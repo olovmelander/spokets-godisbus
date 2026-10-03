@@ -259,6 +259,14 @@ The forest's layers, and after them the garden's:
 | L4 Foreground | Soft grass along the bottom, brighter than the forest's | The same cards, drawn brighter |
 | Effects | Dew that flashes near the ground, only where something grows | The motes, kept low and made to twinkle |
 
+The bog, the mountain and the summit at dusk use the same layers with their own things: sphagnum cushions,
+sedge, dwarf birch, cloudberry leaves and cranberries; reindeer lichen, crowberry, dry grass and bare
+boulders. Two things are different in the open:
+- **The horizon is a picture that stays at the height of his eyes** however high he climbs: the distant
+  forest and the mountain in mist, or the ridges and the hazy valley.
+- **The bog's ground is islands.** It goes down into the water behind the path, and the water lies as far
+  back as the eye reaches. The soft tussocks are mounds of paler moss.
+
 Rules that hold for every place:
 - **The play plane is sharp and level.** Nothing of the dressing stands where he walks, and within 0.3 EL of the
   path the ground has no bumps.
@@ -273,15 +281,15 @@ Rules that hold for every place:
 
 ### 2.3 One palette per place
 
-From plan §5.4. The garden and the forest are built.
+From plan §5.4. All five are built, each as far as its row says.
 
 | Place | Light | Ground | Accents | Built |
 | --- | --- | --- | --- | --- |
 | Gården, 10:00 | Low warm sun, dew sparkle, a blue morning sky | Lawn in four greens (`#3f6a22`, `#5c962b`, `#7fb238`, `#aecb52`), deck wood `#b49a78`, shavings `#e3cb9b` | The house in Falu red `#8f2d22` with white trim; dandelion yellow | **yes** |
 | Granskogen, noon | Shafts of pale gold through cool blue-green shade | Moss in three greens and a gold (`#35521f`, `#587a27`, `#7f9a30`, `#b3ae45`), rust-brown needles | Red lingonberries; bark `#7d6753` | **yes** |
-| Myren, late afternoon | Low gold sun, silver mist late | Rust-red and green sphagnum, orange cloudberry leaves | Red dwarf birch, Mamma's warm lamp | no |
-| Berget, golden hour | Pink-orange sky, haze in the valley | Grey granite, white reindeer lichen | Crooked pines | no |
-| Final, blue hour to night | Stars, green and violet northern lights | The same granite, in blue | Warm headlamps | the lights only |
+| Myren, late afternoon | Low gold sun, mist sheets over the water | Sphagnum in rust-red, green and gold (`#6e3226`, `#8f4d2b`, `#7d8a36`, `#bca94c`), straw sedge, dark peat water `#34423f` | Red dwarf birch, orange cloudberry leaves, cranberries, grey dead pines; the forest and the mountain in mist at the horizon | **yes**; Mamma's lamp not |
+| Berget, golden hour | Pink-orange sky over blue-violet ridges, haze in the valley | Grey granite (`#8a8d94` to `#cfccc8`), white reindeer lichen | Crowberry, dry grass, bare boulders | **yes**; the crooked pines not |
+| Final, blue hour to night | The first stars; then night and the green northern lights | The same granite and lichen, in blue | The candy and the ghost stay in their own colours | **yes**; the headlamps and the violet not |
 
 ### 2.4 The golden frames
 
@@ -319,6 +327,7 @@ scatter, and the grade does more of the work.
   moss, bark and wood. What is there now is drawn in code and reads as stylized, not as photographed.
 - On High: bloom on sparkles, and the half-resolution blur by depth. On Low: the grade inside the materials.
 - Water with glitter, the things on rails and the helpers in the place's style: they are still greybox boxes.
-- The other places: the bog, the mountain, the night.
+- In the bog, the mountain and the final: pines with crowns (a bare trunk reads as a pole, so the mountain
+  has none yet), the valley below the crane flight, Mamma's lamp, the headlamps.
 - In the garden: long shadows, the hose and the lost things under the deck, the birch's crown, the workshop.
 

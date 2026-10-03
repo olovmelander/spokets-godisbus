@@ -119,6 +119,9 @@ function along(t: number): Candy {
 
 export const myren: ChapterData = {
   id: 'myren',
+  place: 'bog',
+  // The boardwalk and its ramp are planks.
+  surfaces: [{ from: 104, to: 136, kind: 'wood' }],
   spawn: { x: 1, y: 0.01 },
   goalX: 197,
   ground: [

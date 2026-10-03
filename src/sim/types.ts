@@ -233,7 +233,7 @@ export interface SimStart {
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** The places of the story, each with its own light and layers (plan §5.4). The picture's business only. */
-export type PlaceId = 'forest' | 'garden';
+export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk';
 
 /** What a stretch of ground is made of, where it isn't the place's own ground. The picture's business only. */
 export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge';
