@@ -77,10 +77,19 @@
       built in stretches of 18 EL that are drawn only while they are in view. **Not measured on a device.**
     - Tests: the browser test runs through the golden frame on Low and High (drawn, within 120 draw calls,
       no shader compiled on the way); `tests/unit/places.test.ts`.
-    - **Not yet:** the second golden frame (the deck edge) and the garden's look; plates rendered in Blender
-      and scanned materials (what is there is drawn in code and reads as stylized); bloom and depth blur on
-      High; the other places; the things on rails, the water and the helpers in the place's style. **H1a is
-      Olov's:** art bible §2.5 says what to look at.
+    - **The garden's look, and the second golden frame** (branch `stage-0b-garden`). `?course=look-deck&debug`
+      is *the deck edge*: deck boards with dark gaps, the house's red wall with a white-framed window behind
+      it, the drop to the lawn, the earth under the lower deck where the sun falls through between the boards,
+      and the lawn as a jungle: grass taller than Elof, dew, dandelions, clover and the birch's first yellow
+      leaves. **All of Kapitel 1 is dressed the same way:** `?dev`.
+      - A chapter can now mark what a stretch of ground is made of (`surfaces`: wood, earth, stone, shavings,
+        hedge), where a deck lies overhead (`roofs`) and where the house stands (`house`). All three are the
+        picture's business only.
+      - Contact sheets of both golden frames, with the stand-in figure: `docs/shots/look-forest/` and
+        `docs/shots/look-deck/`.
+    - **Not yet:** plates rendered in Blender and scanned materials (what is there is drawn in code and reads
+      as stylized); bloom and depth blur on High; the bog, the mountain and the night; the things on rails,
+      the water and the helpers in the place's style. **H1a is Olov's:** art bible §2.5 says what to look at.
 - **Stage 0c has begun** (3 October, branch `stage-0c-ghost`, stacked on `stage-0b-tiers`): the ghost's first
   model, before Stage 0b is finished, because Olov wanted the characters started.
   - It is built in Olov's Blender through the MCP server by `art/private/ghost/ghost.py`. Its four pictures
@@ -517,7 +526,7 @@
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, the forest's golden frame, Kapitel 2 dressed in it, and the art bible's §2. The deck-edge frame, Blender plates and scanned materials, and H1a are left. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, Kapitel 1 and 2 dressed, and the art bible's §2. Blender plates and scanned materials, the other places, and H1a are left. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
 | 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4 and the final in greybox. Only what needs no art, until the look and the characters are decided. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |

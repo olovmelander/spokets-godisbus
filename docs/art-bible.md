@@ -237,6 +237,8 @@ So far: the moss cushions are kept low where Elof walks, so that his boots show.
 
 The layers of plan §5.3, as they are built now. Everything is made in code, so a place costs no download.
 
+The forest's layers, and after them the garden's:
+
 | Layer | What it is in the forest | How it is made |
 | --- | --- | --- |
 | L0 Backdrop | Dark green above, a pale gold glow where the sun stands, moss green below | One small gradient picture behind everything |
@@ -246,6 +248,16 @@ The layers of plan §5.3, as they are built now. Everything is made in code, so 
 | L4 Foreground | Tufts of grass far out of focus along the bottom, now and then one that stands tall | Soft dark cards 4 to 7.5 EL in front of the path, which pass faster than the path does |
 | Effects | Shafts of light, and dust in them | Additive cards; 70 small motes that stay with the camera |
 | Post | The place's grade, a vignette and grain | The one grading pass of Mid and High (`src/render/grade.ts`) |
+
+| Layer | What it is in the garden | How it is made |
+| --- | --- | --- |
+| L0 Backdrop | Morning blue above, pale at the horizon, a warm glow to the left | The same gradient picture, in the garden's colours |
+| L1 Far plates | Leaves in the sun far out of focus: greens and the first yellow | Two drawn plates of soft blobs and spots of light |
+| L2 Mid-ground | **The house's red wall** with its cover strips, a white corner board and white-framed windows; a birch now and then | The wall is a small drawn picture, repeated, 21 EL behind the path; a chapter says where the house stands (`house`) |
+| L3 Play plane | **The deck:** boards 0.8 EL wide with dark gaps, each its own tone, a straight front edge and the dark under it. **The lawn:** a jungle of grass behind the path, stubble where he walks, dew, dandelions as tall as he is, clover, the birch's yellow leaves. Dry earth under the deck, a grey boulder, Pappa's pale shavings, the dark hedge. | A chapter marks what a stretch of ground is made of (`surfaces`); each kind has its tones and its edge. Nothing grows on what is built. |
+| L3, overhead | **The lower deck above him:** boards and joists, with the sun falling through between the boards as stripes on the earth | A chapter says where (`roofs`) |
+| L4 Foreground | Soft grass along the bottom, brighter than the forest's | The same cards, drawn brighter |
+| Effects | Dew that flashes near the ground, only where something grows | The motes, kept low and made to twinkle |
 
 Rules that hold for every place:
 - **The play plane is sharp and level.** Nothing of the dressing stands where he walks, and within 0.3 EL of the
@@ -261,11 +273,11 @@ Rules that hold for every place:
 
 ### 2.3 One palette per place
 
-From plan §5.4. Only the forest is built.
+From plan §5.4. The garden and the forest are built.
 
 | Place | Light | Ground | Accents | Built |
 | --- | --- | --- | --- | --- |
-| Gården, 10:00 | Low warm sun, dew sparkle, long shadows | Bright greens, the first yellow birch leaves, pale deck wood | The red house as a warm wall | no |
+| Gården, 10:00 | Low warm sun, dew sparkle, a blue morning sky | Lawn in four greens (`#3f6a22`, `#5c962b`, `#7fb238`, `#aecb52`), deck wood `#b49a78`, shavings `#e3cb9b` | The house in Falu red `#8f2d22` with white trim; dandelion yellow | **yes** |
 | Granskogen, noon | Shafts of pale gold through cool blue-green shade | Moss in three greens and a gold (`#35521f`, `#587a27`, `#7f9a30`, `#b3ae45`), rust-brown needles | Red lingonberries; bark `#7d6753` | **yes** |
 | Myren, late afternoon | Low gold sun, silver mist late | Rust-red and green sphagnum, orange cloudberry leaves | Red dwarf birch, Mamma's warm lamp | no |
 | Berget, golden hour | Pink-orange sky, haze in the valley | Grey granite, white reindeer lichen | Crooked pines | no |
@@ -278,11 +290,13 @@ Each holds Elof, a red hook ring and candy, and is drawn by the game itself.
 1. **The moss under the spruces: built.** `?course=look-forest` (add `&debug` to start at once, and
    `&tier=high`). It is 48 EL of forest floor with a root, a hollow with a hook over it and a big candy.
    Kapitel 2 is dressed in the same look from end to end: `?dev&course=granskog`.
-2. **The deck edge: not built.** It needs the garden's look: planks, the red wall, grass and dew.
+2. **The deck edge: built.** `?course=look-deck`. The deck with a step, the red wall and a window behind it,
+   the hose down, the earth under the lower deck with a hook in the stripes of sun, and the lawn beyond.
+   Kapitel 1 is dressed in the same look: `?dev`.
 
 ### 2.5 The H1a board: what Olov judges
 
-Look at the golden frame on each device you test on, and at Kapitel 2 for a few minutes. For each of the five,
+Look at the two golden frames on each device you test on, and at Kapitel 1 and 2 for a few minutes. For each of the five,
 say yes or no (plan §5.6):
 
 1. **The macro scale reads.** Does Elof look small in a big forest, or normal-sized among odd shapes?
@@ -305,5 +319,6 @@ scatter, and the grade does more of the work.
   moss, bark and wood. What is there now is drawn in code and reads as stylized, not as photographed.
 - On High: bloom on sparkles, and the half-resolution blur by depth. On Low: the grade inside the materials.
 - Water with glitter, the things on rails and the helpers in the place's style: they are still greybox boxes.
-- The other places.
+- The other places: the bog, the mountain, the night.
+- In the garden: long shadows, the hose and the lost things under the deck, the birch's crown, the workshop.
 

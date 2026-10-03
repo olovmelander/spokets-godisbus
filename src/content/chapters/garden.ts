@@ -38,6 +38,17 @@ function inFlight(t: number, offset: number): Candy {
 
 export const garden: ChapterData = {
   id: 'garden',
+  place: 'garden',
+  // The deck and its steps; the dry earth under the lower deck; the boulder; Pappa's shavings; the hedge.
+  surfaces: [
+    { from: -19, to: 46, kind: 'wood' },
+    { from: 46, to: 66.4, kind: 'earth' },
+    { from: 101, to: 105, kind: 'stone' },
+    { from: 134, to: 154.5, kind: 'shavings' },
+    { from: 178, to: 181, kind: 'hedge' },
+  ],
+  roofs: [{ from: 46.6, to: 66.4, y: 5.4 }],
+  house: { from: -40, to: 72, windows: [4, 24, 40, 58] },
   spawn: { x: 1, y: 6.01 },
   goalX: 210,
   ground: [
