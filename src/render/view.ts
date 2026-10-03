@@ -573,6 +573,7 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
   if (!chapter.night) return { group, update: () => {} };
   const after = chapter.night.after;
   const day = sky.clone();
+  // Night from the start is there at once: it doesn't fall while he watches.
   const dark = new Color('#14244a');
   const lights = { hemisphere: hemisphere.intensity, sun: sun.intensity };
   const ribbons = [0, 1, 2].map((i) => {
@@ -595,9 +596,9 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
     group.add(ribbon);
     return ribbon;
   });
-  let k = 0;
+  let k = after === null ? 1 : 0;
   function update(flags: ReadonlySet<string>, x: number, y: number, clock: number, dt: number): void {
-    k = Math.min(1, Math.max(0, k + (flags.has(after) ? dt : -dt) / 3));
+    k = Math.min(1, Math.max(0, k + (after === null || flags.has(after) ? dt : -dt) / 3));
     sky.copy(day).lerp(dark, k);
     hemisphere.intensity = lerp(lights.hemisphere, 0.75, k);
     sun.intensity = lerp(lights.sun, 0.7, k);

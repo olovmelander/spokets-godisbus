@@ -10,7 +10,7 @@ describe('the places', () => {
   });
 
   it('every chapter of the story is dressed, each as its own place; the test course stays greybox', () => {
-    expect(STORY.map((chapter) => chapter.place)).toEqual(['garden', 'forest', 'bog', 'mountain', 'dusk']);
+    expect(STORY.map((chapter) => chapter.place)).toEqual(['home', 'garden', 'forest', 'bog', 'mountain', 'dusk', 'home']);
     expect(COURSES['garden']!.place).toBe('garden');
     expect(COURSES['look-deck']!.place).toBe('garden');
     expect(COURSES['granskog']!.place).toBe('forest');

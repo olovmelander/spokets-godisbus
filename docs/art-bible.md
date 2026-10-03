@@ -291,6 +291,7 @@ From plan §5.4. All five are built, each as far as its row says.
 | Myren, late afternoon | Low gold sun, mist sheets over the water | Sphagnum in rust-red, green and gold (`#6e3226`, `#8f4d2b`, `#7d8a36`, `#bca94c`), straw sedge, dark peat water `#34423f` | Red dwarf birch, orange cloudberry leaves, cranberries, grey dead pines; the forest and the mountain in mist at the horizon | **yes**; Mamma's lamp not |
 | Berget, golden hour | Pink-orange sky over blue-violet ridges, haze in the valley | Grey granite (`#8a8d94` to `#cfccc8`), white reindeer lichen | Crowberry, dry grass, bare boulders | **yes**; the crooked pines not |
 | Final, blue hour to night | The first stars; then night and the green northern lights | The same granite and lichen, in blue | The candy and the ghost stay in their own colours | **yes**; the headlamps and the violet not |
+| At home: the kitchen at 09:00, the veranda at 21:00 | Warm, low sun; in the evening dim and candle-warm, with the northern lights in the windows | Floor boards, a pale panelled wall close behind | White window frames | **a first room only**: no table, shelf, candles or bowls |
 
 ### 2.4 The golden frames
 

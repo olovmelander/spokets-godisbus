@@ -37,6 +37,14 @@ export const sv = {
     giveJay: 'Ge lavskrikan',
     taste: 'Smaka',
     goHome: 'Gå hem',
+    paintGhost: 'Måla ögonen!',
+    giveMamma: 'Ge Mamma',
+    givePappa: 'Ge Pappa',
+    giveMoa: 'Ge Moa',
+    giveBertil: 'Ge Bertil',
+    takeKnife: 'Ta kniven',
+    carve: 'Tälj',
+    brush: 'Borsta tänderna',
     give: 'Ge',
     pick: 'Plocka',
     rideAnts: 'Åk med myrorna',
@@ -70,13 +78,21 @@ export const sv = {
     first2: 'Den täljde jag till dig',
     first3: 'när du var liten, Elof.',
     first4: 'Vi tappade den här uppe.',
+    // The prologue and the epilogue.
+    tonight: 'Den får du öppna ikväll.',
+    klonk: 'Klonk, klonk!',
+    named: 'Du ska heta Klonk!',
+    away: 'Alltid bort från kroppen.',
+    carved: 'Jag kan tälja!',
   },
 
   // The card at a chapter's end.
   end: {
     chapter: 'Kapitel {n} klart!',
     // A part of the story with a name of its own, by its id.
-    named: { norrsken: 'Finalen klar!' } as Record<string, string>,
+    named: { prolog: 'Lördagsmorgon', norrsken: 'Finalen klar!', epilog: 'Slut' } as Record<string, string>,
+    // The last card of the story, in place of "Fortsättning följer!".
+    closing: { epilog: 'Klonk kunde inte säga det med ord. Men Elof förstod.' } as Record<string, string>,
     course: 'Framme!',
     next: 'Fortsättning följer!',
     onward: 'Nästa kapitel',

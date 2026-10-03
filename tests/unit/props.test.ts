@@ -29,8 +29,8 @@ describe('the stand-ins for things and animals', () => {
         const prop = spotProp(spot);
         if (!prop) continue;
         expect(prop.group.position.x).toBe(spot.at.x);
-        // The bag and the golden candy are held out to him; everything else is behind the path.
-        if (spot.look !== 'bag' && spot.look !== 'gold') expect(prop.group.position.z, `${chapter.id}: the ${spot.id}`).toBeLessThanOrEqual(-0.35);
+        // The bag, the golden candy and the star lie where he takes them; everything else is behind the path.
+        if (spot.look !== 'bag' && spot.look !== 'gold' && spot.look !== 'star') expect(prop.group.position.z, `${chapter.id}: the ${spot.id}`).toBeLessThanOrEqual(-0.35);
       }
     }
   });

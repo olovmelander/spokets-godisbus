@@ -213,8 +213,8 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   const { page, state, info, finish } = await open('dev-1180x820', { viewport: { width: 1180, height: 820 } }, '?dev&debug');
   const drawn = await info();
   const first = await until(state, (s) => s.said.length >= 1);
-  check('?dev plays Kapitel 1', first.course === 'garden' && drawn.drawCalls > 0, first.course);
-  check('a bubble says the first line', (await page.locator('#bubble').isVisible()) && first.said[0] === 'follow1', await page.locator('#bubbleLine').textContent());
+  check('?dev plays the story from its prologue', first.course === 'prolog' && drawn.drawCalls > 0, first.course);
+  check('a bubble says the first line', (await page.locator('#bubble').isVisible()) && first.said[0] === 'tonight', await page.locator('#bubbleLine').textContent());
   await finish();
 }
 
