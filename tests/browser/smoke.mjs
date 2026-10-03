@@ -74,7 +74,7 @@ async function topOfJump(state, timeout = 15000) {
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 mkdirSync(SHOTS, { recursive: true });
 
-async function open(name, options) {
+async function open(name, options, query = '?debug') {
   const context = await browser.newContext(options);
   const page = await context.newPage();
   const requests = [];
@@ -82,14 +82,16 @@ async function open(name, options) {
   page.on('request', (request) => requests.push(request.url()));
   page.on('console', (message) => message.type() === 'error' && errors.push(message.text()));
   page.on('pageerror', (error) => errors.push(String(error)));
-  await page.goto(`${origin}${BASE}?debug`);
+  await page.goto(`${origin}${BASE}${query}`);
   await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
   await sleep(600);
   const state = () => page.evaluate(() => window.__godis.state());
   const info = () => page.evaluate(() => window.__godis.info());
   const finish = async () => {
     await page.screenshot({ path: join(SHOTS, `stage-0a-${name}.png`) });
-    check(`${name}: no request leaves the site`, requests.every((url) => url.startsWith(origin)), `${requests.length} requests`);
+    // The KTX2 transcoder runs in a worker made from a blob, which is still this page's own code.
+    const own = (url) => url.startsWith(origin) || url.startsWith(`blob:${origin}`) || url.startsWith('data:');
+    check(`${name}: no request leaves the site`, requests.every(own), `${requests.length} requests`);
     check(`${name}: no errors in the console`, errors.length === 0, errors.slice(0, 2).join(' | '));
     await context.close();
   };
@@ -104,6 +106,24 @@ async function open(name, options) {
   check('the page asks not to be indexed', /noindex/.test(robots ?? ''), robots ?? 'no robots meta');
   const drawn = await info();
   check('the scene is drawn', drawn.drawCalls > 0 && drawn.triangles > 0, `${drawn.drawCalls} draw calls, ${drawn.triangles} triangles`);
+  check('Auto starts in the Mid tier, with the graded HDR picture', drawn.tier === 'mid', drawn.tier);
+  // The asset chain (plan §7.3, Stage 0a): a model made in Blender, packed with KTX2 and meshopt, on the page.
+  const loaded = await until(info, (i) => i.models.includes('boot/big-candy'), 30000);
+  check('the big candy from Blender is loaded', loaded.models.includes('boot/big-candy'), loaded.models.join(', ') || 'no models');
+  check('its texture arrived as KTX2 and stayed compressed', loaded.compressedTextures >= 1, `${loaded.compressedTextures} compressed`);
+  check('its custom property from Blender arrived', loaded.roles.includes('checkpoint'), loaded.roles.join(', ') || 'no roles');
+  // The ghost's pack is private: it is there on Olov's computer and absent in CI. Both are right.
+  const manifest = await page.evaluate(() => fetch('packs/manifest.json').then((r) => r.json()));
+  if (manifest.packs.private) {
+    const withGhost = await until(info, (i) => i.models.includes('private/ghost'), 30000);
+    check('the ghost from the private pack is loaded', withGhost.models.includes('private/ghost'), withGhost.models.join(', '));
+    if (manifest.packs.private.files['elof.glb']) {
+      const withElof = await until(info, (i) => i.models.includes('private/elof'), 30000);
+      check('Elof from the private pack is loaded', withElof.models.includes('private/elof'), withElof.models.join(', '));
+    }
+  } else {
+    console.log('  --   no private pack in this build: the course has no ghost');
+  }
   check('the on-screen controls are hidden on a computer', await page.locator('#controls').isHidden());
   check('the key hint shows', await page.locator('#hint').isVisible());
 
@@ -119,6 +139,23 @@ async function open(name, options) {
   check('holding Space jumps high', top > 0.8, `top ${top.toFixed(2)} EL`);
   const after = await until(state, (s) => s.vx === 0 && s.grounded === true);
   check('he stops when the keys are let go', after.vx === 0 && after.grounded === true, `vx ${after.vx}`);
+  // Gate 6 (plan §6.12): no shader is compiled during play. Everything was compiled by the first frames.
+  const programs = (await info()).programs;
+  await sleep(500);
+  check('no shader was compiled during play', (await info()).programs === programs, `${programs} programs`);
+  await finish();
+}
+
+// --- the other tiers --------------------------------------------------------------------------------
+for (const tier of ['low', 'high']) {
+  console.log(`tier ${tier}, 1180×820`);
+  const { info, finish } = await open(`tier-${tier}-1180x820`, { viewport: { width: 1180, height: 820 }, deviceScaleFactor: 2 }, `?debug&tier=${tier}`);
+  const drawn = await until(info, (i) => i.models.includes('boot/big-candy'), 30000);
+  check(`?tier=${tier} is honoured`, drawn.tier === tier, drawn.tier);
+  check(`${tier}: the scene and the model are drawn`, drawn.drawCalls > 0 && drawn.models.includes('boot/big-candy'), `${drawn.drawCalls} draw calls`);
+  const pixels = drawn.width * drawn.height;
+  const cap = tier === 'low' ? 1.0e6 : 2.6e6;
+  check(`${tier}: the canvas stays inside its pixel cap`, pixels <= cap * 1.01, `${drawn.width}×${drawn.height}`);
   await finish();
 }
 

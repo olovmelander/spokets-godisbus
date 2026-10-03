@@ -8,9 +8,10 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "dev": "vite",
-    "dev:lan": "vite --host --mode lan",
-    "build": "vite build && node scripts/size-gate.mjs",
+    "assets": "node scripts/build-assets.mjs",
+    "dev": "npm run assets && vite",
+    "dev:lan": "npm run assets && vite --host --mode lan",
+    "build": "npm run assets && vite build && node scripts/size-gate.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -22,6 +23,7 @@
     "three": "0.186.1"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "4.5.1",
     "@types/three": "0.186.0",
     "@vitejs/plugin-basic-ssl": "2.3.0",
     "playwright": "1.56.1",

@@ -1,26 +1,36 @@
 import {
-  AgXToneMapping, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight,
-  ExtrudeGeometry, Fog, Group, HemisphereLight, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial,
-  PerspectiveCamera, Scene, Shape, SphereGeometry, WebGLRenderer,
+  BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight,
+  ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, Mesh, MeshBasicMaterial, MeshLambertMaterial,
+  MeshStandardMaterial, NeutralToneMapping, PerspectiveCamera, Quaternion, Scene, Shape, SphereGeometry, UnsignedByteType, Vector3,
+  WebGLRenderer,
 } from 'three';
+import type { Object3D } from 'three';
+import { createAssets } from './assets';
+import { GARDEN_MORNING, createGradePass } from './grade';
+import { chooseTier, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
 import { RUN_SPEED } from '../sim/constants';
 import type { ChapterData, PlayerState } from '../sim/types';
 
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
-/** The Mid tier's pixel cap, until Stage 0b brings the tiers (plan §6.5). */
-const PIXEL_CAP = 1.6e6;
 /** The ground sits about 35% up from the bottom, so thumbs never cover Elof (plan §5.2). */
 const GROUND_FROM_BOTTOM = 0.35;
 
 export interface ViewInfo {
+  tier: Tier;
   drawCalls: number;
   triangles: number;
   programs: number;
   pixelRatio: number;
   width: number;
   height: number;
+  /** Models loaded from the packs, as "pack/name". */
+  models: string[];
+  /** How many of their textures arrived as KTX2 and stayed compressed on the GPU. */
+  compressedTextures: number;
+  /** The "role" custom properties set in Blender, read back from the models. */
+  roles: string[];
 }
 
 export interface View {
@@ -35,11 +45,35 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 /** How much of the way to go this frame, for a smoothing that doesn't depend on the frame rate. */
 const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
 
-/** Stage 0a's greybox scene: the test course, a stand-in Elof in his colours, and the big candy. */
-export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): View {
-  // Throws when WebGL 2 is missing; main.ts then shows the message (plan §6.5).
-  const renderer = new WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', alpha: false });
-  renderer.toneMapping = AgXToneMapping;
+/**
+ * Stage 0a's greybox scene: the test course, a stand-in Elof in his colours, and the big candy.
+ * `asked` is the tier from ?tier=, or null for Auto.
+ */
+export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null): View {
+  // The context is made here, so that the tier can be chosen before the renderer exists: Mid and High need
+  // float colour buffers, and a device without them gets Low (plan §6.5).
+  const gl = canvas.getContext('webgl2', {
+    alpha: false, antialias: false, depth: true, stencil: false, powerPreference: 'high-performance',
+  });
+  // main.ts catches this and shows the message.
+  if (!gl) throw new Error('WebGL 2 is not available');
+  const tier = chooseTier(asked, gl.getExtension('EXT_color_buffer_float') !== null);
+
+  const renderer = new WebGLRenderer({
+    canvas,
+    context: gl,
+    antialias: false,
+    powerPreference: 'high-performance',
+    alpha: false,
+    outputBufferType: tier === 'low' ? UnsignedByteType : HalfFloatType,
+  });
+  // Neutral keeps the colours that were set: a red house stays red (plan §6.5 names AgX or Neutral).
+  renderer.toneMapping = NeutralToneMapping;
+  // One frame is several render calls on Mid and High (the scene, the grade, the output), so the counters
+  // are reset once per frame here, not by each call.
+  renderer.info.autoReset = false;
+  // Mid and High: the scene goes to the HDR buffer, one pass grades it, and the renderer tone-maps the result.
+  if (tier !== 'low') renderer.setEffects([createGradePass(GARDEN_MORNING)]);
   // Let the browser restore a lost context instead of leaving a dead canvas.
   canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
 
@@ -53,8 +87,82 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): Vie
   sun.position.set(-6, 5, 8);
   scene.add(sun);
 
-  scene.add(buildGround(chapter), buildTrunks(chapter), buildCandy(chapter));
-  const candy = scene.getObjectByName('candy')!;
+  const candyPlace = buildCandy(chapter);
+  scene.add(buildGround(chapter), buildTrunks(chapter), candyPlace);
+  let candy = candyPlace.getObjectByName('candy')!;
+
+  // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
+  // It is the first asset through the whole chain: Blender → glTF → KTX2 and meshopt → the page.
+  const models: string[] = [];
+  const roles: string[] = [];
+  let compressedTextures = 0;
+  const assets = createAssets(renderer);
+  assets
+    .model('boot', 'big-candy')
+    .then((model) => {
+      candyPlace.clear();
+      candyPlace.add(model);
+      candy = model.getObjectByName('candy') ?? model;
+      models.push('boot/big-candy');
+      model.traverse((node) => {
+        if (typeof node.userData.role === 'string') roles.push(node.userData.role);
+        const map = ((node as Mesh).material as MeshStandardMaterial | undefined)?.map;
+        if (map && (map as { isCompressedTexture?: boolean }).isCompressedTexture) compressedTextures++;
+      });
+    })
+    .catch((error) => console.error('The big candy could not be loaded; the stand-in stays.', error));
+
+  // The ghost, modelled in Blender after Pappa's carving. Its files are not in the public repository, so it
+  // stands on the course only where its private pack exists (HANDOVER.md). The manifest says whether it does.
+  const GHOST_X = 6.5;
+  let ghost: Group | null = null;
+  let ghostFoot: Object3D | null = null;
+  let ghostTurn = -Math.PI / 2;
+  let clock = 0;
+  assets
+    .manifest()
+    .then((manifest) => (manifest.packs.private?.files['ghost.glb'] ? assets.model('private', 'ghost') : null))
+    .then((model) => {
+      if (!model) return;
+      model.position.set(GHOST_X, heightOfGroundAt(chapter, GHOST_X), 0);
+      scene.add(model);
+      ghost = model;
+      // GLTFLoader drops the dot from Blender's names: foot.L arrives as footL.
+      ghostFoot = model.getObjectByName('footL') ?? null;
+      models.push('private/ghost');
+    })
+    .catch((error) => console.error('The ghost could not be loaded.', error));
+
+  // Elof, modelled in Blender after his sheets and photos. He too is only here where the private pack is;
+  // everywhere else the stand-in built in code plays his part.
+  let doll: Doll | null = null;
+  assets
+    .manifest()
+    .then((manifest) => (manifest.packs.private?.files['elof.glb'] ? assets.model('private', 'elof') : null))
+    .then((model) => {
+      if (!model) return;
+      // Exported from Blender he faces +z, and the stand-in faces +x. A quarter turn makes them agree.
+      model.rotation.y = Math.PI / 2;
+      elof.group.clear();
+      elof.group.add(model);
+      // A skinned Elof has bones, which keep the turn they rest in; the older one has loose parts that rest unturned.
+      const part = (name: string, forward: 1 | -1): Joint | null => {
+        const node = model.getObjectByName(name);
+        if (!node) return null;
+        const bone = (node as { isBone?: boolean }).isBone === true;
+        return { node, rest: bone ? node.quaternion.clone() : null, forward: bone ? forward : 1, angle: 0 };
+      };
+      doll = {
+        spine: part('spine_01', 1),
+        head: part('Head', 1) ?? part('head', 1),
+        thighs: [part('thigh_l', -1), part('thigh_r', -1)],
+        calves: [part('calf_l', -1), part('calf_r', -1)],
+        upperArms: [part('upperarm_l', -1), part('upperarm_r', -1)],
+        lowerArms: [part('lowerarm_l', -1), part('lowerarm_r', -1)],
+      };
+      models.push('private/elof');
+    })
+    .catch((error) => console.error('Elof could not be loaded; the stand-in stays.', error));
   const elof = buildElof();
   scene.add(elof.group);
 
@@ -79,7 +187,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): Vie
   function resize(): void {
     const width = canvas.clientWidth || window.innerWidth;
     const height = canvas.clientHeight || window.innerHeight;
-    pixelRatio = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(PIXEL_CAP / (width * height)));
+    pixelRatio = pixelRatioFor(tier, width, height, window.devicePixelRatio);
     renderer.setPixelRatio(pixelRatio);
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
@@ -111,6 +219,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): Vie
     const moving = Math.abs(curr.vx) > 0.05 || !curr.grounded;
     elof.legLeft.rotation.z = moving ? swing : 0;
     elof.legRight.rotation.z = moving ? -swing : 0;
+    if (doll) poseDoll(doll, curr, stride, dt);
     if (curr.grounded && !wasGrounded) squash = 0.82; // a soft landing
     wasGrounded = curr.grounded;
     squash += (1 - squash) * ease(12, dt);
@@ -124,7 +233,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): Vie
     shadow.position.set(x, curr.groundY + 0.012, 0);
     shadow.scale.setScalar(clamp(1 - height * 0.25, 0.35, 1));
 
-    candy.rotation.y += dt * (atGoal ? 7 : 1.2);
+    candy.rotateY(dt * (atGoal ? 7 : 1.2));
+
+    // The ghost is a wooden toy come alive: it never bends. It turns towards Elof, sways, and taps a foot.
+    if (ghost) {
+      clock += dt;
+      // Exported from Blender it faces +z, the camera. A quarter turn faces it along the course.
+      const towardsElof = x < ghost.position.x ? -Math.PI / 2 + 0.5 : Math.PI / 2 - 0.5;
+      ghostTurn += (towardsElof - ghostTurn) * ease(6, dt);
+      ghost.rotation.set(0, ghostTurn, Math.sin(clock * 1.7) * 0.035);
+      if (ghostFoot) ghostFoot.rotation.x = -Math.max(0, Math.sin(clock * 9)) * (Math.sin(clock * 0.9) > 0.2 ? 0.45 : 0);
+    }
+    renderer.info.reset();
     renderer.render(scene, camera);
   }
 
@@ -132,14 +252,81 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): Vie
     resize,
     render,
     info: () => ({
+      tier,
       drawCalls: renderer.info.render.calls,
       triangles: renderer.info.render.triangles,
       programs: renderer.info.programs?.length ?? 0,
       pixelRatio,
       width: canvas.width,
       height: canvas.height,
+      models,
+      compressedTextures,
+      roles,
     }),
   };
+}
+
+/** The joints of the Elof made in Blender. They are named after the animation library's skeleton (plan §5.6). */
+interface Doll {
+  spine: Joint | null;
+  head: Joint | null;
+  thighs: (Joint | null)[];
+  calves: (Joint | null)[];
+  upperArms: (Joint | null)[];
+  lowerArms: (Joint | null)[];
+}
+
+/**
+ * One joint and how far it is bent. A bone turns round its own x axis from the turn it rests in, and `forward`
+ * says which way that axis swings it; a loose part has no rest and turns round the model's x axis.
+ */
+interface Joint {
+  node: Object3D;
+  rest: Quaternion | null;
+  forward: 1 | -1;
+  angle: number;
+}
+
+const X_AXIS = new Vector3(1, 0, 0);
+const turn = new Quaternion();
+
+/**
+ * Poses the doll in code until the library's clips drive it: a walk and a run that follow the distance he
+ * covers, and a jump. He faces +z in his own space, so a joint swings forward with a negative turn round x.
+ */
+function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number): void {
+  const quick = ease(18, dt);
+  const bend = (joint: Joint | null, angle: number) => {
+    if (!joint) return;
+    joint.angle += (angle - joint.angle) * quick;
+    if (joint.rest) joint.node.quaternion.copy(joint.rest).multiply(turn.setFromAxisAngle(X_AXIS, joint.angle * joint.forward));
+    else joint.node.rotation.x = joint.angle;
+  };
+  const speed = clamp(Math.abs(player.vx) / RUN_SPEED, 0, 1);
+  if (!player.grounded) {
+    // In the air: one knee up, the other leg trailing, arms thrown forward.
+    bend(doll.thighs[0]!, -0.75);
+    bend(doll.thighs[1]!, 0.3);
+    bend(doll.calves[0]!, 0.9);
+    bend(doll.calves[1]!, 0.5);
+    bend(doll.upperArms[0]!, -0.9);
+    bend(doll.upperArms[1]!, -1.3);
+    bend(doll.lowerArms[0]!, -0.5);
+    bend(doll.lowerArms[1]!, -0.3);
+    bend(doll.spine, 0.06);
+    return;
+  }
+  const reach = speed > 0.01 ? 0.22 + 0.62 * speed : 0;
+  for (const [index, side] of [[0, 1], [1, -1]] as const) {
+    const swing = Math.sin(stride) * side;
+    bend(doll.thighs[index]!, -swing * reach);
+    // The knee bends while the leg comes forward from behind.
+    bend(doll.calves[index]!, Math.max(0, Math.cos(stride) * side) * reach * 1.25);
+    bend(doll.upperArms[index]!, swing * reach * 0.9);
+    bend(doll.lowerArms[index]!, speed > 0.01 ? -(0.25 + 0.6 * speed) : -0.06);
+  }
+  bend(doll.spine, 0.14 * speed);
+  bend(doll.head, -0.08 * speed);
 }
 
 function startState(chapter: ChapterData): PlayerState {

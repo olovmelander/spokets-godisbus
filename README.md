@@ -5,9 +5,13 @@ alive, steals Elof's giant bag of Saturday sweets and drops a trail of candy beh
 through the yard, the spruce forest, past the brook and over the misty bog, up the mountain, to find out *why*.
 
 - **Status:** Stage 0a, the foundation. The site shows a greybox test course: a stand-in Elof who walks, runs
-  and jumps. Nothing of the story is built yet.
+  and jumps, and one model that came from Blender. Nothing of the story is built yet.
 - **Run it:** `npm ci`, then `npm run dev` and open `http://localhost:5173/spokets-godisbus/?debug`.
-  `npm test` runs the simulation tests and the robot; `npm run build && npm run test:browser` plays it in a browser.
+  - It needs the KTX-Software `ktx` tool for the asset build; `HANDOVER.md` says how to install it.
+  - `npm test` runs the simulation tests and the robot; `npm run build && npm run test:browser` plays it in a
+    browser.
+  - `?bench` measures for half a minute; `dev/menus.html` shows the controls and messages without the game.
+  - `?tier=low`, `mid` or `high` chooses the quality tier.
 - **The plan:** [`docs/game-plan.md`](docs/game-plan.md), covering:
   - the design, and the art direction after *Unravel*;
   - the technology: Three.js r186 (`WebGLRenderer`), Vite, Blender and GitHub Pages;

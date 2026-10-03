@@ -3,8 +3,11 @@ import { Game } from './app/game';
 import { testbana } from './content/chapters/testbana';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
+import { tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
+import { createBench } from './ui/bench';
 import { createDebug, type Debug } from './ui/debug';
+import { mountShell } from './ui/shell';
 import './ui/ui.css';
 
 declare global {
@@ -19,7 +22,8 @@ declare global {
 
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const params = new URLSearchParams(location.search);
-const debugOn = params.has('debug');
+const benchOn = params.has('bench');
+const debugOn = params.has('debug') || benchOn;
 
 function showMessage(text: string): void {
   byId('messageText').textContent = text;
@@ -31,10 +35,11 @@ function showMessage(text: string): void {
 }
 
 function start(): void {
+  mountShell(document.body);
   const canvas = byId<HTMLCanvasElement>('game');
   let view: View;
   try {
-    view = createView(canvas, testbana);
+    view = createView(canvas, testbana, tierFromQuery(params.get('tier')));
   } catch (error) {
     console.error(error);
     showMessage(sv.noWebGL);
@@ -44,10 +49,6 @@ function start(): void {
   const game = new Game(testbana);
   const controls = byId('controls');
   const hint = byId('hint');
-  byId('hopLabel').textContent = sv.hop;
-  byId('actLabel').textContent = sv.act;
-  byId('hopBtn').setAttribute('aria-label', sv.hop);
-  byId('actBtn').setAttribute('aria-label', sv.act);
 
   // The on-screen controls follow the device in use, not the kind of computer (plan §4.1).
   let device: Device = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keys';
@@ -92,6 +93,9 @@ function start(): void {
     };
   }
 
+  // ?bench plays the course by itself for 30 seconds and then shows numbers to paste into a session.
+  const bench = benchOn ? createBench(30, testbana) : null;
+
   let shown = false;
   let lastTime = 0;
   function frame(time: number): void {
@@ -99,8 +103,10 @@ function start(): void {
     const began = performance.now();
     timer.update(time);
     const dt = Math.min(timer.getDelta(), 0.25);
-    const held = input.state();
-    game.frame(dt, { x: held.x, hopHeld: held.hopHeld }, input.consume());
+    let held = input.state();
+    let edges = input.consume();
+    if (bench && !bench.done) ({ held, edges } = bench.play(game.sim.curr, time));
+    game.frame(dt, { x: held.x, hopHeld: held.hopHeld }, edges);
     const atGoal = game.sim.flags.has('goal');
     view.render(game.sim.prev, game.sim.curr, game.alpha, dt, atGoal);
     if (atGoal && device !== 'touch') hint.textContent = sv.goal;
@@ -109,7 +115,11 @@ function start(): void {
       shown = true;
       byId('loading').classList.add('done');
     }
-    if (debug) {
+    if (bench && lastTime > 0) {
+      bench.frame(time - lastTime, performance.now() - began);
+      if (bench.done && !bench.shown) byId('debug').textContent = bench.report(view.info());
+    }
+    if (debug && !bench?.shown) {
       const p = game.sim.curr;
       // Two decimals, and never "-0.00".
       const n = (value: number) => (Math.abs(value) < 0.005 ? 0 : value).toFixed(2);
@@ -118,7 +128,8 @@ function start(): void {
         return [
           `steps/frame ${game.lastSteps} · device ${device}`,
           `draw calls ${i.drawCalls} · triangles ${i.triangles} · programs ${i.programs}`,
-          `canvas ${i.width}×${i.height} · pixel ratio ${i.pixelRatio.toFixed(2)}`,
+          `tier ${i.tier} · canvas ${i.width}×${i.height} · pixel ratio ${i.pixelRatio.toFixed(2)}`,
+          `models ${i.models.join(', ') || 'none yet'} · KTX2 textures ${i.compressedTextures}`,
           `x ${n(p.x)} y ${n(p.y)} · vx ${n(p.vx)} vy ${n(p.vy)} · ${p.grounded ? 'on the ground' : 'in the air'}`,
         ];
       });

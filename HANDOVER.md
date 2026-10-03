@@ -24,7 +24,7 @@
       its own. The next session has them, once Olov has restarted VS Code and approved the `blender` server.
     - The add-on inside Blender is older than the server. The server says so and falls back, so it works, but
       see "Next".
-  - **Stage 0a, part 1: the foundation runs** (3 October, branch `stage-0a-foundation`).
+  - **Stage 0a, part 1: the foundation runs** (3 October, merged as pull request #2; the plan was #1).
     - What you see: a greybox test course with a stand-in Elof in his colours. He walks, runs and jumps, with the
       keyboard, a gamepad, or the on-screen stick and buttons. `?debug` shows the numbers.
     - The stack of plan §6.1: Vite 8, TypeScript 7, three r186 (`WebGLRenderer`), planck. `npm run dev`,
@@ -37,43 +37,118 @@
     - 50 Vitest tests, among them the robot, which plays the course through the real loop at 30, 60, 120 and
       144 Hz. The browser smoke test plays with the keyboard at 1440×900 and with touch at 844×390.
     - The build's size gate: 188 KB of gzipped JS, of the 450 KB allowed.
-    - `.github/workflows/deploy.yml` now builds and publishes `dist/`, and `ci.yml` checks pull requests. **Neither
-      has run on GitHub yet:** the first run is this branch's pull request.
-    - The placeholder page in `site/` is gone: merging this branch puts the test course on Pages, with `noindex`.
-- **Not built yet in Stage 0a:** `?bench`, `dev/menus.html`, the asset chain (Blender → glTF → KTX2 → Pages), and
-  the note on what Pages compresses. See "Next".
+    - `.github/workflows/deploy.yml` builds and publishes `dist/`, and `ci.yml` checks pull requests. Both have
+      run green on GitHub: `ci.yml` on pull request #2 in about a minute, and `deploy.yml` after the merge.
+    - **The test course is live** at `https://olovmelander.github.io/spokets-godisbus/`, with `noindex`. The
+      placeholder page is gone.
+  - **Stage 0a, part 2: a model goes from Blender to the page** (3 October, branch `stage-0a-assets`).
+    - The big candy at the end of the course is now modelled in Blender, through the MCP server, by
+      `art/blender/big-candy.py`. `scripts/bake/export.py` exported it to `art/baked/boot/big-candy.glb`.
+    - `scripts/build-assets.mjs` packs it: the texture becomes KTX2 (ETC1S) with the `ktx` tool, the meshes are
+      compressed with meshopt, and `public/packs/manifest.json` lists the bytes. 33 KB became 19 KB.
+    - The game loads it with three's glTF, KTX2 and meshopt loaders (`src/render/assets.ts`). The custom
+      property set in Blender arrives as `userData`. The browser test checks all of it.
+    - `?bench` plays the course by itself for 30 seconds and then shows text to copy into a session.
+    - `dev/menus.html` shows everything that lies over the game view, without WebGL. The game and that page build
+      the same shell (`src/ui/shell.ts`).
+    - The size gate now reads 256 KB of gzipped JS (of 450), and 791 KB for the boot pack (of 3 MB), of which
+      the KTX2 transcoder is 515 KB.
+- **Stage 0a is built.** What is left of it is Olov's checkpoint: the game on his devices. See "Next".
+- **Stage 0b has begun** (3 October, branch `stage-0b-tiers`, stacked on `stage-0a-assets`): quality tiers and the
+  graded picture.
+  - `src/render/quality.ts`: Low, Mid and High with the plan's pixel caps (§6.5). `?tier=low`, `mid` or `high`
+    chooses one; without it the game starts in Mid, and a device that can't render to float buffers gets Low.
+  - `src/render/grade.ts`: on Mid and High the scene goes to r186's HDR buffer, and one pass applies the place's
+    grade, a vignette and film grain. The renderer tone-maps after it. Low draws straight to the canvas.
+  - The browser test covers all three tiers, and checks that no shader is compiled during play (gate 6).
+  - **Not yet:** Auto's two-second measurement, High's bloom and depth blur, Low's grade inside the materials,
+    the LUT per place, `docs/art-bible.md`, and the two golden frames. They are the rest of Stage 0b.
+- **Stage 0c has begun** (3 October, branch `stage-0c-ghost`, stacked on `stage-0b-tiers`): the ghost's first
+  model, before Stage 0b is finished, because Olov wanted the characters started.
+  - It is built in Olov's Blender through the MCP server by `art/private/ghost/ghost.py`. Its four pictures
+    stand beside it in the scene as reference images: the two photos of the carving, the render and the poster.
+  - Five rigid parts, each with its origin where it pivots: the body with the bag and the two eyes, two arms and
+    two feet. The fists grip the bag's upper corners, as on the poster and the render. The ankle disc is plain.
+  - Its colours are flat for now: 14 materials, which cost 26 draw calls. The baked 1024² wood texture of plan
+    §5.6 replaces them, and brings the ghost down to one draw call per part.
+  - **None of the ghost is committed.** The generator, the `.blend` and the export are in `art/private/`, and four
+    renders (front, side, back, three-quarter) are in `docs/shots/_work/ghost/`. Git ignores both folders.
+  - The game shows the ghost on the test course where its pack exists. `scripts/build-assets.mjs` also packs
+    `art/private/baked/`, and the view asks the manifest before it loads `private/ghost`. In CI and on the public
+    site the course has no ghost. The ghost turns towards Elof, sways and taps a foot.
+  - **Not yet for the ghost:** Olov's verdict on the likeness, the wood texture, the split in the hem at the back,
+    the two knife cuts above the bag, and the rest of its moves (waddle, hop, dance, point, grab).
+  - **Elof's first model** (branch `stage-0c-elof`, stacked on `stage-0c-ghost`) is built the same way, by
+    `art/private/elof/elof.py`, with his five pictures beside him in Blender: the player sheet, the siblings
+    sheet, the poster and the two photos of his real clothes.
+    - He is a doll of 19 rigid parts, each with its origin at a joint, and the parts are named after the joints of
+      the animation library (`pelvis`, `spine_01`, `head`, `upperarm_l`, `thigh_l`, `calf_l`, `foot_l` ...), so its
+      clips can drive him once they are retargeted. He is not skinned yet.
+    - From his pictures: the spiky golden fringe swept up and forward, blue eyes, rosy cheeks and freckles; the
+      light-blue pin-striped shirt with its band collar, placket, buttons and two chest pockets, sleeves rolled to
+      the elbows; dark jeans rolled at the ankle; brown laced boots; the olive backpack with its leather patch.
+    - His face is made of sticker meshes, as plan §5.6 says. Only the resting face exists.
+    - In the game he takes the stand-in's place where the private pack has him. A walk, a run and a jump are
+      posed in code (`poseDoll` in `src/render/view.ts`) until the library's clips arrive.
+    - None of him is committed. His renders are in `docs/shots/_work/elof/`.
+  - **The style is decided** (Olov, 3 October; `docs/art-bible.md` §1): Elof and the family are stylized cartoon
+    characters, like his sheets and poster, "a Pixar, Unravel or Disney character". The ghost stays a carved
+    wooden ghost. The first models were not good enough.
+    - **Elof's third model** (`art/private/elof/elof.py`; the earlier two are kept beside it as
+      `elof-v1-doll.py` and `elof-v2-toy.py`). Olov on the second: "the current version is too bad", he wants a
+      "visually stunning design and style". The third is sculpted by script: forms fused with a voxel remesh,
+      cut, smoothed and thinned out. He has eye sockets with lids, large blue eyes, a button nose, lips, ears,
+      fingers, hair in swept tufts and a soft backpack. He is skinned on 15 bones named after the animation
+      library's joints, painted on the vertices with shadow baked into the creases, 15,400 triangles, three
+      materials. He is in the game on Olov's computer, and `src/render/view.ts` poses his bones. He reads as a
+      stylized cartoon boy now. He is still short of the sheets: Olov has not judged him yet.
+    - **What was researched:** how stylized characters are made (the art bible lists the principles and the
+      sources), and two free CC0 bases. Quaternius' *Universal Base Characters* and *Universal Animation
+      Library* are downloaded to `art/vendor/quaternius/` (ignored by git until a file from them is used). The
+      free base pack holds only two muscular adult bodies, so it can't be Elof; its *Teen* and *Regular* bodies
+      are in the paid version. The animation library's 65-joint skeleton and clips are there and unused so far.
+    - **The ghost has not been redone yet.** Art bible §1.5 says how: the fuller sheet, sleeves and fists of
+      the render and the poster, in bolder knife facets, with a painted wood texture.
+  - **Elof costs 3 draw calls now** (he cost about 27). The ghost still costs 26, because every colour is its
+    own material; its baked wood texture comes with its redesign.
+  - **Not yet for Elof:** Olov's verdict, the library's skeleton and clips (the library has to be downloaded to
+    `art/vendor/` first), the other nine expressions, and a skinned body if the joints show too much up close.
+- **How GitHub Pages serves the site** (read from the live site on 3 October): HTML and JS are gzipped, not
+  Brotli, and cached for 10 minutes (`max-age=600`). Whether it compresses `.wasm` and `.glb` can be read once
+  this branch is deployed; the size gate counts them at full size until then.
 - **Olov's computer** (checked 3 October): Windows 11, an RTX 3070, Node 24.14, git, and Blender 4.5.9 LTS with
-  the *MCP for Blender* add-on running on port 9876, with only Poly Haven ticked, `uv` 0.12, and Playwright
-  1.56.1's Chromium. Not installed: `gh`, `exiftool`, `ktx`.
+  the *MCP for Blender* add-on running on port 9876, with only Poly Haven ticked, `uv` 0.12, Playwright
+  1.56.1's Chromium, and the `ktx` tool 4.4.2 in `%LOCALAPPDATA%\Programs\KTX-Software\bin` (the asset build
+  finds it there). Not installed: `gh`, `exiftool`.
+  - To install `ktx` on another Windows computer: download `KTX-Software-4.4.2-Windows-x64.exe` from the
+    KhronosGroup/KTX-Software releases and run it with `/S /D=%LOCALAPPDATA%\Programs\KTX-Software`.
 
 ## Next
 
-1. **Olov gives the next session its Blender tools** (plan §5.6, §6.14):
-   1. restart VS Code, so that Claude Code finds `uvx`;
-   2. keep Blender open with the add-on connected, and approve the `blender` server when Claude Code asks;
-   3. ask the session what the Blender scene holds. It should list the cube, the camera and the light.
+1. **The Blender tools work** in a session on Olov's computer (since the second restart on 3 October).
    - In the add-on's panel, keep only *Poly Haven* ticked. Never tick *Hunyuan*.
    - **Update the add-on when convenient:** run `uvx mcp-for-blender install-addon`, then restart Blender (or switch
-     the add-on off and on in Preferences) and press *Start MCP Server*. If the new panel shows a telemetry consent
-     box, leave it unticked (`CLAUDE.md`).
-2. **Olov merges the two pull requests,** the plan first (`plan-v4-answers`), then the foundation
-   (`stage-0a-foundation`). The second one's checks are the first run of both workflows, so look at them.
-   - Then open `https://olovmelander.github.io/spokets-godisbus/?debug` on the devices you have, play the course
-     to the big candy, and tell the next session what the top two lines of the overlay say on each device.
+     the add-on off and on in Preferences) and press *Start MCP Server*. Then ask the session for the add-on's
+     status: `telemetry_consent` must be false (see "Notes for sessions that drive Blender").
+2. **Olov's checkpoint for Stage 0a** (plan §7.3): once `stage-0a-assets` is merged and deployed, open
+   `https://olovmelander.github.io/spokets-godisbus/?bench` on each device you have. It plays by itself for half a
+   minute and then shows text. Copy that text into the next session.
    - On the computer: `npm run dev`, then `http://localhost:5173/spokets-godisbus/?debug`. For a phone on the same
      Wi-Fi: `npm run dev:lan`.
-3. **Stage 0a, part 2** (plan §7.3), on Olov's computer, because it needs Blender:
-   - `?bench`: the 30-second measurement that prints text to paste into a session (plan §6.10);
-   - `dev/menus.html`, with the first menu in it;
-   - the asset chain proven end to end: `scripts/bake/export.py` in Blender → glTF → `scripts/build-assets.mjs`
-     with gltf-transform and KTX2 → a model on the page;
-   - record whether Pages compresses `.wasm`, `.glb` and `.ktx2` (it needs the deployed site);
-   - note how to install `ktx` and `exiftool` on Windows.
-4. **Stage 0b** (look-dev) and **Stage 0c** (characters) need Olov's computer and step 1: the golden frames, then
-   Elof and the ghost in Blender (plan §5.6).
-5. **Before Stage 0c:** the private repository `spokets-godisbus-familj`, a read-only token, and the secrets
+3. **After that merge,** the next session reads the live site's headers for the `.wasm` and the `.glb`, to see
+   whether Pages compresses them, and corrects `scripts/size-gate.mjs` and the plan's §6.6 if it does.
+4. **The rest of Stage 0b** (look-dev), on Olov's computer, with him watching the picture:
+   - `docs/art-bible.md`: the scale chart, a palette and a grade per place, the layer recipe, the H1a board with
+     its five criteria, and the fallback look (plan §5.6, point 1);
+   - the two golden frames, in `dev/look.html`: the deck edge and the moss under the spruces, each with the
+     stand-in Elof, a red hook ring and candy, built in layers (plan §5.3) with CC0 materials from Poly Haven;
+   - what the tiers still lack (see "State"), and `?bench` on the golden frames;
+   - then **H1a**, Olov's checkpoint.
+5. **Stage 0c** (characters): Elof and the ghost in Blender, with every picture listed for them in plan §2 open
+   as a reference (plan §5.6).
+6. **Before Stage 0c:** the private repository `spokets-godisbus-familj`, a read-only token, and the secrets
    `FAMILY_ASSETS_TOKEN` and `PRIVACY_DENYLIST` (plan §6.11).
-6. **Whenever Olov can:** his own photos of Storklocken's top, the rapids in the village and Näsbacken. No openly
+7. **Whenever Olov can:** his own photos of Storklocken's top, the rapids in the village and Näsbacken. No openly
    licensed photo of them was found, so until then those places are built from descriptions (plan §0 Q8).
 
 ## Decisions in effect
@@ -100,6 +175,7 @@
 | Jump physics | Gravity follows from the plan's numbers: a held jump tops out at 1.1 EL and carries 2.2 EL at a run, so gravity is 22.3 EL/s². Letting go of Hoppa on the way up makes Elof 1.8 times heavier, which makes a tap top out at 0.6 EL. | Session, 3 Oct (`src/sim/constants.ts`) |
 | Hoppa's release | Not queued. Hoppa's held state is read once per frame, and that is enough for a tap inside one frame to be a hop (`src/app/game.ts`). The plan's §4.1 expected releases in the queue. | Session, 3 Oct |
 | planck's scale | `lengthUnitsPerMeter` is 0.2, as the plan says. planck doesn't scale its polygon skin with it, so a body rests 0.019 EL above the ground; the simulation takes that off Elof's reported height. | Session, 3 Oct (`src/sim/sim.ts`) |
+| Tone mapping | Neutral, not AgX. The plan allows either (§6.5). With AgX the sky and every flat colour turned grey once the picture went through the HDR buffer; Neutral keeps a colour as it was set. Olov judges the look at H1a. | Session, 3 Oct (`src/render/view.ts`) |
 | Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
 
 ## Planned against actual
@@ -107,15 +183,40 @@
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
-| 0a Foundation | 1–2 | 1 so far | 1 / 0 so far | Part 1 in the same session as plan version 4: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2 is left. |
+| 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
+| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs
 
 - None known.
-- Not checked yet: the two workflows on GitHub, and the game on a real phone or tablet. The browser test ran in
-  headless Chromium with software rendering, so its frame times say nothing about a device.
+- Not checked yet: the game on a real phone or tablet. The browser test runs in headless Chromium with software
+  rendering, so its frame times say nothing about a device.
+- A viewport screenshot taken through the Blender server came back black once, right after the viewport was
+  switched to material preview. The export itself was right. Check again before relying on screenshots.
 - The stand-in Elof slides a little at the edge of a block before he drops: his body is a box. Stage 1's
   controller (ledges, slopes, steps of 0.3 EL) replaces it.
+
+## Notes for sessions that drive Blender
+
+- **Telemetry.** The add-on that was installed in Olov's Blender had its own consent setting switched on, as its
+  default. On 3 October a session switched it off (`telemetry_consent = False` in the add-on's preferences) and
+  saved Blender's preferences. Nothing was uploaded by these sessions in any case: with `DISABLE_TELEMETRY=true`
+  the server's code returns before every upload. But a server started without that variable, from another
+  program, would have uploaded prompts, code, screenshots and scene data while the setting was on. After any
+  update of the add-on, read `telemetry_consent` in its status again, and it must be false.
+- The server's safe mode lets a script use `bpy`, `bmesh`, `mathutils` and pure-Python standard modules. It
+  rejects `globals()`, `open`, `exec`, `getattr` with a computed name, and `os`, `sys` and anything that reaches
+  files, the network or other programs. Saving, rendering, import and export through Blender's own operators are allowed.
+- So a script can't read another file: send its text. `scripts/bake/export.py` is written for that, with `OUT`
+  set in a first line.
+- A `.blend` stores the full path it was saved to, which includes the Windows user name. `big-candy.blend` is
+  therefore not committed; it is rebuilt from `art/blender/big-candy.py`. Decide how to handle this before the
+  first hand-modelled public `.blend` is committed.
+- A long script is easier to keep in a file than to pass through the tool. The session of 3 October ran its
+  generator files through a small MCP client in its scratchpad, started exactly as `.mcp.json` declares the
+  server, and used the tools directly for short scripts, the status and screenshots.
+- Reference pictures go into the scene as image empties, in a collection that is hidden from renders.
 
 ## Senare (wishes for a later release)
 
@@ -133,6 +234,23 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
 
 3. **Is the small boy on Pappa's lap in `family-pappa-viewpoint.jpg` Elof?** Little Elof in the memories is
    modelled on him, flat cap and all (plan §2.4). The default: yes.
+4. **How should Elof and the family be made?** This is the question that decides the look (art bible §1.4, §1.6).
+   - **(a) Image-to-3D from your sheets, on a paid plan (recommended for the look you ask for).** About 20 US
+     dollars for a month. It is the only route that can reach the Pixar-like quality of the sheets. The parents
+     have agreed to it. You subscribe, check three settings, and generate from the views; the session does the
+     rest in Blender.
+   - **(b) The paid base pack** (20 US dollars, CC0): proper stylized teen and adult bodies with rigs and 20
+     hairstyles, reshaped and dressed in Blender. Better than now, but not the sheets.
+   - **(c) Keep sculpting by script.** Free, and what Elof's third model is: a stylized cartoon boy, better
+     than before and still short of the sheets.
+   - The default until you answer: (c), and the ghost is redone as stylized carved wood.
+5. **Are the ghost and Elof right?** Open `art/private/ghost/ghost.blend` and `art/private/elof/elof.blend` in
+   Blender, where each stands between its pictures, or look at the renders in `docs/shots/_work/ghost/` and
+   `docs/shots/_work/elof/`. For each: say yes, or give up to three corrections (plan §7.3, H1b).
+6. **Where should the ghost's files live?** It is Pappa's carving, not a person, and a drawing of it is already
+   on the public loading card. In the public repository it is simplest, but git history is permanent. In the
+   private repository it can always be taken down, like the family's models. The default until you answer:
+   private, and so not on the public site.
 
 Two choices the session made, for Olov to overrule if he wants:
 - the name *Klonk* (two others that were considered: Kvist and Flisa);
