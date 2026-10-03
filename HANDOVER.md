@@ -704,6 +704,24 @@
       lillebror!", Bertil "Kula! Min kula!", Pappa "En krona! Den får du behålla." The found things come
       with him from Kapitel 1's saved flags. The same branch gives the ghost a shadow where it stands.
     - **Not yet:** the giant's delight as a picture: the owners are still signs or stand-ins.
+  - **The family, first models** (4 October; Olov: "improving and creating all character models in
+    blender"). What exists, on Olov's computer only: `art/private/pappa/`, `mamma/`, `moa/`, `bertil/` and
+    `lill-elof/`, each with its generator script and `.blend`, and the exported `art/private/baked/private/
+    <name>.glb` (about 120 KB each as packed). They were built by a parallel session driving Blender, from
+    Elof's generator, against the family's pictures and sheets.
+    - **In the game** (branch `stage-0c-family-figures`): at home, where Elof is a boy among people, each
+      sign that stands for one of the family is replaced by that person's model when the private pack has
+      it: Mamma in the doorway in the prologue, and the four at the party in the epilogue. In the macro
+      world the signs stay: there a person is a pair of hands from far above. Who a sign stands for is
+      `personFor` in `src/content/people.ts`. Where the pack has no model, as in CI and on the site today,
+      the sign stays.
+    - **Not published.** The models are untracked files in the private repository's folder. Nothing was
+      committed or pushed there, so the site is unchanged. Publishing them is Olov's word (question 6).
+    - **Pictures for Olov:** each model beside its reference pictures, and the family in a row, are in
+      `photos/renders/2026-10-04-family/` on his computer (git ignores `photos/`).
+    - **Not yet:** poses (they stand still, arms down), hands doing things, sitting at the table, any
+      animation, and Olov's own judgement of each likeness (H1b). Three-year-old Elof is built but not
+      used: the memories are still the drawn cards.
   - **Byn, an extra chapter** (4 October, branch `stage-2-byn`). Olov asked for the village's shopping
     street as a chapter. What you see: after the epilogue's card, *Ett kapitel till* leads to **Byn**. Elof
     has one more star and is small again, and follows his friend along the pavement to the candy shop:
@@ -910,6 +928,12 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
    - Whichever you choose, better pictures give a better model: each view of Elof alone, full height, 1024 by
      1536, plain background, arms a little out. The views cut from the sheet are small and soft; they are in
      `art/private/elof/image-to-3d/` and will do for a first try.
+6. **May the family's models go on the site?** Pappa, Mamma, Moa, Bertil and three-year-old Elof have
+   first models, built in Blender on 4 October (see "The family, first models" under "State"). They are on
+   your computer only, in `art/private/`, not committed and not pushed. Look at each beside its pictures
+   (`photos/renders/2026-10-04-family/`), say what is wrong, and say whether they may be published. To
+   publish: commit and push in `art/private/`, then run *Deploy to GitHub Pages*. Until then the site shows
+   signs where they would stand.
 5. **May the village street be called by its own name?** You asked for it as a chapter by name. The game
    calls it *Byn*, as a child would, and the street's name is not written in this repository. The reason:
    CLAUDE.md says never a street address, and a street's name beside the children's first names is most of
