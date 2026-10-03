@@ -150,6 +150,17 @@ export interface Tussock {
 }
 
 /**
+ * A cranberry (plan §4.8, O7): a trampoline. Coming down on one sends him `lift` EL up, whatever Hoppa does.
+ * Walking into one does nothing. It is a toy: nothing in the story needs it.
+ */
+export interface Bouncer {
+  x: number;
+  /** Its top. */
+  y: number;
+  lift: number;
+}
+
+/**
  * A place where cones roll (plan §4.7, E2): one sets off from `from` every so often and rolls to `to`. One
  * that reaches Elof's legs bowls him into the glitter bubble, which takes him to the last big candy.
  */
@@ -280,6 +291,8 @@ export interface ChapterData {
    * route (plan §4.7), and is reached that way only.
    */
   hidden?: { x: number; y: number; kind: string; route?: boolean }[];
+  /** Cranberries to bounce on (plan §4.8, O7). */
+  bouncers?: Bouncer[];
   /** For the picture: stretches of ground that are something else than the place's own: a deck, a boulder. */
   surfaces?: { from: number; to: number; kind: SurfaceKind }[];
   /** For the picture: a deck overhead, with the sun falling through between its boards. */

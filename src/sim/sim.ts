@@ -1,7 +1,7 @@
 import { BoxShape, ChainShape, Settings, Vec2, World, type Body, type Contact, type Fixture } from 'planck';
 import {
   BUBBLE_LIFT, BUBBLE_TIME, CANDY_MAGNET, CLIMB_EXIT, CLIMB_GRAB, CLIMB_SPEED, COYOTE_TIME, EDGE_REACH, ELOF_HALF_WIDTH, ELOF_HEIGHT,
-  FALL_LIMIT, GRAVITY, HOP_GRAVITY_SCALE, JUMP_BUFFER, JUMP_SPEED, LEDGE_REACH, LEDGE_TIME, MAX_FALL_SPEED, REGRAB_AFTER,
+  BERRY_HALF, BERRY_SQUASH, FALL_LIMIT, GRAVITY, HOP_GRAVITY_SCALE, JUMP_BUFFER, JUMP_SPEED, LEDGE_REACH, LEDGE_TIME, MAX_FALL_SPEED, REGRAB_AFTER,
   RUN_AFTER, RUN_DEFLECTION, RUN_SPEED, SAFE_AFTER, SAFE_REACH, SLIDE_REACH, SLIDE_TIME, STEEP_SLIDE_SPEED, STEP,
   STEP_HEIGHT, STOP_WITHIN, WALK_DEFLECTION, WALK_SPEED,
 } from './constants';
@@ -176,6 +176,10 @@ export class Sim {
   readonly tussocks: TussockState[];
   /** How many times a tussock has sunk under him. */
   sinks = 0;
+  /** The cranberries, in the chapter's order: where each is, and how flat it is after a bounce, from 1 to 0. */
+  readonly berries: { x: number; y: number; lift: number; squash: number }[];
+  /** How many times a cranberry has bounced him. */
+  bounces = 0;
   /** The ghost, or null in a chapter without it. */
   readonly ghost: GhostState | null;
   /** The beats that have come, by id, in the order they came: what the page shows as bubbles. */
@@ -297,6 +301,7 @@ export class Sim {
     // What was said before the place he starts at is not said again.
     for (const beat of chapter.beats ?? []) if (beat.at !== undefined && beat.at < spawn.x - 0.5) this.flags.add(`beat:${beat.id}`);
     this.spots = chapter.spots ?? [];
+    this.berries = (chapter.bouncers ?? []).map((b) => ({ ...b, squash: 0 }));
     this.perches = chapter.ghost ?? [];
     // The ghost starts at its first place that is still ahead of him.
     const ahead = this.perches.findIndex((perch) => perch.at.x > spawn.x + 1);
@@ -346,6 +351,7 @@ export class Sim {
     this.roll();
     this.blow();
     this.sink();
+    for (const berry of this.berries) berry.squash = Math.max(0, berry.squash - STEP / BERRY_SQUASH);
     this.haunt();
     this.tell();
     this.assist(input.help === true);
@@ -901,6 +907,17 @@ export class Sim {
       // A step of up to STEP_HEIGHT is walked over: a small lift takes him onto it.
       const lift = this.stepAhead(dir);
       if (lift > 0) jump = Math.sqrt(2 * GRAVITY * (lift + 0.05));
+    }
+    // A cranberry is a trampoline: coming down on one sends him up, the same height whatever Hoppa does.
+    const p = this.curr;
+    const berry = grounded || vy > -0.5 ? undefined : this.berries.find((b) => Math.abs(p.x - b.x) <= BERRY_HALF && p.y <= b.y + 0.05 && p.y >= b.y - 0.3);
+    if (berry) {
+      jump = Math.sqrt(2 * GRAVITY * berry.lift);
+      this.rising = false;
+      this.cut = false;
+      this.fallTop = p.y;
+      berry.squash = 1;
+      this.bounces++;
     }
     if (this.rising && vy <= 0 && jump === 0) this.rising = false;
     // Letting go on the way up makes him heavier, so a tap is a hop. Pressing again doesn't undo it.

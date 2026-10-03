@@ -662,6 +662,15 @@
     - **For H2:** whether a seven-year-old finds the timing fun or fiddly is for Olov to feel and for Elof
       to show. The numbers are two hooks and one candy in `src/content/chapters/garden.ts`.
     - **Not yet:** C2 (the anthill), C3 (the shy lights) and C4.
+  - **O7, the bouncing cranberries** (branch `stage-2-berries`; plan §4.8). What you see: two shiny red
+    cranberries lie at the edge of the bog, where Kapitel 3 begins. Coming down on one sends him up twice
+    as high as he jumps, with a boing, and the berry goes flat and springs back. At a run, a bounce on the
+    first carries him onto the second. Walking into one does nothing: it is a toy, and nothing needs it.
+    - A chapter can now have `bouncers`. The bounce is the same whatever Hoppa does, and from its top he
+      falls less than the glitter bubble's limit. They lie on level firm ground, with nothing to bounce up
+      onto: a test says so. Tests: `tests/sim/berries.test.ts` (7).
+    - **Not yet:** the other optional delights of plan §4.8: the dew bells (O1), the lost things under the
+      deck (O2), the vittra door (O3), and tasting a lingonberry (O10).
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate counts both

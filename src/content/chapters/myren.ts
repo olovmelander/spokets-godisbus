@@ -1,3 +1,4 @@
+import { BERRY_HEIGHT } from '../../sim/constants';
 import type { Candy, ChapterData, Jump, Tussock, Vec } from '../../sim/types';
 
 /**
@@ -16,7 +17,10 @@ import type { Candy, ChapterData, Jump, Tussock, Vec } from '../../sim/types';
  * 6. **The ghost waits,** and lets him come close.
  * 7. **Tranornas dans** (S4): a crane kneels, he climbs on, and it carries him up towards the mountain.
  *
- * Not built yet: the tussocks' dip under his feet, the bouncing cranberries, Mamma's mug and her lamp behind
+ * And, as a toy: **two cranberries** at the edge of the bog (O7). Coming down on one bounces him twice as
+ * high as he jumps, and at a run from the first he comes down on the second.
+ *
+ * Not built yet: the tussocks' dip under his feet, Mamma's mug and her lamp behind
  * him, the lyktgubbar and their game (C3), the rings of the cranes' calls as a thing to follow, memory 3,
  * the ghost's picture bubble, the cranes' dance, the jay.
  */
@@ -126,6 +130,11 @@ export const myren: ChapterData = {
     { x: 42.7, y: 2.7, kind: 'stektagg' },
     { x: 116, y: 6.4, kind: 'surnapp' },
     { x: 174, y: 1.9, kind: 'lakritskonfekt' },
+  ],
+  // Two cranberries on the firm ground at the start: a run from the first carries him to the second.
+  bouncers: [
+    { x: 2.9, y: BERRY_HEIGHT, lift: 2.2 },
+    { x: 6, y: BERRY_HEIGHT, lift: 2.2 },
   ],
   // The boardwalk and its ramp are planks.
   surfaces: [{ from: 104, to: 136, kind: 'wood' }],
