@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cuesFor, footingAt, newCueMemory, STREAK_GAP, STRIDE, type Heard } from '../../src/audio/cues';
+import { cuesFor, footingAt, newCueMemory, STREAK_GAP, STRIDE, VOICES, type Heard } from '../../src/audio/cues';
 import { berget } from '../../src/content/chapters/berget';
 import { prolog } from '../../src/content/chapters/ends';
 import { garden } from '../../src/content/chapters/garden';
@@ -69,6 +69,39 @@ describe('what a moment of play sounds like', () => {
     expect(landed).toEqual([{ kind: 'land', hard: 0.5, on: 'plank' }]);
     // Without a footing the cue says nothing of it.
     expect(cuesFor({ ...still, grounded: false, vy: -5 }, still, newCueMemory())).toEqual([{ kind: 'land', hard: 0.5 }]);
+  });
+
+  it('each one has a wordless sound of their own, heard when a line of theirs comes up', () => {
+    const before = { ...still, said: ['mamma'] as const };
+    expect(cuesFor(before, { ...before, said: ['mamma', 'elof', 'pappa'] }, newCueMemory())).toEqual([
+      { kind: 'say', who: 'elof' },
+      { kind: 'say', who: 'pappa' },
+    ]);
+    // What was said before is not said again.
+    expect(cuesFor(before, before, newCueMemory())).toEqual([]);
+    for (const [who, voice] of Object.entries(VOICES)) {
+      // A few syllables, over in under a second: a sound, not a sentence.
+      expect(voice.steps.length, who).toBeGreaterThanOrEqual(2);
+      expect(voice.steps.length, who).toBeLessThanOrEqual(5);
+      expect(voice.steps.length * voice.pace, who).toBeLessThan(0.8);
+      expect(voice.pitch, who).toBeGreaterThan(120);
+      expect(voice.pitch, who).toBeLessThan(700);
+    }
+    // Pappa is the lowest, the children are higher than their parents, and the ghost has no voice: it knocks.
+    expect(VOICES.pappa.pitch).toBeLessThan(VOICES.mamma.pitch);
+    for (const child of ['elof', 'moa', 'bertil'] as const) expect(VOICES[child].pitch, child).toBeGreaterThan(VOICES.mamma.pitch);
+    expect(VOICES.spoket.wave).toBe('wood');
+    expect(Object.values(VOICES).filter((voice) => voice.wave === 'wood')).toHaveLength(1);
+  });
+
+  it('the ghost knocks as it hops on, louder the nearer it is, and the helper knocks twice', () => {
+    const near = cuesFor({ ...still, ghostPerch: 1, ghostAway: 3 }, { ...still, ghostPerch: 2, ghostAway: 3.5 }, newCueMemory());
+    expect(near).toEqual([{ kind: 'ghostHop', near: 0.75 }]);
+    const far = cuesFor({ ...still, ghostPerch: 1 }, { ...still, ghostPerch: 2, ghostAway: 30 }, newCueMemory());
+    expect(far).toEqual([{ kind: 'ghostHop', near: 0 }]);
+    expect(kinds({ ...still, helpStep: 1 }, { ...still, helpStep: 2 })).toEqual(['knocks']);
+    // It knocks when it arrives, not all the while it waits.
+    expect(kinds({ ...still, helpStep: 2 }, { ...still, helpStep: 3 })).toEqual([]);
   });
 
   it('candy collected in a row steps up, and starts again after a pause', () => {

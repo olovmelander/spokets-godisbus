@@ -137,6 +137,10 @@ function start(): void {
       notes: [...game.sim.flags].filter((flag) => flag.startsWith('note:')).length,
       found: [...game.sim.flags].filter((flag) => flag.startsWith('found:')).length,
       footing: footingAt(chapter, p.x),
+      said: game.sim.said.flatMap((id) => beats.get(id)?.who ?? []),
+      ghostPerch: game.sim.ghost?.perch ?? 0,
+      ghostAway: game.sim.ghost ? Math.hypot(game.sim.ghost.x - p.x, game.sim.ghost.y - p.y) : 99,
+      helpStep: game.sim.help.step,
       wind: game.sim.gusts.some((gust, i) => gust.blow > 0 && p.x > chapter.gusts![i]!.from - 12 && p.x < chapter.gusts![i]!.to + 12),
     };
   };
