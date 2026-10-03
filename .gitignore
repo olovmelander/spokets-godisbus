@@ -11,6 +11,7 @@ Thumbs.db
 # Private references and raw scans never enter the repository (plan §2.6)
 /art/private/
 /references/
+/photos/
 
 # Blender's automatic backups of .blend files
 *.blend[0-9]

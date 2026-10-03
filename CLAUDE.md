@@ -10,6 +10,9 @@ Olov still has to answer. Read both before anything else.
 3. Run `npm run dev`, open the game with `?debug`, and check that it still starts and plays.
 4. Know which kind of session this is (plan §6.14). On Olov's computer, Blender and the asset sites are reachable.
    In a cloud session they are not, so leave Blender work for Olov's computer and say so in `HANDOVER.md`.
+   - The Blender tools exist only when `uv` is installed, Blender is open with its add-on connected, and Olov has
+     approved the `blender` server from `.mcp.json`. If they are missing on his computer, say so before anything
+     else.
 
 ## One PR, one visible outcome
 
@@ -39,19 +42,36 @@ Both parents have said yes to everything in the plan's consent list, and every n
 - **Places.** Bredbyn, Näsbacken and the real places nearby may be named. Never a house number, a street
   address, the house's coordinates, the school or anyone's account names.
 - **Pictures.**
-  - Never commit reference photos, the AI character sheets or likeness renders. They come as attachments or from
-    the gitignored `references/` folder on Olov's computer; working copies stay in the session scratchpad.
+  - Never commit reference photos, the AI character sheets or likeness renders. They are in the `photos/` folder
+    on Olov's computer, which git ignores, or come as attachments; working copies stay in the session scratchpad.
+  - **Every picture in the root of `photos/` is used.** The table in plan §2 says what each one decides. Before
+    building a character, the ghost or the house, open all of its pictures as reference images in Blender, and
+    show Olov the model beside them.
+  - One house photo shows the house number, and the phone screenshots show account names. Never model, draw or
+    write down either.
+  - The pictures in `photos/landscape/` are other people's, mostly under CC BY-SA (`SOURCES.md` there lists each
+    one). They are references for the surroundings: look at them, and never use them as plates or textures.
   - The family's game models, textures and `.blend` files live in the private repository
     `spokets-godisbus-familj` (plan §6.11), so they can always be taken down.
-- **Voices.** No recording of a real family voice is published. Family recordings stay on Elof's device.
+- **Voices.** The game has none: nothing is read aloud and nothing is recorded (plan §0 Q9). Characters make
+  short wordless sounds.
 - **Consent.** Anything comes out again if a parent asks. Anything personal not on the consent list is asked
   about first (plan §2.6).
 
+## Olov's standing decisions (plan §0)
+
+- **No logotypes or brand marks** on any model, texture or screen: plain shapes instead.
+- **One tester, no dates.** Only Olov tests before Elof plays, and a stage is done when its checkpoint passes.
+- **Every character is designed in Blender.** No image-to-3D tool or other paid AI tool without asking Olov first.
+- **The ghost is "spöket"** in the game's text until Elof names it *Klonk* in the epilogue.
+
 ## Blender (plan §5.6, §6.14)
 
-- *MCP for Blender* runs with `DISABLE_TELEMETRY=true` and `BLENDER_MCP_SAFE_MODE=1`. Never tick its telemetry
-  consent box or accept its opt-in prompt: opting in uploads screenshots and scene data, which would include the
-  family's models.
+- *MCP for Blender* runs with `DISABLE_TELEMETRY=true` and `BLENDER_MCP_SAFE_MODE=1`. Both are set in `.mcp.json`;
+  don't register the server any other way. Never tick its telemetry consent box or accept its opt-in prompt:
+  opting in uploads screenshots and scene data, which would include the family's models.
+- In the add-on's panel only *Poly Haven* is ticked. *Hyper3D Rodin* and *Sketchfab* stay off unless a task needs
+  one and follows the rules below.
 - Blender 4.5 LTS, matching `bpy` 4.5.14 in cloud sessions.
 - Save and commit before large operations. Exports go through `scripts/bake/export.py`.
 - Every asset fetched or generated through it gets a `LICENSES.md` entry. Sketchfab and Poly Pizza: CC0 or CC BY
@@ -86,3 +106,4 @@ requests on the site.
 | Saving | `src/save/` |
 | Art sources and generators | `art/` (`.blend` sources in `art/blender/`); exports in `scripts/bake/`, packs by `scripts/build-assets.mjs` |
 | The placeholder page, until Stage 0a | `site/` |
+| Reference pictures, never committed | `photos/` (ignored by git; Olov's computer only) |
