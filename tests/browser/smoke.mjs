@@ -42,6 +42,33 @@ const check = (name, ok, detail = '') => {
   if (!ok) failures.push(name);
 };
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+/**
+ * Waits until the game's state passes a test, and returns that state (or the last one, after the timeout).
+ * CI renders in software and can be slow, so the checks wait for what should happen instead of for a time.
+ */
+async function until(state, test, timeout = 15000) {
+  const end = Date.now() + timeout;
+  let last = await state();
+  while (!test(last) && Date.now() < end) {
+    await sleep(40);
+    last = await state();
+  }
+  return last;
+}
+/** Follows one jump: waits for Elof to leave the ground and land again. Returns how high his feet got. */
+async function topOfJump(state, timeout = 15000) {
+  const end = Date.now() + timeout;
+  let top = 0;
+  let left = false;
+  while (Date.now() < end) {
+    const s = await state();
+    top = Math.max(top, s.y);
+    if (!s.grounded) left = true;
+    else if (left) break;
+    await sleep(25);
+  }
+  return top;
+}
 
 // Software rendering, as in Sköldhästen's screenshot tool: it works without a GPU, in CI too.
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
@@ -56,7 +83,7 @@ async function open(name, options) {
   page.on('console', (message) => message.type() === 'error' && errors.push(message.text()));
   page.on('pageerror', (error) => errors.push(String(error)));
   await page.goto(`${origin}${BASE}?debug`);
-  await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 30000 });
+  await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
   await sleep(600);
   const state = () => page.evaluate(() => window.__godis.state());
   const info = () => page.evaluate(() => window.__godis.info());
@@ -83,20 +110,14 @@ async function open(name, options) {
   const before = await state();
   check('Elof stands on the ground', before.grounded === true && Math.abs(before.y) < 0.05, `y ${before.y.toFixed(3)}`);
   await page.keyboard.down('ArrowRight');
-  await sleep(1500);
-  const running = await state();
+  const running = await until(state, (s) => s.x - before.x > 2 && s.vx > 3);
   check('→ runs to the right', running.x - before.x > 2 && running.vx > 3, `x ${running.x.toFixed(2)}, vx ${running.vx.toFixed(2)}`);
   await page.keyboard.down('Space');
-  let top = 0;
-  for (let i = 0; i < 12; i++) {
-    await sleep(40);
-    top = Math.max(top, (await state()).y);
-  }
+  const top = await topOfJump(state);
   await page.keyboard.up('Space');
   await page.keyboard.up('ArrowRight');
   check('holding Space jumps high', top > 0.8, `top ${top.toFixed(2)} EL`);
-  await sleep(700);
-  const after = await state();
+  const after = await until(state, (s) => s.vx === 0 && s.grounded === true);
   check('he stops when the keys are let go', after.vx === 0 && after.grounded === true, `vx ${after.vx}`);
   await finish();
 }
@@ -117,22 +138,16 @@ async function open(name, options) {
   // The thumb lands on the left half and pushes right: the stick appears there.
   await touch('touchStart', [{ x: 150, y: 250, id: 1 }]);
   await touch('touchMove', [{ x: 230, y: 250, id: 1 }]);
-  await sleep(1200);
-  const running = await state();
+  const running = await until(state, (s) => s.x - before.x > 1.5);
   check('the stick runs to the right', running.x - before.x > 1.5, `x ${running.x.toFixed(2)}`);
   // A second thumb taps Hoppa while the first keeps running.
   const hx = hop.x + hop.width / 2;
   const hy = hop.y + hop.height / 2;
   await touch('touchStart', [{ x: 230, y: 250, id: 1 }, { x: hx, y: hy, id: 2 }]);
-  let top = 0;
-  for (let i = 0; i < 10; i++) {
-    await sleep(40);
-    top = Math.max(top, (await state()).y);
-  }
+  const top = await topOfJump(state);
   await touch('touchEnd', []);
   check('Hoppa jumps while the stick is held', top > 0.4, `top ${top.toFixed(2)} EL`);
-  await sleep(600);
-  const after = await state();
+  const after = await until(state, (s) => s.vx === 0 && s.grounded === true);
   check('he stops when both thumbs lift', after.vx === 0, `vx ${after.vx}`);
   check('the device in use is touch', after.device === 'touch', String(after.device));
   await finish();
