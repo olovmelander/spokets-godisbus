@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
 import { testbana } from '../../src/content/chapters/testbana';
 import { settingsFor, simOptions } from '../../src/save/settings';
-import type { MoverState } from '../../src/sim/sim';
+import { DROP_RADIUS, DROP_WARNING } from '../../src/sim/constants';
+import type { DripState, MoverState } from '../../src/sim/sim';
 import type { ChapterData, PlayerState, SimOptions } from '../../src/sim/types';
 
 /** The ground's height at x, read from the chapter data. */
@@ -25,7 +26,22 @@ function heightAt(chapter: ChapterData, x: number): number {
  * the lace from the ground only: in the air after letting go the hook is still in reach, and Använd would
  * take it straight back.
  */
-function decide(chapter: ChapterData, p: PlayerState, movers: readonly MoverState[] = []): { x: number; ahead: boolean; offered: boolean } {
+function decide(
+  chapter: ChapterData, p: PlayerState, movers: readonly MoverState[] = [], drips: readonly DripState[] = [],
+): { x: number; ahead: boolean; offered: boolean } {
+  // Falling drops are read from their shadows. Outside the places where they land, it waits before one
+  // whose drop would come down while it runs through, and goes when the way is clear.
+  const inALandingPlace = drips.some((d) => Math.abs(d.x - p.x) < DROP_RADIUS + 0.1);
+  if (!inALandingPlace && p.grounded) {
+    for (const d of drips) {
+      const edge = d.x - DROP_RADIUS - p.x;
+      if (Math.abs(d.y - p.y) > 0.5 || edge > 1.1 || edge < 0) continue;
+      const until = d.shadow > 0 ? (1 - d.shadow) * DROP_WARNING : Infinity;
+      // From a standstill the run through takes a little longer than at full speed.
+      const through = (edge + 2 * DROP_RADIUS) / 3.5 + 0.45;
+      if (until < through) return { x: 0, ahead: false, offered: false };
+    }
+  }
   // A thing on its way along its rail: wait for it.
   if (movers.some((m) => m.t < 1)) return { x: 0, ahead: false, offered: false };
   // Something to pull or push: stand still and do it.
@@ -54,8 +70,8 @@ function playThrough(fps: number, chapter = testbana, options: SimOptions = {}) 
   let frames = 0;
   let wasAhead = false;
   let wasOffered = false;
-  while (!game.sim.flags.has('goal') && frames < fps * 120) {
-    const { x, ahead, offered } = decide(chapter, game.sim.curr, game.sim.movers);
+  while (!game.sim.flags.has('goal') && frames < fps * 150) {
+    const { x, ahead, offered } = decide(chapter, game.sim.curr, game.sim.movers, game.sim.drips);
     // A press is the moment the reason appears; holding is everything after it.
     game.frame(dt, { x, hopHeld: true }, { hop: ahead && !wasAhead, act: offered && !wasOffered, helper: false });
     wasAhead = ahead;
@@ -66,7 +82,7 @@ function playThrough(fps: number, chapter = testbana, options: SimOptions = {}) 
   const missed = game.sim.collected.flatMap((got, i) => (got ? [] : [i]));
   return {
     goal: game.sim.flags.has('goal'), seconds: frames * dt, steps: game.sim.steps, end: game.sim.curr, lowest,
-    candy: game.sim.candyCount, missed, bubbles: game.sim.bubbles,
+    candy: game.sim.candyCount, missed, bubbles: game.sim.bubbles, knocks: game.sim.knocks,
   };
 }
 
@@ -75,9 +91,11 @@ describe('the robot on the test course', () => {
     it(`reaches the big candy at ${fps} Hz`, () => {
       const result = playThrough(fps);
       expect(result.goal).toBe(true);
-      expect(result.seconds).toBeLessThan(80);
+      expect(result.seconds).toBeLessThan(110);
       expect(result.lowest).toBeGreaterThan(-1);
       expect(result.bubbles).toBe(0);
+      // It reads the shadows: no drop lands on it.
+      expect(result.knocks).toBe(0);
     });
   }
 
@@ -130,7 +148,9 @@ describe('the robot on the test course', () => {
     expect(game.sim.flags.has('goal')).toBe(true);
     expect(game.sim.bubbles).toBe(0);
     // Every big candy on the way, in order.
-    expect(order).toEqual([0, 1, 2, 3, 4]);
+    expect(order).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    // On Lugnt the drops miss a moving Elof, and this robot never stops under one.
+    expect(game.sim.knocks).toBe(0);
   });
 
   it('with Lugnare tempo, takes a quarter longer and is otherwise the same game', () => {
@@ -174,6 +194,26 @@ describe('a player who never jumps the chasm', () => {
     expect(lowest).toBeGreaterThan(-5);
     expect(game.sim.curr.x).toBeLessThan(27.8);
     expect(candy).toBeGreaterThanOrEqual(17);
+  });
+});
+
+describe('a player who runs straight through the drops', () => {
+  it('is knocked over now and then, and still gets to the end with all the candy on the way', () => {
+    const fromHere = testbana.candy.flatMap((c, i) => (c.x > 71 ? [i] : []));
+    let knocks = 0;
+    // Setting off at twelve different moments: some runs are lucky, some are not, and all arrive.
+    for (let wait = 0; wait < 12; wait++) {
+      const game = new Game({ ...testbana, spawn: { x: 70.6, y: 3.31 } });
+      for (let frame = 0; frame < 60 * 40 && !game.sim.flags.has('goal'); frame++) {
+        game.frame(1 / 60, { x: frame < wait * 12 ? 0 : 1, hopHeld: false }, { hop: false, act: false, helper: false });
+      }
+      expect(game.sim.flags.has('goal'), `setting off after ${wait * 0.2} s`).toBe(true);
+      expect(game.sim.bubbles).toBe(0);
+      // A knock takes nothing: every candy from the first drop on is in the bag.
+      expect(fromHere.every((i) => game.sim.collected[i])).toBe(true);
+      knocks += game.sim.knocks;
+    }
+    expect(knocks).toBeGreaterThan(0);
   });
 });
 

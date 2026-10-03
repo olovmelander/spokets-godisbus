@@ -26,9 +26,13 @@ export function settingsFor(style: PlayStyle): Settings {
   return { style, ...SWITCHES[style] };
 }
 
-/** What the simulation needs to know. In *Lugnt* Elof also stops at every long drop instead of falling. */
+/**
+ * What the simulation needs to know. In *Lugnt* Elof also stops at every long drop instead of falling, and
+ * the exciting sequences need no timing.
+ */
 export function simOptions(settings: Settings): SimOptions {
-  return { swingHelp: settings.swingHelp, easyJumps: settings.easyJumps, stopAtEdges: settings.style === 'lugnt' };
+  const lugnt = settings.style === 'lugnt';
+  return { swingHelp: settings.swingHelp, easyJumps: settings.easyJumps, stopAtEdges: lugnt, gentle: lugnt };
 }
 
 export function tempoOf(settings: Settings): number {

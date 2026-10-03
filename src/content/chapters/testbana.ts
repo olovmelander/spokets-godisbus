@@ -12,6 +12,8 @@ import type { ChapterData } from '../../sim/types';
  * - a gully too wide to jump, with a hook over it: the lace (Använd), a swing, and Hoppa to let go;
  * - a puzzle in two steps: a plank he pulls over a pit with the lace (Dra), and a block he pushes to a wall
  *   in two goes (Knuffa) and climbs from;
+ * - an exciting sequence: a stretch where drops fall, each announced by its shadow on the ground, with a
+ *   big candy in the middle;
  * - and the big candy at the end.
  *
  * The candy trail shows the way (plan §4.3): a candy every 1.5 to 3 EL along the ground, an arc over each
@@ -21,7 +23,7 @@ import type { ChapterData } from '../../sim/types';
 export const testbana: ChapterData = {
   id: 'testbana',
   spawn: { x: 0, y: 0.01 },
-  goalX: 70.5,
+  goalX: 87,
   ground: [
     { x: -4, y: 6 },
     { x: -4, y: 0 },
@@ -75,8 +77,23 @@ export const testbana: ChapterData = {
     // the wall the block is pushed to
     { x: 67.3, y: 0 },
     { x: 67.3, y: 3.3 },
-    { x: 73, y: 3.3 },
-    { x: 73, y: 10 },
+    { x: 90, y: 3.3 },
+    { x: 90, y: 11 },
+  ],
+  // Wider pictures: the climb and the cliff, the swing, and the drops, whose shadows have to be seen ahead.
+  cameras: [
+    { from: 36, to: 44, zoom: 1.2 },
+    { from: 44, to: 52, zoom: 1.3, lift: 0.4 },
+    { from: 70, to: 87, zoom: 1.25, lead: 3.2 },
+  ],
+  // The drops keep different times, so the way through has to be read from their shadows.
+  drips: [
+    { at: { x: 73, y: 3.3 }, every: 1.8, first: 0.2 },
+    { at: { x: 75.2, y: 3.3 }, every: 2.2, first: 1.1 },
+    { at: { x: 77.4, y: 3.3 }, every: 1.6, first: 0.7 },
+    { at: { x: 81, y: 3.3 }, every: 2, first: 0.4 },
+    { at: { x: 83.2, y: 3.3 }, every: 1.5, first: 1.2 },
+    { at: { x: 85.2, y: 3.3 }, every: 2.4, first: 0.9 },
   ],
   movers: [
     // Home on the far side of the pit; pulled, it lies across it with its top level with the ground.
@@ -93,6 +110,9 @@ export const testbana: ChapterData = {
     { x: 40.5, y: 6 },
     { x: 44.9, y: 0 },
     { x: 54.6, y: 0 },
+    // before the drops, and between them
+    { x: 70.6, y: 3.3 },
+    { x: 79.2, y: 3.3 },
   ],
   // What Lätta hopp jumps by itself: onto the step and the block, and across the ditch and the chasm.
   jumps: [
@@ -175,5 +195,14 @@ export const testbana: ChapterData = {
     { x: 66.7, y: 2 },
     { x: 67.6, y: 3.8 },
     { x: 69.2, y: 3.75 },
+    // between the drops
+    { x: 71.6, y: 3.75 },
+    { x: 74.1, y: 3.75 },
+    { x: 76.3, y: 3.75 },
+    { x: 78.3, y: 3.75 },
+    { x: 79.9, y: 3.75 },
+    { x: 82.1, y: 3.75 },
+    { x: 84.2, y: 3.75 },
+    { x: 86.3, y: 3.75 },
   ],
 };

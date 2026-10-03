@@ -6,6 +6,7 @@ import {
   STEP_HEIGHT, STOP_WITHIN, WALK_DEFLECTION, WALK_SPEED,
 } from './constants';
 import { CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER, MOVE_TIME, MOVER_RESET, PUSH_REACH } from './constants';
+import { DOWN_TIME, DROP_FALL, DROP_FROM, DROP_RADIUS, DROP_WARNING } from './constants';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
@@ -44,7 +45,8 @@ type State =
   | { kind: 'slide'; climb: Climb; fromX: number; t: number }
   /** `angle` is from straight down, positive to the right; `speed` is its rate; `letGo` counts from Hoppa, or is -1. */
   | { kind: 'swing'; hook: Hook; length: number; to: number; angle: number; speed: number; letGo: number }
-  | { kind: 'fly'; fromX: number; fromY: number; vx: number; vy: number; toX: number; toY: number; time: number; t: number };
+  | { kind: 'fly'; fromX: number; fromY: number; vx: number; vy: number; toX: number; toY: number; time: number; t: number }
+  | { kind: 'down'; x: number; y: number; t: number };
 
 /** A thing on its rail: where it is, which stop it is at or going to, and how far it has come. */
 export interface MoverState {
@@ -57,6 +59,16 @@ export interface MoverState {
   /** The stop it came from, and how far it has come from there: 1 when it rests. */
   from: number;
   t: number;
+}
+
+/** A drip and its next drop. */
+export interface DripState {
+  x: number;
+  y: number;
+  /** How far the next drop's shadow has grown, from 0 (none yet) to 1 (it lands). */
+  shadow: number;
+  /** How high above the ground the drop is, or -1 while none is in the air. */
+  height: number;
 }
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
@@ -84,6 +96,10 @@ export class Sim {
   options: SimOptions;
   /** The things on rails, in the chapter's order. */
   readonly movers: MoverState[];
+  /** The drips and their next drops, in the chapter's order. */
+  readonly drips: DripState[];
+  /** How many times a drop has knocked him over. It costs him a second and nothing else. */
+  knocks = 0;
   prev: PlayerState;
   curr: PlayerState;
 
@@ -174,6 +190,8 @@ export class Sim {
       return body;
     });
 
+    this.drips = (chapter.drips ?? []).map((drip) => ({ x: drip.at.x, y: drip.at.y, shadow: 0, height: -1 }));
+
     this.world.on('begin-contact', (c) => this.countFoot(c, 1));
     this.world.on('end-contact', (c) => this.countFoot(c, -1));
 
@@ -207,8 +225,10 @@ export class Sim {
     else if (state.kind === 'climb') this.climb(state, input);
     else if (state.kind === 'slide') this.slide(state);
     else if (state.kind === 'swing') this.swing(state, input);
-    else this.fly(state);
+    else if (state.kind === 'fly') this.fly(state);
+    else this.lie(state);
     this.moveMovers();
+    this.rain();
 
     this.world.step(STEP);
     this.steps++;
@@ -222,6 +242,39 @@ export class Sim {
     // The bubble only carries. Everywhere else, candy he comes near is his: up a hose too.
     if (this.state.kind !== 'bubble') this.collect();
     if (this.curr.x >= this.chapter.goalX) this.flags.add('goal');
+  }
+
+  /**
+   * One step for the falling drops. They keep time by the step count, so the rhythm is the same on every
+   * device. A drop that lands on Elof knocks him over; on *Lugnt* it misses him while he moves.
+   */
+  private rain(): void {
+    const drips = this.chapter.drips ?? [];
+    for (const [i, drip] of drips.entries()) {
+      const every = Math.max(1, Math.round(drip.every / STEP));
+      const since = this.steps - Math.round(drip.first / STEP);
+      // Steps left until the next drop lands: 0 means now.
+      const left = (every - (((since % every) + every) % every)) % every;
+      const until = left * STEP;
+      const state = this.drips[i]!;
+      state.shadow = until <= DROP_WARNING ? 1 - until / DROP_WARNING : 0;
+      state.height = until <= DROP_FALL ? DROP_FROM * (until / DROP_FALL) ** 1.6 : -1;
+      if (left !== 0 || this.state.kind !== 'free') continue;
+      const p = this.curr;
+      const under = Math.abs(p.x - drip.at.x) <= DROP_RADIUS && p.y > drip.at.y - 0.3 && p.y < drip.at.y + 1.5;
+      if (!under || (this.options.gentle && Math.abs(p.vx) > 0.5)) continue;
+      this.knocks++;
+      this.carry(true);
+      this.verb = null;
+      this.state = { kind: 'down', x: p.x, y: p.y, t: 0 };
+    }
+  }
+
+  /** One step of lying where the drop knocked him over. Then he is up again, with everything he had. */
+  private lie(state: { x: number; y: number; t: number }): void {
+    state.t = Math.min(1, state.t + STEP / DOWN_TIME);
+    this.place(state.x, state.y);
+    if (state.t >= 1) this.release(state.y);
   }
 
   /** The ids of the things on rails that are where they belong: what a save keeps of the puzzles. */
@@ -789,7 +842,7 @@ export class Sim {
     const along = state.kind === 'swing' ? state.length * state.speed : 0;
     const v = state.kind === 'swing' ? { x: along * Math.cos(state.angle), y: along * Math.sin(state.angle) } : this.body.getLinearVelocity();
     const mode: Mode = state.kind;
-    const t = state.kind === 'bubble' || state.kind === 'ledge' || state.kind === 'slide' || state.kind === 'fly' ? state.t : 0;
+    const t = state.kind === 'bubble' || state.kind === 'ledge' || state.kind === 'slide' || state.kind === 'fly' || state.kind === 'down' ? state.t : 0;
     return {
       x: p.x, y, vx: v.x, vy: v.y, facing: this.facing, grounded, groundY: this.groundBelow(p.x, y),
       standY: this.standY, atEdge: this.atEdge, bubble: state.kind === 'bubble' ? Math.max(t, Number.MIN_VALUE) : 0,
