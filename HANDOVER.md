@@ -709,12 +709,38 @@
     `lill-elof/`, each with its generator script and `.blend`, and the exported `art/private/baked/private/
     <name>.glb` (about 120 KB each as packed). They were built by a parallel session driving Blender, from
     Elof's generator, against the family's pictures and sheets.
-    - **In the game** (branch `stage-0c-family-figures`): at home, where Elof is a boy among people, each
-      sign that stands for one of the family is replaced by that person's model when the private pack has
-      it: Mamma in the doorway in the prologue, and the four at the party in the epilogue. In the macro
-      world the signs stay: there a person is a pair of hands from far above. Who a sign stands for is
+    - **How they are made:** each is derived from Elof's generator: the same 15 bone names, two
+      vertex-painted materials, no textures, about 14,000 to 16,000 triangles. They share Elof's head forms,
+      so the likeness sits in hair, headgear, glasses, build and clothes, not in the face.
+    - **Heights, with Elof as 1:** Pappa 1.50, Mamma 1.40, Moa 1.26, Bertil 1.24 (1.27 with his cap),
+      three-year-old Elof 0.78. Moa's and Bertil's are read from the picture of the three together; the
+      parents' and little Elof's are guesses from ordinary proportions. **Olov should say if they are right.**
+    - **What the next round should correct**, as the session that built them saw it:
+      - all five: plain collars, no real folds in cloth, soft edges between painted colours, and cloth
+        layers that cut through each other in a strong pose;
+      - Pappa: the cap follows the sheet (a baseball cap), not the flat cap of the photo; the glasses have
+        no lenses; the stubble is paint; no knife and no piece of wood;
+      - Mamma: a square neckline where the pictures show a round one; no loose wisps of hair; no mug;
+      - Moa: no lace on the dress, a jacket with only a collar and two pocket flaps, coarse hair waves;
+      - Bertil: the same closed smile as the others, where his sheet shows a grin;
+      - three-year-old Elof: only the outdoor clothes; no pyjamas and no trägubbe in his hand; his flat cap
+        is light grey as in the photo, though the plan says "like Pappa's";
+      - the children's heads are a little small beside the sheets (about 4.3 heads tall).
+    - **In the game** (branch `stage-0c-family-figures`): where Elof is a boy among people, each sign that
+      stands for one of the family is replaced by that person's model when the private pack has it: Mamma
+      in the doorway in the prologue, the four at the party in the epilogue, and **the family on the
+      summit** in the final. There they appear when he has tasted the golden geléhallon and is big again:
+      Bertil, Moa, Mamma, and Pappa where the way home begins, under the northern lights (the plan's MUST
+      "the family on the summit", standing only). In the macro world the signs stay: there a person is a
+      pair of hands from far above. Who a sign stands for is
       `personFor` in `src/content/people.ts`. Where the pack has no model, as in CI and on the site today,
       the sign stays.
+    - **For looking at a late moment alone:** in a debug session `?flags=a,b` starts a chapter with those
+      flags set. The summit with the family:
+      `?dev&debug&course=norrsken&at=26,0.01&flags=placed:tragubbe,crowberry,eyes,bag,share:tragubbe,share:spoket,share:jay,shared,taste`.
+    - **Blender, for the next session:** the scratchpad's small client hung for seven minutes on a script
+      with a section sign in it; keep scripts sent to Blender in plain ASCII. Safe mode also rejects calling
+      a function passed as a parameter. The add-on still reports itself outdated; telemetry consent is false.
     - **Not published.** The models are untracked files in the private repository's folder. Nothing was
       committed or pushed there, so the site is unchanged. Publishing them is Olov's word (question 6).
     - **Pictures for Olov:** each model beside its reference pictures, and the family in a row, are in
