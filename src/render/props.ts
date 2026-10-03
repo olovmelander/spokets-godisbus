@@ -343,6 +343,68 @@ export function spotProp(spot: Spot): SpotProp | null {
   }
 }
 
+// --- the helper ----------------------------------------------------------------------------------------------
+
+/** A small bird, facing +x, with its feet at the origin: the jay's shape, used for the helper as well. */
+function bird(): Group {
+  const group = new Group();
+  const grey = solid('#8c7f72', 0.9);
+  const tail = new Mesh(new BoxGeometry(0.42, 0.05, 0.16), solid('#b5622c', 0.8));
+  tail.position.set(-0.36, 0.3, 0);
+  tail.rotation.z = 0.35;
+  const beak = new Mesh(new ConeGeometry(0.04, 0.14, 8), solid('#2a2622', 0.5));
+  beak.rotation.z = -Math.PI / 2;
+  beak.position.set(0.38, 0.55, 0);
+  group.add(ball(1, grey, 0, 0.36, 0, [0.3, 0.22, 0.2]), ball(0.14, solid('#5a4c42', 0.9), 0.22, 0.55, 0), tail, beak, ball(0.03, solid('#111111', 0.2), 0.3, 0.59, 0.1));
+  for (const side of [-1, 1]) {
+    const wing = new Mesh(new BoxGeometry(0.3, 0.03, 0.34), solid('#b5622c', 0.8));
+    wing.geometry.translate(0, 0, 0.17);
+    wing.position.set(-0.04, 0.44, side * 0.12);
+    wing.scale.z = side;
+    wing.name = side > 0 ? 'wingNear' : 'wingFar';
+    group.add(wing);
+  }
+  return group;
+}
+
+/**
+ * The helper (plan §4.6): a bird that comes when he asks. It flies to the thing and looks at it; asked
+ * again it knocks on it; asked a third time, a pale figure shows where to stand and do it. It has no words.
+ * It is in the scene from the start, at no size, so nothing is compiled when it first comes.
+ */
+export function helperProp() {
+  const group = new Group();
+  const flyer = bird();
+  flyer.scale.setScalar(0);
+  // Where to stand: a pale figure the size of Elof, that fades in and out.
+  const pale = new MeshStandardMaterial({ color: '#fff6dc', roughness: 1, transparent: true, opacity: 0, depthWrite: false, emissive: '#fff0c0', emissiveIntensity: 0.6 });
+  const figure = new Group();
+  const body = new Mesh(new CylinderGeometry(0.16, 0.2, 0.6, 12), pale);
+  body.position.y = 0.34;
+  figure.add(body, ball(0.17, pale, 0, 0.8, 0));
+  group.add(flyer, figure);
+  let shown = 0;
+  let last = { x: 0, y: 0 };
+  function update(step: number, at: { x: number; y: number } | null, x: number, y: number, standY: number, clock: number, dt: number): void {
+    const here = step > 0 && at !== null;
+    if (at) last = at;
+    // It comes from where he is, and leaves upwards.
+    if (here && shown === 0) flyer.position.set(x - 0.6, y + 1.4, 0.4);
+    shown = Math.min(1, Math.max(0, shown + (here ? dt : -dt) / 0.4));
+    const knock = step >= 2 ? Math.max(0, Math.sin(clock * 16)) * (Math.sin(clock * 3.2) > 0 ? 0.16 : 0) : 0;
+    const to = here ? { x: last.x - 0.45 + knock, y: last.y + 0.25 + Math.sin(clock * 5) * 0.04, z: 0.45 } : { x: flyer.position.x, y: flyer.position.y + dt * 4, z: 0.45 };
+    const k = 1 - Math.exp(-5 * dt);
+    flyer.position.set(flyer.position.x + (to.x - flyer.position.x) * k, flyer.position.y + (to.y - flyer.position.y) * k, to.z);
+    flyer.scale.setScalar(shown * 0.9);
+    const beat = Math.sin(clock * 22) * 0.9;
+    flyer.getObjectByName('wingNear')!.rotation.x = -beat;
+    flyer.getObjectByName('wingFar')!.rotation.x = beat;
+    figure.position.set(last.x - 0.75, Math.min(last.y, standY), -0.15);
+    pale.opacity = step >= 3 ? 0.3 + 0.25 * Math.sin(clock * 5) : 0;
+  }
+  return { group, update };
+}
+
 // --- what carries him ----------------------------------------------------------------------------------------
 
 /** What he rides on, pointing along +x, with its origin under his feet. The paper plane is the view's own. */

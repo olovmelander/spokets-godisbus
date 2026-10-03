@@ -11,6 +11,11 @@ export interface Hud {
   candy(count: number): void;
   /** Shows what Använd would do now. With nothing to use, the button is dimmed and says Använd. */
   verb(verb: Verb | null, word?: string | null): void;
+  /**
+   * The helper has knocked (plan §4.6): Använd's word pulses. Out of reach of the thing, the button shows
+   * the word it will have there. `null`: the helper is away, or only looking.
+   */
+  knock(hint: { verb: Verb | null; word: string | null } | null): void;
   /** Puts a line in the queue of bubbles. Each is shown for a few seconds, one after another. */
   say(who: Speaker, line: string): void;
   /** Moves the bubbles on. `dt` is the time since the last frame, in seconds: 0 while the game is paused. */
@@ -60,6 +65,15 @@ export function createHud(doc: Document, total: number): Hud {
       act.disabled = verb === null;
       act.querySelector('span')!.textContent = text;
       act.setAttribute('aria-label', text);
+    },
+    knock(hint) {
+      act.classList.toggle('pulse', hint !== null && hint.verb !== null);
+      // Out of reach the button is dimmed: it shows what it will say when he is there.
+      if (hint && hint.verb && act.disabled) {
+        const text = verbs[hint.word ?? hint.verb] ?? verbs[hint.verb] ?? sv.act;
+        act.querySelector('span')!.textContent = text;
+        wordShown = undefined;
+      }
     },
     say(who, line) {
       if (lines[line]) queue.push({ who, line });

@@ -1,0 +1,52 @@
+import type { Sim } from './sim';
+import type { ChapterData, Vec, Verb } from './types';
+
+/**
+ * What the helper would show now (plan §4.6): the next thing along the way that the story needs him to do,
+ * and the word Använd would say there. Where nothing of that kind is near, it is the next candy of the
+ * trail: the trail is the way.
+ *
+ * It never says how. It is worked out from the game as it stands, so it can't point at something that is
+ * already done, or that can't be done yet.
+ */
+export interface Hint {
+  at: Vec;
+  /** What Använd does there, or null where the way is simply on along the trail. */
+  verb: Verb | null;
+  word: string | null;
+}
+
+/** Something to do further off than this is not the next thing: the trail leads there. */
+export const HINT_REACH = 12;
+
+export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
+  const p = sim.curr;
+  const has = (flag?: string) => flag === undefined || sim.flags.has(flag);
+  const things: Hint[] = [];
+  // Things to use, once what they wait for has happened. One he only has to touch is on the trail anyway.
+  for (const spot of chapter.spots ?? []) {
+    if (spot.touch || sim.flags.has(spot.id) || !has(spot.needs)) continue;
+    things.push({ at: spot.at, verb: spot.verb, word: spot.word ?? null });
+  }
+  // Things on rails that are not yet where they belong, and that he moves himself.
+  for (const mover of sim.movers) {
+    const def = mover.def;
+    if (def.on !== undefined || mover.stop >= def.stops.length - 1 || !has(def.needs)) continue;
+    const ring = def.verb === 'pull' ? (def.ring ?? { x: 0, y: def.height }) : { x: 0, y: def.height };
+    things.push({ at: { x: mover.x + ring.x, y: mover.y + ring.y }, verb: def.verb, word: null });
+  }
+  // Hooks he has not swung past.
+  for (const hook of chapter.hooks ?? []) {
+    if ((hook.land?.x ?? hook.x + hook.length) <= p.x + 0.5) continue;
+    things.push({ at: { x: hook.x, y: hook.y }, verb: 'lace', word: null });
+  }
+  // What he stands at comes first: where several things may be done in any order, it is the one in reach.
+  const beside = things.filter((thing) => Math.abs(thing.at.x - p.x) <= 1.3).sort((a, b) => Math.abs(a.at.x - p.x) - Math.abs(b.at.x - p.x))[0];
+  if (beside) return beside;
+  // Otherwise the first along the way. One he walked past is still the next thing.
+  things.sort((a, b) => a.at.x - b.at.x);
+  const next = things[0] ?? null;
+  if (next && next.at.x - p.x < HINT_REACH) return next;
+  const candy = chapter.candy.find((c, i) => !sim.collected[i] && c.x > p.x + 0.5 && has(c.after));
+  return candy ? { at: { x: candy.x, y: candy.y }, verb: null, word: null } : next;
+}

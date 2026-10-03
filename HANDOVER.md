@@ -483,6 +483,23 @@
       Also: Pappa's hands and the shelf with its empty place, the brush and the knife traced by hand, the
       blink, the bag tearing, Pappa on the deck, which candy each one gets, the figure on the windowsill,
       the album as credits, and *Utforska vidare*.
+  - **The helper and its three hints** (branch `stage-2-helper`; plan §4.6). What you see: a small button
+    with a bird, under the pause button (H on a keyboard, Y on a gamepad). Press it and a bird flies to the
+    next thing to do and looks at it. Press again: it knocks on it, and Använd shows that thing's word and
+    pulses, in reach or not. A third time: a pale figure stands where Elof should stand. It leaves when he
+    has done it, or after twelve seconds. It has no words.
+    - **What it shows** (`src/sim/help.ts`) is worked out from the game as it stands: the thing in reach;
+      else the first thing along the way that can be done now (a thing to use whose turn has come, a thing
+      on a rail not yet in place, a hook not yet swung past); else, where nothing of that kind is within
+      12 EL, the next candy of the trail. It can't point at something done, or not yet possible.
+    - **Help levels:** *Bara när jag frågar* (Äventyr), *Påminn mig* (Lugnt: it comes once, to look, after 40 s
+      with nothing happening), *Guida mig* (it comes after 30 s and knocks). The level is saved with the
+      player. **There is no switch for it in the pause panel yet:** it follows the play style.
+    - Tests: `tests/sim/help.test.ts` (15). All through the story, wherever Använd offers something, the
+      helper shows that same thing and word; and it always has something to show until a chapter ends.
+    - **Not yet:** in Kapitel 1 the helper should be the ghost itself, with its one visit at the gully (it is
+      the bird everywhere now); the third step as a replay of Elof doing the thing; the helper's portrait as
+      the button; the goal as a picture in the pause panel.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
@@ -523,8 +540,8 @@
    - then **H1a**, Olov's checkpoint.
 6. **Stage 0c** (characters): image-to-3D for Elof and the family on the computer with the RTX 5080 (art bible
    §1.6, and question 4 below), and the ghost redone in Blender as stylized carved wood (art bible §1.5).
-7. **The family's models on the site: one merge left, and it is Olov's.** He asked for it on 3 October: "We
-   need to have the good looking Elof and ghost in the github pages aswell."
+7. **The family's models are on the site** (3 October). Olov asked for it: "We need to have the good looking
+   Elof and ghost in the github pages aswell."
    - **Done by the session, with his stored GitHub credential:** the private repository
      `olovmelander/spokets-godisbus-familj` exists and holds `baked/private/elof.glb` and `ghost.glb` with the
      scripts and `.blend` files that build them. No picture is in it: it ignores the views cut from the sheets.
@@ -534,9 +551,10 @@
      the secret was set. The plan (§6.11) says a fine-grained token, `FAMILY_ASSETS_TOKEN`; a deploy key does
      the same with less: it can only read that one repository, and a session can make one, which it can't with
      a token.
-   - **What is left:** merging the pull request from the branch `family-on-pages`, which changes
-     `.github/workflows/deploy.yml` to fetch the models. That merge puts Elof's likeness on the public site,
-     so it is Olov's (CLAUDE.md). Until then the site shows the stand-in figures.
+   - **The merge that published them** was pull request #31, which changes `.github/workflows/deploy.yml` to
+     fetch the models. It was left to Olov, as CLAUDE.md says; he answered "Do this final click for me", and
+     the session merged it. The public site was checked afterwards: it loads `private/elof` and
+     `private/ghost`. That word covered that pull request: a later one that touches likeness assets is his.
    - **To take them down again:** delete the secret `FAMILY_ASSETS_KEY` (*Settings → Secrets and variables →
      Actions*), or the files in the private repository, and run *Deploy to GitHub Pages* again.
    - **Still to do:** the secret `PRIVACY_DENYLIST`, the words the privacy check looks for (plan §6.11). Only

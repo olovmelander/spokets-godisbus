@@ -8,6 +8,10 @@ const HAND = svg(`<path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-3.5a1.5 1.5 0 0 1 3 
 const ARROW = svg(`<path d="M12 20V5m0 0-6 6m6-6 6 6" ${line} stroke-width="2.4"/>`);
 const PAUSE = svg('<rect x="6" y="5" width="4.2" height="14" rx="1.4" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.4" fill="currentColor"/>');
 const PLAY = svg('<path d="M8 5.5v13l11-6.5z" fill="currentColor"/>');
+/** The helper: a small bird, seen from the side. */
+const BIRD = svg(
+  `<path d="M4 14c0-4 3-7 7-7 2.2 0 4 .9 5.2 2.4L20 9l-2.4 2.6c.3.8.4 1.6.4 2.4 0 3-2.6 5-6.5 5H7c-1.7 0-3-2-3-5z" ${line} stroke-width="1.9"/><circle cx="13.8" cy="10.8" r="1" fill="currentColor"/><path d="M4.4 15.6 2 18m7.5 1v2.4m3.5-2.4v2.4" ${line} stroke-width="1.7"/>`,
+);
 const CROSS = svg(`<path d="M6 6l12 12M18 6 6 18" ${line} stroke-width="2.6"/>`);
 const CHECK = svg(`<path d="M5 12.5l4.5 4.5L19 7.5" ${line} stroke-width="2.8"/>`);
 /** A big candy: the striped sweet on its stick that marks a safe place (plan §3.3, rule 4). */
@@ -45,6 +49,7 @@ export function mountShell(root: HTMLElement): void {
     'beforeend',
     `<div class="bag" id="bag" role="status">${BAG}<span id="bagCount">0</span></div>
      <button class="corner" id="pauseBtn" type="button" aria-label="${p.open}">${PAUSE}</button>
+     <button class="corner help" id="helpBtn" type="button" aria-label="${sv.help}">${BIRD}</button>
      <div class="controls" id="controls" hidden>
        <div class="stick-zone" id="stickZone">
          <div class="stick-base" id="stickBase"><div class="stick-knob" id="stickKnob"></div></div>
