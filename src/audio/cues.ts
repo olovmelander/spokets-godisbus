@@ -65,6 +65,8 @@ export type Cue =
   | { kind: 'ghostHop'; near: number }
   /** The helper knocks twice: look here. */
   | { kind: 'knocks' }
+  /** A cranberry bounces him. */
+  | { kind: 'bounce' }
   | { kind: 'goal' };
 
 /** What the cues are worked out from: the little of the game's state that can be heard. */
@@ -102,6 +104,8 @@ export interface Heard {
   ghostAway?: number;
   /** How far the helper has come: from 2 on it knocks. */
   helpStep?: number;
+  /** How many times a cranberry has bounced him. */
+  bounces?: number;
 }
 
 /** What has to be remembered between frames: the candy streak and the stride. */
@@ -178,5 +182,6 @@ export function cuesFor(before: Heard, now: Heard, memory: CueMemory): Cue[] {
   for (const who of (now.said ?? []).slice(before.said?.length ?? 0)) cues.push({ kind: 'say', who });
   if ((now.ghostPerch ?? 0) > (before.ghostPerch ?? 0)) cues.push({ kind: 'ghostHop', near: Math.max(0, 1 - (now.ghostAway ?? 20) / 14) });
   if ((now.helpStep ?? 0) >= 2 && (before.helpStep ?? 0) < 2) cues.push({ kind: 'knocks' });
+  if ((now.bounces ?? 0) > (before.bounces ?? 0)) cues.push({ kind: 'bounce' });
   return cues;
 }

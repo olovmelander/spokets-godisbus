@@ -11,7 +11,7 @@ import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, createGradePass } from './grade';
 import { chooseTier, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
-import { RUN_SPEED } from '../sim/constants';
+import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, PlayerState } from '../sim/types';
 
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
@@ -62,6 +62,8 @@ export interface Frame {
   tussocks: readonly { x: number; y: number }[];
   /** The stretches with gusts, in the chapter's order. */
   gusts: readonly { blow: number; warn: number }[];
+  /** The cranberries, in the chapter's order: how flat each is after a bounce, from 1 to 0. */
+  berries?: readonly { squash: number }[];
   /** What the helper is doing: its step, and where the thing is. */
   help: { step: number; at: { x: number; y: number } | null };
 }
@@ -187,6 +189,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
   const water = buildWater(chapter, place?.water ?? null);
   const tussockMeshes = buildTussocks(chapter, place?.tussock ?? null);
+  const berryMeshes = buildBerries(chapter);
+  for (const berry of berryMeshes) scene.add(berry);
   const mist = buildMist(chapter, scene.fog as Fog, place?.haze ?? null);
   const follower = buildFollower(chapter);
   const wind = buildWind(chapter);
@@ -316,7 +320,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let warm = 2;
   let warmedFor = 0;
   const unculled: Object3D[] = [];
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries }: Frame): void {
     rain.update(drips);
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
@@ -327,6 +331,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     cones.update(rollers, clock);
     water.update(clock);
     for (const [i, t] of tussocks.entries()) tussockMeshes[i]?.position.set(t.x, t.y, 0);
+    // A cranberry goes flat under him and springs back, a little past its shape.
+    for (const [i, b] of (berries ?? []).entries()) {
+      const flat = b.squash * b.squash;
+      const spring = Math.sin(b.squash * Math.PI * 3) * 0.12 * b.squash;
+      berryMeshes[i]?.scale.set(1 + 0.3 * flat - spring * 0.5, 1 - 0.5 * flat + spring, 1 + 0.3 * flat - spring * 0.5);
+    }
     mist.update(flags, x, y, curr.facing, camera.position.z, dt);
     wind.update(gusts, clock);
     climbs.update(flags, dt);
@@ -684,6 +694,27 @@ function buildWind(chapter: ChapterData) {
     }
   }
   return { group, update };
+}
+
+/**
+ * The cranberries (plan §4.8, O7): red, round and shiny, as big as he is wide, lying just behind the path so
+ * that he walks in front of one and comes down on top of it. Each is scaled from the ground it lies on.
+ */
+function buildBerries(chapter: ChapterData): Group[] {
+  const skin = new MeshStandardMaterial({ color: '#c2222e', roughness: 0.28, emissive: '#3a0508', emissiveIntensity: 0.35 });
+  const dark = new MeshStandardMaterial({ color: '#4a1218', roughness: 0.8 });
+  return (chapter.bouncers ?? []).map((b) => {
+    const group = new Group();
+    const berry = new Mesh(new SphereGeometry(BERRY_HALF, 24, 16), skin);
+    berry.scale.y = BERRY_HEIGHT / (2 * BERRY_HALF);
+    berry.position.y = BERRY_HEIGHT / 2;
+    // The little dimple where the flower sat.
+    const calyx = new Mesh(new SphereGeometry(0.07, 10, 8), dark);
+    calyx.position.set(0.12, BERRY_HEIGHT - 0.03, 0.2);
+    group.add(berry, calyx);
+    group.position.set(b.x, b.y - BERRY_HEIGHT, -0.35);
+    return group;
+  });
 }
 
 /**

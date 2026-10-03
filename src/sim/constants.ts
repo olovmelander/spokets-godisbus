@@ -126,6 +126,11 @@ export const ROLLER_REACH = 0.3;
 export const SINK_DEPTH = 0.45;
 export const SINK_TIME = 1.8;
 export const RISE_TIME = 0.8;
+/** A cranberry is this wide from its middle to its side, and stands this high over the ground it lies on. */
+export const BERRY_HALF = 0.42;
+export const BERRY_HEIGHT = 0.5;
+/** It is flat for this long after a bounce, in seconds: for the picture. */
+export const BERRY_SQUASH = 0.35;
 /** The glitter bubble catches him when his boots come this close to water: before he touches it. */
 export const WATER_REACH = 0.1;
 

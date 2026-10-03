@@ -243,6 +243,11 @@ export function createAudio(): Audio {
         knock(300, 0.04 + 0.1 * cue.near);
         tone('sawtooth', 170, 230, 0.12, 0.01 + 0.025 * cue.near, 0.06);
         break;
+      case 'bounce':
+        // Boing: a rubbery note that leaps up.
+        tone('sine', 190, 560, 0.2, 0.2);
+        tone('triangle', 380, 1120, 0.14, 0.06, 0.02);
+        break;
       case 'knocks':
         knock(520, 0.15);
         knock(520, 0.13, 0.16);
