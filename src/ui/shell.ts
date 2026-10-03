@@ -75,6 +75,7 @@ export function mountShell(root: HTMLElement): void {
          <label class="switch"><input type="checkbox" id="setEasyJumps"><span>${p.easyJumps}</span></label>
          <label class="switch"><input type="checkbox" id="setSlower"><span>${p.slower}</span></label>
          <label class="switch"><input type="checkbox" id="setSound"><span>${p.sound}</span></label>
+         <label class="switch"><input type="checkbox" id="setMusic"><span>${p.music}</span></label>
          <h3 id="helpTitle">${BIRD}<span>${p.help}</span></h3>
          <div class="levels" role="radiogroup" aria-labelledby="helpTitle">
            <button class="level" id="helpAsk" type="button" role="radio">${p.helpAsk}</button>

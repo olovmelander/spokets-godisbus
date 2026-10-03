@@ -1,22 +1,36 @@
 import type { Cue } from './cues';
+import { AIRS, barOf, barSeconds, barsIn, frequencyOf, MUSIC_LEVEL, pluck, RING, type Arrangement } from './music';
 
 /**
- * The game's sound (plan §5.8, §6.8). Every effect is made in code, so sound costs no download.
+ * The game's sound (plan §5.8, §6.8). All of it is made in code, so sound costs no download.
  * There are no voices and no recordings: characters will make short wordless sounds, never words.
  *
- * One AudioContext, unlocked by the first tap, click or key. Effects go through their own bus to the
- * master and a compressor; music and ambience get their buses when they arrive.
+ * One AudioContext, unlocked by the first tap, click or key. Three buses, music, effects and ambience, go to
+ * the master and a compressor. *Ljud* is the effects and the place's air; *Musik* is the tune.
  */
 export interface Audio {
   /** Call from a pointerup, a click or a keydown: browsers start sound only from those. */
   unlock(): void;
   play(cue: Cue): void;
-  /** 0 is silent, 1 is full. */
+  /** 0 is silent, 1 is full. The place's air follows it. */
   setEffects(volume: number): void;
+  /** 0 is silent, 1 is full. */
+  setMusic(volume: number): void;
+  /** How this part of the story plays the tune, and its air; null is neither. It begins once sound runs. */
+  setPlace(arrangement: Arrangement | null): void;
+  /**
+   * Call every frame: the next bar is given its notes a moment before it begins. With `chase` the wood
+   * knocks, from the next bar line on.
+   */
+  tick(chase: boolean): void;
+  /** The page was hidden, or shown again: sound sleeps with it. */
+  sleep(hidden: boolean): void;
   /** True once the context runs: for the debug text and the tests. */
   readonly running: boolean;
   /** How many effects have been started. */
   readonly played: number;
+  /** How many bars of music have been given their notes. */
+  readonly bars: number;
 }
 
 /** A pentatonic scale, in semitones: candy collected in a row steps up it (plan §5.8). */
@@ -30,9 +44,24 @@ export function createAudio(): Audio {
     typeof window === 'undefined' ? undefined : (window.AudioContext ?? (window as unknown as { webkitAudioContext?: AudioCtor }).webkitAudioContext);
   let context: AudioContext | null = null;
   let effects: GainNode | null = null;
+  let music: GainNode | null = null;
+  let ambience: GainNode | null = null;
   let noise: AudioBuffer | null = null;
   let volume = 1;
+  let musicVolume = 1;
   let played = 0;
+  // The music: which arrangement, which bar comes next and when, and each string once it has been made.
+  let arrangement: Arrangement | null = null;
+  let started = false;
+  let bar = 0;
+  let nextBar = 0;
+  let bars = 0;
+  const strings = new Map<number, AudioBuffer>();
+  // The air: its wind, while it blows, and when each of its calls comes next.
+  let wind: { source: AudioBufferSourceNode; swell: OscillatorNode } | null = null;
+  let callsAt: number[] = [];
+  let dice = 4711;
+  const roll = () => (dice = (dice * 16807) % 2147483647) / 2147483647;
 
   // The silent switch of an iPhone silences the game, as it should (plan §6.8).
   const session = typeof navigator === 'undefined' ? undefined : (navigator as unknown as { audioSession?: { type: string } }).audioSession;
@@ -46,9 +75,17 @@ export function createAudio(): Audio {
     master.gain.value = 0.8;
     effects = context.createGain();
     effects.gain.value = volume;
-    effects.connect(master).connect(compressor).connect(context.destination);
-    // One second of noise, made with a fixed sequence: the same sound every time.
-    noise = context.createBuffer(1, context.sampleRate, context.sampleRate);
+    master.connect(compressor).connect(context.destination);
+    effects.connect(master);
+    music = context.createGain();
+    music.gain.value = MUSIC_LEVEL * musicVolume;
+    music.connect(master);
+    ambience = context.createGain();
+    ambience.gain.value = volume;
+    ambience.connect(master);
+    // Four seconds of noise, made with a fixed sequence: the same sound every time, and long enough for a
+    // wind that doesn't come round audibly.
+    noise = context.createBuffer(1, context.sampleRate * 4, context.sampleRate);
     const data = noise.getChannelData(0);
     let seed = 22222;
     for (let i = 0; i < data.length; i++) {
@@ -59,8 +96,11 @@ export function createAudio(): Audio {
 
   /** A tone that starts at once and dies away: the stuff of plucks, chimes and chirps. */
   function tone(type: OscillatorType, from: number, to: number, length: number, level: number, delay = 0): void {
-    if (!context || !effects) return;
-    const at = context.currentTime + delay;
+    if (context && effects) toneAt(effects, context.currentTime + delay, type, from, to, length, level);
+  }
+
+  function toneAt(bus: GainNode, at: number, type: OscillatorType, from: number, to: number, length: number, level: number): void {
+    if (!context) return;
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     oscillator.type = type;
@@ -69,15 +109,18 @@ export function createAudio(): Audio {
     gain.gain.setValueAtTime(0.0001, at);
     gain.gain.exponentialRampToValueAtTime(level, at + 0.008);
     gain.gain.exponentialRampToValueAtTime(0.0001, at + length);
-    oscillator.connect(gain).connect(effects);
+    oscillator.connect(gain).connect(bus);
     oscillator.start(at);
     oscillator.stop(at + length + 0.02);
   }
 
   /** A puff of filtered noise: steps, landings, splashes, whooshes. */
   function puff(kind: BiquadFilterType, from: number, to: number, length: number, level: number, delay = 0, q = 1): void {
-    if (!context || !effects || !noise) return;
-    const at = context.currentTime + delay;
+    if (context && effects) puffAt(effects, context.currentTime + delay, kind, from, to, length, level, q);
+  }
+
+  function puffAt(bus: GainNode, at: number, kind: BiquadFilterType, from: number, to: number, length: number, level: number, q: number): void {
+    if (!context || !noise) return;
     const source = context.createBufferSource();
     source.buffer = noise;
     const filter = context.createBiquadFilter();
@@ -89,7 +132,7 @@ export function createAudio(): Audio {
     gain.gain.setValueAtTime(0.0001, at);
     gain.gain.exponentialRampToValueAtTime(level, at + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.0001, at + length);
-    source.connect(filter).connect(gain).connect(effects);
+    source.connect(filter).connect(gain).connect(bus);
     source.start(at, (played * 0.137) % 0.5);
     source.stop(at + length + 0.02);
   }
@@ -171,11 +214,88 @@ export function createAudio(): Audio {
     }
   }
 
+  /** One plucked string, made the first time it is asked for and kept. */
+  function string(midi: number, bright: number): AudioBuffer {
+    let buffer = strings.get(midi);
+    if (!buffer) {
+      const data = pluck(frequencyOf(midi), RING, context!.sampleRate, bright);
+      buffer = context!.createBuffer(1, data.length, context!.sampleRate);
+      buffer.getChannelData(0).set(data);
+      strings.set(midi, buffer);
+    }
+    return buffer;
+  }
+
+  /** The place's music and air begin: its strings are made now, so that no bar has to wait for one. */
+  function begin(): void {
+    if (!context || !ambience || !noise || started) return;
+    started = true;
+    wind?.source.stop();
+    wind?.swell.stop();
+    wind = null;
+    strings.clear();
+    callsAt = [];
+    if (!arrangement) return;
+    for (let i = 0; i < barsIn(arrangement); i++) for (const s of barOf(arrangement, i)) if (s.voice === 'pluck') string(s.midi, arrangement.bright);
+    bar = 0;
+    nextBar = context.currentTime + 0.5;
+    const air = AIRS[arrangement.ambience];
+    callsAt = air.calls.map((call) => context!.currentTime + call.gap[0] * (0.3 + roll()));
+    if (air.wind) {
+      const source = context.createBufferSource();
+      source.buffer = noise;
+      source.loop = true;
+      const filter = context.createBiquadFilter();
+      filter.type = air.wind.filter;
+      filter.frequency.value = air.wind.frequency;
+      filter.Q.value = air.wind.q;
+      const gain = context.createGain();
+      gain.gain.value = air.wind.level * 0.6;
+      // It swells and sinks, slowly: wind is never even.
+      const swell = context.createOscillator();
+      swell.frequency.value = 1 / air.wind.swell;
+      const depth = context.createGain();
+      depth.gain.value = air.wind.level * 0.4;
+      swell.connect(depth).connect(gain.gain);
+      source.connect(filter).connect(gain).connect(ambience);
+      source.start();
+      swell.start();
+      wind = { source, swell };
+    }
+  }
+
+  /** Gives one bar its notes, from the moment `at` on. */
+  function score(a: Arrangement, index: number, at: number, chase: boolean): void {
+    if (!context || !music) return;
+    for (const s of barOf(a, index, chase)) {
+      const from = at + s.at;
+      if (s.voice === 'knock') {
+        // Wood on wood, as in Pappa's workshop.
+        toneAt(music, from, 'sine', frequencyOf(s.midi) * 2, frequencyOf(s.midi) * 1.4, s.seconds, s.level);
+        puffAt(music, from, 'bandpass', 1500, 900, 0.04, s.level * 0.5, 6);
+      } else if (s.voice === 'scrape') {
+        // The knife takes a shaving.
+        puffAt(music, from, 'bandpass', 2600, 1400, s.seconds, s.level, 3);
+      } else {
+        const source = context.createBufferSource();
+        source.buffer = string(s.midi, a.bright);
+        const gain = context.createGain();
+        gain.gain.setValueAtTime(s.level, from);
+        gain.gain.setValueAtTime(s.level, from + s.seconds - 0.06);
+        gain.gain.linearRampToValueAtTime(0, from + s.seconds);
+        source.connect(gain).connect(music);
+        source.start(from);
+        source.stop(from + s.seconds + 0.02);
+      }
+    }
+  }
+
   return {
     unlock() {
       build();
       // iOS leaves the context "interrupted" after a call; any later tap wakes it again.
       if (context && context.state !== 'running') void context.resume();
+      begin();
     },
     play(cue) {
       if (!context || context.state !== 'running' || volume <= 0) return;
@@ -185,12 +305,51 @@ export function createAudio(): Audio {
     setEffects(next) {
       volume = Math.max(0, Math.min(1, next));
       if (effects) effects.gain.value = volume;
+      if (ambience) ambience.gain.value = volume;
+    },
+    setMusic(next) {
+      musicVolume = Math.max(0, Math.min(1, next));
+      if (music) music.gain.value = MUSIC_LEVEL * musicVolume;
+    },
+    setPlace(next) {
+      arrangement = next;
+      started = false;
+      begin();
+    },
+    tick(chase) {
+      if (!context || context.state !== 'running' || !arrangement || !ambience) return;
+      const now = context.currentTime;
+      // After a sleep, or a long frame, the tune goes on from now: never a heap of late bars at once.
+      if (nextBar < now) nextBar = now + 0.1;
+      if (nextBar < now + 0.3) {
+        // With the music off the bars go by unplayed, so that switching it on takes up the tune where it is.
+        if (musicVolume > 0) {
+          score(arrangement, bar, nextBar, chase);
+          bars++;
+        }
+        bar++;
+        nextBar += barSeconds(arrangement);
+      }
+      const calls = AIRS[arrangement.ambience].calls;
+      for (const [i, call] of calls.entries()) {
+        if (now < callsAt[i]!) continue;
+        callsAt[i] = now + call.gap[0] + (call.gap[1] - call.gap[0]) * roll();
+        if (volume > 0) for (const t of call.tones) toneAt(ambience, now + 0.05 + t.delay, t.wave, t.from, t.to, t.seconds, t.level);
+      }
+    },
+    sleep(hidden) {
+      if (!context) return;
+      if (hidden) void context.suspend();
+      else void context.resume();
     },
     get running() {
       return context?.state === 'running';
     },
     get played() {
       return played;
+    },
+    get bars() {
+      return bars;
     },
   };
 }

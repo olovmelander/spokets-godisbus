@@ -12,16 +12,18 @@ export interface Settings {
   easyJumps: boolean;
   /** *Lugnare tempo*: the whole game runs at 80%. */
   slower: boolean;
-  /** *Ljud*: the effects. Off is silent. */
+  /** *Ljud*: the effects and the place's air. Off is silent. */
   sound: boolean;
+  /** *Musik*: the tune. */
+  music: boolean;
   /** How much the helper does by itself: *Bara när jag frågar*, *Påminn mig* or *Guida mig* (plan §4.6). */
   help: HelpLevel;
 }
 
 /** The switches each style starts with. Every one of them can then be changed on its own. */
 const SWITCHES: Record<PlayStyle, Omit<Settings, 'style'>> = {
-  aventyr: { swingHelp: false, easyJumps: false, slower: false, sound: true, help: 'ask' },
-  lugnt: { swingHelp: true, easyJumps: true, slower: false, sound: true, help: 'remind' },
+  aventyr: { swingHelp: false, easyJumps: false, slower: false, sound: true, music: true, help: 'ask' },
+  lugnt: { swingHelp: true, easyJumps: true, slower: false, sound: true, music: true, help: 'remind' },
 };
 
 export const SLOWER_TEMPO = 0.8;
@@ -48,7 +50,7 @@ export function readSettings(value: unknown): Settings {
   const from = (typeof value === 'object' && value !== null ? value : {}) as Record<string, unknown>;
   const style: PlayStyle = from.style === 'lugnt' ? 'lugnt' : 'aventyr';
   const base = settingsFor(style);
-  const flag = (key: 'swingHelp' | 'easyJumps' | 'slower' | 'sound') => (typeof from[key] === 'boolean' ? (from[key] as boolean) : base[key]);
+  const flag = (key: 'swingHelp' | 'easyJumps' | 'slower' | 'sound' | 'music') => (typeof from[key] === 'boolean' ? (from[key] as boolean) : base[key]);
   const help: HelpLevel = from.help === 'ask' || from.help === 'remind' || from.help === 'guide' ? from.help : base.help;
-  return { style, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower'), sound: flag('sound'), help };
+  return { style, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower'), sound: flag('sound'), music: flag('music'), help };
 }

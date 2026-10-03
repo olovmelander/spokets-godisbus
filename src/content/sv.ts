@@ -166,6 +166,7 @@ export const sv = {
     easyJumps: 'Lätta hopp',
     slower: 'Lugnare tempo',
     sound: 'Ljud',
+    music: 'Musik',
     // How much the helper does by itself (plan §4.6).
     help: 'Hjälp',
     helpAsk: 'Bara när jag frågar',
