@@ -199,6 +199,8 @@ export class Sim {
   private state: State = { kind: 'free' };
   /** True in the air after a swing: he keeps the speed it gave him, where a jump's speed follows the stick. */
   private thrown = false;
+  /** The hook he last let go of. In the air it is not offered again: Använd there takes the next one. */
+  private left: Hook | null = null;
   private footContacts = 0;
   private coyote = 0;
   private buffer = 0;
@@ -806,7 +808,7 @@ export class Sim {
     let reach = LACE_REACH;
     for (const hook of this.hooks) {
       const distance = Math.hypot(hook.x - x, hook.y - y);
-      if (hook.y < y + 0.4 || distance > reach || this.cast(x, y, hook.x, hook.y)) continue;
+      if (hook === this.left || hook.y < y + 0.4 || distance > reach || this.cast(x, y, hook.x, hook.y)) continue;
       nearest = hook;
       reach = distance;
     }
@@ -869,6 +871,7 @@ export class Sim {
     const change = (speedingUp ? RUN_SPEED / RUN_AFTER : RUN_SPEED / STOP_WITHIN) * STEP;
     // Thrown by a swing, he keeps its speed in the air unless he pushes against it.
     if (this.thrown && grounded) this.thrown = false;
+    if (grounded) this.left = null;
     const carried = this.thrown && dir !== -Math.sign(speed);
     if (!carried) speed = speed < target ? Math.min(target, speed + change) : Math.max(target, speed - change);
     if (dir !== 0) this.facing = dir as 1 | -1;
@@ -1127,6 +1130,7 @@ export class Sim {
     const along = s.length * s.speed;
     this.release(y);
     this.thrown = true;
+    this.left = hook;
     this.body.setLinearVelocity(new Vec2(along * Math.cos(s.angle), along * Math.sin(s.angle)));
   }
 

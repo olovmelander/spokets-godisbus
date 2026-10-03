@@ -53,6 +53,8 @@ describe('the hidden candy for the album', () => {
   it('can be reached: he finds each one by jumping where it hangs, or by going where it lies', () => {
     for (const chapter of numbered) {
       for (const h of chapter.hidden!) {
+        // One at the end of a challenge route is reached that way only: its own test shows how.
+        if (h.route) continue;
         const sim = jumpAt(chapter, h.x);
         expect(sim.flags.has(foundFlag(h.kind)), `${chapter.id}: ${h.kind} at ${h.x},${h.y}`).toBe(true);
         expect(sim.bubbles, `${chapter.id}: ${h.kind}`).toBe(0);
