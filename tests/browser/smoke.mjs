@@ -163,7 +163,11 @@ async function open(name, options, query = '?debug') {
   const stillThere = await state();
   check('the game stands still while it is open', stillThere.paused === true && stillThere.x === still.x, `x ${stillThere.x.toFixed(2)}`);
   await page.click('#styleLugnt');
-  check('Lugnt switches on its helps', (await page.isChecked('#setSwingHelp')) && (await page.isChecked('#setEasyJumps')));
+  check('Lugnt switches on its helps', (await page.isChecked('#setSwingHelp')) && (await page.isChecked('#setEasyJumps')) && (await page.isChecked('#setLoud')));
+  // Vänsterhänt (plan §4.1): the buttons swap sides.
+  await page.check('#setLefty');
+  const hop = await page.evaluate(() => ({ lefty: document.body.classList.contains('lefty'), left: getComputedStyle(document.getElementById('hopBtn')).left, right: getComputedStyle(document.getElementById('hopBtn')).right }));
+  check('Vänsterhänt moves Hoppa to the left side', hop.lefty && hop.right === 'auto', `left ${hop.left}, right ${hop.right}`);
   await page.click('#resumeBtn');
   const resumed = await state();
   check('Spela vidare closes it', (await page.locator('#pause').isHidden()) && resumed.paused === false && resumed.style === 'lugnt', resumed.style);
@@ -171,6 +175,7 @@ async function open(name, options, query = '?debug') {
   await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
   const again = await state();
   check('the style and the candy are saved', again.style === 'lugnt' && again.candy === bag.inBag, `${again.style}, ${again.candy} candies`);
+  check('and so is Vänsterhänt', await page.evaluate(() => document.body.classList.contains('lefty')));
   await finish();
 }
 

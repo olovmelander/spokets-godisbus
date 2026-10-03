@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readSettings, settingsFor, simOptions, SLOWER_TEMPO, tempoOf } from '../../src/save/settings';
+import { OWN_SWITCHES, readSettings, settingsFor, simOptions, SLOWER_TEMPO, SWITCH_NAMES, tempoOf } from '../../src/save/settings';
 import { createStore, newSave, readSave, SAVE_VERSION } from '../../src/save/store';
 
 /** A stand-in for localStorage. */
@@ -16,7 +16,10 @@ function fakeStorage(initial: Record<string, string> = {}) {
 describe('the two play styles', () => {
   it('Äventyr leaves the jumps and the swing to the player', () => {
     const settings = settingsFor('aventyr');
-    expect(settings).toEqual({ style: 'aventyr', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true, help: 'ask' });
+    expect(settings).toEqual({
+      style: 'aventyr', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true,
+      lefty: false, bigText: false, calm: false, loud: false, help: 'ask',
+    });
     expect(simOptions(settings)).toEqual({ swingHelp: false, easyJumps: false, stopAtEdges: false, gentle: false, help: 'ask' });
     expect(tempoOf(settings)).toBe(1);
   });
@@ -26,6 +29,25 @@ describe('the two play styles', () => {
     expect(settings.swingHelp).toBe(true);
     expect(settings.easyJumps).toBe(true);
     expect(simOptions(settings)).toEqual({ swingHelp: true, easyJumps: true, stopAtEdges: true, gentle: true, help: 'remind' });
+  });
+
+  it('Lugnt sounds in silent mode too, and Äventyr respects the switch', () => {
+    expect(settingsFor('lugnt').loud).toBe(true);
+    expect(settingsFor('aventyr').loud).toBe(false);
+  });
+
+  it('every switch has a value in both styles, and is read back from a save', () => {
+    for (const style of ['aventyr', 'lugnt'] as const) {
+      for (const name of SWITCH_NAMES) {
+        expect(typeof settingsFor(style)[name], name).toBe('boolean');
+        const turned = { ...settingsFor(style), [name]: !settingsFor(style)[name] };
+        expect(readSettings(JSON.parse(JSON.stringify(turned))), name).toEqual(turned);
+      }
+    }
+    // The player's own switches are no part of a style: left-handed is left-handed in both.
+    for (const name of OWN_SWITCHES) expect(settingsFor('lugnt')[name], name).toBe(settingsFor('aventyr')[name]);
+    expect(OWN_SWITCHES).toContain('lefty');
+    expect(OWN_SWITCHES).not.toContain('loud');
   });
 
   it('lets every switch be changed on its own', () => {

@@ -169,6 +169,10 @@ export const sv = {
     slower: 'Lugnare tempo',
     sound: 'Ljud',
     music: 'Musik',
+    loud: 'Ljud även i tyst läge',
+    lefty: 'Vänsterhänt',
+    bigText: 'Större text',
+    calm: 'Mindre rörelse',
     // How much the helper does by itself (plan §4.6).
     help: 'Hjälp',
     helpAsk: 'Bara när jag frågar',
