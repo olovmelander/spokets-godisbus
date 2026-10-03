@@ -29,6 +29,14 @@ export const sv = {
     takeLight: 'Ta lysklubban',
     climbOn: 'Kliv upp',
     lift: 'Lyft',
+    lowerLace: 'Sänk snöret',
+    paintEyes: 'Måla ögon',
+    takeBag: 'Ta påsen',
+    giveTragubbe: 'Ge trägubben',
+    giveGhost: 'Ge spöket',
+    giveJay: 'Ge lavskrikan',
+    taste: 'Smaka',
+    goHome: 'Gå hem',
     give: 'Ge',
     pick: 'Plocka',
     rideAnts: 'Åk med myrorna',
@@ -57,11 +65,18 @@ export const sv = {
     thanked: 'Spöket tackade mig!',
     spangen: 'På myren går vi på spången.',
     fetch: 'Spöket vill hämta hem min trägubbe!',
+    // Pappa on the summit: one thing said, in four bubbles.
+    first1: 'Min allra första trägubbe …',
+    first2: 'Den täljde jag till dig',
+    first3: 'när du var liten, Elof.',
+    first4: 'Vi tappade den här uppe.',
   },
 
   // The card at a chapter's end.
   end: {
     chapter: 'Kapitel {n} klart!',
+    // A part of the story with a name of its own, by its id.
+    named: { norrsken: 'Finalen klar!' } as Record<string, string>,
     course: 'Framme!',
     next: 'Fortsättning följer!',
     onward: 'Nästa kapitel',

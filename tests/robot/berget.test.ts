@@ -148,8 +148,7 @@ describe('Kapitel 4, Berget, in greybox', () => {
     for (const spot of berget.spots ?? []) expect(verbs[spot.word ?? spot.verb], `the word for ${spot.id}`).toBeDefined();
   });
 
-  it('follows Kapitel 3, and is the last chapter built', () => {
+  it('follows Kapitel 3', () => {
     expect(nextAfter('myren')?.id).toBe('berget');
-    expect(nextAfter('berget')).toBeNull();
   });
 });

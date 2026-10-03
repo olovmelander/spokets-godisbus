@@ -37,6 +37,7 @@ export interface Decision {
  * - falling drops it reads from their shadows: it waits before one whose drop would land on it;
  * - a cone rolling up from behind it jumps, so that the cone passes under;
  * - in a boulder's lee it waits until it can reach the next boulder before the next gust;
+ * - a thing behind it that can be used now it walks back to;
  * - on a ride it steers towards the next candy.
  */
 export function decide(game: Game, chapter: ChapterData): Decision {
@@ -74,8 +75,14 @@ export function decide(game: Game, chapter: ChapterData): Decision {
   }
   // A thing on its way along its rail: wait for it.
   if (movers.some((m) => m.t < 1)) return wait;
-  // Something to do where it stands: stand still and do it.
-  if (p.verb !== null && p.verb !== 'lace' && p.verb !== 'slide') return { ...wait, offered: true };
+  // Something to do where it stands: stand still and do it. It taps, as a player does: one thing done may
+  // offer the next at once, and a held button would never press again.
+  if (p.verb !== null && p.verb !== 'lace' && p.verb !== 'slide') return { ...wait, offered: Math.floor(game.sim.steps / 24) % 2 === 0 };
+  // A glint behind it: something there can be used now. It walks back to it, as a player would.
+  const usable = (chapter.spots ?? []).find((s) =>
+    !s.touch && !game.sim.flags.has(s.id) && (s.needs === undefined || game.sim.flags.has(s.needs)) &&
+    p.x - s.at.x > 1 && p.x - s.at.x < 12 && Math.abs(s.at.y - p.y) < 1);
+  if (usable && p.grounded) return { ...wait, x: -1 };
   if (p.hook) {
     const angle = Math.atan2(p.x - p.hook.x, p.hook.y - (p.y + 0.5));
     const high = p.vx > 0 && angle > 0.68 && angle < 0.85 && Math.hypot(p.vx, p.vy) > 5;
@@ -85,7 +92,8 @@ export function decide(game: Game, chapter: ChapterData): Decision {
   // One that can still be pushed is walked up to, not jumped at.
   const placed = (m: MoverState) => m.stop === m.def.stops.length - 1;
   const inTheWay = movers.some((m) => placed(m) && m.x - m.def.width / 2 - p.x > 0 && m.x - m.def.width / 2 - p.x < 1 && m.y + m.def.height > p.y + 0.3);
-  const wall = inTheWay || heightAt(chapter, p.x + 1.0) - heightAt(chapter, p.x + 0.6) > 0.4;
+  // The far side of a crack at his own height is no wall.
+  const wall = inTheWay || (heightAt(chapter, p.x + 1.0) - heightAt(chapter, p.x + 0.6) > 0.4 && heightAt(chapter, p.x + 1.0) > p.y + 0.3);
   // A gap with a plank across it is no gap. A gap has a far side above its bottom, and not far below him: on
   // a slope that is a little lower than where he stands.
   const bridged = movers.some((m) => Math.abs(m.y + m.def.height - p.y) < 0.3 && m.x - m.def.width / 2 < p.x + 0.4 && m.x + m.def.width / 2 > p.x + 2);
@@ -97,7 +105,9 @@ export function decide(game: Game, chapter: ChapterData): Decision {
   );
   const below = floor(p.x + 0.35);
   const across = floor(p.x + 2.2);
-  const gap = !bridged && below < p.y - 0.3 && across > below + 0.5 && across > p.y - 1;
+  // A crack narrower than he is wide is walked over.
+  const wide = floor(p.x + 0.8) < p.y - 0.3;
+  const gap = !bridged && below < p.y - 0.3 && wide && across > below + 0.5 && across > p.y - 1;
   const leadsOn = (chapter.climbs ?? []).some((c) => Math.abs(c.top - p.y) < 0.3 && c.x > p.x && c.x - p.x < 1);
   // A cone rolling up from behind: jump so that it passes under. On Lugnt it misses him as long as he runs.
   const behind = (from: number, to: number) =>

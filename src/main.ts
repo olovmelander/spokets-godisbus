@@ -336,7 +336,8 @@ function start(): void {
       writeSave();
       const number = chapterNumber(chapter.id);
       const next = params.has('dev') ? nextAfter(chapter.id) : null;
-      hud.end(number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined);
+      const title = sv.end.named[chapter.id] ?? (number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course);
+      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined);
     }
 
     if (!shown) {

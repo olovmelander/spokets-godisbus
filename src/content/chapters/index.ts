@@ -3,16 +3,17 @@ import { berget } from './berget';
 import { garden } from './garden';
 import { granskog } from './granskog';
 import { myren } from './myren';
+import { norrsken } from './norrsken';
 import { testbana } from './testbana';
 
 /**
  * Every course the game can play, by id. The test course is not part of the story: it stays as the place
  * where every move can be tried, and as what the page shows while no chapter is released.
  */
-export const COURSES: Record<string, ChapterData> = { testbana, garden, granskog, myren, berget };
+export const COURSES: Record<string, ChapterData> = { testbana, garden, granskog, myren, berget, norrsken };
 
 /** The chapters of the story, in order. Each end card leads to the next one that is built. */
-export const STORY: ChapterData[] = [garden, granskog, myren, berget];
+export const STORY: ChapterData[] = [garden, granskog, myren, berget, norrsken];
 
 /** The chapter after this one, or null when it is the last one built. */
 export function nextAfter(id: string): ChapterData | null {
@@ -20,9 +21,12 @@ export function nextAfter(id: string): ChapterData | null {
   return at >= 0 ? (STORY[at + 1] ?? null) : null;
 }
 
-/** "Kapitel N": a chapter's number among the story's chapters, or 0 for a course outside the story. */
+/** The chapters that have a number, in order. The final has a name instead. */
+const NUMBERED: ChapterData[] = [garden, granskog, myren, berget];
+
+/** "Kapitel N": a chapter's number, or 0 for the final and for a course outside the story. */
 export function chapterNumber(id: string): number {
-  return STORY.findIndex((chapter) => chapter.id === id) + 1;
+  return NUMBERED.findIndex((chapter) => chapter.id === id) + 1;
 }
 
 /**
