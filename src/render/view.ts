@@ -47,6 +47,8 @@ export interface Frame {
   checkpoint: number;
   /** Where the things on rails are, in the chapter's order. */
   movers: readonly { x: number; y: number }[];
+  /** The drips and their next drops, in the chapter's order. */
+  drips: readonly { x: number; y: number; shadow: number; height: number }[];
 }
 
 export interface View {
@@ -118,7 +120,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const glitter = buildGlitter();
   const lace = buildLace();
   const moverMeshes = buildMovers(chapter);
-  scene.add(...moverMeshes);
+  const rain = buildRain(chapter.drips?.length ?? 0);
+  scene.add(...moverMeshes, rain.group);
   scene.add(buildGround(chapter), buildTrunks(chapter), buildClimbs(chapter), buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
@@ -211,7 +214,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let viewHeight = 5;
   let distance = 10;
   let pixelRatio = 1;
-  const look = cameraIntent({ ...startState(chapter) });
+  const look = cameraIntent({ ...startState(chapter) }, chapter.cameras);
   let stride = 0;
   let turn = 0;
   let squash = 1;
@@ -232,7 +235,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   }
   resize();
 
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips }: Frame): void {
+    rain.update(drips);
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
@@ -244,11 +248,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     lace.update(curr.hook, x - Math.sin(hang) * 0.4, y + 0.5 + Math.cos(hang) * 0.4);
 
     // The simulation says where to look; the view only smooths it.
-    const want = cameraIntent(curr);
+    const want = cameraIntent(curr, chapter.cameras);
+    look.zoom += (want.zoom - look.zoom) * ease(1.6, dt);
     look.x += (want.x - look.x) * ease(3, dt);
     look.y += (want.y - look.y) * ease(2.5, dt);
-    const centreY = look.y + viewHeight * (0.5 - GROUND_FROM_BOTTOM);
-    camera.position.set(look.x, centreY, distance);
+    const centreY = look.y + viewHeight * look.zoom * (0.5 - GROUND_FROM_BOTTOM);
+    camera.position.set(look.x, centreY, distance * look.zoom);
     camera.lookAt(look.x, centreY, 0);
 
     // The stand-in Elof: turned a little towards the camera, legs swinging with the distance he covers.
@@ -266,9 +271,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     wasGrounded = curr.grounded;
     squash += (1 - squash) * ease(12, dt);
     const stretch = curr.grounded ? squash : 1 + clamp(curr.vy * 0.012, -0.05, 0.1);
+    // Knocked over by a drop he goes down on his back, lies a moment, and gets up.
+    const lying = curr.mode === 'down' ? Math.min(1, curr.t / 0.15, (1 - curr.t) / 0.25) * 1.4 * curr.facing : 0;
     // The tilt turns about his middle, where the lace's pull goes through.
     elof.group.position.set(x - Math.sin(hang) * 0.5, y + 0.5 - Math.cos(hang) * 0.5, 0);
-    elof.group.rotation.set(0, turn, -hang, 'ZYX');
+    elof.group.rotation.set(0, turn, lying - hang, 'ZYX');
     elof.group.scale.set(1 / Math.sqrt(stretch), stretch, 1 / Math.sqrt(stretch));
     elof.body.rotation.z = -clamp(curr.vx / RUN_SPEED, -1, 1) * 0.12 * curr.facing;
 
@@ -404,6 +411,52 @@ function buildGround(chapter: ChapterData): Mesh {
   const geometry = new ExtrudeGeometry(shape, { depth: 4.7, bevelEnabled: false });
   geometry.translate(0, 0, -4);
   return new Mesh(geometry, new MeshStandardMaterial({ color: '#7f8f58', roughness: 1 }));
+}
+
+/**
+ * The falling drops and their shadows (plan §4.7, E1): the shadow grows on the ground for a second before
+ * the drop lands, so the way through is read from the ground. Two instanced meshes, whatever their number.
+ */
+function buildRain(count: number) {
+  const group = new Group();
+  const size = Math.max(1, count);
+  const drops = new InstancedMesh(
+    new SphereGeometry(0.2, 14, 10),
+    new MeshStandardMaterial({ color: '#a9d8f5', roughness: 0.08, transparent: true, opacity: 0.85 }),
+    size,
+  );
+  const shadows = new InstancedMesh(
+    new CircleGeometry(0.5, 20),
+    new MeshBasicMaterial({ color: '#10202c', transparent: true, opacity: 0.4, depthWrite: false }),
+    size,
+  );
+  for (const mesh of [drops, shadows]) {
+    mesh.count = count;
+    mesh.instanceMatrix.setUsage(DynamicDrawUsage);
+    mesh.frustumCulled = false;
+  }
+  shadows.renderOrder = 1;
+  group.add(shadows, drops);
+  const place = new Object3D();
+
+  function update(drips: readonly { x: number; y: number; shadow: number; height: number }[]): void {
+    for (const [i, drip] of drips.entries()) {
+      // The shadow lies on the ground, and the drop is a little taller than wide on its way down.
+      place.position.set(drip.x, drip.y + 0.015, 0);
+      place.rotation.set(-Math.PI / 2, 0, 0);
+      place.scale.setScalar(drip.shadow);
+      place.updateMatrix();
+      shadows.setMatrixAt(i, place.matrix);
+      place.position.set(drip.x, drip.y + Math.max(0, drip.height) + 0.2, 0);
+      place.rotation.set(0, 0, 0);
+      place.scale.set(drip.height >= 0 ? 1 : 0, drip.height >= 0 ? 1.35 : 0, drip.height >= 0 ? 1 : 0);
+      place.updateMatrix();
+      drops.setMatrixAt(i, place.matrix);
+    }
+    drops.instanceMatrix.needsUpdate = true;
+    shadows.instanceMatrix.needsUpdate = true;
+  }
+  return { group, update };
 }
 
 /**

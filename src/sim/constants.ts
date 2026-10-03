@@ -91,6 +91,16 @@ export const PUSH_REACH = 0.5;
 /** A thing that is not yet where it belongs goes home when Elof is this far from it (plan §4.5). */
 export const MOVER_RESET = 10;
 
+/** A falling drop's shadow shows on the ground this long before it lands: nothing hits him unannounced. */
+export const DROP_WARNING = 1;
+/** The drop itself is in the air for this long, and falls from this high. */
+export const DROP_FALL = 0.55;
+export const DROP_FROM = 5;
+/** A drop knocks him over when he is this close to where it lands. */
+export const DROP_RADIUS = 0.5;
+/** Knocked over, he is back on his feet after this long: a miss costs about a second (plan §4.5). */
+export const DOWN_TIME = 0.9;
+
 /** A fall longer than this ends in the glitter bubble; a shorter one is a soft landing (plan §4.2). */
 export const FALL_LIMIT = 4;
 /** The bubble floats him back in about this long. */

@@ -24,9 +24,9 @@ export interface Hook {
 
 /**
  * What Elof is doing: on his own feet, or carried by the glitter bubble, up a ledge, on a hose, down a hose,
- * on the lace, or through the air to a swing's landing.
+ * on the lace, through the air to a landing, or knocked over for a moment.
  */
-export type Mode = 'free' | 'bubble' | 'ledge' | 'climb' | 'slide' | 'swing' | 'fly';
+export type Mode = 'free' | 'bubble' | 'ledge' | 'climb' | 'slide' | 'swing' | 'fly' | 'down';
 
 /** What the Använd button would do right now. Each has its word in `sv.verbs`. */
 export type Verb = 'slide' | 'lace' | 'push' | 'pull';
@@ -48,6 +48,31 @@ export interface Mover {
   ring?: Vec;
 }
 
+/** A stretch of the course where the camera frames differently (plan §6.4). */
+export interface CameraZone {
+  from: number;
+  to: number;
+  /** How wide the picture is there: 1 is the usual, 1.3 shows about a third more. */
+  zoom?: number;
+  /** How far the picture is lifted, in EL. */
+  lift?: number;
+  /** How far ahead of Elof it looks, where the usual 2.5 EL is wrong. */
+  lead?: number;
+}
+
+/**
+ * A place where drops fall, one after another (plan §4.7, E1). Each drop's shadow grows on the ground before
+ * it lands, so the way through is read from the ground.
+ */
+export interface Drip {
+  /** Where the drops land. */
+  at: Vec;
+  /** The time between two drops, in seconds. */
+  every: number;
+  /** When a drop lands, counted from the chapter's start: it sets this drip's place in the rhythm. */
+  first: number;
+}
+
 /** A jump the course asks for: the edge it is made from, the way it goes, and where it lands. */
 export interface Jump {
   at: Vec;
@@ -65,6 +90,8 @@ export interface SimOptions {
   easyJumps?: boolean;
   /** *Lugnt*: he stops at every drop too long to land, at a run too, instead of falling. */
   stopAtEdges?: boolean;
+  /** *Lugnt*: in the exciting sequences nothing needs timing. Falling drops miss him while he moves. */
+  gentle?: boolean;
 }
 
 /** Where a simulation starts when a saved game is taken up again. */
@@ -100,6 +127,10 @@ export interface ChapterData {
   jumps?: Jump[];
   /** The things on rails that he pushes and pulls. */
   movers?: Mover[];
+  /** The places where drops fall. */
+  drips?: Drip[];
+  /** Where the camera frames differently. */
+  cameras?: CameraZone[];
 }
 
 /** One simulation step's input. hop and act are presses; the rest is held state. */

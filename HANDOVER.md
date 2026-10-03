@@ -225,8 +225,25 @@
       with all 54 candies; on *Lugnt* it still presses Hoppa only on the lace.
     - **Not yet for puzzles:** the three hints and the helper (plan §4.6), a thing he rides or that tips
       (the seesaw), and the lace tied between two rings as a bridge.
-  - **Not yet, the rest of Stage 1** (plan §7.3): the camera's zones and one exciting sequence; then H2.
-    Elof's poses for climbing, hauling and looking down are not drawn yet either.
+  - **Part 7: an exciting sequence, and the camera's zones.** What you see: the course ends with a stretch
+    where drops fall in six places, each to its own time. A shadow grows on the ground for a second before a
+    drop lands. A drop that lands on Elof knocks him on his back for about a second; then he is up, with
+    everything he had. A big candy stands before the stretch and one in the middle of it. The picture is
+    wider here, at the climb and at the swing.
+    - **Drops** (`ChapterData.drips`, plan §4.7 E1) keep time by the simulation's steps, so the rhythm is the
+      same on every device. On *Lugnt* a drop misses him while he moves (`SimOptions.gentle`).
+    - **Camera zones** (`ChapterData.cameras`): a stretch can widen the picture, lift it, or change how far
+      ahead it looks. `cameraIntent` now also says how wide the picture should be.
+    - Tests: `tests/sim/drops.test.ts` (10). The robot reads the shadows, waits where a drop would land on it
+      and runs through when the way is clear: no drop lands on it at 30, 60, 120 or 144 Hz. A player who runs
+      straight through is knocked over now and then and still arrives with every candy.
+    - **Not yet:** the bubble going back to the last big candy inside an exciting sequence (the cones of
+      E2 need it; a drop only knocks him over), and the splash.
+  - **Stage 1's list is built** (plan §7.3): the controller, the glitter bubble, the lace and the swing in
+    both modes, the candy trail, the camera, one puzzle, one exciting sequence, both play styles and the
+    robot. **What is left of Stage 1 is H2:** Olov's own twenty minutes on touch, in greybox. See "Next".
+  - **Not drawn yet:** Elof's poses for climbing, hauling, pushing and looking down; the lace's sag; any
+    sound. The numbers in `src/sim/constants.ts` are starting values, to be tuned from H2.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
@@ -252,8 +269,12 @@
      Wi-Fi: `npm run dev:lan`.
 3. **Correct the size gate:** Pages gzips `.wasm` and `.glb` too (see "State"), so `scripts/size-gate.mjs` and
    the plan's §6.6 should count them as served. A small PR of its own.
-4. **The rest of Stage 1** (plan §7.3), one visible outcome per PR, in this order: a greybox exciting
-   sequence; the camera's zones. Then **H2**, Olov's own test on touch.
+4. **H2, Olov's checkpoint for Stage 1** (plan §7.3): play the test course for twenty minutes on a phone or a
+   tablet, once as yourself and once badly on purpose (one thumb, late jumps, everything in the wrong order).
+   The questions: is moving, jumping and swinging fun for two minutes with no goal? Is *Äventyr*'s swing
+   timing right? Is *Lugnt* gentle enough? What you say tunes `src/sim/constants.ts`.
+   - On the site: `https://olovmelander.github.io/spokets-godisbus/`. The pause button, top right, has the
+     two styles.
 5. **The rest of Stage 0b** (look-dev), on Olov's computer, with him watching the picture:
    - `docs/art-bible.md`: the scale chart, a palette and a grade per place, the layer recipe, the H1a board with
      its five criteria, and the fallback look (plan §5.6, point 1);
@@ -304,7 +325,7 @@
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
-| 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails. Started before 0b and 0c are finished, on Olov's word. |
+| 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs

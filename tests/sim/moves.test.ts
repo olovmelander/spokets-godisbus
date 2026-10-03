@@ -280,3 +280,21 @@ describe('a hose below him', () => {
     expect(sim.curr.x).toBeGreaterThan(2);
   });
 });
+
+describe('a camera zone', () => {
+  const flat = course([{ x: -5, y: 0 }, { x: 40, y: 0 }]);
+
+  it('widens and lifts the picture while he is in it, and nowhere else', () => {
+    const zones = [{ from: 4, to: 9, zoom: 1.3, lift: 0.5, lead: 1 }];
+    const sim = new Sim(flat);
+    run(sim, 0.3);
+    expect(cameraIntent(sim.curr, zones)).toEqual({ x: sim.curr.x + 2.5, y: sim.curr.groundY, zoom: 1 });
+    until(sim, 4, { x: 1 }, () => sim.curr.x > 5);
+    const inside = cameraIntent(sim.curr, zones);
+    expect(inside.zoom).toBe(1.3);
+    expect(inside.y).toBeCloseTo(0.5, 5);
+    expect(inside.x).toBeCloseTo(sim.curr.x + 1, 5);
+    until(sim, 4, { x: 1 }, () => sim.curr.x > 10);
+    expect(cameraIntent(sim.curr, zones).zoom).toBe(1);
+  });
+});
