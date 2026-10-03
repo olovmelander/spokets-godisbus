@@ -122,6 +122,13 @@ export const TOUCH_REACH = 0.7;
 /** A rolling cone bowls him over when it comes this close to his legs. A jump clears it. */
 export const ROLLER_REACH = 0.3;
 
+/** A soft tussock sinks this far, in this many seconds, while he stands on it; left alone it rises again. */
+export const SINK_DEPTH = 0.45;
+export const SINK_TIME = 1.8;
+export const RISE_TIME = 0.8;
+/** The glitter bubble catches him when his boots come this close to water: before he touches it. */
+export const WATER_REACH = 0.1;
+
 /** A fall longer than this ends in the glitter bubble; a shorter one is a soft landing (plan §4.2). */
 export const FALL_LIMIT = 4;
 /** The bubble floats him back in about this long. */

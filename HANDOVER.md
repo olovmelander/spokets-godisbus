@@ -339,6 +339,38 @@
       picture bubbles (the small figure, the mountain); Pappa's and Bertil's hands. The cap is drawn as
       Kapitel 1's paper plane, and the seesaw is not drawn at all. The robot needs 68 seconds; the plan asks
       for 15 to 20 minutes for Elof.
+  - **Kapitel 3, Myren, in greybox** (branch `stage-2-myren`; plan §3.4). **Open it with
+    `?dev&course=myren`**, or play on from Kapitel 2's end card with `?dev`.
+    - What you play, from the left: the bog's edge and **the tussocks**, with open water between them;
+      further out **the pale tussocks that sink** while he stands on them, in two runs with a firm island
+      and a big candy between; *Ropa på Mamma* at the wide pool, and the dead pine rises across it as a
+      bridge; *Ropa på Mamma* at the boardwalk, and he climbs her braid; on top she says "På myren går vi på
+      spången."; the ramp down to **the lollipop** (*Ta lysklubban*): the mist rolls in, he holds the light
+      up, and the trail shows again; a **crane chick** on a tussock, which follows his light to where rings
+      rise from its family; the ghost, which lets him come close; and the crane (*Kliv upp*), which carries
+      him up onto the hill.
+    - It is 197 EL long, with 97 candies and ten big candies. Ground, candy and rules only.
+    - **Water** (`ChapterData.water`) is now known to the simulation: the glitter bubble catches him just
+      above the surface, so he never touches it. Walking, he stops at its edge.
+    - **Soft tussocks** (`ChapterData.tussocks`, plan §4.7 E3): one sinks 0.45 EL in 1.8 s while he stands
+      on it and rises again in 0.8 s when he has left. Sunk, the bubble takes him to the last firm ground:
+      a soft tussock is never where he is put back. A runner hardly sinks one. On *Lugnt* they sink only
+      while he stands still.
+    - **New for it:** a thing a helper's hands move (`Mover.on`: it goes to its place when its flag is set,
+      and Använd never moves it); the mist and the light he carries (`ChapterData.mist`); someone small
+      who follows him (`ChapterData.follower`, the picture only: the flags come from things he touches).
+    - **Gate 6 was not holding in a long chapter, and now does:** a shader was compiled the first time the
+      camera reached a material it had not shown yet (the water, 150 EL in). The first frames now draw the
+      whole chapter, in view or not, and again when a model arrives (`render` in `src/render/view.ts`).
+    - Tests: `tests/sim/bog.test.ts` (11) and `tests/robot/myren.test.ts` (13). The robot plays the chapter
+      at 30, 60 and 144 Hz with no bubble and no tussock sinking under it, and takes every candy; on *Lugnt*
+      it never presses Hoppa; a player who stops on every soft tussock is carried back seven times and still
+      arrives with the candy.
+    - **Not built yet in Kapitel 3:** the tussocks' dip under his feet (P11's feel); cranberries; Mamma's
+      mug and her lamp behind him; the lyktgubbar and their game (C3); the rings as something to follow
+      (the chick's way home is straight ahead here); memory 3; the ghost's picture bubble; the cranes'
+      dance; the jay. The lollipop is drawn only once he holds it, and the crane as Kapitel 1's paper
+      plane. The robot needs a minute; the plan asks for 12 to 15 for Elof.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
@@ -421,7 +453,7 @@
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2 in greybox. Only what needs no art, until the look and the characters are decided. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2 and Kapitel 3 in greybox. Only what needs no art, until the look and the characters are decided. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs

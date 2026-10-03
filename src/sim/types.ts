@@ -48,6 +48,8 @@ export interface Mover {
   verb: 'push' | 'pull';
   /** A flag that has to be set before it can be moved. */
   needs?: string;
+  /** It goes to its last stop by itself when this flag is set, and Använd never moves it: a helper's hands lift it. */
+  on?: string;
   /** For Dra: where the ring sits, from the middle of its bottom. */
   ring?: Vec;
 }
@@ -106,6 +108,18 @@ export interface Ride {
   time: number;
   /** How far the stick moves him from the middle of its path. Left out: 1.6 EL. A boat hardly at all. */
   corridor?: number;
+}
+
+/**
+ * A soft tussock (plan §4.7, E3): it carries him, and sinks slowly while he stands on it. When it has sunk,
+ * the glitter bubble lifts him off and floats him back to the last firm ground. Left alone it rises again.
+ */
+export interface Tussock {
+  /** Its middle. */
+  x: number;
+  /** Its top, at rest. */
+  y: number;
+  width: number;
 }
 
 /**
@@ -231,8 +245,20 @@ export interface ChapterData {
   ghost?: GhostPerch[];
   /** Where cones roll. */
   rollers?: Roller[];
-  /** Water, for the picture only: to the simulation a pool is a pit, and what crosses it is a ride or a thing on a rail. */
+  /**
+   * Water: its surface, between two places. He never touches it: the glitter bubble catches him just above
+   * it (plan §3.4, Myren). What crosses it is ground, a tussock, a ride or a thing on a rail.
+   */
   water?: { from: number; to: number; y: number }[];
+  /** The soft tussocks. */
+  tussocks?: Tussock[];
+  /** For the picture: the mist rolls in when this flag is set, and he carries a light. */
+  mist?: { after: string };
+  /**
+   * For the picture: someone small who waits at `at`, follows him once `after` is set, and stays at `home`
+   * once `until` is set. The flags come from things he touches.
+   */
+  follower?: { at: Vec; after: string; until: string; home: Vec };
   /** What is said along the way. */
   beats?: Beat[];
   /** The rides. */

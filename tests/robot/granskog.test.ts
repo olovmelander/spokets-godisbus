@@ -60,9 +60,8 @@ describe('Kapitel 2, Granskogen, in greybox', () => {
     for (const spot of granskog.spots ?? []) expect(verbs[spot.word ?? spot.verb], `the word for ${spot.id}`).toBeDefined();
   });
 
-  it('follows Kapitel 1, and is the last chapter built', () => {
+  it('follows Kapitel 1', () => {
     expect(nextAfter('garden')?.id).toBe('granskog');
-    expect(nextAfter('granskog')).toBeNull();
     expect(nextAfter('testbana')).toBeNull();
   });
 });
