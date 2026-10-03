@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+.DS_Store
+Thumbs.db
+.vite/
+.claude/
+
+# Private references and raw scans never enter the repository (plan §2.6)
+/art/private/
+/references/
+
+# Local iteration renders; only approved contact sheets are committed
+/docs/shots/_work/
