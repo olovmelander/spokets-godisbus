@@ -87,7 +87,8 @@ describe('the cranberries', () => {
       time: 0, mode: 'free', grounded: false, x: 0, y: 1, vx: 0, vy: -3, candy: 0, checkpoint: -1, bubbles: 0, atGoal: false,
       moving: 0, shadows: [], drips: [], bounces: 0,
     };
-    expect(cuesFor(still, { ...still, vy: 9, bounces: 1 }, newCueMemory())).toEqual([{ kind: 'bounce' }]);
+    // A boing, and at the first bounce of a row he laughs.
+    expect(cuesFor(still, { ...still, vy: 9, bounces: 1 }, newCueMemory())).toEqual([{ kind: 'bounce' }, { kind: 'giggle' }]);
   });
 
   it('in Myren there are two, on firm level ground, a running bounce apart, and never a way past anything', () => {

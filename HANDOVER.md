@@ -625,7 +625,9 @@
     - The voices are a table of pitches (`VOICES` in `src/audio/cues.ts`), played as plain tones. Nothing
       is recorded and nothing is speech, real or synthetic: the rule in plan §0 Q9 stands.
     - Tested without ears (`tests/unit/cues.test.ts`). **No one has listened to it.**
-    - **Not yet:** Elof's gasp and giggle, and his two-note call.
+    - **Elof's own sounds** came after (branch `stage-2-elof-sounds`): a gasp as the glitter bubble takes
+      him, and a giggle at a big candy and at the first bounce on a cranberry. In his voice from the table
+      above, without a word. **Not yet:** his two-note call.
   - **Chapter codes** (branch `stage-2-codes`; plan §6.9, and a MUST in §7.4). What you see: the card at a
     chapter's end shows three words under *Nästa kapitel*, "Kod till nästa kapitel: GRAN KOTTE MOSSA". On
     the title, *Jag har en kod* opens a field; the right three words open that chapter's start, on any
