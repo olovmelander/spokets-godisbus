@@ -103,7 +103,8 @@ function picture(soft: number, draw: (c: Pen) => void): CanvasTexture {
 
 /** Paints a thing three times, a picture's width apart, so that the picture joins itself where it repeats. */
 function around(x: number, paint: (x: number) => void): void {
-  for (const shift of [-W, 0, W]) paint(x + shift);
+  // A copy that lies wholly outside the picture and its margin is not painted: nothing is wider than this.
+  for (const shift of [-W, 0, W]) if (x + shift > -MARGIN - 130 && x + shift < W + MARGIN + 130) paint(x + shift);
 }
 
 /** A number from 0 to 1 for a column of the picture, the same a picture's width on. */
@@ -177,7 +178,7 @@ function pine(c: Pen, x: number, foot: number, tall: number, colour: Ink, crown:
     c.fillStyle = ink(colour);
     c.fillRect(at - tall * 0.03, foot - tall * 0.9, tall * 0.06, tall * 0.9);
     c.fillStyle = ink(crown);
-    for (const [dx, dy, rx, ry] of [[0, 0.93, 0.13, 0.08], [-0.1, 0.85, 0.12, 0.07], [0.1, 0.86, 0.12, 0.07], [-0.03, 0.77, 0.1, 0.06], [0.08, 0.75, 0.09, 0.05]] as const) {
+    for (const [dx, dy, rx, ry] of [[0.01, 0.93, 0.19, 0.055], [-0.13, 0.86, 0.13, 0.045], [0.14, 0.85, 0.12, 0.045], [-0.02, 0.8, 0.11, 0.04], [0.1, 0.74, 0.08, 0.035]] as const) {
       c.beginPath();
       c.ellipse(at + dx * tall, foot - dy * tall, rx * tall, ry * tall, 0, 0, Math.PI * 2);
       c.fill();
