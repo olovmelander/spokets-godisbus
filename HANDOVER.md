@@ -75,6 +75,12 @@
       rendering, which is too slow at Mid to be tried, so it does not see the change.
     - **Not measured:** an iPad or a phone. Auto never goes *down* to Low: a device too slow for Mid needs
       `?tier=low` until that is built.
+  - **High glows** (4 October, branch `stage-0b-glow`; plan §6.5). What you see, on High only: light spills
+    a little round what is brightest: a lit shop window, the sun on something pale, the shafts in the
+    forest. It is part of the one grading pass (sixteen more samples of the same picture, no buffer of its
+    own), switched by a number, so Auto going from Mid to High compiles nothing. Two numbers in
+    `src/render/grade.ts` set it: `GLOW_FROM` and `GLOW_ON_HIGH`. Kept gentle on purpose; a test holds it
+    there. **Not yet:** the depth blur, and a wider glow from smaller copies of the picture.
   - **The look of a place, and the first golden frame** (3 October, branch `stage-0b-look`; art bible §2).
     Olov asked twice when the graphics come, so the look-dev was taken up as soon as the story played through
     in greybox.
