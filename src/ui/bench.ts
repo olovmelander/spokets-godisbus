@@ -68,7 +68,7 @@ export function createBench(seconds: number, chapter: ChapterData): Bench {
         'Elof bench, the test course',
         navigator.userAgent,
         `screen ${window.innerWidth}×${window.innerHeight} CSS px · device pixel ratio ${window.devicePixelRatio}`,
-        `canvas ${info.width}×${info.height} · pixel ratio ${info.pixelRatio.toFixed(2)}`,
+        `tier ${info.tier} · canvas ${info.width}×${info.height} · pixel ratio ${info.pixelRatio.toFixed(2)}`,
         `${intervals.length} frames in ${seconds} s · ${p50 > 0 ? Math.round(1000 / p50) : 0} fps`,
         `frame p50 ${p50.toFixed(1)} ms · p95 ${p95.toFixed(1)} ms`,
         `busy p50 ${percentile(busy, 0.5).toFixed(1)} ms · p95 ${busy95.toFixed(1)} ms`,

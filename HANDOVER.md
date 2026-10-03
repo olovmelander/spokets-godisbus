@@ -54,6 +54,15 @@
     - The size gate now reads 256 KB of gzipped JS (of 450), and 791 KB for the boot pack (of 3 MB), of which
       the KTX2 transcoder is 515 KB.
 - **Stage 0a is built.** What is left of it is Olov's checkpoint: the game on his devices. See "Next".
+- **Stage 0b has begun** (3 October, branch `stage-0b-tiers`, stacked on `stage-0a-assets`): quality tiers and the
+  graded picture.
+  - `src/render/quality.ts`: Low, Mid and High with the plan's pixel caps (§6.5). `?tier=low`, `mid` or `high`
+    chooses one; without it the game starts in Mid, and a device that can't render to float buffers gets Low.
+  - `src/render/grade.ts`: on Mid and High the scene goes to r186's HDR buffer, and one pass applies the place's
+    grade, a vignette and film grain. The renderer tone-maps after it. Low draws straight to the canvas.
+  - The browser test covers all three tiers, and checks that no shader is compiled during play (gate 6).
+  - **Not yet:** Auto's two-second measurement, High's bloom and depth blur, Low's grade inside the materials,
+    the LUT per place, `docs/art-bible.md`, and the two golden frames. They are the rest of Stage 0b.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): HTML and JS are gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). Whether it compresses `.wasm` and `.glb` can be read once
   this branch is deployed; the size gate counts them at full size until then.
@@ -81,11 +90,18 @@
      Wi-Fi: `npm run dev:lan`.
 3. **After that merge,** the next session reads the live site's headers for the `.wasm` and the `.glb`, to see
    whether Pages compresses them, and corrects `scripts/size-gate.mjs` and the plan's §6.6 if it does.
-4. **Stage 0b** (look-dev) and **Stage 0c** (characters) need Olov's computer and step 1: the golden frames, then
-   Elof and the ghost in Blender (plan §5.6).
-5. **Before Stage 0c:** the private repository `spokets-godisbus-familj`, a read-only token, and the secrets
+4. **The rest of Stage 0b** (look-dev), on Olov's computer, with him watching the picture:
+   - `docs/art-bible.md`: the scale chart, a palette and a grade per place, the layer recipe, the H1a board with
+     its five criteria, and the fallback look (plan §5.6, point 1);
+   - the two golden frames, in `dev/look.html`: the deck edge and the moss under the spruces, each with the
+     stand-in Elof, a red hook ring and candy, built in layers (plan §5.3) with CC0 materials from Poly Haven;
+   - what the tiers still lack (see "State"), and `?bench` on the golden frames;
+   - then **H1a**, Olov's checkpoint.
+5. **Stage 0c** (characters): Elof and the ghost in Blender, with every picture listed for them in plan §2 open
+   as a reference (plan §5.6).
+6. **Before Stage 0c:** the private repository `spokets-godisbus-familj`, a read-only token, and the secrets
    `FAMILY_ASSETS_TOKEN` and `PRIVACY_DENYLIST` (plan §6.11).
-6. **Whenever Olov can:** his own photos of Storklocken's top, the rapids in the village and Näsbacken. No openly
+7. **Whenever Olov can:** his own photos of Storklocken's top, the rapids in the village and Näsbacken. No openly
    licensed photo of them was found, so until then those places are built from descriptions (plan §0 Q8).
 
 ## Decisions in effect
@@ -112,6 +128,7 @@
 | Jump physics | Gravity follows from the plan's numbers: a held jump tops out at 1.1 EL and carries 2.2 EL at a run, so gravity is 22.3 EL/s². Letting go of Hoppa on the way up makes Elof 1.8 times heavier, which makes a tap top out at 0.6 EL. | Session, 3 Oct (`src/sim/constants.ts`) |
 | Hoppa's release | Not queued. Hoppa's held state is read once per frame, and that is enough for a tap inside one frame to be a hop (`src/app/game.ts`). The plan's §4.1 expected releases in the queue. | Session, 3 Oct |
 | planck's scale | `lengthUnitsPerMeter` is 0.2, as the plan says. planck doesn't scale its polygon skin with it, so a body rests 0.019 EL above the ground; the simulation takes that off Elof's reported height. | Session, 3 Oct (`src/sim/sim.ts`) |
+| Tone mapping | Neutral, not AgX. The plan allows either (§6.5). With AgX the sky and every flat colour turned grey once the picture went through the HDR buffer; Neutral keeps a colour as it was set. Olov judges the look at H1a. | Session, 3 Oct (`src/render/view.ts`) |
 | Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
 
 ## Planned against actual
@@ -120,6 +137,7 @@
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
 
 ## Known bugs
 

@@ -1,21 +1,22 @@
 import {
-  AgXToneMapping, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight,
-  ExtrudeGeometry, Fog, Group, HemisphereLight, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial,
-  PerspectiveCamera, Scene, Shape, SphereGeometry, WebGLRenderer,
+  BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight,
+  ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, Mesh, MeshBasicMaterial, MeshLambertMaterial,
+  MeshStandardMaterial, NeutralToneMapping, PerspectiveCamera, Scene, Shape, SphereGeometry, UnsignedByteType, WebGLRenderer,
 } from 'three';
 import { createAssets } from './assets';
+import { GARDEN_MORNING, createGradePass } from './grade';
+import { chooseTier, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
 import { RUN_SPEED } from '../sim/constants';
 import type { ChapterData, PlayerState } from '../sim/types';
 
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
-/** The Mid tier's pixel cap, until Stage 0b brings the tiers (plan §6.5). */
-const PIXEL_CAP = 1.6e6;
 /** The ground sits about 35% up from the bottom, so thumbs never cover Elof (plan §5.2). */
 const GROUND_FROM_BOTTOM = 0.35;
 
 export interface ViewInfo {
+  tier: Tier;
   drawCalls: number;
   triangles: number;
   programs: number;
@@ -42,11 +43,35 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 /** How much of the way to go this frame, for a smoothing that doesn't depend on the frame rate. */
 const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
 
-/** Stage 0a's greybox scene: the test course, a stand-in Elof in his colours, and the big candy. */
-export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): View {
-  // Throws when WebGL 2 is missing; main.ts then shows the message (plan §6.5).
-  const renderer = new WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', alpha: false });
-  renderer.toneMapping = AgXToneMapping;
+/**
+ * Stage 0a's greybox scene: the test course, a stand-in Elof in his colours, and the big candy.
+ * `asked` is the tier from ?tier=, or null for Auto.
+ */
+export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null): View {
+  // The context is made here, so that the tier can be chosen before the renderer exists: Mid and High need
+  // float colour buffers, and a device without them gets Low (plan §6.5).
+  const gl = canvas.getContext('webgl2', {
+    alpha: false, antialias: false, depth: true, stencil: false, powerPreference: 'high-performance',
+  });
+  // main.ts catches this and shows the message.
+  if (!gl) throw new Error('WebGL 2 is not available');
+  const tier = chooseTier(asked, gl.getExtension('EXT_color_buffer_float') !== null);
+
+  const renderer = new WebGLRenderer({
+    canvas,
+    context: gl,
+    antialias: false,
+    powerPreference: 'high-performance',
+    alpha: false,
+    outputBufferType: tier === 'low' ? UnsignedByteType : HalfFloatType,
+  });
+  // Neutral keeps the colours that were set: a red house stays red (plan §6.5 names AgX or Neutral).
+  renderer.toneMapping = NeutralToneMapping;
+  // One frame is several render calls on Mid and High (the scene, the grade, the output), so the counters
+  // are reset once per frame here, not by each call.
+  renderer.info.autoReset = false;
+  // Mid and High: the scene goes to the HDR buffer, one pass grades it, and the renderer tone-maps the result.
+  if (tier !== 'low') renderer.setEffects([createGradePass(GARDEN_MORNING)]);
   // Let the browser restore a lost context instead of leaving a dead canvas.
   canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
 
@@ -107,7 +132,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): Vie
   function resize(): void {
     const width = canvas.clientWidth || window.innerWidth;
     const height = canvas.clientHeight || window.innerHeight;
-    pixelRatio = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(PIXEL_CAP / (width * height)));
+    pixelRatio = pixelRatioFor(tier, width, height, window.devicePixelRatio);
     renderer.setPixelRatio(pixelRatio);
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
@@ -153,6 +178,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): Vie
     shadow.scale.setScalar(clamp(1 - height * 0.25, 0.35, 1));
 
     candy.rotateY(dt * (atGoal ? 7 : 1.2));
+    renderer.info.reset();
     renderer.render(scene, camera);
   }
 
@@ -160,6 +186,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): Vie
     resize,
     render,
     info: () => ({
+      tier,
       drawCalls: renderer.info.render.calls,
       triangles: renderer.info.render.triangles,
       programs: renderer.info.programs?.length ?? 0,

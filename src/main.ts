@@ -3,6 +3,7 @@ import { Game } from './app/game';
 import { testbana } from './content/chapters/testbana';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
+import { tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
 import { createBench } from './ui/bench';
 import { createDebug, type Debug } from './ui/debug';
@@ -38,7 +39,7 @@ function start(): void {
   const canvas = byId<HTMLCanvasElement>('game');
   let view: View;
   try {
-    view = createView(canvas, testbana);
+    view = createView(canvas, testbana, tierFromQuery(params.get('tier')));
   } catch (error) {
     console.error(error);
     showMessage(sv.noWebGL);
@@ -127,7 +128,7 @@ function start(): void {
         return [
           `steps/frame ${game.lastSteps} · device ${device}`,
           `draw calls ${i.drawCalls} · triangles ${i.triangles} · programs ${i.programs}`,
-          `canvas ${i.width}×${i.height} · pixel ratio ${i.pixelRatio.toFixed(2)}`,
+          `tier ${i.tier} · canvas ${i.width}×${i.height} · pixel ratio ${i.pixelRatio.toFixed(2)}`,
           `models ${i.models.join(', ') || 'none yet'} · KTX2 textures ${i.compressedTextures}`,
           `x ${n(p.x)} y ${n(p.y)} · vx ${n(p.vx)} vy ${n(p.vy)} · ${p.grounded ? 'on the ground' : 'in the air'}`,
         ];

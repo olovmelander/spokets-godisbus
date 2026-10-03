@@ -11,6 +11,7 @@ through the yard, the spruce forest, past the brook and over the misty bog, up t
   - `npm test` runs the simulation tests and the robot; `npm run build && npm run test:browser` plays it in a
     browser.
   - `?bench` measures for half a minute; `dev/menus.html` shows the controls and messages without the game.
+  - `?tier=low`, `mid` or `high` chooses the quality tier.
 - **The plan:** [`docs/game-plan.md`](docs/game-plan.md), covering:
   - the design, and the art direction after *Unravel*;
   - the technology: Three.js r186 (`WebGLRenderer`), Vite, Blender and GitHub Pages;
