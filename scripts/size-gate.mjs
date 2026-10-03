@@ -8,9 +8,10 @@ import { gzipSync } from 'node:zlib';
 const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
 const JS_GZIP_MAX = 450 * 1024;
 const BOOT_MAX = 3 * 1024 * 1024;
-// GitHub Pages compresses text in transit. Stage 0a records whether it also compresses .wasm, .glb and .ktx2;
-// until that is known they are counted at full size.
-const COMPRESSED = new Set(['.html', '.js', '.css', '.json', '.svg', '.txt', '.webmanifest', '.xml']);
+// GitHub Pages gzips in transit, and not only text: read from the live site on 3 October 2026, .wasm and .glb
+// come gzipped too (the transcoder as 245 KB of its 527 KB). A .ktx2 on its own has not been measured, and is
+// already compressed, so it is counted at full size, as are pictures and sound.
+const COMPRESSED = new Set(['.html', '.js', '.css', '.json', '.svg', '.txt', '.webmanifest', '.xml', '.wasm', '.glb']);
 
 function* files(dir) {
   for (const name of readdirSync(dir)) {
