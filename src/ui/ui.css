@@ -383,6 +383,86 @@ body {
   background: #e6d6b4;
 }
 
+/* --- a bubble: what someone says. The game has no voices (plan §3.7). ----------------------------- */
+.bubble {
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 16px);
+  transform: translateX(-50%);
+  max-width: min(64%, 560px);
+  display: grid;
+  gap: 2px;
+  padding: 10px 20px 12px;
+  border-radius: 22px;
+  background: #fffaf0;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+  font-size: calc(21px * var(--k));
+  line-height: 1.25;
+  text-align: center;
+  pointer-events: none;
+}
+
+.bubble[hidden] {
+  display: none;
+}
+
+.bubble b {
+  font-size: 0.62em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+/* The card at a chapter's end: the candy in rows of ten, with the number beside it (plan §4.3). */
+.panel.end {
+  justify-items: center;
+  text-align: center;
+}
+
+.panel.end h2 {
+  margin: 4px 0 0;
+  font-size: 30px;
+}
+
+.rows {
+  display: grid;
+  gap: 5px;
+  max-height: 34vh;
+  overflow: auto;
+}
+
+.rows .row {
+  display: flex;
+  gap: 5px;
+}
+
+.rows i {
+  width: 16px;
+  height: 11px;
+  border-radius: 6px;
+  background: #e8483f;
+}
+
+.rows i:nth-child(3n + 1) {
+  background: #f6c445;
+}
+
+.rows i:nth-child(3n + 2) {
+  background: #4a90d9;
+}
+
+.panel.end p {
+  margin: 0;
+}
+
+.panel.end .count b {
+  font-size: 30px;
+}
+
+.panel.end .next {
+  opacity: 0.75;
+}
+
 /* A line of news at the top, gone after a few seconds. */
 .notice {
   position: absolute;

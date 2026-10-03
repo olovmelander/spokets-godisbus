@@ -187,6 +187,17 @@ for (const tier of ['low', 'high']) {
   await finish();
 }
 
+// --- the chapter in work: ?dev ------------------------------------------------------------------------
+{
+  console.log('?dev, 1180×820');
+  const { page, state, info, finish } = await open('dev-1180x820', { viewport: { width: 1180, height: 820 } }, '?dev&debug');
+  const drawn = await info();
+  const first = await until(state, (s) => s.said.length >= 1);
+  check('?dev plays Kapitel 1 in greybox', first.course === 'garden' && drawn.drawCalls > 0, first.course);
+  check('a bubble says the first line', (await page.locator('#bubble').isVisible()) && first.said[0] === 'follow1', await page.locator('#bubbleLine').textContent());
+  await finish();
+}
+
 // --- a phone held sideways: touch -------------------------------------------------------------------
 {
   console.log('touch, 844×390');

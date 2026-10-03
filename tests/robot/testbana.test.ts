@@ -2,89 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
 import { testbana } from '../../src/content/chapters/testbana';
 import { settingsFor, simOptions } from '../../src/save/settings';
-import { DROP_RADIUS, DROP_WARNING } from '../../src/sim/constants';
-import type { DripState, MoverState } from '../../src/sim/sim';
-import type { ChapterData, PlayerState, SimOptions } from '../../src/sim/types';
+import { decide, playThrough as play } from './robot';
 
-/** The ground's height at x, read from the chapter data. */
-function heightAt(chapter: ChapterData, x: number): number {
-  const g = chapter.ground;
-  for (let i = 0; i < g.length - 1; i++) {
-    const a = g[i]!;
-    const b = g[i + 1]!;
-    if (a.x !== b.x && x >= a.x && x < b.x) return a.y + ((b.y - a.y) * (x - a.x)) / (b.x - a.x);
-  }
-  return Infinity;
-}
-
-/**
- * The robot plays through the real loop and press queue with a fake clock (plan §6.13).
- * It decides from what it sees, as a player does: it runs right, and holds Hoppa when a wall stands
- * ahead or a gap opens. A slope and a kerb are no wall: it runs up them. A step down with no far side is
- * no gap: it runs off that, as the trail shows. When Använd offers the lace, or a hose that leads on, it
- * presses it. On the lace it pushes the way it swings, and lets go on the way up at full height. It throws
- * the lace from the ground only: in the air after letting go the hook is still in reach, and Använd would
- * take it straight back.
- */
-function decide(
-  chapter: ChapterData, p: PlayerState, movers: readonly MoverState[] = [], drips: readonly DripState[] = [],
-): { x: number; ahead: boolean; offered: boolean } {
-  // Falling drops are read from their shadows. Outside the places where they land, it waits before one
-  // whose drop would come down while it runs through, and goes when the way is clear.
-  const inALandingPlace = drips.some((d) => Math.abs(d.x - p.x) < DROP_RADIUS + 0.1);
-  if (!inALandingPlace && p.grounded) {
-    for (const d of drips) {
-      const edge = d.x - DROP_RADIUS - p.x;
-      if (Math.abs(d.y - p.y) > 0.5 || edge > 1.1 || edge < 0) continue;
-      const until = d.shadow > 0 ? (1 - d.shadow) * DROP_WARNING : Infinity;
-      // From a standstill the run through takes a little longer than at full speed.
-      const through = (edge + 2 * DROP_RADIUS) / 3.5 + 0.45;
-      if (until < through) return { x: 0, ahead: false, offered: false };
-    }
-  }
-  // A thing on its way along its rail: wait for it.
-  if (movers.some((m) => m.t < 1)) return { x: 0, ahead: false, offered: false };
-  // Something to pull or push, or the ghost within reach: stand still and do it.
-  if (p.verb === 'pull' || p.verb === 'push' || p.verb === 'grab') return { x: 0, ahead: false, offered: true };
-  if (p.hook) {
-    const angle = Math.atan2(p.x - p.hook.x, p.hook.y - (p.y + 0.5));
-    const high = p.vx > 0 && angle > 0.68 && angle < 0.85 && Math.hypot(p.vx, p.vy) > 5;
-    return { x: p.vx < -0.05 ? -1 : 1, ahead: high, offered: false };
-  }
-  // Steeper than 45 degrees over the next EL, and more than a step high. A thing in the way is a wall too.
-  // One that can still be pushed is walked up to, not jumped at.
-  const placed = (m: MoverState) => m.stop === m.def.stops.length - 1;
-  const inTheWay = movers.some((m) => placed(m) && m.x - m.def.width / 2 - p.x > 0 && m.x - m.def.width / 2 - p.x < 1 && m.y + m.def.height > p.y + 0.3);
-  const wall = inTheWay || heightAt(chapter, p.x + 1.0) - heightAt(chapter, p.x + 0.6) > 0.4;
-  // A gap with a plank across it is no gap.
-  const bridged = movers.some((m) => Math.abs(m.y + m.def.height - p.y) < 0.3 && m.x - m.def.width / 2 < p.x + 0.4 && m.x + m.def.width / 2 > p.x + 2);
-  const gap = !bridged && heightAt(chapter, p.x + 0.35) < p.y - 0.3 && heightAt(chapter, p.x + 2.2) > p.y - 0.3;
-  const leadsOn = (chapter.climbs ?? []).some((c) => Math.abs(c.top - p.y) < 0.3 && c.x > p.x && c.x - p.x < 1);
-  return { x: 1, ahead: p.grounded && (wall || gap), offered: (p.verb === 'lace' && p.grounded) || (p.verb === 'slide' && leadsOn) };
-}
-
-function playThrough(fps: number, chapter = testbana, options: SimOptions = {}) {
-  const game = new Game(chapter, options);
-  const dt = 1 / fps;
-  let lowest = Infinity;
-  let frames = 0;
-  let wasAhead = false;
-  let wasOffered = false;
-  while (!game.sim.flags.has('goal') && frames < fps * 150) {
-    const { x, ahead, offered } = decide(chapter, game.sim.curr, game.sim.movers, game.sim.drips);
-    // A press is the moment the reason appears; holding is everything after it.
-    game.frame(dt, { x, hopHeld: true }, { hop: ahead && !wasAhead, act: offered && !wasOffered, helper: false });
-    wasAhead = ahead;
-    wasOffered = offered;
-    lowest = Math.min(lowest, game.sim.curr.y);
-    frames++;
-  }
-  const missed = game.sim.collected.flatMap((got, i) => (got ? [] : [i]));
-  return {
-    goal: game.sim.flags.has('goal'), seconds: frames * dt, steps: game.sim.steps, end: game.sim.curr, lowest,
-    candy: game.sim.candyCount, missed, bubbles: game.sim.bubbles, knocks: game.sim.knocks,
-  };
-}
+const playThrough = (fps: number) => play(fps, testbana);
 
 describe('the robot on the test course', () => {
   for (const fps of [30, 60, 120, 144]) {
@@ -116,7 +36,7 @@ describe('the robot on the test course', () => {
     for (let frame = 0; frame < 60 * 90 && !game.sim.flags.has('goal'); frame++) {
       const p = game.sim.curr;
       const swinging = p.hook !== null;
-      const { x, ahead, offered } = decide(testbana, p, game.sim.movers);
+      const { x, ahead, offered } = decide(game, testbana);
       // On the lace it does nothing but press Hoppa, the moment it hangs there.
       const hop = swinging ? !wasSwinging : ahead && !wasAhead;
       game.frame(dt, { x: swinging ? 0 : x, hopHeld: true }, { hop, act: offered && !wasOffered, helper: false });
@@ -139,7 +59,7 @@ describe('the robot on the test course', () => {
     for (let frame = 0; frame < 60 * 90 && !game.sim.flags.has('goal'); frame++) {
       const p = game.sim.curr;
       const swinging = p.hook !== null;
-      const { x, offered } = decide(testbana, p, game.sim.movers);
+      const { x, offered } = decide(game, testbana);
       game.frame(dt, { x: swinging ? 0 : x, hopHeld: false }, { hop: swinging && !wasSwinging, act: offered && !wasOffered, helper: false });
       wasOffered = offered;
       wasSwinging = swinging;
@@ -181,7 +101,7 @@ describe('a player who never jumps the chasm', () => {
     let candy = 0;
     // The robot's own play up to the chasm, and from there only running: 40 seconds of it.
     for (let frame = 0; frame < 60 * 40; frame++) {
-      const ahead = game.sim.curr.x < 25 && decide(testbana, game.sim.curr).ahead;
+      const ahead = game.sim.curr.x < 25 && decide(game, testbana).ahead;
       game.frame(dt, { x: 1, hopHeld: true }, { hop: ahead && !wasAhead, act: false, helper: false });
       wasAhead = ahead;
       lowest = Math.min(lowest, game.sim.curr.y);

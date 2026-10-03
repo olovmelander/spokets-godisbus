@@ -123,6 +123,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const trail = buildTrail(chapter);
   const glitter = buildGlitter();
   const lace = buildLace();
+  const glints = buildGlints(chapter);
+  const plane = buildPlane();
+  scene.add(glints.group, plane);
   const moverMeshes = buildMovers(chapter);
   const rain = buildRain(chapter.drips?.length ?? 0);
   scene.add(...moverMeshes, rain.group);
@@ -254,6 +257,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const y = lerp(prev.y, curr.y, alpha);
     clock += dt;
     trail.update(collected, flags, x, y, dt, clock);
+    glints.update(flags, clock);
+    // On a ride he sits on Moa's paper plane, which points the way it flies.
+    const riding = curr.mode === 'ride';
+    plane.scale.setScalar(riding ? Math.min(1, curr.t / 0.05, (1 - curr.t) / 0.05) : 0);
+    plane.position.set(x, y - 0.05, 0);
+    plane.rotation.z = riding ? Math.atan2(curr.y - prev.y, Math.max(1e-4, curr.x - prev.x)) : 0;
     glitter.update(curr.bubble, x, y, clock);
     // He hangs by his hands, his body along the lace.
     const hang = curr.hook ? Math.atan2(curr.hook.x - x, curr.hook.y - (y + 0.5)) : 0;
@@ -408,7 +417,7 @@ function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number): 
 function startState(chapter: ChapterData): PlayerState {
   return {
     x: chapter.spawn.x, y: chapter.spawn.y, vx: 0, vy: 0, facing: 1, grounded: true, groundY: chapter.spawn.y,
-    standY: chapter.spawn.y, atEdge: false, bubble: 0, mode: 'free', t: 0, verb: null, hook: null,
+    standY: chapter.spawn.y, atEdge: false, bubble: 0, mode: 'free', t: 0, verb: null, hook: null, word: null,
   };
 }
 
@@ -475,6 +484,44 @@ function buildRain(count: number) {
     shadows.instanceMatrix.needsUpdate = true;
   }
   return { group, update };
+}
+
+/**
+ * A soft glint over each thing Använd can act on (plan §4.6): the lever, the place to call from. It is
+ * gone once the thing has been used.
+ */
+function buildGlints(chapter: ChapterData) {
+  const group = new Group();
+  const gold = new MeshBasicMaterial({ color: '#ffd76a', transparent: true, opacity: 0.9, depthWrite: false, blending: AdditiveBlending });
+  const spots = chapter.spots ?? [];
+  const meshes = spots.map((spot) => {
+    const glint = new Mesh(new OctahedronGeometry(0.16), gold);
+    glint.position.set(spot.at.x, spot.at.y + 1.5, 0);
+    group.add(glint);
+    return glint;
+  });
+  function update(flags: ReadonlySet<string>, clock: number): void {
+    for (const [i, spot] of spots.entries()) {
+      const glint = meshes[i]!;
+      const ready = !flags.has(spot.id) && (spot.needs === undefined || flags.has(spot.needs));
+      glint.scale.setScalar(ready ? 1 + 0.25 * Math.sin(clock * 4 + i) : 0);
+      glint.position.y = spot.at.y + 1.5 + Math.sin(clock * 2 + i) * 0.1;
+      glint.rotation.y = clock * 2;
+    }
+  }
+  return { group, update };
+}
+
+/** Moa's paper plane: a folded sheet, pointing along +x. It has no size until he rides it. */
+function buildPlane(): Mesh {
+  const paper = new MeshStandardMaterial({ color: '#fbf6e9', roughness: 0.9, side: DoubleSide });
+  const plane = new Mesh(new ConeGeometry(0.55, 1.9, 3), paper);
+  // A cone on its side, flattened: a dart.
+  plane.geometry.rotateZ(-Math.PI / 2);
+  plane.geometry.scale(1, 0.22, 1);
+  plane.scale.setScalar(0);
+  plane.frustumCulled = false;
+  return plane;
 }
 
 /**

@@ -7,12 +7,12 @@ import {
 } from './constants';
 import { CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER, MOVE_TIME, MOVER_RESET, PUSH_REACH } from './constants';
 import { DOWN_TIME, DROP_FALL, DROP_FROM, DROP_RADIUS, DROP_WARNING } from './constants';
-import { GHOST_CATCH, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, SPOT_REACH } from './constants';
+import { GHOST_CATCH, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_STEER, SPOT_REACH } from './constants';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
 import type {
-  ChapterData, Climb, GhostPerch, Hook, Jump, Mode, Mover, PlayerState, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
+  ChapterData, Climb, GhostPerch, Hook, Jump, Mode, Mover, PlayerState, Ride, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
 } from './types';
 
 // 1 EL is the length unit. This scales Box2D's tolerances to a hero who is one unit tall (plan §6.4).
@@ -49,7 +49,9 @@ type State =
   /** `angle` is from straight down, positive to the right; `speed` is its rate; `letGo` counts from Hoppa, or is -1. */
   | { kind: 'swing'; hook: Hook; length: number; to: number; angle: number; speed: number; letGo: number }
   | { kind: 'fly'; fromX: number; fromY: number; vx: number; vy: number; toX: number; toY: number; time: number; t: number }
-  | { kind: 'down'; x: number; y: number; t: number };
+  | { kind: 'down'; x: number; y: number; t: number }
+  /** `offset` is how far the stick has moved him from the middle of the ride's path. */
+  | { kind: 'ride'; ride: Ride; offset: number; t: number };
 
 /** A thing on its rail: where it is, which stop it is at or going to, and how far it has come. */
 export interface MoverState {
@@ -117,6 +119,8 @@ export class Sim {
   knocks = 0;
   /** The ghost, or null in a chapter without it. */
   readonly ghost: GhostState | null;
+  /** The beats that have come, by id, in the order they came: what the page shows as bubbles. */
+  readonly said: string[] = [];
   prev: PlayerState;
   curr: PlayerState;
 
@@ -145,6 +149,7 @@ export class Sim {
   private facing: 1 | -1 = 1;
   private atEdge = false;
   private verb: Verb | null = null;
+  private word: string | null = null;
   /** Time left before he may take hold of a hose again, after jumping or sliding off one. */
   private regrab = 0;
   /** The height of the ground he last stood on. */
@@ -213,6 +218,8 @@ export class Sim {
 
     this.drips = (chapter.drips ?? []).map((drip) => ({ x: drip.at.x, y: drip.at.y, shadow: 0, height: -1 }));
     for (const flag of start.flags ?? []) this.flags.add(flag);
+    // What was said before the place he starts at is not said again.
+    for (const beat of chapter.beats ?? []) if (beat.at !== undefined && beat.at < spawn.x - 0.5) this.flags.add(`beat:${beat.id}`);
     this.spots = chapter.spots ?? [];
     this.perches = chapter.ghost ?? [];
     // The ghost starts at its first place that is still ahead of him.
@@ -254,10 +261,12 @@ export class Sim {
     else if (state.kind === 'slide') this.slide(state);
     else if (state.kind === 'swing') this.swing(state, input);
     else if (state.kind === 'fly') this.fly(state);
-    else this.lie(state);
+    else if (state.kind === 'down') this.lie(state);
+    else this.ride(state, input);
     this.moveMovers();
     this.rain();
     this.haunt();
+    this.tell();
 
     this.world.step(STEP);
     this.steps++;
@@ -271,6 +280,37 @@ export class Sim {
     // The bubble only carries. Everywhere else, candy he comes near is his: up a hose too.
     if (this.state.kind !== 'bubble') this.collect();
     if (this.curr.x >= this.chapter.goalX) this.flags.add('goal');
+  }
+
+  /** The beats whose moment has come: each is told once, and remembered as a flag. */
+  private tell(): void {
+    for (const beat of this.chapter.beats ?? []) {
+      const flag = `beat:${beat.id}`;
+      if (this.flags.has(flag)) continue;
+      const passed = beat.at !== undefined && this.curr.x >= beat.at;
+      const happened = beat.on !== undefined && this.flags.has(beat.on);
+      if (!passed && !happened) continue;
+      this.flags.add(flag);
+      this.said.push(beat.id);
+    }
+  }
+
+  /**
+   * One step of a ride. It follows its arc whatever he does; up and down on the stick move him inside its
+   * corridor, towards the candy. At its end he stands where it lands.
+   */
+  private ride(state: { ride: Ride; offset: number; t: number }, input: StepInput): void {
+    const ride = state.ride;
+    state.t = Math.min(1, state.t + STEP / ride.time);
+    const want = Math.max(-1, Math.min(1, input.y)) * RIDE_CORRIDOR;
+    const change = RIDE_STEER * STEP;
+    state.offset = state.offset < want ? Math.min(want, state.offset + change) : Math.max(want, state.offset - change);
+    // The corridor narrows to nothing at both ends, so that it always lands where it should.
+    const open = Math.sin(Math.PI * state.t);
+    const k = smooth(state.t);
+    this.facing = ride.to.x >= ride.from.x ? 1 : -1;
+    this.place(mix(ride.from.x, ride.to.x, k), mix(ride.from.y, ride.to.y, k) + open * (ride.rise + state.offset));
+    if (state.t >= 1) this.release(ride.to.y);
   }
 
   /**
@@ -435,7 +475,8 @@ export class Sim {
     // Använd near a hook: the lace flies to it and hooks on by itself, with no aiming (plan §4.2).
     const hook = this.hookInReach();
     // Använd at the top of a hose: he slides down it.
-    const below = p.grounded ? this.climbs.find((c) => Math.abs(c.x - p.x) <= SLIDE_REACH && Math.abs(c.top - p.y) <= 0.25) : undefined;
+    const usable = (c: Climb) => c.needs === undefined || this.flags.has(c.needs);
+    const below = p.grounded ? this.climbs.find((c) => usable(c) && Math.abs(c.x - p.x) <= SLIDE_REACH && Math.abs(c.top - p.y) <= 0.25) : undefined;
     // Använd at a thing on a rail: Dra with the lace by its ring, or Knuffa from beside it.
     const pulled = hook ? null : this.moverFor('pull');
     const pushed = hook || pulled ? null : this.moverFor('push');
@@ -444,6 +485,7 @@ export class Sim {
     const grab = hook ? null : this.ghostInReach();
     const spot = hook || grab || moved ? null : this.spotInReach();
     this.verb = hook ? 'lace' : grab ? 'grab' : pulled ? 'pull' : pushed ? 'push' : spot ? spot.verb : below ? 'slide' : null;
+    this.word = this.verb === spot?.verb ? (spot?.word ?? null) : null;
     if (hook && input.act) {
       this.throwLace(hook);
       return;
@@ -451,6 +493,12 @@ export class Sim {
     if ((grab || spot) && input.act) {
       this.flags.add(grab ?? spot!.id);
       this.verb = null;
+      this.word = null;
+      const ride = spot?.ride === undefined ? undefined : (this.chapter.rides ?? []).find((r) => r.id === spot.ride);
+      if (ride) {
+        this.carry(true);
+        this.state = { kind: 'ride', ride, offset: 0, t: 0 };
+      }
       return;
     }
     if (moved && input.act) {
@@ -480,7 +528,7 @@ export class Sim {
 
     // A hose: he takes hold when he walks into it, from either side, or pushes up where it hangs.
     if (this.regrab === 0 && (dir !== 0 || input.y > 0.5)) {
-      const hose = this.climbs.find((c) => Math.abs(c.x - p.x) <= CLIMB_GRAB && p.y >= c.bottom - 0.05 && p.y <= c.top - 0.3);
+      const hose = this.climbs.find((c) => usable(c) && Math.abs(c.x - p.x) <= CLIMB_GRAB && p.y >= c.bottom - 0.05 && p.y <= c.top - 0.3);
       if (hose) {
         this.carry(true);
         this.state = { kind: 'climb', climb: hose };
@@ -935,12 +983,13 @@ export class Sim {
     const along = state.kind === 'swing' ? state.length * state.speed : 0;
     const v = state.kind === 'swing' ? { x: along * Math.cos(state.angle), y: along * Math.sin(state.angle) } : this.body.getLinearVelocity();
     const mode: Mode = state.kind;
-    const t = state.kind === 'bubble' || state.kind === 'ledge' || state.kind === 'slide' || state.kind === 'fly' || state.kind === 'down' ? state.t : 0;
+    const t = state.kind === 'free' || state.kind === 'climb' || state.kind === 'swing' ? 0 : state.t;
     return {
       x: p.x, y, vx: v.x, vy: v.y, facing: this.facing, grounded, groundY: this.groundBelow(p.x, y),
       standY: this.standY, atEdge: this.atEdge, bubble: state.kind === 'bubble' ? Math.max(t, Number.MIN_VALUE) : 0,
       mode, t, verb: mode === 'free' ? this.verb : null,
       hook: state.kind === 'swing' ? { x: state.hook.x, y: state.hook.y } : null,
+      word: mode === 'free' ? this.word : null,
     };
   }
 

@@ -273,6 +273,33 @@
       *Vänd*, *Ta* or *Ropa*. No chapter has one yet; the ladybird's lever, the star and "Ropa på Moa" will.
     - Tests: `tests/sim/ghost.test.ts` (13).
     - **Not yet:** the ghost's bubbles and its dance, the ghost as helper, and its story beats.
+  - **Kapitel 1, Gården, in greybox** (branch `stage-2-garden`; plan §3.4). **Open it with `?dev`:**
+    `https://olovmelander.github.io/spokets-godisbus/?dev`. Without `?dev` the page still shows the test
+    course, because no chapter is released (`RELEASED_CHAPTER` is still `null`).
+    - What you play, from the left: the deck with its steps and the lifted board; the ladybird, whose lever
+      Använd turns (*Vänd*), and the hose it then shows, down which he slides; under the deck, the lace on a
+      nail, one swing over flat ground and one over the drain gully; the dandelion where the ghost can
+      nearly be caught; the birch's roots and a boulder; the dew rain; Pappa's shavings, one curl pulled
+      down as a step and one pushed across the gap at the top; the ghost on the birch root; Moa, and
+      *Ropa på Moa*: her paper plane carries him over the hedge to the forest's edge, where up and down
+      steer towards the candy. Then the card: *Kapitel 1 klart!* with the candy in rows of ten.
+    - It is 210 EL long, with 116 candies and eleven big candies. **It is ground, candy and rules only:** it
+      looks like the test course. What it looks like comes with the look-dev and the characters.
+    - **New for it:** bubbles for what is said (`ChapterData.beats`, shown by `src/ui/hud.ts`; the game has
+      no voices), rides that can't fail (`ChapterData.rides`), a hose that waits for a flag
+      (`Climb.needs`), a glint over each thing Använd can act on, the end card with *Spela igen*, and the
+      list of courses (`src/content/chapters/index.ts`: `?course=testbana` or `garden`, and `?dev`).
+    - Four lines are said: Pappa's two at the start, Elof's at the birch root and Moa's. They are in
+      `src/content/sv.ts` for Olov to read aloud before a release.
+    - Tests: `tests/robot/garden.test.ts` (10). The robot plays the chapter from the deck to the forest's
+      edge at 30, 60 and 144 Hz with no bubble and no knock, and leaves at most six candies; on *Lugnt* it
+      is played by running and Använd, with Hoppa only on the lace. The robot is now shared between the
+      courses (`tests/robot/robot.ts`).
+    - **Not built yet in Kapitel 1:** the prologue before it; the swing chain (C1); the lost things under
+      the deck; the dew bells; memory 1 at the shavings; the ghost as helper at the gully and its bubbles;
+      the family as giants (Moa's hand, Pappa's); the ghost at the forest's edge; stickers and Moa's map on
+      the end card. The lengths and the timings are a first guess: the chapter takes the robot about two
+      minutes, and the plan asks for 18 to 22 for Elof.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
@@ -355,7 +382,7 @@
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects. Only what needs no art, until the look and the characters are decided. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`. Only what needs no art, until the look and the characters are decided. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs

@@ -22,7 +22,35 @@ export const sv = {
     turn: 'Vänd',
     take: 'Ta',
     call: 'Ropa',
+    callMoa: 'Ropa på Moa',
     grab: 'Ta!',
+  },
+
+  // Who a bubble belongs to. The ghost is "spöket" until Elof names it in the epilogue.
+  who: {
+    mamma: 'Mamma',
+    pappa: 'Pappa',
+    moa: 'Moa',
+    bertil: 'Bertil',
+    elof: 'Elof',
+    spoket: 'Spöket',
+  },
+
+  // What is said, in bubbles: the game has no voices. At most about 40 characters each (plan §3.7).
+  lines: {
+    follow1: 'Följ godisspåret, Elof.',
+    follow2: 'Vi är nära dig hela tiden.',
+    stomp: 'Ge tillbaka mitt godis!',
+    tiny: 'Lillebror?! Du är ju pytteliten!',
+  },
+
+  // The card at a chapter's end.
+  end: {
+    chapter: 'Kapitel 1 klart!',
+    course: 'Framme!',
+    next: 'Fortsättning följer!',
+    again: 'Spela igen',
+    candy: 'godisar i påsen',
   },
 
   // The candy bag in the corner. Screen readers hear the name and then the number.
