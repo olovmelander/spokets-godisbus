@@ -129,8 +129,19 @@ revised 19 September 2026):
    - Microsoft asks for 16 GB of graphics memory. The fork *trellis-stable-projectorz* (MIT) runs it in half
      precision on 8 GB, which is what Olov's RTX 3070 laptop card has. It has a Windows installer (a 327 MB
      download, which then fetches Python 3.11, PyTorch and the models), a local web page and a local API.
-   - **What stands in the way:** drive C: has 11 GB free of 953. The install needs roughly 30 GB (an
-     estimate). `Downloads` holds 138 GB.
+   - **Where it runs: Olov's other computer, which has an RTX 5080** (16 GB; he said so on 3 October). That is
+     what Microsoft asks for, so TRELLIS runs there at full precision and the fork's 8 GB mode is not needed.
+     The fork's installer is still the easy way in on Windows: it brings CUDA 12.8 and PyTorch 2.7, which the
+     50-series cards need.
+   - **TRELLIS.2 as a second try there.** It is finer and gives PBR textures, under the MIT licence, but takes
+     one picture only, and Microsoft asks for 24 GB and Linux. Others report it running in 16 GB on Windows;
+     this is not checked.
+   - **The laptop with the RTX 3070** could run the fork in 8 GB, but drive C: has 11 GB free of 953 and the
+     install needs roughly 30 GB (an estimate).
+   - **Getting the pictures there:** the three views, or the whole `photos/` folder, go from one computer to
+     the other on a USB stick or over the home network. Never through git, and never through a service the
+     parents have not agreed to. The finished GLB comes back the same way, into
+     `art/private/elof/image-to-3d/`.
    - **Not better on this computer:** TRELLIS.2 (MIT, but 16 to 24 GB of graphics memory); Hunyuan3D (its
      licence does not apply in the EU, and `CLAUDE.md` forbids it); TripoSR (MIT, 6 GB, rough); Stable Fast 3D
      (free under Stability's community licence, 7 GB, soft). ComfyUI is a workbench that runs such models, not
@@ -164,8 +175,8 @@ give the face eyes that can move and blink, and bake one 1024² texture. Every g
   <https://80.lv/articles/stylized-character-production-tips-and-tricks>
 - Matt Berenty's board of stylized characters (Pinterest). Olov's reference for the look.
   <https://se.pinterest.com/mattberenty/stylized-characters/>
-- TRELLIS and the fork that runs on 8 GB. <https://github.com/microsoft/TRELLIS>,
-  <https://github.com/IgorAherne/trellis-stable-projectorz>
+- TRELLIS, the fork with the Windows installer, and TRELLIS.2. <https://github.com/microsoft/TRELLIS>,
+  <https://github.com/IgorAherne/trellis-stable-projectorz>, <https://github.com/microsoft/TRELLIS.2>
 - Meshy: terms of use, privacy policy, and the API page for several pictures to one model.
   <https://www.meshy.ai/terms-of-use>, <https://www.meshy.ai/privacy-policy>,
   <https://docs.meshy.ai/en/api/multi-image-to-3d>

@@ -159,7 +159,7 @@
 | Devices | A new iPad, an iPhone, or an Android phone in the Samsung S23 class; tuned for the High tier. Elof uses all three, so none comes first. | Olov, 3 Oct |
 | Consent | Both parents say yes to everything, and every name may be used. Still never surnames, house number or address, coordinates, the school or account names (plan §2.6). | Olov, 3 Oct |
 | Renderer | Three.js r186 `WebGLRenderer` on WebGL 2 | Olov, 3 Oct |
-| Where work happens | Mostly on Olov's computer (Windows, RTX 3070), with Blender through *MCP for Blender*; cloud sessions for code | Olov, 3 Oct |
+| Where work happens | Mostly on Olov's laptop (Windows, RTX 3070, 8 GB), with Blender through *MCP for Blender*; image-to-3D on his other computer (RTX 5080, 16 GB); cloud sessions for code | Olov, 3 Oct |
 | Scale | (a): Elof shrinks to the ghost's size at the end of the prologue | Olov, 3 Oct |
 | The secret | Pappa's first trägubbe, carved for Elof when he was about three and lost on the mountain. Little Elof shared his Saturday sweets with it, which is why the ghost takes the bag. The game names no year. | Olov, 3 Oct; the retelling in plan §2.4 and §3.4 is the session's |
 | The ghost's name | *Klonk*, after its footsteps. Elof names it in the epilogue; until then it is "spöket". | Olov asked for a name, 3 Oct; the name is the session's proposal |
@@ -242,11 +242,15 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
      users' uploads, private models, you own them. Read that on the site before uploading; the session could
      not open the pages.
    - **(b) Meshy Pro all the same,** if you and the parents accept the training clause.
-   - **(c) TRELLIS on your own computer: try this first.** You asked for an open, local alternative. MIT
-     licence, free, and nothing is uploaded. A Windows fork runs it on an 8 GB card like yours (art bible
-     §1.6). **It needs about 30 GB free on C:, which has 11 GB;** `Downloads` holds 138 GB. Not tried yet, and
-     likely rougher than the paid services. When there is room, say so, and the session installs it, runs
-     Elof's three views through it and brings the model into Blender.
+   - **(c) TRELLIS on your own computer: this is the plan.** You asked for an open, local alternative, and
+     your other computer has an RTX 5080 with 16 GB, which is what TRELLIS asks for (art bible §1.6). MIT
+     licence, free, and nothing is uploaded. Not tried yet, and likely rougher than the paid services.
+     - **What a session on that computer needs:** this repository cloned; Elof's three views from
+       `art/private/elof/image-to-3d/` (or the whole `photos/` folder), carried over on a USB stick or the
+       home network, never through git; and about 30 GB of free disk.
+     - **What it does:** installs the Windows fork of TRELLIS, runs the three views through it, and saves the
+       GLB to `art/private/elof/image-to-3d/`. Blender work can then happen on either computer.
+     - The laptop with the RTX 3070 has 11 GB free on C: and cannot hold the install as it is.
    - Whichever you choose, better pictures give a better model: each view of Elof alone, full height, 1024 by
      1536, plain background, arms a little out. The views cut from the sheet are small and soft; they are in
      `art/private/elof/image-to-3d/` and will do for a first try.
