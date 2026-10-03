@@ -405,7 +405,9 @@ export function spotProp(spot: Spot): SpotProp | null {
         coin.position.y = 0.2;
         thing.add(coin);
       }
-      group.add(stone, cap, thing);
+      // Under the deck it lies on a stone. On the table at the party it lies on the cloth.
+      if (spot.at.y > 0.2) group.add(stone, cap);
+      group.add(thing);
       group.position.z = -0.9;
       let gone = 0;
       return {

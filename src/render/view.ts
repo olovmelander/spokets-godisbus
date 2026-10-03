@@ -374,7 +374,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (far) far.rotation.x = beat;
     }
     for (const thing of things) thing.prop?.update(flags.has(thing.spot.id), clock, dt);
-    for (const d of decor) d.prop?.update(d.def.until !== undefined && flags.has(d.def.until), clock, dt);
+    for (const d of decor) {
+      d.prop?.update(d.def.until !== undefined && flags.has(d.def.until), clock, dt);
+      if (d.prop && d.def.after !== undefined) d.prop.group.visible = flags.has(d.def.after);
+    }
     // The POFF: he shrinks, or grows back, in a little more than a second, in a swarm of glitter.
     let poff = false;
     if (sized) {

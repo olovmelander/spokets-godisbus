@@ -5,7 +5,7 @@ import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
 import { bonusAfter, chapterNumber, courseFor, nextAfter } from './content/chapters';
 import { album, foundFlag } from './content/kinds';
-import { lostFound } from './content/lost';
+import { lostFlag, lostFound } from './content/lost';
 import { albumHtml } from './ui/album';
 import { mapSvg, mapState } from './ui/map';
 import { createMemory } from './ui/memory';
@@ -94,13 +94,15 @@ function start(): void {
   }
   let save: PlayerSave = loaded.kind === 'save' ? loaded.save : newSave(Date.now(), chapter.id);
   let settings: Settings = debugOn && params.get('style') === 'lugnt' ? settingsFor('lugnt') : save.settings;
+  // What he found under the deck comes with him to the party in the epilogue (plan §4.8, O2).
+  const carried = chapter.id === 'epilog' ? lostFound(save.flags).map(lostFlag) : [];
   const from: SimStart =
     at || save.chapter !== chapter.id
-      ? {}
+      ? (carried.length > 0 ? { flags: carried } : {})
       : {
           checkpoint: save.checkpoint, collected: save.candy[chapter.id] ?? [], placed: save.placed[chapter.id] ?? [],
           // Reaching the end is not kept: a game taken up again can reach it again.
-          flags: (save.flags[chapter.id] ?? []).filter((flag) => flag !== 'goal'),
+          flags: [...(save.flags[chapter.id] ?? []).filter((flag) => flag !== 'goal'), ...carried],
         };
 
   const game = new Game(chapter, simOptions(settings), from);

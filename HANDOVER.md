@@ -699,7 +699,11 @@
     - They are saved with the chapter, like the hidden candy (`src/content/lost.ts`). The toy brick is
       plain, with no mark on it. Tests: `tests/unit/lost.test.ts` (6).
     - **Stand-ins:** the stones are grey blocks and the things are built in code.
-    - **Not yet:** giving them back at the party in the epilogue, "with a giant's delight".
+    - **Given back at the party** (branch `stage-2-polish`): in the epilogue each found thing lies on the
+      table by its owner, and when Elof gives that one candy they see it: Moa "Mitt hårspänne! Tack,
+      lillebror!", Bertil "Kula! Min kula!", Pappa "En krona! Den får du behålla." The found things come
+      with him from Kapitel 1's saved flags. The same branch gives the ghost a shadow where it stands.
+    - **Not yet:** the giant's delight as a picture: the owners are still signs or stand-ins.
   - **Byn, an extra chapter** (4 October, branch `stage-2-byn`). Olov asked for the village's shopping
     street as a chapter. What you see: after the epilogue's card, *Ett kapitel till* leads to **Byn**. Elof
     has one more star and is small again, and follows his friend along the pavement to the candy shop:

@@ -116,6 +116,9 @@ const GUESTS = [
  *    Pappa: "Alltid bort från kroppen." Elof: "Jag kan tälja!"
  * 4. **Teeth:** *Borsta tänderna*, and up to bed. The last card.
  *
+ * And **Hittegods** (O2): what he found under the deck in Kapitel 1 lies on the table beside its owner, and
+ * the one who gets candy from him sees it: "Mitt hårspänne!"
+ *
  * Not built yet: which candy each one gets (the choice is whom, and in which order); the strokes traced by
  * hand, away from the body; the figure on the windowsill and its blink; the first trägubbe and the ghost on
  * the shelf; the album as credits; *Utforska vidare*.
@@ -154,7 +157,20 @@ export const epilog: ChapterData = {
     { id: 'dots', at: { x: 32, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'cut3' },
     { id: 'teeth', at: { x: 44, y: 0 }, verb: 'take', word: 'brush', needs: 'dots', ride: 'bed' },
   ],
-  sets: [{ flag: 'partied', when: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket'] }],
+  // What he found under the deck came with him: each thing lies by the one it belongs to.
+  decor: [
+    { look: 'coin', at: { x: 12.4, y: 0 }, after: 'lost:coin' },
+    { look: 'clip', at: { x: 16.4, y: 0 }, after: 'lost:clip' },
+    { look: 'marble', at: { x: 20.2, y: 0 }, after: 'lost:marble' },
+    { look: 'brick', at: { x: 21, y: 0 }, after: 'lost:brick' },
+  ],
+  sets: [
+    { flag: 'partied', when: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket'] },
+    // A thing is given back when its owner has had candy and the thing was found.
+    { flag: 'back:coin', when: ['party:pappa', 'lost:coin'] },
+    { flag: 'back:clip', when: ['party:moa', 'lost:clip'] },
+    { flag: 'back:marble', when: ['party:bertil', 'lost:marble'] },
+  ],
   rides: [{ id: 'bed', look: 'none', from: { x: 44, y: 0 }, to: { x: 54, y: 3 }, rise: 1, time: 4, corridor: 0 }],
   ghost: [
     { at: { x: 23.4, y: 0 }, until: 'partied' },
@@ -163,6 +179,9 @@ export const epilog: ChapterData = {
     { at: { x: 41, y: 0 }, near: 1.2 },
   ],
   beats: [
+    { id: 'coinBack', on: 'back:coin', who: 'pappa', line: 'coinBack' },
+    { id: 'clipBack', on: 'back:clip', who: 'moa', line: 'clipBack' },
+    { id: 'marbleBack', on: 'back:marble', who: 'bertil', line: 'marbleBack' },
     { id: 'klonk', on: 'partied', who: 'spoket', line: 'klonk' },
     { id: 'named', on: 'partied', who: 'elof', line: 'named' },
     { id: 'away', on: 'knife', who: 'pappa', line: 'away' },

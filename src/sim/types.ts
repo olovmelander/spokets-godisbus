@@ -305,8 +305,11 @@ export interface ChapterData {
   size?: { scale: number; after?: string; until?: string };
   /** For the picture: Pappa's shelf of figures on the wall, with the first place in the row empty or filled. */
   shelf?: { x: number; y: number; filled?: boolean };
-  /** For the picture: things that stand about and are not used. One with `until` is gone when that flag is set. */
-  decor?: { look: SpotLook; at: Vec; word?: string; until?: string }[];
+  /**
+   * For the picture: things that stand about and are not used. One with `until` is gone when that flag is
+   * set, and one with `after` is not there before its flag is.
+   */
+  decor?: { look: SpotLook; at: Vec; word?: string; until?: string; after?: string }[];
   /** For the picture: the house's wall behind the scene, with its windows. */
   house?: { from: number; to: number; windows: number[] };
   /** The ground as one open line, from left to right. Elof walks on its upper side. */

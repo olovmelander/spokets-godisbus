@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { STORY } from '../../src/content/chapters';
+import { epilog } from '../../src/content/chapters/ends';
 import { garden } from '../../src/content/chapters/garden';
 import { LOST, lostFlag, lostFound } from '../../src/content/lost';
 import { sv } from '../../src/content/sv';
@@ -71,6 +72,27 @@ describe('the lost things under the deck', () => {
     expect(some).not.toContain(sv.lost.marble);
     // The sixteen kinds are still sixteen.
     expect(some.match(/<ul class="album-grid">(.*?)<\/ul>/)![1]!.match(/<li/g)).toHaveLength(16);
+  });
+
+  it('is given back at the party: its owner sees it when he gives them candy', () => {
+    const give = (flags: string[], x: number) => {
+      const sim = new Sim({ ...epilog, spawn: { x, y: 0.01 } }, {}, { flags });
+      for (let i = 0; i < 0.3 / STEP; i++) sim.step(idle);
+      sim.step({ ...idle, act: true });
+      for (let i = 0; i < 0.3 / STEP; i++) sim.step(idle);
+      return sim;
+    };
+    // Moa sits at 15. With her hair clip found, she says so; without it, the party goes on as before.
+    const found = give([lostFlag('clip')], 15);
+    expect(found.flags.has('party:moa')).toBe(true);
+    expect(found.said).toEqual(['clipBack']);
+    const not = give([], 15);
+    expect(not.flags.has('party:moa')).toBe(true);
+    expect(not.said).toEqual([]);
+    // Each thing lies on the table by its owner, and only once it has been found.
+    expect(epilog.decor!.map((d) => d.after)).toEqual(['lost:coin', 'lost:clip', 'lost:marble', 'lost:brick']);
+    const lines: Record<string, string> = sv.lines;
+    for (const line of ['coinBack', 'clipBack', 'marbleBack']) expect(lines[line]!.length).toBeLessThanOrEqual(40);
   });
 
   it('names no brand, and no one outside the family\'s first names', () => {
