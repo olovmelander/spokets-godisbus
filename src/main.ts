@@ -148,6 +148,7 @@ function start(): void {
       ghostAway: game.sim.ghost ? Math.hypot(game.sim.ghost.x - p.x, game.sim.ghost.y - p.y) : 99,
       helpStep: game.sim.help.step,
       bounces: game.sim.bounces,
+      calls: (chapter.spots ?? []).filter((spot) => spot.verb === 'call' && game.sim.flags.has(spot.id)).map((spot) => ({ id: spot.id, word: spot.word })),
       wind: game.sim.gusts.some((gust, i) => gust.blow > 0 && p.x > chapter.gusts![i]!.from - 12 && p.x < chapter.gusts![i]!.to + 12),
     };
   };

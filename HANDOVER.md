@@ -696,7 +696,10 @@
     - Tested without ears (`tests/unit/cues.test.ts`). **No one has listened to it.**
     - **Elof's own sounds** came after (branch `stage-2-elof-sounds`): a gasp as the glitter bubble takes
       him, and a giggle at a big candy and at the first bounce on a cranberry. In his voice from the table
-      above, without a word. **Not yet:** his two-note call.
+      above, without a word.
+    - **His call, and the answer** (branch `stage-2-call`): when he calls someone at their sign, he calls in
+      two notes, and that one answers in three notes of their own: Mamma's rise, Pappa's fall, Moa's leap
+      and come back, Bertil's say one note twice and jump (`MOTIFS` in `src/audio/cues.ts`; plan §5.8).
   - **Chapter codes** (branch `stage-2-codes`; plan §6.9, and a MUST in §7.4). What you see: the card at a
     chapter's end shows three words under *Nästa kapitel*, "Kod till nästa kapitel: GRAN KOTTE MOSSA". On
     the title, *Jag har en kod* opens a field; the right three words open that chapter's start, on any

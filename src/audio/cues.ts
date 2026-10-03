@@ -1,3 +1,4 @@
+import { personFor, type Person } from '../content/people';
 import type { ChapterData, Mode, PlaceId, Speaker, SurfaceKind } from '../sim/types';
 
 /**
@@ -11,6 +12,18 @@ export interface Voice {
   steps: number[];
   pace: number;
 }
+
+/**
+ * Each of the family has three notes of their own, which answer when Elof calls them (plan §5.8): semitones
+ * above their voice's pitch. They are told apart by their shape: Mamma's rises, Pappa's falls, Moa's leaps
+ * and comes back, Bertil's says one note twice and jumps.
+ */
+export const MOTIFS: Record<Person, readonly [number, number, number]> = {
+  mamma: [0, 3, 7],
+  pappa: [7, 3, 0],
+  moa: [0, 7, 5],
+  bertil: [0, 0, 7],
+};
 
 export const VOICES: Record<Speaker, Voice> = {
   elof: { wave: 'triangle', pitch: 520, steps: [0, 3, 5, 3], pace: 0.1 },
@@ -70,6 +83,8 @@ export type Cue =
   /** Elof himself, without words: a gasp as the glitter takes him, a giggle at something good. */
   | { kind: 'gasp' }
   | { kind: 'giggle' }
+  /** He calls someone: his two notes, and then that one's own three in answer. */
+  | { kind: 'call'; who: Person | null }
   | { kind: 'goal' };
 
 /** What the cues are worked out from: the little of the game's state that can be heard. */
@@ -109,6 +124,8 @@ export interface Heard {
   helpStep?: number;
   /** How many times a cranberry has bounced him. */
   bounces?: number;
+  /** The signs he has called at: each one's id, and the word on its button, "callMoa". */
+  calls?: readonly { id: string; word: string | undefined }[];
 }
 
 /** What has to be remembered between frames: the candy streak, the stride, and when he last bounced. */
@@ -186,6 +203,7 @@ export function cuesFor(before: Heard, now: Heard, memory: CueMemory): Cue[] {
   for (const who of (now.said ?? []).slice(before.said?.length ?? 0)) cues.push({ kind: 'say', who });
   if ((now.ghostPerch ?? 0) > (before.ghostPerch ?? 0)) cues.push({ kind: 'ghostHop', near: Math.max(0, 1 - (now.ghostAway ?? 20) / 14) });
   if ((now.helpStep ?? 0) >= 2 && (before.helpStep ?? 0) < 2) cues.push({ kind: 'knocks' });
+  for (const call of now.calls ?? []) if (!(before.calls ?? []).some((old) => old.id === call.id)) cues.push({ kind: 'call', who: personFor(call.word) });
   // The first bounce of a row makes him laugh; the ones after it are only boings.
   if ((now.bounces ?? 0) > (before.bounces ?? 0)) {
     cues.push({ kind: 'bounce' });
