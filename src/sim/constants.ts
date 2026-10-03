@@ -37,6 +37,27 @@ export const JUMP_SPEED = halfStep + Math.sqrt(halfStep * halfStep + 2 * GRAVITY
 /** Gravity multiplier while Elof rises with Hoppa released. A tap then tops out at HOP_APEX. */
 export const HOP_GRAVITY_SCALE = JUMP_SPEED ** 2 / (2 * GRAVITY * (HOP_APEX + (JUMP_SPEED * STEP) / 2));
 
+/** A step this high or lower is walked over (plan §4.2). */
+export const STEP_HEIGHT = 0.3;
+/** A ledge whose top is within this of his feet is grabbed and climbed. */
+export const LEDGE_REACH = 1.4;
+/** Pulling himself up a ledge takes this long. */
+export const LEDGE_TIME = 0.4;
+/** Climbing speed on a hose, a stem or the lace. */
+export const CLIMB_SPEED = 1;
+/** He takes hold of a hose when he is this close to it. */
+export const CLIMB_GRAB = 0.2;
+/** From the top of a hose he steps this far onto the ledge beside it. */
+export const CLIMB_EXIT = 0.65;
+/** After letting go of a hose he can't take hold again for this long. */
+export const REGRAB_AFTER = 0.35;
+/** Standing this close to the top of a hose, Använd slides him down it. */
+export const SLIDE_REACH = 0.75;
+/** Sliding down a hose takes this long, whatever its length. */
+export const SLIDE_TIME = 1;
+/** Ground too steep to stand on is slid down no faster than this. */
+export const STEEP_SLIDE_SPEED = 3;
+
 /** A fall longer than this ends in the glitter bubble; a shorter one is a soft landing (plan §4.2). */
 export const FALL_LIMIT = 4;
 /** The bubble floats him back in about this long. */

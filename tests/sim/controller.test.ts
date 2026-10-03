@@ -24,7 +24,7 @@ const ledge: ChapterData = {
   candy: [],
 };
 
-const idle: StepInput = { x: 0, hopHeld: false, hop: false, act: false };
+const idle: StepInput = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
 const steps = (seconds: number) => Math.round(seconds / STEP);
 
 function run(sim: Sim, seconds: number, input: Partial<StepInput> = {}): void {
@@ -169,7 +169,7 @@ describe('determinism', () => {
   it('gives the same result for the same input, twice', () => {
     const play = () => {
       const sim = new Sim(flat);
-      for (let i = 0; i < 600; i++) sim.step({ x: Math.sin(i / 40), hopHeld: i % 90 < 30, hop: i % 90 === 0, act: false });
+      for (let i = 0; i < 600; i++) sim.step({ x: Math.sin(i / 40), y: 0, hopHeld: i % 90 < 30, hop: i % 90 === 0, act: false });
       return sim.curr;
     };
     expect(play()).toEqual(play());

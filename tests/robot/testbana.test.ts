@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
 import { testbana } from '../../src/content/chapters/testbana';
-import type { ChapterData } from '../../src/sim/types';
+import type { ChapterData, PlayerState } from '../../src/sim/types';
 
 /** The ground's height at x, read from the chapter data. */
 function heightAt(chapter: ChapterData, x: number): number {
@@ -16,23 +16,31 @@ function heightAt(chapter: ChapterData, x: number): number {
 
 /**
  * The robot plays through the real loop and press queue with a fake clock (plan §6.13).
- * It decides from what it sees, as a player does: it runs right, and holds Hoppa when the ground
- * ahead rises or a gap opens. A step down with no far side is no gap: it runs off that, as the trail shows.
+ * It decides from what it sees, as a player does: it runs right, and holds Hoppa when a wall stands
+ * ahead or a gap opens. A slope and a kerb are no wall: it runs up them. A step down with no far side is
+ * no gap: it runs off that, as the trail shows. When Använd offers a hose that leads on, it presses it.
  */
+function decide(chapter: ChapterData, p: PlayerState): { ahead: boolean; offered: boolean } {
+  // Steeper than 45 degrees over the next EL, and more than a step high.
+  const wall = heightAt(chapter, p.x + 1.0) - heightAt(chapter, p.x + 0.6) > 0.4;
+  const gap = heightAt(chapter, p.x + 0.35) < p.y - 0.3 && heightAt(chapter, p.x + 2.2) > p.y - 0.3;
+  const leadsOn = (chapter.climbs ?? []).some((c) => Math.abs(c.top - p.y) < 0.3 && c.x > p.x && c.x - p.x < 1);
+  return { ahead: p.grounded && (wall || gap), offered: p.verb !== null && leadsOn };
+}
+
 function playThrough(fps: number, chapter = testbana) {
   const game = new Game(chapter);
   const dt = 1 / fps;
   let lowest = Infinity;
   let frames = 0;
   let wasAhead = false;
-  while (!game.sim.flags.has('goal') && frames < fps * 40) {
-    const p = game.sim.curr;
-    const rises = heightAt(chapter, p.x + 1.0) > p.y + 0.05;
-    const gap = heightAt(chapter, p.x + 0.35) < p.y - 0.3 && heightAt(chapter, p.x + 2.2) > p.y - 0.3;
-    const ahead = p.grounded && (rises || gap);
+  let wasOffered = false;
+  while (!game.sim.flags.has('goal') && frames < fps * 60) {
+    const { ahead, offered } = decide(chapter, game.sim.curr);
     // A press is the moment the reason appears; holding is everything after it.
-    game.frame(dt, { x: 1, hopHeld: true }, { hop: ahead && !wasAhead, act: false, helper: false });
+    game.frame(dt, { x: 1, hopHeld: true }, { hop: ahead && !wasAhead, act: offered && !wasOffered, helper: false });
     wasAhead = ahead;
+    wasOffered = offered;
     lowest = Math.min(lowest, game.sim.curr.y);
     frames++;
   }
@@ -48,7 +56,7 @@ describe('the robot on the test course', () => {
     it(`reaches the big candy at ${fps} Hz`, () => {
       const result = playThrough(fps);
       expect(result.goal).toBe(true);
-      expect(result.seconds).toBeLessThan(25);
+      expect(result.seconds).toBeLessThan(40);
       expect(result.lowest).toBeGreaterThan(-1);
       expect(result.bubbles).toBe(0);
     });
@@ -76,10 +84,7 @@ describe('a player who never jumps the chasm', () => {
     let candy = 0;
     // The robot's own play up to the chasm, and from there only running: 40 seconds of it.
     for (let frame = 0; frame < 60 * 40; frame++) {
-      const p = game.sim.curr;
-      const rises = heightAt(testbana, p.x + 1.0) > p.y + 0.05;
-      const gap = heightAt(testbana, p.x + 0.35) < p.y - 0.3 && heightAt(testbana, p.x + 2.2) > p.y - 0.3;
-      const ahead = p.grounded && p.x < 25 && (rises || gap);
+      const ahead = game.sim.curr.x < 25 && decide(testbana, game.sim.curr).ahead;
       game.frame(dt, { x: 1, hopHeld: true }, { hop: ahead && !wasAhead, act: false, helper: false });
       wasAhead = ahead;
       lowest = Math.min(lowest, game.sim.curr.y);

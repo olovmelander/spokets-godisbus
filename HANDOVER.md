@@ -147,9 +147,27 @@
     - Tests: `tests/sim/bubble.test.ts` (the catch, the way back, a hopping child, a clipped corner, the
       edge, the camera); the robot crosses the chasm without a bubble; a player who never jumps it is carried
       back every time and loses nothing.
-  - **Not yet, the rest of Stage 1** (plan §7.3): ledges and climbing; the lace and the swing in both modes;
-    the big candy as a checkpoint; the camera's zones; one greybox puzzle and one exciting sequence; the two
-    play styles; then H2.
+  - **Part 3: kerbs, slopes, ledges and hoses.** What you see: the course goes on past the chasm. Elof walks
+    over a kerb and up a ramp, pulls himself up a wall, climbs a hose with his back to you, and at the cliff
+    beyond it the Använd button says *Åk ner*: he slides down the other hose in a second.
+    - **Steps** up to 0.3 EL are walked over (a small lift), **slopes** up to 45° are walked and stood on,
+      and steeper ground slides him down. **A ledge** whose top is within 1.4 EL of his feet is grabbed and
+      climbed in 0.4 s, from the ground or from a jump.
+    - **A hose** (`ChapterData.climbs`) is taken hold of when he walks into it. Any push except down climbs
+      up at 1 EL/s; down climbs down; Hoppa jumps off; at the top he steps onto the ledge.
+    - **Använd** now has a word: the simulation says what it would do (`PlayerState.verb`), and the button
+      shows the word from `sv.verbs` and is dimmed when there is nothing to use. *Åk ner* is the first.
+    - Elof is in one of five states (`mode`): on his own feet, or carried by the bubble, up a ledge, on a
+      hose, down a hose. Carried, the physics leaves him alone.
+    - The camera stays on him on a hose. The ground is drawn thinner towards the camera, so a wall doesn't
+      hide what stands beside it.
+    - With `?debug`, `&at=x,y` starts Elof at that place: `?debug&at=34.5,1.51` is just before the wall.
+    - Tests: `tests/sim/moves.test.ts` (22). The robot now plays as a player would: it runs up slopes and
+      over kerbs, jumps only at walls and gaps, and presses Använd at a hose that leads on. It finishes the
+      course with all 39 candies and no bubble at 30, 60, 120 and 144 Hz.
+  - **Not yet, the rest of Stage 1** (plan §7.3): the lace and the swing in both modes; the big candy as a
+    checkpoint; the camera's zones; one greybox puzzle and one exciting sequence; the two play styles; then
+    H2. Elof's poses for climbing, hauling and looking down are not drawn yet either.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
@@ -175,7 +193,7 @@
      Wi-Fi: `npm run dev:lan`.
 3. **Correct the size gate:** Pages gzips `.wasm` and `.glb` too (see "State"), so `scripts/size-gate.mjs` and
    the plan's §6.6 should count them as served. A small PR of its own.
-4. **The rest of Stage 1** (plan §7.3), one visible outcome per PR, in this order: ledges and climbing; the lace and the swing; the big candy as a checkpoint; the camera's zones; a
+4. **The rest of Stage 1** (plan §7.3), one visible outcome per PR, in this order: the lace and the swing; the big candy as a checkpoint; the camera's zones; a
    greybox puzzle; a greybox exciting sequence; the two play styles. Then **H2**, Olov's own test on touch.
 5. **The rest of Stage 0b** (look-dev), on Olov's computer, with him watching the picture:
    - `docs/art-bible.md`: the scale chart, a palette and a grade per place, the layer recipe, the H1a board with
@@ -227,7 +245,7 @@
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
-| 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble. Started before 0b and 0c are finished, on Olov's word. |
+| 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses. Started before 0b and 0c are finished, on Olov's word. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs

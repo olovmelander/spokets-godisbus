@@ -7,6 +7,8 @@ import type { ChapterData } from '../sim/types';
 /** Held input, read once per frame. */
 export interface Held {
   x: number;
+  /** Up and down, for climbing. Left out, it is 0. */
+  y?: number;
   hopHeld: boolean;
 }
 
@@ -33,7 +35,7 @@ export class Game {
       const e = first ? this.queue.take() : NO_EDGES;
       // Hoppa's held state is read each frame. A tap that begins and ends inside one frame therefore
       // arrives as a press with hopHeld false, which is a hop.
-      this.sim.step({ x: held.x, hopHeld: held.hopHeld, hop: e.hop, act: e.act });
+      this.sim.step({ x: held.x, y: held.y ?? 0, hopHeld: held.hopHeld, hop: e.hop, act: e.act });
     });
     return this.lastSteps;
   }
