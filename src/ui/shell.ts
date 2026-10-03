@@ -103,6 +103,12 @@ export function mountShell(root: HTMLElement): void {
            <p class="rotate">${TURN}<span>${sv.start.rotate}</span></p>
            <button class="wide go" id="startBtn" type="button">${PLAY}<span class="begin">${sv.start.begin}</span><span class="resume">${sv.start.resume}</span></button>
            <button class="wide small" id="startOverBtn" type="button" hidden>${sv.start.over}</button>
+           <button class="wide small" id="codeBtn" type="button">${sv.code.have}</button>
+           <form class="code-form" id="codeForm" hidden>
+             <input id="codeInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" maxlength="40" aria-label="${sv.code.hint}" placeholder="${sv.code.hint}">
+             <button class="wide go" id="codeGo" type="submit">${sv.code.open}</button>
+             <p class="code-wrong" id="codeWrong" role="alert" hidden>${sv.code.wrong}</p>
+           </form>
          </div>
          <div id="titleStyles" hidden>
            <h2 id="howTitle">${sv.start.how}</h2>
@@ -123,6 +129,7 @@ export function mountShell(root: HTMLElement): void {
          <div class="map" id="endMap"></div>
          <p class="next" id="endNext">${sv.end.next}</p>
          <button class="wide go" id="endOnward" type="button" hidden>${PLAY}<span>${sv.end.onward}</span></button>
+         <p class="code" id="endCode" hidden><span>${sv.code.next}</span><b id="endCodeWords"></b></p>
          <button class="wide" id="endAgain" type="button"><span>${sv.end.again}</span></button>
        </div>
      </div>

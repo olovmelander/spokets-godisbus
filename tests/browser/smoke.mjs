@@ -248,6 +248,31 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   await finish();
 }
 
+// --- chapter codes (plan §6.9) ------------------------------------------------------------------------
+{
+  console.log('chapter codes, 1180×820');
+  const { page, state, finish } = await open('codes-1180x820', { viewport: { width: 1180, height: 820 } }, '?dev&debug&title');
+  await page.click('#codeBtn');
+  await page.fill('#codeInput', 'gran kotte');
+  await page.press('#codeInput', 'Enter');
+  check('a wrong code says so, and the title stays', (await page.locator('#codeWrong').isVisible()) && (await state()).course === 'prolog');
+  await page.fill('#codeInput', 'mossa, gran kotte');
+  await page.press('#codeInput', 'Enter');
+  await page.waitForFunction(() => window.__godis?.state().course === 'granskog' && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
+  const opened = await state();
+  check('the right three words open their chapter at its start', opened.course === 'granskog' && opened.checkpoint === -1 && opened.candy === 0, opened.course);
+  await finish();
+}
+{
+  console.log("a chapter's card, 1180×820");
+  const { page, finish } = await open('card-1180x820', { viewport: { width: 1180, height: 820 } }, '?dev&debug&course=garden&at=208.5,0.01');
+  await page.keyboard.down('ArrowRight');
+  await page.waitForSelector('#endCard:not([hidden])', { timeout: 20000 });
+  await page.keyboard.up('ArrowRight');
+  check("the card shows the next chapter's code", (await page.locator('#endCode').isVisible()) && (await page.locator('#endCodeWords').textContent()) === 'GRAN KOTTE MOSSA', await page.locator('#endCodeWords').textContent());
+  await finish();
+}
+
 // --- a phone held sideways: touch -------------------------------------------------------------------
 {
   console.log('touch, 844×390');

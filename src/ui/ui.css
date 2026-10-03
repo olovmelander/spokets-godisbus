@@ -807,6 +807,60 @@ body.calm *::after {
   text-decoration: underline;
 }
 
+/* A chapter code: on a chapter's card, and typed in on the title (plan §6.9). */
+.panel.end .code {
+  margin: 0;
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  font-size: 14px;
+}
+
+.panel.end .code b {
+  padding: 6px 14px;
+  border-radius: 12px;
+  background: #fffaf0;
+  box-shadow: inset 0 0 0 2px rgb(123 90 54 / 0.2);
+  font-size: 19px;
+  letter-spacing: 0.06em;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.code-form {
+  display: grid;
+  gap: 10px;
+}
+
+.code-form input {
+  min-height: 56px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 16px;
+  border: 2px solid rgb(123 90 54 / 0.4);
+  border-radius: 16px;
+  background: #fffaf0;
+  color: inherit;
+  font: 600 20px/1 inherit;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-transform: uppercase;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.code-form input::placeholder {
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 0.55;
+}
+
+.code-wrong {
+  margin: 0;
+  font-size: 16px;
+}
+
 /* The picture of a phone turning shows only when the screen is held upright. */
 .rotate {
   display: none;

@@ -13,6 +13,7 @@ import { createInput, type Device } from './input/input';
 import { tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
 import { settingsFor, simOptions, tempoOf, type Settings } from './save/settings';
+import { codeFor } from './save/codes';
 import { createStore, newSave, type PlayerSave } from './save/store';
 import type { SimStart, Vec } from './sim/types';
 import { createBench } from './ui/bench';
@@ -241,6 +242,17 @@ function start(): void {
       again = true;
       location.reload();
     },
+    onCode(id) {
+      // The chapter's start, with whatever this device has kept of the others. The code holds no candy.
+      const others = <T>(all: Record<string, T>) => Object.fromEntries(Object.entries(all).filter(([key]) => key !== id)) as Record<string, T>;
+      save = { ...save, updated: Date.now(), settings, chapter: id, checkpoint: -1, candy: others(save.candy), placed: others(save.placed), flags: others(save.flags) };
+      store.write(save);
+      again = true;
+      // Without ?course in the address: the code says where to go.
+      params.delete('course');
+      const query = params.toString();
+      location.href = `${location.pathname}${query ? `?${query.replace(/=(?=&|$)/g, '')}` : ''}`;
+    },
   });
   if (!benchOn && !at && (params.has('title') || (chapter.id !== 'testbana' && !debugOn))) {
     paused = true;
@@ -389,7 +401,7 @@ function start(): void {
       const next = params.has('dev') ? nextAfter(chapter.id) : null;
       const title = sv.end.named[chapter.id] ?? (number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course);
       const hidden = (chapter.hidden ?? []).map((h) => ({ kind: h.kind, found: game.sim.flags.has(foundFlag(h.kind)) }));
-      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden);
+      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null);
     }
 
     if (!shown) {
