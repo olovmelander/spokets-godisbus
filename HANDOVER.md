@@ -63,6 +63,21 @@
   - The browser test covers all three tiers, and checks that no shader is compiled during play (gate 6).
   - **Not yet:** Auto's two-second measurement, High's bloom and depth blur, Low's grade inside the materials,
     the LUT per place, `docs/art-bible.md`, and the two golden frames. They are the rest of Stage 0b.
+- **Stage 0c has begun** (3 October, branch `stage-0c-ghost`, stacked on `stage-0b-tiers`): the ghost's first
+  model, before Stage 0b is finished, because Olov wanted the characters started.
+  - It is built in Olov's Blender through the MCP server by `art/private/ghost/ghost.py`. Its four pictures
+    stand beside it in the scene as reference images: the two photos of the carving, the render and the poster.
+  - Five rigid parts, each with its origin where it pivots: the body with the bag and the two eyes, two arms and
+    two feet. The fists grip the bag's upper corners, as on the poster and the render. The ankle disc is plain.
+  - Its colours are flat for now: 14 materials, which cost 26 draw calls. The baked 1024² wood texture of plan
+    §5.6 replaces them, and brings the ghost down to one draw call per part.
+  - **None of the ghost is committed.** The generator, the `.blend` and the export are in `art/private/`, and four
+    renders (front, side, back, three-quarter) are in `docs/shots/_work/ghost/`. Git ignores both folders.
+  - The game shows the ghost on the test course where its pack exists. `scripts/build-assets.mjs` also packs
+    `art/private/baked/`, and the view asks the manifest before it loads `private/ghost`. In CI and on the public
+    site the course has no ghost. The ghost turns towards Elof, sways and taps a foot.
+  - **Not yet:** Olov's verdict on the likeness, the wood texture, the split in the hem at the back, the two knife
+    cuts above the bag, the rest of its moves (waddle, hop, dance, point, grab), and Elof himself.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): HTML and JS are gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). Whether it compresses `.wasm` and `.glb` can be read once
   this branch is deployed; the size gate counts them at full size until then.
@@ -75,8 +90,10 @@
 
 ## Next
 
-1. **Olov gives the next session its Blender tools** (plan §5.6, §6.14):
-   1. restart VS Code, so that Claude Code finds `uvx`;
+1. **Olov gives the next session its Blender tools** (plan §5.6, §6.14). After the first restart the `blender`
+   server still failed with "Connection closed": `uv`'s folder is in the user PATH, but Claude Code's process
+   had started with the old one, so `uvx` wasn't found.
+   1. quit VS Code completely (every window; signing out of Windows and in again is the sure way), and start it;
    2. keep Blender open with the add-on connected, and approve the `blender` server when Claude Code asks;
    3. ask the session what the Blender scene holds. It should list the cube, the camera and the light.
    - In the add-on's panel, keep only *Poly Haven* ticked. Never tick *Hunyuan*.
@@ -138,6 +155,7 @@
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
+| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: the ghost's first model, in two rounds against its pictures. Elof is left, and so is H1b. |
 
 ## Known bugs
 
@@ -178,6 +196,12 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
 
 3. **Is the small boy on Pappa's lap in `family-pappa-viewpoint.jpg` Elof?** Little Elof in the memories is
    modelled on him, flat cap and all (plan §2.4). The default: yes.
+4. **Is the ghost right?** Look at it in Blender, between its pictures, or open the four renders in
+   `docs/shots/_work/ghost/`. Say yes, or give up to three corrections (plan §7.3, H1b).
+5. **Where should the ghost's files live?** It is Pappa's carving, not a person, and a drawing of it is already
+   on the public loading card. In the public repository it is simplest, but git history is permanent. In the
+   private repository it can always be taken down, like the family's models. The default until you answer:
+   private, and so not on the public site.
 
 Two choices the session made, for Olov to overrule if he wants:
 - the name *Klonk* (two others that were considered: Kvist and Flisa);

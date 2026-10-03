@@ -8,6 +8,9 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const BAKED = join(ROOT, 'art', 'baked');
+// Models that are not in the public repository (plan §2.6). The folder is ignored by git and exists only where
+// those files are: on Olov's computer now, and later wherever the private repository is checked out.
+const PRIVATE_BAKED = join(ROOT, 'art', 'private', 'baked');
 const OUT = join(ROOT, 'public', 'packs');
 const CLI = join(ROOT, 'node_modules', '@gltf-transform', 'cli', 'bin', 'cli.js');
 
@@ -47,12 +50,14 @@ function transform(args) {
 
 rmSync(OUT, { recursive: true, force: true });
 const manifest = { version: 1, packs: {} };
-const packs = existsSync(BAKED) ? readdirSync(BAKED).filter((name) => statSync(join(BAKED, name)).isDirectory()) : [];
-for (const pack of packs) {
+const packsIn = (folder) =>
+  existsSync(folder) ? readdirSync(folder).filter((name) => statSync(join(folder, name)).isDirectory()).map((name) => [name, join(folder, name)]) : [];
+const packs = [...packsIn(BAKED), ...packsIn(PRIVATE_BAKED)];
+for (const [pack, folder] of packs) {
   mkdirSync(join(OUT, pack), { recursive: true });
   const files = {};
-  for (const name of readdirSync(join(BAKED, pack)).filter((file) => file.endsWith('.glb')).sort()) {
-    const source = join(BAKED, pack, name);
+  for (const name of readdirSync(folder).filter((file) => file.endsWith('.glb')).sort()) {
+    const source = join(folder, name);
     const target = join(OUT, pack, name);
     const temp = `${target}.tmp.glb`;
     // Colour textures as ETC1S; characters and small props carry no normal maps (plan §6.6).

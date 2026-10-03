@@ -3,6 +3,7 @@ import {
   ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, Mesh, MeshBasicMaterial, MeshLambertMaterial,
   MeshStandardMaterial, NeutralToneMapping, PerspectiveCamera, Scene, Shape, SphereGeometry, UnsignedByteType, WebGLRenderer,
 } from 'three';
+import type { Object3D } from 'three';
 import { createAssets } from './assets';
 import { GARDEN_MORNING, createGradePass } from './grade';
 import { chooseTier, pixelRatioFor, type Tier } from './quality';
@@ -94,7 +95,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const models: string[] = [];
   const roles: string[] = [];
   let compressedTextures = 0;
-  createAssets(renderer)
+  const assets = createAssets(renderer);
+  assets
     .model('boot', 'big-candy')
     .then((model) => {
       candyPlace.clear();
@@ -108,6 +110,27 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       });
     })
     .catch((error) => console.error('The big candy could not be loaded; the stand-in stays.', error));
+
+  // The ghost, modelled in Blender after Pappa's carving. Its files are not in the public repository, so it
+  // stands on the course only where its private pack exists (HANDOVER.md). The manifest says whether it does.
+  const GHOST_X = 6.5;
+  let ghost: Group | null = null;
+  let ghostFoot: Object3D | null = null;
+  let ghostTurn = -Math.PI / 2;
+  let clock = 0;
+  assets
+    .manifest()
+    .then((manifest) => (manifest.packs.private?.files['ghost.glb'] ? assets.model('private', 'ghost') : null))
+    .then((model) => {
+      if (!model) return;
+      model.position.set(GHOST_X, heightOfGroundAt(chapter, GHOST_X), 0);
+      scene.add(model);
+      ghost = model;
+      // GLTFLoader drops the dot from Blender's names: foot.L arrives as footL.
+      ghostFoot = model.getObjectByName('footL') ?? null;
+      models.push('private/ghost');
+    })
+    .catch((error) => console.error('The ghost could not be loaded.', error));
   const elof = buildElof();
   scene.add(elof.group);
 
@@ -178,6 +201,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     shadow.scale.setScalar(clamp(1 - height * 0.25, 0.35, 1));
 
     candy.rotateY(dt * (atGoal ? 7 : 1.2));
+
+    // The ghost is a wooden toy come alive: it never bends. It turns towards Elof, sways, and taps a foot.
+    if (ghost) {
+      clock += dt;
+      // Exported from Blender it faces +z, the camera. A quarter turn faces it along the course.
+      const towardsElof = x < ghost.position.x ? -Math.PI / 2 + 0.5 : Math.PI / 2 - 0.5;
+      ghostTurn += (towardsElof - ghostTurn) * ease(6, dt);
+      ghost.rotation.set(0, ghostTurn, Math.sin(clock * 1.7) * 0.035);
+      if (ghostFoot) ghostFoot.rotation.x = -Math.max(0, Math.sin(clock * 9)) * (Math.sin(clock * 0.9) > 0.2 ? 0.45 : 0);
+    }
     renderer.info.reset();
     renderer.render(scene, camera);
   }
