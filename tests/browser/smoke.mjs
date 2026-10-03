@@ -192,7 +192,8 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   console.log(`${course}, tier ${tier}, 844×390`);
   const { page, state, info, finish } = await open(`${course}-${tier}-844x390`, { viewport: { width: 844, height: 390 } }, `?debug&course=${course}&tier=${tier}`);
   const drawn = await until(info, (i) => i.models.includes('boot/big-candy'), 30000);
-  check(`${tier}: the dressed scene is drawn`, drawn.drawCalls > 20 && drawn.triangles > 20000, `${drawn.drawCalls} draw calls, ${drawn.triangles} triangles`);
+  // Far more than greybox draws. The count is without the family's models: CI has only the stand-ins, and a deck is few triangles.
+  check(`${tier}: the dressed scene is drawn`, drawn.drawCalls > 20 && drawn.triangles > 8000, `${drawn.drawCalls} draw calls, ${drawn.triangles} triangles`);
   // The budget of plan §6.12: a place's layers are instanced, so its draw calls stay few.
   check(`${tier}: it stays within 120 draw calls`, drawn.drawCalls <= 120, `${drawn.drawCalls}`);
   // He runs through it: what comes into the picture was compiled with the first frames.
