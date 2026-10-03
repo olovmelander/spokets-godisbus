@@ -22,8 +22,22 @@ jobs:
     env:
       # The words the privacy check looks for. Without the secret it runs its built-in rules only.
       PRIVACY_DENYLIST: ${{ secrets.PRIVACY_DENYLIST }}
+      # Whether the family's models can be fetched. A secret can't be read in `if:`; this can.
+      HAS_FAMILY: ${{ secrets.FAMILY_ASSETS_KEY != '' }}
     steps:
       - uses: actions/checkout@v7
+      # The family's models (plan §2.6, §6.11) live in a private repository, so that they can always be taken
+      # down: delete the secret FAMILY_ASSETS_KEY, or the files there, and run this workflow again. They are
+      # fetched with a read-only deploy key into art/private, where the asset build looks for them. Without
+      # the secret the site shows the stand-in figures. Pull requests never get them (ci.yml).
+      - name: Fetch the family's models
+        if: env.HAS_FAMILY == 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: olovmelander/spokets-godisbus-familj
+          ssh-key: ${{ secrets.FAMILY_ASSETS_KEY }}
+          path: art/private
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -38,6 +52,10 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # If the models were fetched, they must be in the site: a deploy never falls back to stand-ins in silence.
+      - name: Check that the family's models were packed
+        if: env.HAS_FAMILY == 'true'
+        run: test -s dist/packs/private/elof.glb && test -s dist/packs/private/ghost.glb
       - run: npm run privacy-check
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5

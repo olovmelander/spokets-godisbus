@@ -523,8 +523,24 @@
    - then **H1a**, Olov's checkpoint.
 6. **Stage 0c** (characters): image-to-3D for Elof and the family on the computer with the RTX 5080 (art bible
    §1.6, and question 4 below), and the ghost redone in Blender as stylized carved wood (art bible §1.5).
-7. **For the family's files:** the private repository `spokets-godisbus-familj`, a read-only token, and the secrets
-   `FAMILY_ASSETS_TOKEN` and `PRIVACY_DENYLIST` (plan §6.11).
+7. **The family's models on the site: one merge left, and it is Olov's.** He asked for it on 3 October: "We
+   need to have the good looking Elof and ghost in the github pages aswell."
+   - **Done by the session, with his stored GitHub credential:** the private repository
+     `olovmelander/spokets-godisbus-familj` exists and holds `baked/private/elof.glb` and `ghost.glb` with the
+     scripts and `.blend` files that build them. No picture is in it: it ignores the views cut from the sheets.
+     On Olov's computer it is checked out as `art/private/`.
+   - **How the deploy reaches it:** a read-only deploy key on the private repository, whose private half is the
+     Actions secret `FAMILY_ASSETS_KEY` of this repository. The key file was deleted from the computer after
+     the secret was set. The plan (§6.11) says a fine-grained token, `FAMILY_ASSETS_TOKEN`; a deploy key does
+     the same with less: it can only read that one repository, and a session can make one, which it can't with
+     a token.
+   - **What is left:** merging the pull request from the branch `family-on-pages`, which changes
+     `.github/workflows/deploy.yml` to fetch the models. That merge puts Elof's likeness on the public site,
+     so it is Olov's (CLAUDE.md). Until then the site shows the stand-in figures.
+   - **To take them down again:** delete the secret `FAMILY_ASSETS_KEY` (*Settings → Secrets and variables →
+     Actions*), or the files in the private repository, and run *Deploy to GitHub Pages* again.
+   - **Still to do:** the secret `PRIVACY_DENYLIST`, the words the privacy check looks for (plan §6.11). Only
+     Olov knows them, and they must never be written in this repository.
 8. **Whenever Olov can:** his own photos of Storklocken's top, the rapids in the village and Näsbacken. No openly
    licensed photo of them was found, so until then those places are built from descriptions (plan §0 Q8).
 
@@ -642,13 +658,12 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
      1536, plain background, arms a little out. The views cut from the sheet are small and soft; they are in
      `art/private/elof/image-to-3d/` and will do for a first try.
    - Until then the third, sculpted Elof stays in the game, and the ghost is redone as stylized carved wood.
-5. **Are the ghost and Elof right?** Open `art/private/ghost/ghost.blend` and `art/private/elof/elof.blend` in
-   Blender, where each stands between its pictures, or look at the renders in `docs/shots/_work/ghost/` and
-   `docs/shots/_work/elof/`. For each: say yes, or give up to three corrections (plan §7.3, H1b).
-6. **Where should the ghost's files live?** It is Pappa's carving, not a person, and a drawing of it is already
-   on the public loading card. In the public repository it is simplest, but git history is permanent. In the
-   private repository it can always be taken down, like the family's models. The default until you answer:
-   private, and so not on the public site.
+5. **Are the ghost and Elof right?** Olov called them "the good looking Elof and ghost" on 3 October and asked
+   for them on the site, which the session reads as: good enough to show. It is not H1b: the plan's yes, or up
+   to three corrections each, is still his to give. Open `art/private/ghost/ghost.blend` and
+   `art/private/elof/elof.blend` in Blender, where each stands between its pictures.
+6. **Where should the ghost's files live?** Answered by what Olov asked for on 3 October: in the private
+   repository with Elof's, and shown on the public site through the deploy. It can always be taken down.
 
 Two choices the session made, for Olov to overrule if he wants:
 - the name *Klonk* (two others that were considered: Kvist and Flisa);
