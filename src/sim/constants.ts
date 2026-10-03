@@ -37,6 +37,9 @@ export const JUMP_SPEED = halfStep + Math.sqrt(halfStep * halfStep + 2 * GRAVITY
 /** Gravity multiplier while Elof rises with Hoppa released. A tap then tops out at HOP_APEX. */
 export const HOP_GRAVITY_SCALE = JUMP_SPEED ** 2 / (2 * GRAVITY * (HOP_APEX + (JUMP_SPEED * STEP) / 2));
 
+/** A trail candy is collected when it comes this close to Elof's middle: near misses count (plan §4.3). */
+export const CANDY_MAGNET = 0.6;
+
 export const ELOF_HALF_WIDTH = 0.18;
 export const ELOF_HEIGHT = 1;
 /** How far the camera looks ahead of Elof (plan §5.2: 2–3 EL). */

@@ -113,9 +113,29 @@
     own material; its baked wood texture comes with its redesign.
   - **Not yet for Elof:** Olov's verdict, the library's skeleton and clips (the library has to be downloaded to
     `art/vendor/` first), the other nine expressions, and a skinned body if the joints show too much up close.
-- **How GitHub Pages serves the site** (read from the live site on 3 October): HTML and JS are gzipped, not
-  Brotli, and cached for 10 minutes (`max-age=600`). Whether it compresses `.wasm` and `.glb` can be read once
-  this branch is deployed; the size gate counts them at full size until then.
+- **Stage 1 has begun** (3 October, branch `stage-1-candy`, stacked on `image-to-3d-decision`). Olov: "We need
+  to continue working with the implementation of the games, we can improve the character design later". So the
+  game itself is built in greybox while Stage 0b's look-dev and Stage 0c's characters wait.
+  - **Part 1: the candy trail.** What you see: wrapped sweets float along the test course, in a low arc over
+    the step, a high arc onto the block and a long arc across the ditch. Elof collects the ones he comes near,
+    each flies into him, and the paper bag in the top left corner counts them and fills.
+  - `ChapterData.candy` holds the trail (`src/content/chapters/testbana.ts` has 20). The simulation puts a
+    candy in the bag when it is within 0.6 EL of Elof's middle (`CANDY_MAGNET`, plan §4.3), and nothing ever
+    leaves the bag.
+  - The whole trail is one instanced mesh, so it costs one draw call (`buildTrail` in `src/render/view.ts`).
+    The bag is DOM: `src/ui/hud.ts`, with its markup in `src/ui/shell.ts`.
+  - Tests: pickup, near misses and a candy that takes a jump (`tests/sim/candy.test.ts`); the trail's own
+    rules (never more than 3 EL to the next candy, every candy within a jump of the ground); the robot
+    collects all 20 at 30, 60, 120 and 144 Hz; the browser test reads the bag's number.
+  - The robot now runs off a step down instead of jumping from it, as the trail shows. A player who jumps
+    there flies over the candy just beyond; that is the player's choice, not a bug.
+  - **Not yet, the rest of Stage 1** (plan §7.3): the glitter bubble and safe ground; ledges and climbing;
+    the lace and the swing in both modes; the big candy as a checkpoint; the camera's zones; one greybox
+    puzzle and one exciting sequence; the two play styles; then H2.
+- **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
+  Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
+  served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
+  both at full size, which is on the safe side; see "Next".
 - **Olov's computer** (checked 3 October): Windows 11, an RTX 3070, Node 24.14, git, and Blender 4.5.9 LTS with
   the *MCP for Blender* add-on running on port 9876, with only Poly Haven ticked, `uv` 0.12, Playwright
   1.56.1's Chromium, and the `ktx` tool 4.4.2 in `%LOCALAPPDATA%\Programs\KTX-Software\bin` (the asset build
@@ -135,20 +155,23 @@
    minute and then shows text. Copy that text into the next session.
    - On the computer: `npm run dev`, then `http://localhost:5173/spokets-godisbus/?debug`. For a phone on the same
      Wi-Fi: `npm run dev:lan`.
-3. **After that merge,** the next session reads the live site's headers for the `.wasm` and the `.glb`, to see
-   whether Pages compresses them, and corrects `scripts/size-gate.mjs` and the plan's §6.6 if it does.
-4. **The rest of Stage 0b** (look-dev), on Olov's computer, with him watching the picture:
+3. **Correct the size gate:** Pages gzips `.wasm` and `.glb` too (see "State"), so `scripts/size-gate.mjs` and
+   the plan's §6.6 should count them as served. A small PR of its own.
+4. **The rest of Stage 1** (plan §7.3), one visible outcome per PR, in this order: the glitter bubble and safe
+   ground; ledges and climbing; the lace and the swing; the big candy as a checkpoint; the camera's zones; a
+   greybox puzzle; a greybox exciting sequence; the two play styles. Then **H2**, Olov's own test on touch.
+5. **The rest of Stage 0b** (look-dev), on Olov's computer, with him watching the picture:
    - `docs/art-bible.md`: the scale chart, a palette and a grade per place, the layer recipe, the H1a board with
      its five criteria, and the fallback look (plan §5.6, point 1);
    - the two golden frames, in `dev/look.html`: the deck edge and the moss under the spruces, each with the
      stand-in Elof, a red hook ring and candy, built in layers (plan §5.3) with CC0 materials from Poly Haven;
    - what the tiers still lack (see "State"), and `?bench` on the golden frames;
    - then **H1a**, Olov's checkpoint.
-5. **Stage 0c** (characters): Elof and the ghost in Blender, with every picture listed for them in plan §2 open
-   as a reference (plan §5.6).
-6. **Before Stage 0c:** the private repository `spokets-godisbus-familj`, a read-only token, and the secrets
+6. **Stage 0c** (characters): image-to-3D for Elof and the family on the computer with the RTX 5080 (art bible
+   §1.6, and question 4 below), and the ghost redone in Blender as stylized carved wood (art bible §1.5).
+7. **For the family's files:** the private repository `spokets-godisbus-familj`, a read-only token, and the secrets
    `FAMILY_ASSETS_TOKEN` and `PRIVACY_DENYLIST` (plan §6.11).
-7. **Whenever Olov can:** his own photos of Storklocken's top, the rapids in the village and Näsbacken. No openly
+8. **Whenever Olov can:** his own photos of Storklocken's top, the rapids in the village and Näsbacken. No openly
    licensed photo of them was found, so until then those places are built from descriptions (plan §0 Q8).
 
 ## Decisions in effect
@@ -164,6 +187,7 @@
 | The secret | Pappa's first trägubbe, carved for Elof when he was about three and lost on the mountain. Little Elof shared his Saturday sweets with it, which is why the ghost takes the bag. The game names no year. | Olov, 3 Oct; the retelling in plan §2.4 and §3.4 is the session's |
 | The ghost's name | *Klonk*, after its footsteps. Elof names it in the epilogue; until then it is "spöket". | Olov asked for a name, 3 Oct; the name is the session's proposal |
 | Dates | None. Stages in order; a release goes out when its checkpoint has passed. | Olov, 3 Oct |
+| Order of work | Stage 1, the game itself in greybox, goes on while the look-dev of Stage 0b and the characters of Stage 0c wait | Olov, 3 Oct: "continue working with the implementation of the games, we can improve the character design later" |
 | Testing | Only Olov tests before Elof plays. H2 and H3 are his own tests. | Olov, 3 Oct |
 | Voices | None: no read-aloud, no recordings. Characters make wordless sounds. | Olov, 3 Oct |
 | Logotypes | None anywhere. The star on the real ghost's shoes becomes a plain disc. | Olov, 3 Oct |
@@ -185,6 +209,7 @@
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
+| 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag. Started before 0b and 0c are finished, on Olov's word. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs

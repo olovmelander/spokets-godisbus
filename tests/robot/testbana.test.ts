@@ -17,7 +17,7 @@ function heightAt(chapter: ChapterData, x: number): number {
 /**
  * The robot plays through the real loop and press queue with a fake clock (plan §6.13).
  * It decides from what it sees, as a player does: it runs right, and holds Hoppa when the ground
- * ahead rises or drops.
+ * ahead rises or a gap opens. A step down with no far side is no gap: it runs off that, as the trail shows.
  */
 function playThrough(fps: number, chapter = testbana) {
   const game = new Game(chapter);
@@ -28,15 +28,19 @@ function playThrough(fps: number, chapter = testbana) {
   while (!game.sim.flags.has('goal') && frames < fps * 40) {
     const p = game.sim.curr;
     const rises = heightAt(chapter, p.x + 1.0) > p.y + 0.05;
-    const drops = heightAt(chapter, p.x + 0.35) < p.y - 0.3;
-    const ahead = p.grounded && (rises || drops);
+    const gap = heightAt(chapter, p.x + 0.35) < p.y - 0.3 && heightAt(chapter, p.x + 2.2) > p.y - 0.3;
+    const ahead = p.grounded && (rises || gap);
     // A press is the moment the reason appears; holding is everything after it.
     game.frame(dt, { x: 1, hopHeld: true }, { hop: ahead && !wasAhead, act: false, helper: false });
     wasAhead = ahead;
     lowest = Math.min(lowest, game.sim.curr.y);
     frames++;
   }
-  return { goal: game.sim.flags.has('goal'), seconds: frames * dt, steps: game.sim.steps, end: game.sim.curr, lowest };
+  const missed = game.sim.collected.flatMap((got, i) => (got ? [] : [i]));
+  return {
+    goal: game.sim.flags.has('goal'), seconds: frames * dt, steps: game.sim.steps, end: game.sim.curr, lowest,
+    candy: game.sim.candyCount, missed,
+  };
 }
 
 describe('the robot on the test course', () => {
@@ -46,6 +50,14 @@ describe('the robot on the test course', () => {
       expect(result.goal).toBe(true);
       expect(result.seconds).toBeLessThan(25);
       expect(result.lowest).toBeGreaterThan(-1);
+    });
+  }
+
+  for (const fps of [30, 60, 120, 144]) {
+    it(`follows the candy trail and misses none of it at ${fps} Hz`, () => {
+      const result = playThrough(fps);
+      expect(result.missed).toEqual([]);
+      expect(result.candy).toBe(testbana.candy.length);
     });
   }
 

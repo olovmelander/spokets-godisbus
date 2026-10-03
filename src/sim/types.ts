@@ -11,6 +11,11 @@ export interface ChapterData {
   spawn: Vec;
   /** Reaching this x sets the flag "goal". */
   goalX: number;
+  /**
+   * Trail candy, in the order the path meets it (plan §4.3). Each point is where the candy floats: about
+   * half an EL over the ground on a walk, and along the arc of the jump over a gap or up a step.
+   */
+  candy: Vec[];
 }
 
 /** One simulation step's input. hop and act are presses; the rest is held state. */

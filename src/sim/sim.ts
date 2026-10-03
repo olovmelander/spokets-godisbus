@@ -1,6 +1,6 @@
 import { BoxShape, ChainShape, Settings, Vec2, World, type Body, type Contact } from 'planck';
 import {
-  COYOTE_TIME, ELOF_HALF_WIDTH, ELOF_HEIGHT, GRAVITY, HOP_GRAVITY_SCALE, JUMP_BUFFER, JUMP_SPEED, MAX_FALL_SPEED,
+  CANDY_MAGNET, COYOTE_TIME, ELOF_HALF_WIDTH, ELOF_HEIGHT, GRAVITY, HOP_GRAVITY_SCALE, JUMP_BUFFER, JUMP_SPEED, MAX_FALL_SPEED,
   RUN_AFTER, RUN_DEFLECTION, RUN_SPEED, STEP, STOP_WITHIN, WALK_DEFLECTION, WALK_SPEED,
 } from './constants';
 import type { ChapterData, PlayerState, StepInput } from './types';
@@ -17,12 +17,15 @@ const SKIN = 2 * Settings.polygonRadius - Settings.linearSlop * Settings.lengthU
 
 /**
  * The pure simulation: no three, no DOM, no clock. One call to step() is 1/120 s.
- * Stage 0a holds the ground and a greybox Elof who walks, runs and jumps.
+ * It holds the ground, a greybox Elof who walks, runs and jumps, and the trail candy he collects.
  */
 export class Sim {
   readonly world: World;
   readonly flags = new Set<string>();
   steps = 0;
+  /** Trail candy in the bag, by its place in chapter.candy. Nothing ever leaves the bag (plan §4.3). */
+  readonly collected: boolean[];
+  candyCount = 0;
   prev: PlayerState;
   curr: PlayerState;
 
@@ -65,6 +68,7 @@ export class Sim {
     this.world.on('begin-contact', (c) => this.countFoot(c, 1));
     this.world.on('end-contact', (c) => this.countFoot(c, -1));
 
+    this.collected = chapter.candy.map(() => false);
     this.curr = this.read(false);
     this.prev = this.curr;
   }
@@ -109,7 +113,22 @@ export class Sim {
     this.steps++;
 
     this.curr = this.read(this.footContacts > 0 && this.body.getLinearVelocity().y <= 0.05);
+    this.collect();
     if (this.curr.x >= this.chapter.goalX) this.flags.add('goal');
+  }
+
+  /** Puts every trail candy within reach of Elof's middle in the bag. */
+  private collect(): void {
+    const x = this.curr.x;
+    const y = this.curr.y + ELOF_HEIGHT / 2;
+    const candy = this.chapter.candy;
+    for (let i = 0; i < candy.length; i++) {
+      if (this.collected[i]) continue;
+      const c = candy[i]!;
+      if ((c.x - x) ** 2 + (c.y - y) ** 2 > CANDY_MAGNET ** 2) continue;
+      this.collected[i] = true;
+      this.candyCount++;
+    }
   }
 
   private countFoot(contact: Contact, change: 1 | -1): void {

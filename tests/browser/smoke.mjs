@@ -139,6 +139,10 @@ async function open(name, options, query = '?debug') {
   check('holding Space jumps high', top > 0.8, `top ${top.toFixed(2)} EL`);
   const after = await until(state, (s) => s.vx === 0 && s.grounded === true);
   check('he stops when the keys are let go', after.vx === 0 && after.grounded === true, `vx ${after.vx}`);
+  // Stage 1: the candy trail. The run above went through its first candies.
+  const bag = await page.evaluate(() => ({ inBag: window.__godis.state().candy, shown: document.getElementById('bagCount').textContent }));
+  check('the trail candy he ran through is in the bag', bag.inBag >= 1, `${bag.inBag} candies`);
+  check('the bag in the corner shows the same number', bag.shown === String(bag.inBag), `it shows ${bag.shown}`);
   // Gate 6 (plan §6.12): no shader is compiled during play. Everything was compiled by the first frames.
   const programs = (await info()).programs;
   await sleep(500);
