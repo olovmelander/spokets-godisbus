@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COURSES, STORY } from '../../src/content/chapters';
 import { PLACES } from '../../src/render/dressing';
+import { GLOW_FROM, GLOW_ON_HIGH } from '../../src/render/grade';
 
 describe('the places', () => {
   it('every chapter that names a place names one that has a look', () => {
@@ -37,6 +38,13 @@ describe('the places', () => {
       }
       if (chapter.house) for (const x of chapter.house.windows) expect(x > chapter.house.from && x < chapter.house.to, `${chapter.id}: the window at ${x}`).toBe(true);
     }
+  });
+
+  it('keeps the glow of High gentle: only what is nearly white spills, and never as much as it shines', () => {
+    expect(GLOW_FROM).toBeGreaterThanOrEqual(0.6);
+    expect(GLOW_ON_HIGH).toBeGreaterThan(0);
+    // Sixteen samples at 0.075 and 0.05 add up to one: at full strength the spill would equal the light itself.
+    expect(GLOW_ON_HIGH).toBeLessThanOrEqual(0.75);
   });
 
   it('each look keeps its grade gentle: nothing a child would read as a filter', () => {

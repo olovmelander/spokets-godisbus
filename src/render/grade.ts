@@ -1,5 +1,5 @@
 import {
-  BufferGeometry, Float32BufferAttribute, Mesh, OrthographicCamera, ShaderMaterial, Vector3,
+  BufferGeometry, Float32BufferAttribute, Mesh, OrthographicCamera, ShaderMaterial, Vector2, Vector3,
   type WebGLRenderTarget, type WebGLRenderer,
 } from 'three';
 
@@ -48,14 +48,34 @@ const FRAGMENT = /* glsl */ `
   uniform float vignette;
   uniform float grain;
   uniform float seed;
+  uniform float glow;
+  uniform vec2 texel;
   varying vec2 vUv;
+
+  // What is brighter than white in the picture before it is graded: the candy's glitter, a glint, the sun
+  // on something pale, the northern lights.
+  vec3 bright(vec2 uv) {
+    return max(texture2D(tDiffuse, uv).rgb - GLOW_FROM, 0.0);
+  }
 
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
   }
 
   void main() {
-    vec3 colour = texture2D(tDiffuse, vUv).rgb * exposure * tint;
+    vec3 scene = texture2D(tDiffuse, vUv).rgb;
+    // The glow of High (plan §6.5): light spills a little round what is brightest. Two rings of eight
+    // samples, the outer one turned half a step, read from the same picture: no buffer of its own.
+    if (glow > 0.0) {
+      vec3 spill = vec3(0.0);
+      for (int i = 0; i < 8; i++) {
+        float a = float(i) * 0.7853982;
+        spill += bright(vUv + vec2(cos(a), sin(a)) * texel * 5.0) * 0.075;
+        spill += bright(vUv + vec2(cos(a + 0.3926991), sin(a + 0.3926991)) * texel * 13.0) * 0.05;
+      }
+      scene += spill * glow;
+    }
+    vec3 colour = scene * exposure * tint;
     float light = dot(colour, vec3(0.2126, 0.7152, 0.0722));
     colour = mix(vec3(light), colour, saturation);
     colour = (colour - 0.18) * contrast + 0.18;
@@ -71,13 +91,28 @@ export interface Effect {
   setSize(width: number, height: number): void;
 }
 
+/** The grading pass, which can also glow. */
+export interface GradePass extends Effect {
+  /** How strongly light spills round what is brightest: 0 is off, as on Mid. */
+  setGlow(strength: number): void;
+}
+
+/** In linear light, 1 is white. What glows is what is nearly that bright and brighter: the sun on something pale, a lit window, a glint. */
+export const GLOW_FROM = 0.72;
+/** High's glow. Gentle: it must never read as a haze over the picture. */
+export const GLOW_ON_HIGH = 0.6;
+
 /**
- * The one grading pass of Mid and High (plan §6.5): grade, vignette and grain in a single full-screen draw.
- * Tone mapping and the sRGB conversion are applied by the renderer after it.
+ * The one grading pass of Mid and High (plan §6.5): grade, vignette and grain in a single full-screen draw,
+ * and on High a glow round what is brightest. Tone mapping and the sRGB conversion are applied by the
+ * renderer after it. The glow is switched by a number, so going between Mid and High compiles nothing.
  */
-export function createGradePass(grade: Grade): Effect {
+export function createGradePass(grade: Grade): GradePass {
   const material = new ShaderMaterial({
+    defines: { GLOW_FROM: GLOW_FROM.toFixed(3) },
     uniforms: {
+      glow: { value: 0 },
+      texel: { value: new Vector2(1 / 1280, 1 / 720) },
       tDiffuse: { value: null },
       tint: { value: new Vector3(...grade.tint) },
       exposure: { value: grade.exposure },
@@ -103,12 +138,18 @@ export function createGradePass(grade: Grade): Effect {
   return {
     render(renderer, writeBuffer, readBuffer) {
       material.uniforms.tDiffuse!.value = readBuffer.texture;
+      (material.uniforms.texel!.value as Vector2).set(1 / Math.max(1, readBuffer.width), 1 / Math.max(1, readBuffer.height));
       // The grain moves a little each frame, like film. It is far too faint to flicker.
       material.uniforms.seed!.value = (material.uniforms.seed!.value + 0.371) % 97;
       renderer.setRenderTarget(writeBuffer);
       renderer.render(triangle, camera);
     },
-    // The pass has no buffers of its own, so there is nothing to resize.
-    setSize() {},
+    // The pass has no buffers of its own. The glow's reach is counted in pixels of the picture it reads.
+    setSize(width, height) {
+      (material.uniforms.texel!.value as Vector2).set(1 / Math.max(1, width), 1 / Math.max(1, height));
+    },
+    setGlow(strength) {
+      material.uniforms.glow!.value = Math.max(0, strength);
+    },
   };
 }
