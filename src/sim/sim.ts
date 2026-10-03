@@ -5,11 +5,11 @@ import {
   RUN_AFTER, RUN_DEFLECTION, RUN_SPEED, SAFE_AFTER, SAFE_REACH, SLIDE_REACH, SLIDE_TIME, STEEP_SLIDE_SPEED, STEP,
   STEP_HEIGHT, STOP_WITHIN, WALK_DEFLECTION, WALK_SPEED,
 } from './constants';
-import { CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER } from './constants';
+import { CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER, MOVE_TIME, MOVER_RESET, PUSH_REACH } from './constants';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
-import type { ChapterData, Climb, Hook, Jump, Mode, PlayerState, SimOptions, SimStart, StepInput, Vec, Verb } from './types';
+import type { ChapterData, Climb, Hook, Jump, Mode, Mover, PlayerState, SimOptions, SimStart, StepInput, Vec, Verb } from './types';
 
 // 1 EL is the length unit. This scales Box2D's tolerances to a hero who is one unit tall (plan §6.4).
 Settings.lengthUnitsPerMeter = 0.2;
@@ -46,6 +46,19 @@ type State =
   | { kind: 'swing'; hook: Hook; length: number; to: number; angle: number; speed: number; letGo: number }
   | { kind: 'fly'; fromX: number; fromY: number; vx: number; vy: number; toX: number; toY: number; time: number; t: number };
 
+/** A thing on its rail: where it is, which stop it is at or going to, and how far it has come. */
+export interface MoverState {
+  readonly def: Mover;
+  /** The middle of its bottom. */
+  x: number;
+  y: number;
+  /** The stop it is at, or on its way to. */
+  stop: number;
+  /** The stop it came from, and how far it has come from there: 1 when it rests. */
+  from: number;
+  t: number;
+}
+
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 
@@ -69,6 +82,8 @@ export class Sim {
   checkpoint = -1;
   /** The settings that change the rules. They may be changed while the game is played. */
   options: SimOptions;
+  /** The things on rails, in the chapter's order. */
+  readonly movers: MoverState[];
   prev: PlayerState;
   curr: PlayerState;
 
@@ -79,6 +94,7 @@ export class Sim {
   private readonly hooks: Hook[];
   private readonly checkpoints: Vec[];
   private readonly jumps: Jump[];
+  private readonly moverBodies: Body[];
   private state: State = { kind: 'free' };
   /** True in the air after a swing: he keeps the speed it gave him, where a jump's speed follows the stick. */
   private thrown = false;
@@ -143,6 +159,21 @@ export class Sim {
       userData: FOOT,
     });
 
+    // Things on rails are moved by the game, never by the physics: nothing can knock them off.
+    this.movers = (chapter.movers ?? []).map((def) => {
+      const stop = start.placed?.includes(def.id) ? def.stops.length - 1 : 0;
+      const at = def.stops[stop]!;
+      return { def, x: at.x, y: at.y, stop, from: stop, t: 1 };
+    });
+    this.moverBodies = this.movers.map((mover) => {
+      const body = this.world.createBody({ type: 'kinematic', position: new Vec2(mover.x, mover.y) });
+      body.createFixture({
+        shape: new BoxShape(mover.def.width / 2, mover.def.height / 2, new Vec2(0, mover.def.height / 2)),
+        friction: 0,
+      });
+      return body;
+    });
+
     this.world.on('begin-contact', (c) => this.countFoot(c, 1));
     this.world.on('end-contact', (c) => this.countFoot(c, -1));
 
@@ -177,6 +208,7 @@ export class Sim {
     else if (state.kind === 'slide') this.slide(state);
     else if (state.kind === 'swing') this.swing(state, input);
     else this.fly(state);
+    this.moveMovers();
 
     this.world.step(STEP);
     this.steps++;
@@ -190,6 +222,56 @@ export class Sim {
     // The bubble only carries. Everywhere else, candy he comes near is his: up a hose too.
     if (this.state.kind !== 'bubble') this.collect();
     if (this.curr.x >= this.chapter.goalX) this.flags.add('goal');
+  }
+
+  /** The ids of the things on rails that are where they belong: what a save keeps of the puzzles. */
+  get placed(): string[] {
+    return this.movers.filter((m) => m.stop === m.def.stops.length - 1 && m.t >= 1).map((m) => m.def.id);
+  }
+
+  /** One step for the things on rails: they slide to their stops, and the unfinished ones go home when he leaves. */
+  private moveMovers(): void {
+    for (const [i, mover] of this.movers.entries()) {
+      const last = mover.def.stops.length - 1;
+      // Local reset (plan §4.5): not yet where it belongs, at rest, and Elof far away.
+      if (mover.t >= 1 && mover.stop > 0 && mover.stop < last && Math.abs(this.curr.x - mover.x) > MOVER_RESET) {
+        mover.from = mover.stop;
+        mover.stop = 0;
+        mover.t = 0;
+      }
+      if (mover.t >= 1) continue;
+      mover.t = Math.min(1, mover.t + STEP / MOVE_TIME);
+      const a = mover.def.stops[mover.from]!;
+      const b = mover.def.stops[mover.stop]!;
+      // It starts with a will and settles softly: a little past its stop, and back.
+      const k = mover.t;
+      const eased = 1 - (1 - k) ** 3 + Math.sin(Math.PI * k) * 0.06 * k;
+      mover.x = mix(a.x, b.x, eased);
+      mover.y = mix(a.y, b.y, eased);
+      this.moverBodies[i]!.setTransform(new Vec2(mover.x, mover.y), 0);
+    }
+  }
+
+  /** The thing on a rail that Använd would move now, by pushing or by the lace. */
+  private moverFor(verb: 'push' | 'pull'): MoverState | null {
+    const p = this.curr;
+    for (const mover of this.movers) {
+      const def = mover.def;
+      if (def.verb !== verb || mover.t < 1 || mover.stop >= def.stops.length - 1) continue;
+      const next = def.stops[mover.stop + 1]!;
+      const way = Math.sign(next.x - mover.x) || 1;
+      if (verb === 'pull') {
+        // The ring is in reach of the lace, and the pull brings the thing towards him.
+        const ring = def.ring ?? { x: 0, y: def.height };
+        const near = Math.hypot(mover.x + ring.x - p.x, mover.y + ring.y - (p.y + ELOF_HEIGHT / 2)) <= LACE_REACH;
+        if (near && (p.x - mover.x) * way > 0) return mover;
+      } else if (p.grounded && Math.abs(p.y - mover.y) < 0.3) {
+        // He stands beside it, on the side it is pushed from.
+        const gap = (mover.x - p.x) * way - def.width / 2 - ELOF_HALF_WIDTH;
+        if (gap > -0.05 && gap <= PUSH_REACH) return mover;
+      }
+    }
+    return null;
   }
 
   /**
@@ -218,9 +300,20 @@ export class Sim {
     const hook = this.hookInReach();
     // Använd at the top of a hose: he slides down it.
     const below = p.grounded ? this.climbs.find((c) => Math.abs(c.x - p.x) <= SLIDE_REACH && Math.abs(c.top - p.y) <= 0.25) : undefined;
-    this.verb = hook ? 'lace' : below ? 'slide' : null;
+    // Använd at a thing on a rail: Dra with the lace by its ring, or Knuffa from beside it.
+    const pulled = hook ? null : this.moverFor('pull');
+    const pushed = hook || pulled ? null : this.moverFor('push');
+    const moved = pulled ?? pushed;
+    this.verb = hook ? 'lace' : pulled ? 'pull' : pushed ? 'push' : below ? 'slide' : null;
     if (hook && input.act) {
       this.throwLace(hook);
+      return;
+    }
+    if (moved && input.act) {
+      moved.from = moved.stop;
+      moved.stop++;
+      moved.t = 0;
+      this.verb = null;
       return;
     }
     if (below && input.act) {
@@ -234,7 +327,8 @@ export class Sim {
     if (this.options.easyJumps && p.grounded && dir !== 0) {
       const reach = input.hop ? EASY_JUMP_STEER : EASY_JUMP_REACH;
       const jump = this.jumps.find((j) => j.dir === dir && Math.abs(j.at.y - p.y) < 0.3 && (j.at.x - p.x) * dir >= -0.05 && (j.at.x - p.x) * dir <= reach);
-      if (jump && (input.hop || Math.abs(p.vx) > WALK_SPEED * 0.5)) {
+      const ready = jump && (jump.needs === undefined || this.placed.includes(jump.needs));
+      if (jump && ready && (input.hop || Math.abs(p.vx) > WALK_SPEED * 0.5)) {
         this.flyTo(jump.land, Math.min(0.8, Math.max(0.45, Math.hypot(jump.land.x - p.x, jump.land.y - p.y) / 4.5)));
         return;
       }

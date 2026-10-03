@@ -22,6 +22,8 @@ export interface PlayerSave {
   checkpoint: number;
   /** The trail candy collected, per chapter, by its place in the chapter's list. */
   candy: Record<string, number[]>;
+  /** The things on rails that are where they belong, per chapter, by id. */
+  placed: Record<string, string[]>;
   playMs: number;
 }
 
@@ -32,7 +34,7 @@ export type Loaded =
   | { kind: 'unreadable' };
 
 export function newSave(now: number, chapter: string, settings: Settings = settingsFor('aventyr')): PlayerSave {
-  return { v: SAVE_VERSION, name: FIRST_PLAYER.name, updated: now, settings, chapter, checkpoint: -1, candy: {}, playMs: 0 };
+  return { v: SAVE_VERSION, name: FIRST_PLAYER.name, updated: now, settings, chapter, checkpoint: -1, candy: {}, placed: {}, playMs: 0 };
 }
 
 /** Reads one player's save from its text. */
@@ -54,6 +56,12 @@ export function readSave(text: string | null): Loaded {
       if (Array.isArray(list)) candy[chapter] = list.filter((i): i is number => Number.isInteger(i) && i >= 0);
     }
   }
+  const placed: Record<string, string[]> = {};
+  if (typeof from.placed === 'object' && from.placed !== null) {
+    for (const [chapter, list] of Object.entries(from.placed as Record<string, unknown>)) {
+      if (Array.isArray(list)) placed[chapter] = list.filter((id): id is string => typeof id === 'string');
+    }
+  }
   return {
     kind: 'save',
     save: {
@@ -64,6 +72,7 @@ export function readSave(text: string | null): Loaded {
       chapter: typeof from.chapter === 'string' ? from.chapter : '',
       checkpoint: Number.isInteger(from.checkpoint) ? (from.checkpoint as number) : -1,
       candy,
+      placed,
       playMs: typeof from.playMs === 'number' && from.playMs >= 0 ? from.playMs : 0,
     },
   };

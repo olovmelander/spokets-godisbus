@@ -84,6 +84,13 @@ export const EASY_JUMP_REACH = 0.35;
 /** *Lätta hopp*: Hoppa pressed within this of a marked edge is steered to its landing. */
 export const EASY_JUMP_STEER = 1.2;
 
+/** A thing on a rail takes this long from one stop to the next. */
+export const MOVE_TIME = 0.6;
+/** Standing this close beside a thing on a rail, Använd pushes it. */
+export const PUSH_REACH = 0.5;
+/** A thing that is not yet where it belongs goes home when Elof is this far from it (plan §4.5). */
+export const MOVER_RESET = 10;
+
 /** A fall longer than this ends in the glitter bubble; a shorter one is a soft landing (plan §4.2). */
 export const FALL_LIMIT = 4;
 /** The bubble floats him back in about this long. */

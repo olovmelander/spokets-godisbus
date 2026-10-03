@@ -29,13 +29,32 @@ export interface Hook {
 export type Mode = 'free' | 'bubble' | 'ledge' | 'climb' | 'slide' | 'swing' | 'fly';
 
 /** What the Använd button would do right now. Each has its word in `sv.verbs`. */
-export type Verb = 'slide' | 'lace';
+export type Verb = 'slide' | 'lace' | 'push' | 'pull';
+
+/**
+ * A thing on a rail (plan §4.2): a shaving, a cone, a stick. It moves one stop at a time and can never end
+ * up somewhere unsolvable. At its last stop it stays for good; before that it goes home when Elof leaves.
+ */
+export interface Mover {
+  /** A stable name: the save remembers it by this. */
+  id: string;
+  width: number;
+  height: number;
+  /** Where the middle of its bottom is at each stop, from home to where it belongs. */
+  stops: Vec[];
+  /** Knuffa: he pushes it from beside it. Dra: the lace pulls it by its red ring. */
+  verb: 'push' | 'pull';
+  /** For Dra: where the ring sits, from the middle of its bottom. */
+  ring?: Vec;
+}
 
 /** A jump the course asks for: the edge it is made from, the way it goes, and where it lands. */
 export interface Jump {
   at: Vec;
   dir: 1 | -1;
   land: Vec;
+  /** The thing on a rail that has to be in place before this jump can be made. */
+  needs?: string;
 }
 
 /** The settings that change the rules (plan §4.1). */
@@ -54,6 +73,8 @@ export interface SimStart {
   checkpoint?: number;
   /** The trail candy already in the bag, by its place in chapter.candy. */
   collected?: readonly number[];
+  /** The things on rails that are where they belong, by id. */
+  placed?: readonly string[];
 }
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
@@ -77,6 +98,8 @@ export interface ChapterData {
   checkpoints?: Vec[];
   /** The jumps that *Lätta hopp* makes by itself. */
   jumps?: Jump[];
+  /** The things on rails that he pushes and pulls. */
+  movers?: Mover[];
 }
 
 /** One simulation step's input. hop and act are presses; the rest is held state. */

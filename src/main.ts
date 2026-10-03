@@ -82,7 +82,10 @@ function start(): void {
   }
   let save: PlayerSave = loaded.kind === 'save' ? loaded.save : newSave(Date.now(), chapter.id);
   let settings: Settings = debugOn && params.get('style') === 'lugnt' ? settingsFor('lugnt') : save.settings;
-  const from: SimStart = at || save.chapter !== chapter.id ? {} : { checkpoint: save.checkpoint, collected: save.candy[chapter.id] ?? [] };
+  const from: SimStart =
+    at || save.chapter !== chapter.id
+      ? {}
+      : { checkpoint: save.checkpoint, collected: save.candy[chapter.id] ?? [], placed: save.placed[chapter.id] ?? [] };
 
   const game = new Game(chapter, simOptions(settings), from);
   game.tempo = tempoOf(settings);
@@ -101,6 +104,7 @@ function start(): void {
       chapter: chapter.id,
       checkpoint: game.sim.checkpoint,
       candy: { ...save.candy, [chapter.id]: game.sim.collected.flatMap((got, i) => (got ? [i] : [])) },
+      placed: { ...save.placed, [chapter.id]: game.sim.placed },
       playMs: save.playMs + (now - playedFrom),
     };
     playedFrom = now;
@@ -227,7 +231,7 @@ function start(): void {
     const atGoal = game.sim.flags.has('goal');
     view.render({
       prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: paused ? 0 : dt, atGoal,
-      collected: game.sim.collected, checkpoint: game.sim.checkpoint,
+      collected: game.sim.collected, checkpoint: game.sim.checkpoint, movers: game.sim.movers,
     });
     hud.candy(game.sim.candyCount);
     hud.verb(game.sim.curr.verb);
