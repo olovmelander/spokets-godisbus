@@ -10,11 +10,13 @@ import { DOWN_TIME, DROP_FALL, DROP_FROM, DROP_RADIUS, DROP_WARNING } from './co
 import { GHOST_CATCH, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_STEER, SPOT_REACH } from './constants';
 import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REACH } from './constants';
 import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
+import { GUIDE_AFTER, HELP_TIME, REMIND_AFTER } from './constants';
+import { hintFor } from './help';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
 import type {
-  ChapterData, Climb, GhostPerch, Hook, Jump, Mode, Mover, PlayerState, Ride, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
+  ChapterData, Climb, GhostPerch, HelpState, Hook, Jump, Mode, Mover, PlayerState, Ride, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
 } from './types';
 
 // 1 EL is the length unit. This scales Box2D's tolerances to a hero who is one unit tall (plan §6.4).
@@ -151,6 +153,14 @@ export class Sim {
   readonly rollers: RollerState[];
   /** How many times a cone has bowled him over. */
   bowled = 0;
+  /** What the helper is doing: away, or one of its three steps at the next thing to do. */
+  readonly help: HelpState = { step: 0, at: null, verb: null, word: null };
+  /** How long the helper has been at it, how long nothing has happened, and what "something happened" is read from. */
+  private helpFor = 0;
+  private idle = 0;
+  private progress = -1;
+  private furthest = -Infinity;
+  private reminded = false;
   /** The stretches with gusts, in the chapter's order. */
   readonly gusts: GustState[];
   /** How many times a gust has caught him in the open. */
@@ -330,6 +340,7 @@ export class Sim {
     this.sink();
     this.haunt();
     this.tell();
+    this.assist(input.help === true);
 
     this.world.step(STEP);
     this.steps++;
@@ -398,6 +409,52 @@ export class Sim {
       if (which !== this.caughtBy) this.blown++;
       this.caughtBy = which;
     }
+  }
+
+  /**
+   * One step for the helper (plan §4.6). It comes when he asks, one step further each time, and leaves when
+   * he has done the thing or after a while. On *Påminn mig* it comes once by itself when nothing has
+   * happened for a long time; on *Guida mig* it then knocks as well.
+   */
+  private assist(asked: boolean): void {
+    // Something happened: a flag, a candy, a big candy, or new ground under his feet.
+    const now = this.flags.size * 4096 + this.candyCount * 8 + this.checkpoint;
+    const further = this.curr.x > this.furthest + 1;
+    if (further) this.furthest = this.curr.x;
+    if (now !== this.progress || further) {
+      if (this.progress !== -1 && now !== this.progress) this.leave();
+      this.progress = now;
+      this.idle = 0;
+      this.reminded = false;
+    } else if (this.state.kind === 'free') {
+      this.idle += STEP;
+    }
+    if (this.help.step > 0) {
+      this.helpFor += STEP;
+      if (this.helpFor > HELP_TIME) this.leave();
+    }
+    const level = this.options.help ?? 'ask';
+    const byItself = !this.reminded && ((level === 'remind' && this.idle >= REMIND_AFTER) || (level === 'guide' && this.idle >= GUIDE_AFTER));
+    if (!asked && !byItself) return;
+    const hint = hintFor(this, this.chapter);
+    if (!hint) return;
+    const same = this.help.step > 0 && this.help.at !== null && this.help.at.x === hint.at.x && this.help.at.y === hint.at.y;
+    const step = byItself && !asked ? (level === 'guide' ? 2 : 1) : same ? Math.min(3, this.help.step + 1) : 1;
+    if (byItself) this.reminded = true;
+    this.help.step = Math.max(same ? this.help.step : 0, step) as HelpState['step'];
+    this.help.at = { x: hint.at.x, y: hint.at.y };
+    this.help.verb = hint.verb;
+    this.help.word = hint.word;
+    this.helpFor = 0;
+  }
+
+  /** The helper goes away. */
+  private leave(): void {
+    this.help.step = 0;
+    this.help.at = null;
+    this.help.verb = null;
+    this.help.word = null;
+    this.helpFor = 0;
   }
 
   /** Whether he stands on this soft tussock. */

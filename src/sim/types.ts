@@ -223,6 +223,25 @@ export interface SimOptions {
   stopAtEdges?: boolean;
   /** *Lugnt*: in the exciting sequences nothing needs timing. Falling drops miss him while he moves. */
   gentle?: boolean;
+  /** How much the helper does by itself (plan §4.6). Left out: only when he asks. */
+  help?: HelpLevel;
+}
+
+/** *Bara när jag frågar*, *Påminn mig*, *Guida mig*. */
+export type HelpLevel = 'ask' | 'remind' | 'guide';
+
+/**
+ * What the helper is doing (plan §4.6). Each time he asks it goes one step further:
+ * 1. it goes to the place and looks at it;
+ * 2. it knocks on the thing, and Använd's word pulses;
+ * 3. a pale figure of Elof shows where to stand and do it.
+ * At 0 it is away.
+ */
+export interface HelpState {
+  step: 0 | 1 | 2 | 3;
+  at: Vec | null;
+  verb: Verb | null;
+  word: string | null;
 }
 
 /** Where a simulation starts when a saved game is taken up again. */
@@ -324,6 +343,8 @@ export interface StepInput {
   hopHeld: boolean;
   hop: boolean;
   act: boolean;
+  /** He asks the helper. Left out: no. */
+  help?: boolean;
 }
 
 export interface PlayerState {

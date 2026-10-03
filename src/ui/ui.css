@@ -194,6 +194,36 @@ body {
   height: 30px;
 }
 
+/* The helper's button sits under the pause button. It is small: help is there when he asks, not in the way. */
+.corner.help {
+  top: calc(env(safe-area-inset-top) + 10px + 64px * var(--k) + 10px);
+  width: calc(52px * var(--k));
+  height: calc(52px * var(--k));
+  right: calc(env(safe-area-inset-right) + 18px);
+}
+
+/* The helper has knocked: Använd's word pulses, in reach or not. */
+.btn-act.pulse {
+  animation: act-pulse 0.7s ease-in-out infinite alternate;
+  opacity: 1;
+}
+
+@keyframes act-pulse {
+  from {
+    box-shadow: 0 0 0 0 rgb(255 215 106 / 0.9);
+  }
+  to {
+    box-shadow: 0 0 0 calc(14px * var(--k)) rgb(255 215 106 / 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-act.pulse {
+    animation: none;
+    outline: 4px solid #ffd76a;
+  }
+}
+
 /* --- panels: a paper card over a dimmed game ------------------------------------------------------ */
 .panel-back {
   position: absolute;

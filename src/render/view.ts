@@ -6,7 +6,7 @@ import {
 } from 'three';
 import { createAssets } from './assets';
 import { PLACES, dress } from './dressing';
-import { moverProp, rideProp, spotProp } from './props';
+import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, createGradePass } from './grade';
 import { chooseTier, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
@@ -61,6 +61,8 @@ export interface Frame {
   tussocks: readonly { x: number; y: number }[];
   /** The stretches with gusts, in the chapter's order. */
   gusts: readonly { blow: number; warn: number }[];
+  /** What the helper is doing: its step, and where the thing is. */
+  help: { step: number; at: { x: number; y: number } | null };
 }
 
 export interface View {
@@ -149,6 +151,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const plane = buildPlane();
   scene.add(glints.group, plane);
   // The things that stand at spots, and what carries him on each ride, where the chapter says what they are.
+  const helper = helperProp();
+  scene.add(helper.group);
   const things = (chapter.spots ?? []).map((spot) => ({ spot, prop: spotProp(spot) }));
   for (const thing of things) if (thing.prop) scene.add(thing.prop.group);
   const carriers = (chapter.rides ?? []).map((ride) => {
@@ -298,7 +302,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let warm = 2;
   let warmedFor = 0;
   const unculled: Object3D[] = [];
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help }: Frame): void {
     rain.update(drips);
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
@@ -335,6 +339,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (far) far.rotation.x = beat;
     }
     for (const thing of things) thing.prop?.update(flags.has(thing.spot.id), clock, dt);
+    helper.update(help.step, help.at, x, y, curr.standY, clock, dt);
     glitter.update(curr.bubble, x, y, clock);
     // He hangs by his hands, his body along the lace.
     const hang = curr.hook ? Math.atan2(curr.hook.x - x, curr.hook.y - (y + 0.5)) : 0;

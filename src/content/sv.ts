@@ -8,6 +8,8 @@ export const sv = {
   // The two action buttons. Använd will show the specific verb once there is something to do.
   hop: 'Hoppa',
   act: 'Använd',
+  // The button that calls the helper: no words in the game, a bird on the button.
+  help: 'Hjälp',
 
   // Shown instead of the on-screen controls when a keyboard or a gamepad is in use.
   keysHint: '← → springa och gunga · Mellanslag hoppa och släppa · ↑ ↓ klättra · E använd · Shift gå',

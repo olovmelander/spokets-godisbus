@@ -192,6 +192,9 @@ function start(): void {
     },
   });
   byId('pauseBtn').addEventListener('click', openPause);
+  // The helper's button: a press is passed on with the next frame's presses, like H on a keyboard.
+  let askedForHelp = false;
+  byId('helpBtn').addEventListener('click', () => (askedForHelp = true));
 
   // The title (plan §6.10). A chapter starts behind it; the test course and a debug session start at once.
   // ?title shows it in a debug session too, for the browser test.
@@ -259,7 +262,7 @@ function start(): void {
     window.__godis = {
       state: () => ({
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
-        bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
+        bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
         course: chapter.id, said: [...game.sim.said], title: title.open,
       }),
       info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played }),
@@ -307,7 +310,8 @@ function start(): void {
       let held = input.state();
       let edges = input.consume();
       if (bench && !bench.done) ({ held, edges } = bench.play(game.sim.curr, time));
-      game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld }, edges);
+      game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld }, askedForHelp ? { ...edges, helper: true } : edges);
+      askedForHelp = false;
       playTime += dt * game.tempo;
       const now = hear();
       for (const cue of cuesFor(heard, now, memory)) audio.play(cue);
@@ -322,10 +326,11 @@ function start(): void {
     view.render({
       prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: paused ? 0 : dt, atGoal,
       collected: game.sim.collected, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
-      flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts,
+      flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts, help: game.sim.help,
     });
     hud.candy(game.sim.candyCount);
     hud.verb(game.sim.curr.verb, game.sim.curr.word);
+    hud.knock(game.sim.help.step >= 2 ? game.sim.help : null);
     for (; told < game.sim.said.length; told++) {
       const beat = beats.get(game.sim.said[told]!);
       if (beat) hud.say(beat.who, beat.line);

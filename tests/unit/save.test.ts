@@ -16,8 +16,8 @@ function fakeStorage(initial: Record<string, string> = {}) {
 describe('the two play styles', () => {
   it('Äventyr leaves the jumps and the swing to the player', () => {
     const settings = settingsFor('aventyr');
-    expect(settings).toEqual({ style: 'aventyr', swingHelp: false, easyJumps: false, slower: false, sound: true });
-    expect(simOptions(settings)).toEqual({ swingHelp: false, easyJumps: false, stopAtEdges: false, gentle: false });
+    expect(settings).toEqual({ style: 'aventyr', swingHelp: false, easyJumps: false, slower: false, sound: true, help: 'ask' });
+    expect(simOptions(settings)).toEqual({ swingHelp: false, easyJumps: false, stopAtEdges: false, gentle: false, help: 'ask' });
     expect(tempoOf(settings)).toBe(1);
   });
 
@@ -25,12 +25,12 @@ describe('the two play styles', () => {
     const settings = settingsFor('lugnt');
     expect(settings.swingHelp).toBe(true);
     expect(settings.easyJumps).toBe(true);
-    expect(simOptions(settings)).toEqual({ swingHelp: true, easyJumps: true, stopAtEdges: true, gentle: true });
+    expect(simOptions(settings)).toEqual({ swingHelp: true, easyJumps: true, stopAtEdges: true, gentle: true, help: 'remind' });
   });
 
   it('lets every switch be changed on its own', () => {
     const settings = { ...settingsFor('aventyr'), swingHelp: true, slower: true };
-    expect(simOptions(settings)).toEqual({ swingHelp: true, easyJumps: false, stopAtEdges: false, gentle: false });
+    expect(simOptions(settings)).toEqual({ swingHelp: true, easyJumps: false, stopAtEdges: false, gentle: false, help: 'ask' });
     expect(tempoOf(settings)).toBe(SLOWER_TEMPO);
   });
 

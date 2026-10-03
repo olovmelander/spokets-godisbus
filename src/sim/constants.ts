@@ -138,6 +138,12 @@ export const GUST_SHELTER = 0.8;
 /** On *Lugnt* a gust only slows him: to this share of his running speed. */
 export const GUST_SLOW = 0.5;
 
+/** The helper stays this long at what it shows, in seconds, unless he does it sooner. */
+export const HELP_TIME = 12;
+/** *Påminn mig*: after this long without progress the helper comes once, by itself. *Guida mig*: it knocks. */
+export const REMIND_AFTER = 40;
+export const GUIDE_AFTER = 30;
+
 /** A fall longer than this ends in the glitter bubble; a shorter one is a soft landing (plan §4.2). */
 export const FALL_LIMIT = 4;
 /** The bubble floats him back in about this long. */
