@@ -435,6 +435,54 @@ body {
   background: #fff6e4;
 }
 
+/* --- a memory: sepia pictures, one after another, over a dimmed game (plan §2.4) -------------------- */
+.memory {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  display: grid;
+  place-items: center;
+  background: rgb(42 28 16 / 0.72);
+}
+
+.memory[hidden] {
+  display: none;
+}
+
+.memory-card {
+  width: min(78vw, 124vh, 640px);
+  aspect-ratio: 8 / 5;
+  border-radius: 50% / 46%;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, #f6e6c4 0%, #ecd6a8 62%, #c9a56c 100%);
+  box-shadow: 0 0 0 6px rgb(246 230 196 / 0.35), 0 12px 40px rgb(0 0 0 / 0.45);
+  filter: sepia(0.35) contrast(0.96);
+}
+
+.memory-card svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* It grows out of a bubble, and each picture fades in. */
+.memory-card.in {
+  animation: memory-in 0.5s ease-out;
+}
+
+@keyframes memory-in {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .memory-card.in {
+    animation: none;
+  }
+}
+
 /* Moas karta: crayon on paper. */
 .map:empty {
   display: none;

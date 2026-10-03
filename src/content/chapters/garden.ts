@@ -134,6 +134,8 @@ export const garden: ChapterData = {
   climbs: [{ x: 46.3, bottom: 0, top: 6, exit: -1, needs: 'ladybird' }],
   spots: [
     { id: 'ladybird', look: 'ladybird', at: { x: 41, y: 6 }, verb: 'turn' },
+    // Memory 1, on top of Pappa's shavings: the night he carved his first figure.
+    { id: 'memory', look: 'memory', at: { x: 147, y: 3.3 }, verb: 'take', touch: true },
     { id: 'moa', look: 'sign', at: { x: 166, y: 0 }, verb: 'call', word: 'callMoa', ride: 'plane' },
   ],
   hooks: [

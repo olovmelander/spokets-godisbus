@@ -190,6 +190,8 @@ export const myren: ChapterData = {
     // The crane chick follows his light, and comes home when he reaches its family.
     { id: 'chick', at: { x: 156.7, y: 0 }, verb: 'take', touch: true, needs: 'light' },
     { id: 'home', at: { x: 176, y: 0 }, verb: 'take', touch: true, needs: 'chick' },
+    // Memory 3, where the ghost waits: the boardwalk, and the figure held up to see the way.
+    { id: 'memory', look: 'memory', at: { x: 170.6, y: 0 }, verb: 'take', touch: true },
     { id: 'crane', look: 'crane', at: { x: 182, y: 0 }, verb: 'take', word: 'climbOn', needs: 'home', ride: 'crane' },
   ],
   movers: [

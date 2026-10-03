@@ -312,6 +312,27 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.position.z = 0.25;
       return { group, update: (used, _clock, dt) => vanish(used, dt) };
     }
+    case 'memory': {
+      // A minnesspån: a curl of Pappa's shaving that glows where the ghost has stopped. Touched, it has been seen.
+      const glow = solid('#ffe6a8', 0.5, { emissive: '#ffbf4a', emissiveIntensity: 1, side: DoubleSide });
+      const curl = new Group();
+      for (const [radius, turn] of [[0.3, 4.8], [0.17, 5.4]] as const) {
+        const shell = new Mesh(new CylinderGeometry(radius, radius, 0.42, 20, 1, true, 0.4, turn), glow);
+        shell.rotation.x = Math.PI / 2;
+        curl.add(shell);
+      }
+      curl.position.y = 0.42;
+      group.add(curl);
+      group.position.z = -0.4;
+      return {
+        group,
+        update(used, clock) {
+          glow.emissiveIntensity = used ? 0.15 : 0.8 + 0.4 * Math.sin(clock * 3);
+          curl.position.y = 0.42 + (used ? 0 : Math.sin(clock * 2) * 0.05);
+          curl.rotation.y = used ? 0.4 : Math.sin(clock * 0.8) * 0.5;
+        },
+      };
+    }
     case 'shavings': {
       // What Pappa's knife left on the table: pale curls.
       const pale = solid('#f1dfb4', 0.7, { side: DoubleSide });
