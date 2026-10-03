@@ -148,9 +148,8 @@ describe('Final, Norrsken, in greybox', () => {
     for (const spot of norrsken.spots ?? []) expect(verbs[spot.word ?? spot.verb], `the word for ${spot.id}`).toBeDefined();
   });
 
-  it('follows Kapitel 4, has a name and no number, and is the last part built', () => {
+  it('follows Kapitel 4, and has a name and no number', () => {
     expect(nextAfter('berget')?.id).toBe('norrsken');
-    expect(nextAfter('norrsken')).toBeNull();
     expect(chapterNumber('berget')).toBe(4);
     expect(chapterNumber('norrsken')).toBe(0);
     expect(sv.end.named['norrsken']).toBeDefined();

@@ -17,9 +17,10 @@ export interface Hud {
   tick(dt: number): void;
   /**
    * Shows the card at the end of a chapter: its title, and the candy in rows of ten with the number.
-   * With `onNext` it leads on to the next chapter; without, it says that the story goes on later.
+   * With `onNext` it leads on to the next chapter; without, it says that the story goes on later, or `closing`
+   * where the story is over.
    */
-  end(title: string, count: number, onAgain: () => void, onNext?: () => void): void;
+  end(title: string, count: number, onAgain: () => void, onNext?: () => void, closing?: string): void;
 }
 
 /** A bubble stays for this long, and a little longer for each letter. */
@@ -78,10 +79,11 @@ export function createHud(doc: Document, total: number): Hud {
       bubble.hidden = false;
       left = BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER;
     },
-    end(title, count, onAgain, onNext) {
+    end(title, count, onAgain, onNext, closing) {
       if (ended) return;
       ended = true;
       byId('endTitle').textContent = title;
+      if (closing) byId('endNext').textContent = closing;
       byId('endCount').textContent = String(count);
       // Rows of ten, as on the chapter cards (plan §4.3).
       const rows = byId('endRows');

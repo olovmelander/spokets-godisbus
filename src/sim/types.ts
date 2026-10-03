@@ -240,11 +240,11 @@ export interface SimStart {
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
 export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure';
-export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold';
+export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star';
 export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'none';
 
 /** The places of the story, each with its own light and layers (plan §5.4). The picture's business only. */
-export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk';
+export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home';
 
 /** What a stretch of ground is made of, where it isn't the place's own ground. The picture's business only. */
 export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge';
@@ -300,8 +300,8 @@ export interface ChapterData {
   gusts?: Gust[];
   /** A flag that is set once all of some others are: he has shared with everyone. */
   sets?: { flag: string; when: string[] }[];
-  /** For the picture: night falls and the northern lights flare when this flag is set. */
-  night?: { after: string };
+  /** For the picture: night falls and the northern lights flare when this flag is set. Null: it is night from the start. */
+  night?: { after: string | null };
   /** For the picture: the mist rolls in when this flag is set, and he carries a light. */
   mist?: { after: string };
   /**

@@ -133,7 +133,10 @@ export interface SpotProp {
 }
 
 /** The colour of a person's sign: Moa's denim, Pappa's green, Bertil's cap, Mamma's mug. No likeness. */
-const SIGNS: Record<string, string> = { callMoa: '#5b7fb5', callPappa: '#5a7d4a', callBertil: '#d98a2c', callMamma: '#f1ece2', goHome: '#5a7d4a' };
+const SIGNS: Record<string, string> = {
+  callMoa: '#5b7fb5', callPappa: '#5a7d4a', callBertil: '#d98a2c', callMamma: '#f1ece2', goHome: '#5a7d4a',
+  giveMoa: '#5b7fb5', givePappa: '#5a7d4a', giveBertil: '#d98a2c', giveMamma: '#f1ece2', takeKnife: '#5a7d4a',
+};
 
 /** A thing at a spot, a little behind the path so that he passes in front of it. Null: only the glint. */
 export function spotProp(spot: Spot): SpotProp | null {
@@ -249,7 +252,7 @@ export function spotProp(spot: Spot): SpotProp | null {
       face.position.y = 1.3;
       group.add(stick, board, face);
       // Mamma's is her white mug with its heart.
-      if (spot.word === 'callMamma') group.add(ball(0.1, solid('#d0473a', 0.5), 0, 1.3, 0.05, [1, 1, 0.3]));
+      if (spot.word === 'callMamma' || spot.word === 'giveMamma') group.add(ball(0.1, solid('#d0473a', 0.5), 0, 1.3, 0.05, [1, 1, 0.3]));
       group.position.z = -0.9;
       return { group, update: (_used, clock) => void (board.rotation.z = face.rotation.z = Math.sin(clock * 1.3 + spot.at.x) * 0.05) };
     }
@@ -308,6 +311,22 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.add(body, fold);
       group.position.z = 0.25;
       return { group, update: (used, _clock, dt) => vanish(used, dt) };
+    }
+    case 'star': {
+      // The star that rolled out of the torn bag: it glitters, and turns.
+      const gold = solid('#ffe07a', 0.2, { emissive: '#ffb400', emissiveIntensity: 0.9 });
+      const star = new Group();
+      for (let i = 0; i < 5; i++) {
+        const point = new Mesh(new ConeGeometry(0.09, 0.3, 4), gold);
+        point.position.set(Math.sin((i * Math.PI * 2) / 5) * 0.17, Math.cos((i * Math.PI * 2) / 5) * 0.17, 0);
+        point.rotation.z = -(i * Math.PI * 2) / 5;
+        star.add(point);
+      }
+      star.add(ball(0.13, gold, 0, 0, 0, [1, 1, 0.5]));
+      star.position.y = 0.55;
+      group.add(star);
+      group.position.z = 0;
+      return { group, update: (used, clock, dt) => { vanish(used, dt); star.rotation.y = Math.sin(clock * 1.6) * 0.7; star.position.y = 0.55 + Math.sin(clock * 2.2) * 0.07; } };
     }
     case 'gold': {
       // The golden geléhallon: a raspberry of golden beads.

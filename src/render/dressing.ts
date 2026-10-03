@@ -96,7 +96,20 @@ const DUSK: PlaceLook = {
   tussock: '#6a6f80',
 };
 
-export const PLACES: Record<PlaceId, PlaceLook> = { forest: FOREST, garden: GARDEN, bog: BOG, mountain: MOUNTAIN, dusk: DUSK };
+/** At home: the kitchen on a Saturday morning, and the veranda in the evening. Warm, and built of boards. */
+const HOME: PlaceLook = {
+  id: 'home',
+  grade: { tint: [1.05, 1.0, 0.93], exposure: 1.04, contrast: 1.05, saturation: 1.05, vignette: 0.3, grain: 0.025 },
+  haze: { colour: '#e8d8b8', near: 8, far: 90 },
+  sky: { top: '#d9c8a6', middle: '#f0e2c4', bottom: '#b79f78', glow: '#fff4d2' },
+  hemisphere: { sky: '#fff0d8', ground: '#8a7250', intensity: 1.3 },
+  sun: { colour: '#ffe0aa', intensity: 3.0, from: [-7, 5, -3] },
+  fill: { colour: '#fff0e0', intensity: 0.8 },
+  water: { colour: '#4f9fc4', opacity: 0.78 },
+  tussock: '#b9a07e',
+};
+
+export const PLACES: Record<PlaceId, PlaceLook> = { forest: FOREST, garden: GARDEN, bog: BOG, mountain: MOUNTAIN, dusk: DUSK, home: HOME };
 
 /** What the view adds to its scene for a place, and moves each frame. */
 export interface Dressing {
@@ -620,6 +633,8 @@ const STRETCH = 18;
 /** Everything that stands and lies on the moss, in stretches along the chapter. */
 function scatter(chapter: ChapterData, from: number, to: number, place: PlaceId): Group {
   const group = new Group();
+  // Indoors nothing grows.
+  if (place === 'home') return group;
   const build = { forest: stretch, garden: lawn, bog, mountain: fell, dusk: fell }[place];
   for (let a = from - 12; a < to + 12; a += STRETCH) group.add(build(chapter, a, a + STRETCH, Math.round(a * 7 + 97)));
   return group;
@@ -1208,10 +1223,63 @@ function gardenPlates(from: number, to: number, floor: number): Group {
  * What is built: the house's red wall behind the scene, and a deck overhead with the sun falling through
  * between its boards. The wall is drawn small, so that it is as soft as everything else that far away.
  */
-function built(chapter: ChapterData): Group {
+function built(chapter: ChapterData, indoors = false): Group {
   const group = new Group();
   const house = chapter.house;
-  if (house) {
+  if (house && indoors) {
+    // Seen from inside: a pale panelled wall close behind him, and windows that let the sky in.
+    const long = house.to - house.from;
+    const floor = Math.min(...chapter.ground.map((p) => p.y));
+    const panels = drawn(128, 64, (c) => {
+      c.fillStyle = '#eadcc0';
+      c.fillRect(0, 0, 128, 64);
+      for (let x = 0; x < 128; x += 16) {
+        c.fillStyle = 'rgba(150,126,88,0.35)';
+        c.fillRect(x, 0, 1.5, 64);
+      }
+      // A rail and darker boards below it.
+      c.fillStyle = 'rgba(128,100,66,0.5)';
+      c.fillRect(0, 44, 128, 3);
+      c.fillStyle = 'rgba(150,120,80,0.25)';
+      c.fillRect(0, 47, 128, 17);
+    }, true);
+    panels.repeat.set(long / 12, 1);
+    // In the evening the room is lit by candles: the wall is dim and warm, and the windows are dark.
+    const evening = chapter.night !== undefined;
+    const wall = new Mesh(new PlaneGeometry(long, 26), new MeshBasicMaterial({ map: panels, color: evening ? '#8c7252' : '#ffffff' }));
+    wall.position.set((house.from + house.to) / 2, floor + 11, -9);
+    wall.renderOrder = -2;
+    group.add(wall);
+    const frame = new MeshBasicMaterial({ color: evening ? '#a8977c' : '#f6efe2' });
+    for (const x of house.windows) {
+      // The frame, and a hole of sky in it: whatever is outside shows through, at night the northern lights.
+      for (const [dx, dy, w, h] of [[0, 2.6, 5.4, 0.3], [0, -2.6, 5.4, 0.3], [-2.55, 0, 0.3, 5.5], [2.55, 0, 0.3, 5.5], [0, 0, 0.18, 5.2], [0, 0, 5.1, 0.18]] as const) {
+        const bar = new Mesh(new PlaneGeometry(w, h), frame);
+        bar.position.set(x + dx, heightAt(chapter, x) + 6 + dy, -8.9);
+        group.add(bar);
+      }
+    }
+    // The wall is solid between the windows: it is cut by drawing the sky's own colour there, behind the frames.
+    const sky = evening
+      ? drawn(32, 32, (c) => {
+          // The night outside, with the northern lights low over the trees.
+          c.fillStyle = '#142046';
+          c.fillRect(0, 0, 32, 32);
+          const lights = c.createLinearGradient(0, 4, 0, 26);
+          lights.addColorStop(0, 'rgba(90,240,170,0)');
+          lights.addColorStop(0.6, 'rgba(90,240,170,0.75)');
+          lights.addColorStop(1, 'rgba(90,240,170,0)');
+          c.fillStyle = lights;
+          c.fillRect(0, 4, 32, 22);
+        })
+      : null;
+    const glass = new MeshBasicMaterial(sky ? { map: sky, fog: false } : { color: '#bcd8ee', transparent: true, opacity: 0.55, fog: false });
+    for (const x of house.windows) {
+      const pane = new Mesh(new PlaneGeometry(5.1, 5.2), glass);
+      pane.position.set(x, heightAt(chapter, x) + 6, -8.95);
+      group.add(pane);
+    }
+  } else if (house) {
     const long = house.to - house.from;
     const floor = Math.min(...chapter.ground.map((p) => p.y));
     // Falu red boards with their cover strips, lit from the left.
@@ -1616,14 +1684,15 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
     bog: { ground: 'sphagnum', growth: 'straw' },
     mountain: { ground: 'granite', growth: null },
     dusk: { ground: 'granite', growth: null },
+    home: { ground: 'wood', growth: null },
   };
   // In the open the horizon is far away, and stays at the height of his eyes however high he climbs.
   const open = look.id === 'bog' || look.id === 'mountain' || look.id === 'dusk' ? horizon(from, to, look.id) : null;
   group.add(
-    open ?? (look.id === 'garden' ? gardenPlates(from, to, floor) : plates(from, to, floor)),
+    open ?? (look.id === 'home' ? new Group() : look.id === 'garden' ? gardenPlates(from, to, floor) : plates(from, to, floor)),
     bank(chapter, own[look.id].ground),
     scatter(chapter, from, to, look.id),
-    built(chapter),
+    built(chapter, look.id === 'home'),
     air.group,
     foreground(chapter, from, to, own[look.id].growth),
   );

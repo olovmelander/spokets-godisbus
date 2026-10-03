@@ -338,7 +338,7 @@ function start(): void {
       const number = chapterNumber(chapter.id);
       const next = params.has('dev') ? nextAfter(chapter.id) : null;
       const title = sv.end.named[chapter.id] ?? (number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course);
-      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined);
+      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id]);
     }
 
     if (!shown) {
