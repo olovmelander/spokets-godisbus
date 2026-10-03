@@ -1880,9 +1880,9 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
     - Ambient occlusion is baked into colour or vertex colours, not shipped as its own map;
   - pre-blurs and splits the plates, and bakes the LUTs;
   - writes `manifest.json` (files and bytes per pack, plus estimated GPU MB including render targets per tier);
-  - counts bytes **as served**. Stage 0a records whether GitHub Pages compresses `.wasm`, `.glb` and `.ktx2` in
-    transit (`content-encoding`), because meshopt and the 260 KB gzipped transcoder figure (527 KB raw) depend
-    on it;
+  - counts bytes **as served**. GitHub Pages gzips `.wasm` and `.glb` in transit as well as text (read from the
+    live site's `content-encoding` on 3 October 2026: the transcoder comes as 245 KB of its 527 KB), so the gate
+    counts them gzipped. A `.ktx2` on its own has not been measured and is counted at full size;
   - **fails** when a budget in §6.12 is broken.
 - **Loading:**
   - Show the title as soon as `boot` is in.

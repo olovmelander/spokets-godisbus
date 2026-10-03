@@ -628,8 +628,8 @@
     - **Not yet:** Elof's gasp and giggle, and his two-note call.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
-  served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
-  both at full size, which is on the safe side; see "Next".
+  served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate counts both
+  gzipped since `size-gate-as-served`: the boot pack is about 0.7 MB of its 3 MB as served.
 - **Olov's computer** (checked 3 October): Windows 11, an RTX 3070, Node 24.14, git, and Blender 4.5.9 LTS with
   the *MCP for Blender* add-on running on port 9876, with only Poly Haven ticked, `uv` 0.12, Playwright
   1.56.1's Chromium, and the `ktx` tool 4.4.2 in `%LOCALAPPDATA%\Programs\KTX-Software\bin` (the asset build
@@ -649,8 +649,7 @@
    minute and then shows text. Copy that text into the next session.
    - On the computer: `npm run dev`, then `http://localhost:5173/spokets-godisbus/?debug`. For a phone on the same
      Wi-Fi: `npm run dev:lan`.
-3. **Correct the size gate:** Pages gzips `.wasm` and `.glb` too (see "State"), so `scripts/size-gate.mjs` and
-   the plan's §6.6 should count them as served. A small PR of its own.
+3. *(Done: the size gate counts `.wasm` and `.glb` as Pages serves them, gzipped.)*
 4. **H2, Olov's checkpoint for Stage 1** (plan §7.3): play the test course for twenty minutes on a phone or a
    tablet, once as yourself and once badly on purpose (one thumb, late jumps, everything in the wrong order).
    The questions: is moving, jumping and swinging fun for two minutes with no goal? Is *Äventyr*'s swing
