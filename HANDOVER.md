@@ -91,6 +91,20 @@
     - In the game he takes the stand-in's place where the private pack has him. A walk, a run and a jump are
       posed in code (`poseDoll` in `src/render/view.ts`) until the library's clips arrive.
     - None of him is committed. His renders are in `docs/shots/_work/elof/`.
+  - **The style is decided** (Olov, 3 October; `docs/art-bible.md` §1): Elof and the family are stylized cartoon
+    characters, like his sheets and poster, "a Pixar, Unravel or Disney character". The ghost stays a carved
+    wooden ghost. The first models were not good enough.
+    - **Elof's second model** (`art/private/elof/elof.py`; the first is kept beside it as `elof-v1-doll.py`):
+      a head almost a third of his height, large eyes as real spheres with lids, hair in sculpted locks, chunky
+      hands and boots, thick rolled cuffs. It is in the game on Olov's computer. It reads as a toy-like cartoon
+      boy, and that is as far as shapes built by script go: it is not the quality of the sheets.
+    - **What was researched:** how stylized characters are made (the art bible lists the principles and the
+      sources), and two free CC0 bases. Quaternius' *Universal Base Characters* and *Universal Animation
+      Library* are downloaded to `art/vendor/quaternius/` (ignored by git until a file from them is used). The
+      free base pack holds only two muscular adult bodies, so it can't be Elof; its *Teen* and *Regular* bodies
+      are in the paid version. The animation library's 65-joint skeleton and clips are there and unused so far.
+    - **The ghost has not been redone yet.** Art bible §1.5 says how: the fuller sheet, sleeves and fists of
+      the render and the poster, in bolder knife facets, with a painted wood texture.
   - **Both characters together cost about 55 draw calls,** because every colour is its own material. One baked
     texture per character brings that down to a handful, and is the next step for both.
   - **Not yet for Elof:** Olov's verdict, the library's skeleton and clips (the library has to be downloaded to
@@ -216,10 +230,19 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
 
 3. **Is the small boy on Pappa's lap in `family-pappa-viewpoint.jpg` Elof?** Little Elof in the memories is
    modelled on him, flat cap and all (plan §2.4). The default: yes.
-4. **Are the ghost and Elof right?** Open `art/private/ghost/ghost.blend` and `art/private/elof/elof.blend` in
+4. **How should Elof and the family be made?** This is the question that decides the look (art bible §1.4, §1.6).
+   - **(a) Image-to-3D from your sheets, on a paid plan (recommended for the look you ask for).** About 20 US
+     dollars for a month. It is the only route that can reach the Pixar-like quality of the sheets. The parents
+     have agreed to it. You subscribe, check three settings, and generate from the views; the session does the
+     rest in Blender.
+   - **(b) The paid base pack** (20 US dollars, CC0): proper stylized teen and adult bodies with rigs and 20
+     hairstyles, reshaped and dressed in Blender. Better than now, but not the sheets.
+   - **(c) Keep building by script.** Free, and what Elof's second model is. It stays a toy-like cartoon.
+   - The default until you answer: (c), and the ghost is redone as stylized carved wood.
+5. **Are the ghost and Elof right?** Open `art/private/ghost/ghost.blend` and `art/private/elof/elof.blend` in
    Blender, where each stands between its pictures, or look at the renders in `docs/shots/_work/ghost/` and
    `docs/shots/_work/elof/`. For each: say yes, or give up to three corrections (plan §7.3, H1b).
-5. **Where should the ghost's files live?** It is Pappa's carving, not a person, and a drawing of it is already
+6. **Where should the ghost's files live?** It is Pappa's carving, not a person, and a drawing of it is already
    on the public loading card. In the public repository it is simplest, but git history is permanent. In the
    private repository it can always be taken down, like the family's models. The default until you answer:
    private, and so not on the public site.
