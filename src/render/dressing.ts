@@ -1743,7 +1743,8 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   // In the open the horizon is far away, and stays at the height of his eyes however high he climbs.
   const open = look.id === 'bog' || look.id === 'mountain' || look.id === 'dusk' ? horizon(from, to, look.id) : null;
   group.add(
-    open ?? (look.id === 'home' ? new Group() : look.id === 'garden' ? gardenPlates(from, to, floor) : plates(from, to, floor)),
+    // Indoors there is nothing far away, and the village has its own far picture behind its houses.
+    open ?? (look.id === 'home' || look.id === 'village' ? new Group() : look.id === 'garden' ? gardenPlates(from, to, floor) : plates(from, to, floor)),
     bank(chapter, own[look.id].ground),
     scatter(chapter, from, to, look.id),
     built(chapter, look.id === 'home'),
