@@ -47,6 +47,7 @@ export function mountShell(root: HTMLElement): void {
        <button class="btn btn-act" id="actBtn" type="button" disabled>${HAND}<span></span></button>
        <button class="btn btn-hop" id="hopBtn" type="button">${ARROW}<span></span></button>
      </div>
+     <div class="bubble" id="bubble" role="status" hidden><b id="bubbleWho"></b><span id="bubbleLine"></span></div>
      <div class="hint" id="hint" hidden></div>
      <div class="notice" id="notice" role="status" hidden></div>
      <pre class="debug" id="debug" hidden></pre>
@@ -70,6 +71,15 @@ export function mountShell(root: HTMLElement): void {
            <button class="yes" id="stuckYes" type="button" aria-label="${p.stuckYes}">${CHECK}${BIG_CANDY}</button>
            <button class="no" id="stuckNo" type="button" aria-label="${p.stuckNo}">${CROSS}${PLAY}</button>
          </div>
+       </div>
+     </div>
+     <div class="panel-back" id="endCard" hidden>
+       <div class="panel end" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+         <h2 id="endTitle"></h2>
+         <div class="rows" id="endRows"></div>
+         <p class="count"><b id="endCount"></b> ${sv.end.candy}</p>
+         <p class="next">${sv.end.next}</p>
+         <button class="wide go" id="endAgain" type="button">${PLAY}<span>${sv.end.again}</span></button>
        </div>
      </div>
      <div class="message" id="message" hidden>

@@ -112,6 +112,11 @@ export const GHOST_SLIP = 0.6;
 /** Standing this close to a thing to use, Använd offers it. */
 export const SPOT_REACH = 1.2;
 
+/** On a ride the stick moves him this far up or down from the middle of its path. */
+export const RIDE_CORRIDOR = 1.6;
+/** ...and this fast. */
+export const RIDE_STEER = 3;
+
 /** A fall longer than this ends in the glitter bubble; a shorter one is a soft landing (plan §4.2). */
 export const FALL_LIMIT = 4;
 /** The bubble floats him back in about this long. */

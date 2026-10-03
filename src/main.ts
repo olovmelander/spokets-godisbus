@@ -2,7 +2,7 @@ import { Timer } from 'three';
 import { Game } from './app/game';
 import { createAudio } from './audio/audio';
 import { cuesFor, newCueMemory, type Heard } from './audio/cues';
-import { testbana } from './content/chapters/testbana';
+import { courseFor } from './content/chapters';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
 import { tierFromQuery } from './render/quality';
@@ -60,7 +60,8 @@ function storage(): Storage | null {
 
 function start(): void {
   const at = debugStart();
-  const chapter = at ? { ...testbana, spawn: at } : testbana;
+  const course = courseFor(params);
+  const chapter = at ? { ...course, spawn: at } : course;
   mountShell(document.body);
   const canvas = byId<HTMLCanvasElement>('game');
   let view: View;
@@ -95,7 +96,10 @@ function start(): void {
 
   const game = new Game(chapter, simOptions(settings), from);
   game.tempo = tempoOf(settings);
-  const hud = createHud(byId('bag'), byId('bagCount'), byId<HTMLButtonElement>('actBtn'), chapter.candy.length);
+  const hud = createHud(document, chapter.candy.length);
+  const beats = new Map((chapter.beats ?? []).map((beat) => [beat.id, beat]));
+  // What was said before this game was taken up again is not said again.
+  let told = game.sim.said.length;
   const controls = byId('controls');
   const hint = byId('hint');
 
@@ -132,7 +136,7 @@ function start(): void {
       playMs: save.playMs + (now - playedFrom),
     };
     playedFrom = now;
-    if (!at) store.write(save);
+    if (!at && !again) store.write(save);
   }
   if (!store.available && !benchOn) {
     const notice = byId('notice');
@@ -223,6 +227,7 @@ function start(): void {
       state: () => ({
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
+        course: chapter.id, said: [...game.sim.said],
       }),
       info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played }),
     };
@@ -231,6 +236,21 @@ function start(): void {
   // ?bench plays the course by itself for 30 seconds and then shows numbers to paste into a session.
   const bench = benchOn ? createBench(30, chapter) : null;
 
+  /** "Spela igen": this course from its start, with an empty bag. The settings stay. */
+  function playAgain(): void {
+    const without = (all: Record<string, unknown>) => Object.fromEntries(Object.entries(all).filter(([id]) => id !== chapter.id));
+    save = {
+      ...save, checkpoint: -1,
+      candy: without(save.candy) as PlayerSave['candy'],
+      placed: without(save.placed) as PlayerSave['placed'],
+      flags: without(save.flags) as PlayerSave['flags'],
+    };
+    store.write(save);
+    again = true;
+    location.reload();
+  }
+  let again = false;
+  let endFor = 0;
   let shown = false;
   let lastTime = 0;
   let savedAt = game.sim.checkpoint;
@@ -264,8 +284,18 @@ function start(): void {
       flags: game.sim.flags, ghost: game.sim.ghost,
     });
     hud.candy(game.sim.candyCount);
-    hud.verb(game.sim.curr.verb);
-    if (atGoal && device !== 'touch') hint.textContent = sv.goal;
+    hud.verb(game.sim.curr.verb, game.sim.curr.word);
+    for (; told < game.sim.said.length; told++) {
+      const beat = beats.get(game.sim.said[told]!);
+      if (beat) hud.say(beat.who, beat.line);
+    }
+    hud.tick(paused ? 0 : dt);
+    // The end: a moment to arrive, then the card with the candy in rows of ten.
+    if (atGoal) endFor += paused ? 0 : dt;
+    if (endFor > 1.4 && !benchOn) {
+      writeSave();
+      hud.end(chapter.id === 'testbana' ? sv.end.course : sv.end.chapter, game.sim.candyCount, playAgain);
+    }
 
     if (!shown) {
       shown = true;

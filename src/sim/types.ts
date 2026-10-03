@@ -10,6 +10,8 @@ export interface Climb {
   top: number;
   /** The side its top has a ledge on, which he steps onto: -1 left, 1 right. None: he stops at the top. */
   exit?: -1 | 1;
+  /** A flag that has to be set before he can use it: the hose the ladybird shows him. */
+  needs?: string;
 }
 
 /** A hook for the lace, marked with a red ring (plan §4.2). */
@@ -24,9 +26,9 @@ export interface Hook {
 
 /**
  * What Elof is doing: on his own feet, or carried by the glitter bubble, up a ledge, on a hose, down a hose,
- * on the lace, through the air to a landing, or knocked over for a moment.
+ * on the lace, through the air to a landing, knocked over for a moment, or on a ride.
  */
-export type Mode = 'free' | 'bubble' | 'ledge' | 'climb' | 'slide' | 'swing' | 'fly' | 'down';
+export type Mode = 'free' | 'bubble' | 'ledge' | 'climb' | 'slide' | 'swing' | 'fly' | 'down' | 'ride';
 
 /** What the Använd button would do right now. Each has its word in `sv.verbs`. */
 export type Verb = 'slide' | 'lace' | 'push' | 'pull' | 'turn' | 'take' | 'call' | 'grab';
@@ -64,6 +66,40 @@ export interface Spot {
   verb: 'turn' | 'take' | 'call';
   /** A flag that has to be set before it can be used. */
   needs?: string;
+  /** The word on the button where the verb's own is too plain: a key of `sv.verbs`, as in "Ropa på Moa". */
+  word?: string;
+  /** Using it starts this ride. */
+  ride?: string;
+}
+
+/** Who a bubble belongs to. Each has a name in `sv.who`. */
+export type Speaker = 'mamma' | 'pappa' | 'moa' | 'bertil' | 'elof' | 'spoket';
+
+/**
+ * Something said, in a bubble (plan §3.7): the game has no voices. It comes when Elof first passes `at`, or
+ * when the flag `on` is set, and only once.
+ */
+export interface Beat {
+  id: string;
+  at?: number;
+  on?: string;
+  who: Speaker;
+  /** A key of `sv.lines`. */
+  line: string;
+}
+
+/**
+ * A ride that can't fail (plan §4.2): the paper plane, the cap, the crane. It carries him along an arc from
+ * one place to another, and the stick only moves him up and down inside its corridor.
+ */
+export interface Ride {
+  id: string;
+  from: Vec;
+  to: Vec;
+  /** How high the arc rises above the straight line between its ends. */
+  rise: number;
+  /** How long it takes, in seconds. */
+  time: number;
 }
 
 /**
@@ -169,6 +205,10 @@ export interface ChapterData {
   spots?: Spot[];
   /** The places where the ghost waits for him, in order. Left out: the chapter has no ghost. */
   ghost?: GhostPerch[];
+  /** What is said along the way. */
+  beats?: Beat[];
+  /** The rides. */
+  rides?: Ride[];
 }
 
 /** One simulation step's input. hop and act are presses; the rest is held state. */
@@ -205,4 +245,6 @@ export interface PlayerState {
   verb: Verb | null;
   /** The hook he swings from, or null. */
   hook: Vec | null;
+  /** The word for the button, where the verb's own is too plain: a key of `sv.verbs`. */
+  word: string | null;
 }
