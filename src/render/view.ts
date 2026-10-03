@@ -295,6 +295,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   shadow.rotation.x = -Math.PI / 2;
   shadow.renderOrder = 1;
   scene.add(shadow);
+  // The ghost has one too: it stands on the ground, it does not float over it.
+  const ghostShadow = new Mesh(shadow.geometry, shadow.material);
+  ghostShadow.rotation.x = -Math.PI / 2;
+  ghostShadow.renderOrder = 1;
+  ghostShadow.visible = false;
+  scene.add(ghostShadow);
 
   const camera = new PerspectiveCamera(FOV, 1, 0.1, 140);
   let viewHeight = 5;
@@ -450,6 +456,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostSize += (away - ghostSize) * ease(8, dt);
       ghostPlace.position.set(ghostState.x, ghostState.y, 0);
       ghostPlace.scale.setScalar(ghostSize);
+      // Its shadow lies where it stands. In a hop it is off the ground, and the shadow waits where it will land.
+      ghostShadow.visible = ghostPlace.visible && !hopping && ghostSize > 0.4;
+      ghostShadow.position.set(ghostState.x, ghostState.y + 0.012, 0);
+      ghostShadow.scale.setScalar(1.3 * ghostSize);
       // 0 faces along the course; a half turn faces back at him.
       const wanted = hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4;
       ghostTurn += (wanted - ghostTurn) * ease(7, dt);

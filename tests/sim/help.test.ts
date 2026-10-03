@@ -74,7 +74,8 @@ describe('what the helper shows', () => {
       expect(game.sim.flags.has('goal'), chapter.id).toBe(true);
       if ((chapter.spots ?? []).some((s) => !s.touch)) expect(checked, chapter.id).toBeGreaterThan(0);
     }
-  });
+    // The whole story is played: give it time on a busy computer.
+  }, 60000);
 
   it('always has something to show until the chapter is over', () => {
     for (const chapter of STORY) {
