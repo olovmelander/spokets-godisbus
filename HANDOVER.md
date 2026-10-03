@@ -87,9 +87,17 @@
         picture's business only.
       - Contact sheets of both golden frames, with the stand-in figure: `docs/shots/look-forest/` and
         `docs/shots/look-deck/`.
+    - **The bog, the mountain and the summit at dusk** (branch `stage-0b-places`). Kapitel 3, Kapitel 4 and
+      the final are dressed too, so **no chapter of the story is greybox any more:** `?dev` and play on, or
+      `?dev&course=myren`, `berget`, `norrsken`.
+      - Myren: islands of rust-red and green moss in dark water that lies to the horizon, sedge, dwarf birch,
+        cloudberry leaves, sheets of mist, and the forest and the mountain in mist far away. The soft
+        tussocks are mounds of paler moss. The boardwalk is planks.
+      - Berget: granite, white lichen and boulders under a pink-orange sky, with ridges and a hazy valley.
+      - The final: the same summit in blue with the first stars; night and the northern lights come as before.
     - **Not yet:** plates rendered in Blender and scanned materials (what is there is drawn in code and reads
-      as stylized); bloom and depth blur on High; the bog, the mountain and the night; the things on rails,
-      the water and the helpers in the place's style. **H1a is Olov's:** art bible §2.5 says what to look at.
+      as stylized); bloom and depth blur on High; pines with crowns; the things on rails and the helpers in
+      the place's style. **H1a is Olov's:** art bible §2.5 says what to look at.
 - **Stage 0c has begun** (3 October, branch `stage-0c-ghost`, stacked on `stage-0b-tiers`): the ghost's first
   model, before Stage 0b is finished, because Olov wanted the characters started.
   - It is built in Olov's Blender through the MCP server by `art/private/ghost/ghost.py`. Its four pictures
@@ -526,7 +534,7 @@
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, Kapitel 1 and 2 dressed, and the art bible's §2. Blender plates and scanned materials, the other places, and H1a are left. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
 | 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4 and the final in greybox. Only what needs no art, until the look and the characters are decided. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |

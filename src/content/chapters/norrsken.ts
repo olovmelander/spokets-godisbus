@@ -41,6 +41,7 @@ const JAY = 23;
 
 export const norrsken: ChapterData = {
   id: 'norrsken',
+  place: 'dusk',
   spawn: { x: 1, y: 0.01 },
   goalX: 72,
   ground: [

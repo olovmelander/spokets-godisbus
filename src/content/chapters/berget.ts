@@ -44,6 +44,7 @@ const BOULDERS = [110, 115.2, 120.4, 125.6, 130.8, 136];
 
 export const berget: ChapterData = {
   id: 'berget',
+  place: 'mountain',
   spawn: { x: 1, y: 0.01 },
   goalX: 157,
   ground: [

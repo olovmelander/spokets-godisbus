@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COURSES } from '../../src/content/chapters';
+import { COURSES, STORY } from '../../src/content/chapters';
 import { PLACES } from '../../src/render/dressing';
 
 describe('the places', () => {
@@ -9,7 +9,8 @@ describe('the places', () => {
     }
   });
 
-  it('Gården and Granskogen and their golden frames are dressed; the test course stays greybox', () => {
+  it('every chapter of the story is dressed, each as its own place; the test course stays greybox', () => {
+    expect(STORY.map((chapter) => chapter.place)).toEqual(['garden', 'forest', 'bog', 'mountain', 'dusk']);
     expect(COURSES['garden']!.place).toBe('garden');
     expect(COURSES['look-deck']!.place).toBe('garden');
     expect(COURSES['granskog']!.place).toBe('forest');

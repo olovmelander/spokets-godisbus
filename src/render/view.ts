@@ -155,9 +155,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
-  const water = buildWater(chapter);
-  const tussockMeshes = buildTussocks(chapter);
-  const mist = buildMist(chapter, scene.fog as Fog);
+  const water = buildWater(chapter, place?.water ?? null);
+  const tussockMeshes = buildTussocks(chapter, place?.tussock ?? null);
+  const mist = buildMist(chapter, scene.fog as Fog, place?.haze ?? null);
   const follower = buildFollower(chapter);
   const wind = buildWind(chapter);
   const night = buildNight(chapter, sky, hemisphere, sun);
@@ -516,13 +516,15 @@ function buildGround(chapter: ChapterData): Mesh {
  * The water of a pool or a brook, in greybox: a clear blue body that fills its pit to its surface, which
  * rises and sinks a little. The real water comes with the places (plan §5).
  */
-function buildWater(chapter: ChapterData) {
+function buildWater(chapter: ChapterData, look: { colour: string; opacity: number } | null) {
   const group = new Group();
-  const material = new MeshStandardMaterial({ color: '#4f9fc4', roughness: 0.25, transparent: true, opacity: 0.78 });
+  const material = new MeshStandardMaterial({ color: look?.colour ?? '#4f9fc4', roughness: 0.25, transparent: true, opacity: look?.opacity ?? 0.78 });
   const DEPTH = 6;
+  // In a place the water lies as far back as the eye reaches; in greybox it is as deep as the ground slab.
+  const back = look ? 46 : 4.6;
   const bodies = (chapter.water ?? []).map((w) => {
-    const body = new Mesh(new BoxGeometry(w.to - w.from, DEPTH, 4.6), material);
-    body.position.set((w.from + w.to) / 2, w.y - DEPTH / 2, -1.65);
+    const body = new Mesh(new BoxGeometry(w.to - w.from, DEPTH, back), material);
+    body.position.set((w.from + w.to) / 2, w.y - DEPTH / 2, 0.65 - back / 2);
     group.add(body);
     return { body, y: w.y - DEPTH / 2 };
   });
@@ -627,11 +629,25 @@ function buildWind(chapter: ChapterData) {
  * The soft tussocks (plan §4.7, E3), in greybox: paler than the firm ground, so that they can be told
  * apart before he lands on one. Each is moved by the simulation.
  */
-function buildTussocks(chapter: ChapterData): Mesh[] {
-  const moss = new MeshStandardMaterial({ color: '#c9c377', roughness: 1 });
+function buildTussocks(chapter: ChapterData, colour: string | null): Mesh[] {
+  const moss = new MeshStandardMaterial({ color: colour ?? '#c9c377', roughness: 1, vertexColors: colour !== null });
   return (chapter.tussocks ?? []).map((t) => {
-    const geometry = new BoxGeometry(t.width, 1.6, 2.6);
-    geometry.translate(0, -0.8, -0.6);
+    // In greybox a box. In a place a mound of moss: level on top, where he stands, and round at its shoulders.
+    const geometry = colour
+      ? new LatheGeometry([[0, 0], [0.5, 0], [0.78, -0.06], [0.94, -0.2], [1, -0.42], [0.96, -0.75], [0.8, -1.2], [0.5, -1.6]].map(([r, y]) => new Vector2(r, y)), 22).scale(t.width / 2, 1, 1.5)
+      : new BoxGeometry(t.width, 1.6, 2.6);
+    geometry.translate(0, colour ? 0 : -0.8, -0.6);
+    if (colour) {
+      // Patches of paler and darker moss, and darker towards the water: no two alike.
+      const at = geometry.getAttribute('position');
+      const tones: number[] = [];
+      for (let i = 0; i < at.count; i++) {
+        const patch = 0.78 + 0.3 * Math.abs(Math.sin(at.getX(i) * 3.1 + t.x) * Math.cos(at.getZ(i) * 2.7 + t.x * 1.7));
+        const deep = at.getY(i) < -0.25 ? 0.6 : 1;
+        tones.push(patch * deep, patch * deep * (0.94 + 0.06 * Math.sin(at.getX(i) * 5 + t.x)), patch * deep * 0.9);
+      }
+      geometry.setAttribute('color', new Float32BufferAttribute(tones, 3));
+    }
     const mesh = new Mesh(geometry, moss);
     mesh.position.set(t.x, t.y, 0);
     return mesh;
@@ -643,9 +659,9 @@ function buildTussocks(chapter: ChapterData): Mesh[] {
  * closes in over a few seconds, and a warm light goes with him. The light is in the scene from the start,
  * dark, so that no shader is compiled when it comes on.
  */
-function buildMist(chapter: ChapterData, fog: Fog) {
+function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: number } | null) {
   const group = new Group();
-  const clear = { near: fog.near, far: fog.far };
+  const greybox = { near: fog.near, far: fog.far };
   if (!chapter.mist) return { group, update: () => {} };
   const after = chapter.mist.after;
   const light = new PointLight('#ffcf8a', 0, 9, 1.6);
@@ -660,6 +676,8 @@ function buildMist(chapter: ChapterData, fog: Fog) {
   function update(flags: ReadonlySet<string>, x: number, y: number, facing: number, cameraZ: number, dt: number): void {
     k = Math.min(1, Math.max(0, k + (flags.has(after) ? dt : -dt) / 3));
     // The mist begins just behind the plane he walks in: he and what is near him stay clear, and the rest fades.
+    // Before it comes, the air is the place's own: its haze begins behind the play plane.
+    const clear = haze ? { near: cameraZ + haze.near, far: cameraZ + haze.far } : greybox;
     fog.near = lerp(clear.near, cameraZ - 2, k);
     fog.far = lerp(clear.far, cameraZ + 9, k);
     light.intensity = 7 * k;
