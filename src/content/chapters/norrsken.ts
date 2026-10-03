@@ -42,6 +42,8 @@ const JAY = 23;
 export const norrsken: ChapterData = {
   id: 'norrsken',
   place: 'dusk',
+  // The golden geléhallon: POFF, and he grows back, with both carvings at his feet.
+  size: { scale: 3, after: 'taste' },
   spawn: { x: 1, y: 0.01 },
   goalX: 72,
   ground: [

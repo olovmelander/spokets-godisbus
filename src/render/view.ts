@@ -157,6 +157,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const hiddenSweets = buildHidden(chapter);
   scene.add(hiddenSweets.group);
   const things = (chapter.spots ?? []).map((spot) => ({ spot, prop: spotProp(spot) }));
+  // What only stands about: drawn like a thing to use, and gone when its flag is set.
+  const decor = (chapter.decor ?? []).map((def, i) => ({
+    def,
+    prop: spotProp({ id: `decor:${i}`, at: def.at, verb: 'take', look: def.look, ...(def.word ? { word: def.word } : {}) }),
+  }));
+  for (const d of decor) if (d.prop) scene.add(d.prop.group);
+  // How big he is drawn: a boy among small things, or as small as the ghost (plan §5.2).
+  const sized = chapter.size;
+  let tall = sized && sized.after === undefined ? sized.scale : 1;
   for (const thing of things) if (thing.prop) scene.add(thing.prop.group);
   const carriers = (chapter.rides ?? []).map((ride) => {
     const prop = ride.look && ride.look !== 'plane' && ride.look !== 'none' ? rideProp(ride.look) : null;
@@ -342,6 +351,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (far) far.rotation.x = beat;
     }
     for (const thing of things) thing.prop?.update(flags.has(thing.spot.id), clock, dt);
+    for (const d of decor) d.prop?.update(d.def.until !== undefined && flags.has(d.def.until), clock, dt);
+    // The POFF: he shrinks, or grows back, in a little more than a second, in a swarm of glitter.
+    let poff = false;
+    if (sized) {
+      const big = (sized.after === undefined || flags.has(sized.after)) && (sized.until === undefined || !flags.has(sized.until));
+      const want = big ? sized.scale : 1;
+      poff = tall !== want;
+      tall += Math.sign(want - tall) * Math.min(Math.abs(want - tall), ((sized.scale - 1) * dt) / 1.2);
+    }
     helper.update(help.step, help.at, x, y, curr.standY, clock, dt);
     hiddenSweets.update(flags, clock, dt);
     glitter.update(curr.bubble, x, y, clock);
@@ -387,12 +405,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // The tilt turns about his middle, where the lace's pull goes through.
     elof.group.position.set(x - Math.sin(hang) * 0.5, y + 0.5 - Math.cos(hang) * 0.5, 0);
     elof.group.rotation.set(0, turn, lying - hang, 'ZYX');
-    elof.group.scale.set(1 / Math.sqrt(stretch), stretch, 1 / Math.sqrt(stretch));
+    elof.group.scale.set(tall / Math.sqrt(stretch), tall * stretch, tall / Math.sqrt(stretch));
+    if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
     elof.body.rotation.z = -clamp(curr.vx / RUN_SPEED, -1, 1) * 0.12 * curr.facing;
 
     const height = Math.max(0, y - curr.groundY);
     shadow.position.set(x, curr.groundY + 0.012, 0);
-    shadow.scale.setScalar(clamp(1 - height * 0.25, 0.35, 1));
+    shadow.scale.setScalar(tall * clamp(1 - height * 0.25, 0.35, 1));
 
     // A big candy turns slowly until it is reached. Then it gives a little jump, and turns fast.
     for (const [i, big] of bigCandies.entries()) {

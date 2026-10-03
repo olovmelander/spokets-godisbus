@@ -259,7 +259,7 @@ export interface SimStart {
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
 export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure';
-export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star';
+export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings';
 export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'none';
 
 /** The places of the story, each with its own light and layers (plan §5.4). The picture's business only. */
@@ -281,6 +281,16 @@ export interface ChapterData {
   surfaces?: { from: number; to: number; kind: SurfaceKind }[];
   /** For the picture: a deck overhead, with the sun falling through between its boards. */
   roofs?: { from: number; to: number; y: number }[];
+  /**
+   * For the picture: how big he is drawn (plan §5.2). In the prologue he is a boy among small things until the
+   * star shrinks him; in the final he grows back; in the epilogue he is a boy all through. The simulation
+   * knows nothing of it: there he is always one Elof length.
+   */
+  size?: { scale: number; after?: string; until?: string };
+  /** For the picture: Pappa's shelf of figures on the wall, with the first place in the row empty or filled. */
+  shelf?: { x: number; y: number; filled?: boolean };
+  /** For the picture: things that stand about and are not used. One with `until` is gone when that flag is set. */
+  decor?: { look: SpotLook; at: Vec; word?: string; until?: string }[];
   /** For the picture: the house's wall behind the scene, with its windows. */
   house?: { from: number; to: number; windows: number[] };
   /** The ground as one open line, from left to right. Elof walks on its upper side. */

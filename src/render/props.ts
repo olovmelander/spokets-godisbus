@@ -312,6 +312,18 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.position.z = 0.25;
       return { group, update: (used, _clock, dt) => vanish(used, dt) };
     }
+    case 'shavings': {
+      // What Pappa's knife left on the table: pale curls.
+      const pale = solid('#f1dfb4', 0.7, { side: DoubleSide });
+      for (const [x, z, r, turn] of [[-0.35, 0.1, 0.13, 0.4], [0.1, -0.15, 0.1, 2], [0.4, 0.2, 0.15, 3.4], [0.05, 0.3, 0.08, 5]] as const) {
+        const curl = new Mesh(new CylinderGeometry(r, r, 0.22, 14, 1, true, 0, 4.6), pale);
+        curl.rotation.set(Math.PI / 2, 0, turn);
+        curl.position.set(x, r, z);
+        group.add(curl);
+      }
+      group.position.z = 0.3;
+      return { group, update: () => {} };
+    }
     case 'star': {
       // The star that rolled out of the torn bag: it glitters, and turns.
       const gold = solid('#ffe07a', 0.2, { emissive: '#ffb400', emissiveIntensity: 0.9 });

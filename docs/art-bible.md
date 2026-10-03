@@ -233,6 +233,11 @@ size divided by 15 cm (plan §5.2):
 Keeping these is what makes the world read as seen from close. Where play needs something else, note it here.
 So far: the moss cushions are kept low where Elof walks, so that his boots show.
 
+**At home Elof is a boy.** In the prologue, from the golden candy in the final, and in the epilogue he is
+drawn three times his usual size (`size` in the chapter), beside a ghost that stays the size it is. The plan's
+real ratio is about eight; three is what fits in the picture with the ghost still readable. When the star
+shrinks him the picture closes in at the same time, so the world grows around him.
+
 ### 2.2 How a frame is built
 
 The layers of plan §5.3, as they are built now. Everything is made in code, so a place costs no download.
@@ -291,7 +296,7 @@ From plan §5.4. All five are built, each as far as its row says.
 | Myren, late afternoon | Low gold sun, mist sheets over the water | Sphagnum in rust-red, green and gold (`#6e3226`, `#8f4d2b`, `#7d8a36`, `#bca94c`), straw sedge, dark peat water `#34423f` | Red dwarf birch, orange cloudberry leaves, cranberries, grey dead pines; the forest and the mountain in mist at the horizon | **yes**; Mamma's lamp not |
 | Berget, golden hour | Pink-orange sky over blue-violet ridges, haze in the valley | Grey granite (`#8a8d94` to `#cfccc8`), white reindeer lichen | Crowberry, dry grass, bare boulders | **yes**; the crooked pines not |
 | Final, blue hour to night | The first stars; then night and the green northern lights | The same granite and lichen, in blue | The candy and the ghost stay in their own colours | **yes**; the headlamps and the violet not |
-| At home: the kitchen at 09:00, the veranda at 21:00 | Warm, low sun; in the evening dim and candle-warm, with the northern lights in the windows | Floor boards, a pale panelled wall close behind | White window frames | **a first room only**: no table, shelf, candles or bowls |
+| At home: the kitchen at 09:00, the veranda at 21:00 | Warm, low sun; in the evening dim and candle-warm, with the northern lights in the windows | Floor boards, a pale panelled wall close behind | White window frames; **Pappa's shelf of figures, with the first place in the row empty in the prologue and filled in the epilogue**; the Saturday bag; shavings | **a first room**: no table, candles or bowls, and no people |
 
 ### 2.4 The golden frames
 

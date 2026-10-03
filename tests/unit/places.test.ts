@@ -48,4 +48,35 @@ describe('the places', () => {
       expect(look.haze.near, id).toBeGreaterThan(0);
     }
   });
+
+  it('draws him as a boy among small things at home, and as small as the ghost in between', () => {
+    const sized = Object.fromEntries(STORY.map((part) => [part.id, part.size]));
+    // The prologue: big until the star. The final: big again from the golden candy. The epilogue: big all through.
+    expect(sized['prolog']).toEqual({ scale: 3, until: 'star' });
+    expect(sized['norrsken']).toEqual({ scale: 3, after: 'taste' });
+    expect(sized['epilog']).toEqual({ scale: 3 });
+    for (const id of ['garden', 'granskog', 'myren', 'berget']) expect(sized[id], id).toBeUndefined();
+    // The flags he changes size on are ones the chapter can set.
+    for (const part of STORY) {
+      for (const flag of [part.size?.after, part.size?.until]) {
+        if (flag !== undefined) expect((part.spots ?? []).some((s) => s.id === flag), `${part.id}: ${flag}`).toBe(true);
+      }
+    }
+  });
+
+  it("shows the empty place on Pappa's shelf in the prologue, and the first trägubbe back on it in the epilogue", () => {
+    expect(COURSES['prolog']!.shelf).toBeDefined();
+    expect(COURSES['prolog']!.shelf!.filled).toBeUndefined();
+    expect(COURSES['epilog']!.shelf!.filled).toBe(true);
+    // The Saturday bag stands beside the ghost until the ghost takes it.
+    expect(COURSES['prolog']!.decor).toContainEqual({ look: 'bag', at: { x: 7.8, y: 0 }, until: 'paint' });
+  });
+
+  it('keeps the picture wide while he is big', () => {
+    for (const id of ['prolog', 'epilog']) {
+      const part = COURSES[id]!;
+      const zone = part.cameras!.find((z) => part.spawn.x >= z.from && part.spawn.x < z.to);
+      expect(zone?.zoom, id).toBeGreaterThanOrEqual(1.4);
+    }
+  });
 });
