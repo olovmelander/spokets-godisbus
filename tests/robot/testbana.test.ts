@@ -44,8 +44,8 @@ function decide(
   }
   // A thing on its way along its rail: wait for it.
   if (movers.some((m) => m.t < 1)) return { x: 0, ahead: false, offered: false };
-  // Something to pull or push: stand still and do it.
-  if (p.verb === 'pull' || p.verb === 'push') return { x: 0, ahead: false, offered: true };
+  // Something to pull or push, or the ghost within reach: stand still and do it.
+  if (p.verb === 'pull' || p.verb === 'push' || p.verb === 'grab') return { x: 0, ahead: false, offered: true };
   if (p.hook) {
     const angle = Math.atan2(p.x - p.hook.x, p.hook.y - (p.y + 0.5));
     const high = p.vx > 0 && angle > 0.68 && angle < 0.85 && Math.hypot(p.vx, p.vy) > 5;

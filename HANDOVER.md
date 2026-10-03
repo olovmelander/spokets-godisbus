@@ -259,6 +259,20 @@
       Olov's ears; say what is too loud, too shrill or missing.
     - **Not yet:** music and its layers, ambience, footsteps per surface, the characters' wordless sounds,
       separate volumes for music and effects, and *Ljud även i tyst läge*.
+  - **The ghost keeps its distance** (branch `stage-2-ghost`; plan §4.2, §4.5). What you see: the ghost is
+    on the course from the start, always a little ahead. It stands and taps its foot until Elof comes
+    within 4 EL, then hops on to its next place in an arc. After the swing it lets him come close: Använd
+    says *Ta!*, it gets away, and five candies it drops pop out. At the end it is gone.
+    - The chapter lists the ghost's places (`ChapterData.ghost`). It hops faster than Elof runs, so the
+      chase can't be won early, and it only ever waits, so the chase can't be lost.
+    - **A stand-in ghost** built in code (pale wood, two eyes, the bag, red shoes) plays its part on the
+      public site. The carved one from the private pack takes its place where that pack exists.
+    - **Flags** say what has happened in a chapter, and are saved. A candy can wait for a flag
+      (`Candy.after`), and so can the ghost (`GhostPerch.until`).
+    - **Things to use** (`ChapterData.spots`): a place where Använd does one thing once and sets a flag:
+      *Vänd*, *Ta* or *Ropa*. No chapter has one yet; the ladybird's lever, the star and "Ropa på Moa" will.
+    - Tests: `tests/sim/ghost.test.ts` (13).
+    - **Not yet:** the ghost's bubbles and its dance, the ghost as helper, and its story beats.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts

@@ -87,7 +87,11 @@ function start(): void {
   const from: SimStart =
     at || save.chapter !== chapter.id
       ? {}
-      : { checkpoint: save.checkpoint, collected: save.candy[chapter.id] ?? [], placed: save.placed[chapter.id] ?? [] };
+      : {
+          checkpoint: save.checkpoint, collected: save.candy[chapter.id] ?? [], placed: save.placed[chapter.id] ?? [],
+          // Reaching the end is not kept: a game taken up again can reach it again.
+          flags: (save.flags[chapter.id] ?? []).filter((flag) => flag !== 'goal'),
+        };
 
   const game = new Game(chapter, simOptions(settings), from);
   game.tempo = tempoOf(settings);
@@ -124,6 +128,7 @@ function start(): void {
       checkpoint: game.sim.checkpoint,
       candy: { ...save.candy, [chapter.id]: game.sim.collected.flatMap((got, i) => (got ? [i] : [])) },
       placed: { ...save.placed, [chapter.id]: game.sim.placed },
+      flags: { ...save.flags, [chapter.id]: [...game.sim.flags] },
       playMs: save.playMs + (now - playedFrom),
     };
     playedFrom = now;
@@ -256,6 +261,7 @@ function start(): void {
     view.render({
       prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: paused ? 0 : dt, atGoal,
       collected: game.sim.collected, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
+      flags: game.sim.flags, ghost: game.sim.ghost,
     });
     hud.candy(game.sim.candyCount);
     hud.verb(game.sim.curr.verb);

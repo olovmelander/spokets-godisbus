@@ -7,10 +7,13 @@ import {
 } from './constants';
 import { CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER, MOVE_TIME, MOVER_RESET, PUSH_REACH } from './constants';
 import { DOWN_TIME, DROP_FALL, DROP_FROM, DROP_RADIUS, DROP_WARNING } from './constants';
+import { GHOST_CATCH, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, SPOT_REACH } from './constants';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
-import type { ChapterData, Climb, Hook, Jump, Mode, Mover, PlayerState, SimOptions, SimStart, StepInput, Vec, Verb } from './types';
+import type {
+  ChapterData, Climb, GhostPerch, Hook, Jump, Mode, Mover, PlayerState, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
+} from './types';
 
 // 1 EL is the length unit. This scales Box2D's tolerances to a hero who is one unit tall (plan §6.4).
 Settings.lengthUnitsPerMeter = 0.2;
@@ -61,6 +64,18 @@ export interface MoverState {
   t: number;
 }
 
+/** The ghost: where it is, which of its places it is at or hopping to, and whether it has gone for good. */
+export interface GhostState {
+  x: number;
+  y: number;
+  /** The place it is at, or on its way to. */
+  perch: number;
+  /** How far the hop has come: 1 when it stands. */
+  t: number;
+  /** True once it has left its last place: out of the chapter. */
+  gone: boolean;
+}
+
 /** A drip and its next drop. */
 export interface DripState {
   x: number;
@@ -100,6 +115,8 @@ export class Sim {
   readonly drips: DripState[];
   /** How many times a drop has knocked him over. It costs him a second and nothing else. */
   knocks = 0;
+  /** The ghost, or null in a chapter without it. */
+  readonly ghost: GhostState | null;
   prev: PlayerState;
   curr: PlayerState;
 
@@ -111,6 +128,10 @@ export class Sim {
   private readonly checkpoints: Vec[];
   private readonly jumps: Jump[];
   private readonly moverBodies: Body[];
+  private readonly spots: Spot[];
+  private readonly perches: GhostPerch[];
+  /** The ghost's hop: where from, how long, how high. */
+  private hop = { fromX: 0, fromY: 0, time: 1, lift: 0 };
   private state: State = { kind: 'free' };
   /** True in the air after a swing: he keeps the speed it gave him, where a jump's speed follows the stick. */
   private thrown = false;
@@ -191,6 +212,13 @@ export class Sim {
     });
 
     this.drips = (chapter.drips ?? []).map((drip) => ({ x: drip.at.x, y: drip.at.y, shadow: 0, height: -1 }));
+    for (const flag of start.flags ?? []) this.flags.add(flag);
+    this.spots = chapter.spots ?? [];
+    this.perches = chapter.ghost ?? [];
+    // The ghost starts at its first place that is still ahead of him.
+    const ahead = this.perches.findIndex((perch) => perch.at.x > spawn.x + 1);
+    const first = this.perches[ahead];
+    this.ghost = first ? { x: first.at.x, y: first.at.y, perch: ahead, t: 1, gone: false } : null;
 
     this.world.on('begin-contact', (c) => this.countFoot(c, 1));
     this.world.on('end-contact', (c) => this.countFoot(c, -1));
@@ -229,6 +257,7 @@ export class Sim {
     else this.lie(state);
     this.moveMovers();
     this.rain();
+    this.haunt();
 
     this.world.step(STEP);
     this.steps++;
@@ -242,6 +271,60 @@ export class Sim {
     // The bubble only carries. Everywhere else, candy he comes near is his: up a hose too.
     if (this.state.kind !== 'bubble') this.collect();
     if (this.curr.x >= this.chapter.goalX) this.flags.add('goal');
+  }
+
+  /**
+   * One step for the ghost. It stands at a place until Elof comes near, and then hops to the next: always a
+   * little ahead. At a near-catch it lets him come close; grabbed or not, it gets away.
+   */
+  private haunt(): void {
+    const ghost = this.ghost;
+    if (!ghost || ghost.gone) return;
+    const perch = this.perches[ghost.perch]!;
+    if (ghost.t < 1) {
+      ghost.t = Math.min(1, ghost.t + STEP / this.hop.time);
+      const k = smooth(ghost.t);
+      ghost.x = mix(this.hop.fromX, perch.at.x, k);
+      ghost.y = mix(this.hop.fromY, perch.at.y, k) + Math.sin(Math.PI * ghost.t) * this.hop.lift;
+      return;
+    }
+    if (perch.until && !this.flags.has(perch.until)) return;
+    const p = this.curr;
+    const away = Math.hypot(p.x - ghost.x, p.y - ghost.y);
+    const waiting = perch.catch !== undefined && !this.flags.has(perch.catch);
+    const leaves = waiting ? away < GHOST_SLIP : away < (perch.near ?? GHOST_NEAR);
+    if (!leaves) return;
+    const next = this.perches[ghost.perch + 1];
+    if (!next) {
+      ghost.gone = true;
+      return;
+    }
+    const far = Math.hypot(next.at.x - ghost.x, next.at.y - ghost.y);
+    this.hop = { fromX: ghost.x, fromY: ghost.y, time: Math.min(1.4, Math.max(0.35, far / GHOST_SPEED)), lift: Math.min(1.3, 0.35 + far * 0.12) };
+    ghost.perch++;
+    ghost.t = 0;
+  }
+
+  /** The flag a grab would set, when the ghost stands within reach at a near-catch. */
+  private ghostInReach(): string | null {
+    const ghost = this.ghost;
+    if (!ghost || ghost.gone || ghost.t < 1) return null;
+    const perch = this.perches[ghost.perch]!;
+    if (perch.catch === undefined || this.flags.has(perch.catch)) return null;
+    return Math.hypot(this.curr.x - ghost.x, this.curr.y - ghost.y) <= GHOST_CATCH ? perch.catch : null;
+  }
+
+  /** The thing to use that he stands at, if any. */
+  private spotInReach(): Spot | null {
+    const p = this.curr;
+    if (!p.grounded) return null;
+    return (
+      this.spots.find(
+        (spot) =>
+          !this.flags.has(spot.id) && (spot.needs === undefined || this.flags.has(spot.needs)) &&
+          Math.abs(spot.at.x - p.x) <= SPOT_REACH && Math.abs(spot.at.y - p.y) < 1,
+      ) ?? null
+    );
   }
 
   /**
@@ -357,9 +440,17 @@ export class Sim {
     const pulled = hook ? null : this.moverFor('pull');
     const pushed = hook || pulled ? null : this.moverFor('push');
     const moved = pulled ?? pushed;
-    this.verb = hook ? 'lace' : pulled ? 'pull' : pushed ? 'push' : below ? 'slide' : null;
+    // Använd at the ghost when it lets him come close (Ta!), and at a thing to turn, take or call.
+    const grab = hook ? null : this.ghostInReach();
+    const spot = hook || grab || moved ? null : this.spotInReach();
+    this.verb = hook ? 'lace' : grab ? 'grab' : pulled ? 'pull' : pushed ? 'push' : spot ? spot.verb : below ? 'slide' : null;
     if (hook && input.act) {
       this.throwLace(hook);
+      return;
+    }
+    if ((grab || spot) && input.act) {
+      this.flags.add(grab ?? spot!.id);
+      this.verb = null;
       return;
     }
     if (moved && input.act) {
@@ -813,6 +904,8 @@ export class Sim {
     for (let i = 0; i < candy.length; i++) {
       if (this.collected[i]) continue;
       const c = candy[i]!;
+      // A candy the ghost has yet to drop isn't there.
+      if (c.after !== undefined && !this.flags.has(c.after)) continue;
       if ((c.x - x) ** 2 + (c.y - y) ** 2 > CANDY_MAGNET ** 2) continue;
       this.collected[i] = true;
       this.candyCount++;
