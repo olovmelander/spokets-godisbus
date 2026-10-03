@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noimageindex">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:,">
+  <title>Elof och det stora godisäventyret</title>
+  <!-- The loading card is inline, so it shows before any script has arrived. No external requests. -->
+  <style>
+    html, body { position: fixed; inset: 0; margin: 0; overflow: hidden; background: #ecdfc6; }
+    .loading {
+      position: absolute; inset: 0; z-index: 10; display: grid; place-items: center;
+      background: #ecdfc6; transition: opacity 0.4s ease;
+    }
+    .loading.done { opacity: 0; pointer-events: none; }
+    .loading svg { height: min(34vh, 34vw, 210px); width: auto; animation: bob 2.4s ease-in-out infinite; }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-6px) rotate(2deg); }
+    }
+    @media (prefers-reduced-motion: reduce) { .loading svg { animation: none; } }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div class="controls" id="controls" hidden>
+    <div class="stick-zone" id="stickZone">
+      <div class="stick-base" id="stickBase"><div class="stick-knob" id="stickKnob"></div></div>
+    </div>
+    <button class="btn btn-act" id="actBtn" type="button" disabled>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-3.5a1.5 1.5 0 0 1 3 0V10m0-2a1.5 1.5 0 0 1 3 0v6.5A6.5 6.5 0 0 1 11.5 21 6 6 0 0 1 6.7 18.6L4 14.5a1.5 1.5 0 0 1 2.4-1.8L9 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="actLabel"></span>
+    </button>
+    <button class="btn btn-hop" id="hopBtn" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5m0 0-6 6m6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="hopLabel"></span>
+    </button>
+  </div>
+
+  <div class="hint" id="hint" hidden></div>
+  <pre class="debug" id="debug" hidden></pre>
+  <div class="message" id="message" hidden>
+    <p id="messageText"></p>
+    <button id="messageButton" type="button"></button>
+  </div>
+
+  <div class="loading" id="loading">
+    <svg viewBox="0 0 120 150" aria-hidden="true">
+      <g>
+        <rect x="44" y="118" width="11" height="3" fill="#3b7dd8"/><rect x="44" y="121" width="11" height="3" fill="#3fa34d"/>
+        <rect x="44" y="124" width="11" height="3" fill="#f2c230"/><rect x="44" y="127" width="11" height="3" fill="#d8402f"/>
+        <rect x="44" y="130" width="11" height="3" fill="#f08a24"/>
+        <rect x="65" y="118" width="11" height="3" fill="#3b7dd8"/><rect x="65" y="121" width="11" height="3" fill="#3fa34d"/>
+        <rect x="65" y="124" width="11" height="3" fill="#f2c230"/><rect x="65" y="127" width="11" height="3" fill="#d8402f"/>
+        <rect x="65" y="130" width="11" height="3" fill="#f08a24"/>
+      </g>
+      <path d="M41 133 h16 v5 q0 4 -4 4 h-14 q-4 0 -4 -3 q0 -6 6 -6 z" fill="#c8312a"/>
+      <path d="M35 139 q0 -3 4 -3 h4 v6 h-4 q-4 0 -4 -3 z" fill="#ffffff"/>
+      <path d="M63 133 h16 v5 q0 4 -4 4 h-14 q-4 0 -4 -3 q0 -6 6 -6 z" fill="#c8312a"/>
+      <path d="M57 139 q0 -3 4 -3 h4 v6 h-4 q-4 0 -4 -3 z" fill="#ffffff"/>
+      <path d="M60 8 C36 8 25 30 25 56 L23 116 L34 121 L44 116 L54 122 L64 116 L75 122 L86 116 L97 120 L95 56 C95 30 84 8 60 8 Z"
+            fill="#ead2a6" stroke="#b98e5c" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M60 8 L52 40 L38 64 M60 8 L70 38 L86 60 M52 40 L70 38 M38 64 L44 116 M86 60 L86 116"
+            fill="none" stroke="#b98e5c" stroke-width="1" opacity="0.55"/>
+      <circle cx="48" cy="50" r="6" fill="#141414"/><circle cx="72" cy="50" r="6" fill="#141414"/>
+      <circle cx="50" cy="48" r="1.8" fill="#ffffff"/><circle cx="74" cy="48" r="1.8" fill="#ffffff"/>
+      <path d="M52 76 L80 74 L82 104 L54 106 Z" fill="#d9b98a" stroke="#b98e5c" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M52 76 L80 74 L78 81 L53 83 Z" fill="#c9a571"/>
+      <circle cx="60" cy="90" r="2.2" fill="#d8402f"/><circle cx="70" cy="88" r="2.2" fill="#3fa34d"/>
+      <circle cx="65" cy="98" r="2.2" fill="#f08a24"/><circle cx="74" cy="99" r="2" fill="#d8402f"/>
+      <!-- its two carved fists, holding the bag -->
+      <ellipse cx="51" cy="86" rx="6" ry="5" fill="#ead2a6" stroke="#b98e5c" stroke-width="1.5"/>
+      <ellipse cx="83" cy="84" rx="6" ry="5" fill="#ead2a6" stroke="#b98e5c" stroke-width="1.5"/>
+    </svg>
+  </div>
+
+  <noscript>Elof och det stora godisäventyret behöver JavaScript.</noscript>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

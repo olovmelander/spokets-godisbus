@@ -92,7 +92,7 @@ requests on the site.
 - Merge at least 15 minutes before Elof plays: GitHub Pages caches `index.html` for 10 minutes.
 - Then open the game once on each device Elof plays on, so the service-worker update is in place.
 
-## Where things will live (plan §6.3)
+## Where things live (plan §6.3)
 
 | What | Where |
 | --- | --- |
@@ -105,5 +105,7 @@ requests on the site.
 | Audio | `src/audio/` |
 | Saving | `src/save/` |
 | Art sources and generators | `art/` (`.blend` sources in `art/blender/`); exports in `scripts/bake/`, packs by `scripts/build-assets.mjs` |
-| The placeholder page, until Stage 0a | `site/` |
+| The game without a screen: simulation, loop, press queue | `src/app/game.ts` |
+| Tests: Vitest; the robot; the browser smoke test | `tests/unit/`, `tests/sim/`; `tests/robot/`; `tests/browser/smoke.mjs` (`npm run test:browser`, after a build) |
+| The size gate and the privacy check | `scripts/size-gate.mjs` (part of `npm run build`); `scripts/privacy-check.mjs` |
 | Reference pictures, never committed | `photos/` (ignored by git; Olov's computer only) |

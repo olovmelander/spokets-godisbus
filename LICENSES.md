@@ -12,5 +12,28 @@ Never: Mixamo, ActorCore, Megascans/Fab, Textures.com, or output from a free tie
 or generated through *MCP for Blender* are listed here like any other file: Sketchfab and Poly Pizza models only
 under CC0 or CC BY, and never anything from Hunyuan3D (plan §5.6).
 
-There are no third-party or generated files yet. The placeholder page in `site/` is original work, with no
-third-party files or requests.
+## Libraries
+
+Installed from npm, never copied into the repository. The first two are part of the game that is served; the
+rest are tools.
+
+| Library | Version | Licence | Used for |
+| --- | --- | --- | --- |
+| three | 0.186.1 | MIT | Rendering |
+| planck | 1.5.0 | MIT | Physics |
+| vite | 8.3.2 | MIT | Build and dev server |
+| typescript | 7.0.2 | Apache-2.0 | Type checking |
+| vitest | 5.0.3 | MIT | Tests |
+| playwright | 1.56.1 | Apache-2.0 | Browser tests |
+| @vitejs/plugin-basic-ssl | 2.3.0 | MIT | HTTPS for `npm run dev:lan` |
+| @types/three | 0.186.0 | MIT | Types |
+
+## Code from Olov's other projects
+
+- `src/input/input.ts` is ported from *Sköldhästen*'s `skoldhast/src/input.mjs` (`olovmelander/alva-10-birthday`
+  at `5438e23`), which is Olov's own.
+
+## Files
+
+There are no third-party or generated asset files yet. Everything drawn so far is made in code: the test
+course, the stand-in Elof, and the ghost on the loading card.
