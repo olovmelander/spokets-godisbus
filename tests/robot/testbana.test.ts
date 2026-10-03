@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
 import { testbana } from '../../src/content/chapters/testbana';
-import type { ChapterData, PlayerState } from '../../src/sim/types';
+import type { ChapterData, PlayerState, SimOptions } from '../../src/sim/types';
 
 /** The ground's height at x, read from the chapter data. */
 function heightAt(chapter: ChapterData, x: number): number {
@@ -18,27 +18,35 @@ function heightAt(chapter: ChapterData, x: number): number {
  * The robot plays through the real loop and press queue with a fake clock (plan §6.13).
  * It decides from what it sees, as a player does: it runs right, and holds Hoppa when a wall stands
  * ahead or a gap opens. A slope and a kerb are no wall: it runs up them. A step down with no far side is
- * no gap: it runs off that, as the trail shows. When Använd offers a hose that leads on, it presses it.
+ * no gap: it runs off that, as the trail shows. When Använd offers the lace, or a hose that leads on, it
+ * presses it. On the lace it pushes the way it swings, and lets go on the way up at full height. It throws
+ * the lace from the ground only: in the air after letting go the hook is still in reach, and Använd would
+ * take it straight back.
  */
-function decide(chapter: ChapterData, p: PlayerState): { ahead: boolean; offered: boolean } {
+function decide(chapter: ChapterData, p: PlayerState): { x: number; ahead: boolean; offered: boolean } {
+  if (p.hook) {
+    const angle = Math.atan2(p.x - p.hook.x, p.hook.y - (p.y + 0.5));
+    const high = p.vx > 0 && angle > 0.68 && angle < 0.85 && Math.hypot(p.vx, p.vy) > 5;
+    return { x: p.vx < -0.05 ? -1 : 1, ahead: high, offered: false };
+  }
   // Steeper than 45 degrees over the next EL, and more than a step high.
   const wall = heightAt(chapter, p.x + 1.0) - heightAt(chapter, p.x + 0.6) > 0.4;
   const gap = heightAt(chapter, p.x + 0.35) < p.y - 0.3 && heightAt(chapter, p.x + 2.2) > p.y - 0.3;
   const leadsOn = (chapter.climbs ?? []).some((c) => Math.abs(c.top - p.y) < 0.3 && c.x > p.x && c.x - p.x < 1);
-  return { ahead: p.grounded && (wall || gap), offered: p.verb !== null && leadsOn };
+  return { x: 1, ahead: p.grounded && (wall || gap), offered: (p.verb === 'lace' && p.grounded) || (p.verb === 'slide' && leadsOn) };
 }
 
-function playThrough(fps: number, chapter = testbana) {
-  const game = new Game(chapter);
+function playThrough(fps: number, chapter = testbana, options: SimOptions = {}) {
+  const game = new Game(chapter, options);
   const dt = 1 / fps;
   let lowest = Infinity;
   let frames = 0;
   let wasAhead = false;
   let wasOffered = false;
-  while (!game.sim.flags.has('goal') && frames < fps * 60) {
-    const { ahead, offered } = decide(chapter, game.sim.curr);
+  while (!game.sim.flags.has('goal') && frames < fps * 90) {
+    const { x, ahead, offered } = decide(chapter, game.sim.curr);
     // A press is the moment the reason appears; holding is everything after it.
-    game.frame(dt, { x: 1, hopHeld: true }, { hop: ahead && !wasAhead, act: offered && !wasOffered, helper: false });
+    game.frame(dt, { x, hopHeld: true }, { hop: ahead && !wasAhead, act: offered && !wasOffered, helper: false });
     wasAhead = ahead;
     wasOffered = offered;
     lowest = Math.min(lowest, game.sim.curr.y);
@@ -56,7 +64,7 @@ describe('the robot on the test course', () => {
     it(`reaches the big candy at ${fps} Hz`, () => {
       const result = playThrough(fps);
       expect(result.goal).toBe(true);
-      expect(result.seconds).toBeLessThan(40);
+      expect(result.seconds).toBeLessThan(60);
       expect(result.lowest).toBeGreaterThan(-1);
       expect(result.bubbles).toBe(0);
     });
@@ -69,6 +77,28 @@ describe('the robot on the test course', () => {
       expect(result.candy).toBe(testbana.candy.length);
     });
   }
+
+  it('with Hjälp med svingen, lands the swing by pressing Hoppa at once', () => {
+    const game = new Game(testbana, { swingHelp: true });
+    const dt = 1 / 60;
+    let wasAhead = false;
+    let wasOffered = false;
+    let wasSwinging = false;
+    for (let frame = 0; frame < 60 * 90 && !game.sim.flags.has('goal'); frame++) {
+      const p = game.sim.curr;
+      const swinging = p.hook !== null;
+      const { x, ahead, offered } = decide(testbana, p);
+      // On the lace it does nothing but press Hoppa, the moment it hangs there.
+      const hop = swinging ? !wasSwinging : ahead && !wasAhead;
+      game.frame(dt, { x: swinging ? 0 : x, hopHeld: true }, { hop, act: offered && !wasOffered, helper: false });
+      wasAhead = ahead;
+      wasOffered = offered;
+      wasSwinging = swinging;
+    }
+    expect(game.sim.flags.has('goal')).toBe(true);
+    expect(game.sim.bubbles).toBe(0);
+    expect(game.sim.candyCount).toBeGreaterThanOrEqual(testbana.candy.length - 3);
+  });
 
   it('plays the same game twice at the same frame rate', () => {
     expect(playThrough(60)).toEqual(playThrough(60));
