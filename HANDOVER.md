@@ -75,6 +75,12 @@
       rendering, which is too slow at Mid to be tried, so it does not see the change.
     - **Not measured:** an iPad or a phone. Auto never goes *down* to Low: a device too slow for Mid needs
       `?tier=low` until that is built.
+  - **High glows** (4 October, branch `stage-0b-glow`; plan §6.5). What you see, on High only: light spills
+    a little round what is brightest: a lit shop window, the sun on something pale, the shafts in the
+    forest. It is part of the one grading pass (sixteen more samples of the same picture, no buffer of its
+    own), switched by a number, so Auto going from Mid to High compiles nothing. Two numbers in
+    `src/render/grade.ts` set it: `GLOW_FROM` and `GLOW_ON_HIGH`. Kept gentle on purpose; a test holds it
+    there. **Not yet:** the depth blur, and a wider glow from smaller copies of the picture.
   - **The look of a place, and the first golden frame** (3 October, branch `stage-0b-look`; art bible §2).
     Olov asked twice when the graphics come, so the look-dev was taken up as soon as the story played through
     in greybox.
@@ -722,6 +728,38 @@
       plain, with no mark on it. Tests: `tests/unit/lost.test.ts` (6).
     - **Stand-ins:** the stones are grey blocks and the things are built in code.
     - **Not yet:** giving them back at the party in the epilogue, "with a giant's delight".
+  - **Byn, an extra chapter** (4 October, branch `stage-2-byn`). Olov asked for the village's shopping
+    street as a chapter. What you see: after the epilogue's card, *Ett kapitel till* leads to **Byn**. Elof
+    has one more star and is small again, and follows his friend along the pavement to the candy shop:
+    1. the pavement, and the kerb down into the gutter;
+    2. the drain's grate: four bars to hop across, and the dark between them;
+    3. the puddle, a lake to him: "Kliv på", and a birch leaf sails him over;
+    4. the bicycle: the lace takes hold of its pedal, for one swing over a cellar window's well;
+    5. under the awning, where last night's rain still drips;
+    6. the shop's stone step: a matchbox with a red ring is pulled down as the way up, and at the top the
+       door stands ajar. "Framme! Det luktar godis."
+    - **It is outside the story:** not in `STORY`, no chapter number, not on Moas karta, no hidden candy.
+      `BONUS` in `src/content/chapters/index.ts` lists it; the story's last card keeps its last words and
+      gets the extra button. Its code is GATA LÖV CYKEL. Directly: `?dev&course=byn`.
+    - **Its look** is a new place, `village` (`src/render/village.ts`, art bible §2.3): dark asphalt and
+      pale slabs, house fronts with shop windows, awnings and doors, a lamp post, a bicycle wheel as tall
+      as the picture, birch leaves. No shop is a real one: each sign is a picture, with no letters and no
+      number. The tune is played at a walk with the wood knocking.
+    - **Built from what the robot already knows:** each stretch has the measures of one in an earlier
+      chapter (the bog's firm tussocks, the forest pool's boat, the garden's gully, dew rain and wall), so
+      it was playable at once. Tests: `tests/robot/byn.test.ts` (13); the browser test runs through it.
+    - **Its name:** the game says *Byn*. The street's own name is not written anywhere in this
+      repository: see question 5 under "Frågor till Olov".
+    - **The village behind the street** (branch `stage-2-byn-skyline`): the houses now have the colours
+      of the village's own wooden houses (ochre yellow, white, Falu red, pale plaster, with white trim).
+      After every second house there is a yard with a red picket fence and a hedge, and over it the far
+      village shows: houses with red tin roofs, birches in October yellow, spruces, and the low blue
+      hills of the valley. It is one long soft picture far behind the fronts, so it slides past more
+      slowly than the houses do. The colours and shapes were taken by eye from the openly licensed photos
+      of the street in `photos/landscape/`; nothing of a photo is used, and no sign, name or number of a
+      real house is drawn.
+    - **Not yet:** people and their giant feet, cars, anything inside the shop, a way back, and hidden
+      candy of its own. The fronts are one drawn picture each.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate counts both
@@ -896,6 +934,11 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
    - Whichever you choose, better pictures give a better model: each view of Elof alone, full height, 1024 by
      1536, plain background, arms a little out. The views cut from the sheet are small and soft; they are in
      `art/private/elof/image-to-3d/` and will do for a first try.
+5. **May the village street be called by its own name?** You asked for it as a chapter by name. The game
+   calls it *Byn*, as a child would, and the street's name is not written in this repository. The reason:
+   CLAUDE.md says never a street address, and a street's name beside the children's first names is most of
+   one if anyone in the family lives or goes to school there. This repository is public and its history is
+   permanent. If the street is only where the shops are, say so, and the name can go on the chapter's card.
    - Until then the third, sculpted Elof stays in the game, and the ghost is redone as stylized carved wood.
 5. **Are the ghost and Elof right?** Olov called them "the good looking Elof and ghost" on 3 October and asked
    for them on the site, which the session reads as: good enough to show. It is not H1b: the plan's yes, or up

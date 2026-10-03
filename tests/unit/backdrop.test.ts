@@ -9,7 +9,8 @@ const outdoors = places.filter((place) => place !== 'home');
 describe('the far scenery', () => {
   it('gives every place outdoors a handful of layers, and none indoors', () => {
     for (const place of outdoors) {
-      expect(farLayers(place).length, place).toBeGreaterThanOrEqual(4);
+      // The village's nearer layers are the far village behind its houses, drawn with them: here it has its sky and hills.
+      expect(farLayers(place).length, place).toBeGreaterThanOrEqual(place === 'village' ? 2 : 4);
       // Each layer is a draw call that fills the picture: a place has few.
       expect(farLayers(place).length, place).toBeLessThanOrEqual(6);
     }
@@ -38,7 +39,8 @@ describe('the far scenery', () => {
         // Clearly its own speed: at least a fifth more than the layer behind it.
         if (i > 0) expect(layer.hold, place).toBeGreaterThanOrEqual(layers[i - 1]!.hold * 1.2);
       }
-      expect(layers[layers.length - 1]!.hold, place).toBe(1);
+      // The village's nearest far layer is the far village itself, which stands in the world behind its houses.
+      if (place !== 'village') expect(layers[layers.length - 1]!.hold, place).toBe(1);
       expect(layers[0]!.hold, place).toBeLessThanOrEqual(0.3);
     }
   });

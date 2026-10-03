@@ -3,7 +3,7 @@ import { Game } from './app/game';
 import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
-import { chapterNumber, courseFor, nextAfter } from './content/chapters';
+import { bonusAfter, chapterNumber, courseFor, nextAfter } from './content/chapters';
 import { album, foundFlag } from './content/kinds';
 import { lostFound } from './content/lost';
 import { albumHtml } from './ui/album';
@@ -420,10 +420,13 @@ function start(): void {
     if (endFor > 1.4 && !benchOn) {
       writeSave();
       const number = chapterNumber(chapter.id);
-      const next = params.has('dev') ? nextAfter(chapter.id) : null;
+      const following = params.has('dev') ? nextAfter(chapter.id) : null;
+      // After the story's last part comes an extra chapter, if there is one.
+      const bonus = params.has('dev') && !following ? bonusAfter(chapter.id) : null;
+      const next = following ?? bonus;
       const title = sv.end.named[chapter.id] ?? (number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course);
       const hidden = (chapter.hidden ?? []).map((h) => ({ kind: h.kind, found: game.sim.flags.has(foundFlag(h.kind)) }));
-      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null);
+      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, bonus ? sv.end.bonus : undefined);
     }
 
     if (!shown) {

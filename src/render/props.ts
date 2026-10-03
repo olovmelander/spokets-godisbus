@@ -512,6 +512,21 @@ export function rideProp(look: RideLook): Object3D | null {
       group.position.y = 0.02;
       break;
     }
+    case 'leaf': {
+      // A birch leaf on the water: yellow, a little cupped, with its stalk pointing back the way he came.
+      const yellow = solid('#e8b63a', 0.7, { side: DoubleSide });
+      const blade = new Mesh(new SphereGeometry(0.9, 18, 8), yellow);
+      blade.scale.set(1.3, 0.07, 0.85);
+      const rib = new Mesh(new CylinderGeometry(0.03, 0.03, 2.3, 6), solid('#a9781f', 0.8));
+      rib.rotation.z = Math.PI / 2;
+      rib.position.y = 0.06;
+      const stalk = new Mesh(new CylinderGeometry(0.025, 0.035, 0.7, 6), solid('#a9781f', 0.8));
+      stalk.rotation.z = Math.PI / 2 - 0.5;
+      stalk.position.set(-1.4, 0.2, 0);
+      group.add(blade, rib, stalk);
+      group.position.y = 0.02;
+      break;
+    }
     case 'crane': {
       const grey = solid('#9aa0a6', 0.9);
       const neck = rod(0.06, 1.2, grey);

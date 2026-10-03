@@ -8,7 +8,7 @@ import { createAssets } from './assets';
 import { KINDS } from '../content/kinds';
 import { PLACES, dress } from './dressing';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
-import { GARDEN_MORNING, createGradePass } from './grade';
+import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass } from './grade';
 import { chooseTier, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
@@ -111,7 +111,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   renderer.info.autoReset = false;
   // Mid and High: the scene goes to the HDR buffer, one pass grades it, and the renderer tone-maps the result.
   const place = chapter.place ? PLACES[chapter.place] : null;
-  if (tier !== 'low') renderer.setEffects([createGradePass(place?.grade ?? GARDEN_MORNING)]);
+  const gradePass = tier === 'low' ? null : createGradePass(place?.grade ?? GARDEN_MORNING);
+  if (gradePass) renderer.setEffects([gradePass]);
+  // High glows; Mid does not.
+  gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
   // Let the browser restore a lost context instead of leaving a dead canvas.
   canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
 
@@ -482,6 +485,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // Low has other buffers and no grading pass: it is chosen when the game starts, and stays.
       if (tier === 'low' || tier === next) return;
       tier = next;
+      gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
       resize();
     },
     info: () => ({

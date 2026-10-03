@@ -1,5 +1,6 @@
 import type { ChapterData } from '../../sim/types';
 import { berget } from './berget';
+import { byn } from './byn';
 import { epilog, prolog } from './ends';
 import { garden } from './garden';
 import { granskog } from './granskog';
@@ -13,11 +14,19 @@ import { testbana } from './testbana';
  * where every move can be tried, and as what the page shows while no chapter is released.
  */
 export const COURSES: Record<string, ChapterData> = {
-  testbana, prolog, garden, granskog, myren, berget, norrsken, epilog, 'look-forest': lookForest, 'look-deck': lookDeck,
+  testbana, prolog, garden, granskog, myren, berget, norrsken, epilog, byn, 'look-forest': lookForest, 'look-deck': lookDeck,
 };
 
 /** The chapters of the story, in order. Each end card leads to the next one that is built. */
 export const STORY: ChapterData[] = [prolog, garden, granskog, myren, berget, norrsken, epilog];
+
+/** Extra chapters: they come after the story is over, have no number, and are not on Moa's map. */
+export const BONUS: ChapterData[] = [byn];
+
+/** The extra chapter that the story's last card leads on to, or null. */
+export function bonusAfter(id: string): ChapterData | null {
+  return id === STORY[STORY.length - 1]!.id ? (BONUS[0] ?? null) : null;
+}
 
 /** The chapter after this one, or null when it is the last one built. */
 export function nextAfter(id: string): ChapterData | null {
@@ -44,5 +53,5 @@ export function courseFor(params: URLSearchParams, saved: string | null = null):
   const asked = params.get('course');
   if (asked && COURSES[asked]) return COURSES[asked];
   if (!params.has('dev')) return testbana;
-  return STORY.find((chapter) => chapter.id === saved) ?? STORY[0]!;
+  return [...STORY, ...BONUS].find((chapter) => chapter.id === saved) ?? STORY[0]!;
 }

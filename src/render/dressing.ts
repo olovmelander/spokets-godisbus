@@ -6,6 +6,7 @@ import {
 import type { ChapterData, PlaceId, SurfaceKind } from '../sim/types';
 import { outlook, outlookPane, scenery } from './backdrop';
 import type { Grade } from './grade';
+import { fronts, street } from './village';
 
 /**
  * How a place looks (plan §5.3, §5.4): its light, its haze, its grade, and the layers that are built around
@@ -110,7 +111,20 @@ const HOME: PlaceLook = {
   tussock: '#b9a07e',
 };
 
-export const PLACES: Record<PlaceId, PlaceLook> = { forest: FOREST, garden: GARDEN, bog: BOG, mountain: MOUNTAIN, dusk: DUSK, home: HOME };
+/** Byn on a Saturday morning in October: a clear cool sky, a low sun along the street, warm shop windows. */
+const VILLAGE: PlaceLook = {
+  id: 'village',
+  grade: { tint: [1.03, 1.0, 0.97], exposure: 1.04, contrast: 1.06, saturation: 1.06, vignette: 0.3, grain: 0.03 },
+  haze: { colour: '#d8dde6', near: 8, far: 95 },
+  sky: { top: '#7fa6d6', middle: '#dfe8f2', bottom: '#b8b4ac', glow: '#fff0cc' },
+  hemisphere: { sky: '#e6eefc', ground: '#6e6a66', intensity: 1.25 },
+  sun: { colour: '#ffe2b0', intensity: 3.4, from: [-8, 3.4, -4] },
+  fill: { colour: '#e4ecff', intensity: 0.75 },
+  water: { colour: '#4a5a6a', opacity: 0.85 },
+  tussock: '#9a9a96',
+};
+
+export const PLACES: Record<PlaceId, PlaceLook> = { forest: FOREST, garden: GARDEN, bog: BOG, mountain: MOUNTAIN, dusk: DUSK, home: HOME, village: VILLAGE };
 
 /** What the view adds to its scene for a place, and moves each frame. */
 export interface Dressing {
@@ -317,6 +331,10 @@ const GROUNDS: Record<Ground, GroundLook> = {
   stone: { colours: tones('#767879', '#8a8c8a', '#9b9c97', '#adaca4'), wall: new Color('#6f7172'), shade: new Color('#2c3438'), bump: 0.3, boards: false },
   shavings: { colours: tones('#d6bb8a', '#e3cb9b', '#eedab0', '#f5e6c4'), wall: new Color('#cbb07d'), shade: new Color('#6a5a40'), bump: 0.6, boards: false },
   hedge: { colours: tones('#1f4a1c', '#2f6424', '#3f7a2a', '#588c34'), wall: new Color('#254a1e'), shade: new Color('#16301c'), bump: 1.3, boards: false },
+  // The village street: pale slabs, dark asphalt with a little grit, and the grate's iron.
+  paving: { colours: tones('#9c9a94', '#aeaca5', '#bdbbb3', '#cbc8be'), wall: new Color('#8e8c88'), shade: new Color('#3a3c44'), bump: 0, boards: false },
+  asphalt: { colours: tones('#4c4f56', '#575a61', '#62656b', '#70727a'), wall: new Color('#45484e'), shade: new Color('#24262c'), bump: 0.12, boards: false },
+  iron: { colours: tones('#2e3136', '#383b41', '#44474d', '#52555b'), wall: new Color('#26282c'), shade: new Color('#14161a'), bump: 0, boards: false },
 };
 /** How wide a deck board is: 12 cm. */
 const BOARD = 0.8;
@@ -576,7 +594,7 @@ function scatter(chapter: ChapterData, from: number, to: number, place: PlaceId)
   const group = new Group();
   // Indoors nothing grows.
   if (place === 'home') return group;
-  const build = { forest: stretch, garden: lawn, bog, mountain: fell, dusk: fell }[place];
+  const build = { forest: stretch, garden: lawn, bog, mountain: fell, dusk: fell, village: street }[place];
   for (let a = from - 12; a < to + 12; a += STRETCH) group.add(build(chapter, a, a + STRETCH, Math.round(a * 7 + 97)));
   return group;
 }
@@ -1517,6 +1535,7 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
     mountain: { ground: 'granite', growth: null },
     dusk: { ground: 'granite', growth: null },
     home: { ground: 'wood', growth: null },
+    village: { ground: 'asphalt', growth: null },
   };
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
@@ -1526,6 +1545,8 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
     bank(chapter, own[look.id].ground),
     scatter(chapter, from, to, look.id),
     built(chapter, look.id === 'home'),
+    // The village has the fronts of its houses behind the pavement.
+    look.id === 'village' ? fronts(chapter, from, to) : new Group(),
     air.group,
     foreground(chapter, from, to, own[look.id].growth),
   );

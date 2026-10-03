@@ -557,7 +557,13 @@ export function outlookPane(wide: number, tall: number, index: number): PlaneGeo
 }
 
 /** Every place's far layers, from the farthest to the nearest. Indoors there is nothing far away. */
-const LAYERS: Record<PlaceId, Layer[]> = { forest: FOREST, garden: GARDEN, bog: BOG, mountain: MOUNTAIN, dusk: DUSK, home: [] };
+/**
+ * The village has the garden's sky and its far hills. What stands between them and the street, the far
+ * village with its red roofs, is drawn with the street's houses (village.ts).
+ */
+const VILLAGE = GARDEN.slice(0, 2);
+
+const LAYERS: Record<PlaceId, Layer[]> = { forest: FOREST, garden: GARDEN, bog: BOG, mountain: MOUNTAIN, dusk: DUSK, home: [], village: VILLAGE };
 
 /** Where a place's far layers hang and how they pass, from the farthest to the nearest. Each is one draw call. */
 export const farLayers = (place: PlaceId): { z: number; hold: number; sink: number; drift: number }[] =>

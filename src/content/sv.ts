@@ -30,6 +30,7 @@ export const sv = {
     callMamma: 'Ropa på Mamma',
     takeLight: 'Ta lysklubban',
     climbOn: 'Kliv upp',
+    board: 'Kliv på',
     lift: 'Lyft',
     lowerLace: 'Sänk snöret',
     paintEyes: 'Måla ögon',
@@ -67,6 +68,10 @@ export const sv = {
   // What is said, in bubbles: the game has no voices. At most about 40 characters each (plan §3.7).
   lines: {
     follow1: 'Följ godisspåret, Elof.',
+    // The extra chapter, Byn: a Saturday later, on the way to the candy shop.
+    again: 'En stjärna till. Nu handlar vi!',
+    lake: 'En sjö! Mitt på gatan.',
+    shop: 'Framme! Det luktar godis.',
     follow2: 'Vi är nära dig hela tiden.',
     stomp: 'Ge tillbaka mitt godis!',
     tiny: 'Lillebror?! Du är ju pytteliten!',
@@ -122,9 +127,14 @@ export const sv = {
   end: {
     chapter: 'Kapitel {n} klart!',
     // A part of the story with a name of its own, by its id.
-    named: { prolog: 'Lördagsmorgon', norrsken: 'Finalen klar!', epilog: 'Slut' } as Record<string, string>,
+    named: { prolog: 'Lördagsmorgon', norrsken: 'Finalen klar!', epilog: 'Slut', byn: 'Byn klar!' } as Record<string, string>,
     // The last card of the story, in place of "Fortsättning följer!".
-    closing: { epilog: 'Klonk kunde inte säga det med ord. Men Elof förstod.' } as Record<string, string>,
+    closing: {
+      epilog: 'Klonk kunde inte säga det med ord. Men Elof förstod.',
+      byn: 'Lördagsgodiset är köpt. Nu går vi hem.',
+    } as Record<string, string>,
+    // On the story's last card, the button to an extra chapter.
+    bonus: 'Ett kapitel till',
     course: 'Framme!',
     next: 'Fortsättning följer!',
     onward: 'Nästa kapitel',
@@ -157,6 +167,7 @@ export const sv = {
     berget: ['TALL', 'STEN', 'VIND'],
     norrsken: ['TOPP', 'KVÄLL', 'STJÄRNA'],
     epilog: ['KNIV', 'SPÅN', 'LÖRDAG'],
+    byn: ['GATA', 'LÖV', 'CYKEL'],
   } as Record<string, readonly [string, string, string]>,
   code: {
     // On a chapter's card, over the next chapter's three words.

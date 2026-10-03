@@ -273,13 +273,13 @@ export interface SimStart {
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
 export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure';
 export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin';
-export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'none';
+export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none';
 
 /** The places of the story, each with its own light and layers (plan §5.4). The picture's business only. */
-export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home';
+export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home' | 'village';
 
 /** What a stretch of ground is made of, where it isn't the place's own ground. The picture's business only. */
-export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge';
+export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron';
 
 export interface ChapterData {
   id: string;
