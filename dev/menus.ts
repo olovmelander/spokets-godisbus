@@ -5,10 +5,12 @@
 import { sv } from '../src/content/sv';
 import { settingsFor } from '../src/save/settings';
 import { createPause } from '../src/ui/pause';
+import { createHud } from '../src/ui/hud';
+import { createTitle } from '../src/ui/title';
 import { mountShell } from '../src/ui/shell';
 import '../src/ui/ui.css';
 
-const VIEWS = ['touch', 'keys', 'pad', 'goal', 'pause', 'stuck', 'message', 'debug'] as const;
+const VIEWS = ['touch', 'keys', 'pad', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'end', 'bubble', 'message', 'debug'] as const;
 const shown = new Set((new URLSearchParams(location.search).get('show') ?? 'touch').split(','));
 const byId = (id: string) => document.getElementById(id)!;
 
@@ -24,6 +26,19 @@ if (shown.has('pause') || shown.has('stuck')) {
   const pause = createPause(document, { onResume: () => pause.hide(), onSettings: () => {}, onStuck: () => pause.hide() });
   pause.show(settingsFor('aventyr'));
   if (shown.has('stuck')) byId('stuckBtn').click();
+}
+if (shown.has('title') || shown.has('saved') || shown.has('styles')) {
+  const title = createTitle(document, { onStart: () => title.hide(), onStartOver: () => {} });
+  title.show(shown.has('saved'));
+  if (shown.has('styles')) title.showStyles();
+}
+if (shown.has('end') || shown.has('bubble')) {
+  const hud = createHud(document, 116);
+  if (shown.has('bubble')) {
+    hud.say('moa', 'tiny');
+    hud.tick(0.1);
+  }
+  if (shown.has('end')) hud.end(sv.end.chapter, 87, () => {});
 }
 if (shown.has('message')) {
   byId('messageText').textContent = sv.noWebGL;

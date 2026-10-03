@@ -56,6 +56,15 @@ export const sv = {
   // The candy bag in the corner. Screen readers hear the name and then the number.
   bag: 'Godispåsen',
 
+  // The title and the first start.
+  start: {
+    begin: 'Börja',
+    resume: 'Fortsätt',
+    over: 'Börja om från början',
+    how: 'Hur vill du spela?',
+    rotate: 'Vänd skärmen på bredden!',
+  },
+
   // The pause panel. Every button has a picture beside its word, for a child who can't read yet.
   pause: {
     open: 'Paus',
