@@ -1,4 +1,4 @@
-import { VOICES, type Cue, type Footing } from './cues';
+import { MOTIFS, VOICES, type Cue, type Footing } from './cues';
 import type { Speaker } from '../sim/types';
 import { AIRS, barOf, barSeconds, barsIn, frequencyOf, MUSIC_LEVEL, pluck, RING, type Arrangement } from './music';
 
@@ -243,6 +243,21 @@ export function createAudio(): Audio {
         knock(300, 0.04 + 0.1 * cue.near);
         tone('sawtooth', 170, 230, 0.12, 0.01 + 0.025 * cue.near, 0.06);
         break;
+      case 'call': {
+        // "Hal-lo!": two notes of his own, the second higher, and held a little.
+        const pitch = VOICES.elof.pitch;
+        tone('triangle', note(0, pitch), note(0, pitch), 0.16, 0.12);
+        tone('triangle', note(5, pitch), note(4, pitch), 0.34, 0.12, 0.18);
+        // And the one he called answers, in three notes that are theirs.
+        if (cue.who) {
+          const voice = VOICES[cue.who];
+          for (const [i, step] of MOTIFS[cue.who].entries()) {
+            const answer = note(step, voice.pitch);
+            tone(voice.wave === 'wood' ? 'sine' : voice.wave, answer, answer * 0.97, i === 2 ? 0.42 : 0.2, 0.11, 0.75 + i * 0.22);
+          }
+        }
+        break;
+      }
       case 'gasp': {
         // A quick breath in, in his own voice: up, and cut short.
         const pitch = VOICES.elof.pitch;

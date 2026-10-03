@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { cuesFor, footingAt, newCueMemory, STREAK_GAP, STRIDE, VOICES, type Heard } from '../../src/audio/cues';
+import { cuesFor, footingAt, MOTIFS, newCueMemory, STREAK_GAP, STRIDE, VOICES, type Heard } from '../../src/audio/cues';
+import { STORY } from '../../src/content/chapters';
+import { personFor } from '../../src/content/people';
 import { berget } from '../../src/content/chapters/berget';
 import { prolog } from '../../src/content/chapters/ends';
 import { garden } from '../../src/content/chapters/garden';
@@ -103,6 +105,29 @@ describe('what a moment of play sounds like', () => {
     expect(cuesFor(air, { ...air, bounces: 1 }, memory).map((cue) => cue.kind)).toEqual(['bounce', 'giggle']);
     expect(cuesFor({ ...air, bounces: 1, time: 21 }, { ...air, bounces: 2, time: 21 }, memory).map((cue) => cue.kind)).toEqual(['bounce']);
     expect(cuesFor({ ...air, bounces: 2, time: 30 }, { ...air, bounces: 3, time: 30 }, memory).map((cue) => cue.kind)).toEqual(['bounce', 'giggle']);
+  });
+
+  it('when he calls someone he calls in two notes, and their own three answer', () => {
+    const moa = { id: 'moa', word: 'callMoa' };
+    expect(cuesFor(still, { ...still, calls: [moa] }, newCueMemory())).toEqual([{ kind: 'call', who: 'moa' }]);
+    // Once called is called: the same sign is not heard again, and a second call is heard by itself.
+    const called = { ...still, calls: [moa] };
+    expect(cuesFor(called, called, newCueMemory())).toEqual([]);
+    // Mamma is called twice in the bog, at two signs: each call is heard.
+    const twice = cuesFor({ ...still, calls: [{ id: 'mamma', word: 'callMamma' }] }, { ...still, calls: [{ id: 'mamma', word: 'callMamma' }, { id: 'braid', word: 'callMamma' }] }, newCueMemory());
+    expect(twice).toEqual([{ kind: 'call', who: 'mamma' }]);
+    // Each of the four has three notes, and no two have the same three.
+    const shapes = Object.values(MOTIFS).map((motif) => motif.join(','));
+    expect(shapes).toHaveLength(4);
+    expect(new Set(shapes).size).toBe(4);
+    for (const motif of Object.values(MOTIFS)) {
+      expect(motif).toHaveLength(3);
+      for (const step of motif) expect([0, 2, 3, 5, 7, 9, 10]).toContain(step);
+    }
+    // In the story, every sign he can call at stands for one of them.
+    for (const chapter of STORY) {
+      for (const spot of chapter.spots ?? []) if (spot.verb === 'call') expect(personFor(spot.word), `${chapter.id}: ${spot.id}`).not.toBeNull();
+    }
   });
 
   it('the ghost knocks as it hops on, louder the nearer it is, and the helper knocks twice', () => {

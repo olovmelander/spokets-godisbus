@@ -7,12 +7,13 @@
     the epilogue, and after them an extra chapter, Byn. Everything is merged to `main` and deployed:
     `https://olovmelander.github.io/spokets-godisbus/?dev`. The plain address still shows the grey test
     course, because `RELEASED_CHAPTER` is `null`: releasing is Olov's.
-  - **Added in the night of 3 to 4 October** (pull requests #38 to #55; each has its own entry further
+  - **Added in the night of 3 to 4 October** (pull requests #38 to #58; each has its own entry further
     down): music and each place's air; footsteps for every surface; the sticker album; four more switches;
     wordless sounds for the characters and for Elof; the size gate as served; chapter codes; C1, the swing
     chain; the bouncing cranberries; a graphics level that finds its own place, and High's glow; Hittegods,
     found and given back; Byn; far scenery in layers with parallax for every place; the family's first
-    models, and the code that shows them at home and on the summit.
+    models, and the code that shows them at home and on the summit, turning towards him and glad; the jay
+    modelled in Blender; his call, and each one's answer.
   - **What Olov asked for on 4 October, and how far it got:**
     - *"Improving and creating all character models in blender":* Pappa, Mamma, Moa, Bertil and
       three-year-old Elof have first models. They are on his computer only, waiting for his eyes and his
@@ -696,7 +697,10 @@
     - Tested without ears (`tests/unit/cues.test.ts`). **No one has listened to it.**
     - **Elof's own sounds** came after (branch `stage-2-elof-sounds`): a gasp as the glitter bubble takes
       him, and a giggle at a big candy and at the first bounce on a cranberry. In his voice from the table
-      above, without a word. **Not yet:** his two-note call.
+      above, without a word.
+    - **His call, and the answer** (branch `stage-2-call`): when he calls someone at their sign, he calls in
+      two notes, and that one answers in three notes of their own: Mamma's rise, Pappa's fall, Moa's leap
+      and come back, Bertil's say one note twice and jump (`MOTIFS` in `src/audio/cues.ts`; plan §5.8).
   - **Chapter codes** (branch `stage-2-codes`; plan §6.9, and a MUST in §7.4). What you see: the card at a
     chapter's end shows three words under *Nästa kapitel*, "Kod till nästa kapitel: GRAN KOTTE MOSSA". On
     the title, *Jag har en kod* opens a field; the right three words open that chapter's start, on any
