@@ -292,10 +292,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The family (plan §2.3). At home he is a boy among people, and whoever a sign stands for is there in
   // person, once the private pack has their model. In the macro world the signs stay: there a person is
   // a pair of hands from far above, and the sign is where to call them (plan §4.6).
+  const family: Relative[] = [];
   if (sized && !standIns) {
+    // `glad` is the flag that makes them glad: the candy he gives them, or the moment they come into the picture.
     const stands = [
-      ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop })),
-      ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop })),
+      ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.at.x, glad: thing.spot.id as string | undefined })),
+      ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after })),
     ].filter((stand) => stand.look === 'sign' && stand.prop !== null && personFor(stand.word) !== null);
     assets
       .manifest()
@@ -308,6 +310,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           model.scale.setScalar(sized.scale);
           stand.prop!.group.clear();
           stand.prop!.group.add(model);
+          family.push({
+            model, at: stand.at, glad: stand.glad, was: false, joy: 0,
+            arms: [jointOf(model, 'upperarm_l', -1), jointOf(model, 'upperarm_r', -1)],
+            hands: [jointOf(model, 'lowerarm_l', -1), jointOf(model, 'lowerarm_r', -1)],
+          });
           if (!models.includes(`private/${who}`)) models.push(`private/${who}`);
         }
       })
@@ -495,6 +502,23 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghost.rotation.set(0, ghostFaces + ghostTurn, hopping ? -0.25 * Math.sin(Math.PI * ghostState.t) : Math.sin(clock * 1.7) * 0.035);
       if (ghostFoot) ghostFoot.rotation.x = hopping ? 0 : -Math.max(0, Math.sin(clock * 9)) * (Math.sin(clock * 0.9) > 0.2 ? 0.45 : 0);
     }
+    // The family: each turns a little towards him, and throws their arms up for a moment when he has given
+    // them candy, or when they first come into the picture.
+    for (const one of family) {
+      const now = one.glad !== undefined && flags.has(one.glad);
+      if (now && !one.was) one.joy = 1.8;
+      one.was = now;
+      one.joy = Math.max(0, one.joy - dt);
+      const towards = clamp((x - one.at) * 0.22, -0.75, 0.75);
+      one.model.rotation.y += (towards - one.model.rotation.y) * ease(4, dt);
+      const up = one.joy > 0 ? Math.min(1, one.joy / 0.3, (1.8 - one.joy) / 0.25) : 0;
+      // A small hop of delight, and otherwise the slow sway of someone standing.
+      one.model.position.y = up * Math.abs(Math.sin(clock * 9)) * 0.12 * (sized?.scale ?? 1);
+      for (const [i, arm] of one.arms.entries()) {
+        bendJoint(arm, up > 0 ? -3.0 * up : Math.sin(clock * 1.1 + one.at + i) * 0.05, ease(10, dt));
+        bendJoint(one.hands[i] ?? null, up > 0 ? -0.2 * up : -0.08, ease(10, dt));
+      }
+    }
     renderer.info.reset();
     // Gate 6 (plan §6.12): no shader is compiled during play. The first frames, and the first after a model
     // has arrived, draw the whole chapter, in view or not, so that every material's shader exists from then on.
@@ -565,6 +589,36 @@ interface Joint {
 
 const X_AXIS = new Vector3(1, 0, 0);
 const turn = new Quaternion();
+
+/** One of the family, standing where their sign stood: the model, and the joints that move. */
+interface Relative {
+  model: Object3D;
+  /** Where they stand, along the course. */
+  at: number;
+  /** The flag that makes them glad, and whether it was set when last looked at. */
+  glad: string | undefined;
+  was: boolean;
+  /** Seconds of delight left. */
+  joy: number;
+  arms: (Joint | null)[];
+  hands: (Joint | null)[];
+}
+
+/** A joint of a model by its bone's name, or null when the model has no such bone. */
+function jointOf(model: Object3D, name: string, forward: 1 | -1): Joint | null {
+  const node = model.getObjectByName(name);
+  if (!node) return null;
+  const bone = (node as { isBone?: boolean }).isBone === true;
+  return { node, rest: bone ? node.quaternion.clone() : null, forward: bone ? forward : 1, angle: 0 };
+}
+
+/** Bends a joint towards an angle, a share of the way each frame. */
+function bendJoint(joint: Joint | null, angle: number, quick: number): void {
+  if (!joint) return;
+  joint.angle += (angle - joint.angle) * quick;
+  if (joint.rest) joint.node.quaternion.copy(joint.rest).multiply(turn.setFromAxisAngle(X_AXIS, joint.angle * joint.forward));
+  else joint.node.rotation.x = joint.angle;
+}
 
 /**
  * Poses the doll in code until the library's clips drive it: a walk and a run that follow the distance he
