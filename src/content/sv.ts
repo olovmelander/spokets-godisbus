@@ -110,6 +110,11 @@ export const sv = {
   // Said at the top of the screen when a new kind is found, and under the stickers on a chapter's card.
   found: 'Ny sort: {name}!',
   stickers: 'Gömt godis',
+  // Hittegods (plan §4.8): the small things lost under the deck. Said at the top of the screen when he
+  // finds one, and shown in the album. Plain things, and never a brand.
+  lost: { marble: 'Bertils kula', clip: 'Moas hårspänne', brick: 'En leksakskloss', coin: 'En krona' } as Record<string, string>,
+  lostFound: 'Du hittade något: {name}!',
+  lostTitle: 'Hittegods',
   // The album in the pause panel: every kind, found or not.
   album: { title: 'Godisalbumet', count: '{found} av {total} sorter' },
 

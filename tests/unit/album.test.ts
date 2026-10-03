@@ -3,8 +3,10 @@ import { KINDS } from '../../src/content/kinds';
 import { sv } from '../../src/content/sv';
 import { albumHtml } from '../../src/ui/album';
 
-const slots = (html: string) => html.match(/<li/g)?.length ?? 0;
-const got = (html: string) => html.match(/<li class="got"/g)?.length ?? 0;
+/** The stickers' own part of the page: under it lies Hittegods, which has its own test. */
+const grid = (html: string) => html.match(/<ul class="album-grid">(.*?)<\/ul>/)?.[1] ?? '';
+const slots = (html: string) => grid(html).match(/<li/g)?.length ?? 0;
+const got = (html: string) => grid(html).match(/<li class="got"/g)?.length ?? 0;
 
 describe('the sticker album', () => {
   it('has a place for every kind, and an empty one keeps its name to itself', () => {

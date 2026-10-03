@@ -22,6 +22,8 @@ export interface Hud {
    * said at the top of the screen (plan §4.3).
    */
   stickers(found: readonly string[]): void;
+  /** Says something at the top of the screen for a few seconds: a find. */
+  notice(text: string): void;
   /** Puts a line in the queue of bubbles. Each is shown for a few seconds, one after another. */
   say(who: Speaker, line: string): void;
   /** Moves the bubbles on. `dt` is the time since the last frame, in seconds: 0 while the game is paused. */
@@ -109,6 +111,12 @@ export function createHud(doc: Document, total: number): Hud {
         act.querySelector('span')!.textContent = text;
         wordShown = undefined;
       }
+    },
+    notice(text) {
+      const notice = byId('notice');
+      notice.textContent = text;
+      notice.hidden = false;
+      noticeFor = 3.5;
     },
     say(who, line) {
       if (lines[line]) queue.push({ who, line });
