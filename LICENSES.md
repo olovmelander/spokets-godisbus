@@ -26,7 +26,12 @@ rest are tools.
 | vitest | 5.0.3 | MIT | Tests |
 | playwright | 1.56.1 | Apache-2.0 | Browser tests |
 | @vitejs/plugin-basic-ssl | 2.3.0 | MIT | HTTPS for `npm run dev:lan` |
+| @gltf-transform/cli | 4.5.1 | MIT | The asset build: KTX2 textures and meshopt |
 | @types/three | 0.186.0 | MIT | Types |
+
+Two tools are installed on the computer and never copied into the repository: **KTX-Software** 4.4.2
+(Apache-2.0), whose `ktx` writes the KTX2 textures, and **Blender** 4.5 LTS (GPL, which covers the tool and not
+the files made with it). three's Basis transcoder (Apache-2.0) is served with the game, from the three package.
 
 ## Code from Olov's other projects
 
@@ -35,5 +40,9 @@ rest are tools.
 
 ## Files
 
-There are no third-party or generated asset files yet. Everything drawn so far is made in code: the test
-course, the stand-in Elof, and the ghost on the loading card.
+| File | What it is | Source and licence |
+| --- | --- | --- |
+| `art/baked/boot/big-candy.glb` | The big candy: a striped sweet on a stick | Made for this game in Blender by `art/blender/big-candy.py`, which also paints its texture. Nothing in it comes from anyone else. |
+
+There are no third-party asset files yet. The test course, the stand-in Elof and the ghost on the loading card
+are made in code.

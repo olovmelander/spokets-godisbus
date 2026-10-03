@@ -89,7 +89,9 @@ async function open(name, options) {
   const info = () => page.evaluate(() => window.__godis.info());
   const finish = async () => {
     await page.screenshot({ path: join(SHOTS, `stage-0a-${name}.png`) });
-    check(`${name}: no request leaves the site`, requests.every((url) => url.startsWith(origin)), `${requests.length} requests`);
+    // The KTX2 transcoder runs in a worker made from a blob, which is still this page's own code.
+    const own = (url) => url.startsWith(origin) || url.startsWith(`blob:${origin}`) || url.startsWith('data:');
+    check(`${name}: no request leaves the site`, requests.every(own), `${requests.length} requests`);
     check(`${name}: no errors in the console`, errors.length === 0, errors.slice(0, 2).join(' | '));
     await context.close();
   };
@@ -104,6 +106,11 @@ async function open(name, options) {
   check('the page asks not to be indexed', /noindex/.test(robots ?? ''), robots ?? 'no robots meta');
   const drawn = await info();
   check('the scene is drawn', drawn.drawCalls > 0 && drawn.triangles > 0, `${drawn.drawCalls} draw calls, ${drawn.triangles} triangles`);
+  // The asset chain (plan §7.3, Stage 0a): a model made in Blender, packed with KTX2 and meshopt, on the page.
+  const loaded = await until(info, (i) => i.models.includes('boot/big-candy'), 30000);
+  check('the big candy from Blender is loaded', loaded.models.includes('boot/big-candy'), loaded.models.join(', ') || 'no models');
+  check('its texture arrived as KTX2 and stayed compressed', loaded.compressedTextures >= 1, `${loaded.compressedTextures} compressed`);
+  check('its custom property from Blender arrived', loaded.roles.includes('checkpoint'), loaded.roles.join(', ') || 'no roles');
   check('the on-screen controls are hidden on a computer', await page.locator('#controls').isHidden());
   check('the key hint shows', await page.locator('#hint').isVisible());
 

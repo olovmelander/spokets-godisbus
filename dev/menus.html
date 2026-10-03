@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noimageindex">
+  <title>Menyer – Elof och det stora godisäventyret</title>
+  <!-- A development page: everything that lies over the game view, without WebGL (plan §6.10).
+       It is served by `npm run dev` only, and is not part of the built site. -->
+  <style>
+    .stage { position: absolute; inset: 0; background: linear-gradient(#c4dcea 0 62%, #7f8f58 62%); }
+    .dev-nav {
+      position: absolute; z-index: 30; left: 50%; top: 8px; transform: translateX(-50%);
+      display: flex; gap: 6px; padding: 6px 8px; border-radius: 8px; background: rgb(0 0 0 / 0.55);
+      font: 13px/1 system-ui, sans-serif;
+    }
+    .dev-nav a { color: #fff; padding: 6px 8px; border-radius: 6px; text-decoration: none; }
+    .dev-nav a.on { background: #dd4b39; }
+  </style>
+</head>
+<body>
+  <div class="stage"></div>
+  <nav class="dev-nav" id="devNav"></nav>
+  <script type="module" src="./menus.ts"></script>
+</body>
+</html>

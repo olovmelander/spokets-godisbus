@@ -22,5 +22,11 @@ Thumbs.db
 !.env.example
 .dev.vars
 
+# Written by scripts/build-assets.mjs from art/baked/
+/public/packs/
+
+# Rebuilt from art/blender/big-candy.py. A .blend stores the full path it was saved to.
+/art/blender/big-candy.blend
+
 # Local iteration renders; only approved contact sheets are committed
 /docs/shots/_work/

@@ -3,6 +3,7 @@ import {
   ExtrudeGeometry, Fog, Group, HemisphereLight, Mesh, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial,
   PerspectiveCamera, Scene, Shape, SphereGeometry, WebGLRenderer,
 } from 'three';
+import { createAssets } from './assets';
 import { cameraIntent } from '../sim/camera-intent';
 import { RUN_SPEED } from '../sim/constants';
 import type { ChapterData, PlayerState } from '../sim/types';
@@ -21,6 +22,12 @@ export interface ViewInfo {
   pixelRatio: number;
   width: number;
   height: number;
+  /** Models loaded from the packs, as "pack/name". */
+  models: string[];
+  /** How many of their textures arrived as KTX2 and stayed compressed on the GPU. */
+  compressedTextures: number;
+  /** The "role" custom properties set in Blender, read back from the models. */
+  roles: string[];
 }
 
 export interface View {
@@ -53,8 +60,29 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): Vie
   sun.position.set(-6, 5, 8);
   scene.add(sun);
 
-  scene.add(buildGround(chapter), buildTrunks(chapter), buildCandy(chapter));
-  const candy = scene.getObjectByName('candy')!;
+  const candyPlace = buildCandy(chapter);
+  scene.add(buildGround(chapter), buildTrunks(chapter), candyPlace);
+  let candy = candyPlace.getObjectByName('candy')!;
+
+  // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
+  // It is the first asset through the whole chain: Blender → glTF → KTX2 and meshopt → the page.
+  const models: string[] = [];
+  const roles: string[] = [];
+  let compressedTextures = 0;
+  createAssets(renderer)
+    .model('boot', 'big-candy')
+    .then((model) => {
+      candyPlace.clear();
+      candyPlace.add(model);
+      candy = model.getObjectByName('candy') ?? model;
+      models.push('boot/big-candy');
+      model.traverse((node) => {
+        if (typeof node.userData.role === 'string') roles.push(node.userData.role);
+        const map = ((node as Mesh).material as MeshStandardMaterial | undefined)?.map;
+        if (map && (map as { isCompressedTexture?: boolean }).isCompressedTexture) compressedTextures++;
+      });
+    })
+    .catch((error) => console.error('The big candy could not be loaded; the stand-in stays.', error));
   const elof = buildElof();
   scene.add(elof.group);
 
@@ -124,7 +152,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): Vie
     shadow.position.set(x, curr.groundY + 0.012, 0);
     shadow.scale.setScalar(clamp(1 - height * 0.25, 0.35, 1));
 
-    candy.rotation.y += dt * (atGoal ? 7 : 1.2);
+    candy.rotateY(dt * (atGoal ? 7 : 1.2));
     renderer.render(scene, camera);
   }
 
@@ -138,6 +166,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData): Vie
       pixelRatio,
       width: canvas.width,
       height: canvas.height,
+      models,
+      compressedTextures,
+      roles,
     }),
   };
 }

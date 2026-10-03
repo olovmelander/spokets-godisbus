@@ -24,7 +24,7 @@
       its own. The next session has them, once Olov has restarted VS Code and approved the `blender` server.
     - The add-on inside Blender is older than the server. The server says so and falls back, so it works, but
       see "Next".
-  - **Stage 0a, part 1: the foundation runs** (3 October, branch `stage-0a-foundation`).
+  - **Stage 0a, part 1: the foundation runs** (3 October, merged as pull request #2; the plan was #1).
     - What you see: a greybox test course with a stand-in Elof in his colours. He walks, runs and jumps, with the
       keyboard, a gamepad, or the on-screen stick and buttons. `?debug` shows the numbers.
     - The stack of plan §6.1: Vite 8, TypeScript 7, three r186 (`WebGLRenderer`), planck. `npm run dev`,
@@ -37,14 +37,32 @@
     - 50 Vitest tests, among them the robot, which plays the course through the real loop at 30, 60, 120 and
       144 Hz. The browser smoke test plays with the keyboard at 1440×900 and with touch at 844×390.
     - The build's size gate: 188 KB of gzipped JS, of the 450 KB allowed.
-    - `.github/workflows/deploy.yml` now builds and publishes `dist/`, and `ci.yml` checks pull requests. **Neither
-      has run on GitHub yet:** the first run is this branch's pull request.
-    - The placeholder page in `site/` is gone: merging this branch puts the test course on Pages, with `noindex`.
-- **Not built yet in Stage 0a:** `?bench`, `dev/menus.html`, the asset chain (Blender → glTF → KTX2 → Pages), and
-  the note on what Pages compresses. See "Next".
+    - `.github/workflows/deploy.yml` builds and publishes `dist/`, and `ci.yml` checks pull requests. Both have
+      run green on GitHub: `ci.yml` on pull request #2 in about a minute, and `deploy.yml` after the merge.
+    - **The test course is live** at `https://olovmelander.github.io/spokets-godisbus/`, with `noindex`. The
+      placeholder page is gone.
+  - **Stage 0a, part 2: a model goes from Blender to the page** (3 October, branch `stage-0a-assets`).
+    - The big candy at the end of the course is now modelled in Blender, through the MCP server, by
+      `art/blender/big-candy.py`. `scripts/bake/export.py` exported it to `art/baked/boot/big-candy.glb`.
+    - `scripts/build-assets.mjs` packs it: the texture becomes KTX2 (ETC1S) with the `ktx` tool, the meshes are
+      compressed with meshopt, and `public/packs/manifest.json` lists the bytes. 33 KB became 19 KB.
+    - The game loads it with three's glTF, KTX2 and meshopt loaders (`src/render/assets.ts`). The custom
+      property set in Blender arrives as `userData`. The browser test checks all of it.
+    - `?bench` plays the course by itself for 30 seconds and then shows text to copy into a session.
+    - `dev/menus.html` shows everything that lies over the game view, without WebGL. The game and that page build
+      the same shell (`src/ui/shell.ts`).
+    - The size gate now reads 256 KB of gzipped JS (of 450), and 791 KB for the boot pack (of 3 MB), of which
+      the KTX2 transcoder is 515 KB.
+- **Stage 0a is built.** What is left of it is Olov's checkpoint: the game on his devices. See "Next".
+- **How GitHub Pages serves the site** (read from the live site on 3 October): HTML and JS are gzipped, not
+  Brotli, and cached for 10 minutes (`max-age=600`). Whether it compresses `.wasm` and `.glb` can be read once
+  this branch is deployed; the size gate counts them at full size until then.
 - **Olov's computer** (checked 3 October): Windows 11, an RTX 3070, Node 24.14, git, and Blender 4.5.9 LTS with
-  the *MCP for Blender* add-on running on port 9876, with only Poly Haven ticked, `uv` 0.12, and Playwright
-  1.56.1's Chromium. Not installed: `gh`, `exiftool`, `ktx`.
+  the *MCP for Blender* add-on running on port 9876, with only Poly Haven ticked, `uv` 0.12, Playwright
+  1.56.1's Chromium, and the `ktx` tool 4.4.2 in `%LOCALAPPDATA%\Programs\KTX-Software\bin` (the asset build
+  finds it there). Not installed: `gh`, `exiftool`.
+  - To install `ktx` on another Windows computer: download `KTX-Software-4.4.2-Windows-x64.exe` from the
+    KhronosGroup/KTX-Software releases and run it with `/S /D=%LOCALAPPDATA%\Programs\KTX-Software`.
 
 ## Next
 
@@ -56,19 +74,13 @@
    - **Update the add-on when convenient:** run `uvx mcp-for-blender install-addon`, then restart Blender (or switch
      the add-on off and on in Preferences) and press *Start MCP Server*. If the new panel shows a telemetry consent
      box, leave it unticked (`CLAUDE.md`).
-2. **Olov merges the two pull requests,** the plan first (`plan-v4-answers`), then the foundation
-   (`stage-0a-foundation`). The second one's checks are the first run of both workflows, so look at them.
-   - Then open `https://olovmelander.github.io/spokets-godisbus/?debug` on the devices you have, play the course
-     to the big candy, and tell the next session what the top two lines of the overlay say on each device.
+2. **Olov's checkpoint for Stage 0a** (plan §7.3): once `stage-0a-assets` is merged and deployed, open
+   `https://olovmelander.github.io/spokets-godisbus/?bench` on each device you have. It plays by itself for half a
+   minute and then shows text. Copy that text into the next session.
    - On the computer: `npm run dev`, then `http://localhost:5173/spokets-godisbus/?debug`. For a phone on the same
      Wi-Fi: `npm run dev:lan`.
-3. **Stage 0a, part 2** (plan §7.3), on Olov's computer, because it needs Blender:
-   - `?bench`: the 30-second measurement that prints text to paste into a session (plan §6.10);
-   - `dev/menus.html`, with the first menu in it;
-   - the asset chain proven end to end: `scripts/bake/export.py` in Blender → glTF → `scripts/build-assets.mjs`
-     with gltf-transform and KTX2 → a model on the page;
-   - record whether Pages compresses `.wasm`, `.glb` and `.ktx2` (it needs the deployed site);
-   - note how to install `ktx` and `exiftool` on Windows.
+3. **After that merge,** the next session reads the live site's headers for the `.wasm` and the `.glb`, to see
+   whether Pages compresses them, and corrects `scripts/size-gate.mjs` and the plan's §6.6 if it does.
 4. **Stage 0b** (look-dev) and **Stage 0c** (characters) need Olov's computer and step 1: the golden frames, then
    Elof and the ghost in Blender (plan §5.6).
 5. **Before Stage 0c:** the private repository `spokets-godisbus-familj`, a read-only token, and the secrets
@@ -107,15 +119,30 @@
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
-| 0a Foundation | 1–2 | 1 so far | 1 / 0 so far | Part 1 in the same session as plan version 4: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2 is left. |
+| 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 
 ## Known bugs
 
 - None known.
-- Not checked yet: the two workflows on GitHub, and the game on a real phone or tablet. The browser test ran in
-  headless Chromium with software rendering, so its frame times say nothing about a device.
+- Not checked yet: the game on a real phone or tablet. The browser test runs in headless Chromium with software
+  rendering, so its frame times say nothing about a device.
+- A viewport screenshot taken through the Blender server came back black once, right after the viewport was
+  switched to material preview. The export itself was right. Check again before relying on screenshots.
 - The stand-in Elof slides a little at the edge of a block before he drops: his body is a box. Stage 1's
   controller (ledges, slopes, steps of 0.3 EL) replaces it.
+
+## Notes for sessions that drive Blender
+
+- The server's safe mode lets a script use `bpy`, `bmesh`, `mathutils` and pure-Python standard modules. It
+  rejects `globals()`, `open`, `exec`, and `os`, `sys` and anything that reaches files, the network or other
+  programs. Saving, rendering, import and export through Blender's own operators are allowed.
+- So a script can't read another file: send its text. `scripts/bake/export.py` is written for that, with `OUT`
+  set in a first line.
+- A `.blend` stores the full path it was saved to, which includes the Windows user name. `big-candy.blend` is
+  therefore not committed; it is rebuilt from `art/blender/big-candy.py`. Decide how to handle this before the
+  first hand-modelled public `.blend` is committed.
+- The session of 3 October had no Blender tools of its own, and called the server through a small MCP client in
+  its scratchpad, started exactly as `.mcp.json` declares it. A session that has the tools doesn't need that.
 
 ## Senare (wishes for a later release)
 
