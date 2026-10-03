@@ -233,12 +233,21 @@ export interface SimStart {
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** The places of the story, each with its own light and layers (plan §5.4). The picture's business only. */
-export type PlaceId = 'forest';
+export type PlaceId = 'forest' | 'garden';
+
+/** What a stretch of ground is made of, where it isn't the place's own ground. The picture's business only. */
+export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge';
 
 export interface ChapterData {
   id: string;
   /** The place it is dressed as. Left out: greybox. */
   place?: PlaceId;
+  /** For the picture: stretches of ground that are something else than the place's own: a deck, a boulder. */
+  surfaces?: { from: number; to: number; kind: SurfaceKind }[];
+  /** For the picture: a deck overhead, with the sun falling through between its boards. */
+  roofs?: { from: number; to: number; y: number }[];
+  /** For the picture: the house's wall behind the scene, with its windows. */
+  house?: { from: number; to: number; windows: number[] };
   /** The ground as one open line, from left to right. Elof walks on its upper side. */
   ground: Vec[];
   spawn: Vec;

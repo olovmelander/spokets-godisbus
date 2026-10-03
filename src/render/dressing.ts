@@ -1,9 +1,9 @@
 import {
-  AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, DoubleSide, DynamicDrawUsage,
+  AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, CylinderGeometry, DoubleSide, DynamicDrawUsage,
   Float32BufferAttribute, Group, IcosahedronGeometry, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial,
   Object3D, PlaneGeometry, RepeatWrapping, SRGBColorSpace, SphereGeometry, Vector2, type Texture,
 } from 'three';
-import type { ChapterData, PlaceId } from '../sim/types';
+import type { ChapterData, PlaceId, SurfaceKind } from '../sim/types';
 import type { Grade } from './grade';
 
 /**
@@ -15,6 +15,7 @@ import type { Grade } from './grade';
  * scanned materials replace the drawn ones place by place (plan §5.6).
  */
 export interface PlaceLook {
+  id: PlaceId;
   grade: Grade;
   /** The haze: its colour, and where it begins and ends, counted from the play plane away from the camera. */
   haze: { colour: string; near: number; far: number };
@@ -29,6 +30,7 @@ export interface PlaceLook {
 
 /** Granskogen at noon: deep green and mossy gold, shafts of light, cool shade. */
 const FOREST: PlaceLook = {
+  id: 'forest',
   grade: { tint: [1.04, 1.01, 0.94], exposure: 1.08, contrast: 1.08, saturation: 1.12, vignette: 0.32, grain: 0.03 },
   haze: { colour: '#b4c79a', near: 4, far: 62 },
   sky: { top: '#2c4a44', middle: '#e6ebb0', bottom: '#587246', glow: '#fff8d2' },
@@ -37,7 +39,18 @@ const FOREST: PlaceLook = {
   fill: { colour: '#d6e6ff', intensity: 0.75 },
 };
 
-export const PLACES: Record<PlaceId, PlaceLook> = { forest: FOREST };
+/** Gården at ten in the morning: dew, bright greens, the first yellow leaves, and the red house in the sun. */
+const GARDEN: PlaceLook = {
+  id: 'garden',
+  grade: { tint: [1.04, 1.01, 0.95], exposure: 1.05, contrast: 1.07, saturation: 1.1, vignette: 0.28, grain: 0.025 },
+  haze: { colour: '#cfe2ea', near: 6, far: 80 },
+  sky: { top: '#6fa9d8', middle: '#d9ecf4', bottom: '#b4d28e', glow: '#fff4c8' },
+  hemisphere: { sky: '#dcecff', ground: '#7d8f48', intensity: 1.35 },
+  sun: { colour: '#ffe2ae', intensity: 3.6, from: [-7, 4.5, -3.5] },
+  fill: { colour: '#e8f0ff', intensity: 0.8 },
+};
+
+export const PLACES: Record<PlaceId, PlaceLook> = { forest: FOREST, garden: GARDEN };
 
 /** What the view adds to its scene for a place, and moves each frame. */
 export interface Dressing {
@@ -92,10 +105,16 @@ function heightAt(chapter: ChapterData, x: number): number {
 
 /** Whether things can grow at x: fairly level ground, not the bottom of a pit, and not under water. */
 function grows(chapter: ChapterData, x: number): boolean {
+  if (surfaceAt(chapter, x) !== undefined) return false;
   const here = heightAt(chapter, x);
   if ((chapter.water ?? []).some((w) => x >= w.from - 0.5 && x <= w.to + 0.5 && here < w.y)) return false;
   if (Math.abs(heightAt(chapter, x + 0.4) - here) > 0.3 || Math.abs(heightAt(chapter, x - 0.4) - here) > 0.3) return false;
   return here > Math.min(heightAt(chapter, x - 3.5), heightAt(chapter, x + 3.5)) - 2.5;
+}
+
+/** What the ground is made of at x, where the chapter says it is something else than the place's own. */
+function surfaceAt(chapter: ChapterData, x: number): SurfaceKind | undefined {
+  return chapter.surfaces?.find((s) => x >= s.from && x <= s.to)?.kind;
 }
 
 /** A picture drawn in code, as a texture. Drawn small, it is soft when it fills a large card. */
@@ -243,42 +262,141 @@ const PROFILE = [
 /** The shade is cool: what the sun doesn't reach is lit by the sky. */
 const SHADE = new Color('#27413f');
 
-function bank(chapter: ChapterData): Mesh {
+/** The edge of a deck: level to its front, then the board's end, and the dark under it. */
+const PROFILE_BOARD = [
+  { z: -16, drop: 0, shade: 0.7, bump: 0 },
+  { z: -10, drop: 0, shade: 0.8, bump: 0 },
+  { z: -5.5, drop: 0, shade: 0.9, bump: 0 },
+  { z: -2.6, drop: 0, shade: 0.96, bump: 0 },
+  { z: -0.9, drop: 0, shade: 1, bump: 0 },
+  { z: -0.3, drop: 0, shade: 1, bump: 0 },
+  { z: 0.45, drop: 0, shade: 1, bump: 0 },
+  { z: 1.1, drop: 0, shade: 1, bump: 0 },
+  { z: 1.1, drop: 0.22, shade: 0.8, bump: 0 },
+  { z: 0.85, drop: 0.24, shade: 0.3, bump: 0 },
+  { z: 0.85, drop: 1.4, shade: 0.14, bump: 0 },
+  { z: 0.85, drop: 16, shade: 0.06, bump: 0 },
+];
+
+/** What the ground is made of: a place's own, or what a chapter marks a stretch as. */
+type Ground = 'moss' | 'lawn' | SurfaceKind;
+interface GroundLook {
+  /** Four tones, from deep to bright. */
+  colours: Color[];
+  /** A wall's face, and what the shade goes towards. */
+  wall: Color;
+  shade: Color;
+  /** How much it rolls: 1 as moss does, 0 for something built. */
+  bump: number;
+  /** Boards: a straight front edge, a tone for each board, and the boards' drawing. */
+  boards: boolean;
+}
+const tones = (...hex: string[]) => hex.map((h) => new Color(h));
+const GROUNDS: Record<Ground, GroundLook> = {
+  moss: { colours: MOSS, wall: SOIL, shade: SHADE, bump: 1, boards: false },
+  lawn: { colours: tones('#3f6a22', '#5c962b', '#7fb238', '#aecb52'), wall: new Color('#4a3826'), shade: new Color('#2a4a3a'), bump: 0.8, boards: false },
+  wood: { colours: tones('#a48a69', '#b49a78', '#c2a988', '#ccb696'), wall: new Color('#a38866'), shade: new Color('#1d1712'), bump: 0, boards: true },
+  earth: { colours: tones('#57432e', '#695037', '#7a5e41', '#8a6c4b'), wall: new Color('#4a3826'), shade: new Color('#1f1a16'), bump: 0.5, boards: false },
+  stone: { colours: tones('#767879', '#8a8c8a', '#9b9c97', '#adaca4'), wall: new Color('#6f7172'), shade: new Color('#2c3438'), bump: 0.3, boards: false },
+  shavings: { colours: tones('#d6bb8a', '#e3cb9b', '#eedab0', '#f5e6c4'), wall: new Color('#cbb07d'), shade: new Color('#6a5a40'), bump: 0.6, boards: false },
+  hedge: { colours: tones('#1f4a1c', '#2f6424', '#3f7a2a', '#588c34'), wall: new Color('#254a1e'), shade: new Color('#16301c'), bump: 1.3, boards: false },
+};
+/** How wide a deck board is: 12 cm. */
+const BOARD = 0.8;
+
+function toneAt(kind: Ground, x: number, z: number, out: Color): Color {
+  const look = GROUNDS[kind];
+  const n = look.boards ? hash(Math.floor(x / BOARD), 3) : noise(x * 0.42 + 3, z * 0.6 + 11) * 0.65 + noise(x * 1.9, z * 2.3) * 0.35;
+  const at = Math.min(2.999, Math.max(0, n * 3.4 - 0.2));
+  const i = Math.floor(at);
+  return out.copy(look.colours[i]!).lerp(look.colours[i + 1]!, at - i);
+}
+
+/** Deck boards, two to a tile: the grain runs along each, and a dark gap lies between them. */
+function boards(): CanvasTexture {
+  const next = sequence(43);
+  return drawn(128, 128, (c) => {
+    c.fillStyle = '#d6d2cc';
+    c.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 90; i++) {
+      const x = next() * 128;
+      const v = next() < 0.5 ? 150 + next() * 50 : 225 + next() * 30;
+      c.strokeStyle = `rgba(${v},${v},${v},${0.25 + next() * 0.3})`;
+      c.lineWidth = 0.6 + next() * 1.6;
+      c.beginPath();
+      c.moveTo(x, 0);
+      c.bezierCurveTo(x + (next() - 0.5) * 3, 40, x + (next() - 0.5) * 3, 90, x, 128);
+      c.stroke();
+    }
+    c.fillStyle = 'rgba(30,22,16,0.9)';
+    for (const x of [0, 62, 126]) c.fillRect(x, 0, 2.5, 128);
+  }, true);
+}
+
+interface BankPoint {
+  x: number;
+  y: number;
+  wall: boolean;
+  kind: Ground;
+}
+
+/** The ground of a chapter, as one mesh for each stretch of one kind of ground. */
+function bank(chapter: ChapterData, own: Ground): Group {
   const line = chapter.ground;
   const first = line[0]!;
   const last = line[line.length - 1]!;
   const outline = [{ x: first.x - 16, y: first.y }, ...line, { x: last.x + 16, y: last.y }];
   // Points along the outline, close enough together for the moss to roll. A wall keeps its two corners.
-  const points: { x: number; y: number; steep: boolean }[] = [];
+  const points: BankPoint[] = [];
+  let before = false;
   for (let i = 0; i < outline.length - 1; i++) {
     const a = outline[i]!;
     const b = outline[i + 1]!;
     const dx = b.x - a.x;
     const steep = Math.abs(b.y - a.y) > Math.abs(dx) * 1.3;
     const pieces = Math.max(1, Math.ceil(Math.abs(dx) / 0.45));
-    for (let k = 0; k < pieces; k++) points.push({ x: a.x + (dx * k) / pieces, y: a.y + ((b.y - a.y) * k) / pieces, steep });
+    for (let k = 0; k < pieces; k++) {
+      const x = a.x + (dx * k) / pieces;
+      // The corner at a wall's top or foot is a wall's too.
+      points.push({ x, y: a.y + ((b.y - a.y) * k) / pieces, wall: steep || before, kind: surfaceAt(chapter, x) ?? own });
+      before = steep;
+    }
   }
-  points.push({ x: last.x + 16, y: last.y, steep: false });
+  points.push({ x: last.x + 16, y: last.y, wall: false, kind: own });
 
+  const maps = { speckles: speckles(), boards: boards() };
+  const group = new Group();
+  let start = 0;
+  for (let i = 1; i <= points.length; i++) {
+    if (i < points.length && points[i]!.kind === points[start]!.kind) continue;
+    // A stretch takes the next one's first point too, so that the two meet.
+    group.add(stretchOfGround(points.slice(start, Math.min(points.length, i + 1)), points[start]!.kind, maps));
+    start = i;
+  }
+  return group;
+}
+
+function stretchOfGround(points: BankPoint[], kind: Ground, maps: { speckles: CanvasTexture; boards: CanvasTexture }): Mesh {
+  const look = GROUNDS[kind];
+  const profile = look.boards ? PROFILE_BOARD : PROFILE;
   const position: number[] = [];
   const colour: number[] = [];
   const uv: number[] = [];
   const c = new Color();
-  for (const [i, p] of points.entries()) {
-    // The corner at a wall's top or foot is earth too.
-    const wall = p.steep || (points[i - 1]?.steep ?? false);
-    for (const row of PROFILE) {
-      const swell = wall ? 0 : row.bump * (noise(p.x * 1.15, row.z * 1.4 + 7) - 0.5) * 2;
+  const tile = look.boards ? 1 / (BOARD * 2) : 0.55;
+  for (const p of points) {
+    for (const row of profile) {
+      const swell = p.wall ? 0 : row.bump * look.bump * (noise(p.x * 1.15, row.z * 1.4 + 7) - 0.5) * 2;
       position.push(p.x, p.y - row.drop + swell, row.z);
-      mossAt(p.x, row.z, c);
-      if (wall) c.lerp(SOIL, 0.82);
-      c.lerp(SHADE, (1 - row.shade) * 0.9);
+      toneAt(kind, p.x, row.z, c);
+      if (p.wall) c.lerp(look.wall, 0.82);
+      c.lerp(look.shade, (1 - row.shade) * 0.9);
       colour.push(c.r, c.g, c.b);
-      uv.push(p.x * 0.55, (row.z - row.drop - (wall ? p.y : 0)) * 0.55);
+      uv.push(p.x * tile, (row.z - row.drop - (p.wall ? p.y : 0)) * tile);
     }
   }
   const index: number[] = [];
-  const rows = PROFILE.length;
+  const rows = profile.length;
   for (let i = 0; i < points.length - 1; i++) {
     for (let j = 0; j < rows - 1; j++) {
       const a = i * rows + j;
@@ -292,7 +410,7 @@ function bank(chapter: ChapterData): Mesh {
   geometry.setAttribute('uv', new Float32BufferAttribute(uv, 2));
   geometry.setIndex(index);
   geometry.computeVertexNormals();
-  const mesh = new Mesh(geometry, new MeshStandardMaterial({ vertexColors: true, map: speckles(), roughness: 1 }));
+  const mesh = new Mesh(geometry, new MeshStandardMaterial({ vertexColors: true, map: look.boards ? maps.boards : maps.speckles, roughness: look.boards ? 0.8 : 1 }));
   mesh.frustumCulled = false;
   return mesh;
 }
@@ -361,6 +479,15 @@ function kit() {
     needleWood: new MeshStandardMaterial({ color: '#8a5a2e', roughness: 1 }),
     bark: new MeshStandardMaterial({ map: bark(), vertexColors: true, roughness: 0.95 }),
     stone: new MeshStandardMaterial({ roughness: 0.95, vertexColors: true }),
+    // The garden's.
+    stalk: new CylinderGeometry(0.02, 0.028, 1, 6).translate(0, 0.5, 0),
+    lawn: new MeshStandardMaterial({ roughness: 0.65, side: DoubleSide, emissive: '#4f8a1c', emissiveIntensity: 0.5 }),
+    dew: new MeshStandardMaterial({ color: '#e9f6ff', roughness: 0.05, emissive: '#bfe4ff', emissiveIntensity: 0.35, transparent: true, opacity: 0.8 }),
+    stem: new MeshStandardMaterial({ color: '#7fae45', roughness: 0.7 }),
+    petal: new MeshStandardMaterial({ color: '#f2c81e', roughness: 0.6, emissive: '#a07400', emissiveIntensity: 0.25 }),
+    clover: new MeshStandardMaterial({ color: '#3f8a34', roughness: 0.5 }),
+    birchLeaf: new MeshStandardMaterial({ color: '#e6c53a', roughness: 0.6 }),
+    birch: new MeshStandardMaterial({ map: birchBark(), roughness: 0.8 }),
   };
 }
 let KIT: ReturnType<typeof kit>;
@@ -418,9 +545,10 @@ function boulder(): BufferGeometry {
 const STRETCH = 18;
 
 /** Everything that stands and lies on the moss, in stretches along the chapter. */
-function scatter(chapter: ChapterData, from: number, to: number): Group {
+function scatter(chapter: ChapterData, from: number, to: number, place: PlaceId): Group {
   const group = new Group();
-  for (let a = from - 12; a < to + 12; a += STRETCH) group.add(stretch(chapter, a, a + STRETCH, Math.round(a * 7 + 97)));
+  const build = place === 'garden' ? lawn : stretch;
+  for (let a = from - 12; a < to + 12; a += STRETCH) group.add(build(chapter, a, a + STRETCH, Math.round(a * 7 + 97)));
   return group;
 }
 
@@ -583,14 +711,15 @@ function stretch(chapter: ChapterData, from: number, to: number, seed: number): 
 // --- L4: the foreground ---------------------------------------------------------------------------------
 
 /** A tuft of grass far out of focus, drawn small and dark: it frames the picture from below. */
-function blurredTuft(seed: number): CanvasTexture {
+function blurredTuft(seed: number, bright = false): CanvasTexture {
   const next = sequence(seed);
+  const lift = bright ? 1.45 : 1;
   return drawn(96, 96, (c) => {
     for (let i = 0; i < 16; i++) {
       const x = 28 + next() * 40;
       const lean = (next() - 0.5) * 38;
       const tall = 30 + next() * 58;
-      c.strokeStyle = `rgba(${22 + next() * 22},${48 + next() * 30},${22 + next() * 14},0.3)`;
+      c.strokeStyle = `rgba(${(22 + next() * 22) * lift},${(48 + next() * 30) * lift},${(22 + next() * 14) * lift},0.3)`;
       c.lineCap = 'round';
       // Each blade several times, thinner each time: soft at its edges, dark in its middle.
       for (const wide of [13, 9, 5]) {
@@ -620,15 +749,16 @@ function blurredTuft(seed: number): CanvasTexture {
 }
 
 /** A low shrub far out of focus: a soft mound with a fringe of leaves. */
-function blurredShrub(seed: number): CanvasTexture {
+function blurredShrub(seed: number, bright = false): CanvasTexture {
   const next = sequence(seed);
+  const lift = bright ? 1.9 : 1;
   return drawn(96, 64, (c) => {
     for (let i = 0; i < 46; i++) {
       const x = 12 + next() * 72;
       const y = 26 + next() * 30 + Math.abs(x - 48) * 0.35;
       const r = 5 + next() * 9;
       const blob = c.createRadialGradient(x, y, 0, x, y, r);
-      const g = 52 + next() * 44;
+      const g = (52 + next() * 44) * lift;
       blob.addColorStop(0, `rgba(${g * 0.5},${g},${g * 0.56},0.42)`);
       blob.addColorStop(1, `rgba(${g * 0.5},${g},${g * 0.56},0)`);
       c.fillStyle = blob;
@@ -637,10 +767,10 @@ function blurredShrub(seed: number): CanvasTexture {
   });
 }
 
-function foreground(chapter: ChapterData, from: number, to: number): Group {
+function foreground(chapter: ChapterData, from: number, to: number, bright: boolean): Group {
   const group = new Group();
   const next = sequence(59);
-  const textures = [blurredTuft(1), blurredTuft(2), blurredTuft(3)];
+  const textures = [blurredTuft(1, bright), blurredTuft(2, bright), blurredTuft(3, bright)];
   const materials = textures.map((map) => new MeshBasicMaterial({ map, transparent: true, fog: false, depthWrite: false }));
   for (let x = from - 6 + next() * 4; x < to + 6; x += 3.5 + next() * 5.5) {
     const z = 4 + next() * 3.5;
@@ -648,17 +778,20 @@ function foreground(chapter: ChapterData, from: number, to: number): Group {
     // Mostly low, along the bottom of the picture; now and then one stands tall and passes in front.
     const tall = next() < 0.2 ? 4.2 + next() * 1.6 : 2.4 + next() * 1.3;
     const card = new Mesh(new PlaneGeometry(wide, tall), materials[Math.floor(next() * materials.length)]!);
+    // Grass grows from the ground, not from a deck's edge.
+    if (surfaceAt(chapter, x) !== undefined) continue;
     card.position.set(x, heightAt(chapter, x) - 2.3 + tall / 2, z);
     card.renderOrder = 5;
     group.add(card);
   }
   // The undergrowth far behind the path: soft dark tufts that break the line where the moss ends.
-  const far = [blurredShrub(7), blurredShrub(8), blurredShrub(9)].map((map) => new MeshBasicMaterial({ map, transparent: true, opacity: 0.8, depthWrite: false }));
+  const far = [blurredShrub(7, bright), blurredShrub(8, bright), blurredShrub(9, bright)].map((map) => new MeshBasicMaterial({ map, transparent: true, opacity: 0.8, depthWrite: false }));
   for (let x = from - 10 + next() * 4; x < to + 10; x += 1.6 + next() * 2.6) {
     const z = -8 - next() * 8;
     const wide = 2.6 + next() * 3;
     const tall = 1.4 + next() * 2.2;
     const card = new Mesh(new PlaneGeometry(wide, tall), far[Math.floor(next() * far.length)]!);
+    if (surfaceAt(chapter, x) !== undefined) continue;
     card.position.set(x, heightAt(chapter, x) - 0.3 + tall / 2, z);
     card.renderOrder = -1;
     group.add(card);
@@ -668,9 +801,11 @@ function foreground(chapter: ChapterData, from: number, to: number): Group {
 
 // --- effects: shafts of light, and what floats in them ------------------------------------------------------
 
-function effects(chapter: ChapterData, from: number, to: number) {
+function effects(chapter: ChapterData, from: number, to: number, where: PlaceId) {
   const group = new Group();
   const next = sequence(71);
+  // The forest has shafts of light and dust high in them; the garden has dew that glitters near the ground.
+  const garden = where === 'garden';
   const beam = drawn(64, 128, (c) => {
     const across = c.createLinearGradient(0, 0, 64, 0);
     across.addColorStop(0, 'rgba(255,255,255,0)');
@@ -689,7 +824,7 @@ function effects(chapter: ChapterData, from: number, to: number) {
     c.fillRect(0, 0, 64, 128);
   });
   const shafts: { mesh: Mesh; material: MeshBasicMaterial; base: number; phase: number }[] = [];
-  for (let x = from + next() * 6; x < to + 8; x += 7 + next() * 8) {
+  for (let x = from + next() * 6; x < to + 8 && !garden; x += 7 + next() * 8) {
     const material = new MeshBasicMaterial({ map: beam, color: '#ffeeb0', transparent: true, opacity: 0.3, blending: AdditiveBlending, fog: false, depthWrite: false });
     const wide = 2.4 + next() * 3;
     const mesh = new Mesh(new PlaneGeometry(wide, 26), material);
@@ -705,7 +840,7 @@ function effects(chapter: ChapterData, from: number, to: number) {
   const MOTES = 70;
   const motes = new InstancedMesh(
     new PlaneGeometry(1, 1),
-    new MeshBasicMaterial({ color: '#fff6d0', transparent: true, opacity: 0.7, blending: AdditiveBlending, fog: false, depthWrite: false, map: drawn(32, 32, (c) => {
+    new MeshBasicMaterial({ color: garden ? '#f2fbff' : '#fff6d0', transparent: true, opacity: garden ? 0.95 : 0.7, blending: AdditiveBlending, fog: false, depthWrite: false, map: drawn(32, 32, (c) => {
       const dot = c.createRadialGradient(16, 16, 1, 16, 16, 15);
       dot.addColorStop(0, 'rgba(255,255,255,1)');
       dot.addColorStop(1, 'rgba(255,255,255,0)');
@@ -726,19 +861,312 @@ function effects(chapter: ChapterData, from: number, to: number) {
     for (const shaft of shafts) shaft.material.opacity = shaft.base * (0.8 + 0.2 * Math.sin(clock * 0.6 + shaft.phase));
     for (const [i, mote] of seeds.entries()) {
       // Each keeps its place in a window that follows the camera, and wraps round at its ends.
-      const along = (((mote.x * SPAN + clock * 0.12 * mote.speed - cameraX) % SPAN) + SPAN) % SPAN;
+      const along = (((mote.x * SPAN + (garden ? 0 : clock * 0.12 * mote.speed) - cameraX) % SPAN) + SPAN) % SPAN;
       place.position.set(
         cameraX - SPAN / 2 + along,
-        groundY + 0.3 + mote.y * 7 + Math.sin(clock * 0.5 * mote.speed + i) * 0.25,
+        garden ? heightAt(chapter, cameraX - SPAN / 2 + along) + 0.05 + mote.y * 1.3 : groundY + 0.3 + mote.y * 7 + Math.sin(clock * 0.5 * mote.speed + i) * 0.25,
         -5 + mote.z * 7.5,
       );
-      place.scale.setScalar(mote.size * (0.6 + 0.4 * Math.sin(clock * 1.7 * mote.speed + i * 2.3)));
+      // Dust drifts and swells slowly; dew flashes, and only where something grows.
+      const twinkle = garden
+        ? (grows(chapter, cameraX - SPAN / 2 + along) ? Math.max(0, Math.sin(clock * 3.1 * mote.speed + i * 2.3)) ** 6 * 2.2 : 0)
+        : 0.6 + 0.4 * Math.sin(clock * 1.7 * mote.speed + i * 2.3);
+      place.scale.setScalar(mote.size * twinkle);
       place.updateMatrix();
       motes.setMatrixAt(i, place.matrix);
     }
     motes.instanceMatrix.needsUpdate = true;
   }
   return { group, update };
+}
+
+// --- the garden ---------------------------------------------------------------------------------------------
+
+/** A birch's bark: white, with dark dashes across it. */
+function birchBark(): CanvasTexture {
+  const next = sequence(37);
+  return drawn(128, 256, (c) => {
+    c.fillStyle = '#efe9dc';
+    c.fillRect(0, 0, 128, 256);
+    for (let i = 0; i < 70; i++) {
+      const y = next() * 256;
+      const x = next() * 128;
+      const wide = 6 + next() * 30;
+      c.fillStyle = `rgba(${40 + next() * 40},${36 + next() * 30},${30 + next() * 30},${0.4 + next() * 0.5})`;
+      c.fillRect(x, y, wide, 1 + next() * 3);
+      c.fillRect(x - 128, y, wide, 1 + next() * 3);
+    }
+  }, true);
+}
+
+/** One stretch of the lawn, as he sees it: a jungle behind the path, stubble where he walks, and dew on it all. */
+function lawn(chapter: ChapterData, from: number, to: number, seed: number): Group {
+  const group = new Group();
+  const next = sequence(seed);
+  const place = new Object3D();
+  const tint = new Color();
+  const length = to - from;
+  const top = (x: number, z: number) => heightAt(chapter, x) + (z > 0.45 ? -0.07 * Math.min(1, (z - 0.45) / 0.5) : 0);
+  const depth = (back: number, front = 0.25) => (next() < front ? 0.5 + next() * 0.45 : -0.45 - next() ** 1.6 * back);
+
+  const grass = new InstancedMesh(KIT.blade, KIT.lawn, Math.round(length * 36));
+  let n = 0;
+  for (let i = 0; i < grass.count; i++) {
+    const x = from + next() * length;
+    const where = next();
+    // Behind the path it stands tall; on the path it is stubble, so that his boots show; in front it is short.
+    const z = where < 0.55 ? -0.55 - next() ** 1.4 * 7.5 : where < 0.85 ? -0.5 + next() : 0.55 + next() * 0.4;
+    const tall = where < 0.55 ? (0.5 + next() * 1.9) * Math.min(1, -z / 1.5 + 0.3) : where < 0.85 ? 0.07 + next() * 0.12 : 0.2 + next() * 0.3;
+    if (!grows(chapter, x)) continue;
+    place.position.set(x, top(x, z), z);
+    place.rotation.set((next() - 0.5) * 0.5, next() * 6.28, (next() - 0.5) * 0.5);
+    place.scale.set(0.06 + next() * 0.07, tall, 1);
+    place.updateMatrix();
+    grass.setMatrixAt(n, place.matrix);
+    grass.setColorAt(n++, next() < 0.14 ? tint.set('#c2c552').multiplyScalar(0.8 + next() * 0.3) : tint.set('#6fae34').multiplyScalar(0.7 + next() * 0.5));
+  }
+  grass.count = n;
+
+  // Dew: on the ground, and on the grass behind him.
+  const dew = new InstancedMesh(KIT.ball, KIT.dew, Math.round(length * 5));
+  n = 0;
+  for (let i = 0; i < dew.count; i++) {
+    const x = from + next() * length;
+    const z = depth(3.5, 0.3);
+    if (!grows(chapter, x)) continue;
+    place.position.set(x, top(x, z) + (z < -0.5 && next() < 0.6 ? 0.2 + next() * 0.9 : 0.035), z);
+    place.rotation.set(0, 0, 0);
+    place.scale.setScalar(0.016 + next() * 0.024);
+    place.updateMatrix();
+    dew.setMatrixAt(n++, place.matrix);
+  }
+  dew.count = n;
+
+  // Dandelions, as tall as he is and taller.
+  const flowers = Math.max(1, Math.round(length * 0.3));
+  const stalks = new InstancedMesh(KIT.stalk, KIT.stem, flowers);
+  const heads = new InstancedMesh(KIT.ball, KIT.petal, flowers);
+  n = 0;
+  for (let i = 0; i < flowers; i++) {
+    const x = from + next() * length;
+    const z = -0.9 - next() * 4;
+    if (!grows(chapter, x)) continue;
+    const tall = 0.9 + next() * 0.9;
+    const lean = (next() - 0.5) * 0.25;
+    place.position.set(x, top(x, z), z);
+    place.rotation.set(0, 0, lean);
+    place.scale.set(1.4, tall, 1.4);
+    place.updateMatrix();
+    stalks.setMatrixAt(n, place.matrix);
+    place.position.set(x - Math.sin(lean) * tall, top(x, z) + Math.cos(lean) * tall, z);
+    place.scale.set(0.19, 0.13, 0.19);
+    place.updateMatrix();
+    heads.setMatrixAt(n++, place.matrix);
+  }
+  stalks.count = n;
+  heads.count = n;
+
+  // Clover, three leaves to a stalk, and the birch's first yellow leaves on the ground.
+  const sprigs = Math.round(length * 1.6);
+  const clover = new InstancedMesh(KIT.ball, KIT.clover, Math.max(1, sprigs * 3));
+  n = 0;
+  for (let i = 0; i < sprigs; i++) {
+    const x = from + next() * length;
+    const z = depth(3, 0.3);
+    if (!grows(chapter, x)) continue;
+    const y = top(x, z) + 0.14 + next() * 0.2;
+    const turn = next() * 6.28;
+    for (let k = 0; k < 3; k++) {
+      const a = turn + k * 2.094;
+      place.position.set(x + Math.cos(a) * 0.075, y, z + Math.sin(a) * 0.075);
+      place.rotation.set(0.15, -a, 0.1);
+      place.scale.set(0.085, 0.014, 0.07);
+      place.updateMatrix();
+      clover.setMatrixAt(n++, place.matrix);
+    }
+  }
+  clover.count = n;
+  const fallen = new InstancedMesh(KIT.ball, KIT.birchLeaf, Math.max(1, Math.round(length * 1.4)));
+  n = 0;
+  for (let i = 0; i < fallen.count; i++) {
+    const x = from + next() * length;
+    const z = depth(4, 0.3);
+    if (!grows(chapter, x)) continue;
+    place.position.set(x, top(x, z) + 0.03, z);
+    place.rotation.set((next() - 0.5) * 0.4, next() * 6.28, (next() - 0.5) * 0.4);
+    place.scale.set(0.15, 0.012, 0.1);
+    place.updateMatrix();
+    fallen.setMatrixAt(n++, place.matrix);
+  }
+  fallen.count = n;
+
+  // A birch now and then, far behind the path.
+  const trunks = new InstancedMesh(KIT.trunk, KIT.birch, 2);
+  n = 0;
+  for (let i = 0; i < 2; i++) {
+    const x = from + next() * length;
+    const z = -8 - next() * 9;
+    if (next() > 0.4 || !grows(chapter, x)) continue;
+    const radius = 0.8 + next() * 0.4;
+    place.rotation.set(0, next() * 6.28, (next() - 0.5) * 0.06);
+    place.position.set(x, heightAt(chapter, x) - 0.5, z);
+    place.scale.set(radius, 1, radius);
+    place.updateMatrix();
+    trunks.setMatrixAt(n++, place.matrix);
+  }
+  trunks.count = n;
+
+  for (const mesh of [grass, dew, stalks, heads, clover, fallen, trunks]) {
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    group.add(mesh);
+  }
+  return group;
+}
+
+/** A far plate of the garden: leaves in the sun far out of focus, green and the first yellow, with spots of light. */
+function foliagePlate(seed: number, leaves: string[], light: string, blobs: number, stretch: number): CanvasTexture {
+  const next = sequence(seed);
+  return drawn(512, 256, (c) => {
+    for (let i = 0; i < blobs; i++) {
+      const x = next() * 512;
+      const y = 10 + next() ** 1.5 * 200;
+      const r = 14 + next() * 30;
+      const colour = leaves[Math.floor(next() * leaves.length)]!;
+      for (const shift of [0, -512, 512]) {
+        c.save();
+        c.translate(x + shift, y);
+        c.scale(stretch, 1);
+        const blob = c.createRadialGradient(0, 0, r * 0.2, 0, 0, r);
+        blob.addColorStop(0, colour);
+        blob.addColorStop(1, 'rgba(255,255,255,0)');
+        c.fillStyle = blob;
+        c.fillRect(-r, -r, r * 2, r * 2);
+        c.restore();
+      }
+    }
+    for (let i = 0; i < 18; i++) {
+      const x = next() * 512;
+      const y = 20 + next() * 140;
+      const r = 3 + next() * 6;
+      c.save();
+      c.translate(x, y);
+      c.scale(stretch, 1);
+      const spot = c.createRadialGradient(0, 0, r * 0.5, 0, 0, r);
+      spot.addColorStop(0, light);
+      spot.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = spot;
+      c.fillRect(-r, -r, r * 2, r * 2);
+      c.restore();
+    }
+  }, true);
+}
+
+function gardenPlates(from: number, to: number, floor: number): Group {
+  const group = new Group();
+  const width = to - from + 240;
+  const layers = [
+    { z: -62, height: 90, every: 110, texture: foliagePlate(13, ['rgba(150,190,120,0.4)', 'rgba(120,170,110,0.4)', 'rgba(214,206,120,0.35)'], 'rgba(255,252,224,0.4)', 60, (90 / 256) / (110 / 512)) },
+    { z: -32, height: 60, every: 64, texture: foliagePlate(29, ['rgba(70,120,60,0.6)', 'rgba(96,146,62,0.55)', 'rgba(206,186,70,0.5)'], 'rgba(255,246,196,0.35)', 44, (60 / 256) / (64 / 512)) },
+  ];
+  for (const layer of layers) {
+    layer.texture.repeat.set(width / layer.every, 1);
+    const plate = new Mesh(
+      new PlaneGeometry(width, layer.height),
+      new MeshBasicMaterial({ map: layer.texture, transparent: true, fog: false, depthWrite: false }),
+    );
+    plate.position.set((from + to) / 2, floor + layer.height * 0.45, layer.z);
+    plate.renderOrder = -3;
+    group.add(plate);
+  }
+  return group;
+}
+
+/**
+ * What is built: the house's red wall behind the scene, and a deck overhead with the sun falling through
+ * between its boards. The wall is drawn small, so that it is as soft as everything else that far away.
+ */
+function built(chapter: ChapterData): Group {
+  const group = new Group();
+  const house = chapter.house;
+  if (house) {
+    const long = house.to - house.from;
+    const floor = Math.min(...chapter.ground.map((p) => p.y));
+    // Falu red boards with their cover strips, lit from the left.
+    const wall = drawn(128, 32, (c) => {
+      c.fillStyle = '#8f2d22';
+      c.fillRect(0, 0, 128, 32);
+      for (let x = 0; x < 128; x += 16) {
+        c.fillStyle = 'rgba(60,14,10,0.55)';
+        c.fillRect(x + 11, 0, 2, 32);
+        c.fillStyle = 'rgba(214,96,74,0.5)';
+        c.fillRect(x + 8, 0, 3, 32);
+      }
+    }, true);
+    wall.repeat.set(long / 9.6, 1);
+    const boards = new Mesh(new PlaneGeometry(long, 70), new MeshBasicMaterial({ map: wall }));
+    boards.position.set((house.from + house.to) / 2, floor + 33, -21);
+    boards.renderOrder = -2;
+    // The white board at the wall's corner, and a window with its white frame for each place asked for.
+    const white = new MeshBasicMaterial({ color: '#f1ece2' });
+    const corner = new Mesh(new PlaneGeometry(1.8, 70), white);
+    corner.position.set(house.to - 0.9, floor + 33, -20.95);
+    const pane = drawn(24, 32, (c) => {
+      c.fillStyle = '#f1ece2';
+      c.fillRect(0, 0, 24, 32);
+      const glass = c.createLinearGradient(0, 0, 24, 32);
+      glass.addColorStop(0, '#fdf6d8');
+      glass.addColorStop(1, '#9fc4d8');
+      c.fillStyle = glass;
+      c.fillRect(3, 3, 8, 12);
+      c.fillRect(13, 3, 8, 12);
+      c.fillRect(3, 17, 8, 12);
+      c.fillRect(13, 17, 8, 12);
+    });
+    const glass = new MeshBasicMaterial({ map: pane });
+    group.add(boards, corner);
+    for (const x of house.windows) {
+      const window = new Mesh(new PlaneGeometry(7.5, 10), glass);
+      window.position.set(x, heightAt(chapter, x) + 15, -20.9);
+      group.add(window);
+    }
+  }
+  for (const roof of chapter.roofs ?? []) {
+    const long = roof.to - roof.from;
+    const mid = (roof.from + roof.to) / 2;
+    const dark = new MeshStandardMaterial({ color: '#5f4f3e', roughness: 0.9 });
+    const map = boards();
+    map.repeat.set(long / (BOARD * 2), 9 / (BOARD * 2));
+    const deck = new Mesh(new BoxGeometry(long, 0.28, 9), new MeshStandardMaterial({ color: '#b49a78', map, roughness: 0.8 }));
+    deck.position.set(mid, roof.y - 0.14, -3.4);
+    group.add(deck);
+    const place = new Object3D();
+    const joists = new InstancedMesh(new BoxGeometry(0.34, 0.8, 9), dark, Math.ceil(long / 2.6) + 1);
+    for (let i = 0; i < joists.count; i++) {
+      place.position.set(Math.min(roof.to - 0.2, roof.from + 0.2 + i * 2.6), roof.y - 0.68, -3.4);
+      place.updateMatrix();
+      joists.setMatrixAt(i, place.matrix);
+    }
+    joists.computeBoundingSphere();
+    group.add(joists);
+    // The sun between the boards: stripes of light on the ground below.
+    const stripes = new InstancedMesh(
+      new PlaneGeometry(0.13, 7).rotateX(-Math.PI / 2),
+      new MeshBasicMaterial({ color: '#ffe7ae', transparent: true, opacity: 0.34, blending: AdditiveBlending, fog: false, depthWrite: false }),
+      Math.floor(long / BOARD),
+    );
+    for (let i = 0; i < stripes.count; i++) {
+      const x = roof.from + (i + 0.5) * BOARD;
+      place.position.set(x, heightAt(chapter, x) + 0.03, -2.4);
+      place.updateMatrix();
+      stripes.setMatrixAt(i, place.matrix);
+    }
+    stripes.computeBoundingSphere();
+    stripes.renderOrder = 2;
+    group.add(stripes);
+  }
+  return group;
 }
 
 // --- the whole dressing --------------------------------------------------------------------------------------
@@ -750,7 +1178,15 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   const to = chapter.ground[chapter.ground.length - 1]!.x;
   const floor = Math.min(...chapter.ground.map((p) => p.y));
   KIT = kit();
-  const air = effects(chapter, from, to);
-  group.add(plates(from, to, floor), bank(chapter), scatter(chapter, from, to), air.group, foreground(chapter, from, to));
+  const garden = look.id === 'garden';
+  const air = effects(chapter, from, to, look.id);
+  group.add(
+    garden ? gardenPlates(from, to, floor) : plates(from, to, floor),
+    bank(chapter, garden ? 'lawn' : 'moss'),
+    scatter(chapter, from, to, look.id),
+    built(chapter),
+    air.group,
+    foreground(chapter, from, to, garden),
+  );
   return { group, background: backdrop(look), update: air.update };
 }

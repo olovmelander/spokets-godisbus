@@ -187,10 +187,10 @@ for (const tier of ['low', 'high']) {
   await finish();
 }
 
-// --- a place's look: the golden frame of the forest (plan §5.6, Stage 0b) -------------------------------
-for (const tier of ['low', 'high']) {
-  console.log(`the forest look, tier ${tier}, 844×390`);
-  const { page, state, info, finish } = await open(`look-forest-${tier}-844x390`, { viewport: { width: 844, height: 390 } }, `?debug&course=look-forest&tier=${tier}`);
+// --- a place's look: the two golden frames (plan §5.6, Stage 0b) ---------------------------------------
+for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', 'high', 16], ['look-deck', 'high', 12]]) {
+  console.log(`${course}, tier ${tier}, 844×390`);
+  const { page, state, info, finish } = await open(`${course}-${tier}-844x390`, { viewport: { width: 844, height: 390 } }, `?debug&course=${course}&tier=${tier}`);
   const drawn = await until(info, (i) => i.models.includes('boot/big-candy'), 30000);
   check(`${tier}: the dressed scene is drawn`, drawn.drawCalls > 20 && drawn.triangles > 20000, `${drawn.drawCalls} draw calls, ${drawn.triangles} triangles`);
   // The budget of plan §6.12: a place's layers are instanced, so its draw calls stay few.
@@ -199,9 +199,9 @@ for (const tier of ['low', 'high']) {
   await sleep(600);
   const programs = (await info()).programs;
   await page.keyboard.down('ArrowRight');
-  const ran = await until(state, (s) => s.x > 16);
+  const ran = await until(state, (s) => s.x > far);
   await page.keyboard.up('ArrowRight');
-  check(`${tier}: he runs through it`, ran.x > 16, `x ${ran.x.toFixed(1)}`);
+  check(`${tier}: he runs through it`, ran.x > far, `x ${ran.x.toFixed(1)}`);
   check(`${tier}: no shader was compiled on the way`, (await info()).programs === programs, `${programs} programs`);
   await finish();
 }
@@ -212,7 +212,7 @@ for (const tier of ['low', 'high']) {
   const { page, state, info, finish } = await open('dev-1180x820', { viewport: { width: 1180, height: 820 } }, '?dev&debug');
   const drawn = await info();
   const first = await until(state, (s) => s.said.length >= 1);
-  check('?dev plays Kapitel 1 in greybox', first.course === 'garden' && drawn.drawCalls > 0, first.course);
+  check('?dev plays Kapitel 1', first.course === 'garden' && drawn.drawCalls > 0, first.course);
   check('a bubble says the first line', (await page.locator('#bubble').isVisible()) && first.said[0] === 'follow1', await page.locator('#bubbleLine').textContent());
   await finish();
 }
