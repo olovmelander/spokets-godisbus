@@ -198,6 +198,27 @@ for (const tier of ['low', 'high']) {
   await finish();
 }
 
+// --- the title and the first start ------------------------------------------------------------------
+{
+  console.log('the title, 844×390');
+  const { page, state, finish } = await open('title-844x390', { viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 }, '?dev&debug&title');
+  const before = await state();
+  check('the title shows, and the game waits behind it', (await page.locator('#title').isVisible()) && before.title === true && before.paused === true);
+  check('with no saved game the button says Börja', (await page.locator('#startBtn .begin').isVisible()) && (await page.locator('#startOverBtn').isHidden()));
+  await page.tap('#startBtn');
+  check('Börja asks how to play, with two pictures', (await page.locator('#firstAventyr').isVisible()) && (await page.locator('#firstLugnt').isVisible()));
+  await page.tap('#firstLugnt');
+  const started = await until(state, (s) => s.said.length >= 1);
+  check('choosing Lugnt starts the game on Lugnt', (await page.locator('#title').isHidden()) && started.style === 'lugnt' && started.paused === false, started.style);
+  await page.reload();
+  await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
+  check('with a saved game the button says Fortsätt', (await page.locator('#startBtn .resume').isVisible()) && (await page.locator('#startOverBtn').isVisible()));
+  await page.tap('#startBtn');
+  const resumed = await state();
+  check('Fortsätt goes on with the same style', resumed.title === false && resumed.style === 'lugnt', resumed.style);
+  await finish();
+}
+
 // --- a phone held sideways: touch -------------------------------------------------------------------
 {
   console.log('touch, 844×390');

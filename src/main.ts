@@ -15,6 +15,7 @@ import { createDebug, type Debug } from './ui/debug';
 import { createHud } from './ui/hud';
 import { createPause } from './ui/pause';
 import { mountShell } from './ui/shell';
+import { createTitle } from './ui/title';
 import './ui/ui.css';
 
 declare global {
@@ -120,6 +121,8 @@ function start(): void {
   };
   let heard = hear();
 
+  /** True once the saved game has been given up: nothing more is written before the page loads again. */
+  let again = false;
   let playedFrom = performance.now();
   /** Writes the game as it stands: at every big candy, on pause, and when the page is hidden. */
   function writeSave(): void {
@@ -187,6 +190,33 @@ function start(): void {
   });
   byId('pauseBtn').addEventListener('click', openPause);
 
+  // The title (plan §6.10). A chapter starts behind it; the test course and a debug session start at once.
+  // ?title shows it in a debug session too, for the browser test.
+  const title = createTitle(document, {
+    onStart(style) {
+      if (style) {
+        settings = settingsFor(style);
+        game.sim.options = simOptions(settings);
+        game.tempo = tempoOf(settings);
+        audio.setEffects(settings.sound ? 1 : 0);
+      }
+      title.hide();
+      paused = false;
+      input.release();
+      game.resume();
+      writeSave();
+    },
+    onStartOver() {
+      store.clear();
+      again = true;
+      location.reload();
+    },
+  });
+  if (!benchOn && !at && (params.has('title') || (chapter.id !== 'testbana' && !debugOn))) {
+    paused = true;
+    title.show(loaded.kind === 'save' && loaded.save.chapter === chapter.id);
+  }
+
   const input = createInput(
     {
       stickZone: byId('stickZone'),
@@ -199,7 +229,7 @@ function start(): void {
     {
       onDevice: showDevice,
       onKey: (key) => {
-        if (key === 'pause') (paused ? resume : openPause)();
+        if (key === 'pause' && !title.open) (paused ? resume : openPause)();
       },
       panelOpen: () => paused,
       upClimbs: () => game.sim.curr.mode === 'climb' || game.sim.curr.mode === 'swing',
@@ -227,7 +257,7 @@ function start(): void {
       state: () => ({
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
-        course: chapter.id, said: [...game.sim.said],
+        course: chapter.id, said: [...game.sim.said], title: title.open,
       }),
       info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played }),
     };
@@ -249,7 +279,6 @@ function start(): void {
     again = true;
     location.reload();
   }
-  let again = false;
   let endFor = 0;
   let shown = false;
   let lastTime = 0;

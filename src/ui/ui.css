@@ -463,6 +463,71 @@ body {
   opacity: 0.75;
 }
 
+/* --- the title: the game's name, Börja or Fortsätt, and at a first start the two play styles ------- */
+.panel-back.title {
+  z-index: 12;
+  background: rgb(40 28 18 / 0.6);
+}
+
+.title .panel {
+  text-align: center;
+}
+
+.title #titleFront,
+.title #titleStyles {
+  display: grid;
+  gap: 12px;
+}
+
+.title [hidden] {
+  display: none !important;
+}
+
+.title h1 {
+  margin: 6px 0 2px;
+  font-size: clamp(24px, 6vw, 34px);
+  line-height: 1.15;
+}
+
+.title h2 {
+  margin: 4px 0;
+}
+
+/* Börja without a saved game, Fortsätt with one. */
+.title[data-saved='true'] .begin,
+.title[data-saved='false'] .resume {
+  display: none;
+}
+
+.wide.small {
+  min-height: 64px;
+  background: transparent;
+  font-weight: 400;
+  font-size: 16px;
+  text-decoration: underline;
+}
+
+/* The picture of a phone turning shows only when the screen is held upright. */
+.rotate {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.rotate svg {
+  width: 44px;
+  height: 36px;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  .rotate {
+    display: flex;
+  }
+}
+
 /* A line of news at the top, gone after a few seconds. */
 .notice {
   position: absolute;

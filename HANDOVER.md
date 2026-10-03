@@ -295,6 +295,12 @@
       edge at 30, 60 and 144 Hz with no bubble and no knock, and leaves at most six candies; on *Lugnt* it
       is played by running and Använd, with Hoppa only on the lace. The robot is now shared between the
       courses (`tests/robot/robot.ts`).
+    - **The title and the first start** (branch `stage-2-title`; plan §6.10). A chapter now starts behind
+      the title: the game's name and **Börja**, or **Fortsätt** and *Börja om från början* when there is a
+      saved game. Börja asks *Hur vill du spela?* with the two styles as pictures, and choosing one starts
+      the game. On a phone held upright, a picture of a phone turning says *Vänd skärmen på bredden!* The
+      test course and a `?debug` session start at once, as before. `dev/menus.html?show=title`, `saved`,
+      `styles`, `end` and `bubble` show the new screens without WebGL.
     - **Not built yet in Kapitel 1:** the prologue before it; the swing chain (C1); the lost things under
       the deck; the dew bells; memory 1 at the shavings; the ghost as helper at the gully and its bubbles;
       the family as giants (Moa's hand, Pappa's); the ghost at the forest's edge; stickers and Moa's map on

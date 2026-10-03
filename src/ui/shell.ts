@@ -24,6 +24,11 @@ const STROLL = svg(
   `<circle cx="20" cy="8" r="4.2" fill="currentColor"/><path d="M20 13v11m0 0-4 9m4-9 4 9m-4-16-5 6m5-6 5 5" ${line} stroke-width="2.6"/><path d="M5 34h32" ${line} stroke-width="1.6"/>`,
   '0 0 42 38',
 );
+/** A phone turning on its side: "Vänd skärmen på bredden!" */
+const TURN = svg(
+  `<rect x="4" y="9" width="9" height="16" rx="2" ${line} stroke-width="1.8"/><rect x="15" y="16" width="16" height="9" rx="2" ${line} stroke-width="1.8" stroke-dasharray="2 2.5"/><path d="M14 6c5 0 9 2.5 10.5 7m0 0-3-1.4m3 1.4 1.2-3" ${line} stroke-width="1.8"/>`,
+  '0 0 34 28',
+);
 /** A paper bag with a folded top. The red inside rises as the bag fills (plan §4.3). */
 const BAG =
   '<svg viewBox="0 0 48 56" aria-hidden="true"><path d="M8 15h32l-3 37H11z" fill="#f1dfb8"/><rect class="bag-fill" x="9" y="16" width="30" height="36" fill="#e8483f"/><path d="M8 15h32l-3 37H11z" fill="none" stroke="#7b5a36" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 15l4-9 4 6 4-7 4 7 4-7 4 7 4-6 4 9z" fill="#f1dfb8" stroke="#7b5a36" stroke-width="2.5" stroke-linejoin="round"/></svg>';
@@ -70,6 +75,23 @@ export function mountShell(root: HTMLElement): void {
            <p>${p.stuckAsk}</p>
            <button class="yes" id="stuckYes" type="button" aria-label="${p.stuckYes}">${CHECK}${BIG_CANDY}</button>
            <button class="no" id="stuckNo" type="button" aria-label="${p.stuckNo}">${CROSS}${PLAY}</button>
+         </div>
+       </div>
+     </div>
+     <div class="panel-back title" id="title" hidden>
+       <div class="panel" role="dialog" aria-modal="true" aria-labelledby="titleName">
+         <div id="titleFront">
+           <h1 id="titleName">${sv.title}</h1>
+           <p class="rotate">${TURN}<span>${sv.start.rotate}</span></p>
+           <button class="wide go" id="startBtn" type="button">${PLAY}<span class="begin">${sv.start.begin}</span><span class="resume">${sv.start.resume}</span></button>
+           <button class="wide small" id="startOverBtn" type="button" hidden>${sv.start.over}</button>
+         </div>
+         <div id="titleStyles" hidden>
+           <h2 id="howTitle">${sv.start.how}</h2>
+           <div class="styles" role="group" aria-labelledby="howTitle">
+             <button class="style" id="firstAventyr" type="button">${LEAP}<b>${p.aventyr}</b><small>${p.aventyrHint}</small></button>
+             <button class="style" id="firstLugnt" type="button">${STROLL}<b>${p.lugnt}</b><small>${p.lugntHint}</small></button>
+           </div>
          </div>
        </div>
      </div>
