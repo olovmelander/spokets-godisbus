@@ -138,6 +138,56 @@ body {
   background: #3f9a5a;
 }
 
+/* Vänsterhänt: the stick and the buttons swap sides (plan §4.1). */
+body.lefty .stick-zone {
+  left: auto;
+  right: 0;
+}
+
+body.lefty .stick-base {
+  left: calc(100% - env(safe-area-inset-right) - 104px);
+}
+
+body.lefty .btn-hop {
+  right: auto;
+  left: calc(env(safe-area-inset-left) + 20px);
+}
+
+body.lefty .btn-act {
+  right: auto;
+  left: calc(env(safe-area-inset-left) + 26px);
+}
+
+/* Större text: what is said, and the words on buttons and in panels, a quarter bigger. */
+body.big-text .bubble {
+  font-size: calc(26px * var(--k));
+  max-width: min(76%, 640px);
+}
+
+body.big-text .notice {
+  font-size: 19px;
+}
+
+body.big-text .btn {
+  font-size: 16px;
+}
+
+body.big-text .panel {
+  font-size: 22px;
+}
+
+body.big-text .album-grid li {
+  font-size: 15px;
+}
+
+/* Mindre rörelse: nothing bounces, pulses, slaps on or slides. */
+body.calm *,
+body.calm *::before,
+body.calm *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 /* --- the candy bag, top left: it fills as Elof collects (plan §4.3) ------------------------------ */
 .bag {
   position: absolute;

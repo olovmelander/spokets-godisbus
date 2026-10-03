@@ -16,6 +16,8 @@ export interface Audio {
   setEffects(volume: number): void;
   /** 0 is silent, 1 is full. */
   setMusic(volume: number): void;
+  /** *Ljud även i tyst läge*: whether an iPhone's silent switch is passed by (plan §6.8). */
+  setLoud(on: boolean): void;
   /** How this part of the story plays the tune, and its air; null is neither. It begins once sound runs. */
   setPlace(arrangement: Arrangement | null): void;
   /**
@@ -356,6 +358,9 @@ export function createAudio(): Audio {
     setMusic(next) {
       musicVolume = Math.max(0, Math.min(1, next));
       if (music) music.gain.value = MUSIC_LEVEL * musicVolume;
+    },
+    setLoud(on) {
+      if (session) session.type = on ? 'playback' : 'ambient';
     },
     setPlace(next) {
       arrangement = next;

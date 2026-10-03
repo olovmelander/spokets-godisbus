@@ -247,9 +247,8 @@
     - Tests: `tests/unit/save.test.ts` (10), `tests/sim/styles.test.ts` (11); a robot on *Lugnt* reaches the
       end by running, pressing Använd, and pressing Hoppa once on the lace; the browser test opens the panel,
       chooses *Lugnt*, loads the page again and finds the style and the candy saved.
-    - **Not yet:** the first-start screen with the two styles and the title (Stage 2); the other settings
-      of plan §4.1 (*Följ fingret*, *Vänsterhänt*, text size, motion, sound, help level, graphics); more
-      than one player; what *Lugnt* changes in the exciting sequences.
+    - **Not yet:** *Följ fingret*, the graphics level and more than one player. The title, the help
+      level, music and the other switches came in Stage 2: see below.
   - **Part 6: a puzzle, with things on rails.** What you see: after the swing, a pit with a plank lying
     beyond it. The plank has a red ring: Använd says *Dra*, and the lace pulls it across the pit as a bridge.
     Then a block, too high to walk onto, in front of a wall that is too high to climb: Använd says
@@ -605,6 +604,19 @@
       by `src/ui/album.ts`. A course outside the story has no album. Tests: `tests/unit/album.test.ts` (3).
     - **Not yet:** the album's photos (game renders kept on the device, plan §6.9) and the album as the
       credits in the epilogue; the golden geléhallon as its last piece.
+  - **Four more switches** (branch `stage-2-settings`; plan §4.1, §6.8). What you see, in the pause panel:
+    - *Vänsterhänt*: Hoppa and Använd move to the left side, and the stick to the right.
+    - *Större text*: what is said, the words on the buttons and the panels, about a quarter bigger.
+    - *Mindre rörelse*: the bag doesn't bounce, a sticker doesn't slap on, Använd doesn't pulse, and a
+      memory's pictures don't grow in. A device that asks for less motion gets the same. **It calms the
+      menus and the HUD only:** the camera and the world move as before.
+    - *Ljud även i tyst läge*: an iPhone's silent switch no longer silences the game. *Lugnt* starts
+      with it on, because its sounds carry what a younger player can't read; *Äventyr* respects the switch.
+    - Choosing a style keeps the player's own switches (tempo, sound, music, left-handed, text, motion) and
+      sets the style's (`OWN_SWITCHES` in `src/save/settings.ts`). All of them are saved with the player.
+    - Tests: `tests/unit/save.test.ts`, and the browser test switches on *Vänsterhänt* and finds it saved.
+    - **Not yet:** *Följ fingret*, volume sliders, the graphics level, the key reference, and more than
+      one player. *Ljud även i tyst läge* has not been tried on an iPhone.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts

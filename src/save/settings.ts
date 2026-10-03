@@ -16,15 +16,30 @@ export interface Settings {
   sound: boolean;
   /** *Musik*: the tune. */
   music: boolean;
+  /** *Vänsterhänt*: the stick and the buttons swap sides. */
+  lefty: boolean;
+  /** *Större text*: what is said, and the words on the buttons, a quarter bigger. */
+  bigText: boolean;
+  /** *Mindre rörelse*: nothing on the screen bounces, pulses or slaps on. */
+  calm: boolean;
+  /** *Ljud även i tyst läge*: an iPhone's silent switch no longer silences the game (plan §6.8). */
+  loud: boolean;
   /** How much the helper does by itself: *Bara när jag frågar*, *Påminn mig* or *Guida mig* (plan §4.6). */
   help: HelpLevel;
 }
 
 /** The switches each style starts with. Every one of them can then be changed on its own. */
 const SWITCHES: Record<PlayStyle, Omit<Settings, 'style'>> = {
-  aventyr: { swingHelp: false, easyJumps: false, slower: false, sound: true, music: true, help: 'ask' },
-  lugnt: { swingHelp: true, easyJumps: true, slower: false, sound: true, music: true, help: 'remind' },
+  aventyr: { swingHelp: false, easyJumps: false, slower: false, sound: true, music: true, lefty: false, bigText: false, calm: false, loud: false, help: 'ask' },
+  // On Lugnt the sounds carry what a younger player can't read, so the silent switch doesn't take them.
+  lugnt: { swingHelp: true, easyJumps: true, slower: false, sound: true, music: true, lefty: false, bigText: false, calm: false, loud: true, help: 'remind' },
 };
+
+/** The settings that are a switch: on or off. */
+export type Switch = 'swingHelp' | 'easyJumps' | 'slower' | 'sound' | 'music' | 'lefty' | 'bigText' | 'calm' | 'loud';
+export const SWITCH_NAMES: Switch[] = ['swingHelp', 'easyJumps', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm', 'loud'];
+/** The ones that are the player's own, whatever the style: choosing a style leaves them as they are. */
+export const OWN_SWITCHES: Switch[] = ['slower', 'sound', 'music', 'lefty', 'bigText', 'calm'];
 
 export const SLOWER_TEMPO = 0.8;
 
@@ -50,7 +65,7 @@ export function readSettings(value: unknown): Settings {
   const from = (typeof value === 'object' && value !== null ? value : {}) as Record<string, unknown>;
   const style: PlayStyle = from.style === 'lugnt' ? 'lugnt' : 'aventyr';
   const base = settingsFor(style);
-  const flag = (key: 'swingHelp' | 'easyJumps' | 'slower' | 'sound' | 'music') => (typeof from[key] === 'boolean' ? (from[key] as boolean) : base[key]);
+  const flag = (key: Switch) => (typeof from[key] === 'boolean' ? (from[key] as boolean) : base[key]);
   const help: HelpLevel = from.help === 'ask' || from.help === 'remind' || from.help === 'guide' ? from.help : base.help;
-  return { style, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower'), sound: flag('sound'), music: flag('music'), help };
+  return { style, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower'), sound: flag('sound'), music: flag('music'), lefty: flag('lefty'), bigText: flag('bigText'), calm: flag('calm'), loud: flag('loud'), help };
 }

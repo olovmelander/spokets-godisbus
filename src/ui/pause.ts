@@ -1,4 +1,4 @@
-import { settingsFor, type PlayStyle, type Settings } from '../save/settings';
+import { OWN_SWITCHES, settingsFor, type PlayStyle, type Settings, type Switch } from '../save/settings';
 import type { HelpLevel } from '../sim/types';
 
 /**
@@ -24,12 +24,16 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const back = byId('pause');
   const styles: Record<PlayStyle, HTMLButtonElement> = { aventyr: byId('styleAventyr'), lugnt: byId('styleLugnt') };
-  const switches = {
-    swingHelp: byId<HTMLInputElement>('setSwingHelp'),
-    easyJumps: byId<HTMLInputElement>('setEasyJumps'),
-    slower: byId<HTMLInputElement>('setSlower'),
-    sound: byId<HTMLInputElement>('setSound'),
-    music: byId<HTMLInputElement>('setMusic'),
+  const switches: Record<Switch, HTMLInputElement> = {
+    swingHelp: byId('setSwingHelp'),
+    easyJumps: byId('setEasyJumps'),
+    slower: byId('setSlower'),
+    sound: byId('setSound'),
+    music: byId('setMusic'),
+    lefty: byId('setLefty'),
+    bigText: byId('setBigText'),
+    calm: byId('setCalm'),
+    loud: byId('setLoud'),
   };
   const levels: Record<HelpLevel, HTMLButtonElement> = { ask: byId('helpAsk'), remind: byId('helpRemind'), guide: byId('helpGuide') };
   const ask = byId('stuckAsk');
@@ -47,17 +51,13 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
       button.setAttribute('aria-checked', String(chosen));
       button.classList.toggle('on', chosen);
     }
-    switches.swingHelp.checked = settings.swingHelp;
-    switches.easyJumps.checked = settings.easyJumps;
-    switches.slower.checked = settings.slower;
-    switches.sound.checked = settings.sound;
-    switches.music.checked = settings.music;
+    for (const [key, input] of Object.entries(switches) as [Switch, HTMLInputElement][]) input.checked = settings[key];
   }
 
   // Choosing a style sets its switches; each switch can then be changed on its own (plan §4.1).
   for (const [style, button] of Object.entries(styles) as [PlayStyle, HTMLButtonElement][]) {
     button.addEventListener('click', () => {
-      settings = { ...settingsFor(style), slower: settings.slower, sound: settings.sound, music: settings.music };
+      settings = { ...settingsFor(style), ...Object.fromEntries(OWN_SWITCHES.map((key) => [key, settings[key]])) };
       draw();
       handlers.onSettings(settings);
     });
@@ -69,7 +69,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
       handlers.onSettings(settings);
     });
   }
-  for (const [key, input] of Object.entries(switches) as [keyof typeof switches, HTMLInputElement][]) {
+  for (const [key, input] of Object.entries(switches) as [Switch, HTMLInputElement][]) {
     input.addEventListener('change', () => {
       settings = { ...settings, [key]: input.checked };
       handlers.onSettings(settings);

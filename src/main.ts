@@ -112,11 +112,16 @@ function start(): void {
 
   // Sound starts with the first tap, click or key: browsers allow it no earlier (plan §6.8).
   const audio = createAudio();
-  const volumes = () => {
+  /** What the settings change outside the simulation: the sound, and the page's looks. */
+  const apply = () => {
     audio.setEffects(settings.sound ? 1 : 0);
     audio.setMusic(settings.music ? 1 : 0);
+    audio.setLoud(settings.loud);
+    document.body.classList.toggle('lefty', settings.lefty);
+    document.body.classList.toggle('big-text', settings.bigText);
+    document.body.classList.toggle('calm', settings.calm);
   };
-  volumes();
+  apply();
   // Each part of the story plays the tune in its own way, and has its own air (plan §5.8).
   audio.setPlace(arrangementFor(chapter.id, chapter.place));
   for (const type of ['pointerup', 'click', 'keydown', 'touchend']) window.addEventListener(type, () => audio.unlock());
@@ -196,7 +201,7 @@ function start(): void {
       settings = next;
       game.sim.options = simOptions(settings);
       game.tempo = tempoOf(settings);
-      volumes();
+      apply();
       writeSave();
     },
     onStuck() {
@@ -219,7 +224,7 @@ function start(): void {
         settings = settingsFor(style);
         game.sim.options = simOptions(settings);
         game.tempo = tempoOf(settings);
-        volumes();
+        apply();
       }
       title.hide();
       paused = false;

@@ -49,7 +49,9 @@ export function createHud(doc: Document, total: number): Hud {
   const queue: { who: Speaker; line: string }[] = [];
   let left = 0;
   let ended = false;
-  const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  // Nothing bounces or slaps on when the device asks for less motion, or the player does (*Mindre rörelse*).
+  const less = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const still = { get matches() { return less.matches || doc.body.classList.contains('calm'); } };
   /** A sticker: a round mark in the kind's two colours, or an empty ring for one not found. */
   const sticker = (kind: string, found = true): HTMLElement => {
     const mark = doc.createElement('i');
