@@ -1,7 +1,8 @@
 import {
   BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight,
   ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, Mesh, MeshBasicMaterial, MeshLambertMaterial,
-  MeshStandardMaterial, NeutralToneMapping, PerspectiveCamera, Scene, Shape, SphereGeometry, UnsignedByteType, WebGLRenderer,
+  MeshStandardMaterial, NeutralToneMapping, PerspectiveCamera, Quaternion, Scene, Shape, SphereGeometry, UnsignedByteType, Vector3,
+  WebGLRenderer,
 } from 'three';
 import type { Object3D } from 'three';
 import { createAssets } from './assets';
@@ -144,14 +145,20 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       model.rotation.y = Math.PI / 2;
       elof.group.clear();
       elof.group.add(model);
-      const part = (name: string) => model.getObjectByName(name) ?? null;
+      // A skinned Elof has bones, which keep the turn they rest in; the older one has loose parts that rest unturned.
+      const part = (name: string, forward: 1 | -1): Joint | null => {
+        const node = model.getObjectByName(name);
+        if (!node) return null;
+        const bone = (node as { isBone?: boolean }).isBone === true;
+        return { node, rest: bone ? node.quaternion.clone() : null, forward: bone ? forward : 1, angle: 0 };
+      };
       doll = {
-        spine: part('spine_01'),
-        head: part('head'),
-        thighs: [part('thigh_l'), part('thigh_r')],
-        calves: [part('calf_l'), part('calf_r')],
-        upperArms: [part('upperarm_l'), part('upperarm_r')],
-        lowerArms: [part('lowerarm_l'), part('lowerarm_r')],
+        spine: part('spine_01', 1),
+        head: part('Head', 1) ?? part('head', 1),
+        thighs: [part('thigh_l', -1), part('thigh_r', -1)],
+        calves: [part('calf_l', -1), part('calf_r', -1)],
+        upperArms: [part('upperarm_l', -1), part('upperarm_r', -1)],
+        lowerArms: [part('lowerarm_l', -1), part('lowerarm_r', -1)],
       };
       models.push('private/elof');
     })
@@ -261,13 +268,27 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
 
 /** The joints of the Elof made in Blender. They are named after the animation library's skeleton (plan §5.6). */
 interface Doll {
-  spine: Object3D | null;
-  head: Object3D | null;
-  thighs: (Object3D | null)[];
-  calves: (Object3D | null)[];
-  upperArms: (Object3D | null)[];
-  lowerArms: (Object3D | null)[];
+  spine: Joint | null;
+  head: Joint | null;
+  thighs: (Joint | null)[];
+  calves: (Joint | null)[];
+  upperArms: (Joint | null)[];
+  lowerArms: (Joint | null)[];
 }
+
+/**
+ * One joint and how far it is bent. A bone turns round its own x axis from the turn it rests in, and `forward`
+ * says which way that axis swings it; a loose part has no rest and turns round the model's x axis.
+ */
+interface Joint {
+  node: Object3D;
+  rest: Quaternion | null;
+  forward: 1 | -1;
+  angle: number;
+}
+
+const X_AXIS = new Vector3(1, 0, 0);
+const turn = new Quaternion();
 
 /**
  * Poses the doll in code until the library's clips drive it: a walk and a run that follow the distance he
@@ -275,8 +296,11 @@ interface Doll {
  */
 function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number): void {
   const quick = ease(18, dt);
-  const bend = (joint: Object3D | null, angle: number) => {
-    if (joint) joint.rotation.x += (angle - joint.rotation.x) * quick;
+  const bend = (joint: Joint | null, angle: number) => {
+    if (!joint) return;
+    joint.angle += (angle - joint.angle) * quick;
+    if (joint.rest) joint.node.quaternion.copy(joint.rest).multiply(turn.setFromAxisAngle(X_AXIS, joint.angle * joint.forward));
+    else joint.node.rotation.x = joint.angle;
   };
   const speed = clamp(Math.abs(player.vx) / RUN_SPEED, 0, 1);
   if (!player.grounded) {

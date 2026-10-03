@@ -56,10 +56,13 @@ doll in a photographed world.
 
 No one here sculpts by hand. Two routes were looked at on 3 October, and neither reaches the sheets by itself:
 
-- **Shapes built by script** (what Elof's second model is): big head, large eyes as real spheres, hair in
-  sculpted locks, chunky hands and boots. It reads as a friendly toy-like cartoon boy, and it is as far as
-  scripted shapes go. It has no modelled eye sockets, cheeks or cloth folds, which is what a Pixar or Disney
-  face is made of.
+- **Sculpting by script** (what Elof's third model is, and the default until Olov decides). Rounded forms are
+  fused into one surface with a voxel remesh, cut where the eyes and ears are, smoothed and thinned out. That
+  gives eye sockets with lids, cheeks, a button nose, lips, ears, fingers and hair in swept tufts. The body is
+  skinned on 15 bones named after the animation library's joints. Colour is painted on the vertices, with
+  shadow baked into the creases; only the shirt's stripes are a texture. About 15,300 triangles and three
+  materials. It reads as a stylized cartoon boy, which the second model (plain balls and tubes) did not. It is
+  still short of the sheets: the face is made of simple rounded forms, and the cloth has no real folds.
 - **A base body that an artist made,** reshaped and dressed in Blender. The steps are below. The free version of
   the base pack turned out to hold only two muscular adult bodies; the *Teen* and *Regular* bodies this needs are
   in its paid version (20 US dollars, still CC0).
