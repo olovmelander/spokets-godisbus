@@ -298,8 +298,8 @@
     - Sound starts with the first tap, click or key, and an iPhone's silent switch silences it.
     - **No one has listened to it.** The session can't hear. The levels and the tunes are a first guess for
       Olov's ears; say what is too loud, too shrill or missing.
-    - **Not yet:** footsteps per surface, the characters' wordless sounds and *Ljud även i tyst läge*.
-      Music and ambience came later: see "Music and the air of each place" below.
+    - **Not yet:** the characters' wordless sounds and *Ljud även i tyst läge*. Music, ambience and
+      footsteps per surface came later: see "Music and the air of each place" below.
   - **The ghost keeps its distance** (branch `stage-2-ghost`; plan §4.2, §4.5). What you see: the ghost is
     on the course from the start, always a little ahead. It stands and taps its foot until Elof comes
     within 4 EL, then hops on to its next place in an arc. After the swing it lets him come close: Använd
@@ -589,6 +589,14 @@
     - **Not yet:** the fiddle lead, the pad, the jaw harp and the horn; a three-note motif for each family
       member; the solo line over a memory; silence before a reveal; separate volume sliders (the switches
       are on or off); recorded ambience.
+  - **Footsteps for every surface** (branch `stage-2-steps`; plan §5.8). What you hear: his steps and his
+    landings sound of what he walks on. A hollow knock on the deck and the boardwalk, almost nothing on
+    moss, a swish in grass, a wet squelch in the bog, a click on stone, grit on the dry earth under the
+    deck, and a rustle in Pappa's shavings.
+    - What the ground is comes from the chapter: its place's own ground, and the stretches it marks out
+      for the picture (`surfaces`), so the sound and the picture can't disagree (`footingAt` in
+      `src/audio/cues.ts`). The test course has no place and keeps its plain step.
+    - Tested without ears (`tests/unit/cues.test.ts`). **No one has listened to it.**
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts

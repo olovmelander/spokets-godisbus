@@ -1,13 +1,26 @@
-import type { Mode } from '../sim/types';
+import type { ChapterData, Mode, PlaceId, SurfaceKind } from '../sim/types';
+
+/** What he walks on, for the sound of his steps (plan §5.8). */
+export type Footing = 'plank' | 'moss' | 'grass' | 'squelch' | 'stone' | 'gravel' | 'shavings';
+
+/** A place's own ground, and what the stretches a chapter marks out are made of. */
+const OWN: Record<PlaceId, Footing> = { forest: 'moss', garden: 'grass', bog: 'squelch', mountain: 'stone', dusk: 'stone', home: 'plank' };
+const MADE: Record<SurfaceKind, Footing> = { wood: 'plank', earth: 'gravel', stone: 'stone', shavings: 'shavings', hedge: 'grass' };
+
+/** What the ground is at x. A course without a place, the test course, has no footing: a plain step. */
+export function footingAt(chapter: Pick<ChapterData, 'place' | 'surfaces'>, x: number): Footing | undefined {
+  const made = chapter.surfaces?.find((s) => x >= s.from && x <= s.to)?.kind;
+  return made ? MADE[made] : chapter.place ? OWN[chapter.place] : undefined;
+}
 
 /**
  * Which sounds a moment of play asks for. This is worked out from two looks at the game, a frame apart,
  * with no audio in it at all, so that it can be tested without ears (plan §5.8).
  */
 export type Cue =
-  | { kind: 'step'; left: boolean }
+  | { kind: 'step'; left: boolean; on?: Footing }
   | { kind: 'jump' }
-  | { kind: 'land'; hard: number }
+  | { kind: 'land'; hard: number; on?: Footing }
   /** `streak` counts the candies collected in a row: each one sounds a step higher (plan §5.8). */
   | { kind: 'candy'; streak: number }
   | { kind: 'bigCandy' }
@@ -53,6 +66,8 @@ export interface Heard {
   wind?: boolean;
   /** How many hidden candies he has found in this chapter. */
   found?: number;
+  /** What he stands on. */
+  footing?: Footing | undefined;
 }
 
 /** What has to be remembered between frames: the candy streak and the stride. */
@@ -73,6 +88,7 @@ export const STRIDE = 0.55;
 export function cuesFor(before: Heard, now: Heard, memory: CueMemory): Cue[] {
   const cues: Cue[] = [];
   const dt = Math.max(0, now.time - before.time);
+  const on = now.footing ? { on: now.footing } : {};
 
   // Candy: each one collected in a row sounds a step higher.
   for (let i = before.candy; i < now.candy; i++) {
@@ -99,13 +115,13 @@ export function cuesFor(before: Heard, now: Heard, memory: CueMemory): Cue[] {
   // On his own feet: a jump, a landing, and steps by the distance he covers.
   if (now.mode === 'free' && before.mode === 'free') {
     if (before.grounded && !now.grounded && now.vy > 3) cues.push({ kind: 'jump' });
-    if (!before.grounded && now.grounded) cues.push({ kind: 'land', hard: Math.min(1, Math.max(0, -before.vy) / 10) });
+    if (!before.grounded && now.grounded) cues.push({ kind: 'land', hard: Math.min(1, Math.max(0, -before.vy) / 10), ...on });
     if (now.grounded) {
       memory.stride += Math.abs(now.vx) * dt;
       if (memory.stride >= STRIDE) {
         memory.stride -= STRIDE;
         memory.left = !memory.left;
-        cues.push({ kind: 'step', left: memory.left });
+        cues.push({ kind: 'step', left: memory.left, ...on });
       }
     } else {
       memory.stride = STRIDE * 0.6;

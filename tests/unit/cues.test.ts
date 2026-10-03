@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { cuesFor, newCueMemory, STREAK_GAP, STRIDE, type Heard } from '../../src/audio/cues';
+import { cuesFor, footingAt, newCueMemory, STREAK_GAP, STRIDE, type Heard } from '../../src/audio/cues';
+import { berget } from '../../src/content/chapters/berget';
+import { prolog } from '../../src/content/chapters/ends';
+import { garden } from '../../src/content/chapters/garden';
+import { granskog } from '../../src/content/chapters/granskog';
+import { myren } from '../../src/content/chapters/myren';
+import { testbana } from '../../src/content/chapters/testbana';
 
 const still: Heard = {
   time: 0, mode: 'free', grounded: true, x: 0, y: 0, vx: 0, vy: 0, candy: 0, checkpoint: -1, bubbles: 0, atGoal: false,
@@ -42,6 +48,27 @@ describe('what a moment of play sounds like', () => {
     // Two seconds at a run is 7 EL.
     expect(steps.length).toBe(Math.floor(7 / STRIDE));
     expect(steps.slice(0, 4)).toEqual([false, true, false, true]);
+  });
+
+  it('his steps and his landings sound of what he walks on', () => {
+    // Gården: the deck, the dry earth under it, the lawn, the boulder, Pappa's shavings.
+    expect([0, 50, 90, 103, 140].map((x) => footingAt(garden, x))).toEqual(['plank', 'gravel', 'grass', 'stone', 'shavings']);
+    expect(footingAt(granskog, 20)).toBe('moss');
+    // Myren: sphagnum, and the boardwalk across it.
+    expect([10, 110].map((x) => footingAt(myren, x))).toEqual(['squelch', 'plank']);
+    expect(footingAt(berget, 20)).toBe('stone');
+    expect(footingAt(prolog, 5)).toBe('plank');
+    // The test course is no place: a plain step.
+    expect(footingAt(testbana, 5)).toBeUndefined();
+
+    const memory = newCueMemory();
+    const onDeck = { ...still, footing: 'plank' as const };
+    const cues = cuesFor(onDeck, { ...onDeck, time: 1, vx: 3.5, x: 3.5 }, memory);
+    expect(cues).toEqual([{ kind: 'step', left: false, on: 'plank' }]);
+    const landed = cuesFor({ ...onDeck, grounded: false, vy: -5 }, onDeck, newCueMemory());
+    expect(landed).toEqual([{ kind: 'land', hard: 0.5, on: 'plank' }]);
+    // Without a footing the cue says nothing of it.
+    expect(cuesFor({ ...still, grounded: false, vy: -5 }, still, newCueMemory())).toEqual([{ kind: 'land', hard: 0.5 }]);
   });
 
   it('candy collected in a row steps up, and starts again after a pause', () => {
