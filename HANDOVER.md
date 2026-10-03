@@ -245,9 +245,9 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
    - **(c) An open model on your own computer: this is the plan.** You asked for an open, local alternative,
      and your other computer has an RTX 5080 with 16 GB. The order to try: TRELLIS.2 through ComfyUI, then
      the first TRELLIS. Both are Microsoft's, MIT, free, and nothing is uploaded. Neither is tried yet, and
-     whether TRELLIS.2 fits in 16 GB is not known. **Pixal3D may be better but is held back for you to
-     decide:** its licence file is MIT, yet its model card carries a marker against use in the EU (art bible
-     §1.6).
+     whether TRELLIS.2 fits in 16 GB is not known. **Pixal3D may be better, and its licence allows it:** MIT
+     since 20 May 2026, code and weights; the EU limit belonged to the terms it had for its first eight days
+     (art bible §1.6). Say if you want it tried first.
      - **What a session on that computer needs:** this repository cloned; Elof's three views from
        `art/private/elof/image-to-3d/` (or the whole `photos/` folder), carried over on a USB stick or the
        home network, never through git; and about 30 GB of free disk.
