@@ -95,9 +95,15 @@
         tussocks are mounds of paler moss. The boardwalk is planks.
       - Berget: granite, white lichen and boulders under a pink-orange sky, with ridges and a hazy valley.
       - The final: the same summit in blue with the first stars; night and the northern lights come as before.
+    - **Stand-ins for things and animals** (branch `stage-2-props`; art bible §2.7). The boxes and bare glints
+      are gone from the story's chapters: a chapter says what a thing is (`look`), and `src/render/props.ts`
+      builds it in code. The shavings curl, the cone is a cone, the ladybird lies kicking on its back and flies
+      off when turned, the jay hops for its berry, the crane kneels and then flies with beating wings,
+      Bertil's cap is a boat. Where someone can be called there is a sign on a stick in that person's colour;
+      nobody is drawn.
     - **Not yet:** plates rendered in Blender and scanned materials (what is there is drawn in code and reads
-      as stylized); bloom and depth blur on High; pines with crowns; the things on rails and the helpers in
-      the place's style. **H1a is Olov's:** art bible §2.5 says what to look at.
+      as stylized); bloom and depth blur on High; pines with crowns; the animals and the family's hands as
+      designed in Blender. **H1a is Olov's:** art bible §2.5 says what to look at.
 - **Stage 0c has begun** (3 October, branch `stage-0c-ghost`, stacked on `stage-0b-tiers`): the ghost's first
   model, before Stage 0b is finished, because Olov wanted the characters started.
   - It is built in Olov's Blender through the MCP server by `art/private/ghost/ghost.py`. Its four pictures

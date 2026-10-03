@@ -50,6 +50,8 @@ export interface Mover {
   needs?: string;
   /** It goes to its last stop by itself when this flag is set, and Använd never moves it: a helper's hands lift it. */
   on?: string;
+  /** What it is, for the picture. Left out: a plain box. */
+  look?: MoverLook;
   /** For Dra: where the ring sits, from the middle of its bottom. */
   ring?: Vec;
 }
@@ -72,6 +74,8 @@ export interface Spot {
   needs?: string;
   /** It is used by coming close, with no button: a memory he touches. With a ride, the ride begins by itself. */
   touch?: boolean;
+  /** What stands there, for the picture. Left out: only the glint over it. */
+  look?: SpotLook;
   /** The word on the button where the verb's own is too plain: a key of `sv.verbs`, as in "Ropa på Moa". */
   word?: string;
   /** Using it starts this ride. */
@@ -108,6 +112,8 @@ export interface Ride {
   time: number;
   /** How far the stick moves him from the middle of its path. Left out: 1.6 EL. A boat hardly at all. */
   corridor?: number;
+  /** What he rides on, for the picture. Left out: Moa's paper plane. */
+  look?: RideLook;
 }
 
 /**
@@ -232,6 +238,11 @@ export interface SimStart {
 }
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
+/** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
+export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure';
+export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold';
+export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'none';
+
 /** The places of the story, each with its own light and layers (plan §5.4). The picture's business only. */
 export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk';
 

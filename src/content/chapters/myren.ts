@@ -176,20 +176,20 @@ export const myren: ChapterData = {
     { x: 103.7, bottom: 0, top: 4.5, exit: 1, needs: 'braid' },
   ],
   spots: [
-    { id: 'mamma', at: { x: 84.8, y: 0 }, verb: 'call', word: 'callMamma' },
-    { id: 'braid', at: { x: 102.2, y: 0 }, verb: 'call', word: 'callMamma' },
+    { id: 'mamma', look: 'sign', at: { x: 84.8, y: 0 }, verb: 'call', word: 'callMamma' },
+    { id: 'braid', look: 'sign', at: { x: 102.2, y: 0 }, verb: 'call', word: 'callMamma' },
     // The lollipop the ghost has stuck in the moss for him.
-    { id: 'light', at: { x: 142, y: 0 }, verb: 'take', word: 'takeLight' },
+    { id: 'light', look: 'lollipop', at: { x: 142, y: 0 }, verb: 'take', word: 'takeLight' },
     // The crane chick follows his light, and comes home when he reaches its family.
     { id: 'chick', at: { x: 156.7, y: 0 }, verb: 'take', touch: true, needs: 'light' },
     { id: 'home', at: { x: 176, y: 0 }, verb: 'take', touch: true, needs: 'chick' },
-    { id: 'crane', at: { x: 182, y: 0 }, verb: 'take', word: 'climbOn', needs: 'home', ride: 'crane' },
+    { id: 'crane', look: 'crane', at: { x: 182, y: 0 }, verb: 'take', word: 'climbOn', needs: 'home', ride: 'crane' },
   ],
   movers: [
     // The dead pine in the pool: Mamma's hands lift it across as a bridge.
-    { id: 'pine', width: 8.6, height: 0.4, verb: 'pull', on: 'mamma', stops: [{ x: 90, y: -1.5 }, { x: 90, y: -0.4 }] },
+    { id: 'pine', look: 'log', width: 8.6, height: 0.4, verb: 'pull', on: 'mamma', stops: [{ x: 90, y: -1.5 }, { x: 90, y: -0.4 }] },
   ],
-  rides: [{ id: 'crane', ...CRANE }],
+  rides: [{ id: 'crane', look: 'crane', ...CRANE }],
   jumps: [...hops(OUT), ...hops(HOME)],
   mist: { after: 'light' },
   follower: { at: { x: 156.7, y: 0 }, after: 'chick', until: 'home', home: { x: 177.4, y: 0 } },

@@ -119,9 +119,9 @@ export const testbana: ChapterData = {
   ],
   movers: [
     // Home on the far side of the pit; pulled, it lies across it with its top level with the ground.
-    { id: 'plank', width: 3.1, height: 0.4, verb: 'pull', ring: { x: -1.4, y: 0.55 }, stops: [{ x: 60.6, y: 0 }, { x: 57.4, y: -0.4 }] },
+    { id: 'plank', look: 'plank', width: 3.1, height: 0.4, verb: 'pull', ring: { x: -1.4, y: 0.55 }, stops: [{ x: 60.6, y: 0 }, { x: 57.4, y: -0.4 }] },
     // Too high to walk onto, so he pushes it. Two pushes take it to the wall, which is too high without it.
-    { id: 'block', width: 1, height: 1.5, verb: 'push', stops: [{ x: 64, y: 0 }, { x: 65.4, y: 0 }, { x: 66.8, y: 0 }] },
+    { id: 'block', look: 'block', width: 1, height: 1.5, verb: 'push', stops: [{ x: 64, y: 0 }, { x: 65.4, y: 0 }, { x: 66.8, y: 0 }] },
   ],
   // In reach from 1.4 EL before the edge, so there is time to throw the lace even at a run.
   hooks: [{ x: 47.5, y: 3.3, length: 2.7, land: { x: 51.8, y: 0 } }],
