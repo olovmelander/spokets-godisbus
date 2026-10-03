@@ -1,7 +1,7 @@
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
-  MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, Quaternion,
+  MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PointLight, Quaternion,
   Scene, Shape, SphereGeometry, TorusGeometry, UnsignedByteType, Vector2, Vector3, WebGLRenderer,
 } from 'three';
 import { createAssets } from './assets';
@@ -55,6 +55,8 @@ export interface Frame {
   ghost: { x: number; y: number; t: number; gone: boolean } | null;
   /** The rolling cones, in the chapter's order. */
   rollers: readonly { x: number; y: number; on: boolean; radius: number }[];
+  /** The soft tussocks, in the chapter's order: where the top of each is now. */
+  tussocks: readonly { x: number; y: number }[];
 }
 
 export interface View {
@@ -134,7 +136,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(...moverMeshes, rain.group, cones.mesh);
   scene.add(buildGround(chapter), buildTrunks(chapter), buildClimbs(chapter), buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
   const water = buildWater(chapter);
-  scene.add(water.group);
+  const tussockMeshes = buildTussocks(chapter);
+  const mist = buildMist(chapter, scene.fog as Fog);
+  const follower = buildFollower(chapter);
+  scene.add(water.group, ...tussockMeshes, mist.group, follower.group);
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
   // It is the first asset through the whole chain: Blender → glTF → KTX2 and meshopt → the page.
@@ -255,7 +260,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   resize();
 
   let ghostSize = 1;
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers }: Frame): void {
+  let warm = 2;
+  let warmedFor = 0;
+  const unculled: Object3D[] = [];
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks }: Frame): void {
     rain.update(drips);
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
@@ -265,6 +273,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     glints.update(flags, clock);
     cones.update(rollers, clock);
     water.update(clock);
+    for (const [i, t] of tussocks.entries()) tussockMeshes[i]?.position.set(t.x, t.y, 0);
+    mist.update(flags, x, y, curr.facing, camera.position.z, dt);
+    follower.update(flags, curr, clock, dt);
     // On a ride he sits on Moa's paper plane, which points the way it flies.
     const riding = curr.mode === 'ride';
     plane.scale.setScalar(riding ? Math.min(1, curr.t / 0.05, (1 - curr.t) / 0.05) : 0);
@@ -337,7 +348,25 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (ghostFoot) ghostFoot.rotation.x = hopping ? 0 : -Math.max(0, Math.sin(clock * 9)) * (Math.sin(clock * 0.9) > 0.2 ? 0.45 : 0);
     }
     renderer.info.reset();
+    // Gate 6 (plan §6.12): no shader is compiled during play. The first frames, and the first after a model
+    // has arrived, draw the whole chapter, in view or not, so that every material's shader exists from then on.
+    if (models.length !== warmedFor) {
+      warmedFor = models.length;
+      warm = 2;
+    }
+    if (warm > 0) {
+      scene.traverse((object) => {
+        if (!object.frustumCulled) return;
+        object.frustumCulled = false;
+        unculled.push(object);
+      });
+    }
     renderer.render(scene, camera);
+    if (warm > 0) {
+      for (const object of unculled) object.frustumCulled = true;
+      unculled.length = 0;
+      warm--;
+    }
   }
 
   return {
@@ -469,6 +498,107 @@ function buildWater(chapter: ChapterData) {
   return { group, update };
 }
 
+/**
+ * The soft tussocks (plan §4.7, E3), in greybox: paler than the firm ground, so that they can be told
+ * apart before he lands on one. Each is moved by the simulation.
+ */
+function buildTussocks(chapter: ChapterData): Mesh[] {
+  const moss = new MeshStandardMaterial({ color: '#c9c377', roughness: 1 });
+  return (chapter.tussocks ?? []).map((t) => {
+    const geometry = new BoxGeometry(t.width, 1.6, 2.6);
+    geometry.translate(0, -0.8, -0.6);
+    const mesh = new Mesh(geometry, moss);
+    mesh.position.set(t.x, t.y, 0);
+    return mesh;
+  });
+}
+
+/**
+ * The mist, and the light he carries in it (plan §3.4, Lysklubban). When the chapter's flag is set the fog
+ * closes in over a few seconds, and a warm light goes with him. The light is in the scene from the start,
+ * dark, so that no shader is compiled when it comes on.
+ */
+function buildMist(chapter: ChapterData, fog: Fog) {
+  const group = new Group();
+  const clear = { near: fog.near, far: fog.far };
+  if (!chapter.mist) return { group, update: () => {} };
+  const after = chapter.mist.after;
+  const light = new PointLight('#ffcf8a', 0, 9, 1.6);
+  // The lollipop, held up like a lantern: it glows through the mist.
+  const glow = new Group();
+  const sweet = new Mesh(new SphereGeometry(0.13, 14, 10), new MeshBasicMaterial({ color: '#ffe2a0', fog: false }));
+  const stick = new Mesh(new CylinderGeometry(0.018, 0.018, 0.4, 6), new MeshBasicMaterial({ color: '#fff6e0', fog: false }));
+  stick.position.y = -0.3;
+  glow.add(sweet, stick);
+  group.add(light, glow);
+  let k = 0;
+  function update(flags: ReadonlySet<string>, x: number, y: number, facing: number, cameraZ: number, dt: number): void {
+    k = Math.min(1, Math.max(0, k + (flags.has(after) ? dt : -dt) / 3));
+    // The mist begins just behind the plane he walks in: he and what is near him stay clear, and the rest fades.
+    fog.near = lerp(clear.near, cameraZ - 2, k);
+    fog.far = lerp(clear.far, cameraZ + 9, k);
+    light.intensity = 7 * k;
+    light.position.set(x + facing * 0.3, y + 1.4, 1);
+    glow.position.set(x + facing * 0.32, y + 1.42, 0.25);
+    glow.scale.setScalar(k);
+  }
+  return { group, update };
+}
+
+/**
+ * Someone small who follows him (plan §3.4, Tranungen), in greybox: a grey chick with a long neck. It
+ * waits, follows a little behind him once its flag is set, and stays at its home when it has come there.
+ * While it follows, rings rise from its home: its family calling, shown without sound.
+ */
+function buildFollower(chapter: ChapterData) {
+  const group = new Group();
+  const def = chapter.follower;
+  if (!def) return { group, update: () => {} };
+  const down = new MeshStandardMaterial({ color: '#b9aa94', roughness: 1 });
+  const chick = new Group();
+  const body = new Mesh(new SphereGeometry(0.22, 14, 10), down);
+  body.position.y = 0.42;
+  body.scale.set(1.25, 1, 0.9);
+  const neck = new Mesh(new CylinderGeometry(0.05, 0.06, 0.36, 8), down);
+  neck.position.set(0.17, 0.68, 0);
+  const head = new Mesh(new SphereGeometry(0.1, 12, 8), down);
+  head.position.set(0.19, 0.9, 0);
+  const beak = new Mesh(new ConeGeometry(0.035, 0.18, 8), new MeshStandardMaterial({ color: '#8a6a3a', roughness: 0.7 }));
+  beak.rotation.z = -Math.PI / 2;
+  beak.position.set(0.35, 0.89, 0);
+  chick.add(body, neck, head, beak);
+  for (const side of [-0.07, 0.07]) {
+    const leg = new Mesh(new CylinderGeometry(0.018, 0.018, 0.26, 6), new MeshStandardMaterial({ color: '#5e5548', roughness: 0.8 }));
+    leg.position.set(0, 0.13, side);
+    chick.add(leg);
+  }
+  chick.position.set(def.at.x, def.at.y, 0);
+  group.add(chick);
+  const rings = [0, 1, 2].map(() => {
+    const ring = new Mesh(new TorusGeometry(0.5, 0.025, 8, 36), new MeshBasicMaterial({ color: '#fff3d6', transparent: true, opacity: 0 }));
+    ring.rotation.x = Math.PI / 2;
+    group.add(ring);
+    return ring;
+  });
+  function update(flags: ReadonlySet<string>, elof: PlayerState, clock: number, dt: number): void {
+    const following = flags.has(def!.after) && !flags.has(def!.until);
+    const to = flags.has(def!.until) ? def!.home : following ? { x: elof.x - elof.facing * 1.2, y: elof.standY } : def!.at;
+    chick.position.x += (to.x - chick.position.x) * ease(following ? 4 : 2.5, dt);
+    chick.position.y += (to.y - chick.position.y) * ease(6, dt);
+    // It looks the way it goes, and bobs as it walks.
+    const way = to.x - chick.position.x;
+    if (Math.abs(way) > 0.05) chick.rotation.y = way > 0 ? 0 : Math.PI;
+    body.position.y = 0.42 + (Math.abs(way) > 0.05 ? Math.abs(Math.sin(clock * 11)) * 0.05 : 0);
+    for (const [i, ring] of rings.entries()) {
+      const k = (clock * 0.45 + i / rings.length) % 1;
+      ring.position.set(def!.home.x, def!.home.y + 0.6 + k * 3.2, 0);
+      ring.scale.setScalar(0.5 + k * 1.6);
+      (ring.material as MeshBasicMaterial).opacity = following ? Math.sin(Math.PI * k) * 0.8 : 0;
+    }
+  }
+  return { group, update };
+}
+
 /** The rolling cones of the avalanche (plan §4.7, E2): brown, long, turning as they go. One instanced mesh. */
 function buildCones(count: number) {
   const mesh = new InstancedMesh(new SphereGeometry(1, 12, 8), new MeshStandardMaterial({ color: '#7a5230', roughness: 0.9 }), Math.max(1, count));
@@ -587,7 +717,7 @@ function buildMovers(chapter: ChapterData): Group[] {
     const box = new Mesh(new BoxGeometry(mover.width, mover.height, 1.1), wood);
     box.position.y = mover.height / 2;
     group.add(box);
-    if (mover.verb === 'pull') {
+    if (mover.verb === 'pull' && mover.on === undefined) {
       const at = mover.ring ?? { x: 0, y: mover.height };
       const ring = new Mesh(new TorusGeometry(0.17, 0.04, 10, 28), red);
       ring.position.set(at.x, at.y, 0.2);

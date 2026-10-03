@@ -256,7 +256,7 @@ function start(): void {
     window.__godis = {
       state: () => ({
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
-        bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
+        bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
         course: chapter.id, said: [...game.sim.said], title: title.open,
       }),
       info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played }),
@@ -319,7 +319,7 @@ function start(): void {
     view.render({
       prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: paused ? 0 : dt, atGoal,
       collected: game.sim.collected, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
-      flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers,
+      flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks,
     });
     hud.candy(game.sim.candyCount);
     hud.verb(game.sim.curr.verb, game.sim.curr.word);

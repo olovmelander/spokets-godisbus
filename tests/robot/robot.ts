@@ -77,8 +77,14 @@ export function decide(game: Game, chapter: ChapterData): Decision {
   // A gap with a plank across it is no gap. A gap has a far side above its bottom, and not far below him: on
   // a slope that is a little lower than where he stands.
   const bridged = movers.some((m) => Math.abs(m.y + m.def.height - p.y) < 0.3 && m.x - m.def.width / 2 < p.x + 0.4 && m.x + m.def.width / 2 > p.x + 2);
-  const below = heightAt(chapter, p.x + 0.35);
-  const across = heightAt(chapter, p.x + 2.2);
+  // A soft tussock is a place to stand, like the ground, and so is a thing that lies level with his feet.
+  const floor = (x: number) => Math.max(
+    heightAt(chapter, x),
+    ...game.sim.tussocks.filter((t) => Math.abs(x - t.x) <= t.width / 2).map((t) => t.y),
+    ...movers.filter((m) => Math.abs(x - m.x) <= m.def.width / 2 && Math.abs(m.y + m.def.height - p.y) < 0.3).map((m) => m.y + m.def.height),
+  );
+  const below = floor(p.x + 0.35);
+  const across = floor(p.x + 2.2);
   const gap = !bridged && below < p.y - 0.3 && across > below + 0.5 && across > p.y - 1;
   const leadsOn = (chapter.climbs ?? []).some((c) => Math.abs(c.top - p.y) < 0.3 && c.x > p.x && c.x - p.x < 1);
   // A cone rolling up from behind: jump so that it passes under. On Lugnt it misses him as long as he runs.
@@ -113,7 +119,8 @@ export function playThrough(fps: number, chapter: ChapterData, options: SimOptio
   const missed = game.sim.collected.flatMap((got, i) => (got ? [] : [i]));
   return {
     goal: game.sim.flags.has('goal'), seconds: frames * dt, steps: game.sim.steps, end: game.sim.curr, lowest,
-    candy: game.sim.candyCount, missed, bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, said: [...game.sim.said],
+    candy: game.sim.candyCount, missed, bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled,
+    sinks: game.sim.sinks, said: [...game.sim.said],
     flags: [...game.sim.flags], checkpoint: game.sim.checkpoint, x: game.sim.curr.x,
   };
 }

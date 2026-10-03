@@ -8,7 +8,7 @@ import {
 import { CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER, MOVE_TIME, MOVER_RESET, PUSH_REACH } from './constants';
 import { DOWN_TIME, DROP_FALL, DROP_FROM, DROP_RADIUS, DROP_WARNING } from './constants';
 import { GHOST_CATCH, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_STEER, SPOT_REACH } from './constants';
-import { ROLLER_REACH, TOUCH_REACH } from './constants';
+import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REACH } from './constants';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
@@ -89,6 +89,14 @@ export interface RollerState {
   since: number;
 }
 
+/** A soft tussock: where its top is now, and how far it has sunk, from 0 to 1. */
+export interface TussockState {
+  x: number;
+  y: number;
+  width: number;
+  sunk: number;
+}
+
 /** A drip and its next drop. */
 export interface DripState {
   x: number;
@@ -132,6 +140,10 @@ export class Sim {
   readonly rollers: RollerState[];
   /** How many times a cone has bowled him over. */
   bowled = 0;
+  /** The soft tussocks, in the chapter's order. */
+  readonly tussocks: TussockState[];
+  /** How many times a tussock has sunk under him. */
+  sinks = 0;
   /** The ghost, or null in a chapter without it. */
   readonly ghost: GhostState | null;
   /** The beats that have come, by id, in the order they came: what the page shows as bubbles. */
@@ -147,6 +159,7 @@ export class Sim {
   private readonly checkpoints: Vec[];
   private readonly jumps: Jump[];
   private readonly moverBodies: Body[];
+  private readonly tussockBodies: Body[];
   private readonly spots: Spot[];
   private readonly perches: GhostPerch[];
   /** The ghost's hop: where from, how long, how high. */
@@ -233,6 +246,12 @@ export class Sim {
 
     this.drips = (chapter.drips ?? []).map((drip) => ({ x: drip.at.x, y: drip.at.y, shadow: 0, height: -1 }));
     this.rollers = (chapter.rollers ?? []).map((r) => ({ x: r.from.x, y: r.from.y, on: false, radius: r.radius, since: r.needs === undefined ? 0 : -1 }));
+    this.tussocks = (chapter.tussocks ?? []).map((t) => ({ x: t.x, y: t.y, width: t.width, sunk: 0 }));
+    this.tussockBodies = this.tussocks.map((t) => {
+      const body = this.world.createBody({ type: 'kinematic', position: new Vec2(t.x, t.y - 1) });
+      body.createFixture({ shape: new BoxShape(t.width / 2, 0.5, new Vec2(0, 0.5)), friction: 0 });
+      return body;
+    });
     for (const flag of start.flags ?? []) this.flags.add(flag);
     for (const mover of this.movers) if (mover.stop === mover.def.stops.length - 1) this.flags.add(`placed:${mover.def.id}`);
     // What was said before the place he starts at is not said again.
@@ -283,6 +302,7 @@ export class Sim {
     this.moveMovers();
     this.rain();
     this.roll();
+    this.sink();
     this.haunt();
     this.tell();
 
@@ -292,6 +312,7 @@ export class Sim {
     if (this.state.kind === 'free') {
       this.curr = this.read(this.standing());
       this.remember();
+      this.wade();
     } else {
       this.curr = this.read(false);
     }
@@ -327,6 +348,41 @@ export class Sim {
       this.bowled++;
       this.toCheckpoint();
     }
+  }
+
+  /** Whether he stands on this soft tussock. */
+  private isOn(t: TussockState): boolean {
+    const p = this.curr;
+    return Math.abs(p.x - t.x) <= t.width / 2 + ELOF_HALF_WIDTH && Math.abs(p.y - t.y) < 0.15;
+  }
+
+  /**
+   * One step for the soft tussocks: one sinks while he stands on it and rises when he has left. When it has
+   * sunk, the glitter bubble lifts him off, before the water reaches his boots. On *Lugnt* it sinks only
+   * while he stands still.
+   */
+  private sink(): void {
+    for (const [i, t] of this.tussocks.entries()) {
+      const rest = this.chapter.tussocks![i]!.y;
+      const on = this.state.kind === 'free' && this.isOn(t);
+      const sinking = on && !(this.options.gentle && Math.abs(this.curr.vx) > 0.5);
+      t.sunk = sinking ? Math.min(1, t.sunk + STEP / SINK_TIME) : Math.max(0, t.sunk - STEP / RISE_TIME);
+      t.y = rest - t.sunk * SINK_DEPTH;
+      this.tussockBodies[i]!.setTransform(new Vec2(t.x, t.y - 1), 0);
+      // He goes down with it, his boots on its top, unless he is on his way up in a jump.
+      if (sinking && this.curr.vy <= 0.5) this.body.setTransform(new Vec2(this.body.getPosition().x, t.y + SKIN), 0);
+      if (!on || t.sunk < 1) continue;
+      this.sinks++;
+      this.startBubble();
+    }
+  }
+
+  /** Water: the glitter bubble catches him just above it. */
+  private wade(): void {
+    if (this.state.kind !== 'free') return;
+    const p = this.curr;
+    const wet = (this.chapter.water ?? []).some((w) => p.x >= w.from && p.x <= w.to && p.y < w.y + WATER_REACH);
+    if (wet) this.startBubble();
   }
 
   /** The beats whose moment has come: each is told once, and remembered as a flag. */
@@ -456,6 +512,12 @@ export class Sim {
   private moveMovers(): void {
     for (const [i, mover] of this.movers.entries()) {
       const last = mover.def.stops.length - 1;
+      // A helper's hands: it goes to where it belongs as soon as its flag is set.
+      if (mover.def.on !== undefined && mover.t >= 1 && mover.stop < last && this.flags.has(mover.def.on)) {
+        mover.from = mover.stop;
+        mover.stop = last;
+        mover.t = 0;
+      }
       // Local reset (plan §4.5): not yet where it belongs, at rest, and Elof far away.
       if (mover.t >= 1 && mover.stop > 0 && mover.stop < last && Math.abs(this.curr.x - mover.x) > MOVER_RESET) {
         mover.from = mover.stop;
@@ -482,7 +544,7 @@ export class Sim {
     const p = this.curr;
     for (const mover of this.movers) {
       const def = mover.def;
-      if (def.verb !== verb || mover.t < 1 || mover.stop >= def.stops.length - 1) continue;
+      if (def.verb !== verb || def.on !== undefined || mover.t < 1 || mover.stop >= def.stops.length - 1) continue;
       if (def.needs !== undefined && !this.flags.has(def.needs)) continue;
       const next = def.stops[mover.stop + 1]!;
       const way = Math.sign(next.x - mover.x) || 1;
@@ -972,6 +1034,8 @@ export class Sim {
     }
     this.standY = p.y;
     this.fallTop = p.y;
+    // A soft tussock is no place to be put back on: the bubble takes him to the last firm ground.
+    if (this.tussocks.some((t) => this.isOn(t))) return;
     // Solid ground has to be under both his sides. A corner he only clips on the way down is not a place
     // to be put back on.
     const solid = (x: number) => Math.abs(this.groundBelow(x, p.y) - p.y) < 0.25;
