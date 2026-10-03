@@ -148,6 +148,10 @@ async function open(name, options, query = '?debug') {
   await sleep(500);
   check('no shader was compiled during play', (await info()).programs === programs, `${programs} programs`);
 
+  // Sound (plan §6.8): it starts with the first key, and the run and the jump above made some.
+  const heard = await info();
+  check('sound runs after the first key, and effects were played', heard.sound === true && heard.soundsPlayed > 0, `${heard.soundsPlayed} effects`);
+
   // The pause panel and the play style (plan §4.1, §6.10). Esc opens it, the game stands still, and what is
   // chosen is still chosen after the page is loaded again.
   await page.keyboard.press('Escape');

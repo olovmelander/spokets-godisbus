@@ -1,5 +1,7 @@
 import { Timer } from 'three';
 import { Game } from './app/game';
+import { createAudio } from './audio/audio';
+import { cuesFor, newCueMemory, type Heard } from './audio/cues';
 import { testbana } from './content/chapters/testbana';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
@@ -93,6 +95,23 @@ function start(): void {
   const controls = byId('controls');
   const hint = byId('hint');
 
+  // Sound starts with the first tap, click or key: browsers allow it no earlier (plan §6.8).
+  const audio = createAudio();
+  audio.setEffects(settings.sound ? 1 : 0);
+  for (const type of ['pointerup', 'click', 'keydown', 'touchend']) window.addEventListener(type, () => audio.unlock());
+  const memory = newCueMemory();
+  let playTime = 0;
+  const hear = (): Heard => {
+    const p = game.sim.curr;
+    return {
+      time: playTime, mode: p.mode, grounded: p.grounded, x: p.x, y: p.y, vx: p.vx, vy: p.vy,
+      candy: game.sim.candyCount, checkpoint: game.sim.checkpoint, bubbles: game.sim.bubbles,
+      atGoal: game.sim.flags.has('goal'), moving: game.sim.movers.filter((m) => m.t < 1).length,
+      shadows: game.sim.drips.map((d) => d.shadow), drips: game.sim.drips,
+    };
+  };
+  let heard = hear();
+
   let playedFrom = performance.now();
   /** Writes the game as it stands: at every big candy, on pause, and when the page is hidden. */
   function writeSave(): void {
@@ -149,6 +168,7 @@ function start(): void {
       settings = next;
       game.sim.options = simOptions(settings);
       game.tempo = tempoOf(settings);
+      audio.setEffects(settings.sound ? 1 : 0);
       writeSave();
     },
     onStuck() {
@@ -199,7 +219,7 @@ function start(): void {
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
       }),
-      info: () => ({ ...view.info() }),
+      info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played }),
     };
   }
 
@@ -222,6 +242,10 @@ function start(): void {
       let edges = input.consume();
       if (bench && !bench.done) ({ held, edges } = bench.play(game.sim.curr, time));
       game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld }, edges);
+      playTime += dt * game.tempo;
+      const now = hear();
+      for (const cue of cuesFor(heard, now, memory)) audio.play(cue);
+      heard = now;
     }
     // A big candy is a safe place: the game saves there (plan §3.3, rule 4).
     if (game.sim.checkpoint !== savedAt) {

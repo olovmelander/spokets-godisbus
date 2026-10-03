@@ -242,8 +242,23 @@
   - **Stage 1's list is built** (plan §7.3): the controller, the glitter bubble, the lace and the swing in
     both modes, the candy trail, the camera, one puzzle, one exciting sequence, both play styles and the
     robot. **What is left of Stage 1 is H2:** Olov's own twenty minutes on touch, in greybox. See "Next".
-  - **Not drawn yet:** Elof's poses for climbing, hauling, pushing and looking down; the lace's sag; any
-    sound. The numbers in `src/sim/constants.ts` are starting values, to be tuned from H2.
+  - **Not drawn yet:** Elof's poses for climbing, hauling, pushing and looking down; the lace's sag. The
+    numbers in `src/sim/constants.ts` are starting values, to be tuned from H2.
+- **Stage 2 has begun** with what needs no art (Olov, 3 October: "I want the full game plan implemented").
+  - **Sound effects** (branch `stage-2-sound`; plan §5.8, §6.8). What you hear: steps, a jump and a landing,
+    candy that steps up a scale when collected in a row, a chime at a big candy, the glitter bubble, the
+    lace, letting go, hauling up a ledge, the slide, a drop's splash and the knock when it lands on him,
+    wood knocks when a thing moves on its rail, and a little fanfare at the end. The pause panel has a
+    *Ljud* switch.
+    - Every effect is made in code (`src/audio/audio.ts`), so sound costs no download. There are no voices
+      and no recordings.
+    - Which sound a moment asks for is worked out from two looks at the game a frame apart
+      (`src/audio/cues.ts`), with no audio in it, so it is tested without ears (`tests/unit/cues.test.ts`).
+    - Sound starts with the first tap, click or key, and an iPhone's silent switch silences it.
+    - **No one has listened to it.** The session can't hear. The levels and the tunes are a first guess for
+      Olov's ears; say what is too loud, too shrill or missing.
+    - **Not yet:** music and its layers, ambience, footsteps per surface, the characters' wordless sounds,
+      separate volumes for music and effects, and *Ljud även i tyst läge*.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
@@ -326,6 +341,7 @@
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects. Only what needs no art, until the look and the characters are decided. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs

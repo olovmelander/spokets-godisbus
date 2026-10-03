@@ -16,7 +16,7 @@ function fakeStorage(initial: Record<string, string> = {}) {
 describe('the two play styles', () => {
   it('Äventyr leaves the jumps and the swing to the player', () => {
     const settings = settingsFor('aventyr');
-    expect(settings).toEqual({ style: 'aventyr', swingHelp: false, easyJumps: false, slower: false });
+    expect(settings).toEqual({ style: 'aventyr', swingHelp: false, easyJumps: false, slower: false, sound: true });
     expect(simOptions(settings)).toEqual({ swingHelp: false, easyJumps: false, stopAtEdges: false, gentle: false });
     expect(tempoOf(settings)).toBe(1);
   });

@@ -27,6 +27,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
     swingHelp: byId<HTMLInputElement>('setSwingHelp'),
     easyJumps: byId<HTMLInputElement>('setEasyJumps'),
     slower: byId<HTMLInputElement>('setSlower'),
+    sound: byId<HTMLInputElement>('setSound'),
   };
   const ask = byId('stuckAsk');
   let settings = settingsFor('aventyr');
@@ -41,12 +42,13 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
     switches.swingHelp.checked = settings.swingHelp;
     switches.easyJumps.checked = settings.easyJumps;
     switches.slower.checked = settings.slower;
+    switches.sound.checked = settings.sound;
   }
 
   // Choosing a style sets its switches; each switch can then be changed on its own (plan §4.1).
   for (const [style, button] of Object.entries(styles) as [PlayStyle, HTMLButtonElement][]) {
     button.addEventListener('click', () => {
-      settings = { ...settingsFor(style), slower: settings.slower };
+      settings = { ...settingsFor(style), slower: settings.slower, sound: settings.sound };
       draw();
       handlers.onSettings(settings);
     });
