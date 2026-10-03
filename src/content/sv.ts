@@ -69,6 +69,10 @@ export const sv = {
   lines: {
     follow1: 'Följ godisspåret, Elof.',
     // The extra chapter, Byn: a Saturday later, on the way to the candy shop.
+    // At the party, when what he found under the deck is given back (plan §4.8).
+    clipBack: 'Mitt hårspänne! Tack, lillebror!',
+    marbleBack: 'Kula! Min kula!',
+    coinBack: 'En krona! Den får du behålla.',
     again: 'En stjärna till. Nu handlar vi!',
     lake: 'En sjö! Mitt på gatan.',
     shop: 'Framme! Det luktar godis.',

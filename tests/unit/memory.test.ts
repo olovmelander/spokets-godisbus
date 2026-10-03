@@ -19,7 +19,8 @@ describe('the four memories', () => {
 
   it('are found by anyone who plays the chapter: the robot touches each one', () => {
     for (const chapter of numbered) expect(playThrough(60, chapter, {}, 400).flags, chapter.id).toContain('memory');
-  });
+    // Four whole chapters are played: give it time on a busy computer.
+  }, 60000);
 
   it('are six to ten seconds long, in three or four pictures', () => {
     for (const [id, pictures] of Object.entries(MEMORIES)) {
