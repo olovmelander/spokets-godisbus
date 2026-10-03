@@ -2066,16 +2066,15 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
   branch, the planning branch, became the default. `main` has now been created from it, with a placeholder page
   in `site/` and a minimal workflow (`deploy.yml`) that publishes that folder. Stage 0a replaces the workflow
   with the one above. From now on, work goes through pull requests into `main`.
-- **Olov's one-time steps** (a session can't change repository settings):
+- **Olov's one-time steps** (a session can't change repository settings). Steps 1–3 were done on 3 October:
   1. *Settings → General → Default branch*: switch to `main`.
   2. *Settings → Pages → Build and deployment → Source: GitHub Actions*. `configure-pages` can't switch this
      with the default token.
   3. Run the workflow again: *Actions → Deploy to GitHub Pages → Run workflow*. If it says `main` is not allowed
      to deploy to `github-pages`, add `main` under *Settings → Environments → github-pages → Deployment
      branches*, and run it once more.
-  - Until step 2 is done, every push to `main` also starts GitHub's own branch build, which publishes the
-    repository root through Jekyll (the README as the front page, without `noindex`). Whichever deployment
-    finishes last is what the site shows.
+  - Before step 2, every push to `main` also started GitHub's own branch build, which published the repository
+    root through Jekyll (the README as the front page, without `noindex`), racing the workflow.
   4. Before the family's models exist (Stage 0c): create the private repository `spokets-godisbus-familj`, and a
      fine-grained token that can only read it.
   5. Add two Actions secrets: `FAMILY_ASSETS_TOKEN` (that token) and `PRIVACY_DENYLIST` (the words in gate 8).

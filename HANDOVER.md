@@ -7,21 +7,14 @@
     takes in Olov's answers of 3 October (plan §8).
   - `main` created from the planning branch, with a placeholder page in `site/` and a minimal Pages workflow,
     `.github/workflows/deploy.yml`. Its first run deployed successfully (run 37121042291).
+  - Olov set the default branch to `main` and the Pages source to GitHub Actions (3 October).
 - **Not built:** any game code. The repository holds documents, the placeholder page and its workflow.
 
 ## Next
 
-1. **Olov: three clicks in GitHub** (this session's GitHub access can't change settings or start workflows):
-   1. *Settings → General → Default branch*: switch to `main`.
-   2. *Settings → Pages → Build and deployment → Source*: *GitHub Actions*. Pages is still set to *Deploy from a
-      branch*: when `main` was created on 3 October, GitHub's own branch build ran next to our workflow, finished
-      last, and most likely published the README (built with Jekyll, without `noindex`) instead of the placeholder.
-      Every push to `main` repeats that race until the source is switched.
-   3. *Actions → Deploy to GitHub Pages → Run workflow*, on `main`, so the placeholder is what's published.
-   - If that run says `main` is not allowed to deploy to `github-pages`: *Settings → Environments → github-pages →
-     Deployment branches*, add `main`, and run it again. (The first run deployed from `main` without trouble.)
-   - Then the placeholder is at `https://olovmelander.github.io/spokets-godisbus/`: `noindex`, and linked from
-     nowhere.
+1. **GitHub settings: done (3 October).** The default branch is `main`, and Pages builds from GitHub Actions, so
+   the placeholder at `https://olovmelander.github.io/spokets-godisbus/` (`noindex`, linked from nowhere) is what
+   every push to `main` publishes.
 2. **Olov answers the rest of plan §0.** The ★ questions come first: the scale (Q2), the new secret, which Pappa
    reads (Q3), and the surprise and dates (Q5). Q16 asks about Olov's computer, and Q17 which device Elof plays on
    most.
