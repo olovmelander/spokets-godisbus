@@ -156,6 +156,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(helper.group);
   const hiddenSweets = buildHidden(chapter);
   scene.add(hiddenSweets.group);
+  const glance = buildGlance(chapter);
+  scene.add(glance.group);
   const things = (chapter.spots ?? []).map((spot) => ({ spot, prop: spotProp(spot) }));
   // What only stands about: drawn like a thing to use, and gone when its flag is set.
   const decor = (chapter.decor ?? []).map((def, i) => ({
@@ -362,6 +364,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     helper.update(help.step, help.at, x, y, curr.standY, clock, dt);
     hiddenSweets.update(flags, clock, dt);
+    glance.update(flags, ghostState, clock, dt);
     glitter.update(curr.bubble, x, y, clock);
     // He hangs by his hands, his body along the lace.
     const hang = curr.hook ? Math.atan2(curr.hook.x - x, curr.hook.y - (y + 0.5)) : 0;
@@ -890,6 +893,47 @@ function buildGlints(chapter: ChapterData) {
       glint.position.y = spot.at.y + 1.5 + Math.sin(clock * 2 + i) * 0.1;
       glint.rotation.y = clock * 2;
     }
+  }
+  return { group, update };
+}
+
+/**
+ * A look (plan §3.4, the blink): while the chapter's beat lasts, a dotted line goes from the ghost's eyes to
+ * what it looks at, and a soft ring pulses there. First one place, then the next. It has no words: what it
+ * wants is told by what it looks at.
+ */
+function buildGlance(chapter: ChapterData) {
+  const group = new Group();
+  const def = chapter.glance;
+  if (!def) return { group, update: () => {} };
+  const glow = new MeshBasicMaterial({ color: '#fff0b0', transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, fog: false });
+  const ring = new Mesh(new TorusGeometry(0.62, 0.07, 10, 36), glow);
+  const DOTS = 12;
+  const dots = new InstancedMesh(new SphereGeometry(0.055, 8, 6), glow, DOTS);
+  dots.instanceMatrix.setUsage(DynamicDrawUsage);
+  dots.frustumCulled = false;
+  ring.frustumCulled = false;
+  group.add(ring, dots);
+  const place = new Object3D();
+  let since = 0;
+  function update(flags: ReadonlySet<string>, ghost: { x: number; y: number } | null, clock: number, dt: number): void {
+    const on = flags.has(def!.from) && !flags.has(def!.until) && ghost !== null;
+    since = on ? since + dt : 0;
+    glow.opacity = on ? 0.55 + 0.35 * Math.sin(clock * 9) : 0;
+    if (!on) return;
+    const at = def!.at[Math.min(def!.at.length - 1, Math.floor((since / def!.seconds) * def!.at.length))]!;
+    ring.position.set(at.x, at.y, at.z);
+    ring.scale.setScalar(1 + 0.12 * Math.sin(clock * 9));
+    // The line grows out from its eyes towards what it looks at.
+    const part = (since / def!.seconds) * def!.at.length;
+    const grown = Math.min(1, (part - Math.floor(part)) / 0.35);
+    for (let i = 0; i < DOTS; i++) {
+      const t = ((i + 1) / (DOTS + 1)) * grown;
+      place.position.set(ghost!.x + (at.x - ghost!.x) * t, ghost!.y + 0.75 + (at.y - ghost!.y - 0.75) * t, 0.2 + (at.z - 0.2) * t);
+      place.updateMatrix();
+      dots.setMatrixAt(i, place.matrix);
+    }
+    dots.instanceMatrix.needsUpdate = true;
   }
   return { group, update };
 }

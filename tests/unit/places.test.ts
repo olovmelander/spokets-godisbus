@@ -69,7 +69,7 @@ describe('the places', () => {
     expect(COURSES['prolog']!.shelf!.filled).toBeUndefined();
     expect(COURSES['epilog']!.shelf!.filled).toBe(true);
     // The Saturday bag stands beside the ghost until the ghost takes it.
-    expect(COURSES['prolog']!.decor).toContainEqual({ look: 'bag', at: { x: 7.8, y: 0 }, until: 'paint' });
+    expect(COURSES['prolog']!.decor).toContainEqual({ look: 'bag', at: { x: 7.8, y: 0 }, until: 'blink' });
   });
 
   it('keeps the picture wide while he is big', () => {

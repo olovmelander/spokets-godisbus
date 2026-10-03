@@ -39,7 +39,8 @@ describe('Prolog, Lördagsmorgon, in greybox', () => {
     it(`the robot plays it from the kitchen table to the star at ${fps} Hz`, () => {
       const result = playThrough(fps, prolog, {}, 200);
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
-      expect(did(result.flags)).toEqual(['paint', 'star', 'goal']);
+      // Two eyes, the blink he watches, and the star.
+      expect(did(result.flags)).toEqual(['eye', 'paint', 'blink', 'star', 'goal']);
       expect(result.said).toEqual(['tonight']);
       expect(result.bubbles).toBe(0);
       expect(result.missed).toEqual([]);
@@ -50,8 +51,8 @@ describe('Prolog, Lördagsmorgon, in greybox', () => {
     expect(onLugnt(prolog)).toEqual({ goal: true, hops: 0, bubbles: 0, candy: prolog.candy.length });
   });
 
-  it('has no candy trail until the eyes are painted: the bag has not torn yet', () => {
-    for (const c of prolog.candy) expect(c.after, `the candy at ${c.x}`).toBe('paint');
+  it('has no candy trail until the ghost has run off with the bag: it has not torn yet', () => {
+    for (const c of prolog.candy) expect(c.after, `the candy at ${c.x}`).toBe('blink');
     const sim = new Sim(prolog);
     run(sim, 12, { x: 1 });
     expect(sim.candyCount).toBe(0);
@@ -64,10 +65,70 @@ describe('Prolog, Lördagsmorgon, in greybox', () => {
     expect(sim.curr.x).toBeLessThan(42.4);
     // The ghost has not moved from the table.
     expect(sim.ghost!.x).toBeCloseTo(6.6, 1);
-    // And the star can't be taken before the eyes are painted.
+    // And the star can't be taken before the ghost has run.
     const early = new Sim({ ...prolog, spawn: { x: 41, y: -0.79 } });
     run(early, 0.3);
     expect(early.curr.verb).toBeNull();
+  });
+});
+
+describe('the blink: a beat of the story that takes time', () => {
+  /** Elof at the ghost, having painted one eye. */
+  const atTheGhost = () => {
+    const sim = new Sim({ ...prolog, spawn: { x: 4.6, y: 0.01 } });
+    run(sim, 0.2);
+    sim.step({ ...idle, act: true });
+    run(sim, 0.1);
+    return sim;
+  };
+
+  it('takes two presses to paint the eyes', () => {
+    const sim = atTheGhost();
+    expect(sim.flags.has('eye')).toBe(true);
+    expect(sim.flags.has('paint')).toBe(false);
+    expect(sim.curr.word).toBe('paintGhost');
+    sim.step({ ...idle, act: true });
+    expect(sim.flags.has('paint')).toBe(true);
+  });
+
+  it('holds him while the ghost looks at the shelf and the bag, and then lets it run', () => {
+    const sim = atTheGhost();
+    sim.step({ ...idle, act: true });
+    const x = sim.curr.x;
+    // He watches: the stick does nothing, and the ghost has not moved.
+    run(sim, 2.2, { x: 1, hop: true, hopHeld: true });
+    expect(sim.flags.has('blink')).toBe(false);
+    expect(sim.curr.x).toBeCloseTo(x, 1);
+    expect(sim.curr.grounded).toBe(true);
+    expect(sim.ghost!.x).toBeCloseTo(6.6, 1);
+    // Then it is over: the bag is gone with the ghost, the trail lies there, and he can run.
+    run(sim, 0.6);
+    expect(sim.flags.has('blink')).toBe(true);
+    run(sim, 1.5, { x: 1 });
+    expect(sim.curr.x).toBeGreaterThan(x + 2);
+    expect(sim.ghost!.x).toBeGreaterThan(8);
+    expect(sim.candyCount).toBeGreaterThan(0);
+  });
+
+  it('is short: a beat that holds him is never longer than three seconds', () => {
+    for (const part of STORY) for (const beat of part.later ?? []) if (beat.hold) expect(beat.seconds, `${part.id}: ${beat.flag}`).toBeLessThanOrEqual(3);
+  });
+
+  it('begins again from its start in a game saved in the middle of it', () => {
+    const sim = new Sim({ ...prolog, spawn: { x: 4.6, y: 0.01 } }, {}, { flags: ['eye', 'paint'] });
+    run(sim, 2.2);
+    expect(sim.flags.has('blink')).toBe(false);
+    run(sim, 0.6);
+    expect(sim.flags.has('blink')).toBe(true);
+  });
+
+  it('shows what the ghost looks at: the empty place on the shelf, and then the bag', () => {
+    const shelf = prolog.shelf!;
+    const bag = prolog.decor!.find((d) => d.look === 'bag')!;
+    expect(prolog.glance!.at[0]).toMatchObject({ x: shelf.x - 3.6 });
+    expect(prolog.glance!.at[1]).toMatchObject({ x: bag.at.x });
+    expect(prolog.glance!.seconds).toBe(prolog.later![0]!.seconds);
+    expect(bag.until).toBe('blink');
   });
 });
 

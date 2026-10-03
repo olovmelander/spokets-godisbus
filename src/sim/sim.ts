@@ -157,6 +157,10 @@ export class Sim {
   readonly help: HelpState = { step: 0, at: null, verb: null, word: null };
   /** How long the helper has been at it, how long nothing has happened, and what "something happened" is read from. */
   private helpFor = 0;
+  /** For each beat that takes time: the step at which its time began, once it has. */
+  private readonly began = new Map<string, number>();
+  /** Whether he stands and watches such a beat now. */
+  private watching = false;
   private idle = 0;
   private progress = -1;
   private furthest = -Infinity;
@@ -320,6 +324,8 @@ export class Sim {
 
   step(input: StepInput): void {
     this.prev = this.curr;
+    // While he watches a beat of the story, the stick and the buttons do nothing.
+    if (this.watching) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
     // Free, he may take hold of something this step: a hose, a ledge, or the hose below him.
     if (this.state.kind === 'free') this.reach(input);
 
@@ -495,6 +501,15 @@ export class Sim {
   /** The beats whose moment has come: each is told once, and remembered as a flag. */
   private tell(): void {
     for (const set of this.chapter.sets ?? []) if (set.when.every((flag) => this.flags.has(flag))) this.flags.add(set.flag);
+    // Beats that take time: each begins when its first flag is set, and ends by setting its own.
+    this.watching = false;
+    for (const beat of this.chapter.later ?? []) {
+      if (this.flags.has(beat.flag) || !this.flags.has(beat.after)) continue;
+      const from = this.began.get(beat.flag) ?? this.steps;
+      this.began.set(beat.flag, from);
+      if ((this.steps - from) * STEP >= beat.seconds) this.flags.add(beat.flag);
+      else if (beat.hold) this.watching = true;
+    }
     for (const beat of this.chapter.beats ?? []) {
       const flag = `beat:${beat.id}`;
       if (this.flags.has(flag)) continue;
