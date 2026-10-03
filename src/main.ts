@@ -5,6 +5,7 @@ import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
 import { chapterNumber, courseFor, nextAfter } from './content/chapters';
 import { album, foundFlag } from './content/kinds';
+import { albumHtml } from './ui/album';
 import { mapSvg, mapState } from './ui/map';
 import { createMemory } from './ui/memory';
 import { sv } from './content/sv';
@@ -360,7 +361,10 @@ function start(): void {
     // The album: what earlier chapters hold in the save, and what this one holds now.
     if (game.sim.flags.size !== flagsSeen) {
       flagsSeen = game.sim.flags.size;
-      hud.stickers(album({ ...save.flags, [chapter.id]: [...game.sim.flags] }));
+      const found = album({ ...save.flags, [chapter.id]: [...game.sim.flags] });
+      hud.stickers(found);
+      // The album's page, in the pause panel: in the story only.
+      byId('pauseAlbum').innerHTML = mapState(chapter.id) ? albumHtml(found) : '';
     }
     for (; told < game.sim.said.length; told++) {
       const beat = beats.get(game.sim.said[told]!);

@@ -597,6 +597,14 @@
       for the picture (`surfaces`), so the sound and the picture can't disagree (`footingAt` in
       `src/audio/cues.ts`). The test course has no place and keeps its plain step.
     - Tested without ears (`tests/unit/cues.test.ts`). **No one has listened to it.**
+  - **The sticker album** (branch `stage-2-album`; plan §4.3). What you see: the pause panel has a page,
+    *Godisalbumet*, under Moas karta: sixteen places in four rows, one row for each chapter. A kind he has
+    found is a sticker in its colours with its name; one still out there is an empty ring with a question
+    mark, so the names stay a surprise. Above them: "3 av 16 sorter".
+    - It is read from the save, like the stickers on the bag (`album` in `src/content/kinds.ts`), and drawn
+      by `src/ui/album.ts`. A course outside the story has no album. Tests: `tests/unit/album.test.ts` (3).
+    - **Not yet:** the album's photos (game renders kept on the device, plan §6.9) and the album as the
+      credits in the epilogue; the golden geléhallon as its last piece.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
