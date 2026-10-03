@@ -1,4 +1,25 @@
-import type { ChapterData, Mode, PlaceId, SurfaceKind } from '../sim/types';
+import type { ChapterData, Mode, PlaceId, Speaker, SurfaceKind } from '../sim/types';
+
+/**
+ * How each one sounds when a line of theirs comes up: a few wordless syllables, never a word, and nothing
+ * recorded (plan §5.8, §0 Q9). `pitch` is in Hz, `steps` are semitones above it, one to a syllable, and
+ * `pace` is seconds from one syllable to the next. The ghost has no voice at all: it knocks, wood on wood.
+ */
+export interface Voice {
+  wave: 'sine' | 'triangle' | 'wood';
+  pitch: number;
+  steps: number[];
+  pace: number;
+}
+
+export const VOICES: Record<Speaker, Voice> = {
+  elof: { wave: 'triangle', pitch: 520, steps: [0, 3, 5, 3], pace: 0.1 },
+  mamma: { wave: 'sine', pitch: 350, steps: [4, 2, 0, 2], pace: 0.13 },
+  pappa: { wave: 'triangle', pitch: 175, steps: [0, 0, 3], pace: 0.16 },
+  moa: { wave: 'triangle', pitch: 440, steps: [0, 4, 2, 5, 7], pace: 0.09 },
+  bertil: { wave: 'sine', pitch: 620, steps: [0, 2], pace: 0.14 },
+  spoket: { wave: 'wood', pitch: 300, steps: [0, 0, 5], pace: 0.15 },
+};
 
 /** What he walks on, for the sound of his steps (plan §5.8). */
 export type Footing = 'plank' | 'moss' | 'grass' | 'squelch' | 'stone' | 'gravel' | 'shavings';
@@ -38,6 +59,12 @@ export type Cue =
   | { kind: 'gust' }
   /** A hidden candy of a new kind. */
   | { kind: 'found' }
+  /** Someone's line comes up: their wordless sound. */
+  | { kind: 'say'; who: Speaker }
+  /** The ghost hops on to its next place: a knock and a creak, louder the nearer it is. */
+  | { kind: 'ghostHop'; near: number }
+  /** The helper knocks twice: look here. */
+  | { kind: 'knocks' }
   | { kind: 'goal' };
 
 /** What the cues are worked out from: the little of the game's state that can be heard. */
@@ -68,6 +95,13 @@ export interface Heard {
   found?: number;
   /** What he stands on. */
   footing?: Footing | undefined;
+  /** Who has said each line so far, in order. */
+  said?: readonly Speaker[];
+  /** Which of its places the ghost is at or hopping to, and how far from him it is, in EL. */
+  ghostPerch?: number;
+  ghostAway?: number;
+  /** How far the helper has come: from 2 on it knocks. */
+  helpStep?: number;
 }
 
 /** What has to be remembered between frames: the candy streak and the stride. */
@@ -141,5 +175,8 @@ export function cuesFor(before: Heard, now: Heard, memory: CueMemory): Cue[] {
   for (let i = before.notes ?? 0; i < (now.notes ?? 0); i++) cues.push({ kind: 'note', step: i });
   if (now.wind && !before.wind) cues.push({ kind: 'gust' });
   if ((now.found ?? 0) > (before.found ?? 0)) cues.push({ kind: 'found' });
+  for (const who of (now.said ?? []).slice(before.said?.length ?? 0)) cues.push({ kind: 'say', who });
+  if ((now.ghostPerch ?? 0) > (before.ghostPerch ?? 0)) cues.push({ kind: 'ghostHop', near: Math.max(0, 1 - (now.ghostAway ?? 20) / 14) });
+  if ((now.helpStep ?? 0) >= 2 && (before.helpStep ?? 0) < 2) cues.push({ kind: 'knocks' });
   return cues;
 }

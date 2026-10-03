@@ -297,8 +297,8 @@
     - Sound starts with the first tap, click or key, and an iPhone's silent switch silences it.
     - **No one has listened to it.** The session can't hear. The levels and the tunes are a first guess for
       Olov's ears; say what is too loud, too shrill or missing.
-    - **Not yet:** the characters' wordless sounds and *Ljud även i tyst läge*. Music, ambience and
-      footsteps per surface came later: see "Music and the air of each place" below.
+    - Music, ambience, footsteps per surface, the characters' wordless sounds and *Ljud även i tyst läge*
+      came later: see "Music and the air of each place" below, and the entries after it.
   - **The ghost keeps its distance** (branch `stage-2-ghost`; plan §4.2, §4.5). What you see: the ghost is
     on the course from the start, always a little ahead. It stands and taps its foot until Elof comes
     within 4 EL, then hops on to its next place in an arc. After the swing it lets him come close: Använd
@@ -617,6 +617,15 @@
     - Tests: `tests/unit/save.test.ts`, and the browser test switches on *Vänsterhänt* and finds it saved.
     - **Not yet:** *Följ fingret*, volume sliders, the graphics level, the key reference, and more than
       one player. *Ljud även i tyst läge* has not been tried on an iPhone.
+  - **Wordless sounds** (branch `stage-2-babble`; plan §5.8, §0 Q9). What you hear: when someone's line
+    comes up in a bubble, a few syllables in their own voice, never a word: Pappa low and slow, Mamma
+    gentle, Elof bright, Moa quick, Bertil two small notes. The ghost has no voice: it knocks, wood on
+    wood, when it "speaks" and each time it hops on to its next place, louder the nearer it is. The
+    helper knocks twice when it shows him something.
+    - The voices are a table of pitches (`VOICES` in `src/audio/cues.ts`), played as plain tones. Nothing
+      is recorded and nothing is speech, real or synthetic: the rule in plan §0 Q9 stands.
+    - Tested without ears (`tests/unit/cues.test.ts`). **No one has listened to it.**
+    - **Not yet:** Elof's gasp and giggle, and his two-note call.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
