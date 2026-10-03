@@ -117,6 +117,11 @@ export const RIDE_CORRIDOR = 1.6;
 /** ...and this fast. */
 export const RIDE_STEER = 3;
 
+/** A thing to touch is used when he comes this close: a memory in a curl of shaving. */
+export const TOUCH_REACH = 0.7;
+/** A rolling cone bowls him over when it comes this close to his legs. A jump clears it. */
+export const ROLLER_REACH = 0.3;
+
 /** A fall longer than this ends in the glitter bubble; a shorter one is a soft landing (plan §4.2). */
 export const FALL_LIMIT = 4;
 /** The bubble floats him back in about this long. */

@@ -100,8 +100,9 @@ export function mountShell(root: HTMLElement): void {
          <h2 id="endTitle"></h2>
          <div class="rows" id="endRows"></div>
          <p class="count"><b id="endCount"></b> ${sv.end.candy}</p>
-         <p class="next">${sv.end.next}</p>
-         <button class="wide go" id="endAgain" type="button">${PLAY}<span>${sv.end.again}</span></button>
+         <p class="next" id="endNext">${sv.end.next}</p>
+         <button class="wide go" id="endOnward" type="button" hidden>${PLAY}<span>${sv.end.onward}</span></button>
+         <button class="wide" id="endAgain" type="button"><span>${sv.end.again}</span></button>
        </div>
      </div>
      <div class="message" id="message" hidden>

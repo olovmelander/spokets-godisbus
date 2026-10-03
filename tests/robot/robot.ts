@@ -35,6 +35,7 @@ export interface Decision {
  *   from the ground only: in the air after letting go the hook is still in reach, and Använd would take it
  *   straight back;
  * - falling drops it reads from their shadows: it waits before one whose drop would land on it;
+ * - a cone rolling up from behind it jumps, so that the cone passes under;
  * - on a ride it steers towards the next candy.
  */
 export function decide(game: Game, chapter: ChapterData): Decision {
@@ -73,11 +74,23 @@ export function decide(game: Game, chapter: ChapterData): Decision {
   const placed = (m: MoverState) => m.stop === m.def.stops.length - 1;
   const inTheWay = movers.some((m) => placed(m) && m.x - m.def.width / 2 - p.x > 0 && m.x - m.def.width / 2 - p.x < 1 && m.y + m.def.height > p.y + 0.3);
   const wall = inTheWay || heightAt(chapter, p.x + 1.0) - heightAt(chapter, p.x + 0.6) > 0.4;
-  // A gap with a plank across it is no gap.
+  // A gap with a plank across it is no gap. A gap has a far side above its bottom, and not far below him: on
+  // a slope that is a little lower than where he stands.
   const bridged = movers.some((m) => Math.abs(m.y + m.def.height - p.y) < 0.3 && m.x - m.def.width / 2 < p.x + 0.4 && m.x + m.def.width / 2 > p.x + 2);
-  const gap = !bridged && heightAt(chapter, p.x + 0.35) < p.y - 0.3 && heightAt(chapter, p.x + 2.2) > p.y - 0.3;
+  const below = heightAt(chapter, p.x + 0.35);
+  const across = heightAt(chapter, p.x + 2.2);
+  const gap = !bridged && below < p.y - 0.3 && across > below + 0.5 && across > p.y - 1;
   const leadsOn = (chapter.climbs ?? []).some((c) => Math.abs(c.top - p.y) < 0.3 && c.x > p.x && c.x - p.x < 1);
-  return { x: 1, y: 0, ahead: p.grounded && (wall || gap), offered: (p.verb === 'lace' && p.grounded) || (p.verb === 'slide' && leadsOn) };
+  // A cone rolling up from behind: jump so that it passes under. On Lugnt it misses him as long as he runs.
+  const behind = (from: number, to: number) =>
+    !game.sim.options.gentle && game.sim.rollers.some((r) => r.on && Math.abs(r.y - p.y) < 1.5 && p.x - r.x > from && p.x - r.x < to);
+  let pit = false;
+  for (let d = 0.5; d <= 3.4 && !pit; d += 0.2) pit = heightAt(chapter, p.x + d) < p.y - 2.5;
+  // Where a running jump would land in a pit, it stands and jumps on the spot, and runs on when the cone has passed.
+  if (pit && p.grounded && behind(0, 5)) return { ...wait, ahead: Math.abs(p.vx) < 0.3 && behind(1.4, 3) };
+  if (pit && !p.grounded && Math.abs(p.vx) < 1 && behind(-0.8, 5)) return wait;
+  const cone = behind(0.95, 1.5);
+  return { x: 1, y: 0, ahead: p.grounded && (wall || gap || cone), offered: (p.verb === 'lace' && p.grounded) || (p.verb === 'slide' && leadsOn) };
 }
 
 /** Plays a course from its start until its end, or for `limit` seconds, and says how it went. */
@@ -100,7 +113,7 @@ export function playThrough(fps: number, chapter: ChapterData, options: SimOptio
   const missed = game.sim.collected.flatMap((got, i) => (got ? [] : [i]));
   return {
     goal: game.sim.flags.has('goal'), seconds: frames * dt, steps: game.sim.steps, end: game.sim.curr, lowest,
-    candy: game.sim.candyCount, missed, bubbles: game.sim.bubbles, knocks: game.sim.knocks, said: [...game.sim.said],
+    candy: game.sim.candyCount, missed, bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, said: [...game.sim.said],
     flags: [...game.sim.flags], checkpoint: game.sim.checkpoint, x: game.sim.curr.x,
   };
 }

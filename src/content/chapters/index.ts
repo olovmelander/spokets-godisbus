@@ -1,22 +1,38 @@
 import type { ChapterData } from '../../sim/types';
 import { garden } from './garden';
+import { granskog } from './granskog';
 import { testbana } from './testbana';
 
 /**
  * Every course the game can play, by id. The test course is not part of the story: it stays as the place
  * where every move can be tried, and as what the page shows while no chapter is released.
  */
-export const COURSES: Record<string, ChapterData> = { testbana, garden };
+export const COURSES: Record<string, ChapterData> = { testbana, garden, granskog };
+
+/** The chapters of the story, in order. Each end card leads to the next one that is built. */
+export const STORY: ChapterData[] = [garden, granskog];
+
+/** The chapter after this one, or null when it is the last one built. */
+export function nextAfter(id: string): ChapterData | null {
+  const at = STORY.findIndex((chapter) => chapter.id === id);
+  return at >= 0 ? (STORY[at + 1] ?? null) : null;
+}
+
+/** "Kapitel N": a chapter's number among the story's chapters, or 0 for a course outside the story. */
+export function chapterNumber(id: string): number {
+  return STORY.findIndex((chapter) => chapter.id === id) + 1;
+}
 
 /**
  * Which course a page plays (plan §4.9).
  * - `?course=<id>` plays that one.
- * - `?dev` plays the newest chapter in work, released or not.
+ * - `?dev` plays the story's chapters, released or not: the one the saved game is in, or the first.
  * - Otherwise: the test course, until a chapter is released. A release is `RELEASED_CHAPTER` in `world.ts`,
  *   and then the title and the saved game decide.
  */
-export function courseFor(params: URLSearchParams): ChapterData {
+export function courseFor(params: URLSearchParams, saved: string | null = null): ChapterData {
   const asked = params.get('course');
   if (asked && COURSES[asked]) return COURSES[asked];
-  return params.has('dev') ? garden : testbana;
+  if (!params.has('dev')) return testbana;
+  return STORY.find((chapter) => chapter.id === saved) ?? garden;
 }

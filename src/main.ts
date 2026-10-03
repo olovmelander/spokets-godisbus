@@ -2,7 +2,7 @@ import { Timer } from 'three';
 import { Game } from './app/game';
 import { createAudio } from './audio/audio';
 import { cuesFor, newCueMemory, type Heard } from './audio/cues';
-import { courseFor } from './content/chapters';
+import { chapterNumber, courseFor, nextAfter } from './content/chapters';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
 import { tierFromQuery } from './render/quality';
@@ -61,7 +61,10 @@ function storage(): Storage | null {
 
 function start(): void {
   const at = debugStart();
-  const course = courseFor(params);
+  // The saved game (plan §6.9). ?bench plays without one, and a debug start position never writes one.
+  const store = createStore(benchOn ? null : storage());
+  const loaded = store.load();
+  const course = courseFor(params, loaded.kind === 'save' ? loaded.save.chapter : null);
   const chapter = at ? { ...course, spawn: at } : course;
   mountShell(document.body);
   const canvas = byId<HTMLCanvasElement>('game');
@@ -74,9 +77,6 @@ function start(): void {
     return;
   }
 
-  // The saved game (plan §6.9). ?bench plays without one, and a debug start position never writes one.
-  const store = createStore(benchOn ? null : storage());
-  const loaded = store.load();
   if (loaded.kind === 'unreadable') {
     showMessage(sv.saveUnreadable, sv.startOver, () => {
       store.clear();
@@ -256,7 +256,7 @@ function start(): void {
     window.__godis = {
       state: () => ({
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
-        bubbles: game.sim.bubbles, knocks: game.sim.knocks, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
+        bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
         course: chapter.id, said: [...game.sim.said], title: title.open,
       }),
       info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played }),
@@ -265,6 +265,15 @@ function start(): void {
 
   // ?bench plays the course by itself for 30 seconds and then shows numbers to paste into a session.
   const bench = benchOn ? createBench(30, chapter) : null;
+
+  /** "Nästa kapitel": the saved game moves on to the next chapter's start, and the page loads it. */
+  function goOn(id: string): void {
+    writeSave();
+    save = { ...save, chapter: id, checkpoint: -1 };
+    store.write(save);
+    again = true;
+    location.reload();
+  }
 
   /** "Spela igen": this course from its start, with an empty bag. The settings stay. */
   function playAgain(): void {
@@ -310,7 +319,7 @@ function start(): void {
     view.render({
       prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: paused ? 0 : dt, atGoal,
       collected: game.sim.collected, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
-      flags: game.sim.flags, ghost: game.sim.ghost,
+      flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers,
     });
     hud.candy(game.sim.candyCount);
     hud.verb(game.sim.curr.verb, game.sim.curr.word);
@@ -323,7 +332,9 @@ function start(): void {
     if (atGoal) endFor += paused ? 0 : dt;
     if (endFor > 1.4 && !benchOn) {
       writeSave();
-      hud.end(chapter.id === 'testbana' ? sv.end.course : sv.end.chapter, game.sim.candyCount, playAgain);
+      const number = chapterNumber(chapter.id);
+      const next = params.has('dev') ? nextAfter(chapter.id) : null;
+      hud.end(number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined);
     }
 
     if (!shown) {
