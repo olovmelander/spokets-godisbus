@@ -437,6 +437,7 @@ export class Sim {
 
   /** The beats whose moment has come: each is told once, and remembered as a flag. */
   private tell(): void {
+    for (const set of this.chapter.sets ?? []) if (set.when.every((flag) => this.flags.has(flag))) this.flags.add(set.flag);
     for (const beat of this.chapter.beats ?? []) {
       const flag = `beat:${beat.id}`;
       if (this.flags.has(flag)) continue;

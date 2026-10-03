@@ -479,6 +479,8 @@ body {
   gap: 12px;
 }
 
+/* A button has its own display, which would show it although it is hidden. */
+#endCard [hidden],
 .title [hidden] {
   display: none !important;
 }

@@ -1,7 +1,7 @@
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
-  MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PointLight, Quaternion,
+  Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PlaneGeometry, PointLight, Quaternion,
   Scene, Shape, SphereGeometry, TorusGeometry, UnsignedByteType, Vector2, Vector3, WebGLRenderer,
 } from 'three';
 import { createAssets } from './assets';
@@ -109,7 +109,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.background = sky;
   scene.fog = new Fog(sky, 14, 44);
   // Lights are created once and never toggled: every change would compile a new shader (plan §6.2).
-  scene.add(new HemisphereLight('#e2efff', '#6a5338', 1.25));
+  const hemisphere = new HemisphereLight('#e2efff', '#6a5338', 1.25);
+  scene.add(hemisphere);
   const sun = new DirectionalLight('#ffe1ae', 2.4);
   sun.position.set(-6, 5, 8);
   scene.add(sun);
@@ -143,6 +144,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const mist = buildMist(chapter, scene.fog as Fog);
   const follower = buildFollower(chapter);
   const wind = buildWind(chapter);
+  const night = buildNight(chapter, sky, hemisphere, sun);
+  scene.add(night.group);
   scene.add(water.group, ...tussockMeshes, mist.group, follower.group, wind.group);
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
@@ -300,6 +303,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const centreY = look.y + viewHeight * look.zoom * (0.5 - GROUND_FROM_BOTTOM);
     camera.position.set(look.x, centreY, distance * look.zoom);
     camera.lookAt(look.x, centreY, 0);
+    night.update(flags, look.x, centreY, clock, dt);
 
     // The stand-in Elof: turned a little towards the camera, legs swinging with the distance he covers.
     // On a hose he turns his back to the camera, as a climber does.
@@ -500,6 +504,53 @@ function buildWater(chapter: ChapterData) {
   });
   function update(clock: number): void {
     for (const [i, w] of bodies.entries()) w.body.position.y = w.y + Math.sin(clock * 1.3 + i) * 0.03;
+  }
+  return { group, update };
+}
+
+/**
+ * Night and the northern lights (plan §3.4, the final), in greybox. When the chapter's flag is set, the sky
+ * darkens over a few seconds, the light turns low and blue, and three green ribbons wave far behind the
+ * scene. The ribbons are there from the start, unseen, so that no shader is compiled when they flare.
+ */
+function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLight, sun: DirectionalLight) {
+  const group = new Group();
+  if (!chapter.night) return { group, update: () => {} };
+  const after = chapter.night.after;
+  const day = sky.clone();
+  const dark = new Color('#14244a');
+  const lights = { hemisphere: hemisphere.intensity, sun: sun.intensity };
+  const ribbons = [0, 1, 2].map((i) => {
+    // A curtain of light: bright near its lower edge, fading upwards and towards its ends, and hanging in folds.
+    const geometry = new PlaneGeometry(60, 7 + i * 2, 24, 4);
+    const at = geometry.getAttribute('position');
+    const glow: number[] = [];
+    const rows = [0, 0.22, 0.55, 1, 0];
+    for (let v = 0; v < at.count; v++) {
+      const column = v % 25;
+      const ends = Math.sin((Math.PI * column) / 24);
+      const light = rows[Math.floor(v / 25)]! * ends;
+      glow.push(0.25 * light, light, 0.55 * light);
+      at.setY(v, at.getY(v) + Math.sin(column * 0.8 + i * 2) * 0.9 + Math.sin(column * 0.31 + i) * 1.4);
+    }
+    geometry.setAttribute('color', new Float32BufferAttribute(glow, 3));
+    const material = new MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0, fog: false, depthWrite: false, blending: AdditiveBlending, side: DoubleSide });
+    const ribbon = new Mesh(geometry, material);
+    ribbon.frustumCulled = false;
+    group.add(ribbon);
+    return ribbon;
+  });
+  let k = 0;
+  function update(flags: ReadonlySet<string>, x: number, y: number, clock: number, dt: number): void {
+    k = Math.min(1, Math.max(0, k + (flags.has(after) ? dt : -dt) / 3));
+    sky.copy(day).lerp(dark, k);
+    hemisphere.intensity = lerp(lights.hemisphere, 0.75, k);
+    sun.intensity = lerp(lights.sun, 0.7, k);
+    for (const [i, ribbon] of ribbons.entries()) {
+      ribbon.position.set(x + Math.sin(clock * 0.21 + i * 2.1) * 5, y + 9 + i * 2.5 + Math.sin(clock * 0.5 + i) * 0.5, -20 - i * 3);
+      ribbon.rotation.z = 0.08 * Math.sin(clock * 0.33 + i * 1.7) + (i - 1) * 0.07;
+      (ribbon.material as MeshBasicMaterial).opacity = k * (0.5 + 0.2 * Math.sin(clock * 0.9 + i * 2.4));
+    }
   }
   return { group, update };
 }

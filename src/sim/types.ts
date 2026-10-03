@@ -273,6 +273,10 @@ export interface ChapterData {
   tussocks?: Tussock[];
   /** Where gusts sweep across. */
   gusts?: Gust[];
+  /** A flag that is set once all of some others are: he has shared with everyone. */
+  sets?: { flag: string; when: string[] }[];
+  /** For the picture: night falls and the northern lights flare when this flag is set. */
+  night?: { after: string };
   /** For the picture: the mist rolls in when this flag is set, and he carries a light. */
   mist?: { after: string };
   /**

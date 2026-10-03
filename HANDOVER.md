@@ -397,6 +397,28 @@
       tower at 18:00, the red house, the four headlamps and the jay); the summit cairn (C4); memory 4; the
       ghost's picture bubble of the lonely trägubbe; the ghost shown being boosted up. The crane is drawn as
       Kapitel 1's paper plane. The robot needs under a minute.
+  - **The final, Norrsken, in greybox** (branch `stage-2-final`; plan §3.4). **Open it with
+    `?dev&course=norrsken`**, or play on from Kapitel 4's end card with `?dev`.
+    - What you play, on the summit by the old pine, every step with Använd: *Sänk snöret* at the crack,
+      then *Dra* twice, and the first trägubbe stands on the rock; *Plocka* a crowberry, and *Måla ögon* on
+      the figure; *Ta påsen* from the ghost; then **Dela godiset**: *Ge trägubben*, *Ge spöket* and *Ge
+      lavskrikan*, in the order he likes; *Smaka* the golden candy: night falls, the northern lights flare,
+      and Pappa says his line in four bubbles; and *Gå hem*, the walk down that can't fail. The card says
+      *Finalen klar!*
+    - It can't be walked past: the summit ends in the mountainside. Walking, he stops at the edge; a runner
+      is brought back by the glitter bubble. The crack is too narrow to fall into.
+    - **New for it:** a flag that is set once several others are (`ChapterData.sets`: he has shared with
+      everyone); night and the northern lights (`ChapterData.night`); a part of the story with a name
+      instead of a number (`sv.end.named`).
+    - **A fault mended:** on the last chapter built, the end card showed *Nästa kapitel* although there was
+      none, and the button did nothing.
+    - Tests: `tests/robot/norrsken.test.ts` (11). The robot plays it at 30, 60 and 144 Hz: it now taps
+      Använd as a player does, walks back to a thing it can use behind it, and walks over a narrow crack.
+    - **Not built yet in the final:** which candy each friend gets (he chooses only whom, and in which
+      order: the plan's "tap a candy, then a friend" needs its own screen, shared with the epilogue's party);
+      Elof growing back; the trägubbe's blink; the ghost setting the figure by the pine; the headlamps, the
+      family, Moa's jacket and Bertil's cap; the two carvings in his hands on the way home. The way home is
+      drawn as Kapitel 1's paper plane.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
@@ -479,7 +501,7 @@
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4 in greybox. Only what needs no art, until the look and the characters are decided. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4 and the final in greybox. Only what needs no art, until the look and the characters are decided. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs
