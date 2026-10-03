@@ -10,7 +10,7 @@ through the yard, the spruce forest, past the brook and over the misty bog, up t
   - the technology: Three.js r186 (`WebGLRenderer`), Vite, Blender and GitHub Pages;
   - the delivery stages.
 
-  Its §0 holds the open questions.
+  Its §0 holds Olov's answers, and the two questions that are still open.
 
 Working on the game in a Claude Code session? Read [`CLAUDE.md`](CLAUDE.md) and [`HANDOVER.md`](HANDOVER.md)
 first.
