@@ -29,9 +29,9 @@ export interface Hud {
   /**
    * Shows the card at the end of a chapter: its title, and the candy in rows of ten with the number.
    * With `onNext` it leads on to the next chapter; without, it says that the story goes on later, or `closing`
-   * where the story is over.
+   * where the story is over. `code` is the next chapter's three words, to open it on another device.
    */
-  end(title: string, count: number, onAgain: () => void, onNext?: () => void, closing?: string, hidden?: readonly { kind: string; found: boolean }[]): void;
+  end(title: string, count: number, onAgain: () => void, onNext?: () => void, closing?: string, hidden?: readonly { kind: string; found: boolean }[], code?: string | null): void;
 }
 
 /** A bubble stays for this long, and a little longer for each letter. */
@@ -132,7 +132,7 @@ export function createHud(doc: Document, total: number): Hud {
       bubble.hidden = false;
       left = BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER;
     },
-    end(title, count, onAgain, onNext, closing, hidden) {
+    end(title, count, onAgain, onNext, closing, hidden, code) {
       if (ended) return;
       ended = true;
       byId('endTitle').textContent = title;
@@ -151,6 +151,10 @@ export function createHud(doc: Document, total: number): Hud {
         row.className = 'row';
         for (let k = i; k < Math.min(count, i + 10); k++) row.appendChild(doc.createElement('i'));
         rows.appendChild(row);
+      }
+      if (code) {
+        byId('endCodeWords').textContent = code;
+        byId('endCode').hidden = false;
       }
       byId('endAgain').onclick = onAgain;
       const onward = byId('endOnward');

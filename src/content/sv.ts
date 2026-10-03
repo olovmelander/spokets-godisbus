@@ -144,6 +144,25 @@ export const sv = {
   // The candy bag in the corner. Screen readers hear the name and then the number.
   bag: 'Godispåsen',
 
+  // Chapter codes (plan §6.9): three plain words that open a chapter's start on another device. No names.
+  codes: {
+    garden: ['DAGG', 'SNÖRE', 'BRÄDA'],
+    granskog: ['GRAN', 'KOTTE', 'MOSSA'],
+    myren: ['TUVA', 'SPÅNG', 'TRANA'],
+    berget: ['TALL', 'STEN', 'VIND'],
+    norrsken: ['TOPP', 'KVÄLL', 'STJÄRNA'],
+    epilog: ['KNIV', 'SPÅN', 'LÖRDAG'],
+  } as Record<string, readonly [string, string, string]>,
+  code: {
+    // On a chapter's card, over the next chapter's three words.
+    next: 'Kod till nästa kapitel',
+    // On the title.
+    have: 'Jag har en kod',
+    hint: 'Skriv de tre orden',
+    open: 'Öppna',
+    wrong: 'Den koden finns inte. Titta på kortet en gång till!',
+  },
+
   // The title and the first start.
   start: {
     begin: 'Börja',

@@ -28,7 +28,7 @@ if (shown.has('pause') || shown.has('stuck')) {
   if (shown.has('stuck')) byId('stuckBtn').click();
 }
 if (shown.has('title') || shown.has('saved') || shown.has('styles')) {
-  const title = createTitle(document, { onStart: () => title.hide(), onStartOver: () => {} });
+  const title = createTitle(document, { onStart: () => title.hide(), onStartOver: () => {}, onCode: () => title.hide() });
   title.show(shown.has('saved'));
   if (shown.has('styles')) title.showStyles();
 }

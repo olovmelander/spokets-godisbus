@@ -626,6 +626,21 @@
       is recorded and nothing is speech, real or synthetic: the rule in plan §0 Q9 stands.
     - Tested without ears (`tests/unit/cues.test.ts`). **No one has listened to it.**
     - **Not yet:** Elof's gasp and giggle, and his two-note call.
+  - **Chapter codes** (branch `stage-2-codes`; plan §6.9, and a MUST in §7.4). What you see: the card at a
+    chapter's end shows three words under *Nästa kapitel*, "Kod till nästa kapitel: GRAN KOTTE MOSSA". On
+    the title, *Jag har en kod* opens a field; the right three words open that chapter's start, on any
+    device. So a game begun on the tablet can go on on the phone, and a save a browser has lost is not the
+    end of the story.
+    - Six codes, one for each part after the prologue; the words are in `sv.codes`. Small letters, commas,
+      another order and a keyboard without å, ä and ö are all right. A wrong code says "Den koden finns
+      inte. Titta på kortet en gång till!"
+    - A code holds the chapter only: no candy, no stickers. On a device that has a save, what it holds of
+      the other chapters is kept.
+    - Tests: `tests/unit/codes.test.ts` (5), and the browser test types a wrong code and a right one, and
+      reads the code off Kapitel 1's card.
+    - **When a chapter is released** (`RELEASED_CHAPTER`): a code must not open a chapter that is not
+      released. Today the story is only played with `?dev`, where every part is open, so there is no such
+      check yet. Add it in the PR that makes the plain address play the story.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate counts both
