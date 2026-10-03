@@ -76,8 +76,25 @@
   - The game shows the ghost on the test course where its pack exists. `scripts/build-assets.mjs` also packs
     `art/private/baked/`, and the view asks the manifest before it loads `private/ghost`. In CI and on the public
     site the course has no ghost. The ghost turns towards Elof, sways and taps a foot.
-  - **Not yet:** Olov's verdict on the likeness, the wood texture, the split in the hem at the back, the two knife
-    cuts above the bag, the rest of its moves (waddle, hop, dance, point, grab), and Elof himself.
+  - **Not yet for the ghost:** Olov's verdict on the likeness, the wood texture, the split in the hem at the back,
+    the two knife cuts above the bag, and the rest of its moves (waddle, hop, dance, point, grab).
+  - **Elof's first model** (branch `stage-0c-elof`, stacked on `stage-0c-ghost`) is built the same way, by
+    `art/private/elof/elof.py`, with his five pictures beside him in Blender: the player sheet, the siblings
+    sheet, the poster and the two photos of his real clothes.
+    - He is a doll of 19 rigid parts, each with its origin at a joint, and the parts are named after the joints of
+      the animation library (`pelvis`, `spine_01`, `head`, `upperarm_l`, `thigh_l`, `calf_l`, `foot_l` ...), so its
+      clips can drive him once they are retargeted. He is not skinned yet.
+    - From his pictures: the spiky golden fringe swept up and forward, blue eyes, rosy cheeks and freckles; the
+      light-blue pin-striped shirt with its band collar, placket, buttons and two chest pockets, sleeves rolled to
+      the elbows; dark jeans rolled at the ankle; brown laced boots; the olive backpack with its leather patch.
+    - His face is made of sticker meshes, as plan §5.6 says. Only the resting face exists.
+    - In the game he takes the stand-in's place where the private pack has him. A walk, a run and a jump are
+      posed in code (`poseDoll` in `src/render/view.ts`) until the library's clips arrive.
+    - None of him is committed. His renders are in `docs/shots/_work/elof/`.
+  - **Both characters together cost about 55 draw calls,** because every colour is its own material. One baked
+    texture per character brings that down to a handful, and is the next step for both.
+  - **Not yet for Elof:** Olov's verdict, the library's skeleton and clips (the library has to be downloaded to
+    `art/vendor/` first), the other nine expressions, and a skinned body if the joints show too much up close.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): HTML and JS are gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). Whether it compresses `.wasm` and `.glb` can be read once
   this branch is deployed; the size gate counts them at full size until then.
@@ -90,16 +107,11 @@
 
 ## Next
 
-1. **Olov gives the next session its Blender tools** (plan §5.6, §6.14). After the first restart the `blender`
-   server still failed with "Connection closed": `uv`'s folder is in the user PATH, but Claude Code's process
-   had started with the old one, so `uvx` wasn't found.
-   1. quit VS Code completely (every window; signing out of Windows and in again is the sure way), and start it;
-   2. keep Blender open with the add-on connected, and approve the `blender` server when Claude Code asks;
-   3. ask the session what the Blender scene holds. It should list the cube, the camera and the light.
+1. **The Blender tools work** in a session on Olov's computer (since the second restart on 3 October).
    - In the add-on's panel, keep only *Poly Haven* ticked. Never tick *Hunyuan*.
    - **Update the add-on when convenient:** run `uvx mcp-for-blender install-addon`, then restart Blender (or switch
-     the add-on off and on in Preferences) and press *Start MCP Server*. If the new panel shows a telemetry consent
-     box, leave it unticked (`CLAUDE.md`).
+     the add-on off and on in Preferences) and press *Start MCP Server*. Then ask the session for the add-on's
+     status: `telemetry_consent` must be false (see "Notes for sessions that drive Blender").
 2. **Olov's checkpoint for Stage 0a** (plan §7.3): once `stage-0a-assets` is merged and deployed, open
    `https://olovmelander.github.io/spokets-godisbus/?bench` on each device you have. It plays by itself for half a
    minute and then shows text. Copy that text into the next session.
@@ -155,7 +167,7 @@
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
-| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: the ghost's first model, in two rounds against its pictures. Elof is left, and so is H1b. |
+| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs
 
@@ -169,16 +181,24 @@
 
 ## Notes for sessions that drive Blender
 
+- **Telemetry.** The add-on that was installed in Olov's Blender had its own consent setting switched on, as its
+  default. On 3 October a session switched it off (`telemetry_consent = False` in the add-on's preferences) and
+  saved Blender's preferences. Nothing was uploaded by these sessions in any case: with `DISABLE_TELEMETRY=true`
+  the server's code returns before every upload. But a server started without that variable, from another
+  program, would have uploaded prompts, code, screenshots and scene data while the setting was on. After any
+  update of the add-on, read `telemetry_consent` in its status again, and it must be false.
 - The server's safe mode lets a script use `bpy`, `bmesh`, `mathutils` and pure-Python standard modules. It
-  rejects `globals()`, `open`, `exec`, and `os`, `sys` and anything that reaches files, the network or other
-  programs. Saving, rendering, import and export through Blender's own operators are allowed.
+  rejects `globals()`, `open`, `exec`, `getattr` with a computed name, and `os`, `sys` and anything that reaches
+  files, the network or other programs. Saving, rendering, import and export through Blender's own operators are allowed.
 - So a script can't read another file: send its text. `scripts/bake/export.py` is written for that, with `OUT`
   set in a first line.
 - A `.blend` stores the full path it was saved to, which includes the Windows user name. `big-candy.blend` is
   therefore not committed; it is rebuilt from `art/blender/big-candy.py`. Decide how to handle this before the
   first hand-modelled public `.blend` is committed.
-- The session of 3 October had no Blender tools of its own, and called the server through a small MCP client in
-  its scratchpad, started exactly as `.mcp.json` declares it. A session that has the tools doesn't need that.
+- A long script is easier to keep in a file than to pass through the tool. The session of 3 October ran its
+  generator files through a small MCP client in its scratchpad, started exactly as `.mcp.json` declares the
+  server, and used the tools directly for short scripts, the status and screenshots.
+- Reference pictures go into the scene as image empties, in a collection that is hidden from renders.
 
 ## Senare (wishes for a later release)
 
@@ -196,8 +216,9 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
 
 3. **Is the small boy on Pappa's lap in `family-pappa-viewpoint.jpg` Elof?** Little Elof in the memories is
    modelled on him, flat cap and all (plan §2.4). The default: yes.
-4. **Is the ghost right?** Look at it in Blender, between its pictures, or open the four renders in
-   `docs/shots/_work/ghost/`. Say yes, or give up to three corrections (plan §7.3, H1b).
+4. **Are the ghost and Elof right?** Open `art/private/ghost/ghost.blend` and `art/private/elof/elof.blend` in
+   Blender, where each stands between its pictures, or look at the renders in `docs/shots/_work/ghost/` and
+   `docs/shots/_work/elof/`. For each: say yes, or give up to three corrections (plan §7.3, H1b).
 5. **Where should the ghost's files live?** It is Pappa's carving, not a person, and a drawing of it is already
    on the public loading card. In the public repository it is simplest, but git history is permanent. In the
    private repository it can always be taken down, like the family's models. The default until you answer:

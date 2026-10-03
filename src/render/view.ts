@@ -131,6 +131,31 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       models.push('private/ghost');
     })
     .catch((error) => console.error('The ghost could not be loaded.', error));
+
+  // Elof, modelled in Blender after his sheets and photos. He too is only here where the private pack is;
+  // everywhere else the stand-in built in code plays his part.
+  let doll: Doll | null = null;
+  assets
+    .manifest()
+    .then((manifest) => (manifest.packs.private?.files['elof.glb'] ? assets.model('private', 'elof') : null))
+    .then((model) => {
+      if (!model) return;
+      // Exported from Blender he faces +z, and the stand-in faces +x. A quarter turn makes them agree.
+      model.rotation.y = Math.PI / 2;
+      elof.group.clear();
+      elof.group.add(model);
+      const part = (name: string) => model.getObjectByName(name) ?? null;
+      doll = {
+        spine: part('spine_01'),
+        head: part('head'),
+        thighs: [part('thigh_l'), part('thigh_r')],
+        calves: [part('calf_l'), part('calf_r')],
+        upperArms: [part('upperarm_l'), part('upperarm_r')],
+        lowerArms: [part('lowerarm_l'), part('lowerarm_r')],
+      };
+      models.push('private/elof');
+    })
+    .catch((error) => console.error('Elof could not be loaded; the stand-in stays.', error));
   const elof = buildElof();
   scene.add(elof.group);
 
@@ -187,6 +212,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const moving = Math.abs(curr.vx) > 0.05 || !curr.grounded;
     elof.legLeft.rotation.z = moving ? swing : 0;
     elof.legRight.rotation.z = moving ? -swing : 0;
+    if (doll) poseDoll(doll, curr, stride, dt);
     if (curr.grounded && !wasGrounded) squash = 0.82; // a soft landing
     wasGrounded = curr.grounded;
     squash += (1 - squash) * ease(12, dt);
@@ -231,6 +257,52 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       roles,
     }),
   };
+}
+
+/** The joints of the Elof made in Blender. They are named after the animation library's skeleton (plan §5.6). */
+interface Doll {
+  spine: Object3D | null;
+  head: Object3D | null;
+  thighs: (Object3D | null)[];
+  calves: (Object3D | null)[];
+  upperArms: (Object3D | null)[];
+  lowerArms: (Object3D | null)[];
+}
+
+/**
+ * Poses the doll in code until the library's clips drive it: a walk and a run that follow the distance he
+ * covers, and a jump. He faces +z in his own space, so a joint swings forward with a negative turn round x.
+ */
+function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number): void {
+  const quick = ease(18, dt);
+  const bend = (joint: Object3D | null, angle: number) => {
+    if (joint) joint.rotation.x += (angle - joint.rotation.x) * quick;
+  };
+  const speed = clamp(Math.abs(player.vx) / RUN_SPEED, 0, 1);
+  if (!player.grounded) {
+    // In the air: one knee up, the other leg trailing, arms thrown forward.
+    bend(doll.thighs[0]!, -0.75);
+    bend(doll.thighs[1]!, 0.3);
+    bend(doll.calves[0]!, 0.9);
+    bend(doll.calves[1]!, 0.5);
+    bend(doll.upperArms[0]!, -0.9);
+    bend(doll.upperArms[1]!, -1.3);
+    bend(doll.lowerArms[0]!, -0.5);
+    bend(doll.lowerArms[1]!, -0.3);
+    bend(doll.spine, 0.06);
+    return;
+  }
+  const reach = speed > 0.01 ? 0.22 + 0.62 * speed : 0;
+  for (const [index, side] of [[0, 1], [1, -1]] as const) {
+    const swing = Math.sin(stride) * side;
+    bend(doll.thighs[index]!, -swing * reach);
+    // The knee bends while the leg comes forward from behind.
+    bend(doll.calves[index]!, Math.max(0, Math.cos(stride) * side) * reach * 1.25);
+    bend(doll.upperArms[index]!, swing * reach * 0.9);
+    bend(doll.lowerArms[index]!, speed > 0.01 ? -(0.25 + 0.6 * speed) : -0.06);
+  }
+  bend(doll.spine, 0.14 * speed);
+  bend(doll.head, -0.08 * speed);
 }
 
 function startState(chapter: ChapterData): PlayerState {

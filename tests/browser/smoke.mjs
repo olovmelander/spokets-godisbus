@@ -117,6 +117,10 @@ async function open(name, options, query = '?debug') {
   if (manifest.packs.private) {
     const withGhost = await until(info, (i) => i.models.includes('private/ghost'), 30000);
     check('the ghost from the private pack is loaded', withGhost.models.includes('private/ghost'), withGhost.models.join(', '));
+    if (manifest.packs.private.files['elof.glb']) {
+      const withElof = await until(info, (i) => i.models.includes('private/elof'), 30000);
+      check('Elof from the private pack is loaded', withElof.models.includes('private/elof'), withElof.models.join(', '));
+    }
   } else {
     console.log('  --   no private pack in this build: the course has no ghost');
   }
