@@ -70,7 +70,7 @@ export interface Spot {
   verb: 'turn' | 'take' | 'call' | 'give';
   /** A flag that has to be set before it can be used. A thing on a rail sets `placed:<its id>` once in place. */
   needs?: string;
-  /** It is used by coming close, with no button: a memory he touches. */
+  /** It is used by coming close, with no button: a memory he touches. With a ride, the ride begins by itself. */
   touch?: boolean;
   /** The word on the button where the verb's own is too plain: a key of `sv.verbs`, as in "Ropa på Moa". */
   word?: string;
@@ -108,6 +108,25 @@ export interface Ride {
   time: number;
   /** How far the stick moves him from the middle of its path. Left out: 1.6 EL. A boat hardly at all. */
   corridor?: number;
+}
+
+/**
+ * A stretch of open ground where gusts sweep across (plan §4.7, E4). Each is announced a second ahead. One
+ * that catches him in the open takes him back to the last boulder; in a boulder's lee it passes him by.
+ * Nothing falls. The ground of the stretch is level and has no gap.
+ */
+export interface Gust {
+  /** The open stretch, and the height of its ground. */
+  from: number;
+  to: number;
+  y: number;
+  /** The time between two gusts, in seconds, and how long one blows. */
+  every: number;
+  length: number;
+  /** When a gust begins, counted from the chapter's start: its place in the rhythm. */
+  first: number;
+  /** Where the boulders stand. */
+  shelters: number[];
 }
 
 /**
@@ -252,6 +271,8 @@ export interface ChapterData {
   water?: { from: number; to: number; y: number }[];
   /** The soft tussocks. */
   tussocks?: Tussock[];
+  /** Where gusts sweep across. */
+  gusts?: Gust[];
   /** For the picture: the mist rolls in when this flag is set, and he carries a light. */
   mist?: { after: string };
   /**

@@ -114,6 +114,16 @@ export function createAudio(): Audio {
       case 'bigCandy':
         for (const [i, semitones] of [0, 4, 7, 12].entries()) tone('sine', note(semitones, 659.25), note(semitones, 659.25), 0.5, 0.16, i * 0.09);
         break;
+      case 'note': {
+        // A round stone rings like a bell, with a little of the octave above it.
+        const pitch = note(SCALE[cue.step % SCALE.length]!, 392);
+        tone('sine', pitch, pitch, 0.9, 0.2);
+        tone('sine', pitch * 2, pitch * 2, 0.5, 0.05);
+        break;
+      }
+      case 'gust':
+        puff('bandpass', 260, 900, 1.3, 0.14, 0, 0.6);
+        break;
       case 'goal':
         for (const [i, semitones] of [0, 4, 7, 12, 16].entries()) tone('triangle', note(semitones, 523.25), note(semitones, 523.25), 0.45, 0.18, i * 0.11);
         break;

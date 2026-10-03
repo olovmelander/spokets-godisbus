@@ -28,6 +28,7 @@ export const sv = {
     callMamma: 'Ropa på Mamma',
     takeLight: 'Ta lysklubban',
     climbOn: 'Kliv upp',
+    lift: 'Lyft',
     give: 'Ge',
     pick: 'Plocka',
     rideAnts: 'Åk med myrorna',
@@ -55,6 +56,7 @@ export const sv = {
     heja: 'Heja lillebror!',
     thanked: 'Spöket tackade mig!',
     spangen: 'På myren går vi på spången.',
+    fetch: 'Spöket vill hämta hem min trägubbe!',
   },
 
   // The card at a chapter's end.

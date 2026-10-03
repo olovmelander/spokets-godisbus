@@ -9,6 +9,7 @@ import { CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER, MOVE_TIME, MOVER_RE
 import { DOWN_TIME, DROP_FALL, DROP_FROM, DROP_RADIUS, DROP_WARNING } from './constants';
 import { GHOST_CATCH, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_STEER, SPOT_REACH } from './constants';
 import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REACH } from './constants';
+import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
@@ -97,6 +98,16 @@ export interface TussockState {
   sunk: number;
 }
 
+/** A stretch with gusts: what the next gust is doing. */
+export interface GustState {
+  /** 0 while it is calm; while a gust blows, how far through it is, up to 1. */
+  blow: number;
+  /** In the second before a gust: how near it is, from 0 to 1. */
+  warn: number;
+  /** Seconds until the next gust begins; 0 while one blows. */
+  until: number;
+}
+
 /** A drip and its next drop. */
 export interface DripState {
   x: number;
@@ -140,6 +151,13 @@ export class Sim {
   readonly rollers: RollerState[];
   /** How many times a cone has bowled him over. */
   bowled = 0;
+  /** The stretches with gusts, in the chapter's order. */
+  readonly gusts: GustState[];
+  /** How many times a gust has caught him in the open. */
+  blown = 0;
+  /** Whether a gust has hold of him now, and which gust caught him last: each is counted once. */
+  private windy = false;
+  private caughtBy = -1;
   /** The soft tussocks, in the chapter's order. */
   readonly tussocks: TussockState[];
   /** How many times a tussock has sunk under him. */
@@ -246,6 +264,7 @@ export class Sim {
 
     this.drips = (chapter.drips ?? []).map((drip) => ({ x: drip.at.x, y: drip.at.y, shadow: 0, height: -1 }));
     this.rollers = (chapter.rollers ?? []).map((r) => ({ x: r.from.x, y: r.from.y, on: false, radius: r.radius, since: r.needs === undefined ? 0 : -1 }));
+    this.gusts = (chapter.gusts ?? []).map(() => ({ blow: 0, warn: 0, until: 0 }));
     this.tussocks = (chapter.tussocks ?? []).map((t) => ({ x: t.x, y: t.y, width: t.width, sunk: 0 }));
     this.tussockBodies = this.tussocks.map((t) => {
       const body = this.world.createBody({ type: 'kinematic', position: new Vec2(t.x, t.y - 1) });
@@ -253,6 +272,11 @@ export class Sim {
       return body;
     });
     for (const flag of start.flags ?? []) this.flags.add(flag);
+    // A ride he had not finished when the game was saved begins again: he starts before it.
+    for (const spot of chapter.spots ?? []) {
+      const ride = (chapter.rides ?? []).find((r) => r.id === spot.ride);
+      if (ride && ride.to.x > spawn.x + 0.5) this.flags.delete(spot.id);
+    }
     for (const mover of this.movers) if (mover.stop === mover.def.stops.length - 1) this.flags.add(`placed:${mover.def.id}`);
     // What was said before the place he starts at is not said again.
     for (const beat of chapter.beats ?? []) if (beat.at !== undefined && beat.at < spawn.x - 0.5) this.flags.add(`beat:${beat.id}`);
@@ -302,6 +326,7 @@ export class Sim {
     this.moveMovers();
     this.rain();
     this.roll();
+    this.blow();
     this.sink();
     this.haunt();
     this.tell();
@@ -347,6 +372,31 @@ export class Sim {
       if (!near || (this.options.gentle && Math.abs(p.vx) > 0.5)) continue;
       this.bowled++;
       this.toCheckpoint();
+    }
+  }
+
+  /**
+   * One step for the gusts. They keep time by the step count. One that finds him in the open, away from
+   * every boulder, has hold of him until it has passed or he is back in a boulder's lee.
+   */
+  private blow(): void {
+    this.windy = false;
+    for (const [i, def] of (this.chapter.gusts ?? []).entries()) {
+      const gust = this.gusts[i]!;
+      const every = Math.max(1, Math.round(def.every / STEP));
+      const length = Math.round(def.length / STEP);
+      const since = this.steps - Math.round(def.first / STEP);
+      const at = ((since % every) + every) % every;
+      gust.blow = at < length ? (at + 1) / length : 0;
+      gust.until = at < length ? 0 : (every - at) * STEP;
+      gust.warn = gust.until > 0 && gust.until <= GUST_WARNING ? 1 - gust.until / GUST_WARNING : 0;
+      const p = this.curr;
+      if (gust.blow === 0 || this.state.kind !== 'free' || p.x <= def.from || p.x >= def.to) continue;
+      if (def.shelters.some((s) => Math.abs(p.x - s) <= GUST_SHELTER)) continue;
+      this.windy = true;
+      const which = i * 1e6 + Math.floor(since / every);
+      if (which !== this.caughtBy) this.blown++;
+      this.caughtBy = which;
     }
   }
 
@@ -587,12 +637,21 @@ export class Sim {
 
     // Använd near a hook: the lace flies to it and hooks on by itself, with no aiming (plan §4.2).
     const hook = this.hookInReach();
-    // Använd at the top of a hose: he slides down it.
-    // A thing to touch is used by coming close.
+    // A thing to touch is used by coming close. One with a ride carries him off from the ground.
     for (const spot of this.spots) {
       if (!spot.touch || this.flags.has(spot.id) || (spot.needs !== undefined && !this.flags.has(spot.needs))) continue;
-      if (Math.hypot(spot.at.x - p.x, spot.at.y - p.y) <= TOUCH_REACH + 0.5) this.flags.add(spot.id);
+      if (Math.hypot(spot.at.x - p.x, spot.at.y - p.y) > TOUCH_REACH + 0.5) continue;
+      const ride = spot.ride === undefined ? undefined : (this.chapter.rides ?? []).find((r) => r.id === spot.ride);
+      if (ride && !p.grounded) continue;
+      this.flags.add(spot.id);
+      if (!ride) continue;
+      this.carry(true);
+      this.state = { kind: 'ride', ride, offset: 0, t: 0 };
+      this.verb = null;
+      this.word = null;
+      return;
     }
+    // Använd at the top of a hose: he slides down it.
     const usable = (c: Climb) => c.needs === undefined || this.flags.has(c.needs);
     const below = p.grounded ? this.climbs.find((c) => usable(c) && Math.abs(c.x - p.x) <= SLIDE_REACH && Math.abs(c.top - p.y) <= 0.25) : undefined;
     // Använd at a thing on a rail: Dra with the lace by its ring, or Knuffa from beside it.
@@ -740,6 +799,8 @@ export class Sim {
     const carried = this.thrown && dir !== -Math.sign(speed);
     if (!carried) speed = speed < target ? Math.min(target, speed + change) : Math.max(target, speed - change);
     if (dir !== 0) this.facing = dir as 1 | -1;
+    // A gust in the open takes him back the way he came, whatever the stick says. On *Lugnt* it only slows him.
+    if (this.windy) speed = this.options.gentle ? Math.min(speed, RUN_SPEED * GUST_SLOW) : -GUST_SPEED;
 
     // Walking, he never steps over an edge with a longer drop than he can land: he stops there and looks
     // down. At a run he goes over, so a running jump needs no special care (plan §4.2).

@@ -129,6 +129,15 @@ export const RISE_TIME = 0.8;
 /** The glitter bubble catches him when his boots come this close to water: before he touches it. */
 export const WATER_REACH = 0.1;
 
+/** A gust is announced this long before it blows: the lichen bends, and a line shows where it will come. */
+export const GUST_WARNING = 1;
+/** Caught in the open, he is taken back at this speed, to the last boulder. */
+export const GUST_SPEED = 5;
+/** He is in a boulder's lee within this far of it. */
+export const GUST_SHELTER = 0.8;
+/** On *Lugnt* a gust only slows him: to this share of his running speed. */
+export const GUST_SLOW = 0.5;
+
 /** A fall longer than this ends in the glitter bubble; a shorter one is a soft landing (plan §4.2). */
 export const FALL_LIMIT = 4;
 /** The bubble floats him back in about this long. */

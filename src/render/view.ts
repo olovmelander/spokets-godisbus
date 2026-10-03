@@ -57,6 +57,8 @@ export interface Frame {
   rollers: readonly { x: number; y: number; on: boolean; radius: number }[];
   /** The soft tussocks, in the chapter's order: where the top of each is now. */
   tussocks: readonly { x: number; y: number }[];
+  /** The stretches with gusts, in the chapter's order. */
+  gusts: readonly { blow: number; warn: number }[];
 }
 
 export interface View {
@@ -134,12 +136,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const rain = buildRain(chapter.drips?.length ?? 0);
   const cones = buildCones(chapter.rollers?.length ?? 0);
   scene.add(...moverMeshes, rain.group, cones.mesh);
-  scene.add(buildGround(chapter), buildTrunks(chapter), buildClimbs(chapter), buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
+  const climbs = buildClimbs(chapter);
+  scene.add(buildGround(chapter), buildTrunks(chapter), climbs.group, buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
   const water = buildWater(chapter);
   const tussockMeshes = buildTussocks(chapter);
   const mist = buildMist(chapter, scene.fog as Fog);
   const follower = buildFollower(chapter);
-  scene.add(water.group, ...tussockMeshes, mist.group, follower.group);
+  const wind = buildWind(chapter);
+  scene.add(water.group, ...tussockMeshes, mist.group, follower.group, wind.group);
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
   // It is the first asset through the whole chain: Blender → glTF → KTX2 and meshopt → the page.
@@ -263,7 +267,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let warm = 2;
   let warmedFor = 0;
   const unculled: Object3D[] = [];
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts }: Frame): void {
     rain.update(drips);
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
@@ -275,6 +279,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     water.update(clock);
     for (const [i, t] of tussocks.entries()) tussockMeshes[i]?.position.set(t.x, t.y, 0);
     mist.update(flags, x, y, curr.facing, camera.position.z, dt);
+    wind.update(gusts, clock);
+    climbs.update(flags, dt);
     follower.update(flags, curr, clock, dt);
     // On a ride he sits on Moa's paper plane, which points the way it flies.
     const riding = curr.mode === 'ride';
@@ -494,6 +500,50 @@ function buildWater(chapter: ChapterData) {
   });
   function update(clock: number): void {
     for (const [i, w] of bodies.entries()) w.body.position.y = w.y + Math.sin(clock * 1.3 + i) * 0.03;
+  }
+  return { group, update };
+}
+
+/**
+ * The gusts (plan §4.7, E4), in greybox: boulders to shelter behind, and pale streaks over the open ground.
+ * In the second before a gust the streaks show faintly where it will come; while it blows they sweep across,
+ * against the way he is going.
+ */
+function buildWind(chapter: ChapterData) {
+  const group = new Group();
+  const STREAKS = 14;
+  const stone = new MeshStandardMaterial({ color: '#8d8f93', roughness: 0.95 });
+  const stretches = (chapter.gusts ?? []).map((def) => {
+    for (const x of def.shelters) {
+      const boulder = new Mesh(new SphereGeometry(1, 10, 8), stone);
+      boulder.scale.set(0.95, 1.15, 0.8);
+      boulder.position.set(x, def.y + 0.75, -1.3);
+      group.add(boulder);
+    }
+    const material = new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, depthWrite: false });
+    const streaks = new InstancedMesh(new BoxGeometry(1, 0.035, 0.035), material, STREAKS);
+    streaks.instanceMatrix.setUsage(DynamicDrawUsage);
+    streaks.frustumCulled = false;
+    group.add(streaks);
+    return { def, material, streaks };
+  });
+  const place = new Object3D();
+  function update(gusts: readonly { blow: number; warn: number }[], clock: number): void {
+    for (const [i, { def, material, streaks }] of stretches.entries()) {
+      const gust = gusts[i];
+      const blow = gust?.blow ?? 0;
+      const warn = gust?.warn ?? 0;
+      material.opacity = blow > 0 ? 0.85 * Math.sin(Math.PI * Math.min(1, blow)) + 0.1 : warn * 0.3;
+      const span = def.to - def.from;
+      for (let k = 0; k < STREAKS; k++) {
+        const along = (k * 0.618 + (blow > 0 ? blow * 1.6 : 0)) % 1;
+        place.position.set(def.to - along * span, def.y + 0.25 + (k % 5) * 0.34 + Math.sin(clock * 5 + k) * 0.03, 0.4 - (k % 3) * 0.5);
+        place.scale.set(blow > 0 ? 2.6 : 0.7 + warn * 0.6, 1, 1);
+        place.updateMatrix();
+        streaks.setMatrixAt(k, place.matrix);
+      }
+      streaks.instanceMatrix.needsUpdate = true;
+    }
   }
   return { group, update };
 }
@@ -763,16 +813,27 @@ function buildLace() {
 }
 
 /** The hoses he climbs: green garden hose, a little behind the play plane so that he is in front of it. */
-function buildClimbs(chapter: ChapterData): Group {
+function buildClimbs(chapter: ChapterData) {
   const group = new Group();
   const material = new MeshStandardMaterial({ color: '#3f8f4f', roughness: 0.55 });
-  for (const climb of chapter.climbs ?? []) {
+  const hoses = (chapter.climbs ?? []).map((climb) => {
     const length = climb.top - climb.bottom + 0.25;
-    const hose = new Mesh(new CylinderGeometry(0.06, 0.06, length, 10), material);
-    hose.position.set(climb.x, climb.bottom + length / 2, -0.16);
+    // It hangs from its top, so that one that is let down grows downwards.
+    const geometry = new CylinderGeometry(0.06, 0.06, length, 10);
+    geometry.translate(0, -length / 2, 0);
+    const hose = new Mesh(geometry, material);
+    hose.position.set(climb.x, climb.bottom + length, -0.16);
     group.add(hose);
+    return { hose, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 };
+  });
+  /** A hose that waits for something is let down when that has happened: the lichen, the braid, the lace. */
+  function update(flags: ReadonlySet<string>, dt: number): void {
+    for (const h of hoses) {
+      if (h.needs !== undefined) h.down = Math.min(1, Math.max(0, h.down + (flags.has(h.needs) ? dt : -dt) / 0.5));
+      h.hose.scale.y = Math.max(0.001, h.down);
+    }
   }
-  return group;
+  return { group, update };
 }
 
 /** Dark trunks behind the course: something for the eye to measure Elof's speed against. */
