@@ -117,6 +117,8 @@ function start(): void {
       candy: game.sim.candyCount, checkpoint: game.sim.checkpoint, bubbles: game.sim.bubbles,
       atGoal: game.sim.flags.has('goal'), moving: game.sim.movers.filter((m) => m.t < 1).length,
       shadows: game.sim.drips.map((d) => d.shadow), drips: game.sim.drips,
+      notes: [...game.sim.flags].filter((flag) => flag.startsWith('note:')).length,
+      wind: game.sim.gusts.some((gust, i) => gust.blow > 0 && p.x > chapter.gusts![i]!.from - 12 && p.x < chapter.gusts![i]!.to + 12),
     };
   };
   let heard = hear();
@@ -256,7 +258,7 @@ function start(): void {
     window.__godis = {
       state: () => ({
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
-        bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
+        bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
         course: chapter.id, said: [...game.sim.said], title: title.open,
       }),
       info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played }),
@@ -319,7 +321,7 @@ function start(): void {
     view.render({
       prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: paused ? 0 : dt, atGoal,
       collected: game.sim.collected, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
-      flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks,
+      flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts,
     });
     hud.candy(game.sim.candyCount);
     hud.verb(game.sim.curr.verb, game.sim.curr.word);

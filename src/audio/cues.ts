@@ -20,6 +20,9 @@ export type Cue =
   | { kind: 'knocked' }
   | { kind: 'splash'; near: number }
   | { kind: 'wood' }
+  /** A stone that rings when he touches it: each one a step higher. */
+  | { kind: 'note'; step: number }
+  | { kind: 'gust' }
   | { kind: 'goal' };
 
 /** What the cues are worked out from: the little of the game's state that can be heard. */
@@ -42,6 +45,10 @@ export interface Heard {
   shadows: readonly number[];
   /** Where the drips are, for how near a splash is. */
   drips: readonly { x: number; y: number }[];
+  /** How many ringing stones he has touched. */
+  notes?: number;
+  /** Whether a gust blows where he is. */
+  wind?: boolean;
 }
 
 /** What has to be remembered between frames: the candy streak and the stride. */
@@ -111,5 +118,7 @@ export function cuesFor(before: Heard, now: Heard, memory: CueMemory): Cue[] {
   }
 
   if (now.moving > before.moving) cues.push({ kind: 'wood' });
+  for (let i = before.notes ?? 0; i < (now.notes ?? 0); i++) cues.push({ kind: 'note', step: i });
+  if (now.wind && !before.wind) cues.push({ kind: 'gust' });
   return cues;
 }

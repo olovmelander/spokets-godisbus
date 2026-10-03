@@ -20,6 +20,12 @@ describe('what a moment of play sounds like', () => {
     expect(hard).toEqual([{ kind: 'land', hard: 1 }]);
   });
 
+  it('a stone that rings sounds its own note, and a gust is heard when it begins', () => {
+    expect(cuesFor({ ...still, notes: 2 }, { ...still, notes: 3 }, newCueMemory())).toEqual([{ kind: 'note', step: 2 }]);
+    expect(kinds(still, { ...still, wind: true })).toEqual(['gust']);
+    expect(kinds({ ...still, wind: true }, { ...still, wind: true })).toEqual([]);
+  });
+
   it('walking off an edge is no jump', () => {
     expect(kinds(still, { ...still, grounded: false, vy: -0.3 })).toEqual([]);
   });

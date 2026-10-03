@@ -169,8 +169,7 @@ describe('Kapitel 3, Myren, in greybox', () => {
     expect(behind).toBeLessThan(60 * 3);
   });
 
-  it('follows Kapitel 2, and is the last chapter built', () => {
+  it('follows Kapitel 2', () => {
     expect(nextAfter('granskog')?.id).toBe('myren');
-    expect(nextAfter('myren')).toBeNull();
   });
 });

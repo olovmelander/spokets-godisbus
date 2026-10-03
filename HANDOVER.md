@@ -371,6 +371,32 @@
       (the chick's way home is straight ahead here); memory 3; the ghost's picture bubble; the cranes'
       dance; the jay. The lollipop is drawn only once he holds it, and the crane as Kapitel 1's paper
       plane. The robot needs a minute; the plan asks for 12 to 15 for Elof.
+  - **Kapitel 4, Berget, in greybox** (branch `stage-2-berget`; plan §3.4). **Open it with
+    `?dev&course=berget`**, or play on from Kapitel 3's end card with `?dev`.
+    - What you play: the chapter begins on the crane's back. It carries him over the valley and up to the
+      mountain's shoulder in fourteen seconds; up and down steer through the candy, and with no hand on the
+      stick it still lands. Then two granite slabs to pull himself up; five round cobbles that each ring a
+      note; **the gusts** across the open granite; the ghost stuck below the last cliff, where Använd says
+      *Lyft* and the lace then comes down for him to climb; and the old pine, where Elof says "Spöket vill
+      hämta hem min trägubbe!"
+    - It is 157 EL long, with 60 candies and five big candies. Ground, candy and rules only.
+    - **Gusts** (`ChapterData.gusts`, plan §4.7 E4): one blows for 1.4 s every 4 s, and pale streaks show
+      for a second before it. In a boulder's lee it passes him by. In the open it takes him back to the
+      last boulder at 5 EL/s, whatever the stick says. Nothing falls. On *Lugnt* it only slows him to half
+      his speed.
+    - **New for it:** a ride that begins by itself (a `Spot` with `touch` and a `ride`); a ride he had not
+      finished when the game was saved begins again (before this, a game saved in the middle of Moa's plane
+      or Bertil's cap came back with the ride used up and no way across); a hose that waits for a flag is
+      now let down in the picture only when the flag is set (the lichen, the braid, the lace); two new
+      sounds, a stone's note and a gust.
+    - Tests: `tests/sim/gusts.test.ts` (11) and `tests/robot/berget.test.ts` (12). The robot plays the chapter
+      at 30, 60 and 144 Hz with no bubble, waits in each boulder's lee so that no gust catches it, and takes
+      every candy; on *Lugnt* it never presses Hoppa; a player who never waits is taken back by the gusts
+      and still arrives with everything.
+    - **Not built yet in Kapitel 4:** what lies below the flight (the forest, the brook, the bog, the bell
+      tower at 18:00, the red house, the four headlamps and the jay); the summit cairn (C4); memory 4; the
+      ghost's picture bubble of the lonely trägubbe; the ghost shown being boosted up. The crane is drawn as
+      Kapitel 1's paper plane. The robot needs under a minute.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
@@ -453,7 +479,7 @@
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2 and Kapitel 3 in greybox. Only what needs no art, until the look and the characters are decided. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4 in greybox. Only what needs no art, until the look and the characters are decided. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs

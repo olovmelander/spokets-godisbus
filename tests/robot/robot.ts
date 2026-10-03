@@ -1,5 +1,5 @@
 import { Game } from '../../src/app/game';
-import { DROP_RADIUS, DROP_WARNING } from '../../src/sim/constants';
+import { DROP_RADIUS, DROP_WARNING, GUST_SHELTER, RUN_SPEED } from '../../src/sim/constants';
 import type { DripState, MoverState } from '../../src/sim/sim';
 import type { ChapterData, SimOptions } from '../../src/sim/types';
 
@@ -36,6 +36,7 @@ export interface Decision {
  *   straight back;
  * - falling drops it reads from their shadows: it waits before one whose drop would land on it;
  * - a cone rolling up from behind it jumps, so that the cone passes under;
+ * - in a boulder's lee it waits until it can reach the next boulder before the next gust;
  * - on a ride it steers towards the next candy.
  */
 export function decide(game: Game, chapter: ChapterData): Decision {
@@ -58,6 +59,17 @@ export function decide(game: Game, chapter: ChapterData): Decision {
       // From a standstill the run through takes a little longer than at full speed.
       const through = (edge + 2 * DROP_RADIUS) / 3.5 + 0.45;
       if (until < through) return wait;
+    }
+  }
+  // Gusts: from a boulder's lee it sets off only when it can reach the next boulder before the next gust.
+  // On Lugnt a gust only slows it, so it runs.
+  if (!game.sim.options.gentle) {
+    for (const [i, def] of (chapter.gusts ?? []).entries()) {
+      const gust = game.sim.gusts[i]!;
+      const here = def.shelters.find((s) => Math.abs(p.x - s) <= GUST_SHELTER - 0.1);
+      const next = def.shelters.find((s) => s > p.x + GUST_SHELTER);
+      if (here === undefined || next === undefined) continue;
+      if (gust.blow > 0 || gust.until < (next - 0.5 - p.x) / RUN_SPEED + 0.4) return wait;
     }
   }
   // A thing on its way along its rail: wait for it.
@@ -120,7 +132,7 @@ export function playThrough(fps: number, chapter: ChapterData, options: SimOptio
   return {
     goal: game.sim.flags.has('goal'), seconds: frames * dt, steps: game.sim.steps, end: game.sim.curr, lowest,
     candy: game.sim.candyCount, missed, bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled,
-    sinks: game.sim.sinks, said: [...game.sim.said],
+    sinks: game.sim.sinks, blown: game.sim.blown, said: [...game.sim.said],
     flags: [...game.sim.flags], checkpoint: game.sim.checkpoint, x: game.sim.curr.x,
   };
 }
