@@ -29,7 +29,7 @@ export interface Hook {
 export type Mode = 'free' | 'bubble' | 'ledge' | 'climb' | 'slide' | 'swing' | 'fly' | 'down';
 
 /** What the Använd button would do right now. Each has its word in `sv.verbs`. */
-export type Verb = 'slide' | 'lace' | 'push' | 'pull';
+export type Verb = 'slide' | 'lace' | 'push' | 'pull' | 'turn' | 'take' | 'call' | 'grab';
 
 /**
  * A thing on a rail (plan §4.2): a shaving, a cone, a stick. It moves one stop at a time and can never end
@@ -46,6 +46,38 @@ export interface Mover {
   verb: 'push' | 'pull';
   /** For Dra: where the ring sits, from the middle of its bottom. */
   ring?: Vec;
+}
+
+/** A trail candy: where it floats, and the flag that has to be set before it is there at all. */
+export interface Candy extends Vec {
+  /** It appears when this flag is set: the candy the ghost drops when Elof nearly catches it. */
+  after?: string;
+}
+
+/**
+ * A place where Använd does one thing, once (plan §4.7): a lever to turn, a thing to take, someone to call.
+ * Using it sets the flag with its id, and what follows from that is the chapter's business.
+ */
+export interface Spot {
+  id: string;
+  at: Vec;
+  verb: 'turn' | 'take' | 'call';
+  /** A flag that has to be set before it can be used. */
+  needs?: string;
+}
+
+/**
+ * A place where the ghost waits for Elof (plan §4.2). It hops on to the next when he comes near, so it is
+ * always a little ahead: the chase can't be lost, and it can't be won before the story says so.
+ */
+export interface GhostPerch {
+  at: Vec;
+  /** How close he may come before it hops on. Left out: 4 EL. */
+  near?: number;
+  /** A near-catch: it stays until he is within 1.5 EL, and Använd says Ta! Grabbing sets this flag. */
+  catch?: string;
+  /** It waits here, however close he comes, until this flag is set. */
+  until?: string;
 }
 
 /** A stretch of the course where the camera frames differently (plan §6.4). */
@@ -102,6 +134,8 @@ export interface SimStart {
   collected?: readonly number[];
   /** The things on rails that are where they belong, by id. */
   placed?: readonly string[];
+  /** What has happened in the chapter: the flags set so far. */
+  flags?: readonly string[];
 }
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
@@ -116,7 +150,7 @@ export interface ChapterData {
    * Trail candy, in the order the path meets it (plan §4.3). Each point is where the candy floats: about
    * half an EL over the ground on a walk, and along the arc of the jump over a gap or up a step.
    */
-  candy: Vec[];
+  candy: Candy[];
   /** The hoses and stems he can climb. */
   climbs?: Climb[];
   /** The hooks he can throw the lace to. */
@@ -131,6 +165,10 @@ export interface ChapterData {
   drips?: Drip[];
   /** Where the camera frames differently. */
   cameras?: CameraZone[];
+  /** The places where Använd does one thing, once. */
+  spots?: Spot[];
+  /** The places where the ghost waits for him, in order. Left out: the chapter has no ghost. */
+  ghost?: GhostPerch[];
 }
 
 /** One simulation step's input. hop and act are presses; the rest is held state. */

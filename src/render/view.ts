@@ -49,6 +49,10 @@ export interface Frame {
   movers: readonly { x: number; y: number }[];
   /** The drips and their next drops, in the chapter's order. */
   drips: readonly { x: number; y: number; shadow: number; height: number }[];
+  /** What has happened in the chapter. A candy that waits for a flag is drawn once the flag is set. */
+  flags: ReadonlySet<string>;
+  /** Where the ghost is, or null in a chapter without it. */
+  ghost: { x: number; y: number; t: number; gone: boolean } | null;
 }
 
 export interface View {
@@ -148,21 +152,28 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     })
     .catch((error) => console.error('The big candy could not be loaded; the stand-in stays.', error));
 
-  // The ghost, modelled in Blender after Pappa's carving. Its files are not in the public repository, so it
-  // stands on the course only where its private pack exists (HANDOVER.md). The manifest says whether it does.
-  const GHOST_X = 6.5;
-  let ghost: Group | null = null;
+  // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
+  // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.
+  // A chapter without a ghost in its data has none in the picture.
+  const ghostPlace = new Group();
+  let ghost: Group = buildGhost();
+  ghostPlace.add(ghost);
+  ghostPlace.visible = chapter.ghost !== undefined;
+  scene.add(ghostPlace);
   let ghostFoot: Object3D | null = null;
-  let ghostTurn = -Math.PI / 2;
+  // The stand-in faces +x, as the stand-in Elof does; the model from Blender faces the camera.
+  let ghostFaces = 0;
+  let ghostTurn = Math.PI;
   let clock = 0;
   assets
     .manifest()
     .then((manifest) => (manifest.packs.private?.files['ghost.glb'] ? assets.model('private', 'ghost') : null))
     .then((model) => {
       if (!model) return;
-      model.position.set(GHOST_X, heightOfGroundAt(chapter, GHOST_X), 0);
-      scene.add(model);
+      ghostPlace.clear();
+      ghostPlace.add(model);
       ghost = model;
+      ghostFaces = -Math.PI / 2;
       // GLTFLoader drops the dot from Blender's names: foot.L arrives as footL.
       ghostFoot = model.getObjectByName('footL') ?? null;
       models.push('private/ghost');
@@ -235,13 +246,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   }
   resize();
 
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips }: Frame): void {
+  let ghostSize = 1;
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState }: Frame): void {
     rain.update(drips);
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
     clock += dt;
-    trail.update(collected, x, y, dt, clock);
+    trail.update(collected, flags, x, y, dt, clock);
     glitter.update(curr.bubble, x, y, clock);
     // He hangs by his hands, his body along the lace.
     const hang = curr.hook ? Math.atan2(curr.hook.x - x, curr.hook.y - (y + 0.5)) : 0;
@@ -294,13 +306,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       big.place.scale.setScalar(1 + 0.3 * Math.sin(Math.PI * big.pop));
     }
 
-    // The ghost is a wooden toy come alive: it never bends. It turns towards Elof, sways, and taps a foot.
-    if (ghost) {
-      // Exported from Blender it faces +z, the camera. A quarter turn faces it along the course.
-      const towardsElof = x < ghost.position.x ? -Math.PI / 2 + 0.5 : Math.PI / 2 - 0.5;
-      ghostTurn += (towardsElof - ghostTurn) * ease(6, dt);
-      ghost.rotation.set(0, ghostTurn, Math.sin(clock * 1.7) * 0.035);
-      if (ghostFoot) ghostFoot.rotation.x = -Math.max(0, Math.sin(clock * 9)) * (Math.sin(clock * 0.9) > 0.2 ? 0.45 : 0);
+    // The ghost is a wooden toy come alive: it never bends. Standing, it turns towards Elof, sways and taps
+    // a foot. Hopping, it faces the way it goes and tips forward. Gone, it has shrunk away.
+    if (ghostState) {
+      const hopping = ghostState.t < 1;
+      const away = ghostState.gone ? 0 : 1;
+      ghostSize += (away - ghostSize) * ease(8, dt);
+      ghostPlace.position.set(ghostState.x, ghostState.y, 0);
+      ghostPlace.scale.setScalar(ghostSize);
+      // 0 faces along the course; a half turn faces back at him.
+      const wanted = hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4;
+      ghostTurn += (wanted - ghostTurn) * ease(7, dt);
+      ghost.rotation.set(0, ghostFaces + ghostTurn, hopping ? -0.25 * Math.sin(Math.PI * ghostState.t) : Math.sin(clock * 1.7) * 0.035);
+      if (ghostFoot) ghostFoot.rotation.x = hopping ? 0 : -Math.max(0, Math.sin(clock * 9)) * (Math.sin(clock * 0.9) > 0.2 ? 0.45 : 0);
     }
     renderer.info.reset();
     renderer.render(scene, camera);
@@ -622,20 +640,25 @@ function buildTrail(chapter: ChapterData) {
   const flown = candy.map(() => -1);
   const place = new Object3D();
 
-  function update(collected: readonly boolean[], elofX: number, elofY: number, dt: number, clock: number): void {
+  /** How far each candy that waits for a flag has come out, from 0 to 1. */
+  const out: number[] = candy.map((c) => (c.after === undefined ? 1 : 0));
+
+  function update(collected: readonly boolean[], flags: ReadonlySet<string>, elofX: number, elofY: number, dt: number, clock: number): void {
     for (let i = 0; i < candy.length; i++) {
       const c = candy[i]!;
       if (collected[i] && flown[i]! < 0) flown[i] = 0;
+      // A candy the ghost drops pops out when it does.
+      if (c.after !== undefined && flags.has(c.after)) out[i] = Math.min(1, out[i]! + dt * 5);
       let x = c.x;
       let y = c.y + Math.sin(clock * 2.2 + i * 1.7) * 0.045;
-      let size = 1;
+      let size = out[i]!;
       if (flown[i]! >= 0) {
         const t = Math.min(1, flown[i]! + dt / CANDY_FLIGHT);
         flown[i] = t;
         // It swells for a moment, then shrinks into his chest.
         x = lerp(x, elofX, t * t);
         y = lerp(y, elofY + 0.55, t * t);
-        size = (1 + 0.5 * Math.sin(Math.PI * Math.min(1, t * 2))) * (1 - t * t);
+        size *= (1 + 0.5 * Math.sin(Math.PI * Math.min(1, t * 2))) * (1 - t * t);
       }
       place.position.set(x, y, 0);
       place.rotation.set(0.35, clock * 1.5 + i * 0.9, Math.sin(clock * 1.3 + i) * 0.3);
@@ -676,6 +699,32 @@ function heightOfGroundAt(chapter: ChapterData, x: number): number {
     if (a.x !== b.x && x >= a.x && x <= b.x) return a.y + ((b.y - a.y) * (x - a.x)) / (b.x - a.x);
   }
   return 0;
+}
+
+/**
+ * A stand-in for the ghost: a pale wooden shape with two dark eyes, the bag in front of it and red shoes.
+ * It faces +x. The carved ghost modelled in Blender is in the private pack, and takes its place there.
+ */
+function buildGhost(): Group {
+  const group = new Group();
+  const wood = new MeshStandardMaterial({ color: '#e3cfa4', roughness: 0.75 });
+  const dark = new MeshStandardMaterial({ color: '#1c1a18', roughness: 0.3 });
+  const red = new MeshStandardMaterial({ color: '#c8352b', roughness: 0.6 });
+  const paper = new MeshStandardMaterial({ color: '#c79a62', roughness: 0.9 });
+  const body = new Mesh(new CapsuleGeometry(0.27, 0.42, 6, 14), wood);
+  body.position.y = 0.6;
+  group.add(body);
+  for (const z of [-0.1, 0.1]) {
+    const eye = new Mesh(new SphereGeometry(0.045, 10, 8), dark);
+    eye.position.set(0.235, 0.82, z);
+    const shoe = new Mesh(new BoxGeometry(0.24, 0.1, 0.14), red);
+    shoe.position.set(0.05, 0.05, z * 1.3);
+    group.add(eye, shoe);
+  }
+  const bag = new Mesh(new BoxGeometry(0.16, 0.3, 0.26), paper);
+  bag.position.set(0.3, 0.5, 0);
+  group.add(bag);
+  return group;
 }
 
 /**

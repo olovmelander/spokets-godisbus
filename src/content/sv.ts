@@ -19,6 +19,10 @@ export const sv = {
     lace: 'Kasta snöret',
     push: 'Knuffa',
     pull: 'Dra',
+    turn: 'Vänd',
+    take: 'Ta',
+    call: 'Ropa',
+    grab: 'Ta!',
   },
 
   // The candy bag in the corner. Screen readers hear the name and then the number.

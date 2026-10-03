@@ -16,6 +16,9 @@ import type { ChapterData } from '../../sim/types';
  *   big candy in the middle;
  * - and the big candy at the end.
  *
+ * The ghost is always a little ahead. After the swing it stumbles: there Elof can come close, and Använd
+ * says Ta! It gets away, and drops five candies.
+ *
  * The candy trail shows the way (plan §4.3): a candy every 1.5 to 3 EL along the ground, an arc over each
  * jump (the higher the arc, the longer Hoppa is held), a line of candy up and down each hose, and at the
  * swing an arc for the flight that lands.
@@ -79,6 +82,25 @@ export const testbana: ChapterData = {
     { x: 67.3, y: 3.3 },
     { x: 90, y: 3.3 },
     { x: 90, y: 11 },
+  ],
+  ghost: [
+    { at: { x: 6.2, y: 0 } },
+    { at: { x: 12, y: 0.5 } },
+    { at: { x: 17.5, y: 0.95 } },
+    { at: { x: 25, y: 0 } },
+    { at: { x: 30, y: 0 } },
+    { at: { x: 34.8, y: 1.5 } },
+    { at: { x: 37.6, y: 2.8 } },
+    { at: { x: 41.6, y: 6 } },
+    { at: { x: 45.2, y: 0 } },
+    // the near-catch
+    { at: { x: 52.6, y: 0 }, catch: 'caught' },
+    { at: { x: 55.2, y: 0 } },
+    { at: { x: 62.4, y: 0 } },
+    { at: { x: 69.6, y: 3.3 } },
+    { at: { x: 76.3, y: 3.3 } },
+    { at: { x: 82.1, y: 3.3 } },
+    { at: { x: 88.6, y: 3.3 } },
   ],
   // Wider pictures: the climb and the cliff, the swing, and the drops, whose shadows have to be seen ahead.
   cameras: [
@@ -184,6 +206,12 @@ export const testbana: ChapterData = {
     { x: 50.8, y: 1.6 },
     { x: 51.6, y: 0.8 },
     { x: 53, y: 0.45 },
+    // what the ghost drops when it is nearly caught
+    { x: 53.4, y: 0.6, after: 'caught' },
+    { x: 53.8, y: 0.8, after: 'caught' },
+    { x: 54.2, y: 0.9, after: 'caught' },
+    { x: 54.6, y: 0.8, after: 'caught' },
+    { x: 55, y: 0.6, after: 'caught' },
     { x: 55.3, y: 0.45 },
     // across the plank
     { x: 57.4, y: 0.45 },

@@ -24,6 +24,8 @@ export interface PlayerSave {
   candy: Record<string, number[]>;
   /** The things on rails that are where they belong, per chapter, by id. */
   placed: Record<string, string[]>;
+  /** What has happened, per chapter: the flags set. */
+  flags: Record<string, string[]>;
   playMs: number;
 }
 
@@ -34,7 +36,7 @@ export type Loaded =
   | { kind: 'unreadable' };
 
 export function newSave(now: number, chapter: string, settings: Settings = settingsFor('aventyr')): PlayerSave {
-  return { v: SAVE_VERSION, name: FIRST_PLAYER.name, updated: now, settings, chapter, checkpoint: -1, candy: {}, placed: {}, playMs: 0 };
+  return { v: SAVE_VERSION, name: FIRST_PLAYER.name, updated: now, settings, chapter, checkpoint: -1, candy: {}, placed: {}, flags: {}, playMs: 0 };
 }
 
 /** Reads one player's save from its text. */
@@ -56,12 +58,16 @@ export function readSave(text: string | null): Loaded {
       if (Array.isArray(list)) candy[chapter] = list.filter((i): i is number => Number.isInteger(i) && i >= 0);
     }
   }
-  const placed: Record<string, string[]> = {};
-  if (typeof from.placed === 'object' && from.placed !== null) {
-    for (const [chapter, list] of Object.entries(from.placed as Record<string, unknown>)) {
-      if (Array.isArray(list)) placed[chapter] = list.filter((id): id is string => typeof id === 'string');
+  const names = (value: unknown): Record<string, string[]> => {
+    const out: Record<string, string[]> = {};
+    if (typeof value !== 'object' || value === null) return out;
+    for (const [chapter, list] of Object.entries(value as Record<string, unknown>)) {
+      if (Array.isArray(list)) out[chapter] = list.filter((id): id is string => typeof id === 'string');
     }
-  }
+    return out;
+  };
+  const placed = names(from.placed);
+  const flags = names(from.flags);
   return {
     kind: 'save',
     save: {
@@ -73,6 +79,7 @@ export function readSave(text: string | null): Loaded {
       checkpoint: Number.isInteger(from.checkpoint) ? (from.checkpoint as number) : -1,
       candy,
       placed,
+      flags,
       playMs: typeof from.playMs === 'number' && from.playMs >= 0 ? from.playMs : 0,
     },
   };

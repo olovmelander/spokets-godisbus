@@ -81,7 +81,7 @@ describe('saving', () => {
       kind: 'save',
       save: {
         v: SAVE_VERSION, name: 'Elof', updated: 5, chapter: 'testbana', checkpoint: -1, playMs: 0,
-        candy: { testbana: [0, 3] }, placed: { testbana: ['plank'] }, settings: settingsFor('lugnt'),
+        candy: { testbana: [0, 3] }, placed: { testbana: ['plank'] }, flags: {}, settings: settingsFor('lugnt'),
       },
     });
   });
