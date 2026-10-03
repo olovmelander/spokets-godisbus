@@ -2,6 +2,7 @@ import type { ChapterData } from '../../sim/types';
 import { berget } from './berget';
 import { garden } from './garden';
 import { granskog } from './granskog';
+import { lookForest } from './look';
 import { myren } from './myren';
 import { norrsken } from './norrsken';
 import { testbana } from './testbana';
@@ -10,7 +11,7 @@ import { testbana } from './testbana';
  * Every course the game can play, by id. The test course is not part of the story: it stays as the place
  * where every move can be tried, and as what the page shows while no chapter is released.
  */
-export const COURSES: Record<string, ChapterData> = { testbana, garden, granskog, myren, berget, norrsken };
+export const COURSES: Record<string, ChapterData> = { testbana, garden, granskog, myren, berget, norrsken, 'look-forest': lookForest };
 
 /** The chapters of the story, in order. Each end card leads to the next one that is built. */
 export const STORY: ChapterData[] = [garden, granskog, myren, berget, norrsken];

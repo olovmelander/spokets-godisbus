@@ -3,8 +3,7 @@
 How the game should look, and how each part of the look is made. The plan (`game-plan.md` §5) sets the
 direction; this file holds the rules a session follows while building. It grows through Stage 0b and 0c.
 
-Written so far: the characters (§1). Still to come, from plan §5.6: the scale chart, a palette and a grade per
-place, the layer recipe, the two golden frames, the H1a board and the fallback look.
+Written so far: the characters (§1) and the look of a place (§2), with the first golden frame.
 
 ## 1. Characters
 
@@ -209,3 +208,102 @@ give the face eyes that can move and blink, and bake one 1024² texture. Every g
 The ArtStation page and the Pinterest board could not be read by the session that wrote this (one refused the
 request, the other came back empty), so what is said about them here comes from descriptions of them elsewhere.
 Olov has seen both, and his eye decides at H1b.
+
+## 2. The look of a place
+
+A chapter names its place (`place` in its data), and the game dresses the chapter's ground in that place's
+look: `src/render/dressing.ts`. The rules of the chapter don't change. A chapter without a place is greybox.
+
+### 2.1 Scale
+
+One unit is one Elof length (EL). In the macro chapters 1 EL is about 15 cm, so things are built at their real
+size divided by 15 cm (plan §5.2):
+
+| Thing | Real size | In the game |
+| --- | --- | --- |
+| Lingonberry | 8 mm | 0.05 EL |
+| Lingonberry leaf | 1.5 cm | 0.09 EL |
+| Spruce needle | 2–4 cm | 0.16–0.3 EL |
+| Spruce cone | 7 cm | 0.5 EL |
+| Moss cushion | 2–10 cm | 0.06–0.36 EL |
+| Blade of grass | 25–40 cm | 0.7–2.3 EL |
+| Spruce trunk | 40 cm across | 2–2.9 EL across |
+| Deck step | 18 cm | 1.2 EL |
+
+Keeping these is what makes the world read as seen from close. Where play needs something else, note it here.
+So far: the moss cushions are kept low where Elof walks, so that his boots show.
+
+### 2.2 How a frame is built
+
+The layers of plan §5.3, as they are built now. Everything is made in code, so a place costs no download.
+
+| Layer | What it is in the forest | How it is made |
+| --- | --- | --- |
+| L0 Backdrop | Dark green above, a pale gold glow where the sun stands, moss green below | One small gradient picture behind everything |
+| L1 Far plates | Trunks far out of focus, as soft columns, with round spots of light | Two pictures drawn on small canvases and stretched large, at 30 and 62 EL behind the path. Drawn small, they are soft: that is the blur. |
+| L2 Mid-ground | Spruce trunks 4 to 22 EL behind the path, soft low shrubs, stones | Trunks as one turned shape with roots, bark drawn in code, moss painted on its foot; shrubs as soft cards; the haze takes them with distance |
+| L3 Play plane | The moss bank, cushions, grass, lingonberry sprigs, cones, needles | The ground is a bank that rounds off towards the camera, not a cut face. Each kind of thing is one instanced mesh per 18 EL of chapter, drawn only while it is in the picture. |
+| L4 Foreground | Tufts of grass far out of focus along the bottom, now and then one that stands tall | Soft dark cards 4 to 7.5 EL in front of the path, which pass faster than the path does |
+| Effects | Shafts of light, and dust in them | Additive cards; 70 small motes that stay with the camera |
+| Post | The place's grade, a vignette and grain | The one grading pass of Mid and High (`src/render/grade.ts`) |
+
+Rules that hold for every place:
+- **The play plane is sharp and level.** Nothing of the dressing stands where he walks, and within 0.3 EL of the
+  path the ground has no bumps.
+- **The sun stands behind the scene,** low and warm, so that everything on the play plane has a bright rim. A
+  faint cool light from the camera's side lifts the faces.
+- **The shade is cool.** What the sun doesn't reach goes towards blue-green, not towards black.
+- **The haze begins behind the play plane** and takes the mid-ground with distance. The far plates have their
+  haze painted in.
+- **No hard edge on anything out of focus.** Far plates, shrubs, foreground and beams fade at every side.
+- **Red is the candy's, the hook's and the lingonberries'.** Nothing else in a place is red.
+- **Nothing is compiled during play.** The first frames draw the whole chapter (gate 6).
+
+### 2.3 One palette per place
+
+From plan §5.4. Only the forest is built.
+
+| Place | Light | Ground | Accents | Built |
+| --- | --- | --- | --- | --- |
+| Gården, 10:00 | Low warm sun, dew sparkle, long shadows | Bright greens, the first yellow birch leaves, pale deck wood | The red house as a warm wall | no |
+| Granskogen, noon | Shafts of pale gold through cool blue-green shade | Moss in three greens and a gold (`#35521f`, `#587a27`, `#7f9a30`, `#b3ae45`), rust-brown needles | Red lingonberries; bark `#7d6753` | **yes** |
+| Myren, late afternoon | Low gold sun, silver mist late | Rust-red and green sphagnum, orange cloudberry leaves | Red dwarf birch, Mamma's warm lamp | no |
+| Berget, golden hour | Pink-orange sky, haze in the valley | Grey granite, white reindeer lichen | Crooked pines | no |
+| Final, blue hour to night | Stars, green and violet northern lights | The same granite, in blue | Warm headlamps | the lights only |
+
+### 2.4 The golden frames
+
+Each holds Elof, a red hook ring and candy, and is drawn by the game itself.
+
+1. **The moss under the spruces: built.** `?course=look-forest` (add `&debug` to start at once, and
+   `&tier=high`). It is 48 EL of forest floor with a root, a hollow with a hook over it and a big candy.
+   Kapitel 2 is dressed in the same look from end to end: `?dev&course=granskog`.
+2. **The deck edge: not built.** It needs the garden's look: planks, the red wall, grass and dew.
+
+### 2.5 The H1a board: what Olov judges
+
+Look at the golden frame on each device you test on, and at Kapitel 2 for a few minutes. For each of the five,
+say yes or no (plan §5.6):
+
+1. **The macro scale reads.** Does Elof look small in a big forest, or normal-sized among odd shapes?
+2. **Layered focus.** Is the path sharp, and what is behind and in front of it soft?
+3. **Warm, low light.**
+4. **Elof and the candy are readable** at phone size, also with the colours taken away.
+5. **It runs smoothly:** `?bench` on the device.
+
+Two no's on the look itself mean the fallback below.
+
+### 2.6 The fallback look
+
+If H1a fails twice: more painted 2D plates and fewer 3D layers, flatter lighting, the same characters (plan
+§5.6). In terms of §2.2: the mid-ground becomes plates too, the play plane keeps the bank and loses most of its
+scatter, and the grade does more of the work.
+
+### 2.7 What the look still lacks
+
+- Plates rendered in Blender after the landscape references, and scanned CC0 materials from Poly Haven for
+  moss, bark and wood. What is there now is drawn in code and reads as stylized, not as photographed.
+- On High: bloom on sparkles, and the half-resolution blur by depth. On Low: the grade inside the materials.
+- Water with glitter, the things on rails and the helpers in the place's style: they are still greybox boxes.
+- The other places.
+

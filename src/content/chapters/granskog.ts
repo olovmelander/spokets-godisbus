@@ -53,6 +53,7 @@ const CAP = { from: { x: 154.6, y: -8 }, to: { x: 177.4, y: -8 }, rise: 0.15, ti
 
 export const granskog: ChapterData = {
   id: 'granskog',
+  place: 'forest',
   spawn: { x: 1, y: 0.01 },
   goalX: 204,
   ground: [

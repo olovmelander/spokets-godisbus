@@ -232,8 +232,13 @@ export interface SimStart {
 }
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
+/** The places of the story, each with its own light and layers (plan §5.4). The picture's business only. */
+export type PlaceId = 'forest';
+
 export interface ChapterData {
   id: string;
+  /** The place it is dressed as. Left out: greybox. */
+  place?: PlaceId;
   /** The ground as one open line, from left to right. Elof walks on its upper side. */
   ground: Vec[];
   spawn: Vec;
