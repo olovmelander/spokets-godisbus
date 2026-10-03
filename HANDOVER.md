@@ -24,10 +24,27 @@
       its own. The next session has them, once Olov has restarted VS Code and approved the `blender` server.
     - The add-on inside Blender is older than the server. The server says so and falls back, so it works, but
       see "Next".
-- **Not built:** any game code. The repository holds documents, the placeholder page and its workflow.
+  - **Stage 0a, part 1: the foundation runs** (3 October, branch `stage-0a-foundation`).
+    - What you see: a greybox test course with a stand-in Elof in his colours. He walks, runs and jumps, with the
+      keyboard, a gamepad, or the on-screen stick and buttons. `?debug` shows the numbers.
+    - The stack of plan §6.1: Vite 8, TypeScript 7, three r186 (`WebGLRenderer`), planck. `npm run dev`,
+      `dev:lan`, `build`, `typecheck`, `test`, `test:browser` and `privacy-check` all work.
+    - `src/sim/`: the pure simulation. Walk, run, a jump whose height follows how long Hoppa is held, coyote time
+      and the jump buffer, all at the plan's starting values (§4.2).
+    - `src/input/`: Sköldhästen's input, ported to TypeScript with this game's verbs, and the press queue.
+    - `src/core/loop.ts` and `src/app/game.ts`: the fixed 1/120 s step with interpolation.
+    - `src/render/view.ts`: the side camera with its long lens, the pixel budget, and the greybox scene.
+    - 50 Vitest tests, among them the robot, which plays the course through the real loop at 30, 60, 120 and
+      144 Hz. The browser smoke test plays with the keyboard at 1440×900 and with touch at 844×390.
+    - The build's size gate: 188 KB of gzipped JS, of the 450 KB allowed.
+    - `.github/workflows/deploy.yml` now builds and publishes `dist/`, and `ci.yml` checks pull requests. **Neither
+      has run on GitHub yet:** the first run is this branch's pull request.
+    - The placeholder page in `site/` is gone: merging this branch puts the test course on Pages, with `noindex`.
+- **Not built yet in Stage 0a:** `?bench`, `dev/menus.html`, the asset chain (Blender → glTF → KTX2 → Pages), and
+  the note on what Pages compresses. See "Next".
 - **Olov's computer** (checked 3 October): Windows 11, an RTX 3070, Node 24.14, git, and Blender 4.5.9 LTS with
-  the *MCP for Blender* add-on running on port 9876, with only Poly Haven ticked, and `uv` 0.12. Not installed:
-  `gh`, `exiftool`, `ktx`.
+  the *MCP for Blender* add-on running on port 9876, with only Poly Haven ticked, `uv` 0.12, and Playwright
+  1.56.1's Chromium. Not installed: `gh`, `exiftool`, `ktx`.
 
 ## Next
 
@@ -39,20 +56,24 @@
    - **Update the add-on when convenient:** run `uvx mcp-for-blender install-addon`, then restart Blender (or switch
      the add-on off and on in Preferences) and press *Start MCP Server*. If the new panel shows a telemetry consent
      box, leave it unticked (`CLAUDE.md`).
-2. **Stage 0a** (plan §7.3), in a cloud session or on Olov's computer:
-   - the Vite + TypeScript + three scaffold, both real workflows (replacing the placeholder), and the privacy gate;
-   - a test scene live on Pages with `noindex`;
-   - the input port with a greybox Elof;
-   - `?debug`, `?bench`, `dev/menus.html` and `npm run dev:lan`;
-   - the asset chain proven end to end (Blender → glTF → KTX2 → Pages). In a cloud session this uses headless
-     `bpy`; on Olov's computer, Blender itself;
-   - record whether Pages compresses `.wasm`, `.glb` and `.ktx2`;
+2. **Olov merges the two pull requests,** the plan first (`plan-v4-answers`), then the foundation
+   (`stage-0a-foundation`). The second one's checks are the first run of both workflows, so look at them.
+   - Then open `https://olovmelander.github.io/spokets-godisbus/?debug` on the devices you have, play the course
+     to the big candy, and tell the next session what the top two lines of the overlay say on each device.
+   - On the computer: `npm run dev`, then `http://localhost:5173/spokets-godisbus/?debug`. For a phone on the same
+     Wi-Fi: `npm run dev:lan`.
+3. **Stage 0a, part 2** (plan §7.3), on Olov's computer, because it needs Blender:
+   - `?bench`: the 30-second measurement that prints text to paste into a session (plan §6.10);
+   - `dev/menus.html`, with the first menu in it;
+   - the asset chain proven end to end: `scripts/bake/export.py` in Blender → glTF → `scripts/build-assets.mjs`
+     with gltf-transform and KTX2 → a model on the page;
+   - record whether Pages compresses `.wasm`, `.glb` and `.ktx2` (it needs the deployed site);
    - note how to install `ktx` and `exiftool` on Windows.
-3. **Stage 0b** (look-dev) and **Stage 0c** (characters) need Olov's computer and step 1: the golden frames, then
+4. **Stage 0b** (look-dev) and **Stage 0c** (characters) need Olov's computer and step 1: the golden frames, then
    Elof and the ghost in Blender (plan §5.6).
-4. **Before Stage 0c:** the private repository `spokets-godisbus-familj`, a read-only token, and the secrets
+5. **Before Stage 0c:** the private repository `spokets-godisbus-familj`, a read-only token, and the secrets
    `FAMILY_ASSETS_TOKEN` and `PRIVACY_DENYLIST` (plan §6.11).
-5. **Whenever Olov can:** his own photos of Storklocken's top, the rapids in the village and Näsbacken. No openly
+6. **Whenever Olov can:** his own photos of Storklocken's top, the rapids in the village and Näsbacken. No openly
    licensed photo of them was found, so until then those places are built from descriptions (plan §0 Q8).
 
 ## Decisions in effect
@@ -76,6 +97,9 @@
 | The places | Storklocken as the model for the mountain. Plates rendered in Blender after the landscape references; ambience CC0 or synthesised. The jay and the church bells at 18:00 stay. | Olov, 3 Oct ("what is recommended") |
 | Candy | The family likes every kind. The golden candy is a geléhallon in gold paper; at the party Elof chooses who gets what. | Olov, 3 Oct; the geléhallon is the session's choice |
 | More players | "Ny spelare" always exists; each player picks *Äventyr* or *Lugnt* | Olov, 3 Oct |
+| Jump physics | Gravity follows from the plan's numbers: a held jump tops out at 1.1 EL and carries 2.2 EL at a run, so gravity is 22.3 EL/s². Letting go of Hoppa on the way up makes Elof 1.8 times heavier, which makes a tap top out at 0.6 EL. | Session, 3 Oct (`src/sim/constants.ts`) |
+| Hoppa's release | Not queued. Hoppa's held state is read once per frame, and that is enough for a tap inside one frame to be a hop (`src/app/game.ts`). The plan's §4.1 expected releases in the queue. | Session, 3 Oct |
+| planck's scale | `lengthUnitsPerMeter` is 0.2, as the plan says. planck doesn't scale its polygon skin with it, so a body rests 0.019 EL above the ground; the simulation takes that off Elof's reported height. | Session, 3 Oct (`src/sim/sim.ts`) |
 | Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
 
 ## Planned against actual
@@ -83,10 +107,15 @@
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
+| 0a Foundation | 1–2 | 1 so far | 1 / 0 so far | Part 1 in the same session as plan version 4: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2 is left. |
 
 ## Known bugs
 
-- None: there is no game code yet.
+- None known.
+- Not checked yet: the two workflows on GitHub, and the game on a real phone or tablet. The browser test ran in
+  headless Chromium with software rendering, so its frame times say nothing about a device.
+- The stand-in Elof slides a little at the edge of a block before he drops: his body is a box. Stage 1's
+  controller (ledges, slopes, steps of 0.3 EL) replaces it.
 
 ## Senare (wishes for a later release)
 

@@ -1,5 +1,5 @@
-# Publishes the placeholder page in site/ to GitHub Pages.
-# Stage 0a replaces this with the full build and its checks (docs/game-plan.md §6.11).
+# Builds the game and publishes it to GitHub Pages on every push to main (docs/game-plan.md §6.11).
+# The same checks run on pull requests in ci.yml.
 name: Deploy to GitHub Pages
 
 on:
@@ -19,12 +19,28 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # The words the privacy check looks for. Without the secret it runs its built-in rules only.
+      PRIVACY_DENYLIST: ${{ secrets.PRIVACY_DENYLIST }}
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      # exiftool reads the metadata of pictures, models and sound. Without it the check uses its own scan.
+      - name: Install exiftool
+        continue-on-error: true
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libimage-exiftool-perl
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run privacy-check
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: ./site
+          path: ./dist
 
   deploy:
     needs: build

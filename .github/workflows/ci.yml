@@ -1,0 +1,37 @@
+# The checks every pull request must pass (docs/game-plan.md §6.11): the same as the deploy, plus the
+# browser smoke test. Nothing is published from here.
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      # Pull requests from forks get no secrets; the privacy check then runs its built-in rules only.
+      PRIVACY_DENYLIST: ${{ secrets.PRIVACY_DENYLIST }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install exiftool
+        continue-on-error: true
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libimage-exiftool-perl
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run privacy-check
+      # Playwright is pinned to 1.56.1, the version whose browser cloud sessions have (CLAUDE.md).
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
