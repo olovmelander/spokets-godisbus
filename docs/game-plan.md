@@ -118,7 +118,7 @@ Appendix C lists exactly what carries over. What is new here:
 | 2. Hur stor är Elof? | (a): Elof blir liten. I övrigt det som rekommenderas. | Beslutat. I slutet av prologen krymper Elof till spökets storlek, ungefär 15 cm (§5.2), och familjen blir hjälpsamma jättar (§2.3). |
 | 3. Hemligheten | Den görs om. Pappa började tälja som vuxen, och Elof var då kanske tre år. Det är okej att den första trägubben täljdes till Elof och tappades. Figurerna står på en hylla. | Minnena visar en treårig Elof i stället för en bebis (§2.4, §3.4). Lilla Elof bär själv sin trägubbe och delar sitt lördagsgodis med den, och därför är det godispåsen som spöket tar (§3.5). Spelet nämner inget årtal. |
 | 5. Överraskning och datum | Inga bestämda datum | Stegen görs i ordning, och varje utgåva släpps när dess kontrollpunkt är godkänd (§7.3). Förvalet står kvar: spelet är en överraskning för Elof, och ofärdiga delar syns bara med `?dev`. |
-| 7. Det riktiga spöket | De enda fotona är de två i `photos/`. Där finns också renderingen och affischen. | Spöket modelleras i Blender efter fotona. Renderingen och affischen visar det som fotona saknar: baksidan och formerna snett framifrån (§5.6). Skanningen stryks, för den kräver 60–80 foton. Höjden antas vara cirka 15 cm. Den riktiga figuren har inga händer, och då har spelets spöke inga heller (§2.2). |
+| 7. Det riktiga spöket | De enda fotona är de två i `photos/`. Där finns också renderingen och affischen. | Spöket modelleras i Blender efter fotona. Renderingen och affischen visar det som fotona saknar: baksidan och formerna snett framifrån (§5.6). Skanningen stryks, för den kräver 60–80 foton. Höjden antas vara cirka 15 cm. Spöket får händer som på affischen och renderingen, fast den riktiga figuren saknar dem: det bestämde du den 3 oktober (§2.2). |
 | 8. Riktiga platser | Du kan inte fotografera eller spela in nu, men det finns referensfoton i `photos/landscape/` | Förvalen gäller: Storklocken är förebild för berget, bakgrunderna renderas i Blender, och ljuden syntetiseras eller är CC0. Landskapsfotona är förlagor, inte bilder i spelet: nästan alla har licensen CC BY-SA, som spelet inte får använda (§5.6). Bilder från Storklockens topp, forsen i byn och Näsbacken saknas, så de platserna byggs efter beskrivningar tills du kan ta egna foton. Lavskrikan och kyrkklockorna kl. 18 är kvar. |
 | 9. Röster | Inga röster | *Läs upp* och inspelningssidan stryks (§3.7, §6.8). Figurerna låter, men utan ord. |
 | 10. Testbarn | Bara du testar | H2 och H3 blir dina egna tester. Elofs första spelning (H4) är första gången ett barn spelar (§7.3, §7.7). |
@@ -267,29 +267,48 @@ These are design minutes. Kapitel 1's beats end near 14:00 on the fastest path; 
 
 ## 2. Characters and places: fidelity contract
 
-**Sources,** all in the `photos/` folder on Olov's computer:
-- Olov's character sheets: Moa, Bertil and Lillebror; the family sheet; the player sheet.
-- Two photos of the real carved ghost, front and side: the only photos of the carving (§0 Q7).
-- An AI render of the ghost in three-quarter view, and Olov's "Spökets Godisbus" poster, which shows the ghost
-  and Elof from the front, from behind and running. They show what the two photos don't: the ghost's back, its
-  forms between front and side, and how the two of them move.
-- A picture of four of Pappa's other figures, which shows his style: tomtar with tall pointed caps, big ears and
-  carved beards, a pumpkin-headed man with a broom, and an old woman in a headscarf.
-- Photos of the house in summer, at the deck, and in the first snow.
-- Family photos.
-- `photos/landscape/`: 84 pictures of Anundsjö church and its bell tower, Bredbyn, the rivers and their rapids,
-  the lakes, farms and log barns, old spruce forest, and Storklocken seen from two sides. They were gathered
-  from Wikimedia Commons and Riksantikvarieämbetet, and `SOURCES.md` in that folder gives the photographer,
-  licence and source of each.
-- Pappa's own words about his carving, from the repository of his webshop (Appendix B.3).
+**Sources.** The pictures are in `photos/` on Olov's computer. Pappa's own words about his carving are in the
+repository of his webshop (Appendix B.3).
 
-**None of these images are committed** (§2.6): git ignores `photos/`. They are references that sessions look at;
-nothing is traced or copied from them. Nearly all of the landscape pictures are CC BY-SA, which is not on this
-project's licence list (§5.6), so none of them becomes a plate or a texture.
+**Every picture in the root of `photos/` is used** (Olov, 3 October). They are what the characters, the ghost and
+the house are built from:
+
+| Picture | What it decides | Used for |
+| --- | --- | --- |
+| `sheet-player.png` | Elof from the front, the side and behind; his backpack; four expressions; three poses in motion | Elof's model, his sticker faces and his key poses (§2.1) |
+| `sheet-player-phone-screenshot.jpg` | The same sheet, as a phone screenshot | A spare copy. The PNG is the one to use. |
+| `sheet-siblings.png` | Moa, Elof and Bertil, each from the front, the side and behind, with their traits | Moa's and Bertil's models; Elof without his backpack (§2.3) |
+| `sheet-family.png` | All five together: Mamma and Pappa from the front, the side and behind, everyone's traits, and their sizes beside each other | Mamma's and Pappa's models; the family's relative heights (§2.3) |
+| `family-elof-with-siblings.jpg` | The real clothes, close up: Elof's shirt with its band collar, pin stripes, two buttoned chest pockets and sleeve tabs; Moa's denim jacket and eyelet dress; Bertil's white shirt | Cloth, colours and details for the three siblings |
+| `family-emil-with-siblings-2.jpg` | The three siblings in full figure: how tall they are beside each other, and Bertil's cap | The three siblings' proportions and heights; the cap |
+| `family-mamma-at-table.jpg` | Mamma's braid and black top; the inside of the glazed veranda | Mamma's model; the epilogue's veranda |
+| `family-pappa-viewpoint.jpg` | Pappa on a granite slab with a view: cap, glasses, stubble, black T-shirt, denim shorts. A small boy in a flat cap sits on his lap. | Pappa's model; little Elof in the memories (§2.4); the summit's granite, pines and view |
+| `ghost-carving-front.jpg`, `ghost-carving-side.jpg` | The real carving: its proportions, knife facets, wood, eyes, bag, socks and shoes | The ghost's model. These two are canon (§2.2). |
+| `ghost-render.png` | The ghost in three-quarter view, with its hands and sleeves | The ghost's hands; its forms between front and side; the colour of its wood |
+| `poster.png` | Elof and the ghost running; the ghost from the front and from behind; the candy; the signpost | The ghost's back, its hands and its run; Elof's run; the trail candy (§4.3); the carved lettering of the menus (§5.7) |
+| `some-trägubbar.png` | Four of Pappa's figures: tomtar with tall pointed caps, big ears and carved beards, a pumpkin-headed man with a broom, and an old woman in a headscarf. His knives stand in a rack behind them. | The first trägubbe and the shelf of figures; the workshop |
+| `house-deck.jpg` | The garden side: the deck with its cross-braced railings and wide steps, and the glazed veranda | The deck in Kapitel 1; the veranda in the prologue (§2.5) |
+| `house-first-snow.jpg` | The yard: the big birch, the boulder in the lawn, and the veranda seen from the yard; the children's giant snowball | The lawn in Kapitel 1; the winter epilogue (STRETCH, §7.4) |
+| `house-summer-scaffolding.jpg` | The front gable: its ornaments, window surrounds, door and roof | The house's model (§2.5). It also shows the house number, which is never modelled. |
+
+- **How they are used.** A session that builds a character opens every picture listed for it as a reference
+  image in Blender's viewport. The likeness sheet that Olov judges shows the model beside those pictures (§5.6).
+  A model that hasn't been compared with all of its pictures isn't ready for H1b.
+- **The pictures in `photos/landscape/`** (84 of them) are references for the surroundings: the environment, the
+  atmosphere and the light. They show Anundsjö church and its bell tower, Bredbyn, the rivers and their rapids,
+  the lakes, farms and log barns, old spruce forest, and Storklocken from two sides. They were gathered from
+  Wikimedia Commons and Riksantikvarieämbetet, and `SOURCES.md` in that folder gives the photographer, licence
+  and source of each. Sessions look at them when a place is built. They need not all be used.
+
+**None of these images are committed** (§2.6): git ignores `photos/`. Nothing is traced or copied from them. The
+family's pictures become models and drawn faces. Nearly all of the landscape pictures are CC BY-SA, which is not
+on this project's licence list (§5.6), so none of them becomes a plate or a texture. The family photos are
+screenshots that also show account names, and those are never written down anywhere.
 
 **When sources disagree:** the sheets decide the *style* (Elof's spiky fringe, Pappa's cap on the family
 sheet), and the photos decide the *facts* (the real ghost, clothes and colours). For the ghost, the two photos
-outrank the render and the poster (§2.2). No logotype or brand mark appears anywhere in the game (§0 Q13).
+outrank the render and the poster, except for its hands (§2.2). No logotype or brand mark appears anywhere in
+the game (§0 Q13).
 
 ### 2.1 Elof (the player)
 
@@ -312,7 +331,7 @@ outrank the render and the poster (§2.2). No logotype or brand mark appears any
   - The CC0 animation library covers about half of these (§5.6). The rest are keyed in Blender or made by
     procedural layers on top. They are priced in §7.6.
 
-### 2.2 The ghost (canon: the real carving; the render is secondary)
+### 2.2 The ghost (canon: the real carving; its hands are the poster's and the render's)
 
 | Feature | Requirement |
 | --- | --- |
@@ -321,8 +340,8 @@ outrank the render and the poster (§2.2). No logotype or brand mark appears any
 | Material | Pale, unpainted wood, probably lime (lind), the wood Pappa carves in. Carved in broad flat knife facets (flat-plane carving), never smooth, never white plastic. |
 | Shape | A sheet with a hood: a rounded, slightly pointed top, a long body and a folded hem with a split at the back. Seen from the side it is deep and leans slightly forward. |
 | Eyes | Two round, glossy black painted eyes, each with one white highlight dot. **No mouth, ever.** It is the theme (§3.6). |
-| The carved bag | A paper bag with a folded top, wood-coloured, with painted dots in red, green and orange. It juts out in front of the body, as if held through the sheet. **It is part of the ghost, and it has always been empty.** |
-| Hands | None, as on the real carving: in the photos the bag is held through the sheet, and two knife cuts above it are the only hint of arms. The render and the poster give the ghost fists that grip the bag; the game doesn't. It uses the folds of its sheet as arms, and hooks things with the bag's folded top. |
+| The carved bag | A paper bag with a folded top, wood-coloured, with painted dots in red, green and orange. It juts out in front of the body, held in the ghost's two hands. **It is part of the ghost, and it has always been empty.** |
+| Hands | Two small carved fists, as on the poster and the render (Olov, 3 October). They come out of sleeve-like folds of the sheet and grip the bag. The real carving has none: there the bag is held through the sheet. Each arm is its own wooden part, so the ghost can let go with one hand to point, wave, grab, juggle or set a candy down. |
 | Socks and shoes | Rainbow-striped socks (blue, green, yellow, red, orange). Red high-top canvas sneakers with white toe caps, soles and laces, and a plain white disc on the ankle. The real carving and the render have a small star on that disc; the game leaves it out, because nothing in the game carries a logotype (§0 Q13). |
 | How it moves | Like a wooden toy come alive: rigid body, waddle, little hops, tilts. Tiny feet step quickly. It never bends or squashes like cloth. |
 | Mischief | In the prologue and Kapitel 1 it flees and teases: a little dance, a peek, a foot that taps while it waits, candy juggled on its head. It is *busigt*, as the brief says. |
@@ -352,7 +371,7 @@ outrank the render and the poster (§2.2). No logotype or brand mark appears any
 | **Mamma** (Sofie) | Long brown braid over the shoulder. Black tank top, olive cargo trousers, brown hiking boots, a small backpack. Often holds a white mug with a red heart. | Varm, Snäll, Stark, Kreativ, Äventyrlig, Bästa mamma | **Kapitel 3 (Myren):** lifts a fallen dead pine over a pool as a bridge (Stark), lets her braid down to the boardwalk (Kreativ), warm cocoa (Varm). **The final:** leads the four headlamps up the mountain (Äventyrlig). |
 | **Pappa** (Emil) | Black cap, rectangular glasses, short stubble. Black T-shirt, light denim shorts, hiking boots, an olive backpack. A red-handled carving knife and a piece of wood. | Trygg, Snäll, Äventyrlig, Fixar allt, Bästa pappa | **Prologue:** carves the ghost, and sees Elof shrink: "Följ godisspåret, Elof. Vi är nära dig hela tiden." **Kapitel 1:** his workshop in the yard, and its shavings. **Kapitel 2:** carves a seesaw (*gungbräda*). **The final:** recognises his first trägubbe. **The epilogue:** teaches Elof to carve. |
 | **Moa** (big sister) | Long wavy blond hair. Light denim jacket, pale-yellow tiered dress with eyelet lace, white sneakers, a dark-red backpack. | Snäll, Modig, Äventyrlig, Kreativ, Storasyster | **Kapitel 1:** finds tiny Elof, climbs onto the railing and throws her paper plane. **The summit:** wraps her denim jacket around him. Her crayon drawing style is the game's map. |
-| **Bertil** (big brother) | Red-and-white trucker cap with a plain badge instead of the club crest. White short-sleeved shirt, charcoal jeans, white sneakers with red details, freckles. | Kreativ, Sportig, Busig, Snäll, Storebror | **Kapitel 2:** his cap carries Elof across the forest pool while he cheers from the bank. Version 1.1 adds the rapids. **The summit:** puts the cap on Elof's head. |
+| **Bertil** (big brother) | Red-and-white trucker cap with a plain badge instead of the club crest. White short-sleeved shirt with no chest emblem, charcoal jeans, white sneakers with a plain red stripe, freckles. | Kreativ, Sportig, Busig, Snäll, Storebror | **Kapitel 2:** his cap carries Elof across the forest pool while he cheers from the bank. Version 1.1 adds the rapids. **The summit:** puts the cap on Elof's head. |
 
 **Pappa the carver, in his own words** (Appendix B.3). Just before the pandemic he was looking for something to
 do, and found carving by chance through a video clip. Since then he has carved over 250 figures at home in
@@ -375,8 +394,10 @@ about three (§0 Q3). Four rules keep them clear for a seven-year-old:
 1. Every memory grows out of the ghost's picture bubble, and shrinks back into it.
 2. Each is shown in a warm sepia look with film grain (§5.4), so it never reads as "now".
 3. Little Elof has the same spiky golden fringe as today, and always wears light blue, the colour of Elof's
-   shirt: striped pyjamas indoors, and a knitted hat with a pompom outdoors. His trägubbe is with him in every
-   memory. Memory 1 ends on his face beside the little figure: "Det där är ju jag!" is the reaction we want.
+   shirt: striped pyjamas indoors and a jacket outdoors. Outdoors he also wears a small flat cap like Pappa's,
+   with his fringe sticking out under it, as the small boy on Pappa's lap does in the viewpoint photo (§2). His
+   trägubbe is with him in every memory. Memory 1 ends on his face beside the little figure: "Det där är ju jag!"
+   is the reaction we want.
 4. Pappa looks as he does today, so he is recognised at once.
 
 Elof was too small to remember any of this, which is why the ghost has to show him.
@@ -392,8 +413,9 @@ Elof was too small to remember any of this, which is why the ghost has to show h
 
 Both parents allow an exact house (§0 Q4).
 
-- **What the photos show:** a falu-red, two-storey wooden house with white trim, a glazed veranda, a wooden deck
-  with railings and steps, a big birch in the yard, and spruce forest behind. Pappa's workshop stands in the yard.
+- **What the photos show:** a falu-red, two-storey wooden house with white trim, a glazed veranda, a dark metal
+  roof with two chimneys, a wooden deck with cross-braced railings and wide steps, a big birch and a granite
+  boulder in the yard, and spruce forest behind. Pappa's workshop stands in the yard.
 - **The exact details** (ornaments, door, roof, the workshop, the outbuildings) come from Olov's photos in the
   session that builds the house in Blender (§5.6). The photos are references; nothing is traced from them.
 - **Never** a house number, a street sign or the view from the road. The game doesn't need them, and they are the
@@ -625,8 +647,8 @@ and challenge routes **C1–C4** (§4.7).
     end, and Elof is launched. The small cone nearby launches him too low; the big one, further up the slope,
     carries him across.
 - **Near-catch** on a fallen log: *Ta!*
-- **Memory 2:** an autumn walk in the forest, years ago. Little Elof, in his light-blue hat, carries the little
-  figure in his mitten. He sets it on a stump and takes two raspberry jellies out of his own small Saturday bag:
+- **Memory 2:** an autumn walk in the forest, years ago. Little Elof, in his light-blue jacket and flat cap, carries the
+  little figure in his mitten. He sets it on a stump and takes two raspberry jellies out of his own small Saturday bag:
   one for the figure's lap, one for himself. Pappa photographs them, and they both laugh.
 - **The brook's calm edge.** A forest pool glittering in the midday sun. The ghost floats across on a leaf.
 - **Kepsbåten** (S3).
@@ -718,8 +740,8 @@ Näckens fiol (O5).
   - Elof: "Spöket vill hämta hem min trägubbe!"
 
 **Final: Norrsken (blue hour into night; about 6 min, with a tap at least every 30 s)**
-1. **The crack** (P16). Elof lowers the lace; the ghost climbs down and hooks the trägubbe with its bag's folded
-   top. They pull together, and out it comes: grey, mossy and smiling, with no eyes left.
+1. **The crack** (P16). Elof lowers the lace; the ghost climbs down and takes the trägubbe in its
+   arms. They pull together, and out it comes: grey, mossy and smiling, with no eyes left.
 2. **New eyes.** Elof picks a crowberry from the heather and dots two eyes on the old figure, as he did on the
    ghost that morning.
 3. **The party it wanted.** The ghost sets the trägubbe by the pine, facing the view, and puts a
@@ -1410,7 +1432,7 @@ Every source and licence goes into `LICENSES.md` (§7.5). Three categories are a
    | Who | What is built | When |
    | --- | --- | --- |
    | **Elof** | The whole figure, rigged, with a sticker face of ten expressions: the most finished character in the game | Stage 0c |
-   | **The ghost** | Three rigid wooden parts, after the photos, the render and the poster (point 4) | Stage 0c |
+   | **The ghost** | Five rigid wooden parts, after the photos, the render and the poster (point 4) | Stage 0c |
    | **Pappa and Moa** | Whole figures on Elof's skeleton, mostly in held poses; hands for the close-ups; portrait bubbles rendered from the models | Stage 2, after the slice |
    | **Mamma and Bertil** | The same. Utgåva 1 shows only Mamma passing the door and Bertil's hand. | Those two glimpses in Stage 2; the whole figures in Stages 3 and 4 |
    | **Little Elof** | Elof's own model with a three-year-old's proportions, in two outfits (§2.4) | With memory 1, late in Stage 2 |
@@ -1423,8 +1445,9 @@ Every source and licence goes into `LICENSES.md` (§7.5). Three categories are a
      bone lengths differ, which a build-time retarget with per-bone rest-pose offsets handles; without the
      offsets limbs come out 73–180° wrong.
    - **How Elof is built:**
-     1. Start from the library's CC0 base mannequin, and reshape it to Elof's proportions with the player sheet
-        and the poster as viewport references.
+     1. Start from the library's CC0 base mannequin, and reshape it to Elof's proportions with his pictures from §2 as
+        viewport references: the player sheet's front, side and back first, then the siblings sheet, the poster and
+        the two photos of his real clothes.
      2. Model the hair, shirt, jeans, boots and backpack as simple shells over it.
      3. Give him a sticker face (below), the library's clips and his own clips (point 3).
      4. Optimise: 1024² colour textures, with **no normal maps on characters**, which cost download and are
@@ -1439,7 +1462,8 @@ Every source and licence goes into `LICENSES.md` (§7.5). Three categories are a
      an expression atlas (§2.1's expressions, plus blink frames). `DecalGeometry` is not used here, because it
      doesn't follow a skinned mesh.
    - **Family members,** as set in §2.3:
-     - each is Elof's base reshaped and dressed after the sheets, so a new person costs far less than Elof did;
+     - each is Elof's base reshaped and dressed after every picture listed for that person in §2, so a new person
+       costs far less than Elof did;
      - hands, props, boots and silhouettes in the macro chapters, with 2D portrait bubbles rendered in Blender
        from their models;
      - whole figures in the prologue, the memories, on the summit and in the epilogue: mostly held poses, plus a
@@ -1460,11 +1484,13 @@ Every source and licence goes into `LICENSES.md` (§7.5). Three categories are a
    - **Modelled in Blender,** with its four references in the viewport (§2):
      - the two photos decide the facts: its proportions, the knife facets, the wood, the eyes, the bag and its
        dots;
-     - the render shows the forms between front and side, and the poster shows the back and a running pose.
+     - the render and the poster decide the hands and the sleeve folds they come out of; the render also shows
+       the forms between front and side, and the poster the back and a running pose.
    - It is a faceted mesh with flat knife facets (flat-shaded planes, no smoothing) and a lime-wood material
      baked from procedural nodes: about 8k triangles, and a 1024² colour texture.
    - Its eyes are separate meshes, because the prologue needs it eyeless until Elof paints them.
-   - It is split into rigid parts: the body with the bag, the left foot, the right foot.
+   - It is split into five rigid parts: the body with the bag, the two arms with their fists, and the two feet.
+     At rest both fists grip the bag, as in the render.
    - **No scan.** Photogrammetry needs 60–80 photos of the carving, and there are two (§0 Q7). If they are ever
      taken, version 3 of this plan, in the git history, describes how to shoot and clean up a scan.
    - It is animated in code as a rigid wooden toy. There is no skinning, because carved wood doesn't bend.
@@ -2357,7 +2383,7 @@ Cloud sessions stay useful for code-only work and reviews, and both follow the s
 | Elof's clips from the CC0 library | about 12: idle, walk, run, three jump parts, push, climb, interact, pick up, crouch, sit | the library's skeleton, shared by both routes (§5.6) | 1 |
 | Elof's own clips | about 15: hop, tumble, brace, slide down, pump and swing, throw the lace, lunge, taste, give, paint, carve, hold a lantern, ride (plane, cap, crane), stomp, wave, shrink and grow | keyed in Blender through MCP, plus procedural layers | 2–3 |
 | Elof's faces | 10 expressions plus blink, as a sticker atlas | drawn in code | 0.5 |
-| The ghost | 3 rigid parts, about 10 code-driven moves (waddle, hop, tilt, freeze, dance, juggle, knock, point, hook, fall flat) | modelled in Blender; moved in code | 1.5 |
+| The ghost | 5 rigid parts, about 12 code-driven moves (waddle, hop, tilt, freeze, dance, juggle, knock, point, grab, wave, carry, fall flat) | modelled in Blender; moved in code | 2 |
 | Family hands | about 9 moments: Pappa's brush, knife, seesaw and carving lesson; Moa's plane; Bertil's cap; Mamma's log, braid and mug | hand models with a few poses, in Blender | 2 |
 | Family portrait bubbles | 4 people × 4 expressions | rendered in Blender from their models | 0.5 |
 | The family's figures | Pappa, Mamma, Moa and Bertil | built in Blender on Elof's skeleton, after the sheets (§5.6) | 3–4 |
@@ -2417,7 +2443,7 @@ Cloud sessions stay useful for code-only work and reviews, and both follow the s
    page and the naming screen, pays for building the family's figures (§7.6), so the total stays at about 40–55
    sessions.
 9. **The ghost** (§2.2, §5.6) is modelled after two photos, with the render and the poster for what they don't
-   show. There is no scan, and it has no hands.
+   show. There is no scan. It has hands, as on the poster and the render, which the real carving doesn't.
 10. **The places** (§5.6, §5.8): no photos or recordings from the real places for now. Plates are rendered in
     Blender after the 84 reference pictures in `photos/landscape/`, which are openly licensed but mostly CC BY-SA,
     so they are for looking at only. Scanned rocks, stumps and plants come from Poly Haven, and ambience is CC0 or
@@ -2427,6 +2453,9 @@ Cloud sessions stay useful for code-only work and reviews, and both follow the s
 12. **References** (§2, §2.6) are in `photos/`, which git ignores, instead of `references/`.
 13. **The candy** (§3.4, §4.3): the family likes every kind, so Elof chooses what each of them gets at the party,
     and the trail candy looks like the candy on Olov's poster.
+14. **Every picture in the root of `photos/` has a job** (§2): a table says what each one decides and which model
+    it is used for, and a model isn't ready for H1b until it has been compared with all of its pictures. The
+    landscape folder is for the surroundings. Little Elof's cap in the memories comes from the viewpoint photo.
 
 ### Version 3: Olov's first answers (3 October 2026)
 
@@ -2581,6 +2610,7 @@ images, and the three r186 and planck sources, with builds and Chromium runs.
 | `mcp-for-blender` 2.1.3 is still the newest release (MIT); `blender-mcp` 2.0.0 only points to it | PyPI's JSON, re-checked for version 4 |
 | The real ghost, in its two photos: a star on the ankle disc of the shoe, the bag held out in front through the sheet, no carved hands, and a split in the hem. The render and the poster add hands and a fuller sheet. | Looked at in `photos/` |
 | The 84 pictures in `photos/landscape/`: 82 are CC BY-SA, one is CC BY 4.0 and one is public domain | Counted in `photos/landscape/SOURCES.md`, which the session that gathered them wrote on 3 October |
+| What each of the 16 pictures in the root of `photos/` shows (§2) | Every one was looked at by the session that wrote version 4 |
 
 ## Appendix B: research notes
 

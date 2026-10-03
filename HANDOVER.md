@@ -17,21 +17,28 @@
       and source for each in `photos/landscape/SOURCES.md`. Most are CC BY-SA: for looking at, not for the game.
     - `photos/house-summer-scaffolding.jpg` shows the house number on the wall, and the phone screenshots show
       account names. Neither detail may ever be modelled, drawn, written down or committed (plan §2.6).
-  - `.mcp.json` declares the Blender MCP server with telemetry off and safe mode on. **It has not run yet,**
-    because `uv` is not installed on Olov's computer.
+  - **Blender is connected** (3 October). `.mcp.json` declares the MCP server with telemetry off and safe mode on,
+    and `uv` is installed. Started exactly as declared, the server connected to Olov's Blender, listed its 36 tools
+    and returned the scene.
+    - Claude Code loads `.mcp.json` when a session starts, so the session that tested this had no Blender tools of
+      its own. The next session has them, once Olov has restarted VS Code and approved the `blender` server.
+    - The add-on inside Blender is older than the server. The server says so and falls back, so it works, but
+      see "Next".
 - **Not built:** any game code. The repository holds documents, the placeholder page and its workflow.
 - **Olov's computer** (checked 3 October): Windows 11, an RTX 3070, Node 24.14, git, and Blender 4.5.9 LTS with
-  the *MCP for Blender* add-on running on port 9876, with only Poly Haven ticked. Not installed: `uv`, `gh`,
-  `exiftool`, `ktx`.
+  the *MCP for Blender* add-on running on port 9876, with only Poly Haven ticked, and `uv` 0.12. Not installed:
+  `gh`, `exiftool`, `ktx`.
 
 ## Next
 
-1. **Olov connects Blender to Claude Code** (about five minutes; plan §5.6, §6.14):
-   1. install `uv`: `winget install --id=astral-sh.uv -e` in PowerShell;
-   2. restart VS Code, so that Claude Code finds `uvx`;
-   3. keep Blender open with the add-on connected, and approve the `blender` server when Claude Code asks;
-   4. ask the session what the Blender scene holds. It should list the cube, the camera and the light.
+1. **Olov gives the next session its Blender tools** (plan §5.6, §6.14):
+   1. restart VS Code, so that Claude Code finds `uvx`;
+   2. keep Blender open with the add-on connected, and approve the `blender` server when Claude Code asks;
+   3. ask the session what the Blender scene holds. It should list the cube, the camera and the light.
    - In the add-on's panel, keep only *Poly Haven* ticked. Never tick *Hunyuan*.
+   - **Update the add-on when convenient:** run `uvx mcp-for-blender install-addon`, then restart Blender (or switch
+     the add-on off and on in Preferences) and press *Start MCP Server*. If the new panel shows a telemetry consent
+     box, leave it unticked (`CLAUDE.md`).
 2. **Stage 0a** (plan §7.3), in a cloud session or on Olov's computer:
    - the Vite + TypeScript + three scaffold, both real workflows (replacing the placeholder), and the privacy gate;
    - a test scene live on Pages with `noindex`;
@@ -65,11 +72,11 @@
 | Voices | None: no read-aloud, no recordings. Characters make wordless sounds. | Olov, 3 Oct |
 | Logotypes | None anywhere. The star on the real ghost's shoes becomes a plain disc. | Olov, 3 Oct |
 | Characters | Every character is designed in Blender, with no paid AI tool: Elof and the ghost first, then the family, little Elof, the trägubbar and the animals (plan §5.6) | Olov, 3 Oct |
-| The ghost model | After the two photos of the carving, with the render and the poster for what they don't show. No scan. No hands, as on the carving. | Olov, 3 Oct; "no hands" is the session's reading |
+| The ghost model | After the two photos of the carving, with the render and the poster for what they don't show. It has hands, as on the poster and the render. No scan. | Olov, 3 Oct |
 | The places | Storklocken as the model for the mountain. Plates rendered in Blender after the landscape references; ambience CC0 or synthesised. The jay and the church bells at 18:00 stay. | Olov, 3 Oct ("what is recommended") |
 | Candy | The family likes every kind. The golden candy is a geléhallon in gold paper; at the party Elof chooses who gets what. | Olov, 3 Oct; the geléhallon is the session's choice |
 | More players | "Ny spelare" always exists; each player picks *Äventyr* or *Lugnt* | Olov, 3 Oct |
-| Reference pictures | In `photos/`, ignored by git | Olov, 3 Oct |
+| Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
 
 ## Planned against actual
 
@@ -87,7 +94,7 @@
 
 ## Frågor till Olov
 
-Both are in plan §0, "Kvar att svara på". Neither blocks the work.
+The first two are in plan §0, "Kvar att svara på". None of them blocks the work.
 
 1. **Do Elof's parents know about the game, or is it a surprise for them too?** The default: Olov judges the
    likeness himself, and Pappa reads the storyboard of the memories before the first one is built, late in
@@ -95,7 +102,9 @@ Both are in plan §0, "Kvar att svara på". Neither blocks the work.
 2. **Which devices does Olov have for testing?** The default: he tests on what he has and in Chrome on the
    computer, and a device class he lacks is first measured when Elof plays.
 
-Three choices the session made, for Olov to overrule if he wants:
+3. **Is the small boy on Pappa's lap in `family-pappa-viewpoint.jpg` Elof?** Little Elof in the memories is
+   modelled on him, flat cap and all (plan §2.4). The default: yes.
+
+Two choices the session made, for Olov to overrule if he wants:
 - the name *Klonk* (two others that were considered: Kvist and Flisa);
-- no hands on the ghost, as on the real carving, although the render and the poster show hands;
 - the plain disc instead of the star on the ghost's shoes, because the star on a red canvas shoe reads as a brand.

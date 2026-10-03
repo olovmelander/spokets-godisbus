@@ -44,10 +44,13 @@ Both parents have said yes to everything in the plan's consent list, and every n
 - **Pictures.**
   - Never commit reference photos, the AI character sheets or likeness renders. They are in the `photos/` folder
     on Olov's computer, which git ignores, or come as attachments; working copies stay in the session scratchpad.
+  - **Every picture in the root of `photos/` is used.** The table in plan §2 says what each one decides. Before
+    building a character, the ghost or the house, open all of its pictures as reference images in Blender, and
+    show Olov the model beside them.
   - One house photo shows the house number, and the phone screenshots show account names. Never model, draw or
     write down either.
   - The pictures in `photos/landscape/` are other people's, mostly under CC BY-SA (`SOURCES.md` there lists each
-    one). Look at them; never use them as plates or textures.
+    one). They are references for the surroundings: look at them, and never use them as plates or textures.
   - The family's game models, textures and `.blend` files live in the private repository
     `spokets-godisbus-familj` (plan §6.11), so they can always be taken down.
 - **Voices.** The game has none: nothing is read aloud and nothing is recorded (plan §0 Q9). Characters make
