@@ -129,23 +129,30 @@ revised 19 September 2026):
    - Microsoft asks for 16 GB of graphics memory. The fork *trellis-stable-projectorz* (MIT) runs it in half
      precision on 8 GB, which is what Olov's RTX 3070 laptop card has. It has a Windows installer (a 327 MB
      download, which then fetches Python 3.11, PyTorch and the models), a local web page and a local API.
-   - **Where it runs: Olov's other computer, which has an RTX 5080** (16 GB; he said so on 3 October). That is
-     what Microsoft asks for, so TRELLIS runs there at full precision and the fork's 8 GB mode is not needed.
-     The fork's installer is still the easy way in on Windows: it brings CUDA 12.8 and PyTorch 2.7, which the
-     50-series cards need.
-   - **TRELLIS.2 as a second try there.** It is finer and gives PBR textures, under the MIT licence, but takes
-     one picture only, and Microsoft asks for 24 GB and Linux. Others report it running in 16 GB on Windows;
-     this is not checked.
+   - **Where it runs: Olov's other computer, which has an RTX 5080** (16 GB; he said so on 3 October).
+   - **What to run there, best first** (Olov asked whether anything is better than TRELLIS):
+     1. **Pixal3D** (Tsinghua University and Tencent ARC Lab, SIGGRAPH 2026). MIT licence, with no limit on
+        where it may be used; the parts it builds on keep their own licences. It is built on TRELLIS.2 and
+        follows the picture it is given more closely. It gives a GLB with PBR textures, and since September
+        2026 it takes several views of the same thing. It has a low-memory mode at 1024 resolution; how much
+        memory that needs is not stated.
+     2. **TRELLIS.2** (Microsoft, MIT). Finer than the first TRELLIS, with PBR textures, but one picture only.
+        Microsoft asks for 24 GB and Linux.
+     3. **TRELLIS,** the first one, through the fork's Windows installer (CUDA 12.8 and PyTorch 2.7, which the
+        50-series cards need). 16 GB is what Microsoft asks for, and it takes several views.
+   - **ComfyUI is the way to run the first two on Windows.** Both run in ComfyUI's own core, which has its own
+     replacement for the two parts whose licences forbid commercial use. Not checked: that they fit in 16 GB,
+     and that ComfyUI's nodes take several views. (The session first wrote that ComfyUI added nothing. That
+     was wrong.)
    - **The laptop with the RTX 3070** could run the fork in 8 GB, but drive C: has 11 GB free of 953 and the
      install needs roughly 30 GB (an estimate).
    - **Getting the pictures there:** the three views, or the whole `photos/` folder, go from one computer to
      the other on a USB stick or over the home network. Never through git, and never through a service the
      parents have not agreed to. The finished GLB comes back the same way, into
      `art/private/elof/image-to-3d/`.
-   - **Not better on this computer:** TRELLIS.2 (MIT, but 16 to 24 GB of graphics memory); Hunyuan3D (its
-     licence does not apply in the EU, and `CLAUDE.md` forbids it); TripoSR (MIT, 6 GB, rough); Stable Fast 3D
-     (free under Stability's community licence, 7 GB, soft). ComfyUI is a workbench that runs such models, not
-     a model: it would run the same TRELLIS and adds nothing the fork's own page lacks.
+   - **Looked at and left out:** Hunyuan3D (its licence does not apply in the EU, and `CLAUDE.md` forbids it);
+     Step1X-3D (Apache-2.0, but 24 GB or more); SAM 3D (32 GB recommended, and made for photos of real
+     things); TripoSR (MIT, 6 GB, rough); Stable Fast 3D (Stability's community licence, 7 GB, soft).
    - **Not checked:** that it runs on this card, and how good the result is. It is likely to be rougher than
      the paid services', and it has no A-pose setting, so the model stands as the picture does.
 
@@ -175,6 +182,8 @@ give the face eyes that can move and blink, and bake one 1024² texture. Every g
   <https://80.lv/articles/stylized-character-production-tips-and-tricks>
 - Matt Berenty's board of stylized characters (Pinterest). Olov's reference for the look.
   <https://se.pinterest.com/mattberenty/stylized-characters/>
+- Pixal3D, and ComfyUI's page on running it and TRELLIS.2. <https://github.com/TencentARC/Pixal3D>,
+  <https://comfy.org/pixal3d-trellis2/>
 - TRELLIS, the fork with the Windows installer, and TRELLIS.2. <https://github.com/microsoft/TRELLIS>,
   <https://github.com/IgorAherne/trellis-stable-projectorz>, <https://github.com/microsoft/TRELLIS.2>
 - Meshy: terms of use, privacy policy, and the API page for several pictures to one model.

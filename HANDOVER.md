@@ -242,14 +242,15 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
      users' uploads, private models, you own them. Read that on the site before uploading; the session could
      not open the pages.
    - **(b) Meshy Pro all the same,** if you and the parents accept the training clause.
-   - **(c) TRELLIS on your own computer: this is the plan.** You asked for an open, local alternative, and
-     your other computer has an RTX 5080 with 16 GB, which is what TRELLIS asks for (art bible §1.6). MIT
-     licence, free, and nothing is uploaded. Not tried yet, and likely rougher than the paid services.
+   - **(c) An open model on your own computer: this is the plan.** You asked for an open, local alternative,
+     and your other computer has an RTX 5080 with 16 GB. The order to try, best first: Pixal3D, then
+     TRELLIS.2, both through ComfyUI, then the first TRELLIS (art bible §1.6 says why). All three are MIT,
+     free, and nothing is uploaded. None is tried yet; whether the first two fit in 16 GB is not known.
      - **What a session on that computer needs:** this repository cloned; Elof's three views from
        `art/private/elof/image-to-3d/` (or the whole `photos/` folder), carried over on a USB stick or the
        home network, never through git; and about 30 GB of free disk.
-     - **What it does:** installs the Windows fork of TRELLIS, runs the three views through it, and saves the
-       GLB to `art/private/elof/image-to-3d/`. Blender work can then happen on either computer.
+     - **What it does:** installs ComfyUI, runs Elof's views through the models in that order, and saves the
+       best GLB to `art/private/elof/image-to-3d/`. Blender work can then happen on either computer.
      - The laptop with the RTX 3070 has 11 GB free on C: and cannot hold the install as it is.
    - Whichever you choose, better pictures give a better model: each view of Elof alone, full height, 1024 by
      1536, plain background, arms a little out. The views cut from the sheet are small and soft; they are in
