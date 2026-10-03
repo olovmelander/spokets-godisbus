@@ -14,36 +14,50 @@ Olov still has to answer. Read both before anything else.
 - Never start the next chapter's content in the same PR.
 - Keep `RELEASED_CHAPTER` (`src/content/world.ts`) at the last released chapter. Raising it *is* the release.
 - Work on a branch and merge to `main` through a pull request. `main` deploys to GitHub Pages.
+- Olov merges. If he agrees, a session may merge its own green PR when it doesn't touch `RELEASED_CHAPTER`,
+  likeness assets or these rules.
+- After Utgåva 1's checkpoint H3, new wishes go to the "Senare" list in `HANDOVER.md`.
 
 ## End of a session
 
-- `npm run typecheck`, `npm test` and `npm run build` pass. The build fails if a size budget in plan §6.12 is
-  broken.
-- `HANDOVER.md` is updated: done, next, decisions, known bugs, and "Frågor till Olov".
-- Contact sheets go under `docs/shots/<chapter>/`, as WebP at 390×844, 844×390, 1180×820 and 1440×900. Take
-  them with `scripts/shots.mjs` once it exists.
+- `npm run typecheck`, `npm test`, `npm run build` (size gates) and `npm run privacy-check` pass.
+- `HANDOVER.md` is updated: done, next, decisions, known bugs, the planned-against-actual row, the "Senare" list,
+  and "Frågor till Olov".
+- Contact sheets come only on checkpoint PRs, committed by the session: WebP at 390×844, 844×390, 1180×820 and
+  1440×900, under `docs/shots/<chapter>/`, showing a stand-in figure for the family.
+- Use Playwright 1.56.1, the version whose browser is preinstalled in cloud sessions.
 
 ## Rules that protect the family (plan §2.6)
 
-- Everything in this repository, and everything on the site, is public.
-- First names only: Elof, Moa, Bertil, Sofie (Mamma) and Emil (Pappa). Never a surname, a house number, a
-  school, coordinates, or the names of anyone's online accounts.
-- "Bredbyn" is the finest location allowed. The area name in Olov's brief may be added only after Emil and Sofie
-  have said yes (plan §0 Q4). Git history is permanent.
-- Describe the family's house in the repository only in general terms (plan §2.5).
-- Never commit the reference photos or the AI character sheets. Ask Olov to attach them, and keep working
-  copies in the session scratchpad. Only game models and textures derived from them go in, once Olov has
-  approved the likeness.
-- Recordings of family voices need that person's (or their parents') specific OK.
+- Everything in this repository, and everything on the site, is public, and git history is permanent.
+- **Names.** The children are Elof, Moa and Bertil. The parents are only **Mamma** and **Pappa**: never their
+  first names, never a surname.
+- **Places.** "Bredbyn" is the finest location allowed in the repository. In the game itself the village,
+  church and rivers are not named. Never a house number, an address, a school, coordinates or anyone's account
+  names.
+- **The house** is described only in general terms (plan §2.5).
+- **Pictures.**
+  - Never commit reference photos, the AI character sheets or likeness renders.
+  - Ask Olov to attach them with names and numbers cropped off, and keep working copies in the session
+    scratchpad.
+  - The family's game models and textures live in the private repository `spokets-godisbus-familj` (plan §6.11).
+- **Voices.** No recording of a real family voice is published. Family recordings stay on the tablet.
+- **Consent.** Nothing new and personal is added until both parents have said yes (plan §0 Q4).
 
 ## Licences
 
-Every third-party file is listed in `LICENSES.md` with its source and licence. Allowed: CC0, CC-BY (credited),
-OFL, MIT, BSD and Apache-2.0. No CDNs, analytics or third-party requests on the site.
+Every third-party or generated file is listed in `LICENSES.md` under one of three categories (plan §5.6):
+- **open:** CC0, CC-BY (credited), OFL, MIT, BSD, Apache-2.0;
+- **owned by Olov:** paid-tool output and AI-painted plates;
+- **made by the family, with consent.**
+
+Never Mixamo, ActorCore, Megascans/Fab, Textures.com or free-tier AI output. No CDNs, analytics or third-party
+requests on the site.
 
 ## Releases
 
-Merge at least 15 minutes before Elof plays. GitHub Pages caches `index.html` for 10 minutes.
+- Merge at least 15 minutes before Elof plays: GitHub Pages caches `index.html` for 10 minutes.
+- Then open the game once on Elof's device, so the service-worker update is in place.
 
 ## Where things will live (plan §6.3)
 
@@ -52,9 +66,9 @@ Merge at least 15 minutes before Elof plays. GitHub Pages caches `index.html` fo
 | All player-facing Swedish text | `src/content/sv.ts` |
 | Chapters: terrain, props, candy, hooks, triggers, camera zones, light | `src/content/chapters/*.ts` (units: EL, one Elof length) |
 | Pure simulation (no three, no DOM) | `src/sim/` |
-| Rendering (`WebGLRenderer`, r186) | `src/render/` |
+| Rendering (`WebGLRenderer`, r186, HDR output with `setEffects`) | `src/render/` |
 | DOM menus, HUD, bubbles | `src/ui/` |
 | Input (ported from Sköldhästen) | `src/input/` |
 | Audio | `src/audio/` |
 | Saving | `src/save/` |
-| Art sources and generators | `art/`, built by `scripts/build-assets.mjs` |
+| Art sources and generators | `art/`; session bake in `scripts/bake/`, packs by `scripts/build-assets.mjs` |
