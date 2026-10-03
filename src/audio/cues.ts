@@ -67,6 +67,9 @@ export type Cue =
   | { kind: 'knocks' }
   /** A cranberry bounces him. */
   | { kind: 'bounce' }
+  /** Elof himself, without words: a gasp as the glitter takes him, a giggle at something good. */
+  | { kind: 'gasp' }
+  | { kind: 'giggle' }
   | { kind: 'goal' };
 
 /** What the cues are worked out from: the little of the game's state that can be heard. */
@@ -108,15 +111,16 @@ export interface Heard {
   bounces?: number;
 }
 
-/** What has to be remembered between frames: the candy streak and the stride. */
+/** What has to be remembered between frames: the candy streak, the stride, and when he last bounced. */
 export interface CueMemory {
   streak: number;
   lastCandyAt: number;
   stride: number;
   left: boolean;
+  lastBounceAt: number;
 }
 
-export const newCueMemory = (): CueMemory => ({ streak: 0, lastCandyAt: -10, stride: 0, left: true });
+export const newCueMemory = (): CueMemory => ({ streak: 0, lastCandyAt: -10, stride: 0, left: true, lastBounceAt: -10 });
 
 /** A candy within this long of the one before continues the streak. */
 export const STREAK_GAP = 1.4;
@@ -134,12 +138,12 @@ export function cuesFor(before: Heard, now: Heard, memory: CueMemory): Cue[] {
     memory.lastCandyAt = now.time;
     cues.push({ kind: 'candy', streak: memory.streak });
   }
-  if (now.checkpoint > before.checkpoint) cues.push({ kind: 'bigCandy' });
+  if (now.checkpoint > before.checkpoint) cues.push({ kind: 'bigCandy' }, { kind: 'giggle' });
   if (now.atGoal && !before.atGoal) cues.push({ kind: 'goal' });
 
   // What he starts doing.
   if (now.mode !== before.mode) {
-    if (now.mode === 'bubble') cues.push({ kind: 'bubble' });
+    if (now.mode === 'bubble') cues.push({ kind: 'bubble' }, { kind: 'gasp' });
     else if (now.mode === 'swing') cues.push({ kind: 'lace' });
     else if (now.mode === 'ledge') cues.push({ kind: 'haul' });
     else if (now.mode === 'climb') cues.push({ kind: 'grab' });
@@ -182,6 +186,11 @@ export function cuesFor(before: Heard, now: Heard, memory: CueMemory): Cue[] {
   for (const who of (now.said ?? []).slice(before.said?.length ?? 0)) cues.push({ kind: 'say', who });
   if ((now.ghostPerch ?? 0) > (before.ghostPerch ?? 0)) cues.push({ kind: 'ghostHop', near: Math.max(0, 1 - (now.ghostAway ?? 20) / 14) });
   if ((now.helpStep ?? 0) >= 2 && (before.helpStep ?? 0) < 2) cues.push({ kind: 'knocks' });
-  if ((now.bounces ?? 0) > (before.bounces ?? 0)) cues.push({ kind: 'bounce' });
+  // The first bounce of a row makes him laugh; the ones after it are only boings.
+  if ((now.bounces ?? 0) > (before.bounces ?? 0)) {
+    cues.push({ kind: 'bounce' });
+    if (now.time - memory.lastBounceAt > 3) cues.push({ kind: 'giggle' });
+    memory.lastBounceAt = now.time;
+  }
   return cues;
 }

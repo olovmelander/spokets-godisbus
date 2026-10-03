@@ -243,6 +243,19 @@ export function createAudio(): Audio {
         knock(300, 0.04 + 0.1 * cue.near);
         tone('sawtooth', 170, 230, 0.12, 0.01 + 0.025 * cue.near, 0.06);
         break;
+      case 'gasp': {
+        // A quick breath in, in his own voice: up, and cut short.
+        const pitch = VOICES.elof.pitch;
+        tone('triangle', pitch * 1.1, pitch * 1.9, 0.13, 0.1);
+        puff('highpass', 2500, 5000, 0.12, 0.03);
+        break;
+      }
+      case 'giggle': {
+        // Three or four quick notes that tumble down: a laugh, not a word.
+        const pitch = VOICES.elof.pitch;
+        for (const [i, step] of [9, 7, 9, 5].entries()) tone('triangle', note(step, pitch), note(step - 2, pitch), 0.07, 0.08, 0.12 + i * 0.085);
+        break;
+      }
       case 'bounce':
         // Boing: a rubbery note that leaps up.
         tone('sine', 190, 560, 0.2, 0.2);

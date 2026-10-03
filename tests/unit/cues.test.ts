@@ -94,6 +94,17 @@ describe('what a moment of play sounds like', () => {
     expect(Object.values(VOICES).filter((voice) => voice.wave === 'wood')).toHaveLength(1);
   });
 
+  it('Elof gasps as the glitter takes him, and giggles at a big candy and at a first bounce', () => {
+    expect(kinds(still, { ...still, mode: 'bubble' })).toEqual(['bubble', 'gasp']);
+    expect(kinds(still, { ...still, checkpoint: 0 })).toEqual(['bigCandy', 'giggle']);
+    // A row of bounces: he laughs at the first, and the rest are only boings.
+    const memory = newCueMemory();
+    const air = { ...still, grounded: false, bounces: 0, time: 20 };
+    expect(cuesFor(air, { ...air, bounces: 1 }, memory).map((cue) => cue.kind)).toEqual(['bounce', 'giggle']);
+    expect(cuesFor({ ...air, bounces: 1, time: 21 }, { ...air, bounces: 2, time: 21 }, memory).map((cue) => cue.kind)).toEqual(['bounce']);
+    expect(cuesFor({ ...air, bounces: 2, time: 30 }, { ...air, bounces: 3, time: 30 }, memory).map((cue) => cue.kind)).toEqual(['bounce', 'giggle']);
+  });
+
   it('the ghost knocks as it hops on, louder the nearer it is, and the helper knocks twice', () => {
     const near = cuesFor({ ...still, ghostPerch: 1, ghostAway: 3 }, { ...still, ghostPerch: 2, ghostAway: 3.5 }, newCueMemory());
     expect(near).toEqual([{ kind: 'ghostHop', near: 0.75 }]);
@@ -117,12 +128,12 @@ describe('what a moment of play sounds like', () => {
   });
 
   it('a big candy, and the end of the course', () => {
-    expect(kinds(still, { ...still, checkpoint: 0 })).toEqual(['bigCandy']);
+    expect(kinds(still, { ...still, checkpoint: 0 })).toEqual(['bigCandy', 'giggle']);
     expect(kinds(still, { ...still, atGoal: true })).toEqual(['goal']);
   });
 
   it('each thing he starts doing has its own sound', () => {
-    expect(kinds(still, { ...still, mode: 'bubble', grounded: false })).toEqual(['bubble']);
+    expect(kinds(still, { ...still, mode: 'bubble', grounded: false })).toEqual(['bubble', 'gasp']);
     expect(kinds(still, { ...still, mode: 'swing', grounded: false })).toEqual(['lace']);
     expect(kinds(still, { ...still, mode: 'ledge', grounded: false })).toEqual(['haul']);
     expect(kinds(still, { ...still, mode: 'climb', grounded: false })).toEqual(['grab']);
