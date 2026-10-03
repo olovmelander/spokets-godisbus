@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STORY } from '../../src/content/chapters';
+import { BONUS, STORY } from '../../src/content/chapters';
 import { sv } from '../../src/content/sv';
 import { chapterFor, codeFor } from '../../src/save/codes';
 
@@ -8,7 +8,8 @@ describe('chapter codes', () => {
     for (const part of STORY.slice(1)) expect(codeFor(part.id), part.id).not.toBeNull();
     expect(codeFor('prolog')).toBeNull();
     expect(codeFor('testbana')).toBeNull();
-    expect(Object.keys(sv.codes).sort()).toEqual(STORY.slice(1).map((part) => part.id).sort());
+    // And each extra chapter has one too.
+    expect(Object.keys(sv.codes).sort()).toEqual([...STORY.slice(1), ...BONUS].map((part) => part.id).sort());
   });
 
   it('is three short plain words in capitals, and no word is in two codes', () => {

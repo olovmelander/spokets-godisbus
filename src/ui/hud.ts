@@ -33,7 +33,7 @@ export interface Hud {
    * With `onNext` it leads on to the next chapter; without, it says that the story goes on later, or `closing`
    * where the story is over. `code` is the next chapter's three words, to open it on another device.
    */
-  end(title: string, count: number, onAgain: () => void, onNext?: () => void, closing?: string, hidden?: readonly { kind: string; found: boolean }[], code?: string | null): void;
+  end(title: string, count: number, onAgain: () => void, onNext?: () => void, closing?: string, hidden?: readonly { kind: string; found: boolean }[], code?: string | null, onwardWord?: string): void;
 }
 
 /** A bubble stays for this long, and a little longer for each letter. */
@@ -140,7 +140,7 @@ export function createHud(doc: Document, total: number): Hud {
       bubble.hidden = false;
       left = BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER;
     },
-    end(title, count, onAgain, onNext, closing, hidden, code) {
+    end(title, count, onAgain, onNext, closing, hidden, code, onwardWord) {
       if (ended) return;
       ended = true;
       byId('endTitle').textContent = title;
@@ -167,8 +167,10 @@ export function createHud(doc: Document, total: number): Hud {
       byId('endAgain').onclick = onAgain;
       const onward = byId('endOnward');
       onward.hidden = onNext === undefined;
-      byId('endNext').hidden = onNext !== undefined;
+      // The story's last words stay, even where an extra chapter follows.
+      byId('endNext').hidden = onNext !== undefined && !closing;
       if (onNext) onward.onclick = onNext;
+      if (onwardWord) onward.querySelector('span')!.textContent = onwardWord;
       byId('endCard').hidden = false;
       (onNext ? onward : byId('endAgain')).focus();
     },

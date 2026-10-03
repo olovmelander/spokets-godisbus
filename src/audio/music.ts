@@ -73,6 +73,8 @@ export const ARRANGEMENTS: Record<string, Arrangement> = {
   bog: { tempo: 76, melody: 'sparse', bass: false, rhythm: 'none', transpose: -5, rest: 4, bright: 0.3, ambience: 'bog' },
   // Berget: the full theme.
   mountain: { tempo: 104, melody: 'full', bass: true, rhythm: 'none', transpose: 0, rest: 1, bright: 0.7, ambience: 'wind' },
+  // Byn, the extra chapter: the whole tune at a walk, with the wood knocking all through.
+  village: { tempo: 108, melody: 'full', bass: true, rhythm: 'knock', transpose: 0, rest: 1, bright: 0.75, ambience: 'birds' },
   // The final: everything, a little slower.
   dusk: { tempo: 88, melody: 'full', bass: true, rhythm: 'knock', transpose: 0, rest: 2, bright: 0.5, ambience: 'night' },
 };

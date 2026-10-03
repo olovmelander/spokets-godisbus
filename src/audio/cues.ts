@@ -25,8 +25,8 @@ export const VOICES: Record<Speaker, Voice> = {
 export type Footing = 'plank' | 'moss' | 'grass' | 'squelch' | 'stone' | 'gravel' | 'shavings';
 
 /** A place's own ground, and what the stretches a chapter marks out are made of. */
-const OWN: Record<PlaceId, Footing> = { forest: 'moss', garden: 'grass', bog: 'squelch', mountain: 'stone', dusk: 'stone', home: 'plank' };
-const MADE: Record<SurfaceKind, Footing> = { wood: 'plank', earth: 'gravel', stone: 'stone', shavings: 'shavings', hedge: 'grass' };
+const OWN: Record<PlaceId, Footing> = { forest: 'moss', garden: 'grass', bog: 'squelch', mountain: 'stone', dusk: 'stone', home: 'plank', village: 'stone' };
+const MADE: Record<SurfaceKind, Footing> = { wood: 'plank', earth: 'gravel', stone: 'stone', shavings: 'shavings', hedge: 'grass', paving: 'stone', asphalt: 'stone', iron: 'stone' };
 
 /** What the ground is at x. A course without a place, the test course, has no footing: a plain step. */
 export function footingAt(chapter: Pick<ChapterData, 'place' | 'surfaces'>, x: number): Footing | undefined {

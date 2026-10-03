@@ -193,7 +193,7 @@ for (const tier of ['low', 'high']) {
 }
 
 // --- a place's look: the two golden frames (plan §5.6, Stage 0b) ---------------------------------------
-for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', 'high', 16], ['look-deck', 'high', 12]]) {
+for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', 'high', 16], ['look-deck', 'high', 12], ['byn', 'high', 9]]) {
   console.log(`${course}, tier ${tier}, 844×390`);
   const { page, state, info, finish } = await open(`${course}-${tier}-844x390`, { viewport: { width: 844, height: 390 } }, `?debug&course=${course}&tier=${tier}`);
   const drawn = await until(info, (i) => i.models.includes('boot/big-candy'), 30000);
