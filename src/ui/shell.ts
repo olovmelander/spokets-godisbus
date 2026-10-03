@@ -63,6 +63,7 @@ export function mountShell(root: HTMLElement): void {
          <label class="switch"><input type="checkbox" id="setSwingHelp"><span>${p.swingHelp}</span></label>
          <label class="switch"><input type="checkbox" id="setEasyJumps"><span>${p.easyJumps}</span></label>
          <label class="switch"><input type="checkbox" id="setSlower"><span>${p.slower}</span></label>
+         <label class="switch"><input type="checkbox" id="setSound"><span>${p.sound}</span></label>
          <button class="wide" id="stuckBtn" type="button">${BIG_CANDY}<span>${p.stuck}</span></button>
          <div class="ask" id="stuckAsk" hidden>
            <p>${p.stuckAsk}</p>

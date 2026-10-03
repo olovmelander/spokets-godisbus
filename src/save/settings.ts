@@ -12,12 +12,14 @@ export interface Settings {
   easyJumps: boolean;
   /** *Lugnare tempo*: the whole game runs at 80%. */
   slower: boolean;
+  /** *Ljud*: the effects. Off is silent. */
+  sound: boolean;
 }
 
 /** The switches each style starts with. Every one of them can then be changed on its own. */
 const SWITCHES: Record<PlayStyle, Omit<Settings, 'style'>> = {
-  aventyr: { swingHelp: false, easyJumps: false, slower: false },
-  lugnt: { swingHelp: true, easyJumps: true, slower: false },
+  aventyr: { swingHelp: false, easyJumps: false, slower: false, sound: true },
+  lugnt: { swingHelp: true, easyJumps: true, slower: false, sound: true },
 };
 
 export const SLOWER_TEMPO = 0.8;
@@ -45,5 +47,5 @@ export function readSettings(value: unknown): Settings {
   const style: PlayStyle = from.style === 'lugnt' ? 'lugnt' : 'aventyr';
   const base = settingsFor(style);
   const flag = (key: keyof Omit<Settings, 'style'>) => (typeof from[key] === 'boolean' ? (from[key] as boolean) : base[key]);
-  return { style, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower') };
+  return { style, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower'), sound: flag('sound') };
 }

@@ -38,6 +38,7 @@ export const sv = {
     swingHelp: 'Hjälp med svingen',
     easyJumps: 'Lätta hopp',
     slower: 'Lugnare tempo',
+    sound: 'Ljud',
     stuck: 'Jag har fastnat',
     stuckAsk: 'Tillbaka till den stora godisbiten?',
     stuckYes: 'Ja, tillbaka',
