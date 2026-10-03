@@ -1,6 +1,6 @@
 import {
   BoxGeometry, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial,
-  Object3D, PlaneGeometry, SRGBColorSpace, TorusGeometry,
+  Object3D, PlaneGeometry, RepeatWrapping, SRGBColorSpace, TorusGeometry,
 } from 'three';
 import type { ChapterData } from '../sim/types';
 
@@ -46,6 +46,83 @@ function heightAt(chapter: ChapterData, x: number): number {
 
 /** How wide a house front is, and how tall, in EL. Its picture is 160 by 128. */
 const HOUSE = { wide: 24, tall: 19.2 };
+/** How wide the yard between two houses is. */
+const YARD = 12;
+
+/**
+ * The village beyond the street, far off and soft: wooden houses with red tin roofs, birches in their
+ * October yellow, spruces, and the low blue hills of the valley. It is one long picture far behind the
+ * fronts, seen over the fences: as he walks, it slides past more slowly than the houses do.
+ */
+function skyline(from: number, to: number, foot: number): Mesh {
+  const next = sequence(211);
+  // Drawn at twice the size it is measured in, and a little out of focus: it is far away.
+  const picture = drawn(1024, 256, (c) => {
+    c.scale(2, 2);
+    c.clearRect(0, 0, 512, 128);
+    c.filter = 'blur(1.1px)';
+    // Two ridges of hills, the far one paler.
+    for (const [base, tall, colour] of [[78, 30, '#a9b9cc'], [92, 22, '#8fa3bd']] as const) {
+      c.fillStyle = colour;
+      c.beginPath();
+      c.moveTo(0, 128);
+      for (let px = 0; px <= 512; px += 8) c.lineTo(px, base - tall * (0.5 + 0.5 * Math.sin(px * 0.0123 + base) * Math.cos(px * 0.031 + tall)));
+      c.lineTo(512, 128);
+      c.fill();
+    }
+    // Spruces and birches between the houses.
+    for (let i = 0; i < 34; i++) {
+      const px = next() * 512;
+      const birch = next() < 0.5;
+      const tall = 16 + next() * 16;
+      c.fillStyle = birch ? ['#d0b24a', '#bfa846', '#a9b060'][i % 3]! : '#3f5a48';
+      c.beginPath();
+      if (birch) c.ellipse(px, 104 - tall * 0.6, tall * 0.36, tall * 0.6, 0, 0, Math.PI * 2);
+      else {
+        c.moveTo(px, 104 - tall * 1.2);
+        c.lineTo(px + tall * 0.3, 106);
+        c.lineTo(px - tall * 0.3, 106);
+      }
+      c.fill();
+    }
+    // The houses: a wall, a broken roof of red tin, white gable boards, a chimney, a few windows.
+    const walls = ['#e3b24c', '#e9e6dc', '#e3b24c', '#8f2d22', '#efe6c8', '#e3b24c'];
+    for (let i = 0; i < 9; i++) {
+      const px = 20 + i * 56 + (next() - 0.5) * 16;
+      const wide = 30 + next() * 12;
+      const top = 80 + next() * 6;
+      c.fillStyle = walls[i % walls.length]!;
+      c.fillRect(px - wide / 2, top, wide, 112 - top);
+      c.fillStyle = '#b5443a';
+      c.beginPath();
+      c.moveTo(px - wide / 2 - 2, top);
+      c.lineTo(px - wide * 0.34, top - 12);
+      c.lineTo(px, top - 19);
+      c.lineTo(px + wide * 0.34, top - 12);
+      c.lineTo(px + wide / 2 + 2, top);
+      c.fill();
+      c.fillRect(px + wide * 0.12, top - 22, 4, 6);
+      c.fillStyle = '#fbf6ea';
+      c.fillRect(px - wide / 2 - 2, top - 1, wide + 4, 1.5);
+      c.fillStyle = '#56687c';
+      for (const wx of [-0.28, 0, 0.28]) c.fillRect(px + wx * wide - 2, top + 6, 4, 6);
+    }
+    // The haze of the valley lies over all of it, thickest at the foot.
+    const haze = c.createLinearGradient(0, 40, 0, 128);
+    haze.addColorStop(0, 'rgba(216,221,230,0.25)');
+    haze.addColorStop(1, 'rgba(216,221,230,0.62)');
+    c.globalCompositeOperation = 'source-atop';
+    c.fillStyle = haze;
+    c.fillRect(0, 0, 512, 128);
+  });
+  picture.wrapS = RepeatWrapping;
+  const wide = to - from + 220;
+  picture.repeat.set(wide / 96, 1);
+  const plate = new Mesh(new PlaneGeometry(wide, 24), new MeshBasicMaterial({ map: picture, transparent: true, fog: false, depthWrite: false }));
+  plate.position.set((from + to) / 2, foot + 12.6, -52);
+  plate.renderOrder = -5;
+  return plate;
+}
 
 interface Shop {
   wall: string;
@@ -56,12 +133,16 @@ interface Shop {
   goods: 'candy' | 'bread' | 'boots' | 'yarn';
 }
 
-/** The houses of the street. The first is the candy shop: the one he is on his way to. */
+/**
+ * The houses of the street, in the colours of the village's own wooden houses: ochre yellow and white with
+ * white trim, a Falu red one, and a pale plastered one. The first is the candy shop: the one he is on his
+ * way to.
+ */
 const SHOPS: Shop[] = [
-  { wall: '#e3b24c', trim: '#fbf6ea', awning: '#f0a23a', door: '#7a5632', goods: 'candy' },
-  { wall: '#e9e3d6', trim: '#6f8f76', awning: '#5f8f6c', door: '#4f6a56', goods: 'bread' },
-  { wall: '#9fb5a0', trim: '#fbf6ea', awning: '#e8d27a', door: '#5d4a36', goods: 'boots' },
-  { wall: '#8ea4bc', trim: '#fbf6ea', awning: '#4f6f98', door: '#3d4f66', goods: 'yarn' },
+  { wall: '#e3b24c', trim: '#fbf6ea', awning: '#d9c59a', door: '#7a5632', goods: 'candy' },
+  { wall: '#e9e6dc', trim: '#fbf6ea', awning: '#8a8f96', door: '#4f5a60', goods: 'bread' },
+  { wall: '#8f2d22', trim: '#fbf6ea', awning: '#e8d9b0', door: '#5d4a36', goods: 'boots' },
+  { wall: '#efe6c8', trim: '#f6f0e2', awning: '#d9c59a', door: '#6a4a3a', goods: 'yarn' },
 ];
 
 /** One thing a shop sells, as a plain shape about `size` across, at (x, y). */
@@ -198,18 +279,49 @@ export function fronts(chapter: ChapterData, from: number, to: number): Group {
   const floor = heightAt(chapter, from + 20);
   // The candy shop's door is 123 of its picture's 160 across: put that at the goal.
   const last = chapter.goalX - (123 / 160 - 0.5) * HOUSE.wide;
+  const foot = Math.min(floor, 0) - 0.6;
+  // A picket fence in Falu red closes each yard between two houses, and the village shows over it.
+  const pickets = drawn(32, 32, (c) => {
+    c.clearRect(0, 0, 32, 32);
+    c.fillStyle = '#8f2d22';
+    for (const x of [2, 18]) {
+      c.beginPath();
+      c.moveTo(x, 32);
+      c.lineTo(x, 7);
+      c.lineTo(x + 6, 1);
+      c.lineTo(x + 12, 7);
+      c.lineTo(x + 12, 32);
+      c.fill();
+    }
+    c.fillRect(0, 12, 32, 3);
+    c.fillRect(0, 24, 32, 3);
+  });
+  pickets.wrapS = RepeatWrapping;
+  pickets.repeat.set(YARD / 2.4, 1);
+  const fence = new MeshBasicMaterial({ map: pickets, transparent: true });
   let style = 0;
-  for (let x = last; x > from - 30; x -= HOUSE.wide + 1.5) {
+  let x = last;
+  while (x > from - 30) {
     const house = new Mesh(new PlaneGeometry(HOUSE.wide, HOUSE.tall), materials[style % materials.length]!);
-    house.position.set(x, Math.min(floor, 0) + HOUSE.tall / 2 - 0.6, -13);
+    house.position.set(x, foot + HOUSE.tall / 2, -13);
     house.renderOrder = -2;
     group.add(house);
     style++;
+    // After every second house, a yard as wide as half a house.
+    const open = style % 2 === 0;
+    if (open) {
+      const rail = new Mesh(new PlaneGeometry(YARD, 3.4), fence);
+      rail.position.set(x - HOUSE.wide / 2 - YARD / 2, foot + 1.7, -12.9);
+      rail.renderOrder = -2;
+      group.add(rail);
+    }
+    x -= HOUSE.wide + (open ? YARD : 0.6);
   }
-  // Between the houses, and beyond the last: the dark of a yard, so that no sky shows through at the foot.
-  const yard = new Mesh(new PlaneGeometry(to - from + 80, HOUSE.tall), new MeshBasicMaterial({ color: '#4f5a52' }));
-  yard.position.set((from + to) / 2, Math.min(floor, 0) + HOUSE.tall / 2 - 0.6, -13.4);
+  // Behind the fences: the yards' hedges, low, so that no sky shows at the foot and the far village shows above.
+  const yard = new Mesh(new PlaneGeometry(to - from + 80, 5.2), new MeshBasicMaterial({ color: '#4c5f46' }));
+  yard.position.set((from + to) / 2, foot + 2.6, -13.6);
   yard.renderOrder = -3;
+  group.add(skyline(from, to, foot));
   // Under the street it is dark: the drain and the cellar window's well go down into it.
   const under = new Mesh(new PlaneGeometry(to - from + 80, 16), new MeshBasicMaterial({ color: '#1d2024', fog: false }));
   under.position.set((from + to) / 2, Math.min(floor, 0) - 8.4, -12.6);
