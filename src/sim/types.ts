@@ -272,6 +272,11 @@ export interface ChapterData {
   id: string;
   /** The place it is dressed as. Left out: greybox. */
   place?: PlaceId;
+  /**
+   * The hidden candy for the album (plan §4.3): off the trail, each of its own kind. Finding one sets the
+   * flag `found:<kind>`, which the save keeps.
+   */
+  hidden?: { x: number; y: number; kind: string }[];
   /** For the picture: stretches of ground that are something else than the place's own: a deck, a boulder. */
   surfaces?: { from: number; to: number; kind: SurfaceKind }[];
   /** For the picture: a deck overhead, with the sun falling through between its boards. */

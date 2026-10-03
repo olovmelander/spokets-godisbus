@@ -1197,6 +1197,11 @@ export class Sim {
       this.collected[i] = true;
       this.candyCount++;
     }
+    // Hidden candy: it has the same reach, and each is found once.
+    for (const sweet of this.chapter.hidden ?? []) {
+      if (this.flags.has(`found:${sweet.kind}`) || (sweet.x - x) ** 2 + (sweet.y - y) ** 2 > CANDY_MAGNET ** 2) continue;
+      this.flags.add(`found:${sweet.kind}`);
+    }
     // A big candy further on than the last one becomes the place he comes back to.
     for (let i = this.checkpoint + 1; i < this.checkpoints.length; i++) {
       const c = this.checkpoints[i]!;

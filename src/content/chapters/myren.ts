@@ -120,6 +120,13 @@ function along(t: number): Candy {
 export const myren: ChapterData = {
   id: 'myren',
   place: 'bog',
+  // Off the trail: behind him at the start, over the highest tussock, over the boardwalk, and by the cranes.
+  hidden: [
+    { x: -1.8, y: 0.5, kind: 'chokladpeng' },
+    { x: 42.7, y: 2.7, kind: 'stektagg' },
+    { x: 116, y: 6.4, kind: 'surnapp' },
+    { x: 174, y: 1.9, kind: 'lakritskonfekt' },
+  ],
   // The boardwalk and its ramp are planks.
   surfaces: [{ from: 104, to: 136, kind: 'wood' }],
   spawn: { x: 1, y: 0.01 },

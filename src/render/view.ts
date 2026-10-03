@@ -5,6 +5,7 @@ import {
   Scene, Shape, SphereGeometry, TorusGeometry, UnsignedByteType, Vector2, Vector3, WebGLRenderer,
 } from 'three';
 import { createAssets } from './assets';
+import { KINDS } from '../content/kinds';
 import { PLACES, dress } from './dressing';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, createGradePass } from './grade';
@@ -153,6 +154,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The things that stand at spots, and what carries him on each ride, where the chapter says what they are.
   const helper = helperProp();
   scene.add(helper.group);
+  const hiddenSweets = buildHidden(chapter);
+  scene.add(hiddenSweets.group);
   const things = (chapter.spots ?? []).map((spot) => ({ spot, prop: spotProp(spot) }));
   for (const thing of things) if (thing.prop) scene.add(thing.prop.group);
   const carriers = (chapter.rides ?? []).map((ride) => {
@@ -340,6 +343,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     for (const thing of things) thing.prop?.update(flags.has(thing.spot.id), clock, dt);
     helper.update(help.step, help.at, x, y, curr.standY, clock, dt);
+    hiddenSweets.update(flags, clock, dt);
     glitter.update(curr.bubble, x, y, clock);
     // He hangs by his hands, his body along the lace.
     const hang = curr.hook ? Math.atan2(curr.hook.x - x, curr.hook.y - (y + 0.5)) : 0;
@@ -866,6 +870,38 @@ function buildGlints(chapter: ChapterData) {
       glint.scale.setScalar(ready ? 1 + 0.25 * Math.sin(clock * 4 + i) : 0);
       glint.position.y = spot.at.y + 1.5 + Math.sin(clock * 2 + i) * 0.1;
       glint.rotation.y = clock * 2;
+    }
+  }
+  return { group, update };
+}
+
+/**
+ * The hidden candy (plan §4.3): bigger than the trail's, in its kind's two colours, inside a slowly turning
+ * golden ring. Found, it shrinks away into him.
+ */
+function buildHidden(chapter: ChapterData) {
+  const group = new Group();
+  const gold = new MeshStandardMaterial({ color: '#ffd76a', roughness: 0.3, emissive: '#c9952a', emissiveIntensity: 0.6 });
+  const sweets = (chapter.hidden ?? []).map((def) => {
+    const kind = KINDS[def.kind];
+    const sweet = new Group();
+    const body = new Mesh(new SphereGeometry(0.19, 18, 12), new MeshStandardMaterial({ color: kind?.colour ?? '#cccccc', roughness: 0.3 }));
+    const band = new Mesh(new TorusGeometry(0.17, 0.045, 8, 22), new MeshStandardMaterial({ color: kind?.mark ?? '#ffffff', roughness: 0.4 }));
+    band.rotation.x = Math.PI / 2;
+    const ring = new Mesh(new TorusGeometry(0.34, 0.022, 8, 30), gold);
+    sweet.add(body, band, ring);
+    sweet.position.set(def.x, def.y, 0);
+    group.add(sweet);
+    return { def, sweet, ring, size: 1 };
+  });
+  function update(flags: ReadonlySet<string>, clock: number, dt: number): void {
+    for (const [i, s] of sweets.entries()) {
+      const found = flags.has(`found:${s.def.kind}`);
+      s.size = Math.max(0, Math.min(1, s.size + (found ? -dt / 0.25 : dt)));
+      s.sweet.scale.setScalar(s.size);
+      s.sweet.position.y = s.def.y + Math.sin(clock * 1.8 + i) * 0.06;
+      s.sweet.rotation.y = clock * 0.9 + i;
+      s.ring.rotation.x = clock * 1.3 + i;
     }
   }
   return { group, update };

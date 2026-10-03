@@ -1,3 +1,4 @@
+import { KINDS } from '../content/kinds';
 import { sv } from '../content/sv';
 import type { Speaker, Verb } from '../sim/types';
 
@@ -16,6 +17,11 @@ export interface Hud {
    * the word it will have there. `null`: the helper is away, or only looking.
    */
   knock(hint: { verb: Verb | null; word: string | null } | null): void;
+  /**
+   * Shows the stickers of the hidden candy found so far, on the bag. A new one slaps on, and its name is
+   * said at the top of the screen (plan §4.3).
+   */
+  stickers(found: readonly string[]): void;
   /** Puts a line in the queue of bubbles. Each is shown for a few seconds, one after another. */
   say(who: Speaker, line: string): void;
   /** Moves the bubbles on. `dt` is the time since the last frame, in seconds: 0 while the game is paused. */
@@ -25,7 +31,7 @@ export interface Hud {
    * With `onNext` it leads on to the next chapter; without, it says that the story goes on later, or `closing`
    * where the story is over.
    */
-  end(title: string, count: number, onAgain: () => void, onNext?: () => void, closing?: string): void;
+  end(title: string, count: number, onAgain: () => void, onNext?: () => void, closing?: string, hidden?: readonly { kind: string; found: boolean }[]): void;
 }
 
 /** A bubble stays for this long, and a little longer for each letter. */
@@ -44,6 +50,17 @@ export function createHud(doc: Document, total: number): Hud {
   let left = 0;
   let ended = false;
   const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  /** A sticker: a round mark in the kind's two colours, or an empty ring for one not found. */
+  const sticker = (kind: string, found = true): HTMLElement => {
+    const mark = doc.createElement('i');
+    if (!found) mark.className = 'missing';
+    mark.style.setProperty('--colour', KINDS[kind]?.colour ?? '#cccccc');
+    mark.style.setProperty('--mark', KINDS[kind]?.mark ?? '#ffffff');
+    mark.title = sv.kinds[kind] ?? kind;
+    return mark;
+  };
+  let stuck: string[] | null = null;
+  let noticeFor = 0;
   const verbs: Record<string, string> = sv.verbs;
   const lines: Record<string, string> = sv.lines;
 
@@ -66,6 +83,22 @@ export function createHud(doc: Document, total: number): Hud {
       act.querySelector('span')!.textContent = text;
       act.setAttribute('aria-label', text);
     },
+    stickers(found) {
+      if (stuck !== null && stuck.length === found.length) return;
+      const fresh = stuck === null ? [] : found.filter((kind) => !stuck!.includes(kind));
+      stuck = [...found];
+      const row = byId('bagStickers');
+      row.replaceChildren(...found.map((kind) => sticker(kind)));
+      for (const kind of fresh) {
+        const at = found.indexOf(kind);
+        if (!still.matches) row.children[at]?.classList.add('new');
+        // Its name, at the top of the screen, for a few seconds.
+        const notice = byId('notice');
+        notice.textContent = sv.found.replace('{name}', sv.kinds[kind] ?? kind);
+        notice.hidden = false;
+        noticeFor = 3.5;
+      }
+    },
     knock(hint) {
       act.classList.toggle('pulse', hint !== null && hint.verb !== null);
       // Out of reach the button is dimmed: it shows what it will say when he is there.
@@ -79,6 +112,10 @@ export function createHud(doc: Document, total: number): Hud {
       if (lines[line]) queue.push({ who, line });
     },
     tick(dt) {
+      if (noticeFor > 0) {
+        noticeFor -= dt;
+        if (noticeFor <= 0) byId('notice').hidden = true;
+      }
       if (left > 0) {
         left -= dt;
         if (left <= 0) bubble.hidden = true;
@@ -93,11 +130,16 @@ export function createHud(doc: Document, total: number): Hud {
       bubble.hidden = false;
       left = BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER;
     },
-    end(title, count, onAgain, onNext, closing) {
+    end(title, count, onAgain, onNext, closing, hidden) {
       if (ended) return;
       ended = true;
       byId('endTitle').textContent = title;
       if (closing) byId('endNext').textContent = closing;
+      // The chapter's hidden candy: a sticker for each one found, an empty ring for each still out there.
+      if (hidden && hidden.length > 0) {
+        byId('endStickers').replaceChildren(...hidden.map((h) => sticker(h.kind, h.found)));
+        byId('endFound').hidden = false;
+      }
       byId('endCount').textContent = String(count);
       // Rows of ten, as on the chapter cards (plan §4.3).
       const rows = byId('endRows');

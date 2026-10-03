@@ -121,6 +121,11 @@ export function createAudio(): Audio {
         tone('sine', pitch * 2, pitch * 2, 0.5, 0.05);
         break;
       }
+      case 'found':
+        // A new kind for the album: a quick bright run up, and a sparkle on top.
+        for (const [i, semitones] of [0, 7, 12, 16, 19].entries()) tone('triangle', note(semitones, 587.33), note(semitones, 587.33), 0.3, 0.17, i * 0.07);
+        tone('sine', 2349, 2349, 0.5, 0.06, 0.36);
+        break;
       case 'gust':
         puff('bandpass', 260, 900, 1.3, 0.14, 0, 0.6);
         break;

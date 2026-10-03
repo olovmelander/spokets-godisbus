@@ -54,6 +54,13 @@ const CAP = { from: { x: 154.6, y: -8 }, to: { x: 177.4, y: -8 }, rise: 0.15, ti
 export const granskog: ChapterData = {
   id: 'granskog',
   place: 'forest',
+  // Off the trail: behind him at the start, over the big cone, on top of the anthill, and over the log.
+  hidden: [
+    { x: -1.8, y: 0.5, kind: 'sockerbit' },
+    { x: 22, y: 3.1, kind: 'gummiorm' },
+    { x: 63.6, y: 11.9, kind: 'chokladkola' },
+    { x: 134.5, y: -5.3, kind: 'colaflaska' },
+  ],
   spawn: { x: 1, y: 0.01 },
   goalX: 204,
   ground: [

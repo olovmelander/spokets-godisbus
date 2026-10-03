@@ -88,6 +88,29 @@ export const sv = {
     carved: 'Jag kan tälja!',
   },
 
+  // The sixteen kinds of hidden candy (plan §4.3): plain names of sorts, never a brand.
+  kinds: {
+    gelehallon: 'Geléhallon',
+    gummibjorn: 'Gummibjörn',
+    skumbanan: 'Skumbanan',
+    skumsvamp: 'Skumsvamp',
+    sockerbit: 'Sockerbit',
+    gummiorm: 'Gummiorm',
+    chokladkola: 'Chokladkola',
+    colaflaska: 'Colaflaska',
+    chokladpeng: 'Chokladpeng',
+    stektagg: 'Stekt ägg',
+    surnapp: 'Sur napp',
+    lakritskonfekt: 'Lakritskonfekt',
+    polkagris: 'Polkagris',
+    graddkola: 'Gräddkola',
+    salmiakruta: 'Salmiakruta',
+    chokladpralin: 'Chokladpralin',
+  } as Record<string, string>,
+  // Said at the top of the screen when a new kind is found, and under the stickers on a chapter's card.
+  found: 'Ny sort: {name}!',
+  stickers: 'Gömt godis',
+
   // The card at a chapter's end.
   end: {
     chapter: 'Kapitel {n} klart!',
