@@ -2044,6 +2044,9 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
   3. Run the workflow again: *Actions → Deploy to GitHub Pages → Run workflow*. If it says `main` is not allowed
      to deploy to `github-pages`, add `main` under *Settings → Environments → github-pages → Deployment
      branches*, and run it once more.
+  - Until step 2 is done, every push to `main` also starts GitHub's own branch build, which publishes the
+    repository root through Jekyll (the README as the front page, without `noindex`). Whichever deployment
+    finishes last is what the site shows.
   4. Before the family's models exist (Stage 0c): create the private repository `spokets-godisbus-familj`, and a
      fine-grained token that can only read it.
   5. Add two Actions secrets: `FAMILY_ASSETS_TOKEN` (that token) and `PRIVACY_DENYLIST` (the words in gate 8).
