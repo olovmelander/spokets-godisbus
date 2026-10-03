@@ -5,6 +5,7 @@ import {
   Scene, Shape, SphereGeometry, TorusGeometry, UnsignedByteType, Vector2, Vector3, WebGLRenderer,
 } from 'three';
 import { createAssets } from './assets';
+import { PLACES, dress } from './dressing';
 import { GARDEN_MORNING, createGradePass } from './grade';
 import { chooseTier, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
@@ -74,9 +75,10 @@ const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
 
 /**
  * Stage 0a's greybox scene: the test course, a stand-in Elof in his colours, and the big candy.
- * `asked` is the tier from ?tier=, or null for Auto.
+ * `asked` is the tier from ?tier=, or null for Auto. With `standIns` the figures built in code are kept even
+ * where the private pack has the family's models: for pictures that go into the repository.
  */
-export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null): View {
+export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null, standIns = false): View {
   // The context is made here, so that the tier can be chosen before the renderer exists: Mid and High need
   // float colour buffers, and a device without them gets Low (plan §6.5).
   const gl = canvas.getContext('webgl2', {
@@ -100,20 +102,32 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // are reset once per frame here, not by each call.
   renderer.info.autoReset = false;
   // Mid and High: the scene goes to the HDR buffer, one pass grades it, and the renderer tone-maps the result.
-  if (tier !== 'low') renderer.setEffects([createGradePass(GARDEN_MORNING)]);
+  const place = chapter.place ? PLACES[chapter.place] : null;
+  if (tier !== 'low') renderer.setEffects([createGradePass(place?.grade ?? GARDEN_MORNING)]);
   // Let the browser restore a lost context instead of leaving a dead canvas.
   canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
 
   const scene = new Scene();
-  const sky = new Color('#c4dcea');
+  // A place brings its own light, haze and layers. Without one the chapter is greybox.
+  const sky = new Color(place?.haze.colour ?? '#c4dcea');
   scene.background = sky;
   scene.fog = new Fog(sky, 14, 44);
   // Lights are created once and never toggled: every change would compile a new shader (plan §6.2).
-  const hemisphere = new HemisphereLight('#e2efff', '#6a5338', 1.25);
+  const hemisphere = new HemisphereLight(place?.hemisphere.sky ?? '#e2efff', place?.hemisphere.ground ?? '#6a5338', place?.hemisphere.intensity ?? 1.25);
   scene.add(hemisphere);
-  const sun = new DirectionalLight('#ffe1ae', 2.4);
-  sun.position.set(-6, 5, 8);
+  const sun = new DirectionalLight(place?.sun.colour ?? '#ffe1ae', place?.sun.intensity ?? 2.4);
+  sun.position.set(...(place?.sun.from ?? ([-6, 5, 8] as const)));
   scene.add(sun);
+  // A place's sun stands behind the scene, so a faint light from the camera's side lifts the faces. It is
+  // there in greybox too, dark, so that every chapter uses the same shaders.
+  const fill = new DirectionalLight(place?.fill.colour ?? '#ffffff', place?.fill.intensity ?? 0);
+  fill.position.set(4, 3, 10);
+  scene.add(fill);
+  const dressing = place ? dress(chapter, place) : null;
+  if (dressing) {
+    scene.background = dressing.background;
+    scene.add(dressing.group);
+  }
 
   // The big candies: one at each checkpoint, a little behind the path so that he passes in front of it,
   // and the one at the end.
@@ -138,7 +152,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const cones = buildCones(chapter.rollers?.length ?? 0);
   scene.add(...moverMeshes, rain.group, cones.mesh);
   const climbs = buildClimbs(chapter);
-  scene.add(buildGround(chapter), buildTrunks(chapter), climbs.group, buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
+  // The dressing brings its own ground and its own trees.
+  if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
+  scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
   const water = buildWater(chapter);
   const tussockMeshes = buildTussocks(chapter);
   const mist = buildMist(chapter, scene.fog as Fog);
@@ -187,7 +203,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let clock = 0;
   assets
     .manifest()
-    .then((manifest) => (manifest.packs.private?.files['ghost.glb'] ? assets.model('private', 'ghost') : null))
+    .then((manifest) => (!standIns && manifest.packs.private?.files['ghost.glb'] ? assets.model('private', 'ghost') : null))
     .then((model) => {
       if (!model) return;
       ghostPlace.clear();
@@ -205,7 +221,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let doll: Doll | null = null;
   assets
     .manifest()
-    .then((manifest) => (manifest.packs.private?.files['elof.glb'] ? assets.model('private', 'elof') : null))
+    .then((manifest) => (!standIns && manifest.packs.private?.files['elof.glb'] ? assets.model('private', 'elof') : null))
     .then((model) => {
       if (!model) return;
       // Exported from Blender he faces +z, and the stand-in faces +x. A quarter turn makes them agree.
@@ -303,6 +319,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const centreY = look.y + viewHeight * look.zoom * (0.5 - GROUND_FROM_BOTTOM);
     camera.position.set(look.x, centreY, distance * look.zoom);
     camera.lookAt(look.x, centreY, 0);
+    if (dressing && place) {
+      dressing.update(look.x, look.y, clock);
+      // The haze begins behind the play plane, however far the camera has pulled back.
+      if (!chapter.mist) {
+        (scene.fog as Fog).near = camera.position.z + place.haze.near;
+        (scene.fog as Fog).far = camera.position.z + place.haze.far;
+      }
+    }
     night.update(flags, look.x, centreY, clock, dt);
 
     // The stand-in Elof: turned a little towards the camera, legs swinging with the distance he covers.

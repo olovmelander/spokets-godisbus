@@ -70,7 +70,8 @@ function start(): void {
   const canvas = byId<HTMLCanvasElement>('game');
   let view: View;
   try {
-    view = createView(canvas, chapter, tierFromQuery(params.get('tier')));
+    // ?standin keeps the figures built in code: for pictures that go into the repository (plan §2.6).
+    view = createView(canvas, chapter, tierFromQuery(params.get('tier')), params.has('standin'));
   } catch (error) {
     console.error(error);
     showMessage(sv.noWebGL);
