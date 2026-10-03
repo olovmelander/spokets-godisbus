@@ -140,6 +140,13 @@ har kommit.
     bara för hantverksdetaljer.
 13. **Fler spelare.** Ska Moa och Bertil ha egna sparplatser?
     - *Förval:* "Ny spelare" finns alltid.
+14. **Ett betalt 3D-verktyg för karaktärerna.** Är det okej att köpa en månad av ett AI-verktyg som gör 3D av
+    bilder, i första hand Meshy Pro (cirka 20 US-dollar)?
+    - Bara med en betald plan äger man det som skapas.
+    - Gratisnivåerna ger modeller under CC BY som verktyget äger, och kan visa dem publikt. Barnens porträtt får
+      aldrig gå genom en gratisnivå.
+    - Verktyget testas först med en påhittad figur (§5.6).
+    - *Förval:* ja. Annars byggs karaktärerna i kod (Route B).
 
 ---
 
@@ -946,6 +953,15 @@ The pipeline therefore uses, in order of preference:
 
 Every source and licence goes into `LICENSES.md` (§7.5).
 
+**What cloud sessions can't reach.** Cloud sessions reach npm and GitHub, but the research sessions found most
+asset sites blocked by the environment's network policy: Meshy, Tripo, Poly Haven, ambientCG, Hugging Face.
+Either Olov does those downloads and generations himself and attaches or commits the results, or he widens the
+environment's network access:
+- open the cloud environment's settings (the environment menu in the session's title bar, then *Edit*);
+- choose a broader level, or *Custom* with those hosts added and the default package-manager list kept.
+
+The steps are at https://code.claude.com/docs/en/cloud-environments#network-access.
+
 1. **Reference and art bible** (Stage 0b), in `docs/art-bible.md`:
    - the scale chart (§5.2);
    - one palette per place;
@@ -953,13 +969,25 @@ Every source and licence goes into `LICENSES.md` (§7.5).
    - two "golden frames": the deck edge and the moss under the spruces. They are rendered in-engine and are the
      look every later scene is compared with.
 2. **Elof and the family.**
-   - *Route A (recommended):* image-to-3D from Olov's turnaround sheets, done by Olov with a hosted tool. Then
-     an automatic humanoid rig, with animations retargeted from a CC0 library. The tool comparison and its
-     licence notes are in Appendix B.4.
-     - A Claude session then cleans and optimises the model: decimation to ≤ 15k triangles, a 1024² texture,
-       meshopt and KTX2.
-     - It also adds **expression textures**: swappable eye, brow and mouth decals on the face, for blinking and
-       the nine expressions in §2.1.
+   - *Route A (recommended):* image-to-3D from Olov's turnaround sheets, using **one month of Meshy Pro**
+     (§0 Q14; the tools and licences are in Appendix B.4).
+     1. **Test first.** Try the tool on a made-up character, never the children's sheets on a free tier.
+     2. **Prepare the sheets.** A session crops each sheet into separate square front, side and back images, at
+        least 1024 px, on a plain background. The tool takes 1–4 separate views, never a collage.
+     3. **Generate the model (Olov).** Smart topology at ≤ 15k triangles in A-pose, with a 2k texture.
+     4. **Rig it (Olov).** The tool's automatic humanoid rig, with the height set per person.
+     5. **Animate it.** Clips from **Quaternius' Universal Animation Library** (CC0, 86 clips) are retargeted
+        onto the rig *at build time* with per-bone rest-pose offsets; without the offsets limbs come out 73–180°
+        wrong. A few extra clips can be generated on the paid plan.
+        - Mixamo and ActorCore files never go in the public repository: their terms forbid redistributing them.
+     6. **Optimise it (a Claude session).** Elof keeps a 2048² texture; the family gets 1024². Then meshopt and
+        KTX2.
+     - **Faces get thin "sticker" meshes for eyes, brows and mouth,** weighted to the head bone and textured from
+       an expression atlas (§2.1's nine expressions, plus blink frames).
+       - They replace the generated face, which is the weakest part of AI models.
+       - `DecalGeometry` is not used here, because it doesn't follow a skinned mesh.
+     - **Tripo** is the fallback: native four-view input and a Mixamo-named rig, but few animation presets.
+     - **Hunyuan3D is excluded,** because its licence does not apply in the EU.
    - *Route B (fallback, entirely in code):* stylised toy-like figures built from shaped primitives, with faces
      drawn on canvas textures and procedural animation. They are less like the sheets, but always consistent and
      quick to change.
@@ -967,9 +995,17 @@ Every source and licence goes into `LICENSES.md` (§7.5).
    - **Family members** are mostly needed as giants in close-up, plus a few normal-scale poses, so they need
      only about six clips each.
 3. **The ghost.**
-   - *Route A:* photogrammetry of the real carving with a phone app (40–80 photos on a turntable, in soft
-     diffuse light). Then clean, decimate, and split it into rigid parts: body with hands and bag, left foot,
-     right foot. The tools are in Appendix B.4.
+   - *Route A:* photogrammetry of the real carving (Emil's OK first: §0 Q6).
+     - **Shooting:**
+       - 60–80 photos in three rings of about 24 at roughly 15°, 35° and 60°, plus a few from above;
+       - diffuse light and no flash;
+       - focus, exposure and white balance locked, and the phone's automatic macro switch off;
+       - the figure fills 60–70% of the frame, on a patterned base, with a scale reference beside it.
+     - **Reconstruction:** a phone app (Scaniverse or KIRI Engine), or a cloud session on CPU with COLMAP 4.2.1,
+       whose sparse step was tested here.
+     - **Clean-up** in headless Blender: a planar decimate at about 5° keeps the knife facets crisp; about 8k
+       triangles; a 2k colour texture baked from the full scan.
+     - **Split** it into rigid parts: the body with hands and bag, the left foot, the right foot.
    - *Route B:* image-to-3D from the three photos.
    - *Route C:* a faceted mesh built in code, with a procedural lime-wood material.
    - In every route it is animated in code as a rigid wooden toy. There is no skinning, because carved wood
@@ -982,20 +1018,46 @@ Every source and licence goes into `LICENSES.md` (§7.5).
      rocks, roots and bark;
    - textured with CC0 photo-scanned materials (Poly Haven, ambientCG) converted to KTX2;
    - ambient occlusion baked by the asset build.
-   - Trees come from a procedural generator (e.g. `ez-tree`, MIT) and are baked to GLB, plus impostor cards for
-     the mid-ground.
+   - **Phone scans of real local things.** A fist-sized granite stone with lichen, cones, lingonberry sprigs,
+     moss clumps and a mushroom (Olov, §0 Q7). At macro scale a small stone *is* a boulder, so this is the
+     closest thing to Unravel's photographed nature. Strip location data before committing; re-encoding with
+     `sharp` does it.
+   - **Never** Megascans/Fab or Textures.com files: their licences forbid a public repository, and on GitHub
+     Pages the repository *is* the deployment.
+   - **Trees** come from `@dgreenheck/ez-tree` 1.1.0 (MIT; pine presets, generated levels of detail) and are
+     baked to GLB, plus impostor cards for the mid-ground.
+   - **Moss:** shell texturing only on near-camera patches, scanned clumps elsewhere.
 7. **Backdrop plates.**
    - Painted with an AI image tool from the prompts in the art bible (Olov), **or** photographed at the real
      places (§0 Q7).
-   - Then pre-blurred and split into 2–3 depth layers by the asset build.
-   - No people, houses with numbers or vehicles in any photo.
+   - Then pre-blurred and split into 3–5 depth layers by the asset build:
+     - depth from **Depth Anything V2 Small** (Apache-2.0; the larger models are non-commercial);
+     - masks feathered, colour bled into transparent pixels, and hidden parts inpainted.
+   - **Photos:**
+     - Far hills can be a panorama. For mid-ground strips, walk sideways, because rotating in place gives the
+       wrong parallax.
+     - Remove people and houses with IOPaint (Apache-2.0), and strip GPS data.
+     - No people, houses, house numbers or vehicles in any photo.
+   - **Gaussian splats** (Spark 2.3.1 works with `WebGLRenderer`) are a STRETCH for one summit vista at most.
+     Layered plates are the default.
 8. **Built things,** all in code: the kitchen set, the house and deck, the chopping block and shavings, the
    paper plane, the cap, the boardwalk, the seesaw. Code means exact control of every detail, and nothing
    traced from the family's photos.
 9. **Candy,** in code: about 20 kinds from simple shapes, with three sugar materials (§4.3).
 10. **The look.** Colour grades are generated in code as 3D LUTs from parameter sets per place, so they can be
     tuned in review.
-11. **Review loop** (Sköldhästen §5.4, step 6):
+11. **Headless Blender for agents.** `bpy` 4.5.14 runs on the container's Python 3.11 (about 1.1 GB installed).
+    It is used for:
+    - decimation and LODs;
+    - baking ambient occlusion, normal and colour maps;
+    - splitting parts;
+    - collision proxies.
+
+    Objects' custom properties export as glTF `extras`, which arrive in three as `userData`. That also allows
+    level layout as Blender empties, if Olov ever wants to place things by hand.
+    - Cycles renders on the CPU; EEVEE needs a GPU and isn't used.
+    - Blender is GPL, but that covers the tool, not the assets it outputs.
+12. **Review loop** (Sköldhästen §5.4, step 6):
     - Playwright contact sheets at 390×844, 844×390, 1180×820 (iPad landscape) and 1440×900;
     - a greyscale check that Elof and the candy stand out;
     - a 25% thumbnail check that the path reads.
@@ -1083,6 +1145,9 @@ All versions were checked on npm on 3 October 2026 (Appendix A).
 | Node | 24 in CI (26 becomes LTS on 28 Oct 2026) | — | — |
 
 **Not used:**
+- **Asset files whose licences forbid a public repository:** Mixamo, ActorCore, Megascans/Fab, Textures.com,
+  free-tier AI outputs (Appendix B.4).
+- **Git LFS,** which GitHub Pages can't serve.
 - **WebGPU and TSL,** for now (§6.2).
 - **Rapier.** Its 2D compat build is 1.29 MB gzipped, against planck's 46 KB.
 - **Howler,** which has had no release since 2023; plain Web Audio is enough.
@@ -1468,7 +1533,9 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
 
 - **Olov:**
   - answers §0, and approves likeness (H1b);
-  - runs the AI tools for Route A characters, if chosen;
+  - runs the AI tools for Route A characters, if chosen (one month of Meshy Pro, §0 Q14);
+  - organises the photos: the ghost scan, and optionally local stones, cones and moss, plus plates of the real
+    places (§0 Q6–Q7);
   - does the device tests (H1a, H2, H3) and reads the Swedish aloud;
   - merges and runs the reveal.
   - Realistic time: about 15–25 hours over three to four months, more if he generates the character models.
@@ -1762,7 +1829,42 @@ Check a quote at its source before reusing it publicly.
 
 ### B.4 Tools for characters, the ghost scan and assets
 
-*(Filled in from the asset-pipeline research; see §5.6.)*
+Checked through the tools' GitHub repositories, PyPI, npm and tests in the container. Prices and some licence
+terms marked "unverified" came from second-hand sources.
+
+| Tool | What it does | Licence of what you make | Verdict |
+| --- | --- | --- | --- |
+| **Meshy** (Meshy-7; `meshy-cli` 0.4.0) | Image or 1–4 separate views to 3D. Smart topology at 100–15,000 triangles, A- or T-pose, 2k–8k PBR textures, GLB/FBX. Automatic humanoid rig, and a library of 678 clips. | **Paid plan: you own it.** Free plan: CC BY 4.0, owned by Meshy. | **Recommended:** one month of Pro, about US$20 (unverified) for 1,000 credits. About 50–55 credits per rigged character with five clips. |
+| **Tripo** (SDK 0.4.2) | Image, or four views (front, left, back, right) to 3D. Face limits, quads, a Mixamo-named rig, about 11 humanoid presets. | Free tier CC BY (unverified); paid plans private (unverified) | Fallback |
+| Rodin Gen-2.5 | Up to 5 images, T/A pose, quad options. No rigging. | Unverified | Not evaluated further |
+| Hunyuan3D 2.x (open weights) | Multi-view to 3D | **Licence excludes the EU, UK and South Korea** | **Not usable from Sweden** |
+| TRELLIS.2 (Microsoft) | Single image to 3D; needs a 24 GB NVIDIA GPU | MIT | Possible via a hosted demo; not a turnaround tool |
+| SF3D / SPAR3D (Stability) | Single image to 3D; runs on CPU (slowly) | Community licence; you own outputs | A rough fallback |
+| **Quaternius Universal Animation Library 1 + 2** | 43 + 43 clips on a 65-joint UE5-mannequin rig: idle, walk, jog, sprint, the parts of a jump, push, climb, interact, pick up, crouch, sit, carry. In-place and root-motion versions. | **CC0** | **Recommended animation source** |
+| Mixamo, ActorCore | Large animation libraries | Their terms forbid redistributing raw files | **Never in this public repository** |
+| SMPL-based assets | Body models | Non-commercial research only | Avoid |
+| Scaniverse, KIRI Engine, Polycam | Phone photogrammetry | Free tiers and export limits unverified | Try Scaniverse or KIRI for the ghost |
+| COLMAP 4.2.1 (`pycolmap`) + OpenMVS 2.4.0 | Photogrammetry on CPU | BSD / AGPL (tools only) | The sparse step tested OK here; OpenMVS needs a build |
+| **Poly Haven, ambientCG** | Photo-scanned textures, models and HDRIs | **CC0** (Poly Haven: "no attribution requirement whatsoever") | **Use** |
+| Kenney, Quaternius models | Stylised models | CC0 | Use where the style fits |
+| Megascans/Fab, Textures.com | Photo-scanned assets | Not allowed in a public repository | **Never** |
+| `bpy` 4.5.14 (Blender as a Python module) | Headless decimation, baking and glTF export with `extras` | GPL-3.0 (the tool, not its outputs) | Use in sessions |
+| Depth Anything V2 **Small** | Depth maps to split photo plates | Apache-2.0 (Base, Large and Giant are non-commercial) | Use only *Small* |
+| IOPaint (LaMa) | Removing people and houses from photos | Apache-2.0 | Use |
+| `@dgreenheck/ez-tree` 1.1.0 | Procedural trees with LODs | MIT | Use |
+| `@sparkjsdev/spark` 2.3.1 | Gaussian splats in `WebGLRenderer` | MIT | STRETCH only |
+
+**Retargeting notes** (tested in Node against three r186's `SkeletonUtils.retargetClip`):
+- Pass per-bone rest-pose offsets (`localOffsets`), computed from both rigs in the same T-pose. Without them,
+  limbs are 73–180° off; with them, about 1°.
+- Root the `AnimationMixer` at the `SkinnedMesh`, not at `gltf.scene`.
+- GLTFLoader strips characters such as `:` and `.` from bone names.
+- Bake the clips at build time, then resample them with gltf-transform.
+
+**GitHub limits:**
+- the repository should stay under about 1 GB, and so must the published site;
+- about 100 GB of bandwidth per month;
+- Git LFS cannot be used with GitHub Pages.
 
 ## Appendix C: what is reused from Sköldhästen
 
