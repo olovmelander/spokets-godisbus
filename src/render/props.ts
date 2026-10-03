@@ -196,6 +196,8 @@ export function spotProp(spot: Spot): SpotProp | null {
     case 'jay': {
       // Lavskrikan: grey-brown, with a dark cap and a rust-red tail. It hops when it gets its berry.
       const bird = new Group();
+      // The view puts the jay modelled in Blender here, once it has arrived: it finds this group by its name.
+      bird.name = 'bird';
       const grey = solid('#8c7f72', 0.9);
       const tail = new Mesh(new BoxGeometry(0.42, 0.05, 0.16), solid('#b5622c', 0.8));
       tail.position.set(-0.36, 0.3, 0);
@@ -440,6 +442,7 @@ export function spotProp(spot: Spot): SpotProp | null {
 /** A small bird, facing +x, with its feet at the origin: the jay's shape, used for the helper as well. */
 function bird(): Group {
   const group = new Group();
+  group.name = 'bird';
   const grey = solid('#8c7f72', 0.9);
   const tail = new Mesh(new BoxGeometry(0.42, 0.05, 0.16), solid('#b5622c', 0.8));
   tail.position.set(-0.36, 0.3, 0);

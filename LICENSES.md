@@ -43,6 +43,7 @@ the files made with it). three's Basis transcoder (Apache-2.0) is served with th
 | File | What it is | Source and licence |
 | --- | --- | --- |
 | `art/baked/boot/big-candy.glb` | The big candy: a striped sweet on a stick | Made for this game in Blender by `art/blender/big-candy.py`, which also paints its texture. Nothing in it comes from anyone else. |
+| `art/baked/boot/jay.glb` | Lavskrikan, the Siberian jay: the helper, and the friend he shares a berry with | Made for this game in Blender by `art/blender/jay.py`: plain shapes in plain colours, with no texture. Nothing in it comes from anyone else. |
 
 There are no third-party asset files yet. The test course, the stand-in Elof and the ghost on the loading card
 are made in code.
