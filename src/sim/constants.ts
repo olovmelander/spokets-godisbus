@@ -37,6 +37,19 @@ export const JUMP_SPEED = halfStep + Math.sqrt(halfStep * halfStep + 2 * GRAVITY
 /** Gravity multiplier while Elof rises with Hoppa released. A tap then tops out at HOP_APEX. */
 export const HOP_GRAVITY_SCALE = JUMP_SPEED ** 2 / (2 * GRAVITY * (HOP_APEX + (JUMP_SPEED * STEP) / 2));
 
+/** A fall longer than this ends in the glitter bubble; a shorter one is a soft landing (plan §4.2). */
+export const FALL_LIMIT = 4;
+/** The bubble floats him back in about this long. */
+export const BUBBLE_TIME = 1;
+/** How far the bubble's path rises above a straight line: it floats, it doesn't fly. */
+export const BUBBLE_LIFT = 0.6;
+/** Safe ground is where he stood this much time on the ground ago: time in the air is not counted. */
+export const SAFE_AFTER = 0.5;
+/** If that spot is further than this from where he last stood, or at another height, he goes there instead. */
+export const SAFE_REACH = 2.5;
+/** How far past his own edge a walking Elof looks for the ground. */
+export const EDGE_REACH = 0.08;
+
 /** A trail candy is collected when it comes this close to Elof's middle: near misses count (plan §4.3). */
 export const CANDY_MAGNET = 0.6;
 

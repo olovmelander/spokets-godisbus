@@ -90,7 +90,7 @@ function start(): void {
   const debug: Debug | null = debugOn ? createDebug(byId('debug')) : null;
   if (debugOn) {
     window.__godis = {
-      state: () => ({ ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount, device }),
+      state: () => ({ ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount, bubbles: game.sim.bubbles, device }),
       info: () => ({ ...view.info() }),
     };
   }
@@ -134,7 +134,7 @@ function start(): void {
           `tier ${i.tier} · canvas ${i.width}×${i.height} · pixel ratio ${i.pixelRatio.toFixed(2)}`,
           `models ${i.models.join(', ') || 'none yet'} · KTX2 textures ${i.compressedTextures}`,
           `x ${n(p.x)} y ${n(p.y)} · vx ${n(p.vx)} vy ${n(p.vy)} · ${p.grounded ? 'on the ground' : 'in the air'}`,
-          `candy ${game.sim.candyCount} of ${testbana.candy.length}`,
+          `candy ${game.sim.candyCount} of ${testbana.candy.length} · bubbles ${game.sim.bubbles}${p.atEdge ? ' · at an edge' : ''}`,
         ];
       });
     }

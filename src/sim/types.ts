@@ -37,4 +37,10 @@ export interface PlayerState {
   grounded: boolean;
   /** Height of the ground straight below him, for his shadow and the camera. */
   groundY: number;
+  /** Height of the ground he last stood on: where the camera looks while he is over a long drop. */
+  standY: number;
+  /** He has stopped at the edge of a drop too long to walk off (plan §4.2). */
+  atEdge: boolean;
+  /** 0 outside the glitter bubble; inside it, how far it has carried him, up to 1. */
+  bubble: number;
 }

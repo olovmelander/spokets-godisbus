@@ -39,7 +39,7 @@ function playThrough(fps: number, chapter = testbana) {
   const missed = game.sim.collected.flatMap((got, i) => (got ? [] : [i]));
   return {
     goal: game.sim.flags.has('goal'), seconds: frames * dt, steps: game.sim.steps, end: game.sim.curr, lowest,
-    candy: game.sim.candyCount, missed,
+    candy: game.sim.candyCount, missed, bubbles: game.sim.bubbles,
   };
 }
 
@@ -50,6 +50,7 @@ describe('the robot on the test course', () => {
       expect(result.goal).toBe(true);
       expect(result.seconds).toBeLessThan(25);
       expect(result.lowest).toBeGreaterThan(-1);
+      expect(result.bubbles).toBe(0);
     });
   }
 
@@ -63,6 +64,34 @@ describe('the robot on the test course', () => {
 
   it('plays the same game twice at the same frame rate', () => {
     expect(playThrough(60)).toEqual(playThrough(60));
+  });
+});
+
+describe('a player who never jumps the chasm', () => {
+  it('is carried back every time, loses nothing, and never sees the bottom', () => {
+    const game = new Game(testbana);
+    const dt = 1 / 60;
+    let wasAhead = false;
+    let lowest = Infinity;
+    let candy = 0;
+    // The robot's own play up to the chasm, and from there only running: 40 seconds of it.
+    for (let frame = 0; frame < 60 * 40; frame++) {
+      const p = game.sim.curr;
+      const rises = heightAt(testbana, p.x + 1.0) > p.y + 0.05;
+      const gap = heightAt(testbana, p.x + 0.35) < p.y - 0.3 && heightAt(testbana, p.x + 2.2) > p.y - 0.3;
+      const ahead = p.grounded && p.x < 25 && (rises || gap);
+      game.frame(dt, { x: 1, hopHeld: true }, { hop: ahead && !wasAhead, act: false, helper: false });
+      wasAhead = ahead;
+      lowest = Math.min(lowest, game.sim.curr.y);
+      expect(game.sim.candyCount).toBeGreaterThanOrEqual(candy);
+      candy = game.sim.candyCount;
+    }
+    expect(game.sim.bubbles).toBeGreaterThan(5);
+    expect(game.sim.flags.has('goal')).toBe(false);
+    // The chasm is seven EL deep; the bubble catches him four EL down.
+    expect(lowest).toBeGreaterThan(-5);
+    expect(game.sim.curr.x).toBeLessThan(27.8);
+    expect(candy).toBeGreaterThanOrEqual(17);
   });
 });
 

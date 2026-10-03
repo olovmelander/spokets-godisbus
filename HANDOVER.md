@@ -129,9 +129,27 @@
     collects all 20 at 30, 60, 120 and 144 Hz; the browser test reads the bag's number.
   - The robot now runs off a step down instead of jumping from it, as the trail shows. A player who jumps
     there flies over the candy just beyond; that is the player's choice, not a bug.
-  - **Not yet, the rest of Stage 1** (plan §7.3): the glitter bubble and safe ground; ledges and climbing;
-    the lace and the swing in both modes; the big candy as a checkpoint; the camera's zones; one greybox
-    puzzle and one exciting sequence; the two play styles; then H2.
+  - **Part 2: the glitter bubble.** What you see: the course has a chasm before the big candy. Miss the jump
+    and a golden swarm of sparks gathers round Elof in the air, floats him back to solid ground in a second,
+    and lets him try again. Nothing is lost.
+    - A fall of more than 4 EL starts it (`FALL_LIMIT`), in the air, before he lands. While it carries him the
+      stick and the buttons do nothing.
+    - **Where it puts him** (`chooseSafe` in `src/sim/sim.ts`): where he stood half a second of ground time
+      ago, which gives a runner about 1.75 EL for a new run-up. The plan says "the last spot where he stood
+      for 0.5 s"; played in the browser, that sent a child who hops along far back, because he is hardly
+      ever on the ground. So when that spot is more than 2.5 EL from where he last stood, or at another
+      height, he is put where he last stood instead. Only ground under both his sides counts, so a corner
+      he clipped on the way down is never chosen.
+    - **Walking, he stops at the edge of a long drop** (`atEdge`); at a run he goes over, so a running jump
+      needs no care. This is the session's reading of plan §4.2 ("walking, Elof never goes over an edge
+      higher than 4 EL"); *Lugnt* will stop him at a run too. His looking down is not drawn yet.
+    - The camera keeps looking at the ground he jumped from while he is over a long drop.
+    - Tests: `tests/sim/bubble.test.ts` (the catch, the way back, a hopping child, a clipped corner, the
+      edge, the camera); the robot crosses the chasm without a bubble; a player who never jumps it is carried
+      back every time and loses nothing.
+  - **Not yet, the rest of Stage 1** (plan §7.3): ledges and climbing; the lace and the swing in both modes;
+    the big candy as a checkpoint; the camera's zones; one greybox puzzle and one exciting sequence; the two
+    play styles; then H2.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
@@ -157,8 +175,7 @@
      Wi-Fi: `npm run dev:lan`.
 3. **Correct the size gate:** Pages gzips `.wasm` and `.glb` too (see "State"), so `scripts/size-gate.mjs` and
    the plan's §6.6 should count them as served. A small PR of its own.
-4. **The rest of Stage 1** (plan §7.3), one visible outcome per PR, in this order: the glitter bubble and safe
-   ground; ledges and climbing; the lace and the swing; the big candy as a checkpoint; the camera's zones; a
+4. **The rest of Stage 1** (plan §7.3), one visible outcome per PR, in this order: ledges and climbing; the lace and the swing; the big candy as a checkpoint; the camera's zones; a
    greybox puzzle; a greybox exciting sequence; the two play styles. Then **H2**, Olov's own test on touch.
 5. **The rest of Stage 0b** (look-dev), on Olov's computer, with him watching the picture:
    - `docs/art-bible.md`: the scale chart, a palette and a grade per place, the layer recipe, the H1a board with
@@ -187,6 +204,7 @@
 | The secret | Pappa's first trägubbe, carved for Elof when he was about three and lost on the mountain. Little Elof shared his Saturday sweets with it, which is why the ghost takes the bag. The game names no year. | Olov, 3 Oct; the retelling in plan §2.4 and §3.4 is the session's |
 | The ghost's name | *Klonk*, after its footsteps. Elof names it in the epilogue; until then it is "spöket". | Olov asked for a name, 3 Oct; the name is the session's proposal |
 | Dates | None. Stages in order; a release goes out when its checkpoint has passed. | Olov, 3 Oct |
+| Going on without asking | Sessions work through the plan stage after stage, take the choice they would recommend, and write it here. A session merges its own green PR, except one that touches `RELEASED_CHAPTER`, likeness assets or `CLAUDE.md`. | Olov, 3 Oct: "Do not stop, just continue implement all phases in one shot. Do not wait for greenlight from me. Always do what you recommend doing." and "I want the full game plan implemented". That this covers merging is the session's reading. |
 | Order of work | Stage 1, the game itself in greybox, goes on while the look-dev of Stage 0b and the characters of Stage 0c wait | Olov, 3 Oct: "continue working with the implementation of the games, we can improve the character design later" |
 | Testing | Only Olov tests before Elof plays. H2 and H3 are his own tests. | Olov, 3 Oct |
 | Voices | None: no read-aloud, no recordings. Characters make wordless sounds. | Olov, 3 Oct |
@@ -209,12 +227,15 @@
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
-| 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag. Started before 0b and 0c are finished, on Olov's word. |
+| 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble. Started before 0b and 0c are finished, on Olov's word. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs
 
-- None known.
+- None known in the game.
+- **On Windows, start the tests from a path spelled with a capital `C:`.** From `c:\Users\...` every test file
+  fails with "Cannot read properties of undefined (reading 'config')": vitest gets loaded twice under two
+  spellings. `cd "C:/Users/..."` first.
 - Not checked yet: the game on a real phone or tablet. The browser test runs in headless Chromium with software
   rendering, so its frame times say nothing about a device.
 - A viewport screenshot taken through the Blender server came back black once, right after the viewport was

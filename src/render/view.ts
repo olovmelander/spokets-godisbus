@@ -1,7 +1,7 @@
 import {
-  BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
+  AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
-  MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, PerspectiveCamera, Quaternion,
+  MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, Quaternion,
   Scene, Shape, SphereGeometry, UnsignedByteType, Vector2, Vector3, WebGLRenderer,
 } from 'three';
 import { createAssets } from './assets';
@@ -91,7 +91,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
 
   const candyPlace = buildCandy(chapter);
   const trail = buildTrail(chapter);
-  scene.add(buildGround(chapter), buildTrunks(chapter), candyPlace, trail.mesh);
+  const glitter = buildGlitter();
+  scene.add(buildGround(chapter), buildTrunks(chapter), candyPlace, trail.mesh, glitter.group);
   let candy = candyPlace.getObjectByName('candy')!;
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
@@ -209,6 +210,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const y = lerp(prev.y, curr.y, alpha);
     clock += dt;
     trail.update(collected, x, y, dt, clock);
+    glitter.update(curr.bubble, x, y, clock);
 
     // The simulation says where to look; the view only smooths it.
     const want = cameraIntent(curr);
@@ -223,7 +225,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     turn += (facingAngle - turn) * ease(14, dt);
     if (curr.grounded) stride += Math.abs(curr.vx) * dt * 5.5;
     const swing = curr.grounded ? Math.sin(stride) * 0.75 * Math.min(1, Math.abs(curr.vx) / RUN_SPEED + 0.25) : 0.5;
-    const moving = Math.abs(curr.vx) > 0.05 || !curr.grounded;
+    const moving = Math.abs(curr.vx) > 0.05 || (!curr.grounded && curr.bubble === 0);
     elof.legLeft.rotation.z = moving ? swing : 0;
     elof.legRight.rotation.z = moving ? -swing : 0;
     if (doll) poseDoll(doll, curr, stride, dt);
@@ -336,7 +338,10 @@ function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number): 
 }
 
 function startState(chapter: ChapterData): PlayerState {
-  return { x: chapter.spawn.x, y: chapter.spawn.y, vx: 0, vy: 0, facing: 1, grounded: true, groundY: chapter.spawn.y };
+  return {
+    x: chapter.spawn.x, y: chapter.spawn.y, vx: 0, vy: 0, facing: 1, grounded: true, groundY: chapter.spawn.y,
+    standY: chapter.spawn.y, atEdge: false, bubble: 0,
+  };
 }
 
 /** The ground line, closed below and to the sides, as one extruded slab around the play plane (z = 0). */
@@ -372,6 +377,54 @@ function buildTrunks(chapter: ChapterData): Group {
     group.add(trunk);
   }
   return group;
+}
+
+/**
+ * The glitter bubble (plan §4.2): a golden sparkle shell, never a round gum bubble. A faint glow and a swarm
+ * of sparks that turn round Elof while it carries him. It is always in the scene, at no size, so its shaders
+ * are compiled with the first frames and not when he first falls.
+ */
+function buildGlitter() {
+  const SPARKS = 22;
+  const RADIUS = 0.7;
+  const group = new Group();
+  const glow = new Mesh(
+    new SphereGeometry(RADIUS, 20, 14),
+    new MeshBasicMaterial({ color: '#ffcf5a', transparent: true, opacity: 0.14, depthWrite: false, blending: AdditiveBlending }),
+  );
+  const sparks = new InstancedMesh(
+    new OctahedronGeometry(0.055),
+    new MeshBasicMaterial({ color: '#fff0b0', transparent: true, opacity: 0.95, depthWrite: false, blending: AdditiveBlending }),
+    SPARKS,
+  );
+  sparks.instanceMatrix.setUsage(DynamicDrawUsage);
+  glow.frustumCulled = false;
+  sparks.frustumCulled = false;
+  group.add(glow, sparks);
+  group.scale.setScalar(0);
+  const place = new Object3D();
+
+  /** `carried` is the bubble's progress from the simulation: 0 when there is none. */
+  function update(carried: number, elofX: number, elofY: number, clock: number): void {
+    // It gathers in the first tenth of the way and scatters in the last.
+    const size = carried <= 0 ? 0 : Math.min(1, carried / 0.1, (1 - carried) / 0.1 + 0.15);
+    group.scale.setScalar(size);
+    if (size === 0) return;
+    group.position.set(elofX, elofY + 0.5, 0);
+    for (let i = 0; i < SPARKS; i++) {
+      // Spread evenly over the shell, each on its own slow turn.
+      const up = 1 - (2 * (i + 0.5)) / SPARKS;
+      const ring = Math.sqrt(1 - up * up) * RADIUS;
+      const angle = i * 2.39996 + clock * (1.6 + (i % 5) * 0.35);
+      place.position.set(Math.cos(angle) * ring, up * RADIUS, Math.sin(angle) * ring);
+      place.rotation.set(clock * 3 + i, clock * 2.3 + i * 2, 0);
+      place.scale.setScalar(0.55 + 0.45 * Math.sin(clock * 9 + i * 1.3));
+      place.updateMatrix();
+      sparks.setMatrixAt(i, place.matrix);
+    }
+    sparks.instanceMatrix.needsUpdate = true;
+  }
+  return { group, update };
 }
 
 /** The bright colours of the karameller on Olov's poster. */
