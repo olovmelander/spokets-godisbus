@@ -60,7 +60,7 @@ No one here sculpts by hand. Two routes were looked at on 3 October, and neither
   fused into one surface with a voxel remesh, cut where the eyes and ears are, smoothed and thinned out. That
   gives eye sockets with lids, cheeks, a button nose, lips, ears, fingers and hair in swept tufts. The body is
   skinned on 15 bones named after the animation library's joints. Colour is painted on the vertices, with
-  shadow baked into the creases; only the shirt's stripes are a texture. About 15,300 triangles and three
+  shadow baked into the creases; only the shirt's stripes are a texture. About 15,400 triangles (the budget is 15,000) and three
   materials. It reads as a stylized cartoon boy, which the second model (plain balls and tubes) did not. It is
   still short of the sheets: the face is made of simple rounded forms, and the cloth has no real folds.
 - **A base body that an artist made,** reshaped and dressed in Blender. The steps are below. The free version of

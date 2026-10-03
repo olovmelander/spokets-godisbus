@@ -99,7 +99,7 @@
       "visually stunning design and style". The third is sculpted by script: forms fused with a voxel remesh,
       cut, smoothed and thinned out. He has eye sockets with lids, large blue eyes, a button nose, lips, ears,
       fingers, hair in swept tufts and a soft backpack. He is skinned on 15 bones named after the animation
-      library's joints, painted on the vertices with shadow baked into the creases, 15,300 triangles, three
+      library's joints, painted on the vertices with shadow baked into the creases, 15,400 triangles, three
       materials. He is in the game on Olov's computer, and `src/render/view.ts` poses his bones. He reads as a
       stylized cartoon boy now. He is still short of the sheets: Olov has not judged him yet.
     - **What was researched:** how stylized characters are made (the art bible lists the principles and the
