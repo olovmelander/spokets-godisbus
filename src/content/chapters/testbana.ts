@@ -1,45 +1,75 @@
 import type { ChapterData } from '../../sim/types';
 
 /**
- * Stage 0a's test course. It is not part of the story. Units: EL.
- * From the left: flat ground, a low step (a hop), a high block (a held jump), a ditch (a running jump,
- * or a held jump to get out of it), a chasm too deep to land in (a miss ends in the glitter bubble), and
- * the big candy at the end.
+ * The test course. It is not part of the story: it has one of everything Elof can do so far. Units: EL.
+ * From the left:
+ * - flat ground, and a kerb he walks over;
+ * - a low step (a hop), a high block (a held jump), and a ditch (a running jump, or a held jump out of it);
+ * - a chasm too deep to land in: a miss ends in the glitter bubble;
+ * - a ramp he walks up, and a wall he pulls himself up;
+ * - a wall too high for that, with a hose to climb;
+ * - a cliff too high to jump from, with a hose to slide down (Använd);
+ * - and the big candy at the end.
  *
- * The candy trail shows the way (plan §4.3): a candy every 1.5 to 3 EL along the ground, a low arc over the
- * step, a high arc onto the block, and a long arc across the ditch and across the chasm.
+ * The candy trail shows the way (plan §4.3): a candy every 1.5 to 3 EL along the ground, an arc over each
+ * jump (the higher the arc, the longer Hoppa is held), and a line of candy up and down each hose.
  */
 export const testbana: ChapterData = {
   id: 'testbana',
   spawn: { x: 0, y: 0.01 },
-  goalX: 30,
+  goalX: 48,
   ground: [
     { x: -4, y: 6 },
     { x: -4, y: 0 },
+    // the kerb
+    { x: 7, y: 0 },
+    { x: 7, y: 0.25 },
+    { x: 8.6, y: 0.25 },
+    { x: 8.6, y: 0 },
+    // the step
     { x: 10, y: 0 },
     { x: 10, y: 0.5 },
     { x: 13, y: 0.5 },
     { x: 13, y: 0 },
+    // the block
     { x: 16, y: 0 },
     { x: 16, y: 0.95 },
     { x: 19, y: 0.95 },
     { x: 19, y: 0 },
+    // the ditch
     { x: 22, y: 0 },
     { x: 22, y: -0.9 },
     { x: 23.8, y: -0.9 },
     { x: 23.8, y: 0 },
+    // the chasm
     { x: 26, y: 0 },
     { x: 26, y: -7 },
     { x: 27.8, y: -7 },
     { x: 27.8, y: 0 },
-    { x: 32, y: 0 },
-    { x: 32, y: 6 },
+    // the ramp
+    { x: 31, y: 0 },
+    { x: 33.5, y: 1.5 },
+    // the wall he pulls himself up
+    { x: 36, y: 1.5 },
+    { x: 36, y: 2.8 },
+    // the wall with the hose
+    { x: 39, y: 2.8 },
+    { x: 39, y: 6 },
+    // the cliff with the hose down
+    { x: 43, y: 6 },
+    { x: 43, y: 0 },
+    { x: 50, y: 0 },
+    { x: 50, y: 8 },
+  ],
+  climbs: [
+    { x: 38.7, bottom: 2.8, top: 6, exit: 1 },
+    { x: 43.3, bottom: 0, top: 6, exit: -1 },
   ],
   candy: [
     { x: 2, y: 0.45 },
     { x: 4, y: 0.45 },
     { x: 5.6, y: 0.45 },
-    { x: 7.8, y: 0.45 },
+    { x: 7.8, y: 0.7 },
     // a low arc: a hop takes the step
     { x: 9.3, y: 0.8 },
     { x: 9.9, y: 1.1 },
@@ -60,6 +90,28 @@ export const testbana: ChapterData = {
     { x: 25.7, y: 0.75 },
     { x: 26.9, y: 1.25 },
     { x: 28.1, y: 0.75 },
-    { x: 29.3, y: 0.45 },
+    { x: 29.5, y: 0.45 },
+    // up the ramp
+    { x: 31.4, y: 0.7 },
+    { x: 32.6, y: 1.4 },
+    { x: 34.4, y: 1.95 },
+    // up the wall
+    { x: 35.7, y: 2.5 },
+    { x: 36.5, y: 3.25 },
+    { x: 37.8, y: 3.25 },
+    // up the hose
+    { x: 38.7, y: 4 },
+    { x: 38.7, y: 5 },
+    { x: 38.7, y: 6 },
+    { x: 39.8, y: 6.45 },
+    { x: 41.2, y: 6.45 },
+    { x: 42.5, y: 6.45 },
+    // down the other hose
+    { x: 43.3, y: 5 },
+    { x: 43.3, y: 3.5 },
+    { x: 43.3, y: 2 },
+    { x: 44.4, y: 0.45 },
+    { x: 45.9, y: 0.45 },
+    { x: 47.2, y: 0.45 },
   ],
 };

@@ -4,7 +4,7 @@ import { BUBBLE_TIME, ELOF_HALF_WIDTH, FALL_LIMIT, RUN_SPEED, SAFE_AFTER, STEP, 
 import { Sim } from '../../src/sim/sim';
 import type { ChapterData, StepInput } from '../../src/sim/types';
 
-const idle: StepInput = { x: 0, hopHeld: false, hop: false, act: false };
+const idle: StepInput = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
 
 /** High ground on the left that ends at x = 0, with lower ground `drop` EL below it. */
 function cliff(drop: number, candy: ChapterData['candy'] = [], spawnX = -5): ChapterData {

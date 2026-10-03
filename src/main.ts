@@ -5,6 +5,7 @@ import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
 import { tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
+import type { ChapterData } from './sim/types';
 import { createBench } from './ui/bench';
 import { createDebug, type Debug } from './ui/debug';
 import { createHud } from './ui/hud';
@@ -35,20 +36,28 @@ function showMessage(text: string): void {
   byId('loading').classList.add('done');
 }
 
+/** With ?debug, ?at=x,y starts Elof there instead of at the chapter's start: for looking at one place. */
+function chapterToPlay(): ChapterData {
+  const at = debugOn ? (params.get('at') ?? '').split(',').map(Number) : [];
+  const [x, y] = at;
+  return x !== undefined && y !== undefined && Number.isFinite(x) && Number.isFinite(y) ? { ...testbana, spawn: { x, y } } : testbana;
+}
+
 function start(): void {
+  const chapter = chapterToPlay();
   mountShell(document.body);
   const canvas = byId<HTMLCanvasElement>('game');
   let view: View;
   try {
-    view = createView(canvas, testbana, tierFromQuery(params.get('tier')));
+    view = createView(canvas, chapter, tierFromQuery(params.get('tier')));
   } catch (error) {
     console.error(error);
     showMessage(sv.noWebGL);
     return;
   }
 
-  const game = new Game(testbana);
-  const hud = createHud(byId('bag'), byId('bagCount'), testbana.candy.length);
+  const game = new Game(chapter);
+  const hud = createHud(byId('bag'), byId('bagCount'), byId<HTMLButtonElement>('actBtn'), chapter.candy.length);
   const controls = byId('controls');
   const hint = byId('hint');
 
@@ -96,7 +105,7 @@ function start(): void {
   }
 
   // ?bench plays the course by itself for 30 seconds and then shows numbers to paste into a session.
-  const bench = benchOn ? createBench(30, testbana) : null;
+  const bench = benchOn ? createBench(30, chapter) : null;
 
   let shown = false;
   let lastTime = 0;
@@ -108,10 +117,11 @@ function start(): void {
     let held = input.state();
     let edges = input.consume();
     if (bench && !bench.done) ({ held, edges } = bench.play(game.sim.curr, time));
-    game.frame(dt, { x: held.x, hopHeld: held.hopHeld }, edges);
+    game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld }, edges);
     const atGoal = game.sim.flags.has('goal');
     view.render(game.sim.prev, game.sim.curr, game.alpha, dt, atGoal, game.sim.collected);
     hud.candy(game.sim.candyCount);
+    hud.verb(game.sim.curr.verb);
     if (atGoal && device !== 'touch') hint.textContent = sv.goal;
 
     if (!shown) {
@@ -134,7 +144,7 @@ function start(): void {
           `tier ${i.tier} · canvas ${i.width}×${i.height} · pixel ratio ${i.pixelRatio.toFixed(2)}`,
           `models ${i.models.join(', ') || 'none yet'} · KTX2 textures ${i.compressedTextures}`,
           `x ${n(p.x)} y ${n(p.y)} · vx ${n(p.vx)} vy ${n(p.vy)} · ${p.grounded ? 'on the ground' : 'in the air'}`,
-          `candy ${game.sim.candyCount} of ${testbana.candy.length} · bubbles ${game.sim.bubbles}${p.atEdge ? ' · at an edge' : ''}`,
+          `candy ${game.sim.candyCount} of ${chapter.candy.length} · bubbles ${game.sim.bubbles} · ${p.mode}${p.verb ? ` · Använd: ${p.verb}` : ''}${p.atEdge ? ' · at an edge' : ''}`,
         ];
       });
     }

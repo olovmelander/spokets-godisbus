@@ -92,7 +92,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const candyPlace = buildCandy(chapter);
   const trail = buildTrail(chapter);
   const glitter = buildGlitter();
-  scene.add(buildGround(chapter), buildTrunks(chapter), candyPlace, trail.mesh, glitter.group);
+  scene.add(buildGround(chapter), buildTrunks(chapter), buildClimbs(chapter), candyPlace, trail.mesh, glitter.group);
   let candy = candyPlace.getObjectByName('candy')!;
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
@@ -221,7 +221,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     camera.lookAt(look.x, centreY, 0);
 
     // The stand-in Elof: turned a little towards the camera, legs swinging with the distance he covers.
-    const facingAngle = curr.facing > 0 ? -0.35 : Math.PI + 0.35;
+    // On a hose he turns his back to the camera, as a climber does.
+    const onHose = curr.mode === 'climb' || curr.mode === 'slide';
+    const facingAngle = onHose ? Math.PI / 2 : curr.facing > 0 ? -0.35 : Math.PI + 0.35;
     turn += (facingAngle - turn) * ease(14, dt);
     if (curr.grounded) stride += Math.abs(curr.vx) * dt * 5.5;
     const swing = curr.grounded ? Math.sin(stride) * 0.75 * Math.min(1, Math.abs(curr.vx) / RUN_SPEED + 0.25) : 0.5;
@@ -340,7 +342,7 @@ function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number): 
 function startState(chapter: ChapterData): PlayerState {
   return {
     x: chapter.spawn.x, y: chapter.spawn.y, vx: 0, vy: 0, facing: 1, grounded: true, groundY: chapter.spawn.y,
-    standY: chapter.spawn.y, atEdge: false, bubble: 0,
+    standY: chapter.spawn.y, atEdge: false, bubble: 0, mode: 'free', t: 0, verb: null,
   };
 }
 
@@ -356,9 +358,24 @@ function buildGround(chapter: ChapterData): Mesh {
   shape.lineTo(last.x + 14, -12);
   shape.lineTo(first.x - 14, -12);
   shape.closePath();
-  const geometry = new ExtrudeGeometry(shape, { depth: 5.5, bevelEnabled: false });
+  // From well behind the play plane to a little in front of it: enough to stand on, and little enough that
+  // a wall doesn't hide what is beside it when the camera looks along the course.
+  const geometry = new ExtrudeGeometry(shape, { depth: 4.7, bevelEnabled: false });
   geometry.translate(0, 0, -4);
   return new Mesh(geometry, new MeshStandardMaterial({ color: '#7f8f58', roughness: 1 }));
+}
+
+/** The hoses he climbs: green garden hose, a little behind the play plane so that he is in front of it. */
+function buildClimbs(chapter: ChapterData): Group {
+  const group = new Group();
+  const material = new MeshStandardMaterial({ color: '#3f8f4f', roughness: 0.55 });
+  for (const climb of chapter.climbs ?? []) {
+    const length = climb.top - climb.bottom + 0.25;
+    const hose = new Mesh(new CylinderGeometry(0.06, 0.06, length, 10), material);
+    hose.position.set(climb.x, climb.bottom + length / 2, -0.16);
+    group.add(hose);
+  }
+  return group;
 }
 
 /** Dark trunks behind the course: something for the eye to measure Elof's speed against. */
