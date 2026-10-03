@@ -22,6 +22,8 @@ export interface Hook {
   length: number;
   /** Where the swing is meant to land him. With *Hjälp med svingen* the flight is steered there. */
   land?: Vec;
+  /** A hook of a challenge route (plan §4.7): off the way on, so the helper never points at it. */
+  extra?: boolean;
 }
 
 /**
@@ -274,9 +276,10 @@ export interface ChapterData {
   place?: PlaceId;
   /**
    * The hidden candy for the album (plan §4.3): off the trail, each of its own kind. Finding one sets the
-   * flag `found:<kind>`, which the save keeps.
+   * flag `found:<kind>`, which the save keeps. One with `route` hangs at the end of the chapter's challenge
+   * route (plan §4.7), and is reached that way only.
    */
-  hidden?: { x: number; y: number; kind: string }[];
+  hidden?: { x: number; y: number; kind: string; route?: boolean }[];
   /** For the picture: stretches of ground that are something else than the place's own: a deck, a boulder. */
   surfaces?: { from: number; to: number; kind: SurfaceKind }[];
   /** For the picture: a deck overhead, with the sun falling through between its boards. */

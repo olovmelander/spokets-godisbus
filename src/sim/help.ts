@@ -37,7 +37,7 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   }
   // Hooks he has not swung past.
   for (const hook of chapter.hooks ?? []) {
-    if ((hook.land?.x ?? hook.x + hook.length) <= p.x + 0.5) continue;
+    if (hook.extra || (hook.land?.x ?? hook.x + hook.length) <= p.x + 0.5) continue;
     things.push({ at: { x: hook.x, y: hook.y }, verb: 'lace', word: null });
   }
   // What he stands at comes first: where several things may be done in any order, it is the one in reach.

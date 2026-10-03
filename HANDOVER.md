@@ -641,6 +641,27 @@
     - **When a chapter is released** (`RELEASED_CHAPTER`): a code must not open a chapter that is not
       released. Today the story is only played with `?dev`, where every part is open, so there is no such
       check yet. Add it in the PR that makes the plain address play the story.
+  - **C1, the swing chain** (branch `stage-2-c1`; plan §4.7). What you see: under the deck in Kapitel 1,
+    two more red rings hang high under the joists, out of reach from the ground. From the first swing he
+    can let go on the way up and press Använd again in the air: the lace takes the next ring, and then the
+    next. At the top of the third swing hangs a hidden candy, the gummibjörn. From there the crossing's
+    own ring is in reach and takes him over the gully. It is the first of the plan's four challenge routes.
+    - **A rule changed for it:** in the air, the hook he just let go of is not offered again until he has
+      landed. Before, Använd in the air took the same hook straight back, so a chain could not be played.
+      Every earlier test still passes.
+    - **Missing costs nothing:** he lands on the ground under the chain, or the glitter bubble carries him
+      back from the gully, and a candy he has found he keeps.
+    - The chain is not on the way on: the helper never points at it (`extra` on a hook), and the robot
+      plays Kapitel 1 without it. It is for *Äventyr*: with *Hjälp med svingen* the first swing is steered
+      to its landing, so the chain can't be entered from it.
+    - The deck overhead was raised from 5.4 to 5.95 EL, level with the deck he came from, so that the
+      chain's rings sit at the joists.
+    - Tests: `tests/sim/chain.test.ts` (7): three swings find the candy when he lets go anywhere between
+      0.7 and 0.9 radians; a fourth, on the crossing's ring, lands him past the gully; the ordinary way and
+      a jump from the ground don't find it; a fall after the candy keeps it.
+    - **For H2:** whether a seven-year-old finds the timing fun or fiddly is for Olov to feel and for Elof
+      to show. The numbers are two hooks and one candy in `src/content/chapters/garden.ts`.
+    - **Not yet:** C2 (the anthill), C3 (the shy lights) and C4.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate counts both

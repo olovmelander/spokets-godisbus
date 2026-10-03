@@ -9,6 +9,11 @@ import type { Candy, ChapterData } from '../../sim/types';
  *    down.
  * 3. **Under the deck** (P3): the candy lace on a nail. One swing over flat ground, where a miss costs
  *    nothing; then one over the drain gully.
+ *    - **The swing chain** (C1), for whoever looks up: two more nails high under the boards. From the first
+ *      swing he can let go on the way up and throw again in the air, and again: three swings in a row, and
+ *      at the top of the last one hangs a hidden candy. From there the crossing's own hook is in reach, and
+ *      takes him over the gully. Missing costs nothing: he lands on the ground below, or the glitter bubble
+ *      carries him back from the gully.
  * 4. **The dandelion:** the ghost stumbles, and can nearly be caught.
  * 5. **The lawn:** the birch's roots, and a boulder.
  * 6. **Under the birch** (E1): the dew rain.
@@ -16,8 +21,7 @@ import type { Candy, ChapterData } from '../../sim/types';
  *    There lies the first memory.
  * 8. **Moa** (S1): she throws her paper plane, and Elof flies to the forest's edge.
  *
- * Not built yet: the swing chain (C1), the lost things under the deck, the dew bells, and the ghost at the
- * forest's edge. What is here is the ground, the candy and the rules; what it looks like comes later.
+ * Not built yet: the lost things under the deck, the dew bells, and the ghost at the forest's edge. What is here is the ground, the candy and the rules; what it looks like comes later.
  */
 
 /** A row of candy along flat ground, one every `every` EL. */
@@ -47,11 +51,12 @@ export const garden: ChapterData = {
     { from: 134, to: 154.5, kind: 'shavings' },
     { from: 178, to: 181, kind: 'hedge' },
   ],
-  roofs: [{ from: 46.6, to: 66.4, y: 5.4 }],
-  // Off the trail: behind him at the start, high under the deck, over the boulder, and before Moa.
+  // The deck goes on overhead, level with where he stood: its joists are where the chain's nails sit.
+  roofs: [{ from: 46.6, to: 66.4, y: 5.95 }],
+  // Off the trail: behind him at the start, at the end of the swing chain, over the boulder, and before Moa.
   hidden: [
     { x: -1.8, y: 6.5, kind: 'gelehallon' },
-    { x: 58.6, y: 1.9, kind: 'gummibjorn' },
+    { x: 61.85, y: 3.65, kind: 'gummibjorn', route: true },
     { x: 103, y: 3.2, kind: 'skumbanan' },
     { x: 160.5, y: 1.9, kind: 'skumsvamp' },
   ],
@@ -143,6 +148,10 @@ export const garden: ChapterData = {
     { x: 54, y: 3.4, length: 2.6, land: { x: 57.4, y: 0 } },
     // The second crosses the gully.
     { x: 63.5, y: 3.3, length: 2.7, land: { x: 67.8, y: 0 } },
+    // The swing chain (C1): two nails high under the boards, out of reach from the ground.
+    // The last one is short, so its swing goes high: the candy hangs where only that swing reaches.
+    { x: 57.4, y: 4.9, length: 2.8, extra: true },
+    { x: 60.6, y: 4.9, length: 2, extra: true },
   ],
   movers: [
     // A curl of shaving on the wall's top, with a red ring: pulled down, it is the step up.
