@@ -228,6 +228,25 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     })
     .catch((error) => console.error('The big candy could not be loaded; the stand-in stays.', error));
 
+  // The jay, modelled in Blender (art/blender/jay.py), takes the place of the bird built in code: the helper
+  // that comes when he asks, and the one he shares a berry with. Its wings are parts of their own, with the
+  // same names as the stand-in's, so they beat as before.
+  assets
+    .manifest()
+    .then((manifest) => (manifest.packs.boot?.files['jay.glb'] ? assets.model('boot', 'jay') : null))
+    .then((model) => {
+      if (!model) return;
+      const birds = [helper.group, ...things.map((thing) => (thing.spot.look === 'jay' ? thing.prop?.group : undefined))]
+        .map((group) => group?.getObjectByName('bird'))
+        .filter((bird): bird is Object3D => bird !== undefined);
+      for (const [i, bird] of birds.entries()) {
+        bird.clear();
+        bird.add(i === 0 ? model : model.clone());
+      }
+      models.push('boot/jay');
+    })
+    .catch((error) => console.error('The jay could not be loaded; the stand-in stays.', error));
+
   // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
   // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.
   // A chapter without a ghost in its data has none in the picture.

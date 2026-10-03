@@ -16,7 +16,8 @@
   - **What Olov asked for on 4 October, and how far it got:**
     - *"Improving and creating all character models in blender":* Pappa, Mamma, Moa, Bertil and
       three-year-old Elof have first models. They are on his computer only, waiting for his eyes and his
-      word (question 6). Elof and the ghost were not reworked. The animals are still built in code.
+      word (question 6). The jay has a first model too, and is on the site. Elof and the ghost were not
+      reworked. The other animals are still built in code.
     - *"Better graphics in the background and parallax effect background":* done for every place.
     - *"Improve all assets and graphics on all levels":* the far scenery and High's glow reach every
       level. The things, the animals and the ground are as they were.
@@ -803,6 +804,18 @@
     - **Not yet:** poses (they stand still, arms down), hands doing things, sitting at the table, any
       animation, and Olov's own judgement of each likeness (H1b). Three-year-old Elof is built but not
       used: the memories are still the drawn cards.
+  - **The jay, modelled in Blender** (4 October, branch `stage-0c-jay`). What you see: lavskrikan, the
+    helper from Kapitel 2 on and the friend he shares a lingonberry with, is no longer the bird built in
+    code. It is a small round model made in Blender by `art/blender/jay.py`: grey-brown, with a dark cap,
+    a rust-red tail, rump and wing patch, a beak, bead eyes and thin legs. It is the first character on
+    the site that is neither a stand-in nor from the private pack.
+    - It has no likeness in it, so it is public: `art/baked/boot/jay.glb` (128 KB from Blender, 26 KB as served), in
+      `LICENSES.md`. Its wings are parts of their own with the stand-in's names, so the helper's wings
+      beat as before. Where the model is missing, the bird built in code stays.
+    - No `.blend` is committed, for the same reason as the big candy: a `.blend` stores the path it was
+      saved to. The script rebuilds it.
+    - **Not yet:** the other animals (the ladybird, the ants, the cranes and the chick), and the ghost as
+      helper in Kapitel 1. The jay has no texture and no feathers: it is a first model.
   - **Byn, an extra chapter** (4 October, branch `stage-2-byn`). Olov asked for the village's shopping
     street as a chapter. What you see: after the epilogue's card, *Ett kapitel till* leads to **Byn**. Elof
     has one more star and is small again, and follows his friend along the pavement to the candy shop:
