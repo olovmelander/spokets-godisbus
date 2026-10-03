@@ -4,6 +4,7 @@ import { createAudio } from './audio/audio';
 import { cuesFor, newCueMemory, type Heard } from './audio/cues';
 import { chapterNumber, courseFor, nextAfter } from './content/chapters';
 import { album, foundFlag } from './content/kinds';
+import { mapSvg, mapState } from './ui/map';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
 import { tierFromQuery } from './render/quality';
@@ -194,6 +195,8 @@ function start(): void {
     },
   });
   byId('pauseBtn').addEventListener('click', openPause);
+  // Moas karta, in the pause panel and on the chapter's card: where he is, and where the ghost is heading.
+  for (const id of ['pauseMap', 'endMap']) byId(id).innerHTML = mapSvg(mapState(chapter.id));
   // The helper's button: a press is passed on with the next frame's presses, like H on a keyboard.
   let askedForHelp = false;
   byId('helpBtn').addEventListener('click', () => (askedForHelp = true));
