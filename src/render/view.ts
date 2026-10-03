@@ -70,6 +70,8 @@ export interface Frame {
 
 export interface View {
   resize(): void;
+  /** Changes between Mid and High while the game runs: they differ in how many pixels are drawn, no more. */
+  setTier(next: 'mid' | 'high'): void;
   render(frame: Frame): void;
   info(): ViewInfo;
 }
@@ -92,7 +94,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   });
   // main.ts catches this and shows the message.
   if (!gl) throw new Error('WebGL 2 is not available');
-  const tier = chooseTier(asked, gl.getExtension('EXT_color_buffer_float') !== null);
+  let tier = chooseTier(asked, gl.getExtension('EXT_color_buffer_float') !== null);
 
   const renderer = new WebGLRenderer({
     canvas,
@@ -476,6 +478,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   return {
     resize,
     render,
+    setTier(next) {
+      // Low has other buffers and no grading pass: it is chosen when the game starts, and stays.
+      if (tier === 'low' || tier === next) return;
+      tier = next;
+      resize();
+    },
     info: () => ({
       tier,
       drawCalls: renderer.info.render.calls,
