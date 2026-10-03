@@ -1,6 +1,28 @@
 # Handover
 
-## State (3 October 2026)
+## State (4 October 2026)
+
+- **Read this first: where it stands.**
+  - The whole story is playable from start to end with `?dev`: the prologue, four chapters, the final and
+    the epilogue, and after them an extra chapter, Byn. Everything is merged to `main` and deployed:
+    `https://olovmelander.github.io/spokets-godisbus/?dev`. The plain address still shows the grey test
+    course, because `RELEASED_CHAPTER` is `null`: releasing is Olov's.
+  - **Added in the night of 3 to 4 October** (pull requests #38 to #55; each has its own entry further
+    down): music and each place's air; footsteps for every surface; the sticker album; four more switches;
+    wordless sounds for the characters and for Elof; the size gate as served; chapter codes; C1, the swing
+    chain; the bouncing cranberries; a graphics level that finds its own place, and High's glow; Hittegods,
+    found and given back; Byn; far scenery in layers with parallax for every place; the family's first
+    models, and the code that shows them at home and on the summit.
+  - **What Olov asked for on 4 October, and how far it got:**
+    - *"Improving and creating all character models in blender":* Pappa, Mamma, Moa, Bertil and
+      three-year-old Elof have first models. They are on his computer only, waiting for his eyes and his
+      word (question 6). Elof and the ghost were not reworked. The animals are still built in code.
+    - *"Better graphics in the background and parallax effect background":* done for every place.
+    - *"Improve all assets and graphics on all levels":* the far scenery and High's glow reach every
+      level. The things, the animals and the ground are as they were.
+    - *The village's shopping street as a chapter:* built, as Byn. Its own name waits for question 5.
+  - **Waiting for Olov:** questions 5 and 6 under "Frågor till Olov"; the checkpoints H1a, H1b and H2;
+    pull request #12; and his ears, because nobody has listened to any of the sound.
 
 - **Done:**
   - The plan, `docs/game-plan.md` version 4: research, design, art direction, technology and delivery. Version 4
@@ -732,6 +754,50 @@
       lillebror!", Bertil "Kula! Min kula!", Pappa "En krona! Den får du behålla." The found things come
       with him from Kapitel 1's saved flags. The same branch gives the ghost a shadow where it stands.
     - **Not yet:** the giant's delight as a picture: the owners are still signs or stand-ins.
+  - **The family, first models** (4 October; Olov: "improving and creating all character models in
+    blender"). What exists, on Olov's computer only: `art/private/pappa/`, `mamma/`, `moa/`, `bertil/` and
+    `lill-elof/`, each with its generator script and `.blend`, and the exported `art/private/baked/private/
+    <name>.glb` (about 120 KB each as packed). They were built by a parallel session driving Blender, from
+    Elof's generator, against the family's pictures and sheets.
+    - **How they are made:** each is derived from Elof's generator: the same 15 bone names, two
+      vertex-painted materials, no textures, about 14,000 to 16,000 triangles. They share Elof's head forms,
+      so the likeness sits in hair, headgear, glasses, build and clothes, not in the face.
+    - **Heights, with Elof as 1:** Pappa 1.50, Mamma 1.40, Moa 1.26, Bertil 1.24 (1.27 with his cap),
+      three-year-old Elof 0.78. Moa's and Bertil's are read from the picture of the three together; the
+      parents' and little Elof's are guesses from ordinary proportions. **Olov should say if they are right.**
+    - **What the next round should correct**, as the session that built them saw it:
+      - all five: plain collars, no real folds in cloth, soft edges between painted colours, and cloth
+        layers that cut through each other in a strong pose;
+      - Pappa: the cap follows the sheet (a baseball cap), not the flat cap of the photo; the glasses have
+        no lenses; the stubble is paint; no knife and no piece of wood;
+      - Mamma: a square neckline where the pictures show a round one; no loose wisps of hair; no mug;
+      - Moa: no lace on the dress, a jacket with only a collar and two pocket flaps, coarse hair waves;
+      - Bertil: the same closed smile as the others, where his sheet shows a grin;
+      - three-year-old Elof: only the outdoor clothes; no pyjamas and no trägubbe in his hand; his flat cap
+        is light grey as in the photo, though the plan says "like Pappa's";
+      - the children's heads are a little small beside the sheets (about 4.3 heads tall).
+    - **In the game** (branch `stage-0c-family-figures`): where Elof is a boy among people, each sign that
+      stands for one of the family is replaced by that person's model when the private pack has it: Mamma
+      in the doorway in the prologue, the four at the party in the epilogue, and **the family on the
+      summit** in the final. There they appear when he has tasted the golden geléhallon and is big again:
+      Bertil, Moa, Mamma, and Pappa where the way home begins, under the northern lights (the plan's MUST
+      "the family on the summit", standing only). In the macro world the signs stay: there a person is a
+      pair of hands from far above. Who a sign stands for is
+      `personFor` in `src/content/people.ts`. Where the pack has no model, as in CI and on the site today,
+      the sign stays.
+    - **For looking at a late moment alone:** in a debug session `?flags=a,b` starts a chapter with those
+      flags set. The summit with the family:
+      `?dev&debug&course=norrsken&at=26,0.01&flags=placed:tragubbe,crowberry,eyes,bag,share:tragubbe,share:spoket,share:jay,shared,taste`.
+    - **Blender, for the next session:** the scratchpad's small client hung for seven minutes on a script
+      with a section sign in it; keep scripts sent to Blender in plain ASCII. Safe mode also rejects calling
+      a function passed as a parameter. The add-on still reports itself outdated; telemetry consent is false.
+    - **Not published.** The models are untracked files in the private repository's folder. Nothing was
+      committed or pushed there, so the site is unchanged. Publishing them is Olov's word (question 6).
+    - **Pictures for Olov:** each model beside its reference pictures, and the family in a row, are in
+      `photos/renders/2026-10-04-family/` on his computer (git ignores `photos/`).
+    - **Not yet:** poses (they stand still, arms down), hands doing things, sitting at the table, any
+      animation, and Olov's own judgement of each likeness (H1b). Three-year-old Elof is built but not
+      used: the memories are still the drawn cards.
   - **Byn, an extra chapter** (4 October, branch `stage-2-byn`). Olov asked for the village's shopping
     street as a chapter. What you see: after the epilogue's card, *Ett kapitel till* leads to **Byn**. Elof
     has one more star and is small again, and follows his friend along the pavement to the candy shop:
@@ -776,6 +842,21 @@
     KhronosGroup/KTX-Software releases and run it with `/S /D=%LOCALAPPDATA%\Programs\KTX-Software`.
 
 ## Next
+
+**For the next session, in this order:**
+
+- Olov's answers to questions 5 and 6, and what he says about the pictures in
+  `photos/renders/2026-10-04-family/`. Then a second round on each family model from his remarks and from
+  the list under "The family, first models".
+- Poses for the family: sitting at the table at the party, Mamma in the doorway, Pappa's hands with the
+  knife, and their hands in the macro world where the signs' rides are now.
+- Byn: people's feet passing, cars, and the inside of the shop.
+- What Stage 2 still lacks in code: *Följ fingret*, more than one player, a graphics setting, the key
+  reference, the challenge routes C2 to C4, the dew bells, a service worker for offline play, and the
+  album's photos.
+- The sound, once Olov has listened: nothing of it has been heard by anyone.
+
+The older list, still true where it is not struck:
 
 1. **The Blender tools work** in a session on Olov's computer (since the second restart on 3 October).
    - In the add-on's panel, keep only *Poly Haven* ticked. Never tick *Hunyuan*.
@@ -860,14 +941,19 @@
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. |
-| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. On 4 October: chapter codes, C1, two optional delights, footsteps and wordless sounds, more switches, and the extra chapter Byn. |
+| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. |
 
 ## Known bugs
 
 - None known in the game.
+- The far layers of the sky and hills do not darken when night falls in the final, and the stars at dusk
+  are drawn as short dashes: the sky's picture is stretched to the screen.
+- With three sessions working on the computer at once, two long tests timed out and the browser test once
+  measured a warm-up frame. Both are fixed (a minute for the tests; the measure waits for the frame to
+  settle). On a quiet computer and in CI neither happened.
 - **On Windows, start the tests from a path spelled with a capital `C:`.** From `c:\Users\...` every test file
   fails with "Cannot read properties of undefined (reading 'config')": vitest gets loaded twice under two
   spellings. `cd "C:/Users/..."` first.
@@ -938,6 +1024,12 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
    - Whichever you choose, better pictures give a better model: each view of Elof alone, full height, 1024 by
      1536, plain background, arms a little out. The views cut from the sheet are small and soft; they are in
      `art/private/elof/image-to-3d/` and will do for a first try.
+6. **May the family's models go on the site?** Pappa, Mamma, Moa, Bertil and three-year-old Elof have
+   first models, built in Blender on 4 October (see "The family, first models" under "State"). They are on
+   your computer only, in `art/private/`, not committed and not pushed. Look at each beside its pictures
+   (`photos/renders/2026-10-04-family/`), say what is wrong, and say whether they may be published. To
+   publish: commit and push in `art/private/`, then run *Deploy to GitHub Pages*. Until then the site shows
+   signs where they would stand.
 5. **May the village street be called by its own name?** You asked for it as a chapter by name. The game
    calls it *Byn*, as a child would, and the street's name is not written in this repository. The reason:
    CLAUDE.md says never a street address, and a street's name beside the children's first names is most of

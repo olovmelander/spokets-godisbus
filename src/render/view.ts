@@ -6,6 +6,7 @@ import {
 } from 'three';
 import { createAssets } from './assets';
 import { KINDS } from '../content/kinds';
+import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass } from './grade';
@@ -287,6 +288,31 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     .catch((error) => console.error('Elof could not be loaded; the stand-in stays.', error));
   const elof = buildElof();
   scene.add(elof.group);
+
+  // The family (plan §2.3). At home he is a boy among people, and whoever a sign stands for is there in
+  // person, once the private pack has their model. In the macro world the signs stay: there a person is
+  // a pair of hands from far above, and the sign is where to call them (plan §4.6).
+  if (sized && !standIns) {
+    const stands = [
+      ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop })),
+      ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop })),
+    ].filter((stand) => stand.look === 'sign' && stand.prop !== null && personFor(stand.word) !== null);
+    assets
+      .manifest()
+      .then(async (manifest) => {
+        for (const stand of stands) {
+          const who = personFor(stand.word)!;
+          if (!manifest.packs.private?.files[`${who}.glb`]) continue;
+          const model = await assets.model('private', who);
+          // Modelled with Elof's height as the unit, and drawn as big as he is drawn when he is a boy.
+          model.scale.setScalar(sized.scale);
+          stand.prop!.group.clear();
+          stand.prop!.group.add(model);
+          if (!models.includes(`private/${who}`)) models.push(`private/${who}`);
+        }
+      })
+      .catch((error) => console.error('Someone in the family could not be loaded; the sign stays.', error));
+  }
 
   const shadow = new Mesh(
     new CircleGeometry(0.27, 24),

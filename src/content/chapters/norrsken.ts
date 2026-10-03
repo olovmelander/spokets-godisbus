@@ -14,7 +14,8 @@ import type { Candy, ChapterData } from '../../sim/types';
  *
  * Not built yet: which candy each friend gets (the choice is only whom to give to, and in which order), Elof
  * growing back, the trägubbe's blink, the ghost setting the figure by the pine with a jelly in its lap, the
- * headlamps and the family, Moa's jacket and Bertil's cap, and the two carvings in his hands on the way home.
+ * headlamps, Moa's jacket and Bertil's cap, and the two carvings in his hands on the way home. The family
+ * stands on the summit once he has tasted the golden one, but only stands.
  */
 
 /** A row of candy over ground at one height, one every `every` EL. */
@@ -78,6 +79,14 @@ export const norrsken: ChapterData = {
     { id: 'share:jay', look: 'jay', at: { x: JAY, y: 0 }, verb: 'give', word: 'giveJay', needs: 'bag' },
     { id: 'taste', look: 'gold', at: { x: 26.6, y: 0 }, verb: 'take', word: 'taste', needs: 'shared' },
     { id: 'home', look: 'sign', at: { x: 33, y: 0 }, verb: 'take', word: 'goHome', needs: 'taste', ride: 'home' },
+  ],
+  // The family on the summit (plan §7.4): when the northern lights flare and he is big again, there they
+  // stand, where the way home begins. Signs, until the private pack has their models.
+  decor: [
+    { look: 'sign', at: { x: 27.3, y: 0 }, word: 'callBertil', after: 'taste' },
+    { look: 'sign', at: { x: 29, y: 0 }, word: 'callMoa', after: 'taste' },
+    { look: 'sign', at: { x: 30.8, y: 0 }, word: 'callMamma', after: 'taste' },
+    { look: 'sign', at: { x: 32.8, y: 0 }, word: 'callPappa', after: 'taste' },
   ],
   sets: [{ flag: 'shared', when: ['share:tragubbe', 'share:spoket', 'share:jay'] }],
   movers: [

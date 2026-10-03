@@ -95,7 +95,9 @@ function start(): void {
   let save: PlayerSave = loaded.kind === 'save' ? loaded.save : newSave(Date.now(), chapter.id);
   let settings: Settings = debugOn && params.get('style') === 'lugnt' ? settingsFor('lugnt') : save.settings;
   // What he found under the deck comes with him to the party in the epilogue (plan §4.8, O2).
-  const carried = chapter.id === 'epilog' ? lostFound(save.flags).map(lostFlag) : [];
+  // In a debug session, ?flags=a,b starts with those set: a moment late in a chapter can be looked at alone.
+  const seeded = debugOn ? (params.get('flags') ?? '').split(',').filter((flag) => flag !== '') : [];
+  const carried = [...(chapter.id === 'epilog' ? lostFound(save.flags).map(lostFlag) : []), ...seeded];
   const from: SimStart =
     at || save.chapter !== chapter.id
       ? (carried.length > 0 ? { flags: carried } : {})
