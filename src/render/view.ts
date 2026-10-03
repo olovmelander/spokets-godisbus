@@ -45,6 +45,8 @@ export interface Frame {
   collected: readonly boolean[];
   /** The last big candy reached, or -1. */
   checkpoint: number;
+  /** Where the things on rails are, in the chapter's order. */
+  movers: readonly { x: number; y: number }[];
 }
 
 export interface View {
@@ -115,6 +117,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const trail = buildTrail(chapter);
   const glitter = buildGlitter();
   const lace = buildLace();
+  const moverMeshes = buildMovers(chapter);
+  scene.add(...moverMeshes);
   scene.add(buildGround(chapter), buildTrunks(chapter), buildClimbs(chapter), buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
@@ -228,7 +232,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   }
   resize();
 
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers }: Frame): void {
+    for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
     clock += dt;
@@ -399,6 +404,29 @@ function buildGround(chapter: ChapterData): Mesh {
   const geometry = new ExtrudeGeometry(shape, { depth: 4.7, bevelEnabled: false });
   geometry.translate(0, 0, -4);
   return new Mesh(geometry, new MeshStandardMaterial({ color: '#7f8f58', roughness: 1 }));
+}
+
+/**
+ * The things on rails: pale wood, like Pappa's shavings. One he pulls has the red ring on it, which is the
+ * same sign as on a hook: the lace goes here.
+ */
+function buildMovers(chapter: ChapterData): Group[] {
+  const wood = new MeshStandardMaterial({ color: '#d9bd8b', roughness: 0.85 });
+  const red = new MeshStandardMaterial({ color: '#d8382c', roughness: 0.35 });
+  return (chapter.movers ?? []).map((mover) => {
+    const group = new Group();
+    const box = new Mesh(new BoxGeometry(mover.width, mover.height, 1.1), wood);
+    box.position.y = mover.height / 2;
+    group.add(box);
+    if (mover.verb === 'pull') {
+      const at = mover.ring ?? { x: 0, y: mover.height };
+      const ring = new Mesh(new TorusGeometry(0.17, 0.04, 10, 28), red);
+      ring.position.set(at.x, at.y, 0.2);
+      group.add(ring);
+    }
+    group.position.set(mover.stops[0]!.x, mover.stops[0]!.y, 0);
+    return group;
+  });
 }
 
 /** Every hook has a red ring: the one sign the game teaches for "the lace goes here" (plan §4.2). */

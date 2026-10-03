@@ -17,6 +17,8 @@ export const sv = {
   verbs: {
     slide: 'Åk ner',
     lace: 'Kasta snöret',
+    push: 'Knuffa',
+    pull: 'Dra',
   },
 
   // The candy bag in the corner. Screen readers hear the name and then the number.

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
 import { testbana } from '../../src/content/chapters/testbana';
 import { settingsFor, simOptions } from '../../src/save/settings';
+import type { MoverState } from '../../src/sim/sim';
 import type { ChapterData, PlayerState, SimOptions } from '../../src/sim/types';
 
 /** The ground's height at x, read from the chapter data. */
@@ -24,15 +25,24 @@ function heightAt(chapter: ChapterData, x: number): number {
  * the lace from the ground only: in the air after letting go the hook is still in reach, and Använd would
  * take it straight back.
  */
-function decide(chapter: ChapterData, p: PlayerState): { x: number; ahead: boolean; offered: boolean } {
+function decide(chapter: ChapterData, p: PlayerState, movers: readonly MoverState[] = []): { x: number; ahead: boolean; offered: boolean } {
+  // A thing on its way along its rail: wait for it.
+  if (movers.some((m) => m.t < 1)) return { x: 0, ahead: false, offered: false };
+  // Something to pull or push: stand still and do it.
+  if (p.verb === 'pull' || p.verb === 'push') return { x: 0, ahead: false, offered: true };
   if (p.hook) {
     const angle = Math.atan2(p.x - p.hook.x, p.hook.y - (p.y + 0.5));
     const high = p.vx > 0 && angle > 0.68 && angle < 0.85 && Math.hypot(p.vx, p.vy) > 5;
     return { x: p.vx < -0.05 ? -1 : 1, ahead: high, offered: false };
   }
-  // Steeper than 45 degrees over the next EL, and more than a step high.
-  const wall = heightAt(chapter, p.x + 1.0) - heightAt(chapter, p.x + 0.6) > 0.4;
-  const gap = heightAt(chapter, p.x + 0.35) < p.y - 0.3 && heightAt(chapter, p.x + 2.2) > p.y - 0.3;
+  // Steeper than 45 degrees over the next EL, and more than a step high. A thing in the way is a wall too.
+  // One that can still be pushed is walked up to, not jumped at.
+  const placed = (m: MoverState) => m.stop === m.def.stops.length - 1;
+  const inTheWay = movers.some((m) => placed(m) && m.x - m.def.width / 2 - p.x > 0 && m.x - m.def.width / 2 - p.x < 1 && m.y + m.def.height > p.y + 0.3);
+  const wall = inTheWay || heightAt(chapter, p.x + 1.0) - heightAt(chapter, p.x + 0.6) > 0.4;
+  // A gap with a plank across it is no gap.
+  const bridged = movers.some((m) => Math.abs(m.y + m.def.height - p.y) < 0.3 && m.x - m.def.width / 2 < p.x + 0.4 && m.x + m.def.width / 2 > p.x + 2);
+  const gap = !bridged && heightAt(chapter, p.x + 0.35) < p.y - 0.3 && heightAt(chapter, p.x + 2.2) > p.y - 0.3;
   const leadsOn = (chapter.climbs ?? []).some((c) => Math.abs(c.top - p.y) < 0.3 && c.x > p.x && c.x - p.x < 1);
   return { x: 1, ahead: p.grounded && (wall || gap), offered: (p.verb === 'lace' && p.grounded) || (p.verb === 'slide' && leadsOn) };
 }
@@ -44,8 +54,8 @@ function playThrough(fps: number, chapter = testbana, options: SimOptions = {}) 
   let frames = 0;
   let wasAhead = false;
   let wasOffered = false;
-  while (!game.sim.flags.has('goal') && frames < fps * 90) {
-    const { x, ahead, offered } = decide(chapter, game.sim.curr);
+  while (!game.sim.flags.has('goal') && frames < fps * 120) {
+    const { x, ahead, offered } = decide(chapter, game.sim.curr, game.sim.movers);
     // A press is the moment the reason appears; holding is everything after it.
     game.frame(dt, { x, hopHeld: true }, { hop: ahead && !wasAhead, act: offered && !wasOffered, helper: false });
     wasAhead = ahead;
@@ -65,7 +75,7 @@ describe('the robot on the test course', () => {
     it(`reaches the big candy at ${fps} Hz`, () => {
       const result = playThrough(fps);
       expect(result.goal).toBe(true);
-      expect(result.seconds).toBeLessThan(60);
+      expect(result.seconds).toBeLessThan(80);
       expect(result.lowest).toBeGreaterThan(-1);
       expect(result.bubbles).toBe(0);
     });
@@ -88,7 +98,7 @@ describe('the robot on the test course', () => {
     for (let frame = 0; frame < 60 * 90 && !game.sim.flags.has('goal'); frame++) {
       const p = game.sim.curr;
       const swinging = p.hook !== null;
-      const { x, ahead, offered } = decide(testbana, p);
+      const { x, ahead, offered } = decide(testbana, p, game.sim.movers);
       // On the lace it does nothing but press Hoppa, the moment it hangs there.
       const hop = swinging ? !wasSwinging : ahead && !wasAhead;
       game.frame(dt, { x: swinging ? 0 : x, hopHeld: true }, { hop, act: offered && !wasOffered, helper: false });
@@ -111,8 +121,8 @@ describe('the robot on the test course', () => {
     for (let frame = 0; frame < 60 * 90 && !game.sim.flags.has('goal'); frame++) {
       const p = game.sim.curr;
       const swinging = p.hook !== null;
-      const { offered } = decide(testbana, p);
-      game.frame(dt, { x: swinging ? 0 : 1, hopHeld: false }, { hop: swinging && !wasSwinging, act: offered && !wasOffered, helper: false });
+      const { x, offered } = decide(testbana, p, game.sim.movers);
+      game.frame(dt, { x: swinging ? 0 : x, hopHeld: false }, { hop: swinging && !wasSwinging, act: offered && !wasOffered, helper: false });
       wasOffered = offered;
       wasSwinging = swinging;
       if (game.sim.checkpoint !== reached) order.push((reached = game.sim.checkpoint));
@@ -120,7 +130,7 @@ describe('the robot on the test course', () => {
     expect(game.sim.flags.has('goal')).toBe(true);
     expect(game.sim.bubbles).toBe(0);
     // Every big candy on the way, in order.
-    expect(order).toEqual([0, 1, 2, 3]);
+    expect(order).toEqual([0, 1, 2, 3, 4]);
   });
 
   it('with Lugnare tempo, takes a quarter longer and is otherwise the same game', () => {

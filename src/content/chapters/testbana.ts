@@ -10,6 +10,8 @@ import type { ChapterData } from '../../sim/types';
  * - a wall too high for that, with a hose to climb;
  * - a cliff too high to jump from, with a hose to slide down (Använd);
  * - a gully too wide to jump, with a hook over it: the lace (Använd), a swing, and Hoppa to let go;
+ * - a puzzle in two steps: a plank he pulls over a pit with the lace (Dra), and a block he pushes to a wall
+ *   in two goes (Knuffa) and climbs from;
  * - and the big candy at the end.
  *
  * The candy trail shows the way (plan §4.3): a candy every 1.5 to 3 EL along the ground, an arc over each
@@ -19,7 +21,7 @@ import type { ChapterData } from '../../sim/types';
 export const testbana: ChapterData = {
   id: 'testbana',
   spawn: { x: 0, y: 0.01 },
-  goalX: 56,
+  goalX: 70.5,
   ground: [
     { x: -4, y: 6 },
     { x: -4, y: 0 },
@@ -65,8 +67,22 @@ export const testbana: ChapterData = {
     { x: 46, y: -6 },
     { x: 50.4, y: -6 },
     { x: 50.4, y: 0 },
-    { x: 58, y: 0 },
-    { x: 58, y: 8 },
+    // the pit the plank bridges
+    { x: 56, y: 0 },
+    { x: 56, y: -5 },
+    { x: 58.8, y: -5 },
+    { x: 58.8, y: 0 },
+    // the wall the block is pushed to
+    { x: 67.3, y: 0 },
+    { x: 67.3, y: 3.3 },
+    { x: 73, y: 3.3 },
+    { x: 73, y: 10 },
+  ],
+  movers: [
+    // Home on the far side of the pit; pulled, it lies across it with its top level with the ground.
+    { id: 'plank', width: 3.1, height: 0.4, verb: 'pull', ring: { x: -1.4, y: 0.55 }, stops: [{ x: 60.6, y: 0 }, { x: 57.4, y: -0.4 }] },
+    // Too high to walk onto, so he pushes it. Two pushes take it to the wall, which is too high without it.
+    { id: 'block', width: 1, height: 1.5, verb: 'push', stops: [{ x: 64, y: 0 }, { x: 65.4, y: 0 }, { x: 66.8, y: 0 }] },
   ],
   // In reach from 1.4 EL before the edge, so there is time to throw the lace even at a run.
   hooks: [{ x: 47.5, y: 3.3, length: 2.7, land: { x: 51.8, y: 0 } }],
@@ -76,6 +92,7 @@ export const testbana: ChapterData = {
     { x: 30.3, y: 0 },
     { x: 40.5, y: 6 },
     { x: 44.9, y: 0 },
+    { x: 54.6, y: 0 },
   ],
   // What Lätta hopp jumps by itself: onto the step and the block, and across the ditch and the chasm.
   jumps: [
@@ -83,6 +100,9 @@ export const testbana: ChapterData = {
     { at: { x: 15.8, y: 0 }, dir: 1, land: { x: 16.7, y: 0.95 } },
     { at: { x: 21.8, y: 0 }, dir: 1, land: { x: 24.4, y: 0 } },
     { at: { x: 25.8, y: 0 }, dir: 1, land: { x: 28.4, y: 0 } },
+    // and, once the block stands at the wall, onto the block and from it onto the wall
+    { at: { x: 66, y: 0 }, dir: 1, land: { x: 66.8, y: 1.5 }, needs: 'block' },
+    { at: { x: 67, y: 1.5 }, dir: 1, land: { x: 67.9, y: 3.3 }, needs: 'block' },
   ],
   climbs: [
     { x: 38.7, bottom: 2.8, top: 6, exit: 1 },
@@ -144,6 +164,16 @@ export const testbana: ChapterData = {
     { x: 50.8, y: 1.6 },
     { x: 51.6, y: 0.8 },
     { x: 53, y: 0.45 },
-    { x: 54.5, y: 0.45 },
+    { x: 55.3, y: 0.45 },
+    // across the plank
+    { x: 57.4, y: 0.45 },
+    { x: 59.6, y: 0.45 },
+    { x: 61.6, y: 0.45 },
+    { x: 63, y: 0.45 },
+    { x: 65.2, y: 0.45 },
+    // up the block and the wall
+    { x: 66.7, y: 2 },
+    { x: 67.6, y: 3.8 },
+    { x: 69.2, y: 3.75 },
   ],
 };

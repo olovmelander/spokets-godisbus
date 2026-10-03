@@ -47,7 +47,10 @@ describe('saving', () => {
     const storage = fakeStorage();
     const store = createStore(storage);
     expect(store.load()).toEqual({ kind: 'none' });
-    const save = { ...newSave(1000, 'testbana', settingsFor('lugnt')), checkpoint: 2, candy: { testbana: [0, 1, 5] }, playMs: 42000 };
+    const save = {
+      ...newSave(1000, 'testbana', settingsFor('lugnt')),
+      checkpoint: 2, candy: { testbana: [0, 1, 5] }, placed: { testbana: ['plank'] }, playMs: 42000,
+    };
     expect(store.write(save)).toBe(true);
     expect(store.load()).toEqual({ kind: 'save', save });
     expect([...storage.items.keys()].sort()).toEqual(['godisbus.v1.index', 'godisbus.v1.player.elof']);
@@ -71,13 +74,14 @@ describe('saving', () => {
   it('drops what it does not know, and keeps the rest', () => {
     const loaded = readSave(JSON.stringify({
       v: 1, name: 'Elof', updated: 5, chapter: 'testbana', checkpoint: 1.5, playMs: -3,
-      candy: { testbana: [0, 'two', 3, -1, 2.5], other: 'none' }, settings: { style: 'lugnt' }, someday: true,
+      candy: { testbana: [0, 'two', 3, -1, 2.5], other: 'none' }, placed: { testbana: ['plank', 7], other: 3 },
+      settings: { style: 'lugnt' }, someday: true,
     }));
     expect(loaded).toEqual({
       kind: 'save',
       save: {
         v: SAVE_VERSION, name: 'Elof', updated: 5, chapter: 'testbana', checkpoint: -1, playMs: 0,
-        candy: { testbana: [0, 3] }, settings: settingsFor('lugnt'),
+        candy: { testbana: [0, 3] }, placed: { testbana: ['plank'] }, settings: settingsFor('lugnt'),
       },
     });
   });
