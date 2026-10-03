@@ -30,6 +30,16 @@ function row(from: number, to: number, ground: number, every = 2, after?: string
 export const prolog: ChapterData = {
   id: 'prolog',
   place: 'home',
+  // He is a boy among small things, until the star shrinks him.
+  size: { scale: 3, until: 'star' },
+  // Pappa's shelf, with the first place in the row empty: the first trägubbe is not there.
+  shelf: { x: 10.5, y: 5.4 },
+  decor: [
+    // Mamma in the doorway; the shavings Pappa's knife left; and the Saturday bag, until the ghost takes it.
+    { look: 'sign', at: { x: -1.7, y: 0 }, word: 'callMamma' },
+    { look: 'shavings', at: { x: 5.9, y: 0 } },
+    { look: 'bag', at: { x: 7.8, y: 0 }, until: 'paint' },
+  ],
   spawn: { x: 1, y: 0.01 },
   goalX: 44.4,
   ground: [
@@ -52,12 +62,12 @@ export const prolog: ChapterData = {
   house: { from: -40, to: 60, windows: [12, 24, 36] },
   checkpoints: [{ x: 2.6, y: 0 }, { x: 26, y: 0 }],
   spots: [
-    { id: 'paint', at: { x: 5.4, y: 0 }, verb: 'give', word: 'paintGhost' },
+    { id: 'paint', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost' },
     // The star that rolled out of the torn bag: taking it shrinks him.
     { id: 'star', look: 'star', at: { x: 41, y: -0.8 }, verb: 'take', needs: 'paint', ride: 'shrink' },
   ],
   // The POFF: it carries him a little way, and can't fail.
-  rides: [{ id: 'shrink', look: 'none', from: { x: 41, y: -0.8 }, to: { x: 45, y: 2.4 }, rise: 1.4, time: 1.8, corridor: 0 }],
+  rides: [{ id: 'shrink', look: 'none', from: { x: 41, y: -0.8 }, to: { x: 45, y: 2.4 }, rise: 3, time: 2, corridor: 0 }],
   jumps: [
     { at: { x: 29.8, y: 0 }, dir: 1, land: { x: 30.6, y: 0.5 } },
   ],
@@ -72,7 +82,8 @@ export const prolog: ChapterData = {
   ],
   // Said as the scene opens: he stands at the table already.
   beats: [{ id: 'tonight', at: 0.9, who: 'mamma', line: 'tonight' }],
-  cameras: [],
+  // The picture is wide while he is big, and closes in on him when he has shrunk: the world grows.
+  cameras: [{ from: -3, to: 42.4, zoom: 1.5, lift: 0.3 }],
   candy: [
     // Nothing lies there until the bag has torn.
     ...row(9, 29, 0, 2, 'paint'),
@@ -106,6 +117,10 @@ const GUESTS = [
 export const epilog: ChapterData = {
   id: 'epilog',
   place: 'home',
+  // He has grown back: a boy among small things, all through.
+  size: { scale: 3 },
+  // The first trägubbe has its place again, first in the row.
+  shelf: { x: 34, y: 5.4, filled: true },
   spawn: { x: 1, y: 0.01 },
   goalX: 53,
   ground: [
@@ -147,6 +162,6 @@ export const epilog: ChapterData = {
     { id: 'away', on: 'knife', who: 'pappa', line: 'away' },
     { id: 'carved', on: 'cut3', who: 'elof', line: 'carved' },
   ],
-  cameras: [{ from: -3, to: 26, zoom: 1.2 }],
+  cameras: [{ from: -3, to: 62, zoom: 1.5, lift: 0.3 }],
   candy: [...row(3, 43, 0)],
 };

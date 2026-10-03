@@ -523,6 +523,21 @@
     - Tests: `tests/unit/map.test.ts` (5).
     - **Not yet:** a star for each challenge route; blank paper with "Här ritar Moa fortfarande …" for
       unreleased places (with `?dev` every place is reachable); the map as chapter select after the ending.
+  - **The opening scene tells the story now** (branch `stage-2-prolog`; Olov asked: "are we going to improve
+    the starting scene that explains the story and everything?"). `?dev` starts there.
+    - **Elof is a boy at home:** he is drawn three times his usual size beside the small new ghost. On the
+      wall is **Pappa's shelf: six figures in a row, and a pale empty place first in the row.** Shavings lie
+      about, and the Saturday bag stands beside the ghost until the ghost takes it. Mamma's sign is in the
+      doorway.
+    - **The POFF:** at the star he shrinks in a swarm of glitter while it carries him over the step, and the
+      picture closes in at the same time, so the world grows around him. In the final he grows back at the
+      golden candy; in the epilogue he is a boy all through, and the first trägubbe is back on the shelf.
+    - Three new things a chapter can say for the picture: `size`, `shelf` and `decor`. The simulation knows
+      nothing of them: there he is always one Elof length.
+    - **Not yet, and what the scene still needs most:** people. Pappa's hands blowing the shavings off,
+      Mamma in the doorway and Bertil's hand at the bag are signs or nothing; the ghost doesn't look at the
+      empty place before it takes the bag; the eyes are painted with one press, not traced. The table is the
+      floor.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
