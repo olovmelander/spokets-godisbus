@@ -75,6 +75,13 @@ export function mountShell(root: HTMLElement): void {
          <label class="switch"><input type="checkbox" id="setEasyJumps"><span>${p.easyJumps}</span></label>
          <label class="switch"><input type="checkbox" id="setSlower"><span>${p.slower}</span></label>
          <label class="switch"><input type="checkbox" id="setSound"><span>${p.sound}</span></label>
+         <h3 id="helpTitle">${BIRD}<span>${p.help}</span></h3>
+         <div class="levels" role="radiogroup" aria-labelledby="helpTitle">
+           <button class="level" id="helpAsk" type="button" role="radio">${p.helpAsk}</button>
+           <button class="level" id="helpRemind" type="button" role="radio">${p.helpRemind}</button>
+           <button class="level" id="helpGuide" type="button" role="radio">${p.helpGuide}</button>
+         </div>
+         <div class="map" id="pauseMap"></div>
          <button class="wide" id="stuckBtn" type="button">${BIG_CANDY}<span>${p.stuck}</span></button>
          <div class="ask" id="stuckAsk" hidden>
            <p>${p.stuckAsk}</p>
@@ -106,6 +113,7 @@ export function mountShell(root: HTMLElement): void {
          <div class="rows" id="endRows"></div>
          <p class="count"><b id="endCount"></b> ${sv.end.candy}</p>
          <p class="found" id="endFound" hidden><span>${sv.stickers}</span><span class="stickers" id="endStickers"></span></p>
+         <div class="map" id="endMap"></div>
          <p class="next" id="endNext">${sv.end.next}</p>
          <button class="wide go" id="endOnward" type="button" hidden>${PLAY}<span>${sv.end.onward}</span></button>
          <button class="wide" id="endAgain" type="button"><span>${sv.end.again}</span></button>

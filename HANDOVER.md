@@ -494,7 +494,7 @@
       12 EL, the next candy of the trail. It can't point at something done, or not yet possible.
     - **Help levels:** *Bara när jag frågar* (Äventyr), *Påminn mig* (Lugnt: it comes once, to look, after 40 s
       with nothing happening), *Guida mig* (it comes after 30 s and knocks). The level is saved with the
-      player. **There is no switch for it in the pause panel yet:** it follows the play style.
+      player, and the pause panel has its three choices (they came with Moa's map).
     - Tests: `tests/sim/help.test.ts` (15). All through the story, wherever Använd offers something, the
       helper shows that same thing and word; and it always has something to show until a chapter ends.
     - **Not yet:** in Kapitel 1 the helper should be the ghost itself, with its one visit at the gully (it is
@@ -513,6 +513,16 @@
     - **Not yet:** real hiding places (behind leaves, under roots: they come with the art, and one of the
       four belongs at the end of each challenge route); each kind as its own small model; the album as a
       page of its own; the golden geléhallon as the last piece.
+  - **Moas karta, and the help level's switch** (branch `stage-2-map`; plan §4.9, §4.6). What you see: in
+    the pause panel and on every card of the story, a crayon map of the route: Hemma, Granskogen, Bäcken,
+    Myren, Berget. A place is drawn in when Elof reaches it; a little Elof stands at "Här är du"; the ghost is
+    drawn on the blank paper where it is heading. That is the goal as a picture, which never says how.
+    - It is drawn in code (`src/ui/map.ts`), from the part of the story being played. Nothing in it is taken
+      from a real map.
+    - The pause panel now has the help level: *Bara när jag frågar*, *Påminn mig*, *Guida mig*.
+    - Tests: `tests/unit/map.test.ts` (5).
+    - **Not yet:** a star for each challenge route; blank paper with "Här ritar Moa fortfarande …" for
+      unreleased places (with `?dev` every place is reachable); the map as chapter select after the ending.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts

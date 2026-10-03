@@ -1,4 +1,5 @@
 import { settingsFor, type PlayStyle, type Settings } from '../save/settings';
+import type { HelpLevel } from '../sim/types';
 
 /**
  * The pause panel (plan §6.10): Spela vidare, the play style and its switches, and "Jag har fastnat".
@@ -29,6 +30,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
     slower: byId<HTMLInputElement>('setSlower'),
     sound: byId<HTMLInputElement>('setSound'),
   };
+  const levels: Record<HelpLevel, HTMLButtonElement> = { ask: byId('helpAsk'), remind: byId('helpRemind'), guide: byId('helpGuide') };
   const ask = byId('stuckAsk');
   let settings = settingsFor('aventyr');
   let open = false;
@@ -36,6 +38,11 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   function draw(): void {
     for (const [style, button] of Object.entries(styles)) {
       const chosen = settings.style === style;
+      button.setAttribute('aria-checked', String(chosen));
+      button.classList.toggle('on', chosen);
+    }
+    for (const [level, button] of Object.entries(levels)) {
+      const chosen = settings.help === level;
       button.setAttribute('aria-checked', String(chosen));
       button.classList.toggle('on', chosen);
     }
@@ -49,6 +56,13 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   for (const [style, button] of Object.entries(styles) as [PlayStyle, HTMLButtonElement][]) {
     button.addEventListener('click', () => {
       settings = { ...settingsFor(style), slower: settings.slower, sound: settings.sound };
+      draw();
+      handlers.onSettings(settings);
+    });
+  }
+  for (const [level, button] of Object.entries(levels) as [HelpLevel, HTMLButtonElement][]) {
+    button.addEventListener('click', () => {
+      settings = { ...settings, help: level };
       draw();
       handlers.onSettings(settings);
     });

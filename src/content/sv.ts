@@ -125,6 +125,17 @@ export const sv = {
     candy: 'godisar i påsen',
   },
 
+  // Moas karta: a child's names for the places, as she would write them.
+  map: {
+    title: 'Moas karta',
+    home: 'Hemma',
+    forest: 'Granskogen',
+    brook: 'Bäcken',
+    bog: 'Myren',
+    mountain: 'Berget',
+    here: 'Här är du',
+  },
+
   // The candy bag in the corner. Screen readers hear the name and then the number.
   bag: 'Godispåsen',
 
@@ -152,6 +163,11 @@ export const sv = {
     easyJumps: 'Lätta hopp',
     slower: 'Lugnare tempo',
     sound: 'Ljud',
+    // How much the helper does by itself (plan §4.6).
+    help: 'Hjälp',
+    helpAsk: 'Bara när jag frågar',
+    helpRemind: 'Påminn mig',
+    helpGuide: 'Guida mig',
     stuck: 'Jag har fastnat',
     stuckAsk: 'Tillbaka till den stora godisbiten?',
     stuckYes: 'Ja, tillbaka',
