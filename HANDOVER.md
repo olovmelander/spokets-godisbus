@@ -23,7 +23,8 @@
    - Then the placeholder is at `https://olovmelander.github.io/spokets-godisbus/`: `noindex`, and linked from
      nowhere.
 2. **Olov answers the rest of plan §0.** The ★ questions come first: the scale (Q2), the new secret, which Pappa
-   reads (Q3), and the surprise and dates (Q5). Q16 asks about Olov's computer.
+   reads (Q3), and the surprise and dates (Q5). Q16 asks about Olov's computer, and Q17 which device Elof plays on
+   most.
 3. **Stage 0a** (plan §7.3), in a cloud session or on Olov's computer:
    - the Vite + TypeScript + three scaffold, both real workflows (replacing the placeholder), and the privacy gate;
    - a test scene live on Pages with `noindex`;
@@ -68,4 +69,4 @@
 
 ## Frågor till Olov
 
-See plan §0, "Kvar att svara på": Q2, Q3, Q5 (★), then Q7–Q16.
+See plan §0, "Kvar att svara på": Q2, Q3, Q5 (★), then Q7–Q17.

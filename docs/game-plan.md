@@ -36,7 +36,7 @@ Appendix C lists exactly what carries over. What is new here:
 
 - **Spelet.** Ett äventyr i sidovy, byggt i 3D, om Elof.
   - **Utgåva 1:** prologen och Kapitel 1, cirka 20–25 minuter för Elof.
-  - **Version 1.0:** hela berättelsen på 65–80 minuter, plus fyra valfria utmaningar, med fyra kapitel (Gården,
+  - **Version 1.0:** hela berättelsen på 65–85 minuter, plus fyra valfria utmaningar, med fyra kapitel (Gården,
     Granskogen med bäcken, Myren, Berget), en final och en epilog.
   - **Version 1.1:** lägger till bland annat en forsfärd.
 - **Idén.**
@@ -50,14 +50,14 @@ Appendix C lists exactly what carries over. What is new here:
   - Strax före pandemin, när Elof var bebis, hittade Pappa täljningen genom ett videoklipp. Sin allra första
     trägubbe täljde han till Elof.
   - På en höstpromenad till berget gled den ner i en djup spricka vid den gamla tallen. Där har den väntat
-    nästan hela Elofs liv, medan Pappa har täljt över 250 andra. Först på hans hylla står en tom plats.
-  - Spöket bär på Pappas minne. Det tar godiset för att ha välkommen hem-kalas för den ensamma trägubben, men det
-    kan inte be om hjälp, för det har ingen mun.
+    nästan hela Elofs liv, medan Pappa har täljt över 250 andra. Först i raden på hans hylla står en plats tom.
+  - Spöket bär på Pappas minne. Det tar godiset för att ha ett välkommen-hem-kalas för den ensamma trägubben, men
+    det kan inte be om hjälp, för det har ingen mun.
   - Uppe på berget förstår Elof att trägubben var till honom. Han målar nya ögon på den med ett kråkbär, och
     bestämmer själv vem som ska få hans godis. Hemma lär Pappa honom att tälja.
 - **För Elof, som är sju och spelar spel för 11+:**
-  - hopp som blir högre om man håller in knappen, en gunga som man själv tar fart på, pussel i två till fyra
-    steg, en spännande sekvens i varje kapitel och en valfri utmaning;
+  - hopp som blir högre om man håller in knappen, en gunga som man själv tar fart på, pussel i ett till fyra
+    steg, och en spännande sekvens och en valfri utmaning i varje kapitel;
   - inga liv och inget att förlora: missar han ett hopp fångar *glitterbubblan* honom och för honom tillbaka på
     en sekund;
   - spelsättet *Lugnt* gör allt lättare för den som vill, till exempel en kusin;
@@ -71,8 +71,9 @@ Appendix C lists exactly what carries over. What is new here:
 - **Grafiken.**
   - Du utvecklar på din dator, där Claude styr Blender genom MCP. Modeller, riggar, animationer, bakning och
     bakgrunder görs där, och du kan rätta allt direkt i Blender.
-  - Elof görs på två sätt parallellt, och det som blir mest likt vinner: (A) 3D från dina karaktärsblad med ett
-    betalt AI-verktyg, finputsat i Blender; (B) byggd i Blender på samma skelett som de fria animationerna.
+  - Elof görs på två sätt parallellt, och det som blir mest likt vinner: (A) gjord i 3D från dina karaktärsblad
+    med ett betalt AI-verktyg och finputsad i Blender; (B) byggd direkt i Blender på samma skelett som de fria
+    animationerna.
   - Spöket modelleras i Blender med platta täljytor, efter fotona.
   - Naturen byggs i kod och i Blender, med fria fotoskannade material.
   - Familjens modeller ligger i ett privat repo, så att de alltid går att ta bort.
@@ -90,8 +91,8 @@ Appendix C lists exactly what carries over. What is new here:
 
 | Fråga | Svaret | Vad det ändrar |
 | --- | --- | --- |
-| 1. Elof som spelare | Sju år; spelar spel som är gjorda för 11+ | Spelet får riktiga utmaningar men inget att förlora (§4): hopp som styrs av hur länge knappen hålls in, en gunga man själv tar fart på, en spännande sekvens i varje kapitel och en valfri utmaningsväg. *Äventyr* är förvalt spelsätt, och *Lugnt* finns för den som vill. Hjälp kommer bara när han ber om den, och *Läs upp* är avslaget. |
-| 1. Enheter | En ny iPad, en iPhone eller en Android i klass med Samsung S23 | Alla tre klarar kvalitetsnivån *Hög* (§6.5) och testas vid varje kontrollpunkt. Kontaktbladen får också S23:ans format, 780×360. |
+| 1a. Elof som spelare | Sju år; spelar spel som är gjorda för 11+ | Spelet får riktiga utmaningar men inget att förlora (§4): hopp som styrs av hur länge knappen hålls in, en gunga man själv tar fart på, en spännande sekvens i varje kapitel och en valfri utmaningsväg. *Äventyr* är förvalt spelsätt, och *Lugnt* finns för den som vill. Hjälp kommer bara när han ber om den, och *Läs upp* är avslaget. |
+| 1b. Enheter | En ny iPad, en iPhone eller en Android i klass med Samsung S23 | Alla tre klarar kvalitetsnivån *Hög* (§6.5) och testas vid varje kontrollpunkt. Kontaktbladen får också S23:ans format, 780×360. |
 | 4. 👪 Samtycke | Båda föräldrarna säger ja till allt, och alla namn får användas | Mamma Sofie och Pappa Emil får heta så. Näsbacken, de riktiga platserna och ett exakt hus är tillåtna, liksom skanningen av spöket, berättelsen och röster som spelas in på Elofs enhet. Några skydd som inte kostar spelet något finns kvar (§2.6). |
 | 6. Nätverk | Du utvecklar på din dator, med Blender MCP | Att molnsessionerna inte når materialsajterna spelar ingen roll längre: nedladdningar och allt arbete i Blender sker på din dator (§5.6, §6.14). |
 | Renderaren | Three.js `WebGLRenderer` (WebGL 2) är bäst | Beslutat. Jämförelsen med WebGPU-renderaren i Steg 0b stryks (§6.2). |
@@ -121,15 +122,15 @@ svar har kommit. Numren är desamma som i version 2.
    - *Förval:* (a). Valet ändrar mest kameran och miljöernas skala. Kontroller, menyer och teknik är desamma.
 3. ★ 👪 **Den nya hemligheten.** Version 2 byggde på att Pappa täljde redan som barn. Webbutiken berättar att han
    hittade täljningen som vuxen, strax före pandemin, genom ett videoklipp. Förslaget nu:
-   - Pappas allra första trägubbe var liten och lite klumpig, som ett första försök är: rundt huvud, spetsig
+   - Pappas allra första trägubbe var liten och lite klumpig, som första försök brukar vara: runt huvud, spetsig
      mössa och ett snett täljt leende. Han täljde den om kvällarna vid köksbordet, med bebis-Elof sovande
      bredvid. Den var till Elof.
    - En höstdag gick familjen till berget, med Elof i bärsele. Pappa ställde trägubben på hällen vid den gamla
      tallen för att fotografera den mot utsikten. Den tippade och gled ner i en djup spricka. Han nådde den inte,
      och det blev mörkt.
-   - Sedan dess har Pappa täljt över 250 figurer, men först på hans hylla står en tom plats.
+   - Sedan dess har Pappa täljt över 250 figurer, men först i raden på hans hylla står en plats tom.
    - Spöket fick liv av Pappas händer och Elofs ögon, och bär därför på Pappas minne. Det vill hämta hem trägubben
-     och ha välkommen hem-kalas för den, med det största godiset i huset: Elofs lördagspåse.
+     och ha ett välkommen-hem-kalas för den, med den största godispåsen i huset: Elofs lördagspåse.
    - Uppe på berget drar Elof och spöket upp trägubben tillsammans. Elof målar nya ögon på den med ett kråkbär och
      delar sitt godis. Pappa säger: ”Min allra första trägubbe … Den täljde jag till dig när du var bebis, Elof.
      Vi tappade den här uppe.”
@@ -164,6 +165,7 @@ svar har kommit. Numren är desamma som i version 2.
      omkring 400 år gammal (Appendix B). Är det familjens berg, eller ett annat? Ett av fotona visar en granithäll
      med utsikt nära Bredbyn. Är det den platsen?
    - Har familjen sett lavskrikor i skogen? Om inte, blir följeslagaren en ekorre.
+   - Ringer kyrkklockorna kl. 18 på lördagar? Tranflygningen bygger på det (§3.4).
    - Kan du ta foton och spela in ljud vid platserna (bäcken, vinden i granarna, myren)? Platsuppgifterna i
      filerna tas bort automatiskt (§5.6).
    - *Förval:*
@@ -173,11 +175,11 @@ svar har kommit. Numren är desamma som i version 2.
 9. **Röster.** Ska replikerna läsas upp?
    - (a) Ingen röst, bara bilder och korta texter.
    - (b) Talsyntes (*Läs upp*), bara med rösterna som finns i själva enheten.
-   - (c) Familjen spelar in sina egna repliker på Elofs enhet, under en föräldrasida. Inspelningarna sparas bara där
+   - (c) Familjen spelar in sina egna repliker på Elofs enhet, på en föräldrasida. Inspelningarna sparas bara där
      och laddas aldrig upp. Pappas replik på toppen blir extra fin så.
    - *Förval:* (b) finns men är avslagen i Elofs profil, och slås på om han vill; (c) som erbjudande.
-10. **Testbarn.** Kan ett annat barn på 7–10 år, som spelar mycket, prova spelet tio minuter vid två tillfällen
-    (H2 och H3, §7.3)? Gärna någon som inte avslöjar något för Elof.
+10. **Testbarn.** Kan ett annat barn på 7–10 år, som spelar mycket, prova spelet 20–30 minuter vid två
+    tillfällen (H2 och H3, §7.3)? Gärna någon som inte avslöjar något för Elof.
     - *Förval:* ja, om det finns någon.
 11. **Godis.** Vilket godis tycker Elof, Moa, Bertil, Mamma och Pappa bäst om? Elofs favorit blir den gyllene
     godisbiten som gör honom stor igen, och de andras delas ut på godiskalaset.
@@ -203,6 +205,10 @@ svar har kommit. Numren är desamma som i version 2.
       felsöker vi med `?debug` på skärmen, och Android med Chromes fjärrfelsökning.
     - Med ett grafikkort går rendering och bakning i Blender mycket fortare.
     - *Förval:* Blender 4.5 LTS, samma version som molnsessionerna kan köra (§6.14).
+17. **Vilken enhet spelar Elof mest på?** Spelet sparar på varje enhet för sig, eftersom det inte har några konton.
+    Kapitelkoder flyttar framstegen mellan enheterna (§6.9), och familjens inspelningar finns bara på den enhet där
+    de spelades in.
+    - *Förval:* iPaden. Den testas mest, och de andra två vid varje kontrollpunkt.
 
 ---
 
@@ -233,7 +239,8 @@ börjar det vänta på honom?*
    - One exciting sequence per chapter: dodging falling dew drops, outrunning a cone avalanche, hopping across
      sinking tussocks, dashing between gusts on the summit.
    - One optional challenge route per chapter, for the best hidden candy.
-   - A miss costs about a second: the glitter bubble catches him and floats him back (§4.2).
+   - A miss costs about a second, or at most about 15 s inside an exciting sequence: the glitter bubble catches
+     him and floats him back (§4.2).
 4. **Candy everywhere.**
    - The trail is the way forward, and the bag visibly fills up.
    - Hidden candies become stickers.
@@ -268,7 +275,8 @@ börjar det vänta på honom?*
    are what the player *does*.
 3. **Förstå utan ord.** The ghost has no mouth. Every story beat must work without reading and without sound.
 4. **Svårt ibland, aldrig elakt.** Real jumps, timing and puzzles, but no lives, no game over and no lost
-   progress. A miss costs about a second, and nothing scary chases you.
+   progress. A miss costs about a second (at most about 15 s inside an exciting sequence), and nothing scary
+   chases you.
 
 ### What the player does (details in §4)
 
@@ -277,7 +285,7 @@ börjar det vänta på honom?*
 | **Springa** | Stick ← → | Walk, and run when the stick is pushed far ("Snabb" on his sheet). |
 | **Hoppa** | Hoppa button | A tap is a hop; holding it jumps higher. Ledges within reach are grabbed and climbed automatically. |
 | **Klättra** | Stick against climbable things | Bark, roots, a hose, the candy lace, Mamma's braid. Any push except down climbs up. From above, a hose or lace slides him down. |
-| **Kasta snöret** | Använd button near a red ring | The red candy lace (*godissnöret*, which fell out of the torn bag) hooks on by itself. Elof pumps the swing with the stick and lets go with Hoppa; *Hjälp med svingen* does both for him (§4.2). |
+| **Kasta snöret** | Använd button near a red ring | The red candy lace (*godissnöret*, which fell out of the torn bag) hooks on by itself. Elof pumps the swing with the stick and lets go with Hoppa; *Hjälp med svingen* pumps for him and times his let-go (§4.2). |
 | **Knuffa, Dra, Vänd, Ge, Lyft** | Använd button | The button always shows the specific verb with an icon, and the icon also floats over the target. |
 | **Ta!** | Använd button close to the ghost | A near-catch, once or twice per chapter. Elof lunges, the ghost squeaks free and drops a handful of candy. |
 | **Ropa på …** | Använd button at a helper spot | Calls Moa, Pappa, Bertil or Mamma for their helper moment. |
@@ -287,7 +295,7 @@ börjar det vänta på honom?*
 | **Peka** | Tap anything | A candy jiggles, and Elof walks to it if it is near. The ghost peeks, animals look up. Tapping Elof makes him wave and shout a tiny "Hallå!". Never needed. |
 
 **Magic candy, and how it reaches Elof:**
-- The *krympstjärna* (prologue) falls out by accident. Elof only catches it; nothing found on the ground is ever
+- The *krympstjärna* (prologue) falls out by accident. Elof only catches it; no candy found on the ground is ever
   eaten. Some of its glitter stays on him, and that is the glitter bubble (§4.2).
 - The *lysklubba* (Kapitel 3) is a gift from the ghost. He holds it up as a lantern.
 - The golden candy (the final) is Elof's own favourite from his own bag, eaten on Saturday evening, when
@@ -299,7 +307,7 @@ börjar det vänta på honom?*
 | Version | Content | Length for Elof |
 | --- | --- | --- |
 | **Utgåva 1** | Prologue and Kapitel 1 (Gården) | 20–25 min, plus its challenge route |
-| **Version 1.0** | Prologue; Gården; Granskogen, including the brook's calm edge; Myren; Berget; the final; the epilogue. The whole story. | 65–80 min, plus four challenge routes (15–25 min) |
+| **Version 1.0** | Prologue; Gården; Granskogen, including the brook's calm edge; Myren; Berget; the final; the epilogue. The whole story. | 65–85 min, plus four challenge routes (12–24 min) |
 | **Version 1.1** | *Forsen*, a cap-boat rapids chapter with the beaver, between Granskogen and Myren; the bubble candy; the bark sled; a full 3D crane flight; more duo puzzles and candy kinds | +15–20 min |
 
 Each release must be a complete, lovable game on its own (§7).
@@ -317,7 +325,8 @@ online features, accounts, ads, purchases, analytics or tracking, or live AI.
 | 7:30–11:00 | The lawn jungle: dew drops that ring like bells, then a breeze shakes the birch and big drops rain down, to dodge by their shadows. The birch roots, the mountain of shavings outside Pappa's workshop, and the first memory. | Exploration, the first exciting sequence, the seed of the mystery |
 | 11:00–14:00 | Moa's dress and fingers, then her face: "Lillebror?! Du är ju pytteliten!" Her hand swoops at the ghost, which darts into a root hole her fingers can't enter. She climbs onto the railing and throws a paper plane; Elof flies to the forest edge. | A family role, a laugh that teaches a rule, a spectacle |
 
-These are design minutes. Re-time them with Elof's test player (§7.3).
+These are design minutes. Kapitel 1's beats end near 14:00 on the fastest path; with exploring and C1, Elof needs
+18–22 minutes (§4.9). Re-time with the test child at H2 and H3 (§0 Q10).
 
 ---
 
@@ -386,8 +395,9 @@ reproduced.
   bubbles drawn from their models.
 - **A giant face**, when one is needed, takes at most 40% of the screen height and stays softly out of focus. It
   rises over at least 1.5 s, after the person's clothes and fingers have been seen.
-- **Whole figures** appear only in the prologue, on the summit and in the epilogue, in held poses with small
-  movements.
+- **Whole figures** appear in the prologue, the memories, on the summit and in the epilogue: mostly held poses
+  with small movements, plus the few walks the story needs (Mamma past the door, the memories, the headlamps
+  arriving, the walk home).
 - **Their calls** are "Heja Elof!" and "Heja lillebror!", and they wave back when he waves. They never sound
   like a search party.
 
@@ -411,7 +421,7 @@ in the prologue; his first figure as the secret; and in the epilogue he teaches 
 ### 2.4 The memories: the year Elof was born
 
 The four memories (§3.3, rule 5) show the family six or seven years ago, when Pappa had just begun to carve and
-Elof was a baby (§0 Q3 confirms the timing). Four rules keep them clear for a seven-year-old:
+Elof was a baby (§0 Q3 asks Pappa to confirm the timing). Four rules keep them clear for a seven-year-old:
 1. Every memory grows out of the ghost's picture bubble, and shrinks back into it.
 2. Each is shown in a warm sepia look with film grain (§5.4), so it never reads as "now".
 3. Baby Elof wears a light-blue knitted hat with a pompom, the colour of Elof's shirt, so he can find himself.
@@ -422,7 +432,7 @@ Elof was a baby (§0 Q3 confirms the timing). Four rules keep them clear for a s
 - Pappa and Mamma reuse their game models.
 - Moa and Bertil appear smaller, seen from behind or far away.
 - Baby Elof is one small new model, mostly hidden in a pram or a carrier: a face, the hat and mittens.
-- The first trägubbe is a small figure that never moves, except for one blink at the end (§3.2).
+- The first trägubbe is a small figure that never moves, except for one blink at the end (§3.3, rule 1).
 
 ### 2.5 The red house on Näsbacken (from Olov's photos)
 
@@ -450,7 +460,9 @@ Both parents allow an exact house (§0 Q4).
 - family voices recorded on Elof's device (§0 Q9);
 - sending the character sheets and photos to Claude, and to a paid Meshy plan (§0 Q15).
 
-Anything comes out again if a parent asks. Anything personal that is *not* on the list is asked about first.
+Anything comes out of the game, the site and the current files if a parent asks, but what has been pushed stays
+in the public git history; v2's §0 Q4 said so when consent was asked. Anything personal that is *not* on the list
+is asked about first.
 Place names are allowed, but the game uses them the way a child does: Moa's map says "Hemma" (§4.9).
 
 **What stays out anyway.** None of this limits the game; it only keeps a stranger from finding the children:
@@ -470,7 +482,8 @@ Place names are allowed, but the game uses them the way a child does: Moa's map 
 - Faces are sticker meshes drawn as game art (§5.6), never textures taken from a photo.
 
 **Voices** (§0 Q9):
-- Family members may record lines on Elof's device, on a parents' page. They are stored there and never uploaded.
+- Family members may record lines on a parents' page on each device Elof plays on. A recording stays on the
+  device where it was made, and is never uploaded.
 - *Läs upp* uses only voices that run on the device (`localService`).
 
 **The site:**
@@ -500,7 +513,7 @@ Olov – med hjälp av Claude." If Pappa wants, the credits can also name his ca
 
 At the start: "Spöket tog mitt godis! Jag följer godisspåret och tar tillbaka det."
 
-From Kapitel 2 on: "Varför tog spöket godiset – och varför väntar det på mig?"
+From the end of Kapitel 2 on: "Varför tog spöket godiset – och varför väntar det på mig?"
 
 ### 3.2 Cast
 
@@ -519,7 +532,7 @@ From Kapitel 2 on: "Varför tog spöket godiset – och varför väntar det på 
     general knowledge; §0 Q8 asks whether the family has seen them).
   - It tries to pinch Elof's candy. He gives it a lingonberry instead (no candy for wild animals), and it becomes
     his hint companion from Kapitel 2 (§4.6).
-- **Animal friends** (§4.4): a ladybird, ants, a dipper, a crane family. A beaver in Version 1.1.
+- **Animal friends** (§4.4): a ladybird, ants and a crane family. A dipper and a beaver in Version 1.1.
 - **Den första trägubben**, the very first figure Pappa ever carved, just before the pandemic, when Elof was a
   baby (§0 Q3).
   - Small and a little clumsy, as a first try is: a round head, a pointed cap and a crooked carved smile. Its
@@ -531,20 +544,22 @@ From Kapitel 2 on: "Varför tog spöket godiset – och varför väntar det på 
 ### 3.3 World rules (set up early so the ending is fair)
 
 1. **Spöket fick liv av Pappas händer och Elofs ögon.** Pappa carved it, and Elof painted its eyes. Pappa's
-   carvings wake only when Elof gives them eyes. This is why the ghost carries Pappa's memories, why it turns to
-   Elof, why the old trägubbe blinks once after Elof paints it new eyes, and why the figure Elof carves with
+   carvings wake only when Elof gives them eyes. This is why the ghost carries Pappa's memories and why it turns to
+   Elof. It is also why the old trägubbe, after seven years in the dark, has just enough life for one blink once
+   Elof has painted it new eyes, which comes when the northern lights flare, and why the figure Elof carves with
    Pappa's hand over his blinks at the very end.
 2. **När en vuxen tittar stelnar spöket** into an ordinary wooden figure: the Toy Story rule.
-   - Only tiny Elof sees it move, so only he can follow it.
-   - Giants can't catch what they only ever see as a carving.
-   - The rule is taught as a joke twice: in the prologue (Pappa) and in Kapitel 1 (Moa's grab).
+   - Children see it move too, but only tiny Elof is small enough to follow it where it goes (rule 8).
+   - Grown-ups can't catch what they only ever see as a carving.
+   - The rule is taught as a joke twice in the prologue: Mamma at the door, and Pappa at the railing. Moa's grab in
+     Kapitel 1 shows rule 8.
 3. **Glittrande godis är trollgodis.**
    - When the ghost grabbed the bag, two candies started to glitter. A star fell out on the steps: touching it
      makes you small. Elof's golden favourite stayed in the bag, and it glints there all game: eating it makes
      you big again.
-   - Some of the star's glitter stays on Elof. When he falls too far, it catches him in a bubble and floats him
-     back: the glitter bubble (§4.2). The first time it happens, under the deck in Kapitel 1, the ghost watches
-     with its head tilted.
+   - Some of the star's glitter stays on Elof. When he falls too far, misses a jump over water or wet moss, or is
+     bowled over by a cone, it catches him in a bubble and floats him back: the glitter bubble (§4.2). The first
+     time it happens, under the deck in Kapitel 1, the ghost watches with its head tilted.
    - Later the ghost makes candy glitter on purpose, as gifts: the lollipop lantern (and the 1.1 bubble candy).
    - Ordinary trail candy never glitters, and is only collected.
 4. **Stora godisbitar är trygga platser.** A big candy on the path is a checkpoint: the game saves, and a little
@@ -565,7 +580,7 @@ From Kapitel 2 on: "Varför tog spöket godiset – och varför väntar det på 
 ### 3.4 Beat outline (Version 1.0)
 
 The day runs from morning to night through one Saturday in late September (*brittsommar*). In Bredbyn on 26
-September 2026 the sun rises at 06:38 and sets at 18:38, and at noon it stands only about 26° high, so the light
+September 2026 the sun rises at 06:42 and sets at 18:35, and at noon it stands only about 25° high, so the light
 is low and long all day (Appendix A). Version 1.1 additions are marked **[1.1]**. Exciting sequences are **E1–E4**
 and challenge routes **C1–C4** (§4.7).
 
@@ -674,7 +689,7 @@ and challenge routes **C1–C4** (§4.7).
   - *Barkpulkan* (S2): a ride down a needle slope on a piece of bark.
   - The chapter *Forsen* (S3b, P9) follows Granskogen.
 
-**[1.1] Forsen (13:30, glittering).** Bertil's cap carries Elof down the rapids, steering left and right. The
+**[1.1] Forsen (14:00, glittering).** Bertil's cap carries Elof down the rapids, steering left and right. The
 cap stops at a beaver dam, where a beaver can't reach the stick it needs. Elof pulls the stick within reach with
 the lace, and the beaver lifts the cap over the dam. Also here: a dipper, water striders to hop on (O6), and
 Näckens fiol (O5).
@@ -682,13 +697,14 @@ Näckens fiol (O5).
 **Kapitel 3: Myren (16:30 to 18:00, mist)**
 - **The bog.**
   - Tussocks (*tuvor*) are the path. They dip to his ankles and bounce back (P11).
-  - Open wet moss and pools: Elof never steps onto them. He stops at the edge and points to the next tussock. A
-    missed hop that lands in them ends in the glitter bubble.
+  - Open wet moss and pools: Elof never steps onto them. He stops at the edge and points to the next tussock. On
+    a missed hop, the glitter bubble catches him in the air, before he touches them.
   - Red and green sphagnum, dwarf birch in autumn red, orange cloudberry leaves, and cranberries that bounce
     (O7). Cotton-grass has finished by late September, so it is left out.
   - Dark pools mirror the sky; grey dead pines (*torrakor*) stand about. The ridges and pools of a string bog.
-- **E3 Sjunkande tuvor.** Further out, some tussocks sink slowly once he lands, so he has to keep hopping. A
-  sunk tussock drops him into the glitter bubble, back to the last firm one.
+- **E3 Sjunkande tuvor.** Further out, some tussocks sink slowly once he lands, so he has to keep hopping. As a
+  tussock sinks under him, the glitter bubble lifts him off before the water reaches his boots, and floats him back
+  to the last firm one.
 - **Mamma** (P12).
   - At a wide pool: "Ropa på Mamma". Her hands lift a fallen dead pine across the pool as a bridge.
   - At the boardwalk she lies down on the planks and lets her braid down, and Elof climbs it.
@@ -701,20 +717,20 @@ Näckens fiol (O5).
   - In the lollipop's light the trail shows. The *lyktgubbar* turn out to be shy lights that play hide-and-seek,
     never tricks.
 - **C3 Lyktgubbarnas lek** (optional). Find the shy lights in the mist, each one hiding further out on the
-  tussocks; the last one leaves a sticker.
+  tussocks; the last one leaves the chapter's hidden challenge candy.
 - **Tranungen** (P14). A young crane has lost its family in the mist.
   - Its family's calls show as soft rings rising out of the mist, and the chick turns towards them, so it works
     without sound.
   - Elof leads it with his light until they find each other. Someone small and lost is brought home.
 - **The ghost waits** on a tussock and lets Elof come close. Its bubble is clear now: a mountain with an old pine,
   and something small and grey in a crack beside it.
-- **Memory 3:** dusk on a bog boardwalk, years ago. The family walks towards a mountain: Mamma with a smaller Moa
-  by the hand, a small Bertil running ahead, and Pappa with baby Elof in a carrier on his back. The little figure
-  rides in Pappa's pocket.
+- **Memory 3:** late afternoon on a bog boardwalk, years ago. The family walks towards a mountain: Mamma with a
+  smaller Moa by the hand, a small Bertil running ahead, and Pappa with baby Elof in a carrier on his back. The
+  little figure rides in Pappa's pocket.
 - **Tranornas dans** (S4). The cranes dance in the mist, and one kneels. Elof climbs on, and the jay flies off
   towards the boardwalk.
 
-**Kapitel 4: Berget (18:00 to sunset at 18:38)**
+**Kapitel 4: Berget (18:00 to sunset at 18:35)**
 - **Tranflygningen** (S5): Nils Holgersson's ride, for Elof.
   - In V1.0 it is built from layered plates rendered in Blender (§5.6). [1.1]: a full 3D landscape.
   - Below them: the forest, the brook glittering, the bog, a river and a lake. A church bell tower rings in the
@@ -777,8 +793,8 @@ Näckens fiol (O5).
 - **The naming** (§0 Q12).
 - **Elofs första trägubbe** (P19). Pappa gives Elof a small piece of linden and a knife, and kneels beside him:
   "Alltid bort från kroppen." With Pappa's hand over his, Elof makes three strokes, each traced away from his
-  body; a stroke towards himself simply doesn't start. Out comes a tiny, crooked figure, and Elof sets it on the
-  windowsill.
+  body; a stroke towards himself simply doesn't start. Out comes a tiny, crooked figure. Elof dots two eyes on it
+  with Pappa's brush and sets it on the windowsill.
 - **Teeth.** Everyone brushes their teeth – except the ghost, which has no mouth.
 - **The album as credits,** which Elof can tap through (§6.10).
 - **Last card:** "Spöket kunde inte säga det med ord. Men Elof förstod." Then **Utforska vidare** opens every
@@ -847,7 +863,8 @@ förstod."
   - icons on buttons;
   - the candy trail.
 - **Words for those who want them:**
-  - at most about 60 short captions in the whole game, each at most about 40 characters, never required;
+  - at most about 60 short captions in the whole game, each bubble at most about 40 characters (longer lines,
+    like Pappa's on the summit, run over two or three bubbles), never required;
   - every caption can be read aloud (*Läs upp*: off in Elof's profile, on in *Lugnt*, §4.1);
   - key lines can be recorded by the family on Elof's device (§0 Q9).
 - **Exciting, never scary:**
@@ -860,7 +877,8 @@ förstod."
 - **Healthy, without preaching:**
   - candy is collected, not eaten, until Saturday evening;
   - animals get lingonberries, not candy;
-  - nothing found on the ground is eaten (the crowberry is paint);
+  - no candy found on the ground is eaten; the only wild thing Elof tastes is a lingonberry, picked from its plant,
+    and the crowberry is paint;
   - candy is never placed next to mushrooms;
   - on the bog we walk on tussocks and boardwalks;
   - Elof never walks into water;
@@ -911,7 +929,8 @@ All touch sizes are ×1.15 on tablets.
   1. the resting stick at 40% opacity, after 4 s without moving;
   2. Hoppa at the first door sill, after 3 s at the sill;
   3. Använd at the star, after 3 s beside it.
-- **Never needed:** a double tap, mashing, or two inputs at once. Holding Hoppa only makes a jump higher. Timing
+- **Never needed:** a double tap, mashing, or two buttons at once; the stick plus one button is the most any move
+  asks for. Holding Hoppa only makes a jump higher. Timing
   matters in the swing and in the exciting sequences on *Äventyr*; *Lugnt* takes it away.
 - **Every touch target** is at least 64 CSS px, with at least 12 px between targets. Both action buttons sit
   inside the bottom-right safe area.
@@ -924,9 +943,10 @@ All touch sizes are ×1.15 on tablets.
   jay) and changeable at any time in settings:
   - ***Äventyr*** (Elof's default): Elof pumps and times the swing; falls and missed jumps end in the glitter
     bubble; the exciting sequences run at full speed; help comes only when asked; *Läs upp* is off.
-  - ***Lugnt***: version 2's game for younger players: *Lätta hopp* and *Hjälp med svingen* on, Elof stops at
-    every high edge instead of falling, slow cones, gentle gusts and slow-sinking tussocks, help set to
-    *Påminn mig*, and *Läs upp* on.
+  - ***Lugnt***: version 2's game for younger players. *Lätta hopp*, *Hjälp med svingen* and *Ljud även i tyst
+    läge* are on; jumps are steered to their landings, and Elof stops at every edge higher than 4 EL instead of
+    falling. In the exciting sequences, drops and cones miss a moving Elof, gusts only slow him, and tussocks sink
+    only when he stands still, so nothing needs timing. Help is set to *Påminn mig*, and *Läs upp* is on.
   - Every setting can also be changed on its own.
 - **Settings** (most from Sköldhästen):
   - *Spelsätt*: *Äventyr* or *Lugnt* (above).
@@ -961,12 +981,15 @@ macro world.
   - Drops of up to 4 EL end in a soft landing: a puff of moss and a roll.
   - **Higher drops.** Walking, Elof never goes over an edge higher than 4 EL: he stops and looks down, which is
     why the hose and the lace matter. Jumping from one, or missing a jump above one, is a fall, and a fall of
-    more than 6 EL ends in the glitter bubble.
+    more than 4 EL ends in the glitter bubble.
 - **The glitter bubble (*glitterbubblan*).** Some of the shrinking star's glitter stays on Elof (§3.3, rule 3).
-  - When he falls too far, or lands in water or open wet moss, the glitter gathers into a bubble around him and
-    floats him back to the last safe ground in about a second.
-  - Nothing is lost: candy stays collected, and puzzles keep their state. This is how failing works in the whole
-    game.
+  - When he falls more than 4 EL, would land in water or open wet moss, or is bowled over in the cone avalanche
+    (E2), the glitter gathers into a bubble around him and floats him back to the last safe ground in about a
+    second. Over water and wet moss it catches him in the air, before he touches them: the game never shows Elof
+    in water.
+  - It is a golden sparkle shell, never a round gum bubble like the 1.1 bubble candy.
+  - Nothing is lost: candy stays collected, and puzzles keep their state. This is how most failing works; in E1 a
+    drop only knocks him over, and in E4 a gust only pushes him back.
   - Safe ground is the last spot where he stood for 0.5 s on a surface tagged safe. Authored checkpoints inside
     puzzles and exciting sequences override it, so he never lands somewhere that fails again at once.
 - **Climbing.** 1 EL/s on surfaces tagged climbable, attaching automatically when he walks into them.
@@ -982,8 +1005,8 @@ macro world.
       he reaches the ledge; the automatic ledge grab (above) forgives a little more.
     - A miss drops him below, where a way back up is always near, or into the glitter bubble.
   - **With *Hjälp med svingen*** (on in *Lugnt*), the swing pumps itself to full height in about 2 s, and Hoppa
-    at any moment is held, for up to 1 s, until the next forward apex, so the release always lands on the
-    authored ledge.
+    at any moment is held until the next forward apex (at most one full swing), so the release always lands on
+    the authored ledge.
   - ↑ ↓ climb the lace.
   - At a pull ring (*Dra*), the lace pulls an object along its rail.
   - At a pair of rings, it ties a bridge, which is also a trampoline (Unravel's trick).
@@ -993,7 +1016,7 @@ macro world.
   - Free physics is cosmetic only: wobble, bounce, rope sag.
 - **Water and bog.** Tiny Elof doesn't swim, and never walks into water or onto open wet moss. He stops at the
   edge and looks for another way: a stone, a tussock, a leaf, the cap. That is what children should do by real
-  water. A missed jump that lands in either ends in the glitter bubble.
+  water. On a missed jump over either, the glitter bubble catches him in the air, before he touches it.
 - **Riding** (the paper plane, the cap, the crane): the stick steers within an authored corridor. Branches and
   stones in the corridor bump the ride and cost the candy arc he was aiming for, but nothing can end it.
 - **Exciting sequences** (E1–E4, §4.7) are short, fast stretches with a clear threat to dodge: falling drops,
@@ -1054,19 +1077,19 @@ help is big and spectacular, but Elof still does the part that matters. How the 
 | 2 Granskogen | Pappa, Bertil | The seesaw (P8); the cap across the pool (S3) | Ants: road cleared → ant lift. Jay: given a lingonberry → companion. |
 | 3 Myren | Mamma | The log bridge, the braid, the cocoa (P12) | Crane chick: led home → the cranes fly Elof to the mountain |
 | 4 Berget | — | The ghost as partner (P15) | — |
-| Final | Everyone | Mamma leads the headlamps; Pappa recognises the trägubbe; Moa's jacket, Bertil's cap | The jay fetches the family; it and the cranes come to the party |
+| Final | Everyone | Mamma leads the headlamps; Pappa recognises the trägubbe; Moa's jacket, Bertil's cap | The jay fetches the family, and watches the party from the veranda railing |
 | Epilog | Pappa | Teaches Elof to carve (P19) | — |
 | [1.1] Forsen | Bertil | The rapids | Beaver: stick fetched → lifts the cap over the dam |
 
 ### 4.5 Kindness rules (Sköldhästen §4.3, adapted for a player who wants a challenge)
 
 - There are no lives, damage, game over or lost progress. A miss costs about a second (the glitter bubble,
-  §4.2).
+  §4.2), or at most about 15 s inside an exciting sequence.
 - **The chase can't be lost.** The ghost keeps its distance at Elof's pace and waits, comically, when he dawdles
   or explores (§4.2).
 - **Exciting sequences restart close by.** Big candies split them, so a miss replays at most about 15 s.
 - **Refuse instead of fall, when walking.** Too high to drop, too wet to step on: walking, Elof stops and looks,
-  and a pose shows *why*. Only jumps can fail, and they fail softly.
+  and a pose shows *why*. Only jumps and the exciting sequences can fail, and they fail softly.
 - **Fair challenge.** Every timing window and every exciting sequence is tested by the robot at the edges of its
   window (§6.13), and nothing hits Elof from off screen.
 - **Every puzzle is a small state machine** with:
@@ -1090,7 +1113,8 @@ help is big and spectacular, but Elof still does the part that matters. How the 
   - helper spots marked with a family portrait.
 - **The helper** has no dialogue and no words.
   - In Kapitel 1 the helper is the ghost itself: a clue to its secret. It visits once by itself, at the gully
-    (§3.4), and otherwise only when called. From Kapitel 2 it is the jay.
+    (§3.4), as a story beat on every help level: it looks at the hook but doesn't pulse the button. Otherwise it
+    comes only when called. From Kapitel 2 it is the jay.
   - Each tap on the helper's portrait, or on the helper, goes one step further:
     1. it flies or hops to the right area and looks at it;
     2. it pecks or double-knocks the object, and the right icon pulses on the Använd button;
@@ -1107,8 +1131,8 @@ help is big and spectacular, but Elof still does the part that matters. How the 
 - **Teaching:** every verb is taught on its own before it is combined. Puzzles grow from one or two steps in
   Gården to three or four by Berget, and the exciting sequences grow the same way.
 - **The kinds:** **P** is a puzzle; **S** is a set piece, a ride or a show that can't be failed; **E** is an
-  exciting sequence, where a miss replays a few seconds; **C** is a challenge route, optional and harder, ending
-  at a hidden candy.
+  exciting sequence, where a miss replays at most about 15 s; **C** is a challenge route, optional and harder,
+  ending at a hidden candy.
 - **Before its build session,** each puzzle and sequence gets its commit point, local reset, save rule, three
   hints, return route and framing notes for both orientations.
 - **The version column:** U1 = Utgåva 1; 1.0 and 1.1 are the versions in §1.
@@ -1192,13 +1216,14 @@ The tier says what must be *built*; none of these is ever needed to finish.
 | Chapter | Required | Ends on | Estimate for Elof (main path) |
 | --- | --- | --- | --- |
 | Prolog | P0, the chase, the star | POFF, Pappa's line, the title | 2–3 min |
-| Kapitel 1 Gården | P1–P4, E1, S1 (C1 optional) | The ghost vanishing into the spruces | 15–20 min |
+| Kapitel 1 Gården | P1–P4, E1, S1 (C1 optional) | The ghost vanishing into the spruces | 18–22 min |
 | Kapitel 2 Granskogen | P5, P6, E2, P8, S3, P10 (C2 optional) | The ghost hopping off towards the bog, waiting now | 15–20 min |
 | Kapitel 3 Myren | P11, E3, P12–P14, S4 (C3 optional) | Climbing onto the crane | 12–15 min |
 | Kapitel 4 Berget + Final | S5, E4, P15, P16, P17 (C4 optional) | The walk home under the northern lights | 15–20 min |
 | Epilog | P18, P19 | The album, the last card and the blink | 4–5 min |
 
-Each challenge route adds 3–6 minutes. Re-time everything with a real child at H2, H2b and H3 (§7.3).
+Each challenge route adds 3–6 minutes. Re-time everything with a real child at H2 and H3, and at H4 with Elof
+(§7.3).
 
 ---
 
@@ -1217,12 +1242,12 @@ gården, granskogen, skogsbäcken, myren, berget, and home — follows the same 
 2. **The play plane is sharp, the rest is soft.** The foreground and background are out of focus, as in macro
    photography. This is the single biggest part of the look (§5.3).
 3. **Low, warm, directional light.** Backlit leaves, haze and light shafts, with restrained saturation and a
-   film-like grade per place. Late September helps: the sun never climbs above about 26° (§3.4).
+   film-like grade per place. Late September helps: the sun never climbs above about 25° (§3.4).
 4. **Dark out-of-focus shapes framing the shot,** and a side camera that pulls back for at least one vista per
    chapter.
 5. **No HUD to speak of.** Progress shows in the world: Yarny got thinner as he ran out of yarn; Elof's bag
    gets fuller.
-6. **A wordless story in glowing memories** placed in the world (§3.3, rule 4).
+6. **A wordless story in glowing memories** placed in the world (§3.3, rule 5).
 7. **The core verbs stay the same all game.** Yarny never learned new moves. Elof's three magic candies and the
    rides are one-chapter tools on the same stick and buttons, not new controls.
 8. **An acoustic folk score that grows with play,** field-recorded ambience, and a footstep sound for every
@@ -1241,8 +1266,9 @@ sofa tests at every stage (§6.13, §7.3).
 
 ### 5.2 Scale and camera
 
-- **One unit is one Elof length (EL).** In the macro chapters, 1 EL is about 15 cm of the real world; in the
-  prologue, final and epilogue, about 1.2 m. Props are modelled at real size divided by Elof's real height:
+- **One unit is one Elof length (EL).** In the macro chapters, 1 EL is about 15 cm of the real world; at normal
+  size (the prologue until the POFF, the final from the golden candy, and the epilogue), about 1.2 m. Props are
+  modelled at real size divided by Elof's real height:
   - a lingonberry is about 0.05 EL and a spruce cone about 0.5 EL;
   - a fly agaric is 1–1.3 EL, and a blade of grass 1.5–2.5 EL;
   - a spruce trunk is about 2.7 EL across, and a deck step 1.2 EL high.
@@ -1281,7 +1307,7 @@ sofa tests at every stage (§6.13, §7.3).
 
 ### 5.4 Colour script: one Saturday, 26 September
 
-Sunrise 06:38, sunset 18:38, and at noon the sun is only 26° high, so shadows are long all day.
+Sunrise 06:42, sunset 18:35, and at noon the sun is only 25° high, so shadows are long all day.
 
 | Place | Time | Light and palette |
 | --- | --- | --- |
@@ -1290,7 +1316,7 @@ Sunrise 06:38, sunset 18:38, and at noon the sun is only 26° high, so shadows a
 | Granskogen | 11:30 → 14:00 | Deep green and mossy gold, shafts of light, cool blue shade. Red lingonberries and one red fly agaric as accents (never near candy). At the brook's edge: glitter on blue-green water, yellow birch leaves floating, amber stones. |
 | [1.1] Forsen | 14:00 | White water and sparkle, wet dark stones, spray in the sun |
 | Myren | 16:30 → 18:00 | Low gold sun, with mist rising late. Rust-red sphagnum, orange cloudberry leaves, red dwarf birch, silver mist. Mamma's warm lamp. |
-| Berget | 18:00 → 18:38 | Golden hour into sunset: pink-orange sky, grey granite, white reindeer lichen, haze in the valley |
+| Berget | 18:00 → 18:35 | Golden hour into sunset: pink-orange sky, grey granite, white reindeer lichen, haze in the valley |
 | Final | 18:40 → night | Blue hour into night: stars, green and violet northern lights, warm headlamps |
 | Epilog | 21:00 | Candle-lit glazed veranda, candy colours, the aurora in the windows |
 
@@ -1440,7 +1466,8 @@ Every source and licence goes into `LICENSES.md` (§7.5). Three categories are a
    - **Family members,** as set in §2.3:
      - hands, props, boots and silhouettes in the macro chapters, with 2D portrait bubbles rendered in Blender
        from their models;
-     - whole figures only in held poses in the prologue, on the summit and in the epilogue.
+     - whole figures in the prologue, the memories, on the summit and in the epilogue: mostly held poses, plus a
+       few walks (§2.3).
      - That needs few clips, but each hand and prop moment is a small authored animation, priced in §7.6.
 3. **Animation.**
    - **From the library,** about 12 clips per character: idle, walk, run, the parts of a jump, push, climb,
@@ -1464,7 +1491,7 @@ Every source and licence goes into `LICENSES.md` (§7.5). Three categories are a
      - **Reconstruction:** a phone app (Scaniverse or KIRI Engine), or COLMAP 4.2.1 on Olov's computer or in a
        cloud session (its sparse step was tested here).
      - **Clean-up in Blender:** a planar decimate at about 5° keeps the knife facets crisp; about 8k triangles; a
-       2k colour texture baked from the full scan.
+       2k colour texture baked from the full scan, shipped at 1024².
      - **Split** it into rigid parts: the body with the bag, the left foot, the right foot.
    - *Route B:* image-to-3D from the two photos, if neither of the others works.
    - In every route it is animated in code as a rigid wooden toy. There is no skinning, because carved wood
@@ -1573,8 +1600,9 @@ Every source and licence goes into `LICENSES.md` (§7.5). Three categories are a
   - footsteps per surface: plank, moss, needles, stone, sphagnum squelch, gravel;
   - candy pickups that step up a scale when collected in a row;
   - the ghost's knocks and creaks;
-  - Elof's tiny "Hallå!", gasps and giggles. Characters "speak" in short synthesised babble, never in a
-    recording of a real child (§2.6). Words come from captions and *Läs upp*.
+  - Elof's tiny "Hallå!", gasps and giggles. Characters "speak" in short synthesised babble; the published game
+    holds no recording of a real child (§2.6). Words come from captions, *Läs upp*, or a family member's own
+    recording on the device (§6.8).
   - UI and pickup sounds are synthesised, so they cost no download.
 - **Ambience:** recorded loops per place (CC0, or Olov's own recordings: §0 Q8) — wind in spruces, the brook,
   bog birds and cranes, an evening hush. Macro scale is sold by close, detailed small sounds: dew drips, grass
@@ -1672,8 +1700,9 @@ removed in r163, and r186 throws if WebGL 2 is missing). Olov chose it on 3 Octo
 ### 6.3 Repository layout
 
 ```text
-.github/workflows/deploy.yml   push to main: typecheck, tests, build, size gate, deploy to Pages
-.github/workflows/ci.yml       pull requests: the same checks, plus a Playwright smoke test and contact sheets
+.github/workflows/deploy.yml   push to main: typecheck, tests, build and size gate, privacy check, deploy to Pages
+.github/workflows/ci.yml       pull requests: the same checks, plus a Playwright smoke test (contact sheets come
+                               from sessions, §7.5)
 CLAUDE.md  HANDOVER.md  README.md  LICENSES.md
 index.html                     the shell: inline loading card and its CSS, no framework
 public/                        icons, the web app manifest's images, fonts (Andika woff2 + OFL.txt)
@@ -2145,7 +2174,7 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
   - a long play session for heat, and Low Power Mode;
   - the first-playable time;
   - the swing's timing and the exciting sequences on touch, with a child's hands.
-- **With a child** (§7.3): the playtest checklist at H2, H2b and H3.
+- **With a child** (§7.3): the playtest checklist at H2 and H3, and H4 with Elof.
 - **Housekeeping:** commit `package-lock.json` from Stage 0a, so CI's `npm ci` and its npm cache work.
 
 ### 6.14 Working on Olov's computer
@@ -2237,7 +2266,8 @@ code-only work and reviews, and both follow the same `CLAUDE.md`.
   3. Var det för lätt, lagom eller för svårt?
   4. Varför tror du att spöket tog påsen?
 
-  The first two can become canon in small text patches. The third tunes *Äventyr* for the rest of the game. The
+  His name for the ghost becomes one of the four suggestions at the naming (§0 Q12), and his favourite candy can
+  become canon in a small text patch. The third answer tunes *Äventyr* for the rest of the game. The
   fourth is just for fun: the story is designed, and nothing is promised.
 
 ### 7.3 Stages and checkpoints
@@ -2248,17 +2278,19 @@ code-only work and reviews, and both follow the same `CLAUDE.md`.
 | 0b Look-dev | 2–3 | 2 / 3–4 h | On Olov's computer: Blender and MCP set up (§6.14); the two golden frames with a greybox Elof, a hook and candy; quality tiers; `WebGLRenderer` measured on the three devices | **H1a**: the five criteria in §5.6 |
 | 0c Characters | 2–4 | 3 / 6–10 h, including the AI tool and Blender reviews | Elof by Route A (Meshy, finished in Blender) and Route B (built in Blender) in parallel, on the library's skeleton; the ghost modelled in Blender; likeness sheets shown to Olov through the session, never through git | **H1b**: likeness yes or no, with at most three corrections. Mamma and Pappa see it too. |
 | 1 Feel | 2–3 | 2 / 2 h | Controller (run, variable jump, ledge, climb), the glitter bubble, the swing in both modes, candy trail and pickup, the camera, one greybox puzzle and one greybox exciting sequence, both play styles, the robot | **H2** (20-min sofa test with the borrowed child, greybox): is moving, jumping and swinging fun for two minutes with no goal? Is *Äventyr*'s swing timing right, and is *Lugnt* gentle enough? |
-| 1b Vertical slice | 2–3 | 2 / 2 h | From the deck edge to the first swing (about 90 s, P1 and P3) at **final quality** on the three devices: Elof, the ghost, light, candy, audio | **H2b**: cost logged and extrapolated to the whole of Version 1.0. If it's over budget, cut the scope (§7.4) before Stage 2. |
+| 1b Vertical slice | 2–3 | 2 / 2 h | From the deck edge to the first swing (P1–P3, about 3 min) at **final quality** on the three devices: Elof, the ghost, light, candy, audio | **H2b**: cost logged and extrapolated to the whole of Version 1.0. If it's over budget, cut the scope (§7.4) before Stage 2. |
 | 2 Utgåva 1 | 7–10, plus 1 buffer | 4–6 / 7–11 h | The prologue and Kapitel 1, with E1 and C1; menus, save, audio, hints, stickers; the voice-recording page | **H3** (the whole chapter on the devices, with the borrowed child), then **H4** (the reveal) |
 | 3 Granskogen | 7–9, plus 1 | 3–4 / 5–7 h | The forest kit, the jay, the ants, the cone avalanche, the seesaw, the brook's edge, the cap, the eddy rescue, C2 | Sofa test, then release |
 | 4 Myren | 6–8, plus 1 | 3 / 5 h | The bog kit, sinking tussocks, the mist, the lollipop light, the crane chick, Mamma, C3 | Sofa test, then release |
 | 5 Berget, final, epilogue | 8–10, plus 1 | 4 / 7 h | The plate flight, the gusts, the summit, the duo puzzle, C4, the crowberry eyes, the aurora, the family in held poses, the party, the carving lesson, the album | A fresh-save playthrough, then release **Version 1.0** |
 | 6 Polish | 2–3 | 2 / 3 h | A Swedish copy-edit, performance on every device, the audio mix, an accessibility pass, *Äventyr* tuned from Elof's answers | — |
+| Between checkpoints, all stages | — | about 55–80 / 20–35 h | Weekly feedback in batches; Olov's reviews of models and animation in Blender | — |
 | Version 1.1 | later | — | Forsen, the bubble candy, the bark sled, the 3D flight, two more duo puzzles | — |
 
-- **Total for Version 1.0:** about 40–55 sessions; about 80–110 rounds counting feedback; Olov 60–90 hours.
+- **Total for Version 1.0:** about 40–55 sessions, plus four buffer sessions; about 80–110 rounds counting
+  feedback; Olov 60–90 hours.
   - `HANDOVER.md` keeps a planned-against-actual row per stage, and every checkpoint re-forecasts the rest.
-- **The playtest checklist** (H2, H2b, H3, every release):
+- **The playtest checklist** (H2, H3, every release):
   - log every pause longer than 10 s, and every miss that was repeated more than three times;
   - anything an adult had to say is a bug;
   - a fresh player retells the story from what they saw;
@@ -2280,20 +2312,22 @@ code-only work and reviews, and both follow the same `CLAUDE.md`.
   - the prologue: painting the eyes, the blink, the star, Pappa;
   - the candy trail and the bag; the lace in both modes;
   - the glitter bubble, and the two play styles;
-  - one family helper moment per chapter;
+  - one family helper moment in each of Kapitel 1–3, and the family on the summit;
+  - one exciting sequence per chapter (E1–E4), which may be simplified;
   - every required puzzle in §4.7;
   - four memories (still pictures are an acceptable simplification);
   - the summit: the reveal, the crowberry eyes, the sharing choice, the golden candy, the walk home;
   - the carving lesson in the epilogue;
-  - Swedish text, saving, touch controls and the kindness rules;
+  - Swedish text, saving, chapter codes (progress moves between devices with them), touch controls and the
+    kindness rules;
   - performance at *Hög* on the three devices;
   - the privacy rules.
 - **SHOULD:**
-  - the four exciting sequences (E1–E4) and the four challenge routes (C1–C4);
+  - the four challenge routes (C1–C4);
   - the sticker album, with 16–20 candy kinds;
   - the lost things, the vittra door as a toy, the beach cobbles;
   - album photos as credits;
-  - gamepad support, offline play, chapter codes;
+  - gamepad support, offline play;
   - *Läs upp* and the voice-recording page.
 - **STRETCH:**
   - photo mode, hide-and-seek, the ghost race (O12);
@@ -2303,11 +2337,11 @@ code-only work and reviews, and both follow the same `CLAUDE.md`.
 - **Version 1.1:** Forsen with the rapids and the beaver, the bubble candy, the bark sled, the full 3D crane
   flight, two more duo puzzles, Näckens fiol, the water striders.
 - **Cut order, the most expensive first:**
-  1. family acting beyond hands, props and bubbles;
+  1. family acting beyond hands, props, bubbles and the few walks the story needs;
   2. the 3D crane landscape (keep the plates);
   3. duo puzzles beyond the first;
   4. animals down to four: ladybird, ants, jay, cranes;
-  5. exciting sequences down to two (keep E2, the cone avalanche, and E4, the gusts);
+  5. exciting sequences simplified to one threat each;
   6. challenge routes down to two (keep C1 and C4);
   7. candy kinds from 16 to 10;
   8. music arrangements from 8 to 3;
@@ -2316,7 +2350,7 @@ code-only work and reviews, and both follow the same `CLAUDE.md`.
 - **Change control.** After H3, new wishes go to a "Senare" list in `HANDOVER.md`, decided at the next release.
   Sköldhästen grew into three adventures in the middle of polishing.
 
-### 7.5 Session rules (copied into `CLAUDE.md`)
+### 7.5 Session rules (summarised; `CLAUDE.md` is the working copy)
 
 1. **Start:**
    - read `HANDOVER.md`;
@@ -2357,8 +2391,9 @@ code-only work and reviews, and both follow the same `CLAUDE.md`.
 | Family hands | about 9 moments: Pappa's brush, knife, seesaw and carving lesson; Moa's plane; Bertil's cap; Mamma's log, braid and mug | hand models with a few poses, in Blender | 2 |
 | Family portrait bubbles | 4 people × 4 expressions | rendered in Blender from their models | 0.5 |
 | Family held poses | the prologue, the summit, the epilogue | posed models | 1 |
+| Family walks and memory actions | about 6: Mamma past the door, the memories' walks and reaching, the headlamps arriving, the walk home | library clips plus poses keyed in Blender | 1–2 |
 | The memories' cast | baby Elof in a pram and a carrier; a smaller Moa and Bertil; the first trägubbe, with one blink | modelled in Blender; sepia in-engine | 1 |
-| Animals | ladybird, ants (instanced), jay, a squirrel cameo, crane family (3), a dipper | CC0 or Blender, procedural motion | 2–3 |
+| Animals | ladybird, ants (instanced), jay (a squirrel instead if §0 Q8 says so), crane family (3); in 1.1 a dipper and a beaver | CC0 or Blender, procedural motion | 2–3 |
 | Nature kits | 25–40 props per place, 6–10 tiling materials | generators, Blender hero props, CC0 materials, scans | 1–2 per place |
 | Backdrop plates | about 8 | rendered in Blender, AI-painted or photographed; split and pre-blurred | 1 |
 | Built things | the kitchen and its shelf of figures, the house and deck, Pappa's workshop and shavings, plane, cap, boardwalk, seesaw | Blender | 2 |
@@ -2372,7 +2407,7 @@ code-only work and reviews, and both follow the same `CLAUDE.md`.
 
 | Risk | What could happen | Mitigation |
 | --- | --- | --- |
-| Consent is withdrawn later | a family member wants out | the private repository makes models removable with one redeploy; nothing personal sits in the public history |
+| Consent is withdrawn later | a family member wants out | models, textures and recordings come out with one redeploy, because they never enter the public repository; names, places and the story come out of the site and the current files, but not out of git history |
 | The new secret doesn't match reality | Elof knows Pappa's first figure is at home | §0 Q3 asks Emil first; if it exists, the game's trägubbe is modelled on it and the story becomes how it came home |
 | AI character models fall short of the sheets | Elof doesn't recognise himself | Route A and B in parallel, both finished in Blender; H1b at 75 px and close-up; one correction, then pivot |
 | Too easy, or too hard, for Elof | boredom, or frustration | *Äventyr* as default with a robot-tested window per timing; *Lugnt* one tap away; a borrowed child who plays a lot at H2 and H3; Elof's "lätt, lagom eller svårt?" after Utgåva 1 |
@@ -2520,7 +2555,7 @@ images, and the three r186 and planck sources, with builds and Chromium runs.
 | With `--enable-unsafe-webgpu` in Chromium 141, r186's WebGPU backend throws "The provided value is not of type 'GPUTextureComponentSwizzle'". three always passes `swizzle: 'rgba'` in texture-view descriptors. | Playwright run, plus reading `three.webgpu.js` |
 | In r186, `renderAsync()` is deprecated (use `render()` after `await renderer.init()`); `PostProcessing` is now `RenderPipeline`; the TSL effects include `FSR1Node`, `TAAUNode`, `GodraysNode`, `DepthOfFieldNode` and `Lut3DNode` | Console warning and the package source |
 | Headless Chromium here renders WebGL2 through SwiftShader with ASTC, ETC and S3TC available, and a maximum texture size of 8192 | Playwright run |
-| Bredbyn, 26 September 2026: sunrise 06:38, sunset 18:38, the noon sun 25.6° high (3 October: 06:58, 18:14) | NOAA solar formulas at 63.45° N, 18.10° E, CEST |
+| Bredbyn, Saturday 26 September 2026: sunrise 06:42, sunset 18:35, the noon sun 25.2° high (3 October: 07:01, 18:11). Version 2 had given 25 September's values. | NOAA solar formulas at 63.45° N, 18.10° E, CEST; recomputed for version 3 |
 | `olovmelander/spokets-godisbus` was public and empty when planning began, with the Pages flag already set | GitHub API, and `git ls-remote` (no refs) |
 | Sköldhästen's controls, menus, help ladder, save and process (Appendix C) | Read from `olovmelander/alva-10-birthday` at `5438e23` (1 October 2026) |
 | The deploy workflow's action versions (checkout v7, setup-node v7, configure-pages v6, upload-pages-artifact v5, deploy-pages v5) | Research and review sessions checked them against the actions' repositories (`git ls-remote`); `actionlint` 1.7.12 passed the v1 workflow |
@@ -2534,7 +2569,7 @@ images, and the three r186 and planck sources, with builds and Chromium runs.
 | `bpy` 4.5.14 runs headless on the container's Python 3.11: decimation, a Cycles CPU AO bake, and a glTF export whose custom properties arrive as `extras` | The asset research session |
 | r186's `WebGLRenderer` needs WebGL 2 ("WebGL 1 is not supported since r163") | Read in `three/src/renderers/WebGLRenderer.js` (0.186.1) |
 | WebGPU ships in Safari 26 on iOS and iPadOS (released 15 September 2025), Chrome 121 on Android and Samsung Internet 25 | `@mdn/browser-compat-data` 8.1.4 |
-| Pappa's own account of his carving (Appendix B.3) | Read in `olovmelander/emils-tragubbar-webshop` at `ad48a38`: the About text in its seed data and admin store |
+| Pappa's own account of his carving (Appendix B.3) | Read in Pappa's private webshop repository at `ad48a38`: the About text in its seed data and admin store |
 | *MCP for Blender* is PyPI `mcp-for-blender` 2.1.3 (MIT), formerly `blender-mcp`. Its tools read the scene, run Python in Blender, take viewport screenshots, and fetch from Poly Haven, Sketchfab and Poly Pizza or generate with Hyper3D Rodin, Hunyuan3D and Tripo. Content telemetry is opt-in, and opting in uploads prompts, code, screenshots, scene data and session steps that "may be used … to train AI models"; a minimal usage record is sent by default; `DISABLE_TELEMETRY=true` stops both; `BLENDER_MCP_SAFE_MODE=1` validates scripts before they run. | Read in the 2.1.3 wheel: its code and README |
 | `bpy` 4.5.14 (the 4.5 LTS line, updated 15 September 2026) and 5.0.1 run on Python 3.11; 5.1 and later (newest 5.2.2) need Python 3.13 | `pip index versions bpy`, and PyPI's JSON |
 | `@vitejs/plugin-basic-ssl` 2.3.0 accepts Vite 6, 7 and 8 | `npm view` |
@@ -2666,8 +2701,8 @@ Check a quote at its source before reusing it publicly.
   - Lime (*lind*) is the classic wood for figures.
   - The tools are a sloyd knife (e.g. a Mora knife) and a hook knife.
   - Children learn it with the same rule Pappa says in the epilogue: always cut away from the body.
-- **Pappa's own story,** from the About text of his webshop's repository (`olovmelander/emils-tragubbar-webshop`,
-  private; Olov pointed the planning session to it):
+- **Pappa's own story,** from the About text of his webshop's repository (private; Olov pointed the planning
+  session to it):
   - "Strax före pandemin letade jag efter något att göra och hittade täljningen av en slump via ett videoklipp."
   - "Sedan dess har jag skapat över 250 unika trägubbar här från mitt hem i Bredbyn, Anundsjö. I mitt arbetsrum,
     med en verkstad på gården, förvandlar jag träbitar till livfulla karaktärer."
