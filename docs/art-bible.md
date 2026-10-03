@@ -121,9 +121,22 @@ revised 19 September 2026):
    read on the site before anything is uploaded. It is a different company from the one the parents agreed to.
 2. **Meshy Pro all the same,** if Olov and the parents accept that the uploaded pictures and the models may be
    used for training. The pictures are the AI-drawn sheets, not photos, and carry no names.
-3. **A model that runs on Olov's own computer,** so that nothing is uploaded at all. Microsoft's TRELLIS is the
-   open one that is reported to run on a graphics card with 8 GB, like his. Its licence, and whether it really
-   runs here, are not checked yet, and the result is likely to be rougher than the paid services'.
+3. **A model that runs on Olov's own computer,** so that nothing is uploaded at all. Olov asked for an open
+   one on 3 October, and it is the one to try first.
+   - **TRELLIS** (Microsoft). Its code and models are under the MIT licence; two parts it builds on,
+     diffoctreerast and FlexiCubes, carry licences of their own, which are read before a generated file is
+     used. It takes one picture, or several views of the same thing, and gives a textured GLB.
+   - Microsoft asks for 16 GB of graphics memory. The fork *trellis-stable-projectorz* (MIT) runs it in half
+     precision on 8 GB, which is what Olov's RTX 3070 laptop card has. It has a Windows installer (a 327 MB
+     download, which then fetches Python 3.11, PyTorch and the models), a local web page and a local API.
+   - **What stands in the way:** drive C: has 11 GB free of 953. The install needs roughly 30 GB (an
+     estimate). `Downloads` holds 138 GB.
+   - **Not better on this computer:** TRELLIS.2 (MIT, but 16 to 24 GB of graphics memory); Hunyuan3D (its
+     licence does not apply in the EU, and `CLAUDE.md` forbids it); TripoSR (MIT, 6 GB, rough); Stable Fast 3D
+     (free under Stability's community licence, 7 GB, soft). ComfyUI is a workbench that runs such models, not
+     a model: it would run the same TRELLIS and adds nothing the fork's own page lacks.
+   - **Not checked:** that it runs on this card, and how good the result is. It is likely to be rougher than
+     the paid services', and it has no A-pose setting, so the model stands as the picture does.
 
 **The pictures that go in.** `art/private/elof/image-to-3d/` holds Elof's front, side and back views, cut from
 his sheet. On the sheet each view is only about 150 by 450 pixels, so they are enlarged three times and soft.
@@ -151,6 +164,8 @@ give the face eyes that can move and blink, and bake one 1024² texture. Every g
   <https://80.lv/articles/stylized-character-production-tips-and-tricks>
 - Matt Berenty's board of stylized characters (Pinterest). Olov's reference for the look.
   <https://se.pinterest.com/mattberenty/stylized-characters/>
+- TRELLIS and the fork that runs on 8 GB. <https://github.com/microsoft/TRELLIS>,
+  <https://github.com/IgorAherne/trellis-stable-projectorz>
 - Meshy: terms of use, privacy policy, and the API page for several pictures to one model.
   <https://www.meshy.ai/terms-of-use>, <https://www.meshy.ai/privacy-policy>,
   <https://docs.meshy.ai/en/api/multi-image-to-3d>

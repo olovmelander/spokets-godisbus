@@ -242,8 +242,11 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
      users' uploads, private models, you own them. Read that on the site before uploading; the session could
      not open the pages.
    - **(b) Meshy Pro all the same,** if you and the parents accept the training clause.
-   - **(c) A model on your own computer** (TRELLIS on the RTX 3070): nothing is uploaded. Not tried yet, and
-     likely rougher.
+   - **(c) TRELLIS on your own computer: try this first.** You asked for an open, local alternative. MIT
+     licence, free, and nothing is uploaded. A Windows fork runs it on an 8 GB card like yours (art bible
+     §1.6). **It needs about 30 GB free on C:, which has 11 GB;** `Downloads` holds 138 GB. Not tried yet, and
+     likely rougher than the paid services. When there is room, say so, and the session installs it, runs
+     Elof's three views through it and brings the model into Blender.
    - Whichever you choose, better pictures give a better model: each view of Elof alone, full height, 1024 by
      1536, plain background, arms a little out. The views cut from the sheet are small and soft; they are in
      `art/private/elof/image-to-3d/` and will do for a first try.
