@@ -361,6 +361,63 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.position.z = 0;
       return { group, update: (used, clock, dt) => { vanish(used, dt); star.rotation.y = Math.sin(clock * 1.6) * 0.7; star.position.y = 0.55 + Math.sin(clock * 2.2) * 0.07; } };
     }
+    case 'marble':
+    case 'clip':
+    case 'brick':
+    case 'coin': {
+      // Hittegods: a small thing on a foundation stone under the deck. To him it is as big as his head.
+      const stone = new Mesh(new BoxGeometry(0.95, spot.at.y, 0.95), solid('#8d8a84', 0.95));
+      stone.position.y = -spot.at.y / 2;
+      const cap = new Mesh(new BoxGeometry(1.1, 0.12, 1.1), solid('#a09c94', 0.95));
+      cap.position.y = -0.06;
+      const thing = new Group();
+      if (spot.look === 'marble') {
+        thing.add(ball(0.2, solid('#3aa0d8', 0.08, { emissive: '#0c3a5a', emissiveIntensity: 0.5 }), 0, 0.2, 0));
+        thing.add(ball(0.09, solid('#f4f8ff', 0.2), 0.03, 0.22, 0.06, [1.6, 0.5, 0.6]));
+      } else if (spot.look === 'clip') {
+        const pink = solid('#e86a9a', 0.4);
+        const bar = new Mesh(new BoxGeometry(0.62, 0.05, 0.14), pink);
+        bar.position.y = 0.05;
+        thing.add(bar);
+        // A little flower at one end, five petals round a yellow middle.
+        for (let i = 0; i < 5; i++) thing.add(ball(0.06, solid('#fff3f7', 0.5), 0.22 + Math.cos(i * 1.257) * 0.08, 0.12, Math.sin(i * 1.257) * 0.08));
+        thing.add(ball(0.05, solid('#f2c230', 0.5), 0.22, 0.14, 0));
+      } else if (spot.look === 'brick') {
+        // A toy brick: plain, with two studs, and no mark on it.
+        const yellow = solid('#f2c230', 0.35);
+        const block = new Mesh(new BoxGeometry(0.44, 0.24, 0.24), yellow);
+        block.position.y = 0.12;
+        thing.add(block);
+        for (const x of [-0.11, 0.11]) {
+          const stud = new Mesh(new CylinderGeometry(0.07, 0.07, 0.06, 14), yellow);
+          stud.position.set(x, 0.27, 0);
+          thing.add(stud);
+        }
+        thing.rotation.y = 0.5;
+      } else {
+        // A coin, leaning: plain gold, with a rim.
+        const gold = solid('#d9a93a', 0.3, { emissive: '#6a4a00', emissiveIntensity: 0.4 });
+        const disc = new Mesh(new CylinderGeometry(0.2, 0.2, 0.035, 28), gold);
+        const rim = new Mesh(new CylinderGeometry(0.16, 0.16, 0.045, 28), solid('#f0c860', 0.3));
+        const coin = new Group();
+        coin.add(disc, rim);
+        coin.rotation.set(Math.PI / 2 - 0.5, 0, 0.3);
+        coin.position.y = 0.2;
+        thing.add(coin);
+      }
+      group.add(stone, cap, thing);
+      group.position.z = -0.9;
+      let gone = 0;
+      return {
+        group,
+        update(used, clock, dt) {
+          // The stone stays. The thing glints a little while it lies there, and is gone when he has it.
+          gone = used ? Math.min(1, gone + dt / 0.3) : 0;
+          thing.scale.setScalar(1 - gone);
+          thing.position.y = used ? gone * 0.5 : Math.sin(clock * 2 + spot.at.x) * 0.02;
+        },
+      };
+    }
     case 'gold': {
       // The golden geléhallon: a raspberry of golden beads.
       const gold = solid('#ffcf3a', 0.25, { emissive: '#d99a00', emissiveIntensity: 0.7 });

@@ -5,6 +5,7 @@ import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
 import { chapterNumber, courseFor, nextAfter } from './content/chapters';
 import { album, foundFlag } from './content/kinds';
+import { lostFound } from './content/lost';
 import { albumHtml } from './ui/album';
 import { mapSvg, mapState } from './ui/map';
 import { createMemory } from './ui/memory';
@@ -136,7 +137,7 @@ function start(): void {
       atGoal: game.sim.flags.has('goal'), moving: game.sim.movers.filter((m) => m.t < 1).length,
       shadows: game.sim.drips.map((d) => d.shadow), drips: game.sim.drips,
       notes: [...game.sim.flags].filter((flag) => flag.startsWith('note:')).length,
-      found: [...game.sim.flags].filter((flag) => flag.startsWith('found:')).length,
+      found: [...game.sim.flags].filter((flag) => flag.startsWith('found:') || flag.startsWith('lost:')).length,
       footing: footingAt(chapter, p.x),
       said: game.sim.said.flatMap((id) => beats.get(id)?.who ?? []),
       ghostPerch: game.sim.ghost?.perch ?? 0,
@@ -340,6 +341,9 @@ function start(): void {
   const memories = createMemory(document);
   let remembered = game.sim.flags.has('memory');
   let flagsSeen = -1;
+  // How many lost things were found when the page last looked, and which: -1 before it has looked.
+  let lostSeen = -1;
+  let lostKnown: readonly string[] = [];
   let shown = false;
   let lastTime = 0;
   let savedAt = game.sim.checkpoint;
@@ -391,10 +395,19 @@ function start(): void {
     // The album: what earlier chapters hold in the save, and what this one holds now.
     if (game.sim.flags.size !== flagsSeen) {
       flagsSeen = game.sim.flags.size;
-      const found = album({ ...save.flags, [chapter.id]: [...game.sim.flags] });
+      const all = { ...save.flags, [chapter.id]: [...game.sim.flags] };
+      const found = album(all);
       hud.stickers(found);
+      // Hittegods: a thing found under the deck is said by name, once.
+      const lost = lostFound(all);
+      if (lostSeen >= 0 && lost.length > lostSeen) {
+        const fresh = lost.find((thing) => !lostKnown.includes(thing));
+        if (fresh) hud.notice(sv.lostFound.replace('{name}', sv.lost[fresh] ?? fresh));
+      }
+      lostSeen = lost.length;
+      lostKnown = lost;
       // The album's page, in the pause panel: in the story only.
-      byId('pauseAlbum').innerHTML = mapState(chapter.id) ? albumHtml(found) : '';
+      byId('pauseAlbum').innerHTML = mapState(chapter.id) ? albumHtml(found, lost) : '';
     }
     for (; told < game.sim.said.length; told++) {
       const beat = beats.get(game.sim.said[told]!);

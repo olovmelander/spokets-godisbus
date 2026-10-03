@@ -21,7 +21,10 @@ import type { Candy, ChapterData } from '../../sim/types';
  *    There lies the first memory.
  * 8. **Moa** (S1): she throws her paper plane, and Elof flies to the forest's edge.
  *
- * Not built yet: the lost things under the deck, the dew bells, and the ghost at the forest's edge. What is here is the ground, the candy and the rules; what it looks like comes later.
+ *    - **Hittegods** (O2): a marble, a hair clip, a toy brick and a coin lie on the foundation stones. A
+ *      jump takes each.
+ *
+ * Not built yet: the dew bells, the ghost at the forest's edge, and the lost things given back at the party. What is here is the ground, the candy and the rules; what it looks like comes later.
  */
 
 /** A row of candy along flat ground, one every `every` EL. */
@@ -139,6 +142,12 @@ export const garden: ChapterData = {
   climbs: [{ x: 46.3, bottom: 0, top: 6, exit: -1, needs: 'ladybird' }],
   spots: [
     { id: 'ladybird', look: 'ladybird', at: { x: 41, y: 6 }, verb: 'turn' },
+    // Hittegods (O2): four small things lost between the boards, each on a foundation stone under the deck.
+    // He takes one by jumping up to it; walking past leaves it.
+    { id: 'lost:marble', look: 'marble', at: { x: 48.4, y: 1.7 }, verb: 'take', touch: true },
+    { id: 'lost:clip', look: 'clip', at: { x: 50.4, y: 1.7 }, verb: 'take', touch: true },
+    { id: 'lost:brick', look: 'brick', at: { x: 57.9, y: 1.7 }, verb: 'take', touch: true },
+    { id: 'lost:coin', look: 'coin', at: { x: 59.9, y: 1.7 }, verb: 'take', touch: true },
     // Memory 1, on top of Pappa's shavings: the night he carved his first figure.
     { id: 'memory', look: 'memory', at: { x: 147, y: 3.3 }, verb: 'take', touch: true },
     { id: 'moa', look: 'sign', at: { x: 166, y: 0 }, verb: 'call', word: 'callMoa', ride: 'plane' },

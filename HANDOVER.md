@@ -683,8 +683,17 @@
     - A chapter can now have `bouncers`. The bounce is the same whatever Hoppa does, and from its top he
       falls less than the glitter bubble's limit. They lie on level firm ground, with nothing to bounce up
       onto: a test says so. Tests: `tests/sim/berries.test.ts` (7).
-    - **Not yet:** the other optional delights of plan §4.8: the dew bells (O1), the lost things under the
-      deck (O2), the vittra door (O3), and tasting a lingonberry (O10).
+    - **Not yet:** the other optional delights of plan §4.8: the dew bells (O1), the vittra door (O3), and
+      tasting a lingonberry (O10).
+  - **O2, Hittegods** (branch `stage-2-lost`; plan §4.8). What you see: under the deck in Kapitel 1, four
+    foundation stones each hold a small thing that has fallen between the boards: Bertil's marble, Moa's
+    hair clip, a toy brick and a coin. A jump takes one, and the top of the screen says "Du hittade något:
+    Moas hårspänne!" Walking past leaves it. The pause panel lists them under the album, *Hittegods*, with
+    a question mark for each one still lost.
+    - They are saved with the chapter, like the hidden candy (`src/content/lost.ts`). The toy brick is
+      plain, with no mark on it. Tests: `tests/unit/lost.test.ts` (6).
+    - **Stand-ins:** the stones are grey blocks and the things are built in code.
+    - **Not yet:** giving them back at the party in the epilogue, "with a giant's delight".
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate counts both
