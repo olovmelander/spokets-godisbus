@@ -5,6 +5,7 @@ import { cuesFor, newCueMemory, type Heard } from './audio/cues';
 import { chapterNumber, courseFor, nextAfter } from './content/chapters';
 import { album, foundFlag } from './content/kinds';
 import { mapSvg, mapState } from './ui/map';
+import { createMemory } from './ui/memory';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
 import { tierFromQuery } from './render/quality';
@@ -300,6 +301,9 @@ function start(): void {
     location.reload();
   }
   let endFor = 0;
+  // A memory plays once, when he touches its shaving: not again in a game that has seen it.
+  const memories = createMemory(document);
+  let remembered = game.sim.flags.has('memory');
   let flagsSeen = -1;
   let shown = false;
   let lastTime = 0;
@@ -309,8 +313,8 @@ function start(): void {
     const began = performance.now();
     timer.update(time);
     const dt = Math.min(timer.getDelta(), 0.25);
-    if (paused) {
-      // The panel's buttons still answer a gamepad.
+    if (paused || memories.open) {
+      // The panel's buttons still answer a gamepad. A memory plays over a game that waits.
       input.poll();
     } else {
       let held = input.state();
@@ -322,6 +326,10 @@ function start(): void {
       const now = hear();
       for (const cue of cuesFor(heard, now, memory)) audio.play(cue);
       heard = now;
+    }
+    if (!remembered && game.sim.flags.has('memory')) {
+      remembered = true;
+      memories.play(chapter.id, () => game.resume());
     }
     // A big candy is a safe place: the game saves there (plan §3.3, rule 4).
     if (game.sim.checkpoint !== savedAt) {
@@ -346,7 +354,8 @@ function start(): void {
       const beat = beats.get(game.sim.said[told]!);
       if (beat) hud.say(beat.who, beat.line);
     }
-    hud.tick(paused ? 0 : dt);
+    // What is said waits while a memory plays: its line comes after it.
+    hud.tick(paused || memories.open ? 0 : dt);
     // The end: a moment to arrive, then the card with the candy in rows of ten.
     if (atGoal) endFor += paused ? 0 : dt;
     if (endFor > 1.4 && !benchOn) {

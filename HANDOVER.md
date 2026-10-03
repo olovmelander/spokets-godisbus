@@ -542,6 +542,24 @@
     - **Not yet, and what the scene still needs most:** people. Pappa's hands blowing the shavings off,
       Mamma in the doorway and Bertil's hand at the bag are signs or nothing; the eyes are pressed, not
       traced; the ghost doesn't turn its head. The table is the floor.
+  - **The four memories** (branch `stage-2-memories`; plan §2.4, §3.3 rule 5). What you see: in each of
+    Kapitel 1 to 4 a glowing curl of shaving lies on the path. Touch it and the game waits while three or
+    four sepia pictures play in an oval, like paper cut-outs, with no words. A tap goes on to the next.
+    - **Memory 1** (on Pappa's shavings): Pappa carves a small figure at the table while little Elof watches;
+      he gives it to him; little Elof's face beside the smiling figure. **Memory 2** (after the log): the
+      autumn walk; the figure on a stump with a raspberry jelly in its lap, and one for himself. **Memory 3**
+      (where the ghost waits in the bog): the family on the boardwalk towards the mountain, little Elof on
+      Pappa's shoulders holding the figure up to see. **Memory 4** (at the old pine): the figure on the rock;
+      the gust and the crack, with Pappa reaching; little Elof's last jelly at the edge; the figure alone in
+      the dark, smiling. Elof's line "Spöket vill hämta hem min trägubbe!" now comes after this one.
+    - **They are stand-ins.** The plan's memories are animated scenes with the family's models, growing out
+      of the ghost's picture bubble. These are pictures drawn in code (`src/ui/memory.ts`): a big figure with
+      a flat cap is Pappa, a small one in light blue with a spiky fringe is little Elof, one with a braid is
+      Mamma. Nobody is drawn as themselves.
+    - Tests: `tests/unit/memory.test.ts` (6): one in each numbered chapter, on the path; the robot touches
+      each; six to ten seconds; no words; the little figure in every one.
+    - **For Olov:** the plan has Pappa read the storyboard of the memories before the first one is built
+      (question 1 below). These cards are that storyboard, playable. Show them to him.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts

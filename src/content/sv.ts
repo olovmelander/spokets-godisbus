@@ -125,6 +125,9 @@ export const sv = {
     candy: 'godisar i påsen',
   },
 
+  // A memory has no words. This is what a screen reader says while its pictures are shown.
+  memory: 'Ett minne',
+
   // Moas karta: a child's names for the places, as she would write them.
   map: {
     title: 'Moas karta',

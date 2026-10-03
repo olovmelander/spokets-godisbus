@@ -107,6 +107,7 @@ export function mountShell(root: HTMLElement): void {
          </div>
        </div>
      </div>
+     <div class="memory" id="memory" role="img" hidden><div class="memory-card" id="memoryCard"></div></div>
      <div class="panel-back" id="endCard" hidden>
        <div class="panel end" role="dialog" aria-modal="true" aria-labelledby="endTitle">
          <h2 id="endTitle"></h2>

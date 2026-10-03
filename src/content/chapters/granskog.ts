@@ -143,6 +143,8 @@ export const granskog: ChapterData = {
     { id: 'seesaw', look: 'sign', at: { x: 108.2, y: -8 }, verb: 'call', word: 'callPappa' },
     // The low end of the seesaw. Pappa drops the cone on the high end, and Elof flies.
     { id: 'launch', look: 'seesaw', at: { x: 113.2, y: -8 }, verb: 'take', word: 'standOn', needs: 'placed:cone', ride: 'launch' },
+    // Memory 2, after the log: the autumn walk, and the Saturday sweets he shared.
+    { id: 'memory', look: 'memory', at: { x: 144, y: -8 }, verb: 'take', touch: true },
     { id: 'cap', look: 'sign', at: { x: 154.6, y: -8 }, verb: 'call', word: 'callBertil', ride: 'cap' },
   ],
   movers: [
