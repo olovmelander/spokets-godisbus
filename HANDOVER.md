@@ -167,7 +167,7 @@
 | Testing | Only Olov tests before Elof plays. H2 and H3 are his own tests. | Olov, 3 Oct |
 | Voices | None: no read-aloud, no recordings. Characters make wordless sounds. | Olov, 3 Oct |
 | Logotypes | None anywhere. The star on the real ghost's shoes becomes a plain disc. | Olov, 3 Oct |
-| Characters | Every character is designed in Blender, with no paid AI tool: Elof and the ghost first, then the family, little Elof, the trägubbar and the animals (plan §5.6) | Olov, 3 Oct |
+| Characters | Elof and the family are generated from Olov's sheets by image-to-3D and finished in Blender; the service is not chosen yet (art bible §1.6). The ghost, the trägubbar and the animals are designed in Blender. | Olov, 3 Oct: "We need to go image to 3d way!" |
 | The ghost model | After the two photos of the carving, with the render and the poster for what they don't show. It has hands, as on the poster and the render. No scan. | Olov, 3 Oct |
 | The places | Storklocken as the model for the mountain. Plates rendered in Blender after the landscape references; ambience CC0 or synthesised. The jay and the church bells at 18:00 stay. | Olov, 3 Oct ("what is recommended") |
 | Candy | The family likes every kind. The golden candy is a geléhallon in gold paper; at the party Elof chooses who gets what. | Olov, 3 Oct; the geléhallon is the session's choice |
@@ -234,16 +234,20 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
 
 3. **Is the small boy on Pappa's lap in `family-pappa-viewpoint.jpg` Elof?** Little Elof in the memories is
    modelled on him, flat cap and all (plan §2.4). The default: yes.
-4. **How should Elof and the family be made?** This is the question that decides the look (art bible §1.4, §1.6).
-   - **(a) Image-to-3D from your sheets, on a paid plan (recommended for the look you ask for).** About 20 US
-     dollars for a month. It is the only route that can reach the Pixar-like quality of the sheets. The parents
-     have agreed to it. You subscribe, check three settings, and generate from the views; the session does the
-     rest in Blender.
-   - **(b) The paid base pack** (20 US dollars, CC0): proper stylized teen and adult bodies with rigs and 20
-     hairstyles, reshaped and dressed in Blender. Better than now, but not the sheets.
-   - **(c) Keep sculpting by script.** Free, and what Elof's third model is: a stylized cartoon boy, better
-     than before and still short of the sheets.
-   - The default until you answer: (c), and the ghost is redone as stylized carved wood.
+4. **Which image-to-3D service?** You chose image-to-3D for Elof and the family on 3 October. Nothing has been
+   uploaded, because Meshy Pro, the service the plan examined, fails the plan's own check: its terms let it
+   train on what paying users upload, with no way to switch that off below its Enterprise plan (art bible
+   §1.6 has the wording). The parents' yes was to a paid Meshy plan, so anything else is asked of them first.
+   - **(a) Tripo's paid plan,** if its terms say what its help pages are reported to say: no training on paid
+     users' uploads, private models, you own them. Read that on the site before uploading; the session could
+     not open the pages.
+   - **(b) Meshy Pro all the same,** if you and the parents accept the training clause.
+   - **(c) A model on your own computer** (TRELLIS on the RTX 3070): nothing is uploaded. Not tried yet, and
+     likely rougher.
+   - Whichever you choose, better pictures give a better model: each view of Elof alone, full height, 1024 by
+     1536, plain background, arms a little out. The views cut from the sheet are small and soft; they are in
+     `art/private/elof/image-to-3d/` and will do for a first try.
+   - Until then the third, sculpted Elof stays in the game, and the ghost is redone as stylized carved wood.
 5. **Are the ghost and Elof right?** Open `art/private/ghost/ghost.blend` and `art/private/elof/elof.blend` in
    Blender, where each stands between its pictures, or look at the renders in `docs/shots/_work/ghost/` and
    `docs/shots/_work/elof/`. For each: say yes, or give up to three corrections (plan §7.3, H1b).

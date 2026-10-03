@@ -56,7 +56,7 @@ doll in a photographed world.
 
 No one here sculpts by hand. Two routes were looked at on 3 October, and neither reaches the sheets by itself:
 
-- **Sculpting by script** (what Elof's third model is, and the default until Olov decides). Rounded forms are
+- **Sculpting by script** (what Elof's third model is; it stays in the game until a generated one replaces it). Rounded forms are
   fused into one surface with a voxel remesh, cut where the eyes and ears are, smoothed and thinned out. That
   gives eye sockets with lids, cheeks, a button nose, lips, ears, fingers and hair in swept tufts. The body is
   skinned on 15 bones named after the animation library's joints. Colour is painted on the vertices, with
@@ -67,7 +67,7 @@ No one here sculpts by hand. Two routes were looked at on 3 October, and neither
   the base pack turned out to hold only two muscular adult bodies; the *Teen* and *Regular* bodies this needs are
   in its paid version (20 US dollars, still CC0).
 
-§1.6 is the route that can reach the sheets, and it is Olov's decision.
+§1.6 is the route that can reach the sheets. Olov chose it on 3 October.
 
 1. **Base.** Quaternius' *Universal Base Characters* (CC0): game-ready stylized bodies of about 13,000
    triangles, with animation-friendly topology, rigged on the same 65-joint skeleton as his *Universal Animation
@@ -94,22 +94,51 @@ No one here sculpts by hand. Two routes were looked at on 3 October, and neither
    ridges. The eyes, the bag's dots, the socks and the shoes are painted on the wood, as on the carving.
 4. Five rigid parts, moved in code. It never bends (plan §5.6).
 
-### 1.6 The route that can reach the sheets: image-to-3D, if Olov says yes
+### 1.6 Image-to-3D from the sheets (Olov's decision, 3 October 2026)
 
-The sheets Olov made are already stylized 3D pictures of the characters, with a front, a side and a back view of
-each. An image-to-3D service turns such views into a model that looks like them: the sculpted face, the hair,
-the folds. Nothing built by script or over a base gets as close.
+Olov, after seeing the third scripted Elof: "We need to go image to 3d way!" Elof and the family are generated
+from his sheets and finished in Blender. The ghost is not: carved facets are what modelling by script does well
+(§1.5).
 
-- **Cost and consent.** About 20 US dollars for one month of a paid plan (Meshy Pro is the one the plan
-  examined, Appendix B.4). Both parents have agreed to the sheets going to a paid Meshy plan (plan §2.6).
-- **Before any sheet is uploaded** (plan §0 Q15): the plan must give Olov ownership of what it makes; uploads
-  must not be used for training, or that must be switched off; nothing may land in a public gallery; and the
-  uploads are deleted once the models are downloaded. A free tier is never used.
-- **What happens then.** Olov generates each character from its views (Elof's three views are already cropped
-  to 1024 px squares in `art/private/elof/image-to-3d/`). Claude does the rest in Blender: cleans the mesh,
-  brings it down to 15,000 triangles, fits it to the animation library's skeleton, replaces the face with one
-  that can change expression, and bakes one 1024² texture.
-- **The ghost doesn't need it.** Carved facets are what scripted modelling does well (§1.5).
+**No sheet has been uploaded yet.** The service is not chosen, because the one the plan examined fails one of
+the plan's own checks.
+
+**The checks** (plan §0 Q15), read against Meshy's terms on 3 October 2026 (terms and privacy policy both last
+revised 19 September 2026):
+
+| Check | Meshy Pro, 20 US dollars a month |
+| --- | --- |
+| Olov owns what it makes | Yes. "Customers on a paid Meshy plan own their Customer Output." |
+| Uploads are not used for training | **No.** Terms §2.9: "Meshy may use Customer Inputs and Customer Outputs [...] from non-Enterprise Customers to train, validate, test, or improve Services unless otherwise agreed to in the Order." No way to switch it off was found below the Enterprise plan. |
+| Nothing lands in a public gallery | Yes. A paid plan has "the option to keep their User Content private". |
+| Uploads are deleted after download | Through the API, yes: output is deleted three days after it is made, and a task can be deleted at once, "including all associated models and data". Deleting does not take back the right to train. |
+
+**The ways forward.** Olov chooses, and the parents are asked first about anything they have not agreed to
+(their yes was to a paid Meshy plan, plan §2.6):
+
+1. **A service that does not train on paid users' uploads.** Tripo says so about its paid plans, by its help
+   pages as a search engine summarised them; the session could not open the pages themselves, so this must be
+   read on the site before anything is uploaded. It is a different company from the one the parents agreed to.
+2. **Meshy Pro all the same,** if Olov and the parents accept that the uploaded pictures and the models may be
+   used for training. The pictures are the AI-drawn sheets, not photos, and carry no names.
+3. **A model that runs on Olov's own computer,** so that nothing is uploaded at all. Microsoft's TRELLIS is the
+   open one that is reported to run on a graphics card with 8 GB, like his. Its licence, and whether it really
+   runs here, are not checked yet, and the result is likely to be rougher than the paid services'.
+
+**The pictures that go in.** `art/private/elof/image-to-3d/` holds Elof's front, side and back views, cut from
+his sheet. On the sheet each view is only about 150 by 450 pixels, so they are enlarged three times and soft.
+(The first cuts, made earlier the same day, were wrong and showed only his middle; they are replaced.) A
+better result needs better pictures: each view alone, full height, 1024 by 1536, on a plain background and
+standing with the arms a little out from the body, drawn again with the tool that made the sheet.
+
+**Settings, whichever service:** all the views of one character in one job; an A-pose asked for where the
+service offers it (Meshy's `pose_mode: "a-pose"`); a remeshed quad mesh of about 30,000 faces, which Blender
+brings down to the 15,000 triangles of plan §5.6; a 2K colour texture, no PBR maps; GLB. Never a free tier.
+
+**Then, in Blender:** clean the mesh, bring it down to 15,000 triangles, fit it to the skeleton Elof's third
+model already has (15 bones named after the animation library's joints, which `src/render/view.ts` poses),
+give the face eyes that can move and blink, and bake one 1024² texture. Every generated file gets a
+`LICENSES.md` entry as *owned by Olov*, and stays in the private repository with the family's other files.
 
 ### 1.7 Sources
 
@@ -122,6 +151,9 @@ the folds. Nothing built by script or over a base gets as close.
   <https://80.lv/articles/stylized-character-production-tips-and-tricks>
 - Matt Berenty's board of stylized characters (Pinterest). Olov's reference for the look.
   <https://se.pinterest.com/mattberenty/stylized-characters/>
+- Meshy: terms of use, privacy policy, and the API page for several pictures to one model.
+  <https://www.meshy.ai/terms-of-use>, <https://www.meshy.ai/privacy-policy>,
+  <https://docs.meshy.ai/en/api/multi-image-to-3d>
 - Quaternius, *Universal Base Characters* and *Universal Animation Library* (CC0).
   <https://quaternius.com/packs/universalbasecharacters.html>,
   <https://quaternius.com/packs/universalanimationlibrary.html>
