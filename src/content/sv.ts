@@ -13,6 +13,9 @@ export const sv = {
   keysHint: '← → springa · Mellanslag hoppa · håll in för att hoppa högre · Shift gå',
   padHint: 'Spaken springa · A hoppa · håll in för att hoppa högre',
 
+  // The candy bag in the corner. Screen readers hear the name and then the number.
+  bag: 'Godispåsen',
+
   // Stage 0a's test course.
   goal: 'Framme!',
 

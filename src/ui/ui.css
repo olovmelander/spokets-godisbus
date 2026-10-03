@@ -138,6 +138,40 @@ body {
   background: #3f9a5a;
 }
 
+/* --- the candy bag, top left: it fills as Elof collects (plan §4.3) ------------------------------ */
+.bag {
+  position: absolute;
+  left: calc(env(safe-area-inset-left) + 12px);
+  top: calc(env(safe-area-inset-top) + 10px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px 4px 8px;
+  border-radius: 999px;
+  background: rgb(236 223 198 / 0.9);
+  font-weight: 700;
+  font-size: calc(26px * var(--k));
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  /* How full the bag is, from 0 to 1. */
+  --fill: 0;
+}
+
+.bag svg {
+  width: calc(40px * var(--k));
+  height: calc(47px * var(--k));
+}
+
+.bag-fill {
+  /* Cut to the bag's shape, and grown from its bottom. */
+  clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%);
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transform: scaleY(var(--fill));
+  transition: transform 0.2s ease-out;
+}
+
 /* --- small text over the game ------------------------------------------------------------------- */
 .hint {
   position: absolute;
@@ -155,7 +189,7 @@ body {
 .debug {
   position: absolute;
   left: calc(env(safe-area-inset-left) + 8px);
-  top: calc(env(safe-area-inset-top) + 8px);
+  top: calc(env(safe-area-inset-top) + 76px);
   margin: 0;
   padding: 6px 8px;
   border-radius: 6px;

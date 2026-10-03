@@ -12,6 +12,7 @@ const flat: ChapterData = {
   spawn: { x: 0, y: 0.01 },
   goalX: 1000,
   ground: [{ x: -30, y: 8 }, { x: -30, y: 0 }, { x: 60, y: 0 }, { x: 60, y: 8 }],
+  candy: [],
 };
 
 /** A ledge one EL high on the left, then lower ground. */
@@ -20,6 +21,7 @@ const ledge: ChapterData = {
   spawn: { x: -2, y: 1.01 },
   goalX: 1000,
   ground: [{ x: -8, y: 8 }, { x: -8, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 0 }, { x: 30, y: 0 }, { x: 30, y: 8 }],
+  candy: [],
 };
 
 const idle: StepInput = { x: 0, hopHeld: false, hop: false, act: false };

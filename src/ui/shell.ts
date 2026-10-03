@@ -5,14 +5,19 @@ const HAND =
 const ARROW =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5m0 0-6 6m6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
+/** A paper bag with a folded top. The red inside rises as the bag fills (plan §4.3). */
+const BAG =
+  '<svg viewBox="0 0 48 56" aria-hidden="true"><path d="M8 15h32l-3 37H11z" fill="#f1dfb8"/><rect class="bag-fill" x="9" y="16" width="30" height="36" fill="#e8483f"/><path d="M8 15h32l-3 37H11z" fill="none" stroke="#7b5a36" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 15l4-9 4 6 4-7 4 7 4-7 4 7 4-6 4 9z" fill="#f1dfb8" stroke="#7b5a36" stroke-width="2.5" stroke-linejoin="round"/></svg>';
+
 /**
- * Builds everything that lies over the game view: the on-screen controls, the hint, the debug text and
- * the message. The game page and dev/menus.html both call it, so the preview can't drift from the game.
+ * Builds everything that lies over the game view: the candy bag, the on-screen controls, the hint, the debug
+ * text and the message. The game page and dev/menus.html both call it, so the preview can't drift from the game.
  */
 export function mountShell(root: HTMLElement): void {
   root.insertAdjacentHTML(
     'beforeend',
-    `<div class="controls" id="controls" hidden>
+    `<div class="bag" id="bag" role="status">${BAG}<span id="bagCount">0</span></div>
+     <div class="controls" id="controls" hidden>
        <div class="stick-zone" id="stickZone">
          <div class="stick-base" id="stickBase"><div class="stick-knob" id="stickKnob"></div></div>
        </div>
@@ -33,4 +38,5 @@ export function mountShell(root: HTMLElement): void {
   };
   label('hopBtn', sv.hop);
   label('actBtn', sv.act);
+  document.getElementById('bag')!.setAttribute('aria-label', sv.bag);
 }

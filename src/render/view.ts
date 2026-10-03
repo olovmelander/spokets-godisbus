@@ -1,10 +1,9 @@
 import {
-  BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight,
-  ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, Mesh, MeshBasicMaterial, MeshLambertMaterial,
-  MeshStandardMaterial, NeutralToneMapping, PerspectiveCamera, Quaternion, Scene, Shape, SphereGeometry, UnsignedByteType, Vector3,
-  WebGLRenderer,
+  AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
+  DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
+  MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, Quaternion,
+  Scene, Shape, SphereGeometry, UnsignedByteType, Vector2, Vector3, WebGLRenderer,
 } from 'three';
-import type { Object3D } from 'three';
 import { createAssets } from './assets';
 import { GARDEN_MORNING, createGradePass } from './grade';
 import { chooseTier, pixelRatioFor, type Tier } from './quality';
@@ -35,8 +34,11 @@ export interface ViewInfo {
 
 export interface View {
   resize(): void;
-  /** Draws the picture between two simulation states. dt is the time since the last frame, in seconds. */
-  render(prev: PlayerState, curr: PlayerState, alpha: number, dt: number, atGoal: boolean): void;
+  /**
+   * Draws the picture between two simulation states. dt is the time since the last frame, in seconds, and
+   * `collected` says which trail candies are in the bag.
+   */
+  render(prev: PlayerState, curr: PlayerState, alpha: number, dt: number, atGoal: boolean, collected: readonly boolean[]): void;
   info(): ViewInfo;
 }
 
@@ -88,7 +90,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(sun);
 
   const candyPlace = buildCandy(chapter);
-  scene.add(buildGround(chapter), buildTrunks(chapter), candyPlace);
+  const trail = buildTrail(chapter);
+  const glitter = buildGlitter();
+  scene.add(buildGround(chapter), buildTrunks(chapter), candyPlace, trail.mesh, glitter.group);
   let candy = candyPlace.getObjectByName('candy')!;
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
@@ -199,9 +203,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   }
   resize();
 
-  function render(prev: PlayerState, curr: PlayerState, alpha: number, dt: number, atGoal: boolean): void {
+  function render(
+    prev: PlayerState, curr: PlayerState, alpha: number, dt: number, atGoal: boolean, collected: readonly boolean[],
+  ): void {
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
+    clock += dt;
+    trail.update(collected, x, y, dt, clock);
+    glitter.update(curr.bubble, x, y, clock);
 
     // The simulation says where to look; the view only smooths it.
     const want = cameraIntent(curr);
@@ -216,7 +225,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     turn += (facingAngle - turn) * ease(14, dt);
     if (curr.grounded) stride += Math.abs(curr.vx) * dt * 5.5;
     const swing = curr.grounded ? Math.sin(stride) * 0.75 * Math.min(1, Math.abs(curr.vx) / RUN_SPEED + 0.25) : 0.5;
-    const moving = Math.abs(curr.vx) > 0.05 || !curr.grounded;
+    const moving = Math.abs(curr.vx) > 0.05 || (!curr.grounded && curr.bubble === 0);
     elof.legLeft.rotation.z = moving ? swing : 0;
     elof.legRight.rotation.z = moving ? -swing : 0;
     if (doll) poseDoll(doll, curr, stride, dt);
@@ -237,7 +246,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
 
     // The ghost is a wooden toy come alive: it never bends. It turns towards Elof, sways, and taps a foot.
     if (ghost) {
-      clock += dt;
       // Exported from Blender it faces +z, the camera. A quarter turn faces it along the course.
       const towardsElof = x < ghost.position.x ? -Math.PI / 2 + 0.5 : Math.PI / 2 - 0.5;
       ghostTurn += (towardsElof - ghostTurn) * ease(6, dt);
@@ -330,7 +338,10 @@ function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number): 
 }
 
 function startState(chapter: ChapterData): PlayerState {
-  return { x: chapter.spawn.x, y: chapter.spawn.y, vx: 0, vy: 0, facing: 1, grounded: true, groundY: chapter.spawn.y };
+  return {
+    x: chapter.spawn.x, y: chapter.spawn.y, vx: 0, vy: 0, facing: 1, grounded: true, groundY: chapter.spawn.y,
+    standY: chapter.spawn.y, atEdge: false, bubble: 0,
+  };
 }
 
 /** The ground line, closed below and to the sides, as one extruded slab around the play plane (z = 0). */
@@ -366,6 +377,107 @@ function buildTrunks(chapter: ChapterData): Group {
     group.add(trunk);
   }
   return group;
+}
+
+/**
+ * The glitter bubble (plan §4.2): a golden sparkle shell, never a round gum bubble. A faint glow and a swarm
+ * of sparks that turn round Elof while it carries him. It is always in the scene, at no size, so its shaders
+ * are compiled with the first frames and not when he first falls.
+ */
+function buildGlitter() {
+  const SPARKS = 22;
+  const RADIUS = 0.7;
+  const group = new Group();
+  const glow = new Mesh(
+    new SphereGeometry(RADIUS, 20, 14),
+    new MeshBasicMaterial({ color: '#ffcf5a', transparent: true, opacity: 0.14, depthWrite: false, blending: AdditiveBlending }),
+  );
+  const sparks = new InstancedMesh(
+    new OctahedronGeometry(0.055),
+    new MeshBasicMaterial({ color: '#fff0b0', transparent: true, opacity: 0.95, depthWrite: false, blending: AdditiveBlending }),
+    SPARKS,
+  );
+  sparks.instanceMatrix.setUsage(DynamicDrawUsage);
+  glow.frustumCulled = false;
+  sparks.frustumCulled = false;
+  group.add(glow, sparks);
+  group.scale.setScalar(0);
+  const place = new Object3D();
+
+  /** `carried` is the bubble's progress from the simulation: 0 when there is none. */
+  function update(carried: number, elofX: number, elofY: number, clock: number): void {
+    // It gathers in the first tenth of the way and scatters in the last.
+    const size = carried <= 0 ? 0 : Math.min(1, carried / 0.1, (1 - carried) / 0.1 + 0.15);
+    group.scale.setScalar(size);
+    if (size === 0) return;
+    group.position.set(elofX, elofY + 0.5, 0);
+    for (let i = 0; i < SPARKS; i++) {
+      // Spread evenly over the shell, each on its own slow turn.
+      const up = 1 - (2 * (i + 0.5)) / SPARKS;
+      const ring = Math.sqrt(1 - up * up) * RADIUS;
+      const angle = i * 2.39996 + clock * (1.6 + (i % 5) * 0.35);
+      place.position.set(Math.cos(angle) * ring, up * RADIUS, Math.sin(angle) * ring);
+      place.rotation.set(clock * 3 + i, clock * 2.3 + i * 2, 0);
+      place.scale.setScalar(0.55 + 0.45 * Math.sin(clock * 9 + i * 1.3));
+      place.updateMatrix();
+      sparks.setMatrixAt(i, place.matrix);
+    }
+    sparks.instanceMatrix.needsUpdate = true;
+  }
+  return { group, update };
+}
+
+/** The bright colours of the karameller on Olov's poster. */
+const CANDY_COLOURS = ['#e8483f', '#f6c445', '#58b368', '#4a90d9', '#ef7fb0', '#f08a3c'];
+/** A collected candy flies into Elof in this long. */
+const CANDY_FLIGHT = 0.22;
+
+/**
+ * The trail candy: karameller in twisted wrappers, floating and turning. All of them are one instanced
+ * mesh, so the whole trail is one draw call however long it is.
+ */
+function buildTrail(chapter: ChapterData) {
+  const candy = chapter.candy;
+  // A wrapped sweet in profile: a flared twist, a neck, the sweet itself, a neck and a twist.
+  const profile = [[0.072, -0.19], [0.024, -0.115], [0.085, -0.064], [0.1, 0], [0.085, 0.064], [0.024, 0.115], [0.072, 0.19]];
+  const geometry = new LatheGeometry(profile.map(([radius, along]) => new Vector2(radius, along)), 14);
+  geometry.rotateZ(Math.PI / 2);
+  // Both sides: the twists are open at their ends.
+  const mesh = new InstancedMesh(geometry, new MeshStandardMaterial({ roughness: 0.32, side: DoubleSide }), Math.max(1, candy.length));
+  mesh.count = candy.length;
+  mesh.instanceMatrix.setUsage(DynamicDrawUsage);
+  // The trail runs the length of the course, so it is never outside the picture as a whole.
+  mesh.frustumCulled = false;
+  const colour = new Color();
+  candy.forEach((_, i) => mesh.setColorAt(i, colour.set(CANDY_COLOURS[i % CANDY_COLOURS.length]!)));
+  /** How far each collected candy has flown, from 0 to 1; -1 while it still floats in its place. */
+  const flown = candy.map(() => -1);
+  const place = new Object3D();
+
+  function update(collected: readonly boolean[], elofX: number, elofY: number, dt: number, clock: number): void {
+    for (let i = 0; i < candy.length; i++) {
+      const c = candy[i]!;
+      if (collected[i] && flown[i]! < 0) flown[i] = 0;
+      let x = c.x;
+      let y = c.y + Math.sin(clock * 2.2 + i * 1.7) * 0.045;
+      let size = 1;
+      if (flown[i]! >= 0) {
+        const t = Math.min(1, flown[i]! + dt / CANDY_FLIGHT);
+        flown[i] = t;
+        // It swells for a moment, then shrinks into his chest.
+        x = lerp(x, elofX, t * t);
+        y = lerp(y, elofY + 0.55, t * t);
+        size = (1 + 0.5 * Math.sin(Math.PI * Math.min(1, t * 2))) * (1 - t * t);
+      }
+      place.position.set(x, y, 0);
+      place.rotation.set(0.35, clock * 1.5 + i * 0.9, Math.sin(clock * 1.3 + i) * 0.3);
+      place.scale.setScalar(size);
+      place.updateMatrix();
+      mesh.setMatrixAt(i, place.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+  return { mesh, update };
 }
 
 /** The big candy at the end of the course, on its stick. */

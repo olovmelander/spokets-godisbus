@@ -7,6 +7,7 @@ import { tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
 import { createBench } from './ui/bench';
 import { createDebug, type Debug } from './ui/debug';
+import { createHud } from './ui/hud';
 import { mountShell } from './ui/shell';
 import './ui/ui.css';
 
@@ -47,6 +48,7 @@ function start(): void {
   }
 
   const game = new Game(testbana);
+  const hud = createHud(byId('bag'), byId('bagCount'), testbana.candy.length);
   const controls = byId('controls');
   const hint = byId('hint');
 
@@ -88,7 +90,7 @@ function start(): void {
   const debug: Debug | null = debugOn ? createDebug(byId('debug')) : null;
   if (debugOn) {
     window.__godis = {
-      state: () => ({ ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], device }),
+      state: () => ({ ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount, bubbles: game.sim.bubbles, device }),
       info: () => ({ ...view.info() }),
     };
   }
@@ -108,7 +110,8 @@ function start(): void {
     if (bench && !bench.done) ({ held, edges } = bench.play(game.sim.curr, time));
     game.frame(dt, { x: held.x, hopHeld: held.hopHeld }, edges);
     const atGoal = game.sim.flags.has('goal');
-    view.render(game.sim.prev, game.sim.curr, game.alpha, dt, atGoal);
+    view.render(game.sim.prev, game.sim.curr, game.alpha, dt, atGoal, game.sim.collected);
+    hud.candy(game.sim.candyCount);
     if (atGoal && device !== 'touch') hint.textContent = sv.goal;
 
     if (!shown) {
@@ -131,6 +134,7 @@ function start(): void {
           `tier ${i.tier} · canvas ${i.width}×${i.height} · pixel ratio ${i.pixelRatio.toFixed(2)}`,
           `models ${i.models.join(', ') || 'none yet'} · KTX2 textures ${i.compressedTextures}`,
           `x ${n(p.x)} y ${n(p.y)} · vx ${n(p.vx)} vy ${n(p.vy)} · ${p.grounded ? 'on the ground' : 'in the air'}`,
+          `candy ${game.sim.candyCount} of ${testbana.candy.length} · bubbles ${game.sim.bubbles}${p.atEdge ? ' · at an edge' : ''}`,
         ];
       });
     }
