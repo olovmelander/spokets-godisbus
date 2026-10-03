@@ -130,20 +130,25 @@ revised 19 September 2026):
      precision on 8 GB, which is what Olov's RTX 3070 laptop card has. It has a Windows installer (a 327 MB
      download, which then fetches Python 3.11, PyTorch and the models), a local web page and a local API.
    - **Where it runs: Olov's other computer, which has an RTX 5080** (16 GB; he said so on 3 October).
-   - **What to run there, best first** (Olov asked whether anything is better than TRELLIS):
-     1. **Pixal3D** (Tsinghua University and Tencent ARC Lab, SIGGRAPH 2026). MIT licence, with no limit on
-        where it may be used; the parts it builds on keep their own licences. It is built on TRELLIS.2 and
-        follows the picture it is given more closely. It gives a GLB with PBR textures, and since September
-        2026 it takes several views of the same thing. It has a low-memory mode at 1024 resolution; how much
-        memory that needs is not stated.
-     2. **TRELLIS.2** (Microsoft, MIT). Finer than the first TRELLIS, with PBR textures, but one picture only.
-        Microsoft asks for 24 GB and Linux.
-     3. **TRELLIS,** the first one, through the fork's Windows installer (CUDA 12.8 and PyTorch 2.7, which the
-        50-series cards need). 16 GB is what Microsoft asks for, and it takes several views.
-   - **ComfyUI is the way to run the first two on Windows.** Both run in ComfyUI's own core, which has its own
-     replacement for the two parts whose licences forbid commercial use. Not checked: that they fit in 16 GB,
-     and that ComfyUI's nodes take several views. (The session first wrote that ComfyUI added nothing. That
-     was wrong.)
+   - **What to run there, in this order:**
+     1. **TRELLIS.2** (Microsoft). MIT licence, open to download, 16 GB of model files. Finer than the first
+        TRELLIS, with PBR textures, but one picture only. Microsoft asks for 24 GB of graphics memory and
+        Linux. ComfyUI runs it on Windows in its own core, with its own replacement for the two parts whose
+        licences forbid commercial use. Not checked: that it fits in 16 GB.
+     2. **TRELLIS,** the first one, through the fork's Windows installer (CUDA 12.8 and PyTorch 2.7, which the
+        50-series cards need). MIT, open to download, 3 GB of model files. 16 GB is what Microsoft asks for,
+        and it takes several views.
+   - **Pixal3D is held back until Olov decides.** (The session first put it at the top of this list, and
+     wrote that ComfyUI added nothing. Both were wrong.)
+     - What speaks for it: it is built on TRELLIS.2, follows the picture more closely by ComfyUI's account,
+       takes several views since September 2026, and ComfyUI runs it in its core.
+     - What speaks against it: it is Tencent's. Its licence file is the MIT licence (copyright 2026 Tencent)
+       and names no countries, but its model card carries `extra_gated_eu_disallowed: true`, the marker for
+       keeping a model from people in the EU. The files are not gated at the moment, so the marker does
+       nothing. A community integration describes the model as non-commercial and not for use in the EU.
+       Tencent's Hunyuan3D is forbidden here for a limit of that kind.
+     - It would not fit the laptop anyway: community figures give about 10 GB of graphics memory for a
+       preview and 14 to 17 GB for a good model, and about 50 GB of disk.
    - **The laptop with the RTX 3070** could run the fork in 8 GB, but drive C: has 11 GB free of 953 and the
      install needs roughly 30 GB (an estimate).
    - **Getting the pictures there:** the three views, or the whole `photos/` folder, go from one computer to

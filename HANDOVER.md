@@ -243,9 +243,11 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
      not open the pages.
    - **(b) Meshy Pro all the same,** if you and the parents accept the training clause.
    - **(c) An open model on your own computer: this is the plan.** You asked for an open, local alternative,
-     and your other computer has an RTX 5080 with 16 GB. The order to try, best first: Pixal3D, then
-     TRELLIS.2, both through ComfyUI, then the first TRELLIS (art bible §1.6 says why). All three are MIT,
-     free, and nothing is uploaded. None is tried yet; whether the first two fit in 16 GB is not known.
+     and your other computer has an RTX 5080 with 16 GB. The order to try: TRELLIS.2 through ComfyUI, then
+     the first TRELLIS. Both are Microsoft's, MIT, free, and nothing is uploaded. Neither is tried yet, and
+     whether TRELLIS.2 fits in 16 GB is not known. **Pixal3D may be better but is held back for you to
+     decide:** its licence file is MIT, yet its model card carries a marker against use in the EU (art bible
+     §1.6).
      - **What a session on that computer needs:** this repository cloned; Elof's three views from
        `art/private/elof/image-to-3d/` (or the whole `photos/` folder), carried over on a USB stick or the
        home network, never through git; and about 30 GB of free disk.
