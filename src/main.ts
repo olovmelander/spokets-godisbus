@@ -10,7 +10,7 @@ import { mapSvg, mapState } from './ui/map';
 import { createMemory } from './ui/memory';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
-import { tierFromQuery } from './render/quality';
+import { createAutoTier, tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
 import { settingsFor, simOptions, tempoOf, type Settings } from './save/settings';
 import { codeFor } from './save/codes';
@@ -309,6 +309,9 @@ function start(): void {
 
   // ?bench plays the course by itself for 30 seconds and then shows numbers to paste into a session.
   const bench = benchOn ? createBench(30, chapter) : null;
+  // Auto (plan §6.5): the picture starts at Mellan, and goes up to Hög if the device keeps up. Not while
+  // ?bench measures, and not when ?tier= asks for one.
+  const auto = !benchOn && tierFromQuery(params.get('tier')) === null && view.info().tier === 'mid' ? createAutoTier() : null;
 
   /** "Nästa kapitel": the saved game moves on to the next chapter's start, and the page loads it. */
   function goOn(id: string): void {
@@ -358,6 +361,10 @@ function start(): void {
       game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld }, askedForHelp ? { ...edges, helper: true } : edges);
       askedForHelp = false;
       playTime += dt * game.tempo;
+      if (auto && !auto.settled) {
+        const next = auto.feed(dt);
+        if (next !== 'low') view.setTier(next);
+      }
       const now = hear();
       for (const cue of cuesFor(heard, now, memory)) audio.play(cue);
       heard = now;

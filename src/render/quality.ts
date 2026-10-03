@@ -24,10 +24,86 @@ export function tierFromQuery(value: string | null): Tier | null {
 
 /**
  * The tier to start in. A device that can't render to float buffers gets Low, whatever was asked for.
- * Auto is Mid for now: the two-second measurement that can raise it to High or lower it to Low needs a
- * scene worth measuring, and arrives with the golden frames.
+ * Auto starts in Mid, and may go up to High once play has shown that the device keeps up: see `createAutoTier`.
  */
 export function chooseTier(asked: Tier | null, floatBuffers: boolean): Tier {
   if (!floatBuffers) return 'low';
   return asked ?? 'mid';
+}
+
+/** Auto measures this many seconds of play at Mid, after the first second, before it tries High. */
+export const AUTO_SETTLE = 4;
+/** And this many at High, after the half second in which the picture changes size. */
+export const AUTO_TRIAL = 4;
+/** A frame is late when it takes more than this many times the usual frame at Mid. */
+export const AUTO_LATE = 1.5;
+/** High is kept when at most this share of its frames were late. */
+export const AUTO_LATE_SHARE = 0.1;
+/** Slower than this at Mid, in seconds a frame, and High is never tried. */
+export const AUTO_TOO_SLOW = 1 / 45;
+
+export interface AutoTier {
+  /** Takes the time one frame of play took, in seconds, and tells the tier to draw the next one in. */
+  feed(dt: number): Tier;
+  readonly tier: Tier;
+  /** True once it has made up its mind: from then on the tier never changes. */
+  readonly settled: boolean;
+}
+
+const middle = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] ?? 0;
+
+/**
+ * Auto (plan §6.5). High draws more pixels than Mid and nothing else, so the two can be changed between
+ * while the game runs. The game starts at Mid, measures how long its frames take, tries High, and keeps it
+ * if the frames still come on time. If they don't, it goes back to Mid. One try: the picture never goes
+ * back and forth.
+ */
+export function createAutoTier(): AutoTier {
+  let tier: Tier = 'mid';
+  let phase: 'warm' | 'measure' | 'change' | 'trial' | 'done' = 'warm';
+  let time = 0;
+  let usual = 0;
+  let frames: number[] = [];
+  const to = (next: typeof phase) => {
+    phase = next;
+    time = 0;
+    frames = [];
+  };
+  return {
+    feed(dt) {
+      if (phase === 'done' || !(dt > 0)) return tier;
+      time += dt;
+      if (phase === 'warm') {
+        // The first second has the loading in it: it says nothing.
+        if (time >= 1) to('measure');
+      } else if (phase === 'measure') {
+        frames.push(dt);
+        if (time >= AUTO_SETTLE) {
+          usual = middle(frames);
+          if (usual > AUTO_TOO_SLOW) to('done');
+          else {
+            tier = 'high';
+            to('change');
+          }
+        }
+      } else if (phase === 'change') {
+        // The frame in which the picture changes size is slow on any device.
+        if (time >= 0.5) to('trial');
+      } else {
+        frames.push(dt);
+        if (time >= AUTO_TRIAL) {
+          const late = frames.filter((frame) => frame > usual * AUTO_LATE).length;
+          if (late > frames.length * AUTO_LATE_SHARE) tier = 'mid';
+          to('done');
+        }
+      }
+      return tier;
+    },
+    get tier() {
+      return tier;
+    },
+    get settled() {
+      return phase === 'done';
+    },
+  };
 }

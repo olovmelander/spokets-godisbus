@@ -61,8 +61,20 @@
   - `src/render/grade.ts`: on Mid and High the scene goes to r186's HDR buffer, and one pass applies the place's
     grade, a vignette and film grain. The renderer tone-maps after it. Low draws straight to the canvas.
   - The browser test covers all three tiers, and checks that no shader is compiled during play (gate 6).
-  - **Not yet:** Auto's two-second measurement, High's bloom and depth blur, Low's grade inside the materials,
-    the LUT per place, `docs/art-bible.md`, and the two golden frames. They are the rest of Stage 0b.
+  - **Not yet:** High's bloom and depth blur, Low's grade inside the materials, and the LUT per place.
+  - **Auto finds its own level** (4 October, branch `stage-0b-auto-tier`; plan §6.5). What you see: on a
+    device that keeps up, the picture gets sharper about five seconds into play, and stays so. High draws
+    more pixels than Mid and nothing else, so the game can change between them while it runs.
+    - It starts at Mid, measures four seconds of play, tries High for four, and keeps it if at most a
+      tenth of the frames were late. Otherwise it goes back to Mid. One try a session: it never goes back
+      and forth. A device already under 45 frames a second at Mid is never tried. `?tier=` and `?bench`
+      switch it off. The logic is `createAutoTier` in `src/render/quality.ts`, with no rendering in it.
+    - Tests: `tests/unit/auto-tier.test.ts` (7). Checked on Olov's computer with its own graphics card (the
+      integrated Radeon, through headless Chromium): at 1440×900 the canvas went from 1600×1000 to
+      2039×1274 after five seconds, and no shader was compiled. The browser test runs on software
+      rendering, which is too slow at Mid to be tried, so it does not see the change.
+    - **Not measured:** an iPad or a phone. Auto never goes *down* to Low: a device too slow for Mid needs
+      `?tier=low` until that is built.
   - **The look of a place, and the first golden frame** (3 October, branch `stage-0b-look`; art bible §2).
     Olov asked twice when the graphics come, so the look-dev was taken up as soon as the story played through
     in greybox.
