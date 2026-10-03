@@ -126,8 +126,8 @@ export const garden: ChapterData = {
   // The hose hangs over the deck's edge. The ladybird, turned over, flies to it: until then he doesn't see it.
   climbs: [{ x: 46.3, bottom: 0, top: 6, exit: -1, needs: 'ladybird' }],
   spots: [
-    { id: 'ladybird', at: { x: 41, y: 6 }, verb: 'turn' },
-    { id: 'moa', at: { x: 166, y: 0 }, verb: 'call', word: 'callMoa', ride: 'plane' },
+    { id: 'ladybird', look: 'ladybird', at: { x: 41, y: 6 }, verb: 'turn' },
+    { id: 'moa', look: 'sign', at: { x: 166, y: 0 }, verb: 'call', word: 'callMoa', ride: 'plane' },
   ],
   hooks: [
     // The first swing is over flat ground: a miss costs nothing.
@@ -137,9 +137,9 @@ export const garden: ChapterData = {
   ],
   movers: [
     // A curl of shaving on the wall's top, with a red ring: pulled down, it is the step up.
-    { id: 'curl', width: 1.2, height: 1.5, verb: 'pull', ring: { x: -0.5, y: 0.3 }, stops: [{ x: 134.7, y: 3.3 }, { x: 133.3, y: 0 }] },
+    { id: 'curl', look: 'curl', width: 1.2, height: 1.5, verb: 'pull', ring: { x: -0.5, y: 0.3 }, stops: [{ x: 134.7, y: 3.3 }, { x: 133.3, y: 0 }] },
     // A second curl on the top: two pushes lay it across the gap.
-    { id: 'bridge', width: 3.1, height: 0.4, verb: 'push', stops: [{ x: 137.6, y: 3.3 }, { x: 139.4, y: 3.3 }, { x: 141.4, y: 2.9 }] },
+    { id: 'bridge', look: 'curl', width: 3.1, height: 0.4, verb: 'push', stops: [{ x: 137.6, y: 3.3 }, { x: 139.4, y: 3.3 }, { x: 141.4, y: 2.9 }] },
   ],
   drips: [
     { at: { x: 111, y: 0 }, every: 1.8, first: 0.2 },

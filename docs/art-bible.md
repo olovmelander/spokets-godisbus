@@ -276,7 +276,8 @@ Rules that hold for every place:
 - **The haze begins behind the play plane** and takes the mid-ground with distance. The far plates have their
   haze painted in.
 - **No hard edge on anything out of focus.** Far plates, shrubs, foreground and beams fade at every side.
-- **Red is the candy's, the hook's and the lingonberries'.** Nothing else in a place is red.
+- **Red is the candy's, the hook's and the lingonberries'.** Nothing else in a place is red, except what is
+  red by nature and small: the ladybird, a crane's crown, the heart on Mamma's mug.
 - **Nothing is compiled during play.** The first frames draw the whole chapter (gate 6).
 
 ### 2.3 One palette per place
@@ -321,7 +322,23 @@ If H1a fails twice: more painted 2D plates and fewer 3D layers, flatter lighting
 §5.6). In terms of §2.2: the mid-ground becomes plates too, the play plane keeps the bank and loses most of its
 scatter, and the grade does more of the work.
 
-### 2.7 What the look still lacks
+### 2.7 Stand-ins for things and animals
+
+Until the animals and the family are designed in Blender (plan §5.6), a chapter says what a thing is (`look`
+on a thing on a rail, a thing to use, a ride), and `src/render/props.ts` builds a stand-in for it in code.
+Each should be recognisable at phone size, and none is final.
+
+- **Things on rails:** a plank, a block, a curl of shaving, a twig, the big spruce cone, a leaf, a dead pine
+  as a log, the first trägubbe.
+- **Things to use:** the ladybird on its back, kicking, which turns over and flies off; a lingonberry and a
+  crowberry to pick; the jay, which hops when it gets its berry; the ants; Pappa's seesaw; the lollipop; the
+  kneeling crane; the ringing cobbles; the bag; the golden geléhallon.
+- **What carries him:** Bertil's cap as a boat, the crane with beating wings, the ants. Moa's paper plane was
+  there before.
+- **A person is a sign on a stick,** in a colour of their own: Moa's denim blue, Pappa's green, Bertil's
+  orange, Mamma's white with a heart. No likeness: the family's hands and figures are theirs to approve.
+
+### 2.8 What the look still lacks
 
 - Plates rendered in Blender after the landscape references, and scanned CC0 materials from Poly Haven for
   moss, bark and wood. What is there now is drawn in code and reads as stylized, not as photographed.

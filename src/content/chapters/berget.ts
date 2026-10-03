@@ -82,10 +82,10 @@ export const berget: ChapterData = {
     // He starts on the crane's back: it takes off at once.
     { id: 'flight', at: { x: 1, y: 0 }, verb: 'take', touch: true, ride: 'flight' },
     // The cobbles from the old shore: each rings its note.
-    ...[98, 100, 102, 104, 106].map((x, i) => ({ id: `note:${i + 1}`, at: { x, y: 26.4 }, verb: 'take' as const, touch: true })),
+    ...[98, 100, 102, 104, 106].map((x, i) => ({ id: `note:${i + 1}`, look: 'cobble' as const, at: { x, y: 26.4 }, verb: 'take' as const, touch: true })),
     { id: 'lift', at: { x: 143.8, y: 26.4 }, verb: 'take', word: 'lift' },
   ],
-  rides: [{ id: 'flight', ...FLIGHT }],
+  rides: [{ id: 'flight', look: 'crane', ...FLIGHT }],
   gusts: [{ from: BOULDERS[0]!, to: BOULDERS[BOULDERS.length - 1]!, y: 26.4, every: 4, length: 1.4, first: 0.5, shelters: BOULDERS }],
   ghost: [
     { at: { x: 76.5, y: 24 } },

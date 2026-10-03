@@ -6,6 +6,7 @@ import {
 } from 'three';
 import { createAssets } from './assets';
 import { PLACES, dress } from './dressing';
+import { moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, createGradePass } from './grade';
 import { chooseTier, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
@@ -147,6 +148,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const glints = buildGlints(chapter);
   const plane = buildPlane();
   scene.add(glints.group, plane);
+  // The things that stand at spots, and what carries him on each ride, where the chapter says what they are.
+  const things = (chapter.spots ?? []).map((spot) => ({ spot, prop: spotProp(spot) }));
+  for (const thing of things) if (thing.prop) scene.add(thing.prop.group);
+  const carriers = (chapter.rides ?? []).map((ride) => {
+    const prop = ride.look && ride.look !== 'plane' && ride.look !== 'none' ? rideProp(ride.look) : null;
+    if (prop) {
+      prop.scale.setScalar(0);
+      scene.add(prop);
+    }
+    return { ride, prop };
+  });
   const moverMeshes = buildMovers(chapter);
   const rain = buildRain(chapter.drips?.length ?? 0);
   const cones = buildCones(chapter.rollers?.length ?? 0);
@@ -303,9 +315,26 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     follower.update(flags, curr, clock, dt);
     // On a ride he sits on Moa's paper plane, which points the way it flies.
     const riding = curr.mode === 'ride';
-    plane.scale.setScalar(riding ? Math.min(1, curr.t / 0.05, (1 - curr.t) / 0.05) : 0);
+    // Which ride he is on is read from where he is: no two rides share a stretch.
+    const carrier = riding ? carriers.find((c) => x >= c.ride.from.x - 0.5 && x <= c.ride.to.x + 0.5) : undefined;
+    const size = riding ? Math.min(1, curr.t / 0.05, (1 - curr.t) / 0.05) : 0;
+    const heading = riding ? Math.atan2(curr.y - prev.y, Math.max(1e-4, curr.x - prev.x)) : 0;
+    plane.scale.setScalar(carrier && carrier.ride.look !== undefined && carrier.ride.look !== 'plane' ? 0 : size);
     plane.position.set(x, y - 0.05, 0);
-    plane.rotation.z = riding ? Math.atan2(curr.y - prev.y, Math.max(1e-4, curr.x - prev.x)) : 0;
+    plane.rotation.z = heading;
+    for (const c of carriers) {
+      if (!c.prop) continue;
+      c.prop.scale.setScalar(c === carrier ? size : 0);
+      c.prop.position.set(x, y - 0.05, 0);
+      // A boat lies level on the water; a bird points the way it flies, and beats its wings.
+      c.prop.rotation.z = c.ride.look === 'cap' ? Math.sin(clock * 2.4) * 0.05 : heading * 0.6;
+      const beat = Math.sin(clock * 7) * 0.5;
+      const near = c.prop.getObjectByName('wingNear');
+      const far = c.prop.getObjectByName('wingFar');
+      if (near) near.rotation.x = -beat;
+      if (far) far.rotation.x = beat;
+    }
+    for (const thing of things) thing.prop?.update(flags.has(thing.spot.id), clock, dt);
     glitter.update(curr.bubble, x, y, clock);
     // He hangs by his hands, his body along the lace.
     const hang = curr.hook ? Math.atan2(curr.hook.x - x, curr.hook.y - (y + 0.5)) : 0;
@@ -857,9 +886,11 @@ function buildMovers(chapter: ChapterData): Group[] {
   const red = new MeshStandardMaterial({ color: '#d8382c', roughness: 0.35 });
   return (chapter.movers ?? []).map((mover) => {
     const group = new Group();
+    // As what it is, where the chapter says so; else a plain box.
+    const prop = moverProp(mover);
     const box = new Mesh(new BoxGeometry(mover.width, mover.height, 1.1), wood);
     box.position.y = mover.height / 2;
-    group.add(box);
+    group.add(prop ?? box);
     if (mover.verb === 'pull' && mover.on === undefined) {
       const at = mover.ring ?? { x: 0, y: mover.height };
       const ring = new Mesh(new TorusGeometry(0.17, 0.04, 10, 28), red);

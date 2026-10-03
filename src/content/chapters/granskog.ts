@@ -128,29 +128,29 @@ export const granskog: ChapterData = {
     { x: 66.3, bottom: 0, top: 10, exit: -1 },
   ],
   spots: [
-    { id: 'berry', at: { x: 33, y: 0 }, verb: 'take', word: 'pick' },
-    { id: 'jay', at: { x: 38, y: 0 }, verb: 'give', needs: 'berry' },
-    { id: 'antlift', at: { x: 58.6, y: 4 }, verb: 'take', word: 'rideAnts', needs: 'placed:twig', ride: 'antlift' },
+    { id: 'berry', look: 'berry', at: { x: 33, y: 0 }, verb: 'take', word: 'pick' },
+    { id: 'jay', look: 'jay', at: { x: 38, y: 0 }, verb: 'give', needs: 'berry' },
+    { id: 'antlift', look: 'ants', at: { x: 58.6, y: 4 }, verb: 'take', word: 'rideAnts', needs: 'placed:twig', ride: 'antlift' },
     // The loose cone at the top of the slope: touching it sets the avalanche off.
     { id: 'avalanche', at: { x: 70.4, y: 0 }, verb: 'take', touch: true },
-    { id: 'seesaw', at: { x: 108.2, y: -8 }, verb: 'call', word: 'callPappa' },
+    { id: 'seesaw', look: 'sign', at: { x: 108.2, y: -8 }, verb: 'call', word: 'callPappa' },
     // The low end of the seesaw. Pappa drops the cone on the high end, and Elof flies.
-    { id: 'launch', at: { x: 113.2, y: -8 }, verb: 'take', word: 'standOn', needs: 'placed:cone', ride: 'launch' },
-    { id: 'cap', at: { x: 154.6, y: -8 }, verb: 'call', word: 'callBertil', ride: 'cap' },
+    { id: 'launch', look: 'seesaw', at: { x: 113.2, y: -8 }, verb: 'take', word: 'standOn', needs: 'placed:cone', ride: 'launch' },
+    { id: 'cap', look: 'sign', at: { x: 154.6, y: -8 }, verb: 'call', word: 'callBertil', ride: 'cap' },
   ],
   movers: [
     // The twig across the ants' road: pulled back towards him, the road is clear. It settles into the moss,
     // low enough to walk over.
-    { id: 'twig', width: 2.4, height: 0.5, verb: 'pull', ring: { x: -1, y: 0.7 }, stops: [{ x: 57.2, y: 4 }, { x: 53.4, y: 3.75 }] },
+    { id: 'twig', look: 'twig', width: 2.4, height: 0.5, verb: 'pull', ring: { x: -1, y: 0.7 }, stops: [{ x: 57.2, y: 4 }, { x: 53.4, y: 3.75 }] },
     // The big cone: pushed to Pappa's hand at the seesaw, once he has been called.
-    { id: 'cone', width: 1.1, height: 1.5, verb: 'push', needs: 'seesaw', stops: [{ x: 110, y: -8 }, { x: 112.2, y: -8 }, { x: 114.6, y: -8 }] },
+    { id: 'cone', look: 'cone', width: 1.1, height: 1.5, verb: 'push', needs: 'seesaw', stops: [{ x: 110, y: -8 }, { x: 112.2, y: -8 }, { x: 114.6, y: -8 }] },
     // The ghost in the eddy, on a leaf: the lace pulls it up to the stone, and the leaf is the way across.
-    { id: 'rescue', width: 2.9, height: 0.3, verb: 'pull', ring: { x: 0, y: 0.9 }, stops: [{ x: 186.8, y: -9.3 }, { x: 186.8, y: -7.8 }] },
+    { id: 'rescue', look: 'leaf', width: 2.9, height: 0.3, verb: 'pull', ring: { x: 0, y: 0.9 }, stops: [{ x: 186.8, y: -9.3 }, { x: 186.8, y: -7.8 }] },
   ],
   rides: [
-    { id: 'antlift', ...ANT_LIFT },
-    { id: 'launch', ...LAUNCH },
-    { id: 'cap', ...CAP },
+    { id: 'antlift', look: 'ants', ...ANT_LIFT },
+    { id: 'launch', look: 'none', ...LAUNCH },
+    { id: 'cap', look: 'cap', ...CAP },
   ],
   // Three cones on the slope at a time, one setting off every 1.8 s. The first is the one he nudged: it rolls
   // away ahead of him, and the rest come from behind.

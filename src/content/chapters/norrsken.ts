@@ -66,23 +66,23 @@ export const norrsken: ChapterData = {
   ],
   spots: [
     { id: 'lower', at: { x: 10.9, y: 0 }, verb: 'take', word: 'lowerLace' },
-    { id: 'crowberry', at: { x: 15.6, y: 0 }, verb: 'take', word: 'pick', needs: 'placed:tragubbe' },
+    { id: 'crowberry', look: 'crowberry', at: { x: 15.6, y: 0 }, verb: 'take', word: 'pick', needs: 'placed:tragubbe' },
     { id: 'eyes', at: { x: FIGURE + 1, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'crowberry' },
     // The ghost gives the bag back: it was only borrowed.
-    { id: 'bag', at: { x: GHOST - 0.6, y: 0 }, verb: 'take', word: 'takeBag', needs: 'eyes' },
+    { id: 'bag', look: 'bag', at: { x: GHOST - 0.6, y: 0 }, verb: 'take', word: 'takeBag', needs: 'eyes' },
     // Sharing: he decides himself who gets theirs first.
     { id: 'share:tragubbe', at: { x: FIGURE + 1, y: 0 }, verb: 'give', word: 'giveTragubbe', needs: 'bag' },
     { id: 'share:spoket', at: { x: GHOST - 0.6, y: 0 }, verb: 'give', word: 'giveGhost', needs: 'bag' },
-    { id: 'share:jay', at: { x: JAY, y: 0 }, verb: 'give', word: 'giveJay', needs: 'bag' },
-    { id: 'taste', at: { x: 26.6, y: 0 }, verb: 'take', word: 'taste', needs: 'shared' },
-    { id: 'home', at: { x: 33, y: 0 }, verb: 'take', word: 'goHome', needs: 'taste', ride: 'home' },
+    { id: 'share:jay', look: 'jay', at: { x: JAY, y: 0 }, verb: 'give', word: 'giveJay', needs: 'bag' },
+    { id: 'taste', look: 'gold', at: { x: 26.6, y: 0 }, verb: 'take', word: 'taste', needs: 'shared' },
+    { id: 'home', look: 'sign', at: { x: 33, y: 0 }, verb: 'take', word: 'goHome', needs: 'taste', ride: 'home' },
   ],
   sets: [{ flag: 'shared', when: ['share:tragubbe', 'share:spoket', 'share:jay'] }],
   movers: [
     // The first trägubbe, deep in the crack: two pulls on the lace, and it stands on the rock.
-    { id: 'tragubbe', width: 0.3, height: 0.28, verb: 'pull', needs: 'lower', ring: { x: 0, y: 0.5 }, stops: [{ x: FIGURE, y: -2.6 }, { x: FIGURE, y: -1.3 }, { x: FIGURE, y: 0 }] },
+    { id: 'tragubbe', look: 'figure', width: 0.3, height: 0.28, verb: 'pull', needs: 'lower', ring: { x: 0, y: 0.5 }, stops: [{ x: FIGURE, y: -2.6 }, { x: FIGURE, y: -1.3 }, { x: FIGURE, y: 0 }] },
   ],
-  rides: [{ id: 'home', ...HOME }],
+  rides: [{ id: 'home', look: 'none', ...HOME }],
   night: { after: 'taste' },
   ghost: [
     // It is his partner now: it stays where each thing is done.
