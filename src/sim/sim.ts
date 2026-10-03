@@ -5,10 +5,11 @@ import {
   RUN_AFTER, RUN_DEFLECTION, RUN_SPEED, SAFE_AFTER, SAFE_REACH, SLIDE_REACH, SLIDE_TIME, STEEP_SLIDE_SPEED, STEP,
   STEP_HEIGHT, STOP_WITHIN, WALK_DEFLECTION, WALK_SPEED,
 } from './constants';
+import { CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER } from './constants';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
-import type { ChapterData, Climb, Hook, Mode, PlayerState, SimOptions, StepInput, Vec, Verb } from './types';
+import type { ChapterData, Climb, Hook, Jump, Mode, PlayerState, SimOptions, SimStart, StepInput, Vec, Verb } from './types';
 
 // 1 EL is the length unit. This scales Box2D's tolerances to a hero who is one unit tall (plan §6.4).
 Settings.lengthUnitsPerMeter = 0.2;
@@ -43,7 +44,7 @@ type State =
   | { kind: 'slide'; climb: Climb; fromX: number; t: number }
   /** `angle` is from straight down, positive to the right; `speed` is its rate; `letGo` counts from Hoppa, or is -1. */
   | { kind: 'swing'; hook: Hook; length: number; to: number; angle: number; speed: number; letGo: number }
-  | { kind: 'fly'; fromX: number; fromY: number; vx: number; vy: number; toX: number; toY: number; t: number };
+  | { kind: 'fly'; fromX: number; fromY: number; vx: number; vy: number; toX: number; toY: number; time: number; t: number };
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -64,6 +65,10 @@ export class Sim {
   candyCount = 0;
   /** How many times the glitter bubble has carried him back. It costs him nothing (plan §4.2). */
   bubbles = 0;
+  /** The last big candy he reached, by its place in chapter.checkpoints, or -1 before the first. */
+  checkpoint = -1;
+  /** The settings that change the rules. They may be changed while the game is played. */
+  options: SimOptions;
   prev: PlayerState;
   curr: PlayerState;
 
@@ -72,6 +77,8 @@ export class Sim {
   private readonly shape: Fixture;
   private readonly climbs: Climb[];
   private readonly hooks: Hook[];
+  private readonly checkpoints: Vec[];
+  private readonly jumps: Jump[];
   private state: State = { kind: 'free' };
   /** True in the air after a swing: he keeps the speed it gave him, where a jump's speed follows the stick. */
   private thrown = false;
@@ -101,7 +108,14 @@ export class Sim {
   /** Where the bubble is taking him. */
   private readonly safe: Vec;
 
-  constructor(readonly chapter: ChapterData, readonly options: SimOptions = {}) {
+  constructor(readonly chapter: ChapterData, options: SimOptions = {}, start: SimStart = {}) {
+    this.options = options;
+    this.checkpoints = chapter.checkpoints ?? [];
+    this.jumps = chapter.jumps ?? [];
+    // A saved game starts at its big candy. One the chapter doesn't know means the chapter's start.
+    const saved = start.checkpoint !== undefined ? this.checkpoints[start.checkpoint] : undefined;
+    const spawn = saved ?? chapter.spawn;
+    if (saved) this.checkpoint = start.checkpoint!;
     this.world = new World({ gravity: new Vec2(0, -GRAVITY), allowSleep: false });
 
     const ground = this.world.createBody();
@@ -112,7 +126,7 @@ export class Sim {
 
     this.body = this.world.createBody({
       type: 'dynamic',
-      position: new Vec2(chapter.spawn.x, chapter.spawn.y + SKIN),
+      position: new Vec2(spawn.x, spawn.y + SKIN),
       fixedRotation: true,
       allowSleep: false,
     });
@@ -135,11 +149,17 @@ export class Sim {
     this.climbs = chapter.climbs ?? [];
     this.hooks = chapter.hooks ?? [];
     this.collected = chapter.candy.map(() => false);
-    this.standY = chapter.spawn.y;
-    this.fallTop = chapter.spawn.y;
-    this.safe = { x: chapter.spawn.x, y: chapter.spawn.y };
-    this.last = { x: chapter.spawn.x, y: chapter.spawn.y };
-    this.stood = Array.from({ length: SAFE_STEPS }, () => ({ x: chapter.spawn.x, y: chapter.spawn.y }));
+    for (const i of start.collected ?? []) {
+      if (this.collected[i] === false) {
+        this.collected[i] = true;
+        this.candyCount++;
+      }
+    }
+    this.standY = spawn.y;
+    this.fallTop = spawn.y;
+    this.safe = { x: spawn.x, y: spawn.y };
+    this.last = { x: spawn.x, y: spawn.y };
+    this.stood = Array.from({ length: SAFE_STEPS }, () => ({ x: spawn.x, y: spawn.y }));
     this.curr = this.read(false);
     this.prev = this.curr;
   }
@@ -172,6 +192,20 @@ export class Sim {
     if (this.curr.x >= this.chapter.goalX) this.flags.add('goal');
   }
 
+  /**
+   * "Jag har fastnat": the glitter carries him back to the last big candy, or to the chapter's start.
+   * Nothing he has found or done is undone (plan §4.5).
+   */
+  toCheckpoint(): void {
+    if (this.state.kind === 'bubble') return;
+    const to = this.checkpoints[this.checkpoint] ?? this.chapter.spawn;
+    this.safe.x = to.x;
+    this.safe.y = to.y;
+    this.carry(true);
+    this.state = { kind: 'bubble', fromX: this.curr.x, fromY: this.curr.y, t: 0 };
+    this.curr = { ...this.curr, mode: 'bubble', bubble: Number.MIN_VALUE, verb: null, hook: null };
+  }
+
   // --- taking hold --------------------------------------------------------------------------------------
 
   /** What he takes hold of this step, if anything, and what Använd would do. */
@@ -194,6 +228,16 @@ export class Sim {
       this.state = { kind: 'slide', climb: below, fromX: p.x, t: 0 };
       this.verb = null;
       return;
+    }
+
+    // Lätta hopp: at a marked edge the jump is made for him, and steered to where it lands.
+    if (this.options.easyJumps && p.grounded && dir !== 0) {
+      const reach = input.hop ? EASY_JUMP_STEER : EASY_JUMP_REACH;
+      const jump = this.jumps.find((j) => j.dir === dir && Math.abs(j.at.y - p.y) < 0.3 && (j.at.x - p.x) * dir >= -0.05 && (j.at.x - p.x) * dir <= reach);
+      if (jump && (input.hop || Math.abs(p.vx) > WALK_SPEED * 0.5)) {
+        this.flyTo(jump.land, Math.min(0.8, Math.max(0.45, Math.hypot(jump.land.x - p.x, jump.land.y - p.y) / 4.5)));
+        return;
+      }
     }
 
     // A hose: he takes hold when he walks into it, from either side, or pushes up where it hangs.
@@ -296,7 +340,7 @@ export class Sim {
     // Walking, he never steps over an edge with a longer drop than he can land: he stops there and looks
     // down. At a run he goes over, so a running jump needs no special care (plan §4.2).
     this.atEdge = false;
-    if (grounded && dir !== 0 && Math.abs(speed) <= WALK_SPEED + 1e-6) {
+    if (grounded && dir !== 0 && (this.options.stopAtEdges || Math.abs(speed) <= WALK_SPEED + 1e-6)) {
       const ahead = this.curr.x + dir * (ELOF_HALF_WIDTH + EDGE_REACH);
       if (this.curr.y - this.groundBelow(ahead, this.curr.y) > FALL_LIMIT) {
         this.atEdge = true;
@@ -538,11 +582,7 @@ export class Sim {
       const atTop = s.angle * forward > 0.25 && s.speed * forward <= 0;
       if (!atTop && s.letGo < SWING_HOLD_MAX) return;
       this.facing = forward as 1 | -1;
-      this.state = {
-        kind: 'fly', fromX: x, fromY: y, toX: hook.land.x, toY: hook.land.y, t: 0,
-        vx: (hook.land.x - x) / SWING_FLIGHT,
-        vy: (hook.land.y - y) / SWING_FLIGHT + 0.5 * GRAVITY * SWING_FLIGHT,
-      };
+      this.flyTo(hook.land, SWING_FLIGHT);
       return;
     }
     // He lets go, and flies on the way the swing was taking him.
@@ -552,10 +592,24 @@ export class Sim {
     this.body.setLinearVelocity(new Vec2(along * Math.cos(s.angle), along * Math.sin(s.angle)));
   }
 
-  /** One step of the steered flight from a swing to its landing: the arc of a throw that ends there. */
-  private fly(state: { fromX: number; fromY: number; vx: number; vy: number; toX: number; toY: number; t: number }): void {
-    state.t = Math.min(1, state.t + STEP / SWING_FLIGHT);
-    const time = state.t * SWING_FLIGHT;
+  /** Starts a steered flight from where he is to a landing: the arc of a throw that ends there after `time`. */
+  private flyTo(land: Vec, time: number): void {
+    const from = this.body.getPosition();
+    const x = from.x;
+    const y = from.y - SKIN;
+    this.carry(true);
+    this.verb = null;
+    this.state = {
+      kind: 'fly', fromX: x, fromY: y, toX: land.x, toY: land.y, time, t: 0,
+      vx: (land.x - x) / time,
+      vy: (land.y - y) / time + 0.5 * GRAVITY * time,
+    };
+  }
+
+  /** One step of a steered flight, from a swing or from a marked edge with *Lätta hopp*. */
+  private fly(state: { fromX: number; fromY: number; vx: number; vy: number; toX: number; toY: number; time: number; t: number }): void {
+    state.t = Math.min(1, state.t + STEP / state.time);
+    const time = state.t * state.time;
     if (state.t < 1) {
       this.place(state.fromX + state.vx * time, state.fromY + state.vy * time - 0.5 * GRAVITY * time * time);
       return;
@@ -615,6 +669,11 @@ export class Sim {
       if ((c.x - x) ** 2 + (c.y - y) ** 2 > CANDY_MAGNET ** 2) continue;
       this.collected[i] = true;
       this.candyCount++;
+    }
+    // A big candy further on than the last one becomes the place he comes back to.
+    for (let i = this.checkpoint + 1; i < this.checkpoints.length; i++) {
+      const c = this.checkpoints[i]!;
+      if ((c.x - x) ** 2 + (c.y + ELOF_HEIGHT / 2 - y) ** 2 <= CHECKPOINT_REACH ** 2) this.checkpoint = i;
     }
   }
 

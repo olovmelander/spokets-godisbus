@@ -22,6 +22,31 @@ export const sv = {
   // The candy bag in the corner. Screen readers hear the name and then the number.
   bag: 'Godispåsen',
 
+  // The pause panel. Every button has a picture beside its word, for a child who can't read yet.
+  pause: {
+    open: 'Paus',
+    title: 'Paus',
+    resume: 'Spela vidare',
+    close: 'Stäng',
+    style: 'Spelsätt',
+    aventyr: 'Äventyr',
+    aventyrHint: 'Du hoppar och gungar själv.',
+    lugnt: 'Lugnt',
+    lugntHint: 'Spelet hjälper dig med hopp och gungor.',
+    swingHelp: 'Hjälp med svingen',
+    easyJumps: 'Lätta hopp',
+    slower: 'Lugnare tempo',
+    stuck: 'Jag har fastnat',
+    stuckAsk: 'Tillbaka till den stora godisbiten?',
+    stuckYes: 'Ja, tillbaka',
+    stuckNo: 'Nej, spela vidare',
+  },
+
+  // Saving (Sköldhästen's wording).
+  saveOff: 'Spelet kan inte sparas i den här webbläsaren – men du kan spela ändå.',
+  saveUnreadable: 'Det sparade spelet gick inte att läsa.',
+  startOver: 'Börja om från början',
+
   // Stage 0a's test course.
   goal: 'Framme!',
 

@@ -147,6 +147,26 @@ async function open(name, options, query = '?debug') {
   const programs = (await info()).programs;
   await sleep(500);
   check('no shader was compiled during play', (await info()).programs === programs, `${programs} programs`);
+
+  // The pause panel and the play style (plan §4.1, §6.10). Esc opens it, the game stands still, and what is
+  // chosen is still chosen after the page is loaded again.
+  await page.keyboard.press('Escape');
+  check('Esc opens the pause panel', await page.locator('#pause').isVisible());
+  const still = await state();
+  await page.keyboard.down('ArrowRight');
+  await sleep(400);
+  await page.keyboard.up('ArrowRight');
+  const stillThere = await state();
+  check('the game stands still while it is open', stillThere.paused === true && stillThere.x === still.x, `x ${stillThere.x.toFixed(2)}`);
+  await page.click('#styleLugnt');
+  check('Lugnt switches on its helps', (await page.isChecked('#setSwingHelp')) && (await page.isChecked('#setEasyJumps')));
+  await page.click('#resumeBtn');
+  const resumed = await state();
+  check('Spela vidare closes it', (await page.locator('#pause').isHidden()) && resumed.paused === false && resumed.style === 'lugnt', resumed.style);
+  await page.reload();
+  await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
+  const again = await state();
+  check('the style and the candy are saved', again.style === 'lugnt' && again.candy === bag.inBag, `${again.style}, ${again.candy} candies`);
   await finish();
 }
 

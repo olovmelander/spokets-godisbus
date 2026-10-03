@@ -77,6 +77,13 @@ export const SWING_FLIGHT = 0.6;
 /** With help, Hoppa is held until the next forward top of the swing, but never longer than this. */
 export const SWING_HOLD_MAX = 2.6;
 
+/** A big candy is reached when Elof's middle comes this close to it (plan §3.3, rule 4). */
+export const CHECKPOINT_REACH = 0.9;
+/** *Lätta hopp*: running to within this of a marked edge jumps by itself. */
+export const EASY_JUMP_REACH = 0.35;
+/** *Lätta hopp*: Hoppa pressed within this of a marked edge is steered to its landing. */
+export const EASY_JUMP_STEER = 1.2;
+
 /** A fall longer than this ends in the glitter bubble; a shorter one is a soft landing (plan §4.2). */
 export const FALL_LIMIT = 4;
 /** The bubble floats him back in about this long. */

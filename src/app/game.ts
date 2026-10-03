@@ -2,7 +2,7 @@ import { FixedLoop } from '../core/loop';
 import { NO_EDGES, PressQueue, type Edges } from '../input/press-queue';
 import { MAX_STEPS_PER_FRAME, STEP } from '../sim/constants';
 import { Sim } from '../sim/sim';
-import type { ChapterData, SimOptions } from '../sim/types';
+import type { ChapterData, SimOptions, SimStart } from '../sim/types';
 
 /** Held input, read once per frame. */
 export interface Held {
@@ -20,18 +20,20 @@ export class Game {
   readonly sim: Sim;
   /** Steps run by the last frame. */
   lastSteps = 0;
+  /** How fast the game runs: 1, or 0.8 with *Lugnare tempo* (plan §4.1). */
+  tempo = 1;
 
   private readonly loop = new FixedLoop(STEP, MAX_STEPS_PER_FRAME);
   private readonly queue = new PressQueue();
 
-  constructor(chapter: ChapterData, options: SimOptions = {}) {
-    this.sim = new Sim(chapter, options);
+  constructor(chapter: ChapterData, options: SimOptions = {}, start: SimStart = {}) {
+    this.sim = new Sim(chapter, options, start);
   }
 
   /** One frame: dt seconds have passed. Presses go to the first step that runs. */
   frame(dt: number, held: Held, edges: Readonly<Edges>): number {
     this.queue.push(edges);
-    this.lastSteps = this.loop.advance(dt, (first) => {
+    this.lastSteps = this.loop.advance(dt * this.tempo, (first) => {
       const e = first ? this.queue.take() : NO_EDGES;
       // Hoppa's held state is read each frame. A tap that begins and ends inside one frame therefore
       // arrives as a press with hopHeld false, which is a hop.

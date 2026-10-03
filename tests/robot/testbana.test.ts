@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
 import { testbana } from '../../src/content/chapters/testbana';
+import { settingsFor, simOptions } from '../../src/save/settings';
 import type { ChapterData, PlayerState, SimOptions } from '../../src/sim/types';
 
 /** The ground's height at x, read from the chapter data. */
@@ -98,6 +99,42 @@ describe('the robot on the test course', () => {
     expect(game.sim.flags.has('goal')).toBe(true);
     expect(game.sim.bubbles).toBe(0);
     expect(game.sim.candyCount).toBeGreaterThanOrEqual(testbana.candy.length - 3);
+  });
+
+  it('on Lugnt, gets to the end by running, Använd, and one Hoppa on the lace', () => {
+    const game = new Game(testbana, simOptions(settingsFor('lugnt')));
+    const dt = 1 / 60;
+    let wasOffered = false;
+    let wasSwinging = false;
+    let reached = -1;
+    const order: number[] = [];
+    for (let frame = 0; frame < 60 * 90 && !game.sim.flags.has('goal'); frame++) {
+      const p = game.sim.curr;
+      const swinging = p.hook !== null;
+      const { offered } = decide(testbana, p);
+      game.frame(dt, { x: swinging ? 0 : 1, hopHeld: false }, { hop: swinging && !wasSwinging, act: offered && !wasOffered, helper: false });
+      wasOffered = offered;
+      wasSwinging = swinging;
+      if (game.sim.checkpoint !== reached) order.push((reached = game.sim.checkpoint));
+    }
+    expect(game.sim.flags.has('goal')).toBe(true);
+    expect(game.sim.bubbles).toBe(0);
+    // Every big candy on the way, in order.
+    expect(order).toEqual([0, 1, 2, 3]);
+  });
+
+  it('with Lugnare tempo, takes a quarter longer and is otherwise the same game', () => {
+    const play = (tempo: number) => {
+      const game = new Game(testbana);
+      game.tempo = tempo;
+      let frames = 0;
+      while (game.sim.curr.x < 6 && frames < 600) {
+        game.frame(1 / 60, { x: 1, hopHeld: false }, { hop: false, act: false, helper: false });
+        frames++;
+      }
+      return frames;
+    };
+    expect(play(0.8) / play(1)).toBeCloseTo(1.25, 1);
   });
 
   it('plays the same game twice at the same frame rate', () => {

@@ -32,13 +32,24 @@ export interface ViewInfo {
   roles: string[];
 }
 
+/** What the picture is drawn from: two simulation states and what has been reached and collected. */
+export interface Frame {
+  prev: PlayerState;
+  curr: PlayerState;
+  /** How far between the two states this frame lies, from 0 to 1. */
+  alpha: number;
+  /** The time since the last frame, in seconds. 0 while the game is paused. */
+  dt: number;
+  atGoal: boolean;
+  /** Which trail candies are in the bag. */
+  collected: readonly boolean[];
+  /** The last big candy reached, or -1. */
+  checkpoint: number;
+}
+
 export interface View {
   resize(): void;
-  /**
-   * Draws the picture between two simulation states. dt is the time since the last frame, in seconds, and
-   * `collected` says which trail candies are in the bag.
-   */
-  render(prev: PlayerState, curr: PlayerState, alpha: number, dt: number, atGoal: boolean, collected: readonly boolean[]): void;
+  render(frame: Frame): void;
   info(): ViewInfo;
 }
 
@@ -89,12 +100,22 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   sun.position.set(-6, 5, 8);
   scene.add(sun);
 
-  const candyPlace = buildCandy(chapter);
+  // The big candies: one at each checkpoint, a little behind the path so that he passes in front of it,
+  // and the one at the end.
+  const endX = chapter.goalX + 0.6;
+  const bigCandies = [
+    ...(chapter.checkpoints ?? []).map((at) => ({ x: at.x, y: at.y, z: -0.7 })),
+    { x: endX, y: heightOfGroundAt(chapter, endX), z: 0 },
+  ].map((at) => {
+    const place = buildCandy();
+    place.position.set(at.x, at.y, at.z);
+    scene.add(place);
+    return { place, sweet: place.getObjectByName('candy')!, reached: false, pop: 0 };
+  });
   const trail = buildTrail(chapter);
   const glitter = buildGlitter();
   const lace = buildLace();
-  scene.add(buildGround(chapter), buildTrunks(chapter), buildClimbs(chapter), buildHooks(chapter), lace.mesh, candyPlace, trail.mesh, glitter.group);
-  let candy = candyPlace.getObjectByName('candy')!;
+  scene.add(buildGround(chapter), buildTrunks(chapter), buildClimbs(chapter), buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
   // It is the first asset through the whole chain: Blender → glTF → KTX2 and meshopt → the page.
@@ -105,9 +126,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   assets
     .model('boot', 'big-candy')
     .then((model) => {
-      candyPlace.clear();
-      candyPlace.add(model);
-      candy = model.getObjectByName('candy') ?? model;
+      for (const [i, big] of bigCandies.entries()) {
+        const copy = i === 0 ? model : model.clone();
+        big.place.clear();
+        big.place.add(copy);
+        big.sweet = copy.getObjectByName('candy') ?? copy;
+      }
       models.push('boot/big-candy');
       model.traverse((node) => {
         if (typeof node.userData.role === 'string') roles.push(node.userData.role);
@@ -204,9 +228,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   }
   resize();
 
-  function render(
-    prev: PlayerState, curr: PlayerState, alpha: number, dt: number, atGoal: boolean, collected: readonly boolean[],
-  ): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint }: Frame): void {
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
     clock += dt;
@@ -249,7 +271,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     shadow.position.set(x, curr.groundY + 0.012, 0);
     shadow.scale.setScalar(clamp(1 - height * 0.25, 0.35, 1));
 
-    candy.rotateY(dt * (atGoal ? 7 : 1.2));
+    // A big candy turns slowly until it is reached. Then it gives a little jump, and turns fast.
+    for (const [i, big] of bigCandies.entries()) {
+      const last = i === bigCandies.length - 1;
+      const reached = last ? atGoal : i <= checkpoint;
+      if (reached && !big.reached) big.pop = 1;
+      big.reached = reached;
+      big.pop = Math.max(0, big.pop - dt * 2.2);
+      big.sweet.rotateY(dt * (reached ? (last ? 7 : 3.4) : 1.2));
+      big.place.scale.setScalar(1 + 0.3 * Math.sin(Math.PI * big.pop));
+    }
 
     // The ghost is a wooden toy come alive: it never bends. It turns towards Elof, sways, and taps a foot.
     if (ghost) {
@@ -536,8 +567,8 @@ function buildTrail(chapter: ChapterData) {
   return { mesh, update };
 }
 
-/** The big candy at the end of the course, on its stick. */
-function buildCandy(chapter: ChapterData): Group {
+/** A big candy on its stick: the stand-in, until the one from Blender has loaded. */
+function buildCandy(): Group {
   const group = new Group();
   const stick = new Mesh(new CylinderGeometry(0.035, 0.035, 1.1), new MeshStandardMaterial({ color: '#f4efe6', roughness: 0.6 }));
   stick.position.y = 0.55;
@@ -553,7 +584,6 @@ function buildCandy(chapter: ChapterData): Group {
     sweet.add(band);
   }
   group.add(stick, sweet);
-  group.position.set(chapter.goalX + 0.6, heightOfGroundAt(chapter, chapter.goalX + 0.6), 0);
   return group;
 }
 

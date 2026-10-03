@@ -1,22 +1,45 @@
 import { sv } from '../content/sv';
 
-const HAND =
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-3.5a1.5 1.5 0 0 1 3 0V10m0-2a1.5 1.5 0 0 1 3 0v6.5A6.5 6.5 0 0 1 11.5 21 6 6 0 0 1 6.7 18.6L4 14.5a1.5 1.5 0 0 1 2.4-1.8L9 15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const ARROW =
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5m0 0-6 6m6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+// Every picture on the page is a plain shape drawn here: no logotypes, no brand marks (plan §0).
+const svg = (body: string, box = '0 0 24 24') => `<svg viewBox="${box}" aria-hidden="true">${body}</svg>`;
+const line = 'fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"';
 
+const HAND = svg(`<path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-3.5a1.5 1.5 0 0 1 3 0V10m0-2a1.5 1.5 0 0 1 3 0v6.5A6.5 6.5 0 0 1 11.5 21 6 6 0 0 1 6.7 18.6L4 14.5a1.5 1.5 0 0 1 2.4-1.8L9 15" ${line} stroke-width="1.8"/>`);
+const ARROW = svg(`<path d="M12 20V5m0 0-6 6m6-6 6 6" ${line} stroke-width="2.4"/>`);
+const PAUSE = svg('<rect x="6" y="5" width="4.2" height="14" rx="1.4" fill="currentColor"/><rect x="13.8" y="5" width="4.2" height="14" rx="1.4" fill="currentColor"/>');
+const PLAY = svg('<path d="M8 5.5v13l11-6.5z" fill="currentColor"/>');
+const CROSS = svg(`<path d="M6 6l12 12M18 6 6 18" ${line} stroke-width="2.6"/>`);
+const CHECK = svg(`<path d="M5 12.5l4.5 4.5L19 7.5" ${line} stroke-width="2.8"/>`);
+/** A big candy: the striped sweet on its stick that marks a safe place (plan §3.3, rule 4). */
+const BIG_CANDY = svg(
+  '<path d="M12 13v9" stroke="#f4efe6" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8.5" r="6.5" fill="#dd4b39"/><path d="M6.6 5.2c3.4 0 6.6 2.4 7.4 6.4M9.8 2.6c3.6.8 6.6 3.6 7.6 7.4" fill="none" stroke="#fff6ea" stroke-width="1.7" stroke-linecap="round"/>',
+);
+/** Elof in mid-leap: the picture for Äventyr. */
+const LEAP = svg(
+  `<circle cx="27" cy="9" r="4.2" fill="currentColor"/><path d="M26 14l-6 8m6-8 7 5m-13 3-8 3m8-3 7 6m-6-13-7-3m13 2 6-4" ${line} stroke-width="2.6"/><path d="M4 33c8-5 24-5 34 1" ${line} stroke-width="1.6" stroke-dasharray="1 4"/>`,
+  '0 0 42 38',
+);
+/** Elof strolling: the picture for Lugnt. */
+const STROLL = svg(
+  `<circle cx="20" cy="8" r="4.2" fill="currentColor"/><path d="M20 13v11m0 0-4 9m4-9 4 9m-4-16-5 6m5-6 5 5" ${line} stroke-width="2.6"/><path d="M5 34h32" ${line} stroke-width="1.6"/>`,
+  '0 0 42 38',
+);
 /** A paper bag with a folded top. The red inside rises as the bag fills (plan §4.3). */
 const BAG =
   '<svg viewBox="0 0 48 56" aria-hidden="true"><path d="M8 15h32l-3 37H11z" fill="#f1dfb8"/><rect class="bag-fill" x="9" y="16" width="30" height="36" fill="#e8483f"/><path d="M8 15h32l-3 37H11z" fill="none" stroke="#7b5a36" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 15l4-9 4 6 4-7 4 7 4-7 4 7 4-6 4 9z" fill="#f1dfb8" stroke="#7b5a36" stroke-width="2.5" stroke-linejoin="round"/></svg>';
 
+const p = sv.pause;
+
 /**
- * Builds everything that lies over the game view: the candy bag, the on-screen controls, the hint, the debug
- * text and the message. The game page and dev/menus.html both call it, so the preview can't drift from the game.
+ * Builds everything that lies over the game view: the candy bag, the pause button and its panel, the
+ * on-screen controls, the hint, the notice, the debug text and the message. The game page and
+ * dev/menus.html both call it, so the preview can't drift from the game.
  */
 export function mountShell(root: HTMLElement): void {
   root.insertAdjacentHTML(
     'beforeend',
     `<div class="bag" id="bag" role="status">${BAG}<span id="bagCount">0</span></div>
+     <button class="corner" id="pauseBtn" type="button" aria-label="${p.open}">${PAUSE}</button>
      <div class="controls" id="controls" hidden>
        <div class="stick-zone" id="stickZone">
          <div class="stick-base" id="stickBase"><div class="stick-knob" id="stickKnob"></div></div>
@@ -25,7 +48,29 @@ export function mountShell(root: HTMLElement): void {
        <button class="btn btn-hop" id="hopBtn" type="button">${ARROW}<span></span></button>
      </div>
      <div class="hint" id="hint" hidden></div>
+     <div class="notice" id="notice" role="status" hidden></div>
      <pre class="debug" id="debug" hidden></pre>
+     <div class="panel-back" id="pause" hidden>
+       <div class="panel" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+         <button class="panel-close" id="pauseClose" type="button" aria-label="${p.close}">${CROSS}</button>
+         <h2 id="pauseTitle">${p.title}</h2>
+         <button class="wide go" id="resumeBtn" type="button">${PLAY}<span>${p.resume}</span></button>
+         <h3 id="styleTitle">${p.style}</h3>
+         <div class="styles" role="radiogroup" aria-labelledby="styleTitle">
+           <button class="style" id="styleAventyr" type="button" role="radio">${LEAP}<b>${p.aventyr}</b><small>${p.aventyrHint}</small></button>
+           <button class="style" id="styleLugnt" type="button" role="radio">${STROLL}<b>${p.lugnt}</b><small>${p.lugntHint}</small></button>
+         </div>
+         <label class="switch"><input type="checkbox" id="setSwingHelp"><span>${p.swingHelp}</span></label>
+         <label class="switch"><input type="checkbox" id="setEasyJumps"><span>${p.easyJumps}</span></label>
+         <label class="switch"><input type="checkbox" id="setSlower"><span>${p.slower}</span></label>
+         <button class="wide" id="stuckBtn" type="button">${BIG_CANDY}<span>${p.stuck}</span></button>
+         <div class="ask" id="stuckAsk" hidden>
+           <p>${p.stuckAsk}</p>
+           <button class="yes" id="stuckYes" type="button" aria-label="${p.stuckYes}">${CHECK}${BIG_CANDY}</button>
+           <button class="no" id="stuckNo" type="button" aria-label="${p.stuckNo}">${CROSS}${PLAY}</button>
+         </div>
+       </div>
+     </div>
      <div class="message" id="message" hidden>
        <p id="messageText"></p>
        <button id="messageButton" type="button"></button>

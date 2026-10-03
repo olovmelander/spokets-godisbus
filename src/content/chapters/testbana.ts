@@ -70,6 +70,20 @@ export const testbana: ChapterData = {
   ],
   // In reach from 1.4 EL before the edge, so there is time to throw the lace even at a run.
   hooks: [{ x: 47.5, y: 3.3, length: 2.7, land: { x: 51.8, y: 0 } }],
+  // Big candies: after the jumps, after the chasm, on top of the hose, and before the swing.
+  checkpoints: [
+    { x: 20.8, y: 0 },
+    { x: 30.3, y: 0 },
+    { x: 40.5, y: 6 },
+    { x: 44.9, y: 0 },
+  ],
+  // What Lätta hopp jumps by itself: onto the step and the block, and across the ditch and the chasm.
+  jumps: [
+    { at: { x: 9.8, y: 0 }, dir: 1, land: { x: 10.7, y: 0.5 } },
+    { at: { x: 15.8, y: 0 }, dir: 1, land: { x: 16.7, y: 0.95 } },
+    { at: { x: 21.8, y: 0 }, dir: 1, land: { x: 24.4, y: 0 } },
+    { at: { x: 25.8, y: 0 }, dir: 1, land: { x: 28.4, y: 0 } },
+  ],
   climbs: [
     { x: 38.7, bottom: 2.8, top: 6, exit: 1 },
     { x: 43.3, bottom: 0, top: 6, exit: -1 },

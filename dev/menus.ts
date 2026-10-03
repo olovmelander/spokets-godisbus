@@ -1,11 +1,14 @@
 // dev/menus.html: every piece of DOM that lies over the game, shown without WebGL (plan §6.10).
-// Choose what to show with ?show=touch, keys, pad, goal, message or debug; several can be joined with commas.
+// Choose what to show with ?show=touch, keys, pad, goal, pause, stuck, message or debug; several can be joined
+// with commas.
 // It uses the same shell and the same style sheet as the game, so it shows what the game shows.
 import { sv } from '../src/content/sv';
+import { settingsFor } from '../src/save/settings';
+import { createPause } from '../src/ui/pause';
 import { mountShell } from '../src/ui/shell';
 import '../src/ui/ui.css';
 
-const VIEWS = ['touch', 'keys', 'pad', 'goal', 'message', 'debug'] as const;
+const VIEWS = ['touch', 'keys', 'pad', 'goal', 'pause', 'stuck', 'message', 'debug'] as const;
 const shown = new Set((new URLSearchParams(location.search).get('show') ?? 'touch').split(','));
 const byId = (id: string) => document.getElementById(id)!;
 
@@ -16,6 +19,11 @@ const hint = shown.has('goal') ? sv.goal : shown.has('pad') ? sv.padHint : shown
 if (hint) {
   byId('hint').hidden = false;
   byId('hint').textContent = hint;
+}
+if (shown.has('pause') || shown.has('stuck')) {
+  const pause = createPause(document, { onResume: () => pause.hide(), onSettings: () => {}, onStuck: () => pause.hide() });
+  pause.show(settingsFor('aventyr'));
+  if (shown.has('stuck')) byId('stuckBtn').click();
 }
 if (shown.has('message')) {
   byId('messageText').textContent = sv.noWebGL;
