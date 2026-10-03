@@ -47,7 +47,7 @@ const p = sv.pause;
 export function mountShell(root: HTMLElement): void {
   root.insertAdjacentHTML(
     'beforeend',
-    `<div class="bag" id="bag" role="status">${BAG}<span id="bagCount">0</span></div>
+    `<div class="bag" id="bag" role="status">${BAG}<span id="bagCount">0</span><span class="stickers" id="bagStickers"></span></div>
      <button class="corner" id="pauseBtn" type="button" aria-label="${p.open}">${PAUSE}</button>
      <button class="corner help" id="helpBtn" type="button" aria-label="${sv.help}">${BIRD}</button>
      <div class="controls" id="controls" hidden>
@@ -105,6 +105,7 @@ export function mountShell(root: HTMLElement): void {
          <h2 id="endTitle"></h2>
          <div class="rows" id="endRows"></div>
          <p class="count"><b id="endCount"></b> ${sv.end.candy}</p>
+         <p class="found" id="endFound" hidden><span>${sv.stickers}</span><span class="stickers" id="endStickers"></span></p>
          <p class="next" id="endNext">${sv.end.next}</p>
          <button class="wide go" id="endOnward" type="button" hidden>${PLAY}<span>${sv.end.onward}</span></button>
          <button class="wide" id="endAgain" type="button"><span>${sv.end.again}</span></button>

@@ -23,6 +23,8 @@ export type Cue =
   /** A stone that rings when he touches it: each one a step higher. */
   | { kind: 'note'; step: number }
   | { kind: 'gust' }
+  /** A hidden candy of a new kind. */
+  | { kind: 'found' }
   | { kind: 'goal' };
 
 /** What the cues are worked out from: the little of the game's state that can be heard. */
@@ -49,6 +51,8 @@ export interface Heard {
   notes?: number;
   /** Whether a gust blows where he is. */
   wind?: boolean;
+  /** How many hidden candies he has found in this chapter. */
+  found?: number;
 }
 
 /** What has to be remembered between frames: the candy streak and the stride. */
@@ -120,5 +124,6 @@ export function cuesFor(before: Heard, now: Heard, memory: CueMemory): Cue[] {
   if (now.moving > before.moving) cues.push({ kind: 'wood' });
   for (let i = before.notes ?? 0; i < (now.notes ?? 0); i++) cues.push({ kind: 'note', step: i });
   if (now.wind && !before.wind) cues.push({ kind: 'gust' });
+  if ((now.found ?? 0) > (before.found ?? 0)) cues.push({ kind: 'found' });
   return cues;
 }

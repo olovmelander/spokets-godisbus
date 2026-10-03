@@ -48,6 +48,13 @@ export const garden: ChapterData = {
     { from: 178, to: 181, kind: 'hedge' },
   ],
   roofs: [{ from: 46.6, to: 66.4, y: 5.4 }],
+  // Off the trail: behind him at the start, high under the deck, over the boulder, and before Moa.
+  hidden: [
+    { x: -1.8, y: 6.5, kind: 'gelehallon' },
+    { x: 58.6, y: 1.9, kind: 'gummibjorn' },
+    { x: 103, y: 3.2, kind: 'skumbanan' },
+    { x: 160.5, y: 1.9, kind: 'skumsvamp' },
+  ],
   house: { from: -40, to: 72, windows: [4, 24, 40, 58] },
   spawn: { x: 1, y: 6.01 },
   goalX: 210,

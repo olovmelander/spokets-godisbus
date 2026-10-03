@@ -500,6 +500,19 @@
     - **Not yet:** in Kapitel 1 the helper should be the ghost itself, with its one visit at the gully (it is
       the bird everywhere now); the third step as a replay of Elof doing the thing; the helper's portrait as
       the button; the goal as a picture in the pause panel.
+  - **Hidden candy and its stickers** (branch `stage-2-stickers`; plan §4.3). What you see: in each of
+    Kapitel 1 to 4, four bigger sweets hang off the trail, each inside a turning golden ring: behind Elof at
+    the start, or high over a boulder, a cone, a slab. Jump to one and its sticker slaps onto the bag, its
+    name is said at the top ("Ny sort: Skumbanan!"), and a little run of notes plays. A chapter's card shows
+    its four: a sticker for each one found, an empty ring for each still out there.
+    - Sixteen kinds with plain names of sorts (`sv.kinds`, `src/content/kinds.ts`). A found one is the flag
+      `found:<kind>` in its chapter, so the save already keeps it, and the album is read from the flags of
+      every chapter.
+    - Tests: `tests/unit/kinds.test.ts` (7): four per chapter and each in its own; each can be reached by a
+      jump where it hangs, and is not found by walking under it; none lies on the trail.
+    - **Not yet:** real hiding places (behind leaves, under roots: they come with the art, and one of the
+      four belongs at the end of each challenge route); each kind as its own small model; the album as a
+      page of its own; the golden geléhallon as the last piece.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts

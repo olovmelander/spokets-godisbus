@@ -158,6 +158,58 @@ body {
   --fill: 0;
 }
 
+/* The stickers of the hidden candy he has found: one small round one for each kind, on the bag. */
+.stickers {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: calc(96px * var(--k));
+}
+
+.stickers i {
+  width: calc(13px * var(--k));
+  height: calc(13px * var(--k));
+  border-radius: 50%;
+  background: var(--colour);
+  box-shadow: inset 0 0 0 calc(3px * var(--k)) var(--mark), 0 0 0 1.5px #7b5a36;
+}
+
+/* One he has not found yet: an empty ring. */
+.stickers i.missing {
+  background: transparent;
+  box-shadow: 0 0 0 1.5px rgb(123 90 54 / 0.5);
+  border: 1.5px dashed rgb(123 90 54 / 0.6);
+  box-sizing: border-box;
+}
+
+.stickers i.new {
+  animation: sticker-slap 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes sticker-slap {
+  from {
+    transform: scale(3.2) rotate(-25deg);
+    opacity: 0;
+  }
+}
+
+.panel.end .found {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.panel.end .found .stickers {
+  max-width: none;
+  gap: 6px;
+}
+
+.panel.end .found .stickers i {
+  width: 22px;
+  height: 22px;
+}
+
 .bag svg {
   width: calc(40px * var(--k));
   height: calc(47px * var(--k));

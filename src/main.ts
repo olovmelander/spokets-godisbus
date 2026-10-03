@@ -3,6 +3,7 @@ import { Game } from './app/game';
 import { createAudio } from './audio/audio';
 import { cuesFor, newCueMemory, type Heard } from './audio/cues';
 import { chapterNumber, courseFor, nextAfter } from './content/chapters';
+import { album, foundFlag } from './content/kinds';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
 import { tierFromQuery } from './render/quality';
@@ -119,6 +120,7 @@ function start(): void {
       atGoal: game.sim.flags.has('goal'), moving: game.sim.movers.filter((m) => m.t < 1).length,
       shadows: game.sim.drips.map((d) => d.shadow), drips: game.sim.drips,
       notes: [...game.sim.flags].filter((flag) => flag.startsWith('note:')).length,
+      found: [...game.sim.flags].filter((flag) => flag.startsWith('found:')).length,
       wind: game.sim.gusts.some((gust, i) => gust.blow > 0 && p.x > chapter.gusts![i]!.from - 12 && p.x < chapter.gusts![i]!.to + 12),
     };
   };
@@ -295,6 +297,7 @@ function start(): void {
     location.reload();
   }
   let endFor = 0;
+  let flagsSeen = -1;
   let shown = false;
   let lastTime = 0;
   let savedAt = game.sim.checkpoint;
@@ -331,6 +334,11 @@ function start(): void {
     hud.candy(game.sim.candyCount);
     hud.verb(game.sim.curr.verb, game.sim.curr.word);
     hud.knock(game.sim.help.step >= 2 ? game.sim.help : null);
+    // The album: what earlier chapters hold in the save, and what this one holds now.
+    if (game.sim.flags.size !== flagsSeen) {
+      flagsSeen = game.sim.flags.size;
+      hud.stickers(album({ ...save.flags, [chapter.id]: [...game.sim.flags] }));
+    }
     for (; told < game.sim.said.length; told++) {
       const beat = beats.get(game.sim.said[told]!);
       if (beat) hud.say(beat.who, beat.line);
@@ -343,7 +351,8 @@ function start(): void {
       const number = chapterNumber(chapter.id);
       const next = params.has('dev') ? nextAfter(chapter.id) : null;
       const title = sv.end.named[chapter.id] ?? (number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course);
-      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id]);
+      const hidden = (chapter.hidden ?? []).map((h) => ({ kind: h.kind, found: game.sim.flags.has(foundFlag(h.kind)) }));
+      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden);
     }
 
     if (!shown) {

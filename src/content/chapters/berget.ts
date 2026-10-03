@@ -45,6 +45,13 @@ const BOULDERS = [110, 115.2, 120.4, 125.6, 130.8, 136];
 export const berget: ChapterData = {
   id: 'berget',
   place: 'mountain',
+  // Off the trail: over the shoulder, over the first slab, in a boulder's lee, and by the old pine.
+  hidden: [
+    { x: 78, y: 25.9, kind: 'polkagris' },
+    { x: 87, y: 27.1, kind: 'graddkola' },
+    { x: 125.6, y: 28.3, kind: 'salmiakruta' },
+    { x: 152, y: 33.3, kind: 'chokladpralin' },
+  ],
   spawn: { x: 1, y: 0.01 },
   goalX: 157,
   ground: [
