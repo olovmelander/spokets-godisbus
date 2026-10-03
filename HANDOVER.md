@@ -722,6 +722,14 @@
       it was playable at once. Tests: `tests/robot/byn.test.ts` (13); the browser test runs through it.
     - **Its name:** the game says *Byn*. The street's own name is not written anywhere in this
       repository: see question 5 under "Frågor till Olov".
+    - **The village behind the street** (branch `stage-2-byn-skyline`): the houses now have the colours
+      of the village's own wooden houses (ochre yellow, white, Falu red, pale plaster, with white trim).
+      After every second house there is a yard with a red picket fence and a hedge, and over it the far
+      village shows: houses with red tin roofs, birches in October yellow, spruces, and the low blue
+      hills of the valley. It is one long soft picture far behind the fronts, so it slides past more
+      slowly than the houses do. The colours and shapes were taken by eye from the openly licensed photos
+      of the street in `photos/landscape/`; nothing of a photo is used, and no sign, name or number of a
+      real house is drawn.
     - **Not yet:** people and their giant feet, cars, anything inside the shop, a way back, and hidden
       candy of its own. The fronts are one drawn picture each.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
