@@ -7,12 +7,13 @@
     the epilogue, and after them an extra chapter, Byn. Everything is merged to `main` and deployed:
     `https://olovmelander.github.io/spokets-godisbus/?dev`. The plain address still shows the grey test
     course, because `RELEASED_CHAPTER` is `null`: releasing is Olov's.
-  - **Added in the night of 3 to 4 October** (pull requests #38 to #55; each has its own entry further
+  - **Added in the night of 3 to 4 October** (pull requests #38 to #58; each has its own entry further
     down): music and each place's air; footsteps for every surface; the sticker album; four more switches;
     wordless sounds for the characters and for Elof; the size gate as served; chapter codes; C1, the swing
     chain; the bouncing cranberries; a graphics level that finds its own place, and High's glow; Hittegods,
     found and given back; Byn; far scenery in layers with parallax for every place; the family's first
-    models, and the code that shows them at home and on the summit.
+    models, and the code that shows them at home and on the summit, turning towards him and glad; the jay
+    modelled in Blender; his call, and each one's answer.
   - **What Olov asked for on 4 October, and how far it got:**
     - *"Improving and creating all character models in blender":* Pappa, Mamma, Moa, Bertil and
       three-year-old Elof have first models. They are on his computer only, waiting for his eyes and his
