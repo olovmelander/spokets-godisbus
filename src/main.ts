@@ -1,6 +1,7 @@
 import { Timer } from 'three';
 import { Game } from './app/game';
 import { createAudio } from './audio/audio';
+import { arrangementFor } from './audio/music';
 import { cuesFor, newCueMemory, type Heard } from './audio/cues';
 import { chapterNumber, courseFor, nextAfter } from './content/chapters';
 import { album, foundFlag } from './content/kinds';
@@ -110,7 +111,13 @@ function start(): void {
 
   // Sound starts with the first tap, click or key: browsers allow it no earlier (plan §6.8).
   const audio = createAudio();
-  audio.setEffects(settings.sound ? 1 : 0);
+  const volumes = () => {
+    audio.setEffects(settings.sound ? 1 : 0);
+    audio.setMusic(settings.music ? 1 : 0);
+  };
+  volumes();
+  // Each part of the story plays the tune in its own way, and has its own air (plan §5.8).
+  audio.setPlace(arrangementFor(chapter.id, chapter.place));
   for (const type of ['pointerup', 'click', 'keydown', 'touchend']) window.addEventListener(type, () => audio.unlock());
   const memory = newCueMemory();
   let playTime = 0;
@@ -187,7 +194,7 @@ function start(): void {
       settings = next;
       game.sim.options = simOptions(settings);
       game.tempo = tempoOf(settings);
-      audio.setEffects(settings.sound ? 1 : 0);
+      volumes();
       writeSave();
     },
     onStuck() {
@@ -210,7 +217,7 @@ function start(): void {
         settings = settingsFor(style);
         game.sim.options = simOptions(settings);
         game.tempo = tempoOf(settings);
-        audio.setEffects(settings.sound ? 1 : 0);
+        volumes();
       }
       title.hide();
       paused = false;
@@ -258,6 +265,7 @@ function start(): void {
   const timer = new Timer();
   timer.connect(document);
   document.addEventListener('visibilitychange', () => {
+    audio.sleep(document.hidden);
     if (document.hidden) writeSave();
     else game.resume();
   });
@@ -271,7 +279,7 @@ function start(): void {
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
         course: chapter.id, said: [...game.sim.said], title: title.open,
       }),
-      info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played }),
+      info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars }),
     };
   }
 
@@ -313,6 +321,9 @@ function start(): void {
     const began = performance.now();
     timer.update(time);
     const dt = Math.min(timer.getDelta(), 0.25);
+    // The wood knocks while the ghost is in the picture: the chase (plan §5.8).
+    const ghost = game.sim.ghost;
+    audio.tick(ghost !== null && !ghost.gone && Math.abs(ghost.x - game.sim.curr.x) < 9);
     if (paused || memories.open) {
       // The panel's buttons still answer a gamepad. A memory plays over a game that waits.
       input.poll();

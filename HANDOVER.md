@@ -298,8 +298,8 @@
     - Sound starts with the first tap, click or key, and an iPhone's silent switch silences it.
     - **No one has listened to it.** The session can't hear. The levels and the tunes are a first guess for
       Olov's ears; say what is too loud, too shrill or missing.
-    - **Not yet:** music and its layers, ambience, footsteps per surface, the characters' wordless sounds,
-      separate volumes for music and effects, and *Ljud även i tyst läge*.
+    - **Not yet:** footsteps per surface, the characters' wordless sounds and *Ljud även i tyst läge*.
+      Music and ambience came later: see "Music and the air of each place" below.
   - **The ghost keeps its distance** (branch `stage-2-ghost`; plan §4.2, §4.5). What you see: the ghost is
     on the course from the start, always a little ahead. It stands and taps its foot until Elof comes
     within 4 EL, then hops on to its next place in an arc. After the swing it lets him come close: Använd
@@ -560,6 +560,35 @@
       each; six to ten seconds; no words; the little figure in every one.
     - **For Olov:** the plan has Pappa read the storyboard of the memories before the first one is built
       (question 1 below). These cards are that storyboard, playable. Show them to him.
+  - **Music and the air of each place** (branch `stage-2-music`; plan §5.8, §6.8). What you hear: a tune
+    on a plucked string from the first tap on, and behind it the place's own air. The pause panel has a
+    *Musik* switch beside *Ljud*.
+    - **The tune** is "Spökets polska" (the plan's working title): eight bars in 3/4 in D dorian, written
+      for the game as notes in `src/audio/music.ts`. Nothing is recorded, licensed or downloaded: the string
+      is made in the browser by Karplus–Strong (the plan's Route A).
+    - **Each part of the story plays it in its own way** (`ARRANGEMENTS`): the prologue as a solo pluck with
+      a knife's stroke in every second bar; Gården quick, with bass; Granskogen only the tune's bones, an
+      octave down; Myren fewer notes still and long rests; Berget the whole theme; the final all of it with
+      knocks of wood; the epilogue as a slow waltz. The tune rests one to four bars before it comes again.
+    - **The chase layer:** while the ghost is within nine Elof lengths, wood knocks on the first and third
+      beat, starting and stopping on a bar line.
+    - **The air** (`AIRS`): a clock in the kitchen; small birds in the garden; wind in the spruces and one
+      far bird; a crane and a small bird over the bog; wind on the mountain; an owl at dusk. All synthesised,
+      all quiet. *Ljud* switches it off with the effects.
+    - Three buses now: music, effects and ambience, then the master and the compressor. Sound sleeps while
+      the page is hidden.
+    - Tests without ears (`tests/unit/music.test.ts`, 15): the string is in tune within 0.4 % at every
+      pitch used and at both sample rates, rings and dies away, and is the same every time; every bar is
+      three beats; every note is in the scale; every part of the story has an arrangement and the test
+      course none; a whole round mixed at the game's level never clips. The browser test hears two bars
+      scheduled in the prologue.
+    - **No one has listened to it.** The session can't hear, so the tune was written by rule: small steps,
+      its weight on the first and third beat, home on D. Whether it is a good tune, and whether the levels
+      are right, only Olov's ears can say. If it is wrong, the notes are one table (`POLSKA`) and the
+      level one number (`MUSIC_LEVEL`).
+    - **Not yet:** the fiddle lead, the pad, the jaw harp and the horn; a three-note motif for each family
+      member; the solo line over a memory; silence before a reveal; separate volume sliders (the switches
+      are on or off); recorded ambience.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
@@ -659,7 +688,7 @@
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals. Only what needs no art, until the look and the characters are decided. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs
