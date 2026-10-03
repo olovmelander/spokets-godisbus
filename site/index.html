@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow, noimageindex">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="data:,">
+  <title>Elof och det stora godisäventyret</title>
+  <!-- A placeholder until Stage 0a replaces it with the game (docs/game-plan.md §6.11). No external requests. -->
+  <style>
+    :root {
+      --bg: #ecdfc6;
+      --ink: #3d2b1f;
+      --soft: #7a5a3c;
+      --wood: #ead2a6;
+      --grain: #b98e5c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1f1a15;
+        --ink: #f1e6d2;
+        --soft: #c9ab86;
+      }
+    }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 24px 16px;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    svg {
+      height: min(34vh, 34vw, 210px);
+      width: auto;
+      animation: bob 2.4s ease-in-out infinite;
+    }
+    h1 {
+      font-size: clamp(1.4rem, min(6vw, 7vh), 2.8rem);
+      line-height: 1.15;
+      margin: 0.5em 0 0.3em;
+    }
+    p {
+      font-size: clamp(1rem, min(3.6vw, 4.5vh), 1.3rem);
+      color: var(--soft);
+      margin: 0;
+    }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-6px) rotate(2deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      svg { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div>
+      <svg viewBox="0 0 120 150" aria-hidden="true">
+        <!-- rainbow socks -->
+        <g>
+          <rect x="44" y="118" width="11" height="3" fill="#3b7dd8"/>
+          <rect x="44" y="121" width="11" height="3" fill="#3fa34d"/>
+          <rect x="44" y="124" width="11" height="3" fill="#f2c230"/>
+          <rect x="44" y="127" width="11" height="3" fill="#d8402f"/>
+          <rect x="44" y="130" width="11" height="3" fill="#f08a24"/>
+          <rect x="65" y="118" width="11" height="3" fill="#3b7dd8"/>
+          <rect x="65" y="121" width="11" height="3" fill="#3fa34d"/>
+          <rect x="65" y="124" width="11" height="3" fill="#f2c230"/>
+          <rect x="65" y="127" width="11" height="3" fill="#d8402f"/>
+          <rect x="65" y="130" width="11" height="3" fill="#f08a24"/>
+        </g>
+        <!-- red sneakers with white toe caps -->
+        <path d="M41 133 h16 v5 q0 4 -4 4 h-14 q-4 0 -4 -3 q0 -6 6 -6 z" fill="#c8312a"/>
+        <path d="M35 139 q0 -3 4 -3 h4 v6 h-4 q-4 0 -4 -3 z" fill="#ffffff"/>
+        <path d="M63 133 h16 v5 q0 4 -4 4 h-14 q-4 0 -4 -3 q0 -6 6 -6 z" fill="#c8312a"/>
+        <path d="M57 139 q0 -3 4 -3 h4 v6 h-4 q-4 0 -4 -3 z" fill="#ffffff"/>
+        <!-- the carved sheet, in flat facets -->
+        <path d="M60 8 C36 8 25 30 25 56 L23 116 L34 121 L44 116 L54 122 L64 116 L75 122 L86 116 L97 120 L95 56 C95 30 84 8 60 8 Z"
+              fill="var(--wood)" stroke="var(--grain)" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M60 8 L52 40 L38 64 M60 8 L70 38 L86 60 M52 40 L70 38 M38 64 L44 116 M86 60 L86 116"
+              fill="none" stroke="var(--grain)" stroke-width="1" opacity="0.55"/>
+        <!-- eyes: black, each with one white highlight; no mouth -->
+        <circle cx="48" cy="50" r="6" fill="#141414"/>
+        <circle cx="72" cy="50" r="6" fill="#141414"/>
+        <circle cx="50" cy="48" r="1.8" fill="#ffffff"/>
+        <circle cx="74" cy="48" r="1.8" fill="#ffffff"/>
+        <!-- the carved candy bag, always empty -->
+        <path d="M66 74 L92 72 L94 102 L68 104 Z" fill="#d9b98a" stroke="var(--grain)" stroke-width="1.5"
+              stroke-linejoin="round"/>
+        <path d="M66 74 L92 72 L90 79 L67 81 Z" fill="#c9a571"/>
+        <circle cx="74" cy="88" r="2.2" fill="#d8402f"/>
+        <circle cx="84" cy="86" r="2.2" fill="#3fa34d"/>
+        <circle cx="79" cy="96" r="2.2" fill="#f08a24"/>
+        <circle cx="88" cy="97" r="2" fill="#d8402f"/>
+      </svg>
+      <h1>Elof och det stora godisäventyret</h1>
+      <p>Spöket har smitit med godispåsen … Snart kan du följa godisspåret!</p>
+    </div>
+  </main>
+</body>
+</html>

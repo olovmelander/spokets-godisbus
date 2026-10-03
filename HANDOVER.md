@@ -2,49 +2,61 @@
 
 ## State (3 October 2026)
 
-- **Done:** the plan, `docs/game-plan.md` version 2: research, design, art direction, technology and delivery,
-  revised after a five-angle review (plan §8).
-- **Not built:** any code. The repository holds only documents.
+- **Done:**
+  - The plan, `docs/game-plan.md` version 3: research, design, art direction, technology and delivery. Version 3
+    takes in Olov's answers of 3 October (plan §8).
+  - `main` created from the planning branch, with a placeholder page in `site/` and a minimal Pages workflow,
+    `.github/workflows/deploy.yml`.
+- **Not built:** any game code. The repository holds documents, the placeholder page and its workflow.
 
 ## Next
 
-1. **Consent.** Olov gets a written yes from both of Elof's parents for the items in plan §0 Q4. Until then
-   nothing new and personal is committed. If they say no to anything already here, the repository can still be
-   recreated from scratch: it holds only planning documents.
-2. **Olov answers the rest of plan §0.** The ★ questions come first: Elof and his device, the scale, the secret,
-   the dates, network access.
-3. **Before the first deploy** (plan §6.11):
-   - create `main` from the planning branch and make it the default branch;
-   - set *Settings → Pages → Source* to *GitHub Actions*;
-   - create the private repository `spokets-godisbus-familj`, a read-only token, and the secrets
-     `FAMILY_ASSETS_TOKEN` and `PRIVACY_DENYLIST`;
-   - open the environment's network access for the asset hosts (plan §0 Q6), or put downloads in `art/vendor/`.
-4. **Stage 0a** (plan §7.3):
-   - the Vite + TypeScript + three scaffold, both workflows, and the privacy gate;
+1. **Olov: four clicks in GitHub** (a session can't change repository settings):
+   1. *Settings → General → Default branch*: switch to `main`.
+   2. *Settings → Pages → Build and deployment → Source*: *GitHub Actions*.
+   3. *Actions → Deploy to GitHub Pages → Run workflow*, on `main`.
+   4. If the run says `main` is not allowed to deploy to `github-pages`: *Settings → Environments → github-pages →
+      Deployment branches*, add `main`, and run it again.
+   - Then the placeholder is at the repository's GitHub Pages address. It is `noindex` and linked from nowhere.
+2. **Olov answers the rest of plan §0.** The ★ questions come first: the scale (Q2), the new secret, which Pappa
+   reads (Q3), and the surprise and dates (Q5). Q16 asks about Olov's computer.
+3. **Stage 0a** (plan §7.3), in a cloud session or on Olov's computer:
+   - the Vite + TypeScript + three scaffold, both real workflows (replacing the placeholder), and the privacy gate;
    - a test scene live on Pages with `noindex`;
    - the input port with a greybox Elof;
-   - `?debug`, `?bench` and `dev/menus.html`;
-   - the asset chain proven end to end;
+   - `?debug`, `?bench`, `dev/menus.html` and `npm run dev:lan`;
+   - the asset chain proven end to end (Blender → glTF → KTX2 → Pages);
    - record whether Pages compresses `.wasm`, `.glb` and `.ktx2`.
+4. **Before Stage 0b,** on Olov's computer (plan §6.14): Blender 4.5 LTS, *MCP for Blender* registered with
+   `DISABLE_TELEMETRY=true` and safe mode on, `uv`, Node 24, and the reference pictures in `references/`.
+5. **Before Stage 0c:** the private repository `spokets-godisbus-familj`, a read-only token, and the secrets
+   `FAMILY_ASSETS_TOKEN` and `PRIVACY_DENYLIST` (plan §6.11).
 
-## Decisions in effect until Olov answers (plan §0 defaults)
+## Decisions in effect
 
-| Question | Default |
-| --- | --- |
-| Elof and his device | 6–7 years, not a fluent reader, a tablet held in landscape; *Läs upp* and sound on in his profile |
-| Scale | (a): Elof shrinks to the ghost's size at the end of the prologue |
-| The secret | The ghost carries Pappa's memory of his first trägubbe; memories show only hands until Pappa says yes |
-| Consent and privacy | The children's first names and Bredbyn as the setting; parents only as Mamma and Pappa; the house "clearly alike"; no new personal material before both parents say yes |
-| Dates | Utgåva 1 by Christmas 2026; Version 1.0 in spring 2027 |
-| Characters | Elof by Route A (a paid image-to-3D month) and Route B (code) in parallel; the ghost in code first |
-| The mountain | Storklocken as the model, unnamed in the game |
-| Voices | *Läs upp* with on-device voices; family recordings offered, kept on the tablet |
+| Question | Decision | Source |
+| --- | --- | --- |
+| Elof as a player | 7 years, plays games for 11+. Play style *Äventyr* by default (variable jump, a swing he pumps, the glitter bubble, exciting sequences, challenge routes); *Lugnt* for anyone who wants it. Help only when asked; *Läs upp* off. | Olov, 3 Oct |
+| Devices | A new iPad, an iPhone, or an Android phone in the Samsung S23 class; tuned for the High tier | Olov, 3 Oct |
+| Consent | Both parents say yes to everything, and every name may be used. Still never surnames, house number or address, coordinates, the school or account names (plan §2.6). | Olov, 3 Oct |
+| Renderer | Three.js r186 `WebGLRenderer` on WebGL 2 | Olov, 3 Oct |
+| Where work happens | Mostly on Olov's computer, with Blender through *MCP for Blender*; cloud sessions for code | Olov, 3 Oct |
+| Scale | (a): Elof shrinks to the ghost's size at the end of the prologue | Default, plan §0 Q2 |
+| The secret | Pappa's first trägubbe, carved for baby Elof and lost on the mountain; Pappa reads the storyboard first | Default, plan §0 Q3 |
+| Dates | Utgåva 1 by Christmas 2026; Version 1.0 in spring 2027 | Default, plan §0 Q5 |
+| Characters | Elof by Route A (Meshy Pro, finished in Blender) and Route B (built in Blender) in parallel; the ghost modelled in Blender | Default, plan §5.6 |
+| The mountain | Storklocken as the model | Default, plan §0 Q8 |
+| Voices | *Läs upp* available but off for Elof; family recordings offered, kept on Elof's device | Default, plan §0 Q9 |
 
 ## Planned against actual
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
-| Planning | 1 | 1 | — | Plan version 2 |
+| Planning | 1 | 1 | — | Plan versions 1–3; `main` and the placeholder page |
+
+## Known bugs
+
+- None: there is no game code yet.
 
 ## Senare (wishes for a later release)
 
@@ -52,4 +64,4 @@
 
 ## Frågor till Olov
 
-See plan §0.
+See plan §0, "Kvar att svara på": Q2, Q3, Q5 (★), then Q7–Q16.

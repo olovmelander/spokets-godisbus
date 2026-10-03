@@ -8,6 +8,9 @@ Every third-party or generated file in this repository is listed here with its s
    the terms, including what the service does with uploads.
 3. **Made by the family, with consent:** scans and photos.
 
-Never: Mixamo, ActorCore, Megascans/Fab, Textures.com, or output from a free tier of an AI tool.
+Never: Mixamo, ActorCore, Megascans/Fab, Textures.com, or output from a free tier of an AI tool. Assets fetched
+or generated through *MCP for Blender* are listed here like any other file: Sketchfab and Poly Pizza models only
+under CC0 or CC BY, and never anything from Hunyuan3D (plan §5.6).
 
-There are no third-party or generated files yet.
+There are no third-party or generated files yet. The placeholder page in `site/` is original work, with no
+third-party files or requests.

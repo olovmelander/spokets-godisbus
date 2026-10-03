@@ -12,5 +12,14 @@ Thumbs.db
 /art/private/
 /references/
 
+# Blender's automatic backups of .blend files
+*.blend[0-9]
+
+# Local secrets never enter the repository
+.env
+.env.*
+!.env.example
+.dev.vars
+
 # Local iteration renders; only approved contact sheets are committed
 /docs/shots/_work/
