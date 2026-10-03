@@ -785,6 +785,11 @@
       pair of hands from far above. Who a sign stands for is
       `personFor` in `src/content/people.ts`. Where the pack has no model, as in CI and on the site today,
       the sign stays.
+    - **A little life** (branch `stage-0c-family-life`): each of them turns a little towards Elof as he
+      walks past, sways as someone standing does, and throws their arms up with a small hop when he has
+      given them candy at the party, or when they come into the picture on the summit. It is done in code
+      on the bones they share with Elof (`jointOf` and `bendJoint` in `src/render/view.ts`). Crude: the
+      arms go straight up, and nothing else moves.
     - **For looking at a late moment alone:** in a debug session `?flags=a,b` starts a chapter with those
       flags set. The summit with the family:
       `?dev&debug&course=norrsken&at=26,0.01&flags=placed:tragubbe,crowberry,eyes,bag,share:tragubbe,share:spoket,share:jay,shared,taste`.
