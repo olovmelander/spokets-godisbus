@@ -1343,10 +1343,12 @@ Every source and licence goes into `LICENSES.md` (§7.5). Three categories are a
 - **Setup on Olov's computer** (§6.14):
 
   ```bash
-  claude mcp add --transport stdio --env DISABLE_TELEMETRY=true --env BLENDER_MCP_SAFE_MODE=1 \
+  claude mcp add --env DISABLE_TELEMETRY=true --env BLENDER_MCP_SAFE_MODE=1 --transport stdio \
     blender -- uvx mcp-for-blender
   ```
 
+  - `--env` takes several values, so another option must stand between it and the server name, or the name is
+    read as one more variable.
   - **Telemetry off, completely.** Content collection is opt-in, but opting in uploads prompts, code, viewport
     screenshots, scene data and step-by-step session records, which "may be used … to train AI models" (its
     README). Our scenes hold the family's models, so never tick the add-on's consent box, and decline the one-time
