@@ -1,6 +1,28 @@
 # Handover
 
-## State (3 October 2026)
+## State (4 October 2026)
+
+- **Read this first: where it stands.**
+  - The whole story is playable from start to end with `?dev`: the prologue, four chapters, the final and
+    the epilogue, and after them an extra chapter, Byn. Everything is merged to `main` and deployed:
+    `https://olovmelander.github.io/spokets-godisbus/?dev`. The plain address still shows the grey test
+    course, because `RELEASED_CHAPTER` is `null`: releasing is Olov's.
+  - **Added in the night of 3 to 4 October** (pull requests #38 to #55; each has its own entry further
+    down): music and each place's air; footsteps for every surface; the sticker album; four more switches;
+    wordless sounds for the characters and for Elof; the size gate as served; chapter codes; C1, the swing
+    chain; the bouncing cranberries; a graphics level that finds its own place, and High's glow; Hittegods,
+    found and given back; Byn; far scenery in layers with parallax for every place; the family's first
+    models, and the code that shows them at home and on the summit.
+  - **What Olov asked for on 4 October, and how far it got:**
+    - *"Improving and creating all character models in blender":* Pappa, Mamma, Moa, Bertil and
+      three-year-old Elof have first models. They are on his computer only, waiting for his eyes and his
+      word (question 6). Elof and the ghost were not reworked. The animals are still built in code.
+    - *"Better graphics in the background and parallax effect background":* done for every place.
+    - *"Improve all assets and graphics on all levels":* the far scenery and High's glow reach every
+      level. The things, the animals and the ground are as they were.
+    - *The village's shopping street as a chapter:* built, as Byn. Its own name waits for question 5.
+  - **Waiting for Olov:** questions 5 and 6 under "Frågor till Olov"; the checkpoints H1a, H1b and H2;
+    pull request #12; and his ears, because nobody has listened to any of the sound.
 
 - **Done:**
   - The plan, `docs/game-plan.md` version 4: research, design, art direction, technology and delivery. Version 4
@@ -821,6 +843,21 @@
 
 ## Next
 
+**For the next session, in this order:**
+
+- Olov's answers to questions 5 and 6, and what he says about the pictures in
+  `photos/renders/2026-10-04-family/`. Then a second round on each family model from his remarks and from
+  the list under "The family, first models".
+- Poses for the family: sitting at the table at the party, Mamma in the doorway, Pappa's hands with the
+  knife, and their hands in the macro world where the signs' rides are now.
+- Byn: people's feet passing, cars, and the inside of the shop.
+- What Stage 2 still lacks in code: *Följ fingret*, more than one player, a graphics setting, the key
+  reference, the challenge routes C2 to C4, the dew bells, a service worker for offline play, and the
+  album's photos.
+- The sound, once Olov has listened: nothing of it has been heard by anyone.
+
+The older list, still true where it is not struck:
+
 1. **The Blender tools work** in a session on Olov's computer (since the second restart on 3 October).
    - In the add-on's panel, keep only *Poly Haven* ticked. Never tick *Hunyuan*.
    - **Update the add-on when convenient:** run `uvx mcp-for-blender install-addon`, then restart Blender (or switch
@@ -904,14 +941,19 @@
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. |
-| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. On 4 October: chapter codes, C1, two optional delights, footsteps and wordless sounds, more switches, and the extra chapter Byn. |
+| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. |
 
 ## Known bugs
 
 - None known in the game.
+- The far layers of the sky and hills do not darken when night falls in the final, and the stars at dusk
+  are drawn as short dashes: the sky's picture is stretched to the screen.
+- With three sessions working on the computer at once, two long tests timed out and the browser test once
+  measured a warm-up frame. Both are fixed (a minute for the tests; the measure waits for the frame to
+  settle). On a quiet computer and in CI neither happened.
 - **On Windows, start the tests from a path spelled with a capital `C:`.** From `c:\Users\...` every test file
   fails with "Cannot read properties of undefined (reading 'config')": vitest gets loaded twice under two
   spellings. `cd "C:/Users/..."` first.
