@@ -110,6 +110,8 @@ export const sv = {
   // Said at the top of the screen when a new kind is found, and under the stickers on a chapter's card.
   found: 'Ny sort: {name}!',
   stickers: 'Gömt godis',
+  // The album in the pause panel: every kind, found or not.
+  album: { title: 'Godisalbumet', count: '{found} av {total} sorter' },
 
   // The card at a chapter's end.
   end: {

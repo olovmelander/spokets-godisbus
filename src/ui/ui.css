@@ -483,6 +483,66 @@ body {
   }
 }
 
+/* --- the sticker album: every kind of hidden candy, found or still out there (plan §4.3) ----------- */
+.album:empty {
+  display: none;
+}
+
+.album h3 {
+  margin: 0;
+}
+
+.album-count {
+  margin: 2px 0 8px;
+  font-size: 15px;
+  opacity: 0.75;
+}
+
+.album-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px 6px;
+}
+
+.album-grid li {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.album-grid i {
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--colour);
+  box-shadow: inset 0 0 0 10px var(--mark), 0 0 0 2px #7b5a36;
+  transform: rotate(-6deg);
+}
+
+.album-grid li:nth-child(even) i {
+  transform: rotate(5deg);
+}
+
+/* One he has not found yet: an empty ring, and a question mark for its name. */
+.album-grid i.missing {
+  background: transparent;
+  box-shadow: none;
+  border: 2px dashed rgb(123 90 54 / 0.5);
+}
+
+.album-grid li:not(.got) span {
+  opacity: 0.5;
+}
+
 /* Moas karta: crayon on paper. */
 .map:empty {
   display: none;

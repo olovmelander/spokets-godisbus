@@ -83,6 +83,7 @@ export function mountShell(root: HTMLElement): void {
            <button class="level" id="helpGuide" type="button" role="radio">${p.helpGuide}</button>
          </div>
          <div class="map" id="pauseMap"></div>
+         <div class="album" id="pauseAlbum"></div>
          <button class="wide" id="stuckBtn" type="button">${BIG_CANDY}<span>${p.stuck}</span></button>
          <div class="ask" id="stuckAsk" hidden>
            <p>${p.stuckAsk}</p>
