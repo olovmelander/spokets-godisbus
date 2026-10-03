@@ -4,6 +4,7 @@ import {
   Object3D, PlaneGeometry, RepeatWrapping, SRGBColorSpace, SphereGeometry, Vector2, type Texture,
 } from 'three';
 import type { ChapterData, PlaceId, SurfaceKind } from '../sim/types';
+import { outlook, outlookPane, scenery } from './backdrop';
 import type { Grade } from './grade';
 
 /**
@@ -216,66 +217,6 @@ function backdrop(look: PlaceLook): CanvasTexture {
       c.fill();
     }
   });
-}
-
-// --- L1: far plates --------------------------------------------------------------------------------------
-
-/**
- * A far plate of the forest seen from the moss: tall soft columns, which are trunks far out of focus, and
- * between them round spots of light, as a lens draws them.
- */
-function forestPlate(seed: number, trunk: string, light: string, columns: number, spots: number, stretch: number): CanvasTexture {
-  const next = sequence(seed);
-  return drawn(512, 256, (c) => {
-    for (let i = 0; i < columns; i++) {
-      const x = ((i + 0.2 + next() * 0.6) / columns) * 512;
-      const w = 10 + next() * 26;
-      const across = c.createLinearGradient(x - w, 0, x + w, 0);
-      across.addColorStop(0, 'rgba(0,0,0,0)');
-      across.addColorStop(0.5, trunk);
-      across.addColorStop(1, 'rgba(0,0,0,0)');
-      c.fillStyle = across;
-      // Twice, half a plate apart, so that the plate joins itself when it repeats.
-      c.fillRect(x - w, 0, w * 2, 256);
-      c.fillRect(x - w - 512, 0, w * 2, 256);
-      c.fillRect(x - w + 512, 0, w * 2, 256);
-    }
-    for (let i = 0; i < spots; i++) {
-      const x = next() * 512;
-      const y = 20 + next() * 150;
-      const r = 3 + next() * 7;
-      // The plate is stretched when it hangs: drawn wide here, a spot is round there.
-      c.save();
-      c.translate(x, y);
-      c.scale(stretch, 1);
-      const spot = c.createRadialGradient(0, 0, r * 0.5, 0, 0, r);
-      spot.addColorStop(0, light);
-      spot.addColorStop(1, 'rgba(255,255,255,0)');
-      c.fillStyle = spot;
-      c.fillRect(-r, -r, r * 2, r * 2);
-      c.restore();
-    }
-  }, true);
-}
-
-function plates(from: number, to: number, floor: number): Group {
-  const group = new Group();
-  const width = to - from + 240;
-  const layers = [
-    { z: -62, height: 90, every: 110, texture: forestPlate(11, 'rgba(104,140,138,0.5)', 'rgba(255,250,214,0.36)', 9, 26, (90 / 256) / (110 / 512)) },
-    { z: -30, height: 60, every: 64, texture: forestPlate(23, 'rgba(44,74,70,0.8)', 'rgba(255,244,190,0.3)', 7, 14, (60 / 256) / (64 / 512)) },
-  ];
-  for (const layer of layers) {
-    layer.texture.repeat.set(width / layer.every, 1);
-    const plate = new Mesh(
-      new PlaneGeometry(width, layer.height),
-      new MeshBasicMaterial({ map: layer.texture, transparent: true, fog: false, depthWrite: false }),
-    );
-    plate.position.set((from + to) / 2, floor + layer.height * 0.36, layer.z);
-    plate.renderOrder = -2;
-    group.add(plate);
-  }
-  return group;
 }
 
 // --- L3: the ground ---------------------------------------------------------------------------------------
@@ -1161,64 +1102,6 @@ function lawn(chapter: ChapterData, from: number, to: number, seed: number): Gro
   return group;
 }
 
-/** A far plate of the garden: leaves in the sun far out of focus, green and the first yellow, with spots of light. */
-function foliagePlate(seed: number, leaves: string[], light: string, blobs: number, stretch: number): CanvasTexture {
-  const next = sequence(seed);
-  return drawn(512, 256, (c) => {
-    for (let i = 0; i < blobs; i++) {
-      const x = next() * 512;
-      const y = 10 + next() ** 1.5 * 200;
-      const r = 14 + next() * 30;
-      const colour = leaves[Math.floor(next() * leaves.length)]!;
-      for (const shift of [0, -512, 512]) {
-        c.save();
-        c.translate(x + shift, y);
-        c.scale(stretch, 1);
-        const blob = c.createRadialGradient(0, 0, r * 0.2, 0, 0, r);
-        blob.addColorStop(0, colour);
-        blob.addColorStop(1, 'rgba(255,255,255,0)');
-        c.fillStyle = blob;
-        c.fillRect(-r, -r, r * 2, r * 2);
-        c.restore();
-      }
-    }
-    for (let i = 0; i < 18; i++) {
-      const x = next() * 512;
-      const y = 20 + next() * 140;
-      const r = 3 + next() * 6;
-      c.save();
-      c.translate(x, y);
-      c.scale(stretch, 1);
-      const spot = c.createRadialGradient(0, 0, r * 0.5, 0, 0, r);
-      spot.addColorStop(0, light);
-      spot.addColorStop(1, 'rgba(255,255,255,0)');
-      c.fillStyle = spot;
-      c.fillRect(-r, -r, r * 2, r * 2);
-      c.restore();
-    }
-  }, true);
-}
-
-function gardenPlates(from: number, to: number, floor: number): Group {
-  const group = new Group();
-  const width = to - from + 240;
-  const layers = [
-    { z: -62, height: 90, every: 110, texture: foliagePlate(13, ['rgba(150,190,120,0.4)', 'rgba(120,170,110,0.4)', 'rgba(214,206,120,0.35)'], 'rgba(255,252,224,0.4)', 60, (90 / 256) / (110 / 512)) },
-    { z: -32, height: 60, every: 64, texture: foliagePlate(29, ['rgba(70,120,60,0.6)', 'rgba(96,146,62,0.55)', 'rgba(206,186,70,0.5)'], 'rgba(255,246,196,0.35)', 44, (60 / 256) / (64 / 512)) },
-  ];
-  for (const layer of layers) {
-    layer.texture.repeat.set(width / layer.every, 1);
-    const plate = new Mesh(
-      new PlaneGeometry(width, layer.height),
-      new MeshBasicMaterial({ map: layer.texture, transparent: true, fog: false, depthWrite: false }),
-    );
-    plate.position.set((from + to) / 2, floor + layer.height * 0.45, layer.z);
-    plate.renderOrder = -3;
-    group.add(plate);
-  }
-  return group;
-}
-
 /**
  * What is built: the house's red wall behind the scene, and a deck overhead with the sun falling through
  * between its boards. The wall is drawn small, so that it is as soft as everything else that far away.
@@ -1308,9 +1191,10 @@ function built(chapter: ChapterData, indoors = false): Group {
           c.fillRect(0, 4, 32, 22);
         })
       : null;
-    const glass = new MeshBasicMaterial(sky ? { map: sky, fog: false } : { color: '#bcd8ee', transparent: true, opacity: 0.55, fog: false });
-    for (const x of house.windows) {
-      const pane = new Mesh(new PlaneGeometry(5.1, 5.2), glass);
+    // In the morning the garden's far scenery is outside, each window with its own part of it.
+    const glass = new MeshBasicMaterial({ map: sky ?? outlook(), fog: false });
+    for (const [i, x] of house.windows.entries()) {
+      const pane = new Mesh(sky ? new PlaneGeometry(5.1, 5.2) : outlookPane(5.1, 5.2, i), glass);
       pane.position.set(x, heightAt(chapter, x) + 6, -8.95);
       group.add(pane);
     }
@@ -1617,92 +1501,6 @@ function fell(chapter: ChapterData, from: number, to: number, seed: number): Gro
   return group;
 }
 
-/** Where the horizon lies on a far plate's picture, in pixels from its top. */
-const EYE = 150;
-
-/** A line of hills across a plate, filled down to its foot. It joins itself where the plate repeats. */
-function ridge(c: CanvasRenderingContext2D, base: number, tall: number, colour: string, waves: number[], shift: number): void {
-  c.fillStyle = colour;
-  c.beginPath();
-  c.moveTo(0, 256);
-  for (let x = 0; x <= 512; x += 4) {
-    let up = 0;
-    for (const [i, w] of waves.entries()) up += Math.sin((x / 512) * Math.PI * 2 * w + shift + i * 1.9) / (i + 1);
-    c.lineTo(x, base - tall * (0.5 + 0.35 * up));
-  }
-  c.lineTo(512, 256);
-  c.fill();
-}
-
-/**
- * The far plates of an open place: the bog's distant forest and the mountain beyond it in mist, or the
- * ridges and the hazy valley seen from the mountain. They hang as one group, which the dressing keeps at
- * the height of his eyes.
- */
-function horizon(from: number, to: number, place: PlaceId): Group {
-  const group = new Group();
-  const width = to - from + 260;
-  const next = sequence(83);
-  const spruces = (c: CanvasRenderingContext2D, count: number, low: number, high: number, colour: string) => {
-    c.fillStyle = colour;
-    for (let i = 0; i < count; i++) {
-      const x = next() * 512;
-      const tall = low + next() * (high - low);
-      const wide = tall * 0.32;
-      for (const shift of [0, -512, 512]) {
-        c.beginPath();
-        c.moveTo(x + shift - wide, EYE + 6);
-        c.lineTo(x + shift, EYE + 6 - tall);
-        c.lineTo(x + shift + wide, EYE + 6);
-        c.fill();
-      }
-    }
-  };
-  const band = (c: CanvasRenderingContext2D, from: number, to: number, colour: string) => {
-    const down = c.createLinearGradient(0, from, 0, to);
-    down.addColorStop(0, 'rgba(255,255,255,0)');
-    down.addColorStop(0.5, colour);
-    down.addColorStop(1, 'rgba(255,255,255,0)');
-    c.fillStyle = down;
-    c.fillRect(0, from, 512, to - from);
-  };
-  const layers =
-    place === 'bog'
-      ? [
-          { z: -64, every: 150, draw: (c: CanvasRenderingContext2D) => {
-            ridge(c, EYE + 4, 58, 'rgba(128,142,162,0.6)', [1, 2], 0.6);
-            spruces(c, 90, 6, 16, 'rgba(78,96,84,0.6)');
-            band(c, EYE - 22, EYE + 26, 'rgba(255,250,236,0.5)');
-          } },
-          { z: -32, every: 84, draw: (c: CanvasRenderingContext2D) => {
-            spruces(c, 30, 16, 44, 'rgba(56,74,60,0.78)');
-            band(c, EYE - 14, EYE + 30, 'rgba(255,250,236,0.4)');
-          } },
-        ]
-      : [
-          { z: -74, every: 170, draw: (c: CanvasRenderingContext2D) => {
-            ridge(c, EYE + 2, 34, place === 'dusk' ? 'rgba(44,54,98,0.8)' : 'rgba(128,112,162,0.55)', [1, 3], 0.3);
-            ridge(c, EYE + 12, 26, place === 'dusk' ? 'rgba(34,42,82,0.85)' : 'rgba(150,120,150,0.5)', [2, 5], 1.7);
-            // The valley below, filled with haze.
-            band(c, EYE + 6, 256 + 60, place === 'dusk' ? 'rgba(60,70,112,0.6)' : 'rgba(244,196,170,0.6)');
-          } },
-          { z: -38, every: 96, draw: (c: CanvasRenderingContext2D) => {
-            ridge(c, EYE + 28, 30, place === 'dusk' ? 'rgba(22,28,58,0.9)' : 'rgba(98,86,122,0.7)', [1, 2, 4], 2.4);
-          } },
-        ];
-  for (const layer of layers) {
-    const texture = drawn(512, 256, layer.draw, true);
-    texture.repeat.set(width / layer.every, 1);
-    const tall = 64;
-    const plate = new Mesh(new PlaneGeometry(width, tall), new MeshBasicMaterial({ map: texture, transparent: true, fog: false, depthWrite: false }));
-    // The picture's horizon comes to lie a little above the ground he stands on.
-    plate.position.set((from + to) / 2, 1.4 + (EYE / 256 - 0.5) * tall, layer.z);
-    plate.renderOrder = -3;
-    group.add(plate);
-  }
-  return group;
-}
-
 // --- the whole dressing --------------------------------------------------------------------------------------
 
 /** Builds a place's layers around a chapter's ground. */
@@ -1710,7 +1508,6 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   const group = new Group();
   const from = chapter.ground[0]!.x;
   const to = chapter.ground[chapter.ground.length - 1]!.x;
-  const floor = Math.min(...chapter.ground.map((p) => p.y));
   KIT = kit();
   const air = effects(chapter, from, to, look.id);
   const own: Record<PlaceId, { ground: Ground; growth: Growth | null }> = {
@@ -1721,10 +1518,11 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
     dusk: { ground: 'granite', growth: null },
     home: { ground: 'wood', growth: null },
   };
-  // In the open the horizon is far away, and stays at the height of his eyes however high he climbs.
-  const open = look.id === 'bog' || look.id === 'mountain' || look.id === 'dusk' ? horizon(from, to, look.id) : null;
+  // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
+  // however high he climbs: backdrop.ts.
+  const far = scenery(look.id, heightAt(chapter, from));
   group.add(
-    open ?? (look.id === 'home' ? new Group() : look.id === 'garden' ? gardenPlates(from, to, floor) : plates(from, to, floor)),
+    far.group,
     bank(chapter, own[look.id].ground),
     scatter(chapter, from, to, look.id),
     built(chapter, look.id === 'home'),
@@ -1736,7 +1534,7 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
     background: backdrop(look),
     update(cameraX, groundY, clock) {
       air.update(cameraX, groundY, clock);
-      if (open) open.position.y = groundY;
+      far.update(cameraX, groundY, clock);
     },
   };
 }

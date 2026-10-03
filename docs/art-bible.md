@@ -247,7 +247,7 @@ The forest's layers, and after them the garden's:
 | Layer | What it is in the forest | How it is made |
 | --- | --- | --- |
 | L0 Backdrop | Dark green above, a pale gold glow where the sun stands, moss green below | One small gradient picture behind everything |
-| L1 Far plates | Trunks far out of focus, as soft columns, with round spots of light | Two pictures drawn on small canvases and stretched large, at 30 and 62 EL behind the path. Drawn small, they are soft: that is the blur. |
+| L1 Far scenery | Four depths of forest far out of focus: trunks as soft columns, thinner and paler the further in, young spruces at their feet, boughs that hang in from above, and round spots of light | Four pictures drawn on small canvases, blurred and stretched large, 32 to 78 EL behind the path. Each passes at its own speed: see *The far layers* below. |
 | L2 Mid-ground | Spruce trunks 4 to 22 EL behind the path, soft low shrubs, stones | Trunks as one turned shape with roots, bark drawn in code, moss painted on its foot; shrubs as soft cards; the haze takes them with distance |
 | L3 Play plane | The moss bank, cushions, grass, lingonberry sprigs, cones, needles | The ground is a bank that rounds off towards the camera, not a cut face. Each kind of thing is one instanced mesh per 18 EL of chapter, drawn only while it is in the picture. |
 | L4 Foreground | Tufts of grass far out of focus along the bottom, now and then one that stands tall | Soft dark cards 4 to 7.5 EL in front of the path, which pass faster than the path does |
@@ -257,7 +257,7 @@ The forest's layers, and after them the garden's:
 | Layer | What it is in the garden | How it is made |
 | --- | --- | --- |
 | L0 Backdrop | Morning blue above, pale at the horizon, a warm glow to the left | The same gradient picture, in the garden's colours |
-| L1 Far plates | Leaves in the sun far out of focus: greens and the first yellow | Two drawn plates of soft blobs and spots of light |
+| L1 Far scenery | White clouds that drift; blue hills of forest; the forest's edge with the neighbours' roofs in front of it; birches in their first yellow over a hedge; the garden's own leaves far out of focus | Five pictures, made as the forest's |
 | L2 Mid-ground | **The house's red wall** with its cover strips, a white corner board and white-framed windows; a birch now and then | The wall is a small drawn picture, repeated, 21 EL behind the path; a chapter says where the house stands (`house`) |
 | L3 Play plane | **The deck:** boards 0.8 EL wide with dark gaps, each its own tone, a straight front edge and the dark under it. **The lawn:** a jungle of grass behind the path, stubble where he walks, dew, dandelions as tall as he is, clover, the birch's yellow leaves. Dry earth under the deck, a grey boulder, Pappa's pale shavings, the dark hedge. | A chapter marks what a stretch of ground is made of (`surfaces`); each kind has its tones and its edge. Nothing grows on what is built. |
 | L3, overhead | **The lower deck above him:** boards and joists, with the sun falling through between the boards as stripes on the earth | A chapter says where (`roofs`) |
@@ -267,10 +267,27 @@ The forest's layers, and after them the garden's:
 The bog, the mountain and the summit at dusk use the same layers with their own things: sphagnum cushions,
 sedge, dwarf birch, cloudberry leaves and cranberries; reindeer lichen, crowberry, dry grass and bare
 boulders. Two things are different in the open:
-- **The horizon is a picture that stays at the height of his eyes** however high he climbs: the distant
-  forest and the mountain in mist, or the ridges and the hazy valley.
+- **The far scenery is the horizon.** Over the bog: clouds, the mountain in mist, low hills of forest, the
+  forest's edge, and the nearest spruces and bog pines, dark against the mist. From the mountain: clouds
+  and four lines of ridges with haze in the valleys between them, the nearest with the tops of its spruces.
+  At dusk the same ridges are dark blue, and a few windows are lit far below.
 - **The bog's ground is islands.** It goes down into the water behind the path, and the water lies as far
   back as the eye reaches. The soft tussocks are mounds of paler moss.
+
+**The far layers** (`src/render/backdrop.ts`). This is the parallax:
+- A place outdoors has four or five, one behind the other, 32 to 90 EL behind the path. Each is one card that
+  goes with the camera, and its picture slides across it by its own part of the camera's way (`hold`). The
+  nearest holds 1 and stands still in the world; the next ones hold about 0.65, 0.4 and 0.2; the sky holds
+  0.08, and its clouds drift by themselves. Seen from the path, the nearest passes at about a quarter of the
+  path's speed and the farthest hills at about a fortieth.
+- Every layer stays at the height of his eyes however high he climbs, and sinks by a small part of the climb
+  (`sink`), the nearer the more: nearer hills go down under farther ones.
+- A picture is 512 by 256 pixels. Its shapes are drawn whole, in colours already mixed with the place's haze,
+  and then blurred by halving the picture and doubling it again; a band of mist lies at its foot. Its top row
+  is clear and its bottom row is its foot, and the card repeats both, so no layer has an edge.
+- A house far away is a pale wall under a grey roof: nothing to read on it, and not red.
+- At home the morning windows show the garden's far scenery as one still picture.
+- A new place gets its layers in `LAYERS` there.
 
 Rules that hold for every place:
 - **The play plane is sharp and level.** Nothing of the dressing stands where he walks, and within 0.3 EL of the
@@ -353,4 +370,6 @@ Each should be recognisable at phone size, and none is final.
 - In the bog, the mountain and the final: pines with crowns (a bare trunk reads as a pole, so the mountain
   has none yet), the valley below the crane flight, Mamma's lamp, the headlamps.
 - In the garden: long shadows, the hose and the lost things under the deck, the birch's crown, the workshop.
+- In the far layers: they do not darken when night falls in the final, and what the windows show at home
+  does not move.
 
