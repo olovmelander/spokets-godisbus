@@ -85,6 +85,8 @@ describe("the test course's trail", () => {
   it('has every candy over the ground and within a jump of it, or on a hose', () => {
     for (const [i, c] of candy.entries()) {
       if ((testbana.climbs ?? []).some((h) => Math.abs(h.x - c.x) < 0.5 && c.y > h.bottom && c.y < h.top + 0.6)) continue;
+      // Along a swing: within the lace's length of its hook.
+      if ((testbana.hooks ?? []).some((h) => Math.hypot(h.x - c.x, h.y - c.y) < h.length + 0.7)) continue;
       // A candy over a wall or a ditch belongs to the ground a jump takes off from: the highest within reach.
       const around = [-1.2, -0.6, 0, 0.6, 1.2].map((dx) => heightAt(testbana, c.x + dx));
       const ground = Math.max(...around);

@@ -9,15 +9,17 @@ import type { ChapterData } from '../../sim/types';
  * - a ramp he walks up, and a wall he pulls himself up;
  * - a wall too high for that, with a hose to climb;
  * - a cliff too high to jump from, with a hose to slide down (Använd);
+ * - a gully too wide to jump, with a hook over it: the lace (Använd), a swing, and Hoppa to let go;
  * - and the big candy at the end.
  *
  * The candy trail shows the way (plan §4.3): a candy every 1.5 to 3 EL along the ground, an arc over each
- * jump (the higher the arc, the longer Hoppa is held), and a line of candy up and down each hose.
+ * jump (the higher the arc, the longer Hoppa is held), a line of candy up and down each hose, and at the
+ * swing an arc for the flight that lands.
  */
 export const testbana: ChapterData = {
   id: 'testbana',
   spawn: { x: 0, y: 0.01 },
-  goalX: 48,
+  goalX: 56,
   ground: [
     { x: -4, y: 6 },
     { x: -4, y: 0 },
@@ -58,9 +60,16 @@ export const testbana: ChapterData = {
     // the cliff with the hose down
     { x: 43, y: 6 },
     { x: 43, y: 0 },
-    { x: 50, y: 0 },
-    { x: 50, y: 8 },
+    // the gully under the hook
+    { x: 46, y: 0 },
+    { x: 46, y: -6 },
+    { x: 50.4, y: -6 },
+    { x: 50.4, y: 0 },
+    { x: 58, y: 0 },
+    { x: 58, y: 8 },
   ],
+  // In reach from 1.4 EL before the edge, so there is time to throw the lace even at a run.
+  hooks: [{ x: 47.5, y: 3.3, length: 2.7, land: { x: 51.8, y: 0 } }],
   climbs: [
     { x: 38.7, bottom: 2.8, top: 6, exit: 1 },
     { x: 43.3, bottom: 0, top: 6, exit: -1 },
@@ -111,7 +120,16 @@ export const testbana: ChapterData = {
     { x: 43.3, y: 3.5 },
     { x: 43.3, y: 2 },
     { x: 44.4, y: 0.45 },
-    { x: 45.9, y: 0.45 },
-    { x: 47.2, y: 0.45 },
+    { x: 45.6, y: 0.45 },
+    // along the swing
+    { x: 46.5, y: 0.8 },
+    { x: 47.5, y: 0.6 },
+    { x: 48.5, y: 0.8 },
+    // the flight that lands
+    { x: 50, y: 1.75 },
+    { x: 50.8, y: 1.6 },
+    { x: 51.6, y: 0.8 },
+    { x: 53, y: 0.45 },
+    { x: 54.5, y: 0.45 },
   ],
 };

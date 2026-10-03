@@ -58,6 +58,25 @@ export const SLIDE_TIME = 1;
 /** Ground too steep to stand on is slid down no faster than this. */
 export const STEEP_SLIDE_SPEED = 3;
 
+/** Within this of a hook, Använd throws the lace (plan §4.2). */
+export const LACE_REACH = 4;
+/** How fast the lace pulls him in to its swinging length. */
+export const LACE_REEL = 5;
+/** The lace is never climbed shorter than this. */
+export const SWING_MIN_LENGTH = 1;
+/** Full height: the swing goes no further from straight down than this. */
+export const SWING_MAX = (65 * Math.PI) / 180;
+/** What pushing the way he swings adds, along the arc, in EL/s². */
+export const SWING_PUMP = 1.6;
+/** With *Hjälp med svingen* the swing pumps itself, and harder: full height in about two seconds. */
+export const SWING_PUMP_HELP = 3.2;
+/** A swing left alone slowly comes to rest. */
+export const SWING_DAMP = 0.08;
+/** With help, the flight from the swing to its landing takes this long. */
+export const SWING_FLIGHT = 0.6;
+/** With help, Hoppa is held until the next forward top of the swing, but never longer than this. */
+export const SWING_HOLD_MAX = 2.6;
+
 /** A fall longer than this ends in the glitter bubble; a shorter one is a soft landing (plan §4.2). */
 export const FALL_LIMIT = 4;
 /** The bubble floats him back in about this long. */

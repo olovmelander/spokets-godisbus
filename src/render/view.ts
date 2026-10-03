@@ -2,7 +2,7 @@ import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
   MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, Quaternion,
-  Scene, Shape, SphereGeometry, UnsignedByteType, Vector2, Vector3, WebGLRenderer,
+  Scene, Shape, SphereGeometry, TorusGeometry, UnsignedByteType, Vector2, Vector3, WebGLRenderer,
 } from 'three';
 import { createAssets } from './assets';
 import { GARDEN_MORNING, createGradePass } from './grade';
@@ -92,7 +92,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const candyPlace = buildCandy(chapter);
   const trail = buildTrail(chapter);
   const glitter = buildGlitter();
-  scene.add(buildGround(chapter), buildTrunks(chapter), buildClimbs(chapter), candyPlace, trail.mesh, glitter.group);
+  const lace = buildLace();
+  scene.add(buildGround(chapter), buildTrunks(chapter), buildClimbs(chapter), buildHooks(chapter), lace.mesh, candyPlace, trail.mesh, glitter.group);
   let candy = candyPlace.getObjectByName('candy')!;
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
@@ -211,6 +212,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     clock += dt;
     trail.update(collected, x, y, dt, clock);
     glitter.update(curr.bubble, x, y, clock);
+    // He hangs by his hands, his body along the lace.
+    const hang = curr.hook ? Math.atan2(curr.hook.x - x, curr.hook.y - (y + 0.5)) : 0;
+    lace.update(curr.hook, x - Math.sin(hang) * 0.4, y + 0.5 + Math.cos(hang) * 0.4);
 
     // The simulation says where to look; the view only smooths it.
     const want = cameraIntent(curr);
@@ -235,8 +239,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     wasGrounded = curr.grounded;
     squash += (1 - squash) * ease(12, dt);
     const stretch = curr.grounded ? squash : 1 + clamp(curr.vy * 0.012, -0.05, 0.1);
-    elof.group.position.set(x, y, 0);
-    elof.group.rotation.y = turn;
+    // The tilt turns about his middle, where the lace's pull goes through.
+    elof.group.position.set(x - Math.sin(hang) * 0.5, y + 0.5 - Math.cos(hang) * 0.5, 0);
+    elof.group.rotation.set(0, turn, -hang, 'ZYX');
     elof.group.scale.set(1 / Math.sqrt(stretch), stretch, 1 / Math.sqrt(stretch));
     elof.body.rotation.z = -clamp(curr.vx / RUN_SPEED, -1, 1) * 0.12 * curr.facing;
 
@@ -342,7 +347,7 @@ function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number): 
 function startState(chapter: ChapterData): PlayerState {
   return {
     x: chapter.spawn.x, y: chapter.spawn.y, vx: 0, vy: 0, facing: 1, grounded: true, groundY: chapter.spawn.y,
-    standY: chapter.spawn.y, atEdge: false, bubble: 0, mode: 'free', t: 0, verb: null,
+    standY: chapter.spawn.y, atEdge: false, bubble: 0, mode: 'free', t: 0, verb: null, hook: null,
   };
 }
 
@@ -363,6 +368,40 @@ function buildGround(chapter: ChapterData): Mesh {
   const geometry = new ExtrudeGeometry(shape, { depth: 4.7, bevelEnabled: false });
   geometry.translate(0, 0, -4);
   return new Mesh(geometry, new MeshStandardMaterial({ color: '#7f8f58', roughness: 1 }));
+}
+
+/** Every hook has a red ring: the one sign the game teaches for "the lace goes here" (plan §4.2). */
+function buildHooks(chapter: ChapterData): Group {
+  const group = new Group();
+  const red = new MeshStandardMaterial({ color: '#d8382c', roughness: 0.35 });
+  for (const hook of chapter.hooks ?? []) {
+    const ring = new Mesh(new TorusGeometry(0.19, 0.045, 10, 28), red);
+    ring.position.set(hook.x, hook.y, -0.05);
+    group.add(ring);
+  }
+  return group;
+}
+
+/**
+ * The lace between Elof's hands and the hook: a red candy lace, drawn as one thin rod. It is always in the
+ * scene, at no size while he isn't swinging, so nothing is compiled when he first throws it.
+ */
+function buildLace() {
+  const mesh = new Mesh(new CylinderGeometry(0.022, 0.022, 1, 6), new MeshStandardMaterial({ color: '#e0463a', roughness: 0.5 }));
+  mesh.frustumCulled = false;
+  mesh.scale.setScalar(0);
+  function update(hook: { x: number; y: number } | null, handX: number, handY: number): void {
+    if (!hook) {
+      mesh.scale.setScalar(0);
+      return;
+    }
+    const dx = hook.x - handX;
+    const dy = hook.y - handY;
+    mesh.position.set((hook.x + handX) / 2, (hook.y + handY) / 2, 0);
+    mesh.rotation.z = -Math.atan2(dx, dy);
+    mesh.scale.set(1, Math.hypot(dx, dy), 1);
+  }
+  return { mesh, update };
 }
 
 /** The hoses he climbs: green garden hose, a little behind the play plane so that he is in front of it. */

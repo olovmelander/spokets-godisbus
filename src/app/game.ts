@@ -2,7 +2,7 @@ import { FixedLoop } from '../core/loop';
 import { NO_EDGES, PressQueue, type Edges } from '../input/press-queue';
 import { MAX_STEPS_PER_FRAME, STEP } from '../sim/constants';
 import { Sim } from '../sim/sim';
-import type { ChapterData } from '../sim/types';
+import type { ChapterData, SimOptions } from '../sim/types';
 
 /** Held input, read once per frame. */
 export interface Held {
@@ -24,8 +24,8 @@ export class Game {
   private readonly loop = new FixedLoop(STEP, MAX_STEPS_PER_FRAME);
   private readonly queue = new PressQueue();
 
-  constructor(chapter: ChapterData) {
-    this.sim = new Sim(chapter);
+  constructor(chapter: ChapterData, options: SimOptions = {}) {
+    this.sim = new Sim(chapter, options);
   }
 
   /** One frame: dt seconds have passed. Presses go to the first step that runs. */

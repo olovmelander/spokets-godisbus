@@ -5,7 +5,10 @@ import {
   RUN_AFTER, RUN_DEFLECTION, RUN_SPEED, SAFE_AFTER, SAFE_REACH, SLIDE_REACH, SLIDE_TIME, STEEP_SLIDE_SPEED, STEP,
   STEP_HEIGHT, STOP_WITHIN, WALK_DEFLECTION, WALK_SPEED,
 } from './constants';
-import type { ChapterData, Climb, Mode, PlayerState, StepInput, Vec, Verb } from './types';
+import {
+  LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
+} from './constants';
+import type { ChapterData, Climb, Hook, Mode, PlayerState, SimOptions, StepInput, Vec, Verb } from './types';
 
 // 1 EL is the length unit. This scales Box2D's tolerances to a hero who is one unit tall (plan §6.4).
 Settings.lengthUnitsPerMeter = 0.2;
@@ -37,7 +40,10 @@ type State =
   | { kind: 'bubble'; fromX: number; fromY: number; t: number }
   | { kind: 'ledge'; fromX: number; fromY: number; toX: number; toY: number; t: number }
   | { kind: 'climb'; climb: Climb }
-  | { kind: 'slide'; climb: Climb; fromX: number; t: number };
+  | { kind: 'slide'; climb: Climb; fromX: number; t: number }
+  /** `angle` is from straight down, positive to the right; `speed` is its rate; `letGo` counts from Hoppa, or is -1. */
+  | { kind: 'swing'; hook: Hook; length: number; to: number; angle: number; speed: number; letGo: number }
+  | { kind: 'fly'; fromX: number; fromY: number; vx: number; vy: number; toX: number; toY: number; t: number };
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -45,8 +51,9 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 /**
  * The pure simulation: no three, no DOM, no clock. One call to step() is 1/120 s.
  * It holds the ground and a greybox Elof with the moves of plan §4.2: he walks, runs and jumps, walks over
- * low steps and up slopes, pulls himself up ledges, climbs hoses and slides down them, collects the trail
- * candy, and is carried back by the glitter bubble when he falls too far.
+ * low steps and up slopes, pulls himself up ledges, climbs hoses and slides down them, throws the lace to
+ * a hook and swings, collects the trail candy, and is carried back by the glitter bubble when he falls too
+ * far.
  */
 export class Sim {
   readonly world: World;
@@ -64,7 +71,10 @@ export class Sim {
   /** His body. While he is carried it is a sensor, so he passes through the ground. */
   private readonly shape: Fixture;
   private readonly climbs: Climb[];
+  private readonly hooks: Hook[];
   private state: State = { kind: 'free' };
+  /** True in the air after a swing: he keeps the speed it gave him, where a jump's speed follows the stick. */
+  private thrown = false;
   private footContacts = 0;
   private coyote = 0;
   private buffer = 0;
@@ -91,7 +101,7 @@ export class Sim {
   /** Where the bubble is taking him. */
   private readonly safe: Vec;
 
-  constructor(readonly chapter: ChapterData) {
+  constructor(readonly chapter: ChapterData, readonly options: SimOptions = {}) {
     this.world = new World({ gravity: new Vec2(0, -GRAVITY), allowSleep: false });
 
     const ground = this.world.createBody();
@@ -123,6 +133,7 @@ export class Sim {
     this.world.on('end-contact', (c) => this.countFoot(c, -1));
 
     this.climbs = chapter.climbs ?? [];
+    this.hooks = chapter.hooks ?? [];
     this.collected = chapter.candy.map(() => false);
     this.standY = chapter.spawn.y;
     this.fallTop = chapter.spawn.y;
@@ -143,7 +154,9 @@ export class Sim {
     else if (state.kind === 'bubble') this.float(state);
     else if (state.kind === 'ledge') this.haul(state);
     else if (state.kind === 'climb') this.climb(state, input);
-    else this.slide(state);
+    else if (state.kind === 'slide') this.slide(state);
+    else if (state.kind === 'swing') this.swing(state, input);
+    else this.fly(state);
 
     this.world.step(STEP);
     this.steps++;
@@ -167,9 +180,15 @@ export class Sim {
     this.regrab = Math.max(0, this.regrab - STEP);
     const dir = Math.sign(input.x);
 
-    // Använd at the top of a hose: he slides down it (plan §4.2).
+    // Använd near a hook: the lace flies to it and hooks on by itself, with no aiming (plan §4.2).
+    const hook = this.hookInReach();
+    // Använd at the top of a hose: he slides down it.
     const below = p.grounded ? this.climbs.find((c) => Math.abs(c.x - p.x) <= SLIDE_REACH && Math.abs(c.top - p.y) <= 0.25) : undefined;
-    this.verb = below ? 'slide' : null;
+    this.verb = hook ? 'lace' : below ? 'slide' : null;
+    if (hook && input.act) {
+      this.throwLace(hook);
+      return;
+    }
     if (below && input.act) {
       this.carry(true);
       this.state = { kind: 'slide', climb: below, fromX: p.x, t: 0 };
@@ -197,6 +216,34 @@ export class Sim {
         this.verb = null;
       }
     }
+  }
+
+  /** The nearest hook above him that the lace reaches in a straight line. */
+  private hookInReach(): Hook | null {
+    const x = this.curr.x;
+    const y = this.curr.y + ELOF_HEIGHT / 2;
+    let nearest: Hook | null = null;
+    let reach = LACE_REACH;
+    for (const hook of this.hooks) {
+      const distance = Math.hypot(hook.x - x, hook.y - y);
+      if (hook.y < y + 0.4 || distance > reach || this.cast(x, y, hook.x, hook.y)) continue;
+      nearest = hook;
+      reach = distance;
+    }
+    return nearest;
+  }
+
+  /** The lace hooks on, and he hangs from it: what he was doing along the swing's arc, he keeps doing. */
+  private throwLace(hook: Hook): void {
+    const p = this.curr;
+    const dx = p.x - hook.x;
+    const dy = hook.y - (p.y + ELOF_HEIGHT / 2);
+    const length = Math.hypot(dx, dy);
+    const angle = Math.atan2(dx, dy);
+    const speed = (p.vx * Math.cos(angle) + p.vy * Math.sin(angle)) / length;
+    this.carry(true);
+    this.verb = null;
+    this.state = { kind: 'swing', hook, length, to: Math.max(SWING_MIN_LENGTH, Math.min(length, hook.length)), angle, speed, letGo: -1 };
   }
 
   /**
@@ -240,7 +287,10 @@ export class Sim {
     else if (push > 0) target = dir * WALK_SPEED * Math.min(1, push / WALK_DEFLECTION);
     const speedingUp = target !== 0 && (speed === 0 || Math.sign(speed) === dir) && Math.abs(target) > Math.abs(speed);
     const change = (speedingUp ? RUN_SPEED / RUN_AFTER : RUN_SPEED / STOP_WITHIN) * STEP;
-    speed = speed < target ? Math.min(target, speed + change) : Math.max(target, speed - change);
+    // Thrown by a swing, he keeps its speed in the air unless he pushes against it.
+    if (this.thrown && grounded) this.thrown = false;
+    const carried = this.thrown && dir !== -Math.sign(speed);
+    if (!carried) speed = speed < target ? Math.min(target, speed + change) : Math.max(target, speed - change);
     if (dir !== 0) this.facing = dir as 1 | -1;
 
     // Walking, he never steps over an edge with a longer drop than he can land: he stops there and looks
@@ -338,6 +388,7 @@ export class Sim {
     this.rising = false;
     this.cut = false;
     this.leaving = false;
+    this.thrown = false;
     this.buffer = 0;
     this.coyote = 0;
     this.atEdge = false;
@@ -438,6 +489,81 @@ export class Sim {
     this.regrab = REGRAB_AFTER;
   }
 
+  /**
+   * One step on the lace: a pendulum under the hook.
+   * - On *Äventyr* he pumps it: pushing the way he swings adds to the swing, as on a playground swing, up
+   *   to full height. Hoppa lets go, and he flies on along the arc.
+   * - With *Hjälp med svingen* it pumps itself, and Hoppa is held until the next forward top of the swing;
+   *   the flight from there is steered to the hook's landing.
+   * - Up and down climb the lace.
+   */
+  private swing(s: { hook: Hook; length: number; to: number; angle: number; speed: number; letGo: number }, input: StepInput): void {
+    const hook = s.hook;
+    const help = this.options.swingHelp === true;
+    const forward = hook.land ? Math.sign(hook.land.x - hook.x) || 1 : this.facing;
+
+    if (input.y > 0.5) s.to = Math.max(SWING_MIN_LENGTH, s.to - CLIMB_SPEED * STEP);
+    if (input.y < -0.5) s.to = Math.min(hook.length, s.to + CLIMB_SPEED * STEP);
+    s.length = s.length > s.to ? Math.max(s.to, s.length - LACE_REEL * STEP) : s.to;
+
+    const moving = Math.abs(s.speed) > 0.05 ? Math.sign(s.speed) : 0;
+    const push = help ? moving || forward : Math.sign(input.x);
+    if (!help && push !== 0) this.facing = push as 1 | -1;
+    const energy = 0.5 * (s.length * s.speed) ** 2 + GRAVITY * s.length * (1 - Math.cos(s.angle));
+    const full = GRAVITY * s.length * (1 - Math.cos(SWING_MAX));
+    let turn = -(GRAVITY / s.length) * Math.sin(s.angle);
+    if (push !== 0 && energy < full && (moving === 0 || moving === push)) turn += (push * (help ? SWING_PUMP_HELP : SWING_PUMP)) / s.length;
+    s.speed = (s.speed + turn * STEP) * (1 - SWING_DAMP * STEP);
+
+    // Where the swing would take his middle. Something in the way sends him back the other way, softly.
+    const from = this.body.getPosition();
+    const angle = s.angle + s.speed * STEP;
+    let x = hook.x + s.length * Math.sin(angle);
+    let y = hook.y - s.length * Math.cos(angle) - ELOF_HEIGHT / 2;
+    if (this.cast(from.x, from.y - SKIN + ELOF_HEIGHT / 2, x, y + ELOF_HEIGHT / 2)) {
+      s.speed *= -0.3;
+      x = hook.x + s.length * Math.sin(s.angle);
+      y = hook.y - s.length * Math.cos(s.angle) - ELOF_HEIGHT / 2;
+    } else {
+      s.angle = angle;
+    }
+    this.place(x, y);
+
+    if (input.hop && s.letGo < 0) s.letGo = 0;
+    else if (s.letGo >= 0) s.letGo += STEP;
+    if (s.letGo < 0) return;
+
+    if (help && hook.land) {
+      // Held until he is at the top of the swing on the landing's side, about to swing back.
+      const atTop = s.angle * forward > 0.25 && s.speed * forward <= 0;
+      if (!atTop && s.letGo < SWING_HOLD_MAX) return;
+      this.facing = forward as 1 | -1;
+      this.state = {
+        kind: 'fly', fromX: x, fromY: y, toX: hook.land.x, toY: hook.land.y, t: 0,
+        vx: (hook.land.x - x) / SWING_FLIGHT,
+        vy: (hook.land.y - y) / SWING_FLIGHT + 0.5 * GRAVITY * SWING_FLIGHT,
+      };
+      return;
+    }
+    // He lets go, and flies on the way the swing was taking him.
+    const along = s.length * s.speed;
+    this.release(y);
+    this.thrown = true;
+    this.body.setLinearVelocity(new Vec2(along * Math.cos(s.angle), along * Math.sin(s.angle)));
+  }
+
+  /** One step of the steered flight from a swing to its landing: the arc of a throw that ends there. */
+  private fly(state: { fromX: number; fromY: number; vx: number; vy: number; toX: number; toY: number; t: number }): void {
+    state.t = Math.min(1, state.t + STEP / SWING_FLIGHT);
+    const time = state.t * SWING_FLIGHT;
+    if (state.t < 1) {
+      this.place(state.fromX + state.vx * time, state.fromY + state.vy * time - 0.5 * GRAVITY * time * time);
+      return;
+    }
+    this.place(state.toX, state.toY);
+    this.release(state.toY);
+  }
+
   // --- what follows from where he is --------------------------------------------------------------------
 
   /** Remembers where he stands on solid ground, and measures the fall while he doesn't stand. */
@@ -504,15 +630,18 @@ export class Sim {
 
   private read(grounded: boolean): PlayerState {
     const p = this.body.getPosition();
-    const v = this.body.getLinearVelocity();
     const y = p.y - SKIN;
     const state = this.state;
+    // On the lace the body is carried, so its speed is the swing's own.
+    const along = state.kind === 'swing' ? state.length * state.speed : 0;
+    const v = state.kind === 'swing' ? { x: along * Math.cos(state.angle), y: along * Math.sin(state.angle) } : this.body.getLinearVelocity();
     const mode: Mode = state.kind;
-    const t = state.kind === 'bubble' || state.kind === 'ledge' || state.kind === 'slide' ? state.t : 0;
+    const t = state.kind === 'bubble' || state.kind === 'ledge' || state.kind === 'slide' || state.kind === 'fly' ? state.t : 0;
     return {
       x: p.x, y, vx: v.x, vy: v.y, facing: this.facing, grounded, groundY: this.groundBelow(p.x, y),
       standY: this.standY, atEdge: this.atEdge, bubble: state.kind === 'bubble' ? Math.max(t, Number.MIN_VALUE) : 0,
       mode, t, verb: mode === 'free' ? this.verb : null,
+      hook: state.kind === 'swing' ? { x: state.hook.x, y: state.hook.y } : null,
     };
   }
 

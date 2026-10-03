@@ -12,11 +12,30 @@ export interface Climb {
   exit?: -1 | 1;
 }
 
-/** What Elof is doing: on his own feet, or carried by the glitter bubble, up a ledge, on a hose, down a hose. */
-export type Mode = 'free' | 'bubble' | 'ledge' | 'climb' | 'slide';
+/** A hook for the lace, marked with a red ring (plan §4.2). */
+export interface Hook {
+  x: number;
+  y: number;
+  /** How long the lace is when he swings from it: short enough that the swing clears the ground. */
+  length: number;
+  /** Where the swing is meant to land him. With *Hjälp med svingen* the flight is steered there. */
+  land?: Vec;
+}
+
+/**
+ * What Elof is doing: on his own feet, or carried by the glitter bubble, up a ledge, on a hose, down a hose,
+ * on the lace, or through the air to a swing's landing.
+ */
+export type Mode = 'free' | 'bubble' | 'ledge' | 'climb' | 'slide' | 'swing' | 'fly';
 
 /** What the Använd button would do right now. Each has its word in `sv.verbs`. */
-export type Verb = 'slide';
+export type Verb = 'slide' | 'lace';
+
+/** The settings that change the rules (plan §4.1). */
+export interface SimOptions {
+  /** *Hjälp med svingen*: the swing pumps itself, and letting go always lands. */
+  swingHelp?: boolean;
+}
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 export interface ChapterData {
@@ -33,6 +52,8 @@ export interface ChapterData {
   candy: Vec[];
   /** The hoses and stems he can climb. */
   climbs?: Climb[];
+  /** The hooks he can throw the lace to. */
+  hooks?: Hook[];
 }
 
 /** One simulation step's input. hop and act are presses; the rest is held state. */
@@ -67,4 +88,6 @@ export interface PlayerState {
   t: number;
   /** What Använd would do now, or null when there is nothing to use. */
   verb: Verb | null;
+  /** The hook he swings from, or null. */
+  hook: Vec | null;
 }

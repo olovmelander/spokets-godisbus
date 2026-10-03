@@ -10,6 +10,8 @@ import type { PlayerState, Vec } from './types';
  */
 export function cameraIntent(player: PlayerState): Vec {
   if (player.mode === 'climb' || player.mode === 'slide') return { x: player.x + player.facing * 0.8, y: player.y - 1.2 };
+  // On the lace the picture rests on the hook's place, so that the whole swing is in it and nothing sways.
+  if (player.hook) return { x: player.hook.x + player.facing * 1.2, y: player.standY };
   const below = player.y - player.groundY > FALL_LIMIT ? player.standY : player.groundY;
   const ground = Math.max(below, player.y - 3);
   return { x: player.x + player.facing * CAMERA_LEAD, y: ground };

@@ -10,12 +10,13 @@ export const sv = {
   act: 'Använd',
 
   // Shown instead of the on-screen controls when a keyboard or a gamepad is in use.
-  keysHint: '← → springa · Mellanslag hoppa · håll in för att hoppa högre · ↑ ↓ klättra · E använd · Shift gå',
-  padHint: 'Spaken springa och klättra · A hoppa · håll in för att hoppa högre · X använd',
+  keysHint: '← → springa och gunga · Mellanslag hoppa och släppa · ↑ ↓ klättra · E använd · Shift gå',
+  padHint: 'Spaken springa, klättra och gunga · A hoppa och släppa · X använd',
 
   // What Använd says when there is something to use: one word for each thing Elof can do.
   verbs: {
     slide: 'Åk ner',
+    lace: 'Kasta snöret',
   },
 
   // The candy bag in the corner. Screen readers hear the name and then the number.
