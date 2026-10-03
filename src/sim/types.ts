@@ -31,10 +31,29 @@ export type Mode = 'free' | 'bubble' | 'ledge' | 'climb' | 'slide' | 'swing' | '
 /** What the Använd button would do right now. Each has its word in `sv.verbs`. */
 export type Verb = 'slide' | 'lace';
 
+/** A jump the course asks for: the edge it is made from, the way it goes, and where it lands. */
+export interface Jump {
+  at: Vec;
+  dir: 1 | -1;
+  land: Vec;
+}
+
 /** The settings that change the rules (plan §4.1). */
 export interface SimOptions {
   /** *Hjälp med svingen*: the swing pumps itself, and letting go always lands. */
   swingHelp?: boolean;
+  /** *Lätta hopp*: running to a marked edge jumps by itself, and the jump is steered to its landing. */
+  easyJumps?: boolean;
+  /** *Lugnt*: he stops at every drop too long to land, at a run too, instead of falling. */
+  stopAtEdges?: boolean;
+}
+
+/** Where a simulation starts when a saved game is taken up again. */
+export interface SimStart {
+  /** The big candy to start at, by its place in chapter.checkpoints. Left out or unknown: the chapter's start. */
+  checkpoint?: number;
+  /** The trail candy already in the bag, by its place in chapter.candy. */
+  collected?: readonly number[];
 }
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
@@ -54,6 +73,10 @@ export interface ChapterData {
   climbs?: Climb[];
   /** The hooks he can throw the lace to. */
   hooks?: Hook[];
+  /** The big candies on the path, in order. Each is a checkpoint: the game saves there (plan §3.3, rule 4). */
+  checkpoints?: Vec[];
+  /** The jumps that *Lätta hopp* makes by itself. */
+  jumps?: Jump[];
 }
 
 /** One simulation step's input. hop and act are presses; the rest is held state. */

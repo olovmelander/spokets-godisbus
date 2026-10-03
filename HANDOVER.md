@@ -185,9 +185,32 @@
       with all 46 candies at 30, 60, 120 and 144 Hz; with help, a robot that only presses Hoppa lands too.
     - **Not yet for the lace:** the pull ring (*Dra*) and the pair of rings that ties a bridge; the lace's sag
       and its flight to the hook; the candy arc shown only while he swings.
-  - **Not yet, the rest of Stage 1** (plan §7.3): the big candy as a checkpoint; the camera's zones; one
-    greybox puzzle and one exciting sequence; the two play styles; then H2. Elof's poses for climbing,
-    hauling and looking down are not drawn yet either.
+  - **Part 5: the two play styles, the pause panel, saving, and big candy as checkpoints.** What you see: a
+    pause button top right (Esc or P on a keyboard, Start on a gamepad). The panel has *Spela vidare*, the two
+    styles as pictures, three switches and *Jag har fastnat*. Four big candies stand along the course; each
+    gives a little jump and spins when Elof reaches it. Close the page and open it again: he is back at the
+    last big candy with his candy and his style.
+    - ***Äventyr*** is as before. ***Lugnt*** switches on *Hjälp med svingen* and *Lätta hopp*, and stops
+      him at every long drop even at a run. Each switch can be changed on its own, and *Lugnare tempo* runs
+      the game at 80% (`src/save/settings.ts`).
+    - ***Lätta hopp*:** the chapter marks its jumps (`ChapterData.jumps`); running to a marked edge jumps by
+      itself, and a jump he makes himself a little early is steered to the same landing.
+    - **Big candy** (`ChapterData.checkpoints`): reaching one makes it the place he comes back to, and the
+      game saves. *Jag har fastnat* asks with a ✓ and a ✕, and the glitter carries him to the last one.
+    - **Saving** (`src/save/store.ts`, plan §6.9): `localStorage`, one index key and one key per player,
+      written at every big candy, on pause and when the page is hidden. Loading drops what it doesn't know;
+      a save it can't read is never written over, and the player is asked before starting over. So far it
+      holds the settings, the chapter, the big candy and the trail candy collected.
+    - On a keyboard ↑ and W no longer jump while he is on a hose or on the lace: they climb.
+    - `dev/menus.html?show=pause` and `?show=stuck` show the panel without WebGL.
+    - Tests: `tests/unit/save.test.ts` (10), `tests/sim/styles.test.ts` (11); a robot on *Lugnt* reaches the
+      end by running, pressing Använd, and pressing Hoppa once on the lace; the browser test opens the panel,
+      chooses *Lugnt*, loads the page again and finds the style and the candy saved.
+    - **Not yet:** the first-start screen with the two styles and the title (Stage 2); the other settings
+      of plan §4.1 (*Följ fingret*, *Vänsterhänt*, text size, motion, sound, help level, graphics); more
+      than one player; what *Lugnt* changes in the exciting sequences.
+  - **Not yet, the rest of Stage 1** (plan §7.3): the camera's zones; one greybox puzzle and one exciting
+    sequence; then H2. Elof's poses for climbing, hauling and looking down are not drawn yet either.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
@@ -213,8 +236,8 @@
      Wi-Fi: `npm run dev:lan`.
 3. **Correct the size gate:** Pages gzips `.wasm` and `.glb` too (see "State"), so `scripts/size-gate.mjs` and
    the plan's §6.6 should count them as served. A small PR of its own.
-4. **The rest of Stage 1** (plan §7.3), one visible outcome per PR, in this order: the big candy as a checkpoint; the camera's zones; a
-   greybox puzzle; a greybox exciting sequence; the two play styles. Then **H2**, Olov's own test on touch.
+4. **The rest of Stage 1** (plan §7.3), one visible outcome per PR, in this order: the camera's zones; a
+   greybox puzzle; a greybox exciting sequence. Then **H2**, Olov's own test on touch.
 5. **The rest of Stage 0b** (look-dev), on Olov's computer, with him watching the picture:
    - `docs/art-bible.md`: the scale chart, a palette and a grade per place, the layer recipe, the H1a board with
      its five criteria, and the fallback look (plan §5.6, point 1);
@@ -265,7 +288,7 @@
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
-| 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing. Started before 0b and 0c are finished, on Olov's word. |
+| 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies. Started before 0b and 0c are finished, on Olov's word. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs

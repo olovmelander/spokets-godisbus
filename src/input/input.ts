@@ -27,6 +27,8 @@ export interface InputUi {
 export interface InputOptions {
   onDevice?(device: Device): void;
   onKey?(key: MenuKey): void;
+  /** True while ↑ and W should climb and not be Hoppa: on a hose or on the lace. */
+  upClimbs?(): boolean;
   onBack?(): void;
   onTap?(x: number, y: number): void;
   /** The open menu, if any. While there is one, the gamepad moves the focus inside it. */
@@ -251,8 +253,8 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
       const id = e.code || key;
       if (moves.has(id)) return;
       moves.set(id, dir);
-      // ↑ and W are Hoppa. Stage 1 adds: except on something climbable, where they climb.
-      if (dir === 'up') edges.hop = true;
+      // ↑ and W are Hoppa, except on something climbable, where they climb (plan §4.1).
+      if (dir === 'up' && !opts.upClimbs?.()) edges.hop = true;
       return;
     }
     if (verbs.has(key)) return;
@@ -387,7 +389,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
         x = stick.x;
         y = stick.y;
       }
-      return { x, y, hopHeld: pointerHopHeld || verbs.has(' ') || v === 'up' || pad.hopHeld };
+      return { x, y, hopHeld: pointerHopHeld || verbs.has(' ') || (v === 'up' && !opts.upClimbs?.()) || pad.hopHeld };
     },
     /** The presses since the last call. Each is handed out once. */
     consume(): Edges {
