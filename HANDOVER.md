@@ -119,6 +119,34 @@
       off when turned, the jay hops for its berry, the crane kneels and then flies with beating wings,
       Bertil's cap is a boat. Where someone can be called there is a sign on a stick in that person's colour;
       nobody is drawn.
+    - **The far scenery in layers, with parallax** (4 October, branch `stage-0b-backdrops`; art bible §2.2).
+      Olov: "I want better graphics in the background and parallax effect background".
+      - **What you see:** behind every place outdoors there are four or five soft layers where there were
+        two, and they pass at different speeds when he runs: the nearest as the world does, the farthest
+        hardly at all. The clouds drift.
+        - Granskogen: four depths of trunks, thinner and paler the further in, with young spruces at their
+          feet, boughs that hang in from above and spots of light.
+        - Gården: white clouds, blue hills, the forest's edge with the neighbours' roofs as pale shapes,
+          birches over a hedge, and the garden's own leaves.
+        - Myren: clouds, the mountain in mist, low hills of forest, the forest's edge, and the nearest
+          spruces and bog pines dark against the mist. The old spruces were hard-edged triangles.
+        - Berget and the final: clouds and four lines of ridges with haze between them, the nearest with
+          spruces; at dusk they are dark blue, with a few lit windows in the valley.
+        - At home the morning windows show the garden's far scenery instead of a grey-blue pane.
+      - **How:** `src/render/backdrop.ts`. A layer is a picture drawn in code on a 512×256 canvas, blurred
+        by halving and doubling it, on one card that goes with the camera. Its picture slides across the
+        card by its own part of the camera's way (`hold`: 1 stands in the world, 0.08 is the sky), and it
+        sinks a little under the layers behind it when he climbs (`sink`). Sliding a picture changes no
+        shader. `dressing.ts` lost its two far plates and its horizon; `dress()` calls `scenery()`.
+      - It costs two or three draw calls more in a place: the golden frames went from 58 to 60 (the
+        forest) and from 38 to 41 (the deck), of 120. Each layer is blended over the picture from its top
+        down. **Not measured on a device.**
+      - Tests: `tests/unit/backdrop.test.ts` (5): every place outdoors has four to six layers, one behind
+        the other and inside what the camera sees, each with its own speed. The browser test still finds
+        no shader compiled during play.
+      - **Not done:** the layers do not darken when night falls in the final (the old ones did not
+        either); the windows' picture does not move; nothing is rendered in Blender yet. A new place needs
+        its layers in `LAYERS` in `backdrop.ts`: the type checker says so.
     - **Not yet:** plates rendered in Blender and scanned materials (what is there is drawn in code and reads
       as stylized); bloom and depth blur on High; pines with crowns; the animals and the family's hands as
       designed in Blender. **H1a is Olov's:** art bible §2.5 says what to look at.
