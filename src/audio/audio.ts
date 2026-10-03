@@ -1,4 +1,4 @@
-import type { Cue } from './cues';
+import type { Cue, Footing } from './cues';
 import { AIRS, barOf, barSeconds, barsIn, frequencyOf, MUSIC_LEVEL, pluck, RING, type Arrangement } from './music';
 
 /**
@@ -137,16 +137,62 @@ export function createAudio(): Audio {
     source.stop(at + length + 0.02);
   }
 
+  /** One footstep, on what he walks on (plan §5.8). The left foot and the right differ a little. */
+  function step(on: Footing | undefined, left: boolean): void {
+    const foot = left ? 1.1 : 1;
+    switch (on) {
+      case 'plank':
+        // Hollow: a board with air under it.
+        tone('sine', 180 * foot, 120, 0.05, 0.09);
+        puff('bandpass', 1400 * foot, 800, 0.03, 0.05, 0, 3);
+        break;
+      case 'moss':
+        // Almost nothing: soft and dull.
+        puff('lowpass', 420 * foot, 200, 0.07, 0.07);
+        break;
+      case 'grass':
+        puff('bandpass', 2200 * foot, 1200, 0.06, 0.04, 0, 1.2);
+        puff('lowpass', 380, 200, 0.05, 0.04);
+        break;
+      case 'squelch':
+        // Wet sphagnum: it sucks at his shoe, and lets go.
+        puff('lowpass', 320, 160, 0.06, 0.07);
+        puff('bandpass', 500 * foot, 1500, 0.09, 0.08, 0.02, 5);
+        break;
+      case 'stone':
+        // A hard, short click.
+        puff('bandpass', 2000 * foot, 1600, 0.025, 0.09, 0, 5);
+        puff('lowpass', 600, 300, 0.03, 0.05);
+        break;
+      case 'gravel':
+        // Dry earth and grit: two grains.
+        puff('highpass', 1800 * foot, 3500, 0.05, 0.05);
+        puff('highpass', 2400, 3000, 0.04, 0.035, 0.035);
+        break;
+      case 'shavings':
+        // Pappa's shavings: a dry rustle.
+        puff('bandpass', 3200 * foot, 2200, 0.07, 0.05, 0, 1.5);
+        puff('bandpass', 2600, 1800, 0.05, 0.035, 0.03, 1.5);
+        break;
+      default:
+        puff('bandpass', left ? 900 : 760, 500, 0.05, 0.08, 0, 2);
+    }
+  }
+
   function sound(cue: Cue): void {
     switch (cue.kind) {
       case 'step':
-        puff('bandpass', cue.left ? 900 : 760, 500, 0.05, 0.08, 0, 2);
+        step(cue.on, cue.left);
         break;
       case 'jump':
         tone('triangle', 300, 560, 0.11, 0.16);
         break;
       case 'land':
         puff('lowpass', 500, 120, 0.09, 0.12 + 0.2 * cue.hard);
+        // A deck booms under him, and the bog gives.
+        if (cue.on === 'plank') tone('sine', 140, 90, 0.09, 0.08 + 0.1 * cue.hard);
+        else if (cue.on === 'squelch') puff('bandpass', 400, 1600, 0.14, 0.1, 0, 4);
+        else if (cue.on === 'stone') puff('bandpass', 2000, 1500, 0.03, 0.08, 0, 5);
         break;
       case 'candy': {
         const pitch = note(SCALE[Math.min(cue.streak, SCALE.length - 1)]!);

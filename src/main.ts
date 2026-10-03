@@ -2,7 +2,7 @@ import { Timer } from 'three';
 import { Game } from './app/game';
 import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
-import { cuesFor, newCueMemory, type Heard } from './audio/cues';
+import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
 import { chapterNumber, courseFor, nextAfter } from './content/chapters';
 import { album, foundFlag } from './content/kinds';
 import { mapSvg, mapState } from './ui/map';
@@ -130,6 +130,7 @@ function start(): void {
       shadows: game.sim.drips.map((d) => d.shadow), drips: game.sim.drips,
       notes: [...game.sim.flags].filter((flag) => flag.startsWith('note:')).length,
       found: [...game.sim.flags].filter((flag) => flag.startsWith('found:')).length,
+      footing: footingAt(chapter, p.x),
       wind: game.sim.gusts.some((gust, i) => gust.blow > 0 && p.x > chapter.gusts![i]!.from - 12 && p.x < chapter.gusts![i]!.to + 12),
     };
   };
