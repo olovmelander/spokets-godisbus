@@ -190,7 +190,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const water = buildWater(chapter, place?.water ?? null);
   const tussockMeshes = buildTussocks(chapter, place?.tussock ?? null);
   const berryMeshes = buildBerries(chapter);
-  scene.add(...berryMeshes);
+  for (const berry of berryMeshes) scene.add(berry);
   const mist = buildMist(chapter, scene.fog as Fog, place?.haze ?? null);
   const follower = buildFollower(chapter);
   const wind = buildWind(chapter);
