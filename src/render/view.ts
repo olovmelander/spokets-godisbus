@@ -53,6 +53,8 @@ export interface Frame {
   flags: ReadonlySet<string>;
   /** Where the ghost is, or null in a chapter without it. */
   ghost: { x: number; y: number; t: number; gone: boolean } | null;
+  /** The rolling cones, in the chapter's order. */
+  rollers: readonly { x: number; y: number; on: boolean; radius: number }[];
 }
 
 export interface View {
@@ -128,8 +130,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(glints.group, plane);
   const moverMeshes = buildMovers(chapter);
   const rain = buildRain(chapter.drips?.length ?? 0);
-  scene.add(...moverMeshes, rain.group);
+  const cones = buildCones(chapter.rollers?.length ?? 0);
+  scene.add(...moverMeshes, rain.group, cones.mesh);
   scene.add(buildGround(chapter), buildTrunks(chapter), buildClimbs(chapter), buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
+  const water = buildWater(chapter);
+  scene.add(water.group);
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
   // It is the first asset through the whole chain: Blender → glTF → KTX2 and meshopt → the page.
@@ -250,7 +255,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   resize();
 
   let ghostSize = 1;
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers }: Frame): void {
     rain.update(drips);
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
@@ -258,6 +263,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     clock += dt;
     trail.update(collected, flags, x, y, dt, clock);
     glints.update(flags, clock);
+    cones.update(rollers, clock);
+    water.update(clock);
     // On a ride he sits on Moa's paper plane, which points the way it flies.
     const riding = curr.mode === 'ride';
     plane.scale.setScalar(riding ? Math.min(1, curr.t / 0.05, (1 - curr.t) / 0.05) : 0);
@@ -430,14 +437,58 @@ function buildGround(chapter: ChapterData): Mesh {
   shape.moveTo(first.x - 14, first.y);
   for (const p of line) shape.lineTo(p.x, p.y);
   shape.lineTo(last.x + 14, last.y);
-  shape.lineTo(last.x + 14, -12);
-  shape.lineTo(first.x - 14, -12);
+  // Closed well below the deepest pit, so that the outline never crosses itself.
+  const bottom = Math.min(...line.map((p) => p.y)) - 12;
+  shape.lineTo(last.x + 14, bottom);
+  shape.lineTo(first.x - 14, bottom);
   shape.closePath();
   // From well behind the play plane to a little in front of it: enough to stand on, and little enough that
   // a wall doesn't hide what is beside it when the camera looks along the course.
   const geometry = new ExtrudeGeometry(shape, { depth: 4.7, bevelEnabled: false });
   geometry.translate(0, 0, -4);
   return new Mesh(geometry, new MeshStandardMaterial({ color: '#7f8f58', roughness: 1 }));
+}
+
+/**
+ * The water of a pool or a brook, in greybox: a clear blue body that fills its pit to its surface, which
+ * rises and sinks a little. The real water comes with the places (plan §5).
+ */
+function buildWater(chapter: ChapterData) {
+  const group = new Group();
+  const material = new MeshStandardMaterial({ color: '#4f9fc4', roughness: 0.25, transparent: true, opacity: 0.78 });
+  const DEPTH = 6;
+  const bodies = (chapter.water ?? []).map((w) => {
+    const body = new Mesh(new BoxGeometry(w.to - w.from, DEPTH, 4.6), material);
+    body.position.set((w.from + w.to) / 2, w.y - DEPTH / 2, -1.65);
+    group.add(body);
+    return { body, y: w.y - DEPTH / 2 };
+  });
+  function update(clock: number): void {
+    for (const [i, w] of bodies.entries()) w.body.position.y = w.y + Math.sin(clock * 1.3 + i) * 0.03;
+  }
+  return { group, update };
+}
+
+/** The rolling cones of the avalanche (plan §4.7, E2): brown, long, turning as they go. One instanced mesh. */
+function buildCones(count: number) {
+  const mesh = new InstancedMesh(new SphereGeometry(1, 12, 8), new MeshStandardMaterial({ color: '#7a5230', roughness: 0.9 }), Math.max(1, count));
+  mesh.count = count;
+  mesh.instanceMatrix.setUsage(DynamicDrawUsage);
+  mesh.frustumCulled = false;
+  const place = new Object3D();
+  function update(rollers: readonly { x: number; y: number; on: boolean; radius: number }[], clock: number): void {
+    for (const [i, cone] of rollers.entries()) {
+      const r = cone.on ? cone.radius : 0;
+      // A little bounce as it rolls, and longer across the path than along it: a cone lying on its side.
+      place.position.set(cone.x, cone.y + cone.radius + Math.abs(Math.sin(clock * 9 + i * 2)) * 0.08, 0);
+      place.rotation.set(0, 0, -clock * 12 - i);
+      place.scale.set(r, r, r * 1.9);
+      place.updateMatrix();
+      mesh.setMatrixAt(i, place.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+  return { mesh, update };
 }
 
 /**
@@ -600,13 +651,16 @@ function buildTrunks(chapter: ChapterData): Group {
   const material = new MeshLambertMaterial({ color: '#5a4632' });
   const from = chapter.ground[0]!.x;
   const to = chapter.ground[chapter.ground.length - 1]!.x;
+  // They stand from below the lowest ground to well above the highest: a chapter may go a long way down.
+  const low = Math.min(...chapter.ground.map((p) => p.y)) - 2;
+  const high = Math.max(...chapter.ground.map((p) => p.y)) + 8;
   // A fixed sequence, not Math.random: the scene looks the same in every screenshot.
   let seed = 7;
   const next = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   for (let x = from - 6; x < to + 6; x += 2.2 + next() * 2.4) {
     const width = 0.7 + next() * 1.1;
-    const trunk = new Mesh(new BoxGeometry(width, 16, width), material);
-    trunk.position.set(x, 7, -6 - next() * 7);
+    const trunk = new Mesh(new BoxGeometry(width, high - low, width), material);
+    trunk.position.set(x, (low + high) / 2, -6 - next() * 7);
     group.add(trunk);
   }
   return group;

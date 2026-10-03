@@ -31,7 +31,7 @@ export interface Hook {
 export type Mode = 'free' | 'bubble' | 'ledge' | 'climb' | 'slide' | 'swing' | 'fly' | 'down' | 'ride';
 
 /** What the Använd button would do right now. Each has its word in `sv.verbs`. */
-export type Verb = 'slide' | 'lace' | 'push' | 'pull' | 'turn' | 'take' | 'call' | 'grab';
+export type Verb = 'slide' | 'lace' | 'push' | 'pull' | 'turn' | 'take' | 'call' | 'give' | 'grab';
 
 /**
  * A thing on a rail (plan §4.2): a shaving, a cone, a stick. It moves one stop at a time and can never end
@@ -46,6 +46,8 @@ export interface Mover {
   stops: Vec[];
   /** Knuffa: he pushes it from beside it. Dra: the lace pulls it by its red ring. */
   verb: 'push' | 'pull';
+  /** A flag that has to be set before it can be moved. */
+  needs?: string;
   /** For Dra: where the ring sits, from the middle of its bottom. */
   ring?: Vec;
 }
@@ -63,9 +65,11 @@ export interface Candy extends Vec {
 export interface Spot {
   id: string;
   at: Vec;
-  verb: 'turn' | 'take' | 'call';
-  /** A flag that has to be set before it can be used. */
+  verb: 'turn' | 'take' | 'call' | 'give';
+  /** A flag that has to be set before it can be used. A thing on a rail sets `placed:<its id>` once in place. */
   needs?: string;
+  /** It is used by coming close, with no button: a memory he touches. */
+  touch?: boolean;
   /** The word on the button where the verb's own is too plain: a key of `sv.verbs`, as in "Ropa på Moa". */
   word?: string;
   /** Using it starts this ride. */
@@ -100,6 +104,26 @@ export interface Ride {
   rise: number;
   /** How long it takes, in seconds. */
   time: number;
+  /** How far the stick moves him from the middle of its path. Left out: 1.6 EL. A boat hardly at all. */
+  corridor?: number;
+}
+
+/**
+ * A place where cones roll (plan §4.7, E2): one sets off from `from` every so often and rolls to `to`. One
+ * that reaches Elof's legs bowls him into the glitter bubble, which takes him to the last big candy.
+ */
+export interface Roller {
+  from: Vec;
+  to: Vec;
+  /** The time between two cones, in seconds. */
+  every: number;
+  /** When a cone sets off, counted from the chapter's start or from `needs`: its place in the rhythm. */
+  first: number;
+  /** EL per second. */
+  speed: number;
+  radius: number;
+  /** A flag that sets the cones rolling: the loose cone he nudges. Left out: they roll from the start. */
+  needs?: string;
 }
 
 /**
@@ -205,6 +229,10 @@ export interface ChapterData {
   spots?: Spot[];
   /** The places where the ghost waits for him, in order. Left out: the chapter has no ghost. */
   ghost?: GhostPerch[];
+  /** Where cones roll. */
+  rollers?: Roller[];
+  /** Water, for the picture only: to the simulation a pool is a pit, and what crosses it is a ride or a thing on a rail. */
+  water?: { from: number; to: number; y: number }[];
   /** What is said along the way. */
   beats?: Beat[];
   /** The rides. */

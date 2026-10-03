@@ -15,8 +15,11 @@ export interface Hud {
   say(who: Speaker, line: string): void;
   /** Moves the bubbles on. `dt` is the time since the last frame, in seconds: 0 while the game is paused. */
   tick(dt: number): void;
-  /** Shows the card at the end of a chapter: its title, and the candy in rows of ten with the number. */
-  end(title: string, count: number, onAgain: () => void): void;
+  /**
+   * Shows the card at the end of a chapter: its title, and the candy in rows of ten with the number.
+   * With `onNext` it leads on to the next chapter; without, it says that the story goes on later.
+   */
+  end(title: string, count: number, onAgain: () => void, onNext?: () => void): void;
 }
 
 /** A bubble stays for this long, and a little longer for each letter. */
@@ -75,7 +78,7 @@ export function createHud(doc: Document, total: number): Hud {
       bubble.hidden = false;
       left = BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER;
     },
-    end(title, count, onAgain) {
+    end(title, count, onAgain, onNext) {
       if (ended) return;
       ended = true;
       byId('endTitle').textContent = title;
@@ -90,8 +93,12 @@ export function createHud(doc: Document, total: number): Hud {
         rows.appendChild(row);
       }
       byId('endAgain').onclick = onAgain;
+      const onward = byId('endOnward');
+      onward.hidden = onNext === undefined;
+      byId('endNext').hidden = onNext !== undefined;
+      if (onNext) onward.onclick = onNext;
       byId('endCard').hidden = false;
-      byId('endAgain').focus();
+      (onNext ? onward : byId('endAgain')).focus();
     },
   };
 }

@@ -23,6 +23,12 @@ export const sv = {
     take: 'Ta',
     call: 'Ropa',
     callMoa: 'Ropa på Moa',
+    callPappa: 'Ropa på Pappa',
+    callBertil: 'Ropa på Bertil',
+    give: 'Ge',
+    pick: 'Plocka',
+    rideAnts: 'Åk med myrorna',
+    standOn: 'Ställ dig här',
     grab: 'Ta!',
   },
 
@@ -42,13 +48,17 @@ export const sv = {
     follow2: 'Vi är nära dig hela tiden.',
     stomp: 'Ge tillbaka mitt godis!',
     tiny: 'Lillebror?! Du är ju pytteliten!',
+    givesAway: 'Spöket ger bort mitt godis!?',
+    heja: 'Heja lillebror!',
+    thanked: 'Spöket tackade mig!',
   },
 
   // The card at a chapter's end.
   end: {
-    chapter: 'Kapitel 1 klart!',
+    chapter: 'Kapitel {n} klart!',
     course: 'Framme!',
     next: 'Fortsättning följer!',
+    onward: 'Nästa kapitel',
     again: 'Spela igen',
     candy: 'godisar i påsen',
   },

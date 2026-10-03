@@ -237,8 +237,8 @@
     - Tests: `tests/sim/drops.test.ts` (10). The robot reads the shadows, waits where a drop would land on it
       and runs through when the way is clear: no drop lands on it at 30, 60, 120 or 144 Hz. A player who runs
       straight through is knocked over now and then and still arrives with every candy.
-    - **Not yet:** the bubble going back to the last big candy inside an exciting sequence (the cones of
-      E2 need it; a drop only knocks him over), and the splash.
+    - **Not yet:** the splash. (The bubble that goes back to the last big candy came with the cones of
+      Kapitel 2.)
   - **Stage 1's list is built** (plan §7.3): the controller, the glitter bubble, the lace and the swing in
     both modes, the candy trail, the camera, one puzzle, one exciting sequence, both play styles and the
     robot. **What is left of Stage 1 is H2:** Olov's own twenty minutes on touch, in greybox. See "Next".
@@ -306,6 +306,39 @@
       the family as giants (Moa's hand, Pappa's); the ghost at the forest's edge; stickers and Moa's map on
       the end card. The lengths and the timings are a first guess: the chapter takes the robot about two
       minutes, and the plan asks for 18 to 22 for Elof.
+  - **Kapitel 2, Granskogen, in greybox** (branch `stage-2-granskog`; plan §3.4). **Open it with
+    `?dev&course=granskog`**, or play Kapitel 1 with `?dev` to its end: its card now has *Nästa kapitel*.
+    - What you play, from the left: the forest floor with a root and a big cone; a lingonberry to pick
+      (*Plocka*) and the jay to give it to (*Ge*), which shows the beard lichen up the high root; the twig
+      across the ants' road, pulled away with the lace, and the ants' lift up their hill (*Åk med myrorna*);
+      the vittra door, where Elof says "Spöket ger bort mitt godis!?"; the root down; **the cone avalanche**;
+      *Ropa på Pappa*, the big cone pushed to the seesaw, *Ställ dig här*, and the flight across the ravine;
+      the fallen log where the ghost can nearly be caught; *Ropa på Bertil* and his cap across the pool, with
+      "Heja lillebror!"; and the ghost in the eddy, pulled up with the lace. It leaves one candy on the
+      stone, Elof says "Spöket tackade mig!", and from then on it waits for him close by.
+    - It is 204 EL long, with 103 candies and twelve big candies. Ground, candy and rules only, like
+      Kapitel 1.
+    - **The cone avalanche** (`ChapterData.rollers`, plan §4.7 E2): touching the loose cone at the top of the
+      slope sets it off. That cone rolls away ahead, and from then on one comes from behind every 1.8 s. A
+      jump lets it pass under. One that reaches his legs bowls him into the glitter bubble, which takes him
+      to the last big candy; two big candies split the slope, and it has one gap to jump. On *Lugnt* a cone
+      misses him as long as he runs.
+    - **New for it:** a thing on a rail can wait for a flag (`Mover.needs`) and sets `placed:<id>` when it is
+      in place, so a chapter can build on it; a thing that is used by coming close (`Spot.touch`); *Ge*; a
+      ride with a narrow corridor (`Ride.corridor`); a thing that only rises can be pulled from either side;
+      water that is drawn only (`ChapterData.water`: to the simulation a pool is a pit); the chapters in
+      their order (`STORY` in `src/content/chapters/index.ts`), and a saved game that remembers its chapter.
+    - **Two faults in the picture were found and mended:** the ground's outline crossed itself where a pit
+      went deeper than 12 EL below zero, and the background trunks floated where the ground was low.
+    - Tests: `tests/robot/granskog.test.ts` (7) and `tests/sim/rollers.test.ts` (10). The robot plays the
+      chapter at 30, 60 and 144 Hz with no bubble and no cone reaching it, and leaves one candy; on *Lugnt*
+      it never presses Hoppa. The robot now jumps a cone that comes from behind, and where a running jump
+      would land in the gap it stands and jumps on the spot.
+    - **Not built yet in Kapitel 2:** the anthill's outside (C2); memory 2; tasting a lingonberry; the jay
+      as a companion; the small cone that launches him too low; the current in the pool; the ghost's
+      picture bubbles (the small figure, the mountain); Pappa's and Bertil's hands. The cap is drawn as
+      Kapitel 1's paper plane, and the seesaw is not drawn at all. The robot needs 68 seconds; the plan asks
+      for 15 to 20 minutes for Elof.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts
@@ -388,7 +421,7 @@
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass. The art bible, the golden frames and H1a are left. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`. Only what needs no art, until the look and the characters are decided. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2 in greybox. Only what needs no art, until the look and the characters are decided. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. |
 
 ## Known bugs

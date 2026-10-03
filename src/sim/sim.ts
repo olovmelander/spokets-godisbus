@@ -8,6 +8,7 @@ import {
 import { CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER, MOVE_TIME, MOVER_RESET, PUSH_REACH } from './constants';
 import { DOWN_TIME, DROP_FALL, DROP_FROM, DROP_RADIUS, DROP_WARNING } from './constants';
 import { GHOST_CATCH, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_STEER, SPOT_REACH } from './constants';
+import { ROLLER_REACH, TOUCH_REACH } from './constants';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
@@ -78,6 +79,16 @@ export interface GhostState {
   gone: boolean;
 }
 
+/** A rolling cone: where it is, and whether one is on its way at all. */
+export interface RollerState {
+  x: number;
+  y: number;
+  on: boolean;
+  radius: number;
+  /** The step at which it was set rolling, or -1 while it waits for its flag. */
+  since: number;
+}
+
 /** A drip and its next drop. */
 export interface DripState {
   x: number;
@@ -117,6 +128,10 @@ export class Sim {
   readonly drips: DripState[];
   /** How many times a drop has knocked him over. It costs him a second and nothing else. */
   knocks = 0;
+  /** The rolling cones, in the chapter's order. */
+  readonly rollers: RollerState[];
+  /** How many times a cone has bowled him over. */
+  bowled = 0;
   /** The ghost, or null in a chapter without it. */
   readonly ghost: GhostState | null;
   /** The beats that have come, by id, in the order they came: what the page shows as bubbles. */
@@ -217,7 +232,9 @@ export class Sim {
     });
 
     this.drips = (chapter.drips ?? []).map((drip) => ({ x: drip.at.x, y: drip.at.y, shadow: 0, height: -1 }));
+    this.rollers = (chapter.rollers ?? []).map((r) => ({ x: r.from.x, y: r.from.y, on: false, radius: r.radius, since: r.needs === undefined ? 0 : -1 }));
     for (const flag of start.flags ?? []) this.flags.add(flag);
+    for (const mover of this.movers) if (mover.stop === mover.def.stops.length - 1) this.flags.add(`placed:${mover.def.id}`);
     // What was said before the place he starts at is not said again.
     for (const beat of chapter.beats ?? []) if (beat.at !== undefined && beat.at < spawn.x - 0.5) this.flags.add(`beat:${beat.id}`);
     this.spots = chapter.spots ?? [];
@@ -265,6 +282,7 @@ export class Sim {
     else this.ride(state, input);
     this.moveMovers();
     this.rain();
+    this.roll();
     this.haunt();
     this.tell();
 
@@ -280,6 +298,35 @@ export class Sim {
     // The bubble only carries. Everywhere else, candy he comes near is his: up a hose too.
     if (this.state.kind !== 'bubble') this.collect();
     if (this.curr.x >= this.chapter.goalX) this.flags.add('goal');
+  }
+
+  /**
+   * One step for the rolling cones. They keep time by the step count, like the drops. One that reaches his
+   * legs bowls him into the glitter bubble, which takes him to the last big candy; on *Lugnt* it misses him
+   * while he moves.
+   */
+  private roll(): void {
+    for (const [i, def] of (this.chapter.rollers ?? []).entries()) {
+      const state = this.rollers[i]!;
+      state.on = false;
+      // Cones that wait for a nudge keep time from the nudge, and none is on its way before its turn.
+      if (state.since < 0 && this.flags.has(def.needs!)) state.since = this.steps;
+      if (state.since < 0) continue;
+      const every = Math.max(1, Math.round(def.every / STEP));
+      const since = this.steps - state.since - Math.round(def.first / STEP);
+      if (def.needs !== undefined && since < 0) continue;
+      const gone = ((((since % every) + every) % every) * STEP * def.speed) / Math.hypot(def.to.x - def.from.x, def.to.y - def.from.y);
+      state.on = gone <= 1;
+      if (!state.on) continue;
+      state.x = mix(def.from.x, def.to.x, gone);
+      state.y = mix(def.from.y, def.to.y, gone);
+      if (this.state.kind !== 'free') continue;
+      const p = this.curr;
+      const near = Math.hypot(p.x - state.x, p.y + 0.3 - (state.y + def.radius)) <= def.radius + ROLLER_REACH;
+      if (!near || (this.options.gentle && Math.abs(p.vx) > 0.5)) continue;
+      this.bowled++;
+      this.toCheckpoint();
+    }
   }
 
   /** The beats whose moment has come: each is told once, and remembered as a flag. */
@@ -302,7 +349,7 @@ export class Sim {
   private ride(state: { ride: Ride; offset: number; t: number }, input: StepInput): void {
     const ride = state.ride;
     state.t = Math.min(1, state.t + STEP / ride.time);
-    const want = Math.max(-1, Math.min(1, input.y)) * RIDE_CORRIDOR;
+    const want = Math.max(-1, Math.min(1, input.y)) * (ride.corridor ?? RIDE_CORRIDOR);
     const change = RIDE_STEER * STEP;
     state.offset = state.offset < want ? Math.min(want, state.offset + change) : Math.max(want, state.offset - change);
     // The corridor narrows to nothing at both ends, so that it always lands where it should.
@@ -361,7 +408,7 @@ export class Sim {
     return (
       this.spots.find(
         (spot) =>
-          !this.flags.has(spot.id) && (spot.needs === undefined || this.flags.has(spot.needs)) &&
+          !spot.touch && !this.flags.has(spot.id) && (spot.needs === undefined || this.flags.has(spot.needs)) &&
           Math.abs(spot.at.x - p.x) <= SPOT_REACH && Math.abs(spot.at.y - p.y) < 1,
       ) ?? null
     );
@@ -417,6 +464,8 @@ export class Sim {
       }
       if (mover.t >= 1) continue;
       mover.t = Math.min(1, mover.t + STEP / MOVE_TIME);
+      // In place for good: the chapter can build on it.
+      if (mover.t >= 1 && mover.stop === last) this.flags.add(`placed:${mover.def.id}`);
       const a = mover.def.stops[mover.from]!;
       const b = mover.def.stops[mover.stop]!;
       // It starts with a will and settles softly: a little past its stop, and back.
@@ -434,13 +483,15 @@ export class Sim {
     for (const mover of this.movers) {
       const def = mover.def;
       if (def.verb !== verb || mover.t < 1 || mover.stop >= def.stops.length - 1) continue;
+      if (def.needs !== undefined && !this.flags.has(def.needs)) continue;
       const next = def.stops[mover.stop + 1]!;
       const way = Math.sign(next.x - mover.x) || 1;
       if (verb === 'pull') {
         // The ring is in reach of the lace, and the pull brings the thing towards him.
         const ring = def.ring ?? { x: 0, y: def.height };
         const near = Math.hypot(mover.x + ring.x - p.x, mover.y + ring.y - (p.y + ELOF_HEIGHT / 2)) <= LACE_REACH;
-        if (near && (p.x - mover.x) * way > 0) return mover;
+        // A thing that only rises or sinks can be pulled from either side.
+        if (near && (next.x === mover.x || (p.x - mover.x) * way > 0)) return mover;
       } else if (p.grounded && Math.abs(p.y - mover.y) < 0.3) {
         // He stands beside it, on the side it is pushed from.
         const gap = (mover.x - p.x) * way - def.width / 2 - ELOF_HALF_WIDTH;
@@ -475,6 +526,11 @@ export class Sim {
     // Använd near a hook: the lace flies to it and hooks on by itself, with no aiming (plan §4.2).
     const hook = this.hookInReach();
     // Använd at the top of a hose: he slides down it.
+    // A thing to touch is used by coming close.
+    for (const spot of this.spots) {
+      if (!spot.touch || this.flags.has(spot.id) || (spot.needs !== undefined && !this.flags.has(spot.needs))) continue;
+      if (Math.hypot(spot.at.x - p.x, spot.at.y - p.y) <= TOUCH_REACH + 0.5) this.flags.add(spot.id);
+    }
     const usable = (c: Climb) => c.needs === undefined || this.flags.has(c.needs);
     const below = p.grounded ? this.climbs.find((c) => usable(c) && Math.abs(c.x - p.x) <= SLIDE_REACH && Math.abs(c.top - p.y) <= 0.25) : undefined;
     // Använd at a thing on a rail: Dra with the lace by its ring, or Knuffa from beside it.
