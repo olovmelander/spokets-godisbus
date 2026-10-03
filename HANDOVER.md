@@ -534,10 +534,14 @@
       golden candy; in the epilogue he is a boy all through, and the first trägubbe is back on the shelf.
     - Three new things a chapter can say for the picture: `size`, `shelf` and `decor`. The simulation knows
       nothing of them: there he is always one Elof length.
+    - **The blink** (branch `stage-2-blink`): the eyes take two presses, one for each. Then Elof stands and
+      watches for 2.6 seconds while **the ghost looks at the empty place on the shelf, and then at the bag**:
+      a dotted line goes from its eyes to a ring that pulses there. Then it takes the bag and runs, and the
+      trail begins. A chapter can now have a beat that takes time (`later`, with `hold` while he watches)
+      and a look (`glance`). No beat that holds him may be longer than three seconds: a test says so.
     - **Not yet, and what the scene still needs most:** people. Pappa's hands blowing the shavings off,
-      Mamma in the doorway and Bertil's hand at the bag are signs or nothing; the ghost doesn't look at the
-      empty place before it takes the bag; the eyes are painted with one press, not traced. The table is the
-      floor.
+      Mamma in the doorway and Bertil's hand at the bag are signs or nothing; the eyes are pressed, not
+      traced; the ghost doesn't turn its head. The table is the floor.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate still counts

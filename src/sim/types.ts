@@ -334,6 +334,16 @@ export interface ChapterData {
   gusts?: Gust[];
   /** A flag that is set once all of some others are: he has shared with everyone. */
   sets?: { flag: string; when: string[] }[];
+  /**
+   * A beat of the story that takes time: `flag` is set this many seconds after `after` was. With `hold` he
+   * stands and watches until then: the stick and the buttons do nothing. Keep such a beat short.
+   */
+  later?: { flag: string; after: string; seconds: number; hold?: boolean }[];
+  /**
+   * For the picture: while `from` is set and `until` is not, someone looks at these places, one after the
+   * other, each for the same share of the time: the ghost looks at the empty place on the shelf, and at the bag.
+   */
+  glance?: { from: string; until: string; seconds: number; at: { x: number; y: number; z: number }[] };
   /** For the picture: night falls and the northern lights flare when this flag is set. Null: it is night from the start. */
   night?: { after: string | null };
   /** For the picture: the mist rolls in when this flag is set, and he carries a light. */

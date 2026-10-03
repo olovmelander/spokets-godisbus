@@ -82,7 +82,9 @@ describe('what the helper shows', () => {
       let wasAhead = false;
       let wasOffered = false;
       for (let frame = 0; frame < 60 * 300 && !game.sim.flags.has('goal'); frame++) {
-        if (frame % 120 === 0 && game.sim.curr.mode === 'free' && game.sim.curr.x < chapter.goalX - 3) {
+        // While he watches a beat of the story there is nothing to do, and so nothing to show.
+        const watching = (chapter.later ?? []).some((beat) => game.sim.flags.has(beat.after) && !game.sim.flags.has(beat.flag));
+        if (frame % 120 === 0 && !watching && game.sim.curr.mode === 'free' && game.sim.curr.x < chapter.goalX - 3) {
           expect(hintFor(game.sim, chapter), `${chapter.id} at x ${game.sim.curr.x.toFixed(1)}`).not.toBeNull();
         }
         const { x, y, ahead, offered } = decide(game, chapter);

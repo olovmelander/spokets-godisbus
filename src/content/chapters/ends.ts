@@ -18,8 +18,9 @@ function row(from: number, to: number, ground: number, every = 2, after?: string
 /**
  * Prolog: Lördagsmorgon.
  * 1. **The kitchen table.** Mamma, from the doorway: "Den får du öppna ikväll."
- * 2. **Måla ögonen!** (P0): he paints the new ghost's eyes.
- * 3. **The blink.** It grabs the bag and runs. The bag tears, and candy trickles out behind it: the trail.
+ * 2. **Måla ögonen!** (P0): he paints the new ghost's eyes, one and then the other.
+ * 3. **The blink.** It looks at the empty place on the shelf, and then at the bag. It grabs the bag and runs.
+ *    The bag tears, and candy trickles out behind it: the trail.
  * 4. **The chase,** over the veranda's door sill.
  * 5. **The star** on the deck's step: *Ta*. He shrinks, and Kapitel 1 begins.
  *
@@ -38,8 +39,11 @@ export const prolog: ChapterData = {
     // Mamma in the doorway; the shavings Pappa's knife left; and the Saturday bag, until the ghost takes it.
     { look: 'sign', at: { x: -1.7, y: 0 }, word: 'callMamma' },
     { look: 'shavings', at: { x: 5.9, y: 0 } },
-    { look: 'bag', at: { x: 7.8, y: 0 }, until: 'paint' },
+    { look: 'bag', at: { x: 7.8, y: 0 }, until: 'blink' },
   ],
+  // The blink: he watches while it looks at the empty place on the shelf, and then at the bag.
+  later: [{ flag: 'blink', after: 'paint', seconds: 2.6, hold: true }],
+  glance: { from: 'paint', until: 'blink', seconds: 2.6, at: [{ x: 6.9, y: 6.1, z: -8.8 }, { x: 7.8, y: 0.35, z: 0.25 }] },
   spawn: { x: 1, y: 0.01 },
   goalX: 44.4,
   ground: [
@@ -62,9 +66,11 @@ export const prolog: ChapterData = {
   house: { from: -40, to: 60, windows: [12, 24, 36] },
   checkpoints: [{ x: 2.6, y: 0 }, { x: 26, y: 0 }],
   spots: [
-    { id: 'paint', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost' },
+    // Two eyes: one press for each.
+    { id: 'eye', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost' },
+    { id: 'paint', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye' },
     // The star that rolled out of the torn bag: taking it shrinks him.
-    { id: 'star', look: 'star', at: { x: 41, y: -0.8 }, verb: 'take', needs: 'paint', ride: 'shrink' },
+    { id: 'star', look: 'star', at: { x: 41, y: -0.8 }, verb: 'take', needs: 'blink', ride: 'shrink' },
   ],
   // The POFF: it carries him a little way, and can't fail.
   rides: [{ id: 'shrink', look: 'none', from: { x: 41, y: -0.8 }, to: { x: 45, y: 2.4 }, rise: 3, time: 2, corridor: 0 }],
@@ -73,7 +79,7 @@ export const prolog: ChapterData = {
   ],
   ghost: [
     // On the table, new, with no eyes yet: it stays until they are painted.
-    { at: { x: 6.6, y: 0 }, until: 'paint' },
+    { at: { x: 6.6, y: 0 }, until: 'blink' },
     { at: { x: 14, y: 0 } },
     { at: { x: 22, y: 0 } },
     { at: { x: 28.6, y: 0 } },
@@ -86,11 +92,11 @@ export const prolog: ChapterData = {
   cameras: [{ from: -3, to: 42.4, zoom: 1.5, lift: 0.3 }],
   candy: [
     // Nothing lies there until the bag has torn.
-    ...row(9, 29, 0, 2, 'paint'),
-    { x: 30.6, y: 1.25, after: 'paint' },
-    ...row(32.4, 36.4, 0, 2, 'paint'),
-    { x: 38.6, y: -0.2, after: 'paint' },
-    { x: 39.8, y: -0.35, after: 'paint' },
+    ...row(9, 29, 0, 2, 'blink'),
+    { x: 30.6, y: 1.25, after: 'blink' },
+    ...row(32.4, 36.4, 0, 2, 'blink'),
+    { x: 38.6, y: -0.2, after: 'blink' },
+    { x: 39.8, y: -0.35, after: 'blink' },
   ],
 };
 
