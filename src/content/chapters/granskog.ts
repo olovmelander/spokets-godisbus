@@ -19,6 +19,10 @@ import type { Candy, ChapterData } from '../../sim/types';
  * 8. **Spöket i virveln** (P10): from a stone, the lace pulls the ghost ashore. It leaves one candy on the
  *    stone, and from now on it waits for him.
  *
+ * Over the trail lie the first layers (docs/level-design.md), none of them needed: boughs over the forest
+ * floor from the big cone to the lingonberry, with the forest's first ring; a root from the hilltop back down
+ * to the ant road; and a nest up a trunk after the log, with two rings in a row to a bough before the pool.
+ *
  * At the vittra door, a berry left for the neighbours receives a little picture on a real return visit.
  * Not built yet: tasting a lingonberry.
  * To the simulation the pool and the eddy are pits; the water in them is drawn only.
@@ -168,8 +172,9 @@ export const granskog: ChapterData = {
     { x: 143.6, y: -2.3, length: 3, extra: true },
     { x: 148, y: -2.3, length: 3, extra: true },
   ],
-  // Ledges (docs/level-design.md). Up a trunk each is 0.9 over the last and beside it: a standing leap with
-  // the stick held towards it lands on it from anywhere on the one below, so the climb has a rhythm.
+  // Ledges (docs/level-design.md). Up a trunk each is one held jump over the last, 0.9 at most, and beside
+  // it: a standing leap with the stick held towards it lands on it from nearly anywhere on the one below, so
+  // the climb has a rhythm.
   ledges: [
     // The boughs: a second level over the forest floor, from the big cone to the lingonberry. A plate of
     // bark over the cone, with a heart as its tell, and the high bough the ring is thrown from. A jump from
@@ -183,8 +188,8 @@ export const granskog: ChapterData = {
     // From its end he drops to the forest floor at the lingonberry: the jay's puzzle is still ahead of him.
     { x: 31.7, y: 1.4, width: 1.6, look: 'branch' },
     // The nest: three plates of bark zig-zag up a trunk after the log, to a nest 3.6 EL over the floor. The
-    // lowest plate, with its heart, is the tell. It is as high as the log, so a leap from the log's end lands
-    // on it too; the next one is out of that leap's reach.
+    // lowest plate, with its heart, is the tell. It is about as high as the log, so a leap from the log's end
+    // lands on it too; the next one is out of that leap's reach.
     { x: 138.6, y: -7.1, width: 1.4, look: 'bark' },
     { x: 139.8, y: -6.2, width: 1.4, look: 'bark' },
     { x: 138.6, y: -5.3, width: 1.4, look: 'bark' },
@@ -307,10 +312,11 @@ export const granskog: ChapterData = {
   later: [{ flag: 'seesaw:trial:landed', after: 'seesaw:trial', seconds: TRIAL.time }],
   cameras: [
     // Up on the boughs and in the nest the picture is wider and looks down a little, so that the ring over
-    // him and the trail under him are both in it. Each begins higher than a jump from the trail reaches, and
-    // lower than the bottom of the swing: over the big cone that takes two zones.
-    { from: 21, to: 25.2, above: 2.35, zoom: 1.4, lift: -1.4 },
-    { from: 25.2, to: 33, above: 2.12, zoom: 1.4, lift: -1.4 },
+    // him and the trail under him are both in it: further down from the nest, which is higher. Each begins
+    // higher than a jump from the trail reaches, and lower than the bottom of the swing: over the big cone
+    // that takes two zones.
+    { from: 21, to: 25.2, above: 2.35, zoom: 1.4, lift: -1 },
+    { from: 25.2, to: 33, above: 2.12, zoom: 1.4, lift: -1 },
     { from: 137.7, to: 153.6, above: -5.9, zoom: 1.4, lift: -1.4 },
     { from: 46.5, to: 63.5, above: 5.4, zoom: 1.25, lift: 0.7, lead: 1 },
     { from: 40, to: 66, zoom: 1.25, lift: 0.3 },
@@ -388,8 +394,9 @@ export const granskog: ChapterData = {
     { x: 188.9, y: -7.55 },
     ...row(191, 203, -8),
   ],
-  // Side candy: hearts and lollipops, over every ledge and three along the arc of every swing. Every other
-  // one is a heart, and the first of each way is one: its tell. New ones are added at the end.
+  // Side candy: hearts and lollipops, over every ledge but the nest, which has the colaflaska, and three
+  // along the arc of every swing. Every other one is a heart, and the first of each way is one: its tell.
+  // New ones are added at the end.
   side: [
     // The boughs: up the bark, along the swing, on the far bough, and down.
     { x: 21.6, y: 2.5 },

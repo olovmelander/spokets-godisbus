@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { granskog } from '../../src/content/chapters/granskog';
 import { trailShape } from '../../src/render/candy';
+import { settingsFor, simOptions } from '../../src/save/settings';
 import { cameraIntent } from '../../src/sim/camera-intent';
 import { BUBBLE_TIME, ELOF_HEIGHT, FALL_LIMIT, JUMP_APEX, LACE_REACH, LEDGE_GIVE, STEP, SWING_MAX } from '../../src/sim/constants';
 import { hintFor } from '../../src/sim/help';
 import { Sim } from '../../src/sim/sim';
-import type { Hook, Ledge } from '../../src/sim/types';
+import type { Hook, Ledge, SimOptions } from '../../src/sim/types';
 import { heightAt } from '../robot/robot';
 import { angleOf, idle, jump, leap, run, runPast, sideTaken, swingAlong, use, walkTo } from './drive';
 
@@ -43,8 +44,8 @@ const seconds = (sim: Sim) => (sim.steps - entered.get(sim)!) * STEP;
  * From the first big candy along the trail onto the big cone, and from `under` the plate of bark up to the
  * high bough, in rhythm: a jump straight up, and a leap to the right from where that set him down.
  */
-function upTheBoughs(under = plate.x): Sim {
-  const sim = new Sim(granskog, {}, { checkpoint: 0 });
+function upTheBoughs(under = plate.x, options: SimOptions = {}): Sim {
+  const sim = new Sim(granskog, options, { checkpoint: 0 });
   run(sim, 0.2);
   leap(sim, 1, 19);
   walkTo(sim, under);
@@ -62,8 +63,8 @@ function upTheBoughs(under = plate.x): Sim {
  * From the big candy before the log along the trail, and from `under` the lowest plate of bark up into the
  * nest, in rhythm: a jump straight up, then a leap to the right, to the left and to the right.
  */
-function upToTheNest(under = bark1.x): Sim {
-  const sim = new Sim(granskog, {}, { checkpoint: 8 });
+function upToTheNest(under = bark1.x, options: SimOptions = {}): Sim {
+  const sim = new Sim(granskog, options, { checkpoint: 8 });
   run(sim, 0.2);
   // Over the log, as the trail goes.
   leap(sim, 1, 131);
@@ -113,24 +114,45 @@ function swingFrom(sim: Sim, rings: number, release: number): { taken: number[];
   return { taken, top };
 }
 
+/** The whole of the boughs: up the bark, over on the ring, along the far bough, down the step to the floor. */
+function alongTheBoughs(options: SimOptions = {}): Sim {
+  const sim = upTheBoughs(plate.x, options);
+  walkTo(sim, right(high) - 0.2);
+  expect(sim.curr.verb).toBe('lace');
+  expect(swingAlong(sim, 1, 1)).toEqual([ring.x]);
+  expect(on(sim, far), `the far bough: ${where(sim)}`).toBe(true);
+  // Back for the heart behind him, along the far bough to its end, down onto the step, and off its end to
+  // the forest floor.
+  walkTo(sim, left(far) + 0.8);
+  walkTo(sim, right(far) - 0.3);
+  walkTo(sim, right(far) + 0.3);
+  run(sim, 0.5);
+  expect(on(sim, step), `the step down: ${where(sim)}`).toBe(true);
+  walkTo(sim, left(step) + 0.3);
+  walkTo(sim, right(step) + 0.4);
+  run(sim, 0.6);
+  return sim;
+}
+
+/** The whole of the nest's way: up the bark, along both rings, along the last bough and off its end. */
+function fromTheNest(options: SimOptions = {}): Sim {
+  const sim = upToTheNest(bark1.x, options);
+  walkTo(sim, right(nest) - 0.2);
+  expect(sim.curr.verb).toBe('lace');
+  expect(swingAlong(sim, 1, 2)).toEqual([first.x, second.x]);
+  expect(on(sim, last), `the last bough: ${where(sim)}`).toBe(true);
+  // Back for the lollipop behind him, if he landed past it, and along the bough to its end.
+  walkTo(sim, last.x - 0.4);
+  walkTo(sim, right(last) - 0.3);
+  walkTo(sim, right(last) + 0.4);
+  run(sim, 0.8);
+  return sim;
+}
+
 describe('the boughs over the forest floor', () => {
   it('are entered from the big cone, swung across on the ring, and let out at the lingonberry', () => {
-    const sim = upTheBoughs();
+    const sim = alongTheBoughs();
     const began = plate.x;
-    walkTo(sim, right(high) - 0.2);
-    expect(sim.curr.verb).toBe('lace');
-    expect(swingAlong(sim, 1, 1)).toEqual([ring.x]);
-    expect(on(sim, far), `the far bough: ${where(sim)}`).toBe(true);
-    // Back for the heart behind him, along the far bough to its end, down onto the step, and off its end to
-    // the forest floor.
-    walkTo(sim, left(far) + 0.8);
-    walkTo(sim, right(far) - 0.3);
-    walkTo(sim, right(far) + 0.3);
-    run(sim, 0.5);
-    expect(on(sim, step), `the step down: ${where(sim)}`).toBe(true);
-    walkTo(sim, left(step) + 0.3);
-    walkTo(sim, right(step) + 0.4);
-    run(sim, 0.6);
 
     expect(onTrail(sim), `at the end: ${where(sim)}`).toBe(true);
     expect(sim.curr.y).toBeCloseTo(0, 1);
@@ -256,15 +278,8 @@ describe('the boughs over the forest floor', () => {
 
 describe('the nest up the trunk, and the two rings from it', () => {
   it('are entered at the lowest plate of bark, swung along, and let out before Bertil is called', () => {
-    const sim = upToTheNest();
+    const sim = fromTheNest();
     const began = bark1.x;
-    walkTo(sim, right(nest) - 0.2);
-    expect(sim.curr.verb).toBe('lace');
-    expect(swingAlong(sim, 1, 2)).toEqual([first.x, second.x]);
-    expect(on(sim, last), `the last bough: ${where(sim)}`).toBe(true);
-    walkTo(sim, right(last) - 0.3);
-    walkTo(sim, right(last) + 0.4);
-    run(sim, 0.8);
 
     expect(onTrail(sim), `at the end: ${where(sim)}`).toBe(true);
     expect(sim.curr.y).toBeCloseTo(-8, 1);
@@ -340,6 +355,14 @@ describe('the nest up the trunk, and the two rings from it', () => {
     run(sim, 0.5);
     expect(onTrail(sim), `after the leap: ${where(sim)}`).toBe(true);
     expect(sim.bubbles).toBe(0);
+
+    // A jump out of the nest with no throw at the ring is the one fall he cannot land: the bubble sets him
+    // back in the nest, with the ring still to try.
+    const out = standingOn(nest);
+    leap(out, 1, right(nest) - 0.1);
+    expect(out.bubbles).toBe(1);
+    run(out, BUBBLE_TIME + 0.5);
+    expect(on(out, nest), `after the bubble: ${where(out)}`).toBe(true);
   });
 
   it('a leap from the end of the log lands on the lowest plate or on the floor, never higher up the trunk', () => {
@@ -494,6 +517,23 @@ describe('the root from the hilltop back down to the ant road', () => {
     walkTo(sim, lift.from.x);
     expect(sim.curr.verb).toBe('take');
     expect(sim.curr.word).toBe('rideAnts');
+  });
+});
+
+describe('on Lugnt', () => {
+  it('both ways are there to play as well: the swing pumps itself, and the rest is the same', () => {
+    const lugnt = simOptions(settingsFor('lugnt'));
+    expect(lugnt.swingHelp).toBe(true);
+    const boughs = alongTheBoughs(lugnt);
+    expect(onTrail(boughs), `after the boughs: ${where(boughs)}`).toBe(true);
+    expect(sideTaken(boughs, BOUGHS.from, BOUGHS.to)).toEqual({ taken: 10, of: 10 });
+    expect(boughs.flags.has('found:gummiorm')).toBe(true);
+    expect(boughs.bubbles).toBe(0);
+    const nested = fromTheNest(lugnt);
+    expect(onTrail(nested), `after the nest: ${where(nested)}`).toBe(true);
+    expect(sideTaken(nested, NEST.from, NEST.to)).toEqual({ taken: 11, of: 11 });
+    expect(nested.flags.has('found:colaflaska')).toBe(true);
+    expect(nested.bubbles).toBe(0);
   });
 });
 
