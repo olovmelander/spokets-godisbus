@@ -201,17 +201,21 @@ describe('the leaves over the first tussocks', () => {
     }
   });
 
-  it('are over water: a jump that falls short ends in the glitter bubble, which puts him back on the leaf he left', () => {
+  it('are over water: a jump he gives up on ends in the glitter bubble, which puts him back on the leaf he left', () => {
     const sim = start();
     upTwo(sim);
     // Walking, he stops at the end of a leaf over the water: he cannot stroll in.
     walkTo(sim, right(second) + 1, 3);
     expect(on(sim, second)).toBe(true);
-    // A jump with too little of a run comes down between the second leaf and the third, over open water.
-    // There is no ground to land on there, so this fall is the one that ends in the bubble. It carries him to
-    // the last firm ground he stood on, which is the leaf, and he keeps the hearts he has.
-    walkTo(sim, right(second) - 0.35);
-    jump(sim, 0.5);
+    // The second and third leaves, and the third and fourth, have open water between them, and no ground
+    // within a safe drop. So this is the fall that ends in the bubble: a jump from the second leaf that he
+    // gives up on, letting go of the stick in the air, comes down between the leaves. The bubble carries him
+    // to the last firm ground he stood on, which is the leaf, and he keeps the side candy he has.
+    walkTo(sim, right(second) - 0.5);
+    sim.step({ ...idle, x: 1, hop: true, hopHeld: true });
+    run(sim, 0.3, { x: 1, hopHeld: true });
+    for (let i = 0; i < 3 / STEP && sim.curr.mode === 'free' && !sim.curr.grounded; i++) sim.step({ ...idle, hopHeld: true });
+    expect(sim.curr.mode).toBe('bubble');
     expect(sim.bubbles).toBe(1);
     run(sim, BUBBLE_TIME + 1);
     expect(on(sim, second)).toBe(true);
@@ -221,6 +225,25 @@ describe('the leaves over the first tussocks', () => {
     leap(sim, 1, right(second) - 0.2);
     expect(on(sim, third)).toBe(true);
     expect(sim.bubbles).toBe(1);
+  });
+
+  it('let out forward on a miss too: running off the end of a leaf with no jump, he lands on the next tussock', () => {
+    for (const leaf of [second, third]) {
+      const sim = start();
+      upTwo(sim);
+      if (leaf === third) {
+        walkTo(sim, left(second) + 0.4);
+        leap(sim, 1, right(second) - 0.2);
+        expect(on(sim, third)).toBe(true);
+      }
+      walkTo(sim, left(leaf) + 0.4);
+      for (let i = 0; i < 5 / STEP && !(sim.curr.grounded && sim.curr.y < 1); i++) sim.step({ ...idle, x: 1 });
+      run(sim, 0.3);
+      // On the trail's ground, beyond the leaf he ran off, unhurt: the hops go on from there.
+      expect(onTheTrail(sim), `off the leaf at ${leaf.x}`).toBe(true);
+      expect(sim.curr.x, `off the leaf at ${leaf.x}`).toBeGreaterThan(right(leaf));
+      expect(sim.bubbles, `off the leaf at ${leaf.x}`).toBe(0);
+    }
   });
 });
 

@@ -103,16 +103,17 @@ const BERRY_LEAF: Ledge = { x: 3, y: 1.8, width: 2.4, look: 'leaf' };
 /**
  * Leaves over the firm tussocks: a second level from the third tussock to the wide one with the big candy.
  * - The first is a held jump above its tussock, and in from both of the tussock's ends, so the hops along
- *   the trail pass under it. The second is a step up over its far half. All but the first are higher than
- *   any hop from a tussock rises.
- * - The jumps from the second to the third and from the third to the fourth are over open water. A miss
- *   there is the glitter bubble, which puts him back on the leaf he left; and the picture, which follows the
- *   ground under him, stays level over water, where it would dip over a tussock.
+ *   the trail pass under it. The second is a step up over its far end: a held jump straight up again. All
+ *   but the first are higher than any hop from a tussock rises.
+ * - From the second to the third, and from the third to the fourth, he jumps over open water. A jump he
+ *   gives up on there is the glitter bubble, which puts him back on the leaf he left; a run off the end with
+ *   no jump lands on the next tussock. The picture follows the ground under him, so over water it stays
+ *   level, where over a tussock it would dip.
  * - He runs off the fourth onto the fifth, which is lower, and walks off the fifth onto the wide tussock.
  */
 const LEAVES: Ledge[] = [
   { x: 20.6, y: 1.15, width: 1.6, look: 'leaf' },
-  { x: 21.7, y: 1.95, width: 1.6, look: 'leaf' },
+  { x: 21.9, y: 1.95, width: 1.6, look: 'leaf' },
   { x: 24.75, y: 2.75, width: 2.5, look: 'leaf' },
   { x: 28.2, y: 2.75, width: 2, look: 'leaf' },
   { x: 31.1, y: 2.2, width: 2.2, look: 'leaf' },
@@ -133,7 +134,7 @@ const STEPS: Ledge[] = [
   { x: 111.2, y: 6.2, width: 2, look: 'branch' },
 ];
 const RINGS: Hook[] = [114.1, 117.5, 120.9].map((x) => ({ x, y: 9.1, length: 2.4, extra: true }));
-const LANDING: Ledge = { x: 123.8, y: 6.2, width: 2.4, look: 'branch' };
+const LANDING: Ledge = { x: 123.7, y: 6.2, width: 3, look: 'branch' };
 
 /** A side candy over the middle of a ledge: he takes it standing there, and not from the ground under it. */
 const above = (ledge: Ledge, lift: number): Candy => ({ x: ledge.x, y: round(ledge.y + lift) });
