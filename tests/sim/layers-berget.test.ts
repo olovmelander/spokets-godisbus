@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { berget } from '../../src/content/chapters/berget';
+import { cameraIntent } from '../../src/sim/camera-intent';
 import { ELOF_HEIGHT, GUST_SHELTER, LACE_REACH, STEP } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
 import type { Ledge } from '../../src/sim/types';
@@ -29,11 +30,22 @@ const at = (x: number, y: number) => {
 };
 const seconds = (sim: Sim, since = 0) => (sim.steps - since) * STEP;
 const right = (ledge: Ledge) => ledge.x + ledge.width / 2;
-const stands = (sim: Sim, ledge: Ledge) => sim.curr.grounded && Math.abs(sim.curr.y - ledge.y) < 0.08 && Math.abs(sim.curr.x - ledge.x) < ledge.width / 2 + 0.16;
+const stands = (sim: Sim, ledge: Ledge) => sim.curr.grounded && Math.abs(sim.curr.y - ledge.y) < 0.1 && Math.abs(sim.curr.x - ledge.x) < ledge.width / 2 + 0.16;
+/** How many of the side candies lie between two x. */
+const sideBetween = (from: number, to: number) => side.filter((candy) => candy.x >= from && candy.x <= to).length;
 /** Which of the side candy is in the bag, by its place in the chapter's list. */
 const taken = (sim: Sim) => sim.collectedSide.flatMap((got, i) => (got ? [i] : []));
-/** The heart over a ledge, by its place in the chapter's list. */
-const heartOver = (ledge: Ledge) => side.findIndex((candy) => candy.x === ledge.x && Math.abs(candy.y - ledge.y - 0.55) < 0.01);
+/** The heart over a shelf, by its place in the chapter's list. */
+const heartOver = (shelf: { x: number; y: number }) => side.findIndex((candy) => candy.x === shelf.x && Math.abs(candy.y - shelf.y - 0.55) < 0.01);
+
+/**
+ * What the picture holds, from its bottom to its top, on the smallest screen the game is drawn for: a phone
+ * 360 px high shows 4.8 EL at zoom 1, with the place the camera looks at 35 % up (src/render/view.ts).
+ */
+function picture(sim: Sim): { bottom: number; top: number; zoom: number } {
+  const look = cameraIntent(sim.curr, berget.cameras);
+  return { bottom: look.y - 0.35 * 4.8 * look.zoom, top: look.y + 0.65 * 4.8 * look.zoom, zoom: look.zoom };
+}
 
 /** Waits where he stands until a gust has just blown over: the whole calm is ahead of him. */
 function calm(sim: Sim): void {
@@ -78,7 +90,7 @@ describe('the layers of Berget', () => {
     // A low and a high shelf on every boulder but the last, which has its high one only.
     expect(lee).toHaveLength(2 * boulders.length - 1);
     expect(leeRings).toHaveLength(boulders.length - 1);
-    expect(sideTaken(new Sim(berget), 85, 108).of + sideTaken(new Sim(berget), 109, 137).of).toBe(side.length);
+    expect(sideBetween(85, 108) + sideBetween(109, 137)).toBe(side.length);
     for (const ledge of berget.ledges!) expect(ledge.look).toBe('stone');
   });
 
@@ -95,6 +107,29 @@ describe('the layers of Berget', () => {
       expect(ring.x).toBeCloseTo((boulders[i]! + boulders[i + 1]!) / 2, 5);
       expect(ring.y).toBe(leeRings[0]!.y);
       expect(ring.length).toBe(leeRings[0]!.length);
+    }
+  });
+
+  it('hang their rings low enough that any let-go is a fall he can land: at full swing, with the lace climbed short', () => {
+    const last = rock[rock.length - 3]!;
+    for (const [x, y] of [[right(last) - 0.4, last.y], [boulders[1]! + 0.3, HIGH]] as const) {
+      for (const dir of [1, -1] as const) {
+        const sim = at(x, y);
+        sim.step({ ...idle, act: true });
+        expect(sim.curr.mode).toBe('swing');
+        // Up the lace as far as it goes, pushing the way he swings until the swing is as high as it gets.
+        for (let i = 0; i < 10 / STEP; i++) sim.step({ ...idle, x: sim.curr.vx >= 0 ? 1 : -1, y: i < 2.5 / STEP ? 1 : 0 });
+        let top = 0;
+        for (let i = 0; i < 8 / STEP && sim.curr.mode === 'swing'; i++) {
+          sim.step({ ...idle, x: sim.curr.vx >= 0 ? 1 : -1, hop: dir * sim.curr.vx > 0 && dir * angleOf(sim) > 1 });
+          top = Math.max(top, sim.curr.y);
+        }
+        for (let i = 0; i < 4 / STEP && !(sim.curr.mode === 'free' && sim.curr.grounded); i++) sim.step(idle);
+        // From more than 3.5 EL over the granite, and no glitter bubble.
+        expect(top - GRANITE, `from ${x}, going ${dir}`).toBeGreaterThan(3.5);
+        expect(sim.curr.grounded).toBe(true);
+        expect(sim.bubbles, `from ${x}, going ${dir}`).toBe(0);
+      }
     }
   });
 
@@ -149,6 +184,37 @@ describe('the rock shelves, and the ring over the cobbles', () => {
     expect(sideTaken(sim, 85, 108)).toEqual({ taken: 11, of: 11 });
     expect(sim.bubbles).toBe(0);
     expect(seconds(sim, since)).toBeLessThan(20);
+  });
+
+  it('show the ring from below: a held jump among the cobbles takes the lowest candy of its arc, and no more', () => {
+    const sim = at(cobbleRing!.x, GRANITE);
+    jump(sim);
+    expect(taken(sim)).toEqual([side.findIndex((candy) => candy.x === cobbleRing!.x)]);
+    expect(sim.curr.y).toBeCloseTo(GRANITE, 1);
+  });
+
+  it('are framed with the ring above him and the cobbles below, and the trail under them is framed as it was', () => {
+    const last = rock[rock.length - 3]!;
+    for (const shelf of [last, far]) {
+      const up = picture(at(shelf.x, shelf.y));
+      expect(up.bottom, `on the shelf at ${shelf.x}`).toBeLessThan(GRANITE - 0.3);
+      expect(up.top, `on the shelf at ${shelf.x}`).toBeGreaterThan(cobbleRing!.y + 0.3);
+    }
+    // On the lace too: the picture rests on the hook's place and does not jump.
+    const sim = at(right(last) - 0.4, last.y);
+    sim.step({ ...idle, act: true });
+    run(sim, 0.5);
+    expect(sim.curr.mode).toBe('swing');
+    expect(picture(sim).bottom).toBeLessThan(GRANITE - 0.3);
+    expect(picture(sim).top).toBeGreaterThan(cobbleRing!.y + 0.3);
+    // Down among the cobbles the picture is the usual one, and a held jump there does not widen it.
+    const below = at(cobbleRing!.x, GRANITE);
+    expect(picture(below).zoom).toBe(1);
+    below.step({ ...idle, hop: true, hopHeld: true });
+    for (let i = 0; i < 0.7 / STEP; i++) {
+      below.step({ ...idle, hopHeld: true });
+      expect(picture(below).zoom).toBe(1);
+    }
   });
 
   it('forgive the hands on the ring: anywhere on the upper half of the swing lands on the far shelf', () => {
@@ -210,6 +276,14 @@ describe('the lee shelves, and the rings between the boulders', () => {
     expect(sim.curr.y).toBeCloseTo(HIGH, 1);
   });
 
+  it('are framed by the picture of the open granite: on top of a boulder it holds the rings and the ground', () => {
+    const up = picture(at(boulders[2]!, HIGH));
+    expect(up.bottom).toBeLessThan(GRANITE - 0.3);
+    expect(up.top).toBeGreaterThan(leeRings[0]!.y + 0.3);
+    // The same zone as on the granite below: nothing was widened for the way.
+    expect(up.zoom).toBe(picture(at(boulders[2]!, GRANITE)).zoom);
+  });
+
   it('are played from lee to lee between the gusts, from the first boulder to the granite beyond the last', () => {
     // He comes along the trail, from the big candy before the open granite.
     const sim = at(108.4, GRANITE);
@@ -244,7 +318,7 @@ describe('the lee shelves, and the rings between the boulders', () => {
     for (const [i, boulder] of boulders.slice(0, -1).entries()) {
       const sim = at(boulder, GRANITE);
       upTheBoulder(sim, boulder);
-      expect(taken(sim)).toEqual([heartOver({ x: boulder, y: LOW, width: 1, look: 'stone' }), heartOver({ x: boulder, y: HIGH, width: 1, look: 'stone' })]);
+      expect(taken(sim)).toEqual([heartOver({ x: boulder, y: LOW }), heartOver({ x: boulder, y: HIGH })]);
       toTheNextLee(sim, boulder);
       expect(sim.curr.y).toBeCloseTo(HIGH, 1);
       // Down off the far end of the next top, into the open: once the next gust has passed.

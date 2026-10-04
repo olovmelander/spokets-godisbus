@@ -50,6 +50,11 @@ const BOULDERS = [110, 115.2, 120.4, 125.6, 130.8, 136];
 
 /** A heart over a shelf, where he takes it by standing there. */
 const over = (shelf: { x: number; y: number }): Candy => ({ x: shelf.x, y: Math.round((shelf.y + 0.55) * 100) / 100 });
+/** A place on a ring's swing: where his middle is, this many radians round from straight down. */
+const onArc = (ring: Hook, angle: number): Candy => ({
+  x: Math.round((ring.x + ring.length * Math.sin(angle)) * 10) / 10,
+  y: Math.round((ring.y - ring.length * Math.cos(angle)) * 10) / 10,
+});
 
 /**
  * The rock shelves (docs/level-design.md): a second way from the first slab to the open granite, over the
@@ -70,24 +75,26 @@ const SHELVES: Ledge[] = [
   { x: 104.8, y: 28.4, width: 2.4, look: 'stone' },
   { x: 107.1, y: 27.1, width: 1.2, look: 'stone' },
 ];
-// Too high for the lace from the granite: it is thrown from the last level shelf.
-const SHELF_RING: Hook = { x: 101.4, y: 31.3, length: 2.9, extra: true };
+// Out of the lace's reach for someone standing on the granite, so the trail is never offered it: it is thrown
+// from the last level shelf. Low enough that letting go at the top of the swing is a fall he can land, even
+// with the lace climbed short.
+const SHELF_RING: Hook = { x: 101.5, y: 31.2, length: 2.8, extra: true };
 
 /**
  * The lee shelves: a second way over the open granite. Each boulder but the last has a low shelf, a held jump
  * up from the granite, and a high one at its top; both are narrower than the lee, so no gust takes him on
- * them. Between two boulders hangs a ring, too high for the lace from the granite. On the lace no gust has
- * hold of him. In the air after he lets go one does, unless he is already in the next lee: it sets him down
- * on the granite by the boulder he came from, whose low shelf is the way up again. The last boulder has its
- * high shelf only, so that one is reached by the ring.
+ * them. Between two boulders hangs a ring, out of the lace's reach for someone standing on the granite.
+ * On the lace no gust has hold of him. In the air after he lets go one does, unless he is already in the
+ * next lee: it sets him down on the granite by the boulder he came from, whose low shelf is the way up again.
+ * The last boulder has its high shelf only, so that one is reached by the ring.
  */
 const LEE = { low: 27.3, high: 28.2, width: 1.2 };
 const LEE_SHELVES: Ledge[] = BOULDERS.flatMap((x, i) => [
   ...(i < BOULDERS.length - 1 ? [{ x, y: LEE.low, width: LEE.width, look: 'stone' as const }] : []),
   { x, y: LEE.high, width: LEE.width, look: 'stone' as const },
 ]);
-// A row of rings at one height, one boulder apart: the swing has the same beat as the dash below it.
-const LEE_RINGS: Hook[] = BOULDERS.slice(1).map((x, i) => ({ x: Math.round((BOULDERS[i]! + x) * 5) / 10, y: 31.2, length: 2.6, extra: true }));
+// A row of rings at the first ring's height, one boulder apart: the swing has the same beat as the dash below.
+const LEE_RINGS: Hook[] = BOULDERS.slice(1).map((x, i) => ({ x: Math.round((BOULDERS[i]! + x) * 5) / 10, y: SHELF_RING.y, length: 2.6, extra: true }));
 
 /**
  * Toppröset: these are the shelves' tops. The first is too high to grab from the ordinary path without
@@ -225,17 +232,16 @@ export const berget: ChapterData = {
   ],
   // Hearts and lollipops, off the trail: add new ones at the end.
   side: [
-    // the rock shelves: one over each on the way up, three along the ring's arc, one at the far shelf's end
-    // and one over the step down
+    // The rock shelves: one over each on the way up, and three along the ring's arc. The lowest of those is
+    // within a held jump of the cobbles, the tell of the ring; the other two are well out of a jump's reach.
+    // Then one at the far shelf's end and one over the step down.
     ...SHELVES.slice(0, 6).map(over),
-    { x: 99.9, y: 28.8 },
-    { x: 101.4, y: 28.4 },
-    { x: 102.9, y: 28.8 },
+    ...[-0.75, 0, 0.75].map((angle) => onArc(SHELF_RING, angle)),
     { x: 105.7, y: 28.95 },
     { x: 107.1, y: 27.85 },
-    // the lee shelves: one over each low shelf, one over each high shelf before the last, and one at the
-    // bottom of each swing
+    // The lee shelves: one over each low shelf and one over each high shelf before the last. And one high on
+    // each swing, where it comes into the next lee: letting go there, no gust takes him.
     ...BOULDERS.slice(0, -1).flatMap((x) => [over({ x, y: LEE.low }), over({ x, y: LEE.high })]),
-    ...LEE_RINGS.map((ring) => ({ x: ring.x, y: Math.round((ring.y - ring.length) * 100) / 100 })),
+    ...LEE_RINGS.map((ring) => onArc(ring, 0.8)),
   ],
 };
