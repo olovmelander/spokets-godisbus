@@ -218,3 +218,11 @@ Validation: all 656 integrated unit tests and typecheck pass. The ending rehears
 Align the build estimate with the runtime's decimal MB limits: 100, 150 and 220 MB by graphics tier, plus 80 MB for High render targets. Preserve the manifest's informational MiB value and add an explicit MB value.
 
 Validation: 15 asset-estimate tests and typecheck pass, including exactly 100,000,000 bytes accepted and one extra byte rejected. The clean combined build also passes the stricter limits.
+
+## Release uploaded pack texture buffers and restore them safely
+
+Release CPU mip buffers for supported immutable KTX2 pack textures after upload. Context recovery refetches the original versioned packs through the bounded loader and offline cache, validates mappings, and restores the same Texture and Source identities. Play waits for recovery; retries and repeated loss cannot apply stale results. Initial boot failure retains the reload action.
+
+Procedural and dynamic textures keep the CPU data they need. No blanket geometry or unsupported-source release is attempted.
+
+Validation: the clean combined tree passes 665 unit/robot tests, typecheck, production build/size and privacy gates (371 KB gzip JS; 700 KB public boot). The source passed 13 real KTX browser checks plus 30 lifecycle checks, covering uploaded payload hashes, released buffers, offline recovery, bounded failures, retry and repeated context loss. The full 28-suite integrated browser gate is running.
