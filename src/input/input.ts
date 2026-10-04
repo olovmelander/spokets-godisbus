@@ -99,7 +99,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   let pointerHopHeld = false;
   let enabled = true;
   let stickTap: { x: number; y: number; t: number; moved: boolean } | null = null;
-  let worldTap: { x: number; y: number; t: number; id: number } | null = null;
+  let worldTap: { x: number; y: number; t: number; id: number; moved: boolean } | null = null;
   let follow: {
     id: number; target: HTMLElement; x: number; y: number; ox: number; oy: number; t: number; active: boolean;
   } | null = null;
@@ -137,7 +137,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     if (!follow || e.pointerId !== follow.id) return false;
     follow.x = e.clientX;
     follow.y = e.clientY;
-    if (Math.hypot(follow.x - follow.ox, follow.y - follow.oy) > TAP_PX) follow.active = true;
+    if (Math.hypot(follow.x - follow.ox, follow.y - follow.oy) >= TAP_PX) follow.active = true;
     return true;
   };
   const releaseFollow = () => {
@@ -170,7 +170,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   on(zone, 'pointerdown', (ev) => {
     const e = ev as PointerEvent;
     if (beginFollow(e, zone)) return;
-    if (!enabled || stick.id !== null) return;
+    if (!enabled || opts.panelOpen?.() || stick.id !== null || (e.button !== undefined && e.button !== 0)) return;
     stick.id = e.pointerId;
     stickTap = { x: e.clientX, y: e.clientY, t: e.timeStamp, moved: false };
     const r = zone.getBoundingClientRect();
@@ -188,7 +188,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     const e = ev as PointerEvent;
     if (moveFollow(e)) return;
     if (e.pointerId !== stick.id) return;
-    if (stickTap && Math.hypot(e.clientX - stickTap.x, e.clientY - stickTap.y) > TAP_PX) stickTap.moved = true;
+    if (stickTap && Math.hypot(e.clientX - stickTap.x, e.clientY - stickTap.y) >= TAP_PX) stickTap.moved = true;
     const r = zone.getBoundingClientRect();
     let dx = (e.clientX - r.left - stick.ox) / STICK_RADIUS;
     let dy = (e.clientY - r.top - stick.oy) / STICK_RADIUS;
@@ -208,8 +208,9 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     if (e) captures.delete(e.pointerId);
     if (e && e.pointerId !== stick.id) return;
     // Elof often stands inside the stick's half of the screen: a quick tap there is still a tap on the world.
-    if (e?.type === 'pointerup' && stickTap && !stickTap.moved && e.timeStamp - stickTap.t < TAP_MS) {
-      opts.onTap?.(stickTap.x, stickTap.y);
+    if (enabled && !opts.panelOpen?.() && e?.type === 'pointerup' && stickTap && !stickTap.moved && e.timeStamp - stickTap.t < TAP_MS
+      && Math.hypot(e.clientX - stickTap.x, e.clientY - stickTap.y) < TAP_PX) {
+      opts.onTap?.(e.clientX, e.clientY);
     }
     stickTap = null;
     stick.id = null;
@@ -225,19 +226,23 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   on(ui.world, 'pointerdown', (ev) => {
     const e = ev as PointerEvent;
     if (beginFollow(e, ui.world)) return;
-    if (!enabled || worldTap) return;
-    worldTap = { x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId };
+    if (!enabled || opts.panelOpen?.() || worldTap || (e.button !== undefined && e.button !== 0)) return;
+    worldTap = { x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId, moved: false };
   });
   const endWorldTap = (ev: Event) => {
     const e = ev as PointerEvent;
     if (endFollow(e)) return;
     if (!worldTap || e.pointerId !== worldTap.id) return;
-    const quick = e.type === 'pointerup' && e.timeStamp - worldTap.t < TAP_MS
+    const quick = enabled && !opts.panelOpen?.() && !worldTap.moved && e.type === 'pointerup' && e.timeStamp - worldTap.t < TAP_MS
       && Math.hypot(e.clientX - worldTap.x, e.clientY - worldTap.y) < TAP_PX;
     worldTap = null;
     if (quick) opts.onTap?.(e.clientX, e.clientY);
   };
-  on(ui.world, 'pointermove', (ev) => { moveFollow(ev as PointerEvent); });
+  on(ui.world, 'pointermove', (ev) => {
+    const e = ev as PointerEvent;
+    if (moveFollow(e)) return;
+    if (worldTap?.id === e.pointerId && Math.hypot(e.clientX - worldTap.x, e.clientY - worldTap.y) >= TAP_PX) worldTap.moved = true;
+  });
   on(ui.world, 'pointerup', endWorldTap);
   on(ui.world, 'pointercancel', endWorldTap);
   on(ui.world, 'lostpointercapture', endWorldTap);

@@ -1,4 +1,7 @@
 import { Timer } from 'three';
+import { Pointing } from './app/pointing';
+import { Tutorial } from './app/tutorial';
+import { createTutorial } from './ui/tutorial';
 import { Game } from './app/game';
 import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
@@ -38,6 +41,7 @@ declare global {
     __godis?: {
       state(): Record<string, unknown>;
       info(): Record<string, unknown>;
+      screen(at: Vec): Vec | null;
     };
   }
 }
@@ -129,6 +133,9 @@ function start(): void {
   const game = new Game(chapter, simOptions(settings), from);
   const photoMoment = createPhotoMoments(chapter.id, game.sim.flags);
   game.tempo = tempoOf(settings);
+  const pointing = new Pointing(game.sim);
+  const tutorial = new Tutorial(chapter.id);
+  const tutorialView = createTutorial(document);
   const isKlonk = () => ghostNamed(save.flags) || (chapter.id === 'epilog' && game.sim.flags.has('beat:named'));
   const hud = createHud(document, chapter.candy.length, isKlonk);
   const story = createStoryPanel(document, {
@@ -277,6 +284,8 @@ function start(): void {
     if (menuOpen() || platformBlocked()) return;
     paused = true;
     audio.sleep(true);
+    pointing.cancel();
+    askedForUse = askedForHelp = false;
     input.release();
     pause.show({ ...settings, graphics: requestedGraphics });
     writeSave();
@@ -351,6 +360,7 @@ function start(): void {
   for (const id of ['pauseMap', 'endMap']) byId(id).innerHTML = mapSvg(mapState(chapter.id), isKlonk());
   // The helper's button: a press is passed on with the next frame's presses, like H on a keyboard.
   let askedForHelp = false;
+  let askedForUse = false;
   byId('helpBtn').addEventListener('click', () => {
     if (!platformBlocked() && !menuOpen()) askedForHelp = true;
   });
@@ -461,10 +471,17 @@ function start(): void {
     },
     {
       onDevice: showDevice,
-      // A short tap on the visitor asks the next hint, including taps inside the stick's clear area.
-      onTap: (x, y) => {
-        const at = view.helperScreen();
-        if (!platformBlocked() && !menuOpen() && at && Math.hypot(x - at.x, y - at.y) <= 32) askedForHelp = true;
+      onTap(x, y) {
+        if (platformBlocked() || menuOpen()) return;
+        const what = pointing.tap({ x, y }, { world: (at) => view.worldScreen(at), player: () => view.playerScreen(), helper: () => view.helperScreen() });
+        if (!what) return;
+        if (what.kind === 'use') askedForUse = true;
+        else if (what.kind === 'helper') askedForHelp = true;
+        else {
+          view.react(what, settings.calm || window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+          if (what.kind === 'player') audio.play({ kind: 'say', who: 'elof' });
+          else if (what.kind === 'ghost') audio.play({ kind: 'say', who: 'spoket' });
+        }
       },
       onKey: (key) => {
         if (platformBlocked()) return;
@@ -505,6 +522,10 @@ function start(): void {
     auto?.suspend();
     resolution?.suspend();
   });
+  window.addEventListener('blur', () => {
+    pointing.cancel();
+    askedForUse = askedForHelp = false;
+  });
 
   // r186's Timer follows the page's visibility, so a hidden tab doesn't come back with one huge frame.
   const timer = new Timer();
@@ -514,7 +535,7 @@ function start(): void {
     resolution?.suspend();
     audio.sleep(platformBlocked() || menuOpen());
     memories.suspend(platformBlocked());
-    if (document.hidden) { input.release(); askedForHelp = false; story.interrupt(); writeSave(); }
+    if (document.hidden) { input.release(); pointing.cancel(); askedForUse = askedForHelp = false; story.interrupt(); writeSave(); }
     else game.resume();
   });
   window.addEventListener('pagehide', writeSave);
@@ -525,8 +546,9 @@ function start(): void {
       state: () => ({
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
-        playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(), noteHits: game.sim.noteHits, bootReady, contextLost,
+        pointing: { last: pointing.last, walking: pointing.walking }, tutorial: tutorial.shown, playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(), noteHits: game.sim.noteHits, bootReady, contextLost,
       }),
+      screen: (at) => view.worldScreen(at),
       info: () => ({ ...view.info(), busyMs, autoSettled: auto?.settled ?? true,
         sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars }),
     };
@@ -598,6 +620,8 @@ function start(): void {
       focusBeforeLoss = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     }
     contextLost = true;
+    pointing.cancel();
+    askedForUse = askedForHelp = false;
     memories.suspend(true);
     recovering = true;
     paused = true;
@@ -653,6 +677,9 @@ function start(): void {
     memories.suspend(blocked);
     audio.sleep(blocked || menuOpen());
     if (blocked) {
+      pointing.cancel();
+      askedForUse = askedForHelp = false;
+      tutorialView.show(null, device, settings.followFinger, null);
       auto?.suspend();
       resolution?.suspend();
       input.poll();
@@ -663,26 +690,35 @@ function start(): void {
     const ghost = game.sim.ghost;
     audio.tick(ghost !== null && !ghost.gone && Math.abs(ghost.x - game.sim.curr.x) < 9);
     if (menuOpen()) {
+      pointing.cancel();
+      askedForUse = askedForHelp = false;
       // The panel's buttons still answer a gamepad. A memory plays over a game that waits.
       input.poll();
     } else {
       let held = input.state();
       let edges = input.consume();
       if (bench && !bench.done) ({ held, edges } = bench.play(game.sim.curr, time));
-      game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld }, askedForHelp ? { ...edges, helper: true } : edges);
-      askedForHelp = false;
+      edges = { ...edges, helper: edges.helper || askedForHelp, act: edges.act || askedForUse };
+      held = pointing.steer(dt, held, edges);
+      game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld }, edges);
+      tutorial.update(dt, game.sim.curr, game.sim.flags, held, edges);
+      askedForUse = askedForHelp = false;
       playTime += dt * game.tempo;
       const now = hear();
       for (const cue of cuesFor(heard, now, memory)) audio.play(cue);
       heard = now;
     }
     if (game.sim.story && !story.open) {
+      pointing.cancel();
+      askedForUse = askedForHelp = false;
       input.release();
       story.show(game.sim.story, game.sim.flags);
       audio.sleep(true);
     }
     if (!remembered && game.sim.flags.has('memory')) {
       remembered = true;
+      pointing.cancel();
+      askedForUse = askedForHelp = false;
       input.release();
       writeSave();
       memories.play(chapter.id, () => { input.release(); game.resume(); canvas.focus(); });
@@ -708,6 +744,7 @@ function start(): void {
     if (moment) void view.capture().then(async (blob) => {
       if (blob && !photosStopped && await photoStore.put({ player: photoPlayer, moment, blob })) await photoAlbum.refresh();
     });
+    tutorialView.show(menuOpen() || platformBlocked() ? null : tutorial.shown, device, settings.followFinger, view.playerScreen());
     hud.candy(game.sim.candyCount);
     hud.verb(game.sim.curr.verb, game.sim.curr.word);
     hud.knock(game.sim.help.step >= 2 ? game.sim.help : null);
@@ -758,6 +795,8 @@ function start(): void {
       ended = true;
       paused = true;
       audio.sleep(true);
+      pointing.cancel();
+      askedForUse = askedForHelp = false;
       input.release();
       writeSave();
       const canExplore = params.has('dev') && storyFinished(save.flags);

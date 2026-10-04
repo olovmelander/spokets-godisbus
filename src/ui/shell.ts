@@ -66,6 +66,9 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
      </div>
      <div class="bubble" id="bubble" role="status" hidden><b id="bubbleWho"></b><span id="bubbleLine"></span></div>
      <div class="hint" id="hint" hidden></div>
+     <div class="tutorial" id="tutorial" role="img" hidden>
+       <i class="tutorial-target"></i><span class="tutorial-key" id="tutorialKey"></span><span class="tutorial-hand">${HAND}</span>
+     </div>
      <div class="notice" id="notice" role="status" hidden></div>
      <pre class="debug" id="debug" hidden></pre>
      <div class="panel-back" id="pause" hidden>

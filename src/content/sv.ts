@@ -45,6 +45,16 @@ export const sv = {
   keysHint: '← → springa och gunga · Mellanslag hoppa och släppa · ↑ ↓ klättra · E använd · Shift gå',
   padHint: 'Spaken springa, klättra och gunga · A hoppa och släppa · X använd',
 
+  // The tutorial is wordless on screen; these labels also make its pictures available to a screen reader.
+  tutorial: {
+    keys: { move: '← →', hop: '␣', act: 'E' },
+    pad: { move: '✚', hop: 'A', act: 'X' },
+    touch: { move: 'För fingret åt sidan för att gå.', hop: 'Tryck på Hoppa.', act: 'Tryck på Använd för att ta stjärnan.' },
+    // Spoken descriptions use the same controls as the key reference.
+    keyboard: { move: 'Gå med vänster och höger piltangent.', hop: 'Hoppa med mellanslag.', act: 'Ta stjärnan med E.' },
+    gamepad: { move: 'Gå med vänster spak eller styrkorset.', hop: 'Hoppa med A.', act: 'Ta stjärnan med X.' },
+  },
+
   // What Använd says when there is something to use: one word for each thing Elof can do.
   verbs: {
     slide: 'Åk ner',

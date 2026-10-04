@@ -1175,3 +1175,19 @@ button.bag {
 .story-panel [hidden] { display: none !important; }
 .party .share-sweets { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 12px; }
 @media (min-width: 600px) { .party .share-friends { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+/* A single wordless cue, only after an idle prologue moment. It never catches a touch. */
+.tutorial { position: fixed; z-index: 15; pointer-events: none; width: 96px; height: 96px; transform: translate(-50%, -50%); color: #fff5dc; }
+.tutorial[hidden] { display: none; }
+.tutorial-hand { position: absolute; top: 30px; left: 34px; width: 60px; height: 60px; filter: drop-shadow(0 3px 3px #382410); animation: tutorial-press 1.7s ease-in-out infinite; }
+.tutorial-hand svg { width: 100%; height: 100%; }
+.tutorial-target { position: absolute; inset: 2px; border: 3px solid #ffe299; border-radius: 50%; box-shadow: 0 0 0 5px #4a382544; }
+.tutorial-key { position: absolute; inset: 12px; display: grid; place-items: center; border-radius: 14px; background: #fff7e4; color: #513923; font: 700 32px/1 system-ui; box-shadow: 0 3px 8px #2a1a1844; }
+.tutorial[data-device="touch"] .tutorial-key { display: none; }
+.tutorial[data-device="keys"] .tutorial-target, .tutorial[data-device="pad"] .tutorial-target { display: none; }
+.tutorial[data-lesson="move"] .tutorial-hand { animation-name: tutorial-move; }
+.tutorial[data-lesson="move"][data-device="touch"] .tutorial-target { opacity: 0.4; }
+.tutorial[data-lesson="move"][data-follow="true"] .tutorial-hand { animation-name: tutorial-press; animation-duration: 2.8s; }
+@keyframes tutorial-press { 0%, 100% { transform: translate(12px, 14px) rotate(-14deg); opacity: .7; } 30%, 70% { transform: translate(0, 0) rotate(-14deg); opacity: 1; } }
+@keyframes tutorial-move { 0%, 100% { transform: translate(-14px, 0) rotate(-14deg); } 50% { transform: translate(22px, 0) rotate(-14deg); } }
+body.calm .tutorial-hand { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .tutorial-hand { animation: none !important; } }

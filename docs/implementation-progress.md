@@ -110,3 +110,9 @@ Validation: typecheck and memory tests pass. Source browser checks cover automat
 The garden ghost now acts as the helper, remembers the gully visit and demonstrates the third hint with an authored trajectory. Repeated requests replay it; reduced motion shows still poses. Demonstrations never award puzzle progress.
 
 Validation: typecheck and 23 integrated helper tests pass. Source checks cover both orientations and Low/High, touch calling, replay, pause, one visible ghost and stable shaders within the draw budget.
+
+## Add contextual world taps and gentle control prompts
+
+Quick taps now react to sweets, the ghost, animals and Elof. Nearby candy can guide safe walking; helper taps take precedence and drag gestures remain movement. The prologue offers conditional movement, jump and use prompts only after idle time, then stops each prompt once learned.
+
+Validation: typecheck and 62 integrated input/pointing/tutorial tests pass; 34 source browser checks cover touch, mirrored controls, keyboard/controller prompts, reduced motion and rendering stability. Menus and interruptions cancel queued movement.

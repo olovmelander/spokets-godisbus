@@ -5,6 +5,7 @@ import {
   Scene, Shape, SphereGeometry, TorusGeometry, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
 import { captureFrame } from './capture';
 import { KINDS } from '../content/kinds';
@@ -17,7 +18,7 @@ import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './qual
 import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
-import type { ChapterData, HelpState, PlayerState } from '../sim/types';
+import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
@@ -97,6 +98,9 @@ export interface View {
   playerScreen(): { x: number; y: number } | null;
   /** The visitor's centre for tapping the helper itself; null while it is away. */
   helperScreen(): { x: number; y: number } | null;
+  worldScreen(at: Vec): Vec | null;
+  /** Optional Peka responses: animation only, never changes the simulation. */
+  react(what: Reaction, calm?: boolean): void;
   render(frame: Frame): void;
   /** Read the last frame immediately after render(), with no retained WebGL drawing buffer. */
   capture(): Promise<Blob | null>;
@@ -200,7 +204,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(hiddenSweets.group);
   const glance = buildGlance(chapter);
   scene.add(glance.group);
-  const things = (chapter.spots ?? []).map((spot) => ({ spot, prop: spotProp(spot) }));
+  const things = (chapter.spots ?? []).map((spot) => ({ spot, prop: spotProp(spot), reactionTurn: 0 }));
   // What only stands about: drawn like a thing to use, and gone when its flag is set.
   const decor = (chapter.decor ?? []).map((def, i) => ({
     def,
@@ -448,6 +452,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const unculled: Object3D[] = [];
   const projectedPlayer = new Vector3();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let reaction: Reaction | null = null;
+  let responseFor = 0;
+  let calmResponse = false;
+  const project = (point: Vector3): Vec | null => {
+    if (!hasFrame) return null;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    point.project(camera);
+    if (!Number.isFinite(point.x) || !Number.isFinite(point.y) || Math.abs(point.z) > 1 || Math.abs(point.x) > 1.05 || Math.abs(point.y) > 1.05) return null;
+    return { x: rect.left + (point.x + 1) * rect.width / 2, y: rect.top + (1 - point.y) * rect.height / 2 };
+  };
 
   /** Draws the current scene without advancing a camera, animation or simulation clock. */
   function draw(): void {
@@ -483,7 +498,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
     clock += dt;
-    trail.update(collected, flags, x, y, dt, clock);
+    responseFor = Math.max(0, responseFor - dt);
+    const response = responseFor > 0 ? (calmResponse ? 0.15 : Math.sin((0.85 - responseFor) * 24) * responseFor / 0.85) : 0;
+    if (responseFor === 0) reaction = null;
+    trail.update(collected, flags, x, y, dt, clock, reaction?.kind === 'candy' ? reaction.index : undefined, response);
     glints.update(flags, clock);
     lawnSong.update(flags, clock);
     for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
@@ -521,8 +539,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (near) near.rotation.x = -beat;
       if (far) far.rotation.x = beat;
     }
-    for (const thing of things) {
+    for (const [i, thing] of things.entries()) {
+      if (thing.prop) thing.prop.group.rotation.z -= thing.reactionTurn;
       thing.prop?.update(flags.has(thing.spot.id), clock, dt, noteStrikes.get(thing.spot.id));
+      thing.reactionTurn = reaction?.kind === 'spot' && reaction.index === i ? response * 0.14 : 0;
+      if (thing.prop) thing.prop.group.rotation.z += thing.reactionTurn;
       // Shy lights take turns appearing; unrevealed ones must not betray the hiding place.
       if (thing.prop && thing.spot.look === 'wisp') thing.prop.group.visible = thing.spot.needs === undefined || flags.has(thing.spot.needs);
     }
@@ -541,7 +562,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     helper.update(help, x, y, curr.standY, clock, dt, reducedMotion.matches || document.body.classList.contains('calm'));
     // The helper is the same friend, not a second ghost alongside the one he is following.
     ghostPlace.visible = chapter.ghost !== undefined && !(ghostHelps && helper.active);
-    hiddenSweets.update(flags, clock, dt);
+    hiddenSweets.update(flags, clock, dt, reaction?.kind === 'hidden' ? reaction.index : undefined, response);
     glance.update(flags, ghostState, clock, dt);
     glitter.update(curr.bubble, x, y, clock);
     // He hangs by his hands, his body along the lace.
@@ -581,7 +602,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const moving = Math.abs(curr.vx) > 0.05 || (!curr.grounded && curr.bubble === 0);
     elof.legLeft.rotation.z = moving ? swing : 0;
     elof.legRight.rotation.z = moving ? -swing : 0;
-    if (doll) poseDoll(doll, curr, stride, dt);
+    const waving = reaction?.kind === 'player' && curr.grounded;
+    elof.arm.rotation.z = waving ? -2 + response * 0.3 : 0;
+    if (doll) poseDoll(doll, curr, stride, dt, waving ? responseFor : 0, calmResponse);
     if (curr.grounded && !wasGrounded) squash = 0.82; // a soft landing
     wasGrounded = curr.grounded;
     squash += (1 - squash) * ease(12, dt);
@@ -623,7 +646,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostShadow.position.set(ghostState.x, ghostState.y + 0.012, 0);
       ghostShadow.scale.setScalar(1.3 * ghostSize);
       // 0 faces along the course; a half turn faces back at him.
-      const wanted = hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4;
+      const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4;
       ghostTurn += (wanted - ghostTurn) * ease(7, dt);
       ghost.rotation.set(0, ghostFaces + ghostTurn, hopping ? -0.25 * Math.sin(Math.PI * ghostState.t) : Math.sin(clock * 1.7) * 0.035);
       if (ghostFoot) ghostFoot.rotation.x = hopping ? 0 : -Math.max(0, Math.sin(clock * 9)) * (Math.sin(clock * 0.9) > 0.2 ? 0.45 : 0);
@@ -692,17 +715,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       resize();
     },
     playerScreen() {
-      if (!hasFrame) return null;
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return null;
       elof.group.localToWorld(projectedPlayer.set(0, 0.5, 0));
       projectedPlayer.z = 0;
-      projectedPlayer.project(camera);
-      if (!Number.isFinite(projectedPlayer.x) || !Number.isFinite(projectedPlayer.y) || Math.abs(projectedPlayer.z) > 1) return null;
-      return {
-        x: rect.left + (projectedPlayer.x + 1) * rect.width / 2,
-        y: rect.top + (1 - projectedPlayer.y) * rect.height / 2,
-      };
+      return project(projectedPlayer);
     },
     helperScreen() {
       if (!hasFrame || !helper.active) return null;
@@ -714,6 +729,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (!Number.isFinite(projectedPlayer.x) || !Number.isFinite(projectedPlayer.y) || Math.abs(projectedPlayer.z) > 1 || Math.abs(projectedPlayer.x) > 1 || Math.abs(projectedPlayer.y) > 1) return null;
       return { x: rect.left + (projectedPlayer.x + 1) * rect.width / 2, y: rect.top + (1 - projectedPlayer.y) * rect.height / 2 };
     },
+    worldScreen(at) { return project(projectedPlayer.set(at.x, at.y, 0)); },
+    react(what, calm = false) { reaction = what; responseFor = 0.85; calmResponse = calm; },
     info: () => ({
       tier,
       hdrAvailable,
@@ -791,7 +808,7 @@ function bendJoint(joint: Joint | null, angle: number, quick: number): void {
  * Poses the doll in code until the library's clips drive it: a walk and a run that follow the distance he
  * covers, and a jump. He faces +z in his own space, so a joint swings forward with a negative turn round x.
  */
-function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number): void {
+function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number, wave = 0, calm = false): void {
   const quick = ease(18, dt);
   const bend = (joint: Joint | null, angle: number) => {
     if (!joint) return;
@@ -824,6 +841,10 @@ function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number): 
   }
   bend(doll.spine, 0.14 * speed);
   bend(doll.head, -0.08 * speed);
+  if (wave > 0) {
+    bend(doll.upperArms[0]!, -2);
+    bend(doll.lowerArms[0]!, -0.7 + (calm ? 0 : Math.sin(wave * 22) * 0.3));
+  }
 }
 
 function startState(chapter: ChapterData): PlayerState {
@@ -1262,7 +1283,7 @@ function buildHidden(chapter: ChapterData) {
     group.add(sweet);
     return { def, sweet, ring, size: 1 };
   });
-  function update(flags: ReadonlySet<string>, clock: number, dt: number): void {
+  function update(flags: ReadonlySet<string>, clock: number, dt: number, tapped?: number, response = 0): void {
     for (const [i, s] of sweets.entries()) {
       const found = flags.has(`found:${s.def.kind}`);
       s.sweet.visible = s.def.after === undefined || flags.has(s.def.after);
@@ -1270,6 +1291,7 @@ function buildHidden(chapter: ChapterData) {
       s.sweet.scale.setScalar(s.size);
       s.sweet.position.y = s.def.y + Math.sin(clock * 1.8 + i) * 0.06;
       s.sweet.rotation.y = clock * 0.9 + i;
+      s.sweet.rotation.z = i === tapped ? response * 0.4 : 0;
       s.ring.rotation.x = clock * 1.3 + i;
     }
   }
@@ -1470,14 +1492,14 @@ function buildTrail(chapter: ChapterData) {
   /** How far each candy that waits for a flag has come out, from 0 to 1. */
   const out: number[] = candy.map((c) => (c.after === undefined ? 1 : 0));
 
-  function update(collected: readonly boolean[], flags: ReadonlySet<string>, elofX: number, elofY: number, dt: number, clock: number): void {
+  function update(collected: readonly boolean[], flags: ReadonlySet<string>, elofX: number, elofY: number, dt: number, clock: number, tapped?: number, response = 0): void {
     for (let i = 0; i < candy.length; i++) {
       const c = candy[i]!;
       if (collected[i] && flown[i]! < 0) flown[i] = 0;
       // A candy the ghost drops pops out when it does.
       if (c.after !== undefined && flags.has(c.after)) out[i] = Math.min(1, out[i]! + dt * 5);
       let x = c.x;
-      let y = c.y + Math.sin(clock * 2.2 + i * 1.7) * 0.045;
+      let y = c.y + Math.sin(clock * 2.2 + i * 1.7) * 0.045 + (i === tapped ? response * 0.12 : 0);
       let size = out[i]!;
       if (flown[i]! >= 0) {
         const t = Math.min(1, flown[i]! + dt / CANDY_FLIGHT);
@@ -1598,7 +1620,8 @@ function buildElof() {
     return mesh;
   };
 
-  body.add(torso, head, hairTop, fringe, backpack, arm(0.19), arm(-0.19));
+  const nearArm = arm(0.19);
+  body.add(torso, head, hairTop, fringe, backpack, nearArm, arm(-0.19));
   group.add(body, legLeft, legRight);
-  return { group, body, legLeft, legRight };
+  return { group, body, legLeft, legRight, arm: nearArm };
 }

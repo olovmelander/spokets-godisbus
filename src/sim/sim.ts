@@ -781,6 +781,40 @@ export class Sim {
     this.curr = { ...this.curr, mode: 'bubble', bubble: Number.MIN_VALUE, verb: null, hook: null };
   }
 
+  /** The one thing Använd would act on now. Peka uses this same priority and reach, never a remote action. */
+  get actionAt(): Vec | null {
+    const p = this.curr;
+    if (p.mode !== 'free' || this.watching || p.verb === null) return null;
+    if (p.verb === 'lace') return this.hookInReach();
+    if (p.verb === 'grab') return this.ghost ? { x: this.ghost.x, y: this.ghost.y + 0.6 } : null;
+    if (p.verb === 'pull' || p.verb === 'push') {
+      const mover = this.moverFor(p.verb);
+      if (!mover) return null;
+      const ring = p.verb === 'pull' ? (mover.def.ring ?? { x: 0, y: mover.def.height }) : { x: 0, y: mover.def.height / 2 };
+      return { x: mover.x + ring.x, y: mover.y + ring.y };
+    }
+    if (p.verb === 'slide') {
+      const c = this.climbs.find((c) => (c.needs === undefined || this.flags.has(c.needs)) && Math.abs(c.x - p.x) <= SLIDE_REACH && Math.abs(c.top - p.y) <= 0.25);
+      return c ? { x: c.x, y: c.top } : null;
+    }
+    const spot = this.spotInReach();
+    return spot ? { x: spot.at.x, y: spot.at.y + (spot.look ? 0.6 : 1.5) } : null;
+  }
+
+  /** A nearby candy may invite a stroll along level, clear ground. Peka never climbs or crosses a gap. */
+  canStrollTo(x: number): boolean {
+    const p = this.curr;
+    if (p.mode !== 'free' || !p.grounded || this.watching || Math.abs(x - p.x) > 3) return false;
+    const from = Math.min(x, p.x);
+    const to = Math.max(x, p.x);
+    if (this.climbs.some((c) => c.x >= from - 0.3 && c.x <= to + 0.3 && p.y >= c.bottom - 0.1 && p.y < c.top)) return false;
+    if (this.cast(p.x, p.y + 0.3, x, p.y + 0.3)) return false;
+    for (let at = from; at <= to + 0.1; at += 0.15) {
+      if (Math.abs(this.groundBelow(at, p.y) - p.y) > 0.15) return false;
+    }
+    return true;
+  }
+
   // --- taking hold --------------------------------------------------------------------------------------
 
   /** A little thank-you waits until the gift giver has gone away and passes the door again. */

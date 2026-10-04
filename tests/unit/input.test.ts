@@ -298,6 +298,26 @@ describe('the buttons', () => {
 });
 
 describe('taps on the world', () => {
+  it('applies primary-button and final-displacement tap guards over the stick half too', () => {
+    fire(ui.stickZone, 'pointerdown', { pointerId: 3, clientX: 100, clientY: 200, button: 2 });
+    fire(ui.stickZone, 'pointerup', { pointerId: 3, clientX: 100, clientY: 200, button: 2 });
+    fire(ui.stickZone, 'pointerdown', { pointerId: 4, clientX: 100, clientY: 200 });
+    fire(ui.stickZone, 'pointerup', { pointerId: 4, clientX: 150, clientY: 200 });
+    expect(taps).toEqual([]);
+  });
+  it('never turns a drag out and back, cancellation, right-click or menu touch into an action', () => {
+    fire(ui.world, 'pointerdown', { pointerId: 3, clientX: 500, clientY: 200 });
+    fire(ui.world, 'pointermove', { pointerId: 3, clientX: 540, clientY: 200 });
+    fire(ui.world, 'pointerup', { pointerId: 3, clientX: 500, clientY: 200 });
+    fire(ui.world, 'pointerdown', { pointerId: 4, clientX: 500, clientY: 200 });
+    fire(ui.world, 'pointercancel', { pointerId: 4, clientX: 500, clientY: 200 });
+    fire(ui.world, 'pointerdown', { pointerId: 5, clientX: 500, clientY: 200, button: 2 });
+    fire(ui.world, 'pointerup', { pointerId: 5, clientX: 500, clientY: 200 });
+    panelOpen = true;
+    fire(ui.world, 'pointerdown', { pointerId: 6, clientX: 500, clientY: 200 });
+    fire(ui.world, 'pointerup', { pointerId: 6, clientX: 500, clientY: 200 });
+    expect(taps).toEqual([]);
+  });
   it('reports a quick tap, and not a drag', () => {
     fire(ui.world, 'pointerdown', { pointerId: 3, clientX: 500, clientY: 200 });
     fire(ui.world, 'pointerup', { pointerId: 3, clientX: 503, clientY: 201 });
