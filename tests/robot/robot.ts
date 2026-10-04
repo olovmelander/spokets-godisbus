@@ -3,7 +3,7 @@ import { DROP_RADIUS, DROP_WARNING, GUST_SHELTER, RUN_SPEED } from '../../src/si
 import type { DripState, MoverState } from '../../src/sim/sim';
 import type { ChapterData, SimOptions } from '../../src/sim/types';
 import { eyeCentres, guidedCarve, guidedEye } from '../../src/sim/story-stroke';
-import { FRIENDS } from '../../src/sim/story';
+import { FRIENDS, PARTY_GUESTS } from '../../src/sim/story';
 
 /** The ground's height at x, read from the chapter data. */
 export function heightAt(chapter: ChapterData, x: number): number {
@@ -49,6 +49,10 @@ export function decide(game: Game, chapter: ChapterData): Decision {
   }
   if (game.sim.story?.kind === 'paint') game.sim.finishStory({ kind: 'paint', traces: eyeCentres(game.sim.story.spot).map(guidedEye) });
   if (game.sim.story?.kind === 'carve') game.sim.finishStory({ kind: 'carve', stroke: guidedCarve() });
+  if (game.sim.story?.kind === 'party') {
+    const friend = PARTY_GUESTS.find((friend) => !game.sim.flags.has(`party:${friend}`));
+    if (friend) game.sim.finishStory({ kind: 'party', friend, sweet: 'gelehallon' });
+  }
   const p = game.sim.curr;
   const movers: readonly MoverState[] = game.sim.movers;
   const drips: readonly DripState[] = game.sim.drips;

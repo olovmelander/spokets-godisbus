@@ -30,6 +30,10 @@ export const sv = {
     sweets: { gelehallon: 'Geléhallon', karamell: 'Karamell', skumbanan: 'Skumbanan', lingon: 'Lingon' },
     friends: { tragubbe: 'Trägubben', spoket: 'Spöket', jay: 'Lavskrikan' },
   },
+  party: {
+    title: 'Godiskalaset', thanks: '{friend} tackar glatt för {sweet}!',
+    friends: { mamma: 'Mamma', pappa: 'Pappa', moa: 'Moa', bertil: 'Bertil', spoket: 'Spöket' },
+  },
 
   // The two action buttons. Använd will show the specific verb once there is something to do.
   hop: 'Hoppa',

@@ -247,6 +247,39 @@ try {
     check('the epilogue can finish after carving', (await state()).flags.includes('teeth'));
     await finish();
   }
+  console.log('story: family candy choices');
+  {
+    const { page, state, finish } = await open('party', { hasTouch: true, viewport: { width: 390, height: 844 } }, '?dev&debug&standin&tier=low&course=epilog', () => {
+      localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 0, candy: {}, placed: {}, flags: {}, playMs: 0 }));
+    });
+    await page.keyboard.down('ArrowRight'); await until(state, (s) => s.word === 'giveMamma', 'first guest is reachable'); await page.keyboard.up('ArrowRight');
+    await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
+    check('the family party offers three candies and five guests', await page.locator('[data-sweet]:visible').count() === 3 && await page.locator('[data-friend]:visible').count() === 5);
+    await page.locator('[data-sweet="karamell"]').tap();
+    check('every guest likes the selected candy', await page.locator('[data-friend]:visible:enabled').count() === 5);
+    await page.screenshot({ path: '/tmp/godisbus-party.png' });
+    await page.locator('[data-friend="bertil"]').tap(); await until(state, (s) => s.flags.includes('party:bertil'), 'touch choice for Bertil');
+    check('a guest can be chosen before the nearby guest', !(await state()).flags.includes('party:mamma') && (await state()).flags.includes('party-gift:bertil:karamell'));
+    await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
+    await page.focus('[data-sweet="gelehallon"]'); await page.keyboard.press('Enter');
+    await page.focus('[data-friend="mamma"]'); await page.keyboard.press('Enter'); await until(state, (s) => s.flags.includes('party:mamma'), 'keyboard choice for Mamma');
+    await page.keyboard.down('ArrowRight'); await until(state, (s) => s.word === 'givePappa', 'next guest is reachable'); await page.keyboard.up('ArrowRight');
+    await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
+    await page.evaluate(installPad); await padFocus(page, '[data-sweet="skumbanan"]'); await padPress(page, 0);
+    await padFocus(page, '[data-friend="moa"]'); await padPress(page, 0); await until(state, (s) => s.flags.includes('party:moa'), 'gamepad choice for Moa');
+    check('the controller chooses a different candy for Moa', (await state()).flags.includes('party-gift:moa:skumbanan'));
+    for (const [friend, sweet] of [['spoket', 'karamell'], ['pappa', 'gelehallon']]) {
+      await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
+      await page.locator(`[data-sweet="${sweet}"]`).tap(); await page.locator(`[data-friend="${friend}"]`).tap();
+      await until(state, (s) => s.flags.includes(`party:${friend}`), `choice for ${friend}`);
+    }
+    await until(state, (s) => s.flags.includes('beat:named'), 'the party reaches the naming');
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
+    check('the family candy choices persist', ['party-gift:bertil:karamell', 'party-gift:mamma:gelehallon', 'party-gift:moa:skumbanan', 'party-gift:spoket:karamell', 'party-gift:pappa:gelehallon'].every((flag) => saved.flags.epilog.includes(flag)));
+    await page.keyboard.down('ArrowRight'); await until(state, (s) => s.word === 'takeKnife', 'Pappa offers the knife after the naming'); await page.keyboard.up('ArrowRight');
+    check('the party continues into Pappa’s carving lesson', (await state()).flags.includes('partied'));
+    await finish();
+  }
   console.log(`Story browser tests: ${checked} checks passed.`);
 } finally {
   await browser?.close();

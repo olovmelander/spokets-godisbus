@@ -12,7 +12,7 @@ import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REAC
 import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
 import { GUIDE_AFTER, HELP_TIME, REMIND_AFTER } from './constants';
 import { hintFor } from './help';
-import { sharingReward, type StoryAnswer } from './story';
+import { partyReward, sharingReward, type StoryAnswer } from './story';
 import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
@@ -345,6 +345,7 @@ export class Sim {
     if (!this.story || this.story.kind !== answer.kind) return false;
     const centres = eyeCentres(this.story.spot);
     const reward = answer.kind === 'share' ? sharingReward(this.flags, answer.friend, answer.sweet)
+      : answer.kind === 'party' ? partyReward(this.flags, answer.friend, answer.sweet)
       : answer.kind === 'carve' ? ['cut1', 'cut2', 'cut3'].includes(this.story.spot) && validCarveStroke(answer.stroke) ? [this.story.spot] : null
       : centres.length > 0 && answer.traces.length === centres.length && centres.every((cx, i) => validEyeStroke(answer.traces[i]!, cx)) ? [this.story.spot] : null;
     if (!reward) return false;

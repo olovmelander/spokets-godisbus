@@ -74,3 +74,9 @@ Validation: integrated typecheck and story tests pass. Source browser checks exe
 The epilogue carving now uses three safe outward strokes, followed by painting the eyes. Inward or incomplete movement does not award progress. Keyboard and controller provide guided cuts, and interruption cancels pending completion safely.
 
 Validation: typecheck and 28 integrated stroke/ending robot tests pass. Source browser checks cover touch, keyboard, controller, rejected strokes and saved completion.
+
+## Choose who receives each sweet at the party
+
+The party now offers three sweets and all five recipients. Every guest accepts every kind, gifts are saved without reducing the collection, and naming the ghost remains gated on sharing with everyone.
+
+Validation: typecheck and 35 integrated sharing, party, ending and lost-property tests pass. Source browser checks cover all input methods and continuation through the epilogue.

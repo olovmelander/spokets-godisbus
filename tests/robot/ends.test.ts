@@ -16,7 +16,7 @@ function run(sim: Sim, seconds: number, input: Partial<StepInput> = {}): void {
 }
 
 /** What he did, in order: the flags that are not bubbles. */
-const did = (flags: string[]) => flags.filter((flag) => !flag.startsWith('beat:'));
+const did = (flags: string[]) => flags.filter((flag) => !flag.startsWith('beat:') && !flag.startsWith('party-gift:'));
 
 /** On Lugnt: played by running and Använd, and how many times Hoppa was needed. */
 function onLugnt(chapter: ChapterData) {

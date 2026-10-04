@@ -110,7 +110,7 @@ const GUESTS = [
 
 /**
  * Epilog: Godiskalaset, on the glazed veranda at nine in the evening.
- * 1. **Elof hands out candy** (P18): to Mamma, Pappa, Moa, Bertil and the ghost, in the order he likes.
+ * 1. **Elof hands out candy** (P18): he chooses a candy and then Mamma, Pappa, Moa, Bertil or the ghost.
  * 2. **The naming.** The ghost hops across the table: klonk, klonk. "Du ska heta Klonk!"
  * 3. **Elofs första trägubbe** (P19): *Ta kniven*, three outward strokes traced with Pappa, and two painted eyes.
  *    Pappa: "Alltid bort från kroppen." Elof: "Jag kan tälja!"
@@ -119,7 +119,7 @@ const GUESTS = [
  * And **Hittegods** (O2): what he found under the deck in Kapitel 1 lies on the table beside its owner, and
  * the one who gets candy from him sees it: "Mitt hårspänne!"
  *
- * Not built yet: which candy each one gets (the choice is whom, and in which order); the figure on the windowsill and its blink; the first trägubbe and the ghost on
+ * Not built yet: the figure on the windowsill and its blink; the first trägubbe and the ghost on
  * the shelf; *Utforska vidare*. The album now plays as credits after the last step.
  */
 export const epilog: ChapterData = {
@@ -145,8 +145,8 @@ export const epilog: ChapterData = {
   night: { after: null },
   checkpoints: [{ x: 2.6, y: 0 }, { x: 25, y: 0 }, { x: 38, y: 0 }],
   spots: [
-    ...GUESTS.map((g) => ({ id: `party:${g.id}`, look: 'sign' as const, at: { x: g.x, y: 0 }, verb: 'give' as const, word: g.word })),
-    { id: 'party:spoket', at: { x: 22.4, y: 0 }, verb: 'give', word: 'giveGhost' },
+    ...GUESTS.map((g) => ({ id: `party:${g.id}`, look: 'sign' as const, at: { x: g.x, y: 0 }, verb: 'give' as const, word: g.word, story: 'party' as const })),
+    { id: 'party:spoket', at: { x: 22.4, y: 0 }, verb: 'give', word: 'giveGhost', story: 'party' },
     // Pappa kneels beside him with a piece of linden and a knife: it waits until the ghost has its name.
     { id: 'knife', look: 'sign', at: { x: 29, y: 0 }, verb: 'take', word: 'takeKnife', needs: 'beat:named' },
     // Three strokes, each away from his body, and two dots of paint.

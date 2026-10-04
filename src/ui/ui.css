@@ -1123,8 +1123,12 @@ button.bag {
 .panel button:disabled { opacity: 0.45; }
 #pause [hidden] { display: none !important; }
 #strokePicture { display: block; width: 100%; height: min(42vh, 300px); touch-action: none; user-select: none; }
-#strokeAssist { min-height: 52px; margin-top: 10px; }
+#strokeAssist { min-height: 64px; margin-top: 10px; }
 @media (max-height: 500px) and (orientation: landscape) {
   #strokePicture { height: 140px; }
   #strokeAssist { margin-top: 4px; }
 }
+
+.story-panel [hidden] { display: none !important; }
+.party .share-sweets { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 12px; }
+@media (min-width: 600px) { .party .share-friends { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
