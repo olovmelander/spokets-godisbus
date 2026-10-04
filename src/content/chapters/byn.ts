@@ -144,12 +144,13 @@ export const byn: ChapterData = {
   ],
   // The shop's shelves (docs/level-design.md): three steps of shelf up from the floor, the two lamps to swing
   // along, a long shelf to land on and a step down before the bag. A fall from any of it lands on the floor.
+  // They stand on legs on the floor: the wall is far behind the jars.
   ledges: [
-    { x: 130.6, y: SHOP_FLOOR + 0.9, width: 1.6, look: 'plank' },
-    { x: 132.8, y: SHOP_FLOOR + 1.7, width: 1.6, look: 'plank' },
-    { x: 135, y: SHOP_FLOOR + 2.5, width: 1.6, look: 'plank' },
-    { x: 146.2, y: SHOP_FLOOR + 2.5, width: 2.4, look: 'plank' },
-    { x: 148.6, y: SHOP_FLOOR + 1.7, width: 1.4, look: 'plank' },
+    { x: 130.6, y: SHOP_FLOOR + 0.9, width: 1.6, look: 'trestle' },
+    { x: 132.8, y: SHOP_FLOOR + 1.7, width: 1.6, look: 'trestle' },
+    { x: 135, y: SHOP_FLOOR + 2.5, width: 1.6, look: 'trestle' },
+    { x: 146.2, y: SHOP_FLOOR + 2.5, width: 2.4, look: 'trestle' },
+    { x: 148.6, y: SHOP_FLOOR + 1.7, width: 1.4, look: 'trestle' },
   ],
   // What a sweet shop keeps on its shelves: hearts and lollipops, one on every shelf and along both swings.
   side: [
