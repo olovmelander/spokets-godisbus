@@ -21,7 +21,7 @@ const server = await createServer({ root, server: { host: '127.0.0.1', port: 0, 
       export { granskog } from ${JSON.stringify(join(root, 'src/content/chapters/granskog.ts'))};
       export { mountShell } from ${JSON.stringify(join(root, 'src/ui/shell.ts'))};
       let scene, camera; const before = Scene.prototype.onBeforeRender;
-      Scene.prototype.onBeforeRender = function (...args) { scene = this; camera = args[2]; before.apply(this, args); };
+      Scene.prototype.onBeforeRender = function (...args) { if (this.getObjectByName('chase-ghost')) { scene = this; camera = args[2]; } before.apply(this, args); };
       export const renderedScene = () => scene;
       export const helperPoint = () => { const p = new Vector3(); scene.getObjectByName('helper-actor').getWorldPosition(p); p.y += 0.5; p.project(camera); const r = document.getElementById('game').getBoundingClientRect(); return { x: r.left + (p.x+1)*r.width/2, y: r.top + (1-p.y)*r.height/2 }; };`;
   },
@@ -39,7 +39,7 @@ try {
     const errors = [], fetched = [];
     page.on('pageerror', (error) => errors.push(String(error)));
     page.on('request', (request) => fetched.push(request.url()));
-    await page.route('**/helper-probe', (route) => route.fulfill({ contentType: 'text/html', body: '<body style="margin:0"><canvas id="game" style="width:100vw;height:100vh;display:block"></canvas></body>' }));
+    await page.route('**/helper-probe', (route) => route.fulfill({ contentType: 'text/html', body: '<script type="module" src="/spokets-godisbus/@vite/client"></script><body style="margin:0"><canvas id="game" style="width:100vw;height:100vh;display:block"></canvas></body>' }));
     await page.goto(`${origin}/spokets-godisbus/helper-probe`);
     const visit = await page.evaluate(async ({ tier }) => {
       const f = await import('/spokets-godisbus/helper-fixture.js');
