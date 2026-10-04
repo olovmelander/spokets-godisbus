@@ -46,4 +46,11 @@ describe('Moas karta', () => {
     expect(svg).not.toMatch(/\d{2}\.\d{3,}/);
     expect(svg).not.toMatch(/Bredbyn|Näsbacken/);
   });
+
+  it('uses the ghost’s name only after naming, including when he is at home beside Elof', () => {
+    expect(mapSvg(mapState('garden'))).toContain('>Spöket<');
+    expect(mapSvg(mapState('garden'))).not.toContain('Klonk');
+    expect(mapSvg(mapState('garden'), true)).toContain('>Klonk<');
+    expect(mapSvg(mapState('epilog'), true)).toContain('>Klonk<');
+  });
 });

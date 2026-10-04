@@ -2,9 +2,38 @@
 
 ## State (4 October 2026)
 
+- **Current Git state:** `main` is still the deployed checkpoint from PR #60. The subsequent code
+  improvements are saved in the PR stack #61–#103 and its full-game checkpoint; they have not been
+  merged or deployed. PR #104 preserves the previously local browser fixture and narrow-screen fixes;
+  PR #105 adds the memory presentation. PR #106 (`codex/story-thought-pictures`) continues from #105
+  with the clearer ghost pictures below. All three changes are stacked, without a release or deployment.
+  `RELEASED_CHAPTER` remains `null`.
+
+- **Recovered baseline verified:** the complete existing 28-suite browser gate finished uninterrupted
+  with exit status 0, alongside 665 unit/robot tests, typecheck, build/size and built-in privacy checks.
+  The new memories and thought pictures also pass their combined checks recorded below; the gate now
+  includes both new browser suites for future runs.
+
+- **Memories grow from their source and return to it** (`codex/memory-bubble-presentation`; plan §2.4).
+  - First discoveries grow from the visible ghost, or from the touched glowing shaving when the ghost
+    is beyond the camera. Album replays grow from their thumbnail. The existing sepia oval stays still
+    between pictures and shrinks back after the last picture. Escape, controller Back, the close button
+    and the backdrop still cancel immediately, restoring focus and releasing held input.
+  - Opening, drawing fades, picture timing and return suspend together while hidden or during WebGL
+    recovery. Canceled animations cannot finish or reappear in a newer replay. Rotating an interrupted
+    opening/return replaces stale movement with a centred fade, keeping the picture and remaining time.
+    Saved *Mindre rörelse* and the OS preference use fades without travel/scale. Total automatic playback
+    stays within the planned six to ten seconds. `dev/menus.html?show=memory` previews the same component.
+  - Validation: 30 new real-browser presentation checks cover interruptions in all phases, immediate
+    cancellation, reopening, natural completion, rotation, both reduced-motion settings and layout at
+    all five planned sizes. Typecheck and the 665 existing unit/robot tests pass. The drawing cards remain
+    the current public cutouts: animated family memory scenes and their final acting still need Blender
+    on Olov's computer. No private asset, character model, release or later-release wish changed.
+
 - **Read this first: where it stands.**
   - The whole story is playable from start to end with `?dev`: the prologue, four chapters, the final and
-    the epilogue, and after them an extra chapter, Byn. Everything is merged to `main` and deployed:
+    the epilogue, and after them an extra chapter, Byn. That original foundation is deployed on `main`;
+    the newer code milestones above remain in the unmerged PR stack:
     `https://olovmelander.github.io/spokets-godisbus/?dev`. The plain address still shows the grey test
     course, because `RELEASED_CHAPTER` is `null`: releasing is Olov's.
   - **Added in the night of 3 to 4 October** (pull requests #38 to #59; each has its own entry further
@@ -25,6 +54,31 @@
     - *The village's shopping street as a chapter:* built, as Byn. Its own name waits for question 5.
   - **Waiting for Olov:** questions 5 and 6 under "Frågor till Olov"; the checkpoints H1a, H1b and H2;
     pull request #12; and his ears, because nobody has listened to any of the sound.
+
+- **The ghost's thoughts grow clearer** (4 October, cloud session, `codex/story-thought-pictures`; plan §§3.3–3.4).
+  - After Elof pulls it out of the forest eddy, its final waiting stops show a mountain silhouette.
+    After the crane chick reaches its family in Myren, the waiting ghost shows the mountain, old pine
+    and a small grey thing in a crack. Below Berget's final cliff it shows the lonely first trägubbe,
+    before *Lyft*. Helping it at the cliff clears that picture. The garden's first smudge is unchanged.
+  - Each chapter has one static 256×192 canvas picture and one card beside the actual chase ghost.
+    These are symbolic cutouts in the existing memory-card style, with no text or downloaded art;
+    the little cap-and-smile icon is a story symbol, not a new character model or final likeness asset.
+    No eyes are added to the lost figure. Blender character work and private packs are unchanged.
+  - Pictures wait for their authored story flags and settled ghost perch, and clear while it hops or
+    leaves. The card stays inside portrait/landscape framing. Pause freezes its entrance and gentle
+    drift; *Mindre rörelse* and OS reduced motion keep it still. Its texture is never redrawn during play and
+    its shader joins the chapter's initial warmup. Resources belong to the chapter's existing scene
+    lifetime, which ends on page navigation; the card also has an explicit resource-release method.
+  - Validation: the combined tree passes typecheck, all 671 unit/robot tests, 54 real-browser thought
+    checks, all 30 memory-presentation checks and the existing album flow. Clean build/size and the
+    built-in privacy scan pass (373.2 KB gzip JavaScript; 701.8 KB public boot). Browser thought cases
+    cover all three stops in Low landscape and High
+    portrait, using 59–88 draw calls; checks include icon contents, framing, pause, both reduced-motion
+    settings, shader/draw/texture bounds and resource release. Iteration
+    screenshots use stand-ins under ignored `docs/shots/_work/ghost-thoughts/`.
+  - Cloud session: no new question, later-release wish or known defect. `RELEASED_CHAPTER` stays null.
+    The remaining small-figure thought at the vittra door and final art/device review are separate
+    follow-ups; these code pictures require no connection to Olov's computer.
 
 - **Controls and graphics settings completed** (4 October, cloud session, `codex/controls-and-graphics-settings`).
   - **What you see:** Paus now has *Följ fingret*, *Grafik* (Auto / Låg / Mellan / Hög), and
@@ -48,6 +102,120 @@
     software rendering and stand-ins. Device performance and the sound still need Olov's own checks.
   - **Cloud scope:** no Blender connection or local family models here; no likeness assets changed.
     `RELEASED_CHAPTER` is still null. The next model round still needs Olov's computer and his remarks.
+
+- **Separate player adventures completed** (4 October, cloud session, `codex/player-profiles`).
+  - The title always offers *Ny spelare*, and *Byt spelare* once a player exists. A local name and play style
+    create a separate adventure; everyone still plays as Elof. Progress, candy, story flags, checkpoint
+    and settings belong to the selected player. Names stay on this device and are displayed as plain text.
+  - Pause has *Till startsidan*. Settings can also be opened from the title, and closing them returns
+    to the title without starting play. Reset and removal each ask Yes/No, with No focused first.
+  - Existing Elof saves migrate without losing data. Damaged/newer saves remain untouched until an
+    explicit reset/removal; a damaged index is never guessed or replaced. Failed writes keep the player
+    on the current screen. An outgoing tab cannot save into a newly selected or deleted profile.
+  - Validation: 481 unit/robot tests, 15 new real-browser profile checks, typecheck, build/size gate and
+    privacy scan pass. The browser checks cover creation, switching, settings isolation, safe names,
+    confirmation, reset/removal isolation, unreadable saves and refused writes. JS is 325 KB gzipped;
+    public boot is 608 KB as served. Album photo isolation is a separate follow-up.
+
+- **Album photos and credits** (4 October, cloud session, `codex/album-photos`; plan §§6.9–6.10).
+  - Seven story moments now keep a small WebP game frame: shrinking, the first swing, Moa's plane,
+    Bertil's cap, the crane flight, the aurora and the finished carving. Foton in the paused album opens
+    thumbnails and a keyboard/controller/touch carousel. Finishing the epilogue opens that album as
+    credits, then returns to the existing end-card choices; it can be opened again there.
+  - IndexedDB stores the first frame of each authored moment under the stable player ID, at most seven
+    frames of at most 100 KB each. Reset/deletion must clear that ID's frames before reloading. Denied,
+    unsupported or full storage quietly leaves the ordinary album without photos. Only the rendered
+    game canvas is copied: no camera, file import, upload or third-party request.
+  - Reset/deletion first records a per-player generation in localStorage. If IndexedDB refuses deletion,
+    older frames stay hidden and physical cleanup retries on the next read. New adventures can capture
+    the same moments again; older tabs cannot relabel pending captures into the new generation. If the
+    durable marker itself cannot be saved, reset returns false and leaves the album intact.
+  - Capture copies synchronously just after rendering and then encodes asynchronously, without enabling
+    `preserveDrawingBuffer`, retaining a full-size render target or rendering the scene twice. Frames
+    fit inside 640×360. Pausing also pauses capture delays; saved flags do not produce unrelated frames.
+  - Tests cover authored timing, denied storage, size/type guards, copying before encoding, real WebGL
+    pixels, IndexedDB persistence and first-frame retention, reset isolation, denied/full fallback,
+    pause/back/focus and epilogue credits. `dev/menus.html?show=photos` previews the credits without WebGL.
+  - Cloud session: no family reference pictures or likeness renders touched. `RELEASED_CHAPTER` remains
+    null; final visual and device review remains Olov's. These tasks did not need his computer.
+
+- **Offline play and Home Screen install** (4 October, cloud session, `codex/offline-play`; plan §6.6).
+  - The app shell, decoder, manifest and boot models are saved on the first online visit. Loaded chapter
+    assets are cached for offline play too, including assets that arrived before the first worker took
+    control. Settings explain *Lägg till på hemskärmen*. The manifest and Apple/Android icons use the
+    existing loading-card ghost drawn in code; no new likeness or reference picture is included.
+  - `vite-plugin-pwa` 1.3.0 and Workbox 7.4.1 build the worker. They are pinned, and the plugin's declared
+    peers include Vite 8. The page checks for updates on the title and when it becomes visible. Every
+    open game tab must be at its title before an update activates; an active chapter vetoes it. Title
+    controls briefly lock during the vote. The first install does not reload the page.
+    A delayed title response gets at most two short retries, each with a fresh all-tab vote. An active
+    chapter's explicit veto never retries. Requests arriving during a vote are retained for the next one.
+  - Pack and manifest URLs have SHA-256 content versions. Runtime responses are checked against them,
+    so an old page cannot silently use a newly deployed asset with the same filename. Shell and runtime
+    caches are separated by build. Chapter caches expire after 30 days, with at most 96 files per build;
+    obsolete generations are removed once no live page needs them. A waiting worker's shell is retained.
+  - Audio is synthesized/decoded, without `<audio>` streaming, so no range-request plugin is needed.
+    Browser storage remains best effort: a device can evict it. No save or album data is placed in these
+    caches, and clearing a player does not remove downloaded game files.
+  - **Validation:** 461 unit/robot tests, typecheck, build/size gates, the built-in privacy check and 21
+    browser offline/update checks, including a deliberately delayed vote. The browser suite shuts its
+    server off for a real offline reload,
+    checks compressed models and play, then simulates a second deployment with two tabs and same-name
+    asset changes. Real iPhone/iPad Home Screen lifecycle and device storage pressure still need Olov.
+  - **Next:** continue the remaining code tasks below. H1/H2, sound review and family model feedback still
+    need Olov; this change requires no Blender or private assets. No new question or later-release wish.
+
+- **Finale nightfall repaired** (4 October, cloud session, `codex/finale-nightfall`).
+  - The blue-hour sky, all five distant scenery layers and their haze now darken together over the
+    existing three-second transition after *Smaka*. The stars have their own single point layer and stay
+    round in portrait and landscape. The existing northern lights, story and simulation are unchanged.
+  - No textures are redrawn and no shaders compile during the transition. The added star layer costs
+    one draw call. Seeded finale checks at 844×390 and 390×844 on Low and High stay within 120 calls
+    (93/95 in landscape, 66/68 in portrait after the family signs appear). Pausing holds the fade; reversing
+    it restores the original colours without drift. Morning prologue captures remain pixel-identical.
+  - Validation: 461 unit/robot tests, 36 targeted browser checks (`node tests/browser/nightfall.mjs`),
+    typecheck, build/size gate and the built-in privacy scan. Iteration captures use stand-ins and stay
+    in ignored `docs/shots/_work/nightfall/`. Physical device performance and H1a still need Olov.
+  - This repair needs no Blender work. The remaining art/model work still needs Olov's computer;
+    no family assets, release setting, "Senare" scope or questions to Olov changed.
+
+- **Byn has street life and a shop interior** (4 October, cloud session, `codex/byn-street-and-shop`).
+  - Giant shoes pass and an unmarked car rolls slowly along a separate lane behind Elof. They never collide
+    with him. These are anonymous plain stand-ins, with no faces, shop names, numbers or brands.
+  - The existing leaf, bicycle and matchbox puzzles still lead to the same door. Now he walks through it,
+    onto wooden boards past giant jars of sweets, to a paper bag to share. Two new checkpoints and a candy
+    trail lead through the room. The first 62 candy entries and eight checkpoints retain their exact old
+    indices; a saved game at the old final checkpoint continues into the shop.
+  - Validation: 463 unit/robot tests, typecheck, build/size and privacy pass. The focused browser checks
+    cover shoes, car, door, shelves and bag in portrait/landscape on Low/High, including the real simulation
+    walking from the door to the new ending. Motion pauses, no shaders compile during the walk, and the
+    picture stays below 120 draw calls. JavaScript is 325 KB gzipped and boot assets 607 KB as served.
+    Iteration captures use stand-ins in ignored `docs/shots/_work/village/`.
+  - Next here: Olov's device/art review; a return route and hidden candy remain unbuilt. Detailed people
+    and vehicle models still need Blender on his computer. No release, family assets, questions or later
+    scope changed.
+
+- **C2, Myrstacken** (4 October, cloud session, first commit on `codex/chapter-challenges`).
+  - **What you see:** six moving ant columns climb the steep outside of the forest anthill. Jump onto
+    the first needle mat deliberately; the ordinary ant road and ride remain open below. A firm ledge
+    halfway up gives misses a nearby bubble return. The top holds the existing chokladkola and a root
+    slides back to the usual hilltop. Collecting it earns the album's challenge star.
+  - The three helper levels work inside the raised route; outside they still show the story path.
+    Raised camera zones frame the climb in portrait and landscape. Columns carry standing feet both
+    upwards and downwards, let jumps leave freely, and never become unsafe bubble return positions.
+  - **Save/commit rule:** only finding the candy commits the challenge. Moving phases restart locally;
+    no extra checkpoint or placed flag changes the chapter save. Reset/reload keeps the prize. The root
+    opens only after finding it, so a normal walk cannot accidentally climb the challenge backwards.
+  - **Validation:** 466 tests, typecheck, build/size gate and privacy scan pass. Browser checks cover
+    portrait/landscape, Low/High, all three hints, standing/jumping on a column and the root return;
+    draw calls remain within 120 and no shader compiles during play. Full climbs pass four cycle phases.
+  - **Limits/next:** animal shapes are code stand-ins; Blender work and real-device difficulty judgement
+    still need Olov's computer. No new question or later-release wish; `RELEASED_CHAPTER` remains null.
+    C3 and C4 are the next separate chapter changes.
+
+- **Historical milestones:** the older entries below record their state at that time, including their
+  then-current test counts and remaining work. The State entries above and Next list below describe
+  the current combined code; do not restart work marked complete there.
 
 - **Done:**
   - The plan, `docs/game-plan.md` version 4: research, design, art direction, technology and delivery. Version 4
@@ -191,8 +359,7 @@
       - Tests: `tests/unit/backdrop.test.ts` (5): every place outdoors has four to six layers, one behind
         the other and inside what the camera sees, each with its own speed. The browser test still finds
         no shader compiled during play.
-      - **Not done:** the layers do not darken when night falls in the final (the old ones did not
-        either); the windows' picture does not move; nothing is rendered in Blender yet. A new place needs
+      - **Not done:** the windows' picture does not move; nothing is rendered in Blender yet. A new place needs
         its layers in `LAYERS` in `backdrop.ts`: the type checker says so.
     - **Not yet:** plates rendered in Blender and scanned materials (what is there is drawn in code and reads
       as stylized); bloom and depth blur on High; pines with crowns; the animals and the family's hands as
@@ -574,7 +741,7 @@
       is at his normal size in both, and he shrinks with a POFF at the star: here he is the size he always is.
       Also: Pappa's hands and the shelf with its empty place, the brush and the knife traced by hand, the
       blink, the bag tearing, Pappa on the deck, which candy each one gets, the figure on the windowsill,
-      the album as credits, and *Utforska vidare*.
+      and *Utforska vidare*. The album credits were added on 4 October (see State above).
   - **The helper and its three hints** (branch `stage-2-helper`; plan §4.6). What you see: a small button
     with a bird, under the pause button (H on a keyboard, Y on a gamepad). Press it and a bird flies to the
     next thing to do and looks at it. Press again: it knocks on it, and Använd shows that thing's word and
@@ -695,8 +862,8 @@
     mark, so the names stay a surprise. Above them: "3 av 16 sorter".
     - It is read from the save, like the stickers on the bag (`album` in `src/content/kinds.ts`), and drawn
       by `src/ui/album.ts`. A course outside the story has no album. Tests: `tests/unit/album.test.ts` (3).
-    - **Not yet:** the album's photos (game renders kept on the device, plan §6.9) and the album as the
-      credits in the epilogue; the golden geléhallon as its last piece.
+    - The photos and album credits were added on 4 October (see State above). **Not yet:** the golden
+      geléhallon as its last piece.
   - **Four more switches** (branch `stage-2-settings`; plan §4.1, §6.8). What you see, in the pause panel:
     - *Vänsterhänt*: Hoppa and Använd move to the left side, and the stick to the right.
     - *Större text*: what is said, the words on the buttons and the panels, about a quarter bigger.
@@ -882,8 +1049,8 @@
       slowly than the houses do. The colours and shapes were taken by eye from the openly licensed photos
       of the street in `photos/landscape/`; nothing of a photo is used, and no sign, name or number of a
       real house is drawn.
-    - **Not yet:** people and their giant feet, cars, anything inside the shop, a way back, and hidden
-      candy of its own. The fronts are one drawn picture each.
+    - **Now extended:** anonymous passing shoes, a car and a playable shop interior are described above.
+      **Not yet:** a way back and hidden candy of its own. The fronts are one drawn picture each.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate counts both
@@ -904,12 +1071,18 @@
   the list under "The family, first models".
 - Poses for the family: sitting at the table at the party, Mamma in the doorway, Pappa's hands with the
   knife, and their hands in the macro world where the signs' rides are now.
-- Byn: people's feet passing, cars, and the inside of the shop.
-- What Stage 2 still lacks in code: more than one player (the next self-contained code task), the
-  challenge routes C2 to C4, a service worker for offline play, and the album's photos. The dew bells
-  exist, but still need replayable notes and visible lawn glitter to finish the planned toy.
-- Look-dev repair: make the final's sky and far scenery darken together as night falls, and keep the
-  stars round at different aspect ratios. This can be done in a cloud code session.
+- Byn: review the passing shoes, car and playable shop interior on Olov's devices; detailed models need Blender.
+- Completed code: C1–C4, separate players, album photos/replay, offline updates, replayable dew bells
+  and cobbles, the vittra gift, party/summit choices, painting/carving gestures, exploration, and the
+  moonlit ending. See `docs/implementation-progress.md` for the PR milestones. Do not restart them.
+- The ghost's forest, bog and cliff thought pictures are implemented (plan §3.3 rule 6). Its smaller
+  shape at the vittra door remains a separate story beat. The memory presentation grows/returns; final
+  animated 3D memory art and family acting still need Blender on Olov's computer.
+- Look-dev code now includes place LUTs, Low material grading, High background blur and half-size bloom,
+  flowing water/refraction, tiered character shadows and measured GPU allocation/texture recovery gates.
+  Review the combined result with private models and `?bench` on Olov's devices; cloud stand-ins are not
+  the H1a/H1b/H2 checks or listening approval.
+- Look-dev: review the repaired finale nightfall and round stars on Olov's devices at H1a.
 - The sound, once Olov has listened: nothing of it has been heard by anyone.
 
 The older list, still true where it is not struck:
@@ -936,7 +1109,7 @@ The older list, still true where it is not struck:
      its five criteria, and the fallback look (plan §5.6, point 1);
    - the two golden frames, in `dev/look.html`: the deck edge and the moss under the spruces, each with the
      stand-in Elof, a red hook ring and candy, built in layers (plan §5.3) with CC0 materials from Poly Haven;
-   - what the tiers still lack (see "State"), and `?bench` on the golden frames;
+   - the completed renderer effects and tier/GPU budgets, with `?bench` on the golden frames;
    - then **H1a**, Olov's checkpoint.
 6. **Stage 0c** (characters): image-to-3D for Elof and the family on the computer with the RTX 5080 (art bible
    §1.6, and question 4 below), and the ghost redone in Blender as stylized carved wood (art bible §1.5).
@@ -997,15 +1170,17 @@ The older list, still true where it is not struck:
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. On 4 October: chapter codes, C1, two optional delights, footsteps and wordless sounds, more switches, and the extra chapter Byn. A cloud session completed touch-follow, graphics selection, controls reference and menu input routing. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. On 4 October: chapter codes, C1, two optional delights, footsteps and wordless sounds, more switches, and the extra chapter Byn. A cloud session completed touch-follow, graphics selection, controls reference and menu input routing; another implemented offline boot/chapter caching and title-only updates. Byn now has street life and a shop interior. C2–C4, replayable toys, story choices/gestures, exploration, the golden album reward, moonlit ending, memory presentation and clearer ghost thoughts are implemented in the unmerged code stack. Final family acting, memory art, listening and device checkpoints remain. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. |
 
 ## Known bugs
 
-- The far layers of the sky and hills do not darken when night falls in the final, and the stars at dusk
-  are drawn as short dashes: the sky's picture is stretched to the screen.
+- Offline play is checked in Chromium with a real worker and the test server disconnected. Installed
+  Safari/Home Screen updates and storage eviction have not been checked on the family's devices yet.
+
+
 - With three sessions working on the computer at once, two long tests timed out and the browser test once
   measured a warm-up frame. Both are fixed (a minute for the tests; the measure waits for the frame to
   settle). On a quiet computer and in CI neither happened.

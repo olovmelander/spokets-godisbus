@@ -195,7 +195,7 @@ for (const tier of ['low', 'high']) {
 // --- a place's look: the two golden frames (plan §5.6, Stage 0b) ---------------------------------------
 for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', 'high', 16], ['look-deck', 'high', 12], ['byn', 'high', 9]]) {
   console.log(`${course}, tier ${tier}, 844×390`);
-  const { page, state, info, finish } = await open(`${course}-${tier}-844x390`, { viewport: { width: 844, height: 390 } }, `?debug&course=${course}&tier=${tier}`);
+  const { page, state, info, finish } = await open(`${course}-${tier}-844x390`, { viewport: { width: 844, height: 390 } }, `?dev&debug&course=${course}&tier=${tier}`);
   const drawn = await until(info, (i) => i.models.includes('boot/big-candy'), 30000);
   // Far more than greybox draws. The count is without the family's models: CI has only the stand-ins, and a deck is few triangles.
   check(`${tier}: the dressed scene is drawn`, drawn.drawCalls > 20 && drawn.triangles > 8000, `${drawn.drawCalls} draw calls, ${drawn.triangles} triangles`);
@@ -207,7 +207,10 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   await sleep(600);
   const programs = (await info()).programs;
   await page.keyboard.down('ArrowRight');
-  const ran = await until(state, (s) => s.x > far);
+  // High's forest effects can slow SwiftShader enough to reach the boundary just after 15 seconds.
+  // Keep the exact traversal and performance predicates; only this software-rendered wait gets longer.
+  const traversalTimeout = course === 'look-forest' && tier === 'high' ? 30000 : 15000;
+  const ran = await until(state, (s) => s.x > far, traversalTimeout);
   await page.keyboard.up('ArrowRight');
   check(`${tier}: he runs through it`, ran.x > far, `x ${ran.x.toFixed(1)}`);
   check(`${tier}: no shader was compiled on the way`, (await info()).programs === programs, `${programs} programs`);

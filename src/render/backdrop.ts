@@ -572,8 +572,11 @@ export const farLayers = (place: PlaceId): { z: number; hold: number; sink: numb
 export interface Scenery {
   group: Group;
   /** Where the camera looks, the ground he stands on, and the time. */
-  update(cameraX: number, groundY: number, clock: number): void;
+  update(cameraX: number, groundY: number, clock: number, night?: number): void;
 }
+
+/** Linear-light exposure shared by the finale's sky and its unlit distant hills. */
+export const nightBrightness = (night: number): number => 1 - 0.66 * Math.min(1, Math.max(0, night));
 
 /**
  * Builds a place's far scenery. `anchor` is the height the chapter starts at: above it the nearer layers
@@ -592,6 +595,7 @@ export function scenery(place: PlaceId, anchor: number): Scenery {
     const uv = geometry.getAttribute('uv');
     for (let i = 0; i < at.count; i++) uv.setXY(i, at.getX(i) / layer.every, (at.getY(i) + below) / tall);
     const card = new Mesh(geometry, new MeshBasicMaterial({ map, transparent: true, fog: false, depthWrite: false }));
+    card.name = `far-${place}-${-layer.z}`;
     card.position.z = layer.z;
     card.renderOrder = -3;
     // It goes with the camera, so it is always in the picture.
@@ -601,12 +605,15 @@ export function scenery(place: PlaceId, anchor: number): Scenery {
   });
   return {
     group,
-    update(cameraX, groundY, clock) {
+    update(cameraX, groundY, clock, night = 0) {
       for (const { layer, card, map } of cards) {
         const sunk = Math.max(-5, Math.min(5, (groundY - anchor) * layer.sink));
         card.position.set(cameraX, groundY + EYE - sunk, layer.z);
         const along = (cameraX * layer.hold + clock * (layer.drift ?? 0)) / layer.every;
         map.offset.x = along - Math.floor(along);
+        // These pictures include their own haze and receive no scene lights. Tint from white each time,
+        // never from last frame's colour, so pausing or reversing nightfall cannot accumulate darkness.
+        if (place === 'dusk') card.material.color.setScalar(nightBrightness(night));
       }
     },
   };

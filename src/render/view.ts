@@ -1,20 +1,35 @@
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
-  DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
+  DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
   Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PlaneGeometry, PointLight, Quaternion,
-  Scene, Shape, SphereGeometry, TorusGeometry, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
+  Scene, Shape, SphereGeometry, TorusGeometry, UnsignedIntType, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
+import type { TextureOwnershipInfo } from './texture-ownership';
+import { captureFrame } from './capture';
+import { observeGpu, type GpuMemory } from './gpu-memory';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
+import { nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
-import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass } from './grade';
-import { chooseTier, pixelRatioFor, type Tier } from './quality';
+import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
+import { createDepthBlur } from './depth-blur';
+import { createBloom } from './bloom';
+import { createWater } from './water';
+import { createCharacterShadows } from './character-shadows';
+import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
+import { songGlitter } from './song-glitter';
+import { createEpilogueStage } from './epilogue-stage';
+import { createPrologueStage } from './prologue-stage';
+import { createGhostThought } from './ghost-thought';
+import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
-import type { ChapterData, PlayerState } from '../sim/types';
+import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
+import type { GhostState } from '../sim/sim';
 
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
@@ -28,15 +43,25 @@ export interface ViewInfo {
   drawCalls: number;
   triangles: number;
   programs: number;
+  geometries: number;
+  textures: number;
+  /** Allocation observer is present only with ?debug or ?bench. */
+  gpu: GpuMemory | null;
   pixelRatio: number;
+  maxPixelRatio: number;
+  resolutionSteps: number;
+  /** Drawing-buffer resize operations, including viewport and tier changes. Useful for the churn gate. */
+  resizes: number;
   width: number;
   height: number;
   /** Models loaded from the packs, as "pack/name". */
   models: string[];
   /** How many of their textures arrived as KTX2 and stayed compressed on the GPU. */
   compressedTextures: number;
+  assetTextures: TextureOwnershipInfo;
   /** The "role" custom properties set in Blender, read back from the models. */
   roles: string[];
+  shadows: { characters: number; contact: boolean; mapSize: number; casters: number };
 }
 
 /** What the picture is drawn from: two simulation states and what has been reached and collected. */
@@ -59,7 +84,7 @@ export interface Frame {
   /** What has happened in the chapter. A candy that waits for a flag is drawn once the flag is set. */
   flags: ReadonlySet<string>;
   /** Where the ghost is, or null in a chapter without it. */
-  ghost: { x: number; y: number; t: number; gone: boolean } | null;
+  ghost: GhostState | null;
   /** The rolling cones, in the chapter's order. */
   rollers: readonly { x: number; y: number; on: boolean; radius: number }[];
   /** The soft tussocks, in the chapter's order: where the top of each is now. */
@@ -68,17 +93,38 @@ export interface Frame {
   gusts: readonly { blow: number; warn: number }[];
   /** The cranberries, in the chapter's order: how flat each is after a bounce, from 1 to 0. */
   berries?: readonly { squash: number }[];
+  prologue?: PrologueFrame | null;
+  ending?: number | null;
+  noteHits?: readonly { serial: number; id: string; midi: number }[];
   /** What the helper is doing: its step, and where the thing is. */
-  help: { step: number; at: { x: number; y: number } | null };
+  help: HelpState;
 }
 
 export interface View {
+  readonly warming: boolean;
+  readonly resolutionSteps: number;
+  readonly maxResolutionSteps: number;
+  /** Required public boot models are present; a failure keeps the loading/error card in front of play. */
+  readonly ready: Promise<void>;
+  /** Re-fetch released immutable textures before warming Three's restored GL resources. */
+  restore(): Promise<void>;
   resize(): void;
   /** Apply a level without resetting the scene. Call while paused when crossing Low, to warm its shaders. */
   setTier(next: Tier): void;
+  /** Whole 0.1 reductions from the tier cap. A changed step resizes existing targets, never shaders. */
+  setResolutionSteps(steps: number): void;
   /** The rendered player's centre on the play plane, in CSS client coordinates; null before the first frame. */
   playerScreen(): { x: number; y: number } | null;
+  /** The visitor's centre for tapping the helper itself; null while it is away. */
+  helperScreen(): { x: number; y: number } | null;
+  /** The visible ghost's picture-bubble origin above its head; null while it is away or off screen. */
+  ghostScreen(): Vec | null;
+  worldScreen(at: Vec): Vec | null;
+  /** Optional Peka responses: animation only, never changes the simulation. */
+  react(what: Reaction, calm?: boolean): void;
   render(frame: Frame): void;
+  /** Read the last frame immediately after render(), with no retained WebGL drawing buffer. */
+  capture(): Promise<Blob | null>;
   info(): ViewInfo;
 }
 
@@ -92,7 +138,7 @@ const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
  * `asked` is the tier from settings or ?tier=, or null for Auto. With `standIns` the figures built in code are kept even
  * where the private pack has the family's models: for pictures that go into the repository.
  */
-export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null, standIns = false): View {
+export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null, standIns = false, trackGpu = false): View {
   // The context is made here, so that support is known before allocating HDR targets: Mid and High need
   // float colour buffers, and a device without them gets Low (plan §6.5).
   const gl = canvas.getContext('webgl2', {
@@ -100,6 +146,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   });
   // main.ts catches this and shows the message.
   if (!gl) throw new Error('WebGL 2 is not available');
+  const gpu = trackGpu ? observeGpu(gl) : null;
   const hdrAvailable = gl.getExtension('EXT_color_buffer_float') !== null;
   let tier = chooseTier(asked, hdrAvailable);
 
@@ -119,7 +166,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // release them and draw Low straight to the canvas, keeping this renderer, its assets and the scene.
   // Mid and High keep the same linear HDR → grade → Neutral/sRGB stages as r186's native setEffects path.
   const place = chapter.place ? PLACES[chapter.place] : null;
-  const gradePass = hdrAvailable ? createGradePass(place?.grade ?? GARDEN_MORNING) : null;
+  const grade = place?.grade ?? GARDEN_MORNING;
+  const gradePass = hdrAvailable ? createGradePass(grade) : null;
+  const materialGrade = createMaterialGrade(grade);
+  materialGrade.setEnabled(tier === 'low');
+  const depthBlur = hdrAvailable ? createDepthBlur() : null;
+  const bloom = hdrAvailable ? createBloom() : null;
   const outputPass = hdrAvailable ? new OutputPass() : null;
   if (outputPass) outputPass.renderToScreen = true;
   let hdr: { scene: WebGLRenderTarget; grade: WebGLRenderTarget } | null = null;
@@ -166,16 +218,20 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const glitter = buildGlitter();
   const lace = buildLace();
   const glints = buildGlints(chapter);
+  const lawnSong = songGlitter(chapter);
+  const noteStrikes = new Map<string, number>();
+  scene.add(lawnSong.group);
   const plane = buildPlane();
   scene.add(glints.group, plane);
   // The things that stand at spots, and what carries him on each ride, where the chapter says what they are.
-  const helper = helperProp();
+  const ghostHelps = chapter.helper?.kind === 'ghost';
+  const helper = helperProp(chapter, ghostHelps ? buildGhost() : undefined);
   scene.add(helper.group);
   const hiddenSweets = buildHidden(chapter);
   scene.add(hiddenSweets.group);
   const glance = buildGlance(chapter);
   scene.add(glance.group);
-  const things = (chapter.spots ?? []).map((spot) => ({ spot, prop: spotProp(spot) }));
+  const things = (chapter.spots ?? []).map((spot) => ({ spot, prop: spotProp(spot), reactionTurn: 0 }));
   // What only stands about: drawn like a thing to use, and gone when its flag is set.
   const decor = (chapter.decor ?? []).map((def, i) => ({
     def,
@@ -202,7 +258,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
-  const water = buildWater(chapter, place?.water ?? null);
+  const water = createWater(chapter, place?.water ?? null, place?.sun.from);
+  const waterScene = new Scene();
+  waterScene.fog = scene.fog;
+  waterScene.add(water.group);
   const tussockMeshes = buildTussocks(chapter, place?.tussock ?? null);
   const berryMeshes = buildBerries(chapter);
   for (const berry of berryMeshes) scene.add(berry);
@@ -211,7 +270,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const wind = buildWind(chapter);
   const night = buildNight(chapter, sky, hemisphere, sun);
   scene.add(night.group);
-  scene.add(water.group, ...tussockMeshes, mist.group, follower.group, wind.group);
+  scene.add(...tussockMeshes, mist.group, follower.group, wind.group);
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
   // It is the first asset through the whole chain: Blender → glTF → KTX2 and meshopt → the page.
@@ -219,7 +278,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const roles: string[] = [];
   let compressedTextures = 0;
   const assets = createAssets(renderer);
-  assets
+  const birds = [helper.group, ...things.map((thing) => (thing.spot.look === 'jay' ? thing.prop?.group : undefined))]
+    .map((group) => group?.getObjectByName('bird'))
+    .filter((bird): bird is Object3D => bird !== undefined);
+  const candyReady = assets
     .model('boot', 'big-candy')
     .then((model) => {
       for (const [i, big] of bigCandies.entries()) {
@@ -234,36 +296,39 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         const map = ((node as Mesh).material as MeshStandardMaterial | undefined)?.map;
         if (map && (map as { isCompressedTexture?: boolean }).isCompressedTexture) compressedTextures++;
       });
-    })
-    .catch((error) => console.error('The big candy could not be loaded; the stand-in stays.', error));
+    });
 
   // The jay, modelled in Blender (art/blender/jay.py), takes the place of the bird built in code: the helper
   // that comes when he asks, and the one he shares a berry with. Its wings are parts of their own, with the
   // same names as the stand-in's, so they beat as before.
-  assets
+  const jayReady = birds.length > 0 ? assets
     .manifest()
     .then((manifest) => (manifest.packs.boot?.files['jay.glb'] ? assets.model('boot', 'jay') : null))
     .then((model) => {
       if (!model) return;
-      const birds = [helper.group, ...things.map((thing) => (thing.spot.look === 'jay' ? thing.prop?.group : undefined))]
-        .map((group) => group?.getObjectByName('bird'))
-        .filter((bird): bird is Object3D => bird !== undefined);
       for (const [i, bird] of birds.entries()) {
         bird.clear();
         bird.add(i === 0 ? model : model.clone());
       }
       models.push('boot/jay');
-    })
-    .catch((error) => console.error('The jay could not be loaded; the stand-in stays.', error));
+    }) : Promise.resolve();
+  const ready = Promise.all([candyReady, jayReady]).then(() => undefined);
 
   // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
   // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.
   // A chapter without a ghost in its data has none in the picture.
   const ghostPlace = new Group();
+  ghostPlace.name = 'chase-ghost';
   let ghost: Group = buildGhost();
   ghostPlace.add(ghost);
   ghostPlace.visible = chapter.ghost !== undefined;
   scene.add(ghostPlace);
+  const ghostThought = createGhostThought(chapter);
+  if (ghostThought) scene.add(ghostThought.mesh);
+  const prologueStage = createPrologueStage(chapter.prologue);
+  scene.add(prologueStage.group);
+  const epilogueStage = createEpilogueStage(chapter.epilogue);
+  scene.add(epilogueStage.group);
   let ghostFoot: Object3D | null = null;
   // The stand-in faces +x, as the stand-in Elof does; the model from Blender faces the camera.
   let ghostFaces = 0;
@@ -277,6 +342,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostPlace.clear();
       ghostPlace.add(model);
       ghost = model;
+      if (ghostHelps) helper.replaceGhost(model.clone());
       ghostFaces = -Math.PI / 2;
       // GLTFLoader drops the dot from Blender's names: foot.L arrives as footL.
       ghostFoot = model.getObjectByName('footL') ?? null;
@@ -338,6 +404,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           model.scale.setScalar(sized.scale);
           stand.prop!.group.clear();
           stand.prop!.group.add(model);
+          characterShadows.add({ object: model, height: 1.6, radius: .3 });
           family.push({
             model, at: stand.at, glad: stand.glad, was: false, joy: 0,
             arms: [jointOf(model, 'upperarm_l', -1), jointOf(model, 'upperarm_r', -1)],
@@ -349,24 +416,35 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       .catch((error) => console.error('Someone in the family could not be loaded; the sign stays.', error));
   }
 
-  const shadow = new Mesh(
-    new CircleGeometry(0.27, 24),
-    new MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.3, depthWrite: false }),
-  );
-  shadow.rotation.x = -Math.PI / 2;
-  shadow.renderOrder = 1;
-  scene.add(shadow);
-  // The ghost has one too: it stands on the ground, it does not float over it.
-  const ghostShadow = new Mesh(shadow.geometry, shadow.material);
-  ghostShadow.rotation.x = -Math.PI / 2;
-  ghostShadow.renderOrder = 1;
-  ghostShadow.visible = false;
-  scene.add(ghostShadow);
+  const characterShadows = createCharacterShadows(renderer, scene, sun);
+  let playerGroundY = chapter.spawn.y;
+  let ghostGroundY = chapter.ghost?.[0]?.at.y ?? 0;
+  let ghostStaged = false;
+  characterShadows.add({ object: elof.group, height: 1, radius: .31, groundY: () => playerGroundY });
+  characterShadows.add({ object: ghostPlace, height: 1, radius: .36, active: () => !ghostStaged, groundY: () => ghostGroundY });
+  characterShadows.add({ object: helper.actor, height: ghostHelps ? 1 : .7, radius: .3,
+    groundY: () => Math.min(helper.actor.position.y, heightOfGroundAt(chapter, helper.actor.position.x)) });
+  if (chapter.follower && follower.group.children[0]) characterShadows.add({ object: follower.group.children[0], height: 1, radius: .3 });
+  const animal = { ladybird: [.5, .45], jay: [.7, .34], ants: [.3, .5], crane: [2.2, .4] } as const;
+  for (const thing of things) {
+    const size = thing.spot.look && animal[thing.spot.look as keyof typeof animal];
+    if (size && thing.prop) characterShadows.add({ object: thing.prop.group, height: size[0], radius: size[1] });
+  }
+  for (const carrier of carriers) if (carrier.prop && (carrier.ride.look === 'crane' || carrier.ride.look === 'ants')) {
+    characterShadows.add({ object: carrier.prop, height: carrier.ride.look === 'crane' ? 1.6 : .3, radius: .7,
+      groundY: () => Math.min(carrier.prop!.position.y, heightOfGroundAt(chapter, carrier.prop!.position.x)) });
+  }
+  characterShadows.setTier(tier);
 
   const camera = new PerspectiveCamera(FOV, 1, 0.1, 140);
   let viewHeight = 5;
   let distance = 10;
   let pixelRatio = 1;
+  let maxPixelRatio = 1;
+  let resolutionSteps = 0;
+  let resizes = 0;
+  let cssWidth = 0;
+  let cssHeight = 0;
   const look = cameraIntent({ ...startState(chapter) }, chapter.cameras);
   let stride = 0;
   let turn = 0;
@@ -376,22 +454,33 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   function resize(): void {
     const width = canvas.clientWidth || window.innerWidth;
     const height = canvas.clientHeight || window.innerHeight;
-    pixelRatio = pixelRatioFor(tier, width, height, window.devicePixelRatio);
-    renderer.setPixelRatio(pixelRatio);
-    renderer.setSize(width, height, false);
+    maxPixelRatio = pixelRatioFor(tier, width, height, window.devicePixelRatio);
+    resolutionSteps = Math.min(resolutionSteps, maxResolutionSteps(maxPixelRatio));
+    const ratio = pixelRatioFor(tier, width, height, window.devicePixelRatio, resolutionSteps);
+    // setPixelRatio + setSize would resize the canvas twice. Only do one allocation, when needed.
+    if (cssWidth !== width || cssHeight !== height || pixelRatio !== ratio) {
+      cssWidth = width;
+      cssHeight = height;
+      pixelRatio = ratio;
+      renderer.setDrawingBufferSize(width, height, pixelRatio);
+      resizes++;
+    }
     if (tier === 'low') {
       hdr?.scene.dispose();
       hdr?.grade.dispose();
       hdr = null;
     } else {
       hdr ??= {
-        scene: new WebGLRenderTarget(canvas.width, canvas.height, { type: HalfFloatType, stencilBuffer: false }),
+        scene: new WebGLRenderTarget(canvas.width, canvas.height, { type: HalfFloatType, stencilBuffer: false, depthTexture: new DepthTexture(canvas.width, canvas.height, UnsignedIntType) }),
         grade: new WebGLRenderTarget(canvas.width, canvas.height, { type: HalfFloatType, depthBuffer: false, stencilBuffer: false }),
       };
       hdr.scene.setSize(canvas.width, canvas.height);
       hdr.grade.setSize(canvas.width, canvas.height);
       gradePass?.setSize(canvas.width, canvas.height);
     }
+    depthBlur?.setSize(canvas.width, canvas.height, tier === 'high');
+    bloom?.setSize(canvas.width, canvas.height, tier === 'high');
+    water.setSize(canvas.width, canvas.height, tier);
     camera.aspect = width / height;
     // Elof is about 78 px tall on a phone held sideways, and the view is never narrower than 6 EL.
     const elofPx = clamp(height * 0.2, 75, 140);
@@ -405,14 +494,32 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let warm = 2;
   let warmedFor = 0;
   let hasFrame = false;
+  let inEndingShot = false;
+  let warming = true;
   const unculled: Object3D[] = [];
   const projectedPlayer = new Vector3();
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let reaction: Reaction | null = null;
+  let responseFor = 0;
+  let calmResponse = false;
+  const project = (point: Vector3, bounds = 1.05): Vec | null => {
+    if (!hasFrame) return null;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    point.project(camera);
+    if (!Number.isFinite(point.x) || !Number.isFinite(point.y) || Math.abs(point.z) > 1 || Math.abs(point.x) > bounds || Math.abs(point.y) > bounds) return null;
+    return { x: rect.left + (point.x + 1) * rect.width / 2, y: rect.top + (1 - point.y) * rect.height / 2 };
+  };
 
   /** Draws the current scene without advancing a camera, animation or simulation clock. */
   function draw(): void {
     renderer.info.reset();
     if (warm > 0) {
-      scene.traverse((object) => {
+      water.applyCaustics(scene);
+      characterShadows.prepareReceivers();
+      materialGrade.apply(scene);
+      materialGrade.apply(waterScene);
+      for (const layer of [scene, waterScene]) layer.traverse((object) => {
         if (!object.frustumCulled) return;
         object.frustumCulled = false;
         unculled.push(object);
@@ -422,7 +529,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       renderer.setRenderTarget(hdr?.scene ?? null);
       // A normal (non-XR) render target uses linear output without material tone mapping.
       renderer.render(scene, camera);
+      if (hdr && water.refracting) water.capture(renderer, hdr.scene, camera);
+      renderer.setRenderTarget(hdr?.scene ?? null);
+      // Water reads the copied pre-water colour, while testing the scene's retained depth. No second
+      // scene render and no read/write feedback: this adds only the pool draws and one small copy.
+      const clear = renderer.autoClear;
+      renderer.autoClear = false;
+      try { renderer.render(waterScene, camera); } finally { renderer.autoClear = clear; }
       if (hdr && gradePass && outputPass) {
+        bloom?.render(renderer, hdr.scene);
+        gradePass.setBloom(bloom?.texture ?? null);
+        // The final macro shot focuses on the window figure, outside the usual z=0 play plane.
+        if (!inEndingShot) depthBlur?.render(renderer, hdr.scene, camera);
+        gradePass.setDepthBlur(inEndingShot ? null : depthBlur?.texture ?? null, hdr.scene.depthTexture, camera.near, camera.far, camera.position.z);
         gradePass.render(renderer, hdr.grade, hdr.scene);
         outputPass.render(renderer, hdr.grade, hdr.grade, 0, false);
       }
@@ -436,14 +555,22 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
   }
 
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue, ending }: Frame): void {
+    inEndingShot = !!chapter.epilogue && ending !== null && ending !== undefined;
     rain.update(drips);
+    prologueStage.update(prologue, flags);
+    epilogueStage.update(flags, ending, reducedMotion.matches || document.body.classList.contains('calm'));
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
     clock += dt;
-    trail.update(collected, flags, x, y, dt, clock);
+    responseFor = Math.max(0, responseFor - dt);
+    const response = responseFor > 0 ? (calmResponse ? 0.15 : Math.sin((0.85 - responseFor) * 24) * responseFor / 0.85) : 0;
+    if (responseFor === 0) reaction = null;
+    trail.update(collected, flags, x, y, dt, clock, reaction?.kind === 'candy' ? reaction.index : undefined, response);
     glints.update(flags, clock);
+    lawnSong.update(flags, clock);
+    for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
     cones.update(rollers, clock);
     water.update(clock);
     for (const [i, t] of tussocks.entries()) tussockMeshes[i]?.position.set(t.x, t.y, 0);
@@ -478,10 +605,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (near) near.rotation.x = -beat;
       if (far) far.rotation.x = beat;
     }
-    for (const thing of things) thing.prop?.update(flags.has(thing.spot.id), clock, dt);
+    for (const [i, thing] of things.entries()) {
+      if (thing.prop) thing.prop.group.rotation.z -= thing.reactionTurn;
+      thing.prop?.update(flags.has(thing.spot.id), clock, dt, noteStrikes.get(thing.spot.id));
+      thing.reactionTurn = reaction?.kind === 'spot' && reaction.index === i ? response * 0.14 : 0;
+      if (thing.prop) thing.prop.group.rotation.z += thing.reactionTurn;
+      // Shy lights take turns appearing; unrevealed ones must not betray the hiding place.
+      if (thing.prop && thing.spot.look === 'wisp') thing.prop.group.visible = thing.spot.needs === undefined || flags.has(thing.spot.needs);
+    }
     for (const d of decor) {
       d.prop?.update(d.def.until !== undefined && flags.has(d.def.until), clock, dt);
       if (d.prop && d.def.after !== undefined) d.prop.group.visible = flags.has(d.def.after);
+      // The doorway tableau takes over Mamma's opening mark; never draw her twice when private models load.
+      if (d.prop && chapter.prologue && d.def.word === 'callMamma') d.prop.group.visible = !flags.has('blink');
     }
     // The POFF: he shrinks, or grows back, in a little more than a second, in a swarm of glitter.
     let poff = false;
@@ -491,8 +627,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       poff = tall !== want;
       tall += Math.sign(want - tall) * Math.min(Math.abs(want - tall), ((sized.scale - 1) * dt) / 1.2);
     }
-    helper.update(help.step, help.at, x, y, curr.standY, clock, dt);
-    hiddenSweets.update(flags, clock, dt);
+    helper.update(help, x, y, curr.standY, clock, dt, reducedMotion.matches || document.body.classList.contains('calm'));
+    // The helper is the same friend, not a second ghost alongside the one he is following.
+    ghostPlace.visible = chapter.ghost !== undefined && !(ghostHelps && helper.active);
+    hiddenSweets.update(flags, clock, dt, reaction?.kind === 'hidden' ? reaction.index : undefined, response);
     glance.update(flags, ghostState, clock, dt);
     glitter.update(curr.bubble, x, y, clock);
     // He hangs by his hands, his body along the lace.
@@ -507,15 +645,26 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const centreY = look.y + viewHeight * look.zoom * (0.5 - GROUND_FROM_BOTTOM);
     camera.position.set(look.x, centreY, distance * look.zoom);
     camera.lookAt(look.x, centreY, 0);
+    if (chapter.epilogue && ending !== null && ending !== undefined) {
+      const window = chapter.epilogue.window;
+      const shotHeight = Math.max(2.6, 2.8 / camera.aspect);
+      camera.position.set(window.x, window.y + 0.65, window.z + shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
+      camera.lookAt(window.x, window.y + 0.65, window.z);
+    }
+    const darkness = night.update(flags, look.x, centreY, clock, dt);
     if (dressing && place) {
-      dressing.update(look.x, look.y, clock);
+      dressing.update(look.x, look.y, clock, darkness);
+      if (place.id === 'dusk') {
+        scene.backgroundIntensity = nightBrightness(darkness);
+        // Fog keeps a copy of its initial colour; changing `sky` alone never changes the haze.
+        (scene.fog as Fog).color.copy(sky);
+      }
       // The haze begins behind the play plane, however far the camera has pulled back.
       if (!chapter.mist) {
         (scene.fog as Fog).near = camera.position.z + place.haze.near;
         (scene.fog as Fog).far = camera.position.z + place.haze.far;
       }
     }
-    night.update(flags, look.x, centreY, clock, dt);
 
     // The stand-in Elof: turned a little towards the camera, legs swinging with the distance he covers.
     // On a hose he turns his back to the camera, as a climber does.
@@ -527,7 +676,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const moving = Math.abs(curr.vx) > 0.05 || (!curr.grounded && curr.bubble === 0);
     elof.legLeft.rotation.z = moving ? swing : 0;
     elof.legRight.rotation.z = moving ? -swing : 0;
-    if (doll) poseDoll(doll, curr, stride, dt);
+    const waving = reaction?.kind === 'player' && curr.grounded;
+    elof.arm.rotation.z = waving ? -2 + response * 0.3 : 0;
+    if (doll) poseDoll(doll, curr, stride, dt, waving ? responseFor : 0, calmResponse);
     if (curr.grounded && !wasGrounded) squash = 0.82; // a soft landing
     wasGrounded = curr.grounded;
     squash += (1 - squash) * ease(12, dt);
@@ -541,9 +692,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
     elof.body.rotation.z = -clamp(curr.vx / RUN_SPEED, -1, 1) * 0.12 * curr.facing;
 
-    const height = Math.max(0, y - curr.groundY);
-    shadow.position.set(x, curr.groundY + 0.012, 0);
-    shadow.scale.setScalar(tall * clamp(1 - height * 0.25, 0.35, 1));
+    playerGroundY = curr.groundY;
 
     // A big candy turns slowly until it is reached. Then it gives a little jump, and turns fast.
     for (const [i, big] of bigCandies.entries()) {
@@ -556,6 +705,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       big.place.scale.setScalar(1 + 0.3 * Math.sin(Math.PI * big.pop));
     }
 
+    ghostStaged = false;
     // The ghost is a wooden toy come alive: it never bends. Standing, it turns towards Elof, sways and taps
     // a foot. Hopping, it faces the way it goes and tips forward. Gone, it has shrunk away.
     if (ghostState) {
@@ -565,15 +715,36 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostPlace.position.set(ghostState.x, ghostState.y, 0);
       ghostPlace.scale.setScalar(ghostSize);
       // Its shadow lies where it stands. In a hop it is off the ground, and the shadow waits where it will land.
-      ghostShadow.visible = ghostPlace.visible && !hopping && ghostSize > 0.4;
-      ghostShadow.position.set(ghostState.x, ghostState.y + 0.012, 0);
-      ghostShadow.scale.setScalar(1.3 * ghostSize);
+      if (!hopping) ghostGroundY = ghostState.y;
       // 0 faces along the course; a half turn faces back at him.
-      const wanted = hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4;
+      const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4;
       ghostTurn += (wanted - ghostTurn) * ease(7, dt);
       ghost.rotation.set(0, ghostFaces + ghostTurn, hopping ? -0.25 * Math.sin(Math.PI * ghostState.t) : Math.sin(clock * 1.7) * 0.035);
       if (ghostFoot) ghostFoot.rotation.x = hopping ? 0 : -Math.max(0, Math.sin(clock * 9)) * (Math.sin(clock * 0.9) > 0.2 ? 0.45 : 0);
+      if (chapter.prologue && prologue) {
+        const pose = prologuePose(chapter.prologue, prologue);
+        ghostPlace.position.set(pose.x, pose.y, 0.1);
+        ghostSize = pose.scale;
+        ghostPlace.scale.setScalar(ghostSize);
+        ghost.rotation.set(0, ghostFaces + pose.turn, pose.tilt);
+        if (ghostFoot) ghostFoot.rotation.x = 0;
+        ghostStaged = true;
+      } else if (chapter.prologue && flags.has('pappa:done')) {
+        ghostSize = 0;
+        ghostPlace.scale.setScalar(0);
+        ghostStaged = true;
+      }
     }
+    // His first figure has its place again, with Klonk beside it once Elof finishes painting.
+    if (chapter.epilogue && chapter.shelf && flags.has('dots')) {
+      ghostPlace.position.set(chapter.shelf.x - 2.4, chapter.shelf.y + 0.08, -8.5);
+      ghostPlace.scale.setScalar(1);
+      ghost.rotation.set(0, ghostFaces - Math.PI / 2, 0);
+      if (ghostFoot) ghostFoot.rotation.x = 0;
+      ghostStaged = true;
+    }
+    ghostThought?.update(ghostState, flags, { x, y }, camera, clock, dt,
+      reducedMotion.matches || document.body.classList.contains('calm'), ghostPlace.visible);
     // The family: each turns a little towards him, and throws their arms up for a moment when he has given
     // them candy, or when they first come into the picture.
     for (const one of family) {
@@ -591,58 +762,105 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         bendJoint(one.hands[i] ?? null, up > 0 ? -0.2 * up : -0.08, ease(10, dt));
       }
     }
+    characterShadows.update(look.x, centreY, viewHeight * look.zoom * Math.max(1, camera.aspect) * .65);
     // Gate 6 (plan §6.12): no shader is compiled during play. The first frames, and the first after a model
     // has arrived, draw the whole chapter, in view or not, so that every material's shader exists from then on.
     if (models.length !== warmedFor) {
       warmedFor = models.length;
       warm = 2;
     }
+    warming = warm > 0;
     draw();
     hasFrame = true;
   }
 
   return {
+    get warming() { return warming; },
+    get resolutionSteps() { return resolutionSteps; },
+    get maxResolutionSteps() { return maxResolutionSteps(maxPixelRatio); },
+    ready,
+    async restore() {
+      await ready;
+      await assets.restoreTextures();
+      resize();
+      warmedFor = -1;
+      warm = 2;
+      if (hasFrame) while (warm > 0) draw();
+    },
     resize,
     render,
+    capture: () => hasFrame ? captureFrame(canvas) : Promise.resolve(null),
     setTier(next) {
       const chosen = chooseTier(next, hdrAvailable);
       if (tier === chosen) return;
-      const changesPipeline = (tier === 'low') !== (chosen === 'low');
+      const changesPipeline = (tier === 'low') !== (chosen === 'low') || tier === 'high' || chosen === 'high';
       tier = chosen;
+      characterShadows.setTier(tier);
+      materialGrade.setEnabled(tier === 'low');
+      resolutionSteps = 0;
       gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
       resize();
+      // The previous tier's storage has been released/resized; new allocations use this tier's budget.
+      gpu?.resetPeaks();
       // Low and HDR need different material variants. Compile against their actual play targets before
-      // the paused settings handler returns. Mid ↔ High changes only pixels and the glow uniform.
+      // the paused settings handler returns. Entering High also warms its half-resolution depth, bloom and water passes.
       if (changesPipeline) {
         warm = 2;
         if (hasFrame) while (warm > 0) draw();
       }
     },
+    setResolutionSteps(steps) {
+      const next = Math.min(maxResolutionSteps(maxPixelRatio), Math.max(0, Math.floor(steps)));
+      if (resolutionSteps === next || !Number.isFinite(next)) return;
+      resolutionSteps = next;
+      resize();
+    },
     playerScreen() {
-      if (!hasFrame) return null;
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) return null;
       elof.group.localToWorld(projectedPlayer.set(0, 0.5, 0));
       projectedPlayer.z = 0;
-      projectedPlayer.project(camera);
-      if (!Number.isFinite(projectedPlayer.x) || !Number.isFinite(projectedPlayer.y) || Math.abs(projectedPlayer.z) > 1) return null;
-      return {
-        x: rect.left + (projectedPlayer.x + 1) * rect.width / 2,
-        y: rect.top + (1 - projectedPlayer.y) * rect.height / 2,
-      };
+      return project(projectedPlayer);
     },
+    helperScreen() {
+      if (!hasFrame || !helper.active) return null;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return null;
+      helper.actor.getWorldPosition(projectedPlayer);
+      projectedPlayer.y += 0.5;
+      projectedPlayer.project(camera);
+      if (!Number.isFinite(projectedPlayer.x) || !Number.isFinite(projectedPlayer.y) || Math.abs(projectedPlayer.z) > 1 || Math.abs(projectedPlayer.x) > 1 || Math.abs(projectedPlayer.y) > 1) return null;
+      return { x: rect.left + (projectedPlayer.x + 1) * rect.width / 2, y: rect.top + (1 - projectedPlayer.y) * rect.height / 2 };
+    },
+    ghostScreen() {
+      // In the garden the visiting helper replaces the chase ghost. Later helpers are birds, so they
+      // never become a memory's origin. Use the rendered transform, including its hop and scale.
+      const actor = ghostPlace.visible && ghost.visible ? ghostPlace
+        : ghostHelps && helper.active && helper.group.visible && helper.actor.children[0]?.visible ? helper.actor : null;
+      if (!hasFrame || !actor?.visible || Math.min(actor.scale.x, actor.scale.y, actor.scale.z) <= 0.001) return null;
+      actor.localToWorld(projectedPlayer.set(0, 1.35, 0));
+      return project(projectedPlayer, 1);
+    },
+    worldScreen(at) { return project(projectedPlayer.set(at.x, at.y, 0)); },
+    react(what, calm = false) { reaction = what; responseFor = 0.85; calmResponse = calm; },
     info: () => ({
       tier,
       hdrAvailable,
       drawCalls: renderer.info.render.calls,
       triangles: renderer.info.render.triangles,
       programs: renderer.info.programs?.length ?? 0,
+      geometries: renderer.info.memory.geometries,
+      textures: renderer.info.memory.textures,
+      gpu: gpu?.snapshot() ?? null,
       pixelRatio,
+      maxPixelRatio,
+      resolutionSteps,
+      resizes,
       width: canvas.width,
       height: canvas.height,
       models,
       compressedTextures,
+      assetTextures: assets.textureInfo(),
       roles,
+      shadows: characterShadows.info(),
     }),
   };
 }
@@ -705,7 +923,7 @@ function bendJoint(joint: Joint | null, angle: number, quick: number): void {
  * Poses the doll in code until the library's clips drive it: a walk and a run that follow the distance he
  * covers, and a jump. He faces +z in his own space, so a joint swings forward with a negative turn round x.
  */
-function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number): void {
+function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number, wave = 0, calm = false): void {
   const quick = ease(18, dt);
   const bend = (joint: Joint | null, angle: number) => {
     if (!joint) return;
@@ -738,6 +956,10 @@ function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number): 
   }
   bend(doll.spine, 0.14 * speed);
   bend(doll.head, -0.08 * speed);
+  if (wave > 0) {
+    bend(doll.upperArms[0]!, -2);
+    bend(doll.lowerArms[0]!, -0.7 + (calm ? 0 : Math.sin(wave * 22) * 0.3));
+  }
 }
 
 function startState(chapter: ChapterData): PlayerState {
@@ -769,35 +991,13 @@ function buildGround(chapter: ChapterData): Mesh {
 }
 
 /**
- * The water of a pool or a brook, in greybox: a clear blue body that fills its pit to its surface, which
- * rises and sinks a little. The real water comes with the places (plan §5).
- */
-function buildWater(chapter: ChapterData, look: { colour: string; opacity: number } | null) {
-  const group = new Group();
-  const material = new MeshStandardMaterial({ color: look?.colour ?? '#4f9fc4', roughness: 0.25, transparent: true, opacity: look?.opacity ?? 0.78 });
-  const DEPTH = 6;
-  // In a place the water lies as far back as the eye reaches; in greybox it is as deep as the ground slab.
-  const back = look ? 46 : 4.6;
-  const bodies = (chapter.water ?? []).map((w) => {
-    const body = new Mesh(new BoxGeometry(w.to - w.from, DEPTH, back), material);
-    body.position.set((w.from + w.to) / 2, w.y - DEPTH / 2, 0.65 - back / 2);
-    group.add(body);
-    return { body, y: w.y - DEPTH / 2 };
-  });
-  function update(clock: number): void {
-    for (const [i, w] of bodies.entries()) w.body.position.y = w.y + Math.sin(clock * 1.3 + i) * 0.03;
-  }
-  return { group, update };
-}
-
-/**
- * Night and the northern lights (plan §3.4, the final), in greybox. When the chapter's flag is set, the sky
+ * Night and the northern lights (plan §3.4, the final). When the chapter's flag is set, the sky
  * darkens over a few seconds, the light turns low and blue, and three green ribbons wave far behind the
  * scene. The ribbons are there from the start, unseen, so that no shader is compiled when they flare.
  */
 function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLight, sun: DirectionalLight) {
   const group = new Group();
-  if (!chapter.night) return { group, update: () => {} };
+  if (!chapter.night) return { group, update: () => 0 };
   const after = chapter.night.after;
   const day = sky.clone();
   // Night from the start is there at once: it doesn't fall while he watches.
@@ -824,7 +1024,7 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
     return ribbon;
   });
   let k = after === null ? 1 : 0;
-  function update(flags: ReadonlySet<string>, x: number, y: number, clock: number, dt: number): void {
+  function update(flags: ReadonlySet<string>, x: number, y: number, clock: number, dt: number): number {
     k = Math.min(1, Math.max(0, k + (after === null || flags.has(after) ? dt : -dt) / 3));
     sky.copy(day).lerp(dark, k);
     hemisphere.intensity = lerp(lights.hemisphere, 0.75, k);
@@ -834,6 +1034,7 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
       ribbon.rotation.z = 0.08 * Math.sin(clock * 0.33 + i * 1.7) + (i - 1) * 0.07;
       (ribbon.material as MeshBasicMaterial).opacity = k * (0.5 + 0.2 * Math.sin(clock * 0.9 + i * 2.4));
     }
+    return k;
   }
   return { group, update };
 }
@@ -1171,16 +1372,19 @@ function buildHidden(chapter: ChapterData) {
     const ring = new Mesh(new TorusGeometry(0.34, 0.022, 8, 30), gold);
     sweet.add(body, band, ring);
     sweet.position.set(def.x, def.y, 0);
+    sweet.visible = def.after === undefined;
     group.add(sweet);
     return { def, sweet, ring, size: 1 };
   });
-  function update(flags: ReadonlySet<string>, clock: number, dt: number): void {
+  function update(flags: ReadonlySet<string>, clock: number, dt: number, tapped?: number, response = 0): void {
     for (const [i, s] of sweets.entries()) {
       const found = flags.has(`found:${s.def.kind}`);
+      s.sweet.visible = s.def.after === undefined || flags.has(s.def.after);
       s.size = Math.max(0, Math.min(1, s.size + (found ? -dt / 0.25 : dt)));
       s.sweet.scale.setScalar(s.size);
       s.sweet.position.y = s.def.y + Math.sin(clock * 1.8 + i) * 0.06;
       s.sweet.rotation.y = clock * 0.9 + i;
+      s.sweet.rotation.z = i === tapped ? response * 0.4 : 0;
       s.ring.rotation.x = clock * 1.3 + i;
     }
   }
@@ -1213,7 +1417,7 @@ function buildMovers(chapter: ChapterData): Group[] {
     const box = new Mesh(new BoxGeometry(mover.width, mover.height, 1.1), wood);
     box.position.y = mover.height / 2;
     group.add(prop ?? box);
-    if (mover.verb === 'pull' && mover.on === undefined) {
+    if (mover.verb === 'pull' && mover.on === undefined && !mover.cycle && mover.stops.length > 1) {
       const at = mover.ring ?? { x: 0, y: mover.height };
       const ring = new Mesh(new TorusGeometry(0.17, 0.04, 10, 28), red);
       ring.position.set(at.x, at.y, 0.2);
@@ -1381,14 +1585,14 @@ function buildTrail(chapter: ChapterData) {
   /** How far each candy that waits for a flag has come out, from 0 to 1. */
   const out: number[] = candy.map((c) => (c.after === undefined ? 1 : 0));
 
-  function update(collected: readonly boolean[], flags: ReadonlySet<string>, elofX: number, elofY: number, dt: number, clock: number): void {
+  function update(collected: readonly boolean[], flags: ReadonlySet<string>, elofX: number, elofY: number, dt: number, clock: number, tapped?: number, response = 0): void {
     for (let i = 0; i < candy.length; i++) {
       const c = candy[i]!;
       if (collected[i] && flown[i]! < 0) flown[i] = 0;
       // A candy the ghost drops pops out when it does.
       if (c.after !== undefined && flags.has(c.after)) out[i] = Math.min(1, out[i]! + dt * 5);
       let x = c.x;
-      let y = c.y + Math.sin(clock * 2.2 + i * 1.7) * 0.045;
+      let y = c.y + Math.sin(clock * 2.2 + i * 1.7) * 0.045 + (i === tapped ? response * 0.12 : 0);
       let size = out[i]!;
       if (flown[i]! >= 0) {
         const t = Math.min(1, flown[i]! + dt / CANDY_FLIGHT);
@@ -1509,7 +1713,8 @@ function buildElof() {
     return mesh;
   };
 
-  body.add(torso, head, hairTop, fringe, backpack, arm(0.19), arm(-0.19));
+  const nearArm = arm(0.19);
+  body.add(torso, head, hairTop, fringe, backpack, nearArm, arm(-0.19));
   group.add(body, legLeft, legRight);
-  return { group, body, legLeft, legRight };
+  return { group, body, legLeft, legRight, arm: nearArm };
 }

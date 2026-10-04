@@ -40,7 +40,7 @@ export interface Hud {
 const BUBBLE_TIME = 2.2;
 const BUBBLE_TIME_PER_LETTER = 0.055;
 
-export function createHud(doc: Document, total: number): Hud {
+export function createHud(doc: Document, total: number, ghostNamed: () => boolean = () => false): Hud {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const bag = byId('bag');
   const number = byId('bagCount');
@@ -67,6 +67,7 @@ export function createHud(doc: Document, total: number): Hud {
   let noticeFor = 0;
   const verbs: Record<string, string> = sv.verbs;
   const lines: Record<string, string> = sv.lines;
+  const actionWord = (verb: Verb, word?: string | null) => word === 'giveGhost' && ghostNamed() ? sv.giveKlonk : (verbs[word ?? verb] ?? verbs[verb] ?? sv.act);
 
   return {
     candy(count) {
@@ -80,7 +81,7 @@ export function createHud(doc: Document, total: number): Hud {
       }
     },
     verb(verb, word = null) {
-      const text = verb ? (verbs[word ?? verb] ?? verbs[verb] ?? sv.act) : sv.act;
+      const text = verb ? actionWord(verb, word) : sv.act;
       if (text === wordShown && act.disabled === (verb === null)) return;
       wordShown = text;
       act.disabled = verb === null;
@@ -107,7 +108,7 @@ export function createHud(doc: Document, total: number): Hud {
       act.classList.toggle('pulse', hint !== null && hint.verb !== null);
       // Out of reach the button is dimmed: it shows what it will say when he is there.
       if (hint && hint.verb && act.disabled) {
-        const text = verbs[hint.word ?? hint.verb] ?? verbs[hint.verb] ?? sv.act;
+        const text = actionWord(hint.verb, hint.word);
         act.querySelector('span')!.textContent = text;
         wordShown = undefined;
       }
@@ -134,7 +135,7 @@ export function createHud(doc: Document, total: number): Hud {
       const next = queue.shift();
       if (!next) return;
       const text = lines[next.line]!;
-      byId('bubbleWho').textContent = sv.who[next.who];
+      byId('bubbleWho').textContent = next.who === 'spoket' && ghostNamed() ? sv.ghostName : sv.who[next.who];
       byId('bubbleLine').textContent = text;
       bubble.dataset.who = next.who;
       bubble.hidden = false;

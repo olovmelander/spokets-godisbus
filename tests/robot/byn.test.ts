@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createHash } from 'node:crypto';
 import { Game } from '../../src/app/game';
 import { arrangementFor } from '../../src/audio/music';
 import { BONUS, bonusAfter, courseFor, nextAfter, STORY } from '../../src/content/chapters';
@@ -11,7 +12,7 @@ import { decide, heightAt, playThrough } from './robot';
 
 describe('Byn, the extra chapter, in greybox rules', () => {
   for (const fps of [30, 60, 144]) {
-    it(`the robot plays it from the pavement to the shop's door at ${fps} Hz`, () => {
+    it(`the robot plays it from the pavement into the shop at ${fps} Hz`, () => {
       const result = playThrough(fps, byn, {}, 240);
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
       expect(result.bubbles).toBe(0);
@@ -21,13 +22,40 @@ describe('Byn, the extra chapter, in greybox rules', () => {
       // The things it had to do: the leaf, and the matchbox.
       expect(result.flags).toEqual(expect.arrayContaining(['leaf', 'placed:box', 'goal']));
       // What was said, in order.
-      expect(result.said).toEqual(['again', 'lake', 'shop']);
+      expect(result.said).toEqual(['again', 'lake', 'shop', 'shopInside', 'shopBag']);
     });
   }
 
   it('the robot leaves little candy behind', () => {
     const result = playThrough(60, byn, {}, 240);
     expect(result.missed.length, `it missed ${result.missed.map((i) => `${byn.candy[i]!.x},${byn.candy[i]!.y}`).join(' ')}`).toBeLessThanOrEqual(4);
+  });
+
+  it('keeps all earlier candy and checkpoint indices intact when the shop is appended', () => {
+    expect(createHash('sha256').update(JSON.stringify(byn.candy.slice(0, 62))).digest('hex'))
+      .toBe('029d3d2e09c86f02ef2227df0583e19f97a4e8f374a868ac4d205bf57d30150e');
+    expect(byn.checkpoints!.slice(0, 8)).toEqual([
+      { x: 8, y: 2 }, { x: 15.6, y: 0 }, { x: 37.6, y: 0 }, { x: 66, y: 0 },
+      { x: 83, y: 0 }, { x: 93.2, y: 0 }, { x: 105, y: 0 }, { x: 115, y: 3.3 },
+    ]);
+    expect(byn.shop?.door).toBe(122);
+    expect(byn.goalX).toBeGreaterThan(byn.shop!.door + 20);
+  });
+
+  it('resumes an older save at the shop step and reaches the new ending without repeating the street', () => {
+    const game = new Game(byn, {}, { checkpoint: 7, collected: [0, 61], placed: ['box'], flags: ['leaf', 'placed:box'] });
+    expect(game.sim.curr.x).toBe(115);
+    expect(game.sim.collected[0]).toBe(true);
+    expect(game.sim.collected[61]).toBe(true);
+    expect(game.sim.collected.slice(62).every((got) => !got)).toBe(true);
+    for (let frame = 0; frame < 60 * 30 && !game.sim.flags.has('goal'); frame++) {
+      game.frame(1 / 60, { x: 1, hopHeld: false }, { hop: false, act: false, helper: false });
+    }
+    expect(game.sim.flags.has('goal')).toBe(true);
+    expect(game.sim.checkpoint).toBe(9);
+    expect(game.sim.bubbles).toBe(0);
+    expect(game.sim.knocks).toBe(0);
+    expect(game.sim.said).toEqual(['shopInside', 'shopBag']);
   });
 
   it('on Lugnt it is played by running and Använd, with Hoppa only on the lace', () => {
@@ -100,7 +128,7 @@ describe('Byn, the extra chapter, in greybox rules', () => {
     expect(sv.verbs.board).toBeDefined();
   });
 
-  it('keeps his friend ahead of him, on firm ground, all the way to the door', () => {
+  it('keeps his friend ahead of him, on firm ground, all the way through the shop', () => {
     const perches = byn.ghost!;
     for (const [i, perch] of perches.entries()) {
       expect(heightAt(byn, perch.at.x), `the place at ${perch.at.x}`).toBeCloseTo(perch.at.y, 5);

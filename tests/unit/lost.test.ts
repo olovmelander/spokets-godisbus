@@ -79,6 +79,7 @@ describe('the lost things under the deck', () => {
       const sim = new Sim({ ...epilog, spawn: { x, y: 0.01 } }, {}, { flags });
       for (let i = 0; i < 0.3 / STEP; i++) sim.step(idle);
       sim.step({ ...idle, act: true });
+      sim.finishStory({ kind: 'party', friend: 'moa', sweet: 'karamell' });
       for (let i = 0; i < 0.3 / STEP; i++) sim.step(idle);
       return sim;
     };

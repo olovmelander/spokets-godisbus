@@ -56,6 +56,10 @@ export interface Mover {
   look?: MoverLook;
   /** For Dra: where the ring sits, from the middle of its bottom. */
   ring?: Vec;
+  /** An optional path: the story helper never sends him here from the main trail. */
+  extra?: boolean;
+  /** A repeating platform, between its two stops. Its phase is local, never saved as puzzle progress. */
+  cycle?: { seconds: number; phase?: number };
 }
 
 /** A trail candy: where it floats, and the flag that has to be set before it is there at all. */
@@ -76,12 +80,20 @@ export interface Spot {
   needs?: string;
   /** It is used by coming close, with no button: a memory he touches. With a ride, the ride begins by itself. */
   touch?: boolean;
+  /** A side-route interaction, left out of the main trail's hints. */
+  extra?: boolean;
+  /** A replayable bell: its MIDI pitch stays the same on every visit, including after loading a save. */
+  note?: number;
+  /** A kindness toy: after using it, leave by 4 EL and return for this saved keepsake flag. */
+  returnGift?: string;
   /** What stands there, for the picture. Left out: only the glint over it. */
   look?: SpotLook;
   /** The word on the button where the verb's own is too plain: a key of `sv.verbs`, as in "Ropa på Moa". */
   word?: string;
   /** Using it starts this ride. */
   ride?: string;
+  /** Opens an authored interaction; pressing Använd alone never awards its flag. */
+  story?: import('./story').StoryKind;
 }
 
 /** Who a bubble belongs to. Each has a name in `sv.who`. */
@@ -190,12 +202,16 @@ export interface GhostPerch {
   catch?: string;
   /** It waits here, however close he comes, until this flag is set. */
   until?: string;
+  /** A wordless picture at this story stop; progress makes the ghost's thoughts clearer (§3.3). */
+  thought?: { picture: 'mountain' | 'pine-crack' | 'lonely-figure'; after?: string; until?: string };
 }
 
 /** A stretch of the course where the camera frames differently (plan §6.4). */
 export interface CameraZone {
   from: number;
   to: number;
+  /** Only above this height: a challenge can have its own framing without widening the ordinary path. */
+  above?: number;
   /** How wide the picture is there: 1 is the usual, 1.3 shows about a third more. */
   zoom?: number;
   /** How far the picture is lifted, in EL. */
@@ -247,7 +263,7 @@ export type HelpLevel = 'ask' | 'remind' | 'guide';
  * What the helper is doing (plan §4.6). Each time he asks it goes one step further:
  * 1. it goes to the place and looks at it;
  * 2. it knocks on the thing, and Använd's word pulses;
- * 3. a pale figure of Elof shows where to stand and do it.
+ * 3. a dotted figure of Elof demonstrates the action, without changing the simulation.
  * At 0 it is away.
  */
 export interface HelpState {
@@ -255,6 +271,10 @@ export interface HelpState {
   at: Vec | null;
   verb: Verb | null;
   word: string | null;
+  /** An authored story visit: looking/double-knocking only, never a pulse on Använd. */
+  visit?: boolean;
+  /** A fresh explicit request for step three restarts its short visual demonstration. */
+  replay?: number;
 }
 
 /** Where a simulation starts when a saved game is taken up again. */
@@ -271,8 +291,8 @@ export interface SimStart {
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
-export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure';
-export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew';
+export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone';
+export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'vittra-door' | 'keepsake';
 export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none';
 
 /** The places of the story, each with its own light and layers (plan §5.4). The picture's business only. */
@@ -281,8 +301,27 @@ export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home'
 /** What a stretch of ground is made of, where it isn't the place's own ground. The picture's business only. */
 export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron';
 
+/** A raised optional path. Fixed waypoints keep all three helper hints steady even on moving platforms. */
+export interface Challenge {
+  id: string;
+  from: number;
+  to: number;
+  above: number;
+  reward: string;
+  steps: Vec[];
+  return: Vec;
+  /** What makes the route playable, such as the lollipop light. */
+  needs?: string;
+  /** Unfinished local steps; reset on leaving, getting unstuck or reloading, until the reward commits. */
+  pending?: string[];
+  /** After the prize, guide back down the same landings before showing the return to the trail. */
+  backtrack?: boolean;
+}
+
 export interface ChapterData {
   id: string;
+  /** An optional melody toy. Consecutive repeat bumps are allowed; other wrong notes restart it. */
+  song?: { notes: string[]; flag: string };
   /** The place it is dressed as. Left out: greybox. */
   place?: PlaceId;
   /**
@@ -290,9 +329,11 @@ export interface ChapterData {
    * flag `found:<kind>`, which the save keeps. One with `route` hangs at the end of the chapter's challenge
    * route (plan §4.7), and is reached that way only.
    */
-  hidden?: { x: number; y: number; kind: string; route?: boolean }[];
+  hidden?: { x: number; y: number; kind: string; route?: boolean; after?: string }[];
   /** Cranberries to bounce on (plan §4.8, O7). */
   bouncers?: Bouncer[];
+  /** Optional routes, entered by leaving the ordinary trail; their prizes never gate the story. */
+  challenges?: Challenge[];
   /** For the picture: stretches of ground that are something else than the place's own: a deck, a boulder. */
   surfaces?: { from: number; to: number; kind: SurfaceKind }[];
   /** For the picture: a deck overhead, with the sun falling through between its boards. */
@@ -303,6 +344,8 @@ export interface ChapterData {
    * knows nothing of it: there he is always one Elof length.
    */
   size?: { scale: number; after?: string; until?: string };
+  /** The final carving's windowsill, and the camera's post-credit shot. */
+  epilogue?: { window: { x: number; y: number; z: number } };
   /** For the picture: Pappa's shelf of figures on the wall, with the first place in the row empty or filled. */
   shelf?: { x: number; y: number; filled?: boolean };
   /**
@@ -312,11 +355,17 @@ export interface ChapterData {
   decor?: { look: SpotLook; at: Vec; word?: string; until?: string; after?: string }[];
   /** For the picture: the house's wall behind the scene, with its windows. */
   house?: { from: number; to: number; windows: number[] };
+  /** For the picture: an open shop door leading into a room beside the street, at the path's height. */
+  shop?: { door: number; to: number; floor: number };
   /** The ground as one open line, from left to right. Elof walks on its upper side. */
   ground: Vec[];
   spawn: Vec;
   /** Reaching this x sets the flag "goal". */
   goalX: number;
+  /** A final story beat can finish before the safe walk to the chapter card. */
+  goalNeeds?: string;
+  /** The prologue's two freeze jokes and the hinge that tears the bag. */
+  prologue?: import('./prologue').PrologueLayout;
   /**
    * Trail candy, in the order the path meets it (plan §4.3). Each point is where the candy floats: about
    * half an EL over the ground on a walk, and along the arc of the jump over a gap or up a step.
@@ -340,6 +389,8 @@ export interface ChapterData {
   spots?: Spot[];
   /** The places where the ghost waits for him, in order. Left out: the chapter has no ghost. */
   ghost?: GhostPerch[];
+  /** Kapitel 1's helper is the ghost. A story visit happens once regardless of the chosen help level. */
+  helper?: { kind: 'ghost' | 'jay'; visit?: { id: string; from: number; to: number; at: Vec } };
   /** Where cones roll. */
   rollers?: Roller[];
   /**

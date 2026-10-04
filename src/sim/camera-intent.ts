@@ -19,7 +19,7 @@ export interface CameraIntent {
  * The renderer only smooths this, so framing can be tested without it (plan §6.4).
  */
 export function cameraIntent(player: PlayerState, zones: readonly CameraZone[] = []): CameraIntent {
-  const zone = zones.find((z) => player.x >= z.from && player.x < z.to);
+  const zone = zones.find((z) => player.x >= z.from && player.x < z.to && (z.above === undefined || player.y >= z.above));
   const zoom = zone?.zoom ?? 1;
   const lift = zone?.lift ?? 0;
   if (player.mode === 'climb' || player.mode === 'slide') return { x: player.x + player.facing * 0.8, y: player.y - 1.2 + lift, zoom };

@@ -1,4 +1,7 @@
 import { sv } from '../content/sv';
+import { endingHtml } from './ending';
+import { photoAlbumHtml } from './photos';
+import { storyPanelHtml } from './story';
 
 // Every picture on the page is a plain shape drawn here: no logotypes, no brand marks (plan §0).
 const svg = (body: string, box = '0 0 24 24') => `<svg viewBox="${box}" aria-hidden="true">${body}</svg>`;
@@ -12,7 +15,11 @@ const PLAY = svg('<path d="M8 5.5v13l11-6.5z" fill="currentColor"/>');
 const BIRD = svg(
   `<path d="M4 14c0-4 3-7 7-7 2.2 0 4 .9 5.2 2.4L20 9l-2.4 2.6c.3.8.4 1.6.4 2.4 0 3-2.6 5-6.5 5H7c-1.7 0-3-2-3-5z" ${line} stroke-width="1.9"/><circle cx="13.8" cy="10.8" r="1" fill="currentColor"/><path d="M4.4 15.6 2 18m7.5 1v2.4m3.5-2.4v2.4" ${line} stroke-width="1.7"/>`,
 );
+/** The wooden ghost: round top, two painted eyes, two shoes, and its paper bag; no mouth. */
+const GHOST = svg(`<path d="M6 17V9a6 6 0 0 1 12 0v8c0 2-2 3-6 3s-6-1-6-3z" ${line} stroke-width="1.8"/><circle cx="10" cy="8.5" r="1" fill="currentColor"/><circle cx="14.5" cy="8.5" r="1" fill="currentColor"/><path d="M7 21h3m4 0h3M15 12h6v6h-6z" ${line} stroke-width="1.7"/>`);
 const CROSS = svg(`<path d="M6 6l12 12M18 6 6 18" ${line} stroke-width="2.6"/>`);
+const PEOPLE = svg('<circle cx="8" cy="7" r="3" fill="currentColor"/><circle cx="17" cy="9" r="2.5" fill="currentColor"/><path d="M2 21v-4a6 6 0 0 1 12 0v4m1-7a5 5 0 0 1 7 5v2" fill="none" stroke="currentColor" stroke-width="2"/>');
+const HOME = svg(`<path d="m2 11 10-9 10 9M5 9v13h14V9m-10 13v-8h6v8" ${line} stroke-width="2"/>`);
 const CHECK = svg(`<path d="M5 12.5l4.5 4.5L19 7.5" ${line} stroke-width="2.8"/>`);
 /** A big candy: the striped sweet on its stick that marks a safe place (plan §3.3, rule 4). */
 const BIG_CANDY = svg(
@@ -44,12 +51,13 @@ const p = sv.pause;
  * on-screen controls, the hint, the notice, the debug text and the message. The game page and
  * dev/menus.html both call it, so the preview can't drift from the game.
  */
-export function mountShell(root: HTMLElement): void {
+export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): void {
+  const portrait = helper === 'ghost' ? GHOST : BIRD;
   root.insertAdjacentHTML(
     'beforeend',
     `<button class="bag" id="bag" type="button">${BAG}<span id="bagCount">0</span><span class="stickers" id="bagStickers"></span></button>
      <button class="corner" id="pauseBtn" type="button" aria-label="${p.open}">${PAUSE}</button>
-     <button class="corner help" id="helpBtn" type="button" aria-label="${sv.help}">${BIRD}</button>
+     <button class="corner help" id="helpBtn" type="button" aria-label="${sv.help}">${portrait}</button>
      <div class="controls" id="controls" hidden>
        <div class="stick-zone" id="stickZone">
          <div class="stick-base" id="stickBase"><div class="stick-knob" id="stickKnob"></div></div>
@@ -59,6 +67,9 @@ export function mountShell(root: HTMLElement): void {
      </div>
      <div class="bubble" id="bubble" role="status" hidden><b id="bubbleWho"></b><span id="bubbleLine"></span></div>
      <div class="hint" id="hint" hidden></div>
+     <div class="tutorial" id="tutorial" role="img" hidden>
+       <i class="tutorial-target"></i><span class="tutorial-key" id="tutorialKey"></span><span class="tutorial-hand">${HAND}</span>
+     </div>
      <div class="notice" id="notice" role="status" hidden></div>
      <pre class="debug" id="debug" hidden></pre>
      <div class="panel-back" id="pause" hidden>
@@ -67,6 +78,8 @@ export function mountShell(root: HTMLElement): void {
          <h2 id="pauseTitle">${p.title}</h2>
          <div class="pause-options" id="pauseOptions">
          <button class="wide go" id="resumeBtn" type="button">${PLAY}<span>${p.resume}</span></button>
+         <button class="wide" id="fullscreenBtn" type="button" hidden>${p.fullscreen}</button>
+         <p class="setting-hint" id="fullscreenFailed" role="status" hidden>${p.fullscreenFailed}</p>
          <h3 id="styleTitle">${p.style}</h3>
          <div class="styles" role="radiogroup" aria-labelledby="styleTitle">
            <button class="style" id="styleAventyr" type="button" role="radio">${LEAP}<b>${p.aventyr}</b><small>${p.aventyrHint}</small></button>
@@ -76,9 +89,24 @@ export function mountShell(root: HTMLElement): void {
          <label class="switch"><input type="checkbox" id="setEasyJumps"><span>${p.easyJumps}</span></label>
          <label class="switch"><input type="checkbox" id="setFollowFinger" aria-describedby="followHint"><span>${p.followFinger}</span></label>
          <p class="setting-hint" id="followHint">${p.followHint}</p>
+         <label class="switch" id="vibrationSetting" hidden><input type="checkbox" id="setVibration"><span>${p.vibration}</span></label>
          <label class="switch"><input type="checkbox" id="setSlower"><span>${p.slower}</span></label>
          <label class="switch"><input type="checkbox" id="setSound"><span>${p.sound}</span></label>
+         <div class="volume" role="group" aria-labelledby="effectsVolumeLabel">
+           <span id="effectsVolumeLabel">${p.effectsVolume}</span><div class="volume-steps">
+             <button id="effectsVolumeDown" type="button" aria-label="${p.effectsQuieter}" aria-describedby="effectsVolumeValue">−</button>
+             <output id="effectsVolumeValue" aria-live="polite" aria-atomic="true">100 %</output>
+             <button id="effectsVolumeUp" type="button" aria-label="${p.effectsLouder}" aria-describedby="effectsVolumeValue">+</button>
+           </div>
+         </div>
          <label class="switch"><input type="checkbox" id="setMusic"><span>${p.music}</span></label>
+         <div class="volume" role="group" aria-labelledby="musicVolumeLabel">
+           <span id="musicVolumeLabel">${p.musicVolume}</span><div class="volume-steps">
+             <button id="musicVolumeDown" type="button" aria-label="${p.musicQuieter}" aria-describedby="musicVolumeValue">−</button>
+             <output id="musicVolumeValue" aria-live="polite" aria-atomic="true">100 %</output>
+             <button id="musicVolumeUp" type="button" aria-label="${p.musicLouder}" aria-describedby="musicVolumeValue">+</button>
+           </div>
+         </div>
          <label class="switch"><input type="checkbox" id="setLoud"><span>${p.loud}</span></label>
          <label class="switch"><input type="checkbox" id="setLefty"><span>${p.lefty}</span></label>
          <label class="switch"><input type="checkbox" id="setBigText"><span>${p.bigText}</span></label>
@@ -93,14 +121,20 @@ export function mountShell(root: HTMLElement): void {
          <p class="setting-hint" id="graphicsHint">${p.graphicsHint}</p>
          <p class="setting-hint" id="graphicsFallback" role="status" hidden>${p.graphicsFallback}</p>
          <button class="wide" id="controlsReferenceBtn" type="button">${sv.controls.title}</button>
-         <h3 id="helpTitle">${BIRD}<span>${p.help}</span></h3>
+         <details class="setting-hint" id="homeScreenHelp"><summary>${sv.homeScreen.title}</summary>
+           <p>${sv.homeScreen.apple}</p><p>${sv.homeScreen.android}</p><p>${sv.homeScreen.offline}</p>
+         </details>
+         <h3 id="helpTitle">${portrait}<span>${p.help}</span></h3>
          <div class="levels" role="radiogroup" aria-labelledby="helpTitle">
            <button class="level" id="helpAsk" type="button" role="radio">${p.helpAsk}</button>
            <button class="level" id="helpRemind" type="button" role="radio">${p.helpRemind}</button>
            <button class="level" id="helpGuide" type="button" role="radio">${p.helpGuide}</button>
          </div>
          <div class="map" id="pauseMap"></div>
+         <button class="wide" id="pauseExplore" type="button" hidden><span aria-hidden="true">♧</span><span>${sv.explore.title}</span></button>
          <div class="album" id="pauseAlbum" tabindex="-1"></div>
+         <button class="wide" id="titleBtn" type="button">${HOME}<span>${p.home}</span></button>
+         <section id="albumPhotos" class="album-photos" aria-label="${sv.photos.title}"></section>
          <button class="wide" id="stuckBtn" type="button">${BIG_CANDY}<span>${p.stuck}</span></button>
          <div class="ask" id="stuckAsk" hidden>
            <p>${p.stuckAsk}</p>
@@ -122,9 +156,14 @@ export function mountShell(root: HTMLElement): void {
          <div id="titleFront">
            <h1 id="titleName">${sv.title}</h1>
            <p class="rotate">${TURN}<span>${sv.start.rotate}</span></p>
+           <p id="currentPlayer" class="current-player" hidden></p>
+           <p id="playerUnreadable" role="status" hidden>${sv.players.preserved}</p>
            <button class="wide go" id="startBtn" type="button">${PLAY}<span class="begin">${sv.start.begin}</span><span class="resume">${sv.start.resume}</span></button>
+           <button class="wide" id="playersBtn" type="button" hidden>${PEOPLE}<span>${sv.players.choose}</span></button>
+           <button class="wide" id="titleSettingsBtn" type="button">${sv.players.settings}</button>
            <button class="wide small" id="startOverBtn" type="button" hidden>${sv.start.over}</button>
            <button class="wide small" id="codeBtn" type="button">${sv.code.have}</button>
+           <button class="wide" id="titleExplore" type="button" hidden><span aria-hidden="true">♧</span><span>${sv.explore.title}</span></button>
            <form class="code-form" id="codeForm" hidden>
              <input id="codeInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" maxlength="40" aria-label="${sv.code.hint}" placeholder="${sv.code.hint}">
              <button class="wide go" id="codeGo" type="submit">${sv.code.open}</button>
@@ -132,15 +171,40 @@ export function mountShell(root: HTMLElement): void {
            </form>
          </div>
          <div id="titleStyles" hidden>
+           <button class="wide small" id="stylesBack" type="button">${sv.players.back}</button>
            <h2 id="howTitle">${sv.start.how}</h2>
            <div class="styles" role="group" aria-labelledby="howTitle">
              <button class="style" id="firstAventyr" type="button">${LEAP}<b>${p.aventyr}</b><small>${p.aventyrHint}</small></button>
              <button class="style" id="firstLugnt" type="button">${STROLL}<b>${p.lugnt}</b><small>${p.lugntHint}</small></button>
            </div>
          </div>
+         <div id="titlePlayers" hidden>
+           <h2>${sv.players.choose}</h2>
+           <button class="wide small" id="playersBack" type="button">${sv.players.back}</button>
+           <div id="playerList"></div>
+           <button class="wide" id="newPlayerBtn" type="button">${PEOPLE}<span>${sv.players.new}</span></button>
+         </div>
+         <div id="titleNewPlayer" hidden>
+           <button class="wide small" id="newPlayerBack" type="button">${sv.players.back}</button>
+           <form class="code-form player-form" id="newPlayerForm">
+             <label for="playerName">${sv.players.name}</label>
+             <input id="playerName" required type="text" autocomplete="off" spellcheck="false" enterkeyhint="next" aria-describedby="playerLocal">
+             <p class="setting-hint" id="playerLocal">${sv.players.local}</p>
+             <button class="wide go" type="submit">${sv.players.next}</button>
+           </form>
+         </div>
+         <div id="titleConfirm" hidden>
+           <p id="playerConfirmText"></p>
+           <button class="wide" id="playerConfirmNo" type="button">${CROSS}<span>${sv.players.no}</span></button>
+           <button class="wide" id="playerConfirmYes" type="button">${CHECK}<span>${sv.players.yes}</span></button>
+         </div>
+         <p id="playerError" role="alert" hidden>${sv.players.error}</p>
        </div>
      </div>
-     <div class="memory" id="memory" role="img" hidden><div class="memory-card" id="memoryCard"></div></div>
+     <div class="memory" id="memory" hidden><div class="memory-panel" role="dialog" aria-modal="true" aria-labelledby="memoryTitle"><button class="panel-close" id="memoryClose" type="button" aria-label="${p.close}">${CROSS}</button><h2 id="memoryTitle">${sv.memory}</h2><div class="memory-card" id="memoryCard" role="img" aria-label="${sv.memory}"></div><div class="memory-controls"><span id="memoryProgress" role="status"></span><button class="wide" id="memoryNext" type="button">${sv.memories.next} →</button></div></div></div>
+     ${photoAlbumHtml}
+     ${endingHtml}
+     ${storyPanelHtml}
      <div class="panel-back" id="endCard" hidden>
        <div class="panel end" role="dialog" aria-modal="true" aria-labelledby="endTitle">
          <h2 id="endTitle"></h2>
@@ -149,12 +213,14 @@ export function mountShell(root: HTMLElement): void {
          <p class="found" id="endFound" hidden><span>${sv.stickers}</span><span class="stickers" id="endStickers"></span></p>
          <div class="map" id="endMap"></div>
          <p class="next" id="endNext">${sv.end.next}</p>
+         <button class="wide" id="endPhotos" type="button" hidden>▧ ${sv.photos.again}</button>
          <button class="wide go" id="endOnward" type="button" hidden>${PLAY}<span>${sv.end.onward}</span></button>
+         <button class="wide go" id="endExplore" type="button" hidden><span aria-hidden="true">♧</span><span>${sv.explore.title}</span></button>
          <p class="code" id="endCode" hidden><span>${sv.code.next}</span><b id="endCodeWords"></b></p>
          <button class="wide" id="endAgain" type="button"><span>${sv.end.again}</span></button>
        </div>
      </div>
-     <div class="message" id="message" hidden>
+     <div class="message" id="message" role="alertdialog" aria-modal="true" aria-label="${sv.recoveryTitle}" aria-describedby="messageText" hidden>
        <p id="messageText"></p>
        <button id="messageButton" type="button"></button>
      </div>`,

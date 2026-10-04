@@ -8,12 +8,11 @@ import type { Candy, ChapterData } from '../../sim/types';
  *    pull the first trägubbe out.
  * 2. **New eyes:** *Plocka* a crowberry from the heather, and *Måla ögon* on the old figure.
  * 3. **The bag comes back:** the ghost holds it out. *Ta påsen*.
- * 4. **Dela godiset** (P17): *Ge* to the trägubbe, to the ghost and to the jay, in the order he likes.
+ * 4. **Dela godiset** (P17): choose a candy and a friend; the jay gets a lingonberry from his pocket.
  * 5. **The golden geléhallon:** *Smaka*. The northern lights flare, and Pappa speaks.
  * 6. **Home:** *Gå hem*. The walk down on Pappa's shoulders can't fail.
  *
- * Not built yet: which candy each friend gets (the choice is only whom to give to, and in which order), Elof
- * growing back, the trägubbe's blink, the ghost setting the figure by the pine with a jelly in its lap, the
+ * Not built yet: the trägubbe's blink, the ghost setting the figure by the pine with a jelly in its lap, the
  * headlamps, Moa's jacket and Bertil's cap, and the two carvings in his hands on the way home. The family
  * stands on the summit once he has tasted the golden one, but only stands.
  */
@@ -74,9 +73,9 @@ export const norrsken: ChapterData = {
     // The ghost gives the bag back: it was only borrowed.
     { id: 'bag', look: 'bag', at: { x: GHOST - 0.6, y: 0 }, verb: 'take', word: 'takeBag', needs: 'eyes' },
     // Sharing: he decides himself who gets theirs first.
-    { id: 'share:tragubbe', at: { x: FIGURE + 1, y: 0 }, verb: 'give', word: 'giveTragubbe', needs: 'bag' },
-    { id: 'share:spoket', at: { x: GHOST - 0.6, y: 0 }, verb: 'give', word: 'giveGhost', needs: 'bag' },
-    { id: 'share:jay', look: 'jay', at: { x: JAY, y: 0 }, verb: 'give', word: 'giveJay', needs: 'bag' },
+    { id: 'share:tragubbe', at: { x: FIGURE + 1, y: 0 }, verb: 'give', word: 'giveTragubbe', needs: 'bag', story: 'share' },
+    { id: 'share:spoket', at: { x: GHOST - 0.6, y: 0 }, verb: 'give', word: 'giveGhost', needs: 'bag', story: 'share' },
+    { id: 'share:jay', look: 'jay', at: { x: JAY, y: 0 }, verb: 'give', word: 'giveJay', needs: 'bag', story: 'share' },
     { id: 'taste', look: 'gold', at: { x: 26.6, y: 0 }, verb: 'take', word: 'taste', needs: 'shared' },
     { id: 'home', look: 'sign', at: { x: 33, y: 0 }, verb: 'take', word: 'goHome', needs: 'taste', ride: 'home' },
   ],

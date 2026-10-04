@@ -18,7 +18,8 @@ describe('Kapitel 2, Granskogen, in greybox', () => {
       expect(result.flags).toEqual(expect.arrayContaining([
         'berry', 'jay', 'placed:twig', 'antlift', 'seesaw', 'placed:cone', 'launch', 'log', 'cap', 'placed:rescue', 'goal',
       ]));
-      expect(result.said).toEqual(['vittra', 'heja', 'thanked']);
+      // This robot presses every offered Använd, so it also chooses the optional berry gift.
+      expect(result.said).toEqual(['vittra', 'vittra-gift', 'heja', 'thanked']);
       // The avalanche may bowl it over now and then: that only takes it back to a big candy.
       expect(result.bowled).toBeLessThanOrEqual(2);
       expect(result.bubbles).toBe(0);

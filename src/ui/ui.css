@@ -491,10 +491,12 @@ body.calm *::after {
 .memory {
   position: absolute;
   inset: 0;
-  z-index: 11;
+  z-index: 14;
   display: grid;
   place-items: center;
   background: rgb(42 28 16 / 0.72);
+  padding: 12px;
+  box-sizing: border-box;
 }
 
 .memory[hidden] {
@@ -502,7 +504,7 @@ body.calm *::after {
 }
 
 .memory-card {
-  width: min(78vw, 124vh, 640px);
+  width: min(78vw, 82vh, 640px);
   aspect-ratio: 8 / 5;
   border-radius: 50% / 46%;
   overflow: hidden;
@@ -511,34 +513,67 @@ body.calm *::after {
   filter: sepia(0.35) contrast(0.96);
 }
 
+.memory-panel { position: relative; display: grid; justify-items: center; gap: 10px; max-width: 100%; max-height: 100%; box-sizing: border-box; overflow: auto; padding: 12px; border-radius: 22px; color: #f8edd6; }
+.memory-panel h2 { margin: 8px 60px; font-size: 18px; text-align: center; }
+.memory-panel .panel-close { color: #f8edd6; }
+.memory-controls { display: flex; align-items: center; gap: 18px; }
+.memory-controls button { color: #5a3d24; font: inherit; }
+.memory-album { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+.memory-thumb, .memory-missing { display: grid; align-content: center; justify-items: center; gap: 5px; min-height: 100px; border: 2px solid #cbb490; border-radius: 12px; padding: 7px; background: #eee0c1; }
+.memory-thumb svg { display: block; width: 100%; border-radius: 8px; }
+.memory-missing { border-style: dashed; color: #937850; font-size: 30px; }
+
 .memory-card svg {
   display: block;
   width: 100%;
   height: 100%;
 }
 
-/* It grows out of a bubble, and each picture fades in. */
-.memory-card.in {
-  animation: memory-in 0.5s ease-out;
-}
-
-@keyframes memory-in {
-  from {
-    opacity: 0;
-    transform: scale(0.82);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .memory-card.in {
-    animation: none;
-  }
-}
+/* Entrance/return and picture fades use one suspendable presentation in memory.ts. The picture's
+   oval stays still between cards, and Mindre rörelse uses fades without a travelling/scaling panel. */
 
 /* --- the sticker album: every kind of hidden candy, found or still out there (plan §4.3) ----------- */
 .album:empty {
   display: none;
 }
+
+/* Local game-frame memories: small thumbnails and one quiet, keyboard-accessible album page. */
+.album-photos h3 { display: flex; align-items: center; gap: 10px; }
+.photo-thumbnails { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.photo-thumb { min-width: 0; padding: 7px; background: #fff9e9; border-radius: 10px; text-align: left; }
+.photo-thumb img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #27352e; border-radius: 5px; }
+.photo-thumb span { display: block; padding: 7px 2px 1px; font-size: 0.85rem; }
+.photo-panel { width: min(700px, calc(100vw - 36px)); }
+.photo-panel figure { margin: 0; }
+.photo-panel figure img { display: block; width: 100%; max-height: 45vh; object-fit: contain; border-radius: 8px; background: #27352e; }
+.photo-panel figcaption { padding: 12px 0 0; text-align: center; font-size: 1.1rem; }
+.photo-count { text-align: center; font-size: 0.9rem; margin: 10px 0; }
+.photo-nav { display: flex; gap: 12px; }
+.photo-nav .wide { flex: 1; }
+.photo-credits { padding: 18px 12px; text-align: center; line-height: 1.65; }
+.photo-credits > span { font-size: 60px; color: #a95e27; }
+.photo-panel [hidden], .album-photos[hidden] { display: none; }
+.photo-panel button:disabled { opacity: 0.4; }
+@media (max-height: 500px) {
+  .photo-panel figure img { max-height: 38vh; }
+  .photo-panel figcaption { padding-top: 5px; }
+  .photo-panel .wide { min-height: 40px; margin-top: 8px; }
+  .photo-panel #photoBack { display: none; }
+}
+.story-panel { width: min(760px, 100%); }
+.story-panel p { margin: 3px 0; }
+.share-sweets, .share-friends { display: grid; gap: 12px; }
+.share-sweets { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.share-friends { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.share-choice { border: 2px solid transparent; border-radius: 14px; background: #e6d6b4; padding: 8px; min-width: 64px; min-height: 88px; display: grid; justify-items: center; gap: 3px; }
+.share-choice svg { width: 55px; height: 52px; }
+.share-choice span { font-size: 0.85em; }
+.share-choice small { font-size: 0.65em; }
+.share-choice[aria-pressed="true"] { border-color: #8b4738; background: #f8dba2; }
+.share-choice:disabled { opacity: 0.4; }
+.share-bird-rule { font-size: 0.8em; }
+@media (max-width: 480px) { .share-sweets { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-height: 500px) { .share-choice { min-height: 68px; padding: 3px; } .share-choice svg { width: 36px; height: 34px; } .story-panel { gap: 8px; } }
 
 .album h3 {
   margin: 0;
@@ -549,6 +584,20 @@ body.calm *::after {
   font-size: 15px;
   opacity: 0.75;
 }
+
+.golden-reward {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  margin: 16px 0;
+  padding: 10px;
+  border: 2px solid #c69732;
+  border-radius: 18px;
+  background: radial-gradient(ellipse, #fff9dc, #f1d88c);
+  font-weight: 600;
+  text-align: center;
+}
+.golden-reward svg { width: 120px; height: 76px; }
 
 .album-grid {
   list-style: none;
@@ -662,6 +711,36 @@ body.calm *::after {
   width: 30px;
   height: 30px;
   accent-color: #dd4b39;
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px 8px 16px;
+  flex-wrap: wrap;
+}
+
+.volume-steps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.volume-steps button {
+  width: 48px;
+  height: 48px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background: #e6d6b4;
+  font-size: 26px;
+}
+
+.volume-steps output {
+  min-width: 5ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .ask {
@@ -793,12 +872,33 @@ body.calm *::after {
   background: rgb(40 28 18 / 0.6);
 }
 
+.panel-back.explore { z-index: 13; }
+.chapter-list { display: grid; gap: 12px; }
+.chapter-choice {
+  display: grid;
+  gap: 7px;
+  min-height: 96px;
+  padding: 15px;
+  border: 2px solid #cfb991;
+  border-radius: 18px;
+  text-align: left;
+  background: #fff6e2;
+}
+.chapter-choice b { font-size: 21px; }
+.chapter-choice .rows { max-height: none; }
+.route-star { color: #806022; font-size: 26px; }
+#pauseExplore[hidden] { display: none; }
+
 .title .panel {
   text-align: center;
 }
 
 .title #titleFront,
-.title #titleStyles {
+.title #titleStyles,
+.title #titlePlayers,
+.title #titleNewPlayer,
+.title #titleConfirm,
+#playerList {
   display: grid;
   gap: 12px;
 }
@@ -930,14 +1030,20 @@ body.calm *::after {
 /* --- small text over the game ------------------------------------------------------------------- */
 .hint {
   position: absolute;
-  left: 50%;
+  left: calc(env(safe-area-inset-left) + 14px);
+  right: calc(env(safe-area-inset-right) + 14px);
   bottom: calc(env(safe-area-inset-bottom) + 14px);
-  transform: translateX(-50%);
-  padding: 8px 16px;
-  border-radius: 999px;
+  width: max-content;
+  max-width: calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right) - 28px);
+  box-sizing: border-box;
+  margin-inline: auto;
+  padding: 8px 12px;
+  border-radius: 18px;
   background: rgb(236 223 198 / 0.9);
   font-size: 15px;
-  white-space: nowrap;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
   pointer-events: none;
 }
 
@@ -1039,3 +1145,54 @@ button.bag {
   pointer-events: auto;
   touch-action: manipulation;
 }
+
+/* Each profile is a separate local adventure, with large touch targets. */
+.player-row { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 8px; }
+.player-row .wide { overflow-wrap: anywhere; }
+.player-row [aria-current='true'] { box-shadow: inset 0 0 0 3px #dd4b39; }
+.player-remove { padding: 0; font-size: 28px !important; }
+.current-player { margin: 0; font-weight: 700; }
+.player-form input { text-transform: none; letter-spacing: 0; }
+#playerError, #playerUnreadable { font-size: 16px; }
+.panel button:disabled { opacity: 0.45; }
+#pause [hidden] { display: none !important; }
+#strokePicture { display: block; width: 100%; height: min(42vh, 300px); touch-action: none; user-select: none; }
+#strokeAssist { min-height: 64px; margin-top: 10px; }
+@media (max-height: 500px) and (orientation: landscape) {
+  #strokePicture { height: 140px; }
+  #strokeAssist { margin-top: 4px; }
+}
+
+.story-panel [hidden] { display: none !important; }
+.party .share-sweets { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 12px; }
+@media (min-width: 600px) { .party .share-friends { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+/* A single wordless cue, only after an idle prologue moment. It never catches a touch. */
+.tutorial { position: fixed; z-index: 15; pointer-events: none; width: 96px; height: 96px; transform: translate(-50%, -50%); color: #fff5dc; }
+.tutorial[hidden] { display: none; }
+.tutorial-hand { position: absolute; top: 30px; left: 34px; width: 60px; height: 60px; filter: drop-shadow(0 3px 3px #382410); animation: tutorial-press 1.7s ease-in-out infinite; }
+.tutorial-hand svg { width: 100%; height: 100%; }
+.tutorial-target { position: absolute; inset: 2px; border: 3px solid #ffe299; border-radius: 50%; box-shadow: 0 0 0 5px #4a382544; }
+.tutorial-key { position: absolute; inset: 12px; display: grid; place-items: center; border-radius: 14px; background: #fff7e4; color: #513923; font: 700 32px/1 system-ui; box-shadow: 0 3px 8px #2a1a1844; }
+.tutorial[data-device="touch"] .tutorial-key { display: none; }
+.tutorial[data-device="keys"] .tutorial-target, .tutorial[data-device="pad"] .tutorial-target { display: none; }
+.tutorial[data-lesson="move"] .tutorial-hand { animation-name: tutorial-move; }
+.tutorial[data-lesson="move"][data-device="touch"] .tutorial-target { opacity: 0.4; }
+.tutorial[data-lesson="move"][data-follow="true"] .tutorial-hand { animation-name: tutorial-press; animation-duration: 2.8s; }
+@keyframes tutorial-press { 0%, 100% { transform: translate(12px, 14px) rotate(-14deg); opacity: .7; } 30%, 70% { transform: translate(0, 0) rotate(-14deg); opacity: 1; } }
+@keyframes tutorial-move { 0%, 100% { transform: translate(-14px, 0) rotate(-14deg); } 50% { transform: translate(22px, 0) rotate(-14deg); } }
+body.calm .tutorial-hand { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .tutorial-hand { animation: none !important; } }
+
+/* The last camera shot stays visible behind a short caption and one ordinary menu control. */
+.ending-shot {
+  position: fixed; inset: 0; z-index: 11; display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between; padding: max(24px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
+  background: linear-gradient(#101a2a80, transparent 30%, transparent 72%, #101a2a80);
+}
+.ending-shot[hidden] { display: none; }
+.ending-shot p { max-width: 32ch; text-align: center; color: #fff6df; text-shadow: 0 2px 5px #000; font-size: clamp(18px, 4vw, 25px); }
+.ending-shot button { max-width: 300px; }
+
+.ending-shot .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.ending-view #controls, .ending-view #hint, .ending-view #bag, .ending-view #pauseBtn, .ending-view #helpBtn { visibility: hidden; }

@@ -15,6 +15,8 @@ through the yard, the spruce forest, past the brook and over the misty bog, up t
   - `?bench` measures for half a minute; `dev/menus.html` shows the controls and messages without the game.
   - Paus includes *Följ fingret*, saved *Auto / Låg / Mellan / Hög* graphics, and the keyboard/controller
     reference. The bag, G or gamepad View opens the album.
+  - The title supports separate local players, each with their own progress and settings. Pause →
+    *Till startsidan* returns to it; reset/removal ask for confirmation.
   - `?tier=low`, `mid` or `high` temporarily overrides saved graphics for inspection.
 - **The plan:** [`docs/game-plan.md`](docs/game-plan.md), covering:
   - the design, and the art direction after *Unravel*;

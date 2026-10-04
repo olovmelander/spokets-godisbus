@@ -21,17 +21,56 @@ export const HINT_REACH = 12;
 
 export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   const p = sim.curr;
+  if (sim.prologue?.frame) return null;
+  if (chapter.prologue && sim.flags.has('pappa:done') && !sim.flags.has('goal')) {
+    return { at: { x: chapter.goalX, y: chapter.prologue.railing.y - 2.2 }, verb: null, word: null };
+  }
   const has = (flag?: string) => flag === undefined || sim.flags.has(flag);
+  // A raised route can overlap ordinary ground in x (the anthill's other side). Its landing heights,
+  // not the airborne feet, distinguish a deliberate climb from an ordinary jump or the ant ride.
+  const route = chapter.challenges?.find((r) => p.x >= r.from && p.x <= r.to && p.y >= r.above &&
+    r.steps.some((at) => Math.hypot(at.x - p.x, at.y - p.standY) <= 2.5));
+  if (route && !has(route.needs)) {
+    const missing = chapter.spots?.find((spot) => spot.id === route.needs);
+    if (missing) return { at: missing.at, verb: missing.verb, word: missing.word ?? null };
+  }
+  if (route && has(route.needs)) {
+    const found = sim.flags.has(`found:${route.reward}`);
+    if (found && !route.backtrack) return { at: route.return, verb: null, word: null };
+    // Find the nearest landing, then show the next. Never use the live position of a moving platform:
+    // repeated taps must progress from looking, to pointing, to the demonstration at the same place.
+    let nearest = 0;
+    let distance = Infinity;
+    for (const [i, at] of route.steps.entries()) {
+      const d = Math.hypot(at.x - p.x, at.y - p.standY);
+      if (d < distance) { distance = d; nearest = i; }
+    }
+    // A missed jump may reset a light sequence while the bubble returns onto an upper ledge.
+    // Guide back to the first unfinished light instead of pointing at its still-hidden successor.
+    if (found && nearest === 0) return { at: route.return, verb: null, word: null };
+    const pending = route.pending?.find((id) => !sim.flags.has(id));
+    const light = pending ? chapter.spots?.find((spot) => spot.id === pending) : undefined;
+    let target = found ? 0 : route.steps.length - 1;
+    if (light) {
+      let nearestLight = Infinity;
+      for (const [i, at] of route.steps.entries()) {
+        const d = Math.hypot(at.x - light.at.x, at.y - light.at.y);
+        if (d < nearestLight) { nearestLight = d; target = i; }
+      }
+    }
+    const at = route.steps[nearest + Math.sign(target - nearest)]!;
+    return { at, verb: null, word: null };
+  }
   const things: Hint[] = [];
   // Things to use, once what they wait for has happened. One he only has to touch is on the trail anyway.
   for (const spot of chapter.spots ?? []) {
-    if (spot.touch || sim.flags.has(spot.id) || !has(spot.needs)) continue;
+    if (spot.extra || spot.touch || sim.flags.has(spot.id) || !has(spot.needs)) continue;
     things.push({ at: spot.at, verb: spot.verb, word: spot.word ?? null });
   }
   // Things on rails that are not yet where they belong, and that he moves himself.
   for (const mover of sim.movers) {
     const def = mover.def;
-    if (def.on !== undefined || mover.stop >= def.stops.length - 1 || !has(def.needs)) continue;
+    if (def.extra || def.cycle || def.on !== undefined || mover.stop >= def.stops.length - 1 || !has(def.needs)) continue;
     const ring = def.verb === 'pull' ? (def.ring ?? { x: 0, y: def.height }) : { x: 0, y: def.height };
     things.push({ at: { x: mover.x + ring.x, y: mover.y + ring.y }, verb: def.verb, word: null });
   }

@@ -1,4 +1,4 @@
-import { OWN_SWITCHES, settingsFor, type Graphics, type PlayStyle, type Settings, type Switch } from '../save/settings';
+import { changeStyle, settingsFor, VOLUME_NAMES, type Graphics, type PlayStyle, type Settings, type Switch } from '../save/settings';
 import type { HelpLevel } from '../sim/types';
 import { sv } from '../content/sv';
 
@@ -13,11 +13,12 @@ export interface PauseHandlers {
   onSettings(settings: Settings, choice?: 'graphics'): void;
   /** "Jag har fastnat", answered with ✓: back to the last big candy. */
   onStuck(): void;
+  onTitle?(): void;
 }
 
 export interface Pause {
   readonly open: boolean;
-  show(settings: Settings): void;
+  show(settings: Settings, fromTitle?: boolean): void;
   hide(): void;
   /** Back from the reference/confirmation first; otherwise resume. */
   back(): void;
@@ -29,6 +30,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   const styles: Record<PlayStyle, HTMLButtonElement> = { aventyr: byId('styleAventyr'), lugnt: byId('styleLugnt') };
   const switches: Record<Switch, HTMLInputElement> = {
     followFinger: byId('setFollowFinger'),
+    vibration: byId('setVibration'),
     swingHelp: byId('setSwingHelp'),
     easyJumps: byId('setEasyJumps'),
     slower: byId('setSlower'),
@@ -61,6 +63,11 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
       button.classList.toggle('on', chosen);
     }
     for (const [key, input] of Object.entries(switches) as [Switch, HTMLInputElement][]) input.checked = settings[key];
+    for (const key of VOLUME_NAMES) {
+      byId(`${key}Value`).textContent = `${Math.round(settings[key] * 100)} %`;
+      byId<HTMLButtonElement>(`${key}Down`).disabled = settings[key] <= 0;
+      byId<HTMLButtonElement>(`${key}Up`).disabled = settings[key] >= 1;
+    }
     for (const [choice, button] of Object.entries(graphics)) {
       button.setAttribute('aria-checked', String(settings.graphics === choice));
       button.classList.toggle('on', settings.graphics === choice);
@@ -70,7 +77,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   // Choosing a style sets its switches; each switch can then be changed on its own (plan §4.1).
   for (const [style, button] of Object.entries(styles) as [PlayStyle, HTMLButtonElement][]) {
     button.addEventListener('click', () => {
-      settings = { ...settingsFor(style), graphics: settings.graphics, ...Object.fromEntries(OWN_SWITCHES.map((key) => [key, settings[key]])) };
+      settings = changeStyle(settings, style);
       draw();
       handlers.onSettings(settings);
     });
@@ -95,6 +102,15 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
       handlers.onSettings(settings, 'graphics');
     });
   }
+  for (const key of VOLUME_NAMES) {
+    for (const [suffix, step] of [['Down', -1], ['Up', 1]] as const) {
+      byId(`${key}${suffix}`).addEventListener('click', () => {
+        settings = { ...settings, [key]: Math.max(0, Math.min(10, Math.round(settings[key] * 10) + step)) / 10 };
+        draw();
+        handlers.onSettings(settings);
+      });
+    }
+  }
 
   function showReference(show: boolean): void {
     reference.hidden = !show;
@@ -112,6 +128,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   byId('controlsReferenceBtn').addEventListener('click', () => showReference(true));
   byId('controlsBack').addEventListener('click', () => showReference(false));
 
+  byId('titleBtn').addEventListener('click', () => handlers.onTitle?.());
   byId('resumeBtn').addEventListener('click', () => handlers.onResume());
   byId('pauseClose').addEventListener('click', backOne);
   // A tap on the backdrop closes the panel; a tap inside it doesn't.
@@ -131,7 +148,9 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
     get open() {
       return open;
     },
-    show(current) {
+    show(current, fromTitle = false) {
+      byId('resumeBtn').querySelector('span')!.textContent = fromTitle ? sv.players.back : sv.pause.resume;
+      for (const id of ['pauseMap', 'pauseAlbum', 'albumPhotos', 'stuckBtn', 'titleBtn']) byId(id).hidden = fromTitle;
       settings = current;
       open = true;
       ask.hidden = true;

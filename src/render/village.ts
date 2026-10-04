@@ -1,6 +1,6 @@
 import {
   BoxGeometry, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial,
-  Object3D, PlaneGeometry, RepeatWrapping, SRGBColorSpace, TorusGeometry,
+  Object3D, PlaneGeometry, RepeatWrapping, SphereGeometry, SRGBColorSpace, TorusGeometry,
 } from 'three';
 import type { ChapterData } from '../sim/types';
 
@@ -270,15 +270,15 @@ function front(shop: Shop): CanvasTexture {
 }
 
 /**
- * The fronts of the street's houses, side by side behind the pavement. The candy shop stands where the
- * chapter ends, so that its door is the one he reaches.
+ * The fronts of the street's houses, side by side behind the pavement. The candy shop stays at its authored
+ * door when the path continues into the room: extending the goal must not move every house along the street.
  */
 export function fronts(chapter: ChapterData, from: number, to: number): Group {
   const group = new Group();
   const materials = SHOPS.map((shop) => new MeshBasicMaterial({ map: front(shop) }));
   const floor = heightAt(chapter, from + 20);
   // The candy shop's door is 123 of its picture's 160 across: put that at the goal.
-  const last = chapter.goalX - (123 / 160 - 0.5) * HOUSE.wide;
+  const last = (chapter.shop?.door ?? chapter.goalX) - (123 / 160 - 0.5) * HOUSE.wide;
   const foot = Math.min(floor, 0) - 0.6;
   // A picket fence in Falu red closes each yard between two houses, and the village shows over it.
   const pickets = drawn(32, 32, (c) => {
@@ -326,8 +326,153 @@ export function fronts(chapter: ChapterData, from: number, to: number): Group {
   const under = new Mesh(new PlaneGeometry(to - from + 80, 16), new MeshBasicMaterial({ color: '#1d2024', fog: false }));
   under.position.set((from + to) / 2, Math.min(floor, 0) - 8.4, -12.6);
   under.renderOrder = -1;
-  group.add(yard, under, bicycle(chapter));
+  group.add(yard, under, bicycle(chapter), shopInterior(chapter));
   return group;
+}
+
+/** A cutaway room continuous with the outdoor step: huge jars, plain shelves and a bag to share. */
+function shopInterior(chapter: ChapterData): Group {
+  const group = new Group();
+  group.name = 'candy-shop-interior';
+  const shop = chapter.shop;
+  if (!shop) return group;
+  const { door, to, floor } = shop;
+  const wood = new MeshStandardMaterial({ color: '#98663f', roughness: 0.85 });
+  const cream = new MeshStandardMaterial({ color: '#f1dbb2', roughness: 0.9 });
+  const brass = new MeshStandardMaterial({ color: '#c9a35e', roughness: 0.6 });
+  const block = (x: number, y: number, z: number, w: number, h: number, d: number, material = wood) => {
+    const mesh = new Mesh(new BoxGeometry(w, h, d), material);
+    mesh.position.set(x, y, z); group.add(mesh); return mesh;
+  };
+  const wallpaper = drawn(128, 128, (c) => {
+    c.fillStyle = '#edddbd'; c.fillRect(0, 0, 128, 128);
+    c.fillStyle = '#e5d2ad';
+    for (let x = 0; x < 128; x += 16) c.fillRect(x, 0, 5, 128);
+    c.fillStyle = '#dac5a0';
+    for (let x = 8; x < 128; x += 32) for (let y = 12; y < 128; y += 32) {
+      c.beginPath(); c.arc(x, y, 1.3, 0, Math.PI * 2); c.fill();
+    }
+  });
+  wallpaper.wrapS = wallpaper.wrapT = RepeatWrapping;
+  wallpaper.repeat.set((to - door) / 5, 4);
+  const wall = new Mesh(new PlaneGeometry(to - door + 2, 28), new MeshBasicMaterial({ map: wallpaper, fog: false }));
+  wall.position.set((door + to) / 2, floor + 14, -8.5);
+  group.add(wall);
+  // The door is open behind his path. Its jamb, warm sill and doormat mark the threshold without a wall
+  // across the play plane. The interior wall hides cars beyond it; they never enter the room.
+  block(door, floor + 10, -2.1, 0.5, 20, 0.6, cream);
+  block(door + 3, floor + 19.7, -2.1, 6.5, 0.6, 0.6, cream);
+  const openDoor = block(door - 1.1, floor + 6, -5, 2.6, 12, 0.25);
+  openDoor.rotation.y = -0.75;
+  // Close the cutaway's side below the threshold, where the rounded outdoor bank meets straight boards.
+  // Both top surfaces remain at the authored floor height; no white slice of the backdrop shows through.
+  block(door + 0.13, floor - 8, 1.84, 0.55, 16, 2.15, new MeshStandardMaterial({ color: '#68513b', roughness: 1 }));
+  block(door + 1.8, floor + 0.035, -0.9, 4.5, 0.05, 3, new MeshStandardMaterial({ color: '#8b6260', roughness: 1 }));
+  block((door + to) / 2, floor + 1.2, -8.1, to - door + 1, 2.4, 0.3);
+  for (const y of [floor + 1, floor + 8.4]) block(door + 23, y, -5.9, 43, 0.36, 4.2);
+
+  const jarGeometry = new CylinderGeometry(1.8, 1.95, 5.2, 18, 1, true);
+  const glass = new MeshStandardMaterial({ color: '#f4f4e5', roughness: 0.18, transparent: true, opacity: 0.17, depthWrite: false, side: DoubleSide });
+  const jars = new InstancedMesh(jarGeometry, glass, 10);
+  const lids = new InstancedMesh(new CylinderGeometry(1.98, 1.98, 0.28, 18), brass, 10);
+  const perJar = 54;
+  const sweets = new InstancedMesh(new SphereGeometry(0.32, 7, 5), new MeshStandardMaterial({ roughness: 0.45 }), 10 * perJar);
+  const place = new Object3D();
+  const next = sequence(708);
+  const tones = ['#de5161', '#e6b940', '#81a269', '#ecb3c2', '#a397cb', '#d98748'].map((c) => new Color(c));
+  for (let i = 0; i < 10; i++) {
+    const x = door + 7 + (i % 5) * 8;
+    const shelf = floor + (i < 5 ? 1.18 : 8.58);
+    place.position.set(x, shelf + 2.6, -5.9); place.updateMatrix(); jars.setMatrixAt(i, place.matrix);
+    place.position.y = shelf + 5.35; place.updateMatrix(); lids.setMatrixAt(i, place.matrix);
+    for (let j = 0; j < perJar; j++) {
+      // A loose pile from the bottom up, not sweets floating throughout an empty jar.
+      place.position.set(x + ((j % 3) - 1) * 0.73 + (next() - 0.5) * 0.12,
+        shelf + 0.35 + Math.floor(j / 9) * 0.56,
+        -5.9 + ((Math.floor(j / 3) % 3) - 1) * 0.73 + (next() - 0.5) * 0.12);
+      place.rotation.set(next(), next(), next()); place.scale.set(1.1, 0.95, 0.9); place.updateMatrix();
+      sweets.setMatrixAt(i * perJar + j, place.matrix); sweets.setColorAt(i * perJar + j, tones[i % tones.length]!);
+    }
+    place.rotation.set(0, 0, 0); place.scale.setScalar(1);
+  }
+  for (const mesh of [jars, lids, sweets]) mesh.computeBoundingSphere();
+  group.add(sweets, lids, jars);
+  // A plain paper bag, open at its top, beside the final candy. No sign, price or brand.
+  const paper = new MeshStandardMaterial({ color: '#d5b57e', roughness: 1 });
+  const dark = new MeshBasicMaterial({ color: '#6a5035' });
+  const bagX = chapter.goalX + 1.9;
+  block(bagX, floor + 1.7, -2.7, 3.2, 3.4, 0.16, paper);
+  block(bagX - 1.52, floor + 1.7, -3.45, 0.16, 3.4, 1.5, paper);
+  block(bagX + 1.52, floor + 1.7, -3.45, 0.16, 3.4, 1.5, paper);
+  const opening = new Mesh(new PlaneGeometry(2.9, 1.3), dark);
+  opening.rotation.x = -Math.PI / 2; opening.position.set(bagX, floor + 0.05, -3.45); group.add(opening);
+  return group;
+}
+
+/**
+ * Anonymous street life, well behind Elof: shoes passing on the pavement and a slow, unmarked car.
+ * These are only scenery: their shadows and steady motion announce them, and they have no collision,
+ * timer or damage rule. Everything is allocated at startup and the view's paused clock freezes them.
+ */
+export function villageLife(chapter: ChapterData): { group: Group; update(clock: number): void } {
+  const group = new Group();
+  group.name = 'village-life';
+  const shoes = new Group();
+  const car = new Group();
+  shoes.name = 'passing-shoes'; car.name = 'passing-car';
+  const cloth = new MeshStandardMaterial({ color: '#687989', roughness: 1 });
+  const leather = new MeshStandardMaterial({ color: '#705142', roughness: 0.85 });
+  const rubber = new MeshStandardMaterial({ color: '#343535', roughness: 1 });
+  const shape = (parent: Group, material: MeshStandardMaterial, x: number, y: number, z: number, w: number, h: number, d: number) => {
+    const mesh = new Mesh(new BoxGeometry(w, h, d), material); mesh.position.set(x, y, z); parent.add(mesh); return mesh;
+  };
+  const legs = [-0.6, 0.6].map((z) => {
+    const leg = new Group(); leg.position.z = z;
+    shape(leg, rubber, 0.5, 0.18, 0, 3.3, 0.36, 1.3);
+    shape(leg, leather, 0.3, 0.7, 0, 2.8, 1, 1.25);
+    shape(leg, cloth, -0.55, 10, 0, 1.3, 18, 1.2);
+    shoes.add(leg); return leg;
+  });
+  const paint = new MeshStandardMaterial({ color: '#be7564', roughness: 0.65 });
+  const window = new MeshStandardMaterial({ color: '#809ba6', roughness: 0.5 });
+  shape(car, paint, 0, 3.3, 0, 18, 3.3, 4);
+  shape(car, paint, -0.8, 6, 0, 9.5, 3.1, 3.6);
+  shape(car, window, -0.8, 6.1, 1.82, 8.4, 2.2, 0.06);
+  const wheel = new InstancedMesh(new TorusGeometry(1.8, 0.42, 8, 24), rubber, 4);
+  const hubs = new InstancedMesh(new CircleGeometry(1.2, 16), new MeshBasicMaterial({ color: '#c4c2b9', side: DoubleSide }), 4);
+  const place = new Object3D();
+  for (let i = 0; i < 4; i++) {
+    place.position.set(i % 2 === 0 ? -6 : 6, 1.9, i < 2 ? 2.1 : -2.1); place.updateMatrix(); wheel.setMatrixAt(i, place.matrix);
+    place.position.z += i < 2 ? 0.1 : -0.1; place.updateMatrix(); hubs.setMatrixAt(i, place.matrix);
+  }
+  wheel.computeBoundingSphere(); hubs.computeBoundingSphere(); car.add(wheel, hubs);
+  // A pale lamp on each end, with no flashing or sudden movement.
+  shape(car, new MeshStandardMaterial({ color: '#f6dda1', emissive: '#77603a', emissiveIntensity: 0.3 }), 8.85, 3.3, 1.6, 0.25, 0.8, 0.5);
+  shape(car, new MeshStandardMaterial({ color: '#ad5347' }), -8.85, 3.3, 1.6, 0.25, 0.6, 0.5);
+  const shadowMaterial = new MeshBasicMaterial({ color: '#242b31', transparent: true, opacity: 0.18, depthWrite: false });
+  const shade = (parent: Group, width: number, depth: number) => {
+    const mesh = new Mesh(new CircleGeometry(1, 24), shadowMaterial);
+    mesh.rotation.x = -Math.PI / 2; mesh.scale.set(width, depth, 1); mesh.position.y = 0.025; parent.add(mesh);
+  };
+  shade(car, 10, 2.8); shade(shoes, 3.5, 1.6);
+  group.add(car, shoes);
+  const lo = chapter.ground[0]!.x - 36;
+  const hi = (chapter.shop?.to ?? chapter.goalX) + 40;
+  const span = hi - lo;
+  return {
+    group,
+    update(clock) {
+      // The loop resets beyond the playable view. Inside the shop its wall hides both lanes.
+      car.position.set(lo + ((clock * 4 + 104) % span), 0.12, -11.2);
+      shoes.position.set(lo + ((clock * 2.8 + 45) % span), 2, -10.6);
+      for (const [i, leg] of legs.entries()) {
+        const stride = clock * 3.2 + i * Math.PI;
+        leg.position.x = Math.sin(stride) * 1.15;
+        leg.position.y = Math.max(0, Math.cos(stride)) * 0.75;
+        leg.rotation.z = -Math.sin(stride) * 0.08;
+      }
+    },
+  };
 }
 
 /**
@@ -397,7 +542,7 @@ export function street(chapter: ChapterData, from: number, to: number, seed: num
     const tone = LEAVES[Math.floor(next() * LEAVES.length)]!;
     const y = heightAt(chapter, x);
     // None over the drain, in the well or on the puddle's bottom.
-    if (y < -2 || Math.abs(heightAt(chapter, x + 0.4) - y) > 0.2 || Math.abs(heightAt(chapter, x - 0.4) - y) > 0.2) continue;
+    if ((chapter.shop && x >= chapter.shop.door) || y < -2 || Math.abs(heightAt(chapter, x + 0.4) - y) > 0.2 || Math.abs(heightAt(chapter, x - 0.4) - y) > 0.2) continue;
     place.position.set(x, y + 0.03 + next() * 0.02, z);
     place.rotation.set(-Math.PI / 2 + tilt, 0, turn);
     place.scale.setScalar(0.7 + next() * 0.8);
@@ -414,7 +559,7 @@ export function street(chapter: ChapterData, from: number, to: number, seed: num
   if (Math.round(from / 18) % 2 === 0) {
     const x = from + 4 + next() * 8;
     const y = heightAt(chapter, x);
-    if (y > -2) {
+    if (y > -2 && (!chapter.shop || x < chapter.shop.door)) {
       const iron = new MeshStandardMaterial({ color: '#2f4a3c', roughness: 0.6 });
       const post = new Mesh(new CylinderGeometry(0.42, 0.55, 40, 14), iron);
       post.position.set(x, y + 20, -8.2);

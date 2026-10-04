@@ -1,12 +1,12 @@
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage,
   Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial,
-  Object3D, PlaneGeometry, RepeatWrapping, SRGBColorSpace, SphereGeometry, Vector2, type Texture,
+  Object3D, PlaneGeometry, Points, RepeatWrapping, ShaderMaterial, SRGBColorSpace, SphereGeometry, Vector2, type Texture,
 } from 'three';
 import type { ChapterData, PlaceId, SurfaceKind } from '../sim/types';
 import { outlook, outlookPane, scenery } from './backdrop';
 import type { Grade } from './grade';
-import { fronts, street } from './village';
+import { fronts, street, villageLife } from './village';
 
 /**
  * How a place looks (plan §5.3, §5.4): its light, its haze, its grade, and the layers that are built around
@@ -130,7 +130,7 @@ export const PLACES: Record<PlaceId, PlaceLook> = { forest: FOREST, garden: GARD
 export interface Dressing {
   group: Group;
   background: Texture;
-  update(cameraX: number, groundY: number, clock: number): void;
+  update(cameraX: number, groundY: number, clock: number, night?: number): void;
 }
 
 // --- small tools ----------------------------------------------------------------------------------------
@@ -220,17 +220,59 @@ function backdrop(look: PlaceLook): CanvasTexture {
     glow.addColorStop(1, 'rgba(255,255,255,0)');
     c.fillStyle = glow;
     c.fillRect(0, 0, 256, 256);
-    // The first stars of the blue hour.
-    if (look.id !== 'dusk') return;
-    const next = sequence(19);
-    for (let i = 0; i < 110; i++) {
-      c.fillStyle = `rgba(255,252,240,${0.35 + next() * 0.6})`;
-      const r = 0.35 + next() * 0.6;
-      c.beginPath();
-      c.arc(next() * 256, next() ** 1.6 * 150, r, 0, Math.PI * 2);
-      c.fill();
-    }
   });
+}
+
+/**
+ * The first stars, separate from the stretched sky gradient. Point sprites are square in framebuffer
+ * pixels, so each soft circle stays round in portrait, landscape and every graphics tier. They sit at
+ * the far depth, before the transparent hills: rock, people, clouds and ridges still hide them.
+ */
+function stars(): Points {
+  const next = sequence(19);
+  const positions: number[] = [];
+  const sizes: number[] = [];
+  const lights: number[] = [];
+  for (let i = 0; i < 110; i++) {
+    lights.push(0.35 + next() * 0.6);
+    sizes.push(1.6 + next() * 1.5);
+    positions.push(next() * 2 - 1, 1 - next() ** 1.6 * (300 / 256), 0);
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('size', new Float32BufferAttribute(sizes, 1));
+  geometry.setAttribute('light', new Float32BufferAttribute(lights, 1));
+  const material = new ShaderMaterial({
+    uniforms: { pixelRatio: { value: 1 }, colour: { value: new Color('#fffcf0') } },
+    vertexShader: /* glsl */ `
+      attribute float size;
+      attribute float light;
+      uniform float pixelRatio;
+      varying float brightness;
+      void main() {
+        gl_Position = vec4(position.xy, 1.0, 1.0);
+        gl_PointSize = size * pixelRatio;
+        brightness = light;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform vec3 colour;
+      varying float brightness;
+      void main() {
+        float round = 1.0 - smoothstep(0.2, 0.5, length(gl_PointCoord - vec2(0.5)));
+        if (round < 0.01) discard;
+        gl_FragColor = vec4(colour, round * brightness);
+        #include <colorspace_fragment>
+      }
+    `,
+    transparent: true, depthWrite: false, toneMapped: false,
+  });
+  const points = new Points(geometry, material);
+  points.name = 'dusk-stars';
+  points.frustumCulled = false;
+  points.renderOrder = -4;
+  points.onBeforeRender = (renderer) => { material.uniforms.pixelRatio!.value = renderer.getPixelRatio(); };
+  return points;
 }
 
 // --- L3: the ground ---------------------------------------------------------------------------------------
@@ -1170,6 +1212,8 @@ function built(chapter: ChapterData, indoors = false): Group {
       group.add(board);
       const tones = ['#d9bd8b', '#c9a877', '#e2c898', '#b99262', '#d2b07e', '#c4a070', '#dcc08e'];
       for (let i = 0; i < 7; i++) {
+        // Klonk comes back beside the old first figure after the carving lesson.
+        if (chapter.epilogue && i === 1) continue;
         const at = x - 3.6 + i * 1.2;
         if (i === 0 && !filled) {
           // The empty place: a paler patch on the wall where a figure once stood.
@@ -1540,6 +1584,9 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
   const far = scenery(look.id, heightAt(chapter, from));
+  const life = look.id === 'village' ? villageLife(chapter) : null;
+  if (life) group.add(life.group);
+  if (look.id === 'dusk') group.add(stars());
   group.add(
     far.group,
     bank(chapter, own[look.id].ground),
@@ -1553,9 +1600,10 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   return {
     group,
     background: backdrop(look),
-    update(cameraX, groundY, clock) {
+    update(cameraX, groundY, clock, night = 0) {
       air.update(cameraX, groundY, clock);
-      far.update(cameraX, groundY, clock);
+      far.update(cameraX, groundY, clock, night);
+      life?.update(clock);
     },
   };
 }

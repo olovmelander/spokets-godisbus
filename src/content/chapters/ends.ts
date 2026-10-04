@@ -24,9 +24,8 @@ function row(from: number, to: number, ground: number, every = 2, after?: string
  * 4. **The chase,** over the veranda's door sill.
  * 5. **The star** on the deck's step: *Ta*. He shrinks, and Kapitel 1 begins.
  *
- * Not built yet: Pappa's hands and the shelf with its empty place, Bertil's hand at the bag, the brush
- * strokes traced by hand, the blink and the freeze joke, the bag tearing on the hinge, the POFF, and Pappa
- * on the deck. His two lines are said at the start of Kapitel 1.
+ * The two freeze jokes and the bag's tear use simple stage shapes until their Blender acting is ready.
+ * Bertil's hand at the bag and the family's authored likeness/poses still need the art session.
  */
 export const prolog: ChapterData = {
   id: 'prolog',
@@ -45,7 +44,9 @@ export const prolog: ChapterData = {
   later: [{ flag: 'blink', after: 'paint', seconds: 2.6, hold: true }],
   glance: { from: 'paint', until: 'blink', seconds: 2.6, at: [{ x: 6.9, y: 6.1, z: -8.8 }, { x: 7.8, y: 0.35, z: 0.25 }] },
   spawn: { x: 1, y: 0.01 },
-  goalX: 44.4,
+  goalX: 50.6,
+  goalNeeds: 'pappa:done',
+  prologue: { doorway: { x: 8.4, y: 0 }, railing: { x: 48.2, y: 4.6 } },
   ground: [
     { x: -3, y: 9 },
     { x: -3, y: 0 },
@@ -64,11 +65,11 @@ export const prolog: ChapterData = {
     { x: 52, y: 10 },
   ],
   house: { from: -40, to: 60, windows: [12, 24, 36] },
-  checkpoints: [{ x: 2.6, y: 0 }, { x: 26, y: 0 }],
+  checkpoints: [{ x: 2.6, y: 0 }, { x: 26, y: 0 }, { x: 45, y: 2.4 }],
   spots: [
-    // Two eyes: one press for each.
-    { id: 'eye', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost' },
-    { id: 'paint', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye' },
+    // Two eyes: a brush stroke for each; Pappa finishes a short stroke.
+    { id: 'eye', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost', story: 'paint' },
+    { id: 'paint', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye', story: 'paint' },
     // The star that rolled out of the torn bag: taking it shrinks him.
     { id: 'star', look: 'star', at: { x: 41, y: -0.8 }, verb: 'take', needs: 'blink', ride: 'shrink' },
   ],
@@ -84,19 +85,23 @@ export const prolog: ChapterData = {
     { at: { x: 22, y: 0 } },
     { at: { x: 28.6, y: 0 } },
     { at: { x: 35, y: 0 } },
-    { at: { x: 48, y: 2.4 } },
+    { at: { x: 48, y: 2.4 }, until: 'pappa:done' },
   ],
   // Said as the scene opens: he stands at the table already.
-  beats: [{ id: 'tonight', at: 0.9, who: 'mamma', line: 'tonight' }],
+  beats: [
+    { id: 'tonight', at: 0.9, who: 'mamma', line: 'tonight' },
+    { id: 'follow1', on: 'pappa:noticed', who: 'pappa', line: 'follow1' },
+    { id: 'follow2', on: 'pappa:done', who: 'pappa', line: 'follow2' },
+  ],
   // The picture is wide while he is big, and closes in on him when he has shrunk: the world grows.
-  cameras: [{ from: -3, to: 42.4, zoom: 1.5, lift: 0.3 }],
+  cameras: [{ from: -3, to: 42.4, zoom: 1.5, lift: 0.3 }, { from: 42.4, to: 52, zoom: 1.8, lift: 1.1 }],
   candy: [
     // Nothing lies there until the bag has torn.
-    ...row(9, 29, 0, 2, 'blink'),
-    { x: 30.6, y: 1.25, after: 'blink' },
-    ...row(32.4, 36.4, 0, 2, 'blink'),
-    { x: 38.6, y: -0.2, after: 'blink' },
-    { x: 39.8, y: -0.35, after: 'blink' },
+    ...row(9, 29, 0, 2, 'bag:torn'),
+    { x: 30.6, y: 1.25, after: 'bag:torn' },
+    ...row(32.4, 36.4, 0, 2, 'bag:torn'),
+    { x: 38.6, y: -0.2, after: 'bag:torn' },
+    { x: 39.8, y: -0.35, after: 'bag:torn' },
   ],
 };
 
@@ -110,18 +115,17 @@ const GUESTS = [
 
 /**
  * Epilog: Godiskalaset, on the glazed veranda at nine in the evening.
- * 1. **Elof hands out candy** (P18): to Mamma, Pappa, Moa, Bertil and the ghost, in the order he likes.
+ * 1. **Elof hands out candy** (P18): he chooses a candy and then Mamma, Pappa, Moa, Bertil or the ghost.
  * 2. **The naming.** The ghost hops across the table: klonk, klonk. "Du ska heta Klonk!"
- * 3. **Elofs första trägubbe** (P19): *Ta kniven*, three strokes with *Tälj*, and *Måla ögon*.
+ * 3. **Elofs första trägubbe** (P19): *Ta kniven*, three outward strokes traced with Pappa, and two painted eyes.
  *    Pappa: "Alltid bort från kroppen." Elof: "Jag kan tälja!"
  * 4. **Teeth:** *Borsta tänderna*, and up to bed. The last card.
  *
  * And **Hittegods** (O2): what he found under the deck in Kapitel 1 lies on the table beside its owner, and
  * the one who gets candy from him sees it: "Mitt hårspänne!"
  *
- * Not built yet: which candy each one gets (the choice is whom, and in which order); the strokes traced by
- * hand, away from the body; the figure on the windowsill and its blink; the first trägubbe and the ghost on
- * the shelf; the album as credits; *Utforska vidare*.
+ * Approved likenesses and hand/acting poses remain art work. The album leads to the last windowsill shot;
+ * the existing ending then offers free exploration.
  */
 export const epilog: ChapterData = {
   id: 'epilog',
@@ -130,6 +134,7 @@ export const epilog: ChapterData = {
   size: { scale: 3 },
   // The first trägubbe has its place again, first in the row.
   shelf: { x: 34, y: 5.4, filled: true },
+  epilogue: { window: { x: 40, y: 3.43, z: -8.3 } },
   spawn: { x: 1, y: 0.01 },
   goalX: 53,
   ground: [
@@ -146,15 +151,15 @@ export const epilog: ChapterData = {
   night: { after: null },
   checkpoints: [{ x: 2.6, y: 0 }, { x: 25, y: 0 }, { x: 38, y: 0 }],
   spots: [
-    ...GUESTS.map((g) => ({ id: `party:${g.id}`, look: 'sign' as const, at: { x: g.x, y: 0 }, verb: 'give' as const, word: g.word })),
-    { id: 'party:spoket', at: { x: 22.4, y: 0 }, verb: 'give', word: 'giveGhost' },
+    ...GUESTS.map((g) => ({ id: `party:${g.id}`, look: 'sign' as const, at: { x: g.x, y: 0 }, verb: 'give' as const, word: g.word, story: 'party' as const })),
+    { id: 'party:spoket', at: { x: 22.4, y: 0 }, verb: 'give', word: 'giveGhost', story: 'party' },
     // Pappa kneels beside him with a piece of linden and a knife: it waits until the ghost has its name.
     { id: 'knife', look: 'sign', at: { x: 29, y: 0 }, verb: 'take', word: 'takeKnife', needs: 'beat:named' },
     // Three strokes, each away from his body, and two dots of paint.
-    { id: 'cut1', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'knife' },
-    { id: 'cut2', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut1' },
-    { id: 'cut3', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut2' },
-    { id: 'dots', at: { x: 32, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'cut3' },
+    { id: 'cut1', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'knife', story: 'carve' },
+    { id: 'cut2', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut1', story: 'carve' },
+    { id: 'cut3', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut2', story: 'carve' },
+    { id: 'dots', at: { x: 32, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'cut3', story: 'paint' },
     { id: 'teeth', at: { x: 44, y: 0 }, verb: 'take', word: 'brush', needs: 'dots', ride: 'bed' },
   ],
   // What he found under the deck came with him: each thing lies by the one it belongs to.
@@ -166,6 +171,8 @@ export const epilog: ChapterData = {
   ],
   sets: [
     { flag: 'partied', when: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket'] },
+    // Pappa tells him why the musical beach stones lie so high up, if he found them.
+    { flag: 'cobbles:explained', when: ['party:pappa', 'heard:cobbles'] },
     // A thing is given back when its owner has had candy and the thing was found.
     { flag: 'back:coin', when: ['party:pappa', 'lost:coin'] },
     { flag: 'back:clip', when: ['party:moa', 'lost:clip'] },
@@ -179,6 +186,9 @@ export const epilog: ChapterData = {
     { at: { x: 41, y: 0 }, near: 1.2 },
   ],
   beats: [
+    { id: 'cobbles1', on: 'cobbles:explained', who: 'pappa', line: 'cobbles1' },
+    { id: 'cobbles2', on: 'cobbles:explained', who: 'pappa', line: 'cobbles2' },
+    { id: 'cobbles3', on: 'cobbles:explained', who: 'pappa', line: 'cobbles3' },
     { id: 'coinBack', on: 'back:coin', who: 'pappa', line: 'coinBack' },
     { id: 'clipBack', on: 'back:clip', who: 'moa', line: 'clipBack' },
     { id: 'marbleBack', on: 'back:marble', who: 'bertil', line: 'marbleBack' },

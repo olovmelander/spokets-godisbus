@@ -18,7 +18,7 @@ import type { Candy, ChapterData } from '../../sim/types';
  * 8. **Spöket i virveln** (P10): from a stone, the lace pulls the ghost ashore. It leaves one candy on the
  *    stone, and from now on it waits for him.
  *
- * Not built yet: the anthill's outside (C2), memory 2, tasting a lingonberry, the ghost's picture bubbles.
+ * Not built yet: tasting a lingonberry, the small figure in the ghost's vittra-door bubble.
  * To the simulation the pool and the eddy are pits; the water in them is drawn only.
  */
 
@@ -58,9 +58,18 @@ export const granskog: ChapterData = {
   hidden: [
     { x: -1.8, y: 0.5, kind: 'sockerbit' },
     { x: 22, y: 3.1, kind: 'gummiorm' },
-    { x: 63.6, y: 11.9, kind: 'chokladkola' },
+    { x: 62, y: 14.45, kind: 'chokladkola', route: true },
     { x: 134.5, y: -5.3, kind: 'colaflaska' },
   ],
+  challenges: [{
+    id: 'anthill', from: 46.5, to: 63.5, above: 5.4, reward: 'chokladkola',
+    steps: [
+      { x: 48, y: 5.9 }, { x: 50.3, y: 7.3 }, { x: 52.6, y: 8.7 },
+      { x: 53.8, y: 9.8 }, { x: 54.9, y: 10.1 }, { x: 57.2, y: 11.5 },
+      { x: 59.5, y: 12.9 }, { x: 62, y: 14 },
+    ],
+    return: { x: 63.1, y: 14 },
+  }],
   spawn: { x: 1, y: 0.01 },
   goalX: 204,
   ground: [
@@ -129,6 +138,8 @@ export const granskog: ChapterData = {
     { x: 194.6, y: -8 },
   ],
   climbs: [
+    // C2 has its own way down to the ordinary hilltop, without a long drop.
+    { x: 63.1, bottom: 10, top: 14, exit: -1, needs: 'found:chokladkola' },
     // The beard lichen: the jay shows it once it is his friend.
     { x: 43.7, bottom: 0, top: 4, exit: 1, needs: 'jay' },
     // The root down from the anthill.
@@ -138,6 +149,9 @@ export const granskog: ChapterData = {
     { id: 'berry', look: 'berry', at: { x: 33, y: 0 }, verb: 'take', word: 'pick' },
     { id: 'jay', look: 'jay', at: { x: 38, y: 0 }, verb: 'give', needs: 'berry' },
     { id: 'antlift', look: 'ants', at: { x: 58.6, y: 4 }, verb: 'take', word: 'rideAnts', needs: 'placed:twig', ride: 'antlift' },
+    // O3 is separate from the ghost's vittra story beat. This berry is for the neighbours, not the jay.
+    { id: 'vittra:berry', look: 'berry', at: { x: 61, y: 10 }, verb: 'take', word: 'pick', needs: 'beat:vittra' },
+    { id: 'vittra:gift', look: 'vittra-door', at: { x: 64.4, y: 10 }, verb: 'give', word: 'leaveBerry', needs: 'vittra:berry', returnGift: 'keepsake:vittra' },
     // The loose cone at the top of the slope: touching it sets the avalanche off.
     { id: 'avalanche', at: { x: 70.4, y: 0 }, verb: 'take', touch: true },
     { id: 'seesaw', look: 'sign', at: { x: 108.2, y: -8 }, verb: 'call', word: 'callPappa' },
@@ -147,7 +161,17 @@ export const granskog: ChapterData = {
     { id: 'memory', look: 'memory', at: { x: 144, y: -8 }, verb: 'take', touch: true },
     { id: 'cap', look: 'sign', at: { x: 154.6, y: -8 }, verb: 'call', word: 'callBertil', ride: 'cap' },
   ],
+  decor: [{ look: 'keepsake', at: { x: 64.4, y: 10.8 }, after: 'keepsake:vittra' }],
   movers: [
+    // C2: deliberately jump onto the first needle mat; the main ant road stays open underneath.
+    ...Array.from({ length: 6 }, (_, i) => ({
+      id: `ant-column-${i}`, look: 'ants' as const, width: 1.4, height: 0.3,
+      verb: 'push' as const, extra: true, cycle: { seconds: 4.8, phase: i * 0.6 },
+      stops: [{ x: 48 + i * 2.3, y: 5.25 + i * 1.4 }, { x: 48 + i * 2.3, y: 5.95 + i * 1.4 }],
+    })),
+    // Firm needles halfway up give a missed jump a nearby place to return to.
+    { id: 'anthill-rest', look: 'twig', width: 1.2, height: 0.3, verb: 'push', extra: true, stops: [{ x: 53.8, y: 9.5 }] },
+    { id: 'anthill-top', look: 'twig', width: 2.1, height: 0.3, verb: 'push', extra: true, stops: [{ x: 62, y: 13.7 }] },
     // The twig across the ants' road: pulled back towards him, the road is clear. It settles into the moss,
     // low enough to walk over.
     { id: 'twig', look: 'twig', width: 2.4, height: 0.5, verb: 'pull', ring: { x: -1, y: 0.7 }, stops: [{ x: 57.2, y: 4 }, { x: 53.4, y: 3.75 }] },
@@ -206,15 +230,17 @@ export const granskog: ChapterData = {
     { at: { x: 180.5, y: -8 } },
     { at: { x: 186.8, y: -9 }, until: 'placed:rescue' },
     // from now on it waits for him
-    { at: { x: 197, y: -8 }, near: 1.6 },
-    { at: { x: 205.5, y: -8 }, near: 1.6 },
+    { at: { x: 197, y: -8 }, near: 1.6, thought: { picture: 'mountain', after: 'placed:rescue' } },
+    { at: { x: 205.5, y: -8 }, near: 1.6, thought: { picture: 'mountain', after: 'placed:rescue' } },
   ],
   beats: [
     { id: 'vittra', at: 61.8, who: 'elof', line: 'givesAway' },
+    { id: 'vittra-gift', on: 'vittra:gift', who: 'elof', line: 'vittraBerry' },
     { id: 'heja', at: 166, who: 'bertil', line: 'heja' },
     { id: 'thanked', on: 'placed:rescue', who: 'elof', line: 'thanked' },
   ],
   cameras: [
+    { from: 46.5, to: 63.5, above: 5.4, zoom: 1.25, lift: 0.7, lead: 1 },
     { from: 40, to: 66, zoom: 1.25, lift: 0.3 },
     // On the slope the picture looks less far ahead, so that the cones coming from behind are seen.
     { from: 68, to: 105, zoom: 1.45, lead: 0.3 },

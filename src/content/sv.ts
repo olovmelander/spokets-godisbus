@@ -4,16 +4,56 @@
  */
 export const sv = {
   title: 'Elof och det stora godisäventyret',
+  homeScreen: {
+    shortName: 'Elofs äventyr',
+    title: 'Lägg till på hemskärmen',
+    apple: 'På iPhone och iPad: öppna spelet i Safari, tryck på Dela och välj Lägg till på hemskärmen.',
+    android: 'På Android: öppna webbläsarens meny och välj Installera app eller Lägg till på startskärmen.',
+    offline: 'Öppna spelet med internet först. Delar som har laddats kan sedan spelas utan internet, så länge enheten har plats att spara dem.',
+  },
+  painting: {
+    title: 'Måla ögonen', hint: 'Följ ringen med fingret eller musen.',
+    assist: 'Måla med hjälp', picture: 'Spökets ögon. Följ den prickade ringen.',
+    figurePicture: 'Min nya trägubbes ögon. Följ den prickade ringen.',
+    tryAgain: 'Dra med penseln, så hjälper Pappa till.', painted: 'Ett öga till liv!',
+  },
+  carving: {
+    title: 'Min första trägubbe', hint: 'Alltid bort från kroppen. Följ pilen.',
+    assist: 'Tälj med Pappa', picture: 'Elof sitter till vänster. Dra från handen längs pilen, bort från kroppen.',
+    tryAgain: 'Bort från kroppen. Pappa hjälper dig att prova igen.', carved: 'Ett tag med kniven!',
+    step: 'Tag {step} av 3',
+  },
+  sharing: {
+    title: 'Dela godiset', choose: 'Välj något gott.', friend: 'Välj en vän.', back: 'Tillbaka',
+    bird: 'Lavskrikan får ett lingon ur fickan.', given: 'Har fått', nowFriend: '{sweet} – vem ska få den?',
+    thanks: '{friend} fick {sweet}!',
+    sweets: { gelehallon: 'Geléhallon', karamell: 'Karamell', skumbanan: 'Skumbanan', lingon: 'Lingon' },
+    friends: { tragubbe: 'Trägubben', spoket: 'Spöket', jay: 'Lavskrikan' },
+  },
+  party: {
+    title: 'Godiskalaset', thanks: '{friend} tackar glatt för {sweet}!',
+    friends: { mamma: 'Mamma', pappa: 'Pappa', moa: 'Moa', bertil: 'Bertil', spoket: 'Spöket' },
+  },
 
   // The two action buttons. Använd will show the specific verb once there is something to do.
   hop: 'Hoppa',
   act: 'Använd',
-  // The button that calls the helper: no words in the game, a bird on the button.
+  // The button that calls the helper: a ghost portrait in Kapitel 1, a jay from Kapitel 2.
   help: 'Hjälp',
 
   // Shown instead of the on-screen controls when a keyboard or a gamepad is in use.
   keysHint: '← → springa och gunga · Mellanslag hoppa och släppa · ↑ ↓ klättra · E använd · Shift gå',
   padHint: 'Spaken springa, klättra och gunga · A hoppa och släppa · X använd',
+
+  // The tutorial is wordless on screen; these labels also make its pictures available to a screen reader.
+  tutorial: {
+    keys: { move: '← →', hop: '␣', act: 'E' },
+    pad: { move: '✚', hop: 'A', act: 'X' },
+    touch: { move: 'För fingret åt sidan för att gå.', hop: 'Tryck på Hoppa.', act: 'Tryck på Använd för att ta stjärnan.' },
+    // Spoken descriptions use the same controls as the key reference.
+    keyboard: { move: 'Gå med vänster och höger piltangent.', hop: 'Hoppa med mellanslag.', act: 'Ta stjärnan med E.' },
+    gamepad: { move: 'Gå med vänster spak eller styrkorset.', hop: 'Hoppa med A.', act: 'Ta stjärnan med X.' },
+  },
 
   // What Använd says when there is something to use: one word for each thing Elof can do.
   verbs: {
@@ -50,6 +90,7 @@ export const sv = {
     brush: 'Borsta tänderna',
     give: 'Ge',
     pick: 'Plocka',
+    leaveBerry: 'Lämna ett lingon',
     rideAnts: 'Åk med myrorna',
     standOn: 'Ställ dig här',
     grab: 'Ta!',
@@ -64,6 +105,15 @@ export const sv = {
     elof: 'Elof',
     spoket: 'Spöket',
   },
+  ghostName: 'Klonk',
+  giveKlonk: 'Ge Klonk',
+  memories: {
+    title: 'Pappas minnen',
+    watch: 'Se minnet igen',
+    waiting: 'Ett minne att hitta',
+    next: 'Nästa bild',
+    back: 'Tillbaka',
+  },
 
   // What is said, in bubbles: the game has no voices. At most about 40 characters each (plan §3.7).
   lines: {
@@ -73,13 +123,19 @@ export const sv = {
     clipBack: 'Mitt hårspänne! Tack, lillebror!',
     marbleBack: 'Kula! Min kula!',
     coinBack: 'En krona! Den får du behålla.',
+    cobbles1: 'Stenarna på berget var en strand.',
+    cobbles2: 'Havet nådde ända dit en gång.',
+    cobbles3: 'Vågorna gjorde dem runda.',
     again: 'En stjärna till. Nu handlar vi!',
     lake: 'En sjö! Mitt på gatan.',
     shop: 'Framme! Det luktar godis.',
+    shopInside: 'Godiset är större än jag!',
+    shopBag: 'En påse att dela på!',
     follow2: 'Vi är nära dig hela tiden.',
     stomp: 'Ge tillbaka mitt godis!',
     tiny: 'Lillebror?! Du är ju pytteliten!',
     givesAway: 'Spöket ger bort mitt godis!?',
+    vittraBerry: 'Ett lingon till er också.',
     heja: 'Heja lillebror!',
     thanked: 'Spöket tackade mig!',
     spangen: 'På myren går vi på spången.',
@@ -124,10 +180,31 @@ export const sv = {
   lost: { marble: 'Bertils kula', clip: 'Moas hårspänne', brick: 'En leksakskloss', coin: 'En krona' } as Record<string, string>,
   lostFound: 'Du hittade något: {name}!',
   lostTitle: 'Hittegods',
-  // Daggklockspelet (plan §4.8): said at the top of the screen when all four drops have rung.
+  // Daggklockspelet (plan §4.8): said when the drops play the opening theme in order.
   dewSong: 'Hela gräsmattan glittrar!',
+  keepsakes: 'Små minnen',
+  vittraSticker: 'Vittrornas tack',
+  vittraFound: 'Ett klistermärke! Tack för lingonet.',
   // The album in the pause panel: every kind, found or not.
-  album: { title: 'Godisalbumet', count: '{found} av {total} sorter' },
+  album: { title: 'Godisalbumet', count: '{found} av {total} sorter', golden: 'Det gyllene geléhallonet', goldenFound: 'Alla sorter! Ett geléhallon i guld.' },
+  photos: {
+    title: 'Foton', journey: 'Vårt äventyr', empty: 'Här samlas bilder från ditt äventyr.',
+    open: 'Titta på {name}', previous: 'Förra', next: 'Nästa', back: 'Tillbaka', done: 'Klart',
+    count: '{n} av {total}', thanks: 'Tack för äventyret!', again: 'Se äventyret igen',
+    credits: 'Spöket är täljt av Pappa Emil. Spelet är gjort till Elof av morbror Olov – med hjälp av Claude och Codex.',
+    moments: {
+      shrinking: 'Liten som en godis', swing: 'Första svingen', plane: 'Moas flygplan', cap: 'Bertils kepsbåt',
+      crane: 'På tranans rygg', aurora: 'Under norrskenet', carving: 'Min första trägubbe',
+    },
+  },
+  explore: {
+    title: 'Utforska vidare',
+    hint: 'Välj en plats. Allt du har hittat finns kvar.',
+    routeFound: 'Utmaningsgodiset hittat',
+    routeWaiting: 'En utmaningsväg att utforska',
+    chapters: { prolog: 'Lördagsmorgon', garden: 'Gården', granskog: 'Granskogen', myren: 'Myren', berget: 'Berget', norrsken: 'Norrskenet', epilog: 'Godiskalaset', byn: 'Byn' } as Record<string, string>,
+    icons: { prolog: '☀', garden: '❀', granskog: '♧', myren: '≈', berget: '△', norrsken: '✧', epilog: '⌂', byn: '⌂' } as Record<string, string>,
+  },
 
   // The card at a chapter's end.
   end: {
@@ -141,6 +218,7 @@ export const sv = {
     } as Record<string, string>,
     // On the story's last card, the button to an extra chapter.
     bonus: 'Ett kapitel till',
+    window: 'Elofs lilla trägubbe står i månljuset. Dess målade ögon blinkar.',
     course: 'Framme!',
     next: 'Fortsättning följer!',
     onward: 'Nästa kapitel',
@@ -154,6 +232,7 @@ export const sv = {
   // Moas karta: a child's names for the places, as she would write them.
   map: {
     title: 'Moas karta',
+    unfinished: 'Här ritar Moa fortfarande …',
     home: 'Hemma',
     forest: 'Granskogen',
     brook: 'Bäcken',
@@ -194,11 +273,24 @@ export const sv = {
     rotate: 'Vänd skärmen på bredden!',
   },
 
+  players: {
+    choose: 'Byt spelare', new: 'Ny spelare', name: 'Vad vill du heta?',
+    local: 'Namnet stannar på den här enheten. Alla spelar som Elof.',
+    next: 'Välj spelsätt', back: 'Tillbaka', settings: 'Inställningar',
+    remove: 'Ta bort {name}', removeAsk: 'Ta bort {name} och allt som spelaren har sparat?',
+    restartAsk: 'Börja om från början för {name}? Godis, bilder och framsteg tas bort.',
+    yes: 'Ja', no: 'Nej, gå tillbaka', unreadable: 'Kan inte läsas',
+    error: 'Det gick inte att spara ändringen. Försök igen.',
+    indexUnreadable: 'Spelarlistan gick inte att läsa. Det sparade finns kvar. Prova att ladda om sidan.',
+    preserved: 'Det sparade spelet gick inte att läsa. Det finns kvar. Välj en annan spelare eller börja om.',
+  },
+
   // The pause panel. Every button has a picture beside its word, for a child who can't read yet.
   pause: {
     open: 'Paus',
     title: 'Paus',
     resume: 'Spela vidare',
+    home: 'Till startsidan',
     close: 'Stäng',
     style: 'Spelsätt',
     aventyr: 'Äventyr',
@@ -208,6 +300,10 @@ export const sv = {
     swingHelp: 'Hjälp med svingen',
     easyJumps: 'Lätta hopp',
     followFinger: 'Följ fingret',
+    vibration: 'Vibration vid landning',
+    fullscreen: 'Helskärm',
+    exitFullscreen: 'Lämna helskärm',
+    fullscreenFailed: 'Helskärm kunde inte öppnas. Du kan spela vidare här.',
     followHint: 'Håll fingret dit du vill gå. Släpp för att stanna.',
     graphics: 'Grafik',
     graphicsAuto: 'Auto',
@@ -219,6 +315,12 @@ export const sv = {
     slower: 'Lugnare tempo',
     sound: 'Ljud',
     music: 'Musik',
+    effectsVolume: 'Ljudvolym',
+    musicVolume: 'Musikvolym',
+    effectsQuieter: 'Sänk ljudvolymen',
+    effectsLouder: 'Höj ljudvolymen',
+    musicQuieter: 'Sänk musikvolymen',
+    musicLouder: 'Höj musikvolymen',
     loud: 'Ljud även i tyst läge',
     lefty: 'Vänsterhänt',
     bigText: 'Större text',
@@ -273,5 +375,10 @@ export const sv = {
 
   // Sköldhästen's wording.
   noWebGL: 'Den här webbläsaren kan tyvärr inte visa spelet.',
+  loadFailed: 'Något gick fel när spelet laddades.',
+  contextLost: 'Bilden försvann en stund. Spelet är pausat och det du har gjort är sparat.',
+  contextRestored: 'Bilden är tillbaka. Fortsätt när du är redo!',
+  contextReloading: 'Vi hämtar tillbaka bilden. Spelet väntar.',
+  recoveryTitle: 'Spelet väntar',
   retry: 'Försök igen',
 } as const;

@@ -5,6 +5,7 @@ import { epilog, prolog } from '../../src/content/chapters/ends';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
 import { STEP } from '../../src/sim/constants';
+import { guidedCarve, guidedEye } from '../../src/sim/story-stroke';
 import { Sim } from '../../src/sim/sim';
 import type { ChapterData, StepInput } from '../../src/sim/types';
 import { decide, playThrough } from './robot';
@@ -15,7 +16,7 @@ function run(sim: Sim, seconds: number, input: Partial<StepInput> = {}): void {
 }
 
 /** What he did, in order: the flags that are not bubbles. */
-const did = (flags: string[]) => flags.filter((flag) => !flag.startsWith('beat:'));
+const did = (flags: string[]) => flags.filter((flag) => !flag.startsWith('beat:') && !flag.startsWith('party-gift:'));
 
 /** On Lugnt: played by running and Använd, and how many times Hoppa was needed. */
 function onLugnt(chapter: ChapterData) {
@@ -40,8 +41,8 @@ describe('Prolog, Lördagsmorgon, in greybox', () => {
       const result = playThrough(fps, prolog, {}, 200);
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
       // Two eyes, the blink he watches, and the star.
-      expect(did(result.flags)).toEqual(['eye', 'paint', 'blink', 'star', 'goal']);
-      expect(result.said).toEqual(['tonight']);
+      expect(did(result.flags)).toEqual(['eye', 'paint', 'blink', 'mamma:passed', 'bag:torn', 'star', 'pappa:noticed', 'pappa:done', 'goal']);
+      expect(result.said).toEqual(['tonight', 'follow1', 'follow2']);
       expect(result.bubbles).toBe(0);
       expect(result.missed).toEqual([]);
     });
@@ -52,7 +53,7 @@ describe('Prolog, Lördagsmorgon, in greybox', () => {
   });
 
   it('has no candy trail until the ghost has run off with the bag: it has not torn yet', () => {
-    for (const c of prolog.candy) expect(c.after, `the candy at ${c.x}`).toBe('blink');
+    for (const c of prolog.candy) expect(c.after, `the candy at ${c.x}`).toBe('bag:torn');
     const sim = new Sim(prolog);
     run(sim, 12, { x: 1 });
     expect(sim.candyCount).toBe(0);
@@ -78,22 +79,25 @@ describe('the blink: a beat of the story that takes time', () => {
     const sim = new Sim({ ...prolog, spawn: { x: 4.6, y: 0.01 } });
     run(sim, 0.2);
     sim.step({ ...idle, act: true });
+    sim.finishStory({ kind: 'paint', traces: [guidedEye(116)] });
     run(sim, 0.1);
     return sim;
   };
 
-  it('takes two presses to paint the eyes', () => {
+  it('takes two completed strokes to paint the eyes', () => {
     const sim = atTheGhost();
     expect(sim.flags.has('eye')).toBe(true);
     expect(sim.flags.has('paint')).toBe(false);
     expect(sim.curr.word).toBe('paintGhost');
     sim.step({ ...idle, act: true });
+    sim.finishStory({ kind: 'paint', traces: [guidedEye(204)] });
     expect(sim.flags.has('paint')).toBe(true);
   });
 
   it('holds him while the ghost looks at the shelf and the bag, and then lets it run', () => {
     const sim = atTheGhost();
     sim.step({ ...idle, act: true });
+    sim.finishStory({ kind: 'paint', traces: [guidedEye(204)] });
     const x = sim.curr.x;
     // He watches: the stick does nothing, and the ghost has not moved.
     run(sim, 2.2, { x: 1, hop: true, hopHeld: true });
@@ -104,7 +108,7 @@ describe('the blink: a beat of the story that takes time', () => {
     // Then it is over: the bag is gone with the ghost, the trail lies there, and he can run.
     run(sim, 0.6);
     expect(sim.flags.has('blink')).toBe(true);
-    run(sim, 1.5, { x: 1 });
+    run(sim, 4.5, { x: 1 });
     expect(sim.curr.x).toBeGreaterThan(x + 2);
     expect(sim.ghost!.x).toBeGreaterThan(8);
     expect(sim.candyCount).toBeGreaterThan(0);
@@ -177,7 +181,10 @@ describe('Epilog, Godiskalaset, in greybox', () => {
       run(sim, 0.1);
       words.push(sim.curr.word);
       sim.step({ ...idle, act: true });
+      if (i < 3) sim.finishStory({ kind: 'carve', stroke: guidedCarve() });
+      else sim.finishStory({ kind: 'paint', traces: [guidedEye(116), guidedEye(204)] });
     }
+    run(sim, .1);
     expect(words).toEqual(['carve', 'carve', 'carve', 'paintEyes']);
     expect(sim.flags.has('dots')).toBe(true);
     expect(sim.said).toContain('carved');
@@ -206,7 +213,7 @@ describe('the story from its first scene to its last', () => {
     expect(courseFor(dev).id).toBe('prolog');
     expect(courseFor(dev, 'myren').id).toBe('myren');
     expect(courseFor(new URLSearchParams('')).id).toBe('testbana');
-    expect(courseFor(new URLSearchParams('course=epilog')).id).toBe('epilog');
+    expect(courseFor(new URLSearchParams('dev&course=epilog')).id).toBe('epilog');
   });
 
   it('gives each part without a number a name for its card, and the last one its closing words', () => {

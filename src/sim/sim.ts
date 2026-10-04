@@ -12,6 +12,9 @@ import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REAC
 import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
 import { GUIDE_AFTER, HELP_TIME, REMIND_AFTER } from './constants';
 import { hintFor } from './help';
+import { partyReward, sharingReward, type StoryAnswer } from './story';
+import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
+import { PrologueSequence } from './prologue';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
@@ -131,8 +134,11 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
  * far.
  */
 export class Sim {
+  readonly prologue: PrologueSequence | null;
   readonly world: World;
   readonly flags = new Set<string>();
+  /** The world waits while a story interaction is open; only a validated answer commits progress. */
+  story: import('./story').StoryAction | null = null;
   steps = 0;
   /** Trail candy in the bag, by its place in chapter.candy. Nothing ever leaves the bag (plan §4.3). */
   readonly collected: boolean[];
@@ -184,6 +190,11 @@ export class Sim {
   readonly ghost: GhostState | null;
   /** The beats that have come, by id, in the order they came: what the page shows as bubbles. */
   readonly said: string[] = [];
+  /** Recent replayable bell strikes. Bounded, immutable between strikes, and never saved as a backlog. */
+  noteHits: readonly { serial: number; id: string; midi: number }[] = [];
+  private noteSerial = 0;
+  private readonly touchingNotes = new Set<string>();
+  private songAt = 0;
   prev: PlayerState;
   curr: PlayerState;
 
@@ -233,6 +244,7 @@ export class Sim {
   private readonly safe: Vec;
 
   constructor(readonly chapter: ChapterData, options: SimOptions = {}, start: SimStart = {}) {
+    this.prologue = chapter.prologue ? new PrologueSequence(chapter.prologue) : null;
     this.options = options;
     this.checkpoints = chapter.checkpoints ?? [];
     this.jumps = chapter.jumps ?? [];
@@ -269,9 +281,11 @@ export class Sim {
 
     // Things on rails are moved by the game, never by the physics: nothing can knock them off.
     this.movers = (chapter.movers ?? []).map((def) => {
-      const stop = start.placed?.includes(def.id) ? def.stops.length - 1 : 0;
+      const stop = !def.cycle && start.placed?.includes(def.id) ? def.stops.length - 1 : 0;
       const at = def.stops[stop]!;
-      return { def, x: at.x, y: at.y, stop, from: stop, t: 1 };
+      const to = def.stops[1] ?? at;
+      const phase = def.cycle ? (1 - Math.cos((def.cycle.phase ?? 0) / def.cycle.seconds * Math.PI * 2)) / 2 : 0;
+      return { def, x: mix(at.x, to.x, phase), y: mix(at.y, to.y, phase), stop, from: stop, t: 1 };
     });
     this.moverBodies = this.movers.map((mover) => {
       const body = this.world.createBody({ type: 'kinematic', position: new Vec2(mover.x, mover.y) });
@@ -297,7 +311,7 @@ export class Sim {
       const ride = (chapter.rides ?? []).find((r) => r.id === spot.ride);
       if (ride && ride.to.x > spawn.x + 0.5) this.flags.delete(spot.id);
     }
-    for (const mover of this.movers) if (mover.stop === mover.def.stops.length - 1) this.flags.add(`placed:${mover.def.id}`);
+    for (const mover of this.movers) if (!mover.def.extra && !mover.def.cycle && mover.stop === mover.def.stops.length - 1) this.flags.add(`placed:${mover.def.id}`);
     // What was said before the place he starts at is not said again.
     for (const beat of chapter.beats ?? []) if (beat.at !== undefined && beat.at < spawn.x - 0.5) this.flags.add(`beat:${beat.id}`);
     this.spots = chapter.spots ?? [];
@@ -307,6 +321,11 @@ export class Sim {
     const ahead = this.perches.findIndex((perch) => perch.at.x > spawn.x + 1);
     const first = this.perches[ahead];
     this.ghost = first ? { x: first.at.x, y: first.at.y, perch: ahead, t: 1, gone: false } : null;
+    if (chapter.prologue && this.ghost && this.flags.has('pappa:done')) this.ghost.gone = true;
+    // Older saves beyond the door have already chased the torn bag; never replay that joke out of place.
+    if (chapter.prologue && spawn.x > chapter.prologue.doorway.x + 2) {
+      this.flags.add('mamma:passed'); this.flags.add('bag:torn');
+    }
 
     this.world.on('begin-contact', (c) => this.countFoot(c, 1));
     this.world.on('end-contact', (c) => this.countFoot(c, -1));
@@ -327,14 +346,35 @@ export class Sim {
     this.stood = Array.from({ length: SAFE_STEPS }, () => ({ x: spawn.x, y: spawn.y }));
     this.curr = this.read(false);
     this.prev = this.curr;
+    this.resetChallenges(true);
   }
 
+  finishStory(answer: StoryAnswer): boolean {
+    if (!this.story || this.story.kind !== answer.kind) return false;
+    const centres = eyeCentres(this.story.spot);
+    const reward = answer.kind === 'share' ? sharingReward(this.flags, answer.friend, answer.sweet)
+      : answer.kind === 'party' ? partyReward(this.flags, answer.friend, answer.sweet)
+      : answer.kind === 'carve' ? ['cut1', 'cut2', 'cut3'].includes(this.story.spot) && validCarveStroke(answer.stroke) ? [this.story.spot] : null
+      : centres.length > 0 && answer.traces.length === centres.length && centres.every((cx, i) => validEyeStroke(answer.traces[i]!, cx)) ? [this.story.spot] : null;
+    if (!reward) return false;
+    for (const flag of reward) this.flags.add(flag);
+    this.story = null;
+    return true;
+  }
+
+  cancelStory(): void { this.story = null; }
+
   step(input: StepInput): void {
+    if (this.story) return;
     this.prev = this.curr;
+    this.ringNotes();
+    this.returnGifts();
+    this.prologue?.tick(this.curr, this.ghost, this.flags);
     // While he watches a beat of the story, the stick and the buttons do nothing.
-    if (this.watching) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
+    if (this.watching || this.prologue?.frame) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
     // Free, he may take hold of something this step: a hose, a ledge, or the hose below him.
     if (this.state.kind === 'free') this.reach(input);
+    if (this.story) { this.curr = this.read(this.standing()); return; }
 
     const state = this.state;
     if (state.kind === 'free') this.walk(input);
@@ -352,7 +392,7 @@ export class Sim {
     this.blow();
     this.sink();
     for (const berry of this.berries) berry.squash = Math.max(0, berry.squash - STEP / BERRY_SQUASH);
-    this.haunt();
+    if (!this.prologue?.frame) this.haunt();
     this.tell();
     this.assist(input.help === true);
 
@@ -368,7 +408,8 @@ export class Sim {
     }
     // The bubble only carries. Everywhere else, candy he comes near is his: up a hose too.
     if (this.state.kind !== 'bubble') this.collect();
-    if (this.curr.x >= this.chapter.goalX) this.flags.add('goal');
+    this.resetChallenges();
+    if (this.curr.x >= this.chapter.goalX && (!this.chapter.goalNeeds || this.flags.has(this.chapter.goalNeeds))) this.flags.add('goal');
   }
 
   /**
@@ -436,7 +477,7 @@ export class Sim {
     const further = this.curr.x > this.furthest + 1;
     if (further) this.furthest = this.curr.x;
     if (now !== this.progress || further) {
-      if (this.progress !== -1 && now !== this.progress) this.leave();
+      if (this.progress !== -1 && now !== this.progress && !this.help.visit) this.leave();
       this.progress = now;
       this.idle = 0;
       this.reminded = false;
@@ -445,11 +486,24 @@ export class Sim {
     }
     if (this.help.step > 0) {
       this.helpFor += STEP;
-      if (this.helpFor > HELP_TIME) this.leave();
+      if (this.helpFor > (this.help.visit ? 5 : HELP_TIME)) this.leave();
+    }
+    const visit = this.chapter.helper?.visit;
+    if (visit && this.curr.x >= visit.from && this.curr.x <= visit.to && !this.flags.has(`visit:${visit.id}`)) {
+      // Remember the story beat in ordinary save flags, without moving Elof, the ghost's chase state or
+      // any puzzle. A candy/checkpoint on this stretch must not immediately cancel its quiet visit.
+      this.flags.add(`visit:${visit.id}`);
+      this.help.step = 1;
+      this.help.at = { ...visit.at };
+      this.help.verb = null;
+      this.help.word = null;
+      this.help.visit = true;
+      delete this.help.replay;
+      this.helpFor = 0;
     }
     const level = this.options.help ?? 'ask';
     const byItself = !this.reminded && ((level === 'remind' && this.idle >= REMIND_AFTER) || (level === 'guide' && this.idle >= GUIDE_AFTER));
-    if (!asked && !byItself) return;
+    if (!asked && (!byItself || this.help.visit)) return;
     const hint = hintFor(this, this.chapter);
     if (!hint) return;
     const same = this.help.step > 0 && this.help.at !== null && this.help.at.x === hint.at.x && this.help.at.y === hint.at.y;
@@ -459,6 +513,9 @@ export class Sim {
     this.help.at = { x: hint.at.x, y: hint.at.y };
     this.help.verb = hint.verb;
     this.help.word = hint.word;
+    delete this.help.visit;
+    if (this.help.step === 3 && asked) this.help.replay = (this.help.replay ?? 0) + 1;
+    else if (this.help.step !== 3) delete this.help.replay;
     this.helpFor = 0;
   }
 
@@ -468,6 +525,8 @@ export class Sim {
     this.help.at = null;
     this.help.verb = null;
     this.help.word = null;
+    delete this.help.visit;
+    delete this.help.replay;
     this.helpFor = 0;
   }
 
@@ -636,12 +695,33 @@ export class Sim {
 
   /** The ids of the things on rails that are where they belong: what a save keeps of the puzzles. */
   get placed(): string[] {
-    return this.movers.filter((m) => m.stop === m.def.stops.length - 1 && m.t >= 1).map((m) => m.def.id);
+    return this.movers.filter((m) => !m.def.extra && !m.def.cycle && m.stop === m.def.stops.length - 1 && m.t >= 1).map((m) => m.def.id);
   }
 
   /** One step for the things on rails: they slide to their stops, and the unfinished ones go home when he leaves. */
   private moveMovers(): void {
     for (const [i, mover] of this.movers.entries()) {
+      const cycle = mover.def.cycle;
+      if (cycle) {
+        const a = mover.def.stops[0]!;
+        const b = mover.def.stops[1]!;
+        const t = ((this.steps + 1) * STEP + (cycle.phase ?? 0)) / cycle.seconds;
+        const k = (1 - Math.cos(t * Math.PI * 2)) / 2;
+        const x = mix(a.x, b.x, k);
+        const y = mix(a.y, b.y, k);
+        // The shallow tops carry feet, including on the downward half of their cycle. A jump has
+        // already left this step, so it must never be pulled back onto its platform.
+        if (this.state.kind === 'free' && this.curr.grounded && !this.leaving &&
+            Math.abs(this.curr.x - mover.x) < mover.def.width / 2 + ELOF_HALF_WIDTH &&
+            Math.abs(this.curr.y - mover.y - mover.def.height) < 0.12) {
+          const p = this.body.getPosition();
+          this.body.setTransform(new Vec2(p.x + x - mover.x, p.y + y - mover.y), 0);
+        }
+        mover.x = x;
+        mover.y = y;
+        this.moverBodies[i]!.setTransform(new Vec2(x, y), 0);
+        continue;
+      }
       const last = mover.def.stops.length - 1;
       // A helper's hands: it goes to where it belongs as soon as its flag is set.
       if (mover.def.on !== undefined && mover.t >= 1 && mover.stop < last && this.flags.has(mover.def.on)) {
@@ -675,7 +755,7 @@ export class Sim {
     const p = this.curr;
     for (const mover of this.movers) {
       const def = mover.def;
-      if (def.verb !== verb || def.on !== undefined || mover.t < 1 || mover.stop >= def.stops.length - 1) continue;
+      if (def.cycle || def.verb !== verb || def.on !== undefined || mover.t < 1 || mover.stop >= def.stops.length - 1) continue;
       if (def.needs !== undefined && !this.flags.has(def.needs)) continue;
       const next = def.stops[mover.stop + 1]!;
       const way = Math.sign(next.x - mover.x) || 1;
@@ -699,6 +779,9 @@ export class Sim {
    * Nothing he has found or done is undone (plan §4.5).
    */
   toCheckpoint(): void {
+    this.prologue?.cancel();
+    this.resetChallenges(true);
+    this.story = null;
     if (this.state.kind === 'bubble') return;
     const to = this.checkpoints[this.checkpoint] ?? this.chapter.spawn;
     this.safe.x = to.x;
@@ -708,7 +791,76 @@ export class Sim {
     this.curr = { ...this.curr, mode: 'bubble', bubble: Number.MIN_VALUE, verb: null, hook: null };
   }
 
+  /** The one thing Använd would act on now. Peka uses this same priority and reach, never a remote action. */
+  get actionAt(): Vec | null {
+    const p = this.curr;
+    if (p.mode !== 'free' || this.watching || p.verb === null) return null;
+    if (p.verb === 'lace') return this.hookInReach();
+    if (p.verb === 'grab') return this.ghost ? { x: this.ghost.x, y: this.ghost.y + 0.6 } : null;
+    if (p.verb === 'pull' || p.verb === 'push') {
+      const mover = this.moverFor(p.verb);
+      if (!mover) return null;
+      const ring = p.verb === 'pull' ? (mover.def.ring ?? { x: 0, y: mover.def.height }) : { x: 0, y: mover.def.height / 2 };
+      return { x: mover.x + ring.x, y: mover.y + ring.y };
+    }
+    if (p.verb === 'slide') {
+      const c = this.climbs.find((c) => (c.needs === undefined || this.flags.has(c.needs)) && Math.abs(c.x - p.x) <= SLIDE_REACH && Math.abs(c.top - p.y) <= 0.25);
+      return c ? { x: c.x, y: c.top } : null;
+    }
+    const spot = this.spotInReach();
+    return spot ? { x: spot.at.x, y: spot.at.y + (spot.look ? 0.6 : 1.5) } : null;
+  }
+
+  /** A nearby candy may invite a stroll along level, clear ground. Peka never climbs or crosses a gap. */
+  canStrollTo(x: number): boolean {
+    const p = this.curr;
+    if (p.mode !== 'free' || !p.grounded || this.watching || Math.abs(x - p.x) > 3) return false;
+    const from = Math.min(x, p.x);
+    const to = Math.max(x, p.x);
+    if (this.climbs.some((c) => c.x >= from - 0.3 && c.x <= to + 0.3 && p.y >= c.bottom - 0.1 && p.y < c.top)) return false;
+    if (this.cast(p.x, p.y + 0.3, x, p.y + 0.3)) return false;
+    for (let at = from; at <= to + 0.1; at += 0.15) {
+      if (Math.abs(this.groundBelow(at, p.y) - p.y) > 0.15) return false;
+    }
+    return true;
+  }
+
   // --- taking hold --------------------------------------------------------------------------------------
+
+  /** A little thank-you waits until the gift giver has gone away and passes the door again. */
+  private returnGifts(): void {
+    for (const spot of this.spots) {
+      if (!spot.returnGift || !this.flags.has(spot.id) || this.flags.has(spot.returnGift)) continue;
+      const away = `${spot.id}:away`;
+      const distance = Math.hypot(spot.at.x - this.curr.x, spot.at.y - this.curr.y);
+      if (this.state.kind !== 'free' || !this.curr.grounded) continue;
+      if (distance >= 4) this.flags.add(away);
+      else if (distance <= SPOT_REACH && this.flags.has(away)) this.flags.add(spot.returnGift);
+    }
+  }
+
+  /** Bells answer contact edges, not every physics step and not only the first saved discovery. */
+  private ringNotes(): void {
+    const reach = TOUCH_REACH + 0.5;
+    for (const spot of this.spots) {
+      if (spot.note === undefined) continue;
+      const distance = Math.hypot(spot.at.x - this.curr.x, spot.at.y - this.curr.y);
+      if (distance > reach + 0.2 || this.state.kind !== 'free') this.touchingNotes.delete(spot.id);
+      if (distance > reach || this.state.kind !== 'free' || this.touchingNotes.has(spot.id)
+        || (spot.needs !== undefined && !this.flags.has(spot.needs))) continue;
+      this.touchingNotes.add(spot.id);
+      this.flags.add(spot.id);
+      this.noteHits = [...this.noteHits.slice(-15), { serial: ++this.noteSerial, id: spot.id, midi: spot.note }];
+      const song = this.chapter.song;
+      if (!song) continue;
+      if (spot.id === song.notes[this.songAt]) this.songAt++;
+      else if (spot.id !== song.notes[this.songAt - 1]) this.songAt = spot.id === song.notes[0] ? 1 : 0;
+      if (this.songAt === song.notes.length) {
+        this.flags.add(song.flag);
+        this.songAt = 0;
+      }
+    }
+  }
 
   /** What he takes hold of this step, if anything, and what Använd would do. */
   private reach(input: StepInput): void {
@@ -720,7 +872,7 @@ export class Sim {
     const hook = this.hookInReach();
     // A thing to touch is used by coming close. One with a ride carries him off from the ground.
     for (const spot of this.spots) {
-      if (!spot.touch || this.flags.has(spot.id) || (spot.needs !== undefined && !this.flags.has(spot.needs))) continue;
+      if (!spot.touch || spot.note !== undefined || this.flags.has(spot.id) || (spot.needs !== undefined && !this.flags.has(spot.needs))) continue;
       if (Math.hypot(spot.at.x - p.x, spot.at.y - p.y) > TOUCH_REACH + 0.5) continue;
       const ride = spot.ride === undefined ? undefined : (this.chapter.rides ?? []).find((r) => r.id === spot.ride);
       if (ride && !p.grounded) continue;
@@ -749,6 +901,12 @@ export class Sim {
       return;
     }
     if ((grab || spot) && input.act) {
+      if (spot?.story) {
+        this.story = { kind: spot.story, spot: spot.id };
+        this.verb = null;
+        this.word = null;
+        return;
+      }
       this.flags.add(grab ?? spot!.id);
       this.verb = null;
       this.word = null;
@@ -1191,6 +1349,8 @@ export class Sim {
     this.fallTop = p.y;
     // A soft tussock is no place to be put back on: the bubble takes him to the last firm ground.
     if (this.tussocks.some((t) => this.isOn(t))) return;
+    // A moving ant column may have gone by the time the bubble returns. Use a firm rest ledge instead.
+    if (this.movers.some((m) => m.def.cycle && Math.abs(p.x - m.x) <= m.def.width / 2 + ELOF_HALF_WIDTH && Math.abs(p.y - m.y - m.def.height) < 0.25)) return;
     // Solid ground has to be under both his sides. A corner he only clips on the way down is not a place
     // to be put back on.
     const solid = (x: number) => Math.abs(this.groundBelow(x, p.y) - p.y) < 0.25;
@@ -1220,6 +1380,16 @@ export class Sim {
   }
 
   /** Puts every trail candy within reach of Elof's middle in the bag. */
+  private resetChallenges(force = false): void {
+    for (const route of this.chapter.challenges ?? []) {
+      if (this.flags.has(`found:${route.reward}`)) continue;
+      const p = this.curr;
+      if (force || p.x < route.from || p.x > route.to || p.y < route.above) {
+        for (const flag of route.pending ?? []) this.flags.delete(flag);
+      }
+    }
+  }
+
   private collect(): void {
     const x = this.curr.x;
     const y = this.curr.y + ELOF_HEIGHT / 2;
@@ -1233,8 +1403,9 @@ export class Sim {
       this.collected[i] = true;
       this.candyCount++;
     }
-    // Hidden candy: it has the same reach, and each is found once.
+    // Hidden candy: it has the same reach, and each is found once. A shy light must leave it first.
     for (const sweet of this.chapter.hidden ?? []) {
+      if (sweet.after !== undefined && !this.flags.has(sweet.after)) continue;
       if (this.flags.has(`found:${sweet.kind}`) || (sweet.x - x) ** 2 + (sweet.y - y) ** 2 > CANDY_MAGNET ** 2) continue;
       this.flags.add(`found:${sweet.kind}`);
     }
