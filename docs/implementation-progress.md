@@ -152,3 +152,9 @@ Validation: typecheck and 56 integrated device/save/settings tests pass. Source 
 Discovering the mountain's musical cobbles unlocks a brief explanation of the old shore and rounded stones when sharing candy at the party. It is optional, appears once and is saved without adding a story gate.
 
 Validation: typecheck and 25 integrated cobble/ending tests pass. The combined party browser check covers the remembered discovery and explanation.
+
+## Preserve album focus when saved photos finish loading
+
+Keep keyboard focus within the active album after asynchronous photo loading refreshes its controls. Closing the album or switching profiles invalidates pending refreshes so they cannot steal focus.
+
+Validation: focused browser checks cover delayed photo loads, keyboard focus and album closure. Typecheck and integrated unit tests pass.
