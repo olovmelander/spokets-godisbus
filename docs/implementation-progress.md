@@ -170,3 +170,9 @@ Validation: typecheck, unit tests, build and privacy gates pass. Browser checks 
 Exercise the staged prologue from painting and the freeze gag through the hinge tear and pickup. The browser rehearsal checks interaction gates and progression with the current stand-in models.
 
 Validation: 22 prologue browser checks pass, and the staged views were visually inspected. Final approved character acting and models remain an art checkpoint.
+
+## Run every executable browser regression in the release gate
+
+Include all executable browser suites in the repository's complete browser gate so the story interactions, album, profile, lifecycle and rendering regressions are checked together.
+
+Validation: the script inventory was compared with the package gate and every executable suite is included. Subsequent renderer and device milestones extend this same gate.
