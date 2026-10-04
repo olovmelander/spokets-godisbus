@@ -1,4 +1,5 @@
 import { sv } from '../content/sv';
+import { createStrokeUI, strokeHtml } from './story-stroke';
 import { FRIENDS, SWEETS, sharingReward, type StoryAction, type StoryAnswer, type Sweet } from '../sim/story';
 
 const pictures: Record<Sweet, string> = {
@@ -19,9 +20,10 @@ export const storyPanelHtml = `<div class="panel-back" id="storyPanel" hidden>
     <button class="panel-close" id="storyClose" aria-label="${sv.sharing.back}" type="button">✕</button>
     <h2 id="storyTitle">${sv.sharing.title}</h2>
     <p id="storyHint">${sv.sharing.choose}</p>
-    <div id="shareSweets" class="share-sweets" role="group" aria-label="${sv.sharing.choose}">${SWEETS.map((sweet) => `<button type="button" class="share-choice" data-sweet="${sweet}" aria-pressed="false">${svg(pictures[sweet])}<span>${sv.sharing.sweets[sweet]}</span></button>`).join('')}</div>
+    <div id="sharingBody"><div id="shareSweets" class="share-sweets" role="group" aria-label="${sv.sharing.choose}">${SWEETS.map((sweet) => `<button type="button" class="share-choice" data-sweet="${sweet}" aria-pressed="false">${svg(pictures[sweet])}<span>${sv.sharing.sweets[sweet]}</span></button>`).join('')}</div>
     <p class="share-bird-rule">${sv.sharing.bird}</p>
     <div id="shareFriends" class="share-friends" role="group" aria-label="${sv.sharing.friend}">${FRIENDS.map((friend) => `<button type="button" class="share-choice" data-friend="${friend}" disabled>${svg(portraits[friend])}<span>${sv.sharing.friends[friend]}</span><small></small></button>`).join('')}</div>
+    </div>${strokeHtml}
     <p id="storyStatus" role="status" aria-live="polite"></p>
   </section>
 </div>`;
@@ -29,6 +31,12 @@ export const storyPanelHtml = `<div class="panel-back" id="storyPanel" hidden>
 export function createStoryPanel(doc: Document, handlers: { answer(answer: StoryAnswer): boolean; cancel(): void }) {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const element = byId('storyPanel');
+  const stroke = createStrokeUI(doc, (answer) => {
+    if (!handlers.answer(answer)) return false;
+    element.hidden = true;
+    stroke.cancel();
+    return true;
+  });
   let flags: ReadonlySet<string> = new Set();
   let chosen: Sweet | null = null;
   function draw(): void {
@@ -51,6 +59,7 @@ export function createStoryPanel(doc: Document, handlers: { answer(answer: Story
   function back(): void {
     if (element.hidden) return;
     element.hidden = true;
+    stroke.cancel();
     handlers.cancel();
   }
   byId('storyClose').addEventListener('click', back);
@@ -58,12 +67,20 @@ export function createStoryPanel(doc: Document, handlers: { answer(answer: Story
   return {
     element,
     get open() { return !element.hidden; },
-    show(_action: StoryAction, current: ReadonlySet<string>) {
+    interrupt: () => stroke.interrupt(),
+    show(action: StoryAction, current: ReadonlySet<string>) {
       flags = current;
       chosen = null;
-      draw();
+      byId('sharingBody').hidden = action.kind !== 'share';
+      byId('strokeBody').hidden = action.kind === 'share';
+      byId('storyTitle').textContent = action.kind === 'share' ? sv.sharing.title : sv.painting.title;
+      byId('storyHint').textContent = action.kind === 'share' ? sv.sharing.choose : sv.painting.hint;
+      byId('storyStatus').textContent = '';
       element.hidden = false;
-      element.querySelector<HTMLButtonElement>('[data-sweet]')!.focus();
+      if (action.kind === 'share') {
+        draw();
+        element.querySelector<HTMLButtonElement>('[data-sweet]')!.focus();
+      } else stroke.show(action);
     },
     back,
   };

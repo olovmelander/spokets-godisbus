@@ -5,6 +5,7 @@ import { epilog, prolog } from '../../src/content/chapters/ends';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
 import { STEP } from '../../src/sim/constants';
+import { guidedEye } from '../../src/sim/story-stroke';
 import { Sim } from '../../src/sim/sim';
 import type { ChapterData, StepInput } from '../../src/sim/types';
 import { decide, playThrough } from './robot';
@@ -78,22 +79,25 @@ describe('the blink: a beat of the story that takes time', () => {
     const sim = new Sim({ ...prolog, spawn: { x: 4.6, y: 0.01 } });
     run(sim, 0.2);
     sim.step({ ...idle, act: true });
+    sim.finishStory({ kind: 'paint', traces: [guidedEye(116)] });
     run(sim, 0.1);
     return sim;
   };
 
-  it('takes two presses to paint the eyes', () => {
+  it('takes two completed strokes to paint the eyes', () => {
     const sim = atTheGhost();
     expect(sim.flags.has('eye')).toBe(true);
     expect(sim.flags.has('paint')).toBe(false);
     expect(sim.curr.word).toBe('paintGhost');
     sim.step({ ...idle, act: true });
+    sim.finishStory({ kind: 'paint', traces: [guidedEye(204)] });
     expect(sim.flags.has('paint')).toBe(true);
   });
 
   it('holds him while the ghost looks at the shelf and the bag, and then lets it run', () => {
     const sim = atTheGhost();
     sim.step({ ...idle, act: true });
+    sim.finishStory({ kind: 'paint', traces: [guidedEye(204)] });
     const x = sim.curr.x;
     // He watches: the stick does nothing, and the ghost has not moved.
     run(sim, 2.2, { x: 1, hop: true, hopHeld: true });

@@ -13,6 +13,7 @@ import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
 import { GUIDE_AFTER, HELP_TIME, REMIND_AFTER } from './constants';
 import { hintFor } from './help';
 import { sharingReward, type StoryAnswer } from './story';
+import { eyeCentres, validEyeStroke } from './story-stroke';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
@@ -342,7 +343,9 @@ export class Sim {
 
   finishStory(answer: StoryAnswer): boolean {
     if (!this.story || this.story.kind !== answer.kind) return false;
-    const reward = sharingReward(this.flags, answer.friend, answer.sweet);
+    const centres = eyeCentres(this.story.spot);
+    const reward = answer.kind === 'share' ? sharingReward(this.flags, answer.friend, answer.sweet)
+      : centres.length > 0 && answer.traces.length === centres.length && centres.every((cx, i) => validEyeStroke(answer.traces[i]!, cx)) ? [this.story.spot] : null;
     if (!reward) return false;
     for (const flag of reward) this.flags.add(flag);
     this.story = null;

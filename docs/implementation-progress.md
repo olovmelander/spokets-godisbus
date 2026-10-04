@@ -62,3 +62,9 @@ Validation: all 36 save tests and typecheck pass, including stale writers from l
 The summit sharing moment now lets the player choose a candy and recipient. The jay accepts its intended berry; canceling is safe and gifts do not deduct from the collection. Story panels join the shared pause, audio, photo and focus guards, including recovery states.
 
 Validation: typecheck and 14 integrated story/summit tests pass. Source browser checks cover touch, keyboard, controller, saved gifts and continuation to the golden candy.
+
+## Paint the prologue eyes with a forgiving brush gesture
+
+The opening painting action now follows a real brush stroke. Short or wobbly strokes receive the planned assistance; keyboard and controller use the same guided shape. The simulation awards progress only when an eye is completed.
+
+Validation: integrated typecheck and story tests pass. Source browser checks exercise pointer, touch and guided input, interruption and story continuation.

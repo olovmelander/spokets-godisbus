@@ -66,9 +66,9 @@ export const prolog: ChapterData = {
   house: { from: -40, to: 60, windows: [12, 24, 36] },
   checkpoints: [{ x: 2.6, y: 0 }, { x: 26, y: 0 }],
   spots: [
-    // Two eyes: one press for each.
-    { id: 'eye', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost' },
-    { id: 'paint', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye' },
+    // Two eyes: a brush stroke for each; Pappa finishes a short stroke.
+    { id: 'eye', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost', story: 'paint' },
+    { id: 'paint', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye', story: 'paint' },
     // The star that rolled out of the torn bag: taking it shrinks him.
     { id: 'star', look: 'star', at: { x: 41, y: -0.8 }, verb: 'take', needs: 'blink', ride: 'shrink' },
   ],

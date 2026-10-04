@@ -13,7 +13,7 @@ import { createPhotoAlbum } from '../src/ui/photos';
 import { createStoryPanel } from '../src/ui/story';
 import '../src/ui/ui.css';
 
-const VIEWS = ['touch', 'keys', 'pad', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'end', 'photos', 'sharing', 'bubble', 'message', 'debug'] as const;
+const VIEWS = ['touch', 'keys', 'pad', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'end', 'photos', 'sharing', 'painting', 'bubble', 'message', 'debug'] as const;
 const shown = new Set((new URLSearchParams(location.search).get('show') ?? 'touch').split(','));
 const byId = (id: string) => document.getElementById(id)!;
 
@@ -23,6 +23,7 @@ void photos.refresh();
 if (shown.has('photos')) photos.credits();
 const story = createStoryPanel(document, { answer: () => true, cancel: () => {} });
 if (shown.has('sharing')) story.show({ kind: 'share', spot: 'preview' }, new Set(['bag']));
+if (shown.has('painting')) story.show({ kind: 'paint', spot: 'eye' }, new Set());
 byId('controls').hidden = !shown.has('touch');
 
 const hint = shown.has('goal') ? sv.goal : shown.has('pad') ? sv.padHint : shown.has('keys') ? sv.keysHint : '';

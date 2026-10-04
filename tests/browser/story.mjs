@@ -162,6 +162,39 @@ try {
     check('the normal finale continues after sharing', (await state()).flags.includes('taste'));
     await finish();
   }
+  console.log('story: painting starts the prologue');
+  {
+    const { page, state, finish } = await open('painting', {}, '?dev&debug&standin&tier=low&course=prolog', () => {
+      localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'prolog', checkpoint: 0, candy: {}, placed: {}, flags: {}, playMs: 0 }));
+    });
+    await page.keyboard.down('ArrowRight');
+    await until(state, (s) => s.word === 'paintGhost', 'the brush becomes reachable');
+    await page.keyboard.up('ArrowRight');
+    await page.keyboard.press('e');
+    await page.waitForSelector('#storyPanel:not([hidden])');
+    check('the brush waits for a gesture', !(await state()).flags.includes('eye'));
+    const coords = await page.evaluate(() => {
+      const svg = document.getElementById('strokePicture'), matrix = svg.getScreenCTM();
+      return [{ x: 116, y: 64 }, { x: 123, y: 65 }].map((point) => { const p = svg.createSVGPoint(); p.x = point.x; p.y = point.y; const q = p.matrixTransform(matrix); return { x: q.x, y: q.y }; });
+    });
+    await page.mouse.move(coords[0].x, coords[0].y); await page.mouse.down(); await page.mouse.up();
+    check('a tap alone has not painted an eye', !(await state()).flags.includes('eye'));
+    await page.mouse.down(); await page.mouse.move(coords[1].x, coords[1].y, { steps: 3 }); await page.mouse.up();
+    await until(state, (s) => s.flags.includes('eye'), 'Pappa finishes a short brush stroke');
+    check('a short mouse stroke is finished with help', !(await state()).flags.includes('paint'));
+    await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
+    await page.keyboard.press('Escape');
+    check('back keeps the finished eye and leaves the other ready to paint', (await state()).flags.includes('eye') && !(await state()).flags.includes('paint'));
+    await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
+    await page.evaluate(installPad);
+    await padPress(page, 0);
+    await until(state, (s) => s.flags.includes('paint'), 'gamepad paints with help');
+    await until(state, (s) => s.flags.includes('blink'), 'the ghost blinks');
+    check('gamepad painting releases the prologue chase', (await state()).flags.includes('blink'));
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
+    check('finished eyes persist with this player', saved.flags.prolog.includes('eye') && saved.flags.prolog.includes('paint'));
+    await finish();
+  }
   console.log(`Story browser tests: ${checked} checks passed.`);
 } finally {
   await browser?.close();

@@ -132,7 +132,7 @@ function start(): void {
     answer(answer) {
       if (platformBlocked()) return false;
       if (!game.sim.finishStory(answer)) return false;
-      hud.notice(sv.sharing.thanks.replace('{friend}', sv.sharing.friends[answer.friend]).replace('{sweet}', sv.sharing.sweets[answer.sweet].toLocaleLowerCase('sv')));
+      hud.notice(answer.kind === 'paint' ? sv.painting.painted : sv.sharing.thanks.replace('{friend}', sv.sharing.friends[answer.friend]).replace('{sweet}', sv.sharing.sweets[answer.sweet].toLocaleLowerCase('sv')));
       writeSave();
       input.release();
       game.resume();
@@ -481,7 +481,7 @@ function start(): void {
     auto?.suspend();
     resolution?.suspend();
     audio.sleep(platformBlocked() || menuOpen());
-    if (document.hidden) { input.release(); writeSave(); }
+    if (document.hidden) { input.release(); askedForHelp = false; story.interrupt(); writeSave(); }
     else game.resume();
   });
   window.addEventListener('pagehide', writeSave);
@@ -573,6 +573,8 @@ function start(): void {
     recovering = true;
     paused = true;
     input.release();
+    askedForHelp = false;
+    story.interrupt();
     audio.sleep(true);
     auto?.suspend();
     resolution?.suspend();

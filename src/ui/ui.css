@@ -1122,3 +1122,9 @@ button.bag {
 #playerError, #playerUnreadable { font-size: 16px; }
 .panel button:disabled { opacity: 0.45; }
 #pause [hidden] { display: none !important; }
+#strokePicture { display: block; width: 100%; height: min(42vh, 300px); touch-action: none; user-select: none; }
+#strokeAssist { min-height: 52px; margin-top: 10px; }
+@media (max-height: 500px) and (orientation: landscape) {
+  #strokePicture { height: 140px; }
+  #strokeAssist { margin-top: 4px; }
+}
