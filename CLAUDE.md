@@ -62,7 +62,10 @@ Both parents have said yes to everything in the plan's consent list, and every n
 
 - **No logotypes or brand marks** on any model, texture or screen: plain shapes instead.
 - **One tester, no dates.** Only Olov tests before Elof plays, and a stage is done when its checkpoint passes.
-- **Every character is designed in Blender.** No image-to-3D tool or other paid AI tool without asking Olov first.
+- **Elof and the family are generated from Olov's sheets by image-to-3D and finished in Blender** (his decision,
+  3 October 2026): by an open model run on his own computer, or by a paid service once he has chosen it and it
+  passes the checks in `docs/art-bible.md` §1.6. Nothing is uploaded before that, and never to a free tier. The
+  ghost and everything else are designed in Blender. No other paid AI tool without asking Olov first.
 - **The ghost is "spöket"** in the game's text until Elof names it *Klonk* in the epilogue.
 
 ## Blender (plan §5.6, §6.14)
