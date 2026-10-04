@@ -50,7 +50,7 @@ describe('skumbanan, at the end of the clothes line', () => {
       jump(sim, 1);
       walkTo(sim, 107.5);
       jump(sim, 1);
-      expect(sim.curr.y).toBeCloseTo(3, 0);
+      expect(sim.curr.y).toBeCloseTo(garden.ledges!.filter((ledge) => ledge.look === 'leaf')[2]!.y, 1);
       expect(has(sim, 'skumbanan')).toBe(false);
       expect(swingAlong(sim, 1, 3, release), `let go at ${release}`).toEqual(rings.map((ring) => ring.x));
       // On the far leaf: a few steps along it, and it is his.

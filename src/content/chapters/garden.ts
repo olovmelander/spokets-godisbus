@@ -221,10 +221,11 @@ export const garden: ChapterData = {
     // the second is still a soft landing.
     { x: 49.2, y: 2.2, width: 1.2, look: 'plank', needs: 'ladybird' },
     { x: 50.5, y: 2.7, width: 1.2, look: 'plank', needs: 'ladybird' },
-    // The clothes line: three leaves up from the boulder's top to where the first ring is in reach...
+    // The clothes line: three leaves up from the boulder's top to where the first ring is in reach. The
+    // highest is no higher than a held jump off it can come down from, onto the lawn, without the bubble...
     { x: 105, y: 2.1, width: 1.6, look: 'leaf' },
     { x: 107, y: 2.6, width: 1.6, look: 'leaf' },
-    { x: 109.2, y: 3, width: 1.6, look: 'leaf' },
+    { x: 109.2, y: 2.8, width: 1.6, look: 'leaf' },
     // ...and beyond the last ring a broad leaf to land on and a smaller one to step down by, both above where
     // the drops reach. Neither can be jumped onto from the lawn: the way to them is along the rings.
     { x: 123.2, y: 2.3, width: 2.4, look: 'leaf' },
@@ -242,7 +243,7 @@ export const garden: ChapterData = {
     // Over the leaves up from the boulder.
     { x: 105, y: 2.65 },
     { x: 107, y: 3.15 },
-    { x: 109.2, y: 3.55 },
+    { x: 109.2, y: 3.35 },
     // Along the arc of each ring, where the lace carries him: before its lowest point, at it, and after it.
     // A little inside the arc of a full lace, so that a throw that comes late, on a shorter lace, takes them too.
     { x: 111, y: 2.8 },

@@ -345,8 +345,11 @@ describe('the clothes line over the dew rain', () => {
     expect(second.y - first.y).toBeLessThanOrEqual(0.9);
     expect(top.y - second.y).toBeLessThanOrEqual(0.9);
     expect(garden.side!.some((candy) => candy.x === first.x && Math.abs(candy.y - first.y - 0.55) < 0.01)).toBe(true);
-    // Every leaf lies above where a drop reaches him.
-    for (const leaf of leaves) expect(leaf.y).toBeGreaterThanOrEqual(1.5);
+    // Every leaf lies above where a drop reaches him, and no higher than a held jump off it can come down from.
+    for (const leaf of leaves) {
+      expect(leaf.y).toBeGreaterThanOrEqual(1.5);
+      expect(leaf.y + 0.05 + JUMP_APEX - heightAt(garden, leaf.x + leaf.width)).toBeLessThan(FALL_LIMIT);
+    }
     // The two at the far end cannot be jumped onto from the lawn: the way to them is along the rings.
     for (const leaf of [landing, step]) expect(leaf.y - LEDGE_GIVE).toBeGreaterThan(JUMP_APEX + 0.2);
   });
