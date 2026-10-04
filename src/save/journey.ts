@@ -1,3 +1,4 @@
+import { courseQuery } from '../content/chapters';
 import type { PlayerSave } from './store';
 
 /** The ending stays finished when its chapter is played again. */
@@ -23,8 +24,5 @@ export function visitChapter(save: PlayerSave, id: string, fromStart = false): P
 
 /** Explicit course URLs must not keep sending chapter navigation back to the chapter just left. */
 export function chapterQuery(params: URLSearchParams, id: string): string {
-  const next = new URLSearchParams(params);
-  next.set('course', id);
-  for (const key of ['at', 'flags', 'title']) next.delete(key);
-  return next.toString();
+  return courseQuery(params, id).slice(1);
 }

@@ -122,3 +122,9 @@ Validation: typecheck and 62 integrated input/pointing/tutorial tests pass; 34 s
 The combined browser checks now exercise real party choices, close epilogue photo credits before exploration, and verify that memory playback freezes while hidden or recovering from context loss, then resumes at the same picture without moving the game.
 
 Validation: browser scripts parse and typecheck; these integrated cases are included in the final combined browser gate.
+
+## Apply release boundaries to navigation and saved chapters
+
+A single routing policy now governs URLs, saved adventures, chapter codes, onward navigation, exploration and the map. Stable plan IDs map to runtime chapter IDs. Public null still opens the test course; developer routes retain access to the full game. Advancing replaces the old course URL and clears inspection flags, while unavailable saved progress stays intact.
+
+Validation: typecheck and 40 integrated routing/journey/map/ending tests pass; ten source browser checks cover public rejection, explicit-course advancement, codes and saved checkpoints. The release constant is unchanged.

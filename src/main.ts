@@ -6,7 +6,7 @@ import { Game } from './app/game';
 import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
-import { bonusAfter, chapterNumber, courseFor, nextAfter } from './content/chapters';
+import { bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, nextAvailable } from './content/chapters';
 import { album, albumComplete, foundFlag } from './content/kinds';
 import { lostFlag, lostFound } from './content/lost';
 import { createPhotoMoments } from './content/photos';
@@ -22,7 +22,7 @@ import { changeStyle, settingsFor, simOptions, tempoOf, type Settings } from './
 import { codeFor } from './save/codes';
 import { createStore, newSave, type PlayerSave } from './save/store';
 import { createPhotoStore } from './save/photos';
-import { chapterQuery, ghostNamed, rememberFlags, storyFinished, visitChapter } from './save/journey';
+import { ghostNamed, rememberFlags, storyFinished, visitChapter } from './save/journey';
 import type { SimStart, Vec } from './sim/types';
 import { createBench } from './ui/bench';
 import { createDebug, type Debug } from './ui/debug';
@@ -97,6 +97,9 @@ function start(): void {
     return cleared;
   }
   const course = courseFor(params, loaded.kind === 'save' ? loaded.save.chapter : null);
+  const canEnter = (id: string) => courseAvailable(params, id);
+  // Merely opening the public fallback must not move a development save backwards.
+  let keepSavedPosition = loaded.kind === 'save' && !canEnter(loaded.save.chapter);
   const chapter = at ? { ...course, spawn: at } : course;
   let save: PlayerSave = loaded.kind === 'save' ? loaded.save : newSave(Date.now(), chapter.id);
   let settings: Settings = debugOn && params.get('style') === 'lugnt' ? settingsFor('lugnt') : save.settings;
@@ -125,7 +128,7 @@ function start(): void {
     at
       ? (carried.length > 0 ? { flags: carried } : {})
       : {
-          checkpoint: save.chapter === chapter.id ? save.checkpoint : (save.checkpoints?.[chapter.id] ?? -1), collected: save.candy[chapter.id] ?? [], placed: save.placed[chapter.id] ?? [],
+          checkpoint: courseId(save.chapter) === chapter.id ? save.checkpoint : (save.checkpoints?.[chapter.id] ?? -1), collected: save.candy[chapter.id] ?? [], placed: save.placed[chapter.id] ?? [],
           // Reaching the end is not kept: a game taken up again can reach it again.
           flags: [...(save.flags[chapter.id] ?? []).filter((flag) => flag !== 'goal'), ...carried],
         };
@@ -216,8 +219,8 @@ function start(): void {
       ...save,
       updated: Date.now(),
       settings,
-      chapter: chapter.id,
-      checkpoint: game.sim.checkpoint,
+      chapter: keepSavedPosition ? save.chapter : chapter.id,
+      checkpoint: keepSavedPosition ? save.checkpoint : game.sim.checkpoint,
       checkpoints: { ...save.checkpoints, [chapter.id]: Math.max(save.checkpoints?.[chapter.id] ?? -1, game.sim.checkpoint) },
       candy: { ...save.candy, [chapter.id]: game.sim.collected.flatMap((got, i) => (got ? [i] : [])) },
       placed: { ...save.placed, [chapter.id]: game.sim.placed },
@@ -249,15 +252,15 @@ function start(): void {
   let ended = false;
   const explore = createExplore(document, (id) => {
     if (!platformBlocked() && offline.canStart()) goOn(id);
-  });
+  }, canEnter);
   function openExplore(): void {
-    if (platformBlocked() || !offline.canStart() || story.open || photoAlbum.open || memories.open || !params.has('dev') || !storyFinished(save.flags)) return;
+    if (platformBlocked() || !offline.canStart() || story.open || photoAlbum.open || memories.open || !canEnter('epilog') || !storyFinished(save.flags)) return;
     input.release();
     if (!title.open) writeSave();
     explore.show(save);
   }
   for (const id of ['titleExplore', 'pauseExplore', 'endExplore']) {
-    byId(id).hidden = !params.has('dev') || !storyFinished(save.flags);
+    byId(id).hidden = !canEnter('epilog') || !storyFinished(save.flags);
     byId(id).addEventListener('click', openExplore);
   }
   let auto = !benchOn && requestedGraphics === 'auto' && view.info().tier === 'mid' ? createAutoTier() : null;
@@ -340,7 +343,7 @@ function start(): void {
   const hdrAvailable = view.info().hdrAvailable;
   const photoAlbum = createPhotoAlbum(document, photoStore, photoPlayer);
   void photoAlbum.refresh();
-  byId('albumPhotos').hidden = !mapState(chapter.id);
+  byId('albumPhotos').hidden = !mapState(chapter.id, canEnter);
   byId('endPhotos').addEventListener('click', () => photoAlbum.credits());
   byId('graphicsFallback').hidden = hdrAvailable;
   byId<HTMLButtonElement>('graphicsMid').disabled = !hdrAvailable;
@@ -357,7 +360,7 @@ function start(): void {
   }
   byId('bag').addEventListener('click', openBag);
   // Moas karta, in the pause panel and on the chapter's card: where he is, and where the ghost is heading.
-  for (const id of ['pauseMap', 'endMap']) byId(id).innerHTML = mapSvg(mapState(chapter.id), isKlonk());
+  for (const id of ['pauseMap', 'endMap']) byId(id).innerHTML = mapSvg(mapState(chapter.id, canEnter), isKlonk());
   // The helper's button: a press is passed on with the next frame's presses, like H on a keyboard.
   let askedForHelp = false;
   let askedForUse = false;
@@ -443,16 +446,15 @@ function start(): void {
       return true;
     },
     onCode(id) {
-      if (!offline.canStart()) return;
+      if (!offline.canStart() || !canEnter(id)) return false;
       // The chapter's start, with whatever this device has kept of the others. The code holds no candy.
       const others = <T>(all: Record<string, T>) => Object.fromEntries(Object.entries(all).filter(([key]) => key !== id)) as Record<string, T>;
+      keepSavedPosition = false;
       save = { ...save, updated: Date.now(), settings, chapter: id, checkpoint: -1, checkpoints: others(save.checkpoints ?? {}), candy: others(save.candy), placed: others(save.placed), flags: others(save.flags) };
       store.write(save);
       again = true;
-      // Without ?course in the address: the code says where to go.
-      params.delete('course');
-      const query = params.toString();
-      location.href = `${location.pathname}${query ? `?${query.replace(/=(?=&|$)/g, '')}` : ''}`;
+      location.href = `${location.pathname}${courseQuery(params, id)}`;
+      return true;
     },
   });
   const offline = createOffline({
@@ -559,20 +561,22 @@ function start(): void {
 
   /** "Nästa kapitel": the saved game moves on to the next chapter's start, and the page loads it. */
   function goOn(id: string): void {
+    if (!canEnter(id)) return;
     writeSave();
+    keepSavedPosition = false;
     save = visitChapter(save, id);
     store.write(save);
     again = true;
-    location.href = `${location.pathname}?${chapterQuery(params, id)}`;
+    location.href = `${location.pathname}${courseQuery(params, id)}`;
   }
 
   /** "Spela igen": this course from its start; the collection and safe places remain. */
   function playAgain(): void {
     writeSave();
-    save = visitChapter(save, chapter.id, true);
+    if (!keepSavedPosition) save = visitChapter(save, chapter.id, true);
     store.write(save);
     again = true;
-    location.href = `${location.pathname}?${chapterQuery(params, chapter.id)}`;
+    location.href = `${location.pathname}${courseQuery(params, chapter.id)}`;
   }
   let endFor = 0;
   // A memory plays once, when he touches its shaving: not again in a game that has seen it.
@@ -752,7 +756,7 @@ function start(): void {
     if (game.sim.flags.size !== flagsSeen) {
       flagsSeen = game.sim.flags.size;
       const all = { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags) };
-      for (const id of ['pauseMap', 'endMap']) byId(id).innerHTML = mapSvg(mapState(chapter.id), isKlonk());
+      for (const id of ['pauseMap', 'endMap']) byId(id).innerHTML = mapSvg(mapState(chapter.id, canEnter), isKlonk());
       const found = album(all);
       hud.stickers(found);
       if (!goldenFound && albumComplete(found)) {
@@ -781,7 +785,7 @@ function start(): void {
       }
       // The album's page, in the pause panel: in the story only.
       const keepsakes = Object.values(all).some((flags) => flags.includes('keepsake:vittra')) ? ['vittra'] : [];
-      byId('pauseAlbum').innerHTML = mapState(chapter.id) ? albumHtml(found, lost, keepsakes) + memoryAlbumHtml(all) : '';
+      byId('pauseAlbum').innerHTML = mapState(chapter.id, canEnter) ? albumHtml(found, lost, keepsakes) + memoryAlbumHtml(all) : '';
     }
     for (; told < game.sim.said.length; told++) {
       const beat = beats.get(game.sim.said[told]!);
@@ -799,13 +803,11 @@ function start(): void {
       askedForUse = askedForHelp = false;
       input.release();
       writeSave();
-      const canExplore = params.has('dev') && storyFinished(save.flags);
+      const canExplore = canEnter('epilog') && storyFinished(save.flags);
       for (const id of ['titleExplore', 'pauseExplore', 'endExplore']) byId(id).hidden = !canExplore;
       const number = chapterNumber(chapter.id);
-      const following = params.has('dev') ? nextAfter(chapter.id) : null;
-      // After the story's last part comes an extra chapter, if there is one.
-      const bonus = params.has('dev') && !following ? bonusAfter(chapter.id) : null;
-      const next = following ?? bonus;
+      const next = nextAvailable(chapter.id, params);
+      const bonus = next && bonusAfter(chapter.id)?.id === next.id;
       const title = sv.end.named[chapter.id] ?? (number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course);
       const hidden = (chapter.hidden ?? []).map((h) => ({ kind: h.kind, found: game.sim.flags.has(foundFlag(h.kind)) }));
       hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, bonus ? sv.end.bonus : undefined);

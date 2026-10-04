@@ -1,4 +1,5 @@
 import type { ChapterData } from '../../sim/types';
+import { CHAPTER_IDS, RELEASED_CHAPTER, type ChapterId } from '../world';
 import { berget } from './berget';
 import { byn } from './byn';
 import { epilog, prolog } from './ends';
@@ -42,16 +43,44 @@ export function chapterNumber(id: string): number {
   return NUMBERED.findIndex((chapter) => chapter.id === id) + 1;
 }
 
-/**
- * Which course a page plays (plan §4.9).
- * - `?course=<id>` plays that one.
- * - `?dev` plays the story, released or not: the part the saved game is in, or the prologue.
- * - Otherwise: the test course, until a chapter is released. A release is `RELEASED_CHAPTER` in `world.ts`,
- *   and then the title and the saved game decide.
- */
-export function courseFor(params: URLSearchParams, saved: string | null = null): ChapterData {
+/** The authored course names used by existing saves, and the plan's stable release IDs. */
+const RELEASE_IDS: Record<string, ChapterId> = {
+  prolog: 'prolog', garden: 'garden', granskog: 'granskog', myren: 'myr', berget: 'berg',
+  norrsken: 'final', epilog: 'epilog',
+};
+const COURSE_ALIASES: Record<string, string> = { myr: 'myren', berg: 'berget', final: 'norrsken' };
+export const courseId = (id: string): string => Object.hasOwn(COURSE_ALIASES, id) ? COURSE_ALIASES[id]! : id;
+
+/** One release boundary for links, saves, codes and chapter selection. Debug alone never opens a chapter. */
+export function courseAvailable(params: URLSearchParams, id: string, released: ChapterId | null = RELEASED_CHAPTER): boolean {
+  const canonical = courseId(id);
+  if (!Object.hasOwn(COURSES, canonical)) return false;
+  if (canonical === 'testbana' || params.has('dev')) return true;
+  const stable = RELEASE_IDS[canonical];
+  return released !== null && stable !== undefined && CHAPTER_IDS.indexOf(stable) <= CHAPTER_IDS.indexOf(released);
+}
+
+/** Which course a page plays (plan §4.9); an unavailable URL/save falls back to the released beginning. */
+export function courseFor(params: URLSearchParams, saved: string | null = null, released: ChapterId | null = RELEASED_CHAPTER): ChapterData {
   const asked = params.get('course');
-  if (asked && COURSES[asked]) return COURSES[asked];
-  if (!params.has('dev')) return testbana;
-  return [...STORY, ...BONUS].find((chapter) => chapter.id === saved) ?? STORY[0]!;
+  if (asked && courseAvailable(params, asked, released)) return COURSES[courseId(asked)]!;
+  // A development save is retained on the device, but never opens unreleased work in the public game.
+  if (saved && courseAvailable(params, saved, released) && courseId(saved) !== 'testbana') return COURSES[courseId(saved)]!;
+  return courseAvailable(params, 'prolog', released) ? prolog : testbana;
+}
+
+/** The end card's destination. Bonus and look-development courses have no public release ID. */
+export function nextAvailable(id: string, params: URLSearchParams, released: ChapterId | null = RELEASED_CHAPTER): ChapterData | null {
+  const following = nextAfter(courseId(id)) ?? bonusAfter(courseId(id));
+  return following && courseAvailable(params, following.id, released) ? following : null;
+}
+
+/** Replace an old explicit course and discard inspection seeds when entering a different chapter. */
+export function courseQuery(params: URLSearchParams, id: string): string {
+  const next = new URLSearchParams(params);
+  next.set('course', courseId(id));
+  next.delete('at');
+  next.delete('flags');
+  next.delete('title');
+  return `?${next.toString()}`;
 }

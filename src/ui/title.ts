@@ -6,7 +6,7 @@ import { sv } from '../content/sv';
 export interface TitleHandlers {
   onStart(style: PlayStyle | null): void;
   onStartOver(): boolean | void | Promise<boolean | void>;
-  onCode(chapter: string): void;
+  onCode(chapter: string): boolean | void;
   onSettings?(): void;
   onFront?(): void;
   onSelect?(id: string): boolean;
@@ -142,8 +142,7 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     const chapter = chapterFor(field.value);
-    if (chapter) handlers.onCode(chapter);
-    else wrong.hidden = false;
+    if (!chapter || handlers.onCode(chapter) === false) wrong.hidden = false;
   });
   for (const [id, style] of [['firstAventyr', 'aventyr'], ['firstLugnt', 'lugnt']] as const) {
     byId(id).addEventListener('click', () => {

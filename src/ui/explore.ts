@@ -8,8 +8,8 @@ import { mapState, mapSvg } from './map';
 /** Only authored, already built chapters; neither test courses nor future places appear. */
 export const EXPLORE_CHAPTERS = [...STORY, ...BONUS];
 
-export function exploreHtml(save: PlayerSave): string {
-  return EXPLORE_CHAPTERS.map((chapter) => {
+export function exploreHtml(save: PlayerSave, available: (id: string) => boolean = () => true): string {
+  return EXPLORE_CHAPTERS.filter((chapter) => available(chapter.id)).map((chapter) => {
     const flags = save.flags[chapter.id] ?? [];
     const candy = new Set((save.candy[chapter.id] ?? []).filter((i) => i >= 0 && i < chapter.candy.length)).size;
     const kinds = Object.entries(KINDS).filter(([, kind]) => kind.chapter === chapter.id);
@@ -21,7 +21,7 @@ export function exploreHtml(save: PlayerSave): string {
   }).join('');
 }
 
-export function createExplore(doc: Document, onSelect: (id: string) => void) {
+export function createExplore(doc: Document, onSelect: (id: string) => void, available: (id: string) => boolean = () => true) {
   const back = doc.createElement('div');
   back.id = 'explore';
   back.className = 'panel-back explore';
@@ -38,17 +38,17 @@ export function createExplore(doc: Document, onSelect: (id: string) => void) {
   back.addEventListener('click', (event) => {
     if (event.target === back) hide();
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-chapter]') : null;
-    if (button && EXPLORE_CHAPTERS.some((chapter) => chapter.id === button.dataset.chapter)) onSelect(button.dataset.chapter!);
+    if (button && available(button.dataset.chapter!) && EXPLORE_CHAPTERS.some((chapter) => chapter.id === button.dataset.chapter)) onSelect(button.dataset.chapter!);
   });
   return {
     element: back,
     get open() { return !back.hidden; },
     show(save: PlayerSave) {
       focus = doc.activeElement instanceof HTMLElement ? doc.activeElement : null;
-      back.querySelector('.map')!.innerHTML = mapSvg({ ...mapState('epilog')!, here: mapState(save.chapter)?.here ?? 'home' }, ghostNamed(save.flags));
-      back.querySelector('.chapter-list')!.innerHTML = exploreHtml(save);
+      back.querySelector('.map')!.innerHTML = mapSvg({ ...mapState('epilog', available)!, here: mapState(save.chapter, available)?.here ?? 'home' }, ghostNamed(save.flags));
+      back.querySelector('.chapter-list')!.innerHTML = exploreHtml(save, available);
       back.hidden = false;
-      back.querySelector<HTMLButtonElement>(`[data-chapter="${EXPLORE_CHAPTERS.some((chapter) => chapter.id === save.chapter) ? save.chapter : 'prolog'}"]`)!.focus();
+      back.querySelector<HTMLButtonElement>(`[data-chapter="${EXPLORE_CHAPTERS.some((chapter) => chapter.id === save.chapter && available(chapter.id)) ? save.chapter : EXPLORE_CHAPTERS.find((chapter) => available(chapter.id))?.id}"]`)?.focus();
     },
     back: hide,
   };

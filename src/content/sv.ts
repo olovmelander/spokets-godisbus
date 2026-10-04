@@ -228,6 +228,7 @@ export const sv = {
   // Moas karta: a child's names for the places, as she would write them.
   map: {
     title: 'Moas karta',
+    unfinished: 'Här ritar Moa fortfarande …',
     home: 'Hemma',
     forest: 'Granskogen',
     brook: 'Bäcken',

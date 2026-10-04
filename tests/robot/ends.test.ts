@@ -213,7 +213,7 @@ describe('the story from its first scene to its last', () => {
     expect(courseFor(dev).id).toBe('prolog');
     expect(courseFor(dev, 'myren').id).toBe('myren');
     expect(courseFor(new URLSearchParams('')).id).toBe('testbana');
-    expect(courseFor(new URLSearchParams('course=epilog')).id).toBe('epilog');
+    expect(courseFor(new URLSearchParams('dev&course=epilog')).id).toBe('epilog');
   });
 
   it('gives each part without a number a name for its card, and the last one its closing words', () => {

@@ -54,5 +54,9 @@ describe('visiting the story after its ending', () => {
     expect(html).toContain('<span class="row"><i></i><i></i></span>');
     expect(html).toContain('1 / 4 Gömt godis');
     expect(html).toContain('En utmaningsväg att utforska');
+    const released = exploreHtml(save, (id) => ['prolog', 'garden'].includes(id));
+    expect(released.match(/data-chapter=/g)).toHaveLength(2);
+    expect(released).not.toContain('data-chapter="byn"');
+    expect(exploreHtml(save, () => false)).toBe('');
   });
 });
