@@ -204,6 +204,8 @@ export const garden: ChapterData = {
     { x: 116, y: 4.9, length: 2.6, extra: true },
     { x: 120, y: 4.9, length: 2.6, extra: true },
   ],
+  // The clothes line itself, between its two poles: the three rings hang from it.
+  lines: [{ from: { x: 110.4, y: 6 }, to: { x: 121.6, y: 6 }, sag: 0.3, posts: true }],
   ledges: [
     // The window sills: five boards along the house wall, up from the step beyond the lifted board and down
     // again before the ladybird. They are wide and 0.7 or 0.8 apart, and each going down begins under the end
