@@ -197,29 +197,34 @@ const HEART = '#ef7fb0';
 /** A collected candy flies into Elof in this long. */
 const CANDY_FLIGHT = 0.22;
 
-/** The trail's sweets, by their names in the kit. The last three are flat, and keep their faces to him. */
+/** The candy's shapes, by their names in the kit. The last three are flat, and keep their faces to him. */
 export const TRAIL_SHAPES = ['karamell', 'randig', 'polka', 'hjarta', 'klubba'] as const;
 /**
- * Bright karameller in twisted wrappers, with a swirl, a striped lollipop or a pink heart now and then (plan
- * §4.3). Thirteen in a row and then again: thirteen shares nothing with the six colours, so each sweet comes
- * round in every colour.
+ * Candy speaks in two voices (docs/level-design.md). **The trail is sweets in wrappers:** karameller, striped
+ * ones and a swirl now and then, and it says "this is the way". **Side candy is hearts and lollipops:** it
+ * lies off the trail, on an upper route or in a pocket, and says "this is extra". A child can tell route
+ * from detour by the shape alone.
+ * Thirteen in a row and then again: thirteen shares nothing with the six colours, so each sweet comes round
+ * in every colour.
  */
-const ORDER = [0, 1, 0, 2, 0, 0, 1, 3, 0, 1, 0, 2, 4];
-export const trailShape = (index: number): number => ORDER[index % ORDER.length]!;
-export const trailColour = (index: number): string => (trailShape(index) === 3 ? HEART : CANDY_COLOURS[index % CANDY_COLOURS.length]!);
+const ORDER = [0, 1, 0, 2, 0, 0, 1, 0, 0, 1, 0, 2, 1];
+export type CandyVoice = 'trail' | 'side';
+export const trailShape = (index: number, voice: CandyVoice = 'trail'): number => (voice === 'side' ? 3 + (index % 2) : ORDER[index % ORDER.length]!);
+export const trailColour = (index: number, voice: CandyVoice = 'trail'): string =>
+  (trailShape(index, voice) === 3 ? HEART : CANDY_COLOURS[index % CANDY_COLOURS.length]!);
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
 interface Batch { mesh: InstancedMesh; candies: number[]; flat: boolean }
 
 /**
- * The trail candy, floating and turning. Each kind of sweet is one instanced mesh, so the whole trail is at
- * most five draw calls however long it is. A mesh says which of the chapter's candies it holds in
- * `userData.candies`.
+ * The trail candy, or the side candy, floating and turning. Each kind of sweet is one instanced mesh, so a
+ * whole trail is at most three draw calls however long it is, and the side candy two. A mesh says which of
+ * the list's candies it holds in `userData.candies`.
  */
-export function createTrail(candy: readonly { x: number; y: number; after?: string }[]) {
+export function createTrail(candy: readonly { x: number; y: number; after?: string }[], voice: CandyVoice = 'trail') {
   const group = new Group();
-  group.name = 'trail-candy';
+  group.name = voice === 'side' ? 'side-candy' : 'trail-candy';
   const colour = new Color();
   const place = new Object3D();
   // Its roll round its own length comes first, then the sway and the tilt.
@@ -230,7 +235,7 @@ export function createTrail(candy: readonly { x: number; y: number; after?: stri
     mesh.instanceMatrix.setUsage(DynamicDrawUsage);
     // The trail runs the length of the course, so it is never outside the picture as a whole.
     mesh.frustumCulled = false;
-    for (const [slot, index] of candies.entries()) mesh.setColorAt(slot, colour.set(trailColour(index)));
+    for (const [slot, index] of candies.entries()) mesh.setColorAt(slot, colour.set(trailColour(index, voice)));
     mesh.userData.candies = candies;
     group.add(mesh);
     return { mesh, candies, flat };
@@ -258,8 +263,8 @@ export function createTrail(candy: readonly { x: number; y: number; after?: stri
       old.mesh.dispose();
     }
     batches = shapes
-      .map((shape, kind) => ({ shape: shape!, kind, candies: candy.map((_, i) => i).filter((i) => trailShape(i) === kind) }))
-      .filter((one) => one.candies.length > 0 || one.kind === 0)
+      .map((shape, kind) => ({ shape: shape!, kind, candies: candy.map((_, i) => i).filter((i) => trailShape(i, voice) === kind) }))
+      .filter((one) => one.candies.length > 0)
       .map((one) => batch(one.shape, kit.material, one.candies, one.kind >= 2));
     return true;
   }

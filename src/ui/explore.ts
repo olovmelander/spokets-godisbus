@@ -12,13 +12,16 @@ export const EXPLORE_CHAPTERS = [...STORY, ...BONUS];
 export function exploreHtml(save: PlayerSave, available: (id: string) => boolean = () => true): string {
   return EXPLORE_CHAPTERS.filter((chapter) => available(chapter.id)).map((chapter) => {
     const flags = save.flags[chapter.id] ?? [];
-    const candy = new Set((save.candy[chapter.id] ?? []).filter((i) => i >= 0 && i < chapter.candy.length)).size;
+    // All the candy he has from here, and all there is: the trail's, and the side candy off it.
+    const sideTotal = chapter.side?.length ?? 0;
+    const candy = new Set((save.candy[chapter.id] ?? []).filter((i) => i >= 0 && i < chapter.candy.length)).size
+      + new Set((save.side?.[chapter.id] ?? []).filter((i) => i >= 0 && i < sideTotal)).size;
     const kinds = Object.entries(KINDS).filter(([, kind]) => kind.chapter === chapter.id);
     const stickers = kinds.map(([id]) => `<i class="${flags.includes(foundFlag(id)) ? 'got kind' : 'missing'}" style="${stickerStyle(id)}"></i>`).join('');
     const rows = Array.from({ length: Math.ceil(candy / 10) }, (_, row) => `<span class="row">${'<i></i>'.repeat(Math.min(10, candy - row * 10))}</span>`).join('');
     const challenge = chapter.hidden?.find((hidden) => hidden.route);
     const stars = challenge ? `<span class="route-star" aria-label="${flags.includes(foundFlag(challenge.kind)) ? sv.explore.routeFound : sv.explore.routeWaiting}">${flags.includes(foundFlag(challenge.kind)) ? '★' : '☆'}</span>` : '';
-    return `<button type="button" class="chapter-choice" data-chapter="${chapter.id}"><b><span aria-hidden="true">${sv.explore.icons[chapter.id] ?? '→'}</span> ${sv.explore.chapters[chapter.id] ?? chapter.id}</b><span class="rows" aria-hidden="true">${rows}</span><span>${candy} / ${chapter.candy.length} ${sv.end.candy}</span>${kinds.length ? `<span class="stickers" aria-label="${kinds.filter(([id]) => flags.includes(foundFlag(id))).length} / ${kinds.length} ${sv.stickers}">${stickers}</span>` : ''}${stars}</button>`;
+    return `<button type="button" class="chapter-choice" data-chapter="${chapter.id}"><b><span aria-hidden="true">${sv.explore.icons[chapter.id] ?? '→'}</span> ${sv.explore.chapters[chapter.id] ?? chapter.id}</b><span class="rows" aria-hidden="true">${rows}</span><span>${candy} / ${chapter.candy.length + sideTotal} ${sv.end.candy}</span>${kinds.length ? `<span class="stickers" aria-label="${kinds.filter(([id]) => flags.includes(foundFlag(id))).length} / ${kinds.length} ${sv.stickers}">${stickers}</span>` : ''}${stars}</button>`;
   }).join('');
 }
 
