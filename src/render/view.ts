@@ -16,6 +16,8 @@ import { nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
 import { createDepthBlur } from './depth-blur';
+import { createBloom } from './bloom';
+import { createWater } from './water';
 import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
@@ -159,6 +161,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const materialGrade = createMaterialGrade(grade);
   materialGrade.setEnabled(tier === 'low');
   const depthBlur = hdrAvailable ? createDepthBlur() : null;
+  const bloom = hdrAvailable ? createBloom() : null;
   const outputPass = hdrAvailable ? new OutputPass() : null;
   if (outputPass) outputPass.renderToScreen = true;
   let hdr: { scene: WebGLRenderTarget; grade: WebGLRenderTarget } | null = null;
@@ -245,7 +248,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
-  const water = buildWater(chapter, place?.water ?? null);
+  const water = createWater(chapter, place?.water ?? null, place?.sun.from);
+  const waterScene = new Scene();
+  waterScene.fog = scene.fog;
+  waterScene.add(water.group);
   const tussockMeshes = buildTussocks(chapter, place?.tussock ?? null);
   const berryMeshes = buildBerries(chapter);
   for (const berry of berryMeshes) scene.add(berry);
@@ -254,7 +260,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const wind = buildWind(chapter);
   const night = buildNight(chapter, sky, hemisphere, sun);
   scene.add(night.group);
-  scene.add(water.group, ...tussockMeshes, mist.group, follower.group, wind.group);
+  scene.add(...tussockMeshes, mist.group, follower.group, wind.group);
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
   // It is the first asset through the whole chain: Blender → glTF → KTX2 and meshopt → the page.
@@ -452,6 +458,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       gradePass?.setSize(canvas.width, canvas.height);
     }
     depthBlur?.setSize(canvas.width, canvas.height, tier === 'high');
+    bloom?.setSize(canvas.width, canvas.height, tier === 'high');
+    water.setSize(canvas.width, canvas.height, tier);
     camera.aspect = width / height;
     // Elof is about 78 px tall on a phone held sideways, and the view is never narrower than 6 EL.
     const elofPx = clamp(height * 0.2, 75, 140);
@@ -485,8 +493,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   function draw(): void {
     renderer.info.reset();
     if (warm > 0) {
+      water.applyCaustics(scene);
       materialGrade.apply(scene);
-      scene.traverse((object) => {
+      materialGrade.apply(waterScene);
+      for (const layer of [scene, waterScene]) layer.traverse((object) => {
         if (!object.frustumCulled) return;
         object.frustumCulled = false;
         unculled.push(object);
@@ -496,7 +506,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       renderer.setRenderTarget(hdr?.scene ?? null);
       // A normal (non-XR) render target uses linear output without material tone mapping.
       renderer.render(scene, camera);
+      if (hdr && water.refracting) water.capture(renderer, hdr.scene, camera);
+      renderer.setRenderTarget(hdr?.scene ?? null);
+      // Water reads the copied pre-water colour, while testing the scene's retained depth. No second
+      // scene render and no read/write feedback: this adds only the pool draws and one small copy.
+      const clear = renderer.autoClear;
+      renderer.autoClear = false;
+      try { renderer.render(waterScene, camera); } finally { renderer.autoClear = clear; }
       if (hdr && gradePass && outputPass) {
+        bloom?.render(renderer, hdr.scene);
+        gradePass.setBloom(bloom?.texture ?? null);
         depthBlur?.render(renderer, hdr.scene, camera);
         gradePass.setDepthBlur(depthBlur?.texture ?? null, hdr.scene.depthTexture, camera.near, camera.far, camera.position.z);
         gradePass.render(renderer, hdr.grade, hdr.scene);
@@ -741,7 +760,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // The previous tier's storage has been released/resized; new allocations use this tier's budget.
       gpu?.resetPeaks();
       // Low and HDR need different material variants. Compile against their actual play targets before
-      // the paused settings handler returns. Entering High also warms its half-resolution depth pass.
+      // the paused settings handler returns. Entering High also warms its half-resolution depth, bloom and water passes.
       if (changesPipeline) {
         warm = 2;
         if (hasFrame) while (warm > 0) draw();
@@ -915,28 +934,6 @@ function buildGround(chapter: ChapterData): Mesh {
   const geometry = new ExtrudeGeometry(shape, { depth: 4.7, bevelEnabled: false });
   geometry.translate(0, 0, -4);
   return new Mesh(geometry, new MeshStandardMaterial({ color: '#7f8f58', roughness: 1 }));
-}
-
-/**
- * The water of a pool or a brook, in greybox: a clear blue body that fills its pit to its surface, which
- * rises and sinks a little. The real water comes with the places (plan §5).
- */
-function buildWater(chapter: ChapterData, look: { colour: string; opacity: number } | null) {
-  const group = new Group();
-  const material = new MeshStandardMaterial({ color: look?.colour ?? '#4f9fc4', roughness: 0.25, transparent: true, opacity: look?.opacity ?? 0.78 });
-  const DEPTH = 6;
-  // In a place the water lies as far back as the eye reaches; in greybox it is as deep as the ground slab.
-  const back = look ? 46 : 4.6;
-  const bodies = (chapter.water ?? []).map((w) => {
-    const body = new Mesh(new BoxGeometry(w.to - w.from, DEPTH, back), material);
-    body.position.set((w.from + w.to) / 2, w.y - DEPTH / 2, 0.65 - back / 2);
-    group.add(body);
-    return { body, y: w.y - DEPTH / 2 };
-  });
-  function update(clock: number): void {
-    for (const [i, w] of bodies.entries()) w.body.position.y = w.y + Math.sin(clock * 1.3 + i) * 0.03;
-  }
-  return { group, update };
 }
 
 /**

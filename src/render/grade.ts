@@ -1,5 +1,5 @@
 import {
-  BufferGeometry, Data3DTexture, DataUtils, Float32BufferAttribute, HalfFloatType, LinearFilter, Mesh, OrthographicCamera, RGBAFormat, ShaderMaterial, Vector2, Vector3,
+  BufferGeometry, Data3DTexture, DataUtils, Float32BufferAttribute, HalfFloatType, LinearFilter, Mesh, OrthographicCamera, RGBAFormat, ShaderMaterial, Vector3,
   type Material, type Object3D, type Texture,
   type WebGLRenderTarget, type WebGLRenderer,
 } from 'three';
@@ -128,14 +128,8 @@ const FRAGMENT = /* glsl */ `
   uniform float grain;
   uniform float seed;
   uniform float glow;
-  uniform vec2 texel;
+  uniform sampler2D tBloom;
   varying vec2 vUv;
-
-  // What is brighter than white in the picture before it is graded: the candy's glitter, a glint, the sun
-  // on something pale, the northern lights.
-  vec3 bright(vec2 uv) {
-    return max(texture2D(tDiffuse, uv).rgb - GLOW_FROM, 0.0);
-  }
 
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
@@ -150,17 +144,8 @@ const FRAGMENT = /* glsl */ `
       vec4 soft = texture2D(tBlur, vUv);
       scene = mix(scene, soft.rgb, mask * soft.a);
     }
-    // The glow of High (plan §6.5): light spills a little round what is brightest. Two rings of eight
-    // samples, the outer one turned half a step, read from the same picture: no buffer of its own.
-    if (glow > 0.0) {
-      vec3 spill = vec3(0.0);
-      for (int i = 0; i < 8; i++) {
-        float a = float(i) * 0.7853982;
-        spill += bright(vUv + vec2(cos(a), sin(a)) * texel * 5.0) * 0.075;
-        spill += bright(vUv + vec2(cos(a + 0.3926991), sin(a + 0.3926991)) * texel * 13.0) * 0.05;
-      }
-      scene += spill * glow;
-    }
+    // High's threshold light is gathered once at half resolution; keep it HDR until output.
+    if (glow > 0.0) scene += texture2D(tBloom, vUv).rgb * glow;
     float light = dot(scene * exposure * tint, vec3(0.2126, 0.7152, 0.0722));
     // Scale exceptionally bright HDR values into the LUT, then extrapolate the affine grade about its
     // black offset. Highlights remain HDR until OutputPass applies Neutral and sRGB exactly once.
@@ -183,6 +168,7 @@ export interface Effect {
 export interface GradePass extends Effect {
   /** How strongly light spills round what is brightest: 0 is off, as on Mid. */
   setGlow(strength: number): void;
+  setBloom(texture: Texture | null): void;
   setDepthBlur(texture: Texture | null, depth: Texture | null, near: number, far: number, cameraZ: number): void;
 }
 
@@ -194,14 +180,14 @@ export const GLOW_ON_HIGH = 0.6;
 /**
  * The one grading pass of Mid and High (plan §6.5): grade, vignette and grain in a single full-screen draw,
  * and on High a glow round what is brightest. Tone mapping and the sRGB conversion are applied by the
- * renderer after it. The glow is switched by a number, so going between Mid and High compiles nothing.
+ * renderer after it. High reads a half-resolution HDR bloom texture; all switches in this pass are uniforms.
  */
 export function createGradePass(grade: Grade): GradePass {
   const material = new ShaderMaterial({
-    defines: { GLOW_FROM: GLOW_FROM.toFixed(3), LUT_SIZE: LUT_SIZE.toFixed(1), LUT_RANGE: LUT_RANGE.toFixed(1) },
+    defines: { LUT_SIZE: LUT_SIZE.toFixed(1), LUT_RANGE: LUT_RANGE.toFixed(1) },
     uniforms: {
       glow: { value: 0 },
-      texel: { value: new Vector2(1 / 1280, 1 / 720) },
+      tBloom: { value: null },
       tDiffuse: { value: null },
       tint: { value: new Vector3(...grade.tint) },
       exposure: { value: grade.exposure },
@@ -229,16 +215,14 @@ export function createGradePass(grade: Grade): GradePass {
   return {
     render(renderer, writeBuffer, readBuffer) {
       material.uniforms.tDiffuse!.value = readBuffer.texture;
-      (material.uniforms.texel!.value as Vector2).set(1 / Math.max(1, readBuffer.width), 1 / Math.max(1, readBuffer.height));
       // The grain moves a little each frame, like film. It is far too faint to flicker.
       material.uniforms.seed!.value = (material.uniforms.seed!.value + 0.371) % 97;
       renderer.setRenderTarget(writeBuffer);
       renderer.render(triangle, camera);
     },
-    // The pass has no buffers of its own. The glow's reach is counted in pixels of the picture it reads.
-    setSize(width, height) {
-      (material.uniforms.texel!.value as Vector2).set(1 / Math.max(1, width), 1 / Math.max(1, height));
-    },
+    // Only the effect targets depend on size; LUT/vignette/grain use normalized coordinates.
+    setSize() {},
+    setBloom(texture) { material.uniforms.tBloom!.value = texture; },
     setDepthBlur(texture, depth, near, far, cameraZ) {
       material.uniforms.tBlur!.value = texture;
       material.uniforms.tDepth!.value = depth;

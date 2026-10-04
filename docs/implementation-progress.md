@@ -182,3 +182,9 @@ Validation: the script inventory was compared with the package gate and every ex
 Track texture and render-target allocation, resize, deletion and context loss in debug and benchmark runs. Graphics-tier checks now include peak storage and the High render-target limit; unknown formats fail explicitly.
 
 Validation: 581 unit tests and 49 focused browser checks passed at the source milestone. Typecheck, build and privacy gates pass; later combined High checks cover all representative places.
+
+## Add flowing water and half-resolution bloom
+
+Animate water flow with glints and caustics, add bounded refraction, and render bloom at half resolution. Quality changes dispose of their old targets and retain the existing play-plane clarity.
+
+Validation: renderer unit tests, typecheck, build and privacy gates pass. The renderer's 28 focused browser checks cover tier changes, image properties and shader/framebuffer validity; tested scenes remain below 120 draws.
