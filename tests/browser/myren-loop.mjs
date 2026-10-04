@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { picture } from './picture.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/myren-loop'); mkdirSync(shots, { recursive: true });
@@ -84,7 +85,7 @@ try {
     check(`${name}: Mamma's raised boardwalk meets the visible landing`, result.ready && result.visible);
     check(`${name}: Low and High remain below 120 draws with warmed shaders`, result.drawn.every((info) => info.drawCalls <= 120 && info.stable));
     check(`${name}: pause freezes boardwalk and simulation`, result.frozen);
-    await page.screenshot({ path: join(shots, `${name}-reunion-high.png`) });
+    await picture(page, join(shots, `${name}-reunion-high.png`));
     const loop = await page.evaluate(() => {
       const p = window.probe;
       const west = p.walk(142), returned = p.sim.flags.has('bog:lantern-return');

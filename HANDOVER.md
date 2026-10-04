@@ -2,7 +2,8 @@
 
 ## State (4 October 2026)
 
-- **The candy is modelled in Blender** (4 October, on Olov's computer, branch `candy-design`; art bible §2.9).
+- **The candy is modelled in Blender** (4 October, on Olov's computer; pull requests #110 and #111, merged, and
+  on the site; art bible §2.9).
   Olov: "We need to improve the design of all candies and similar assets in the game use the blender mcp".
   - **What you see:**
     - *The trail* is the poster's candy: glossy karameller in pleated, twisted wrappers, striped ones whose
@@ -33,11 +34,17 @@
   - **Validation:** typecheck; 790 unit and robot tests, 16 of them new (`tests/unit/candy.test.ts` holds the
     generator to the game's kinds and colours, and checks the trail, the places for sweets and the summit's
     gifts); the build and its size gate; the privacy check. In a browser on Olov's computer: the smoke suite,
-    with a new check that the kit is loaded, and the opening story, whose candy check now reads the trail's
-    several meshes. The other suites ran on GitHub for the pull request. Pictures from the game at nine places
+    with a new check that the kit is loaded, the opening story, whose candy check now reads the trail's
+    several meshes, and for the stickers the album and Moa's map.
+    - **Merged on Olov's word, before GitHub had finished.** He wrote "Merge this to main!" while both pull
+      requests' runs were still playing the browser suites; typecheck, the tests, the build and the privacy
+      check had passed there. Both were merged then. The deploy succeeded, the live pack has `candy.glb`, and
+      the live game was looked at in the garden, the bog, the summit and the shop, with no error in the console.
+      When this was written both runs were still playing the suites, fifty and forty minutes in. Their results are on the two pull requests, and are recorded with the next change to this file. Pictures from the game at nine places
     and the kit as a sheet are in `docs/shots/_work/candy/` on his computer (git ignores them).
     - With another session's browser drawing the game on the same computer, seven robot tests ran out of
-      their five seconds. They pass with `npx vitest run --testTimeout 90000`, and on GitHub.
+      vitest's five seconds, and passed with a longer limit and on GitHub. **Fixed:** a test now has thirty
+      seconds (`testTimeout` in `vite.config.ts`), so `npm test` passes on a busy computer too.
   - **Not done:** the bag in the corner is the drawn outline it was, and the golden geléhallon's reward in the
     album is its drawn picture. The stand-in big candy (seen for a moment before the pack arrives) is still
     the old striped ball. The ghost's own carved pocket, on its private model, is untouched. **Not judged by Olov yet,** and not seen on a phone.
@@ -1354,6 +1361,11 @@ The older list, still true where it is not struck:
   Safari/Home Screen updates and storage eviction have not been checked on the family's devices yet.
 
 
+- **A slow picture no longer fails a browser suite.** On GitHub the game is drawn in software, and a
+  screenshot there can take longer than Playwright's thirty seconds: on 4 October that failed the run of a
+  pull request that changed only this file (`myren-loop.mjs`, at 1180×820 on High). Every screenshot in the
+  suites was an iteration picture and never a check, so all 54 now go through `tests/browser/picture.mjs`,
+  which waits two minutes and then goes on without the picture. A run on GitHub takes 43 minutes or more.
 - **Two sessions in one checkout get in each other's way.** On 4 October a second session started in the main
   checkout while the first had a dev server running there. Its `npm ci` could not delete rolldown's native file,
   which the server held open, and stopped with `EPERM` after removing most of `node_modules`; and each

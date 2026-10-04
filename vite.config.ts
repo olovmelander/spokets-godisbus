@@ -49,6 +49,8 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     build: { target: 'es2022', chunkSizeWarningLimit: 900, emptyOutDir: true },
-    test: { include: ['tests/{unit,sim,robot}/**/*.test.ts'], environment: 'node' },
+    // A robot plays a whole chapter in one test. Vitest's five seconds are enough on a quiet computer, and
+    // not when another session's browser is drawing the game beside it (HANDOVER.md, "Known bugs").
+    test: { include: ['tests/{unit,sim,robot}/**/*.test.ts'], environment: 'node', testTimeout: 30000 },
   };
 });

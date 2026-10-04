@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -102,7 +103,7 @@ try {
           await until(state, s => s.help.step === step, `${name}: hint ${step}`);
         }
         check(`${name}: all three hints`, (await state()).help.step === 3);
-        await page.screenshot({ path: join(SHOTS, `${name}.png`) });
+        await picture(page, join(SHOTS, `${name}.png`));
         if (stop === 'entry') {
           await page.keyboard.down('Space');
           await until(state, s => !s.grounded && s.vy > 0, `${name}: leaves moving platform`);
@@ -140,7 +141,7 @@ try {
           await until(state, s => s.help.step === step, `${name}: hint ${step}`);
         }
         check(`${name}: all three hints`, (await state()).help.step === 3);
-        await page.screenshot({ path: join(SHOTS, `${name}.png`) });
+        await picture(page, join(SHOTS, `${name}.png`));
         if (stop === 'light') {
           check(`${name}: only first light found`, start.flags.includes('shy:1') && !start.flags.includes('shy:2') && !start.flags.includes('found:lakritskonfekt'));
         } else {
@@ -170,7 +171,7 @@ try {
           await until(state, s => s.help.step === step, `${name}: hint ${step}`);
         }
         check(`${name}: all three hints`, (await state()).help.step === 3);
-        await page.screenshot({ path: join(SHOTS, `${name}.png`) });
+        await picture(page, join(SHOTS, `${name}.png`));
         if (stop === 'entry') {
           await page.keyboard.down('ArrowLeft');
           await until(state, s => s.x < 151.86, `${name}: running takeoff`);

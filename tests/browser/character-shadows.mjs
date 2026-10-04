@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm' };
@@ -44,7 +45,7 @@ try {
       await frames(page);
       check(`${course} ${tier}: no shader compiled during play`, (await info(page)).programs === programs);
       if (course === 'garden' && tier === 'high' && process.env.SHADOW_SCREENSHOT) {
-        await page.screenshot({ path: process.env.SHADOW_SCREENSHOT });
+        await picture(page, process.env.SHADOW_SCREENSHOT);
       }
       await page.keyboard.press('Escape');
     }

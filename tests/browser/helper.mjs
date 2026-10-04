@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { picture } from './picture.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/helper');
 mkdirSync(shots, { recursive: true });
@@ -68,10 +69,10 @@ try {
     }, { tier });
     check(`${name}: one ghost visits the actual gully without a jay download or Använd hint`, visit.ghostCount === 1 && !visit.bird && visit.help.step === 1 && visit.help.visit && visit.help.verb === null && visit.models.includes('boot/big-candy') && !visit.models.includes('boot/jay') && !fetched.some((url) => url.includes('/jay.glb')));
     check(`${name}: visitor is visible and within draw budget`, visit.screen && visit.screen.x > 0 && visit.screen.x < width && visit.drawCalls <= 120);
-    await page.screenshot({ path: join(shots, `${name}-visit.png`) });
+    await picture(page, join(shots, `${name}-visit.png`));
     const first = await page.evaluate(() => { const p = window.probe; p.ask(); p.ask(); p.draw(0); return p.snapshot(); });
     const middle = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 5; i++) p.draw(0.5); return p.snapshot(); });
-    await page.screenshot({ path: join(shots, `${name}-swing.png`) });
+    await picture(page, join(shots, `${name}-swing.png`));
     const end = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 5; i++) p.draw(0.5); return p.snapshot(); });
     check(`${name}: dotted Elof demonstrates the full swing without granting progress`, first.help.step === 3 && middle.figures[0].at[0] !== first.figures[0].at[0] && middle.ropeOpacity > 0 && Math.abs(end.figures[0].at[0] - 67.8) < 0.01 && end.ropeOpacity === 0 && end.state === first.state);
     check(`${name}: visit and demonstration compile no new shaders and fit the draw budget`, first.programs === visit.programs && middle.programs === visit.programs && end.programs === visit.programs && Math.max(first.drawCalls, middle.drawCalls, end.drawCalls) <= 120);
@@ -82,7 +83,7 @@ try {
     const calm = await page.evaluate(() => { document.body.classList.add('calm'); const p = window.probe; p.draw(0); return p.snapshot(); });
     const calmLater = await page.evaluate(() => { const p = window.probe; p.draw(2); return p.snapshot(); });
     check(`${name}: Mindre rörelse keeps a static three-pose explanation`, calm.figures.every((f) => f.opacity > 0) && JSON.stringify(calm.figures) === JSON.stringify(calmLater.figures) && JSON.stringify(calm.actor) === JSON.stringify(calmLater.actor) && calm.programs === visit.programs);
-    await page.screenshot({ path: join(shots, `${name}-calm.png`) });
+    await picture(page, join(shots, `${name}-calm.png`));
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const os = await page.evaluate(() => { document.body.classList.remove('calm'); const p = window.probe; p.draw(1); return p.snapshot(); });
     check(`${name}: device reduced-motion preference selects the same still explanation`, JSON.stringify(os.figures) === JSON.stringify(calm.figures));
@@ -109,7 +110,7 @@ try {
       await page.touchscreen.tap(point.x, point.y);
       await page.waitForFunction(() => window.__godis.state().help.step === 2).catch(async (error) => {
         console.log('touch diagnostic', point, await page.evaluate(() => window.__godis.state()));
-        await page.screenshot({ path: join(shots, 'touch-failure.png') });
+        await picture(page, join(shots, 'touch-failure.png'));
         throw error;
       });
       check('actual garden page: tapping the world helper asks the next hint', await page.locator('#actBtn').evaluate((e) => e.classList.contains('pulse')));

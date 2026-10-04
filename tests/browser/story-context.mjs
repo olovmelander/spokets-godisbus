@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { picture } from './picture.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/story-context');
@@ -88,7 +89,7 @@ try {
     });
     check(`${width}×${height}: big text fits below the bag and beside the helper`, layout.inside && layout.readable && layout.clear);
     check(`${width}×${height}: reminder is untimed and politely announced`, layout.animated === 0 && layout.live === 'polite');
-    await page.screenshot({ path: join(shots, `purpose-${width}x${height}.png`) });
+    await picture(page, join(shots, `purpose-${width}x${height}.png`));
     await page.evaluate(() => { document.getElementById('bubble').hidden = false; });
     check(`${width}×${height}: temporary dialogue can be read without overlap`, await page.locator('#storyPurpose').evaluate((node) => getComputedStyle(node).visibility === 'hidden'));
     await page.evaluate(() => { document.getElementById('bubble').hidden = true; });
@@ -140,7 +141,7 @@ try {
   await frames(resumed.page, 20);
   check('reading the untimed pause recap leaves simulation and context frozen', (await state(resumed.page)).steps === before.steps && await resumed.page.locator('#pauseStory').textContent() === recap);
   check('the candy counter identifies recovered sweets while the ghost has the original bag', (await resumed.page.locator('#bag').getAttribute('aria-label')).startsWith('Upphittat godis:') && await resumed.page.locator('#bag').getAttribute('title') === 'Upphittat godis');
-  await resumed.page.screenshot({ path: join(shots, 'pause-resumed.png') });
+  await picture(resumed.page, join(shots, 'pause-resumed.png'));
   await resumed.page.click('#resumeBtn');
   await resumed.page.evaluate(() => {
     window.__contextLoss = document.getElementById('game').getContext('webgl2').getExtension('WEBGL_lose_context');
@@ -188,7 +189,7 @@ try {
   await frames(unknown.page, 20);
   check('missing the memory cannot make the normal-play explanation expire',
     await unknown.page.locator('#storyPurposeReveal').isVisible() && await unknown.page.locator('#storyPurposeReveal').textContent() === genericMotive);
-  await unknown.page.screenshot({ path: join(shots, 'finale-motive-without-memory.png') });
+  await picture(unknown.page, join(shots, 'finale-motive-without-memory.png'));
   for (const [sweet, friend] of [['karamell', 'tragubbe'], ['lingon', 'jay'], ['skumbanan', 'spoket']]) {
     await unknown.page.keyboard.press('e');
     await unknown.page.waitForSelector('#storyPanel:not([hidden])');
@@ -217,7 +218,7 @@ try {
   check('the epilogue pause recap keeps that saved motive without granting the missed identity',
     (await home.page.locator('#pauseStoryRecap').textContent()).includes(genericMotive) &&
     !/min gamla|min första/.test(await home.page.locator('#pauseStoryRecap').textContent()));
-  await home.page.screenshot({ path: join(shots, 'epilogue-motive-without-memory.png') });
+  await picture(home.page, join(shots, 'epilogue-motive-without-memory.png'));
   await home.finish();
 
   const unfinished = await open({ width: 390, height: 844 }, saved('epilog', 0, { norrsken: ['placed:tragubbe', 'eyes'] }));
@@ -249,7 +250,7 @@ try {
   const learned = await known.page.locator('#storyPurposeReveal').textContent();
   await frames(known.page, 20);
   check('the normal-play explanation persists while the game continues', await known.page.locator('#storyPurposeReveal').isVisible() && await known.page.locator('#storyPurposeReveal').textContent() === learned);
-  await known.page.screenshot({ path: join(shots, 'finale-motive-playing.png') });
+  await picture(known.page, join(shots, 'finale-motive-playing.png'));
   for (const [sweet, friend] of [['karamell', 'tragubbe'], ['lingon', 'jay'], ['skumbanan', 'spoket']]) {
     await known.page.keyboard.press('e');
     await known.page.waitForSelector('#storyPanel:not([hidden])');
@@ -265,7 +266,7 @@ try {
     !(await state(known.page)).paused);
   await known.page.keyboard.press('Escape');
   await known.page.waitForSelector('#pause:not([hidden])');
-  await known.page.screenshot({ path: join(shots, 'finale-understanding.png') });
+  await picture(known.page, join(shots, 'finale-understanding.png'));
   await known.finish();
 
   // This saved route can finish within the four Pappa lines' 14.135-second duration at normal speed.
@@ -321,7 +322,7 @@ try {
       }));
     check(`${width}×${height}: reading the origin leaves the onward action focused`,
       await fast.page.locator('#endOnward').evaluate((node) => document.activeElement === node));
-    await fast.page.screenshot({ path: join(shots, `finale-origin-end-${width}x${height}.png`) });
+    await picture(fast.page, join(shots, `finale-origin-end-${width}x${height}.png`));
   }
   await fast.finish();
 
@@ -334,7 +335,7 @@ try {
   check('the transition explanation stays visible beside the focused next action', await ending.page.locator('#endStory').evaluate((node) => {
     const rect = node.getBoundingClientRect(); return rect.top >= 0 && rect.bottom <= innerHeight;
   }));
-  await ending.page.screenshot({ path: join(shots, 'forest-handoff.png') });
+  await picture(ending.page, join(shots, 'forest-handoff.png'));
   await ending.finish();
   console.log(`Story context: ${checks} browser checks passed.`);
 } finally { await browser.close(); await server.close(); }

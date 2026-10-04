@@ -6,6 +6,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -88,7 +89,7 @@ async function open(name, options, query = '?debug') {
   const state = () => page.evaluate(() => window.__godis.state());
   const info = () => page.evaluate(() => window.__godis.info());
   const finish = async () => {
-    await page.screenshot({ path: join(SHOTS, `stage-0a-${name}.png`) });
+    await picture(page, join(SHOTS, `stage-0a-${name}.png`));
     // The KTX2 transcoder runs in a worker made from a blob, which is still this page's own code.
     const own = (url) => url.startsWith(origin) || url.startsWith(`blob:${origin}`) || url.startsWith('data:');
     check(`${name}: no request leaves the site`, requests.every(own), `${requests.length} requests`);

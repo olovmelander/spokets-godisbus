@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { picture } from './picture.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/finale-stage'); mkdirSync(shots, { recursive: true });
 const virtual = '\0finale-stage-fixture';
@@ -95,7 +96,7 @@ try {
     check(`${name}: the whole shoulder composition fits the screen`, ride.corners.every(points=>points.every(([x,y])=>Math.abs(x)<1 && Math.abs(y)<1)));
     const pause=await page.evaluate(()=>{const p=window.probe;for(let i=0;i<20;i++)p.draw(0);return p.snapshot();});
     check(`${name}: pausing holds the shoulder pose and GPU resources`, JSON.stringify(pause.elof)===JSON.stringify(ride.elof) && JSON.stringify(pause.pappa)===JSON.stringify(ride.pappa) && pause.geometries===ride.geometries && pause.textures===ride.textures);
-    await page.screenshot({path:join(shots,`${name}-home.png`),timeout:60000});
+    await picture(page, join(shots,`${name}-home.png`));
     const after=await page.evaluate(()=>{const p=window.probe;p.advance(3);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});
     check(`${name}: the carried group follows the path with warmed shaders and bounded draws`, after.player[0]>ride.player[0]+3 && Math.abs(after.pappa[0]-after.player[0])<.01 && Math.abs(after.carving[0]-after.elof[0])<1.1 && after.programs===ride.programs && after.drawCalls<=120);
     const late=await page.evaluate(()=>{const p=window.probe;p.advance(4.4);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});

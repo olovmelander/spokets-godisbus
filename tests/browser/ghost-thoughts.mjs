@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { picture } from './picture.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/ghost-thoughts'); mkdirSync(shots, { recursive: true });
@@ -86,7 +87,7 @@ try {
     }, gate);
     check(`${name}: story progress reveals a legible picture inside the viewport`, shown.opacity > 0.9 && shown.scale === 1 && shown.corners.every((point) => Math.abs(point[0]) <= 0.99 && Math.abs(point[1]) <= 0.99));
     check(`${name}: thought shader was warmed and draw calls remain bounded`, shown.programs === early.programs && shown.drawCalls <= 120);
-    await page.screenshot({ path: join(shots, `${name}.png`) });
+    await picture(page, join(shots, `${name}.png`));
     const paused = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 20; i++) p.draw(0); return p.snapshot(); });
     check(`${name}: pause freezes placement and opacity without changing the simulation`, JSON.stringify(paused.at) === JSON.stringify(shown.at) && paused.opacity === shown.opacity && paused.sim === shown.sim);
     const calm = await page.evaluate(() => { const p = window.probe; document.body.classList.add('calm'); p.draw(0.2); const a = p.snapshot(); for (let i = 0; i < 40; i++) p.draw(0.1); return { a, b: p.snapshot() }; });
