@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
           icons: [192, 512].map((size) => ({ src: `icons/ghost-${size}.png`, sizes: `${size}x${size}`, type: 'image/png', purpose: 'any' })),
         },
         injectManifest: {
-          globPatterns: ['**/*.{js,wasm,css,html,woff2}', 'icons/*.png', 'packs/manifest.json', 'packs/boot/*.{glb,ktx2,m4a,webp}'],
+          globPatterns: ['**/*.{js,wasm,css,html,woff2}', 'assets/*.webp', 'icons/*.png', 'packs/manifest.json', 'packs/boot/*.{glb,ktx2,m4a,webp}'],
           maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
           // Pack filenames are stable. Version their URLs too, including the manifest fetched by old pages.
           manifestTransforms: [(entries) => ({

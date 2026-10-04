@@ -18,12 +18,18 @@
       skumbanan. *In Byn's shop* the jars hold wrapped sweets.
     - *Everywhere* a sweet gives off a little of its own colour and has a glossy rim, so it keeps its colours in
       the forest's shade, against the bog's sun and at night. Before, the big candy went olive in the bog.
+    - *The stickers* in the album, on the bag in the corner, on the end card and on Moa's map are pictures of
+      the sweets themselves, rendered from the same models, where each was a disc in two colours. The end
+      card's rows of ten are small wrapped sweets.
+    - *The Saturday bag* that the ghost takes is striped paper, pinked at its top, with sweets looking out,
+      where it was a box with three stripes. Its tear is a jagged rip.
   - **How:** `art/blender/candy.py` builds 25 sweets into `art/baked/boot/candy.glb` (no texture; colours on
     the corners, their own shade baked in), and `art/blender/big-candy.py` the checkpoint.
     `src/render/candy.ts` reads the kit, draws the trail and puts the sweets where the scene asks for them.
     Every place keeps a stand-in built in code until the kit has arrived, and where a build has no kit.
-  - **It costs** 68 KB more as served (boot is 787 KB of 3 MB) and 2 KB of script. The trail is at most five
-    draw calls where it was one; a hidden sweet is two where it was three.
+  - **It costs** about 100 KB more as served (the kit, and 24 KB for the stickers' sheet) and 2 KB of script.
+    The trail is at most five draw calls where it was one; a hidden sweet is two where it was three.
+  - `dev/menus.html?show=album` shows the stickers without WebGL (`album,all` shows every one).
   - **Validation:** typecheck; 790 unit and robot tests, 16 of them new (`tests/unit/candy.test.ts` holds the
     generator to the game's kinds and colours, and checks the trail, the places for sweets and the summit's
     gifts); the build and its size gate; the privacy check. In a browser on Olov's computer: the smoke suite,
@@ -32,9 +38,9 @@
     and the kit as a sheet are in `docs/shots/_work/candy/` on his computer (git ignores them).
     - With another session's browser drawing the game on the same computer, seven robot tests ran out of
       their five seconds. They pass with `npx vitest run --testTimeout 90000`, and on GitHub.
-  - **Not done:** the stickers in the album and on the bag are still discs in two colours, and the Saturday bag
-    and the bag in the corner are as they were. The stand-in big candy (seen for a moment before the pack
-    arrives) is still the old striped ball. **Not judged by Olov yet,** and not seen on a phone.
+  - **Not done:** the bag in the corner is the drawn outline it was, and the golden geléhallon's reward in the
+    album is its drawn picture. The stand-in big candy (seen for a moment before the pack arrives) is still
+    the old striped ball. The ghost's own carved pocket, on its private model, is untouched. **Not judged by Olov yet,** and not seen on a phone.
   - **Three choices the session made,** for Olov to overrule: the bow on the big candy; that it turns as a
     pinwheel instead of round its stick; and how much a sweet shines by itself (`CANDY_LIFT` in
     `src/render/candy.ts`: 0 is only the place's light).
@@ -1210,10 +1216,8 @@
 
 - **The candy** (art bible §2.9): Olov's eyes on it, on a phone: `?dev` for the trail and the big candy,
   `?dev&course=myren` for the lysklubba, the album's kinds one by one as he finds them. What he says tunes
-  `art/blender/candy.py` and `CANDY_LIFT`. Then the rest of what he asked for, "all candies and similar
-  assets": the album's and the bag's stickers as pictures of the same models, the Saturday bag as a model
-  (striped paper, pinked at its top, sweets looking out), and the end card's rows as small wrapped sweets.
-  It needs Blender, so Olov's computer.
+  `art/blender/candy.py` and `CANDY_LIFT`; the stickers follow from the same models
+  (`art/blender/candy-stickers.py`). Changing a model needs Blender, so Olov's computer.
 - Use the validation record in State for the exact integrated source tree before further integration.
   Keep the merged baseline separate from `codex/storytelling-gameplay-overhaul` until its reviewed
   integration is recorded. The earlier PR stack is already merged; superseded older heads were audited
@@ -1390,9 +1394,10 @@ The older list, still true where it is not struck:
 - A `.blend` stores the full path it was saved to, which includes the Windows user name. `big-candy.blend` is
   therefore not committed; it is rebuilt from `art/blender/big-candy.py`. Decide how to handle this before the
   first hand-modelled public `.blend` is committed.
-- A long script is easier to keep in a file than to pass through the tool. The session of 3 October ran its
-  generator files through a small MCP client in its scratchpad, started exactly as `.mcp.json` declares the
-  server, and used the tools directly for short scripts, the status and screenshots.
+- A long script is easier to keep in a file than to pass through the tool. `scripts/bake/send-to-blender.mjs`
+  sends a file to the open Blender through the server, started exactly as `.mcp.json` declares it; arguments
+  after the file become its first lines (`"OUT = r'...'"`). Use the session's own tools for short scripts,
+  the status and screenshots. A render written to a file and read back shows more than a viewport screenshot.
 - Reference pictures go into the scene as image empties, in a collection that is hidden from renders.
 - Shade can be baked into a model's colours: Cycles bakes ambient occlusion to a colour attribute on the points
   (`bpy.ops.object.bake(type='AO', target='VERTEX_COLORS')`), in well under a second for a small model.

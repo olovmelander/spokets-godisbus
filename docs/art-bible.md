@@ -393,6 +393,9 @@ anyone else:
     gräddkola, a salmiak lozenge and a praline in its paper cup.
   - *The magic candy:* `guldhallon`, `lysklubba` (a golden swirl) and `stjarna` (the shrinking star).
   - `burk`, a wrapped sweet of 60 triangles, for the hundreds in the shop's jars.
+  - *Elof's Saturday bag,* `lordagspase`: striped paper, pinked at its top and open, with five sweets looking
+    out; and `reva`, the jagged tear the story shows at its hinge. Paper is dull and gives off less of its
+    colour than sugar does (`paperMaterial`).
 - `art/blender/big-candy.py` builds the checkpoint, `art/baked/boot/big-candy.glb`: a thick round swirl
   lollipop with a yellow bow, and the one painted texture (256², with the stick's and the bow's colours in
   its corners, so the whole model is one material).
@@ -408,6 +411,12 @@ anyone else:
   place's light. Magic candy gives off most of its colours: it glows, and High's bloom spreads it.
 - Until the kit has arrived, and wherever it is missing, each place draws the stand-in it builds in code.
 
+**The stickers are pictures of the same models.** `art/blender/candy-stickers.py` renders the sixteen kinds
+into one sheet, `src/ui/kinds.webp` (six across, three down, 96 pixels each, 24 KB), and the album, the bag
+in the corner, the end card and Moa's map cut their stickers from it (`src/ui/sticker.ts`), with a pale
+edge like a sticker's. One not found yet is still an empty ring. The end card's rows of ten are small wrapped
+sweets, cut from plain colour.
+
 **Rules:**
 
 - **Red is the candy's** (§2.2). The big candy is red and white in every place.
@@ -417,13 +426,20 @@ anyone else:
   always has its bow-tie outline and a flat one shows its swirl; one in a wrapper rolls round its own length.
   A hidden sweet sways inside its golden ring. The big candy's swirl turns like a pinwheel, faster once reached.
 - **Budgets.** The trail is at most five draw calls (one for each kind of sweet), about 450 triangles a
-  sweet; a hidden sweet is one draw call and at most 1,300 triangles; the kit is 140 KB packed.
+  sweet; a hidden sweet is one draw call and at most 1,300 triangles; the kit is 160 KB packed.
 
-**To rebuild or change it,** on Olov's computer with Blender open: send `art/blender/candy.py` to Blender,
-then `scripts/bake/export.py` with `OUT` set to `art/baked/boot/candy.glb`; the same for `big-candy.py`.
-`art/blender/candy-sheet.py` renders the whole kit as one picture for looking at. The server's safe mode
+**To rebuild or change it,** on Olov's computer with Blender open and its MCP server started:
+
+    node scripts/bake/send-to-blender.mjs art/blender/candy.py
+    node scripts/bake/send-to-blender.mjs scripts/bake/export.py "OUT = r'<the repository>/art/baked/boot/candy.glb'"
+
+and the same for `big-candy.py` and `big-candy.glb`. `send-to-blender.mjs` starts the server as `.mcp.json`
+declares it, with safe mode on.
+After a change to a hidden kind, send `candy.py` and then `candy-stickers.py` with `OUT` set to
+`src/ui/kinds.webp`, so that its sticker follows. `art/blender/candy-sheet.py` renders the whole kit as one
+picture for looking at. The server's safe mode
 allows no classes and no functions passed as values, which is why the generators give shapes as tables.
 
-**What Olov judges:** is each hidden kind recognisable as its sort; are the trail's sweets bright enough and
-big enough on a phone; is the big candy's bow wanted. `docs/shots/_work/candy/` has the sheet and pictures
+**What Olov judges:** is each hidden kind recognisable as its sort, in the world and as a sticker; are the
+trail's sweets bright enough and big enough on a phone; is the big candy's bow wanted; is the bag his bag. `docs/shots/_work/candy/` has the sheet and pictures
 from the game.

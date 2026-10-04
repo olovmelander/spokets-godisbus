@@ -1,8 +1,10 @@
 // dev/menus.html: every piece of DOM that lies over the game, shown without WebGL (plan §6.10).
-// Choose what to show with ?show=touch, keys, pad, goal, pause, stuck, message or debug; several can be joined
-// with commas.
+// Choose what to show with ?show=touch, keys, pad, goal, pause, stuck, album, message or debug; several can be
+// joined with commas.
 // It uses the same shell and the same style sheet as the game, so it shows what the game shows.
+import { KINDS } from '../src/content/kinds';
 import { sv } from '../src/content/sv';
+import { albumHtml } from '../src/ui/album';
 import { settingsFor } from '../src/save/settings';
 import { createPause } from '../src/ui/pause';
 import { createHud } from '../src/ui/hud';
@@ -16,7 +18,7 @@ import { storyContext, storyHandoff } from '../src/content/story-context';
 import { createStoryContext } from '../src/ui/story-context';
 import '../src/ui/ui.css';
 
-const VIEWS = ['touch', 'keys', 'pad', 'purpose', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'end', 'photos', 'memory', 'sharing', 'painting', 'carving', 'party', 'bubble', 'message', 'debug'] as const;
+const VIEWS = ['touch', 'keys', 'pad', 'purpose', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'album', 'end', 'photos', 'memory', 'sharing', 'painting', 'carving', 'party', 'bubble', 'message', 'debug'] as const;
 const params = new URLSearchParams(location.search);
 const shown = new Set((params.get('show') ?? 'touch').split(','));
 const byId = (id: string) => document.getElementById(id)!;
@@ -46,10 +48,16 @@ if (hint) {
   byId('hint').hidden = false;
   byId('hint').textContent = hint;
 }
-if (shown.has('pause') || shown.has('stuck')) {
+// Three of every four kinds found: the stickers on the bag and in the album, and the empty rings between them.
+const someKinds = Object.keys(KINDS).filter((_, i) => i % 4 !== 3);
+if (shown.has('pause') || shown.has('stuck') || shown.has('album')) {
   const pause = createPause(document, { onResume: () => pause.hide(), onSettings: () => {}, onStuck: () => pause.hide() });
   pause.show(settingsFor('aventyr'));
   if (shown.has('stuck')) byId('stuckBtn').click();
+  if (shown.has('album')) {
+    byId('pauseAlbum').innerHTML = albumHtml(shown.has('all') ? Object.keys(KINDS) : someKinds);
+    createHud(document, 116).stickers(someKinds);
+  }
 }
 if (shown.has('title') || shown.has('saved') || shown.has('styles')) {
   const title = createTitle(document, { onStart: () => title.hide(), onStartOver: () => {}, onCode: () => title.hide() });
@@ -62,7 +70,7 @@ if (shown.has('end') || shown.has('bubble')) {
     hud.say('moa', 'tiny');
     hud.tick(0.1);
   }
-  if (shown.has('end')) hud.end(sv.end.chapter, 87, () => {});
+  if (shown.has('end')) hud.end(sv.end.chapter, 87, () => {}, undefined, undefined, Object.keys(KINDS).slice(0, 4).map((kind, i) => ({ kind, found: i !== 2 })));
 }
 if (shown.has('message')) {
   byId('messageText').textContent = sv.noWebGL;

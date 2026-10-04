@@ -1,4 +1,4 @@
-import { KINDS } from '../content/kinds';
+import { stickerStyle } from './sticker';
 import { sv } from '../content/sv';
 import type { Speaker, Verb } from '../sim/types';
 
@@ -54,12 +54,11 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
   // Nothing bounces or slaps on when the device asks for less motion, or the player does (*Mindre rörelse*).
   const less = window.matchMedia('(prefers-reduced-motion: reduce)');
   const still = { get matches() { return less.matches || doc.body.classList.contains('calm'); } };
-  /** A sticker: a round mark in the kind's two colours, or an empty ring for one not found. */
+  /** A sticker: a picture of the sweet, or an empty ring for one not found. */
   const sticker = (kind: string, found = true): HTMLElement => {
     const mark = doc.createElement('i');
-    if (!found) mark.className = 'missing';
-    mark.style.setProperty('--colour', KINDS[kind]?.colour ?? '#cccccc');
-    mark.style.setProperty('--mark', KINDS[kind]?.mark ?? '#ffffff');
+    mark.className = found ? 'kind' : 'missing';
+    mark.style.cssText = stickerStyle(kind);
     mark.title = sv.kinds[kind] ?? kind;
     return mark;
   };

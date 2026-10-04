@@ -1,18 +1,19 @@
 import { albumComplete, KINDS } from '../content/kinds';
 import { LOST } from '../content/lost';
 import { sv } from '../content/sv';
+import { stickerStyle } from './sticker';
 
 /**
  * The sticker album (plan §4.3), in the pause panel: every kind of hidden candy, four to a chapter, in the
- * order of the story. A kind he has found is a sticker with its name. One still out there is an empty ring,
+ * order of the story. A kind he has found is a sticker, a picture of the sweet, with its name. One still out there is an empty ring,
  * and keeps its name to itself: what it is, is for him to find out. Under them: Hittegods (plan §4.8).
  */
 export function albumHtml(found: readonly string[], lost: readonly string[] = [], keepsakes: readonly string[] = []): string {
   const has = new Set(found);
   const kinds = Object.entries(KINDS);
-  const slots = kinds.map(([kind, look]) =>
+  const slots = kinds.map(([kind]) =>
     has.has(kind)
-      ? `<li class="got"><i style="--colour:${look.colour};--mark:${look.mark}"></i><span>${sv.kinds[kind] ?? kind}</span></li>`
+      ? `<li class="got"><i class="kind" style="${stickerStyle(kind)}"></i><span>${sv.kinds[kind] ?? kind}</span></li>`
       : '<li><i class="missing"></i><span>?</span></li>',
   );
   const count = sv.album.count.replace('{found}', String(kinds.filter(([kind]) => has.has(kind)).length)).replace('{total}', String(kinds.length));

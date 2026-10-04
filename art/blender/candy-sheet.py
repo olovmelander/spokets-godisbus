@@ -59,7 +59,7 @@ ROWS = [
     [('karamell', 0), ('karamell', 1), ('karamell', 2), ('randig', 3), ('randig', 0), ('polka', 5), ('polka', 0), ('hjarta', 4), ('klubba', 0), ('klubba', 2), ('burk', 1)],
     ['gelehallon', 'gummibjorn', 'skumbanan', 'skumsvamp', 'sockerbit', 'gummiorm', 'chokladkola', 'colaflaska'],
     ['chokladpeng', 'stektagg', 'surnapp', 'lakritskonfekt', 'polkagris', 'graddkola', 'salmiakruta', 'chokladpralin'],
-    ['guldhallon', 'lysklubba', 'stjarna'],
+    ['guldhallon', 'lysklubba', 'stjarna', 'lordagspase'],
 ]
 STEP = 0.62
 turned = math.radians(TURN)  # noqa: F821 (set by the caller, see above)
@@ -75,7 +75,8 @@ for r in range(len(ROWS)):
             made = made.copy()
             scene.collection.objects.link(made)
         used.add(name)
-        made.location = ((k - (len(row) - 1) / 2.0) * STEP, 0.0, -r * STEP)
+        # The bag stands on its origin, and a sweet has its middle there: the bag is set down by half its height.
+        made.location = ((k - (len(row) - 1) / 2.0) * STEP, 0.0, -r * STEP - (0.3 if name == 'lordagspase' else 0.0))
         made.rotation_euler = (0.0, 0.0, turned)
         made.color = tone('#ffffff') if isinstance(entry, str) else tone(COLOURS[entry[1]])
         made.data.materials.clear()
@@ -119,6 +120,10 @@ try:
     scene.view_settings.view_transform = 'Standard'
 except TypeError:
     pass
+# Its own settings, whatever the scene was last rendered as: a picture with its wall, as a PNG.
+scene.render.film_transparent = False
+scene.render.image_settings.file_format = 'PNG'
+scene.render.image_settings.color_mode = 'RGB'
 scene.render.filepath = OUT  # noqa: F821 (set by the caller, see above)
 bpy.ops.render.render(write_still=True)
 print('rendered', OUT, 'with', scene.render.engine)  # noqa: F821
