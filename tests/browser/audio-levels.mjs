@@ -29,7 +29,14 @@ function audioProbe() {
     createGain() { const gain = super.createGain(); window.__audioGains.push(gain); return gain; }
   };
   window.__pad = { connected: true, mapping: 'standard', index: 0, id: 'test controller', axes: [0, 0], buttons: Array.from({ length: 16 }, () => ({ pressed: false, touched: false, value: 0 })) };
-  Object.defineProperty(navigator, 'getGamepads', { value: () => [window.__pad] });
+  Object.defineProperty(navigator, 'getGamepads', { value: () => {
+    // Each test press is one sampled tap. Three slow software-rendered frames can exceed the
+    // menu's 380 ms repeat delay, so retaining a held button would navigate more than once.
+    const pad = window.__pad;
+    const sample = { ...pad, buttons: pad.buttons.map((button) => ({ ...button })) };
+    pad.buttons = pad.buttons.map(() => ({ pressed: false, touched: false, value: 0 }));
+    return [sample];
+  } });
 }
 const frames = (page, left = 3) => page.evaluate((left) => new Promise((resolve) => {
   const step = () => { if (--left <= 0) resolve(); else requestAnimationFrame(step); };
