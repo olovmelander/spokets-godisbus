@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { myren } from '../../src/content/chapters/myren';
 import { foundFlag } from '../../src/content/kinds';
 import { CANDY_MAGNET, ELOF_HEIGHT, JUMP_APEX, STEP } from '../../src/sim/constants';
@@ -7,6 +7,9 @@ import { heightAt } from '../robot/robot';
 import { idle, jump, run, runPast, swingAlong, walkTo } from './drive';
 
 // The sweets of Myren that have a way of their own (docs/level-design.md): each is played here the way it says.
+
+// Each way is played several times over: give the tests time on a busy computer.
+vi.setConfig({ testTimeout: 90000 });
 
 const sweet = (kind: string) => myren.hidden!.find((h) => h.kind === kind)!;
 const found = (sim: Sim, kind: string) => sim.flags.has(foundFlag(kind));

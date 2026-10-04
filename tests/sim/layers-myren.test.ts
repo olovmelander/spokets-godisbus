@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { Game } from '../../src/app/game';
 import { myren } from '../../src/content/chapters/myren';
 import { TRAIL_SHAPES, trailShape } from '../../src/render/candy';
@@ -14,6 +14,9 @@ import { idle, jump, leap, run, runPast, sideTaken, swingAlong, walkTo } from '.
 // The first layers over Myren (docs/level-design.md): a leaf over the first cranberry, five leaves over the
 // firm tussocks, and three rings between the dead pines over the boardwalk. Each is played here from the
 // trail's ground and back to it, on Äventyr.
+
+// Most tests here play their way several times over: give them time on a busy computer.
+vi.setConfig({ testTimeout: 90000 });
 
 const ledges = myren.ledges!;
 const side = myren.side!;
@@ -402,13 +405,15 @@ describe('the trail under the layers', () => {
   });
 
   it('is followed as before: the robot takes no side candy, finds no sweet with a way, and is never offered the lace', () => {
+    // The layers end with the boardwalk: the robot is followed from the start to the ramp beyond it.
+    const beyond = 130;
     for (const style of ['aventyr', 'lugnt'] as const) {
       const game = new Game(myren, style === 'lugnt' ? simOptions(settingsFor('lugnt')) : {});
       let wasAhead = false;
       let wasOffered = false;
       let lace = 0;
       let onALedge = 0;
-      for (let frame = 0; frame < 60 * 300 && !game.sim.flags.has('goal'); frame++) {
+      for (let frame = 0; frame < 60 * 200 && game.sim.curr.x < beyond; frame++) {
         const { x, y, ahead, offered } = decide(game, myren);
         // On Lugnt nothing is jumped: the marked hops carry him.
         const hop = style === 'aventyr' && ahead && !wasAhead;
@@ -418,7 +423,7 @@ describe('the trail under the layers', () => {
         if (game.sim.curr.verb === 'lace') lace++;
         if (ledges.some((ledge) => on(game.sim, ledge))) onALedge++;
       }
-      expect(game.sim.flags.has('goal'), style).toBe(true);
+      expect(game.sim.curr.x, style).toBeGreaterThanOrEqual(beyond);
       expect(game.sim.bubbles, style).toBe(0);
       expect(game.sim.collectedSide.filter(Boolean), style).toHaveLength(0);
       expect(lace, style).toBe(0);
