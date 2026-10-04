@@ -9,6 +9,8 @@ const CARD_WIDTH = 1.9, CARD_HEIGHT = CARD_WIDTH * HEIGHT / WIDTH;
 
 /** Thoughts belong to a settled, nearby story stop, never a later chapter or a travelling ghost. */
 export function thoughtAt(chapter: ChapterData, ghost: GhostState | null, flags: ReadonlySet<string>, player: Vec): Picture | null {
+  const clue = chapter.thoughtClues?.find((clue) => flags.has(clue.after) && Math.hypot(clue.at.x - player.x, clue.at.y - player.y) <= 3);
+  if (clue) return clue.picture;
   if (!ghost || ghost.gone || ghost.t < 1 || Math.hypot(ghost.x - player.x, ghost.y - player.y) > 5.5) return null;
   const thought = chapter.ghost?.[ghost.perch]?.thought;
   if (!thought || (thought.after !== undefined && !flags.has(thought.after)) || (thought.until !== undefined && flags.has(thought.until))) return null;
@@ -17,6 +19,19 @@ export function thoughtAt(chapter: ChapterData, ghost: GhostState | null, flags:
 
 /** Symbolic drawings, like the garden's smudge: no likeness, text, model or downloaded image. */
 function drawPicture(c: CanvasRenderingContext2D, picture: Picture): void {
+  if (picture === 'small-figure') {
+    // A little paper picture left with the vittror's thank-you, rather than a thought from an absent ghost.
+    c.fillStyle = '#fff6e2'; c.beginPath(); c.roundRect(35, 10, 186, 146, 13); c.fill();
+    c.fillStyle = '#decfb3'; c.beginPath(); c.moveTo(190, 10); c.lineTo(221, 40); c.lineTo(190, 40); c.closePath(); c.fill();
+    c.save(); c.filter = 'blur(1.2px)'; c.fillStyle = '#8b8172';
+    c.beginPath(); c.moveTo(99, 105); c.lineTo(151, 105); c.lineTo(161, 141); c.lineTo(91, 141); c.closePath(); c.fill();
+    c.beginPath(); c.ellipse(127, 89, 21, 23, -0.12, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.moveTo(103, 75); c.lineTo(132, 32); c.lineTo(147, 79); c.closePath(); c.fill();
+    c.restore();
+    // The trail of pale paper leads visibly down to the keepsake at the doorway, not to the chase ghost.
+    c.fillStyle = '#fff6e2'; c.beginPath(); c.ellipse(128, 174, 7, 5, 0, 0, Math.PI * 2); c.fill();
+    return;
+  }
   c.fillStyle = '#fff6e2';
   c.beginPath(); c.ellipse(128, 77, 117, 70, 0, 0, Math.PI * 2); c.fill();
   c.beginPath(); c.ellipse(111, 161, 10, 7, -0.5, 0, Math.PI * 2); c.fill();
@@ -57,7 +72,10 @@ function drawPicture(c: CanvasRenderingContext2D, picture: Picture): void {
 
 /** One static canvas atlas and one card per chapter. Updates only transform, UV offset and opacity. */
 export function createGhostThought(chapter: ChapterData) {
-  const pictures = [...new Set((chapter.ghost ?? []).flatMap((perch) => perch.thought ? [perch.thought.picture] : []))];
+  const pictures = [...new Set([
+    ...(chapter.ghost ?? []).flatMap((perch) => perch.thought ? [perch.thought.picture] : []),
+    ...(chapter.thoughtClues ?? []).map((clue) => clue.picture),
+  ])];
   if (!pictures.length) return null;
   const canvas = document.createElement('canvas'); canvas.width = WIDTH * pictures.length; canvas.height = HEIGHT;
   const c = canvas.getContext('2d')!;
@@ -76,9 +94,11 @@ export function createGhostThought(chapter: ChapterData) {
   return {
     mesh,
     update(ghost: GhostState | null, flags: ReadonlySet<string>, player: Vec, camera: PerspectiveCamera, clock: number, dt: number, calm: boolean, visible: boolean) {
-      const picture = visible ? thoughtAt(chapter, ghost, flags, player) : null;
-      if (ghost) point.set(ghost.x, ghost.y + 0.5, 0).project(camera);
-      const inView = ghost !== null && Math.abs(point.x) <= 1 && Math.abs(point.y) <= 1 && Math.abs(point.z) <= 1;
+      const clue = chapter.thoughtClues?.find((clue) => flags.has(clue.after) && Math.hypot(clue.at.x - player.x, clue.at.y - player.y) <= 3);
+      const picture = clue?.picture ?? (visible ? thoughtAt(chapter, ghost, flags, player) : null);
+      const source = clue?.at ?? ghost;
+      if (source) point.set(source.x, source.y + 0.5, 0).project(camera);
+      const inView = source !== null && source !== undefined && Math.abs(point.x) <= 1 && Math.abs(point.y) <= 1 && Math.abs(point.z) <= 1;
       const wanted = picture !== null && inView;
       // Paused frames may be redrawn after resizing or changing settings, but the entrance stays frozen.
       if (dt > 0) shown = calm ? (wanted ? 1 : 0) : shown + ((wanted ? 1 : 0) - shown) * (1 - Math.exp(-7 * dt));
@@ -87,13 +107,13 @@ export function createGhostThought(chapter: ChapterData) {
       // Gate immediately when a story flag clears the picture or the ghost leaves: no lingering spoiler.
       material.opacity = wanted ? shown * 0.96 : 0;
       mesh.scale.setScalar(wanted ? 1 : 0);
-      if (!ghost) return;
+      if (!source) return;
       const halfHeight = (camera.position.z - 0.65) * Math.tan(camera.fov * Math.PI / 360);
       const halfWidth = halfHeight * camera.aspect;
       const clamp = (v: number, centre: number, half: number, size: number) => Math.min(centre + half - size / 2 - 0.1, Math.max(centre - half + size / 2 + 0.1, v));
       mesh.position.set(
-        clamp(ghost.x, camera.position.x, halfWidth, CARD_WIDTH),
-        clamp(ghost.y + 1.95 + (calm ? 0 : Math.sin(clock * 1.3) * 0.035), camera.position.y, halfHeight, CARD_HEIGHT),
+        clamp(source.x, camera.position.x, halfWidth, CARD_WIDTH),
+        clamp(source.y + 1.95 + (calm ? 0 : Math.sin(clock * 1.3) * 0.035), camera.position.y, halfHeight, CARD_HEIGHT),
         0.65,
       );
     },

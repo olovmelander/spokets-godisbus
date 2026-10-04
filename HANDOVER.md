@@ -2,17 +2,99 @@
 
 ## State (4 October 2026)
 
-- **Current Git state:** `main` is still the deployed checkpoint from PR #60. The subsequent code
-  improvements are saved in the PR stack #61–#103 and its full-game checkpoint; they have not been
-  merged or deployed. PR #104 preserves the previously local browser fixture and narrow-screen fixes;
-  PR #105 adds the memory presentation. PR #106 (`codex/story-thought-pictures`) continues from #105
-  with the clearer ghost pictures below. All three changes are stacked, without a release or deployment.
+- **Current Git state:** PR #12 and the aggregate PR #106 are merged. `main` is
+  `0a94b20e13b504d5a4c157ee0f8a2c579fb626ab`, including the earlier code milestones, memories and ghost
+  thought pictures. The aggregate's exact `fff4bd` CI tree passed 677 unit/robot tests, all 30 browser
+  suites, typecheck, build/size and privacy checks before merging. All 44 superseded older PRs are now
+  closed after checking their heads against the merged result: 25 are ancestors and 19 are
+  patch-equivalent. Main deployment `37204352024` succeeded for exactly `0a94b20`; the live
+  `index-BziDHGfm.js` matches its deployment log and contains the memory/thought features. Fresh-browser
+  checks of the plain address and `?debug&course=prolog` still open the test course. A new overhaul is on
+  `codex/storytelling-gameplay-overhaul`, with the published source snapshot at `a6038a1`; that newer source
+  is separate from the verified deployed baseline.
   `RELEASED_CHAPTER` remains `null`.
 
-- **Recovered baseline verified:** the complete existing 28-suite browser gate finished uninterrupted
-  with exit status 0, alongside 665 unit/robot tests, typecheck, build/size and built-in privacy checks.
-  The new memories and thought pictures also pass their combined checks recorded below; the gate now
-  includes both new browser suites for future runs.
+- **Integrated overhaul verification:** published source snapshot `a6038a1` (source-identical to tested
+  local `e754c06`, with the handover updated afterward) passes 774 unit/robot tests in 76 files,
+  typecheck, the KTX asset build/size gate and privacy checks (383.6 KB gzip JavaScript; 712.5 KB public
+  boot). Focused browser checks passed for the opening (50), finale (57), family (52) and repeated model
+  installation (30), alongside the chapter agents' actual loop playthroughs. The final warmup fix also
+  passes nightfall (44), colour pipeline (14) and prologue (25) checks, including a hidden private-model
+  substitute whose distinct physical material reveals without compiling during play.
+  All 39 browser suite commands passed across the integration runs: the first 22 on `872bf24`, then
+  the remaining 17 on `6f7b494` after the hidden-material warmup repair. The warmup-sensitive
+  colour pipeline, prologue and opening checks were also rerun against that repair. The original
+  nightfall assertion was retained and now passes. The subsequent required-origin handoff fix passes
+  the full context browser suite (85), including actual saved-game fast tasting/homeward completion,
+  all five layouts and larger phone text. This is a split local gate with a targeted follow-up;
+  exact-head GitHub CI runs all 39 suites on the published PR and remains pending at this handover.
+
+- **Story and connected gameplay overhaul implemented** (4 October; plan version 5 and
+  `docs/storytelling-overhaul.md`).
+  - The opening shows the painted eyes waking the ghost, the striped Saturday bag moving from the table
+    to the ghost and tearing at the hinge, and the shrinking star spilling afterward. The ghost's own
+    carved pocket stays distinct. The family stands beside full-sized Elof, witnesses his shrinking in
+    the same picture, reacts and reassures him, and explains that they follow the larger path to help
+    with crossings. Existing painting, star and checkpoint progress retains its meaning.
+  - An untimed current-purpose HUD, accessible pause recap, title resume cue and chapter-end handoff
+    keep the established goal and family role available throughout the adventure. The candy counter
+    describes recovered sweets. Optional local loops get their own context without replacing the main
+    onward purpose; main-route progress stays independent of optional challenge prizes and album rewards.
+  - After the actual summit rescue (`placed:tragubbe`), painted eyes (`eyes`) and recovered bag (`bag`),
+    normal play and later recaps explicitly explain the welcome-home candy motive. Missing the optional
+    mountain memory still gives "Spöket tog godiset för att välkomna trägubben hem!" The discovered
+    mountain memory separately permits "min gamla" and childhood-identity wording in purpose/recap
+    cues. The summit uses this visit's local flags; home/epilogue recaps use saved summit receipts, so
+    past completion does not spoil a fresh summit replay. Position, a chapter preview or opening a menu
+    cannot invent either discovery.
+  - The required reunion gives Pappa's origin story its own source. After actual rescue, painted eyes,
+    bag return and tasting, the untimed finale handoff explains that he carved the figure for Elof
+    when he was little and that they lost it on the mountain, alongside the candy motive. Fast
+    homeward travel can overtake the timed
+    bubbles, so this essential explanation remains readable on the existing end card. It does not
+    grant an optional memory or change the purpose/recap memory guard, input timing or saved flags.
+  - Public rehearsal family bodies appear across all chapters and their practical help points. The
+    finale shows painted eyes on the rescued carving, the chosen sweets at their recipients and a
+    nearby family reunion; Elof then travels home visibly on Pappa's shoulders with both carvings.
+    Existing private models can replace the rehearsals. These bodies establish staging, not final
+    likeness, hand contact or polished acting; private family assets and their approval rules are intact.
+  - **Gården:** Moa opens an optional dry paper pocket once the bridge is ready. Elof can return through
+    the same hose/bridge and share the paper, leaving a visible response. Calling Moa prepares her plane;
+    a separate deliberate boarding action starts the flight. Old saves that called her can still board.
+  - **Granskogen:** a nearby small cone gives a safe low seesaw bounce, while the heavier cone farther
+    back supplies the weight for the crossing. Both solve orders work with stage-specific help. The
+    neighbour's optional gift/return loop now leaves a persistent small-figure picture at the actual
+    root-door keepsake after the real return visit, without moving or duplicating the chase ghost.
+  - **Myren:** guiding the chick home unlocks an optional call to Mamma. She raises a persistent firm
+    boardwalk back to the recognizable lantern clearing. It supports repeated crossings, stops and
+    reversals, restores from old firm checkpoints and avoids the old assisted-hop markers. The crane
+    flight remains independent of this return loop.
+  - **Berget:** the existing optional Toppröset prize opens a reusable return lace. Players can take it
+    down or use the original shelves, then deliberately catch it for another visit. Its raised lower
+    end keeps ordinary main-route walkers from catching it; the cooperative cliff and flight remain.
+  - Main collectible/checkpoint identities and primary puzzle flags remain compatible with old saves.
+    The new optional progress is additive. These are local authored loops, not a full nonlinear world
+    or complete chapter-layout redesign; Byn's connected return loop remains open.
+
+- **Renderer continuity repaired in the same source tree:** family rehearsal materials belong to each
+  actor/view, so separate chapter grades do not patch a shared material twice. Every installed model
+  warms its new materials and shadow receivers, even when another help point already uses the same
+  private asset name or it arrives while paused. The homeward ride anchors Pappa's and the carried
+  ghost's shadows to the terrain beneath the ride rather than their elevated shoulder positions.
+  Initial warmup compiles hidden chapter materials against the actual Low/HDR target without drawing
+  the hidden actors. This fixes the family-reveal shader hitch while keeping the story cue intact.
+  The repeated-installation checks use delayed substitute models; final private-model appearance still
+  needs Olov's review.
+
+- **Public visual checkpoint:** `docs/shots/storytelling/` contains WebP captures of the shared family
+  shrinking composition and the shoulder ride at 390×844, 844×390, 780×360, 1180×820 and 1440×900.
+  They use public rehearsal figures with the real renderer/simulation, covering Low/High and selected
+  reduced-motion cases. The isolated frames omit the HUD for actor inspection. They do not establish
+  final likeness, acting or physical-device performance; see that directory's README for the fixtures.
+
+- **Earlier 4 October milestone records:** the entries below preserve their original measurements and
+  personal/asset notes. The current combined state and remaining work are the entries above and the
+  Next list. Do not interpret an older test count or next-step note as the integrated branch's result.
 
 - **Memories grow from their source and return to it** (`codex/memory-bubble-presentation`; plan §2.4).
   - First discoveries grow from the visible ghost, or from the touched glowing shaving when the ghost
@@ -32,10 +114,11 @@
 
 - **Read this first: where it stands.**
   - The whole story is playable from start to end with `?dev`: the prologue, four chapters, the final and
-    the epilogue, and after them an extra chapter, Byn. That original foundation is deployed on `main`;
-    the newer code milestones above remain in the unmerged PR stack:
-    `https://olovmelander.github.io/spokets-godisbus/?dev`. The plain address still shows the grey test
-    course, because `RELEASED_CHAPTER` is `null`: releasing is Olov's.
+    the epilogue, and after them an extra chapter, Byn. The foundation and the older code stack are merged
+    on `main`; the new overhaul is on the development branch named above. The development entry point is
+    `https://olovmelander.github.io/spokets-godisbus/?dev`; verify the deployed revision before treating
+    it as the overhaul. The plain address retains the test course while `RELEASED_CHAPTER` is `null`:
+    releasing is Olov's.
   - **Added in the night of 3 to 4 October** (pull requests #38 to #59; each has its own entry further
     down): music and each place's air; footsteps for every surface; the sticker album; four more switches;
     wordless sounds for the characters and for Elof; the size gate as served; chapter codes; C1, the swing
@@ -53,7 +136,7 @@
       level. The things, the animals and the ground are as they were.
     - *The village's shopping street as a chapter:* built, as Byn. Its own name waits for question 5.
   - **Waiting for Olov:** questions 5 and 6 under "Frågor till Olov"; the checkpoints H1a, H1b and H2;
-    pull request #12; and his ears, because nobody has listened to any of the sound.
+    and his ears, because the listening review remains outstanding. PR #12 is now merged.
 
 - **The ghost's thoughts grow clearer** (4 October, cloud session, `codex/story-thought-pictures`; plan §§3.3–3.4).
   - After Elof pulls it out of the forest eddy, its final waiting stops show a mountain silhouette.
@@ -77,8 +160,9 @@
     settings, shader/draw/texture bounds and resource release. Iteration
     screenshots use stand-ins under ignored `docs/shots/_work/ghost-thoughts/`.
   - Cloud session: no new question, later-release wish or known defect. `RELEASED_CHAPTER` stays null.
-    The remaining small-figure thought at the vittra door and final art/device review are separate
-    follow-ups; these code pictures require no connection to Olov's computer.
+    The small-figure picture at the vittra door is now implemented in the overhaul's persistent keepsake
+    after the actual return visit. Final art/device review remains; these code pictures require no
+    connection to Olov's computer.
 
 - **Controls and graphics settings completed** (4 October, cloud session, `codex/controls-and-graphics-settings`).
   - **What you see:** Paus now has *Följ fingret*, *Grafik* (Auto / Låg / Mellan / Hög), and
@@ -1066,24 +1150,41 @@
 
 **For the next session, in this order:**
 
+- Use the validation record in State for the exact integrated source tree before further integration.
+  Keep the merged baseline separate from `codex/storytelling-gameplay-overhaul` until its reviewed
+  integration is recorded. The earlier PR stack is already merged; superseded older heads were audited
+  as ancestors or patch-equivalents, not missing work.
 - Olov's answers to questions 5 and 6, and what he says about the pictures in
   `photos/renders/2026-10-04-family/`. Then a second round on each family model from his remarks and from
   the list under "The family, first models".
-- Poses for the family: sitting at the table at the party, Mamma in the doorway, Pappa's hands with the
-  knife, and their hands in the macro world where the signs' rides are now.
-- Byn: review the passing shoes, car and playable shop interior on Olov's devices; detailed models need Blender.
+- Review comprehension and play in the implemented causal opening, ongoing purpose cues, finale and
+  four chapter loops before enlarging them. Olov should be able to explain the theft, shrinking, family
+  help and welcome-home purpose from normal play; automation checks state, not that understanding.
+- Finish final likeness, close contact and acting in Blender: family table/doorway/knife poses,
+  practical help at the crossings, eye painting, giving sweets and convincing shoulder carrying.
+  The public rehearsal bodies and visible shoulder ride are implemented; the next work refines them.
+  Animated 3D memory scenes and full shelf/material continuity also remain.
+- Broader spatial storytelling and deeper connected puzzle reuse remain chapter work. The garden's
+  paper pocket/boarding, forest's weight/doorway loops, bog's reusable Mamma boardwalk and mountain's
+  return lace are implemented; do not restart them. Byn still needs its own optional connected return
+  loop. Review its passing shoes, car and playable shop interior on Olov's devices; detailed models need Blender.
 - Completed code: C1–C4, separate players, album photos/replay, offline updates, replayable dew bells
   and cobbles, the vittra gift, party/summit choices, painting/carving gestures, exploration, and the
-  moonlit ending. See `docs/implementation-progress.md` for the PR milestones. Do not restart them.
-- The ghost's forest, bog and cliff thought pictures are implemented (plan §3.3 rule 6). Its smaller
-  shape at the vittra door remains a separate story beat. The memory presentation grows/returns; final
-  animated 3D memory art and family acting still need Blender on Olov's computer.
+  moonlit ending are in the merged baseline. See `docs/implementation-progress.md` for their historical
+  PR milestones and `docs/storytelling-overhaul.md` for the new integrated development scope.
+- The ghost's forest, bog and cliff thought pictures, the persistent root-door small-figure clue and
+  the growing/returning memory presentation are implemented. Final memory art still needs Blender on
+  Olov's computer.
 - Look-dev code now includes place LUTs, Low material grading, High background blur and half-size bloom,
-  flowing water/refraction, tiered character shadows and measured GPU allocation/texture recovery gates.
+  flowing water/refraction, tiered character shadows and measured GPU allocation/texture recovery gates;
+  the overhaul also fixes per-view grading ownership, repeated model installation, hidden-material
+  warmup and carried shadows.
   Review the combined result with private models and `?bench` on Olov's devices; cloud stand-ins are not
   the H1a/H1b/H2 checks or listening approval.
 - Look-dev: review the repaired finale nightfall and round stars on Olov's devices at H1a.
-- The sound, once Olov has listened: nothing of it has been heard by anyone.
+- Physical iPad/iPhone/Android play, installed Safari/Home Screen behavior, performance and sound review
+  remain outstanding. Finish those checkpoints before a separate release decision; keep
+  `RELEASED_CHAPTER` at `null` meanwhile.
 
 The older list, still true where it is not struck:
 
@@ -1092,7 +1193,8 @@ The older list, still true where it is not struck:
    - **Update the add-on when convenient:** run `uvx mcp-for-blender install-addon`, then restart Blender (or switch
      the add-on off and on in Preferences) and press *Start MCP Server*. Then ask the session for the add-on's
      status: `telemetry_consent` must be false (see "Notes for sessions that drive Blender").
-2. **Olov's checkpoint for Stage 0a** (plan §7.3): once `stage-0a-assets` is merged and deployed, open
+2. **Olov's checkpoint for Stage 0a** (plan §7.3): the foundation is merged; after confirming the deployed
+   revision, open
    `https://olovmelander.github.io/spokets-godisbus/?bench` on each device you have. It plays by itself for half a
    minute and then shows text. Copy that text into the next session.
    - On the computer: `npm run dev`, then `http://localhost:5173/spokets-godisbus/?debug`. For a phone on the same
@@ -1150,6 +1252,9 @@ The older list, still true where it is not struck:
 | Dates | None. Stages in order; a release goes out when its checkpoint has passed. | Olov, 3 Oct |
 | Going on without asking | Sessions work through the plan stage after stage, take the choice they would recommend, and write it here. A session merges its own green PR, except one that touches `RELEASED_CHAPTER`, likeness assets or `CLAUDE.md`. | Olov, 3 Oct: "Do not stop, just continue implement all phases in one shot. Do not wait for greenlight from me. Always do what you recommend doing." and "I want the full game plan implemented". That this covers merging is the session's reading. |
 | Order of work | Stage 1, the game itself in greybox, goes on while the look-dev of Stage 0b and the characters of Stage 0c wait | Olov, 3 Oct: "continue working with the implementation of the games, we can improve the character design later" |
+| Story and level direction | Plan version 5 improves visible opening causes, durable purpose, family cooperation and connected, reusable local puzzles. The implemented opening/context/family/finale and four chapter loops are development milestones; broader layouts, Byn's return loop and final art remain. | Olov's 4 Oct direction; `docs/storytelling-overhaul.md` records research and our design inference |
+| Finale explanation | Actual summit rescue, painted eyes and bag recovery reveal the welcome-home candy motive even if the optional mountain memory was missed. The memory separately guards old/childhood identity wording in purpose and recap cues. | 4 Oct overhaul implementation; existing story canon in plan §§2.4, 3.4 |
+| Progress continuity | Main collectible/checkpoint identities and primary puzzle flags retain their meaning. New local loops are optional and additive; an old save need not complete them to continue the story. Public rehearsal family bodies can be replaced by approved private models. | 4 Oct overhaul implementation; existing save and family-asset rules |
 | Testing | Only Olov tests before Elof plays. H2 and H3 are his own tests. | Olov, 3 Oct |
 | Voices | None: no read-aloud, no recordings. Characters make wordless sounds. | Olov, 3 Oct |
 | Logotypes | None anywhere. The star on the real ghost's shoes becomes a plain disc. | Olov, 3 Oct |
@@ -1168,12 +1273,12 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
-| Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
+| Planning | 1 | 3 recorded | — / 2 | Original plan versions 1–4; `main` and the placeholder page; the reference pictures gathered. Version 5 on 4 October adds the researched story/level overhaul and its acceptance criteria; no new session or review count is inferred. |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. On 4 October: chapter codes, C1, two optional delights, footsteps and wordless sounds, more switches, and the extra chapter Byn. A cloud session completed touch-follow, graphics selection, controls reference and menu input routing; another implemented offline boot/chapter caching and title-only updates. Byn now has street life and a shop interior. C2–C4, replayable toys, story choices/gestures, exploration, the golden album reward, moonlit ending, memory presentation and clearer ghost thoughts are implemented in the unmerged code stack. Final family acting, memory art, listening and device checkpoints remain. |
-| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. Broader spatial work, Byn's return loop, final likeness/contact/acting/memory art, listening and device checkpoints remain; no release is declared. |
+| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. |
 
 ## Known bugs
 

@@ -85,6 +85,26 @@ async function open(name, options = {}, query = '?debug&standin&tier=low', init)
 
 try {
   browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+  if (!process.env.PROLOGUE_SCENE) {
+    const { page, state, finish } = await open('shrinking-reassurance', { hasTouch: true },
+      '?dev&debug&standin&course=prolog&tier=low&at=40,-0.79&flags=eye,paint,blink,mamma:passed,bag:torn');
+    await until(state, (s) => s.verb === 'take', 'the spilled star is offered');
+    await page.keyboard.press('e');
+    await until(state, (s) => s.flags.includes('star'), 'Elof takes the star');
+    await page.waitForFunction(() => document.getElementById('bubbleLine').textContent === 'Stjärnan gör dig liten. Vi hjälper dig!');
+    check('shrinking: Pappa immediately explains the cause and reassures Elof ahead of stale dialogue',
+      await page.locator('#bubble').getAttribute('data-who') === 'pappa');
+    await page.keyboard.press('Escape');
+    const line = await page.locator('#bubbleLine').textContent();
+    await sleep(250);
+    check('shrinking: pausing keeps the explanation available', await page.locator('#bubbleLine').textContent() === line);
+    await page.keyboard.press('Escape');
+    await page.keyboard.down('ArrowRight');
+    await until(state, (s) => s.flags.includes('goal'), 'fast shrinking flow reaches its handoff', 15000);
+    await page.keyboard.up('ArrowRight');
+    check('shrinking: the safe ride and family tableau still complete', (await state()).flags.includes('pappa:done'));
+    await finish();
+  }
   for (const [name, viewport, tier, kind] of [
     ['mamma-landscape-low', { width: 844, height: 390 }, 'low', 'mamma'],
     ['mamma-portrait-high', { width: 390, height: 844 }, 'high', 'mamma'],

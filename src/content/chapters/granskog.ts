@@ -11,14 +11,16 @@ import type { Candy, ChapterData } from '../../sim/types';
  * 4. **Kottlavinen** (E2): a needle slope. He nudges a loose cone at its top, and from then on cones roll
  *    past from behind. A jump clears one; one that reaches him bowls him into the glitter bubble and back to
  *    the last big candy. Two of them split the run, and there is a gap to jump on the way.
- * 5. **Pappas gungbräda** (P8): "Ropa på Pappa", push the cone to his hand, stand on the low end, and fly
- *    across the ravine.
+ * 5. **Pappas gungbräda** (P8): "Ropa på Pappa". The small cone near the ravine gives a playful low bounce;
+ *    the big one further up the slope carries him across. Go back for it, push it to his hand, and stand
+ *    on the low end. He can also choose the big cone first and skip the trial.
  * 6. **The fallen log:** the ghost can nearly be caught.
  * 7. **Kepsbåten** (S3): "Ropa på Bertil", and his cap carries Elof across the forest pool.
  * 8. **Spöket i virveln** (P10): from a stone, the lace pulls the ghost ashore. It leaves one candy on the
  *    stone, and from now on it waits for him.
  *
- * Not built yet: tasting a lingonberry, the small figure in the ghost's vittra-door bubble.
+ * At the vittra door, a berry left for the neighbours receives a little picture on a real return visit.
+ * Not built yet: tasting a lingonberry.
  * To the simulation the pool and the eddy are pits; the water in them is drawn only.
  */
 
@@ -49,11 +51,15 @@ function along(ride: { from: { x: number; y: number }; to: { x: number; y: numbe
 
 const ANT_LIFT = { from: { x: 58.6, y: 4 }, to: { x: 61.6, y: 10 }, rise: 0.4, time: 3, corridor: 0.2 };
 const LAUNCH = { from: { x: 113.2, y: -8 }, to: { x: 128.4, y: -8 }, rise: 5, time: 1.8, corridor: 0.4 };
+const TRIAL = { from: { x: 113.2, y: -8 }, to: { x: 116.5, y: -8 }, rise: 1.3, time: 1.5, corridor: 0.15 };
 const CAP = { from: { x: 154.6, y: -8 }, to: { x: 177.4, y: -8 }, rise: 0.15, time: 8, corridor: 0.3 };
 
 export const granskog: ChapterData = {
   id: 'granskog',
   place: 'forest',
+  counterweight: { from: 100, to: 118, call: 'seesaw', heavy: 'cone', launch: 'launch', trial: 'seesaw:trial' },
+  returnClue: { from: 60, to: 69.5, gift: 'vittra:gift', away: 'vittra:gift:away', clue: 'keepsake:vittra', root: { x: 66.3, bottom: 0, top: 10, exit: -1, look: 'root' }, door: { x: 64.4, y: 10 } },
+  thoughtClues: [{ at: { x: 64.4, y: 10.5 }, picture: 'small-figure', after: 'keepsake:vittra' }],
   // Off the trail: behind him at the start, over the big cone, on top of the anthill, and over the log.
   hidden: [
     { x: -1.8, y: 0.5, kind: 'sockerbit' },
@@ -139,19 +145,19 @@ export const granskog: ChapterData = {
   ],
   climbs: [
     // C2 has its own way down to the ordinary hilltop, without a long drop.
-    { x: 63.1, bottom: 10, top: 14, exit: -1, needs: 'found:chokladkola' },
+    { x: 63.1, bottom: 10, top: 14, exit: -1, needs: 'found:chokladkola', look: 'root' },
     // The beard lichen: the jay shows it once it is his friend.
-    { x: 43.7, bottom: 0, top: 4, exit: 1, needs: 'jay' },
+    { x: 43.7, bottom: 0, top: 4, exit: 1, needs: 'jay', look: 'lichen' },
     // The root down from the anthill.
-    { x: 66.3, bottom: 0, top: 10, exit: -1 },
+    { x: 66.3, bottom: 0, top: 10, exit: -1, look: 'root' },
   ],
   spots: [
     { id: 'berry', look: 'berry', at: { x: 33, y: 0 }, verb: 'take', word: 'pick' },
     { id: 'jay', look: 'jay', at: { x: 38, y: 0 }, verb: 'give', needs: 'berry' },
     { id: 'antlift', look: 'ants', at: { x: 58.6, y: 4 }, verb: 'take', word: 'rideAnts', needs: 'placed:twig', ride: 'antlift' },
     // O3 is separate from the ghost's vittra story beat. This berry is for the neighbours, not the jay.
-    { id: 'vittra:berry', look: 'berry', at: { x: 61, y: 10 }, verb: 'take', word: 'pick', needs: 'beat:vittra' },
-    { id: 'vittra:gift', look: 'vittra-door', at: { x: 64.4, y: 10 }, verb: 'give', word: 'leaveBerry', needs: 'vittra:berry', returnGift: 'keepsake:vittra' },
+    { id: 'vittra:berry', look: 'berry', at: { x: 61, y: 10 }, verb: 'take', word: 'pick', needs: 'beat:vittra', extra: true },
+    { id: 'vittra:gift', look: 'vittra-door', at: { x: 64.4, y: 10 }, verb: 'give', word: 'leaveBerry', needs: 'vittra:berry', returnGift: 'keepsake:vittra', extra: true },
     // The loose cone at the top of the slope: touching it sets the avalanche off.
     { id: 'avalanche', at: { x: 70.4, y: 0 }, verb: 'take', touch: true },
     { id: 'seesaw', look: 'sign', at: { x: 108.2, y: -8 }, verb: 'call', word: 'callPappa' },
@@ -160,8 +166,14 @@ export const granskog: ChapterData = {
     // Memory 2, after the log: the autumn walk, and the Saturday sweets he shared.
     { id: 'memory', look: 'memory', at: { x: 144, y: -8 }, verb: 'take', touch: true },
     { id: 'cap', look: 'sign', at: { x: 154.6, y: -8 }, verb: 'call', word: 'callBertil', ride: 'cap' },
+    // The same seesaw, with the lighter counterweight. The successful launch above takes priority once ready.
+    { id: 'seesaw:trial', at: LAUNCH.from, verb: 'take', word: 'standOn', needs: 'placed:cone-small', ride: 'seesaw:trial', extra: true },
   ],
-  decor: [{ look: 'keepsake', at: { x: 64.4, y: 10.8 }, after: 'keepsake:vittra' }],
+  decor: [
+    { look: 'keepsake', at: { x: 64.4, y: 10.8 }, after: 'keepsake:vittra' },
+    // A pale shaving beside the return root invites curiosity after the berry was left, without a text task.
+    { look: 'shavings', at: { x: 66.3, y: 0.15 }, after: 'vittra:gift:away' },
+  ],
   movers: [
     // C2: deliberately jump onto the first needle mat; the main ant road stays open underneath.
     ...Array.from({ length: 6 }, (_, i) => ({
@@ -176,20 +188,23 @@ export const granskog: ChapterData = {
     // low enough to walk over.
     { id: 'twig', look: 'twig', width: 2.4, height: 0.5, verb: 'pull', ring: { x: -1, y: 0.7 }, stops: [{ x: 57.2, y: 4 }, { x: 53.4, y: 3.75 }] },
     // The big cone: pushed to Pappa's hand at the seesaw, once he has been called.
-    { id: 'cone', look: 'cone', width: 1.1, height: 1.5, verb: 'push', needs: 'seesaw', stops: [{ x: 110, y: -8 }, { x: 112.2, y: -8 }, { x: 114.6, y: -8 }] },
+    { id: 'cone', look: 'cone', width: 1.1, height: 1.5, verb: 'push', needs: 'seesaw', stops: [{ x: 103.4, y: slope(103.4) }, { x: 106.2, y: -8 }, { x: 110, y: -8 }, { x: 112.2, y: -8 }, { x: 114.6, y: -8 }] },
     // The ghost in the eddy, on a leaf: the lace pulls it up to the stone, and the leaf is the way across.
     { id: 'rescue', look: 'leaf', width: 2.9, height: 0.3, verb: 'pull', ring: { x: 0, y: 0.9 }, stops: [{ x: 186.8, y: -9.3 }, { x: 186.8, y: -7.8 }] },
+    // A clearly smaller cone. He approaches its right side and pushes it left, onto Pappa's high end.
+    { id: 'cone-small', look: 'cone', width: 0.55, height: 0.7, verb: 'push', needs: 'seesaw', optional: true, stops: [{ x: 116, y: -8 }, { x: 114.6, y: -8 }] },
   ],
   rides: [
     { id: 'antlift', look: 'ants', ...ANT_LIFT },
     { id: 'launch', look: 'none', ...LAUNCH },
     { id: 'cap', look: 'cap', ...CAP },
+    { id: 'seesaw:trial', look: 'none', ...TRIAL },
   ],
   // Three cones on the slope at a time, one setting off every 1.8 s. The first is the one he nudged: it rolls
   // away ahead of him, and the rest come from behind.
   rollers: [0, 1.8, 3.6].map((first) => ({
     from: { x: 70.6, y: slope(70.6) }, to: { x: 103.4, y: slope(103.4) }, every: 5.4, first, speed: 7.5, radius: 0.28,
-    needs: 'avalanche',
+    needs: 'avalanche', until: 'seesaw',
   })),
   water: [
     { from: 156, to: 176, y: -8.3 },
@@ -200,6 +215,12 @@ export const granskog: ChapterData = {
     { at: { x: 87.8, y: slope(87.8) }, dir: 1, land: { x: 90.4, y: slope(90.4) } },
     { at: { x: 131.8, y: -8 }, dir: 1, land: { x: 132.8, y: -7.2 } },
     { at: { x: 182.8, y: -8 }, dir: 1, land: { x: 183.8, y: -7.5 } },
+    // Lugnt walks past the gated cone, and can return to its left push side without a precision jump.
+    { at: { x: 102.25, y: slope(102.25) }, dir: 1, land: { x: 104.8, y: -8 }, until: 'seesaw' },
+    { at: { x: 104.8, y: -8 }, dir: -1, land: { x: 101.9, y: slope(101.9) } },
+    // Choosing the small cone and returning from its low bounce are accessible on Lugnt too.
+    { at: { x: 115.1, y: -8 }, dir: 1, land: { x: 116.75, y: -8 }, until: 'placed:cone-small' },
+    { at: { x: 115.4, y: -8 }, dir: -1, land: { x: 113.5, y: -8 } },
   ],
   ghost: [
     { at: { x: 6, y: 0 } },
@@ -238,7 +259,10 @@ export const granskog: ChapterData = {
     { id: 'vittra-gift', on: 'vittra:gift', who: 'elof', line: 'vittraBerry' },
     { id: 'heja', at: 166, who: 'bertil', line: 'heja' },
     { id: 'thanked', on: 'placed:rescue', who: 'elof', line: 'thanked' },
+    { id: 'vittra-clue', on: 'keepsake:vittra', who: 'elof', line: 'forestVittraClue' },
+    { id: 'seesaw-trial', on: 'seesaw:trial:landed', who: 'elof', line: 'forestTrial' },
   ],
+  later: [{ flag: 'seesaw:trial:landed', after: 'seesaw:trial', seconds: TRIAL.time }],
   cameras: [
     { from: 46.5, to: 63.5, above: 5.4, zoom: 1.25, lift: 0.7, lead: 1 },
     { from: 40, to: 66, zoom: 1.25, lift: 0.3 },

@@ -12,13 +12,21 @@ import { createPhotoStore } from '../src/save/photos';
 import { createPhotoAlbum } from '../src/ui/photos';
 import { createStoryPanel } from '../src/ui/story';
 import { createMemory } from '../src/ui/memory';
+import { storyContext, storyHandoff } from '../src/content/story-context';
+import { createStoryContext } from '../src/ui/story-context';
 import '../src/ui/ui.css';
 
-const VIEWS = ['touch', 'keys', 'pad', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'end', 'photos', 'memory', 'sharing', 'painting', 'carving', 'party', 'bubble', 'message', 'debug'] as const;
-const shown = new Set((new URLSearchParams(location.search).get('show') ?? 'touch').split(','));
+const VIEWS = ['touch', 'keys', 'pad', 'purpose', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'end', 'photos', 'memory', 'sharing', 'painting', 'carving', 'party', 'bubble', 'message', 'debug'] as const;
+const params = new URLSearchParams(location.search);
+const shown = new Set((params.get('show') ?? 'touch').split(','));
 const byId = (id: string) => document.getElementById(id)!;
 
 mountShell(document.body, shown.has('memory') ? 'ghost' : 'jay');
+const reminders = createStoryContext(document);
+const chapter = params.get('chapter') ?? 'garden';
+const flags = new Set((params.get('flags') ?? '').split(',').filter(Boolean));
+reminders.show(storyContext(chapter, flags, { x: Number(params.get('x') ?? '0'), y: Number(params.get('y') ?? '0') }), shown.has('purpose'));
+if (shown.has('end')) reminders.handoff(storyHandoff(chapter, flags));
 if (shown.has('memory')) {
   const rect = byId('helpBtn').getBoundingClientRect();
   createMemory(document).play('garden', () => {}, { origin: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } });

@@ -25,7 +25,7 @@ export interface Hud {
   /** Says something at the top of the screen for a few seconds: a find. */
   notice(text: string): void;
   /** Puts a line in the queue of bubbles. Each is shown for a few seconds, one after another. */
-  say(who: Speaker, line: string): void;
+  say(who: Speaker, line: string, priority?: boolean): void;
   /** Moves the bubbles on. `dt` is the time since the last frame, in seconds: 0 while the game is paused. */
   tick(dt: number): void;
   /**
@@ -75,6 +75,8 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       const grew = shown >= 0 && count > shown;
       shown = count;
       number.textContent = String(count);
+      bag.title = sv.storyContext.recovered;
+      bag.setAttribute('aria-label', sv.storyContext.recoveredCount.replace('{count}', String(count)));
       bag.style.setProperty('--fill', String(total > 0 ? Math.min(1, count / total) : 0));
       if (grew && !still.matches) {
         bag.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 200, easing: 'ease-out' });
@@ -119,15 +121,20 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       notice.hidden = false;
       noticeFor = 3.5;
     },
-    say(who, line) {
-      if (lines[line]) queue.push({ who, line });
+    say(who, line, priority = false) {
+      if (!lines[line]) return;
+      if (priority) { queue.length = 0; left = 0; }
+      queue.push({ who, line });
     },
     tick(dt) {
       if (noticeFor > 0) {
         noticeFor -= dt;
         if (noticeFor <= 0) byId('notice').hidden = true;
       }
+      // Finds and speech share a readable area. Keep the complete speech queued while a find is shown.
+      if (noticeFor > 0) { bubble.hidden = true; return; }
       if (left > 0) {
+        bubble.hidden = false;
         left -= dt;
         if (left <= 0) bubble.hidden = true;
         return;

@@ -1,5 +1,6 @@
 import type { Sim } from './sim';
 import type { ChapterData, Vec, Verb } from './types';
+import { ELOF_HALF_WIDTH } from './constants';
 
 /**
  * What the helper would show now (plan §4.6): the next thing along the way that the story needs him to do,
@@ -18,6 +19,30 @@ export interface Hint {
 
 /** Something to do further off than this is not the next thing: the trail leads there. */
 export const HINT_REACH = 12;
+
+/** A push begins from its correct side. The weight puzzle deliberately revisits a passed landmark. */
+export function counterweightTarget(sim: Sim, chapter: ChapterData): Hint | null {
+  const puzzle = chapter.counterweight, p = sim.curr;
+  if (!puzzle || p.x < puzzle.from || p.x > puzzle.to || sim.flags.has(puzzle.launch)) return null;
+  const spot = (id: string) => chapter.spots?.find((s) => s.id === id);
+  if (!sim.flags.has(puzzle.call)) {
+    const call = spot(puzzle.call);
+    return call ? { at: call.at, verb: call.verb, word: call.word ?? null } : null;
+  }
+  const heavy = sim.movers.find((m) => m.def.id === puzzle.heavy);
+  if (!heavy) return null;
+  if (sim.flags.has(`placed:${puzzle.heavy}`)) {
+    const launch = spot(puzzle.launch);
+    return launch ? { at: launch.at, verb: launch.verb, word: launch.word ?? null } : null;
+  }
+  const trial = spot(puzzle.trial);
+  if (trial && !sim.flags.has(trial.id) && trial.needs !== undefined && sim.flags.has(trial.needs)) {
+    return { at: trial.at, verb: trial.verb, word: trial.word ?? null };
+  }
+  const stance = heavy.x - heavy.def.width / 2 - ELOF_HALF_WIDTH - 0.12;
+  if (p.x > stance + 0.05 || Math.abs(p.y - heavy.y) > 0.3) return { at: { x: stance, y: heavy.y }, verb: null, word: null };
+  return { at: { x: heavy.x, y: heavy.y + heavy.def.height }, verb: heavy.def.verb, word: null };
+}
 
 export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   const p = sim.curr;
@@ -61,6 +86,21 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
     const at = route.steps[nearest + Math.sign(target - nearest)]!;
     return { at, verb: null, word: null };
   }
+  // In the authored hub, a chosen local action is valid too (small cone, trial or berry gift).
+  // Beyond its reach, guide the required weight/return route instead of whichever unfinished x is lowest.
+  const weight = counterweightTarget(sim, chapter);
+  const revisit = chapter.returnClue;
+  const returning = revisit && has(revisit.gift) && !has(revisit.clue) && p.x >= revisit.from && p.x <= revisit.to;
+  if (weight || returning || (revisit && p.x >= revisit.from && p.x <= revisit.to && p.y >= revisit.root.top - 1)) {
+    const action = sim.actionAt;
+    if (action && p.verb !== null && p.verb !== 'grab') return { at: action, verb: p.verb, word: p.word };
+    if (weight) return weight;
+    if (returning) {
+      if (!has(revisit.away)) return { at: { x: revisit.root.x, y: revisit.root.top }, verb: 'slide', word: null };
+      if (p.y < revisit.root.top - 1) return { at: { x: revisit.root.x, y: revisit.root.top }, verb: null, word: null };
+      return { at: revisit.door, verb: null, word: null };
+    }
+  }
   const things: Hint[] = [];
   // Things to use, once what they wait for has happened. One he only has to touch is on the trail anyway.
   for (const spot of chapter.spots ?? []) {
@@ -70,7 +110,7 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   // Things on rails that are not yet where they belong, and that he moves himself.
   for (const mover of sim.movers) {
     const def = mover.def;
-    if (def.extra || def.cycle || def.on !== undefined || mover.stop >= def.stops.length - 1 || !has(def.needs)) continue;
+    if (def.extra || def.optional || def.cycle || def.on !== undefined || mover.stop >= def.stops.length - 1 || !has(def.needs)) continue;
     const ring = def.verb === 'pull' ? (def.ring ?? { x: 0, y: def.height }) : { x: 0, y: def.height };
     things.push({ at: { x: mover.x + ring.x, y: mover.y + ring.y }, verb: def.verb, word: null });
   }

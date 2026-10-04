@@ -1,8 +1,9 @@
 import {
-  BoxGeometry, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, SphereGeometry, SRGBColorSpace, Vector2, Vector3,
+  BoxGeometry, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
+import { saturdayBag } from './saturday-bag';
 
 /**
  * Stand-ins for the things and the animals of the story, built in code: each is recognisable, and none is
@@ -144,11 +145,19 @@ export function moverProp(mover: Mover): Group | null {
       break;
     }
     case 'figure': {
-      // The first trägubbe: small, grey with age, mossy. Its eyes are painted in the story.
+      // The pointed cap and crooked smile match the remembered first carving. Its restored eyes
+      // become visible only after Elof paints them; the collider keeps its existing saved meaning.
       const old = solid('#8f8c7e', 1);
-      const body = new Mesh(new CylinderGeometry(w * 0.32, w * 0.42, h * 0.85, 10), old);
-      body.position.y = h * 0.42;
-      group.add(body, ball(w * 0.34, old, 0, h * 1.02), ball(w * 0.2, solid('#6f8a45', 1), -w * 0.12, h * 0.9, 0.06, [1, 0.5, 1]));
+      const body = new Mesh(new CylinderGeometry(.13, .2, .48, 8), old);
+      body.position.set(0, .24, 0); body.rotation.z = -.08;
+      const cap = new Mesh(new ConeGeometry(.17, .34, 7), old); cap.position.set(.02, .84, 0); cap.rotation.z = -.1;
+      const dark = solid('#3d3932', .9), eyes = new Group(); eyes.name = 'first-carving-eyes'; eyes.visible = false;
+      for (const x of [-.075, .075]) eyes.add(ball(.023, dark, x, .61, .146));
+      const smile = new Mesh(new TorusGeometry(.055, .009, 5, 12, Math.PI), dark);
+      smile.position.set(0, .57, .146); smile.rotation.z = Math.PI;
+      group.add(body, ball(.16, old, .015, .58), cap, smile, eyes,
+        ball(.06, solid('#6f8a45', 1), -.13, .38, .08, [1, .5, 1]));
+      group.name = 'first-carving';
       break;
     }
     default:
@@ -170,6 +179,7 @@ export interface SpotProp {
 const SIGNS: Record<string, string> = {
   callMoa: '#5b7fb5', callPappa: '#5a7d4a', callBertil: '#d98a2c', callMamma: '#f1ece2', goHome: '#5a7d4a',
   giveMoa: '#5b7fb5', givePappa: '#5a7d4a', giveBertil: '#d98a2c', giveMamma: '#f1ece2', takeKnife: '#5a7d4a',
+  gardenBoard: '#334e72',
 };
 
 /** A thing at a spot, a little behind the path so that he passes in front of it. Null: only the glint. */
@@ -269,7 +279,10 @@ export function spotProp(spot: Spot): SpotProp | null {
       const leaf = ball(0.1, solid('#5f923f'), 0, 0, 0.04, [0.7, 1.3, 0.15]);
       leaf.rotation.z = -0.5;
       group.add(paper, leaf);
-      return { group, update(_used, clock) { group.rotation.z = Math.sin(clock * 1.7) * 0.08; } };
+      return { group, update(used, clock, dt) {
+        group.rotation.z = Math.sin(clock * 1.7) * 0.08;
+        if (spot.id === 'garden:paper' || spot.id === 'garden:shared-paper') vanish(used, dt);
+      } };
     }
     case 'jay': {
       // Lavskrikan: grey-brown, with a dark cap and a rust-red tail. It hops when it gets its berry.
@@ -333,6 +346,14 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.add(stick, board, face);
       // Mamma's is her white mug with its heart.
       if (spot.word === 'callMamma' || spot.word === 'giveMamma') group.add(ball(0.1, solid('#d0473a', 0.5), 0, 1.3, 0.05, [1, 1, 0.3]));
+      if (spot.word === 'gardenBoard') {
+        // A folded-plane glyph makes the departure choice readable without naming another family figure.
+        const sheet = new Shape();
+        sheet.moveTo(-0.2, 1.43); sheet.lineTo(0.23, 1.32); sheet.lineTo(-0.14, 1.13);
+        sheet.lineTo(-0.08, 1.3); sheet.closePath();
+        const paper = new Mesh(new ShapeGeometry(sheet), solid('#faf5e6', 0.8, { side: DoubleSide }));
+        paper.name = 'garden-boarding-glyph'; paper.position.z = 0.055; group.add(paper);
+      }
       group.position.z = -0.9;
       return { group, update: (_used, clock) => void (board.rotation.z = face.rotation.z = Math.sin(clock * 1.3 + spot.at.x) * 0.05) };
     }
@@ -402,14 +423,8 @@ export function spotProp(spot: Spot): SpotProp | null {
       };
     }
     case 'bag': {
-      // The Saturday bag, striped paper with a folded top.
-      const paper = solid('#efe2c4', 0.9);
-      const body = new Mesh(new CylinderGeometry(0.2, 0.26, 0.5, 4), paper);
-      body.rotation.y = Math.PI / 4;
-      body.position.y = 0.25;
-      const fold = new Mesh(new BoxGeometry(0.34, 0.1, 0.06), solid('#d9c8a2', 0.9));
-      fold.position.y = 0.53;
-      group.add(body, fold);
+      // The same striped bag on the table, in the chase and when the ghost returns it.
+      group.add(saturdayBag());
       group.position.z = 0.25;
       return { group, update: (used, _clock, dt) => vanish(used, dt) };
     }

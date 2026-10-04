@@ -16,9 +16,9 @@ describe('Kapitel 1, Gården, in greybox', () => {
       // Every big candy on the way.
       expect(result.checkpoint).toBe(garden.checkpoints!.length - 1);
       // The things it had to do: the ladybird, the dandelion, both curls, and Moa.
-      expect(result.flags).toEqual(expect.arrayContaining(['ladybird', 'dandelion', 'moa', 'goal']));
+      expect(result.flags).toEqual(expect.arrayContaining(['ladybird', 'dandelion', 'moa', 'plane:board', 'goal']));
       // What was said, in order.
-      expect(result.said).toEqual(['follow1', 'follow2', 'stomp', 'moa1']);
+      expect(result.said).toEqual(['follow1', 'follow2', 'stomp', 'moa1', 'garden:ready', 'garden:pocket']);
     });
   }
 

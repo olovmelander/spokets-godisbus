@@ -224,7 +224,7 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   const drawn = await info();
   const first = await until(state, (s) => s.said.length >= 1);
   check('?dev plays the story from its prologue', first.course === 'prolog' && drawn.drawCalls > 0, first.course);
-  check('a bubble says the first line', (await page.locator('#bubble').isVisible()) && first.said[0] === 'tonight', await page.locator('#bubbleLine').textContent());
+  check('the first bubble establishes Pappa carving the ghost', (await page.locator('#bubble').isVisible()) && first.said[0] === 'newGhost', await page.locator('#bubbleLine').textContent());
   // Music (plan §5.8): the tune begins with the first key, a bar at a time.
   await page.keyboard.press('ArrowLeft');
   const playing = await until(info, (i) => i.musicBars >= 2, 15000);

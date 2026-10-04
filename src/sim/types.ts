@@ -12,6 +12,8 @@ export interface Climb {
   exit?: -1 | 1;
   /** A flag that has to be set before he can use it: the hose the ladybird shows him. */
   needs?: string;
+  /** Keep a reused climbing rule recognizable as the story's actual tool. */
+  look?: 'hose' | 'lace' | 'braid' | 'lichen' | 'root';
 }
 
 /** A hook for the lace, marked with a red ring (plan §4.2). */
@@ -58,6 +60,8 @@ export interface Mover {
   ring?: Vec;
   /** An optional path: the story helper never sends him here from the main trail. */
   extra?: boolean;
+  /** A toy/side puzzle: keep its final placement in saves, but do not steer the main hint trail into it. */
+  optional?: boolean;
   /** A repeating platform, between its two stops. Its phase is local, never saved as puzzle progress. */
   cycle?: { seconds: number; phase?: number };
 }
@@ -107,6 +111,10 @@ export interface Beat {
   id: string;
   at?: number;
   on?: string;
+  /** Context that must exist even when Elof reaches the position first. */
+  needs?: string;
+  /** A new causal scene replaces stale queued dialogue. */
+  priority?: boolean;
   who: Speaker;
   /** A key of `sv.lines`. */
   line: string;
@@ -188,6 +196,8 @@ export interface Roller {
   radius: number;
   /** A flag that sets the cones rolling: the loose cone he nudges. Left out: they roll from the start. */
   needs?: string;
+  /** A local story beat can end the hazard before a return path becomes a puzzle hub. */
+  until?: string;
 }
 
 /**
@@ -203,7 +213,7 @@ export interface GhostPerch {
   /** It waits here, however close he comes, until this flag is set. */
   until?: string;
   /** A wordless picture at this story stop; progress makes the ghost's thoughts clearer (§3.3). */
-  thought?: { picture: 'mountain' | 'pine-crack' | 'lonely-figure'; after?: string; until?: string };
+  thought?: { picture: 'mountain' | 'pine-crack' | 'lonely-figure' | 'small-figure'; after?: string; until?: string };
 }
 
 /** A stretch of the course where the camera frames differently (plan §6.4). */
@@ -240,6 +250,8 @@ export interface Jump {
   land: Vec;
   /** The thing on a rail that has to be in place before this jump can be made. */
   needs?: string;
+  /** A traversal aid that stops once its obstacle becomes an interactive puzzle. */
+  until?: string;
 }
 
 /** The settings that change the rules (plan §4.1). */
@@ -322,6 +334,12 @@ export interface ChapterData {
   id: string;
   /** An optional melody toy. Consecutive repeat bumps are allowed; other wrong notes restart it. */
   song?: { notes: string[]; flag: string };
+  /** A weight puzzle: the trial is optional; the helper can guide a deliberate return to the heavy mover. */
+  counterweight?: { from: number; to: number; call: string; heavy: string; launch: string; trial: string };
+  /** Once he chooses to leave a gift, a nearby return route can guide him back to its picture clue. */
+  returnClue?: { from: number; to: number; gift: string; away: string; clue: string; root: Climb; door: Vec };
+  /** A picture left at a landmark, revealed by a saved discovery rather than by moving the chase ghost. */
+  thoughtClues?: { at: Vec; picture: NonNullable<GhostPerch['thought']>['picture']; after: string }[];
   /** The place it is dressed as. Left out: greybox. */
   place?: PlaceId;
   /**
