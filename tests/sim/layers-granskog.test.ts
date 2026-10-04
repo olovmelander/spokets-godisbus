@@ -30,7 +30,9 @@ const on = (sim: Sim, ledge: Ledge) =>
   sim.curr.mode === 'free' && sim.curr.grounded && Math.abs(sim.curr.y - ledge.y) < 0.08 && Math.abs(sim.curr.x - ledge.x) <= ledge.width / 2 + 0.16;
 /** Whether he stands on the ground the trail runs on. */
 const onTrail = (sim: Sim) => sim.curr.mode === 'free' && sim.curr.grounded && Math.abs(sim.curr.y - heightAt(granskog, sim.curr.x)) < 0.05;
-const seconds = (sim: Sim) => sim.steps * STEP;
+/** When he stood under the first ledge of the way he is on: the way's own time is counted from there. */
+const entered = new WeakMap<Sim, number>();
+const seconds = (sim: Sim) => (sim.steps - entered.get(sim)!) * STEP;
 
 /**
  * Up onto the next ledge from the one he stands on. Where it lies over him he jumps straight up through it;
@@ -57,6 +59,7 @@ function upTheBoughs(): Sim {
   // The cone's top is the trail's ground: its candy lies along it.
   expect(onTrail(sim), `on the cone: ${sim.curr.x}, ${sim.curr.y}`).toBe(true);
   walkTo(sim, barkA.x);
+  entered.set(sim, sim.steps);
   jump(sim);
   expect(on(sim, barkA), `the first plate: ${sim.curr.x}, ${sim.curr.y}`).toBe(true);
   climbOnto(sim, barkA, barkB);
@@ -73,6 +76,7 @@ function upToTheNest(): Sim {
   runPast(sim, 137.6);
   walkTo(sim, plate1.x);
   expect(onTrail(sim), `under the first plate: ${sim.curr.x}, ${sim.curr.y}`).toBe(true);
+  entered.set(sim, sim.steps);
   jump(sim);
   expect(on(sim, plate1), `the first plate: ${sim.curr.x}, ${sim.curr.y}`).toBe(true);
   // Right, left, right, and up into the nest.
@@ -137,7 +141,7 @@ describe('the boughs over the forest floor', () => {
     expect(sim.curr.x).toBeLessThan(jay.at.x);
     expect(sim.flags.has('berry')).toBe(false);
     expect(sim.flags.has('jay')).toBe(false);
-    expect(seconds(sim)).toBeLessThan(40);
+    expect(seconds(sim)).toBeLessThan(25);
   });
 
   it('end long before the beard lichen, and nowhere near the ant road', () => {
@@ -180,6 +184,41 @@ describe('the boughs over the forest floor', () => {
         expect(top - heightAt(granskog, sim.curr.x)).toBeLessThan(FALL_LIMIT);
       }
     }
+  });
+
+  it('can be taken at a leap: a running jump off the big cone brings the ring within reach of the lace', () => {
+    for (const from of [22.8, 23.2, 23.5]) {
+      const sim = new Sim({ ...granskog, spawn: { x: 20.6, y: 1.21 } });
+      run(sim, 0.2);
+      runPast(sim, from);
+      sim.step({ ...idle, x: 1, hop: true, hopHeld: true });
+      let thrown = false;
+      for (let i = 0; i < 20 / STEP; i++) {
+        const p = sim.curr;
+        const input = { ...idle, x: 1, hopHeld: !thrown };
+        if (p.mode === 'free' && !p.grounded && p.verb === 'lace' && !thrown) input.act = true;
+        if (p.mode === 'swing') {
+          thrown = true;
+          if (p.vx > 0 && angleOf(sim) > 0.5) input.hop = true;
+        }
+        sim.step(input);
+        if (thrown && sim.curr.mode === 'free' && sim.curr.grounded) break;
+        if (sim.curr.mode === 'bubble') break;
+      }
+      run(sim, 0.2);
+      // A shorter way to the far bough, past the hearts on the bark. A miss would land him on the trail.
+      expect(thrown, `leaping at ${from}`).toBe(true);
+      expect(on(sim, far), `leaping at ${from}: ${sim.curr.x}, ${sim.curr.y}`).toBe(true);
+      expect(sim.bubbles).toBe(0);
+    }
+    // Running off the cone without a jump, as the trail goes, the lace is never offered.
+    const sim = new Sim({ ...granskog, spawn: { x: 20.6, y: 1.21 } });
+    run(sim, 0.2);
+    for (let i = 0; i < 2 / STEP; i++) {
+      sim.step({ ...idle, x: 1 });
+      expect(sim.curr.verb, `running at ${sim.curr.x}`).not.toBe('lace');
+    }
+    expect(sim.curr.x).toBeGreaterThan(ring.x);
   });
 
   it('cannot be entered from their far end: the step down is too high to jump onto', () => {
@@ -226,7 +265,7 @@ describe('the nest up the trunk, and the two rings from it', () => {
     expect(sim.flags.has('cap')).toBe(false);
     expect(sideTaken(sim, NEST.from, NEST.to)).toEqual({ taken: 12, of: 12 });
     expect(sim.bubbles).toBe(0);
-    expect(seconds(sim)).toBeLessThan(40);
+    expect(seconds(sim)).toBeLessThan(25);
   });
 
   it('hang the rings in a row: at one height, with one length of lace', () => {
@@ -264,6 +303,21 @@ describe('the nest up the trunk, and the two rings from it', () => {
     walkTo(sim, right(nest) + 0.5);
     run(sim, 0.8);
     expect(onTrail(sim)).toBe(true);
+    expect(sim.bubbles).toBe(0);
+  });
+
+  it('a jump from any plate of bark that misses is a soft landing: only the nest is higher than that', () => {
+    for (const plate of [plate1, plate2, plate3, plate4]) {
+      expect(plate.y + JUMP_APEX - heightAt(granskog, plate.x), `the plate at ${plate.y}`).toBeLessThan(FALL_LIMIT);
+    }
+    expect(nest.y - plate4.y).toBeLessThan(0.9 + 1e-6);
+    // From the highest plate, a leap away from the trunk: over the plate under it, down to the floor.
+    const sim = new Sim({ ...granskog, spawn: { x: plate4.x, y: plate4.y + 0.01 } });
+    run(sim, 0.3);
+    leap(sim, -1, left(plate4) + 0.1);
+    run(sim, 0.5);
+    expect(sim.curr.mode).toBe('free');
+    expect(sim.curr.grounded).toBe(true);
     expect(sim.bubbles).toBe(0);
   });
 
@@ -367,10 +421,25 @@ describe('the tells and the picture', () => {
   });
 
   it('the picture widens on the boughs and in the nest, and is the usual one on the trail under them', () => {
-    const boughs = upTheBoughs();
-    expect(cameraIntent(boughs.curr, granskog.cameras).zoom).toBe(1.4);
-    const nested = upToTheNest();
-    expect(cameraIntent(nested.curr, granskog.cameras).zoom).toBe(1.4);
+    // From the last ledge before each swing, all through it, until he stands on the bough it ends on: the
+    // picture is the wide one at every step, and never goes back and forth.
+    for (const [sim, rings, end] of [[upTheBoughs(), 1, far], [upToTheNest(), 2, last]] as const) {
+      expect(cameraIntent(sim.curr, granskog.cameras).zoom).toBe(1.4);
+      let was = sim.curr.mode;
+      let taken = 0;
+      for (let i = 0; i < 25 / STEP; i++) {
+        const p = sim.curr;
+        const input = { ...idle, x: 1 };
+        if (p.mode === 'free' && p.verb === 'lace' && taken < rings) input.act = true;
+        if (p.mode === 'swing' && was !== 'swing') taken++;
+        if (p.mode === 'swing' && p.vx > 0 && angleOf(sim) > 0.8) input.hop = true;
+        was = p.mode;
+        sim.step(input);
+        expect(cameraIntent(sim.curr, granskog.cameras).zoom, `at ${sim.curr.x}, ${sim.curr.y}`).toBe(1.4);
+        if (taken === rings && sim.curr.mode === 'free' && sim.curr.grounded) break;
+      }
+      expect(on(sim, end)).toBe(true);
+    }
     // On the last bough too, where the pool's own zone begins under it.
     const high = new Sim({ ...granskog, spawn: { x: right(last) - 0.4, y: last.y + 0.01 } });
     run(high, 0.3);
@@ -389,14 +458,18 @@ describe('the tells and the picture', () => {
         expect(cameraIntent(sim.curr, granskog.cameras).zoom, `jumping at ${x}`).toBe(1);
       }
     }
-    // A running jump off the end of the log, which is as high as the lowest plate.
-    const sim = new Sim({ ...granskog, spawn: { x: 136, y: -7.19 } });
-    run(sim, 0.2);
-    runPast(sim, 136.9);
-    sim.step({ ...idle, x: 1, hop: true, hopHeld: true });
-    for (let i = 0; i < 1 / STEP; i++) {
-      sim.step({ ...idle, x: 1, hopHeld: true });
-      expect(cameraIntent(sim.curr, granskog.cameras).zoom, `off the log at ${sim.curr.x}`).toBe(1);
+    // A running jump off the end of the big cone and off the end of the log, which the trail invites.
+    for (const [start, edge] of [[{ x: 21, y: 1.21 }, 23.5], [{ x: 135, y: -7.19 }, 137]] as const) {
+      for (const before of [0.6, 0.3, 0.05, -0.1]) {
+        const sim = new Sim({ ...granskog, spawn: start });
+        run(sim, 0.2);
+        runPast(sim, edge - before);
+        sim.step({ ...idle, x: 1, hop: true, hopHeld: true });
+        for (let i = 0; i < 1 / STEP; i++) {
+          sim.step({ ...idle, x: 1, hopHeld: true });
+          expect(cameraIntent(sim.curr, granskog.cameras).zoom, `jumping ${before} before ${edge}: at ${sim.curr.x}, ${sim.curr.y}`).toBe(1);
+        }
+      }
     }
   });
 });
