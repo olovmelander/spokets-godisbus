@@ -24,6 +24,14 @@
     Every place keeps a stand-in built in code until the kit has arrived, and where a build has no kit.
   - **It costs** 68 KB more as served (boot is 787 KB of 3 MB) and 2 KB of script. The trail is at most five
     draw calls where it was one; a hidden sweet is two where it was three.
+  - **Validation:** typecheck; 790 unit and robot tests, 16 of them new (`tests/unit/candy.test.ts` holds the
+    generator to the game's kinds and colours, and checks the trail, the places for sweets and the summit's
+    gifts); the build and its size gate; the privacy check. In a browser on Olov's computer: the smoke suite,
+    with a new check that the kit is loaded, and the opening story, whose candy check now reads the trail's
+    several meshes. The other suites ran on GitHub for the pull request. Pictures from the game at nine places
+    and the kit as a sheet are in `docs/shots/_work/candy/` on his computer (git ignores them).
+    - With another session's browser drawing the game on the same computer, seven robot tests ran out of
+      their five seconds. They pass with `npx vitest run --testTimeout 90000`, and on GitHub.
   - **Not done:** the stickers in the album and on the bag are still discs in two colours, and the Saturday bag
     and the bag in the corner are as they were. The stand-in big candy (seen for a moment before the pack
     arrives) is still the old striped ball. **Not judged by Olov yet,** and not seen on a phone.
@@ -1200,6 +1208,12 @@
 
 **For the next session, in this order:**
 
+- **The candy** (art bible §2.9): Olov's eyes on it, on a phone: `?dev` for the trail and the big candy,
+  `?dev&course=myren` for the lysklubba, the album's kinds one by one as he finds them. What he says tunes
+  `art/blender/candy.py` and `CANDY_LIFT`. Then the rest of what he asked for, "all candies and similar
+  assets": the album's and the bag's stickers as pictures of the same models, the Saturday bag as a model
+  (striped paper, pinked at its top, sweets looking out), and the end card's rows as small wrapped sweets.
+  It needs Blender, so Olov's computer.
 - Use the validation record in State for the exact integrated source tree before further integration.
   Keep the merged baseline separate from `codex/storytelling-gameplay-overhaul` until its reviewed
   integration is recorded. The earlier PR stack is already merged; superseded older heads were audited
