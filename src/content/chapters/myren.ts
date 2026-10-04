@@ -24,7 +24,7 @@ import type { Candy, ChapterData, Jump, Tussock, Vec } from '../../sim/types';
  *
  * Not built yet: the tussocks' dip under his feet, Mamma's mug and her lamp behind
  * him, the rings of the cranes' calls as a thing to follow, memory 3,
- * the ghost's picture bubble, the cranes' dance, the jay.
+ * the cranes' dance, the jay.
  */
 
 /** Open water is a pit this deep to the simulation, and its surface is here. */
@@ -260,8 +260,8 @@ export const myren: ChapterData = {
     { at: { x: 146.5, y: 0 } },
     { at: { x: 160.7, y: 0.3 } },
     // it waits on firm ground, and lets him come close
-    { at: { x: 172.5, y: 0 }, near: 1.6 },
-    { at: { x: 186.5, y: 0 }, near: 1.6 },
+    { at: { x: 172.5, y: 0 }, near: 1.6, thought: { picture: 'pine-crack', after: 'home' } },
+    { at: { x: 186.5, y: 0 }, near: 1.6, thought: { picture: 'pine-crack', after: 'home' } },
   ],
   beats: [{ id: 'spangen', at: 105.4, who: 'mamma', line: 'spangen' }],
   cameras: [

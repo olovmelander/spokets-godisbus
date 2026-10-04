@@ -45,6 +45,7 @@ the files made with it). three's Basis transcoder (Apache-2.0) is served with th
 | File | What it is | Source and licence |
 | --- | --- | --- |
 | `public/icons/ghost-{180,192,512}.png` | Home Screen icons | Exact SVG ghost already drawn in `index.html`, rendered on its existing cream background with sharp. Made in code for this game; no reference image or new likeness. |
+| In-memory thought pictures in `src/render/ghost-thought.ts` | Symbolic mountain, pine/crack and the existing pointed-cap first-figure icon | Plain canvas cutouts made in code for this game, in the existing story-card style. No reference picture, third-party art, character model or new likeness asset. |
 | `art/baked/boot/big-candy.glb` | The big candy: a striped sweet on a stick | Made for this game in Blender by `art/blender/big-candy.py`, which also paints its texture. Nothing in it comes from anyone else. |
 | `art/baked/boot/jay.glb` | Lavskrikan, the Siberian jay: the helper, and the friend he shares a berry with | Made for this game in Blender by `art/blender/jay.py`: plain shapes in plain colours, with no texture. Nothing in it comes from anyone else. |
 

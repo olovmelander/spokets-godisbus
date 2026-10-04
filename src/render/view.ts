@@ -25,9 +25,11 @@ import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
 import { createEpilogueStage } from './epilogue-stage';
 import { createPrologueStage } from './prologue-stage';
+import { createGhostThought } from './ghost-thought';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
+import type { GhostState } from '../sim/sim';
 
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
@@ -82,7 +84,7 @@ export interface Frame {
   /** What has happened in the chapter. A candy that waits for a flag is drawn once the flag is set. */
   flags: ReadonlySet<string>;
   /** Where the ghost is, or null in a chapter without it. */
-  ghost: { x: number; y: number; t: number; gone: boolean } | null;
+  ghost: GhostState | null;
   /** The rolling cones, in the chapter's order. */
   rollers: readonly { x: number; y: number; on: boolean; radius: number }[];
   /** The soft tussocks, in the chapter's order: where the top of each is now. */
@@ -321,6 +323,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   ghostPlace.add(ghost);
   ghostPlace.visible = chapter.ghost !== undefined;
   scene.add(ghostPlace);
+  const ghostThought = createGhostThought(chapter);
+  if (ghostThought) scene.add(ghostThought.mesh);
   const prologueStage = createPrologueStage(chapter.prologue);
   scene.add(prologueStage.group);
   const epilogueStage = createEpilogueStage(chapter.epilogue);
@@ -739,6 +743,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (ghostFoot) ghostFoot.rotation.x = 0;
       ghostStaged = true;
     }
+    ghostThought?.update(ghostState, flags, { x, y }, camera, clock, dt,
+      reducedMotion.matches || document.body.classList.contains('calm'), ghostPlace.visible);
     // The family: each turns a little towards him, and throws their arms up for a moment when he has given
     // them candy, or when they first come into the picture.
     for (const one of family) {

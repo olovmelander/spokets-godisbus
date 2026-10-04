@@ -18,7 +18,7 @@ import type { Candy, ChapterData } from '../../sim/types';
  * 8. **Spöket i virveln** (P10): from a stone, the lace pulls the ghost ashore. It leaves one candy on the
  *    stone, and from now on it waits for him.
  *
- * Not built yet: tasting a lingonberry, the ghost's picture bubbles.
+ * Not built yet: tasting a lingonberry, the small figure in the ghost's vittra-door bubble.
  * To the simulation the pool and the eddy are pits; the water in them is drawn only.
  */
 
@@ -230,8 +230,8 @@ export const granskog: ChapterData = {
     { at: { x: 180.5, y: -8 } },
     { at: { x: 186.8, y: -9 }, until: 'placed:rescue' },
     // from now on it waits for him
-    { at: { x: 197, y: -8 }, near: 1.6 },
-    { at: { x: 205.5, y: -8 }, near: 1.6 },
+    { at: { x: 197, y: -8 }, near: 1.6, thought: { picture: 'mountain', after: 'placed:rescue' } },
+    { at: { x: 205.5, y: -8 }, near: 1.6, thought: { picture: 'mountain', after: 'placed:rescue' } },
   ],
   beats: [
     { id: 'vittra', at: 61.8, who: 'elof', line: 'givesAway' },

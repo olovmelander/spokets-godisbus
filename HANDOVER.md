@@ -4,8 +4,10 @@
 
 - **Current Git state:** `main` is still the deployed checkpoint from PR #60. The subsequent code
   improvements are saved in the PR stack #61–#103 and its full-game checkpoint; they have not been
-  merged or deployed. This continuation preserves those changes and the previously local browser
-  fixture and narrow-screen fixes. `RELEASED_CHAPTER` remains `null`.
+  merged or deployed. PR #104 preserves the previously local browser fixture and narrow-screen fixes;
+  PR #105 adds the memory presentation. `codex/story-thought-pictures` continues from #105 with the
+  clearer ghost pictures below. All three changes are stacked, without a release or deployment.
+  `RELEASED_CHAPTER` remains `null`.
 
 - **Memories grow from their source and return to it** (`codex/memory-bubble-presentation`; plan §2.4).
   - First discoveries grow from the visible ghost, or from the touched glowing shaving when the ghost
@@ -25,7 +27,8 @@
 
 - **Read this first: where it stands.**
   - The whole story is playable from start to end with `?dev`: the prologue, four chapters, the final and
-    the epilogue, and after them an extra chapter, Byn. Everything is merged to `main` and deployed:
+    the epilogue, and after them an extra chapter, Byn. That original foundation is deployed on `main`;
+    the newer code milestones above remain in the unmerged PR stack:
     `https://olovmelander.github.io/spokets-godisbus/?dev`. The plain address still shows the grey test
     course, because `RELEASED_CHAPTER` is `null`: releasing is Olov's.
   - **Added in the night of 3 to 4 October** (pull requests #38 to #59; each has its own entry further
@@ -46,6 +49,31 @@
     - *The village's shopping street as a chapter:* built, as Byn. Its own name waits for question 5.
   - **Waiting for Olov:** questions 5 and 6 under "Frågor till Olov"; the checkpoints H1a, H1b and H2;
     pull request #12; and his ears, because nobody has listened to any of the sound.
+
+- **The ghost's thoughts grow clearer** (4 October, cloud session, `codex/story-thought-pictures`; plan §§3.3–3.4).
+  - After Elof pulls it out of the forest eddy, its final waiting stops show a mountain silhouette.
+    After the crane chick reaches its family in Myren, the waiting ghost shows the mountain, old pine
+    and a small grey thing in a crack. Below Berget's final cliff it shows the lonely first trägubbe,
+    before *Lyft*. Helping it at the cliff clears that picture. The garden's first smudge is unchanged.
+  - Each chapter has one static 256×192 canvas picture and one card beside the actual chase ghost.
+    These are symbolic cutouts in the existing memory-card style, with no text or downloaded art;
+    the little cap-and-smile icon is a story symbol, not a new character model or final likeness asset.
+    No eyes are added to the lost figure. Blender character work and private packs are unchanged.
+  - Pictures wait for their authored story flags and settled ghost perch, and clear while it hops or
+    leaves. The card stays inside portrait/landscape framing. Pause freezes its entrance and gentle
+    drift; *Mindre rörelse* and OS reduced motion keep it still. Its texture is never redrawn during play and
+    its shader joins the chapter's initial warmup. Resources belong to the chapter's existing scene
+    lifetime, which ends on page navigation; the card also has an explicit resource-release method.
+  - Validation: the combined tree passes typecheck, all 671 unit/robot tests, 54 real-browser thought
+    checks, all 30 memory-presentation checks and the existing album flow. Clean build/size and the
+    built-in privacy scan pass (373.2 KB gzip JavaScript; 701.8 KB public boot). Browser thought cases
+    cover all three stops in Low landscape and High
+    portrait, using 59–88 draw calls; checks include icon contents, framing, pause, both reduced-motion
+    settings, shader/draw/texture bounds and resource release. Iteration
+    screenshots use stand-ins under ignored `docs/shots/_work/ghost-thoughts/`.
+  - Cloud session: no new question, later-release wish or known defect. `RELEASED_CHAPTER` stays null.
+    The remaining small-figure thought at the vittra door and final art/device review are separate
+    follow-ups; these code pictures require no connection to Olov's computer.
 
 - **Controls and graphics settings completed** (4 October, cloud session, `codex/controls-and-graphics-settings`).
   - **What you see:** Paus now has *Följ fingret*, *Grafik* (Auto / Låg / Mellan / Hög), and
@@ -179,6 +207,10 @@
   - **Limits/next:** animal shapes are code stand-ins; Blender work and real-device difficulty judgement
     still need Olov's computer. No new question or later-release wish; `RELEASED_CHAPTER` remains null.
     C3 and C4 are the next separate chapter changes.
+
+- **Historical milestones:** the older entries below record their state at that time, including their
+  then-current test counts and remaining work. The State entries above and Next list below describe
+  the current combined code; do not restart work marked complete there.
 
 - **Done:**
   - The plan, `docs/game-plan.md` version 4: research, design, art direction, technology and delivery. Version 4
@@ -1038,8 +1070,9 @@
 - Completed code: C1–C4, separate players, album photos/replay, offline updates, replayable dew bells
   and cobbles, the vittra gift, party/summit choices, painting/carving gestures, exploration, and the
   moonlit ending. See `docs/implementation-progress.md` for the PR milestones. Do not restart them.
-- Next cloud story outcome: the ghost's pictures become clearer at the forest, bog and cliff stops
-  (plan §3.3 rule 6). The memory presentation now grows/returns; final animated 3D memory art is separate.
+- The ghost's forest, bog and cliff thought pictures are implemented (plan §3.3 rule 6). Its smaller
+  shape at the vittra door remains a separate story beat. The memory presentation grows/returns; final
+  animated 3D memory art and family acting still need Blender on Olov's computer.
 - Look-dev code now includes place LUTs, Low material grading, High background blur and half-size bloom,
   flowing water/refraction, tiered character shadows and measured GPU allocation/texture recovery gates.
   Review the combined result with private models and `?bench` on Olov's devices; cloud stand-ins are not
@@ -1134,7 +1167,7 @@ The older list, still true where it is not struck:
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. On 4 October: chapter codes, C1, two optional delights, footsteps and wordless sounds, more switches, and the extra chapter Byn. A cloud session completed touch-follow, graphics selection, controls reference and menu input routing; another implemented offline boot/chapter caching and title-only updates. Byn now has street life and a shop interior. C2–C4, replayable toys, story choices/gestures, exploration, the golden album reward, moonlit ending and memory presentation are implemented in the unmerged code stack. Final family acting, memory art, listening and device checkpoints remain. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. On 4 October: chapter codes, C1, two optional delights, footsteps and wordless sounds, more switches, and the extra chapter Byn. A cloud session completed touch-follow, graphics selection, controls reference and menu input routing; another implemented offline boot/chapter caching and title-only updates. Byn now has street life and a shop interior. C2–C4, replayable toys, story choices/gestures, exploration, the golden album reward, moonlit ending, memory presentation and clearer ghost thoughts are implemented in the unmerged code stack. Final family acting, memory art, listening and device checkpoints remain. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. |
 
 ## Known bugs

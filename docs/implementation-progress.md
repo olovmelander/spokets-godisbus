@@ -249,3 +249,17 @@ Validation: 30 real-browser checks and all 665 unit/robot tests pass, including 
 interruptions, immediate cancellation, reopen races, rotation, natural completion and all five planned
 screen sizes. Typecheck, clean build/size and privacy pass (372 KB gzip JS; 701 KB public boot).
 The existing wordless cutout cards remain: final animated family scenes are the separate Blender task.
+
+## Show clearer ghost picture thoughts at the story stops
+
+After the forest rescue the ghost shows a mountain silhouette. After the crane reunion it shows the
+mountain, old pine and a grey thing in a crack. Before the final cliff Lift it shows the lonely first
+figure. Progress and settled perches gate the pictures; leaving or lifting clears them immediately.
+One static symbolic canvas/card per chapter follows the existing ghost, with bounded framing,
+paused entrance/drift and both reduced-motion preferences. No private character model changes.
+
+Validation: the combined tree passes all 671 unit/robot tests, typecheck, 54 actual-renderer thought
+checks, all 30 memory-presentation checks and the existing album flow. Clean build/size and built-in
+privacy checks pass (373.2 KB gzip JavaScript; 701.8 KB public boot). Six Low/High landscape/portrait
+thought cases use 59–88 draw calls, with stable shaders/textures. The vittra-door small-figure thought
+remains a separate planned beat.

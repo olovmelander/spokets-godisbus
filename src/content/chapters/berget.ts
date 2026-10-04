@@ -16,7 +16,7 @@ import type { Candy, ChapterData } from '../../sim/types';
  *    The summit's candy is optional; the ordinary path stays below, and the same shelves lead back down.
  *
  * Not built yet: what lies below the flight (the forest, the brook, the bog, the bell tower, the red house,
- * the four headlamps), memory 4, the ghost's picture bubble, the ghost shown lifted.
+ * the four headlamps), memory 4, the ghost shown lifted.
  */
 
 /** A row of candy over ground at one height, one every `every` EL. */
@@ -131,7 +131,7 @@ export const berget: ChapterData = {
     { at: { x: 130.8, y: 26.4 } },
     { at: { x: 140, y: 26.4 } },
     // stuck below the cliff, with the bag too heavy: it doesn't run
-    { at: { x: 145, y: 26.4 }, until: 'lift' },
+    { at: { x: 145, y: 26.4 }, until: 'lift', thought: { picture: 'lonely-figure', until: 'lift' } },
     // up, it waits by the pine
     { at: { x: 151, y: 31.4 }, near: 1.6 },
     { at: { x: 159, y: 31.4 }, near: 1.6 },

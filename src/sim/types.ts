@@ -202,6 +202,8 @@ export interface GhostPerch {
   catch?: string;
   /** It waits here, however close he comes, until this flag is set. */
   until?: string;
+  /** A wordless picture at this story stop; progress makes the ghost's thoughts clearer (§3.3). */
+  thought?: { picture: 'mountain' | 'pine-crack' | 'lonely-figure'; after?: string; until?: string };
 }
 
 /** A stretch of the course where the camera frames differently (plan §6.4). */
