@@ -41,8 +41,8 @@ describe('Prolog, Lördagsmorgon, in greybox', () => {
       const result = playThrough(fps, prolog, {}, 200);
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
       // Two eyes, the blink he watches, and the star.
-      expect(did(result.flags)).toEqual(['eye', 'paint', 'blink', 'star', 'goal']);
-      expect(result.said).toEqual(['tonight']);
+      expect(did(result.flags)).toEqual(['eye', 'paint', 'blink', 'mamma:passed', 'bag:torn', 'star', 'pappa:noticed', 'pappa:done', 'goal']);
+      expect(result.said).toEqual(['tonight', 'follow1', 'follow2']);
       expect(result.bubbles).toBe(0);
       expect(result.missed).toEqual([]);
     });
@@ -53,7 +53,7 @@ describe('Prolog, Lördagsmorgon, in greybox', () => {
   });
 
   it('has no candy trail until the ghost has run off with the bag: it has not torn yet', () => {
-    for (const c of prolog.candy) expect(c.after, `the candy at ${c.x}`).toBe('blink');
+    for (const c of prolog.candy) expect(c.after, `the candy at ${c.x}`).toBe('bag:torn');
     const sim = new Sim(prolog);
     run(sim, 12, { x: 1 });
     expect(sim.candyCount).toBe(0);
@@ -108,7 +108,7 @@ describe('the blink: a beat of the story that takes time', () => {
     // Then it is over: the bag is gone with the ghost, the trail lies there, and he can run.
     run(sim, 0.6);
     expect(sim.flags.has('blink')).toBe(true);
-    run(sim, 1.5, { x: 1 });
+    run(sim, 4.5, { x: 1 });
     expect(sim.curr.x).toBeGreaterThan(x + 2);
     expect(sim.ghost!.x).toBeGreaterThan(8);
     expect(sim.candyCount).toBeGreaterThan(0);

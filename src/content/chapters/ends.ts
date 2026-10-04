@@ -24,9 +24,8 @@ function row(from: number, to: number, ground: number, every = 2, after?: string
  * 4. **The chase,** over the veranda's door sill.
  * 5. **The star** on the deck's step: *Ta*. He shrinks, and Kapitel 1 begins.
  *
- * Not built yet: Pappa's hands and the shelf with its empty place, Bertil's hand at the bag, the brush
- * strokes traced by hand, the blink and the freeze joke, the bag tearing on the hinge, the POFF, and Pappa
- * on the deck. His two lines are said at the start of Kapitel 1.
+ * The two freeze jokes and the bag's tear use simple stage shapes until their Blender acting is ready.
+ * Bertil's hand at the bag and the family's authored likeness/poses still need the art session.
  */
 export const prolog: ChapterData = {
   id: 'prolog',
@@ -45,7 +44,9 @@ export const prolog: ChapterData = {
   later: [{ flag: 'blink', after: 'paint', seconds: 2.6, hold: true }],
   glance: { from: 'paint', until: 'blink', seconds: 2.6, at: [{ x: 6.9, y: 6.1, z: -8.8 }, { x: 7.8, y: 0.35, z: 0.25 }] },
   spawn: { x: 1, y: 0.01 },
-  goalX: 44.4,
+  goalX: 50.6,
+  goalNeeds: 'pappa:done',
+  prologue: { doorway: { x: 8.4, y: 0 }, railing: { x: 48.2, y: 4.6 } },
   ground: [
     { x: -3, y: 9 },
     { x: -3, y: 0 },
@@ -64,7 +65,7 @@ export const prolog: ChapterData = {
     { x: 52, y: 10 },
   ],
   house: { from: -40, to: 60, windows: [12, 24, 36] },
-  checkpoints: [{ x: 2.6, y: 0 }, { x: 26, y: 0 }],
+  checkpoints: [{ x: 2.6, y: 0 }, { x: 26, y: 0 }, { x: 45, y: 2.4 }],
   spots: [
     // Two eyes: a brush stroke for each; Pappa finishes a short stroke.
     { id: 'eye', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost', story: 'paint' },
@@ -84,19 +85,23 @@ export const prolog: ChapterData = {
     { at: { x: 22, y: 0 } },
     { at: { x: 28.6, y: 0 } },
     { at: { x: 35, y: 0 } },
-    { at: { x: 48, y: 2.4 } },
+    { at: { x: 48, y: 2.4 }, until: 'pappa:done' },
   ],
   // Said as the scene opens: he stands at the table already.
-  beats: [{ id: 'tonight', at: 0.9, who: 'mamma', line: 'tonight' }],
+  beats: [
+    { id: 'tonight', at: 0.9, who: 'mamma', line: 'tonight' },
+    { id: 'follow1', on: 'pappa:noticed', who: 'pappa', line: 'follow1' },
+    { id: 'follow2', on: 'pappa:done', who: 'pappa', line: 'follow2' },
+  ],
   // The picture is wide while he is big, and closes in on him when he has shrunk: the world grows.
-  cameras: [{ from: -3, to: 42.4, zoom: 1.5, lift: 0.3 }],
+  cameras: [{ from: -3, to: 42.4, zoom: 1.5, lift: 0.3 }, { from: 42.4, to: 52, zoom: 1.8, lift: 1.1 }],
   candy: [
     // Nothing lies there until the bag has torn.
-    ...row(9, 29, 0, 2, 'blink'),
-    { x: 30.6, y: 1.25, after: 'blink' },
-    ...row(32.4, 36.4, 0, 2, 'blink'),
-    { x: 38.6, y: -0.2, after: 'blink' },
-    { x: 39.8, y: -0.35, after: 'blink' },
+    ...row(9, 29, 0, 2, 'bag:torn'),
+    { x: 30.6, y: 1.25, after: 'bag:torn' },
+    ...row(32.4, 36.4, 0, 2, 'bag:torn'),
+    { x: 38.6, y: -0.2, after: 'bag:torn' },
+    { x: 39.8, y: -0.35, after: 'bag:torn' },
   ],
 };
 

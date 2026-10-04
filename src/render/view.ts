@@ -17,6 +17,8 @@ import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass } from './grade';
 import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
+import { createPrologueStage } from './prologue-stage';
+import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 
@@ -76,6 +78,7 @@ export interface Frame {
   gusts: readonly { blow: number; warn: number }[];
   /** The cranberries, in the chapter's order: how flat each is after a bounce, from 1 to 0. */
   berries?: readonly { squash: number }[];
+  prologue?: PrologueFrame | null;
   noteHits?: readonly { serial: number; id: string; midi: number }[];
   /** What the helper is doing: its step, and where the thing is. */
   help: HelpState;
@@ -293,6 +296,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   ghostPlace.add(ghost);
   ghostPlace.visible = chapter.ghost !== undefined;
   scene.add(ghostPlace);
+  const prologueStage = createPrologueStage(chapter.prologue);
+  scene.add(prologueStage.group);
   let ghostFoot: Object3D | null = null;
   // The stand-in faces +x, as the stand-in Elof does; the model from Blender faces the camera.
   let ghostFaces = 0;
@@ -492,8 +497,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
   }
 
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue }: Frame): void {
     rain.update(drips);
+    prologueStage.update(prologue, flags);
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
@@ -550,6 +556,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     for (const d of decor) {
       d.prop?.update(d.def.until !== undefined && flags.has(d.def.until), clock, dt);
       if (d.prop && d.def.after !== undefined) d.prop.group.visible = flags.has(d.def.after);
+      // The doorway tableau takes over Mamma's opening mark; never draw her twice when private models load.
+      if (d.prop && chapter.prologue && d.def.word === 'callMamma') d.prop.group.visible = !flags.has('blink');
     }
     // The POFF: he shrinks, or grows back, in a little more than a second, in a swarm of glitter.
     let poff = false;
@@ -650,6 +658,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostTurn += (wanted - ghostTurn) * ease(7, dt);
       ghost.rotation.set(0, ghostFaces + ghostTurn, hopping ? -0.25 * Math.sin(Math.PI * ghostState.t) : Math.sin(clock * 1.7) * 0.035);
       if (ghostFoot) ghostFoot.rotation.x = hopping ? 0 : -Math.max(0, Math.sin(clock * 9)) * (Math.sin(clock * 0.9) > 0.2 ? 0.45 : 0);
+      if (chapter.prologue && prologue) {
+        const pose = prologuePose(chapter.prologue, prologue);
+        ghostPlace.position.set(pose.x, pose.y, 0.1);
+        ghostSize = pose.scale;
+        ghostPlace.scale.setScalar(ghostSize);
+        ghost.rotation.set(0, ghostFaces + pose.turn, pose.tilt);
+        if (ghostFoot) ghostFoot.rotation.x = 0;
+        ghostShadow.visible = false;
+      } else if (chapter.prologue && flags.has('pappa:done')) {
+        ghostSize = 0;
+        ghostPlace.scale.setScalar(0);
+        ghostShadow.visible = false;
+      }
     }
     // The family: each turns a little towards him, and throws their arms up for a moment when he has given
     // them candy, or when they first come into the picture.

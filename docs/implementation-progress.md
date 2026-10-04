@@ -134,3 +134,9 @@ Validation: typecheck and 40 integrated routing/journey/map/ending tests pass; t
 Story strokes have their own pointer capture and delayed completion. Losing window focus now cancels that pending gesture alongside normal movement, so returning cannot complete an old partial stroke.
 
 Validation: typecheck passes and browser regressions cover both partial pointer strokes and delayed guided completion.
+
+## Stage the prologue freeze jokes and torn-bag chase
+
+The opening now stages the two planned freeze jokes, the bag catching the hinge, and the ghost being picked up and placed on the railing before sneaking away. An appended deck checkpoint safely restores interrupted scenes while keeping older checkpoints compatible.
+
+Validation: typecheck and 59 integrated prologue, ending, helper and input tests pass. The focused browser rehearsal verifies both orientations, Low/High, pause, shader stability and continuation. Character forms remain stand-ins pending art approval.

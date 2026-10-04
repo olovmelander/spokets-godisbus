@@ -21,6 +21,10 @@ export const HINT_REACH = 12;
 
 export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   const p = sim.curr;
+  if (sim.prologue?.frame) return null;
+  if (chapter.prologue && sim.flags.has('pappa:done') && !sim.flags.has('goal')) {
+    return { at: { x: chapter.goalX, y: chapter.prologue.railing.y - 2.2 }, verb: null, word: null };
+  }
   const has = (flag?: string) => flag === undefined || sim.flags.has(flag);
   // A raised route can overlap ordinary ground in x (the anthill's other side). Its landing heights,
   // not the airborne feet, distinguish a deliberate climb from an ordinary jump or the ant ride.

@@ -358,6 +358,10 @@ export interface ChapterData {
   spawn: Vec;
   /** Reaching this x sets the flag "goal". */
   goalX: number;
+  /** A final story beat can finish before the safe walk to the chapter card. */
+  goalNeeds?: string;
+  /** The prologue's two freeze jokes and the hinge that tears the bag. */
+  prologue?: import('./prologue').PrologueLayout;
   /**
    * Trail candy, in the order the path meets it (plan §4.3). Each point is where the candy floats: about
    * half an EL over the ground on a walk, and along the arc of the jump over a gap or up a step.

@@ -14,6 +14,7 @@ import { GUIDE_AFTER, HELP_TIME, REMIND_AFTER } from './constants';
 import { hintFor } from './help';
 import { partyReward, sharingReward, type StoryAnswer } from './story';
 import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
+import { PrologueSequence } from './prologue';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
@@ -133,6 +134,7 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
  * far.
  */
 export class Sim {
+  readonly prologue: PrologueSequence | null;
   readonly world: World;
   readonly flags = new Set<string>();
   /** The world waits while a story interaction is open; only a validated answer commits progress. */
@@ -242,6 +244,7 @@ export class Sim {
   private readonly safe: Vec;
 
   constructor(readonly chapter: ChapterData, options: SimOptions = {}, start: SimStart = {}) {
+    this.prologue = chapter.prologue ? new PrologueSequence(chapter.prologue) : null;
     this.options = options;
     this.checkpoints = chapter.checkpoints ?? [];
     this.jumps = chapter.jumps ?? [];
@@ -318,6 +321,11 @@ export class Sim {
     const ahead = this.perches.findIndex((perch) => perch.at.x > spawn.x + 1);
     const first = this.perches[ahead];
     this.ghost = first ? { x: first.at.x, y: first.at.y, perch: ahead, t: 1, gone: false } : null;
+    if (chapter.prologue && this.ghost && this.flags.has('pappa:done')) this.ghost.gone = true;
+    // Older saves beyond the door have already chased the torn bag; never replay that joke out of place.
+    if (chapter.prologue && spawn.x > chapter.prologue.doorway.x + 2) {
+      this.flags.add('mamma:passed'); this.flags.add('bag:torn');
+    }
 
     this.world.on('begin-contact', (c) => this.countFoot(c, 1));
     this.world.on('end-contact', (c) => this.countFoot(c, -1));
@@ -361,8 +369,9 @@ export class Sim {
     this.prev = this.curr;
     this.ringNotes();
     this.returnGifts();
+    this.prologue?.tick(this.curr, this.ghost, this.flags);
     // While he watches a beat of the story, the stick and the buttons do nothing.
-    if (this.watching) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
+    if (this.watching || this.prologue?.frame) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
     // Free, he may take hold of something this step: a hose, a ledge, or the hose below him.
     if (this.state.kind === 'free') this.reach(input);
     if (this.story) { this.curr = this.read(this.standing()); return; }
@@ -383,7 +392,7 @@ export class Sim {
     this.blow();
     this.sink();
     for (const berry of this.berries) berry.squash = Math.max(0, berry.squash - STEP / BERRY_SQUASH);
-    this.haunt();
+    if (!this.prologue?.frame) this.haunt();
     this.tell();
     this.assist(input.help === true);
 
@@ -400,7 +409,7 @@ export class Sim {
     // The bubble only carries. Everywhere else, candy he comes near is his: up a hose too.
     if (this.state.kind !== 'bubble') this.collect();
     this.resetChallenges();
-    if (this.curr.x >= this.chapter.goalX) this.flags.add('goal');
+    if (this.curr.x >= this.chapter.goalX && (!this.chapter.goalNeeds || this.flags.has(this.chapter.goalNeeds))) this.flags.add('goal');
   }
 
   /**
@@ -770,6 +779,7 @@ export class Sim {
    * Nothing he has found or done is undone (plan §4.5).
    */
   toCheckpoint(): void {
+    this.prologue?.cancel();
     this.resetChallenges(true);
     this.story = null;
     if (this.state.kind === 'bubble') return;
