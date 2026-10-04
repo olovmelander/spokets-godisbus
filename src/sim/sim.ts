@@ -421,6 +421,7 @@ export class Sim {
     for (const [i, def] of (this.chapter.rollers ?? []).entries()) {
       const state = this.rollers[i]!;
       state.on = false;
+      if (def.until !== undefined && this.flags.has(def.until)) continue;
       // Cones that wait for a nudge keep time from the nudge, and none is on its way before its turn.
       if (state.since < 0 && this.flags.has(def.needs!)) state.since = this.steps;
       if (state.since < 0) continue;
@@ -578,6 +579,7 @@ export class Sim {
       else if (beat.hold) this.watching = true;
     }
     for (const beat of this.chapter.beats ?? []) {
+      if (beat.needs !== undefined && !this.flags.has(beat.needs)) continue;
       const flag = `beat:${beat.id}`;
       if (this.flags.has(flag)) continue;
       const passed = beat.at !== undefined && this.curr.x >= beat.at;
@@ -934,7 +936,7 @@ export class Sim {
     // Lätta hopp: at a marked edge the jump is made for him, and steered to where it lands.
     if (this.options.easyJumps && p.grounded && dir !== 0) {
       const reach = input.hop ? EASY_JUMP_STEER : EASY_JUMP_REACH;
-      const jump = this.jumps.find((j) => j.dir === dir && Math.abs(j.at.y - p.y) < 0.3 && (j.at.x - p.x) * dir >= -0.05 && (j.at.x - p.x) * dir <= reach);
+      const jump = this.jumps.find((j) => (j.until === undefined || !this.flags.has(j.until)) && j.dir === dir && Math.abs(j.at.y - p.y) < 0.3 && (j.at.x - p.x) * dir >= -0.05 && (j.at.x - p.x) * dir <= reach);
       const ready = jump && (jump.needs === undefined || this.placed.includes(jump.needs));
       if (jump && ready && (input.hop || Math.abs(p.vx) > WALK_SPEED * 0.5)) {
         this.flyTo(jump.land, Math.min(0.8, Math.max(0.45, Math.hypot(jump.land.x - p.x, jump.land.y - p.y) / 4.5)));

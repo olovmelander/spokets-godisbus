@@ -63,7 +63,27 @@ describe('what the helper shows', () => {
         if (p.verb !== null && p.verb !== 'slide' && p.verb !== 'grab' && p.mode === 'free') {
           const hint = hintFor(game.sim, chapter);
           expect(hint, `${chapter.id} at x ${p.x.toFixed(1)}: ${p.verb}`).not.toBeNull();
-          expect({ verb: hint!.verb, word: hint!.word }, `${chapter.id} at x ${p.x.toFixed(1)}`).toEqual({ verb: p.verb, word: p.word });
+          const action = game.sim.actionAt;
+          const extraSpot = chapter.spots?.find((spot) => spot.extra && !spot.touch &&
+            action?.x === spot.at.x && action.y === spot.at.y + (spot.look ? 0.6 : 1.5));
+          if (extraSpot && action && hint!.at.x === action.x && hint!.at.y === action.y) {
+            // Inside an authored experiment/return hub, the helper supports the player's chosen
+            // optional action. This contract is separate from unsolicited main-route guidance.
+            const weight = chapter.counterweight, revisit = chapter.returnClue;
+            expect((weight && p.x >= weight.from && p.x <= weight.to) ||
+              (revisit && p.x >= revisit.from && p.x <= revisit.to), `${chapter.id}: chosen help belongs to an authored hub`).toBeTruthy();
+            expect({ verb: hint!.verb, word: hint!.word }).toEqual({ verb: p.verb, word: p.word });
+          } else if (extraSpot) {
+            // An authored optional call may be offered beside the trail. The helper still points at
+            // an available main action, rather than making the side loop a job to finish first.
+            expect(hint!.at).not.toEqual(extraSpot.at);
+            const mainSpot = chapter.spots?.find((spot) => !spot.extra && !spot.touch && !game.sim.flags.has(spot.id) &&
+              (spot.needs === undefined || game.sim.flags.has(spot.needs)) && spot.at.x === hint!.at.x && spot.at.y === hint!.at.y);
+            expect(mainSpot, `${chapter.id}: the optional action leaves a valid main action`).toBeDefined();
+            expect({ verb: hint!.verb, word: hint!.word }).toEqual({ verb: mainSpot!.verb, word: mainSpot!.word ?? null });
+          } else {
+            expect({ verb: hint!.verb, word: hint!.word }, `${chapter.id} at x ${p.x.toFixed(1)}`).toEqual({ verb: p.verb, word: p.word });
+          }
           checked++;
         }
         const { x, y, ahead, offered } = decide(game, chapter);

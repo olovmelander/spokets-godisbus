@@ -74,8 +74,8 @@ try {
       return { ...snapshot(), colours, canvas: [card.material.map.image.width, card.material.map.image.height] };
     }, { course, x, y, tier, gate });
     check(`${name}: early or travelling ghost reveals no picture`, early.opacity === 0 && early.scale === 0);
-    check(`${name}: one pre-drawn 256×192 texture shows only its authored symbols`,
-      early.canvas[0] === 256 && early.canvas[1] === 192 &&
+    check(`${name}: one bounded pre-drawn atlas shows only its authored symbols`,
+      early.canvas[0] === (course === 'granskog' ? 512 : 256) && early.canvas[1] === 192 &&
       (expected === 'mountain' ? early.colours.green === 0 && early.colours.grey === 0 && early.colours.smile === 0 :
         expected === 'pine-crack' ? early.colours.green > 100 && early.colours.grey > 50 && early.colours.smile === 0 : early.colours.green > 100 && early.colours.smile > 5));
     const shown = await page.evaluate((gate) => {

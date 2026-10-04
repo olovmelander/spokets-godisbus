@@ -4,6 +4,7 @@ import type { DripState, MoverState } from '../../src/sim/sim';
 import type { ChapterData, SimOptions } from '../../src/sim/types';
 import { eyeCentres, guidedCarve, guidedEye } from '../../src/sim/story-stroke';
 import { FRIENDS, PARTY_GUESTS } from '../../src/sim/story';
+import { counterweightTarget } from '../../src/sim/help';
 
 /** The ground's height at x, read from the chapter data. */
 export function heightAt(chapter: ChapterData, x: number): number {
@@ -90,6 +91,17 @@ export function decide(game: Game, chapter: ChapterData): Decision {
   // Something to do where it stands: stand still and do it. It taps, as a player does: one thing done may
   // offer the next at once, and a held button would never press again.
   if (p.verb !== null && p.verb !== 'lace' && p.verb !== 'slide') return { ...wait, offered: Math.floor(game.sim.steps / 24) % 2 === 0 };
+  // A readable weight puzzle deliberately sends him back to a passed cone, onto its push side.
+  // Its authored hint supplies the current target; the robot still reads/clears the actual obstacle.
+  const weight = counterweightTarget(game.sim, chapter);
+  if (weight && chapter.counterweight && game.sim.flags.has(chapter.counterweight.call)
+    && !game.sim.flags.has(`placed:${chapter.counterweight.heavy}`) && weight.verb === null) {
+    const obstacle = movers.find((m) => m.def.id === chapter.counterweight!.heavy)!;
+    const right = obstacle.x + obstacle.def.width / 2;
+    const wall = p.x - right > -0.1 && p.x - right < 1.05 && obstacle.y + obstacle.def.height > p.y + 0.3;
+    const direction = Math.abs(p.x - weight.at.x) < 0.08 ? 0 : Math.sign(weight.at.x - p.x);
+    return { ...wait, x: direction, ahead: direction < 0 && p.grounded && wall };
+  }
   // A glint behind it: something there can be used now. It walks back to it, as a player would.
   const usable = (chapter.spots ?? []).find((s) =>
     !s.touch && !game.sim.flags.has(s.id) && (s.needs === undefined || game.sim.flags.has(s.needs)) &&
@@ -103,7 +115,7 @@ export function decide(game: Game, chapter: ChapterData): Decision {
   // Steeper than 45 degrees over the next EL, and more than a step high. A thing in the way is a wall too.
   // One that can still be pushed is walked up to, not jumped at.
   const placed = (m: MoverState) => m.stop === m.def.stops.length - 1;
-  const inTheWay = movers.some((m) => placed(m) && m.y < p.y + 1.3 && m.x - m.def.width / 2 - p.x > 0 && m.x - m.def.width / 2 - p.x < 1 && m.y + m.def.height > p.y + 0.3);
+  const inTheWay = movers.some((m) => (placed(m) || (m.def.id === chapter.counterweight?.heavy && m.def.needs !== undefined && !game.sim.flags.has(m.def.needs))) && m.y < p.y + 1.3 && m.x - m.def.width / 2 - p.x > 0 && m.x - m.def.width / 2 - p.x < 1 && m.y + m.def.height > p.y + 0.3);
   // The far side of a crack at his own height is no wall.
   const wall = inTheWay || (heightAt(chapter, p.x + 1.0) - heightAt(chapter, p.x + 0.6) > 0.4 && heightAt(chapter, p.x + 1.0) > p.y + 0.3);
   // A gap with a plank across it is no gap. A gap has a far side above its bottom, and not far below him: on

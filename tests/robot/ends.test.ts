@@ -42,7 +42,7 @@ describe('Prolog, Lördagsmorgon, in greybox', () => {
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
       // Two eyes, the blink he watches, and the star.
       expect(did(result.flags)).toEqual(['eye', 'paint', 'blink', 'mamma:passed', 'bag:torn', 'star', 'pappa:noticed', 'pappa:done', 'goal']);
-      expect(result.said).toEqual(['tonight', 'follow1', 'follow2']);
+      expect(result.said).toEqual(['newGhost', 'tonight', 'stolenBag', 'fallenStar', 'tinyElof', 'follow1', 'follow2']);
       expect(result.bubbles).toBe(0);
       expect(result.missed).toEqual([]);
     });
@@ -57,6 +57,15 @@ describe('Prolog, Lördagsmorgon, in greybox', () => {
     const sim = new Sim(prolog);
     run(sim, 12, { x: 1 });
     expect(sim.candyCount).toBe(0);
+  });
+
+  it('exploring the deck before painting never announces a star that has not spilled', () => {
+    const sim = new Sim(prolog);
+    run(sim, 25, { x: 1, hopHeld: true });
+    expect(sim.curr.x).toBeGreaterThan(38.5);
+    expect(sim.flags.has('blink')).toBe(false);
+    expect(sim.said).not.toContain('fallenStar');
+    expect(sim.said).not.toContain('tinyElof');
   });
 
   it('cannot be walked past: the ghost waits for its eyes, the star for the ghost, and the step for the star', () => {

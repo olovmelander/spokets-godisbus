@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { garden } from '../../src/content/chapters/garden';
+import { granskog } from '../../src/content/chapters/granskog';
+import { ELOF_HALF_WIDTH } from '../../src/sim/constants';
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo } from '../../src/render/helper-demo';
 
 describe('the visual hint demonstration', () => {
@@ -34,5 +36,29 @@ describe('the visual hint demonstration', () => {
     expect(keys[3]!.reach).toBe(1);
     expect(keys[4]!.x).toBeLessThan(keys[3]!.x);
     expect(keys.every((p) => p.y === 6)).toBe(true);
+  });
+
+  it('shows the actual return root and the heavy cone push side without altering the course', () => {
+    const before = JSON.stringify(granskog);
+    const root = granskog.returnClue!.root;
+    const climb = demoFor(granskog, { at: { x: root.x, y: root.top }, verb: null }, root.bottom);
+    expect(climb[0]!.y).toBe(root.bottom);
+    expect(climb.some((pose) => pose.x === root.x && pose.y === root.top)).toBe(true);
+    expect(climb.at(-1)!.x).toBeLessThan(root.x);
+    const heavy = granskog.movers!.find((mover) => mover.id === 'cone')!;
+    const home = heavy.stops[0]!;
+    const at = { x: home.x - heavy.width / 2 - ELOF_HALF_WIDTH - 0.12, y: home.y };
+    const back = demoFor(granskog, { at, verb: null }, home.y);
+    expect(back[0]!.x).toBeGreaterThan(home.x + heavy.width / 2);
+    expect(back.some((pose) => pose.y > home.y + heavy.height)).toBe(true);
+    expect(back.at(-1)!.x).toBe(at.x);
+    expect(JSON.stringify(granskog)).toBe(before);
+  });
+
+  it('approaches the small cone from its right and demonstrates a leftwards push', () => {
+    const keys = demoFor(granskog, { at: { x: 116, y: -7.3 }, verb: 'push' }, -8);
+    expect(keys[0]!.x).toBeGreaterThan(116);
+    expect(keys[1]!.x).toBeGreaterThan(116);
+    expect(keys[2]!.x).toBeLessThan(keys[1]!.x);
   });
 });

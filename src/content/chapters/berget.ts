@@ -13,7 +13,9 @@ import type { Candy, ChapterData } from '../../sim/types';
  *    lace to him (P15).
  * 6. **The old pine:** "Spöket vill hämta hem min trägubbe!"
  *    **Toppröset** (C4) is above it: five narrow granite shelves, reached with held jumps and ledge grabs.
- *    The summit's candy is optional; the ordinary path stays below, and the same shelves lead back down.
+ *    The summit's candy is optional; the ordinary path stays below. Finding it leaves the familiar lace
+ *    anchored to the cairn: choose a quick slide back to the pine, or retrace the shelves. A deliberate
+ *    jump can catch its hanging end for another visit, and the ghost's lower lace still leads to the lee.
  *
  * Not built yet: what lies below the flight (the forest, the brook, the bog, the bell tower, the red house,
  * the four headlamps), memory 4, the ghost shown lifted.
@@ -56,6 +58,9 @@ const CAIRN = [
   { x: 149.5, y: 39, width: 1.6 },
   { x: 146.9, y: 40.9, width: 1.9 },
 ];
+// The hanging end is above walking height, so earning this route never catches the main trail's feet.
+// The same lace skill learned at the cliff, now anchored beside the summit cairn.
+const CAIRN_LACE = { x: 147.6, bottom: 32.4, top: 40.9, exit: -1 as const, needs: 'found:chokladpralin', look: 'lace' as const };
 
 export const berget: ChapterData = {
   id: 'berget',
@@ -103,7 +108,9 @@ export const berget: ChapterData = {
   ],
   climbs: [
     // The lace, lowered by the ghost from the top of the cliff.
-    { x: 145.7, bottom: 26.4, top: 31.4, exit: 1, needs: 'lift' },
+    { x: 145.7, bottom: 26.4, top: 31.4, exit: 1, needs: 'lift', look: 'lace' },
+    // The optional cairn loop reuses the same climbing/sliding skill, with no new Use step or reward flag.
+    CAIRN_LACE,
   ],
   movers: CAIRN.map((shelf, i) => ({
     id: `cairn:${i + 1}`, look: 'stone', extra: true, width: shelf.width, height: 0.4, verb: 'push',
@@ -137,7 +144,10 @@ export const berget: ChapterData = {
     { at: { x: 159, y: 31.4 }, near: 1.6 },
   ],
   // He understands when he has seen it.
-  beats: [{ id: 'fetch', on: 'memory', who: 'elof', line: 'fetch' }],
+  beats: [
+    { id: 'fetch', on: 'memory', who: 'elof', line: 'fetch' },
+    { id: 'cairn-loop', on: 'found:chokladpralin', who: 'elof', line: 'mountainLoop' },
+  ],
   cameras: [
     // Above the pine, frame the next shelf and the way back in both orientations.
     { from: 145, to: 154, above: 32.9, zoom: 1.6, lift: 1.3, lead: 0 },

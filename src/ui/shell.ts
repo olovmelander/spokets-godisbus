@@ -67,6 +67,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
      </div>
      <div class="bubble" id="bubble" role="status" hidden><b id="bubbleWho"></b><span id="bubbleLine"></span></div>
      <div class="hint" id="hint" hidden></div>
+     <div class="story-purpose" id="storyPurpose" role="status" aria-live="polite" aria-atomic="true" hidden><span id="storyPurposeIcon" aria-hidden="true"></span><span><small>${sv.storyContext.now}</small><span id="storyPurposeText"></span><span id="storyPurposeReveal" class="story-purpose-reveal" hidden></span></span></div>
      <div class="tutorial" id="tutorial" role="img" hidden>
        <i class="tutorial-target"></i><span class="tutorial-key" id="tutorialKey"></span><span class="tutorial-hand">${HAND}</span>
      </div>
@@ -78,6 +79,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
          <h2 id="pauseTitle">${p.title}</h2>
          <div class="pause-options" id="pauseOptions">
          <button class="wide go" id="resumeBtn" type="button">${PLAY}<span>${p.resume}</span></button>
+         <section class="story-recap" id="pauseStory" aria-labelledby="pauseStoryTitle" hidden><h3 id="pauseStoryTitle">${sv.storyContext.recap}</h3><b id="pauseStoryPurpose"></b><p id="pauseStoryRecap"></p><h4>${sv.storyContext.family}</h4><p id="pauseStoryFamily"></p></section>
          <button class="wide" id="fullscreenBtn" type="button" hidden>${p.fullscreen}</button>
          <p class="setting-hint" id="fullscreenFailed" role="status" hidden>${p.fullscreenFailed}</p>
          <h3 id="styleTitle">${p.style}</h3>
@@ -155,6 +157,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
        <div class="panel" role="dialog" aria-modal="true" aria-labelledby="titleName">
          <div id="titleFront">
            <h1 id="titleName">${sv.title}</h1>
+           <div class="story-title" id="titleStory" hidden><b id="titleStoryPurpose"></b><p id="titleStoryRecap"></p></div>
            <p class="rotate">${TURN}<span>${sv.start.rotate}</span></p>
            <p id="currentPlayer" class="current-player" hidden></p>
            <p id="playerUnreadable" role="status" hidden>${sv.players.preserved}</p>
@@ -214,6 +217,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
          <div class="map" id="endMap"></div>
          <p class="next" id="endNext">${sv.end.next}</p>
          <button class="wide" id="endPhotos" type="button" hidden>▧ ${sv.photos.again}</button>
+         <div class="story-handoff" id="endStory" hidden><b id="endStoryTitle"></b><p id="endStoryText"></p></div>
          <button class="wide go" id="endOnward" type="button" hidden>${PLAY}<span>${sv.end.onward}</span></button>
          <button class="wide go" id="endExplore" type="button" hidden><span aria-hidden="true">♧</span><span>${sv.explore.title}</span></button>
          <p class="code" id="endCode" hidden><span>${sv.code.next}</span><b id="endCodeWords"></b></p>

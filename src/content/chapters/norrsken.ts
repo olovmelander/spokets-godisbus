@@ -70,7 +70,7 @@ export const norrsken: ChapterData = {
     { id: 'lower', at: { x: 10.9, y: 0 }, verb: 'take', word: 'lowerLace' },
     { id: 'crowberry', look: 'crowberry', at: { x: 15.6, y: 0 }, verb: 'take', word: 'pick', needs: 'placed:tragubbe' },
     { id: 'eyes', at: { x: FIGURE + 1, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'crowberry' },
-    // The ghost gives the bag back: it was only borrowed.
+    // The same torn Saturday bag returns; sharing now becomes Elof's own choice.
     { id: 'bag', look: 'bag', at: { x: GHOST - 0.6, y: 0 }, verb: 'take', word: 'takeBag', needs: 'eyes' },
     // Sharing: he decides himself who gets theirs first.
     { id: 'share:tragubbe', at: { x: FIGURE + 1, y: 0 }, verb: 'give', word: 'giveTragubbe', needs: 'bag', story: 'share' },

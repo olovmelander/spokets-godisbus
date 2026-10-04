@@ -40,6 +40,16 @@ describe('the ghost learns to show what it wants', () => {
     expect(thoughtAt(myren, ghost, new Set(['home']), nearby(myren))).toBe('pine-crack');
   });
 
+  it('shows the returned doorway picture only beside its discovered keepsake, without relocating the ghost', () => {
+    const player = { x: 64.4, y: 10 };
+    const waitingBelow = { x: 69, y: 0, perch: 8, t: 1, gone: false };
+    expect(thoughtAt(granskog, waitingBelow, new Set(['vittra:gift', 'vittra:gift:away']), player)).toBeNull();
+    expect(thoughtAt(granskog, waitingBelow, new Set(['keepsake:vittra']), player)).toBe('small-figure');
+    expect(waitingBelow).toMatchObject({ x: 69, y: 0, perch: 8 });
+    expect(thoughtAt(granskog, waitingBelow, new Set(['keepsake:vittra']), { x: 69, y: 0 })).toBeNull();
+    expect(thoughtAt(granskog, null, new Set(['keepsake:vittra']), player)).toBe('small-figure');
+  });
+
   it('shows the lonely figure below the final cliff before Lift, and clears it immediately afterwards', () => {
     const ghost = stop(berget);
     expect(berget.ghost![ghost.perch]!.until).toBe('lift');

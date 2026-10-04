@@ -1,4 +1,5 @@
 import type { ChapterData, HelpState, Vec } from '../sim/types';
+import { ELOF_HALF_WIDTH } from '../sim/constants';
 
 /** Authored, sampled motion only: these poses never feed inputs, physics, flags or candy collection. */
 export interface DemoPose extends Vec {
@@ -40,11 +41,31 @@ export function demoFor(chapter: ChapterData, help: Pick<HelpState, 'at' | 'verb
   const floor = Math.min(at.y, demoFloor(chapter, from));
   if (help.verb === 'push' || help.verb === 'pull') {
     const pull = help.verb === 'pull';
-    const end = at.x - 0.6 + (pull ? -0.7 : 0.7);
-    return [pose(0, from, floor), pose(0.22, at.x - 0.6, floor, 1, -0.15, 0.3, pull ? at : null),
+    // The optional light cone is deliberately pushed left. Read its authored stop instead of showing the wrong side.
+    const left = !pull && chapter.counterweight && chapter.movers?.some((mover) => mover.optional && mover.stops.some((stop, i) =>
+      Math.abs(stop.x - at.x) < 0.05 && Math.abs(stop.y + mover.height - at.y) < 0.05 && mover.stops[i + 1] !== undefined && mover.stops[i + 1]!.x < stop.x));
+    const side = left ? -1 : 1;
+    const end = at.x - side * 0.6 + (pull ? -0.7 : 0.7) * side;
+    return [pose(0, at.x - side * 1.4, floor), pose(0.22, at.x - side * 0.6, floor, 1, -0.15, 0.3, pull ? at : null),
       pose(0.7, end, floor, 1, pull ? 0.25 : -0.3, -0.3, pull ? at : null), pose(1, end, floor)];
   }
   if (help.verb === null) {
+    const root = chapter.returnClue?.root;
+    if (root && Math.abs(at.x - root.x) < 0.05 && Math.abs(at.y - root.top) < 0.05) {
+      return [pose(0, root.x + 0.65, root.bottom), pose(0.18, root.x, root.bottom, 1),
+        pose(0.78, root.x, root.top, 1), pose(1, root.x - 0.6, root.top)];
+    }
+    const heavy = chapter.counterweight ? chapter.movers?.find((m) => m.id === chapter.counterweight!.heavy) : null;
+    if (heavy && heavy.stops.some((stop) => Math.abs(at.x - (stop.x - heavy.width / 2 - ELOF_HALF_WIDTH - 0.12)) < 0.05
+      && Math.abs(at.y - stop.y) < 0.05)) {
+      const centre = at.x + heavy.width / 2 + ELOF_HALF_WIDTH + 0.12;
+      const left = at.x;
+      // Show the return over the unmovable side of the cone, then approach its left push side.
+      return [pose(0, centre + 1.2, demoFloor(chapter, centre + 1.2)),
+        pose(0.24, centre + 0.8, demoFloor(chapter, centre + 0.8), 0.2, -0.1, 0.4),
+        pose(0.55, centre, at.y + heavy.height + 0.65, 0.4, 0.1, -0.4),
+        pose(0.9, left, demoFloor(chapter, left)), pose(1, left, demoFloor(chapter, left))];
+    }
     // Walking/hopping along the trail, with the landing taken from the chapter instead of guessed input.
     const land = demoFloor(chapter, at.x);
     return [pose(0, from, floor), pose(0.24, from + 0.4, floor, 0, -0.1, 0.4),

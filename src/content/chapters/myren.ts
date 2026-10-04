@@ -15,7 +15,9 @@ import type { Candy, ChapterData, Jump, Tussock, Vec } from '../../sim/types';
  *    rolls in, and in its light the trail shows again.
  *    **Lyktgubbarnas lek** (C3) branches onto the high tussocks: three shy lights appear one after another,
  *    each further out in the mist. The last leaves the hidden candy, and the lower trail is the way back.
- * 5. **Tranungen** (P14): a crane chick alone on a tussock. It follows his light to its family.
+ * 5. **Tranungen** (P14): a crane chick alone on a tussock. It follows his light to its family. Once it is
+ *    home, he can return to Mamma's sign at the clearing's edge. She lays a firm spång across the mist:
+ *    an optional, reusable way back to the lantern, and from there to the reunited cranes.
  * 6. **The ghost waits,** and lets him come close.
  * 7. **Tranornas dans** (S4): a crane kneels, he climbs on, and it carries him up towards the mountain.
  *
@@ -147,6 +149,8 @@ export const myren: ChapterData = {
     { x: 116, y: 6.4, kind: 'surnapp' },
     { x: 161.2, y: 4.15, kind: 'lakritskonfekt', route: true, after: 'shy:3' },
   ],
+  // A lasting landmark for the lantern's clearing after he carries the light away.
+  decor: [{ look: 'cairn', at: { x: 141.3, y: 0 }, after: 'light' }],
   challenges: [{
     id: 'shy', from: 145.8, to: 163, above: 1.55, reward: 'lakritskonfekt', needs: 'light',
     steps: SHY.map(({ x, y }) => ({ x, y })), return: { x: 164.7, y: 0.1 },
@@ -210,7 +214,7 @@ export const myren: ChapterData = {
   ],
   climbs: [
     // Mamma's braid, let down from the boardwalk.
-    { x: 103.7, bottom: 0, top: 4.5, exit: 1, needs: 'braid' },
+    { x: 103.7, bottom: 0, top: 4.5, exit: 1, needs: 'braid', look: 'braid' },
   ],
   spots: [
     { id: 'mamma', look: 'sign', at: { x: 84.8, y: 0 }, verb: 'call', word: 'callMamma' },
@@ -225,6 +229,11 @@ export const myren: ChapterData = {
     // It follows his light, and comes home when he reaches its family.
     { id: 'chick', at: { x: 164.7, y: 0.1 }, verb: 'take', touch: true, needs: 'light' },
     { id: 'home', at: { x: 176, y: 0 }, verb: 'take', touch: true, needs: 'chick' },
+    // The family reunion makes another way possible, without adding a job before the crane ride.
+    // Its sign is beside the east landing, so the bridge's near end rises within the same picture.
+    { id: 'bog:return-bridge', look: 'sign', at: { x: 169.2, y: 0 }, verb: 'call', word: 'callMamma', needs: 'home', extra: true },
+    // The return is its own discovery, not another candy or an album reward to complete.
+    { id: 'bog:lantern-return', at: { x: 142, y: 0 }, verb: 'take', touch: true, needs: 'placed:bog-boardwalk', extra: true },
     // Memory 3, where the ghost waits: the boardwalk, and the figure held up to see the way.
     { id: 'memory', look: 'memory', at: { x: 170.6, y: 0 }, verb: 'take', touch: true },
     { id: 'crane', look: 'crane', at: { x: 182, y: 0 }, verb: 'take', word: 'climbOn', needs: 'home', ride: 'crane' },
@@ -232,6 +241,12 @@ export const myren: ChapterData = {
   movers: [
     // The dead pine in the pool: Mamma's hands lift it across as a bridge.
     { id: 'pine', look: 'log', width: 8.6, height: 0.4, verb: 'pull', on: 'mamma', stops: [{ x: 90, y: -1.5 }, { x: 90, y: -0.4 }] },
+    // Only after helping the chick: Mamma lifts a plank over the lower mist trail. The old stepping
+    // stones and upper lights remain. Its top clears all the old assisted-hop markers by more than
+    // their reach in height, so stopping or turning on the new path never starts an old forward hop.
+    // Both ends overlap firm ground and are automatically climbed without pressing Hoppa.
+    { id: 'bog-boardwalk', look: 'plank', width: 20, height: 0.35, verb: 'pull', on: 'bog:return-bridge', extra: true,
+      stops: [{ x: 158.5, y: -2.5 }, { x: 158.5, y: 0.3 }] },
     ...SHY.map((tuft, i) => ({
       id: `shy-tuft:${i + 1}`, look: 'tussock' as const, extra: true, width: tuft.width, height: 0.4, verb: 'push' as const,
       stops: [{ x: tuft.x, y: tuft.y - 0.4 }],
@@ -263,7 +278,13 @@ export const myren: ChapterData = {
     { at: { x: 172.5, y: 0 }, near: 1.6, thought: { picture: 'pine-crack', after: 'home' } },
     { at: { x: 186.5, y: 0 }, near: 1.6, thought: { picture: 'pine-crack', after: 'home' } },
   ],
-  beats: [{ id: 'spangen', at: 105.4, who: 'mamma', line: 'spangen' }],
+  beats: [
+    { id: 'spangen', at: 105.4, who: 'mamma', line: 'spangen' },
+    { id: 'bog:chick-light', on: 'chick', who: 'elof', line: 'bogChickLight' },
+    { id: 'bog:family-home', on: 'home', who: 'mamma', line: 'bogFamilyHome' },
+    { id: 'bog:bridge-ready', on: 'placed:bog-boardwalk', who: 'mamma', line: 'bogBridgeReady' },
+    { id: 'bog:light-return', on: 'bog:lantern-return', who: 'elof', line: 'bogLightReturn' },
+  ],
   cameras: [
     // The upper route needs its next landing and the lower way home in portrait as well as landscape.
     { from: 145.8, to: 163, above: 1.55, zoom: 1.45, lift: 0.6, lead: 0.8 },

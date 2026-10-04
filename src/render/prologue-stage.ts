@@ -1,10 +1,12 @@
 import { BoxGeometry, Color, Group, InstancedMesh, Matrix4, MeshLambertMaterial, Object3D, Vector3 } from 'three';
 import { prologuePose, type PrologueFrame, type PrologueLayout } from '../sim/prologue';
+import { createFamilyRehearsal } from './family-rehearsal';
 
 /** Simple rehearsal shapes, never substitutes for the family's approved Blender models. */
 export function createPrologueStage(layout: PrologueLayout | undefined) {
   const group = new Group();
-  if (!layout) return { group, update(_frame: PrologueFrame | null | undefined, _flags: ReadonlySet<string>) {} };
+  group.name = 'prologue-family';
+  if (!layout) return { group, replace(_who: string, _model: Object3D) {}, update(_frame: PrologueFrame | null | undefined, _flags: ReadonlySet<string>, _player?: { x: number; y: number; tall: number }) {} };
   const geometry = new BoxGeometry(1, 1, 1);
   const material = new MeshLambertMaterial();
   const matrix = new Matrix4();
@@ -19,18 +21,12 @@ export function createPrologueStage(layout: PrologueLayout | undefined) {
     mesh.computeBoundingSphere();
     return mesh;
   }
-  const wood = '#d2b98c', skin = '#e7bd96', shirt = '#3e4445', trousers = '#77816a';
-  function person(cap: boolean) {
-    const root = new Group();
-    root.add(boxes([
-      [0, 3.45, 0, 1.3, 1.8, 0.7, shirt], [0, 4.75, 0, 0.8, 0.85, 0.75, skin],
-      [-0.38, 1.3, 0, 0.48, 2.45, 0.58, trousers], [0.38, 1.3, 0, 0.48, 2.45, 0.58, trousers],
-      [0.35, 0.13, 0.12, 0.58, 0.26, 0.95, '#62503d'], [-0.35, 0.13, 0.12, 0.58, 0.26, 0.95, '#62503d'],
-      ...(cap ? [[0, 5.23, 0.14, 0.94, 0.18, 1, shirt] as Box] : [[0.42, 4.33, 0, 0.2, 1.5, 0.3, '#6a4634'] as Box]),
-    ]));
-    return root;
-  }
-  const mamma = person(false), pappa = person(true);
+  const wood = '#d2b98c', skin = '#e7bd96', shirt = '#3e4445';
+  const mamma = createFamilyRehearsal('mamma'), pappa = createFamilyRehearsal('pappa');
+  const moa = createFamilyRehearsal('moa'), bertil = createFamilyRehearsal('bertil');
+  const relatives: Record<string, Group> = { mamma, pappa, moa, bertil };
+  for (const [who, actor] of Object.entries(relatives)) actor.name = `prologue-${who}`;
+  // These share the existing rehearsal body. Their approved models replace these shapes when available.
   const hand = boxes([[0, 0, 0, 0.85, 0.28, 0.55, skin]]);
   const arm = boxes([[0, 0, 0, 1, 1, 1, shirt]]);
   const seam = boxes([[0, 0, 0, 0.06, 0.3, 0.15, '#6e3d29']]);
@@ -45,23 +41,46 @@ export function createPrologueStage(layout: PrologueLayout | undefined) {
       [layout.railing.x - 2.8, 3.45, -0.25, 0.18, 2.1, 0.22, wood],
       [layout.railing.x + 2.8, 3.45, -0.25, 0.18, 2.1, 0.22, wood],
     ]));
-    group.add(mamma, pappa, hand, arm, seam);
+    group.add(mamma, pappa, moa, bertil, hand, arm, seam);
   }
   return {
     group,
-    update(frame: PrologueFrame | null | undefined, flags: ReadonlySet<string>) {
+    replace(who: string, model: Object3D) {
+      const actor = relatives[who];
+      if (!actor) return;
+      actor.clear();
+      model.scale.setScalar(3);
+      model.rotation.y = Math.PI / 2;
+      actor.add(model);
+    },
+    update(frame: PrologueFrame | null | undefined, flags: ReadonlySet<string>, player = { x: 0, y: 0, tall: 3 }) {
       if (!layout) return;
-      mamma.visible = frame?.kind === 'mamma';
-      pappa.visible = flags.has('star');
-      hand.visible = arm.visible = frame?.kind === 'pappa';
+      const opening = !flags.has('blink');
+      const deck = player.x >= 36;
+      mamma.visible = opening || deck || frame?.kind === 'mamma';
+      pappa.visible = opening || deck;
+      moa.visible = bertil.visible = opening || deck;
+      hand.visible = arm.visible = frame?.kind === 'pappa' || (deck && flags.has('star') && !flags.has('pappa:done'));
       seam.visible = flags.has('bag:torn');
       seam.position.set(layout.doorway.x + 0.08, layout.doorway.y + 1.48, 0.05);
+      mamma.position.set(deck ? 40.0 : -1.7, deck ? -.8 : 0, -1.25);
+      pappa.position.set(deck ? 41.9 : 2.3, deck ? -.8 : 0, -1.1);
+      moa.position.set(deck ? 38.5 : -3.0, deck ? -.8 : 0, -.75);
+      bertil.position.set(deck ? 39.2 : -.45, deck ? -.8 : 0, -.55);
+      mamma.rotation.y = deck ? -.3 : .25;
+      moa.rotation.y = bertil.rotation.y = deck ? -.3 : .2;
+      // The same adult remains beside him through the change of scale, then crouches towards him.
+      pappa.scale.set(1, deck && flags.has('star') && frame?.kind !== 'pappa' ? .74 : 1, 1);
       if (frame?.kind === 'mamma') {
         mamma.position.set(layout.doorway.x - 1.4 + frame.seconds * 1.15, layout.doorway.y, -1.15);
         mamma.rotation.y = -0.5;
       }
-      pappa.position.set(layout.railing.x + 1.9, layout.railing.y - 2.2, -1.35);
       const t = frame?.kind === 'pappa' ? frame.seconds : 3;
+      if (frame?.kind === 'pappa' || flags.has('pappa:done')) {
+        const approach = Math.min(1, t / .45);
+        pappa.position.set(41.9 + (layout.railing.x + 1.9 - 41.9) * approach,
+          -.8 + (layout.railing.y - 1.4) * approach, -1.1);
+      }
       // Watch the toy, turn towards Elof, then find the railing empty.
       pappa.rotation.y = t < 1.55 ? -0.65 : t < 2.7 ? -1.5 : -0.65;
       if (frame?.kind === 'pappa') {
@@ -73,6 +92,13 @@ export function createPrologueStage(layout: PrologueLayout | undefined) {
         arm.scale.set(0.32, target.length(), 0.32);
         arm.quaternion.setFromUnitVectors(up, target.normalize());
         hand.visible = arm.visible = t < 1.65;
+      } else if (hand.visible) {
+        hand.position.set(player.x - .2, player.y + player.tall + .35, .12);
+        shoulder.set(pappa.position.x - .55, pappa.position.y + 3.7 * .74, pappa.position.z);
+        target.copy(hand.position).sub(shoulder);
+        arm.position.copy(shoulder).addScaledVector(target, .5);
+        arm.scale.set(.32, target.length(), .32);
+        arm.quaternion.setFromUnitVectors(up, target.normalize());
       }
     },
   };

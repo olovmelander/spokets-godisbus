@@ -17,6 +17,8 @@ import { createMemory, memoryAlbumHtml } from './ui/memory';
 import { createEnding } from './ui/ending';
 import { createExplore } from './ui/explore';
 import { sv } from './content/sv';
+import { storyContext, storyHandoff } from './content/story-context';
+import { createStoryContext } from './ui/story-context';
 import { createInput, type Device } from './input/input';
 import { createAutoTier, createDynamicResolution, tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
@@ -111,6 +113,7 @@ function start(): void {
   // A URL tier is a temporary inspection override. A deliberate menu choice replaces it.
   let requestedGraphics = tierFromQuery(params.get('tier')) ?? settings.graphics;
   mountShell(document.body, chapter.helper?.kind);
+  const storyReminder = createStoryContext(document);
   const canvas = byId<HTMLCanvasElement>('game');
   canvas.tabIndex = -1;
   const devicePlay = createDevicePlay({
@@ -751,6 +754,7 @@ function start(): void {
     const dt = Math.min(timer.getDelta(), 0.25);
     const blocked = platformBlocked();
     memories.suspend(blocked);
+    storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !blocked && !menuOpen());
     audio.sleep(blocked || (menuOpen() && !ending.open));
     if (blocked) {
       pointing.cancel();
@@ -830,6 +834,7 @@ function start(): void {
     });
     tutorialView.show(menuOpen() || platformBlocked() ? null : tutorial.shown, device, settings.followFinger, view.playerScreen());
     hud.candy(game.sim.candyCount);
+    storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !menuOpen());
     hud.verb(game.sim.curr.verb, game.sim.curr.word);
     hud.knock(game.sim.help.step >= 2 ? game.sim.help : null);
     // The album: what earlier chapters hold in the save, and what this one holds now.
@@ -869,7 +874,7 @@ function start(): void {
     }
     for (; told < game.sim.said.length; told++) {
       const beat = beats.get(game.sim.said[told]!);
-      if (beat) hud.say(beat.who, beat.line);
+      if (beat) hud.say(beat.who, beat.line, beat.priority);
     }
     // What is said waits while a memory plays: its line comes after it.
     hud.tick(menuOpen() ? 0 : dt);
@@ -890,6 +895,7 @@ function start(): void {
       const bonus = next && bonusAfter(chapter.id)?.id === next.id;
       const title = sv.end.named[chapter.id] ?? (number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course);
       const hidden = (chapter.hidden ?? []).map((h) => ({ kind: h.kind, found: game.sim.flags.has(foundFlag(h.kind)) }));
+      storyReminder.handoff(storyHandoff(chapter.id, game.sim.flags));
       hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, bonus ? sv.end.bonus : undefined);
       byId(canExplore ? 'endExplore' : next ? 'endOnward' : 'endAgain').focus();
       if (chapter.id === 'epilog') {

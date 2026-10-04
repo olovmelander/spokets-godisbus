@@ -19,7 +19,8 @@ import type { Candy, ChapterData } from '../../sim/types';
  * 6. **Under the birch** (E1): the dew rain.
  * 7. **Pappa's shavings** (P4): a curl pulled down as a step, and a second pushed across the gap at the top.
  *    There lies the first memory.
- * 8. **Moa** (S1): she throws her paper plane, and Elof flies to the forest's edge.
+ * 8. **Moa** (S1): she prepares the plane. Elof chooses when to board, or follows the lowered hose back
+ *    under the completed shaving bridge to find her leaf drawing and bring it back before their flight.
  *
  *    - **Hittegods** (O2): a marble, a hair clip, a toy brick and a coin lie on the foundation stones. A
  *      jump takes each.
@@ -144,7 +145,12 @@ export const garden: ChapterData = {
     { x: 160, y: 0 },
   ],
   // The hose hangs over the deck's edge. The ladybird, turned over, flies to it: until then he doesn't see it.
-  climbs: [{ x: 46.3, bottom: 0, top: 6, exit: -1, needs: 'ladybird' }],
+  climbs: [
+    { x: 46.3, bottom: 0, top: 6, exit: -1, needs: 'ladybird' },
+    // Moa lowers a hose through the shaving curl after meeting him. Använd slides into the dry pocket;
+    // the same hose climbs back onto the completed bridge. The first trip across is unchanged.
+    { x: 141.8, bottom: -2, top: 3.3, exit: 1, needs: 'garden:pocket-open' },
+  ],
   spots: [
     { id: 'ladybird', look: 'ladybird', at: { x: 41, y: 6 }, verb: 'turn' },
     // Hittegods (O2): four small things lost between the boards, each on a foundation stone under the deck.
@@ -158,8 +164,15 @@ export const garden: ChapterData = {
     ...[89.6, 91, 92.4, 97.9].map((x, i) => ({ id: `note:dew${i + 1}`, look: 'dew' as const, at: { x, y: 1.6 }, verb: 'take' as const, touch: true, note: [74, 77, 81, 86][i]! })),
     // Memory 1, on top of Pappa's shavings: the night he carved his first figure.
     { id: 'memory', look: 'memory', at: { x: 147, y: 3.3 }, verb: 'take', touch: true },
-    { id: 'moa', look: 'sign', at: { x: 166, y: 0 }, verb: 'call', word: 'callMoa', ride: 'plane' },
+    { id: 'moa', look: 'sign', at: { x: 166, y: 0 }, verb: 'call', word: 'callMoa' },
+    // Optional local return. Its stable flags add no candy, lost-property or main-route requirement.
+    { id: 'garden:paper', look: 'keepsake', at: { x: 141.1, y: -2 }, verb: 'take', touch: true, needs: 'garden:pocket-open', extra: true },
+    { id: 'garden:shared-paper', look: 'keepsake', at: { x: 164.1, y: 0 }, verb: 'give', word: 'gardenGiveDrawing', needs: 'garden:paper', extra: true },
+    // Old saves that already called Moa can board directly. Calling never starts an involuntary ride.
+    { id: 'plane:board', look: 'sign', at: { x: 167.2, y: 0 }, verb: 'take', word: 'gardenBoard', needs: 'moa', ride: 'plane' },
   ],
+  sets: [{ flag: 'garden:pocket-open', when: ['placed:bridge', 'moa'] }],
+  decor: [{ look: 'keepsake', at: { x: 167.2, y: 1.7 }, after: 'garden:shared-paper' }],
   song: { flag: 'dewsong', notes: ['note:dew1', 'note:dew2', 'note:dew3', 'note:dew4'] },
   hooks: [
     // The first swing is over flat ground: a miss costs nothing.
@@ -232,6 +245,10 @@ export const garden: ChapterData = {
     { id: 'follow2', at: 3.2, who: 'pappa', line: 'follow2' },
     { id: 'stomp', at: 155.6, who: 'elof', line: 'stomp' },
     { id: 'moa1', at: 161.5, who: 'moa', line: 'tiny' },
+    { id: 'garden:ready', on: 'moa', who: 'moa', line: 'gardenReady' },
+    { id: 'garden:pocket', on: 'moa', who: 'moa', line: 'gardenPocket' },
+    { id: 'garden:found', on: 'garden:paper', who: 'elof', line: 'gardenFound' },
+    { id: 'garden:thanks', on: 'garden:shared-paper', who: 'moa', line: 'gardenThanks' },
   ],
   cameras: [
     { from: 46, to: 59, zoom: 1.25, lift: 0.4 },

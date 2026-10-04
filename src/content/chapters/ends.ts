@@ -4,8 +4,8 @@ import type { Candy, ChapterData } from '../../sim/types';
  * The story's two ends (plan §3.4): the prologue before Kapitel 1, and the epilogue after the final. Both
  * are played at home, and in both every step is something Elof does with Använd.
  *
- * In the plan Elof is at his normal size in both. Here he is as big as anywhere else in the game: the
- * rooms are built around him. The change of scale, and the POFF that shrinks him, come with the art.
+ * Elof begins at normal size. His family stays in a shared shot while the star makes him small;
+ * the same identifiable bag links the kitchen, chase and return. Final likeness/acting art is separate.
  */
 
 /** A row of candy over ground at one height, one every `every` EL. */
@@ -85,11 +85,17 @@ export const prolog: ChapterData = {
     { at: { x: 22, y: 0 } },
     { at: { x: 28.6, y: 0 } },
     { at: { x: 35, y: 0 } },
+    // At the family, the torn bag spills its star before the little chase continues up the step.
+    { at: { x: 40.9, y: -0.8 }, until: 'star' },
     { at: { x: 48, y: 2.4 }, until: 'pappa:done' },
   ],
   // Said as the scene opens: he stands at the table already.
   beats: [
+    { id: 'newGhost', at: 0.9, who: 'pappa', line: 'newGhost' },
     { id: 'tonight', at: 0.9, who: 'mamma', line: 'tonight' },
+    { id: 'stolenBag', on: 'blink', who: 'elof', line: 'stolenBag', priority: true },
+    { id: 'fallenStar', at: 38.5, needs: 'bag:torn', who: 'moa', line: 'fallenStar', priority: true },
+    { id: 'tinyElof', on: 'star', who: 'pappa', line: 'tinyElof', priority: true },
     { id: 'follow1', on: 'pappa:noticed', who: 'pappa', line: 'follow1' },
     { id: 'follow2', on: 'pappa:done', who: 'pappa', line: 'follow2' },
   ],
