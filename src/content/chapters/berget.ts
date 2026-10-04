@@ -60,9 +60,9 @@ const onArc = (ring: Hook, angle: number): Candy => ({
  * The rock shelves (docs/level-design.md): a second way from the first slab to the open granite, over the
  * cobbles. Four shelves rise along the rock, each a held jump above the last, to 2.4 EL over the second slab,
  * and two more run level there with a gap to jump before each. From the last of them the mountain's first
- * ring swings him over the cobbles to a far shelf, and a low shelf is the step down to the granite before the
- * gusts. The far shelf is more than a held jump above that step: he comes down there and never up, so the far
- * shelf is reached by the ring only. A miss anywhere lands on the slab below, unhurt.
+ * ring swings him over the cobbles to a far shelf, and off its far end he drops to the granite before the
+ * gusts. Nothing leads up to the far shelf from below, and what lies on it is out of a jump's reach from the
+ * granite: it is reached by the ring only. A miss anywhere lands on the slab below, unhurt.
  */
 const SHELVES: Ledge[] = [
   { x: 86, y: 26.1, width: 1.4, look: 'stone' },
@@ -73,7 +73,6 @@ const SHELVES: Ledge[] = [
   { x: 98.2, y: 28.8, width: 1.6, look: 'stone' },
   // the far side of the ring
   { x: 104.8, y: 28.4, width: 2.4, look: 'stone' },
-  { x: 107.1, y: 27.1, width: 1.2, look: 'stone' },
 ];
 // Out of the lace's reach for someone standing on the granite, so the trail is never offered it: it is thrown
 // from the last level shelf. Low enough that letting go at the top of the swing is a fall he can land, even
@@ -116,10 +115,11 @@ export const berget: ChapterData = {
   id: 'berget',
   place: 'mountain',
   // Off the trail: over the shoulder, on the far shelf of the ring over the cobbles, on the last boulder's
-  // top, and at the summit cairn. The two on shelves are for the brave: in sight from the trail below.
+  // top, and at the summit cairn. The two on shelves are for the brave: in sight from the trail below. The
+  // first lies towards the far shelf's end, where he walks through it on his way down.
   hidden: [
     { x: 78, y: 25.9, kind: 'polkagris' },
-    { x: 104.9, y: 29, kind: 'graddkola', way: 'over the ring above the cobbles' },
+    { x: 105.4, y: 29, kind: 'graddkola', way: 'over the ring above the cobbles' },
     { x: 136, y: 28.85, kind: 'salmiakruta', way: 'from lee to lee above the boulders' },
     { x: 146.9, y: 41.35, kind: 'chokladpralin', route: true },
   ],
@@ -233,12 +233,10 @@ export const berget: ChapterData = {
   // Hearts and lollipops, off the trail: add new ones at the end.
   side: [
     // The rock shelves: one over each on the way up, and three along the ring's arc. The lowest of those is
-    // within a held jump of the cobbles, the tell of the ring; the other two are well out of a jump's reach.
-    // Then one at the far shelf's end and one over the step down.
+    // within a held jump of the cobbles, the tell of the ring; the other two are well out of a jump's reach,
+    // and the last hangs where the far shelf begins. The far shelf itself has the sweet.
     ...SHELVES.slice(0, 6).map(over),
     ...[-0.75, 0, 0.75].map((angle) => onArc(SHELF_RING, angle)),
-    { x: 105.7, y: 28.95 },
-    { x: 107.1, y: 27.85 },
     // The lee shelves: one over each low shelf and one over each high shelf before the last. And one high on
     // each swing, where it comes into the next lee: letting go there, no gust takes him.
     ...BOULDERS.slice(0, -1).flatMap((x) => [over({ x, y: LEE.low }), over({ x, y: LEE.high })]),

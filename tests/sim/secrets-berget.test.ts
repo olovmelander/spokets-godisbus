@@ -4,7 +4,7 @@ import { foundFlag } from '../../src/content/kinds';
 import { CANDY_MAGNET, ELOF_HEIGHT, JUMP_APEX, STEP } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
 import { heightAt } from '../robot/robot';
-import { idle, jump, run, swingAlong, walkTo } from './drive';
+import { idle, jump, leap, run, runPast, swingAlong, walkTo } from './drive';
 
 // The sweets of Berget that have a way of their own (docs/level-design.md): both are for the brave, in sight
 // from the trail and reached by a ring. Each is played here the way its `way` says.
@@ -33,9 +33,8 @@ function jumpUnder(kind: string): Sim {
 describe('gräddkola', () => {
   const h = sweet('graddkola');
   const rock = berget.ledges!.filter((ledge) => ledge.x < gusts.from - 1);
-  const up = rock.slice(0, -2);
-  const far = rock[rock.length - 2]!;
-  const step = rock[rock.length - 1]!;
+  const up = rock.slice(0, -1);
+  const far = rock[rock.length - 1]!;
 
   it('lies on the far shelf of the ring over the cobbles', () => {
     expect(h.way).toBe('over the ring above the cobbles');
@@ -69,17 +68,43 @@ describe('gräddkola', () => {
     expect(sim.bubbles).toBe(0);
   });
 
+  it('cannot be missed by someone who has swung over: it lies where he goes on from, towards the far end of the shelf', () => {
+    expect(h.x).toBeGreaterThan(far.x);
+    const last = up[up.length - 1]!;
+    // Wherever on the shelf's end he throws from and wherever on the upper swing he lets go, and then
+    // simply runs on to the right as a child does: through the sweet, and down to the granite.
+    for (const back of [1, 0.4, 0.1]) {
+      for (const release of [0.5, 0.7, 0.9]) {
+        const sim = at(last.x + last.width / 2 - back, last.y);
+        swingAlong(sim, 1, 1, release);
+        runPast(sim, far.x + far.width / 2 + 0.6);
+        run(sim, 0.8);
+        expect(sim.flags.has(foundFlag('graddkola')), `thrown ${back} from the end, let go at ${release}`).toBe(true);
+        expect(sim.curr.y).toBeCloseTo(heightAt(berget, sim.curr.x), 1);
+        expect(sim.bubbles).toBe(0);
+      }
+    }
+  });
+
   it('is in sight from the trail and out of reach from it: by the ring only', () => {
     // Above what a held jump from the granite reaches, and low enough to be in the picture from there.
     const ground = heightAt(berget, h.x);
     expect(h.y - ground).toBeGreaterThan(JUMP_APEX + ELOF_HEIGHT / 2 + CANDY_MAGNET + 0.2);
     expect(h.y - ground).toBeLessThan(3);
     expect(jumpUnder('graddkola').flags.has(foundFlag('graddkola'))).toBe(false);
-    // Nor from the step below the far shelf, which is more than a held jump under it.
-    const below = at(step.x - step.width / 2 + 0.1, step.y);
-    jump(below, -1);
-    expect(below.curr.y).toBeLessThan(far.y - 1);
-    expect(below.flags.has(foundFlag('graddkola'))).toBe(false);
+    // No jump from the granite finds it, standing or at a run, from under the far shelf or from either side
+    // of it; and nothing else stands near enough to jump from.
+    for (let x = far.x - far.width / 2 - 1; x <= far.x + far.width / 2 + 2.5; x += 0.3) {
+      for (const how of [1, -1, 'right', 'left'] as const) {
+        const sim = at(x, ground);
+        if (how === 'right') leap(sim, 1, x + 1.2);
+        else if (how === 'left') leap(sim, -1, x - 1.2);
+        else jump(sim, how);
+        expect(sim.flags.has(foundFlag('graddkola')), `a jump (${how}) from x ${x.toFixed(1)}`).toBe(false);
+      }
+    }
+    const others = berget.ledges!.filter((ledge) => ledge !== far && Math.abs(ledge.x - h.x) < 4);
+    expect(others).toEqual([]);
   });
 });
 
@@ -122,5 +147,20 @@ describe('salmiakruta', () => {
     expect(h.y - gusts.y).toBeGreaterThan(JUMP_APEX + ELOF_HEIGHT / 2 + CANDY_MAGNET + 0.2);
     expect(h.y - gusts.y).toBeLessThan(3);
     expect(jumpUnder('salmiakruta').flags.has(foundFlag('salmiakruta'))).toBe(false);
+    // No jump from the granite finds it, standing or at a run, from either side of the boulder. This is asked
+    // in still air: a gust would only take him further from it.
+    for (let x = last - 3; x <= last + 3; x += 0.3) {
+      for (const how of [1, -1, 'right', 'left'] as const) {
+        const sim = new Sim({ ...berget, gusts: [], spawn: { x, y: gusts.y + 0.01 } });
+        run(sim, 0.2);
+        if (how === 'right') leap(sim, 1, x + 1.2);
+        else if (how === 'left') leap(sim, -1, x - 1.2);
+        else jump(sim, how);
+        expect(sim.flags.has(foundFlag('salmiakruta')), `a jump (${how}) from x ${x.toFixed(1)}`).toBe(false);
+      }
+    }
+    // The nearest shelf to jump from is the top of the boulder before it, a whole dash away.
+    const others = lee.filter((ledge) => ledge.x !== last && Math.abs(ledge.x - h.x) < 4);
+    expect(others).toEqual([]);
   });
 });

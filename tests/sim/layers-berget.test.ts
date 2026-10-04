@@ -5,7 +5,7 @@ import { ELOF_HEIGHT, GUST_SHELTER, LACE_REACH, STEP } from '../../src/sim/const
 import { Sim } from '../../src/sim/sim';
 import type { Ledge } from '../../src/sim/types';
 import { heightAt } from '../robot/robot';
-import { angleOf, idle, jump, run, runPast, sideTaken, swingAlong, walkTo } from './drive';
+import { angleOf, idle, jump, leap, run, runPast, sideTaken, swingAlong, walkTo } from './drive';
 
 // The layers over Berget (docs/level-design.md), each played from the trail and back to it on Äventyr:
 // the rock shelves with the ring over the cobbles, and the lee shelves with a ring between two boulders.
@@ -18,8 +18,10 @@ const side = berget.side!;
 const rock = berget.ledges!.filter((ledge) => ledge.x < gusts.from - 1);
 const lee = berget.ledges!.filter((ledge) => ledge.x >= gusts.from - 1);
 const [cobbleRing, ...leeRings] = berget.hooks!;
-const far = rock[rock.length - 2]!;
-const step = rock[rock.length - 1]!;
+/** The shelves on the near side of the ring, and the one on its far side. */
+const up = rock.slice(0, -1);
+const last = up[up.length - 1]!;
+const far = rock[rock.length - 1]!;
 const LOW = Math.min(...lee.map((ledge) => ledge.y));
 const HIGH = Math.max(...lee.map((ledge) => ledge.y));
 
@@ -55,7 +57,6 @@ function calm(sim: Sim): void {
 
 /** Up the rock shelves, each with a held jump from near the last one's end, and over the ring. */
 function overTheCobbles(sim: Sim, release = 0.7): number[] {
-  const up = rock.slice(0, -2);
   walkTo(sim, up[0]!.x);
   jump(sim);
   for (const [i, shelf] of up.slice(1).entries()) {
@@ -64,7 +65,7 @@ function overTheCobbles(sim: Sim, release = 0.7): number[] {
     jump(sim, 1);
     expect(stands(sim, shelf), `on the shelf at ${shelf.x}`).toBe(true);
   }
-  walkTo(sim, right(up[up.length - 1]!) - 0.4);
+  walkTo(sim, right(last) - 0.4);
   return swingAlong(sim, 1, 1, release);
 }
 
@@ -86,7 +87,7 @@ function toTheNextLee(sim: Sim, boulder: number, release = 0.7): number[] {
 
 describe('the layers of Berget', () => {
   it('are two ways: every ledge, ring and side candy belongs to one of them', () => {
-    expect(rock).toHaveLength(8);
+    expect(rock).toHaveLength(7);
     // A low and a high shelf on every boulder but the last, which has its high one only.
     expect(lee).toHaveLength(2 * boulders.length - 1);
     expect(leeRings).toHaveLength(boulders.length - 1);
@@ -111,7 +112,6 @@ describe('the layers of Berget', () => {
   });
 
   it('hang their rings low enough that any let-go is a fall he can land: at full swing, with the lace climbed short', () => {
-    const last = rock[rock.length - 3]!;
     for (const [x, y] of [[right(last) - 0.4, last.y], [boulders[1]! + 0.3, HIGH]] as const) {
       for (const dir of [1, -1] as const) {
         const sim = at(x, y);
@@ -157,7 +157,6 @@ describe('the rock shelves, and the ring over the cobbles', () => {
     expect(first.y - heightAt(berget, first.x)).toBeCloseTo(0.9, 5);
     expect(heartOver(first)).toBeGreaterThanOrEqual(0);
     // No step up is more than a held jump, and no gap more than a running one.
-    const up = rock.slice(0, -2);
     for (const [i, shelf] of up.slice(1).entries()) {
       expect(shelf.y - up[i]!.y).toBeLessThanOrEqual(0.9 + 1e-9);
       expect(shelf.x - shelf.width / 2 - right(up[i]!)).toBeLessThanOrEqual(1.6);
@@ -174,14 +173,14 @@ describe('the rock shelves, and the ring over the cobbles', () => {
     const rings = overTheCobbles(sim);
     expect(rings).toEqual([cobbleRing!.x]);
     expect(stands(sim, far)).toBe(true);
-    // Down the step, and on along the trail.
-    runPast(sim, right(step) + 0.3);
-    walkTo(sim, right(step) + 0.6);
+    // Off the far shelf's end, down to the granite, and on along the trail.
+    runPast(sim, right(far) + 0.6);
+    walkTo(sim, right(far) + 1.4);
     expect(sim.curr.grounded).toBe(true);
     expect(sim.curr.y).toBeCloseTo(GRANITE, 1);
     expect(sim.curr.x).toBeGreaterThan(from);
-    expect(sim.curr.x).toBeLessThan(gusts.from);
-    expect(sideTaken(sim, 85, 108)).toEqual({ taken: 11, of: 11 });
+    expect(sim.curr.x).toBeLessThan(berget.checkpoints![2]!.x);
+    expect(sideTaken(sim, 85, 108)).toEqual({ taken: 9, of: 9 });
     expect(sim.bubbles).toBe(0);
     expect(seconds(sim, since)).toBeLessThan(20);
   });
@@ -194,7 +193,6 @@ describe('the rock shelves, and the ring over the cobbles', () => {
   });
 
   it('are framed with the ring above him and the cobbles below, and the trail under them is framed as it was', () => {
-    const last = rock[rock.length - 3]!;
     for (const shelf of [last, far]) {
       const up = picture(at(shelf.x, shelf.y));
       expect(up.bottom, `on the shelf at ${shelf.x}`).toBeLessThan(GRANITE - 0.3);
@@ -218,7 +216,6 @@ describe('the rock shelves, and the ring over the cobbles', () => {
   });
 
   it('forgive the hands on the ring: anywhere on the upper half of the swing lands on the far shelf', () => {
-    const last = rock[rock.length - 3]!;
     for (const from of [right(last) - 0.8, right(last) - 0.4, right(last) - 0.1]) {
       for (const release of [0.5, 0.6, 0.7, 0.8, 0.9]) {
         const sim = at(from, last.y);
@@ -231,7 +228,6 @@ describe('the rock shelves, and the ring over the cobbles', () => {
 
   it('cost a miss nothing but the climb: he lands on the slab below, unhurt', () => {
     // Off the end of the last level shelf without the lace.
-    const last = rock[rock.length - 3]!;
     const off = at(last.x, last.y);
     runPast(off, right(last) + 1);
     run(off, 1);
@@ -247,14 +243,23 @@ describe('the rock shelves, and the ring over the cobbles', () => {
     expect(early.bubbles).toBe(0);
   });
 
-  it('let out forward only: the far shelf is not climbed from the step below it', () => {
-    expect(far.y - step.y).toBeGreaterThan(1.2);
-    const sim = at(step.x, step.y);
-    walkTo(sim, step.x - step.width / 2 + 0.1);
-    jump(sim, -1);
-    expect(stands(sim, far)).toBe(false);
-    expect(sim.curr.y).toBeLessThan(far.y - 1);
-    expect(sim.bubbles).toBe(0);
+  it('let out forward only: nothing leads up to the far shelf from the granite, by any jump from under or beside it', () => {
+    expect(far.y - GRANITE).toBeGreaterThan(1.5);
+    expect(far.y - GRANITE).toBeLessThan(4);
+    // The candy of the arc that a jump from the cobbles takes is its lowest, and nothing more.
+    const lowest = side.findIndex((candy) => candy.x === cobbleRing!.x);
+    for (let x = far.x - far.width / 2 - 1; x <= far.x + far.width / 2 + 2.5; x += 0.3) {
+      for (const how of [0, 1, -1, 'right', 'left'] as const) {
+        const sim = at(x, GRANITE);
+        if (how === 'right') leap(sim, 1, x + 1.2);
+        else if (how === 'left') leap(sim, -1, x - 1.2);
+        else jump(sim, how);
+        run(sim, 0.3);
+        // He comes down on the granite again, or on the first boulder's low shelf, which is its own way up.
+        expect(sim.curr.y, `a jump (${how}) from x ${x.toFixed(1)}`).toBeLessThan(far.y - 1);
+        expect(taken(sim).filter((i) => i !== lowest && side[i]!.x < gusts.from - 1), `a jump (${how}) from x ${x.toFixed(1)}`).toEqual([]);
+      }
+    }
   });
 });
 
@@ -296,9 +301,9 @@ describe('the lee shelves, and the rings between the boulders', () => {
       expect(Math.abs(sim.curr.x - boulders[i + 1]!)).toBeLessThan(GUST_SHELTER);
     }
     // Off the last boulder's top, forward, and down on the granite before the big candy and the cliff.
-    const last = boulders[boulders.length - 1]!;
-    runPast(sim, last + 1.2);
-    walkTo(sim, last + 1.6);
+    const end = boulders[boulders.length - 1]!;
+    runPast(sim, end + 1.2);
+    walkTo(sim, end + 1.6);
     expect(sim.curr.grounded).toBe(true);
     expect(sim.curr.y).toBeCloseTo(GRANITE, 1);
     expect(sim.curr.x).toBeGreaterThan(from);
