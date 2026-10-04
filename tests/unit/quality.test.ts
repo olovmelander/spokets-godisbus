@@ -34,13 +34,11 @@ describe('choosing a tier', () => {
     expect(chooseTier(null, true)).toBe('mid');
   });
 
-  it('honours what was asked for', () => {
-    expect(chooseTier('high', true)).toBe('high');
-    expect(chooseTier('low', true)).toBe('low');
+  it.each(['low', 'mid', 'high'] as const)('honours a supported %s choice at startup or in settings', (tier) => {
+    expect(chooseTier(tier, true)).toBe(tier);
   });
 
-  it('falls back to Low on a device without float colour buffers', () => {
-    expect(chooseTier(null, false)).toBe('low');
-    expect(chooseTier('high', false)).toBe('low');
+  it.each([null, 'low', 'mid', 'high'] as const)('keeps %s on Low when float colour buffers are unavailable', (tier) => {
+    expect(chooseTier(tier, false)).toBe('low');
   });
 });

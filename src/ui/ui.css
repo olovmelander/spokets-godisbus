@@ -191,6 +191,7 @@ body.calm *::after {
 /* --- the candy bag, top left: it fills as Elof collects (plan §4.3) ------------------------------ */
 .bag {
   position: absolute;
+  z-index: 2;
   left: calc(env(safe-area-inset-left) + 12px);
   top: calc(env(safe-area-inset-top) + 10px);
   display: flex;
@@ -277,6 +278,7 @@ body.calm *::after {
 /* --- the pause button, top right: 64 px (plan §4.1) ---------------------------------------------- */
 .corner {
   position: absolute;
+  z-index: 2;
   right: calc(env(safe-area-inset-right) + 12px);
   top: calc(env(safe-area-inset-top) + 10px);
   width: calc(64px * var(--k));
@@ -982,4 +984,58 @@ body.calm *::after {
 .debug[hidden],
 .message[hidden] {
   display: none;
+}
+
+/* Settings stay in one paused surface; the reference returns to it. */
+body.follow-finger .stick-base {
+  display: none;
+}
+
+.pause-options,
+.controls-reference {
+  display: grid;
+  gap: 12px;
+}
+
+.pause-options[hidden],
+.controls-reference[hidden] {
+  display: none;
+}
+
+.graphics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.setting-hint {
+  margin: 0 4px 6px;
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+.controls-reference dl {
+  margin: 0;
+}
+
+.controls-reference dl > div {
+  padding: 12px 4px;
+  border-bottom: 1px solid #ddcfb5;
+}
+
+.controls-reference dt {
+  font-weight: 700;
+}
+
+.controls-reference dd {
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+
+button.bag {
+  min-height: 64px;
+  border: 0;
+  color: inherit;
+  font-family: inherit;
+  pointer-events: auto;
+  touch-action: manipulation;
 }

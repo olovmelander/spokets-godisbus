@@ -1,5 +1,5 @@
 /*
- * Input: a floating stick for the left thumb, two buttons for the right, the keyboard and a gamepad.
+ * Input: a floating stick or Följ fingret, two action buttons, the keyboard and a gamepad.
  * Ported from Sköldhästen (skoldhast/src/input.mjs at 5438e23) with this game's verbs (plan §4.1):
  *  - pointer capture per touch, and every held input released on cancel, lost capture, blur and pause;
  *  - movement keys by their place on the keyboard, and the newest of two opposite directions wins;
@@ -29,9 +29,13 @@ export interface InputOptions {
   onKey?(key: MenuKey): void;
   /** True while ↑ and W should climb and not be Hoppa: on a hose or on the lace. */
   upClimbs?(): boolean;
+  /** Use a held finger on the world or stick zone instead of the floating stick. */
+  followFinger?(): boolean;
+  /** Elof's current centre in viewport CSS pixels, matching pointer clientX/clientY. */
+  playerScreen?(): { x: number; y: number } | null;
   onBack?(): void;
   onTap?(x: number, y: number): void;
-  /** The open menu, if any. While there is one, the gamepad moves the focus inside it. */
+  /** The open menu, if any. Tab and the gamepad keep focus inside it. */
   focusScope?(): HTMLElement | null;
   panelOpen?(): boolean;
 }
@@ -96,6 +100,9 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   let enabled = true;
   let stickTap: { x: number; y: number; t: number; moved: boolean } | null = null;
   let worldTap: { x: number; y: number; t: number; id: number } | null = null;
+  let follow: {
+    id: number; target: HTMLElement; x: number; y: number; ox: number; oy: number; t: number; active: boolean;
+  } | null = null;
 
   const setDevice = (d: Device) => {
     if (d !== device) {
@@ -114,6 +121,47 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   const on = (target: EventTarget, type: string, fn: (e: Event) => void, extra: AddEventListenerOptions = {}) =>
     target.addEventListener(type, fn, { ...sig, ...extra });
 
+  // --- Följ fingret ------------------------------------------------------------------------------
+  // A quick Peka never takes a step. Holding for TAP_MS or dragging commits this pointer to movement;
+  // once committed, it cannot also activate whatever happens to be under the finger when it lifts.
+  const beginFollow = (e: PointerEvent, target: HTMLElement): boolean => {
+    if (!opts.followFinger?.()) return false;
+    if (!enabled || opts.panelOpen?.() || follow || (e.button !== undefined && e.button !== 0)) return true;
+    follow = { id: e.pointerId, target, x: e.clientX, y: e.clientY, ox: e.clientX, oy: e.clientY,
+      t: env.now(), active: false };
+    capture(target, e.pointerId);
+    e.preventDefault();
+    return true;
+  };
+  const moveFollow = (e: PointerEvent): boolean => {
+    if (!follow || e.pointerId !== follow.id) return false;
+    follow.x = e.clientX;
+    follow.y = e.clientY;
+    if (Math.hypot(follow.x - follow.ox, follow.y - follow.oy) > TAP_PX) follow.active = true;
+    return true;
+  };
+  const releaseFollow = () => {
+    const held = follow;
+    follow = null;
+    if (!held) return;
+    captures.delete(held.id);
+    try {
+      held.target.releasePointerCapture?.(held.id);
+    } catch {
+      /* already lost */
+    }
+  };
+  const endFollow = (e: PointerEvent): boolean => {
+    if (!follow || e.pointerId !== follow.id) return false;
+    const quick = e.type === 'pointerup' && !follow.active && env.now() - follow.t < TAP_MS
+      && Math.hypot(e.clientX - follow.ox, e.clientY - follow.oy) < TAP_PX;
+    releaseFollow();
+    if (quick && enabled && !opts.panelOpen?.()) opts.onTap?.(e.clientX, e.clientY);
+    return true;
+  };
+  const followAxis = (delta: number) => Math.abs(delta) <= TAP_PX ? 0
+    : Math.sign(delta) * Math.min(1, (Math.abs(delta) - TAP_PX) / (STICK_RADIUS - TAP_PX));
+
   // --- the stick ---------------------------------------------------------------------------------
   const zone = ui.stickZone;
   const moveKnob = () => {
@@ -121,6 +169,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   };
   on(zone, 'pointerdown', (ev) => {
     const e = ev as PointerEvent;
+    if (beginFollow(e, zone)) return;
     if (!enabled || stick.id !== null) return;
     stick.id = e.pointerId;
     stickTap = { x: e.clientX, y: e.clientY, t: e.timeStamp, moved: false };
@@ -137,6 +186,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   });
   on(zone, 'pointermove', (ev) => {
     const e = ev as PointerEvent;
+    if (moveFollow(e)) return;
     if (e.pointerId !== stick.id) return;
     if (stickTap && Math.hypot(e.clientX - stickTap.x, e.clientY - stickTap.y) > TAP_PX) stickTap.moved = true;
     const r = zone.getBoundingClientRect();
@@ -154,6 +204,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   });
   const endStick = (ev?: Event) => {
     const e = ev as PointerEvent | undefined;
+    if (e && endFollow(e)) return;
     if (e) captures.delete(e.pointerId);
     if (e && e.pointerId !== stick.id) return;
     // Elof often stands inside the stick's half of the screen: a quick tap there is still a tap on the world.
@@ -173,19 +224,23 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   // --- taps on the world -------------------------------------------------------------------------
   on(ui.world, 'pointerdown', (ev) => {
     const e = ev as PointerEvent;
+    if (beginFollow(e, ui.world)) return;
     if (!enabled || worldTap) return;
     worldTap = { x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId };
   });
   const endWorldTap = (ev: Event) => {
     const e = ev as PointerEvent;
+    if (endFollow(e)) return;
     if (!worldTap || e.pointerId !== worldTap.id) return;
     const quick = e.type === 'pointerup' && e.timeStamp - worldTap.t < TAP_MS
       && Math.hypot(e.clientX - worldTap.x, e.clientY - worldTap.y) < TAP_PX;
     worldTap = null;
     if (quick) opts.onTap?.(e.clientX, e.clientY);
   };
+  on(ui.world, 'pointermove', (ev) => { moveFollow(ev as PointerEvent); });
   on(ui.world, 'pointerup', endWorldTap);
   on(ui.world, 'pointercancel', endWorldTap);
+  on(ui.world, 'lostpointercapture', endWorldTap);
 
   // --- the buttons -------------------------------------------------------------------------------
   const press = (btn: HTMLElement, down: () => void, up?: () => void) => {
@@ -241,7 +296,17 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     const active = env.doc.activeElement as HTMLElement | null;
     const key = keyName(e);
     const dir = moveOf(e);
-    if (active && (['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || active.isContentEditable)) return;
+    if (key === 'Tab') {
+      const scope = opts.focusScope?.();
+      if (scope) {
+        e.preventDefault();
+        setDevice('keys');
+        moveFocus(scope, e.shiftKey ? -1 : 1);
+      }
+      return;
+    }
+    // Escape closes a menu even while a checkbox or chapter-code field has focus. Text stays text.
+    if (key !== 'Escape' && active && (['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || active.isContentEditable)) return;
     const menuKey = key === 'Escape' || key === 'p' || key === 'g';
     if (opts.panelOpen?.() && !menuKey) return;
     if (key === 'Enter' && active?.tagName === 'BUTTON') return; // Enter presses the focused button
@@ -353,6 +418,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     pad.x = pad.y = 0;
     pad.hopHeld = false;
     stickTap = worldTap = null;
+    releaseFollow();
     edges.hop = edges.act = edges.helper = false;
     ui.stickBase.classList.remove('on', 'run');
     moveKnob();
@@ -388,6 +454,14 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
       if (stick.id !== null) {
         x = stick.x;
         y = stick.y;
+      }
+      if (follow && (!opts.followFinger?.() || opts.panelOpen?.())) releaseFollow();
+      if (follow) {
+        if (env.now() - follow.t >= TAP_MS) follow.active = true;
+        const player = follow.active ? opts.playerScreen?.() : null;
+        // Evaluate against the current projection, even when the finger stays still and the camera moves.
+        x = player ? followAxis(follow.x - player.x) * WALK_KEYS : 0;
+        y = player ? followAxis(player.y - follow.y) : 0;
       }
       return { x, y, hopHeld: pointerHopHeld || verbs.has(' ') || (v === 'up' && !opts.upClimbs?.()) || pad.hopHeld };
     },
