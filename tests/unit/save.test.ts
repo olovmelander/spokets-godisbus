@@ -294,6 +294,29 @@ describe('local player profiles', () => {
     expect(storage.items.has(key('elof'))).toBe(false);
   });
 
+  it.each(['new', 'legacy'] as const)('rejects a deleted %s Elof tab after a fresh default Elof is created', (kind) => {
+    const oldAdventure = { ...newSave(100, 'garden'), candy: { garden: [1, 2] } };
+    const storage = fakeStorage(kind === 'legacy' ? { [key('elof')]: JSON.stringify(oldAdventure) } : {});
+    const oldTab = createStore(storage);
+    if (kind === 'new') expect(oldTab.write(oldAdventure)).toBe(true);
+    const editor = createStore(storage);
+    expect(editor.remove('elof')).toBe(true);
+    expect(oldTab.write(oldAdventure)).toBe(false);
+
+    // The title automatically offers Elof again after the last profile has been removed.
+    const freshTab = createStore(storage);
+    const freshAdventure = newSave(200, 'prolog');
+    expect(freshTab.write(freshAdventure)).toBe(true);
+    expect(oldTab.write(oldAdventure)).toBe(false);
+    expect(createStore(storage).load()).toEqual({ kind: 'save', save: freshAdventure });
+
+    // The writer binds the new token too, and remains able to save its new game.
+    const progressed = { ...freshAdventure, candy: { prolog: [0] } };
+    expect(freshTab.write(progressed)).toBe(true);
+    expect(oldTab.write(oldAdventure)).toBe(false);
+    expect(createStore(storage).load()).toEqual({ kind: 'save', save: progressed });
+  });
+
   it('cannot create, select, clear or remove profiles without storage', () => {
     const store = createStore(null);
     expect(store.players()).toEqual([]);

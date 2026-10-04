@@ -287,12 +287,18 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
         const name = profile?.name ?? (playerName(save.name) || FIRST_PLAYER.name);
         storage.setItem(key, JSON.stringify({ ...save, name }));
         if (!profile || data.raw === null) {
+          // Elof's stable default ID can be recreated after deleting the last profile. Give that new
+          // incarnation its own token, so an older tab cannot overwrite it with the deleted adventure.
+          // A legacy save synthesized by readIndex already has a profile and keeps its existing token.
+          const createdGeneration = profile ? profile.generation
+            : globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
           try {
-            putIndex({ ...data.index, players: profile ? data.index.players : [...data.index.players, { id: currentId, name }] });
+            putIndex({ ...data.index, players: profile ? data.index.players : [...data.index.players, { id: currentId, name, generation: createdGeneration }] });
           } catch (error) {
             restore(key, previous);
             throw error;
           }
+          generation = createdGeneration;
         }
         currentWasIndexed = true;
         return true;

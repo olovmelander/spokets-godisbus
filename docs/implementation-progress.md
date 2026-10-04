@@ -50,3 +50,9 @@ Validation: typecheck and 46 integrated settings/save tests pass. Source browser
 Required models and decoder loads now have bounded waits and retry controls. WebGL context loss saves and pauses the game, restores rendering in place, and returns to the prior menu state. Audio cancels scheduled sounds while blocked so resuming cannot play stale notes.
 
 Validation: integrated typecheck and lifecycle/fetch tests pass. The source feature passed 30 browser checks covering context loss, failed model/decoder retries, saved progress and repeated audio suspension. Includes the separately verified slow-frame calibration repair from #72.
+
+## Prevent old tabs from overwriting a recreated player
+
+Deleting the final default player and starting fresh previously reused an empty save generation. An older tab could overwrite the new adventure. Freshly created players now receive a new generation while existing saves retain their migration behavior.
+
+Validation: all 36 save tests and typecheck pass, including stale writers from legacy and newly created profiles and continued writes by the fresh profile.
