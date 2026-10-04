@@ -113,12 +113,15 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
 
 /** A bridge to the next place, shown inside the existing chapter card without a second dialog. */
 export function storyHandoff(chapter: string, flags: ReadonlySet<string>): { title: string; text: string } | null {
+  const rescued = ['placed:tragubbe', 'eyes', 'bag'].every((flag) => flags.has(flag));
   const id = chapter === 'garden' && !flags.has('plane:board') ? 'gardenClue'
     : chapter === 'epilog' && !flags.has('partied') ? 'epilogClue'
     : chapter === 'berget' && !flags.has('memory') ? 'bergetClue'
     : chapter === 'granskog' && !flags.has('placed:rescue') ? 'granskogClue'
     : chapter === 'myren' && !flags.has('home') ? 'myrenClue'
-    : chapter === 'norrsken' && !(flags.has('placed:tragubbe') && flags.has('bag')) ? 'norrskenClue' : chapter;
+    : chapter === 'norrsken' && !rescued ? 'norrskenClue'
+    // Pappa tells the origin at Smaka, separately from the optional mountain memory.
+    : chapter === 'norrsken' && flags.has('taste') ? 'norrskenOrigin' : chapter;
   const handoffs = sv.storyContext.handoffs;
   return Object.hasOwn(handoffs, id) ? handoffs[id as keyof typeof handoffs] : null;
 }

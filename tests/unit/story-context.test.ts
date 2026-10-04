@@ -376,4 +376,46 @@ describe('chapter handoffs state what really happened', () => {
       expect(fallback!.text).not.toMatch(/trägubben är räddad och påsen är tillbaka/i);
     }
   });
+
+  it('keeps Pappa’s required origin explanation in the completed finale handoff without an optional memory', () => {
+    const actual = ['placed:tragubbe', 'eyes', 'bag', 'taste'];
+    const handoff = storyHandoff('norrsken', new Set(actual));
+    expect(handoff).toEqual(sv.storyContext.handoffs.norrskenOrigin);
+    expect(handoff!.text).toMatch(/Pappa täljde trägubben åt mig när jag var liten/);
+    expect(handoff!.text).toMatch(/tappade den här på berget/);
+    expect(handoff!.text).toMatch(/Spöket tog godiset för att välkomna den hem/);
+    // That required-stage explanation does not manufacture a discovered mountain memory.
+    const current = context('norrsken', actual, checkpoint(norrsken, 30.4));
+    expect(current.id).toBe('reunion');
+    expect(current.reveal).toBe(genericWelcome);
+    expect(publicText(current)).not.toMatch(firstFigureIdentity);
+  });
+
+  it('requires each actual finale receipt before crediting Pappa’s origin explanation', () => {
+    const required = ['placed:tragubbe', 'eyes', 'bag', 'taste'];
+    const dialogOnly = ['goal', 'home', 'memory', 'beat:first1', 'beat:first2', 'beat:first3', 'beat:first4'];
+    for (const missing of required) {
+      const flags = [...required.filter((flag) => flag !== missing), ...dialogOnly];
+      const handoff = storyHandoff('norrsken', new Set(flags));
+      expect(handoff, missing).toEqual(missing === 'taste'
+        ? sv.storyContext.handoffs.norrsken : sv.storyContext.handoffs.norrskenClue);
+      expect(handoff!.text, missing).not.toMatch(/täljde.*åt mig|när jag var liten|tappade.*här.*berget/i);
+    }
+    expect(storyHandoff('norrsken', new Set(['tragubbe', 'eyes', 'bag', 'taste', ...dialogOnly])))
+      .toEqual(sv.storyContext.handoffs.norrskenClue);
+  });
+
+  it('does not borrow a completed saved finale to fill a fresh visit’s missing handoff receipts', () => {
+    const completed = ['placed:tragubbe', 'eyes', 'bag', 'taste'];
+    const history = Object.freeze({ norrsken: Object.freeze([...completed]) });
+    for (const actual of [[], ['placed:tragubbe', 'eyes'], ['placed:tragubbe', 'eyes', 'bag']]) {
+      const flags = new Set(actual);
+      const before = [...flags];
+      storyContext('norrsken', flags, position, history);
+      expect(storyHandoff('norrsken', flags)).toEqual(actual.includes('bag')
+        ? sv.storyContext.handoffs.norrsken : sv.storyContext.handoffs.norrskenClue);
+      expect([...flags]).toEqual(before);
+    }
+    expect(history.norrsken).toEqual(completed);
+  });
 });

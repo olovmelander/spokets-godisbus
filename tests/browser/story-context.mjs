@@ -242,6 +242,62 @@ try {
   await known.page.screenshot({ path: join(shots, 'finale-understanding.png') });
   await known.finish();
 
+  // A fast player can finish the ride before all four Pappa bubbles have finished speaking.
+  // The required Smaka stage is another real source for the untimed origin at the end card.
+  const originText = 'Pappa täljde trägubben åt mig när jag var liten. Vi tappade den här på berget. Spöket tog godiset för att välkomna den hem.';
+  const fast = await open({ width: 390, height: 844 }, saved('norrsken', 1, { norrsken: [
+    'placed:tragubbe', 'eyes', 'bag', 'share:tragubbe', 'gift:tragubbe:karamell',
+    'share:jay', 'gift:jay:lingon', 'share:spoket', 'gift:spoket:skumbanan',
+  ] }));
+  await fast.page.goto(`${base}?dev&debug&standin&course=norrsken&tier=low`);
+  await ready(fast.page);
+  await fast.page.evaluate(() => { document.getElementById('debug').hidden = true; });
+  await fast.page.keyboard.down('ArrowRight');
+  await fast.page.waitForFunction(() => window.__godis.state().word === 'taste', null, { timeout: 15000 });
+  await fast.page.keyboard.up('ArrowRight');
+  const beforeTaste = await state(fast.page);
+  check('the old-save finale resumes shared sweets without taste or optional mountain-memory identity',
+    beforeTaste.word === 'taste' && !beforeTaste.flags.includes('taste') &&
+    !/min gamla|min första/.test(await fast.page.locator('#pauseStoryRecap').textContent()));
+  await fast.page.keyboard.press('e');
+  await fast.page.waitForFunction(() => window.__godis.state().flags.includes('taste'));
+  await fast.page.keyboard.down('ArrowRight');
+  await fast.page.waitForFunction(() => window.__godis.state().word === 'goHome', null, { timeout: 15000 });
+  await fast.page.keyboard.up('ArrowRight');
+  await fast.page.keyboard.press('e');
+  await fast.page.waitForFunction(() => window.__godis.state().flags.includes('home'));
+  await fast.page.waitForSelector('#endCard:not([hidden])', { timeout: 20000 });
+  await frames(fast.page);
+  const arrived = await state(fast.page);
+  check('actual fast taste and home actions reach the end before the queued origin speech can finish',
+    ['placed:tragubbe', 'eyes', 'bag', 'taste', 'home', 'goal'].every((flag) => arrived.flags.includes(flag)) &&
+    (arrived.steps - beforeTaste.steps) / 120 < 14.135);
+  check('the end card preserves Pappa’s origin, the mountain loss and the candy motive without optional memory',
+    await fast.page.locator('#endStoryText').textContent() === originText);
+  check('the durable origin uses the existing end card and preserves Onward focus',
+    await fast.page.locator('[role=dialog]:visible').count() === 1 &&
+    await fast.page.locator('#endOnward').evaluate((node) => document.activeElement === node));
+  await frames(fast.page, 30);
+  check('reading the untimed origin keeps the completed simulation and text frozen',
+    (await state(fast.page)).steps === arrived.steps && await fast.page.locator('#endStoryText').textContent() === originText &&
+    await fast.page.locator('#endStory').evaluate((node) => node.getAnimations({ subtree: true }).length === 0));
+  for (const [width, height] of [[390, 844], [844, 390], [780, 360], [1180, 820], [1440, 900]]) {
+    await fast.page.setViewportSize({ width, height });
+    await fast.page.evaluate((larger) => document.body.classList.toggle('big-text', larger), width === 390);
+    await fast.page.locator('#endStory').scrollIntoViewIfNeeded();
+    await frames(fast.page);
+    check(`${width}×${height}: the full origin remains readable in the existing scrollable card`,
+      await fast.page.locator('#endStory').evaluate((node) => {
+        const rect = node.getBoundingClientRect(), text = document.getElementById('endStoryText');
+        return rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight &&
+          text.scrollWidth <= text.clientWidth;
+      }));
+    check(`${width}×${height}: reading the origin leaves the onward action focused`,
+      await fast.page.locator('#endOnward').evaluate((node) => document.activeElement === node));
+    await fast.page.screenshot({ path: join(shots, `finale-origin-end-${width}x${height}.png`) });
+  }
+  await fast.finish();
+
   const ending = await open();
   await ending.page.goto(`${base}?dev&debug&standin&course=granskog&tier=low&at=204.6,-8&flags=placed:rescue`);
   await ready(ending.page);

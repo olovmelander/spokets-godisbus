@@ -109,6 +109,13 @@ mountain memory. Before the finale gate, both paths retain only their establishe
 Afterward, pause, homeward travel and home recaps retain the appropriate explanation without inventing
 a memory discovery.
 
+Pappa's required reunion story has a separate source. After the actual rescue, eye painting, bag return
+and tasting the golden sweet, the untimed finale handoff preserves what he tells Elof: Pappa carved the
+figure for him when he was little, and they lost it on the mountain. It also repeats the welcome-home
+candy motive. Fast homeward play can reach the chapter card before every timed speech bubble finishes;
+the essential origin must remain readable there. This handoff does not grant an optional memory or
+loosen the purpose/recap identity guard. An incomplete preview cannot claim Pappa told that story.
+
 Recovering and sharing the bag does not excuse the theft through exposition alone: it closes the
 relationship arc through an action the player performs. Elof still chooses what to give and to whom.
 
@@ -158,7 +165,7 @@ An implemented rehearsal is not final likeness, acting, landscape completion or 
 | Forest | Small-versus-heavy cone experiment and local return with puzzle-specific help; optional neighbour gift/return loop with a persistent doorway picture. | Broader forest composition, final assets and richer cooperative acting. |
 | Bog | Chick reunion unlocks Mamma's optional persistent boardwalk back to the lantern clearing. Repeated crossings, stops, reversals and restored saves remain usable; the crane flight stays independent. | Broader light/guide puzzle variations, landscape detail and final crane/family acting. |
 | Mountain | Existing optional cairn prize opens a reusable return lace, with both the original descent and main cooperative cliff retained. | Wider mountain route composition and final lift/lace acting. |
-| Finale and home | Visible painted eyes on the rescued first carving, chosen shared sweets and family reunion; Elof visibly returns on Pappa's shoulders with the carvings. Explicit candy motive survives a missed mountain memory without inventing childhood identity. | Final likeness, hand contact, carrying/painting/sharing performance and full shelf/material continuity. |
+| Finale and home | Visible painted eyes on the rescued first carving, chosen shared sweets and family reunion; Elof visibly returns on Pappa's shoulders with the carvings. Explicit candy motive survives a missed mountain memory. After the required reunion/taste stage, the untimed ending handoff also preserves Pappa's origin and lost-on-mountain story. Purpose/recap identity stays memory-guarded. | Final likeness, hand contact, carrying/painting/sharing performance and full shelf/material continuity. |
 | Review | Targeted story-state, simulation, save and browser checks of these outcomes. | Final Blender work, listening review and physical iPad/iPhone/Android judgement. |
 
 Continue one visible chapter outcome at a time:
@@ -187,6 +194,7 @@ a player understood the picture, and software-rendered browser results are not p
 | Family logic | Reassurance happens at shrinking, and later family appearances consistently support the larger-route plan. The relevant helped crossing has an understandable contribution from Elof and the family member. | Trigger/framing checks and Olov's chapter play. Final private-model acting gets its own review. |
 | Durable purpose | Fresh play, return from pause, resumed saves and chapter changes show the current established purpose. Neither position nor replay of a UI panel fabricates discoveries. | Resolver tests for legitimate flag/position combinations and browser pause/resume/reload/handoff checks. |
 | Reveal | The welcome-home candy motive appears after actual figure rescue, painted eyes and bag recovery, including when the mountain memory was missed. Only a discovered mountain memory licenses "min gamla" and childhood-identity wording in purpose/recap cues. The motive is absent before that gate and remains available during sharing, homeward travel and home. | Positive and negative resolver/browser cases with and without the mountain memory; Olov can explain why it took sweets rather than another object. |
+| Required origin | After the actual rescue/eyes/bag/taste sequence, the untimed chapter handoff keeps Pappa's made-for-little-Elof and lost-on-mountain explanation available even when fast travel overtakes his timed bubbles. The copy cannot appear from position, a preview or incomplete receipts. | Guard and restored-save cases; actual immediate tasting, homeward travel and end-card checks without the mountain memory; readable layout and onward focus at all five sizes. |
 | Weight puzzle | Small-first and heavy-first approaches both remain possible. The small cone gives an understandable safe result. Fetching and placing the heavy cone enables the real crossing, and helper advice follows the unsolved stage. | Real simulation playthroughs of both orders, controller/touch interaction checks and visual feedback review. |
 | Return clue | The root-door clue requires the authored return/gift sequence, appears at the actual doorway, persists for revisits and does not require teleporting or drawing a second ghost. Ordinary forward play still reaches the next chapter. | Flag gating and reload checks, both route orders, captures showing its source and a main-route robot pass. |
 | Local route loops | Garden's paper detour returns through the same hose/bridge and never boards the plane automatically. Bog's boardwalk requires reunion and a real Mamma call, then supports repeated stops/reversals without old assisted hops. Mountain's return lace requires the optional prize and remains reusable without catching ordinary walkers. Each main route still works when its detour is omitted. | Real interaction and simulation checks of unlock order, repeated use, misses, pause and old-save restoration; browser views show the route's endpoints and response. |

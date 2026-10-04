@@ -208,6 +208,7 @@ export const sv = {
       berget: { title: 'Min trägubbe väntar', text: 'Minnet visade var den försvann. Nu hämtar spöket och jag hem den.' },
       bergetClue: { title: 'Vid den gamla tallen', text: 'Spöket visar en spricka. Vi behöver ta reda på vad som finns där.' },
       norrsken: { title: 'Hem till godiskalaset', text: 'Trägubben är räddad och påsen är tillbaka. Nu går vi hem tillsammans.' },
+      norrskenOrigin: { title: 'Hem till godiskalaset', text: 'Pappa täljde trägubben åt mig när jag var liten. Vi tappade den här på berget. Spöket tog godiset för att välkomna den hem.' },
       norrskenClue: { title: 'Tillsammans på berget', text: 'Spöket och jag har följt samma väg. Familjen är nära.' },
       epilog: { title: 'Ett äventyr att minnas', text: 'Vi delade godiset och hjälptes åt. Det finns fler små saker att upptäcka.' },
       epilogClue: { title: 'Fler små äventyr', text: 'Familjen är hemma. Här finns fler små saker att upptäcka tillsammans.' },
