@@ -1,4 +1,5 @@
 import { sv } from '../content/sv';
+import { endingHtml } from './ending';
 import { photoAlbumHtml } from './photos';
 import { storyPanelHtml } from './story';
 
@@ -202,6 +203,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
      </div>
      <div class="memory" id="memory" hidden><div class="memory-panel" role="dialog" aria-modal="true" aria-labelledby="memoryTitle"><button class="panel-close" id="memoryClose" type="button" aria-label="${p.close}">${CROSS}</button><h2 id="memoryTitle">${sv.memory}</h2><div class="memory-card" id="memoryCard" role="img" aria-label="${sv.memory}"></div><div class="memory-controls"><span id="memoryProgress" role="status"></span><button class="wide" id="memoryNext" type="button">${sv.memories.next} →</button></div></div></div>
      ${photoAlbumHtml}
+     ${endingHtml}
      ${storyPanelHtml}
      <div class="panel-back" id="endCard" hidden>
        <div class="panel end" role="dialog" aria-modal="true" aria-labelledby="endTitle">

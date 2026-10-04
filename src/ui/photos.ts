@@ -17,7 +17,7 @@ export const photoAlbumHtml = `
     </section>
   </div>`;
 
-export function createPhotoAlbum(doc: Document, store: PhotoStore, player: string) {
+export function createPhotoAlbum(doc: Document, store: PhotoStore, player: string, onCreditsDone?: () => void) {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const panel = byId('photoAlbum');
   const section = byId('albumPhotos');
@@ -73,7 +73,10 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
     focusMoment = null;
   }
   byId('photoPrevious').addEventListener('click', () => { if (index > 0) { index--; draw(); } });
-  byId('photoNext').addEventListener('click', () => { if (index + 1 < count()) { index++; draw(); } else back(); });
+  byId('photoNext').addEventListener('click', () => {
+    if (index + 1 < count()) { index++; draw(); }
+    else { const completedCredits = credits; back(); if (completedCredits) onCreditsDone?.(); }
+  });
   for (const id of ['photoClose', 'photoBack']) byId(id).addEventListener('click', back);
   panel.addEventListener('click', (event) => { if (event.target === panel) back(); });
   panel.addEventListener('keydown', (event) => {

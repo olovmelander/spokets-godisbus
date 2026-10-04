@@ -188,3 +188,9 @@ Validation: 581 unit tests and 49 focused browser checks passed at the source mi
 Animate water flow with glints and caustics, add bounded refraction, and render bloom at half resolution. Quality changes dispose of their old targets and retain the existing play-plane clarity.
 
 Validation: renderer unit tests, typecheck, build and privacy gates pass. The renderer's 28 focused browser checks cover tier changes, image properties and shader/framebuffer validity; tested scenes remain below 120 draws.
+
+## Stage the moonlit ending after the credits
+
+Place the carved eyes in the window and the named keepsake on the shelf. After the credits, show a short moonlit blink and bell before the ending and exploration choices; lifecycle pauses freeze the sequence and sound respects saved volume and mute settings.
+
+Validation: typecheck and focused ending tests pass. A subsequent browser rehearsal covers the complete ending, focus and interruption paths with the current stand-in models.

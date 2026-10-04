@@ -21,6 +21,7 @@ import { createWater } from './water';
 import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
+import { createEpilogueStage } from './epilogue-stage';
 import { createPrologueStage } from './prologue-stage';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
@@ -87,6 +88,7 @@ export interface Frame {
   /** The cranberries, in the chapter's order: how flat each is after a bounce, from 1 to 0. */
   berries?: readonly { squash: number }[];
   prologue?: PrologueFrame | null;
+  ending?: number | null;
   noteHits?: readonly { serial: number; id: string; midi: number }[];
   /** What the helper is doing: its step, and where the thing is. */
   help: HelpState;
@@ -315,6 +317,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(ghostPlace);
   const prologueStage = createPrologueStage(chapter.prologue);
   scene.add(prologueStage.group);
+  const epilogueStage = createEpilogueStage(chapter.epilogue);
+  scene.add(epilogueStage.group);
   let ghostFoot: Object3D | null = null;
   // The stand-in faces +x, as the stand-in Elof does; the model from Blender faces the camera.
   let ghostFaces = 0;
@@ -473,6 +477,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let warm = 2;
   let warmedFor = 0;
   let hasFrame = false;
+  let inEndingShot = false;
   let warming = true;
   const unculled: Object3D[] = [];
   const projectedPlayer = new Vector3();
@@ -516,8 +521,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (hdr && gradePass && outputPass) {
         bloom?.render(renderer, hdr.scene);
         gradePass.setBloom(bloom?.texture ?? null);
-        depthBlur?.render(renderer, hdr.scene, camera);
-        gradePass.setDepthBlur(depthBlur?.texture ?? null, hdr.scene.depthTexture, camera.near, camera.far, camera.position.z);
+        // The final macro shot focuses on the window figure, outside the usual z=0 play plane.
+        if (!inEndingShot) depthBlur?.render(renderer, hdr.scene, camera);
+        gradePass.setDepthBlur(inEndingShot ? null : depthBlur?.texture ?? null, hdr.scene.depthTexture, camera.near, camera.far, camera.position.z);
         gradePass.render(renderer, hdr.grade, hdr.scene);
         outputPass.render(renderer, hdr.grade, hdr.grade, 0, false);
       }
@@ -531,9 +537,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
   }
 
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue, ending }: Frame): void {
+    inEndingShot = !!chapter.epilogue && ending !== null && ending !== undefined;
     rain.update(drips);
     prologueStage.update(prologue, flags);
+    epilogueStage.update(flags, ending, reducedMotion.matches || document.body.classList.contains('calm'));
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
@@ -619,6 +627,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const centreY = look.y + viewHeight * look.zoom * (0.5 - GROUND_FROM_BOTTOM);
     camera.position.set(look.x, centreY, distance * look.zoom);
     camera.lookAt(look.x, centreY, 0);
+    if (chapter.epilogue && ending !== null && ending !== undefined) {
+      const window = chapter.epilogue.window;
+      const shotHeight = Math.max(2.6, 2.8 / camera.aspect);
+      camera.position.set(window.x, window.y + 0.65, window.z + shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
+      camera.lookAt(window.x, window.y + 0.65, window.z);
+    }
     const darkness = night.update(flags, look.x, centreY, clock, dt);
     if (dressing && place) {
       dressing.update(look.x, look.y, clock, darkness);
@@ -705,6 +719,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostPlace.scale.setScalar(0);
         ghostShadow.visible = false;
       }
+    }
+    // His first figure has its place again, with Klonk beside it once Elof finishes painting.
+    if (chapter.epilogue && chapter.shelf && flags.has('dots')) {
+      ghostPlace.position.set(chapter.shelf.x - 2.4, chapter.shelf.y + 0.08, -8.5);
+      ghostPlace.scale.setScalar(1);
+      ghost.rotation.set(0, ghostFaces - Math.PI / 2, 0);
+      if (ghostFoot) ghostFoot.rotation.x = 0;
+      ghostShadow.visible = false;
     }
     // The family: each turns a little towards him, and throws their arms up for a moment when he has given
     // them candy, or when they first come into the picture.

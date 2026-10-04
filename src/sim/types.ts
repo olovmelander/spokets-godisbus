@@ -342,6 +342,8 @@ export interface ChapterData {
    * knows nothing of it: there he is always one Elof length.
    */
   size?: { scale: number; after?: string; until?: string };
+  /** The final carving's windowsill, and the camera's post-credit shot. */
+  epilogue?: { window: { x: number; y: number; z: number } };
   /** For the picture: Pappa's shelf of figures on the wall, with the first place in the row empty or filled. */
   shelf?: { x: number; y: number; filled?: boolean };
   /**

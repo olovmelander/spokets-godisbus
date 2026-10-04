@@ -184,7 +184,9 @@ try {
     check('the epilogue opens credits even when no photos are stored', await page.locator('#photoCredits').isVisible() && (await state()).paused);
     check('credits name the family creators', (await page.locator('#photoCredits').textContent()).includes('Pappa Emil') && (await page.locator('#photoCredits').textContent()).includes('morbror Olov'));
     await page.click('#photoNext');
-    check('finishing the credits reveals the chapter-end choices', await page.locator('#photoAlbum').isHidden() && await page.locator('#endCard').isVisible() && await page.locator('#endPhotos').isVisible());
+    await page.waitForSelector('#endingShot:not([hidden])');
+    await page.click('#endingContinue');
+    check('finishing the credits and window shot reveals the chapter-end choices', await page.locator('#photoAlbum').isHidden() && await page.locator('#endCard').isVisible() && await page.locator('#endPhotos').isVisible());
     await page.click('#endPhotos');
     await page.keyboard.press('Escape');
     check('credits can be reopened and escaped without restarting gameplay', await page.locator('#endCard').isVisible() && (await state()).paused);

@@ -218,6 +218,7 @@ export const sv = {
     } as Record<string, string>,
     // On the story's last card, the button to an extra chapter.
     bonus: 'Ett kapitel till',
+    window: 'Elofs lilla trägubbe står i månljuset. Dess målade ögon blinkar.',
     course: 'Framme!',
     next: 'Fortsättning följer!',
     onward: 'Nästa kapitel',
