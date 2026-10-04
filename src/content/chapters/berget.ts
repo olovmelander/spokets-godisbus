@@ -167,6 +167,12 @@ export const berget: ChapterData = {
   ],
   ledges: [...SHELVES, ...LEE_SHELVES],
   hooks: [SHELF_RING, ...LEE_RINGS],
+  // What the rings hang from: a rope over the cobbles, from a pole at the last level shelf to one at the far
+  // shelf's end, and the guide rope along the open granite, from the first boulder to the last.
+  lines: [
+    { from: { x: 97.5, y: 32.4 }, to: { x: 105.95, y: 32.4 }, sag: 0.3, posts: true },
+    { from: { x: BOULDERS[0]! - 0.75, y: 32.4 }, to: { x: BOULDERS[BOULDERS.length - 1]! + 0.75, y: 32.4 }, sag: 0.45, posts: true },
+  ],
   movers: CAIRN.map((shelf, i) => ({
     id: `cairn:${i + 1}`, look: 'stone', extra: true, width: shelf.width, height: 0.4, verb: 'push',
     // One stop is fixed ground, so there is no push or pull interaction on these shelves.
