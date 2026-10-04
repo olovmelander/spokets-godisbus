@@ -69,6 +69,14 @@ describe('the leaf over the first cranberry', () => {
     expect(seconds(sim, since)).toBeLessThan(8);
   });
 
+  it('is not found by following the trail: running under it and through the berry, he takes nothing and is not bounced', () => {
+    const sim = new Sim(myren);
+    expect(runPast(sim, 9)).toBe(true);
+    expect(sim.bounces).toBe(0);
+    expect(onTheTrail(sim)).toBe(true);
+    expect(sideTaken(sim, 0, 10).taken).toBe(0);
+  });
+
   it('is not reached from the ground beside the berry, and the heart is not taken there', () => {
     for (const x of [berry.x - 0.6, berry.x + 0.6, berryLeaf.x + 0.9]) {
       const sim = new Sim({ ...myren, spawn: { x, y: 0.01 } });
@@ -120,20 +128,28 @@ describe('the leaves over the first tussocks', () => {
     expect(on(sim, second)).toBe(true);
   }
 
+  /** A run along the second leaf and a held jump over open water, up to the third. */
+  function toTheThird(sim: Sim, early: number): void {
+    walkTo(sim, left(second) + 0.4);
+    leap(sim, 1, right(second) - early);
+    expect(on(sim, third), `taking off ${early} early`).toBe(true);
+  }
+
   it('are five between x 18 and x 40, each a step he can make from the last, with side candy over every one', () => {
     expect(leaves).toHaveLength(5);
     for (const leaf of leaves) {
       expect(left(leaf)).toBeGreaterThan(18);
       expect(right(leaf)).toBeLessThan(40);
-      expect(leaf.width).toBeGreaterThanOrEqual(1.6);
+      expect(leaf.width).toBeGreaterThanOrEqual(1.4);
       expect(over(leaf), `the leaf at ${leaf.x}`).toBeGreaterThanOrEqual(0);
     }
-    // The first leaf's is a heart: the tell of the way, in sight from the tussock under it.
+    // The candy over the first leaf is a heart: the tell of the way, in sight from the tussock under it.
     expect(isHeart(over(first))).toBe(true);
-    // The first is over its tussock: more than a hop and no more than a comfortable held jump above it.
+    // The first is over the far end of its tussock: more than a hop and no more than a comfortable held jump
+    // above it, with most of an EL of the tussock under it to jump from.
     const under = heightAt(myren, first.x);
     expect(heightAt(myren, left(first))).toBe(under);
-    expect(heightAt(myren, right(first))).toBe(under);
+    expect(heightAt(myren, left(first) + 0.9)).toBe(under);
     expect(first.y - under).toBeGreaterThan(HOP_APEX + LEDGE_GIVE);
     expect(first.y - under).toBeLessThanOrEqual(0.9);
     for (const [i, leaf] of leaves.slice(1).entries()) {
@@ -142,10 +158,15 @@ describe('the leaves over the first tussocks', () => {
       expect(left(leaf) - right(last), `across to the leaf at ${leaf.x}`).toBeLessThanOrEqual(1.6);
       expect(leaf.x).toBeGreaterThan(last.x);
     }
-    // All but the first are higher than a held jump from any tussock rises: the trail's hops pass under them.
+    // All but the first are higher than a held jump from any tussock rises: the hops of the trail pass under them.
     let highest = -Infinity;
     for (let x = 15.5; x < 36; x += 0.1) highest = Math.max(highest, heightAt(myren, x));
     for (const leaf of leaves.slice(1)) expect(leaf.y - LEDGE_GIVE, `the leaf at ${leaf.x}`).toBeGreaterThan(highest + JUMP_APEX + 0.3);
+    // The two jumps with a gap are over open water: no ground within a safe drop under either gap.
+    for (const [from, to] of [[second, third], [third, fourth]] as [Ledge, Ledge][]) {
+      expect(left(to) - right(from)).toBeGreaterThan(0.5);
+      expect(from.y - heightAt(myren, (right(from) + left(to)) / 2)).toBeGreaterThan(FALL_LIMIT);
+    }
     // The last ends over the wide tussock, short of its big candy, and a safe drop above it.
     const wide = myren.checkpoints![1]!;
     expect(heightAt(myren, right(fifth))).toBe(wide.y);
@@ -161,10 +182,7 @@ describe('the leaves over the first tussocks', () => {
       expect(onTheTrail(sim), `taking off ${early} early`).toBe(true);
       const began = sim.curr.x;
       upTwo(sim);
-      // A run along the second and a held jump over open water, up to the third.
-      walkTo(sim, left(second) + 0.4);
-      leap(sim, 1, right(second) - early);
-      expect(on(sim, third), `taking off ${early} early`).toBe(true);
+      toTheThird(sim, early);
       // The same, level, to the fourth.
       walkTo(sim, left(third) + 0.5);
       leap(sim, 1, right(third) - early);
@@ -181,11 +199,11 @@ describe('the leaves over the first tussocks', () => {
     }
   });
 
-  it('can be run in one go: the stick held right from the first leaf, and Hoppa three times', () => {
-    for (const hops of [[20.4, 22.1, 25.5], [20.5, 22.2, 25.7], [20.6, 22.3, 25.85]]) {
+  it('can be run in one go from the second leaf: the stick held right, and Hoppa twice', () => {
+    for (const hops of [[22.2, 25.2], [22.4, 25.6], [22.6, 25.9]]) {
       const sim = start();
+      upTwo(sim);
       const since = sim.steps;
-      jump(sim);
       const waiting = [...hops];
       for (let i = 0; i < 12 / STEP && sim.curr.x < right(fifth) + 0.9 && sim.curr.mode !== 'bubble'; i++) {
         const press = waiting.length > 0 && sim.curr.grounded && sim.curr.x >= waiting[0]!;
@@ -197,16 +215,28 @@ describe('the leaves over the first tussocks', () => {
       expect(sim.curr.x).toBeGreaterThan(right(fifth));
       expect(sim.bubbles, `Hoppa at ${hops.join(', ')}`).toBe(0);
       expect(sideTaken(sim, 18, 40), `Hoppa at ${hops.join(', ')}`).toEqual({ taken: 6, of: 6 });
-      expect(seconds(sim, since)).toBeLessThan(6);
+      expect(seconds(sim, since)).toBeLessThan(5);
     }
+  });
+
+  it('are jumped from a standstill too: at the end of a leaf over the water a walker stops, and jumps from there', () => {
+    const sim = start();
+    upTwo(sim);
+    // Walking, he stops at the end of the second leaf: he cannot stroll into the water.
+    walkTo(sim, right(second) + 1, 3);
+    expect(on(sim, second)).toBe(true);
+    jump(sim, 1);
+    expect(on(sim, third)).toBe(true);
+    walkTo(sim, right(third) + 1, 4);
+    expect(on(sim, third)).toBe(true);
+    jump(sim, 1);
+    expect(on(sim, fourth)).toBe(true);
+    expect(sim.bubbles).toBe(0);
   });
 
   it('are over water: a jump he gives up on ends in the glitter bubble, which puts him back on the leaf he left', () => {
     const sim = start();
     upTwo(sim);
-    // Walking, he stops at the end of a leaf over the water: he cannot stroll in.
-    walkTo(sim, right(second) + 1, 3);
-    expect(on(sim, second)).toBe(true);
     // The second and third leaves, and the third and fourth, have open water between them, and no ground
     // within a safe drop. So this is the fall that ends in the bubble: a jump from the second leaf that he
     // gives up on, letting go of the stick in the air, comes down between the leaves. The bubble carries him
@@ -221,25 +251,21 @@ describe('the leaves over the first tussocks', () => {
     expect(on(sim, second)).toBe(true);
     expect(sideTaken(sim, 18, 40).taken).toBe(2);
     // And from there the way goes on.
-    walkTo(sim, left(second) + 0.4);
-    leap(sim, 1, right(second) - 0.2);
-    expect(on(sim, third)).toBe(true);
+    toTheThird(sim, 0.2);
     expect(sim.bubbles).toBe(1);
   });
 
   it('let out forward on a miss too: running off the end of a leaf with no jump, he lands on the next tussock', () => {
-    for (const leaf of [second, third]) {
+    for (const [i, leaf] of [first, second, third].entries()) {
       const sim = start();
-      upTwo(sim);
-      if (leaf === third) {
-        walkTo(sim, left(second) + 0.4);
-        leap(sim, 1, right(second) - 0.2);
-        expect(on(sim, third)).toBe(true);
-      }
+      if (i === 0) jump(sim);
+      else upTwo(sim);
+      if (i === 2) toTheThird(sim, 0.2);
+      expect(on(sim, leaf)).toBe(true);
       walkTo(sim, left(leaf) + 0.4);
-      for (let i = 0; i < 5 / STEP && !(sim.curr.grounded && sim.curr.y < 1); i++) sim.step({ ...idle, x: 1 });
+      for (let step = 0; step < 5 / STEP && !(sim.curr.grounded && sim.curr.y < 1); step++) sim.step({ ...idle, x: 1 });
       run(sim, 0.3);
-      // On the trail's ground, beyond the leaf he ran off, unhurt: the hops go on from there.
+      // On the ground the trail runs on, beyond the leaf he ran off, unhurt: the hops go on from there.
       expect(onTheTrail(sim), `off the leaf at ${leaf.x}`).toBe(true);
       expect(sim.curr.x, `off the leaf at ${leaf.x}`).toBeGreaterThan(right(leaf));
       expect(sim.bubbles, `off the leaf at ${leaf.x}`).toBe(0);
@@ -362,6 +388,19 @@ describe('the rings between the dead pines over the boardwalk', () => {
 });
 
 describe('the trail under the layers', () => {
+  it('has no ledge where the ghost stands waiting, or over a big candy: both stand taller than he does', () => {
+    for (const ledge of ledges) {
+      for (const perch of myren.ghost!) {
+        const over = Math.abs(ledge.x - perch.at.x) < ledge.width / 2 + 0.3 && ledge.y > perch.at.y;
+        expect(over && ledge.y - perch.at.y < 1.5, `the ledge at ${ledge.x},${ledge.y} over the ghost at ${perch.at.x}`).toBe(false);
+      }
+      for (const big of myren.checkpoints!) {
+        const over = Math.abs(ledge.x - big.x) < ledge.width / 2 + 0.5 && ledge.y > big.y;
+        expect(over && ledge.y - big.y < 1.85, `the ledge at ${ledge.x},${ledge.y} over the big candy at ${big.x}`).toBe(false);
+      }
+    }
+  });
+
   it('is followed as before: the robot takes no side candy, finds no sweet with a way, and is never offered the lace', () => {
     for (const style of ['aventyr', 'lugnt'] as const) {
       const game = new Game(myren, style === 'lugnt' ? simOptions(settingsFor('lugnt')) : {});

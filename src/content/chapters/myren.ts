@@ -96,15 +96,17 @@ const SHY = [
 /**
  * A leaf over the first cranberry, higher than he jumps and lower than the berry bounces him: jumping for
  * the heart over it, he comes down on the berry and is put on the leaf. It ends well before a running bounce
- * comes down again, so the run from the first berry to the second passes over it.
+ * comes down again, so the run from the first berry to the second passes over it. It clears the big candy
+ * that stands under its far end.
  */
-const BERRY_LEAF: Ledge = { x: 3, y: 1.8, width: 2.4, look: 'leaf' };
+const BERRY_LEAF: Ledge = { x: 3, y: 1.9, width: 2.4, look: 'leaf' };
 
 /**
  * Leaves over the firm tussocks: a second level from the third tussock to the wide one with the big candy.
- * - The first is a held jump above its tussock, and in from both of the tussock's ends, so the hops along
- *   the trail pass under it. The second is a step up over its far end: a held jump straight up again. All
- *   but the first are higher than any hop from a tussock rises.
+ * - The first is a held jump above the third tussock's far end, clear of where the ghost waits on its
+ *   middle. A hop along the trail from that end is still rising when it has passed the leaf, so it goes on
+ *   under the others, which are higher than any hop from a tussock rises.
+ * - The second is a step up over the first: a held jump straight up again.
  * - From the second to the third, and from the third to the fourth, he jumps over open water. A jump he
  *   gives up on there is the glitter bubble, which puts him back on the leaf he left; a run off the end with
  *   no jump lands on the next tussock. The picture follows the ground under him, so over water it stays
@@ -112,8 +114,8 @@ const BERRY_LEAF: Ledge = { x: 3, y: 1.8, width: 2.4, look: 'leaf' };
  * - He runs off the fourth onto the fifth, which is lower, and walks off the fifth onto the wide tussock.
  */
 const LEAVES: Ledge[] = [
-  { x: 20.6, y: 1.15, width: 1.6, look: 'leaf' },
-  { x: 21.9, y: 1.95, width: 1.6, look: 'leaf' },
+  { x: 21.7, y: 1.15, width: 1.4, look: 'leaf' },
+  { x: 22.1, y: 1.95, width: 1.4, look: 'leaf' },
   { x: 24.75, y: 2.75, width: 2.5, look: 'leaf' },
   { x: 28.2, y: 2.75, width: 2, look: 'leaf' },
   { x: 31.1, y: 2.2, width: 2.2, look: 'leaf' },
@@ -262,8 +264,9 @@ export const myren: ChapterData = {
     // Over the first cranberry, where its bounce carries him through the leaf, and over the leaf's far end.
     { x: 2.9, y: 2.4 },
     { x: 3.7, y: 2.4 },
-    // Over the leaves: one over each, and two over the wide third one.
-    above(LEAVES[0]!, 0.6),
+    // Over the leaves: one over each, and two over the wide third one. The first hangs over its leaf's near
+    // end, out of the way of the hop along the trail that sets off under the leaf.
+    { x: 21.3, y: 1.8 },
     above(LEAVES[1]!, 0.6),
     { x: 24.3, y: 3.35 },
     { x: 25.4, y: 3.35 },
