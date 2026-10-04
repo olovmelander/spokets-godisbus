@@ -46,7 +46,8 @@ the files made with it). three's Basis transcoder (Apache-2.0) is served with th
 | --- | --- | --- |
 | `public/icons/ghost-{180,192,512}.png` | Home Screen icons | Exact SVG ghost already drawn in `index.html`, rendered on its existing cream background with sharp. Made in code for this game; no reference image or new likeness. |
 | In-memory thought pictures in `src/render/ghost-thought.ts` | Symbolic mountain, pine/crack and the existing pointed-cap first-figure icon | Plain canvas cutouts made in code for this game, in the existing story-card style. No reference picture, third-party art, character model or new likeness asset. |
-| `art/baked/boot/big-candy.glb` | The big candy: a striped sweet on a stick | Made for this game in Blender by `art/blender/big-candy.py`, which also paints its texture. Nothing in it comes from anyone else. |
+| `art/baked/boot/big-candy.glb` | The big candy: a round swirl lollipop on a stick, with a bow | Made for this game in Blender by `art/blender/big-candy.py`, which also paints its texture. Nothing in it comes from anyone else. |
+| `art/baked/boot/candy.glb` | The candy kit: the trail's five sweets, the sixteen hidden kinds, the golden geléhallon, the glowing lollipop, the shrinking star and the jars' sweets | Made for this game in Blender by `art/blender/candy.py`: shapes built from numbers, colours painted on their corners, and their own shade baked in with Blender's Cycles. No texture. Plain sorts of candy, with no brand's shape or mark. Nothing in it comes from anyone else. |
 | `art/baked/boot/jay.glb` | Lavskrikan, the Siberian jay: the helper, and the friend he shares a berry with | Made for this game in Blender by `art/blender/jay.py`: plain shapes in plain colours, with no texture. Nothing in it comes from anyone else. |
 
 There are no third-party asset files yet. The test course, the stand-in Elof and the ghost on the loading card
