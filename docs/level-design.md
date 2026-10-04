@@ -36,7 +36,7 @@ These are the pieces a chapter is laid out with. The first four are in the forma
 
 | Piece | In the chapter file | What it is for |
 | --- | --- | --- |
-| **Ledge** | `ledges: { x, y, width, look, needs? }` | A thin floor he jumps up through and stands on, and walks in front of when it is above his feet. It is how a second level lies over the same stretch: the ground is one line, and a ledge is ground only from above. He leaves it by walking off its end. `needs` makes it appear when a flag is set. |
+| **Ledge** | `ledges: { x, y, width, look, needs? }` | A thin floor he jumps up through and stands on, and walks in front of when it is above his feet. It is how a second level lies over the same stretch: the ground is one line, and a ledge is ground only from above. He leaves it by walking off its end. `needs` makes it appear when a flag is set. Nothing floats: a `leaf` is drawn on its stalk, a `branch` and a plate of `bark` on a young stem, a `stone` shelf on its pillar, a `plank` on the batten that holds it to a wall. |
 | **Side candy** | `side: Candy[]` | Candy off the trail, drawn as **hearts and lollipops**. The trail is sweets in wrappers and says "this is the way"; a heart says "this is extra". A heart in sight is the tell of every side way. Never needed, none of the trail's rules apply, saved by its place in the list (add at the end). |
 | **A sweet with a way** | `hidden[].way` | A hidden sweet that is not reached by a held jump from the ground under it says how: "up the window sills", "at the end of the clothes line". `tests/sim/secrets-<chapter>.test.ts` has to play it. |
 | **Ring** | `hooks[]` with `extra: true` | A ring off the main way. Rings in a row at equal spacing give the swing a rhythm. |

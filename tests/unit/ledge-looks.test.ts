@@ -12,16 +12,31 @@ const size = (mesh: InstancedMesh, slot: number) => {
 };
 
 describe('the ledges, as they are drawn', () => {
-  it('every look builds something, and all ledges of one look are one mesh', () => {
+  it('every look builds something: all ledges of one look are one mesh, and what holds them up another', () => {
     const ledges: Ledge[] = LEDGE_LOOKS.flatMap((look, i) => [{ x: i * 3, y: 1, width: 2, look }, { x: i * 3 + 1, y: 2, width: 1, look }]);
-    const built = buildLedges(ledges);
-    expect(built.group.children).toHaveLength(LEDGE_LOOKS.length);
+    const built = buildLedges(ledges, () => 0);
+    expect(built.group.children).toHaveLength(LEDGE_LOOKS.length * 2);
     for (const mesh of built.group.children as InstancedMesh[]) {
       expect(mesh.count).toBe(2);
       expect(mesh.geometry.getAttribute('position').count).toBeGreaterThan(8);
+      if (mesh.name.endsWith(':support')) continue;
       // As wide as the ledge it draws.
       expect(size(mesh, 0).x).toBeCloseTo(2);
       expect(size(mesh, 1).x).toBeCloseTo(1);
+    }
+  });
+
+  it('nothing floats: a stalk, a stem or a pillar stands on the ground under its ledge', () => {
+    const built = buildLedges([{ x: 4, y: 3, width: 1.5, look: 'leaf' }, { x: 8, y: 2, width: 1.5, look: 'stone' }], (x) => (x < 6 ? 0.5 : -1));
+    const at = new Vector3();
+    const matrix = new Matrix4();
+    for (const [name, foot, top] of [['ledges:leaf:support', 0.5, 3], ['ledges:stone:support', -1, 2]] as const) {
+      const held = built.group.getObjectByName(name) as InstancedMesh;
+      held.getMatrixAt(0, matrix);
+      expect(at.setFromMatrixPosition(matrix).y).toBeCloseTo(foot);
+      // From the ground to just under the ledge's top.
+      expect(foot + size(held, 0).y).toBeGreaterThan(top - 0.2);
+      expect(foot + size(held, 0).y).toBeLessThanOrEqual(top);
     }
   });
 
@@ -31,7 +46,7 @@ describe('the ledges, as they are drawn', () => {
 
   it('a ledge that waits for a flag has no size until the flag is set, and then grows out', () => {
     const built = buildLedges([{ x: 0, y: 1, width: 2, look: 'plank', needs: 'laid' }, { x: 3, y: 1, width: 2, look: 'plank' }]);
-    const mesh = built.group.children[0] as InstancedMesh;
+    const mesh = built.group.getObjectByName('ledges:plank') as InstancedMesh;
     expect(size(mesh, 0).x).toBe(0);
     expect(size(mesh, 1).x).toBeCloseTo(2);
     built.update(new Set(), 0.1);

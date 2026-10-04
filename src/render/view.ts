@@ -225,7 +225,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Side candy, off the trail: hearts and lollipops, where the trail is sweets in wrappers.
   const sideTrail = createTrail(chapter.side ?? [], 'side');
   const noSide: readonly boolean[] = [];
-  const ledges = buildLedges(chapter.ledges ?? []);
+  const ledges = buildLedges(chapter.ledges ?? [], (x) => heightOfGroundAt(chapter, x));
   const glitter = buildGlitter();
   const lace = buildLace();
   const glints = buildGlints(chapter);
