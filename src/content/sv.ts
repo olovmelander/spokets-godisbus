@@ -11,6 +11,13 @@ export const sv = {
     android: 'På Android: öppna webbläsarens meny och välj Installera app eller Lägg till på startskärmen.',
     offline: 'Öppna spelet med internet först. Delar som har laddats kan sedan spelas utan internet, så länge enheten har plats att spara dem.',
   },
+  sharing: {
+    title: 'Dela godiset', choose: 'Välj något gott.', friend: 'Välj en vän.', back: 'Tillbaka',
+    bird: 'Lavskrikan får ett lingon ur fickan.', given: 'Har fått', nowFriend: '{sweet} – vem ska få den?',
+    thanks: '{friend} fick {sweet}!',
+    sweets: { gelehallon: 'Geléhallon', karamell: 'Karamell', skumbanan: 'Skumbanan', lingon: 'Lingon' },
+    friends: { tragubbe: 'Trägubben', spoket: 'Spöket', jay: 'Lavskrikan' },
+  },
 
   // The two action buttons. Använd will show the specific verb once there is something to do.
   hop: 'Hoppa',

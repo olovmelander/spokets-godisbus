@@ -56,3 +56,9 @@ Validation: integrated typecheck and lifecycle/fetch tests pass. The source feat
 Deleting the final default player and starting fresh previously reused an empty save generation. An older tab could overwrite the new adventure. Freshly created players now receive a new generation while existing saves retain their migration behavior.
 
 Validation: all 36 save tests and typecheck pass, including stale writers from legacy and newly created profiles and continued writes by the fresh profile.
+
+## Choose candy and recipients at the summit
+
+The summit sharing moment now lets the player choose a candy and recipient. The jay accepts its intended berry; canceling is safe and gifts do not deduct from the collection. Story panels join the shared pause, audio, photo and focus guards, including recovery states.
+
+Validation: typecheck and 14 integrated story/summit tests pass. Source browser checks cover touch, keyboard, controller, saved gifts and continuation to the golden candy.

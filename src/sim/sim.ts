@@ -12,6 +12,7 @@ import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REAC
 import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
 import { GUIDE_AFTER, HELP_TIME, REMIND_AFTER } from './constants';
 import { hintFor } from './help';
+import { sharingReward, type StoryAnswer } from './story';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
@@ -133,6 +134,8 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 export class Sim {
   readonly world: World;
   readonly flags = new Set<string>();
+  /** The world waits while a story interaction is open; only a validated answer commits progress. */
+  story: import('./story').StoryAction | null = null;
   steps = 0;
   /** Trail candy in the bag, by its place in chapter.candy. Nothing ever leaves the bag (plan §4.3). */
   readonly collected: boolean[];
@@ -337,7 +340,19 @@ export class Sim {
     this.resetChallenges(true);
   }
 
+  finishStory(answer: StoryAnswer): boolean {
+    if (!this.story || this.story.kind !== answer.kind) return false;
+    const reward = sharingReward(this.flags, answer.friend, answer.sweet);
+    if (!reward) return false;
+    for (const flag of reward) this.flags.add(flag);
+    this.story = null;
+    return true;
+  }
+
+  cancelStory(): void { this.story = null; }
+
   step(input: StepInput): void {
+    if (this.story) return;
     this.prev = this.curr;
     this.ringNotes();
     this.returnGifts();
@@ -345,6 +360,7 @@ export class Sim {
     if (this.watching) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
     // Free, he may take hold of something this step: a hose, a ledge, or the hose below him.
     if (this.state.kind === 'free') this.reach(input);
+    if (this.story) { this.curr = this.read(this.standing()); return; }
 
     const state = this.state;
     if (state.kind === 'free') this.walk(input);
@@ -732,6 +748,7 @@ export class Sim {
    */
   toCheckpoint(): void {
     this.resetChallenges(true);
+    this.story = null;
     if (this.state.kind === 'bubble') return;
     const to = this.checkpoints[this.checkpoint] ?? this.chapter.spawn;
     this.safe.x = to.x;
@@ -817,6 +834,12 @@ export class Sim {
       return;
     }
     if ((grab || spot) && input.act) {
+      if (spot?.story) {
+        this.story = { kind: spot.story, spot: spot.id };
+        this.verb = null;
+        this.word = null;
+        return;
+      }
       this.flags.add(grab ?? spot!.id);
       this.verb = null;
       this.word = null;

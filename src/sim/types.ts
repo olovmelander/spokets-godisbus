@@ -92,6 +92,8 @@ export interface Spot {
   word?: string;
   /** Using it starts this ride. */
   ride?: string;
+  /** Opens an authored interaction; pressing Använd alone never awards its flag. */
+  story?: import('./story').StoryKind;
 }
 
 /** Who a bubble belongs to. Each has a name in `sv.who`. */

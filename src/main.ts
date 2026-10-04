@@ -27,6 +27,7 @@ import { mountShell } from './ui/shell';
 import { createTitle } from './ui/title';
 import { createPhotoAlbum } from './ui/photos';
 import { createOffline } from './platform/offline';
+import { createStoryPanel } from './ui/story';
 import './ui/ui.css';
 
 declare global {
@@ -127,6 +128,19 @@ function start(): void {
   const photoMoment = createPhotoMoments(chapter.id, game.sim.flags);
   game.tempo = tempoOf(settings);
   const hud = createHud(document, chapter.candy.length);
+  const story = createStoryPanel(document, {
+    answer(answer) {
+      if (platformBlocked()) return false;
+      if (!game.sim.finishStory(answer)) return false;
+      hud.notice(sv.sharing.thanks.replace('{friend}', sv.sharing.friends[answer.friend]).replace('{sweet}', sv.sharing.sweets[answer.sweet].toLocaleLowerCase('sv')));
+      writeSave();
+      input.release();
+      game.resume();
+      canvas.focus();
+      return true;
+    },
+    cancel() { game.sim.cancelStory(); input.release(); game.resume(); canvas.focus(); },
+  });
   const beats = new Map((chapter.beats ?? []).map((beat) => [beat.id, beat]));
   // What was said before this game was taken up again is not said again.
   let told = game.sim.said.length;
@@ -224,10 +238,11 @@ function start(): void {
     return !bootReady || contextLost || !byId('message').hidden || document.hidden;
   }
   function menuOpen(): boolean {
-    return paused || ended || title.open || memories.open || photoAlbum.open;
+    return paused || ended || title.open || memories.open || photoAlbum.open || story.open;
   }
   function focusScope(): HTMLElement | null {
     if (!byId('message').hidden) return byId('message');
+    if (story.open) return story.element;
     if (photoAlbum.open) return byId('photoAlbum');
     if (memories.open) return byId('memory');
     if (title.open) return byId('title');
@@ -300,7 +315,7 @@ function start(): void {
   byId<HTMLButtonElement>('graphicsHigh').disabled = !hdrAvailable;
   byId('pauseBtn').addEventListener('click', openPause);
   function openBag(): void {
-    if (platformBlocked() || title.open || ended || memories.open || photoAlbum.open) return;
+    if (platformBlocked() || title.open || ended || memories.open || photoAlbum.open || story.open) return;
     if (!pause.open) openPause();
     const album = byId('pauseAlbum');
     if (!byId('pauseOptions').hidden) {
@@ -425,7 +440,8 @@ function start(): void {
       onDevice: showDevice,
       onKey: (key) => {
         if (platformBlocked()) return;
-        if (photoAlbum.open) photoAlbum.back();
+        if (story.open) story.back();
+        else if (photoAlbum.open) photoAlbum.back();
         else if (key === 'bag') openBag();
         else if (title.open) title.back();
         else if (pause.open) pause.back();
@@ -433,7 +449,8 @@ function start(): void {
       },
       onBack: () => {
         if (platformBlocked()) return;
-        if (photoAlbum.open) photoAlbum.back();
+        if (story.open) story.back();
+        else if (photoAlbum.open) photoAlbum.back();
         else if (title.open) title.back();
         else if (pause.open) pause.back();
       },
@@ -618,6 +635,11 @@ function start(): void {
       for (const cue of cuesFor(heard, now, memory)) audio.play(cue);
       heard = now;
     }
+    if (game.sim.story && !story.open) {
+      input.release();
+      story.show(game.sim.story, game.sim.flags);
+      audio.sleep(true);
+    }
     if (!remembered && game.sim.flags.has('memory')) {
       remembered = true;
       memories.play(chapter.id, () => game.resume());
@@ -713,7 +735,7 @@ function start(): void {
     busyMs = performance.now() - began;
     const elapsed = lastTime > 0 ? (time - lastTime) / 1000 : 0;
     if (auto && !auto.settled) {
-      if ((title.open || pause.open) && !photoAlbum.open && !memories.open && !view.warming) {
+      if ((title.open || pause.open) && !photoAlbum.open && !memories.open && !story.open && !view.warming) {
         const next = auto.feed(elapsed, busyMs);
         if (auto.settled) {
           view.setTier(next); // Low/HDR shader variants warm here, while the game is safely paused.

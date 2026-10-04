@@ -25,7 +25,7 @@ describe('Final, Norrsken, in greybox', () => {
       const result = playThrough(fps, norrsken, {}, 200);
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
       // The story's steps, each one built on the one before.
-      const did = result.flags.filter((flag) => !flag.startsWith('beat:'));
+      const did = result.flags.filter((flag) => !flag.startsWith('beat:') && !flag.startsWith('gift:'));
       expect(did.slice(0, 5)).toEqual(['lower', 'placed:tragubbe', 'crowberry', 'eyes', 'bag']);
       expect(did.slice(5, 8).sort()).toEqual(['share:jay', 'share:spoket', 'share:tragubbe']);
       expect(did.slice(8)).toEqual(['shared', 'taste', 'home', 'goal']);
@@ -80,6 +80,8 @@ describe('Final, Norrsken, in greybox', () => {
     expect(jay.curr.verb).toBe('give');
     expect(jay.curr.word).toBe('giveJay');
     jay.step({ ...idle, act: true });
+    expect(jay.flags.has('share:jay')).toBe(false);
+    expect(jay.finishStory({ kind: 'share', friend: 'jay', sweet: 'lingon' })).toBe(true);
     expect(jay.flags.has('share:jay')).toBe(true);
     expect(jay.flags.has('shared')).toBe(false);
     // With one friend still waiting, Smaka is not offered.

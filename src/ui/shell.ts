@@ -1,5 +1,6 @@
 import { sv } from '../content/sv';
 import { photoAlbumHtml } from './photos';
+import { storyPanelHtml } from './story';
 
 // Every picture on the page is a plain shape drawn here: no logotypes, no brand marks (plan §0).
 const svg = (body: string, box = '0 0 24 24') => `<svg viewBox="${box}" aria-hidden="true">${body}</svg>`;
@@ -190,6 +191,7 @@ export function mountShell(root: HTMLElement): void {
      </div>
      <div class="memory" id="memory" role="img" hidden><div class="memory-card" id="memoryCard"></div></div>
      ${photoAlbumHtml}
+     ${storyPanelHtml}
      <div class="panel-back" id="endCard" hidden>
        <div class="panel end" role="dialog" aria-modal="true" aria-labelledby="endTitle">
          <h2 id="endTitle"></h2>
