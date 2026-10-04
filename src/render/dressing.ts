@@ -6,7 +6,7 @@ import {
 import type { ChapterData, PlaceId, SurfaceKind } from '../sim/types';
 import { outlook, outlookPane, scenery } from './backdrop';
 import type { Grade } from './grade';
-import { fronts, street } from './village';
+import { fronts, street, villageLife } from './village';
 
 /**
  * How a place looks (plan §5.3, §5.4): its light, its haze, its grade, and the layers that are built around
@@ -1582,6 +1582,8 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
   const far = scenery(look.id, heightAt(chapter, from));
+  const life = look.id === 'village' ? villageLife(chapter) : null;
+  if (life) group.add(life.group);
   if (look.id === 'dusk') group.add(stars());
   group.add(
     far.group,
@@ -1599,6 +1601,7 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
     update(cameraX, groundY, clock, night = 0) {
       air.update(cameraX, groundY, clock);
       far.update(cameraX, groundY, clock, night);
+      life?.update(clock);
     },
   };
 }

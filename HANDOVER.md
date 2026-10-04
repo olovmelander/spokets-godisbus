@@ -125,6 +125,22 @@
   - This repair needs no Blender work. The remaining art/model work still needs Olov's computer;
     no family assets, release setting, "Senare" scope or questions to Olov changed.
 
+- **Byn has street life and a shop interior** (4 October, cloud session, `codex/byn-street-and-shop`).
+  - Giant shoes pass and an unmarked car rolls slowly along a separate lane behind Elof. They never collide
+    with him. These are anonymous plain stand-ins, with no faces, shop names, numbers or brands.
+  - The existing leaf, bicycle and matchbox puzzles still lead to the same door. Now he walks through it,
+    onto wooden boards past giant jars of sweets, to a paper bag to share. Two new checkpoints and a candy
+    trail lead through the room. The first 62 candy entries and eight checkpoints retain their exact old
+    indices; a saved game at the old final checkpoint continues into the shop.
+  - Validation: 463 unit/robot tests, typecheck, build/size and privacy pass. The focused browser checks
+    cover shoes, car, door, shelves and bag in portrait/landscape on Low/High, including the real simulation
+    walking from the door to the new ending. Motion pauses, no shaders compile during the walk, and the
+    picture stays below 120 draw calls. JavaScript is 325 KB gzipped and boot assets 607 KB as served.
+    Iteration captures use stand-ins in ignored `docs/shots/_work/village/`.
+  - Next here: Olov's device/art review; a return route and hidden candy remain unbuilt. Detailed people
+    and vehicle models still need Blender on his computer. No release, family assets, questions or later
+    scope changed.
+
 - **Done:**
   - The plan, `docs/game-plan.md` version 4: research, design, art direction, technology and delivery. Version 4
     takes in Olov's second round of answers of 3 October, which settle every question version 3 left open (plan
@@ -957,8 +973,8 @@
       slowly than the houses do. The colours and shapes were taken by eye from the openly licensed photos
       of the street in `photos/landscape/`; nothing of a photo is used, and no sign, name or number of a
       real house is drawn.
-    - **Not yet:** people and their giant feet, cars, anything inside the shop, a way back, and hidden
-      candy of its own. The fronts are one drawn picture each.
+    - **Now extended:** anonymous passing shoes, a car and a playable shop interior are described above.
+      **Not yet:** a way back and hidden candy of its own. The fronts are one drawn picture each.
 - **How GitHub Pages serves the site** (read from the live site on 3 October): everything is gzipped, not
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate counts both
@@ -979,7 +995,7 @@
   the list under "The family, first models".
 - Poses for the family: sitting at the table at the party, Mamma in the doorway, Pappa's hands with the
   knife, and their hands in the macro world where the signs' rides are now.
-- Byn: people's feet passing, cars, and the inside of the shop.
+- Byn: review the passing shoes, car and playable shop interior on Olov's devices; detailed models need Blender.
 - What Stage 2 still lacks in code: the challenge routes C2 to C4. Multiple players, album photos
   and offline play are implemented. The dew bells
   exist, but still need replayable notes and visible lawn glitter to finish the planned toy.
@@ -1073,7 +1089,7 @@ The older list, still true where it is not struck:
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. On 4 October: chapter codes, C1, two optional delights, footsteps and wordless sounds, more switches, and the extra chapter Byn. A cloud session completed touch-follow, graphics selection, controls reference and menu input routing; another implemented offline boot/chapter caching and title-only updates. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. On 4 October: chapter codes, C1, two optional delights, footsteps and wordless sounds, more switches, and the extra chapter Byn. A cloud session completed touch-follow, graphics selection, controls reference and menu input routing; another implemented offline boot/chapter caching and title-only updates. Byn now has street life and a shop interior. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. |
 
 ## Known bugs

@@ -312,6 +312,8 @@ export interface ChapterData {
   decor?: { look: SpotLook; at: Vec; word?: string; until?: string; after?: string }[];
   /** For the picture: the house's wall behind the scene, with its windows. */
   house?: { from: number; to: number; windows: number[] };
+  /** For the picture: an open shop door leading into a room beside the street, at the path's height. */
+  shop?: { door: number; to: number; floor: number };
   /** The ground as one open line, from left to right. Elof walks on its upper side. */
   ground: Vec[];
   spawn: Vec;

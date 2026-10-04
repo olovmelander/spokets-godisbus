@@ -83,6 +83,8 @@ export const sv = {
     again: 'En stjärna till. Nu handlar vi!',
     lake: 'En sjö! Mitt på gatan.',
     shop: 'Framme! Det luktar godis.',
+    shopInside: 'Godiset är större än jag!',
+    shopBag: 'En påse att dela på!',
     follow2: 'Vi är nära dig hela tiden.',
     stomp: 'Ge tillbaka mitt godis!',
     tiny: 'Lillebror?! Du är ju pytteliten!',

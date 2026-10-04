@@ -12,6 +12,8 @@ import type { Candy, ChapterData, Jump, Vec } from '../../sim/types';
  * 5. **Under the awning:** last night's rain still drips from it. He reads the drops from their shadows.
  * 6. **The shop's step:** a matchbox on its edge, with a red ring. Pulled down, it is the way up. At the top
  *    the door stands ajar, and it smells of candy.
+ * 7. **Inside the shop:** a warm wooden floor under shelves of enormous candy jars. His friend leads him
+ *    past the doormat to a paper bag and the final candy. Passing shoes and cars stay behind his path.
  *
  * Nothing here is a real shop, and no house has a number: the fronts are plain shapes (plan §0, §2.6).
  */
@@ -80,10 +82,12 @@ export const byn: ChapterData = {
   surfaces: [
     { from: -19, to: 12, kind: 'paving' },
     ...BARS.map((b) => ({ from: b.from, to: b.to, kind: 'iron' as const })),
-    { from: 110, to: 142, kind: 'stone' },
+    { from: 110, to: 122, kind: 'stone' },
+    { from: 122, to: 194, kind: 'wood' },
   ],
+  shop: { door: 122, to: 178, floor: 3.3 },
   spawn: { x: 1, y: 2.01 },
-  goalX: 122,
+  goalX: 158,
   ground: [
     { x: -3, y: 14 },
     { x: -3, y: 2 },
@@ -109,8 +113,9 @@ export const byn: ChapterData = {
     // 5. under the awning, and 6. the shop's step
     { x: 110, y: 0 },
     { x: 110, y: 3.3 },
-    { x: 126, y: 3.3 },
-    { x: 126, y: 14 },
+    // 7. The open door and shop floor continue at the step's height: no invisible wall or scene reset.
+    { x: 178, y: 3.3 },
+    { x: 178, y: 20 },
   ],
   water: [{ from: 42, to: 62, y: -0.3 }],
   checkpoints: [
@@ -122,6 +127,9 @@ export const byn: ChapterData = {
     { x: 93.2, y: 0 },
     { x: 105, y: 0 },
     { x: 115, y: 3.3 },
+    // Append: older saves keep every existing checkpoint and candy index.
+    { x: 128, y: 3.3 },
+    { x: 150, y: 3.3 },
   ],
   hooks: [
     // The lace on the bicycle's pedal: one swing over the cellar window's well.
@@ -164,17 +172,23 @@ export const byn: ChapterData = {
     { at: { x: 104, y: 0 } },
     { at: { x: 113, y: 3.3 } },
     { at: { x: 119.6, y: 3.3 }, near: 2.2 },
+    { at: { x: 130, y: 3.3 } },
+    { at: { x: 141, y: 3.3 } },
+    { at: { x: 156, y: 3.3 }, near: 2.2 },
   ],
   beats: [
     { id: 'again', at: 1.4, who: 'elof', line: 'again' },
     { id: 'lake', at: 37.4, who: 'elof', line: 'lake' },
     { id: 'shop', at: 114, who: 'elof', line: 'shop' },
+    { id: 'shopInside', at: 124, who: 'elof', line: 'shopInside' },
+    { id: 'shopBag', at: 154, who: 'elof', line: 'shopBag' },
   ],
   cameras: [
     { from: 16, to: 36, zoom: 1.2 },
     { from: 40, to: 64, zoom: 1.3 },
     { from: 68, to: 80, zoom: 1.25, lift: 0.4 },
     { from: 84, to: 103, zoom: 1.25, lead: 3.2 },
+    { from: 120, to: 178, zoom: 1.6 },
   ],
   candy: [
     // 1. the pavement, and down the kerb
@@ -220,5 +234,7 @@ export const byn: ChapterData = {
     { x: 110.2, y: 3.8 },
     { x: 111.6, y: 3.75 },
     ...row(113.5, 121.5, 3.3),
+    // New candy is appended, so every older collected index still points to the same sweet.
+    ...row(123.5, 157.5, 3.3),
   ],
 };
