@@ -40,6 +40,32 @@ const saved = (chapter, checkpoint, flags) => ({ v: 1, name: 'Elof', updated: 1,
 const state = (page) => page.evaluate(() => window.__godis.state());
 const purpose = (page) => page.locator('#storyPurpose').getAttribute('data-purpose');
 
+async function fastEnd(page, fromSteps) {
+  // Game caps simulation steps per rendered frame. Slow software rendering can make this short
+  // logical route take more than 20 wall seconds; it must still advance and finish within its Sim budget.
+  const started = Date.now();
+  let advanced = started, previous = fromSteps;
+  for (;;) {
+    const current = await page.evaluate(() => {
+      const s = window.__godis.state(), end = document.getElementById('endCard');
+      return { steps: s.steps, mode: s.mode, x: s.x, flags: s.flags, paused: s.paused, title: s.title,
+        contextLost: s.contextLost, documentHidden: document.hidden,
+        messageShown: !document.getElementById('message').hidden,
+        endShown: !end.hidden && end.getClientRects().length > 0 && getComputedStyle(end).visibility !== 'hidden',
+        dialogs: [...document.querySelectorAll('[role="dialog"]')].filter(n => n.getClientRects().length).map(n => n.id) };
+    });
+    const diagnostic = JSON.stringify({ wallMs: Date.now() - started, ...current });
+    assert.ok((current.steps - fromSteps) / 120 < 14.135, `fast route exceeded its simulation budget: ${diagnostic}`);
+    if (current.endShown) return;
+    assert.ok(!current.paused && !current.title && !current.contextLost && !current.documentHidden &&
+      !current.messageShown && current.dialogs.length === 0, `fast route is blocked: ${diagnostic}`);
+    if (current.steps > previous) { previous = current.steps; advanced = Date.now(); }
+    assert.ok(Date.now() - advanced < 5000, `fast route stopped advancing: ${diagnostic}`);
+    assert.ok(Date.now() - started < 60000, `fast route exceeded its wall-time safety deadline: ${diagnostic}`);
+    await page.waitForTimeout(100);
+  }
+}
+
 try {
   for (const [width, height, chapter, flags, expected] of [
     [390, 844, 'granskog', 'seesaw:trial', 'coneRetry'],
@@ -242,7 +268,8 @@ try {
   await known.page.screenshot({ path: join(shots, 'finale-understanding.png') });
   await known.finish();
 
-  // A fast player can finish the ride before all four Pappa bubbles have finished speaking.
+  // This saved route can finish within the four Pappa lines' 14.135-second duration at normal speed.
+  // The bound below measures simulation time; dialogue reading uses a separate frame-time clock.
   // The required Smaka stage is another real source for the untimed origin at the end card.
   const originText = 'Pappa täljde trägubben åt mig när jag var liten. Vi tappade den här på berget. Spöket tog godiset för att välkomna den hem.';
   const fast = await open({ width: 390, height: 844 }, saved('norrsken', 1, { norrsken: [
@@ -266,10 +293,10 @@ try {
   await fast.page.keyboard.up('ArrowRight');
   await fast.page.keyboard.press('e');
   await fast.page.waitForFunction(() => window.__godis.state().flags.includes('home'));
-  await fast.page.waitForSelector('#endCard:not([hidden])', { timeout: 20000 });
+  await fastEnd(fast.page, beforeTaste.steps);
   await frames(fast.page);
   const arrived = await state(fast.page);
-  check('actual fast taste and home actions reach the end before the queued origin speech can finish',
+  check('actual taste and home actions finish within the fast route’s 14.135 simulation-second bound',
     ['placed:tragubbe', 'eyes', 'bag', 'taste', 'home', 'goal'].every((flag) => arrived.flags.includes(flag)) &&
     (arrived.steps - beforeTaste.steps) / 120 < 14.135);
   check('the end card preserves Pappa’s origin, the mountain loss and the candy motive without optional memory',
