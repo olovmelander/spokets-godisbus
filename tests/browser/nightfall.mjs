@@ -96,7 +96,7 @@ try {
         tussocks: sim.tussocks, gusts: sim.gusts, help: sim.help, berries: sim.berries,
       });
       const until = performance.now() + 15000;
-      while (view.info().models.length < 2 && performance.now() < until) await new Promise((r) => setTimeout(r, 25));
+      while (view.info().models.length < 3 && performance.now() < until) await new Promise((r) => setTimeout(r, 25));
       for (let i = 0; i < 4; i++) draw();
       const scene = fixture.renderedScene();
       const far = [];
@@ -110,7 +110,7 @@ try {
       window.probe = { fixture, sim, view, draw, scene, snapshot };
       return snapshot();
     }, { tier });
-    check(`${name}: real finale assets loaded`, early.models.length >= 2);
+    check(`${name}: real finale assets loaded`, early.models.length >= 3);
     check(`${name}: blue-hour sky and five far layers start at full brightness`, early.background === 1 && early.far.length === 5 && early.far.every((v) => v === 1));
     check(`${name}: precompiled family stays hidden until the golden sweet`, early.familyShown === 0);
     await page.screenshot({ path: join(shots, `${name}-early.png`) });

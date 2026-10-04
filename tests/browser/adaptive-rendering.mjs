@@ -60,7 +60,7 @@ const frames = (page, count) => page.evaluate((count) => new Promise((resolve) =
   requestAnimationFrame(step);
 }), count);
 const ready = (page) => page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done')
-  && ['boot/jay', 'boot/big-candy'].every((model) => window.__godis.info().models.includes(model)), null, { timeout: 60000 });
+  && ['boot/jay', 'boot/big-candy', 'boot/candy'].every((model) => window.__godis.info().models.includes(model)), null, { timeout: 60000 });
 const info = (page) => page.evaluate(() => window.__godis.info());
 
 try {
