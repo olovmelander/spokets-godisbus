@@ -1203,3 +1203,5 @@ body.calm .tutorial-hand { animation: none !important; }
 .ending-shot button { max-width: 300px; }
 
 .ending-shot .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.ending-view #controls, .ending-view #hint, .ending-view #bag, .ending-view #pauseBtn, .ending-view #helpBtn { visibility: hidden; }

@@ -33,6 +33,7 @@ export function createEnding(doc: Document, done: () => void) {
   function back(): void {
     if (element.hidden) return;
     element.hidden = true;
+    doc.body.classList.remove('ending-view');
     clock.finish();
     card.hidden = false;
     const explore = doc.getElementById('endExplore');
@@ -50,6 +51,7 @@ export function createEnding(doc: Document, done: () => void) {
       if (!clock.start()) return false;
       card.hidden = true;
       element.hidden = false;
+      doc.body.classList.add('ending-view');
       next.focus();
       return true;
     },

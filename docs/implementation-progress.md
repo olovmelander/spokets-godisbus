@@ -206,3 +206,9 @@ Validation: character-shadow browser checks and integrated unit tests pass. Comb
 Add decoded geometry and texture estimates to the existing asset manifest without removing file hashes or byte sizes. Build budgets account for shared packs plus one chapter, including known canvas and render targets. Unsupported image and instancing cases fail explicitly.
 
 Validation: 14 focused fixture tests, the source's 636 unit tests, typecheck, production build and privacy gate pass. Estimates are conservative; live GL allocation checks remain authoritative.
+
+## Keep the ending clear and verify its complete lifecycle
+
+Hide the ordinary play HUD during the moonlit ending and apply consistent overlay, input and focus guards. Add a complete browser rehearsal through credits, blink, bell, interruption recovery and exploration.
+
+Validation: all 656 integrated unit tests and typecheck pass. The ending rehearsal passes 20 browser checks. A clean combined build is 370.1 KB gzip JavaScript and 698.7 KB boot; High GPU checks pass in all four representative scenes.

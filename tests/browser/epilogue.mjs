@@ -132,6 +132,7 @@ try {
     ['window-portrait-low', { width: 390, height: 844 }, 'low', true],
     ['window-landscape-high', { width: 844, height: 390 }, 'high', false],
   ]) {
+    if (process.env.EPILOGUE_SCENE === 'shelf') continue;
     const { page, state, info, finish } = await open(name, { viewport, hasTouch: touch, reducedMotion: touch ? 'reduce' : 'no-preference' },
       `?dev&debug&standin&course=epilog&tier=${tier}&at=52.8,3&flags=dots`, touch ? () => {
         localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1,
@@ -184,6 +185,17 @@ try {
     await page.click('#endPhotos');
     await page.click('#photoNext');
     check(`${name}: repeated credits do not replay the last shot`, await page.locator('#endingShot').isHidden() && await page.locator('#endCard').isVisible());
+    await finish();
+  }
+  {
+    const { page, state, info, finish } = await open('shelf', { viewport: { width: 844, height: 390 } },
+      '?dev&debug&standin&course=epilog&tier=low&at=33,0.01&flags=dots');
+    await page.keyboard.press('Escape');
+    check('shelf: the completed carving remains saved', (await state()).flags.includes('dots'));
+    check('shelf: the two figures stay within the draw budget', (await info()).drawCalls <= 120);
+    await page.locator('#pause').evaluate(node => { node.style.visibility = 'hidden'; });
+    await page.locator('#debug').evaluate(node => { node.style.visibility = 'hidden'; });
+    await page.screenshot({ path: '/tmp/epilogue-shelf.png' });
     await finish();
   }
   console.log(`epilogue: ${checked} checks passed`);
