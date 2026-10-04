@@ -2,6 +2,7 @@ import type { Sim } from '../sim/sim';
 import type { Vec } from '../sim/types';
 import type { HeldInput } from '../input/input';
 import type { Edges } from '../input/press-queue';
+import { STEP } from '../sim/constants';
 
 export type Reaction = { kind: 'player' | 'ghost' | 'spot' | 'candy' | 'hidden'; index?: number };
 export type Pointed = Reaction | { kind: 'use' } | { kind: 'helper' };
@@ -16,7 +17,7 @@ const remains = new Set(['jay', 'sign', 'seesaw', 'cobble', 'dew', 'memory', 'sh
 /** Peka is optional. A near interaction uses exactly the button's current target; a far one never queues an action. */
 export class Pointing {
   private walk: number | null = null;
-  private left = 0;
+  private walkUntil = 0;
   last: Pointed['kind'] | null = null;
   constructor(private readonly sim: Sim) {}
 
@@ -59,25 +60,26 @@ export class Pointing {
       const candy = sim.chapter.candy[picked.index!]!;
       if (Math.abs(candy.y - sim.curr.y - 0.45) < 0.4 && sim.canStrollTo(candy.x)) {
         this.walk = picked.index!;
-        this.left = 2.5;
+        // Long rendered frames drop excess physics time. The stroll keeps the same 2.5-second
+        // limit in simulation time, so a slow picture cannot expire it before he walks there.
+        this.walkUntil = sim.steps + Math.ceil(2.5 / STEP);
       }
     }
     return picked;
   }
 
   /** Any deliberate control, edge, pause, wall or drop cancels the short stroll. Never jump or use something for him. */
-  steer(dt: number, held: HeldInput, edges: Edges): HeldInput {
+  steer(held: HeldInput, edges: Edges): HeldInput {
     if (this.walk === null) return held;
     const sim = this.sim;
     const candy = sim.chapter.candy[this.walk]!;
-    this.left -= dt;
-    if (held.x !== 0 || held.y !== 0 || held.hopHeld || edges.hop || edges.act || edges.helper || this.left <= 0 ||
+    if (held.x !== 0 || held.y !== 0 || held.hopHeld || edges.hop || edges.act || edges.helper || sim.steps >= this.walkUntil ||
         sim.collected[this.walk] || Math.abs(candy.x - sim.curr.x) < 0.25 || !sim.canStrollTo(candy.x)) {
       this.cancel();
       return held;
     }
     return { ...held, x: Math.sign(candy.x - sim.curr.x) * 0.6 };
   }
-  cancel(): void { this.walk = null; this.left = 0; }
+  cancel(): void { this.walk = null; this.walkUntil = 0; }
   get walking(): boolean { return this.walk !== null; }
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Pointing, type Projection } from '../../src/app/pointing';
+import { Game } from '../../src/app/game';
 import { Sim } from '../../src/sim/sim';
 import { STEP } from '../../src/sim/constants';
 import type { ChapterData, StepInput } from '../../src/sim/types';
@@ -50,7 +51,7 @@ describe('Peka without remote actions', () => {
     expect(point.tap({ x: 220, y: 45 }, screen)?.kind).toBe('candy');
     expect(sim.candyCount).toBe(0);
     for (let i = 0; i < 300; i++) {
-      const input = point.steer(STEP, held, edges);
+      const input = point.steer(held, edges);
       sim.step({ ...idle, ...input });
     }
     expect(sim.candyCount).toBe(1);
@@ -58,6 +59,30 @@ describe('Peka without remote actions', () => {
     expect(sim.curr.x).toBeLessThan(2.3);
     expect(point.walking).toBe(false);
     expect(sim.bubbles).toBe(0);
+  });
+  it.each([{ hz: 60, tempo: 1 }, { hz: 144, tempo: 1 }, { hz: 8, tempo: 1 }, { hz: 4, tempo: 1 }, { hz: 8, tempo: 0.8 }])('the real fixed-step game finishes the same safe stroll at $hz FPS and tempo $tempo', ({ hz, tempo }) => {
+    const game = new Game(course);
+    game.tempo = tempo;
+    for (let i = 0; i < 30; i++) game.frame(STEP, held, edges);
+    const point = new Pointing(game.sim);
+    expect(point.tap({ x: 220, y: 45 }, screen)?.kind).toBe('candy');
+    for (let i = 0; i < 500; i++) game.frame(1 / hz, point.steer(held, edges), edges);
+    expect(game.sim.candyCount).toBe(1);
+    expect(game.sim.curr.x).toBeGreaterThan(1);
+    expect(game.sim.curr.x).toBeLessThan(2.3);
+    expect(point.walking).toBe(false);
+    expect(game.sim.bubbles).toBe(0);
+  });
+  it('keeps the same 2.5-second simulation limit if the stroll makes no progress', () => {
+    const { sim, point } = start();
+    point.tap({ x: 220, y: 45 }, screen);
+    for (let i = 0; i < 300; i++) {
+      point.steer(held, edges);
+      sim.step(idle);
+    }
+    expect(point.steer(held, edges)).toEqual(held);
+    expect(point.walking).toBe(false);
+    expect(sim.candyCount).toBe(0);
   });
   it('a stroll never crosses a gap, climbs a wall, takes a hose or walks to distant candy', () => {
     const cases: ChapterData[] = [
@@ -76,12 +101,12 @@ describe('Peka without remote actions', () => {
     for (const [input, press] of [[{ ...held, x: -1 }, edges], [held, { ...edges, hop: true }], [held, { ...edges, act: true }], [held, { ...edges, helper: true }]] as const) {
       const { point } = start();
       point.tap({ x: 220, y: 45 }, screen);
-      expect(point.steer(STEP, input, press)).toEqual(input);
+      expect(point.steer(input, press)).toEqual(input);
       expect(point.walking).toBe(false);
     }
     const { point } = start();
     point.tap({ x: 220, y: 45 }, screen);
     point.cancel();
-    expect(point.steer(STEP, held, edges)).toEqual(held);
+    expect(point.steer(held, edges)).toEqual(held);
   });
 });

@@ -776,7 +776,7 @@ function start(): void {
       let edges = input.consume();
       if (bench && !bench.done) ({ held, edges } = bench.play(game.sim.curr, time));
       edges = { ...edges, helper: edges.helper || askedForHelp, act: edges.act || askedForUse };
-      held = pointing.steer(dt, held, edges);
+      held = pointing.steer(held, edges);
       game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld }, edges);
       tutorial.update(dt, game.sim.curr, game.sim.flags, held, edges);
       askedForUse = askedForHelp = false;

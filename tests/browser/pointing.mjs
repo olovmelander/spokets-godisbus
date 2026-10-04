@@ -104,13 +104,27 @@ async function padPress(page, index) {
   await frames(page, 2);
 }
 
+function slowFrames() {
+  const request = window.requestAnimationFrame.bind(window);
+  let delayedAt = -1;
+  window.requestAnimationFrame = (callback) => request((time) => {
+    if (time !== delayedAt) {
+      delayedAt = time;
+      const end = performance.now() + 150;
+      while (performance.now() < end) {} // One work stall per frame, as on overloaded software rendering.
+    }
+    callback(time);
+  });
+}
+
 try {
   browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 
   console.log('pointing: reactions, nearby candy and bounded approaches');
-  for (const tier of ['low', 'high']) {
-    console.log(`  ${tier}`);
-    const { page, state, info, finish } = await open(`reactions-${tier}`, {}, query('34.5,0.01', '&flags=blink').replace('tier=low', `tier=${tier}`));
+  for (const [tier, slow] of [['low', false], ['high', false], ['high', true]]) {
+    const name = `reactions-${tier}${slow ? '-slow' : ''}`;
+    console.log(`  ${tier}${slow ? ' with 150 ms frame stalls' : ''}`);
+    const { page, state, info, finish } = await open(name, {}, query('34.5,0.01', '&flags=blink').replace('tier=low', `tier=${tier}`), slow ? slowFrames : undefined);
     await until(state, s => s.grounded && s.steps > 50, 'still on the veranda');
     const before = await state();
     const programs = (await info()).programs;
