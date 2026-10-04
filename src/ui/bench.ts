@@ -1,6 +1,7 @@
 import type { Held } from '../app/game';
 import type { Edges } from '../input/press-queue';
 import type { ViewInfo } from '../render/view';
+import { gpuFailures, GPU_LIMIT } from '../render/gpu-memory';
 import type { ChapterData, PlayerState } from '../sim/types';
 
 /**
@@ -75,6 +76,11 @@ export function createBench(seconds: number, chapter: ChapterData): Bench {
         capped ? 'The frame rate looks capped at 30: Low Power Mode, or a warm device?' : 'The frame rate does not look capped.',
         `draw calls ${info.drawCalls} · triangles ${info.triangles} · programs ${info.programs}`,
         `models ${info.models.join(', ') || 'none'} · KTX2 textures ${info.compressedTextures}`,
+        ...(info.gpu ? [
+          `GL assets ${(info.gpu.assetBytes / 1e6).toFixed(2)} MB · render targets ${(info.gpu.targetBytes / 1e6).toFixed(2)} MB · canvas estimate ${(info.gpu.canvasBytes / 1e6).toFixed(2)} MB`,
+          `GPU total ${(info.gpu.totalBytes / 1e6).toFixed(2)} MB · tier peak ${(info.gpu.peakBytes / 1e6).toFixed(2)} / ${GPU_LIMIT[info.tier] / 1e6} MB · geometries ${info.geometries} · textures ${info.textures}`,
+          `GPU gate: ${gpuFailures(info.gpu, info.tier).join('; ') || 'pass'} (logical GL storage; driver/compositor overhead is not observable)`,
+        ] : ['GPU allocation tracking was not enabled.']),
       ].join('\n');
     },
   };

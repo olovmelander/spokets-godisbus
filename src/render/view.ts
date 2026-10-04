@@ -8,6 +8,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
 import { captureFrame } from './capture';
+import { observeGpu, type GpuMemory } from './gpu-memory';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
@@ -35,6 +36,10 @@ export interface ViewInfo {
   drawCalls: number;
   triangles: number;
   programs: number;
+  geometries: number;
+  textures: number;
+  /** Allocation observer is present only with ?debug or ?bench. */
+  gpu: GpuMemory | null;
   pixelRatio: number;
   maxPixelRatio: number;
   resolutionSteps: number;
@@ -121,7 +126,7 @@ const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
  * `asked` is the tier from settings or ?tier=, or null for Auto. With `standIns` the figures built in code are kept even
  * where the private pack has the family's models: for pictures that go into the repository.
  */
-export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null, standIns = false): View {
+export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null, standIns = false, trackGpu = false): View {
   // The context is made here, so that support is known before allocating HDR targets: Mid and High need
   // float colour buffers, and a device without them gets Low (plan §6.5).
   const gl = canvas.getContext('webgl2', {
@@ -129,6 +134,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   });
   // main.ts catches this and shows the message.
   if (!gl) throw new Error('WebGL 2 is not available');
+  const gpu = trackGpu ? observeGpu(gl) : null;
   const hdrAvailable = gl.getExtension('EXT_color_buffer_float') !== null;
   let tier = chooseTier(asked, hdrAvailable);
 
@@ -732,6 +738,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       resolutionSteps = 0;
       gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
       resize();
+      // The previous tier's storage has been released/resized; new allocations use this tier's budget.
+      gpu?.resetPeaks();
       // Low and HDR need different material variants. Compile against their actual play targets before
       // the paused settings handler returns. Entering High also warms its half-resolution depth pass.
       if (changesPipeline) {
@@ -768,6 +776,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       drawCalls: renderer.info.render.calls,
       triangles: renderer.info.render.triangles,
       programs: renderer.info.programs?.length ?? 0,
+      geometries: renderer.info.memory.geometries,
+      textures: renderer.info.memory.textures,
+      gpu: gpu?.snapshot() ?? null,
       pixelRatio,
       maxPixelRatio,
       resolutionSteps,

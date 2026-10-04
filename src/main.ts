@@ -135,7 +135,7 @@ function start(): void {
   let view: View;
   try {
     // ?standin keeps the figures built in code: for pictures that go into the repository (plan §2.6).
-    view = createView(canvas, chapter, requestedGraphics === 'auto' ? null : requestedGraphics, params.has('standin'));
+    view = createView(canvas, chapter, requestedGraphics === 'auto' ? null : requestedGraphics, params.has('standin'), debugOn);
   } catch (error) {
     console.error(error);
     showMessage(sv.noWebGL);
@@ -889,6 +889,8 @@ function start(): void {
         return [
           `steps/frame ${game.lastSteps} · device ${device}`,
           `draw calls ${i.drawCalls} · triangles ${i.triangles} · programs ${i.programs}`,
+          ...(i.gpu ? [`GL ${(i.gpu.glBytes / 1e6).toFixed(1)} MB · targets ${(i.gpu.targetBytes / 1e6).toFixed(1)} · canvas estimate ${(i.gpu.canvasBytes / 1e6).toFixed(1)} · total ${(i.gpu.totalBytes / 1e6).toFixed(1)} MB`,
+            `geometries ${i.geometries} · textures ${i.textures} · GL buffers ${i.gpu.buffers}${i.gpu.unknownFormats.length ? ' · UNCOUNTED FORMAT' : ''}`] : []),
           `tier ${i.tier} · canvas ${i.width}×${i.height} · pixel ratio ${i.pixelRatio.toFixed(2)} / ${i.maxPixelRatio.toFixed(2)}`,
           `models ${i.models.join(', ') || 'none yet'} · KTX2 textures ${i.compressedTextures}`,
           `x ${n(p.x)} y ${n(p.y)} · vx ${n(p.vx)} vy ${n(p.vy)} · ${p.grounded ? 'on the ground' : 'in the air'}`,

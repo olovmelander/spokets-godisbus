@@ -176,3 +176,9 @@ Validation: 22 prologue browser checks pass, and the staged views were visually 
 Include all executable browser suites in the repository's complete browser gate so the story interactions, album, profile, lifecycle and rendering regressions are checked together.
 
 Validation: the script inventory was compared with the package gate and every executable suite is included. Subsequent renderer and device milestones extend this same gate.
+
+## Measure live and peak GPU allocations against rendering budgets
+
+Track texture and render-target allocation, resize, deletion and context loss in debug and benchmark runs. Graphics-tier checks now include peak storage and the High render-target limit; unknown formats fail explicitly.
+
+Validation: 581 unit tests and 49 focused browser checks passed at the source milestone. Typecheck, build and privacy gates pass; later combined High checks cover all representative places.
