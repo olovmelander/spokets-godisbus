@@ -55,11 +55,14 @@ describe('the window sills over the deck', () => {
     return sim;
   };
 
-  it('are five boards, each wide, each 0.8 from the last, and none more than a soft landing above the deck', () => {
+  it('are five boards, each wide, each 0.7 or 0.8 from the last, and none more than a soft landing above the deck', () => {
     expect(sills).toHaveLength(5);
     for (const [i, sill] of sills.entries()) {
       expect(sill.width).toBeGreaterThanOrEqual(1.8);
-      if (i > 0) expect(Math.abs(sill.y - sills[i - 1]!.y)).toBeCloseTo(0.8);
+      if (i > 0) {
+        expect(Math.abs(sill.y - sills[i - 1]!.y)).toBeGreaterThan(0.65);
+        expect(Math.abs(sill.y - sills[i - 1]!.y)).toBeLessThan(0.85);
+      }
       // A held jump straight up from it comes down on it, or beside it on the deck under it: a soft landing.
       expect(sill.y + JUMP_APEX - heightAt(garden, sill.x), `the sill at ${sill.x}`).toBeLessThan(FALL_LIMIT - 0.2);
     }
@@ -67,6 +70,17 @@ describe('the window sills over the deck', () => {
     expect(sills[0]!.y - heightAt(garden, 22.8)).toBeLessThanOrEqual(0.9);
     expect(garden.side![0]!.x).toBe(sills[0]!.x);
     expect(garden.side![0]!.y).toBeCloseTo(sills[0]!.y + 0.55);
+  });
+
+  it('are each one clear held jump up from the deck under them, or clearly out of reach: none is a near miss', () => {
+    for (let x = FROM; x <= TO; x += 0.05) {
+      const floor = heightAt(garden, x);
+      for (const sill of sills.filter((s) => Math.abs(x - s.x) <= s.width / 2 + 0.2)) {
+        const up = sill.y - floor;
+        // A held jump lifts his feet 1.1, and a board holds him from 0.1 under its top.
+        expect(up <= 0.9 || up >= JUMP_APEX + LEDGE_GIVE + 0.1, `the sill at ${sill.x}, ${up.toFixed(2)} over the deck at ${x.toFixed(2)}`).toBe(true);
+      }
+    }
   });
 
   it('are climbed from the step, walked along and stepped off before the ladybird, with every heart and lollipop', () => {
@@ -81,7 +95,7 @@ describe('the window sills over the deck', () => {
     walkTo(sim, 24.5);
     jump(sim, 1);
     expect(standsOn(sim, sills[1]!)).toBe(true);
-    walkTo(sim, 26.7);
+    walkTo(sim, 26.4);
     jump(sim, 1);
     expect(standsOn(sim, sills[2]!)).toBe(true);
     // Down again at a walk: each board begins under the end of the one before.
@@ -156,23 +170,56 @@ describe('the planks beside the hose', () => {
     return sim;
   };
 
-  it('are two boards under the deck, clear of the lost things, and out of reach from the ground', () => {
+  it('are two boards under the deck, there once the hose is, clear of the lost things, and out of reach from the ground', () => {
     expect(planks).toHaveLength(2);
     const roof = garden.roofs![0]!;
     for (const plank of planks) {
+      expect(plank.needs).toBe(hose.needs);
       expect(plank.y).toBeLessThan(roof.y - 2);
       // No held jump from the ground lands on one.
       expect(plank.y - LEDGE_GIVE).toBeGreaterThan(JUMP_APEX + 0.2);
       // A held jump off one is still a soft landing.
       expect(plank.y + 0.05 + JUMP_APEX).toBeLessThan(FALL_LIMIT);
-      // Each lost thing under it has room over it.
-      for (const spot of garden.spots!.filter((s) => s.id.startsWith('lost:') && Math.abs(s.at.x - plank.x) < plank.width / 2 + 0.6)) {
+      // A lost thing under it has room over it: it stands 0.4 tall on its stone.
+      for (const spot of garden.spots!.filter((s) => s.id.startsWith('lost:') && Math.abs(s.at.x - plank.x) < plank.width / 2 + 0.1)) {
         expect(plank.y - spot.at.y, spot.id).toBeGreaterThan(0.65);
       }
     }
+    // Before the ladybird is turned there is no hose, and no plank or heart either.
+    const before = new Sim(garden);
+    expect(before.ledges.filter((ledge) => ledge.x > 40 && ledge.x < 60).map((ledge) => ledge.there)).toEqual([false, false]);
+    expect(garden.side!.filter((candy) => candy.x > FROM && candy.x < TO).map((candy) => candy.after)).toEqual([hose.needs]);
     // The first ring of the trail hangs further on: its swing does not come this far left.
     const ring = garden.hooks![0]!;
     expect(ring.x - ring.length).toBeGreaterThan(planks[1]!.x + planks[1]!.width / 2);
+  });
+
+  it('are not a way down from the deck: a run or a jump off its edge is the glitter bubble, as it always was', () => {
+    for (const flags of [[], ['ladybird']]) {
+      for (const speed of [1, 0.75]) {
+        // Hoppa this long after his middle passes the edge (before it, where negative), tapped or held; or not at all.
+        for (const press of [null, -0.1, 0, 0.1, 0.19]) {
+          for (const held of press === null ? [false] : [false, true]) {
+            const sim = new Sim({ ...garden, spawn: { x: 42.5, y: 6.01 } }, {}, { flags });
+            run(sim, 0.3);
+            let pressed = false;
+            let landed = false;
+            for (let i = 0; i < 2.5 / STEP && sim.bubbles === 0; i++) {
+              const hop: boolean = !pressed && press !== null && sim.curr.x >= 46 + press * 3.5 * speed;
+              if (hop) pressed = true;
+              sim.step({ ...idle, x: speed, hop, hopHeld: held });
+              if (sim.curr.grounded && sim.curr.y < 5.5) landed = true;
+            }
+            const how = `${flags.length ? 'after' : 'before'} the ladybird, at ${speed}, ${press === null ? 'running off' : `${held ? 'held' : 'tapped'} ${press} s past the edge`}`;
+            expect(sim.bubbles, how).toBe(1);
+            expect(landed, how).toBe(false);
+            expect(sim.flags.has('found:skumsvamp'), how).toBe(false);
+            // Running off without a jump, as the trail's own miss is made, he does not come near the heart either.
+            if (press === null) expect(sideTaken(sim, FROM, TO).taken, how).toBe(0);
+          }
+        }
+      }
+    }
   });
 
   it('are reached by climbing back up the hose and jumping off it, and let out forward under the deck', () => {
@@ -182,13 +229,14 @@ describe('the planks beside the hose', () => {
     expect(sideTaken(sim, FROM, TO).taken).toBe(0);
     const began = sim.curr.x;
     const since = sim.steps;
-    upTheHoseAndOff(sim, 2.6);
+    // From above the first plank: it lies a long jump from the hose.
+    upTheHoseAndOff(sim, 3.4);
     expect(standsOn(sim, planks[0]!)).toBe(true);
-    walkTo(sim, 48.7);
+    walkTo(sim, 48.9);
     jump(sim, 1);
     expect(standsOn(sim, planks[1]!)).toBe(true);
     // Off its far end, at a walk.
-    stroll(sim, 51.4);
+    stroll(sim, 51.9);
     expect(onTheTrail(sim)).toBe(true);
     expect(sim.curr.x).toBeGreaterThan(began);
     expect(sideTaken(sim, FROM, TO)).toEqual({ taken: 1, of: 1 });
@@ -196,20 +244,19 @@ describe('the planks beside the hose', () => {
     expect(seconds(sim, since)).toBeLessThan(15);
   });
 
-  it('catch a jump off the hose from nearly any height: there is no one right moment', () => {
-    for (const height of [1.8, 2.2, 2.6, 3, 3.4]) {
+  it('catch a jump off the hose from anywhere above them: there is no one right moment', () => {
+    for (const height of [2.9, 3.4, 3.9, 4.4, 4.9, 5.4]) {
       const sim = slidDown();
       upTheHoseAndOff(sim, height);
       expect(standsOn(sim, planks[0]!), `off the hose at ${height}`).toBe(true);
       expect(sim.bubbles).toBe(0);
     }
-    // From higher up he comes down on one of the two, or past them on the ground: never in the bubble.
-    for (const height of [3.8, 4.4, 5, 5.6]) {
+    // From lower down the jump falls short of them, onto the ground: a soft landing, and the hose is right there.
+    for (const height of [1.5, 2, 2.5]) {
       const sim = slidDown();
       upTheHoseAndOff(sim, height);
-      run(sim, 1);
-      expect(sim.bubbles, `off the hose at ${height}`).toBe(0);
-      expect(sim.curr.grounded).toBe(true);
+      expect(onTheTrail(sim), `off the hose at ${height}`).toBe(true);
+      expect(sim.bubbles).toBe(0);
     }
   });
 

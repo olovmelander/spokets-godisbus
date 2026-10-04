@@ -74,11 +74,12 @@ export const garden: ChapterData = {
   // Off the trail: behind him at the start, at the end of the swing chain, over the leaf the clothes line ends
   // on, and on the planks beside the hose. Two for the brave, in sight above a row of swings; two for the
   // curious, back the way he came. The order is the album's, not the path's.
+  // The last is there once the hose is: like its planks, it is not something to fall into from the deck.
   hidden: [
     { x: -1.8, y: 6.5, kind: 'gelehallon' },
     { x: 61.85, y: 3.65, kind: 'gummibjorn', route: true },
     { x: 123.9, y: 3.1, kind: 'skumbanan', way: 'at the end of the clothes line' },
-    { x: 50, y: 3.45, kind: 'skumsvamp', way: 'back up the hose, on the planks under the deck' },
+    { x: 50.7, y: 3.3, kind: 'skumsvamp', after: 'ladybird', way: 'back up the hose, on the planks under the deck' },
   ],
   house: { from: -40, to: 72, windows: [4, 24, 40, 58] },
   spawn: { x: 1, y: 6.01 },
@@ -204,19 +205,22 @@ export const garden: ChapterData = {
   ],
   ledges: [
     // The window sills: five boards along the house wall, up from the step beyond the lifted board and down
-    // again before the ladybird. They are wide and 0.8 apart, and each begins under the end of its neighbour,
-    // so that walking, running or jumping off one lands on another or on the deck, never in the bubble. The
-    // fourth is short and the fifth long: a running jump from the top clears the one and lands on the other.
+    // again before the ladybird. They are wide and 0.7 or 0.8 apart, and each going down begins under the end
+    // of the one before, so that walking, running or jumping off one lands on another or on the deck, never
+    // in the bubble. The fourth is short and the fifth long: a running jump from the top clears the one and
+    // lands on the other. Seen from the deck's steps, each is either one held jump up or clearly out of reach.
     { x: 23.7, y: 8.4, width: 2.2, look: 'plank' },
-    { x: 25.9, y: 9.2, width: 2.6, look: 'plank' },
+    { x: 25.6, y: 9.2, width: 2, look: 'plank' },
     { x: 28.6, y: 10, width: 2.2, look: 'plank' },
-    { x: 30.7, y: 9.2, width: 1.8, look: 'plank' },
-    { x: 33.5, y: 8.4, width: 3.6, look: 'plank' },
-    // Two planks under the deck boards beside the hose, for whoever climbs back up it: Hoppa on the hose sets
-    // him down on the first. They clear the lost things on their stones, and are low enough that a jump off
+    { x: 30.7, y: 9.3, width: 1.8, look: 'plank' },
+    { x: 33.5, y: 8.6, width: 3.6, look: 'plank' },
+    // Two planks under the deck boards a little way from the hose, for whoever climbs back up it: Hoppa on
+    // the hose, from above them, sets him down on the first. They are there once the hose is. They begin
+    // beyond where a run off the deck's edge comes down, and lie lower than a jump off it can land: that fall
+    // is the glitter bubble's, as it always was. They clear the lost things on their stones, and a jump off
     // the second is still a soft landing.
-    { x: 48, y: 2.4, width: 1.8, look: 'plank' },
-    { x: 50, y: 2.8, width: 1.6, look: 'plank' },
+    { x: 49.2, y: 2.2, width: 1.2, look: 'plank', needs: 'ladybird' },
+    { x: 50.5, y: 2.7, width: 1.2, look: 'plank', needs: 'ladybird' },
     // The clothes line: three leaves up from the boulder's top to where the first ring is in reach...
     { x: 105, y: 2.1, width: 1.6, look: 'leaf' },
     { x: 107, y: 2.6, width: 1.6, look: 'leaf' },
@@ -230,11 +234,11 @@ export const garden: ChapterData = {
   side: [
     // Over the window sills, two over the long last one.
     { x: 23.7, y: 8.95 },
-    { x: 25.9, y: 9.75 },
+    { x: 25.6, y: 9.75 },
     { x: 28.6, y: 10.55 },
-    { x: 30.7, y: 9.75 },
-    { x: 32.8, y: 8.95 },
-    { x: 34.4, y: 8.95 },
+    { x: 30.7, y: 9.85 },
+    { x: 32.8, y: 9.15 },
+    { x: 34.4, y: 9.15 },
     // Over the leaves up from the boulder.
     { x: 105, y: 2.65 },
     { x: 107, y: 3.15 },
@@ -253,8 +257,9 @@ export const garden: ChapterData = {
     // Where the last swing sets him down, and over the step down.
     { x: 122.5, y: 3.1 },
     { x: 125.3, y: 2.15 },
-    // Over the first plank beside the hose: he sees it as he slides down.
-    { x: 48, y: 2.95 },
+    // Over the first plank by the hose, where a jump off the hose sets him down, once the hose is there: he
+    // sees it as he slides down.
+    { x: 48.9, y: 2.75, after: 'ladybird' },
   ],
   movers: [
     // A curl of shaving on the wall's top, with a red ring: pulled down, it is the step up.
@@ -325,8 +330,8 @@ export const garden: ChapterData = {
   cameras: [
     // Up on the window sills the picture is wider and looks down a little: the deck he can drop to stays in it.
     { from: 22, to: 36, above: 8.2, zoom: 1.3, lift: -1.2 },
-    // On the planks beside the hose it looks down too, at the ground he will step off onto.
-    { from: 46.9, to: 51, above: 1.5, zoom: 1.25, lift: -1.2 },
+    // On the planks by the hose it looks down too, at the ground he will step off onto.
+    { from: 46.9, to: 51.3, above: 1.5, zoom: 1.25, lift: -1.2 },
     { from: 46, to: 59, zoom: 1.25, lift: 0.4 },
     // Portrait includes the hook and its landing during the helper's demonstration.
     { from: 59, to: 70, zoom: 1.8, lift: 0.4, lead: 3.6 },
