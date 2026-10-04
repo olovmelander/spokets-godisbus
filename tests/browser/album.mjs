@@ -94,6 +94,36 @@ try {
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-memory')), 'garden');
   assert.equal((await state()).steps, progress.steps, 'Replay leaves the game paused');
   assert.deepEqual(await saved(), saveBeforeMemory, 'Watching a memory changes no saved progress');
+  // Visibility and renderer interruptions keep the current picture, including its remaining time.
+  await page.locator('[data-memory="garden"]').tap();
+  await page.evaluate(() => {
+    window.__memoryHidden = true;
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => window.__memoryHidden });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const hiddenPicture = await page.locator('#memoryProgress').textContent();
+  await new Promise((resolve) => setTimeout(resolve, 2700));
+  assert.equal(await page.locator('#memoryProgress').textContent(), hiddenPicture, 'Hidden pages hold the memory picture');
+  await page.evaluate(() => { window.__memoryHidden = false; document.dispatchEvent(new Event('visibilitychange')); });
+  await page.waitForFunction((before) => document.getElementById('memoryProgress').textContent !== before, hiddenPicture);
+  await page.locator('#memoryClose').tap();
+  await page.locator('[data-memory="garden"]').tap();
+  await page.evaluate(() => {
+    window.__memoryLoss = document.getElementById('game').getContext('webgl2').getExtension('WEBGL_lose_context');
+    window.__memoryLoss.loseContext();
+  });
+  await page.waitForFunction(() => window.__godis.state().contextLost);
+  const lostPicture = await page.locator('#memoryProgress').textContent();
+  await new Promise((resolve) => setTimeout(resolve, 2700));
+  assert.equal(await page.locator('#memoryProgress').textContent(), lostPicture, 'Context loss holds the memory picture');
+  await page.evaluate(() => window.__memoryLoss.restoreContext());
+  await page.waitForFunction(() => !window.__godis.state().contextLost);
+  await new Promise((resolve) => setTimeout(resolve, 2700));
+  assert.equal(await page.locator('#memoryProgress').textContent(), lostPicture, 'Recovery confirmation keeps the memory paused');
+  await page.locator('#messageButton').click();
+  await page.waitForFunction((before) => document.getElementById('memoryProgress').textContent !== before, lostPicture);
+  assert.equal((await state()).steps, progress.steps, 'Memory recovery returns to paused play');
+  await page.locator('#memoryClose').tap();
   await page.locator('[data-memory="berget"]').tap();
   await pad(1);
   assert.ok(await page.locator('#memory').isHidden(), 'Controller B closes the memory');
@@ -123,11 +153,13 @@ try {
   await page.waitForFunction(() => window.__godis.state().word === 'giveGhost');
   assert.equal(await page.locator('#actBtn').getAttribute('aria-label'), 'Ge spöket');
   await page.keyboard.press('KeyE');
+  await page.locator('[data-sweet="gelehallon"]').tap();
+  await page.locator('[data-friend="spoket"]').tap();
   await page.waitForFunction(() => window.__godis.state().flags.includes('beat:named'));
   await page.keyboard.press('Escape');
   assert.ok((await page.locator('#pauseMap').textContent()).includes('Klonk'), 'The real naming action changes the map immediately');
   assert.deepEqual(errors, []);
-  console.log('Album: golden reward/reload, found-memory replay controls and naming action passed.');
+  console.log('Album: golden reward/reload, found-memory replay, interruption recovery and naming action passed.');
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));

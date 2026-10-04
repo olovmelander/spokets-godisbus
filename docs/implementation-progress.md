@@ -116,3 +116,9 @@ Validation: typecheck and 23 integrated helper tests pass. Source checks cover b
 Quick taps now react to sweets, the ghost, animals and Elof. Nearby candy can guide safe walking; helper taps take precedence and drag gestures remain movement. The prologue offers conditional movement, jump and use prompts only after idle time, then stops each prompt once learned.
 
 Validation: typecheck and 62 integrated input/pointing/tutorial tests pass; 34 source browser checks cover touch, mirrored controls, keyboard/controller prompts, reduced motion and rendering stability. Menus and interruptions cancel queued movement.
+
+## Verify story choices and album recovery together
+
+The combined browser checks now exercise real party choices, close epilogue photo credits before exploration, and verify that memory playback freezes while hidden or recovering from context loss, then resumes at the same picture without moving the game.
+
+Validation: browser scripts parse and typecheck; these integrated cases are included in the final combined browser gate.

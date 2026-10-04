@@ -93,6 +93,7 @@ try {
   // A new ending offers the selector too; no explicit course URL can trap the next chapter button.
   await open('course=epilog&flags=goal');
   await page.waitForSelector('#endCard:not([hidden])');
+  if (await page.locator('#photoAlbum').isVisible()) await page.keyboard.press('Escape');
   assert.ok(await page.locator('#endExplore').isVisible());
   await page.locator('#endExplore').tap();
   await pad(1);
