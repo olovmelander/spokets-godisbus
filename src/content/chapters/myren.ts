@@ -13,6 +13,8 @@ import type { Candy, ChapterData, Jump, Tussock, Vec } from '../../sim/types';
  *    boardwalk she lets her braid down, and he climbs it. At the top: "På myren går vi på spången."
  * 4. **Lysklubban** (P13): the trail ends at a lollipop the ghost has left for him. He takes it, the mist
  *    rolls in, and in its light the trail shows again.
+ *    **Lyktgubbarnas lek** (C3) branches onto the high tussocks: three shy lights appear one after another,
+ *    each further out in the mist. The last leaves the hidden candy, and the lower trail is the way back.
  * 5. **Tranungen** (P14): a crane chick alone on a tussock. It follows his light to its family.
  * 6. **The ghost waits,** and lets him come close.
  * 7. **Tranornas dans** (S4): a crane kneels, he climbs on, and it carries him up towards the mountain.
@@ -21,7 +23,7 @@ import type { Candy, ChapterData, Jump, Tussock, Vec } from '../../sim/types';
  * high as he jumps, and at a run from the first he comes down on the second.
  *
  * Not built yet: the tussocks' dip under his feet, Mamma's mug and her lamp behind
- * him, the lyktgubbar and their game (C3), the rings of the cranes' calls as a thing to follow, memory 3,
+ * him, the rings of the cranes' calls as a thing to follow, memory 3,
  * the ghost's picture bubble, the cranes' dance, the jay.
  */
 
@@ -69,6 +71,20 @@ const MIST: Stone[] = [
   { from: 155.4, to: 158, y: 0 },
   { from: 159.4, to: 162, y: 0.3 },
   { from: 163.4, to: 166, y: 0.1 },
+];
+
+/**
+ * The optional high tussocks, above the ordinary mist trail. The first needs an intentional jump, before
+ * the ordinary water crossing begins. All later tops leave enough room for its jumps underneath them.
+ * Heights are their tops; the small shelves reuse the solid support and ledge-grab rules.
+ */
+const SHY = [
+  { x: 147.2, y: 1.9, width: 1.6 },
+  { x: 150, y: 3.8, width: 1.6 },
+  { x: 152.8, y: 4.5, width: 1.4 },
+  { x: 155.6, y: 4.9, width: 1.4 },
+  { x: 158.4, y: 4.3, width: 1.4 },
+  { x: 161.2, y: 3.7, width: 1.8 },
 ];
 
 /** The two ways over water, each from firm ground to firm ground. */
@@ -124,13 +140,18 @@ function along(t: number): Candy {
 export const myren: ChapterData = {
   id: 'myren',
   place: 'bog',
-  // Off the trail: behind him at the start, over the highest tussock, over the boardwalk, and by the cranes.
+  // Off the trail: behind him at the start, over the highest tussock, over the boardwalk, and with the last shy light.
   hidden: [
     { x: -1.8, y: 0.5, kind: 'chokladpeng' },
     { x: 42.7, y: 2.7, kind: 'stektagg' },
     { x: 116, y: 6.4, kind: 'surnapp' },
-    { x: 174, y: 1.9, kind: 'lakritskonfekt' },
+    { x: 161.2, y: 4.15, kind: 'lakritskonfekt', route: true, after: 'shy:3' },
   ],
+  challenges: [{
+    id: 'shy', from: 145.8, to: 163, above: 1.55, reward: 'lakritskonfekt', needs: 'light',
+    steps: SHY.map(({ x, y }) => ({ x, y })), return: { x: 164.7, y: 0.1 },
+    pending: ['shy:1', 'shy:2', 'shy:3'],
+  }],
   // Two cranberries on the firm ground at the start: a run from the first carries him to the second.
   bouncers: [
     { x: 2.9, y: BERRY_HEIGHT, lift: 2.2 },
@@ -196,8 +217,13 @@ export const myren: ChapterData = {
     { id: 'braid', look: 'sign', at: { x: 102.2, y: 0 }, verb: 'call', word: 'callMamma' },
     // The lollipop the ghost has stuck in the moss for him.
     { id: 'light', look: 'lollipop', at: { x: 142, y: 0 }, verb: 'take', word: 'takeLight' },
-    // The crane chick follows his light, and comes home when he reaches its family.
-    { id: 'chick', at: { x: 156.7, y: 0 }, verb: 'take', touch: true, needs: 'light' },
+    // Only the next light is there; approaching it invites its friend further out to shine.
+    { id: 'shy:1', look: 'wisp', at: { x: 150, y: 3.8 }, verb: 'take', touch: true, needs: 'light', extra: true },
+    { id: 'shy:2', look: 'wisp', at: { x: 155.6, y: 4.9 }, verb: 'take', touch: true, needs: 'shy:1', extra: true },
+    { id: 'shy:3', look: 'wisp', at: { x: 161.2, y: 3.7 }, verb: 'take', touch: true, needs: 'shy:2', extra: true },
+    // Both routes meet at this tuft, so taking the upper path cannot miss the chick.
+    // It follows his light, and comes home when he reaches its family.
+    { id: 'chick', at: { x: 164.7, y: 0.1 }, verb: 'take', touch: true, needs: 'light' },
     { id: 'home', at: { x: 176, y: 0 }, verb: 'take', touch: true, needs: 'chick' },
     // Memory 3, where the ghost waits: the boardwalk, and the figure held up to see the way.
     { id: 'memory', look: 'memory', at: { x: 170.6, y: 0 }, verb: 'take', touch: true },
@@ -206,11 +232,15 @@ export const myren: ChapterData = {
   movers: [
     // The dead pine in the pool: Mamma's hands lift it across as a bridge.
     { id: 'pine', look: 'log', width: 8.6, height: 0.4, verb: 'pull', on: 'mamma', stops: [{ x: 90, y: -1.5 }, { x: 90, y: -0.4 }] },
+    ...SHY.map((tuft, i) => ({
+      id: `shy-tuft:${i + 1}`, look: 'tussock' as const, extra: true, width: tuft.width, height: 0.4, verb: 'push' as const,
+      stops: [{ x: tuft.x, y: tuft.y - 0.4 }],
+    })),
   ],
   rides: [{ id: 'crane', look: 'crane', ...CRANE }],
   jumps: [...hops(OUT), ...hops(HOME)],
   mist: { after: 'light' },
-  follower: { at: { x: 156.7, y: 0 }, after: 'chick', until: 'home', home: { x: 177.4, y: 0 } },
+  follower: { at: { x: 164.7, y: 0.1 }, after: 'chick', until: 'home', home: { x: 177.4, y: 0 } },
   ghost: [
     { at: { x: 6, y: 0 } },
     { at: { x: 12.7, y: 0.2 } },
@@ -235,6 +265,8 @@ export const myren: ChapterData = {
   ],
   beats: [{ id: 'spangen', at: 105.4, who: 'mamma', line: 'spangen' }],
   cameras: [
+    // The upper route needs its next landing and the lower way home in portrait as well as landscape.
+    { from: 145.8, to: 163, above: 1.55, zoom: 1.45, lift: 0.6, lead: 0.8 },
     { from: 9, to: 50, zoom: 1.2 },
     { from: 50, to: 83, zoom: 1.3 },
     { from: 84, to: 97, zoom: 1.25 },

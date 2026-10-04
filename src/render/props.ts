@@ -65,6 +65,16 @@ export function moverProp(mover: Mover): Group | null {
       }
       break;
     }
+    case 'tussock': {
+      // A firm tuft on a slim peat pillar behind the lower path, with a flat, readable moss top.
+      const peat = new Mesh(new CylinderGeometry(w * 0.36, w * 0.23, 2.5, 8), solid('#635447'));
+      peat.position.set(0, h - 1.45, -0.45);
+      const moss = new Mesh(new CylinderGeometry(w / 2, w * 0.45, h, 10), solid('#829950'));
+      moss.scale.z = 0.75;
+      moss.position.y = h / 2;
+      group.add(peat, moss);
+      break;
+    }
     case 'ants': {
       // Two draw calls for the whole living column: dark linked bodies beneath a broad needle mat.
       // The animals remain code stand-ins until their Blender round.
@@ -165,6 +175,17 @@ export function spotProp(spot: Spot): SpotProp | null {
     group.scale.setScalar(Math.max(0, 1 - since / over));
   };
   switch (spot.look) {
+    case 'wisp': {
+      const light = solid('#fff2b0', 0.25, { emissive: '#ffe8a0', emissiveIntensity: 1.8 });
+      const glow = ball(0.18, light, 0, 0.65);
+      const halo = ball(0.32, solid('#b0e1b7', 0.4, { transparent: true, opacity: 0.3, depthWrite: false, emissive: '#8ac5a0', emissiveIntensity: 0.6 }), 0, 0.65);
+      group.add(glow, halo);
+      group.visible = false;
+      return { group, update(used, clock, dt) {
+        vanish(used, dt, 0.6);
+        glow.position.y = halo.position.y = 0.65 + Math.sin(clock * 2.5) * 0.12;
+      } };
+    }
     case 'ladybird': {
       // On its back, legs in the air, until he turns it over. Then it flies to the hose.
       const body = new Group();

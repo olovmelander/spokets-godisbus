@@ -80,6 +80,8 @@ export interface Spot {
   needs?: string;
   /** It is used by coming close, with no button: a memory he touches. With a ride, the ride begins by itself. */
   touch?: boolean;
+  /** A side-route interaction, left out of the main trail's hints. */
+  extra?: boolean;
   /** What stands there, for the picture. Left out: only the glint over it. */
   look?: SpotLook;
   /** The word on the button where the verb's own is too plain: a key of `sv.verbs`, as in "Ropa på Moa". */
@@ -277,8 +279,8 @@ export interface SimStart {
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
-export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants';
-export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew';
+export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock';
+export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp';
 export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none';
 
 /** The places of the story, each with its own light and layers (plan §5.4). The picture's business only. */
@@ -296,6 +298,10 @@ export interface Challenge {
   reward: string;
   steps: Vec[];
   return: Vec;
+  /** What makes the route playable, such as the lollipop light. */
+  needs?: string;
+  /** Unfinished local steps; reset on leaving, getting unstuck or reloading, until the reward commits. */
+  pending?: string[];
 }
 
 export interface ChapterData {
@@ -307,7 +313,7 @@ export interface ChapterData {
    * flag `found:<kind>`, which the save keeps. One with `route` hangs at the end of the chapter's challenge
    * route (plan §4.7), and is reached that way only.
    */
-  hidden?: { x: number; y: number; kind: string; route?: boolean }[];
+  hidden?: { x: number; y: number; kind: string; route?: boolean; after?: string }[];
   /** Cranberries to bounce on (plan §4.8, O7). */
   bouncers?: Bouncer[];
   /** Optional routes, entered by leaving the ordinary trail; their prizes never gate the story. */

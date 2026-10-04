@@ -26,7 +26,11 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   // not the airborne feet, distinguish a deliberate climb from an ordinary jump or the ant ride.
   const route = chapter.challenges?.find((r) => p.x >= r.from && p.x <= r.to && p.y >= r.above &&
     r.steps.some((at) => Math.hypot(at.x - p.x, at.y - p.standY) <= 2.5));
-  if (route) {
+  if (route && !has(route.needs)) {
+    const missing = chapter.spots?.find((spot) => spot.id === route.needs);
+    if (missing) return { at: missing.at, verb: missing.verb, word: missing.word ?? null };
+  }
+  if (route && has(route.needs)) {
     if (sim.flags.has(`found:${route.reward}`)) return { at: route.return, verb: null, word: null };
     // Find the nearest landing, then show the next. Never use the live position of a moving platform:
     // repeated taps must progress from looking, to pointing, to the demonstration at the same place.
@@ -36,13 +40,25 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
       const d = Math.hypot(at.x - p.x, at.y - p.standY);
       if (d < distance) { distance = d; nearest = i; }
     }
-    const at = route.steps[Math.min(nearest + 1, route.steps.length - 1)]!;
+    // A missed jump may reset a light sequence while the bubble returns onto an upper ledge.
+    // Guide back to the first unfinished light instead of pointing at its still-hidden successor.
+    const pending = route.pending?.find((id) => !sim.flags.has(id));
+    const light = pending ? chapter.spots?.find((spot) => spot.id === pending) : undefined;
+    let target = route.steps.length - 1;
+    if (light) {
+      let nearestLight = Infinity;
+      for (const [i, at] of route.steps.entries()) {
+        const d = Math.hypot(at.x - light.at.x, at.y - light.at.y);
+        if (d < nearestLight) { nearestLight = d; target = i; }
+      }
+    }
+    const at = route.steps[nearest + Math.sign(target - nearest)]!;
     return { at, verb: null, word: null };
   }
   const things: Hint[] = [];
   // Things to use, once what they wait for has happened. One he only has to touch is on the trail anyway.
   for (const spot of chapter.spots ?? []) {
-    if (spot.touch || sim.flags.has(spot.id) || !has(spot.needs)) continue;
+    if (spot.extra || spot.touch || sim.flags.has(spot.id) || !has(spot.needs)) continue;
     things.push({ at: spot.at, verb: spot.verb, word: spot.word ?? null });
   }
   // Things on rails that are not yet where they belong, and that he moves himself.

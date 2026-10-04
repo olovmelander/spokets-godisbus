@@ -329,6 +329,7 @@ export class Sim {
     this.stood = Array.from({ length: SAFE_STEPS }, () => ({ x: spawn.x, y: spawn.y }));
     this.curr = this.read(false);
     this.prev = this.curr;
+    this.resetChallenges(true);
   }
 
   step(input: StepInput): void {
@@ -370,6 +371,7 @@ export class Sim {
     }
     // The bubble only carries. Everywhere else, candy he comes near is his: up a hose too.
     if (this.state.kind !== 'bubble') this.collect();
+    this.resetChallenges();
     if (this.curr.x >= this.chapter.goalX) this.flags.add('goal');
   }
 
@@ -722,6 +724,7 @@ export class Sim {
    * Nothing he has found or done is undone (plan §4.5).
    */
   toCheckpoint(): void {
+    this.resetChallenges(true);
     if (this.state.kind === 'bubble') return;
     const to = this.checkpoints[this.checkpoint] ?? this.chapter.spawn;
     this.safe.x = to.x;
@@ -1245,6 +1248,16 @@ export class Sim {
   }
 
   /** Puts every trail candy within reach of Elof's middle in the bag. */
+  private resetChallenges(force = false): void {
+    for (const route of this.chapter.challenges ?? []) {
+      if (this.flags.has(`found:${route.reward}`)) continue;
+      const p = this.curr;
+      if (force || p.x < route.from || p.x > route.to || p.y < route.above) {
+        for (const flag of route.pending ?? []) this.flags.delete(flag);
+      }
+    }
+  }
+
   private collect(): void {
     const x = this.curr.x;
     const y = this.curr.y + ELOF_HEIGHT / 2;
@@ -1258,8 +1271,9 @@ export class Sim {
       this.collected[i] = true;
       this.candyCount++;
     }
-    // Hidden candy: it has the same reach, and each is found once.
+    // Hidden candy: it has the same reach, and each is found once. A shy light must leave it first.
     for (const sweet of this.chapter.hidden ?? []) {
+      if (sweet.after !== undefined && !this.flags.has(sweet.after)) continue;
       if (this.flags.has(`found:${sweet.kind}`) || (sweet.x - x) ** 2 + (sweet.y - y) ** 2 > CANDY_MAGNET ** 2) continue;
       this.flags.add(`found:${sweet.kind}`);
     }

@@ -86,7 +86,7 @@ const SHOTS = fileURLToPath(new URL('../../docs/shots/_work/', import.meta.url))
 mkdirSync(SHOTS, { recursive: true });
 try {
   browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-  for (const viewport of [{ width: 844, height: 390 }, { width: 390, height: 844 }]) {
+  if (!process.env.CHALLENGE || process.env.CHALLENGE === '2') for (const viewport of [{ width: 844, height: 390 }, { width: 390, height: 844 }]) {
     for (const tier of ['low', 'high']) {
       for (const stop of ['entry', 'prize']) {
         const at = stop === 'entry' ? '48,5.57' : '62,14.01';
@@ -117,6 +117,37 @@ try {
           await page.keyboard.press('e');
           await until(state, s => s.mode === 'free' && s.y < 10.2, `${name}: root returns`);
           check(`${name}: safe return with reward`, (await state()).flags.includes('found:chokladkola') && (await state()).bubbles === 0);
+        }
+        check(`${name}: shaders stay warm`, (await info()).programs === drawn.programs);
+        await finish();
+      }
+    }
+  }
+  if (!process.env.CHALLENGE || process.env.CHALLENGE === '3') for (const viewport of [{ width: 844, height: 390 }, { width: 390, height: 844 }]) {
+    for (const tier of ['low', 'high']) {
+      for (const stop of ['light', 'return'].filter(stop => !process.env.CHALLENGE_STOP || stop === process.env.CHALLENGE_STOP)) {
+        const at = stop === 'light' ? '150,3.81' : '161.2,3.71';
+        const flags = stop === 'light' ? 'light' : 'light,shy:1,shy:2,shy:3,found:lakritskonfekt';
+        const name = `c3-${stop}-${viewport.width}-${tier}`;
+        const { page, state, info, finish } = await open(name, { viewport }, `?dev&debug&standin&course=myren&tier=${tier}&at=${at}&flags=${flags}`);
+        if (await page.locator('#startBtn').isVisible()) await page.locator('#startBtn').click();
+        const start = await until(state, s => s.steps > 90 && s.grounded, name);
+        const drawn = await info();
+        check(`${name}: draw-call budget`, drawn.drawCalls > 0 && drawn.drawCalls <= 120);
+        check(`${name}: player framed`, start.playerScreen && start.playerScreen.x > 30 && start.playerScreen.x < viewport.width - 30 && start.playerScreen.y > 35 && start.playerScreen.y < viewport.height - 30);
+        for (const step of [1, 2, 3]) {
+          await page.keyboard.press('h');
+          await until(state, s => s.help.step === step, `${name}: hint ${step}`);
+        }
+        check(`${name}: all three hints`, (await state()).help.step === 3);
+        await page.screenshot({ path: join(SHOTS, `${name}.png`) });
+        if (stop === 'light') {
+          check(`${name}: only first light found`, start.flags.includes('shy:1') && !start.flags.includes('shy:2') && !start.flags.includes('found:lakritskonfekt'));
+        } else {
+          await page.keyboard.down('ArrowRight');
+          await until(state, s => s.grounded && s.y < 0.2 && s.x > 163.4, `${name}: lower path reached`);
+          await page.keyboard.up('ArrowRight');
+          check(`${name}: safe return with reward and chick`, (await state()).flags.includes('found:lakritskonfekt') && (await state()).flags.includes('chick') && (await state()).bubbles === 0);
         }
         check(`${name}: shaders stay warm`, (await info()).programs === drawn.programs);
         await finish();

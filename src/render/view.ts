@@ -482,7 +482,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (near) near.rotation.x = -beat;
       if (far) far.rotation.x = beat;
     }
-    for (const thing of things) thing.prop?.update(flags.has(thing.spot.id), clock, dt);
+    for (const thing of things) {
+      thing.prop?.update(flags.has(thing.spot.id), clock, dt);
+      // Shy lights take turns appearing; unrevealed ones must not betray the hiding place.
+      if (thing.prop && thing.spot.look === 'wisp') thing.prop.group.visible = thing.spot.needs === undefined || flags.has(thing.spot.needs);
+    }
     for (const d of decor) {
       d.prop?.update(d.def.until !== undefined && flags.has(d.def.until), clock, dt);
       if (d.prop && d.def.after !== undefined) d.prop.group.visible = flags.has(d.def.after);
@@ -1182,12 +1186,14 @@ function buildHidden(chapter: ChapterData) {
     const ring = new Mesh(new TorusGeometry(0.34, 0.022, 8, 30), gold);
     sweet.add(body, band, ring);
     sweet.position.set(def.x, def.y, 0);
+    sweet.visible = def.after === undefined;
     group.add(sweet);
     return { def, sweet, ring, size: 1 };
   });
   function update(flags: ReadonlySet<string>, clock: number, dt: number): void {
     for (const [i, s] of sweets.entries()) {
       const found = flags.has(`found:${s.def.kind}`);
+      s.sweet.visible = s.def.after === undefined || flags.has(s.def.after);
       s.size = Math.max(0, Math.min(1, s.size + (found ? -dt / 0.25 : dt)));
       s.sweet.scale.setScalar(s.size);
       s.sweet.position.y = s.def.y + Math.sin(clock * 1.8 + i) * 0.06;
