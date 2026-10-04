@@ -152,6 +152,10 @@ export const granskog: ChapterData = {
     { x: 43.7, bottom: 0, top: 4, exit: 1, needs: 'jay', look: 'lichen' },
     // The root down from the anthill.
     { x: 66.3, bottom: 0, top: 10, exit: -1, look: 'root' },
+    // A root down the hilltop's near side, back to the ant road. It is there once the ants have carried him
+    // up, so that the anthill's own way up (C2) can still be gone back to, and never before: the twig and
+    // the ants are the way up the first time.
+    { x: 59.7, bottom: 4, top: 10, exit: 1, needs: 'antlift', look: 'root' },
   ],
   // Rings off the main way (docs/level-design.md). Each hangs 5.7 EL over the forest floor: out of the lace's
   // reach from the floor, even at the top of a jump, and within it from the bough or the nest beside it. The

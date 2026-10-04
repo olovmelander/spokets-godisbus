@@ -3,14 +3,15 @@ import { granskog } from '../../src/content/chapters/granskog';
 import { trailShape } from '../../src/render/candy';
 import { cameraIntent } from '../../src/sim/camera-intent';
 import { BUBBLE_TIME, ELOF_HEIGHT, FALL_LIMIT, JUMP_APEX, LACE_REACH, LEDGE_GIVE, STEP } from '../../src/sim/constants';
+import { hintFor } from '../../src/sim/help';
 import { Sim } from '../../src/sim/sim';
 import type { Hook, Ledge } from '../../src/sim/types';
 import { heightAt } from '../robot/robot';
-import { angleOf, idle, jump, leap, run, runPast, sideTaken, swingAlong, walkTo } from './drive';
+import { angleOf, idle, jump, leap, run, runPast, sideTaken, swingAlong, use, walkTo } from './drive';
 
 // The first layers over Granskogen (docs/level-design.md): the boughs over the forest floor, with the forest's
-// first ring, and the nest up a trunk after the log, with two rings in a row. Each is played here from the
-// trail and back to it, on Äventyr.
+// first ring; the nest up a trunk after the log, with two rings in a row; and a root from the hilltop back
+// down to the ant road. Each is played here from the trail and back to it, on Äventyr.
 
 const [barkA, barkB, near, far, step, plate1, plate2, plate3, plate4, nest, last] = granskog.ledges! as [Ledge, Ledge, Ledge, Ledge, Ledge, Ledge, Ledge, Ledge, Ledge, Ledge, Ledge];
 const [ring, first, second] = granskog.hooks! as [Hook, Hook, Hook];
@@ -357,6 +358,116 @@ describe('the nest up the trunk, and the two rings from it', () => {
     expect(sim.collectedSide.some(Boolean)).toBe(false);
     expect(sim.flags.has('found:colaflaska')).toBe(false);
     expect(sim.bubbles).toBe(0);
+  });
+});
+
+describe('the root from the hilltop back down to the ant road', () => {
+  const root = granskog.climbs!.find((climb) => climb.needs === 'antlift')!;
+  const lift = granskog.rides!.find((ride) => ride.id === 'antlift')!;
+  const anthill = granskog.challenges![0]!;
+  /** On the ant road at its big candy, with the jay his friend and the twig pulled off the road. */
+  const onTheAntRoad = () => {
+    const sim = new Sim(granskog, {}, { checkpoint: 2, flags: ['berry', 'jay'], placed: ['twig'] });
+    run(sim, 0.3);
+    return sim;
+  };
+  const untilFree = (sim: Sim) => {
+    for (let i = 0; i < 10 / STEP && sim.curr.mode !== 'free'; i++) sim.step(idle);
+  };
+  /** Up to the hilltop with the ants, as the trail goes. */
+  function rideUp(sim: Sim): void {
+    walkTo(sim, lift.from.x);
+    use(sim);
+    untilFree(sim);
+    run(sim, 0.3);
+    expect(sim.curr.x).toBeCloseTo(lift.to.x, 1);
+    expect(sim.curr.y).toBeCloseTo(lift.to.y, 1);
+  }
+  /** At the hilltop's near edge, Använd slides him down the root. */
+  function slideDown(sim: Sim): void {
+    walkTo(sim, root.x + 0.6);
+    expect(sim.curr.verb).toBe('slide');
+    use(sim);
+    untilFree(sim);
+  }
+
+  it('runs down the hilltop\'s near side, from its top to the ant road', () => {
+    expect(root.look).toBe('root');
+    expect(root.top).toBe(heightAt(granskog, root.x + 0.5));
+    expect(root.bottom).toBe(heightAt(granskog, root.x));
+    expect(root.exit).toBe(1);
+    // The climbs before it keep their places in the list.
+    expect(granskog.climbs!.indexOf(root)).toBe(granskog.climbs!.length - 1);
+  });
+
+  it('is not there before the ants have carried him up: the twig and the ants are the first way', () => {
+    const sim = onTheAntRoad();
+    run(sim, 5, { x: 1 });
+    expect(sim.curr.mode).toBe('free');
+    expect(sim.curr.y).toBeCloseTo(4, 1);
+    expect(sim.curr.x).toBeLessThan(60);
+    run(sim, 0.5, { y: 1 });
+    expect(sim.curr.mode).toBe('free');
+    expect(sim.curr.y).toBeCloseTo(4, 1);
+  });
+
+  it('after the ant lift it takes him down to the ant road, to the foot of the anthill, and up again', () => {
+    const sim = onTheAntRoad();
+    rideUp(sim);
+    expect(sim.flags.has('antlift')).toBe(true);
+    slideDown(sim);
+    expect(sim.curr.x).toBeCloseTo(root.x, 1);
+    expect(sim.curr.y).toBeCloseTo(4, 1);
+    // Along the ant road, over the twig, to where the anthill's own way up begins.
+    expect(runPast(sim, anthill.steps[0]!.x - 0.8)).toBe(true);
+    run(sim, 0.3);
+    expect(sim.curr.grounded).toBe(true);
+    expect(sim.curr.y).toBeCloseTo(4, 1);
+    expect(sim.curr.x).toBeGreaterThan(anthill.from);
+    expect(sim.flags.has('found:chokladkola')).toBe(false);
+    expect(sim.bubbles).toBe(0);
+    // And back: running into the root he takes hold of it, climbs, and steps onto the hilltop.
+    for (let i = 0; i < 20 / STEP && sim.curr.y < root.top - 0.05; i++) sim.step({ ...idle, x: 1 });
+    run(sim, 0.6, { x: 1 });
+    expect(sim.curr.mode).toBe('free');
+    expect(sim.curr.grounded).toBe(true);
+    expect(sim.curr.y).toBeCloseTo(10, 1);
+    expect(sim.curr.x).toBeGreaterThan(60);
+    expect(sim.bubbles).toBe(0);
+  });
+
+  it('the helper leads on along the trail: from the hilltop to its candy, and from the ant road back up', () => {
+    const sim = onTheAntRoad();
+    rideUp(sim);
+    const onTop = hintFor(sim, granskog)!;
+    expect(onTop.verb).toBeNull();
+    expect(onTop.at.x).toBeGreaterThan(sim.curr.x);
+    expect(onTop.at.y).toBeGreaterThan(10);
+    slideDown(sim);
+    run(sim, 0.2);
+    const below = hintFor(sim, granskog)!;
+    expect(below.verb).toBeNull();
+    expect(below.at.x).toBeGreaterThan(60);
+    expect(below.at.y).toBeGreaterThan(10);
+  });
+
+  it('put back before the lift, he has neither the ride behind him nor the root: the ants carry him again', () => {
+    const sim = onTheAntRoad();
+    rideUp(sim);
+    slideDown(sim);
+    // He never touched the hilltop's big candy, so "Jag har fastnat" takes him to the ant road's.
+    expect(sim.checkpoint).toBe(2);
+    sim.toCheckpoint();
+    run(sim, BUBBLE_TIME + 0.5);
+    expect(sim.curr.x).toBeCloseTo(47, 0);
+    expect(sim.flags.has('antlift')).toBe(false);
+    run(sim, 5, { x: 1 });
+    // He runs on to the wall under the hilltop, and no root takes him up.
+    expect(sim.curr.mode).toBe('free');
+    expect(sim.curr.y).toBeCloseTo(4, 1);
+    walkTo(sim, lift.from.x);
+    expect(sim.curr.verb).toBe('take');
+    expect(sim.curr.word).toBe('rideAnts');
   });
 });
 
