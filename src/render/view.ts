@@ -17,7 +17,7 @@ import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './qual
 import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
-import type { ChapterData, PlayerState } from '../sim/types';
+import type { ChapterData, HelpState, PlayerState } from '../sim/types';
 
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
@@ -77,7 +77,7 @@ export interface Frame {
   berries?: readonly { squash: number }[];
   noteHits?: readonly { serial: number; id: string; midi: number }[];
   /** What the helper is doing: its step, and where the thing is. */
-  help: { step: number; at: { x: number; y: number } | null };
+  help: HelpState;
 }
 
 export interface View {
@@ -95,6 +95,8 @@ export interface View {
   setResolutionSteps(steps: number): void;
   /** The rendered player's centre on the play plane, in CSS client coordinates; null before the first frame. */
   playerScreen(): { x: number; y: number } | null;
+  /** The visitor's centre for tapping the helper itself; null while it is away. */
+  helperScreen(): { x: number; y: number } | null;
   render(frame: Frame): void;
   /** Read the last frame immediately after render(), with no retained WebGL drawing buffer. */
   capture(): Promise<Blob | null>;
@@ -191,7 +193,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const plane = buildPlane();
   scene.add(glints.group, plane);
   // The things that stand at spots, and what carries him on each ride, where the chapter says what they are.
-  const helper = helperProp();
+  const ghostHelps = chapter.helper?.kind === 'ghost';
+  const helper = helperProp(chapter, ghostHelps ? buildGhost() : undefined);
   scene.add(helper.group);
   const hiddenSweets = buildHidden(chapter);
   scene.add(hiddenSweets.group);
@@ -241,6 +244,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const roles: string[] = [];
   let compressedTextures = 0;
   const assets = createAssets(renderer);
+  const birds = [helper.group, ...things.map((thing) => (thing.spot.look === 'jay' ? thing.prop?.group : undefined))]
+    .map((group) => group?.getObjectByName('bird'))
+    .filter((bird): bird is Object3D => bird !== undefined);
   const candyReady = assets
     .model('boot', 'big-candy')
     .then((model) => {
@@ -261,26 +267,24 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The jay, modelled in Blender (art/blender/jay.py), takes the place of the bird built in code: the helper
   // that comes when he asks, and the one he shares a berry with. Its wings are parts of their own, with the
   // same names as the stand-in's, so they beat as before.
-  const jayReady = assets
+  const jayReady = birds.length > 0 ? assets
     .manifest()
     .then((manifest) => (manifest.packs.boot?.files['jay.glb'] ? assets.model('boot', 'jay') : null))
     .then((model) => {
       if (!model) return;
-      const birds = [helper.group, ...things.map((thing) => (thing.spot.look === 'jay' ? thing.prop?.group : undefined))]
-        .map((group) => group?.getObjectByName('bird'))
-        .filter((bird): bird is Object3D => bird !== undefined);
       for (const [i, bird] of birds.entries()) {
         bird.clear();
         bird.add(i === 0 ? model : model.clone());
       }
       models.push('boot/jay');
-    });
+    }) : Promise.resolve();
   const ready = Promise.all([candyReady, jayReady]).then(() => undefined);
 
   // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
   // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.
   // A chapter without a ghost in its data has none in the picture.
   const ghostPlace = new Group();
+  ghostPlace.name = 'chase-ghost';
   let ghost: Group = buildGhost();
   ghostPlace.add(ghost);
   ghostPlace.visible = chapter.ghost !== undefined;
@@ -298,6 +302,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostPlace.clear();
       ghostPlace.add(model);
       ghost = model;
+      if (ghostHelps) helper.replaceGhost(model.clone());
       ghostFaces = -Math.PI / 2;
       // GLTFLoader drops the dot from Blender's names: foot.L arrives as footL.
       ghostFoot = model.getObjectByName('footL') ?? null;
@@ -442,6 +447,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let warming = true;
   const unculled: Object3D[] = [];
   const projectedPlayer = new Vector3();
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   /** Draws the current scene without advancing a camera, animation or simulation clock. */
   function draw(): void {
@@ -532,7 +538,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       poff = tall !== want;
       tall += Math.sign(want - tall) * Math.min(Math.abs(want - tall), ((sized.scale - 1) * dt) / 1.2);
     }
-    helper.update(help.step, help.at, x, y, curr.standY, clock, dt);
+    helper.update(help, x, y, curr.standY, clock, dt, reducedMotion.matches || document.body.classList.contains('calm'));
+    // The helper is the same friend, not a second ghost alongside the one he is following.
+    ghostPlace.visible = chapter.ghost !== undefined && !(ghostHelps && helper.active);
     hiddenSweets.update(flags, clock, dt);
     glance.update(flags, ghostState, clock, dt);
     glitter.update(curr.bubble, x, y, clock);
@@ -695,6 +703,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         x: rect.left + (projectedPlayer.x + 1) * rect.width / 2,
         y: rect.top + (1 - projectedPlayer.y) * rect.height / 2,
       };
+    },
+    helperScreen() {
+      if (!hasFrame || !helper.active) return null;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return null;
+      helper.actor.getWorldPosition(projectedPlayer);
+      projectedPlayer.y += 0.5;
+      projectedPlayer.project(camera);
+      if (!Number.isFinite(projectedPlayer.x) || !Number.isFinite(projectedPlayer.y) || Math.abs(projectedPlayer.z) > 1 || Math.abs(projectedPlayer.x) > 1 || Math.abs(projectedPlayer.y) > 1) return null;
+      return { x: rect.left + (projectedPlayer.x + 1) * rect.width / 2, y: rect.top + (1 - projectedPlayer.y) * rect.height / 2 };
     },
     info: () => ({
       tier,

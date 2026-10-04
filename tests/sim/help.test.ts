@@ -107,8 +107,10 @@ describe('the helper', () => {
     expect(sim.help.step).toBe(2);
     ask(sim);
     expect(sim.help.step).toBe(3);
+    expect(sim.help.replay).toBe(1);
     ask(sim);
     expect(sim.help.step).toBe(3);
+    expect(sim.help.replay).toBe(2);
   });
 
   it('leaves when he has done the thing, and starts again at the next', () => {
@@ -165,10 +167,44 @@ describe('the helper', () => {
       game.frame(1 / 60, { x, y, hopHeld: true }, { hop: ahead && !wasAhead, act: offered && !wasOffered, helper: false });
       wasAhead = ahead;
       wasOffered = offered;
-      if (game.sim.help.step > 0) came++;
+      if (game.sim.help.step > 0 && !game.sim.help.visit) came++;
     }
     expect(game.sim.flags.has('goal')).toBe(true);
     expect(came).toBe(0);
+    expect(game.sim.flags.has('visit:gully')).toBe(true);
+  });
+
+  for (const help of ['ask', 'remind', 'guide'] as const) {
+    it(`visits the gully once on ${help}, without granting a puzzle or pulsing Använd`, () => {
+      const sim = at(garden, 59.2, 0.01, { flags: ['ladybird'] }, { help });
+      expect(sim.help).toMatchObject({ step: 1, at: { x: 63.5, y: 3.3 }, verb: null, visit: true });
+      expect([...sim.flags].filter((f) => !f.startsWith('beat:'))).toEqual(['ladybird', 'visit:gully']);
+      const visited = [...sim.flags];
+      run(sim, 6);
+      expect(sim.help.step).toBe(0);
+      run(sim, 2);
+      expect(sim.help.step).toBe(0);
+      const restored = at(garden, 59.2, 0.01, { flags: visited }, { help });
+      expect(restored.help.step).toBe(0);
+    });
+  }
+
+  it('keeps the story visit through local candy progress and lets a deliberate call ask for the next hint', () => {
+    const sim = at(garden, 59.2, 0.01, { flags: ['ladybird'] });
+    sim.flags.add('test-progress');
+    run(sim, 0.1);
+    expect(sim.help.visit).toBe(true);
+    ask(sim);
+    expect(sim.help).toEqual({ step: 2, at: { x: 63.5, y: 3.3 }, verb: 'lace', word: null });
+    ask(sim);
+    expect(sim.help.step).toBe(3);
+  });
+
+  it('does not replay the gully visit when loading a later checkpoint', () => {
+    const sim = new Sim(garden, {}, { checkpoint: 5, flags: ['ladybird'] });
+    run(sim, 1);
+    expect(sim.curr.x).toBeGreaterThan(66.4);
+    expect(sim.help.step).toBe(0);
   });
 });
 

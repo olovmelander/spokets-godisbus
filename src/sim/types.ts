@@ -261,7 +261,7 @@ export type HelpLevel = 'ask' | 'remind' | 'guide';
  * What the helper is doing (plan §4.6). Each time he asks it goes one step further:
  * 1. it goes to the place and looks at it;
  * 2. it knocks on the thing, and Använd's word pulses;
- * 3. a pale figure of Elof shows where to stand and do it.
+ * 3. a dotted figure of Elof demonstrates the action, without changing the simulation.
  * At 0 it is away.
  */
 export interface HelpState {
@@ -269,6 +269,10 @@ export interface HelpState {
   at: Vec | null;
   verb: Verb | null;
   word: string | null;
+  /** An authored story visit: looking/double-knocking only, never a pulse on Använd. */
+  visit?: boolean;
+  /** A fresh explicit request for step three restarts its short visual demonstration. */
+  replay?: number;
 }
 
 /** Where a simulation starts when a saved game is taken up again. */
@@ -377,6 +381,8 @@ export interface ChapterData {
   spots?: Spot[];
   /** The places where the ghost waits for him, in order. Left out: the chapter has no ghost. */
   ghost?: GhostPerch[];
+  /** Kapitel 1's helper is the ghost. A story visit happens once regardless of the chosen help level. */
+  helper?: { kind: 'ghost' | 'jay'; visit?: { id: string; from: number; to: number; at: Vec } };
   /** Where cones roll. */
   rollers?: Roller[];
   /**

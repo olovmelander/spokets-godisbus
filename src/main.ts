@@ -98,7 +98,7 @@ function start(): void {
   let settings: Settings = debugOn && params.get('style') === 'lugnt' ? settingsFor('lugnt') : save.settings;
   // A URL tier is a temporary inspection override. A deliberate menu choice replaces it.
   let requestedGraphics = tierFromQuery(params.get('tier')) ?? settings.graphics;
-  mountShell(document.body);
+  mountShell(document.body, chapter.helper?.kind);
   const canvas = byId<HTMLCanvasElement>('game');
   canvas.tabIndex = -1;
   let bootReady = false;
@@ -461,6 +461,11 @@ function start(): void {
     },
     {
       onDevice: showDevice,
+      // A short tap on the visitor asks the next hint, including taps inside the stick's clear area.
+      onTap: (x, y) => {
+        const at = view.helperScreen();
+        if (!platformBlocked() && !menuOpen() && at && Math.hypot(x - at.x, y - at.y) <= 32) askedForHelp = true;
+      },
       onKey: (key) => {
         if (platformBlocked()) return;
         if (story.open) story.back();

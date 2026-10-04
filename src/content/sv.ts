@@ -38,7 +38,7 @@ export const sv = {
   // The two action buttons. Använd will show the specific verb once there is something to do.
   hop: 'Hoppa',
   act: 'Använd',
-  // The button that calls the helper: no words in the game, a bird on the button.
+  // The button that calls the helper: a ghost portrait in Kapitel 1, a jay from Kapitel 2.
   help: 'Hjälp',
 
   // Shown instead of the on-screen controls when a keyboard or a gamepad is in use.

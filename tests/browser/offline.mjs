@@ -46,7 +46,7 @@ const external = [];
 const check = (name, value) => { assert.ok(value, name); checked++; console.log(`  ok   ${name}`); };
 async function ready(page) {
   await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
-  await page.waitForFunction(() => window.__godis.info().models.includes('boot/big-candy') && window.__godis.info().models.includes('boot/jay'), null, { timeout: 30000 });
+  await page.waitForFunction(() => window.__godis.state().bootReady, null, { timeout: 30000 });
 }
 async function waiting(page) {
   await page.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration())?.waiting, null, { timeout: 30000 });

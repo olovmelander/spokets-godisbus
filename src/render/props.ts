@@ -1,7 +1,8 @@
 import {
-  BoxGeometry, ConeGeometry, CylinderGeometry, DoubleSide, Group, InstancedMesh, LatheGeometry, Mesh, Object3D, MeshStandardMaterial, SphereGeometry, Vector2,
+  BoxGeometry, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, SphereGeometry, SRGBColorSpace, Vector2, Vector3,
 } from 'three';
-import type { Mover, RideLook, Spot } from '../sim/types';
+import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
+import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
 
 /**
  * Stand-ins for the things and the animals of the story, built in code: each is recognisable, and none is
@@ -561,41 +562,117 @@ function bird(): Group {
 }
 
 /**
- * The helper (plan §4.6): a bird that comes when he asks. It flies to the thing and looks at it; asked
- * again it knocks on it; asked a third time, a pale figure shows where to stand and do it. It has no words.
- * It is in the scene from the start, at no size, so nothing is compiled when it first comes.
+ * The helper (plan §4.6): the existing wooden ghost in the garden, then the jay. The third hint samples
+ * a dotted silhouette along a short action trajectory. Nothing here changes a rule or awards anything.
+ * All meshes exist from startup, including the still poses for the reduced-motion alternative.
  */
-export function helperProp() {
+export function helperProp(chapter: ChapterData, ghost?: Group) {
   const group = new Group();
-  const flyer = bird();
+  group.name = 'helper';
+  const flyer = new Group();
+  flyer.name = 'helper-actor';
+  flyer.add(ghost ?? bird());
   flyer.scale.setScalar(0);
-  // Where to stand: a pale figure the size of Elof, that fades in and out.
-  const pale = new MeshStandardMaterial({ color: '#fff6dc', roughness: 1, transparent: true, opacity: 0, depthWrite: false, emissive: '#fff0c0', emissiveIntensity: 0.6 });
-  const figure = new Group();
-  const body = new Mesh(new CylinderGeometry(0.16, 0.2, 0.6, 12), pale);
-  body.position.y = 0.34;
-  figure.add(body, ball(0.17, pale, 0, 0.8, 0));
-  group.add(flyer, figure);
+  const pale = () => new MeshStandardMaterial({ color: '#fff6dc', roughness: 1, transparent: true, opacity: 0, depthWrite: false, emissive: '#fff0c0', emissiveIntensity: 0.65 });
+  const figures = [0, 1, 2].map((i) => {
+    const mesh = new InstancedMesh(new SphereGeometry(0.026, 6, 4), pale(), 64);
+    mesh.name = `helper-demo-${i}`;
+    mesh.frustumCulled = false;
+    mesh.instanceMatrix.setUsage(DynamicDrawUsage);
+    group.add(mesh);
+    return mesh;
+  });
+  const rope = new Mesh(new CylinderGeometry(0.017, 0.017, 1, 6), pale());
+  rope.name = 'helper-demo-lace';
+  group.add(flyer, rope);
+  // Its first thought is only a smudge, not words or the later story's revealed figure (§3.4).
+  let thought: Mesh<PlaneGeometry, MeshBasicMaterial> | null = null;
+  if (ghost) {
+    const canvas = document.createElement('canvas'); canvas.width = 96; canvas.height = 64;
+    const c = canvas.getContext('2d')!;
+    c.fillStyle = '#fff6e2'; c.beginPath(); c.ellipse(49, 25, 42, 23, 0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(26, 55, 6, 4, -0.5, 0, Math.PI * 2); c.fill();
+    c.filter = 'blur(5px)'; c.fillStyle = '#8b8172'; c.beginPath(); c.ellipse(50, 25, 13, 10, -0.4, 0, Math.PI * 2); c.fill();
+    const texture = new CanvasTexture(canvas); texture.colorSpace = SRGBColorSpace;
+    thought = new Mesh(new PlaneGeometry(0.95, 0.65), new MeshBasicMaterial({ map: texture, transparent: true, opacity: 0, depthWrite: false }));
+    thought.name = 'helper-first-thought'; group.add(thought);
+  }
+  const dot = new Object3D(), end = new Vector3(), direction = new Vector3(), up = new Vector3(0, 1, 0);
+  function drawPose(mesh: InstancedMesh, pose: DemoPose): void {
+    let n = 0;
+    const point = (x: number, y: number) => {
+      dot.position.set(x - Math.sin(pose.lean) * y * 0.35, y, 0); dot.updateMatrix();
+      mesh.setMatrixAt(n++, dot.matrix);
+    };
+    const segment = (ax: number, ay: number, bx: number, by: number, count = 5) => {
+      for (let i = 0; i < count; i++) point(ax + (bx - ax) * i / (count - 1), ay + (by - ay) * i / (count - 1));
+    };
+    for (let i = 0; i < 10; i++) point(Math.cos(i / 10 * Math.PI * 2) * 0.15, 0.84 + Math.sin(i / 10 * Math.PI * 2) * 0.15);
+    segment(-0.13, 0.69, -0.12, 0.38); segment(0.13, 0.69, 0.12, 0.38);
+    segment(-0.13, 0.69, 0.13, 0.69); segment(-0.12, 0.38, 0.12, 0.38);
+    for (const side of [-1, 1]) {
+      segment(side * 0.11, 0.63, side * 0.18 + pose.reach * 0.28, 0.43 + pose.reach * 0.47, 6);
+      segment(side * 0.09, 0.37, side * (0.15 + pose.stride * 0.22), 0.03, 6);
+    }
+    mesh.count = n;
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.position.set(pose.x, pose.y, 0.7);
+  }
   let shown = 0;
   let last = { x: 0, y: 0 };
-  function update(step: number, at: { x: number; y: number } | null, x: number, y: number, standY: number, clock: number, dt: number): void {
+  let demonstration: DemoPose[] = [];
+  let demoKey = '';
+  let elapsed = 0;
+  function update(help: HelpState, x: number, y: number, standY: number, clock: number, dt: number, still: boolean): void {
+    const { step, at } = help;
     const here = step > 0 && at !== null;
     if (at) last = at;
     // It comes from where he is, and leaves upwards.
     if (here && shown === 0) flyer.position.set(x - 0.6, y + 1.4, 0.4);
-    shown = Math.min(1, Math.max(0, shown + (here ? dt : -dt) / 0.4));
-    const knock = step >= 2 ? Math.max(0, Math.sin(clock * 16)) * (Math.sin(clock * 3.2) > 0 ? 0.16 : 0) : 0;
-    const to = here ? { x: last.x - 0.45 + knock, y: last.y + 0.25 + Math.sin(clock * 5) * 0.04, z: 0.45 } : { x: flyer.position.x, y: flyer.position.y + dt * 4, z: 0.45 };
-    const k = 1 - Math.exp(-5 * dt);
+    shown = still ? (here ? 1 : 0) : Math.min(1, Math.max(0, shown + (here ? dt : -dt) / 0.4));
+    const cycle = clock % 3;
+    const doubleKnock = Math.max(0, 1 - Math.abs(cycle - 0.9) / 0.12) + Math.max(0, 1 - Math.abs(cycle - 1.2) / 0.12);
+    const knock = !still && (step >= 2 || help.visit) ? doubleKnock * 0.12 : 0;
+    const targetX = last.x - (ghost ? (help.verb === 'lace' || help.visit ? (step >= 3 ? 2.7 : 2.1) : 0.75) : 0.45);
+    const targetY = ghost ? demoFloor(chapter, targetX) : last.y + 0.25;
+    const to = here ? { x: targetX + knock, y: targetY + (still ? 0 : ghost ? Math.sin(Math.PI * shown) * 0.35 : Math.sin(clock * 5) * 0.04), z: 0.45 } : { x: flyer.position.x, y: flyer.position.y + dt * 4, z: 0.45 };
+    const k = still ? 1 : 1 - Math.exp(-5 * dt);
     flyer.position.set(flyer.position.x + (to.x - flyer.position.x) * k, flyer.position.y + (to.y - flyer.position.y) * k, to.z);
     flyer.scale.setScalar(shown * 0.9);
-    const beat = Math.sin(clock * 22) * 0.9;
-    flyer.getObjectByName('wingNear')!.rotation.x = -beat;
-    flyer.getObjectByName('wingFar')!.rotation.x = beat;
-    figure.position.set(last.x - 0.75, Math.min(last.y, standY), -0.15);
-    pale.opacity = step >= 3 ? 0.3 + 0.25 * Math.sin(clock * 5) : 0;
+    flyer.rotation.z = ghost ? -knock * 0.8 : 0;
+    if (thought) {
+      thought.material.opacity = help.visit ? shown * 0.9 : 0;
+      thought.position.set(flyer.position.x + 0.15, flyer.position.y + 1.5, 0.65);
+    }
+    const beat = still ? 0 : Math.sin(clock * 22) * 0.9;
+    const near = flyer.getObjectByName('wingNear'), far = flyer.getObjectByName('wingFar');
+    if (near) near.rotation.x = -beat;
+    if (far) far.rotation.x = beat;
+    const key = step >= 3 && at ? `${at.x},${at.y},${help.verb},${help.replay ?? 0}` : '';
+    if (key !== demoKey) { demoKey = key; elapsed = 0; demonstration = demoFor(chapter, help, standY); }
+    if (key) elapsed = Math.min(DEMO_SECONDS, elapsed + dt);
+    for (const [i, figure] of figures.entries()) {
+      const visible = key !== '' && (i === 0 || still);
+      figure.material.opacity = visible ? (still ? [0.24, 0.55, 0.35][i]! : 0.65) : 0;
+      if (!visible) continue;
+      drawPose(figure, sampleDemo(demonstration, still ? [0, DEMO_SECONDS * 0.6, DEMO_SECONDS][i]! : elapsed));
+    }
+    const pose = key ? sampleDemo(demonstration, still ? DEMO_SECONDS * 0.6 : elapsed) : null;
+    rope.material.opacity = pose?.rope ? 0.5 : 0;
+    if (pose?.rope) {
+      end.set(pose.x + 0.2, pose.y + 0.9, 0.7);
+      direction.set(pose.rope.x, pose.rope.y, 0.7).sub(end);
+      rope.position.copy(end).addScaledVector(direction, 0.5);
+      rope.scale.y = direction.length();
+      rope.quaternion.setFromUnitVectors(up, direction.normalize());
+    }
   }
-  return { group, update };
+  return { group, actor: flyer, update, get active() { return shown > 0.001; }, replaceGhost(model: Group) {
+    if (!ghost) return;
+    flyer.clear();
+    model.rotation.y = Math.PI / 2;
+    flyer.add(model);
+  } };
 }
 
 // --- what carries him ----------------------------------------------------------------------------------------

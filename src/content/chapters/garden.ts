@@ -48,6 +48,9 @@ function inFlight(t: number, offset: number): Candy {
 export const garden: ChapterData = {
   id: 'garden',
   place: 'garden',
+  // A clue to the ghost's secret, once at the gully on every help setting (§3.4, §4.6).
+  // It looks at the second hook and double-knocks; Använd is not pulsed until he asks for more help.
+  helper: { kind: 'ghost', visit: { id: 'gully', from: 59, to: 62, at: { x: 63.5, y: 3.3 } } },
   // The deck and its steps; the dry earth under the lower deck; the boulder; Pappa's shavings; the hedge.
   surfaces: [
     { from: -19, to: 46, kind: 'wood' },
@@ -231,7 +234,9 @@ export const garden: ChapterData = {
     { id: 'moa1', at: 161.5, who: 'moa', line: 'tiny' },
   ],
   cameras: [
-    { from: 46, to: 70, zoom: 1.25, lift: 0.4 },
+    { from: 46, to: 59, zoom: 1.25, lift: 0.4 },
+    // Portrait includes the hook and its landing during the helper's demonstration.
+    { from: 59, to: 70, zoom: 1.8, lift: 0.4, lead: 3.6 },
     { from: 108, to: 128, zoom: 1.25, lead: 3.2 },
     { from: 130, to: 152, zoom: 1.2 },
     { from: 164, to: 208, zoom: 1.5, lift: 0.5 },

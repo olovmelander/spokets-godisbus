@@ -104,3 +104,9 @@ Validation: typecheck and sixteen integrated journey/map/story tests pass, inclu
 Discovered memories can be replayed from the paused album, with next, close, Escape and controller-back controls. Closing returns focus to the originating album item. Playback preserves the current picture and remaining time while the page is hidden or the renderer recovers.
 
 Validation: typecheck and memory tests pass. Source browser checks cover automatic discovery, replay, input methods, natural completion, focus restoration and unchanged save progress.
+
+## Let the garden ghost demonstrate the third hint
+
+The garden ghost now acts as the helper, remembers the gully visit and demonstrates the third hint with an authored trajectory. Repeated requests replay it; reduced motion shows still poses. Demonstrations never award puzzle progress.
+
+Validation: typecheck and 23 integrated helper tests pass. Source checks cover both orientations and Low/High, touch calling, replay, pause, one visible ghost and stable shaders within the draw budget.

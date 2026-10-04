@@ -468,7 +468,7 @@ export class Sim {
     const further = this.curr.x > this.furthest + 1;
     if (further) this.furthest = this.curr.x;
     if (now !== this.progress || further) {
-      if (this.progress !== -1 && now !== this.progress) this.leave();
+      if (this.progress !== -1 && now !== this.progress && !this.help.visit) this.leave();
       this.progress = now;
       this.idle = 0;
       this.reminded = false;
@@ -477,11 +477,24 @@ export class Sim {
     }
     if (this.help.step > 0) {
       this.helpFor += STEP;
-      if (this.helpFor > HELP_TIME) this.leave();
+      if (this.helpFor > (this.help.visit ? 5 : HELP_TIME)) this.leave();
+    }
+    const visit = this.chapter.helper?.visit;
+    if (visit && this.curr.x >= visit.from && this.curr.x <= visit.to && !this.flags.has(`visit:${visit.id}`)) {
+      // Remember the story beat in ordinary save flags, without moving Elof, the ghost's chase state or
+      // any puzzle. A candy/checkpoint on this stretch must not immediately cancel its quiet visit.
+      this.flags.add(`visit:${visit.id}`);
+      this.help.step = 1;
+      this.help.at = { ...visit.at };
+      this.help.verb = null;
+      this.help.word = null;
+      this.help.visit = true;
+      delete this.help.replay;
+      this.helpFor = 0;
     }
     const level = this.options.help ?? 'ask';
     const byItself = !this.reminded && ((level === 'remind' && this.idle >= REMIND_AFTER) || (level === 'guide' && this.idle >= GUIDE_AFTER));
-    if (!asked && !byItself) return;
+    if (!asked && (!byItself || this.help.visit)) return;
     const hint = hintFor(this, this.chapter);
     if (!hint) return;
     const same = this.help.step > 0 && this.help.at !== null && this.help.at.x === hint.at.x && this.help.at.y === hint.at.y;
@@ -491,6 +504,9 @@ export class Sim {
     this.help.at = { x: hint.at.x, y: hint.at.y };
     this.help.verb = hint.verb;
     this.help.word = hint.word;
+    delete this.help.visit;
+    if (this.help.step === 3 && asked) this.help.replay = (this.help.replay ?? 0) + 1;
+    else if (this.help.step !== 3) delete this.help.replay;
     this.helpFor = 0;
   }
 
@@ -500,6 +516,8 @@ export class Sim {
     this.help.at = null;
     this.help.verb = null;
     this.help.word = null;
+    delete this.help.visit;
+    delete this.help.replay;
     this.helpFor = 0;
   }
 

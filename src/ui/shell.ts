@@ -14,6 +14,8 @@ const PLAY = svg('<path d="M8 5.5v13l11-6.5z" fill="currentColor"/>');
 const BIRD = svg(
   `<path d="M4 14c0-4 3-7 7-7 2.2 0 4 .9 5.2 2.4L20 9l-2.4 2.6c.3.8.4 1.6.4 2.4 0 3-2.6 5-6.5 5H7c-1.7 0-3-2-3-5z" ${line} stroke-width="1.9"/><circle cx="13.8" cy="10.8" r="1" fill="currentColor"/><path d="M4.4 15.6 2 18m7.5 1v2.4m3.5-2.4v2.4" ${line} stroke-width="1.7"/>`,
 );
+/** The wooden ghost: round top, two painted eyes, two shoes, and its paper bag; no mouth. */
+const GHOST = svg(`<path d="M6 17V9a6 6 0 0 1 12 0v8c0 2-2 3-6 3s-6-1-6-3z" ${line} stroke-width="1.8"/><circle cx="10" cy="8.5" r="1" fill="currentColor"/><circle cx="14.5" cy="8.5" r="1" fill="currentColor"/><path d="M7 21h3m4 0h3M15 12h6v6h-6z" ${line} stroke-width="1.7"/>`);
 const CROSS = svg(`<path d="M6 6l12 12M18 6 6 18" ${line} stroke-width="2.6"/>`);
 const PEOPLE = svg('<circle cx="8" cy="7" r="3" fill="currentColor"/><circle cx="17" cy="9" r="2.5" fill="currentColor"/><path d="M2 21v-4a6 6 0 0 1 12 0v4m1-7a5 5 0 0 1 7 5v2" fill="none" stroke="currentColor" stroke-width="2"/>');
 const HOME = svg(`<path d="m2 11 10-9 10 9M5 9v13h14V9m-10 13v-8h6v8" ${line} stroke-width="2"/>`);
@@ -48,12 +50,13 @@ const p = sv.pause;
  * on-screen controls, the hint, the notice, the debug text and the message. The game page and
  * dev/menus.html both call it, so the preview can't drift from the game.
  */
-export function mountShell(root: HTMLElement): void {
+export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): void {
+  const portrait = helper === 'ghost' ? GHOST : BIRD;
   root.insertAdjacentHTML(
     'beforeend',
     `<button class="bag" id="bag" type="button">${BAG}<span id="bagCount">0</span><span class="stickers" id="bagStickers"></span></button>
      <button class="corner" id="pauseBtn" type="button" aria-label="${p.open}">${PAUSE}</button>
-     <button class="corner help" id="helpBtn" type="button" aria-label="${sv.help}">${BIRD}</button>
+     <button class="corner help" id="helpBtn" type="button" aria-label="${sv.help}">${portrait}</button>
      <div class="controls" id="controls" hidden>
        <div class="stick-zone" id="stickZone">
          <div class="stick-base" id="stickBase"><div class="stick-knob" id="stickKnob"></div></div>
@@ -114,7 +117,7 @@ export function mountShell(root: HTMLElement): void {
          <details class="setting-hint" id="homeScreenHelp"><summary>${sv.homeScreen.title}</summary>
            <p>${sv.homeScreen.apple}</p><p>${sv.homeScreen.android}</p><p>${sv.homeScreen.offline}</p>
          </details>
-         <h3 id="helpTitle">${BIRD}<span>${p.help}</span></h3>
+         <h3 id="helpTitle">${portrait}<span>${p.help}</span></h3>
          <div class="levels" role="radiogroup" aria-labelledby="helpTitle">
            <button class="level" id="helpAsk" type="button" role="radio">${p.helpAsk}</button>
            <button class="level" id="helpRemind" type="button" role="radio">${p.helpRemind}</button>

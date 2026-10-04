@@ -27,7 +27,7 @@ const state = () => page.evaluate(() => window.__godis.state());
 async function open(query) {
   await page.goto(`${origin}${base}?dev&debug&standin&tier=low&${query}`);
   await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
-  await page.waitForFunction(() => window.__godis.info().models.includes('boot/jay') && window.__godis.info().models.includes('boot/big-candy'));
+  await page.waitForFunction(() => window.__godis.state().bootReady);
   const warmed = (await state()).steps;
   await page.waitForFunction((step) => window.__godis.state().steps > step + 8, warmed);
   await page.waitForFunction(() => window.__godis.state().grounded);
