@@ -8,6 +8,7 @@ export interface TitleHandlers {
   onStartOver(): boolean | void | Promise<boolean | void>;
   onCode(chapter: string): void;
   onSettings?(): void;
+  onFront?(): void;
   onSelect?(id: string): boolean;
   onCreate?(name: string, style: PlayStyle): boolean;
   onDelete?(id: string): boolean | Promise<boolean>;
@@ -52,6 +53,7 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
     byId('codeForm').hidden = true;
     byId('codeWrong').hidden = true;
     section('titleFront', state.unreadable ? 'playersBtn' : 'startBtn');
+    handlers.onFront?.();
   }
   function confirm(text: string, action: () => boolean | void | Promise<boolean | void>, from: string): void {
     byId('playerConfirmText').textContent = text;
@@ -134,6 +136,7 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
     form.hidden = !form.hidden;
     wrong.hidden = true;
     if (!form.hidden) field.focus();
+    else handlers.onFront?.();
   });
   field.addEventListener('input', () => (wrong.hidden = true));
   form.addEventListener('submit', (event) => {

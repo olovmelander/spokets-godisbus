@@ -26,6 +26,7 @@ import { createPause } from './ui/pause';
 import { mountShell } from './ui/shell';
 import { createTitle } from './ui/title';
 import { createPhotoAlbum } from './ui/photos';
+import { createOffline } from './platform/offline';
 import './ui/ui.css';
 
 declare global {
@@ -296,6 +297,7 @@ function start(): void {
     paused = true;
     input.release();
     title.show(begun, { currentId: store.currentId, players: store.players(), available: store.available, unreadable: store.load().kind === 'unreadable' });
+    offline.check();
   }
   function reloadPlayer(): void {
     // The outgoing page must never autosave its simulation into the newly selected profile.
@@ -306,24 +308,29 @@ function start(): void {
   }
   const newPlayerChapter = courseFor(new URLSearchParams(params.has('dev') ? 'dev' : ''), null).id;
   const title = createTitle(document, {
+    onFront() { offline.check(); },
     onSettings() {
+      if (!offline.canStart()) return;
       titleSettings = true;
       title.hide();
       pause.show({ ...settings, graphics: requestedGraphics }, true);
     },
     onSelect(id) {
+      if (!offline.canStart()) return false;
       if (begun && loaded.kind !== 'unreadable') writeSave();
       if (!store.select(id)) return false;
       reloadPlayer();
       return true;
     },
     onCreate(name, style) {
+      if (!offline.canStart()) return false;
       if (begun && loaded.kind !== 'unreadable') writeSave();
       if (!store.create(name, style, newPlayerChapter, Date.now())) return false;
       reloadPlayer();
       return true;
     },
     async onDelete(id) {
+      if (!offline.canStart()) return false;
       again = true;
       profileMutationPending = true;
       const cleared = id === photoPlayer ? await clearSavedPhotos() : await photoStore.clear(id);
@@ -333,7 +340,7 @@ function start(): void {
       return true;
     },
     onStart(style) {
-      if (store.load().kind === 'unreadable') return;
+      if (!offline.canStart() || store.load().kind === 'unreadable') return;
       begun = true;
       if (style) {
         settings = { ...settingsFor(style), graphics: settings.graphics, ...Object.fromEntries(OWN_SWITCHES.map(key => [key, settings[key]])) };
@@ -349,6 +356,7 @@ function start(): void {
       writeSave();
     },
     async onStartOver() {
+      if (!offline.canStart()) return false;
       again = true;
       profileMutationPending = true;
       if (!await clearSavedPhotos()) { again = false; profileMutationPending = false; return false; }
@@ -357,6 +365,7 @@ function start(): void {
       return true;
     },
     onCode(id) {
+      if (!offline.canStart()) return;
       // The chapter's start, with whatever this device has kept of the others. The code holds no candy.
       const others = <T>(all: Record<string, T>) => Object.fromEntries(Object.entries(all).filter(([key]) => key !== id)) as Record<string, T>;
       save = { ...save, updated: Date.now(), settings, chapter: id, checkpoint: -1, candy: others(save.candy), placed: others(save.placed), flags: others(save.flags) };
@@ -367,6 +376,10 @@ function start(): void {
       const query = params.toString();
       location.href = `${location.pathname}${query ? `?${query.replace(/=(?=&|$)/g, '')}` : ''}`;
     },
+  });
+  const offline = createOffline({
+    isTitle: () => title.open && !profileMutationPending && !byId('titleFront').hidden && byId('codeForm').hidden === true,
+    setUpdateLock: (locked) => { byId('title').inert = locked; },
   });
   const input = createInput(
     {

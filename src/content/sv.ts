@@ -4,6 +4,13 @@
  */
 export const sv = {
   title: 'Elof och det stora godisäventyret',
+  homeScreen: {
+    shortName: 'Elofs äventyr',
+    title: 'Lägg till på hemskärmen',
+    apple: 'På iPhone och iPad: öppna spelet i Safari, tryck på Dela och välj Lägg till på hemskärmen.',
+    android: 'På Android: öppna webbläsarens meny och välj Installera app eller Lägg till på startskärmen.',
+    offline: 'Öppna spelet med internet först. Delar som har laddats kan sedan spelas utan internet, så länge enheten har plats att spara dem.',
+  },
 
   // The two action buttons. Använd will show the specific verb once there is something to do.
   hop: 'Hoppa',

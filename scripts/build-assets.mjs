@@ -2,7 +2,8 @@
 // game can load, in public/packs/<pack>/. Textures become KTX2 (ETC1S), meshes are compressed with meshopt,
 // and manifest.json lists the bytes per pack. public/packs/ is generated and never committed.
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { delimiter, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -56,6 +57,7 @@ const packs = [...packsIn(BAKED), ...packsIn(PRIVATE_BAKED)];
 for (const [pack, folder] of packs) {
   mkdirSync(join(OUT, pack), { recursive: true });
   const files = {};
+  const hashes = {};
   for (const name of readdirSync(folder).filter((file) => file.endsWith('.glb')).sort()) {
     const source = join(folder, name);
     const target = join(OUT, pack, name);
@@ -65,9 +67,10 @@ for (const [pack, folder] of packs) {
     transform(['meshopt', temp, target, '--level', 'medium']);
     rmSync(temp);
     files[name] = statSync(target).size;
+    hashes[name] = createHash('sha256').update(readFileSync(target)).digest('hex');
     console.log(`  ${pack}/${name}: ${statSync(source).size} → ${files[name]} bytes`);
   }
-  manifest.packs[pack] = { bytes: Object.values(files).reduce((sum, bytes) => sum + bytes, 0), files };
+  manifest.packs[pack] = { bytes: Object.values(files).reduce((sum, bytes) => sum + bytes, 0), files, hashes };
 }
 mkdirSync(OUT, { recursive: true });
 writeFileSync(join(OUT, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);

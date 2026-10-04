@@ -96,6 +96,9 @@ export function mountShell(root: HTMLElement): void {
          <p class="setting-hint" id="graphicsHint">${p.graphicsHint}</p>
          <p class="setting-hint" id="graphicsFallback" role="status" hidden>${p.graphicsFallback}</p>
          <button class="wide" id="controlsReferenceBtn" type="button">${sv.controls.title}</button>
+         <details class="setting-hint" id="homeScreenHelp"><summary>${sv.homeScreen.title}</summary>
+           <p>${sv.homeScreen.apple}</p><p>${sv.homeScreen.android}</p><p>${sv.homeScreen.offline}</p>
+         </details>
          <h3 id="helpTitle">${BIRD}<span>${p.help}</span></h3>
          <div class="levels" role="radiogroup" aria-labelledby="helpTitle">
            <button class="level" id="helpAsk" type="button" role="radio">${p.helpAsk}</button>

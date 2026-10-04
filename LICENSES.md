@@ -14,8 +14,8 @@ under CC0 or CC BY, and never anything from Hunyuan3D (plan §5.6).
 
 ## Libraries
 
-Installed from npm, never copied into the repository. The first two are part of the game that is served; the
-rest are tools.
+Installed from npm, never copied into the repository. Three, planck and Workbox are part of the game that is
+served; the rest are tools.
 
 | Library | Version | Licence | Used for |
 | --- | --- | --- | --- |
@@ -28,6 +28,8 @@ rest are tools.
 | @vitejs/plugin-basic-ssl | 2.3.0 | MIT | HTTPS for `npm run dev:lan` |
 | @gltf-transform/cli | 4.5.1 | MIT | The asset build: KTX2 textures and meshopt |
 | @types/three | 0.186.0 | MIT | Types |
+| vite-plugin-pwa | 1.3.0 | MIT | Web app manifest and service-worker build |
+| workbox-core, workbox-precaching, workbox-routing, workbox-strategies, workbox-expiration | 7.4.1 | MIT | Offline shell, bounded chapter caches and safe updates |
 
 Two tools are installed on the computer and never copied into the repository: **KTX-Software** 4.4.2
 (Apache-2.0), whose `ktx` writes the KTX2 textures, and **Blender** 4.5 LTS (GPL, which covers the tool and not
@@ -42,6 +44,7 @@ the files made with it). three's Basis transcoder (Apache-2.0) is served with th
 
 | File | What it is | Source and licence |
 | --- | --- | --- |
+| `public/icons/ghost-{180,192,512}.png` | Home Screen icons | Exact SVG ghost already drawn in `index.html`, rendered on its existing cream background with sharp. Made in code for this game; no reference image or new likeness. |
 | `art/baked/boot/big-candy.glb` | The big candy: a striped sweet on a stick | Made for this game in Blender by `art/blender/big-candy.py`, which also paints its texture. Nothing in it comes from anyone else. |
 | `art/baked/boot/jay.glb` | Lavskrikan, the Siberian jay: the helper, and the friend he shares a berry with | Made for this game in Blender by `art/blender/jay.py`: plain shapes in plain colours, with no texture. Nothing in it comes from anyone else. |
 
