@@ -10,6 +10,7 @@ import { createPhotoMoments } from './content/photos';
 import { albumHtml } from './ui/album';
 import { mapSvg, mapState } from './ui/map';
 import { createMemory } from './ui/memory';
+import { createExplore } from './ui/explore';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
 import { createAutoTier, createDynamicResolution, tierFromQuery } from './render/quality';
@@ -18,6 +19,7 @@ import { changeStyle, settingsFor, simOptions, tempoOf, type Settings } from './
 import { codeFor } from './save/codes';
 import { createStore, newSave, type PlayerSave } from './save/store';
 import { createPhotoStore } from './save/photos';
+import { chapterQuery, rememberFlags, storyFinished, visitChapter } from './save/journey';
 import type { SimStart, Vec } from './sim/types';
 import { createBench } from './ui/bench';
 import { createDebug, type Debug } from './ui/debug';
@@ -116,10 +118,10 @@ function start(): void {
   const seeded = debugOn ? (params.get('flags') ?? '').split(',').filter((flag) => flag !== '') : [];
   const carried = [...(chapter.id === 'epilog' ? lostFound(save.flags).map(lostFlag) : []), ...seeded];
   const from: SimStart =
-    at || save.chapter !== chapter.id
+    at
       ? (carried.length > 0 ? { flags: carried } : {})
       : {
-          checkpoint: save.checkpoint, collected: save.candy[chapter.id] ?? [], placed: save.placed[chapter.id] ?? [],
+          checkpoint: save.chapter === chapter.id ? save.checkpoint : (save.checkpoints?.[chapter.id] ?? -1), collected: save.candy[chapter.id] ?? [], placed: save.placed[chapter.id] ?? [],
           // Reaching the end is not kept: a game taken up again can reach it again.
           flags: [...(save.flags[chapter.id] ?? []).filter((flag) => flag !== 'goal'), ...carried],
         };
@@ -207,9 +209,10 @@ function start(): void {
       settings,
       chapter: chapter.id,
       checkpoint: game.sim.checkpoint,
+      checkpoints: { ...save.checkpoints, [chapter.id]: Math.max(save.checkpoints?.[chapter.id] ?? -1, game.sim.checkpoint) },
       candy: { ...save.candy, [chapter.id]: game.sim.collected.flatMap((got, i) => (got ? [i] : [])) },
       placed: { ...save.placed, [chapter.id]: game.sim.placed },
-      flags: { ...save.flags, [chapter.id]: [...game.sim.flags] },
+      flags: { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags) },
       playMs: save.playMs + (now - playedFrom),
     };
     playedFrom = now;
@@ -235,6 +238,19 @@ function start(): void {
   // Pause: the game stands still, and the panel has the play style and "Jag har fastnat" (plan §6.10).
   let paused = false;
   let ended = false;
+  const explore = createExplore(document, (id) => {
+    if (!platformBlocked() && offline.canStart()) goOn(id);
+  });
+  function openExplore(): void {
+    if (platformBlocked() || !offline.canStart() || story.open || photoAlbum.open || memories.open || !params.has('dev') || !storyFinished(save.flags)) return;
+    input.release();
+    if (!title.open) writeSave();
+    explore.show(save);
+  }
+  for (const id of ['titleExplore', 'pauseExplore', 'endExplore']) {
+    byId(id).hidden = !params.has('dev') || !storyFinished(save.flags);
+    byId(id).addEventListener('click', openExplore);
+  }
   let auto = !benchOn && requestedGraphics === 'auto' && view.info().tier === 'mid' ? createAutoTier() : null;
   let resolution = !benchOn && requestedGraphics === 'auto' ? createDynamicResolution() : null;
   let busyMs = 0;
@@ -242,11 +258,12 @@ function start(): void {
     return !bootReady || contextLost || !byId('message').hidden || document.hidden;
   }
   function menuOpen(): boolean {
-    return paused || ended || title.open || memories.open || photoAlbum.open || story.open;
+    return paused || ended || title.open || memories.open || photoAlbum.open || story.open || explore.open;
   }
   function focusScope(): HTMLElement | null {
     if (!byId('message').hidden) return byId('message');
     if (story.open) return story.element;
+    if (explore.open) return explore.element;
     if (photoAlbum.open) return byId('photoAlbum');
     if (memories.open) return byId('memory');
     if (title.open) return byId('title');
@@ -319,7 +336,7 @@ function start(): void {
   byId<HTMLButtonElement>('graphicsHigh').disabled = !hdrAvailable;
   byId('pauseBtn').addEventListener('click', openPause);
   function openBag(): void {
-    if (platformBlocked() || title.open || ended || memories.open || photoAlbum.open || story.open) return;
+    if (platformBlocked() || title.open || ended || memories.open || photoAlbum.open || story.open || explore.open) return;
     if (!pause.open) openPause();
     const album = byId('pauseAlbum');
     if (!byId('pauseOptions').hidden) {
@@ -417,7 +434,7 @@ function start(): void {
       if (!offline.canStart()) return;
       // The chapter's start, with whatever this device has kept of the others. The code holds no candy.
       const others = <T>(all: Record<string, T>) => Object.fromEntries(Object.entries(all).filter(([key]) => key !== id)) as Record<string, T>;
-      save = { ...save, updated: Date.now(), settings, chapter: id, checkpoint: -1, candy: others(save.candy), placed: others(save.placed), flags: others(save.flags) };
+      save = { ...save, updated: Date.now(), settings, chapter: id, checkpoint: -1, checkpoints: others(save.checkpoints ?? {}), candy: others(save.candy), placed: others(save.placed), flags: others(save.flags) };
       store.write(save);
       again = true;
       // Without ?course in the address: the code says where to go.
@@ -427,7 +444,7 @@ function start(): void {
     },
   });
   const offline = createOffline({
-    isTitle: () => title.open && bootReady && !contextLost && byId('message').hidden && !profileMutationPending
+    isTitle: () => title.open && !explore.open && bootReady && !contextLost && byId('message').hidden && !profileMutationPending
       && !byId('titleFront').hidden && byId('codeForm').hidden === true,
     setUpdateLock: (locked) => { byId('title').inert = locked; },
   });
@@ -446,6 +463,7 @@ function start(): void {
         if (platformBlocked()) return;
         if (story.open) story.back();
         else if (photoAlbum.open) photoAlbum.back();
+        else if (explore.open) explore.back();
         else if (key === 'bag') openBag();
         else if (title.open) title.back();
         else if (pause.open) pause.back();
@@ -455,6 +473,7 @@ function start(): void {
         if (platformBlocked()) return;
         if (story.open) story.back();
         else if (photoAlbum.open) photoAlbum.back();
+        else if (explore.open) explore.back();
         else if (title.open) title.back();
         else if (pause.open) pause.back();
       },
@@ -509,24 +528,19 @@ function start(): void {
   /** "Nästa kapitel": the saved game moves on to the next chapter's start, and the page loads it. */
   function goOn(id: string): void {
     writeSave();
-    save = { ...save, chapter: id, checkpoint: -1 };
+    save = visitChapter(save, id);
     store.write(save);
     again = true;
-    location.reload();
+    location.href = `${location.pathname}?${chapterQuery(params, id)}`;
   }
 
-  /** "Spela igen": this course from its start, with an empty bag. The settings stay. */
+  /** "Spela igen": this course from its start; the collection and safe places remain. */
   function playAgain(): void {
-    const without = (all: Record<string, unknown>) => Object.fromEntries(Object.entries(all).filter(([id]) => id !== chapter.id));
-    save = {
-      ...save, checkpoint: -1,
-      candy: without(save.candy) as PlayerSave['candy'],
-      placed: without(save.placed) as PlayerSave['placed'],
-      flags: without(save.flags) as PlayerSave['flags'],
-    };
+    writeSave();
+    save = visitChapter(save, chapter.id, true);
     store.write(save);
     again = true;
-    location.reload();
+    location.href = `${location.pathname}?${chapterQuery(params, chapter.id)}`;
   }
   let endFor = 0;
   // A memory plays once, when he touches its shaving: not again in a game that has seen it.
@@ -677,7 +691,7 @@ function start(): void {
     // The album: what earlier chapters hold in the save, and what this one holds now.
     if (game.sim.flags.size !== flagsSeen) {
       flagsSeen = game.sim.flags.size;
-      const all = { ...save.flags, [chapter.id]: [...game.sim.flags] };
+      const all = { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags) };
       const found = album(all);
       hud.stickers(found);
       // Hittegods: a thing found under the deck is said by name, once.
@@ -717,6 +731,8 @@ function start(): void {
       audio.sleep(true);
       input.release();
       writeSave();
+      const canExplore = params.has('dev') && storyFinished(save.flags);
+      for (const id of ['titleExplore', 'pauseExplore', 'endExplore']) byId(id).hidden = !canExplore;
       const number = chapterNumber(chapter.id);
       const following = params.has('dev') ? nextAfter(chapter.id) : null;
       // After the story's last part comes an extra chapter, if there is one.
@@ -725,7 +741,7 @@ function start(): void {
       const title = sv.end.named[chapter.id] ?? (number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course);
       const hidden = (chapter.hidden ?? []).map((h) => ({ kind: h.kind, found: game.sim.flags.has(foundFlag(h.kind)) }));
       hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, bonus ? sv.end.bonus : undefined);
-      byId(next ? 'endOnward' : 'endAgain').focus();
+      byId(canExplore ? 'endExplore' : next ? 'endOnward' : 'endAgain').focus();
       if (chapter.id === 'epilog') {
         byId('endPhotos').hidden = false;
         photoAlbum.credits();
@@ -741,7 +757,7 @@ function start(): void {
     busyMs = performance.now() - began;
     const elapsed = lastTime > 0 ? (time - lastTime) / 1000 : 0;
     if (auto && !auto.settled) {
-      if ((title.open || pause.open) && !photoAlbum.open && !memories.open && !story.open && !view.warming) {
+      if ((title.open || pause.open) && !photoAlbum.open && !memories.open && !story.open && !explore.open && !view.warming) {
         const next = auto.feed(elapsed, busyMs);
         if (auto.settled) {
           view.setTier(next); // Low/HDR shader variants warm here, while the game is safely paused.

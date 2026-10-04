@@ -89,7 +89,7 @@ describe('local player profiles', () => {
     const store = createStore(storage);
     expect(store.currentId).toBe('elof');
     expect(store.players()).toEqual([{ id: 'elof', name: 'Elof', kind: 'save' }]);
-    expect(store.load()).toEqual({ kind: 'save', save: oldSave });
+    expect(store.load()).toEqual({ kind: 'save', save: { ...oldSave, checkpoints: { [oldSave.chapter]: oldSave.checkpoint } } });
     expect(storage.items.get(indexKey)).toBeUndefined();
     expect(storage.items.get(key('elof'))).toBe(raw);
     expect(store.write(oldSave)).toBe(true);
@@ -107,11 +107,11 @@ describe('local player profiles', () => {
     expect(store.currentId).toBe(otherId);
     const moa = { ...newSave(200, 'prolog', settingsFor('lugnt'), 'Moa'), flags: { prolog: ['star'] } };
     expect(store.write(moa)).toBe(true);
-    expect(createStore(storage).load()).toEqual({ kind: 'save', save: moa });
+    expect(createStore(storage).load()).toEqual({ kind: 'save', save: { ...moa, checkpoints: { [moa.chapter]: moa.checkpoint } } });
     expect(store.select('elof')).toBe(true);
-    expect(store.load()).toEqual({ kind: 'save', save: elof });
+    expect(store.load()).toEqual({ kind: 'save', save: { ...elof, checkpoints: { [elof.chapter]: elof.checkpoint } } });
     expect(store.select(otherId)).toBe(true);
-    expect(store.load()).toEqual({ kind: 'save', save: moa });
+    expect(store.load()).toEqual({ kind: 'save', save: { ...moa, checkpoints: { [moa.chapter]: moa.checkpoint } } });
     expect(store.players()).toEqual([
       { id: 'elof', name: 'Elof', kind: 'save' }, { id: otherId, name: 'Moa', kind: 'save' },
     ]);
@@ -308,13 +308,13 @@ describe('local player profiles', () => {
     const freshAdventure = newSave(200, 'prolog');
     expect(freshTab.write(freshAdventure)).toBe(true);
     expect(oldTab.write(oldAdventure)).toBe(false);
-    expect(createStore(storage).load()).toEqual({ kind: 'save', save: freshAdventure });
+    expect(createStore(storage).load()).toEqual({ kind: 'save', save: { ...freshAdventure, checkpoints: { [freshAdventure.chapter]: freshAdventure.checkpoint } } });
 
     // The writer binds the new token too, and remains able to save its new game.
     const progressed = { ...freshAdventure, candy: { prolog: [0] } };
     expect(freshTab.write(progressed)).toBe(true);
     expect(oldTab.write(oldAdventure)).toBe(false);
-    expect(createStore(storage).load()).toEqual({ kind: 'save', save: progressed });
+    expect(createStore(storage).load()).toEqual({ kind: 'save', save: { ...progressed, checkpoints: { [progressed.chapter]: progressed.checkpoint } } });
   });
 
   it('cannot create, select, clear or remove profiles without storage', () => {
@@ -335,7 +335,7 @@ describe('saving', () => {
     expect(store.load()).toEqual({ kind: 'none' });
     const save = {
       ...newSave(1000, 'testbana', settingsFor('lugnt')),
-      checkpoint: 2, candy: { testbana: [0, 1, 5] }, placed: { testbana: ['plank'] }, playMs: 42000,
+      checkpoint: 2, checkpoints: { testbana: 2 }, candy: { testbana: [0, 1, 5] }, placed: { testbana: ['plank'] }, playMs: 42000,
     };
     expect(store.write(save)).toBe(true);
     expect(store.load()).toEqual({ kind: 'save', save });
@@ -366,7 +366,7 @@ describe('saving', () => {
     expect(loaded).toEqual({
       kind: 'save',
       save: {
-        v: SAVE_VERSION, name: 'Elof', updated: 5, chapter: 'testbana', checkpoint: -1, playMs: 0,
+        v: SAVE_VERSION, name: 'Elof', updated: 5, chapter: 'testbana', checkpoint: -1, checkpoints: { testbana: -1 }, playMs: 0,
         candy: { testbana: [0, 3] }, placed: { testbana: ['plank'] }, flags: {}, settings: settingsFor('lugnt'),
       },
     });
@@ -406,6 +406,6 @@ describe('reset while another tab is open', () => {
     expect(first.load()).toEqual({ kind: 'none' });
     expect(first.write(newSave(1, 'prolog'))).toBe(true);
     if (stale.kind === 'save') expect(staleTab.write(stale.save)).toBe(false);
-    expect(createStore(storage).load()).toEqual({ kind: 'save', save: newSave(1, 'prolog') });
+    expect(createStore(storage).load()).toEqual({ kind: 'save', save: { ...newSave(1, 'prolog'), checkpoints: { prolog: -1 } } });
   });
 });

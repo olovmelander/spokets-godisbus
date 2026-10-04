@@ -861,6 +861,23 @@ body.calm *::after {
   background: rgb(40 28 18 / 0.6);
 }
 
+.panel-back.explore { z-index: 13; }
+.chapter-list { display: grid; gap: 12px; }
+.chapter-choice {
+  display: grid;
+  gap: 7px;
+  min-height: 96px;
+  padding: 15px;
+  border: 2px solid #cfb991;
+  border-radius: 18px;
+  text-align: left;
+  background: #fff6e2;
+}
+.chapter-choice b { font-size: 21px; }
+.chapter-choice .rows { max-height: none; }
+.route-star { color: #806022; font-size: 26px; }
+#pauseExplore[hidden] { display: none; }
+
 .title .panel {
   text-align: center;
 }

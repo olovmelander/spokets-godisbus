@@ -36,6 +36,8 @@ export interface PlayerSave {
   chapter: string;
   /** The last big candy reached in that chapter, or -1 for its start. */
   checkpoint: number;
+  /** Furthest safe place reached in each chapter, kept when visiting another chapter. */
+  checkpoints?: Record<string, number>;
   /** The trail candy collected, per chapter, by its place in the chapter's list. */
   candy: Record<string, number[]>;
   /** The things on rails that are where they belong, per chapter, by id. */
@@ -84,6 +86,15 @@ export function readSave(text: string | null): Loaded {
   };
   const placed = names(from.placed);
   const flags = names(from.flags);
+  const chapter = typeof from.chapter === 'string' ? from.chapter : '';
+  const checkpoint = Number.isInteger(from.checkpoint) && (from.checkpoint as number) >= -1 ? from.checkpoint as number : -1;
+  const checkpoints: Record<string, number> = {};
+  if (typeof from.checkpoints === 'object' && from.checkpoints !== null) {
+    for (const [id, point] of Object.entries(from.checkpoints)) {
+      if (Number.isInteger(point) && (point as number) >= -1) checkpoints[id] = point as number;
+    }
+  }
+  if (chapter) checkpoints[chapter] = Math.max(checkpoints[chapter] ?? -1, checkpoint);
   return {
     kind: 'save',
     save: {
@@ -91,8 +102,9 @@ export function readSave(text: string | null): Loaded {
       name: typeof from.name === 'string' ? playerName(from.name) || FIRST_PLAYER.name : FIRST_PLAYER.name,
       updated: typeof from.updated === 'number' ? from.updated : 0,
       settings: readSettings(from.settings),
-      chapter: typeof from.chapter === 'string' ? from.chapter : '',
-      checkpoint: Number.isInteger(from.checkpoint) ? (from.checkpoint as number) : -1,
+      chapter,
+      checkpoint,
+      checkpoints,
       candy,
       placed,
       flags,

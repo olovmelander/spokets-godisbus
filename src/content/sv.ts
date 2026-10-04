@@ -175,6 +175,14 @@ export const sv = {
       crane: 'På tranans rygg', aurora: 'Under norrskenet', carving: 'Min första trägubbe',
     },
   },
+  explore: {
+    title: 'Utforska vidare',
+    hint: 'Välj en plats. Allt du har hittat finns kvar.',
+    routeFound: 'Utmaningsgodiset hittat',
+    routeWaiting: 'En utmaningsväg att utforska',
+    chapters: { prolog: 'Lördagsmorgon', garden: 'Gården', granskog: 'Granskogen', myren: 'Myren', berget: 'Berget', norrsken: 'Norrskenet', epilog: 'Godiskalaset', byn: 'Byn' } as Record<string, string>,
+    icons: { prolog: '☀', garden: '❀', granskog: '♧', myren: '≈', berget: '△', norrsken: '✧', epilog: '⌂', byn: '⌂' } as Record<string, string>,
+  },
 
   // The card at a chapter's end.
   end: {

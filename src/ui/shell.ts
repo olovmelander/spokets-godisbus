@@ -121,6 +121,7 @@ export function mountShell(root: HTMLElement): void {
            <button class="level" id="helpGuide" type="button" role="radio">${p.helpGuide}</button>
          </div>
          <div class="map" id="pauseMap"></div>
+         <button class="wide" id="pauseExplore" type="button" hidden><span aria-hidden="true">♧</span><span>${sv.explore.title}</span></button>
          <div class="album" id="pauseAlbum" tabindex="-1"></div>
          <button class="wide" id="titleBtn" type="button">${HOME}<span>${p.home}</span></button>
          <section id="albumPhotos" class="album-photos" aria-label="${sv.photos.title}"></section>
@@ -152,6 +153,7 @@ export function mountShell(root: HTMLElement): void {
            <button class="wide" id="titleSettingsBtn" type="button">${sv.players.settings}</button>
            <button class="wide small" id="startOverBtn" type="button" hidden>${sv.start.over}</button>
            <button class="wide small" id="codeBtn" type="button">${sv.code.have}</button>
+           <button class="wide" id="titleExplore" type="button" hidden><span aria-hidden="true">♧</span><span>${sv.explore.title}</span></button>
            <form class="code-form" id="codeForm" hidden>
              <input id="codeInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" maxlength="40" aria-label="${sv.code.hint}" placeholder="${sv.code.hint}">
              <button class="wide go" id="codeGo" type="submit">${sv.code.open}</button>
@@ -202,6 +204,7 @@ export function mountShell(root: HTMLElement): void {
          <p class="next" id="endNext">${sv.end.next}</p>
          <button class="wide" id="endPhotos" type="button" hidden>▧ ${sv.photos.again}</button>
          <button class="wide go" id="endOnward" type="button" hidden>${PLAY}<span>${sv.end.onward}</span></button>
+         <button class="wide go" id="endExplore" type="button" hidden><span aria-hidden="true">♧</span><span>${sv.explore.title}</span></button>
          <p class="code" id="endCode" hidden><span>${sv.code.next}</span><b id="endCodeWords"></b></p>
          <button class="wide" id="endAgain" type="button"><span>${sv.end.again}</span></button>
        </div>

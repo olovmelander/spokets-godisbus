@@ -80,3 +80,9 @@ Validation: typecheck and 28 integrated stroke/ending robot tests pass. Source b
 The party now offers three sweets and all five recipients. Every guest accepts every kind, gifts are saved without reducing the collection, and naming the ghost remains gated on sharing with everyone.
 
 Validation: typecheck and 35 integrated sharing, party, ending and lost-property tests pass. Source browser checks cover all input methods and continuation through the epilogue.
+
+## Revisit chapters after finishing the story
+
+After the story, Explore Further offers the seven story chapters and the village from the title, pause and ending. Revisits preserve collected sweets, completed story flags and each chapter's latest checkpoint; replaying starts at the beginning while keeping the collection.
+
+Validation: typecheck and 41 integrated journey/save tests pass. Source browser checks cover touch, keyboard, controller, explicit chapter URLs, saved completion and chapter-to-chapter progress. Release boundaries remain in place.
