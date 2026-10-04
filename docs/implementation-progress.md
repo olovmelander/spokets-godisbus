@@ -152,3 +152,9 @@ Validation: typecheck and 56 integrated device/save/settings tests pass. Source 
 Discovering the mountain's musical cobbles unlocks a brief explanation of the old shore and rounded stones when sharing candy at the party. It is optional, appears once and is saved without adding a story gate.
 
 Validation: typecheck and 25 integrated cobble/ending tests pass. The combined party browser check covers the remembered discovery and explanation.
+
+## Checkpoint the combined full-game implementation
+
+Integration checkpoint with profiles, photos, offline play, optional routes, story gestures and choices, exploration, memories, device controls, release routing, helper/tutorial, prologue and ending staging, LUT/depth/bloom/water/shadows, and GPU memory estimates/gates.
+
+At source 57a0314: 656 unit/robot tests and typecheck pass. A fresh combined build is 370.1 KB compressed JavaScript and 698.7 KB boot. Twenty-eight combined rendering checks pass; High target peak is 75.97 MB, total GPU at most 103.33 MB, and tested draw calls at most 85. Full final browser validation and immutable-pack CPU texture restoration are still in progress. This is a backup branch, with individual outcomes reviewed in the PR stack. RELEASED_CHAPTER remains null.

@@ -1,7 +1,9 @@
 // The pack step (plan §5.6, §6.6): every model baked from Blender in art/baked/<pack>/ becomes a file the
 // game can load, in public/packs/<pack>/. Textures become KTX2 (ETC1S), meshes are compressed with meshopt,
-// and manifest.json lists the bytes per pack. public/packs/ is generated and never committed.
+// and manifest.json lists transfer bytes plus a conservative GPU estimate. public/packs/ is generated,
+// never committed. Runtime GL allocation tracking remains the full-scene memory gate.
 import { spawnSync } from 'node:child_process';
+import { estimateBuild, estimateGlb, totalEstimates } from './asset-gpu-estimate.mjs';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { delimiter, join } from 'node:path';
@@ -58,6 +60,7 @@ for (const [pack, folder] of packs) {
   mkdirSync(join(OUT, pack), { recursive: true });
   const files = {};
   const hashes = {};
+  const gpuFiles = {};
   for (const name of readdirSync(folder).filter((file) => file.endsWith('.glb')).sort()) {
     const source = join(folder, name);
     const target = join(OUT, pack, name);
@@ -67,10 +70,17 @@ for (const [pack, folder] of packs) {
     transform(['meshopt', temp, target, '--level', 'medium']);
     rmSync(temp);
     files[name] = statSync(target).size;
-    hashes[name] = createHash('sha256').update(readFileSync(target)).digest('hex');
+    const packed = readFileSync(target);
+    hashes[name] = createHash('sha256').update(packed).digest('hex');
+    try { gpuFiles[name] = estimateGlb(packed); }
+    catch (error) { throw new Error(`${pack}/${name}: ${error.message}`, { cause: error }); }
     console.log(`  ${pack}/${name}: ${statSync(source).size} → ${files[name]} bytes`);
   }
-  manifest.packs[pack] = { bytes: Object.values(files).reduce((sum, bytes) => sum + bytes, 0), files, hashes };
+  manifest.packs[pack] = { bytes: Object.values(files).reduce((sum, bytes) => sum + bytes, 0), files, hashes, gpuEstimate: totalEstimates(gpuFiles) };
+}
+manifest.gpuEstimate = estimateBuild(Object.fromEntries(Object.entries(manifest.packs).map(([name, pack]) => [name, pack.gpuEstimate])));
+for (const [name, group] of Object.entries(manifest.gpuEstimate.loadGroups)) {
+  console.log(`  GPU estimate ${name}: ${Object.entries(group.tiers).map(([tier, value]) => `${tier} ${value.knownMiB} MiB`).join(', ')} (known allocations; runtime gate still required)`);
 }
 mkdirSync(OUT, { recursive: true });
 writeFileSync(join(OUT, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);

@@ -124,8 +124,8 @@ const GUESTS = [
  * And **Hittegods** (O2): what he found under the deck in Kapitel 1 lies on the table beside its owner, and
  * the one who gets candy from him sees it: "Mitt hårspänne!"
  *
- * Not built yet: the figure on the windowsill and its blink; the first trägubbe and the ghost on
- * the shelf; *Utforska vidare*. The album now plays as credits after the last step.
+ * Approved likenesses and hand/acting poses remain art work. The album leads to the last windowsill shot;
+ * the existing ending then offers free exploration.
  */
 export const epilog: ChapterData = {
   id: 'epilog',
@@ -134,6 +134,7 @@ export const epilog: ChapterData = {
   size: { scale: 3 },
   // The first trägubbe has its place again, first in the row.
   shelf: { x: 34, y: 5.4, filled: true },
+  epilogue: { window: { x: 40, y: 3.43, z: -8.3 } },
   spawn: { x: 1, y: 0.01 },
   goalX: 53,
   ground: [

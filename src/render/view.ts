@@ -1,22 +1,28 @@
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
-  DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
+  DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
   Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PlaneGeometry, PointLight, Quaternion,
-  Scene, Shape, SphereGeometry, TorusGeometry, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
+  Scene, Shape, SphereGeometry, TorusGeometry, UnsignedIntType, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
 import { captureFrame } from './capture';
+import { observeGpu, type GpuMemory } from './gpu-memory';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
 import { nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
-import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass } from './grade';
+import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
+import { createDepthBlur } from './depth-blur';
+import { createBloom } from './bloom';
+import { createWater } from './water';
+import { createCharacterShadows } from './character-shadows';
 import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
+import { createEpilogueStage } from './epilogue-stage';
 import { createPrologueStage } from './prologue-stage';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
@@ -34,6 +40,10 @@ export interface ViewInfo {
   drawCalls: number;
   triangles: number;
   programs: number;
+  geometries: number;
+  textures: number;
+  /** Allocation observer is present only with ?debug or ?bench. */
+  gpu: GpuMemory | null;
   pixelRatio: number;
   maxPixelRatio: number;
   resolutionSteps: number;
@@ -47,6 +57,7 @@ export interface ViewInfo {
   compressedTextures: number;
   /** The "role" custom properties set in Blender, read back from the models. */
   roles: string[];
+  shadows: { characters: number; contact: boolean; mapSize: number; casters: number };
 }
 
 /** What the picture is drawn from: two simulation states and what has been reached and collected. */
@@ -79,6 +90,7 @@ export interface Frame {
   /** The cranberries, in the chapter's order: how flat each is after a bounce, from 1 to 0. */
   berries?: readonly { squash: number }[];
   prologue?: PrologueFrame | null;
+  ending?: number | null;
   noteHits?: readonly { serial: number; id: string; midi: number }[];
   /** What the helper is doing: its step, and where the thing is. */
   help: HelpState;
@@ -120,7 +132,7 @@ const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
  * `asked` is the tier from settings or ?tier=, or null for Auto. With `standIns` the figures built in code are kept even
  * where the private pack has the family's models: for pictures that go into the repository.
  */
-export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null, standIns = false): View {
+export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null, standIns = false, trackGpu = false): View {
   // The context is made here, so that support is known before allocating HDR targets: Mid and High need
   // float colour buffers, and a device without them gets Low (plan §6.5).
   const gl = canvas.getContext('webgl2', {
@@ -128,6 +140,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   });
   // main.ts catches this and shows the message.
   if (!gl) throw new Error('WebGL 2 is not available');
+  const gpu = trackGpu ? observeGpu(gl) : null;
   const hdrAvailable = gl.getExtension('EXT_color_buffer_float') !== null;
   let tier = chooseTier(asked, hdrAvailable);
 
@@ -147,7 +160,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // release them and draw Low straight to the canvas, keeping this renderer, its assets and the scene.
   // Mid and High keep the same linear HDR → grade → Neutral/sRGB stages as r186's native setEffects path.
   const place = chapter.place ? PLACES[chapter.place] : null;
-  const gradePass = hdrAvailable ? createGradePass(place?.grade ?? GARDEN_MORNING) : null;
+  const grade = place?.grade ?? GARDEN_MORNING;
+  const gradePass = hdrAvailable ? createGradePass(grade) : null;
+  const materialGrade = createMaterialGrade(grade);
+  materialGrade.setEnabled(tier === 'low');
+  const depthBlur = hdrAvailable ? createDepthBlur() : null;
+  const bloom = hdrAvailable ? createBloom() : null;
   const outputPass = hdrAvailable ? new OutputPass() : null;
   if (outputPass) outputPass.renderToScreen = true;
   let hdr: { scene: WebGLRenderTarget; grade: WebGLRenderTarget } | null = null;
@@ -234,7 +252,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
-  const water = buildWater(chapter, place?.water ?? null);
+  const water = createWater(chapter, place?.water ?? null, place?.sun.from);
+  const waterScene = new Scene();
+  waterScene.fog = scene.fog;
+  waterScene.add(water.group);
   const tussockMeshes = buildTussocks(chapter, place?.tussock ?? null);
   const berryMeshes = buildBerries(chapter);
   for (const berry of berryMeshes) scene.add(berry);
@@ -243,7 +264,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const wind = buildWind(chapter);
   const night = buildNight(chapter, sky, hemisphere, sun);
   scene.add(night.group);
-  scene.add(water.group, ...tussockMeshes, mist.group, follower.group, wind.group);
+  scene.add(...tussockMeshes, mist.group, follower.group, wind.group);
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
   // It is the first asset through the whole chain: Blender → glTF → KTX2 and meshopt → the page.
@@ -298,6 +319,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(ghostPlace);
   const prologueStage = createPrologueStage(chapter.prologue);
   scene.add(prologueStage.group);
+  const epilogueStage = createEpilogueStage(chapter.epilogue);
+  scene.add(epilogueStage.group);
   let ghostFoot: Object3D | null = null;
   // The stand-in faces +x, as the stand-in Elof does; the model from Blender faces the camera.
   let ghostFaces = 0;
@@ -373,6 +396,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           model.scale.setScalar(sized.scale);
           stand.prop!.group.clear();
           stand.prop!.group.add(model);
+          characterShadows.add({ object: model, height: 1.6, radius: .3 });
           family.push({
             model, at: stand.at, glad: stand.glad, was: false, joy: 0,
             arms: [jointOf(model, 'upperarm_l', -1), jointOf(model, 'upperarm_r', -1)],
@@ -384,19 +408,25 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       .catch((error) => console.error('Someone in the family could not be loaded; the sign stays.', error));
   }
 
-  const shadow = new Mesh(
-    new CircleGeometry(0.27, 24),
-    new MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.3, depthWrite: false }),
-  );
-  shadow.rotation.x = -Math.PI / 2;
-  shadow.renderOrder = 1;
-  scene.add(shadow);
-  // The ghost has one too: it stands on the ground, it does not float over it.
-  const ghostShadow = new Mesh(shadow.geometry, shadow.material);
-  ghostShadow.rotation.x = -Math.PI / 2;
-  ghostShadow.renderOrder = 1;
-  ghostShadow.visible = false;
-  scene.add(ghostShadow);
+  const characterShadows = createCharacterShadows(renderer, scene, sun);
+  let playerGroundY = chapter.spawn.y;
+  let ghostGroundY = chapter.ghost?.[0]?.at.y ?? 0;
+  let ghostStaged = false;
+  characterShadows.add({ object: elof.group, height: 1, radius: .31, groundY: () => playerGroundY });
+  characterShadows.add({ object: ghostPlace, height: 1, radius: .36, active: () => !ghostStaged, groundY: () => ghostGroundY });
+  characterShadows.add({ object: helper.actor, height: ghostHelps ? 1 : .7, radius: .3,
+    groundY: () => Math.min(helper.actor.position.y, heightOfGroundAt(chapter, helper.actor.position.x)) });
+  if (chapter.follower && follower.group.children[0]) characterShadows.add({ object: follower.group.children[0], height: 1, radius: .3 });
+  const animal = { ladybird: [.5, .45], jay: [.7, .34], ants: [.3, .5], crane: [2.2, .4] } as const;
+  for (const thing of things) {
+    const size = thing.spot.look && animal[thing.spot.look as keyof typeof animal];
+    if (size && thing.prop) characterShadows.add({ object: thing.prop.group, height: size[0], radius: size[1] });
+  }
+  for (const carrier of carriers) if (carrier.prop && (carrier.ride.look === 'crane' || carrier.ride.look === 'ants')) {
+    characterShadows.add({ object: carrier.prop, height: carrier.ride.look === 'crane' ? 1.6 : .3, radius: .7,
+      groundY: () => Math.min(carrier.prop!.position.y, heightOfGroundAt(chapter, carrier.prop!.position.x)) });
+  }
+  characterShadows.setTier(tier);
 
   const camera = new PerspectiveCamera(FOV, 1, 0.1, 140);
   let viewHeight = 5;
@@ -433,13 +463,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       hdr = null;
     } else {
       hdr ??= {
-        scene: new WebGLRenderTarget(canvas.width, canvas.height, { type: HalfFloatType, stencilBuffer: false }),
+        scene: new WebGLRenderTarget(canvas.width, canvas.height, { type: HalfFloatType, stencilBuffer: false, depthTexture: new DepthTexture(canvas.width, canvas.height, UnsignedIntType) }),
         grade: new WebGLRenderTarget(canvas.width, canvas.height, { type: HalfFloatType, depthBuffer: false, stencilBuffer: false }),
       };
       hdr.scene.setSize(canvas.width, canvas.height);
       hdr.grade.setSize(canvas.width, canvas.height);
       gradePass?.setSize(canvas.width, canvas.height);
     }
+    depthBlur?.setSize(canvas.width, canvas.height, tier === 'high');
+    bloom?.setSize(canvas.width, canvas.height, tier === 'high');
+    water.setSize(canvas.width, canvas.height, tier);
     camera.aspect = width / height;
     // Elof is about 78 px tall on a phone held sideways, and the view is never narrower than 6 EL.
     const elofPx = clamp(height * 0.2, 75, 140);
@@ -453,6 +486,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let warm = 2;
   let warmedFor = 0;
   let hasFrame = false;
+  let inEndingShot = false;
   let warming = true;
   const unculled: Object3D[] = [];
   const projectedPlayer = new Vector3();
@@ -473,7 +507,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   function draw(): void {
     renderer.info.reset();
     if (warm > 0) {
-      scene.traverse((object) => {
+      water.applyCaustics(scene);
+      characterShadows.prepareReceivers();
+      materialGrade.apply(scene);
+      materialGrade.apply(waterScene);
+      for (const layer of [scene, waterScene]) layer.traverse((object) => {
         if (!object.frustumCulled) return;
         object.frustumCulled = false;
         unculled.push(object);
@@ -483,7 +521,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       renderer.setRenderTarget(hdr?.scene ?? null);
       // A normal (non-XR) render target uses linear output without material tone mapping.
       renderer.render(scene, camera);
+      if (hdr && water.refracting) water.capture(renderer, hdr.scene, camera);
+      renderer.setRenderTarget(hdr?.scene ?? null);
+      // Water reads the copied pre-water colour, while testing the scene's retained depth. No second
+      // scene render and no read/write feedback: this adds only the pool draws and one small copy.
+      const clear = renderer.autoClear;
+      renderer.autoClear = false;
+      try { renderer.render(waterScene, camera); } finally { renderer.autoClear = clear; }
       if (hdr && gradePass && outputPass) {
+        bloom?.render(renderer, hdr.scene);
+        gradePass.setBloom(bloom?.texture ?? null);
+        // The final macro shot focuses on the window figure, outside the usual z=0 play plane.
+        if (!inEndingShot) depthBlur?.render(renderer, hdr.scene, camera);
+        gradePass.setDepthBlur(inEndingShot ? null : depthBlur?.texture ?? null, hdr.scene.depthTexture, camera.near, camera.far, camera.position.z);
         gradePass.render(renderer, hdr.grade, hdr.scene);
         outputPass.render(renderer, hdr.grade, hdr.grade, 0, false);
       }
@@ -497,9 +547,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
   }
 
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue, ending }: Frame): void {
+    inEndingShot = !!chapter.epilogue && ending !== null && ending !== undefined;
     rain.update(drips);
     prologueStage.update(prologue, flags);
+    epilogueStage.update(flags, ending, reducedMotion.matches || document.body.classList.contains('calm'));
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
@@ -585,6 +637,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const centreY = look.y + viewHeight * look.zoom * (0.5 - GROUND_FROM_BOTTOM);
     camera.position.set(look.x, centreY, distance * look.zoom);
     camera.lookAt(look.x, centreY, 0);
+    if (chapter.epilogue && ending !== null && ending !== undefined) {
+      const window = chapter.epilogue.window;
+      const shotHeight = Math.max(2.6, 2.8 / camera.aspect);
+      camera.position.set(window.x, window.y + 0.65, window.z + shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
+      camera.lookAt(window.x, window.y + 0.65, window.z);
+    }
     const darkness = night.update(flags, look.x, centreY, clock, dt);
     if (dressing && place) {
       dressing.update(look.x, look.y, clock, darkness);
@@ -626,9 +684,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
     elof.body.rotation.z = -clamp(curr.vx / RUN_SPEED, -1, 1) * 0.12 * curr.facing;
 
-    const height = Math.max(0, y - curr.groundY);
-    shadow.position.set(x, curr.groundY + 0.012, 0);
-    shadow.scale.setScalar(tall * clamp(1 - height * 0.25, 0.35, 1));
+    playerGroundY = curr.groundY;
 
     // A big candy turns slowly until it is reached. Then it gives a little jump, and turns fast.
     for (const [i, big] of bigCandies.entries()) {
@@ -641,6 +697,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       big.place.scale.setScalar(1 + 0.3 * Math.sin(Math.PI * big.pop));
     }
 
+    ghostStaged = false;
     // The ghost is a wooden toy come alive: it never bends. Standing, it turns towards Elof, sways and taps
     // a foot. Hopping, it faces the way it goes and tips forward. Gone, it has shrunk away.
     if (ghostState) {
@@ -650,9 +707,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostPlace.position.set(ghostState.x, ghostState.y, 0);
       ghostPlace.scale.setScalar(ghostSize);
       // Its shadow lies where it stands. In a hop it is off the ground, and the shadow waits where it will land.
-      ghostShadow.visible = ghostPlace.visible && !hopping && ghostSize > 0.4;
-      ghostShadow.position.set(ghostState.x, ghostState.y + 0.012, 0);
-      ghostShadow.scale.setScalar(1.3 * ghostSize);
+      if (!hopping) ghostGroundY = ghostState.y;
       // 0 faces along the course; a half turn faces back at him.
       const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4;
       ghostTurn += (wanted - ghostTurn) * ease(7, dt);
@@ -665,12 +720,20 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostPlace.scale.setScalar(ghostSize);
         ghost.rotation.set(0, ghostFaces + pose.turn, pose.tilt);
         if (ghostFoot) ghostFoot.rotation.x = 0;
-        ghostShadow.visible = false;
+        ghostStaged = true;
       } else if (chapter.prologue && flags.has('pappa:done')) {
         ghostSize = 0;
         ghostPlace.scale.setScalar(0);
-        ghostShadow.visible = false;
+        ghostStaged = true;
       }
+    }
+    // His first figure has its place again, with Klonk beside it once Elof finishes painting.
+    if (chapter.epilogue && chapter.shelf && flags.has('dots')) {
+      ghostPlace.position.set(chapter.shelf.x - 2.4, chapter.shelf.y + 0.08, -8.5);
+      ghostPlace.scale.setScalar(1);
+      ghost.rotation.set(0, ghostFaces - Math.PI / 2, 0);
+      if (ghostFoot) ghostFoot.rotation.x = 0;
+      ghostStaged = true;
     }
     // The family: each turns a little towards him, and throws their arms up for a moment when he has given
     // them candy, or when they first come into the picture.
@@ -689,6 +752,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         bendJoint(one.hands[i] ?? null, up > 0 ? -0.2 * up : -0.08, ease(10, dt));
       }
     }
+    characterShadows.update(look.x, centreY, viewHeight * look.zoom * Math.max(1, camera.aspect) * .65);
     // Gate 6 (plan §6.12): no shader is compiled during play. The first frames, and the first after a model
     // has arrived, draw the whole chapter, in view or not, so that every material's shader exists from then on.
     if (models.length !== warmedFor) {
@@ -717,13 +781,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     setTier(next) {
       const chosen = chooseTier(next, hdrAvailable);
       if (tier === chosen) return;
-      const changesPipeline = (tier === 'low') !== (chosen === 'low');
+      const changesPipeline = (tier === 'low') !== (chosen === 'low') || tier === 'high' || chosen === 'high';
       tier = chosen;
+      characterShadows.setTier(tier);
+      materialGrade.setEnabled(tier === 'low');
       resolutionSteps = 0;
       gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
       resize();
+      // The previous tier's storage has been released/resized; new allocations use this tier's budget.
+      gpu?.resetPeaks();
       // Low and HDR need different material variants. Compile against their actual play targets before
-      // the paused settings handler returns. Mid ↔ High changes only pixels and the glow uniform.
+      // the paused settings handler returns. Entering High also warms its half-resolution depth, bloom and water passes.
       if (changesPipeline) {
         warm = 2;
         if (hasFrame) while (warm > 0) draw();
@@ -758,6 +826,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       drawCalls: renderer.info.render.calls,
       triangles: renderer.info.render.triangles,
       programs: renderer.info.programs?.length ?? 0,
+      geometries: renderer.info.memory.geometries,
+      textures: renderer.info.memory.textures,
+      gpu: gpu?.snapshot() ?? null,
       pixelRatio,
       maxPixelRatio,
       resolutionSteps,
@@ -767,6 +838,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       models,
       compressedTextures,
       roles,
+      shadows: characterShadows.info(),
     }),
   };
 }
@@ -894,28 +966,6 @@ function buildGround(chapter: ChapterData): Mesh {
   const geometry = new ExtrudeGeometry(shape, { depth: 4.7, bevelEnabled: false });
   geometry.translate(0, 0, -4);
   return new Mesh(geometry, new MeshStandardMaterial({ color: '#7f8f58', roughness: 1 }));
-}
-
-/**
- * The water of a pool or a brook, in greybox: a clear blue body that fills its pit to its surface, which
- * rises and sinks a little. The real water comes with the places (plan §5).
- */
-function buildWater(chapter: ChapterData, look: { colour: string; opacity: number } | null) {
-  const group = new Group();
-  const material = new MeshStandardMaterial({ color: look?.colour ?? '#4f9fc4', roughness: 0.25, transparent: true, opacity: look?.opacity ?? 0.78 });
-  const DEPTH = 6;
-  // In a place the water lies as far back as the eye reaches; in greybox it is as deep as the ground slab.
-  const back = look ? 46 : 4.6;
-  const bodies = (chapter.water ?? []).map((w) => {
-    const body = new Mesh(new BoxGeometry(w.to - w.from, DEPTH, back), material);
-    body.position.set((w.from + w.to) / 2, w.y - DEPTH / 2, 0.65 - back / 2);
-    group.add(body);
-    return { body, y: w.y - DEPTH / 2 };
-  });
-  function update(clock: number): void {
-    for (const [i, w] of bodies.entries()) w.body.position.y = w.y + Math.sin(clock * 1.3 + i) * 0.03;
-  }
-  return { group, update };
 }
 
 /**

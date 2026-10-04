@@ -14,6 +14,7 @@ import { createPhotoMoments } from './content/photos';
 import { albumHtml } from './ui/album';
 import { mapSvg, mapState } from './ui/map';
 import { createMemory, memoryAlbumHtml } from './ui/memory';
+import { createEnding } from './ui/ending';
 import { createExplore } from './ui/explore';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
@@ -135,7 +136,7 @@ function start(): void {
   let view: View;
   try {
     // ?standin keeps the figures built in code: for pictures that go into the repository (plan §2.6).
-    view = createView(canvas, chapter, requestedGraphics === 'auto' ? null : requestedGraphics, params.has('standin'));
+    view = createView(canvas, chapter, requestedGraphics === 'auto' ? null : requestedGraphics, params.has('standin'), debugOn);
   } catch (error) {
     console.error(error);
     showMessage(sv.noWebGL);
@@ -272,11 +273,16 @@ function start(): void {
   // Pause: the game stands still, and the panel has the play style and "Jag har fastnat" (plan §6.10).
   let paused = false;
   let ended = false;
+  const ending = createEnding(document, () => {
+    input.release();
+    audio.sleep(true);
+    audio.setPlace(arrangementFor(chapter.id, chapter.place));
+  });
   const explore = createExplore(document, (id) => {
     if (!platformBlocked() && offline.canStart()) goOn(id);
   }, canEnter);
   function openExplore(): void {
-    if (platformBlocked() || !offline.canStart() || story.open || photoAlbum.open || memories.open || !canEnter('epilog') || !storyFinished(save.flags)) return;
+    if (platformBlocked() || !offline.canStart() || ending.open || story.open || photoAlbum.open || memories.open || !canEnter('epilog') || !storyFinished(save.flags)) return;
     input.release();
     if (!title.open) writeSave();
     explore.show(save);
@@ -292,10 +298,11 @@ function start(): void {
     return !bootReady || contextLost || !byId('message').hidden || document.hidden;
   }
   function menuOpen(): boolean {
-    return paused || ended || title.open || memories.open || photoAlbum.open || story.open || explore.open;
+    return paused || ended || title.open || memories.open || photoAlbum.open || story.open || explore.open || ending.open;
   }
   function focusScope(): HTMLElement | null {
     if (!byId('message').hidden) return byId('message');
+    if (ending.open) return ending.element;
     if (story.open) return story.element;
     if (explore.open) return explore.element;
     if (photoAlbum.open) return byId('photoAlbum');
@@ -364,7 +371,14 @@ function start(): void {
     },
   });
   const hdrAvailable = view.info().hdrAvailable;
-  const photoAlbum = createPhotoAlbum(document, photoStore, photoPlayer);
+  const photoAlbum = createPhotoAlbum(document, photoStore, photoPlayer, () => {
+    if (chapter.epilogue && ended && !title.open && !profileMutationPending && !story.open && !memories.open && !explore.open && !platformBlocked() && ending.start()) {
+      input.release(); pointing.cancel(); askedForUse = askedForHelp = false;
+      audio.setPlace(null);
+      audio.sleep(false);
+      audio.unlock();
+    }
+  });
   void photoAlbum.refresh();
   byId('albumPhotos').hidden = !mapState(chapter.id, canEnter);
   byId('endPhotos').addEventListener('click', () => photoAlbum.credits());
@@ -481,7 +495,7 @@ function start(): void {
     },
   });
   const offline = createOffline({
-    isTitle: () => title.open && !explore.open && bootReady && !contextLost && byId('message').hidden && !profileMutationPending
+    isTitle: () => title.open && !ending.open && !explore.open && bootReady && !contextLost && byId('message').hidden && !profileMutationPending
       && !byId('titleFront').hidden && byId('codeForm').hidden === true,
     setUpdateLock: (locked) => { byId('title').inert = locked; },
   });
@@ -510,7 +524,8 @@ function start(): void {
       },
       onKey: (key) => {
         if (platformBlocked()) return;
-        if (story.open) story.back();
+        if (ending.open) ending.back();
+        else if (story.open) story.back();
         else if (photoAlbum.open) photoAlbum.back();
         else if (memories.open) memories.close();
         else if (explore.open) explore.back();
@@ -521,7 +536,8 @@ function start(): void {
       },
       onBack: () => {
         if (platformBlocked()) return;
-        if (story.open) story.back();
+        if (ending.open) ending.back();
+        else if (story.open) story.back();
         else if (photoAlbum.open) photoAlbum.back();
         else if (memories.open) memories.close();
         else if (explore.open) explore.back();
@@ -581,7 +597,7 @@ function start(): void {
       state: () => ({
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
-        pointing: { last: pointing.last, walking: pointing.walking }, tutorial: tutorial.shown, playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(), noteHits: game.sim.noteHits, bootReady, contextLost, prologue: game.sim.prologue?.frame ?? null,
+        pointing: { last: pointing.last, walking: pointing.walking }, tutorial: tutorial.shown, playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(), noteHits: game.sim.noteHits, bootReady, contextLost, ending: { open: ending.open, seconds: ending.seconds }, prologue: game.sim.prologue?.frame ?? null,
       }),
       screen: (at) => view.worldScreen(at),
       info: () => ({ ...view.info(), busyMs, autoSettled: auto?.settled ?? true,
@@ -713,7 +729,7 @@ function start(): void {
     const dt = Math.min(timer.getDelta(), 0.25);
     const blocked = platformBlocked();
     memories.suspend(blocked);
-    audio.sleep(blocked || menuOpen());
+    audio.sleep(blocked || (menuOpen() && !ending.open));
     if (blocked) {
       pointing.cancel();
       askedForUse = askedForHelp = false;
@@ -726,7 +742,8 @@ function start(): void {
     }
     // The wood knocks while the ghost is in the picture: the chase (plan §5.8).
     const ghost = game.sim.ghost;
-    audio.tick(ghost !== null && !ghost.gone && Math.abs(ghost.x - game.sim.curr.x) < 9);
+    if (!ending.open) audio.tick(ghost !== null && !ghost.gone && Math.abs(ghost.x - game.sim.curr.x) < 9);
+    if (ending.tick(dt)) audio.play({ kind: 'bell', midi: 86 });
     if (menuOpen()) {
       pointing.cancel();
       askedForUse = askedForHelp = false;
@@ -772,7 +789,7 @@ function start(): void {
     view.render({
       prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: menuOpen() ? 0 : dt, atGoal,
       collected: game.sim.collected, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
-      prologue: game.sim.prologue?.frame,
+      prologue: game.sim.prologue?.frame, ending: ending.seconds,
       flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts, help: game.sim.help,
       berries: game.sim.berries,
       noteHits: game.sim.noteHits,
@@ -889,6 +906,8 @@ function start(): void {
         return [
           `steps/frame ${game.lastSteps} · device ${device}`,
           `draw calls ${i.drawCalls} · triangles ${i.triangles} · programs ${i.programs}`,
+          ...(i.gpu ? [`GL ${(i.gpu.glBytes / 1e6).toFixed(1)} MB · targets ${(i.gpu.targetBytes / 1e6).toFixed(1)} · canvas estimate ${(i.gpu.canvasBytes / 1e6).toFixed(1)} · total ${(i.gpu.totalBytes / 1e6).toFixed(1)} MB`,
+            `geometries ${i.geometries} · textures ${i.textures} · GL buffers ${i.gpu.buffers}${i.gpu.unknownFormats.length ? ' · UNCOUNTED FORMAT' : ''}`] : []),
           `tier ${i.tier} · canvas ${i.width}×${i.height} · pixel ratio ${i.pixelRatio.toFixed(2)} / ${i.maxPixelRatio.toFixed(2)}`,
           `models ${i.models.join(', ') || 'none yet'} · KTX2 textures ${i.compressedTextures}`,
           `x ${n(p.x)} y ${n(p.y)} · vx ${n(p.vx)} vy ${n(p.vy)} · ${p.grounded ? 'on the ground' : 'in the air'}`,

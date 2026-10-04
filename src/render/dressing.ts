@@ -1212,6 +1212,8 @@ function built(chapter: ChapterData, indoors = false): Group {
       group.add(board);
       const tones = ['#d9bd8b', '#c9a877', '#e2c898', '#b99262', '#d2b07e', '#c4a070', '#dcc08e'];
       for (let i = 0; i < 7; i++) {
+        // Klonk comes back beside the old first figure after the carving lesson.
+        if (chapter.epilogue && i === 1) continue;
         const at = x - 3.6 + i * 1.2;
         if (i === 0 && !filled) {
           // The empty place: a paler patch on the wall where a figure once stood.

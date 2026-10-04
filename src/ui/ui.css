@@ -1191,3 +1191,17 @@ button.bag {
 @keyframes tutorial-move { 0%, 100% { transform: translate(-14px, 0) rotate(-14deg); } 50% { transform: translate(22px, 0) rotate(-14deg); } }
 body.calm .tutorial-hand { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .tutorial-hand { animation: none !important; } }
+
+/* The last camera shot stays visible behind a short caption and one ordinary menu control. */
+.ending-shot {
+  position: fixed; inset: 0; z-index: 11; display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between; padding: max(24px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
+  background: linear-gradient(#101a2a80, transparent 30%, transparent 72%, #101a2a80);
+}
+.ending-shot[hidden] { display: none; }
+.ending-shot p { max-width: 32ch; text-align: center; color: #fff6df; text-shadow: 0 2px 5px #000; font-size: clamp(18px, 4vw, 25px); }
+.ending-shot button { max-width: 300px; }
+
+.ending-shot .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.ending-view #controls, .ending-view #hint, .ending-view #bag, .ending-view #pauseBtn, .ending-view #helpBtn { visibility: hidden; }

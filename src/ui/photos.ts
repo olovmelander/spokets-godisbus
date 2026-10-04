@@ -17,7 +17,7 @@ export const photoAlbumHtml = `
     </section>
   </div>`;
 
-export function createPhotoAlbum(doc: Document, store: PhotoStore, player: string) {
+export function createPhotoAlbum(doc: Document, store: PhotoStore, player: string, onCreditsDone?: () => void) {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const panel = byId('photoAlbum');
   const section = byId('albumPhotos');
@@ -26,6 +26,7 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
   let credits = false;
   let source: HTMLElement | null = null;
   let focus: HTMLElement | null = null;
+  let focusMoment: string | null = null;
   let revision = 0;
 
   const count = () => photos.length + (credits ? 1 : 0);
@@ -49,6 +50,7 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
     credits = withCredits;
     source = from;
     focus = backTo;
+    focusMoment = backTo.dataset.photoMoment ?? null;
     from.hidden = true;
     panel.hidden = false;
     draw();
@@ -58,11 +60,23 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
     if (panel.hidden) return;
     panel.hidden = true;
     if (source) source.hidden = false;
-    focus?.focus();
+    // A capture can refresh the thumbnail list while this panel is open. Return to the same moment's
+    // new button rather than a detached element, with a visible source control when that moment vanished.
+    const visible = (element: HTMLElement | null): element is HTMLElement => !!element?.isConnected
+      && element.getClientRects().length > 0 && !element.closest('[hidden]') && !element.hasAttribute('disabled');
+    const current = focusMoment
+      ? [...section.querySelectorAll<HTMLElement>('[data-photo-moment]')].find((button) => button.dataset.photoMoment === focusMoment) ?? null
+      : null;
+    const target = [current, focus, ...(source?.querySelectorAll<HTMLElement>('button,input,[tabindex]:not([tabindex="-1"])') ?? [])].find(visible);
+    target?.focus();
     source = focus = null;
+    focusMoment = null;
   }
   byId('photoPrevious').addEventListener('click', () => { if (index > 0) { index--; draw(); } });
-  byId('photoNext').addEventListener('click', () => { if (index + 1 < count()) { index++; draw(); } else back(); });
+  byId('photoNext').addEventListener('click', () => {
+    if (index + 1 < count()) { index++; draw(); }
+    else { const completedCredits = credits; back(); if (completedCredits) onCreditsDone?.(); }
+  });
   for (const id of ['photoClose', 'photoBack']) byId(id).addEventListener('click', back);
   panel.addEventListener('click', (event) => { if (event.target === panel) back(); });
   panel.addEventListener('keydown', (event) => {
@@ -92,6 +106,7 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
         const button = doc.createElement('button');
         button.type = 'button';
         button.className = 'photo-thumb';
+        button.dataset.photoMoment = photo.moment;
         button.setAttribute('aria-label', sv.photos.open.replace('{name}', sv.photos.moments[photo.moment]));
         const img = doc.createElement('img');
         img.src = photo.url;

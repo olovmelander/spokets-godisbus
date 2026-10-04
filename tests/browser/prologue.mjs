@@ -91,6 +91,7 @@ try {
     ['pappa-landscape-high', { width: 844, height: 390 }, 'high', 'pappa'],
     ['pappa-portrait-low', { width: 390, height: 844 }, 'low', 'pappa'],
   ]) {
+    if (process.env.PROLOGUE_SCENE && !name.startsWith(process.env.PROLOGUE_SCENE)) continue;
     const pappa = kind === 'pappa';
     const flags = pappa ? 'eye,paint,blink,mamma:passed,bag:torn,star' : 'eye,paint,blink';
     const at = pappa ? '45,2.41' : '5.5,0.01';
@@ -115,6 +116,7 @@ try {
       await page.keyboard.down('ArrowRight');
       await until(state, (s) => s.flags.includes('goal'), `${name}: title card`, 15000);
       await page.keyboard.up('ArrowRight');
+      await page.waitForSelector('#endCard:not([hidden])', { timeout: 15000 });
       check(`${name}: scene continues to chapter card`, await page.locator('#endCard').isVisible());
     } else {
       await page.keyboard.down('ArrowRight');
