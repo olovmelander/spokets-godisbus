@@ -17,7 +17,7 @@ function sweet(): BufferGeometry {
 }
 const kit = (...names: string[]): CandyKit => {
   const shapes = new Map(names.map((name) => [name, sweet()]));
-  return { shape: (name) => shapes.get(name), material: new MeshStandardMaterial() };
+  return { shape: (name) => shapes.get(name), material: new MeshStandardMaterial(), paper: new MeshStandardMaterial() };
 };
 const trail = Array.from({ length: 40 }, (_, i) => ({ x: i * 2, y: 1 }));
 const meshes = (group: Group) => group.children as InstancedMesh[];
@@ -38,7 +38,7 @@ describe('the candy kit from Blender', () => {
   it('has a sweet for everything the game asks it for', () => {
     for (const shape of TRAIL_SHAPES) expect(built, shape).toContain(shape);
     for (const kind of Object.keys(KINDS)) expect(built, kind).toContain(kind);
-    for (const other of ['burk', 'guldhallon', 'lysklubba', 'stjarna']) expect(built, other).toContain(other);
+    for (const other of ['burk', 'guldhallon', 'lysklubba', 'stjarna', 'lordagspase', 'reva']) expect(built, other).toContain(other);
     expect(new Set(built).size).toBe(built.length);
   });
 

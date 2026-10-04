@@ -214,7 +214,7 @@ body.calm *::after {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 3px;
-  max-width: calc(96px * var(--k));
+  max-width: calc(118px * var(--k));
 }
 
 .stickers i {
@@ -223,6 +223,26 @@ body.calm *::after {
   border-radius: 50%;
   background: var(--colour);
   box-shadow: inset 0 0 0 calc(3px * var(--k)) var(--mark), 0 0 0 1.5px #7b5a36;
+}
+
+/*
+ * A sticker he has is a picture of the sweet itself, cut out with a pale edge like a sticker. The pictures lie
+ * in one sheet, six across and three down (src/ui/sticker.ts says which is where).
+ */
+.stickers i.kind,
+.album-grid i.kind {
+  border-radius: 0;
+  background: url('./kinds.webp') no-repeat;
+  background-size: 600% 300%;
+  background-position: calc(var(--sx) * 20%) calc(var(--sy) * 50%);
+  box-shadow: none;
+  filter: drop-shadow(0 0.8px 0 #fffaf0) drop-shadow(0 -0.8px 0 #fffaf0) drop-shadow(0.8px 0 0 #fffaf0) drop-shadow(-0.8px 0 0 #fffaf0)
+    drop-shadow(0 1px 1px rgb(70 45 20 / 0.45));
+}
+
+.stickers i.kind {
+  width: calc(17px * var(--k));
+  height: calc(17px * var(--k));
 }
 
 /* One he has not found yet: an empty ring. */
@@ -257,8 +277,8 @@ body.calm *::after {
 }
 
 .panel.end .found .stickers i {
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
 }
 
 .bag svg {
@@ -839,11 +859,12 @@ body.calm *::after {
   gap: 5px;
 }
 
+/* Each is a small sweet in its wrapper: a round middle between two twisted ends. */
 .rows i {
-  width: 16px;
+  width: 19px;
   height: 11px;
-  border-radius: 6px;
   background: #e8483f;
+  clip-path: polygon(0 8%, 17% 38%, 24% 14%, 36% 0, 64% 0, 76% 14%, 83% 38%, 100% 8%, 100% 92%, 83% 62%, 76% 86%, 64% 100%, 36% 100%, 24% 86%, 17% 62%, 0 92%);
 }
 
 .rows i:nth-child(3n + 1) {

@@ -40,7 +40,7 @@ describe('the sweets given to the three friends', () => {
 describe('the sweets given to the three friends, once the kit from Blender has come', () => {
   const kit = (...names: string[]): CandyKit => {
     const shapes = new Map(names.map((name) => [name, new BoxGeometry(1, 1, 1)]));
-    return { shape: (name) => shapes.get(name), material: new MeshStandardMaterial() };
+    return { shape: (name) => shapes.get(name), material: new MeshStandardMaterial(), paper: new MeshStandardMaterial() };
   };
   it('shows the sweet he chose as its own shape beside its recipient, and hides the ball', () => {
     const { group, mesh, install, update } = createSharedSweets();

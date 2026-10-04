@@ -17,6 +17,8 @@ export interface CandyKit {
   shape(name: string): BufferGeometry | undefined;
   /** Lit by the place. One for the whole view, so every sweet shares a shader. */
   readonly material: MeshStandardMaterial;
+  /** The same, for what is paper and not sugar: dull, and giving off less of its colour. */
+  readonly paper: MeshStandardMaterial;
 }
 
 /** What a place in the scene asks the kit for: set as `userData.sweet` on a group that holds the stand-in. */
@@ -29,6 +31,8 @@ export interface SweetSocket {
   glow?: number;
   /** Unlit and clear through the mist: the lollipop he carries as a lantern. */
   lantern?: boolean;
+  /** Paper, not sugar: the Saturday bag. */
+  paper?: boolean;
 }
 
 /** Marks a group as a place for one of the kit's sweets. What it holds now is its stand-in. */
@@ -53,8 +57,8 @@ export const CANDY_LIFT = 0.3;
 /** How bright its rim is: sugar is glossy, and catches the sky where it turns away. */
 const CANDY_SHEEN = 0.1;
 
-function shining(material: MeshStandardMaterial, lift: number, painted: boolean): void {
-  const uniforms = { candyLift: { value: lift }, candySheen: { value: CANDY_SHEEN } };
+function shining(material: MeshStandardMaterial, lift: number, painted: boolean, sheen = CANDY_SHEEN): void {
+  const uniforms = { candyLift: { value: lift }, candySheen: { value: sheen } };
   material.userData.candy = uniforms;
   // One shader for every painted sweet: what differs between them is only these two numbers.
   material.customProgramCacheKey = () => (painted ? 'candy-v1' : 'candy-shine-v1');
@@ -71,11 +75,14 @@ ${shader.fragmentShader.replace('#include <emissivemap_fragment>', SHINE)}`;
  * The sweets' material: painted corners, glossy, and an instance's colour only where the sweet takes it.
  * `lift` is how much of its own colours it gives off: a little for a sweet, much for magic candy.
  */
-export function candyMaterial(lift = CANDY_LIFT, parameters: MeshStandardMaterialParameters = {}): MeshStandardMaterial {
+export function candyMaterial(lift = CANDY_LIFT, parameters: MeshStandardMaterialParameters = {}, sheen = CANDY_SHEEN): MeshStandardMaterial {
   const material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.3, ...parameters });
-  shining(material, lift, true);
+  shining(material, lift, true, sheen);
   return material;
 }
+
+/** Paper painted like a sweet: the same shader, dull, with a little lift so that the bag is found in the dark. */
+export const paperMaterial = (): MeshStandardMaterial => candyMaterial(0.14, { roughness: 0.9 }, 0.02);
 
 /** The same lift and glossy rim for a sweet with a material of its own: the big candy, which has a texture. */
 export function sweeten(model: Object3D): void {
@@ -134,7 +141,7 @@ export function candyKit(model: Object3D): CandyKit {
     if (!mesh.isMesh || !mesh.geometry.getAttribute('color') || !mesh.geometry.getAttribute('uv') || !mesh.geometry.getAttribute('normal')) return;
     shapes.set(mesh.name, plain(mesh));
   });
-  return { shape: (name) => shapes.get(name), material: candyMaterial() };
+  return { shape: (name) => shapes.get(name), material: candyMaterial(), paper: paperMaterial() };
 }
 
 function discard(stood: Object3D): void {
@@ -173,7 +180,7 @@ export function installSweets(root: Object3D, kit: CandyKit): number {
     holder.clear();
     const material = socket.lantern
       ? new MeshBasicMaterial({ vertexColors: true, fog: false })
-      : socket.glow !== undefined ? candyMaterial(socket.glow, { roughness: 0.25 }) : kit.material;
+      : socket.glow !== undefined ? candyMaterial(socket.glow, { roughness: 0.25 }) : socket.paper ? kit.paper : kit.material;
     const mesh = new Mesh(shape, material);
     mesh.scale.setScalar(socket.scale ?? 1);
     mesh.position.y = socket.y ?? 0;

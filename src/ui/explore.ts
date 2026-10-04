@@ -1,5 +1,6 @@
 import { BONUS, STORY } from '../content/chapters';
 import { foundFlag, KINDS } from '../content/kinds';
+import { stickerStyle } from './sticker';
 import { sv } from '../content/sv';
 import type { PlayerSave } from '../save/store';
 import { ghostNamed } from '../save/journey';
@@ -13,7 +14,7 @@ export function exploreHtml(save: PlayerSave, available: (id: string) => boolean
     const flags = save.flags[chapter.id] ?? [];
     const candy = new Set((save.candy[chapter.id] ?? []).filter((i) => i >= 0 && i < chapter.candy.length)).size;
     const kinds = Object.entries(KINDS).filter(([, kind]) => kind.chapter === chapter.id);
-    const stickers = kinds.map(([id, kind]) => `<i class="${flags.includes(foundFlag(id)) ? 'got' : 'missing'}" style="--colour:${kind.colour};--mark:${kind.mark}"></i>`).join('');
+    const stickers = kinds.map(([id]) => `<i class="${flags.includes(foundFlag(id)) ? 'got kind' : 'missing'}" style="${stickerStyle(id)}"></i>`).join('');
     const rows = Array.from({ length: Math.ceil(candy / 10) }, (_, row) => `<span class="row">${'<i></i>'.repeat(Math.min(10, candy - row * 10))}</span>`).join('');
     const challenge = chapter.hidden?.find((hidden) => hidden.route);
     const stars = challenge ? `<span class="route-star" aria-label="${flags.includes(foundFlag(challenge.kind)) ? sv.explore.routeFound : sv.explore.routeWaiting}">${flags.includes(foundFlag(challenge.kind)) ? '★' : '☆'}</span>` : '';
