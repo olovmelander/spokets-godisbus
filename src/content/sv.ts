@@ -124,6 +124,8 @@ export const sv = {
   lost: { marble: 'Bertils kula', clip: 'Moas hårspänne', brick: 'En leksakskloss', coin: 'En krona' } as Record<string, string>,
   lostFound: 'Du hittade något: {name}!',
   lostTitle: 'Hittegods',
+  // Daggklockspelet (plan §4.8): said at the top of the screen when all four drops have rung.
+  dewSong: 'Hela gräsmattan glittrar!',
   // The album in the pause panel: every kind, found or not.
   album: { title: 'Godisalbumet', count: '{found} av {total} sorter' },
 
