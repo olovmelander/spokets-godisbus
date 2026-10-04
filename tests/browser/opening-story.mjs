@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { picture } from './picture.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/opening-story');
@@ -101,7 +102,7 @@ try {
       return p.snapshot();
     });
     check(`${name}: the spilled star and whole family share the composition before shrinking`, before.star && before.family.every((actor) => actor.visible && actor.corners.every(([x, y]) => Math.abs(x) < 1 && Math.abs(y) < 1)));
-    await page.screenshot({ path: join(shots, `${name}-before.png`) });
+    await picture(page, join(shots, `${name}-before.png`));
     const change = await page.evaluate(() => {
       const p = window.probe; p.sim.flags.add('star'); p.draw(.4); const midway = p.snapshot();
       for (let i = 0; i < 12; i++) p.draw(0); const paused = p.snapshot();
@@ -110,7 +111,7 @@ try {
     check(`${name}: shrinking is visible and pauses at its intermediate size`, change.midway.scale > 1 && change.midway.scale < 3 && change.paused.scale === change.midway.scale);
     check(`${name}: Elof becomes one third as tall while the same family remains beside him`, Math.abs(change.after.scale - 1) < .01 && change.after.family.every((actor, i) => actor.visible && JSON.stringify(actor.at) === JSON.stringify(before.family[i].at)) && !change.after.star);
     check(`${name}: story staging stays inside the draw budget with warmed shaders`, change.after.drawCalls <= 120 && change.after.programs === before.programs);
-    await page.screenshot({ path: join(shots, `${name}-after.png`) });
+    await picture(page, join(shots, `${name}-after.png`));
     const restored = await page.evaluate(async ({ tier }) => {
       // The saved checkpoint is beyond the completed ride; a save before it deliberately replays it.
       const p = window.probe, chapter = { ...p.f.prolog, spawn: { x: 45, y: 2.41 } };

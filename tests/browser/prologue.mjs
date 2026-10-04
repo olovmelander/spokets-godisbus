@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -124,7 +125,7 @@ try {
     await sleep(350);
     check(`${name}: all staging holds its simulation time while paused`, (await state()).prologue.seconds === paused.prologue.seconds);
     await page.locator('#pause').evaluate((node) => { node.style.visibility = 'hidden'; });
-    await page.screenshot({ path: `/tmp/${name}.png` });
+    await picture(page, `/tmp/${name}.png`);
     await page.locator('#pause').evaluate((node) => { node.style.visibility = ''; });
     const before = await info();
     check(`${name}: draw budget`, before.drawCalls <= 120);

@@ -6,6 +6,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -129,7 +130,7 @@ try {
     await page.locator('.photo-thumb').click();
     const before = await state();
     check('thumbnail opens its named image while the game remains paused', await page.locator('#photoCaption').textContent() === 'På tranans rygg' && before.paused && await page.locator('#pause').isHidden());
-    if (process.env.PHOTO_SCREENSHOT) await page.screenshot({ path: process.env.PHOTO_SCREENSHOT });
+    if (process.env.PHOTO_SCREENSHOT) await picture(page, process.env.PHOTO_SCREENSHOT);
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowLeft');
     check('photo navigation leaves simulation stopped', (await state()).steps === before.steps);

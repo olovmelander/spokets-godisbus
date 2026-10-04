@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 
 const BASE = '/spokets-godisbus/';
 const ROOT = fileURLToPath(new URL('../../', import.meta.url)), DIST = join(ROOT, 'dist');
@@ -94,7 +95,7 @@ try {
     check(`${name}: reward opens return without another Use flag`, summit.said.includes('cairn-loop') && summit.checkpoint === 4 && !summit.flags.includes('goal'));
     await until(() => page.locator('#bubbleLine').innerText(), (line) => line === 'Snöret runt röset. En väg ner!', `${name}: visible return objective`);
     check(`${name}: optional return objective is visible beside the earned route`, await page.locator('#bubble').isVisible());
-    await page.screenshot({ path: join(shots, `${name}-summit.png`) });
+    await picture(page, join(shots, `${name}-summit.png`));
     await page.keyboard.press('Escape');
     const paused = await state(); await sleep(350); const still = await state();
     check(`${name}: pause freezes earned route, player and story flags`, paused.paused && paused.steps === still.steps && paused.x === still.x && paused.y === still.y && JSON.stringify(paused.flags) === JSON.stringify(still.flags));
@@ -103,7 +104,7 @@ try {
     await walk(page, state, 147.3, name);
     const returned = await slide(page, state, name);
     check(`${name}: short slide and one-EL landing are safe and retain the reward`, returned.bubbles === 0 && returned.flags.includes('found:chokladpralin') && Math.abs(returned.x - 147.6) < 0.1 && !returned.flags.includes('goal'));
-    await page.screenshot({ path: join(shots, `${name}-returned.png`) });
+    await picture(page, join(shots, `${name}-returned.png`));
     // The end hangs above ordinary walking height: a deliberate jump chooses the optional shortcut again.
     await page.keyboard.down('ArrowUp'); await page.keyboard.down('Space');
     await until(state, (s) => s.mode === 'climb', `${name}: reuse hanging lace`);
@@ -136,7 +137,7 @@ try {
     await page.keyboard.up('ArrowRight');
     const lifted = await state();
     check('Lugnt: main cooperation needs no Hoppa and never grants optional prize', lifted.bubbles === 0 && lifted.blown === 0 && !lifted.flags.includes('found:chokladpralin'));
-    await page.screenshot({ path: join(shots, 'lugnt-main-lift.png') });
+    await picture(page, join(shots, 'lugnt-main-lift.png'));
     check('Lugnt: main scene draw bound', (await info()).drawCalls <= 125);
     await finish();
   }

@@ -6,6 +6,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 
 const base = '/spokets-godisbus/';
 const dist = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -115,13 +116,13 @@ try {
     await sleep(350);
     check(`${name}: calling offers a choice and keeps Elof in the garden`, (await state()).mode === 'free' && !(await state()).flags.includes('plane:board'));
     check(`${name}: the completed bridge opens the optional hose`, (await state()).flags.includes('garden:pocket-open'));
-    await page.screenshot({ path: join(shots, `${name}-hub.png`) });
+    await picture(page, join(shots, `${name}-hub.png`));
     await move(-1, s => s.verb === 'slide' && s.x > 140 && s.x < 143, 'return to the curl hose');
     await act();
     await until(s => s.mode === 'free' && s.grounded && s.y < -1.8 && s.flags.includes('garden:paper'), 'dry pocket and drawing');
     const pocket = await state();
     check(`${name}: the real return reaches a framed dry pocket`, pocket.bubbles === 0 && pocket.playerScreen && pocket.playerScreen.x > 0 && pocket.playerScreen.x < viewport.width && pocket.playerScreen.y > 0 && pocket.playerScreen.y < viewport.height);
-    await page.screenshot({ path: join(shots, `${name}-pocket.png`) });
+    await picture(page, join(shots, `${name}-pocket.png`));
     await sleep(400);
     await move(1, s => s.mode === 'free' && s.grounded && s.y > 3.2 && s.x > 142.7, 'climb back without Hoppa');
     check(`${name}: climbing rejoins the completed bridge without a fall`, (await state()).bubbles === 0);
@@ -135,7 +136,7 @@ try {
     await page.reload(); await run.ready();
     check(`${name}: the optional reward survives reload at the existing checkpoint`, (await state()).flags.includes('garden:shared-paper') && !(await state()).said.includes('garden:thanks') && (await state()).checkpoint === 10);
     await move(1, s => s.word === 'gardenBoard', 'boarding choice after reload');
-    await page.screenshot({ path: join(shots, `${name}-board.png`) });
+    await picture(page, join(shots, `${name}-board.png`));
     await act();
     await until(s => s.mode === 'ride' && s.flags.includes('plane:board'), 'chosen departure');
     await until(s => s.mode === 'free' && s.grounded && s.x > 205, 'unchanged plane arrival');
@@ -145,7 +146,7 @@ try {
   }
   const legacy = await open('legacy-moa', { width: 844, height: 390 }, 'low', false, true);
   await legacy.move(1, s => s.word === 'gardenBoard', 'old called-Moa save boards directly');
-  await legacy.page.screenshot({ path: join(shots, 'legacy-moa-board.png') });
+  await picture(legacy.page, join(shots, 'legacy-moa-board.png'));
   await legacy.act();
   await legacy.until(s => s.mode === 'ride', 'legacy flight');
   check('older Moa saves still board without finding the drawing', !(await legacy.state()).flags.includes('garden:paper') && (await legacy.state()).flags.includes('plane:board'));

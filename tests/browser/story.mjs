@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -232,7 +233,7 @@ try {
     check('a touch stroke towards the body does not start or award a cut', !(await state()).flags.includes('cut1') && await page.locator('#storyPanel').isVisible());
     await drawStroke(page, outward.slice(0, 4), true);
     check('a short stroke stays at the same carving step', !(await state()).flags.includes('cut1'));
-    await page.screenshot({ path: '/tmp/godisbus-carving.png' });
+    await picture(page, '/tmp/godisbus-carving.png');
     await drawStroke(page, outward, true);
     await until(state, (s) => s.flags.includes('cut1'), 'safe touch stroke cuts outwards');
     check('an outward touch stroke finishes the first cut', !(await state()).flags.includes('cut2'));
@@ -266,7 +267,7 @@ try {
     check('the family party offers three candies and five guests', await page.locator('[data-sweet]:visible').count() === 3 && await page.locator('[data-friend]:visible').count() === 5);
     await page.locator('[data-sweet="karamell"]').tap();
     check('every guest likes the selected candy', await page.locator('[data-friend]:visible:enabled').count() === 5);
-    await page.screenshot({ path: '/tmp/godisbus-party.png' });
+    await picture(page, '/tmp/godisbus-party.png');
     await page.locator('[data-friend="bertil"]').tap(); await until(state, (s) => s.flags.includes('party:bertil'), 'touch choice for Bertil');
     check('a guest can be chosen before the nearby guest', !(await state()).flags.includes('party:mamma') && (await state()).flags.includes('party-gift:bertil:karamell'));
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');

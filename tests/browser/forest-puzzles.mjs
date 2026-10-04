@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { picture } from './picture.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/forest-puzzles'); mkdirSync(shots, { recursive: true });
@@ -106,7 +107,7 @@ try {
     const { page, errors, initial } = await open(progress, width, height, tier, gentle);
     check(`${name}: large cone is visible before calling Pappa`, Math.abs(initial.heavy[0]) < 0.95 && Math.abs(initial.heavy[1]) < 1 && !initial.flags.includes('seesaw'));
     check(`${name}: skipping the optional berry loop never grants its picture`, initial.opacity === 0 && !initial.flags.includes('keepsake:vittra'));
-    await page.screenshot({ path: join(shots, `${name}-arrival.png`) });
+    await picture(page, join(shots, `${name}-arrival.png`));
     const called = await page.evaluate(() => {
       const p = window.probe; p.walkTo(108.2); p.step({ act: true }); p.run(0.2);
       return { ...p.snapshot(), rolling: p.sim.rollers.some((cone) => cone.on) };
@@ -120,11 +121,11 @@ try {
       check(`${name}: physical small cone moves left to the board, without placing heavy`, prepared.placed.includes('cone-small') && !prepared.placed.includes('cone') && prepared.curr.word === 'standOn');
       const tipped = await page.evaluate(() => { const p = window.probe; p.step({ act: true }); p.run(0.35); return p.snapshot(); });
       check(`${name}: trial is an actual low ride before the pit`, tipped.curr.mode === 'ride' && tipped.curr.x < 118 && tipped.curr.y > -8);
-      await page.screenshot({ path: join(shots, `${name}-bounce.png`) });
+      await picture(page, join(shots, `${name}-bounce.png`));
       const landed = await page.evaluate(() => { const p = window.probe; p.run(1.6); return p.snapshot(); });
       check(`${name}: failed trial lands safely and unlocks an explicit larger-cone reaction`, landed.curr.grounded && Math.abs(landed.curr.x - 116.5) < 0.05 && Math.abs(landed.curr.y + 8) < 0.05 && landed.bubbles === 0 && !landed.flags.includes('launch') && landed.flags.includes('beat:seesaw-trial'));
       check(`${name}: helper returns to actual heavy push side rather than the completed small cone`, landed.hint.verb === null && landed.hint.at.x < 103);
-      await page.screenshot({ path: join(shots, `${name}-return.png`) });
+      await picture(page, join(shots, `${name}-return.png`));
       const paused = await page.evaluate(() => { const p = window.probe; const before = p.snapshot(); for (let i = 0; i < 10; i++) p.draw(0); return { before, after: p.snapshot() }; });
       check(`${name}: pause cannot advance cone, trial, position or flags`, paused.before.sim === paused.after.sim);
     }
@@ -132,7 +133,7 @@ try {
     check(`${name}: player returns for heavy cone, pushes it and crosses successfully`, complete.flags.includes('launch') && complete.placed.includes('cone') && complete.curr.x > 126 && complete.curr.grounded && complete.bubbles === 0 && complete.bowled === 0);
     check(`${name}: choice is remembered and no gift is silently completed`, complete.flags.includes('seesaw:trial') === smallFirst && !complete.flags.includes('keepsake:vittra'));
     check(`${name}: puzzle adds no runtime shader/texture churn`, complete.programs === initial.programs && complete.textures === initial.textures && complete.texturesVersion === initial.texturesVersion && complete.drawCalls <= 125);
-    await page.screenshot({ path: join(shots, `${name}-crossed.png`) });
+    await picture(page, join(shots, `${name}-crossed.png`));
     assert.deepEqual(errors, [], `${name}: browser errors`); await page.close();
   }
 
@@ -175,7 +176,7 @@ try {
     check(`${name}: actual ghost remains at its next lower perch, with one chase mesh`, returned.ghost.perch === 9 && Math.abs(returned.ghost.x - 76) < 0.1 && returned.ghost.y < 0.1 && returned.ghosts === 1);
     check(`${name}: card stays legible inside portrait/landscape framing`, returned.corners.every((point) => Math.abs(point[0]) <= 0.99 && Math.abs(point[1]) <= 0.99));
     check(`${name}: atlas/card stay bounded and all shaders were warmed early`, returned.programs === initial.programs && returned.textures === initial.textures && returned.texturesVersion === initial.texturesVersion && returned.drawCalls <= 125);
-    await page.screenshot({ path: join(shots, `${name}.png`) });
+    await picture(page, join(shots, `${name}.png`));
     const paused = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 10; i++) p.draw(0); return p.snapshot(); });
     check(`${name}: pause freezes clue entrance, location and simulation`, returned.sim === paused.sim && returned.opacity === paused.opacity && JSON.stringify(returned.at) === JSON.stringify(paused.at));
     await page.emulateMedia({ reducedMotion: 'reduce' });

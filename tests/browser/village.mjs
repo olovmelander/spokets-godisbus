@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { picture } from './picture.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/village');
@@ -63,7 +64,7 @@ try {
         window.probe = { f, game, view, draw, scene, snapshot };
         return { ...snapshot(), interior: scene.getObjectByName('candy-shop-interior').children.length };
       }, { x, y, tier });
-      await page.screenshot({ path: join(shots, `${name}.png`) });
+      await picture(page, join(shots, `${name}.png`));
       check(`${name}: scene and assets render within budget (${early.models.length} models, ${early.drawCalls} calls)`, early.models.length >= 3 && early.interior > 10 && early.drawCalls > 20 && early.drawCalls <= 120);
       const moved = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 6; i++) p.draw(0.5); return p.snapshot(); });
       check(`${name}: street life moves safely behind the play plane without shaders or simulation changes`, moved.shoes[0] > early.shoes[0] && moved.car[0] > early.car[0] && moved.shoes[2] < -10 && moved.car[2] < -10 && moved.programs === early.programs && moved.state === early.state && moved.drawCalls <= 120);

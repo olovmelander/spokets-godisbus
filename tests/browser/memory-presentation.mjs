@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { createServer } from 'vite';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const server = await createServer({ configFile: false, root, logLevel: 'error', server: { host: '127.0.0.1', port: 0 } });
@@ -155,7 +156,7 @@ try {
       return card.left >= 0 && card.right <= innerWidth && panel.top >= 0 && panel.bottom <= innerHeight;
     });
     check(`${width}×${height}: the oval and controls fit`, fits);
-    await page.screenshot({ path: join(shots, `${width}x${height}.png`) });
+    await picture(page, join(shots, `${width}x${height}.png`));
     await page.evaluate(() => { window.memory.close(); window.memory.suspend(false); });
   }
   check('presentation makes no browser errors', errors.length === 0);

@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 const base = '/spokets-godisbus/';
 const dist = fileURLToPath(new URL('../../dist/', import.meta.url));
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.wasm': 'application/wasm' };
@@ -80,7 +81,7 @@ try {
   assert.deepEqual(after.placed.garden, ['curl']);
   for (const candy of [0, 1, 4]) assert.ok(after.candy.garden.includes(candy));
   await page.locator('#pauseExplore').tap();
-  if (process.env.JOURNEY_SHOT) await page.screenshot({ path: process.env.JOURNEY_SHOT });
+  if (process.env.JOURNEY_SHOT) await picture(page, process.env.JOURNEY_SHOT);
   await page.keyboard.press('Escape');
   assert.ok(await page.locator('#pause').isVisible(), 'Escape returns to pause');
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'pauseExplore');

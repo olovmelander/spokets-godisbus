@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -159,7 +160,7 @@ try {
     check(`${name}: no new shaders for the window shot`, after.programs === before.programs);
     check(`${name}: the one bell respects effects mute`, after.soundsPlayed - before.soundsPlayed === (touch ? 0 : 1));
     await page.locator('#debug').evaluate(node => { node.style.visibility = 'hidden'; });
-    await page.screenshot({ path: `/tmp/${name}.png` });
+    await picture(page, `/tmp/${name}.png`);
     if (!touch) {
       await page.evaluate(() => {
         const gl = document.querySelector('canvas').getContext('webgl2');
@@ -195,7 +196,7 @@ try {
     check('shelf: the two figures stay within the draw budget', (await info()).drawCalls <= 120);
     await page.locator('#pause').evaluate(node => { node.style.visibility = 'hidden'; });
     await page.locator('#debug').evaluate(node => { node.style.visibility = 'hidden'; });
-    await page.screenshot({ path: '/tmp/epilogue-shelf.png' });
+    await picture(page, '/tmp/epilogue-shelf.png');
     await finish();
   }
   console.log(`epilogue: ${checked} checks passed`);

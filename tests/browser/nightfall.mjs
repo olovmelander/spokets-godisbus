@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { picture } from './picture.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/nightfall');
@@ -113,7 +114,7 @@ try {
     check(`${name}: real finale assets loaded`, early.models.length >= 3);
     check(`${name}: blue-hour sky and five far layers start at full brightness`, early.background === 1 && early.far.length === 5 && early.far.every((v) => v === 1));
     check(`${name}: precompiled family stays hidden until the golden sweet`, early.familyShown === 0);
-    await page.screenshot({ path: join(shots, `${name}-early.png`) });
+    await picture(page, join(shots, `${name}-early.png`));
     const transition = await page.evaluate(() => {
       const p = window.probe;
       p.sim.flags.add('taste');
@@ -133,7 +134,7 @@ try {
     // Tasting also reveals the existing family signs. From that first frame on, only uniforms change.
     check(`${name}: nightfall draw calls stay fixed within budget`, transition.frames.every((s) => s.drawCalls === transition.frames[0].drawCalls && s.drawCalls <= 120));
     check(`${name}: pause holds nightfall still`, transition.paused.background === transition.beforePause.background);
-    await page.screenshot({ path: join(shots, `${name}-night.png`) });
+    await picture(page, join(shots, `${name}-night.png`));
     const round = await page.evaluate(({ width, height }) => {
       const p = window.probe;
       return p.fixture.measureStars(p.scene.getObjectByName('dusk-stars'), width, height, p.view.info().pixelRatio);

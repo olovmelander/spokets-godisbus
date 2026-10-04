@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -188,7 +189,7 @@ try {
     check('the idle prompt never moves Elof or changes story flags', (await state()).x === initial.x && (await state()).flags.length === initial.flags.length);
     check('keyboard movement cue is one keycap and has accessible text', (await page.locator('#tutorialKey').innerText()) === '← →' && (await page.locator('#tutorial').getAttribute('aria-label')).length > 0);
     check('reduced motion stops the hand animation', await page.locator('.tutorial-hand').evaluate(el => getComputedStyle(el).animationName === 'none'));
-    await page.screenshot({ path: join(shots, 'tutorial-move-keys.png') });
+    await picture(page, join(shots, 'tutorial-move-keys.png'));
     await page.keyboard.press('Escape');
     await frames(page);
     check('pause hides the prompt', await page.locator('#tutorial').isHidden());
@@ -210,7 +211,7 @@ try {
     const button = await page.locator('#hopBtn').boundingBox();
     check(`${name}: the one hand points at Hoppa inside the viewport`, Math.abs(hint.x + hint.width / 2 - button.x - button.width / 2) < 2 && hint.y >= 0 && hint.y + hint.height <= viewport.height);
     check(`${name}: the tutorial stays wordless on touch`, await page.locator('#tutorialKey').evaluate(el => getComputedStyle(el).display === 'none'));
-    await page.screenshot({ path: join(shots, `${name}-hop.png`) });
+    await picture(page, join(shots, `${name}-hop.png`));
     await page.tap('#hopBtn');
     await until(state, s => s.y > 0.3 && !s.grounded, 'Hoppa responds normally');
     check(`${name}: jumping dismisses the learned cue`, await page.locator('#tutorial').isHidden());
@@ -247,7 +248,7 @@ try {
     const hint = await page.locator('#tutorial').boundingBox();
     check('mirrored Follow finger still teaches moving right into the story', hint.x + hint.width / 2 > (await state()).playerScreen.x && hint.x + hint.width <= 390);
     check('Lugna animationer stops the follow gesture cue', await page.locator('.tutorial-hand').evaluate(el => getComputedStyle(el).animationName === 'none'));
-    await page.screenshot({ path: join(shots, 'tutorial-follow-lefty.png') });
+    await picture(page, join(shots, 'tutorial-follow-lefty.png'));
     await finish();
   }
   console.log(`pointing/tutorial: ${checked} checks passed`);

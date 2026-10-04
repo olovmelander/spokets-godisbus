@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
 const base = '/spokets-godisbus/';
 const dist = fileURLToPath(new URL('../../dist/', import.meta.url));
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.wasm': 'application/wasm' };
@@ -64,7 +65,7 @@ try {
   assert.equal(await page.locator('[data-reward="golden"]').count(), 1, 'The last real pickup awards one golden sticker');
   assert.equal(await page.locator('.album-count').textContent(), '16 av 16 sorter');
   assert.ok((await saved()).flags.garden.includes('found:gelehallon'));
-  if (process.env.ALBUM_SHOT) await page.screenshot({ path: process.env.ALBUM_SHOT });
+  if (process.env.ALBUM_SHOT) await picture(page, process.env.ALBUM_SHOT);
   await page.reload();
   await ready();
   await page.keyboard.press('KeyG');
@@ -87,7 +88,7 @@ try {
   if (process.env.MEMORY_SHOT) {
     await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('#memoryCard svg')).opacity) > 0.99
       && document.getElementById('memory').dataset.phase === 'pictures');
-    await page.screenshot({ path: process.env.MEMORY_SHOT });
+    await picture(page, process.env.MEMORY_SHOT);
   }
   await page.keyboard.press('Escape');
   assert.ok(await page.locator('#memory').isHidden());
