@@ -30,6 +30,13 @@ describe('conservative dynamic resolution', () => {
       expect(changes[i]!.at - changes[i - 1]!.at).toBeGreaterThanOrEqual(RESOLUTION_STEP_SECONDS);
     }
   });
+  it('can reduce resolution when visible frames consistently exceed 250 ms', () => {
+    const resolution = createDynamicResolution();
+    let steps = 0;
+    for (let n = 0; n < 40; n++) steps = resolution.feed(0.4, 275, steps, 13);
+    expect(steps).toBeGreaterThan(0);
+    expect(steps).toBeLessThanOrEqual(3);
+  });
   it('recovers slowly and never reverses direction sooner than the hysteresis', () => {
     const { changes } = run(45, (at) => at < 12 ? 24 : 2);
     const firstRecovery = changes.findIndex((change, i) => i > 0 && change.steps < changes[i - 1]!.steps);

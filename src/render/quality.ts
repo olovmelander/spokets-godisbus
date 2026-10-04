@@ -60,8 +60,12 @@ export interface AutoTier {
 }
 
 const percentile80 = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floor((values.length - 1) * 0.8)] ?? 0;
-const valid = (elapsed: number, busyMs: number) => elapsed > 0 && elapsed <= 0.25 && Number.isFinite(elapsed)
+const valid = (elapsed: number, busyMs: number) => elapsed > 0 && Number.isFinite(elapsed)
   && busyMs >= 0 && Number.isFinite(busyMs);
+// A slow visible frame is evidence, not a suspension. Cap its contribution to the measurement clock so
+// one long callback/resume gap cannot satisfy a window or allocation spacing. The caller explicitly
+// suspends across hidden/loading/menu changes, and both controllers still require many CPU samples.
+const sampleSeconds = (elapsed: number) => Math.min(elapsed, 0.25);
 
 /**
  * Auto uses the 80th-percentile CPU cost of a warmed title scene. A capped 30 Hz callback with 3 ms of
@@ -83,6 +87,7 @@ export function createAutoTier(): AutoTier {
     feed(elapsed, busyMs) {
       if (settled) return tier;
       if (!valid(elapsed, busyMs)) { suspend(); return tier; }
+      elapsed = sampleSeconds(elapsed);
       if (warm < QUALITY_WARMUP) { warm += elapsed; return tier; }
       measured += elapsed;
       samples.push(busyMs);
@@ -131,6 +136,7 @@ export function createDynamicResolution(): DynamicResolution {
     suspend,
     feed(elapsed, busyMs, steps, maxSteps) {
       if (!valid(elapsed, busyMs)) { suspend(); return steps; }
+      elapsed = sampleSeconds(elapsed);
       if (warm < QUALITY_WARMUP) { warm += elapsed; return steps; }
       sinceStep += elapsed;
       windowTime += elapsed;
