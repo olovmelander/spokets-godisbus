@@ -1,8 +1,8 @@
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
-  DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
+  DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
   Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PlaneGeometry, PointLight, Quaternion,
-  Scene, Shape, SphereGeometry, TorusGeometry, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
+  Scene, Shape, SphereGeometry, TorusGeometry, UnsignedIntType, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
@@ -13,7 +13,8 @@ import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
 import { nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
-import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass } from './grade';
+import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
+import { createDepthBlur } from './depth-blur';
 import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
@@ -147,7 +148,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // release them and draw Low straight to the canvas, keeping this renderer, its assets and the scene.
   // Mid and High keep the same linear HDR → grade → Neutral/sRGB stages as r186's native setEffects path.
   const place = chapter.place ? PLACES[chapter.place] : null;
-  const gradePass = hdrAvailable ? createGradePass(place?.grade ?? GARDEN_MORNING) : null;
+  const grade = place?.grade ?? GARDEN_MORNING;
+  const gradePass = hdrAvailable ? createGradePass(grade) : null;
+  const materialGrade = createMaterialGrade(grade);
+  materialGrade.setEnabled(tier === 'low');
+  const depthBlur = hdrAvailable ? createDepthBlur() : null;
   const outputPass = hdrAvailable ? new OutputPass() : null;
   if (outputPass) outputPass.renderToScreen = true;
   let hdr: { scene: WebGLRenderTarget; grade: WebGLRenderTarget } | null = null;
@@ -433,13 +438,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       hdr = null;
     } else {
       hdr ??= {
-        scene: new WebGLRenderTarget(canvas.width, canvas.height, { type: HalfFloatType, stencilBuffer: false }),
+        scene: new WebGLRenderTarget(canvas.width, canvas.height, { type: HalfFloatType, stencilBuffer: false, depthTexture: new DepthTexture(canvas.width, canvas.height, UnsignedIntType) }),
         grade: new WebGLRenderTarget(canvas.width, canvas.height, { type: HalfFloatType, depthBuffer: false, stencilBuffer: false }),
       };
       hdr.scene.setSize(canvas.width, canvas.height);
       hdr.grade.setSize(canvas.width, canvas.height);
       gradePass?.setSize(canvas.width, canvas.height);
     }
+    depthBlur?.setSize(canvas.width, canvas.height, tier === 'high');
     camera.aspect = width / height;
     // Elof is about 78 px tall on a phone held sideways, and the view is never narrower than 6 EL.
     const elofPx = clamp(height * 0.2, 75, 140);
@@ -473,6 +479,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   function draw(): void {
     renderer.info.reset();
     if (warm > 0) {
+      materialGrade.apply(scene);
       scene.traverse((object) => {
         if (!object.frustumCulled) return;
         object.frustumCulled = false;
@@ -484,6 +491,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // A normal (non-XR) render target uses linear output without material tone mapping.
       renderer.render(scene, camera);
       if (hdr && gradePass && outputPass) {
+        depthBlur?.render(renderer, hdr.scene, camera);
+        gradePass.setDepthBlur(depthBlur?.texture ?? null, hdr.scene.depthTexture, camera.near, camera.far, camera.position.z);
         gradePass.render(renderer, hdr.grade, hdr.scene);
         outputPass.render(renderer, hdr.grade, hdr.grade, 0, false);
       }
@@ -717,13 +726,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     setTier(next) {
       const chosen = chooseTier(next, hdrAvailable);
       if (tier === chosen) return;
-      const changesPipeline = (tier === 'low') !== (chosen === 'low');
+      const changesPipeline = (tier === 'low') !== (chosen === 'low') || chosen === 'high';
       tier = chosen;
+      materialGrade.setEnabled(tier === 'low');
       resolutionSteps = 0;
       gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
       resize();
       // Low and HDR need different material variants. Compile against their actual play targets before
-      // the paused settings handler returns. Mid ↔ High changes only pixels and the glow uniform.
+      // the paused settings handler returns. Entering High also warms its half-resolution depth pass.
       if (changesPipeline) {
         warm = 2;
         if (hasFrame) while (warm > 0) draw();

@@ -158,3 +158,9 @@ Validation: typecheck and 25 integrated cobble/ending tests pass. The combined p
 Keep keyboard focus within the active album after asynchronous photo loading refreshes its controls. Closing the album or switching profiles invalidates pending refreshes so they cannot steal focus.
 
 Validation: focused browser checks cover delayed photo loads, keyboard focus and album closure. Typecheck and integrated unit tests pass.
+
+## Add place colour grading and bounded background depth blur
+
+Use generated place LUTs for consistent colour across graphics tiers. Low applies the grade through materials; High adds background depth blur while keeping the play plane sharp.
+
+Validation: typecheck, unit tests, build and privacy gates pass. Browser checks verify matching Low/HDR sampled colours, a sharp play plane, background softening and valid shader/framebuffer output.
