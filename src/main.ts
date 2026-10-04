@@ -346,6 +346,8 @@ function start(): void {
   const memories = createMemory(document);
   let remembered = game.sim.flags.has('memory');
   let flagsSeen = -1;
+  // Whether the dew bells had all rung when the page last looked.
+  let dewRung = game.sim.flags.has('dewsong');
   // How many lost things were found when the page last looked, and which: -1 before it has looked.
   let lostSeen = -1;
   let lostKnown: readonly string[] = [];
@@ -411,6 +413,12 @@ function start(): void {
       }
       lostSeen = lost.length;
       lostKnown = lost;
+      // Daggklockspelet: when the fourth drop has rung, the top of the screen says so, with the find's chime.
+      if (!dewRung && game.sim.flags.has('dewsong')) {
+        dewRung = true;
+        hud.notice(sv.dewSong);
+        audio.play({ kind: 'found' });
+      }
       // The album's page, in the pause panel: in the story only.
       byId('pauseAlbum').innerHTML = mapState(chapter.id) ? albumHtml(found, lost) : '';
     }

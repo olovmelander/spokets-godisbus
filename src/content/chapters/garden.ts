@@ -24,7 +24,9 @@ import type { Candy, ChapterData } from '../../sim/types';
  *    - **Hittegods** (O2): a marble, a hair clip, a toy brick and a coin lie on the foundation stones. A
  *      jump takes each.
  *
- * Not built yet: the dew bells, the ghost at the forest's edge, and the lost things given back at the party. What is here is the ground, the candy and the rules; what it looks like comes later.
+ * 5b. **Daggklockspelet** (O1): on the lawn between the roots, four drops of dew ring when he hops up to them.
+ *
+ * Not built yet: the ghost at the forest's edge. What is here is the ground, the candy and the rules; what it looks like comes later.
  */
 
 /** A row of candy along flat ground, one every `every` EL. */
@@ -148,10 +150,14 @@ export const garden: ChapterData = {
     { id: 'lost:clip', look: 'clip', at: { x: 50.4, y: 1.7 }, verb: 'take', touch: true },
     { id: 'lost:brick', look: 'brick', at: { x: 57.9, y: 1.7 }, verb: 'take', touch: true },
     { id: 'lost:coin', look: 'coin', at: { x: 59.9, y: 1.7 }, verb: 'take', touch: true },
+    // Daggklockspelet (O1): four drops of dew on bent blades of grass over the lawn. A hop rings one, each a
+    // step higher than the last, and when all four have rung the lawn glitters.
+    ...[89.6, 91, 92.4, 97.9].map((x, i) => ({ id: `note:dew${i + 1}`, look: 'dew' as const, at: { x, y: 1.6 }, verb: 'take' as const, touch: true })),
     // Memory 1, on top of Pappa's shavings: the night he carved his first figure.
     { id: 'memory', look: 'memory', at: { x: 147, y: 3.3 }, verb: 'take', touch: true },
     { id: 'moa', look: 'sign', at: { x: 166, y: 0 }, verb: 'call', word: 'callMoa', ride: 'plane' },
   ],
+  sets: [{ flag: 'dewsong', when: ['note:dew1', 'note:dew2', 'note:dew3', 'note:dew4'] }],
   hooks: [
     // The first swing is over flat ground: a miss costs nothing.
     { x: 54, y: 3.4, length: 2.6, land: { x: 57.4, y: 0 } },

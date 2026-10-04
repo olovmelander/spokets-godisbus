@@ -289,6 +289,25 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.position.z = -0.8;
       return { group, update: (used, clock, dt) => { vanish(used, dt); neck.rotation.z = -0.35 + Math.sin(clock * 0.9) * 0.05; } };
     }
+    case 'dew': {
+      // A drop of dew at the tip of a bent blade of grass, as big as his head. Rung, it shivers and shines.
+      const green = solid('#6fa436', 0.7, { side: DoubleSide });
+      const blade = new Mesh(new CylinderGeometry(0.012, 0.05, spot.at.y + 0.5, 6), green);
+      blade.position.set(-0.28, -spot.at.y / 2 + 0.2, 0);
+      blade.rotation.z = -0.28;
+      const drop = ball(0.16, new MeshStandardMaterial({ color: '#dff3ff', roughness: 0.05, transparent: true, opacity: 0.8, emissive: '#bfe6ff', emissiveIntensity: 0.25 }), 0, 0, 0, [1, 1.12, 1]);
+      group.add(blade, drop);
+      group.position.z = -0.5;
+      return {
+        group,
+        update(used, clock, dt) {
+          since = used ? since + dt : 0;
+          const ring = used && since < 0.9 ? Math.sin(since * 40) * 0.06 * (1 - since / 0.9) : 0;
+          drop.position.set(ring, Math.sin(clock * 1.7 + spot.at.x) * 0.015, 0);
+          (drop.material as MeshStandardMaterial).emissiveIntensity = used ? 0.9 : 0.25 + 0.1 * Math.sin(clock * 3 + spot.at.x);
+        },
+      };
+    }
     case 'cobble': {
       const stone = ball(0.3, solid('#9c9d98', 0.6), 0, 0.14, 0, [1.15, 0.7, 1]);
       group.add(stone);

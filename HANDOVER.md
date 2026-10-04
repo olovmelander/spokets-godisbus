@@ -7,13 +7,13 @@
     the epilogue, and after them an extra chapter, Byn. Everything is merged to `main` and deployed:
     `https://olovmelander.github.io/spokets-godisbus/?dev`. The plain address still shows the grey test
     course, because `RELEASED_CHAPTER` is `null`: releasing is Olov's.
-  - **Added in the night of 3 to 4 October** (pull requests #38 to #58; each has its own entry further
+  - **Added in the night of 3 to 4 October** (pull requests #38 to #59; each has its own entry further
     down): music and each place's air; footsteps for every surface; the sticker album; four more switches;
     wordless sounds for the characters and for Elof; the size gate as served; chapter codes; C1, the swing
     chain; the bouncing cranberries; a graphics level that finds its own place, and High's glow; Hittegods,
     found and given back; Byn; far scenery in layers with parallax for every place; the family's first
     models, and the code that shows them at home and on the summit, turning towards him and glad; the jay
-    modelled in Blender; his call, and each one's answer.
+    modelled in Blender; his call, and each one's answer; the dew bells.
   - **What Olov asked for on 4 October, and how far it got:**
     - *"Improving and creating all character models in blender":* Pappa, Mamma, Moa, Bertil and
       three-year-old Elof have first models. They are on his computer only, waiting for his eyes and his
@@ -744,8 +744,17 @@
     - A chapter can now have `bouncers`. The bounce is the same whatever Hoppa does, and from its top he
       falls less than the glitter bubble's limit. They lie on level firm ground, with nothing to bounce up
       onto: a test says so. Tests: `tests/sim/berries.test.ts` (7).
-    - **Not yet:** the other optional delights of plan §4.8: the dew bells (O1), the vittra door (O3), and
-      tasting a lingonberry (O10).
+    - **Not yet:** the other optional delights of plan §4.8: the vittra door (O3), and tasting a
+      lingonberry (O10).
+  - **O1, Daggklockspelet** (4 October, branch `stage-2-dew`; plan §4.8). What you see: on the lawn in
+    Kapitel 1, between the birch's roots, four drops of dew hang at the tips of bent blades of grass, each
+    as big as his head. A hop up to one rings it, each a step higher than the last, and it shines from then
+    on. When the fourth has rung, the top of the screen says "Hela gräsmattan glittrar!" with the find's
+    chime. Walking under them leaves them silent.
+    - They ring through the same rule as the beach cobbles on the mountain (`note:` flags). Tests:
+      `tests/sim/dew.test.ts` (3).
+    - **Not yet:** the plan's whole toy: the drops ring once each, in any order, and the lawn's glitter is
+      a line and a chime, not a picture.
   - **O2, Hittegods** (branch `stage-2-lost`; plan §4.8). What you see: under the deck in Kapitel 1, four
     foundation stones each hold a small thing that has fallen between the boards: Bertil's marble, Moa's
     hair clip, a toy brick and a coin. A jump takes one, and the top of the screen says "Du hittade något:
