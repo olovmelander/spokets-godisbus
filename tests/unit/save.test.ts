@@ -18,6 +18,7 @@ describe('the two play styles', () => {
     const settings = settingsFor('aventyr');
     expect(settings).toEqual({
       style: 'aventyr', followFinger: false, graphics: 'auto', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true,
+      effectsVolume: 1, musicVolume: 1,
       lefty: false, bigText: false, calm: false, loud: false, help: 'ask',
     });
     expect(simOptions(settings)).toEqual({ swingHelp: false, easyJumps: false, stopAtEdges: false, gentle: false, help: 'ask' });

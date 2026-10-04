@@ -23,6 +23,9 @@ export interface Settings {
   sound: boolean;
   /** *Musik*: the tune. */
   music: boolean;
+  /** Saved levels are independent of mute: switching sound on restores the chosen level. */
+  effectsVolume: number;
+  musicVolume: number;
   /** *Vänsterhänt*: the stick and the buttons swap sides. */
   lefty: boolean;
   /** *Större text*: what is said, and the words on the buttons, a quarter bigger. */
@@ -37,9 +40,9 @@ export interface Settings {
 
 /** The switches each style starts with. Every one of them can then be changed on its own. */
 const SWITCHES: Record<PlayStyle, Omit<Settings, 'style'>> = {
-  aventyr: { followFinger: false, graphics: 'auto', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true, lefty: false, bigText: false, calm: false, loud: false, help: 'ask' },
+  aventyr: { followFinger: false, graphics: 'auto', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true, effectsVolume: 1, musicVolume: 1, lefty: false, bigText: false, calm: false, loud: false, help: 'ask' },
   // On Lugnt the sounds carry what a younger player can't read, so the silent switch doesn't take them.
-  lugnt: { followFinger: false, graphics: 'auto', swingHelp: true, easyJumps: true, slower: false, sound: true, music: true, lefty: false, bigText: false, calm: false, loud: true, help: 'remind' },
+  lugnt: { followFinger: false, graphics: 'auto', swingHelp: true, easyJumps: true, slower: false, sound: true, music: true, effectsVolume: 1, musicVolume: 1, lefty: false, bigText: false, calm: false, loud: true, help: 'remind' },
 };
 
 /** The settings that are a switch: on or off. */
@@ -47,11 +50,27 @@ export type Switch = 'followFinger' | 'swingHelp' | 'easyJumps' | 'slower' | 'so
 export const SWITCH_NAMES: Switch[] = ['followFinger', 'swingHelp', 'easyJumps', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm', 'loud'];
 /** The ones that are the player's own, whatever the style: choosing a style leaves them as they are. */
 export const OWN_SWITCHES: Switch[] = ['followFinger', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm'];
+export type Volume = 'effectsVolume' | 'musicVolume';
+export const VOLUME_NAMES: readonly Volume[] = ['effectsVolume', 'musicVolume'];
 
 export const SLOWER_TEMPO = 0.8;
 
 export function settingsFor(style: PlayStyle): Settings {
   return { style, ...SWITCHES[style] };
+}
+
+/** Style changes alter the helps, not a player's controls, picture or sound preferences. */
+export function changeStyle(current: Settings, style: PlayStyle): Settings {
+  return {
+    ...settingsFor(style), graphics: current.graphics,
+    effectsVolume: current.effectsVolume, musicVolume: current.musicVolume,
+    ...Object.fromEntries(OWN_SWITCHES.map((key) => [key, current[key]])),
+  };
+}
+
+/** Old saves have no levels. Invalid/non-finite values also use full level; finite values are bounded. */
+export function readVolume(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 1;
 }
 
 /**
@@ -75,5 +94,5 @@ export function readSettings(value: unknown): Settings {
   const flag = (key: Switch) => (typeof from[key] === 'boolean' ? (from[key] as boolean) : base[key]);
   const help: HelpLevel = from.help === 'ask' || from.help === 'remind' || from.help === 'guide' ? from.help : base.help;
   const graphics: Graphics = tierFromQuery(typeof from.graphics === 'string' ? from.graphics : null) ?? 'auto';
-  return { style, followFinger: flag('followFinger'), graphics, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower'), sound: flag('sound'), music: flag('music'), lefty: flag('lefty'), bigText: flag('bigText'), calm: flag('calm'), loud: flag('loud'), help };
+  return { style, followFinger: flag('followFinger'), graphics, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower'), sound: flag('sound'), music: flag('music'), effectsVolume: readVolume(from.effectsVolume), musicVolume: readVolume(from.musicVolume), lefty: flag('lefty'), bigText: flag('bigText'), calm: flag('calm'), loud: flag('loud'), help };
 }

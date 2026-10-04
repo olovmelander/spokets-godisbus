@@ -81,7 +81,21 @@ export function mountShell(root: HTMLElement): void {
          <p class="setting-hint" id="followHint">${p.followHint}</p>
          <label class="switch"><input type="checkbox" id="setSlower"><span>${p.slower}</span></label>
          <label class="switch"><input type="checkbox" id="setSound"><span>${p.sound}</span></label>
+         <div class="volume" role="group" aria-labelledby="effectsVolumeLabel">
+           <span id="effectsVolumeLabel">${p.effectsVolume}</span><div class="volume-steps">
+             <button id="effectsVolumeDown" type="button" aria-label="${p.effectsQuieter}" aria-describedby="effectsVolumeValue">−</button>
+             <output id="effectsVolumeValue" aria-live="polite" aria-atomic="true">100 %</output>
+             <button id="effectsVolumeUp" type="button" aria-label="${p.effectsLouder}" aria-describedby="effectsVolumeValue">+</button>
+           </div>
+         </div>
          <label class="switch"><input type="checkbox" id="setMusic"><span>${p.music}</span></label>
+         <div class="volume" role="group" aria-labelledby="musicVolumeLabel">
+           <span id="musicVolumeLabel">${p.musicVolume}</span><div class="volume-steps">
+             <button id="musicVolumeDown" type="button" aria-label="${p.musicQuieter}" aria-describedby="musicVolumeValue">−</button>
+             <output id="musicVolumeValue" aria-live="polite" aria-atomic="true">100 %</output>
+             <button id="musicVolumeUp" type="button" aria-label="${p.musicLouder}" aria-describedby="musicVolumeValue">+</button>
+           </div>
+         </div>
          <label class="switch"><input type="checkbox" id="setLoud"><span>${p.loud}</span></label>
          <label class="switch"><input type="checkbox" id="setLefty"><span>${p.lefty}</span></label>
          <label class="switch"><input type="checkbox" id="setBigText"><span>${p.bigText}</span></label>

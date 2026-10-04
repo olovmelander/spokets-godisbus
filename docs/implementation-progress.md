@@ -38,3 +38,9 @@ Validation: integrated typecheck and all 524 unit/robot tests pass. Source brows
 Auto graphics measures CPU work at safe menus and selects a tier once. During play, sustained load adjusts pixel ratio in bounded steps with delays between allocations and reversals. Manual tiers and benchmark runs remain fixed; hidden pages stop drawing.
 
 Validation: integrated typecheck and 19 quality tests; 16 source browser checks exercise injected CPU cost, target allocation counts and stable shaders. CPU measurements cannot diagnose GPU-only stalls.
+
+## Add separate sound and music volume controls
+
+Settings now offer separate effects and music levels in ten-percent steps, with accessible buttons for touch, keyboard and controller. Values are saved per player, clamped on load and preserved when changing play style; existing mute switches still work.
+
+Validation: typecheck and 46 integrated settings/save tests pass. Source browser checks cover all input methods and persistence.

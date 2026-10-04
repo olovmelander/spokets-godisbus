@@ -14,7 +14,7 @@ import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
 import { createAutoTier, createDynamicResolution, tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
-import { OWN_SWITCHES, settingsFor, simOptions, tempoOf, type Settings } from './save/settings';
+import { changeStyle, settingsFor, simOptions, tempoOf, type Settings } from './save/settings';
 import { codeFor } from './save/codes';
 import { createStore, newSave, type PlayerSave } from './save/store';
 import { createPhotoStore } from './save/photos';
@@ -134,8 +134,8 @@ function start(): void {
   const audio = createAudio();
   /** What the settings change outside the simulation: the sound, and the page's looks. */
   const apply = () => {
-    audio.setEffects(settings.sound ? 1 : 0);
-    audio.setMusic(settings.music ? 1 : 0);
+    audio.setEffects(settings.sound ? settings.effectsVolume : 0);
+    audio.setMusic(settings.music ? settings.musicVolume : 0);
     audio.setLoud(settings.loud);
     document.body.classList.toggle('lefty', settings.lefty);
     document.body.classList.toggle('big-text', settings.bigText);
@@ -348,7 +348,7 @@ function start(): void {
       if (!offline.canStart() || store.load().kind === 'unreadable') return;
       begun = true;
       if (style) {
-        settings = { ...settingsFor(style), graphics: settings.graphics, ...Object.fromEntries(OWN_SWITCHES.map(key => [key, settings[key]])) };
+        settings = changeStyle(settings, style);
         game.sim.options = simOptions(settings);
         game.tempo = tempoOf(settings);
         apply();
