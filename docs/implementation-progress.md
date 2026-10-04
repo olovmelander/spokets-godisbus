@@ -200,3 +200,9 @@ Validation: typecheck and focused ending tests pass. A subsequent browser rehear
 Use simple ground shadows on Low, contact shadows on Mid and a bounded 1024-pixel character shadow map on High. Switching to Low releases the higher-tier shadow targets.
 
 Validation: character-shadow browser checks and integrated unit tests pass. Combined High measurements across garden, forest, bog and finale stay below the 80 MB target-storage and 120-draw limits, and High-to-Low releases all render targets.
+
+## Estimate decoded asset GPU storage during builds
+
+Add decoded geometry and texture estimates to the existing asset manifest without removing file hashes or byte sizes. Build budgets account for shared packs plus one chapter, including known canvas and render targets. Unsupported image and instancing cases fail explicitly.
+
+Validation: 14 focused fixture tests, the source's 636 unit tests, typecheck, production build and privacy gate pass. Estimates are conservative; live GL allocation checks remain authoritative.
