@@ -194,11 +194,24 @@ export const sv = {
     rotate: 'Vänd skärmen på bredden!',
   },
 
+  players: {
+    choose: 'Byt spelare', new: 'Ny spelare', name: 'Vad vill du heta?',
+    local: 'Namnet stannar på den här enheten. Alla spelar som Elof.',
+    next: 'Välj spelsätt', back: 'Tillbaka', settings: 'Inställningar',
+    remove: 'Ta bort {name}', removeAsk: 'Ta bort {name} och allt som spelaren har sparat?',
+    restartAsk: 'Börja om från början för {name}? Godis, bilder och framsteg tas bort.',
+    yes: 'Ja', no: 'Nej, gå tillbaka', unreadable: 'Kan inte läsas',
+    error: 'Det gick inte att spara ändringen. Försök igen.',
+    indexUnreadable: 'Spelarlistan gick inte att läsa. Det sparade finns kvar. Prova att ladda om sidan.',
+    preserved: 'Det sparade spelet gick inte att läsa. Det finns kvar. Välj en annan spelare eller börja om.',
+  },
+
   // The pause panel. Every button has a picture beside its word, for a child who can't read yet.
   pause: {
     open: 'Paus',
     title: 'Paus',
     resume: 'Spela vidare',
+    home: 'Till startsidan',
     close: 'Stäng',
     style: 'Spelsätt',
     aventyr: 'Äventyr',

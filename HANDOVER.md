@@ -49,6 +49,20 @@
   - **Cloud scope:** no Blender connection or local family models here; no likeness assets changed.
     `RELEASED_CHAPTER` is still null. The next model round still needs Olov's computer and his remarks.
 
+- **Separate player adventures completed** (4 October, cloud session, `codex/player-profiles`).
+  - The title always offers *Ny spelare*, and *Byt spelare* once a player exists. A local name and play style
+    create a separate adventure; everyone still plays as Elof. Progress, candy, story flags, checkpoint
+    and settings belong to the selected player. Names stay on this device and are displayed as plain text.
+  - Pause has *Till startsidan*. Settings can also be opened from the title, and closing them returns
+    to the title without starting play. Reset and removal each ask Yes/No, with No focused first.
+  - Existing Elof saves migrate without losing data. Damaged/newer saves remain untouched until an
+    explicit reset/removal; a damaged index is never guessed or replaced. Failed writes keep the player
+    on the current screen. An outgoing tab cannot save into a newly selected or deleted profile.
+  - Validation: 481 unit/robot tests, 15 new real-browser profile checks, typecheck, build/size gate and
+    privacy scan pass. The browser checks cover creation, switching, settings isolation, safe names,
+    confirmation, reset/removal isolation, unreadable saves and refused writes. JS is 325 KB gzipped;
+    public boot is 608 KB as served. Album photo isolation is a separate follow-up.
+
 - **Done:**
   - The plan, `docs/game-plan.md` version 4: research, design, art direction, technology and delivery. Version 4
     takes in Olov's second round of answers of 3 October, which settle every question version 3 left open (plan
@@ -905,8 +919,8 @@
 - Poses for the family: sitting at the table at the party, Mamma in the doorway, Pappa's hands with the
   knife, and their hands in the macro world where the signs' rides are now.
 - Byn: people's feet passing, cars, and the inside of the shop.
-- What Stage 2 still lacks in code: more than one player (the next self-contained code task), the
-  challenge routes C2 to C4, a service worker for offline play, and the album's photos. The dew bells
+- What Stage 2 still lacks in code: the challenge routes C2 to C4, a service worker for offline play,
+  and the album's photos. Multiple players are implemented in `codex/player-profiles`. The dew bells
   exist, but still need replayable notes and visible lawn glitter to finish the planned toy.
 - Look-dev repair: make the final's sky and far scenery darken together as night falls, and keep the
   stars round at different aspect ratios. This can be done in a cloud code session.

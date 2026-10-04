@@ -90,13 +90,6 @@ function start(): void {
     return;
   }
 
-  if (loaded.kind === 'unreadable') {
-    showMessage(sv.saveUnreadable, sv.startOver, () => {
-      store.clear();
-      location.reload();
-    });
-    return;
-  }
   // What he found under the deck comes with him to the party in the epilogue (plan §4.8, O2).
   // In a debug session, ?flags=a,b starts with those set: a moment late in a chapter can be looked at alone.
   const seeded = debugOn ? (params.get('flags') ?? '').split(',').filter((flag) => flag !== '') : [];
@@ -160,6 +153,8 @@ function start(): void {
 
   /** True once the saved game has been given up: nothing more is written before the page loads again. */
   let again = false;
+  let begun = loaded.kind === 'save';
+  let titleSettings = false;
   let playedFrom = performance.now();
   /** Writes the game as it stands: at every big candy, on pause, and when the page is hidden. */
   function writeSave(): void {
@@ -176,7 +171,7 @@ function start(): void {
       playMs: save.playMs + (now - playedFrom),
     };
     playedFrom = now;
-    if (!at && !again) store.write(save);
+    if (!at && !again && loaded.kind !== 'unreadable') store.write(save);
   }
   if (!store.available && !benchOn) {
     const notice = byId('notice');
@@ -208,6 +203,12 @@ function start(): void {
   }
   function resume(): void {
     if (!paused) return;
+    if (titleSettings) {
+      titleSettings = false;
+      pause.hide();
+      showTitle();
+      return;
+    }
     paused = false;
     pause.hide();
     input.release();
@@ -216,6 +217,11 @@ function start(): void {
   }
   const pause = createPause(document, {
     onResume: resume,
+    onTitle() {
+      writeSave();
+      pause.hide();
+      showTitle();
+    },
     onSettings(next, choice) {
       input.release();
       // Merely changing sound or play style must not save a temporary ?tier inspection override.
@@ -263,8 +269,45 @@ function start(): void {
 
   // The title (plan §6.10). A chapter starts behind it; the test course and a debug session start at once.
   // ?title shows it in a debug session too, for the browser test.
+  function showTitle(): void {
+    paused = true;
+    input.release();
+    title.show(begun, { currentId: store.currentId, players: store.players(), available: store.available, unreadable: store.load().kind === 'unreadable' });
+  }
+  function reloadPlayer(): void {
+    // The outgoing page must never autosave its simulation into the newly selected profile.
+    again = true;
+    for (const key of ['course', 'at', 'flags', 'style', 'bench']) params.delete(key);
+    params.set('title', '');
+    location.href = `${location.pathname}?${params}`;
+  }
+  const newPlayerChapter = courseFor(new URLSearchParams(params.has('dev') ? 'dev' : ''), null).id;
   const title = createTitle(document, {
+    onSettings() {
+      titleSettings = true;
+      title.hide();
+      pause.show({ ...settings, graphics: requestedGraphics }, true);
+    },
+    onSelect(id) {
+      if (begun && loaded.kind !== 'unreadable') writeSave();
+      if (!store.select(id)) return false;
+      reloadPlayer();
+      return true;
+    },
+    onCreate(name, style) {
+      if (begun && loaded.kind !== 'unreadable') writeSave();
+      if (!store.create(name, style, newPlayerChapter, Date.now())) return false;
+      reloadPlayer();
+      return true;
+    },
+    onDelete(id) {
+      if (!store.remove(id)) return false;
+      reloadPlayer();
+      return true;
+    },
     onStart(style) {
+      if (store.load().kind === 'unreadable') return;
+      begun = true;
       if (style) {
         settings = { ...settingsFor(style), graphics: settings.graphics, followFinger: settings.followFinger };
         game.sim.options = simOptions(settings);
@@ -279,9 +322,9 @@ function start(): void {
       writeSave();
     },
     onStartOver() {
-      store.clear();
-      again = true;
-      location.reload();
+      if (!store.clear()) return false;
+      reloadPlayer();
+      return true;
     },
     onCode(id) {
       // The chapter's start, with whatever this device has kept of the others. The code holds no candy.
@@ -295,11 +338,6 @@ function start(): void {
       location.href = `${location.pathname}${query ? `?${query.replace(/=(?=&|$)/g, '')}` : ''}`;
     },
   });
-  if (!benchOn && !at && (params.has('title') || (chapter.id !== 'testbana' && !debugOn))) {
-    paused = true;
-    title.show(loaded.kind === 'save' && loaded.save.chapter === chapter.id);
-  }
-
   const input = createInput(
     {
       stickZone: byId('stickZone'),
@@ -336,6 +374,8 @@ function start(): void {
     },
   );
 
+  if (loaded.kind === 'unreadable' || (!benchOn && !at && (params.has('title') || (chapter.id !== 'testbana' && !debugOn)))) showTitle();
+
   // The page is a game surface: no pinch zoom, no double-tap zoom, no long-press menu (plan §6.7).
   for (const type of ['gesturestart', 'dblclick', 'contextmenu']) {
     document.addEventListener(type, (e) => e.preventDefault());
@@ -358,7 +398,7 @@ function start(): void {
       state: () => ({
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
-        course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(),
+        playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(),
       }),
       info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars }),
     };

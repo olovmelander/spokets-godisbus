@@ -13,6 +13,8 @@ const BIRD = svg(
   `<path d="M4 14c0-4 3-7 7-7 2.2 0 4 .9 5.2 2.4L20 9l-2.4 2.6c.3.8.4 1.6.4 2.4 0 3-2.6 5-6.5 5H7c-1.7 0-3-2-3-5z" ${line} stroke-width="1.9"/><circle cx="13.8" cy="10.8" r="1" fill="currentColor"/><path d="M4.4 15.6 2 18m7.5 1v2.4m3.5-2.4v2.4" ${line} stroke-width="1.7"/>`,
 );
 const CROSS = svg(`<path d="M6 6l12 12M18 6 6 18" ${line} stroke-width="2.6"/>`);
+const PEOPLE = svg('<circle cx="8" cy="7" r="3" fill="currentColor"/><circle cx="17" cy="9" r="2.5" fill="currentColor"/><path d="M2 21v-4a6 6 0 0 1 12 0v4m1-7a5 5 0 0 1 7 5v2" fill="none" stroke="currentColor" stroke-width="2"/>');
+const HOME = svg(`<path d="m2 11 10-9 10 9M5 9v13h14V9m-10 13v-8h6v8" ${line} stroke-width="2"/>`);
 const CHECK = svg(`<path d="M5 12.5l4.5 4.5L19 7.5" ${line} stroke-width="2.8"/>`);
 /** A big candy: the striped sweet on its stick that marks a safe place (plan §3.3, rule 4). */
 const BIG_CANDY = svg(
@@ -101,6 +103,7 @@ export function mountShell(root: HTMLElement): void {
          </div>
          <div class="map" id="pauseMap"></div>
          <div class="album" id="pauseAlbum" tabindex="-1"></div>
+         <button class="wide" id="titleBtn" type="button">${HOME}<span>${p.home}</span></button>
          <button class="wide" id="stuckBtn" type="button">${BIG_CANDY}<span>${p.stuck}</span></button>
          <div class="ask" id="stuckAsk" hidden>
            <p>${p.stuckAsk}</p>
@@ -122,7 +125,11 @@ export function mountShell(root: HTMLElement): void {
          <div id="titleFront">
            <h1 id="titleName">${sv.title}</h1>
            <p class="rotate">${TURN}<span>${sv.start.rotate}</span></p>
+           <p id="currentPlayer" class="current-player" hidden></p>
+           <p id="playerUnreadable" role="status" hidden>${sv.players.preserved}</p>
            <button class="wide go" id="startBtn" type="button">${PLAY}<span class="begin">${sv.start.begin}</span><span class="resume">${sv.start.resume}</span></button>
+           <button class="wide" id="playersBtn" type="button" hidden>${PEOPLE}<span>${sv.players.choose}</span></button>
+           <button class="wide" id="titleSettingsBtn" type="button">${sv.players.settings}</button>
            <button class="wide small" id="startOverBtn" type="button" hidden>${sv.start.over}</button>
            <button class="wide small" id="codeBtn" type="button">${sv.code.have}</button>
            <form class="code-form" id="codeForm" hidden>
@@ -132,12 +139,34 @@ export function mountShell(root: HTMLElement): void {
            </form>
          </div>
          <div id="titleStyles" hidden>
+           <button class="wide small" id="stylesBack" type="button">${sv.players.back}</button>
            <h2 id="howTitle">${sv.start.how}</h2>
            <div class="styles" role="group" aria-labelledby="howTitle">
              <button class="style" id="firstAventyr" type="button">${LEAP}<b>${p.aventyr}</b><small>${p.aventyrHint}</small></button>
              <button class="style" id="firstLugnt" type="button">${STROLL}<b>${p.lugnt}</b><small>${p.lugntHint}</small></button>
            </div>
          </div>
+         <div id="titlePlayers" hidden>
+           <h2>${sv.players.choose}</h2>
+           <button class="wide small" id="playersBack" type="button">${sv.players.back}</button>
+           <div id="playerList"></div>
+           <button class="wide" id="newPlayerBtn" type="button">${PEOPLE}<span>${sv.players.new}</span></button>
+         </div>
+         <div id="titleNewPlayer" hidden>
+           <button class="wide small" id="newPlayerBack" type="button">${sv.players.back}</button>
+           <form class="code-form player-form" id="newPlayerForm">
+             <label for="playerName">${sv.players.name}</label>
+             <input id="playerName" required type="text" autocomplete="off" spellcheck="false" enterkeyhint="next" aria-describedby="playerLocal">
+             <p class="setting-hint" id="playerLocal">${sv.players.local}</p>
+             <button class="wide go" type="submit">${sv.players.next}</button>
+           </form>
+         </div>
+         <div id="titleConfirm" hidden>
+           <p id="playerConfirmText"></p>
+           <button class="wide" id="playerConfirmNo" type="button">${CROSS}<span>${sv.players.no}</span></button>
+           <button class="wide" id="playerConfirmYes" type="button">${CHECK}<span>${sv.players.yes}</span></button>
+         </div>
+         <p id="playerError" role="alert" hidden>${sv.players.error}</p>
        </div>
      </div>
      <div class="memory" id="memory" role="img" hidden><div class="memory-card" id="memoryCard"></div></div>

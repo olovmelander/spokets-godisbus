@@ -13,11 +13,12 @@ export interface PauseHandlers {
   onSettings(settings: Settings, choice?: 'graphics'): void;
   /** "Jag har fastnat", answered with ✓: back to the last big candy. */
   onStuck(): void;
+  onTitle?(): void;
 }
 
 export interface Pause {
   readonly open: boolean;
-  show(settings: Settings): void;
+  show(settings: Settings, fromTitle?: boolean): void;
   hide(): void;
   /** Back from the reference/confirmation first; otherwise resume. */
   back(): void;
@@ -112,6 +113,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   byId('controlsReferenceBtn').addEventListener('click', () => showReference(true));
   byId('controlsBack').addEventListener('click', () => showReference(false));
 
+  byId('titleBtn').addEventListener('click', () => handlers.onTitle?.());
   byId('resumeBtn').addEventListener('click', () => handlers.onResume());
   byId('pauseClose').addEventListener('click', backOne);
   // A tap on the backdrop closes the panel; a tap inside it doesn't.
@@ -131,7 +133,9 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
     get open() {
       return open;
     },
-    show(current) {
+    show(current, fromTitle = false) {
+      byId('resumeBtn').querySelector('span')!.textContent = fromTitle ? sv.players.back : sv.pause.resume;
+      for (const id of ['pauseMap', 'pauseAlbum', 'stuckBtn', 'titleBtn']) byId(id).hidden = fromTitle;
       settings = current;
       open = true;
       ask.hidden = true;

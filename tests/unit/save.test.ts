@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { OWN_SWITCHES, readSettings, settingsFor, simOptions, SLOWER_TEMPO, SWITCH_NAMES, tempoOf } from '../../src/save/settings';
-import { createStore, newSave, readSave, SAVE_VERSION } from '../../src/save/store';
+import { createStore, newSave, PLAYER_NAME_MAX, readSave, SAVE_VERSION } from '../../src/save/store';
 
 /** A stand-in for localStorage. */
 function fakeStorage(initial: Record<string, string> = {}) {
@@ -72,6 +72,235 @@ describe('the two play styles', () => {
     expect(readSettings({ style: 'lugnt' })).toEqual(settingsFor('lugnt'));
     expect(readSettings({ style: 'something else', swingHelp: 'yes' })).toEqual(settingsFor('aventyr'));
     expect(readSettings({ style: 'lugnt', easyJumps: false, extra: 1 })).toEqual({ ...settingsFor('lugnt'), easyJumps: false });
+  });
+});
+
+describe('local player profiles', () => {
+  const indexKey = 'godisbus.v1.index';
+  const key = (id: string) => `godisbus.v1.player.${id}`;
+  const index = (players: { id: string; name: string }[], current = players[0]?.id ?? 'elof') =>
+    JSON.stringify({ v: SAVE_VERSION, players, current });
+
+  it('discovers the old Elof save without changing it, then migrates its index on the next write', () => {
+    const oldSave = { ...newSave(100, 'garden'), candy: { garden: [2, 4] }, flags: { garden: ['found'] } };
+    const raw = JSON.stringify(oldSave);
+    const storage = fakeStorage({ [key('elof')]: raw });
+    const store = createStore(storage);
+    expect(store.currentId).toBe('elof');
+    expect(store.players()).toEqual([{ id: 'elof', name: 'Elof', kind: 'save' }]);
+    expect(store.load()).toEqual({ kind: 'save', save: oldSave });
+    expect(storage.items.get(indexKey)).toBeUndefined();
+    expect(storage.items.get(key('elof'))).toBe(raw);
+    expect(store.write(oldSave)).toBe(true);
+    expect(JSON.parse(storage.items.get(indexKey)!)).toEqual(JSON.parse(index([{ id: 'elof', name: 'Elof' }])));
+  });
+
+  it('keeps each player’s progress and settings separate, and remembers the selected player after reload', () => {
+    const storage = fakeStorage();
+    const store = createStore(storage);
+    expect(store.players()).toEqual([]);
+    const elof = { ...newSave(100, 'garden'), checkpoint: 2, candy: { garden: [1, 2] }, flags: { garden: ['memory'] } };
+    expect(store.write(elof)).toBe(true);
+    const otherId = store.create('Moa', 'lugnt', 'prolog', 200)!;
+    expect(otherId).toMatch(/^p_/);
+    expect(store.currentId).toBe(otherId);
+    const moa = { ...newSave(200, 'prolog', settingsFor('lugnt'), 'Moa'), flags: { prolog: ['star'] } };
+    expect(store.write(moa)).toBe(true);
+    expect(createStore(storage).load()).toEqual({ kind: 'save', save: moa });
+    expect(store.select('elof')).toBe(true);
+    expect(store.load()).toEqual({ kind: 'save', save: elof });
+    expect(store.select(otherId)).toBe(true);
+    expect(store.load()).toEqual({ kind: 'save', save: moa });
+    expect(store.players()).toEqual([
+      { id: 'elof', name: 'Elof', kind: 'save' }, { id: otherId, name: 'Moa', kind: 'save' },
+    ]);
+  });
+
+  it('uses distinct opaque IDs for equal names and bounds names without splitting Unicode characters', () => {
+    const storage = fakeStorage();
+    const store = createStore(storage);
+    const first = store.create('  Moa\n  ', 'aventyr', 'prolog', 100)!;
+    const second = store.create('Moa', 'lugnt', 'prolog', 100)!;
+    expect(first).not.toBe(second);
+    expect(first.toLowerCase()).not.toContain('moa');
+    expect(second.toLowerCase()).not.toContain('moa');
+    expect(store.players().map((p) => p.name)).toEqual(['Moa', 'Moa']);
+    expect(store.create(' \n\t ', 'aventyr', 'prolog', 100)).toBeNull();
+    const long = '🐴'.repeat(PLAYER_NAME_MAX + 5);
+    store.create(long, 'aventyr', 'prolog', 100);
+    const loaded = store.load();
+    expect(loaded.kind === 'save' && loaded.save.name).toBe('🐴'.repeat(PLAYER_NAME_MAX));
+  });
+
+  it('binds save names to the selected profile instead of a caller’s stale default name', () => {
+    const store = createStore(fakeStorage());
+    store.create('Moa', 'lugnt', 'prolog', 100);
+    expect(store.write(newSave(200, 'garden'))).toBe(true);
+    const loaded = store.load();
+    expect(loaded.kind === 'save' && loaded.save.name).toBe('Moa');
+    expect(store.players()[0]?.name).toBe('Moa');
+  });
+
+  it('clears only current progress and preserves the profile’s name and other players', () => {
+    const storage = fakeStorage();
+    const store = createStore(storage);
+    store.write(newSave(100, 'garden'));
+    const elof = storage.items.get(key('elof'));
+    const other = store.create('Moa', 'lugnt', 'prolog', 200)!;
+    expect(store.clear()).toBe(true);
+    expect(store.load()).toEqual({ kind: 'none' });
+    expect(store.players().find((p) => p.id === other)).toEqual({ id: other, name: 'Moa', kind: 'none' });
+    expect(storage.items.get(key('elof'))).toBe(elof);
+    expect(store.write(newSave(300, 'prolog'))).toBe(true);
+    const loaded = store.load();
+    expect(loaded.kind === 'save' && loaded.save.name).toBe('Moa');
+  });
+
+  it('removes exactly the named profile and selects a remaining player when necessary', () => {
+    const storage = fakeStorage({ unrelated: 'keep me' });
+    const store = createStore(storage);
+    store.write(newSave(100, 'garden'));
+    const other = store.create('Moa', 'lugnt', 'prolog', 200)!;
+    expect(store.remove('unknown')).toBe(false);
+    expect(store.remove(other)).toBe(true);
+    expect(store.currentId).toBe('elof');
+    expect(storage.items.has(key(other))).toBe(false);
+    expect(store.load().kind).toBe('save');
+    expect(store.remove('elof')).toBe(true);
+    expect(store.players()).toEqual([]);
+    expect(createStore(storage).load()).toEqual({ kind: 'none' });
+    expect(storage.items.get('unrelated')).toBe('keep me');
+    expect(store.write(newSave(300, 'prolog'))).toBe(true);
+  });
+
+  it('keeps corrupt player data visible and untouched while another player can still play', () => {
+    const raw = '{ broken save';
+    const storage = fakeStorage({ [key('elof')]: raw });
+    const store = createStore(storage);
+    expect(store.players()).toEqual([{ id: 'elof', name: 'Elof', kind: 'unreadable' }]);
+    expect(store.write(newSave(100, 'prolog'))).toBe(false); // protected even before load()
+    const other = store.create('Moa', 'lugnt', 'prolog', 200)!;
+    expect(store.load().kind).toBe('save');
+    expect(store.select('elof')).toBe(true);
+    expect(store.load().kind).toBe('unreadable');
+    expect(store.write(newSave(300, 'prolog'))).toBe(false);
+    expect(storage.items.get(key('elof'))).toBe(raw);
+    expect(store.remove('elof')).toBe(true); // explicit removal is allowed
+    expect(store.currentId).toBe(other);
+  });
+
+  it.each([
+    '{ broken index',
+    JSON.stringify({ v: SAVE_VERSION + 1, players: [], current: 'elof' }),
+    index([{ id: 'elof', name: 'Elof' }], 'missing'),
+    index([{ id: 'elof', name: 'Elof' }, { id: 'elof', name: 'Again' }]),
+  ])('never replaces a corrupt or newer index: %s', (raw) => {
+    const storage = fakeStorage({ [indexKey]: raw, [key('elof')]: JSON.stringify(newSave(100, 'garden')) });
+    const before = [...storage.items];
+    const store = createStore(storage);
+    expect(store.load()).toEqual({ kind: 'unreadable' });
+    expect(store.write(newSave(200, 'prolog'))).toBe(false);
+    expect(store.create('Moa', 'lugnt', 'prolog', 200)).toBeNull();
+    expect(store.select('elof')).toBe(false);
+    expect(store.remove('elof')).toBe(false);
+    expect(store.clear()).toBe(false);
+    expect([...storage.items]).toEqual(before);
+  });
+
+  it('does not guess that a rejected read means an empty save', () => {
+    const storage = fakeStorage({ [key('elof')]: JSON.stringify(newSave(100, 'garden')) });
+    const before = [...storage.items];
+    storage.getItem = () => { throw new Error('blocked'); };
+    const store = createStore(storage);
+    expect(store.available).toBe(false);
+    expect(store.load().kind).toBe('unreadable');
+    expect(store.write(newSave(200, 'prolog'))).toBe(false);
+    expect(store.create('Moa', 'lugnt', 'prolog', 200)).toBeNull();
+    expect(store.clear()).toBe(false);
+    expect([...storage.items]).toEqual(before);
+  });
+
+  it('checks the current save again before writing, even when the index can still be read', () => {
+    const storage = fakeStorage();
+    const store = createStore(storage);
+    store.write(newSave(100, 'garden'));
+    const before = [...storage.items];
+    const get = storage.getItem;
+    storage.getItem = (id) => { if (id === key('elof')) throw new Error('blocked'); return get(id); };
+    expect(store.write(newSave(200, 'prolog'))).toBe(false);
+    expect(store.select('elof')).toBe(false);
+    expect(store.remove('elof')).toBe(false);
+    expect([...storage.items]).toEqual(before);
+  });
+
+  it.each(['save', 'index'])('rolls back creation when storage refuses the new %s', (failure) => {
+    const storage = fakeStorage();
+    const store = createStore(storage);
+    store.write(newSave(100, 'garden'));
+    const before = [...storage.items];
+    const set = storage.setItem;
+    storage.setItem = (id, value) => {
+      if ((failure === 'index' && id === indexKey) || (failure === 'save' && id.startsWith('godisbus.v1.player.p_'))) throw new Error('full');
+      set(id, value);
+    };
+    expect(store.create('Moa', 'lugnt', 'prolog', 200)).toBeNull();
+    expect(store.currentId).toBe('elof');
+    expect([...storage.items]).toEqual(before);
+  });
+
+  it('restores a legacy save if its first index cannot be saved', () => {
+    const raw = JSON.stringify(newSave(100, 'garden'));
+    const storage = fakeStorage({ [key('elof')]: raw });
+    const set = storage.setItem;
+    storage.setItem = (id, value) => { if (id === indexKey) throw new Error('full'); set(id, value); };
+    expect(createStore(storage).write(newSave(200, 'prolog'))).toBe(false);
+    expect([...storage.items]).toEqual([[key('elof'), raw]]);
+  });
+
+  it('restores the index when profile removal is refused', () => {
+    const storage = fakeStorage();
+    const store = createStore(storage);
+    store.write(newSave(100, 'garden'));
+    const other = store.create('Moa', 'lugnt', 'prolog', 200)!;
+    const before = [...storage.items];
+    storage.removeItem = () => { throw new Error('blocked'); };
+    expect(store.remove(other)).toBe(false);
+    expect(store.currentId).toBe(other);
+    expect([...storage.items]).toEqual(before);
+  });
+
+  it('does not retarget a running game when a different tab selects or creates another player', () => {
+    const storage = fakeStorage();
+    const first = createStore(storage);
+    first.write(newSave(100, 'garden'));
+    const second = createStore(storage);
+    const other = second.create('Moa', 'lugnt', 'prolog', 200)!;
+    const otherSave = storage.items.get(key(other));
+    expect(first.currentId).toBe('elof');
+    expect(first.write(newSave(300, 'granskog'))).toBe(true);
+    expect(storage.items.get(key(other))).toBe(otherSave);
+    expect(createStore(storage).currentId).toBe(other);
+    expect(first.players()).toHaveLength(2);
+  });
+
+  it('does not recreate a profile removed by another tab through a late autosave', () => {
+    const storage = fakeStorage();
+    const first = createStore(storage);
+    first.write(newSave(100, 'garden'));
+    const second = createStore(storage);
+    expect(second.remove('elof')).toBe(true);
+    expect(first.write(newSave(200, 'granskog'))).toBe(false);
+    expect(storage.items.has(key('elof'))).toBe(false);
+  });
+
+  it('cannot create, select, clear or remove profiles without storage', () => {
+    const store = createStore(null);
+    expect(store.players()).toEqual([]);
+    expect(store.currentId).toBe('elof');
+    expect(store.create('Moa', 'lugnt', 'prolog', 100)).toBeNull();
+    expect(store.select('elof')).toBe(false);
+    expect(store.clear()).toBe(false);
+    expect(store.remove('elof')).toBe(false);
   });
 });
 
