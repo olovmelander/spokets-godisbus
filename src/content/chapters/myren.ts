@@ -1,5 +1,5 @@
 import { BERRY_HEIGHT } from '../../sim/constants';
-import type { Candy, ChapterData, Jump, Tussock, Vec } from '../../sim/types';
+import type { Candy, ChapterData, Hook, Jump, Ledge, Tussock, Vec } from '../../sim/types';
 
 /**
  * Kapitel 3: Myren (plan §3.4), in greybox. Units: EL. The places, from the left:
@@ -23,6 +23,10 @@ import type { Candy, ChapterData, Jump, Tussock, Vec } from '../../sim/types';
  *
  * And, as a toy: **two cranberries** at the edge of the bog (O7). Coming down on one bounces him twice as
  * high as he jumps, and at a run from the first he comes down on the second.
+ *
+ * Over the path lie the first layers (docs/level-design.md), each with side candy and each letting out
+ * forward onto the trail: **a leaf over the first cranberry**, which only its bounce reaches; **leaves over
+ * the firm tussocks**; and **three rings between the dead pines** over the boardwalk.
  *
  * Not built yet: the tussocks' dip under his feet, Mamma's mug and her lamp behind
  * him, the rings of the cranes' calls as a thing to follow, memory 3,
@@ -89,6 +93,51 @@ const SHY = [
   { x: 161.2, y: 3.7, width: 1.8 },
 ];
 
+/**
+ * A leaf over the first cranberry, higher than he jumps and lower than the berry bounces him: jumping for
+ * the heart over it, he comes down on the berry and is put on the leaf. It ends well before a running bounce
+ * comes down again, so the run from the first berry to the second passes over it.
+ */
+const BERRY_LEAF: Ledge = { x: 3, y: 1.8, width: 2.4, look: 'leaf' };
+
+/**
+ * Leaves over the firm tussocks: a second level from the third tussock to the wide one with the big candy.
+ * - The first is a held jump above its tussock, and in from both of the tussock's ends, so the hops along
+ *   the trail pass under it. The second is a step up over its far half. All but the first are higher than
+ *   any hop from a tussock rises.
+ * - The jumps from the second to the third and from the third to the fourth are over open water. A miss
+ *   there is the glitter bubble, which puts him back on the leaf he left; and the picture, which follows the
+ *   ground under him, stays level over water, where it would dip over a tussock.
+ * - He runs off the fourth onto the fifth, which is lower, and walks off the fifth onto the wide tussock.
+ */
+const LEAVES: Ledge[] = [
+  { x: 20.6, y: 1.15, width: 1.6, look: 'leaf' },
+  { x: 21.7, y: 1.95, width: 1.6, look: 'leaf' },
+  { x: 24.75, y: 2.75, width: 2.5, look: 'leaf' },
+  { x: 28.2, y: 2.75, width: 2, look: 'leaf' },
+  { x: 31.1, y: 2.2, width: 2.2, look: 'leaf' },
+];
+
+/**
+ * The dead pines over the boardwalk.
+ * - Two branches of the first pine, one over the other, are the steps up from the boards: a held jump
+ *   straight up to each.
+ * - Three rings hang between the pines, at one height and one spacing: too high for the lace from the
+ *   boards, in reach from the upper branch, and each in reach from where the one before lets him go.
+ * - A branch of the second pine is where the third swing sets him down. It is too high to jump to from the
+ *   boards, so the rings are the way to it, and he leaves it by walking off its end.
+ * Nothing here is more than a safe drop over the boards.
+ */
+const STEPS: Ledge[] = [
+  { x: 111.2, y: 5.35, width: 1.4, look: 'branch' },
+  { x: 111.2, y: 6.2, width: 2, look: 'branch' },
+];
+const RINGS: Hook[] = [114.1, 117.5, 120.9].map((x) => ({ x, y: 9.1, length: 2.4, extra: true }));
+const LANDING: Ledge = { x: 123.8, y: 6.2, width: 2.4, look: 'branch' };
+
+/** A side candy over the middle of a ledge: he takes it standing there, and not from the ground under it. */
+const above = (ledge: Ledge, lift: number): Candy => ({ x: ledge.x, y: round(ledge.y + lift) });
+
 /** The two ways over water, each from firm ground to firm ground. */
 const OUT: Stone[] = [{ from: -3, to: 10, y: 0 }, ...FIRM, ...SOFT_A, ISLAND, ...SOFT_B, SHORE];
 const HOME: Stone[] = [{ from: 136, to: 150, y: 0 }, ...MIST, { from: 167.4, to: 190, y: 0 }];
@@ -142,11 +191,13 @@ function along(t: number): Candy {
 export const myren: ChapterData = {
   id: 'myren',
   place: 'bog',
-  // Off the trail: behind him at the start, over the highest tussock, over the boardwalk, and with the last shy light.
+  // Off the trail: behind him at the start; at the near end of the leaf the first cranberry bounces him up
+  // to, out of the way of a bounce at a run; over the branch where the rings end, higher than a jump from the
+  // boards reaches; and with the last shy light.
   hidden: [
     { x: -1.8, y: 0.5, kind: 'chokladpeng' },
-    { x: 42.7, y: 2.7, kind: 'stektagg' },
-    { x: 116, y: 6.4, kind: 'surnapp' },
+    { x: 2.1, y: 2.45, kind: 'stektagg', way: 'bounced up from the cranberry' },
+    { x: 124.2, y: 7.1, kind: 'surnapp', way: 'along the rings between the dead pines' },
     { x: 161.2, y: 4.15, kind: 'lakritskonfekt', route: true, after: 'shy:3' },
   ],
   // A lasting landmark for the lantern's clearing after he carries the light away.
@@ -200,6 +251,31 @@ export const myren: ChapterData = {
     { from: 150, to: 167.4, y: WATER },
   ],
   tussocks: [...SOFT_A, ...SOFT_B].map(soft),
+  // The second level: the leaf over the cranberry, the leaves over the tussocks, and the dead pines' branches.
+  ledges: [BERRY_LEAF, ...LEAVES, ...STEPS, LANDING],
+  // The rings between the dead pines. They are off the way on: the boardwalk under them is the trail.
+  hooks: RINGS,
+  // Side candy, off the trail. None is taken by walking under it, or by a hop along the trail. It is drawn as
+  // a heart and a lollipop by turns, in the order of this list, so the first of each way is a heart: its tell.
+  side: [
+    // Over the first cranberry, where its bounce carries him through the leaf, and over the leaf's far end.
+    { x: 2.9, y: 2.4 },
+    { x: 3.7, y: 2.4 },
+    // Over the leaves: one over each, and two over the wide third one.
+    above(LEAVES[0]!, 0.6),
+    above(LEAVES[1]!, 0.6),
+    { x: 24.3, y: 3.35 },
+    { x: 25.4, y: 3.35 },
+    above(LEAVES[3]!, 0.6),
+    above(LEAVES[4]!, 0.6),
+    // Over each step of the first pine.
+    ...STEPS.map((step) => above(step, 0.55)),
+    // Along the three swings: a heart where he hangs lowest under each ring, and a lollipop where it lets
+    // him go to the next.
+    ...RINGS.flatMap((ring) => [{ x: ring.x, y: 6.95 }, { x: round(ring.x + 1.7), y: 7.25 }]),
+    // And where the third swing sets him down.
+    { x: 123.2, y: 6.9 },
+  ],
   checkpoints: [
     { x: 4, y: 0 },
     { x: 34, y: 0 },
@@ -288,6 +364,12 @@ export const myren: ChapterData = {
   cameras: [
     // The upper route needs its next landing and the lower way home in portrait as well as landscape.
     { from: 145.8, to: 163, above: 1.55, zoom: 1.45, lift: 0.6, lead: 0.8 },
+    // On the leaves the picture is wider and lower, so the tussocks under him, and the one he will drop to,
+    // are in it. A hop along the trail never rises this high.
+    { from: 19, to: 33, above: 1.6, zoom: 1.4, lift: -0.8 },
+    // Up among the rings it is wider and lower too: the next ring is in it, and so are the boards a fall
+    // would land on. A jump on the boards never rises this high.
+    { from: 109, to: 126, above: 5.75, zoom: 1.5, lift: -0.4 },
     { from: 9, to: 50, zoom: 1.2 },
     { from: 50, to: 83, zoom: 1.3 },
     { from: 84, to: 97, zoom: 1.25 },
