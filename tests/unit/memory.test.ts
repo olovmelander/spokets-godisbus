@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { STORY, chapterNumber } from '../../src/content/chapters';
-import { MEMORIES, PICTURE_TIME, memoryAlbumHtml } from '../../src/ui/memory';
+import { MEMORIES, MEMORY_RETURN_TIME, PICTURE_TIME, memoryAlbumHtml } from '../../src/ui/memory';
 import { heightAt, playThrough } from '../robot/robot';
 
 const numbered = STORY.filter((chapter) => chapterNumber(chapter.id) > 0);
@@ -40,7 +40,7 @@ describe('the four memories', () => {
     for (const [id, pictures] of Object.entries(MEMORIES)) {
       expect(pictures.length, id).toBeGreaterThanOrEqual(3);
       expect((pictures.length * PICTURE_TIME) / 1000, id).toBeGreaterThanOrEqual(6);
-      expect((pictures.length * PICTURE_TIME) / 1000, id).toBeLessThanOrEqual(10);
+      expect((pictures.length * PICTURE_TIME + MEMORY_RETURN_TIME) / 1000, id).toBeLessThanOrEqual(10);
     }
   });
 

@@ -115,6 +115,8 @@ export interface View {
   playerScreen(): { x: number; y: number } | null;
   /** The visitor's centre for tapping the helper itself; null while it is away. */
   helperScreen(): { x: number; y: number } | null;
+  /** The visible ghost's picture-bubble origin above its head; null while it is away or off screen. */
+  ghostScreen(): Vec | null;
   worldScreen(at: Vec): Vec | null;
   /** Optional Peka responses: animation only, never changes the simulation. */
   react(what: Reaction, calm?: boolean): void;
@@ -496,12 +498,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let reaction: Reaction | null = null;
   let responseFor = 0;
   let calmResponse = false;
-  const project = (point: Vector3): Vec | null => {
+  const project = (point: Vector3, bounds = 1.05): Vec | null => {
     if (!hasFrame) return null;
     const rect = canvas.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return null;
     point.project(camera);
-    if (!Number.isFinite(point.x) || !Number.isFinite(point.y) || Math.abs(point.z) > 1 || Math.abs(point.x) > 1.05 || Math.abs(point.y) > 1.05) return null;
+    if (!Number.isFinite(point.x) || !Number.isFinite(point.y) || Math.abs(point.z) > 1 || Math.abs(point.x) > bounds || Math.abs(point.y) > bounds) return null;
     return { x: rect.left + (point.x + 1) * rect.width / 2, y: rect.top + (1 - point.y) * rect.height / 2 };
   };
 
@@ -821,6 +823,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       projectedPlayer.project(camera);
       if (!Number.isFinite(projectedPlayer.x) || !Number.isFinite(projectedPlayer.y) || Math.abs(projectedPlayer.z) > 1 || Math.abs(projectedPlayer.x) > 1 || Math.abs(projectedPlayer.y) > 1) return null;
       return { x: rect.left + (projectedPlayer.x + 1) * rect.width / 2, y: rect.top + (1 - projectedPlayer.y) * rect.height / 2 };
+    },
+    ghostScreen() {
+      // In the garden the visiting helper replaces the chase ghost. Later helpers are birds, so they
+      // never become a memory's origin. Use the rendered transform, including its hop and scale.
+      const actor = ghostPlace.visible && ghost.visible ? ghostPlace
+        : ghostHelps && helper.active && helper.group.visible && helper.actor.children[0]?.visible ? helper.actor : null;
+      if (!hasFrame || !actor?.visible || Math.min(actor.scale.x, actor.scale.y, actor.scale.z) <= 0.001) return null;
+      actor.localToWorld(projectedPlayer.set(0, 1.35, 0));
+      return project(projectedPlayer, 1);
     },
     worldScreen(at) { return project(projectedPlayer.set(at.x, at.y, 0)); },
     react(what, calm = false) { reaction = what; responseFor = 0.85; calmResponse = calm; },

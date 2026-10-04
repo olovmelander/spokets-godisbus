@@ -107,6 +107,7 @@ function start(): void {
   const chapter = at ? { ...course, spawn: at } : course;
   let save: PlayerSave = loaded.kind === 'save' ? loaded.save : newSave(Date.now(), chapter.id);
   let settings: Settings = debugOn && params.get('style') === 'lugnt' ? settingsFor('lugnt') : save.settings;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   // A URL tier is a temporary inspection override. A deliberate menu choice replaces it.
   let requestedGraphics = tierFromQuery(params.get('tier')) ?? settings.graphics;
   mountShell(document.body, chapter.helper?.kind);
@@ -518,7 +519,7 @@ function start(): void {
         if (what.kind === 'use') askedForUse = true;
         else if (what.kind === 'helper') askedForHelp = true;
         else {
-          view.react(what, settings.calm || window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+          view.react(what, settings.calm || reducedMotion.matches);
           if (what.kind === 'player') audio.play({ kind: 'say', who: 'elof' });
           else if (what.kind === 'ghost') audio.play({ kind: 'say', who: 'spoket' });
         }
@@ -721,9 +722,13 @@ function start(): void {
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-memory]') : null;
     const id = button?.dataset.memory;
     const found = id && (id === chapter.id ? game.sim.flags.has('memory') : save.flags[id]?.includes('memory'));
-    if (platformBlocked() || !id || !found || !pause.open || memories.open || photoAlbum.open || story.open || explore.open) return;
+    if (!button || platformBlocked() || !id || !found || !pause.open || memories.open || photoAlbum.open || story.open || explore.open) return;
     input.release();
-    memories.play(id, () => { input.release(); game.resume(); });
+    const rect = button.getBoundingClientRect();
+    memories.play(id, () => { input.release(); game.resume(); }, {
+      origin: rect.width > 0 && rect.height > 0 ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null,
+      calm: settings.calm || reducedMotion.matches,
+    });
   });
   let remembered = game.sim.flags.has('memory');
   let flagsSeen = -1;
@@ -794,7 +799,12 @@ function start(): void {
       askedForUse = askedForHelp = false;
       input.release();
       writeSave();
-      memories.play(chapter.id, () => { input.release(); game.resume(); canvas.focus(); });
+      const shaving = chapter.spots?.find((spot) => spot.id === 'memory')?.at ?? game.sim.curr;
+      memories.play(chapter.id, () => { input.release(); game.resume(); canvas.focus(); }, {
+        // If the ghost is waiting beyond the camera, grow from the glowing shaving Elof just touched.
+        origin: view.ghostScreen() ?? view.worldScreen({ x: shaving.x, y: shaving.y + 0.6 }),
+        calm: settings.calm || reducedMotion.matches,
+      });
       audio.sleep(true);
     }
     // A big candy is a safe place: the game saves there (plan §3.3, rule 4).

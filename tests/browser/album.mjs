@@ -85,7 +85,8 @@ try {
   await page.keyboard.press('Enter');
   assert.equal(await page.locator('#memoryProgress').textContent(), '2 / 3', 'Enter advances a frame');
   if (process.env.MEMORY_SHOT) {
-    await page.waitForFunction(() => Number(getComputedStyle(document.getElementById('memoryCard')).opacity) > 0.99);
+    await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('#memoryCard svg')).opacity) > 0.99
+      && document.getElementById('memory').dataset.phase === 'pictures');
     await page.screenshot({ path: process.env.MEMORY_SHOT });
   }
   await page.keyboard.press('Escape');

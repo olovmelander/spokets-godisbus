@@ -1,6 +1,7 @@
 # Implementation progress
 
-Technical progress for the implementation PR stack. Detailed historical handover edits remain local pending publication review.
+Technical progress for the implementation PR stack. `HANDOVER.md` gives the current next steps.
+The deployed `main` is PR #60; later milestones below remain unmerged until their PRs are merged in order.
 
 
 ## Add the optional shy-lights route in Myren
@@ -226,3 +227,25 @@ Release CPU mip buffers for supported immutable KTX2 pack textures after upload.
 Procedural and dynamic textures keep the CPU data they need. No blanket geometry or unsupported-source release is attempted.
 
 Validation: the clean combined tree passes 665 unit/robot tests, typecheck, production build/size and privacy gates (371 KB gzip JS; 700 KB public boot). The source passed 13 real KTX browser checks plus 30 lifecycle checks, covering uploaded payload hashes, released buffers, offline recovery, bounded failures, retry and repeated context loss. The full 28-suite integrated browser gate is running.
+
+## Complete integrated fixtures and narrow-screen hints
+
+Recovered the unfinished browser-fixture repairs and High forest software-renderer traversal wait.
+Fixtures now retain the actual game scene when renderer effects add their own scenes. Keyboard hints
+wrap inside phone margins instead of extending past portrait screens. Gameplay and visuals are unchanged.
+
+Validation: 665 unit/robot tests, typecheck, build/size and built-in privacy checks pass on the recovered
+baseline (371 KB gzip JavaScript, 700 KB public boot). The complete existing 28-suite browser gate is
+being run together; its final result is recorded when it finishes.
+
+## Grow and return the wordless memories
+
+First discoveries grow from the visible ghost or the touched shaving; album replays grow from their
+thumbnail. The oval remains still between pictures and returns after the last. Explicit cancellation
+stays immediate. Picture timers and animations freeze during visibility/context interruptions, and
+rotation safely replaces stale travel with a centred fade. Saved and OS reduced motion avoid travel.
+
+Validation: 30 real-browser checks and all 665 unit/robot tests pass, including opening/closing
+interruptions, immediate cancellation, reopen races, rotation, natural completion and all five planned
+screen sizes. Typecheck, clean build/size and privacy pass (372 KB gzip JS; 701 KB public boot).
+The existing wordless cutout cards remain: final animated family scenes are the separate Blender task.

@@ -529,23 +529,8 @@ body.calm *::after {
   height: 100%;
 }
 
-/* It grows out of a bubble, and each picture fades in. */
-.memory-card.in {
-  animation: memory-in 0.5s ease-out;
-}
-
-@keyframes memory-in {
-  from {
-    opacity: 0;
-    transform: scale(0.82);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .memory-card.in {
-    animation: none;
-  }
-}
+/* Entrance/return and picture fades use one suspendable presentation in memory.ts. The picture's
+   oval stays still between cards, and Mindre rörelse uses fades without a travelling/scaling panel. */
 
 /* --- the sticker album: every kind of hidden candy, found or still out there (plan §4.3) ----------- */
 .album:empty {
