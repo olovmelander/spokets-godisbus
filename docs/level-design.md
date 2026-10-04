@@ -57,7 +57,7 @@ These are the pieces a chapter is laid out with. The first four are in the forma
 - **Nothing the story needs is on a side way.** The helper never points there. *Lugnt* needs nothing there.
 - **Saved games:** trail candy and big candies are kept by their place in their lists. Add, never insert or
   move. Side candy has its own list for that reason.
-- **Budgets:** all ledges of one look are one draw call; every ring, climb and thing on a rail is one of its
+- **Budgets:** all ledges of one look, with what holds them up, are one draw call; every ring, climb and thing on a rail is one of its
   own. A picture stays within 120.
 
 ## 3. The chapters

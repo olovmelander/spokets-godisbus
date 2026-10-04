@@ -12,31 +12,29 @@ const size = (mesh: InstancedMesh, slot: number) => {
 };
 
 describe('the ledges, as they are drawn', () => {
-  it('every look builds something: all ledges of one look are one mesh, and what holds them up another', () => {
+  it('every look builds something, and all ledges of one look are one mesh', () => {
     const ledges: Ledge[] = LEDGE_LOOKS.flatMap((look, i) => [{ x: i * 3, y: 1, width: 2, look }, { x: i * 3 + 1, y: 2, width: 1, look }]);
-    const built = buildLedges(ledges, () => 0);
-    expect(built.group.children).toHaveLength(LEDGE_LOOKS.length * 2);
+    const built = buildLedges(ledges);
+    expect(built.group.children).toHaveLength(LEDGE_LOOKS.length);
     for (const mesh of built.group.children as InstancedMesh[]) {
       expect(mesh.count).toBe(2);
       expect(mesh.geometry.getAttribute('position').count).toBeGreaterThan(8);
-      if (mesh.name.endsWith(':support')) continue;
       // As wide as the ledge it draws.
       expect(size(mesh, 0).x).toBeCloseTo(2);
       expect(size(mesh, 1).x).toBeCloseTo(1);
     }
   });
 
-  it('nothing floats: a stalk, a stem or a pillar stands on the ground under its ledge', () => {
-    const built = buildLedges([{ x: 4, y: 3, width: 1.5, look: 'leaf' }, { x: 8, y: 2, width: 1.5, look: 'stone' }], (x) => (x < 6 ? 0.5 : -1));
-    const at = new Vector3();
-    const matrix = new Matrix4();
-    for (const [name, foot, top] of [['ledges:leaf:support', 0.5, 3], ['ledges:stone:support', -1, 2]] as const) {
-      const held = built.group.getObjectByName(name) as InstancedMesh;
-      held.getMatrixAt(0, matrix);
-      expect(at.setFromMatrixPosition(matrix).y).toBeCloseTo(foot);
-      // From the ground to just under the ledge's top.
-      expect(foot + size(held, 0).y).toBeGreaterThan(top - 0.2);
-      expect(foot + size(held, 0).y).toBeLessThanOrEqual(top);
+  it('nothing floats: a stalk, a stem or a pillar goes down from its ledge into the ground, and a plank has its batten', () => {
+    const built = buildLedges(LEDGE_LOOKS.map((look, i) => ({ x: i * 3, y: 1, width: 1.5, look })));
+    for (const look of LEDGE_LOOKS) {
+      const shape = (built.group.getObjectByName(`ledges:${look}`) as InstancedMesh).geometry;
+      shape.computeBoundingBox();
+      // Its top is the ledge's top (a stem goes on above it), and what holds it reaches below the ledge.
+      expect(shape.boundingBox!.max.y, look).toBeGreaterThanOrEqual(-0.001);
+      expect(shape.boundingBox!.min.y, look).toBeLessThan(look === 'plank' ? -0.3 : -10);
+      // Nothing of it stands in front of the plane he moves in.
+      expect(shape.boundingBox!.max.z, look).toBeLessThanOrEqual(0.001);
     }
   });
 
