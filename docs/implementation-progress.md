@@ -194,3 +194,9 @@ Validation: renderer unit tests, typecheck, build and privacy gates pass. The re
 Place the carved eyes in the window and the named keepsake on the shelf. After the credits, show a short moonlit blink and bell before the ending and exploration choices; lifecycle pauses freeze the sequence and sound respects saved volume and mute settings.
 
 Validation: typecheck and focused ending tests pass. A subsequent browser rehearsal covers the complete ending, focus and interruption paths with the current stand-in models.
+
+## Give each graphics tier bounded character shadows
+
+Use simple ground shadows on Low, contact shadows on Mid and a bounded 1024-pixel character shadow map on High. Switching to Low releases the higher-tier shadow targets.
+
+Validation: character-shadow browser checks and integrated unit tests pass. Combined High measurements across garden, forest, bog and finale stay below the 80 MB target-storage and 120-draw limits, and High-to-Low releases all render targets.

@@ -18,6 +18,7 @@ import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } fr
 import { createDepthBlur } from './depth-blur';
 import { createBloom } from './bloom';
 import { createWater } from './water';
+import { createCharacterShadows } from './character-shadows';
 import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
@@ -56,6 +57,7 @@ export interface ViewInfo {
   compressedTextures: number;
   /** The "role" custom properties set in Blender, read back from the models. */
   roles: string[];
+  shadows: { characters: number; contact: boolean; mapSize: number; casters: number };
 }
 
 /** What the picture is drawn from: two simulation states and what has been reached and collected. */
@@ -394,6 +396,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           model.scale.setScalar(sized.scale);
           stand.prop!.group.clear();
           stand.prop!.group.add(model);
+          characterShadows.add({ object: model, height: 1.6, radius: .3 });
           family.push({
             model, at: stand.at, glad: stand.glad, was: false, joy: 0,
             arms: [jointOf(model, 'upperarm_l', -1), jointOf(model, 'upperarm_r', -1)],
@@ -405,19 +408,25 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       .catch((error) => console.error('Someone in the family could not be loaded; the sign stays.', error));
   }
 
-  const shadow = new Mesh(
-    new CircleGeometry(0.27, 24),
-    new MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0.3, depthWrite: false }),
-  );
-  shadow.rotation.x = -Math.PI / 2;
-  shadow.renderOrder = 1;
-  scene.add(shadow);
-  // The ghost has one too: it stands on the ground, it does not float over it.
-  const ghostShadow = new Mesh(shadow.geometry, shadow.material);
-  ghostShadow.rotation.x = -Math.PI / 2;
-  ghostShadow.renderOrder = 1;
-  ghostShadow.visible = false;
-  scene.add(ghostShadow);
+  const characterShadows = createCharacterShadows(renderer, scene, sun);
+  let playerGroundY = chapter.spawn.y;
+  let ghostGroundY = chapter.ghost?.[0]?.at.y ?? 0;
+  let ghostStaged = false;
+  characterShadows.add({ object: elof.group, height: 1, radius: .31, groundY: () => playerGroundY });
+  characterShadows.add({ object: ghostPlace, height: 1, radius: .36, active: () => !ghostStaged, groundY: () => ghostGroundY });
+  characterShadows.add({ object: helper.actor, height: ghostHelps ? 1 : .7, radius: .3,
+    groundY: () => Math.min(helper.actor.position.y, heightOfGroundAt(chapter, helper.actor.position.x)) });
+  if (chapter.follower && follower.group.children[0]) characterShadows.add({ object: follower.group.children[0], height: 1, radius: .3 });
+  const animal = { ladybird: [.5, .45], jay: [.7, .34], ants: [.3, .5], crane: [2.2, .4] } as const;
+  for (const thing of things) {
+    const size = thing.spot.look && animal[thing.spot.look as keyof typeof animal];
+    if (size && thing.prop) characterShadows.add({ object: thing.prop.group, height: size[0], radius: size[1] });
+  }
+  for (const carrier of carriers) if (carrier.prop && (carrier.ride.look === 'crane' || carrier.ride.look === 'ants')) {
+    characterShadows.add({ object: carrier.prop, height: carrier.ride.look === 'crane' ? 1.6 : .3, radius: .7,
+      groundY: () => Math.min(carrier.prop!.position.y, heightOfGroundAt(chapter, carrier.prop!.position.x)) });
+  }
+  characterShadows.setTier(tier);
 
   const camera = new PerspectiveCamera(FOV, 1, 0.1, 140);
   let viewHeight = 5;
@@ -499,6 +508,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     renderer.info.reset();
     if (warm > 0) {
       water.applyCaustics(scene);
+      characterShadows.prepareReceivers();
       materialGrade.apply(scene);
       materialGrade.apply(waterScene);
       for (const layer of [scene, waterScene]) layer.traverse((object) => {
@@ -674,9 +684,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
     elof.body.rotation.z = -clamp(curr.vx / RUN_SPEED, -1, 1) * 0.12 * curr.facing;
 
-    const height = Math.max(0, y - curr.groundY);
-    shadow.position.set(x, curr.groundY + 0.012, 0);
-    shadow.scale.setScalar(tall * clamp(1 - height * 0.25, 0.35, 1));
+    playerGroundY = curr.groundY;
 
     // A big candy turns slowly until it is reached. Then it gives a little jump, and turns fast.
     for (const [i, big] of bigCandies.entries()) {
@@ -689,6 +697,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       big.place.scale.setScalar(1 + 0.3 * Math.sin(Math.PI * big.pop));
     }
 
+    ghostStaged = false;
     // The ghost is a wooden toy come alive: it never bends. Standing, it turns towards Elof, sways and taps
     // a foot. Hopping, it faces the way it goes and tips forward. Gone, it has shrunk away.
     if (ghostState) {
@@ -698,9 +707,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostPlace.position.set(ghostState.x, ghostState.y, 0);
       ghostPlace.scale.setScalar(ghostSize);
       // Its shadow lies where it stands. In a hop it is off the ground, and the shadow waits where it will land.
-      ghostShadow.visible = ghostPlace.visible && !hopping && ghostSize > 0.4;
-      ghostShadow.position.set(ghostState.x, ghostState.y + 0.012, 0);
-      ghostShadow.scale.setScalar(1.3 * ghostSize);
+      if (!hopping) ghostGroundY = ghostState.y;
       // 0 faces along the course; a half turn faces back at him.
       const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4;
       ghostTurn += (wanted - ghostTurn) * ease(7, dt);
@@ -713,11 +720,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostPlace.scale.setScalar(ghostSize);
         ghost.rotation.set(0, ghostFaces + pose.turn, pose.tilt);
         if (ghostFoot) ghostFoot.rotation.x = 0;
-        ghostShadow.visible = false;
+        ghostStaged = true;
       } else if (chapter.prologue && flags.has('pappa:done')) {
         ghostSize = 0;
         ghostPlace.scale.setScalar(0);
-        ghostShadow.visible = false;
+        ghostStaged = true;
       }
     }
     // His first figure has its place again, with Klonk beside it once Elof finishes painting.
@@ -726,7 +733,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostPlace.scale.setScalar(1);
       ghost.rotation.set(0, ghostFaces - Math.PI / 2, 0);
       if (ghostFoot) ghostFoot.rotation.x = 0;
-      ghostShadow.visible = false;
+      ghostStaged = true;
     }
     // The family: each turns a little towards him, and throws their arms up for a moment when he has given
     // them candy, or when they first come into the picture.
@@ -745,6 +752,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         bendJoint(one.hands[i] ?? null, up > 0 ? -0.2 * up : -0.08, ease(10, dt));
       }
     }
+    characterShadows.update(look.x, centreY, viewHeight * look.zoom * Math.max(1, camera.aspect) * .65);
     // Gate 6 (plan §6.12): no shader is compiled during play. The first frames, and the first after a model
     // has arrived, draw the whole chapter, in view or not, so that every material's shader exists from then on.
     if (models.length !== warmedFor) {
@@ -773,8 +781,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     setTier(next) {
       const chosen = chooseTier(next, hdrAvailable);
       if (tier === chosen) return;
-      const changesPipeline = (tier === 'low') !== (chosen === 'low') || chosen === 'high';
+      const changesPipeline = (tier === 'low') !== (chosen === 'low') || tier === 'high' || chosen === 'high';
       tier = chosen;
+      characterShadows.setTier(tier);
       materialGrade.setEnabled(tier === 'low');
       resolutionSteps = 0;
       gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
@@ -829,6 +838,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       models,
       compressedTextures,
       roles,
+      shadows: characterShadows.info(),
     }),
   };
 }
