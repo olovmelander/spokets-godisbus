@@ -4,12 +4,13 @@ import {
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
 import { saturdayBag } from './saturday-bag';
+import { capBoat } from './adventure-craft';
 
 /**
  * Stand-ins for the things and the animals of the story, built in code: each is recognisable, and none is
- * final. The animals and the family are designed in Blender (plan §5.6); until they are, a chapter says what
+ * final. Final characters are authored in Blender (plan §5.6); until then, a chapter says what
  * a thing is (`look`), and it is drawn as that instead of as a box or a bare glint.
- * Nothing here is a likeness of anyone: a person is a sign on a stick, in a colour of their own.
+ * Public rehearsal figures are abstract signs on sticks in distinct colours.
  */
 
 const solid = (color: string, roughness = 0.8, more: Partial<ConstructorParameters<typeof MeshStandardMaterial>[0]> = {}) =>
@@ -45,7 +46,7 @@ export function moverProp(mover: Mover): Group | null {
       break;
     }
     case 'curl': {
-      // A shaving from Pappa's knife: pale wood, thin, curled.
+      // A thin, curled shaving of pale wood.
       const pale = solid('#f1dfb4', 0.7, { side: DoubleSide });
       if (h > w * 0.6) {
         for (const [radius, turn] of [[Math.min(w, h) / 2, 4.6], [Math.min(w, h) / 3.4, 5.2]] as const) {
@@ -146,7 +147,7 @@ export function moverProp(mover: Mover): Group | null {
     }
     case 'figure': {
       // The pointed cap and crooked smile match the remembered first carving. Its restored eyes
-      // become visible only after Elof paints them; the collider keeps its existing saved meaning.
+      // become visible only after painting; the collider keeps its existing saved meaning.
       const old = solid('#8f8c7e', 1);
       const body = new Mesh(new CylinderGeometry(.13, .2, .48, 8), old);
       body.position.set(0, .24, 0); body.rotation.z = -.08;
@@ -175,7 +176,7 @@ export interface SpotProp {
   update(used: boolean, clock: number, dt: number, strike?: number): void;
 }
 
-/** The colour of a person's sign: Moa's denim, Pappa's green, Bertil's cap, Mamma's mug. No likeness. */
+/** Distinct blue, green, red and cream palettes identify the public sign props. */
 const SIGNS: Record<string, string> = {
   callMoa: '#5b7fb5', callPappa: '#5a7d4a', callBertil: '#d98a2c', callMamma: '#f1ece2', goHome: '#5a7d4a',
   giveMoa: '#5b7fb5', givePappa: '#5a7d4a', giveBertil: '#d98a2c', giveMamma: '#f1ece2', takeKnife: '#5a7d4a',
@@ -262,7 +263,7 @@ export function spotProp(spot: Spot): SpotProp | null {
       return { group, update: (used, _clock, dt) => vanish(used, dt) };
     }
     case 'vittra-door': {
-      // An ordinary little wooden door tucked under a root; no creature or family likeness.
+      // An ordinary little wooden door tucked under a root.
       const frame = new Mesh(new BoxGeometry(0.72, 0.82, 0.12), solid('#60432d'));
       frame.position.y = 0.41;
       const door = new Mesh(new BoxGeometry(0.5, 0.65, 0.09), solid('#785d37'));
@@ -344,10 +345,10 @@ export function spotProp(spot: Spot): SpotProp | null {
       face.rotation.x = Math.PI / 2;
       face.position.y = 1.3;
       group.add(stick, board, face);
-      // Mamma's is her white mug with its heart.
+      // A white mug with a heart.
       if (spot.word === 'callMamma' || spot.word === 'giveMamma') group.add(ball(0.1, solid('#d0473a', 0.5), 0, 1.3, 0.05, [1, 1, 0.3]));
       if (spot.word === 'gardenBoard') {
-        // A folded-plane glyph makes the departure choice readable without naming another family figure.
+        // A folded-plane glyph makes the departure choice readable without naming another actor.
         const sheet = new Shape();
         sheet.moveTo(-0.2, 1.43); sheet.lineTo(0.23, 1.32); sheet.lineTo(-0.14, 1.13);
         sheet.lineTo(-0.08, 1.3); sheet.closePath();
@@ -358,7 +359,7 @@ export function spotProp(spot: Spot): SpotProp | null {
       return { group, update: (_used, clock) => void (board.rotation.z = face.rotation.z = Math.sin(clock * 1.3 + spot.at.x) * 0.05) };
     }
     case 'seesaw': {
-      // Pappa's seesaw: a stick across a stone. He stands on the low end.
+      // A seesaw: a stick across a stone, with weight on the low end.
       const plank = new Mesh(new BoxGeometry(4.4, 0.12, 0.7), solid('#c9ae84', 0.75));
       plank.position.set(1.3, 0.34, 0.6);
       plank.rotation.z = 0.14;
@@ -429,7 +430,7 @@ export function spotProp(spot: Spot): SpotProp | null {
       return { group, update: (used, _clock, dt) => vanish(used, dt) };
     }
     case 'memory': {
-      // A minnesspån: a curl of Pappa's shaving that glows where the ghost has stopped. Touched, it has been seen.
+      // A minnesspån: a curled wood shaving that glows where the ghost has stopped. Touched, it has been seen.
       const glow = solid('#ffe6a8', 0.5, { emissive: '#ffbf4a', emissiveIntensity: 1, side: DoubleSide });
       const curl = new Group();
       for (const [radius, turn] of [[0.3, 4.8], [0.17, 5.4]] as const) {
@@ -450,7 +451,7 @@ export function spotProp(spot: Spot): SpotProp | null {
       };
     }
     case 'shavings': {
-      // What Pappa's knife left on the table: pale curls.
+      // Pale wood curls left on the table.
       const pale = solid('#f1dfb4', 0.7, { side: DoubleSide });
       for (const [x, z, r, turn] of [[-0.35, 0.1, 0.13, 0.4], [0.1, -0.15, 0.1, 2], [0.4, 0.2, 0.15, 3.4], [0.05, 0.3, 0.08, 5]] as const) {
         const curl = new Mesh(new CylinderGeometry(r, r, 0.22, 14, 1, true, 0, 4.6), pale);
@@ -697,13 +698,7 @@ export function rideProp(look: RideLook): Object3D | null {
   const group = new Group();
   switch (look) {
     case 'cap': {
-      // Bertil's cap, upside down on the water: a bowl with its peak pointing the way he goes.
-      const cloth = solid('#3f5f8f', 0.85, { side: DoubleSide });
-      const bowl = new Mesh(new SphereGeometry(0.75, 18, 10, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), cloth);
-      bowl.scale.set(1.15, 0.55, 0.9);
-      const peak = new Mesh(new CylinderGeometry(0.55, 0.55, 0.05, 18, 1, false, -0.9, 1.8), cloth);
-      peak.position.set(0.55, -0.02, 0);
-      group.add(bowl, peak);
+      group.add(capBoat());
       group.position.y = 0.02;
       break;
     }

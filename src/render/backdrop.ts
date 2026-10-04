@@ -558,10 +558,20 @@ export function outlookPane(wide: number, tall: number, index: number): PlaneGeo
 
 /** Every place's far layers, from the farthest to the nearest. Indoors there is nothing far away. */
 /**
- * The village has the garden's sky and its far hills. What stands between them and the street, the far
- * village with its red roofs, is drawn with the street's houses (village.ts).
+ * Köpmangatan has a cooler open sky than the enclosed garden, and a blue-green wooded valley.
+ * The closer red roofs and timber houses are drawn with the street itself (village.ts).
  */
-const VILLAGE = GARDEN.slice(0, 2);
+const VILLAGE: Layer[] = [
+  { z: -90, hold: .08, sink: 0, every: 170, eye: 200, soft: 1, drift: .3,
+    draw: c => clouds(c, 181, 200, 7, [252,250,239], [176,194,213], .8) },
+  { z: -76, hold: .24, sink: .02, every: 200, eye: 190, soft: 1,
+    draw(c) {
+      const haze: Ink = [216,224,231];
+      hills(c,190,38,[1,3,5],.7,[126,154,176],haze,1.2,40);
+      hills(c,197,20,[2,4,7],2.4,[112,145,143],haze,3,24);
+      floor(c,194,[166,188,166],[131,162,147]);
+    } },
+];
 
 const LAYERS: Record<PlaceId, Layer[]> = { forest: FOREST, garden: GARDEN, bog: BOG, mountain: MOUNTAIN, dusk: DUSK, home: [], village: VILLAGE };
 

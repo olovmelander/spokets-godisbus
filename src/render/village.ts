@@ -44,8 +44,8 @@ function heightAt(chapter: ChapterData, x: number): number {
   return x < line[0]!.x ? line[0]!.y : line[line.length - 1]!.y;
 }
 
-/** How wide a house front is, and how tall, in EL. Its picture is 160 by 128. */
-const HOUSE = { wide: 24, tall: 19.2 };
+/** How wide a house front is, and how tall, in EL. Its logical picture is 160 by 192, including 64 units above the wall for the roof. */
+const HOUSE = { wide: 24, tall: 28.8 };
 /** How wide the yard between two houses is. */
 const YARD = 12;
 
@@ -131,6 +131,9 @@ interface Shop {
   door: string;
   /** What lies in the window and hangs on the sign: plain shapes. */
   goods: 'candy' | 'bread' | 'boots' | 'yarn';
+  roof: 'gable' | 'gambrel';
+  roofColour: string;
+  horizontal?: boolean;
 }
 
 /**
@@ -139,10 +142,10 @@ interface Shop {
  * way to.
  */
 const SHOPS: Shop[] = [
-  { wall: '#e3b24c', trim: '#fbf6ea', awning: '#d9c59a', door: '#7a5632', goods: 'candy' },
-  { wall: '#e9e6dc', trim: '#fbf6ea', awning: '#8a8f96', door: '#4f5a60', goods: 'bread' },
-  { wall: '#8f2d22', trim: '#fbf6ea', awning: '#e8d9b0', door: '#5d4a36', goods: 'boots' },
-  { wall: '#efe6c8', trim: '#f6f0e2', awning: '#d9c59a', door: '#6a4a3a', goods: 'yarn' },
+  { wall: '#e3c37a', trim: '#fbf6ea', awning: '#747b70', door: '#7a5632', goods: 'candy', roof: 'gambrel', roofColour: '#707a7e', horizontal: true },
+  { wall: '#b5beaa', trim: '#fbf6ea', awning: '#8a8f96', door: '#4f5a60', goods: 'bread', roof: 'gable', roofColour: '#b75745' },
+  { wall: '#983f32', trim: '#fbf6ea', awning: '#e8d9b0', door: '#5d4a36', goods: 'boots', roof: 'gambrel', roofColour: '#666f74' },
+  { wall: '#e7e3d2', trim: '#f6f0e2', awning: '#7e8d76', door: '#6a4a3a', goods: 'yarn', roof: 'gable', roofColour: '#bc6450' },
 ];
 
 /** One thing a shop sells, as a plain shape about `size` across, at (x, y). */
@@ -172,16 +175,34 @@ function ware(c: CanvasRenderingContext2D, goods: Shop['goods'], x: number, y: n
 
 /** One house front, drawn small so that it is soft: the mid-ground is never as sharp as the path. */
 function front(shop: Shop): CanvasTexture {
-  return drawn(160, 128, (c) => {
+  return drawn(640, 768, (c) => {
+    c.scale(4, 4);
+    c.translate(0, 64);
+    // An original interpretation of Köpmangatan's timber fronts and roof silhouettes.
+    c.fillStyle = shop.wall;
+    c.beginPath(); c.moveTo(0, 0); c.lineTo(80, -57); c.lineTo(160, 0); c.fill();
+    const roof = [[-5, 1], [shop.roof === 'gambrel' ? 29 : 80, shop.roof === 'gambrel' ? -39 : -61],
+      [67,-61],[93,-61],[shop.roof === 'gambrel' ? 131 : 80, shop.roof === 'gambrel' ? -39 : -61],[165,1]];
+    c.lineJoin = 'round'; c.strokeStyle = shop.roofColour; c.lineWidth = 8;
+    c.beginPath(); roof.forEach(([x,y],i)=>i ? c.lineTo(x!,y!) : c.moveTo(x!,y!)); c.stroke();
+    c.strokeStyle = shop.trim; c.lineWidth = 2;
+    c.beginPath(); roof.forEach(([x,y],i)=>i ? c.lineTo(x!,y!+3) : c.moveTo(x!,y!+3)); c.stroke();
+    c.fillStyle = shop.roofColour; c.fillRect(110,-53,10,25); c.fillRect(108,-55,14,4);
+    c.fillStyle = shop.trim; c.fillRect(68,-36,24,25);
+    c.fillStyle = '#657c87'; c.fillRect(71,-33,18,19);
+    c.fillStyle = shop.trim; c.fillRect(79,-33,2,19); c.fillRect(71,-25,18,2);
     // The wall: boards, lit from the left, with corner boards and the shade under the eaves.
     c.fillStyle = shop.wall;
     c.fillRect(0, 0, 160, 128);
-    for (let x = 0; x < 160; x += 8) {
-      c.fillStyle = 'rgba(40,30,20,0.16)';
-      c.fillRect(x + 6, 0, 1.5, 118);
-      c.fillStyle = 'rgba(255,255,255,0.14)';
-      c.fillRect(x + 3, 0, 2, 118);
+    for (let n = 0; n < 160; n += 5) {
+      c.fillStyle = 'rgba(35,42,35,0.13)';
+      if (shop.horizontal) c.fillRect(0,n,160,.7); else c.fillRect(n,0,.7,118);
+      c.fillStyle = 'rgba(255,255,245,0.17)';
+      if (shop.horizontal) c.fillRect(0,n+1,160,.55); else c.fillRect(n+1,0,.6,118);
     }
+    const light = c.createLinearGradient(0,0,160,128);
+    light.addColorStop(0,'rgba(255,246,215,0.18)'); light.addColorStop(1,'rgba(34,48,50,0.2)');
+    c.fillStyle = light; c.fillRect(0,0,160,128);
     c.fillStyle = shop.trim;
     c.fillRect(0, 0, 4, 118);
     c.fillRect(156, 0, 4, 118);
@@ -208,6 +229,10 @@ function front(shop: Shop): CanvasTexture {
       c.fillRect(x + 31, 12, 9, 24);
       c.fillStyle = shop.trim;
       c.fillRect(x + 19, 12, 2, 24);
+      c.fillRect(x, 23, 40, 1.5);
+      c.fillStyle = 'rgba(25,35,39,0.28)'; c.fillRect(x-4,39,49,3);
+      c.fillStyle = shop.trim; c.fillRect(x-4,36,49,3);
+      c.fillStyle = shop.awning; c.fillRect(x-5,9,3,27); c.fillRect(x+42,9,3,27);
     }
 
     // The shop window: warm inside, with what the shop sells on two shelves.
@@ -275,7 +300,7 @@ function front(shop: Shop): CanvasTexture {
  */
 export function fronts(chapter: ChapterData, from: number, to: number): Group {
   const group = new Group();
-  const materials = SHOPS.map((shop) => new MeshBasicMaterial({ map: front(shop) }));
+  const materials = SHOPS.map((shop) => new MeshBasicMaterial({ map: front(shop), transparent: true, alphaTest: .08 }));
   const floor = heightAt(chapter, from + 20);
   // The candy shop's door is 123 of its picture's 160 across: put that at the goal.
   const last = (chapter.shop?.door ?? chapter.goalX) - (123 / 160 - 0.5) * HOUSE.wide;
@@ -304,6 +329,7 @@ export function fronts(chapter: ChapterData, from: number, to: number): Group {
   while (x > from - 30) {
     const house = new Mesh(new PlaneGeometry(HOUSE.wide, HOUSE.tall), materials[style % materials.length]!);
     house.position.set(x, foot + HOUSE.tall / 2, -13);
+    house.name = `kopmangatan-front:${style}`;
     house.renderOrder = -2;
     group.add(house);
     style++;
@@ -318,7 +344,11 @@ export function fronts(chapter: ChapterData, from: number, to: number): Group {
     x -= HOUSE.wide + (open ? YARD : 0.6);
   }
   // Behind the fences: the yards' hedges, low, so that no sky shows at the foot and the far village shows above.
-  const yard = new Mesh(new PlaneGeometry(to - from + 80, 5.2), new MeshBasicMaterial({ color: '#4c5f46' }));
+  const yard = new Mesh(new PlaneGeometry(to - from + 80, 5.2), new MeshBasicMaterial({ map: drawn(512,128,c=>{
+    const next=sequence(418); c.fillStyle='#3c523d'; c.fillRect(0,0,512,128);
+    for(let i=0;i<950;i++){c.fillStyle=['#556c46','#64764c','#809052','#455e40'][i%4]!;c.beginPath();c.ellipse(next()*512,next()*128,2+next()*7,2+next()*4,next()*3,0,Math.PI*2);c.fill();}
+    const shade=c.createLinearGradient(0,0,0,128);shade.addColorStop(0,'rgba(203,201,140,.12)');shade.addColorStop(1,'rgba(16,33,27,.72)');c.fillStyle=shade;c.fillRect(0,0,512,128);
+  }) }));
   yard.position.set((from + to) / 2, foot + 2.6, -13.6);
   yard.renderOrder = -3;
   group.add(skyline(from, to, foot));

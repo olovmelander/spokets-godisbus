@@ -42,6 +42,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     refraction: { value: null as WebGLRenderTarget['texture'] | null }, refractOn: { value: 0 },
     resolution: { value: new Vector2(1, 1) }, cameraFar: { value: 140 },
     fogColor: { value: new Color() }, fogNear: { value: 1 }, fogFar: { value: 100 },
+    wake: { value: new Vector4(0, 0, 0, 0) },
+    poolBounds: { value: new Vector2(0, 1) },
+    reflectionColour: { value: new Color(chapter.place === 'bog' ? '#c8bb94' : '#a5c6d3') },
   };
   const material = new ShaderMaterial({
     uniforms, transparent: true, depthWrite: false, fog: true,
@@ -59,7 +62,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
       }`,
     fragmentShader: `
       uniform sampler2D flowMap, refraction;
-      uniform vec3 waterColour, sunDirection;
+      uniform vec3 waterColour, sunDirection, reflectionColour;
+      uniform vec4 wake;
+      uniform vec2 poolBounds;
       uniform float time, details, opacity, refractOn, cameraFar;
       uniform vec2 resolution;
       varying vec3 waterWorld, waterNormal; varying float waterDepth;
@@ -69,13 +74,29 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         vec2 flow = texture2D(flowMap, waterWorld.xz * 0.045).rg * 2.0 - 1.0;
         vec2 uv = waterWorld.xz * 1.6 - flow * time * 0.28;
         vec2 waves = vec2(sin(uv.x + sin(uv.y * 1.3)), cos(uv.y * 1.2 + sin(uv.x * 0.8)));
-        vec3 normal = normalize(waterNormal + vec3(waves.x, 0.0, waves.y) * 0.13);
-        vec3 colour = waterColour * (0.91 + sin(uv.x * 1.4 + uv.y) * 0.045);
+        waves += vec2(sin(uv.x * 3.7 + uv.y * 1.8), cos(uv.y * 3.2 - uv.x * 1.6)) * .22;
+        vec3 normal = normalize(waterNormal + vec3(waves.x, 0.0, waves.y) * 0.105);
+        vec3 colour = waterColour * (0.88 + sin(uv.x * 1.4 + uv.y) * 0.05);
         float top = max(waterNormal.y, 0.0);
+        vec3 view = normalize(cameraPosition - waterWorld);
+        float fresnel = pow(1.0 - max(dot(view, normal), 0.0), 3.0);
+        // Broad sky bands read as water on every tier; the fine glints remain tiered.
+        float reflection = .17 + .055 * sin(waterWorld.z * .7 + waves.x * .5);
+        colour = mix(colour, reflectionColour, fresnel * reflection * top);
+        float shore = min(waterWorld.x - poolBounds.x, poolBounds.y - waterWorld.x);
+        float fringe = (1.0 - smoothstep(.03, .38, shore)) * (.5 + .5 * sin(uv.y * 3.0 + time));
+        colour += reflectionColour * fringe * top * .15;
+        // A wake follows only the active water craft, clipped by the pool geometry itself.
+        vec2 behindBoat = waterWorld.xz - wake.xy;
+        float wakeDistance = length(behindBoat * vec2(.7, 1.4));
+        float rings = pow(max(0.0, sin(wakeDistance * 16.0 - time * 4.0)), 7.0);
+        float stern = exp(-abs(abs(behindBoat.y) + behindBoat.x * .3) * 8.0)
+          * smoothstep(0.0, .4, -behindBoat.x);
+        float wakeLight = (rings * .35 + stern * .55) * exp(-wakeDistance * .8)
+          * smoothstep(.35, .7, wakeDistance) * wake.z * top;
+        colour += reflectionColour * wakeLight;
         if (details > 0.5) {
-          vec3 view = normalize(cameraPosition - waterWorld);
-          float fresnel = pow(1.0 - max(dot(view, normal), 0.0), 3.0);
-          colour = mix(colour, vec3(0.56, 0.72, 0.76), fresnel * 0.32);
+          colour = mix(colour, reflectionColour, fresnel * 0.18);
           vec3 halfVector = normalize(view + sunDirection);
           float glint = pow(max(dot(normal, halfVector), 0.0), 64.0)
             + pow(max(0.0, waves.x * waves.y), 18.0) * 0.12;
@@ -100,6 +121,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   const depth = 6, back = look ? 46 : 4.6;
   const bodies = pools.map((w) => {
     const body = new Mesh(new BoxGeometry(w.to - w.from, depth, back), material);
+    body.onBeforeRender = () => { uniforms.poolBounds.value.set(w.from, w.to); material.uniformsNeedUpdate = true; };
     body.position.set((w.from + w.to) / 2, w.y - depth / 2, 0.65 - back / 2);
     group.add(body);
     return { body, y: w.y - depth / 2 };
@@ -127,6 +149,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   return {
     group,
     get refracting() { return target !== null; },
+    setWake(x: number, active: boolean) { uniforms.wake.value.set(x, 0, active ? 1 : 0, 0); },
     update(clock: number) {
       time.value = clock;
       for (const [i, w] of bodies.entries()) w.body.position.y = w.y + Math.sin(clock * 1.3 + i) * 0.03;

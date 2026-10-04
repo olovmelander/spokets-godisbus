@@ -7,6 +7,7 @@ import type { ChapterData, PlaceId, SurfaceKind } from '../sim/types';
 import { outlook, outlookPane, scenery } from './backdrop';
 import type { Grade } from './grade';
 import { fronts, street, villageLife } from './village';
+import { vegetation } from './vegetation';
 
 /**
  * How a place looks (plan §5.3, §5.4): its light, its haze, its grade, and the layers that are built around
@@ -130,7 +131,7 @@ export const PLACES: Record<PlaceId, PlaceLook> = { forest: FOREST, garden: GARD
 export interface Dressing {
   group: Group;
   background: Texture;
-  update(cameraX: number, groundY: number, clock: number, night?: number): void;
+  update(cameraX: number, groundY: number, clock: number, night?: number, calm?: boolean): void;
 }
 
 // --- small tools ----------------------------------------------------------------------------------------
@@ -497,19 +498,41 @@ function stretchOfGround(points: BankPoint[], kind: Ground, maps: { speckles: Ca
 /** One blade of grass, standing at the origin and bending a little forward: 1 high. */
 function blade(): BufferGeometry {
   const position: number[] = [];
+  const colours: number[] = [];
   const index: number[] = [];
   const steps = 4;
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
     const half = 0.5 * (1 - t) ** 1.4;
     position.push(-half, t, t * t * 0.28, half, t, t * t * 0.28);
+    const colour = new Color('#7c8963').lerp(new Color('#f5edbe'), t);
+    for (let k = 0; k < 2; k++) colours.push(colour.r, colour.g, colour.b);
     if (i < steps) index.push(i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2);
   }
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute(position, 3));
+  geometry.setAttribute('color', new Float32BufferAttribute(colours, 3));
   geometry.setIndex(index);
   geometry.computeVertexNormals();
   return geometry;
+}
+
+/** Petals have an actual silhouette at macro scale, while the whole flower remains one instance. */
+function flowerHead(): BufferGeometry {
+  const positions: number[] = [], colours: number[] = [];
+  const add = (points: number[][], hex: string) => {
+    const c = new Color(hex); positions.push(...points.flat());
+    for (let i = 0; i < points.length; i++) colours.push(c.r,c.g,c.b);
+  };
+  for (let i = 0; i < 28; i++) {
+    const a = i * Math.PI * 2 / 28, b = a + Math.PI * 2 / 28;
+    add([[0,.42,0],[Math.cos(a)*.7,.27,Math.sin(a)*.7],[Math.cos(b)*.7,.27,Math.sin(b)*.7]],'#d5a029');
+    const tip = a + .11, radius = 1.03 + (i % 3)*.05;
+    add([[Math.cos(a)*.5,.3,Math.sin(a)*.5],[Math.cos(tip)*radius,.14,Math.sin(tip)*radius],
+      [Math.cos(b)*.63,.3,Math.sin(b)*.63]],i % 3 === 0 ? '#fff0a4' : '#f1ce4a');
+  }
+  const g = new BufferGeometry();g.setAttribute('position',new Float32BufferAttribute(positions,3));
+  g.setAttribute('color',new Float32BufferAttribute(colours,3));g.computeVertexNormals();return g;
 }
 
 /** Bark for the trunks: dark, with lighter ridges running up it. Multiplied with each trunk's own colour. */
@@ -543,13 +566,14 @@ function kit() {
   return {
     ball: new SphereGeometry(1, 8, 6),
     blade: blade(),
+    flower: flowerHead(),
     cone: new LatheGeometry(profile.map(([r, y]) => new Vector2(r!, y!)), 9),
     needle: new BoxGeometry(1, 0.012, 0.014),
     trunk: trunk(),
     boulder: boulder(),
     moss: new MeshStandardMaterial({ roughness: 1 }),
     // The sun stands behind the grass and shines through: a little light of its own stands in for that.
-    grass: new MeshStandardMaterial({ roughness: 0.7, side: DoubleSide, emissive: '#5d7a1e', emissiveIntensity: 0.55 }),
+    grass: new MeshStandardMaterial({ vertexColors: true, roughness: 0.7, side: DoubleSide, emissive: '#5d7a1e', emissiveIntensity: 0.24 }),
     leaf: new MeshStandardMaterial({ color: '#2f5a26', roughness: 0.35 }),
     berry: new MeshStandardMaterial({ color: '#c4202a', roughness: 0.25 }),
     coneWood: new MeshStandardMaterial({ color: '#7a4f2c', roughness: 0.85, flatShading: true }),
@@ -558,16 +582,16 @@ function kit() {
     stone: new MeshStandardMaterial({ roughness: 0.95, vertexColors: true }),
     // The garden's.
     stalk: new CylinderGeometry(0.02, 0.028, 1, 6).translate(0, 0.5, 0),
-    lawn: new MeshStandardMaterial({ roughness: 0.65, side: DoubleSide, emissive: '#4f8a1c', emissiveIntensity: 0.5 }),
+    lawn: new MeshStandardMaterial({ vertexColors: true, roughness: 0.65, side: DoubleSide, emissive: '#4f8a1c', emissiveIntensity: 0.22 }),
     dew: new MeshStandardMaterial({ color: '#e9f6ff', roughness: 0.05, emissive: '#bfe4ff', emissiveIntensity: 0.35, transparent: true, opacity: 0.8 }),
     stem: new MeshStandardMaterial({ color: '#7fae45', roughness: 0.7 }),
-    petal: new MeshStandardMaterial({ color: '#f2c81e', roughness: 0.6, emissive: '#a07400', emissiveIntensity: 0.25 }),
+    petal: new MeshStandardMaterial({ vertexColors: true, side: DoubleSide, roughness: 0.6, emissive: '#a07400', emissiveIntensity: 0.12 }),
     clover: new MeshStandardMaterial({ color: '#3f8a34', roughness: 0.5 }),
     birchLeaf: new MeshStandardMaterial({ color: '#e6c53a', roughness: 0.6 }),
     birch: new MeshStandardMaterial({ map: birchBark(), roughness: 0.8 }),
     // The bog's and the mountain's.
     bare: boulder(false),
-    straw: new MeshStandardMaterial({ roughness: 0.75, side: DoubleSide, emissive: '#8a7430', emissiveIntensity: 0.45 }),
+    straw: new MeshStandardMaterial({ vertexColors: true, roughness: 0.75, side: DoubleSide, emissive: '#8a7430', emissiveIntensity: 0.22 }),
     redLeaf: new MeshStandardMaterial({ color: '#c4472c', roughness: 0.55, emissive: '#70200c', emissiveIntensity: 0.3 }),
     orangeLeaf: new MeshStandardMaterial({ color: '#dd8a2c', roughness: 0.6, emissive: '#7a3c08', emissiveIntensity: 0.25 }),
     deadwood: new MeshStandardMaterial({ color: '#a9a69e', roughness: 1 }),
@@ -1082,7 +1106,7 @@ function lawn(chapter: ChapterData, from: number, to: number, seed: number): Gro
   // Dandelions, as tall as he is and taller.
   const flowers = Math.max(1, Math.round(length * 0.3));
   const stalks = new InstancedMesh(KIT.stalk, KIT.stem, flowers);
-  const heads = new InstancedMesh(KIT.ball, KIT.petal, flowers);
+  const heads = new InstancedMesh(KIT.flower, KIT.petal, flowers);
   n = 0;
   for (let i = 0; i < flowers; i++) {
     const x = from + next() * length;
@@ -1571,6 +1595,20 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   const from = chapter.ground[0]!.x;
   const to = chapter.ground[chapter.ground.length - 1]!.x;
   KIT = kit();
+  const windTime = { value: 0 }, windMotion = { value: 1 };
+  for (const material of [KIT.grass, KIT.lawn, KIT.straw]) {
+    material.onBeforeCompile = shader => {
+      shader.uniforms.grassTime = windTime; shader.uniforms.grassMotion = windMotion;
+      shader.vertexShader = 'uniform float grassTime, grassMotion;\n' + shader.vertexShader;
+      shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+        #ifdef USE_INSTANCING
+          transformed.z += (sin(grassTime * 1.3 + instanceMatrix[3].x * .65)
+            + .35 * sin(grassTime * 2.1 + instanceMatrix[3].z)) * position.y * position.y * .13 * grassMotion;
+        #endif`);
+    };
+    material.customProgramCacheKey = () => 'chapter-grass-v1';
+  }
+  const trees = vegetation(chapter, look.id);
   const air = effects(chapter, from, to, look.id);
   const own: Record<PlaceId, { ground: Ground; growth: Growth | null }> = {
     forest: { ground: 'moss', growth: 'dark' },
@@ -1589,6 +1627,7 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   if (look.id === 'dusk') group.add(stars());
   group.add(
     far.group,
+    trees.group,
     bank(chapter, own[look.id].ground),
     scatter(chapter, from, to, look.id),
     built(chapter, look.id === 'home'),
@@ -1600,7 +1639,9 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   return {
     group,
     background: backdrop(look),
-    update(cameraX, groundY, clock, night = 0) {
+    update(cameraX, groundY, clock, night = 0, calm = false) {
+      windTime.value = clock; windMotion.value = calm ? 0 : 1;
+      trees.update(clock, calm);
       air.update(cameraX, groundY, clock);
       far.update(cameraX, groundY, clock, night);
       life?.update(clock);
