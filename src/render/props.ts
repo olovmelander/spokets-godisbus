@@ -3,6 +3,7 @@ import {
 } from 'three';
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
+import { sweetSocket } from './candy';
 import { saturdayBag } from './saturday-bag';
 
 /**
@@ -368,7 +369,11 @@ export function spotProp(spot: Spot): SpotProp | null {
     case 'lollipop': {
       const stick = rod(0.025, 0.9, solid('#fff6e0', 0.6));
       stick.position.y = 0.45;
-      group.add(stick, ball(0.22, solid('#ffd98a', 0.3, { emissive: '#ffb23c', emissiveIntensity: 0.9 }), 0, 1, 0));
+      // The kit's golden swirl, glowing; until it has come, a glowing ball.
+      const sweet = sweetSocket(new Group().add(ball(0.22, solid('#ffd98a', 0.3, { emissive: '#ffb23c', emissiveIntensity: 0.9 }))),
+        { shape: 'lysklubba', glow: 0.95 });
+      sweet.position.y = 1;
+      group.add(stick, sweet);
       group.position.z = -0.35;
       return { group, update: (used, clock, dt) => { vanish(used, dt); group.rotation.z = Math.sin(clock * 1.2) * 0.04; } };
     }
@@ -472,6 +477,7 @@ export function spotProp(spot: Spot): SpotProp | null {
         star.add(point);
       }
       star.add(ball(0.13, gold, 0, 0, 0, [1, 1, 0.5]));
+      sweetSocket(star, { shape: 'stjarna', glow: 0.8 });
       star.position.y = 0.55;
       group.add(star);
       group.position.z = 0;
@@ -541,6 +547,7 @@ export function spotProp(spot: Spot): SpotProp | null {
       const gold = solid('#ffcf3a', 0.25, { emissive: '#d99a00', emissiveIntensity: 0.7 });
       const sweet = new Group();
       for (let i = 0; i < 9; i++) sweet.add(ball(0.07, gold, Math.cos(i * 2.4) * 0.09 * (1 - i / 14), 0.05 + i * 0.022, Math.sin(i * 2.4) * 0.09 * (1 - i / 14)));
+      sweetSocket(sweet, { shape: 'guldhallon', scale: 0.8, y: 0.12, glow: 0.65 });
       sweet.position.y = 0.5;
       group.add(sweet);
       group.position.z = 0;

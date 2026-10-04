@@ -3,6 +3,7 @@ import {
   Object3D, PlaneGeometry, RepeatWrapping, SphereGeometry, SRGBColorSpace, TorusGeometry,
 } from 'three';
 import type { ChapterData } from '../sim/types';
+import { sweetSocket } from './candy';
 
 /**
  * The village street (the extra chapter Byn): the fronts of its houses behind the pavement, a lamp post now
@@ -396,6 +397,8 @@ function shopInterior(chapter: ChapterData): Group {
     place.rotation.set(0, 0, 0); place.scale.setScalar(1);
   }
   for (const mesh of [jars, lids, sweets]) mesh.computeBoundingSphere();
+  // Wrapped sweets from the kit take the balls' place: the same piles, in the same colours.
+  sweetSocket(sweets, { shape: 'burk', scale: 3.1 });
   group.add(sweets, lids, jars);
   // A plain paper bag, open at its top, beside the final candy. No sign, price or brand.
   const paper = new MeshStandardMaterial({ color: '#d5b57e', roughness: 1 });

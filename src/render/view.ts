@@ -7,6 +7,7 @@ import {
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
+import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
 import type { TextureOwnershipInfo } from './texture-ownership';
 import { captureFrame } from './capture';
 import { observeGpu, type GpuMemory } from './gpu-memory';
@@ -215,9 +216,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const place = buildCandy();
     place.position.set(at.x, at.y, at.z);
     scene.add(place);
-    return { place, sweet: place.getObjectByName('candy')!, reached: false, pop: 0 };
+    return { place, sweet: place.getObjectByName('candy')!, reached: false, pop: 0, spin: 0 };
   });
-  const trail = buildTrail(chapter);
+  const trail = createTrail(chapter.candy);
   const glitter = buildGlitter();
   const lace = buildLace();
   const glints = buildGlints(chapter);
@@ -258,14 +259,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   });
   const moverMeshes = buildMovers(chapter);
   const sharedSweets = chapter.id === 'norrsken' ? createSharedSweets() : null;
-  if (sharedSweets) scene.add(sharedSweets.mesh);
+  if (sharedSweets) scene.add(sharedSweets.group);
   const rain = buildRain(chapter.drips?.length ?? 0);
   const cones = buildCones(chapter.rollers?.length ?? 0);
   scene.add(...moverMeshes, rain.group, cones.mesh);
   const climbs = buildClimbs(chapter);
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
-  scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.mesh, glitter.group);
+  scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.group, glitter.group);
   const water = createWater(chapter, place?.water ?? null, place?.sun.from);
   const waterScene = new Scene();
   waterScene.fog = scene.fog;
@@ -295,6 +296,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const candyReady = assets
     .model('boot', 'big-candy')
     .then((model) => {
+      // Before it is copied: the copies share its material.
+      sweeten(model);
       for (const [i, big] of bigCandies.entries()) {
         const copy = i === 0 ? model : model.clone();
         big.place.clear();
@@ -325,7 +328,22 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       models.push('boot/jay');
       modelInstallations++;
     }) : Promise.resolve();
-  const ready = Promise.all([candyReady, jayReady]).then(() => undefined);
+  // The small sweets, modelled in Blender (art/blender/candy.py), take the place of the ones built in code: the
+  // trail, the hidden kinds and the magic candy. A build without the file keeps the stand-ins.
+  const sweetsReady = assets
+    .manifest()
+    .then((manifest) => (manifest.packs.boot?.files['candy.glb'] ? assets.model('boot', 'candy') : null))
+    .then((model) => {
+      if (!model) return;
+      const kit = candyKit(model);
+      const onTrail = trail.install(kit);
+      const placed = installSweets(scene, kit);
+      const shared = sharedSweets?.install(kit) ?? false;
+      if (!onTrail && placed === 0 && !shared) return;
+      models.push('boot/candy');
+      modelInstallations++;
+    });
+  const ready = Promise.all([candyReady, jayReady, sweetsReady]).then(() => undefined);
 
   // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
   // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.
@@ -816,7 +834,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (reached && !big.reached) big.pop = 1;
       big.reached = reached;
       big.pop = Math.max(0, big.pop - dt * 2.2);
-      big.sweet.rotateY(dt * (reached ? (last ? 7 : 3.4) : 1.2));
+      // Its swirl turns like a pinwheel, with its face to him, and it sways a little so that it has a side.
+      big.spin += dt * (reached ? (last ? 7 : 3.4) : 1.2);
+      big.sweet.rotation.set(0, Math.sin(clock * 0.8 + i) * 0.4, -big.spin);
       big.place.scale.setScalar(1 + 0.3 * Math.sin(Math.PI * big.pop));
     }
 
@@ -1290,7 +1310,8 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
   const light = new PointLight('#ffcf8a', 0, 9, 1.6);
   // The lollipop, held up like a lantern: it glows through the mist.
   const glow = new Group();
-  const sweet = new Mesh(new SphereGeometry(0.13, 14, 10), new MeshBasicMaterial({ color: '#ffe2a0', fog: false }));
+  const sweet = sweetSocket(new Group().add(new Mesh(new SphereGeometry(0.13, 14, 10), new MeshBasicMaterial({ color: '#ffe2a0', fog: false }))),
+    { shape: 'lysklubba', scale: 0.62, lantern: true });
   const stick = new Mesh(new CylinderGeometry(0.018, 0.018, 0.4, 6), new MeshBasicMaterial({ color: '#fff6e0', fog: false }));
   stick.position.y = -0.3;
   glow.add(sweet, stick);
@@ -1501,8 +1522,8 @@ function buildGlance(chapter: ChapterData) {
 }
 
 /**
- * The hidden candy (plan §4.3): bigger than the trail's, in its kind's two colours, inside a slowly turning
- * golden ring. Found, it shrinks away into him.
+ * The hidden candy (plan §4.3): bigger than the trail's, shaped as its kind, inside a slowly turning golden
+ * ring. Found, it shrinks away into him. Its stand-in is a ball in its kind's two colours.
  */
 function buildHidden(chapter: ChapterData) {
   const group = new Group();
@@ -1514,7 +1535,8 @@ function buildHidden(chapter: ChapterData) {
     const band = new Mesh(new TorusGeometry(0.17, 0.045, 8, 22), new MeshStandardMaterial({ color: kind?.mark ?? '#ffffff', roughness: 0.4 }));
     band.rotation.x = Math.PI / 2;
     const ring = new Mesh(new TorusGeometry(0.34, 0.022, 8, 30), gold);
-    sweet.add(body, band, ring);
+    // The kit's sweet fills its ring: it is the prize, and bigger than anything on the trail.
+    sweet.add(sweetSocket(new Group().add(body, band), { shape: def.kind, scale: 1.25 }), ring);
     sweet.position.set(def.x, def.y, 0);
     sweet.visible = def.after === undefined;
     group.add(sweet);
@@ -1527,7 +1549,8 @@ function buildHidden(chapter: ChapterData) {
       s.size = Math.max(0, Math.min(1, s.size + (found ? -dt / 0.25 : dt)));
       s.sweet.scale.setScalar(s.size);
       s.sweet.position.y = s.def.y + Math.sin(clock * 1.8 + i) * 0.06;
-      s.sweet.rotation.y = clock * 0.9 + i;
+      // It sways with its face to him: a coin or a fried egg seen edge-on is nothing.
+      s.sweet.rotation.y = Math.sin(clock * 0.9 + i) * 0.9;
       s.sweet.rotation.z = i === tapped ? response * 0.4 : 0;
       s.ring.rotation.x = clock * 1.3 + i;
     }
@@ -1712,65 +1735,6 @@ function buildGlitter() {
     sparks.instanceMatrix.needsUpdate = true;
   }
   return { group, update };
-}
-
-/** The bright colours of the karameller on Olov's poster. */
-const CANDY_COLOURS = ['#e8483f', '#f6c445', '#58b368', '#4a90d9', '#ef7fb0', '#f08a3c'];
-/** A collected candy flies into Elof in this long. */
-const CANDY_FLIGHT = 0.22;
-
-/**
- * The trail candy: karameller in twisted wrappers, floating and turning. All of them are one instanced
- * mesh, so the whole trail is one draw call however long it is.
- */
-function buildTrail(chapter: ChapterData) {
-  const candy = chapter.candy;
-  // A wrapped sweet in profile: a flared twist, a neck, the sweet itself, a neck and a twist.
-  const profile = [[0.072, -0.19], [0.024, -0.115], [0.085, -0.064], [0.1, 0], [0.085, 0.064], [0.024, 0.115], [0.072, 0.19]];
-  const geometry = new LatheGeometry(profile.map(([radius, along]) => new Vector2(radius, along)), 14);
-  geometry.rotateZ(Math.PI / 2);
-  // Both sides: the twists are open at their ends.
-  const mesh = new InstancedMesh(geometry, new MeshStandardMaterial({ roughness: 0.32, side: DoubleSide }), Math.max(1, candy.length));
-  mesh.name = 'trail-candy';
-  mesh.count = candy.length;
-  mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-  // The trail runs the length of the course, so it is never outside the picture as a whole.
-  mesh.frustumCulled = false;
-  const colour = new Color();
-  candy.forEach((_, i) => mesh.setColorAt(i, colour.set(CANDY_COLOURS[i % CANDY_COLOURS.length]!)));
-  /** How far each collected candy has flown, from 0 to 1; -1 while it still floats in its place. */
-  const flown = candy.map(() => -1);
-  const place = new Object3D();
-
-  /** How far each candy that waits for a flag has come out, from 0 to 1. */
-  const out: number[] = candy.map((c) => (c.after === undefined ? 1 : 0));
-
-  function update(collected: readonly boolean[], flags: ReadonlySet<string>, elofX: number, elofY: number, dt: number, clock: number, tapped?: number, response = 0, droppedThrough = Infinity): void {
-    for (let i = 0; i < candy.length; i++) {
-      const c = candy[i]!;
-      if (collected[i] && flown[i]! < 0) flown[i] = 0;
-      // A candy the ghost drops pops out when it does.
-      if (c.after !== undefined && flags.has(c.after) && c.x <= droppedThrough) out[i] = Math.min(1, out[i]! + dt * 5);
-      let x = c.x;
-      let y = c.y + Math.sin(clock * 2.2 + i * 1.7) * 0.045 + (i === tapped ? response * 0.12 : 0);
-      let size = out[i]!;
-      if (flown[i]! >= 0) {
-        const t = Math.min(1, flown[i]! + dt / CANDY_FLIGHT);
-        flown[i] = t;
-        // It swells for a moment, then shrinks into his chest.
-        x = lerp(x, elofX, t * t);
-        y = lerp(y, elofY + 0.55, t * t);
-        size *= (1 + 0.5 * Math.sin(Math.PI * Math.min(1, t * 2))) * (1 - t * t);
-      }
-      place.position.set(x, y, 0);
-      place.rotation.set(0.35, clock * 1.5 + i * 0.9, Math.sin(clock * 1.3 + i) * 0.3);
-      place.scale.setScalar(size);
-      place.updateMatrix();
-      mesh.setMatrixAt(i, place.matrix);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-  }
-  return { mesh, update };
 }
 
 /** A big candy on its stick: the stand-in, until the one from Blender has loaded. */

@@ -112,6 +112,9 @@ async function open(name, options, query = '?debug') {
   check('the big candy from Blender is loaded', loaded.models.includes('boot/big-candy'), loaded.models.join(', ') || 'no models');
   check('its texture arrived as KTX2 and stayed compressed', loaded.compressedTextures >= 1, `${loaded.compressedTextures} compressed`);
   check('its custom property from Blender arrived', loaded.roles.includes('checkpoint'), loaded.roles.join(', ') || 'no roles');
+  // The small sweets (art/blender/candy.py) come in a file of their own, without a texture.
+  const sweets = await until(info, (i) => i.models.includes('boot/candy'), 30000);
+  check('the candy kit from Blender is loaded, and takes the stand-ins\' place', sweets.models.includes('boot/candy'), sweets.models.join(', '));
   // The ghost's pack is private: it is there on Olov's computer and absent in CI. Both are right.
   const manifest = await page.evaluate(() => fetch('packs/manifest.json').then((r) => r.json()));
   if (manifest.packs.private) {

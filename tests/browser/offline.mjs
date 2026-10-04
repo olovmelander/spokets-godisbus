@@ -101,8 +101,8 @@ try {
     const name = (await caches.keys()).find((name) => name.endsWith(':shell'));
     return (await (await caches.open(name)).keys()).map((key) => key.url);
   });
-  check('shell, decoder WASM, manifest, both boot models and Home Screen icons are precached',
-    ['index.html', 'basis_transcoder-', 'packs/manifest.json?v=', 'packs/boot/big-candy.glb?v=', 'packs/boot/jay.glb?v=', 'icons/ghost-180.png'].every((name) => precached.some((address) => address.includes(name))));
+  check('shell, decoder WASM, manifest, the boot models and Home Screen icons are precached',
+    ['index.html', 'basis_transcoder-', 'packs/manifest.json?v=', 'packs/boot/big-candy.glb?v=', 'packs/boot/candy.glb?v=', 'packs/boot/jay.glb?v=', 'icons/ghost-180.png'].every((name) => precached.some((address) => address.includes(name))));
   check('visited runtime chapter pack loads online', await fetchPack(page, 0) === fixture[0]);
   await page.waitForFunction(async () => (await caches.keys()).some((name) => name.endsWith(':packs')));
   await context.setOffline(true);

@@ -32,9 +32,13 @@ const server = await createServer({ root,
             for (const z of [box.min.z, box.max.z]) corners.push(new Vector3(x, y, z).project(camera).toArray());
           return corners;
         }
-        export function candyScales(mesh) {
-          const m = new Matrix4(), s = new Vector3();
-          return Array.from({length: mesh.count}, (_, i) => { mesh.getMatrixAt(i, m); s.setFromMatrixScale(m); return s.x; });
+        // The trail is a group of instanced meshes, one for each kind of sweet. Each says which candies it draws.
+        export function candyScales(trail) {
+          const m = new Matrix4(), s = new Vector3(), scales = [];
+          for (const mesh of trail.children) mesh.userData.candies.forEach((index, slot) => {
+            mesh.getMatrixAt(slot, m); scales[index] = s.setFromMatrixScale(m).x;
+          });
+          return scales;
         }
       `;
     },

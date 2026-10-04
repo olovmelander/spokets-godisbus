@@ -2,6 +2,43 @@
 
 ## State (4 October 2026)
 
+- **The candy is modelled in Blender** (4 October, on Olov's computer, branch `candy-design`; art bible §2.9).
+  Olov: "We need to improve the design of all candies and similar assets in the game use the blender mcp".
+  - **What you see:**
+    - *The trail* is the poster's candy: glossy karameller in pleated, twisted wrappers, striped ones whose
+      stripes wind as they roll, swirls in wrappers, and now and then a pink heart or a small swirl lollipop.
+      They sway with their side to him instead of turning right round, so each always has a sweet's outline.
+    - *The big candy* at every checkpoint is a thick round swirl lollipop with a yellow bow. Its swirl turns
+      like a pinwheel, and fast once he has reached it.
+    - *The sixteen hidden kinds* are each shaped as what they are (a gummy bear, a fried egg, a cola bottle, a
+      polkagris ...), in the colours their stickers have, where every one was a ball with a band.
+    - *The magic candy:* the golden geléhallon is a raspberry of beads, the lysklubba a golden swirl that glows
+      (also as the lantern he carries through the mist), the shrinking star a plump five-pointed star.
+    - *On the summit* the sweet he gives away lies beside its friend as itself: a geléhallon, a karamell or a
+      skumbanan. *In Byn's shop* the jars hold wrapped sweets.
+    - *Everywhere* a sweet gives off a little of its own colour and has a glossy rim, so it keeps its colours in
+      the forest's shade, against the bog's sun and at night. Before, the big candy went olive in the bog.
+  - **How:** `art/blender/candy.py` builds 25 sweets into `art/baked/boot/candy.glb` (no texture; colours on
+    the corners, their own shade baked in), and `art/blender/big-candy.py` the checkpoint.
+    `src/render/candy.ts` reads the kit, draws the trail and puts the sweets where the scene asks for them.
+    Every place keeps a stand-in built in code until the kit has arrived, and where a build has no kit.
+  - **It costs** 68 KB more as served (boot is 787 KB of 3 MB) and 2 KB of script. The trail is at most five
+    draw calls where it was one; a hidden sweet is two where it was three.
+  - **Validation:** typecheck; 790 unit and robot tests, 16 of them new (`tests/unit/candy.test.ts` holds the
+    generator to the game's kinds and colours, and checks the trail, the places for sweets and the summit's
+    gifts); the build and its size gate; the privacy check. In a browser on Olov's computer: the smoke suite,
+    with a new check that the kit is loaded, and the opening story, whose candy check now reads the trail's
+    several meshes. The other suites ran on GitHub for the pull request. Pictures from the game at nine places
+    and the kit as a sheet are in `docs/shots/_work/candy/` on his computer (git ignores them).
+    - With another session's browser drawing the game on the same computer, seven robot tests ran out of
+      their five seconds. They pass with `npx vitest run --testTimeout 90000`, and on GitHub.
+  - **Not done:** the stickers in the album and on the bag are still discs in two colours, and the Saturday bag
+    and the bag in the corner are as they were. The stand-in big candy (seen for a moment before the pack
+    arrives) is still the old striped ball. **Not judged by Olov yet,** and not seen on a phone.
+  - **Three choices the session made,** for Olov to overrule: the bow on the big candy; that it turns as a
+    pinwheel instead of round its stick; and how much a sweet shines by itself (`CANDY_LIFT` in
+    `src/render/candy.ts`: 0 is only the place's light).
+
 - **Current Git state:** PR #12 and the aggregate PR #106 are merged. `main` is
   `0a94b20e13b504d5a4c157ee0f8a2c579fb626ab`, including the earlier code milestones, memories and ghost
   thought pictures. The aggregate's exact `fff4bd` CI tree passed 677 unit/robot tests, all 30 browser
@@ -1171,6 +1208,12 @@
 
 **For the next session, in this order:**
 
+- **The candy** (art bible §2.9): Olov's eyes on it, on a phone: `?dev` for the trail and the big candy,
+  `?dev&course=myren` for the lysklubba, the album's kinds one by one as he finds them. What he says tunes
+  `art/blender/candy.py` and `CANDY_LIFT`. Then the rest of what he asked for, "all candies and similar
+  assets": the album's and the bag's stickers as pictures of the same models, the Saturday bag as a model
+  (striped paper, pinked at its top, sweets looking out), and the end card's rows as small wrapped sweets.
+  It needs Blender, so Olov's computer.
 - Use the validation record in State for the exact integrated source tree before further integration.
   Keep the merged baseline separate from `codex/storytelling-gameplay-overhaul` until its reviewed
   integration is recorded. The earlier PR stack is already merged; superseded older heads were audited
@@ -1296,7 +1339,7 @@ The older list, still true where it is not struck:
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 recorded | — / 2 | Original plan versions 1–4; `main` and the placeholder page; the reference pictures gathered. Version 5 on 4 October adds the researched story/level overhaul and its acceptance criteria; no new session or review count is inferred. |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. Final visual and physical-device review remains. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
 | 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. Broader spatial work, Byn's return loop, final likeness/contact/acting/memory art, listening and device checkpoints remain; no release is declared. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. |
@@ -1307,6 +1350,13 @@ The older list, still true where it is not struck:
   Safari/Home Screen updates and storage eviction have not been checked on the family's devices yet.
 
 
+- **Two sessions in one checkout get in each other's way.** On 4 October a second session started in the main
+  checkout while the first had a dev server running there. Its `npm ci` could not delete rolldown's native file,
+  which the server held open, and stopped with `EPERM` after removing most of `node_modules`; and each
+  changed the branch under the other. `npm install` put `node_modules` back without touching the held
+  file. **A session that finds another at work takes a worktree of its own:**
+  `git worktree add .claude/worktrees/<name> <branch>`, and `npm ci` there. The family's models and the
+  reference pictures stay in the main checkout, so such a worktree shows the stand-ins, as CI does.
 - With three sessions working on the computer at once, two long tests timed out and the browser test once
   measured a warm-up frame. Both are fixed (a minute for the tests; the measure waits for the frame to
   settle). On a quiet computer and in CI neither happened.
@@ -1331,6 +1381,10 @@ The older list, still true where it is not struck:
 - The server's safe mode lets a script use `bpy`, `bmesh`, `mathutils` and pure-Python standard modules. It
   rejects `globals()`, `open`, `exec`, `getattr` with a computed name, and `os`, `sys` and anything that reaches
   files, the network or other programs. Saving, rendering, import and export through Blender's own operators are allowed.
+- Since the server was updated the safe mode is stricter, and says what it rejects before anything runs: no
+  `class`, no calling a function that was passed as a value (so no callbacks, and no lambdas that are called),
+  and no name that the script does not bind itself. A generator therefore gives its shapes as tables and plain
+  `def`s (`art/blender/candy.py`), and a value from the caller is always set in a first line.
 - So a script can't read another file: send its text. `scripts/bake/export.py` is written for that, with `OUT`
   set in a first line.
 - A `.blend` stores the full path it was saved to, which includes the Windows user name. `big-candy.blend` is
@@ -1340,6 +1394,11 @@ The older list, still true where it is not struck:
   generator files through a small MCP client in its scratchpad, started exactly as `.mcp.json` declares the
   server, and used the tools directly for short scripts, the status and screenshots.
 - Reference pictures go into the scene as image empties, in a collection that is hidden from renders.
+- Shade can be baked into a model's colours: Cycles bakes ambient occlusion to a colour attribute on the points
+  (`bpy.ops.object.bake(type='AO', target='VERTEX_COLORS')`), in well under a second for a small model.
+- The exporter writes a colour attribute as `COLOR_0` only when the material's base colour reads it, and without
+  its alpha unless the alpha is linked too, which marks the material as see-through. A second number for each
+  corner travels better in a UV map (`art/blender/candy.py` keeps how much tint a corner takes there).
 
 ## Senare (wishes for a later release)
 
@@ -1397,6 +1456,8 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
 6. **Where should the ghost's files live?** Answered by what Olov asked for on 3 October: in the private
    repository with Elof's, and shown on the public site through the deploy. It can always be taken down.
 
-Two choices the session made, for Olov to overrule if he wants:
+Choices the session made, for Olov to overrule if he wants:
+- the bow on the big candy, its pinwheel turn, and how much a sweet shines by itself (see "The candy is
+  modelled in Blender" under "State");
 - the name *Klonk* (two others that were considered: Kvist and Flisa);
 - the plain disc instead of the star on the ghost's shoes, because the star on a red canvas shoe reads as a brand.

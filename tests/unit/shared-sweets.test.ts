@@ -1,5 +1,6 @@
-import { Color, Matrix4, Vector3 } from 'three';
+import { BoxGeometry, Color, Matrix4, MeshStandardMaterial, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
+import type { CandyKit } from '../../src/render/candy';
 import { createSharedSweets } from '../../src/render/shared-sweets';
 
 describe('the sweets given to the three friends', () => {
@@ -33,5 +34,37 @@ describe('the sweets given to the three friends', () => {
     expect(mesh.count).toBe(3);
     expect(mesh.geometry).toBe(geometry);
     expect(mesh.material).toBe(material);
+  });
+});
+
+describe('the sweets given to the three friends, once the kit from Blender has come', () => {
+  const kit = (...names: string[]): CandyKit => {
+    const shapes = new Map(names.map((name) => [name, new BoxGeometry(1, 1, 1)]));
+    return { shape: (name) => shapes.get(name), material: new MeshStandardMaterial() };
+  };
+  it('shows the sweet he chose as its own shape beside its recipient, and hides the ball', () => {
+    const { group, mesh, install, update } = createSharedSweets();
+    expect(install(kit('gelehallon', 'karamell', 'skumbanan'))).toBe(true);
+    update(new Set(['share:spoket', 'gift:spoket:skumbanan', 'share:jay']), { x: 50, y: 4 });
+    const shown = group.children.filter((child) => child !== mesh && child.visible).map((child) => child.name);
+    expect(shown).toEqual(['shared:spoket:skumbanan']);
+    expect(group.getObjectByName('shared:spoket:skumbanan')!.position.x).toBeCloseTo(50.26);
+    const scale = new Vector3(), matrix = new Matrix4();
+    mesh.getMatrixAt(1, matrix); expect(scale.setFromMatrixScale(matrix).x).toBe(0);
+    // The jay's lingonberry is a berry, not a sweet: it stays a ball.
+    mesh.getMatrixAt(2, matrix); expect(scale.setFromMatrixScale(matrix).x).toBeGreaterThan(0);
+  });
+  it('makes every sweet once, so that giving one later builds nothing', () => {
+    const { group, install, update } = createSharedSweets();
+    install(kit('gelehallon', 'karamell', 'skumbanan'));
+    const made = group.children.length;
+    expect(install(kit('gelehallon', 'karamell', 'skumbanan'))).toBe(false);
+    for (const kind of ['gelehallon', 'karamell', 'skumbanan']) update(new Set(['share:tragubbe', `gift:tragubbe:${kind}`]), null);
+    expect(group.children).toHaveLength(made);
+  });
+  it('keeps the balls when the kit lacks a sweet', () => {
+    const { group, install } = createSharedSweets();
+    expect(install(kit('gelehallon'))).toBe(false);
+    expect(group.children).toHaveLength(1);
   });
 });
