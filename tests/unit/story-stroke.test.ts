@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { prolog } from '../../src/content/chapters/ends';
+import { epilog, prolog } from '../../src/content/chapters/ends';
 import { Sim } from '../../src/sim/sim';
-import { finishEyeStroke, guidedEye, validEyeStroke } from '../../src/sim/story-stroke';
+import { finishEyeStroke, guidedCarve, guidedEye, validCarveStroke, validEyeStroke } from '../../src/sim/story-stroke';
 
 const idle = { x: 0, y: 0, hop: false, hopHeld: false, act: false };
 const settle = (sim: Sim) => { for (let i = 0; i < 20; i++) sim.step(idle); };
@@ -36,5 +36,37 @@ describe('painting with Pappa', () => {
     expect(sim.finishStory({ kind: 'paint', traces: [guidedEye(204)] })).toBe(true);
     for (let i = 0; i < 360; i++) sim.step(idle);
     expect(sim.flags.has('blink')).toBe(true);
+  });
+});
+
+describe('carving away from the body', () => {
+  it('accepts an outward stroke with finger jitter, but rejects inward, sideways and partial strokes', () => {
+    const outward = guidedCarve();
+    expect(validCarveStroke(outward)).toBe(true);
+    expect(validCarveStroke(outward.map((p, i) => ({ x: p.x + (i % 2 ? 2 : -2), y: p.y + (i % 2 ? 2 : -2) })))).toBe(true);
+    expect(validCarveStroke([...outward].reverse())).toBe(false);
+    expect(validCarveStroke(outward.slice(0, 5))).toBe(false);
+    expect(validCarveStroke([outward[0]!, { x: 150, y: 30 }, outward.at(-1)!])).toBe(false);
+    expect(validCarveStroke([outward[0]!, outward[7]!, outward[3]!, outward.at(-1)!])).toBe(false);
+    expect(validCarveStroke([{ x: NaN, y: 0 }, outward.at(-1)!])).toBe(false);
+  });
+  it('an inward stroke cannot start or award progress; a retry finishes the same carving', () => {
+    const sim = new Sim({ ...epilog, spawn: { x: 32, y: .01 } }, {}, { flags: ['knife'] });
+    settle(sim); sim.step({ ...idle, act: true });
+    expect(sim.story).toEqual({ kind: 'carve', spot: 'cut1' });
+    expect(sim.finishStory({ kind: 'carve', stroke: guidedCarve().reverse() })).toBe(false);
+    expect(sim.flags.has('cut1')).toBe(false);
+    expect(sim.story?.spot).toBe('cut1');
+    for (let n = 1; n <= 3; n++) {
+      expect(sim.finishStory({ kind: 'carve', stroke: guidedCarve() })).toBe(true);
+      expect(sim.flags.has(`cut${n}`)).toBe(true);
+      expect(sim.finishStory({ kind: 'carve', stroke: guidedCarve() })).toBe(false);
+      settle(sim); sim.step({ ...idle, act: true });
+    }
+    expect(sim.story).toEqual({ kind: 'paint', spot: 'dots' });
+    expect(sim.finishStory({ kind: 'paint', traces: [guidedEye(116)] })).toBe(false);
+    expect(sim.flags.has('dots')).toBe(false);
+    expect(sim.finishStory({ kind: 'paint', traces: [guidedEye(116), guidedEye(204)] })).toBe(true);
+    expect(sim.flags.has('dots')).toBe(true);
   });
 });

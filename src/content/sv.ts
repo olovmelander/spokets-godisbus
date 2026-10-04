@@ -14,7 +14,14 @@ export const sv = {
   painting: {
     title: 'Måla ögonen', hint: 'Följ ringen med fingret eller musen.',
     assist: 'Måla med hjälp', picture: 'Spökets ögon. Följ den prickade ringen.',
+    figurePicture: 'Min nya trägubbes ögon. Följ den prickade ringen.',
     tryAgain: 'Dra med penseln, så hjälper Pappa till.', painted: 'Ett öga till liv!',
+  },
+  carving: {
+    title: 'Min första trägubbe', hint: 'Alltid bort från kroppen. Följ pilen.',
+    assist: 'Tälj med Pappa', picture: 'Elof sitter till vänster. Dra från handen längs pilen, bort från kroppen.',
+    tryAgain: 'Bort från kroppen. Pappa hjälper dig att prova igen.', carved: 'Ett tag med kniven!',
+    step: 'Tag {step} av 3',
   },
   sharing: {
     title: 'Dela godiset', choose: 'Välj något gott.', friend: 'Välj en vän.', back: 'Tillbaka',

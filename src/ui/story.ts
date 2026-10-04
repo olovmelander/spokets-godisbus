@@ -73,8 +73,8 @@ export function createStoryPanel(doc: Document, handlers: { answer(answer: Story
       chosen = null;
       byId('sharingBody').hidden = action.kind !== 'share';
       byId('strokeBody').hidden = action.kind === 'share';
-      byId('storyTitle').textContent = action.kind === 'share' ? sv.sharing.title : sv.painting.title;
-      byId('storyHint').textContent = action.kind === 'share' ? sv.sharing.choose : sv.painting.hint;
+      byId('storyTitle').textContent = action.kind === 'share' ? sv.sharing.title : action.kind === 'carve' ? sv.carving.title : sv.painting.title;
+      byId('storyHint').textContent = action.kind === 'share' ? sv.sharing.choose : action.kind === 'carve' ? sv.carving.hint : sv.painting.hint;
       byId('storyStatus').textContent = '';
       element.hidden = false;
       if (action.kind === 'share') {

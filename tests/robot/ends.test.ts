@@ -5,7 +5,7 @@ import { epilog, prolog } from '../../src/content/chapters/ends';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
 import { STEP } from '../../src/sim/constants';
-import { guidedEye } from '../../src/sim/story-stroke';
+import { guidedCarve, guidedEye } from '../../src/sim/story-stroke';
 import { Sim } from '../../src/sim/sim';
 import type { ChapterData, StepInput } from '../../src/sim/types';
 import { decide, playThrough } from './robot';
@@ -181,7 +181,10 @@ describe('Epilog, Godiskalaset, in greybox', () => {
       run(sim, 0.1);
       words.push(sim.curr.word);
       sim.step({ ...idle, act: true });
+      if (i < 3) sim.finishStory({ kind: 'carve', stroke: guidedCarve() });
+      else sim.finishStory({ kind: 'paint', traces: [guidedEye(116), guidedEye(204)] });
     }
+    run(sim, .1);
     expect(words).toEqual(['carve', 'carve', 'carve', 'paintEyes']);
     expect(sim.flags.has('dots')).toBe(true);
     expect(sim.said).toContain('carved');

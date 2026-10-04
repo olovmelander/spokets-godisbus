@@ -132,7 +132,7 @@ function start(): void {
     answer(answer) {
       if (platformBlocked()) return false;
       if (!game.sim.finishStory(answer)) return false;
-      hud.notice(answer.kind === 'paint' ? sv.painting.painted : sv.sharing.thanks.replace('{friend}', sv.sharing.friends[answer.friend]).replace('{sweet}', sv.sharing.sweets[answer.sweet].toLocaleLowerCase('sv')));
+      hud.notice(answer.kind === 'paint' ? sv.painting.painted : answer.kind === 'carve' ? sv.carving.carved : sv.sharing.thanks.replace('{friend}', sv.sharing.friends[answer.friend]).replace('{sweet}', sv.sharing.sweets[answer.sweet].toLocaleLowerCase('sv')));
       writeSave();
       input.release();
       game.resume();

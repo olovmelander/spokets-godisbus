@@ -100,12 +100,30 @@ async function padPress(page, index) {
   }, index);
   await frames(page, 2);
 }
-async function padFocus(page, id) {
+async function padFocus(page, selector) {
   for (let n = 0; n < 35; n++) {
-    if (await page.evaluate((target) => document.activeElement?.id === target, id)) return;
+    if (await page.evaluate((target) => document.activeElement?.matches(target), selector)) return;
     await padPress(page, 13); // D-pad down
   }
-  assert.fail(`Gamepad could not reach #${id}.`);
+  assert.fail(`Gamepad could not reach ${selector}.`);
+}
+
+async function drawStroke(page, points, touch = false) {
+  const coords = await page.evaluate((path) => {
+    const svg = document.getElementById('strokePicture'), matrix = svg.getScreenCTM();
+    return path.map((point) => { const p = svg.createSVGPoint(); p.x = point.x; p.y = point.y; const q = p.matrixTransform(matrix); return { x: q.x, y: q.y }; });
+  }, points);
+  if (touch) {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...coords[0], id: 1 }] });
+    for (const point of coords.slice(1)) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, id: 1 }] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await cdp.detach();
+  } else {
+    await page.mouse.move(coords[0].x, coords[0].y); await page.mouse.down();
+    for (const point of coords.slice(1)) await page.mouse.move(point.x, point.y);
+    await page.mouse.up();
+  }
 }
 
 try {
@@ -143,12 +161,10 @@ try {
     await page.keyboard.press('e');
     await page.waitForSelector('#storyPanel:not([hidden])');
     await page.evaluate(installPad);
-    await padPress(page, 15);
-    await padPress(page, 15);
+    await padFocus(page, '[data-sweet="skumbanan"]');
     await padPress(page, 0);
     check('gamepad A selects the candy under focus', await page.locator('[data-sweet="skumbanan"]').getAttribute('aria-pressed') === 'true');
-    await padPress(page, 15);
-    await padPress(page, 15);
+    await padFocus(page, '[data-friend="spoket"]');
     await padPress(page, 0);
     await until(state, (s) => s.flags.includes('shared'), 'all friends have their chosen food');
     check('all three choices unlock the golden candy', (await state()).flags.includes('gift:spoket:skumbanan'));
@@ -193,6 +209,42 @@ try {
     check('gamepad painting releases the prologue chase', (await state()).flags.includes('blink'));
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check('finished eyes persist with this player', saved.flags.prolog.includes('eye') && saved.flags.prolog.includes('paint'));
+    await finish();
+  }
+  console.log('story: carving safely with Pappa');
+  {
+    const { page, state, finish } = await open('carving', { hasTouch: true }, '?dev&debug&standin&tier=low&course=epilog', () => {
+      localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 1, candy: {}, placed: {}, flags: { epilog: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket', 'partied', 'knife'] }, playMs: 0 }));
+    });
+    await page.keyboard.down('ArrowRight'); await until(state, (s) => s.word === 'carve', 'the wood becomes reachable'); await page.keyboard.up('ArrowRight');
+    await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
+    const outward = Array.from({ length: 13 }, (_, i) => ({ x: 100 + 144 * i / 12, y: 150 - 80 * i / 12 }));
+    await drawStroke(page, [...outward].reverse(), true);
+    check('a touch stroke towards the body does not start or award a cut', !(await state()).flags.includes('cut1') && await page.locator('#storyPanel').isVisible());
+    await drawStroke(page, outward.slice(0, 4), true);
+    check('a short stroke stays at the same carving step', !(await state()).flags.includes('cut1'));
+    await page.screenshot({ path: '/tmp/godisbus-carving.png' });
+    await drawStroke(page, outward, true);
+    await until(state, (s) => s.flags.includes('cut1'), 'safe touch stroke cuts outwards');
+    check('an outward touch stroke finishes the first cut', !(await state()).flags.includes('cut2'));
+    await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
+    await page.keyboard.press('Enter');
+    await until(state, (s) => s.flags.includes('cut2'), 'keyboard guided carving');
+    check('keyboard can take the next stroke with Pappa', !(await state()).flags.includes('cut3'));
+    await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
+    await page.evaluate(installPad); await padPress(page, 0);
+    await until(state, (s) => s.flags.includes('cut3'), 'gamepad guided carving');
+    check('gamepad completes the third safe stroke', (await state()).flags.includes('cut3'));
+    await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.getElementById('strokeGuide').getAttribute('cx') === '204');
+    check('the new figure needs both painted eyes', !(await state()).flags.includes('dots'));
+    await page.keyboard.press('Enter'); await until(state, (s) => s.flags.includes('dots'), 'the new figure gets both eyes');
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
+    check('three cuts and both eyes are saved', ['cut1', 'cut2', 'cut3', 'dots'].every((flag) => saved.flags.epilog.includes(flag)));
+    await page.keyboard.down('ArrowRight'); await until(state, (s) => s.word === 'brush', 'toothbrush is reachable'); await page.keyboard.up('ArrowRight');
+    await page.keyboard.press('e'); await until(state, (s) => s.flags.includes('goal'), 'the epilogue reaches bedtime', 20000);
+    check('the epilogue can finish after carving', (await state()).flags.includes('teeth'));
     await finish();
   }
   console.log(`Story browser tests: ${checked} checks passed.`);

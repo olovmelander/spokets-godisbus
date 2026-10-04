@@ -68,3 +68,9 @@ Validation: typecheck and 14 integrated story/summit tests pass. Source browser 
 The opening painting action now follows a real brush stroke. Short or wobbly strokes receive the planned assistance; keyboard and controller use the same guided shape. The simulation awards progress only when an eye is completed.
 
 Validation: integrated typecheck and story tests pass. Source browser checks exercise pointer, touch and guided input, interruption and story continuation.
+
+## Carve the epilogue figure with three outward strokes
+
+The epilogue carving now uses three safe outward strokes, followed by painting the eyes. Inward or incomplete movement does not award progress. Keyboard and controller provide guided cuts, and interruption cancels pending completion safely.
+
+Validation: typecheck and 28 integrated stroke/ending robot tests pass. Source browser checks cover touch, keyboard, controller, rejected strokes and saved completion.
