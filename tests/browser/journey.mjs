@@ -92,8 +92,10 @@ try {
   assert.equal((await saved()).checkpoints.epilog, 2);
   // A new ending offers the selector too; no explicit course URL can trap the next chapter button.
   await open('course=epilog&flags=goal');
-  await page.waitForSelector('#endCard:not([hidden])');
+  // Automatic credits temporarily hide their source end card. Dismiss them before waiting for it.
+  await page.waitForSelector('#photoAlbum:not([hidden]), #endCard:not([hidden])');
   if (await page.locator('#photoAlbum').isVisible()) await page.keyboard.press('Escape');
+  await page.waitForSelector('#endCard:not([hidden])');
   assert.ok(await page.locator('#endExplore').isVisible());
   await page.locator('#endExplore').tap();
   await pad(1);
