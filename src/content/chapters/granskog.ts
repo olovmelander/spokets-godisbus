@@ -65,9 +65,9 @@ export const granskog: ChapterData = {
   // curious, behind a tell.
   hidden: [
     { x: -1.8, y: 0.5, kind: 'sockerbit' },
-    { x: 31.1, y: 2.95, kind: 'gummiorm', way: 'over the ring between the trunks' },
+    { x: 31, y: 2.95, kind: 'gummiorm', way: 'over the ring between the trunks' },
     { x: 62, y: 14.45, kind: 'chokladkola', route: true },
-    { x: 140.3, y: -3.7, kind: 'colaflaska', way: 'up the bark to the nest' },
+    { x: 140.3, y: -3.85, kind: 'colaflaska', way: 'up the bark to the nest' },
   ],
   challenges: [{
     id: 'anthill', from: 46.5, to: 63.5, above: 5.4, reward: 'chokladkola',
@@ -163,35 +163,35 @@ export const granskog: ChapterData = {
   hooks: [
     // The forest's first ring, between two trunks: from the high bough to the long bough on the far side.
     // A running jump off the big cone comes within its reach too: a shorter way, for quick hands.
-    { x: 26.3, y: 5.7, length: 3, extra: true },
+    { x: 26.2, y: 5.7, length: 3, extra: true },
     // Two in a row from the nest, at one height and 4.4 EL apart: the second is thrown to in the air.
-    { x: 143.7, y: -2.3, length: 3, extra: true },
-    { x: 148.1, y: -2.3, length: 3, extra: true },
+    { x: 143.6, y: -2.3, length: 3, extra: true },
+    { x: 148, y: -2.3, length: 3, extra: true },
   ],
+  // Ledges (docs/level-design.md). Up a trunk each is 0.9 over the last and beside it: a standing leap with
+  // the stick held towards it lands on it from anywhere on the one below, so the climb has a rhythm.
   ledges: [
-    // The boughs: a second level over the forest floor, from the big cone to the lingonberry. Two plates of
-    // bark on the trunk behind the cone lead up to the bough the ring is thrown from.
-    { x: 21, y: 2.1, width: 1.2, look: 'bark' },
-    { x: 22, y: 2.85, width: 1.2, look: 'bark' },
-    { x: 23.2, y: 3.4, width: 1.4, look: 'branch' },
+    // The boughs: a second level over the forest floor, from the big cone to the lingonberry. A plate of
+    // bark over the cone, with a heart as its tell, and the high bough the ring is thrown from. A jump from
+    // the high bough that misses is still a soft landing.
+    { x: 21.6, y: 1.95, width: 1.2, look: 'bark' },
+    { x: 22.9, y: 2.85, width: 1.8, look: 'branch' },
     // The far bough is lower and long, so that he lands on it wherever he lets go of the ring. Too far from
-    // the near bough for a jump: the ring is the way over.
-    { x: 29.75, y: 2.4, width: 3.9, look: 'branch' },
+    // the high bough for a jump: the ring is the way over.
+    { x: 29.65, y: 2.4, width: 3.9, look: 'branch' },
     // A step down. It is too high to jump onto from the floor, so the boughs are entered at the cone only.
     // From its end he drops to the forest floor at the lingonberry: the jay's puzzle is still ahead of him.
-    { x: 31.8, y: 1.4, width: 1.6, look: 'branch' },
-    // The nest: plates of bark zig-zag up a trunk after the log, to a nest 3.75 EL over the floor. The lowest
-    // plate, with its heart, is the tell. It is level with the log, so a leap from the log's end lands on it
-    // too; the next one is out of that leap's reach. The highest plate is low enough that a jump from it
-    // that misses is still a soft landing.
-    { x: 138.7, y: -7.2, width: 1.2, look: 'bark' },
-    { x: 139.7, y: -6.5, width: 1.2, look: 'bark' },
-    { x: 138.7, y: -5.8, width: 1.2, look: 'bark' },
-    { x: 139.7, y: -5.15, width: 1.2, look: 'bark' },
-    { x: 140.3, y: -4.25, width: 1.6, look: 'branch' },
+    { x: 31.7, y: 1.4, width: 1.6, look: 'branch' },
+    // The nest: three plates of bark zig-zag up a trunk after the log, to a nest 3.6 EL over the floor. The
+    // lowest plate, with its heart, is the tell. It is as high as the log, so a leap from the log's end lands
+    // on it too; the next one is out of that leap's reach.
+    { x: 138.6, y: -7.1, width: 1.4, look: 'bark' },
+    { x: 139.8, y: -6.2, width: 1.4, look: 'bark' },
+    { x: 138.6, y: -5.3, width: 1.4, look: 'bark' },
+    { x: 140.05, y: -4.4, width: 2.1, look: 'branch' },
     // The bough the two rings end on, high over the big candy. From its end he drops to the floor before
     // Bertil's sign.
-    { x: 151.5, y: -5.6, width: 3.6, look: 'branch' },
+    { x: 151.4, y: -5.6, width: 3.6, look: 'branch' },
   ],
   spots: [
     { id: 'berry', look: 'berry', at: { x: 33, y: 0 }, verb: 'take', word: 'pick' },
@@ -309,9 +309,9 @@ export const granskog: ChapterData = {
     // Up on the boughs and in the nest the picture is wider and looks down a little, so that the ring over
     // him and the trail under him are both in it. Each begins higher than a jump from the trail reaches, and
     // lower than the bottom of the swing: over the big cone that takes two zones.
-    { from: 20.4, to: 25.2, above: 2.35, zoom: 1.4, lift: -1.4 },
+    { from: 21, to: 25.2, above: 2.35, zoom: 1.4, lift: -1.4 },
     { from: 25.2, to: 33, above: 2.12, zoom: 1.4, lift: -1.4 },
-    { from: 138, to: 153.6, above: -6, zoom: 1.4, lift: -1.4 },
+    { from: 137.7, to: 153.6, above: -5.9, zoom: 1.4, lift: -1.4 },
     { from: 46.5, to: 63.5, above: 5.4, zoom: 1.25, lift: 0.7, lead: 1 },
     { from: 40, to: 66, zoom: 1.25, lift: 0.3 },
     // On the slope the picture looks less far ahead, so that the cones coming from behind are seen.
@@ -388,32 +388,31 @@ export const granskog: ChapterData = {
     { x: 188.9, y: -7.55 },
     ...row(191, 203, -8),
   ],
-  // Side candy: hearts and lollipops, one over every ledge and three along the arc of every swing. Every
-  // other one is a heart, and the first of each way is one: its tell. New ones are added at the end.
+  // Side candy: hearts and lollipops, over every ledge and three along the arc of every swing. Every other
+  // one is a heart, and the first of each way is one: its tell. New ones are added at the end.
   side: [
     // The boughs: up the bark, along the swing, on the far bough, and down.
-    { x: 21.1, y: 2.65 },
-    { x: 22, y: 3.4 },
-    { x: 23.2, y: 3.95 },
-    { x: 25, y: 3 },
-    { x: 26.3, y: 2.7 },
-    { x: 27.6, y: 3 },
+    { x: 21.6, y: 2.5 },
+    { x: 22.5, y: 3.4 },
+    { x: 23.3, y: 3.4 },
+    { x: 24.9, y: 3 },
+    { x: 26.2, y: 2.7 },
+    { x: 27.5, y: 3 },
     { x: 28.8, y: 2.95 },
     { x: 29.8, y: 2.95 },
-    { x: 31.6, y: 1.95 },
-    { x: 32.3, y: 1.95 },
+    { x: 31.4, y: 1.95 },
+    { x: 32.1, y: 1.95 },
     // The nest: up the bark, along both swings, and on the last bough.
-    { x: 138.7, y: -6.65 },
-    { x: 139.7, y: -5.95 },
-    { x: 138.7, y: -5.25 },
-    { x: 139.3, y: -4.6 },
-    { x: 142.4, y: -5 },
-    { x: 143.7, y: -5.3 },
-    { x: 145, y: -5 },
-    { x: 146.8, y: -5 },
-    { x: 148.1, y: -5.3 },
-    { x: 149.4, y: -5 },
-    { x: 151.4, y: -5.05 },
-    { x: 152.8, y: -5.05 },
+    { x: 138.6, y: -6.55 },
+    { x: 139.8, y: -5.65 },
+    { x: 138.5, y: -4.75 },
+    { x: 142.3, y: -5 },
+    { x: 143.6, y: -5.3 },
+    { x: 144.9, y: -5 },
+    { x: 146.7, y: -5 },
+    { x: 148, y: -5.3 },
+    { x: 149.3, y: -5 },
+    { x: 151.3, y: -5.05 },
+    { x: 152.6, y: -5.05 },
   ],
 };
