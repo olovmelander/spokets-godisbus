@@ -154,6 +154,44 @@ try {
       }
     }
   }
+  if (!process.env.CHALLENGE || process.env.CHALLENGE === '4') for (const viewport of [{ width: 844, height: 390 }, { width: 390, height: 844 }]) {
+    for (const tier of ['low', 'high']) {
+      for (const stop of ['entry', 'prize']) {
+        const at = stop === 'entry' ? '152.3,33.31' : '146.9,40.91';
+        const name = `c4-${stop}-${viewport.width}-${tier}`;
+        const { page, state, info, finish } = await open(name, { viewport }, `?dev&debug&standin&course=berget&tier=${tier}&at=${at}&flags=lift,memory`);
+        if (await page.locator('#startBtn').isVisible()) await page.locator('#startBtn').click();
+        const start = await until(state, s => s.steps > 90 && s.grounded, name);
+        const drawn = await info();
+        check(`${name}: draw-call budget`, drawn.drawCalls > 0 && drawn.drawCalls <= 120);
+        check(`${name}: player framed`, start.playerScreen && start.playerScreen.x > 30 && start.playerScreen.x < viewport.width - 30 && start.playerScreen.y > 35 && start.playerScreen.y < viewport.height - 30);
+        for (const step of [1, 2, 3]) {
+          await page.keyboard.press('h');
+          await until(state, s => s.help.step === step, `${name}: hint ${step}`);
+        }
+        check(`${name}: all three hints`, (await state()).help.step === 3);
+        await page.screenshot({ path: join(SHOTS, `${name}.png`) });
+        if (stop === 'entry') {
+          await page.keyboard.down('ArrowLeft');
+          await until(state, s => s.x < 151.86, `${name}: running takeoff`);
+          await page.keyboard.down('Space');
+          await until(state, s => s.grounded && s.y > 35.1, `${name}: next shelf reached`);
+          await page.keyboard.up('Space');
+          await page.keyboard.up('ArrowLeft');
+          check(`${name}: jump and ledge grab work`, (await state()).bubbles === 0 && !(await state()).flags.includes('goal'));
+        } else {
+          check(`${name}: challenge candy commits`, start.flags.includes('found:chokladpralin'));
+          check(`${name}: return hint uses the next lower shelf`, (await state()).help.at.x === 149.5 && (await state()).help.at.y === 39);
+          await page.keyboard.down('ArrowRight');
+          await until(state, s => s.grounded && Math.abs(s.y - 39) < 0.15, `${name}: first return shelf`);
+          await page.keyboard.up('ArrowRight');
+          check(`${name}: descending keeps prize and chapter open`, (await state()).flags.includes('found:chokladpralin') && !(await state()).flags.includes('goal') && (await state()).bubbles === 0);
+        }
+        check(`${name}: shaders stay warm`, (await info()).programs === drawn.programs);
+        await finish();
+      }
+    }
+  }
   console.log(`${checked} optional-path browser checks passed.`);
 } finally {
   await browser?.close();

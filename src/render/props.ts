@@ -65,6 +65,13 @@ export function moverProp(mover: Mover): Group | null {
       }
       break;
     }
+    case 'stone': {
+      const slab = new Mesh(new CylinderGeometry(w / 2, w * 0.53, h, 8), solid('#8d9698', 1, { flatShading: true }));
+      slab.position.y = h / 2;
+      slab.scale.z = 0.75;
+      group.add(slab);
+      break;
+    }
     case 'tussock': {
       // A firm tuft on a slim peat pillar behind the lower path, with a flat, readable moss top.
       const peat = new Mesh(new CylinderGeometry(w * 0.36, w * 0.23, 2.5, 8), solid('#635447'));
@@ -175,6 +182,18 @@ export function spotProp(spot: Spot): SpotProp | null {
     group.scale.setScalar(Math.max(0, 1 - since / over));
   };
   switch (spot.look) {
+    case 'cairn': {
+      const stones = new InstancedMesh(new SphereGeometry(1, 10, 7), solid('#b5b9ad', 1, { flatShading: true }), 3);
+      const at = new Object3D();
+      for (const [i, [x, y, w, h]] of [[0, 0.17, 0.44, 0.2], [-0.06, 0.45, 0.32, 0.16], [0.03, 0.68, 0.21, 0.13]].entries()) {
+        at.position.set(x!, y!, 0);
+        at.scale.set(w!, h!, w! * 0.8);
+        at.updateMatrix();
+        stones.setMatrixAt(i, at.matrix);
+      }
+      group.add(stones);
+      return { group, update() {} };
+    }
     case 'wisp': {
       const light = solid('#fff2b0', 0.25, { emissive: '#ffe8a0', emissiveIntensity: 1.8 });
       const glow = ball(0.18, light, 0, 0.65);

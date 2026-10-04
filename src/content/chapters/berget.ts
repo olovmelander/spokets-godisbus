@@ -12,9 +12,11 @@ import type { Candy, ChapterData } from '../../sim/types';
  * 5. **The ghost is stuck** below the last cliff. Använd says *Lyft*: he boosts it up, and it lowers the
  *    lace to him (P15).
  * 6. **The old pine:** "Spöket vill hämta hem min trägubbe!"
+ *    **Toppröset** (C4) is above it: five narrow granite shelves, reached with held jumps and ledge grabs.
+ *    The summit's candy is optional; the ordinary path stays below, and the same shelves lead back down.
  *
  * Not built yet: what lies below the flight (the forest, the brook, the bog, the bell tower, the red house,
- * the four headlamps), the summit cairn (C4), memory 4, the ghost's picture bubble, the ghost shown lifted.
+ * the four headlamps), memory 4, the ghost's picture bubble, the ghost shown lifted.
  */
 
 /** A row of candy over ground at one height, one every `every` EL. */
@@ -42,16 +44,34 @@ function inFlight(): Candy[] {
 /** The open granite, and its boulders. */
 const BOULDERS = [110, 115.2, 120.4, 125.6, 130.8, 136];
 
+/**
+ * Toppröset: these are the shelves' tops. The first is too high to grab from the ordinary path without
+ * jumping. The rightmost edge leaves 3.9 EL before the exit, so a miss lands or bubbles before reaching it.
+ * The 1.9 EL rises combine a held jump with the ledge grab already taught on the shoulder.
+ */
+const CAIRN = [
+  { x: 152.3, y: 33.3, width: 1.6 },
+  { x: 149.5, y: 35.2, width: 1.6 },
+  { x: 152.3, y: 37.1, width: 1.6 },
+  { x: 149.5, y: 39, width: 1.6 },
+  { x: 146.9, y: 40.9, width: 1.9 },
+];
+
 export const berget: ChapterData = {
   id: 'berget',
   place: 'mountain',
-  // Off the trail: over the shoulder, over the first slab, in a boulder's lee, and by the old pine.
+  // Off the trail: over the shoulder, over the first slab, in a boulder's lee, and at the summit cairn.
   hidden: [
     { x: 78, y: 25.9, kind: 'polkagris' },
     { x: 87, y: 27.1, kind: 'graddkola' },
     { x: 125.6, y: 28.3, kind: 'salmiakruta' },
-    { x: 152, y: 33.3, kind: 'chokladpralin' },
+    { x: 146.9, y: 41.35, kind: 'chokladpralin', route: true },
   ],
+  decor: [{ look: 'cairn', at: { x: 146.9, y: 40.9 } }],
+  challenges: [{
+    id: 'cairn', from: 145, to: 154, above: 32.9, reward: 'chokladpralin',
+    steps: CAIRN.map(({ x, y }) => ({ x, y })), return: { x: 150.6, y: 31.4 }, backtrack: true,
+  }],
   spawn: { x: 1, y: 0.01 },
   goalX: 157,
   ground: [
@@ -85,6 +105,11 @@ export const berget: ChapterData = {
     // The lace, lowered by the ghost from the top of the cliff.
     { x: 145.7, bottom: 26.4, top: 31.4, exit: 1, needs: 'lift' },
   ],
+  movers: CAIRN.map((shelf, i) => ({
+    id: `cairn:${i + 1}`, look: 'stone', extra: true, width: shelf.width, height: 0.4, verb: 'push',
+    // One stop is fixed ground, so there is no push or pull interaction on these shelves.
+    stops: [{ x: shelf.x, y: shelf.y - 0.4 }],
+  })),
   spots: [
     // He starts on the crane's back: it takes off at once.
     { id: 'flight', at: { x: 1, y: 0 }, verb: 'take', touch: true, ride: 'flight' },
@@ -114,6 +139,8 @@ export const berget: ChapterData = {
   // He understands when he has seen it.
   beats: [{ id: 'fetch', on: 'memory', who: 'elof', line: 'fetch' }],
   cameras: [
+    // Above the pine, frame the next shelf and the way back in both orientations.
+    { from: 145, to: 154, above: 32.9, zoom: 1.6, lift: 1.3, lead: 0 },
     { from: -3, to: 70, zoom: 1.7, lift: 0.5 },
     { from: 108, to: 138, zoom: 1.35 },
     { from: 140, to: 150, zoom: 1.3, lift: 0.5 },

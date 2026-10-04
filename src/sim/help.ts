@@ -31,7 +31,8 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
     if (missing) return { at: missing.at, verb: missing.verb, word: missing.word ?? null };
   }
   if (route && has(route.needs)) {
-    if (sim.flags.has(`found:${route.reward}`)) return { at: route.return, verb: null, word: null };
+    const found = sim.flags.has(`found:${route.reward}`);
+    if (found && !route.backtrack) return { at: route.return, verb: null, word: null };
     // Find the nearest landing, then show the next. Never use the live position of a moving platform:
     // repeated taps must progress from looking, to pointing, to the demonstration at the same place.
     let nearest = 0;
@@ -42,9 +43,10 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
     }
     // A missed jump may reset a light sequence while the bubble returns onto an upper ledge.
     // Guide back to the first unfinished light instead of pointing at its still-hidden successor.
+    if (found && nearest === 0) return { at: route.return, verb: null, word: null };
     const pending = route.pending?.find((id) => !sim.flags.has(id));
     const light = pending ? chapter.spots?.find((spot) => spot.id === pending) : undefined;
-    let target = route.steps.length - 1;
+    let target = found ? 0 : route.steps.length - 1;
     if (light) {
       let nearestLight = Infinity;
       for (const [i, at] of route.steps.entries()) {
