@@ -254,9 +254,10 @@ export const garden: ChapterData = {
     { x: 119, y: 2.8 },
     { x: 120, y: 2.55 },
     { x: 121, y: 2.8 },
-    // Where the last swing sets him down, and over the step down.
+    // Where the last swing sets him down, and over the step down: too high for a jump from the lawn, which
+    // would find a leaf it cannot get onto.
     { x: 122.5, y: 3.1 },
-    { x: 125.3, y: 2.15 },
+    { x: 125.3, y: 2.3 },
     // Over the first plank by the hose, where a jump off the hose sets him down, once the hose is there: he
     // sees it as he slides down.
     { x: 48.9, y: 2.75, after: 'ladybird' },

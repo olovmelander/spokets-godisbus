@@ -162,7 +162,7 @@ describe('skumsvamp, back up the hose, on the planks under the deck', () => {
         const sim = new Sim({ ...garden, spawn: { x: 42.5, y: 6.01 } }, {}, { flags });
         run(sim, 0.3);
         if (jumping) leap(sim, 1, 45.9);
-        else runPast(sim, 49, 3);
+        else for (let i = 0; i < 3 / STEP && sim.bubbles === 0; i++) sim.step({ ...idle, x: 1 });
         expect(sim.bubbles).toBe(1);
         expect(has(sim, 'skumsvamp')).toBe(false);
       }

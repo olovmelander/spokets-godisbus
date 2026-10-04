@@ -113,6 +113,21 @@ describe('the window sills over the deck', () => {
     expect(seconds(sim, since)).toBeLessThan(25);
   });
 
+  it('flow at a run too: three running jumps up, and on along the boards, in about the time the deck under them takes', () => {
+    const sim = start();
+    const since = sim.steps;
+    leap(sim, 1, 21.6);
+    leap(sim, 1, 24.3);
+    leap(sim, 1, 26.2);
+    expect(standsOn(sim, sills[2]!)).toBe(true);
+    runPast(sim, 36.4);
+    run(sim, 0.3);
+    expect(onTheTrail(sim)).toBe(true);
+    expect(sideTaken(sim, FROM, TO)).toEqual({ taken: 6, of: 6 });
+    expect(sim.bubbles).toBe(0);
+    expect(seconds(sim, since)).toBeLessThan(8);
+  });
+
   it('are reached by a running jump from anywhere on the last two EL of the step too', () => {
     for (const from of [20.9, 21.6, 22.3, 22.8]) {
       const sim = start();
