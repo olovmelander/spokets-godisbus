@@ -56,6 +56,10 @@ export interface Mover {
   look?: MoverLook;
   /** For Dra: where the ring sits, from the middle of its bottom. */
   ring?: Vec;
+  /** An optional path: the story helper never sends him here from the main trail. */
+  extra?: boolean;
+  /** A repeating platform, between its two stops. Its phase is local, never saved as puzzle progress. */
+  cycle?: { seconds: number; phase?: number };
 }
 
 /** A trail candy: where it floats, and the flag that has to be set before it is there at all. */
@@ -196,6 +200,8 @@ export interface GhostPerch {
 export interface CameraZone {
   from: number;
   to: number;
+  /** Only above this height: a challenge can have its own framing without widening the ordinary path. */
+  above?: number;
   /** How wide the picture is there: 1 is the usual, 1.3 shows about a third more. */
   zoom?: number;
   /** How far the picture is lifted, in EL. */
@@ -271,7 +277,7 @@ export interface SimStart {
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
-export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure';
+export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants';
 export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew';
 export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none';
 
@@ -280,6 +286,17 @@ export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home'
 
 /** What a stretch of ground is made of, where it isn't the place's own ground. The picture's business only. */
 export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron';
+
+/** A raised optional path. Fixed waypoints keep all three helper hints steady even on moving platforms. */
+export interface Challenge {
+  id: string;
+  from: number;
+  to: number;
+  above: number;
+  reward: string;
+  steps: Vec[];
+  return: Vec;
+}
 
 export interface ChapterData {
   id: string;
@@ -293,6 +310,8 @@ export interface ChapterData {
   hidden?: { x: number; y: number; kind: string; route?: boolean }[];
   /** Cranberries to bounce on (plan §4.8, O7). */
   bouncers?: Bouncer[];
+  /** Optional routes, entered by leaving the ordinary trail; their prizes never gate the story. */
+  challenges?: Challenge[];
   /** For the picture: stretches of ground that are something else than the place's own: a deck, a boulder. */
   surfaces?: { from: number; to: number; kind: SurfaceKind }[];
   /** For the picture: a deck overhead, with the sun falling through between its boards. */

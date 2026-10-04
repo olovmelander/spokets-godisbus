@@ -22,6 +22,23 @@ export const HINT_REACH = 12;
 export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   const p = sim.curr;
   const has = (flag?: string) => flag === undefined || sim.flags.has(flag);
+  // A raised route can overlap ordinary ground in x (the anthill's other side). Its landing heights,
+  // not the airborne feet, distinguish a deliberate climb from an ordinary jump or the ant ride.
+  const route = chapter.challenges?.find((r) => p.x >= r.from && p.x <= r.to && p.y >= r.above &&
+    r.steps.some((at) => Math.hypot(at.x - p.x, at.y - p.standY) <= 2.5));
+  if (route) {
+    if (sim.flags.has(`found:${route.reward}`)) return { at: route.return, verb: null, word: null };
+    // Find the nearest landing, then show the next. Never use the live position of a moving platform:
+    // repeated taps must progress from looking, to pointing, to the demonstration at the same place.
+    let nearest = 0;
+    let distance = Infinity;
+    for (const [i, at] of route.steps.entries()) {
+      const d = Math.hypot(at.x - p.x, at.y - p.standY);
+      if (d < distance) { distance = d; nearest = i; }
+    }
+    const at = route.steps[Math.min(nearest + 1, route.steps.length - 1)]!;
+    return { at, verb: null, word: null };
+  }
   const things: Hint[] = [];
   // Things to use, once what they wait for has happened. One he only has to touch is on the trail anyway.
   for (const spot of chapter.spots ?? []) {
@@ -31,7 +48,7 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   // Things on rails that are not yet where they belong, and that he moves himself.
   for (const mover of sim.movers) {
     const def = mover.def;
-    if (def.on !== undefined || mover.stop >= def.stops.length - 1 || !has(def.needs)) continue;
+    if (def.extra || def.cycle || def.on !== undefined || mover.stop >= def.stops.length - 1 || !has(def.needs)) continue;
     const ring = def.verb === 'pull' ? (def.ring ?? { x: 0, y: def.height }) : { x: 0, y: def.height };
     things.push({ at: { x: mover.x + ring.x, y: mover.y + ring.y }, verb: def.verb, word: null });
   }

@@ -269,9 +269,11 @@ export class Sim {
 
     // Things on rails are moved by the game, never by the physics: nothing can knock them off.
     this.movers = (chapter.movers ?? []).map((def) => {
-      const stop = start.placed?.includes(def.id) ? def.stops.length - 1 : 0;
+      const stop = !def.cycle && start.placed?.includes(def.id) ? def.stops.length - 1 : 0;
       const at = def.stops[stop]!;
-      return { def, x: at.x, y: at.y, stop, from: stop, t: 1 };
+      const to = def.stops[1] ?? at;
+      const phase = def.cycle ? (1 - Math.cos((def.cycle.phase ?? 0) / def.cycle.seconds * Math.PI * 2)) / 2 : 0;
+      return { def, x: mix(at.x, to.x, phase), y: mix(at.y, to.y, phase), stop, from: stop, t: 1 };
     });
     this.moverBodies = this.movers.map((mover) => {
       const body = this.world.createBody({ type: 'kinematic', position: new Vec2(mover.x, mover.y) });
@@ -297,7 +299,7 @@ export class Sim {
       const ride = (chapter.rides ?? []).find((r) => r.id === spot.ride);
       if (ride && ride.to.x > spawn.x + 0.5) this.flags.delete(spot.id);
     }
-    for (const mover of this.movers) if (mover.stop === mover.def.stops.length - 1) this.flags.add(`placed:${mover.def.id}`);
+    for (const mover of this.movers) if (!mover.def.extra && !mover.def.cycle && mover.stop === mover.def.stops.length - 1) this.flags.add(`placed:${mover.def.id}`);
     // What was said before the place he starts at is not said again.
     for (const beat of chapter.beats ?? []) if (beat.at !== undefined && beat.at < spawn.x - 0.5) this.flags.add(`beat:${beat.id}`);
     this.spots = chapter.spots ?? [];
@@ -636,12 +638,33 @@ export class Sim {
 
   /** The ids of the things on rails that are where they belong: what a save keeps of the puzzles. */
   get placed(): string[] {
-    return this.movers.filter((m) => m.stop === m.def.stops.length - 1 && m.t >= 1).map((m) => m.def.id);
+    return this.movers.filter((m) => !m.def.extra && !m.def.cycle && m.stop === m.def.stops.length - 1 && m.t >= 1).map((m) => m.def.id);
   }
 
   /** One step for the things on rails: they slide to their stops, and the unfinished ones go home when he leaves. */
   private moveMovers(): void {
     for (const [i, mover] of this.movers.entries()) {
+      const cycle = mover.def.cycle;
+      if (cycle) {
+        const a = mover.def.stops[0]!;
+        const b = mover.def.stops[1]!;
+        const t = ((this.steps + 1) * STEP + (cycle.phase ?? 0)) / cycle.seconds;
+        const k = (1 - Math.cos(t * Math.PI * 2)) / 2;
+        const x = mix(a.x, b.x, k);
+        const y = mix(a.y, b.y, k);
+        // The shallow tops carry feet, including on the downward half of their cycle. A jump has
+        // already left this step, so it must never be pulled back onto its platform.
+        if (this.state.kind === 'free' && this.curr.grounded && !this.leaving &&
+            Math.abs(this.curr.x - mover.x) < mover.def.width / 2 + ELOF_HALF_WIDTH &&
+            Math.abs(this.curr.y - mover.y - mover.def.height) < 0.12) {
+          const p = this.body.getPosition();
+          this.body.setTransform(new Vec2(p.x + x - mover.x, p.y + y - mover.y), 0);
+        }
+        mover.x = x;
+        mover.y = y;
+        this.moverBodies[i]!.setTransform(new Vec2(x, y), 0);
+        continue;
+      }
       const last = mover.def.stops.length - 1;
       // A helper's hands: it goes to where it belongs as soon as its flag is set.
       if (mover.def.on !== undefined && mover.t >= 1 && mover.stop < last && this.flags.has(mover.def.on)) {
@@ -675,7 +698,7 @@ export class Sim {
     const p = this.curr;
     for (const mover of this.movers) {
       const def = mover.def;
-      if (def.verb !== verb || def.on !== undefined || mover.t < 1 || mover.stop >= def.stops.length - 1) continue;
+      if (def.cycle || def.verb !== verb || def.on !== undefined || mover.t < 1 || mover.stop >= def.stops.length - 1) continue;
       if (def.needs !== undefined && !this.flags.has(def.needs)) continue;
       const next = def.stops[mover.stop + 1]!;
       const way = Math.sign(next.x - mover.x) || 1;
@@ -1191,6 +1214,8 @@ export class Sim {
     this.fallTop = p.y;
     // A soft tussock is no place to be put back on: the bubble takes him to the last firm ground.
     if (this.tussocks.some((t) => this.isOn(t))) return;
+    // A moving ant column may have gone by the time the bubble returns. Use a firm rest ledge instead.
+    if (this.movers.some((m) => m.def.cycle && Math.abs(p.x - m.x) <= m.def.width / 2 + ELOF_HALF_WIDTH && Math.abs(p.y - m.y - m.def.height) < 0.25)) return;
     // Solid ground has to be under both his sides. A corner he only clips on the way down is not a place
     // to be put back on.
     const solid = (x: number) => Math.abs(this.groundBelow(x, p.y) - p.y) < 0.25;

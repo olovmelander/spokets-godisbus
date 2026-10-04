@@ -91,7 +91,7 @@ export function decide(game: Game, chapter: ChapterData): Decision {
   // Steeper than 45 degrees over the next EL, and more than a step high. A thing in the way is a wall too.
   // One that can still be pushed is walked up to, not jumped at.
   const placed = (m: MoverState) => m.stop === m.def.stops.length - 1;
-  const inTheWay = movers.some((m) => placed(m) && m.x - m.def.width / 2 - p.x > 0 && m.x - m.def.width / 2 - p.x < 1 && m.y + m.def.height > p.y + 0.3);
+  const inTheWay = movers.some((m) => placed(m) && m.y < p.y + 1.3 && m.x - m.def.width / 2 - p.x > 0 && m.x - m.def.width / 2 - p.x < 1 && m.y + m.def.height > p.y + 0.3);
   // The far side of a crack at his own height is no wall.
   const wall = inTheWay || (heightAt(chapter, p.x + 1.0) - heightAt(chapter, p.x + 0.6) > 0.4 && heightAt(chapter, p.x + 1.0) > p.y + 0.3);
   // A gap with a plank across it is no gap. A gap has a far side above its bottom, and not far below him: on

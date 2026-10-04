@@ -1224,7 +1224,7 @@ function buildMovers(chapter: ChapterData): Group[] {
     const box = new Mesh(new BoxGeometry(mover.width, mover.height, 1.1), wood);
     box.position.y = mover.height / 2;
     group.add(prop ?? box);
-    if (mover.verb === 'pull' && mover.on === undefined) {
+    if (mover.verb === 'pull' && mover.on === undefined && !mover.cycle && mover.stops.length > 1) {
       const at = mover.ring ?? { x: 0, y: mover.height };
       const ring = new Mesh(new TorusGeometry(0.17, 0.04, 10, 28), red);
       ring.position.set(at.x, at.y, 0.2);

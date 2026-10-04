@@ -141,6 +141,24 @@
     and vehicle models still need Blender on his computer. No release, family assets, questions or later
     scope changed.
 
+- **C2, Myrstacken** (4 October, cloud session, first commit on `codex/chapter-challenges`).
+  - **What you see:** six moving ant columns climb the steep outside of the forest anthill. Jump onto
+    the first needle mat deliberately; the ordinary ant road and ride remain open below. A firm ledge
+    halfway up gives misses a nearby bubble return. The top holds the existing chokladkola and a root
+    slides back to the usual hilltop. Collecting it earns the album's challenge star.
+  - The three helper levels work inside the raised route; outside they still show the story path.
+    Raised camera zones frame the climb in portrait and landscape. Columns carry standing feet both
+    upwards and downwards, let jumps leave freely, and never become unsafe bubble return positions.
+  - **Save/commit rule:** only finding the candy commits the challenge. Moving phases restart locally;
+    no extra checkpoint or placed flag changes the chapter save. Reset/reload keeps the prize. The root
+    opens only after finding it, so a normal walk cannot accidentally climb the challenge backwards.
+  - **Validation:** 466 tests, typecheck, build/size gate and privacy scan pass. Browser checks cover
+    portrait/landscape, Low/High, all three hints, standing/jumping on a column and the root return;
+    draw calls remain within 120 and no shader compiles during play. Full climbs pass four cycle phases.
+  - **Limits/next:** animal shapes are code stand-ins; Blender work and real-device difficulty judgement
+    still need Olov's computer. No new question or later-release wish; `RELEASED_CHAPTER` remains null.
+    C3 and C4 are the next separate chapter changes.
+
 - **Done:**
   - The plan, `docs/game-plan.md` version 4: research, design, art direction, technology and delivery. Version 4
     takes in Olov's second round of answers of 3 October, which settle every question version 3 left open (plan
@@ -996,7 +1014,7 @@
 - Poses for the family: sitting at the table at the party, Mamma in the doorway, Pappa's hands with the
   knife, and their hands in the macro world where the signs' rides are now.
 - Byn: review the passing shoes, car and playable shop interior on Olov's devices; detailed models need Blender.
-- What Stage 2 still lacks in code: the challenge routes C2 to C4. Multiple players, album photos
+- What Stage 2 still lacks in code: the challenge routes C3 and C4. Multiple players, album photos
   and offline play are implemented. The dew bells
   exist, but still need replayable notes and visible lawn glitter to finish the planned toy.
 - Look-dev: review the repaired finale nightfall and round stars on Olov's devices at H1a.
@@ -1089,7 +1107,7 @@ The older list, still true where it is not struck:
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. On 4 October: chapter codes, C1, two optional delights, footsteps and wordless sounds, more switches, and the extra chapter Byn. A cloud session completed touch-follow, graphics selection, controls reference and menu input routing; another implemented offline boot/chapter caching and title-only updates. Byn now has street life and a shop interior. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. On 4 October: chapter codes, C1, two optional delights, footsteps and wordless sounds, more switches, and the extra chapter Byn. A cloud session completed touch-follow, graphics selection, controls reference and menu input routing; another implemented offline boot/chapter caching and title-only updates. Byn now has street life and a shop interior. C2 adds moving ant columns and a safe return. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. |
 
 ## Known bugs

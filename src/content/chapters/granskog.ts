@@ -18,7 +18,7 @@ import type { Candy, ChapterData } from '../../sim/types';
  * 8. **Spöket i virveln** (P10): from a stone, the lace pulls the ghost ashore. It leaves one candy on the
  *    stone, and from now on it waits for him.
  *
- * Not built yet: the anthill's outside (C2), memory 2, tasting a lingonberry, the ghost's picture bubbles.
+ * Not built yet: tasting a lingonberry, the ghost's picture bubbles.
  * To the simulation the pool and the eddy are pits; the water in them is drawn only.
  */
 
@@ -58,9 +58,18 @@ export const granskog: ChapterData = {
   hidden: [
     { x: -1.8, y: 0.5, kind: 'sockerbit' },
     { x: 22, y: 3.1, kind: 'gummiorm' },
-    { x: 63.6, y: 11.9, kind: 'chokladkola' },
+    { x: 62, y: 14.45, kind: 'chokladkola', route: true },
     { x: 134.5, y: -5.3, kind: 'colaflaska' },
   ],
+  challenges: [{
+    id: 'anthill', from: 46.5, to: 63.5, above: 5.4, reward: 'chokladkola',
+    steps: [
+      { x: 48, y: 5.9 }, { x: 50.3, y: 7.3 }, { x: 52.6, y: 8.7 },
+      { x: 53.8, y: 9.8 }, { x: 54.9, y: 10.1 }, { x: 57.2, y: 11.5 },
+      { x: 59.5, y: 12.9 }, { x: 62, y: 14 },
+    ],
+    return: { x: 63.1, y: 14 },
+  }],
   spawn: { x: 1, y: 0.01 },
   goalX: 204,
   ground: [
@@ -129,6 +138,8 @@ export const granskog: ChapterData = {
     { x: 194.6, y: -8 },
   ],
   climbs: [
+    // C2 has its own way down to the ordinary hilltop, without a long drop.
+    { x: 63.1, bottom: 10, top: 14, exit: -1, needs: 'found:chokladkola' },
     // The beard lichen: the jay shows it once it is his friend.
     { x: 43.7, bottom: 0, top: 4, exit: 1, needs: 'jay' },
     // The root down from the anthill.
@@ -148,6 +159,15 @@ export const granskog: ChapterData = {
     { id: 'cap', look: 'sign', at: { x: 154.6, y: -8 }, verb: 'call', word: 'callBertil', ride: 'cap' },
   ],
   movers: [
+    // C2: deliberately jump onto the first needle mat; the main ant road stays open underneath.
+    ...Array.from({ length: 6 }, (_, i) => ({
+      id: `ant-column-${i}`, look: 'ants' as const, width: 1.4, height: 0.3,
+      verb: 'push' as const, extra: true, cycle: { seconds: 4.8, phase: i * 0.6 },
+      stops: [{ x: 48 + i * 2.3, y: 5.25 + i * 1.4 }, { x: 48 + i * 2.3, y: 5.95 + i * 1.4 }],
+    })),
+    // Firm needles halfway up give a missed jump a nearby place to return to.
+    { id: 'anthill-rest', look: 'twig', width: 1.2, height: 0.3, verb: 'push', extra: true, stops: [{ x: 53.8, y: 9.5 }] },
+    { id: 'anthill-top', look: 'twig', width: 2.1, height: 0.3, verb: 'push', extra: true, stops: [{ x: 62, y: 13.7 }] },
     // The twig across the ants' road: pulled back towards him, the road is clear. It settles into the moss,
     // low enough to walk over.
     { id: 'twig', look: 'twig', width: 2.4, height: 0.5, verb: 'pull', ring: { x: -1, y: 0.7 }, stops: [{ x: 57.2, y: 4 }, { x: 53.4, y: 3.75 }] },
@@ -215,6 +235,7 @@ export const granskog: ChapterData = {
     { id: 'thanked', on: 'placed:rescue', who: 'elof', line: 'thanked' },
   ],
   cameras: [
+    { from: 46.5, to: 63.5, above: 5.4, zoom: 1.25, lift: 0.7, lead: 1 },
     { from: 40, to: 66, zoom: 1.25, lift: 0.3 },
     // On the slope the picture looks less far ahead, so that the cones coming from behind are seen.
     { from: 68, to: 105, zoom: 1.45, lead: 0.3 },

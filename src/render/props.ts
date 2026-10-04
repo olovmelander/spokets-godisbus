@@ -1,6 +1,5 @@
 import {
-  BoxGeometry, ConeGeometry, CylinderGeometry, DoubleSide, Group, LatheGeometry, Mesh, MeshStandardMaterial, SphereGeometry, Vector2,
-  type Object3D,
+  BoxGeometry, ConeGeometry, CylinderGeometry, DoubleSide, Group, InstancedMesh, LatheGeometry, Mesh, Object3D, MeshStandardMaterial, SphereGeometry, Vector2,
 } from 'three';
 import type { Mover, RideLook, Spot } from '../sim/types';
 
@@ -64,6 +63,23 @@ export function moverProp(mover: Mover): Group | null {
           group.add(shell);
         }
       }
+      break;
+    }
+    case 'ants': {
+      // Two draw calls for the whole living column: dark linked bodies beneath a broad needle mat.
+      // The animals remain code stand-ins until their Blender round.
+      const ants = new InstancedMesh(new SphereGeometry(0.09, 8, 6), solid('#3a281c'), 30);
+      const at = new Object3D();
+      for (let i = 0; i < 30; i++) {
+        const row = Math.floor(i / 3);
+        at.position.set(Math.sin(row * 1.6) * 0.14 + (i % 3 - 1) * 0.11, h - 0.25 - row * 0.2, 0.13);
+        at.scale.set(i % 3 === 0 ? 1.3 : 1, 0.75, 1);
+        at.updateMatrix();
+        ants.setMatrixAt(i, at.matrix);
+      }
+      const mat = new Mesh(new BoxGeometry(w, h, 0.9), solid('#a08b45'));
+      mat.position.y = h / 2;
+      group.add(ants, mat);
       break;
     }
     case 'twig': {
