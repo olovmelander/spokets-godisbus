@@ -52,6 +52,7 @@ try {
   await open('course=epilog&title');
   await page.locator('#titleExplore').tap();
   assert.equal(await page.locator('#explore [data-chapter]').count(), 8);
+  assert.ok((await page.locator('#explore .map').textContent()).includes('Klonk'), 'The saved name appears on the map');
   const paused = await state();
   await pad(13);
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-chapter')), 'byn', 'Controller moves through chapter choices');
@@ -73,6 +74,7 @@ try {
   assert.ok(!(await state()).flags.includes('goal'), 'The live chapter can be reached again');
   await page.keyboard.press('Escape');
   const after = await saved();
+  assert.ok((await page.locator('#pauseMap').textContent()).includes('Klonk'), 'The name follows him into earlier chapters');
   for (const flag of ['goal', 'found:gelehallon', 'memory']) assert.ok(after.flags.garden.includes(flag));
   assert.ok(after.flags.epilog.includes('goal'), 'The ending stays unlocked');
   assert.deepEqual(after.placed.garden, ['curl']);

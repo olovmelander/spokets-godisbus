@@ -58,8 +58,17 @@ try {
   await page.keyboard.press('KeyG');
   assert.equal(await page.locator('[data-reward="golden"]').count(), 1, 'The reward survives save and reload');
   assert.notEqual(await page.locator('#notice').textContent(), 'Alla sorter! Ett geléhallon i guld.', 'Loading does not replay the reward notice');
+  assert.ok((await page.locator('#pauseMap').textContent()).includes('Spöket'), 'His name is not revealed early');
+  await page.goto(`${origin}${base}?dev&debug&standin&tier=low&course=epilog&at=22.4,0.01&flags=party:mamma,party:pappa,party:moa,party:bertil`);
+  await ready();
+  await page.waitForFunction(() => window.__godis.state().word === 'giveGhost');
+  assert.equal(await page.locator('#actBtn').getAttribute('aria-label'), 'Ge spöket');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__godis.state().flags.includes('beat:named'));
+  await page.keyboard.press('Escape');
+  assert.ok((await page.locator('#pauseMap').textContent()).includes('Klonk'), 'The real naming action changes the map immediately');
   assert.deepEqual(errors, []);
-  console.log('Album: final real pickup, golden reward and saved reload passed.');
+  console.log('Album: final pickup, golden reward/reload and real naming action passed.');
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));

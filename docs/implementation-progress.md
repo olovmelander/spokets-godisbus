@@ -92,3 +92,9 @@ Validation: typecheck and 41 integrated journey/save tests pass. Source browser 
 Finding all sixteen distinct candy types awards the golden raspberry-jelly sticker in the album. The final discovery sounds once, and the reward survives reloading and revisiting chapters.
 
 Validation: typecheck and album tests pass. Source browser checks cover the final pickup, persistence and repeat visits without duplicate rewards.
+
+## Remember the ghost's name throughout the game
+
+After naming the ghost, the saved name appears in map, dialogue, helper and sharing labels on revisits. Before that moment the text still calls it the ghost.
+
+Validation: typecheck and sixteen integrated journey/map/story tests pass, including the new sharing panels.

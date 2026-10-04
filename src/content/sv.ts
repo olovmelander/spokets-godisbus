@@ -95,6 +95,8 @@ export const sv = {
     elof: 'Elof',
     spoket: 'Spöket',
   },
+  ghostName: 'Klonk',
+  giveKlonk: 'Ge Klonk',
 
   // What is said, in bubbles: the game has no voices. At most about 40 characters each (plan §3.7).
   lines: {

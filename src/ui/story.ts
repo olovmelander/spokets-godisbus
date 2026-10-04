@@ -35,7 +35,7 @@ export const storyPanelHtml = `<div class="panel-back" id="storyPanel" hidden>
   </section>
 </div>`;
 
-export function createStoryPanel(doc: Document, handlers: { answer(answer: StoryAnswer): boolean; cancel(): void }) {
+export function createStoryPanel(doc: Document, handlers: { named?(): boolean; answer(answer: StoryAnswer): boolean; cancel(): void }) {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const element = byId('storyPanel');
   const stroke = createStrokeUI(doc, (answer) => {
@@ -57,6 +57,7 @@ export function createStoryPanel(doc: Document, handlers: { answer(answer: Story
       const button = element.querySelector<HTMLButtonElement>(`[data-friend="${friend}"]`)!;
       const given = flags.has(`${kind === 'party' ? 'party' : 'share'}:${friend}`);
       button.hidden = kind === 'party' ? !isGuest(friend) : !isFriend(friend);
+      button.querySelector('span')!.textContent = friend === 'spoket' && handlers.named?.() ? sv.ghostName : names[friend];
       button.disabled = !chosen || !(kind === 'party' ? isGuest(friend) && partyReward(flags, friend, chosen) : isFriend(friend) && sharingReward(flags, friend, chosen));
       button.querySelector('small')!.textContent = given ? `✓ ${sv.sharing.given}` : '';
     }

@@ -66,7 +66,7 @@ const PICTURE: Record<MapPlace, string> = {
 };
 
 /** The map as SVG markup. With a state of null it draws nothing. */
-export function mapSvg(state: MapState | null): string {
+export function mapSvg(state: MapState | null, named = false): string {
   if (!state) return '';
   const route = state.drawn.map((place, i) => `${i === 0 ? 'M' : 'L'}${AT[place].x} ${AT[place].y + 20}`).join(' ');
   const places = state.drawn
@@ -78,10 +78,11 @@ export function mapSvg(state: MapState | null): string {
   const here = AT[state.here];
   // A little Elof: a yellow tuft of hair on a blue shirt.
   const elof = `<g transform="translate(${here.x - 22} ${here.y - 30})"><circle r="6" fill="#f4c542" stroke="#8a6a1a" stroke-width="1.5"/><path d="M-5 7h10l2 11h-14z" fill="#8fb4dc" stroke="#4a6a8c" stroke-width="1.5"/></g><text class="here" x="${here.x - 22}" y="${here.y - 42}" text-anchor="middle">${sv.map.here}</text>`;
-  const to = state.ghost && state.ghost !== state.here ? AT[state.ghost] : null;
+  const ghostAt = state.ghost ?? (named ? state.here : null);
+  const to = ghostAt && (named || ghostAt !== state.here) ? AT[ghostAt] : null;
   // The ghost, where it is heading: on blank paper, when that place is not drawn yet.
   const ghost = to
-    ? `<g transform="translate(${to.x + (state.drawn.includes(state.ghost!) ? 22 : 0)} ${to.y - (state.drawn.includes(state.ghost!) ? 26 : 0)})"><path d="M-7 10v-12a7 7 0 0 1 14 0v12z" fill="#e9d3a8" stroke="#8a6a3a" stroke-width="1.5"/><circle cx="-2.5" cy="-2" r="1.2"/><circle cx="2.5" cy="-2" r="1.2"/></g>`
+    ? `<g transform="translate(${to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)} ${to.y - (state.drawn.includes(ghostAt!) ? 26 : 0)})"><path d="M-7 10v-12a7 7 0 0 1 14 0v12z" fill="#e9d3a8" stroke="#8a6a3a" stroke-width="1.5"/><circle cx="-2.5" cy="-2" r="1.2"/><circle cx="2.5" cy="-2" r="1.2"/><text x="0" y="-15" text-anchor="middle">${named ? sv.ghostName : sv.who.spoket}</text></g>`
     : '';
   return `<svg class="moas-karta" viewBox="0 -16 380 180" role="img" aria-label="${sv.map.title}"><path d="${route}" ${crayon} stroke="#b9976a" stroke-width="3" stroke-dasharray="2 8"/>${places}${ghost}${elof}</svg>`;
 }

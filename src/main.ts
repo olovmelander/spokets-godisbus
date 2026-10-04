@@ -19,7 +19,7 @@ import { changeStyle, settingsFor, simOptions, tempoOf, type Settings } from './
 import { codeFor } from './save/codes';
 import { createStore, newSave, type PlayerSave } from './save/store';
 import { createPhotoStore } from './save/photos';
-import { chapterQuery, rememberFlags, storyFinished, visitChapter } from './save/journey';
+import { chapterQuery, ghostNamed, rememberFlags, storyFinished, visitChapter } from './save/journey';
 import type { SimStart, Vec } from './sim/types';
 import { createBench } from './ui/bench';
 import { createDebug, type Debug } from './ui/debug';
@@ -129,15 +129,17 @@ function start(): void {
   const game = new Game(chapter, simOptions(settings), from);
   const photoMoment = createPhotoMoments(chapter.id, game.sim.flags);
   game.tempo = tempoOf(settings);
-  const hud = createHud(document, chapter.candy.length);
+  const isKlonk = () => ghostNamed(save.flags) || (chapter.id === 'epilog' && game.sim.flags.has('beat:named'));
+  const hud = createHud(document, chapter.candy.length, isKlonk);
   const story = createStoryPanel(document, {
+    named: isKlonk,
     answer(answer) {
       if (platformBlocked()) return false;
       if (!game.sim.finishStory(answer)) return false;
       if (answer.kind === 'paint') hud.notice(sv.painting.painted);
       else if (answer.kind === 'carve') hud.notice(sv.carving.carved);
       else hud.notice((answer.kind === 'party' ? sv.party.thanks : sv.sharing.thanks)
-        .replace('{friend}', answer.kind === 'party' ? sv.party.friends[answer.friend] : sv.sharing.friends[answer.friend])
+        .replace('{friend}', answer.friend === 'spoket' && isKlonk() ? sv.ghostName : answer.kind === 'party' ? sv.party.friends[answer.friend] : sv.sharing.friends[answer.friend])
         .replace('{sweet}', sv.sharing.sweets[answer.sweet].toLocaleLowerCase('sv')));
       writeSave();
       input.release();
@@ -346,7 +348,7 @@ function start(): void {
   }
   byId('bag').addEventListener('click', openBag);
   // Moas karta, in the pause panel and on the chapter's card: where he is, and where the ghost is heading.
-  for (const id of ['pauseMap', 'endMap']) byId(id).innerHTML = mapSvg(mapState(chapter.id));
+  for (const id of ['pauseMap', 'endMap']) byId(id).innerHTML = mapSvg(mapState(chapter.id), isKlonk());
   // The helper's button: a press is passed on with the next frame's presses, like H on a keyboard.
   let askedForHelp = false;
   byId('helpBtn').addEventListener('click', () => {
@@ -693,6 +695,7 @@ function start(): void {
     if (game.sim.flags.size !== flagsSeen) {
       flagsSeen = game.sim.flags.size;
       const all = { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags) };
+      for (const id of ['pauseMap', 'endMap']) byId(id).innerHTML = mapSvg(mapState(chapter.id), isKlonk());
       const found = album(all);
       hud.stickers(found);
       if (!goldenFound && albumComplete(found)) {

@@ -2,6 +2,7 @@ import { BONUS, STORY } from '../content/chapters';
 import { foundFlag, KINDS } from '../content/kinds';
 import { sv } from '../content/sv';
 import type { PlayerSave } from '../save/store';
+import { ghostNamed } from '../save/journey';
 import { mapState, mapSvg } from './map';
 
 /** Only authored, already built chapters; neither test courses nor future places appear. */
@@ -44,7 +45,7 @@ export function createExplore(doc: Document, onSelect: (id: string) => void) {
     get open() { return !back.hidden; },
     show(save: PlayerSave) {
       focus = doc.activeElement instanceof HTMLElement ? doc.activeElement : null;
-      back.querySelector('.map')!.innerHTML = mapSvg({ ...mapState('epilog')!, here: mapState(save.chapter)?.here ?? 'home' });
+      back.querySelector('.map')!.innerHTML = mapSvg({ ...mapState('epilog')!, here: mapState(save.chapter)?.here ?? 'home' }, ghostNamed(save.flags));
       back.querySelector('.chapter-list')!.innerHTML = exploreHtml(save);
       back.hidden = false;
       back.querySelector<HTMLButtonElement>(`[data-chapter="${EXPLORE_CHAPTERS.some((chapter) => chapter.id === save.chapter) ? save.chapter : 'prolog'}"]`)!.focus();

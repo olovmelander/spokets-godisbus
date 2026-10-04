@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chapterQuery, rememberFlags, storyFinished, visitChapter } from '../../src/save/journey';
+import { chapterQuery, ghostNamed, rememberFlags, storyFinished, visitChapter } from '../../src/save/journey';
 import { newSave, readSave } from '../../src/save/store';
 import { EXPLORE_CHAPTERS, exploreHtml } from '../../src/ui/explore';
 
@@ -25,6 +25,8 @@ describe('visiting the story after its ending', () => {
     const loaded = readSave(JSON.stringify({ ...newSave(1, 'epilog'), flags: { epilog: flags } }));
     expect(loaded.kind === 'save' && storyFinished(loaded.save.flags)).toBe(true);
     expect(storyFinished({ berget: ['goal'] })).toBe(false);
+    expect(ghostNamed({ epilog: ['partied'] })).toBe(false);
+    expect(ghostNamed({ epilog: ['beat:named'] })).toBe(true);
   });
 
   it('migrates the old single checkpoint and drops malformed entries', () => {

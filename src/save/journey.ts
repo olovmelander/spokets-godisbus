@@ -5,6 +5,11 @@ export function storyFinished(flags: PlayerSave['flags']): boolean {
   return flags.epilog?.includes('goal') ?? false;
 }
 
+/** The name is a story discovery, carried into every later visit. */
+export function ghostNamed(flags: PlayerSave['flags']): boolean {
+  return flags.epilog?.includes('beat:named') ?? false;
+}
+
 /** The live goal resets on load; its saved completion must survive the next autosave. */
 export function rememberFlags(previous: readonly string[], live: ReadonlySet<string>): string[] {
   return [...new Set([...live, ...(previous.includes('goal') ? ['goal'] : [])])];
