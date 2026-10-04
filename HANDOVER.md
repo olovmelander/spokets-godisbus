@@ -10,22 +10,24 @@
   patch-equivalent. Main deployment `37204352024` succeeded for exactly `0a94b20`; the live
   `index-BziDHGfm.js` matches its deployment log and contains the memory/thought features. Fresh-browser
   checks of the plain address and `?debug&course=prolog` still open the test course. A new overhaul is on
-  `codex/storytelling-gameplay-overhaul`, with the published source snapshot at `6f7b494`; that newer source
+  `codex/storytelling-gameplay-overhaul`, with the published source snapshot at `a6038a1`; that newer source
   is separate from the verified deployed baseline.
   `RELEASED_CHAPTER` remains `null`.
 
-- **Integrated overhaul verification:** published source snapshot `6f7b494` (source-identical to tested
-  local `1ea852e`, with the handover updated afterward) passes 771 unit/robot tests in 76 files,
-  typecheck, the KTX asset build/size gate and privacy checks (383.5 KB gzip JavaScript; 712.4 KB public
+- **Integrated overhaul verification:** published source snapshot `a6038a1` (source-identical to tested
+  local `e754c06`, with the handover updated afterward) passes 774 unit/robot tests in 76 files,
+  typecheck, the KTX asset build/size gate and privacy checks (383.6 KB gzip JavaScript; 712.5 KB public
   boot). Focused browser checks passed for the opening (50), finale (57), family (52) and repeated model
   installation (30), alongside the chapter agents' actual loop playthroughs. The final warmup fix also
   passes nightfall (44), colour pipeline (14) and prologue (25) checks, including a hidden private-model
   substitute whose distinct physical material reveals without compiling during play.
   All 39 browser suite commands passed across the integration runs: the first 22 on `872bf24`, then
-  the remaining 17 on the final source after the hidden-material warmup repair. The warmup-sensitive
+  the remaining 17 on `6f7b494` after the hidden-material warmup repair. The warmup-sensitive
   colour pipeline, prologue and opening checks were also rerun against that repair. The original
-  nightfall assertion was retained and now passes. This is a split local gate; exact-head GitHub CI
-  runs all 39 suites on the published PR and remains pending at this handover.
+  nightfall assertion was retained and now passes. The subsequent required-origin handoff fix passes
+  the full context browser suite (85), including actual saved-game fast tasting/homeward completion,
+  all five layouts and larger phone text. This is a split local gate with a targeted follow-up;
+  exact-head GitHub CI runs all 39 suites on the published PR and remains pending at this handover.
 
 - **Story and connected gameplay overhaul implemented** (4 October; plan version 5 and
   `docs/storytelling-overhaul.md`).
@@ -45,6 +47,12 @@
     cues. The summit uses this visit's local flags; home/epilogue recaps use saved summit receipts, so
     past completion does not spoil a fresh summit replay. Position, a chapter preview or opening a menu
     cannot invent either discovery.
+  - The required reunion gives Pappa's origin story its own source. After actual rescue, painted eyes,
+    bag return and tasting, the untimed finale handoff explains that he carved the figure for Elof
+    when he was little and that they lost it on the mountain, alongside the candy motive. Fast
+    homeward travel can overtake the timed
+    bubbles, so this essential explanation remains readable on the existing end card. It does not
+    grant an optional memory or change the purpose/recap memory guard, input timing or saved flags.
   - Public rehearsal family bodies appear across all chapters and their practical help points. The
     finale shows painted eyes on the rescued carving, the chosen sweets at their recipients and a
     nearby family reunion; Elof then travels home visibly on Pappa's shoulders with both carvings.
