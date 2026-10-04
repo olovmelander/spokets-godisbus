@@ -17,7 +17,7 @@ describe('the two play styles', () => {
   it('Äventyr leaves the jumps and the swing to the player', () => {
     const settings = settingsFor('aventyr');
     expect(settings).toEqual({
-      style: 'aventyr', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true,
+      style: 'aventyr', followFinger: false, graphics: 'auto', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true,
       lefty: false, bigText: false, calm: false, loud: false, help: 'ask',
     });
     expect(simOptions(settings)).toEqual({ swingHelp: false, easyJumps: false, stopAtEdges: false, gentle: false, help: 'ask' });
@@ -48,6 +48,17 @@ describe('the two play styles', () => {
     for (const name of OWN_SWITCHES) expect(settingsFor('lugnt')[name], name).toBe(settingsFor('aventyr')[name]);
     expect(OWN_SWITCHES).toContain('lefty');
     expect(OWN_SWITCHES).not.toContain('loud');
+  });
+
+  it('loads old settings safely and round-trips the controls and graphics preferences', () => {
+    expect(readSettings({ style: 'lugnt' }).followFinger).toBe(false);
+    expect(readSettings({ followFinger: 'yes', graphics: 'ultra' })).toEqual(settingsFor('aventyr'));
+    for (const graphics of ['auto', 'low', 'mid', 'high'] as const) {
+      const settings = { ...settingsFor('aventyr'), followFinger: true, graphics };
+      const loaded = readSave(JSON.stringify(newSave(100, 'garden', settings)));
+      expect(loaded.kind === 'save' && loaded.save.settings).toEqual(settings);
+    }
+    expect(OWN_SWITCHES).toContain('followFinger');
   });
 
   it('lets every switch be changed on its own', () => {

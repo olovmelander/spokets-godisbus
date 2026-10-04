@@ -73,12 +73,17 @@ function start(): void {
   const loaded = store.load();
   const course = courseFor(params, loaded.kind === 'save' ? loaded.save.chapter : null);
   const chapter = at ? { ...course, spawn: at } : course;
+  let save: PlayerSave = loaded.kind === 'save' ? loaded.save : newSave(Date.now(), chapter.id);
+  let settings: Settings = debugOn && params.get('style') === 'lugnt' ? settingsFor('lugnt') : save.settings;
+  // A URL tier is a temporary inspection override. A deliberate menu choice replaces it.
+  let requestedGraphics = tierFromQuery(params.get('tier')) ?? settings.graphics;
   mountShell(document.body);
   const canvas = byId<HTMLCanvasElement>('game');
+  canvas.tabIndex = -1;
   let view: View;
   try {
     // ?standin keeps the figures built in code: for pictures that go into the repository (plan §2.6).
-    view = createView(canvas, chapter, tierFromQuery(params.get('tier')), params.has('standin'));
+    view = createView(canvas, chapter, requestedGraphics === 'auto' ? null : requestedGraphics, params.has('standin'));
   } catch (error) {
     console.error(error);
     showMessage(sv.noWebGL);
@@ -92,8 +97,6 @@ function start(): void {
     });
     return;
   }
-  let save: PlayerSave = loaded.kind === 'save' ? loaded.save : newSave(Date.now(), chapter.id);
-  let settings: Settings = debugOn && params.get('style') === 'lugnt' ? settingsFor('lugnt') : save.settings;
   // What he found under the deck comes with him to the party in the epilogue (plan §4.8, O2).
   // In a debug session, ?flags=a,b starts with those set: a moment late in a chapter can be looked at alone.
   const seeded = debugOn ? (params.get('flags') ?? '').split(',').filter((flag) => flag !== '') : [];
@@ -126,6 +129,7 @@ function start(): void {
     document.body.classList.toggle('lefty', settings.lefty);
     document.body.classList.toggle('big-text', settings.bigText);
     document.body.classList.toggle('calm', settings.calm);
+    document.body.classList.toggle('follow-finger', settings.followFinger);
   };
   apply();
   // Each part of the story plays the tune in its own way, and has its own air (plan §5.8).
@@ -193,11 +197,13 @@ function start(): void {
 
   // Pause: the game stands still, and the panel has the play style and "Jag har fastnat" (plan §6.10).
   let paused = false;
+  let ended = false;
+  let auto = !benchOn && requestedGraphics === 'auto' && view.info().tier === 'mid' ? createAutoTier() : null;
   function openPause(): void {
-    if (paused) return;
+    if (paused || ended || memories.open) return;
     paused = true;
     input.release();
-    pause.show(settings);
+    pause.show({ ...settings, graphics: requestedGraphics });
     writeSave();
   }
   function resume(): void {
@@ -206,11 +212,22 @@ function start(): void {
     pause.hide();
     input.release();
     game.resume();
+    canvas.focus();
   }
   const pause = createPause(document, {
     onResume: resume,
-    onSettings(next) {
-      settings = next;
+    onSettings(next, choice) {
+      input.release();
+      // Merely changing sound or play style must not save a temporary ?tier inspection override.
+      settings = { ...next, graphics: choice === 'graphics' ? next.graphics : settings.graphics };
+      if (choice === 'graphics') {
+        requestedGraphics = settings.graphics;
+        // A saved explicit selection must not be overridden on the next load by an old ?tier URL.
+        params.delete('tier');
+        history.replaceState(null, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`);
+        view.setTier(settings.graphics === 'auto' ? 'mid' : settings.graphics);
+        auto = !benchOn && settings.graphics === 'auto' && view.info().tier === 'mid' ? createAutoTier() : null;
+      }
       game.sim.options = simOptions(settings);
       game.tempo = tempoOf(settings);
       apply();
@@ -221,19 +238,35 @@ function start(): void {
       resume();
     },
   });
+  const hdrAvailable = view.info().hdrAvailable;
+  byId('graphicsFallback').hidden = hdrAvailable;
+  byId<HTMLButtonElement>('graphicsMid').disabled = !hdrAvailable;
+  byId<HTMLButtonElement>('graphicsHigh').disabled = !hdrAvailable;
   byId('pauseBtn').addEventListener('click', openPause);
+  function openBag(): void {
+    if (title.open || ended || memories.open) return;
+    if (!pause.open) openPause();
+    const album = byId('pauseAlbum');
+    if (!byId('pauseOptions').hidden) {
+      album.scrollIntoView({ block: 'start' });
+      album.focus();
+    }
+  }
+  byId('bag').addEventListener('click', openBag);
   // Moas karta, in the pause panel and on the chapter's card: where he is, and where the ghost is heading.
   for (const id of ['pauseMap', 'endMap']) byId(id).innerHTML = mapSvg(mapState(chapter.id));
   // The helper's button: a press is passed on with the next frame's presses, like H on a keyboard.
   let askedForHelp = false;
-  byId('helpBtn').addEventListener('click', () => (askedForHelp = true));
+  byId('helpBtn').addEventListener('click', () => {
+    if (!paused && !ended && !memories.open) askedForHelp = true;
+  });
 
   // The title (plan §6.10). A chapter starts behind it; the test course and a debug session start at once.
   // ?title shows it in a debug session too, for the browser test.
   const title = createTitle(document, {
     onStart(style) {
       if (style) {
-        settings = settingsFor(style);
+        settings = { ...settingsFor(style), graphics: settings.graphics, followFinger: settings.followFinger };
         game.sim.options = simOptions(settings);
         game.tempo = tempoOf(settings);
         apply();
@@ -242,6 +275,7 @@ function start(): void {
       paused = false;
       input.release();
       game.resume();
+      canvas.focus();
       writeSave();
     },
     onStartOver() {
@@ -278,9 +312,26 @@ function start(): void {
     {
       onDevice: showDevice,
       onKey: (key) => {
-        if (key === 'pause' && !title.open) (paused ? resume : openPause)();
+        if (key === 'bag') openBag();
+        else if (title.open) title.back();
+        else if (pause.open) pause.back();
+        else openPause();
       },
-      panelOpen: () => paused,
+      onBack: () => {
+        if (title.open) title.back();
+        else if (pause.open) pause.back();
+      },
+      focusScope: () => {
+        if (!byId('message').hidden) return byId('message');
+        if (title.open) return byId('title');
+        if (pause.open) return byId('pause');
+        if (ended) return byId('endCard');
+        if (memories.open) return byId('memory');
+        return null;
+      },
+      panelOpen: () => paused || ended || memories.open,
+      followFinger: () => settings.followFinger,
+      playerScreen: () => view.playerScreen(),
       upClimbs: () => game.sim.curr.mode === 'climb' || game.sim.curr.mode === 'swing',
     },
   );
@@ -307,7 +358,7 @@ function start(): void {
       state: () => ({
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
-        course: chapter.id, said: [...game.sim.said], title: title.open,
+        course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(),
       }),
       info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars }),
     };
@@ -315,9 +366,6 @@ function start(): void {
 
   // ?bench plays the course by itself for 30 seconds and then shows numbers to paste into a session.
   const bench = benchOn ? createBench(30, chapter) : null;
-  // Auto (plan §6.5): the picture starts at Mellan, and goes up to Hög if the device keeps up. Not while
-  // ?bench measures, and not when ?tier= asks for one.
-  const auto = !benchOn && tierFromQuery(params.get('tier')) === null && view.info().tier === 'mid' ? createAutoTier() : null;
 
   /** "Nästa kapitel": the saved game moves on to the next chapter's start, and the page loads it. */
   function goOn(id: string): void {
@@ -362,7 +410,7 @@ function start(): void {
     // The wood knocks while the ghost is in the picture: the chase (plan §5.8).
     const ghost = game.sim.ghost;
     audio.tick(ghost !== null && !ghost.gone && Math.abs(ghost.x - game.sim.curr.x) < 9);
-    if (paused || memories.open) {
+    if (paused || ended || memories.open) {
       // The panel's buttons still answer a gamepad. A memory plays over a game that waits.
       input.poll();
     } else {
@@ -430,7 +478,10 @@ function start(): void {
     hud.tick(paused || memories.open ? 0 : dt);
     // The end: a moment to arrive, then the card with the candy in rows of ten.
     if (atGoal) endFor += paused ? 0 : dt;
-    if (endFor > 1.4 && !benchOn) {
+    if (endFor > 1.4 && !benchOn && !ended) {
+      ended = true;
+      paused = true;
+      input.release();
       writeSave();
       const number = chapterNumber(chapter.id);
       const following = params.has('dev') ? nextAfter(chapter.id) : null;
@@ -440,6 +491,7 @@ function start(): void {
       const title = sv.end.named[chapter.id] ?? (number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course);
       const hidden = (chapter.hidden ?? []).map((h) => ({ kind: h.kind, found: game.sim.flags.has(foundFlag(h.kind)) }));
       hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, bonus ? sv.end.bonus : undefined);
+      byId(next ? 'endOnward' : 'endAgain').focus();
     }
 
     if (!shown) {

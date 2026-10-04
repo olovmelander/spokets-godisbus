@@ -2,8 +2,9 @@ import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
   Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PlaneGeometry, PointLight, Quaternion,
-  Scene, Shape, SphereGeometry, TorusGeometry, UnsignedByteType, Vector2, Vector3, WebGLRenderer,
+  Scene, Shape, SphereGeometry, TorusGeometry, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { createAssets } from './assets';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
@@ -22,6 +23,8 @@ const GROUND_FROM_BOTTOM = 0.35;
 
 export interface ViewInfo {
   tier: Tier;
+  /** Mid and High require renderable floating-point colour buffers. */
+  hdrAvailable: boolean;
   drawCalls: number;
   triangles: number;
   programs: number;
@@ -71,8 +74,10 @@ export interface Frame {
 
 export interface View {
   resize(): void;
-  /** Changes between Mid and High while the game runs: they differ in how many pixels are drawn, no more. */
-  setTier(next: 'mid' | 'high'): void;
+  /** Apply a level without resetting the scene. Call while paused when crossing Low, to warm its shaders. */
+  setTier(next: Tier): void;
+  /** The rendered player's centre on the play plane, in CSS client coordinates; null before the first frame. */
+  playerScreen(): { x: number; y: number } | null;
   render(frame: Frame): void;
   info(): ViewInfo;
 }
@@ -84,18 +89,19 @@ const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
 
 /**
  * Stage 0a's greybox scene: the test course, a stand-in Elof in his colours, and the big candy.
- * `asked` is the tier from ?tier=, or null for Auto. With `standIns` the figures built in code are kept even
+ * `asked` is the tier from settings or ?tier=, or null for Auto. With `standIns` the figures built in code are kept even
  * where the private pack has the family's models: for pictures that go into the repository.
  */
 export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null, standIns = false): View {
-  // The context is made here, so that the tier can be chosen before the renderer exists: Mid and High need
+  // The context is made here, so that support is known before allocating HDR targets: Mid and High need
   // float colour buffers, and a device without them gets Low (plan §6.5).
   const gl = canvas.getContext('webgl2', {
     alpha: false, antialias: false, depth: true, stencil: false, powerPreference: 'high-performance',
   });
   // main.ts catches this and shows the message.
   if (!gl) throw new Error('WebGL 2 is not available');
-  let tier = chooseTier(asked, gl.getExtension('EXT_color_buffer_float') !== null);
+  const hdrAvailable = gl.getExtension('EXT_color_buffer_float') !== null;
+  let tier = chooseTier(asked, hdrAvailable);
 
   const renderer = new WebGLRenderer({
     canvas,
@@ -103,17 +109,20 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     antialias: false,
     powerPreference: 'high-performance',
     alpha: false,
-    outputBufferType: tier === 'low' ? UnsignedByteType : HalfFloatType,
   });
   // Neutral keeps the colours that were set: a red house stays red (plan §6.5 names AgX or Neutral).
   renderer.toneMapping = NeutralToneMapping;
   // One frame is several render calls on Mid and High (the scene, the grade, the output), so the counters
   // are reset once per frame here, not by each call.
   renderer.info.autoReset = false;
-  // Mid and High: the scene goes to the HDR buffer, one pass grades it, and the renderer tone-maps the result.
+  // r186's outputBufferType is fixed at construction. Own the two HDR targets so a settings change can
+  // release them and draw Low straight to the canvas, keeping this renderer, its assets and the scene.
+  // Mid and High keep the same linear HDR → grade → Neutral/sRGB stages as r186's native setEffects path.
   const place = chapter.place ? PLACES[chapter.place] : null;
-  const gradePass = tier === 'low' ? null : createGradePass(place?.grade ?? GARDEN_MORNING);
-  if (gradePass) renderer.setEffects([gradePass]);
+  const gradePass = hdrAvailable ? createGradePass(place?.grade ?? GARDEN_MORNING) : null;
+  const outputPass = hdrAvailable ? new OutputPass() : null;
+  if (outputPass) outputPass.renderToScreen = true;
+  let hdr: { scene: WebGLRenderTarget; grade: WebGLRenderTarget } | null = null;
   // High glows; Mid does not.
   gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
   // Let the browser restore a lost context instead of leaving a dead canvas.
@@ -370,6 +379,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     pixelRatio = pixelRatioFor(tier, width, height, window.devicePixelRatio);
     renderer.setPixelRatio(pixelRatio);
     renderer.setSize(width, height, false);
+    if (tier === 'low') {
+      hdr?.scene.dispose();
+      hdr?.grade.dispose();
+      hdr = null;
+    } else {
+      hdr ??= {
+        scene: new WebGLRenderTarget(canvas.width, canvas.height, { type: HalfFloatType, stencilBuffer: false }),
+        grade: new WebGLRenderTarget(canvas.width, canvas.height, { type: HalfFloatType, depthBuffer: false, stencilBuffer: false }),
+      };
+      hdr.scene.setSize(canvas.width, canvas.height);
+      hdr.grade.setSize(canvas.width, canvas.height);
+      gradePass?.setSize(canvas.width, canvas.height);
+    }
     camera.aspect = width / height;
     // Elof is about 78 px tall on a phone held sideways, and the view is never narrower than 6 EL.
     const elofPx = clamp(height * 0.2, 75, 140);
@@ -382,7 +404,38 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let ghostSize = 1;
   let warm = 2;
   let warmedFor = 0;
+  let hasFrame = false;
   const unculled: Object3D[] = [];
+  const projectedPlayer = new Vector3();
+
+  /** Draws the current scene without advancing a camera, animation or simulation clock. */
+  function draw(): void {
+    renderer.info.reset();
+    if (warm > 0) {
+      scene.traverse((object) => {
+        if (!object.frustumCulled) return;
+        object.frustumCulled = false;
+        unculled.push(object);
+      });
+    }
+    try {
+      renderer.setRenderTarget(hdr?.scene ?? null);
+      // A normal (non-XR) render target uses linear output without material tone mapping.
+      renderer.render(scene, camera);
+      if (hdr && gradePass && outputPass) {
+        gradePass.render(renderer, hdr.grade, hdr.scene);
+        outputPass.render(renderer, hdr.grade, hdr.grade, 0, false);
+      }
+    } finally {
+      renderer.setRenderTarget(null);
+      if (warm > 0) {
+        for (const object of unculled) object.frustumCulled = true;
+        unculled.length = 0;
+        warm--;
+      }
+    }
+  }
+
   function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries }: Frame): void {
     rain.update(drips);
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
@@ -538,40 +591,49 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         bendJoint(one.hands[i] ?? null, up > 0 ? -0.2 * up : -0.08, ease(10, dt));
       }
     }
-    renderer.info.reset();
     // Gate 6 (plan §6.12): no shader is compiled during play. The first frames, and the first after a model
     // has arrived, draw the whole chapter, in view or not, so that every material's shader exists from then on.
     if (models.length !== warmedFor) {
       warmedFor = models.length;
       warm = 2;
     }
-    if (warm > 0) {
-      scene.traverse((object) => {
-        if (!object.frustumCulled) return;
-        object.frustumCulled = false;
-        unculled.push(object);
-      });
-    }
-    renderer.render(scene, camera);
-    if (warm > 0) {
-      for (const object of unculled) object.frustumCulled = true;
-      unculled.length = 0;
-      warm--;
-    }
+    draw();
+    hasFrame = true;
   }
 
   return {
     resize,
     render,
     setTier(next) {
-      // Low has other buffers and no grading pass: it is chosen when the game starts, and stays.
-      if (tier === 'low' || tier === next) return;
-      tier = next;
+      const chosen = chooseTier(next, hdrAvailable);
+      if (tier === chosen) return;
+      const changesPipeline = (tier === 'low') !== (chosen === 'low');
+      tier = chosen;
       gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
       resize();
+      // Low and HDR need different material variants. Compile against their actual play targets before
+      // the paused settings handler returns. Mid ↔ High changes only pixels and the glow uniform.
+      if (changesPipeline) {
+        warm = 2;
+        if (hasFrame) while (warm > 0) draw();
+      }
+    },
+    playerScreen() {
+      if (!hasFrame) return null;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return null;
+      elof.group.localToWorld(projectedPlayer.set(0, 0.5, 0));
+      projectedPlayer.z = 0;
+      projectedPlayer.project(camera);
+      if (!Number.isFinite(projectedPlayer.x) || !Number.isFinite(projectedPlayer.y) || Math.abs(projectedPlayer.z) > 1) return null;
+      return {
+        x: rect.left + (projectedPlayer.x + 1) * rect.width / 2,
+        y: rect.top + (1 - projectedPlayer.y) * rect.height / 2,
+      };
     },
     info: () => ({
       tier,
+      hdrAvailable,
       drawCalls: renderer.info.render.calls,
       triangles: renderer.info.render.triangles,
       programs: renderer.info.programs?.length ?? 0,

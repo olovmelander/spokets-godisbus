@@ -1,4 +1,7 @@
 import type { HelpLevel, SimOptions } from '../sim/types';
+import { tierFromQuery, type Tier } from '../render/quality';
+
+export type Graphics = 'auto' | Tier;
 
 /** The two play styles of plan §4.1. *Äventyr* is Elof's; *Lugnt* is the gentler game for anyone who wants it. */
 export type PlayStyle = 'aventyr' | 'lugnt';
@@ -6,6 +9,10 @@ export type PlayStyle = 'aventyr' | 'lugnt';
 /** What a player has chosen. It is saved with the player (plan §6.9). */
 export interface Settings {
   style: PlayStyle;
+  /** Walk towards a held finger instead of using the floating stick. */
+  followFinger: boolean;
+  /** The player's picture preference. Auto measures once per choice/session. */
+  graphics: Graphics;
   /** *Hjälp med svingen*: the swing pumps itself and always lands. */
   swingHelp: boolean;
   /** *Lätta hopp*: running to a marked edge jumps by itself, and the jump is steered to its landing. */
@@ -30,16 +37,16 @@ export interface Settings {
 
 /** The switches each style starts with. Every one of them can then be changed on its own. */
 const SWITCHES: Record<PlayStyle, Omit<Settings, 'style'>> = {
-  aventyr: { swingHelp: false, easyJumps: false, slower: false, sound: true, music: true, lefty: false, bigText: false, calm: false, loud: false, help: 'ask' },
+  aventyr: { followFinger: false, graphics: 'auto', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true, lefty: false, bigText: false, calm: false, loud: false, help: 'ask' },
   // On Lugnt the sounds carry what a younger player can't read, so the silent switch doesn't take them.
-  lugnt: { swingHelp: true, easyJumps: true, slower: false, sound: true, music: true, lefty: false, bigText: false, calm: false, loud: true, help: 'remind' },
+  lugnt: { followFinger: false, graphics: 'auto', swingHelp: true, easyJumps: true, slower: false, sound: true, music: true, lefty: false, bigText: false, calm: false, loud: true, help: 'remind' },
 };
 
 /** The settings that are a switch: on or off. */
-export type Switch = 'swingHelp' | 'easyJumps' | 'slower' | 'sound' | 'music' | 'lefty' | 'bigText' | 'calm' | 'loud';
-export const SWITCH_NAMES: Switch[] = ['swingHelp', 'easyJumps', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm', 'loud'];
+export type Switch = 'followFinger' | 'swingHelp' | 'easyJumps' | 'slower' | 'sound' | 'music' | 'lefty' | 'bigText' | 'calm' | 'loud';
+export const SWITCH_NAMES: Switch[] = ['followFinger', 'swingHelp', 'easyJumps', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm', 'loud'];
 /** The ones that are the player's own, whatever the style: choosing a style leaves them as they are. */
-export const OWN_SWITCHES: Switch[] = ['slower', 'sound', 'music', 'lefty', 'bigText', 'calm'];
+export const OWN_SWITCHES: Switch[] = ['followFinger', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm'];
 
 export const SLOWER_TEMPO = 0.8;
 
@@ -67,5 +74,6 @@ export function readSettings(value: unknown): Settings {
   const base = settingsFor(style);
   const flag = (key: Switch) => (typeof from[key] === 'boolean' ? (from[key] as boolean) : base[key]);
   const help: HelpLevel = from.help === 'ask' || from.help === 'remind' || from.help === 'guide' ? from.help : base.help;
-  return { style, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower'), sound: flag('sound'), music: flag('music'), lefty: flag('lefty'), bigText: flag('bigText'), calm: flag('calm'), loud: flag('loud'), help };
+  const graphics: Graphics = tierFromQuery(typeof from.graphics === 'string' ? from.graphics : null) ?? 'auto';
+  return { style, followFinger: flag('followFinger'), graphics, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower'), sound: flag('sound'), music: flag('music'), lefty: flag('lefty'), bigText: flag('bigText'), calm: flag('calm'), loud: flag('loud'), help };
 }

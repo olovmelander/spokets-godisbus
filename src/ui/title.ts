@@ -23,6 +23,8 @@ export interface Title {
   /** Shows the choice of play style, as after Börja. */
   showStyles(): void;
   hide(): void;
+  /** Return from the style choice or chapter code to the title. */
+  back(): void;
 }
 
 export function createTitle(doc: Document, handlers: TitleHandlers): Title {
@@ -88,6 +90,12 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
       byId('startBtn').focus();
     },
     showStyles,
+    back() {
+      if (!styles.hidden || !form.hidden) {
+        draw();
+        byId('startBtn').focus();
+      }
+    },
     hide() {
       open = false;
       back.hidden = true;

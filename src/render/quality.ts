@@ -2,8 +2,8 @@
  * Quality tiers (plan §6.5). The game is tuned for High on the family's devices; Low and Mid keep it playable
  * elsewhere.
  *  - Low renders straight to the canvas, with tone mapping in the materials and no post-processing.
- *  - Mid and High render to r186's HDR buffer and run one grading pass.
- * Bloom and the depth blur of High, and the grade inside the materials for Low, come with the golden frames.
+ *  - Mid and High render to HDR buffers and run one grading pass, with glow on High.
+ * High's depth blur and the grade inside the materials for Low still wait for the golden frames.
  */
 export type Tier = 'low' | 'mid' | 'high';
 
@@ -23,7 +23,7 @@ export function tierFromQuery(value: string | null): Tier | null {
 }
 
 /**
- * The tier to start in. A device that can't render to float buffers gets Low, whatever was asked for.
+ * The tier to use at startup or after a settings change. Without float buffers it is always Low.
  * Auto starts in Mid, and may go up to High once play has shown that the device keeps up: see `createAutoTier`.
  */
 export function chooseTier(asked: Tier | null, floatBuffers: boolean): Tier {
@@ -53,8 +53,8 @@ export interface AutoTier {
 const middle = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] ?? 0;
 
 /**
- * Auto (plan §6.5). High draws more pixels than Mid and nothing else, so the two can be changed between
- * while the game runs. The game starts at Mid, measures how long its frames take, tries High, and keeps it
+ * Auto (plan §6.5). High draws more pixels than Mid and enables the grading pass's glow uniform, so the two
+ * can change without compiling shaders. The game starts at Mid, measures its frames, tries High, and keeps it
  * if the frames still come on time. If they don't, it goes back to Mid. One try: the picture never goes
  * back and forth.
  */

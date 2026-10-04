@@ -47,7 +47,7 @@ const p = sv.pause;
 export function mountShell(root: HTMLElement): void {
   root.insertAdjacentHTML(
     'beforeend',
-    `<div class="bag" id="bag" role="status">${BAG}<span id="bagCount">0</span><span class="stickers" id="bagStickers"></span></div>
+    `<button class="bag" id="bag" type="button">${BAG}<span id="bagCount">0</span><span class="stickers" id="bagStickers"></span></button>
      <button class="corner" id="pauseBtn" type="button" aria-label="${p.open}">${PAUSE}</button>
      <button class="corner help" id="helpBtn" type="button" aria-label="${sv.help}">${BIRD}</button>
      <div class="controls" id="controls" hidden>
@@ -65,6 +65,7 @@ export function mountShell(root: HTMLElement): void {
        <div class="panel" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
          <button class="panel-close" id="pauseClose" type="button" aria-label="${p.close}">${CROSS}</button>
          <h2 id="pauseTitle">${p.title}</h2>
+         <div class="pause-options" id="pauseOptions">
          <button class="wide go" id="resumeBtn" type="button">${PLAY}<span>${p.resume}</span></button>
          <h3 id="styleTitle">${p.style}</h3>
          <div class="styles" role="radiogroup" aria-labelledby="styleTitle">
@@ -73,6 +74,8 @@ export function mountShell(root: HTMLElement): void {
          </div>
          <label class="switch"><input type="checkbox" id="setSwingHelp"><span>${p.swingHelp}</span></label>
          <label class="switch"><input type="checkbox" id="setEasyJumps"><span>${p.easyJumps}</span></label>
+         <label class="switch"><input type="checkbox" id="setFollowFinger" aria-describedby="followHint"><span>${p.followFinger}</span></label>
+         <p class="setting-hint" id="followHint">${p.followHint}</p>
          <label class="switch"><input type="checkbox" id="setSlower"><span>${p.slower}</span></label>
          <label class="switch"><input type="checkbox" id="setSound"><span>${p.sound}</span></label>
          <label class="switch"><input type="checkbox" id="setMusic"><span>${p.music}</span></label>
@@ -80,6 +83,16 @@ export function mountShell(root: HTMLElement): void {
          <label class="switch"><input type="checkbox" id="setLefty"><span>${p.lefty}</span></label>
          <label class="switch"><input type="checkbox" id="setBigText"><span>${p.bigText}</span></label>
          <label class="switch"><input type="checkbox" id="setCalm"><span>${p.calm}</span></label>
+         <h3 id="graphicsTitle">${p.graphics}</h3>
+         <div class="levels graphics" role="radiogroup" aria-labelledby="graphicsTitle" aria-describedby="graphicsHint">
+           <button class="level" id="graphicsAuto" type="button" role="radio">${p.graphicsAuto}</button>
+           <button class="level" id="graphicsLow" type="button" role="radio">${p.graphicsLow}</button>
+           <button class="level" id="graphicsMid" type="button" role="radio">${p.graphicsMid}</button>
+           <button class="level" id="graphicsHigh" type="button" role="radio">${p.graphicsHigh}</button>
+         </div>
+         <p class="setting-hint" id="graphicsHint">${p.graphicsHint}</p>
+         <p class="setting-hint" id="graphicsFallback" role="status" hidden>${p.graphicsFallback}</p>
+         <button class="wide" id="controlsReferenceBtn" type="button">${sv.controls.title}</button>
          <h3 id="helpTitle">${BIRD}<span>${p.help}</span></h3>
          <div class="levels" role="radiogroup" aria-labelledby="helpTitle">
            <button class="level" id="helpAsk" type="button" role="radio">${p.helpAsk}</button>
@@ -87,12 +100,20 @@ export function mountShell(root: HTMLElement): void {
            <button class="level" id="helpGuide" type="button" role="radio">${p.helpGuide}</button>
          </div>
          <div class="map" id="pauseMap"></div>
-         <div class="album" id="pauseAlbum"></div>
+         <div class="album" id="pauseAlbum" tabindex="-1"></div>
          <button class="wide" id="stuckBtn" type="button">${BIG_CANDY}<span>${p.stuck}</span></button>
          <div class="ask" id="stuckAsk" hidden>
            <p>${p.stuckAsk}</p>
            <button class="yes" id="stuckYes" type="button" aria-label="${p.stuckYes}">${CHECK}${BIG_CANDY}</button>
            <button class="no" id="stuckNo" type="button" aria-label="${p.stuckNo}">${CROSS}${PLAY}</button>
+         </div>
+         </div>
+         <div class="controls-reference" id="controlsReference" hidden>
+           <button class="wide" id="controlsBack" type="button">${sv.controls.back}</button>
+           <h3>${sv.controls.keyboard}</h3>
+           <dl>${sv.controls.keyboardRows.map(([key, action]) => `<div><dt>${key}</dt><dd>${action}</dd></div>`).join('')}</dl>
+           <h3>${sv.controls.gamepad}</h3>
+           <dl>${sv.controls.gamepadRows.map(([key, action]) => `<div><dt>${key}</dt><dd>${action}</dd></div>`).join('')}</dl>
          </div>
        </div>
      </div>
