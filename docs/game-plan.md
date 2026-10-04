@@ -1,6 +1,12 @@
 # Elof och det stora godisäventyret
 
-Game plan, version 4 — 3 October 2026. Repository `olovmelander/spokets-godisbus`.
+Game plan, version 5 — 4 October 2026. Repository `olovmelander/spokets-godisbus`.
+
+Version 5 records Olov's direction to improve the story, its opening, the family's role and the levels'
+connected puzzles, informed by research into indie adventures and platformers. The concrete design,
+primary sources, implemented development scope and acceptance criteria are in
+[the storytelling and level overhaul addendum](storytelling-overhaul.md). The 3 October decisions below
+remain the canon; this addendum clarifies how the player sees and understands them.
 
 Version 4 takes in Olov's second round of answers of 3 October. They settle every question that version 3 left
 open (§0):
@@ -16,9 +22,15 @@ open (§0):
 §8 lists what changed in each version. Version 3 took in Olov's first answers; version 2 was version 1 revised
 after a five-angle review.
 
-This is a design and implementation proposal. Nothing is built yet, and nothing has been measured on the
-family's devices. Numbers are starting values to tune. Everything that was checked while planning is listed in
-Appendix A, with how it was checked; everything else is marked as an estimate or as unverified.
+**Current status.** The original 3 October proposal was written before implementation. Its statement
+"Nothing is built yet" is historical: the whole story now has a playable development implementation,
+with the causal opening, durable context, family rehearsal bodies, finale staging and local loops in
+Gården, Granskogen, Myren and Berget developed in a separate PR stack. `HANDOVER.md` records the current
+code, verification and deployment state. Main collectible/checkpoint identities and old-save progression
+remain intact; `RELEASED_CHAPTER` remains `null`. Final art, acting, broader spatial world work, a Byn
+return loop, listening and family-device checkpoints remain open. The durations,
+budgets and hardware assumptions in the original proposal are starting values, not new measurements.
+Appendix A records the original planning checks.
 
 **Who reads this:**
 - **Olov**, Elof's morbror, who commissions the game and builds it with Claude: the decisions in §0 and the
@@ -74,7 +86,8 @@ Appendix C lists exactly what carries over. What is new here:
 - **Tekniken.**
   - Three.js r186 med `WebGLRenderer` (WebGL 2): ditt val, och det som mätningarna också pekade på.
   - Vite 8, TypeScript, planck.js för fysiken.
-  - GitHub Actions bygger och publicerar på GitHub Pages. `main` finns nu, med en tillfällig startsida.
+  - GitHub Actions bygger och publicerar på GitHub Pages. Hela berättelsen har ett spelbart utvecklingsbygge;
+    `HANDOVER.md` skiljer det som är publicerat från senare ändringar i PR-stacken.
 - **Grafiken.**
   - Du utvecklar på din dator (Windows, RTX 3070), där Claude styr Blender genom MCP. Modeller, riggar,
     animationer, bakning och bakgrunder görs där, och du kan rätta allt direkt i Blender.
@@ -89,10 +102,15 @@ Appendix C lists exactly what carries over. What is new here:
 - **Test och datum.** Bara du testar innan Elof spelar. Inga datum är satta: varje steg är klart när dess
   kontrollpunkt är godkänd.
 - **Nästa steg.**
-  1. Koppla Blender till Claude Code: installera `uv`, och godkänn servern i `.mcp.json` (`HANDOVER.md`).
-  2. Steg 0a: grundbygget live på Pages.
-  3. Steg 0b och 0c: en provbild av gården testad på enheterna, och en första Elof och ett första spöke i 3D.
-  4. Sedan en kort ”vertikal skiva” i färdig kvalitet, innan hela kapitel byggs.
+  1. Bedöm den byggda början och det löpande målet: familjen ser krympningen, hjälper vid korsningarna och
+     möter Elof i finalen. Provfigurerna och återfärden på Pappas axlar är inte färdigt skådespel.
+  2. Spela de byggda slingorna: Moas pappersficka och medveten ombordstigning, Granskogens viktpussel och
+     återbesök, Mammas spång efter tranungens hemkomst och Bergets återväg runt röset.
+  3. Kontrollera att godismotivet framgår efter räddningen, ögonmålningen och den återtagna påsen även om
+     bergsminnet missades. I målet och återblicken förutsätter "min gamla trägubbe" att minnet har upptäckts.
+  4. Fördjupa världen och planera Byns återvändarslinga; granska ljud och bild på de riktiga enheterna.
+     Färdig familjekonst och skådespel kräver Olovs dator. Se
+     [tilläggets genomförandeordning](storytelling-overhaul.md#implementation-order).
 
 ---
 
@@ -129,6 +147,17 @@ Appendix C lists exactly what carries over. What is new here:
 | 15. Betalt 3D-verktyg | Du har Blender MCP med Poly Haven. Ska alla figurer formges? | Inget verktyg köps. Ja, alla figurer formges i Blender, men i tur och ordning och olika mycket (§5.6): först Elof och spöket, sedan familjen, lilla Elof, trägubbarna och djuren. Poly Haven ger material, naturmodeller och himlar, men inga figurer. |
 | 16. Din dator | Windows med ett RTX 3070 | Blender renderar och bakar på grafikkortet. Utan Mac felsöks iPad och iPhone med `?debug` och `?bench` på skärmen (§6.14). |
 | 17. Vilken enhet | Det är blandat | Ingen enhet går före. De tre klasserna väger lika, och kapitelkoderna som flyttar framsteg mellan enheterna blir viktigare (§6.9). |
+
+### Ny inriktning den 4 oktober
+
+Olov vill förbättra berättelsen och hur spelaren förstår den, undersöka bra indiespel på webben och göra
+banornas pussel mer sammanhängande. Krympningen ska ske synligt nära familjen, deras hjälp ska ha en tydlig
+orsak, och finalen ska förklara varför spöket tog just godiset. Det är en utveckling av den godkända
+berättelsen, inte en ny hemlighet. [Tillägget](storytelling-overhaul.md) beskriver den byggda utvecklingsomgången:
+gemensam krympningsscen, löpande sammanhang, familjens provfigurer, finalens målade ögon och delade
+godis samt lokala slingor i Gården, Granskogen, Myren och Berget. Större ombyggnad av världen, Byns slinga,
+färdig konst och skådespel samt lyssnings- och enhetsbedömning återstår. Gamla framsteg behåller sin
+betydelse, och releasegränsen är fortfarande `null`.
 
 ### Kvar att svara på
 
@@ -557,6 +586,12 @@ From the end of Kapitel 2 on: "Varför tog spöket godiset – och varför vänt
 
 ### 3.4 Beat outline (Version 1.0)
 
+Version 5's [opening and chapter design](storytelling-overhaul.md#opening-cause-and-effect) clarifies this
+outline: the theft, torn bag and star are visible causes, shrinking is witnessed beside the family, and
+the current purpose evolves across chapters. The development scope also includes local return routes,
+family rehearsal bodies and the finale's visible painting, sharing and shoulder carry. The original beats
+and character history below remain the story's basis; rehearsed scenes are not evidence of final art.
+
 The day runs from morning to night through one Saturday in late September (*brittsommar*). In Bredbyn on 26
 September 2026 the sun rises at 06:42 and sets at 18:35, and at noon it stands only about 25° high, so the light
 is low and long all day (Appendix A). Version 1.1 additions are marked **[1.1]**. Exciting sequences are **E1–E4**
@@ -783,6 +818,16 @@ Näckens fiol (O5).
   *Pling.* It blinks.
 
 ### 3.5 Why the ghost did it (told only in pictures until the summit)
+
+**Version 5 comprehension requirement.** At the summit, the pictures and a short explicit explanation
+connect the lost first carving to the Saturday sweets: the ghost took the bag for a welcome-home party,
+the way little Elof used to share with it. Revealing that it wants to recover the figure alone does not
+explain the candy theft. The explicit motive is gated by actual carving rescue, painted eyes and bag
+recovery; it must still appear if the optional mountain memory was missed. Personal purpose/recap wording such as
+"min gamla trägubbe" remains guarded by that memory's discovery. Before the finale gate, goals and recaps
+show only what Elof has already learned; later recaps retain the appropriate motive without inventing a
+memory discovery.
+See [the purpose progression and reveal](storytelling-overhaul.md#purpose-and-recap).
 
 The ghost came alive through Pappa's hands and Elof's eyes, so it carries a little of both, including Pappa's
 memory of his very first trägubbe: carved for three-year-old Elof, who shared his Saturday sweets with it, and
@@ -2421,6 +2466,30 @@ Cloud sessions stay useful for code-only work and reviews, and both follow the s
 ---
 
 ## 8. What changed between versions
+
+### Version 5: story comprehension and connected puzzles (4 October 2026)
+
+1. The original "nothing is built" state is identified as historical. `HANDOVER.md` is authoritative for
+   code, checks, releases and deployment; this plan still describes work beyond the current stand-ins.
+2. [The overhaul addendum](storytelling-overhaul.md) records six primary game/developer sources and
+   distinguishes their descriptions from our proposed application.
+3. The opening establishes painting → waking → theft → torn bag → spilled star → witnessed shrinking.
+   The family sees and reassures Elof nearby, and its later practical help follows from that encounter.
+4. Durable current-purpose, pause/title recap and chapter handoff reconnect the player to the story. The
+   summit motive requires actual rescue/eyes/bag but survives a missed mountain memory; "min gamla" and
+   childhood identity in those cues still require that discovered memory.
+5. Implemented local loops cover Moa's optional paper pocket and explicit boarding, the forest weight
+   experiment and returned-to doorway picture, Mamma's persistent bog boardwalk after chick reunion, and
+   the optional mountain prize's reusable return lace. Main collectible/checkpoint meaning and old saves
+   are preserved; these loops are not a new global quest engine or a complete spatial-world redesign.
+6. Public family rehearsal bodies now stage practical roles across all chapters. The finale shows painted
+   first-carving eyes, chosen shared sweets and Elof carried home on Pappa's shoulders, with private-model
+   compatibility. Final likeness, contact and nuanced acting remain open.
+7. Acceptance includes comprehension, legitimate solve orders, failure feedback, retry, optional-route
+   independence, interrupted sessions, accessibility and all five device layouts. Passing browser checks
+   does not substitute for Olov's judgement of final art, sound and family-device play.
+8. Broader spatial work and Byn's return loop remain later outcomes. `RELEASED_CHAPTER` remains `null`;
+   neither these development changes nor this document approve publishing or release.
 
 ### Version 4: Olov's second round of answers (3 October 2026)
 
