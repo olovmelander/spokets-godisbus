@@ -93,7 +93,9 @@ const LEE_SHELVES: Ledge[] = BOULDERS.flatMap((x, i) => [
   { x, y: LEE.high, width: LEE.width, look: 'stone' as const },
 ]);
 // A row of rings at the first ring's height, one boulder apart: the swing has the same beat as the dash below.
-const LEE_RINGS: Hook[] = BOULDERS.slice(1).map((x, i) => ({ x: Math.round((BOULDERS[i]! + x) * 5) / 10, y: SHELF_RING.y, length: 2.6, extra: true }));
+const LEE_RINGS: Hook[] = BOULDERS.slice(1).map((x, i) => (
+  { x: Math.round((BOULDERS[i]! + x) * 5) / 10, y: SHELF_RING.y, length: 2.6, extra: true }
+));
 
 /**
  * Toppröset: these are the shelves' tops. The first is too high to grab from the ordinary path without

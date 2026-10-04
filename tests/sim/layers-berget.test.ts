@@ -387,4 +387,45 @@ describe('the lee shelves, and the rings between the boulders', () => {
       expect(sim.blown).toBe(0);
     }
   });
+
+  it('are never a dead end for careless hands: no waiting for gusts, a let-go anywhere on the swing, and he still gets there', () => {
+    const ramps = boulders.slice(0, -1);
+    const end = boulders[boulders.length - 1]!;
+    for (let seed = 1; seed <= 8; seed++) {
+      // The same careless child every time the test is run: a small generator of his own.
+      let state = seed;
+      const random = () => (state = (state * 1664525 + 1013904223) >>> 0) / 4294967296;
+      const mood = () => ({ release: 0.2 + random() * 0.9, wait: Math.round((random() * 1.5) / STEP) });
+      const sim = at(108.4, GRANITE);
+      let now = mood();
+      let i = 0;
+      for (; i < 180 / STEP && !(sim.curr.grounded && Math.abs(sim.curr.y - HIGH) < 0.1 && Math.abs(sim.curr.x - end) < GUST_SHELTER); i++) {
+        const p = sim.curr;
+        const input = { ...idle, hopHeld: true };
+        if (p.mode === 'swing') {
+          // He pushes on, and lets go wherever the mood takes him.
+          input.x = 1;
+          if (p.vx > 0 && angleOf(sim) > now.release) {
+            input.hop = true;
+            now = mood();
+          }
+        } else if (p.mode === 'free' && p.grounded && Math.abs(p.y - HIGH) < 0.1) {
+          // On a top: over to its far side, and the lace when he feels like it, whatever the wind does.
+          const boulder = boulders.reduce((a, b) => (Math.abs(b - p.x) < Math.abs(a - p.x) ? b : a));
+          if (p.x < boulder + 0.25) input.x = 0.5;
+          else if (now.wait-- <= 0 && p.verb === 'lace') input.act = true;
+        } else if (p.mode === 'free' && p.grounded && Math.abs(p.y - LOW) < 0.1) {
+          input.hop = true;
+        } else if (p.mode === 'free' && p.grounded) {
+          // Down on the granite: to the boulder he was taken back to, and up its two shelves again.
+          const boulder = [...ramps].reverse().find((b) => b <= p.x + GUST_SHELTER) ?? ramps[0]!;
+          if (Math.abs(p.x - boulder) > 0.12) input.x = Math.sign(boulder - p.x) * (Math.abs(p.x - boulder) > 0.6 ? 1 : 0.5);
+          else input.hop = true;
+        }
+        sim.step(input);
+      }
+      expect(i * STEP, `careless child ${seed} is at ${sim.curr.x.toFixed(1)},${sim.curr.y.toFixed(1)}`).toBeLessThan(120);
+      expect(sim.bubbles, `careless child ${seed}`).toBe(0);
+    }
+  });
 });
