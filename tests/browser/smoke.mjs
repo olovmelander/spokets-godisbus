@@ -207,7 +207,10 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   await sleep(600);
   const programs = (await info()).programs;
   await page.keyboard.down('ArrowRight');
-  const ran = await until(state, (s) => s.x > far);
+  // High's forest effects can slow SwiftShader enough to reach the boundary just after 15 seconds.
+  // Keep the exact traversal and performance predicates; only this software-rendered wait gets longer.
+  const traversalTimeout = course === 'look-forest' && tier === 'high' ? 30000 : 15000;
+  const ran = await until(state, (s) => s.x > far, traversalTimeout);
   await page.keyboard.up('ArrowRight');
   check(`${tier}: he runs through it`, ran.x > far, `x ${ran.x.toFixed(1)}`);
   check(`${tier}: no shader was compiled on the way`, (await info()).programs === programs, `${programs} programs`);
