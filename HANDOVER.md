@@ -14,6 +14,25 @@
   is separate from the verified deployed baseline.
   `RELEASED_CHAPTER` remains `null`.
 
+- **The family's models are on the site** (4 October, in the evening). Olov: "I want to implement the all
+  family characters now in the main branch." Pappa, Mamma, Moa and Bertil's first models were committed to
+  the private repository (`379a9ec` there) and *Deploy to GitHub Pages* was run by hand on `main` (`368a074`).
+  Nothing in this repository changed for it: the code already replaced each rehearsal figure with that
+  person's model wherever the private pack has one, in the opening, at every help point, on the summit and
+  at the party.
+  - **They are in the private repository, never in this one.** That is how "in the main branch" was done:
+    the rules keep the family's models out of the public history, so that they can be taken down.
+  - **Three-year-old Elof (`lill-elof`) was held back.** No part of the game uses him yet, so publishing
+    him would only put a file of a three-year-old on the site. He is still on Olov's computer, untracked.
+    He goes up with the first memory that shows him, or sooner if Olov says so.
+  - **These are the first round,** built in Blender by script on 4 October, not the image-to-3D models
+    that CLAUDE.md names as the way the family is to be made. They stand in the game until those exist.
+    What each needs next is listed under "The family, first models".
+  - **To take them down:** delete their files from `baked/private/` in the private repository (or the
+    secret `FAMILY_ASSETS_KEY`) and run the deploy again. The rehearsal figures come back.
+  - **On a device that has played before,** the service worker may show the older pack once: open the game
+    and reload, as before any release.
+
 - **Integrated overhaul verification:** published source snapshot `a6038a1` (source-identical to tested
   local `e754c06`, with the handover updated afterward) passes 774 unit/robot tests in 76 files,
   typecheck, the KTX asset build/size gate and privacy checks (383.6 KB gzip JavaScript; 712.5 KB public
@@ -128,8 +147,9 @@
     modelled in Blender; his call, and each one's answer; the dew bells.
   - **What Olov asked for on 4 October, and how far it got:**
     - *"Improving and creating all character models in blender":* Pappa, Mamma, Moa, Bertil and
-      three-year-old Elof have first models. They are on his computer only, waiting for his eyes and his
-      word (question 6). The jay has a first model too, and is on the site. Elof and the ghost were not
+      three-year-old Elof have first models. The four were published that evening on his word;
+      three-year-old Elof waits for a memory that uses him. The jay has a first model too, and is on the
+      site. Elof and the ghost were not
       reworked. The other animals are still built in code.
     - *"Better graphics in the background and parallax effect background":* done for every place.
     - *"Improve all assets and graphics on all levels":* the far scenery and High's glow reach every
@@ -1084,8 +1104,9 @@
     - **Blender, for the next session:** the scratchpad's small client hung for seven minutes on a script
       with a section sign in it; keep scripts sent to Blender in plain ASCII. Safe mode also rejects calling
       a function passed as a parameter. The add-on still reports itself outdated; telemetry consent is false.
-    - **Not published.** The models are untracked files in the private repository's folder. Nothing was
-      committed or pushed there, so the site is unchanged. Publishing them is Olov's word (question 6).
+    - **Published on 4 October, in the evening,** on Olov's word: Pappa, Mamma, Moa and Bertil are
+      committed in the private repository and deployed. Three-year-old Elof is still an untracked file
+      on Olov's computer (see the top of "State").
     - **Pictures for Olov:** each model beside its reference pictures, and the family in a row, are in
       `photos/renders/2026-10-04-family/` on his computer (git ignores `photos/`).
     - **Not yet:** poses (they stand still, arms down), hands doing things, sitting at the table, any
@@ -1359,12 +1380,10 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
    - Whichever you choose, better pictures give a better model: each view of Elof alone, full height, 1024 by
      1536, plain background, arms a little out. The views cut from the sheet are small and soft; they are in
      `art/private/elof/image-to-3d/` and will do for a first try.
-6. **May the family's models go on the site?** Pappa, Mamma, Moa, Bertil and three-year-old Elof have
-   first models, built in Blender on 4 October (see "The family, first models" under "State"). They are on
-   your computer only, in `art/private/`, not committed and not pushed. Look at each beside its pictures
-   (`photos/renders/2026-10-04-family/`), say what is wrong, and say whether they may be published. To
-   publish: commit and push in `art/private/`, then run *Deploy to GitHub Pages*. Until then the site shows
-   signs where they would stand.
+6. *(Answered on 4 October: yes. Pappa, Mamma, Moa and Bertil are on the site.)* **Still open:** should
+   three-year-old Elof go up too, before any memory uses him? The default is no. And what is wrong with
+   each likeness: the pictures are in `photos/renders/2026-10-04-family/`, and the list of what the
+   session itself would correct is under "The family, first models".
 5. **May the village street be called by its own name?** You asked for it as a chapter by name. The game
    calls it *Byn*, as a child would, and the street's name is not written in this repository. The reason:
    CLAUDE.md says never a street address, and a street's name beside the children's first names is most of
