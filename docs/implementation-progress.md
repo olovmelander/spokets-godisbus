@@ -20,3 +20,9 @@ Validation: typecheck and all 513 integrated unit/robot tests pass. Source brows
 The four dew bells play a fixed D–F–A–D phrase. Completing the tune adds visible lawn sparkles, and the bells can be played again without changing story progress.
 
 Validation: integrated typecheck and nine focused tests; source unit/robot and browser checks passed. The sparkle objects are reused during play.
+
+## Let the mountain cobbles play again
+
+The shore cobbles now form a replayable musical toy with fixed notes. Playing them again leaves story and collectible progress unchanged.
+
+Validation: both integrated cobble tests and source browser toy checks passed.

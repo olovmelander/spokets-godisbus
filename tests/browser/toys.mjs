@@ -52,8 +52,17 @@ try {
   await open('course=garden&at=92.4,0.01&flags=dewsong');
   assert.ok((await state()).flags.includes('dewsong'), 'The saved lawn sparkle reward remains unlocked');
   if (process.env.TOY_SHOT) await page.screenshot({ path: process.env.TOY_SHOT });
+  await open('course=berget&at=98,26.41&flags=note:1');
+  await page.keyboard.down('ArrowRight');
+  await page.waitForFunction(() => window.__godis.state().x > 101.5);
+  await page.keyboard.up('ArrowRight');
+  await page.keyboard.down('ArrowLeft');
+  await page.waitForFunction(() => window.__godis.state().x < 98);
+  await page.keyboard.up('ArrowLeft');
+  const strikes = (await state()).noteHits.filter((hit) => hit.id === 'note:1');
+  assert.ok(strikes.length >= 2 && strikes.every((hit) => hit.midi === 67), 'The saved shore cobble can be played again at the same pitch');
   assert.deepEqual(errors, [], 'No browser errors');
-  console.log('Replayable toys: garden browser checks passed.');
+  console.log('Replayable toys: garden and mountain browser checks passed.');
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));

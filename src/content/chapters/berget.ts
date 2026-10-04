@@ -113,8 +113,8 @@ export const berget: ChapterData = {
   spots: [
     // He starts on the crane's back: it takes off at once.
     { id: 'flight', at: { x: 1, y: 0 }, verb: 'take', touch: true, ride: 'flight' },
-    // The cobbles from the old shore: each rings its note.
-    ...[98, 100, 102, 104, 106].map((x, i) => ({ id: `note:${i + 1}`, look: 'cobble' as const, at: { x, y: 26.4 }, verb: 'take' as const, touch: true })),
+    // The cobbles from the old shore: each always rings its own note, on every new visit.
+    ...[98, 100, 102, 104, 106].map((x, i) => ({ id: `note:${i + 1}`, look: 'cobble' as const, at: { x, y: 26.4 }, verb: 'take' as const, touch: true, note: [67, 69, 71, 74, 76][i]! })),
     { id: 'lift', at: { x: 143.8, y: 26.4 }, verb: 'take', word: 'lift' },
     // Memory 4, at the old pine: the gust, the crack, and the last raspberry jelly.
     { id: 'memory', look: 'memory', at: { x: 153, y: 31.4 }, verb: 'take', touch: true },
