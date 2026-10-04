@@ -588,6 +588,20 @@ body.calm *::after {
   opacity: 0.75;
 }
 
+.golden-reward {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  margin: 16px 0;
+  padding: 10px;
+  border: 2px solid #c69732;
+  border-radius: 18px;
+  background: radial-gradient(ellipse, #fff9dc, #f1d88c);
+  font-weight: 600;
+  text-align: center;
+}
+.golden-reward svg { width: 120px; height: 76px; }
+
 .album-grid {
   list-style: none;
   margin: 0;

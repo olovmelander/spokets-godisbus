@@ -86,3 +86,9 @@ Validation: typecheck and 35 integrated sharing, party, ending and lost-property
 After the story, Explore Further offers the seven story chapters and the village from the title, pause and ending. Revisits preserve collected sweets, completed story flags and each chapter's latest checkpoint; replaying starts at the beginning while keeping the collection.
 
 Validation: typecheck and 41 integrated journey/save tests pass. Source browser checks cover touch, keyboard, controller, explicit chapter URLs, saved completion and chapter-to-chapter progress. Release boundaries remain in place.
+
+## Reward discovering all sixteen candy types
+
+Finding all sixteen distinct candy types awards the golden raspberry-jelly sticker in the album. The final discovery sounds once, and the reward survives reloading and revisiting chapters.
+
+Validation: typecheck and album tests pass. Source browser checks cover the final pickup, persistence and repeat visits without duplicate rewards.

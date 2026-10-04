@@ -32,6 +32,12 @@ export const KINDS: Record<string, Kind> = {
 /** The flag a found candy sets in its chapter: what the save keeps, and what the album is read from. */
 export const foundFlag = (kind: string) => `found:${kind}`;
 
+/** The final album piece belongs to all sixteen discoveries; duplicate or unknown flags never count. */
+export function albumComplete(found: readonly string[]): boolean {
+  const known = new Set(found);
+  return Object.keys(KINDS).every((kind) => known.has(kind));
+}
+
 /** The kinds found so far, read from a save's flags for every chapter. */
 export function album(flags: Record<string, string[]>): string[] {
   const found = new Set(Object.values(flags).flat().filter((flag) => flag.startsWith('found:')).map((flag) => flag.slice('found:'.length)));

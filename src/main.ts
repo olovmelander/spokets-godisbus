@@ -4,7 +4,7 @@ import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
 import { bonusAfter, chapterNumber, courseFor, nextAfter } from './content/chapters';
-import { album, foundFlag } from './content/kinds';
+import { album, albumComplete, foundFlag } from './content/kinds';
 import { lostFlag, lostFound } from './content/lost';
 import { createPhotoMoments } from './content/photos';
 import { albumHtml } from './ui/album';
@@ -617,6 +617,7 @@ function start(): void {
   // Whether the dew bells had all rung when the page last looked.
   let dewRung = game.sim.flags.has('dewsong');
   let vittraThanked = game.sim.flags.has('keepsake:vittra');
+  let goldenFound = albumComplete(album(save.flags));
   // How many lost things were found when the page last looked, and which: -1 before it has looked.
   let lostSeen = -1;
   let lostKnown: readonly string[] = [];
@@ -694,6 +695,11 @@ function start(): void {
       const all = { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags) };
       const found = album(all);
       hud.stickers(found);
+      if (!goldenFound && albumComplete(found)) {
+        goldenFound = true;
+        hud.notice(sv.album.goldenFound);
+        audio.play({ kind: 'found' });
+      }
       // Hittegods: a thing found under the deck is said by name, once.
       const lost = lostFound(all);
       if (lostSeen >= 0 && lost.length > lostSeen) {

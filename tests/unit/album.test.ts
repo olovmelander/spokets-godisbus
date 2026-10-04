@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { KINDS } from '../../src/content/kinds';
+import { albumComplete, KINDS } from '../../src/content/kinds';
 import { sv } from '../../src/content/sv';
 import { albumHtml } from '../../src/ui/album';
 
@@ -37,5 +37,16 @@ describe('the sticker album', () => {
     expect(all).toContain('16 av 16 sorter');
     expect(all).not.toContain('something else');
     expect(all).not.toContain('class="missing"');
+    expect(all).toContain('data-reward="golden"');
+    expect(all).toContain(sv.album.golden);
+    expect(all.match(/data-reward="golden"/g)).toHaveLength(1);
+  });
+
+  it('awards the final golden piece only for every distinct known candy', () => {
+    const incomplete = [...Object.keys(KINDS).slice(1), 'gummibjorn', 'unknown'];
+    expect(incomplete.length).toBeGreaterThan(16);
+    expect(albumComplete(incomplete)).toBe(false);
+    expect(albumHtml(incomplete)).not.toContain('data-reward="golden"');
+    expect(albumComplete([...incomplete, 'gelehallon'])).toBe(true);
   });
 });
