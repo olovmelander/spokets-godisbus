@@ -27,7 +27,7 @@ const server = await createServer({
         export { COURSES } from ${JSON.stringify(join(root, 'src/content/chapters/index.ts'))};
         let scene;
         const before = Scene.prototype.onBeforeRender;
-        Scene.prototype.onBeforeRender = function (...args) { scene = this; before.apply(this, args); };
+        Scene.prototype.onBeforeRender = function (...args) { if (this.getObjectByName('chase-ghost')) scene = this; before.apply(this, args); };
         export const renderedScene = () => scene;
         export function measureStars(points, width, height, ratio) {
           const canvas = document.createElement('canvas');
@@ -83,7 +83,7 @@ try {
     const errors = [];
     page.on('pageerror', (error) => errors.push(String(error)));
     page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
-    await page.route('**/nightfall-probe', (route) => route.fulfill({ contentType: 'text/html', body: '<body style="margin:0"><canvas id="game" style="width:100vw;height:100vh;display:block"></canvas></body>' }));
+    await page.route('**/nightfall-probe', (route) => route.fulfill({ contentType: 'text/html', body: '<script type="module" src="/spokets-godisbus/@vite/client"></script><body style="margin:0"><canvas id="game" style="width:100vw;height:100vh;display:block"></canvas></body>' }));
     await page.goto(`${origin}/spokets-godisbus/nightfall-probe`);
     const early = await page.evaluate(async ({ tier }) => {
       const fixture = await import('/spokets-godisbus/nightfall-fixture.js');
