@@ -17,13 +17,14 @@ const server = await createServer({ root,
     },
     load(id) {
       if (id === proofAssets) return `import { createAssets as actual } from ${JSON.stringify(join(root, 'src/render/assets.ts'))};
-        import { Group, Mesh, BoxGeometry, MeshLambertMaterial } from 'three';
+        import { Group, Mesh, BoxGeometry, MeshLambertMaterial, MeshPhysicalMaterial } from 'three';
         export function createAssets(renderer) {
           if (!window.privateFamilyProof) return actual(renderer);
           return { manifest:async()=>({packs:{boot:{files:{}},private:{files:{'pappa.glb':1}}}}),
             model:async(pack)=>{if(pack==='private')await new Promise(resolve=>setTimeout(resolve,0));
               const group=new Group();group.name=pack==='private'?'fixture-private-pappa':'candy';
-              group.add(new Mesh(new BoxGeometry(.4,1,.4),new MeshLambertMaterial()));return group;},
+              group.add(new Mesh(new BoxGeometry(.4,1,.4),pack==='private'
+                ?new MeshPhysicalMaterial({clearcoat:.4}):new MeshLambertMaterial()));return group;},
             restoreTextures:async()=>{},textureInfo:()=>({}) };
         }
       `;
@@ -108,7 +109,7 @@ try {
   await privatePage.goto(`${origin}/spokets-godisbus/private-family-probe`);
   const privateSupport=await privatePage.evaluate(async()=>{
     window.privateFamilyProof=true;const f=await import('/spokets-godisbus/finale-stage-fixture.js');
-    const sim=new f.Sim({...f.norrsken,spawn:{x:33,y:.01}},{},{placed:['tragubbe'],flags:['lower','crowberry','eyes','bag','share:tragubbe','share:spoket','share:jay','taste']});
+    const sim=new f.Sim({...f.norrsken,spawn:{x:33,y:.01}},{},{placed:['tragubbe'],flags:['lower','crowberry','eyes','bag','share:tragubbe','share:spoket','share:jay']});
     const idle={x:0,y:0,hopHeld:false,hop:false,act:false},view=f.createView(document.getElementById('game'),f.norrsken,'high',false);
     await view.ready;await new Promise(resolve=>setTimeout(resolve,0));
     const advance=seconds=>{for(let i=0;i<Math.round(seconds*120);i++)sim.step(idle);};
@@ -116,11 +117,15 @@ try {
       movers:sim.movers,drips:sim.drips,flags:sim.flags,ghost:sim.ghost,rollers:sim.rollers,tussocks:sim.tussocks,gusts:sim.gusts,help:sim.help,berries:sim.berries});
     advance(.2);for(let i=0;i<12;i++)draw();
     const scene=f.renderedScene(),pappa=scene.getObjectByName('fixture-private-pappa');
+    const beforeReveal=view.info().programs,hidden=!pappa.parent.visible;
+    sim.flags.add('taste');advance(.2);for(let i=0;i<12;i++)draw();
+    const revealWarmed=beforeReveal===view.info().programs;
     const supported=at=>f.shadows().some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-(sim.curr.groundY+.018))<.01);
     const waiting=supported(f.at(pappa));sim.step({...idle,act:true});advance(8);for(let i=0;i<12;i++)draw();
-    return{waiting,pappa:supported(f.at(pappa)),ghost:supported(f.at(scene.getObjectByName('chase-ghost'))),
+    return{hidden,revealWarmed,waiting,pappa:supported(f.at(pappa)),ghost:supported(f.at(scene.getObjectByName('chase-ghost'))),
       x:sim.curr.x,y:sim.curr.y,mode:sim.curr.mode,models:view.info().models};
   });
+  check('Private Pappa: hidden replacement reveals without compiling its distinct material variant',privateSupport.hidden && privateSupport.revealWarmed);
   check('Private Pappa: waiting shadow rests on the summit floor',privateSupport.waiting);
   check('Private Pappa: late home shadow follows the descending terrain',privateSupport.mode==='ride' && privateSupport.x>60 && privateSupport.y<-6 && privateSupport.pappa);
   check('Private Pappa: the carried ghost shares the same terrain support',privateSupport.ghost && privateSupport.models.includes('private/pappa'));

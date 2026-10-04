@@ -578,6 +578,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     try {
       renderer.setRenderTarget(hdr?.scene ?? null);
+      if (warm > 0) {
+        // Frustum warmup alone skips hidden parents, including the family revealed at nightfall.
+        // compile traverses their materials without drawing them, using this tier's actual target.
+        renderer.compile(scene, camera);
+        renderer.compile(waterScene, camera);
+      }
       // A normal (non-XR) render target uses linear output without material tone mapping.
       renderer.render(scene, camera);
       if (hdr && water.refracting) water.capture(renderer, hdr.scene, camera);
