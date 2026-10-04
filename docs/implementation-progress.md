@@ -44,3 +44,9 @@ Validation: integrated typecheck and 19 quality tests; 16 source browser checks 
 Settings now offer separate effects and music levels in ten-percent steps, with accessible buttons for touch, keyboard and controller. Values are saved per player, clamped on load and preserved when changing play style; existing mute switches still work.
 
 Validation: typecheck and 46 integrated settings/save tests pass. Source browser checks cover all input methods and persistence.
+
+## Recover safely from loading failures and interrupted play
+
+Required models and decoder loads now have bounded waits and retry controls. WebGL context loss saves and pauses the game, restores rendering in place, and returns to the prior menu state. Audio cancels scheduled sounds while blocked so resuming cannot play stale notes.
+
+Validation: integrated typecheck and lifecycle/fetch tests pass. The source feature passed 30 browser checks covering context loss, failed model/decoder retries, saved progress and repeated audio suspension. Includes the separately verified slow-frame calibration repair from #72.

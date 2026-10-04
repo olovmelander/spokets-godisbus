@@ -316,5 +316,9 @@ export const sv = {
 
   // Sköldhästen's wording.
   noWebGL: 'Den här webbläsaren kan tyvärr inte visa spelet.',
+  loadFailed: 'Något gick fel när spelet laddades.',
+  contextLost: 'Bilden försvann en stund. Spelet är pausat och det du har gjort är sparat.',
+  contextRestored: 'Bilden är tillbaka. Fortsätt när du är redo!',
+  recoveryTitle: 'Spelet väntar',
   retry: 'Försök igen',
 } as const;

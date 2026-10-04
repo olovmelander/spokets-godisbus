@@ -84,6 +84,10 @@ export interface View {
   readonly warming: boolean;
   readonly resolutionSteps: number;
   readonly maxResolutionSteps: number;
+  /** Required public boot models are present; a failure keeps the loading/error card in front of play. */
+  readonly ready: Promise<void>;
+  /** Three restores its GL state; reupload retained CPU assets and warm the rebuilt render targets. */
+  restore(): void;
   resize(): void;
   /** Apply a level without resetting the scene. Call while paused when crossing Low, to warm its shaders. */
   setTier(next: Tier): void;
@@ -237,7 +241,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const roles: string[] = [];
   let compressedTextures = 0;
   const assets = createAssets(renderer);
-  assets
+  const candyReady = assets
     .model('boot', 'big-candy')
     .then((model) => {
       for (const [i, big] of bigCandies.entries()) {
@@ -252,13 +256,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         const map = ((node as Mesh).material as MeshStandardMaterial | undefined)?.map;
         if (map && (map as { isCompressedTexture?: boolean }).isCompressedTexture) compressedTextures++;
       });
-    })
-    .catch((error) => console.error('The big candy could not be loaded; the stand-in stays.', error));
+    });
 
   // The jay, modelled in Blender (art/blender/jay.py), takes the place of the bird built in code: the helper
   // that comes when he asks, and the one he shares a berry with. Its wings are parts of their own, with the
   // same names as the stand-in's, so they beat as before.
-  assets
+  const jayReady = assets
     .manifest()
     .then((manifest) => (manifest.packs.boot?.files['jay.glb'] ? assets.model('boot', 'jay') : null))
     .then((model) => {
@@ -271,8 +274,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         bird.add(i === 0 ? model : model.clone());
       }
       models.push('boot/jay');
-    })
-    .catch((error) => console.error('The jay could not be loaded; the stand-in stays.', error));
+    });
+  const ready = Promise.all([candyReady, jayReady]).then(() => undefined);
 
   // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
   // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.
@@ -649,6 +652,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     get warming() { return warming; },
     get resolutionSteps() { return resolutionSteps; },
     get maxResolutionSteps() { return maxResolutionSteps(maxPixelRatio); },
+    ready,
+    restore() {
+      resize();
+      warmedFor = -1;
+      warm = 2;
+      if (hasFrame) while (warm > 0) draw();
+    },
     resize,
     render,
     capture: () => hasFrame ? captureFrame(canvas) : Promise.resolve(null),

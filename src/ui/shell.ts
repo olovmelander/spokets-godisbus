@@ -204,7 +204,7 @@ export function mountShell(root: HTMLElement): void {
          <button class="wide" id="endAgain" type="button"><span>${sv.end.again}</span></button>
        </div>
      </div>
-     <div class="message" id="message" hidden>
+     <div class="message" id="message" role="alertdialog" aria-modal="true" aria-label="${sv.recoveryTitle}" aria-describedby="messageText" hidden>
        <p id="messageText"></p>
        <button id="messageButton" type="button"></button>
      </div>`,

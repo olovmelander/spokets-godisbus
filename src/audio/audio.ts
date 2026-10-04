@@ -26,7 +26,7 @@ export interface Audio {
    * knocks, from the next bar line on.
    */
   tick(chase: boolean): void;
-  /** The page was hidden, or shown again: sound sleeps with it. */
+  /** Pause/hidden/recovery silence every bus and cancel scheduled sounds; resume starts fresh. */
   sleep(hidden: boolean): void;
   /** True once the context runs: for the debug text and the tests. */
   readonly running: boolean;
@@ -46,6 +46,14 @@ export function createAudio(): Audio {
   const Ctor: AudioCtor | undefined =
     typeof window === 'undefined' ? undefined : (window.AudioContext ?? (window as unknown as { webkitAudioContext?: AudioCtor }).webkitAudioContext);
   let context: AudioContext | null = null;
+  let master: GainNode | null = null;
+  let sleeping = false;
+  const sources = new Set<AudioScheduledSourceNode>();
+  function track<T extends AudioScheduledSourceNode>(source: T): T {
+    sources.add(source);
+    source.onended = () => { sources.delete(source); source.disconnect(); };
+    return source;
+  }
   let effects: GainNode | null = null;
   let music: GainNode | null = null;
   let ambience: GainNode | null = null;
@@ -74,7 +82,7 @@ export function createAudio(): Audio {
     if (context || !Ctor) return;
     context = new Ctor();
     const compressor = context.createDynamicsCompressor();
-    const master = context.createGain();
+    master = context.createGain();
     master.gain.value = 0.8;
     effects = context.createGain();
     effects.gain.value = volume;
@@ -104,7 +112,7 @@ export function createAudio(): Audio {
 
   function toneAt(bus: GainNode, at: number, type: OscillatorType, from: number, to: number, length: number, level: number): void {
     if (!context) return;
-    const oscillator = context.createOscillator();
+    const oscillator = track(context.createOscillator());
     const gain = context.createGain();
     oscillator.type = type;
     oscillator.frequency.setValueAtTime(from, at);
@@ -124,7 +132,7 @@ export function createAudio(): Audio {
 
   function puffAt(bus: GainNode, at: number, kind: BiquadFilterType, from: number, to: number, length: number, level: number, q: number): void {
     if (!context || !noise) return;
-    const source = context.createBufferSource();
+    const source = track(context.createBufferSource());
     source.buffer = noise;
     const filter = context.createBiquadFilter();
     filter.type = kind;
@@ -340,7 +348,7 @@ export function createAudio(): Audio {
 
   /** The place's music and air begin: its strings are made now, so that no bar has to wait for one. */
   function begin(): void {
-    if (!context || !ambience || !noise || started) return;
+    if (sleeping || !context || !ambience || !noise || started) return;
     started = true;
     wind?.source.stop();
     wind?.swell.stop();
@@ -354,7 +362,7 @@ export function createAudio(): Audio {
     const air = AIRS[arrangement.ambience];
     callsAt = air.calls.map((call) => context!.currentTime + call.gap[0] * (0.3 + roll()));
     if (air.wind) {
-      const source = context.createBufferSource();
+      const source = track(context.createBufferSource());
       source.buffer = noise;
       source.loop = true;
       const filter = context.createBiquadFilter();
@@ -364,7 +372,7 @@ export function createAudio(): Audio {
       const gain = context.createGain();
       gain.gain.value = air.wind.level * 0.6;
       // It swells and sinks, slowly: wind is never even.
-      const swell = context.createOscillator();
+      const swell = track(context.createOscillator());
       swell.frequency.value = 1 / air.wind.swell;
       const depth = context.createGain();
       depth.gain.value = air.wind.level * 0.4;
@@ -389,7 +397,7 @@ export function createAudio(): Audio {
         // The knife takes a shaving.
         puffAt(music, from, 'bandpass', 2600, 1400, s.seconds, s.level, 3);
       } else {
-        const source = context.createBufferSource();
+        const source = track(context.createBufferSource());
         source.buffer = string(s.midi, a.bright);
         const gain = context.createGain();
         gain.gain.setValueAtTime(s.level, from);
@@ -404,13 +412,14 @@ export function createAudio(): Audio {
 
   return {
     unlock() {
+      if (sleeping) return;
       build();
       // iOS leaves the context "interrupted" after a call; any later tap wakes it again.
-      if (context && context.state !== 'running') void context.resume();
+      if (context && context.state !== 'running') void context.resume().catch(() => {});
       begin();
     },
     play(cue) {
-      if (!context || context.state !== 'running' || volume <= 0) return;
+      if (sleeping || !context || context.state !== 'running' || volume <= 0) return;
       played++;
       sound(cue);
     },
@@ -432,7 +441,8 @@ export function createAudio(): Audio {
       begin();
     },
     tick(chase) {
-      if (!context || context.state !== 'running' || !arrangement || !ambience) return;
+      if (sleeping || !context || context.state !== 'running' || !arrangement || !ambience) return;
+      begin();
       const now = context.currentTime;
       // After a sleep, or a long frame, the tune goes on from now: never a heap of late bars at once.
       if (nextBar < now) nextBar = now + 0.1;
@@ -453,12 +463,26 @@ export function createAudio(): Audio {
       }
     },
     sleep(hidden) {
+      if (sleeping === hidden) return;
+      sleeping = hidden;
       if (!context) return;
-      if (hidden) void context.suspend();
-      else void context.resume();
+      if (hidden) {
+        // Suspend alone freezes already scheduled notes; they would play after the next tap.
+        // Silence synchronously, cancel them, then suspend to release audio processing while paused.
+        if (master) master.gain.value = 0;
+        for (const source of sources) { try { source.stop(); } catch { /* Already ended. */ } }
+        sources.clear();
+        wind = null;
+        started = false;
+        void context.suspend().catch(() => {});
+      } else {
+        if (master) master.gain.value = 0.8;
+        void context.resume().catch(() => {});
+        begin();
+      }
     },
     get running() {
-      return context?.state === 'running';
+      return !sleeping && context?.state === 'running';
     },
     get played() {
       return played;

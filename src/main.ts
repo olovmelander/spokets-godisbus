@@ -51,6 +51,7 @@ function showMessage(text: string, button: string = sv.retry, action: () => void
   element.onclick = action;
   byId('message').hidden = false;
   byId('loading').classList.add('done');
+  element.focus();
 }
 
 /** With ?debug, ?at=x,y starts Elof there instead of at the chapter's start: for looking at one place. */
@@ -97,6 +98,8 @@ function start(): void {
   mountShell(document.body);
   const canvas = byId<HTMLCanvasElement>('game');
   canvas.tabIndex = -1;
+  let bootReady = false;
+  let contextLost = false;
   let view: View;
   try {
     // ?standin keeps the figures built in code: for pictures that go into the repository (plan §2.6).
@@ -132,6 +135,7 @@ function start(): void {
 
   // Sound starts with the first tap, click or key: browsers allow it no earlier (plan §6.8).
   const audio = createAudio();
+  audio.sleep(true);
   /** What the settings change outside the simulation: the sound, and the page's looks. */
   const apply = () => {
     audio.setEffects(settings.sound ? settings.effectsVolume : 0);
@@ -216,15 +220,31 @@ function start(): void {
   let auto = !benchOn && requestedGraphics === 'auto' && view.info().tier === 'mid' ? createAutoTier() : null;
   let resolution = !benchOn && requestedGraphics === 'auto' ? createDynamicResolution() : null;
   let busyMs = 0;
+  function platformBlocked(): boolean {
+    return !bootReady || contextLost || !byId('message').hidden || document.hidden;
+  }
+  function menuOpen(): boolean {
+    return paused || ended || title.open || memories.open || photoAlbum.open;
+  }
+  function focusScope(): HTMLElement | null {
+    if (!byId('message').hidden) return byId('message');
+    if (photoAlbum.open) return byId('photoAlbum');
+    if (memories.open) return byId('memory');
+    if (title.open) return byId('title');
+    if (pause.open) return byId('pause');
+    if (ended) return byId('endCard');
+    return null;
+  }
   function openPause(): void {
-    if (paused || ended || memories.open) return;
+    if (menuOpen() || platformBlocked()) return;
     paused = true;
+    audio.sleep(true);
     input.release();
     pause.show({ ...settings, graphics: requestedGraphics });
     writeSave();
   }
   function resume(): void {
-    if (!paused) return;
+    if (!paused || platformBlocked()) return;
     if (titleSettings) {
       titleSettings = false;
       pause.hide();
@@ -235,6 +255,8 @@ function start(): void {
     pause.hide();
     input.release();
     game.resume();
+    audio.sleep(document.hidden);
+    audio.unlock();
     canvas.focus();
   }
   const pause = createPause(document, {
@@ -278,7 +300,7 @@ function start(): void {
   byId<HTMLButtonElement>('graphicsHigh').disabled = !hdrAvailable;
   byId('pauseBtn').addEventListener('click', openPause);
   function openBag(): void {
-    if (title.open || ended || memories.open) return;
+    if (platformBlocked() || title.open || ended || memories.open || photoAlbum.open) return;
     if (!pause.open) openPause();
     const album = byId('pauseAlbum');
     if (!byId('pauseOptions').hidden) {
@@ -292,7 +314,7 @@ function start(): void {
   // The helper's button: a press is passed on with the next frame's presses, like H on a keyboard.
   let askedForHelp = false;
   byId('helpBtn').addEventListener('click', () => {
-    if (!paused && !ended && !memories.open) askedForHelp = true;
+    if (!platformBlocked() && !menuOpen()) askedForHelp = true;
   });
 
   // The title (plan §6.10). A chapter starts behind it; the test course and a debug session start at once.
@@ -300,6 +322,7 @@ function start(): void {
   function showTitle(): void {
     if (profileMutationPending) return;
     paused = true;
+    audio.sleep(true);
     input.release();
     title.show(begun, { currentId: store.currentId, players: store.players(), available: store.available, unreadable: store.load().kind === 'unreadable' });
     offline.check();
@@ -345,7 +368,7 @@ function start(): void {
       return true;
     },
     onStart(style) {
-      if (!offline.canStart() || store.load().kind === 'unreadable') return;
+      if (!offline.canStart() || platformBlocked() || store.load().kind === 'unreadable') return;
       begun = true;
       if (style) {
         settings = changeStyle(settings, style);
@@ -357,6 +380,8 @@ function start(): void {
       paused = false;
       input.release();
       game.resume();
+      audio.sleep(document.hidden);
+      audio.unlock();
       canvas.focus();
       writeSave();
     },
@@ -383,7 +408,8 @@ function start(): void {
     },
   });
   const offline = createOffline({
-    isTitle: () => title.open && !profileMutationPending && !byId('titleFront').hidden && byId('codeForm').hidden === true,
+    isTitle: () => title.open && bootReady && !contextLost && byId('message').hidden && !profileMutationPending
+      && !byId('titleFront').hidden && byId('codeForm').hidden === true,
     setUpdateLock: (locked) => { byId('title').inert = locked; },
   });
   const input = createInput(
@@ -398,6 +424,7 @@ function start(): void {
     {
       onDevice: showDevice,
       onKey: (key) => {
+        if (platformBlocked()) return;
         if (photoAlbum.open) photoAlbum.back();
         else if (key === 'bag') openBag();
         else if (title.open) title.back();
@@ -405,20 +432,13 @@ function start(): void {
         else openPause();
       },
       onBack: () => {
+        if (platformBlocked()) return;
         if (photoAlbum.open) photoAlbum.back();
         else if (title.open) title.back();
         else if (pause.open) pause.back();
       },
-      focusScope: () => {
-        if (!byId('message').hidden) return byId('message');
-        if (photoAlbum.open) return byId('photoAlbum');
-        if (title.open) return byId('title');
-        if (pause.open) return byId('pause');
-        if (ended) return byId('endCard');
-        if (memories.open) return byId('memory');
-        return null;
-      },
-      panelOpen: () => paused || ended || memories.open,
+      focusScope,
+      panelOpen: () => menuOpen() || platformBlocked(),
       followFinger: () => settings.followFinger,
       playerScreen: () => view.playerScreen(),
       upClimbs: () => game.sim.curr.mode === 'climb' || game.sim.curr.mode === 'swing',
@@ -443,8 +463,8 @@ function start(): void {
   document.addEventListener('visibilitychange', () => {
     auto?.suspend();
     resolution?.suspend();
-    audio.sleep(document.hidden);
-    if (document.hidden) writeSave();
+    audio.sleep(platformBlocked() || menuOpen());
+    if (document.hidden) { input.release(); writeSave(); }
     else game.resume();
   });
   window.addEventListener('pagehide', writeSave);
@@ -455,7 +475,7 @@ function start(): void {
       state: () => ({
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
-        playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(), noteHits: game.sim.noteHits,
+        playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(), noteHits: game.sim.noteHits, bootReady, contextLost,
       }),
       info: () => ({ ...view.info(), busyMs, autoSettled: auto?.settled ?? true,
         sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars }),
@@ -490,6 +510,71 @@ function start(): void {
   let endFor = 0;
   // A memory plays once, when he touches its shaving: not again in a game that has seen it.
   const memories = createMemory(document);
+  let recovering = false;
+  let pausedBeforeLoss = false;
+  let focusBeforeLoss: HTMLElement | null = null;
+  function offerRecovery(): void {
+    if (!recovering || contextLost || !bootReady) return;
+    showMessage(sv.contextRestored, sv.pause.resume, () => {
+      recovering = false;
+      byId('message').hidden = true;
+      paused = pausedBeforeLoss;
+      input.release();
+      game.resume();
+      const panel = focusScope();
+      if (panel) {
+        const target = focusBeforeLoss && panel.contains(focusBeforeLoss) ? focusBeforeLoss
+          : [...panel.querySelectorAll<HTMLElement>('button,input')].find((element) => element.getClientRects().length > 0 && !element.hasAttribute('disabled'));
+        target?.focus();
+      } else canvas.focus();
+      audio.sleep(platformBlocked() || menuOpen());
+      if (!menuOpen()) audio.unlock();
+      if (title.open) offline.check();
+    });
+  }
+  // No simulation or audio runs before the required public models have loaded. Reload retries the same
+  // versioned URLs; no save is cleared and a worker may supply them from its own matching cache.
+  void view.ready.then(() => {
+    bootReady = true;
+    game.resume();
+    input.release();
+    offerRecovery();
+    if (title.open) offline.check();
+  }).catch(() => {
+    paused = true;
+    input.release();
+    audio.sleep(true);
+    showMessage(sv.loadFailed);
+  });
+  canvas.addEventListener('webglcontextlost', (event) => {
+    event.preventDefault();
+    if (!recovering) {
+      pausedBeforeLoss = paused;
+      focusBeforeLoss = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    }
+    contextLost = true;
+    recovering = true;
+    paused = true;
+    input.release();
+    audio.sleep(true);
+    auto?.suspend();
+    resolution?.suspend();
+    writeSave();
+    showMessage(sv.contextLost);
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    contextLost = false;
+    try {
+      view.restore();
+      offerRecovery();
+    } catch {
+      showMessage(sv.loadFailed);
+    }
+  });
+  // This one-button recovery dialog also works before the input controller has any game to control.
+  byId('message').addEventListener('keydown', (event) => {
+    if (event.key === 'Tab') { event.preventDefault(); byId('messageButton').focus(); }
+  });
   let remembered = game.sim.flags.has('memory');
   let flagsSeen = -1;
   // Whether the dew bells had all rung when the page last looked.
@@ -507,10 +592,19 @@ function start(): void {
     timer.update(time);
     if (document.hidden) { lastTime = time; return; }
     const dt = Math.min(timer.getDelta(), 0.25);
+    const blocked = platformBlocked();
+    audio.sleep(blocked || menuOpen());
+    if (blocked) {
+      auto?.suspend();
+      resolution?.suspend();
+      input.poll();
+      lastTime = time;
+      return;
+    }
     // The wood knocks while the ghost is in the picture: the chase (plan §5.8).
     const ghost = game.sim.ghost;
     audio.tick(ghost !== null && !ghost.gone && Math.abs(ghost.x - game.sim.curr.x) < 9);
-    if (paused || ended || memories.open) {
+    if (menuOpen()) {
       // The panel's buttons still answer a gamepad. A memory plays over a game that waits.
       input.poll();
     } else {
@@ -527,6 +621,7 @@ function start(): void {
     if (!remembered && game.sim.flags.has('memory')) {
       remembered = true;
       memories.play(chapter.id, () => game.resume());
+      audio.sleep(true);
     }
     // A big candy is a safe place: the game saves there (plan §3.3, rule 4).
     if (game.sim.checkpoint !== savedAt) {
@@ -535,7 +630,7 @@ function start(): void {
     }
     const atGoal = game.sim.flags.has('goal');
     view.render({
-      prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: paused ? 0 : dt, atGoal,
+      prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: menuOpen() ? 0 : dt, atGoal,
       collected: game.sim.collected, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
       flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts, help: game.sim.help,
       berries: game.sim.berries,
@@ -544,7 +639,7 @@ function start(): void {
     // Copy this exact rendered frame now, before WebGL's drawing buffer is discarded. Encoding and
     // IndexedDB run afterwards; the ordinary render loop never keeps its drawing buffer alive.
     const moment = !photosStopped && !benchOn && !at
-      ? photoMoment(game.sim.curr, game.sim.flags, paused || ended || memories.open ? 0 : dt * game.tempo) : null;
+      ? photoMoment(game.sim.curr, game.sim.flags, menuOpen() ? 0 : dt * game.tempo) : null;
     if (moment) void view.capture().then(async (blob) => {
       if (blob && !photosStopped && await photoStore.put({ player: photoPlayer, moment, blob })) await photoAlbum.refresh();
     });
@@ -585,12 +680,13 @@ function start(): void {
       if (beat) hud.say(beat.who, beat.line);
     }
     // What is said waits while a memory plays: its line comes after it.
-    hud.tick(paused || memories.open ? 0 : dt);
+    hud.tick(menuOpen() ? 0 : dt);
     // The end: a moment to arrive, then the card with the candy in rows of ten.
-    if (atGoal) endFor += paused ? 0 : dt;
+    if (atGoal) endFor += menuOpen() ? 0 : dt;
     if (endFor > 1.4 && !benchOn && !ended) {
       ended = true;
       paused = true;
+      audio.sleep(true);
       input.release();
       writeSave();
       const number = chapterNumber(chapter.id);
@@ -617,7 +713,7 @@ function start(): void {
     busyMs = performance.now() - began;
     const elapsed = lastTime > 0 ? (time - lastTime) / 1000 : 0;
     if (auto && !auto.settled) {
-      if ((title.open || pause.open) && !view.warming) {
+      if ((title.open || pause.open) && !photoAlbum.open && !memories.open && !view.warming) {
         const next = auto.feed(elapsed, busyMs);
         if (auto.settled) {
           view.setTier(next); // Low/HDR shader variants warm here, while the game is safely paused.
@@ -626,7 +722,7 @@ function start(): void {
       } else auto.suspend();
     }
     if (resolution) {
-      if (!paused && !ended && !memories.open && !title.open && !view.warming) {
+      if (!menuOpen() && !view.warming) {
         view.setResolutionSteps(resolution.feed(elapsed, busyMs, view.resolutionSteps, view.maxResolutionSteps));
       } else resolution.suspend();
     }
