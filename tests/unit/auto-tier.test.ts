@@ -35,7 +35,22 @@ describe('Auto measures warmed CPU work on a safe screen', () => {
     for (let n = 0; n < 180; n++) auto.feed(1 / 60, 3);
     expect(auto.tier).toBe('high');
   });
-  it.each([[0, 2], [Number.NaN, 2], [3, 2], [1 / 60, Number.NaN], [1 / 60, -1]])('rejects elapsed %s / busy %s instead of counting a resume gap', (dt, busy) => {
+  it.each([0.3, 0.5, 1])('can settle on Low under continuously slow visible %s second frames', (dt) => {
+    const auto = createAutoTier();
+    for (let n = 0; n < 24; n++) auto.feed(dt, 275);
+    expect(auto.settled).toBe(true);
+    expect(auto.tier).toBe('low');
+  });
+  it('caps long intervals and still requires sustained samples after a resume', () => {
+    const auto = createAutoTier();
+    auto.suspend();
+    auto.feed(60, 275);
+    for (let n = 0; n < 30; n++) auto.feed(1 / 60, 3);
+    expect(auto.settled).toBe(false);
+    for (let n = 0; n < 180; n++) auto.feed(1 / 60, 3);
+    expect(auto.tier).toBe('high');
+  });
+  it.each([[0, 2], [Number.NaN, 2], [Number.POSITIVE_INFINITY, 2], [1 / 60, Number.NaN], [1 / 60, -1]])('rejects elapsed %s / busy %s instead of counting invalid samples', (dt, busy) => {
     const auto = createAutoTier();
     for (let n = 0; n < 100; n++) auto.feed(dt!, busy!);
     expect(auto.settled).toBe(false);

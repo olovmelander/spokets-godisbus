@@ -21,11 +21,19 @@ let browser;
 let checked = 0;
 const check = (name, value) => { assert.ok(value, name); console.log(`  ok   ${name}`); checked++; };
 function instrumentation() {
-  window.__renderTest = { workMs: 24, allocations: 0, draws: 0, hidden: false };
+  // A real CPU workload longer than 250 ms must still let Auto settle. Otherwise a slow device can
+  // reset calibration forever. Restore the ordinary overload once the title has selected Low.
+  window.__renderTest = { workMs: 275, allocations: 0, draws: 0, hidden: false, longFrames: 0 };
   let frame = 0;
   let charged = -1;
+  let last = 0;
   const raf = requestAnimationFrame.bind(window);
-  window.requestAnimationFrame = (callback) => raf((time) => { frame++; callback(time); });
+  window.requestAnimationFrame = (callback) => raf((time) => {
+    if (last && time - last > 250) window.__renderTest.longFrames++;
+    last = time;
+    frame++;
+    callback(time);
+  });
   for (const name of ['drawElements', 'drawArrays', 'drawElementsInstanced', 'drawArraysInstanced']) {
     const original = WebGL2RenderingContext.prototype[name];
     WebGL2RenderingContext.prototype[name] = function (...args) {
@@ -67,6 +75,8 @@ try {
   await page.waitForFunction(() => window.__godis.info().autoSettled, null, { timeout: 60000 });
   const title = await info(page);
   check('sustained title CPU work selects Low before play', title.tier === 'low' && (await page.evaluate(() => window.__godis.state())).title);
+  check('Auto settles despite sustained visible frames longer than 250 ms', await page.evaluate(() => window.__renderTest.longFrames >= 20));
+  await page.evaluate(() => { window.__renderTest.workMs = 24; });
   check('selected Low stays within its pixel budget', title.width * title.height <= 1e6);
   await frames(page, 5);
   check('an idle title makes no dynamic resolution allocations', (await info(page)).resizes === title.resizes);
