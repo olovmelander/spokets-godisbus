@@ -1394,9 +1394,10 @@ The older list, still true where it is not struck:
 - A `.blend` stores the full path it was saved to, which includes the Windows user name. `big-candy.blend` is
   therefore not committed; it is rebuilt from `art/blender/big-candy.py`. Decide how to handle this before the
   first hand-modelled public `.blend` is committed.
-- A long script is easier to keep in a file than to pass through the tool. The session of 3 October ran its
-  generator files through a small MCP client in its scratchpad, started exactly as `.mcp.json` declares the
-  server, and used the tools directly for short scripts, the status and screenshots.
+- A long script is easier to keep in a file than to pass through the tool. `scripts/bake/send-to-blender.mjs`
+  sends a file to the open Blender through the server, started exactly as `.mcp.json` declares it; arguments
+  after the file become its first lines (`"OUT = r'...'"`). Use the session's own tools for short scripts,
+  the status and screenshots. A render written to a file and read back shows more than a viewport screenshot.
 - Reference pictures go into the scene as image empties, in a collection that is hidden from renders.
 - Shade can be baked into a model's colours: Cycles bakes ambient occlusion to a colour attribute on the points
   (`bpy.ops.object.bake(type='AO', target='VERTEX_COLORS')`), in well under a second for a small model.

@@ -428,8 +428,13 @@ sweets, cut from plain colour.
 - **Budgets.** The trail is at most five draw calls (one for each kind of sweet), about 450 triangles a
   sweet; a hidden sweet is one draw call and at most 1,300 triangles; the kit is 160 KB packed.
 
-**To rebuild or change it,** on Olov's computer with Blender open: send `art/blender/candy.py` to Blender,
-then `scripts/bake/export.py` with `OUT` set to `art/baked/boot/candy.glb`; the same for `big-candy.py`.
+**To rebuild or change it,** on Olov's computer with Blender open and its MCP server started:
+
+    node scripts/bake/send-to-blender.mjs art/blender/candy.py
+    node scripts/bake/send-to-blender.mjs scripts/bake/export.py "OUT = r'<the repository>/art/baked/boot/candy.glb'"
+
+and the same for `big-candy.py` and `big-candy.glb`. `send-to-blender.mjs` starts the server as `.mcp.json`
+declares it, with safe mode on.
 After a change to a hidden kind, send `candy.py` and then `candy-stickers.py` with `OUT` set to
 `src/ui/kinds.webp`, so that its sticker follows. `art/blender/candy-sheet.py` renders the whole kit as one
 picture for looking at. The server's safe mode
