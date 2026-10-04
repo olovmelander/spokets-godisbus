@@ -4,11 +4,12 @@ big-candy.py builds.
   - the trail's sweets, after Olov's poster: a karamell in its twisted wrapper, a striped one, a polka swirl
     in a wrapper, a heart and a small swirl lollipop, and a plain little one for the shop's jars;
   - the sixteen kinds of hidden candy, each shaped as what it is, in the colours of src/content/kinds.ts;
-  - the golden gelehallon, the glowing lollipop of the mist and the shrinking star.
+  - the golden gelehallon, the glowing lollipop of the mist and the shrinking star;
+  - Elof's Saturday bag, which the ghost takes, and the tear in it.
 
 Run it inside Blender. It empties the scene first. Units: 1 Blender unit is 1 EL; Blender's Z is up, and a
 sweet's front faces -Y, which is towards the camera in the game. Every sweet is an object of its own, named
-as the game asks for it, with its middle at the origin.
+as the game asks for it, with its middle at the origin. The bag stands on the origin.
 
 Nothing here has a texture. A sweet's colours are painted on its corners (the colour attribute "Color"),
 with the shade of its own creases baked into them. The first UV coordinate says how much of the game's own
@@ -612,6 +613,71 @@ for wide, deep in ((0.5, -0.07), (0.86, -0.04), (1.0, 0.0), (0.86, 0.04), (0.5, 
 quads, first, last = skin(part, rings, Vector((0.0, -0.085, 0.0)), Vector((0.0, 0.085, 0.0)))
 reach(part, every(quads) + first + last, tone('#fff4b8'), tone('#ffd75a'), 0.0, 0.2, True)
 finish(part, 'stjarna', sharp=50.0, strength=0.4)
+
+
+# --- the Saturday bag: striped paper, pinked at its top, open, with sweets looking out ---------------------
+
+def outline(wide, deep, height, count, lift=None):
+    """A ring with a rounded-rectangle outline, lying flat at a height, its points evenly spaced along it."""
+    fine = []
+    for k in range(720):
+        angle = TAU * k / 720
+        c = math.cos(angle)
+        s = math.sin(angle)
+        fine.append(((abs(c) ** 0.4) * (1.0 if c >= 0 else -1.0) * wide / 2.0, (abs(s) ** 0.4) * (1.0 if s >= 0 else -1.0) * deep / 2.0))
+    along = [0.0]
+    for k in range(1, 721):
+        a = fine[k - 1]
+        b = fine[k % 720]
+        along.append(along[-1] + math.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2))
+    ring = []
+    k = 0
+    for j in range(count):
+        want = along[-1] * j / count
+        while along[k + 1] < want:
+            k += 1
+        ring.append(Vector((fine[k][0], fine[k][1], height + (lift[j] if lift else 0.0))))
+    return ring
+
+
+SIDES = 32
+part = new_part()
+pinked = [0.02 if j % 2 == 0 else -0.012 for j in range(SIDES)]
+rings = [
+    outline(0.33, 0.21, 0.0, SIDES),
+    outline(0.40, 0.27, 0.08, SIDES),
+    outline(0.43, 0.30, 0.24, SIDES),
+    outline(0.42, 0.28, 0.40, SIDES),
+    outline(0.40, 0.22, 0.52, SIDES),
+    outline(0.41, 0.19, 0.60, SIDES, lift=pinked),
+    outline(0.385, 0.165, 0.585, SIDES, lift=pinked),
+    outline(0.36, 0.17, 0.47, SIDES),
+]
+quads, first, last = skin(part, rings, Vector((0.0, 0.0, 0.0)), Vector((0.0, 0.0, 0.45)))
+paper = fixed(tone('#efdfbd'))
+striped(part, quads[:5], [], 2, 4, fixed(tone('#5379a3')), paper)
+flat(part, first, paper)
+flat(part, every(quads[5:]) + last, fixed(tone('#8f7350')))
+# What he chose on Saturday looks out over the edge.
+PEEKING = (
+    (-0.11, 0.0, 0.57, 0.055, '#e8483f'), (0.0, 0.01, 0.6, 0.06, '#f6c445'), (0.105, -0.01, 0.575, 0.052, '#58b368'),
+    (-0.05, -0.03, 0.545, 0.045, '#ef7fb0'), (0.06, 0.03, 0.55, 0.045, '#4a90d9'),
+)
+for x, y, z, size, colour in PEEKING:
+    flat(part, ball(part, (x, y, z), (size, size * 0.8, size), 8, 5), fixed(tone(colour)))
+finish(part, 'lordagspase', sharp=50.0, strength=0.55)
+
+# Reva: the tear at the bag's hinge, a jagged rip that is dark inside. It lies in the bag's front.
+part = new_part()
+points = []
+jagged = (0.085, 0.03, 0.06, 0.022, 0.075, 0.028, 0.05, 0.02, 0.07, 0.03, 0.055, 0.024)
+for j in range(12):
+    angle = TAU * j / 12 + 0.2
+    points.append(Vector((math.cos(angle) * jagged[j] * 1.3, 0.0, math.sin(angle) * jagged[j] * 0.75)))
+behind = [point + Vector((0.0, 0.004, 0.0)) for point in points]
+quads, first, last = skin(part, [points, behind], Vector((0.0, -0.002, 0.0)), Vector((0.0, 0.006, 0.0)))
+flat(part, every(quads) + first + last, fixed(tone('#5d4433')))
+finish(part, 'reva', sharp=20.0, strength=0.0)
 
 
 # --- the shade of each sweet's own creases, baked into its colours ------------------------------------------
