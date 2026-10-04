@@ -226,7 +226,7 @@ Release CPU mip buffers for supported immutable KTX2 pack textures after upload.
 
 Procedural and dynamic textures keep the CPU data they need. No blanket geometry or unsupported-source release is attempted.
 
-Validation: the clean combined tree passes 665 unit/robot tests, typecheck, production build/size and privacy gates (371 KB gzip JS; 700 KB public boot). The source passed 13 real KTX browser checks plus 30 lifecycle checks, covering uploaded payload hashes, released buffers, offline recovery, bounded failures, retry and repeated context loss. The full 28-suite integrated browser gate is running.
+Validation: the clean combined tree passes 665 unit/robot tests, typecheck, production build/size and privacy gates (371 KB gzip JS; 700 KB public boot). The source passed 13 real KTX browser checks plus 30 lifecycle checks, covering uploaded payload hashes, released buffers, offline recovery, bounded failures, retry and repeated context loss. The subsequent full 28-suite integrated browser gate passed uninterrupted on the recovered baseline.
 
 ## Complete integrated fixtures and narrow-screen hints
 
@@ -235,8 +235,9 @@ Fixtures now retain the actual game scene when renderer effects add their own sc
 wrap inside phone margins instead of extending past portrait screens. Gameplay and visuals are unchanged.
 
 Validation: 665 unit/robot tests, typecheck, build/size and built-in privacy checks pass on the recovered
-baseline (371 KB gzip JavaScript, 700 KB public boot). The complete existing 28-suite browser gate is
-being run together; its final result is recorded when it finishes.
+baseline (371 KB gzip JavaScript, 700 KB public boot). The complete existing 28-suite browser gate
+finished uninterrupted with exit status 0, including all recovered fixtures and final rendering suites.
+Saved as PR #104, stacked on #103.
 
 ## Grow and return the wordless memories
 

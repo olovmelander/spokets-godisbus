@@ -5,9 +5,14 @@
 - **Current Git state:** `main` is still the deployed checkpoint from PR #60. The subsequent code
   improvements are saved in the PR stack #61–#103 and its full-game checkpoint; they have not been
   merged or deployed. PR #104 preserves the previously local browser fixture and narrow-screen fixes;
-  PR #105 adds the memory presentation. `codex/story-thought-pictures` continues from #105 with the
-  clearer ghost pictures below. All three changes are stacked, without a release or deployment.
+  PR #105 adds the memory presentation. PR #106 (`codex/story-thought-pictures`) continues from #105
+  with the clearer ghost pictures below. All three changes are stacked, without a release or deployment.
   `RELEASED_CHAPTER` remains `null`.
+
+- **Recovered baseline verified:** the complete existing 28-suite browser gate finished uninterrupted
+  with exit status 0, alongside 665 unit/robot tests, typecheck, build/size and built-in privacy checks.
+  The new memories and thought pictures also pass their combined checks recorded below; the gate now
+  includes both new browser suites for future runs.
 
 - **Memories grow from their source and return to it** (`codex/memory-bubble-presentation`; plan §2.4).
   - First discoveries grow from the visible ghost, or from the touched glowing shaving when the ghost
