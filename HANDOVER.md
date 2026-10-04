@@ -111,6 +111,20 @@
   - **Next:** continue the remaining code tasks below. H1/H2, sound review and family model feedback still
     need Olov; this change requires no Blender or private assets. No new question or later-release wish.
 
+- **Finale nightfall repaired** (4 October, cloud session, `codex/finale-nightfall`).
+  - The blue-hour sky, all five distant scenery layers and their haze now darken together over the
+    existing three-second transition after *Smaka*. The stars have their own single point layer and stay
+    round in portrait and landscape. The existing northern lights, story and simulation are unchanged.
+  - No textures are redrawn and no shaders compile during the transition. The added star layer costs
+    one draw call. Seeded finale checks at 844×390 and 390×844 on Low and High stay within 120 calls
+    (93/95 in landscape, 66/68 in portrait after the family signs appear). Pausing holds the fade; reversing
+    it restores the original colours without drift. Morning prologue captures remain pixel-identical.
+  - Validation: 461 unit/robot tests, 36 targeted browser checks (`node tests/browser/nightfall.mjs`),
+    typecheck, build/size gate and the built-in privacy scan. Iteration captures use stand-ins and stay
+    in ignored `docs/shots/_work/nightfall/`. Physical device performance and H1a still need Olov.
+  - This repair needs no Blender work. The remaining art/model work still needs Olov's computer;
+    no family assets, release setting, "Senare" scope or questions to Olov changed.
+
 - **Done:**
   - The plan, `docs/game-plan.md` version 4: research, design, art direction, technology and delivery. Version 4
     takes in Olov's second round of answers of 3 October, which settle every question version 3 left open (plan
@@ -253,8 +267,7 @@
       - Tests: `tests/unit/backdrop.test.ts` (5): every place outdoors has four to six layers, one behind
         the other and inside what the camera sees, each with its own speed. The browser test still finds
         no shader compiled during play.
-      - **Not done:** the layers do not darken when night falls in the final (the old ones did not
-        either); the windows' picture does not move; nothing is rendered in Blender yet. A new place needs
+      - **Not done:** the windows' picture does not move; nothing is rendered in Blender yet. A new place needs
         its layers in `LAYERS` in `backdrop.ts`: the type checker says so.
     - **Not yet:** plates rendered in Blender and scanned materials (what is there is drawn in code and reads
       as stylized); bloom and depth blur on High; pines with crowns; the animals and the family's hands as
@@ -970,8 +983,7 @@
 - What Stage 2 still lacks in code: the challenge routes C2 to C4. Multiple players, album photos
   and offline play are implemented. The dew bells
   exist, but still need replayable notes and visible lawn glitter to finish the planned toy.
-- Look-dev repair: make the final's sky and far scenery darken together as night falls, and keep the
-  stars round at different aspect ratios. This can be done in a cloud code session.
+- Look-dev: review the repaired finale nightfall and round stars on Olov's devices at H1a.
 - The sound, once Olov has listened: nothing of it has been heard by anyone.
 
 The older list, still true where it is not struck:
@@ -1059,7 +1071,7 @@ The older list, still true where it is not struck:
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 | — / 2 | Plan versions 1–4; `main` and the placeholder page; the reference pictures gathered |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
 | 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | In the same session: sound effects; the ghost that keeps its distance; Kapitel 1 in greybox, playable with `?dev`; the title and the first start; Kapitel 2, 3 and 4, the final, the prologue and the epilogue in greybox rules; stand-ins for the things and the animals; the helper, the album's stickers, Moas karta, the opening scene with the blink, the four memories as picture cards, and the music with each place's air. Only what needs no art, until the look and the characters are decided. On 4 October: chapter codes, C1, two optional delights, footsteps and wordless sounds, more switches, and the extra chapter Byn. A cloud session completed touch-follow, graphics selection, controls reference and menu input routing; another implemented offline boot/chapter caching and title-only updates. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. |
@@ -1069,8 +1081,7 @@ The older list, still true where it is not struck:
 - Offline play is checked in Chromium with a real worker and the test server disconnected. Installed
   Safari/Home Screen updates and storage eviction have not been checked on the family's devices yet.
 
-- The far layers of the sky and hills do not darken when night falls in the final, and the stars at dusk
-  are drawn as short dashes: the sky's picture is stretched to the screen.
+
 - With three sessions working on the computer at once, two long tests timed out and the browser test once
   measured a warm-up frame. Both are fixed (a minute for the tests; the measure waits for the frame to
   settle). On a quiet computer and in CI neither happened.

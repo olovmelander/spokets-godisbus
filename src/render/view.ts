@@ -10,6 +10,7 @@ import { captureFrame } from './capture';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
+import { nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass } from './grade';
 import { chooseTier, pixelRatioFor, type Tier } from './quality';
@@ -510,15 +511,20 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const centreY = look.y + viewHeight * look.zoom * (0.5 - GROUND_FROM_BOTTOM);
     camera.position.set(look.x, centreY, distance * look.zoom);
     camera.lookAt(look.x, centreY, 0);
+    const darkness = night.update(flags, look.x, centreY, clock, dt);
     if (dressing && place) {
-      dressing.update(look.x, look.y, clock);
+      dressing.update(look.x, look.y, clock, darkness);
+      if (place.id === 'dusk') {
+        scene.backgroundIntensity = nightBrightness(darkness);
+        // Fog keeps a copy of its initial colour; changing `sky` alone never changes the haze.
+        (scene.fog as Fog).color.copy(sky);
+      }
       // The haze begins behind the play plane, however far the camera has pulled back.
       if (!chapter.mist) {
         (scene.fog as Fog).near = camera.position.z + place.haze.near;
         (scene.fog as Fog).far = camera.position.z + place.haze.far;
       }
     }
-    night.update(flags, look.x, centreY, clock, dt);
 
     // The stand-in Elof: turned a little towards the camera, legs swinging with the distance he covers.
     // On a hose he turns his back to the camera, as a climber does.
@@ -795,13 +801,13 @@ function buildWater(chapter: ChapterData, look: { colour: string; opacity: numbe
 }
 
 /**
- * Night and the northern lights (plan §3.4, the final), in greybox. When the chapter's flag is set, the sky
+ * Night and the northern lights (plan §3.4, the final). When the chapter's flag is set, the sky
  * darkens over a few seconds, the light turns low and blue, and three green ribbons wave far behind the
  * scene. The ribbons are there from the start, unseen, so that no shader is compiled when they flare.
  */
 function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLight, sun: DirectionalLight) {
   const group = new Group();
-  if (!chapter.night) return { group, update: () => {} };
+  if (!chapter.night) return { group, update: () => 0 };
   const after = chapter.night.after;
   const day = sky.clone();
   // Night from the start is there at once: it doesn't fall while he watches.
@@ -828,7 +834,7 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
     return ribbon;
   });
   let k = after === null ? 1 : 0;
-  function update(flags: ReadonlySet<string>, x: number, y: number, clock: number, dt: number): void {
+  function update(flags: ReadonlySet<string>, x: number, y: number, clock: number, dt: number): number {
     k = Math.min(1, Math.max(0, k + (after === null || flags.has(after) ? dt : -dt) / 3));
     sky.copy(day).lerp(dark, k);
     hemisphere.intensity = lerp(lights.hemisphere, 0.75, k);
@@ -838,6 +844,7 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
       ribbon.rotation.z = 0.08 * Math.sin(clock * 0.33 + i * 1.7) + (i - 1) * 0.07;
       (ribbon.material as MeshBasicMaterial).opacity = k * (0.5 + 0.2 * Math.sin(clock * 0.9 + i * 2.4));
     }
+    return k;
   }
   return { group, update };
 }

@@ -371,6 +371,5 @@ Each should be recognisable at phone size, and none is final.
 - In the bog, the mountain and the final: pines with crowns (a bare trunk reads as a pole, so the mountain
   has none yet), the valley below the crane flight, Mamma's lamp, the headlamps.
 - In the garden: long shadows, the hose and the lost things under the deck, the birch's crown, the workshop.
-- In the far layers: they do not darken when night falls in the final, and what the windows show at home
-  does not move.
-
+- What the windows show at home does not move. The finale's sky, distant layers and haze now share the
+  same nightfall; its stars are separate round points, unaffected by the sky gradient's aspect ratio.
