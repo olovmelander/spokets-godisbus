@@ -22,7 +22,7 @@ const server = await createServer({ root, server: { host: '127.0.0.1', port: 0, 
       export { Game } from ${JSON.stringify(join(root, 'src/app/game.ts'))};
       export { byn } from ${JSON.stringify(join(root, 'src/content/chapters/byn.ts'))};
       let scene; const before = Scene.prototype.onBeforeRender;
-      Scene.prototype.onBeforeRender = function (...args) { scene = this; before.apply(this, args); };
+      Scene.prototype.onBeforeRender = function (...args) { if (this.getObjectByName('chase-ghost')) scene = this; before.apply(this, args); };
       export const renderedScene = () => scene;
     `;
   },
@@ -41,7 +41,7 @@ try {
       const errors = [];
       page.on('pageerror', (error) => errors.push(String(error)));
       page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
-      await page.route('**/village-probe', (route) => route.fulfill({ contentType: 'text/html', body: '<body style="margin:0"><canvas id="game" style="width:100vw;height:100vh;display:block"></canvas></body>' }));
+      await page.route('**/village-probe', (route) => route.fulfill({ contentType: 'text/html', body: '<script type="module" src="/spokets-godisbus/@vite/client"></script><body style="margin:0"><canvas id="game" style="width:100vw;height:100vh;display:block"></canvas></body>' }));
       await page.goto(`${origin}/spokets-godisbus/village-probe`);
       const early = await page.evaluate(async ({ x, y, tier }) => {
         const f = await import('/spokets-godisbus/village-fixture.js');
