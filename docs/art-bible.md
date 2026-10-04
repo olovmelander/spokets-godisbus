@@ -373,3 +373,57 @@ Each should be recognisable at phone size, and none is final.
 - In the garden: long shadows, the hose and the lost things under the deck, the birch's crown, the workshop.
 - What the windows show at home does not move. The finale's sky, distant layers and haze now share the
   same nightfall; its stars are separate round points, unaffected by the sky gradient's aspect ratio.
+
+### 2.9 Candy
+
+The candy is the game's trail, its checkpoints and its treasure, so it is drawn to be seen first and read at
+once (plan §4.3; H1a asks whether Elof and the candy are readable at phone size). It looks like the candy on
+Olov's poster: glossy karameller in twisted wrappers, striped ones, swirls, a heart and a lollipop.
+
+**It is modelled in Blender,** by two generators that build everything from numbers, with nothing from
+anyone else:
+
+- `art/blender/candy.py` builds the kit, `art/baked/boot/candy.glb`: 25 sweets in one file, without a texture.
+  - *The trail:* `karamell`, `randig` (striped), `polka` (a swirl in a wrapper), `hjarta` and `klubba` (a small
+    swirl lollipop). Thirteen in a row and then again, mostly karameller, each in the poster's six colours.
+  - *The sixteen hidden kinds,* each shaped as what it is, in the two colours its sticker has
+    (`src/content/kinds.ts`; a test holds the generator to them): a geléhallon of round beads, a sitting
+    gummy bear, a foam banana and a foam mushroom, a two-layer sockerbit, a ringed worm, a layered chokladkola,
+    a cola bottle, a gold coin, a fried egg, a dummy, a striped lakritskonfekt, a polkagris, a wrapped
+    gräddkola, a salmiak lozenge and a praline in its paper cup.
+  - *The magic candy:* `guldhallon`, `lysklubba` (a golden swirl) and `stjarna` (the shrinking star).
+  - `burk`, a wrapped sweet of 60 triangles, for the hundreds in the shop's jars.
+- `art/blender/big-candy.py` builds the checkpoint, `art/baked/boot/big-candy.glb`: a thick round swirl
+  lollipop with a yellow bow, and the one painted texture (256², with the stick's and the bow's colours in
+  its corners, so the whole model is one material).
+
+**How a sweet gets its colours** (`src/render/candy.ts`):
+
+- Its colours are painted on its corners, with the shade of its own creases baked into them in Blender
+  (Cycles, ambient occlusion per point). Stripes follow the faces, so they stay crisp at any size.
+- The first UV coordinate says how much of the game's colour a corner takes. A karamell's sweet takes all of
+  it, its paper most of it, a white stripe none: one mesh draws a red, a yellow and a green karamell.
+- **A sweet gives off a little of its own colour** (`CANDY_LIFT`), and its rim catches the sky. So it keeps
+  its colours in the forest's shade, against the bog's low sun and at night, where everything else takes the
+  place's light. Magic candy gives off most of its colours: it glows, and High's bloom spreads it.
+- Until the kit has arrived, and wherever it is missing, each place draws the stand-in it builds in code.
+
+**Rules:**
+
+- **Red is the candy's** (§2.2). The big candy is red and white in every place.
+- **No mark on anything** (plan §0): the coin's face is a plain raised round. The foam mushroom's cap has no
+  dots: it is a sweet, and never looks like a fly agaric (plan §3.3).
+- **A sweet keeps its best side to him.** Trail sweets sway instead of turning right round, so a wrapped one
+  always has its bow-tie outline and a flat one shows its swirl; one in a wrapper rolls round its own length.
+  A hidden sweet sways inside its golden ring. The big candy's swirl turns like a pinwheel, faster once reached.
+- **Budgets.** The trail is at most five draw calls (one for each kind of sweet), about 450 triangles a
+  sweet; a hidden sweet is one draw call and at most 1,300 triangles; the kit is 140 KB packed.
+
+**To rebuild or change it,** on Olov's computer with Blender open: send `art/blender/candy.py` to Blender,
+then `scripts/bake/export.py` with `OUT` set to `art/baked/boot/candy.glb`; the same for `big-candy.py`.
+`art/blender/candy-sheet.py` renders the whole kit as one picture for looking at. The server's safe mode
+allows no classes and no functions passed as values, which is why the generators give shapes as tables.
+
+**What Olov judges:** is each hidden kind recognisable as its sort; are the trail's sweets bright enough and
+big enough on a phone; is the big candy's bow wanted. `docs/shots/_work/candy/` has the sheet and pictures
+from the game.
