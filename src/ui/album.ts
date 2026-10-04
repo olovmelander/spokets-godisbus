@@ -7,7 +7,7 @@ import { sv } from '../content/sv';
  * order of the story. A kind he has found is a sticker with its name. One still out there is an empty ring,
  * and keeps its name to itself: what it is, is for him to find out. Under them: Hittegods (plan §4.8).
  */
-export function albumHtml(found: readonly string[], lost: readonly string[] = []): string {
+export function albumHtml(found: readonly string[], lost: readonly string[] = [], keepsakes: readonly string[] = []): string {
   const has = new Set(found);
   const kinds = Object.entries(KINDS);
   const slots = kinds.map(([kind, look]) =>
@@ -19,5 +19,6 @@ export function albumHtml(found: readonly string[], lost: readonly string[] = []
   // Hittegods: what he has found under the deck, by name. What is still lost keeps its name to itself.
   const things = LOST.map((thing) => (lost.includes(thing) ? `<li class="got" data-thing="${thing}">${sv.lost[thing]}</li>` : '<li>?</li>'));
   return `<h3>${sv.album.title}</h3><p class="album-count">${count}</p><ul class="album-grid">${slots.join('')}</ul>`
-    + `<h3>${sv.lostTitle}</h3><ul class="lost-list">${things.join('')}</ul>`;
+    + `<h3>${sv.lostTitle}</h3><ul class="lost-list">${things.join('')}</ul>`
+    + (keepsakes.includes('vittra') ? `<h3>${sv.keepsakes}</h3><ul class="album-grid"><li class="got" data-keepsake="vittra"><i style="--colour:#f2df9a;--mark:#5f923f"></i><span>${sv.vittraSticker}</span></li></ul>` : '');
 }

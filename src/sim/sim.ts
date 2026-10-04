@@ -340,6 +340,7 @@ export class Sim {
   step(input: StepInput): void {
     this.prev = this.curr;
     this.ringNotes();
+    this.returnGifts();
     // While he watches a beat of the story, the stick and the buttons do nothing.
     if (this.watching) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
     // Free, he may take hold of something this step: a hose, a ledge, or the hose below him.
@@ -741,6 +742,18 @@ export class Sim {
   }
 
   // --- taking hold --------------------------------------------------------------------------------------
+
+  /** A little thank-you waits until the gift giver has gone away and passes the door again. */
+  private returnGifts(): void {
+    for (const spot of this.spots) {
+      if (!spot.returnGift || !this.flags.has(spot.id) || this.flags.has(spot.returnGift)) continue;
+      const away = `${spot.id}:away`;
+      const distance = Math.hypot(spot.at.x - this.curr.x, spot.at.y - this.curr.y);
+      if (this.state.kind !== 'free' || !this.curr.grounded) continue;
+      if (distance >= 4) this.flags.add(away);
+      else if (distance <= SPOT_REACH && this.flags.has(away)) this.flags.add(spot.returnGift);
+    }
+  }
 
   /** Bells answer contact edges, not every physics step and not only the first saved discovery. */
   private ringNotes(): void {

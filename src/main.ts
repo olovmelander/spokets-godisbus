@@ -483,6 +483,7 @@ function start(): void {
   let flagsSeen = -1;
   // Whether the dew bells had all rung when the page last looked.
   let dewRung = game.sim.flags.has('dewsong');
+  let vittraThanked = game.sim.flags.has('keepsake:vittra');
   // How many lost things were found when the page last looked, and which: -1 before it has looked.
   let lostSeen = -1;
   let lostKnown: readonly string[] = [];
@@ -562,8 +563,14 @@ function start(): void {
         hud.notice(sv.dewSong);
         audio.play({ kind: 'found' });
       }
+      if (!vittraThanked && game.sim.flags.has('keepsake:vittra')) {
+        vittraThanked = true;
+        hud.notice(sv.vittraFound);
+        audio.play({ kind: 'found' });
+      }
       // The album's page, in the pause panel: in the story only.
-      byId('pauseAlbum').innerHTML = mapState(chapter.id) ? albumHtml(found, lost) : '';
+      const keepsakes = Object.values(all).some((flags) => flags.includes('keepsake:vittra')) ? ['vittra'] : [];
+      byId('pauseAlbum').innerHTML = mapState(chapter.id) ? albumHtml(found, lost, keepsakes) : '';
     }
     for (; told < game.sim.said.length; told++) {
       const beat = beats.get(game.sim.said[told]!);

@@ -84,6 +84,8 @@ export interface Spot {
   extra?: boolean;
   /** A replayable bell: its MIDI pitch stays the same on every visit, including after loading a save. */
   note?: number;
+  /** A kindness toy: after using it, leave by 4 EL and return for this saved keepsake flag. */
+  returnGift?: string;
   /** What stands there, for the picture. Left out: only the glint over it. */
   look?: SpotLook;
   /** The word on the button where the verb's own is too plain: a key of `sv.verbs`, as in "Ropa på Moa". */
@@ -282,7 +284,7 @@ export interface SimStart {
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
 export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone';
-export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn';
+export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'vittra-door' | 'keepsake';
 export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none';
 
 /** The places of the story, each with its own light and layers (plan §5.4). The picture's business only. */

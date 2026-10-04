@@ -61,8 +61,17 @@ try {
   await page.keyboard.up('ArrowLeft');
   const strikes = (await state()).noteHits.filter((hit) => hit.id === 'note:1');
   assert.ok(strikes.length >= 2 && strikes.every((hit) => hit.midi === 67), 'The saved shore cobble can be played again at the same pitch');
+  await open('course=granskog&at=64.4,10.01&flags=vittra:berry');
+  assert.equal((await state()).word, 'leaveBerry', 'The door offers the berry gift');
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.__godis.state().flags.includes('vittra:gift'));
+  assert.ok(!(await state()).flags.includes('keepsake:vittra'), 'Giving is not an immediate sticker pickup');
+  await open('course=granskog&at=64.4,10.01&flags=vittra:gift,vittra:gift:away');
+  await page.waitForFunction(() => window.__godis.state().flags.includes('keepsake:vittra'));
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('[data-keepsake="vittra"]').count(), 1, 'The return gift appears in the album as a keepsake');
   assert.deepEqual(errors, [], 'No browser errors');
-  console.log('Replayable toys: garden and mountain browser checks passed.');
+  console.log('Replayable toys: garden, mountain and vittra browser checks passed.');
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));

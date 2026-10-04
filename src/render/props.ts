@@ -250,6 +250,26 @@ export function spotProp(spot: Spot): SpotProp | null {
       }
       return { group, update: (used, _clock, dt) => vanish(used, dt) };
     }
+    case 'vittra-door': {
+      // An ordinary little wooden door tucked under a root; no creature or family likeness.
+      const frame = new Mesh(new BoxGeometry(0.72, 0.82, 0.12), solid('#60432d'));
+      frame.position.y = 0.41;
+      const door = new Mesh(new BoxGeometry(0.5, 0.65, 0.09), solid('#785d37'));
+      door.position.set(0, 0.33, 0.1);
+      const root = rod(0.11, 1.1, solid('#4b3529'));
+      root.position.set(-0.12, 0.86, -0.02);
+      root.rotation.z = 1.2;
+      const gift = ball(0.08, solid('#c4202a', 0.25), 0.37, 0.12, 0.2);
+      group.add(frame, door, root, ball(0.025, solid('#dfc372', 0.5), 0.16, 0.33, 0.17), gift);
+      return { group, update(used) { gift.scale.setScalar(used ? 1 : 0); } };
+    }
+    case 'keepsake': {
+      const paper = ball(0.2, solid('#f2df9a'), 0, 0, 0, [1, 1, 0.1]);
+      const leaf = ball(0.1, solid('#5f923f'), 0, 0, 0.04, [0.7, 1.3, 0.15]);
+      leaf.rotation.z = -0.5;
+      group.add(paper, leaf);
+      return { group, update(_used, clock) { group.rotation.z = Math.sin(clock * 1.7) * 0.08; } };
+    }
     case 'jay': {
       // Lavskrikan: grey-brown, with a dark cap and a rust-red tail. It hops when it gets its berry.
       const bird = new Group();

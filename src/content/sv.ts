@@ -57,6 +57,7 @@ export const sv = {
     brush: 'Borsta tänderna',
     give: 'Ge',
     pick: 'Plocka',
+    leaveBerry: 'Lämna ett lingon',
     rideAnts: 'Åk med myrorna',
     standOn: 'Ställ dig här',
     grab: 'Ta!',
@@ -89,6 +90,7 @@ export const sv = {
     stomp: 'Ge tillbaka mitt godis!',
     tiny: 'Lillebror?! Du är ju pytteliten!',
     givesAway: 'Spöket ger bort mitt godis!?',
+    vittraBerry: 'Ett lingon till er också.',
     heja: 'Heja lillebror!',
     thanked: 'Spöket tackade mig!',
     spangen: 'På myren går vi på spången.',
@@ -135,6 +137,9 @@ export const sv = {
   lostTitle: 'Hittegods',
   // Daggklockspelet (plan §4.8): said when the drops play the opening theme in order.
   dewSong: 'Hela gräsmattan glittrar!',
+  keepsakes: 'Små minnen',
+  vittraSticker: 'Vittrornas tack',
+  vittraFound: 'Ett klistermärke! Tack för lingonet.',
   // The album in the pause panel: every kind, found or not.
   album: { title: 'Godisalbumet', count: '{found} av {total} sorter' },
   photos: {

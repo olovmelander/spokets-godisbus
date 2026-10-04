@@ -26,3 +26,9 @@ Validation: integrated typecheck and nine focused tests; source unit/robot and b
 The shore cobbles now form a replayable musical toy with fixed notes. Playing them again leaves story and collectible progress unchanged.
 
 Validation: both integrated cobble tests and source browser toy checks passed.
+
+## Add the forest berry gift and return reward
+
+The forest's tiny door accepts a berry gift. Leaving and returning reveals a saved keepsake, separate from the 16 candy types; the story ghost encounter remains intact.
+
+Validation: integrated typecheck and all 524 unit/robot tests pass. Source browser checks cover the gift, departure, return and saved reward.

@@ -149,6 +149,9 @@ export const granskog: ChapterData = {
     { id: 'berry', look: 'berry', at: { x: 33, y: 0 }, verb: 'take', word: 'pick' },
     { id: 'jay', look: 'jay', at: { x: 38, y: 0 }, verb: 'give', needs: 'berry' },
     { id: 'antlift', look: 'ants', at: { x: 58.6, y: 4 }, verb: 'take', word: 'rideAnts', needs: 'placed:twig', ride: 'antlift' },
+    // O3 is separate from the ghost's vittra story beat. This berry is for the neighbours, not the jay.
+    { id: 'vittra:berry', look: 'berry', at: { x: 61, y: 10 }, verb: 'take', word: 'pick', needs: 'beat:vittra' },
+    { id: 'vittra:gift', look: 'vittra-door', at: { x: 64.4, y: 10 }, verb: 'give', word: 'leaveBerry', needs: 'vittra:berry', returnGift: 'keepsake:vittra' },
     // The loose cone at the top of the slope: touching it sets the avalanche off.
     { id: 'avalanche', at: { x: 70.4, y: 0 }, verb: 'take', touch: true },
     { id: 'seesaw', look: 'sign', at: { x: 108.2, y: -8 }, verb: 'call', word: 'callPappa' },
@@ -158,6 +161,7 @@ export const granskog: ChapterData = {
     { id: 'memory', look: 'memory', at: { x: 144, y: -8 }, verb: 'take', touch: true },
     { id: 'cap', look: 'sign', at: { x: 154.6, y: -8 }, verb: 'call', word: 'callBertil', ride: 'cap' },
   ],
+  decor: [{ look: 'keepsake', at: { x: 64.4, y: 10.8 }, after: 'keepsake:vittra' }],
   movers: [
     // C2: deliberately jump onto the first needle mat; the main ant road stays open underneath.
     ...Array.from({ length: 6 }, (_, i) => ({
@@ -231,6 +235,7 @@ export const granskog: ChapterData = {
   ],
   beats: [
     { id: 'vittra', at: 61.8, who: 'elof', line: 'givesAway' },
+    { id: 'vittra-gift', on: 'vittra:gift', who: 'elof', line: 'vittraBerry' },
     { id: 'heja', at: 166, who: 'bertil', line: 'heja' },
     { id: 'thanked', on: 'placed:rescue', who: 'elof', line: 'thanked' },
   ],
