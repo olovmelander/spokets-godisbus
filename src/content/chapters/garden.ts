@@ -151,13 +151,13 @@ export const garden: ChapterData = {
     { id: 'lost:brick', look: 'brick', at: { x: 57.9, y: 1.7 }, verb: 'take', touch: true },
     { id: 'lost:coin', look: 'coin', at: { x: 59.9, y: 1.7 }, verb: 'take', touch: true },
     // Daggklockspelet (O1): four drops of dew on bent blades of grass over the lawn. A hop rings one, each a
-    // step higher than the last, and when all four have rung the lawn glitters.
-    ...[89.6, 91, 92.4, 97.9].map((x, i) => ({ id: `note:dew${i + 1}`, look: 'dew' as const, at: { x, y: 1.6 }, verb: 'take' as const, touch: true })),
+    // note of the polska's opening D–F–A–D. They can always be played again.
+    ...[89.6, 91, 92.4, 97.9].map((x, i) => ({ id: `note:dew${i + 1}`, look: 'dew' as const, at: { x, y: 1.6 }, verb: 'take' as const, touch: true, note: [74, 77, 81, 86][i]! })),
     // Memory 1, on top of Pappa's shavings: the night he carved his first figure.
     { id: 'memory', look: 'memory', at: { x: 147, y: 3.3 }, verb: 'take', touch: true },
     { id: 'moa', look: 'sign', at: { x: 166, y: 0 }, verb: 'call', word: 'callMoa', ride: 'plane' },
   ],
-  sets: [{ flag: 'dewsong', when: ['note:dew1', 'note:dew2', 'note:dew3', 'note:dew4'] }],
+  song: { flag: 'dewsong', notes: ['note:dew1', 'note:dew2', 'note:dew3', 'note:dew4'] },
   hooks: [
     // The first swing is over flat ground: a miss costs nothing.
     { x: 54, y: 3.4, length: 2.6, land: { x: 57.4, y: 0 } },

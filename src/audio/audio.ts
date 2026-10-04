@@ -223,9 +223,10 @@ export function createAudio(): Audio {
       case 'bigCandy':
         for (const [i, semitones] of [0, 4, 7, 12].entries()) tone('sine', note(semitones, 659.25), note(semitones, 659.25), 0.5, 0.16, i * 0.09);
         break;
-      case 'note': {
+      case 'note':
+      case 'bell': {
         // A round stone rings like a bell, with a little of the octave above it.
-        const pitch = note(SCALE[cue.step % SCALE.length]!, 392);
+        const pitch = cue.kind === 'bell' ? 440 * 2 ** ((cue.midi - 69) / 12) : note(SCALE[cue.step % SCALE.length]!, 392);
         tone('sine', pitch, pitch, 0.9, 0.2);
         tone('sine', pitch * 2, pitch * 2, 0.5, 0.05);
         break;

@@ -15,6 +15,7 @@ import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass } from './grade';
 import { chooseTier, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
+import { songGlitter } from './song-glitter';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, PlayerState } from '../sim/types';
 
@@ -70,6 +71,7 @@ export interface Frame {
   gusts: readonly { blow: number; warn: number }[];
   /** The cranberries, in the chapter's order: how flat each is after a bounce, from 1 to 0. */
   berries?: readonly { squash: number }[];
+  noteHits?: readonly { serial: number; id: string; midi: number }[];
   /** What the helper is doing: its step, and where the thing is. */
   help: { step: number; at: { x: number; y: number } | null };
 }
@@ -170,6 +172,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const glitter = buildGlitter();
   const lace = buildLace();
   const glints = buildGlints(chapter);
+  const lawnSong = songGlitter(chapter);
+  const noteStrikes = new Map<string, number>();
+  scene.add(lawnSong.group);
   const plane = buildPlane();
   scene.add(glints.group, plane);
   // The things that stand at spots, and what carries him on each ride, where the chapter says what they are.
@@ -440,7 +445,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
   }
 
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits }: Frame): void {
     rain.update(drips);
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     const x = lerp(prev.x, curr.x, alpha);
@@ -448,6 +453,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     clock += dt;
     trail.update(collected, flags, x, y, dt, clock);
     glints.update(flags, clock);
+    lawnSong.update(flags, clock);
+    for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
     cones.update(rollers, clock);
     water.update(clock);
     for (const [i, t] of tussocks.entries()) tussockMeshes[i]?.position.set(t.x, t.y, 0);
@@ -483,7 +490,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (far) far.rotation.x = beat;
     }
     for (const thing of things) {
-      thing.prop?.update(flags.has(thing.spot.id), clock, dt);
+      thing.prop?.update(flags.has(thing.spot.id), clock, dt, noteStrikes.get(thing.spot.id));
       // Shy lights take turns appearing; unrevealed ones must not betray the hiding place.
       if (thing.prop && thing.spot.look === 'wisp') thing.prop.group.visible = thing.spot.needs === undefined || flags.has(thing.spot.needs);
     }

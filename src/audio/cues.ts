@@ -69,6 +69,7 @@ export type Cue =
   | { kind: 'wood' }
   /** A stone that rings when he touches it: each one a step higher. */
   | { kind: 'note'; step: number }
+  | { kind: 'bell'; midi: number }
   | { kind: 'gust' }
   /** A hidden candy of a new kind. */
   | { kind: 'found' }
@@ -109,6 +110,8 @@ export interface Heard {
   drips: readonly { x: number; y: number }[];
   /** How many ringing stones he has touched. */
   notes?: number;
+  /** Replayable bell strikes, each with a monotonically increasing serial. */
+  noteHits?: readonly { serial: number; midi: number }[];
   /** Whether a gust blows where he is. */
   wind?: boolean;
   /** How many hidden candies he has found in this chapter. */
@@ -198,6 +201,8 @@ export function cuesFor(before: Heard, now: Heard, memory: CueMemory): Cue[] {
 
   if (now.moving > before.moving) cues.push({ kind: 'wood' });
   for (let i = before.notes ?? 0; i < (now.notes ?? 0); i++) cues.push({ kind: 'note', step: i });
+  const lastNote = before.noteHits?.at(-1)?.serial ?? 0;
+  for (const hit of now.noteHits ?? []) if (hit.serial > lastNote) cues.push({ kind: 'bell', midi: hit.midi });
   if (now.wind && !before.wind) cues.push({ kind: 'gust' });
   if ((now.found ?? 0) > (before.found ?? 0)) cues.push({ kind: 'found' });
   for (const who of (now.said ?? []).slice(before.said?.length ?? 0)) cues.push({ kind: 'say', who });

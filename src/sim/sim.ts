@@ -184,6 +184,11 @@ export class Sim {
   readonly ghost: GhostState | null;
   /** The beats that have come, by id, in the order they came: what the page shows as bubbles. */
   readonly said: string[] = [];
+  /** Recent replayable bell strikes. Bounded, immutable between strikes, and never saved as a backlog. */
+  noteHits: readonly { serial: number; id: string; midi: number }[] = [];
+  private noteSerial = 0;
+  private readonly touchingNotes = new Set<string>();
+  private songAt = 0;
   prev: PlayerState;
   curr: PlayerState;
 
@@ -334,6 +339,7 @@ export class Sim {
 
   step(input: StepInput): void {
     this.prev = this.curr;
+    this.ringNotes();
     // While he watches a beat of the story, the stick and the buttons do nothing.
     if (this.watching) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
     // Free, he may take hold of something this step: a hose, a ledge, or the hose below him.
@@ -736,6 +742,29 @@ export class Sim {
 
   // --- taking hold --------------------------------------------------------------------------------------
 
+  /** Bells answer contact edges, not every physics step and not only the first saved discovery. */
+  private ringNotes(): void {
+    const reach = TOUCH_REACH + 0.5;
+    for (const spot of this.spots) {
+      if (spot.note === undefined) continue;
+      const distance = Math.hypot(spot.at.x - this.curr.x, spot.at.y - this.curr.y);
+      if (distance > reach + 0.2 || this.state.kind !== 'free') this.touchingNotes.delete(spot.id);
+      if (distance > reach || this.state.kind !== 'free' || this.touchingNotes.has(spot.id)
+        || (spot.needs !== undefined && !this.flags.has(spot.needs))) continue;
+      this.touchingNotes.add(spot.id);
+      this.flags.add(spot.id);
+      this.noteHits = [...this.noteHits.slice(-15), { serial: ++this.noteSerial, id: spot.id, midi: spot.note }];
+      const song = this.chapter.song;
+      if (!song) continue;
+      if (spot.id === song.notes[this.songAt]) this.songAt++;
+      else if (spot.id !== song.notes[this.songAt - 1]) this.songAt = spot.id === song.notes[0] ? 1 : 0;
+      if (this.songAt === song.notes.length) {
+        this.flags.add(song.flag);
+        this.songAt = 0;
+      }
+    }
+  }
+
   /** What he takes hold of this step, if anything, and what Använd would do. */
   private reach(input: StepInput): void {
     const p = this.curr;
@@ -746,7 +775,7 @@ export class Sim {
     const hook = this.hookInReach();
     // A thing to touch is used by coming close. One with a ride carries him off from the ground.
     for (const spot of this.spots) {
-      if (!spot.touch || this.flags.has(spot.id) || (spot.needs !== undefined && !this.flags.has(spot.needs))) continue;
+      if (!spot.touch || spot.note !== undefined || this.flags.has(spot.id) || (spot.needs !== undefined && !this.flags.has(spot.needs))) continue;
       if (Math.hypot(spot.at.x - p.x, spot.at.y - p.y) > TOUCH_REACH + 0.5) continue;
       const ride = spot.ride === undefined ? undefined : (this.chapter.rides ?? []).find((r) => r.id === spot.ride);
       if (ride && !p.grounded) continue;

@@ -155,7 +155,8 @@ function start(): void {
       candy: game.sim.candyCount, checkpoint: game.sim.checkpoint, bubbles: game.sim.bubbles,
       atGoal: game.sim.flags.has('goal'), moving: game.sim.movers.filter((m) => m.t < 1).length,
       shadows: game.sim.drips.map((d) => d.shadow), drips: game.sim.drips,
-      notes: [...game.sim.flags].filter((flag) => flag.startsWith('note:')).length,
+      notes: (chapter.spots ?? []).filter((spot) => spot.id.startsWith('note:') && spot.note === undefined && game.sim.flags.has(spot.id)).length,
+      noteHits: game.sim.noteHits,
       found: [...game.sim.flags].filter((flag) => flag.startsWith('found:') || flag.startsWith('lost:')).length,
       footing: footingAt(chapter, p.x),
       said: game.sim.said.flatMap((id) => beats.get(id)?.who ?? []),
@@ -444,7 +445,7 @@ function start(): void {
       state: () => ({
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
-        playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(),
+        playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(), noteHits: game.sim.noteHits,
       }),
       info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars }),
     };
@@ -529,6 +530,7 @@ function start(): void {
       collected: game.sim.collected, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
       flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts, help: game.sim.help,
       berries: game.sim.berries,
+      noteHits: game.sim.noteHits,
     });
     // Copy this exact rendered frame now, before WebGL's drawing buffer is discarded. Encoding and
     // IndexedDB run afterwards; the ordinary render loop never keeps its drawing buffer alive.

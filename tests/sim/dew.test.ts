@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { cuesFor, newCueMemory, type Heard } from '../../src/audio/cues';
 import { garden } from '../../src/content/chapters/garden';
 import { sv } from '../../src/content/sv';
+import { POLSKA } from '../../src/audio/music';
 import { STEP } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
-import type { StepInput } from '../../src/sim/types';
+import type { ChapterData, StepInput } from '../../src/sim/types';
 import { heightAt } from '../robot/robot';
 
 // O1, Daggklockspelet (plan §4.8): dew drops on grass blades ring when bumped.
@@ -39,18 +40,65 @@ describe('the dew bells on the lawn', () => {
     }
   });
 
-  it('each one rings a step higher than the last, and when all four have rung the lawn glitters', () => {
+  it('rings the opening theme with each drop’s own pitch, including repeated notes between frames', () => {
     const still: Heard = {
       time: 0, mode: 'free', grounded: false, x: 0, y: 1, vx: 0, vy: 0, candy: 0, checkpoint: -1, bubbles: 0, atGoal: false,
       moving: 0, shadows: [], drips: [], notes: 0,
     };
-    expect(cuesFor({ ...still, notes: 2 }, { ...still, notes: 3 }, newCueMemory())).toEqual([{ kind: 'note', step: 2 }]);
+    expect(drops.map((spot) => spot.note)).toEqual(POLSKA[0]!.map((note) => note.midi + 12));
+    expect(cuesFor({ ...still, noteHits: [{ serial: 1, midi: 74 }] }, {
+      ...still, noteHits: [{ serial: 1, midi: 74 }, { serial: 2, midi: 74 }, { serial: 3, midi: 81 }],
+    }, newCueMemory())).toEqual([{ kind: 'bell', midi: 74 }, { kind: 'bell', midi: 81 }]);
+    expect(sv.dewSong.length).toBeLessThanOrEqual(40);
+  });
+
+  it('does not award the song for merely loading four discovered drops in any order', () => {
     const sim = new Sim({ ...garden, spawn: { x: 95, y: 1.11 } }, {}, { flags: ['note:dew1', 'note:dew2', 'note:dew3'] });
     for (let i = 0; i < 0.2 / STEP; i++) sim.step(idle);
     expect(sim.flags.has('dewsong')).toBe(false);
     const last = new Sim({ ...garden, spawn: { x: 95, y: 1.11 } }, {}, { flags: ['note:dew1', 'note:dew2', 'note:dew3', 'note:dew4'] });
     for (let i = 0; i < 0.2 / STEP; i++) last.step(idle);
-    expect(last.flags.has('dewsong')).toBe(true);
-    expect(sv.dewSong.length).toBeLessThanOrEqual(40);
+    expect(last.flags.has('dewsong')).toBe(false);
+    expect(last.noteHits).toEqual([]);
+  });
+
+  // A flat test lane uses the real chapter's authored melody and pitches; real physics crosses each bell.
+  const lane: ChapterData = {
+    id: 'bells', ground: [{ x: -10, y: 0 }, { x: 30, y: 0 }], spawn: { x: -3, y: 0.01 }, goalX: 25, candy: [],
+    spots: drops.map((spot, i) => ({ ...spot, at: { x: i * 4, y: 0 } })), song: garden.song!,
+  };
+  function walkTo(sim: Sim, x: number) {
+    const direction = Math.sign(x - sim.curr.x);
+    for (let i = 0; i < 1500 && (x - sim.curr.x) * direction > 0; i++) sim.step({ ...idle, x: direction });
+    expect((x - sim.curr.x) * direction).toBeLessThanOrEqual(0);
+  }
+
+  it('makes the lawn sparkle for the ordered theme, and keeps every bell playable afterwards', () => {
+    const sim = new Sim(lane);
+    walkTo(sim, 14);
+    expect(sim.noteHits.map((hit) => hit.id)).toEqual(garden.song!.notes);
+    expect(sim.flags.has('dewsong')).toBe(true);
+    walkTo(sim, -3);
+    expect(sim.noteHits).toHaveLength(8);
+    expect(sim.noteHits.slice(4).map((hit) => hit.midi)).toEqual(drops.map((spot) => spot.note!).reverse());
+    expect(sim.flags.has('dewsong')).toBe(true);
+  });
+
+  it('does not award a reversed melody, then accepts a fresh ordered try without resetting the chapter', () => {
+    const sim = new Sim({ ...lane, spawn: { x: 15, y: 0.01 } });
+    walkTo(sim, -3);
+    expect(sim.flags.has('dewsong')).toBe(false);
+    walkTo(sim, 14);
+    expect(sim.flags.has('dewsong')).toBe(true);
+  });
+
+  it('does not ring every physics tick while standing on a bell, and replays after loading a discovery', () => {
+    const sim = new Sim({ ...lane, spawn: { x: 0, y: 0.01 } }, {}, { flags: ['note:dew1', 'dewsong'] });
+    for (let i = 0; i < 2 / STEP; i++) sim.step(idle);
+    expect(sim.noteHits).toHaveLength(1);
+    walkTo(sim, -3);
+    walkTo(sim, 0);
+    expect(sim.noteHits).toHaveLength(2);
+    expect(sim.noteHits[1]?.midi).toBe(74);
   });
 });

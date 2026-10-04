@@ -162,7 +162,7 @@ export function moverProp(mover: Mover): Group | null {
 export interface SpotProp {
   group: Group;
   /** `used`: its flag is set. `clock` and `dt` are in seconds. */
-  update(used: boolean, clock: number, dt: number): void;
+  update(used: boolean, clock: number, dt: number, strike?: number): void;
 }
 
 /** The colour of a person's sign: Moa's denim, Pappa's green, Bertil's cap, Mamma's mug. No likeness. */
@@ -177,6 +177,7 @@ export function spotProp(spot: Spot): SpotProp | null {
   group.position.set(spot.at.x, spot.at.y, -0.6);
   /** For how long it has been used. */
   let since = 0;
+  let lastStrike = 0;
   const vanish = (used: boolean, dt: number, over = 0.35) => {
     since = used ? since + dt : 0;
     group.scale.setScalar(Math.max(0, 1 - since / over));
@@ -356,8 +357,9 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.position.z = -0.5;
       return {
         group,
-        update(used, clock, dt) {
-          since = used ? since + dt : 0;
+        update(used, clock, dt, strike = 0) {
+          if (strike !== lastStrike) { since = 0; lastStrike = strike; }
+          else since = used ? since + dt : 0;
           const ring = used && since < 0.9 ? Math.sin(since * 40) * 0.06 * (1 - since / 0.9) : 0;
           drop.position.set(ring, Math.sin(clock * 1.7 + spot.at.x) * 0.015, 0);
           (drop.material as MeshStandardMaterial).emissiveIntensity = used ? 0.9 : 0.25 + 0.1 * Math.sin(clock * 3 + spot.at.x);
@@ -370,9 +372,10 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.position.z = -0.45;
       return {
         group,
-        update(used, _clock, dt) {
-          // Touched, it rings: a small jump, once.
-          since = used ? since + dt : 0;
+        update(used, _clock, dt, strike = 0) {
+          // A small jump for every new touch, even when its discovery is already saved.
+          if (strike !== lastStrike) { since = 0; lastStrike = strike; }
+          else since = used ? since + dt : 0;
           stone.position.y = 0.14 + (used && since < 0.4 ? Math.sin((since / 0.4) * Math.PI) * 0.18 : 0);
         },
       };

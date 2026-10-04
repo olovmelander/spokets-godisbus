@@ -82,6 +82,8 @@ export interface Spot {
   touch?: boolean;
   /** A side-route interaction, left out of the main trail's hints. */
   extra?: boolean;
+  /** A replayable bell: its MIDI pitch stays the same on every visit, including after loading a save. */
+  note?: number;
   /** What stands there, for the picture. Left out: only the glint over it. */
   look?: SpotLook;
   /** The word on the button where the verb's own is too plain: a key of `sv.verbs`, as in "Ropa på Moa". */
@@ -308,6 +310,8 @@ export interface Challenge {
 
 export interface ChapterData {
   id: string;
+  /** An optional melody toy. Consecutive repeat bumps are allowed; other wrong notes restart it. */
+  song?: { notes: string[]; flag: string };
   /** The place it is dressed as. Left out: greybox. */
   place?: PlaceId;
   /**

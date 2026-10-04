@@ -14,3 +14,9 @@ Validation: integrated typecheck and eight route tests; focused browser checks i
 Berget gains the C4 zigzag challenge above the old pine, with reward and downward return ledges. The shelves stay clear of the goal boundary so missed or coyote jumps cannot finish the chapter accidentally.
 
 Validation: typecheck and all 513 integrated unit/robot tests pass. Source browser checks cover hints, saved rewards, return paths, both orientations and Low/High within the draw-call budget.
+
+## Make the garden dew bells a replayable musical toy
+
+The four dew bells play a fixed D–F–A–D phrase. Completing the tune adds visible lawn sparkles, and the bells can be played again without changing story progress.
+
+Validation: integrated typecheck and nine focused tests; source unit/robot and browser checks passed. The sparkle objects are reused during play.
