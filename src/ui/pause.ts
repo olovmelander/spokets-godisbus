@@ -30,6 +30,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   const styles: Record<PlayStyle, HTMLButtonElement> = { aventyr: byId('styleAventyr'), lugnt: byId('styleLugnt') };
   const switches: Record<Switch, HTMLInputElement> = {
     followFinger: byId('setFollowFinger'),
+    vibration: byId('setVibration'),
     swingHelp: byId('setSwingHelp'),
     easyJumps: byId('setEasyJumps'),
     slower: byId('setSlower'),

@@ -11,6 +11,8 @@ export interface Settings {
   style: PlayStyle;
   /** Walk towards a held finger instead of using the floating stick. */
   followFinger: boolean;
+  /** Android only: a tiny bump after a high landing. Off unless chosen. */
+  vibration: boolean;
   /** The player's picture preference. Auto measures once per choice/session. */
   graphics: Graphics;
   /** *Hjälp med svingen*: the swing pumps itself and always lands. */
@@ -40,16 +42,16 @@ export interface Settings {
 
 /** The switches each style starts with. Every one of them can then be changed on its own. */
 const SWITCHES: Record<PlayStyle, Omit<Settings, 'style'>> = {
-  aventyr: { followFinger: false, graphics: 'auto', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true, effectsVolume: 1, musicVolume: 1, lefty: false, bigText: false, calm: false, loud: false, help: 'ask' },
+  aventyr: { followFinger: false, vibration: false, graphics: 'auto', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true, effectsVolume: 1, musicVolume: 1, lefty: false, bigText: false, calm: false, loud: false, help: 'ask' },
   // On Lugnt the sounds carry what a younger player can't read, so the silent switch doesn't take them.
-  lugnt: { followFinger: false, graphics: 'auto', swingHelp: true, easyJumps: true, slower: false, sound: true, music: true, effectsVolume: 1, musicVolume: 1, lefty: false, bigText: false, calm: false, loud: true, help: 'remind' },
+  lugnt: { followFinger: false, vibration: false, graphics: 'auto', swingHelp: true, easyJumps: true, slower: false, sound: true, music: true, effectsVolume: 1, musicVolume: 1, lefty: false, bigText: false, calm: false, loud: true, help: 'remind' },
 };
 
 /** The settings that are a switch: on or off. */
-export type Switch = 'followFinger' | 'swingHelp' | 'easyJumps' | 'slower' | 'sound' | 'music' | 'lefty' | 'bigText' | 'calm' | 'loud';
-export const SWITCH_NAMES: Switch[] = ['followFinger', 'swingHelp', 'easyJumps', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm', 'loud'];
+export type Switch = 'followFinger' | 'vibration' | 'swingHelp' | 'easyJumps' | 'slower' | 'sound' | 'music' | 'lefty' | 'bigText' | 'calm' | 'loud';
+export const SWITCH_NAMES: Switch[] = ['followFinger', 'vibration', 'swingHelp', 'easyJumps', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm', 'loud'];
 /** The ones that are the player's own, whatever the style: choosing a style leaves them as they are. */
-export const OWN_SWITCHES: Switch[] = ['followFinger', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm'];
+export const OWN_SWITCHES: Switch[] = ['followFinger', 'vibration', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm'];
 export type Volume = 'effectsVolume' | 'musicVolume';
 export const VOLUME_NAMES: readonly Volume[] = ['effectsVolume', 'musicVolume'];
 
@@ -94,5 +96,5 @@ export function readSettings(value: unknown): Settings {
   const flag = (key: Switch) => (typeof from[key] === 'boolean' ? (from[key] as boolean) : base[key]);
   const help: HelpLevel = from.help === 'ask' || from.help === 'remind' || from.help === 'guide' ? from.help : base.help;
   const graphics: Graphics = tierFromQuery(typeof from.graphics === 'string' ? from.graphics : null) ?? 'auto';
-  return { style, followFinger: flag('followFinger'), graphics, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower'), sound: flag('sound'), music: flag('music'), effectsVolume: readVolume(from.effectsVolume), musicVolume: readVolume(from.musicVolume), lefty: flag('lefty'), bigText: flag('bigText'), calm: flag('calm'), loud: flag('loud'), help };
+  return { style, followFinger: flag('followFinger'), vibration: flag('vibration'), graphics, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower'), sound: flag('sound'), music: flag('music'), effectsVolume: readVolume(from.effectsVolume), musicVolume: readVolume(from.musicVolume), lefty: flag('lefty'), bigText: flag('bigText'), calm: flag('calm'), loud: flag('loud'), help };
 }

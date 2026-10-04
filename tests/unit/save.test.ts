@@ -17,7 +17,7 @@ describe('the two play styles', () => {
   it('Äventyr leaves the jumps and the swing to the player', () => {
     const settings = settingsFor('aventyr');
     expect(settings).toEqual({
-      style: 'aventyr', followFinger: false, graphics: 'auto', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true,
+      style: 'aventyr', followFinger: false, vibration: false, graphics: 'auto', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true,
       effectsVolume: 1, musicVolume: 1,
       lefty: false, bigText: false, calm: false, loud: false, help: 'ask',
     });

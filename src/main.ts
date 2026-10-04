@@ -33,6 +33,7 @@ import { createTitle } from './ui/title';
 import { createPhotoAlbum } from './ui/photos';
 import { createOffline } from './platform/offline';
 import { createStoryPanel } from './ui/story';
+import { createDevicePlay, createHighLanding, isAndroid } from './platform/device';
 import './ui/ui.css';
 
 declare global {
@@ -108,6 +109,26 @@ function start(): void {
   mountShell(document.body, chapter.helper?.kind);
   const canvas = byId<HTMLCanvasElement>('game');
   canvas.tabIndex = -1;
+  const devicePlay = createDevicePlay({
+    userAgent: navigator.userAgent,
+    requestWakeLock: navigator.wakeLock ? () => navigator.wakeLock.request('screen') : undefined,
+    vibrate: typeof navigator.vibrate === 'function' ? (ms) => navigator.vibrate(ms) : undefined,
+  });
+  const highLanding = createHighLanding();
+  byId('vibrationSetting').hidden = !isAndroid(navigator.userAgent) || typeof navigator.vibrate !== 'function';
+  const fullscreen = byId<HTMLButtonElement>('fullscreenBtn');
+  fullscreen.hidden = !isAndroid(navigator.userAgent) || !document.fullscreenEnabled || typeof document.documentElement.requestFullscreen !== 'function';
+  fullscreen.addEventListener('click', () => {
+    // This is always a deliberate button gesture. No orientation lock or automatic fullscreen.
+    byId('fullscreenFailed').hidden = true;
+    try {
+      const operation = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+      void operation.catch(() => { byId('fullscreenFailed').hidden = false; });
+    } catch { byId('fullscreenFailed').hidden = false; }
+  });
+  document.addEventListener('fullscreenchange', () => {
+    fullscreen.textContent = document.fullscreenElement ? sv.pause.exitFullscreen : sv.pause.fullscreen;
+  });
   let bootReady = false;
   let contextLost = false;
   let view: View;
@@ -336,6 +357,7 @@ function start(): void {
       writeSave();
     },
     onStuck() {
+      highLanding.reset();
       game.sim.toCheckpoint();
       resume();
     },
@@ -519,11 +541,19 @@ function start(): void {
   for (const type of ['gesturestart', 'dblclick', 'contextmenu']) {
     document.addEventListener(type, (e) => e.preventDefault());
   }
-  window.addEventListener('resize', () => {
+  const relayout = () => {
+    story.interrupt();
+    pointing.cancel();
+    askedForUse = askedForHelp = false;
+    input.release();
+    openPause();
+    devicePlay.setPlaying(false);
     view.resize();
     auto?.suspend();
     resolution?.suspend();
-  });
+  };
+  window.addEventListener('resize', relayout);
+  window.addEventListener('orientationchange', relayout);
   window.addEventListener('blur', () => {
     story.interrupt();
     pointing.cancel();
@@ -537,11 +567,12 @@ function start(): void {
     auto?.suspend();
     resolution?.suspend();
     audio.sleep(platformBlocked() || menuOpen());
+    devicePlay.setPlaying(!platformBlocked() && !menuOpen());
     memories.suspend(platformBlocked());
     if (document.hidden) { input.release(); pointing.cancel(); askedForUse = askedForHelp = false; story.interrupt(); writeSave(); }
-    else game.resume();
+    else { game.resume(); devicePlay.visible(); }
   });
-  window.addEventListener('pagehide', writeSave);
+  window.addEventListener('pagehide', () => { devicePlay.setPlaying(false); writeSave(); });
 
   const debug: Debug | null = debugOn ? createDebug(byId('debug')) : null;
   if (debugOn) {
@@ -676,6 +707,7 @@ function start(): void {
     requestAnimationFrame(frame);
     const began = performance.now();
     timer.update(time);
+    devicePlay.setPlaying(!platformBlocked() && !menuOpen());
     if (document.hidden) { lastTime = time; return; }
     const dt = Math.min(timer.getDelta(), 0.25);
     const blocked = platformBlocked();
@@ -708,6 +740,7 @@ function start(): void {
       game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld }, edges);
       tutorial.update(dt, game.sim.curr, game.sim.flags, held, edges);
       askedForUse = askedForHelp = false;
+      if (highLanding(game.sim.curr)) devicePlay.landing(settings.vibration);
       playTime += dt * game.tempo;
       const now = hear();
       for (const cue of cuesFor(heard, now, memory)) audio.play(cue);

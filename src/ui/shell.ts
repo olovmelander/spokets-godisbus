@@ -77,6 +77,8 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
          <h2 id="pauseTitle">${p.title}</h2>
          <div class="pause-options" id="pauseOptions">
          <button class="wide go" id="resumeBtn" type="button">${PLAY}<span>${p.resume}</span></button>
+         <button class="wide" id="fullscreenBtn" type="button" hidden>${p.fullscreen}</button>
+         <p class="setting-hint" id="fullscreenFailed" role="status" hidden>${p.fullscreenFailed}</p>
          <h3 id="styleTitle">${p.style}</h3>
          <div class="styles" role="radiogroup" aria-labelledby="styleTitle">
            <button class="style" id="styleAventyr" type="button" role="radio">${LEAP}<b>${p.aventyr}</b><small>${p.aventyrHint}</small></button>
@@ -86,6 +88,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
          <label class="switch"><input type="checkbox" id="setEasyJumps"><span>${p.easyJumps}</span></label>
          <label class="switch"><input type="checkbox" id="setFollowFinger" aria-describedby="followHint"><span>${p.followFinger}</span></label>
          <p class="setting-hint" id="followHint">${p.followHint}</p>
+         <label class="switch" id="vibrationSetting" hidden><input type="checkbox" id="setVibration"><span>${p.vibration}</span></label>
          <label class="switch"><input type="checkbox" id="setSlower"><span>${p.slower}</span></label>
          <label class="switch"><input type="checkbox" id="setSound"><span>${p.sound}</span></label>
          <div class="volume" role="group" aria-labelledby="effectsVolumeLabel">

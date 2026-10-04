@@ -140,3 +140,9 @@ Validation: typecheck passes and browser regressions cover both partial pointer 
 The opening now stages the two planned freeze jokes, the bag catching the hinge, and the ghost being picked up and placed on the railing before sneaking away. An appended deck checkpoint safely restores interrupted scenes while keeping older checkpoints compatible.
 
 Validation: typecheck and 59 integrated prologue, ending, helper and input tests pass. The focused browser rehearsal verifies both orientations, Low/High, pause, shader stability and continuation. Character forms remain stand-ins pending art approval.
+
+## Support mobile fullscreen, wake lock and safe rotation
+
+Android receives an explicit fullscreen button and optional saved landing vibration. Wake Lock is held only during active visible play and handles denial or late responses safely. Resizing or rotating pauses play, releases movement and cancels unfinished gestures.
+
+Validation: typecheck and 56 integrated device/save/settings tests pass. Source browser validation passed 21 device and 33 settings checks. Physical-device checks remain required.
