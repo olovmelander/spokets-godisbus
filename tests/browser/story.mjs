@@ -259,7 +259,7 @@ try {
   console.log('story: family candy choices');
   {
     const { page, state, finish } = await open('party', { hasTouch: true, viewport: { width: 390, height: 844 } }, '?dev&debug&standin&tier=low&course=epilog', () => {
-      localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 0, candy: {}, placed: {}, flags: {}, playMs: 0 }));
+      localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 0, candy: {}, placed: {}, flags: { berget: ['note:1'] }, playMs: 0 }));
     });
     await page.keyboard.down('ArrowRight'); await until(state, (s) => s.word === 'giveMamma', 'first guest is reachable'); await page.keyboard.up('ArrowRight');
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
@@ -283,6 +283,8 @@ try {
       await until(state, (s) => s.flags.includes(`party:${friend}`), `choice for ${friend}`);
     }
     await until(state, (s) => s.flags.includes('beat:named'), 'the party reaches the naming');
+    const afterParty = await state();
+    check('Pappa remembers the saved musical cobbles at the party', ['cobbles1', 'cobbles2', 'cobbles3'].every((id) => afterParty.said.includes(id)));
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check('the family candy choices persist', ['party-gift:bertil:karamell', 'party-gift:mamma:gelehallon', 'party-gift:moa:skumbanan', 'party-gift:spoket:karamell', 'party-gift:pappa:gelehallon'].every((flag) => saved.flags.epilog.includes(flag)));
     await page.keyboard.down('ArrowRight'); await until(state, (s) => s.word === 'takeKnife', 'Pappa offers the knife after the naming'); await page.keyboard.up('ArrowRight');

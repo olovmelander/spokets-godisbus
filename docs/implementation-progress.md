@@ -146,3 +146,9 @@ Validation: typecheck and 59 integrated prologue, ending, helper and input tests
 Android receives an explicit fullscreen button and optional saved landing vibration. Wake Lock is held only during active visible play and handles denial or late responses safely. Resizing or rotating pauses play, releases movement and cancels unfinished gestures.
 
 Validation: typecheck and 56 integrated device/save/settings tests pass. Source browser validation passed 21 device and 33 settings checks. Physical-device checks remain required.
+
+## Explain the musical cobbles at the epilogue party
+
+Discovering the mountain's musical cobbles unlocks a brief explanation of the old shore and rounded stones when sharing candy at the party. It is optional, appears once and is saved without adding a story gate.
+
+Validation: typecheck and 25 integrated cobble/ending tests pass. The combined party browser check covers the remembered discovery and explanation.

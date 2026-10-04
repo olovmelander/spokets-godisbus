@@ -170,6 +170,8 @@ export const epilog: ChapterData = {
   ],
   sets: [
     { flag: 'partied', when: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket'] },
+    // Pappa tells him why the musical beach stones lie so high up, if he found them.
+    { flag: 'cobbles:explained', when: ['party:pappa', 'heard:cobbles'] },
     // A thing is given back when its owner has had candy and the thing was found.
     { flag: 'back:coin', when: ['party:pappa', 'lost:coin'] },
     { flag: 'back:clip', when: ['party:moa', 'lost:clip'] },
@@ -183,6 +185,9 @@ export const epilog: ChapterData = {
     { at: { x: 41, y: 0 }, near: 1.2 },
   ],
   beats: [
+    { id: 'cobbles1', on: 'cobbles:explained', who: 'pappa', line: 'cobbles1' },
+    { id: 'cobbles2', on: 'cobbles:explained', who: 'pappa', line: 'cobbles2' },
+    { id: 'cobbles3', on: 'cobbles:explained', who: 'pappa', line: 'cobbles3' },
     { id: 'coinBack', on: 'back:coin', who: 'pappa', line: 'coinBack' },
     { id: 'clipBack', on: 'back:clip', who: 'moa', line: 'clipBack' },
     { id: 'marbleBack', on: 'back:marble', who: 'bertil', line: 'marbleBack' },

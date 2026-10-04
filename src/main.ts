@@ -9,6 +9,7 @@ import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
 import { bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, nextAvailable } from './content/chapters';
 import { album, albumComplete, foundFlag } from './content/kinds';
 import { lostFlag, lostFound } from './content/lost';
+import { cobbleMemory } from './content/cobbles';
 import { createPhotoMoments } from './content/photos';
 import { albumHtml } from './ui/album';
 import { mapSvg, mapState } from './ui/map';
@@ -144,7 +145,7 @@ function start(): void {
   // What he found under the deck comes with him to the party in the epilogue (plan §4.8, O2).
   // In a debug session, ?flags=a,b starts with those set: a moment late in a chapter can be looked at alone.
   const seeded = debugOn ? (params.get('flags') ?? '').split(',').filter((flag) => flag !== '') : [];
-  const carried = [...(chapter.id === 'epilog' ? lostFound(save.flags).map(lostFlag) : []), ...seeded];
+  const carried = [...(chapter.id === 'epilog' ? [...lostFound(save.flags).map(lostFlag), ...cobbleMemory(save.flags)] : []), ...seeded];
   const from: SimStart =
     at
       ? (carried.length > 0 ? { flags: carried } : {})
