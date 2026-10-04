@@ -13,7 +13,7 @@ import { PLACES, dress } from './dressing';
 import { nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass } from './grade';
-import { chooseTier, pixelRatioFor, type Tier } from './quality';
+import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
@@ -32,6 +32,10 @@ export interface ViewInfo {
   triangles: number;
   programs: number;
   pixelRatio: number;
+  maxPixelRatio: number;
+  resolutionSteps: number;
+  /** Drawing-buffer resize operations, including viewport and tier changes. Useful for the churn gate. */
+  resizes: number;
   width: number;
   height: number;
   /** Models loaded from the packs, as "pack/name". */
@@ -77,9 +81,14 @@ export interface Frame {
 }
 
 export interface View {
+  readonly warming: boolean;
+  readonly resolutionSteps: number;
+  readonly maxResolutionSteps: number;
   resize(): void;
   /** Apply a level without resetting the scene. Call while paused when crossing Low, to warm its shaders. */
   setTier(next: Tier): void;
+  /** Whole 0.1 reductions from the tier cap. A changed step resizes existing targets, never shaders. */
+  setResolutionSteps(steps: number): void;
   /** The rendered player's centre on the play plane, in CSS client coordinates; null before the first frame. */
   playerScreen(): { x: number; y: number } | null;
   render(frame: Frame): void;
@@ -376,6 +385,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let viewHeight = 5;
   let distance = 10;
   let pixelRatio = 1;
+  let maxPixelRatio = 1;
+  let resolutionSteps = 0;
+  let resizes = 0;
+  let cssWidth = 0;
+  let cssHeight = 0;
   const look = cameraIntent({ ...startState(chapter) }, chapter.cameras);
   let stride = 0;
   let turn = 0;
@@ -385,9 +399,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   function resize(): void {
     const width = canvas.clientWidth || window.innerWidth;
     const height = canvas.clientHeight || window.innerHeight;
-    pixelRatio = pixelRatioFor(tier, width, height, window.devicePixelRatio);
-    renderer.setPixelRatio(pixelRatio);
-    renderer.setSize(width, height, false);
+    maxPixelRatio = pixelRatioFor(tier, width, height, window.devicePixelRatio);
+    resolutionSteps = Math.min(resolutionSteps, maxResolutionSteps(maxPixelRatio));
+    const ratio = pixelRatioFor(tier, width, height, window.devicePixelRatio, resolutionSteps);
+    // setPixelRatio + setSize would resize the canvas twice. Only do one allocation, when needed.
+    if (cssWidth !== width || cssHeight !== height || pixelRatio !== ratio) {
+      cssWidth = width;
+      cssHeight = height;
+      pixelRatio = ratio;
+      renderer.setDrawingBufferSize(width, height, pixelRatio);
+      resizes++;
+    }
     if (tier === 'low') {
       hdr?.scene.dispose();
       hdr?.grade.dispose();
@@ -414,6 +436,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let warm = 2;
   let warmedFor = 0;
   let hasFrame = false;
+  let warming = true;
   const unculled: Object3D[] = [];
   const projectedPlayer = new Vector3();
 
@@ -617,11 +640,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       warmedFor = models.length;
       warm = 2;
     }
+    warming = warm > 0;
     draw();
     hasFrame = true;
   }
 
   return {
+    get warming() { return warming; },
+    get resolutionSteps() { return resolutionSteps; },
+    get maxResolutionSteps() { return maxResolutionSteps(maxPixelRatio); },
     resize,
     render,
     capture: () => hasFrame ? captureFrame(canvas) : Promise.resolve(null),
@@ -630,6 +657,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (tier === chosen) return;
       const changesPipeline = (tier === 'low') !== (chosen === 'low');
       tier = chosen;
+      resolutionSteps = 0;
       gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
       resize();
       // Low and HDR need different material variants. Compile against their actual play targets before
@@ -638,6 +666,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         warm = 2;
         if (hasFrame) while (warm > 0) draw();
       }
+    },
+    setResolutionSteps(steps) {
+      const next = Math.min(maxResolutionSteps(maxPixelRatio), Math.max(0, Math.floor(steps)));
+      if (resolutionSteps === next || !Number.isFinite(next)) return;
+      resolutionSteps = next;
+      resize();
     },
     playerScreen() {
       if (!hasFrame) return null;
@@ -659,6 +693,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       triangles: renderer.info.render.triangles,
       programs: renderer.info.programs?.length ?? 0,
       pixelRatio,
+      maxPixelRatio,
+      resolutionSteps,
+      resizes,
       width: canvas.width,
       height: canvas.height,
       models,

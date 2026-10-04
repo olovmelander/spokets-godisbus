@@ -32,3 +32,9 @@ Validation: both integrated cobble tests and source browser toy checks passed.
 The forest's tiny door accepts a berry gift. Leaving and returning reveals a saved keepsake, separate from the 16 candy types; the story ghost encounter remains intact.
 
 Validation: integrated typecheck and all 524 unit/robot tests pass. Source browser checks cover the gift, departure, return and saved reward.
+
+## Adapt graphics from measured busy work and sustained frame cost
+
+Auto graphics measures CPU work at safe menus and selects a tier once. During play, sustained load adjusts pixel ratio in bounded steps with delays between allocations and reversals. Manual tiers and benchmark runs remain fixed; hidden pages stop drawing.
+
+Validation: integrated typecheck and 19 quality tests; 16 source browser checks exercise injected CPU cost, target allocation counts and stable shaders. CPU measurements cannot diagnose GPU-only stalls.

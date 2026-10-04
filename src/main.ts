@@ -12,7 +12,7 @@ import { mapSvg, mapState } from './ui/map';
 import { createMemory } from './ui/memory';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
-import { createAutoTier, tierFromQuery } from './render/quality';
+import { createAutoTier, createDynamicResolution, tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
 import { OWN_SWITCHES, settingsFor, simOptions, tempoOf, type Settings } from './save/settings';
 import { codeFor } from './save/codes';
@@ -214,6 +214,8 @@ function start(): void {
   let paused = false;
   let ended = false;
   let auto = !benchOn && requestedGraphics === 'auto' && view.info().tier === 'mid' ? createAutoTier() : null;
+  let resolution = !benchOn && requestedGraphics === 'auto' ? createDynamicResolution() : null;
+  let busyMs = 0;
   function openPause(): void {
     if (paused || ended || memories.open) return;
     paused = true;
@@ -252,7 +254,9 @@ function start(): void {
         params.delete('tier');
         history.replaceState(null, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`);
         view.setTier(settings.graphics === 'auto' ? 'mid' : settings.graphics);
+        view.setResolutionSteps(0);
         auto = !benchOn && settings.graphics === 'auto' && view.info().tier === 'mid' ? createAutoTier() : null;
+        resolution = !benchOn && settings.graphics === 'auto' ? createDynamicResolution() : null;
       }
       game.sim.options = simOptions(settings);
       game.tempo = tempoOf(settings);
@@ -427,12 +431,18 @@ function start(): void {
   for (const type of ['gesturestart', 'dblclick', 'contextmenu']) {
     document.addEventListener(type, (e) => e.preventDefault());
   }
-  window.addEventListener('resize', () => view.resize());
+  window.addEventListener('resize', () => {
+    view.resize();
+    auto?.suspend();
+    resolution?.suspend();
+  });
 
   // r186's Timer follows the page's visibility, so a hidden tab doesn't come back with one huge frame.
   const timer = new Timer();
   timer.connect(document);
   document.addEventListener('visibilitychange', () => {
+    auto?.suspend();
+    resolution?.suspend();
     audio.sleep(document.hidden);
     if (document.hidden) writeSave();
     else game.resume();
@@ -447,7 +457,8 @@ function start(): void {
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
         playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(), noteHits: game.sim.noteHits,
       }),
-      info: () => ({ ...view.info(), sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars }),
+      info: () => ({ ...view.info(), busyMs, autoSettled: auto?.settled ?? true,
+        sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars }),
     };
   }
 
@@ -494,6 +505,7 @@ function start(): void {
     requestAnimationFrame(frame);
     const began = performance.now();
     timer.update(time);
+    if (document.hidden) { lastTime = time; return; }
     const dt = Math.min(timer.getDelta(), 0.25);
     // The wood knocks while the ghost is in the picture: the chase (plan §5.8).
     const ghost = game.sim.ghost;
@@ -508,10 +520,6 @@ function start(): void {
       game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld }, askedForHelp ? { ...edges, helper: true } : edges);
       askedForHelp = false;
       playTime += dt * game.tempo;
-      if (auto && !auto.settled) {
-        const next = auto.feed(dt);
-        if (next !== 'low') view.setTier(next);
-      }
       const now = hear();
       for (const cue of cuesFor(heard, now, memory)) audio.play(cue);
       heard = now;
@@ -604,6 +612,24 @@ function start(): void {
       shown = true;
       byId('loading').classList.add('done');
     }
+    // Measure only work done in this callback. RAF idle time (for example a 30 Hz power-save cap) is
+    // not overload. No GPU timer is assumed; a GPU-only bottleneck can remain invisible to this measure.
+    busyMs = performance.now() - began;
+    const elapsed = lastTime > 0 ? (time - lastTime) / 1000 : 0;
+    if (auto && !auto.settled) {
+      if ((title.open || pause.open) && !view.warming) {
+        const next = auto.feed(elapsed, busyMs);
+        if (auto.settled) {
+          view.setTier(next); // Low/HDR shader variants warm here, while the game is safely paused.
+          resolution?.suspend();
+        }
+      } else auto.suspend();
+    }
+    if (resolution) {
+      if (!paused && !ended && !memories.open && !title.open && !view.warming) {
+        view.setResolutionSteps(resolution.feed(elapsed, busyMs, view.resolutionSteps, view.maxResolutionSteps));
+      } else resolution.suspend();
+    }
     if (bench && lastTime > 0) {
       bench.frame(time - lastTime, performance.now() - began);
       if (bench.done && !bench.shown) byId('debug').textContent = bench.report(view.info());
@@ -617,7 +643,7 @@ function start(): void {
         return [
           `steps/frame ${game.lastSteps} · device ${device}`,
           `draw calls ${i.drawCalls} · triangles ${i.triangles} · programs ${i.programs}`,
-          `tier ${i.tier} · canvas ${i.width}×${i.height} · pixel ratio ${i.pixelRatio.toFixed(2)}`,
+          `tier ${i.tier} · canvas ${i.width}×${i.height} · pixel ratio ${i.pixelRatio.toFixed(2)} / ${i.maxPixelRatio.toFixed(2)}`,
           `models ${i.models.join(', ') || 'none yet'} · KTX2 textures ${i.compressedTextures}`,
           `x ${n(p.x)} y ${n(p.y)} · vx ${n(p.vx)} vy ${n(p.vy)} · ${p.grounded ? 'on the ground' : 'in the air'}`,
           `candy ${game.sim.candyCount} of ${chapter.candy.length} · bubbles ${game.sim.bubbles} · ${p.mode}${p.verb ? ` · Använd: ${p.verb}` : ''}${p.atEdge ? ' · at an edge' : ''}`,
