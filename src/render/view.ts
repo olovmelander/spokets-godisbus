@@ -1610,15 +1610,26 @@ function buildMovers(chapter: ChapterData): Group[] {
   });
 }
 
-/** Every hook has a red ring: the one sign the game teaches for "the lace goes here" (plan §4.2). */
+/**
+ * Every hook has a red ring: the one sign the game teaches for "the lace goes here" (plan §4.2). All of a
+ * chapter's rings are one mesh, so a row of them costs the picture one draw call.
+ */
 function buildHooks(chapter: ChapterData): Group {
   const group = new Group();
-  const red = new MeshStandardMaterial({ color: '#d8382c', roughness: 0.35 });
-  for (const hook of chapter.hooks ?? []) {
-    const ring = new Mesh(new TorusGeometry(0.19, 0.045, 10, 28), red);
-    ring.position.set(hook.x, hook.y, -0.05);
-    group.add(ring);
+  const hooks = chapter.hooks ?? [];
+  if (hooks.length === 0) return group;
+  const rings = new InstancedMesh(new TorusGeometry(0.19, 0.045, 10, 28), new MeshStandardMaterial({ color: '#d8382c', roughness: 0.35 }), hooks.length);
+  rings.name = 'rings';
+  // They hang all along a chapter: as a whole they are never outside the picture.
+  rings.frustumCulled = false;
+  const place = new Object3D();
+  for (const [i, hook] of hooks.entries()) {
+    place.position.set(hook.x, hook.y, -0.05);
+    place.updateMatrix();
+    rings.setMatrixAt(i, place.matrix);
   }
+  rings.instanceMatrix.needsUpdate = true;
+  group.add(rings);
   return group;
 }
 
