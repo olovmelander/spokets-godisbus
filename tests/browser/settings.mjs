@@ -186,13 +186,17 @@ try {
         await page.tap('#resumeBtn');
       }
       const layout = portrait ? 'portrait, left-handed' : 'landscape';
+      // Framing follows facing. After relayout it settles only once play resumes; choose a target
+      // on the roomy side instead of clamping a rightward target onto Elof at the viewport edge.
+      await frames(page, 30);
       const before = await state();
       const viewport = page.viewportSize();
-      // Above the action buttons and to the right of Elof, on the actual game surface.
-      const finger = { x: Math.min(viewport.width - 28, before.playerScreen.x + 115), y: Math.max(100, before.playerScreen.y - 70), id: 1 };
+      // Above the action buttons, on the actual game surface.
+      const followDirection = before.playerScreen.x > viewport.width * 0.6 ? -1 : 1;
+      const finger = { x: Math.max(28, Math.min(viewport.width - 28, before.playerScreen.x + followDirection * 115)), y: Math.max(100, before.playerScreen.y - 70), id: 1 };
       await touch('touchStart', [finger]);
-      const walking = await until(state, (s) => s.x > before.x + 0.45 && s.vx > 0, `${layout}: follows held finger`);
-      check(`${layout}: a held finger walks towards its position`, walking.vx <= 1.3);
+      const walking = await until(state, (s) => (s.x - before.x) * followDirection > 0.45 && s.vx * followDirection > 0, `${layout}: follows held finger`);
+      check(`${layout}: a held finger walks towards its position`, Math.abs(walking.vx) <= 1.3);
       const hop = await page.locator('#hopBtn').boundingBox();
       const jumping = { x: hop.x + hop.width / 2, y: hop.y + hop.height / 2, id: 2 };
       await touch('touchStart', [finger, jumping]);
