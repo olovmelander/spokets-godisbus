@@ -63,7 +63,7 @@ export function createPrologueStage(layout: PrologueLayout | undefined) {
       pappa.position.set(layout.railing.x + 1.9, layout.railing.y - 2.2, -1.35);
       const t = frame?.kind === 'pappa' ? frame.seconds : 3;
       // Watch the toy, turn towards Elof, then find the railing empty.
-      pappa.rotation.y = t < 1.55 ? -0.65 : t < 2.7 ? 0.7 : -0.65;
+      pappa.rotation.y = t < 1.55 ? -0.65 : t < 2.7 ? -1.5 : -0.65;
       if (frame?.kind === 'pappa') {
         const pose = prologuePose(layout, frame);
         hand.position.set(pose.x + 0.1, pose.y - 0.1, 0.1);

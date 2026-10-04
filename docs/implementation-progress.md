@@ -164,3 +164,9 @@ Validation: focused browser checks cover delayed photo loads, keyboard focus and
 Use generated place LUTs for consistent colour across graphics tiers. Low applies the grade through materials; High adds background depth blur while keeping the play plane sharp.
 
 Validation: typecheck, unit tests, build and privacy gates pass. Browser checks verify matching Low/HDR sampled colours, a sharp play plane, background softening and valid shader/framebuffer output.
+
+## Verify the prologue staging through its complete browser flow
+
+Exercise the staged prologue from painting and the freeze gag through the hinge tear and pickup. The browser rehearsal checks interaction gates and progression with the current stand-in models.
+
+Validation: 22 prologue browser checks pass, and the staged views were visually inspected. Final approved character acting and models remain an art checkpoint.
