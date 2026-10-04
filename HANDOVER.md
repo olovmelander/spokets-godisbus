@@ -63,6 +63,28 @@
     confirmation, reset/removal isolation, unreadable saves and refused writes. JS is 325 KB gzipped;
     public boot is 608 KB as served. Album photo isolation is a separate follow-up.
 
+- **Album photos and credits** (4 October, cloud session, `codex/album-photos`; plan §§6.9–6.10).
+  - Seven story moments now keep a small WebP game frame: shrinking, the first swing, Moa's plane,
+    Bertil's cap, the crane flight, the aurora and the finished carving. Foton in the paused album opens
+    thumbnails and a keyboard/controller/touch carousel. Finishing the epilogue opens that album as
+    credits, then returns to the existing end-card choices; it can be opened again there.
+  - IndexedDB stores the first frame of each authored moment under the stable player ID, at most seven
+    frames of at most 100 KB each. Reset/deletion must clear that ID's frames before reloading. Denied,
+    unsupported or full storage quietly leaves the ordinary album without photos. Only the rendered
+    game canvas is copied: no camera, file import, upload or third-party request.
+  - Reset/deletion first records a per-player generation in localStorage. If IndexedDB refuses deletion,
+    older frames stay hidden and physical cleanup retries on the next read. New adventures can capture
+    the same moments again; older tabs cannot relabel pending captures into the new generation. If the
+    durable marker itself cannot be saved, reset returns false and leaves the album intact.
+  - Capture copies synchronously just after rendering and then encodes asynchronously, without enabling
+    `preserveDrawingBuffer`, retaining a full-size render target or rendering the scene twice. Frames
+    fit inside 640×360. Pausing also pauses capture delays; saved flags do not produce unrelated frames.
+  - Tests cover authored timing, denied storage, size/type guards, copying before encoding, real WebGL
+    pixels, IndexedDB persistence and first-frame retention, reset isolation, denied/full fallback,
+    pause/back/focus and epilogue credits. `dev/menus.html?show=photos` previews the credits without WebGL.
+  - Cloud session: no family reference pictures or likeness renders touched. `RELEASED_CHAPTER` remains
+    null; final visual and device review remains Olov's. These tasks did not need his computer.
+
 - **Done:**
   - The plan, `docs/game-plan.md` version 4: research, design, art direction, technology and delivery. Version 4
     takes in Olov's second round of answers of 3 October, which settle every question version 3 left open (plan
@@ -588,7 +610,7 @@
       is at his normal size in both, and he shrinks with a POFF at the star: here he is the size he always is.
       Also: Pappa's hands and the shelf with its empty place, the brush and the knife traced by hand, the
       blink, the bag tearing, Pappa on the deck, which candy each one gets, the figure on the windowsill,
-      the album as credits, and *Utforska vidare*.
+      and *Utforska vidare*. The album credits were added on 4 October (see State above).
   - **The helper and its three hints** (branch `stage-2-helper`; plan §4.6). What you see: a small button
     with a bird, under the pause button (H on a keyboard, Y on a gamepad). Press it and a bird flies to the
     next thing to do and looks at it. Press again: it knocks on it, and Använd shows that thing's word and
@@ -709,8 +731,8 @@
     mark, so the names stay a surprise. Above them: "3 av 16 sorter".
     - It is read from the save, like the stickers on the bag (`album` in `src/content/kinds.ts`), and drawn
       by `src/ui/album.ts`. A course outside the story has no album. Tests: `tests/unit/album.test.ts` (3).
-    - **Not yet:** the album's photos (game renders kept on the device, plan §6.9) and the album as the
-      credits in the epilogue; the golden geléhallon as its last piece.
+    - The photos and album credits were added on 4 October (see State above). **Not yet:** the golden
+      geléhallon as its last piece.
   - **Four more switches** (branch `stage-2-settings`; plan §4.1, §6.8). What you see, in the pause panel:
     - *Vänsterhänt*: Hoppa and Använd move to the left side, and the stick to the right.
     - *Större text*: what is said, the words on the buttons and the panels, about a quarter bigger.
@@ -919,8 +941,8 @@
 - Poses for the family: sitting at the table at the party, Mamma in the doorway, Pappa's hands with the
   knife, and their hands in the macro world where the signs' rides are now.
 - Byn: people's feet passing, cars, and the inside of the shop.
-- What Stage 2 still lacks in code: the challenge routes C2 to C4, a service worker for offline play,
-  and the album's photos. Multiple players are implemented in `codex/player-profiles`. The dew bells
+- What Stage 2 still lacks in code: the challenge routes C2 to C4 and a service worker for offline play.
+  Multiple players and album photos are implemented. The dew bells
   exist, but still need replayable notes and visible lawn glitter to finish the planned toy.
 - Look-dev repair: make the final's sky and far scenery darken together as night falls, and keep the
   stars round at different aspect ratios. This can be done in a cloud code session.

@@ -22,7 +22,7 @@ export interface PlayerProfile {
 
 interface PlayerIndex {
   v: number;
-  players: { id: string; name: string }[];
+  players: { id: string; name: string; generation?: string }[];
   current: string;
 }
 
@@ -152,8 +152,9 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
       const players: PlayerIndex['players'] = [];
       for (const item of from.players) {
         if (!item || typeof item !== 'object' || typeof item.id !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(item.id)
+          || (item.generation !== undefined && typeof item.generation !== 'string')
           || typeof item.name !== 'string' || !playerName(item.name) || players.some((p) => p.id === item.id)) return null;
-        players.push({ id: item.id, name: playerName(item.name) });
+        players.push({ id: item.id, name: playerName(item.name), ...(item.generation ? { generation: item.generation } : {}) });
       }
       if (players.length ? !players.some((p) => p.id === from.current) : from.current !== FIRST_PLAYER.id) return null;
       return { raw, index: { v: SAVE_VERSION, players, current: from.current } };
@@ -163,6 +164,7 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
   };
   const first = readIndex();
   if (first) currentId = first.index.current;
+  let generation = first?.index.players.find((p) => p.id === currentId)?.generation;
   let currentWasIndexed = first?.index.players.some((p) => p.id === currentId) ?? false;
   const restore = (key: string, value: string | null) => {
     try {
@@ -186,7 +188,7 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
           // A profile whose progress was explicitly cleared is a valid player with no save yet.
           kind = readSave(get(playerKey(profile.id))).kind;
         } catch { /* Keep the profile visible when a read is refused. */ }
-        return { ...profile, kind };
+        return { id: profile.id, name: profile.name, kind };
       });
     },
     select(id) {
@@ -197,6 +199,7 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
         get(playerKey(id)); // A rejected read must not change the selected profile.
         putIndex({ ...data.index, current: id });
         currentId = id;
+        generation = data.index.players.find((p) => p.id === id)?.generation;
         currentWasIndexed = true;
         return true;
       } catch {
@@ -228,6 +231,7 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
           throw error;
         }
         currentId = id;
+        generation = undefined;
         currentWasIndexed = true;
         return id;
       } catch {
@@ -251,6 +255,7 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
         }
         if (currentId === id) {
           currentId = nextId;
+          generation = players.find((p) => p.id === nextId)?.generation;
           currentWasIndexed = players.some((p) => p.id === nextId);
         }
         return true;
@@ -273,6 +278,7 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
       const data = readIndex();
       if (!data) return false;
       const profile = data.index.players.find((p) => p.id === currentId);
+      if (profile && profile.generation !== generation) return false;
       if (!profile && (currentWasIndexed || data.index.players.length > 0 || currentId !== FIRST_PLAYER.id)) return false;
       try {
         const key = playerKey(currentId);
@@ -300,14 +306,17 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
       if (!data || (data.index.players.length > 0 && !data.index.players.some((p) => p.id === currentId))) return false;
       try {
         get(playerKey(currentId));
-        // A legacy profile gets an index before its progress is cleared, so its name is retained too.
-        if (data.raw === null && data.index.players.length) putIndex(data.index);
+        // Invalidate already-open tabs as well as this save; their next autosave must not restore it.
+        const nextGeneration = globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+        const indexed = data.index.players.some((p) => p.id === currentId);
+        if (indexed) putIndex({ ...data.index, players: data.index.players.map((p) => p.id === currentId ? { ...p, generation: nextGeneration } : p) });
         try {
           storage.removeItem(playerKey(currentId));
         } catch (error) {
-          if (data.raw === null && data.index.players.length) restore(INDEX_KEY, null);
+          if (indexed) restore(INDEX_KEY, data.raw);
           throw error;
         }
+        if (indexed) generation = nextGeneration;
         return true;
       } catch {
         return false;

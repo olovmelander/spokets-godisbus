@@ -135,7 +135,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
     },
     show(current, fromTitle = false) {
       byId('resumeBtn').querySelector('span')!.textContent = fromTitle ? sv.players.back : sv.pause.resume;
-      for (const id of ['pauseMap', 'pauseAlbum', 'stuckBtn', 'titleBtn']) byId(id).hidden = fromTitle;
+      for (const id of ['pauseMap', 'pauseAlbum', 'albumPhotos', 'stuckBtn', 'titleBtn']) byId(id).hidden = fromTitle;
       settings = current;
       open = true;
       ask.hidden = true;

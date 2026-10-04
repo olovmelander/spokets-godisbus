@@ -6,6 +6,7 @@ import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
 import { bonusAfter, chapterNumber, courseFor, nextAfter } from './content/chapters';
 import { album, foundFlag } from './content/kinds';
 import { lostFlag, lostFound } from './content/lost';
+import { createPhotoMoments } from './content/photos';
 import { albumHtml } from './ui/album';
 import { mapSvg, mapState } from './ui/map';
 import { createMemory } from './ui/memory';
@@ -13,9 +14,10 @@ import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
 import { createAutoTier, tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
-import { settingsFor, simOptions, tempoOf, type Settings } from './save/settings';
+import { OWN_SWITCHES, settingsFor, simOptions, tempoOf, type Settings } from './save/settings';
 import { codeFor } from './save/codes';
 import { createStore, newSave, type PlayerSave } from './save/store';
+import { createPhotoStore } from './save/photos';
 import type { SimStart, Vec } from './sim/types';
 import { createBench } from './ui/bench';
 import { createDebug, type Debug } from './ui/debug';
@@ -23,6 +25,7 @@ import { createHud } from './ui/hud';
 import { createPause } from './ui/pause';
 import { mountShell } from './ui/shell';
 import { createTitle } from './ui/title';
+import { createPhotoAlbum } from './ui/photos';
 import './ui/ui.css';
 
 declare global {
@@ -71,6 +74,19 @@ function start(): void {
   // The saved game (plan §6.9). ?bench plays without one, and a debug start position never writes one.
   const store = createStore(benchOn ? null : storage());
   const loaded = store.load();
+  // The profile store supplies its stable ID; older single-player saves use the original Elof ID.
+  const photoPlayer = store.currentId;
+  let database: IDBFactory | null = null;
+  try { database = !benchOn && !at ? window.indexedDB : null; } catch { /* An album without photos. */ }
+  const photoStore = createPhotoStore(database, storage());
+  let photosStopped = false;
+  async function clearSavedPhotos(): Promise<boolean> {
+    // Cancel any encoder still finishing a frame before the profile is reset.
+    photosStopped = true;
+    const cleared = await photoStore.clear(photoPlayer);
+    if (!cleared) photosStopped = false;
+    return cleared;
+  }
   const course = courseFor(params, loaded.kind === 'save' ? loaded.save.chapter : null);
   const chapter = at ? { ...course, spawn: at } : course;
   let save: PlayerSave = loaded.kind === 'save' ? loaded.save : newSave(Date.now(), chapter.id);
@@ -104,6 +120,7 @@ function start(): void {
         };
 
   const game = new Game(chapter, simOptions(settings), from);
+  const photoMoment = createPhotoMoments(chapter.id, game.sim.flags);
   game.tempo = tempoOf(settings);
   const hud = createHud(document, chapter.candy.length);
   const beats = new Map((chapter.beats ?? []).map((beat) => [beat.id, beat]));
@@ -155,6 +172,7 @@ function start(): void {
   let again = false;
   let begun = loaded.kind === 'save';
   let titleSettings = false;
+  let profileMutationPending = false;
   let playedFrom = performance.now();
   /** Writes the game as it stands: at every big candy, on pause, and when the page is hidden. */
   function writeSave(): void {
@@ -245,6 +263,10 @@ function start(): void {
     },
   });
   const hdrAvailable = view.info().hdrAvailable;
+  const photoAlbum = createPhotoAlbum(document, photoStore, photoPlayer);
+  void photoAlbum.refresh();
+  byId('albumPhotos').hidden = !mapState(chapter.id);
+  byId('endPhotos').addEventListener('click', () => photoAlbum.credits());
   byId('graphicsFallback').hidden = hdrAvailable;
   byId<HTMLButtonElement>('graphicsMid').disabled = !hdrAvailable;
   byId<HTMLButtonElement>('graphicsHigh').disabled = !hdrAvailable;
@@ -270,6 +292,7 @@ function start(): void {
   // The title (plan §6.10). A chapter starts behind it; the test course and a debug session start at once.
   // ?title shows it in a debug session too, for the browser test.
   function showTitle(): void {
+    if (profileMutationPending) return;
     paused = true;
     input.release();
     title.show(begun, { currentId: store.currentId, players: store.players(), available: store.available, unreadable: store.load().kind === 'unreadable' });
@@ -300,8 +323,12 @@ function start(): void {
       reloadPlayer();
       return true;
     },
-    onDelete(id) {
-      if (!store.remove(id)) return false;
+    async onDelete(id) {
+      again = true;
+      profileMutationPending = true;
+      const cleared = id === photoPlayer ? await clearSavedPhotos() : await photoStore.clear(id);
+      if (!cleared) { again = false; profileMutationPending = false; return false; }
+      if (!store.remove(id)) { again = false; profileMutationPending = false; photosStopped = false; return false; }
       reloadPlayer();
       return true;
     },
@@ -309,7 +336,7 @@ function start(): void {
       if (store.load().kind === 'unreadable') return;
       begun = true;
       if (style) {
-        settings = { ...settingsFor(style), graphics: settings.graphics, followFinger: settings.followFinger };
+        settings = { ...settingsFor(style), graphics: settings.graphics, ...Object.fromEntries(OWN_SWITCHES.map(key => [key, settings[key]])) };
         game.sim.options = simOptions(settings);
         game.tempo = tempoOf(settings);
         apply();
@@ -321,8 +348,11 @@ function start(): void {
       canvas.focus();
       writeSave();
     },
-    onStartOver() {
-      if (!store.clear()) return false;
+    async onStartOver() {
+      again = true;
+      profileMutationPending = true;
+      if (!await clearSavedPhotos()) { again = false; profileMutationPending = false; return false; }
+      if (!store.clear()) { again = false; profileMutationPending = false; photosStopped = false; return false; }
       reloadPlayer();
       return true;
     },
@@ -350,17 +380,20 @@ function start(): void {
     {
       onDevice: showDevice,
       onKey: (key) => {
-        if (key === 'bag') openBag();
+        if (photoAlbum.open) photoAlbum.back();
+        else if (key === 'bag') openBag();
         else if (title.open) title.back();
         else if (pause.open) pause.back();
         else openPause();
       },
       onBack: () => {
-        if (title.open) title.back();
+        if (photoAlbum.open) photoAlbum.back();
+        else if (title.open) title.back();
         else if (pause.open) pause.back();
       },
       focusScope: () => {
         if (!byId('message').hidden) return byId('message');
+        if (photoAlbum.open) return byId('photoAlbum');
         if (title.open) return byId('title');
         if (pause.open) return byId('pause');
         if (ended) return byId('endCard');
@@ -484,6 +517,13 @@ function start(): void {
       flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts, help: game.sim.help,
       berries: game.sim.berries,
     });
+    // Copy this exact rendered frame now, before WebGL's drawing buffer is discarded. Encoding and
+    // IndexedDB run afterwards; the ordinary render loop never keeps its drawing buffer alive.
+    const moment = !photosStopped && !benchOn && !at
+      ? photoMoment(game.sim.curr, game.sim.flags, paused || ended || memories.open ? 0 : dt * game.tempo) : null;
+    if (moment) void view.capture().then(async (blob) => {
+      if (blob && !photosStopped && await photoStore.put({ player: photoPlayer, moment, blob })) await photoAlbum.refresh();
+    });
     hud.candy(game.sim.candyCount);
     hud.verb(game.sim.curr.verb, game.sim.curr.word);
     hud.knock(game.sim.help.step >= 2 ? game.sim.help : null);
@@ -532,6 +572,10 @@ function start(): void {
       const hidden = (chapter.hidden ?? []).map((h) => ({ kind: h.kind, found: game.sim.flags.has(foundFlag(h.kind)) }));
       hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, bonus ? sv.end.bonus : undefined);
       byId(next ? 'endOnward' : 'endAgain').focus();
+      if (chapter.id === 'epilog') {
+        byId('endPhotos').hidden = false;
+        photoAlbum.credits();
+      }
     }
 
     if (!shown) {

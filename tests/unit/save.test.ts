@@ -367,3 +367,21 @@ describe('saving', () => {
     expect(store.write(newSave(0, 'testbana'))).toBe(true);
   });
 });
+
+
+describe('reset while another tab is open', () => {
+  it('invalidates old autosaves without affecting other profiles', () => {
+    const storage = fakeStorage();
+    const first = createStore(storage);
+    first.write({ ...newSave(0, 'garden'), candy: { garden: [1, 2] } });
+    const staleTab = createStore(storage);
+    const stale = staleTab.load();
+    expect(stale.kind).toBe('save');
+    expect(first.clear()).toBe(true);
+    if (stale.kind === 'save') expect(staleTab.write(stale.save)).toBe(false);
+    expect(first.load()).toEqual({ kind: 'none' });
+    expect(first.write(newSave(1, 'prolog'))).toBe(true);
+    if (stale.kind === 'save') expect(staleTab.write(stale.save)).toBe(false);
+    expect(createStore(storage).load()).toEqual({ kind: 'save', save: newSave(1, 'prolog') });
+  });
+});

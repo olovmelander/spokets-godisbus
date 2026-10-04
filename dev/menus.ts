@@ -8,13 +8,18 @@ import { createPause } from '../src/ui/pause';
 import { createHud } from '../src/ui/hud';
 import { createTitle } from '../src/ui/title';
 import { mountShell } from '../src/ui/shell';
+import { createPhotoStore } from '../src/save/photos';
+import { createPhotoAlbum } from '../src/ui/photos';
 import '../src/ui/ui.css';
 
-const VIEWS = ['touch', 'keys', 'pad', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'end', 'bubble', 'message', 'debug'] as const;
+const VIEWS = ['touch', 'keys', 'pad', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'end', 'photos', 'bubble', 'message', 'debug'] as const;
 const shown = new Set((new URLSearchParams(location.search).get('show') ?? 'touch').split(','));
 const byId = (id: string) => document.getElementById(id)!;
 
 mountShell(document.body);
+const photos = createPhotoAlbum(document, createPhotoStore(null), 'preview');
+void photos.refresh();
+if (shown.has('photos')) photos.credits();
 byId('controls').hidden = !shown.has('touch');
 
 const hint = shown.has('goal') ? sv.goal : shown.has('pad') ? sv.padHint : shown.has('keys') ? sv.keysHint : '';

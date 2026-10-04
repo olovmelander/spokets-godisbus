@@ -100,13 +100,15 @@ try {
   }
   await page.locator('#titleSettingsBtn').click();
   await page.locator('#setFollowFinger').check();
+  await page.locator('#setLefty').check();
+  await page.locator('#setMusic').uncheck();
   await page.keyboard.press('Escape');
   check('title settings return to title without starting play', await page.locator('#title').isVisible() && (await state()).paused);
   await page.locator('#startBtn').click();
   await page.locator('#firstAventyr').click();
   await home();
   const first = JSON.parse((await read())['godisbus.v1.player.elof']);
-  check('first start creates Elof with the chosen settings', first.name === 'Elof' && first.settings.followFinger);
+  check('first start creates Elof with the chosen settings', first.name === 'Elof' && first.settings.followFinger && first.settings.lefty && !first.settings.music);
   await page.locator('#playersBtn').click();
   await page.locator('#newPlayerBtn').click();
   await page.locator('#playerName').fill('<b>Test</b>');
@@ -129,6 +131,20 @@ try {
   await page.locator('#startOverBtn').click();
   await reloadAction('#playerConfirmYes', 'elof');
   check('confirmed reset retains name and removes only current progress', await page.locator('#startBtn .begin').isVisible() && await page.locator('#currentPlayer').textContent() === 'Elof' && (await read())[`godisbus.v1.player.${newId}`] === untouched);
+  await page.evaluate(async (second) => {
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 8;
+    canvas.getContext('2d').fillRect(0, 0, 8, 8);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp'));
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('godisbus.v1.photos', 1);
+      request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
+    });
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction('frames', 'readwrite');
+      for (const player of ['elof', second]) tx.objectStore('frames').put({ player, moment: 'carving', blob });
+      tx.oncomplete = resolve; tx.onerror = () => reject(tx.error);
+    }); db.close();
+  }, newId);
   await page.locator('#playersBtn').click();
   await page.locator(`[data-player="${newId}"]`).locator('..').locator('.player-remove').click();
   await page.locator('#playerConfirmNo').click();
@@ -137,6 +153,17 @@ try {
   await reloadAction('#playerConfirmYes', 'elof');
   entries = await read();
   check('removal deletes only the named player and its index entry', !entries[`godisbus.v1.player.${newId}`] && JSON.parse(entries['godisbus.v1.index']).players.length === 1);
+  const photoPlayers = await page.evaluate(() => new Promise((resolve, reject) => {
+    const request = indexedDB.open('godisbus.v1.photos', 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result, tx = db.transaction('frames', 'readonly');
+      const rows = tx.objectStore('frames').getAll();
+      rows.onsuccess = () => resolve(rows.result.map(row => row.player));
+      tx.oncomplete = () => db.close();
+    };
+  }));
+  check('removing another profile deletes its photos and preserves current-player photos', photoPlayers.includes('elof') && !photoPlayers.includes(newId));
   // A newer save is not silently replaced by the title, visibility or autosaving.
   await page.evaluate(() => localStorage.setItem('godisbus.v1.player.elof', '{"v":99,"name":"Elof"}'));
   await page.reload(); await ready(page);

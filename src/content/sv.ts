@@ -128,6 +128,16 @@ export const sv = {
   dewSong: 'Hela gräsmattan glittrar!',
   // The album in the pause panel: every kind, found or not.
   album: { title: 'Godisalbumet', count: '{found} av {total} sorter' },
+  photos: {
+    title: 'Foton', journey: 'Vårt äventyr', empty: 'Här samlas bilder från ditt äventyr.',
+    open: 'Titta på {name}', previous: 'Förra', next: 'Nästa', back: 'Tillbaka', done: 'Klart',
+    count: '{n} av {total}', thanks: 'Tack för äventyret!', again: 'Se äventyret igen',
+    credits: 'Spöket är täljt av Pappa Emil. Spelet är gjort till Elof av morbror Olov – med hjälp av Claude och Codex.',
+    moments: {
+      shrinking: 'Liten som en godis', swing: 'Första svingen', plane: 'Moas flygplan', cap: 'Bertils kepsbåt',
+      crane: 'På tranans rygg', aurora: 'Under norrskenet', carving: 'Min första trägubbe',
+    },
+  },
 
   // The card at a chapter's end.
   end: {

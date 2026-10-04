@@ -6,6 +6,7 @@ import {
 } from 'three';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { createAssets } from './assets';
+import { captureFrame } from './capture';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
@@ -79,6 +80,8 @@ export interface View {
   /** The rendered player's centre on the play plane, in CSS client coordinates; null before the first frame. */
   playerScreen(): { x: number; y: number } | null;
   render(frame: Frame): void;
+  /** Read the last frame immediately after render(), with no retained WebGL drawing buffer. */
+  capture(): Promise<Blob | null>;
   info(): ViewInfo;
 }
 
@@ -604,6 +607,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   return {
     resize,
     render,
+    capture: () => hasFrame ? captureFrame(canvas) : Promise.resolve(null),
     setTier(next) {
       const chosen = chooseTier(next, hdrAvailable);
       if (tier === chosen) return;

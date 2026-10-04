@@ -121,7 +121,7 @@ const GUESTS = [
  *
  * Not built yet: which candy each one gets (the choice is whom, and in which order); the strokes traced by
  * hand, away from the body; the figure on the windowsill and its blink; the first trägubbe and the ghost on
- * the shelf; the album as credits; *Utforska vidare*.
+ * the shelf; *Utforska vidare*. The album now plays as credits after the last step.
  */
 export const epilog: ChapterData = {
   id: 'epilog',

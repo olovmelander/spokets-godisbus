@@ -1,4 +1,5 @@
 import { sv } from '../content/sv';
+import { photoAlbumHtml } from './photos';
 
 // Every picture on the page is a plain shape drawn here: no logotypes, no brand marks (plan §0).
 const svg = (body: string, box = '0 0 24 24') => `<svg viewBox="${box}" aria-hidden="true">${body}</svg>`;
@@ -104,6 +105,7 @@ export function mountShell(root: HTMLElement): void {
          <div class="map" id="pauseMap"></div>
          <div class="album" id="pauseAlbum" tabindex="-1"></div>
          <button class="wide" id="titleBtn" type="button">${HOME}<span>${p.home}</span></button>
+         <section id="albumPhotos" class="album-photos" aria-label="${sv.photos.title}"></section>
          <button class="wide" id="stuckBtn" type="button">${BIG_CANDY}<span>${p.stuck}</span></button>
          <div class="ask" id="stuckAsk" hidden>
            <p>${p.stuckAsk}</p>
@@ -170,6 +172,7 @@ export function mountShell(root: HTMLElement): void {
        </div>
      </div>
      <div class="memory" id="memory" role="img" hidden><div class="memory-card" id="memoryCard"></div></div>
+     ${photoAlbumHtml}
      <div class="panel-back" id="endCard" hidden>
        <div class="panel end" role="dialog" aria-modal="true" aria-labelledby="endTitle">
          <h2 id="endTitle"></h2>
@@ -178,6 +181,7 @@ export function mountShell(root: HTMLElement): void {
          <p class="found" id="endFound" hidden><span>${sv.stickers}</span><span class="stickers" id="endStickers"></span></p>
          <div class="map" id="endMap"></div>
          <p class="next" id="endNext">${sv.end.next}</p>
+         <button class="wide" id="endPhotos" type="button" hidden>▧ ${sv.photos.again}</button>
          <button class="wide go" id="endOnward" type="button" hidden>${PLAY}<span>${sv.end.onward}</span></button>
          <p class="code" id="endCode" hidden><span>${sv.code.next}</span><b id="endCodeWords"></b></p>
          <button class="wide" id="endAgain" type="button"><span>${sv.end.again}</span></button>

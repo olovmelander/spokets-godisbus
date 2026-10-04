@@ -540,6 +540,30 @@ body.calm *::after {
   display: none;
 }
 
+/* Local game-frame memories: small thumbnails and one quiet, keyboard-accessible album page. */
+.album-photos h3 { display: flex; align-items: center; gap: 10px; }
+.photo-thumbnails { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.photo-thumb { min-width: 0; padding: 7px; background: #fff9e9; border-radius: 10px; text-align: left; }
+.photo-thumb img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #27352e; border-radius: 5px; }
+.photo-thumb span { display: block; padding: 7px 2px 1px; font-size: 0.85rem; }
+.photo-panel { width: min(700px, calc(100vw - 36px)); }
+.photo-panel figure { margin: 0; }
+.photo-panel figure img { display: block; width: 100%; max-height: 45vh; object-fit: contain; border-radius: 8px; background: #27352e; }
+.photo-panel figcaption { padding: 12px 0 0; text-align: center; font-size: 1.1rem; }
+.photo-count { text-align: center; font-size: 0.9rem; margin: 10px 0; }
+.photo-nav { display: flex; gap: 12px; }
+.photo-nav .wide { flex: 1; }
+.photo-credits { padding: 18px 12px; text-align: center; line-height: 1.65; }
+.photo-credits > span { font-size: 60px; color: #a95e27; }
+.photo-panel [hidden], .album-photos[hidden] { display: none; }
+.photo-panel button:disabled { opacity: 0.4; }
+@media (max-height: 500px) {
+  .photo-panel figure img { max-height: 38vh; }
+  .photo-panel figcaption { padding-top: 5px; }
+  .photo-panel .wide { min-height: 40px; margin-top: 8px; }
+  .photo-panel #photoBack { display: none; }
+}
+
 .album h3 {
   margin: 0;
 }
