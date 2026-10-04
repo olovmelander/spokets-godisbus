@@ -5,6 +5,7 @@ import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import transcoderJS from 'three/examples/jsm/libs/basis/basis_transcoder.js?url';
 import transcoderWASM from 'three/examples/jsm/libs/basis/basis_transcoder.wasm?url';
 import { fetchAsset } from './fetch-asset';
+import { createTextureOwnership, type TextureOwnershipInfo } from './texture-ownership';
 
 /** public/packs/manifest.json, as written by scripts/build-assets.mjs. */
 export interface Manifest {
@@ -17,6 +18,8 @@ export interface Assets {
   model(pack: string, name: string): Promise<Group>;
   /** Which packs and files this build has. A private pack is only there where its files are. */
   manifest(): Promise<Manifest>;
+  restoreTextures(): Promise<void>;
+  textureInfo(): TextureOwnershipInfo;
 }
 
 /**
@@ -40,16 +43,24 @@ export function createAssets(renderer: WebGLRenderer): Assets {
   let manifest: Promise<Manifest> | null = null;
   const readManifest = () => manifest ??= fetchAsset(`${import.meta.env.BASE_URL}packs/manifest.json?v=${__ASSET_VERSION__}`,
     (response) => response.json() as Promise<Manifest>);
+  const parse = async (url: string) => {
+    const [bytes] = await Promise.all([fetchAsset(url, (response) => response.arrayBuffer()), initDecoder()]);
+    return loader.parseAsync(bytes, url.slice(0, url.lastIndexOf('/') + 1));
+  };
+  const textures = createTextureOwnership(renderer, parse);
+  renderer.domElement.addEventListener('webglcontextlost', () => textures.suspend());
   return {
     async model(pack, name) {
       const hash = (await readManifest()).packs[pack]?.hashes?.[`${name}.glb`];
       const url = `${import.meta.env.BASE_URL}packs/${pack}/${name}.glb${hash ? `?v=${hash}` : ''}`;
-      const [bytes] = await Promise.all([fetchAsset(url, (response) => response.arrayBuffer()), initDecoder()]);
-      const gltf = await loader.parseAsync(bytes, `${import.meta.env.BASE_URL}packs/${pack}/`);
+      const gltf = await parse(url);
+      textures.track(url, gltf);
       return gltf.scene;
     },
     manifest() {
       return readManifest();
     },
+    restoreTextures: () => textures.restore(),
+    textureInfo: () => textures.info(),
   };
 }

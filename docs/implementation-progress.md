@@ -153,8 +153,76 @@ Discovering the mountain's musical cobbles unlocks a brief explanation of the ol
 
 Validation: typecheck and 25 integrated cobble/ending tests pass. The combined party browser check covers the remembered discovery and explanation.
 
-## Checkpoint the combined full-game implementation
+## Preserve album focus when saved photos finish loading
 
-Integration checkpoint with profiles, photos, offline play, optional routes, story gestures and choices, exploration, memories, device controls, release routing, helper/tutorial, prologue and ending staging, LUT/depth/bloom/water/shadows, and GPU memory estimates/gates.
+Keep keyboard focus within the active album after asynchronous photo loading refreshes its controls. Closing the album or switching profiles invalidates pending refreshes so they cannot steal focus.
 
-At source 57a0314: 656 unit/robot tests and typecheck pass. A fresh combined build is 370.1 KB compressed JavaScript and 698.7 KB boot. Twenty-eight combined rendering checks pass; High target peak is 75.97 MB, total GPU at most 103.33 MB, and tested draw calls at most 85. Full final browser validation and immutable-pack CPU texture restoration are still in progress. This is a backup branch, with individual outcomes reviewed in the PR stack. RELEASED_CHAPTER remains null.
+Validation: focused browser checks cover delayed photo loads, keyboard focus and album closure. Typecheck and integrated unit tests pass.
+
+## Add place colour grading and bounded background depth blur
+
+Use generated place LUTs for consistent colour across graphics tiers. Low applies the grade through materials; High adds background depth blur while keeping the play plane sharp.
+
+Validation: typecheck, unit tests, build and privacy gates pass. Browser checks verify matching Low/HDR sampled colours, a sharp play plane, background softening and valid shader/framebuffer output.
+
+## Verify the prologue staging through its complete browser flow
+
+Exercise the staged prologue from painting and the freeze gag through the hinge tear and pickup. The browser rehearsal checks interaction gates and progression with the current stand-in models.
+
+Validation: 22 prologue browser checks pass, and the staged views were visually inspected. Final approved character acting and models remain an art checkpoint.
+
+## Run every executable browser regression in the release gate
+
+Include all executable browser suites in the repository's complete browser gate so the story interactions, album, profile, lifecycle and rendering regressions are checked together.
+
+Validation: the script inventory was compared with the package gate and every executable suite is included. Subsequent renderer and device milestones extend this same gate.
+
+## Measure live and peak GPU allocations against rendering budgets
+
+Track texture and render-target allocation, resize, deletion and context loss in debug and benchmark runs. Graphics-tier checks now include peak storage and the High render-target limit; unknown formats fail explicitly.
+
+Validation: 581 unit tests and 49 focused browser checks passed at the source milestone. Typecheck, build and privacy gates pass; later combined High checks cover all representative places.
+
+## Add flowing water and half-resolution bloom
+
+Animate water flow with glints and caustics, add bounded refraction, and render bloom at half resolution. Quality changes dispose of their old targets and retain the existing play-plane clarity.
+
+Validation: renderer unit tests, typecheck, build and privacy gates pass. The renderer's 28 focused browser checks cover tier changes, image properties and shader/framebuffer validity; tested scenes remain below 120 draws.
+
+## Stage the moonlit ending after the credits
+
+Place the carved eyes in the window and the named keepsake on the shelf. After the credits, show a short moonlit blink and bell before the ending and exploration choices; lifecycle pauses freeze the sequence and sound respects saved volume and mute settings.
+
+Validation: typecheck and focused ending tests pass. A subsequent browser rehearsal covers the complete ending, focus and interruption paths with the current stand-in models.
+
+## Give each graphics tier bounded character shadows
+
+Use simple ground shadows on Low, contact shadows on Mid and a bounded 1024-pixel character shadow map on High. Switching to Low releases the higher-tier shadow targets.
+
+Validation: character-shadow browser checks and integrated unit tests pass. Combined High measurements across garden, forest, bog and finale stay below the 80 MB target-storage and 120-draw limits, and High-to-Low releases all render targets.
+
+## Estimate decoded asset GPU storage during builds
+
+Add decoded geometry and texture estimates to the existing asset manifest without removing file hashes or byte sizes. Build budgets account for shared packs plus one chapter, including known canvas and render targets. Unsupported image and instancing cases fail explicitly.
+
+Validation: 14 focused fixture tests, the source's 636 unit tests, typecheck, production build and privacy gate pass. Estimates are conservative; live GL allocation checks remain authoritative.
+
+## Keep the ending clear and verify its complete lifecycle
+
+Hide the ordinary play HUD during the moonlit ending and apply consistent overlay, input and focus guards. Add a complete browser rehearsal through credits, blink, bell, interruption recovery and exploration.
+
+Validation: all 656 integrated unit tests and typecheck pass. The ending rehearsal passes 20 browser checks. A clean combined build is 370.1 KB gzip JavaScript and 698.7 KB boot; High GPU checks pass in all four representative scenes.
+
+## Use the same GPU memory limits in build and runtime checks
+
+Align the build estimate with the runtime's decimal MB limits: 100, 150 and 220 MB by graphics tier, plus 80 MB for High render targets. Preserve the manifest's informational MiB value and add an explicit MB value.
+
+Validation: 15 asset-estimate tests and typecheck pass, including exactly 100,000,000 bytes accepted and one extra byte rejected. The clean combined build also passes the stricter limits.
+
+## Release uploaded pack texture buffers and restore them safely
+
+Release CPU mip buffers for supported immutable KTX2 pack textures after upload. Context recovery refetches the original versioned packs through the bounded loader and offline cache, validates mappings, and restores the same Texture and Source identities. Play waits for recovery; retries and repeated loss cannot apply stale results. Initial boot failure retains the reload action.
+
+Procedural and dynamic textures keep the CPU data they need. No blanket geometry or unsupported-source release is attempted.
+
+Validation: the clean combined tree passes 665 unit/robot tests, typecheck, production build/size and privacy gates (371 KB gzip JS; 700 KB public boot). The source passed 13 real KTX browser checks plus 30 lifecycle checks, covering uploaded payload hashes, released buffers, offline recovery, bounded failures, retry and repeated context loss. The full 28-suite integrated browser gate is running.

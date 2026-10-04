@@ -58,6 +58,7 @@ function showMessage(text: string, button: string = sv.retry, action: () => void
   byId('messageText').textContent = text;
   const element = byId<HTMLButtonElement>('messageButton');
   element.textContent = button;
+  element.disabled = false;
   element.onclick = action;
   byId('message').hidden = false;
   byId('loading').classList.add('done');
@@ -631,10 +632,12 @@ function start(): void {
   // A memory plays once, when he touches its shaving: not again in a game that has seen it.
   const memories = createMemory(document);
   let recovering = false;
+  let restoreReady = true;
+  let restoreGeneration = 0;
   let pausedBeforeLoss = false;
   let focusBeforeLoss: HTMLElement | null = null;
   function offerRecovery(): void {
-    if (!recovering || contextLost || !bootReady) return;
+    if (!recovering || contextLost || !bootReady || !restoreReady) return;
     showMessage(sv.contextRestored, sv.pause.resume, () => {
       recovering = false;
       byId('message').hidden = true;
@@ -673,6 +676,8 @@ function start(): void {
       focusBeforeLoss = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     }
     contextLost = true;
+    restoreReady = false;
+    restoreGeneration++;
     pointing.cancel();
     askedForUse = askedForHelp = false;
     memories.suspend(true);
@@ -687,14 +692,26 @@ function start(): void {
     writeSave();
     showMessage(sv.contextLost);
   });
-  canvas.addEventListener('webglcontextrestored', () => {
-    contextLost = false;
+  async function restorePicture(): Promise<void> {
+    const ticket = ++restoreGeneration;
+    restoreReady = false;
+    showMessage(sv.contextReloading);
+    byId<HTMLButtonElement>('messageButton').disabled = true;
     try {
-      view.restore();
+      await view.restore();
+      if (ticket !== restoreGeneration || contextLost || again) return;
+      restoreReady = true;
       offerRecovery();
     } catch {
-      showMessage(sv.loadFailed);
+      if (ticket !== restoreGeneration || contextLost || again) return;
+      // A rejected initial ready promise cannot be retried in place; rebuild the loader on reload.
+      if (!bootReady) showMessage(sv.loadFailed);
+      else showMessage(sv.loadFailed, sv.retry, () => { void restorePicture(); });
     }
+  }
+  canvas.addEventListener('webglcontextrestored', () => {
+    contextLost = false;
+    void restorePicture();
   });
   // This one-button recovery dialog also works before the input controller has any game to control.
   byId('message').addEventListener('keydown', (event) => {
@@ -910,6 +927,7 @@ function start(): void {
             `geometries ${i.geometries} · textures ${i.textures} · GL buffers ${i.gpu.buffers}${i.gpu.unknownFormats.length ? ' · UNCOUNTED FORMAT' : ''}`] : []),
           `tier ${i.tier} · canvas ${i.width}×${i.height} · pixel ratio ${i.pixelRatio.toFixed(2)} / ${i.maxPixelRatio.toFixed(2)}`,
           `models ${i.models.join(', ') || 'none yet'} · KTX2 textures ${i.compressedTextures}`,
+          `pack CPU textures ${(i.assetTextures.cpuBytes / 1024).toFixed(1)} KB · released ${i.assetTextures.released}/${i.assetTextures.managed}`,
           `x ${n(p.x)} y ${n(p.y)} · vx ${n(p.vx)} vy ${n(p.vy)} · ${p.grounded ? 'on the ground' : 'in the air'}`,
           `candy ${game.sim.candyCount} of ${chapter.candy.length} · bubbles ${game.sim.bubbles} · ${p.mode}${p.verb ? ` · Använd: ${p.verb}` : ''}${p.atEdge ? ' · at an edge' : ''}`,
           `big candy ${game.sim.checkpoint + 1} of ${chapter.checkpoints?.length ?? 0} · ${settings.style}${paused ? ' · paused' : ''}`,

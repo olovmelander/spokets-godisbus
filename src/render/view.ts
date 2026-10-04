@@ -7,6 +7,7 @@ import {
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
+import type { TextureOwnershipInfo } from './texture-ownership';
 import { captureFrame } from './capture';
 import { observeGpu, type GpuMemory } from './gpu-memory';
 import { KINDS } from '../content/kinds';
@@ -55,6 +56,7 @@ export interface ViewInfo {
   models: string[];
   /** How many of their textures arrived as KTX2 and stayed compressed on the GPU. */
   compressedTextures: number;
+  assetTextures: TextureOwnershipInfo;
   /** The "role" custom properties set in Blender, read back from the models. */
   roles: string[];
   shadows: { characters: number; contact: boolean; mapSize: number; casters: number };
@@ -102,8 +104,8 @@ export interface View {
   readonly maxResolutionSteps: number;
   /** Required public boot models are present; a failure keeps the loading/error card in front of play. */
   readonly ready: Promise<void>;
-  /** Three restores its GL state; reupload retained CPU assets and warm the rebuilt render targets. */
-  restore(): void;
+  /** Re-fetch released immutable textures before warming Three's restored GL resources. */
+  restore(): Promise<void>;
   resize(): void;
   /** Apply a level without resetting the scene. Call while paused when crossing Low, to warm its shaders. */
   setTier(next: Tier): void;
@@ -769,7 +771,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     get resolutionSteps() { return resolutionSteps; },
     get maxResolutionSteps() { return maxResolutionSteps(maxPixelRatio); },
     ready,
-    restore() {
+    async restore() {
+      await ready;
+      await assets.restoreTextures();
       resize();
       warmedFor = -1;
       warm = 2;
@@ -837,6 +841,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       height: canvas.height,
       models,
       compressedTextures,
+      assetTextures: assets.textureInfo(),
       roles,
       shadows: characterShadows.info(),
     }),

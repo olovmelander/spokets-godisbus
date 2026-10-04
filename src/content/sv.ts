@@ -378,6 +378,7 @@ export const sv = {
   loadFailed: 'Något gick fel när spelet laddades.',
   contextLost: 'Bilden försvann en stund. Spelet är pausat och det du har gjort är sparat.',
   contextRestored: 'Bilden är tillbaka. Fortsätt när du är redo!',
+  contextReloading: 'Vi hämtar tillbaka bilden. Spelet väntar.',
   recoveryTitle: 'Spelet väntar',
   retry: 'Försök igen',
 } as const;

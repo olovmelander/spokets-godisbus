@@ -80,7 +80,7 @@ for (const [pack, folder] of packs) {
 }
 manifest.gpuEstimate = estimateBuild(Object.fromEntries(Object.entries(manifest.packs).map(([name, pack]) => [name, pack.gpuEstimate])));
 for (const [name, group] of Object.entries(manifest.gpuEstimate.loadGroups)) {
-  console.log(`  GPU estimate ${name}: ${Object.entries(group.tiers).map(([tier, value]) => `${tier} ${value.knownMiB} MiB`).join(', ')} (known allocations; runtime gate still required)`);
+  console.log(`  GPU estimate ${name}: ${Object.entries(group.tiers).map(([tier, value]) => `${tier} ${value.knownMB} MB`).join(', ')} (known allocations; runtime gate still required)`);
 }
 mkdirSync(OUT, { recursive: true });
 writeFileSync(join(OUT, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
