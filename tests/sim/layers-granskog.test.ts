@@ -287,7 +287,7 @@ describe('the nest up the trunk, and the two rings from it', () => {
     // On the floor before Bertil's sign, with the pool still ahead.
     expect(sim.curr.x).toBeLessThan(cap.at.x);
     expect(sim.flags.has('cap')).toBe(false);
-    expect(sideTaken(sim, NEST.from, NEST.to)).toEqual({ taken: 11, of: 11 });
+    expect(sideTaken(sim, NEST.from, NEST.to)).toEqual({ taken: 12, of: 12 });
     expect(sim.bubbles).toBe(0);
     expect(seconds(sim)).toBeLessThan(25);
   });
@@ -401,7 +401,7 @@ describe('the nest up the trunk, and the two rings from it', () => {
     expect(runPast(sim, cap.at.x - 0.6)).toBe(true);
     expect(sim.flags.has('memory')).toBe(true);
     expect(sim.checkpoint).toBe(9);
-    expect(sideTaken(sim, NEST.from, NEST.to)).toEqual({ taken: 0, of: 11 });
+    expect(sideTaken(sim, NEST.from, NEST.to)).toEqual({ taken: 0, of: 12 });
     expect(sim.collectedSide.some(Boolean)).toBe(false);
     expect(sim.flags.has('found:colaflaska')).toBe(false);
     expect(sim.bubbles).toBe(0);
@@ -531,7 +531,7 @@ describe('on Lugnt', () => {
     expect(boughs.bubbles).toBe(0);
     const nested = fromTheNest(lugnt);
     expect(onTrail(nested), `after the nest: ${where(nested)}`).toBe(true);
-    expect(sideTaken(nested, NEST.from, NEST.to)).toEqual({ taken: 11, of: 11 });
+    expect(sideTaken(nested, NEST.from, NEST.to)).toEqual({ taken: 12, of: 12 });
     expect(nested.flags.has('found:colaflaska')).toBe(true);
     expect(nested.bubbles).toBe(0);
   });
@@ -585,8 +585,7 @@ describe('the tells and the picture', () => {
     const side = granskog.side!;
     for (const ledge of granskog.ledges!) {
       const over = side.some((candy) => Math.abs(candy.x - ledge.x) <= ledge.width / 2 && candy.y > ledge.y && candy.y - ledge.y < 1);
-      const sweet = granskog.hidden!.some((h) => Math.abs(h.x - ledge.x) <= ledge.width / 2 && h.y > ledge.y && h.y - ledge.y < 1);
-      expect(over || sweet, `the ledge at ${ledge.x}, ${ledge.y}`).toBe(true);
+      expect(over, `the ledge at ${ledge.x}, ${ledge.y}`).toBe(true);
     }
     for (const hook of granskog.hooks!) {
       const along = side.filter((candy) => Math.abs(Math.hypot(candy.x - hook.x, candy.y - hook.y) - hook.length) < 0.1);

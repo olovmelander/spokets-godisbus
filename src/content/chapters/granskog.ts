@@ -394,9 +394,8 @@ export const granskog: ChapterData = {
     { x: 188.9, y: -7.55 },
     ...row(191, 203, -8),
   ],
-  // Side candy: hearts and lollipops, over every ledge but the nest, which has the colaflaska, and three
-  // along the arc of every swing. Every other one is a heart, and the first of each way is one: its tell.
-  // New ones are added at the end.
+  // Side candy: hearts and lollipops, over every ledge and three along the arc of every swing. Every other
+  // one is a heart, and the first of each way is one: its tell. New ones are added at the end.
   side: [
     // The boughs: up the bark, along the swing, on the far bough, and down.
     { x: 21.6, y: 2.5 },
@@ -409,10 +408,11 @@ export const granskog: ChapterData = {
     { x: 29.8, y: 2.95 },
     { x: 31.4, y: 1.95 },
     { x: 32.1, y: 1.95 },
-    // The nest: up the bark, along both swings, and on the last bough.
+    // The nest: up the bark, in the nest beside the colaflaska, along both swings, and on the last bough.
     { x: 138.6, y: -6.55 },
     { x: 139.8, y: -5.65 },
     { x: 138.5, y: -4.75 },
+    { x: 139.6, y: -3.85 },
     { x: 142.3, y: -5 },
     { x: 143.6, y: -5.3 },
     { x: 144.9, y: -5 },
