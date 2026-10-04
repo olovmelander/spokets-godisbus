@@ -75,6 +75,9 @@ function sailing(t: number): Candy {
   return { x: Math.round((LEAF.from.x + (LEAF.to.x - LEAF.from.x) * k) * 10) / 10, y: Math.round((Math.sin(Math.PI * t) * LEAF.rise + 0.5) * 10) / 10 };
 }
 
+/** The shop's floor: the height of its stone step. */
+const SHOP_FLOOR = 3.3;
+
 export const byn: ChapterData = {
   id: 'byn',
   place: 'village',
@@ -134,6 +137,33 @@ export const byn: ChapterData = {
   hooks: [
     // The lace on the bicycle's pedal: one swing over the cellar window's well.
     { x: 73.5, y: 3.3, length: 2.7, land: { x: 77.8, y: 0 } },
+    // In the shop: the rings of the two lamps over the floor, between the shelves. Out of the lace's reach
+    // from the floor, and in reach from the top shelf.
+    { x: 138, y: 8.8, length: 2.6, extra: true },
+    { x: 142.4, y: 8.8, length: 2.6, extra: true },
+  ],
+  // The shop's shelves (docs/level-design.md): three steps of shelf up from the floor, the two lamps to swing
+  // along, a long shelf to land on and a step down before the bag. A fall from any of it lands on the floor.
+  ledges: [
+    { x: 130.6, y: SHOP_FLOOR + 0.9, width: 1.6, look: 'plank' },
+    { x: 132.8, y: SHOP_FLOOR + 1.7, width: 1.6, look: 'plank' },
+    { x: 135, y: SHOP_FLOOR + 2.5, width: 1.6, look: 'plank' },
+    { x: 146.2, y: SHOP_FLOOR + 2.5, width: 2.4, look: 'plank' },
+    { x: 148.6, y: SHOP_FLOOR + 1.7, width: 1.4, look: 'plank' },
+  ],
+  // What a sweet shop keeps on its shelves: hearts and lollipops, one on every shelf and along both swings.
+  side: [
+    { x: 130.6, y: SHOP_FLOOR + 1.45 },
+    { x: 132.8, y: SHOP_FLOOR + 2.25 },
+    { x: 135, y: SHOP_FLOOR + 3.05 },
+    { x: 136.7, y: SHOP_FLOOR + 3.3 },
+    { x: 138, y: SHOP_FLOOR + 2.9 },
+    { x: 139.5, y: SHOP_FLOOR + 3.3 },
+    { x: 141, y: SHOP_FLOOR + 3.3 },
+    { x: 142.4, y: SHOP_FLOOR + 2.9 },
+    { x: 143.9, y: SHOP_FLOOR + 3.3 },
+    { x: 146.2, y: SHOP_FLOOR + 3.05 },
+    { x: 148.6, y: SHOP_FLOOR + 2.25 },
   ],
   movers: [
     // A matchbox on the step's edge, with a red ring: pulled down, it is the step up.
@@ -188,6 +218,8 @@ export const byn: ChapterData = {
     { from: 40, to: 64, zoom: 1.3 },
     { from: 68, to: 80, zoom: 1.25, lift: 0.4 },
     { from: 84, to: 103, zoom: 1.25, lead: 3.2 },
+    // Up on the shelves the picture rises with him, so that the lamps' rings and the far shelf are in it.
+    { from: 129, to: 150, above: SHOP_FLOOR + 0.6, zoom: 1.8, lift: 1.4 },
     { from: 120, to: 178, zoom: 1.6 },
   ],
   candy: [
