@@ -196,9 +196,10 @@ export const garden: ChapterData = {
     { x: 57.4, y: 4.9, length: 2.8, extra: true },
     { x: 60.6, y: 4.9, length: 2, extra: true },
     // The clothes line: three rings in a row over the dew rain, at equal spacing and equal height, out of
-    // reach from the lawn. From the highest leaf he swings along them one after another: letting go of one
-    // on the way up puts the next in reach, and the last one sets him down on the leaf at the far end.
-    // They hang as high as the chain's nails, so that letting go anywhere is a soft landing on the lawn.
+    // reach of anyone standing on the lawn. From the highest leaf he swings along them one after another:
+    // letting go of one on the way up puts the next in reach, and the last one sets him down on the leaf at
+    // the far end. They hang as high as the chain's nails, so that letting go anywhere is a soft landing on
+    // the lawn; and like the chain's first nail, one can be thrown to in the air at the top of a jump.
     { x: 112, y: 4.9, length: 2.6, extra: true },
     { x: 116, y: 4.9, length: 2.6, extra: true },
     { x: 120, y: 4.9, length: 2.6, extra: true },
