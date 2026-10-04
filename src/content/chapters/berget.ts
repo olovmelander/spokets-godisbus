@@ -1,14 +1,16 @@
-import type { Candy, ChapterData } from '../../sim/types';
+import type { Candy, ChapterData, Hook, Ledge } from '../../sim/types';
 
 /**
  * Kapitel 4: Berget (plan §3.4), in greybox. Units: EL. The places, from the left:
  *
  * 1. **Tranflygningen** (S5): the chapter begins on the crane's back. It carries him over the valley and up
  *    to the mountain's shoulder; up and down steer through the candy, and nothing can end the ride.
- * 2. **The shoulder:** granite slabs to pull himself up.
+ * 2. **The shoulder:** granite slabs to pull himself up. From the first slab the rock shelves rise: a second
+ *    way, over the mountain's first ring, to the far side of the cobbles.
  * 3. **Strandstenarna** (O8): five round cobbles, each ringing a note as he passes.
  * 4. **Vindbyarna** (E4): open granite with boulders. A gust is announced a second ahead; one that catches
- *    him in the open takes him back to the last boulder. Nothing falls.
+ *    him in the open takes him back to the last boulder. Nothing falls. Shelves on the boulders and a ring
+ *    between every two are a second way over it, from lee to lee.
  * 5. **The ghost is stuck** below the last cliff. Använd says *Lyft*: he boosts it up, and it lowers the
  *    lace to him (P15).
  * 6. **The old pine:** "Spöket vill hämta hem min trägubbe!"
@@ -46,6 +48,47 @@ function inFlight(): Candy[] {
 /** The open granite, and its boulders. */
 const BOULDERS = [110, 115.2, 120.4, 125.6, 130.8, 136];
 
+/** A heart over a shelf, where he takes it by standing there. */
+const over = (shelf: { x: number; y: number }): Candy => ({ x: shelf.x, y: Math.round((shelf.y + 0.55) * 100) / 100 });
+
+/**
+ * The rock shelves (docs/level-design.md): a second way from the first slab to the open granite, over the
+ * cobbles. Four shelves rise along the rock, each a held jump above the last, to 2.4 EL over the second slab,
+ * and two more run level there with a gap to jump before each. From the last of them the mountain's first
+ * ring swings him over the cobbles to a far shelf, and a low shelf is the step down to the granite before the
+ * gusts. The far shelf is more than a held jump above that step: he comes down there and never up, so the far
+ * shelf is reached by the ring only. A miss anywhere lands on the slab below, unhurt.
+ */
+const SHELVES: Ledge[] = [
+  { x: 86, y: 26.1, width: 1.4, look: 'stone' },
+  { x: 88, y: 27, width: 1.4, look: 'stone' },
+  { x: 90.2, y: 27.9, width: 1.4, look: 'stone' },
+  { x: 92.5, y: 28.8, width: 1.6, look: 'stone' },
+  { x: 95.4, y: 28.8, width: 2, look: 'stone' },
+  { x: 98.2, y: 28.8, width: 1.6, look: 'stone' },
+  // the far side of the ring
+  { x: 104.8, y: 28.4, width: 2.4, look: 'stone' },
+  { x: 107.1, y: 27.1, width: 1.2, look: 'stone' },
+];
+// Too high for the lace from the granite: it is thrown from the last level shelf.
+const SHELF_RING: Hook = { x: 101.4, y: 31.3, length: 2.9, extra: true };
+
+/**
+ * The lee shelves: a second way over the open granite. Each boulder but the last has a low shelf, a held jump
+ * up from the granite, and a high one at its top; both are narrower than the lee, so no gust takes him on
+ * them. Between two boulders hangs a ring, too high for the lace from the granite. On the lace no gust has
+ * hold of him. In the air after he lets go one does, unless he is already in the next lee: it sets him down
+ * on the granite by the boulder he came from, whose low shelf is the way up again. The last boulder has its
+ * high shelf only, so that one is reached by the ring.
+ */
+const LEE = { low: 27.3, high: 28.2, width: 1.2 };
+const LEE_SHELVES: Ledge[] = BOULDERS.flatMap((x, i) => [
+  ...(i < BOULDERS.length - 1 ? [{ x, y: LEE.low, width: LEE.width, look: 'stone' as const }] : []),
+  { x, y: LEE.high, width: LEE.width, look: 'stone' as const },
+]);
+// A row of rings at one height, one boulder apart: the swing has the same beat as the dash below it.
+const LEE_RINGS: Hook[] = BOULDERS.slice(1).map((x, i) => ({ x: Math.round((BOULDERS[i]! + x) * 5) / 10, y: 31.2, length: 2.6, extra: true }));
+
 /**
  * Toppröset: these are the shelves' tops. The first is too high to grab from the ordinary path without
  * jumping. The rightmost edge leaves 3.9 EL before the exit, so a miss lands or bubbles before reaching it.
@@ -65,11 +108,12 @@ const CAIRN_LACE = { x: 147.6, bottom: 32.4, top: 40.9, exit: -1 as const, needs
 export const berget: ChapterData = {
   id: 'berget',
   place: 'mountain',
-  // Off the trail: over the shoulder, over the first slab, in a boulder's lee, and at the summit cairn.
+  // Off the trail: over the shoulder, on the far shelf of the ring over the cobbles, on the last boulder's
+  // top, and at the summit cairn. The two on shelves are for the brave: in sight from the trail below.
   hidden: [
     { x: 78, y: 25.9, kind: 'polkagris' },
-    { x: 87, y: 27.1, kind: 'graddkola' },
-    { x: 125.6, y: 28.3, kind: 'salmiakruta' },
+    { x: 104.9, y: 29, kind: 'graddkola', way: 'over the ring above the cobbles' },
+    { x: 136, y: 28.85, kind: 'salmiakruta', way: 'from lee to lee above the boulders' },
     { x: 146.9, y: 41.35, kind: 'chokladpralin', route: true },
   ],
   decor: [{ look: 'cairn', at: { x: 146.9, y: 40.9 } }],
@@ -112,6 +156,8 @@ export const berget: ChapterData = {
     // The optional cairn loop reuses the same climbing/sliding skill, with no new Use step or reward flag.
     CAIRN_LACE,
   ],
+  ledges: [...SHELVES, ...LEE_SHELVES],
+  hooks: [SHELF_RING, ...LEE_RINGS],
   movers: CAIRN.map((shelf, i) => ({
     id: `cairn:${i + 1}`, look: 'stone', extra: true, width: shelf.width, height: 0.4, verb: 'push',
     // One stop is fixed ground, so there is no push or pull interaction on these shelves.
@@ -151,6 +197,9 @@ export const berget: ChapterData = {
   cameras: [
     // Above the pine, frame the next shelf and the way back in both orientations.
     { from: 145, to: 154, above: 32.9, zoom: 1.6, lift: 1.3, lead: 0 },
+    // On the rock shelves, show the ring above him and the cobbles below. The lee shelves need no zone of
+    // their own: the open granite's picture is wide enough for the rings and the ground.
+    { from: 89, to: 108, above: 27.6, zoom: 1.4, lift: -0.5 },
     { from: -3, to: 70, zoom: 1.7, lift: 0.5 },
     { from: 108, to: 138, zoom: 1.35 },
     { from: 140, to: 150, zoom: 1.3, lift: 0.5 },
@@ -173,5 +222,20 @@ export const berget: ChapterData = {
     { x: 145.7, y: 29.8 },
     // 6. to the old pine
     ...row(147.5, 155.5, 31.4),
+  ],
+  // Hearts and lollipops, off the trail: add new ones at the end.
+  side: [
+    // the rock shelves: one over each on the way up, three along the ring's arc, one at the far shelf's end
+    // and one over the step down
+    ...SHELVES.slice(0, 6).map(over),
+    { x: 99.9, y: 28.8 },
+    { x: 101.4, y: 28.4 },
+    { x: 102.9, y: 28.8 },
+    { x: 105.7, y: 28.95 },
+    { x: 107.1, y: 27.85 },
+    // the lee shelves: one over each low shelf, one over each high shelf before the last, and one at the
+    // bottom of each swing
+    ...BOULDERS.slice(0, -1).flatMap((x) => [over({ x, y: LEE.low }), over({ x, y: LEE.high })]),
+    ...LEE_RINGS.map((ring) => ({ x: ring.x, y: Math.round((ring.y - ring.length) * 100) / 100 })),
   ],
 };
