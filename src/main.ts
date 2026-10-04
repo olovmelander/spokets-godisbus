@@ -525,6 +525,7 @@ function start(): void {
     resolution?.suspend();
   });
   window.addEventListener('blur', () => {
+    story.interrupt();
     pointing.cancel();
     askedForUse = askedForHelp = false;
   });

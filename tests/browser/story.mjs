@@ -193,6 +193,15 @@ try {
       const svg = document.getElementById('strokePicture'), matrix = svg.getScreenCTM();
       return [{ x: 116, y: 64 }, { x: 123, y: 65 }].map((point) => { const p = svg.createSVGPoint(); p.x = point.x; p.y = point.y; const q = p.matrixTransform(matrix); return { x: q.x, y: q.y }; });
     });
+    await page.mouse.move(coords[0].x, coords[0].y); await page.mouse.down();
+    await page.mouse.move(coords[1].x, coords[1].y, { steps: 3 });
+    await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+    await page.mouse.up();
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    check('focus loss discards an unfinished pointer stroke', !(await state()).flags.includes('eye'));
+    await page.evaluate(() => { document.getElementById('strokeAssist').click(); window.dispatchEvent(new Event('blur')); });
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    check('focus loss cancels a pending guided stroke completion', !(await state()).flags.includes('eye') && await page.locator('#storyPanel').isVisible());
     await page.mouse.move(coords[0].x, coords[0].y); await page.mouse.down(); await page.mouse.up();
     check('a tap alone has not painted an eye', !(await state()).flags.includes('eye'));
     await page.mouse.down(); await page.mouse.move(coords[1].x, coords[1].y, { steps: 3 }); await page.mouse.up();

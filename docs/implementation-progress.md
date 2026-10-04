@@ -128,3 +128,9 @@ Validation: browser scripts parse and typecheck; these integrated cases are incl
 A single routing policy now governs URLs, saved adventures, chapter codes, onward navigation, exploration and the map. Stable plan IDs map to runtime chapter IDs. Public null still opens the test course; developer routes retain access to the full game. Advancing replaces the old course URL and clears inspection flags, while unavailable saved progress stays intact.
 
 Validation: typecheck and 40 integrated routing/journey/map/ending tests pass; ten source browser checks cover public rejection, explicit-course advancement, codes and saved checkpoints. The release constant is unchanged.
+
+## Cancel unfinished painting and carving when focus is lost
+
+Story strokes have their own pointer capture and delayed completion. Losing window focus now cancels that pending gesture alongside normal movement, so returning cannot complete an old partial stroke.
+
+Validation: typecheck passes and browser regressions cover both partial pointer strokes and delayed guided completion.
