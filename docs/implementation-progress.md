@@ -98,3 +98,9 @@ Validation: typecheck and album tests pass. Source browser checks cover the fina
 After naming the ghost, the saved name appears in map, dialogue, helper and sharing labels on revisits. Before that moment the text still calls it the ghost.
 
 Validation: typecheck and sixteen integrated journey/map/story tests pass, including the new sharing panels.
+
+## Replay discovered memories from the album
+
+Discovered memories can be replayed from the paused album, with next, close, Escape and controller-back controls. Closing returns focus to the originating album item. Playback preserves the current picture and remaining time while the page is hidden or the renderer recovers.
+
+Validation: typecheck and memory tests pass. Source browser checks cover automatic discovery, replay, input methods, natural completion, focus restoration and unchanged save progress.

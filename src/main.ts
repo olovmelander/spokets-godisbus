@@ -9,7 +9,7 @@ import { lostFlag, lostFound } from './content/lost';
 import { createPhotoMoments } from './content/photos';
 import { albumHtml } from './ui/album';
 import { mapSvg, mapState } from './ui/map';
-import { createMemory } from './ui/memory';
+import { createMemory, memoryAlbumHtml } from './ui/memory';
 import { createExplore } from './ui/explore';
 import { sv } from './content/sv';
 import { createInput, type Device } from './input/input';
@@ -465,6 +465,7 @@ function start(): void {
         if (platformBlocked()) return;
         if (story.open) story.back();
         else if (photoAlbum.open) photoAlbum.back();
+        else if (memories.open) memories.close();
         else if (explore.open) explore.back();
         else if (key === 'bag') openBag();
         else if (title.open) title.back();
@@ -475,6 +476,7 @@ function start(): void {
         if (platformBlocked()) return;
         if (story.open) story.back();
         else if (photoAlbum.open) photoAlbum.back();
+        else if (memories.open) memories.close();
         else if (explore.open) explore.back();
         else if (title.open) title.back();
         else if (pause.open) pause.back();
@@ -506,6 +508,7 @@ function start(): void {
     auto?.suspend();
     resolution?.suspend();
     audio.sleep(platformBlocked() || menuOpen());
+    memories.suspend(platformBlocked());
     if (document.hidden) { input.release(); askedForHelp = false; story.interrupt(); writeSave(); }
     else game.resume();
   });
@@ -590,6 +593,7 @@ function start(): void {
       focusBeforeLoss = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     }
     contextLost = true;
+    memories.suspend(true);
     recovering = true;
     paused = true;
     input.release();
@@ -614,6 +618,14 @@ function start(): void {
   byId('message').addEventListener('keydown', (event) => {
     if (event.key === 'Tab') { event.preventDefault(); byId('messageButton').focus(); }
   });
+  byId('pauseAlbum').addEventListener('click', (event) => {
+    const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-memory]') : null;
+    const id = button?.dataset.memory;
+    const found = id && (id === chapter.id ? game.sim.flags.has('memory') : save.flags[id]?.includes('memory'));
+    if (platformBlocked() || !id || !found || !pause.open || memories.open || photoAlbum.open || story.open || explore.open) return;
+    input.release();
+    memories.play(id, () => { input.release(); game.resume(); });
+  });
   let remembered = game.sim.flags.has('memory');
   let flagsSeen = -1;
   // Whether the dew bells had all rung when the page last looked.
@@ -633,6 +645,7 @@ function start(): void {
     if (document.hidden) { lastTime = time; return; }
     const dt = Math.min(timer.getDelta(), 0.25);
     const blocked = platformBlocked();
+    memories.suspend(blocked);
     audio.sleep(blocked || menuOpen());
     if (blocked) {
       auto?.suspend();
@@ -665,7 +678,9 @@ function start(): void {
     }
     if (!remembered && game.sim.flags.has('memory')) {
       remembered = true;
-      memories.play(chapter.id, () => game.resume());
+      input.release();
+      writeSave();
+      memories.play(chapter.id, () => { input.release(); game.resume(); canvas.focus(); });
       audio.sleep(true);
     }
     // A big candy is a safe place: the game saves there (plan §3.3, rule 4).
@@ -724,7 +739,7 @@ function start(): void {
       }
       // The album's page, in the pause panel: in the story only.
       const keepsakes = Object.values(all).some((flags) => flags.includes('keepsake:vittra')) ? ['vittra'] : [];
-      byId('pauseAlbum').innerHTML = mapState(chapter.id) ? albumHtml(found, lost, keepsakes) : '';
+      byId('pauseAlbum').innerHTML = mapState(chapter.id) ? albumHtml(found, lost, keepsakes) + memoryAlbumHtml(all) : '';
     }
     for (; told < game.sim.said.length; told++) {
       const beat = beats.get(game.sim.said[told]!);

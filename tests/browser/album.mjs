@@ -23,11 +23,23 @@ page.on('pageerror', (error) => errors.push(String(error)));
 page.on('request', (request) => assert.ok(request.url().startsWith(origin) || /^(data:|blob:)/.test(request.url()), 'Only local requests'));
 const state = () => page.evaluate(() => window.__godis.state());
 const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
+const frames = (count = 2) => page.evaluate((n) => new Promise((resolve) => {
+  function frame() { if (--n <= 0) resolve(); else requestAnimationFrame(frame); }
+  requestAnimationFrame(frame);
+}), count);
+async function pad(index) {
+  await page.evaluate((i) => { window.__testPad.buttons[i] = { pressed: true, value: 1 }; }, index);
+  await frames(1);
+  await page.evaluate((i) => { window.__testPad.buttons[i] = { pressed: false, value: 0 }; }, index);
+  await frames();
+}
 async function ready() {
   await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
 }
 try {
   await page.addInitScript(() => {
+    window.__testPad = { connected: true, mapping: 'standard', index: 0, id: 'test controller', axes: [0, 0], buttons: Array.from({ length: 16 }, () => ({ pressed: false, value: 0 })) };
+    Object.defineProperty(navigator, 'getGamepads', { value: () => [window.__testPad] });
     if (localStorage.getItem('album-test')) return;
     localStorage.setItem('album-test', 'yes');
     const flags = {
@@ -59,6 +71,53 @@ try {
   assert.equal(await page.locator('[data-reward="golden"]').count(), 1, 'The reward survives save and reload');
   assert.notEqual(await page.locator('#notice').textContent(), 'Alla sorter! Ett geléhallon i guld.', 'Loading does not replay the reward notice');
   assert.ok((await page.locator('#pauseMap').textContent()).includes('Spöket'), 'His name is not revealed early');
+  assert.equal(await page.locator('[data-memory]').count(), 2, 'Only found memories can be replayed');
+  assert.equal(await page.locator('.memory-missing').count(), 2);
+  const progress = await state();
+  const saveBeforeMemory = await saved();
+  await page.locator('[data-memory="garden"]').tap();
+  assert.ok(await page.locator('#memory').isVisible());
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'memoryNext');
+  await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'memoryClose', 'Memory owns the keyboard focus scope over pause');
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'memoryNext');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#memoryProgress').textContent(), '2 / 3', 'Enter advances a frame');
+  if (process.env.MEMORY_SHOT) {
+    await page.waitForFunction(() => Number(getComputedStyle(document.getElementById('memoryCard')).opacity) > 0.99);
+    await page.screenshot({ path: process.env.MEMORY_SHOT });
+  }
+  await page.keyboard.press('Escape');
+  assert.ok(await page.locator('#memory').isHidden());
+  assert.ok(await page.locator('#pause').isVisible());
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-memory')), 'garden');
+  assert.equal((await state()).steps, progress.steps, 'Replay leaves the game paused');
+  assert.deepEqual(await saved(), saveBeforeMemory, 'Watching a memory changes no saved progress');
+  await page.locator('[data-memory="berget"]').tap();
+  await pad(1);
+  assert.ok(await page.locator('#memory').isHidden(), 'Controller B closes the memory');
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-memory')), 'berget');
+  await pad(0);
+  assert.ok(await page.locator('#memory').isVisible(), 'Controller A reopens a found memory');
+  await pad(0);
+  assert.equal(await page.locator('#memoryProgress').textContent(), '2 / 4', 'Controller A advances a frame');
+  await page.locator('#memoryClose').tap();
+  await page.locator('[data-memory="garden"]').tap();
+  await page.waitForSelector('#memory[hidden]', { state: 'attached', timeout: 15000 });
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-memory')), 'garden', 'Automatic completion returns to the same album button');
+  assert.equal((await state()).steps, progress.steps);
+  // The first encounter still plays automatically, then returns to the world with no held movement.
+  await page.goto(`${origin}${base}?dev&debug&standin&tier=low&course=granskog&at=144,-7.99`);
+  await ready();
+  await page.waitForSelector('#memory:not([hidden])');
+  const stopped = await state();
+  assert.ok(stopped.flags.includes('memory'));
+  await page.keyboard.press('Escape');
+  await page.waitForFunction((before) => window.__godis.state().steps > before, stopped.steps);
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'game', 'Automatic memory returns to the world');
+  await page.keyboard.press('KeyG');
+  assert.ok(await page.locator('[data-memory="granskog"]').count(), 'The new discovery can now be replayed');
   await page.goto(`${origin}${base}?dev&debug&standin&tier=low&course=epilog&at=22.4,0.01&flags=party:mamma,party:pappa,party:moa,party:bertil`);
   await ready();
   await page.waitForFunction(() => window.__godis.state().word === 'giveGhost');
@@ -68,7 +127,7 @@ try {
   await page.keyboard.press('Escape');
   assert.ok((await page.locator('#pauseMap').textContent()).includes('Klonk'), 'The real naming action changes the map immediately');
   assert.deepEqual(errors, []);
-  console.log('Album: final pickup, golden reward/reload and real naming action passed.');
+  console.log('Album: golden reward/reload, found-memory replay controls and naming action passed.');
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));

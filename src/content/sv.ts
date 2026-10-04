@@ -97,6 +97,13 @@ export const sv = {
   },
   ghostName: 'Klonk',
   giveKlonk: 'Ge Klonk',
+  memories: {
+    title: 'Pappas minnen',
+    watch: 'Se minnet igen',
+    waiting: 'Ett minne att hitta',
+    next: 'Nästa bild',
+    back: 'Tillbaka',
+  },
 
   // What is said, in bubbles: the game has no voices. At most about 40 characters each (plan §3.7).
   lines: {

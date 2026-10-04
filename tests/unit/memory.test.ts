@@ -1,11 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { STORY, chapterNumber } from '../../src/content/chapters';
-import { MEMORIES, PICTURE_TIME } from '../../src/ui/memory';
+import { MEMORIES, PICTURE_TIME, memoryAlbumHtml } from '../../src/ui/memory';
 import { heightAt, playThrough } from '../robot/robot';
 
 const numbered = STORY.filter((chapter) => chapterNumber(chapter.id) > 0);
 
 describe('the four memories', () => {
+  it('lets the album replay only discovered memories, with the same existing cards', () => {
+    const empty = memoryAlbumHtml({});
+    expect(empty.match(/memory-missing/g)).toHaveLength(4);
+    expect(empty).not.toContain('<svg');
+    expect(empty).not.toContain('data-memory=');
+    const found = memoryAlbumHtml({ garden: ['memory'], granskog: ['goal'], berget: ['memory'], unknown: ['memory'] });
+    expect(found.match(/data-memory=/g)).toHaveLength(2);
+    expect(found).toContain('data-memory="garden"');
+    expect(found).toContain('data-memory="berget"');
+    expect(found).toContain(MEMORIES.garden![0]);
+    expect(found).not.toContain('data-memory="granskog"');
+    expect(found).not.toContain('unknown');
+  });
+
   it('lie one in each numbered chapter, as a glowing shaving on the path that he only has to touch', () => {
     for (const chapter of numbered) {
       const spots = (chapter.spots ?? []).filter((spot) => spot.look === 'memory');

@@ -78,10 +78,23 @@ export const MEMORIES: Record<string, string[]> = {
   ],
 };
 
+/** Only discovered memories show their pictures. The other slots keep the story to themselves. */
+export function memoryAlbumHtml(flags: Record<string, string[]>): string {
+  return `<h3>${sv.memories.title}</h3><div class="memory-album">${Object.entries(MEMORIES).map(([id, pictures]) =>
+    flags[id]?.includes('memory')
+      ? `<button type="button" class="memory-thumb" data-memory="${id}" aria-label="${sv.memories.watch}: ${sv.explore.chapters[id]}">${pictures[0]}<span>${sv.explore.chapters[id]}</span><span aria-hidden="true">▶</span></button>`
+      : `<div class="memory-missing" aria-label="${sv.memories.waiting}">?</div>`,
+  ).join('')}</div>`;
+}
+
 export interface Memory {
   readonly open: boolean;
   /** Plays a chapter's memory, picture after picture, and calls `done` when it is over. A tap goes on at once. */
   play(chapter: string, done: () => void): void;
+  /** Ends playback and returns to the panel or game that opened it. */
+  close(): void;
+  /** Hold the current picture while the page or renderer is interrupted. */
+  suspend(paused: boolean): void;
 }
 
 /** How long each picture stays, in milliseconds. A memory is six to ten seconds (plan §3.3). */
@@ -90,41 +103,86 @@ export const PICTURE_TIME = 2400;
 export function createMemory(doc: Document): Memory {
   const back = doc.getElementById('memory') as HTMLElement;
   const card = doc.getElementById('memoryCard') as HTMLElement;
+  const nextButton = doc.getElementById('memoryNext') as HTMLButtonElement;
+  const closeButton = doc.getElementById('memoryClose') as HTMLButtonElement;
+  const progress = doc.getElementById('memoryProgress') as HTMLElement;
   let open = false;
   let timer = 0;
+  let suspended = false, remaining = PICTURE_TIME, deadline = 0;
+  let advance: (() => void) | null = null;
+  const schedule = () => {
+    window.clearTimeout(timer);
+    if (!open || suspended || !advance) return;
+    deadline = performance.now() + remaining;
+    timer = window.setTimeout(() => { if (!suspended) advance?.(); }, remaining);
+  };
+  let finish: (() => void) | null = null;
+  const close = () => {
+    if (!open) return;
+    window.clearTimeout(timer);
+    open = false;
+    advance = null;
+    back.hidden = true;
+    card.onclick = null;
+    nextButton.onclick = null;
+    const done = finish;
+    finish = null;
+    done?.();
+  };
+  closeButton.onclick = close;
+  back.addEventListener('click', (event) => { if (event.target === back) close(); });
   return {
     get open() {
       return open;
     },
     play(chapter, done) {
       const pictures = MEMORIES[chapter];
-      if (!pictures || open) {
+      if (open) return;
+      if (!pictures) {
         done();
         return;
       }
       open = true;
       back.hidden = false;
-      back.setAttribute('aria-label', sv.memory);
+      const focus = doc.activeElement instanceof HTMLElement ? doc.activeElement : null;
+      finish = () => {
+        if (focus?.isConnected) focus.focus();
+        done();
+      };
+      doc.getElementById('memoryTitle')!.textContent = `${sv.memories.title} · ${sv.explore.chapters[chapter]}`;
       let at = -1;
       const next = () => {
+        if (suspended) return;
         window.clearTimeout(timer);
         at++;
         if (at >= pictures.length) {
-          open = false;
-          back.hidden = true;
-          back.onclick = null;
-          done();
+          close();
           return;
         }
         card.innerHTML = pictures[at]!;
+        progress.textContent = `${at + 1} / ${pictures.length}`;
+        nextButton.textContent = at === pictures.length - 1 ? `${sv.memories.back} ↩` : `${sv.memories.next} →`;
         // Each picture fades in anew.
         card.classList.remove('in');
         void card.offsetWidth;
         card.classList.add('in');
-        timer = window.setTimeout(next, PICTURE_TIME);
+        remaining = PICTURE_TIME;
+        schedule();
       };
-      back.onclick = next;
+      advance = next;
+      card.onclick = next;
+      nextButton.onclick = next;
       next();
+      nextButton.focus();
+    },
+    close,
+    suspend(paused) {
+      if (paused === suspended) return;
+      suspended = paused;
+      if (paused) {
+        if (open) remaining = Math.max(0, deadline - performance.now());
+        window.clearTimeout(timer);
+      } else schedule();
     },
   };
 }
