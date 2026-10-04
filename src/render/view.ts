@@ -1535,7 +1535,8 @@ function buildHidden(chapter: ChapterData) {
     const band = new Mesh(new TorusGeometry(0.17, 0.045, 8, 22), new MeshStandardMaterial({ color: kind?.mark ?? '#ffffff', roughness: 0.4 }));
     band.rotation.x = Math.PI / 2;
     const ring = new Mesh(new TorusGeometry(0.34, 0.022, 8, 30), gold);
-    sweet.add(sweetSocket(new Group().add(body, band), { shape: def.kind }), ring);
+    // The kit's sweet fills its ring: it is the prize, and bigger than anything on the trail.
+    sweet.add(sweetSocket(new Group().add(body, band), { shape: def.kind, scale: 1.25 }), ring);
     sweet.position.set(def.x, def.y, 0);
     sweet.visible = def.after === undefined;
     group.add(sweet);

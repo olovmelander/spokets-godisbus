@@ -369,7 +369,7 @@ export function spotProp(spot: Spot): SpotProp | null {
     case 'lollipop': {
       const stick = rod(0.025, 0.9, solid('#fff6e0', 0.6));
       stick.position.y = 0.45;
-      // A fluted round of clear sugar from the kit, glowing; until it has come, a glowing ball.
+      // The kit's golden swirl, glowing; until it has come, a glowing ball.
       const sweet = sweetSocket(new Group().add(ball(0.22, solid('#ffd98a', 0.3, { emissive: '#ffb23c', emissiveIntensity: 0.9 }))),
         { shape: 'lysklubba', glow: 0.95 });
       sweet.position.y = 1;
