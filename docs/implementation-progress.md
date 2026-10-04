@@ -212,3 +212,9 @@ Validation: 14 focused fixture tests, the source's 636 unit tests, typecheck, pr
 Hide the ordinary play HUD during the moonlit ending and apply consistent overlay, input and focus guards. Add a complete browser rehearsal through credits, blink, bell, interruption recovery and exploration.
 
 Validation: all 656 integrated unit tests and typecheck pass. The ending rehearsal passes 20 browser checks. A clean combined build is 370.1 KB gzip JavaScript and 698.7 KB boot; High GPU checks pass in all four representative scenes.
+
+## Use the same GPU memory limits in build and runtime checks
+
+Align the build estimate with the runtime's decimal MB limits: 100, 150 and 220 MB by graphics tier, plus 80 MB for High render targets. Preserve the manifest's informational MiB value and add an explicit MB value.
+
+Validation: 15 asset-estimate tests and typecheck pass, including exactly 100,000,000 bytes accepted and one extra byte rejected. The clean combined build also passes the stricter limits.

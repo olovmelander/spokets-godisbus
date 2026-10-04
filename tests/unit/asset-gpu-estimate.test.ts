@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { describe, expect, it } from 'vitest';
-import { estimateBuild, estimateGlb, estimateKtx2, PIXEL_CAPS, totalEstimates } from '../../scripts/asset-gpu-estimate.mjs';
+import { estimateBuild, estimateGlb, estimateKtx2, GPU_BUDGETS, HIGH_TARGET_BUDGET, PIXEL_CAPS, totalEstimates } from '../../scripts/asset-gpu-estimate.mjs';
+import { GPU_LIMIT, HIGH_TARGET_LIMIT } from '../../src/render/gpu-memory';
 import { PIXEL_CAP } from '../../src/render/quality';
 
 function glb(json: object, binary: Buffer = Buffer.alloc(0)): Buffer {
@@ -125,6 +126,16 @@ describe('KTX2 fallback inventory', () => {
 });
 
 describe('build estimate load groups and tier budgets', () => {
+  it('uses the same decimal MB boundaries as the live allocation gate', () => {
+    expect(GPU_BUDGETS).toEqual(GPU_LIMIT);
+    expect(HIGH_TARGET_BUDGET).toBe(HIGH_TARGET_LIMIT);
+    const overhead = estimateBuild({ boot: pack(0) }).loadGroups.common.tiers.low.knownBytes;
+    const assetBytes = 100e6 - overhead;
+    const low = estimateBuild({ boot: pack(assetBytes) }).loadGroups.common.tiers.low;
+    expect(low.knownBytes).toBe(100e6);
+    expect(low.knownMB).toBe(100);
+    expect(() => estimateBuild({ boot: pack(assetBytes + 1) })).toThrow('common/low known estimate exceeds 100 MB');
+  });
   it('gates common/private plus a single chapter, not the sum of prefetched chapters', () => {
     const result = estimateBuild({ boot: pack(1 * 1024 ** 2), private: pack(1 * 1024 ** 2), garden: pack(80 * 1024 ** 2), granskog: pack(80 * 1024 ** 2) });
     expect(result.commonPacks).toEqual(['boot', 'private']);
@@ -141,7 +152,7 @@ describe('build estimate load groups and tier budgets', () => {
     expect(high.renderTargetBytes).toBe(high.width * high.height * 20 + Math.ceil(high.width / 2) * Math.ceil(high.height / 2) * 24 + 1024 ** 2 * 8);
     expect(high.canvasBytes).toBe(high.width * high.height * 8);
     expect(high.knownBytes).toBe(1000 + high.canvasBytes + high.renderTargetBytes + high.knownProceduralTextureBytes);
-    expect(high.renderTargetBytes).toBeLessThan(80 * 1024 ** 2);
+    expect(high.renderTargetBytes).toBeLessThan(HIGH_TARGET_LIMIT);
   });
   it('counts unknown shared packs conservatively and rejects an over-budget load group', () => {
     expect(estimateBuild({ boot: pack(10), animals: pack(20), garden: pack(30) }).loadGroups.garden.assetBytes).toBe(60);
