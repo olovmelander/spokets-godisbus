@@ -138,9 +138,9 @@ export const byn: ChapterData = {
     // The lace on the bicycle's pedal: one swing over the cellar window's well.
     { x: 73.5, y: 3.3, length: 2.7, land: { x: 77.8, y: 0 } },
     // In the shop: the rings of the two lamps over the floor, between the shelves. Out of the lace's reach
-    // from the floor, and in reach from the top shelf.
-    { x: 138, y: 8.8, length: 2.6, extra: true },
-    { x: 142.4, y: 8.8, length: 2.6, extra: true },
+    // from the floor, and in reach from the top shelf. Each hangs on its flex from the ceiling.
+    { x: 138, y: 8.8, length: 2.6, extra: true, hangs: 16 },
+    { x: 142.4, y: 8.8, length: 2.6, extra: true, hangs: 16 },
   ],
   // The shop's shelves (docs/level-design.md): three steps of shelf up from the floor, the two lamps to swing
   // along, a long shelf to land on and a step down before the bag. A fall from any of it lands on the floor.

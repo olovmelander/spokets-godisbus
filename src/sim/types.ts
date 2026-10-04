@@ -26,6 +26,25 @@ export interface Hook {
   land?: Vec;
   /** A hook of a challenge route (plan §4.7): off the way on, so the helper never points at it. */
   extra?: boolean;
+  /**
+   * For the picture: its ring hangs on a cord this long from something above it, a string from a bough or
+   * the flex of a lamp. Left out, a ring under a line (`lines`) hangs from that line, and any other is a
+   * ring on a nail.
+   */
+  hangs?: number;
+}
+
+/**
+ * A line strung over the path, for the picture only (docs/level-design.md): a clothes line, a rope between
+ * two dead pines. The rings under it hang from it, so that nothing floats.
+ */
+export interface Line {
+  from: Vec;
+  to: Vec;
+  /** How far its middle hangs below its ends. */
+  sag?: number;
+  /** A pole stands under each end, down into the ground. */
+  posts?: boolean;
 }
 
 /**
@@ -424,6 +443,8 @@ export interface ChapterData {
   side?: Candy[];
   /** Ledges: thin floors over the path that he jumps up through. */
   ledges?: Ledge[];
+  /** For the picture: lines strung over the path, which the rings under them hang from. */
+  lines?: Line[];
   /** The hoses and stems he can climb. */
   climbs?: Climb[];
   /** The hooks he can throw the lace to. */

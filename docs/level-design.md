@@ -40,6 +40,7 @@ These are the pieces a chapter is laid out with. The first four are in the forma
 | **Side candy** | `side: Candy[]` | Candy off the trail, drawn as **hearts and lollipops**. The trail is sweets in wrappers and says "this is the way"; a heart says "this is extra". A heart in sight is the tell of every side way. Never needed, none of the trail's rules apply, saved by its place in the list (add at the end). |
 | **A sweet with a way** | `hidden[].way` | A hidden sweet that is not reached by a held jump from the ground under it says how: "up the window sills", "at the end of the clothes line". `tests/sim/secrets-<chapter>.test.ts` has to play it. |
 | **Ring** | `hooks[]` with `extra: true` | A ring off the main way. Rings in a row at equal spacing give the swing a rhythm. |
+| **What holds a ring** | `hooks[].hangs`, `lines: { from, to, sag?, posts? }` | For the picture only. A ring in the open air hangs on a cord `hangs` long from something above it, or from a line strung over it: a clothes line, a rope between two dead pines, with a pole under each end. A ring under a line needs nothing more said. |
 | **Pocket** | ledges, a climb, a pit | A small place above or below the path with something in it. It lets out forward. |
 | **Fixed or moving thing** | `movers[]` with one stop, or `cycle` | A solid floating floor, a lift, a ferry. Solid from below too: use a ledge where he should be able to jump up through. |
 
@@ -57,8 +58,9 @@ These are the pieces a chapter is laid out with. The first four are in the forma
 - **Nothing the story needs is on a side way.** The helper never points there. *Lugnt* needs nothing there.
 - **Saved games:** trail candy and big candies are kept by their place in their lists. Add, never insert or
   move. Side candy has its own list for that reason.
-- **Budgets:** all ledges of one look, with what holds them up, are one draw call; every ring, climb and thing on a rail is one of its
-  own. A picture stays within 120.
+- **Budgets:** all ledges of one look, with what holds them up, are one draw call; so are all of a chapter's
+  cords, lines and poles together; every ring, climb and thing on a rail is one of its own. A picture stays
+  within 120.
 
 ## 3. The chapters
 

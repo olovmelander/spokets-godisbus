@@ -9,6 +9,7 @@ import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
 import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
 import { buildLedges } from './ledges';
+import { buildLines } from './lines';
 import type { TextureOwnershipInfo } from './texture-ownership';
 import { captureFrame } from './capture';
 import { observeGpu, type GpuMemory } from './gpu-memory';
@@ -274,6 +275,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.group, sideTrail.group, ledges.group, glitter.group);
+  // What holds the rings that hang in the open air: cords, lines and their poles.
+  const lines = buildLines(chapter);
+  if (lines) scene.add(lines);
   const water = createWater(chapter, place?.water ?? null, place?.sun.from);
   const waterScene = new Scene();
   waterScene.fog = scene.fog;
