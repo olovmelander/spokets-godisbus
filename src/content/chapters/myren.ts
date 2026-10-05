@@ -28,9 +28,9 @@ import type { Candy, ChapterData, Hook, Jump, Ledge, Tussock, Vec } from '../../
  * forward onto the trail: **a leaf over the first cranberry**, which only its bounce reaches; **leaves over
  * the firm tussocks**; and **three rings between the dead pines** over the boardwalk.
  *
- * And one puzzle, off the trail: **the toss.** Hearts hang in an arch over the second run of soft tussocks, up
- * to a bough of a dead pine, and something glints in the moss under the foot of the arch. Standing still
- * there, on a tussock that sinks, is how he is thrown up to them.
+ * And one puzzle, off the trail: **the toss.** Hearts and lollipops hang in an arch over the second run of
+ * soft tussocks, up to a bough of a dead pine, and something glints in the moss under the foot of the arch.
+ * Standing still there, on a tussock that sinks, is how he is thrown up to them.
  *
  * Not built yet: the tussocks' dip under his feet, Mamma's mug and her lamp behind
  * him, the rings of the cranes' calls as a thing to follow, memory 3,
@@ -198,17 +198,18 @@ function along(t: number): Candy {
 /**
  * The toss: the one puzzle of the bog (docs/level-design.md, §1 point 8). Its rule is the soft tussocks', the
  * other way round: what has hurried him is here a lift.
- * - **What he sees,** from the island: an arch of hearts over the second run of soft tussocks, far above
- *   any jump, up to a bough of a dead pine that stands in the water. Nothing leads up to it. Low over the
- *   far end of the first soft tussock, under the foot of the arch, something glints.
+ * - **What he sees,** from the island: an arch of hearts and lollipops over the second run of soft tussocks,
+ *   far above any jump, up to a bough of a dead pine that stands in the water. Nothing leads up to it. In
+ *   the moss at the far end of the first soft tussock, under the foot of the arch, something glints.
  * - **What he has to do** is the one thing the bog has taught him not to: stand still on a soft tussock.
  *   What glints lies deep under the moss, out of his reach from the top of it. Standing over it he sinks
- *   towards it, and when he has come near enough the tussock springs back and throws him along the hearts,
+ *   towards it, and when he has come near enough the tussock springs back and throws him along the arch,
  *   up onto the bough. He presses nothing, and he is thrown well before the tussock would have sunk.
  * - **Everywhere else it is a soft tussock like the others:** hurried over it does nothing, and on its near
  *   half it sinks under him and the glitter bubble takes him back.
  * The bough is too high to jump to, and he leaves it by walking off either end, down onto a soft tussock.
- * Like every ride it is there again in a game taken up before it; the hearts stay in the bag.
+ * It throws him once. Like every ride it is there again in a game taken up before it, and after "Jag har
+ * fastnat" has put him back before it; the candy stays in the bag.
  */
 const SPRING: Stone = SOFT_B[0]!;
 /**
@@ -217,11 +218,11 @@ const SPRING: Stone = SOFT_B[0]!;
  */
 const GLINT_ALONG = 0.7;
 /**
- * How far under the top of the tussock the thing lies. He touches a thing from 1.2 EL (TOUCH_REACH and a
- * half), and a tussock sinks 0.45 in 1.8 s. So from the top of it he is 0.3 short; standing over it, two
- * thirds of the way down brings him there, after 1.2 s; and to its sides it takes a little longer. Someone
- * who crosses the tussock and hops on has not sunk a third of that. It is drawn as its glint only, which
- * floats 1.5 over a thing: in the moss at the top of the tussock.
+ * How far under the top of the tussock the thing lies. He touches a thing from 1.2 EL, feet to thing
+ * (TOUCH_REACH + 0.5 in the simulation), and a tussock sinks 0.45 in 1.8 s. So from the top of it he is
+ * 0.3 short; standing over it, two thirds of the way down brings him there, after 1.2 s; and to its sides
+ * it takes a little longer. Someone who crosses the tussock and hops on has not sunk a third of that. It is
+ * drawn as its glint only, which floats 1.5 over a thing: in the moss at the top of the tussock.
  */
 const GLINT_DEEP = 1.5;
 const GLINT: Vec = { x: round((SPRING.from + SPRING.to) / 2 + GLINT_ALONG), y: round(SPRING.y - GLINT_DEEP) };
@@ -232,7 +233,7 @@ const GLINT: Vec = { x: round((SPRING.from + SPRING.to) / 2 + GLINT_ALONG), y: r
 const PERCH: Ledge = { x: 74.25, y: 2, width: 1.8, look: 'branch' };
 /**
  * The throw: from where he has sunk to over the glint, over the next soft tussock, and down onto the bough
- * beside the stem. Nothing steers it, so every heart along it is his.
+ * beside the stem. Nothing is drawn under him and nothing steers it, so every candy along it is his.
  */
 const TOSS = { from: { x: GLINT.x, y: round(SPRING.y - (GLINT_DEEP - 1.2)) }, to: { x: 74, y: PERCH.y }, rise: 1.6, time: 1.2, corridor: 0 };
 /** Where his middle is on the throw, as the simulation carries him. */

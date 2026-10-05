@@ -666,6 +666,20 @@ describe('the toss: a saved game', () => {
     expect(taken(sim)).toBe(6);
   });
 
+  it('"Jag har fastnat" puts him back at the island\'s big candy, before the toss: it is there again, and the candy is his', () => {
+    const sim = onTheIslandAgain();
+    solve(sim);
+    const had = sim.candyCount;
+    sim.toCheckpoint();
+    run(sim, BUBBLE_TIME + 0.3);
+    expect(onTheIsland(sim)).toBe(true);
+    expect(wasThrown(sim)).toBe(false);
+    expect(taken(sim)).toBe(6);
+    solve(sim);
+    expect(onTheBough(sim)).toBe(true);
+    expect(sim.candyCount).toBe(had);
+  });
+
   it('a game saved half-way, sunk but not thrown, is a game in which nothing has happened', () => {
     const sim = onTheIslandAgain();
     hopOn(sim);
