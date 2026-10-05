@@ -1,5 +1,6 @@
 import { AdditiveBlending, DynamicDrawUsage, Group, InstancedMesh, MeshBasicMaterial, Object3D, PlaneGeometry } from 'three';
 import type { ChapterData } from '../sim/types';
+import { drawnWhile } from './idle';
 
 /** O1's reward lives in the grass. One preallocated draw call, warmed with the rest of the chapter. */
 export function songGlitter(chapter: ChapterData) {
@@ -32,6 +33,8 @@ export function songGlitter(chapter: ChapterData) {
     group,
     update(flags: ReadonlySet<string>, clock: number) {
       const on = flags.has(flag);
+      // Until the song has been played every star has no size, and the one draw call is not made (./idle.ts).
+      drawnWhile(stars, on);
       for (let i = 0; i < stars.count; i++) {
         const seed = seeds[i]!;
         place.position.set(seed.x, seed.y, seed.z);

@@ -1,5 +1,6 @@
 import { BoxGeometry, CircleGeometry, Color, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, OctahedronGeometry, SphereGeometry } from 'three';
 import type { ChapterData } from '../sim/types';
+import { drawnWhile } from './idle';
 
 /** Rehearsal carving: a crooked piece of wood with the two eyes Elof painted, never a likeness asset. */
 export function createEpilogueStage(layout: ChapterData['epilogue']) {
@@ -38,7 +39,9 @@ export function createEpilogueStage(layout: ChapterData['epilogue']) {
       const time = seconds ?? -1;
       const blink = time >= 1.2 && time < 1.52 ? Math.sin((time - 1.2) / 0.32 * Math.PI) : 0;
       for (const eye of eyes.children) eye.scale.y = 1 - blink * 0.96;
-      glint.scale.setScalar(calm ? (time >= 1.2 && time <= 1.7 ? 0.6 : 0) : time >= 1.05 && time <= 1.95 ? Math.sin((time - 1.05) / 0.9 * Math.PI) : 0);
+      const size = calm ? (time >= 1.2 && time <= 1.7 ? 0.6 : 0) : time >= 1.05 && time <= 1.95 ? Math.sin((time - 1.05) / 0.9 * Math.PI) : 0;
+      glint.scale.setScalar(size);
+      drawnWhile(glint, size > 0);
       glint.rotation.z = calm ? 0 : time * 0.8;
     },
   };

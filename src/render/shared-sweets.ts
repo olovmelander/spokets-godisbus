@@ -1,6 +1,7 @@
 import { Color, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D, SphereGeometry } from 'three';
 import type { Vec } from '../sim/types';
 import type { CandyKit } from './candy';
+import { drawnWhile } from './idle';
 
 const FRIENDS = ['tragubbe', 'spoket', 'jay'] as const;
 /** The sweets he can give on the summit, as the kit's shapes: how big each is drawn, and the karamell's own colour. */
@@ -50,6 +51,7 @@ export function createSharedSweets() {
       return true;
     },
     update(flags: ReadonlySet<string>, ghost: Vec | null, figure?: Vec) {
+      let any = false;
       for (const [i, friend] of FRIENDS.entries()) {
         const prefix = `gift:${friend}:`, gift = [...flags].find((flag) => flag.startsWith(prefix));
         const kind = gift?.slice(prefix.length) ?? (friend === 'jay' ? 'lingon' : 'gelehallon');
@@ -62,10 +64,13 @@ export function createSharedSweets() {
         if (model) model.position.set(x, y, .24);
         shape.position.set(x, y, .24);
         const size = shown && !model ? (friend === 'jay' ? .075 : .12) : 0;
+        any ||= size > 0;
         shape.scale.set(size, size * (kind === 'skumbanan' ? .55 : 1.2), size);
         shape.updateMatrix(); balls.setMatrixAt(i, shape.matrix);
         balls.setColorAt(i, colour.set(colours[kind] ?? '#c73650'));
       }
+      // Before anything is given, and where the kit's sweets have taken their place, no ball has a size (./idle.ts).
+      drawnWhile(balls, any);
       balls.instanceMatrix.needsUpdate = true;
       if (balls.instanceColor) balls.instanceColor.needsUpdate = true;
     },

@@ -3,6 +3,7 @@ import {
 } from 'three';
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
+import { drawnWhile } from './idle';
 import { sweetSocket } from './candy';
 import { saturdayBag } from './saturday-bag';
 
@@ -192,7 +193,10 @@ export function spotProp(spot: Spot): SpotProp | null {
   let lastStrike = 0;
   const vanish = (used: boolean, dt: number, over = 0.35) => {
     since = used ? since + dt : 0;
-    group.scale.setScalar(Math.max(0, 1 - since / over));
+    const size = Math.max(0, 1 - since / over);
+    group.scale.setScalar(size);
+    // Shrunk away, it is out of the picture too (./idle.ts).
+    drawnWhile(group, size > 0);
   };
   switch (spot.look) {
     case 'cairn': {
@@ -246,6 +250,7 @@ export function spotProp(spot: Spot): SpotProp | null {
           const flown = Math.max(0, since - 0.6);
           body.position.set(flown * 3.2, 0.36 * turned + (1 - turned) * 0.36 + flown * flown * 2.2, 0);
           group.scale.setScalar(flown > 1.6 ? 0 : 1);
+          drawnWhile(group, flown <= 1.6);
         },
       };
     }
@@ -273,7 +278,7 @@ export function spotProp(spot: Spot): SpotProp | null {
       root.rotation.z = 1.2;
       const gift = ball(0.08, solid('#c4202a', 0.25), 0.37, 0.12, 0.2);
       group.add(frame, door, root, ball(0.025, solid('#dfc372', 0.5), 0.16, 0.33, 0.17), gift);
-      return { group, update(used) { gift.scale.setScalar(used ? 1 : 0); } };
+      return { group, update(used) { gift.scale.setScalar(used ? 1 : 0); drawnWhile(gift, used); } };
     }
     case 'keepsake': {
       const paper = ball(0.2, solid('#f2df9a'), 0, 0, 0, [1, 1, 0.1]);
@@ -538,6 +543,7 @@ export function spotProp(spot: Spot): SpotProp | null {
           // The stone stays. The thing glints a little while it lies there, and is gone when he has it.
           gone = used ? Math.min(1, gone + dt / 0.3) : 0;
           thing.scale.setScalar(1 - gone);
+          drawnWhile(thing, gone < 1);
           thing.position.y = used ? gone * 0.5 : Math.sin(clock * 2 + spot.at.x) * 0.02;
         },
       };
@@ -586,7 +592,8 @@ function bird(): Group {
 /**
  * The helper (plan §4.6): the existing wooden ghost in the garden, then the jay. The third hint samples
  * a dotted silhouette along a short action trajectory. Nothing here changes a rule or awards anything.
- * All meshes exist from startup, including the still poses for the reduced-motion alternative.
+ * All meshes exist from startup, including the still poses for the reduced-motion alternative. What is not
+ * shown is out of the picture, and not drawn at no size or unseen (./idle.ts).
  */
 export function helperProp(chapter: ChapterData, ghost?: Group) {
   const group = new Group();
@@ -595,10 +602,12 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
   flyer.name = 'helper-actor';
   flyer.add(ghost ?? bird());
   flyer.scale.setScalar(0);
+  drawnWhile(flyer, false);
   const pale = () => new MeshStandardMaterial({ color: '#fff6dc', roughness: 1, transparent: true, opacity: 0, depthWrite: false, emissive: '#fff0c0', emissiveIntensity: 0.65 });
   const figures = [0, 1, 2].map((i) => {
     const mesh = new InstancedMesh(new SphereGeometry(0.026, 6, 4), pale(), 64);
     mesh.name = `helper-demo-${i}`;
+    drawnWhile(mesh, false);
     mesh.frustumCulled = false;
     mesh.instanceMatrix.setUsage(DynamicDrawUsage);
     group.add(mesh);
@@ -606,6 +615,7 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
   });
   const rope = new Mesh(new CylinderGeometry(0.017, 0.017, 1, 6), pale());
   rope.name = 'helper-demo-lace';
+  drawnWhile(rope, false);
   group.add(flyer, rope);
   // Its first thought is only a smudge, not words or the later story's revealed figure (§3.4).
   let thought: Mesh<PlaneGeometry, MeshBasicMaterial> | null = null;
@@ -617,7 +627,7 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     c.filter = 'blur(5px)'; c.fillStyle = '#8b8172'; c.beginPath(); c.ellipse(50, 25, 13, 10, -0.4, 0, Math.PI * 2); c.fill();
     const texture = new CanvasTexture(canvas); texture.colorSpace = SRGBColorSpace;
     thought = new Mesh(new PlaneGeometry(0.95, 0.65), new MeshBasicMaterial({ map: texture, transparent: true, opacity: 0, depthWrite: false }));
-    thought.name = 'helper-first-thought'; group.add(thought);
+    thought.name = 'helper-first-thought'; drawnWhile(thought, false); group.add(thought);
   }
   const dot = new Object3D(), end = new Vector3(), direction = new Vector3(), up = new Vector3(0, 1, 0);
   function drawPose(mesh: InstancedMesh, pose: DemoPose): void {
@@ -661,9 +671,11 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     const k = still ? 1 : 1 - Math.exp(-5 * dt);
     flyer.position.set(flyer.position.x + (to.x - flyer.position.x) * k, flyer.position.y + (to.y - flyer.position.y) * k, to.z);
     flyer.scale.setScalar(shown * 0.9);
+    drawnWhile(flyer, shown > 0);
     flyer.rotation.z = ghost ? -knock * 0.8 : 0;
     if (thought) {
       thought.material.opacity = help.visit ? shown * 0.9 : 0;
+      drawnWhile(thought, thought.material.opacity > 0);
       thought.position.set(flyer.position.x + 0.15, flyer.position.y + 1.5, 0.65);
     }
     const beat = still ? 0 : Math.sin(clock * 22) * 0.9;
@@ -676,11 +688,13 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     for (const [i, figure] of figures.entries()) {
       const visible = key !== '' && (i === 0 || still);
       figure.material.opacity = visible ? (still ? [0.24, 0.55, 0.35][i]! : 0.65) : 0;
+      drawnWhile(figure, visible);
       if (!visible) continue;
       drawPose(figure, sampleDemo(demonstration, still ? [0, DEMO_SECONDS * 0.6, DEMO_SECONDS][i]! : elapsed));
     }
     const pose = key ? sampleDemo(demonstration, still ? DEMO_SECONDS * 0.6 : elapsed) : null;
     rope.material.opacity = pose?.rope ? 0.5 : 0;
+    drawnWhile(rope, !!pose?.rope);
     if (pose?.rope) {
       end.set(pose.x + 0.2, pose.y + 0.9, 0.7);
       direction.set(pose.rope.x, pose.rope.y, 0.7).sub(end);

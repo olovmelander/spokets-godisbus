@@ -5,6 +5,7 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { LEDGE_THICK } from '../sim/constants';
 import type { Ledge, LedgeLook } from '../sim/types';
+import { drawnWhile } from './idle';
 import { ROD_COLOUR, rodShape, type Rod } from './lines';
 
 /**
@@ -184,7 +185,9 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [])
         mesh.setMatrixAt(slot, place.matrix);
       }
       mesh.instanceMatrix.needsUpdate = true;
-      // It is drawn while its place is in sight, whatever size its ledges have come to.
+      // It is drawn while its place is in sight, whatever size its ledges have come to: unless none of them
+      // has come to any size yet (./idle.ts).
+      drawnWhile(mesh, at.some((i) => there[i]! > 0));
       mesh.computeBoundingSphere();
     }
   };
