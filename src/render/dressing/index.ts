@@ -1,6 +1,7 @@
 import { Group, type Object3D, type Texture } from 'three';
 import type { ChapterData, PlaceId } from '../../sim/types';
 import { scenery } from '../backdrop';
+import { createLife, type Life, type LifeAsk, type Quiet } from '../life';
 import { fronts, street, villageLife } from '../village';
 import { bog } from './bog';
 import { built } from './built';
@@ -122,8 +123,13 @@ export const PLACES: Record<PlaceId, PlaceLook> = { forest: FOREST, garden: GARD
 export interface Dressing {
   group: Group;
   background: Texture;
-  /** `wind`: the gust that blows now, if one does, and whether everything is to stand still (reduced motion). */
-  update(cameraX: number, groundY: number, clock: number, night?: number, wind?: { gust: Blow | null; still: boolean }): void;
+  /** What lives far off in the scenery, where the place has any: it waits for its picture (life.ts). */
+  wild: Life | null;
+  /**
+   * `wind`: the gust that blows now, if one does, and whether everything is to stand still (reduced motion).
+   * `quiet`: what the far scenery's life needs to know of him and of the lens; without it, it does not move.
+   */
+  update(cameraX: number, groundY: number, clock: number, night?: number, wind?: { gust: Blow | null; still: boolean }, quiet?: Quiet): void;
   /**
    * A place whose houses are put together from a kit modelled in Blender (the village) takes the kit here
    * once it has arrived. False where the kit has nothing the chapter asks for: its stand-ins stay.
@@ -158,8 +164,8 @@ const OWN: Record<PlaceId, { ground: Ground; growth: Growth | null }> = {
 };
 export const groundOf = (place: PlaceId): Ground => OWN[place].ground;
 
-/** Builds a place's layers around a chapter's ground. */
-export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
+/** Builds a place's layers around a chapter's ground. `asked` is what is asked of the far scenery's life (life.ts). */
+export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}): Dressing {
   const group = new Group();
   const from = chapter.ground[0]!.x;
   const to = chapter.ground[chapter.ground.length - 1]!.x;
@@ -170,12 +176,18 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   const front = foreground(chapter, from, to, OWN[look.id].growth, standing);
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
-  const far = scenery(look.id, heightAt(chapter, from) - (chapter.outlook ?? 0), from, to);
+  // What the far pictures count their sinking from: the land around the chapter's start.
+  const land = heightAt(chapter, from) - (chapter.outlook ?? 0);
+  const far = scenery(look.id, land, from, to);
   const life = look.id === 'village' ? villageLife(chapter) : null;
   // The village has its houses and its yard behind the street.
   const houses = look.id === 'village' ? fronts(chapter, from, to) : null;
   if (life) group.add(life.group);
   if (look.id === 'dusk') group.add(stars());
+  // A moose in the mist, cranes, smoke from a far chimney: among the far pictures, and only there.
+  // The far village's picture hangs among the houses, 52 lengths behind the path: its chimneys smoke.
+  const wild = createLife(chapter, look.id, land, houses?.group.children.find((child) => child.position.z === -52), asked);
+  if (wild) group.add(wild.mesh);
   group.add(
     far.group,
     bank(chapter, OWN[look.id].ground),
@@ -188,8 +200,9 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   return {
     group,
     background: backdrop(look),
+    wild,
     ...(houses ? { install: houses.install } : {}),
-    update(cameraX, groundY, clock, night = 0, wind) {
+    update(cameraX, groundY, clock, night = 0, wind, quiet) {
       const still = wind?.still ?? false;
       // The wind first: what sways, what leans in front and what flies all go by it. Breaths of wind pass
       // through every place but the mountain, where the wind is the gusts'.
@@ -197,6 +210,7 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
       air.update(cameraX, groundY, clock, still);
       front.update(still);
       far.update(cameraX, groundY, clock, night);
+      if (quiet) wild?.update(cameraX, groundY, clock, night, quiet);
       life?.update(clock);
     },
   };

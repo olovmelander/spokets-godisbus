@@ -562,6 +562,19 @@ export interface ChapterData {
   beats?: Beat[];
   /** The rides. */
   rides?: Ride[];
+  /**
+   * For the picture only: stretches where something may happen far off in the scenery, a moose in the mist
+   * or cranes overhead (content/life.ts). The camera coming into one starts it. The simulation never reads
+   * this, so it cannot change the play.
+   */
+  life?: LifeStage[];
+}
+
+/** A stage for the far scenery's life: what comes, and where the camera is when it does. */
+export interface LifeStage {
+  kind: string;
+  from: number;
+  to: number;
 }
 
 /** One simulation step's input. hop and act are presses; the rest is held state. */
