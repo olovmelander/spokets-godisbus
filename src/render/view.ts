@@ -359,7 +359,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       models.push('boot/candy');
       modelInstallations++;
     });
-  const ready = Promise.all([candyReady, jayReady, sweetsReady]).then(() => undefined);
+  // The village's houses, put together from the kit modelled in Blender (art/blender/village.py), take the
+  // place of the plain fronts built in code. A build without the file keeps those, as does a failed load.
+  const housesReady = dressing?.install ? assets
+    .manifest()
+    .then((manifest) => (manifest.packs.boot?.files['village.glb'] ? assets.model('boot', 'village') : null))
+    .then((model) => {
+      if (!model || !dressing.install!(model)) return;
+      models.push('boot/village');
+      modelInstallations++;
+    })
+    .catch((error) => console.error('The village kit could not be loaded; the plain fronts stay.', error)) : Promise.resolve();
+  const ready = Promise.all([candyReady, jayReady, sweetsReady, housesReady]).then(() => undefined);
 
   // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
   // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.

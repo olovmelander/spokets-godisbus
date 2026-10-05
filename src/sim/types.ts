@@ -351,6 +351,35 @@ export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home'
 /** What a stretch of ground is made of, where it isn't the place's own ground. The picture's business only. */
 export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron';
 
+/** What a shop in the village sells: told by the wares in its window, never by a letter. The picture's business only. */
+export type StreetGoods = 'yarn' | 'boots' | 'bread' | 'candy';
+
+/**
+ * One stretch of what stands behind the village street: a house's front, or a yard behind its fence. The
+ * picture's business only: no rule of the game reads it, and nothing in it can be stood on or run into.
+ */
+export interface StreetPart {
+  from: number;
+  to: number;
+  /** Near: its wall stands right behind him, and he walks at its foot. Far: on the other side of the crossing. */
+  depth: 'near' | 'far';
+  kind: 'house' | 'yard';
+  /** How high its foot stands. Left out: on the ground that is there. */
+  foot?: number;
+  /** A house's wall: its colour, and which way its boards run. */
+  wall?: string;
+  boards?: 'upright' | 'lying';
+  goods?: StreetGoods;
+  /** Its shop windows, each from one side of the glass to the other. */
+  windows?: { from: number; to: number }[];
+  /** Its door, from one side of the opening to the other. Its step lies in front of it. */
+  door?: { from: number; to: number };
+  /** Where its downpipes stand, where its sign hangs low on the wall, and where a cellar window sits in its foot. */
+  pipes?: number[];
+  sign?: number;
+  cellar?: number;
+}
+
 /** A raised optional path. Fixed waypoints keep all three helper hints steady even on moving platforms. */
 export interface Challenge {
   id: string;
@@ -424,6 +453,11 @@ export interface ChapterData {
   decor?: { look: SpotLook; at: Vec; word?: string; until?: string; after?: string }[];
   /** For the picture: the house's wall behind the scene, with its windows. */
   house?: { from: number; to: number; windows: number[] };
+  /**
+   * For the picture: what stands behind the village street, from left to right, with no gap and nothing twice.
+   * tests/unit/street.test.ts holds its rules.
+   */
+  street?: StreetPart[];
   /** For the picture: an open shop door leading into a room beside the street, at the path's height. */
   shop?: { door: number; to: number; floor: number };
   /** The ground as one open line, from left to right. Elof walks on its upper side. */

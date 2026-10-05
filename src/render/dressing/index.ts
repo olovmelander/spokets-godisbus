@@ -1,4 +1,4 @@
-import { Group, type Texture } from 'three';
+import { Group, type Object3D, type Texture } from 'three';
 import type { ChapterData, PlaceId } from '../../sim/types';
 import { scenery } from '../backdrop';
 import { fronts, street, villageLife } from '../village';
@@ -122,6 +122,11 @@ export interface Dressing {
   group: Group;
   background: Texture;
   update(cameraX: number, groundY: number, clock: number, night?: number): void;
+  /**
+   * A place whose houses are put together from a kit modelled in Blender (the village) takes the kit here
+   * once it has arrived. False where the kit has nothing the chapter asks for: its stand-ins stay.
+   */
+  install?(model: Object3D): boolean;
 }
 
 /** How long a stretch of scatter is: each is drawn only while it is in the picture. */
@@ -162,6 +167,8 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   // however high he climbs: backdrop.ts.
   const far = scenery(look.id, heightAt(chapter, from) - (chapter.outlook ?? 0), from, to);
   const life = look.id === 'village' ? villageLife(chapter) : null;
+  // The village has its houses and its yard behind the street.
+  const houses = look.id === 'village' ? fronts(chapter, from, to) : null;
   if (life) group.add(life.group);
   if (look.id === 'dusk') group.add(stars());
   group.add(
@@ -169,14 +176,14 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
     bank(chapter, OWN[look.id].ground),
     scatter(chapter, from, to, look.id),
     built(chapter, look.id === 'home'),
-    // The village has the fronts of its houses behind the pavement.
-    look.id === 'village' ? fronts(chapter, from, to) : new Group(),
+    houses?.group ?? new Group(),
     air.group,
     foreground(chapter, from, to, OWN[look.id].growth),
   );
   return {
     group,
     background: backdrop(look),
+    ...(houses ? { install: houses.install } : {}),
     update(cameraX, groundY, clock, night = 0) {
       air.update(cameraX, groundY, clock);
       far.update(cameraX, groundY, clock, night);
