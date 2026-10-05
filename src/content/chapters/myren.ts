@@ -28,6 +28,10 @@ import type { Candy, ChapterData, Hook, Jump, Ledge, Tussock, Vec } from '../../
  * forward onto the trail: **a leaf over the first cranberry**, which only its bounce reaches; **leaves over
  * the firm tussocks**; and **three rings between the dead pines** over the boardwalk.
  *
+ * And one puzzle, off the trail: **the toss.** Hearts hang in an arch over the second run of soft tussocks, up
+ * to a bough of a dead pine, and something glints in the moss under the foot of the arch. Standing still
+ * there, on a tussock that sinks, is how he is thrown up to them.
+ *
  * Not built yet: the tussocks' dip under his feet, Mamma's mug and her lamp behind
  * him, the rings of the cranes' calls as a thing to follow, memory 3,
  * the cranes' dance, the jay.
@@ -191,6 +195,55 @@ function along(t: number): Candy {
   };
 }
 
+/**
+ * The toss: the one puzzle of the bog (docs/level-design.md, §1 point 8). Its rule is the soft tussocks', the
+ * other way round: what has hurried him is here a lift.
+ * - **What he sees,** from the island: an arch of hearts over the second run of soft tussocks, far above
+ *   any jump, up to a bough of a dead pine that stands in the water. Nothing leads up to it. Low over the
+ *   far end of the first soft tussock, under the foot of the arch, something glints.
+ * - **What he has to do** is the one thing the bog has taught him not to: stand still on a soft tussock.
+ *   What glints lies deep under the moss, out of his reach from the top of it. Standing over it he sinks
+ *   towards it, and when he has come near enough the tussock springs back and throws him along the hearts,
+ *   up onto the bough. He presses nothing, and he is thrown well before the tussock would have sunk.
+ * - **Everywhere else it is a soft tussock like the others:** hurried over it does nothing, and on its near
+ *   half it sinks under him and the glitter bubble takes him back.
+ * The bough is too high to jump to, and he leaves it by walking off either end, down onto a soft tussock.
+ * Like every ride it is there again in a game taken up before it; the hearts stay in the bag.
+ */
+const SPRING: Stone = SOFT_B[0]!;
+/**
+ * Where it glints: this far from the middle of the tussock, towards its far end and the hearts. Someone who
+ * stops where a hop sets him down, on its near half, is out of its reach however deep he sinks.
+ */
+const GLINT_ALONG = 0.7;
+/**
+ * How far under the top of the tussock the thing lies. He touches a thing from 1.2 EL (TOUCH_REACH and a
+ * half), and a tussock sinks 0.45 in 1.8 s. So from the top of it he is 0.3 short; standing over it, two
+ * thirds of the way down brings him there, after 1.2 s; and to its sides it takes a little longer. Someone
+ * who crosses the tussock and hops on has not sunk a third of that. It is drawn as its glint only, which
+ * floats 1.5 over a thing: in the moss at the top of the tussock.
+ */
+const GLINT_DEEP = 1.5;
+const GLINT: Vec = { x: round((SPRING.from + SPRING.to) / 2 + GLINT_ALONG), y: round(SPRING.y - GLINT_DEEP) };
+/**
+ * The bough he is thrown onto, of a dead pine that stands in the water between the next two soft tussocks:
+ * higher than a jump from either rises, and an end over each, so that walking off it he lands on one.
+ */
+const PERCH: Ledge = { x: 74.25, y: 2, width: 1.8, look: 'branch' };
+/**
+ * The throw: from where he has sunk to over the glint, over the next soft tussock, and down onto the bough
+ * beside the stem. Nothing steers it, so every heart along it is his.
+ */
+const TOSS = { from: { x: GLINT.x, y: round(SPRING.y - (GLINT_DEEP - 1.2)) }, to: { x: 74, y: PERCH.y }, rise: 1.6, time: 1.2, corridor: 0 };
+/** Where his middle is on the throw, as the simulation carries him. */
+function tossed(t: number): Candy {
+  const k = t * t * (3 - 2 * t);
+  return {
+    x: round(TOSS.from.x + (TOSS.to.x - TOSS.from.x) * k),
+    y: round(TOSS.from.y + (TOSS.to.y - TOSS.from.y) * k + Math.sin(Math.PI * t) * TOSS.rise + 0.5),
+  };
+}
+
 export const myren: ChapterData = {
   id: 'myren',
   place: 'bog',
@@ -255,7 +308,8 @@ export const myren: ChapterData = {
   ],
   tussocks: [...SOFT_A, ...SOFT_B].map(soft),
   // The second level: the leaf over the cranberry, the leaves over the tussocks, and the dead pines' branches.
-  ledges: [BERRY_LEAF, ...LEAVES, ...STEPS, LANDING],
+  // And the bough the toss sets him down on.
+  ledges: [BERRY_LEAF, ...LEAVES, ...STEPS, LANDING, PERCH],
   // The rings between the dead pines. They are off the way on: the boardwalk under them is the trail.
   hooks: RINGS,
   // What the rings hang from: a rope from the top of one dead pine to the top of the other.
@@ -281,6 +335,15 @@ export const myren: ChapterData = {
     ...RINGS.flatMap((ring) => [{ x: ring.x, y: 6.95 }, { x: round(ring.x + 1.7), y: 7.25 }]),
     // And where the third swing sets him down.
     { x: 123.2, y: 6.9 },
+    // The toss: six along the throw, each where his middle passes, and all higher than a jump from the
+    // tussocks under them reaches. By their places in this list a heart is the first of the arch, and a
+    // heart is the last, over the bough.
+    tossed(0.55),
+    tossed(0.45),
+    tossed(0.74),
+    tossed(0.64),
+    tossed(0.84),
+    tossed(0.95),
   ],
   checkpoints: [
     { x: 4, y: 0 },
@@ -319,6 +382,9 @@ export const myren: ChapterData = {
     // Memory 3, where the ghost waits: the boardwalk, and the figure held up to see the way.
     { id: 'memory', look: 'memory', at: { x: 170.6, y: 0 }, verb: 'take', touch: true },
     { id: 'crane', look: 'crane', at: { x: 182, y: 0 }, verb: 'take', word: 'climbOn', needs: 'home', ride: 'crane' },
+    // The toss: what glints under the first soft tussock after the island. He comes within its reach only
+    // by sinking towards it, standing, and that throws him.
+    { id: 'bog:toss', at: GLINT, verb: 'take', touch: true, extra: true, ride: 'toss' },
   ],
   movers: [
     // The dead pine in the pool: Mamma's hands lift it across as a bridge.
@@ -334,7 +400,7 @@ export const myren: ChapterData = {
       stops: [{ x: tuft.x, y: tuft.y - 0.4 }],
     })),
   ],
-  rides: [{ id: 'crane', look: 'crane', ...CRANE }],
+  rides: [{ id: 'crane', look: 'crane', ...CRANE }, { id: 'toss', look: 'none', ...TOSS }],
   jumps: [...hops(OUT), ...hops(HOME)],
   mist: { after: 'light' },
   follower: { at: { x: 164.7, y: 0.1 }, after: 'chick', until: 'home', home: { x: 177.4, y: 0 } },
@@ -376,6 +442,10 @@ export const myren: ChapterData = {
     // Up among the rings it is wider and lower too: the next ring is in it, and so are the boards a fall
     // would land on. A jump on the boards never rises this high.
     { from: 109, to: 126, above: 5.75, zoom: 1.5, lift: -0.4 },
+    // On the toss and on the bough it sets him down on the picture is wider, so that the hearts ahead of him
+    // are in it, and from the bough the soft tussocks he will step down to. A hop along the trail never
+    // rises this high.
+    { from: 70.3, to: 75.7, above: 1.8, zoom: 1.5 },
     { from: 9, to: 50, zoom: 1.2 },
     { from: 50, to: 83, zoom: 1.3 },
     { from: 84, to: 97, zoom: 1.25 },
