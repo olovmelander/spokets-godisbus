@@ -18,7 +18,7 @@ const server = await createServer({ root, server: { host: '127.0.0.1', port: 0, 
     export { createView } from ${JSON.stringify(join(root, 'src/render/view.ts'))};
     export { createGradePass, createMaterialGrade, GARDEN_MORNING } from ${JSON.stringify(join(root, 'src/render/grade.ts'))};
     export { createDepthBlur } from ${JSON.stringify(join(root, 'src/render/depth-blur.ts'))};
-    export { PLACES } from ${JSON.stringify(join(root, 'src/render/dressing.ts'))};
+    export { PLACES } from ${JSON.stringify(join(root, 'src/render/dressing/index.ts'))};
     export { Sim } from ${JSON.stringify(join(root, 'src/sim/sim.ts'))};
     export { COURSES } from ${JSON.stringify(join(root, 'src/content/chapters/index.ts'))};
   `; },
