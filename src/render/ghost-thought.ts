@@ -2,6 +2,7 @@ import { CanvasTexture, LinearFilter, Mesh, MeshBasicMaterial, PlaneGeometry, SR
 import type { PerspectiveCamera } from 'three';
 import type { GhostState } from '../sim/sim';
 import type { ChapterData, GhostPerch, Vec } from '../sim/types';
+import { drawnWhile } from './idle';
 
 type Picture = NonNullable<GhostPerch['thought']>['picture'];
 const WIDTH = 256, HEIGHT = 192;
@@ -87,8 +88,10 @@ export function createGhostThought(chapter: ChapterData) {
   const material = new MeshBasicMaterial({ map: texture, transparent: true, opacity: 0, depthWrite: false, fog: false });
   const mesh = new Mesh(new PlaneGeometry(CARD_WIDTH, CARD_HEIGHT), material);
   mesh.name = 'ghost-thought'; mesh.renderOrder = 20;
-  // Keep its shader in the chapter's initial warmup, including when progress has not unlocked it.
+  // Keep its shader in the chapter's initial warmup, including when progress has not unlocked it. Until it is
+  // thought it is out of the picture (./idle.ts), and drawn by the warm-up alone.
   mesh.scale.setScalar(0);
+  drawnWhile(mesh, false);
   const point = new Vector3();
   let shown = 0, current: Picture | null = null;
   return {
@@ -107,6 +110,7 @@ export function createGhostThought(chapter: ChapterData) {
       // Gate immediately when a story flag clears the picture or the ghost leaves: no lingering spoiler.
       material.opacity = wanted ? shown * 0.96 : 0;
       mesh.scale.setScalar(wanted ? 1 : 0);
+      drawnWhile(mesh, material.opacity > 0);
       if (!source) return;
       const halfHeight = (camera.position.z - 0.65) * Math.tan(camera.fov * Math.PI / 360);
       const halfWidth = halfHeight * camera.aspect;

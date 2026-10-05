@@ -33,6 +33,7 @@ import { createFamilyRehearsal } from './family-rehearsal';
 import { createSharedSweets } from './shared-sweets';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
+import { drawnWhile } from './idle';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
@@ -262,6 +263,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const prop = ride.look && ride.look !== 'plane' && ride.look !== 'none' ? rideProp(ride.look) : null;
     if (prop) {
       prop.scale.setScalar(0);
+      drawnWhile(prop, false);
       scene.add(prop);
     }
     return { ride, prop };
@@ -576,6 +578,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let inEndingShot = false;
   let warming = true;
   const unculled: Object3D[] = [];
+  const idle: Object3D[] = [];
   const projectedPlayer = new Vector3();
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let reaction: Reaction | null = null;
@@ -599,6 +602,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       materialGrade.apply(scene);
       materialGrade.apply(waterScene);
       for (const layer of [scene, waterScene]) layer.traverse((object) => {
+        // What is out of the picture for having nothing to draw (./idle.ts) is drawn in these frames all the
+        // same, as it is: at no size, or unseen. Its shader, its shape and its picture are made here, not in play.
+        if (object.userData.idle === true && !object.visible) {
+          object.visible = true;
+          idle.push(object);
+        }
         if (!object.frustumCulled) return;
         object.frustumCulled = false;
         unculled.push(object);
@@ -634,7 +643,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       renderer.setRenderTarget(null);
       if (warm > 0) {
         for (const object of unculled) object.frustumCulled = true;
+        for (const object of idle) object.visible = false;
         unculled.length = 0;
+        idle.length = 0;
         warm--;
       }
     }
@@ -686,12 +697,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const carrier = riding ? carriers.find((c) => x >= c.ride.from.x - 0.5 && x <= c.ride.to.x + 0.5) : undefined;
     const size = riding ? Math.min(1, curr.t / 0.05, (1 - curr.t) / 0.05) : 0;
     const heading = riding ? Math.atan2(curr.y - prev.y, Math.max(1e-4, curr.x - prev.x)) : 0;
-    plane.scale.setScalar(carrier && carrier.ride.look !== undefined && carrier.ride.look !== 'plane' ? 0 : size);
+    // What does not carry him now lies under his feet at no size, and is out of the picture (./idle.ts).
+    const planeSize = carrier && carrier.ride.look !== undefined && carrier.ride.look !== 'plane' ? 0 : size;
+    plane.scale.setScalar(planeSize);
+    drawnWhile(plane, planeSize > 0);
     plane.position.set(x, y - 0.05, 0);
     plane.rotation.z = heading;
     for (const c of carriers) {
       if (!c.prop) continue;
-      c.prop.scale.setScalar(c === carrier ? size : 0);
+      const propSize = c === carrier ? size : 0;
+      c.prop.scale.setScalar(propSize);
+      drawnWhile(c.prop, propSize > 0);
       c.prop.position.set(x, y - 0.05, 0);
       // A boat lies level on the water; a bird points the way it flies, and beats its wings.
       c.prop.rotation.z = c.ride.look === 'cap' ? Math.sin(clock * 2.4) * 0.05 : heading * 0.6;
@@ -710,7 +726,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       thing.reactionTurn = reaction?.kind === 'spot' && reaction.index === i ? response * 0.14 : 0;
       if (thing.prop) thing.prop.group.rotation.z += thing.reactionTurn;
       // Shy lights take turns appearing; unrevealed ones must not betray the hiding place.
-      if (thing.prop && thing.spot.look === 'wisp') thing.prop.group.visible = thing.spot.needs === undefined || flags.has(thing.spot.needs);
+      // One that has been taken has shrunk away, and stays out of the picture.
+      if (thing.prop && thing.spot.look === 'wisp') thing.prop.group.visible = (thing.spot.needs === undefined || flags.has(thing.spot.needs)) && thing.prop.group.scale.x > 0;
       // The star comes from the torn bag; the returned bag is offered only after the repaired eyes.
       if (thing.prop && chapter.prologue && thing.spot.id === 'star') {
         const spilled = flags.has('blink') && flags.has('bag:torn') && (starDropTime > 0 || (x >= 37.5 && (ghostState?.x ?? 0) >= 40.5));
@@ -728,7 +745,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     for (const d of decor) {
       d.prop?.update(d.def.until !== undefined && flags.has(d.def.until), clock, dt);
-      if (d.prop && d.def.after !== undefined) d.prop.group.visible = flags.has(d.def.after);
+      if (d.prop && d.def.after !== undefined) d.prop.group.visible = flags.has(d.def.after) && d.prop.group.scale.x > 0;
       // The doorway tableau takes over Mamma's opening mark; never draw her twice when private models load.
       if (d.prop && chapter.prologue && d.def.word === 'callMamma') d.prop.group.visible = false;
     }
@@ -1209,6 +1226,8 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
       ribbon.position.set(x + Math.sin(clock * 0.21 + i * 2.1) * 5, y + 9 + i * 2.5 + Math.sin(clock * 0.5 + i) * 0.5, -20 - i * 3);
       ribbon.rotation.z = 0.08 * Math.sin(clock * 0.33 + i * 1.7) + (i - 1) * 0.07;
       (ribbon.material as MeshBasicMaterial).opacity = k * (0.5 + 0.2 * Math.sin(clock * 0.9 + i * 2.4));
+      // Unseen, it is not drawn either: a ribbon is two draw calls, one for each of its sides.
+      drawnWhile(ribbon, k > 0);
     }
     return k;
   }
@@ -1245,6 +1264,7 @@ function buildWind(chapter: ChapterData) {
       const blow = gust?.blow ?? 0;
       const warn = gust?.warn ?? 0;
       material.opacity = blow > 0 ? 0.85 * Math.sin(Math.PI * Math.min(1, blow)) + 0.1 : warn * 0.3;
+      drawnWhile(streaks, material.opacity > 0);
       const span = def.to - def.from;
       for (let k = 0; k < STREAKS; k++) {
         const along = (k * 0.618 + (blow > 0 ? blow * 1.6 : 0)) % 1;
@@ -1340,6 +1360,8 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
     light.position.set(x + facing * 0.3, y + 1.4, 1);
     glow.position.set(x + facing * 0.32, y + 1.42, 0.25);
     glow.scale.setScalar(k);
+    // Only the lollipop goes out of the picture. The light stays, dark: taking a light out compiles every shader anew.
+    drawnWhile(glow, k > 0);
   }
   return { group, update };
 }
@@ -1392,7 +1414,9 @@ function buildFollower(chapter: ChapterData) {
       const k = (clock * 0.45 + i / rings.length) % 1;
       ring.position.set(def!.home.x, def!.home.y + 0.6 + k * 3.2, 0);
       ring.scale.setScalar(0.5 + k * 1.6);
-      (ring.material as MeshBasicMaterial).opacity = following ? Math.sin(Math.PI * k) * 0.8 : 0;
+      const opacity = following ? Math.sin(Math.PI * k) * 0.8 : 0;
+      (ring.material as MeshBasicMaterial).opacity = opacity;
+      drawnWhile(ring, opacity > 0);
     }
   }
   return { group, update };
@@ -1406,6 +1430,8 @@ function buildCones(count: number) {
   mesh.frustumCulled = false;
   const place = new Object3D();
   function update(rollers: readonly { x: number; y: number; on: boolean; radius: number }[], clock: number): void {
+    // Drawn while one of them rolls: a cone that waits has no size.
+    drawnWhile(mesh, rollers.some((cone) => cone.on));
     for (const [i, cone] of rollers.entries()) {
       const r = cone.on ? cone.radius : 0;
       // A little bounce as it rolls, and longer across the path than along it: a cone lying on its side.
@@ -1447,6 +1473,9 @@ function buildRain(count: number) {
   const place = new Object3D();
 
   function update(drips: readonly { x: number; y: number; shadow: number; height: number }[]): void {
+    // Each is drawn while one of its own has a size: a drop on its way down, a shadow that has begun to grow.
+    drawnWhile(drops, drips.some((drip) => drip.height >= 0));
+    drawnWhile(shadows, drips.some((drip) => drip.shadow > 0));
     for (const [i, drip] of drips.entries()) {
       // The shadow lies on the ground, and the drop is a little taller than wide on its way down.
       place.position.set(drip.x, drip.y + 0.015, 0);
@@ -1485,6 +1514,7 @@ function buildGlints(chapter: ChapterData) {
       const glint = meshes[i]!;
       const ready = !flags.has(spot.id) && (spot.needs === undefined || flags.has(spot.needs));
       glint.scale.setScalar(ready ? 1 + 0.25 * Math.sin(clock * 4 + i) : 0);
+      drawnWhile(glint, ready);
       glint.position.y = spot.at.y + 1.5 + Math.sin(clock * 2 + i) * 0.1;
       glint.rotation.y = clock * 2;
     }
@@ -1515,6 +1545,7 @@ function buildGlance(chapter: ChapterData) {
     const on = flags.has(def!.from) && !flags.has(def!.until) && ghost !== null;
     since = on ? since + dt : 0;
     glow.opacity = on ? 0.55 + 0.35 * Math.sin(clock * 9) : 0;
+    drawnWhile(group, on);
     if (!on) return;
     const at = def!.at[Math.min(def!.at.length - 1, Math.floor((since / def!.seconds) * def!.at.length))]!;
     ring.position.set(at.x, at.y, at.z);
@@ -1557,9 +1588,11 @@ function buildHidden(chapter: ChapterData) {
   function update(flags: ReadonlySet<string>, clock: number, dt: number, tapped?: number, response = 0): void {
     for (const [i, s] of sweets.entries()) {
       const found = flags.has(`found:${s.def.kind}`);
-      s.sweet.visible = s.def.after === undefined || flags.has(s.def.after);
       s.size = Math.max(0, Math.min(1, s.size + (found ? -dt / 0.25 : dt)));
       s.sweet.scale.setScalar(s.size);
+      // Found, it has shrunk away into him and is out of the picture. One that waits for its flag is hidden too.
+      drawnWhile(s.sweet, s.size > 0);
+      if (s.def.after !== undefined && !flags.has(s.def.after)) s.sweet.visible = false;
       s.sweet.position.y = s.def.y + Math.sin(clock * 1.8 + i) * 0.06;
       // It sways with its face to him: a coin or a fried egg seen edge-on is nothing.
       s.sweet.rotation.y = Math.sin(clock * 0.9 + i) * 0.9;
@@ -1570,7 +1603,7 @@ function buildHidden(chapter: ChapterData) {
   return { group, update };
 }
 
-/** Moa's paper plane: a folded sheet, pointing along +x. It has no size until he rides it. */
+/** Moa's paper plane: a folded sheet, pointing along +x. It has no size, and is not drawn, until he rides it. */
 function buildPlane(): Mesh {
   const paper = new MeshStandardMaterial({ color: '#fbf6e9', roughness: 0.9, side: DoubleSide });
   const plane = new Mesh(new ConeGeometry(0.55, 1.9, 3), paper);
@@ -1578,6 +1611,7 @@ function buildPlane(): Mesh {
   plane.geometry.rotateZ(-Math.PI / 2);
   plane.geometry.scale(1, 0.22, 1);
   plane.scale.setScalar(0);
+  drawnWhile(plane, false);
   plane.frustumCulled = false;
   return plane;
 }
@@ -1612,13 +1646,16 @@ function buildMovers(chapter: ChapterData): Group[] {
 
 /**
  * The lace between Elof's hands and the hook: a red candy lace, drawn as one thin rod. It is always in the
- * scene, at no size while he isn't swinging, so nothing is compiled when he first throws it.
+ * scene, at no size and out of the picture while he isn't swinging (./idle.ts), so nothing is compiled when
+ * he first throws it.
  */
 function buildLace() {
   const mesh = new Mesh(new CylinderGeometry(0.022, 0.022, 1, 6), new MeshStandardMaterial({ color: '#e0463a', roughness: 0.5 }));
   mesh.frustumCulled = false;
   mesh.scale.setScalar(0);
+  drawnWhile(mesh, false);
   function update(hook: { x: number; y: number } | null, handX: number, handY: number): void {
+    drawnWhile(mesh, hook !== null);
     if (!hook) {
       mesh.scale.setScalar(0);
       return;
@@ -1664,7 +1701,10 @@ function buildClimbs(chapter: ChapterData) {
     for (const h of hoses) {
       if (h.needs !== undefined) h.down = Math.min(1, Math.max(0, h.down + (flags.has(h.needs) ? dt : -dt) / 0.5));
       h.hose.scale.y = Math.max(0.001, h.down);
-      if (h.ring) h.ring.scale.setScalar(h.down);
+      if (h.ring) {
+        h.ring.scale.setScalar(h.down);
+        drawnWhile(h.ring, h.down > 0);
+      }
     }
   }
   return { group, update };
@@ -1693,8 +1733,8 @@ function buildTrunks(chapter: ChapterData): Group {
 
 /**
  * The glitter bubble (plan §4.2): a golden sparkle shell, never a round gum bubble. A faint glow and a swarm
- * of sparks that turn round Elof while it carries him. It is always in the scene, at no size, so its shaders
- * are compiled with the first frames and not when he first falls.
+ * of sparks that turn round Elof while it carries him. It is always in the scene, at no size and out of the
+ * picture (./idle.ts), so its shaders are compiled with the first frames and not when he first falls.
  */
 function buildGlitter() {
   const SPARKS = 22;
@@ -1714,6 +1754,7 @@ function buildGlitter() {
   sparks.frustumCulled = false;
   group.add(glow, sparks);
   group.scale.setScalar(0);
+  drawnWhile(group, false);
   const place = new Object3D();
 
   /** `carried` is the bubble's progress from the simulation: 0 when there is none. */
@@ -1721,6 +1762,7 @@ function buildGlitter() {
     // It gathers in the first tenth of the way and scatters in the last.
     const size = carried <= 0 ? 0 : Math.min(1, carried / 0.1, (1 - carried) / 0.1 + 0.15);
     group.scale.setScalar(size);
+    drawnWhile(group, size > 0);
     if (size === 0) return;
     group.position.set(elofX, elofY + 0.5, 0);
     for (let i = 0; i < SPARKS; i++) {

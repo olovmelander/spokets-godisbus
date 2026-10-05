@@ -2,6 +2,7 @@ import {
   BufferGeometry, Color, DoubleSide, DynamicDrawUsage, Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Matrix3, Mesh,
   MeshBasicMaterial, MeshStandardMaterial, Object3D, Sphere, Vector2, Vector3, type Material, type MeshStandardMaterialParameters,
 } from 'three';
+import { drawnWhile } from './idle';
 
 /**
  * The sweets modelled in Blender (art/blender/candy.py, plan §4.3): the trail's karameller, the sixteen kinds
@@ -309,6 +310,7 @@ export function createTrail(candy: readonly { x: number; y: number; after?: stri
       if (flown[i]! >= 0) flown[i] = Math.min(1, flown[i]! + dt / CANDY_FLIGHT);
     }
     for (const { mesh, candies, flat } of batches) {
+      let any = false;
       for (let slot = 0; slot < candies.length; slot++) {
         const i = candies[slot]!;
         const c = candy[i]!;
@@ -326,10 +328,13 @@ export function createTrail(candy: readonly { x: number; y: number; after?: stri
         // A sweet sways with its side to him, so that it always has a wrapped sweet's outline, or shows its
         // swirl or its heart. One in a wrapper also rolls slowly round its own length, and its stripes wind.
         place.rotation.set(flat ? 0.1 : clock * 1.1 + i * 0.9, Math.sin(clock * 1.7 + i * 0.9) * (flat ? 0.8 : 0.6), Math.sin(clock * 1.3 + i) * (flat ? 0.18 : 0.38));
+        any ||= size > 0;
         place.scale.setScalar(size);
         place.updateMatrix();
         mesh.setMatrixAt(slot, place.matrix);
       }
+      // One whose sweets are all in his bag, or all still wait for their flag, has nothing to draw (./idle.ts).
+      drawnWhile(mesh, any);
       mesh.instanceMatrix.needsUpdate = true;
     }
   }

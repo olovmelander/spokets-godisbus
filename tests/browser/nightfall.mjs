@@ -131,8 +131,9 @@ try {
     check(`${name}: tasting reveals the same four family figures`, transition.frames.every(s=>s.familyShown === 4));
     check(`${name}: no shader compiles or simulation changes during nightfall`, transition.frames.every((s) => s.programs === early.programs && s.state === early.state));
     console.log(`  draws ${name}: ${early.drawCalls} → ${transition.frames.map((s) => s.drawCalls).join(', ')}`);
-    // Tasting also reveals the existing family signs. From that first frame on, only uniforms change.
-    check(`${name}: nightfall draw calls stay fixed within budget`, transition.frames.every((s) => s.drawCalls === transition.frames[0].drawCalls && s.drawCalls <= 120));
+    // Tasting also reveals the existing family signs. From that first frame on only uniforms change, and nothing
+    // new comes into the picture. The glitter round him leaves it when he has grown back: two draw calls fewer.
+    check(`${name}: nightfall draw calls never rise, within budget`, transition.frames.every((s, i, all) => s.drawCalls <= (all[i - 1] ?? s).drawCalls && s.drawCalls <= 120));
     check(`${name}: pause holds nightfall still`, transition.paused.background === transition.beforePause.background);
     await picture(page, join(shots, `${name}-night.png`));
     const round = await page.evaluate(({ width, height }) => {
