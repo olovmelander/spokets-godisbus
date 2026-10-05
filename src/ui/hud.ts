@@ -26,8 +26,15 @@ export interface Hud {
   notice(text: string): void;
   /** Puts a line in the queue of bubbles. Each is shown for a few seconds, one after another. */
   say(who: Speaker, line: string, priority?: boolean): void;
+  /**
+   * A scene takes the floor: lines still waiting are dropped, and so is one a find has hidden. A line being read
+   * is let stay a little longer, so the scene's own lines come when they are acted.
+   */
+  hush(): void;
   /** Moves the bubbles on. `dt` is the time since the last frame, in seconds: 0 while the game is paused. */
   tick(dt: number): void;
+  /** Whether someone is saying something, or will: a bubble shows or waits its turn. */
+  speaking(): boolean;
   /**
    * Shows the card at the end of a chapter: its title, and the candy in rows of ten with the number.
    * With `onNext` it leads on to the next chapter; without, it says that the story goes on later, or `closing`
@@ -39,6 +46,8 @@ export interface Hud {
 /** A bubble stays for this long, and a little longer for each letter. */
 const BUBBLE_TIME = 2.2;
 const BUBBLE_TIME_PER_LETTER = 0.055;
+/** How long a line being read stays when a scene begins. */
+const HUSH_TIME = 1.6;
 
 export function createHud(doc: Document, total: number, ghostNamed: () => boolean = () => false): Hud {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
@@ -124,6 +133,18 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       if (!lines[line]) return;
       if (priority) { queue.length = 0; left = 0; }
       queue.push({ who, line });
+    },
+    hush() {
+      queue.length = 0;
+      if (noticeFor > 0) {
+        noticeFor = 0;
+        byId('notice').hidden = true;
+        left = 0;
+        bubble.hidden = true;
+      } else left = Math.min(left, HUSH_TIME);
+    },
+    speaking() {
+      return left > 0 || queue.length > 0;
     },
     tick(dt) {
       if (noticeFor > 0) {

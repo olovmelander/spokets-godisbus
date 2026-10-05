@@ -1,4 +1,5 @@
 import type { Candy, ChapterData } from '../../sim/types';
+import { PROLOG_SCENES } from './prolog-scenes';
 
 /**
  * The story's two ends (plan §3.4): the prologue before Kapitel 1, and the epilogue after the final. Both
@@ -16,94 +17,116 @@ function row(from: number, to: number, ground: number, every = 2, after?: string
 }
 
 /**
- * Prolog: Lördagsmorgon.
- * 1. **The kitchen table.** Mamma, from the doorway: "Den får du öppna ikväll."
+ * Prolog: Lördagsmorgon (docs/narrative-audit.md, "the intro").
+ * 1. **The morning** (a scene): Pappa carves the ghost at the kitchen table while the family is round him; he
+ *    sets it down before Elof and holds out the brush.
  * 2. **Måla ögonen!** (P0): he paints the new ghost's eyes, one and then the other.
- * 3. **The blink.** It looks at the empty place on the shelf, and then at the bag. It grabs the bag and runs.
- *    The bag tears, and candy trickles out behind it: the trail.
- * 4. **The chase,** over the veranda's door sill.
- * 5. **The star** on the deck's step: *Ta*. He shrinks, and Kapitel 1 begins.
+ * 3. **It wakes** (a scene): the jay at the window turns every grown-up's head; the ghost blinks, looks at the
+ *    empty place on the shelf and at the bag, takes the bag, and its magic makes two sweets in it glitter.
+ * 4. **The chase**, with Mamma's freeze joke at the doorway, whose hinge tears the bag: the candy trail.
+ * 5. **The star** on the deck: *Ta*, and POFF (a scene): he is as small as the ghost.
+ * 6. **The family** (scenes): they kneel round him; he steps onto Pappa's hand; Moa's drawing says what the
+ *    star did and what the gold sweet could do; Pappa's freeze joke at the railing; their promises as he
+ *    walks to the deck's edge, and the game's title over the garden.
  *
- * The two freeze jokes and the bag's tear use simple stage shapes until their Blender acting is ready.
- * Bertil's hand at the bag and the family's authored likeness/poses still need the art session.
+ * The family are rehearsal figures that act (src/render/stage.ts); their models from Blender take their
+ * places where the private pack has them. The table and chairs are plain stand-ins: the house is Olov's.
  */
 export const prolog: ChapterData = {
   id: 'prolog',
   place: 'home',
-  // He is a boy among small things, until the star shrinks him.
+  // He is a boy among small things, until the star shrinks him. The POFF scene says when he is drawn small.
   size: { scale: 3, until: 'star' },
   // Pappa's shelf, with the first place in the row empty: the first trägubbe is not there.
-  shelf: { x: 10.5, y: 5.4 },
+  shelf: { x: 2.4, y: 5.4 },
   decor: [
-    // Mamma in the doorway; the shavings Pappa's knife left; and the Saturday bag, until the ghost takes it.
-    { look: 'sign', at: { x: -1.7, y: 0 }, word: 'callMamma' },
-    { look: 'shavings', at: { x: 5.9, y: 0 } },
-    { look: 'bag', at: { x: 7.8, y: 0 }, until: 'blink' },
+    // The shavings Pappa's knife left, and the Saturday bag on the table, until the ghost takes it.
+    { look: 'shavings', at: { x: 5.6, y: 0 } },
+    { look: 'bag', at: { x: 7.1, y: 1.65 }, until: 'grab', z: -1.25 },
   ],
-  // The blink: he watches while it looks at the empty place on the shelf, and then at the bag.
-  later: [{ flag: 'blink', after: 'paint', seconds: 2.6, hold: true }],
-  glance: { from: 'paint', until: 'blink', seconds: 2.6, at: [{ x: 6.9, y: 6.1, z: -8.8 }, { x: 7.8, y: 0.35, z: 0.25 }] },
-  spawn: { x: 1, y: 0.01 },
-  goalX: 50.6,
-  goalNeeds: 'pappa:done',
-  prologue: { doorway: { x: 8.4, y: 0 }, railing: { x: 48.2, y: 4.6 } },
+  furniture: [
+    { look: 'table', at: { x: 5.5, y: 0 }, z: -1.5 },
+    { look: 'chair', at: { x: 5.8, y: 0 }, z: -3.15, face: 0.25 },
+    { look: 'chair', at: { x: 9.05, y: 0 }, z: -1.5, face: 0.5 },
+  ],
+  scenes: PROLOG_SCENES,
+  // Pappa's line after his freeze joke has its own moment: Elof sees the ghost slip away.
+  later: [{ flag: 'snuck', after: 'pappa:noticed', seconds: 2.2 }],
+  spawn: { x: 2.0, y: 0.01 },
+  goalX: 51.0,
+  goalNeeds: 'titel',
+  prologue: {
+    // Pappa notices the ghost once Moa's drawing is told, as Elof sets off towards it.
+    doorway: { x: 12, y: 0 }, railing: { x: 46.6, y: 1.9 }, edge: { x: 52.6, y: -0.8 }, pappaAfter: 'scene:handen', pappaFrom: 41.5,
+    // The deck's railing runs along its far side: Pappa puts the frozen ghost up on its top rail.
+    rail: { from: 38.4, to: 53.8, z: -3.4 },
+  },
   ground: [
     { x: -3, y: 9 },
     { x: -3, y: 0 },
-    // the kitchen, and the door sill to the veranda
+    // the kitchen and the hall, and the door sill to the veranda
     { x: 30, y: 0 },
     { x: 30, y: 0.5 },
     { x: 31.2, y: 0.5 },
     { x: 31.2, y: 0 },
-    // the veranda, and the deck's first step down
+    // the veranda, and the step down to the deck, out of doors
     { x: 38, y: 0 },
     { x: 38, y: -0.8 },
-    // Shrunk, he is set down where the next step is a cliff: nothing but the star takes him there.
-    { x: 42.4, y: -0.8 },
-    { x: 42.4, y: 2.4 },
-    { x: 52, y: 2.4 },
-    { x: 52, y: 10 },
+    // the deck, and its edge: the garden's lawn lies far below it
+    { x: 54, y: -0.8 },
+    { x: 54, y: -7 },
+    { x: 96, y: -7 },
+    { x: 96, y: 10 },
   ],
-  house: { from: -40, to: 60, windows: [12, 24, 36] },
-  checkpoints: [{ x: 2.6, y: 0 }, { x: 26, y: 0 }, { x: 45, y: 2.4 }],
+  // The floors and the deck are boards; the garden below the deck's edge is lawn (picture and footsteps only).
+  surfaces: [{ from: -19, to: 54, kind: 'wood' }],
+  house: { from: -40, to: 38, windows: [9.4, 21, 34] },
+  outdoors: 38,
+  // The big candies keep their meaning in older saves: in the kitchen at the start (behind him, out of the
+  // morning's pictures), at the end of the hall, and on the deck after the shrinking.
+  checkpoints: [{ x: 0.6, y: 0 }, { x: 26, y: 0 }, { x: 45.5, y: -0.8 }],
   spots: [
     // Two eyes: a brush stroke for each; Pappa finishes a short stroke.
-    { id: 'eye', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost', story: 'paint' },
-    { id: 'paint', at: { x: 4.6, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye', story: 'paint' },
-    // The star that rolled out of the torn bag: taking it shrinks him.
-    { id: 'star', look: 'star', at: { x: 41, y: -0.8 }, verb: 'take', needs: 'blink', ride: 'shrink' },
+    { id: 'eye', at: { x: 3.7, y: 0 }, verb: 'give', word: 'paintGhost', story: 'paint' },
+    { id: 'paint', at: { x: 3.7, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye', story: 'paint' },
+    // The star that fell from the torn bag, glittering as the bag did: running into it, he is made small.
+    { id: 'star', look: 'star', at: { x: 41.7, y: -0.8 }, verb: 'take', touch: true, needs: 'blink' },
+    // Pappa's open hand on the planks: he chooses to step onto it.
+    { id: 'hand', at: { x: 40.9, y: -0.8 }, verb: 'take', word: 'climbOn', needs: 'scene:familj' },
   ],
-  // The POFF: it carries him a little way, and can't fail.
-  rides: [{ id: 'shrink', look: 'none', from: { x: 41, y: -0.8 }, to: { x: 45, y: 2.4 }, rise: 3, time: 2, corridor: 0 }],
   jumps: [
     { at: { x: 29.8, y: 0 }, dir: 1, land: { x: 30.6, y: 0.5 } },
   ],
   ghost: [
-    // On the table, new, with no eyes yet: it stays until they are painted.
-    { at: { x: 6.6, y: 0 }, until: 'blink' },
-    { at: { x: 14, y: 0 } },
+    // On the table, new, with no eyes yet. Awake, it hops to the bag, and with the bag off the table.
+    { at: { x: 4.6, y: 1.65 }, z: -1.15, until: 'woke' },
+    { at: { x: 6.5, y: 1.65 }, z: -1.2, until: 'blink', near: 99 },
+    { at: { x: 16, y: 0 } },
     { at: { x: 22, y: 0 } },
     { at: { x: 28.6, y: 0 } },
     { at: { x: 35, y: 0 } },
-    // At the family, the torn bag spills its star before the little chase continues up the step.
-    { at: { x: 40.9, y: -0.8 }, until: 'star' },
-    { at: { x: 48, y: 2.4 }, until: 'pappa:done' },
+    // On the deck, beyond the star it lost: it waits there until Pappa's joke.
+    { at: { x: 44.4, y: -0.8 }, until: 'pappa:done', near: 0 },
+    // At the deck's edge, where it hid behind his back; then down into the garden, as the title comes.
+    { at: { x: 52.6, y: -0.8 }, until: 'leap', near: 99 },
+    { at: { x: 57.5, y: -7 }, near: 0 },
   ],
-  // Said as the scene opens: he stands at the table already.
   beats: [
-    { id: 'newGhost', at: 0.9, who: 'pappa', line: 'newGhost' },
-    { id: 'tonight', at: 0.9, who: 'mamma', line: 'tonight' },
-    { id: 'stolenBag', on: 'blink', who: 'elof', line: 'stolenBag', priority: true },
+    { id: 'dropped', on: 'mamma:noticed', who: 'mamma', line: 'dropped' },
     { id: 'fallenStar', at: 38.5, needs: 'bag:torn', who: 'moa', line: 'fallenStar', priority: true },
-    { id: 'tinyElof', on: 'star', who: 'pappa', line: 'tinyElof', priority: true },
-    { id: 'follow1', on: 'pappa:noticed', who: 'pappa', line: 'follow1' },
-    { id: 'follow2', on: 'pappa:done', who: 'pappa', line: 'follow2' },
+    { id: 'onlyWood', on: 'pappa:noticed', who: 'pappa', line: 'onlyWood', priority: true },
+    { id: 'snuck', on: 'snuck', who: 'elof', line: 'snuck' },
+    // Their promises, one from each as he passes them on the deck.
+    { id: 'nearYou', at: 45.0, needs: 'pappa:done', who: 'mamma', line: 'nearYou' },
+    { id: 'mapForYou', at: 47.0, needs: 'pappa:done', who: 'moa', line: 'mapForYou' },
+    { id: 'heja', at: 48.8, needs: 'pappa:done', who: 'bertil', line: 'heja' },
+    { id: 'followTrail', at: 50.8, needs: 'pappa:done', who: 'pappa', line: 'followTrail' },
   ],
-  // The picture is wide while he is big, and closes in on him when he has shrunk: the world grows.
-  cameras: [{ from: -3, to: 42.4, zoom: 1.5, lift: 0.3 }, { from: 42.4, to: 52, zoom: 1.8, lift: 1.1 }],
+  // Indoors the picture is wide while he is big; on the deck it frames him small among the kneeling family.
+  cameras: [{ from: -3, to: 38, zoom: 1.5, lift: 0.3 }, { from: 38, to: 60, zoom: 1.7, lift: 1.5 }],
   candy: [
-    // Nothing lies there until the bag has torn.
-    ...row(9, 29, 0, 2, 'bag:torn'),
+    // Nothing lies there until the bag has torn on the doorway's hinge.
+    ...row(13, 29, 0, 1.6, 'bag:torn'),
     { x: 30.6, y: 1.25, after: 'bag:torn' },
     ...row(32.4, 36.4, 0, 2, 'bag:torn'),
     { x: 38.6, y: -0.2, after: 'bag:torn' },

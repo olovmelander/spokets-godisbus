@@ -32,6 +32,7 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
   switch (chapter) {
     case 'prolog':
       if (has('pappa:done')) return context('handoff', 'trail');
+      if (has('star') && has('scene:familj') && !has('hand') && !has('pappa:noticed')) return context('hand', 'home', '♡');
       if (has('star')) return context(has('pappa:noticed') ? 'handoff' : 'tiny', 'trail', '✦');
       if (has('bag:torn')) return context('starTrail', 'home', '✦');
       if (has('blink')) return context('chase', 'home');

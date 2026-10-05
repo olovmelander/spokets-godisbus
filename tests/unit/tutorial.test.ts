@@ -23,12 +23,27 @@ describe('conditional, wordless prologue controls', () => {
     expect(tutor.update(0.1, at(29.5), flags, held, { ...edges, hop: true })).toBeNull();
     expect(tutor.update(10, at(29.5), flags, held, edges)).toBeNull();
   });
-  it('shows use only beside the offered star and disappears when it is taken', () => {
+  it('shows use beside the brush Pappa holds out, and no more once the eyes are painted', () => {
     const tutor = new Tutorial('prolog');
-    expect(tutor.update(10, at(41, { y: -0.8 }), flags, held, edges)).not.toBe('act');
-    expect(tutor.update(2.9, at(41, { y: -0.8, verb: 'take' }), flags, held, edges)).toBeNull();
-    expect(tutor.update(0.11, at(41, { y: -0.8, verb: 'take' }), flags, held, edges)).toBe('act');
-    expect(tutor.update(0.1, at(41), new Set(['blink', 'star']), held, edges)).toBeNull();
+    const morning = new Set(['scene:morgon']);
+    tutor.update(0, at(3.7, { verb: 'give' }), morning, { ...held, x: 1 }, edges);
+    expect(tutor.update(2.9, at(3.7, { verb: 'give' }), morning, held, edges)).toBeNull();
+    expect(tutor.update(0.11, at(3.7, { verb: 'give' }), morning, held, edges)).toBe('act');
+    expect(tutor.update(10, at(3.7), new Set(['scene:morgon', 'eye', 'paint']), held, edges)).toBeNull();
+  });
+  it('shows use beside Pappa\'s open hand, and disappears when he steps onto it', () => {
+    const tutor = new Tutorial('prolog');
+    const small = new Set(['blink', 'star', 'scene:poff', 'scene:familj', 'paint']);
+    expect(tutor.update(10, at(41, { y: -0.8 }), small, held, edges)).not.toBe('act');
+    expect(tutor.update(2.9, at(41, { y: -0.8, verb: 'take' }), small, held, edges)).toBeNull();
+    expect(tutor.update(0.11, at(41, { y: -0.8, verb: 'take' }), small, held, edges)).toBe('act');
+    expect(tutor.update(0.1, at(41, { y: -0.8, verb: 'take' }), new Set([...small, 'hand']), held, edges)).toBeNull();
+  });
+  it('teaches nothing while a scene holds him', () => {
+    const tutor = new Tutorial('prolog');
+    expect(tutor.update(20, at(2), new Set(), held, edges, true)).toBeNull();
+    expect(tutor.update(3.9, at(2), new Set(), held, edges)).toBeNull();
+    expect(tutor.update(0.11, at(2), new Set(), held, edges)).toBe('move');
   });
   it('resets the wait when leaving a place and never teaches other chapters or carried states', () => {
     const tutor = new Tutorial('prolog');

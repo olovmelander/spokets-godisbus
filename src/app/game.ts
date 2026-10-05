@@ -10,6 +10,8 @@ export interface Held {
   /** Up and down, for climbing. Left out, it is 0. */
   y?: number;
   hopHeld: boolean;
+  /** Someone is still speaking on the page (src/sim/scene.ts, `quiet`). */
+  talking?: boolean;
 }
 
 /**
@@ -37,7 +39,7 @@ export class Game {
       const e = first ? this.queue.take() : NO_EDGES;
       // Hoppa's held state is read each frame. A tap that begins and ends inside one frame therefore
       // arrives as a press with hopHeld false, which is a hop.
-      this.sim.step({ x: held.x, y: held.y ?? 0, hopHeld: held.hopHeld, hop: e.hop, act: e.act, help: e.helper });
+      this.sim.step({ x: held.x, y: held.y ?? 0, hopHeld: held.hopHeld, hop: e.hop, act: e.act, help: e.helper, talking: held.talking });
     });
     return this.lastSteps;
   }

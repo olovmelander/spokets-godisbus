@@ -249,6 +249,8 @@ export interface GhostPerch {
   until?: string;
   /** A wordless picture at this story stop; progress makes the ghost's thoughts clearer (§3.3). */
   thought?: { picture: 'mountain' | 'pine-crack' | 'lonely-figure' | 'small-figure'; after?: string; until?: string };
+  /** For the picture only: how far behind the play plane it stands here, on a table's edge, say. Left out: 0. */
+  z?: number;
 }
 
 /** A stretch of the course where the camera frames differently (plan §6.4). */
@@ -466,7 +468,7 @@ export interface ChapterData {
    * For the picture: things that stand about and are not used. One with `until` is gone when that flag is
    * set, and one with `after` is not there before its flag is.
    */
-  decor?: { look: SpotLook; at: Vec; word?: string; until?: string; after?: string }[];
+  decor?: { look: SpotLook; at: Vec; word?: string; until?: string; after?: string; z?: number }[];
   /**
    * For the picture only: where the old pine stands, a little behind the path (plan §3.4). The wind has swept
    * it to the left; `flip` turns it round, swept to the right. The simulation knows nothing of it.
@@ -560,6 +562,21 @@ export interface ChapterData {
   follower?: { at: Vec; after: string; until: string; home: Vec };
   /** What is said along the way. */
   beats?: Beat[];
+  /**
+   * The story's short authored moments, in the order they are tried (src/sim/scene.ts): each may hold him
+   * while it plays, set the story's flags and say lines, and carries its staging for the picture.
+   */
+  scenes?: import('./scene').SceneDef[];
+  /**
+   * For the picture only: things that stand about in a room, behind the play plane: a table, a chair. Where
+   * an actor of a scene sits or stands at them is the scene's business.
+   */
+  furniture?: { look: 'table' | 'chair' | 'stool'; at: Vec; z: number; face?: number }[];
+  /**
+   * For the picture only: from this x the chapter is out of doors: the house's wall gives way to the
+   * garden's far scenery. Indoors before it.
+   */
+  outdoors?: number;
   /** The rides. */
   rides?: Ride[];
   /**
@@ -588,6 +605,8 @@ export interface StepInput {
   act: boolean;
   /** He asks the helper. Left out: no. */
   help?: boolean;
+  /** Someone is still speaking on the page: a scene that waits for quiet waits. Left out: no. */
+  talking?: boolean;
 }
 
 export interface PlayerState {

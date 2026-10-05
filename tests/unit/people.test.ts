@@ -24,10 +24,12 @@ describe('who a sign stands for', () => {
         expect(sign.word, chapter.id).toBeDefined();
         expect(verbs[sign.word!], `${chapter.id}: ${sign.word}`).toBeDefined();
       }
-      // At home, where he is a boy among people, the family's signs are the ones their models take the place of.
+      // At home, where he is a boy among people, the family is there: as signs their models take the place of,
+      // or as the actors of the chapter's scenes (src/render/stage.ts).
       if (chapter.size) {
         const people = signs.map((sign) => personFor(sign.word)).filter((who) => who !== null);
-        expect(people.length, chapter.id).toBeGreaterThanOrEqual(chapter.id === 'norrsken' ? 0 : 1);
+        const actors = (chapter.scenes ?? []).flatMap((scene) => Object.keys(scene.stage?.actors ?? {})).filter((who) => who !== 'ghost' && who !== 'elof');
+        expect(people.length + actors.length, chapter.id).toBeGreaterThanOrEqual(chapter.id === 'norrsken' ? 0 : 1);
       }
     }
   });

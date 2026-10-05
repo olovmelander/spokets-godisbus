@@ -1,3 +1,4 @@
+import { sceneUiHtml } from './scene';
 import { sv } from '../content/sv';
 import { endingHtml } from './ending';
 import { photoAlbumHtml } from './photos';
@@ -65,6 +66,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
        <button class="btn btn-act" id="actBtn" type="button" disabled>${HAND}<span></span></button>
        <button class="btn btn-hop" id="hopBtn" type="button">${ARROW}<span></span></button>
      </div>
+     ${sceneUiHtml}
      <div class="bubble" id="bubble" role="status" hidden><b id="bubbleWho"></b><span id="bubbleLine"></span></div>
      <div class="hint" id="hint" hidden></div>
      <div class="story-purpose" id="storyPurpose" role="status" aria-live="polite" aria-atomic="true" hidden><span id="storyPurposeIcon" aria-hidden="true"></span><span><small>${sv.storyContext.now}</small><span id="storyPurposeText"></span><span id="storyPurposeReveal" class="story-purpose-reveal" hidden></span></span></div>

@@ -143,10 +143,14 @@ const STRETCH = 18;
 /** Everything that stands and lies on the moss, in stretches along the chapter. */
 function scatter(chapter: ChapterData, from: number, to: number, place: PlaceId): Group {
   const group = new Group();
-  // Indoors nothing grows.
-  if (place === 'home') return group;
-  const build = { forest: stretch, garden: lawn, bog, mountain: fell, dusk: fell, village: street }[place];
-  for (let a = from - 12; a < to + 12; a += STRETCH) group.add(build(chapter, a, a + STRETCH, Math.round(a * 7 + 97)));
+  // Indoors nothing grows. Out of doors at home it is the garden's lawn, below the deck: nothing grows on boards.
+  if (place === 'home' && chapter.outdoors === undefined) return group;
+  const build = { forest: stretch, garden: lawn, bog, mountain: fell, dusk: fell, village: street, home: lawn }[place];
+  // At home the lawn begins a little past the boards, and no birch stands in the view from the deck.
+  const start = place === 'home' ? Math.max(chapter.outdoors!, ...(chapter.surfaces ?? []).map((s) => s.to)) + 4 : from - 12;
+  for (let a = start; a < to + 12; a += STRETCH) {
+    group.add(place === 'home' ? lawn(chapter, a, a + STRETCH, Math.round(a * 7 + 97), false) : build(chapter, a, a + STRETCH, Math.round(a * 7 + 97)));
+  }
   return group;
 }
 
@@ -169,6 +173,10 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   const group = new Group();
   const from = chapter.ground[0]!.x;
   const to = chapter.ground[chapter.ground.length - 1]!.x;
+  // A chapter at home that goes out of doors (the prologue's deck): past the house the garden's sky and far
+  // scenery, and its lawn below the deck. What is built, the floors and the deck, says so with its surfaces.
+  const out = look.id === 'home' && chapter.outdoors !== undefined;
+  const own = out ? 'lawn' : OWN[look.id].ground;
   makeKit();
   // What stands on the ground comes first: the bee is told where the dandelions are.
   const standing = scatter(chapter, from, to, look.id);
@@ -178,7 +186,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   // however high he climbs: backdrop.ts.
   // What the far pictures count their sinking from: the land around the chapter's start.
   const land = heightAt(chapter, from) - (chapter.outlook ?? 0);
-  const far = scenery(look.id, land, from, to);
+  const far = scenery(out ? 'garden' : look.id, land, from, to);
   const life = look.id === 'village' ? villageLife(chapter) : null;
   // The village has its houses and its yard behind the street.
   const houses = look.id === 'village' ? fronts(chapter, from, to) : null;
@@ -190,7 +198,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   if (wild) group.add(wild.mesh);
   group.add(
     far.group,
-    bank(chapter, OWN[look.id].ground),
+    bank(chapter, own),
     standing,
     built(chapter, look.id === 'home'),
     houses?.group ?? new Group(),
@@ -199,7 +207,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   );
   return {
     group,
-    background: backdrop(look),
+    background: backdrop(out ? GARDEN : look),
     wild,
     ...(houses ? { install: houses.install } : {}),
     update(cameraX, groundY, clock, night = 0, wind, quiet) {

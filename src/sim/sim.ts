@@ -16,6 +16,7 @@ import { hintFor } from './help';
 import { partyReward, sharingReward, type StoryAnswer } from './story';
 import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
 import { PrologueSequence } from './prologue';
+import { SceneDirector } from './scene';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
@@ -142,6 +143,8 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
  */
 export class Sim {
   readonly prologue: PrologueSequence | null;
+  /** The chapter's authored scenes (./scene.ts), or null in a chapter without any. */
+  readonly scene: SceneDirector | null;
   readonly world: World;
   readonly flags = new Set<string>();
   /** The world waits while a story interaction is open; only a validated answer commits progress. */
@@ -256,7 +259,7 @@ export class Sim {
   private readonly safe: Vec;
 
   constructor(readonly chapter: ChapterData, options: SimOptions = {}, start: SimStart = {}) {
-    this.prologue = chapter.prologue ? new PrologueSequence(chapter.prologue) : null;
+    this.prologue = chapter.prologue ? new PrologueSequence(chapter.prologue, chapter.ghost ?? []) : null;
     this.options = options;
     this.checkpoints = chapter.checkpoints ?? [];
     this.jumps = chapter.jumps ?? [];
@@ -330,6 +333,7 @@ export class Sim {
       return body;
     });
     for (const flag of start.flags ?? []) this.flags.add(flag);
+    this.scene = chapter.scenes?.length ? new SceneDirector(chapter.scenes, spawn, this.flags) : null;
     this.readyRides(spawn.x);
     this.placeLedges();
     for (const mover of this.movers) if (!mover.def.extra && !mover.def.cycle && mover.stop === mover.def.stops.length - 1) this.flags.add(`placed:${mover.def.id}`);
@@ -342,7 +346,11 @@ export class Sim {
     const ahead = this.perches.findIndex((perch) => perch.at.x > spawn.x + 1);
     const first = this.perches[ahead];
     this.ghost = first ? { x: first.at.x, y: first.at.y, perch: ahead, t: 1, gone: false } : null;
-    if (chapter.prologue && this.ghost && this.flags.has('pappa:done')) this.ghost.gone = true;
+    if (chapter.prologue && this.ghost && this.flags.has('pappa:done')) {
+      // Taken up after Pappa's joke: the ghost is gone from the older prologue, and at the deck's edge in this one.
+      if (!chapter.prologue.edge) this.ghost.gone = true;
+      else if (this.ghost.perch < chapter.ghost!.findIndex((perch) => perch.at.x === chapter.prologue!.edge!.x)) this.prologue!.hide(this.ghost);
+    }
     // Older saves beyond the door have already chased the torn bag; never replay that joke out of place.
     if (chapter.prologue && spawn.x > chapter.prologue.doorway.x + 2) {
       this.flags.add('mamma:passed'); this.flags.add('bag:torn');
@@ -401,14 +409,30 @@ export class Sim {
 
   cancelStory(): void { this.story = null; }
 
+  /** Whether he stands and watches the story now: a beat that takes time, a freeze joke or a held scene. */
+  get held(): boolean {
+    return this.watching || !!this.prologue?.frame || !!this.scene?.holding;
+  }
+
+  /**
+   * The scene playing now, for the picture: one of the chapter's scenes, or one of the prologue's two freeze
+   * jokes, which keep their own clock (./prologue.ts) and are staged as `prologue:mamma` and `prologue:pappa`.
+   */
+  get sceneFrame(): import('./scene').SceneFrame | null {
+    const frame = this.prologue?.frame;
+    if (frame) return { id: `prologue:${frame.kind}`, seconds: frame.seconds };
+    return this.scene?.frame ?? null;
+  }
+
   step(input: StepInput): void {
     if (this.story) return;
     this.prev = this.curr;
     this.ringNotes();
     this.returnGifts();
     this.prologue?.tick(this.curr, this.ghost, this.flags);
+    this.scene?.tick(this.curr, this.flags, this.said, input.talking === true);
     // While he watches a beat of the story, the stick and the buttons do nothing.
-    if (this.watching || this.prologue?.frame) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
+    if (this.held) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
     // Free, he may take hold of something this step: a hose, a ledge, or the hose below him.
     if (this.state.kind === 'free') this.reach(input);
     if (this.story) { this.curr = this.read(this.standing()); return; }
@@ -820,6 +844,7 @@ export class Sim {
    */
   toCheckpoint(): void {
     this.prologue?.cancel();
+    this.scene?.cancel();
     this.resetChallenges(true);
     this.story = null;
     if (this.state.kind === 'bubble') return;

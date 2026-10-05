@@ -40,6 +40,12 @@ export function built(chapter: ChapterData, indoors = false): Group {
     wall.position.set((house.from + house.to) / 2, floor + 11, -9);
     wall.renderOrder = -2;
     group.add(wall);
+    // Where the chapter goes out of doors the house ends: its white corner board, and the garden beyond it.
+    if (chapter.outdoors !== undefined) {
+      const corner = new Mesh(new BoxGeometry(0.7, 26, 0.5), new MeshStandardMaterial({ color: '#efe8da', roughness: 0.8 }));
+      corner.position.set(chapter.outdoors + 0.35, floor + 11, -8.9);
+      group.add(corner);
+    }
     const frame = new MeshBasicMaterial({ color: evening ? '#a8977c' : '#f6efe2' });
     for (const x of house.windows) {
       // The frame, and a hole of sky in it: whatever is outside shows through, at night the northern lights.

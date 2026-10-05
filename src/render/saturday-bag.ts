@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, Group, InstancedMesh, Matrix4, MeshLambertMaterial, Object3D } from 'three';
+import { AdditiveBlending, BoxGeometry, Color, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshLambertMaterial, Object3D, SphereGeometry } from 'three';
 import { sweetSocket } from './candy';
 
 type Box = [x: number, y: number, z: number, wide: number, high: number, deep: number, colour: string];
@@ -37,5 +37,12 @@ export function saturdayBag(): Group {
   tear.name = 'saturday-bag-tear';
   tear.visible = false;
   group.add(tear);
+  // The magic in the bag (plan §3.3 rule 3): when the ghost took it, two sweets began to glitter, and the gold
+  // one glints at its mouth all through the chase. A soft glow, never a sweet of its own.
+  const glow = new Mesh(new SphereGeometry(0.13, 12, 8), new MeshBasicMaterial({ color: '#ffd774', transparent: true, opacity: 0.5, depthWrite: false, blending: AdditiveBlending }));
+  glow.name = 'saturday-bag-glow';
+  glow.position.set(0, 0.6, 0);
+  glow.visible = false;
+  group.add(glow);
   return group;
 }

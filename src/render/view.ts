@@ -32,6 +32,9 @@ import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
 import { createEpilogueStage } from './epilogue-stage';
 import { createPrologueStage } from './prologue-stage';
+import { createStage } from './stage';
+import { actPose } from './acting';
+import { STANDING, type Pose } from './rig';
 import { createFamilyRehearsal } from './family-rehearsal';
 import { createSharedSweets } from './shared-sweets';
 import { saturdayBag } from './saturday-bag';
@@ -40,6 +43,7 @@ import { drawnWhile } from './idle';
 import type { Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
+import type { SceneFrame } from '../sim/scene';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
@@ -48,6 +52,8 @@ import type { GhostState } from '../sim/sim';
 const FOV = 30;
 /** The ground sits about 35% up from the bottom, so thumbs never cover Elof (plan §5.2). */
 const GROUND_FROM_BOTTOM = 0.35;
+/** How long the camera takes to come back to play after a scene's shot, in seconds. */
+const SHOT_RELEASE = 1.1;
 
 export interface ViewInfo {
   tier: Tier;
@@ -109,6 +115,8 @@ export interface Frame {
   /** The cranberries, in the chapter's order: how flat each is after a bounce, from 1 to 0. */
   berries?: readonly { squash: number }[];
   prologue?: PrologueFrame | null;
+  /** The scene playing now: one of the chapter's, or one of the prologue's freeze jokes (src/sim/scene.ts). */
+  scene?: SceneFrame | null;
   ending?: number | null;
   noteHits?: readonly { serial: number; id: string; midi: number }[];
   /** What the helper is doing: its step, and where the thing is. */
@@ -229,6 +237,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     scene.add(place);
     return { place, sweet: place.getObjectByName('candy')!, reached: false, pop: 0, spin: 0 };
   });
+  // Where a scene ends the chapter (the prologue's title), the scene is the end: no candy marks it.
+  const sceneEnds = chapter.goalNeeds !== undefined && (chapter.scenes ?? []).some((def) => def.cues?.some((cue) => cue.flag === chapter.goalNeeds));
+  if (sceneEnds) bigCandies.at(-1)!.place.visible = false;
   const trail = createTrail(chapter.candy);
   // Side candy, off the trail: hearts and lollipops, where the trail is sweets in wrappers.
   const sideTrail = createTrail(chapter.side ?? [], 'side');
@@ -250,13 +261,22 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(hiddenSweets.group);
   const glance = buildGlance(chapter);
   scene.add(glance.group);
+  // The ghost's look in a scene: a dotted line from its eyes to what it looks at, and a ring there.
+  const looking = buildLook();
+  scene.add(looking.group);
+  // The scenes' actors, what they hold, the furniture and the scenes' glitter (./stage.ts).
+  const stage = createStage(chapter, (x) => heightOfGroundAt(chapter, x));
+  scene.add(stage.group);
   const things = (chapter.spots ?? []).map((spot) => ({ spot, prop: spotProp(spot), reactionTurn: 0 }));
   // What only stands about: drawn like a thing to use, and gone when its flag is set.
   const decor = (chapter.decor ?? []).map((def, i) => ({
     def,
     prop: spotProp({ id: `decor:${i}`, at: def.at, verb: 'take', look: def.look, ...(def.word ? { word: def.word } : {}) }),
   }));
-  for (const d of decor) if (d.prop) scene.add(d.prop.group);
+  for (const d of decor) if (d.prop) {
+    if (d.def.z !== undefined) d.prop.group.position.z = d.def.z;
+    scene.add(d.prop.group);
+  }
   // How big he is drawn: a boy among small things, or as small as the ghost (plan §5.2).
   const sized = chapter.size;
   let tall = sized && sized.after === undefined ? sized.scale : 1;
@@ -314,7 +334,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const assets = createAssets(renderer);
   const birds = [helper.group, ...things.map((thing) => (thing.spot.look === 'jay' ? thing.prop?.group : undefined))]
     .map((group) => group?.getObjectByName('bird'))
-    .filter((bird): bird is Object3D => bird !== undefined);
+    .filter((bird): bird is Object3D => bird !== undefined)
+    .concat(stage.birds);
   const candyReady = assets
     .model('boot', 'big-candy')
     .then((model) => {
@@ -430,7 +451,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(ghostPlace);
   const ghostThought = createGhostThought(chapter);
   if (ghostThought) scene.add(ghostThought.mesh);
-  const prologueStage = createPrologueStage(chapter.prologue);
+  const prologueStage = createPrologueStage(chapter.prologue, (x) => heightOfGroundAt(chapter, x));
   scene.add(prologueStage.group);
   const epilogueStage = createEpilogueStage(chapter.epilogue);
   scene.add(epilogueStage.group);
@@ -507,17 +528,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     stand.prop!.group.clear(); stand.prop!.group.add(model);
     family.push({ model, at: stand.at, glad: stand.glad, was: false, joy: 0, arms: [], hands: [] });
   }
-  if (chapter.prologue && !standIns) {
+  if (stage.actors.size > 0 && !standIns) {
     assets.manifest().then(async (manifest) => {
-      for (const who of ['pappa', 'mamma', 'moa', 'bertil']) {
+      for (const who of stage.actors.keys()) {
         if (!manifest.packs.private?.files[`${who}.glb`]) continue;
         const model = await assets.model('private', who);
-        prologueStage.replace(who, model);
-        characterShadows.add({ object: model, height: 1.6, radius: .3 });
+        const placed = stage.replace(who, model);
+        if (placed) characterShadows.add({ object: placed, height: 1.6, radius: .3, active: () => placed.parent !== null && placed.visible });
         if (!models.includes(`private/${who}`)) models.push(`private/${who}`);
         modelInstallations++;
       }
-    }).catch((error) => console.error('The opening family could not be loaded; rehearsal shapes stay.', error));
+    }).catch((error) => console.error('The family in the scenes could not be loaded; rehearsal shapes stay.', error));
   }
   if (!standIns && stands.length) {
     // `glad` is the flag that makes them glad: the candy he gives them, or the moment they come into the picture.
@@ -565,6 +586,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       active: () => model.parent === stand.prop!.group && stand.prop!.group.visible,
       groundY: () => chapter.id === 'norrsken' && homeJourney && personFor(stand.word) === 'pappa'
         ? playerGroundY : stand.prop!.group.position.y });
+  }
+  // The family in the scenes stand on the ground as the family at the help points do: each rehearsal figure has
+  // its shadow while it is drawn. A model from Blender that takes a figure's place brings its own.
+  for (const actor of stage.actors.values()) {
+    const body = actor.rig.group;
+    characterShadows.add({ object: body, height: actor.rig.height, radius: .45 * actor.rig.height / 5.2,
+      active: () => body.parent !== null && body.visible });
   }
   for (const thing of things) {
     const size = thing.spot.look && animal[thing.spot.look as keyof typeof animal];
@@ -632,6 +660,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   resize();
 
   let ghostSize = 1;
+  /** Elof's pose when a scene asks him to act. */
+  const elofPose: Pose = { ...STANDING };
+  /** The last scene shot, and how much of it the camera takes now: 1 in the scene, easing to 0 after it. */
+  let lastShot: { x: number; y: number; height: number; width: number; eye: number } | null = null;
+  let shotWeight = 0;
+  const playAim = new Vector3();
   let warm = 2;
   let warmedFor = 0;
   let hasFrame = false;
@@ -706,7 +740,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
   }
 
-  function render({ prev, curr, alpha, dt, atGoal, collected, side, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue, ending }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, side, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue, scene: sceneFrame, ending }: Frame): void {
     inEndingShot = !!chapter.epilogue && ending !== null && ending !== undefined;
     rain.update(drips);
     epilogueStage.update(flags, ending, reducedMotion.matches || document.body.classList.contains('calm'));
@@ -723,6 +757,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const calmStory = reducedMotion.matches || document.body.classList.contains('calm');
     shoulderLift = calmStory ? wantShoulders : shoulderLift + Math.sign(wantShoulders - shoulderLift) * Math.min(Math.abs(wantShoulders - shoulderLift), dt * 8.5);
     clock += dt;
+    // The scene playing now, if any: where the family and the ghost are, what they do, and the shot (./stage.ts).
+    const directions = stage.update(sceneFrame ?? null, flags, { x, y }, clock, dt, calmStory);
     responseFor = Math.max(0, responseFor - dt);
     const response = responseFor > 0 ? (calmResponse ? 0.15 : Math.sin((0.85 - responseFor) * 24) * responseFor / 0.85) : 0;
     if (responseFor === 0) reaction = null;
@@ -808,7 +844,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     let poff = false;
     if (sized) {
       const big = (sized.after === undefined || flags.has(sized.after)) && (sized.until === undefined || !flags.has(sized.until));
-      const want = big ? sized.scale : 1;
+      const want = directions.elof?.size ?? (big ? sized.scale : 1);
       if (!hasFrame) tall = want; // A restored small Elof must not replay a change that already happened.
       poff = tall !== want;
       tall += Math.sign(want - tall) * Math.min(Math.abs(want - tall), ((sized.scale - 1) * dt) / 1.2);
@@ -831,11 +867,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const centreY = look.y + viewHeight * look.zoom * (0.5 - GROUND_FROM_BOTTOM);
     camera.position.set(look.x, centreY, distance * look.zoom);
     camera.lookAt(look.x, centreY, 0);
-    if (chapter.prologue && !flags.has('blink') && x < 10) {
-      const shotHeight = Math.max(8.4, 14.5 / camera.aspect);
-      camera.position.set(3.5, 2.1, shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
-      camera.lookAt(3.5, 2.1, 0);
-    }
     const nearbyFamily = stands.find((stand) => stand.prop!.group.visible && Math.abs(stand.at - x) < 3.4 &&
       Math.abs(stand.prop!.group.position.y - y) < 2 && curr.mode !== 'ride' && curr.mode !== 'fly');
     if (nearbyFamily && !chapter.epilogue) {
@@ -855,12 +886,20 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       camera.position.set(x, y + 3.1, shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
       camera.lookAt(x, y + 3.1, 0);
     }
-    if (chapter.prologue && x >= 38 && !flags.has('pappa:noticed')) {
-      // A fixed shared composition makes the scale change visible relative to the same family.
-      // Width is bounded in portrait; the top and bottom leave room for story and touch controls.
-      const shotHeight = Math.max(8.4, 9.6 / camera.aspect);
-      camera.position.set(42.1, 1.55, shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
-      camera.lookAt(42.1, 1.55, 0);
+    // A scene's shot takes over from the play camera, and gives it back, smoothly (./stage.ts).
+    if (directions.shot) {
+      const s = directions.shot;
+      lastShot = s;
+      shotWeight = s.blend;
+    } else shotWeight = Math.max(0, shotWeight - dt / SHOT_RELEASE);
+    if (lastShot && shotWeight > 0) {
+      const s = lastShot;
+      const tall = Math.max(s.height, s.width / camera.aspect);
+      const away = tall / 2 / Math.tan(FOV * Math.PI / 360);
+      const w = shotWeight * shotWeight * (3 - 2 * shotWeight);
+      playAim.set(camera.position.x, camera.position.y, 0);
+      camera.position.set(lerp(camera.position.x, s.x, w), lerp(camera.position.y, s.y + s.eye, w), lerp(camera.position.z, away, w));
+      camera.lookAt(lerp(playAim.x, s.x, w), lerp(playAim.y, s.y, w), 0);
     }
     if (chapter.epilogue && ending !== null && ending !== undefined) {
       const window = chapter.epilogue.window;
@@ -871,7 +910,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const darkness = night.update(flags, look.x, centreY, clock, dt);
     if (dressing && place) {
       // What lives far off begins nothing while he is busy, and needs the lens to know what is in the picture.
-      dressing.update(look.x, look.y, clock, darkness, { gust, still: calmStory }, {
+      dressing.update(camera.position.x, look.y, clock, darkness, { gust, still: calmStory }, {
         busy: !curr.grounded || curr.mode !== 'free' || !!nearbyFamily || (!!chapter.mist && flags.has(chapter.mist.after)) || gusts.some((gust) => gust.blow > 0 || gust.warn > 0),
         calm: calmStory, eye: camera.position.z, slope: Math.tan((FOV * Math.PI) / 360) * camera.aspect,
       });
@@ -892,7 +931,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // The stand-in Elof: turned a little towards the camera, legs swinging with the distance he covers.
     // On a hose he turns his back to the camera, as a climber does.
     const onHose = curr.mode === 'climb' || curr.mode === 'slide';
-    const facingAngle = onHose ? Math.PI / 2 : curr.facing > 0 ? -0.35 : Math.PI + 0.35;
+    // In a held scene the scene may turn him: towards his family, or out over the garden.
+    const scripted = directions.elof;
+    const facingAngle = scripted?.face != null ? -scripted.face * Math.PI * 2 : onHose ? Math.PI / 2 : curr.facing > 0 ? -0.35 : Math.PI + 0.35;
     turn += (facingAngle - turn) * ease(14, dt);
     if (curr.grounded) stride += Math.abs(curr.vx) * dt * 5.5;
     const swing = curr.grounded ? Math.sin(stride) * 0.75 * Math.min(1, Math.abs(curr.vx) / RUN_SPEED + 0.25) : 0.5;
@@ -902,6 +943,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const waving = reaction?.kind === 'player' && curr.grounded;
     elof.arm.rotation.z = waving ? -2 + response * 0.3 : 0;
     if (doll) poseDoll(doll, curr, stride, dt, waving ? responseFor : 0, calmResponse);
+    // His part in a held scene: he startles, points, looks at his hands, holds up the star (./acting.ts).
+    let acted = 0;
+    if (scripted?.act && curr.grounded) {
+      // His acting is measured as an adult's: his own height stands for an adult's 5.2.
+      const unit = 5.2 / Math.max(0.5, tall);
+      const facing = Math.cos(facingAngle) >= 0 ? 1 : -1;
+      actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null, stride: 0, pace: 0, calm: calmStory }, elofPose);
+      elof.arm.rotation.z = -elofPose.armR;
+      elof.legLeft.rotation.z = elofPose.legL;
+      elof.legRight.rotation.z = -elofPose.legR * 0.2;
+      acted = elofPose.bounce * 0.35;
+      if (doll) actDoll(doll, elofPose);
+    }
     if (curr.grounded && !wasGrounded) squash = 0.82; // a soft landing
     wasGrounded = curr.grounded;
     squash += (1 - squash) * ease(12, dt);
@@ -909,11 +963,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Knocked over by a drop he goes down on his back, lies a moment, and gets up.
     const lying = curr.mode === 'down' ? Math.min(1, curr.t / 0.15, (1 - curr.t) / 0.25) * 1.4 * curr.facing : 0;
     // The tilt turns about his middle, where the lace's pull goes through.
-    elof.group.position.set(x - Math.sin(hang) * 0.5, y + 0.5 - Math.cos(hang) * 0.5 + shoulderLift, 0);
+    const lift = scripted?.lift;
+    elof.group.position.set(x - Math.sin(hang) * 0.5 + (lift?.x ?? 0), y + 0.5 - Math.cos(hang) * 0.5 + shoulderLift + (lift?.y ?? 0) + acted, lift?.z ?? 0);
+    // On a mark in the place itself, such as Pappa's palm: wherever the run left him.
+    if (scripted && scripted.ontoWeight > 0) {
+      const on = scripted.ontoWeight;
+      elof.group.position.x += (scripted.onto.x - x) * on;
+      elof.group.position.y += (scripted.onto.y - y) * on;
+      elof.group.position.z += ((scripted.onto.z ?? 0) - (lift?.z ?? 0)) * on;
+    }
     elof.group.rotation.set(0, turn, lying - hang, 'ZYX');
     elof.group.scale.set(tall / Math.sqrt(stretch), tall * stretch, tall / Math.sqrt(stretch));
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
-    elof.body.rotation.z = -clamp(curr.vx / RUN_SPEED, -1, 1) * 0.12 * curr.facing;
+    elof.body.rotation.z = scripted?.act ? -elofPose.lean : -clamp(curr.vx / RUN_SPEED, -1, 1) * 0.12 * curr.facing;
 
     playerGroundY = curr.groundY;
 
@@ -937,7 +999,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const hopping = ghostState.t < 1;
       const away = ghostState.gone ? 0 : 1;
       ghostSize += (away - ghostSize) * ease(8, dt);
-      ghostPlace.position.set(ghostState.x, ghostState.y, 0);
+      // On a table's edge it stands behind the play plane: its perch says how far (picture only).
+      const perch = chapter.ghost?.[ghostState.perch];
+      const before = chapter.ghost?.[Math.max(0, ghostState.perch - 1)];
+      const depth = hopping ? lerp(before?.z ?? 0, perch?.z ?? 0, ghostState.t) : perch?.z ?? 0;
+      ghostPlace.position.set(ghostState.x, ghostState.y, depth);
       ghostPlace.scale.setScalar(ghostSize);
       // Its shadow lies where it stands. In a hop it is off the ground, and the shadow waits where it will land.
       if (!hopping) ghostGroundY = ghostState.y;
@@ -949,29 +1015,50 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (ghostFoot) ghostFoot.rotation.x = hopping ? 0 : -Math.max(0, Math.sin(clock * 9)) * (Math.sin(clock * 0.9) > 0.2 ? 0.45 : 0);
       if (chapter.prologue && prologue) {
         const pose = prologuePose(chapter.prologue, prologue);
-        ghostPlace.position.set(pose.x, pose.y, 0.1);
+        ghostPlace.position.set(pose.x, pose.y, pose.z);
         ghostSize = pose.scale;
         ghostPlace.scale.setScalar(ghostSize);
         ghost.rotation.set(0, ghostFaces + pose.turn, pose.tilt);
         if (ghostFoot) ghostFoot.rotation.x = 0;
         ghostStaged = true;
-      } else if (chapter.prologue && flags.has('pappa:done')) {
+      } else if (chapter.prologue && flags.has('pappa:done') && !chapter.prologue.edge) {
         ghostSize = 0;
         ghostPlace.scale.setScalar(0);
         ghostStaged = true;
       }
+      // A scene's own acting: in Pappa's hands, its first blink, a look at the shelf, the grab (./stage.ts).
+      const staged = directions.ghost;
+      if (staged) {
+        ghostPlace.position.set(staged.x, staged.y + staged.bounce, staged.z);
+        ghostSize = 1;
+        ghostPlace.scale.setScalar(1);
+        ghostTurn = -staged.face * Math.PI * 2;
+        ghost.rotation.set(0, ghostFaces + ghostTurn, staged.tilt);
+        if (ghostFoot) ghostFoot.rotation.x = 0;
+        ghostStaged = true;
+      }
+      for (const eye of paintedEyes) eye.scale.y = staged?.blink ?? 1;
+      looking.update(staged?.look ? ghostPlace.position : null, staged?.look ?? null, clock, dt);
     }
     if (chapter.prologue) {
       paintedEyes.forEach((eye, i) => { eye.visible = flags.has(i === 0 && paintedEyes.length > 1 ? 'eye' : 'paint'); });
     }
     // Keep the stolen paper bag distinct from the wooden pocket, across every chapter of the chase.
-    stolenBag.visible = ghostPlace.visible && (chapter.prologue ? flags.has('blink') : chapter.id !== 'epilog') &&
+    stolenBag.visible = ghostPlace.visible && (chapter.prologue ? flags.has('grab') || flags.has('blink') : chapter.id !== 'epilog') &&
       !(chapter.id === 'norrsken' && flags.has('eyes'));
-    stolenBag.position.set(Math.cos(ghostTurn) * .48, .18, -.18 + Math.sin(ghostTurn) * .25);
+    // The gold sweet glints at the bag's mouth all through the chase (plan §3.3 rule 3).
+    const glint = stolenBag.getObjectByName('saturday-bag-glow');
+    if (glint) {
+      drawnWhile(glint, stolenBag.visible);
+      glint.scale.setScalar(calmStory ? 1 : 0.85 + 0.25 * Math.sin(clock * 4.2));
+    }
+    // Carried before it: in a scene it may face the camera, and the bag goes with its front.
+    if (directions.ghost) stolenBag.position.set(Math.cos(ghostTurn) * .48, .18, -Math.sin(ghostTurn) * .4 - .05);
+    else stolenBag.position.set(Math.cos(ghostTurn) * .48, .18, -.18 + Math.sin(ghostTurn) * .25);
     stolenBag.rotation.y = ghostTurn;
     const tear = stolenBag.getObjectByName('saturday-bag-tear');
     if (tear) tear.visible = chapter.prologue ? flags.has('bag:torn') : true;
-    prologueStage.update(prologue, flags, { x, y, tall });
+    prologueStage.update(flags);
     // His first figure has its place again, with Klonk beside it once Elof finishes painting.
     if (chapter.epilogue && chapter.shelf && flags.has('dots')) {
       ghostPlace.position.set(chapter.shelf.x - 2.4, chapter.shelf.y + 0.08, -8.5);
@@ -1215,6 +1302,21 @@ function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number, w
     bend(doll.upperArms[0]!, -2);
     bend(doll.lowerArms[0]!, -0.7 + (calm ? 0 : Math.sin(wave * 22) * 0.3));
   }
+}
+
+/** A scene's pose on the Elof made in Blender: the same signs as the walk in `poseDoll`. */
+function actDoll(doll: Doll, pose: Pose): void {
+  const now = (joint: Joint | null, angle: number) => bendJoint(joint, angle, 1);
+  now(doll.upperArms[0]!, -pose.armL);
+  now(doll.upperArms[1]!, -pose.armR);
+  now(doll.lowerArms[0]!, -pose.elbowL);
+  now(doll.lowerArms[1]!, -pose.elbowR);
+  now(doll.thighs[0]!, -pose.legL);
+  now(doll.thighs[1]!, -pose.legR);
+  now(doll.calves[0]!, pose.kneeL);
+  now(doll.calves[1]!, pose.kneeR);
+  now(doll.spine, pose.lean);
+  now(doll.head, pose.nod);
 }
 
 function startState(chapter: ChapterData): PlayerState {
@@ -1626,6 +1728,49 @@ function buildGlance(chapter: ChapterData) {
     dots.instanceMatrix.needsUpdate = true;
   }
   return { group, update };
+}
+
+/**
+ * The ghost's look in a scene (src/sim/scene.ts, the act `look`): it has no mouth and cannot point well, so a
+ * line of dots grows from its eyes to what it looks at, and a ring pulses there. The same look as `glance`.
+ */
+function buildLook() {
+  const group = new Group();
+  const glow = new MeshBasicMaterial({ color: '#fff0b0', transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, fog: false });
+  const ring = new Mesh(new TorusGeometry(0.42, 0.06, 10, 36), glow);
+  const DOTS = 12;
+  const dots = new InstancedMesh(new SphereGeometry(0.05, 8, 6), glow, DOTS);
+  dots.instanceMatrix.setUsage(DynamicDrawUsage);
+  dots.frustumCulled = false;
+  ring.frustumCulled = false;
+  group.add(ring, dots);
+  drawnWhile(group, false);
+  const place = new Object3D();
+  let since = 0;
+  let last: { x: number; y: number; z?: number } | null = null;
+  return {
+    group,
+    update(from: { x: number; y: number; z: number } | null, to: { x: number; y: number; z?: number } | null, clock: number, dt: number): void {
+      if (to !== last) since = 0;
+      last = to;
+      const on = from !== null && to !== null;
+      since = on ? since + dt : 0;
+      glow.opacity = on ? 0.55 + 0.35 * Math.sin(clock * 9) : 0;
+      drawnWhile(group, on);
+      if (!on) return;
+      ring.position.set(to.x, to.y, to.z ?? 0);
+      ring.scale.setScalar(1 + 0.12 * Math.sin(clock * 9));
+      const grown = Math.min(1, since / 0.35);
+      const eyeY = from.y + 0.8;
+      for (let i = 0; i < DOTS; i++) {
+        const t = ((i + 1) / (DOTS + 1)) * grown;
+        place.position.set(from.x + (to.x - from.x) * t, eyeY + (to.y - eyeY) * t, from.z + 0.1 + ((to.z ?? 0) - from.z - 0.1) * t);
+        place.updateMatrix();
+        dots.setMatrixAt(i, place.matrix);
+      }
+      dots.instanceMatrix.needsUpdate = true;
+    },
+  };
 }
 
 /**
