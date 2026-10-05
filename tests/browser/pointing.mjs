@@ -164,7 +164,8 @@ try {
     await page.tap('#resumeBtn');
     const cdp = await context.newCDPSession(page);
     const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
-    const hand = await screen(page, 40.9, -0.2);
+    // Where the game offers the hand's action: over the hand, clear of Elof himself (Sim.actionAt).
+    const hand = await screen(page, 40.9, 0.7);
     assert.ok(hand, `${name}: the hand is framed`);
     const finger = { ...hand, id: 1 };
     await touch('touchStart', [finger]);
@@ -177,7 +178,7 @@ try {
     await touch('touchCancel', []);
     await frames(page, 3);
     check(`${name}: a cancelled finger never acts`, !(await state()).flags.includes('hand'));
-    const at = await screen(page, 40.9, -0.2);
+    const at = await screen(page, 40.9, 0.7);
     await page.touchscreen.tap(at.x, at.y);
     await until(state, s => s.flags.includes('hand'), `${name}: near hand touch`);
     check(`${name}: a quick near-target tap uses the offered action`, (await state()).pointing.last === 'use' && (await state()).flags.includes('hand'));

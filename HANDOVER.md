@@ -51,8 +51,9 @@
     plats!"). Older saves: the big candies keep their meaning (the first is in the kitchen again), and a game
     taken up past the kitchen never replays the morning or the waking.
   - **Checked** (stand-ins, cloud): typecheck; 1,201 unit, simulation and robot tests (new: `tests/sim/scene.test.ts`,
-    the prologue's own, the rig's); the build with its size gates (436.9 KB of 450 gzipped); the privacy check;
-    the browser suites (see "Next"); the whole intro played in the browser at 844×390 on Low, in pictures:
+    the prologue's own, the rig's); the build with its size gates (437.0 KB of 450 gzipped); the privacy check;
+    the browser suites (all six parts on GitHub; locally, timing checks miss when several suites share four
+    cores, and pass alone); the whole intro played in the browser at 844×390 on Low, in pictures:
     at most 103 draw calls in the house (of Low's 120) and 51 on the deck, and no program compiled while the
     scenes play.
   - **Not in this pull request (one visible outcome):** the chapter endings (the overview's step 2: a storybook
