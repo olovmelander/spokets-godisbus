@@ -54,10 +54,11 @@ try {
         drips: s.drips, flags: s.flags, ghost: s.ghost, rollers: s.rollers, tussocks: s.tussocks, gusts: s.gusts,
         help: s.help, berries: s.berries }); };
       const until = performance.now() + 15000;
-      // Both of the boot's models that this place has: one that came after the first measure was warmed in the
-      // middle of the visit, 318 draw calls in one frame and two programs more, and the check below failed.
-      const here = ['boot/big-candy', 'boot/candy'];
-      while (!here.every((model) => view.info().models.includes(model)) && performance.now() < until) await new Promise((r) => setTimeout(r, 25));
+      // Every model that this place has (the candy, the forest's kit): one that came after the first measure was
+      // warmed in the middle of the visit, 318 draw calls in one frame and two programs more, and the check
+      // below failed. The view says when all of them have come.
+      await Promise.race([view.ready, new Promise((r) => setTimeout(r, 15000))]);
+      while (!view.info().models.includes('boot/big-candy') && performance.now() < until) await new Promise((r) => setTimeout(r, 25));
       for (let i = 0; i < 4; i++) draw(0.25);
       const scene = f.renderedScene(), actor = scene.getObjectByName('helper-actor');
       const snapshot = () => ({ ...view.info(), actor: actor.position.toArray(), screen: view.helperScreen(),
