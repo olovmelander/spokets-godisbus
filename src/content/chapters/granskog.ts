@@ -139,6 +139,14 @@ export const granskog: ChapterData = {
     { x: 208, y: -8 },
     { x: 208, y: 4 },
   ],
+  // What four of the blocks above are, for the picture only: a model stands over each, with its top where the
+  // outline has the block's. The simulation never reads this.
+  landmarks: [
+    { look: 'cone', from: 20, to: 23.5, base: 0 },
+    { look: 'anthill', from: 60, to: 66, base: 4 },
+    { look: 'log', from: 132, to: 137, base: -8 },
+    { look: 'stone', from: 183, to: 185.4, base: -8 },
+  ],
   checkpoints: [
     { x: 4, y: 0 },
     { x: 27, y: 0 },
