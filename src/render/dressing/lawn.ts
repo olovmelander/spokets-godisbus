@@ -6,7 +6,8 @@ import { KIT, grows, heightAt, sequence } from './kit';
 // --- the garden ---------------------------------------------------------------------------------------------
 
 /** One stretch of the lawn, as he sees it: a jungle behind the path, stubble where he walks, and dew on it all. */
-export function lawn(chapter: ChapterData, from: number, to: number, seed: number): Group {
+/** `birches`: whether a birch stands now and then far behind; below the deck at home the garden opens without. */
+export function lawn(chapter: ChapterData, from: number, to: number, seed: number, birches = true): Group {
   const group = new Group();
   const next = sequence(seed);
   const place = new Object3D();
@@ -120,7 +121,7 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
   // A birch now and then, far behind the path.
   const trunks = new InstancedMesh(KIT.trunk, KIT.birch, 2);
   n = 0;
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < (birches ? 2 : 0); i++) {
     const x = from + next() * length;
     const z = -8 - next() * 9;
     if (next() > 0.4 || !grows(chapter, x)) continue;

@@ -63,21 +63,27 @@ try {
     const opening = await page.evaluate(async ({ tier }) => {
       const f = await import('/spokets-godisbus/opening-story-fixture.js');
       const sim = new f.Sim(f.prolog), view = f.createView(document.getElementById('game'), f.prolog, tier, true);
+      // A moment of one of the prologue's scenes, as the simulation would give it, or none.
+      let frame = null;
       const draw = (dt = 0) => view.render({ prev: sim.prev, curr: sim.curr, alpha: 1, dt,
         atGoal: false, collected: sim.collected, checkpoint: sim.checkpoint, movers: sim.movers,
         drips: sim.drips, flags: sim.flags, ghost: sim.ghost, rollers: sim.rollers, tussocks: sim.tussocks,
-        gusts: sim.gusts, help: sim.help, berries: sim.berries, prologue: sim.prologue?.frame });
+        gusts: sim.gusts, help: sim.help, berries: sim.berries, prologue: sim.prologue?.frame, scene: frame });
       await view.ready;
-      for (let i = 0; i < 5; i++) draw(.1);
+      // The morning at the table, near its end: the whole family in the wide picture.
+      frame = { id: 'morgon', seconds: 9.6 };
+      for (let i = 0; i < 40; i++) draw(.1);
       const scene = f.renderedScene();
-      const relatives = ['mamma', 'pappa', 'moa', 'bertil'].map((who) => scene.getObjectByName(`prologue-${who}`));
+      const relatives = ['mamma', 'pappa', 'moa', 'bertil'].map((who) => scene.getObjectByName(`stage-${who}`));
       const ghost = scene.getObjectByName('chase-ghost'), bag = scene.getObjectByName('stolen-saturday-bag');
       const snapshot = () => ({ ...view.info(), eyes: [0, 1].map((i) => ghost.getObjectByName(`ghost-eye-${i}`).visible),
         bag: bag.visible, tear: bag.getObjectByName('saturday-bag-tear').visible,
         star: scene.getObjectByName('spot:star').visible, family: relatives.map((actor) => ({ visible: actor.visible, at: actor.position.toArray(), corners: f.bounds(actor) })),
         scale: scene.getObjectByName('elof').scale.y, candy: f.candyScales(scene.getObjectByName('trail-candy')) });
-      window.probe = { f, sim, view, draw, scene, snapshot };
-      return snapshot();
+      window.probe = { f, sim, view, draw, scene, snapshot, at: (next) => { frame = next; } };
+      const opening = snapshot();
+      frame = null;
+      return opening;
     }, { tier });
     check(`${name}: opening frames all four relatives beside normal-size Elof`, opening.family.every((actor) => actor.visible && actor.corners.every(([x, y]) => Math.abs(x) < 1 && Math.abs(y) < 1)) && Math.abs(opening.scale - 3) < .01);
     check(`${name}: new carving has no eyes, stolen bag, star or candy trail`, opening.eyes.every((eye) => !eye) && !opening.bag && !opening.star && opening.candy.every((size) => size === 0));
@@ -97,12 +103,14 @@ try {
     check(`${name}: torn bag releases candy behind the ghost and reserves the star for the family scene`, torn.tear && !torn.star && torn.candy.some((size) => size > .9) && torn.candy.at(-1) === 0);
     const before = await page.evaluate(() => {
       const p = window.probe;
-      for (const state of [p.sim.prev, p.sim.curr]) { state.x = 41; state.y = -.79; state.grounded = true; state.vx = state.vy = 0; }
-      p.sim.ghost.x = 48; p.sim.ghost.y = 2.4;
+      for (const flag of ['scene:morgon', 'woke', 'grab', 'scene:vaknar', 'mamma:noticed']) p.sim.flags.add(flag);
+      for (const state of [p.sim.prev, p.sim.curr]) { state.x = 40.5; state.y = -.79; state.grounded = true; state.vx = state.vy = 0; }
+      p.sim.ghost.x = 44.4; p.sim.ghost.y = -.8;
       for (let i = 0; i < 10; i++) p.draw(.1);
       return p.snapshot();
     });
-    check(`${name}: the spilled star and whole family share the composition before shrinking`, before.star && before.family.every((actor) => actor.visible && actor.corners.every(([x, y]) => Math.abs(x) < 1 && Math.abs(y) < 1)));
+    check(`${name}: the spilled star lies ahead of him, and the family has followed him out`, before.star
+      && before.family.every((actor) => actor.visible && actor.at[0] < 40.5 && actor.at[0] > 30));
     await picture(page, join(shots, `${name}-before.png`));
     const change = await page.evaluate(() => {
       const p = window.probe; p.sim.flags.add('star'); p.draw(.4); const midway = p.snapshot();
@@ -112,10 +120,20 @@ try {
     check(`${name}: shrinking is visible and pauses at its intermediate size`, change.midway.scale > 1 && change.midway.scale < 3 && change.paused.scale === change.midway.scale);
     check(`${name}: Elof becomes one third as tall while the same family remains beside him`, Math.abs(change.after.scale - 1) < .01 && change.after.family.every((actor, i) => actor.visible && JSON.stringify(actor.at) === JSON.stringify(before.family[i].at)) && !change.after.star);
     check(`${name}: story staging stays inside the draw budget with warmed shaders`, withinDraws(change.after.drawCalls, change.after.tier) && change.after.programs === before.programs);
+    const kneeling = await page.evaluate(() => {
+      const p = window.probe;
+      p.sim.flags.add('scene:poff');
+      p.at({ id: 'familj', seconds: 5.6 });
+      for (let i = 0; i < 30; i++) p.draw(.1);
+      return p.snapshot();
+    });
+    check(`${name}: the whole family kneels round him in one picture`, kneeling.family.every((actor) => actor.visible
+      && Math.abs(actor.at[0] - 41) < 3.5 && actor.corners.every(([x, y]) => Math.abs(x) < 1.02 && y > -1.02)));
+    check(`${name}: the family's scene fits the draw budget with warmed shaders`, withinDraws(kneeling.drawCalls, kneeling.tier) && kneeling.programs === before.programs);
     await picture(page, join(shots, `${name}-after.png`));
     const restored = await page.evaluate(async ({ tier }) => {
       // The saved checkpoint is beyond the completed ride; a save before it deliberately replays it.
-      const p = window.probe, chapter = { ...p.f.prolog, spawn: { x: 45, y: 2.41 } };
+      const p = window.probe, chapter = { ...p.f.prolog, spawn: { x: 45, y: -0.79 } };
       const oldCanvas = document.getElementById('game'), canvas = document.createElement('canvas');
       canvas.id = 'game'; canvas.style.cssText = oldCanvas.style.cssText; oldCanvas.replaceWith(canvas);
       p.sim = new p.f.Sim(chapter, {}, { flags: ['eye', 'paint', 'blink', 'mamma:passed', 'bag:torn', 'star'] });

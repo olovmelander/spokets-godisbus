@@ -2,6 +2,63 @@
 
 ## State (5 October 2026)
 
+- **The story: an audit, story scenes, and the intro rebuilt** (5 October, a cloud session;
+  `docs/narrative-audit.md`; branch `ccr-6078e7de-t0rxpz`). Olov: "we really need to shift our focus to the
+  storytelling. The narrative must become the heart of both the game and the player's experience ... an intro that
+  feels incredibly atmospheric and captivating ... the chapter endings feel too sudden and flat ... We need to do a
+  complete audit of the game's narrative and gameplay".
+  - **The audit is done:** seven audits, one area each (the prologue, Gården, Granskogen, Myren, Berget, the
+    finale with home and Byn, and the threads through the whole game), 166 findings with the fix for each, in
+    `docs/narrative-audit/`, measured on the robot's timelines and in pictures with stand-ins. A research note
+    says how *Edith Finch*, *Firewatch*, *Oxenfree*, *Journey* and *Brothers* put story into play
+    (`docs/research/narrative-craft.md`; its sources were read only through a search tool's excerpts). The
+    overview says what already works, the eight things that let the story down most (the endings first: a tally
+    card 1.4 s after an invisible line, in silence), and the order of the work in fourteen pull requests.
+  - **Story scenes** (`src/sim/scene.ts`): a chapter's short authored moments as data. A scene begins on a flag,
+    at a place or at once; it can wait for a flag, for Elof to be at its place, and for quiet (the bubbles still
+    being read); it is passed over once the story has gone past it. A held scene holds his input while he
+    watches (11 s at most, a test says). It sets flags and says lines at its moments, on the simulation's 1/120 s
+    step, so a pause holds every actor and it plays the same everywhere. Only a finished scene is saved
+    (`scene:<id>`); an interrupted one plays again. For the picture: camera shots, letterbox bars, fades, a time
+    card and the title (`src/ui/scene.ts`), and actors (`src/render/stage.ts`): posable rehearsal figures in one
+    draw call each, a rig for the private models' bones (`src/render/rig.ts`), about 25 acts with two-bone reaching
+    (`src/render/acting.ts`), props (knife, brush, mug, crayon, Moa's drawing) and effects (shavings, sparkle, the
+    magic's stream, a glow, the POFF, the jay at the window). Elof can act, be drawn at another size, and ride a
+    family member's hand.
+  - **The prologue rebuilt on it** (`src/content/chapters/prolog-scenes.ts`, `ends.ts`):
+    1. *Lördagsmorgon*: a fade up on Pappa's hands carving the ghost out of a block; Moa draws; Bertil's hand
+       creeps towards the Saturday bag and Mamma stops it ("Bertil! Godiset öppnar vi ikväll."); Pappa blows off
+       the shavings, sets the ghost before Elof and holds out the brush. Elof paints the two eyes (play).
+    2. The ghost wakes while every grown-up looks at a jay at the window, so the freeze rule holds: it looks at
+       Elof, at the empty first place on Pappa's shelf, and at the bag; its magic runs into the bag and two sweets
+       glitter. Only Moa glances back and sees the glitter. "Pappa! Spöket tog min godispåse!"
+    3. Mamma's freeze joke, the chase through the hall with the family following, the bag torn on the hinge.
+    4. On the deck, now out of doors (the garden's sky and far scenery behind a railing, the lawn far below), he
+       runs into the glittering star from the bag: POFF, the ghost's size; the camera goes down with him.
+    5. The giants kneel round him, frightened ("Lillebror?! Du är ju pytteliten!", "Gör det ont?"); Pappa's
+       open hand on the planks, and stepping onto it is his choice (*Kliv upp*). He rides the palm up to their
+       faces; Moa's drawing shows the star made him small and the gold sweet glitters too, and Pappa reads it as
+       hope: "Guldgodiset kan göra dig stor igen."
+    6. Set down, he sets off after the ghost: Pappa's freeze joke at the railing, the ghost slips to the deck's
+       edge; a promise from each as he passes them kneeling; he listens at the edge until all four are said;
+       the ghost hops down into the garden, he waves to them, and the game's title comes over the garden.
+  - **Mended on the way:** the rehearsal figures leaned and nodded the wrong way (a forward lean tipped them
+    back, a nod looked up) and reaching compensated wrongly; a test now holds that a reaching hand comes where it
+    is aimed (`tests/unit/rig.test.ts`). The end card waits for the last line (7 s at most). Lines waiting when a
+    held scene begins are dropped, so a scene's lines come when they are acted. The keys' hint steps aside during
+    a scene. The tutorial teaches *Använd* at the brush and at Pappa's hand, and nothing while a scene holds him.
+    In Gården Moa no longer says "pytteliten" a second time (at the root: "Där kröp spöket in. Jag får inte
+    plats!"). Older saves: the big candies keep their meaning (the first is in the kitchen again), and a game
+    taken up past the kitchen never replays the morning or the waking.
+  - **Checked** (stand-ins, cloud): typecheck; 1,201 unit, simulation and robot tests (new: `tests/sim/scene.test.ts`,
+    the prologue's own, the rig's); the build with its size gates (437.0 KB of 450 gzipped); the privacy check;
+    the browser suites (all six parts on GitHub; locally, timing checks miss when several suites share four
+    cores, and pass alone); the whole intro played in the browser at 844×390 on Low, in pictures:
+    at most 103 draw calls in the house (of Low's 120) and 51 on the deck, and no program compiled while the
+    scenes play.
+  - **Not in this pull request (one visible outcome):** the chapter endings (the overview's step 2: a storybook
+    page, music, Moa's map), the ghost's sharpening thought, the family between help points, and every chapter's
+    own moment. The family's private models have not been posed by the new acting: that needs Olov's computer.
 - **The look: an audit of everything on screen, and the first eight of its steps built** (5 October, on
   Olov's computer; `docs/visual-audit.md`; pull requests #128 to #146, all merged). Olov:
   "make an audit of everything in the game and find everything that can be improved visually ... make it a
@@ -1491,6 +1548,22 @@
 
 **For the next session, in this order:**
 
+- **The story's pull request (this session's): Olov plays the new intro, and the story's work goes on in the
+  overview's order** (`docs/narrative-audit.md`, "The order of the work"). Nothing in it raises
+  `RELEASED_CHAPTER`, touches likeness assets or the rules.
+  - **What to look at:** a new player under `?dev` (the prologue plays from the morning), on a phone held
+    sideways and on the computer. `?dev&debug&course=prolog&at=37,0.01&flags=scene:morgon,eye,paint,woke,grab,blink,scene:vaknar,mamma:noticed,mamma:passed,bag:torn`
+    starts on the veranda, before the star. Judge the order of things, the length of each held moment, what is
+    said and when, and whether Moa's drawing explains the shrinking well enough for Elof. The family are stand-ins
+    in the pictures; on Olov's computer the private models act the same keys.
+  - **Next, one pull request each:** step 1, Gården picks up where the prologue ends (no off-screen Pappa at its
+    start); step 2, every chapter ends on a storybook page and opens on a time card, with music; step 3, sound
+    that carries the story. Then the ghost's sharpening thought, the family
+    between help points, and each chapter's own moment, in story order. All can be done in a cloud session except
+    the Blender parts the overview marks.
+  - **On Olov's computer:** pose the private family models with the new acting (`src/render/rig.ts`,
+    `createModelRig`; the bones' signs follow Elof's doll) and look at them in the prologue's scenes; the kitchen,
+    the veranda, the deck and the shelf figures are still plain shapes (question 11).
 - **Where 5 October ended: everything built is on `main`, and no pull request is open.** The last six of the
   day:
 
@@ -1711,6 +1784,9 @@ The older list, still true where it is not struck:
 | planck's scale | `lengthUnitsPerMeter` is 0.2, as the plan says. planck doesn't scale its polygon skin with it, so a body rests 0.019 EL above the ground; the simulation takes that off Elof's reported height. | Session, 3 Oct (`src/sim/sim.ts`) |
 | Draw calls | 120 on Low, 160 on Mid, 200 on High, where it was 120 on every tier. The game is tuned for High, which the family's devices are expected to run; Low keeps the old number for older phones, and what is added for High stays out of Low's picture where it would not fit. A check that cannot say its tier is held to Low's. The numbers are in `tests/browser/budget.mjs`. They are an estimate (about 4 ms of a 10 ms frame at 200): the frame time on the devices, from `?bench`, is what will tell. | Olov, 5 Oct: "Raise the graphical threshold to enable for better graphics" |
 | Tone mapping | Neutral, not AgX. The plan allows either (§6.5). With AgX the sky and every flat colour turned grey once the picture went through the HDR buffer; Neutral keeps a colour as it was set. Olov judges the look at H1a. | Session, 3 Oct (`src/render/view.ts`) |
+| Story first | The narrative is the heart of the game: story is put into play (scenes the player stands in, choices that are his, the family's help shown), measured against `docs/narrative-audit.md` and its order of work. | Olov, 5 Oct: "we really need to shift our focus to the storytelling" |
+| Story scenes | A chapter's authored moments are data on the simulation's clock (`src/sim/scene.ts`): a held scene is 11 s at most and holds his input; only a finished scene is saved; one taken up later is passed over by its `until` flag or its place. The picture's side (shots, acting, props) never changes the play. | Session, 5 Oct |
+| Why he shrinks | The ghost's magic runs into the Saturday bag as it takes it: a star from the bag makes Elof small, and the gold sweet glitters too and can make him big again. Moa saw the glitter and draws it; Pappa reads the hope. | Session's proposal, 5 Oct (question 15) |
 | Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
 
 ## Planned against actual
@@ -1721,11 +1797,19 @@ The older list, still true where it is not struck:
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. Broader spatial work, Byn's return loop, final likeness/contact/acting/memory art, listening and device checkpoints remain; no release is declared. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, and the prologue rebuilt as scenes with an outdoor deck. Broader spatial work, Byn's return loop, final likeness/contact/acting/memory art, the story's further steps (endings first), listening and device checkpoints remain; no release is declared. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. |
 
 ## Known bugs
 
+- **The prologue's stand-ins act roughly** (5 October): box figures in place of the family, so a kneel or a
+  shrug reads stiffly, and Pappa's hand under Elof is a block. The private models have not been posed by the new
+  acting yet; their bones' signs follow Elof's doll and are untested with it (Olov's computer).
+- **The longest stretch Elof only watches is about 10.6 s** (the POFF with the kneeling family). A skip is not
+  needed for a replay: a chapter played again keeps its story's flags (`src/save/journey.ts`), so its scenes do not
+  play twice.
+- **A tally card still follows the prologue's title,** and Gården still opens with Pappa's two lines from off
+  screen: the overview's steps 2 and 1.
 - **Two browser suites failed by chance on GitHub this evening, and both are mended in #143** (merged):
   - `helper`, "visit and demonstration compile no new shaders and fit the draw budget (programs 29, 31, 31,
     31; draw calls 67, 318, 68, 67)", on #133 and #142. The suite waited for one of the place's models before
@@ -1918,3 +2002,10 @@ Choices the session made, for Olov to overrule if he wants:
 14. **Is the swaying and the soft growth in front calm enough?** Grass sways all the time and a breath of
     wind passes every 6.5 s; out-of-focus ferns and blades lie along the picture's lower edge. *Lugna
     animationer* stops all of it. The default: as built.
+15. **Why Elof shrinks, told in the prologue:** the ghost's magic runs into the bag as it takes it; a star from
+    the bag makes him small, and the gold sweet glitters too and can make him big again. Moa saw the glitter and
+    draws it, and Pappa reads the hope. Is that the lore you want, told this early? The default: yes. The
+    narrative audit's own fifteen questions are in `docs/narrative-audit.md` ("Frågor till Olov"); the first
+    three matter soonest: music under scenes and endings (default: yes), the family seen between help points
+    (default: two far sightings a chapter and an answer to every call), and the purpose line only on change
+    (default: yes).

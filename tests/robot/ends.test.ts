@@ -35,14 +35,20 @@ function onLugnt(chapter: ChapterData) {
   return { goal: game.sim.flags.has('goal'), hops, bubbles: game.sim.bubbles, candy: game.sim.candyCount };
 }
 
-describe('Prolog, Lördagsmorgon, in greybox', () => {
+describe('Prolog, Lördagsmorgon', () => {
   for (const fps of [30, 60, 144]) {
-    it(`the robot plays it from the kitchen table to the star at ${fps} Hz`, () => {
+    it(`the robot plays it from the kitchen table to the title at ${fps} Hz`, () => {
       const result = playThrough(fps, prolog, {}, 200);
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
-      // Two eyes, the blink he watches, and the star.
-      expect(did(result.flags)).toEqual(['eye', 'paint', 'blink', 'mamma:passed', 'bag:torn', 'star', 'pappa:noticed', 'pappa:done', 'goal']);
-      expect(result.said).toEqual(['newGhost', 'tonight', 'stolenBag', 'fallenStar', 'tinyElof', 'follow1', 'follow2']);
+      // The morning, two eyes, the waking he watches, the chase, the star, the family, Pappa's hand and the title.
+      expect(did(result.flags).filter((flag) => !flag.startsWith('scene:'))).toEqual([
+        'eye', 'paint', 'woke', 'grab', 'blink', 'mamma:noticed', 'mamma:passed', 'bag:torn', 'star', 'hand',
+        'pappa:noticed', 'snuck', 'pappa:done', 'leap', 'titel', 'goal']);
+      // The title is still on the screen when the chapter reaches its goal: its scene ends behind the card.
+      expect(did(result.flags).filter((flag) => flag.startsWith('scene:'))).toEqual(
+        ['scene:morgon', 'scene:vaknar', 'scene:poff', 'scene:familj', 'scene:handen', 'scene:lofte']);
+      expect(result.said).toEqual(['morgon:0', 'morgon:1', 'vaknar:0', 'vaknar:1', 'dropped', 'fallenStar', 'poff:0', 'familj:0', 'familj:1',
+        'handen:0', 'handen:1', 'onlyWood', 'snuck', 'nearYou', 'mapForYou', 'heja', 'followTrail']);
       expect(result.bubbles).toBe(0);
       expect(result.missed).toEqual([]);
     });
@@ -68,24 +74,54 @@ describe('Prolog, Lördagsmorgon, in greybox', () => {
     expect(sim.said).not.toContain('tinyElof');
   });
 
-  it('cannot be walked past: the ghost waits for its eyes, the star for the ghost, and the step for the star', () => {
+  it('cannot be walked past: the ghost waits for its eyes, the star for the ghost, and the title for the family', () => {
     const sim = new Sim(prolog);
-    run(sim, 30, { x: 1, hopHeld: true });
+    run(sim, 40, { x: 1, hopHeld: true });
     expect(sim.flags.has('goal')).toBe(false);
-    expect(sim.curr.x).toBeLessThan(42.4);
     // The ghost has not moved from the table.
-    expect(sim.ghost!.x).toBeCloseTo(6.6, 1);
+    expect(sim.ghost!.x).toBeCloseTo(4.6, 1);
     // And the star can't be taken before the ghost has run.
     const early = new Sim({ ...prolog, spawn: { x: 41, y: -0.79 } });
     run(early, 0.3);
     expect(early.curr.verb).toBeNull();
+  });
+
+  it('opens on the morning: he watches Pappa carve, and is let go to paint the eyes', () => {
+    const sim = new Sim(prolog);
+    run(sim, 5, { x: 1, hopHeld: true, act: true });
+    expect(sim.sceneFrame?.id).toBe('morgon');
+    expect(sim.curr.x).toBeCloseTo(prolog.spawn.x, 1);
+    run(sim, 6);
+    expect(sim.flags.has('scene:morgon')).toBe(true);
+    expect(sim.sceneFrame).toBeNull();
+    run(sim, 0.4, { x: 1 });
+    expect(sim.curr.word).toBe('paintGhost');
+  });
+
+  it('makes him small when he runs into the star, and lets him choose Pappa\'s hand', () => {
+    const sim = new Sim({ ...prolog, spawn: { x: 39, y: -0.79 } }, {}, { flags: ['eye', 'paint', 'blink', 'mamma:passed', 'bag:torn'] });
+    run(sim, 0.3);
+    expect(sim.flags.has('star')).toBe(false);
+    run(sim, 0.8, { x: 1 });
+    expect(sim.flags.has('star')).toBe(true);
+    run(sim, 0.2);
+    expect(sim.sceneFrame?.id).toBe('poff');
+    run(sim, 11);
+    expect(sim.flags.has('scene:familj')).toBe(true);
+    // Nothing goes on until he steps onto the hand himself.
+    run(sim, 5);
+    expect(sim.flags.has('hand')).toBe(false);
+    expect(sim.curr.word).toBe('climbOn');
+    sim.step({ ...idle, act: true });
+    run(sim, 0.2);
+    expect(sim.sceneFrame?.id).toBe('handen');
   });
 });
 
 describe('the blink: a beat of the story that takes time', () => {
   /** Elof at the ghost, having painted one eye. */
   const atTheGhost = () => {
-    const sim = new Sim({ ...prolog, spawn: { x: 4.6, y: 0.01 } });
+    const sim = new Sim({ ...prolog, spawn: { x: 3.4, y: 0.01 } }, {}, { flags: ['scene:morgon'] });
     run(sim, 0.2);
     sim.step({ ...idle, act: true });
     sim.finishStory({ kind: 'paint', traces: [guidedEye(116)] });
@@ -103,21 +139,24 @@ describe('the blink: a beat of the story that takes time', () => {
     expect(sim.flags.has('paint')).toBe(true);
   });
 
-  it('holds him while the ghost looks at the shelf and the bag, and then lets it run', () => {
+  it('holds him while the ghost wakes and looks at the shelf and the bag, and then lets it run', () => {
     const sim = atTheGhost();
     sim.step({ ...idle, act: true });
     sim.finishStory({ kind: 'paint', traces: [guidedEye(204)] });
     const x = sim.curr.x;
-    // He watches: the stick does nothing, and the ghost has not moved.
-    run(sim, 2.2, { x: 1, hop: true, hopHeld: true });
+    // He watches: the stick does nothing, and the ghost is still on the table.
+    run(sim, 4.6, { x: 1, hop: true, hopHeld: true });
     expect(sim.flags.has('blink')).toBe(false);
     expect(sim.curr.x).toBeCloseTo(x, 1);
     expect(sim.curr.grounded).toBe(true);
-    expect(sim.ghost!.x).toBeCloseTo(6.6, 1);
-    // Then it is over: the bag is gone with the ghost, the trail lies there, and he can run.
-    run(sim, 0.6);
+    expect(sim.ghost!.x).toBeCloseTo(4.6, 1);
+    // It takes the bag, and the bag's magic begins: the chase starts at the scene's end.
+    run(sim, 1.4);
+    expect(sim.flags.has('grab')).toBe(true);
+    expect(sim.ghost!.x).toBeCloseTo(6.5, 1);
+    run(sim, 1.6);
     expect(sim.flags.has('blink')).toBe(true);
-    run(sim, 4.5, { x: 1 });
+    run(sim, 6, { x: 1 });
     expect(sim.curr.x).toBeGreaterThan(x + 2);
     expect(sim.ghost!.x).toBeGreaterThan(8);
     expect(sim.candyCount).toBeGreaterThan(0);
@@ -128,20 +167,22 @@ describe('the blink: a beat of the story that takes time', () => {
   });
 
   it('begins again from its start in a game saved in the middle of it', () => {
-    const sim = new Sim({ ...prolog, spawn: { x: 4.6, y: 0.01 } }, {}, { flags: ['eye', 'paint'] });
-    run(sim, 2.2);
-    expect(sim.flags.has('blink')).toBe(false);
-    run(sim, 0.6);
+    const sim = new Sim({ ...prolog, spawn: { x: 3.4, y: 0.01 } }, {}, { flags: ['scene:morgon', 'eye', 'paint', 'woke'] });
+    run(sim, 0.1);
+    expect(sim.sceneFrame).toEqual({ id: 'vaknar', seconds: expect.any(Number) });
+    expect(sim.sceneFrame!.seconds).toBeLessThan(0.2);
+    run(sim, 7.5);
     expect(sim.flags.has('blink')).toBe(true);
   });
 
   it('shows what the ghost looks at: the empty place on the shelf, and then the bag', () => {
     const shelf = prolog.shelf!;
     const bag = prolog.decor!.find((d) => d.look === 'bag')!;
-    expect(prolog.glance!.at[0]).toMatchObject({ x: shelf.x - 3.6 });
-    expect(prolog.glance!.at[1]).toMatchObject({ x: bag.at.x });
-    expect(prolog.glance!.seconds).toBe(prolog.later![0]!.seconds);
-    expect(bag.until).toBe('blink');
+    const looks = prolog.scenes!.find((scene) => scene.id === 'vaknar')!.stage!.actors!.ghost!.filter((key) => key.act === 'look');
+    expect(looks).toHaveLength(3);
+    expect(looks[1]!.aim!.x).toBeCloseTo(shelf.x - 3.6);
+    expect(looks[2]!.aim!.x).toBeCloseTo(bag.at.x);
+    expect(bag.until).toBe('grab');
   });
 });
 

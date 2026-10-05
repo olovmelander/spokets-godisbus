@@ -37,6 +37,8 @@ import { createTitle } from './ui/title';
 import { createPhotoAlbum } from './ui/photos';
 import { createOffline } from './platform/offline';
 import { createStoryPanel } from './ui/story';
+import { createSceneUi } from './ui/scene';
+import { sceneBeats } from './sim/scene';
 import { createDevicePlay, createHighLanding, isAndroid } from './platform/device';
 import './ui/ui.css';
 
@@ -192,9 +194,12 @@ function start(): void {
     },
     cancel() { game.sim.cancelStory(); input.release(); game.resume(); canvas.focus(); },
   });
-  const beats = new Map((chapter.beats ?? []).map((beat) => [beat.id, beat]));
+  // What is said along the way, and in the chapter's scenes (src/sim/scene.ts).
+  const beats = new Map([...(chapter.beats ?? []), ...sceneBeats(chapter.scenes)].map((beat) => [beat.id, beat]));
+  const sceneUi = createSceneUi(document);
   // What was said before this game was taken up again is not said again.
   let told = game.sim.said.length;
+  let sceneHeard: string | null = null;
   const controls = byId('controls');
   const hint = byId('hint');
 
@@ -609,6 +614,7 @@ function start(): void {
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
         pointing: { last: pointing.last, walking: pointing.walking }, tutorial: tutorial.shown, playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(), noteHits: game.sim.noteHits, bootReady, contextLost, ending: { open: ending.open, seconds: ending.seconds }, prologue: game.sim.prologue?.frame ?? null,
+        scene: game.sim.sceneFrame, held: game.sim.held,
       }),
       screen: (at) => view.worldScreen(at),
       info: () => ({ ...view.info(), busyMs, autoSettled: auto?.settled ?? true,
@@ -787,8 +793,8 @@ function start(): void {
       if (bench && !bench.done) ({ held, edges } = bench.play(game.sim.curr, time));
       edges = { ...edges, helper: edges.helper || askedForHelp, act: edges.act || askedForUse };
       held = pointing.steer(held, edges);
-      game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld }, edges);
-      tutorial.update(dt, game.sim.curr, game.sim.flags, held, edges);
+      game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld, talking: hud.speaking() }, edges);
+      tutorial.update(dt, game.sim.curr, game.sim.flags, held, edges, game.sim.held);
       askedForUse = askedForHelp = false;
       if (highLanding(game.sim.curr)) devicePlay.landing(settings.vibration);
       playTime += dt * game.tempo;
@@ -826,7 +832,7 @@ function start(): void {
     view.render({
       prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: menuOpen() ? 0 : dt, atGoal,
       collected: game.sim.collected, side: game.sim.collectedSide, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
-      prologue: game.sim.prologue?.frame, ending: ending.seconds,
+      prologue: game.sim.prologue?.frame, scene: game.sim.sceneFrame, ending: ending.seconds,
       flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts, help: game.sim.help,
       berries: game.sim.berries,
       noteHits: game.sim.noteHits,
@@ -839,6 +845,7 @@ function start(): void {
       if (blob && !photosStopped && await photoStore.put({ player: photoPlayer, moment, blob })) await photoAlbum.refresh();
     });
     tutorialView.show(menuOpen() || platformBlocked() ? null : tutorial.shown, device, settings.followFinger, view.playerScreen());
+    sceneUi.show(chapter.scenes, game.sim.sceneFrame, menuOpen() && !paused);
     hud.candy(game.sim.candyCount);
     storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !menuOpen());
     hud.verb(game.sim.curr.verb, game.sim.curr.word);
@@ -878,15 +885,22 @@ function start(): void {
       const keepsakes = Object.values(all).some((flags) => flags.includes('keepsake:vittra')) ? ['vittra'] : [];
       byId('pauseAlbum').innerHTML = mapState(chapter.id, canEnter) ? albumHtml(found, lost, keepsakes) + memoryAlbumHtml(all) : '';
     }
+    // A held scene takes the floor as it begins: what was said before it is not read over it.
+    const scene = game.sim.sceneFrame;
+    if (scene && scene.id !== sceneHeard) {
+      if (chapter.scenes?.find((def) => def.id === scene.id)?.hold) hud.hush();
+    }
+    sceneHeard = scene?.id ?? null;
     for (; told < game.sim.said.length; told++) {
       const beat = beats.get(game.sim.said[told]!);
       if (beat) hud.say(beat.who, beat.line, beat.priority);
     }
     // What is said waits while a memory plays: its line comes after it.
     hud.tick(menuOpen() ? 0 : dt);
-    // The end: a moment to arrive, then the card with the candy in rows of ten.
+    // The end: a moment to arrive, then the card with the candy in rows of ten. The last words are let finish
+    // first, for a few seconds at most: a chapter must not end over what someone is saying.
     if (atGoal) endFor += menuOpen() ? 0 : dt;
-    if (endFor > 1.4 && !benchOn && !ended) {
+    if (endFor > 1.4 && (!hud.speaking() || endFor > 7) && !benchOn && !ended) {
       ended = true;
       paused = true;
       audio.sleep(true);

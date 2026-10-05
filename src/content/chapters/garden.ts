@@ -371,7 +371,8 @@ export const garden: ChapterData = {
     { id: 'follow1', at: 0.9, who: 'pappa', line: 'follow1' },
     { id: 'follow2', at: 3.2, who: 'pappa', line: 'follow2' },
     { id: 'stomp', at: 155.6, who: 'elof', line: 'stomp' },
-    { id: 'moa1', at: 161.5, who: 'moa', line: 'tiny' },
+    // Moa saw him made small on the deck: here she sees why it is good to be small.
+    { id: 'moa1', at: 161.5, who: 'moa', line: 'rootFingers' },
     { id: 'garden:ready', on: 'moa', who: 'moa', line: 'gardenReady' },
     { id: 'garden:pocket', on: 'moa', who: 'moa', line: 'gardenPocket' },
     { id: 'garden:found', on: 'garden:paper', who: 'elof', line: 'gardenFound' },

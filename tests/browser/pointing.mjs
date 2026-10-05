@@ -86,6 +86,8 @@ async function open(name, options = {}, query = '?debug&standin&tier=low', init)
 }
 
 const query = (at, extra = '') => `?dev&debug&standin&course=prolog&tier=low&at=${at}${extra}`;
+/** Shrunk, with the family kneeling: Pappa's hand is offered. */
+const HAND = 'scene:morgon,eye,paint,woke,grab,blink,scene:vaknar,mamma:noticed,mamma:passed,bag:torn,star,scene:poff,scene:familj';
 const screen = (page, x, y) => page.evaluate(at => window.__godis.screen(at), { x, y });
 const shots = fileURLToPath(new URL('../../docs/shots/_work/', import.meta.url));
 mkdirSync(shots, { recursive: true });
@@ -139,7 +141,7 @@ try {
     await until(state, s => s.pointing.last === 'candy', 'tap candy');
     await until(state, s => s.candy > before.candy && !s.pointing.walking && s.vx === 0, 'ordinary walking collects the candy');
     check('near candy gives one short safe stroll and stops', (await state()).x < 36.5 && (await state()).bubbles === 0);
-    const star = await screen(page, 41, -0.2);
+    const star = await screen(page, 41.7, -0.2);
     assert.ok(star, 'far star is framed');
     const where = (await state()).x;
     await page.mouse.click(star.x, star.y);
@@ -153,37 +155,40 @@ try {
   console.log('pointing: actual touch actions in both orientations and follow-finger gesture safety');
   for (const viewport of [{ width: 844, height: 390 }, { width: 390, height: 844 }]) {
     const name = `tap-${viewport.width}`;
-    const { page, context, state, finish } = await open(name, { viewport, hasTouch: true, isMobile: true }, query('40.5,-0.79', '&flags=blink'));
-    await until(state, s => s.grounded && s.verb === 'take' && s.steps > 30, 'near the star');
+    // The star is taken by running into it; the action offered here is Pappa's open hand (*Kliv upp*).
+    const { page, context, state, finish } = await open(name, { viewport, hasTouch: true, isMobile: true }, query('40.6,-0.79', `&flags=${HAND}`));
+    await until(state, s => s.grounded && s.verb === 'take' && s.steps > 30, 'near the hand');
     await page.tap('#pauseBtn');
     await page.check('#setFollowFinger');
     if (viewport.width === 390) await page.check('#setLefty');
     await page.tap('#resumeBtn');
     const cdp = await context.newCDPSession(page);
     const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
-    const star = await screen(page, 41, -0.2);
-    assert.ok(star, `${name}: star is framed`);
-    const finger = { ...star, id: 1 };
+    // Where the game offers the hand's action: over the hand, clear of Elof himself (Sim.actionAt).
+    const hand = await screen(page, 40.9, 0.7);
+    assert.ok(hand, `${name}: the hand is framed`);
+    const finger = { ...hand, id: 1 };
     await touch('touchStart', [finger]);
     await touch('touchMove', [{ ...finger, x: finger.x + 24 }]);
     await touch('touchMove', [finger]);
     await touch('touchEnd', []);
     await frames(page, 3);
-    check(`${name}: a drag out and back never becomes an action`, !(await state()).flags.includes('star'));
+    check(`${name}: a drag out and back never becomes an action`, !(await state()).flags.includes('hand'));
     await touch('touchStart', [finger]);
     await touch('touchCancel', []);
     await frames(page, 3);
-    check(`${name}: a cancelled finger never acts`, !(await state()).flags.includes('star'));
-    const at = await screen(page, 41, -0.2);
+    check(`${name}: a cancelled finger never acts`, !(await state()).flags.includes('hand'));
+    const at = await screen(page, 40.9, 0.7);
     await page.touchscreen.tap(at.x, at.y);
-    await until(state, s => s.flags.includes('star'), `${name}: near star touch`);
-    check(`${name}: a quick near-target tap uses the offered action`, (await state()).pointing.last === 'use' && (await state()).mode === 'ride');
+    await until(state, s => s.flags.includes('hand'), `${name}: near hand touch`);
+    check(`${name}: a quick near-target tap uses the offered action`, (await state()).pointing.last === 'use' && (await state()).flags.includes('hand'));
     await finish();
   }
 
   console.log('tutorial: one idle prompt, discovered controls disappear, pause and reduced motion');
   {
-    const { page, state, finish } = await open('move lesson', { reducedMotion: 'reduce' }, query('1,0.01'));
+    // After the morning's scene: nothing is taught while a scene holds him.
+    const { page, state, finish } = await open('move lesson', { reducedMotion: 'reduce' }, query('1,0.01', '&flags=scene:morgon'));
     const initial = await state();
     check('movement prompt starts hidden', await page.locator('#tutorial').isHidden());
     await shown(page, 'move');
@@ -216,15 +221,15 @@ try {
     await page.tap('#hopBtn');
     await until(state, s => s.y > 0.3 && !s.grounded, 'Hoppa responds normally');
     check(`${name}: jumping dismisses the learned cue`, await page.locator('#tutorial').isHidden());
-    await page.goto(`${origin}${BASE}${query('40.5,-0.79', '&flags=blink')}`);
+    await page.goto(`${origin}${BASE}${query('40.6,-0.79', `&flags=${HAND}`)}`);
     await ready(page);
     await page.touchscreen.tap(15, viewport.height / 2);
     await shown(page, 'act');
     const useHint = await page.locator('#tutorial').boundingBox();
     const use = await page.locator('#actBtn').boundingBox();
-    check(`${name}: the next idle cue points only at Använd`, Math.abs(useHint.x + useHint.width / 2 - use.x - use.width / 2) < 2 && !(await state()).flags.includes('star'));
+    check(`${name}: the next idle cue points only at Använd`, Math.abs(useHint.x + useHint.width / 2 - use.x - use.width / 2) < 2 && !(await state()).flags.includes('hand'));
     await page.tap('#actBtn');
-    await until(state, s => s.flags.includes('star'), 'Använd responds normally');
+    await until(state, s => s.flags.includes('hand'), 'Använd responds normally');
     check(`${name}: the prompt never blocks the real button`, await page.locator('#tutorial').isHidden());
     await finish();
   }

@@ -47,8 +47,10 @@ describe('Elof\'s Saturday bag', () => {
     const bag = saturdayBag();
     expect(bag.name).toBe('saturday-bag');
     expect(tear(bag).visible).toBe(false);
-    const asked = bag.children.map((child) => (child.userData.sweet as SweetSocket).shape);
+    const asked = bag.children.flatMap((child) => child.userData.sweet ? [(child.userData.sweet as SweetSocket).shape] : []);
     expect(asked).toEqual(['lordagspase', 'reva']);
+    // And the gold sweet's glint at its mouth, which is the story's to show (plan §3.3 rule 3).
+    expect(bag.getObjectByName('saturday-bag-glow')?.visible).toBe(false);
     expect((bag.children[0]!.children[0] as InstancedMesh).isInstancedMesh).toBe(true);
   });
 

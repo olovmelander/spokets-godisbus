@@ -185,7 +185,8 @@ try {
       localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'prolog', checkpoint: 0, candy: {}, placed: {}, flags: {}, playMs: 0 }));
     });
     await page.keyboard.down('ArrowRight');
-    await until(state, (s) => s.word === 'paintGhost', 'the brush becomes reachable');
+    // The morning's scene plays first: he watches it, and walks to the brush once it has ended.
+    await until(state, (s) => s.word === 'paintGhost', 'the brush becomes reachable', 120000);
     await page.keyboard.up('ArrowRight');
     await page.keyboard.press('e');
     await page.waitForSelector('#storyPanel:not([hidden])');
@@ -215,7 +216,7 @@ try {
     await page.evaluate(installPad);
     await padPress(page, 0);
     await until(state, (s) => s.flags.includes('paint'), 'gamepad paints with help');
-    await until(state, (s) => s.flags.includes('blink'), 'the ghost blinks');
+    await until(state, (s) => s.flags.includes('blink'), 'the ghost blinks', 90000);
     check('gamepad painting releases the prologue chase', (await state()).flags.includes('blink'));
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check('finished eyes persist with this player', saved.flags.prolog.includes('eye') && saved.flags.prolog.includes('paint'));

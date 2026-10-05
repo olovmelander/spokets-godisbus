@@ -119,8 +119,9 @@ export const sv = {
       paintSecond: { purpose: 'Måla spökets andra öga.', recap: 'Ett öga är klart. Nu målar jag det andra.' },
       awakening: { purpose: 'Titta – spöket blinkar!', recap: 'Jag gav träspöket ögon. Nu verkar det vakna.' },
       chase: { purpose: 'Följ spöket – det har min påse.', recap: 'Spöket vaknade och tog min lördagsgodispåse!' },
-      starTrail: { purpose: 'Följ godisspåret till stjärnan.', recap: 'Påsen har gått sönder. Godiset visar vart spöket sprang.' },
-      tiny: { purpose: 'Gå fram till Pappa.', recap: 'Stjärnan gjorde mig pytteliten. Pappa är alldeles nära.' },
+      starTrail: { purpose: 'Följ spöket och godisspåret.', recap: 'Påsen har gått sönder. Godiset visar vart spöket sprang.' },
+      tiny: { purpose: 'Familjen är här hos mig.', recap: 'Stjärnan gjorde mig lika liten som spöket. Familjen såg det.' },
+      hand: { purpose: 'Kliv upp i Pappas hand.', recap: 'Jag krympte. Pappa sträcker fram handen åt mig.' },
       handoff: { purpose: 'Följ godisspåret ut på gården.', recap: 'Spöket har påsen. Jag kan följa det där de stora inte når.' },
       garden: { purpose: 'Följ spöket. Hitta min påse.', recap: 'Jag samlar upp godiset längs spåret. Spöket har resten.' },
       gardenMemory: { purpose: 'Följ spöket mot Moa.', recap: 'Ett minne visade Pappa, mig som liten och en trägubbe.' },
@@ -198,7 +199,7 @@ export const sv = {
       bogReturned: 'Jag gick tillbaka till gläntan. Mammas spång låter mig välja väg.',
     },
     handoffs: {
-      prolog: { title: 'Ut på gården', text: 'Spöket har min påse. Jag följer godisspåret, med familjen nära.' },
+      prolog: { title: 'Ut på gården', text: 'Spöket har min påse, med guldgodiset i. Jag följer godisspåret, och familjen går den stora vägen bredvid.' },
       garden: { title: 'Vidare till granskogen', text: 'Moas plan tar mig till skogen. De stora följer stigen runt.' },
       gardenClue: { title: 'Godisspåret leder till skogen', text: 'Spöket är längre fram. Familjen följer stigen runt.' },
       granskog: { title: 'Spöket väntar på mig', text: 'Jag hjälpte det ur vattnet. Nu visar det vägen mot myren.' },
@@ -223,6 +224,12 @@ export const sv = {
     back: 'Tillbaka',
   },
 
+  // Words a scene lays over the picture (src/ui/scene.ts): a time of day as a part of the story opens, and the title.
+  scene: {
+    morning: 'Lördagsmorgon',
+    title: 'Elof och det stora godisäventyret',
+  } as Record<string, string>,
+
   // What is said, in bubbles: the game has no voices. At most about 40 characters each (plan §3.7).
   lines: {
     follow1: 'Jag ser dig. Vi håller ihop.',
@@ -242,6 +249,7 @@ export const sv = {
     follow2: 'Vi följer stigen och hjälper dig.',
     stomp: 'Ge tillbaka mitt godis!',
     tiny: 'Lillebror?! Du är ju pytteliten!',
+    rootFingers: 'Där kröp spöket in. Jag får inte plats!',
     gardenReady: 'Planet väntar. Vi lyfter när du vill.',
     gardenPocket: 'Min lövteckning föll under spånbron!',
     gardenFound: 'En lövteckning! Den är Moas.',
@@ -266,7 +274,19 @@ export const sv = {
     first4: 'Vi tappade den här uppe.',
     // The prologue and the epilogue.
     newGhost: 'Jag har täljt ett spöke. Måla ögonen!',
-    tonight: 'Ditt lördagsgodis får du öppna ikväll.',
+    // The prologue as it is told now (docs/narrative-audit.md): a cosy morning, the ghost wakes, Elof shrinks.
+    notYet: 'Bertil! Godiset öppnar vi ikväll.',
+    jayWindow: 'Titta! En lavskrika!',
+    dropped: 'Hoppsan! Vem tappade spöket?',
+    sameSize: 'Jag är lika liten som spöket!',
+    hurt: 'Gör det ont?',
+    sawGlitter: 'Jag såg det! Påsen började glittra.',
+    goldHope: 'Guldgodiset kan göra dig stor igen.',
+    onlyWood: 'Det är ju bara trä.',
+    snuck: 'Det smiter!',
+    nearYou: 'Vi är nära dig hela tiden.',
+    mapForYou: 'Jag ritar en karta åt dig!',
+    followTrail: 'Följ godisspåret, Elof.',
     stolenBag: 'Pappa! Spöket tog min godispåse!',
     fallenStar: 'En stjärna föll ur påsen!',
     tinyElof: 'Stjärnan gör dig liten. Vi hjälper dig!',

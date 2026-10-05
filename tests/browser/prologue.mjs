@@ -87,27 +87,103 @@ async function open(name, options = {}, query = '?debug&standin&tier=low', init)
 
 try {
   browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-  if (!process.env.PROLOGUE_SCENE) {
-    const { page, state, finish } = await open('shrinking-reassurance', { hasTouch: true },
-      '?dev&debug&standin&course=prolog&tier=low&at=40,-0.79&flags=eye,paint,blink,mamma:passed,bag:torn');
-    await until(state, (s) => s.verb === 'take', 'the spilled star is offered');
-    await page.keyboard.press('e');
-    await until(state, (s) => s.flags.includes('star'), 'Elof takes the star');
-    await page.waitForFunction(() => document.getElementById('bubbleLine').textContent === 'Stjärnan gör dig liten. Vi hjälper dig!');
-    check('shrinking: Pappa immediately explains the cause and reassures Elof ahead of stale dialogue',
-      await page.locator('#bubble').getAttribute('data-who') === 'pappa');
-    await page.keyboard.press('Escape');
-    const line = await page.locator('#bubbleLine').textContent();
-    await sleep(250);
-    check('shrinking: pausing keeps the explanation available', await page.locator('#bubbleLine').textContent() === line);
-    await page.keyboard.press('Escape');
+  // Scenes run on the game's own clock. Drawn in software, with other suites beside it, the game falls well
+  // behind the wall clock (a fifth of its speed at times, with other suites beside it), so every wait for a scene is long.
+  // The flags of a game that has come to the veranda: the morning and the waking told, the bag torn.
+  const VERANDA = 'scene:morgon,eye,paint,woke,grab,blink,scene:vaknar,mamma:noticed,mamma:passed,bag:torn';
+  if (!process.env.PROLOGUE_SCENE || process.env.PROLOGUE_SCENE === 'morning') {
+    const { page, state, info, finish } = await open('morning', {}, '?dev&debug&standin&course=prolog&tier=low');
+    const programs = (await info()).programs;
+    await until(state, (s) => s.scene?.id === 'morgon' && s.scene.seconds > 1.2, 'the morning scene plays first', 120000);
+    check('morning: he watches it, held, between dark bars', (await state()).held && await page.evaluate(() => document.body.classList.contains('scene-bars')));
+    check('morning: the time of day is shown', await page.locator('#sceneCaption').textContent() === 'Lördagsmorgon');
+    const x = (await state()).x;
     await page.keyboard.down('ArrowRight');
-    // The walk takes about 14 s of the game's own time. On GitHub's software renderer a frame of the room's
-    // floor takes long enough for the game to fall a little behind the clock, and 15 s were too few in two
-    // runs of five once the floor filled the lower third of the picture (#141): he was still walking, at x 50.
-    await until(state, (s) => s.flags.includes('goal'), 'fast shrinking flow reaches its handoff', 40000);
+    await sleep(500);
     await page.keyboard.up('ArrowRight');
-    check('shrinking: the safe ride and family tableau still complete', (await state()).flags.includes('pappa:done'));
+    check('morning: the keys do nothing while it tells', Math.abs((await state()).x - x) < 0.01);
+    await sleep(700);
+    check('morning: the keys\' hint steps aside', await page.locator('#hint').evaluate((node) => getComputedStyle(node).opacity) === '0');
+    await page.keyboard.press('Escape');
+    const paused = await state();
+    await sleep(400);
+    check('morning: a pause holds the scene\'s clock', (await state()).scene.seconds === paused.scene.seconds);
+    await page.keyboard.press('Escape');
+    check('morning: draw budget', withinDraws((await info()).drawCalls, (await info()).tier));
+    await until(state, (s) => s.said.includes('morgon:1'), 'Pappa holds out the brush', 120000);
+    check('morning: Pappa asks him to paint the eyes', await page.locator('#bubbleLine').textContent() === 'Jag har täljt ett spöke. Måla ögonen!');
+    await until(state, (s) => !s.held && s.scene === null, 'the morning ends', 120000);
+    await page.keyboard.down('ArrowRight');
+    await until(state, (s) => s.word === 'paintGhost', 'the brush becomes reachable', 120000);
+    await page.keyboard.up('ArrowRight');
+    for (const eye of ['eye', 'paint']) {
+      await page.keyboard.press('e');
+      await page.waitForSelector('#storyPanel:not([hidden])');
+      await page.locator('#strokeAssist').click();
+      await until(state, (s) => s.flags.includes(eye), `the ${eye} is painted`, 120000);
+    }
+    // The waking takes the floor: the line the jay calls for comes first, not what was said before.
+    await until(state, (s) => s.scene?.id === 'vaknar', 'the ghost wakes', 120000);
+    await page.waitForFunction(() => !document.getElementById('bubble').hidden && document.getElementById('bubbleLine').textContent === 'Titta! En lavskrika!', null, { timeout: 120000 });
+    check('waking: Mamma looks at the jay as it begins', (await state()).scene.seconds < 2.5);
+    check('waking: draw budget', withinDraws((await info()).drawCalls, (await info()).tier));
+    await until(state, (s) => s.flags.includes('blink') && s.scene?.id !== 'vaknar', 'the ghost takes the bag and runs', 120000);
+    const woke = await state();
+    check('waking: the ghost has woken, taken the bag and run', ['woke', 'grab', 'blink', 'scene:vaknar'].every((flag) => woke.flags.includes(flag)));
+    check('morning and waking: no shader is compiled while they play', (await info()).programs === programs);
+    await finish();
+  }
+  if (!process.env.PROLOGUE_SCENE || process.env.PROLOGUE_SCENE === 'shrinking') {
+    const { page, state, info, finish } = await open('shrinking', { hasTouch: true },
+      `?dev&debug&standin&course=prolog&tier=low&at=37,0.01&flags=${VERANDA}`);
+    const programs = (await info()).programs;
+    await page.keyboard.down('ArrowRight');
+    await until(state, (s) => s.flags.includes('star'), 'he runs into the star', 120000);
+    await page.keyboard.up('ArrowRight');
+    await until(state, (s) => s.scene?.id === 'poff', 'POFF', 120000);
+    const held = await state();
+    await page.keyboard.down('ArrowLeft');
+    await sleep(400);
+    await page.keyboard.up('ArrowLeft');
+    check('shrinking: he is held while it happens', held.held && (await state()).x >= held.x - 0.05);
+    await until(state, (s) => s.scene?.id === 'familj', 'the family comes down to him', 120000);
+    check('shrinking: draw budget with the whole family kneeling', withinDraws((await info()).drawCalls, (await info()).tier));
+    await until(state, (s) => !s.held && s.word === 'climbOn', 'Pappa\'s hand is offered', 120000);
+    check('shrinking: stepping onto the hand is his choice', await page.locator('#actBtn').textContent() === 'Kliv upp' && !(await state()).flags.includes('hand'));
+    await page.keyboard.press('e');
+    await until(state, (s) => s.scene?.id === 'handen', 'he is lifted', 120000);
+    await page.waitForFunction(() => document.getElementById('bubbleLine').textContent === 'Jag såg det! Påsen började glittra.', null, { timeout: 120000 });
+    await page.keyboard.press('Escape');
+    const lifted = await state();
+    await sleep(350);
+    check('shrinking: a pause holds the lift', (await state()).scene.seconds === lifted.scene.seconds);
+    await page.locator('#pause').evaluate((node) => { node.style.visibility = 'hidden'; });
+    await picture(page, '/tmp/prologue-hand.png');
+    await page.locator('#pause').evaluate((node) => { node.style.visibility = ''; });
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => document.getElementById('bubbleLine').textContent === 'Guldgodiset kan göra dig stor igen.', null, { timeout: 120000 });
+    check('shrinking: Pappa reads the hope in Moa\'s drawing', await page.locator('#bubble').getAttribute('data-who') === 'pappa');
+    // Set down again, he has his feet back: Pappa notices the ghost as he sets off towards it.
+    await until(state, (s) => s.flags.includes('scene:handen') && !s.held, 'he is set down', 120000);
+    await page.keyboard.down('ArrowRight');
+    await until(state, (s) => s.prologue?.kind === 'pappa', 'Pappa notices the ghost', 120000);
+    await page.keyboard.up('ArrowRight');
+    await until(state, (s) => s.flags.includes('pappa:done'), 'Pappa\'s freeze joke', 120000);
+    check('shrinking: the walk to the edge is still his', !(await state()).flags.includes('goal'));
+    await page.keyboard.down('ArrowRight');
+    // He stops at the edge and listens to the promises before the title.
+    await until(state, (s) => s.x > 51.4 && s.held, 'he stops at the edge', 120000);
+    await page.keyboard.up('ArrowRight');
+    await until(state, (s) => s.scene?.id === 'titel', 'the title scene', 120000);
+    const promised = await state();
+    check('shrinking: all four promises were said before the title', ['nearYou', 'mapForYou', 'heja', 'followTrail'].every((id) => promised.said.includes(id)));
+    await until(state, (s) => s.scene?.id === 'titel' && s.scene.seconds > 5.5, 'the title shows', 120000);
+    check('shrinking: the game\'s title over the garden', await page.locator('#sceneTitle').textContent() === 'Elof och det stora godisäventyret'
+      && Number(await page.locator('#sceneTitle').evaluate((node) => node.style.opacity)) > 0.5);
+    await until(state, (s) => s.flags.includes('goal'), 'the prologue ends', 120000);
+    await page.waitForSelector('#endCard:not([hidden])', { timeout: 120000 });
+    check('shrinking: the chapter card follows', await page.locator('#endCard').isVisible());
+    check('shrinking: no shader is compiled on the deck', (await info()).programs === programs);
     await finish();
   }
   for (const [name, viewport, tier, kind] of [
@@ -118,11 +194,11 @@ try {
   ]) {
     if (process.env.PROLOGUE_SCENE && !name.startsWith(process.env.PROLOGUE_SCENE)) continue;
     const pappa = kind === 'pappa';
-    const flags = pappa ? 'eye,paint,blink,mamma:passed,bag:torn,star' : 'eye,paint,blink';
-    const at = pappa ? '45,2.41' : '5.5,0.01';
+    const flags = pappa ? `${VERANDA},star,scene:poff,scene:familj,hand,scene:handen` : 'scene:morgon,eye,paint,woke,grab,blink,scene:vaknar';
+    const at = pappa ? '41.6,-0.79' : '5.5,0.01';
     const { page, state, info, finish } = await open(name, { viewport, hasTouch: true },
       `?dev&debug&standin&course=prolog&tier=${tier}&at=${at}&flags=${flags}`);
-    await until(state, (s) => s.prologue?.kind === kind && s.prologue.seconds >= (pappa ? 1.45 : 0.85), `${name}: tableau`, 30000);
+    await until(state, (s) => s.prologue?.kind === kind && s.prologue.seconds >= (pappa ? 1.45 : 0.85), `${name}: tableau`, 90000);
     await page.keyboard.press('Escape');
     const paused = await state();
     check(`${name}: pause opens during tableau`, paused.paused && paused.prologue?.kind === kind);
@@ -134,18 +210,19 @@ try {
     const before = await info();
     check(`${name}: draw budget`, withinDraws(before.drawCalls, before.tier));
     await page.keyboard.press('Escape');
-    await until(state, (s) => s.flags.includes(pappa ? 'pappa:done' : 'mamma:passed'), `${name}: completed`, 30000);
+    await until(state, (s) => s.flags.includes(pappa ? 'pappa:done' : 'mamma:passed'), `${name}: completed`, 90000);
     check(`${name}: no shaders compile during the scene`, (await info()).programs === before.programs);
     if (pappa) {
       check(`${name}: safe walk is still required`, !(await state()).flags.includes('goal'));
       await page.keyboard.down('ArrowRight');
-      await until(state, (s) => s.flags.includes('goal'), `${name}: title card`, 15000);
+      // The promises, the edge and the title scene, on the game's own clock: slow in software, on High.
+      await until(state, (s) => s.flags.includes('goal'), `${name}: title card`, 180000);
       await page.keyboard.up('ArrowRight');
-      await page.waitForSelector('#endCard:not([hidden])', { timeout: 15000 });
+      await page.waitForSelector('#endCard:not([hidden])', { timeout: 60000 });
       check(`${name}: scene continues to chapter card`, await page.locator('#endCard').isVisible());
     } else {
       await page.keyboard.down('ArrowRight');
-      await until(state, (s) => s.flags.includes('bag:torn') && s.candy > 0, `${name}: torn bag trail`, 15000);
+      await until(state, (s) => s.flags.includes('bag:torn') && s.candy > 0, `${name}: torn bag trail`, 60000);
       await page.keyboard.up('ArrowRight');
       check(`${name}: chase resumes and candy can be collected`, (await state()).x > 8);
     }

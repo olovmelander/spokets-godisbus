@@ -227,9 +227,13 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   console.log('?dev, 1180×820');
   const { page, state, info, finish } = await open('dev-1180x820', { viewport: { width: 1180, height: 820 } }, '?dev&debug');
   const drawn = await info();
-  const first = await until(state, (s) => s.said.length >= 1);
+  // The prologue opens on the morning's scene: Pappa carving at the table, and Mamma's first line in it.
+  const first = await until(state, (s) => s.said.length >= 1, 120000);
   check('?dev plays the story from its prologue', first.course === 'prolog' && drawn.drawCalls > 0, first.course);
-  check('the first bubble establishes Pappa carving the ghost', (await page.locator('#bubble').isVisible()) && first.said[0] === 'newGhost', await page.locator('#bubbleLine').textContent());
+  // The bubble comes on the page's next frame.
+  await page.waitForFunction(() => document.getElementById('bubbleLine').textContent !== '', null, { timeout: 30000 }).catch(() => {});
+  check('the morning scene tells its first line', first.said[0] === 'morgon:0' && first.scene?.id === 'morgon'
+    && await page.locator('#bubbleLine').textContent() === 'Bertil! Godiset öppnar vi ikväll.', await page.locator('#bubbleLine').textContent());
   // Music (plan §5.8): the tune begins with the first key, a bar at a time.
   await page.keyboard.press('ArrowLeft');
   const playing = await until(info, (i) => i.musicBars >= 2, 15000);
