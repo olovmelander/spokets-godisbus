@@ -8,7 +8,9 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
 import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
+import { forestKit, forestSocket, installForest, rollingCone } from './forest-kit';
 import { buildLedges } from './ledges';
+import { createMountain, shelterStandIn } from './mountain-kit';
 import { rods } from './lines';
 import { buildHooks } from './rings';
 import type { TextureOwnershipInfo } from './texture-ownership';
@@ -296,6 +298,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const night = buildNight(chapter, sky, hemisphere, sun);
   scene.add(night.group);
   scene.add(...tussockMeshes, mist.group, follower.group, wind.group);
+  const mountain = createMountain(chapter, ledges);
+  if (mountain) scene.add(mountain.group);
 
   // The big candy modelled in Blender takes the place of the one built in code, once it has arrived.
   // It is the first asset through the whole chain: Blender → glTF → KTX2 and meshopt → the page.
@@ -360,6 +364,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       models.push('boot/candy');
       modelInstallations++;
     });
+  // The things of the forest, modelled in Blender (art/blender/forest-kit.py), take the place of the ones built
+  // in code. A build without the file keeps those, as does a failed load.
+  const forestReady = chapter.place === 'forest' ? assets
+    .manifest()
+    .then((manifest) => (manifest.packs.boot?.files['forest-kit.glb'] ? assets.model('boot', 'forest-kit') : null))
+    .then((model) => {
+      if (!model || installForest(scene, chapter, forestKit(model)) === 0) return;
+      models.push('boot/forest-kit');
+      modelInstallations++;
+    })
+    .catch((error) => console.error('The forest kit could not be loaded; the stand-ins stay.', error)) : Promise.resolve();
   // The village's houses, put together from the kit modelled in Blender (art/blender/village.py), take the
   // place of the plain fronts built in code. A build without the file keeps those, as does a failed load.
   const housesReady = dressing?.install ? assets
@@ -371,7 +386,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       modelInstallations++;
     })
     .catch((error) => console.error('The village kit could not be loaded; the plain fronts stay.', error)) : Promise.resolve();
-  const ready = Promise.all([candyReady, jayReady, sweetsReady, housesReady]).then(() => undefined);
+  // The things of the mountain, modelled in Blender (art/blender/mountain-kit.py), take the place of the plain
+  // shapes built in code, and bring the pines. A build without the file keeps the plain shapes, as does a failed load.
+  const mountainReady = mountain ? assets
+    .manifest()
+    .then((manifest) => (manifest.packs.boot?.files['mountain-kit.glb'] ? assets.model('boot', 'mountain-kit') : null))
+    .then((model) => {
+      if (!model || !mountain.install(model, scene)) return;
+      models.push('boot/mountain-kit');
+      modelInstallations++;
+    })
+    .catch((error) => console.error('The mountain kit could not be loaded; the plain shapes stay.', error)) : Promise.resolve();
+  const ready = Promise.all([candyReady, jayReady, sweetsReady, forestReady, housesReady, mountainReady]).then(() => undefined);
 
   // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
   // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.
@@ -1257,14 +1283,10 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
 function buildWind(chapter: ChapterData) {
   const group = new Group();
   const STREAKS = 14;
-  const stone = new MeshStandardMaterial({ color: '#8d8f93', roughness: 0.95 });
+  const stone = new MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
   const stretches = (chapter.gusts ?? []).map((def) => {
-    for (const x of def.shelters) {
-      const boulder = new Mesh(new SphereGeometry(1, 10, 8), stone);
-      boulder.scale.set(0.95, 1.15, 0.8);
-      boulder.position.set(x, def.y + 0.75, -1.3);
-      group.add(boulder);
-    }
+    // The boulders: plain lumps in one mesh, until the mountain kit's are there, each with its lee shelves as its own steps.
+    group.add(shelterStandIn(def, stone));
     const material = new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, depthWrite: false });
     const streaks = new InstancedMesh(new BoxGeometry(1, 0.035, 0.035), material, STREAKS);
     streaks.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -1439,7 +1461,7 @@ function buildFollower(chapter: ChapterData) {
 
 /** The rolling cones of the avalanche (plan §4.7, E2): brown, long, turning as they go. One instanced mesh. */
 function buildCones(count: number) {
-  const mesh = new InstancedMesh(new SphereGeometry(1, 12, 8), new MeshStandardMaterial({ color: '#7a5230', roughness: 0.9 }), Math.max(1, count));
+  const mesh = forestSocket(new InstancedMesh(new SphereGeometry(1, 12, 8), new MeshStandardMaterial({ color: '#7a5230', roughness: 0.9 }), Math.max(1, count)), rollingCone(1.9));
   mesh.count = count;
   mesh.instanceMatrix.setUsage(DynamicDrawUsage);
   mesh.frustumCulled = false;
@@ -1451,7 +1473,8 @@ function buildCones(count: number) {
       const r = cone.on ? cone.radius : 0;
       // A little bounce as it rolls, and longer across the path than along it: a cone lying on its side.
       place.position.set(cone.x, cone.y + cone.radius + Math.abs(Math.sin(clock * 9 + i * 2)) * 0.08, 0);
-      place.rotation.set(0, 0, -clock * 12 - i);
+      // It lies a little askew, so that its length shows while it turns.
+      place.rotation.set(0, 0.45, -clock * 12 - i);
       place.scale.set(r, r, r * 1.9);
       place.updateMatrix();
       mesh.setMatrixAt(i, place.matrix);

@@ -126,6 +126,8 @@ export const berget: ChapterData = {
     { x: 146.9, y: 41.35, kind: 'chokladpralin', route: true },
   ],
   decor: [{ look: 'cairn', at: { x: 146.9, y: 40.9 } }],
+  // The old pine: behind the path, between the cairn and the summit's end, its crown swept towards the cairn.
+  pine: { x: 160.2 },
   challenges: [{
     id: 'cairn', from: 145, to: 154, above: 32.9, reward: 'chokladpralin',
     steps: CAIRN.map(({ x, y }) => ({ x, y })), return: { x: 150.6, y: 31.4 }, backtrack: true,

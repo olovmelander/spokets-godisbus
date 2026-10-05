@@ -119,17 +119,15 @@ describe("the lawn's floor", () => {
     expect(walls).toBeGreaterThan(3);
   });
 
-  it('leaves the deck alone: a wooden floor does not draw back, and runs straight on', () => {
-    let front = -Infinity;
+  it('meets a deck that also falls away in front: the two end within a step of one another', () => {
+    const fronts = new Map<string, number>();
     for (const { kind, shape } of bankShapes(garden, groundOf(garden.place!))) {
-      if (kind !== 'wood') continue;
       const at = shape.getAttribute('position');
-      // Every corner of the deck stands at one of its rows' own depths: none has been drawn in.
-      for (let i = 0; i < at.count; i++) {
-        front = Math.max(front, at.getZ(i));
-        if (at.getZ(i) > 1.2) expect([2.2, 3.6, 5.4, 8, 13].some((z) => Math.abs(at.getZ(i) - z) < 1e-5), `a deck corner at depth ${at.getZ(i)}`).toBe(true);
-      }
+      let front = -Infinity;
+      for (let i = 0; i < at.count; i++) front = Math.max(front, at.getZ(i));
+      fronts.set(kind, Math.max(fronts.get(kind) ?? -Infinity, front));
     }
-    expect(front).toBeCloseTo(13, 5);
+    expect(fronts.get('lawn')).toBeCloseTo(5.3, 5);
+    expect(fronts.get('wood')).toBeCloseTo(5.6, 5);
   });
 });

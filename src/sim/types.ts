@@ -351,6 +351,17 @@ export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home'
 /** What a stretch of ground is made of, where it isn't the place's own ground. The picture's business only. */
 export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron';
 
+/**
+ * A thing that a block of the ground is, for the picture only: the block runs from `from` to `to` along the
+ * outline, and `base` is the height of the ground at its foot.
+ */
+export interface Landmark {
+  look: 'cone' | 'log' | 'anthill' | 'stone';
+  from: number;
+  to: number;
+  base: number;
+}
+
 /** What a shop in the village sells: told by the wares in its window, never by a letter. The picture's business only. */
 export type StreetGoods = 'yarn' | 'boots' | 'bread' | 'candy';
 
@@ -434,6 +445,11 @@ export interface ChapterData {
   challenges?: Challenge[];
   /** For the picture: stretches of ground that are something else than the place's own: a deck, a boulder. */
   surfaces?: { from: number; to: number; kind: SurfaceKind }[];
+  /**
+   * For the picture only, and never read by the simulation: what a raised block of the ground is. A model
+   * stands over the block (src/render/forest-kit.ts), with its top where the outline has the block's.
+   */
+  landmarks?: Landmark[];
   /** For the picture: a deck overhead, with the sun falling through between its boards. */
   roofs?: { from: number; to: number; y: number }[];
   /**
@@ -451,6 +467,11 @@ export interface ChapterData {
    * set, and one with `after` is not there before its flag is.
    */
   decor?: { look: SpotLook; at: Vec; word?: string; until?: string; after?: string }[];
+  /**
+   * For the picture only: where the old pine stands, a little behind the path (plan §3.4). The wind has swept
+   * it to the left; `flip` turns it round, swept to the right. The simulation knows nothing of it.
+   */
+  pine?: { x: number; flip?: boolean };
   /** For the picture: the house's wall behind the scene, with its windows. */
   house?: { from: number; to: number; windows: number[] };
   /**
