@@ -1,6 +1,6 @@
 import {
   BufferGeometry, Color, DoubleSide, DynamicDrawUsage, Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Matrix3, Mesh,
-  MeshBasicMaterial, MeshStandardMaterial, Object3D, Vector2, Vector3, type Material, type MeshStandardMaterialParameters,
+  MeshBasicMaterial, MeshStandardMaterial, Object3D, Sphere, Vector2, Vector3, type Material, type MeshStandardMaterialParameters,
 } from 'three';
 
 /**
@@ -217,10 +217,32 @@ const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
 interface Batch { mesh: InstancedMesh; candies: number[]; flat: boolean }
 
+/** Side candy lies in a few places far apart. Candy further than this from the next is in another place. */
+const SIDE_APART = 10;
+/** How far outside its place a side candy is still drawn: it sways, swells and flies into him. */
+const SIDE_REACH = 3;
+
+/**
+ * The places a list of candy lies in, each as the candies' numbers in the list. The trail is one place: it
+ * runs the length of the course. Side candy is one place for each side way.
+ */
+export function candyPlaces(candy: readonly { x: number }[], voice: CandyVoice): number[][] {
+  const all = candy.map((_, i) => i);
+  if (voice !== 'side') return all.length > 0 ? [all] : [];
+  const places: number[][] = [];
+  for (const i of [...all].sort((a, b) => candy[a]!.x - candy[b]!.x)) {
+    const last = places.at(-1);
+    if (last && candy[i]!.x - candy[last.at(-1)!]!.x < SIDE_APART) last.push(i);
+    else places.push([i]);
+  }
+  return places.map((place) => place.sort((a, b) => a - b));
+}
+
 /**
  * The trail candy, or the side candy, floating and turning. Each kind of sweet is one instanced mesh, so a
- * whole trail is at most three draw calls however long it is, and the side candy two. A mesh says which of
- * the list's candies it holds in `userData.candies`.
+ * whole trail is at most three draw calls however long it is. Side candy is two for each place it lies in,
+ * and a place is drawn only while it is in sight: a side way far from him costs the picture nothing. A mesh
+ * says which of the list's candies it holds in `userData.candies`.
  */
 export function createTrail(candy: readonly { x: number; y: number; after?: string }[], voice: CandyVoice = 'trail') {
   const group = new Group();
@@ -233,8 +255,16 @@ export function createTrail(candy: readonly { x: number; y: number; after?: stri
     const mesh = new InstancedMesh(geometry, material, Math.max(1, candies.length));
     mesh.count = candies.length;
     mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-    // The trail runs the length of the course, so it is never outside the picture as a whole.
-    mesh.frustumCulled = false;
+    if (voice === 'side' && candies.length > 0) {
+      // A place of side candy is small: it is in the picture or it is not.
+      const xs = candies.map((i) => candy[i]!.x);
+      const ys = candies.map((i) => candy[i]!.y);
+      const [left, right, low, high] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+      mesh.boundingSphere = new Sphere(new Vector3((left + right) / 2, (low + high) / 2, 0), Math.hypot(right - left, high - low) / 2 + SIDE_REACH);
+    } else {
+      // The trail runs the length of the course, so it is never outside the picture as a whole.
+      mesh.frustumCulled = false;
+    }
     for (const [slot, index] of candies.entries()) mesh.setColorAt(slot, colour.set(trailColour(index, voice)));
     mesh.userData.candies = candies;
     group.add(mesh);
@@ -262,10 +292,10 @@ export function createTrail(candy: readonly { x: number; y: number; after?: stri
       (old.mesh.material as Material).dispose();
       old.mesh.dispose();
     }
-    batches = shapes
-      .map((shape, kind) => ({ shape: shape!, kind, candies: candy.map((_, i) => i).filter((i) => trailShape(i, voice) === kind) }))
+    batches = candyPlaces(candy, voice).flatMap((here) => shapes
+      .map((shape, kind) => ({ shape: shape!, kind, candies: here.filter((i) => trailShape(i, voice) === kind) }))
       .filter((one) => one.candies.length > 0)
-      .map((one) => batch(one.shape, kit.material, one.candies, one.kind >= 2));
+      .map((one) => batch(one.shape, kit.material, one.candies, one.kind >= 2)));
     return true;
   }
 

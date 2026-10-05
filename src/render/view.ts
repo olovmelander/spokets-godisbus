@@ -9,7 +9,8 @@ import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
 import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
 import { buildLedges } from './ledges';
-import { buildLines } from './lines';
+import { rods } from './lines';
+import { buildHooks } from './rings';
 import type { TextureOwnershipInfo } from './texture-ownership';
 import { captureFrame } from './capture';
 import { observeGpu, type GpuMemory } from './gpu-memory';
@@ -226,7 +227,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Side candy, off the trail: hearts and lollipops, where the trail is sweets in wrappers.
   const sideTrail = createTrail(chapter.side ?? [], 'side');
   const noSide: readonly boolean[] = [];
-  const ledges = buildLedges(chapter.ledges ?? []);
+  const ledges = buildLedges(chapter.ledges ?? [], rods(chapter));
   const glitter = buildGlitter();
   const lace = buildLace();
   const glints = buildGlints(chapter);
@@ -275,9 +276,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.group, sideTrail.group, ledges.group, glitter.group);
-  // What holds the rings that hang in the open air: cords, lines and their poles.
-  const lines = buildLines(chapter);
-  if (lines) scene.add(lines);
   const water = createWater(chapter, place?.water ?? null, place?.sun.from);
   const waterScene = new Scene();
   waterScene.fog = scene.fog;
@@ -1610,28 +1608,7 @@ function buildMovers(chapter: ChapterData): Group[] {
   });
 }
 
-/**
- * Every hook has a red ring: the one sign the game teaches for "the lace goes here" (plan §4.2). All of a
- * chapter's rings are one mesh, so a row of them costs the picture one draw call.
- */
-function buildHooks(chapter: ChapterData): Group {
-  const group = new Group();
-  const hooks = chapter.hooks ?? [];
-  if (hooks.length === 0) return group;
-  const rings = new InstancedMesh(new TorusGeometry(0.19, 0.045, 10, 28), new MeshStandardMaterial({ color: '#d8382c', roughness: 0.35 }), hooks.length);
-  rings.name = 'rings';
-  // They hang all along a chapter: as a whole they are never outside the picture.
-  rings.frustumCulled = false;
-  const place = new Object3D();
-  for (const [i, hook] of hooks.entries()) {
-    place.position.set(hook.x, hook.y, -0.05);
-    place.updateMatrix();
-    rings.setMatrixAt(i, place.matrix);
-  }
-  rings.instanceMatrix.needsUpdate = true;
-  group.add(rings);
-  return group;
-}
+
 
 /**
  * The lace between Elof's hands and the hook: a red candy lace, drawn as one thin rod. It is always in the

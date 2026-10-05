@@ -11,7 +11,8 @@ import type { StepInput } from '../../src/sim/types';
 const idle: StepInput = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
 const first = garden.hooks![0]!;
 const crossing = garden.hooks![1]!;
-const chain = garden.hooks!.filter((hook) => hook.extra);
+// The two nails under the deck: the clothes line further on has rings of its own.
+const chain = garden.hooks!.filter((hook) => hook.extra && hook.x < 66.4);
 const prize = garden.hidden!.find((h) => h.route)!;
 const GULLY = { from: 62, to: 66.4 };
 

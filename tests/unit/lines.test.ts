@@ -1,7 +1,6 @@
-import { Matrix4, Quaternion, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { BONUS, STORY } from '../../src/content/chapters';
-import { buildLines, lineHeight, lineOver, rods } from '../../src/render/lines';
+import { lineHeight, lineOver, rodShape, rods } from '../../src/render/lines';
 import type { Hook, Line } from '../../src/sim/types';
 import { heightAt } from '../robot/robot';
 
@@ -54,25 +53,22 @@ describe('what holds a ring', () => {
     expect(hung[0]!.to).toEqual({ x: 3, y: 7 });
   });
 
-  it('all of it is one mesh, with a rod from each start to each end, behind the plane he moves in', () => {
-    expect(buildLines({})).toBeNull();
+  it('a rod is drawn as a thin stick from its start to its end, behind the plane he moves in', () => {
+    expect(rods({})).toHaveLength(0);
     const chapter = { lines: [line], hooks: [ring(15, 4.6), ring(30, 3, { hangs: 2 })] };
-    const all = rods(chapter);
-    const mesh = buildLines(chapter)!;
-    expect(mesh.count).toBe(all.length);
-    const matrix = new Matrix4();
-    const at = new Vector3();
-    const turn = new Quaternion();
-    const size = new Vector3();
-    for (const [i, rod] of all.entries()) {
-      mesh.getMatrixAt(i, matrix);
-      matrix.decompose(at, turn, size);
-      const half = new Vector3(0, size.y / 2, 0).applyQuaternion(turn);
-      expect(at.x + half.x).toBeCloseTo(rod.to.x);
-      expect(at.y + half.y).toBeCloseTo(rod.to.y);
-      expect(at.x - half.x).toBeCloseTo(rod.from.x);
-      expect(at.y - half.y).toBeCloseTo(rod.from.y);
-      expect(at.z + size.z).toBeLessThan(0);
+    for (const rod of rods(chapter)) {
+      const shape = rodShape(rod);
+      shape.computeBoundingBox();
+      const box = shape.boundingBox!;
+      // As long as the rod and no thicker than it says, whichever way it leans.
+      expect(Math.abs(box.min.x - Math.min(rod.from.x, rod.to.x))).toBeLessThanOrEqual(rod.thick + 1e-6);
+      expect(Math.abs(box.max.x - Math.max(rod.from.x, rod.to.x))).toBeLessThanOrEqual(rod.thick + 1e-6);
+      expect(Math.abs(box.min.y - Math.min(rod.from.y, rod.to.y))).toBeLessThanOrEqual(rod.thick + 1e-6);
+      expect(Math.abs(box.max.y - Math.max(rod.from.y, rod.to.y))).toBeLessThanOrEqual(rod.thick + 1e-6);
+      expect(box.max.z).toBeLessThan(0);
+      // It is joined to the ledges' shape: corners of its own, with a normal each.
+      expect(shape.index).toBeNull();
+      expect(shape.getAttribute('normal').count).toBe(shape.getAttribute('position').count);
     }
   });
 
