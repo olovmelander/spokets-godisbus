@@ -16,6 +16,11 @@ function* edges(course: string) {
       if (corners.some((c) => at.getZ(c) < -0.35)) continue;
       // Where the forest's front draws back to a wall its rows close like a fan, and the picture with them.
       if (chapter.place === 'forest' && corners.some((c) => forwardAt(chapter, at.getX(c) - 0.01) < 1 || forwardAt(chapter, at.getX(c) + 0.01) < 1)) continue;
+      // A triangle of no area shows none of the picture: where two rows stand in one place, so that a colour
+      // changes at an edge, the triangles between them are such.
+      const [p0, p1, p2] = corners.map((c) => [at.getX(c), at.getY(c), at.getZ(c)] as const);
+      const [ux, uy, uz, vx, vy, vz] = [p1![0] - p0![0], p1![1] - p0![1], p1![2] - p0![2], p2![0] - p0![0], p2![1] - p0![1], p2![2] - p0![2]];
+      if (Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx) < 1e-7) continue;
       for (let k = 0; k < 3; k++) {
         const a = corners[k]!;
         const b = corners[(k + 1) % 3]!;

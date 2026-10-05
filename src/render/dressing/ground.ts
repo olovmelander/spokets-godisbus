@@ -122,6 +122,10 @@ interface Row {
   pale?: number;
   /** Which ledge it belongs to, where the rock is jointed: a block's ledges lie a little higher or lower. */
   ledge?: 1 | 2;
+  /** On a deck's rim board: 0 at its upper edge, 1 at its lower. The board lies along the path. */
+  rim?: number;
+  /** The dark under a walk of planks: how far its tone has gone into it. Nothing is lit there. */
+  hollow?: number;
 }
 const PROFILE: Row[] = [
   { z: -16, drop: -0.6, shade: 0.62, bump: 0.5 },
@@ -373,21 +377,58 @@ function forwardAtCorner(chapter: ChapterData, x: number, y: number): number {
   return forward;
 }
 
-/** The edge of a deck: level to its front, then the board's end, and the dark under it. */
-const PROFILE_BOARD: Row[] = [
+/** A wooden floor behind its front edge, in every place: boards, level, a little darker further in. */
+const BOARDS_BEHIND: Row[] = [
   { z: -16, drop: 0, shade: 0.7, bump: 0 },
   { z: -10, drop: 0, shade: 0.8, bump: 0 },
   { z: -5.5, drop: 0, shade: 0.9, bump: 0 },
   { z: -2.6, drop: 0, shade: 0.96, bump: 0 },
   { z: -0.9, drop: 0, shade: 1, bump: 0 },
   { z: -0.3, drop: 0, shade: 1, bump: 0 },
-  { z: 0.45, drop: 0, shade: 1, bump: 0 },
+  { z: EDGE, drop: 0, shade: 1, bump: 0 },
   { z: 1.1, drop: 0, shade: 1, bump: 0 },
-  { z: 1.1, drop: 0.22, shade: 0.8, bump: 0 },
-  { z: 0.85, drop: 0.24, shade: 0.3, bump: 0 },
-  { z: 0.85, drop: 1.4, shade: 0.14, bump: 0 },
-  { z: 0.85, drop: 16, shade: 0.06, bump: 0 },
 ];
+/** How thick a plank is at its end, and how high the rim board under a walk of planks: a board on edge. */
+const BOARD_END = 0.19;
+const RIM = 0.76;
+
+/**
+ * A wooden floor runs on towards the camera, as a floor does: under the picture's lower edge and on under the
+ * camera, a little darker the nearer it comes, so that the eye stays on the path. Before, it ended a step in
+ * front of him, and the boards' picture ran down a face 16 lengths deep: a third of every picture at home and
+ * on the deck was a plank fence with black gaps.
+ * Its end is never in the picture: the lower edge of the widest picture meets the floor 11 lengths in front.
+ */
+const PROFILE_FLOOR: Row[] = [
+  ...BOARDS_BEHIND,
+  { z: 2.2, drop: 0, shade: 0.95, bump: 0 },
+  { z: 3.6, drop: 0, shade: 0.86, bump: 0 },
+  { z: 5.4, drop: 0, shade: 0.75, bump: 0 },
+  { z: 8, drop: 0, shade: 0.64, bump: 0 },
+  { z: 13, drop: 0, shade: 0.52, bump: 0 },
+  { z: 13, drop: 16, shade: 0.3, bump: 0 },
+];
+
+/**
+ * A walk of planks laid over a bog is narrow: it has a front edge. The boards' ends, a line of shadow under
+ * their overhang, one rim board along the path that catches the light, and under it the dark.
+ * Two rows may stand in one place: the colour changes there at once, as at an edge, and not over a slope.
+ */
+const PROFILE_PLANKS: Row[] = [
+  ...BOARDS_BEHIND,
+  { z: 1.1, drop: BOARD_END, shade: 0.86, bump: 0 },
+  { z: 1.1, drop: BOARD_END, shade: 0.12, bump: 0 },
+  { z: 1.0, drop: BOARD_END, shade: 0.12, bump: 0 },
+  { z: 1.0, drop: BOARD_END + 0.15, shade: 0.12, bump: 0 },
+  { z: 1.0, drop: BOARD_END + 0.15, shade: 1, bump: 0, rim: 0 },
+  { z: 1.0, drop: BOARD_END + 0.15 + RIM, shade: 0.92, bump: 0, rim: 1 },
+  { z: 1.0, drop: BOARD_END + 0.15 + RIM, shade: 1, bump: 0, hollow: 0.55 },
+  { z: 0.72, drop: BOARD_END + 0.2 + RIM, shade: 1, bump: 0, hollow: 0.75 },
+  { z: 0.72, drop: BOARD_END + 2.4 + RIM, shade: 1, bump: 0, hollow: 1 },
+  { z: 0.72, drop: 16, shade: 1, bump: 0, hollow: 1 },
+];
+/** Under a walk of planks: the peat it lies on, in its shadow just under the rim and darker further down. */
+const HOLLOW = [new Color('#5a4630'), new Color('#2a2018')];
 
 /**
  * How far down a profile each of its rows lies, measured along the surface, and counted so that it is the
@@ -596,7 +637,8 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
     if (i < points.length && points[i]!.kind === points[start]!.kind) continue;
     // A stretch takes the next one's first point too, so that the two meet.
     const stretch = points.slice(start, Math.min(points.length, i + 1));
-    if (stretch.length > 1) shapes.push({ kind: points[start]!.kind, shape: stretchOfGround(stretch, points[start]!.kind, natural, blocks) });
+    // Over the bog, boards are a walk of planks with a front edge; anywhere else they are a floor.
+    if (stretch.length > 1) shapes.push({ kind: points[start]!.kind, shape: stretchOfGround(stretch, points[start]!.kind, natural, blocks, !!GROUNDS[own].sinks) });
     start = i;
   }
   return shapes;
@@ -606,9 +648,9 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
  * One stretch, as columns of points across the profile. The top and a wall's face have a column each where
  * they meet, so that each keeps its own colour and its own lie of the picture, and the corner is a corner.
  */
-function stretchOfGround(points: BankPoint[], kind: Ground, natural: Front, blocks: Block[] = []): BufferGeometry {
+function stretchOfGround(points: BankPoint[], kind: Ground, natural: Front, blocks: Block[] = [], planks = false): BufferGeometry {
   const look = GROUNDS[kind];
-  const profile = look.boards ? PROFILE_BOARD : look.sinks ? PROFILE_ISLAND : natural.rows;
+  const profile = look.boards ? (planks ? PROFILE_PLANKS : PROFILE_FLOOR) : look.sinks ? PROFILE_ISLAND : natural.rows;
   const whole = lengthsDown(profile);
   const rows = profile.length;
   const cuts = natural.cuts && profile === natural.rows;
@@ -657,14 +699,20 @@ function stretchOfGround(points: BankPoint[], kind: Ground, natural: Front, bloc
         const hang = natural.hang * (0.36 + noise(p.x * 1.7 + 2, z * 0.8) * 0.64);
         if (cut > 0 && under > hang) c.lerp(natural.cutAt(p.x, z, under - hang, scratch), cut);
       } else if (face) c.lerp(look.wall, 0.82);
+      // A rim board is one long board, not a board to each board of the deck: one tone, drifting along it.
+      if (row.rim !== undefined && !face) c.copy(look.colours[1]!).lerp(look.colours[2]!, noise(p.x * 0.31 + 5, 3));
       c.lerp(look.shade, (1 - row.shade) * 0.9);
+      if (row.hollow !== undefined) c.copy(HOLLOW[0]!).lerp(HOLLOW[1]!, row.hollow);
       if (block) c.multiplyScalar(block.tone);
       // A joint is a dark line down the faces, and a faint one across the ledges and the top.
       if (seam) c.multiplyScalar(row.cut ? 0.5 : row.z > EDGE ? 0.8 : 0.93);
       if (row.pale && !face) c.lerp(WHITE, row.pale);
       if (row.far) c.lerp(FAR, row.far);
       colour.push(c.r, c.g, c.b);
-      if (!face) uv.push((look.boards ? p.x : p.along) * tile, (down[j]! + (row.z > EDGE ? rise : 0)) * tile);
+      // The rim board lies along the path: across it the picture spans one board, between two gaps, and its
+      // grain runs along.
+      if (row.rim !== undefined && !face) uv.push(0.0125 + row.rim * 0.475, p.x * tile);
+      else if (!face) uv.push((look.boards ? p.x : p.along) * tile, (down[j]! + (row.z > EDGE ? rise : 0)) * tile);
       // A face lies in the depth and along the wall. A board there is a board on edge, its grain into the depth.
       else if (look.boards) uv.push((p.x * ux + y * uy) * tile, z * tile);
       else uv.push(z * tile, (p.x * ux + y * uy) * tile);
