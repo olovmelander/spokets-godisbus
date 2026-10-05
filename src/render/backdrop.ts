@@ -339,7 +339,8 @@ function pine(c: Pen, x: number, foot: number, tall: number, bark: Ink, warm: In
       // The top plate lies over the stem; the lower ones reach out, the lowest the furthest.
       const out = up === 1 ? 0 : side * tall * (0.1 + next() * 0.14) * spread * (1.1 - up * 0.6);
       const lift = tall * (0.03 + next() * 0.04);
-      const wide = tall * (0.1 + next() * 0.06) * spread * (0.8 + 0.2 * (1 - up));
+      // The top one is the smallest and the roundest: a pine's crown is a heap, not a table.
+      const wide = tall * (0.1 + next() * 0.06) * spread * (0.62 + 0.38 * (1 - up));
       if (out !== 0) {
         c.strokeStyle = ink(warm);
         c.lineWidth = Math.max(1.2, thick * 0.45);
@@ -353,7 +354,7 @@ function pine(c: Pen, x: number, foot: number, tall: number, bark: Ink, warm: In
       for (let p = 0; p < puffs; p++) {
         const along = p / (puffs - 1) - 0.5;
         c.beginPath();
-        c.ellipse(px + out + along * wide * 1.2, py - lift - tall * 0.02 * next(), wide * (0.55 + next() * 0.25), Math.max(2, wide * (0.3 + next() * 0.14)), 0, 0, Math.PI * 2);
+        c.ellipse(px + out + along * wide * 1.2, py - lift - tall * 0.02 * next(), wide * (0.55 + next() * 0.25), Math.max(2, wide * (0.3 + next() * 0.14 + up * 0.25)), 0, 0, Math.PI * 2);
         c.fill();
       }
       side = -side;
@@ -821,7 +822,8 @@ const BOG: Layer[] = [
       for (const [i, tree] of BOG_NEAR.trees.entries()) {
         const x = tree.at * W;
         const tall = tree.tall * texels;
-        if (tree.kind === 'spruce') spruce(c, x, 197, tall, mix(near, BOG_MIST, (i % 3) * 0.07), 1.1);
+        // The group is the bog's dark against the mist: slim as they are, they keep it by being a shade deeper.
+        if (tree.kind === 'spruce') spruce(c, x, 197, tall, mix(mix(near, [50, 68, 60], 0.4), BOG_MIST, (i % 3) * 0.06), 1.1);
         else if (tree.kind === 'pine') pine(c, x, 196, tall, [104, 98, 90], mix([176, 118, 78], BOG_MIST, 0.15), mix(near, [100, 112, 76], 0.4), 1.25);
         else snag(c, x, 196, tall, [198, 194, 182], [112, 110, 108]);
       }
