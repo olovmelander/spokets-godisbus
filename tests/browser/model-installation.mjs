@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
+import { withinDraws } from './budget.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const assetsId = '\0model-installation-assets';
@@ -101,7 +102,7 @@ try {
         result.loaded.info.models.filter((model) => model === 'private/mamma').length === 1);
       check(`${tier}: Mamma ${i} stays warmed during pause redraws`, result.paused.info.programs === result.loaded.info.programs &&
         result.paused.info.geometries === result.loaded.info.geometries && result.paused.info.textures === result.loaded.info.textures &&
-        result.paused.info.drawCalls <= 120);
+        withinDraws(result.paused.info.drawCalls, result.paused.info.tier));
       if (i === 3) check(`${tier}: the third installation belongs to the cooperative bog bridge`, Math.abs(result.current.x - 169.2) < .01);
     }
     assert.deepEqual(errors, [], `${tier}: browser or shader errors`);

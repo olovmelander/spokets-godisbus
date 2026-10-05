@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/colour-pipeline');
 mkdirSync(shots, { recursive: true });
@@ -121,7 +122,7 @@ try {
       return results;
     }, { course });
     const name = `${course}-${width}x${height}`;
-    check(`${name}: all tier switches render within 120 draws`, state.every((s) => s.drawCalls <= 120));
+    check(`${name}: all tier switches render within the draw budget`, state.every((s) => withinDraws(s.drawCalls, s.tier)));
     check(`${name}: no shader compiles after the loading/settings warm-up`, state.every((s) => s.stable));
     await picture(page, join(shots, `${name}-high.png`));
     console.log(`       draws ${state.map((s) => `${s.tier}:${s.drawCalls}`).join(' ')}`);

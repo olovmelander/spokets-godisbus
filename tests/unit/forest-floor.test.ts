@@ -74,7 +74,7 @@ describe("the forest's floor", () => {
     }
   });
 
-  it('is the forest alone: the lawn, the bog and the rock keep their own fronts', () => {
+  it('is the forest alone: the lawn and the bog keep their fronts, and the rock has its own', () => {
     const deepest = (course: string) => {
       const chapter = COURSES[course]!;
       let front = -Infinity;

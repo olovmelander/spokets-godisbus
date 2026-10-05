@@ -6,6 +6,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm' };
@@ -39,7 +40,7 @@ try {
       await frames(page);
       const drawn = await info(page);
       check(`${course} ${tier}: correct contact/map variant`, drawn.shadows.characters >= 1 && drawn.shadows.contact === (tier !== 'low') && drawn.shadows.mapSize === (tier === 'high' ? 1024 : 0));
-      check(`${course} ${tier}: bounded draws`, drawn.drawCalls <= 120);
+      check(`${course} ${tier}: bounded draws`, withinDraws(drawn.drawCalls, drawn.tier));
       await page.click('#resumeBtn');
       const programs = (await info(page)).programs;
       await frames(page);

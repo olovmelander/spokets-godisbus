@@ -1,4 +1,4 @@
-import { Group, type Texture } from 'three';
+import { Group, type Object3D, type Texture } from 'three';
 import type { ChapterData, PlaceId } from '../../sim/types';
 import { scenery } from '../backdrop';
 import { fronts, street, villageLife } from '../village';
@@ -66,11 +66,12 @@ const BOG: PlaceLook = {
 const MOUNTAIN: PlaceLook = {
   id: 'mountain',
   grade: { tint: [1.06, 0.99, 0.95], exposure: 1.04, contrast: 1.07, saturation: 1.08, vignette: 0.3, grain: 0.03 },
-  haze: { colour: '#e9b9a0', near: 6, far: 95 },
+  haze: { colour: '#e9b9a0', near: 9, far: 95 },
   sky: { top: '#6a78ae', middle: '#f7b78c', bottom: '#c98c74', glow: '#ffe2b4' },
-  hemisphere: { sky: '#f0d4dc', ground: '#84705e', intensity: 1.25 },
-  sun: { colour: '#ffae6c', intensity: 3.7, from: [-8, 2.6, -3] },
-  fill: { colour: '#e8dcf0', intensity: 0.75 },
+  // A top face sees the zenith, not the horizon: the sky's light is cool, and only the sun is warm.
+  hemisphere: { sky: '#c9d2f4', ground: '#8a6f78', intensity: 1.5 },
+  sun: { colour: '#ffb884', intensity: 3.2, from: [-8, 2.6, -3] },
+  fill: { colour: '#cfd6ff', intensity: 0.9 },
   water: { colour: '#4f7f9c', opacity: 0.8 },
   tussock: '#b9b08a',
 };
@@ -121,6 +122,11 @@ export interface Dressing {
   group: Group;
   background: Texture;
   update(cameraX: number, groundY: number, clock: number, night?: number): void;
+  /**
+   * A place whose houses are put together from a kit modelled in Blender (the village) takes the kit here
+   * once it has arrived. False where the kit has nothing the chapter asks for: its stand-ins stay.
+   */
+  install?(model: Object3D): boolean;
 }
 
 /** How long a stretch of scatter is: each is drawn only while it is in the picture. */
@@ -161,6 +167,8 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   // however high he climbs: backdrop.ts.
   const far = scenery(look.id, heightAt(chapter, from) - (chapter.outlook ?? 0), from, to);
   const life = look.id === 'village' ? villageLife(chapter) : null;
+  // The village has its houses and its yard behind the street.
+  const houses = look.id === 'village' ? fronts(chapter, from, to) : null;
   if (life) group.add(life.group);
   if (look.id === 'dusk') group.add(stars());
   group.add(
@@ -168,14 +176,14 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
     bank(chapter, OWN[look.id].ground),
     scatter(chapter, from, to, look.id),
     built(chapter, look.id === 'home'),
-    // The village has the fronts of its houses behind the pavement.
-    look.id === 'village' ? fronts(chapter, from, to) : new Group(),
+    houses?.group ?? new Group(),
     air.group,
     foreground(chapter, from, to, OWN[look.id].growth),
   );
   return {
     group,
     background: backdrop(look),
+    ...(houses ? { install: houses.install } : {}),
     update(cameraX, groundY, clock, night = 0) {
       air.update(cameraX, groundY, clock);
       far.update(cameraX, groundY, clock, night);

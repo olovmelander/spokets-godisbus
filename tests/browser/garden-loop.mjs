@@ -7,6 +7,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 
 const base = '/spokets-godisbus/';
 const dist = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -91,7 +92,7 @@ async function open(name, viewport, tier, touch, oldCalled = false) {
   async function act() { if (touch) await page.locator('#actBtn').tap(); else await page.keyboard.press('KeyE'); }
   return { context, page, state, info, ready, until, move, act, programs, async finish() {
     check(`${name}: no shaders compiled during play`, (await info()).programs === programs);
-    check(`${name}: bounded real renderer draws (${maximumDraws})`, maximumDraws > 0 && maximumDraws <= 120);
+    check(`${name}: bounded real renderer draws (${maximumDraws})`, maximumDraws > 0 && withinDraws(maximumDraws));
     assert.deepEqual(errors, [], `${name}: browser errors`);
     assert.deepEqual(external, [], `${name}: external requests`);
     await context.close();

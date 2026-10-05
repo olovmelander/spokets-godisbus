@@ -283,6 +283,19 @@ boulders. Two things are different in the open:
 - **The bog's ground is islands.** It goes down into the water behind the path, and the water lies as far
   back as the eye reaches. The soft tussocks are mounds of paler moss.
 
+**Water** (`src/render/water.ts`) is one mesh in a chapter and one shader on every tier:
+- **It mirrors its place.** The backdrop's sky, and the far layers' pictures standing on their heads, hinged
+  where the nearest of them meets the water; a street puddle mirrors the house fronts behind it instead. The
+  mirror is one small picture built at load. Its own colour is the place's, dimmed: the sky in the water is
+  always darker than the sky.
+- **It has no edge behind the path.** It thins out into the haze, or ends at a shore. The bog's lies in front
+  of its tussocks and behind the whole chapter; the forest's pool fades into the forest; the village's puddle
+  is a hand deep, with asphalt under it and a wet far shore.
+- **In front it is cut,** as the ground is: the cut face is the water's own body, darker with depth, with a
+  pale line at the surface and no caustic lines on it. Those lie on what is under water, on Mid and High.
+- **Its ripples are small and die out with distance,** and all but stand with reduced motion. Mid adds the
+  low sun's glitter under the sky's glow; High also shows what lies just under the surface.
+
 **The far layers** (`src/render/backdrop.ts`). This is the parallax:
 - A place outdoors has four or five, one behind the other, 32 to 90 EL behind the path. Each is one card that
   goes with the camera, and its picture slides across it by its own part of the camera's way (`hold`). The
@@ -326,9 +339,9 @@ From plan §5.4, and one more for the extra chapter. All are built, each as far 
 | Gården, 10:00 | Low warm sun, dew sparkle, a blue morning sky | Lawn in four greens (`#3f6a22`, `#5c962b`, `#7fb238`, `#aecb52`), deck wood `#b49a78`, shavings `#e3cb9b` | The house in Falu red `#8f2d22` with white trim; dandelion yellow | **yes** |
 | Granskogen, noon | Shafts of pale gold through cool blue-green shade | Moss in three greens and a gold (`#35521f`, `#587a27`, `#7f9a30`, `#b3ae45`), rust-brown needles | Red lingonberries; bark `#7d6753` | **yes** |
 | Myren, late afternoon | Low gold sun, mist sheets over the water | Sphagnum in rust-red, green and gold (`#6e3226`, `#8f4d2b`, `#7d8a36`, `#bca94c`), straw sedge, dark peat water `#34423f` | Red dwarf birch, orange cloudberry leaves, cranberries, grey dead pines; the forest and the mountain in mist at the horizon | **yes**; Mamma's lamp not |
-| Berget, golden hour | Pink-orange sky over blue-violet ridges, haze in the valley | Grey granite (`#8a8d94` to `#cfccc8`), white reindeer lichen | Crowberry, dry grass, bare boulders | **yes**; the crooked pines not |
+| Berget, golden hour | Pink-orange sky over blue-violet ridges, haze in the valley | Grey granite (`#8f939d` to `#d6d5d6`) with its own grain: pale and grey grains, dark mica, hairline cracks, rings of crust lichen. Cut hard, never rounded: a pale edge where he walks, then down in two ledges, in blocks with joints between them; walls in courses. Its shade is blue-violet (`#46527e`), and only the sun is warm. White reindeer lichen | Crowberry, dry grass, bare boulders | **yes**; the crooked pines not |
 | Final, blue hour to night | The first stars; then night and the green northern lights | The same granite and lichen, in blue | The candy and the ghost stay in their own colours | **yes**; the headlamps and the violet not |
-| Byn (the extra chapter), a Saturday morning in October | A clear cool sky, a low sun along the street | Dark asphalt (`#4c4f56` to `#70727a`), pale paving slabs, the drain's iron; wooden boards inside the shop | House fronts in the village's own colours (ochre yellow, white, Falu red, pale plaster) with white trim, striped awnings, warm shop windows; yards with a red picket fence and a hedge, and the far village over them: red tin roofs, birches, spruces, blue hills; a dark green lamp post; yellow birch leaves; a blue bicycle. **No shop is a real one: a picture on each sign, no letters, no number.** | **a first street and shop**: drawn fronts, anonymous passing shoes/calves and an unmarked slow car behind the path; an open doorway leads to a warm striped room with giant jars of sweets and a paper bag. Plain code stand-ins, with no collisions; detailed people/vehicle models still need Blender. |
+| Byn (the extra chapter), a Saturday morning in October | A clear cool sky, a low sun along the street | Dark asphalt (`#4c4f56` to `#70727a`), pale paving slabs, the drain's iron; wooden boards inside the shop | Wooden houses in the village's own colours (ochre yellow, white, pale plaster, and one in Falu red on the far side of the crossing, in shade) with white trim, striped awnings, warm shop windows; a yard with a weathered grey fence, a hedge and a birch, and the far village over it: weathered tin roofs, birches, spruces, blue hills; a dark green lamp post; yellow birch leaves; a blue bicycle. Red is the candy's and the hook's here too: the fence, the car and the far roofs are not red. **No shop is a real one: its wares in its window and a carved sign, no letters, no number.** | **a street of houses and a shop**: each house is put together from a kit of parts modelled in Blender (`art/blender/village.py`: a stone foot with a drip board, boards with cover strips, casings, a door behind its step, a downpipe, a shop window with its wares) where the chapter says it stands (`street`): a near wall 7 EL behind the path, or 20 EL off across the crossing. The walls are lit, and the shop windows give off light. Anonymous passing shoes/calves and an unmarked slow car go behind the houses and are seen on the crossing; an open doorway leads to a warm striped room with giant jars of sweets and a paper bag. Plain code stand-ins, with no collisions; detailed people/vehicle models still need Blender. |
 | At home: the kitchen at 09:00, the veranda at 21:00 | Warm, low sun; in the evening dim and candle-warm, with the northern lights in the windows | Floor boards, a pale panelled wall close behind | White window frames; **Pappa's shelf of figures, with the first place in the row empty in the prologue and filled in the epilogue**; the Saturday bag; shavings | **a first room**: no table, candles or bowls, and no people |
 
 ### 2.4 The golden frames
@@ -341,6 +354,11 @@ Each holds Elof, a red hook ring and candy, and is drawn by the game itself.
 2. **The deck edge: built.** `?course=look-deck`. The deck with a step, the red wall and a window behind it,
    the hose down, the earth under the lower deck with a hook in the stripes of sun, and the lawn beyond.
    Kapitel 1 is dressed in the same look: `?dev`.
+3. **The village street: built.** `?course=look-street`. It is 61 EL: the pavement under the yarn shop's
+   window, the kerb, one bar of the drain, the crossing with a yard and the sky on its far side, and the
+   bakery's wall close behind him: the bicycle with the hook on its pedal over the cellar window's well, the
+   window where the drops fall, and the door behind its granite step. The extra chapter is dressed in the
+   same look: `?dev&course=byn`.
 
 ### 2.5 The H1a board: what Olov judges
 
@@ -382,7 +400,8 @@ Each should be recognisable at phone size, and none is final.
 - Plates rendered in Blender after the landscape references, and scanned CC0 materials from Poly Haven for
   moss, bark and wood. What is there now is drawn in code and reads as stylized, not as photographed.
 - On High: bloom on sparkles, and the half-resolution blur by depth. On Low: the grade inside the materials.
-- Water with glitter, the things on rails and the helpers in the place's style: they are still greybox boxes.
+- The things on rails and the helpers in the place's style: they are still greybox boxes. The water mirrors
+  the sky and the far scenery, and not yet what stands in it: a tussock, a trunk, him.
 - In the bog, the mountain and the final: pines with crowns on the play plane (a bare trunk reads as a
   pole, so the mountain has none yet; the far scenery has them), Mamma's lamp, the headlamps.
 - In the garden: long shadows, the hose and the lost things under the deck, the birch's crown, the workshop.

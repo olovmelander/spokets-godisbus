@@ -35,6 +35,7 @@ import { createSharedSweets } from './shared-sweets';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
+import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
@@ -279,10 +280,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.group, sideTrail.group, ledges.group, glitter.group);
-  const water = createWater(chapter, place?.water ?? null, place?.sun.from);
-  const waterScene = new Scene();
-  waterScene.fog = scene.fog;
-  waterScene.add(water.group);
+  // The water mirrors its place: the backdrop's sky, and the far layers' pictures standing on their heads.
+  const farCards: Object3D[] = [];
+  dressing?.group.traverse((object) => { if (object.name.startsWith('far-')) farCards.push(object); });
+  const water = createWater(chapter, place?.water ?? null, place?.sun.from,
+    place && dressing ? { place: place.id, sky: place.sky, far: farCards, dressing: dressing.group, street: (x) => heightOfGroundAt(chapter, x) } : undefined);
+  // It is drawn in the scene's own pass, after what stands in it and the far layers, and before what
+  // drifts over it (the bog's mist sheets, the shafts of light, the dust): its render order says where.
+  scene.add(water.group);
   const tussockMeshes = buildTussocks(chapter, place?.tussock ?? null);
   const berryMeshes = buildBerries(chapter);
   for (const berry of berryMeshes) scene.add(berry);
@@ -358,6 +363,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       models.push('boot/candy');
       modelInstallations++;
     });
+  // The village's houses, put together from the kit modelled in Blender (art/blender/village.py), take the
+  // place of the plain fronts built in code. A build without the file keeps those, as does a failed load.
+  const housesReady = dressing?.install ? assets
+    .manifest()
+    .then((manifest) => (manifest.packs.boot?.files['village.glb'] ? assets.model('boot', 'village') : null))
+    .then((model) => {
+      if (!model || !dressing.install!(model)) return;
+      models.push('boot/village');
+      modelInstallations++;
+    })
+    .catch((error) => console.error('The village kit could not be loaded; the plain fronts stay.', error)) : Promise.resolve();
   // The things of the mountain, modelled in Blender (art/blender/mountain-kit.py), take the place of the plain
   // shapes built in code, and bring the pines. A build without the file keeps the plain shapes, as does a failed load.
   const mountainReady = mountain ? assets
@@ -369,7 +385,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       modelInstallations++;
     })
     .catch((error) => console.error('The mountain kit could not be loaded; the plain shapes stay.', error)) : Promise.resolve();
-  const ready = Promise.all([candyReady, jayReady, sweetsReady, mountainReady]).then(() => undefined);
+  const ready = Promise.all([candyReady, jayReady, sweetsReady, housesReady, mountainReady]).then(() => undefined);
 
   // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
   // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.
@@ -532,6 +548,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   characterShadows.setTier(tier);
 
   const camera = new PerspectiveCamera(FOV, 1, 0.1, 140);
+  seeRich(camera, tier);
   let viewHeight = 5;
   let distance = 10;
   let pixelRatio = 1;
@@ -614,8 +631,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       water.applyCaustics(scene);
       characterShadows.prepareReceivers();
       materialGrade.apply(scene);
-      materialGrade.apply(waterScene);
-      for (const layer of [scene, waterScene]) layer.traverse((object) => {
+      // What only Mid and High draw (./rich.ts) is laid here, so that a model which arrived late is laid too.
+      layRich(scene);
+      scene.traverse((object) => {
         // What is out of the picture for having nothing to draw (./idle.ts) is drawn in these frames all the
         // same, as it is: at no size, or unseen. Its shader, its shape and its picture are made here, not in play.
         if (object.userData.idle === true && !object.visible) {
@@ -633,17 +651,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         // Frustum warmup alone skips hidden parents, including the family revealed at nightfall.
         // compile traverses their materials without drawing them, using this tier's actual target.
         renderer.compile(scene, camera);
-        renderer.compile(waterScene, camera);
       }
-      // A normal (non-XR) render target uses linear output without material tone mapping.
+      // A normal (non-XR) render target uses linear output without material tone mapping. The water is in
+      // this pass: on High it copies the picture so far just before it is drawn, and only while it is in
+      // sight (water.ts). No second scene render and no read/write feedback.
       renderer.render(scene, camera);
-      if (hdr && water.refracting) water.capture(renderer, hdr.scene, camera);
-      renderer.setRenderTarget(hdr?.scene ?? null);
-      // Water reads the copied pre-water colour, while testing the scene's retained depth. No second
-      // scene render and no read/write feedback: this adds only the pool draws and one small copy.
-      const clear = renderer.autoClear;
-      renderer.autoClear = false;
-      try { renderer.render(waterScene, camera); } finally { renderer.autoClear = clear; }
       if (hdr && gradePass && outputPass) {
         bloom?.render(renderer, hdr.scene);
         gradePass.setBloom(bloom?.texture ?? null);
@@ -693,7 +705,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     lawnSong.update(flags, clock);
     for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
     cones.update(rollers, clock);
-    water.update(clock);
+    water.update(clock, reducedMotion.matches || document.body.classList.contains('calm'));
     for (const [i, t] of tussocks.entries()) tussockMeshes[i]?.position.set(t.x, t.y, 0);
     // A cranberry goes flat under him and springs back, a little past its shape.
     for (const [i, b] of (berries ?? []).entries()) {
@@ -1004,6 +1016,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (tier === chosen) return;
       const changesPipeline = (tier === 'low') !== (chosen === 'low') || tier === 'high' || chosen === 'high';
       tier = chosen;
+      seeRich(camera, tier);
       characterShadows.setTier(tier);
       materialGrade.setEnabled(tier === 'low');
       resolutionSteps = 0;
