@@ -308,13 +308,17 @@ describe('the curl on the ring: the wrong tries', () => {
         for (let i = 0; i < 6 / STEP && dir * (x - sim.curr.x) > 0; i++) sim.step({ ...idle, x: dir });
         sim.step({ ...idle, x: dir, hop: true, hopHeld: true });
         const how = `a jump from ${x.toFixed(1)}, ${dir === 0 ? 'on the spot' : dir > 0 ? 'running right' : 'running left'}`;
+        let laced = false;
+        let strayed: string | null = null;
         for (let i = 0; i < 1.2 / STEP; i++) {
           sim.step({ ...idle, x: dir, hopHeld: true });
-          // While the curl hangs round the ring, the lace is never offered: not in the air either.
-          expect(sim.curr.verb, how).not.toBe('lace');
-          // The bark is the way in, and a jump under it lands on it. Nothing else is stood on.
-          if (sim.curr.grounded) expect(onTheTrail(sim) || standsOn(sim, bark), `${how}: he stood ${where(sim)}`).toBe(true);
+          laced ||= sim.curr.verb === 'lace';
+          if (sim.curr.grounded && !onTheTrail(sim) && !standsOn(sim, bark)) strayed ??= where(sim);
         }
+        // While the curl hangs round the ring, the lace is never offered: not in the air either.
+        expect(laced, how).toBe(false);
+        // The bark is the way in, and a jump under it lands on it. Nothing else is stood on.
+        expect(strayed, how).toBeNull();
         expect(taken(sim), how).toBe(0);
         expect(sim.bubbles, how).toBe(0);
       }
@@ -356,10 +360,12 @@ describe('the curl on the ring: the wrong tries', () => {
     // On the trail, at a walk and at a run: nothing of the puzzle is offered at all.
     for (const speed of [0.5, 1]) {
       const sim = at(FROM);
+      const offered = new Set<string>();
       for (let i = 0; i < 40 / STEP && sim.curr.x < TO; i++) {
         sim.step({ ...idle, x: speed });
-        expect(sim.curr.verb, `on the trail ${where(sim)}`).toBeNull();
+        if (sim.curr.verb !== null) offered.add(`${sim.curr.verb} ${where(sim)}`);
       }
+      expect([...offered]).toEqual([]);
       expect(sim.curr.x).toBeGreaterThanOrEqual(TO);
     }
     // On the bark, standing and jumping, straight up and off either end: Dra or nothing.
@@ -368,10 +374,12 @@ describe('the curl on the ring: the wrong tries', () => {
         const sim = on(bark, x);
         expect(sim.curr.verb).toBe('pull');
         sim.step({ ...idle, x: dir, hop: true, hopHeld: true });
+        const offered = new Set<string | null>();
         for (let i = 0; i < 1.4 / STEP; i++) {
           sim.step({ ...idle, x: dir, hopHeld: true });
-          expect(sim.curr.verb === null || sim.curr.verb === 'pull', `a jump from the bark at ${x.toFixed(1)}: ${sim.curr.verb}`).toBe(true);
+          offered.add(sim.curr.verb);
         }
+        expect([...offered].filter((verb) => verb !== null && verb !== 'pull'), `a jump from the bark at ${x.toFixed(1)}`).toEqual([]);
         expect(curl(sim).stop).toBe(0);
         expect(taken(sim)).toBe(0);
       }
@@ -395,10 +403,12 @@ describe('the curl on the ring: the wrong tries', () => {
         const sim = at(x);
         expect(sim.curr.verb).toBeNull();
         sim.step({ ...idle, x: dir, hop: true, hopHeld: true });
+        const offered = new Set<string>();
         for (let i = 0; i < 1.2 / STEP; i++) {
           sim.step({ ...idle, x: dir, hopHeld: true });
-          expect(sim.curr.verb, `a jump from ${x.toFixed(1)} on the far side`).toBeNull();
+          if (sim.curr.verb !== null) offered.add(sim.curr.verb);
         }
+        expect([...offered], `a jump from ${x.toFixed(1)} on the far side`).toEqual([]);
       }
     }
     // Even on the bough itself, were he there: the curl's ring is within the lace's reach, and it is not offered.
@@ -423,7 +433,6 @@ describe('the curl on the ring: the wrong tries', () => {
   });
 
   it('letting go badly: early, late, backwards or off a lace climbed short is a soft landing, and the ring is still there', () => {
-    const count = (sim: Sim) => expect(sim.bubbles).toBe(0);
     // Forwards, from the first moment of the swing to its very top.
     for (const from of [left(bark), bark.x, right(bark)]) {
       for (let release = 0.05; release <= 1.12; release += 0.1) {
@@ -438,10 +447,10 @@ describe('the curl on the ring: the wrong tries', () => {
             if (p.vx > 0 && angleOf(sim) > release) input.hop = true;
           }
           sim.step(input);
-          count(sim);
           if (swung && sim.curr.mode === 'free' && sim.curr.grounded) break;
         }
         expect(sim.curr.grounded, `from ${from.toFixed(2)}, let go at ${release.toFixed(2)}`).toBe(true);
+        expect(sim.bubbles, `from ${from.toFixed(2)}, let go at ${release.toFixed(2)}`).toBe(0);
       }
     }
     // Backwards, after pumping it up, with the stick any way; and with the lace climbed short first.
@@ -459,10 +468,11 @@ describe('the curl on the ring: the wrong tries', () => {
               const input = { ...idle, x: p.mode === 'swing' ? Math.sign(p.vx) || 1 : stick };
               if (p.mode === 'swing' && way * p.vx > 0 && way * angleOf(sim) > release) input.hop = true;
               sim.step(input);
-              count(sim);
               if (sim.curr.mode === 'free' && sim.curr.grounded) break;
             }
-            expect(sim.curr.grounded, `stick ${stick}, let go ${way > 0 ? 'forwards' : 'backwards'} at ${release}, climbed ${climb} s`).toBe(true);
+            const how = `stick ${stick}, let go ${way > 0 ? 'forwards' : 'backwards'} at ${release}, climbed ${climb} s`;
+            expect(sim.curr.grounded, how).toBe(true);
+            expect(sim.bubbles, how).toBe(0);
           }
         }
       }
