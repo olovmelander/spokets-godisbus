@@ -6,6 +6,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -156,7 +157,7 @@ try {
     await page.keyboard.up('ArrowRight');
     const after = await info();
     check(`${name}: chapter simulation remains frozen`, (await state()).steps === began.steps);
-    check(`${name}: ending draw budget`, after.drawCalls <= 120);
+    check(`${name}: ending draw budget`, withinDraws(after.drawCalls, after.tier));
     check(`${name}: no new shaders for the window shot`, after.programs === before.programs);
     check(`${name}: the one bell respects effects mute`, after.soundsPlayed - before.soundsPlayed === (touch ? 0 : 1));
     await page.locator('#debug').evaluate(node => { node.style.visibility = 'hidden'; });
@@ -193,7 +194,7 @@ try {
       '?dev&debug&standin&course=epilog&tier=low&at=33,0.01&flags=dots');
     await page.keyboard.press('Escape');
     check('shelf: the completed carving remains saved', (await state()).flags.includes('dots'));
-    check('shelf: the two figures stay within the draw budget', (await info()).drawCalls <= 120);
+    check('shelf: the two figures stay within the draw budget', withinDraws((await info()).drawCalls, (await info()).tier));
     await page.locator('#pause').evaluate(node => { node.style.visibility = 'hidden'; });
     await page.locator('#debug').evaluate(node => { node.style.visibility = 'hidden'; });
     await picture(page, '/tmp/epilogue-shelf.png');

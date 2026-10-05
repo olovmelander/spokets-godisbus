@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/opening-story');
@@ -110,7 +111,7 @@ try {
     });
     check(`${name}: shrinking is visible and pauses at its intermediate size`, change.midway.scale > 1 && change.midway.scale < 3 && change.paused.scale === change.midway.scale);
     check(`${name}: Elof becomes one third as tall while the same family remains beside him`, Math.abs(change.after.scale - 1) < .01 && change.after.family.every((actor, i) => actor.visible && JSON.stringify(actor.at) === JSON.stringify(before.family[i].at)) && !change.after.star);
-    check(`${name}: story staging stays inside the draw budget with warmed shaders`, change.after.drawCalls <= 120 && change.after.programs === before.programs);
+    check(`${name}: story staging stays inside the draw budget with warmed shaders`, withinDraws(change.after.drawCalls, change.after.tier) && change.after.programs === before.programs);
     await picture(page, join(shots, `${name}-after.png`));
     const restored = await page.evaluate(async ({ tier }) => {
       // The saved checkpoint is beyond the completed ride; a save before it deliberately replays it.

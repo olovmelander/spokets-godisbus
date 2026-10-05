@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/nightfall');
@@ -133,7 +134,7 @@ try {
     console.log(`  draws ${name}: ${early.drawCalls} → ${transition.frames.map((s) => s.drawCalls).join(', ')}`);
     // Tasting also reveals the existing family signs. From that first frame on only uniforms change, and nothing
     // new comes into the picture. The glitter round him leaves it when he has grown back: two draw calls fewer.
-    check(`${name}: nightfall draw calls never rise, within budget`, transition.frames.every((s, i, all) => s.drawCalls <= (all[i - 1] ?? s).drawCalls && s.drawCalls <= 120));
+    check(`${name}: nightfall draw calls never rise, within budget`, transition.frames.every((s, i, all) => s.drawCalls <= (all[i - 1] ?? s).drawCalls && withinDraws(s.drawCalls, s.tier)));
     check(`${name}: pause holds nightfall still`, transition.paused.background === transition.beforePause.background);
     await picture(page, join(shots, `${name}-night.png`));
     const round = await page.evaluate(({ width, height }) => {

@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/helper');
 mkdirSync(shots, { recursive: true });
@@ -68,14 +69,16 @@ try {
       return snapshot();
     }, { tier });
     check(`${name}: one ghost visits the actual gully without a jay download or Använd hint`, visit.ghostCount === 1 && !visit.bird && visit.help.step === 1 && visit.help.visit && visit.help.verb === null && visit.models.includes('boot/big-candy') && !visit.models.includes('boot/jay') && !fetched.some((url) => url.includes('/jay.glb')));
-    check(`${name}: visitor is visible and within draw budget`, visit.screen && visit.screen.x > 0 && visit.screen.x < width && visit.drawCalls <= 120);
+    check(`${name}: visitor is visible and within draw budget`, visit.screen && visit.screen.x > 0 && visit.screen.x < width && withinDraws(visit.drawCalls, visit.tier));
     await picture(page, join(shots, `${name}-visit.png`));
     const first = await page.evaluate(() => { const p = window.probe; p.ask(); p.ask(); p.draw(0); return p.snapshot(); });
     const middle = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 5; i++) p.draw(0.5); return p.snapshot(); });
     await picture(page, join(shots, `${name}-swing.png`));
     const end = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 5; i++) p.draw(0.5); return p.snapshot(); });
     check(`${name}: dotted Elof demonstrates the full swing without granting progress`, first.help.step === 3 && middle.figures[0].at[0] !== first.figures[0].at[0] && middle.ropeOpacity > 0 && Math.abs(end.figures[0].at[0] - 67.8) < 0.01 && end.ropeOpacity === 0 && end.state === first.state);
-    check(`${name}: visit and demonstration compile no new shaders and fit the draw budget`, first.programs === visit.programs && middle.programs === visit.programs && end.programs === visit.programs && Math.max(first.drawCalls, middle.drawCalls, end.drawCalls) <= 120);
+    // What was measured is in the check's name: when this fails on a slower computer, the log says which half.
+    const shown = [visit, first, middle, end];
+    check(`${name}: visit and demonstration compile no new shaders and fit the draw budget (programs ${shown.map((s) => s.programs).join(", ")}; draw calls ${shown.map((s) => s.drawCalls).join(", ")})`, first.programs === visit.programs && middle.programs === visit.programs && end.programs === visit.programs && withinDraws(Math.max(first.drawCalls, middle.drawCalls, end.drawCalls), first.tier));
     const paused = await page.evaluate(() => { const p = window.probe; p.draw(0); return p.snapshot(); });
     check(`${name}: pause holds the helper and demonstration`, JSON.stringify(paused.actor) === JSON.stringify(end.actor) && JSON.stringify(paused.figures) === JSON.stringify(end.figures));
     const repeated = await page.evaluate(() => { const p = window.probe; p.ask(); p.draw(0); return p.snapshot(); });
