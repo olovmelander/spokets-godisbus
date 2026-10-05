@@ -3,7 +3,7 @@
 ## State (5 October 2026)
 
 - **The look: an audit of everything on screen, and the first eight of its steps built** (5 October, on
-  Olov's computer; `docs/visual-audit.md`; pull requests #128 to #137, merged; #138 and #139 open). Olov:
+  Olov's computer; `docs/visual-audit.md`; pull requests #128 to #146, all merged). Olov:
   "make an audit of everything in the game and find everything that can be improved visually ... make it a
   visual masterpiece ... also i want things happening in the background, like a moose walking in the
   distant".
@@ -59,21 +59,17 @@
     mountain. The bog is an open mire with a veiled sun, crooked pines, silver dead pines and the mountain as
     a long back with a knob. Slim Norrland spruces, pines, birches; long level clouds. Not painted: red farms
     and the bell tower (question 8).
-  - **Step 5, life far off (#138, built and NOT merged when this was written):** its checks fail on GitHub in
-    five browser suites (`helper`, `nightfall`, `forest-puzzles`, `family-help`, `village`). One cause: the
-    life's picture arrives after the chapter has started, and its arrival ran the view's warm-up in the middle
-    of play (a frame of 313 draw calls in the log), and the batch's buffers were made when something first came
-    on stage. Both break gate 6. The fix is being made on the branch `background-life`: hide the batch as an
-    idle thing so the first frames make it, and swap the picture in without a warm-up. What it is:
-    Olov asked for "a moose walking in the distant". On the bog's far shore a
-    moose comes out of the mist, walks, stops, lifts its head and looks, and walks on; cranes cross the bog's
-    sky in a V; in the forest the moose crosses a bright gap one visit in three; smoke rises from far
-    chimneys, geese cross the garden's sky; at dusk the valley's windows light one by one, a car's lights
-    creep between them, and a star falls. One batch of at most 32 quads among the far pictures
+  - **Step 5, life far off (#138, merged):** Olov asked for "a moose walking in the distant". On the
+    bog's far shore a moose comes out of the mist, walks, stops, lifts its head and looks, and walks on; cranes
+    cross the bog's sky in a V; in the forest the moose crosses a bright gap one visit in three; smoke rises
+    from far chimneys, geese cross the garden's sky; at dusk the valley's windows light one by one, a car's
+    lights creep between them, and a star falls. One batch of at most 32 quads among the far pictures
     (`src/render/life.ts`), planned without three or DOM (`src/render/life-plan.ts`), the cast as data
     (`src/content/life.ts`), stages in the chapters (`life`), the moose a sheet of eighteen cells rendered in
     Blender (`art/blender/life.py`). With `debug` in the address, `&life=moose` (or `cranes`) puts a
-    happening on stage at once.
+    happening on stage at once. Its first run on GitHub failed five suites, and rightly: its picture was
+    treated as a model and its arrival ran the view's warm-up in the middle of play. It is a picture now,
+    swapped into a material the first frames have drawn, and the page waits for it with the boot's models.
     **The walk was judged in stills and by its tests, not watched in motion: Olov looks at that first.**
   - **Step 6, the village's houses (#136):** built of parts made in Blender (`art/blender/village.py`,
     `boot/village`): a stone foot, boards with cover strips, corner boards, casings, a downpipe, a panelled
@@ -82,26 +78,78 @@
     stands behind each stretch: near walls where a place wants one, the crossing and a yard with a birch far
     off. Red is the candy's and the hook's again. Still wrong: white walls in shade read grey on High; the far
     houses stand on no pavement (the street's ground is next); the shoes and the car are still boxes.
-  - **Being built when this was written,** each on its own branch, none merged:
-    - `forest-kit`: the forest's things as models (one spruce cone in its sizes, the giant cone, the log, the
-      anthill, stones, a lighter moss hummock, undergrowth, the vittra door, the twig and seesaw, and Bertil's
-      cap as a red-and-white trucker cap with a plain badge).
-    - `stone-kit`: the mountain's things (the old pine as a hero model, crooked pines, the wind shelters, the
-      cairn, the rock shelves, stones, cobbles, reindeer lichen).
-    - `soft-cards`: the soft cards as batches, the foreground redrawn for each place (the bog's is a mustard
-      smudge today, and shows more since the water stopped painting over it), wind in what grows, a gust,
-      falling needles, insects, dark skirts under trunks.
-    - Their brief is the second-wave one: up to 12 draw calls a picture may be spent on High and Mid, and what
-      would take a Low picture over 120 is marked `object.userData.rich = true`. The view lays what is rich
-      on a camera layer that Low does not see (`src/render/rich.ts`, #139, in checks when this was written).
-      Nothing is marked rich yet, so it is proven by its unit test only: look at the first rich thing on Low
-      and on High.
+  - **Step 8 for the garden, the lawn's floor (#142, merged):** in front of the path the lawn slopes on
+    towards the camera as the forest's floor does, with grass growing down it (never higher than the path it
+    stands under), dew, clover and the birch's fallen leaves; cut ground is turf over earth; far behind it
+    goes into the garden's own pale green. `FRONTS.lawn` in `src/render/dressing/ground.ts`.
+  - **Step 8 for what is built: wooden floors and the street (#141 merged, and its fault mended in #143,
+    merged).** #141 made a wooden floor run on level under the camera, and that was wrong: where he
+    stands at the foot of a step the camera is ahead of him, over the upper floor, and was inside it (at the
+    deck's 1 EL step the picture was the house wall seen through the floor). #143 is the mend, and gives the
+    street the same front:
+    - **The rule, in the art bible §2.3 and held by a test: no ground reaches the camera.** Every chapter's
+      ground ends less than 6 EL in front of the path. What grows rolls away in a curve (`PROFILE_FOREST`);
+      what is built (boards, asphalt, paving) is level where he walks and then one flat plane that tilts away,
+      0.3 down for each length (`TILTED`, `TILT`, `TILT_ENDS`), because boards on a curve are a barrel.
+    - At the top of a step of 0.6 EL or more every front draws back to the path, so that he is in sight at
+      the step's foot. (Tried and thrown away: drawing back only at falls over 1.2 EL. The deck's upper floor
+      then stood in front of him at its 1 EL step.)
+    - Each kind of ground has its own front now (`frontFor(kind, own)`): a deck that crosses a lawn is a
+      deck. The bog's walk of planks keeps its narrow front edge with board ends, a rim and peat under it.
+    - `tests/unit/wooden-floors.test.ts` holds all of it.
+    - Still wrong: near a step the plane twists as it draws back, and a step's face is a plain wall of
+      boards (it wants a riser and a nosing); the street's 3.3 EL step to the shop is a plain grey wall (it
+      wants a kerb and laid stone, from the village's kit); the faces in the street's pits (the drain, the
+      kerb's gap, about x 12 to 40) are near black.
+  - **Step 9 for the mountain, its things (#144, merged):** a kit modelled in Blender
+    (`art/blender/mountain-kit.py`, `boot/mountain-kit`, 188 KB as served, `src/render/mountain-kit.ts`).
+    **The old pine** stands on Berget's summit and again, mirrored, in Norrsken: a short twisted stem with a
+    strip of bare silver wood, orange limbs under a flat swept crown, one dead limb, roots over the rock.
+    Toppröset is three stacks of laid stones with pale slabs for steps; the rock shelves are slabs on
+    weathered blocks; each boulder of the gusts has its lee shelves as its own step and top; stones in three
+    shapes, lichen in drifts, the ringing cobbles pale on a shore of grey ones, small crooked pines on the
+    rim. Everything that holds a top up stands 0.42 EL behind the play plane (1.15 where a big candy, a
+    cobble or the memory stands). `tests/unit/mountain-kit.test.ts` holds every flat top to the chapter's
+    height and width. Still wrong: the boulders are one design and read a little like anvils; the cairn is
+    heavy masonry; the pine's limbs are smooth close up; the end wall still shows to the right of the pine.
+    Not done: a warm rim on the pine at dusk, cones and needles under it, the five cobbles as one mesh.
+  - **Step 9 for the forest, its things (#145, merged):** a kit of 24 things modelled in Blender
+    (`art/blender/forest-kit.py`, `boot/forest-kit`, 145 KB as served, `src/render/forest-kit.ts`). Cones are
+    spruce cones (the pushed, the rolling, the floor's, and the giant one he stands on); the anthill is a
+    needle mound; the log has bark, moss and broken boughs; the stone is a granite slab; **Bertil's cap is a
+    red-and-white trucker cap, upside down, with a plain dark-blue patch**; the vittra door is a plank door
+    under a spruce's roots; young spruces, ferns, chanterelles, ceps, lichen and birch leaves on the floor,
+    and fewer, larger moss hummocks (a forest picture has 14 to 33 % fewer triangles). A chapter says which
+    block of its ground is which thing (`landmarks` in `granskog.ts`, for the picture only). Still wrong:
+    behind each landmark the raised bank and its cut side walls still run back from the path, and the
+    slope's toe shows under the cone, the log and the stone (the ground should leave those blocks out:
+    `chapter.landmarks` has `from`, `to` and `base` for it); on the cap ride the camera is at water level,
+    so the near shore hides the pool and the cap floats over moss; the anthill's near flank at x 56 is a
+    plain brown face; rolling cones are drawn 1.2 EL wide over a 0.56 EL collider; on a pushed cone his feet
+    float at one corner. Not done: the root's back at x 9 to 15, the high root's shelf, blueberry twigs.
+  - **The foreground, the wind and the near life (#146, merged):** the soft cards in front are
+    batches with shapes on them (`src/render/quads.ts`, `dressing/foreground.ts`): ferns, sprigs and a spruce
+    twig in the forest, broad blades and clover in the garden, sedge and cotton grass in the bog (the mustard
+    smudge is gone), plantain and a dandelion clock out of the village's kerb. No card rises over the line he
+    walks on, from wherever he stands (`ceilingAt`; `tests/unit/soft-cards.test.ts`), so beside steps and
+    gaps the foreground thins out or is not there. What grows sways, and a breath of wind passes every 6.5 s
+    (`src/render/wind.ts`); on the mountain grass and lichen lean in a gust. Behind the path: a falling
+    needle in the forest, a bumblebee and two brimstones in the garden, midges over the bog, low seed fluff
+    on the mountain. A pool of light under each shaft and a dark at each trunk's foot. With reduced motion
+    all of it stands still. 5 to 15 draw calls fewer; two shader programs more in the garden and one on the
+    mountain, made in the first frames. Still wrong: the pools of light are strong on Low; the batches are
+    never culled. Not done: boughs hanging into the top of the picture, the gust's warning shiver, ants, a
+    spider's web, sparrows, drips.
+  - **The hook for things that only High and Mid draw (#139, merged):** `object.userData.rich = true` puts a
+    thing on a camera layer that Low does not see (`src/render/rich.ts`). **Nothing is marked rich yet:** the
+    three kits and the foreground all fit Low's 120 draw calls. The first thing marked needs looking at on
+    Low and on High.
   - **Not started, in the audit's order:** one haze for all three tiers, then shadows from the world, a rim
     of light and the grade (step 7: do the haze before any more tuning of looks); the bog's hummocks with a
-    waterline, the street's kerb and road, the lawn's fringe and the decks' rim (the rest of step 8); the
-    bog's things with the dead pines and the crane, the garden's things with Moa's paper plane (step 9);
-    ledges that belong to their place (step 10); the mist and the lantern, the northern lights with rays, the
-    shop's inside, the drain and the awning (step 11).
+    waterline, the street's kerb and road, a riser for the decks' steps (the rest of step 8); the bog's
+    things with the dead pines and the crane, the garden's things with Moa's paper plane (the rest of
+    step 9); ledges that belong to their place (step 10); the mist and the lantern, the northern lights with
+    rays, the shop's inside, the drain and the awning (step 11).
   - **Waits for Olov:** the house's front and home's rooms (garden rows 3, 5, 9, 10). They are the family's
     house: `CLAUDE.md` asks for every picture of it open beside the model and for Olov to see it, and its
     model lives in the private repository. Only the draw calls there (row 11) can be done without him.
@@ -1443,21 +1491,71 @@
 
 **For the next session, in this order:**
 
-- **Olov looks at the look,** on a phone and on the computer: `?dev&course=granskog` (the floor, the pool at
-  the brook), `?dev&course=myren` (the water, the open mire), `?dev&course=berget` (the granite, the view
-  from the summit), `?dev&course=norrsken`, `?dev&course=byn` (the houses). Once #138 is merged: the moose in
-  the bog a little way in, about where the first big tussocks end
-  (`?dev&debug&course=myren&life=moose` brings it at once; `life=` is read only with `debug` in the
-  address), and the valley's windows at dusk. What his eyes are needed for: whether the moose's walk is right in motion, whether it is taken
-  for scenery, whether anything new draws the eye from the candy, and which place is now the weakest.
+- **Where 5 October ended: everything built is on `main`, and no pull request is open.** The last six of the
+  day:
+
+  | PR | What | At the end of 5 October |
+  | --- | --- | --- |
+  | #142 | The lawn's floor | merged |
+  | #143 | Built floors tilt away; the camera is never inside a step (mends #141) | merged |
+  | #144 | The mountain's kit: the old pine, the cairn, shelves, boulders | merged, with #145 (see below) |
+  | #145 | The forest's kit: cones, the anthill, the log, Bertil's cap | merged |
+  | #146 | The foreground, the wind, the near life | merged |
+  | #138 | The moose and the far life | merged |
+
+  - **They were merged as a stack:** each branch had the ones above it merged in, because all of them add a
+    line at the same places in `view.ts`, `LICENSES.md`, `sim/types.ts` and the dressing. All the checks then
+    ran at once, and each merged without conflicts once the ones above it were in.
+  - **#144's own run on GitHub never finished:** one of its browser jobs hung for 31 minutes while installing
+    the browser, before any test had started, and was cancelled. Its commits passed all six browser jobs
+    twice inside #145 and #146, and came in with #145.
+  - **Checked on `main` after the merges, with stand-in figures:** typecheck, the unit and robot tests, the
+    build with its size gates (the script is about 399 KB of 450 gzipped), the privacy check, and `smoke`
+    (88 checks). The tree on `main` is the same as the one #138 was checked with: 1,180 tests.
+  - **Nobody has seen the sum of it move.** Each step was judged in still pictures, by me and by its builder.
+    Olov's look, below, is the first time anyone sees the wind, the moose and the kits together in play.
+  - The branches are still on GitHub and the worktrees `vis-ground`, `vis-stonekit`, `vis-forestkit`,
+    `vis-soft` and `vis-life` are still on Olov's computer under `.claude/worktrees/`: all merged, and free to
+    remove (take the `node_modules` link out of each first: the memory note says how).
+- **Olov looks at the look,** on a phone and on the computer, about 15 minutes after the last merge:
+  - `?dev&course=garden`: the lawn's floor; the deck's steps
+    (`?dev&debug&course=garden&at=11.7,6.61` is the step that was broken); the bee at the dandelions.
+  - `?dev&course=granskog`: the cones, the giant cone a little way in, the anthill, the log, and Bertil's
+    cap on the pool; ferns in front; needles falling.
+  - `?dev&course=myren`: the water, sedge in front, and the moose a little way in, about where the first big
+    tussocks end (`?dev&debug&course=myren&life=moose` brings it at once; `life=`, `at=` and `flags=` are
+    read only with `debug` in the address).
+  - `?dev&course=berget`: the granite, the shelves and boulders, and at the top the cairn and the old pine
+    (`?dev&debug&course=berget&at=155,31.4`). `?dev&course=norrsken`: the pine under the lights, and the
+    valley's windows.
+  - `?dev&course=byn`: the houses, the street's front, weeds out of the kerb.
+  - What his eyes are needed for: whether the moose's walk is right in motion and is taken for scenery;
+    whether the swaying grass and the soft plants in front are calm or busy; whether the old pine is the
+    tree he imagined; whether anything new draws the eye from the candy; and which place is now the weakest.
 - **Olov runs the benchmark on the devices Elof plays on:** `?dev&bench&course=granskog` plays by itself for
   30 seconds and shows numbers as text to paste into a session. The draw-call budget was raised on an
-  estimate; this is the measurement that says whether it is right.
-- **The look, step by step** (`docs/visual-audit.md`, "The order of the work"). First: the moose's fix, its
-  checks green, and its merge (#138: the moose is not on the site until then); the hook for rich things
-  (#139); the three branches being built, each looked at in pictures, rebased, checked and merged. Then one
-  haze for all three tiers before any more tuning of looks (pipeline rows 3 and 15), shadows from the world,
-  and the rest as the state above lists it.
+  estimate; this is the measurement that says whether it is right. It matters more now: two kits, the wind
+  and the far life have come since.
+- **The look, the next steps** (`docs/visual-audit.md`, "The order of the work"; the "Still wrong" lists in
+  the state above and in each pull request). In the order I would take them:
+  1. **One haze for all three tiers** (pipeline rows 3 and 15), before any more tuning of looks: today a
+     place's colours are tuned three times over. Then shadows from the world and a rim of light (step 7).
+  2. **The ground leaves out the blocks that are things:** `chapter.landmarks` (the forest's cone, log,
+     anthill and stone) and the mountain's shelves say where; the bank and its cut walls behind them go.
+  3. **Steps and walls in what is built:** a riser and a nosing for a deck's step, a kerb and laid stone for
+     the street's wall to the shop, and the street's dark pits.
+  4. **The bog's hummocks with a waterline, and its things:** dead pines, the crane as a model.
+  5. **The garden's things,** with Moa's paper plane; the house and home's rooms wait for Olov (below).
+  6. Ledges that belong to their place; the mist and the lantern; the northern lights with rays; the shop's
+     inside; the drain and the awning.
+- **How this session worked, for the one that goes on:** a builder for each step in its own worktree under
+  `.claude/worktrees/`, briefed from the audit's rows (the briefs are in the memory note "Other sessions
+  share the checkout"), judged on before and after pictures on a tablet, a phone and Low, then merged as its
+  own pull request. Blender runs without a window
+  (`blender -b --factory-startup --python art/blender/<kit>.py`). A fresh worktree needs
+  `node scripts/build-assets.mjs` before its dev server shows anything. The picture tools are in the main
+  checkout's `docs/shots/_work/audit/` (git ignores them): `shot.mjs` takes a list of places and a server's
+  address, `sheet.mjs` and `pair.mjs` lay pictures side by side.
 - **Olov plays the layers and the puzzles,** on a phone and on the computer: `?dev&course=garden` (the window
   sills at once, the clothes line after the boulder), `?dev&course=granskog`, `?dev&course=myren`,
   `?dev&course=berget` and `?dev&course=byn`; and the puzzles at `?dev&debug&course=garden&at=79,0.01`,
@@ -1621,25 +1719,32 @@ The older list, still true where it is not struck:
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 recorded | — / 2 | Original plan versions 1–4; `main` and the placeholder page; the reference pictures gathered. Version 5 on 4 October adds the researched story/level overhaul and its acceptance criteria; no new session or review count is inferred. |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. Final visual and physical-device review remains. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
 | 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. Broader spatial work, Byn's return loop, final likeness/contact/acting/memory art, listening and device checkpoints remain; no release is declared. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. |
 
 ## Known bugs
 
-- **A browser check fails now and then on GitHub:** `helper`, "visit and demonstration compile no new
-  shaders and fit the draw budget", at 844×390 on Low. It failed once for #133 and passed when the same commit
-  was run again; here it passes. Since #134 its name says what it measured, so the next failure tells
-  whether it was a shader or the draw calls.
-- **The bog's foreground card is a mustard smudge** over the lower right of several pictures (x 83, 94,
-  139). It was always there; the water used to paint over it. The `soft-cards` branch redraws it.
-- **Granskogen's pictures have about 30,000 triangles more** since the forest got its floor (208,000 at
-  x 106 on a tablet, 242,000 on a phone). Nothing holds triangles to a number. Most of a forest picture's
-  triangles are the 22 moss cushions a length behind the path at 80 triangles each; the `forest-kit` branch
-  makes a lighter one.
-- **The mountain's end walls are flat sheets,** warm pink in the sun, and its boulders, shelves and cairn
-  are still the old shapes until `stone-kit`.
+- **Two browser suites failed by chance on GitHub this evening, and both are mended in #143** (merged):
+  - `helper`, "visit and demonstration compile no new shaders and fit the draw budget (programs 29, 31, 31,
+    31; draw calls 67, 318, 68, 67)", on #133 and #142. The suite waited for one of the place's models before
+    it measured; another that came after the first measure was warmed in the middle of the visit. It waits
+    for the view's own `ready` now (#145 has that last step).
+  - `prologue`, "fast shrinking flow reaches its handoff: timed out" with him still walking at x 50, on #138
+    and #143. The walk takes about 14 s of the game's time and the suite allowed 15 s by the clock; since the
+    room's floor fills the lower third of the picture (#141), GitHub's software renderer falls a little
+    behind. It has 40 s now. It says nothing about a real device, but it is a reason to run the benchmark.
+- **Timed checks miss on this computer when several sessions work at once:** `challenges` (the mountain's
+  C4 jump, the forest's C2 platform), `garden-loop` and `mountain-loop` each failed for a builder this evening
+  and passed when run again alone. Nobody ran a control on an unchanged checkout, so "load" is a reading and
+  not a measurement. GitHub's run is the measure.
+- **What is still wrong in the pictures** is listed step by step in "State" above (each step's "Still
+  wrong"). The ones that show most: the plane's twist and the plain faces at steps in decks and the street;
+  the bank that still runs back behind the forest's cone, log, anthill and stone; the cap floating over moss
+  on the cap ride; the mountain's end wall beside the old pine.
+- **Granskogen's triangles:** the forest's floor added about 30,000 a picture (#131), and the forest kit's
+  lighter hummocks took 14 to 33 % off again (#145). Nothing holds triangles to a number.
 - **The dusk's lights are placed by eye** against the far hillside as it stands with `outlook: 30`; change
   that or the hillside's `sink` and they need looking at (said at the data in `src/content/life.ts`).
 
@@ -1806,3 +1911,10 @@ Choices the session made, for Olov to overrule if he wants:
 11. **The house and home's rooms:** the audit asks for the house's front as a model and the kitchen and the
     veranda rebuilt. They are the family's house, so they wait for a session with you at the screen, the
     photos open beside the model.
+12. **Is Bertil's cap right?** It is a red-and-white trucker cap with a plain dark-blue round patch where a
+    mark would be (no logotype). The builder had no picture of the real cap: say its colours if they differ.
+13. **Is the old pine the tree you meant?** Short, twisted, a flat crown swept by the wind, one dead silver
+    limb. It stands on the summit and at the northern lights. The default: it stays.
+14. **Is the swaying and the soft growth in front calm enough?** Grass sways all the time and a breath of
+    wind passes every 6.5 s; out-of-focus ferns and blades lie along the picture's lower edge. *Lugna
+    animationer* stops all of it. The default: as built.
