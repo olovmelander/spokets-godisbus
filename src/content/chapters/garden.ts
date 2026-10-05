@@ -36,6 +36,14 @@ import type { Candy, ChapterData } from '../../sim/types';
  * - **The clothes line:** leaves up from the boulder, three rings in a row over the dew rain, and a leaf to
  *   land on with a hidden candy over it. The dry, brave way; the lawn below stays the way that dodges drops.
  *
+ * And one puzzle, never needed (docs/level-design.md, point 8), over the birch's first root, before he has
+ * pulled anything:
+ * - **The curl on the ring:** hearts lie on a bough beyond the root, too high from the ground and too far from
+ *   the plate of bark over the root's top. A red ring hangs between them, but a curl of Pappa's shavings has
+ *   blown onto its string and hangs round it: the lace has nothing to catch. The curl has a red ring of its
+ *   own. From the bark Använd pulls it along the string, off the ring; then the same press throws the lace at
+ *   the ring it hid, and the swing sets him down among the hearts. The lace pulls as well as swings.
+ *
  * Not built yet: the ghost at the forest's edge. What is here is the ground, the candy and the rules; what it looks like comes later.
  */
 
@@ -203,9 +211,19 @@ export const garden: ChapterData = {
     { x: 112, y: 4.9, length: 2.6, extra: true },
     { x: 116, y: 4.9, length: 2.6, extra: true },
     { x: 120, y: 4.9, length: 2.6, extra: true },
+    // The curl on the ring: one ring on a string over the birch root, inside a curl of shaving (see `movers`)
+    // until the curl is pulled off it. While the curl hangs round it the lace cannot reach it from anywhere.
+    // Its swing starts from the plate of bark and ends on the bough with the hearts; it hangs low enough that
+    // letting go anywhere is a soft landing on the root or the lawn. With *Hjälp med svingen* the flight is
+    // steered to the bough.
+    { x: 85.4, y: 5.2, length: 2.2, extra: true, land: { x: 87.9, y: 2.75 } },
   ],
   // The clothes line itself, between its two poles: the three rings hang from it.
-  lines: [{ from: { x: 110.4, y: 6 }, to: { x: 121.6, y: 6 }, sag: 0.3, posts: true }],
+  // And a string between two sticks over the birch root: the ring hangs from it, and the curl slides along it.
+  lines: [
+    { from: { x: 110.4, y: 6 }, to: { x: 121.6, y: 6 }, sag: 0.3, posts: true },
+    { from: { x: 82.3, y: 6.5 }, to: { x: 86.3, y: 6.5 }, sag: 0.1, posts: true },
+  ],
   ledges: [
     // The window sills: five boards along the house wall, up from the step beyond the lifted board and down
     // again before the ladybird. They are wide and 0.7 or 0.8 apart, and each going down begins under the end
@@ -233,6 +251,12 @@ export const garden: ChapterData = {
     // the drops reach. Neither can be jumped onto from the lawn: the way to them is along the rings.
     { x: 123.2, y: 2.3, width: 2.4, look: 'leaf' },
     { x: 125.3, y: 1.6, width: 1.4, look: 'leaf' },
+    // The curl on the ring. A plate of bark on a birch shoot over the root's top, one held jump up through it:
+    // from anywhere on it the curl's ring is in the lace's reach, and the ring it hides after that...
+    { x: 83.6, y: 2.3, width: 1.1, look: 'bark' },
+    // ...and the bough with the hearts, over the root's far slope. It is out of a jump's reach from the root,
+    // from the slope under it and from the bark, and ends before the dew bells: nobody on it rings one.
+    { x: 87.9, y: 2.75, width: 1.6, look: 'branch' },
   ],
   // Side candy, in the order sills, clothes line, planks, so that the first of each way is a heart.
   side: [
@@ -265,12 +289,27 @@ export const garden: ChapterData = {
     // Over the first plank by the hose, where a jump off the hose sets him down, once the hose is there: he
     // sees it as he slides down.
     { x: 48.9, y: 2.75, after: 'ladybird' },
+    // The prize of the curl on the ring: five in a row over the bough, the nearest of them a heart. They hang
+    // higher than a jump from the root carries him, and a walk along the bough takes them all.
+    { x: 87.6, y: 3.75 },
+    { x: 87.25, y: 3.75 },
+    { x: 88.3, y: 3.75 },
+    { x: 87.95, y: 3.75 },
+    { x: 88.65, y: 3.75 },
   ],
   movers: [
     // A curl of shaving on the wall's top, with a red ring: pulled down, it is the step up.
     { id: 'curl', look: 'curl', width: 1.2, height: 1.5, verb: 'pull', ring: { x: -0.5, y: 0.3 }, stops: [{ x: 134.7, y: 3.3 }, { x: 133.3, y: 0 }] },
     // A second curl on the top: two pushes lay it across the gap.
     { id: 'bridge', look: 'curl', width: 3.1, height: 0.4, verb: 'push', stops: [{ x: 137.6, y: 3.3 }, { x: 139.4, y: 3.3 }, { x: 141.4, y: 2.9 }] },
+    // The curl on the ring: a curl of shaving on the string over the birch root, hanging by its own red ring
+    // with the swing's ring in its middle. Nothing reaches through it: while it hangs there the lace is not
+    // offered. Its ring is out of reach for anyone standing on the root under it, and in reach from all of the
+    // plate of bark; like the clothes line's rings it can be thrown to at the top of a jump from below. One
+    // pull slides it along the string towards him, over his head to the first stick, and there it stays: the
+    // ring it hid is then in reach from the bark and from the root under it.
+    // Never needed: the helper never points at it.
+    { id: 'ring-curl', look: 'curl', width: 1.2, height: 1.5, verb: 'pull', optional: true, ring: { x: -0.5, y: 1.35 }, stops: [{ x: 85.4, y: 4.8 }, { x: 83.1, y: 4.85 }] },
   ],
   drips: [
     { at: { x: 111, y: 0 }, every: 1.8, first: 0.2 },
@@ -345,6 +384,11 @@ export const garden: ChapterData = {
     { from: 108, to: 128, zoom: 1.25, lead: 3.2 },
     { from: 130, to: 152, zoom: 1.2 },
     { from: 164, to: 208, zoom: 1.5, lift: 0.5 },
+    // On the plate of bark, on the swing and on the bough: the string overhead with the curl and its ring,
+    // the bough with the hearts, and the root below. Standing on the root, and hopping there, the picture is
+    // the usual one; the top of a held jump on the root's top reaches the bark's height and stirs it, as a
+    // jump on the boulder does under the clothes line.
+    { from: 82.8, to: 89, above: 2.25, zoom: 1.35, lift: 0.2 },
   ],
   candy: [
     // 1. the deck
