@@ -19,6 +19,10 @@ import type { Candy, ChapterData } from '../../sim/types';
  * 8. **Spöket i virveln** (P10): from a stone, the lace pulls the ghost ashore. It leaves one candy on the
  *    stone, and from now on it waits for him.
  *
+ * Over the trail lie the first layers (docs/level-design.md), none of them needed: boughs over the forest
+ * floor from the big cone to the lingonberry, with the forest's first ring; a root from the hilltop back down
+ * to the ant road; and a nest up a trunk after the log, with two rings in a row to a bough before the pool.
+ *
  * At the vittra door, a berry left for the neighbours receives a little picture on a real return visit.
  * Not built yet: tasting a lingonberry.
  * To the simulation the pool and the eddy are pits; the water in them is drawn only.
@@ -60,12 +64,14 @@ export const granskog: ChapterData = {
   counterweight: { from: 100, to: 118, call: 'seesaw', heavy: 'cone', launch: 'launch', trial: 'seesaw:trial' },
   returnClue: { from: 60, to: 69.5, gift: 'vittra:gift', away: 'vittra:gift:away', clue: 'keepsake:vittra', root: { x: 66.3, bottom: 0, top: 10, exit: -1, look: 'root' }, door: { x: 64.4, y: 10 } },
   thoughtClues: [{ at: { x: 64.4, y: 10.5 }, picture: 'small-figure', after: 'keepsake:vittra' }],
-  // Off the trail: behind him at the start, over the big cone, on top of the anthill, and over the log.
+  // Off the trail: behind him at the start, at the end of the far bough of the swing, on top of the anthill,
+  // and in the nest up the trunk after the log. Two for the brave, in sight above a hard move; two for the
+  // curious, behind a tell.
   hidden: [
     { x: -1.8, y: 0.5, kind: 'sockerbit' },
-    { x: 22, y: 3.1, kind: 'gummiorm' },
+    { x: 31, y: 2.95, kind: 'gummiorm', way: 'over the ring between the trunks' },
     { x: 62, y: 14.45, kind: 'chokladkola', route: true },
-    { x: 134.5, y: -5.3, kind: 'colaflaska' },
+    { x: 140.3, y: -3.85, kind: 'colaflaska', way: 'up the bark to the nest' },
   ],
   challenges: [{
     id: 'anthill', from: 46.5, to: 63.5, above: 5.4, reward: 'chokladkola',
@@ -150,6 +156,48 @@ export const granskog: ChapterData = {
     { x: 43.7, bottom: 0, top: 4, exit: 1, needs: 'jay', look: 'lichen' },
     // The root down from the anthill.
     { x: 66.3, bottom: 0, top: 10, exit: -1, look: 'root' },
+    // A root down the hilltop's near side, back to the ant road. It is there once the ants have carried him
+    // up, so that the anthill's own way up (C2) can still be gone back to, and never before: the twig and
+    // the ants are the way up the first time.
+    { x: 59.7, bottom: 4, top: 10, exit: 1, needs: 'antlift', look: 'root' },
+  ],
+  // Rings off the main way (docs/level-design.md). Each hangs 5.7 EL over the forest floor: out of the lace's
+  // reach from the floor, even at the top of a jump, and within it from the bough or the nest beside it. The
+  // lace is 3 EL long, so that a full swing tops out under 4 EL: letting go anywhere is a soft landing.
+  // Each hangs on a string from a bough high in the canopy, out of the picture.
+  hooks: [
+    // The forest's first ring, between two trunks: from the high bough to the long bough on the far side.
+    // A running jump off the big cone comes within its reach too: a shorter way, for quick hands.
+    { x: 26.2, y: 5.7, length: 3, extra: true, hangs: 9 },
+    // Two in a row from the nest, at one height and 4.4 EL apart: the second is thrown to in the air.
+    { x: 143.6, y: -2.3, length: 3, extra: true, hangs: 9 },
+    { x: 148, y: -2.3, length: 3, extra: true, hangs: 9 },
+  ],
+  // Ledges (docs/level-design.md). Up a trunk each is one held jump over the last, 0.9 at most, and beside
+  // it: a standing leap with the stick held towards it lands on it from nearly anywhere on the one below, so
+  // the climb has a rhythm.
+  ledges: [
+    // The boughs: a second level over the forest floor, from the big cone to the lingonberry. A plate of
+    // bark over the cone, with a heart as its tell, and the high bough the ring is thrown from. A jump from
+    // the high bough that misses is still a soft landing.
+    { x: 21.6, y: 1.95, width: 1.2, look: 'bark' },
+    { x: 22.9, y: 2.85, width: 1.8, look: 'branch' },
+    // The far bough is lower and long, so that he lands on it wherever he lets go of the ring. Too far from
+    // the high bough for a jump: the ring is the way over.
+    { x: 29.65, y: 2.4, width: 3.9, look: 'branch' },
+    // A step down. It is too high to jump onto from the floor, so the boughs are entered at the cone only.
+    // From its end he drops to the forest floor at the lingonberry: the jay's puzzle is still ahead of him.
+    { x: 31.7, y: 1.4, width: 1.6, look: 'branch' },
+    // The nest: three plates of bark zig-zag up a trunk after the log, to a nest 3.6 EL over the floor. The
+    // lowest plate, with its heart, is the tell. It is about as high as the log, so a leap from the log's end
+    // lands on it too; the next one is out of that leap's reach.
+    { x: 138.6, y: -7.1, width: 1.4, look: 'bark' },
+    { x: 139.8, y: -6.2, width: 1.4, look: 'bark' },
+    { x: 138.6, y: -5.3, width: 1.4, look: 'bark' },
+    { x: 140.05, y: -4.4, width: 2.1, look: 'branch' },
+    // The bough the two rings end on, high over the big candy. From its end he drops to the floor before
+    // Bertil's sign.
+    { x: 151.4, y: -5.6, width: 3.6, look: 'branch' },
   ],
   spots: [
     { id: 'berry', look: 'berry', at: { x: 33, y: 0 }, verb: 'take', word: 'pick' },
@@ -264,6 +312,13 @@ export const granskog: ChapterData = {
   ],
   later: [{ flag: 'seesaw:trial:landed', after: 'seesaw:trial', seconds: TRIAL.time }],
   cameras: [
+    // Up on the boughs and in the nest the picture is wider and looks down a little, so that the ring over
+    // him and the trail under him are both in it: further down from the nest, which is higher. Each begins
+    // higher than a jump from the trail reaches, and lower than the bottom of the swing: over the big cone
+    // that takes two zones.
+    { from: 21, to: 25.2, above: 2.35, zoom: 1.4, lift: -1 },
+    { from: 25.2, to: 33, above: 2.12, zoom: 1.4, lift: -1 },
+    { from: 137.7, to: 153.6, above: -5.9, zoom: 1.4, lift: -1.4 },
     { from: 46.5, to: 63.5, above: 5.4, zoom: 1.25, lift: 0.7, lead: 1 },
     { from: 40, to: 66, zoom: 1.25, lift: 0.3 },
     // On the slope the picture looks less far ahead, so that the cones coming from behind are seen.
@@ -339,5 +394,33 @@ export const granskog: ChapterData = {
     { x: 186.8, y: -7.05 },
     { x: 188.9, y: -7.55 },
     ...row(191, 203, -8),
+  ],
+  // Side candy: hearts and lollipops, over every ledge and three along the arc of every swing. Every other
+  // one is a heart, and the first of each way is one: its tell. New ones are added at the end.
+  side: [
+    // The boughs: up the bark, along the swing, on the far bough, and down.
+    { x: 21.6, y: 2.5 },
+    { x: 22.5, y: 3.4 },
+    { x: 23.3, y: 3.4 },
+    { x: 24.9, y: 3 },
+    { x: 26.2, y: 2.7 },
+    { x: 27.5, y: 3 },
+    { x: 28.8, y: 2.95 },
+    { x: 29.8, y: 2.95 },
+    { x: 31.4, y: 1.95 },
+    { x: 32.1, y: 1.95 },
+    // The nest: up the bark, in the nest beside the colaflaska, along both swings, and on the last bough.
+    { x: 138.6, y: -6.55 },
+    { x: 139.8, y: -5.65 },
+    { x: 138.5, y: -4.75 },
+    { x: 139.6, y: -3.85 },
+    { x: 142.3, y: -5 },
+    { x: 143.6, y: -5.3 },
+    { x: 144.9, y: -5 },
+    { x: 146.7, y: -5 },
+    { x: 148, y: -5.3 },
+    { x: 149.3, y: -5 },
+    { x: 151.3, y: -5.05 },
+    { x: 152.6, y: -5.05 },
   ],
 };
