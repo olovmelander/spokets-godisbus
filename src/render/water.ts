@@ -86,7 +86,7 @@ const KINDS: Partial<Record<PlaceId, WaterKind>> = {
   /** Peat water: nearly black, still, and a mirror. It lies in front of the tussocks and behind the whole bog. */
   bog: {
     front: 2.4, corner: 1.5, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
-    dim: 0.6, faceTop: '#34423f', faceDeep: '#0e1a18', ramp: 1.6, faceAlpha: 0.93, faceBelow: 1, murk: 0.9, through: '#9fb09a',
+    dim: 0.6, faceTop: '#34423f', faceDeep: '#0e1a18', ramp: 1.6, faceAlpha: 0.93, faceBelow: 1, murk: 0.5, through: '#c9d2c0',
     mirror: 0.5, tint: '#c8bd9e', ripple: 0.8, bedColour: '#000000', shoreColour: '#000000', stands: null,
   },
   /** Rain water in a dip of the street: a hand deep, asphalt under it, and a wet shore towards the houses. */
@@ -464,10 +464,12 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           float see = exp(-max(behind.a * cameraFar - waterDepth, 0.0) * body.x);
           vec3 seen = behind.rgb * through;
           top = mix(top, seen, see * (1.0 - mirrors) * 0.85);
-          face = mix(face, seen, see * 0.8);
+          // Less light reaches what lies deep: a tussock's foot shows at the waterline, a sunken plank hardly.
+          face = mix(face, seen, see * exp(-under * body.x * 2.0) * 0.8);
           solid = faceSolid = 1.0;
         }
-        face = mix(face, skyMiddle * mirrorTint, 0.22 * (1.0 - smoothstep(0.01, 0.035, under)));
+        // The line is soft, so that High's depth blur, which sees the pit behind the water, does not break it.
+        face = mix(face, skyMiddle * mirrorTint, 0.2 * (1.0 - smoothstep(0.0, 0.07, under)));
         if (body.w > 0.0) {
           // Shallow water: under its bed the street is cut through, dark and cool as the ground's own front.
           float ground = smoothstep(body.w - 0.02, body.w + 0.03, under);
