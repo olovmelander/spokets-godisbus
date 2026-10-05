@@ -247,6 +247,32 @@ describe('the plan', () => {
     }
   });
 
+  it('begins nothing before its pictures have come, and says what is always there all the same', () => {
+    // Half a minute on the stage with no pictures: nothing is on it, and nothing is drawn.
+    const bog = lifePlan('bog', [{ kind: 'moose', from: 0, to: 10 }], 0)!;
+    let drawn = 0;
+    run(bog, 30, () => ({ x: 5, wait: true }), ({ count, on }) => {
+      if (on || count) drawn++;
+    });
+    expect(drawn).toBe(0);
+    // The stage was not used up unseen: it is played as soon as they are there.
+    bog.step(watch({ x: 5, clock: 30.1 }));
+    expect(bog.on).toBe('moose');
+    // Not even a kind that is asked for by name begins.
+    const named = lifePlan('bog', [], 0, 'cranes')!;
+    for (const clock of [0, 3, 6]) named.step(watch({ clock, wait: true }));
+    expect(named.on).toBeNull();
+    named.step(watch({ clock: 6.1 }));
+    expect(named.on).toBe('cranes');
+    // Smoke and far windows are said from the first frame, to be drawn unseen with a clear picture: so the
+    // place has as many draw calls before its pictures come as after.
+    for (const [place, x] of [['dusk', 18], ['garden', 73]] as const) {
+      const before = lifePlan(place, [], 0)!.step(watch({ x, clock: 2, wait: true }));
+      expect(before, place).toBeGreaterThan(0);
+      expect(before, place).toBe(lifePlan(place, [], 0)!.step(watch({ x, clock: 2 })));
+    }
+  });
+
   it('with reduced motion shows only what is always there, and the slow walkers', () => {
     for (const place of places) {
       const plan = lifePlan(place, STAGES[place], 3)!;

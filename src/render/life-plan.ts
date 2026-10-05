@@ -40,6 +40,12 @@ export interface Watch {
   calm: boolean;
   /** How far night has fallen, from 0 to 1. */
   night: number;
+  /**
+   * Its pictures have not arrived: nothing begins, not even a kind that was asked for by name. What is always
+   * there is said all the same, and is drawn unseen with a clear picture, so that the place's draw calls are
+   * the same before the pictures come as after.
+   */
+  wait?: boolean;
 }
 
 export interface LifePlan {
@@ -134,7 +140,9 @@ export function lifePlan(place: PlaceId, stages: readonly LifeStage[] = [], seed
     if (!on) {
       rest += dt;
       const role = now ? cast!.roles[now] : undefined;
-      if (role && rest > 2) enter(now!, role, w);
+      if (w.wait) {
+        // Nothing begins unseen: a stage is not used up before its pictures are there.
+      } else if (role && rest > 2) enter(now!, role, w);
       else if (!now && w.clock >= FIRST && rest >= GAP && !w.busy) {
         const i = stages.findIndex((stage, k) => waiting[k] && w.x >= stage.from && w.x <= stage.to && (!w.calm || cast!.roles[stage.kind]!.calm));
         if (i >= 0) {

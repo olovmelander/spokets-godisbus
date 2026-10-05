@@ -142,7 +142,10 @@ function start(): void {
   try {
     // ?standin keeps the figures built in code: for pictures that go into the repository (plan §2.6).
     // With ?debug, &life=moose puts that kind of the far scenery's life on stage at once (render/life.ts).
-    view = createView(canvas, chapter, requestedGraphics === 'auto' ? null : requestedGraphics, params.has('standin'), debugOn, debugOn ? params.get('life') : null);
+    // Each visit has its own far life (what comes in some visits only). A debug session has the same every
+    // time, or the one &seed= names, so that pictures and tests can be taken again.
+    view = createView(canvas, chapter, requestedGraphics === 'auto' ? null : requestedGraphics, params.has('standin'), debugOn,
+      debugOn ? { now: params.get('life'), seed: Number(params.get('seed')) || 0 } : { seed: Math.random() * 1000 });
   } catch (error) {
     console.error(error);
     showMessage(sv.noWebGL);

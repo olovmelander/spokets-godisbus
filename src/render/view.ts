@@ -17,6 +17,7 @@ import { observeGpu, type GpuMemory } from './gpu-memory';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
+import type { LifeAsk } from './life';
 import { evening, nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
@@ -148,7 +149,7 @@ const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
  * `asked` is the tier from settings or ?tier=, or null for Auto. With `standIns` the figures built in code are kept even
  * where the private pack has the family's models: for pictures that go into the repository.
  */
-export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null, standIns = false, trackGpu = false, lifeNow: string | null = null): View {
+export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null, standIns = false, trackGpu = false, life: LifeAsk = {}): View {
   // The context is made here, so that support is known before allocating HDR targets: Mid and High need
   // float colour buffers, and a device without them gets Low (plan §6.5).
   const gl = canvas.getContext('webgl2', {
@@ -206,7 +207,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const fill = new DirectionalLight(place?.fill.colour ?? '#ffffff', place?.fill.intensity ?? 0);
   fill.position.set(4, 3, 10);
   scene.add(fill);
-  const dressing = place ? dress(chapter, place, lifeNow) : null;
+  const dressing = place ? dress(chapter, place, life) : null;
   if (dressing) {
     scene.background = dressing.background;
     scene.add(dressing.group);
@@ -359,21 +360,22 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       models.push('boot/candy');
       modelInstallations++;
     });
-  const ready = Promise.all([candyReady, jayReady, sweetsReady]).then(() => undefined);
-  // The far scenery's life (life.ts) waits for its pictures: one atlas, carried by a model. Without it nothing
-  // happens far off, and the game is whole.
+  // The far scenery's life (life.ts) waits for its pictures: one atlas, carried by a model. It is a picture
+  // and not a model: it is sent to the GPU as it arrives (assets.ts) and takes the place of the clear picture
+  // in a material the first frames have drawn already. So nothing is warmed again for it, and it is not
+  // counted among the models: no shader, buffer or picture is made, and no draw call is added, when it comes.
+  // The page waits for it with the boot's models, so that in play it has come before the first step. Without
+  // it nothing happens far off, and the game is whole: a failure only says so.
   const wild = dressing?.wild;
-  if (wild) assets
+  const lifeReady = wild ? assets
     .manifest()
     .then((manifest) => (manifest.packs.boot?.files['life.glb'] ? assets.model('boot', 'life') : null))
     .then((model) => {
       const atlas = ((model?.getObjectByName('life') as Mesh | undefined)?.material as MeshBasicMaterial | undefined)?.map;
-      if (!atlas) return;
-      wild.install(atlas);
-      models.push('boot/life');
-      modelInstallations++;
+      if (atlas) wild.install(atlas);
     })
-    .catch((error) => console.error('The life of the far scenery could not be loaded.', error));
+    .catch((error) => console.error('The life of the far scenery could not be loaded.', error)) : Promise.resolve();
+  const ready = Promise.all([candyReady, jayReady, sweetsReady, lifeReady]).then(() => undefined);
 
   // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
   // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.

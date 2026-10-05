@@ -1,7 +1,7 @@
 import { Group, type Texture } from 'three';
 import type { ChapterData, PlaceId } from '../../sim/types';
 import { scenery } from '../backdrop';
-import { createLife, type Life, type Quiet } from '../life';
+import { createLife, type Life, type LifeAsk, type Quiet } from '../life';
 import { fronts, street, villageLife } from '../village';
 import { bog } from './bog';
 import { built } from './built';
@@ -154,8 +154,8 @@ const OWN: Record<PlaceId, { ground: Ground; growth: Growth | null }> = {
 };
 export const groundOf = (place: PlaceId): Ground => OWN[place].ground;
 
-/** Builds a place's layers around a chapter's ground. `lifeNow` puts one kind of far life on stage at once, for pictures. */
-export function dress(chapter: ChapterData, look: PlaceLook, lifeNow: string | null = null): Dressing {
+/** Builds a place's layers around a chapter's ground. `asked` is what is asked of the far scenery's life (life.ts). */
+export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}): Dressing {
   const group = new Group();
   const from = chapter.ground[0]!.x;
   const to = chapter.ground[chapter.ground.length - 1]!.x;
@@ -172,7 +172,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, lifeNow: string | n
   // The village has the fronts of its houses behind the pavement, and the far village behind them.
   const houses = look.id === 'village' ? fronts(chapter, from, to) : new Group();
   // A moose in the mist, cranes, smoke from a far chimney: among the far pictures, and only there.
-  const wild = createLife(chapter, look.id, land, houses.children.find((child) => child.position.z === -52), lifeNow);
+  const wild = createLife(chapter, look.id, land, houses.children.find((child) => child.position.z === -52), asked);
   if (wild) group.add(wild.mesh);
   group.add(
     far.group,
