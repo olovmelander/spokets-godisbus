@@ -149,9 +149,8 @@ const SIGN: Partial<Record<StreetGoods, number>> = { bread: 1.7, boots: 2.1 };
 const PROUD = 0.35;
 /** The kit's parts that go on along a wall, and how long one of each is. */
 const TILES = { sockel: 4, panel: 1.35, liggande: 4, mur: 4, staket: 3.8, hack: 6 } as const;
-/** Where the kit's walls end, and how much higher a side wall is drawn, which is seen from further off. */
+/** Where the kit's walls end: nothing of a house is built above 12 EL, and the picture never reaches there. */
 const TOP = 12;
-const LIFT = 2;
 /** A shop window's sill, over its house's foot: the floor its wares stand on. */
 const SILL = 2.6;
 /**
@@ -159,8 +158,8 @@ const SILL = 2.6;
  * there comes out of its dark opening and goes into it. `near` is its front edge, behind the path.
  */
 const PASSAGE = { near: -10.7, wide: 5.4, post: 0.5 };
-/** How far back a house's side wall goes. */
-const SIDE = { near: 19, far: 8 };
+/** How far back a house's side wall goes: no further than where the picture's top edge is still under its top. */
+const SIDE = { near: 17, far: 8 };
 /** The colour of each shop's door. */
 const DOORS: Record<StreetGoods, string> = { candy: '#7a5632', bread: '#4f5a60', boots: '#5d4a36', yarn: '#6a4a3a' };
 /** How much of its colour a corner gives off where the kit says it glows: the lamps in a shop window. */
@@ -280,24 +279,24 @@ function flat(slabs: Slab[]): Shape {
 
 /**
  * The stand-in for the kit: the same parts by the same names, each as a few flat pieces, so that a house is
- * put together the same way with either. It has no pipe, no sign and no wares.
+ * put together the same way with either. It has no pipe, no sign and no wares. Its pieces lie nearly in one
+ * plane, a little in front of one another: seen from the side, nothing shows between them.
  */
 function standIn(): VillageKit {
   const trim = '#f4efe2';
   const stone = '#8f8c86';
   const kit = new Map<string, Shape>([
-    ['sockel', flat([[0, 4, -7, 1.6, PROUD, stone], [0, 4, 1.6, 1.98, 0.45, trim]])],
-    ['panel', flat([[0, 1.35, 1.95, TOP, 0, '#ffffff', 0.5], [0, 0.35, 1.95, TOP, 0.15, '#e9e9e9', 0.5]])],
+    ['sockel', flat([[0, 4, -7, 1.6, 0.04, stone], [0, 4, 1.6, 1.98, 0.06, trim]])],
+    ['panel', flat([[0, 1.35, 1.95, TOP, 0, '#ffffff', 0.5], [0, 0.35, 1.95, TOP, 0.02, '#e9e9e9', 0.5]])],
     ['liggande', flat([[0, 4, 1.95, TOP, 0, '#ffffff', 0.5]])],
-    ['knut', flat([[-0.2, 1.1, 1.95, TOP, 0.2, trim]])],
-    ['dorr', flat([[-4, 4, -0.8, 1.2, 3, '#aaa59d'], [-4, 4, 1.2, TOP, 0.3, trim], [-3, 3, 1.2, TOP, 0.32, '#ffffff', 1]])],
-    ['port', flat([[0, 5.4, -7, 13, 0.02, '#15171c'], [-0.5, 0, -7, 13, 0.2, trim], [5.4, 5.9, -7, 13, 0.2, trim]])],
-    ['mur', flat([[0, 4, -7, 0.5, 0.25, stone]])],
-    ['staket', flat([[0, 3.8, 0.6, 4.6, 0.3, '#9a968c']])],
-    ['hack', flat([[0, 6, 0, 5.6, -2.3, '#7d8a3c']])],
+    ['knut', flat([[-0.2, 1.1, 1.95, TOP, 0.03, trim]])],
+    ['dorr', flat([[-4, 4, -7, 1.2, 0.08, '#aaa59d'], [-4, 4, 1.2, TOP, 0.04, trim], [-3, 3, 1.2, TOP, 0.06, '#ffffff', 1]])],
+    ['port', flat([[0, 5.4, -7, 13, 0.02, '#15171c'], [-0.5, 0, -7, 13, 0.03, trim], [5.4, 5.9, -7, 13, 0.03, trim]])],
+    ['mur', flat([[0, 4, -7, 0.5, 0.04, stone]])],
+    ['staket', flat([[0, 3.8, 0.5, 4.6, 0.04, '#9a968c']])],
   ]);
   for (const [goods, wide] of Object.entries(WINDOW_WIDE)) {
-    kit.set(`fonster-${goods}`, flat([[-wide / 2 - 1, wide / 2 + 1, 1.95, TOP, 0.3, trim], [-wide / 2, wide / 2, 2.6, TOP, 0.32, '#ffe2a0', 0, 0.45]]));
+    kit.set(`fonster-${goods}`, flat([[-wide / 2 - 1, wide / 2 + 1, 1.95, TOP, 0.04, trim], [-wide / 2, wide / 2, SILL, TOP, 0.06, '#ffe2a0', 0, 0.45]]));
   }
   return kit;
 }
@@ -323,27 +322,26 @@ interface Paint {
   wall: Color;
   door: Color;
 }
-/** How a part is set on a wall: stretched along it, mirrored, moved up, a tone lighter or darker, its top raised. */
+/** How a part is set on a wall: stretched along it, mirrored, moved up, a tone lighter or darker. */
 interface Placing {
   wide?: number;
   mirror?: boolean;
   up?: number;
   tone?: number;
-  lift?: number;
 }
 const PLAIN = new Color('#ffffff');
 
 /** Sets a part of the kit on a wall, `at` along it, in the house's colours. A part the kit lacks is left out. */
 function put(build: Build, shape: Shape | undefined, wall: Wall, at: number, paint: Paint, placing: Placing = {}): void {
   if (!shape) return;
-  const { wide = 1, mirror = false, up = 0, tone = 1, lift = 0 } = placing;
+  const { wide = 1, mirror = false, up = 0, tone = 1 } = placing;
   const stretch = mirror ? -wide : wide;
   const first = build.position.length / 3;
   for (let i = 0; i < shape.whose.length; i++) {
     const x = shape.position[i * 3]! * stretch + at;
     const y = shape.position[i * 3 + 1]!;
     const z = shape.position[i * 3 + 2]!;
-    build.position.push(wall.x + wall.along[0] * x + wall.out[0] * z, wall.y + up + y + (y > TOP - 0.1 ? lift : 0), wall.z + wall.along[1] * x + wall.out[1] * z);
+    build.position.push(wall.x + wall.along[0] * x + wall.out[0] * z, wall.y + up + y, wall.z + wall.along[1] * x + wall.out[1] * z);
     // A stretched part's faces turn: their normals are divided by the stretch, and made one long again.
     const nx = shape.normal[i * 3]! / stretch;
     const ny = shape.normal[i * 3 + 1]!;
@@ -390,17 +388,16 @@ function side(build: Build, kit: VillageKit, wall: Wall, long: number, corner: '
   // The front's corner board goes round the corner and covers the wall's first bit.
   const wood: [number, number] = corner === 'first' ? [CORNER, long] : [0, long - CORNER];
   const stone: [number, number] = corner === 'first' ? [-PROUD, long] : [0, long + PROUD];
-  const raised = { lift: LIFT };
   if (!passage) {
-    run(build, kit, boards, wall, wood[0], wood[1], paint, raised);
+    run(build, kit, boards, wall, wood[0], wood[1], paint);
     run(build, kit, 'sockel', wall, stone[0], stone[1], paint);
     return;
   }
   const from = passage.at - PASSAGE.post;
   const to = passage.at + PASSAGE.wide + PASSAGE.post;
   put(build, kit.get('port'), wall, passage.at, paint, { up: passage.up });
-  run(build, kit, boards, wall, wood[0], from, paint, raised);
-  run(build, kit, boards, wall, to, wood[1], paint, raised);
+  run(build, kit, boards, wall, wood[0], from, paint);
+  run(build, kit, boards, wall, to, wood[1], paint);
   run(build, kit, 'sockel', wall, stone[0], from, paint);
   run(build, kit, 'sockel', wall, to, stone[1], paint);
 }
@@ -467,11 +464,27 @@ function yard(build: Build, kit: VillageKit, chapter: ChapterData, part: StreetP
   put(build, kit.get('bjork'), front, part.from + (part.to - part.from) * 0.4, paint);
 }
 
-/** One stretch of the street as one shape: everything in it is drawn at once. */
-function assemble(kit: VillageKit, chapter: ChapterData, parts: readonly StreetPart[], i: number): BufferGeometry {
+/**
+ * Which of the street's stretches are drawn together. A near house is drawn by itself, and only while it is
+ * in sight. Everything on the far side of a crossing is one shape: it is all in sight at once.
+ */
+export function drawnTogether(parts: readonly StreetPart[]): number[][] {
+  const groups: number[][] = [];
+  for (const [i, part] of parts.entries()) {
+    const last = groups.at(-1);
+    if (last && part.depth === 'far' && parts[last[0]!]!.depth === 'far') last.push(i);
+    else groups.push([i]);
+  }
+  return groups;
+}
+
+/** Some stretches of the street as one shape: everything in it is drawn at once. */
+function assemble(kit: VillageKit, chapter: ChapterData, parts: readonly StreetPart[], which: readonly number[]): BufferGeometry {
   const build: Build = { position: [], normal: [], colour: [], glow: [], index: [] };
-  if (parts[i]!.kind === 'house') house(build, kit, chapter, parts, i);
-  else yard(build, kit, chapter, parts[i]!);
+  for (const i of which) {
+    if (parts[i]!.kind === 'house') house(build, kit, chapter, parts, i);
+    else yard(build, kit, chapter, parts[i]!);
+  }
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute(build.position, 3));
   geometry.setAttribute('normal', new Float32BufferAttribute(build.normal, 3));
@@ -483,11 +496,12 @@ function assemble(kit: VillageKit, chapter: ChapterData, parts: readonly StreetP
 }
 
 /**
- * The glass of a house's shop windows, as what it catches of the sky: two pale streaks slanting across each
- * window, one wide and one narrow. They lie just behind the bars' fronts, so the bars cross them.
+ * The glass of a near house's shop windows, as what it catches of the sky: two pale streaks slanting across
+ * each window, one wide and one narrow. They lie just behind the bars' fronts, so the bars cross them. A far
+ * house has none: its windows are small in the picture, and in the haze.
  */
 function panes(chapter: ChapterData, part: StreetPart): BufferGeometry | null {
-  if (part.kind !== 'house' || !part.windows?.length) return null;
+  if (part.kind !== 'house' || part.depth !== 'near' || !part.windows?.length) return null;
   const foot = footOf(chapter, part);
   const z = STREET_DEPTH[part.depth] - 0.47;
   const position: number[] = [];
@@ -495,7 +509,7 @@ function panes(chapter: ChapterData, part: StreetPart): BufferGeometry | null {
   const rows = 4;
   const lean = 0.42;
   for (const w of part.windows) {
-    for (const [at, wide] of [[0.06, 0.26], [0.4, 0.08]] as const) {
+    for (const [at, wide] of [[0.06, 0.2], [0.34, 0.06]] as const) {
       const first = position.length / 3;
       for (let r = 0; r <= rows; r++) {
         const up = ((TOP - SILL) * r) / rows;
@@ -530,9 +544,28 @@ function wallMaterial(): MeshStandardMaterial {
 }
 
 /**
- * Everything that stands behind the street: its houses and its yard, each stretch as one mesh, the far village
- * beyond them, the dark under the street, the bicycle and the shop's room. `install` puts the houses together
- * again from the kit modelled in Blender, once it has arrived.
+ * The street's pits that are open to the back: the drain and the puddle, each from its first edge to its last.
+ * A pit behind which a near house stands is closed by that house's foot.
+ */
+function pits(chapter: ChapterData): { from: number; to: number }[] {
+  const out: { from: number; to: number }[] = [];
+  const line = chapter.ground;
+  for (let i = 0; i < line.length - 1; i++) {
+    const a = line[i]!;
+    const b = line[i + 1]!;
+    if (b.x <= a.x || Math.max(a.y, b.y) > -2) continue;
+    const last = out.at(-1);
+    // The dark between the drain's bars is one pit: its bars are less than 3 EL wide.
+    if (last && a.x - last.to < 3) last.to = b.x;
+    else out.push({ from: a.x, to: b.x });
+  }
+  return out.filter((pit) => !chapter.street?.some((part) => part.depth === 'near' && (pit.from + pit.to) / 2 >= part.from && (pit.from + pit.to) / 2 < part.to));
+}
+
+/**
+ * Everything that stands behind the street: its houses and its yard, the far village beyond them, the dark
+ * under the street, the bicycle and the shop's room. `install` puts the houses together again from the kit
+ * modelled in Blender, once it has arrived.
  */
 export function fronts(chapter: ChapterData, from: number, to: number): { group: Group; install(model: Object3D): boolean } {
   const group = new Group();
@@ -541,32 +574,37 @@ export function fronts(chapter: ChapterData, from: number, to: number): { group:
   const parts = chapter.street ?? [];
   const material = wallMaterial();
   const plain = standIn();
-  const stretches = parts.map((part, i) => {
-    const mesh = new Mesh(assemble(plain, chapter, parts, i), material);
-    mesh.name = `street:${part.goods ?? part.kind}`;
+  const stretches = drawnTogether(parts).map((which) => {
+    const mesh = new Mesh(assemble(plain, chapter, parts, which), material);
+    mesh.name = `street:${which.map((i) => parts[i]!.goods ?? parts[i]!.kind).join('+')}`;
     group.add(mesh);
-    return mesh;
+    return { mesh, which };
   });
   // The glass is the chapter's, not the kit's: it is there from the first frame.
-  const glass = new MeshBasicMaterial({ color: '#e6f0ff', transparent: true, opacity: 0.16, depthWrite: false });
+  const glass = new MeshBasicMaterial({ color: '#e6f0ff', transparent: true, opacity: 0.12, depthWrite: false });
   for (const part of parts) {
     const streaks = panes(chapter, part);
     if (streaks) group.add(new Mesh(streaks, glass));
   }
   group.add(skyline(from, to, foot));
-  // Under the street it is dark: the drain and the cellar window's well go down into it.
-  const under = new Mesh(new PlaneGeometry(to - from + 80, 16), new MeshBasicMaterial({ color: '#1d2024', fog: false }));
-  under.position.set((from + to) / 2, Math.min(floor, 0) - 8.4, -12.6);
-  under.renderOrder = -1;
-  group.add(under, bicycle(chapter), shopInterior(chapter));
+  // Under the street it is dark: the drain and the puddle go down into it. Each has its own piece of the dark,
+  // which is drawn only while that pit is in sight.
+  const dark = new MeshBasicMaterial({ color: '#1d2024', fog: false });
+  for (const pit of pits(chapter)) {
+    const under = new Mesh(new PlaneGeometry(pit.to - pit.from + 2, 16), dark);
+    under.position.set((pit.from + pit.to) / 2, Math.min(floor, 0) - 8.4, -12.6);
+    under.renderOrder = -1;
+    group.add(under);
+  }
+  group.add(bicycle(chapter), shopInterior(chapter));
   return {
     group,
     install(model) {
       const kit = villageKit(model);
       if (stretches.length === 0 || !kit.has('sockel') || !kit.has('panel')) return false;
-      for (const [i, mesh] of stretches.entries()) {
+      for (const { mesh, which } of stretches) {
         mesh.geometry.dispose();
-        mesh.geometry = assemble(kit, chapter, parts, i);
+        mesh.geometry = assemble(kit, chapter, parts, which);
       }
       return true;
     },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
-import { DOOR_WIDE, STREET_DEPTH, WINDOW_WIDE, uprights } from '../../src/render/village';
+import { DOOR_WIDE, STREET_DEPTH, WINDOW_WIDE, drawnTogether, uprights } from '../../src/render/village';
 import type { ChapterData } from '../../src/sim/types';
 
 /** The chapters of the village that say what stands behind their street. */
@@ -62,6 +62,13 @@ describe('the village street', () => {
     expect(STREET_DEPTH.near).toBeGreaterThan(STREET_DEPTH.far);
     // A near wall is behind the play plane, clear of everything that stands on the path.
     expect(STREET_DEPTH.near).toBeLessThanOrEqual(-6);
+  });
+
+  it('draws a near house by itself and the whole far side of a crossing at once', () => {
+    // One draw call a house, as before the kit: the far side is all in sight together, so it is one.
+    expect(drawnTogether(COURSES['byn']!.street!)).toEqual([[0], [1, 2], [3], [4]]);
+    expect(drawnTogether(COURSES['look-street']!.street!)).toEqual([[0], [1], [2]]);
+    for (const chapter of STREETS) expect(drawnTogether(chapter.street!).flat(), chapter.id).toEqual(chapter.street!.map((_, i) => i));
   });
 
   it("gives each window and door the kit's own width, inside its house and clear of the next opening", () => {

@@ -486,7 +486,7 @@ made['wide'] = PORT
 # Kallarfonster: a cellar window with two panes behind three iron bars, down in the house's foot. It stands
 # with its middle at X 0, and is seen in a well.
 part = new_part()
-paint(part, [face(part, [Vector((-1.6, -0.37, -2.55)), Vector((1.6, -0.37, -2.55)), Vector((1.6, -0.37, -1.05)), Vector((-1.6, -0.37, -1.05))], FRONT)], tone('#c9a35e'), OWN, 0.1)
+paint(part, [face(part, [Vector((-1.6, -0.37, -2.55)), Vector((1.6, -0.37, -2.55)), Vector((1.6, -0.37, -1.05)), Vector((-1.6, -0.37, -1.05))], FRONT)], tone('#b0935c'), OWN, 0.06)
 for lo, hi in (((-1.82, -0.5, -2.77), (-1.6, -0.35, -0.83)), ((1.6, -0.5, -2.77), (1.82, -0.35, -0.83)), ((-1.6, -0.5, -2.77), (1.6, -0.35, -2.55)), ((-1.6, -0.5, -1.05), (1.6, -0.35, -0.83)), ((-0.09, -0.46, -2.55), (0.09, -0.36, -1.05))):
     paint(part, block(part, lo, hi), tone('#77736a'))
 for x in (-1.07, 0.0, 1.07):
@@ -522,15 +522,19 @@ def kringla(part, centre, size, thick, sides, steps, colour, glow, sugar):
 
 
 def loaf(part, centre, long, colour, turn, glow):
-    """A loaf of bread lying along X, slashed across its top."""
-    matrix = Matrix.Rotation(turn, 4, 'Y')
-    faces = ball(part, centre, (long / 2.0, 0.5, 0.42), 14, 6, matrix)
+    """A loaf of bread lying along X: thick in the middle, with a blunt point at each end, and slashed across
+    its top, where the pale crumb shows."""
+    half = long / 2.0
+    profile = [(0.0, -half), (0.2, -half * 0.94), (0.34, -half * 0.74), (0.43, -half * 0.4), (0.45, 0.0), (0.43, half * 0.4), (0.34, half * 0.74), (0.2, half * 0.94), (0.0, half)]
+    matrix = Matrix.Translation(centre) @ Matrix.Rotation(turn, 4, 'Y') @ Matrix.Diagonal((1.0, 1.15, 0.92, 1.0)) @ Matrix.Rotation(math.radians(90), 4, 'Y')
+    faces = lathe(part, profile, 12, matrix)
     paint(part, faces, colour, OWN, glow)
-    back = (Matrix.Translation(centre) @ matrix).inverted()
+    back = matrix.inverted()
     for item in faces:
+        # In the loaf's own space it lies along Z, and its top is towards -X.
         at = back @ item.calc_center_median()
-        if at.z > 0.2 and math.floor((at.x + at.y * 0.6 + 4.0) / 0.27) % 2 == 0 and abs(at.x) < long * 0.4:
-            paint(part, [item], tone('#ecd09a'), OWN, glow)
+        if at.x < -0.2 and math.floor((at.z + at.y * 0.8 + 4.0) / 0.3) % 2 == 0 and abs(at.z) < half * 0.8:
+            paint(part, [item], tone('#f0dcae'), OWN, glow)
     return faces
 
 
@@ -566,8 +570,9 @@ def jar(part, at, size, sweets, glow):
         elif height > 1.08:
             paint(part, [item], tone('#dfe9e4'), OWN, glow)
         else:
-            # Many sweets of one kind: two tones of its colour, face by face.
-            paint(part, [item], dim(sweets, 1.0 if chance(n * 3.7) < 0.55 else 0.8), OWN, glow)
+            # Many sweets of one kind, lying in layers: a lighter and a darker ring by turns. Never a pattern of
+            # single faces: by chance such a pattern can look like a letter.
+            paint(part, [item], dim(sweets, 1.0 if int(height / 0.195 + 0.3) % 2 == 0 else 0.86), OWN, glow)
     return faces
 
 
@@ -656,9 +661,10 @@ for colour, x, y, z in YARN:
         # The strands lie side by side round it.
         if int(((back @ item.calc_center_median()).z + 2.0) / 0.26) % 2 == 0:
             scale_paint(part, [item], 0.62)
-for lean in (-1.0, 1.0):
-    foot = Vector((at[0] - 0.4 + lean * 0.1, at[1] - 0.25, SILL + 2.1))
-    tip = foot + Vector((lean * 1.05, 0.0, 1.85))
+# The two needles lean the same way, one more than the other: sticks in a ball of yarn, and no letter's shape.
+for lean, out in ((0.35, 0.0), (0.95, 0.25)):
+    foot = Vector((at[0] - 0.55 + out, at[1] - 0.25, SILL + 2.05))
+    tip = foot + Vector((lean, 0.0, 1.9 - out))
     paint(part, sweep(part, [foot, tip], [0.07, 0.05], 5), tone('#7a5632'), OWN, WARES)
     paint(part, ball(part, tip, (0.13, 0.13, 0.13), 6, 4), tone('#7a5632'), OWN, WARES)
 stand(part, 1.5, 3.2, 1.3, 2.3, 0.35, WOOD, WARES)
@@ -700,7 +706,7 @@ made['wide'] = 8.2
 # Brod: three loaves stacked like logs, and a kringla standing on its edge on a little stand.
 part = new_part()
 window(part, 5.2, (0.0,))
-CRUST = ('#c48a48', '#b47a3a', '#d09a56')
+CRUST = ('#a8692f', '#96592a', '#b4763a')
 for k in range(3):
     loaf(part, (-1.36 + (0.1 if k == 1 else -0.04), 1.7 + 0.12 * k, SILL + 0.42 + 0.78 * k), 2.0 - 0.14 * k, tone(CRUST[k]), 0.1 if k == 1 else -0.07, WARES)
 paint(part, lathe(part, [(0.0, 0.0), (0.5, 0.0), (0.5, 0.1), (0.16, 0.16), (0.16, 0.42), (0.75, 0.5), (0.75, 0.58), (0.0, 0.58)], 12, Matrix.Translation((1.36, 1.7, SILL))), tone('#e9e2d2'), OWN, WARES)
@@ -735,11 +741,12 @@ for x, lean, colour in ((-3.0, -0.16, '#f08a2c'), (-2.65, 0.0, '#4aa3d8'), (-2.3
     foot = Vector((x, 2.48, SILL + 0.4))
     top = foot + Vector((math.sin(lean) * 1.9, 0.0, math.cos(lean) * 1.9 + (0.5 if lean == 0.0 else 0.0)))
     paint(part, sweep(part, [foot, top], [0.04, 0.04], 5), tone('#f4ecdc'), OWN, GLOW)
-    disc = lathe(part, [(0.0, -0.09), (0.34, -0.09), (0.42, 0.0), (0.34, 0.09), (0.0, 0.09)], 12, Matrix.Translation(top) @ Matrix.Rotation(math.radians(90), 4, 'X'))
+    disc = lathe(part, [(0.0, -0.09), (0.4, -0.09), (0.5, 0.0), (0.4, 0.09), (0.0, 0.09)], 12, Matrix.Translation(top) @ Matrix.Rotation(math.radians(90), 4, 'X'))
     for item in disc:
         centre = item.calc_center_median() - top
-        swirl = int((math.atan2(centre.z, centre.x) + math.pi + math.sqrt(centre.x ** 2 + centre.z ** 2) * 2.4) / TAU * 8.0) % 2
-        paint(part, [item], tone(colour) if swirl == 0 else tone('#fff6ea'), OWN, GLOW)
+        # A swirl of its colour with a narrow white stripe in it.
+        swirl = int((math.atan2(centre.z, centre.x) + math.pi + math.sqrt(centre.x ** 2 + centre.z ** 2) * 2.4) / TAU * 12.0) % 3
+        paint(part, [item], tone('#fff6ea') if swirl == 0 else tone(colour), OWN, GLOW)
 made = finish(part, 'fonster-candy', sharp=40.0)
 made['wide'] = 6.8
 
@@ -748,7 +755,7 @@ made['wide'] = 6.8
 
 # A gilded kringla for the bakery, as a baker's sign has been for hundreds of years.
 part = new_part()
-kringla(part, (0.0, -0.42, 3.85), 1.22, 0.24, 6, 3, tone('#d2a03c'), 0.06, False)
+kringla(part, (0.0, -0.42, 3.85), 1.22, 0.24, 6, 3, tone('#b88c3c'), 0.02, False)
 for x in (-0.75, 0.75):
     paint(part, block(part, (x - 0.07, -0.3, 4.35), (x + 0.07, 0.0, 4.49)), IRON)
 finish(part, 'skylt-bread', sharp=45.0, shade=0.6)
