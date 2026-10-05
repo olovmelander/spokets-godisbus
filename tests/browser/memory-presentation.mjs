@@ -29,6 +29,8 @@ try {
     const { mountShell } = await import('/src/ui/shell.ts');
     document.body.innerHTML = '<button id="source" style="position:absolute;left:70px;top:180px;width:60px;height:40px">▶</button>';
     mountShell(document.body, 'ghost');
+    // In the game the typeface has long arrived when a memory opens; here it must not arrive in the middle of one.
+    await Promise.all([document.fonts.load('400 16px Andika'), document.fonts.load('700 16px Andika')]);
     window.memory = createMemory(document);
     window.finished = 0;
     window.playMemory = (options = {}) => {
