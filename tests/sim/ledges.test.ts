@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { granskog } from '../../src/content/chapters/granskog';
-import { BUBBLE_TIME, STEP } from '../../src/sim/constants';
+import { BUBBLE_TIME, ELOF_HALF_WIDTH, STEP } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
 import type { ChapterData, StepInput } from '../../src/sim/types';
 
@@ -83,6 +83,26 @@ describe('a ledge', () => {
     expect(sim.curr.x).toBeLessThan(6.9);
     expect(sim.curr.y).toBeCloseTo(0, 1);
     expect(sim.bubbles).toBe(0);
+  });
+
+  it('holds him on its very corner too, and there he stands: wherever a ledge carries him, Hoppa is a jump', () => {
+    const end = 8 + 2 / 2;
+    let onTheCorner = 0;
+    // Set down with only the outer edge of his body over the ledge's end, a little more each time.
+    for (const over of [0.004, 0.008, 0.012, 0.016, 0.02, 0.024, 0.028, 0.035, 0.05, 0.1]) {
+      const sim = new Sim(course({ spawn: { x: end + ELOF_HALF_WIDTH - over, y: 0.92 } }));
+      run(sim, 0.6);
+      // Either the ledge carries him or he has slipped down to the ground: he is never left resting in between.
+      expect(sim.curr.grounded, `${over} over the end`).toBe(true);
+      if (sim.curr.y < 0.8) continue;
+      onTheCorner++;
+      let top = sim.curr.y;
+      sim.step({ ...idle, hop: true, hopHeld: true });
+      for (let i = 0; i < 60; i++) { sim.step({ ...idle, hopHeld: true }); top = Math.max(top, sim.curr.y); }
+      expect(top, `a jump from ${over} over the end`).toBeGreaterThan(0.9 + 0.5);
+    }
+    // The outer three hundredths of his body are past his feet: the ledge carried him there, and it was a dead spot.
+    expect(onTheCorner).toBeGreaterThanOrEqual(6);
   });
 
   it('is never pulled up onto: his hands only take the ledges of solid things', () => {

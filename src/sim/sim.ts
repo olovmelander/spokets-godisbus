@@ -11,7 +11,7 @@ import { GHOST_CATCH, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_S
 import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REACH } from './constants';
 import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
 import { GUIDE_AFTER, HELP_TIME, REMIND_AFTER } from './constants';
-import { LEDGE_GIVE, LEDGE_RISING, LEDGE_STAND, LEDGE_THICK } from './constants';
+import { LEDGE_CORNER, LEDGE_GIVE, LEDGE_RISING, LEDGE_STAND, LEDGE_THICK } from './constants';
 import { hintFor } from './help';
 import { partyReward, sharingReward, type StoryAnswer } from './story';
 import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
@@ -846,13 +846,17 @@ export class Sim {
     return ledge.there && this.body.getPosition().y - SKIN >= ledge.y - LEDGE_GIVE;
   }
 
-  /** The ledge he stands on: his feet at its top, over it, and not on the way up through it. */
+  /**
+   * The ledge he stands on: his feet at its top, over it, and not on the way up through it. "Over it" is as
+   * wide as his body, with the little a resting body may hang over a corner: wherever a ledge holds him up,
+   * he stands on it, and Hoppa is a jump.
+   */
   private ledgeUnder(): LedgeState | null {
     if (this.ledges.length === 0 || this.body.getLinearVelocity().y > LEDGE_RISING) return null;
     const p = this.body.getPosition();
     const feet = p.y - SKIN;
     for (const ledge of this.ledges) {
-      if (ledge.there && Math.abs(feet - ledge.y) <= LEDGE_STAND && Math.abs(p.x - ledge.x) <= ledge.width / 2 + ELOF_HALF_WIDTH * 0.85) return ledge;
+      if (ledge.there && Math.abs(feet - ledge.y) <= LEDGE_STAND && Math.abs(p.x - ledge.x) <= ledge.width / 2 + ELOF_HALF_WIDTH + LEDGE_CORNER) return ledge;
     }
     return null;
   }

@@ -173,6 +173,8 @@ export const LEDGE_GIVE = 0.1;
 export const LEDGE_STAND = 0.07;
 /** Rising faster than this he is on his way up through a ledge, not standing on it. */
 export const LEDGE_RISING = 0.05;
+/** How far past a ledge's end his body's edge may be while the ledge still holds him up on its corner. */
+export const LEDGE_CORNER = 0.015;
 
 /** A trail candy is collected when it comes this close to Elof's middle: near misses count (plan §4.3). */
 export const CANDY_MAGNET = 0.6;
