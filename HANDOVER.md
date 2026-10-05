@@ -29,6 +29,18 @@
     haze. `tests/unit/forest-floor.test.ts` holds the rules. Costs: no draw call at the heaviest places
     (117, 116), one or two at a few light ones, ten at the pool (65 to 75); about 30,000 triangles a picture
     (176,000 to 208,000 at x 106). The other places keep their fronts until their own step.
+  - **Step 8 for the mountain, its rock** (Berget and Norrsken): granite that is granite. It has a picture
+    of its own (grains, mica, cracks, crust lichen) instead of the moss's speckles, which halved its tones to
+    brown felt. It is cut hard: level a little past the path, a pale edge, then down in two ledges, in blocks
+    with a joint every 2.5 to 6 lengths; walls stand in courses, and at a wall's top the front draws back, so
+    the cliff's foot (the ghost, the lace, its sweets) is in sight. The mountain's light is cool from the sky
+    and warm from the sun only, so grey stays grey in shade and edges catch the sun.
+    `tests/unit/rock-front.test.ts` holds the rules; three ways of breaking it were tried, and each fails one
+    test. No draw call more anywhere; about 14,000 triangles a picture. Still wrong: the chapter's end walls
+    are flat sheets, warm pink where the sun is on them; the boulders, the shelves and the cairn wait for the
+    stone kit. A place's front is one description now (`FRONTS` in `src/render/dressing/ground.ts`): its
+    rows, whether it cuts its walls, what cut ground looks like, whether it is in blocks. The lawn, the bog
+    and the street still have the plain one.
   - **In work when this was written,** each on its own branch: things at scale or opacity 0 not drawn
     (`idle-draws`); the water (`water-look`); the far scenery repainted (`far-scenery`); the moose and the
     other life far off (`background-life`); the village's houses as a kit of parts (`village-street`).
