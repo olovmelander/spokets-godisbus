@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
 import { groundOf } from '../../src/render/dressing';
-import { bankShapes, tileOf } from '../../src/render/dressing/ground';
+import { bankShapes, forwardAt, tileOf } from '../../src/render/dressing/ground';
 
 /** Each corner of each triangle from the path forward: how long its picture is against how long it is itself. */
 function* edges(course: string) {
@@ -14,6 +14,8 @@ function* edges(course: string) {
       const corners = [index.getX(i), index.getX(i + 1), index.getX(i + 2)];
       // Behind the path the moss rolls between its points, and nobody sees it but edge on.
       if (corners.some((c) => at.getZ(c) < -0.35)) continue;
+      // Where the forest's front draws back to a wall its rows close like a fan, and the picture with them.
+      if (chapter.place === 'forest' && corners.some((c) => forwardAt(chapter, at.getX(c) - 0.01) < 1 || forwardAt(chapter, at.getX(c) + 0.01) < 1)) continue;
       for (let k = 0; k < 3; k++) {
         const a = corners[k]!;
         const b = corners[(k + 1) % 3]!;
@@ -33,9 +35,8 @@ describe("the ground's picture", () => {
       let seen = 0;
       for (const edge of edges(course)) {
         seen += 1;
-        const where = `${course}: ${edge.kind} at x ${edge.x.toFixed(2)}, z ${edge.z.toFixed(2)}`;
-        expect(edge.pull, where).toBeGreaterThan(0.6);
-        expect(edge.pull, where).toBeLessThan(1.6);
+        if (edge.pull > 0.6 && edge.pull < 1.6) continue;
+        expect.fail(`${course}: ${edge.kind} at x ${edge.x.toFixed(2)}, z ${edge.z.toFixed(2)}: the picture is pulled ${edge.pull.toFixed(2)} times`);
       }
       expect(seen, course).toBeGreaterThan(500);
     }
