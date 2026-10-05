@@ -1,3 +1,4 @@
+import { timeCard } from './cards';
 import type { Candy, ChapterData } from '../../sim/types';
 
 /**
@@ -87,6 +88,8 @@ export const granskog: ChapterData = {
     return: { x: 63.1, y: 14 },
   }],
   spawn: { x: 1, y: 0.01 },
+  // Where and when, as the chapter opens (./cards.ts).
+  scenes: [timeCard('granskog', 1)],
   goalX: 204,
   // For the picture only (content/life.ts): in one visit of three a moose crosses a bright gap far in among the
   // trunks, after the last big candy, where nothing is left to do but walk out of the forest.

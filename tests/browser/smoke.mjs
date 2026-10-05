@@ -281,7 +281,8 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   console.log("a chapter's card, 1180×820");
   const { page, finish } = await open('card-1180x820', { viewport: { width: 1180, height: 820 } }, '?dev&debug&course=garden&at=208.5,0.01');
   await page.keyboard.down('ArrowRight');
-  await page.waitForSelector('#endCard:not([hidden])', { timeout: 20000 });
+  // The chapter's coda plays before its last page (docs/narrative-audit/threads.md §5.4).
+  await page.waitForSelector('#endCard:not([hidden])', { timeout: 60000 });
   await page.keyboard.up('ArrowRight');
   check("the card shows the next chapter's code", (await page.locator('#endCode').isVisible()) && (await page.locator('#endCodeWords').textContent()) === 'GRAN KOTTE MOSSA', await page.locator('#endCodeWords').textContent());
   await finish();

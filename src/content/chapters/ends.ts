@@ -1,4 +1,5 @@
 import type { Candy, ChapterData } from '../../sim/types';
+import { timeCard } from './cards';
 import { PROLOG_SCENES } from './prolog-scenes';
 
 /**
@@ -165,6 +166,8 @@ export const epilog: ChapterData = {
   shelf: { x: 34, y: 5.4, filled: true },
   epilogue: { window: { x: 40, y: 3.43, z: -8.3 } },
   spawn: { x: 1, y: 0.01 },
+  // Where and when, as the evening opens (./cards.ts).
+  scenes: [timeCard('epilog', 1)],
   goalX: 53,
   ground: [
     { x: -3, y: 9 },

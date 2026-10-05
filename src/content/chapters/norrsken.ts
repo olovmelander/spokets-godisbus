@@ -1,3 +1,4 @@
+import { timeCard } from './cards';
 import type { Candy, ChapterData } from '../../sim/types';
 
 /**
@@ -49,6 +50,8 @@ export const norrsken: ChapterData = {
   // The golden geléhallon: POFF, and he grows back, with both carvings at his feet.
   size: { scale: 3, after: 'taste' },
   spawn: { x: 1, y: 0.01 },
+  // Where and when, as the chapter opens (./cards.ts).
+  scenes: [timeCard('norrsken', 1)],
   goalX: 72,
   ground: [
     { x: -3, y: 12 },

@@ -1,3 +1,4 @@
+import { timeCard } from './cards';
 import type { Candy, ChapterData } from '../../sim/types';
 
 /**
@@ -91,6 +92,8 @@ export const garden: ChapterData = {
   ],
   house: { from: -40, to: 72, windows: [4, 24, 40, 58] },
   spawn: { x: 1, y: 6.01 },
+  // Where and when, as the chapter opens (./cards.ts).
+  scenes: [timeCard('garden', 1)],
   goalX: 210,
   // For the picture only (content/life.ts): geese cross the sky in a V where the lawn opens after the house's
   // wall, and again from the top of the heap of shavings.
@@ -367,9 +370,7 @@ export const garden: ChapterData = {
     { at: { x: 163.4, y: 0 }, near: 2.2 },
   ],
   beats: [
-    // Pappa's two lines come as the chapter opens: they are his last in the prologue.
-    { id: 'follow1', at: 0.9, who: 'pappa', line: 'follow1' },
-    { id: 'follow2', at: 3.2, who: 'pappa', line: 'follow2' },
+    // The chapter opens on its time card, without words: the family's promises were said on the deck.
     { id: 'stomp', at: 155.6, who: 'elof', line: 'stomp' },
     // Moa saw him made small on the deck: here she sees why it is good to be small.
     { id: 'moa1', at: 161.5, who: 'moa', line: 'rootFingers' },

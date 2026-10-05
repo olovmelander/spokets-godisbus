@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AIRS, ARRANGEMENTS, arrangementFor, barOf, barSeconds, barsIn, BASS, BEATS_PER_BAR, frequencyOf, MUSIC_LEVEL, pluck, POLSKA, RING,
+  AIRS, ARRANGEMENTS, arrangementFor, barOf, barSeconds, barsIn, BASS, BEATS_PER_BAR, CADENCE_SLOW, cadenceOf, frequencyOf, MUSIC_LEVEL, pluck,
+  POLSKA, RING,
 } from '../../src/audio/music';
 import { STORY } from '../../src/content/chapters';
 import { testbana } from '../../src/content/chapters/testbana';
@@ -233,5 +234,25 @@ describe('the air of a place', () => {
 
   it('has something in it everywhere: a wind or a call', () => {
     for (const [name, air] of Object.entries(AIRS)) expect(air.wind !== null || air.calls.length > 0, name).toBe(true);
+  });
+});
+
+describe('the close a chapter ends on', () => {
+  it('plays the tune\'s last two bars a little slower, whole, and comes to rest on a held D', () => {
+    for (const [place, a] of Object.entries(ARRANGEMENTS)) {
+      const close = cadenceOf(a);
+      const bar = barSeconds(a) / CADENCE_SLOW;
+      const strings = close.filter((s) => s.voice === 'pluck');
+      // The melody of bars 7 and 8, every note of it, even where the place plays only the tune's bones.
+      const melody = [...POLSKA[6]!, ...POLSKA[7]!].map((n) => n.midi + a.transpose);
+      for (const midi of melody) expect(strings.some((s) => s.midi === midi), `${place}: ${midi}`).toBe(true);
+      const last = strings.reduce((latest, s) => (s.at > latest.at ? s : latest));
+      expect((last.midi - a.transpose) % 12, place).toBe(62 % 12);
+      expect(last.at, place).toBeCloseTo(2 * bar);
+      expect(last.seconds, place).toBe(RING);
+      // Nothing knocks or scrapes in it: the wood is quiet as the chapter ends.
+      expect(close.every((s) => s.voice === 'pluck'), place).toBe(true);
+      expect(Math.max(...close.map((s) => s.at + s.seconds)), place).toBeLessThan(2 * bar + RING + 0.01);
+    }
   });
 });

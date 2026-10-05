@@ -18,6 +18,7 @@ import { createEnding } from './ui/ending';
 import { createExplore } from './ui/explore';
 import { sv } from './content/sv';
 import { storyContext, storyHandoff } from './content/story-context';
+import type { Person } from './content/people';
 import { createStoryContext } from './ui/story-context';
 import { createInput, type Device } from './input/input';
 import { createAutoTier, createDynamicResolution, tierFromQuery } from './render/quality';
@@ -38,7 +39,7 @@ import { createPhotoAlbum } from './ui/photos';
 import { createOffline } from './platform/offline';
 import { createStoryPanel } from './ui/story';
 import { createSceneUi } from './ui/scene';
-import { sceneBeats } from './sim/scene';
+import { endsInScene, sceneBeats } from './sim/scene';
 import { createDevicePlay, createHighLanding, isAndroid } from './platform/device';
 import './ui/ui.css';
 
@@ -55,6 +56,11 @@ declare global {
 
 const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const params = new URLSearchParams(location.search);
+/** How long the coda plays before the last page, and when one of the family answers in it, in seconds. */
+const CODA = 4.6;
+const CODA_ANSWER = 1.6;
+/** Who answers from afar as each chapter ends; null is all four together. */
+const CODA_FAMILY: Record<string, Person | null> = { garden: 'moa', granskog: 'bertil', myren: 'mamma', berget: 'pappa', norrsken: null, byn: 'mamma' };
 const benchOn = params.has('bench');
 const debugOn = params.has('debug') || benchOn;
 
@@ -413,7 +419,8 @@ function start(): void {
   }
   byId('bag').addEventListener('click', openBag);
   // Moas karta, in the pause panel and on the chapter's card: where he is, and where the ghost is heading.
-  for (const id of ['pauseMap', 'endMap']) byId(id).innerHTML = mapSvg(mapState(chapter.id, canEnter), isKlonk());
+  byId('pauseMap').innerHTML = mapSvg(mapState(chapter.id, canEnter), isKlonk());
+  byId('endMap').innerHTML = mapSvg(mapState(chapter.id, canEnter), isKlonk(), true);
   // The helper's button: a press is passed on with the next frame's presses, like H on a keyboard.
   let askedForHelp = false;
   let askedForUse = false;
@@ -645,6 +652,11 @@ function start(): void {
     location.href = `${location.pathname}${courseQuery(params, chapter.id)}`;
   }
   let endFor = 0;
+  // The coda before the last page (docs/narrative-audit/threads.md §5.4): the tune closes, and one of the family
+  // answers from afar. Not where a scene is the chapter's end, nor in the epilogue, which has its own.
+  const coda = !endsInScene(chapter) && !chapter.epilogue;
+  let closing = false;
+  let answered = false;
   // A memory plays once, when he touches its shaving: not again in a game that has seen it.
   const memories = createMemory(document);
   let recovering = false;
@@ -767,7 +779,8 @@ function start(): void {
     const blocked = platformBlocked();
     memories.suspend(blocked);
     storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !blocked && !menuOpen());
-    audio.sleep(blocked || (menuOpen() && !ending.open));
+    // On a chapter's last page the place's air goes on, and the tune's last note rings out.
+    audio.sleep(blocked || (menuOpen() && !ending.open && !(ended && coda)));
     if (blocked) {
       pointing.cancel();
       askedForUse = askedForHelp = false;
@@ -854,7 +867,8 @@ function start(): void {
     if (game.sim.flags.size !== flagsSeen) {
       flagsSeen = game.sim.flags.size;
       const all = { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags) };
-      for (const id of ['pauseMap', 'endMap']) byId(id).innerHTML = mapSvg(mapState(chapter.id, canEnter), isKlonk());
+      byId('pauseMap').innerHTML = mapSvg(mapState(chapter.id, canEnter), isKlonk());
+      byId('endMap').innerHTML = mapSvg(mapState(chapter.id, canEnter), isKlonk(), true);
       const found = album(all);
       hud.stickers(found);
       if (!goldenFound && albumComplete(found)) {
@@ -900,10 +914,24 @@ function start(): void {
     // The end: a moment to arrive, then the card with the candy in rows of ten. The last words are let finish
     // first, for a few seconds at most: a chapter must not end over what someone is saying.
     if (atGoal) endFor += menuOpen() ? 0 : dt;
-    if (endFor > 1.4 && (!hud.speaking() || endFor > 7) && !benchOn && !ended) {
+    if (atGoal && coda && !closing) {
+      closing = true;
+      audio.cadence();
+    }
+    // Only in the story: the test course has no family to answer.
+    if (coda && !answered && endFor > CODA_ANSWER && Object.hasOwn(CODA_FAMILY, chapter.id)) {
+      answered = true;
+      audio.play({ kind: 'motif', who: CODA_FAMILY[chapter.id]! });
+    }
+    const wait = coda ? CODA : 1.4;
+    if (endFor > wait && (!hud.speaking() || endFor > wait + 5.6) && !benchOn && !ended) {
       ended = true;
       paused = true;
-      audio.sleep(true);
+      if (!coda) audio.sleep(true);
+      // The coda's last picture, for the page: copied now, right after it was drawn.
+      const picture = view.snapshot();
+      byId('endPicture').replaceChildren(...(picture ? [picture] : []));
+      byId('endPicture').hidden = picture === null;
       pointing.cancel();
       askedForUse = askedForHelp = false;
       input.release();

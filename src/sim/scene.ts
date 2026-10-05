@@ -189,6 +189,14 @@ export function sceneBeats(scenes: readonly SceneDef[] | undefined): Beat[] {
   return (scenes ?? []).flatMap((scene) => (scene.lines ?? []).map((line, i) => ({ id: `${scene.id}:${i}`, who: line.who, line: line.line })));
 }
 
+/**
+ * Whether one of a chapter's scenes ends it: its goal waits for a flag a scene sets (the prologue's title). The
+ * scene is then the chapter's last moment, and nothing else is played after the goal.
+ */
+export function endsInScene(chapter: { goalNeeds?: string; scenes?: readonly SceneDef[] }): boolean {
+  return chapter.goalNeeds !== undefined && (chapter.scenes ?? []).some((scene) => scene.cues?.some((cue) => cue.flag === chapter.goalNeeds));
+}
+
 /** The longest a scene waits for quiet, in seconds: a line that never ends cannot keep the story waiting. */
 export const QUIET_WAIT = 10;
 

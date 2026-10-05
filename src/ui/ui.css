@@ -887,6 +887,123 @@ body.calm *::after {
   opacity: 0.75;
 }
 
+/* The chapter's last page (docs/narrative-audit/threads.md §5.4): the coda's last picture glued in like a photo,
+   the chapter's name, what comes next as its caption and Moa's map with the way on; the tally after it. */
+.panel.end {
+  animation: page-in 0.6s ease-out both;
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(14px) rotate(-0.6deg); }
+  to { opacity: 1; transform: none; }
+}
+
+.page-story,
+.page-tally {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  min-width: 0;
+}
+
+.page-picture {
+  margin: 4px 0 2px;
+  padding: 7px 7px 9px;
+  max-width: 100%;
+  background: #fffdf7;
+  box-shadow: 0 3px 10px rgb(60 40 20 / 0.28);
+  transform: rotate(-1.4deg);
+}
+
+.page-picture canvas {
+  display: block;
+  width: 100%;
+  max-height: 32vh;
+  object-fit: cover;
+}
+
+.page-story .story-handoff {
+  margin: 0;
+  text-align: center;
+}
+
+.page-tally .count b {
+  font-size: 24px;
+}
+
+.page-tally .rows {
+  max-height: 18vh;
+}
+
+/* Moa's crayon draws the way on, once the page is there. */
+.moas-karta .way-on {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: crayon 1.8s ease-in-out 0.7s forwards;
+}
+
+@keyframes crayon {
+  to { stroke-dashoffset: 0; }
+}
+
+body.calm .panel.end,
+body.calm .moas-karta .way-on {
+  animation: none;
+  stroke-dashoffset: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel.end,
+  .moas-karta .way-on {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* A phone held sideways: the page opens in two, the story on the left and the tally on the right, so that
+   nothing of it is scrolled out of sight. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .panel.end {
+    width: min(100%, 860px);
+    grid-template-columns: 1.15fr 1fr;
+    align-items: start;
+    column-gap: 18px;
+  }
+
+  .page-picture canvas {
+    max-height: 38vh;
+  }
+
+  .panel.end h2 {
+    font-size: 24px;
+  }
+
+  .page-tally {
+    gap: 6px;
+  }
+
+  .page-tally .map svg {
+    max-height: 22vh;
+  }
+
+  .page-tally .rows {
+    max-height: 9vh;
+  }
+
+  .panel.end .wide {
+    min-height: 52px;
+  }
+
+  /* Playing again is the lesser choice here: a plain link under the way on. */
+  .panel.end #endAgain {
+    min-height: 40px;
+    background: transparent;
+    font-weight: 400;
+    font-size: 16px;
+    text-decoration: underline;
+  }
+}
+
 /* --- the title: the game's name, Börja or Fortsätt, and at a first start the two play styles ------- */
 .panel-back.title {
   z-index: 12;
@@ -1304,16 +1421,21 @@ body.scene-bars .hint {
   opacity: 0;
 }
 
+/* The time of day and the place, on a scrap of Moa's paper: above the keys' hint and the scene's bars. */
 .scene-caption {
   position: absolute;
   left: 50%;
-  bottom: calc(9vh + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom) + max(9vh, 66px));
+  transform: translateX(-50%) rotate(-1.5deg);
   margin: 0;
-  color: #fff6e2;
-  font-size: calc(22px * var(--k));
-  letter-spacing: 0.12em;
-  text-shadow: 0 2px 10px rgb(0 0 0 / 0.6);
+  padding: 8px 18px 9px;
+  border-radius: 6px;
+  background: #fff6e2;
+  color: #4a3520;
+  font-size: calc(21px * var(--k));
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 0.3);
   opacity: 0;
   white-space: nowrap;
 }

@@ -1,6 +1,6 @@
 import { MOTIFS, VOICES, type Cue, type Footing } from './cues';
 import type { Speaker } from '../sim/types';
-import { AIRS, barOf, barSeconds, barsIn, frequencyOf, MUSIC_LEVEL, pluck, RING, type Arrangement } from './music';
+import { AIRS, barOf, barSeconds, barsIn, cadenceOf, frequencyOf, MUSIC_LEVEL, pluck, RING, type Arrangement, type Sound } from './music';
 
 /**
  * The game's sound (plan §5.8, §6.8). All of it is made in code, so sound costs no download.
@@ -26,6 +26,11 @@ export interface Audio {
    * knocks, from the next bar line on.
    */
   tick(chase: boolean): void;
+  /**
+   * The chapter's end: the tune closes on its last two bars and a held D from the next bar line, and plays no
+   * more until the next place. The air goes on.
+   */
+  cadence(): void;
   /** Pause/hidden/recovery silence every bus and cancel scheduled sounds; resume starts fresh. */
   sleep(hidden: boolean): void;
   /** True once the context runs: for the debug text and the tests. */
@@ -67,6 +72,8 @@ export function createAudio(): Audio {
   let bar = 0;
   let nextBar = 0;
   let bars = 0;
+  /** The tune has closed: no more bars until the next place. */
+  let closed = false;
   const strings = new Map<number, AudioBuffer>();
   // The air: its wind, while it blows, and when each of its calls comes next.
   let wind: { source: AudioBufferSourceNode; swell: OscillatorNode } | null = null;
@@ -252,6 +259,17 @@ export function createAudio(): Audio {
         knock(300, 0.04 + 0.1 * cue.near);
         tone('sawtooth', 170, 230, 0.12, 0.01 + 0.025 * cue.near, 0.06);
         break;
+      case 'motif': {
+        // One of the family answers from afar, in the three notes that are theirs; all four together at the end.
+        for (const who of cue.who ? [cue.who] : (['mamma', 'pappa', 'moa', 'bertil'] as const)) {
+          const voice = VOICES[who];
+          for (const [i, step] of MOTIFS[who].entries()) {
+            const answer = note(step, voice.pitch);
+            tone(voice.wave === 'wood' ? 'sine' : voice.wave, answer, answer * 0.97, i === 2 ? 0.5 : 0.24, 0.07, i * 0.26);
+          }
+        }
+        break;
+      }
       case 'call': {
         // "Hal-lo!": two notes of his own, the second higher, and held a little.
         const pitch = VOICES.elof.pitch;
@@ -386,8 +404,13 @@ export function createAudio(): Audio {
 
   /** Gives one bar its notes, from the moment `at` on. */
   function score(a: Arrangement, index: number, at: number, chase: boolean): void {
+    sounds(a, barOf(a, index, chase), at);
+  }
+
+  /** Sounds the notes of an arrangement from the moment `at` on. */
+  function sounds(a: Arrangement, list: readonly Sound[], at: number): void {
     if (!context || !music) return;
-    for (const s of barOf(a, index, chase)) {
+    for (const s of list) {
       const from = at + s.at;
       if (s.voice === 'knock') {
         // Wood on wood, as in Pappa's workshop.
@@ -438,7 +461,15 @@ export function createAudio(): Audio {
     setPlace(next) {
       arrangement = next;
       started = false;
+      closed = false;
       begin();
+    },
+    cadence() {
+      if (closed) return;
+      closed = true;
+      if (sleeping || !context || context.state !== 'running' || !arrangement || musicVolume <= 0) return;
+      // From the next bar line: the bar playing now is let finish.
+      sounds(arrangement, cadenceOf(arrangement), Math.max(context.currentTime + 0.1, nextBar));
     },
     tick(chase) {
       if (sleeping || !context || context.state !== 'running' || !arrangement || !ambience) return;
@@ -446,7 +477,7 @@ export function createAudio(): Audio {
       const now = context.currentTime;
       // After a sleep, or a long frame, the tune goes on from now: never a heap of late bars at once.
       if (nextBar < now) nextBar = now + 0.1;
-      if (nextBar < now + 0.3) {
+      if (nextBar < now + 0.3 && !closed) {
         // With the music off the bars go by unplayed, so that switching it on takes up the tune where it is.
         if (musicVolume > 0) {
           score(arrangement, bar, nextBar, chase);

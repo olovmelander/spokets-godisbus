@@ -270,7 +270,8 @@ try {
     });
     await page.evaluate(installPad);
     await page.keyboard.down('ArrowRight');
-    await page.waitForSelector('#endCard:not([hidden])', { timeout: 25000 });
+    // The chapter's coda plays before its last page.
+    await page.waitForSelector('#endCard:not([hidden])', { timeout: 60000 });
     await page.keyboard.up('ArrowRight');
     const arrived = progress(await state());
     const writes = await page.evaluate(() => window.__saveWrites);
