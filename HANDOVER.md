@@ -20,6 +20,15 @@
     keep their colour to the edge; tiling maps are read along the slant, so deck boards keep their gaps to
     the far edge; shade is cool; and ground out of sight is not drawn (6 to 12 draw calls fewer in the garden
     and the village). `tests/unit/ground.test.ts` holds it.
+  - **Step 8 for the forest, its floor:** in front of the path the forest's ground slopes on towards the
+    camera instead of rolling over into a face, so the lower third of the picture is floor seen from above,
+    with hummocks, needles, grass, sprigs, cones and stones on it (none higher than the path it lies under:
+    nothing covers his boots). At a wall's top the floor draws back to the path, so no corner hides the
+    wall's foot, and the lower floor goes on under the rounded corner. Cut ground is humus and rock under
+    hanging moss. A pool has a near shore instead of a tank's glass front. Behind, the floor runs into the
+    haze. `tests/unit/forest-floor.test.ts` holds the rules. Costs: no draw call at the heaviest places
+    (117, 116), one or two at a few light ones, ten at the pool (65 to 75); about 30,000 triangles a picture
+    (176,000 to 208,000 at x 106). The other places keep their fronts until their own step.
   - **In work when this was written,** each on its own branch: things at scale or opacity 0 not drawn
     (`idle-draws`); the water (`water-look`); the far scenery repainted (`far-scenery`); the moose and the
     other life far off (`background-life`); the village's houses as a kit of parts (`village-street`).
