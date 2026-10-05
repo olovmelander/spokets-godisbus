@@ -9,9 +9,9 @@ import type { Ledge, LedgeLook } from '../sim/types';
  * than his feet and stands on its edge once he is up.
  *
  * Nothing floats: a leaf has its stalk, a bough and a plate of bark their young stem, a shelf of rock its
- * pillar, a plank the batten that holds it to the wall. What holds a ledge is part of its shape and goes far
- * down, into the ground under it, so every look is one instanced mesh: a chapter's ledges cost one draw call
- * for each look it uses, however many there are.
+ * pillar, a plank the batten that holds it to the wall, a trestle its legs. What holds a ledge is part of its
+ * shape and goes far down, into the ground under it, so every look is one instanced mesh: a chapter's ledges
+ * cost one draw call for each look it uses, however many there are.
  */
 const DEPTH = 0.9;
 /** How far down a stalk, a stem or a pillar goes: further than any ledge is above its ground. */
@@ -30,6 +30,16 @@ const LOOKS: Record<LedgeLook, { colour: string; roughness: number; flat?: boole
     shape: () => together(
       new BoxGeometry(1, LEDGE_THICK, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2),
       new BoxGeometry(0.86, 0.3, 0.12).translate(0, -LEDGE_THICK - 0.15, -DEPTH + 0.1),
+    ),
+  },
+  // A board on four legs, where there is no wall to hold it: a step, a bench, a table on a floor. Its legs
+  // stand back from the plane he moves in, so he walks past in front of them.
+  trestle: {
+    colour: '#c9ae84', roughness: 0.75,
+    shape: () => together(
+      new BoxGeometry(1, LEDGE_THICK, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2),
+      new BoxGeometry(0.9, 0.12, 0.05).translate(0, -LEDGE_THICK - 0.06, -0.3),
+      ...[-0.43, 0.43].flatMap((x) => [-0.3, -DEPTH + 0.1].map((z) => new BoxGeometry(0.06, DOWN, 0.08).translate(x, -LEDGE_THICK - DOWN / 2, z))),
     ),
   },
   // A broad leaf held out flat on its stalk: thick in the middle, thin at its rim.
