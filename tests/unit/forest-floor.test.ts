@@ -74,7 +74,7 @@ describe("the forest's floor", () => {
     }
   });
 
-  it('is the forest alone: the lawn and the bog keep their fronts, and the rock has its own', () => {
+  it("is the forest's and the lawn's: the bog keeps its front, and the rock has its own", () => {
     const deepest = (course: string) => {
       const chapter = COURSES[course]!;
       let front = -Infinity;
@@ -86,7 +86,50 @@ describe("the forest's floor", () => {
       }
       return front;
     };
-    expect(deepest('granskog')).toBeCloseTo(5.3, 6);
-    for (const course of ['garden', 'myren', 'berget']) expect(deepest(course), course).toBeLessThan(3);
+    for (const course of ['granskog', 'garden']) expect(deepest(course), course).toBeCloseTo(5.3, 6);
+    for (const course of ['myren', 'berget']) expect(deepest(course), course).toBeLessThan(3);
+  });
+});
+
+describe("the lawn's floor", () => {
+  const garden = COURSES['garden']!;
+
+  it('is the same floor as the forest has: all the way forward on the open lawn, and no floor past its lip', () => {
+    for (const x of [75, 118, 160, 200]) {
+      expect(forwardAt(garden, x), `at x ${x}`).toBe(1);
+      expect(floorDrop(garden, x, 0.3)).toBe(0);
+      expect(floorDrop(garden, x, 2.2)).toBeCloseTo(slopeDrop(2.2), 6);
+      expect(floorDrop(garden, x, FLOOR_ENDS + 0.2)).toBeNull();
+    }
+  });
+
+  it('draws back at the top of the garden\'s walls too', () => {
+    const line = garden.ground;
+    let walls = 0;
+    for (let i = 0; i < line.length - 1; i++) {
+      const a = line[i]!;
+      const b = line[i + 1]!;
+      if (Math.abs(b.y - a.y) <= Math.abs(b.x - a.x) * 1.3 || Math.abs(b.y - a.y) < 0.6) continue;
+      const top = b.y > a.y ? b : a;
+      const on = top.x + (b.y > a.y ? 0.05 : -0.05);
+      if (Math.abs(heightAt(garden, on) - top.y) > 0.3) continue;
+      walls += 1;
+      expect(forwardAt(garden, on), `the wall top at x ${top.x}`).toBeLessThan(0.02);
+    }
+    expect(walls).toBeGreaterThan(3);
+  });
+
+  it('leaves the deck alone: a wooden floor does not draw back, and runs straight on', () => {
+    let front = -Infinity;
+    for (const { kind, shape } of bankShapes(garden, groundOf(garden.place!))) {
+      if (kind !== 'wood') continue;
+      const at = shape.getAttribute('position');
+      // Every corner of the deck stands at one of its rows' own depths: none has been drawn in.
+      for (let i = 0; i < at.count; i++) {
+        front = Math.max(front, at.getZ(i));
+        if (at.getZ(i) > 1.2) expect([2.2, 3.6, 5.4, 8, 13].some((z) => Math.abs(at.getZ(i) - z) < 1e-5), `a deck corner at depth ${at.getZ(i)}`).toBe(true);
+      }
+    }
+    expect(front).toBeCloseTo(13, 5);
   });
 });
