@@ -205,7 +205,7 @@ export const granskog: ChapterData = {
     // The cone on the bough: a puzzle of three pieces over the slope, where the cones that chase him leave a
     // moment's peace between the first big candy and the gap. A plate of bark with a heart is the way in, and
     // a refuge: the cones roll by under it. From it he steps onto a long bough, and a cone lies out on it.
-    { x: 82, y: -2, width: 1.2, look: 'bark' },
+    { x: 82.2, y: -2, width: 1.2, look: 'bark' },
     { x: 84.55, y: -1.1, width: 4.5, look: 'branch' },
     // The twig over the long bough's near end: the missing step. It is there once the cone weighs on the
     // bough's tip, and the two steps up to the hearts are one jump each, straight up.
@@ -445,7 +445,7 @@ export const granskog: ChapterData = {
     // The cone on the bough: the heart over the plate of bark, and a lollipop on the long bough, towards the
     // cone. Then the prize, four on the hearts' bough: too high to jump for. The last is the heart on the
     // twig, which comes with it.
-    { x: 81.75, y: -1.45 },
+    { x: 82, y: -1.45 },
     { x: 83.9, y: -0.55 },
     { x: 82.2, y: 1.4 },
     { x: 81.85, y: 1.4 },

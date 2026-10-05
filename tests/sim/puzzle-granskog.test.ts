@@ -216,7 +216,8 @@ describe('the cone on the bough: how it is laid', () => {
   it('is a plate of bark, a long bough and two steps up: the first of the two is the one that is missing', () => {
     // The plate is within a jump of the slope all along, and a refuge: higher than a rolling cone reaches.
     expect(plate.y - slope(left(plate))).toBeGreaterThan(0.66);
-    expect(plate.y - slope(right(plate))).toBeLessThan(JUMP_APEX - 0.1);
+    expect(plate.y - slope(plate.x)).toBeLessThan(0.9);
+    expect(plate.y - slope(right(plate))).toBeLessThan(JUMP_APEX - 0.05);
     expect(bough.y - plate.y).toBeLessThanOrEqual(0.9 + 1e-9);
     expect(twig.y - bough.y).toBeCloseTo(0.9, 9);
     expect(hearts.y - twig.y).toBeCloseTo(0.9, 9);
@@ -749,6 +750,24 @@ describe('5. it is not on the main way', () => {
     }
   });
 
+  /**
+   * The plate is the one piece within a jump of the trail, as the first ledge of every side way is. The first
+   * place on the slope from which a jump at a run ends on it, or takes its heart on the way by.
+   */
+  let first: number | undefined;
+  function firstTakeoffOntoThePlate(): number {
+    if (first !== undefined) return first;
+    first = Infinity;
+    for (let from = left(plate) - 4; from < left(plate) && first === Infinity; from += 0.05) {
+      const sim = standingAt(from - 2.5, slope(from - 2.5));
+      for (let i = 0; i < 5 / STEP && sim.curr.x < from; i++) sim.step({ ...idle, x: 1 });
+      const took = sim.curr.x;
+      hop(sim, 1);
+      if (on(sim, plate) || sim.collectedSide[TELL]) first = took;
+    }
+    return first;
+  }
+
   for (const [name, fps, options] of [['30 Hz', 30, {}], ['60 Hz', 60, {}], ['144 Hz', 144, {}], ['Lugnt, 60 Hz', 60, simOptions(settingsFor('lugnt'))]] as const) {
     it(`the robot at ${name} plays the chapter through and never touches it`, () => {
       const lugnt = (options as SimOptions).gentle === true;
@@ -757,6 +776,9 @@ describe('5. it is not on the main way', () => {
       let wasOffered = false;
       /** How near his feet came to the top of a ledge of it, from below, while he was under it. */
       let nearest = Infinity;
+      /** Where he last stood before each time he was in the air on the slope before the plate. */
+      const takeoffs: number[] = [];
+      let stood = { x: -Infinity, grounded: true };
       for (let frames = 0; !game.sim.flags.has('goal') && frames < fps * 400; frames++) {
         const d = decide(game, granskog);
         const ahead = lugnt ? d.ahead && game.sim.curr.vx < 0.2 : d.ahead;
@@ -764,27 +786,40 @@ describe('5. it is not on the main way', () => {
         wasAhead = ahead;
         wasOffered = d.offered;
         const p = game.sim.curr;
-        if (p.x < SPAN.from || p.x > SPAN.to) continue;
+        if (stood.grounded && !p.grounded && p.mode === 'free' && stood.x > 70.5 && stood.x < left(plate)) takeoffs.push(stood.x);
+        stood = { x: p.x, grounded: p.grounded };
+        if (!within(p)) continue;
         expect(p.verb, `at ${p.x.toFixed(2)}`).toBeNull();
         for (const ledge of [plate, bough, hearts]) {
           if (Math.abs(p.x - ledge.x) < ledge.width / 2 + 0.2) nearest = Math.min(nearest, ledge.y - p.y);
         }
       }
       expect(game.sim.flags.has('goal')).toBe(true);
-      // It ran under the plate with its feet on the slope: the cone it jumps before the plate sets it down
-      // short of it, and the next it jumps at the gap.
+      expect(game.sim.bowled).toBe(0);
+      // It ran under the plate with its feet on the slope, and under the rest with room over its head.
       expect(nearest).toBeGreaterThan(0.5);
       expect(game.sim.collectedSide.some((got, i) => got && within(side[i]!))).toBe(false);
       expect(game.sim.flags.has(PLACED)).toBe(false);
       expect(game.sim.placed).not.toContain(cone.id);
       expect(game.sim.movers.find((mover) => mover.def.id === cone.id)!.x).toBe(home.x);
+      // Not by a hair: the cone that catches it up before the plate is jumped more than half an EL before the
+      // first place a jump would have ended on the plate, and the next catches it up at the gap. If the cones'
+      // rhythm or the robot's running is ever changed, this is the number that says whether the plate has to move.
+      if (!lugnt) {
+        expect(takeoffs).toHaveLength(1);
+        console.log(`puzzle granskog: the robot at ${name} jumps a cone at x ${takeoffs[0]!.toFixed(2)}; a jump from x ${firstTakeoffOntoThePlate().toFixed(2)} on would have ended on the plate`);
+        expect(firstTakeoffOntoThePlate() - takeoffs[0]!).toBeGreaterThan(0.5);
+      } else {
+        // On Lugnt the cones miss him while he runs, and it does not jump on the slope before the gap at all.
+        expect(takeoffs).toHaveLength(0);
+      }
     });
   }
 
   it('the cone is in the way of no jump from the trail: it lies over the head of the highest, and with it or without it every jump is the same jump', () => {
     // The cone is the one solid thing of the puzzle: a ledge is no ceiling. Jumps from the slope under it,
     // standing and at a run, with the slope's ledges taken away so that none of them ends on the plate.
-    const bare = (withCone: boolean): ChapterData => ({ ...granskog, ledges: [], movers: withCone ? granskog.movers! : granskog.movers!.slice(0, -1) });
+    const bare = (withCone: boolean): ChapterData => ({ ...granskog, ledges: [], movers: granskog.movers!.filter((mover) => withCone || mover !== cone) });
     let most = 0;
     let headroom = Infinity;
     let tries = 0;
