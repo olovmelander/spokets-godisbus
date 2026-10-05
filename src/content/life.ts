@@ -50,7 +50,7 @@ export interface Slot {
   haze: number;
 }
 
-/** How the moose walks, whatever its size: the cell's numbers, measured in the bog's moose. */
+/** How the moose walks, whatever its size: the cell's numbers, as art/blender/life.py builds it (2 EL at the hump). */
 export const WALK = {
   /** Cells a second: twelve make a cycle of 1.2 s. */
   fps: 10,
@@ -60,9 +60,12 @@ export const WALK = {
   cell: 4,
   /** How far over the cell's bottom edge the hooves stand, and how tall the animal is with its antlers. */
   foot: 0.25,
-  tall: 2.4,
-  /** The share of its height that goes into the mist: the legs fade towards the hooves. */
+  tall: 2.6,
+  /** How light its cells are on the whole, as light: its ink is divided by this, so that the ink is its colour. */
+  shade: 0.135,
+  /** The share of its height that goes into the mist, and how much of a hoof is left: the legs fade towards the hooves. */
   mist: 0.35,
+  hoof: 0.35,
   /** The cell it stops after: every hoof is on or near the ground there. */
   halt: 5,
   /** How long it stands: its head comes up, turns this way, an ear flicks, and it goes down again. */
@@ -76,7 +79,7 @@ export interface Role {
   /** One colour, before the place's haze is mixed in, and how solid it is. */
   ink: Ink;
   alpha: number;
-  /** A walker: how many times the bog's moose. A flock: one bird's cell width in EL. */
+  /** A walker: how many times the cell's own measure. A flock: one bird's cell width in EL. */
   size: number;
   /** EL a second. A walker's is its stride over its cycle, and is not given here. */
   speed?: number;
@@ -139,19 +142,20 @@ export const LIFE: Partial<Record<PlaceId, PlaceLife>> = {
   bog: {
     haze: BOG_MIST,
     // Behind the nearest spruces, in front of the forest's edge.
-    slots: [{ z: -42, hold: 0.8, sink: 0.1, haze: 0.25 }],
+    slots: [{ z: -42, hold: 0.8, sink: 0.1, haze: 0.12 }],
     roles: {
       // A bull, 1.9 EL at the shoulder. Its hooves are a little under the eye line, in the nearest picture's mist.
-      moose: { act: 'walk', slot: 0, ink: [58, 52, 46], alpha: 0.9, size: 1, stops: true, y: -0.2, calm: true, known: true },
-      cranes: { act: 'flock', slot: 0, ink: [92, 96, 104], alpha: 0.85, size: 1.2, speed: 2.2, y: 9.5, strip: STRIPS.crane, birds: 9 },
+      moose: { act: 'walk', slot: 0, ink: [50, 45, 40], alpha: 0.9, size: 0.95, stops: true, y: -0.2, calm: true, known: true },
+      cranes: { act: 'flock', slot: 0, ink: [104, 108, 116], alpha: 0.85, size: 1.2, speed: 2.2, y: 9.5, strip: STRIPS.crane, birds: 9 },
     },
   },
   forest: {
     haze: FOREST_MIST,
     // Two depths of trunks pass in front of it.
-    slots: [{ z: -54, hold: 0.58, sink: 0.17, haze: 0.5 }],
+    slots: [{ z: -54, hold: 0.58, sink: 0.17, haze: 0.3 }],
     roles: {
-      moose: { act: 'walk', slot: 0, ink: [90, 125, 119], alpha: 0.6, size: 1.37, y: -0.6, odds: 1 / 3, calm: true, known: true },
+      // Nearer and so bigger, 2.6 EL at the shoulder, and no more than a shape of the forest's own green haze.
+      moose: { act: 'walk', slot: 0, ink: [56, 90, 84], alpha: 0.8, size: 1.3, y: -0.6, odds: 1 / 3, calm: true, known: true },
     },
   },
   garden: {

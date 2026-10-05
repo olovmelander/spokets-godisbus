@@ -97,12 +97,13 @@ describe('what it is made of', () => {
     }
   });
 
-  it('shows the bog its moose as the audit measured it', () => {
+  it('shows the bog its moose as the audit measured it: about 34 px tall on a phone and 69 on a tablet', () => {
     const z = LIFE.bog!.slots[0]!.z;
-    expect(WALK.tall * PHONE.px(z)).toBeGreaterThan(32);
-    expect(WALK.tall * PHONE.px(z)).toBeLessThan(38);
-    expect(WALK.tall * TABLET.px(z)).toBeGreaterThan(64);
-    expect(WALK.tall * TABLET.px(z)).toBeLessThan(74);
+    const tall = WALK.tall * LIFE.bog!.roles.moose!.size;
+    expect(tall * PHONE.px(z)).toBeGreaterThan(32);
+    expect(tall * PHONE.px(z)).toBeLessThan(38);
+    expect(tall * TABLET.px(z)).toBeGreaterThan(64);
+    expect(tall * TABLET.px(z)).toBeLessThan(74);
   });
 });
 
@@ -317,12 +318,15 @@ describe('the stages in the chapters', () => {
 
   /**
    * Calm ground (the audit's rule): no hook, ledge, hidden candy, soft tussock or family member within 8 EL
-   * of the stretch, and no ride, hose or gust over it.
+   * of the stretch, and no ride, hose or gust over it. And where an animal walks on the far ground, nothing
+   * to use within 8 EL either: it must never stand behind a thing that has the game's diamond over it.
    */
   function trouble(chapter: ChapterData, stage: LifeStage): string[] {
     const near = (x: number, half = 0) => x + half > stage.from - 8 && x - half < stage.to + 8;
     const over = (from: number, to: number) => to > stage.from && from < stage.to;
+    const walks = LIFE[chapter.place!]?.roles[stage.kind]?.act === 'walk';
     return [
+      ...(chapter.spots ?? []).filter((spot) => walks && spot.look !== undefined && near(spot.at.x)).map((spot) => `${spot.id} to use at ${spot.at.x}`),
       ...(chapter.hooks ?? []).filter((hook) => near(hook.x)).map((hook) => `hook at ${hook.x}`),
       ...(chapter.ledges ?? []).filter((ledge) => near(ledge.x, ledge.width / 2)).map((ledge) => `ledge at ${ledge.x}`),
       ...(chapter.hidden ?? []).filter((candy) => near(candy.x)).map((candy) => `hidden candy at ${candy.x}`),
@@ -375,7 +379,7 @@ describe('the stages in the chapters', () => {
 
   it('would not pass on ground that is not calm', () => {
     const myren = COURSES.myren!;
-    // Under the rings between the dead pines, beside Mamma, and on the soft tussocks.
-    for (const from of [112, 96.5, 60]) expect(trouble(myren, { kind: 'moose', from, to: from + 3 }).length, `${from}`).toBeGreaterThan(0);
+    // Under the rings between the dead pines, beside Mamma, on the soft tussocks, and by the ghost's lollipop.
+    for (const from of [112, 96.5, 60, 138]) expect(trouble(myren, { kind: 'moose', from, to: from + 3 }).length, `${from}`).toBeGreaterThan(0);
   });
 });

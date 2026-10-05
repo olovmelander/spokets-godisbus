@@ -114,13 +114,15 @@ export function lifePlan(place: PlaceId, stages: readonly LifeStage[] = [], seed
     // A hoof that stands goes back under the body as fast as the body goes on: the stride over the cycle.
     const speed = role.speed ?? (WALK.stride * role.size * WALK.fps) / 12;
     // A walker comes out of the mist ahead of him and goes off the other way. A flock crosses the whole sky.
-    const far = walks ? Math.min(reach, 26) : reach * 2 + role.size * (2 + arm(role) * 1.6);
+    const far = walks ? Math.min(reach * 1.05, 27) : reach * 2 + role.size * (2 + arm(role) * 1.6);
     on = {
       kind, role, speed, far, t: 0,
-      ink: light(role.ink, cast!.haze, here.haze),
-      from: centre + (walks ? Math.min(reach * 0.55, 15) : reach + role.size),
-      // It stops when it has shown the cell where its hooves are down, about halfway.
-      halt: role.stops ? (Math.round(((far * 0.5) / speed - 0.6) / 1.2) * 12 + WALK.halt + 1) / WALK.fps : Infinity,
+      // A walker's cells are shaded: lit along the back, dark under the belly. On the whole they are its ink.
+      ink: light(role.ink, cast!.haze, here.haze).map((c) => (walks ? c / WALK.shade : c)) as unknown as Ink,
+      from: centre + (walks ? Math.min(reach * 0.62, 17) : reach + role.size),
+      // It stops when it has shown the cell where its hooves are down, a third of the way: ahead of him still, and
+      // to one side of the middle of the picture, where he and the things he uses are.
+      halt: role.stops ? (Math.round(((far * 0.36) / speed - 0.6) / 1.2) * 12 + WALK.halt + 1) / WALK.fps : Infinity,
     };
   }
 
@@ -210,7 +212,7 @@ export function lifePlan(place: PlaceId, stages: readonly LifeStage[] = [], seed
       const strip = stands ? STRIPS.stand : STRIPS.walk;
       // Two quads: the legs fade towards the hooves, so they go into the mist and no hoof has to meet any ground.
       const knee = (WALK.foot + WALK.tall * WALK.mist) / (WALK.cell * 0.8);
-      put(strip, cell, x, y, wide, tall, ink, solid, solid * 0.1, 0, knee, true);
+      put(strip, cell, x, y, wide, tall, ink, solid, solid * WALK.hoof, 0, knee, true);
       put(strip, cell, x, y, wide, tall, ink, solid, solid, knee, 1, true);
       if (gone >= on.far) on = null;
     } else {
