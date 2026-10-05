@@ -249,11 +249,14 @@ const ROCK_DEEP = new Color('#46527e');
  * Rock where it is cut: the same rock as its top, with a pale crust of lichen along the edge above it, and
  * going cool, never black, further down.
  */
-function rockCutAt(x: number, z: number, under: number, out: Color): Color {
-  toneAt('granite', x * 1.3 + 4, under * 1.1 + z, out).multiplyScalar(0.9);
+function rockCutAt(kind: Ground, x: number, z: number, under: number, out: Color): Color {
+  toneAt(kind, x * 1.3 + 4, under * 1.1 + z, out).multiplyScalar(0.9);
   if (under < 0.15) out.lerp(CAP, (1 - under / 0.15) * (0.3 + noise(x * 2.3, z * 2.1) * 0.5));
   return out.lerp(ROCK_DEEP, Math.min(1, Math.max(0, (under - 1.5) / 10)) * 0.7);
 }
+
+/** What grows in soil: where such ground is cut, there is humus under it, and what grows hangs over the edge. */
+const IN_SOIL: ReadonlySet<Ground> = new Set<Ground>(['moss', 'lawn', 'sphagnum', 'earth']);
 
 /**
  * What a place's ground does in front of the path, and at its walls.
@@ -271,7 +274,8 @@ interface Front {
   course: number;
   /** Whether it is broken into blocks along the path: see `blocksOf`. */
   jointed: boolean;
-  cutAt(x: number, z: number, under: number, out: Color): Color;
+  /** What it goes into far behind the path: the place's haze, in the ground's own hue. */
+  far: Color;
 }
 
 /**
@@ -297,13 +301,15 @@ function blocksOf(from: number, to: number): Block[] {
   }
   return blocks;
 }
-const FRONTS: Record<'plain' | 'forest' | 'rock', Front> = {
-  plain: { rows: PROFILE, cuts: false, lip: 0, hang: 0, course: Infinity, jointed: false, cutAt: (_x, _z, _under, out) => out },
-  forest: { rows: PROFILE_FOREST, cuts: true, lip: LIP - 0.5, hang: 0.7, course: 0.9, jointed: false, cutAt },
-  rock: { rows: PROFILE_ROCK, cuts: true, lip: 0, hang: 0, course: 0.6, jointed: true, cutAt: rockCutAt },
+const FRONTS: Record<'plain' | 'forest' | 'lawn' | 'rock', Front> = {
+  plain: { rows: PROFILE, cuts: false, lip: 0, hang: 0, course: Infinity, jointed: false, far: FAR },
+  forest: { rows: PROFILE_FOREST, cuts: true, lip: LIP - 0.5, hang: 0.7, course: 0.9, jointed: false, far: FAR },
+  // The lawn has the forest's floor: grass grows down it towards the camera. Its turf hangs less far.
+  lawn: { rows: PROFILE_FOREST, cuts: true, lip: LIP - 0.5, hang: 0.45, course: 0.9, jointed: false, far: new Color('#b3cfa6') },
+  rock: { rows: PROFILE_ROCK, cuts: true, lip: 0, hang: 0, course: 0.6, jointed: true, far: FAR },
 };
 /** The front of a place whose own ground is this. */
-const frontOf = (own: Ground): Front => (own === 'moss' ? FRONTS.forest : own === 'granite' ? FRONTS.rock : FRONTS.plain);
+const frontOf = (own: Ground): Front => (own === 'moss' ? FRONTS.forest : own === 'lawn' ? FRONTS.lawn : own === 'granite' ? FRONTS.rock : FRONTS.plain);
 
 /** How far under the outline a profile lies at a depth, between its rows. */
 function dropAt(rows: Row[], z: number): number {
@@ -588,8 +594,8 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
   // In a place with a front of its own, every kind of ground but a deck has that front.
   const natural = frontOf(own);
   const drawsBack = natural.cuts;
-  // Only the forest's floor closes a pool with a near shore.
-  const shores = natural === FRONTS.forest;
+  // A floor that slopes on towards the camera closes a pool with a near shore.
+  const shores = natural.rows === PROFILE_FOREST;
   const points: BankPoint[] = [];
   let before = false;
   let along = 0;
@@ -620,9 +626,12 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
       const corner = steep || before;
       const forward = !drawsBack ? 1 : ends ? ends[0]! + ((ends[1]! - ends[0]!) * k) / pieces : corner ? forwardAtCorner(chapter, x, y) : forwardAt(chapter, x);
       const pool = shores ? (chapter.water ?? []).find((w) => x >= w.from && x <= w.to && y < w.y) : undefined;
+      const kind = surfaceAt(chapter, x) ?? own;
+      // What is built does not draw back: a wooden floor runs straight on, and a step in it is a step.
+      const built = GROUNDS[kind].boards;
       points.push({
-        x, y, wall: corner, face: steep, along: along + (length * k) / pieces, forward: pool ? 1 : forward,
-        ...(rises ? { rises } : {}), ...(pool ? { shore: pool.y + SHORE_OVER } : {}), kind: surfaceAt(chapter, x) ?? own,
+        x, y, wall: corner, face: steep, along: along + (length * k) / pieces, forward: pool || built ? 1 : forward,
+        ...(rises && !built ? { rises } : {}), ...(pool ? { shore: pool.y + SHORE_OVER } : {}), kind,
       });
       before = steep;
     }
@@ -654,6 +663,7 @@ function stretchOfGround(points: BankPoint[], kind: Ground, natural: Front, bloc
   const whole = lengthsDown(profile);
   const rows = profile.length;
   const cuts = natural.cuts && profile === natural.rows;
+  const soil = IN_SOIL.has(kind);
   const ends = profile[rows - 1]!.z;
   const position: number[] = [];
   const colour: number[] = [];
@@ -696,8 +706,13 @@ function stretchOfGround(points: BankPoint[], kind: Ground, natural: Front, bloc
         // A face is cut all the way; the front is cut under its lip, and where it has drawn back to a wall.
         const cut = face ? 1 : Math.max(row.cut ?? 0, row.z > EDGE ? 1 - p.forward : 0);
         // Over the edge what grows hangs a hand or two, further in some places than in others.
-        const hang = natural.hang * (0.36 + noise(p.x * 1.7 + 2, z * 0.8) * 0.64);
-        if (cut > 0 && under > hang) c.lerp(natural.cutAt(p.x, z, under - hang, scratch), cut);
+        const hang = soil ? natural.hang * (0.36 + noise(p.x * 1.7 + 2, z * 0.8) * 0.64) : 0;
+        // Soil is cut to humus and rock, rock to rock; what is built or clipped has its own face.
+        if (cut > 0 && under > hang) {
+          if (soil) c.lerp(cutAt(p.x, z, under - hang, scratch), cut);
+          else if (look.rock) c.lerp(rockCutAt(kind, p.x, z, under, scratch), cut);
+          else c.lerp(look.wall, 0.82 * cut);
+        }
       } else if (face) c.lerp(look.wall, 0.82);
       // A rim board is one long board, not a board to each board of the deck: one tone, drifting along it.
       if (row.rim !== undefined && !face) c.copy(look.colours[1]!).lerp(look.colours[2]!, noise(p.x * 0.31 + 5, 3));
@@ -707,7 +722,7 @@ function stretchOfGround(points: BankPoint[], kind: Ground, natural: Front, bloc
       // A joint is a dark line down the faces, and a faint one across the ledges and the top.
       if (seam) c.multiplyScalar(row.cut ? 0.5 : row.z > EDGE ? 0.8 : 0.93);
       if (row.pale && !face) c.lerp(WHITE, row.pale);
-      if (row.far) c.lerp(FAR, row.far);
+      if (row.far) c.lerp(natural.far, row.far);
       colour.push(c.r, c.g, c.b);
       // The rim board lies along the path: across it the picture spans one board, between two gaps, and its
       // grain runs along.
