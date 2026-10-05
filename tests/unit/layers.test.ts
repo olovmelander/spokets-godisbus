@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { BONUS, STORY } from '../../src/content/chapters';
 import type { ChapterData } from '../../src/sim/types';
@@ -12,9 +13,9 @@ import type { ChapterData } from '../../src/sim/types';
  * are reached by a way of their own.
  */
 const FLOOR: Record<string, { sideWays: number; length: number; rings: number; sweets: number }> = {
-  garden: { sideWays: 3, length: 36, rings: 5, sweets: 2 },
-  granskog: { sideWays: 2, length: 26, rings: 3, sweets: 2 },
-  myren: { sideWays: 3, length: 28, rings: 3, sweets: 2 },
+  garden: { sideWays: 4, length: 42, rings: 6, sweets: 2 },
+  granskog: { sideWays: 3, length: 32, rings: 3, sweets: 2 },
+  myren: { sideWays: 4, length: 30, rings: 3, sweets: 2 },
   berget: { sideWays: 2, length: 47, rings: 6, sweets: 2 },
   byn: { sideWays: 1, length: 19, rings: 2, sweets: 0 },
 };
@@ -65,6 +66,13 @@ describe('the second level over each chapter', () => {
     for (const id of ['garden', 'granskog', 'myren', 'berget', 'byn']) {
       const chapter = [...STORY, ...BONUS].find((one) => one.id === id)!;
       expect((chapter.hooks ?? []).length, id).toBeGreaterThan(0);
+    }
+  });
+
+  it('the chapters with a puzzle keep the test that plays it', () => {
+    // Berget has none yet: nothing in the format lets a gust be his tool (docs/level-design.md §3).
+    for (const id of ['garden', 'granskog', 'myren']) {
+      expect(existsSync(new URL(`../sim/puzzle-${id}.test.ts`, import.meta.url)), id).toBe(true);
     }
   });
 

@@ -67,8 +67,9 @@ These are the pieces a chapter is laid out with. The first four are in the forma
 ## 3. The chapters
 
 "Layers" is the first pass: side ways, rings and re-homed sweets laid over the chapters as they stand, with
-their main trails and saved games untouched. It is built (5 October 2026). "Arcs" is the second pass, on the
-main trail itself, and is not begun.
+their main trails and saved games untouched. It is built (5 October 2026), and so is one optional puzzle in
+each of three chapters (the table after this one). "Arcs" is the second pass, on the main trail itself, and
+is not begun.
 
 | Chapter | The rule of the place | Layers, as built (first pass) | Arcs (second pass) |
 | --- | --- | --- | --- |
@@ -78,14 +79,26 @@ main trail itself, and is not begun.
 | **Berget** | Gusts that come in beats | **The rock shelves** up from the first slab, and the mountain's first ring over the cobbles to a far shelf with the gräddkola. **From lee to lee:** a low and a high shelf on every boulder and a ring between every two, on a guide rope: on the lace no gust has hold of him. The salmiakruta is on the last boulder | A climb that needs Hoppa; a three-step puzzle with the ghost at the cliff |
 | **Byn** | (a medley) | **The sweet shop's shelves:** three steps up, two rings on their flex over the floor, a long shelf and a step down | Its return loop and its sweets are still unbuilt |
 
-**Measured, before and after the first pass.** "One corridor" is the share of a chapter's length, from its
-start to its goal, with no second way beside it; the first pass added what `tests/unit/layers.test.ts` counts.
+**The puzzles** (5 October 2026). Each is optional, with its prize in sight first, and its insight is the
+chapter's own rule used the other way round. `tests/sim/puzzle-<chapter>.test.ts` plays each, with its
+likeliest wrong tries.
+
+| Chapter | He sees | The catch | The insight | Built from |
+| --- | --- | --- | --- | --- |
+| **Gården:** the curl on the ring | Five sweets on a bough beyond the birch's first root, and a red ring on a string between him and them | A curl of shaving hangs round the ring: the lace has nothing to catch | The lace pulls as well as swings. *Dra* slides the curl off along the string; then the same button throws the lace | A thing on a rail whose solid box stands round a ring; the lace needs a clear line |
+| **Granskogen:** the cone on the bough | Hearts on a bough high over the needle slope | Two steps up from a long bough, with no step between | A cone lies on the long bough. Pushed to its tip, its weight brings the missing step. What bowled him over is his tool | A thing on a rail, and a ledge that waits for `placed:` |
+| **Myren:** the toss | An arch of hearts over the soft tussocks, and a glint in the moss under its foot | The arch is higher than a jump, and the tussock under it sinks | Stay. Standing still over the glint he sinks towards it, and the tussock throws him along the arch | A `touch` spot too deep to reach except by sinking, which begins a ride |
+| **Berget:** none yet | | | A gust is only a push to the left: it lifts nothing, a thing on a rail makes no lee, and on *Lugnt* it does not blow at all | What was tried, a leaf that rises with each gust, was one piece, hung in the air and was not built |
+
+**Measured, before and after.** "One corridor" is the share of a chapter's length, from its start to its
+goal, with no second way beside it; `tests/unit/layers.test.ts` counts what was added, the puzzles' ledges
+among it.
 
 | Chapter | One corridor, before | after | Side ways laid | over (EL) | Rings | Side candy | Sweets with a way |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Gården | 95 % | 77 % | 3 | 37.0 of 209 | 7, were 4 | 21 | 2 of 4 |
-| Granskogen | 92 % | 78 % | 2, and the root | 26.8 of 203 | 3, were 0 | 22 | 2 of 4 |
-| Myren | 91 % | 77 % | 3 | 28.6 of 196 | 3, were 0 | 17 | 2 of 4 |
+| Gården | 95 % | 74 % | 4 | 42.7 of 209 | 8, were 4 | 26 | 2 of 4 |
+| Granskogen | 92 % | 76 % | 3, and the root | 32.6 of 203 | 3, were 0 | 29 | 2 of 4 |
+| Myren | 91 % | 76 % | 4 | 30.4 of 196 | 3, were 0 | 23 | 2 of 4 |
 | Berget | 94 % | 64 % | 2 | 47.9 of 156 | 6, were 0 | 24 | 2 of 4 |
 | Byn | 100 % | 88 % | 1 | 19.5 of 157 | 3, was 1 | 11 | none hidden yet |
 
@@ -113,6 +126,20 @@ only lower it.
   running off the deck's edge; they now wait for the hose and begin beyond that fall.
 - **A wide ledge has a wide stem,** because a ledge and what holds it are one shape scaled to its width.
 
+**What the puzzles taught:**
+
+- **The format can hide, wait and carry; it cannot tilt, lift or shelter.** A solid thing can stand in the
+  lace's way; a ledge, a climb or a candy can wait for a flag; a ride can carry him. But nothing tilts under
+  a weight, so Granskogen's lever is told by a twig that grows out, and not shown. And a gust cannot lift,
+  be sheltered from by a thing he moves, or wait for a flag, so Berget has no puzzle. The pieces to add are a
+  ledge that tilts, shelters that follow things on rails, and a ring that waits for a flag.
+- **"Stay" is an action.** Myren's puzzle asks for no button: a thing too deep to touch except by sinking.
+  It can also solve itself for a child who lingers, which is kinder than what stood there before.
+- **A puzzle beside a drop needs its far end thought of.** Holding the stick on after the push walks him
+  over Granskogen's cone and off the bough's tip.
+- **A chapter's tests box the next thing in.** Several count every ledge, ring or candy beyond some x as
+  belonging to one side way, so a new piece fits only where they do not look. Find pieces by what they are.
+
 ## 4. Checks
 
 - `tests/sim/ledges.test.ts`: what a ledge is, side candy, and the ride that begins again.
@@ -127,5 +154,7 @@ only lower it.
 - `tests/unit/layers.test.ts`: a floor under each chapter's side ways, rings and sweets with a way, so that a
   change can add one and never quietly lose one; and that every ring off the main way hangs from something.
 - `tests/robot/pace.test.ts`: a ceiling over how long each main trail asks for nothing but running.
-- Not yet: no browser suite plays a side way. Each was played once with the keyboard in the running game, at
-  1180×820 and 844×390, by a script that is not in the repository.
+- `tests/sim/puzzle-<chapter>.test.ts`: each puzzle's solution from the trail back to the trail, its likeliest
+  wrong tries, a game taken up again, and that the helper and the robot never go there.
+- Not yet: no browser suite plays a side way or a puzzle. Each was played once with the keyboard in the
+  running game, at 1180×820 and 844×390, by a script that is not in the repository.

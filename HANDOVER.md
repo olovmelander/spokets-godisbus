@@ -3,7 +3,7 @@
 ## State (5 October 2026)
 
 - **Level design, version 6: the first pass, the "layers", is laid over five chapters** (4 October, late
-  evening, and 5 October, on Olov's computer; `docs/level-design.md`; pull requests #113 to #120, merged).
+  evening, and 5 October, on Olov's computer; `docs/level-design.md`; pull requests #113 to #125, merged).
   Olov: "the game feels very linear right now. I want it to feel more like an
   exceptional indie platformer ... research on the web for good game that we can get inspired of ... Take the
   best things from the best platformers into my game. Like Super Mario, Rayman, Braid, Unravel, little
@@ -63,9 +63,23 @@
       crossed overhead; the salmiakruta is on the last boulder's top.
     - **Byn** (#114). *The sweet shop's shelves:* three steps up on legs, two rings on their flex over the
       floor, a long shelf and a step down before the bag.
-  - **In numbers.** The share of a chapter that is one corridor went from 95 to 77 per cent in Gården, from
-    92 to 78 in Granskogen, from 91 to 77 in Myren, from 94 to 64 on Berget and from 100 to 88 in Byn. There
-    are 53 ledges, 17 new rings, 95 side candies, and eight of the sixteen hidden sweets now lie at the end
+  - **The first three puzzles** (#122 to #124; the table in `docs/level-design.md` §3). Each is optional,
+    has its prize in sight first, and takes the chapter's own rule the other way round.
+    - **Gården, the curl on the ring.** Five sweets on a bough beyond the birch root, and a ring on a string
+      that a curl of shaving hangs round, so the lace cannot catch it. *Dra* slides the curl off along the
+      string, and then the same button throws the lace. The lace pulls as well as swings.
+    - **Granskogen, the cone on the bough.** Hearts two steps over a long bough, with no step between. A cone
+      lies on the bough: pushed out to its tip, its weight brings the missing step.
+    - **Myren, the toss.** An arch of hearts over the soft tussocks and a glint in the moss under it.
+      Standing still on the tussock that sinks, the one thing the bog has taught him not to do, he sinks
+      towards the glint and is thrown along the arch onto a dead pine's bough.
+    - **Berget has none.** What came back was a leaf that hangs in the air and rises with each gust, with a
+      garland over it: one piece, floating, and its prize out of the trail's picture. It was not merged; the
+      branch `puzzle-berget` is on Olov's computer only. A gust is only a push to the left: it lifts
+      nothing, a thing he moves makes no lee, and on *Lugnt* it does not blow.
+  - **In numbers.** The share of a chapter that is one corridor went from 95 to 74 per cent in Gården, from
+    92 to 76 in Granskogen, from 91 to 76 in Myren, from 94 to 64 on Berget and from 100 to 88 in Byn. There
+    are 60 ledges, 18 new rings, 113 side candies, and eight of the sixteen hidden sweets now lie at the end
     of a way of their own. The lace, which was used in 14 EL of Gården only, is in every chapter he walks
     through.
   - **Inside the draw budget** (#118). With Granskogen's layers two of its pictures came to 119 and 122 draw
@@ -73,25 +87,34 @@
     rings one and its side candy two, and each is drawn only while it is in sight: four draw calls at a side
     way, where it was up to six, and none away from it. The heaviest picture measured in Granskogen is now
     117; the chapters merged before it got one to six cheaper.
-  - **What this pass is not.** The main trails are exactly as they were. The puzzles are the same ones, of
-    one or two presses; Myren's boardwalk is still 9.7 seconds of plain running under the new rings; the
-    robot still finishes Berget without Hoppa. Olov asked for level design *and puzzles*: this pass is the
-    routes, the heights, the rings and the sweets. The puzzles of three pieces, and each chapter's arcs on
-    its main trail, are the second pass, which is not begun.
-  - **Validation:** typecheck; 958 unit, simulation and robot tests, about 170 of them new. Each chapter has
+  - **What this is not.** The main trails are exactly as they were: the trail's own puzzles are the same
+    ones, of one or two presses; Myren's boardwalk is still 9.7 seconds of plain running under the new rings;
+    the robot still finishes Berget without Hoppa. Everything laid so far is beside the trail and can be
+    walked past. Each chapter's arcs on its main trail are the second pass, which is not begun. And the three
+    puzzles are greybox: Granskogen's lever is told by a twig that grows out, not shown, because nothing in
+    the format can tilt.
+  - **The checks take 13 minutes, where they took 44 to 75** (#121). All but 74 seconds of a run was the 39
+    browser suites, one after another on a machine that draws the game in software. They are shared out
+    over six jobs that run side by side (`tests/browser/suites.mjs`); `npm run test:browser` still runs
+    them in a row. A unit test holds that a new suite cannot be left out of the list.
+  - **Validation:** typecheck; 1,046 unit, simulation and robot tests, about 250 of them new. Each chapter has
     `tests/sim/layers-<chapter>.test.ts`, which plays every side way from the trail back to the trail at
     several moments of letting go and tells every miss, and `tests/sim/secrets-<chapter>.test.ts`, which
-    plays the way to each moved sweet. `tests/unit/layers.test.ts` is a floor under each chapter's side
-    ways, rings and sweets, and `tests/robot/pace.test.ts` a ceiling over each main trail's plain running.
+    plays the way to each moved sweet. Each puzzle has `tests/sim/puzzle-<chapter>.test.ts`: its solution
+    from the trail back to the trail, its likeliest wrong tries, a game taken up again, and that the helper
+    and the robot never go there. `tests/unit/layers.test.ts` is a floor under each chapter's side ways,
+    rings and sweets, and `tests/robot/pace.test.ts` a ceiling over each main trail's plain running.
     The build and its size gate (391 KB of script, 828 KB at boot); the privacy check.
     - **In a browser:** every pull request's run on GitHub was green, all 39 suites, before it was merged.
-      On Olov's computer each side way with rings, and Gården's sills and Myren's leaves, was played with the
-      keyboard in the running game at 1180×820 and 844×390 by a script that is not in the repository, and its
-      pictures were looked at. No browser suite in the repository plays a side way yet.
+      On Olov's computer each side way with rings, Gården's sills, Myren's leaves and each of the three
+      puzzles was played with the keyboard in the running game at 1180×820 and 844×390 by a script that is
+      not in the repository, and its pictures were looked at. The live site was looked at in every chapter
+      after the deploys. No browser suite in the repository plays a side way or a puzzle yet.
     - **Built by five sessions at once:** the format and Byn by the main session, and Gården, Granskogen,
-      Myren and Berget each by a helper session in a worktree of its own, from one brief. The main session
-      read every change, played every way and hung the rings. The chapters did not get in each other's way,
-      because a chapter is one file.
+      Myren and Berget each by a helper session in a worktree of its own, from one brief, and the puzzles
+      the same way from a second brief. The main session read every change, played every way and every
+      puzzle in the running game, hung the rings, and turned Berget's puzzle down. The chapters did not get
+      in each other's way, because a chapter is one file.
 
 - **The candy is modelled in Blender** (4 October, on Olov's computer; pull requests #110 and #111, merged, and
   on the site; art bible §2.9).
@@ -1313,11 +1336,13 @@
 
 **For the next session, in this order:**
 
-- **Olov plays the layers,** on a phone and on the computer: `?dev&course=garden` (the window sills at once, the
-  clothes line after the boulder), `?dev&course=granskog`, `?dev&course=myren`, `?dev&course=berget` and
-  `?dev&course=byn`. What his eyes are needed for: whether the side ways are found without being told,
-  whether a heart reads as "extra" and a wrapped sweet as "this way", whether three rings in a row are fun
-  or too hard for Elof's hands, and which chapter's layers are the weakest.
+- **Olov plays the layers and the puzzles,** on a phone and on the computer: `?dev&course=garden` (the window
+  sills at once, the clothes line after the boulder), `?dev&course=granskog`, `?dev&course=myren`,
+  `?dev&course=berget` and `?dev&course=byn`; and the puzzles at `?dev&course=garden&at=79,0.01`,
+  `?dev&course=granskog&at=80.6,-2.48` and `?dev&course=myren&at=65,0.01`. What his eyes are needed for:
+  whether the side ways are found without being told, whether a heart reads as "extra" and a wrapped sweet
+  as "this way", whether three rings in a row are fun or too hard for Elof's hands, whether each puzzle's
+  idea comes to him or has to be told, and which chapter's layers are the weakest.
 - **The second pass: the arcs on the main trails, and the puzzles** (`docs/level-design.md` §1 and §3). This
   is where the game stops being a corridor with detours. One toy to a chapter, in four steps: seen, tried
   where a miss costs nothing, gated, twisted. In order of how much each would change:
@@ -1326,7 +1351,12 @@
   - *Granskogen:* a ring that a cone's weight pulls into reach, and the avalanche as a chase after the
     ghost's cone. The first needs a ring that waits for a flag or rides on a thing on a rail: hooks have no
     `needs` yet.
-  - *Berget:* a climb that needs Hoppa, and a puzzle of three pieces with the ghost at the cliff.
+  - *Berget:* a climb that needs Hoppa, and a puzzle of three pieces with the ghost at the cliff. Its
+    optional puzzle is unbuilt: it needs a gust to be a tool, which takes one of three engine pieces (a gust
+    that lifts what he stands on, shelters that follow things on rails, or a gust that waits for a flag), and
+    an answer for *Lugnt*, where gusts do not blow.
+  - *The engine pieces the puzzles asked for:* a ledge that tilts under a weight (Granskogen's lever, shown
+    and not told), and a ring that waits for a flag (one ring that is first pulled and then swung from).
   - *Gården:* the swing's twist and its show of mastery after the gully; the dew rain as a choice.
   - *Byn:* its return loop and its sweets.
   - **Rules that bind it:** trail candy and big candies are saved by their place in their lists, so add and
@@ -1474,6 +1504,15 @@ The older list, still true where it is not struck:
 - Offline play is checked in Chromium with a real worker and the test server disconnected. Installed
   Safari/Home Screen updates and storage eviction have not been checked on the family's devices yet.
 
+- **With the family's models the live game draws more than the checks measure, and is over the budget in
+  one place.** The checks run with stand-in figures. On the site the family's models cost 11 to 19 draw calls
+  more in a picture: Granskogen's hilltop after the ant lift is 127 against the budget of 120 (116 with
+  stand-ins), and Gården's clothes line on a phone held sideways is 105 (86). It was so before the layers,
+  which left the hilltop one or two cheaper. Each family model is several meshes; joining a model's meshes
+  where they share a material is where the draw calls are.
+- **A jump that comes down exactly on the far corner of a tussock or a block leaves him resting there
+  without standing:** Hoppa does nothing until the stick moves him. It is what was repaired for ledges on
+  5 October, in the ground's own footing, and was there before: 14 of 5,055 swept jumps on Myren's trail.
 - **The side ways are in greybox, like the chapters.** A ledge and what holds it are one shape scaled to its
   width, so a wide bough has a wide stem. There is no look for a nest: Granskogen's is a bough. The dew rain's
   drops are drawn falling through Gården's leaves and past its rings; they do nothing to him up there. The
@@ -1497,7 +1536,8 @@ The older list, still true where it is not struck:
   screenshot there can take longer than Playwright's thirty seconds: on 4 October that failed the run of a
   pull request that changed only this file (`myren-loop.mjs`, at 1180×820 on High). Every screenshot in the
   suites was an iteration picture and never a check, so all 54 now go through `tests/browser/picture.mjs`,
-  which waits two minutes and then goes on without the picture. A run on GitHub takes 43 minutes or more.
+  which waits two minutes and then goes on without the picture. A run on GitHub took 43 minutes or more
+  until the suites were shared out over six jobs on 5 October; it now takes about 13.
 - **Two sessions in one checkout get in each other's way.** On 4 October a second session started in the main
   checkout while the first had a dev server running there. Its `npm ci` could not delete rolldown's native file,
   which the server held open, and stopped with `EPERM` after removing most of `node_modules`; and each
