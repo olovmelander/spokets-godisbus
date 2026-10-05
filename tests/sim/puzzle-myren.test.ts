@@ -9,7 +9,7 @@ import {
 } from '../../src/sim/constants';
 import { hintFor } from '../../src/sim/help';
 import { Sim } from '../../src/sim/sim';
-import type { Mode, SimOptions, SimStart, Vec } from '../../src/sim/types';
+import type { ChapterData, Mode, SimOptions, SimStart, Vec } from '../../src/sim/types';
 import { decide, heightAt } from '../robot/robot';
 import { idle, jump, leap, run, runPast } from './drive';
 
@@ -711,6 +711,44 @@ describe('the toss: not on the main way', () => {
         // A tenth of an EL is two fifths of a second more on the tussock than the robot spends there.
         expect(nearest, what).toBeGreaterThan(REACH + 0.1);
       }
+    }
+  });
+
+  it('the robot\'s playthrough is what it was: step for step the same as in the chapter with the puzzle taken out', () => {
+    // The chapter as it was before the toss: without what glints, the throw, the bough, their candy and their picture.
+    const without: ChapterData = {
+      ...myren,
+      spots: myren.spots!.filter((spot) => spot !== glint),
+      rides: myren.rides!.filter((ride) => ride !== toss),
+      ledges: myren.ledges!.filter((ledge) => ledge !== perch),
+      side: side.filter((_, i) => !prize.includes(i)),
+      cameras: myren.cameras!.filter((zone) => !(zone.above !== undefined && zone.from < TO && zone.to > FROM)),
+    };
+    expect(without.cameras).toHaveLength(myren.cameras!.length - 1);
+    /** Where the robot is at every frame of the whole chapter, and how the chapter ended for it. */
+    const play = (chapter: ChapterData, style: 'aventyr' | 'lugnt') => {
+      const game = new Game(chapter, style === 'lugnt' ? simOptions(settingsFor('lugnt')) : {});
+      const path: number[] = [];
+      let wasAhead = false;
+      let wasOffered = false;
+      for (let frame = 0; frame < 60 * 300 && !game.sim.flags.has('goal'); frame++) {
+        const { x, y, ahead, offered } = decide(game, chapter);
+        game.frame(1 / 60, { x, y, hopHeld: true }, { hop: ahead && !wasAhead, act: offered && !wasOffered, helper: false });
+        wasAhead = ahead;
+        wasOffered = offered;
+        path.push(game.sim.curr.x, game.sim.curr.y);
+      }
+      const sim = game.sim;
+      return { path, steps: sim.steps, goal: sim.flags.has('goal'), candy: sim.candyCount, said: [...sim.said], flags: [...sim.flags].sort(), bubbles: sim.bubbles, sinks: sim.sinks, checkpoint: sim.checkpoint };
+    };
+    for (const style of ['aventyr', 'lugnt'] as const) {
+      const now = play(myren, style);
+      const before = play(without, style);
+      expect(now.goal, style).toBe(true);
+      expect(now.path.length, style).toBe(before.path.length);
+      // Not nearly the same: the same, to the last digit.
+      expect(now.path.findIndex((at, i) => at !== before.path[i]), style).toBe(-1);
+      expect({ ...now, path: 0 }, style).toEqual({ ...before, path: 0 });
     }
   });
 
