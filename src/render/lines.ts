@@ -1,11 +1,12 @@
-import { CylinderGeometry, InstancedMesh, MeshStandardMaterial, Object3D } from 'three';
+import { CylinderGeometry, Object3D, type BufferGeometry } from 'three';
 import type { ChapterData, Line, Vec } from '../sim/types';
 
 /**
  * What holds a ring (docs/level-design.md). A ring off the main way hangs in the open air over the path, and
  * nothing floats: it hangs on a cord from something above it, or from a line strung between two poles, a
- * clothes line or a rope between two dead pines. All of it is thin rods, and one instanced mesh: a chapter's
- * cords, lines and poles cost one draw call together.
+ * clothes line or a rope between two dead pines. All of it is thin rods. They are drawn with the ledges of
+ * the side way they belong to, as part of that place's one mesh (`ledges.ts`), so they cost no draw call
+ * of their own.
  */
 export interface Rod { from: Vec; to: Vec; thick: number }
 
@@ -22,6 +23,8 @@ const OVER = 0.14;
 const RING = 0.19;
 /** Just behind the rings, and behind the plane he moves in: he passes in front of a pole. */
 const Z = -0.12;
+/** Weathered string and wood. */
+export const ROD_COLOUR = '#5f564c';
 
 /** How high a line is at an x between its ends: it hangs in a shallow curve, lowest in the middle. */
 export function lineHeight(line: Line, x: number): number {
@@ -54,24 +57,15 @@ export function rods(chapter: Pick<ChapterData, 'hooks' | 'lines'>): Rod[] {
   return all;
 }
 
-/** The cords, lines and poles of a chapter as one mesh, or nothing where a chapter has none. */
-export function buildLines(chapter: Pick<ChapterData, 'hooks' | 'lines'>): InstancedMesh | null {
-  const all = rods(chapter);
-  if (all.length === 0) return null;
-  const mesh = new InstancedMesh(new CylinderGeometry(1, 1, 1, 6), new MeshStandardMaterial({ color: '#5f564c', roughness: 0.9 }), all.length);
-  mesh.name = 'lines';
-  // They hang all along a chapter: as a whole they are never outside the picture.
-  mesh.frustumCulled = false;
-  const place = new Object3D();
-  for (const [i, rod] of all.entries()) {
-    const dx = rod.to.x - rod.from.x;
-    const dy = rod.to.y - rod.from.y;
-    place.position.set((rod.from.x + rod.to.x) / 2, (rod.from.y + rod.to.y) / 2, Z);
-    place.rotation.set(0, 0, -Math.atan2(dx, dy));
-    place.scale.set(rod.thick, Math.hypot(dx, dy), rod.thick);
-    place.updateMatrix();
-    mesh.setMatrixAt(i, place.matrix);
-  }
-  mesh.instanceMatrix.needsUpdate = true;
-  return mesh;
+const place = new Object3D();
+
+/** A rod as a shape where it lies: a thin six-sided stick from its start to its end, with no shared corners. */
+export function rodShape(rod: Rod): BufferGeometry {
+  const dx = rod.to.x - rod.from.x;
+  const dy = rod.to.y - rod.from.y;
+  place.position.set((rod.from.x + rod.to.x) / 2, (rod.from.y + rod.to.y) / 2, Z);
+  place.rotation.set(0, 0, -Math.atan2(dx, dy));
+  place.scale.set(rod.thick, Math.hypot(dx, dy), rod.thick);
+  place.updateMatrix();
+  return new CylinderGeometry(1, 1, 1, 6).toNonIndexed().applyMatrix4(place.matrix);
 }

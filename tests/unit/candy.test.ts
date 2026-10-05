@@ -3,7 +3,7 @@ import { BoxGeometry, BufferGeometry, Color, Float32BufferAttribute, Group, Inst
 import { describe, expect, it } from 'vitest';
 import { STORY } from '../../src/content/chapters';
 import { KINDS } from '../../src/content/kinds';
-import { TRAIL_SHAPES, candyKit, createTrail, installSweets, sweetSocket, trailColour, trailShape, type CandyKit } from '../../src/render/candy';
+import { TRAIL_SHAPES, candyKit, candyPlaces, createTrail, installSweets, sweetSocket, trailColour, trailShape, type CandyKit } from '../../src/render/candy';
 
 const generator = readFileSync(new URL('../../art/blender/candy.py', import.meta.url), 'utf8');
 /** The names the generator gives its sweets. */
@@ -91,6 +91,25 @@ describe('the trail candy', () => {
     expect(made.group.name).toBe('side-candy');
     expect(made.install(kit(...TRAIL_SHAPES))).toBe(true);
     expect(meshes(made.group)).toHaveLength(2);
+    // Each place it lies in is drawn for itself, and only while it is in sight: two side ways far apart are
+    // four meshes, and each holds its own candies and is as large as its place, with room for a sweet to fly.
+    const two = [...trail.slice(0, 4), ...trail.slice(0, 5).map((c) => ({ x: c.x + 60, y: c.y + 3 }))];
+    expect(candyPlaces(two, 'side')).toEqual([[0, 1, 2, 3], [4, 5, 6, 7, 8]]);
+    expect(candyPlaces(two, 'trail')).toEqual([[0, 1, 2, 3, 4, 5, 6, 7, 8]]);
+    const apart = createTrail(two, 'side');
+    apart.install(kit(...TRAIL_SHAPES));
+    expect(meshes(apart.group)).toHaveLength(4);
+    for (const mesh of meshes(apart.group)) {
+      const held = mesh.userData.candies as number[];
+      expect(mesh.frustumCulled).toBe(true);
+      expect(held.every((i) => i < 4) || held.every((i) => i >= 4)).toBe(true);
+      for (const i of held) expect(mesh.boundingSphere!.center.distanceTo(new Vector3(two[i]!.x, two[i]!.y, 0))).toBeLessThan(mesh.boundingSphere!.radius - 2);
+      expect(mesh.boundingSphere!.radius).toBeLessThan(12);
+    }
+    // The trail itself is never outside the picture as a whole.
+    const whole = createTrail(two);
+    whole.install(kit(...TRAIL_SHAPES));
+    for (const mesh of meshes(whole.group)) expect(mesh.frustumCulled).toBe(false);
     // A chapter with no side candy draws nothing for it.
     const none = createTrail([], 'side');
     none.install(kit(...TRAIL_SHAPES));
