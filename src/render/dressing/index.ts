@@ -9,6 +9,7 @@ import { effects } from './effects';
 import { fell } from './fell';
 import { foreground, type Growth } from './foreground';
 import { stretch } from './forest';
+import { setWind, type Blow } from '../wind';
 import { bank, type Ground } from './ground';
 import { heightAt, makeKit, type PlaceLook } from './kit';
 import { lawn } from './lawn';
@@ -124,7 +125,11 @@ export interface Dressing {
   background: Texture;
   /** What lives far off in the scenery, where the place has any: it waits for its picture (life.ts). */
   wild: Life | null;
-  update(cameraX: number, groundY: number, clock: number, night?: number, quiet?: Quiet): void;
+  /**
+   * `wind`: the gust that blows now, if one does, and whether everything is to stand still (reduced motion).
+   * `quiet`: what the far scenery's life needs to know of him and of the lens; without it, it does not move.
+   */
+  update(cameraX: number, groundY: number, clock: number, night?: number, wind?: { gust: Blow | null; still: boolean }, quiet?: Quiet): void;
   /**
    * A place whose houses are put together from a kit modelled in Blender (the village) takes the kit here
    * once it has arrived. False where the kit has nothing the chapter asks for: its stand-ins stay.
@@ -155,7 +160,7 @@ const OWN: Record<PlaceId, { ground: Ground; growth: Growth | null }> = {
   mountain: { ground: 'granite', growth: null },
   dusk: { ground: 'granite', growth: null },
   home: { ground: 'wood', growth: null },
-  village: { ground: 'asphalt', growth: null },
+  village: { ground: 'asphalt', growth: 'kerb' },
 };
 export const groundOf = (place: PlaceId): Ground => OWN[place].ground;
 
@@ -165,7 +170,10 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   const from = chapter.ground[0]!.x;
   const to = chapter.ground[chapter.ground.length - 1]!.x;
   makeKit();
-  const air = effects(chapter, from, to, look.id);
+  // What stands on the ground comes first: the bee is told where the dandelions are.
+  const standing = scatter(chapter, from, to, look.id);
+  const air = effects(chapter, from, to, look.id, standing);
+  const front = foreground(chapter, from, to, OWN[look.id].growth, standing);
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
   // What the far pictures count their sinking from: the land around the chapter's start.
@@ -183,19 +191,24 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   group.add(
     far.group,
     bank(chapter, OWN[look.id].ground),
-    scatter(chapter, from, to, look.id),
+    standing,
     built(chapter, look.id === 'home'),
     houses?.group ?? new Group(),
     air.group,
-    foreground(chapter, from, to, OWN[look.id].growth),
+    front.group,
   );
   return {
     group,
     background: backdrop(look),
     wild,
     ...(houses ? { install: houses.install } : {}),
-    update(cameraX, groundY, clock, night = 0, quiet) {
-      air.update(cameraX, groundY, clock);
+    update(cameraX, groundY, clock, night = 0, wind, quiet) {
+      const still = wind?.still ?? false;
+      // The wind first: what sways, what leans in front and what flies all go by it. Breaths of wind pass
+      // through every place but the mountain, where the wind is the gusts'.
+      setWind(clock, still, look.id !== 'mountain' && look.id !== 'dusk', wind?.gust ?? null);
+      air.update(cameraX, groundY, clock, still);
+      front.update(still);
       far.update(cameraX, groundY, clock, night);
       if (quiet) wild?.update(cameraX, groundY, clock, night, quiet);
       life?.update(clock);

@@ -98,7 +98,8 @@ try {
         tussocks: sim.tussocks, gusts: sim.gusts, help: sim.help, berries: sim.berries,
       });
       const until = performance.now() + 15000;
-      while (view.info().models.length < 3 && performance.now() < until) await new Promise((r) => setTimeout(r, 25));
+      // The big candy, the jay, the candy kit and the mountain kit: each brings shaders of its own when it arrives.
+      while (view.info().models.length < 4 && performance.now() < until) await new Promise((r) => setTimeout(r, 25));
       for (let i = 0; i < 4; i++) draw();
       const scene = fixture.renderedScene();
       const far = [];
@@ -112,7 +113,7 @@ try {
       window.probe = { fixture, sim, view, draw, scene, snapshot };
       return snapshot();
     }, { tier });
-    check(`${name}: real finale assets loaded`, early.models.length >= 3);
+    check(`${name}: real finale assets loaded`, early.models.length >= 4 && early.models.includes('boot/mountain-kit'));
     check(`${name}: blue-hour sky and five far layers start at full brightness`, early.background === 1 && early.far.length === 5 && early.far.every((v) => v === 1));
     check(`${name}: precompiled family stays hidden until the golden sweet`, early.familyShown === 0);
     await picture(page, join(shots, `${name}-early.png`));

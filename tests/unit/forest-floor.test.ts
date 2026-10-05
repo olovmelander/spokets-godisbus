@@ -74,7 +74,7 @@ describe("the forest's floor", () => {
     }
   });
 
-  it('is the forest alone: the lawn and the bog keep their fronts, and the rock has its own', () => {
+  it("is the forest's and the lawn's: the bog keeps its front, and the rock has its own", () => {
     const deepest = (course: string) => {
       const chapter = COURSES[course]!;
       let front = -Infinity;
@@ -86,7 +86,48 @@ describe("the forest's floor", () => {
       }
       return front;
     };
-    expect(deepest('granskog')).toBeCloseTo(5.3, 6);
-    for (const course of ['garden', 'myren', 'berget']) expect(deepest(course), course).toBeLessThan(3);
+    for (const course of ['granskog', 'garden']) expect(deepest(course), course).toBeCloseTo(5.3, 6);
+    for (const course of ['myren', 'berget']) expect(deepest(course), course).toBeLessThan(3);
+  });
+});
+
+describe("the lawn's floor", () => {
+  const garden = COURSES['garden']!;
+
+  it('is the same floor as the forest has: all the way forward on the open lawn, and no floor past its lip', () => {
+    for (const x of [75, 118, 160, 200]) {
+      expect(forwardAt(garden, x), `at x ${x}`).toBe(1);
+      expect(floorDrop(garden, x, 0.3)).toBe(0);
+      expect(floorDrop(garden, x, 2.2)).toBeCloseTo(slopeDrop(2.2), 6);
+      expect(floorDrop(garden, x, FLOOR_ENDS + 0.2)).toBeNull();
+    }
+  });
+
+  it('draws back at the top of the garden\'s walls too', () => {
+    const line = garden.ground;
+    let walls = 0;
+    for (let i = 0; i < line.length - 1; i++) {
+      const a = line[i]!;
+      const b = line[i + 1]!;
+      if (Math.abs(b.y - a.y) <= Math.abs(b.x - a.x) * 1.3 || Math.abs(b.y - a.y) < 0.6) continue;
+      const top = b.y > a.y ? b : a;
+      const on = top.x + (b.y > a.y ? 0.05 : -0.05);
+      if (Math.abs(heightAt(garden, on) - top.y) > 0.3) continue;
+      walls += 1;
+      expect(forwardAt(garden, on), `the wall top at x ${top.x}`).toBeLessThan(0.02);
+    }
+    expect(walls).toBeGreaterThan(3);
+  });
+
+  it('meets a deck that also falls away in front: the two end within a step of one another', () => {
+    const fronts = new Map<string, number>();
+    for (const { kind, shape } of bankShapes(garden, groundOf(garden.place!))) {
+      const at = shape.getAttribute('position');
+      let front = -Infinity;
+      for (let i = 0; i < at.count; i++) front = Math.max(front, at.getZ(i));
+      fronts.set(kind, Math.max(fronts.get(kind) ?? -Infinity, front));
+    }
+    expect(fronts.get('lawn')).toBeCloseTo(5.3, 5);
+    expect(fronts.get('wood')).toBeCloseTo(5.6, 5);
   });
 });
