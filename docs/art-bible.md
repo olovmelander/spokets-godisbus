@@ -251,8 +251,8 @@ The forest's layers, and after them the garden's:
 | L1 Far scenery | Four depths of forest far out of focus: trunks as soft columns, thinner and paler the further in, young spruces at their feet, boughs that hang in from above, and round spots of light | Four pictures drawn on small canvases, blurred and stretched large, 32 to 78 EL behind the path. Each passes at its own speed: see *The far layers* below. |
 | L2 Mid-ground | Spruce trunks 4 to 22 EL behind the path, soft low shrubs, stones | Trunks as one turned shape with roots, bark drawn in code, moss painted on its foot; shrubs as soft cards; the haze takes them with distance |
 | L3 Play plane | The moss bank, cushions, grass, lingonberry sprigs, cones, needles | The ground is a floor that slopes on towards the camera in front of the path, with things lying on it, none higher than the path they lie under. At a wall's top it draws back to the path; where it is cut (a wall, the face under its lip) moss hangs over the edge, then humus, then rock. A pool has a near shore. Each kind of thing is one instanced mesh per 18 EL of chapter, drawn only while it is in the picture. |
-| L4 Foreground | Tufts of grass far out of focus along the bottom, now and then one that stands tall | Soft dark cards 4 to 7.5 EL in front of the path, which pass faster than the path does |
-| Effects | Shafts of light, and dust in them | Additive cards; 70 small motes that stay with the camera |
+| L4 Foreground | A fern, a lingonberry sprig, grass and a fallen spruce twig, out of focus along the bottom of the picture: dark, with a warm rim on the sun's side | Soft cards 2.6 to 5.6 EL in front of the path, which pass faster than the path does. Each is drawn with real outlines and then made soft; all of a chapter's are one draw call. **None rises over the line he walks on**, from wherever he stands: see the rules below |
+| Effects | Shafts of light, the light each leaves on the moss where it lands, and dust in them; a needle or a leaf falling now and then; a dark at the foot of each trunk and stone | Additive cards and 70 small motes that stay with the camera, as one draw call; what falls is another; the dark at a foot is a card among the shrubs' |
 | Post | The place's grade, a vignette and grain | The one grading pass of Mid and High (`src/render/grade.ts`) |
 
 | Layer | What it is in the garden | How it is made |
@@ -262,8 +262,8 @@ The forest's layers, and after them the garden's:
 | L2 Mid-ground | **The house's red wall** with its cover strips, a white corner board and white-framed windows; a birch now and then | The wall is a small drawn picture, repeated, 21 EL behind the path; a chapter says where the house stands (`house`) |
 | L3 Play plane | **The deck:** boards 0.8 EL wide with dark gaps, each its own tone, a straight front edge and the dark under it. **The lawn:** a jungle of grass behind the path, stubble where he walks, dew, dandelions as tall as he is, clover, the birch's yellow leaves. Dry earth under the deck, a grey boulder, Pappa's pale shavings, the dark hedge. | A chapter marks what a stretch of ground is made of (`surfaces`); each kind has its tones and its edge. Nothing grows on what is built. |
 | L3, overhead | **The lower deck above him:** boards and joists, with the sun falling through between the boards as stripes on the earth | A chapter says where (`roofs`) |
-| L4 Foreground | Soft grass along the bottom, brighter than the forest's | The same cards, drawn brighter |
-| Effects | Dew that flashes near the ground, only where something grows | The motes, kept low and made to twinkle |
+| L4 Foreground | Soft grass along the bottom, brighter than the forest's: broad blades, clover, a dandelion's leaves | The same cards, drawn brighter |
+| Effects | Dew that flashes near the ground, only where something grows; a bumblebee that works the dandelions nearest him, and two brimstone butterflies far behind | The motes, kept low and made to twinkle; the bee and the butterflies are a few small cards behind the path |
 
 The bog, the mountain and the summit at dusk use the same layers with their own things: sphagnum cushions,
 sedge, dwarf birch, cloudberry leaves and cranberries; reindeer lichen, crowberry, dry grass and bare
@@ -326,6 +326,17 @@ Rules that hold for every place:
 - **The haze begins behind the play plane** and takes the mid-ground with distance. The far plates have their
   haze painted in.
 - **No hard edge on anything out of focus.** Far plates, shrubs, foreground and beams fade at every side.
+- **Nothing in front covers what he needs.** The top of a foreground card stays under the line he walks on,
+  as the lens sees it from wherever he stands, on every screen (`ceilingAt` in
+  `src/render/dressing/foreground.ts`, held by `tests/unit/soft-cards.test.ts`). So beside a step or a gap
+  the cards are lower, and none stands tall. The bog has sedge and cotton grass there, and thin tips out of
+  its water; the village has what grows in a kerb's joint: plantain, grass, a dandelion gone to seed. Bare
+  rock and a floor indoors have nothing.
+- **What grows moves, and little else does.** Grass, sedge and straw sway where they stand, a dandelion nods,
+  and every six or seven seconds a breath of wind passes along the path (`src/render/wind.ts`). On the
+  mountain the wind is the gusts': the grass and the lichen lean while one blows. What flies is a few pixels,
+  slow, dull in colour and behind the path: midges over the bog's water, seed fluff low over the rock.
+  With reduced motion asked for, all of it stands still and nothing flies.
 - **Red is the candy's, the hook's and the lingonberries'.** Nothing else in a place is red, except what is
   red by nature and small: the ladybird, a crane's crown, the heart on Mamma's mug.
 - **Nothing is compiled during play.** The first frames draw the whole chapter (gate 6).

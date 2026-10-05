@@ -4,6 +4,7 @@ import {
 } from 'three';
 import type { ChapterData, PlaceId, SurfaceKind } from '../../sim/types';
 import type { Grade } from '../grade';
+import { sway } from '../wind';
 
 // What every part of the dressing uses: the type of a place's look, the small tools, the moss's colours, and
 // the shapes and materials that the stretches of every place are built from.
@@ -203,6 +204,12 @@ export let KIT: ReturnType<typeof kit>;
 /** Makes the kit anew, for the chapter that is being dressed: only this module can set what it exports. */
 export function makeKit(): void {
   KIT = kit();
+  // What grows moves in the wind (../wind.ts): a blade's top by a share of its length, a dandelion's stalk
+  // and the head on it by the same few hundredths of an EL, and the lichen only while a gust blows.
+  for (const blades of [KIT.grass, KIT.lawn, KIT.straw]) sway(blades, 0.07);
+  sway(KIT.stem, 0, 0.045);
+  sway(KIT.petal, 0, 0, 0.045);
+  sway(KIT.lichen, 0, 0, 0.02, 0);
 }
 
 /**

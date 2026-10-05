@@ -34,6 +34,7 @@ import { createSharedSweets } from './shared-sweets';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
+import type { Blow } from './wind';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
@@ -685,7 +686,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       berryMeshes[i]?.scale.set(1 + 0.3 * flat - spring * 0.5, 1 - 0.5 * flat + spring, 1 + 0.3 * flat - spring * 0.5);
     }
     mist.update(flags, x, y, curr.facing, camera.position.z, dt);
-    wind.update(gusts, clock);
+    const gust = wind.update(gusts, clock);
     climbs.update(flags, dt);
     follower.update(flags, curr, clock, dt);
     // On a ride he sits on Moa's paper plane, which points the way it flies.
@@ -812,7 +813,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     const darkness = night.update(flags, look.x, centreY, clock, dt);
     if (dressing && place) {
-      dressing.update(look.x, look.y, clock, darkness);
+      dressing.update(look.x, look.y, clock, darkness, { gust, still: calmStory });
       if (place.id === 'dusk') {
         scene.backgroundIntensity = nightBrightness(darkness);
         // Fog keeps a copy of its initial colour; changing `sky` alone never changes the haze.
@@ -1257,11 +1258,15 @@ function buildWind(chapter: ChapterData) {
     return { def, material, streaks };
   });
   const place = new Object3D();
-  function update(gusts: readonly { blow: number; warn: number }[], clock: number): void {
+  /** Moves the streaks, and says which gust blows now, for what grows there to lean in (./wind.ts). */
+  function update(gusts: readonly { blow: number; warn: number }[], clock: number): Blow | null {
+    let blowing: Blow | null = null;
     for (const [i, { def, material, streaks }] of stretches.entries()) {
       const gust = gusts[i];
       const blow = gust?.blow ?? 0;
       const warn = gust?.warn ?? 0;
+      // It swells and dies down as the streaks do.
+      if (blow > 0) blowing = { from: def.from, to: def.to, blow: Math.sin(Math.PI * Math.min(1, blow)) };
       material.opacity = blow > 0 ? 0.85 * Math.sin(Math.PI * Math.min(1, blow)) + 0.1 : warn * 0.3;
       drawnWhile(streaks, material.opacity > 0);
       const span = def.to - def.from;
@@ -1274,6 +1279,7 @@ function buildWind(chapter: ChapterData) {
       }
       streaks.instanceMatrix.needsUpdate = true;
     }
+    return blowing;
   }
   return { group, update };
 }
