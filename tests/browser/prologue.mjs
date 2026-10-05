@@ -102,7 +102,10 @@ try {
     check('shrinking: pausing keeps the explanation available', await page.locator('#bubbleLine').textContent() === line);
     await page.keyboard.press('Escape');
     await page.keyboard.down('ArrowRight');
-    await until(state, (s) => s.flags.includes('goal'), 'fast shrinking flow reaches its handoff', 15000);
+    // The walk takes about 14 s of the game's own time. On GitHub's software renderer a frame of the room's
+    // floor takes long enough for the game to fall a little behind the clock, and 15 s were too few in two
+    // runs of five once the floor filled the lower third of the picture (#141): he was still walking, at x 50.
+    await until(state, (s) => s.flags.includes('goal'), 'fast shrinking flow reaches its handoff', 40000);
     await page.keyboard.up('ArrowRight');
     check('shrinking: the safe ride and family tableau still complete', (await state()).flags.includes('pappa:done'));
     await finish();
