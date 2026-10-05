@@ -75,17 +75,13 @@ const seconds = (sim: Sim, since = 0) => (sim.steps - since) * STEP;
 const away = (sim: Sim) => Math.hypot(sim.curr.x - glint.at.x, sim.curr.y - glint.at.y);
 
 /** He stands on the island, at its big candy, as a game taken up there does. */
-function onTheIslandAgain(options: SimOptions = {}, start: SimStart = {}): Sim {
-  const sim = new Sim(myren, options, { checkpoint: ISLAND.big, ...start });
+function onTheIslandAgain(options: SimOptions = {}): Sim {
+  const sim = new Sim(myren, options, { checkpoint: ISLAND.big });
   run(sim, 0.3);
   return sim;
 }
-/** He stands on a soft tussock, this far from its middle. */
-function standingOn(i: number, along = 0, options: SimOptions = {}, start: SimStart = {}): Sim {
-  const sim = new Sim({ ...myren, spawn: { x: soft[i]!.x + along, y: soft[i]!.y + 0.01 } }, options, start);
-  // A game is taken up before the toss here, so the toss is there (see "a saved game").
-  return sim;
-}
+/** He is put on a soft tussock, this far from its middle, and from this moment it sinks under him. */
+const standingOn = (i: number, along = 0): Sim => new Sim({ ...myren, spawn: { x: soft[i]!.x + along, y: soft[i]!.y + 0.01 } });
 /** The hop the trail asks for: at a run off the island's far end, onto the first soft tussock. */
 function hopOn(sim: Sim): void {
   leap(sim, 1, ISLAND.to - 0.3);
@@ -103,10 +99,16 @@ function standAt(sim: Sim, x: number, limit = 4): 'thrown' | 'bubble' | 'nothing
   }
   return 'nothing';
 }
-/** Lets what carries him carry him, until he stands again. */
+/**
+ * Lets what carries him carry him, until he stands again: for a fifth of a second on end, because the corner
+ * of a tussock that he only clips on his way into the water is not a place he stands on.
+ */
 function untilHeStands(sim: Sim, limit = 5): void {
-  for (let i = 0; i < limit / STEP && !stands(sim); i++) sim.step(idle);
-  run(sim, 0.1);
+  let stood = 0;
+  for (let i = 0; i < limit / STEP && stood < 0.2 / STEP; i++) {
+    sim.step(idle);
+    stood = stands(sim) ? stood + 1 : 0;
+  }
 }
 /** Walks along the bough and off its end, until he stands on something lower. */
 function stepDown(sim: Sim, dir: 1 | -1): void {
@@ -158,7 +160,12 @@ describe('the toss: what is laid out', () => {
     expect(glint.look).toBeUndefined();
     expect(glint.at.y + 1.5 - spring.y).toBeGreaterThan(-0.01);
     expect(glint.at.y + 1.5 - spring.y).toBeLessThan(0.2);
-    // It lies under the first soft tussock after the island, towards its far end.
+    // It lies under the first soft tussock after the island, towards its far end. The island is firm ground
+    // with a big candy on it: the place to stand and look from.
+    expect(heightAt(myren, ISLAND.from + 0.1)).toBe(0);
+    expect(heightAt(myren, ISLAND.to - 0.1)).toBe(0);
+    expect(myren.checkpoints![ISLAND.big]!.x).toBeGreaterThan(ISLAND.from);
+    expect(myren.checkpoints![ISLAND.big]!.x).toBeLessThan(ISLAND.to);
     expect(SPRING).toBe(soft.findIndex((t) => t.x > ISLAND.to));
     expect(glint.at.x - spring.x).toBeGreaterThan(0.5);
     expect(glint.at.x).toBeLessThan(right(spring) - 0.2);
@@ -319,6 +326,24 @@ describe('the toss: the solution', () => {
     expect(taken(sim)).toBe(6);
   });
 
+  it('it has no wrong side: hopping back onto its far end from the next tussock, and standing, throws him too', () => {
+    // He has hurried over it, as the trail asks, and looks back from the next tussock.
+    const sim = onTheIslandAgain();
+    hopOn(sim);
+    leap(sim, 1, right(spring) - 0.3);
+    expect(onTussock(sim, SPRING + 1)).toBe(true);
+    expect(wasThrown(sim)).toBe(false);
+    // Back, against the way the trail runs: the hop sets him down on the far half, where it glints.
+    leap(sim, -1, left(soft[SPRING + 1]!) + 0.3);
+    expect(onTussock(sim, SPRING)).toBe(true);
+    expect(sim.curr.x).toBeGreaterThan(spring.x);
+    expect(standAt(sim, sim.curr.x)).toBe('thrown');
+    untilHeStands(sim);
+    expect(onTheBough(sim)).toBe(true);
+    expect(taken(sim)).toBe(6);
+    expect(sim.bubbles + sim.sinks).toBe(0);
+  });
+
   it('on Lugnt too: the marked hop sets him down on its near half, and a step on, standing still, throws him', () => {
     const lugnt = simOptions(settingsFor('lugnt'));
     const sim = onTheIslandAgain(lugnt);
@@ -442,6 +467,29 @@ describe('the toss: what does not take the prize', () => {
     }
   });
 
+  it('why the prize is not simply hung low beside a soft tussock: a fall into the water comes lower than a tussock sinks', () => {
+    // The seed of this puzzle was a prize that only a sunk stand reaches. Candy cannot say that: whatever he
+    // reaches standing on a tussock that has all but sunk, he reaches falling past its side, and keeps.
+    const stander = standingOn(SPRING, -0.3);
+    let stood = Infinity;
+    for (let i = 0; i < 3 / STEP && doing(stander) !== 'bubble'; i++) {
+      stander.step(idle);
+      stood = Math.min(stood, stander.curr.y);
+    }
+    const faller = standingOn(SPRING, 0.2);
+    let fell = Infinity;
+    for (let i = 0; i < 3 / STEP && doing(faller) !== 'bubble'; i++) {
+      faller.step({ ...idle, x: 1 });
+      fell = Math.min(fell, faller.curr.y);
+    }
+    expect(stander.sinks).toBe(1);
+    expect(faller.sinks).toBe(0);
+    expect(spring.y - stood).toBeCloseTo(SINK_DEPTH, 2);
+    expect(fell).toBeLessThan(stood - 0.15);
+    // A thing to touch can: he touches only while he stands, and from his feet.
+    expect(wasThrown(faller)).toBe(false);
+  });
+
   it('a fall into the water beside the glint: he is not standing, so he is not thrown', () => {
     for (const from of [-0.2, 0.3]) {
       // A run off the far end of the tussock, past the glint, with no jump.
@@ -502,15 +550,72 @@ describe('the toss: no dead end', () => {
     expect(sim.bubbles).toBe(1);
   });
 
-  it('a jump off the bough over open water is the glitter bubble, which puts him back on it', () => {
-    const sim = standingOn(SPRING, glint.at.x - spring.x);
-    expect(standAt(sim, glint.at.x)).toBe('thrown');
-    untilHeStands(sim);
-    // A running jump off the far end carries him over the tussock under it.
-    leap(sim, 1, right(perch) - 0.2);
-    if (doing(sim) === 'bubble') run(sim, BUBBLE_TIME + 0.3);
-    expect(onTheBough(sim) || onTheTrail(sim)).toBe(true);
-    expect(taken(sim)).toBe(6);
+  it('running off either end of the bough he lands on the soft tussock under it; jumping off it he comes down on a tussock, or the glitter bubble puts him back on the bough', () => {
+    /** Up on the bough, thrown there. */
+    const up = (): Sim => {
+      const sim = standingOn(SPRING, glint.at.x - spring.x);
+      expect(standAt(sim, glint.at.x)).toBe('thrown');
+      untilHeStands(sim);
+      expect(onTheBough(sim)).toBe(true);
+      return sim;
+    };
+    // At a run, with no jump: off the far end onto the next tussock, off the near end onto the one before.
+    for (const [dir, lands] of [[1, SPRING + 2], [-1, SPRING + 1]] as const) {
+      const sim = up();
+      runPast(sim, dir > 0 ? right(perch) + 0.4 : left(perch) - 0.4);
+      untilHeStands(sim);
+      expect(onTussock(sim, lands), `a run off its end to ${dir}`).toBe(true);
+      expect(sim.bubbles + sim.sinks).toBe(0);
+    }
+    // A held jump, from a standstill and at a run, from all along it and to both sides.
+    const walkTo = (sim: Sim, x: number) => {
+      for (let i = 0; i < 4 / STEP && Math.abs(x - sim.curr.x) > 0.03; i++) sim.step({ ...idle, x: Math.sign(x - sim.curr.x) * 0.5 });
+      run(sim, 0.2);
+    };
+    let wet = 0;
+    let dry = 0;
+    let hung = 0;
+    for (const dir of [1, -1] as const) {
+      for (let from = left(perch) + 0.2; from <= right(perch) - 0.19; from += 0.2) {
+        for (const running of [false, true]) {
+          const sim = up();
+          // To the place he jumps from: at a walk, or with a run-up from the other end of the bough.
+          if (running) {
+            walkTo(sim, dir > 0 ? left(perch) + 0.15 : right(perch) - 0.15);
+            leap(sim, dir, from);
+          } else {
+            walkTo(sim, from);
+            jump(sim, dir);
+          }
+          const what = `a ${running ? 'running' : 'standing'} jump to ${dir} from ${from.toFixed(2)}`;
+          // Until he stands again: down from the bough, or carried back to it.
+          untilHeStands(sim, BUBBLE_TIME + 3);
+          if (!stands(sim) && doing(sim) === 'free') {
+            // A jump that comes down exactly on the far corner of a tussock leaves him hanging on it: his body
+            // rests on the corner and his feet are past it, so he neither stands nor falls. That is so on the
+            // trail's own hops too, bough or no bough. The stick takes him off it, onto the tussock.
+            expect(Math.abs(sim.curr.vy), what).toBeLessThan(0.01);
+            run(sim, 0.3, { x: -dir * 0.5 });
+            untilHeStands(sim);
+            hung++;
+          }
+          if (sim.bubbles > 0) {
+            // Into the water: the bubble takes him back to the last firm ground he stood on, which is the bough.
+            expect(onTheBough(sim), what).toBe(true);
+            expect(sim.bubbles, what).toBe(1);
+            wet++;
+          } else {
+            expect(onTheBough(sim) || soft.some((_, i) => onTussock(sim, i)), what).toBe(true);
+            dry++;
+          }
+          expect(taken(sim), what).toBe(6);
+        }
+      }
+    }
+    // Most jumps off it come down on a tussock, and hardly any on a corner.
+    expect(dry).toBeGreaterThan(wet);
+    expect(dry + wet).toBeGreaterThan(30);
+    expect(hung).toBeLessThanOrEqual(2);
   });
 });
 
