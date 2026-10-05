@@ -78,7 +78,9 @@ describe("the forest's floor", () => {
     const deepest = (course: string) => {
       const chapter = COURSES[course]!;
       let front = -Infinity;
-      for (const { shape } of bankShapes(chapter, groundOf(chapter.place!))) {
+      // A wooden floor runs on towards the camera in every place: this is about what grows.
+      for (const { kind, shape } of bankShapes(chapter, groundOf(chapter.place!))) {
+        if (kind === 'wood') continue;
         const at = shape.getAttribute('position');
         for (let i = 0; i < at.count; i++) front = Math.max(front, at.getZ(i));
       }
