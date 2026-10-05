@@ -15,7 +15,7 @@ function* edges(course: string) {
       // Behind the path the moss rolls between its points, and nobody sees it but edge on.
       if (corners.some((c) => at.getZ(c) < -0.35)) continue;
       // Where a floor's front draws back to a wall its rows close like a fan, and the picture with them.
-      if ((chapter.place === 'forest' || chapter.place === 'garden') && corners.some((c) => forwardAt(chapter, at.getX(c) - 0.01) < 1 || forwardAt(chapter, at.getX(c) + 0.01) < 1)) continue;
+      if (corners.some((c) => forwardAt(chapter, at.getX(c) - 0.01) < 1 || forwardAt(chapter, at.getX(c) + 0.01) < 1)) continue;
       // A triangle of no area shows none of the picture: where two rows stand in one place, so that a colour
       // changes at an edge, the triangles between them are such.
       const [p0, p1, p2] = corners.map((c) => [at.getX(c), at.getY(c), at.getZ(c)] as const);
