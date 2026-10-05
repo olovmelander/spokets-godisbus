@@ -9,7 +9,8 @@
     a slab of rock on the blocks it has weathered out of; la-1 to -3 and la-topp, a boulder to shelter behind
     with a step on its lee side and a flat top; rose-1 to -3, the three stacks of Topproset, the summit cairn;
   - sten-a, -b and -c: stones as the ice left them, one whole, one split in two, one a slab;
-  - klapper: a cobble worn round by an old shore; lav: a cushion of reindeer lichen.
+  - klapper: a cobble worn round by an old shore, and strandsten, the same of fewer corners; lav: a cushion
+    of reindeer lichen.
 
 Run it inside Blender. It empties the scene first. Units: 1 Blender unit is 1 EL (15 cm); Blender's Z is up, and
 a part's front faces -Y, which is towards the camera in the game. Every part is an object of its own, named as
@@ -345,7 +346,7 @@ def prism(top, bottom, z1, z0, tilt=0.0):
     return piece
 
 
-def granite(piece, key, crust=0.5, foot=None, lip=None, light=1.0):
+def granite(piece, key, crust=0.5, foot=None, lip=None, light=1.0, own=1.0):
     """Paints a stone as granite: each face in a grey of its own, a pale crust of lichen on what faces the
     sky, the damp dark at its foot, and with `lip` (a height) a pale line along the edge he walks on.
     A point has one colour, that of the largest face it lies on: a worn edge goes from one face's grey to the
@@ -376,11 +377,13 @@ def granite(piece, key, crust=0.5, foot=None, lip=None, light=1.0):
         if foot is not None:
             low = 1.0 - step(0.0, 0.45, co[2] - foot)
             c = blend(c, dim(blend(c, DEEP, 0.35), 0.6), low)
-        if lip is not None and up > 0.9 and co[2] > lip - 0.01 and co[1] < 0.12:
+        if lip is not None and co[1] < 0.12 and co[2] > lip - 0.2:
+            # The edge he walks on, and the face under it that is turned to him: pale, as the ground's edge is.
             c = blend(c, (1.0, 1.0, 1.0), 0.4)
         # Its own shade: what faces the ground sees little of the sky. (The baked shade knows only a face's
         # corners, and on a stone among stones every corner lies in a joint.)
-        c = dim(blend(c, DEEP, 0.3 * (1.0 - step(-0.9, 0.2, up))), light * (0.66 + 0.34 * step(-0.9, 0.2, up)))
+        under = (1.0 - step(-0.9, 0.2, up)) * own
+        c = dim(blend(c, DEEP, 0.3 * under), light * (1.0 - 0.34 * under))
         for loop in vert.link_loops:
             loop[layer] = (c[0], c[1], c[2], 1.0)
 
@@ -403,11 +406,14 @@ def tongue(wide, key, deep=DEPTH, flare=0.03):
     ]
 
 
-def topped(outline, top, thick, spread=1.0, back=0.06, centre=None, bevel=0.045, loose=0.25):
+def topped(outline, top, thick, spread=1.0, back=0.06, centre=None, bevel=0.045, loose=0.25, lip=0.0):
     """A stone with a level top of this outline at this height: under the top it is as the rock broke, `thick`
-    deep, drawn in or spread out by `spread`, and nowhere in front of `back`."""
+    deep, drawn in or spread out by `spread`, and nowhere in front of `back`. With `lip` its edge on the play
+    plane is a face that high, standing upright: it is turned to him and to the light."""
     piece = new_part()
     points = [(point[0], point[1], top) for point in outline]
+    if lip > 0.0:
+        points += [(point[0], point[1], top - lip) for point in outline if point[1] < 0.01]
     if centre is None:
         centre = (0.0, 0.0)
         for point in outline:
@@ -425,8 +431,8 @@ def slab(part, wide, key, top, thick, deep=DEPTH, crust=0.6, foot=None, light=1.
     """A flat stone he stands on: its top level at `top`, its front edge on the play plane. It is a little
     paler than what it lies on, so that it is seen to be a place to stand."""
     # Its underside begins well behind the play plane: its edge there is thin, and hides little of him.
-    piece = topped(tongue(wide, key, deep), top, thick, 0.92, 0.3)
-    granite(piece, key, crust, foot, top, light)
+    piece = topped(tongue(wide, key, deep), top, thick, 0.92, 0.3, None, 0.04, 0.25, 0.13)
+    granite(piece, key, crust, foot, top, light, 0.0)
     take(part, piece)
 
 
@@ -537,8 +543,8 @@ def lee(name, wide, high, low, key, side):
     granite(body, key, 0.45, -0.72)
     take(part, body, Matrix.Translation((lean, BACK + 0.08 + radii[1], 0.72)))
     # The top: a thick plate of the same rock, as wide as its shelf where he stands and no wider behind.
-    plate = topped(tongue(wide, key + 3, 1.75), high, 0.4, 1.22, 0.3, (lean * 0.6, 1.0), 0.05, 0.2)
-    granite(plate, key + 1, 0.7, None, high, 1.06)
+    plate = topped(tongue(wide, key + 3, 1.75), high, 0.34, 1.22, 0.4, (lean * 0.6, 1.0), 0.04, 0.2, 0.07)
+    granite(plate, key + 1, 0.7, None, high, 1.06, 0.0)
     take(part, plate)
     if low > 0.0:
         # The step: a plate on the block that has split from the boulder's face and stands before it.
@@ -664,6 +670,21 @@ if wanted('klapper'):
             loop[part['colour']] = (c[0], c[1], c[2], 1.0)
     finish(part, 'klapper', 0.35, None, False, 80.0)
 
+if wanted('strandsten'):
+    # The same, of few corners: for the many grey ones that lie round the five that ring.
+    part = new_part()
+    bm = part['bm']
+    made = bmesh.ops.create_uvsphere(bm, u_segments=7, v_segments=4, radius=1.0)
+    for vert in made['verts']:
+        co = vert.co
+        swell = 0.9 + 0.2 * noise(co, 1.3)
+        vert.co = Vector((co[0] * swell, co[1] * 0.78 * swell, co[2] * 0.6 * swell))
+    for item in bm.faces:
+        for loop in item.loops:
+            c = dim(tone('#d8d6cf'), 0.88 + 0.16 * noise(loop.vert.co, 2.1))
+            loop[part['colour']] = (c[0], c[1], c[2], 1.0)
+    finish(part, 'strandsten', 0.35, None, False, 80.0)
+
 if wanted('lav'):
     # Reindeer lichen: a pale cushion as high as his knee, branching like a small bare shrub. Its base is on
     # the ground at the origin, and it is one across.
@@ -720,7 +741,7 @@ FURROW = tone('#3f342e')
 ORANGE = (tone('#a0683f'), tone('#bf8b5c'))
 SILVER = (tone('#77756f'), tone('#aeaaa1'), tone('#d8d4ca'))
 TWIG = tone('#5e4c40')
-NEEDLE = (tone('#1c3019'), tone('#2f4c27'), tone('#56732f'), tone('#8f9c48'))
+NEEDLE = (tone('#1c3019'), tone('#2f4c27'), tone('#4f7030'), tone('#7f9648'))
 
 
 def smooth(points, steps, crook=0.0, key=0.0):
@@ -790,10 +811,12 @@ def wood(kind, at, angle, thin):
         c = blend(PLATE[0], PLATE[1], grain)
         c = blend(c, FURROW, step(0.55, 0.8, noise(at, 5.0)) * 0.6)
         return blend(c, blend(ORANGE[0], ORANGE[1], grain), step(0.25, 0.7, thin))
-    # A limb: orange where young bark shows, in patches between plates of older bark; browner towards its twigs.
-    c = blend(ORANGE[0], ORANGE[1], step(0.3, 0.75, grain))
-    c = blend(c, PLATE[0], step(0.5, 0.72, noise(at, 1.2)) * 0.75 * (1.0 - thin))
-    c = blend(c, FURROW, step(0.6, 0.86, noise(at, 4.6)) * 0.6)
+    # A limb: thin orange bark in scales, each its own shade, in patches between plates of older grey bark
+    # with dark cracks; browner towards its twigs.
+    scale = hash3(math.floor(at[0] * 6.0), math.floor(at[1] * 6.0), math.floor(at[2] * 6.0))
+    c = blend(ORANGE[0], ORANGE[1], scale)
+    c = blend(c, PLATE[0], step(0.48, 0.66, noise(at, 1.2)) * 0.8 * (1.0 - thin))
+    c = blend(c, FURROW, (0.75 if scale < 0.16 else 0.0) + step(0.62, 0.86, noise(at, 4.6)) * 0.4)
     return blend(c, TWIG, step(0.45, 1.0, thin))
 
 
@@ -811,7 +834,7 @@ def limb(part, path, radii, sides, kind, lobes=0.0, tip=True):
         for j in range(sides):
             angle = TAU * j / sides
             there = path[i] + (frames[i][0] * math.cos(angle) + frames[i][1] * math.sin(angle)) * radii[i]
-            far = 1.0 + lobes * ((noise(there, 1.7) - 0.5) + 0.5 * (noise(there, 4.3) - 0.5))
+            far = 1.0 + lobes * ((noise(there, 1.7) - 0.5) + 0.5 * (noise(there, 4.3) - 0.5)) + (0.07 * (hash3(i * 1.0, j * 1.0, 3.0) - 0.5) if sides >= 7 else 0.0)
             ring.append((bm.verts.new(path[i] + (there - path[i]) * far), angle, 1.0 - radii[i] / thick))
         rings.append(ring)
     for i in range(count - 1):
@@ -931,30 +954,32 @@ def shoots_of(name):
     return count
 
 
-if wanted('skott'):
-    # One shoot of a pine: its needles stand out round it like a bottle brush, forward at its end. It is one
-    # long from its foot at the origin to its end along +Z. A needle is a thin blade seen from both sides, and
-    # is lit as if it were part of a round mass, so that a bough is light above and dark below.
+# One shoot of a pine: its needles stand out round it like a bottle brush, forward at its end. It is one long
+# from its foot at the origin to its end along +Z. A needle is a thin blade seen from both sides, and is lit as
+# if it were part of a round mass, so that a bough is light above and dark below. The coarse one, of a few
+# broad needles, is for the pines that stand far off and out of focus.
+for row in (('skott', 13, 0.06, 64), ('skott-grov', 7, 0.11, 65)):
+    if not wanted(row[0]):
+        continue
     part = new_part()
     bm = part['bm']
     layer = part['colour']
-    start(64)
+    start(row[3])
     normals = []
-    for k in range(16):
-        along = 0.1 + 0.8 * (k + 0.5) / 16.0
+    for k in range(row[1]):
+        along = 0.1 + 0.8 * (k + 0.5) / row[1]
         turn = k * 2.399963
         lean = 1.2 - 0.85 * along + between(-0.12, 0.12)
         out = Vector((math.cos(turn) * math.sin(lean), math.sin(turn) * math.sin(lean), math.cos(lean)))
         flat = Vector((0.0, 0.0, 1.0)).cross(out).normalized()
         at = Vector((0.0, 0.0, along))
         length = between(0.5, 0.72)
-        shade = step(0.0, 1.0, along)
-        dark = blend(NEEDLE[0], NEEDLE[1], shade)
+        dark = blend(NEEDLE[0], NEEDLE[1], step(0.0, 1.0, along))
         pale = blend(NEEDLE[2], NEEDLE[3], between(0.2, 1.0))
         lit = (out * 0.55 + Vector((out[0], out[1], 0.0)) * 0.5 + Vector((0.0, 0.0, 0.6))).normalized()
         for side in (1.0, -1.0):
             # Once for each of its two sides.
-            made = bm.faces.new((bm.verts.new(at - flat * 0.06 * side), bm.verts.new(at + flat * 0.06 * side), bm.verts.new(at + out * length)))
+            made = bm.faces.new((bm.verts.new(at - flat * row[2] * side), bm.verts.new(at + flat * row[2] * side), bm.verts.new(at + out * length)))
             loops = made.loops
             loops[0][layer] = (dark[0], dark[1], dark[2], 1.0)
             loops[1][layer] = (dark[0], dark[1], dark[2], 1.0)
@@ -962,7 +987,7 @@ if wanted('skott'):
             normals.append(lit)
             normals.append(lit)
             normals.append(lit)
-    finish(part, 'skott', 0.0, None, False, 50.0, normals)
+    finish(part, row[0], 0.0, None, False, 50.0, normals)
 
 
 if wanted('tall'):
@@ -1002,7 +1027,7 @@ if wanted('tall'):
             thick = 1.0 - step(1.5, 3.0, height)
             row = int((height + 0.41 * (j // 3)) / 0.6)
             furrow = 1.0 if (j + row) % 3 == 0 or (i + (j // 3) * 2) % 5 == 0 else 0.0
-            r *= 1.0 - 0.07 * bare + 0.08 * roll * (1.0 - bare) - 0.1 * furrow * thick * (1.0 - bare) + 0.05 * (hash3(j // 3, row, 5.0) - 0.5) * thick
+            r *= 1.0 - 0.07 * bare + 0.08 * roll * (1.0 - bare) - 0.13 * furrow * thick * (1.0 - bare) + 0.07 * (hash3(j // 3, row, 5.0) - 0.5) * thick + 0.05 * (hash3(i * 1.0, j * 1.0, 7.0) - 0.5) * (1.0 - thick) * (1.0 - bare)
             point = spine[i] + (frames[i][0] * math.cos(angle) + frames[i][1] * math.sin(angle)) * r
             ring.append((bm.verts.new(point), bare, furrow, thick, hash3(j // 3, row, 9.0), off))
         rings.append(ring)
@@ -1062,8 +1087,8 @@ if wanted('tall'):
     number = 0
     for row in LIMBS:
         number += 1
-        path = smooth(row[0], 4, 0.13, number * 5.3)
-        limb(part, path, spread(row[1], len(path)), 9, 'limb', 0.4)
+        path = smooth(row[0], 6, 0.13, number * 5.3)
+        limb(part, path, spread(row[1], len(path)), 10, 'limb', 0.4)
         for plate in row[2]:
             # A branch from the limb up into the plate.
             at = path[min(len(path) - 1, int(plate[2] * (len(path) - 1)))]
@@ -1078,8 +1103,8 @@ if wanted('tall'):
         bough(part, plate[0], plate[1], 90 + int(plate[2] * 9.0), 5, 8, 0.56, -1.0)
 
     # The dead limb: silver, bare, crooked, with the stubs of its twigs.
-    dead = smooth([(0.62, -0.25, 1.8), (1.6, -0.6, 2.45), (2.6, -0.85, 2.62), (3.35, -0.65, 3.2), (3.8, -0.5, 4.0)], 4, 0.09, 8.0)
-    limb(part, dead, spread([0.33, 0.25, 0.18, 0.12, 0.045], len(dead)), 8, 'dead', 0.4)
+    dead = smooth([(0.15, -0.2, 1.72), (0.9, -0.42, 2.1), (1.6, -0.6, 2.45), (2.6, -0.85, 2.62), (3.35, -0.65, 3.2), (3.8, -0.5, 4.0)], 4, 0.09, 8.0)
+    limb(part, dead, spread([0.36, 0.31, 0.25, 0.18, 0.12, 0.045], len(dead)), 8, 'dead', 0.45)
     for snag in (
         ((1.9, -0.68, 2.5), (1.7, -0.95, 3.1), (1.9, -1.05, 3.55)),
         ((2.85, -0.8, 2.75), (3.25, -1.25, 2.55), (3.7, -1.4, 2.72)),
@@ -1106,7 +1131,7 @@ def crooked(name, key, stem, radii, plates):
         hub = Vector(plate[0])
         middle = (at + hub) / 2.0 + Vector((0.0, 0.0, -0.2))
         limb(part, [at, middle, hub], [radii[-1] * 1.5, radii[-1] * 1.1, 0.07], 4, 'limb', 0.0, False)
-        bough(part, plate[0], plate[1], key + number, 4, 6, 0.6, -0.8, 1, False)
+        bough(part, plate[0], plate[1], key + number, 4, 6, 0.66, -0.8, 1, False)
     finish(part, name, 0.7, 0.0, False, 50.0)
     shoots_of(name + '-skott')
 

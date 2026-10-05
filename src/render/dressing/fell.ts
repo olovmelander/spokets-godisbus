@@ -94,10 +94,10 @@ export function fell(chapter: ChapterData, from: number, to: number, seed: numbe
   }
   lichen.count = n;
 
-  // Crowberry: low dark sprigs with black berries.
+  // Crowberry: low dark sprigs with black berries. A leaf and a berry are a few pixels across: beads, of few corners.
   const sprigs = Math.round(length * 0.9);
-  const leaves = new InstancedMesh(KIT.ball, KIT.crowLeaf, Math.max(1, sprigs * 8));
-  const berries = new InstancedMesh(KIT.ball, KIT.blackBerry, Math.max(1, sprigs * 3));
+  const leaves = new InstancedMesh(KIT.bead, KIT.crowLeaf, Math.max(1, sprigs * 8));
+  const berries = new InstancedMesh(KIT.bead, KIT.blackBerry, Math.max(1, sprigs * 3));
   let leaf = 0;
   let berry = 0;
   for (let i = 0; i < sprigs; i++) {
@@ -153,7 +153,7 @@ export function fell(chapter: ChapterData, from: number, to: number, seed: numbe
   const hi = Math.min(to, shore.to);
   if (hi > lo) {
     const field = new InstancedMesh(KIT.cobble, KIT.stone, Math.round((hi - lo) * 20));
-    field.userData.mountain = { part: 'klapper' } satisfies MountainSocket;
+    field.userData.mountain = { part: 'strandsten' } satisfies MountainSocket;
     n = 0;
     for (let i = 0; i < field.count; i++) {
       const x = lo + next() * (hi - lo);

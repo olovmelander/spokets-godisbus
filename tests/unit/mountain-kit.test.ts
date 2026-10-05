@@ -130,9 +130,10 @@ describe('the mountain kit from Blender', () => {
     const things: [string, number, number, number, number, number][] = [
       ...(berget.checkpoints ?? []).map((at): [string, number, number, number, number, number] => ['the big candy', at.x, 0.5, at.y, at.y + 1.6, -1.1]),
       ...(berget.spots ?? []).filter((spot) => spot.look === 'cobble' || spot.look === 'memory').map((spot): [string, number, number, number, number, number] => [`the ${spot.look}`, spot.at.x, 0.42, spot.at.y, spot.at.y + 0.85, -1.05]),
-      // A sweet in its wrapper turns as it hangs; a heart and a lollipop are flat and keep their faces to him.
+      // A sweet in its wrapper is 0.46 long and turns as it hangs. A heart and a lollipop are flat and sway: the
+      // lollipop is the taller, 0.24 down its stick and 0.18 up, and both bob a twentieth of a length.
       ...berget.candy.map((candy): [string, number, number, number, number, number] => ['a sweet of the trail', candy.x, 0.26, candy.y - 0.22, candy.y + 0.22, -0.16]),
-      ...(berget.side ?? []).map((candy): [string, number, number, number, number, number] => ['a heart or a lollipop', candy.x, 0.2, candy.y - 0.24, candy.y + 0.24, -0.05]),
+      ...(berget.side ?? []).map((candy): [string, number, number, number, number, number] => ['a heart or a lollipop', candy.x, 0.13, candy.y - 0.29, candy.y + 0.23, -0.05]),
     ];
     const edge = new Vector3();
     for (const [i, rock] of rocks.entries()) {

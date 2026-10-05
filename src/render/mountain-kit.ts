@@ -240,11 +240,14 @@ export function shootsOf(frames: Shape): Matrix4[] {
   return out;
 }
 
-/** A pine of the kit where a matrix puts it: its wood, and one shoot of needles at each place its `-skott` part says. */
+/**
+ * A pine of the kit where a matrix puts it: its wood, and one shoot of needles at each place its `-skott` part
+ * says. The old pine has the fine shoot; a pine of the rim, far off and out of focus, has the coarse one.
+ */
 function pine(into: Build, kit: MountainKit, name: string, matrix: Matrix4): void {
   const wood = kit.get(name);
   const frames = kit.get(`${name}-skott`);
-  const shoot = kit.get('skott');
+  const shoot = (name === 'tall' ? undefined : kit.get('skott-grov')) ?? kit.get('skott');
   if (!wood || !frames || !shoot) return;
   put(into, wood, matrix);
   const there = new Matrix4();
@@ -305,7 +308,7 @@ export const backRise = (z: number) => (z > -5.5 ? 0 : z > -10 ? ((-5.5 - z) / 4
 /** What a mesh of the scene asks the kit for: set as `userData.mountain`. Its stand-in is what it has now. */
 export type MountainSocket =
   /** Many of one small thing, each in its place: the shape changes, the places stay. */
-  | { part: 'lav' | 'klapper' }
+  | { part: 'lav' | 'klapper' | 'strandsten' }
   /** The stones of a stretch: built again from the kit's three. */
   | { stones: StonePlace[] }
   /** A stand-in that the kit's rocks take the place of: the steps of the cairn, its mark, the boulders of the gusts. */
@@ -366,15 +369,16 @@ export function createMountain(chapter: ChapterData, ledges: { install(carved: (
     }
     const sheltered = rocks.every((crop, i) => crop.kind !== 'la' || fits[i] !== null);
     const gone: Object3D[] = [];
-    const lichen = geometryOf(kit.get('lav'));
-    const cobble = geometryOf(kit.get('klapper'));
+    /** A small part of the kit as one shape, shared by everything that is drawn with it. */
+    const small = new Map<string, BufferGeometry | null>();
 
     scene.traverse((node) => {
       const socket = node.userData.mountain as MountainSocket | undefined;
       if (!socket) return;
       const mesh = node as Mesh;
       if ('part' in socket) {
-        const shape = socket.part === 'lav' ? lichen : cobble;
+        if (!small.has(socket.part)) small.set(socket.part, geometryOf(kit.get(socket.part)));
+        const shape = small.get(socket.part);
         if (!shape) return;
         mesh.geometry.dispose();
         mesh.geometry = shape;
@@ -406,7 +410,7 @@ export function createMountain(chapter: ChapterData, ledges: { install(carved: (
       pine(made, kit, 'tall', at(chapter.pine.x, foot - 0.04, PINE_DEPTH, side < 0));
       const mesh = new Mesh(shaped(made), rock);
       mesh.name = 'old-pine';
-      const lying = BY_THE_PINE.map(([dx, dz, size, shape], i): StonePlace => ({ x: chapter.pine!.x + dx * side, y: foot + size * 0.28, z: PINE_DEPTH + dz, size, turn: [i * 1.3, i * 2.1 + 0.4, i * 0.7], shape, tone: 1, foot }));
+      const lying = BY_THE_PINE.map(([dx, dz, size, shape], i): StonePlace => ({ x: chapter.pine!.x + dx * side, y: foot + size * 0.28, z: PINE_DEPTH + dz, size, turn: [i * 1.3, i * 2.1 + 0.4, i * 0.7], shape, tone: 0.86, foot }));
       const beside = new Mesh(stones(lying, loose), rock);
       beside.name = 'old-pine-stones';
       group.add(mesh, beside);
