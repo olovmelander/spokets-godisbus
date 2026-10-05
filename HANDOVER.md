@@ -1,9 +1,10 @@
 # Handover
 
-## State (4 October 2026)
+## State (5 October 2026)
 
-- **Level design, version 6: the pieces for layered chapters** (4 October, late evening, on Olov's computer;
-  `docs/level-design.md`). Olov: "the game feels very linear right now. I want it to feel more like an
+- **Level design, version 6: the first pass, the "layers", is laid over five chapters** (4 October, late
+  evening, and 5 October, on Olov's computer; `docs/level-design.md`; pull requests #113 to #120, merged).
+  Olov: "the game feels very linear right now. I want it to feel more like an
   exceptional indie platformer ... research on the web for good game that we can get inspired of ... Take the
   best things from the best platformers into my game. Like Super Mario, Rayman, Braid, Unravel, little
   Nightmares, inside, ori and the blind forest ... really improve the level design, puzzles and the chapters".
@@ -28,10 +29,69 @@
       keeps it under `side`, and an older save reads back exactly as before.
     - **A hidden sweet can say how it is reached** (`way`), and then its chapter's secrets test must play it:
       that lifts the rule that every sweet hangs one held jump above the ground.
+    - **What holds a ring** (`hangs` on a hook, `lines` in a chapter): a ring off the main way hangs on a
+      cord from something above it, or from a line strung between two poles. For the picture only.
+    - **A sixth ledge look, the trestle:** a board on legs, for a floor with no wall behind it.
     - **A defect repaired:** *Jag har fastnat* right after a ride (the cap, the launch, the ant lift, the plane)
       left him on the ride's near side with the ride used up, until the page was loaded again. The ride now
       begins again.
-  - **Each chapter's layers come in a pull request of its own.**
+    - **A defect in the format itself, repaired:** a ledge held his body up on its very corner, but he
+      counted as standing only with his feet over it, and his feet are narrower than his body. On those three
+      hundredths of an EL he rested without standing, and Hoppa did nothing until the stick moved. Every
+      chapter's tests ran into it. He now stands wherever a ledge carries him.
+  - **The layers, chapter by chapter** (side by side in `docs/level-design.md` §3). Each starts where the
+    trail passes, with a heart in sight, and lets out forward onto it. Up is the richer, harder way, and a
+    miss lands on the trail below, unhurt. Nothing the story needs is on one; the helper and the robot never
+    go there. The trail's candy, the big candies, the ground and everything that was there are untouched, so
+    saved games are too.
+    - **Gården** (#116). *The window sills:* five boards along the house wall over the deck, up and down
+      again before the ladybird. *The clothes line:* three leaves up from the boulder, three rings on a line
+      between two poles over the dew rain, and the skumbanan on the leaf at its end. *The planks by the
+      hose,* there once the ladybird has brought the hose down, for whoever climbs back up it: the skumsvamp.
+    - **Granskogen** (#119). *The boughs:* a plate of bark and a bough up from the big cone, the forest's
+      first ring between two trunks, and the gummiorm at the end of the far bough. *The nest:* bark up a
+      trunk after the log, the colaflaska in the nest, and two rings in a row to a bough before the pool.
+      *The root* down the hilltop's near side, there once the ants have carried him up: a way back to the
+      ant road and up again.
+    - **Myren** (#117). *The cranberry's leaf:* jumping for a heart over the first cranberry, he comes down
+      on the berry and it puts him on a leaf with the stekt ägg. *The leaves* over the firm tussocks, two of
+      them reached over open water. *The dead pines* over the boardwalk: two branches up, three rings on a
+      rope between the pines, and the sur napp on the branch where they end.
+    - **Berget** (#115). *The rock shelves* up from the first slab, and the mountain's first ring over the
+      cobbles to a far shelf with the gräddkola. *From lee to lee:* a low and a high shelf on every boulder
+      and a ring between every two, on a guide rope. On the lace no gust has hold of him, so the gusts can be
+      crossed overhead; the salmiakruta is on the last boulder's top.
+    - **Byn** (#114). *The sweet shop's shelves:* three steps up on legs, two rings on their flex over the
+      floor, a long shelf and a step down before the bag.
+  - **In numbers.** The share of a chapter that is one corridor went from 95 to 77 per cent in Gården, from
+    92 to 78 in Granskogen, from 91 to 77 in Myren, from 94 to 64 on Berget and from 100 to 88 in Byn. There
+    are 53 ledges, 17 new rings, 95 side candies, and eight of the sixteen hidden sweets now lie at the end
+    of a way of their own. The lace, which was used in 14 EL of Gården only, is in every chapter he walks
+    through.
+  - **Inside the draw budget** (#118). With Granskogen's layers two of its pictures came to 119 and 122 draw
+    calls. A side way's ledges, with what holds them and its cords, lines and poles, are now one mesh, its
+    rings one and its side candy two, and each is drawn only while it is in sight: four draw calls at a side
+    way, where it was up to six, and none away from it. The heaviest picture measured in Granskogen is now
+    117; the chapters merged before it got one to six cheaper.
+  - **What this pass is not.** The main trails are exactly as they were. The puzzles are the same ones, of
+    one or two presses; Myren's boardwalk is still 9.7 seconds of plain running under the new rings; the
+    robot still finishes Berget without Hoppa. Olov asked for level design *and puzzles*: this pass is the
+    routes, the heights, the rings and the sweets. The puzzles of three pieces, and each chapter's arcs on
+    its main trail, are the second pass, which is not begun.
+  - **Validation:** typecheck; 958 unit, simulation and robot tests, about 170 of them new. Each chapter has
+    `tests/sim/layers-<chapter>.test.ts`, which plays every side way from the trail back to the trail at
+    several moments of letting go and tells every miss, and `tests/sim/secrets-<chapter>.test.ts`, which
+    plays the way to each moved sweet. `tests/unit/layers.test.ts` is a floor under each chapter's side
+    ways, rings and sweets, and `tests/robot/pace.test.ts` a ceiling over each main trail's plain running.
+    The build and its size gate (391 KB of script, 828 KB at boot); the privacy check.
+    - **In a browser:** every pull request's run on GitHub was green, all 39 suites, before it was merged.
+      On Olov's computer each side way with rings, and Gården's sills and Myren's leaves, was played with the
+      keyboard in the running game at 1180×820 and 844×390 by a script that is not in the repository, and its
+      pictures were looked at. No browser suite in the repository plays a side way yet.
+    - **Built by five sessions at once:** the format and Byn by the main session, and Gården, Granskogen,
+      Myren and Berget each by a helper session in a worktree of its own, from one brief. The main session
+      read every change, played every way and hung the rings. The chapters did not get in each other's way,
+      because a chapter is one file.
 
 - **The candy is modelled in Blender** (4 October, on Olov's computer; pull requests #110 and #111, merged, and
   on the site; art bible §2.9).
@@ -1253,12 +1313,28 @@
 
 **For the next session, in this order:**
 
-- **The chapters' layers and arcs** (`docs/level-design.md` §3). Layers first, one chapter to a pull request,
-  with the main trail and saved games untouched; then the arcs on the main trail: the swing's twist and mastery
-  in Gården, a ring that a cone's weight pulls into reach in Granskogen, the sinking run rebuilt as a rhythm in
-  Myren, a climb that needs Hoppa and a three-step puzzle with the ghost on Berget. Byn still needs its return
-  loop and its sweets. Code only: a cloud session can do it. What Olov's eyes are needed for: whether the side
-  ways are found, and whether hearts read as "extra" to Elof.
+- **Olov plays the layers,** on a phone and on the computer: `?dev&course=garden` (the window sills at once, the
+  clothes line after the boulder), `?dev&course=granskog`, `?dev&course=myren`, `?dev&course=berget` and
+  `?dev&course=byn`. What his eyes are needed for: whether the side ways are found without being told,
+  whether a heart reads as "extra" and a wrapped sweet as "this way", whether three rings in a row are fun
+  or too hard for Elof's hands, and which chapter's layers are the weakest.
+- **The second pass: the arcs on the main trails, and the puzzles** (`docs/level-design.md` §1 and §3). This
+  is where the game stops being a corridor with detours. One toy to a chapter, in four steps: seen, tried
+  where a miss costs nothing, gated, twisted. In order of how much each would change:
+  - *Myren:* the boardwalk and its ramp are the longest plain run in the story (9.7 s). A ring over a soft
+    tussock, so that swinging is the way not to stand on it, and the sinking run rebuilt as a rhythm.
+  - *Granskogen:* a ring that a cone's weight pulls into reach, and the avalanche as a chase after the
+    ghost's cone. The first needs a ring that waits for a flag or rides on a thing on a rail: hooks have no
+    `needs` yet.
+  - *Berget:* a climb that needs Hoppa, and a puzzle of three pieces with the ghost at the cliff.
+  - *Gården:* the swing's twist and its show of mastery after the gully; the dew rain as a choice.
+  - *Byn:* its return loop and its sweets.
+  - **Rules that bind it:** trail candy and big candies are saved by their place in their lists, so add and
+    never insert or move; Granskogen and Berget have tests that hold their lists' fingerprints;
+    `tests/robot/pace.test.ts` may only be lowered. Code only: a cloud session can do it.
+- **A browser suite that plays one side way** in the built game, so that the ledges, the rings and the side
+  candy are held in the real renderer and not only in the simulation. Slow frames on GitHub make a swing's
+  timing loose: hold a ledge and a walk off it rather than three rings.
 - **The candy** (art bible §2.9): Olov's eyes on it, on a phone: `?dev` for the trail and the big candy,
   `?dev&course=myren` for the lysklubba, the album's kinds one by one as he finds them. What he says tunes
   `art/blender/candy.py` and `CANDY_LIFT`; the stickers follow from the same models
@@ -1390,13 +1466,31 @@ The older list, still true where it is not struck:
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. Broader spatial work, Byn's return loop, final likeness/contact/acting/memory art, listening and device checkpoints remain; no release is declared. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6, and its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; the second pass, on the main trails and the puzzles, remains. Broader spatial work, Byn's return loop, final likeness/contact/acting/memory art, listening and device checkpoints remain; no release is declared. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. |
 
 ## Known bugs
 
 - Offline play is checked in Chromium with a real worker and the test server disconnected. Installed
   Safari/Home Screen updates and storage eviction have not been checked on the family's devices yet.
+
+- **The side ways are in greybox, like the chapters.** A ledge and what holds it are one shape scaled to its
+  width, so a wide bough has a wide stem. There is no look for a nest: Granskogen's is a bough. The dew rain's
+  drops are drawn falling through Gården's leaves and past its rings; they do nothing to him up there. The
+  stand-in ghost waits in front of three of Berget's low shelves.
+- **From the trail, on a phone held sideways, some rings are above the top of the picture:** Gården's
+  clothes line from the lawn, Berget's rings between the boulders from the granite, and in Granskogen the
+  gummiorm is at the picture's top edge. The hearts over the first ledges and the candy along the swings are
+  in it, and they are the tell.
+- **The picture follows the ground under him, so it dips a little between rings** and on a jump between two
+  ledges over ground. Myren's leaves have their gaps over water, where it does not.
+- **A jump under a ring with a throw at its top catches it** in Gården, in Myren and on Berget, as under the
+  swing chain's first nail: a row of rings can be joined in its middle. The sweet at the end still takes a
+  swing. In Granskogen the rings hang too high for that.
+- **Run the browser suites one at a time, and leave the working tree alone under them.** Some of them start
+  Vite on the source instead of serving `dist/`: a branch changed in that worktree reloads their pages and
+  fails them (`myren-loop` and `ghost-thoughts` did, on 4 October), and two chains at once made
+  `mountain-loop` miss a jump that it makes alone.
 
 
 - **A slow picture no longer fails a browser suite.** On GitHub the game is drawn in software, and a
