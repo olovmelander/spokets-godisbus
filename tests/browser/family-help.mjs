@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/family-help'); mkdirSync(shots, { recursive: true });
 const virtual = '\0family-help-fixture';
@@ -69,7 +70,7 @@ try {
     const paused = await page.evaluate(() => { const p=window.probe; for(let i=0;i<20;i++)p.draw(0); return p.snapshot(); });
     check(`${name}: pausing retains family pose and GPU resources`, JSON.stringify(paused.at) === JSON.stringify(shown.at) && JSON.stringify(paused.rotation) === JSON.stringify(shown.rotation) && paused.textures === shown.textures && paused.geometries === shown.geometries);
     const calm = await page.evaluate(() => { const p=window.probe; for(let i=0;i<20;i++)p.draw(.1); return p.snapshot(); });
-    check(`${name}: reduced motion keeps the actor grounded and shaders/draws bounded`, calm.at[1] === 0 && calm.programs === shown.programs && calm.drawCalls <= 120);
+    check(`${name}: reduced motion keeps the actor grounded and shaders/draws bounded`, calm.at[1] === 0 && calm.programs === shown.programs && withinDraws(calm.drawCalls, calm.tier));
     await picture(page, join(shots, `${name}.png`));
     if (course === 'norrsken') {
       const before = await page.evaluate(() => { const p=window.probe; p.sim.flags.delete('taste'); p.draw(0); return p.snapshot(); });

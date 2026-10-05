@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/village');
@@ -65,9 +66,9 @@ try {
         return { ...snapshot(), interior: scene.getObjectByName('candy-shop-interior').children.length };
       }, { x, y, tier });
       await picture(page, join(shots, `${name}.png`));
-      check(`${name}: scene and assets render within budget (${early.models.length} models, ${early.drawCalls} calls)`, early.models.length >= 3 && early.interior > 10 && early.drawCalls > 20 && early.drawCalls <= 120);
+      check(`${name}: scene and assets render within budget (${early.models.length} models, ${early.drawCalls} calls)`, early.models.length >= 3 && early.interior > 10 && early.drawCalls > 20 && withinDraws(early.drawCalls, early.tier));
       const moved = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 6; i++) p.draw(0.5); return p.snapshot(); });
-      check(`${name}: street life moves safely behind the play plane without shaders or simulation changes`, moved.shoes[0] > early.shoes[0] && moved.car[0] > early.car[0] && moved.shoes[2] < -10 && moved.car[2] < -10 && moved.programs === early.programs && moved.state === early.state && moved.drawCalls <= 120);
+      check(`${name}: street life moves safely behind the play plane without shaders or simulation changes`, moved.shoes[0] > early.shoes[0] && moved.car[0] > early.car[0] && moved.shoes[2] < -10 && moved.car[2] < -10 && moved.programs === early.programs && moved.state === early.state && withinDraws(moved.drawCalls, moved.tier));
       const paused = await page.evaluate(() => { const p = window.probe; p.draw(0); return p.snapshot(); });
       check(`${name}: pause freezes street life`, JSON.stringify(paused.shoes) === JSON.stringify(moved.shoes) && JSON.stringify(paused.car) === JSON.stringify(moved.car) && JSON.stringify(paused.feet) === JSON.stringify(moved.feet));
       if (place === 'door') {
@@ -81,7 +82,7 @@ try {
           return { goal: p.game.sim.flags.has('goal'), x: p.game.sim.curr.x, checkpoint: p.game.sim.checkpoint,
             bubbles: p.game.sim.bubbles, knocks: p.game.sim.knocks, stable, maxCalls };
         });
-        check(`${name}: walking through the room reaches its new ending and checkpoints`, walk.goal && walk.x >= 158 && walk.checkpoint === 9 && walk.bubbles === 0 && walk.knocks === 0 && walk.stable && walk.maxCalls <= 120);
+        check(`${name}: walking through the room reaches its new ending and checkpoints`, walk.goal && walk.x >= 158 && walk.checkpoint === 9 && walk.bubbles === 0 && walk.knocks === 0 && walk.stable && withinDraws(walk.maxCalls));
       }
       assert.deepEqual(errors, [], `${name}: browser errors`);
       console.log(`  draws ${name}: ${early.drawCalls}`);

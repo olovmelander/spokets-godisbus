@@ -20,6 +20,10 @@
     keep their colour to the edge; tiling maps are read along the slant, so deck boards keep their gaps to
     the far edge; shade is cool; and ground out of sight is not drawn (6 to 12 draw calls fewer in the garden
     and the village). `tests/unit/ground.test.ts` holds it.
+  - **Step 2, nothing drawn for what is not there, and more room:** things at no size or opacity are hidden
+    (`src/render/idle.ts`), and the view's warm-up still draws them once, so nothing is made when they are
+    first shown: 8 to 22 fewer draw calls in every picture (Granskogen at x 52 on a phone: 123 to 101). And
+    Olov raised the draw-call budget: 120 on Low, 160 on Mid, 200 on High ("Decisions in effect").
   - **Step 8 for the forest, its floor:** in front of the path the forest's ground slopes on towards the
     camera instead of rolling over into a face, so the lower third of the picture is floor seen from above,
     with hummocks, needles, grass, sprigs, cones and stones on it (none higher than the path it lies under:
@@ -1527,6 +1531,7 @@ The older list, still true where it is not struck:
 | Jump physics | Gravity follows from the plan's numbers: a held jump tops out at 1.1 EL and carries 2.2 EL at a run, so gravity is 22.3 EL/s². Letting go of Hoppa on the way up makes Elof 1.8 times heavier, which makes a tap top out at 0.6 EL. | Session, 3 Oct (`src/sim/constants.ts`) |
 | Hoppa's release | Not queued. Hoppa's held state is read once per frame, and that is enough for a tap inside one frame to be a hop (`src/app/game.ts`). The plan's §4.1 expected releases in the queue. | Session, 3 Oct |
 | planck's scale | `lengthUnitsPerMeter` is 0.2, as the plan says. planck doesn't scale its polygon skin with it, so a body rests 0.019 EL above the ground; the simulation takes that off Elof's reported height. | Session, 3 Oct (`src/sim/sim.ts`) |
+| Draw calls | 120 on Low, 160 on Mid, 200 on High, where it was 120 on every tier. The game is tuned for High, which the family's devices are expected to run; Low keeps the old number for older phones, and what is added for High stays out of Low's picture where it would not fit. A check that cannot say its tier is held to Low's. The numbers are in `tests/browser/budget.mjs`. They are an estimate (about 4 ms of a 10 ms frame at 200): the frame time on the devices, from `?bench`, is what will tell. | Olov, 5 Oct: "Raise the graphical threshold to enable for better graphics" |
 | Tone mapping | Neutral, not AgX. The plan allows either (§6.5). With AgX the sky and every flat colour turned grey once the picture went through the HDR buffer; Neutral keeps a colour as it was set. Olov judges the look at H1a. | Session, 3 Oct (`src/render/view.ts`) |
 | Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
 

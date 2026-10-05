@@ -6,6 +6,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -96,7 +97,7 @@ try {
         if (await page.locator('#startBtn').isVisible()) await page.locator('#startBtn').click();
         const start = await until(state, s => s.steps > 90 && s.grounded, name);
         const drawn = await info();
-        check(`${name}: draw-call budget`, drawn.drawCalls > 0 && drawn.drawCalls <= 120);
+        check(`${name}: draw-call budget`, drawn.drawCalls > 0 && withinDraws(drawn.drawCalls, drawn.tier));
         check(`${name}: player framed`, start.playerScreen && start.playerScreen.x > 30 && start.playerScreen.x < viewport.width - 30 && start.playerScreen.y > 35 && start.playerScreen.y < viewport.height - 30);
         for (const step of [1, 2, 3]) {
           await page.keyboard.press('h');
@@ -134,7 +135,7 @@ try {
         if (await page.locator('#startBtn').isVisible()) await page.locator('#startBtn').click();
         const start = await until(state, s => s.steps > 90 && s.grounded, name);
         const drawn = await info();
-        check(`${name}: draw-call budget`, drawn.drawCalls > 0 && drawn.drawCalls <= 120);
+        check(`${name}: draw-call budget`, drawn.drawCalls > 0 && withinDraws(drawn.drawCalls, drawn.tier));
         check(`${name}: player framed`, start.playerScreen && start.playerScreen.x > 30 && start.playerScreen.x < viewport.width - 30 && start.playerScreen.y > 35 && start.playerScreen.y < viewport.height - 30);
         for (const step of [1, 2, 3]) {
           await page.keyboard.press('h');
@@ -164,7 +165,7 @@ try {
         if (await page.locator('#startBtn').isVisible()) await page.locator('#startBtn').click();
         const start = await until(state, s => s.steps > 90 && s.grounded, name);
         const drawn = await info();
-        check(`${name}: draw-call budget`, drawn.drawCalls > 0 && drawn.drawCalls <= 120);
+        check(`${name}: draw-call budget`, drawn.drawCalls > 0 && withinDraws(drawn.drawCalls, drawn.tier));
         check(`${name}: player framed`, start.playerScreen && start.playerScreen.x > 30 && start.playerScreen.x < viewport.width - 30 && start.playerScreen.y > 35 && start.playerScreen.y < viewport.height - 30);
         for (const step of [1, 2, 3]) {
           await page.keyboard.press('h');
