@@ -1111,6 +1111,7 @@ NEEDLE = (tone('#38312a'), tone('#483e33'), tone('#5a4e40'), tone('#6a5c4a'))
 STROKE = (tone('#84704f'), tone('#9c8a66'), tone('#b9a884'), tone('#28221c'), tone('#6a5a44'), tone('#8a5a30'), tone('#4a3f33'))
 STRAW = tone('#b79a66')
 HOLE = tone('#1a100a')
+HILL_SHADE = tone('#4d5e55')
 HILL_TOP = 6.03
 HILL_HALF = 3.06
 HILL_FRONT = 6.0
@@ -1159,6 +1160,10 @@ def needles(at, steep):
         colour = blend(colour, STRAW, 0.5)
     if steep and noise(at.x * 2.7 + 11.0, at.y * 2.7, at.z * 2.7 + 5.0) > 0.8:
         colour = blend(colour, HOLE, 0.85)
+    if steep and at.z < 2.4:
+        green = (noise(at.x * 1.3 + 2.0, at.y * 1.3, at.z * 1.3) - 0.42) * 3.0 * (1.0 - at.z / 2.4)
+        colour = blend(colour, blend(MOSS_DEEP, MOSS, noise(at.x * 3.0, at.y * 3.0, 1.0)), green)
+        colour = blend(colour, HILL_SHADE, min(0.6, (1.0 - at.z) / 4.0))
     return colour
 
 
@@ -1197,7 +1202,7 @@ for a in range(SPOKES + 1):
         column.append(put(part, at, needles(at, steep)))
     # Its foot goes on down into the ground in front of it, which falls away towards the camera.
     foot = hill_at(a, DOWN)
-    column.append(put(part, Vector((foot.x + (HILL_AT.x - foot.x) * 0.04, foot.y, -3.4)), lit(NEEDLE[0], 0.7)))
+    column.append(put(part, Vector((foot.x + (HILL_AT.x - foot.x) * 0.04, foot.y, -3.4)), HILL_SHADE))
     grid.append(column)
 for a in range(SPOKES):
     face(part, (crown, grid[a][0], grid[a + 1][0]))
