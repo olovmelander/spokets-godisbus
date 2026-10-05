@@ -23,6 +23,10 @@ import type { Candy, ChapterData } from '../../sim/types';
  * floor from the big cone to the lingonberry, with the forest's first ring; a root from the hilltop back down
  * to the ant road; and a nest up a trunk after the log, with two rings in a row to a bough before the pool.
  *
+ * And one puzzle of three pieces, as optional as the layers: **the cone on the bough**, over the slope between
+ * its first big candy and the gap. Hearts lie on a bough two steps over a long bough, with no step between. A
+ * cone lies on the long bough. Pushed out to the bough's tip, its weight tips the near end up: the step.
+ *
  * At the vittra door, a berry left for the neighbours receives a little picture on a real return visit.
  * Not built yet: tasting a lingonberry.
  * To the simulation the pool and the eddy are pits; the water in them is drawn only.
@@ -198,6 +202,17 @@ export const granskog: ChapterData = {
     // The bough the two rings end on, high over the big candy. From its end he drops to the floor before
     // Bertil's sign.
     { x: 151.4, y: -5.6, width: 3.6, look: 'branch' },
+    // The cone on the bough: a puzzle of three pieces over the slope, where the cones that chase him leave a
+    // moment's peace between the first big candy and the gap. A plate of bark with a heart is the way in, and
+    // a refuge: the cones roll by under it. From it he steps onto a long bough, and a cone lies out on it.
+    { x: 82.2, y: -2, width: 1.2, look: 'bark' },
+    { x: 84.55, y: -1.1, width: 4.5, look: 'branch' },
+    // The twig over the long bough's near end: the missing step. It is there once the cone weighs on the
+    // bough's tip, and the two steps up to the hearts are one jump each, straight up.
+    { x: 82.55, y: -0.2, width: 1.1, look: 'branch', needs: 'placed:cone-bough' },
+    // The hearts' bough: two steps over the long one, which is more than a jump, and its sweets hang out of
+    // reach of the highest jump from the long bough and from the cone's top.
+    { x: 81.9, y: 0.7, width: 1.8, look: 'branch' },
   ],
   spots: [
     { id: 'berry', look: 'berry', at: { x: 33, y: 0 }, verb: 'take', word: 'pick' },
@@ -241,6 +256,11 @@ export const granskog: ChapterData = {
     { id: 'rescue', look: 'leaf', width: 2.9, height: 0.3, verb: 'pull', ring: { x: 0, y: 0.9 }, stops: [{ x: 186.8, y: -9.3 }, { x: 186.8, y: -7.8 }] },
     // A clearly smaller cone. He approaches its right side and pushes it left, onto Pappa's high end.
     { id: 'cone-small', look: 'cone', width: 0.55, height: 0.7, verb: 'push', needs: 'seesaw', optional: true, stops: [{ x: 116, y: -8 }, { x: 114.6, y: -8 }] },
+    // The cone on the bough. What bowls him over on the slope below is his tool up here: pushed out to the
+    // bough's tip, its weight tips the near end up. It lies on the long bough at both its places, higher over
+    // the slope than the head of any jump from the trail, and more than three EL from the hearts: he can
+    // climb onto it, and it is no step up to them.
+    { id: 'cone-bough', look: 'cone', width: 0.7, height: 0.7, verb: 'push', optional: true, stops: [{ x: 85.75, y: -1.1 }, { x: 86.45, y: -1.1 }] },
   ],
   rides: [
     { id: 'antlift', look: 'ants', ...ANT_LIFT },
@@ -422,5 +442,15 @@ export const granskog: ChapterData = {
     { x: 149.3, y: -5 },
     { x: 151.3, y: -5.05 },
     { x: 152.6, y: -5.05 },
+    // The cone on the bough: the heart over the plate of bark, and a lollipop on the long bough, towards the
+    // cone. Then the prize, four on the hearts' bough: too high to jump for. The last is the heart on the
+    // twig, which comes with it.
+    { x: 82, y: -1.45 },
+    { x: 83.9, y: -0.55 },
+    { x: 82.2, y: 1.4 },
+    { x: 81.85, y: 1.4 },
+    { x: 81.5, y: 1.4 },
+    { x: 81.15, y: 1.4 },
+    { x: 82.9, y: 0.2, after: 'placed:cone-bough' },
   ],
 };
