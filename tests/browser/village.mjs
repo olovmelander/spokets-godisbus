@@ -56,7 +56,8 @@ try {
           rollers: s.rollers, tussocks: s.tussocks, gusts: s.gusts, help: s.help, berries: s.berries,
         }); };
         const until = performance.now() + 15000;
-        while (view.info().models.length < 3 && performance.now() < until) await new Promise((r) => setTimeout(r, 25));
+        // Four models arrive for this chapter: the big candy, the jay, the candy kit and the village kit.
+        while (view.info().models.length < 4 && performance.now() < until) await new Promise((r) => setTimeout(r, 25));
         for (let i = 0; i < 4; i++) draw();
         const scene = f.renderedScene();
         const shoes = scene.getObjectByName('passing-shoes'), car = scene.getObjectByName('passing-car');
@@ -66,7 +67,7 @@ try {
         return { ...snapshot(), interior: scene.getObjectByName('candy-shop-interior').children.length };
       }, { x, y, tier });
       await picture(page, join(shots, `${name}.png`));
-      check(`${name}: scene and assets render within budget (${early.models.length} models, ${early.drawCalls} calls)`, early.models.length >= 3 && early.interior > 10 && early.drawCalls > 20 && withinDraws(early.drawCalls, early.tier));
+      check(`${name}: scene and assets render within budget (${early.models.length} models, ${early.drawCalls} calls)`, early.models.length >= 4 && early.interior > 10 && early.drawCalls > 20 && withinDraws(early.drawCalls, early.tier));
       const moved = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 6; i++) p.draw(0.5); return p.snapshot(); });
       check(`${name}: street life moves safely behind the play plane without shaders or simulation changes`, moved.shoes[0] > early.shoes[0] && moved.car[0] > early.car[0] && moved.shoes[2] < -10 && moved.car[2] < -10 && moved.programs === early.programs && moved.state === early.state && withinDraws(moved.drawCalls, moved.tier));
       const paused = await page.evaluate(() => { const p = window.probe; p.draw(0); return p.snapshot(); });

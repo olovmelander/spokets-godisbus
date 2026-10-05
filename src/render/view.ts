@@ -35,6 +35,7 @@ import { createSharedSweets } from './shared-sweets';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
+import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
@@ -360,6 +361,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       models.push('boot/candy');
       modelInstallations++;
     });
+  // The village's houses, put together from the kit modelled in Blender (art/blender/village.py), take the
+  // place of the plain fronts built in code. A build without the file keeps those, as does a failed load.
+  const housesReady = dressing?.install ? assets
+    .manifest()
+    .then((manifest) => (manifest.packs.boot?.files['village.glb'] ? assets.model('boot', 'village') : null))
+    .then((model) => {
+      if (!model || !dressing.install!(model)) return;
+      models.push('boot/village');
+      modelInstallations++;
+    })
+    .catch((error) => console.error('The village kit could not be loaded; the plain fronts stay.', error)) : Promise.resolve();
   // The far scenery's life (life.ts) waits for its pictures: one atlas, carried by a model. It is a picture
   // and not a model: it is sent to the GPU as it arrives (assets.ts) and takes the place of the clear picture
   // in a material the first frames have drawn already. So nothing is warmed again for it, and it is not
@@ -375,7 +387,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (atlas) wild.install(atlas);
     })
     .catch((error) => console.error('The life of the far scenery could not be loaded.', error)) : Promise.resolve();
-  const ready = Promise.all([candyReady, jayReady, sweetsReady, lifeReady]).then(() => undefined);
+  const ready = Promise.all([candyReady, jayReady, sweetsReady, housesReady, lifeReady]).then(() => undefined);
 
   // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
   // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.
@@ -538,6 +550,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   characterShadows.setTier(tier);
 
   const camera = new PerspectiveCamera(FOV, 1, 0.1, 140);
+  seeRich(camera, tier);
   let viewHeight = 5;
   let distance = 10;
   let pixelRatio = 1;
@@ -620,6 +633,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       water.applyCaustics(scene);
       characterShadows.prepareReceivers();
       materialGrade.apply(scene);
+      // What only Mid and High draw (./rich.ts) is laid here, so that a model which arrived late is laid too.
+      layRich(scene);
       scene.traverse((object) => {
         // What is out of the picture for having nothing to draw (./idle.ts) is drawn in these frames all the
         // same, as it is: at no size, or unseen. Its shader, its shape and its picture are made here, not in play.
@@ -1007,6 +1022,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (tier === chosen) return;
       const changesPipeline = (tier === 'low') !== (chosen === 'low') || tier === 'high' || chosen === 'high';
       tier = chosen;
+      seeRich(camera, tier);
       characterShadows.setTier(tier);
       materialGrade.setEnabled(tier === 'low');
       resolutionSteps = 0;

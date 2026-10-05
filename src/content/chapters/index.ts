@@ -5,7 +5,7 @@ import { byn } from './byn';
 import { epilog, prolog } from './ends';
 import { garden } from './garden';
 import { granskog } from './granskog';
-import { lookDeck, lookForest } from './look';
+import { lookDeck, lookForest, lookStreet } from './look';
 import { myren } from './myren';
 import { norrsken } from './norrsken';
 import { testbana } from './testbana';
@@ -15,7 +15,7 @@ import { testbana } from './testbana';
  * where every move can be tried, and as what the page shows while no chapter is released.
  */
 export const COURSES: Record<string, ChapterData> = {
-  testbana, prolog, garden, granskog, myren, berget, norrsken, epilog, byn, 'look-forest': lookForest, 'look-deck': lookDeck,
+  testbana, prolog, garden, granskog, myren, berget, norrsken, epilog, byn, 'look-forest': lookForest, 'look-deck': lookDeck, 'look-street': lookStreet,
 };
 
 /** The chapters of the story, in order. Each end card leads to the next one that is built. */
