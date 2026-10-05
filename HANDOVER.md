@@ -1338,8 +1338,12 @@
 
 - **Olov plays the layers and the puzzles,** on a phone and on the computer: `?dev&course=garden` (the window
   sills at once, the clothes line after the boulder), `?dev&course=granskog`, `?dev&course=myren`,
-  `?dev&course=berget` and `?dev&course=byn`; and the puzzles at `?dev&course=garden&at=79,0.01`,
-  `?dev&course=granskog&at=80.6,-2.48` and `?dev&course=myren&at=65,0.01`. What his eyes are needed for:
+  `?dev&course=berget` and `?dev&course=byn`; and the puzzles at `?dev&debug&course=garden&at=79,0.01`,
+  `?dev&debug&course=granskog&at=80.6,-2.48` and `?dev&debug&course=myren&at=65,0.01`. A place (`at=`) and
+  flags (`flags=`) in an address are read only with `debug` in it, which also shows the grey readout. Every
+  kind of hidden candy at once, as its sticker: `?dev&debug&course=garden&flags=` and then `found:<kind>`
+  for each of the sixteen kinds in `src/content/kinds.ts`, with commas between; then the pause button. Open
+  that one in a private window: the flags go into that browser's saved game. What his eyes are needed for:
   whether the side ways are found without being told, whether a heart reads as "extra" and a wrapped sweet
   as "this way", whether three rings in a row are fun or too hard for Elof's hands, whether each puzzle's
   idea comes to him or has to be told, and which chapter's layers are the weakest.
