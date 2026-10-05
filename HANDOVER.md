@@ -1557,8 +1557,8 @@
     said and when, and whether Moa's drawing explains the shrinking well enough for Elof. The family are stand-ins
     in the pictures; on Olov's computer the private models act the same keys.
   - **Next, one pull request each:** step 1, Gården picks up where the prologue ends (no off-screen Pappa at its
-    start); step 2, every chapter ends on a storybook page and opens on a time card, with music, and a scene seen
-    before can be skipped; step 3, sound that carries the story. Then the ghost's sharpening thought, the family
+    start); step 2, every chapter ends on a storybook page and opens on a time card, with music; step 3, sound
+    that carries the story. Then the ghost's sharpening thought, the family
     between help points, and each chapter's own moment, in story order. All can be done in a cloud session except
     the Blender parts the overview marks.
   - **On Olov's computer:** pose the private family models with the new acting (`src/render/rig.ts`,
@@ -1805,8 +1805,9 @@ The older list, still true where it is not struck:
 - **The prologue's stand-ins act roughly** (5 October): box figures in place of the family, so a kneel or a
   shrug reads stiffly, and Pappa's hand under Elof is a block. The private models have not been posed by the new
   acting yet; their bones' signs follow Elof's doll and are untested with it (Olov's computer).
-- **Held scenes cannot be skipped on a replay,** and the longest held stretch is about 10.6 s (the POFF with the
-  kneeling family). The overview's step 2 adds the skip.
+- **The longest stretch Elof only watches is about 10.6 s** (the POFF with the kneeling family). A skip is not
+  needed for a replay: a chapter played again keeps its story's flags (`src/save/journey.ts`), so its scenes do not
+  play twice.
 - **A tally card still follows the prologue's title,** and Gården still opens with Pappa's two lines from off
   screen: the overview's steps 2 and 1.
 - **Two browser suites failed by chance on GitHub this evening, and both are mended in #143** (merged):

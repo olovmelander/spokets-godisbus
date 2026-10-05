@@ -134,8 +134,9 @@ Moa no longer says "pytteliten" a second time: at the root she says "Där kröp 
 
 **Still open:** the family are stand-ins in a cloud session (the private Blender models replace them on Olov's
 computer); the eyes are painted in the modal panel (`prologue.md` 4); a tally card still follows the title
-(`prologue.md` 17); Gården still opens with Pappa's old lines from off screen (`garden.md` 1); no scene can be
-skipped on a replay. Held stretches are at most about 10.6 s (the morning 10.5 s, the POFF with the kneeling
+(`prologue.md` 17); Gården still opens with Pappa's old lines from off screen (`garden.md` 1). A chapter played
+again keeps its story's flags, so its scenes do not play twice and need no skip. Held stretches are at most about
+10.6 s (the morning 10.5 s, the POFF with the kneeling
 family 10.6 s, the lift 10.2 s; Pappa's joke now begins only when Elof sets off towards the ghost). Other help
 points keep the box figures.
 
@@ -149,7 +150,7 @@ audit's "five to do first" lists its chapter's further steps.
    stale bubbles (`garden.md` 1, 18; Moa's repeated "pytteliten", `garden.md` 14, is mended in this pull request).
    `garden.ts`, `sv.ts`. Cloud.
 2. **Every chapter ends on a storybook page** and opens on a time card; the prologue hands to Gården under its
-   title alone; a scene seen before can be skipped (`threads.md` rows 2, 17–19; `prologue.md` 17). `main.ts`,
+   title alone (`threads.md` rows 2, 17–19; `prologue.md` 17). `main.ts`,
    `hud.ts`, `map.ts`, a coda per chapter. Cloud.
 3. **Sound that carries the story:** music ducked under panels, the tune under memories, POFF and pling, quiet
    before a reveal (`threads.md` row 20; `berget.md` 1–2). `src/audio/`, `main.ts`. Cloud; Olov listens.
