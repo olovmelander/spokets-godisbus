@@ -381,6 +381,12 @@ export interface ChapterData {
   /** The place it is dressed as. Left out: greybox. */
   place?: PlaceId;
   /**
+   * For the picture only: how high over the land around it the chapter starts, in EL. The far scenery lies
+   * that much lower from the first step: the finale begins on the summit that Berget climbs to. Left out,
+   * the land around is at the height where the chapter starts. Nothing in the simulation reads it.
+   */
+  outlook?: number;
+  /**
    * The hidden candy for the album (plan §4.3): off the trail, each of its own kind. Finding one sets the
    * flag `found:<kind>`, which the save keeps. One with `route` hangs at the end of the chapter's challenge
    * route (plan §4.7), and is reached that way only.

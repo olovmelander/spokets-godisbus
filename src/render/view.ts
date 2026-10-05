@@ -17,7 +17,7 @@ import { observeGpu, type GpuMemory } from './gpu-memory';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
-import { nightBrightness } from './backdrop';
+import { evening, nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
 import { createDepthBlur } from './depth-blur';
@@ -821,6 +821,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         // Fog keeps a copy of its initial colour; changing `sky` alone never changes the haze.
         (scene.fog as Fog).color.copy(sky);
       }
+      // The mountain's hour goes on as he does: the sky dims with the far ridges (backdrop.ts).
+      if (place.id === 'mountain') scene.backgroundIntensity = evening(look.x, chapter.ground[0]!.x, chapter.ground[chapter.ground.length - 1]!.x).sky;
       // The haze begins behind the play plane, however far the camera has pulled back.
       if (!chapter.mist) {
         (scene.fog as Fog).near = camera.position.z + place.haze.near;
