@@ -41,7 +41,10 @@ const PROFILE = [
   { z: 1.5, drop: 0.4, shade: 0.8, bump: 0.12 },
   { z: 2.1, drop: 1.2, shade: 0.62, bump: 0.12 },
   { z: 2.6, drop: 3, shade: 0.44, bump: 0.05 },
-  { z: 2.9, drop: 16, shade: 0.26, bump: 0 },
+  { z: 2.75, drop: 4.4, shade: 0.37, bump: 0 },
+  { z: 2.85, drop: 6.4, shade: 0.31, bump: 0 },
+  { z: 2.9, drop: 9.5, shade: 0.27, bump: 0 },
+  { z: 2.9, drop: 16, shade: 0.24, bump: 0 },
 ];
 /** The shade is cool: what the sun doesn't reach is lit by the sky. */
 const SHADE = new Color('#27413f');
@@ -61,6 +64,18 @@ const PROFILE_BOARD = [
   { z: 0.85, drop: 1.4, shade: 0.14, bump: 0 },
   { z: 0.85, drop: 16, shade: 0.06, bump: 0 },
 ];
+
+/**
+ * How far down a profile each of its rows lies, measured along the surface, and counted so that it is the
+ * row's z on the play plane. The ground's picture and its tones are laid out by this: by z alone they would
+ * be pulled long down the front, where the surface falls as fast as it comes forward.
+ */
+function lengthsDown(profile: typeof PROFILE): number[] {
+  const down = [0];
+  for (let j = 1; j < profile.length; j++) down.push(down[j - 1]! + Math.hypot(profile[j]!.z - profile[j - 1]!.z, profile[j]!.drop - profile[j - 1]!.drop));
+  const level = profile.findIndex((row) => row.z >= -0.3);
+  return down.map((d) => d - down[level]! + profile[level]!.z);
+}
 
 /** The bog's ground: as the bank in front, and sinking under the water behind the path. */
 const PROFILE_ISLAND = PROFILE.map((row, i) => (i < 3 ? { ...row, drop: [3.2, 1.7, 0.3][i]!, bump: row.bump * 0.6 } : row));
@@ -86,18 +101,20 @@ const GROUNDS: Record<Ground, GroundLook> = {
   lawn: { colours: tones('#3f6a22', '#5c962b', '#7fb238', '#aecb52'), wall: new Color('#4a3826'), shade: new Color('#2a4a3a'), bump: 0.8, boards: false },
   sphagnum: { colours: tones('#6e3226', '#8f4d2b', '#7d8a36', '#bca94c'), wall: new Color('#2e241c'), shade: new Color('#2a3438'), bump: 1, boards: false, sinks: true },
   granite: { colours: tones('#8a8d94', '#a0a3a8', '#b6b7b8', '#cfccc8'), wall: new Color('#6a6c72'), shade: new Color('#3a3848'), bump: 0.25, boards: false },
-  wood: { colours: tones('#a48a69', '#b49a78', '#c2a988', '#ccb696'), wall: new Color('#a38866'), shade: new Color('#1d1712'), bump: 0, boards: true },
-  earth: { colours: tones('#57432e', '#695037', '#7a5e41', '#8a6c4b'), wall: new Color('#4a3826'), shade: new Color('#1f1a16'), bump: 0.5, boards: false },
+  wood: { colours: tones('#a48a69', '#b49a78', '#c2a988', '#ccb696'), wall: new Color('#a38866'), shade: new Color('#2b2a33'), bump: 0, boards: true },
+  earth: { colours: tones('#57432e', '#695037', '#7a5e41', '#8a6c4b'), wall: new Color('#4a3826'), shade: new Color('#2c2a2e'), bump: 0.5, boards: false },
   stone: { colours: tones('#767879', '#8a8c8a', '#9b9c97', '#adaca4'), wall: new Color('#6f7172'), shade: new Color('#2c3438'), bump: 0.3, boards: false },
   shavings: { colours: tones('#d6bb8a', '#e3cb9b', '#eedab0', '#f5e6c4'), wall: new Color('#cbb07d'), shade: new Color('#6a5a40'), bump: 0.6, boards: false },
   hedge: { colours: tones('#1f4a1c', '#2f6424', '#3f7a2a', '#588c34'), wall: new Color('#254a1e'), shade: new Color('#16301c'), bump: 1.3, boards: false },
   // The village street: pale slabs, dark asphalt with a little grit, and the grate's iron.
   paving: { colours: tones('#9c9a94', '#aeaca5', '#bdbbb3', '#cbc8be'), wall: new Color('#8e8c88'), shade: new Color('#3a3c44'), bump: 0, boards: false },
-  asphalt: { colours: tones('#4c4f56', '#575a61', '#62656b', '#70727a'), wall: new Color('#45484e'), shade: new Color('#24262c'), bump: 0.12, boards: false },
-  iron: { colours: tones('#2e3136', '#383b41', '#44474d', '#52555b'), wall: new Color('#26282c'), shade: new Color('#14161a'), bump: 0, boards: false },
+  asphalt: { colours: tones('#4c4f56', '#575a61', '#62656b', '#70727a'), wall: new Color('#45484e'), shade: new Color('#2a3038'), bump: 0.12, boards: false },
+  iron: { colours: tones('#2e3136', '#383b41', '#44474d', '#52555b'), wall: new Color('#26282c'), shade: new Color('#22262c'), bump: 0, boards: false },
 };
 /** How wide a deck board is: 12 cm. */
 export const BOARD = 0.8;
+/** How much of its picture a kind of ground shows in one length: boards two to a tile, the speckles 256 dots to 1.8 lengths. */
+export const tileOf = (kind: Ground) => (GROUNDS[kind].boards ? 1 / (BOARD * 2) : 0.55);
 
 export function toneAt(kind: Ground, x: number, z: number, out: Color): Color {
   const look = GROUNDS[kind];
@@ -131,12 +148,28 @@ export function boards(): CanvasTexture {
 interface BankPoint {
   x: number;
   y: number;
+  /** A wall's top or foot: it keeps the outline's height, without the moss's roll. */
   wall: boolean;
+  /** From here to the next point the outline is a wall's face. */
+  face: boolean;
+  /** How far along the outline it lies. */
+  along: number;
   kind: Ground;
 }
 
 /** The ground of a chapter, as one mesh for each stretch of one kind of ground. */
 export function bank(chapter: ChapterData, own: Ground): Group {
+  const maps = { speckles: speckles(), boards: boards() };
+  const group = new Group();
+  for (const { kind, shape } of bankShapes(chapter, own)) {
+    const wood = GROUNDS[kind].boards;
+    group.add(new Mesh(shape, new MeshStandardMaterial({ vertexColors: true, map: wood ? maps.boards : maps.speckles, roughness: wood ? 0.8 : 1 })));
+  }
+  return group;
+}
+
+/** The shapes of a chapter's ground, a stretch of one kind at a time. No picture is drawn for them here. */
+export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; shape: BufferGeometry }[] {
   const line = chapter.ground;
   const first = line[0]!;
   const last = line[line.length - 1]!;
@@ -144,60 +177,88 @@ export function bank(chapter: ChapterData, own: Ground): Group {
   // Points along the outline, close enough together for the moss to roll. A wall keeps its two corners.
   const points: BankPoint[] = [];
   let before = false;
+  let along = 0;
   for (let i = 0; i < outline.length - 1; i++) {
     const a = outline[i]!;
     const b = outline[i + 1]!;
     const dx = b.x - a.x;
     const steep = Math.abs(b.y - a.y) > Math.abs(dx) * 1.3;
     const pieces = Math.max(1, Math.ceil(Math.abs(dx) / 0.45));
+    const length = Math.hypot(dx, b.y - a.y);
     for (let k = 0; k < pieces; k++) {
       const x = a.x + (dx * k) / pieces;
       // The corner at a wall's top or foot is a wall's too.
-      points.push({ x, y: a.y + ((b.y - a.y) * k) / pieces, wall: steep || before, kind: surfaceAt(chapter, x) ?? own });
+      points.push({ x, y: a.y + ((b.y - a.y) * k) / pieces, wall: steep || before, face: steep, along: along + (length * k) / pieces, kind: surfaceAt(chapter, x) ?? own });
       before = steep;
     }
+    along += length;
   }
-  points.push({ x: last.x + 16, y: last.y, wall: false, kind: own });
+  points.push({ x: last.x + 16, y: last.y, wall: false, face: false, along, kind: own });
 
-  const maps = { speckles: speckles(), boards: boards() };
-  const group = new Group();
+  const shapes: { kind: Ground; shape: BufferGeometry }[] = [];
   let start = 0;
   for (let i = 1; i <= points.length; i++) {
     if (i < points.length && points[i]!.kind === points[start]!.kind) continue;
     // A stretch takes the next one's first point too, so that the two meet.
-    group.add(stretchOfGround(points.slice(start, Math.min(points.length, i + 1)), points[start]!.kind, maps));
+    const stretch = points.slice(start, Math.min(points.length, i + 1));
+    if (stretch.length > 1) shapes.push({ kind: points[start]!.kind, shape: stretchOfGround(stretch, points[start]!.kind) });
     start = i;
   }
-  return group;
+  return shapes;
 }
 
-function stretchOfGround(points: BankPoint[], kind: Ground, maps: { speckles: CanvasTexture; boards: CanvasTexture }): Mesh {
+/**
+ * One stretch, as columns of points across the profile. The top and a wall's face have a column each where
+ * they meet, so that each keeps its own colour and its own lie of the picture, and the corner is a corner.
+ */
+function stretchOfGround(points: BankPoint[], kind: Ground): BufferGeometry {
   const look = GROUNDS[kind];
   const profile = look.boards ? PROFILE_BOARD : look.sinks ? PROFILE_ISLAND : PROFILE;
+  const down = lengthsDown(profile);
+  const rows = profile.length;
   const position: number[] = [];
   const colour: number[] = [];
   const uv: number[] = [];
+  const index: number[] = [];
   const c = new Color();
-  const tile = look.boards ? 1 / (BOARD * 2) : 0.55;
-  for (const p of points) {
-    for (const row of profile) {
+  const tile = tileOf(kind);
+
+  /** The column at a point: of the top, or of the wall's face that runs along (ux, uy). Returns its first corner. */
+  const column = (p: BankPoint, ux = 0, uy = 0): number => {
+    const first = position.length / 3;
+    const face = ux !== 0 || uy !== 0;
+    for (let j = 0; j < rows; j++) {
+      const row = profile[j]!;
       const swell = p.wall ? 0 : row.bump * look.bump * (noise(p.x * 1.15, row.z * 1.4 + 7) - 0.5) * 2;
-      position.push(p.x, p.y - row.drop + swell, row.z);
-      toneAt(kind, p.x, row.z, c);
-      if (p.wall) c.lerp(look.wall, 0.82);
+      const y = p.y - row.drop + swell;
+      position.push(p.x, y, row.z);
+      toneAt(kind, p.x, down[j]!, c);
+      if (face) c.lerp(look.wall, 0.82);
       c.lerp(look.shade, (1 - row.shade) * 0.9);
       colour.push(c.r, c.g, c.b);
-      uv.push(p.x * tile, (row.z - row.drop - (p.wall ? p.y : 0)) * tile);
+      if (!face) uv.push((look.boards ? p.x : p.along) * tile, down[j]! * tile);
+      // A face lies in the depth and along the wall. A board there is a board on edge, its grain into the depth.
+      else if (look.boards) uv.push((p.x * ux + y * uy) * tile, row.z * tile);
+      else uv.push(row.z * tile, (p.x * ux + y * uy) * tile);
     }
-  }
-  const index: number[] = [];
-  const rows = profile.length;
+    return first;
+  };
+
+  let right = -1;
+  let wasFace = false;
   for (let i = 0; i < points.length - 1; i++) {
-    for (let j = 0; j < rows - 1; j++) {
-      const a = i * rows + j;
-      const b = (i + 1) * rows + j;
-      index.push(a, a + 1, b, b, a + 1, b + 1);
-    }
+    const a = points[i]!;
+    const b = points[i + 1]!;
+    const length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    // Up the wall, whichever way the outline runs.
+    const turn = b.y < a.y ? -1 : 1;
+    const ux = a.face ? ((b.x - a.x) / length) * turn : 0;
+    const uy = a.face ? ((b.y - a.y) / length) * turn : 0;
+    // Faces never share a column: two that meet may run different ways.
+    const left = right < 0 || a.face || wasFace ? column(a, ux, uy) : right;
+    right = column(b, ux, uy);
+    wasFace = a.face;
+    for (let j = 0; j < rows - 1; j++) index.push(left + j, left + j + 1, right + j, right + j, left + j + 1, right + j + 1);
   }
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute(position, 3));
@@ -205,7 +266,5 @@ function stretchOfGround(points: BankPoint[], kind: Ground, maps: { speckles: Ca
   geometry.setAttribute('uv', new Float32BufferAttribute(uv, 2));
   geometry.setIndex(index);
   geometry.computeVertexNormals();
-  const mesh = new Mesh(geometry, new MeshStandardMaterial({ vertexColors: true, map: look.boards ? maps.boards : maps.speckles, roughness: look.boards ? 0.8 : 1 }));
-  mesh.frustumCulled = false;
-  return mesh;
+  return geometry;
 }
