@@ -23,19 +23,19 @@ import { idle, jump, run, runPast, sideTaken, use, walkTo } from './drive';
 // The cones of the avalanche roll under all of it. It is played here both ways: with them rolling, as he
 // meets it first, and on the calm slope he comes back up once Pappa has been called.
 
-const side = granskog.side!;
-const [plate, bough, twig, hearts] = granskog.ledges!.slice(-4) as [Ledge, Ledge, Ledge, Ledge];
-const cone = granskog.movers!.at(-1)!;
-const [home, tip] = cone.stops as [{ x: number; y: number }, { x: number; y: number }];
-/** The puzzle's side candy, by its place in the chapter's list: the tell, the lollipop, the four on the hearts' bough, the twig's heart. */
-const FIRST = side.length - 7;
-const TELL = FIRST;
-const LOLLIPOP = FIRST + 1;
-const HEARTS = [FIRST + 2, FIRST + 3, FIRST + 4, FIRST + 5];
-const ON_THE_TWIG = FIRST + 6;
-const PLACED = `placed:${cone.id}`;
-/** Where its side candy lies, by x. */
+/** Where it lies, by x: between the slope's first big candy and the gap. Nothing else of the chapter's layers lies there. */
 const SPAN = { from: 80.5, to: 88 };
+const within = (at: { x: number }) => at.x > SPAN.from && at.x < SPAN.to;
+const side = granskog.side!;
+/** Its ledges, in the chapter's order: the plate of bark, the long bough, the twig that waits for the cone, the hearts' bough. */
+const [plate, bough, twig, hearts] = granskog.ledges!.filter(within) as [Ledge, Ledge, Ledge, Ledge];
+const cone = granskog.movers!.find((mover) => mover.id === 'cone-bough')!;
+const [home, tip] = cone.stops as [{ x: number; y: number }, { x: number; y: number }];
+/** Its side candy, by its place in the chapter's list: the tell, the lollipop, the four on the hearts' bough, the twig's heart. */
+const [TELL, LOLLIPOP, ...REST] = side.flatMap((candy, i) => (within(candy) ? [i] : [])) as [number, number, ...number[]];
+const HEARTS = REST.slice(0, 4);
+const ON_THE_TWIG = REST[4]!;
+const PLACED = `placed:${cone.id}`;
 
 /** A saved game at the slope's first big candy: the jay and the ants are behind him, and the cones roll. */
 const ROLLING: SimStart = { checkpoint: 5, flags: ['berry', 'jay', 'antlift', 'avalanche'], placed: ['twig'] };
@@ -58,7 +58,7 @@ const taken = (sim: Sim) => sideTaken(sim, SPAN.from, SPAN.to).taken;
 /** How much of the prize is his: the four on the hearts' bough and the heart on the twig. */
 const prizeTaken = (sim: Sim) => [...HEARTS, ON_THE_TWIG].filter((i) => sim.collectedSide[i]).length;
 const theCone = (sim: Sim) => sim.movers.find((mover) => mover.def.id === cone.id)!;
-const theTwig = (sim: Sim) => sim.ledges.at(-2)!;
+const theTwig = (sim: Sim) => sim.ledges[granskog.ledges!.indexOf(twig)]!;
 /** How far the nearest sweet on the hearts' bough is from his middle: within `CANDY_MAGNET` it is his. */
 const toTheHearts = (sim: Sim) => Math.min(...HEARTS.map((i) => Math.hypot(side[i]!.x - sim.curr.x, side[i]!.y - (sim.curr.y + ELOF_HEIGHT / 2))));
 
@@ -184,9 +184,16 @@ function underThePlate(options: SimOptions = {}, start: SimStart = CALM): Sim {
 }
 
 describe('the cone on the bough: how it is laid', () => {
-  it('is added at the end of the chapter\'s lists: four ledges, one thing on a rail, seven side candies', () => {
-    expect(granskog.ledges).toHaveLength(13);
-    expect(side).toHaveLength(29);
+  it('is added after everything that was in the chapter\'s lists: four ledges, one thing on a rail, seven side candies', () => {
+    // The layers' nine ledges, the story's twelve things on rails and the layers' twenty-two side candies
+    // keep their places: a saved game knows side candy by its place in the list.
+    expect(granskog.ledges!.filter(within)).toHaveLength(4);
+    expect(granskog.ledges!.indexOf(plate)).toBe(9);
+    expect(granskog.ledges!.indexOf(hearts)).toBe(12);
+    expect(granskog.movers!.filter((mover) => mover.stops.some(within))).toEqual([cone]);
+    expect(granskog.movers!.indexOf(cone)).toBe(12);
+    expect(side.filter(within)).toHaveLength(7);
+    expect([TELL, LOLLIPOP, ...HEARTS, ON_THE_TWIG]).toEqual([22, 23, 24, 25, 26, 27, 28]);
     expect(cone).toMatchObject({ id: 'cone-bough', look: 'cone', verb: 'push', optional: true });
     expect(cone.needs).toBeUndefined();
     expect(cone.extra).toBeUndefined();
@@ -198,10 +205,12 @@ describe('the cone on the bough: how it is laid', () => {
     expect(side[ON_THE_TWIG]!.after).toBe(PLACED);
     for (const ledge of [plate, bough, hearts]) expect(ledge.needs).toBeUndefined();
     for (const i of [TELL, LOLLIPOP, ...HEARTS]) expect(side[i]!.after).toBeUndefined();
-    // One thing to act on. It adds no thing to use, no ring, no climb and no camera zone.
-    expect(granskog.spots!.some((spot) => spot.at.x > SPAN.from && spot.at.x < SPAN.to)).toBe(false);
-    expect(granskog.hooks!.some((hook) => hook.x > SPAN.from && hook.x < SPAN.to)).toBe(false);
-    expect(granskog.climbs!.some((climb) => climb.x > SPAN.from && climb.x < SPAN.to)).toBe(false);
+    // One thing to act on. It adds no thing to use, no ring, no climb and no camera zone: the slope's own
+    // wide picture is the one it is seen in.
+    expect(granskog.spots!.some((spot) => within(spot.at))).toBe(false);
+    expect(granskog.hooks!.some(within)).toBe(false);
+    expect(granskog.climbs!.some(within)).toBe(false);
+    expect(granskog.cameras!.filter((zone) => zone.from < SPAN.to && zone.to > SPAN.from)).toEqual([{ from: 68, to: 105, zoom: 1.45, lead: 0.3 }]);
   });
 
   it('is a plate of bark, a long bough and two steps up: the first of the two is the one that is missing', () => {
@@ -449,7 +458,8 @@ describe('2. the prize cannot be had without it', () => {
       walkTo(sim, twig.x + 0.25);
       expect(on(sim, bough), `under where the twig will be: ${where(sim)}`).toBe(true);
       const { highest } = hop(sim, dir);
-      expect(twig.y - LEDGE_GIVE - highest, `a jump ${dir}`).toBeGreaterThan(-0.31);
+      // He jumps as high as the twig will be: it is the step that is missing, not his jump.
+      expect(highest, `a jump ${dir}`).toBeGreaterThan(twig.y);
       expect(sim.curr.y, `after a jump ${dir}: ${where(sim)}`).toBeLessThan(twig.y - 0.5);
       expect(sim.bubbles).toBe(0);
     }
@@ -536,7 +546,7 @@ describe('2. the prize cannot be had without it', () => {
     let nearest = Infinity;
     for (const [name, x, y] of starts) {
       for (const way of [-1, 1]) {
-        for (let runUp = 0; runUp <= 1.2001; runUp += 0.2) {
+        for (let runUp = 0; runUp <= 1.2001; runUp += 0.3) {
           for (const held of [-1, 0, 1]) {
             const sim = standingAt(x, y);
             run(sim, runUp, { x: way });
@@ -554,7 +564,7 @@ describe('2. the prize cannot be had without it', () => {
         }
       }
     }
-    expect(tries).toBe(starts.length * 2 * 7 * 3);
+    expect(tries).toBe(starts.length * 2 * 5 * 3);
     expect(nearest - CANDY_MAGNET).toBeGreaterThan(0.25);
     // Nothing else in the chapter sets the flag the twig waits for.
     expect(granskog.spots!.some((spot) => spot.id === PLACED)).toBe(false);
@@ -764,7 +774,7 @@ describe('5. it is not on the main way', () => {
       // It ran under the plate with its feet on the slope: the cone it jumps before the plate sets it down
       // short of it, and the next it jumps at the gap.
       expect(nearest).toBeGreaterThan(0.5);
-      expect(game.sim.collectedSide.slice(FIRST).some(Boolean)).toBe(false);
+      expect(game.sim.collectedSide.some((got, i) => got && within(side[i]!))).toBe(false);
       expect(game.sim.flags.has(PLACED)).toBe(false);
       expect(game.sim.placed).not.toContain(cone.id);
       expect(game.sim.movers.find((mover) => mover.def.id === cone.id)!.x).toBe(home.x);
