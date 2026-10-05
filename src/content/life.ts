@@ -23,8 +23,8 @@ export type Strip = readonly [x: number, y: number, wide: number, tall: number, 
 export const STRIPS = {
   /** The moose's walk: twelve cells, a whole cycle. It faces right. */
   walk: [0, 0, 160, 128, 12, 6],
-  /** The moose standing: as it stopped, its head half lifted, lifted and turned this way, and with an ear flicked. */
-  stand: [0, 256, 160, 128, 4, 4],
+  /** The moose standing: as it stopped, its head coming up and turning this way in three steps, looking, and with an ear flicked. */
+  stand: [0, 384, 160, 128, 6, 6],
   /** A crane's wingbeat: up, level, down, level. Neck out, legs trailing. It faces right. */
   crane: [640, 256, 96, 48, 4, 4],
   /** A goose's: a shorter neck, no legs to see. */
@@ -34,7 +34,7 @@ export const STRIPS = {
   /** A soft dot: a far window, a car's light. */
   dot: [960, 64, 32, 32, 1, 1],
   /** A shooting star, falling to the left: bright at its head, nothing at its tail. */
-  streak: [640, 352, 128, 64, 1, 1],
+  streak: [0, 256, 128, 64, 1, 1],
 } satisfies Record<string, Strip>;
 
 /**

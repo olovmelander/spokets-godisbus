@@ -153,7 +153,8 @@ export function lifePlan(place: PlaceId, stages: readonly LifeStage[] = [], seed
       const x = p + Math.round((centre - p) / smoke.every) * smoke.every - centre;
       if (Math.abs(x) > reach + 3) continue;
       for (let i = 0; i < smoke.puffs; i++) {
-        const age = fract(w.clock / 8 + i / smoke.puffs + p * 0.37);
+        // With reduced motion it all but stands.
+        const age = fract(w.clock / (w.calm ? 30 : 8) + i / smoke.puffs + p * 0.37);
         const size = 0.8 + 1.7 * age;
         put(STRIPS.puff, 0, x + 2.4 * age ** 1.6 + 0.15 * Math.sin(age * 9 + i * 2) - size / 2, y + 4 * age - size / 2, size, size, smokeInk, smoke.alpha * Math.min(1, age * 8) * (1 - age * age));
       }
@@ -201,8 +202,10 @@ export function lifePlan(place: PlaceId, stages: readonly LifeStage[] = [], seed
       const gone = walked * speed;
       const s = t - on.halt;
       const stands = s >= 0 && s < WALK.stand;
-      // Standing: as it stopped, the head half up, up and turned this way with one flick of an ear, and down again.
-      const cell = !stands ? Math.floor(walked * WALK.fps) % 12 : s < 0.5 || s > WALK.stand - 0.4 ? 0 : s < 1 || s > WALK.stand - 0.9 ? 1 : s > 2.2 && s < 2.4 ? 3 : 2;
+      // Standing: as it stopped; the head comes up and turns this way through three cells; it looks, with one
+      // flick of an ear; and the head goes down again the same way.
+      const rise = Math.min(s - 0.5, WALK.stand - 0.42 - s) / 0.16;
+      const cell = !stands ? Math.floor(walked * WALK.fps) % 12 : rise < 0 ? 0 : rise < 3 ? 1 + Math.floor(rise) : s > 2.3 && s < 2.5 ? 5 : 4;
       const wide = WALK.cell * role.size;
       const tall = wide * 0.8;
       const x = on.from - gone - centre - wide / 2;

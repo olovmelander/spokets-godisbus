@@ -44,7 +44,7 @@ describe('the atlas of the far life', () => {
     for (const [place, cast] of Object.entries(LIFE)) {
       for (const [kind, role] of Object.entries(cast.roles)) {
         if (role.act === 'flock') expect(drawn.has(role.strip!), `${place} ${kind}`).toBe(true);
-        else expect([sheet.cells.walk!.length, sheet.cells.stand!.length], `${place} ${kind}`).toEqual([12, 4]);
+        else expect([sheet.cells.walk!.length, sheet.cells.stand!.length], `${place} ${kind}`).toEqual([12, 6]);
       }
     }
   });
@@ -146,10 +146,15 @@ describe('the moose\'s cells', () => {
   it('stop from the cell where the hooves are down, and lift the head from there', () => {
     // The first standing cell is the walk's cell with two hooves set down: as like it as a neighbour is.
     expect(apart(small.stand[0]!, small.walk[WALK.halt]!)).toBeLessThanOrEqual(Math.max(...neighbours));
-    // The head comes up: the animal's top is higher in each of the next two, and the last only flicks an ear.
-    expect(stand[1]!.box[1]).toBeLessThan(stand[0]!.box[1]);
-    expect(stand[2]!.box[1]).toBeLessThan(stand[1]!.box[1]);
-    expect(apart(small.stand[3]!, small.stand[2]!)).toBeLessThan(apart(small.stand[2]!, small.stand[0]!));
-    expect(small.stand[3]).not.toBe(small.stand[2]);
+    // The head comes up and turns in small steps: each cell is nearer the next than the first is to the last,
+    // and the animal's top rises. The last only flicks an ear.
+    const whole = apart(small.stand[0]!, small.stand[4]!);
+    for (let i = 0; i < 4; i++) {
+      expect(apart(small.stand[i]!, small.stand[i + 1]!), `standing cell ${i}`).toBeLessThan(whole * 0.6);
+      expect(apart(small.stand[i]!, small.stand[i + 1]!), `standing cell ${i}`).toBeGreaterThan(0);
+    }
+    expect(stand[2]!.box[1]).toBeLessThan(stand[0]!.box[1]);
+    expect(stand[4]!.box[1]).toBeLessThan(stand[2]!.box[1]);
+    expect(apart(small.stand[5]!, small.stand[4]!)).toBeLessThan(whole * 0.25);
   });
 });

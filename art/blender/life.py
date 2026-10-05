@@ -47,12 +47,12 @@ TALL = 512
 # name: left, top, a cell's width and height, how many cells, how many in a row
 STRIPS = {
     'walk': (0, 0, 160, 128, 12, 6),
-    'stand': (0, 256, 160, 128, 4, 4),
+    'stand': (0, 384, 160, 128, 6, 6),
     'crane': (640, 256, 96, 48, 4, 4),
     'goose': (640, 304, 96, 48, 4, 4),
     'puff': (960, 0, 64, 64, 1, 1),
     'dot': (960, 64, 32, 32, 1, 1),
-    'streak': (640, 352, 128, 64, 1, 1),
+    'streak': (0, 256, 128, 64, 1, 1),
 }
 
 # The picture, as Blender keeps one: four numbers a pixel, rows from the bottom. White and clear to begin with,
@@ -457,11 +457,14 @@ scene.camera = camera
 # Every cell: which strip, which cell, the moment of the walk, hooves set down, head up, head turned, ear back.
 CELLS = [('walk', i, (i + 0.5) / 12.0, False, 0.0, 0.0, 0.0) for i in range(12)]
 REST_PHASE = (HALT + 0.5) / 12.0
+# Standing: as it stopped; its head coming up in three steps and turning this way; looking; and an ear flicked.
 CELLS += [
     ('stand', 0, REST_PHASE, True, 0.0, 0.0, 0.0),
-    ('stand', 1, REST_PHASE, True, 0.55, 0.2, 0.0),
-    ('stand', 2, REST_PHASE, True, 1.0, 1.0, 0.0),
-    ('stand', 3, REST_PHASE, True, 1.0, 1.0, 1.0),
+    ('stand', 1, REST_PHASE, True, 0.35, 0.05, 0.0),
+    ('stand', 2, REST_PHASE, True, 0.68, 0.35, 0.0),
+    ('stand', 3, REST_PHASE, True, 0.92, 0.75, 0.0),
+    ('stand', 4, REST_PHASE, True, 1.0, 1.0, 0.0),
+    ('stand', 5, REST_PHASE, True, 1.0, 1.0, 1.0),
 ]
 shades = []
 small = {'walk': [], 'stand': []}
