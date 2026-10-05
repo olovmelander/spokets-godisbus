@@ -15,7 +15,8 @@ import type { Candy, ChapterData, Jump, Vec } from '../../sim/types';
  * 7. **Inside the shop:** a warm wooden floor under shelves of enormous candy jars. His friend leads him
  *    past the doormat to a paper bag and the final candy. Passing shoes and cars stay behind his path.
  *
- * Nothing here is a real shop, and no house has a number: the fronts are plain shapes (plan §0, §2.6).
+ * Nothing here is a real shop, and no house has a number: a shop is told by the wares in its window, and
+ * nothing on the street is a letter (plan §0, §2.6).
  */
 
 /** The drain and the well are this deep: a fall into either ends in the glitter bubble. */
@@ -89,6 +90,26 @@ export const byn: ChapterData = {
     { from: 122, to: 194, kind: 'wood' },
   ],
   shop: { door: 122, to: 178, floor: 3.3 },
+  // What stands behind him, written by hand so that each place has the backdrop it wants (docs/art-bible.md
+  // §2.3). A near wall is 7 EL behind the path: the bicycle leans on one, and the drops fall along one. The
+  // crossing is open: the houses and the yard on its far side are 20 EL off, with the sky over the yard.
+  // No upright part of a near wall (a casing, a pipe, a corner, a sign) stands behind a big candy or the hook.
+  street: [
+    // The yarn shop, pale, with lying boards. It stands on the pavement, and its window is behind the start.
+    { from: -22, to: 12, depth: 'near', kind: 'house', wall: '#efe6c8', boards: 'lying', goods: 'yarn', windows: [{ from: -1.6, to: 5.4 }], pipes: [10.3] },
+    // Across the crossing: the shoemaker's, the street's one Falu red house, in shade and haze...
+    { from: 12, to: 38, depth: 'far', kind: 'house', foot: 1, wall: '#8f2d22', boards: 'upright', goods: 'boots', windows: [{ from: 14.4, to: 22.6 }], door: { from: 29.2, to: 35.2 }, sign: 26 },
+    // ...and a yard behind the puddle: a grey fence, a birch and a hedge, and the far village and the sky.
+    { from: 38, to: 62, depth: 'far', kind: 'yard', foot: 1 },
+    // The bakery, white, with upright boards: the bicycle leans on its wall over the cellar window's well, the
+    // first run of drops falls before its window, the dry place is the pier, and the second run is at its door.
+    {
+      from: 62, to: 110, depth: 'near', kind: 'house', wall: '#e9e6dc', boards: 'upright', goods: 'bread',
+      windows: [{ from: 85.5, to: 90.7 }], door: { from: 96, to: 102 }, pipes: [63.7, 108.2], sign: 79.6, cellar: 74.2,
+    },
+    // The sweet shop, ochre, up on the stone step: its window is the most colourful, and stands only here.
+    { from: 110, to: 122, depth: 'near', kind: 'house', wall: '#e3b24c', boards: 'upright', goods: 'candy', windows: [{ from: 112.6, to: 119.4 }] },
+  ],
   spawn: { x: 1, y: 2.01 },
   goalX: 158,
   ground: [
