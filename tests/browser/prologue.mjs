@@ -6,6 +6,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -128,7 +129,7 @@ try {
     await picture(page, `/tmp/${name}.png`);
     await page.locator('#pause').evaluate((node) => { node.style.visibility = ''; });
     const before = await info();
-    check(`${name}: draw budget`, before.drawCalls <= 120);
+    check(`${name}: draw budget`, withinDraws(before.drawCalls, before.tier));
     await page.keyboard.press('Escape');
     await until(state, (s) => s.flags.includes(pappa ? 'pappa:done' : 'mamma:passed'), `${name}: completed`, 30000);
     check(`${name}: no shaders compile during the scene`, (await info()).programs === before.programs);

@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/water-light');
 mkdirSync(shots, { recursive: true });
@@ -122,7 +123,7 @@ try {
       return results;
     }, { course });
     const name = `${course}-${width}x${height}`;
-    check(`${name}: water and glow stay below 120 draws`, result.every((r) => r.drawCalls <= 120));
+    check(`${name}: water and glow stay within the draw budget`, result.every((r) => withinDraws(r.drawCalls, r.tier)));
     check(`${name}: tier switches warm all water/light shaders before play`, result.every((r) => r.stable));
     await picture(page, join(shots, `${name}-high.png`));
     console.log(`       draws ${result.map((s) => `${s.tier}:${s.drawCalls}`).join(' ')}`);

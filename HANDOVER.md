@@ -2,10 +2,11 @@
 
 ## State (5 October 2026)
 
-- **The look: an audit of everything on screen, and the work it orders, begun** (5 October, on Olov's
-  computer; `docs/visual-audit.md`). Olov: "make an audit of everything in the game and find everything that
-  can be improved visually ... make it a visual masterpiece ... also i want things happening in the
-  background, like a moose walking in the distant".
+- **The look: an audit of everything on screen, and the first eight of its steps built** (5 October, on
+  Olov's computer; `docs/visual-audit.md`; pull requests #128 to #137, merged; #138 and #139 open). Olov:
+  "make an audit of everything in the game and find everything that can be improved visually ... make it a
+  visual masterpiece ... also i want things happening in the background, like a moose walking in the
+  distant".
   - **The audit is done:** seven auditors, one area each (home and Gården, Granskogen, Myren, Berget and
     Norrsken, Byn, the pipeline and light, the far scenery and its life), 167 findings with the fix for each,
     in `docs/visual-audit/`. The overview says what is already good, the ten things that let the game down
@@ -20,7 +21,11 @@
     keep their colour to the edge; tiling maps are read along the slant, so deck boards keep their gaps to
     the far edge; shade is cool; and ground out of sight is not drawn (6 to 12 draw calls fewer in the garden
     and the village). `tests/unit/ground.test.ts` holds it.
-  - **Step 8 for the forest, its floor:** in front of the path the forest's ground slopes on towards the
+  - **Step 2, nothing drawn for what is not there, and more room (#132, #134):** things at no size or
+    opacity are hidden (`src/render/idle.ts`), and the view's warm-up still draws them once, so nothing is made when they are
+    first shown: 8 to 22 fewer draw calls in every picture (Granskogen at x 52 on a phone: 123 to 101). And
+    Olov raised the draw-call budget: 120 on Low, 160 on Mid, 200 on High ("Decisions in effect").
+  - **Step 8 for the forest, its floor (#131):** in front of the path the forest's ground slopes on towards the
     camera instead of rolling over into a face, so the lower third of the picture is floor seen from above,
     with hummocks, needles, grass, sprigs, cones and stones on it (none higher than the path it lies under:
     nothing covers his boots). At a wall's top the floor draws back to the path, so no corner hides the
@@ -29,9 +34,77 @@
     haze. `tests/unit/forest-floor.test.ts` holds the rules. Costs: no draw call at the heaviest places
     (117, 116), one or two at a few light ones, ten at the pool (65 to 75); about 30,000 triangles a picture
     (176,000 to 208,000 at x 106). The other places keep their fronts until their own step.
-  - **In work when this was written,** each on its own branch: things at scale or opacity 0 not drawn
-    (`idle-draws`); the water (`water-look`); the far scenery repainted (`far-scenery`); the moose and the
-    other life far off (`background-life`); the village's houses as a kit of parts (`village-street`).
+  - **Step 8 for the mountain, its rock (#137)** (Berget and Norrsken): granite that is granite. It has a
+    picture of its own (grains, mica, cracks, crust lichen) instead of the moss's speckles, which halved its tones to
+    brown felt. It is cut hard: level a little past the path, a pale edge, then down in two ledges, in blocks
+    with a joint every 2.5 to 6 lengths; walls stand in courses, and at a wall's top the front draws back, so
+    the cliff's foot (the ghost, the lace, its sweets) is in sight. The mountain's light is cool from the sky
+    and warm from the sun only, so grey stays grey in shade and edges catch the sun.
+    `tests/unit/rock-front.test.ts` holds the rules; three ways of breaking it were tried, and each fails one
+    test. No draw call more anywhere; about 14,000 triangles a picture. Still wrong: the chapter's end walls
+    are flat sheets, warm pink where the sun is on them; the boulders, the shelves and the cairn wait for the
+    stone kit. A place's front is one description now (`FRONTS` in `src/render/dressing/ground.ts`): its
+    rows, whether it cuts its walls, what cut ground looks like, whether it is in blocks. The lawn, the bog
+    and the street still have the plain one.
+  - **Step 3, the water (#135):** it mirrors its place. The bog's water is dark peat water with the gold sky
+    and the trees upside down in it, in calm ripples, the same on Low, Mid and High (on High it was a pale
+    grey sheet over a mustard rectangle). The tussocks stand in it; no pool ends in a straight edge or a
+    corner; the mist, the bubble and the sunbeams lie over it. It is drawn in the one scene now: the second
+    scene and its pass are gone. The forest's pool fades into the forest behind its near shore; the village's
+    puddle is a hand deep and mirrors the house fronts. Still wrong: nothing that stands in the water is
+    mirrored (a tussock, a trunk, him); no rings yet.
+  - **Step 4, the far scenery repainted (#133):** on the same cards at the same depths. The summit looks out
+    over thin ridges under a big sky, and they sink as the crane climbs; under the flight there is a valley
+    with a lake; the finale stands on that same horizon (a chapter's `outlook`); the hour moves on the
+    mountain. The bog is an open mire with a veiled sun, crooked pines, silver dead pines and the mountain as
+    a long back with a knob. Slim Norrland spruces, pines, birches; long level clouds. Not painted: red farms
+    and the bell tower (question 8).
+  - **Step 5, life far off (#138, built and NOT merged when this was written):** its checks fail on GitHub in
+    five browser suites (`helper`, `nightfall`, `forest-puzzles`, `family-help`, `village`). One cause: the
+    life's picture arrives after the chapter has started, and its arrival ran the view's warm-up in the middle
+    of play (a frame of 313 draw calls in the log), and the batch's buffers were made when something first came
+    on stage. Both break gate 6. The fix is being made on the branch `background-life`: hide the batch as an
+    idle thing so the first frames make it, and swap the picture in without a warm-up. What it is:
+    Olov asked for "a moose walking in the distant". On the bog's far shore a
+    moose comes out of the mist, walks, stops, lifts its head and looks, and walks on; cranes cross the bog's
+    sky in a V; in the forest the moose crosses a bright gap one visit in three; smoke rises from far
+    chimneys, geese cross the garden's sky; at dusk the valley's windows light one by one, a car's lights
+    creep between them, and a star falls. One batch of at most 32 quads among the far pictures
+    (`src/render/life.ts`), planned without three or DOM (`src/render/life-plan.ts`), the cast as data
+    (`src/content/life.ts`), stages in the chapters (`life`), the moose a sheet of eighteen cells rendered in
+    Blender (`art/blender/life.py`). With `debug` in the address, `&life=moose` (or `cranes`) puts a
+    happening on stage at once.
+    **The walk was judged in stills and by its tests, not watched in motion: Olov looks at that first.**
+  - **Step 6, the village's houses (#136):** built of parts made in Blender (`art/blender/village.py`,
+    `boot/village`): a stone foot, boards with cover strips, corner boards, casings, a downpipe, a panelled
+    door behind its step, lit by the low sun. Each shop's window is a glowing room with its wares as dark
+    shapes, and two carved signs hang low; no letter anywhere. A `street` list in the chapter says what
+    stands behind each stretch: near walls where a place wants one, the crossing and a yard with a birch far
+    off. Red is the candy's and the hook's again. Still wrong: white walls in shade read grey on High; the far
+    houses stand on no pavement (the street's ground is next); the shoes and the car are still boxes.
+  - **Being built when this was written,** each on its own branch, none merged:
+    - `forest-kit`: the forest's things as models (one spruce cone in its sizes, the giant cone, the log, the
+      anthill, stones, a lighter moss hummock, undergrowth, the vittra door, the twig and seesaw, and Bertil's
+      cap as a red-and-white trucker cap with a plain badge).
+    - `stone-kit`: the mountain's things (the old pine as a hero model, crooked pines, the wind shelters, the
+      cairn, the rock shelves, stones, cobbles, reindeer lichen).
+    - `soft-cards`: the soft cards as batches, the foreground redrawn for each place (the bog's is a mustard
+      smudge today, and shows more since the water stopped painting over it), wind in what grows, a gust,
+      falling needles, insects, dark skirts under trunks.
+    - Their brief is the second-wave one: up to 12 draw calls a picture may be spent on High and Mid, and what
+      would take a Low picture over 120 is marked `object.userData.rich = true`. The view lays what is rich
+      on a camera layer that Low does not see (`src/render/rich.ts`, #139, in checks when this was written).
+      Nothing is marked rich yet, so it is proven by its unit test only: look at the first rich thing on Low
+      and on High.
+  - **Not started, in the audit's order:** one haze for all three tiers, then shadows from the world, a rim
+    of light and the grade (step 7: do the haze before any more tuning of looks); the bog's hummocks with a
+    waterline, the street's kerb and road, the lawn's fringe and the decks' rim (the rest of step 8); the
+    bog's things with the dead pines and the crane, the garden's things with Moa's paper plane (step 9);
+    ledges that belong to their place (step 10); the mist and the lantern, the northern lights with rays, the
+    shop's inside, the drain and the awning (step 11).
+  - **Waits for Olov:** the house's front and home's rooms (garden rows 3, 5, 9, 10). They are the family's
+    house: `CLAUDE.md` asks for every picture of it open beside the model and for Olov to see it, and its
+    model lives in the private repository. Only the draw calls there (row 11) can be done without him.
   - **How the work is done:** a builder for each step in a worktree of its own, from the audit's rows, judged
     on before and after pictures on a tablet, a phone and Low. Blender runs without a window
     (`blender -b --factory-startup --python <script>`), which leaves the Blender that is open alone and lets
@@ -1370,10 +1443,21 @@
 
 **For the next session, in this order:**
 
-- **The look, step by step** (`docs/visual-audit.md`, "The order of the work"). After the steps in work:
-  one haze for all three tiers before any tuning of looks (pipeline rows 3 and 15); then each place's own
-  ground, the kits made in Blender (forest, stones, bog, garden, the old pine), shadows from the world, wind,
-  and home's rooms. Olov looks at each merged step on the site and says what is wrong with it.
+- **Olov looks at the look,** on a phone and on the computer: `?dev&course=granskog` (the floor, the pool at
+  the brook), `?dev&course=myren` (the water, the open mire), `?dev&course=berget` (the granite, the view
+  from the summit), `?dev&course=norrsken`, `?dev&course=byn` (the houses). Once #138 is merged: the moose in
+  the bog a little way in, about where the first big tussocks end
+  (`?dev&debug&course=myren&life=moose` brings it at once; `life=` is read only with `debug` in the
+  address), and the valley's windows at dusk. What his eyes are needed for: whether the moose's walk is right in motion, whether it is taken
+  for scenery, whether anything new draws the eye from the candy, and which place is now the weakest.
+- **Olov runs the benchmark on the devices Elof plays on:** `?dev&bench&course=granskog` plays by itself for
+  30 seconds and shows numbers as text to paste into a session. The draw-call budget was raised on an
+  estimate; this is the measurement that says whether it is right.
+- **The look, step by step** (`docs/visual-audit.md`, "The order of the work"). First: the moose's fix, its
+  checks green, and its merge (#138: the moose is not on the site until then); the hook for rich things
+  (#139); the three branches being built, each looked at in pictures, rebased, checked and merged. Then one
+  haze for all three tiers before any more tuning of looks (pipeline rows 3 and 15), shadows from the world,
+  and the rest as the state above lists it.
 - **Olov plays the layers and the puzzles,** on a phone and on the computer: `?dev&course=garden` (the window
   sills at once, the clothes line after the boulder), `?dev&course=granskog`, `?dev&course=myren`,
   `?dev&course=berget` and `?dev&course=byn`; and the puzzles at `?dev&debug&course=garden&at=79,0.01`,
@@ -1527,6 +1611,7 @@ The older list, still true where it is not struck:
 | Jump physics | Gravity follows from the plan's numbers: a held jump tops out at 1.1 EL and carries 2.2 EL at a run, so gravity is 22.3 EL/s². Letting go of Hoppa on the way up makes Elof 1.8 times heavier, which makes a tap top out at 0.6 EL. | Session, 3 Oct (`src/sim/constants.ts`) |
 | Hoppa's release | Not queued. Hoppa's held state is read once per frame, and that is enough for a tap inside one frame to be a hop (`src/app/game.ts`). The plan's §4.1 expected releases in the queue. | Session, 3 Oct |
 | planck's scale | `lengthUnitsPerMeter` is 0.2, as the plan says. planck doesn't scale its polygon skin with it, so a body rests 0.019 EL above the ground; the simulation takes that off Elof's reported height. | Session, 3 Oct (`src/sim/sim.ts`) |
+| Draw calls | 120 on Low, 160 on Mid, 200 on High, where it was 120 on every tier. The game is tuned for High, which the family's devices are expected to run; Low keeps the old number for older phones, and what is added for High stays out of Low's picture where it would not fit. A check that cannot say its tier is held to Low's. The numbers are in `tests/browser/budget.mjs`. They are an estimate (about 4 ms of a 10 ms frame at 200): the frame time on the devices, from `?bench`, is what will tell. | Olov, 5 Oct: "Raise the graphical threshold to enable for better graphics" |
 | Tone mapping | Neutral, not AgX. The plan allows either (§6.5). With AgX the sky and every flat colour turned grey once the picture went through the HDR buffer; Neutral keeps a colour as it was set. Olov judges the look at H1a. | Session, 3 Oct (`src/render/view.ts`) |
 | Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
 
@@ -1542,6 +1627,21 @@ The older list, still true where it is not struck:
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. |
 
 ## Known bugs
+
+- **A browser check fails now and then on GitHub:** `helper`, "visit and demonstration compile no new
+  shaders and fit the draw budget", at 844×390 on Low. It failed once for #133 and passed when the same commit
+  was run again; here it passes. Since #134 its name says what it measured, so the next failure tells
+  whether it was a shader or the draw calls.
+- **The bog's foreground card is a mustard smudge** over the lower right of several pictures (x 83, 94,
+  139). It was always there; the water used to paint over it. The `soft-cards` branch redraws it.
+- **Granskogen's pictures have about 30,000 triangles more** since the forest got its floor (208,000 at
+  x 106 on a tablet, 242,000 on a phone). Nothing holds triangles to a number. Most of a forest picture's
+  triangles are the 22 moss cushions a length behind the path at 80 triangles each; the `forest-kit` branch
+  makes a lighter one.
+- **The mountain's end walls are flat sheets,** warm pink in the sun, and its boulders, shelves and cairn
+  are still the old shapes until `stone-kit`.
+- **The dusk's lights are placed by eye** against the far hillside as it stands with `outlook: 30`; change
+  that or the hillside's `sink` and they need looking at (said at the data in `src/content/life.ts`).
 
 - Offline play is checked in Chromium with a real worker and the test server disconnected. Installed
   Safari/Home Screen updates and storage eviction have not been checked on the family's devices yet.
@@ -1700,3 +1800,9 @@ Choices the session made, for Olov to overrule if he wants:
    so the far houses are "not red". The audit asks for Falu red mixed half with the haze, and the tower as a
    small dark shape. The default: fields and a pale river, no red, no tower.
 9. **Reindeer on the mountain's ridge?** A winter sight here, not a September one. The default: ravens.
+10. **What do the devices say?** The draw-call budget went from 120 to 160 on Mid and 200 on High on my
+    estimate (about 4 ms of a 10 ms frame), not on a measurement. `?dev&bench&course=granskog` on the iPad and
+    on a phone, pasted into a session, settles it. The default: the numbers stand.
+11. **The house and home's rooms:** the audit asks for the house's front as a model and the kitchen and the
+    veranda rebuilt. They are the family's house, so they wait for a session with you at the screen, the
+    photos open beside the model.

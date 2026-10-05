@@ -74,11 +74,13 @@ describe("the forest's floor", () => {
     }
   });
 
-  it('is the forest alone: the lawn, the bog and the rock keep their own fronts', () => {
+  it('is the forest alone: the lawn and the bog keep their fronts, and the rock has its own', () => {
     const deepest = (course: string) => {
       const chapter = COURSES[course]!;
       let front = -Infinity;
-      for (const { shape } of bankShapes(chapter, groundOf(chapter.place!))) {
+      // A wooden floor runs on towards the camera in every place: this is about what grows.
+      for (const { kind, shape } of bankShapes(chapter, groundOf(chapter.place!))) {
+        if (kind === 'wood') continue;
         const at = shape.getAttribute('position');
         for (let i = 0; i < at.count; i++) front = Math.max(front, at.getZ(i));
       }

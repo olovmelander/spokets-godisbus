@@ -263,9 +263,9 @@ The forest's layers, and after them the garden's:
 | Layer | What it is in the garden | How it is made |
 | --- | --- | --- |
 | L0 Backdrop | Morning blue above, pale at the horizon, a warm glow to the left | The same gradient picture, in the garden's colours |
-| L1 Far scenery | White clouds that drift; blue hills of forest; the forest's edge with the neighbours' roofs in front of it; birches in their first yellow over a hedge; the garden's own leaves far out of focus | Five pictures, made as the forest's |
+| L1 Far scenery | White clouds that drift; blue hills of forest, one a long back with a knob; the valley's far side, with fields in strips, the river at their foot, the neighbours' roofs and a spruce forest on its crest; birches in their first yellow over a low hedge; the garden's own leaves far out of focus | Five pictures, made as the forest's |
 | L2 Mid-ground | **The house's red wall** with its cover strips, a white corner board and white-framed windows; a birch now and then | The wall is a small drawn picture, repeated, 21 EL behind the path; a chapter says where the house stands (`house`) |
-| L3 Play plane | **The deck:** boards 0.8 EL wide with dark gaps, each its own tone, a straight front edge and the dark under it. **The lawn:** a jungle of grass behind the path, stubble where he walks, dew, dandelions as tall as he is, clover, the birch's yellow leaves. Dry earth under the deck, a grey boulder, Pappa's pale shavings, the dark hedge. | A chapter marks what a stretch of ground is made of (`surfaces`); each kind has its tones and its edge. Nothing grows on what is built. |
+| L3 Play plane | **The deck:** boards 0.8 EL wide with dark gaps, each its own tone. A wooden floor (the deck, a room at home, the shop) runs on towards the camera, under the picture's lower edge, a little darker the nearer it comes; it has no front face. Only the bog's walk of planks has a front edge: board ends, a rim board along the path, and the peat under it. **The lawn:** a jungle of grass behind the path, stubble where he walks, dew, dandelions as tall as he is, clover, the birch's yellow leaves. Dry earth under the deck, a grey boulder, Pappa's pale shavings, the dark hedge. | A chapter marks what a stretch of ground is made of (`surfaces`); each kind has its tones and its edge. Nothing grows on what is built. |
 | L3, overhead | **The lower deck above him:** boards and joists, with the sun falling through between the boards as stripes on the earth | A chapter says where (`roofs`) |
 | L4 Foreground | Soft grass along the bottom, brighter than the forest's | The same cards, drawn brighter |
 | Effects | Dew that flashes near the ground, only where something grows | The motes, kept low and made to twinkle |
@@ -273,12 +273,33 @@ The forest's layers, and after them the garden's:
 The bog, the mountain and the summit at dusk use the same layers with their own things: sphagnum cushions,
 sedge, dwarf birch, cloudberry leaves and cranberries; reindeer lichen, crowberry, dry grass and bare
 boulders. Two things are different in the open:
-- **The far scenery is the horizon.** Over the bog: clouds, the mountain in mist, low hills of forest, the
-  forest's edge, and the nearest spruces and bog pines, dark against the mist. From the mountain: clouds
-  and four lines of ridges with haze in the valleys between them, the nearest with the tops of its spruces.
-  At dusk the same ridges are dark blue, and a few windows are lit far below.
+- **The far scenery is the horizon.** Over the bog: long level clouds, the mountain in mist (a long back
+  that rises to a knob), low hills of forest, a pine wood as a low band across the mire, and nearest one
+  group of spruces, dark against the mist, with small crooked bog pines and silver dead ones. The middle of
+  the nearest picture is open mire. From the mountain: the land lies under him. At its foot the nearer
+  ridges stand high; as he climbs they sink, until thin ridges lie one behind the other close over the
+  horizon, each paler, under a sky that fills half the picture, with one long back and its knob over them
+  and the tops of the nearest spruces at the granite's edge. Under the crests the valley is painted, for
+  the flight: a lake the colour of the sky, a mire, a river's thread, clear-cuts, and the slope falling
+  away with its spruces. At dusk the same ridges are dark blue, and a few windows are lit far below.
+- **The sun is a veiled disc** in its glow over the bog and from the mountain, kept round whatever shape
+  the picture has; from the mountain the hour moves on after the flight, towards rose and a dimmer sky.
+  Elsewhere the sun stands too high to be seen, and there is no moon.
 - **The bog's ground is islands.** It goes down into the water behind the path, and the water lies as far
   back as the eye reaches. The soft tussocks are mounds of paler moss.
+
+**Water** (`src/render/water.ts`) is one mesh in a chapter and one shader on every tier:
+- **It mirrors its place.** The backdrop's sky, and the far layers' pictures standing on their heads, hinged
+  where the nearest of them meets the water; a street puddle mirrors the house fronts behind it instead. The
+  mirror is one small picture built at load. Its own colour is the place's, dimmed: the sky in the water is
+  always darker than the sky.
+- **It has no edge behind the path.** It thins out into the haze, or ends at a shore. The bog's lies in front
+  of its tussocks and behind the whole chapter; the forest's pool fades into the forest; the village's puddle
+  is a hand deep, with asphalt under it and a wet far shore.
+- **In front it is cut,** as the ground is: the cut face is the water's own body, darker with depth, with a
+  pale line at the surface and no caustic lines on it. Those lie on what is under water, on Mid and High.
+- **Its ripples are small and die out with distance,** and all but stand with reduced motion. Mid adds the
+  low sun's glitter under the sky's glow; High also shows what lies just under the surface.
 
 **The far layers** (`src/render/backdrop.ts`). This is the parallax:
 - A place outdoors has four or five, one behind the other, 32 to 90 EL behind the path. Each is one card that
@@ -286,8 +307,14 @@ boulders. Two things are different in the open:
   nearest holds 1 and stands still in the world; the next ones hold about 0.65, 0.4 and 0.2; the sky holds
   0.08, and its clouds drift by themselves. Seen from the path, the nearest passes at about a quarter of the
   path's speed and the farthest hills at about a fortieth.
-- Every layer stays at the height of his eyes however high he climbs, and sinks by a small part of the climb
-  (`sink`), the nearer the more: nearer hills go down under farther ones.
+- Every layer stays at the height of his eyes however high he climbs, and sinks by a part of the climb
+  (`sink`), the nearer the more: nearer hills go down under farther ones. On the mountain the nearest slope
+  sinks by a third of the climb and 9 EL at most, the farthest ridges by a twentieth. A chapter that begins
+  on a height says how high (`outlook`): the finale stands on Berget's summit from its first step.
+- A tree far away is one of four: a Norrland spruce, a narrow spire in tiers that droop, with a bough
+  missing here and there; a pine with a bent stem, warm near the top, and a few flat plates for a crown; a
+  dead pine, silver, with crooked hanging limbs; a birch, white with dark marks, in yellow. A forested
+  ridge has spruce tops for a skyline, and a hill is a long back drawn by hand, not a wave.
 - A picture is 512 by 256 pixels. Its shapes are drawn whole, in colours already mixed with the place's haze,
   and then blurred by halving the picture and doubling it again; a band of mist lies at its foot. Its top row
   is clear and its bottom row is its foot, and the card repeats both, so no layer has an edge.
@@ -317,9 +344,9 @@ From plan §5.4, and one more for the extra chapter. All are built, each as far 
 | Gården, 10:00 | Low warm sun, dew sparkle, a blue morning sky | Lawn in four greens (`#3f6a22`, `#5c962b`, `#7fb238`, `#aecb52`), deck wood `#b49a78`, shavings `#e3cb9b` | The house in Falu red `#8f2d22` with white trim; dandelion yellow | **yes** |
 | Granskogen, noon | Shafts of pale gold through cool blue-green shade | Moss in three greens and a gold (`#35521f`, `#587a27`, `#7f9a30`, `#b3ae45`), rust-brown needles | Red lingonberries; bark `#7d6753` | **yes** |
 | Myren, late afternoon | Low gold sun, mist sheets over the water | Sphagnum in rust-red, green and gold (`#6e3226`, `#8f4d2b`, `#7d8a36`, `#bca94c`), straw sedge, dark peat water `#34423f` | Red dwarf birch, orange cloudberry leaves, cranberries, grey dead pines; the forest and the mountain in mist at the horizon | **yes**; Mamma's lamp not |
-| Berget, golden hour | Pink-orange sky over blue-violet ridges, haze in the valley | Grey granite (`#8a8d94` to `#cfccc8`), white reindeer lichen | Crowberry, dry grass, bare boulders | **yes**; the crooked pines not |
+| Berget, golden hour | Pink-orange sky over blue-violet ridges, haze in the valley | Grey granite (`#8f939d` to `#d6d5d6`) with its own grain: pale and grey grains, dark mica, hairline cracks, rings of crust lichen. Cut hard, never rounded: a pale edge where he walks, then down in two ledges, in blocks with joints between them; walls in courses. Its shade is blue-violet (`#46527e`), and only the sun is warm. White reindeer lichen | Crowberry, dry grass, bare boulders | **yes**; the crooked pines not |
 | Final, blue hour to night | The first stars; then night and the green northern lights | The same granite and lichen, in blue | The candy and the ghost stay in their own colours | **yes**; the headlamps and the violet not |
-| Byn (the extra chapter), a Saturday morning in October | A clear cool sky, a low sun along the street | Dark asphalt (`#4c4f56` to `#70727a`), pale paving slabs, the drain's iron; wooden boards inside the shop | House fronts in the village's own colours (ochre yellow, white, Falu red, pale plaster) with white trim, striped awnings, warm shop windows; yards with a red picket fence and a hedge, and the far village over them: red tin roofs, birches, spruces, blue hills; a dark green lamp post; yellow birch leaves; a blue bicycle. **No shop is a real one: a picture on each sign, no letters, no number.** | **a first street and shop**: drawn fronts, anonymous passing shoes/calves and an unmarked slow car behind the path; an open doorway leads to a warm striped room with giant jars of sweets and a paper bag. Plain code stand-ins, with no collisions; detailed people/vehicle models still need Blender. |
+| Byn (the extra chapter), a Saturday morning in October | A clear cool sky, a low sun along the street | Dark asphalt (`#4c4f56` to `#70727a`), pale paving slabs, the drain's iron; wooden boards inside the shop | Wooden houses in the village's own colours (ochre yellow, white, pale plaster, and one in Falu red on the far side of the crossing, in shade) with white trim, striped awnings, warm shop windows; a yard with a weathered grey fence, a hedge and a birch, and the far village over it: weathered tin roofs, birches, spruces, blue hills; a dark green lamp post; yellow birch leaves; a blue bicycle. Red is the candy's and the hook's here too: the fence, the car and the far roofs are not red. **No shop is a real one: its wares in its window and a carved sign, no letters, no number.** | **a street of houses and a shop**: each house is put together from a kit of parts modelled in Blender (`art/blender/village.py`: a stone foot with a drip board, boards with cover strips, casings, a door behind its step, a downpipe, a shop window with its wares) where the chapter says it stands (`street`): a near wall 7 EL behind the path, or 20 EL off across the crossing. The walls are lit, and the shop windows give off light. Anonymous passing shoes/calves and an unmarked slow car go behind the houses and are seen on the crossing; an open doorway leads to a warm striped room with giant jars of sweets and a paper bag. Plain code stand-ins, with no collisions; detailed people/vehicle models still need Blender. |
 | At home: the kitchen at 09:00, the veranda at 21:00 | Warm, low sun; in the evening dim and candle-warm, with the northern lights in the windows | Floor boards, a pale panelled wall close behind | White window frames; **Pappa's shelf of figures, with the first place in the row empty in the prologue and filled in the epilogue**; the Saturday bag; shavings | **a first room**: no table, candles or bowls, and no people |
 
 ### 2.4 The golden frames
@@ -332,6 +359,11 @@ Each holds Elof, a red hook ring and candy, and is drawn by the game itself.
 2. **The deck edge: built.** `?course=look-deck`. The deck with a step, the red wall and a window behind it,
    the hose down, the earth under the lower deck with a hook in the stripes of sun, and the lawn beyond.
    Kapitel 1 is dressed in the same look: `?dev`.
+3. **The village street: built.** `?course=look-street`. It is 61 EL: the pavement under the yarn shop's
+   window, the kerb, one bar of the drain, the crossing with a yard and the sky on its far side, and the
+   bakery's wall close behind him: the bicycle with the hook on its pedal over the cellar window's well, the
+   window where the drops fall, and the door behind its granite step. The extra chapter is dressed in the
+   same look: `?dev&course=byn`.
 
 ### 2.5 The H1a board: what Olov judges
 
@@ -379,9 +411,10 @@ Each should be recognisable at phone size, and none is final.
 - Plates rendered in Blender after the landscape references, and scanned CC0 materials from Poly Haven for
   moss, bark and wood. What is there now is drawn in code and reads as stylized, not as photographed.
 - On High: bloom on sparkles, and the half-resolution blur by depth. On Low: the grade inside the materials.
-- Water with glitter, the things on rails and the helpers in the place's style: they are still greybox boxes.
-- In the bog, the mountain and the final: pines with crowns (a bare trunk reads as a pole, so the mountain
-  has none yet), the valley below the crane flight, Mamma's lamp, the headlamps.
+- The things on rails and the helpers in the place's style: they are still greybox boxes. The water mirrors
+  the sky and the far scenery, and not yet what stands in it: a tussock, a trunk, him.
+- In the bog, the mountain and the final: pines with crowns on the play plane (a bare trunk reads as a
+  pole, so the mountain has none yet; the far scenery has them), Mamma's lamp, the headlamps.
 - In the garden: long shadows, the hose and the lost things under the deck, the birch's crown, the workshop.
 - What the windows show at home does not move. The finale's sky, distant layers and haze now share the
   same nightfall; its stars are separate round points, unaffected by the sky gradient's aspect ratio.
