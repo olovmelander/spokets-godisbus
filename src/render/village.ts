@@ -161,7 +161,7 @@ const PASSAGE = { near: -10.7, wide: 5.4, post: 0.5 };
 /** How far back a house's side wall goes: no further than where the picture's top edge is still under its top. */
 const SIDE = { near: 17, far: 8 };
 /** The colour of each shop's door. */
-const DOORS: Record<StreetGoods, string> = { candy: '#7a5632', bread: '#4f5a60', boots: '#5d4a36', yarn: '#6a4a3a' };
+const DOORS: Record<StreetGoods, string> = { candy: '#7a5632', bread: '#6b8494', boots: '#5d4a36', yarn: '#6a4a3a' };
 /** How much of its colour a corner gives off where the kit says it glows: the lamps in a shop window. */
 const GLOW = 2.2;
 
