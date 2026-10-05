@@ -1,7 +1,11 @@
-import { BoxGeometry, CylinderGeometry, DynamicDrawUsage, Group, InstancedMesh, MeshStandardMaterial, Object3D, SphereGeometry, type BufferGeometry } from 'three';
+import {
+  BoxGeometry, Color, CylinderGeometry, DynamicDrawUsage, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D,
+  SphereGeometry, type BufferGeometry,
+} from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { LEDGE_THICK } from '../sim/constants';
 import type { Ledge, LedgeLook } from '../sim/types';
+import { ROD_COLOUR, rodShape, type Rod } from './lines';
 
 /**
  * The ledges (docs/level-design.md): thin floors that he jumps up through and stands on. Each stands just
@@ -10,8 +14,13 @@ import type { Ledge, LedgeLook } from '../sim/types';
  *
  * Nothing floats: a leaf has its stalk, a bough and a plate of bark their young stem, a shelf of rock its
  * pillar, a plank the batten that holds it to the wall, a trestle its legs. What holds a ledge is part of its
- * shape and goes far down, into the ground under it, so every look is one instanced mesh: a chapter's ledges
- * cost one draw call for each look it uses, however many there are.
+ * shape and goes far down, into the ground under it.
+ *
+ * A chapter's ledges lie in a few places far apart, one for each side way. **A place is one mesh:** its
+ * ledges of every look, what holds each of them, and the cords, lines and poles its rings hang from, all one
+ * shape with their colours on their corners. It is drawn only while it is in sight. So a side way costs a
+ * picture one draw call while he is at it and none while he is not, however many ledges it has. A ledge that
+ * waits for a flag grows out when the flag is set: those few are drawn as instances beside the rest.
  */
 const DEPTH = 0.9;
 /** How far down a stalk, a stem or a pillar goes: further than any ledge is above its ground. */
@@ -58,11 +67,12 @@ const LOOKS: Record<LedgeLook, { colour: string; roughness: number; flat?: boole
       upright(0.16, 0.26, 9, 2.6, -0.72),
     ),
   },
-  // A plate of bark standing out from a stem.
+  // A plate of bark standing out from a stem: six-sided, with a corner to each side, so that it is as wide
+  // as the ledge he stands on.
   bark: {
     colour: '#8a735c', roughness: 0.95, flat: true,
     shape: () => together(
-      new CylinderGeometry(0.5, 0.42, LEDGE_THICK, 6).scale(1, 1, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2),
+      new CylinderGeometry(0.5, 0.42, LEDGE_THICK, 6).rotateY(Math.PI / 6).scale(1, 1, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2),
       upright(0.17, 0.27, 9, 2.6, -0.78),
     ),
   },
@@ -80,29 +90,91 @@ const LOOKS: Record<LedgeLook, { colour: string; roughness: number; flat?: boole
 export const LEDGE_LOOKS = Object.keys(LOOKS) as LedgeLook[];
 /** How long a ledge that waits for a flag takes to come into being. */
 const GROW = 0.35;
+/** Ledges and rods further apart than this are in different places: no side way has a gap that wide. */
+const APART = 10;
 
-export function buildLedges(ledges: readonly Ledge[]) {
+const tint = new Color();
+/** A shape with one colour on all its corners. */
+function painted(shape: BufferGeometry, colour: string): BufferGeometry {
+  tint.set(colour);
+  const corners = shape.getAttribute('position').count;
+  const colours = new Float32Array(corners * 3);
+  for (let i = 0; i < corners; i++) colours.set([tint.r, tint.g, tint.b], i * 3);
+  shape.setAttribute('color', new Float32BufferAttribute(colours, 3));
+  return shape;
+}
+
+/** A ledge as a shape where it lies: as wide as it is, with what holds it, in its look's colour. */
+function ledgeShape(ledge: Ledge): BufferGeometry {
+  const how = LOOKS[ledge.look];
+  const shape = how.shape().scale(ledge.width, 1, 1).translate(ledge.x, ledge.y, 0);
+  // A look with flat faces: the shape has no shared corners, so each face gets its own normal.
+  if (how.flat) shape.computeVertexNormals();
+  return painted(shape, how.colour);
+}
+
+interface Piece { from: number; to: number; ledge?: number; rod?: Rod }
+
+/**
+ * The places a chapter's ledges and rods lie in: a run of them with no gap wider than `APART`, one for each
+ * side way. Each is given as the numbers of its ledges and as its rods.
+ */
+export function ledgePlaces(ledges: readonly Ledge[], rods: readonly Rod[] = []): { ledges: number[]; rods: Rod[] }[] {
+  const pieces: Piece[] = [
+    ...ledges.map((ledge, i) => ({ from: ledge.x - ledge.width / 2, to: ledge.x + ledge.width / 2, ledge: i })),
+    ...rods.map((rod) => ({ from: Math.min(rod.from.x, rod.to.x), to: Math.max(rod.from.x, rod.to.x), rod })),
+  ].sort((a, b) => a.from - b.from);
+  const places: { ledges: number[]; rods: Rod[] }[] = [];
+  let reach = -Infinity;
+  for (const piece of pieces) {
+    if (piece.from - reach > APART) places.push({ ledges: [], rods: [] });
+    const here = places.at(-1)!;
+    if (piece.ledge !== undefined) here.ledges.push(piece.ledge);
+    if (piece.rod) here.rods.push(piece.rod);
+    reach = Math.max(reach, piece.to);
+  }
+  return places;
+}
+
+export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = []) {
   const group = new Group();
   group.name = 'ledges';
   const place = new Object3D();
   /** How far each ledge has come into being, from 0 to 1. */
   const there: number[] = ledges.map((ledge) => (ledge.needs === undefined ? 1 : 0));
-  const batches = LEDGE_LOOKS.map((look) => ({ look, at: ledges.flatMap((ledge, i) => (ledge.look === look ? [i] : [])) }))
-    .filter((batch) => batch.at.length > 0)
-    .map(({ look, at }) => {
+  /** One material for every place: the colours are on the corners. */
+  const solid = new MeshStandardMaterial({ vertexColors: true, roughness: 0.88 });
+  const waiting: { mesh: InstancedMesh; at: number[] }[] = [];
+
+  for (const [n, here] of ledgePlaces(ledges, rods).entries()) {
+    // What is always there: one shape, one mesh, drawn while the place is in sight.
+    const always = here.ledges.filter((i) => ledges[i]!.needs === undefined);
+    const parts = [...always.map((i) => ledgeShape(ledges[i]!)), ...here.rods.map((rod) => painted(rodShape(rod), ROD_COLOUR))];
+    if (parts.length > 0) {
+      const mesh = new Mesh(mergeGeometries(parts), solid);
+      for (const part of parts) part.dispose();
+      mesh.name = `ledges:${n}`;
+      mesh.geometry.computeBoundingSphere();
+      mesh.userData.ledges = always;
+      mesh.userData.rods = here.rods.length;
+      group.add(mesh);
+    }
+    // Those that wait for a flag grow out when it is set: instances, one mesh for each look among them.
+    for (const look of LEDGE_LOOKS) {
+      const at = here.ledges.filter((i) => ledges[i]!.needs !== undefined && ledges[i]!.look === look);
+      if (at.length === 0) continue;
       const how = LOOKS[look];
       const mesh = new InstancedMesh(how.shape(), new MeshStandardMaterial({ color: how.colour, roughness: how.roughness, flatShading: how.flat === true }), at.length);
-      mesh.name = `ledges:${look}`;
-      // Ledges lie all along a chapter: as a whole they are never outside the picture.
-      mesh.frustumCulled = false;
+      mesh.name = `ledges:${n}:${look}`;
       mesh.instanceMatrix.setUsage(DynamicDrawUsage);
       mesh.userData.ledges = at;
       group.add(mesh);
-      return { mesh, at };
-    });
+      waiting.push({ mesh, at });
+    }
+  }
 
   const write = (): void => {
-    for (const { mesh, at } of batches) {
+    for (const { mesh, at } of waiting) {
       for (const [slot, i] of at.entries()) {
         const ledge = ledges[i]!;
         const k = there[i]!;
@@ -112,6 +184,8 @@ export function buildLedges(ledges: readonly Ledge[]) {
         mesh.setMatrixAt(slot, place.matrix);
       }
       mesh.instanceMatrix.needsUpdate = true;
+      // It is drawn while its place is in sight, whatever size its ledges have come to.
+      mesh.computeBoundingSphere();
     }
   };
   write();
@@ -119,12 +193,13 @@ export function buildLedges(ledges: readonly Ledge[]) {
   /** A ledge that waits for a flag grows out once the flag is set. Nothing is written while nothing changes. */
   function update(flags: ReadonlySet<string>, dt: number): void {
     let changed = false;
-    for (const [i, ledge] of ledges.entries()) {
-      if (ledge.needs === undefined) continue;
-      const want = flags.has(ledge.needs) ? 1 : 0;
-      if (there[i] === want) continue;
-      there[i] = want > there[i]! ? Math.min(1, there[i]! + dt / GROW) : Math.max(0, there[i]! - dt / GROW);
-      changed = true;
+    for (const { at } of waiting) {
+      for (const i of at) {
+        const want = flags.has(ledges[i]!.needs!) ? 1 : 0;
+        if (there[i] === want) continue;
+        there[i] = want > there[i]! ? Math.min(1, there[i]! + dt / GROW) : Math.max(0, there[i]! - dt / GROW);
+        changed = true;
+      }
     }
     if (changed) write();
   }
