@@ -140,6 +140,18 @@ again keeps its story's flags, so its scenes do not play twice and need no skip.
 family 10.6 s, the lift 10.2 s; Pappa's joke now begins only when Elof sets off towards the ghost). Other help
 points keep the box figures.
 
+## Done in the endings pull request
+
+**Every chapter ends on a coda and a storybook page** (steps 1 and 2 below). At a chapter's goal the picture looks
+back over the way he came and up into the sky for about three seconds, while the tune closes on its last two bars,
+slower, and a held note, and one of the family answers from afar in their three notes. The page comes after it:
+the coda's last picture glued in like a photo, the chapter's name, what comes next as its caption, and Moa's map
+with the way on drawn in red crayon; the tally after that. Every chapter after the prologue opens on a time card
+on Moa's paper (plan §4.9). Gården opens without Pappa's lines from off screen.
+
+**Not as planned:** the prologue still hands to Gården through its page (now the storybook page), not under its
+title alone (`prologue.md` 17).
+
 ## The order of the work
 
 One pull request per visible outcome. None raises `RELEASED_CHAPTER` or starts the next chapter's content. The
