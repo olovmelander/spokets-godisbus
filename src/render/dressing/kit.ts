@@ -162,6 +162,8 @@ function kit() {
   const profile = [[0, -0.5], [0.13, -0.42], [0.19, -0.2], [0.2, 0.05], [0.15, 0.3], [0.07, 0.46], [0, 0.5]];
   return {
     ball: new SphereGeometry(1, 8, 6),
+    // For what is a few pixels across, a leaf or a berry: under half the ball's corners.
+    bead: new SphereGeometry(1, 6, 4),
     blade: blade(),
     cone: new LatheGeometry(profile.map(([r, y]) => new Vector2(r!, y!)), 9),
     needle: new BoxGeometry(1, 0.012, 0.014),
