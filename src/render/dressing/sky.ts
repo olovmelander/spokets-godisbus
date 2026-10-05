@@ -3,22 +3,69 @@ import { drawn, sequence, type PlaceLook } from './kit';
 
 // --- L0: the backdrop ------------------------------------------------------------------------------------
 
+/**
+ * Where the sun is in the picture at all, it is a veiled disc inside its glow: low over the bog in the late
+ * afternoon, and lower still from the mountain at the golden hour, where the far ridges pass in front of it.
+ * `x` and `y` are its place from the picture's left and top (0 to 1), `wide` its width as a part of the
+ * picture's height (1.3 degrees of the camera's 30 is 0.043). Elsewhere the sun stands too high to be seen,
+ * or has set, and there is no moon: it would fight the northern lights.
+ */
+const SUNS: Partial<Record<PlaceLook['id'], { x: number; y: number; wide: number; colour: [number, number, number] }>> = {
+  bog: { x: 0.33, y: 0.325, wide: 0.05, colour: [255, 252, 238] },
+  mountain: { x: 0.31, y: 0.37, wide: 0.055, colour: [255, 244, 214] },
+};
+
+/** The sky's picture: twice as wide as it is tall, as a screen is, so that a small sun has texels enough. */
+const WIDE = 512;
+const TALL = 256;
+
+/** The sky that is up is drawn again when the window changes shape: the picture is stretched over it. */
+let again: (() => void) | null = null;
+if (typeof window !== 'undefined') window.addEventListener('resize', () => again?.());
+
 export function backdrop(look: PlaceLook): CanvasTexture {
-  return drawn(256, 256, (c) => {
-    const down = c.createLinearGradient(0, 0, 0, 256);
+  const sun = SUNS[look.id];
+  const paint = (c: CanvasRenderingContext2D) => {
+    const down = c.createLinearGradient(0, 0, 0, TALL);
     down.addColorStop(0, look.sky.top);
     down.addColorStop(0.42, look.sky.middle);
     down.addColorStop(0.7, look.sky.middle);
     down.addColorStop(1, look.sky.bottom);
     c.fillStyle = down;
-    c.fillRect(0, 0, 256, 256);
+    c.fillRect(0, 0, WIDE, TALL);
     // Where the sun stands behind the trees: a wide soft glow, up to the left.
+    c.save();
+    c.scale(WIDE / 256, TALL / 256);
     const glow = c.createRadialGradient(70, 95, 4, 70, 95, 170);
     glow.addColorStop(0, look.sky.glow);
     glow.addColorStop(1, 'rgba(255,255,255,0)');
     c.fillStyle = glow;
     c.fillRect(0, 0, 256, 256);
-  });
+    c.restore();
+    if (!sun) return;
+    // The disc, squashed by the window's shape so that it is round on the screen. Its edge is soft, and a
+    // little of its light lies round it: a sun seen through haze.
+    const shape = window.innerWidth / Math.max(1, window.innerHeight);
+    const r = (sun.wide / 2) * TALL;
+    c.save();
+    c.translate(sun.x * WIDE, sun.y * TALL);
+    c.scale(WIDE / TALL / shape, 1);
+    const [red, green, blue] = sun.colour;
+    const disc = c.createRadialGradient(0, 0, 0, 0, 0, r * 3);
+    disc.addColorStop(0, `rgba(${red},${green},${blue},1)`);
+    disc.addColorStop(0.29, `rgba(${red},${green},${blue},1)`);
+    disc.addColorStop(0.39, `rgba(${red},${green},${blue},0.4)`);
+    disc.addColorStop(1, `rgba(${red},${green},${blue},0)`);
+    c.fillStyle = disc;
+    c.fillRect(-r * 3, -r * 3, r * 6, r * 6);
+    c.restore();
+  };
+  const texture = drawn(WIDE, TALL, paint);
+  again = sun ? () => {
+    paint((texture.image as HTMLCanvasElement).getContext('2d')!);
+    texture.needsUpdate = true;
+  } : null;
+  return texture;
 }
 
 /**

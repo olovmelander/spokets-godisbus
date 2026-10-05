@@ -6,6 +6,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -145,7 +146,7 @@ try {
     await until(state, s => s.pointing.last === 'spot', 'far star only reacts');
     await frames(page, 10);
     check('a distant star never starts its action or approaches a drop', !(await state()).flags.includes('star') && (await state()).x === where && !(await state()).pointing.walking);
-    check('reactions add no shaders and stay within the draw-call budget', (await info()).programs === programs && (await info()).drawCalls <= 120);
+    check('reactions add no shaders and stay within the draw-call budget', (await info()).programs === programs && withinDraws((await info()).drawCalls, (await info()).tier));
     await finish();
   }
 

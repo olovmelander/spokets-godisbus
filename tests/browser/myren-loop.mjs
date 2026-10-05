@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/myren-loop'); mkdirSync(shots, { recursive: true });
@@ -83,7 +84,7 @@ try {
     });
     check(`${name}: family reunion unlocks the optional call, and an early press cannot do it`, result.locked && result.reunion && result.offered);
     check(`${name}: Mamma's raised boardwalk meets the visible landing`, result.ready && result.visible);
-    check(`${name}: Low and High remain below 120 draws with warmed shaders`, result.drawn.every((info) => info.drawCalls <= 120 && info.stable));
+    check(`${name}: Low and High remain within the draw budget with warmed shaders`, result.drawn.every((info) => withinDraws(info.drawCalls, info.tier) && info.stable));
     check(`${name}: pause freezes boardwalk and simulation`, result.frozen);
     await picture(page, join(shots, `${name}-reunion-high.png`));
     const loop = await page.evaluate(() => {
@@ -99,7 +100,7 @@ try {
         once: p.sim.said.filter((id) => id === 'bog:light-return').length === 1,
         noDeparture: !p.sim.flags.has('crane') && !p.sim.flags.has('goal') };
     });
-    check(`${name}: the lantern return is real, readable and reusable without jumping`, loop.west && loop.returned && loop.lit && loop.east && loop.twice && loop.flights === 0 && loop.bubbles === 0 && loop.once && loop.noDeparture && loop.maxDraws <= 120, loop);
+    check(`${name}: the lantern return is real, readable and reusable without jumping`, loop.west && loop.returned && loop.lit && loop.east && loop.twice && loop.flights === 0 && loop.bubbles === 0 && loop.once && loop.noDeparture && withinDraws(loop.maxDraws), loop);
     const restored = await page.evaluate(() => {
       const p = window.probe;
       const game = new p.f.Game(p.f.myren, p.f.simOptions(p.f.settingsFor('lugnt')), { checkpoint: 8, flags: [...p.sim.flags], collected: p.sim.collected.flatMap((value, i) => value ? [i] : []), placed: p.sim.placed });

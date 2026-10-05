@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { picture } from './picture.mjs';
+import { withinDraws } from './budget.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/finale-stage'); mkdirSync(shots, { recursive: true });
 const virtual = '\0finale-stage-fixture';
@@ -98,7 +99,7 @@ try {
     check(`${name}: pausing holds the shoulder pose and GPU resources`, JSON.stringify(pause.elof)===JSON.stringify(ride.elof) && JSON.stringify(pause.pappa)===JSON.stringify(ride.pappa) && pause.geometries===ride.geometries && pause.textures===ride.textures);
     await picture(page, join(shots,`${name}-home.png`));
     const after=await page.evaluate(()=>{const p=window.probe;p.advance(3);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});
-    check(`${name}: the carried group follows the path with warmed shaders and bounded draws`, after.player[0]>ride.player[0]+3 && Math.abs(after.pappa[0]-after.player[0])<.01 && Math.abs(after.carving[0]-after.elof[0])<1.1 && after.programs===ride.programs && after.drawCalls<=120);
+    check(`${name}: the carried group follows the path with warmed shaders and bounded draws`, after.player[0]>ride.player[0]+3 && Math.abs(after.pappa[0]-after.player[0])<.01 && Math.abs(after.carving[0]-after.elof[0])<1.1 && after.programs===ride.programs && withinDraws(after.drawCalls, after.tier));
     const late=await page.evaluate(()=>{const p=window.probe;p.advance(4.4);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});
     check(`${name}: eight seconds into home, ghost and Pappa shadows follow terrain support`, late.mode==='ride' && late.player[0]>60 && late.player[1]<-6 &&
       [late.ghost,late.pappa].every(at=>late.shadows.some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-(late.groundY+.018))<.01)));

@@ -1865,6 +1865,7 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
   | | Low | Mid | High |
   | --- | --- | --- | --- |
   | Pixel cap | 1.0 Mpx | 1.6 Mpx | 2.6 Mpx |
+  | Draw calls a picture | 120 | 160 | 200 |
   | Post | none; grading in the materials | HDR output with the one grading pass | the same, plus half-resolution bloom and one half-resolution depth blur on the mid-ground. No SMAA and no full depth-of-field pass on phones. |
   | Foliage density | 40% | 70% | 100% |
   | Shadows | a blob under each character | blob plus contact darkening | plus one 1024² shadow map for characters only |
@@ -2174,7 +2175,10 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
    - any word from the denylist (surnames, house number, street address, school, account names) in the diff, in
      `dist/`, or in glTF `extras`. The list is stored as an Actions secret, so it never enters the repository.
 9. **Draw-call budgets:** in CI, each golden frame and chapter tour view stays within its budget of draw calls
-   and triangles from `renderer.info`. The counts don't depend on GPU speed, so software rendering measures them
+   and triangles from `renderer.info`. The draw calls are by tier (§6.5; `tests/browser/budget.mjs`): 120 on
+   Low, 160 on Mid, 200 on High. They were 120 on every tier until Olov raised them on 5 October 2026 to make
+   room for better graphics; Low keeps the old number, and what is added for High stays out of Low's picture
+   where it would not fit. Gate 5, measured on the devices, says whether the numbers are right. The counts don't depend on GPU speed, so software rendering measures them
    exactly.
 
 ### 6.13 Tests

@@ -17,7 +17,7 @@ import { observeGpu, type GpuMemory } from './gpu-memory';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
-import { nightBrightness } from './backdrop';
+import { evening, nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
 import { createDepthBlur } from './depth-blur';
@@ -278,10 +278,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.group, sideTrail.group, ledges.group, glitter.group);
-  const water = createWater(chapter, place?.water ?? null, place?.sun.from);
-  const waterScene = new Scene();
-  waterScene.fog = scene.fog;
-  waterScene.add(water.group);
+  // The water mirrors its place: the backdrop's sky, and the far layers' pictures standing on their heads.
+  const farCards: Object3D[] = [];
+  dressing?.group.traverse((object) => { if (object.name.startsWith('far-')) farCards.push(object); });
+  const water = createWater(chapter, place?.water ?? null, place?.sun.from,
+    place && dressing ? { place: place.id, sky: place.sky, far: farCards, dressing: dressing.group, street: (x) => heightOfGroundAt(chapter, x) } : undefined);
+  // It is drawn in the scene's own pass, after what stands in it and the far layers, and before what
+  // drifts over it (the bog's mist sheets, the shafts of light, the dust): its render order says where.
+  scene.add(water.group);
   const tussockMeshes = buildTussocks(chapter, place?.tussock ?? null);
   const berryMeshes = buildBerries(chapter);
   for (const berry of berryMeshes) scene.add(berry);
@@ -600,8 +604,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       water.applyCaustics(scene);
       characterShadows.prepareReceivers();
       materialGrade.apply(scene);
-      materialGrade.apply(waterScene);
-      for (const layer of [scene, waterScene]) layer.traverse((object) => {
+      scene.traverse((object) => {
         // What is out of the picture for having nothing to draw (./idle.ts) is drawn in these frames all the
         // same, as it is: at no size, or unseen. Its shader, its shape and its picture are made here, not in play.
         if (object.userData.idle === true && !object.visible) {
@@ -619,17 +622,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         // Frustum warmup alone skips hidden parents, including the family revealed at nightfall.
         // compile traverses their materials without drawing them, using this tier's actual target.
         renderer.compile(scene, camera);
-        renderer.compile(waterScene, camera);
       }
-      // A normal (non-XR) render target uses linear output without material tone mapping.
+      // A normal (non-XR) render target uses linear output without material tone mapping. The water is in
+      // this pass: on High it copies the picture so far just before it is drawn, and only while it is in
+      // sight (water.ts). No second scene render and no read/write feedback.
       renderer.render(scene, camera);
-      if (hdr && water.refracting) water.capture(renderer, hdr.scene, camera);
-      renderer.setRenderTarget(hdr?.scene ?? null);
-      // Water reads the copied pre-water colour, while testing the scene's retained depth. No second
-      // scene render and no read/write feedback: this adds only the pool draws and one small copy.
-      const clear = renderer.autoClear;
-      renderer.autoClear = false;
-      try { renderer.render(waterScene, camera); } finally { renderer.autoClear = clear; }
       if (hdr && gradePass && outputPass) {
         bloom?.render(renderer, hdr.scene);
         gradePass.setBloom(bloom?.texture ?? null);
@@ -679,7 +676,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     lawnSong.update(flags, clock);
     for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
     cones.update(rollers, clock);
-    water.update(clock);
+    water.update(clock, reducedMotion.matches || document.body.classList.contains('calm'));
     for (const [i, t] of tussocks.entries()) tussockMeshes[i]?.position.set(t.x, t.y, 0);
     // A cranberry goes flat under him and springs back, a little past its shape.
     for (const [i, b] of (berries ?? []).entries()) {
@@ -821,6 +818,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         // Fog keeps a copy of its initial colour; changing `sky` alone never changes the haze.
         (scene.fog as Fog).color.copy(sky);
       }
+      // The mountain's hour goes on as he does: the sky dims with the far ridges (backdrop.ts).
+      if (place.id === 'mountain') scene.backgroundIntensity = evening(look.x, chapter.ground[0]!.x, chapter.ground[chapter.ground.length - 1]!.x).sky;
       // The haze begins behind the play plane, however far the camera has pulled back.
       if (!chapter.mist) {
         (scene.fog as Fog).near = camera.position.z + place.haze.near;

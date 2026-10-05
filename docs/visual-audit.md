@@ -92,8 +92,11 @@ looks, since everything tuned after it is tuned once.
 
 ## The budgets every step lives inside
 
-- **120 draw calls a picture.** The heavy places stand at 100 to 117 with stand-in figures, and the family's
-  models add 11 to 19 on the site.
+- **Draw calls a picture: 120 on Low, 160 on Mid, 200 on High.** It was 120 on every tier when the audit was
+  made; Olov raised it the same day to make room for better graphics, and things at no size or opacity are
+  no longer drawn (8 to 22 fewer in every picture). The heavy places stood at 100 to 117 with stand-in
+  figures, and the family's models add 11 to 19 on the site. What is added for High stays out of Low's
+  picture where it would not fit.
 - **No shader compiled during play.** Anything new is in the scene from the first frame.
 - **Three tiers,** and a phone held sideways as much as a tablet.
 - **Size:** the script 450 KB gzipped (391 used on 5 October), the boot pack 3,072 KB (828 used).

@@ -58,7 +58,7 @@ These are the pieces a chapter is laid out with. The first four are in the forma
 - **Nothing the story needs is on a side way.** The helper never points there. *Lugnt* needs nothing there.
 - **Saved games:** trail candy and big candies are kept by their place in their lists. Add, never insert or
   move. Side candy has its own list for that reason.
-- **Budgets:** a picture stays within 120 draw calls. A side way in sight costs four: its ledges of every
+- **Budgets:** a picture stays within its tier's draw calls: 120 on Low, 160 on Mid, 200 on High. A side way in sight costs four: its ledges of every
   look, with what holds them and with its cords, lines and poles, are one mesh; its rings are one; its side
   candy two. Out of sight it costs none. A ledge that waits for a flag is one more for its look; every climb
   and thing on a rail is one of its own. Granskogen is the heavy chapter: its far bough is at 117 on a phone

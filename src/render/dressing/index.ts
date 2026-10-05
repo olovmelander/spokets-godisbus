@@ -66,11 +66,12 @@ const BOG: PlaceLook = {
 const MOUNTAIN: PlaceLook = {
   id: 'mountain',
   grade: { tint: [1.06, 0.99, 0.95], exposure: 1.04, contrast: 1.07, saturation: 1.08, vignette: 0.3, grain: 0.03 },
-  haze: { colour: '#e9b9a0', near: 6, far: 95 },
+  haze: { colour: '#e9b9a0', near: 9, far: 95 },
   sky: { top: '#6a78ae', middle: '#f7b78c', bottom: '#c98c74', glow: '#ffe2b4' },
-  hemisphere: { sky: '#f0d4dc', ground: '#84705e', intensity: 1.25 },
-  sun: { colour: '#ffae6c', intensity: 3.7, from: [-8, 2.6, -3] },
-  fill: { colour: '#e8dcf0', intensity: 0.75 },
+  // A top face sees the zenith, not the horizon: the sky's light is cool, and only the sun is warm.
+  hemisphere: { sky: '#c9d2f4', ground: '#8a6f78', intensity: 1.5 },
+  sun: { colour: '#ffb884', intensity: 3.2, from: [-8, 2.6, -3] },
+  fill: { colour: '#cfd6ff', intensity: 0.9 },
   water: { colour: '#4f7f9c', opacity: 0.8 },
   tussock: '#b9b08a',
 };
@@ -159,7 +160,7 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   const air = effects(chapter, from, to, look.id);
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
-  const far = scenery(look.id, heightAt(chapter, from));
+  const far = scenery(look.id, heightAt(chapter, from) - (chapter.outlook ?? 0), from, to);
   const life = look.id === 'village' ? villageLife(chapter) : null;
   if (life) group.add(life.group);
   if (look.id === 'dusk') group.add(stars());
