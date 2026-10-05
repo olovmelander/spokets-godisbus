@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { STORY, chapterNumber } from '../../src/content/chapters';
 import { KINDS, album, foundFlag } from '../../src/content/kinds';
@@ -55,6 +56,14 @@ describe('the hidden candy for the album', () => {
       for (const h of chapter.hidden!) {
         // One at the end of a challenge route is reached that way only: its own test shows how.
         if (h.route) continue;
+        // One with a way of its own (up some ledges, down in a pocket, at the end of a swing) is played by
+        // its chapter's secrets test, which has to exist and to name it.
+        if (h.way !== undefined) {
+          const file = new URL(`../sim/secrets-${chapter.id}.test.ts`, import.meta.url);
+          expect(existsSync(file), `${chapter.id}: ${h.kind} is reached by "${h.way}", so tests/sim/secrets-${chapter.id}.test.ts must play it`).toBe(true);
+          expect(readFileSync(file, 'utf8'), `${chapter.id}: ${h.kind}`).toContain(`'${h.kind}'`);
+          continue;
+        }
         const sim = jumpAt(chapter, h.x);
         expect(sim.flags.has(foundFlag(h.kind)), `${chapter.id}: ${h.kind} at ${h.x},${h.y}`).toBe(true);
         expect(sim.bubbles, `${chapter.id}: ${h.kind}`).toBe(0);
@@ -65,7 +74,7 @@ describe('the hidden candy for the album', () => {
   it('is not found by walking under it: where it hangs, it asks for a jump', () => {
     for (const chapter of numbered) {
       for (const h of chapter.hidden!) {
-        if (h.y - heightAt(chapter, h.x) < 1) continue;
+        if (h.way !== undefined || h.y - heightAt(chapter, h.x) < 1) continue;
         const sim = new Sim({ ...chapter, spawn: { x: h.x, y: heightAt(chapter, h.x) + 0.01 } });
         run(sim, 0.5);
         expect(sim.flags.has(foundFlag(h.kind)), `${chapter.id}: ${h.kind}`).toBe(false);

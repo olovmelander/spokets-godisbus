@@ -329,6 +329,16 @@ describe('local player profiles', () => {
 });
 
 describe('saving', () => {
+  it('keeps side candy apart from the trail candy, and an older save has none', () => {
+    const save = { ...newSave(1, 'garden'), candy: { garden: [0, 2] }, side: { garden: [1, 4] } };
+    expect(readSave(JSON.stringify(save))).toEqual({ kind: 'save', save: { ...save, checkpoints: { garden: -1 } } });
+    const older = readSave(JSON.stringify(newSave(1, 'garden')));
+    expect(older.kind === 'save' && older.save.side).toBeUndefined();
+    // What is not a list of places is dropped, as for the trail.
+    const odd = readSave(JSON.stringify({ ...save, side: { garden: [3, 'x', -1, 2.5], myren: 'all' } }));
+    expect(odd.kind === 'save' && odd.save.side).toEqual({ garden: [3] });
+  });
+
   it('writes a game and reads the same game back', () => {
     const storage = fakeStorage();
     const store = createStore(storage);

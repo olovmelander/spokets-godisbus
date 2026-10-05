@@ -70,21 +70,36 @@ describe('the candy kit from Blender', () => {
 });
 
 describe('the trail candy', () => {
-  it('is mostly karameller, with a swirl, a heart or a lollipop now and then', () => {
+  it('is sweets in wrappers only: karameller, striped ones and a swirl now and then', () => {
     const count = [0, 0, 0, 0, 0];
     for (let i = 0; i < 78; i++) count[trailShape(i)]!++;
-    expect(count[0]! + count[1]!).toBeGreaterThan(78 * 0.6);
-    for (const some of count) expect(some).toBeGreaterThan(0);
-    expect(count[3]! + count[4]!).toBeLessThan(78 * 0.2);
-    // A heart is always pink; a karamell comes in every colour.
-    for (let i = 0; i < 78; i++) if (trailShape(i) === 3) expect(trailColour(i)).toBe('#ef7fb0');
-    expect(new Set(Array.from({ length: 78 }, (_, i) => i).filter((i) => trailShape(i) === 0).map(trailColour)).size).toBe(6);
+    // No heart and no lollipop: those are the side candy's voice.
+    expect(count[3]! + count[4]!).toBe(0);
+    expect(count[0]!).toBeGreaterThan(count[1]!);
+    expect(count[1]!).toBeGreaterThan(count[2]!);
+    expect(count[2]!).toBeGreaterThan(0);
+    // A karamell comes in every colour.
+    expect(new Set(Array.from({ length: 78 }, (_, i) => i).filter((i) => trailShape(i) === 0).map((i) => trailColour(i))).size).toBe(6);
   });
 
-  it('never goes long without a sweet in a wrapper, in any chapter', () => {
+  it('side candy speaks in another voice: hearts and lollipops, and every heart is pink', () => {
+    for (let i = 0; i < 40; i++) {
+      expect(trailShape(i, 'side')).toBeGreaterThanOrEqual(3);
+      if (trailShape(i, 'side') === 3) expect(trailColour(i, 'side')).toBe('#ef7fb0');
+    }
+    const made = createTrail(trail, 'side');
+    expect(made.group.name).toBe('side-candy');
+    expect(made.install(kit(...TRAIL_SHAPES))).toBe(true);
+    expect(meshes(made.group)).toHaveLength(2);
+    // A chapter with no side candy draws nothing for it.
+    const none = createTrail([], 'side');
+    none.install(kit(...TRAIL_SHAPES));
+    expect(meshes(none.group)).toHaveLength(0);
+    // Every chapter's side candy lies off its trail: none of it is found by following the trail's candy.
     for (const chapter of STORY) {
-      for (let i = 0; i + 3 <= chapter.candy.length; i++) {
-        expect([0, 1, 2].some((k) => trailShape(i + k) < 2), `${chapter.id} ${i}`).toBe(true);
+      for (const extra of chapter.side ?? []) {
+        const nearest = Math.min(...chapter.candy.map((c) => Math.hypot(c.x - extra.x, c.y - extra.y)));
+        expect(nearest, `${chapter.id}: side candy at ${extra.x},${extra.y}`).toBeGreaterThan(0.9);
       }
     }
   });
@@ -97,7 +112,7 @@ describe('the trail candy', () => {
     expect(made.install(kit('karamell', 'randig'))).toBe(false);
     expect(meshes(made.group)).toHaveLength(1);
     expect(made.install(kit(...TRAIL_SHAPES))).toBe(true);
-    expect(meshes(made.group)).toHaveLength(5);
+    expect(meshes(made.group)).toHaveLength(3);
     // Every candy is drawn by exactly one of them.
     const held = meshes(made.group).flatMap((mesh) => mesh.userData.candies as number[]).sort((a, b) => a - b);
     expect(held).toEqual(trail.map((_, i) => i));

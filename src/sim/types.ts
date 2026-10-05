@@ -29,6 +29,22 @@ export interface Hook {
 }
 
 /**
+ * A ledge (docs/level-design.md): a thin floor that he can jump up through and stand on, and walk in front of
+ * when it is higher than his feet. It is how a chapter gets a second level over the same stretch: the ground
+ * is one line, and a ledge is ground only from above. He leaves it by walking off its end.
+ */
+export interface Ledge {
+  /** The middle of its top. */
+  x: number;
+  y: number;
+  width: number;
+  /** What it is, for the picture. */
+  look: LedgeLook;
+  /** It is there only once this flag is set: something a helper's hands, or his own, put in place. */
+  needs?: string;
+}
+
+/**
  * What Elof is doing: on his own feet, or carried by the glitter bubble, up a ledge, on a hose, down a hose,
  * on the lace, through the air to a landing, knocked over for a moment, or on a ride.
  */
@@ -295,6 +311,8 @@ export interface SimStart {
   checkpoint?: number;
   /** The trail candy already in the bag, by its place in chapter.candy. */
   collected?: readonly number[];
+  /** The side candy already in the bag, by its place in chapter.side. */
+  side?: readonly number[];
   /** The things on rails that are where they belong, by id. */
   placed?: readonly string[];
   /** What has happened in the chapter: the flags set so far. */
@@ -304,6 +322,7 @@ export interface SimStart {
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
 export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone';
+export type LedgeLook = 'plank' | 'leaf' | 'branch' | 'bark' | 'stone';
 export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'vittra-door' | 'keepsake';
 export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none';
 
@@ -347,7 +366,14 @@ export interface ChapterData {
    * flag `found:<kind>`, which the save keeps. One with `route` hangs at the end of the chapter's challenge
    * route (plan §4.7), and is reached that way only.
    */
-  hidden?: { x: number; y: number; kind: string; route?: boolean; after?: string }[];
+  hidden?: {
+    x: number; y: number; kind: string; route?: boolean; after?: string;
+    /**
+     * How it is reached, where a held jump from the ground under it is not the way: up some ledges, down in a
+     * pocket, at the end of a swing. A few words for people; tests/sim/secrets.test.ts plays every one.
+     */
+    way?: string;
+  }[];
   /** Cranberries to bounce on (plan §4.8, O7). */
   bouncers?: Bouncer[];
   /** Optional routes, entered by leaving the ordinary trail; their prizes never gate the story. */
@@ -389,6 +415,15 @@ export interface ChapterData {
    * half an EL over the ground on a walk, and along the arc of the jump over a gap or up a step.
    */
   candy: Candy[];
+  /**
+   * Side candy (docs/level-design.md): candy off the trail, on an upper route or in a pocket. It is drawn as
+   * hearts and lollipops, where the trail is karameller, so that "this is the way" and "this is extra" are
+   * different words. It goes in the bag like any candy, is never needed, and none of the trail's rules of
+   * order and spacing apply to it. Saved by its place in this list: add new ones at the end.
+   */
+  side?: Candy[];
+  /** Ledges: thin floors over the path that he jumps up through. */
+  ledges?: Ledge[];
   /** The hoses and stems he can climb. */
   climbs?: Climb[];
   /** The hooks he can throw the lace to. */

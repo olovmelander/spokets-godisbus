@@ -2,6 +2,37 @@
 
 ## State (4 October 2026)
 
+- **Level design, version 6: the pieces for layered chapters** (4 October, late evening, on Olov's computer;
+  `docs/level-design.md`). Olov: "the game feels very linear right now. I want it to feel more like an
+  exceptional indie platformer ... research on the web for good game that we can get inspired of ... Take the
+  best things from the best platformers into my game. Like Super Mario, Rayman, Braid, Unravel, little
+  Nightmares, inside, ori and the blind forest ... really improve the level design, puzzles and the chapters".
+  - **The research is done:** seven threads (Nintendo's course design, Rayman and Celeste, Inside and Little
+    Nightmares, Braid and puzzle craft, Unravel, Ori, and non-linearity for young players), written up with its
+    sources in `docs/research/platformer-level-design.md`. Its raw notes, and a measured brief of the chapters
+    as they were, are on Olov's computer in `references/level-design-research/` (git ignores that folder).
+  - **What it found about the game as built:** 91 to 95 per cent of each numbered chapter was one corridor; no
+    swing ring hung outside Gården and Byn, so the game's best verb was dropped after 14 EL; nine of the
+    sixteen hidden sweets used one recipe (1.9 EL straight above the trail); most puzzles are one or two
+    presses; the robot finishes Berget without pressing Hoppa and the whole story in 5 min 22 s. And the
+    lesson from Kirby's Epic Yarn: the risk for Elof is a game that is easy, pretty and dull, not a hard one.
+  - **What follows from it** is in `docs/level-design.md`, and the plan is version 6: the trail stays a line,
+    and a chapter gets ledges that make a second level over the path, side candy in a voice of its own, the lace
+    in every chapter, pockets, and sweets for the brave and for the curious. First the "layers" over the
+    chapters as they stand, then the "arcs" on the main trail.
+  - **Built first, the format:**
+    - **A ledge** (`ledges` in a chapter): a thin floor he jumps up through and stands on, and walks in front of
+      when it is above his feet. Until now every second level was a solid box, a ceiling from below.
+    - **Side candy** (`side`): candy off the trail, drawn as hearts and lollipops, where the trail is now only
+      sweets in wrappers. It has its own list, so a chapter's trail and its saved games are untouched; a save
+      keeps it under `side`, and an older save reads back exactly as before.
+    - **A hidden sweet can say how it is reached** (`way`), and then its chapter's secrets test must play it:
+      that lifts the rule that every sweet hangs one held jump above the ground.
+    - **A defect repaired:** *Jag har fastnat* right after a ride (the cap, the launch, the ant lift, the plane)
+      left him on the ride's near side with the ride used up, until the page was loaded again. The ride now
+      begins again.
+  - **Each chapter's layers come in a pull request of its own.**
+
 - **The candy is modelled in Blender** (4 October, on Olov's computer; pull requests #110 and #111, merged, and
   on the site; art bible §2.9).
   Olov: "We need to improve the design of all candies and similar assets in the game use the blender mcp".
@@ -40,7 +71,8 @@
       requests' runs were still playing the browser suites; typecheck, the tests, the build and the privacy
       check had passed there. Both were merged then. The deploy succeeded, the live pack has `candy.glb`, and
       the live game was looked at in the garden, the bog, the summit and the shop, with no error in the console.
-      When this was written both runs were still playing the suites, fifty and forty minutes in. Their results are on the two pull requests, and are recorded with the next change to this file. Pictures from the game at nine places
+      Both runs then finished green on GitHub, all 39 browser suites (58.5 and 44.1 minutes), and so did the run
+      of the fixes that followed (#112). Pictures from the game at nine places
     and the kit as a sheet are in `docs/shots/_work/candy/` on his computer (git ignores them).
     - With another session's browser drawing the game on the same computer, seven robot tests ran out of
       vitest's five seconds, and passed with a longer limit and on GitHub. **Fixed:** a test now has thirty
@@ -1221,6 +1253,12 @@
 
 **For the next session, in this order:**
 
+- **The chapters' layers and arcs** (`docs/level-design.md` §3). Layers first, one chapter to a pull request,
+  with the main trail and saved games untouched; then the arcs on the main trail: the swing's twist and mastery
+  in Gården, a ring that a cone's weight pulls into reach in Granskogen, the sinking run rebuilt as a rhythm in
+  Myren, a climb that needs Hoppa and a three-step puzzle with the ghost on Berget. Byn still needs its return
+  loop and its sweets. Code only: a cloud session can do it. What Olov's eyes are needed for: whether the side
+  ways are found, and whether hearts read as "extra" to Elof.
 - **The candy** (art bible §2.9): Olov's eyes on it, on a phone: `?dev` for the trail and the big candy,
   `?dev&course=myren` for the lysklubba, the album's kinds one by one as he finds them. What he says tunes
   `art/blender/candy.py` and `CANDY_LIFT`; the stickers follow from the same models

@@ -156,7 +156,7 @@ function start(): void {
     at
       ? (carried.length > 0 ? { flags: carried } : {})
       : {
-          checkpoint: courseId(save.chapter) === chapter.id ? save.checkpoint : (save.checkpoints?.[chapter.id] ?? -1), collected: save.candy[chapter.id] ?? [], placed: save.placed[chapter.id] ?? [],
+          checkpoint: courseId(save.chapter) === chapter.id ? save.checkpoint : (save.checkpoints?.[chapter.id] ?? -1), collected: save.candy[chapter.id] ?? [], side: save.side?.[chapter.id] ?? [], placed: save.placed[chapter.id] ?? [],
           // Reaching the end is not kept: a game taken up again can reach it again.
           flags: [...(save.flags[chapter.id] ?? []).filter((flag) => flag !== 'goal'), ...carried],
         };
@@ -168,7 +168,8 @@ function start(): void {
   const tutorial = new Tutorial(chapter.id);
   const tutorialView = createTutorial(document);
   const isKlonk = () => ghostNamed(save.flags) || (chapter.id === 'epilog' && game.sim.flags.has('beat:named'));
-  const hud = createHud(document, chapter.candy.length, isKlonk);
+  // The bag counts all the candy there is: the trail's, and the side candy off it.
+  const hud = createHud(document, chapter.candy.length + (chapter.side?.length ?? 0), isKlonk);
   const story = createStoryPanel(document, {
     named: isKlonk,
     answer(answer) {
@@ -251,6 +252,7 @@ function start(): void {
       checkpoint: keepSavedPosition ? save.checkpoint : game.sim.checkpoint,
       checkpoints: { ...save.checkpoints, [chapter.id]: Math.max(save.checkpoints?.[chapter.id] ?? -1, game.sim.checkpoint) },
       candy: { ...save.candy, [chapter.id]: game.sim.collected.flatMap((got, i) => (got ? [i] : [])) },
+      side: { ...save.side, [chapter.id]: game.sim.collectedSide.flatMap((got, i) => (got ? [i] : [])) },
       placed: { ...save.placed, [chapter.id]: game.sim.placed },
       flags: { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags) },
       playMs: save.playMs + (now - playedFrom),
@@ -819,7 +821,7 @@ function start(): void {
     const atGoal = game.sim.flags.has('goal');
     view.render({
       prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: menuOpen() ? 0 : dt, atGoal,
-      collected: game.sim.collected, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
+      collected: game.sim.collected, side: game.sim.collectedSide, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
       prologue: game.sim.prologue?.frame, ending: ending.seconds,
       flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts, help: game.sim.help,
       berries: game.sim.berries,
@@ -945,7 +947,7 @@ function start(): void {
           `models ${i.models.join(', ') || 'none yet'} · KTX2 textures ${i.compressedTextures}`,
           `pack CPU textures ${(i.assetTextures.cpuBytes / 1024).toFixed(1)} KB · released ${i.assetTextures.released}/${i.assetTextures.managed}`,
           `x ${n(p.x)} y ${n(p.y)} · vx ${n(p.vx)} vy ${n(p.vy)} · ${p.grounded ? 'on the ground' : 'in the air'}`,
-          `candy ${game.sim.candyCount} of ${chapter.candy.length} · bubbles ${game.sim.bubbles} · ${p.mode}${p.verb ? ` · Använd: ${p.verb}` : ''}${p.atEdge ? ' · at an edge' : ''}`,
+          `candy ${game.sim.candyCount} of ${chapter.candy.length + (chapter.side?.length ?? 0)} · bubbles ${game.sim.bubbles} · ${p.mode}${p.verb ? ` · Använd: ${p.verb}` : ''}${p.atEdge ? ' · at an edge' : ''}`,
           `big candy ${game.sim.checkpoint + 1} of ${chapter.checkpoints?.length ?? 0} · ${settings.style}${paused ? ' · paused' : ''}`,
         ];
       });

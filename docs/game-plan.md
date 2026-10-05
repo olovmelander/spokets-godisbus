@@ -1,6 +1,14 @@
 # Elof och det stora godisäventyret
 
-Game plan, version 5 — 4 October 2026. Repository `olovmelander/spokets-godisbus`.
+Game plan, version 6 — 4 October 2026. Repository `olovmelander/spokets-godisbus`.
+
+Version 6 records Olov's direction that the game "feels very linear" and should take "the best things from the
+best platformers" (Super Mario, Rayman, Braid, Unravel, Little Nightmares, Inside, Ori). The research and its
+sources are in [the research report](research/platformer-level-design.md), and what follows from it for the
+chapters is in [the level design document](level-design.md): ledges that make a second level over the path,
+side candy in a voice of its own, the lace in every chapter, sweets for the brave and for the curious. The
+story, the verbs and the kindness rules below are unchanged. Where §4.3 and §4.7 describe the candy and the
+optional routes, the level design document is the newer word.
 
 Version 5 records Olov's direction to improve the story, its opening, the family's role and the levels'
 connected puzzles, informed by research into indie adventures and platformers. The concrete design,
@@ -1062,8 +1070,9 @@ macro world.
     jump.
   - About 60–80 per chapter. Touching one collects it, and a magnet radius of 0.6 EL forgives near misses.
   - It is collected into the bag, never eaten.
-  - It looks like the candy on Olov's poster: bright karameller in twisted wrappers, with a striped lollipop or a
-    pink heart now and then.
+  - It looks like the candy on Olov's poster: bright karameller in twisted wrappers. The poster's striped
+    lollipop and pink heart are the **side candy** (version 6, `docs/level-design.md`): candy off the trail, on
+    an upper way or in a pocket, in a shape of its own so that the way and the extra can be told apart.
 - **Big candy** is a checkpoint (§3.3, rule 4). There is at least one every 90 seconds of play, and one every
   10–15 s inside exciting sequences.
 - **Hidden candy for the album.**

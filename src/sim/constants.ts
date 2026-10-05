@@ -162,6 +162,18 @@ export const SAFE_REACH = 2.5;
 /** How far past his own edge a walking Elof looks for the ground. */
 export const EDGE_REACH = 0.08;
 
+/** A ledge is this thick: a thin floor, drawn as a plank, a leaf or a branch. */
+export const LEDGE_THICK = 0.14;
+/**
+ * A ledge is ground for him once his feet are no further than this below its top, so that a fast landing
+ * never slips through; from further below he passes in front of it.
+ */
+export const LEDGE_GIVE = 0.1;
+/** He counts as standing on a ledge with his feet this close to its top. */
+export const LEDGE_STAND = 0.07;
+/** Rising faster than this he is on his way up through a ledge, not standing on it. */
+export const LEDGE_RISING = 0.05;
+
 /** A trail candy is collected when it comes this close to Elof's middle: near misses count (plan §4.3). */
 export const CANDY_MAGNET = 0.6;
 

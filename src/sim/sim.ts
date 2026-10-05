@@ -11,6 +11,7 @@ import { GHOST_CATCH, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_S
 import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REACH } from './constants';
 import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
 import { GUIDE_AFTER, HELP_TIME, REMIND_AFTER } from './constants';
+import { LEDGE_GIVE, LEDGE_RISING, LEDGE_STAND, LEDGE_THICK } from './constants';
 import { hintFor } from './help';
 import { partyReward, sharingReward, type StoryAnswer } from './story';
 import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
@@ -26,6 +27,12 @@ import type {
 Settings.lengthUnitsPerMeter = 0.2;
 
 const FOOT = 'foot';
+/** A ledge as the simulation holds it: where its top is, and whether it is there yet. */
+export interface LedgeState { x: number; y: number; width: number; there: boolean; needs?: string }
+const ledgeOf = (fixture: Fixture): LedgeState | null => {
+  const data = fixture.getUserData() as { ledge?: LedgeState } | null;
+  return data !== null && typeof data === 'object' && data.ledge ? data.ledge : null;
+};
 /**
  * Box2D keeps a thin skin between shapes, so a body rests this far above the ground.
  * Elof's reported y has it taken off: y is 0 when he stands on ground at height 0.
@@ -142,6 +149,11 @@ export class Sim {
   steps = 0;
   /** Trail candy in the bag, by its place in chapter.candy. Nothing ever leaves the bag (plan §4.3). */
   readonly collected: boolean[];
+  /** The side candy, off the trail: which of chapter.side is in the bag. */
+  readonly collectedSide: boolean[];
+  /** The ledges, and which of them are there yet. */
+  readonly ledges: LedgeState[];
+  private readonly ledgeBodies: Body[];
   candyCount = 0;
   /** How many times the glitter bubble has carried him back. It costs him nothing (plan §4.2). */
   bubbles = 0;
@@ -296,6 +308,18 @@ export class Sim {
       return body;
     });
 
+    // Ledges: thin floors that are ground only from above (see the pre-solve listener below).
+    this.ledges = (chapter.ledges ?? []).map((def) => ({ x: def.x, y: def.y, width: def.width, there: def.needs === undefined, ...(def.needs !== undefined ? { needs: def.needs } : {}) }));
+    this.ledgeBodies = this.ledges.map((ledge) => {
+      const body = this.world.createBody({ type: 'static', position: new Vec2(ledge.x, ledge.y) });
+      body.createFixture({
+        shape: new BoxShape(ledge.width / 2, LEDGE_THICK / 2, new Vec2(0, -LEDGE_THICK / 2)),
+        friction: 0,
+        userData: { ledge },
+      });
+      return body;
+    });
+
     this.drips = (chapter.drips ?? []).map((drip) => ({ x: drip.at.x, y: drip.at.y, shadow: 0, height: -1 }));
     this.rollers = (chapter.rollers ?? []).map((r) => ({ x: r.from.x, y: r.from.y, on: false, radius: r.radius, since: r.needs === undefined ? 0 : -1 }));
     this.gusts = (chapter.gusts ?? []).map(() => ({ blow: 0, warn: 0, until: 0 }));
@@ -306,11 +330,8 @@ export class Sim {
       return body;
     });
     for (const flag of start.flags ?? []) this.flags.add(flag);
-    // A ride he had not finished when the game was saved begins again: he starts before it.
-    for (const spot of chapter.spots ?? []) {
-      const ride = (chapter.rides ?? []).find((r) => r.id === spot.ride);
-      if (ride && ride.to.x > spawn.x + 0.5) this.flags.delete(spot.id);
-    }
+    this.readyRides(spawn.x);
+    this.placeLedges();
     for (const mover of this.movers) if (!mover.def.extra && !mover.def.cycle && mover.stop === mover.def.stops.length - 1) this.flags.add(`placed:${mover.def.id}`);
     // What was said before the place he starts at is not said again.
     for (const beat of chapter.beats ?? []) if (beat.at !== undefined && beat.at < spawn.x - 0.5) this.flags.add(`beat:${beat.id}`);
@@ -329,9 +350,25 @@ export class Sim {
 
     this.world.on('begin-contact', (c) => this.countFoot(c, 1));
     this.world.on('end-contact', (c) => this.countFoot(c, -1));
+    // A ledge holds him only from above: while his feet are below its top, or he is on his way up, his body
+    // goes through it. Asked afresh every step, so nothing has to be remembered.
+    this.world.on('pre-solve', (contact) => {
+      const a = contact.getFixtureA();
+      const b = contact.getFixtureB();
+      const ledge = ledgeOf(a) ?? ledgeOf(b);
+      if (!ledge || (a.getBody() !== this.body && b.getBody() !== this.body)) return;
+      if (!this.holds(ledge) || this.body.getLinearVelocity().y > LEDGE_RISING) contact.setEnabled(false);
+    });
 
     this.climbs = chapter.climbs ?? [];
     this.hooks = chapter.hooks ?? [];
+    this.collectedSide = (chapter.side ?? []).map(() => false);
+    for (const i of start.side ?? []) {
+      if (this.collectedSide[i] === false) {
+        this.collectedSide[i] = true;
+        this.candyCount++;
+      }
+    }
     this.collected = chapter.candy.map(() => false);
     for (const i of start.collected ?? []) {
       if (this.collected[i] === false) {
@@ -387,6 +424,7 @@ export class Sim {
     else if (state.kind === 'down') this.lie(state);
     else this.ride(state, input);
     this.moveMovers();
+    this.placeLedges();
     this.rain();
     this.roll();
     this.blow();
@@ -786,11 +824,53 @@ export class Sim {
     this.story = null;
     if (this.state.kind === 'bubble') return;
     const to = this.checkpoints[this.checkpoint] ?? this.chapter.spawn;
+    // Sent back to before a ride he has taken, he can take it again: otherwise he would be left on its near side.
+    this.readyRides(to.x);
     this.safe.x = to.x;
     this.safe.y = to.y;
     this.carry(true);
     this.state = { kind: 'bubble', fromX: this.curr.x, fromY: this.curr.y, t: 0 };
     this.curr = { ...this.curr, mode: 'bubble', bubble: Number.MIN_VALUE, verb: null, hook: null };
+  }
+
+  /** A ride that ends beyond the place he is put at begins again: he is before it. */
+  private readyRides(fromX: number): void {
+    for (const spot of this.chapter.spots ?? []) {
+      const ride = (this.chapter.rides ?? []).find((r) => r.id === spot.ride);
+      if (ride && ride.to.x > fromX + 0.5) this.flags.delete(spot.id);
+    }
+  }
+
+  /** Whether a ledge is ground for him now: it is there, and his feet are at its top or above. */
+  private holds(ledge: LedgeState): boolean {
+    return ledge.there && this.body.getPosition().y - SKIN >= ledge.y - LEDGE_GIVE;
+  }
+
+  /** The ledge he stands on: his feet at its top, over it, and not on the way up through it. */
+  private ledgeUnder(): LedgeState | null {
+    if (this.ledges.length === 0 || this.body.getLinearVelocity().y > LEDGE_RISING) return null;
+    const p = this.body.getPosition();
+    const feet = p.y - SKIN;
+    for (const ledge of this.ledges) {
+      if (ledge.there && Math.abs(feet - ledge.y) <= LEDGE_STAND && Math.abs(p.x - ledge.x) <= ledge.width / 2 + ELOF_HALF_WIDTH * 0.85) return ledge;
+    }
+    return null;
+  }
+
+  /** A ledge that waits for a flag comes into being when the flag is set. */
+  private placeLedges(): void {
+    for (const [i, ledge] of this.ledges.entries()) {
+      if (ledge.needs === undefined) continue;
+      const there = this.flags.has(ledge.needs);
+      if (there === ledge.there && this.ledgeBodies[i]!.isActive() === there) continue;
+      ledge.there = there;
+      this.ledgeBodies[i]!.setActive(there);
+    }
+  }
+
+  /** Whether his feet touch something to stand on: the ground or a thing, or a ledge from above. */
+  private touching(): boolean {
+    return this.footContacts > 0 || this.ledgeUnder() !== null;
   }
 
   /** The one thing Använd would act on now. Peka uses this same priority and reach, never a remote action. */
@@ -1014,8 +1094,8 @@ export class Sim {
 
   private walk(input: StepInput): void {
     const v = this.body.getLinearVelocity();
-    if (this.leaving && (this.footContacts === 0 || v.y <= 0.05)) this.leaving = false;
-    const floor = this.footContacts > 0 && !this.leaving ? this.footing() : null;
+    if (this.leaving && (!this.touching() || v.y <= 0.05)) this.leaving = false;
+    const floor = this.touching() && !this.leaving ? this.footing() : null;
     const grounded = floor !== null && floor.ny >= WALKABLE;
     // Along the ground he stands on; level in the air.
     const tx = grounded ? floor.ny : 1;
@@ -1110,7 +1190,7 @@ export class Sim {
 
   /** Whether he stands, after a step: feet on ground he can stand on, and not just taking off from it. */
   private standing(): boolean {
-    if (this.footContacts === 0 || this.leaving) return false;
+    if (!this.touching() || this.leaving) return false;
     return this.footing().ny >= WALKABLE;
   }
 
@@ -1405,6 +1485,18 @@ export class Sim {
       this.collected[i] = true;
       this.candyCount++;
     }
+    // Side candy, off the trail: the same reach, into the same bag.
+    const side = this.chapter.side;
+    if (side) {
+      for (let i = 0; i < side.length; i++) {
+        if (this.collectedSide[i]) continue;
+        const c = side[i]!;
+        if (c.after !== undefined && !this.flags.has(c.after)) continue;
+        if ((c.x - x) ** 2 + (c.y - y) ** 2 > CANDY_MAGNET ** 2) continue;
+        this.collectedSide[i] = true;
+        this.candyCount++;
+      }
+    }
     // Hidden candy: it has the same reach, and each is found once. A shy light must leave it first.
     for (const sweet of this.chapter.hidden ?? []) {
       if (sweet.after !== undefined && !this.flags.has(sweet.after)) continue;
@@ -1424,7 +1516,9 @@ export class Sim {
     const foot = a.getUserData() === FOOT ? a : b.getUserData() === FOOT ? b : null;
     if (!foot) return;
     const other = foot === a ? b : a;
-    if (other.isSensor() || other.getBody() === this.body) return;
+    // A ledge is not counted here: whether he stands on one is asked every step (ledgeUnder), because his
+    // feet pass through it on the way up.
+    if (other.isSensor() || other.getBody() === this.body || ledgeOf(other)) return;
     this.footContacts += change;
   }
 
@@ -1451,6 +1545,9 @@ export class Sim {
     let hit: Hit | null = null;
     this.world.rayCast(new Vec2(x1, y1), new Vec2(x2, y2), (fixture, point, normal, fraction) => {
       if (fixture.isSensor() || fixture.getBody() === this.body) return -1;
+      // A ledge above his feet is not in his way: not for his hands, the lace or the ground he looks for.
+      const ledge = ledgeOf(fixture);
+      if (ledge && !this.holds(ledge)) return -1;
       hit = { x: point.x, y: point.y, nx: normal.x, ny: normal.y };
       return fraction;
     });

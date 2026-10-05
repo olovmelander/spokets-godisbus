@@ -8,6 +8,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
 import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
+import { buildLedges } from './ledges';
 import type { TextureOwnershipInfo } from './texture-ownership';
 import { captureFrame } from './capture';
 import { observeGpu, type GpuMemory } from './gpu-memory';
@@ -79,6 +80,8 @@ export interface Frame {
   atGoal: boolean;
   /** Which trail candies are in the bag. */
   collected: readonly boolean[];
+  /** The side candy in the bag, by its place in chapter.side. Left out: none. */
+  side?: readonly boolean[];
   /** The last big candy reached, or -1. */
   checkpoint: number;
   /** Where the things on rails are, in the chapter's order. */
@@ -219,6 +222,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     return { place, sweet: place.getObjectByName('candy')!, reached: false, pop: 0, spin: 0 };
   });
   const trail = createTrail(chapter.candy);
+  // Side candy, off the trail: hearts and lollipops, where the trail is sweets in wrappers.
+  const sideTrail = createTrail(chapter.side ?? [], 'side');
+  const noSide: readonly boolean[] = [];
+  const ledges = buildLedges(chapter.ledges ?? []);
   const glitter = buildGlitter();
   const lace = buildLace();
   const glints = buildGlints(chapter);
@@ -266,7 +273,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const climbs = buildClimbs(chapter);
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
-  scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.group, glitter.group);
+  scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.group, sideTrail.group, ledges.group, glitter.group);
   const water = createWater(chapter, place?.water ?? null, place?.sun.from);
   const waterScene = new Scene();
   waterScene.fog = scene.fog;
@@ -337,6 +344,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (!model) return;
       const kit = candyKit(model);
       const onTrail = trail.install(kit);
+      sideTrail.install(kit);
       const placed = installSweets(scene, kit);
       const shared = sharedSweets?.install(kit) ?? false;
       if (!onTrail && placed === 0 && !shared) return;
@@ -630,7 +638,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
   }
 
-  function render({ prev, curr, alpha, dt, atGoal, collected, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue, ending }: Frame): void {
+  function render({ prev, curr, alpha, dt, atGoal, collected, side, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue, ending }: Frame): void {
     inEndingShot = !!chapter.epilogue && ending !== null && ending !== undefined;
     rain.update(drips);
     epilogueStage.update(flags, ending, reducedMotion.matches || document.body.classList.contains('calm'));
@@ -652,6 +660,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (responseFor === 0) reaction = null;
     trail.update(collected, flags, x, y, dt, clock, reaction?.kind === 'candy' ? reaction.index : undefined, response,
       chapter.prologue && ghostState ? ghostState.x : Infinity);
+    sideTrail.update(side ?? noSide, flags, x, y, dt, clock);
+    ledges.update(flags, dt);
     glints.update(flags, clock);
     lawnSong.update(flags, clock);
     for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
