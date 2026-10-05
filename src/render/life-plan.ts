@@ -73,8 +73,8 @@ export function lifePlan(place: PlaceId, stages: readonly LifeStage[] = [], seed
     return !!role && chance(i) < (role.odds ?? 1);
   });
   const smokeInk = cast.smoke && light(cast.smoke.ink, cast.haze, cast.slots[0]!.haze);
-  // What shines is not hazed: a window, a car's lights, a falling star.
-  const glow = cast.lights && [cast.lights.ink, cast.lights.road.ink, cast.lights.star.ink].map((ink) => light(ink, ink, 0));
+  // What shines is not hazed, and is brighter than paint: a window, a car's lights, a falling star.
+  const glow = cast.lights && [cast.lights.ink, cast.lights.road.ink, cast.lights.star.ink].map((ink) => light(ink, ink, 0).map((c) => c * 1.3) as unknown as Ink);
   /** How many birds fly in a flock's longer arm. */
   const arm = (role: Role) => Math.ceil((role.birds! - 1) * 0.6);
   let count = 0;
@@ -153,7 +153,7 @@ export function lifePlan(place: PlaceId, stages: readonly LifeStage[] = [], seed
       for (let i = 0; i < smoke.puffs; i++) {
         const age = fract(w.clock / 8 + i / smoke.puffs + p * 0.37);
         const size = 0.8 + 1.7 * age;
-        put(STRIPS.puff, 0, x + 2.2 * age * age + 0.2 * Math.sin(age * 9 + i * 2) - size / 2, y + 4 * age - size / 2, size, size, smokeInk, smoke.alpha * Math.min(1, age * 5) * (1 - age));
+        put(STRIPS.puff, 0, x + 2.4 * age ** 1.6 + 0.15 * Math.sin(age * 9 + i * 2) - size / 2, y + 4 * age - size / 2, size, size, smokeInk, smoke.alpha * Math.min(1, age * 8) * (1 - age * age));
       }
     }
 
@@ -187,7 +187,7 @@ export function lifePlan(place: PlaceId, stages: readonly LifeStage[] = [], seed
       const star = lights.star;
       const k = (now === 'star' ? w.clock % 1.6 : w.clock - dark) / star.seconds;
       if (!w.calm && k >= 0 && k <= 1) {
-        put(STRIPS.streak, 0, reach * 0.3 - star.long * k, star.y - star.long * 0.5 * k, 4, 2, glow[2]!, Math.sin(Math.PI * k) ** 0.6);
+        put(STRIPS.streak, 0, reach * 0.3 - star.long * k, star.y - star.long * 0.5 * k, star.wide, star.wide / 2, glow[2]!, Math.sin(Math.PI * k) ** 0.6);
       }
     }
 

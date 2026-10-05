@@ -1,6 +1,7 @@
 import { Group, type Texture } from 'three';
 import type { ChapterData, PlaceId } from '../../sim/types';
 import { scenery } from '../backdrop';
+import { createLife, type Life, type Quiet } from '../life';
 import { fronts, street, villageLife } from '../village';
 import { bog } from './bog';
 import { built } from './built';
@@ -121,7 +122,9 @@ export const PLACES: Record<PlaceId, PlaceLook> = { forest: FOREST, garden: GARD
 export interface Dressing {
   group: Group;
   background: Texture;
-  update(cameraX: number, groundY: number, clock: number, night?: number): void;
+  /** What lives far off in the scenery, where the place has any: it waits for its picture (life.ts). */
+  wild: Life | null;
+  update(cameraX: number, groundY: number, clock: number, night?: number, quiet?: Quiet): void;
 }
 
 /** How long a stretch of scatter is: each is drawn only while it is in the picture. */
@@ -151,8 +154,8 @@ const OWN: Record<PlaceId, { ground: Ground; growth: Growth | null }> = {
 };
 export const groundOf = (place: PlaceId): Ground => OWN[place].ground;
 
-/** Builds a place's layers around a chapter's ground. */
-export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
+/** Builds a place's layers around a chapter's ground. `lifeNow` puts one kind of far life on stage at once, for pictures. */
+export function dress(chapter: ChapterData, look: PlaceLook, lifeNow: string | null = null): Dressing {
   const group = new Group();
   const from = chapter.ground[0]!.x;
   const to = chapter.ground[chapter.ground.length - 1]!.x;
@@ -164,22 +167,28 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   const life = look.id === 'village' ? villageLife(chapter) : null;
   if (life) group.add(life.group);
   if (look.id === 'dusk') group.add(stars());
+  // The village has the fronts of its houses behind the pavement, and the far village behind them.
+  const houses = look.id === 'village' ? fronts(chapter, from, to) : new Group();
+  // A moose in the mist, cranes, smoke from a far chimney: among the far pictures, and only there.
+  const wild = createLife(chapter, look.id, heightAt(chapter, from), houses.children.find((child) => child.position.z === -52), lifeNow);
+  if (wild) group.add(wild.mesh);
   group.add(
     far.group,
     bank(chapter, OWN[look.id].ground),
     scatter(chapter, from, to, look.id),
     built(chapter, look.id === 'home'),
-    // The village has the fronts of its houses behind the pavement.
-    look.id === 'village' ? fronts(chapter, from, to) : new Group(),
+    houses,
     air.group,
     foreground(chapter, from, to, OWN[look.id].growth),
   );
   return {
     group,
     background: backdrop(look),
-    update(cameraX, groundY, clock, night = 0) {
+    wild,
+    update(cameraX, groundY, clock, night = 0, quiet) {
       air.update(cameraX, groundY, clock);
       far.update(cameraX, groundY, clock, night);
+      if (quiet) wild?.update(cameraX, groundY, clock, night, quiet);
       life?.update(clock);
     },
   };

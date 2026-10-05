@@ -141,7 +141,8 @@ function start(): void {
   let view: View;
   try {
     // ?standin keeps the figures built in code: for pictures that go into the repository (plan §2.6).
-    view = createView(canvas, chapter, requestedGraphics === 'auto' ? null : requestedGraphics, params.has('standin'), debugOn);
+    // With ?debug, &life=moose puts that kind of the far scenery's life on stage at once (render/life.ts).
+    view = createView(canvas, chapter, requestedGraphics === 'auto' ? null : requestedGraphics, params.has('standin'), debugOn, debugOn ? params.get('life') : null);
   } catch (error) {
     console.error(error);
     showMessage(sv.noWebGL);

@@ -1,12 +1,8 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { COURSES } from '../../src/content/chapters';
 import { LIFE, WALK, type Ink } from '../../src/content/life';
-import { personFor } from '../../src/content/people';
 import { farLayers } from '../../src/render/backdrop';
 import { FIRST, GAP, QUADS, STRIDE, lifePlan, type LifePlan, type Watch } from '../../src/render/life-plan';
-import type { ChapterData, LifeStage, PlaceId } from '../../src/sim/types';
+import type { LifeStage, PlaceId } from '../../src/sim/types';
 
 /** The view's own lens (render/view.ts): 30 degrees, Elof a fifth of the picture's height within limits. */
 function lens(width: number, height: number, zoom = 1) {

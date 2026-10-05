@@ -114,8 +114,8 @@ export interface Lights {
   ink: Ink;
   /** A car's lights creep from the first place to the second, hidden by the forest where `gone` says. */
   road: { from: readonly [number, number]; to: readonly [number, number]; speed: number; every: number; gone: readonly (readonly [number, number])[]; ink: Ink };
-  /** The shooting star: how far over the eye line it begins, how far it falls, how long it takes. */
-  star: { y: number; long: number; seconds: number; ink: Ink };
+  /** The shooting star: how far over the eye line it begins, how far it falls, how wide its streak is, how long it takes. */
+  star: { y: number; long: number; wide: number; seconds: number; ink: Ink };
 }
 
 export interface PlaceLife {
@@ -131,8 +131,9 @@ const BOG_MIST: Ink = [246, 236, 212];
 const FOREST_MIST: Ink = [196, 212, 160];
 const GARDEN_HAZE: Ink = [214, 232, 236];
 
-const GEESE: Role = { act: 'flock', slot: 0, ink: [86, 92, 104], alpha: 0.8, size: 0.8, speed: 2.6, y: 13, strip: STRIPS.goose, birds: 9 };
-const SMOKE_INK: Ink = [242, 240, 234];
+const GEESE: Role = { act: 'flock', slot: 0, ink: [86, 92, 104], alpha: 0.8, size: 1.1, speed: 2.6, y: 12.5, strip: STRIPS.goose, birds: 9 };
+/** Wood smoke in cool air: paler than a far forest, darker than a bright sky. */
+const SMOKE_INK: Ink = [222, 224, 228];
 
 export const LIFE: Partial<Record<PlaceId, PlaceLife>> = {
   bog: {
@@ -155,19 +156,21 @@ export const LIFE: Partial<Record<PlaceId, PlaceLife>> = {
   },
   garden: {
     haze: GARDEN_HAZE,
-    // With the neighbours' houses: behind the birches and the hedge.
-    slots: [{ z: -61, hold: 0.44, sink: 0.04, haze: 0.3 }],
+    // On the picture with the neighbours' houses, behind the birches and the hedge: as good as at its depth, so
+    // that the smoke stays over its roof out to the picture's edges.
+    slots: [{ z: -61.9, hold: 0.44, sink: 0.04, haze: 0.3 }],
     roles: { geese: GEESE },
     // The two bigger houses of the picture at z -62 (backdrop.ts, GARDEN): 96 and 318 of its 512 across 140 EL.
-    smoke: { at: [[27.8, 8.2], [88.1, 6.6]], every: 140, puffs: 6, ink: SMOKE_INK, alpha: 0.4 },
+    smoke: { at: [[27.8, 8.2], [88.1, 6.6]], every: 140, puffs: 6, ink: SMOKE_INK, alpha: 0.6 },
   },
   village: {
     haze: [216, 221, 230],
     // Just in front of the far village's picture, which stands in the world (village.ts).
-    slots: [{ z: -51, hold: 1, sink: 0, haze: 0.3 }],
-    roles: { geese: { ...GEESE, y: 9 } },
-    // The batch finds the chimneys on the far village's picture.
-    smoke: { at: [], every: 96, puffs: 6, ink: SMOKE_INK, alpha: 0.45 },
+    slots: [{ z: -51.9, hold: 1, sink: 0, haze: 0.3 }],
+    // Between the houses of the street there is too little sky for a flock.
+    roles: {},
+    // The batch finds the chimneys on the far village's picture, and counts heights from that picture's top.
+    smoke: { at: [], every: 96, puffs: 6, ink: SMOKE_INK, alpha: 0.65 },
   },
   dusk: {
     haze: [62, 74, 122],
@@ -176,14 +179,14 @@ export const LIFE: Partial<Record<PlaceId, PlaceLife>> = {
     roles: {},
     lights: {
       at: [
-        [9.6, 1.5], [12.9, 1.9], [7.2, 1.1], [11.2, 2.5], [14.8, 1.3], [5.4, 2.0], [10.3, 0.8], [16.9, 2.2], [8.4, 2.8],
-        [13.9, 0.7], [3.1, 1.4], [19.6, 1.7],
+        [9.6, 1.7], [12.9, 2.1], [7.2, 1.3], [11.2, 2.8], [14.8, 1.5], [5.4, 2.3], [10.3, 1.0], [16.9, 2.5], [8.4, 3.1],
+        [13.9, 0.9], [3.1, 1.6], [19.6, 1.9],
       ],
-      lit: 4,
-      size: 0.34,
+      lit: 5,
+      size: 0.5,
       ink: [255, 214, 140],
-      road: { from: [21, 0.9], to: [2, 1.6], speed: 0.35, every: 64, gone: [[6.2, 7.8], [12.2, 13.4], [17, 18.6]], ink: [255, 240, 200] },
-      star: { y: 15, long: 7, seconds: 0.7, ink: [236, 244, 255] },
+      road: { from: [21, 1.1], to: [2, 1.9], speed: 0.35, every: 64, gone: [[6.2, 7.8], [12.2, 13.4], [17, 18.6]], ink: [255, 240, 200] },
+      star: { y: 15, long: 7, wide: 6, seconds: 0.7, ink: [236, 244, 255] },
     },
   },
 };
