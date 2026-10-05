@@ -138,6 +138,18 @@ function scatter(chapter: ChapterData, from: number, to: number, place: PlaceId)
 
 // --- the whole dressing --------------------------------------------------------------------------------------
 
+/** What each place's own ground is, and what grows out of focus in front of it. */
+const OWN: Record<PlaceId, { ground: Ground; growth: Growth | null }> = {
+  forest: { ground: 'moss', growth: 'dark' },
+  garden: { ground: 'lawn', growth: 'bright' },
+  bog: { ground: 'sphagnum', growth: 'straw' },
+  mountain: { ground: 'granite', growth: null },
+  dusk: { ground: 'granite', growth: null },
+  home: { ground: 'wood', growth: null },
+  village: { ground: 'asphalt', growth: null },
+};
+export const groundOf = (place: PlaceId): Ground => OWN[place].ground;
+
 /** Builds a place's layers around a chapter's ground. */
 export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   const group = new Group();
@@ -145,15 +157,6 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   const to = chapter.ground[chapter.ground.length - 1]!.x;
   makeKit();
   const air = effects(chapter, from, to, look.id);
-  const own: Record<PlaceId, { ground: Ground; growth: Growth | null }> = {
-    forest: { ground: 'moss', growth: 'dark' },
-    garden: { ground: 'lawn', growth: 'bright' },
-    bog: { ground: 'sphagnum', growth: 'straw' },
-    mountain: { ground: 'granite', growth: null },
-    dusk: { ground: 'granite', growth: null },
-    home: { ground: 'wood', growth: null },
-    village: { ground: 'asphalt', growth: null },
-  };
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
   const far = scenery(look.id, heightAt(chapter, from));
@@ -162,13 +165,13 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   if (look.id === 'dusk') group.add(stars());
   group.add(
     far.group,
-    bank(chapter, own[look.id].ground),
+    bank(chapter, OWN[look.id].ground),
     scatter(chapter, from, to, look.id),
     built(chapter, look.id === 'home'),
     // The village has the fronts of its houses behind the pavement.
     look.id === 'village' ? fronts(chapter, from, to) : new Group(),
     air.group,
-    foreground(chapter, from, to, own[look.id].growth),
+    foreground(chapter, from, to, OWN[look.id].growth),
   );
   return {
     group,

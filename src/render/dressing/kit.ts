@@ -83,7 +83,11 @@ export function surfaceAt(chapter: ChapterData, x: number): SurfaceKind | undefi
   return chapter.surfaces?.find((s) => x >= s.from && x <= s.to)?.kind;
 }
 
-/** A picture drawn in code, as a texture. Drawn small, it is soft when it fills a large card. */
+/**
+ * A picture drawn in code, as a texture. Drawn small, it is soft when it fills a large card. One that tiles
+ * lies on ground and bark, which are seen almost edge on: it is read along the slant, so that it stays sharp
+ * into the distance (the graphics card gives as much of the 8 as it has).
+ */
 export function drawn(width: number, height: number, draw: (c: CanvasRenderingContext2D) => void, tiled = false): CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -91,7 +95,10 @@ export function drawn(width: number, height: number, draw: (c: CanvasRenderingCo
   draw(canvas.getContext('2d')!);
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
-  if (tiled) texture.wrapS = texture.wrapT = RepeatWrapping;
+  if (tiled) {
+    texture.wrapS = texture.wrapT = RepeatWrapping;
+    texture.anisotropy = 8;
+  }
   return texture;
 }
 
