@@ -234,6 +234,7 @@ export const sv = {
     berget: 'Berget · klockan sex',
     norrsken: 'Norrskenet · i skymningen',
     epilog: 'Godiskalaset · klockan nio',
+    byn: 'Byn · en vecka senare',
     title: 'Elof och det stora godisäventyret',
   } as Record<string, string>,
 

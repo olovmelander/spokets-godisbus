@@ -1060,8 +1060,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (chapter.prologue) {
       paintedEyes.forEach((eye, i) => { eye.visible = flags.has(i === 0 && paintedEyes.length > 1 ? 'eye' : 'paint'); });
     }
-    // Keep the stolen paper bag distinct from the wooden pocket, across every chapter of the chase.
-    stolenBag.visible = ghostPlace.visible && (chapter.prologue ? flags.has('grab') || flags.has('blink') : chapter.id !== 'epilog') &&
+    // Keep the stolen paper bag distinct from the wooden pocket, across every chapter of the chase. It was given
+    // back on the summit, so neither the party nor Byn, a week later, has it.
+    stolenBag.visible = ghostPlace.visible && (chapter.prologue ? flags.has('grab') || flags.has('blink') : chapter.id !== 'epilog' && chapter.id !== 'byn') &&
       !(chapter.id === 'norrsken' && flags.has('eyes'));
     // The gold sweet glints at the bag's mouth all through the chase (plan §3.3 rule 3).
     const glint = stolenBag.getObjectByName('saturday-bag-glow');
