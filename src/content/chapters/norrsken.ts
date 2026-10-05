@@ -42,6 +42,8 @@ const JAY = 23;
 export const norrsken: ChapterData = {
   id: 'norrsken',
   place: 'dusk',
+  // The summit that Berget ends on, 31.4 EL up: the land lies under him from the first step.
+  outlook: 30,
   // The golden geléhallon: POFF, and he grows back, with both carvings at his feet.
   size: { scale: 3, after: 'taste' },
   spawn: { x: 1, y: 0.01 },

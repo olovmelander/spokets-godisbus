@@ -159,7 +159,7 @@ export function dress(chapter: ChapterData, look: PlaceLook): Dressing {
   const air = effects(chapter, from, to, look.id);
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
-  const far = scenery(look.id, heightAt(chapter, from));
+  const far = scenery(look.id, heightAt(chapter, from) - (chapter.outlook ?? 0), from, to);
   const life = look.id === 'village' ? villageLife(chapter) : null;
   if (life) group.add(life.group);
   if (look.id === 'dusk') group.add(stars());

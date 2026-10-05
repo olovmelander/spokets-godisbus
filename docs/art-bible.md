@@ -258,7 +258,7 @@ The forest's layers, and after them the garden's:
 | Layer | What it is in the garden | How it is made |
 | --- | --- | --- |
 | L0 Backdrop | Morning blue above, pale at the horizon, a warm glow to the left | The same gradient picture, in the garden's colours |
-| L1 Far scenery | White clouds that drift; blue hills of forest; the forest's edge with the neighbours' roofs in front of it; birches in their first yellow over a hedge; the garden's own leaves far out of focus | Five pictures, made as the forest's |
+| L1 Far scenery | White clouds that drift; blue hills of forest, one a long back with a knob; the valley's far side, with fields in strips, the river at their foot, the neighbours' roofs and a spruce forest on its crest; birches in their first yellow over a low hedge; the garden's own leaves far out of focus | Five pictures, made as the forest's |
 | L2 Mid-ground | **The house's red wall** with its cover strips, a white corner board and white-framed windows; a birch now and then | The wall is a small drawn picture, repeated, 21 EL behind the path; a chapter says where the house stands (`house`) |
 | L3 Play plane | **The deck:** boards 0.8 EL wide with dark gaps, each its own tone, a straight front edge and the dark under it. **The lawn:** a jungle of grass behind the path, stubble where he walks, dew, dandelions as tall as he is, clover, the birch's yellow leaves. Dry earth under the deck, a grey boulder, Pappa's pale shavings, the dark hedge. | A chapter marks what a stretch of ground is made of (`surfaces`); each kind has its tones and its edge. Nothing grows on what is built. |
 | L3, overhead | **The lower deck above him:** boards and joists, with the sun falling through between the boards as stripes on the earth | A chapter says where (`roofs`) |
@@ -268,10 +268,18 @@ The forest's layers, and after them the garden's:
 The bog, the mountain and the summit at dusk use the same layers with their own things: sphagnum cushions,
 sedge, dwarf birch, cloudberry leaves and cranberries; reindeer lichen, crowberry, dry grass and bare
 boulders. Two things are different in the open:
-- **The far scenery is the horizon.** Over the bog: clouds, the mountain in mist, low hills of forest, the
-  forest's edge, and the nearest spruces and bog pines, dark against the mist. From the mountain: clouds
-  and four lines of ridges with haze in the valleys between them, the nearest with the tops of its spruces.
-  At dusk the same ridges are dark blue, and a few windows are lit far below.
+- **The far scenery is the horizon.** Over the bog: long level clouds, the mountain in mist (a long back
+  that rises to a knob), low hills of forest, a pine wood as a low band across the mire, and nearest one
+  group of spruces, dark against the mist, with small crooked bog pines and silver dead ones. The middle of
+  the nearest picture is open mire. From the mountain: the land lies under him. At its foot the nearer
+  ridges stand high; as he climbs they sink, until thin ridges lie one behind the other close over the
+  horizon, each paler, under a sky that fills half the picture, with one long back and its knob over them
+  and the tops of the nearest spruces at the granite's edge. Under the crests the valley is painted, for
+  the flight: a lake the colour of the sky, a mire, a river's thread, clear-cuts, and the slope falling
+  away with its spruces. At dusk the same ridges are dark blue, and a few windows are lit far below.
+- **The sun is a veiled disc** in its glow over the bog and from the mountain, kept round whatever shape
+  the picture has; from the mountain the hour moves on after the flight, towards rose and a dimmer sky.
+  Elsewhere the sun stands too high to be seen, and there is no moon.
 - **The bog's ground is islands.** It goes down into the water behind the path, and the water lies as far
   back as the eye reaches. The soft tussocks are mounds of paler moss.
 
@@ -281,8 +289,14 @@ boulders. Two things are different in the open:
   nearest holds 1 and stands still in the world; the next ones hold about 0.65, 0.4 and 0.2; the sky holds
   0.08, and its clouds drift by themselves. Seen from the path, the nearest passes at about a quarter of the
   path's speed and the farthest hills at about a fortieth.
-- Every layer stays at the height of his eyes however high he climbs, and sinks by a small part of the climb
-  (`sink`), the nearer the more: nearer hills go down under farther ones.
+- Every layer stays at the height of his eyes however high he climbs, and sinks by a part of the climb
+  (`sink`), the nearer the more: nearer hills go down under farther ones. On the mountain the nearest slope
+  sinks by a third of the climb and 9 EL at most, the farthest ridges by a twentieth. A chapter that begins
+  on a height says how high (`outlook`): the finale stands on Berget's summit from its first step.
+- A tree far away is one of four: a Norrland spruce, a narrow spire in tiers that droop, with a bough
+  missing here and there; a pine with a bent stem, warm near the top, and a few flat plates for a crown; a
+  dead pine, silver, with crooked hanging limbs; a birch, white with dark marks, in yellow. A forested
+  ridge has spruce tops for a skyline, and a hill is a long back drawn by hand, not a wave.
 - A picture is 512 by 256 pixels. Its shapes are drawn whole, in colours already mixed with the place's haze,
   and then blurred by halving the picture and doubling it again; a band of mist lies at its foot. Its top row
   is clear and its bottom row is its foot, and the card repeats both, so no layer has an edge.
@@ -369,8 +383,8 @@ Each should be recognisable at phone size, and none is final.
   moss, bark and wood. What is there now is drawn in code and reads as stylized, not as photographed.
 - On High: bloom on sparkles, and the half-resolution blur by depth. On Low: the grade inside the materials.
 - Water with glitter, the things on rails and the helpers in the place's style: they are still greybox boxes.
-- In the bog, the mountain and the final: pines with crowns (a bare trunk reads as a pole, so the mountain
-  has none yet), the valley below the crane flight, Mamma's lamp, the headlamps.
+- In the bog, the mountain and the final: pines with crowns on the play plane (a bare trunk reads as a
+  pole, so the mountain has none yet; the far scenery has them), Mamma's lamp, the headlamps.
 - In the garden: long shadows, the hose and the lost things under the deck, the birch's crown, the workshop.
 - What the windows show at home does not move. The finale's sky, distant layers and haze now share the
   same nightfall; its stars are separate round points, unaffected by the sky gradient's aspect ratio.
