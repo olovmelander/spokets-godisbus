@@ -28,6 +28,7 @@ import { codeFor } from './save/codes';
 import { createStore, newSave, type PlayerSave } from './save/store';
 import { createPhotoStore } from './save/photos';
 import { ghostNamed, rememberFlags, storyFinished, visitChapter } from './save/journey';
+import { markOnward, takeOnward } from './save/onward';
 import type { SimStart, Vec } from './sim/types';
 import { createBench } from './ui/bench';
 import { createDebug, type Debug } from './ui/debug';
@@ -513,7 +514,9 @@ function start(): void {
       save = { ...save, updated: Date.now(), settings, chapter: id, checkpoint: -1, checkpoints: others(save.checkpoints ?? {}), candy: others(save.candy), placed: others(save.placed), flags: others(save.flags) };
       store.write(save);
       again = true;
-      location.href = `${location.pathname}${courseQuery(params, id)}`;
+      markOnward(id);
+      // Replaced, not added: Back must not reopen the chapter left behind and move the save back to it.
+      location.replace(`${location.pathname}${courseQuery(params, id)}`);
       return true;
     },
   });
@@ -575,7 +578,10 @@ function start(): void {
     },
   );
 
-  if (loaded.kind === 'unreadable' || (!benchOn && !at && (params.has('title') || (chapter.id !== 'testbana' && !debugOn)))) showTitle();
+  // A chapter reached from the page before it ("Nästa kapitel", "Spela igen", a code) opens on its time card: the
+  // title shows when the game is opened, not between chapters (src/save/onward.ts).
+  const onward = takeOnward(chapter.id);
+  if (loaded.kind === 'unreadable' || (!benchOn && !at && !onward && (params.has('title') || (chapter.id !== 'testbana' && !debugOn)))) showTitle();
 
   // The page is a game surface: no pinch zoom, no double-tap zoom, no long-press menu (plan §6.7).
   for (const type of ['gesturestart', 'dblclick', 'contextmenu']) {
@@ -640,7 +646,9 @@ function start(): void {
     save = visitChapter(save, id);
     store.write(save);
     again = true;
-    location.href = `${location.pathname}${courseQuery(params, id)}`;
+    markOnward(id);
+    // Replaced, not added: Back must not reopen the chapter left behind and move the save back to it.
+    location.replace(`${location.pathname}${courseQuery(params, id)}`);
   }
 
   /** "Spela igen": this course from its start; the collection and safe places remain. */
@@ -649,7 +657,8 @@ function start(): void {
     if (!keepSavedPosition) save = visitChapter(save, chapter.id, true);
     store.write(save);
     again = true;
-    location.href = `${location.pathname}${courseQuery(params, chapter.id)}`;
+    markOnward(chapter.id);
+    location.replace(`${location.pathname}${courseQuery(params, chapter.id)}`);
   }
   let endFor = 0;
   // The coda before the last page (docs/narrative-audit/threads.md §5.4): the tune closes, and one of the family

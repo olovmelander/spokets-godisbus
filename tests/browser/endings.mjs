@@ -95,7 +95,8 @@ try {
 
   console.log('endings: the coda and the last page of Gården');
   for (const [name, viewport] of [['garden-844x390', { width: 844, height: 390 }], ['garden-390x844', { width: 390, height: 844 }]]) {
-    const { page, state, finish } = await open(name, { viewport, hasTouch: true }, '?dev&debug&standin&course=garden&tier=low&at=207,0.01');
+    // No service worker: it would answer the next chapter's load itself, past the test's stand-in page.
+    const { page, state, finish } = await open(name, { viewport, hasTouch: true, serviceWorkers: 'block' }, '?dev&debug&standin&course=garden&tier=low&at=207,0.01');
     await page.keyboard.down('ArrowRight');
     await until(state, (s) => s.flags.includes('goal'), `${name}: the goal`, 90000);
     const reached = Date.now();
@@ -116,6 +117,17 @@ try {
       check(`${name}: ${selector} is in view`, await inView(page, selector));
     }
     await picture(page, `/tmp/endings-${name}.png`);
+    if (name === 'garden-844x390') {
+      // "Nästa kapitel" goes on into Granskogen: the page marks it, so the next load opens on its card, not the title.
+      await page.route((url) => url.searchParams.get('course') === 'granskog', (route) => route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>next</title>' }));
+      const before = await page.evaluate(() => history.length);
+      await page.locator('#endOnward').click();
+      await page.waitForURL((url) => url.searchParams.get('course') === 'granskog', { timeout: 30000 });
+      check(`${name}: Nästa kapitel marks Granskogen to open without the title`,
+        await page.evaluate(() => sessionStorage.getItem('godisbus.v1.onward')) === 'granskog');
+      // The chapter left behind is not a step back: Back must not reopen it and move the save back to it.
+      check(`${name}: going on adds no step to Back`, await page.evaluate(() => history.length) === before);
+    }
     await finish();
   }
 
@@ -139,6 +151,30 @@ try {
     await until(state, (s) => s.flags.includes('scene:card'), 'the card ends', 30000);
     check('garden: nobody speaks from off screen as it opens', (await state()).said.length === 0);
     await finish();
+  }
+  console.log('endings: going on into a chapter opens it on its card, not the title');
+  {
+    const context = await browser.newContext({ viewport: { width: 844, height: 390 }, serviceWorkers: 'block' });
+    // As "Nästa kapitel" leaves it: this tab's session marks Granskogen, once.
+    await context.addInitScript(() => {
+      if (sessionStorage.getItem('test:seeded')) return;
+      sessionStorage.setItem('test:seeded', '1');
+      sessionStorage.setItem('godisbus.v1.onward', 'granskog');
+    });
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(String(error)));
+    // Not a debug session: the public game, where every load used to open on the title.
+    await page.goto(`${origin}${BASE}?dev&standin&course=granskog&tier=low`);
+    await page.waitForFunction(() => document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
+    await page.waitForFunction(() => document.getElementById('sceneCaption')?.textContent === 'Granskogen · halv tolv', null, { timeout: 30000 });
+    check('onward: Granskogen opens on its card', true);
+    check('onward: no title between the chapters', await page.locator('#title').isHidden());
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
+    check('onward: opened again by hand, the game shows its title', await page.locator('#title').isVisible());
+    assert.deepEqual(errors, [], 'onward: browser errors');
+    await context.close();
   }
   console.log(`endings: ${checked} checks passed`);
 } finally {
