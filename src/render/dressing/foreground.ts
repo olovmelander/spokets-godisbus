@@ -1,5 +1,6 @@
-import { Group, Mesh, MeshBasicMaterial, PlaneGeometry, type CanvasTexture } from 'three';
+import { Group, MeshBasicMaterial, type CanvasTexture } from 'three';
 import type { ChapterData } from '../../sim/types';
+import { quadBatch } from '../quads';
 import { drawn, grows, heightAt, sequence, surfaceAt } from './kit';
 
 // --- L4: the foreground ---------------------------------------------------------------------------------
@@ -69,37 +70,55 @@ function blurredShrub(seed: number, growth: Growth = 'dark'): CanvasTexture {
   });
 }
 
+/** Some pictures of one size side by side as one: the cards of a batch each show one of them. */
+function sheet(pictures: CanvasTexture[]): CanvasTexture {
+  const one = pictures[0]!.image as HTMLCanvasElement;
+  return drawn(one.width * pictures.length, one.height, (c) => {
+    for (const [i, picture] of pictures.entries()) c.drawImage(picture.image as HTMLCanvasElement, i * one.width, 0);
+  });
+}
+
+/** Cards of soft growth as one batch, drawn far to near: each is one of the pictures of its sheet. */
+function cards(list: { x: number; y: number; z: number; wide: number; tall: number; picture: number }[], pictures: CanvasTexture[], order: number, fog: boolean, opacity = 1) {
+  const material = new MeshBasicMaterial({ map: sheet(pictures), transparent: true, vertexColors: true, opacity, fog, depthWrite: false });
+  const batch = quadBatch(list.length, material);
+  for (const [i, card] of list.sort((a, b) => a.z - b.z).entries()) {
+    batch.put(i, card.x, card.y, card.z, card.wide / 2, 0, 0, card.tall / 2);
+    batch.cell(i, card.picture / pictures.length, 0, 1 / pictures.length, 1);
+  }
+  batch.mesh.renderOrder = order;
+  batch.mesh.visible = list.length > 0;
+  return batch.mesh;
+}
+
 export function foreground(chapter: ChapterData, from: number, to: number, growth: Growth | null): Group {
   const group = new Group();
   // Bare rock has nothing soft in front of it.
   if (growth === null) return group;
   const next = sequence(59);
-  const textures = [blurredTuft(1, growth), blurredTuft(2, growth), blurredTuft(3, growth)];
-  const materials = textures.map((map) => new MeshBasicMaterial({ map, transparent: true, fog: false, depthWrite: false }));
+  const tufts = [];
   for (let x = from - 6 + next() * 4; x < to + 6; x += 3.5 + next() * 5.5) {
     const z = 4 + next() * 3.5;
     const wide = 4 + next() * 4;
     // Mostly low, along the bottom of the picture; now and then one stands tall and passes in front.
     const tall = next() < 0.2 ? 4.2 + next() * 1.6 : 2.4 + next() * 1.3;
-    const card = new Mesh(new PlaneGeometry(wide, tall), materials[Math.floor(next() * materials.length)]!);
+    const picture = Math.floor(next() * 3);
     // Grass grows from the ground, not from a deck's edge.
     if (surfaceAt(chapter, x) !== undefined) continue;
     if (!grows(chapter, x)) continue;
-    card.position.set(x, heightAt(chapter, x) - 2.3 + tall / 2, z);
-    card.renderOrder = 5;
-    group.add(card);
+    tufts.push({ x, y: heightAt(chapter, x) - 2.3 + tall / 2, z, wide, tall, picture });
   }
+  group.add(cards(tufts, [1, 2, 3].map((seed) => blurredTuft(seed, growth)), 5, false));
   // The undergrowth far behind the path: soft dark tufts that break the line where the moss ends.
-  const far = [blurredShrub(7, growth), blurredShrub(8, growth), blurredShrub(9, growth)].map((map) => new MeshBasicMaterial({ map, transparent: true, opacity: 0.8, depthWrite: false }));
+  const shrubs = [];
   for (let x = from - 10 + next() * 4; x < to + 10; x += 1.6 + next() * 2.6) {
     const z = -8 - next() * 8;
     const wide = 2.6 + next() * 3;
     const tall = 1.4 + next() * 2.2;
-    const card = new Mesh(new PlaneGeometry(wide, tall), far[Math.floor(next() * far.length)]!);
+    const picture = Math.floor(next() * 3);
     if (!grows(chapter, x)) continue;
-    card.position.set(x, heightAt(chapter, x) - 0.3 + tall / 2, z);
-    card.renderOrder = -1;
-    group.add(card);
+    shrubs.push({ x, y: heightAt(chapter, x) - 0.3 + tall / 2, z, wide, tall, picture });
   }
+  group.add(cards(shrubs, [7, 8, 9].map((seed) => blurredShrub(seed, growth)), -1, true, 0.8));
   return group;
 }
