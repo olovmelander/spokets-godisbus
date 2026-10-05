@@ -226,13 +226,18 @@ size divided by 15 cm (plan §5.2):
 | Lingonberry leaf | 1.5 cm | 0.09 EL |
 | Spruce needle | 2–4 cm | 0.16–0.3 EL |
 | Spruce cone | 7 cm | 0.5 EL |
-| Moss cushion | 2–10 cm | 0.06–0.36 EL |
+| Moss cushion | 4–16 cm | 0.3–1.1 EL |
 | Blade of grass | 25–40 cm | 0.7–2.3 EL |
 | Spruce trunk | 40 cm across | 2–2.9 EL across |
 | Deck step | 18 cm | 1.2 EL |
 
 Keeping these is what makes the world read as seen from close. Where play needs something else, note it here.
-So far: the moss cushions are kept low where Elof walks, so that his boots show.
+So far:
+- The moss cushions are kept low where Elof walks, so that his boots show.
+- **The cones of the story are bigger than a cone is.** The ones that lie on the floor are 0.5 EL. The one
+  he pushes is 1.5 EL and the ones that roll are 1.7 EL, three times a real cone, and the one he climbs
+  over is 4 EL, "as big as a car": each is a thing in the game, and has to be seen and stood on. All are one
+  cone from the forest kit, four times as long as it is thick, with its scales in spirals.
 
 **At home Elof is a boy.** In the prologue, from the golden candy in the final, and in the epilogue he is
 drawn three times his usual size (`size` in the chapter), beside a ghost that stays the size it is. The plan's
@@ -362,6 +367,12 @@ Each should be recognisable at phone size, and none is final.
   there before.
 - **A person is a sign on a stick,** in a colour of their own: Moa's denim blue, Pappa's green, Bertil's
   orange, Mamma's white with a heart. No likeness: the family's hands and figures are theirs to approve.
+- **In the forest the kit modelled in Blender takes their place** once it has loaded
+  (`art/blender/forest-kit.py`, `art/baked/boot/forest-kit.glb`; `src/render/forest-kit.ts` lists its
+  shapes): the cones, the twig, the leaf, the seesaw, the vittra door under its spruce, Bertil's cap (a
+  red-and-white trucker cap with a plain round badge), the lichen and the roots he climbs, the floor's
+  cushions, stones, young spruces, ferns and mushrooms, and the chapter's landmarks (`landmarks` in its
+  data): the giant cone, the anthill, the fallen log and the stone at the eddy.
 
 ### 2.8 What the look still lacks
 

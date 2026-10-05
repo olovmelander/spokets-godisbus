@@ -5,6 +5,7 @@ import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
 import { drawnWhile } from './idle';
 import { sweetSocket } from './candy';
+import { forestSocket, standingCone } from './forest-kit';
 import { saturdayBag } from './saturday-bag';
 
 /**
@@ -115,6 +116,8 @@ export function moverProp(mover: Mover): Group | null {
         side.rotation.set(lean, 0, lean * 0.6);
         group.add(side);
       }
+      // The forest kit's twig takes its place (./forest-kit.ts), as its cone, its leaf, its seesaw, its door and the cap do theirs.
+      forestSocket(group, { shape: 'kvist', size: [w / 2.4, h / 0.5, h / 0.5] });
       break;
     }
     case 'cone': {
@@ -122,6 +125,7 @@ export function moverProp(mover: Mover): Group | null {
       const profile = [[0, 0], [0.62, 0.06], [0.95, 0.28], [1, 0.52], [0.78, 0.8], [0.4, 0.96], [0, 1]];
       const cone = new Mesh(new LatheGeometry(profile.map(([r, y]) => new Vector2(r! * (w / 2), y! * h)), 12), solid('#7a4f2c', 0.85, { flatShading: true }));
       group.add(cone);
+      forestSocket(group, standingCone(w, h));
       break;
     }
     case 'leaf': {
@@ -129,6 +133,7 @@ export function moverProp(mover: Mover): Group | null {
       const rib = new Mesh(new BoxGeometry(w * 0.92, 0.05, 0.07), solid('#8a8f33', 0.7));
       rib.position.y = h;
       group.add(leaf, rib);
+      forestSocket(group, { shape: 'lovbat', size: [w / 2.9, h / 0.3, w / 2.9] });
       break;
     }
     case 'log': {
@@ -277,7 +282,7 @@ export function spotProp(spot: Spot): SpotProp | null {
       root.position.set(-0.12, 0.86, -0.02);
       root.rotation.z = 1.2;
       const gift = ball(0.08, solid('#c4202a', 0.25), 0.37, 0.12, 0.2);
-      group.add(frame, door, root, ball(0.025, solid('#dfc372', 0.5), 0.16, 0.33, 0.17), gift);
+      group.add(forestSocket(new Group().add(frame, door, root, ball(0.025, solid('#dfc372', 0.5), 0.16, 0.33, 0.17)), { shape: 'vittradorr', size: 0.85 }), gift);
       return { group, update(used) { gift.scale.setScalar(used ? 1 : 0); drawnWhile(gift, used); } };
     }
     case 'keepsake': {
@@ -365,10 +370,10 @@ export function spotProp(spot: Spot): SpotProp | null {
     }
     case 'seesaw': {
       // Pappa's seesaw: a stick across a stone. He stands on the low end.
-      const plank = new Mesh(new BoxGeometry(4.4, 0.12, 0.7), solid('#c9ae84', 0.75));
+      const plank = forestSocket(new Group().add(new Mesh(new BoxGeometry(4.4, 0.12, 0.7), solid('#c9ae84', 0.75))), { shape: 'gungbrada' });
       plank.position.set(1.3, 0.34, 0.6);
       plank.rotation.z = 0.14;
-      group.add(plank, ball(0.3, solid('#8d8f8a', 0.95), 1.3, 0.12, 0.6, [1.2, 0.8, 1]));
+      group.add(plank, forestSocket(new Group().add(ball(0.3, solid('#8d8f8a', 0.95), 1.3, 0.12, 0.6, [1.2, 0.8, 1])), { shape: 'gungsten', at: [1.3, -0.2, 0.6] }));
       return { group, update: (used, _clock, dt) => { since = used ? since + dt : 0; plank.rotation.z = 0.14 - Math.min(1, since / 0.25) * 0.28; } };
     }
     case 'lollipop': {
@@ -724,7 +729,8 @@ export function rideProp(look: RideLook): Object3D | null {
       bowl.scale.set(1.15, 0.55, 0.9);
       const peak = new Mesh(new CylinderGeometry(0.55, 0.55, 0.05, 18, 1, false, -0.9, 1.8), cloth);
       peak.position.set(0.55, -0.02, 0);
-      group.add(bowl, peak);
+      // The kit's cap floats deeper, so that he sits in it, and is turned a little towards the camera.
+      group.add(forestSocket(new Group().add(bowl, peak), { shape: 'keps', at: [0, 0.3, 0], turn: [0.22, -0.7, 0] }));
       group.position.y = 0.02;
       break;
     }
