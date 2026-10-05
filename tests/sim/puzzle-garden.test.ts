@@ -252,6 +252,23 @@ describe('the curl on the ring: the solution', () => {
       expect(onTheTrail(sim)).toBe(true);
       expect(sim.bubbles).toBe(0);
     }
+    // And all of it at a run, by a boy who knows it: under the bark, up, Dra, Kasta snöret before the curl has
+    // come to rest, off the swing on its first way up, and along the bough without stopping.
+    const sim = at(79);
+    const since = sim.steps;
+    runPast(sim, bark.x - 0.3);
+    jump(sim);
+    expect(standsOn(sim, bark), where(sim)).toBe(true);
+    use(sim);
+    run(sim, 0.1);
+    expect(swingAlong(sim, 1, 1, 0.7)).toEqual([ring.x]);
+    runPast(sim, right(bough) + 0.6);
+    settle(sim);
+    expect(taken(sim)).toBe(5);
+    expect(onTheTrail(sim), where(sim)).toBe(true);
+    expect(sim.bubbles).toBe(0);
+    expect(seconds(sim, since)).toBeLessThan(10);
+    console.log(`the curl on the ring, at a run from x 79 to the lawn beyond the bough: ${seconds(sim, since).toFixed(1)} s`);
   });
 
   it('forgives where he stands and when he lets go: from anywhere on the bark, anywhere on the upper part of the swing', () => {
@@ -405,7 +422,7 @@ describe('the curl on the ring: the wrong tries', () => {
     expect(sim.bubbles).toBe(0);
   });
 
-  it('letting go badly: early, late, backwards or not at all is a soft landing, and the ring is still there', () => {
+  it('letting go badly: early, late, backwards or off a lace climbed short is a soft landing, and the ring is still there', () => {
     const count = (sim: Sim) => expect(sim.bubbles).toBe(0);
     // Forwards, from the first moment of the swing to its very top.
     for (const from of [left(bark), bark.x, right(bark)]) {
