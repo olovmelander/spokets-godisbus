@@ -1,5 +1,5 @@
 # The checks every pull request must pass (docs/game-plan.md §6.11): the same as the deploy, plus the
-# browser smoke test. Nothing is published from here.
+# browser suites. Nothing is published from here.
 name: CI
 
 on:
@@ -34,6 +34,27 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run privacy-check
+
+  # The browser suites play the built game in a headless browser. GitHub has no graphics card, so the game is
+  # drawn in software there, and in one job the suites took 44 to 75 minutes. They are shared out over six
+  # jobs that run side by side (tests/browser/suites.mjs says how), and each job runs all its suites, also
+  # after one has failed. `npm run test:browser` still runs every suite in a row.
+  browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      # The asset build turns textures into KTX2 with this tool (plan §5.6).
+      - run: bash ./scripts/install-ktx.sh
+      - run: npm ci
+      - run: npm run build
       # Playwright is pinned to 1.56.1, the version whose browser cloud sessions have (CLAUDE.md).
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+      - run: node tests/browser/run.mjs --part ${{ matrix.part }}/6
