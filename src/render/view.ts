@@ -283,8 +283,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   dressing?.group.traverse((object) => { if (object.name.startsWith('far-')) farCards.push(object); });
   const water = createWater(chapter, place?.water ?? null, place?.sun.from,
     place && dressing ? { place: place.id, sky: place.sky, far: farCards, dressing: dressing.group, street: (x) => heightOfGroundAt(chapter, x) } : undefined);
-  // It is drawn in the scene's own pass, after what stands in it and before what drifts over it (the bog's
-  // mist sheets, the shafts of light, the dust): its render order says where.
+  // It is drawn in the scene's own pass, after what stands in it and the far layers, and before what
+  // drifts over it (the bog's mist sheets, the shafts of light, the dust): its render order says where.
   scene.add(water.group);
   const tussockMeshes = buildTussocks(chapter, place?.tussock ?? null);
   const berryMeshes = buildBerries(chapter);

@@ -85,7 +85,7 @@ const KINDS: Partial<Record<PlaceId, WaterKind>> = {
   forest: POOL,
   /** Peat water: nearly black, still, and a mirror. It lies in front of the tussocks and behind the whole bog. */
   bog: {
-    front: 2.4, corner: 1.55, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
+    front: 2.4, corner: 1.5, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
     dim: 0.6, faceTop: '#34423f', faceDeep: '#0e1a18', ramp: 1.6, faceAlpha: 0.93, faceBelow: 1, murk: 0.9, through: '#9fb09a',
     mirror: 0.5, tint: '#c8bd9e', ripple: 0.8, bedColour: '#000000', shoreColour: '#000000', stands: null,
   },
@@ -360,9 +360,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     surface: { value: new Vector4(kind.mirror, kind.ripple, kind.dim, kind.faceBelow) },
   };
   const material = new ShaderMaterial({
-    // It writes its depth, so that what drifts over it afterwards (mist, dust) is hidden where it dips under
-    // the surface, and the depth blur treats the water as what it is and not as the pit behind it.
-    uniforms, transparent: true, depthWrite: true, fog: true, side: DoubleSide,
+    // It writes no depth: a shaft of light or a sheet of mist that dips under the surface goes on into the
+    // water, as light does, instead of being cut off along a line.
+    uniforms, transparent: true, depthWrite: false, fog: true, side: DoubleSide,
     vertexShader: `
       attribute vec4 part;
       varying vec3 waterWorld; varying float waterDepth; varying vec4 waterPart;
@@ -469,9 +469,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         }
         face = mix(face, skyMiddle * mirrorTint, 0.22 * (1.0 - smoothstep(0.01, 0.035, under)));
         if (body.w > 0.0) {
-          // Shallow water: under its bed the street is cut through, dark.
+          // Shallow water: under its bed the street is cut through, dark and cool as the ground's own front.
           float ground = smoothstep(body.w - 0.02, body.w + 0.03, under);
-          face = mix(face, bedColour * mix(0.75, 0.35, smoothstep(body.w, body.w + 2.0, under)), ground);
+          face = mix(face, bedColour * vec3(0.7, 0.82, 1.2) * mix(0.8, 0.4, smoothstep(body.w, body.w + 2.0, under)), ground);
           faceSolid = 1.0;
         }
         // A puddle's far shore: wet asphalt, with a little of the sky in it.
@@ -479,8 +479,6 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
 
         vec3 colour = waterPart.x < 0.5 ? top : waterPart.x < 1.5 ? face : shore;
         float there = waterPart.x < 0.5 ? solid : waterPart.x < 1.5 ? faceSolid : 1.0;
-        // Where it has thinned out to nothing there is no water: nothing is drawn, and no depth written.
-        if (there * waterPart.y < 0.02) discard;
         gl_FragColor = vec4(colour, there * waterPart.y);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -497,8 +495,10 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   geometry.computeBoundingSphere();
   const body = new Mesh(geometry, material);
   body.name = 'water';
-  // After everything that stands in the water, and before what drifts over it: mist, shafts of light, dust.
-  body.renderOrder = 1.5;
+  // After the far layers (-3) and the street's houses (-2), which it thins out over and mirrors; before
+  // everything else that is see-through, so that it is drawn over the water and not under it: the shrubs at
+  // the far edge of the moss (-1), the glitter bubble, the mist sheets, the shafts of light and the dust.
+  body.renderOrder = -1.5;
   if (pools.length) group.add(body);
   let target: WebGLRenderTarget | null = null;
   const copyMaterial = new ShaderMaterial({

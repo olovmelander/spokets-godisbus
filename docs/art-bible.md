@@ -283,6 +283,19 @@ boulders. Two things are different in the open:
 - **The bog's ground is islands.** It goes down into the water behind the path, and the water lies as far
   back as the eye reaches. The soft tussocks are mounds of paler moss.
 
+**Water** (`src/render/water.ts`) is one mesh in a chapter and one shader on every tier:
+- **It mirrors its place.** The backdrop's sky, and the far layers' pictures standing on their heads, hinged
+  where the nearest of them meets the water; a street puddle mirrors the house fronts behind it instead. The
+  mirror is one small picture built at load. Its own colour is the place's, dimmed: the sky in the water is
+  always darker than the sky.
+- **It has no edge behind the path.** It thins out into the haze, or ends at a shore. The bog's lies in front
+  of its tussocks and behind the whole chapter; the forest's pool fades into the forest; the village's puddle
+  is a hand deep, with asphalt under it and a wet far shore.
+- **In front it is cut,** as the ground is: the cut face is the water's own body, darker with depth, with a
+  pale line at the surface and no caustic lines on it. Those lie on what is under water, on Mid and High.
+- **Its ripples are small and die out with distance,** and all but stand with reduced motion. Mid adds the
+  low sun's glitter under the sky's glow; High also shows what lies just under the surface.
+
 **The far layers** (`src/render/backdrop.ts`). This is the parallax:
 - A place outdoors has four or five, one behind the other, 32 to 90 EL behind the path. Each is one card that
   goes with the camera, and its picture slides across it by its own part of the camera's way (`hold`). The
@@ -382,7 +395,8 @@ Each should be recognisable at phone size, and none is final.
 - Plates rendered in Blender after the landscape references, and scanned CC0 materials from Poly Haven for
   moss, bark and wood. What is there now is drawn in code and reads as stylized, not as photographed.
 - On High: bloom on sparkles, and the half-resolution blur by depth. On Low: the grade inside the materials.
-- Water with glitter, the things on rails and the helpers in the place's style: they are still greybox boxes.
+- The things on rails and the helpers in the place's style: they are still greybox boxes. The water mirrors
+  the sky and the far scenery, and not yet what stands in it: a tussock, a trunk, him.
 - In the bog, the mountain and the final: pines with crowns on the play plane (a bare trunk reads as a
   pole, so the mountain has none yet; the far scenery has them), Mamma's lamp, the headlamps.
 - In the garden: long shadows, the hose and the lost things under the deck, the birch's crown, the workshop.
