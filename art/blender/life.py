@@ -13,9 +13,11 @@ two together, through life.json).
 
 - The moose is built here from numbers: a body, a neck, a head, legs, ears and antlers, each a tube through a
   few stations. There is no armature. For every cell a gait puts the joints where they belong, the parts are
-  built anew, and Cycles renders the animal from the side, without perspective, on a clear film. It is one
-  grey: the game gives it its colour, mixed with the place's haze. The legs of its far side are rendered
-  thinner than air, so that they are paler than the near ones.
+  built anew, and Cycles renders the animal from the side, without perspective, on a clear film, through a
+  wide filter: it is as soft as a far picture. It is grey, lit along its back: the game gives it its colour,
+  mixed with the place's haze. The legs of its far side are rendered half clear, so that they are paler than
+  the near ones. Twelve cells are a cycle of its walk, and six are it standing: stopped, its head coming up and
+  turning to the camera, looking, and with one ear laid back.
 - The birds, the smoke, the far window and the shooting star are drawn here, in white, from plain shapes.
 
 Nothing in it comes from anyone else: no model, no picture, no photograph. It empties the scene first.
