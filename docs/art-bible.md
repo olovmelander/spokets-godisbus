@@ -212,7 +212,8 @@ Olov has seen both, and his eye decides at H1b.
 ## 2. The look of a place
 
 A chapter names its place (`place` in its data), and the game dresses the chapter's ground in that place's
-look: `src/render/dressing.ts`. The rules of the chapter don't change. A chapter without a place is greybox.
+look: `src/render/dressing/`, a module for each place and each shared system. The rules of the chapter don't
+change. A chapter without a place is greybox.
 
 ### 2.1 Scale
 

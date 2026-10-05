@@ -572,7 +572,7 @@
       a moss bank with cushions, grass lit from behind, lingonberry sprigs, cones and needles; spruce trunks
       with bark and roots; trunks far out of focus with spots of light; shafts of light and dust; soft dark
       grass in the foreground. **All of Kapitel 2 is dressed the same way:** `?dev&course=granskog`.
-    - **How:** a chapter names its place (`place: 'forest'`), and `src/render/dressing.ts` builds the layers
+    - **How:** a chapter names its place (`place: 'forest'`), and `src/render/dressing/` builds the layers
       of plan §5.3 around the chapter's ground. The rules of the chapter are untouched, and a chapter without
       a place is greybox as before. Everything is made in code: no download, no third-party file.
     - It costs about 50 to 75 draw calls and 110,000 to 150,000 triangles in the picture. The scatter is
@@ -621,7 +621,7 @@
         by halving and doubling it, on one card that goes with the camera. Its picture slides across the
         card by its own part of the camera's way (`hold`: 1 stands in the world, 0.08 is the sky), and it
         sinks a little under the layers behind it when he climbs (`sink`). Sliding a picture changes no
-        shader. `dressing.ts` lost its two far plates and its horizon; `dress()` calls `scenery()`.
+        shader. The dressing (`src/render/dressing/`) lost its two far plates and its horizon; `dress()` calls `scenery()`.
       - It costs two or three draw calls more in a place: the golden frames went from 58 to 60 (the
         forest) and from 38 to 41 (the deck), of 120. Each layer is blended over the picture from its top
         down. **Not measured on a device.**
