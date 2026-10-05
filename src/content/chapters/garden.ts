@@ -27,6 +27,15 @@ import type { Candy, ChapterData } from '../../sim/types';
  *
  * 5b. **Daggklockspelet** (O1): on the lawn between the roots, four drops of dew ring when he hops up to them.
  *
+ * Over and beside the trail lie three side ways (docs/level-design.md), each marked by a heart in sight from
+ * the trail, and each letting out forward onto it:
+ * - **The window sills:** five boards along the house wall over the deck's steps, up and down again before
+ *   the ladybird. The first proof that up is worth looking at.
+ * - **The planks by the hose:** two boards under the deck for whoever climbs back up the hose he slid down.
+ *   A hidden candy lies over the second.
+ * - **The clothes line:** leaves up from the boulder, three rings in a row over the dew rain, and a leaf to
+ *   land on with a hidden candy over it. The dry, brave way; the lawn below stays the way that dodges drops.
+ *
  * Not built yet: the ghost at the forest's edge. What is here is the ground, the candy and the rules; what it looks like comes later.
  */
 
@@ -62,12 +71,15 @@ export const garden: ChapterData = {
   ],
   // The deck goes on overhead, level with where he stood: its joists are where the chain's nails sit.
   roofs: [{ from: 46.6, to: 66.4, y: 5.95 }],
-  // Off the trail: behind him at the start, at the end of the swing chain, over the boulder, and before Moa.
+  // Off the trail: behind him at the start, at the end of the swing chain, over the leaf the clothes line ends
+  // on, and on the planks beside the hose. Two for the brave, in sight above a row of swings; two for the
+  // curious, back the way he came. The order is the album's, not the path's.
+  // The last is there once the hose is: like its planks, it is not something to fall into from the deck.
   hidden: [
     { x: -1.8, y: 6.5, kind: 'gelehallon' },
     { x: 61.85, y: 3.65, kind: 'gummibjorn', route: true },
-    { x: 103, y: 3.2, kind: 'skumbanan' },
-    { x: 160.5, y: 1.9, kind: 'skumsvamp' },
+    { x: 123.9, y: 3.1, kind: 'skumbanan', way: 'at the end of the clothes line' },
+    { x: 50.7, y: 3.3, kind: 'skumsvamp', after: 'ladybird', way: 'back up the hose, on the planks under the deck' },
   ],
   house: { from: -40, to: 72, windows: [4, 24, 40, 58] },
   spawn: { x: 1, y: 6.01 },
@@ -183,6 +195,76 @@ export const garden: ChapterData = {
     // The last one is short, so its swing goes high: the candy hangs where only that swing reaches.
     { x: 57.4, y: 4.9, length: 2.8, extra: true },
     { x: 60.6, y: 4.9, length: 2, extra: true },
+    // The clothes line: three rings in a row over the dew rain, at equal spacing and equal height, out of
+    // reach of anyone standing on the lawn. From the highest leaf he swings along them one after another:
+    // letting go of one on the way up puts the next in reach, and the last one sets him down on the leaf at
+    // the far end. They hang as high as the chain's nails, so that letting go anywhere is a soft landing on
+    // the lawn; and like the chain's first nail, one can be thrown to in the air at the top of a jump.
+    { x: 112, y: 4.9, length: 2.6, extra: true },
+    { x: 116, y: 4.9, length: 2.6, extra: true },
+    { x: 120, y: 4.9, length: 2.6, extra: true },
+  ],
+  // The clothes line itself, between its two poles: the three rings hang from it.
+  lines: [{ from: { x: 110.4, y: 6 }, to: { x: 121.6, y: 6 }, sag: 0.3, posts: true }],
+  ledges: [
+    // The window sills: five boards along the house wall, up from the step beyond the lifted board and down
+    // again before the ladybird. They are wide and 0.7 or 0.8 apart, and each going down begins under the end
+    // of the one before, so that walking, running or jumping off one lands on another or on the deck, never
+    // in the bubble. The fourth is short and the fifth long: a running jump from the top clears the one and
+    // lands on the other. Seen from the deck's steps, each is either one held jump up or clearly out of reach.
+    { x: 23.7, y: 8.4, width: 2.2, look: 'plank' },
+    { x: 25.6, y: 9.2, width: 2, look: 'plank' },
+    { x: 28.6, y: 10, width: 2.2, look: 'plank' },
+    { x: 30.7, y: 9.3, width: 1.8, look: 'plank' },
+    { x: 33.5, y: 8.6, width: 3.6, look: 'plank' },
+    // Two planks under the deck boards a little way from the hose, for whoever climbs back up it: Hoppa on
+    // the hose, from above them, sets him down on the first. They are there once the hose is. They begin
+    // beyond where a run off the deck's edge comes down, and lie lower than a jump off it can land: that fall
+    // is the glitter bubble's, as it always was. They clear the lost things on their stones, and a jump off
+    // the second is still a soft landing.
+    { x: 49.2, y: 2.2, width: 1.2, look: 'plank', needs: 'ladybird' },
+    { x: 50.5, y: 2.7, width: 1.2, look: 'plank', needs: 'ladybird' },
+    // The clothes line: three leaves up from the boulder's top to where the first ring is in reach. The
+    // highest is no higher than a held jump off it can come down from, onto the lawn, without the bubble...
+    { x: 105, y: 2.1, width: 1.6, look: 'leaf' },
+    { x: 107, y: 2.6, width: 1.6, look: 'leaf' },
+    { x: 109.2, y: 2.8, width: 1.6, look: 'leaf' },
+    // ...and beyond the last ring a broad leaf to land on and a smaller one to step down by, both above where
+    // the drops reach. Neither can be jumped onto from the lawn: the way to them is along the rings.
+    { x: 123.2, y: 2.3, width: 2.4, look: 'leaf' },
+    { x: 125.3, y: 1.6, width: 1.4, look: 'leaf' },
+  ],
+  // Side candy, in the order sills, clothes line, planks, so that the first of each way is a heart.
+  side: [
+    // Over the window sills, two over the long last one.
+    { x: 23.7, y: 8.95 },
+    { x: 25.6, y: 9.75 },
+    { x: 28.6, y: 10.55 },
+    { x: 30.7, y: 9.85 },
+    { x: 32.8, y: 9.15 },
+    { x: 34.4, y: 9.15 },
+    // Over the leaves up from the boulder.
+    { x: 105, y: 2.65 },
+    { x: 107, y: 3.15 },
+    { x: 109.2, y: 3.35 },
+    // Along the arc of each ring, where the lace carries him: before its lowest point, at it, and after it.
+    // A little inside the arc of a full lace, so that a throw that comes late, on a shorter lace, takes them too.
+    { x: 111, y: 2.8 },
+    { x: 112, y: 2.55 },
+    { x: 113, y: 2.8 },
+    { x: 115, y: 2.8 },
+    { x: 116, y: 2.55 },
+    { x: 117, y: 2.8 },
+    { x: 119, y: 2.8 },
+    { x: 120, y: 2.55 },
+    { x: 121, y: 2.8 },
+    // Where the last swing sets him down, and over the step down: too high for a jump from the lawn, which
+    // would find a leaf it cannot get onto.
+    { x: 122.5, y: 3.1 },
+    { x: 125.3, y: 2.3 },
+    // Over the first plank by the hose, where a jump off the hose sets him down, once the hose is there: he
+    // sees it as he slides down.
+    { x: 48.9, y: 2.75, after: 'ladybird' },
   ],
   movers: [
     // A curl of shaving on the wall's top, with a red ring: pulled down, it is the step up.
@@ -251,9 +333,15 @@ export const garden: ChapterData = {
     { id: 'garden:thanks', on: 'garden:shared-paper', who: 'moa', line: 'gardenThanks' },
   ],
   cameras: [
+    // Up on the window sills the picture is wider and looks down a little: the deck he can drop to stays in it.
+    { from: 22, to: 36, above: 8.2, zoom: 1.3, lift: -1.2 },
+    // On the planks by the hose it looks down too, at the ground he will step off onto.
+    { from: 46.9, to: 51.3, above: 1.5, zoom: 1.25, lift: -1.2 },
     { from: 46, to: 59, zoom: 1.25, lift: 0.4 },
     // Portrait includes the hook and its landing during the helper's demonstration.
     { from: 59, to: 70, zoom: 1.8, lift: 0.4, lead: 3.6 },
+    // On the leaves and along the clothes line: the rings overhead, the next one ahead and the lawn below.
+    { from: 104.2, to: 127, above: 1.5, zoom: 1.5, lift: -1.2, lead: 3.2 },
     { from: 108, to: 128, zoom: 1.25, lead: 3.2 },
     { from: 130, to: 152, zoom: 1.2 },
     { from: 164, to: 208, zoom: 1.5, lift: 0.5 },
