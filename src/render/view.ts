@@ -34,6 +34,7 @@ import { createSharedSweets } from './shared-sweets';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
+import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
@@ -522,6 +523,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   characterShadows.setTier(tier);
 
   const camera = new PerspectiveCamera(FOV, 1, 0.1, 140);
+  seeRich(camera, tier);
   let viewHeight = 5;
   let distance = 10;
   let pixelRatio = 1;
@@ -604,6 +606,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       water.applyCaustics(scene);
       characterShadows.prepareReceivers();
       materialGrade.apply(scene);
+      // What only Mid and High draw (./rich.ts) is laid here, so that a model which arrived late is laid too.
+      layRich(scene);
       scene.traverse((object) => {
         // What is out of the picture for having nothing to draw (./idle.ts) is drawn in these frames all the
         // same, as it is: at no size, or unseen. Its shader, its shape and its picture are made here, not in play.
@@ -987,6 +991,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (tier === chosen) return;
       const changesPipeline = (tier === 'low') !== (chosen === 'low') || tier === 'high' || chosen === 'high';
       tier = chosen;
+      seeRich(camera, tier);
       characterShadows.setTier(tier);
       materialGrade.setEnabled(tier === 'low');
       resolutionSteps = 0;
