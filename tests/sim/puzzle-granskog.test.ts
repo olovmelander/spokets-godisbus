@@ -573,6 +573,45 @@ describe('2. the prize cannot be had without it', () => {
     expect((granskog.later ?? []).some((beat) => beat.flag === PLACED)).toBe(false);
     expect(granskog.movers!.filter((mover) => `placed:${mover.id}` === PLACED)).toEqual([cone]);
   }, 60000);
+
+  it('a child who tries everything: half a minute of running and jumping about it at random, and the prize is his only by the cone', () => {
+    /** Random numbers from a seed, so that a failure can be played again. */
+    const random = (seed: number) => () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+    const starts = [{ x: plate.x - 1.2, y: slope(plate.x - 1.2) }, { x: plate.x, y: plate.y }, { x: bough.x - 1, y: bough.y }, { x: home.x, y: home.y + cone.height }];
+    let pushed = 0;
+    for (const [n, from] of starts.entries()) {
+      for (const uses of [false, true, true]) {
+        for (const start of [CALM, ROLLING]) {
+          const next = random(7919 * (n + 1) + (uses ? 104729 : 0) + (start === CALM ? 0 : 31));
+          const sim = standingAt(from.x, from.y, start);
+          let stick = 0;
+          let held = false;
+          let until = 0;
+          for (let i = 0; i < 30 / STEP; i++) {
+            if (i >= until) {
+              // He stays about it: when he strays up or down the slope, he mostly turns back.
+              const back = sim.curr.x < left(hearts) - 1.5 ? 1 : sim.curr.x > right(bough) + 0.8 ? -1 : 0;
+              stick = back !== 0 && next() < 0.8 ? back : [-1, -1, -0.5, 0, 0.5, 1, 1][Math.floor(next() * 7)]!;
+              held = next() < 0.6;
+              until = i + Math.floor((0.08 + next() * 0.5) / STEP);
+            }
+            const press = next() < 0.02;
+            sim.step({ ...idle, x: stick, hop: press, hopHeld: held || press, act: uses && next() < 0.01 });
+            if (prizeTaken(sim) > 0 && !sim.flags.has(PLACED)) expect.fail(`the prize without the cone: ${where(sim)}, from ${from.x}, ${from.y}`);
+          }
+          if (!uses) expect(sim.flags.has(PLACED)).toBe(false);
+          if (sim.flags.has(PLACED)) pushed++;
+          // Whatever he did, he is on his feet or on his way back to them, and the story's own things are untouched.
+          for (let i = 0; i < 4 / STEP && sim.curr.mode !== 'free'; i++) sim.step(idle);
+          expect(sim.curr.mode, `at the end: ${where(sim)}`).toBe('free');
+          expect(sim.placed.filter((id) => id !== 'twig' && id !== cone.id)).toEqual([]);
+          expect(sim.said).toEqual([]);
+        }
+      }
+    }
+    // Pressing Använd now and then, he pushes the cone in some of them: it is found by trying, too.
+    expect(pushed).toBeGreaterThan(0);
+  }, 60000);
 });
 
 describe('3. no dead end', () => {
