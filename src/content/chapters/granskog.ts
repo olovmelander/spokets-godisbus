@@ -88,6 +88,9 @@ export const granskog: ChapterData = {
   }],
   spawn: { x: 1, y: 0.01 },
   goalX: 204,
+  // For the picture only (content/life.ts): in one visit of three a moose crosses a bright gap far in among the
+  // trunks, after the last big candy, where nothing is left to do but walk out of the forest.
+  life: [{ kind: 'moose', from: 194.6, to: 200 }],
   ground: [
     { x: -3, y: 12 },
     { x: -3, y: 0 },

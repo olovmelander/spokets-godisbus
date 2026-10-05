@@ -92,6 +92,12 @@ export const garden: ChapterData = {
   house: { from: -40, to: 72, windows: [4, 24, 40, 58] },
   spawn: { x: 1, y: 6.01 },
   goalX: 210,
+  // For the picture only (content/life.ts): geese cross the sky in a V where the lawn opens after the house's
+  // wall, and again from the top of the heap of shavings.
+  life: [
+    { kind: 'geese', from: 72, to: 75 },
+    { kind: 'geese', from: 145, to: 152 },
+  ],
   ground: [
     { x: -3, y: 16 },
     { x: -3, y: 6 },

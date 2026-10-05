@@ -1,8 +1,12 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { COURSES } from '../../src/content/chapters';
 import { LIFE, WALK, type Ink } from '../../src/content/life';
+import { personFor } from '../../src/content/people';
 import { farLayers } from '../../src/render/backdrop';
 import { FIRST, GAP, QUADS, STRIDE, lifePlan, type LifePlan, type Watch } from '../../src/render/life-plan';
-import type { LifeStage, PlaceId } from '../../src/sim/types';
+import type { ChapterData, LifeStage, PlaceId } from '../../src/sim/types';
 
 /** The view's own lens (render/view.ts): 30 degrees, Elof a fifth of the picture's height within limits. */
 function lens(width: number, height: number, zoom = 1) {
@@ -305,5 +309,73 @@ describe('the plan', () => {
       expect(w).toBeLessThanOrEqual(2.5);
       expect(y! + w! / 2).toBeGreaterThan(6);
     }
+  });
+});
+
+describe('the stages in the chapters', () => {
+  const staged = Object.values(COURSES).filter((chapter) => chapter.life?.length);
+
+  /**
+   * Calm ground (the audit's rule): no hook, ledge, hidden candy, soft tussock or family member within 8 EL
+   * of the stretch, and no ride, hose or gust over it.
+   */
+  function trouble(chapter: ChapterData, stage: LifeStage): string[] {
+    const near = (x: number, half = 0) => x + half > stage.from - 8 && x - half < stage.to + 8;
+    const over = (from: number, to: number) => to > stage.from && from < stage.to;
+    return [
+      ...(chapter.hooks ?? []).filter((hook) => near(hook.x)).map((hook) => `hook at ${hook.x}`),
+      ...(chapter.ledges ?? []).filter((ledge) => near(ledge.x, ledge.width / 2)).map((ledge) => `ledge at ${ledge.x}`),
+      ...(chapter.hidden ?? []).filter((candy) => near(candy.x)).map((candy) => `hidden candy at ${candy.x}`),
+      ...(chapter.tussocks ?? []).filter((tussock) => near(tussock.x, tussock.width / 2)).map((tussock) => `soft tussock at ${tussock.x}`),
+      ...[...(chapter.spots ?? []).map((spot) => ({ look: spot.look, word: spot.word, x: spot.at.x })), ...(chapter.decor ?? []).map((decor) => ({ look: decor.look, word: decor.word, x: decor.at.x }))]
+        .filter((sign) => sign.look === 'sign' && personFor(sign.word) !== null && near(sign.x)).map((sign) => `${personFor(sign.word)} at ${sign.x}`),
+      ...(chapter.rides ?? []).filter((ride) => over(Math.min(ride.from.x, ride.to.x), Math.max(ride.from.x, ride.to.x))).map((ride) => `the ride ${ride.id}`),
+      ...(chapter.climbs ?? []).filter((climb) => over(climb.x - 1, climb.x + 1)).map((climb) => `a hose at ${climb.x}`),
+      ...(chapter.gusts ?? []).filter((gust) => over(gust.from, gust.to)).map((gust) => `a gust from ${gust.from}`),
+    ];
+  }
+
+  it('are there, in the places that have life', () => {
+    expect(staged.map((chapter) => chapter.id).sort()).toEqual(['garden', 'granskog', 'myren']);
+  });
+
+  it('name kinds their place has, on stretches of the chapter', () => {
+    for (const chapter of staged) {
+      const cast = LIFE[chapter.place!];
+      expect(cast, chapter.id).toBeDefined();
+      for (const stage of chapter.life!) {
+        expect(cast!.roles[stage.kind], `${chapter.id} ${stage.kind}`).toBeDefined();
+        expect(stage.to).toBeGreaterThan(stage.from);
+        expect(stage.from).toBeGreaterThanOrEqual(chapter.ground[0]!.x);
+        expect(stage.to).toBeLessThanOrEqual(chapter.goalX);
+      }
+    }
+  });
+
+  it('lie on calm ground', () => {
+    for (const chapter of staged) for (const stage of chapter.life!) expect(trouble(chapter, stage), `${chapter.id} ${stage.kind} at ${stage.from}`).toEqual([]);
+  });
+
+  it('begin at a big candy or just after one, where he stops anyway', () => {
+    for (const chapter of staged) {
+      for (const stage of chapter.life!) {
+        const candies = (chapter.checkpoints ?? []).map((candy) => candy.x);
+        expect(candies.some((x) => x >= stage.from - 10 && x <= stage.to), `${chapter.id} ${stage.kind} at ${stage.from}`).toBe(true);
+      }
+    }
+  });
+
+  it('are data for the picture: no simulation code reads them', () => {
+    const files = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((file) => (file.isDirectory() ? files(join(dir, file.name)) : [join(dir, file.name)]));
+    for (const file of [...files('src/sim'), 'src/app/game.ts']) {
+      const source = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+      expect(/\.life\b|content\/life|life-plan/.test(source), file).toBe(false);
+    }
+  });
+
+  it('would not pass on ground that is not calm', () => {
+    const myren = COURSES.myren!;
+    // Under the rings between the dead pines, beside Mamma, and on the soft tussocks.
+    for (const from of [112, 96.5, 60]) expect(trouble(myren, { kind: 'moose', from, to: from + 3 }).length, `${from}`).toBeGreaterThan(0);
   });
 });

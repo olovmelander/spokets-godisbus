@@ -404,6 +404,13 @@ export const myren: ChapterData = {
   rides: [{ id: 'crane', look: 'crane', ...CRANE }, { id: 'toss', look: 'none', ...TOSS }],
   jumps: [...hops(OUT), ...hops(HOME)],
   mist: { after: 'light' },
+  // For the picture only (content/life.ts): what happens far off, where the trail is calm. Cranes cross the sky
+  // from the wide firm tussocks after the second big candy. A moose walks out of the mist across the bog where
+  // he comes down from the boardwalk to the big candy, before the lollipop brings the mist in.
+  life: [
+    { kind: 'cranes', from: 40.5, to: 45 },
+    { kind: 'moose', from: 136.5, to: 141 },
+  ],
   follower: { at: { x: 164.7, y: 0.1 }, after: 'chick', until: 'home', home: { x: 177.4, y: 0 } },
   ghost: [
     { at: { x: 6, y: 0 } },
