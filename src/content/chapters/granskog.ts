@@ -164,13 +164,14 @@ export const granskog: ChapterData = {
   // Rings off the main way (docs/level-design.md). Each hangs 5.7 EL over the forest floor: out of the lace's
   // reach from the floor, even at the top of a jump, and within it from the bough or the nest beside it. The
   // lace is 3 EL long, so that a full swing tops out under 4 EL: letting go anywhere is a soft landing.
+  // Each hangs on a string from a bough high in the canopy, out of the picture.
   hooks: [
     // The forest's first ring, between two trunks: from the high bough to the long bough on the far side.
     // A running jump off the big cone comes within its reach too: a shorter way, for quick hands.
-    { x: 26.2, y: 5.7, length: 3, extra: true },
+    { x: 26.2, y: 5.7, length: 3, extra: true, hangs: 9 },
     // Two in a row from the nest, at one height and 4.4 EL apart: the second is thrown to in the air.
-    { x: 143.6, y: -2.3, length: 3, extra: true },
-    { x: 148, y: -2.3, length: 3, extra: true },
+    { x: 143.6, y: -2.3, length: 3, extra: true, hangs: 9 },
+    { x: 148, y: -2.3, length: 3, extra: true, hangs: 9 },
   ],
   // Ledges (docs/level-design.md). Up a trunk each is one held jump over the last, 0.9 at most, and beside
   // it: a standing leap with the stick held towards it lands on it from nearly anywhere on the one below, so
