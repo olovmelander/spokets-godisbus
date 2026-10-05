@@ -178,7 +178,9 @@ export const LIFE: Partial<Record<PlaceId, PlaceLife>> = {
   },
   dusk: {
     haze: [62, 74, 122],
-    // On the face of the far hillside.
+    // On the face of the far hillside. The lights stay on the eye line while that hillside's picture sinks
+    // with the summit's height over the land (`outlook`, and the picture's `sink` in backdrop.ts): their heights
+    // below were set by eye against the picture as it then stands. Change either, and look at them again.
     slots: [{ z: -63, hold: 0.38, sink: 0, haze: 0 }],
     roles: {},
     lights: {

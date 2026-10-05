@@ -1,6 +1,7 @@
 import { BufferAttribute, BufferGeometry, DataTexture, DynamicDrawUsage, Mesh, MeshBasicMaterial, type Object3D, type PlaneGeometry, type Texture } from 'three';
 import { LIFE, type Smoke } from '../content/life';
 import type { ChapterData, PlaceId } from '../sim/types';
+import { sunk } from './backdrop';
 import { sequence } from './dressing/kit';
 import { QUADS, STRIDE, lifePlan, type Watch } from './life-plan';
 
@@ -80,7 +81,7 @@ export function createLife(chapter: ChapterData, place: PlaceId, anchor: number,
       if (!count) return;
       const slot = cast.slots[plan.slot]!;
       // The far village stands in the world; everything else hangs at the height of his eyes, as the far pictures do.
-      const level = plate ? plate.position.y + 12 : groundY + EYE - Math.max(-5, Math.min(5, (groundY - anchor) * slot.sink));
+      const level = plate ? plate.position.y + 12 : groundY + EYE - sunk(slot.sink, groundY - anchor);
       mesh.position.set(cameraX, level, slot.z);
       const q = plan.quads;
       for (let i = 0; i < count; i++) {

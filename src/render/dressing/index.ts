@@ -163,14 +163,16 @@ export function dress(chapter: ChapterData, look: PlaceLook, lifeNow: string | n
   const air = effects(chapter, from, to, look.id);
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
-  const far = scenery(look.id, heightAt(chapter, from) - (chapter.outlook ?? 0), from, to);
+  // What the far pictures count their sinking from: the land around the chapter's start.
+  const land = heightAt(chapter, from) - (chapter.outlook ?? 0);
+  const far = scenery(look.id, land, from, to);
   const life = look.id === 'village' ? villageLife(chapter) : null;
   if (life) group.add(life.group);
   if (look.id === 'dusk') group.add(stars());
   // The village has the fronts of its houses behind the pavement, and the far village behind them.
   const houses = look.id === 'village' ? fronts(chapter, from, to) : new Group();
   // A moose in the mist, cranes, smoke from a far chimney: among the far pictures, and only there.
-  const wild = createLife(chapter, look.id, heightAt(chapter, from), houses.children.find((child) => child.position.z === -52), lifeNow);
+  const wild = createLife(chapter, look.id, land, houses.children.find((child) => child.position.z === -52), lifeNow);
   if (wild) group.add(wild.mesh);
   group.add(
     far.group,
