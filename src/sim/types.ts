@@ -422,6 +422,11 @@ export interface ChapterData {
    * set, and one with `after` is not there before its flag is.
    */
   decor?: { look: SpotLook; at: Vec; word?: string; until?: string; after?: string }[];
+  /**
+   * For the picture only: where the old pine stands, a little behind the path (plan §3.4). The wind has swept
+   * it to the left; `flip` turns it round, swept to the right. The simulation knows nothing of it.
+   */
+  pine?: { x: number; flip?: boolean };
   /** For the picture: the house's wall behind the scene, with its windows. */
   house?: { from: number; to: number; windows: number[] };
   /** For the picture: an open shop door leading into a room beside the street, at the path's height. */

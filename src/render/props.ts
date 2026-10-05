@@ -5,6 +5,7 @@ import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
 import { drawnWhile } from './idle';
 import { sweetSocket } from './candy';
+import type { MountainSocket } from './mountain-kit';
 import { saturdayBag } from './saturday-bag';
 
 /**
@@ -70,10 +71,13 @@ export function moverProp(mover: Mover): Group | null {
       break;
     }
     case 'stone': {
+      // A step of the summit cairn, until the mountain kit's stacks are there: one of their stones is the step.
       const slab = new Mesh(new CylinderGeometry(w / 2, w * 0.53, h, 8), solid('#8d9698', 1, { flatShading: true }));
       slab.position.y = h / 2;
       slab.scale.z = 0.75;
       group.add(slab);
+      group.userData.mountain = { standIn: 'step' } satisfies MountainSocket;
+      group.userData.mover = mover.id;
       break;
     }
     case 'tussock': {
@@ -209,6 +213,8 @@ export function spotProp(spot: Spot): SpotProp | null {
         stones.setMatrixAt(i, at.matrix);
       }
       group.add(stones);
+      // The mountain kit's cairn has its mark on its capstone.
+      group.userData.mountain = { standIn: 'cairn' } satisfies MountainSocket;
       return { group, update() {} };
     }
     case 'wisp': {
@@ -419,16 +425,25 @@ export function spotProp(spot: Spot): SpotProp | null {
       };
     }
     case 'cobble': {
-      const stone = ball(0.3, solid('#9c9d98', 0.6), 0, 0.14, 0, [1.15, 0.7, 1]);
+      // One of the five that ring: pale and smooth among the grey ones lying round it, and the lower its
+      // note the bigger it is. The mountain kit's cobble takes this egg's place.
+      const size = 0.36 - ((spot.note ?? 67) - 67) * 0.013;
+      const pale = solid('#d8d6cf', 0.35, { emissive: '#fff6dc', emissiveIntensity: 0 });
+      const stone = new Mesh(new SphereGeometry(1, 14, 10).scale(1, 0.6, 0.78), pale);
+      stone.scale.setScalar(size);
+      stone.rotation.y = spot.at.x * 1.7;
+      stone.userData.mountain = { part: 'klapper' } satisfies MountainSocket;
       group.add(stone);
       group.position.z = -0.45;
+      const rest = size * 0.5;
       return {
         group,
         update(used, _clock, dt, strike = 0) {
-          // A small jump for every new touch, even when its discovery is already saved.
+          // A small jump for every new touch, even when its discovery is already saved, and a flash of light.
           if (strike !== lastStrike) { since = 0; lastStrike = strike; }
           else since = used ? since + dt : 0;
-          stone.position.y = 0.14 + (used && since < 0.4 ? Math.sin((since / 0.4) * Math.PI) * 0.18 : 0);
+          stone.position.y = rest + (used && since < 0.4 ? Math.sin((since / 0.4) * Math.PI) * 0.18 : 0);
+          pale.emissiveIntensity = used && since < 0.3 ? 0.5 * (1 - since / 0.3) : 0;
         },
       };
     }
