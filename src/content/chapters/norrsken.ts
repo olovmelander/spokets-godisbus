@@ -44,6 +44,8 @@ export const norrsken: ChapterData = {
   place: 'dusk',
   // The summit that Berget ends on, 31.4 EL up: the land lies under him from the first step.
   outlook: 30,
+  // The old pine, seen from its other side: left of the crack, its crown swept out over it.
+  pine: { x: 7.5, flip: true },
   // The golden geléhallon: POFF, and he grows back, with both carvings at his feet.
   size: { scale: 3, after: 'taste' },
   spawn: { x: 1, y: 0.01 },

@@ -187,13 +187,18 @@ function kit() {
     clover: new MeshStandardMaterial({ color: '#3f8a34', roughness: 0.5 }),
     birchLeaf: new MeshStandardMaterial({ color: '#e6c53a', roughness: 0.6 }),
     birch: new MeshStandardMaterial({ map: birchBark(), roughness: 0.8 }),
-    // The bog's and the mountain's.
-    bare: boulder(false),
+    // The bog's and the mountain's. The mountain's stones, its cobbles and its cushions of reindeer lichen are
+    // modelled in Blender (../mountain-kit.ts): these three are their stand-ins, plain and of few corners.
+    bare: boulder(false, 10, 7, '#a4a8b2'),
+    cobble: tinted(new SphereGeometry(1, 8, 6).scale(1, 0.6, 0.78), '#d8d6cf'),
+    lav: tinted(new SphereGeometry(0.5, 6, 3, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.75, 1), '#f4f3e4'),
     straw: new MeshStandardMaterial({ roughness: 0.75, side: DoubleSide, emissive: '#8a7430', emissiveIntensity: 0.45 }),
     redLeaf: new MeshStandardMaterial({ color: '#c4472c', roughness: 0.55, emissive: '#70200c', emissiveIntensity: 0.3 }),
     orangeLeaf: new MeshStandardMaterial({ color: '#dd8a2c', roughness: 0.6, emissive: '#7a3c08', emissiveIntensity: 0.25 }),
     deadwood: new MeshStandardMaterial({ color: '#a9a69e', roughness: 1 }),
-    lichen: new MeshStandardMaterial({ color: '#ecebdf', roughness: 1 }),
+    // Reindeer lichen is the brightest thing on the mountain's ground: its colours are on its corners, and a
+    // little light of its own keeps it white where the low sun does not reach.
+    lichen: new MeshStandardMaterial({ vertexColors: true, roughness: 1, emissive: '#8a8f84', emissiveIntensity: 0.25 }),
     crowLeaf: new MeshStandardMaterial({ color: '#2f4c2c', roughness: 0.5 }),
     blackBerry: new MeshStandardMaterial({ color: '#1e1e2a', roughness: 0.25 }),
   };
@@ -231,13 +236,21 @@ function trunk(): BufferGeometry {
   return geometry;
 }
 
+/** A shape with one colour on all its corners, for a material that reads its colours there. */
+function tinted(geometry: BufferGeometry, colour: string): BufferGeometry {
+  const c = new Color(colour);
+  const count = geometry.getAttribute('position').count;
+  geometry.setAttribute('color', new Float32BufferAttribute(Array.from({ length: count }, () => [c.r, c.g, c.b]).flat(), 3));
+  return geometry;
+}
+
 /** A stone: a round thing pushed out of shape, grey below and mossy on top. */
-function boulder(mossy = true): BufferGeometry {
+function boulder(mossy = true, across = 22, down = 16, stone = '#8f918d'): BufferGeometry {
   // A sphere's points are shared between its faces, so the stone is smooth when it is pushed out of shape.
-  const geometry = new SphereGeometry(1, 22, 16);
+  const geometry = new SphereGeometry(1, across, down);
   const at = geometry.getAttribute('position');
   const colour: number[] = [];
-  const grey = new Color('#8f918d');
+  const grey = new Color(stone);
   const c = new Color();
   for (let i = 0; i < at.count; i++) {
     const x = at.getX(i);

@@ -77,7 +77,8 @@ const LOOKS: Record<LedgeLook, { colour: string; roughness: number; flat?: boole
       upright(0.17, 0.27, 9, 2.6, -0.78),
     ),
   },
-  // A shelf of rock on the pillar it has weathered out of.
+  // A shelf of rock on the pillar it has weathered out of. This is its stand-in: the mountain kit has each
+  // shelf as a slab on its own blocks, and puts it here once it has arrived (`install` below).
   stone: {
     colour: '#9a9da0', roughness: 1, flat: true,
     shape: () => together(
@@ -117,6 +118,13 @@ function ledgeShape(ledge: Ledge): BufferGeometry {
 interface Piece { from: number; to: number; ledge?: number; rod?: Rod }
 
 /**
+ * A ledge of rock as the mountain kit has it (src/render/mountain-kit.ts), where it lies: with a normal, a UV
+ * and a colour on each corner, and no index, as the shapes built here have. Null: nothing is drawn for this
+ * ledge, since it is a step of the rock drawn at another. Undefined: the kit has none, and its stand-in stays.
+ */
+export type Carved = (ledge: number) => BufferGeometry | null | undefined;
+
+/**
  * The places a chapter's ledges and rods lie in: a run of them with no gap wider than `APART`, one for each
  * side way. Each is given as the numbers of its ledges and as its rods.
  */
@@ -146,19 +154,32 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [])
   /** One material for every place: the colours are on the corners. */
   const solid = new MeshStandardMaterial({ vertexColors: true, roughness: 0.88 });
   const waiting: { mesh: InstancedMesh; at: number[] }[] = [];
+  const solids: { mesh: Mesh; always: number[]; rods: Rod[] }[] = [];
+  /** A place's one shape: its ledges that are always there, each as the kit has it or as its look, and its rods. */
+  const shapeOf = (always: readonly number[], lines: readonly Rod[], carved?: Carved): BufferGeometry => {
+    const parts = [
+      ...always.flatMap((i) => {
+        const rock = ledges[i]!.look === 'stone' ? carved?.(i) : undefined;
+        return rock === null ? [] : [rock ?? ledgeShape(ledges[i]!)];
+      }),
+      ...lines.map((rod) => painted(rodShape(rod), ROD_COLOUR)),
+    ];
+    const shape = mergeGeometries(parts);
+    for (const part of parts) part.dispose();
+    shape.computeBoundingSphere();
+    return shape;
+  };
 
   for (const [n, here] of ledgePlaces(ledges, rods).entries()) {
     // What is always there: one shape, one mesh, drawn while the place is in sight.
     const always = here.ledges.filter((i) => ledges[i]!.needs === undefined);
-    const parts = [...always.map((i) => ledgeShape(ledges[i]!)), ...here.rods.map((rod) => painted(rodShape(rod), ROD_COLOUR))];
-    if (parts.length > 0) {
-      const mesh = new Mesh(mergeGeometries(parts), solid);
-      for (const part of parts) part.dispose();
+    if (always.length + here.rods.length > 0) {
+      const mesh = new Mesh(shapeOf(always, here.rods), solid);
       mesh.name = `ledges:${n}`;
-      mesh.geometry.computeBoundingSphere();
       mesh.userData.ledges = always;
       mesh.userData.rods = here.rods.length;
       group.add(mesh);
+      solids.push({ mesh, always, rods: here.rods });
     }
     // Those that wait for a flag grow out when it is set: instances, one mesh for each look among them.
     for (const look of LEDGE_LOOKS) {
@@ -206,5 +227,14 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [])
     }
     if (changed) write();
   }
-  return { group, update };
+
+  /** The rock ledges take the shapes the mountain kit has for them: each place that has one is built again. */
+  function install(carved: Carved): void {
+    for (const { mesh, always, rods: lines } of solids) {
+      if (!always.some((i) => ledges[i]!.look === 'stone')) continue;
+      mesh.geometry.dispose();
+      mesh.geometry = shapeOf(always, lines, carved);
+    }
+  }
+  return { group, update, install };
 }
