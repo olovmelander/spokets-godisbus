@@ -2,6 +2,31 @@
 
 ## State (5 October 2026)
 
+- **The look: an audit of everything on screen, and the work it orders, begun** (5 October, on Olov's
+  computer; `docs/visual-audit.md`). Olov: "make an audit of everything in the game and find everything that
+  can be improved visually ... make it a visual masterpiece ... also i want things happening in the
+  background, like a moose walking in the distant".
+  - **The audit is done:** seven auditors, one area each (home and Gården, Granskogen, Myren, Berget and
+    Norrsken, Byn, the pipeline and light, the far scenery and its life), 167 findings with the fix for each,
+    in `docs/visual-audit/`. The overview says what is already good, the ten things that let the game down
+    most, and the order of the work in eleven steps.
+  - **Step 0, merged (#128):** `src/render/dressing.ts` is `src/render/dressing/`, a module for each place
+    and each shared system, so that the places can be worked on at once. Nothing drawn changed: an exact
+    comparison of everything `dress()` builds, and 45 pictures with the same draw calls, triangles and
+    programs.
+  - **Step 1, the ground's front (#129):** the "fur" over the bottom third of every picture was a mapping
+    fault: the ground's picture was laid out by depth alone and pulled three to five times long on the
+    rounded front. It is laid out by length along the surface now; a wall's face has its own points, so tops
+    keep their colour to the edge; tiling maps are read along the slant, so deck boards keep their gaps to
+    the far edge; shade is cool; and ground out of sight is not drawn (6 to 12 draw calls fewer in the garden
+    and the village). `tests/unit/ground.test.ts` holds it.
+  - **In work when this was written,** each on its own branch: things at scale or opacity 0 not drawn
+    (`idle-draws`); the water (`water-look`); the far scenery repainted (`far-scenery`); the moose and the
+    other life far off (`background-life`); the village's houses as a kit of parts (`village-street`).
+  - **How the work is done:** a builder for each step in a worktree of its own, from the audit's rows, judged
+    on before and after pictures on a tablet, a phone and Low. Blender runs without a window
+    (`blender -b --factory-startup --python <script>`), which leaves the Blender that is open alone and lets
+    several models be built at once; generators are kept in `art/blender/`.
 - **Level design, version 6: the first pass, the "layers", is laid over five chapters** (4 October, late
   evening, and 5 October, on Olov's computer; `docs/level-design.md`; pull requests #113 to #125, merged).
   Olov: "the game feels very linear right now. I want it to feel more like an
@@ -1336,6 +1361,10 @@
 
 **For the next session, in this order:**
 
+- **The look, step by step** (`docs/visual-audit.md`, "The order of the work"). After the steps in work:
+  one haze for all three tiers before any tuning of looks (pipeline rows 3 and 15); then each place's own
+  ground, the kits made in Blender (forest, stones, bog, garden, the old pine), shadows from the world, wind,
+  and home's rooms. Olov looks at each merged step on the site and says what is wrong with it.
 - **Olov plays the layers and the puzzles,** on a phone and on the computer: `?dev&course=garden` (the window
   sills at once, the clothes line after the boulder), `?dev&course=granskog`, `?dev&course=myren`,
   `?dev&course=berget` and `?dev&course=byn`; and the puzzles at `?dev&debug&course=garden&at=79,0.01`,
@@ -1654,3 +1683,11 @@ Choices the session made, for Olov to overrule if he wants:
   modelled in Blender" under "State");
 - the name *Klonk* (two others that were considered: Kvist and Flisa);
 - the plain disc instead of the star on the ghost's shoes, because the star on a red canvas shoe reads as a brand.
+7. **A moose at its true size among the forest's trunks?** (`docs/visual-audit.md`, "For Olov to decide".)
+   The forest's far layers are near, so a moose passing there would be 14 times his height: legs like moving
+   trunks, pale in the mist. It could be the game's most remembered picture, and it could frighten Elof. The
+   default: only the small, far moose.
+8. **Red farms and Anundsjö's bell tower far off behind the garden?** The art bible keeps red for the candy,
+   so the far houses are "not red". The audit asks for Falu red mixed half with the haze, and the tower as a
+   small dark shape. The default: fields and a pale river, no red, no tower.
+9. **Reindeer on the mountain's ridge?** A winter sight here, not a September one. The default: ravens.
