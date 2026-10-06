@@ -517,12 +517,12 @@ function depthOf(row: Row, forward: number): number {
 }
 
 /**
- * A wooden floor stays on its plane where its edge draws back beside a step. Keeping the full-depth drop
- * while shortening its depth bent the boards into a steep shoulder. Its cut keeps the same thickness
- * below the floor; the bog's narrow planks and the other places keep their own profiles.
+ * A floor or street stays on its plane where its edge draws back beside a step. Keeping the full-depth
+ * drop while shortening its depth bent the surface into a steep shoulder. Its cut keeps the same thickness
+ * below the floor; the bog's narrow planks and the growing ground keep their own profiles.
  */
 function dropOf(profile: Row[], row: Row, forward: number): number {
-  if (profile !== PROFILE_FLOOR || row.z <= EDGE || forward === 1) return row.drop;
+  if ((profile !== PROFILE_FLOOR && profile !== PROFILE_STREET) || row.z <= EDGE || forward === 1) return row.drop;
   return row.drop - dropAt(profile, row.z) + dropAt(profile, depthOf(row, forward));
 }
 
@@ -794,7 +794,7 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       if (wall) {
         // The face stands on the lower floor as that lies at this depth, and goes up to the upper one.
         const upper = wall.top - drop;
-        const lowerDepth = profile === PROFILE_FLOOR ? z : EDGE + (z - EDGE) / Math.max(0.05, wall.footForward);
+        const lowerDepth = profile === PROFILE_FLOOR || profile === PROFILE_STREET ? z : EDGE + (z - EDGE) / Math.max(0.05, wall.footForward);
         const lower = row.z <= EDGE ? wall.foot - drop : wall.floor - (lowerDepth > ends ? drop : dropAt(profile, lowerDepth));
         y = Math.min(upper, lower) + (upper - Math.min(upper, lower)) * up;
         under = upper - y;

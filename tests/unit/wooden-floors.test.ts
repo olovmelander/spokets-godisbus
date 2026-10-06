@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
 import { groundOf } from '../../src/render/dressing';
-import { BOARD, TILT, TILT_ENDS, bankShapes, forwardAt } from '../../src/render/dressing/ground';
+import { BOARD, TILT, TILT_ENDS, bankShapes, forwardAt, tileOf } from '../../src/render/dressing/ground';
 import { heightAt } from '../../src/render/dressing/kit';
 
 /** Every corner of a chapter's ground of some kinds that a triangle is drawn with. */
@@ -145,6 +145,45 @@ describe('a wooden floor', () => {
 describe('a street', () => {
   const street = COURSES['byn']!;
   const built = (kind: string) => kind === 'asphalt' || kind === 'paving';
+
+  it('keeps asphalt, paving and stone planar beside both directions of step, with unstretched surface coordinates', () => {
+    for (const kind of ['asphalt', 'paving', 'stone'] as const) {
+      const chapter = {
+        ...street,
+        ground: [{ x: -8, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 3.3 }, { x: 8, y: 3.3 }, { x: 8, y: 0 }, { x: 16, y: 0 }],
+        surfaces: [{ from: -24, to: 32, kind }], water: [],
+      };
+      const beside = [0, 0];
+      let mapped = 0;
+      for (const { shape } of bankShapes(chapter, 'asphalt')) {
+        const at = shape.getAttribute('position'), normal = shape.getAttribute('normal'), uv = shape.getAttribute('uv');
+        const columns = new Map<number, { y: number; z: number; v: number }[]>();
+        for (let i = 0; i < at.count; i++) {
+          const x = at.getX(i), y = at.getY(i), z = at.getZ(i);
+          const side = x > 0.05 && x < 2.4 ? 0 : x > 5.6 && x < 7.95 ? 1 : -1;
+          if (side < 0 || y <= 1.7 || z < 1.6 || normal.getY(i) < 0.8) continue;
+          expect(y, `${kind}: x${x}, z${z}`).toBeCloseTo(3.3 - tilted(z), 5);
+          beside[side]!++;
+          const column = columns.get(x) ?? [];
+          column.push({ y, z, v: uv.getY(i) });
+          columns.set(x, column);
+        }
+        for (const column of columns.values()) {
+          column.sort((a, b) => a.z - b.z);
+          for (let i = 1; i < column.length; i++) {
+            const a = column[i - 1]!, b = column[i]!;
+            if (b.z - a.z < 0.01) continue;
+            expect(b.v - a.v, kind).toBeCloseTo(Math.hypot(b.z - a.z, b.y - a.y) * tileOf(kind), 5);
+            mapped++;
+          }
+        }
+        shape.dispose();
+      }
+      expect(beside[0], kind).toBeGreaterThan(5);
+      expect(beside[1], kind).toBeGreaterThan(5);
+      expect(mapped, kind).toBeGreaterThan(5);
+    }
+  });
 
   it('has the same plane in asphalt and paving: level where he walks, tilting away in front', () => {
     let sloping = 0;

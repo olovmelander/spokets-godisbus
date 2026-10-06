@@ -300,6 +300,12 @@ keep its direction through story shots, wind, instancing and skinning. It fades 
 out with nightfall, using shared uniforms and the existing warmup for models that arrive later. Water,
 glow and transparent helper figures keep their own shading; the rim adds no draw or render target.
 
+**Village edges** use laid granite on raised paving: one course at the kerb, two staggered courses at
+the shop's physical riser, with recessed mortar and small chamfers. These join the existing house mesh
+and stay below the authored walking height. The street's upper surface remains planar where it draws
+back beside a step. Its separate forward cut still needs a material pass; a riser cannot be seen through
+that cut when the camera is on the upper side.
+
 **Forest landmarks** supply their own raised shape. The bank, its plants and effects use the ground
 under the cone, anthill, log and stone, while the game keeps the same playable top. The doorway remains
 on the anthill and the spruce roots reach into it. If a kit shape is missing, its socket keeps a solid
