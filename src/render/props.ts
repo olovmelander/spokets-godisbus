@@ -1,5 +1,6 @@
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {
-  BoxGeometry, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
+  BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
@@ -83,13 +84,42 @@ export function moverProp(mover: Mover): Group | null {
       break;
     }
     case 'tussock': {
-      // A firm tuft on a slim peat pillar behind the lower path, with a flat, readable moss top.
-      const peat = new Mesh(new CylinderGeometry(w * 0.36, w * 0.23, 2.5, 8), solid('#635447'));
-      peat.position.set(0, h - 1.45, -0.45);
-      const moss = new Mesh(new CylinderGeometry(w / 2, w * 0.45, h, 10), solid('#829950'));
-      moss.scale.z = 0.75;
-      moss.position.y = h / 2;
-      group.add(peat, moss);
+      // A tussock sedge's pedestal (visual audit, myren row 12): a column of dark peat and roots up out of the
+      // water behind the lower path, a skirt of last year's straw leaves hanging round its crown, a flat top of
+      // moss as wide as he can stand on and a few fresh blades at its back. Nothing floats. One mesh, its
+      // colours on its corners.
+      const paint = (shape: BufferGeometry, hex: string, shade?: (x: number, y: number, z: number) => number) => {
+        const c = new Color(hex);
+        const at = shape.getAttribute('position');
+        const colour: number[] = [];
+        for (let i = 0; i < at.count; i++) {
+          const k = shade ? shade(at.getX(i), at.getY(i), at.getZ(i)) : 1;
+          colour.push(c.r * k, c.g * k, c.b * k);
+        }
+        shape.setAttribute('color', new Float32BufferAttribute(colour, 3));
+        return shape.index ? shape.toNonIndexed() : shape;
+      };
+      // The column: ragged, with the fibres of old roots up it, and darker the nearer the water it is.
+      const column = new CylinderGeometry(w * 0.34, w * 0.27, 14, 12, 10).translate(0, h - 7.1, -0.2);
+      const at = column.getAttribute('position');
+      for (let i = 0; i < at.count; i++) {
+        const a = Math.atan2(at.getZ(i) + 0.2, at.getX(i));
+        const out = 1 + 0.09 * Math.sin(a * 5 + at.getY(i) * 1.7) + 0.05 * Math.sin(a * 11 - at.getY(i) * 0.9);
+        at.setXYZ(i, at.getX(i) * out, at.getY(i), (at.getZ(i) + 0.2) * out - 0.2);
+      }
+      const leaf = (turn: number, lean: number, long: number, hex: string, y: number, rim: number) => paint(
+        new ConeGeometry(0.05, long, 3).rotateZ(Math.PI).translate(0, -long / 2, 0).rotateZ(lean).rotateY(-turn)
+          .translate(Math.cos(turn) * rim * w * 0.5, y, Math.sin(turn) * rim * w * 0.38), hex);
+      const parts = [
+        paint(column, '#4a3627', (x, y, z) => (0.55 + 0.45 * Math.min(1, Math.max(0, (y + 2) / 6))) * (0.8 + 0.2 * Math.sin(Math.atan2(z + 0.2, x) * 9))),
+        // The moss: flat where he stands, rounding over at its edge into the leaves.
+        paint(new LatheGeometry([[0.42, 0], [0.5, 0.45], [0.47, 0.8], [0.4, 1], [0, 1]].map(([r, y]) => new Vector2(r! * w, y! * h)), 14)
+          .scale(1, 1, 0.76), '#7d8a36', (_, y) => 0.62 + 0.38 * (y / h) ** 2),
+        // Last year's leaves hang round the crown, close to the column.
+        ...Array.from({ length: 22 }, (_, i) => leaf((i / 22) * Math.PI * 2 + 0.2, 0.12 + (i % 3) * 0.06, 1.3 + (i % 5) * 0.14, i % 3 ? '#d2b968' : '#a8894a', 0.08, 0.9)),
+        ...[-0.3, -0.1, 0.12, 0.3].map((x, i) => leaf(Math.PI * 1.5 + x, Math.PI - 0.2 + i * 0.1, 0.45, '#8f9a3a', h - 0.02, 0.6)),
+      ];
+      group.add(new Mesh(mergeGeometries(parts), solid('#ffffff', 0.9, { vertexColors: true })));
       break;
     }
     case 'ants': {
