@@ -270,7 +270,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Side candy, off the trail: hearts and lollipops, where the trail is sweets in wrappers.
   const sideTrail = createTrail(chapter.side ?? [], 'side');
   const noSide: readonly boolean[] = [];
-  const ledges = buildLedges(chapter.ledges ?? [], rods(chapter));
+  const ledges = buildLedges(chapter.ledges ?? [], rods(chapter), chapter.place);
   const glitter = buildGlitter();
   const lace = buildLace();
   // What Använd will do, over each thing it can act on (in-play.md row 6).

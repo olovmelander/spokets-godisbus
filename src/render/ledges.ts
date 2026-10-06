@@ -1,10 +1,10 @@
 import {
-  BoxGeometry, Color, CylinderGeometry, DynamicDrawUsage, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D,
+  BoxGeometry, Color, ConeGeometry, CylinderGeometry, DynamicDrawUsage, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D,
   SphereGeometry, type BufferGeometry,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { LEDGE_THICK } from '../sim/constants';
-import type { Ledge, LedgeLook } from '../sim/types';
+import type { Ledge, LedgeLook, PlaceId } from '../sim/types';
 import { drawnWhile } from './idle';
 import { ROD_COLOUR, rodShape, type Rod } from './lines';
 
@@ -33,7 +33,24 @@ const together = (...parts: BufferGeometry[]): BufferGeometry => mergeGeometries
 const upright = (top: number, bottom: number, sides: number, rise: number, z: number): BufferGeometry =>
   new CylinderGeometry(top, bottom, DOWN + rise, sides).translate(0, (rise - DOWN) / 2 - LEDGE_THICK * 0.6, z);
 
-const LOOKS: Record<LedgeLook, { colour: string; roughness: number; flat?: boolean; shape: () => BufferGeometry }> = {
+/**
+ * A ledge's look. `shape` is the ledge itself, one EL wide: it is drawn as wide as the ledge. `holder` is what
+ * holds it, at its own size whatever the ledge's width, with its colours on its corners: a stem drawn wider for a
+ * wider ledge was a board with a cut top (visual audit, granskogen row 4). A place may have its own colour.
+ */
+interface Look {
+  colour: string;
+  roughness: number;
+  flat?: boolean;
+  shape: () => BufferGeometry;
+  holder?: (width: number, place?: PlaceId) => BufferGeometry;
+  colours?: Partial<Record<PlaceId, string>>;
+}
+
+/** A young tree's stem behind a ledge's middle, its top out of every picture. */
+const stem = (radius: number, z: number, colour: string) => painted(upright(radius * 0.8, radius, 9, 16, z), colour);
+
+const LOOKS: Record<LedgeLook, Look> = {
   // A sawn board: the end of a deck plank, a sill, a shelf. A batten under its back edge holds it to the wall.
   plank: {
     colour: '#c9ae84', roughness: 0.75,
@@ -55,27 +72,42 @@ const LOOKS: Record<LedgeLook, { colour: string; roughness: number; flat?: boole
   // A broad leaf held out flat on its stalk: thick in the middle, thin at its rim.
   leaf: {
     colour: '#5f9140', roughness: 0.8,
-    shape: () => together(
-      new SphereGeometry(0.5, 14, 6).scale(1, 0.17, DEPTH).translate(0, -0.085, -DEPTH / 2),
-      upright(0.035, 0.06, 6, 0, -DEPTH / 2),
-    ),
+    shape: () => new SphereGeometry(0.5, 14, 6).scale(1, 0.17, DEPTH).translate(0, -0.085, -DEPTH / 2),
+    holder: () => painted(upright(0.035, 0.06, 6, 0, -DEPTH / 2), '#5f9140'),
   },
-  // A bough: round, rough, lying along the path, on the young stem it grows from.
+  // A bough lying along the path, thickest where it leaves its stem and thinner towards both ends, its top a
+  // clean line where he stands. In the forest it is spruce, its needles hanging in sprays below and behind that
+  // line; in the bog a dead pine's, grey, with the stubs of its twigs.
   branch: {
-    colour: '#6e5238', roughness: 0.95,
+    colour: '#6e5238', roughness: 0.95, colours: { bog: '#a9a69e' },
     shape: () => together(
-      new CylinderGeometry(0.085, 0.1, 1, 9).rotateZ(Math.PI / 2).scale(1, 1, 3.2).translate(0, -0.085, -0.32),
-      upright(0.16, 0.26, 9, 2.6, -0.72),
+      new CylinderGeometry(0.05, 0.1, 0.5, 9).rotateZ(Math.PI / 2).translate(-0.25, -0.08, -0.32),
+      new CylinderGeometry(0.05, 0.1, 0.5, 9).rotateZ(-Math.PI / 2).translate(0.25, -0.08, -0.32),
     ),
+    holder: (width, place) => {
+      const bog = place === 'bog';
+      const parts = [stem(bog ? 0.24 : 0.3, -0.72, bog ? '#9c998f' : '#5c4a3a')];
+      for (let x = -width / 2 + 0.12, i = 0; x < width / 2 - 0.08; x += bog ? 0.7 : 0.17, i++) {
+        // Towards the camera only as far as the plane he moves in: nothing of it stands in front of him.
+        const front = i % 2 === 1;
+        if (bog) parts.push(painted(new CylinderGeometry(0.015, 0.04, 0.35, 5).rotateX(front ? 1.1 : -1.1).translate(x, -0.06, front ? -0.3 : -0.6), '#8d8a81'));
+        // A spray: a flat fan of needles drooping out from under the bough, darker than any sweet and never
+        // above the line where he stands.
+        else {
+          const long = 0.5 + ((i * 7) % 5) * 0.08;
+          parts.push(painted(new ConeGeometry(0.2, long, 5).scale(1, 1, 0.35).translate(0, long / 2, 0).rotateX(front ? 2.7 : -1.9)
+            .rotateZ(((i % 3) - 1) * 0.5).translate(x, -0.1, front ? -0.45 : -0.56), i % 3 ? '#234a2e' : '#3f6b3a'));
+        }
+      }
+      return together(...parts);
+    },
   },
   // A plate of bark standing out from a stem: six-sided, with a corner to each side, so that it is as wide
   // as the ledge he stands on.
   bark: {
     colour: '#8a735c', roughness: 0.95, flat: true,
-    shape: () => together(
-      new CylinderGeometry(0.5, 0.42, LEDGE_THICK, 6).rotateY(Math.PI / 6).scale(1, 1, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2),
-      upright(0.17, 0.27, 9, 2.6, -0.78),
-    ),
+    shape: () => new CylinderGeometry(0.5, 0.42, LEDGE_THICK, 6).rotateY(Math.PI / 6).scale(1, 1, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2),
+    holder: () => stem(0.27, -0.78, '#6e5a46'),
   },
   // A shelf of rock on the pillar it has weathered out of. This is its stand-in: the mountain kit has each
   // shelf as a slab on its own blocks, and puts it here once it has arrived (`install` below).
@@ -106,13 +138,19 @@ function painted(shape: BufferGeometry, colour: string): BufferGeometry {
   return shape;
 }
 
-/** A ledge as a shape where it lies: as wide as it is, with what holds it, in its look's colour. */
-function ledgeShape(ledge: Ledge): BufferGeometry {
-  const how = LOOKS[ledge.look];
-  const shape = how.shape().scale(ledge.width, 1, 1).translate(ledge.x, ledge.y, 0);
+/** A look as a shape one ledge wide, at the origin: the ledge in its place's colour, and what holds it. */
+function lookShape(look: LedgeLook, width: number, place?: PlaceId): BufferGeometry {
+  const how = LOOKS[look];
+  const ledge = painted(how.shape().scale(width, 1, 1), (place && how.colours?.[place]) ?? how.colour);
+  const shape = how.holder ? together(ledge, how.holder(width, place)) : ledge;
   // A look with flat faces: the shape has no shared corners, so each face gets its own normal.
   if (how.flat) shape.computeVertexNormals();
-  return painted(shape, how.colour);
+  return shape;
+}
+
+/** A ledge as a shape where it lies: as wide as it is, with what holds it. */
+function ledgeShape(ledge: Ledge, place?: PlaceId): BufferGeometry {
+  return lookShape(ledge.look, ledge.width, place).translate(ledge.x, ledge.y, 0);
 }
 
 interface Piece { from: number; to: number; ledge?: number; rod?: Rod }
@@ -145,7 +183,7 @@ export function ledgePlaces(ledges: readonly Ledge[], rods: readonly Rod[] = [])
   return places;
 }
 
-export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = []) {
+export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [], site?: PlaceId) {
   const group = new Group();
   group.name = 'ledges';
   const place = new Object3D();
@@ -160,7 +198,7 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [])
     const parts = [
       ...always.flatMap((i) => {
         const rock = ledges[i]!.look === 'stone' ? carved?.(i) : undefined;
-        return rock === null ? [] : [rock ?? ledgeShape(ledges[i]!)];
+        return rock === null ? [] : [rock ?? ledgeShape(ledges[i]!, site)];
       }),
       ...lines.map((rod) => painted(rodShape(rod), ROD_COLOUR)),
     ];
@@ -186,7 +224,8 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [])
       const at = here.ledges.filter((i) => ledges[i]!.needs !== undefined && ledges[i]!.look === look);
       if (at.length === 0) continue;
       const how = LOOKS[look];
-      const mesh = new InstancedMesh(how.shape(), new MeshStandardMaterial({ color: how.colour, roughness: how.roughness, flatShading: how.flat === true }), at.length);
+      // Their colours are on their corners too: what holds the ledge has its own.
+      const mesh = new InstancedMesh(lookShape(look, 1, site), new MeshStandardMaterial({ vertexColors: true, roughness: how.roughness, flatShading: how.flat === true }), at.length);
       mesh.name = `ledges:${n}:${look}`;
       mesh.instanceMatrix.setUsage(DynamicDrawUsage);
       mesh.userData.ledges = at;

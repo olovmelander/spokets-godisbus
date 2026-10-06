@@ -26,11 +26,12 @@ describe('the ledges, as they are drawn', () => {
     expect((mesh as unknown as InstancedMesh).isInstancedMesh).toBeUndefined();
     expect(mesh.userData.ledges).toEqual(ledges.map((_, i) => i));
     expect(mesh.userData.rods).toBe(1);
-    // From the first ledge's near edge, past the last one's middle, and up to the top of the rod.
+    // From the first ledge's near edge, past the last one's middle, and up past the top of the rod: a bough's
+    // stem goes on up out of every picture.
     expect(box(mesh).min.x).toBeLessThanOrEqual(-1);
     expect(box(mesh).min.x).toBeGreaterThan(-1.3);
     expect(box(mesh).max.x).toBeGreaterThanOrEqual((LEDGE_LOOKS.length - 1) * 3 + 1);
-    expect(box(mesh).max.y).toBeCloseTo(6, 1);
+    expect(box(mesh).max.y).toBeGreaterThan(6);
     // Every corner has its colour: the looks are told apart by that, in one material.
     expect(mesh.geometry.getAttribute('color').count).toBe(mesh.geometry.getAttribute('position').count);
     // One ledge alone is as wide as it says.
@@ -67,6 +68,38 @@ describe('the ledges, as they are drawn', () => {
       // Nothing of it stands in front of the plane he moves in.
       expect(shape.max.z, look).toBeLessThanOrEqual(0.001);
     }
+  });
+
+  it("what holds a ledge is drawn at its own size, not as wide as the ledge: a bough's stem is no board", () => {
+    for (const look of ['branch', 'bark', 'leaf'] as const) {
+      const narrow = box(buildLedges([{ x: 0, y: 0, width: 1, look }]).group.children[0] as Mesh);
+      const wide = box(buildLedges([{ x: 0, y: 0, width: 4, look }]).group.children[0] as Mesh);
+      // Under the ledge only the stem is there: it is as thin under a wide ledge as under a narrow one.
+      const under = (width: number) => {
+        const mesh = buildLedges([{ x: 0, y: 0, width, look }]).group.children[0] as Mesh;
+        const at = mesh.geometry.getAttribute('position');
+        let reach = 0;
+        for (let i = 0; i < at.count; i++) if (at.getY(i) < -2) reach = Math.max(reach, Math.abs(at.getX(i)));
+        return reach;
+      };
+      expect(under(4), look).toBeCloseTo(under(1), 6);
+      expect(under(4), look).toBeLessThan(0.45);
+      expect(wide.max.x - wide.min.x, look).toBeGreaterThan(narrow.max.x - narrow.min.x + 2.5);
+    }
+  });
+
+  it('a bough is spruce in the forest and a dead pine\'s in the bog', () => {
+    const colours = (place: 'forest' | 'bog') => {
+      const mesh = buildLedges([{ x: 0, y: 0, width: 3, look: 'branch' }], [], place).group.children[0] as Mesh;
+      const colour = mesh.geometry.getAttribute('color');
+      let green = 0;
+      for (let i = 0; i < colour.count; i++) if (colour.getY(i) > colour.getX(i) * 1.5 && colour.getY(i) > colour.getZ(i) * 1.5) green++;
+      // How warm the bough itself is: brown bark against grey dead wood.
+      return { green, warmth: colour.getX(0) - colour.getZ(0) };
+    };
+    expect(colours('forest').green).toBeGreaterThan(50);
+    expect(colours('bog').green).toBe(0);
+    expect(colours('bog').warmth).toBeLessThan(colours('forest').warmth * 0.6);
   });
 
   it('a chapter without ledges draws nothing for them', () => {
