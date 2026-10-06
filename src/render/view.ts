@@ -41,6 +41,7 @@ import { createSharedSweets } from './shared-sweets';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
+import { buildVerbMarks } from './verb-marks';
 import type { Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
@@ -265,7 +266,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const ledges = buildLedges(chapter.ledges ?? [], rods(chapter));
   const glitter = buildGlitter();
   const lace = buildLace();
-  const glints = buildGlints(chapter);
+  // What Använd will do, over each thing it can act on (in-play.md row 6).
+  const glints = buildVerbMarks(chapter);
   const lawnSong = songGlitter(chapter);
   const noteStrikes = new Map<string, number>();
   scene.add(lawnSong.group);
@@ -786,7 +788,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       chapter.prologue && ghostState ? ghostState.x : Infinity);
     sideTrail.update(side ?? noSide, flags, x, y, dt, clock);
     ledges.update(flags, dt);
-    glints.update(flags, clock);
+    glints.update(flags, clock, lessMotion());
     lawnSong.update(flags, clock);
     for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
     cones.update(rollers, clock);
@@ -1708,32 +1710,6 @@ function buildRain(count: number) {
   return { group, update };
 }
 
-/**
- * A soft glint over each thing Använd can act on (plan §4.6): the lever, the place to call from. It is
- * gone once the thing has been used.
- */
-function buildGlints(chapter: ChapterData) {
-  const group = new Group();
-  const gold = new MeshBasicMaterial({ color: '#ffd76a', transparent: true, opacity: 0.9, depthWrite: false, blending: AdditiveBlending });
-  const spots = chapter.spots ?? [];
-  const meshes = spots.map((spot) => {
-    const glint = new Mesh(new OctahedronGeometry(0.16), gold);
-    glint.position.set(spot.at.x, spot.at.y + 1.5, 0);
-    group.add(glint);
-    return glint;
-  });
-  function update(flags: ReadonlySet<string>, clock: number): void {
-    for (const [i, spot] of spots.entries()) {
-      const glint = meshes[i]!;
-      const ready = !flags.has(spot.id) && (spot.needs === undefined || flags.has(spot.needs));
-      glint.scale.setScalar(ready ? 1 + 0.25 * Math.sin(clock * 4 + i) : 0);
-      drawnWhile(glint, ready);
-      glint.position.y = spot.at.y + 1.5 + Math.sin(clock * 2 + i) * 0.1;
-      glint.rotation.y = clock * 2;
-    }
-  }
-  return { group, update };
-}
 
 /**
  * A look (plan §3.4, the blink): while the chapter's beat lasts, a dotted line goes from the ghost's eyes to
