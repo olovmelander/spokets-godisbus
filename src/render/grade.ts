@@ -1,6 +1,6 @@
 import {
-  BufferGeometry, Data3DTexture, DataUtils, Float32BufferAttribute, HalfFloatType, LinearFilter, Mesh, OrthographicCamera, RGBAFormat, ShaderMaterial, Vector3,
-  type Material, type Object3D, type Texture,
+  BufferGeometry, Data3DTexture, DataUtils, Float32BufferAttribute, HalfFloatType, LinearFilter, Mesh, OrthographicCamera, RGBAFormat, ShaderChunk, ShaderMaterial, Vector3,
+  type Fog, type FogExp2, type Material, type Object3D, type Texture,
   type WebGLRenderTarget, type WebGLRenderer,
 } from 'three';
 
@@ -61,14 +61,20 @@ export function createGradeLut(grade: Grade): Data3DTexture {
   return texture;
 }
 
-/** Low has no framebuffer pass: apply the same place transform before the material's Neutral/sRGB output. */
-export function createMaterialGrade(grade: Grade) {
+/**
+ * Haze is linear light on every tier, before grading and Neutral/sRGB output. Low then grades in the
+ * material; HDR grades the completed scene. Keep three's distance/density uniforms, but not fogColor:
+ * three converts that colour to display space when drawing straight to the canvas.
+ */
+export function createMaterialGrade(grade: Grade, haze: Fog | FogExp2 | null = null) {
   const enabled = { value: 0 };
   const patched = new WeakSet<Material>();
   const uniforms = {
     placeGradeEnabled: enabled, placeTint: { value: new Vector3(...grade.tint) },
     placeExposure: { value: grade.exposure }, placeContrast: { value: grade.contrast },
     placeSaturation: { value: grade.saturation },
+    // Keep the colour object itself: nightfall changes it without recompiling any material.
+    ...(haze ? { placeHazeLinear: { value: haze.color } } : {}),
   };
   return {
     setEnabled(on: boolean) { enabled.value = on ? 1 : 0; },
@@ -80,7 +86,7 @@ export function createMaterialGrade(grade: Grade) {
           patched.add(one);
           const before = one.onBeforeCompile;
           const key = one.customProgramCacheKey.bind(one);
-          one.customProgramCacheKey = () => `${key()}:place-grade-v1`;
+          one.customProgramCacheKey = () => `${key()}:place-grade-v2:${haze ? 'haze' : 'clear'}`;
           one.onBeforeCompile = (shader, renderer) => {
             before.call(one, shader, renderer);
             Object.assign(shader.uniforms, uniforms);
@@ -90,6 +96,13 @@ export function createMaterialGrade(grade: Grade) {
               ` + shader.fragmentShader;
             const point = shader.fragmentShader.includes('#include <tonemapping_fragment>')
               ? '#include <tonemapping_fragment>' : '#include <colorspace_fragment>';
+            // Compose locally with water/caustics and other patches. Never rewrite ShaderChunk globally:
+            // a separate view or an unpatched material still owns three's ordinary fog/output path.
+            if (haze && shader.fragmentShader.includes('#include <fog_fragment>')) {
+              shader.fragmentShader = 'uniform vec3 placeHazeLinear;\n' + shader.fragmentShader
+                .replace('#include <fog_fragment>', '')
+                .replace(point, ShaderChunk.fog_fragment.replace('fogColor', 'placeHazeLinear') + '\n' + point);
+            }
             shader.fragmentShader = shader.fragmentShader.replace(point, `
               if (placeGradeEnabled > 0.5) {
                 vec3 graded = gl_FragColor.rgb * placeExposure * placeTint;

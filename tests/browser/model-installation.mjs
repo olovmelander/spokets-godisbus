@@ -47,7 +47,7 @@ const server = await createServer({
         export const installedModels = () => {
           const models = []; scene.traverse((node) => {
             if (!node.name.startsWith('installed-mamma-')) return;
-            models.push({ name: node.name, graded: node.material.customProgramCacheKey().includes('place-grade-v1'),
+            models.push({ name: node.name, graded: node.material.customProgramCacheKey().includes('place-grade-v2'),
               receiveShadow: node.receiveShadow, x: node.parent.parent.position.x });
           }); return models;
         };
