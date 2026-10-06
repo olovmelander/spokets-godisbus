@@ -78,7 +78,7 @@ describe('shared model turning and arm spread', () => {
     const model = new Group(), spine = new Bone(), head = new Bone(), left = new Bone(), right = new Bone();
     spine.name = 'spine_01'; head.name = 'Head'; left.name = 'upperarm_l'; right.name = 'upperarm_r';
     spine.rotation.set(.05, -.2, .1); head.rotation.set(.3, .4, -.15);
-    left.rotation.set(Math.PI, .2, .15); right.rotation.set(Math.PI, -.3, -.25);
+    left.rotation.set(.2, .15, Math.PI); right.rotation.set(-.3, -.25, Math.PI);
     spine.add(head, left, right); model.add(spine); model.rotation.y = .8; model.scale.setScalar(3);
     const rest = [spine, head, left, right].map((node) => node.quaternion.clone());
     const relative = [head, left, right].map((node) => rest[0]!.clone().multiply(node.quaternion));
@@ -89,8 +89,8 @@ describe('shared model turning and arm spread', () => {
     const body = model.getWorldQuaternion(new Quaternion()), x = new Vector3(1, 0, 0);
     for (const [i, node, axis, extra, pitch] of [
       [0, head, new Vector3(0, 1, 0), pose.turn, pose.nod],
-      [1, left, new Vector3(0, 0, 1), pose.spread, -pose.armL],
-      [2, right, new Vector3(0, 0, 1), -pose.spread, -pose.armR],
+      [1, left, new Vector3(0, 0, 1), pose.spread, pose.armL],
+      [2, right, new Vector3(0, 0, 1), -pose.spread, pose.armR],
     ] as const) {
       const expected = body.clone().multiply(new Quaternion().setFromAxisAngle(axis, extra))
         .multiply(relative[i]!).multiply(new Quaternion().setFromAxisAngle(x, pitch));
