@@ -48,6 +48,7 @@ const server = await createServer({
           const models = []; scene.traverse((node) => {
             if (!node.name.startsWith('installed-mamma-')) return;
             models.push({ name: node.name, graded: node.material.customProgramCacheKey().includes('place-grade-v2'),
+              rim: node.material.customProgramCacheKey().includes('place-rim-v1'),
               receiveShadow: node.receiveShadow, x: node.parent.parent.position.x });
           }); return models;
         };
@@ -95,7 +96,7 @@ try {
         const paused = p.state();
         return { before, loaded, paused, current: loaded.models.find((model) => model.name === `installed-mamma-${i}`) };
       }, i);
-      check(`${tier}: delayed Mamma ${i} receives the place grade and shadow receiver setup`, result.current?.graded && result.current.receiveShadow);
+      check(`${tier}: delayed Mamma ${i} receives the place grade, rim and shadow receiver setup`, result.current?.graded && result.current.rim && result.current.receiveShadow);
       check(`${tier}: Mamma ${i} arrival keeps simulation state and the asset display unchanged`,
         JSON.stringify(result.loaded.player) === JSON.stringify(result.before.player) &&
         JSON.stringify(result.loaded.flags) === JSON.stringify(result.before.flags) &&
