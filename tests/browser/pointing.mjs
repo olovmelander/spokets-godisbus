@@ -211,7 +211,8 @@ try {
   }
   for (const viewport of [{ width: 844, height: 390 }, { width: 390, height: 844 }]) {
     const name = `tutorial-touch-${viewport.width}`;
-    const { page, state, finish } = await open(name, { viewport, hasTouch: true, isMobile: true }, query('29.4,0.01', '&flags=blink'));
+    // In the hall the chase is on, and Hoppa has come in (first-minutes.md row 8).
+    const { page, state, finish } = await open(name, { viewport, hasTouch: true, isMobile: true }, query('29.4,0.01', '&flags=blink,bag:torn'));
     // A harmless surface tap selects touch without discovering either movement or jump.
     await page.touchscreen.tap(15, viewport.height / 2);
     await shown(page, 'hop');

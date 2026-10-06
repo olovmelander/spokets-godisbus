@@ -27,6 +27,9 @@ export function fadeAt(keys: NonNullable<SceneStage['fade']>, seconds: number): 
   return dark;
 }
 
+/** How long "Fortsätt" shows where he is, in seconds. */
+const REMINDED = 2.4;
+
 export function createSceneUi(doc: Document) {
   const byId = (id: string) => doc.getElementById(id)!;
   const fade = byId('sceneFade');
@@ -34,7 +37,16 @@ export function createSceneUi(doc: Document) {
   const title = byId('sceneTitle');
   const words: Record<string, string> = sv.scene;
   let shown = { bars: false, fade: -1, caption: '', captionOn: -1, title: '', titleOn: -1 };
+  /** A game taken up again says where he is, on the card's scrap, for a moment. */
+  let reminder: { text: string; from: number } | null = null;
   return {
+    /**
+     * "Fortsätt": the chapter's card word on its scrap of paper for 2.4 s, without holding him
+     * (docs/ux-audit/first-minutes.md row 9).
+     */
+    remind(text: string) {
+      reminder = text ? { text, from: performance.now() } : null;
+    },
     /** One frame: the scene playing now (or null), and whether a menu covers the picture. */
     show(scenes: readonly SceneDef[] | undefined, frame: SceneFrame | null, covered: boolean) {
       const scene = frame ? scenes?.find((def) => def.id === frame.id) : undefined;
@@ -50,6 +62,11 @@ export function createSceneUi(doc: Document) {
         const on = Math.min(1, age / 0.6, (word.seconds - age) / 0.6);
         if (word.kind === 'caption') { captionText = words[word.text] ?? ''; captionOn = on; }
         else { titleText = words[word.text] ?? ''; titleOn = on; }
+      }
+      if (!captionText && reminder) {
+        const age = (performance.now() - reminder.from) / 1000;
+        if (age > REMINDED) reminder = null;
+        else { captionText = reminder.text; captionOn = covered ? 0 : Math.min(1, age / 0.6, (REMINDED - age) / 0.6); }
       }
       if (captionText !== shown.caption) {
         // The place in large letters and the time of day under it; the dot stays in the text for anyone who

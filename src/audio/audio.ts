@@ -318,6 +318,9 @@ export function createAudio(): Audio {
         knock(520, 0.15);
         knock(520, 0.13, 0.16);
         break;
+      case 'tock':
+        knock(560, 0.07);
+        break;
       case 'gust':
         puff('bandpass', 260, 900, 1.3, 0.14, 0, 0.6);
         break;

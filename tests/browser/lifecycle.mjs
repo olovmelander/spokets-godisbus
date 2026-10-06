@@ -41,7 +41,7 @@ async function until(read, accepts, name, timeout = 15000) {
   assert.fail(`${name}: ${JSON.stringify(value)}`);
 }
 const progress = ({ x, y, steps, candy, flags, checkpoint }) => ({ x, y, steps, candy, flags, checkpoint });
-async function open(setup = async () => {}) {
+async function open(setup = async () => {}, query = '?debug&standin&tier=low') {
   // Keep the pack-failure assertions independent of a previously cached worker response.
   const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 844, height: 390 } });
   await context.addInitScript(() => {
@@ -54,7 +54,7 @@ async function open(setup = async () => {}) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(String(error)));
   await setup(page);
-  await page.goto(`${origin}${BASE}?debug&standin&tier=low`);
+  await page.goto(`${origin}${BASE}${query}`);
   await page.waitForFunction(() => window.__godis);
   return { page, context, errors, state: () => page.evaluate(() => window.__godis.state()), info: () => page.evaluate(() => window.__godis.info()) };
 }
@@ -130,6 +130,22 @@ try {
   await until(duringBoot.state, (s) => !s.paused && s.steps > 0, 'continue after early restore');
   assert.deepEqual(duringBoot.errors, []);
   await duringBoot.context.close();
+
+  // A start pressed while the models still load is kept, never dropped (docs/ux-audit/first-minutes.md row 1).
+  let releaseLate;
+  const lateGate = new Promise((resolve) => { releaseLate = resolve; });
+  const early = await open(async (page) => page.route('**/packs/boot/big-candy.glb*', async (route) => {
+    await lateGate;
+    await route.continue();
+  }), '?debug&standin&tier=low&title');
+  await early.page.locator('#startAventyr').click();
+  check('a start pressed while loading waits on its button with the ghost, under the title', (await early.state()).title && !(await early.state()).bootReady
+    && await early.page.locator('#title.waiting #startAventyr.pressed .waiting-ghost').count() === 1);
+  releaseLate();
+  await until(early.state, (s) => s.bootReady && !s.title && !s.paused, 'the kept start begins once the models are in', 60000);
+  check('the kept press starts the game on the style it chose', (await early.state()).style === 'aventyr');
+  assert.deepEqual(early.errors, []);
+  await early.context.close();
 
   const game = await open();
   await until(game.state, (s) => s.bootReady && s.steps > 0, 'boot ready', 60000);

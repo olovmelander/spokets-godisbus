@@ -131,6 +131,8 @@ export interface View {
   readonly maxResolutionSteps: number;
   /** Required public boot models are present; a failure keeps the loading/error card in front of play. */
   readonly ready: Promise<void>;
+  /** How much of what `ready` waits for has come, from 0 to 1: for the crayon line under the title. */
+  readonly loaded: number;
   /** Re-fetch released immutable textures before warming Three's restored GL resources. */
   restore(): Promise<void>;
   resize(): void;
@@ -443,7 +445,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (atlas) wild.install(atlas);
     })
     .catch((error) => console.error('The life of the far scenery could not be loaded.', error)) : Promise.resolve();
-  const ready = Promise.all([candyReady, jayReady, sweetsReady, forestReady, housesReady, mountainReady, lifeReady]).then(() => undefined);
+  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, mountainReady, lifeReady];
+  let arrived = 0;
+  for (const part of parts) void part.then(() => { arrived++; }, () => {});
+  const ready = Promise.all(parts).then(() => undefined);
 
   // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
   // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.
@@ -1138,6 +1143,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     get resolutionSteps() { return resolutionSteps; },
     get maxResolutionSteps() { return maxResolutionSteps(maxPixelRatio); },
     ready,
+    get loaded() { return arrived / parts.length; },
     async restore() {
       await ready;
       await assets.restoreTextures();

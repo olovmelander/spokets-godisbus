@@ -3,6 +3,9 @@ import { PLAYER_NAME_MAX, type PlayerProfile } from '../save/store';
 import type { PlayStyle } from '../save/settings';
 import { sv } from '../content/sv';
 
+/** The buttons that start the game from the title's front. */
+const START_BUTTONS = ['startAventyr', 'startLugnt', 'startBtn'];
+
 export interface TitleHandlers {
   onStart(style: PlayStyle | null): void;
   onStartOver(): boolean | void | Promise<boolean | void>;
@@ -24,6 +27,11 @@ export interface Title {
   readonly open: boolean;
   show(hasSave: boolean, players?: TitlePlayers): void;
   showStyles(): void;
+  /**
+   * A start pressed while the game still loads (docs/ux-audit/first-minutes.md row 1): that button keeps its word
+   * and shows the loading ghost, the others dim. The game starts by itself once it has loaded.
+   */
+  waiting(style: PlayStyle | null): void;
   hide(): void;
   back(): void;
 }
@@ -171,7 +179,9 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
       if (playerState) state = playerState;
       open = true;
       backdrop.dataset.saved = String(saved);
-      backdrop.classList.remove('leaving');
+      backdrop.classList.remove('leaving', 'waiting');
+      for (const id of START_BUTTONS) byId(id).classList.remove('pressed');
+      for (const ghost of backdrop.querySelectorAll('.waiting-ghost')) ghost.remove();
       backdrop.hidden = false;
       // Nothing of the play shows under the title: no bag, corners or controls for a game not begun (row 8).
       doc.body.classList.add('at-title');
@@ -191,6 +201,17 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
       front();
     },
     showStyles,
+    waiting(style) {
+      const pressed = style === 'aventyr' ? 'startAventyr' : style === 'lugnt' ? 'startLugnt' : 'startBtn';
+      backdrop.classList.add('waiting');
+      for (const id of START_BUTTONS) byId(id).classList.toggle('pressed', id === pressed);
+      const button = byId(pressed);
+      if (button.querySelector('.waiting-ghost')) return;
+      const ghost = doc.querySelector('#loading svg')?.cloneNode(true) as SVGElement | undefined;
+      if (!ghost) return;
+      ghost.classList.add('waiting-ghost');
+      button.prepend(ghost);
+    },
     back() {
       if (busy) return;
       if (!byId('titleConfirm').hidden) byId('playerConfirmNo').click();

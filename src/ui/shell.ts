@@ -317,6 +317,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
            <button class="wide" id="playerConfirmYes" type="button">${CHECK}<span>${sv.players.yes}</span></button>
          </div>
          <p id="playerError" role="alert" hidden>${sv.players.error}</p>
+         <i class="title-loading" id="titleLoading" aria-hidden="true"></i>
        </div>
      </div>
      <div class="memory" id="memory" hidden><div class="memory-panel" role="dialog" aria-modal="true" aria-labelledby="memoryTitle"><button class="panel-close" id="memoryClose" type="button" aria-label="${p.close}">${CROSS}</button><h2 id="memoryTitle">${sv.memory}</h2><div class="memory-card" id="memoryCard" role="img" aria-label="${sv.memory}"></div><div class="memory-controls"><span id="memoryProgress" role="status"></span><button class="wide" id="memoryNext" type="button">${sv.memories.next} →</button></div></div></div>

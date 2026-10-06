@@ -53,8 +53,8 @@ export const PROLOG_SCENES: SceneDef[] = [
     // towards the Saturday bag, and Mamma's look stops it. Pappa blows the last shavings off, sets the ghost
     // down before Elof, and holds out the brush: the eyes are Elof's to paint (plan §3.3 rule 1).
     id: 'morgon',
-    // At the table where he starts: a game taken up further on has had its morning.
-    at: 1.5,
+    // At the table where he starts (in reach of the brush): a game taken up further on has had its morning.
+    at: 2.2,
     until: 'eye',
     seconds: 10.5,
     hold: true,

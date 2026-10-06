@@ -12,14 +12,18 @@ export function createTutorial(doc: Document) {
     show(lesson: Lesson | null, device: Device, follow: boolean, player: Vec | null): void {
       panel.hidden = lesson === null;
       if (!lesson) return;
-      const key = `${lesson}:${device}:${follow}`;
+      // Använd's lesson names what the button says now.
+      const word = lesson === 'act' ? doc.getElementById('actBtn')?.getAttribute('aria-label') ?? sv.act : '';
+      const key = `${lesson}:${device}:${follow}:${word}`;
       if (key !== previous) {
         previous = key;
         panel.dataset.lesson = lesson;
         panel.dataset.device = device;
         panel.dataset.follow = String(follow);
         caption.textContent = device === 'keys' ? sv.tutorial.keys[lesson] : device === 'pad' ? sv.tutorial.pad[lesson] : '';
-        panel.setAttribute('aria-label', sv.tutorial[device === 'keys' ? 'keyboard' : device === 'pad' ? 'gamepad' : 'touch'][lesson]);
+        // With a key after it, the word loses its own "!": "Tryck på Måla ögonen med E."
+        const said = device === 'touch' ? word : word.replace(/[!.?]+$/u, '');
+        panel.setAttribute('aria-label', sv.tutorial[device === 'keys' ? 'keyboard' : device === 'pad' ? 'gamepad' : 'touch'][lesson].replace('{word}', said));
       }
       if (device === 'touch') {
         const id = lesson === 'move' ? 'stickBase' : lesson === 'hop' ? 'hopBtn' : 'actBtn';

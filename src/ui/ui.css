@@ -1882,6 +1882,27 @@ body.calm .moas-karta .way-on {
   text-align: center;
 }
 
+/* While the game still loads, Moa's red crayon line crosses the card's foot as its models arrive
+   (first-minutes.md row 2). */
+.title .panel {
+  position: relative;
+}
+
+.title-loading {
+  position: absolute;
+  left: 18px;
+  bottom: 8px;
+  width: calc((100% - 36px) * var(--loaded, 0));
+  height: 4px;
+  border-radius: 2px;
+  background: #c8312a;
+  transition: width 300ms ease-out, opacity 400ms ease-out;
+}
+
+.title-loading.done {
+  opacity: 0;
+}
+
 /* Under the title the picture is the game's alone: no bag, corners, controls or hints (first-minutes.md row 8). */
 body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) {
   visibility: hidden;
@@ -2017,6 +2038,27 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 .start-style small {
   font-size: 16px;
   line-height: 1.2;
+}
+
+/* A start pressed while the game loads: that button waits, with the loading ghost bobbing on it (row 1). */
+.title.waiting :is(#startAventyr, #startLugnt, #startBtn):not(.pressed) {
+  opacity: 0.45;
+}
+
+.pressed > svg:not(.waiting-ghost) {
+  display: none;
+}
+
+.waiting-ghost {
+  width: 32px;
+  height: 40px;
+  animation: bob 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waiting-ghost {
+    animation: none;
+  }
 }
 
 /* Under the start: round buttons with a word under each (row 7). */
@@ -2537,6 +2579,12 @@ button.bag {
 .tutorial[data-lesson="move"][data-device="touch"] .tutorial-target { opacity: 0.4; }
 .tutorial[data-lesson="move"][data-follow="true"] .tutorial-hand { animation-name: tutorial-press; animation-duration: 2.8s; }
 @keyframes tutorial-press { 0%, 100% { transform: translate(12px, 14px) rotate(-14deg); opacity: .7; } 30%, 70% { transform: translate(0, 0) rotate(-14deg); opacity: 1; } }
+/* On touch the hand presses Hoppa and Använd at their lower left rim, so the button's word stays in sight
+   (docs/ux-audit/first-minutes.md row 20). */
+.tutorial[data-device="touch"]:is([data-lesson="act"], [data-lesson="hop"]) .tutorial-hand { top: 64px; left: -22px; animation-name: tutorial-rim; }
+@keyframes tutorial-rim { 0%, 100% { transform: translate(-8px, 10px) rotate(35deg); opacity: .7; } 30%, 70% { transform: translate(0, 0) rotate(35deg); opacity: 1; } }
+body.calm .tutorial[data-device="touch"]:is([data-lesson="act"], [data-lesson="hop"]) .tutorial-hand { transform: rotate(35deg); }
+@media (prefers-reduced-motion: reduce) { .tutorial[data-device="touch"]:is([data-lesson="act"], [data-lesson="hop"]) .tutorial-hand { transform: rotate(35deg); } }
 @keyframes tutorial-move { 0%, 100% { transform: translate(-14px, 0) rotate(-14deg); } 50% { transform: translate(22px, 0) rotate(-14deg); } }
 body.calm .tutorial-hand { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .tutorial-hand { animation: none !important; } }
@@ -2600,6 +2648,27 @@ body.scene-card :is(.bag, #helpBtn, .key-prompt, .story-purpose, .hint) {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.6s ease;
+}
+
+/* The prologue brings its controls in as they are needed (docs/ux-audit/first-minutes.md rows 8 and 18): Hoppa,
+   the helper and "Just nu" when the chase starts, the bag with its first candy, each over 0.4 s. */
+#hopBtn {
+  transition: transform 0.06s ease, opacity 0.4s ease-out, visibility 0.4s;
+}
+
+#helpBtn,
+.bag {
+  transition: opacity 0.4s ease-out, visibility 0.4s;
+}
+
+body.before-chase :is(#hopBtn, #helpBtn, .story-purpose),
+body.no-candy .bag {
+  opacity: 0;
+  visibility: hidden;
+}
+
+body.keys-later .hint {
+  visibility: hidden;
 }
 
 /* A chapter's card does not hold him: the stick and the buttons stay where his thumbs are. */

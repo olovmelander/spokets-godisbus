@@ -23,7 +23,7 @@ import { createStoryContext } from './ui/story-context';
 import { createInput, type Device } from './input/input';
 import { createAutoTier, createDynamicResolution, tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
-import { changeStyle, settingsFor, simOptions, tempoOf, type Settings } from './save/settings';
+import { changeStyle, settingsFor, simOptions, tempoOf, type PlayStyle, type Settings } from './save/settings';
 import { codeFor } from './save/codes';
 import { createStore, newSave, type PlayerSave } from './save/store';
 import { createPhotoStore } from './save/photos';
@@ -497,6 +497,37 @@ function start(): void {
     params.set('title', '');
     location.href = `${location.pathname}?${params}`;
   }
+  /** The words of a chapter's time card, which the loading card shows when the page goes on to it. */
+  function cardOf(id: string): string | undefined {
+    const text = [...STORY, ...BONUS].find((c) => c.id === id)?.scenes?.find((scene) => scene.id === 'card')?.stage?.words?.find((word) => word.kind === 'caption')?.text;
+    return text ? (sv.scene as Record<string, string>)[text] : undefined;
+  }
+  /** The game begins from the title: with the style chosen there, or the saved one for Fortsätt. */
+  function startPlay(style: PlayStyle | null): void {
+    pendingStart = null;
+    startedAt = performance.now();
+    begun = true;
+    if (tableauShown()) game.sim.scene?.openAt('morgon', handoff);
+    if (style) {
+      settings = changeStyle(settings, style);
+      game.sim.options = simOptions(settings);
+      game.tempo = tempoOf(settings);
+      apply();
+    }
+    // Fortsätt: where he is, on the card's scrap for a moment (first-minutes.md row 9). The tableau needs none.
+    if (!style && !tableauShown()) sceneUi.remind(byId('titleStoryCard').textContent ?? '');
+    title.hide();
+    paused = false;
+    input.release();
+    game.resume();
+    audio.sleep(document.hidden);
+    audio.unlock();
+    canvas.focus();
+    writeSave();
+  }
+  let pendingStart: { style: PlayStyle | null } | null = null;
+  /** When the game began from the title: a turn of the phone just after does not open Pause. */
+  let startedAt = -Infinity;
   const newPlayerChapter = courseFor(new URLSearchParams(params.has('dev') ? 'dev' : ''), null).id;
   const title = createTitle(document, {
     onFront() { offline.check(); },
@@ -531,23 +562,16 @@ function start(): void {
       return true;
     },
     onStart(style) {
-      if (!offline.canStart() || platformBlocked() || store.load().kind === 'unreadable') return;
-      begun = true;
-      if (tableauShown()) game.sim.scene?.openAt('morgon', handoff);
-      if (style) {
-        settings = changeStyle(settings, style);
-        game.sim.options = simOptions(settings);
-        game.tempo = tempoOf(settings);
-        apply();
+      if (!offline.canStart() || store.load().kind === 'unreadable') return;
+      // A start pressed while the models still load is kept, never dropped (docs/ux-audit/first-minutes.md row 1):
+      // the pressed button shows the loading ghost, and the game starts the moment the models are in.
+      if (!bootReady && !contextLost && byId('message').hidden && !document.hidden) {
+        pendingStart = { style };
+        title.waiting(style);
+        return;
       }
-      title.hide();
-      paused = false;
-      input.release();
-      game.resume();
-      audio.sleep(document.hidden);
-      audio.unlock();
-      canvas.focus();
-      writeSave();
+      if (platformBlocked()) return;
+      startPlay(style);
     },
     async onStartOver() {
       if (!offline.canStart()) return false;
@@ -566,7 +590,7 @@ function start(): void {
       save = { ...save, updated: Date.now(), settings, chapter: id, checkpoint: -1, checkpoints: others(save.checkpoints ?? {}), candy: others(save.candy), placed: others(save.placed), flags: others(save.flags) };
       store.write(save);
       again = true;
-      markOnward(id);
+      markOnward(id, undefined, cardOf(id));
       // Replaced, not added: Back must not reopen the chapter left behind and move the save back to it.
       location.replace(`${location.pathname}${courseQuery(params, id)}`);
       return true;
@@ -594,6 +618,9 @@ function start(): void {
         if (!what) return;
         if (what.kind === 'use') askedForUse = true;
         else if (what.kind === 'helper') askedForHelp = true;
+        // Until it wakes, the carving is only wood: a dry tock, and no turn that would give its waking away
+        // (docs/ux-audit/first-minutes.md row 21).
+        else if (what.kind === 'ghost' && chapter.id === 'prolog' && !game.sim.flags.has('blink')) audio.play({ kind: 'tock' });
         else {
           view.react(what, settings.calm || reducedMotion.matches);
           if (what.kind === 'player') audio.play({ kind: 'say', who: 'elof' });
@@ -639,16 +666,26 @@ function start(): void {
   for (const type of ['gesturestart', 'dblclick', 'contextmenu']) {
     document.addEventListener(type, (e) => e.preventDefault());
   }
+  // A turn of the phone opens Pause only in free play, and only when the picture turns between landscape and
+  // portrait: never over a held scene, nor in the first seconds after the title, when a child often turns the phone
+  // only after tapping (docs/ux-audit/first-minutes.md row 17). Any other change of size only redraws.
+  let landscape = innerWidth >= innerHeight;
+  /** When a key, a tap or a pad was last used: the prologue's line of keys waits for a quiet moment. */
+  let inputAt = performance.now();
+  for (const type of ['keydown', 'pointerdown']) window.addEventListener(type, () => { inputAt = performance.now(); }, { capture: true });
   const relayout = () => {
-    story.interrupt();
+    const turned = (innerWidth >= innerHeight) !== landscape;
+    landscape = innerWidth >= innerHeight;
     pointing.cancel();
     askedForUse = askedForHelp = false;
     input.release();
-    openPause();
-    devicePlay.setPlaying(false);
     view.resize();
     auto?.suspend();
     resolution?.suspend();
+    if (!turned || menuOpen() || game.sim.scene?.holding || performance.now() - startedAt < 3000) return;
+    story.interrupt();
+    openPause();
+    devicePlay.setPlaying(false);
   };
   window.addEventListener('resize', relayout);
   window.addEventListener('orientationchange', relayout);
@@ -698,7 +735,7 @@ function start(): void {
     save = visitChapter(save, id);
     store.write(save);
     again = true;
-    markOnward(id);
+    markOnward(id, undefined, cardOf(id));
     // Replaced, not added: Back must not reopen the chapter left behind and move the save back to it.
     location.replace(`${location.pathname}${courseQuery(params, id)}`);
   }
@@ -709,7 +746,7 @@ function start(): void {
     if (!keepSavedPosition) save = visitChapter(save, chapter.id, true);
     store.write(save);
     again = true;
-    markOnward(chapter.id);
+    markOnward(chapter.id, undefined, cardOf(chapter.id));
     location.replace(`${location.pathname}${courseQuery(params, chapter.id)}`);
   }
   let endFor = 0;
@@ -752,6 +789,8 @@ function start(): void {
     input.release();
     offerRecovery();
     if (title.open) offline.check();
+    // A start pressed while loading begins now, if the title still waits on its front for it.
+    if (pendingStart && title.open && !byId('titleFront').hidden && !platformBlocked()) startPlay(pendingStart.style);
   }).catch(() => {
     paused = true;
     input.release();
@@ -904,6 +943,12 @@ function start(): void {
     const atGoal = game.sim.flags.has('goal');
     const tableau = tableauShown();
     if (tableau) tableauSeconds += dt;
+    // The crayon line under the title, while the models come (first-minutes.md row 2).
+    if (title.open) {
+      const line = byId('titleLoading');
+      line.style.setProperty('--loaded', String(bootReady ? 1 : view.loaded));
+      line.classList.toggle('done', bootReady);
+    }
     view.render({
       // Under the title the place lives on (first-minutes.md row 4); under any other menu it stands still.
       prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: menuOpen() && !title.open ? 0 : dt, atGoal,
@@ -923,6 +968,12 @@ function start(): void {
     tutorialView.show(menuOpen() || platformBlocked() ? null : tutorial.shown, device, settings.followFinger, view.playerScreen());
     sceneUi.show(chapter.scenes, game.sim.sceneFrame, menuOpen() && !paused);
     hud.candy(game.sim.candyCount);
+    // In the prologue the keycaps teach, so the line of keys waits unless he has stood 10 s without a key
+    // (first-minutes.md row 22).
+    document.body.classList.toggle('keys-later', chapter.id === 'prolog' && performance.now() - inputAt < 10000);
+    // The prologue brings its controls in as they are needed (first-minutes.md rows 8 and 18).
+    document.body.classList.toggle('before-chase', chapter.id === 'prolog' && !game.sim.flags.has('bag:torn'));
+    document.body.classList.toggle('no-candy', chapter.id === 'prolog' && game.sim.candyCount === 0);
     storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !menuOpen());
     hud.verb(game.sim.curr.verb, game.sim.curr.word);
     hud.knock(game.sim.help.step >= 2 ? game.sim.help : null);
