@@ -300,6 +300,11 @@ keep its direction through story shots, wind, instancing and skinning. It fades 
 out with nightfall, using shared uniforms and the existing warmup for models that arrive later. Water,
 glow and transparent helper figures keep their own shading; the rim adds no draw or render target.
 
+**Forest landmarks** supply their own raised shape. The bank, its plants and effects use the ground
+under the cone, anthill, log and stone, while the game keeps the same playable top. The doorway remains
+on the anthill and the spruce roots reach into it. If a kit shape is missing, its socket keeps a solid
+stand-in support; loading or retrying replaces that support rather than stacking a second model.
+
 **Forest shadows** follow the existing spruces and the place's sun. On High, only the marked trunks join
 the characters in the existing 1024-pixel shadow map: their shade crosses the moss, the cut bank and the
 figures. The light reaches far enough behind the path to include a tree outside the camera whose shadow

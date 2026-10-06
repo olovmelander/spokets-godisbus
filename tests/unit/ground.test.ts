@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { DoubleSide, Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three';
 import { COURSES } from '../../src/content/chapters';
 import { groundOf } from '../../src/render/dressing';
 import { bankShapes, forwardAt, tileOf } from '../../src/render/dressing/ground';
+import { heightAt, landscape } from '../../src/render/dressing/kit';
 
 /** Each corner of each triangle from the path forward: how long its picture is against how long it is itself. */
 function* edges(course: string) {
@@ -56,5 +58,46 @@ describe("the ground's picture", () => {
         expect(shape.boundingSphere!.radius, course + ': ' + kind).toBeGreaterThan(0.4);
       }
     }
+  });
+});
+
+describe('the land under forest landmarks', () => {
+  const chapter = COURSES['granskog']!;
+
+  it('removes only the named raised blocks and leaves collision ground and adjoining cliffs intact', () => {
+    const before = JSON.stringify(chapter);
+    const land = landscape(chapter);
+    for (const mark of chapter.landmarks!) {
+      for (const x of [mark.from + 0.01, (mark.from + mark.to) / 2, mark.to - 0.01]) {
+        expect(heightAt(land, x), mark.look).toBe(mark.base);
+        expect(heightAt(chapter, x), mark.look).toBeGreaterThan(mark.base);
+      }
+      for (const x of [mark.from - 0.01, mark.to + 0.01]) expect(heightAt(land, x)).toBeCloseTo(heightAt(chapter, x));
+    }
+    expect(heightAt(land, 65.99)).toBe(4);
+    expect(heightAt(land, 66.01)).toBe(0);
+    expect(heightAt(land, 185.39)).toBe(-8);
+    expect(heightAt(land, 185.41)).toBe(-13);
+    expect(JSON.stringify(chapter)).toBe(before);
+    expect(landscape(land)).toBe(land);
+    for (const other of Object.values(COURSES).filter((course) => !course.landmarks?.length)) expect(landscape(other)).toBe(other);
+  });
+
+  it('draws the floor at the base behind and under each model, without its old raised wall', () => {
+    const material = new MeshBasicMaterial({ side: DoubleSide });
+    const meshes = bankShapes(chapter, 'moss').map(({ shape }) => new Mesh(shape, material));
+    const ray = new Raycaster();
+    for (const mark of chapter.landmarks!) {
+      for (const x of [mark.from + 0.2, (mark.from + mark.to) / 2, mark.to - 0.2]) {
+        for (const z of [0, -5]) {
+          ray.set(new Vector3(x, 40, z), new Vector3(0, -1, 0));
+          const hit = ray.intersectObjects(meshes)[0];
+          expect(hit, `${mark.look} at ${x},${z}`).toBeDefined();
+          expect(Math.abs(hit!.point.y - mark.base), `${mark.look} at ${x},${z}`).toBeLessThan(z === 0 ? 0.001 : 0.3);
+        }
+      }
+    }
+    for (const mesh of meshes) mesh.geometry.dispose();
+    material.dispose();
   });
 });

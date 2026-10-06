@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
 import { groundOf } from '../../src/render/dressing';
 import { FLOOR_ENDS, bankShapes, floorDrop, forwardAt, shoreAt, slopeDrop } from '../../src/render/dressing/ground';
-import { heightAt } from '../../src/render/dressing/kit';
+import { heightAt, landscape } from '../../src/render/dressing/kit';
 
-const forest = COURSES['granskog']!;
+const forest = landscape(COURSES['granskog']!);
 /** The tops of the forest's walls: a wall tall enough to hide something at its foot. */
 function wallTops() {
   const tops: { x: number; y: number; side: number }[] = [];
