@@ -127,6 +127,8 @@ interface Row {
   rim?: number;
   /** The dark under a walk of planks: how far its tone has gone into it. Nothing is lit there. */
   hollow?: number;
+  /** A section sample between two original rows: stay on their line even where the front draws back. */
+  between?: readonly [Row, Row, number];
 }
 const PROFILE: Row[] = [
   { z: -16, drop: -0.6, shade: 0.62, bump: 0.5 },
@@ -314,6 +316,32 @@ const PROFILE_STREET: Row[] = [
   { z: EDGE, drop: 0, shade: 1, bump: 0 },
   ...TILTED,
 ];
+
+/** The road's section: a thin wearing course, crushed stone, then earth. Samples lie on the old cut. */
+const ROAD_SAMPLES = [0.3, 0.4, 2.05, 2.25, 6];
+const PROFILE_ROAD = PROFILE_STREET.flatMap((row, i): Row[] => {
+  const next = PROFILE_STREET[i + 1];
+  if (!row.cut || !next?.cut) return [row];
+  const from = row.drop - dropAt(PROFILE_STREET, row.z);
+  const to = next.drop - dropAt(PROFILE_STREET, next.z);
+  return [row, ...ROAD_SAMPLES.filter((d) => d > from && d < to).map((d) => {
+    const k = (d - from) / (to - from);
+    return { z: row.z + (next.z - row.z) * k, drop: row.drop + (next.drop - row.drop) * k,
+      shade: row.shade + (next.shade - row.shade) * k, bump: 0, cut: 1, between: [row, next, k] as const };
+  })];
+});
+const AGGREGATE = new Color('#8a8378');
+const ROAD_EARTH = new Color('#5a4a38');
+const ROAD_DEEP = new Color('#1b1a1c');
+const road = (kind: Ground) => kind === 'asphalt' || kind === 'paving';
+
+function roadCutAt(kind: Ground, x: number, z: number, under: number, out: Color): Color {
+  const blend = (from: number, to: number) => Math.min(1, Math.max(0, (under - from) / (to - from)));
+  toneAt(kind, x, z, out).multiplyScalar(0.86);
+  out.lerp(AGGREGATE, blend(0.3, 0.4)).lerp(ROAD_EARTH, blend(2.05, 2.25));
+  out.multiplyScalar(0.88 + noise(x * 3.7 + z, under * 4.1) * 0.24);
+  return out.lerp(ROAD_DEEP, blend(2.25, 6));
+}
 
 /**
  * What a place's ground does in front of the path, and at its walls.
@@ -534,7 +562,12 @@ function depthOf(row: Row, forward: number): number {
  * below the floor; the bog's narrow planks and the growing ground keep their own profiles.
  */
 function dropOf(profile: Row[], row: Row, forward: number): number {
-  if ((profile !== PROFILE_FLOOR && profile !== PROFILE_STREET) || row.z <= EDGE || forward === 1) return row.drop;
+  if (row.between) {
+    const [a, b, k] = row.between;
+    const from = dropOf(profile, a, forward);
+    return from + (dropOf(profile, b, forward) - from) * k;
+  }
+  if ((profile !== PROFILE_FLOOR && profile !== PROFILE_STREET && profile !== PROFILE_ROAD) || row.z <= EDGE || forward === 1) return row.drop;
   return row.drop - dropAt(profile, row.z) + dropAt(profile, depthOf(row, forward));
 }
 
@@ -732,7 +765,13 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
         x: foot.x, side: up ? 1 : -1, lean: Math.abs(top.x - foot.x), along: up ? along : along + length, lower,
       };
     }
-    for (let k = 0; k < pieces; k++) {
+    const steps = Array.from({ length: pieces }, (_, k) => k);
+    if (steep && front === FRONTS.street && road(kindAt(a.x))) {
+      const height = Math.abs(b.y - a.y);
+      for (const depth of ROAD_SAMPLES) if (depth < height) steps.push((b.y < a.y ? depth / height : 1 - depth / height) * pieces);
+      steps.sort((a, b) => a - b);
+    }
+    for (const k of new Set(steps)) {
       const x = a.x + (dx * k) / pieces;
       // The corner at a wall's top or foot is a wall's too.
       const y = a.y + ((b.y - a.y) * k) / pieces;
@@ -772,7 +811,8 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
  */
 function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks: Block[] = []): BufferGeometry {
   const look = GROUNDS[kind];
-  const profile = kind === 'moss' ? PROFILE_FOREST_SHADE : front.rows;
+  const street = front === FRONTS.street && road(kind);
+  const profile = street ? PROFILE_ROAD : kind === 'moss' ? PROFILE_FOREST_SHADE : front.rows;
   const whole = lengthsDown(profile);
   const rows = profile.length;
   const cuts = front.cuts;
@@ -808,7 +848,7 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       if (wall) {
         // The face stands on the lower floor as that lies at this depth, and goes up to the upper one.
         const upper = wall.top - drop;
-        const lowerDepth = profile === PROFILE_FLOOR || profile === PROFILE_STREET ? z : EDGE + (z - EDGE) / Math.max(0.05, wall.footForward);
+        const lowerDepth = profile === PROFILE_FLOOR || profile === PROFILE_STREET || profile === PROFILE_ROAD ? z : EDGE + (z - EDGE) / Math.max(0.05, wall.footForward);
         const lower = row.z <= EDGE ? wall.foot - drop : wall.floor - (lowerDepth > ends ? drop : dropAt(profile, lowerDepth));
         y = Math.min(upper, lower) + (upper - Math.min(upper, lower)) * up;
         under = upper - y;
@@ -830,6 +870,11 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       // A rim board is one long board, not a board to each board of the deck: one tone, drifting along it.
       if (row.rim !== undefined && !face) c.copy(look.colours[1]!).lerp(look.colours[2]!, noise(p.x * 0.31 + 5, 3));
       c.lerp(look.shade, (1 - row.shade) * 0.9);
+      // Retraction also marks the tilted top as a generic cut; it is still road, not exposed aggregate.
+      if (street && (face || row.cut)) {
+        const depth = face ? under : drop - dropAt(profile, z);
+        if (depth > 0) roadCutAt(kind, p.x, z, depth, c);
+      }
       if (row.hollow !== undefined) c.copy(HOLLOW[0]!).lerp(HOLLOW[1]!, row.hollow);
       if (block) c.multiplyScalar(block.tone);
       // A joint is a dark line down the faces, and a faint one across the ledges and the top.
