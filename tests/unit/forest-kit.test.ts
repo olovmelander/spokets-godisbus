@@ -1,14 +1,14 @@
 import { readFileSync } from 'node:fs';
 import {
-  Box3, BoxGeometry, BufferGeometry, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial,
+  Box3, BoxGeometry, BufferGeometry, CylinderGeometry, DoubleSide, Euler, Float32BufferAttribute, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial,
   MeshStandardMaterial, Raycaster, SphereGeometry, Vector3, type Object3D,
 } from 'three';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
 import { FLOOR_SHAPES, restock, stretch } from '../../src/render/dressing/forest';
 import { shoreAt } from '../../src/render/dressing/ground';
-import { heightAt, makeKit } from '../../src/render/dressing/kit';
-import { LANDMARKS, forestKit, forestSocket, installForest, placing, rollingCone, standingCone, together, type ForestKit } from '../../src/render/forest-kit';
+import { heightAt, landscape, makeKit } from '../../src/render/dressing/kit';
+import { LANDMARKS, forestKit, forestLandmarks, forestSocket, installForest, placing, rollingCone, standingCone, together, type ForestKit } from '../../src/render/forest-kit';
 import { moverProp, rideProp, spotProp } from '../../src/render/props';
 
 const forest = COURSES['granskog']!;
@@ -201,7 +201,7 @@ describe('the landmarks', () => {
   });
 
   it('are put in the scene where the chapter says, one mesh each', () => {
-    const scene = new Group();
+    const scene = forestLandmarks(forest);
     expect(installForest(scene, forest, boxes(...Object.values(LANDMARKS)))).toBe(marks.length);
     for (const mark of marks) {
       const mesh = scene.getObjectByName(`landmark:${mark.look}`)!;
@@ -209,6 +209,32 @@ describe('the landmarks', () => {
     }
     // A kit without them leaves the chapter as it was.
     expect(installForest(new Group(), forest, boxes())).toBe(0);
+  });
+
+  it('keeps a solid collision-aligned top until each individual landmark arrives, without duplicates on retry', () => {
+    const scene = forestLandmarks(forest);
+    scene.updateMatrixWorld(true);
+    const originals = scene.children.map((holder) => holder.children[0] as Mesh);
+    for (const [i, mark] of marks.entries()) {
+      const bounds = new Box3().setFromObject(originals[i]!);
+      expect(bounds.min.x, mark.look).toBeCloseTo(mark.from);
+      expect(bounds.max.x, mark.look).toBeCloseTo(mark.to);
+      expect(bounds.max.y, mark.look).toBeCloseTo(heightAt(forest, (mark.from + mark.to) / 2));
+      expect(bounds.min.y, mark.look).toBeCloseTo(mark.base);
+      expect(bounds.min.z).toBeLessThan(-2.45);
+      expect(bounds.max.z).toBeGreaterThan(0.3);
+    }
+    expect(installForest(scene, forest, boxes())).toBe(0);
+    expect(scene.children.map((holder) => holder.children[0])).toEqual(originals);
+    const cone = boxes(LANDMARKS.cone);
+    expect(installForest(scene, forest, cone)).toBe(1);
+    expect(scene.children[0]!.children[0]).not.toBe(originals[0]);
+    expect(scene.children.slice(1).map((holder) => holder.children[0])).toEqual(originals.slice(1));
+    expect(installForest(scene, forest, cone)).toBe(0);
+    expect(installForest(scene, forest, kit)).toBe(3);
+    expect(installForest(scene, forest, kit)).toBe(0);
+    expect(scene.children).toHaveLength(4);
+    for (const holder of scene.children) expect(holder.children).toHaveLength(1);
   });
 });
 
@@ -348,6 +374,22 @@ describe('the forest\'s floor with the kit', () => {
     }
   });
 
+  it('uses the same lowered land at initial dressing and delayed restock, while the door keeps its authored height', () => {
+    const land = landscape(forest);
+    for (const [from, to, seed] of stretches()) {
+      const initial = stretch(land, from, to, seed);
+      const expected = stretch(land, from, to, seed, kit);
+      expect(restock(initial, forest, kit)).toBe(true);
+      for (const kind of [1, 2, 3, 4, 5]) expect(places(initial.children[kind] as InstancedMesh), `${from}: ${kind}`).toEqual(places(expected.children[kind] as InstancedMesh));
+      const trunks = places(initial.children[5] as InstancedMesh);
+      const door = forest.spots!.find((spot) => spot.look === 'vittra-door')!;
+      for (const [x, y, z] of trunks) {
+        const own = Math.abs(x! - door.at.x - 0.1) < 0.01 && Math.abs(z! + 2.45) < 0.01;
+        expect(y, `trunk at ${x}`).toBeCloseTo(own ? door.at.y - 1.1 : heightAt(land, x!) - 0.5, 2);
+      }
+    }
+  });
+
   it('lays nothing in front of the path higher than the path, and nothing where he walks', () => {
     for (const [from, to, seed] of stretches()) {
       const still = stretch(forest, from, to, seed, kit).children.at(-1) as Mesh;
@@ -373,5 +415,28 @@ describe('the forest\'s floor with the kit', () => {
     expect(own.length).toBe(1);
     // No other stands in its way.
     expect(trunks.filter(([x, , z]) => Math.abs(x! - door.at.x) < 3.2 && z! > -9).length).toBe(1);
+  });
+
+  it('roots the door spruce into the actual mound without moving its crown or the doorway', () => {
+    const door = forest.spots!.find((spot) => spot.look === 'vittra-door')!;
+    const [from, to, seed] = stretches().find(([a, b]) => door.at.x >= a && door.at.x < b)!;
+    const trunks = stretch(forest, from, to, seed, kit).children[5] as InstancedMesh;
+    const matrix = new Matrix4();
+    trunks.getMatrixAt(trunks.count - 1, matrix);
+    const root = new Vector3().applyMatrix4(matrix);
+    const top = new Vector3(0, 60, 0).applyMatrix4(matrix);
+    const old = new Matrix4().makeRotationFromEuler(new Euler(0, 1.1, 0.015)).setPosition(door.at.x + 0.1, door.at.y - 0.5, -2.45);
+    expect(top.distanceTo(new Vector3(0, 60, 0).applyMatrix4(old))).toBeLessThan(0.00001);
+    const mark = forest.landmarks!.find((landmark) => landmark.look === 'anthill')!;
+    const mound = new Mesh(kit.shape(LANDMARKS.anthill)!, new MeshBasicMaterial({ side: DoubleSide }));
+    mound.position.set(mark.from, mark.base, 0);
+    mound.updateMatrixWorld(true);
+    const ray = new Raycaster(new Vector3(root.x, 40, root.z), new Vector3(0, -1, 0));
+    const floor = ray.intersectObject(mound)[0]!;
+    expect(floor).toBeDefined();
+    expect(floor.point.y - root.y).toBeGreaterThan(0);
+    expect(floor.point.y - root.y).toBeLessThan(0.2);
+    ray.set(new Vector3(door.at.x, 40, 0), new Vector3(0, -1, 0));
+    expect(ray.intersectObject(mound)[0]!.point.y).toBeCloseTo(door.at.y, 1);
   });
 });

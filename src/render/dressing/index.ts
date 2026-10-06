@@ -11,8 +11,9 @@ import { foreground, type Growth } from './foreground';
 import { stretch } from './forest';
 import { setWind, type Blow } from '../wind';
 import { bakeForestShadows } from '../forest-shadows';
+import { forestLandmarks } from '../forest-kit';
 import { bank, type Ground } from './ground';
-import { heightAt, makeKit, type PlaceLook } from './kit';
+import { heightAt, landscape, makeKit, type PlaceLook } from './kit';
 import { lawn } from './lawn';
 import { backdrop, stars } from './sky';
 
@@ -178,13 +179,14 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   // scenery, and its lawn below the deck. What is built, the floors and the deck, says so with its surfaces.
   const out = look.id === 'home' && chapter.outdoors !== undefined;
   const own = out ? 'lawn' : OWN[look.id].ground;
+  const landChapter = landscape(chapter);
   makeKit();
   // What stands on the ground comes first: the bee is told where the dandelions are.
-  const standing = scatter(chapter, from, to, look.id);
-  const ground = bank(chapter, own);
+  const standing = scatter(landChapter, from, to, look.id);
+  const ground = bank(landChapter, own);
   if (look.id === 'forest') bakeForestShadows(ground, standing, look.sun.from);
-  const air = effects(chapter, from, to, look.id, standing);
-  const front = foreground(chapter, from, to, OWN[look.id].growth, standing);
+  const air = effects(landChapter, from, to, look.id, standing);
+  const front = foreground(landChapter, from, to, OWN[look.id].growth, standing);
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
   // What the far pictures count their sinking from: the land around the chapter's start.
@@ -203,6 +205,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
     far.group,
     ground,
     standing,
+    forestLandmarks(chapter),
     built(chapter, look.id === 'home'),
     houses?.group ?? new Group(),
     air.group,

@@ -2,7 +2,7 @@ import { Color, Group, InstancedMesh, Mesh, Object3D } from 'three';
 import type { ChapterData } from '../../sim/types';
 import { placing, together, type ForestKit, type Placed } from '../forest-kit';
 import { floorDrop, shoreAt } from './ground';
-import { KIT, grows, heightAt, mossAt, sequence } from './kit';
+import { KIT, grows, heightAt, landscape, mossAt, sequence } from './kit';
 
 // --- the forest ---------------------------------------------------------------------------------------------
 
@@ -35,6 +35,7 @@ export function restock(group: Group, chapter: ChapterData, kit: ForestKit): boo
 }
 
 function grown(chapter: ChapterData, from: number, to: number, seed: number, kit?: ForestKit): Object3D[] {
+  chapter = landscape(chapter);
   const next = sequence(seed);
   const place = new Object3D();
   const tint = new Color();
@@ -210,7 +211,10 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
   for (const door of doors) {
     place.rotation.set(0, 1.1, 0.015);
     place.position.set(door.at.x + 0.1, door.at.y - 0.5, DOOR_SPRUCE.z);
-    place.scale.set(DOOR_SPRUCE.radius, 1, DOOR_SPRUCE.radius);
+    // The mound falls under the spruce's roots behind the door. Extend this trunk's foot into it,
+    // keeping the top of its 60 EL stem fixed; the doorway still stands at its authored height.
+    place.scale.set(DOOR_SPRUCE.radius, 1.01, DOOR_SPRUCE.radius);
+    place.translateY(-0.6);
     place.updateMatrix();
     trunks.setMatrixAt(n, place.matrix);
     trunks.setColorAt(n++, tint.set('#ffffff'));

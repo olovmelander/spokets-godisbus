@@ -1,6 +1,6 @@
 import { BufferGeometry, Color, Float32BufferAttribute, Group, Mesh, MeshStandardMaterial, type CanvasTexture } from 'three';
 import type { ChapterData, SurfaceKind } from '../../sim/types';
-import { MOSS, drawn, hash, heightAt, noise, sequence, surfaceAt } from './kit';
+import { MOSS, drawn, hash, heightAt, landscape, noise, sequence, surfaceAt } from './kit';
 
 // --- L3: the ground ---------------------------------------------------------------------------------------
 
@@ -668,6 +668,7 @@ export function bank(chapter: ChapterData, own: Ground): Group {
 
 /** The shapes of a chapter's ground, a stretch of one kind at a time. No picture is drawn for them here. */
 export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; shape: BufferGeometry }[] {
+  chapter = landscape(chapter);
   const line = chapter.ground;
   const first = line[0]!;
   const last = line[line.length - 1]!;

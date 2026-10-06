@@ -70,6 +70,17 @@ export function heightAt(chapter: ChapterData, x: number): number {
   return x < line[0]!.x ? line[0]!.y : line[line.length - 1]!.y;
 }
 
+/** The land under the things he stands on. Their models keep the collision outline's raised tops. */
+export function landscape(chapter: ChapterData): ChapterData {
+  if (!chapter.landmarks?.length) return chapter;
+  const ground = chapter.ground.map((point) => {
+    const mark = chapter.landmarks!.find(({ from, to }) => point.x >= from && point.x <= to);
+    return mark ? { x: point.x, y: Math.min(point.y, mark.base) } : point;
+  }).filter((point, i, line) => i === 0 || point.x !== line[i - 1]!.x || point.y !== line[i - 1]!.y);
+  // Idempotent: the dressing and a later restock can both ask for the land. The simulation is untouched.
+  return { ...chapter, ground, landmarks: [] };
+}
+
 /** Whether things can grow at x: fairly level ground, not the bottom of a pit, and not under water. */
 export function grows(chapter: ChapterData, x: number): boolean {
   if (surfaceAt(chapter, x) !== undefined) return false;

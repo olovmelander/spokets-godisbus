@@ -1,9 +1,10 @@
 import {
-  BufferGeometry, Euler, Float32BufferAttribute, Group, InstancedMesh, Matrix3, Matrix4, Mesh, MeshStandardMaterial, Quaternion, Vector3,
+  BoxGeometry, BufferGeometry, Euler, Float32BufferAttribute, Group, InstancedMesh, Matrix3, Matrix4, Mesh, MeshStandardMaterial, Quaternion, Vector3,
   type Material, type Object3D,
 } from 'three';
 import type { ChapterData, Landmark } from '../sim/types';
 import { restock } from './dressing/forest';
+import { heightAt } from './dressing/kit';
 
 /**
  * The things of the spruce forest, modelled in Blender (art/blender/forest-kit.py): one spruce cone in its
@@ -203,6 +204,25 @@ function climb(kit: ForestKit, look: string, long: number): BufferGeometry | und
 /** The name of the kit's shape for each of the chapter's landmarks. */
 export const LANDMARKS: Record<Landmark['look'], string> = { cone: 'jattekotte', log: 'stock', anthill: 'myrstack', stone: 'virvelsten' };
 
+/** Separate things above the land, including when the kit is missing or only partly available. */
+export function forestLandmarks(chapter: ChapterData): Group {
+  const group = new Group();
+  const colours = { cone: '#7a4f2c', log: '#604a35', anthill: '#5a4e40', stone: '#7c827d' };
+  for (const mark of chapter.landmarks ?? []) {
+    const width = mark.to - mark.from;
+    const high = heightAt(chapter, (mark.from + mark.to) / 2) - mark.base;
+    const holder = forestSocket(new Group(), { shape: LANDMARKS[mark.look] });
+    holder.name = `landmark:${mark.look}`;
+    holder.position.set(mark.from, mark.base, 0);
+    // A narrow solid support for the whole playable top; the anthill also holds the door's spruce behind it.
+    const mesh = new Mesh(new BoxGeometry(width, high, 3.5), new MeshStandardMaterial({ color: colours[mark.look], roughness: 0.95 }));
+    mesh.position.set(width / 2, high / 2, -1.3);
+    holder.add(mesh);
+    group.add(holder);
+  }
+  return group;
+}
+
 /**
  * Puts the kit's shapes where the scene asks for them, in place of their stand-ins: the things he uses, the
  * cones that roll, what he climbs, the forest floor's scatter, and the chapter's landmarks. A place whose
@@ -252,14 +272,5 @@ export function installForest(root: Object3D, chapter: ChapterData, kit: ForestK
     installed++;
   }
   for (const stretch of stretches) if (restock(stretch, chapter, kit)) installed++;
-  for (const mark of chapter.landmarks ?? []) {
-    const shape = kit.shape(LANDMARKS[mark.look]);
-    if (!shape) continue;
-    const mesh = new Mesh(shape, kit.material);
-    mesh.name = `landmark:${mark.look}`;
-    mesh.position.set(mark.from, mark.base, 0);
-    root.add(mesh);
-    installed++;
-  }
   return installed;
 }
