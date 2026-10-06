@@ -2,6 +2,11 @@
 
 ## State (5 October 2026)
 
+- **A lighter script: the meshes' decoder is a file of its own** (6 October, a cloud session). The pictures still
+  to come needed room under the 450 KB gate (plan §6.12, gate 2): it stood at 449.3 KB. Three carries meshoptimizer's
+  decoder as WebAssembly inside its script; the game now ships it as two small files (`src/render/meshopt/`, written
+  from three's copy by `scripts/meshopt-wasm.mjs`, MIT, in `LICENSES.md`) and drives it with the same few lines
+  (`src/render/meshopt.ts`). The script is 442.7 KB; a unit test holds the files equal to three's after an upgrade.
 - **What Använd will do, over the thing itself** (6 October, a cloud session; `docs/ux-audit/in-play.md` row 6, step
   11's second half). The gold diamond over each usable thing is now the button's own picture, on a cream disc with a
   gold rim, half an EL across: the hand with a sweet over the jay, the arrow against a block over the ladybird. The
