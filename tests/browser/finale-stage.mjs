@@ -139,10 +139,17 @@ try {
     const host=document.createElement('div');document.body.replaceChildren(host);f.mountShell(host);const hud=f.createHud(document,100);
     const state=()=>({bubble:!document.getElementById('bubble').hidden,notice:!document.getElementById('notice').hidden,line:document.getElementById('bubbleLine').textContent});
     hud.say('pappa','tinyElof',true);hud.tick(0);const initial=state();hud.notice('Hittat!');hud.tick(1);const find=state();hud.tick(2.6);const resumed=state();hud.tick(1);const readable=state();
-    hud.say('elof','stolenBag',true);hud.tick(0);return{initial,find,resumed,readable,priority:state()};});
+    hud.say('elof','stolenBag',true);hud.tick(0);const priority=state();
+    // Pappa's sentence in two bubbles is read whole: the second half goes on under the first (story-presentation.md row 22).
+    hud.say('pappa','first2',true);hud.tick(0);hud.say('pappa','first3');hud.tick(20);const bubble=document.getElementById('bubble');
+    const more={shown:!bubble.hidden,lines:[...document.querySelectorAll('#bubbleLine .said')].map((said)=>said.textContent),tone:bubble.dataset.tone};
+    hud.say('elof','stomp',true);hud.tick(0);const shout=bubble.dataset.tone;
+    return{initial,find,resumed,readable,priority,more,shout};});
   // A find hangs from the bag now, so what is being said goes on beside it (docs/ux-audit/in-play.md row 18).
   check('Portrait: a find leaves speech where it is',speech.initial.bubble && speech.find.notice && speech.find.bubble && speech.find.line===speech.initial.line);
   check('Portrait: the causal line keeps its reading time after the find',speech.resumed.bubble && !speech.resumed.notice && speech.resumed.line===speech.initial.line && speech.readable.bubble);
   check('Portrait: a new causal priority line replaces stale dialogue',speech.priority.bubble && speech.priority.line!==speech.initial.line);
+  check('Portrait: a line that goes on stands under the one before, said gently',speech.more.shown && speech.more.lines.join(' / ')==='Den täljde jag till dig / när du var liten, Elof.' && speech.more.tone==='soft');
+  check('Portrait: a shout is drawn as one',speech.shout==='call');
   await page.close();console.log(`Finale staging: ${checks} browser checks passed.`);
 } finally {await browser.close();await server.close();}

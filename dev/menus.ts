@@ -2,6 +2,7 @@
 // Choose what to show with ?show=touch, keys, pad, goal, pause, stuck, album, settings, message or debug; several
 // can be joined with commas. Pause opens on its first page, or on the candy bag's or the settings' page.
 // It uses the same shell and the same style sheet as the game, so it shows what the game shows.
+import type { Speaker } from '../src/sim/types';
 import { KINDS } from '../src/content/kinds';
 import { sv } from '../src/content/sv';
 import { albumHtml } from '../src/ui/album';
@@ -68,8 +69,13 @@ if (shown.has('title') || shown.has('saved') || shown.has('styles')) {
 if (shown.has('end') || shown.has('bubble')) {
   const hud = createHud(document, 116);
   if (shown.has('bubble')) {
-    hud.say('moa', 'tiny');
+    // ?show=bubble&who=pappa&line=first2,first3: one line, or a line and the one that goes on from it.
+    const query = new URLSearchParams(location.search);
+    const who = (query.get('who') ?? 'moa') as Speaker;
+    const said = (query.get('line') ?? 'tiny').split(',');
+    for (const line of said) hud.say(who, line);
     hud.tick(0.1);
+    for (const _ of said.slice(1)) hud.tick(30);
   }
   if (shown.has('end')) hud.end(sv.explore.chapters.garden!, 87, () => {}, undefined, undefined, Object.keys(KINDS).slice(0, 4).map((kind, i) => ({ kind, found: i !== 2 })));
 }

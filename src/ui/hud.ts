@@ -1,4 +1,5 @@
 import { lessMotion } from '../platform/motion';
+import { GOES_ON, TONES } from '../content/tones';
 import { stickerStyle } from './sticker';
 import { sv } from '../content/sv';
 import type { Speaker, Verb } from '../sim/types';
@@ -86,6 +87,8 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
   let wordShown: string | undefined;
   const queue: { who: Speaker; line: string }[] = [];
   let left = 0;
+  /** Whose the bubble is and the lines in it now, so that a line which goes on from them is added under them. */
+  let spoken: { who: Speaker; texts: string[] } | null = null;
   let ended = false;
   // Nothing bounces or slaps on when the device asks for less motion, or the player does (*Mindre rörelse*).
   const still = { get matches() { return lessMotion(doc); } };
@@ -208,7 +211,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
     },
     say(who, line, priority = false) {
       if (!lines[line]) return;
-      if (priority) { queue.length = 0; left = 0; }
+      if (priority) { queue.length = 0; left = 0; spoken = null; }
       queue.push({ who, line });
     },
     hush() {
@@ -237,14 +240,31 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       if (left > 0) {
         bubble.hidden = false;
         left -= dt;
-        if (left <= 0) bubble.hidden = true;
-        return;
+        if (left > 0) return;
+        // A line that goes on from this one is added under it, not put in its place (story-presentation.md row 22).
+        const after = queue[0];
+        if (!after || !GOES_ON.has(after.line) || after.who !== spoken?.who) {
+          bubble.hidden = true;
+          spoken = null;
+          return;
+        }
       }
       const next = queue.shift();
       if (!next) return;
       const text = lines[next.line]!;
+      const goesOn = GOES_ON.has(next.line) && !bubble.hidden && spoken?.who === next.who;
+      spoken = { who: next.who, texts: goesOn ? [...spoken!.texts, text].slice(-2) : [text] };
       byId('bubbleWho').textContent = next.who === 'spoket' && ghostNamed() ? sv.ghostName : sv.who[next.who];
-      byId('bubbleLine').textContent = text;
+      byId('bubbleLine').replaceChildren(...spoken.texts.flatMap((words, i) => {
+        const said = doc.createElement('span');
+        said.className = 'said';
+        said.textContent = words;
+        return i > 0 ? [doc.createTextNode(' '), said] : [said];
+      }));
+      // How it is said: a shout, a worry, a gentle word or a thought (src/content/tones.ts).
+      const tone = TONES[next.line];
+      if (tone) bubble.dataset.tone = tone;
+      else delete bubble.dataset.tone;
       byId('bubbleFace').innerHTML = faceSvg(next.who);
       bubble.dataset.who = next.who;
       bubble.hidden = false;

@@ -1812,6 +1812,83 @@ details.info-row p {
 .bubble[data-who='elof'] { --who: var(--who-elof); --who-ink: var(--who-elof); --tilt: 0deg; }
 .bubble[data-who='spoket'] { --who: var(--who-spoket); --who-ink: var(--who-spoket); --tilt: -0.3deg; }
 
+/* How a line is said (src/content/tones.ts; docs/ux-audit/story-presentation.md row 22). A shout bursts, bigger and
+   bold, and pops as it lands; a worry wavers; a gentle word is smaller and lies flat on the picture; a thought is a
+   cloud trailing three small rings down towards Elof. The burst, the wavering line and the cloud are drawn round the
+   paper in the speaker's colour, in place of its straight edge and its colour bar (src/ui/tones.ts). */
+.tone-edge,
+.think-rings {
+  display: none;
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+.tone-edge {
+  inset: -7px;
+  z-index: -1;
+  width: calc(100% + 14px);
+  height: calc(100% + 14px);
+  filter: drop-shadow(0 4px 7px rgb(0 0 0 / 0.22));
+}
+.tone-edge path,
+.think-rings circle {
+  display: none;
+  fill: var(--paper);
+  stroke: var(--who, var(--who-spoket));
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.bubble:is([data-tone='call'], [data-tone='worry'], [data-tone='think']) {
+  border-left-color: transparent;
+  background: none;
+  box-shadow: none;
+}
+.bubble:is([data-tone='call'], [data-tone='worry'], [data-tone='think']) .tone-edge {
+  display: block;
+}
+.bubble[data-tone='call'] .edge-call,
+.bubble[data-tone='worry'] .edge-worry,
+.bubble[data-tone='think'] .edge-think,
+.bubble[data-tone='think'] .think-rings circle {
+  display: inline;
+}
+.bubble[data-tone='call'] {
+  font-size: calc(24px * var(--k));
+  font-weight: 700;
+}
+body.big-text .bubble[data-tone='call'] {
+  font-size: calc(30px * var(--k));
+}
+.bubble[data-tone='call']:not([hidden]) {
+  animation: call-pop 0.2s var(--ease-paper);
+}
+@keyframes call-pop {
+  from {
+    opacity: 0;
+    scale: 0.82;
+  }
+}
+.bubble[data-tone='soft'] {
+  font-size: calc(18px * var(--k));
+  box-shadow: none;
+}
+body.big-text .bubble[data-tone='soft'] {
+  font-size: calc(22px * var(--k));
+}
+.bubble[data-tone='think'] .think-rings {
+  display: block;
+  top: calc(100% + 3px);
+  left: calc(50% - 34px);
+  width: 34px;
+  height: 30px;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.2));
+}
+/* A line that goes on from the one before stands under it, in the same bubble. */
+#bubbleLine .said {
+  display: block;
+}
+
 /* Held upright the top is the corner buttons' row: what is said hangs below it, across the screen. */
 @media (orientation: portrait) {
   .bubble,
