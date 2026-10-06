@@ -334,7 +334,10 @@ function start(): void {
   // Pause: the game stands still, and the panel has the play style and "Jag har fastnat" (plan §6.10).
   let paused = false;
   let ended = false;
+  // The story's last page glues the frame the story ends on, once the ending's shot is left (story-presentation.md row 6).
+  let reglue = false;
   const ending = createEnding(document, () => {
+    reglue = true;
     input.release();
     audio.menu(true);
     audio.setPlace(arrangementFor(chapter.id, chapter.place));
@@ -980,6 +983,14 @@ function start(): void {
       berries: game.sim.berries,
       noteHits: game.sim.noteHits,
     });
+    if (reglue) {
+      reglue = false;
+      const frame = view.snapshot(null);
+      if (frame) {
+        byId('endPhoto').replaceChildren(frame);
+        byId('endPicture').hidden = false;
+      }
+    }
     // Copy this exact rendered frame now, before WebGL's drawing buffer is discarded. Encoding and
     // IndexedDB run afterwards; the ordinary render loop never keeps its drawing buffer alive.
     const moment = !photosStopped && !benchOn && !at
@@ -1073,8 +1084,9 @@ function start(): void {
       // The storybook page turns in.
       audio.ui('page');
       // The coda's last picture, for the page: copied now, right after it was drawn.
-      const picture = view.snapshot();
-      byId('endPicture').replaceChildren(...(picture ? [picture] : []));
+      // A photo of Elof walking into the picture; the story's last page glues its own frame (row 6).
+      const picture = view.snapshot(chapter.epilogue ? null : view.playerScreen());
+      byId('endPhoto').replaceChildren(...(picture ? [picture] : []));
       byId('endPicture').hidden = picture === null;
       pointing.cancel();
       askedForUse = askedForHelp = false;
@@ -1085,10 +1097,12 @@ function start(): void {
       const number = chapterNumber(chapter.id);
       const next = nextAvailable(chapter.id, params);
       const bonus = next && bonusAfter(chapter.id)?.id === next.id;
-      const title = sv.end.named[chapter.id] ?? (number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course);
+      // The chapter's name, under its kicker: "Kapitel 1", "Gården" (story-presentation.md row 7).
+      const title = sv.end.headings[chapter.id] ?? sv.explore.chapters[chapter.id] ?? sv.end.course;
+      const kicker = sv.end.kickers[chapter.id] ?? (number > 0 ? sv.end.kicker.replace('{n}', String(number)) : '');
       const hidden = (chapter.hidden ?? []).map((h) => ({ kind: h.kind, found: game.sim.flags.has(foundFlag(h.kind)) }));
       storyReminder.handoff(storyHandoff(chapter.id, game.sim.flags));
-      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, bonus ? sv.end.bonus : undefined);
+      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, bonus ? sv.end.bonus : undefined, kicker);
       byId(canExplore ? 'endExplore' : next ? 'endOnward' : 'endAgain').focus();
       if (chapter.id === 'epilog') {
         byId('endPhotos').hidden = false;

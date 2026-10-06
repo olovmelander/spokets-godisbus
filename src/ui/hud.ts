@@ -41,7 +41,7 @@ export interface Hud {
    * With `onNext` it leads on to the next chapter; without, it says that the story goes on later, or `closing`
    * where the story is over. `code` is the next chapter's three words, to open it on another device.
    */
-  end(title: string, count: number, onAgain: () => void, onNext?: () => void, closing?: string, hidden?: readonly { kind: string; found: boolean }[], code?: string | null, onwardWord?: string): void;
+  end(title: string, count: number, onAgain: () => void, onNext?: () => void, closing?: string, hidden?: readonly { kind: string; found: boolean }[], code?: string | null, onwardWord?: string, kicker?: string): void;
 }
 
 /** A bubble stays for this long, and a little longer for each letter. */
@@ -187,10 +187,12 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       bubble.hidden = false;
       left = (BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER) * reading();
     },
-    end(title, count, onAgain, onNext, closing, hidden, code, onwardWord) {
+    end(title, count, onAgain, onNext, closing, hidden, code, onwardWord, kicker) {
       if (ended) return;
       ended = true;
       byId('endTitle').textContent = title;
+      byId('endKicker').textContent = kicker ?? '';
+      byId('endKicker').hidden = !kicker;
       if (closing) byId('endNext').textContent = closing;
       // The chapter's hidden candy: a sticker for each one found, an empty ring for each still out there.
       if (hidden && hidden.length > 0) {

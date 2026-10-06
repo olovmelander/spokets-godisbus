@@ -279,21 +279,22 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
      <div class="panel-back" id="endCard" hidden>
        <div class="panel end" role="dialog" aria-modal="true" aria-labelledby="endTitle">
          <div class="page-story">
-           <figure class="page-picture" id="endPicture" hidden></figure>
+           <figure class="page-picture" id="endPicture" hidden><span class="page-photo" id="endPhoto"></span><figcaption id="endStoryTitle"></figcaption></figure>
+           <p class="page-kicker" id="endKicker" hidden></p>
            <h2 id="endTitle"></h2>
-           <div class="story-handoff" id="endStory" hidden><b id="endStoryTitle"></b><p id="endStoryText"></p></div>
+           <div class="story-handoff" id="endStory" hidden><p id="endStoryText"></p></div>
+           <p class="next" id="endNext">${sv.end.next}</p>
          </div>
          <div class="page-tally">
            <div class="map" id="endMap"></div>
            <div class="rows" id="endRows"></div>
            <p class="count"><b id="endCount"></b> ${sv.end.candy}</p>
            <p class="found" id="endFound" hidden><span>${sv.stickers}</span><span class="stickers" id="endStickers"></span></p>
-           <p class="next" id="endNext">${sv.end.next}</p>
            <button class="wide" id="endPhotos" type="button" hidden>${CAMERA}<span>${sv.photos.again}</span></button>
            <button class="wide go" id="endOnward" type="button" hidden>${PLAY}<span>${sv.end.onward}</span></button>
            <button class="wide go" id="endExplore" type="button" hidden>${FOLDED_MAP}<span>${sv.explore.title}</span></button>
-           <p class="code" id="endCode" hidden><span>${sv.code.next}</span><b id="endCodeWords"></b></p>
            <button class="wide" id="endAgain" type="button"><span>${sv.end.again}</span></button>
+           <p class="code" id="endCode" hidden><span>${sv.code.next}</span><b id="endCodeWords"></b></p>
          </div>
        </div>
      </div>

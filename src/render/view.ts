@@ -47,6 +47,7 @@ import { endsInScene, type SceneFrame } from '../sim/scene';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
+import { photoCut } from './crop';
 
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
@@ -152,8 +153,11 @@ export interface View {
   render(frame: Frame): void;
   /** Read the last frame immediately after render(), with no retained WebGL drawing buffer. */
   capture(): Promise<Blob | null>;
-  /** A copy of the frame just drawn, as a canvas of its own: the picture on a chapter's last page. */
-  snapshot(): HTMLCanvasElement | null;
+  /**
+   * A copy of the frame just drawn, as a canvas of its own: the photo on a chapter's last page, a 3:2 cut with the
+   * given point (CSS client coordinates, Elof) a third of the way in, at most 720×480 (src/render/crop.ts).
+   */
+  snapshot(focus?: { x: number; y: number } | null): HTMLCanvasElement | null;
   info(): ViewInfo;
 }
 
@@ -1155,15 +1159,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     resize,
     render,
     capture: () => hasFrame ? captureFrame(canvas) : Promise.resolve(null),
-    snapshot() {
+    snapshot(focus) {
       // Call it right after a render, as `capture`: the drawing buffer is not kept.
       if (!hasFrame || canvas.width <= 0 || canvas.height <= 0) return null;
+      const rect = canvas.getBoundingClientRect();
+      const toCanvas = rect.width > 0 ? canvas.width / rect.width : 1;
+      const point = focus ? { x: (focus.x - rect.left) * toCanvas, y: (focus.y - rect.top) * toCanvas } : null;
+      const cut = photoCut(canvas.width, canvas.height, point);
       const copy = canvas.ownerDocument.createElement('canvas');
-      const scale = Math.min(1, 720 / canvas.width, 420 / canvas.height);
-      copy.width = Math.max(1, Math.round(canvas.width * scale));
-      copy.height = Math.max(1, Math.round(canvas.height * scale));
+      const scale = Math.min(1, 720 / cut.width, 480 / cut.height);
+      copy.width = Math.max(1, Math.round(cut.width * scale));
+      copy.height = Math.max(1, Math.round(cut.height * scale));
       try {
-        copy.getContext('2d')?.drawImage(canvas, 0, 0, copy.width, copy.height);
+        copy.getContext('2d')?.drawImage(canvas, cut.x, cut.y, cut.width, cut.height, 0, 0, copy.width, copy.height);
       } catch { return null; }
       return copy;
     },

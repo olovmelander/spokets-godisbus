@@ -365,9 +365,13 @@ export const sv = {
 
   // The card at a chapter's end.
   end: {
-    chapter: 'Kapitel {n} klart!',
-    // A part of the story with a name of its own, by its id.
-    named: { prolog: 'Lördagsmorgon', norrsken: 'Finalen klar!', epilog: 'Slut', byn: 'Byn klar!' } as Record<string, string>,
+    // The page is headed by the chapter's name (explore.chapters), under a small kicker that says which part it is
+    // (docs/ux-audit/story-presentation.md row 7), as a storybook names its chapters.
+    kicker: 'Kapitel {n}',
+    // The kicker of a part of the story without a number, by its id.
+    kickers: { prolog: 'Början', norrsken: 'Finalen', epilog: 'Godiskalaset', byn: 'Ett kapitel till' } as Record<string, string>,
+    // The heading where it is not the chapter's name: the story's last page says that it ends.
+    headings: { epilog: 'Slut' } as Record<string, string>,
     // The last card of the story, in place of "Fortsättning följer!".
     closing: {
       epilog: 'Klonk kunde inte säga det med ord. Men Elof förstod.',

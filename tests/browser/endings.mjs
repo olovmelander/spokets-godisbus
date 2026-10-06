@@ -94,7 +94,9 @@ try {
   browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 
   console.log('endings: the coda and the last page of Gården');
-  for (const [name, viewport] of [['garden-844x390', { width: 844, height: 390 }], ['garden-390x844', { width: 390, height: 844 }]]) {
+  // A phone held either way, the iPad and a computer: the page is in view on each (story-presentation.md row 9).
+  for (const [name, viewport] of [['garden-844x390', { width: 844, height: 390 }], ['garden-390x844', { width: 390, height: 844 }],
+    ['garden-1180x820', { width: 1180, height: 820 }], ['garden-1440x900', { width: 1440, height: 900 }]]) {
     // No service worker: it would answer the next chapter's load itself, past the test's stand-in page.
     const { page, state, finish } = await open(name, { viewport, hasTouch: true, serviceWorkers: 'block' }, '?dev&debug&standin&course=garden&tier=low&at=207,0.01');
     await page.keyboard.down('ArrowRight');
@@ -110,8 +112,12 @@ try {
     check(`${name}: what comes next is the page's caption`, (await page.locator('#endStoryText').textContent()).length > 10
       && await page.locator('#endStory').isVisible());
     check(`${name}: Moa's map draws the way on`, await page.locator('#endMap path.way-on').count() === 1);
-    check(`${name}: the page names the chapter and the next one's code`, (await page.locator('#endTitle').textContent()).length > 0
-      && await page.locator('#endCodeWords').textContent() === 'GRAN KOTTE MOSSA');
+    check(`${name}: the page is headed by the chapter's name under its number, and gives the next one's code`, await page.locator('#endTitle').textContent() === 'Gården'
+      && await page.locator('#endKicker').textContent() === 'Kapitel 1' && await page.locator('#endCodeWords').textContent() === 'GRAN KOTTE MOSSA');
+    // The photo is a 3:2 print with Elof in it, not the whole screen's shape (row 6).
+    check(`${name}: the photo is a 3:2 print`, await page.locator('#endPicture canvas').evaluate((c) => Math.abs(c.width / c.height - 1.5) < 0.02));
+    check(`${name}: the story is the page's biggest reading`, await page.locator('#endStoryText').evaluate((node) => parseFloat(getComputedStyle(node).fontSize))
+      > await page.locator('#endCount').evaluate((node) => parseFloat(getComputedStyle(node).fontSize)));
     // Held sideways, nothing of the story is scrolled out of sight: the picture, the name and the way on.
     for (const selector of ['#endPicture', '#endTitle', '#endStory', '#endOnward']) {
       check(`${name}: ${selector} is in view`, await inView(page, selector));

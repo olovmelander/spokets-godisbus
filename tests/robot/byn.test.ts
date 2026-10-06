@@ -150,11 +150,11 @@ describe('Byn, the extra chapter, in greybox rules', () => {
     expect(chapterFor(codeFor('byn')!)).toBe('byn');
     // It has its own way of playing the tune, and its own card.
     expect(arrangementFor(byn.id, byn.place)).not.toBeNull();
-    expect(sv.end.named.byn).toBeDefined();
+    expect(sv.end.kickers.byn).toBeDefined();
     expect(sv.end.closing.byn).toBeDefined();
   });
 
   it('names no real shop and no number: its words are plain', () => {
-    for (const text of [sv.lines.again, sv.lines.lake, sv.lines.shop, sv.end.named.byn!, sv.end.closing.byn!]) expect(text).not.toMatch(/\d/);
+    for (const text of [sv.lines.again, sv.lines.lake, sv.lines.shop, sv.end.kickers.byn!, sv.end.closing.byn!]) expect(text).not.toMatch(/\d/);
   });
 });

@@ -71,7 +71,7 @@ if (shown.has('end') || shown.has('bubble')) {
     hud.say('moa', 'tiny');
     hud.tick(0.1);
   }
-  if (shown.has('end')) hud.end(sv.end.chapter, 87, () => {}, undefined, undefined, Object.keys(KINDS).slice(0, 4).map((kind, i) => ({ kind, found: i !== 2 })));
+  if (shown.has('end')) hud.end(sv.explore.chapters.garden!, 87, () => {}, undefined, undefined, Object.keys(KINDS).slice(0, 4).map((kind, i) => ({ kind, found: i !== 2 })));
 }
 if (shown.has('message')) {
   byId('messageText').textContent = sv.noWebGL;

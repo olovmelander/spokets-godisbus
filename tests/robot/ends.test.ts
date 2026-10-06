@@ -268,7 +268,9 @@ describe('the story from its first scene to its last', () => {
   });
 
   it('gives each part without a number a name for its card, and the last one its closing words', () => {
-    for (const part of STORY) if (chapterNumber(part.id) === 0) expect(sv.end.named[part.id], part.id).toBeDefined();
+    for (const part of STORY) if (chapterNumber(part.id) === 0) expect(sv.end.kickers[part.id], part.id).toBeDefined();
+    // The page is headed by the chapter's name, never by "klart".
+    for (const part of STORY) expect(sv.end.headings[part.id] ?? sv.explore.chapters[part.id], part.id).toBeDefined();
     expect(sv.end.closing['epilog']).toBe('Klonk kunde inte säga det med ord. Men Elof förstod.');
   });
 
