@@ -931,6 +931,8 @@ function start(): void {
     if (atGoal && coda && !closing) {
       closing = true;
       audio.cadence();
+      // The coda is the picture alone: the play's corners and words step aside while the tune closes.
+      document.body.classList.add('coda');
     }
     // Only in the story: the test course has no family to answer.
     if (coda && !answered && endFor > CODA_ANSWER && Object.hasOwn(CODA_FAMILY, chapter.id)) {

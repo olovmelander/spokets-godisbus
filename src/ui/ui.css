@@ -1549,8 +1549,16 @@ body.calm .tutorial-hand { animation: none !important; }
 /* --- a scene of the story (src/ui/scene.ts): bars while it tells, a fade, a time card and the title ------- */
 .scene-ui {
   position: absolute;
+  z-index: 5;
   inset: 0;
   pointer-events: none;
+}
+
+/* Over a scene's fade and bars: what is said, and Pause, which always works (docs/ux-audit/story-presentation.md
+   row 2: the fade from black used to be drawn under the corners). */
+.bubble,
+#pauseBtn {
+  z-index: 6;
 }
 
 .scene-bar {
@@ -1574,19 +1582,18 @@ body.scene-bars .scene-bar {
   height: 7.5vh;
 }
 
-/* While a scene tells, the hands rest: the controls fade back, and the purpose line steps aside. */
-body.scene-bars .controls,
-body.scene-bars .corner,
-body.scene-bars .bag {
-  opacity: 0.28;
+/* While a scene tells, while a chapter's card shows, and in the coda at its end, the picture has the screen: the
+   controls, the bag, the helper, the purpose line and the keys' hint step aside. Pause stays (story-presentation.md
+   rows 1, 4 and 5; Journey and Gris show nothing at such moments). */
+body.scene-bars :is(.controls, .bag, #helpBtn, .key-prompt, .story-purpose, .hint),
+body.coda :is(.controls, .bag, #helpBtn, .key-prompt, .story-purpose, .hint),
+body.scene-card :is(.bag, #helpBtn, .key-prompt, .story-purpose, .hint) {
+  opacity: 0;
+  pointer-events: none;
   transition: opacity 0.6s ease;
 }
 
-body.scene-bars .story-purpose,
-body.scene-bars .hint {
-  opacity: 0;
-  transition: opacity 0.6s ease;
-}
+/* A chapter's card does not hold him: the stick and the buttons stay where his thumbs are. */
 
 .scene-fade {
   position: absolute;
@@ -1595,38 +1602,89 @@ body.scene-bars .hint {
   opacity: 0;
 }
 
-/* The time of day and the place, on a scrap of Moa's paper: above the keys' hint and the scene's bars. */
+/* The place and the time of day, on a torn scrap of Moa's paper (story-presentation.md row 4): the place large,
+   the time under it. In a held scene it is taped at the top bar's edge, out of the shot. */
 .scene-caption {
   position: absolute;
   left: 50%;
-  bottom: calc(env(safe-area-inset-bottom) + max(9vh, 66px));
+  bottom: calc(env(safe-area-inset-bottom) + max(12vh, 72px));
+  display: grid;
+  justify-items: center;
+  min-width: min(60vw, 320px);
   transform: translateX(-50%) rotate(-1.5deg);
   margin: 0;
-  padding: 8px 18px 9px;
-  border-radius: 6px;
+  padding: 14px 34px 16px;
   background: #fff6e2;
   color: #4a3520;
-  font-size: calc(21px * var(--k));
   font-weight: 700;
-  letter-spacing: 0.06em;
-  box-shadow: 0 3px 12px rgb(0 0 0 / 0.3);
+  line-height: 1.1;
+  filter: drop-shadow(0 3px 8px rgb(0 0 0 / 0.35));
+  /* Torn at both ends. */
+  clip-path: polygon(0 4%, 3% 0, 97% 2%, 100% 0, 98% 18%, 100% 34%, 97% 52%, 100% 70%, 98% 86%, 100% 100%, 3% 98%,
+    0 100%, 2% 82%, 0 64%, 3% 46%, 0 28%, 2% 14%);
   opacity: 0;
   white-space: nowrap;
 }
 
+.scene-caption .place {
+  font-size: calc(34px * var(--k));
+  letter-spacing: 0.02em;
+}
+
+.scene-caption .dot {
+  display: none;
+}
+
+.scene-caption .time {
+  margin-top: 4px;
+  font-size: calc(20px * var(--k));
+  font-weight: 400;
+  color: #6b4f33;
+}
+
+body.scene-bars .scene-caption {
+  left: max(20px, 7vw);
+  top: calc(7.5vh - 14px);
+  bottom: auto;
+  min-width: 0;
+  padding: 8px 22px 10px;
+  transform: rotate(-2deg);
+}
+
+body.scene-bars .scene-caption .place {
+  font-size: calc(24px * var(--k));
+}
+
+@media (orientation: portrait) {
+  .scene-caption {
+    top: 26%;
+    bottom: auto;
+  }
+}
+
+/* The game's name over the garden's sky, on the side the ghost has gone, never across the family on the deck
+   (story-presentation.md row 3). */
 .scene-title {
   position: absolute;
-  left: 50%;
-  top: 40%;
+  left: 72%;
+  top: 26%;
   transform: translate(-50%, -50%);
-  width: min(92vw, 900px);
+  width: min(46vw, 560px);
   margin: 0;
   text-align: center;
   color: #fff8e8;
-  font-size: clamp(30px, 6.4vw, 68px);
-  line-height: 1.1;
+  font-size: clamp(28px, 5vw, 60px);
+  line-height: 1.08;
   text-shadow: 0 3px 18px rgb(0 0 0 / 0.55), 0 0 2px rgb(0 0 0 / 0.4);
   opacity: 0;
+}
+
+@media (orientation: portrait) {
+  .scene-title {
+    left: 50%;
+    top: 18%;
+    width: 92vw;
+  }
 }
 
 body.calm .scene-bar,

@@ -51,7 +51,23 @@ export function createSceneUi(doc: Document) {
         if (word.kind === 'caption') { captionText = words[word.text] ?? ''; captionOn = on; }
         else { titleText = words[word.text] ?? ''; titleOn = on; }
       }
-      if (captionText !== shown.caption) caption.textContent = captionText;
+      if (captionText !== shown.caption) {
+        // The place in large letters and the time of day under it; the dot stays in the text for anyone who
+        // reads it aloud.
+        const [place, time] = captionText.split(' · ');
+        caption.replaceChildren();
+        const line = (cls: string, text: string) => {
+          const span = doc.createElement('span');
+          span.className = cls;
+          span.textContent = text;
+          caption.append(span);
+        };
+        if (place) line('place', place);
+        if (time) { line('dot', ' · '); line('time', time); }
+      }
+      // A chapter's card has the screen to itself: the play's corners step aside while it shows.
+      const card = scene?.id === 'card' && captionOn > 0;
+      if (card !== doc.body.classList.contains('scene-card')) doc.body.classList.toggle('scene-card', card);
       if (Math.abs(captionOn - shown.captionOn) > 0.002) caption.style.opacity = String(captionOn);
       if (titleText !== shown.title) title.textContent = titleText;
       if (Math.abs(titleOn - shown.titleOn) > 0.002) title.style.opacity = String(titleOn);
