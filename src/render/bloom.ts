@@ -10,9 +10,9 @@ export function createBloom() {
   const material = new ShaderMaterial({
     defines: { GLOW_FROM: GLOW_FROM.toFixed(3) },
     uniforms: { tDiffuse: { value: null }, texel: { value: new Vector2(1, 1) } },
-    vertexShader: `varying vec2 vUv;
+    vertexShader: /* glsl */ `varying vec2 vUv;
       void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
-    fragmentShader: `
+    fragmentShader: /* glsl */ `
       uniform sampler2D tDiffuse;
       uniform vec2 texel;
       varying vec2 vUv;

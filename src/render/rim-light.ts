@@ -33,9 +33,9 @@ export function createRimLight(sun: DirectionalLight) {
           one.onBeforeCompile = (shader, renderer) => {
             before.call(one, shader, renderer);
             Object.assign(shader.uniforms, uniforms);
-            shader.fragmentShader = `uniform float placeRimStrength;
+            shader.fragmentShader = /* glsl */ `uniform float placeRimStrength;
               uniform vec3 placeRimSun, placeRimColour;
-              ` + shader.fragmentShader.replace('#include <opaque_fragment>', `
+              ` + shader.fragmentShader.replace('#include <opaque_fragment>', /* glsl */ `
               float placeRimEdge = 1.0 - saturate(dot(normal, normalize(vViewPosition)));
               vec3 placeRimDirection = normalize((viewMatrix * vec4(placeRimSun, 0.0)).xyz);
               float placeRimFacing = smoothstep(-0.15, 0.6, dot(normal, placeRimDirection));

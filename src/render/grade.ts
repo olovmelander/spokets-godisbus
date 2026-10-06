@@ -90,7 +90,7 @@ export function createMaterialGrade(grade: Grade, haze: Fog | FogExp2 | null = n
           one.onBeforeCompile = (shader, renderer) => {
             before.call(one, shader, renderer);
             Object.assign(shader.uniforms, uniforms);
-            shader.fragmentShader = `uniform float placeGradeEnabled;
+            shader.fragmentShader = /* glsl */ `uniform float placeGradeEnabled;
               uniform vec3 placeTint;
               uniform float placeExposure, placeContrast, placeSaturation;
               ` + shader.fragmentShader;
@@ -103,7 +103,7 @@ export function createMaterialGrade(grade: Grade, haze: Fog | FogExp2 | null = n
                 .replace('#include <fog_fragment>', '')
                 .replace(point, ShaderChunk.fog_fragment.replace('fogColor', 'placeHazeLinear') + '\n' + point);
             }
-            shader.fragmentShader = shader.fragmentShader.replace(point, `
+            shader.fragmentShader = shader.fragmentShader.replace(point, /* glsl */ `
               if (placeGradeEnabled > 0.5) {
                 vec3 graded = gl_FragColor.rgb * placeExposure * placeTint;
                 float light = dot(graded, vec3(0.2126, 0.7152, 0.0722));

@@ -14,9 +14,9 @@ export function createDepthBlur() {
       tDiffuse: { value: null }, tDepth: { value: null },
       texel: { value: new Vector2(1, 1) }, depthCamera: { value: new Vector3(0.1, 140, 10) },
     },
-    vertexShader: `varying vec2 vUv;
+    vertexShader: /* glsl */ `varying vec2 vUv;
       void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
-    fragmentShader: `
+    fragmentShader: /* glsl */ `
       uniform sampler2D tDiffuse, tDepth;
       uniform vec2 texel;
       uniform vec3 depthCamera;

@@ -11,10 +11,10 @@ export function stoneCourses(material: MeshStandardMaterial): void {
   material.customProgramCacheKey = () => `${key()}:stone-courses-v1`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
-    shader.vertexShader = 'varying vec3 stoneCoursePosition;\n' + shader.vertexShader.replace('#include <project_vertex>', `
+    shader.vertexShader = 'varying vec3 stoneCoursePosition;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `
       stoneCoursePosition = (modelMatrix * vec4(transformed, 1.0)).xyz;
       #include <project_vertex>`);
-    shader.fragmentShader = 'varying vec3 stoneCoursePosition;\n' + shader.fragmentShader.replace('#include <normal_fragment_maps>', `
+    shader.fragmentShader = 'varying vec3 stoneCoursePosition;\n' + shader.fragmentShader.replace('#include <normal_fragment_maps>', /* glsl */ `
       #include <normal_fragment_maps>
       {
         vec3 stoneNormal = normalize(normal * mat3(viewMatrix));

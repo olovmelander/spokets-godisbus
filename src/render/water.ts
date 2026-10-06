@@ -22,7 +22,7 @@ function flowField() {
   return texture;
 }
 
-const CAUSTIC = `
+const CAUSTIC = /* glsl */ `
   float causticPattern(vec2 p, float time) {
     vec2 q = p * 6.0 + vec2(time * 0.43, time * -0.3);
     float a = sin(q.x + sin(q.y * 0.73 + time * 0.2));
@@ -363,7 +363,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     // It writes no depth: a shaft of light or a sheet of mist that dips under the surface goes on into the
     // water, as light does, instead of being cut off along a line.
     uniforms, transparent: true, depthWrite: false, fog: true, side: DoubleSide,
-    vertexShader: `
+    vertexShader: /* glsl */ `
       attribute vec4 part;
       varying vec3 waterWorld; varying float waterDepth; varying vec4 waterPart;
       #include <fog_pars_vertex>
@@ -377,7 +377,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
       }`,
-    fragmentShader: `
+    fragmentShader: /* glsl */ `
       uniform sampler2D flowMap, refraction, mirrorMap;
       uniform vec3 waterColour, sunDirection, skyTop, skyMiddle, skyGlow, mirrorTint, faceTop, faceDeep, through, bedColour, shoreColour;
       uniform float time, details, opacity, refractOn, cameraFar;
@@ -506,7 +506,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   const copyMaterial = new ShaderMaterial({
     uniforms: { tDiffuse: { value: null }, tDepth: { value: null }, nearFar: { value: new Vector2(0.1, 140) } },
     vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
-    fragmentShader: `uniform sampler2D tDiffuse, tDepth; uniform vec2 nearFar; varying vec2 vUv;
+    fragmentShader: /* glsl */ `uniform sampler2D tDiffuse, tDepth; uniform vec2 nearFar; varying vec2 vUv;
       void main() {
         float d = texture2D(tDepth, vUv).r;
         float linearDepth = nearFar.x / (nearFar.y - (nearFar.y - nearFar.x) * d);
@@ -582,16 +582,16 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
             shader.uniforms.waterTime = time; shader.uniforms.waterDetails = details;
             shader.uniforms.waterPools = { value: causticPools };
             shader.vertexShader = 'varying vec3 causticWorld;\n' + shader.vertexShader;
-            shader.vertexShader = shader.vertexShader.replace('#include <project_vertex>', `
+            shader.vertexShader = shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `
               vec4 causticPosition = vec4(transformed, 1.0);
               #ifdef USE_INSTANCING
                 causticPosition = instanceMatrix * causticPosition;
               #endif
               causticWorld = (modelMatrix * causticPosition).xyz;
               #include <project_vertex>`);
-            shader.fragmentShader = `varying vec3 causticWorld; uniform float waterTime, waterDetails;
+            shader.fragmentShader = /* glsl */ `varying vec3 causticWorld; uniform float waterTime, waterDetails;
               uniform vec4 waterPools[8]; ${CAUSTIC}\n` + shader.fragmentShader;
-            shader.fragmentShader = shader.fragmentShader.replace('#include <tonemapping_fragment>', `
+            shader.fragmentShader = shader.fragmentShader.replace('#include <tonemapping_fragment>', /* glsl */ `
               if (waterDetails > 0.5) {
                 for (int i = 0; i < 8; i++) {
                   vec4 pool = waterPools[i];
