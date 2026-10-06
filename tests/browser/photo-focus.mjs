@@ -39,7 +39,28 @@ try {
   await page.locator('#photoClose').click();
   assert.deepEqual(await active(), { id: 'endPhotos', moment: undefined, visible: true });
   console.log('  ok   credits still return focus to the ending’s photo button');
-  console.log('3 photo-focus browser checks passed.');
+  // The credits are the book's last pages: two photos to a spread, no count, and Klart only on the last page
+  // (docs/ux-audit/story-presentation.md row 15).
+  await page.evaluate(async () => {
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 2;
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp'));
+    window.framesForAlbum = ['shrinking', 'swing', 'crane'].map((moment) => ({ moment, player: 'elof', blob }));
+    await window.testAlbum.refresh();
+    document.getElementById('pause').hidden = true; document.getElementById('endCard').hidden = false; window.testAlbum.credits();
+  });
+  const spread = await page.evaluate(() => ({
+    book: document.querySelector('.photo-panel').classList.contains('book'),
+    prints: [...document.querySelectorAll('.photo-print')].filter((print) => !print.hidden).length,
+    next: document.getElementById('photoNext').textContent,
+  }));
+  assert.deepEqual(spread, { book: true, prints: 2, next: '' });
+  await page.locator('#photoNext').click();
+  await page.locator('#photoNext').click();
+  const last = await page.evaluate(() => ({ credits: !document.getElementById('photoCredits').hidden, next: document.getElementById('photoNext').textContent }));
+  assert.deepEqual(last, { credits: true, next: 'Klart' });
+  await page.locator('#photoClose').click();
+  console.log('  ok   the credits are the book\'s last pages: two photos a spread, and Klart only on the last');
+  console.log('4 photo-focus browser checks passed.');
 } finally {
   await browser?.close();
   await server.close();

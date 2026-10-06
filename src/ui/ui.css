@@ -1210,6 +1210,85 @@ body.lefty .key-prompt {
 .photo-credits .credits-mark { width: 60px; height: 60px; color: var(--gold-deep); }
 .photo-panel [hidden], .album-photos[hidden] { display: none; }
 
+/* The credits are the book's last pages (docs/ux-audit/story-presentation.md row 15): two photos to a spread with
+   Moa's captions, a page turning by itself every 4 s and at a tap anywhere on it; no count and no arrows. The last
+   page has the thanks in her hand, and "Klart" only there. */
+.photo-panel.book .photo-count,
+.photo-panel.book #photoPrevious {
+  display: none;
+}
+.photo-panel.book .photo-stage {
+  position: relative;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+.photo-panel.book .photo-stage:has(#photoFrame2[hidden]) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.photo-panel.book .photo-print figcaption {
+  font-family: var(--font-hand);
+  font-weight: 700;
+}
+.photo-panel.book .photo-print.second img {
+  transform: rotate(1.4deg);
+}
+.photo-panel.book:not(.last) #photoNext {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  background: none;
+  box-shadow: none;
+}
+.photo-panel.book:not(.last) #photoNext svg {
+  display: none;
+}
+.photo-panel.book.last .photo-stage {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+.photo-panel.book.last #photoNext {
+  width: auto;
+  min-width: 200px;
+  height: 64px;
+  padding: 0 28px;
+  grid-auto-flow: column;
+  gap: 10px;
+  border-radius: 32px;
+  font-size: calc(20px * var(--k));
+  font-weight: 700;
+}
+.photo-panel.book .photo-credits h3 {
+  margin: 6px 0 10px;
+  font: 700 calc(34px * var(--k)) / 1.15 var(--font-hand);
+  color: var(--ink);
+}
+.photo-panel.book .photo-credits p {
+  font-size: calc(20px * var(--k));
+}
+.photo-stage.turned :is(.photo-print:not([hidden]), .photo-credits:not([hidden])) {
+  animation: page-turn 600ms var(--ease-out);
+}
+@media (max-height: 500px) {
+  .photo-panel.book .photo-credits {
+    padding: 4px 12px 0;
+    line-height: 1.45;
+  }
+  .photo-panel.book .photo-credits .credits-mark {
+    width: 40px;
+    height: 40px;
+  }
+}
+@media (orientation: portrait) {
+  .photo-panel.book .photo-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .photo-panel.book .photo-print img {
+    max-height: calc((100dvh - 300px) / 2);
+  }
+}
+
 
 @media (max-height: 500px) {
   .photo-print img {
@@ -3631,6 +3710,7 @@ body.keys-learned .hint {
 :root[data-motion="reduce"] .tutorial[data-device="touch"]:is([data-lesson="act"], [data-lesson="hop"]) .tutorial-hand {
   transform: rotate(35deg);
 }
+:root[data-motion="reduce"] .photo-stage.turned :is(.photo-print:not([hidden]), .photo-credits:not([hidden])),
 :root[data-motion="reduce"] :is(.turn, .turn-back):not([hidden]),
 :root[data-motion="reduce"] .panel.end,
 :root[data-motion="reduce"] :is(.bubble, .notice):not([hidden]) {

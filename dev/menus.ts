@@ -35,9 +35,26 @@ if (shown.has('memory')) {
   const rect = byId('helpBtn').getBoundingClientRect();
   createMemory(document).play('garden', () => {}, { origin: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } });
 }
-const photos = createPhotoAlbum(document, createPhotoStore(null), 'preview');
+// ?fake=5: that many photos, drawn here, so that the credits' spreads can be seen without a game.
+const fakes = Number(params.get('fake') ?? '0');
+const MOMENTS = ['shrinking', 'swing', 'plane', 'cap', 'crane', 'aurora', 'carving'] as const;
+const fakeStore = {
+  async list() {
+    return Promise.all(Array.from({ length: fakes }, (_, i) => new Promise<{ player: string; moment: (typeof MOMENTS)[number]; blob: Blob }>((resolve) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 640; canvas.height = 360;
+      const c = canvas.getContext('2d')!;
+      c.fillStyle = `hsl(${i * 50} 45% 55%)`; c.fillRect(0, 0, 640, 360);
+      c.fillStyle = '#fff6dc'; c.beginPath(); c.arc(320, 180, 90, 0, Math.PI * 2); c.fill();
+      canvas.toBlob((blob) => resolve({ player: 'preview', moment: MOMENTS[i % MOMENTS.length]!, blob: blob! }));
+    })));
+  },
+  put: async () => false,
+  clear: async () => true,
+};
+const photos = createPhotoAlbum(document, fakes ? fakeStore : createPhotoStore(null), 'preview');
 void photos.refresh();
-if (shown.has('photos')) photos.credits();
+if (shown.has('photos')) void photos.refresh().then(() => photos.credits());
 const story = createStoryPanel(document, { answer: () => true, cancel: () => {} });
 if (shown.has('sharing')) story.show({ kind: 'share', spot: 'preview' }, new Set(['bag']));
 if (shown.has('painting')) story.show({ kind: 'paint', spot: 'eye' }, new Set());
