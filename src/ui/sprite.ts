@@ -164,6 +164,18 @@ export const ICONS = {
   house: `${lines('<path d="M3.5 11.5 12 4l8.5 7.5V20h-17z"/><path d="M10 20v-4.5h4V20"/>', 2)}<rect x="14.6" y="11" width="2.6" height="2.6" rx="0.4" fill="#f6c445" stroke="currentColor" stroke-width="1.2"/>`,
   /** Byn: three house fronts in a row. */
   village: lines('<path d="M2 20.5V12l3.5-3 3.5 3v8.5M9 20.5V9.5L12.5 6 16 9.5v11M16 20.5V13l3-2.5 3 2.5v7.5M1.5 20.5h21"/><path d="M12.5 13v2.5M5.5 15v2"/>', 1.8),
+
+  // --- the story's close-ups (docs/ux-audit/story-presentation.md rows 17 and 18) ------------------------------
+  /**
+   * Painting the eyes: Pappa's ghost as the loading card draws it (index.html), close, its eyes where the painting's
+   * rings are (src/sim/story-stroke.ts, 116 and 204 across, 86 down). In the painting's own units.
+   */
+  'paint-ghost': { box: '0 -70 320 290', body: '<g transform="matrix(3.6667 0 0 3.6667 -60 -97.33)"><path d="M60 8C36 8 25 30 25 56L23 116 34 121 44 116 54 122 64 116 75 122 86 116 97 120 95 56C95 30 84 8 60 8Z" fill="#ead2a6" stroke="#b98e5c" stroke-width=".9" stroke-linejoin="round"/><path d="M60 8 52 40 38 64M60 8 70 38 86 60M52 40 70 38M38 64 44 116M86 60 86 116" fill="none" stroke="#b98e5c" stroke-width=".5" opacity=".55"/><path d="M52 76 80 74 82 104 54 106Z" fill="#d9b98a" stroke="#b98e5c" stroke-width=".7" stroke-linejoin="round"/><path d="M52 76 80 74 78 81 53 83Z" fill="#c9a571"/><circle cx="60" cy="90" r="2.2" fill="#d8402f"/><circle cx="70" cy="88" r="2.2" fill="#3fa34d"/><ellipse cx="51" cy="86" rx="6" ry="5" fill="#ead2a6" stroke="#b98e5c" stroke-width=".7"/><ellipse cx="83" cy="84" rx="6" ry="5" fill="#ead2a6" stroke="#b98e5c" stroke-width=".7"/></g>' },
+  /**
+   * Carving, seen over Elof's shoulder: his light-blue sleeve and small hand on the knife, and Pappa's larger hand over
+   * his, with its green cuff. The block and the way of the stroke are the panel's own (src/ui/story-stroke.ts).
+   */
+  'carving-hands': { box: '0 0 320 220', body: '<path d="M-6 206C20 190 48 176 76 164l14 20C62 196 34 212 8 228Z" fill="#8fb4dc" stroke="#3d2b1f" stroke-width="2.5" stroke-linejoin="round"/><path d="M99 161 82 172" stroke="#9a6a3c" stroke-width="8" stroke-linecap="round"/><path d="M102.7 160.1 127.2 142.4 99.3 153.9Z" fill="#cfd6db" stroke="#56606a" stroke-width="1.6" stroke-linejoin="round"/><ellipse cx="94" cy="167" rx="13" ry="10" fill="#f2c9a0" stroke="#3d2b1f" stroke-width="2.2"/><path d="M-8 92C20 104 42 118 60 132l-16 22C26 140 6 128 -12 122Z" fill="#6f8f5c" stroke="#3d2b1f" stroke-width="2.5" stroke-linejoin="round"/><path d="M56 127 41 152l11 6 15-25Z" fill="#4c6b3e" stroke="#3d2b1f" stroke-width="2" stroke-linejoin="round"/><path d="M62 140c10-12 30-12 40-2 7 7 4 18-6 21-12 4-27 2-34-4-4-4-4-10 0-15Z" fill="#e5b48a" stroke="#3d2b1f" stroke-width="2.4" stroke-linejoin="round"/><path d="M78 157q9 3 19 0M74 150q11 3 23-1" fill="none" stroke="#3d2b1f" stroke-width="1.6" stroke-linecap="round"/>' },
 } as const satisfies Record<string, string | { box: string; body: string }>;
 
 export type IconId = keyof typeof ICONS;

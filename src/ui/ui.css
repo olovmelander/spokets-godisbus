@@ -37,6 +37,12 @@
   --paper-bright: #fffaf0;
   --paper-edge: #d6bf95;
   --tape: rgb(239 224 176 / 0.82);
+  /* Pappa's carving: the pale shaving the stroke peels off, and the notches cut into the block. */
+  --shaving: #f4dcae;
+  --shaving-edge: #9c7448;
+  --notch: #f0d6a2;
+  --notch-edge: #906a40;
+  --notch-cut: #5e3d22;
   /* Ink. */
   --ink: #33241a;
   --ink-soft: #5f4733;
@@ -3063,9 +3069,54 @@ button.bag {
 #pause [hidden] { display: none !important; }
 #strokePicture { display: block; width: 100%; height: min(42vh, 300px); touch-action: none; user-select: none; }
 #strokeAssist { min-height: 64px; margin-top: 10px; }
+/* Painting and carving (docs/ux-audit/story-presentation.md rows 17 and 18): the picture has the panel, and its
+   title is for a screen reader. On a phone held sideways the picture takes the panel's full height, about 300 px, and
+   the hint and Pappa's help stand beside it. */
+.story-panel.stroking #storyTitle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.story-panel.stroking #storyHint {
+  padding-right: calc(56px * var(--k));
+  font-weight: 700;
+}
 @media (max-height: 500px) and (orientation: landscape) {
-  #strokePicture { height: 140px; }
-  #strokeAssist { margin-top: 4px; }
+  .story-panel.stroking {
+    grid-template-columns: auto minmax(180px, 1fr);
+    grid-template-rows: 1fr auto auto auto 1fr;
+    column-gap: 18px;
+  }
+  .story-panel.stroking #strokeBody {
+    display: contents;
+  }
+  .story-panel.stroking #strokePicture {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    width: auto;
+    height: min(300px, calc(100dvh - 60px));
+  }
+  .story-panel.stroking #storyHint { grid-column: 2; grid-row: 2; }
+  .story-panel.stroking #strokeAssist { grid-column: 2; grid-row: 3; margin-top: 4px; }
+  .story-panel.stroking #storyStatus { grid-column: 2; grid-row: 4; }
+}
+/* Carving: the stroke peels a pale shaving off the block along its way, and a notch is cut for each stroke done. */
+#strokePicture.carving #strokeLine {
+  stroke: var(--shaving);
+  stroke-width: 9px;
+  filter: drop-shadow(0 1.5px 0 var(--shaving-edge));
+}
+#strokePicture .notch {
+  fill: var(--notch);
+  stroke: var(--notch-edge);
+  stroke-width: 1.5px;
+  stroke-linejoin: round;
+}
+#strokePicture .notch.done {
+  fill: var(--notch-cut);
 }
 
 .story-panel [hidden] { display: none !important; }

@@ -36,13 +36,22 @@ export const storyPanelHtml = `<div class="panel-back" id="storyPanel" hidden>
   </section>
 </div>`;
 
-export function createStoryPanel(doc: Document, handlers: { named?(): boolean; answer(answer: StoryAnswer): boolean; cancel(): void }) {
+export function createStoryPanel(doc: Document, handlers: {
+  named?(): boolean; answer(answer: StoryAnswer): boolean; cancel(): void;
+  /** The story's next step, where it follows at once at the same place. */
+  next?(): StoryAction | null;
+}) {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const element = byId('storyPanel');
   const stroke = createStrokeUI(doc, (answer) => {
     if (!handlers.answer(answer)) return false;
-    element.hidden = true;
-    stroke.cancel();
+    // The carving's next cut, and then the eyes, follow in the same panel (story-presentation.md row 18).
+    const next = handlers.next?.() ?? null;
+    if (next) panel.show(next, flags);
+    else {
+      element.hidden = true;
+      stroke.cancel();
+    }
     return true;
   });
   let flags: ReadonlySet<string> = new Set();
@@ -80,7 +89,7 @@ export function createStoryPanel(doc: Document, handlers: { named?(): boolean; a
   }
   byId('storyClose').addEventListener('click', back);
   element.addEventListener('click', (event) => { if (event.target === element) back(); });
-  return {
+  const panel = {
     element,
     get open() { return !element.hidden; },
     interrupt: () => stroke.interrupt(),
@@ -93,6 +102,8 @@ export function createStoryPanel(doc: Document, handlers: { named?(): boolean; a
       byId('sharingBody').classList.toggle('party', kind === 'party');
       element.querySelector<HTMLElement>('.share-bird-rule')!.hidden = kind === 'party';
       byId('strokeBody').hidden = sharing;
+      // Painting and carving: the picture has the panel, and its title is for a screen reader (row 17).
+      element.querySelector('.story-panel')!.classList.toggle('stroking', !sharing);
       byId('storyTitle').textContent = sharing ? kind === 'party' ? sv.party.title : sv.sharing.title : action.kind === 'carve' ? sv.carving.title : sv.painting.title;
       byId('storyHint').textContent = sharing ? sv.sharing.choose : action.kind === 'carve' ? sv.carving.hint : sv.painting.hint;
       byId('storyStatus').textContent = '';
@@ -104,4 +115,5 @@ export function createStoryPanel(doc: Document, handlers: { named?(): boolean; a
     },
     back,
   };
+  return panel;
 }

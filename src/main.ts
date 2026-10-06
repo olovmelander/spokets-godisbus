@@ -239,11 +239,14 @@ function start(): void {
         .replace('{friend}', answer.friend === 'spoket' && isKlonk() ? sv.ghostName : answer.kind === 'party' ? sv.party.friends[answer.friend] : sv.sharing.friends[answer.friend])
         .replace('{sweet}', sv.sharing.sweets[answer.sweet].toLocaleLowerCase('sv')));
       writeSave();
+      // The next step at the same place follows in the same panel.
+      if (game.sim.story) return true;
       input.release();
       game.resume();
       canvas.focus();
       return true;
     },
+    next: () => game.sim.story,
     cancel() { game.sim.cancelStory(); input.release(); game.resume(); canvas.focus(); },
   });
   // What is said along the way, and in the chapter's scenes (src/sim/scene.ts).

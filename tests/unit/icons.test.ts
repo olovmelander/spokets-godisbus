@@ -14,7 +14,7 @@ const code = (path: string) => readFileSync(new URL(`../../${path}`, import.meta
 describe("the UI's icons", () => {
   it('puts every icon in the sprite once, as a symbol with its own box', () => {
     const sprite = spriteHtml();
-    for (const id of Object.keys(ICONS)) expect(sprite.match(new RegExp(`<symbol id="i-${id}" viewBox="[\\d .]+"`, 'g')), id).toHaveLength(1);
+    for (const id of Object.keys(ICONS)) expect(sprite.match(new RegExp(`<symbol id="i-${id}" viewBox="[-\\d .]+"`, 'g')), id).toHaveLength(1);
     expect(sprite).toMatch(/^<svg class="sprite" aria-hidden="true"/);
     // Plain shapes, nothing fetched (plan §0, §5.6).
     expect(sprite).not.toMatch(/https?:|<image|href=/);

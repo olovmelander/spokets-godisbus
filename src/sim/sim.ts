@@ -405,7 +405,13 @@ export class Sim {
       : centres.length > 0 && answer.traces.length === centres.length && centres.every((cx, i) => validEyeStroke(answer.traces[i]!, cx)) ? [this.story.spot] : null;
     if (!reward) return false;
     for (const flag of reward) this.flags.add(flag);
-    this.story = null;
+    // The next step at the same place follows at once, in the same panel: the carving's next cut, then the new
+    // figure's eyes (docs/ux-audit/story-presentation.md row 18).
+    const done = this.story.spot;
+    const at = this.chapter.spots?.find((spot) => spot.id === done)?.at;
+    const next = at && this.chapter.spots?.find((spot) => spot.story && spot.needs === done && !this.flags.has(spot.id)
+      && spot.at.x === at.x && spot.at.y === at.y);
+    this.story = next ? { kind: next.story!, spot: next.id } : null;
     return true;
   }
 

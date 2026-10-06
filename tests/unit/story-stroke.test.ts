@@ -64,10 +64,9 @@ describe('carving away from the body', () => {
     for (let n = 1; n <= 3; n++) {
       expect(sim.finishStory({ kind: 'carve', stroke: guidedCarve() })).toBe(true);
       expect(sim.flags.has(`cut${n}`)).toBe(true);
-      expect(sim.finishStory({ kind: 'carve', stroke: guidedCarve() })).toBe(false);
-      settle(sim); sim.step({ ...idle, act: true });
+      // The next step at the same place follows at once, in the same panel (story-presentation.md row 18).
+      expect(sim.story).toEqual(n < 3 ? { kind: 'carve', spot: `cut${n + 1}` } : { kind: 'paint', spot: 'dots' });
     }
-    expect(sim.story).toEqual({ kind: 'paint', spot: 'dots' });
     expect(sim.finishStory({ kind: 'paint', traces: [guidedEye(116)] })).toBe(false);
     expect(sim.flags.has('dots')).toBe(false);
     expect(sim.finishStory({ kind: 'paint', traces: [guidedEye(116), guidedEye(204)] })).toBe(true);
