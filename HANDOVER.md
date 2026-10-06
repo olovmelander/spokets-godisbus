@@ -2,6 +2,22 @@
 
 ## State (6 October 2026)
 
+- **Room in the script: shaders without their padding** (6 October, cloud session, branch
+  `ccr-6078e7de-t0rxpz`).
+  - The northern lights left 1.3 KB under the script's 450 KB gate. The build now squeezes shader source
+    (`scripts/squeeze-glsl.mjs`, a plugin in `vite.config.ts`): three's chunks, which it ships as quoted
+    strings, and every template literal marked `/* glsl */`, three's add-ons' and ours, lose their indentation,
+    blank lines and line comments. Only whole lines change, so the preprocessor's lines stay lines. Each
+    string keeps the line break or space at its ends, which what it is joined to may need: an `#include`
+    must start a line. A literal with `${...}` in it keeps its comments. The dev server serves shaders as
+    written.
+  - Our larger shaders are now marked `/* glsl */`. The script is 445.5 KB: 3.2 KB freed.
+  - **Checked:** a unit test runs every chunk and library shader of three through it, and checks that the
+    compiler reads the same tokens and finds every include. Every chapter on Low, Mid and High compiles
+    without a shader or page error, with the same program counts as before. `smoke` passes against the
+    squeezed build (96 checks). A first try that dropped the strings' end line breaks failed `smoke` on an
+    `#include` joined to the line before it; that is what the test's second case holds.
+
 - **Graphics, cloud stage 12: the northern lights as curtains** (6 October, cloud session, branch
   `ccr-6078e7de-t0rxpz`; Olov: "continue the work with improving the graphics").
   - At the climax the lights were three additive planes piling into a flat mint wash over the top third,
@@ -2211,10 +2227,12 @@
   30 seconds and shows numbers as text to paste into a session. The draw-call budget was raised on an
   estimate; this is the measurement that says whether it is right. It matters more now: two kits, the wind
   and the far life have come since.
-- **Room in the script for more graphics:** the gate (plan §6.12) is 450 KB of gzipped JS, and 448.7 KB is
-  used after stage 12. The gate counts every `.js` in the build, so splitting code into chunks does not help.
-  Before a stage that adds code, find room: try a smaller minifier setting, take out dead code, or make
-  something smaller. Raising the gate is Olov's decision.
+- **Room in the script for more graphics:** the gate (plan §6.12) is 450 KB of gzipped JS. After stage 12
+  it stood at 448.7 KB; the build now ships shaders without their padding (`scripts/squeeze-glsl.mjs`, see
+  "State"), and it stands at 445.5 KB. The gate counts every `.js` in the build, so splitting code into chunks
+  does not help. Mark a new shader's template literal `/* glsl */` so that it is squeezed too. When room runs
+  out again: a smaller minifier setting saves about 1.5 KB more (terser on top of the default, measured),
+  then dead code. Raising the gate is Olov's decision.
 - **The look, the next steps** (`docs/visual-audit.md`, "The order of the work"; the "Still wrong" lists in
   the state above and in each pull request). In the order I would take them:
   1. **The base haze and sky pipeline is shared across tiers** (cloud stage 1, above; pipeline row 3).
