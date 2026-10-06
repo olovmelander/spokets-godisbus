@@ -68,7 +68,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
      </div>
      <div class="key-prompt" id="keyPrompt" aria-hidden="true"><kbd id="keyPromptKey">E</kbd><span id="keyPromptWord"></span></div>
      ${sceneUiHtml}
-     <div class="bubble" id="bubble" role="status" hidden><b id="bubbleWho"></b><span id="bubbleLine"></span></div>
+     <div class="bubble" id="bubble" role="status" hidden><span class="face" id="bubbleFace" aria-hidden="true"></span><b id="bubbleWho"></b><span id="bubbleLine"></span></div>
      <div class="hint" id="hint" hidden></div>
      <div class="story-purpose" id="storyPurpose" role="status" aria-live="polite" aria-atomic="true" hidden><span id="storyPurposeIcon" aria-hidden="true"></span><span><small>${sv.storyContext.now}</small><span id="storyPurposeText"></span><span id="storyPurposeReveal" class="story-purpose-reveal" hidden></span></span></div>
      <div class="tutorial" id="tutorial" role="img" hidden>

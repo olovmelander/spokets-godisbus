@@ -2,6 +2,11 @@
 
 ## State (5 October 2026)
 
+- **Every speaker their own** (6 October, a cloud session; `docs/ux-audit.md`, step 3). A bubble is a scrap of
+  Moa's paper with the speaker's face (`src/ui/faces.ts`, plain shapes), name and sign colour, at its full width
+  between the corners, and below the corner row when the phone is upright. It stays 2.5 s plus 0.09 s a letter,
+  longer with *Lugnare tempo* and *Större text*, and in a held scene a line takes the floor when it is acted. Not
+  yet: bubbles at the speaker with a tail, and the find tag on the bag.
 - **Controls a thumb can trust** (6 October, a cloud session; `docs/ux-audit.md`, step 2). *Hoppa* is 116 px and
   *Använd* 100 px on the thumb's arc, with 15 px bold words at 4.6:1 and 5.1:1. The verb stands on a paper tag
   beside *Använd*, which nearly steps out of the picture with nothing to use. A pressed button shows a ring round
@@ -1624,7 +1629,7 @@
   scale, colour tokens, button states); 2, the controls a thumb can trust; 3, every speaker their own; 4, a clear
   screen for the story; 5, a pause that is short; 6, one movement from the tap to the story; 7, the materials;
   8, the UI's sound together with the narrative audit's step 3; 9, the page as a page; 10, the collections; 11, a
-  picture for every verb. Built: steps 1 to 2 (see "State"). The narrative audit's later steps go on around them.
+  picture for every verb. Built: steps 1 to 3 (see "State"). The narrative audit's later steps go on around them.
 - **The story's pull requests (this session's: #148, merged, and the endings after it): Olov plays the new
   intro and the new chapter endings, and the story's work goes on in the overview's order**
   (`docs/narrative-audit.md`, "The order of the work"). Neither raises `RELEASED_CHAPTER`, touches likeness
@@ -1890,9 +1895,9 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
-- **The UX audit's defects, not yet mended** (`docs/ux-audit.md`, in the order of the work): bubbles can only use
-  half the screen's width; the HUD stays at 28 % over held scenes and bright over a fade from black; Pause is 8.4
-  panel heights at 844×390 with its ✕ scrolling away; *Foton* shows on Byn with nothing in it.
+- **The UX audit's defects, not yet mended** (`docs/ux-audit.md`, in the order of the work): the HUD stays at 28 %
+  over held scenes and bright over a fade from black; Pause is 8.4 panel heights at 844×390 with its ✕ scrolling
+  away; *Foton* shows on Byn with nothing in it.
 - **The prologue's stand-ins act roughly** (5 October): box figures in place of the family, so a kneel or a
   shrug reads stiffly, and Pappa's hand under Elof is a block. The private models have not been posed by the new
   acting yet; their bones' signs follow Elof's doll and are untested with it (Olov's computer).

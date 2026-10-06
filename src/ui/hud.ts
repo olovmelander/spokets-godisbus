@@ -1,6 +1,7 @@
 import { stickerStyle } from './sticker';
 import { sv } from '../content/sv';
 import type { Speaker, Verb } from '../sim/types';
+import { faceSvg } from './faces';
 
 /**
  * What the page shows over the game while it is played: the candy bag in the corner (plan §4.3), the word
@@ -44,12 +45,16 @@ export interface Hud {
 }
 
 /** A bubble stays for this long, and a little longer for each letter. */
-const BUBBLE_TIME = 2.2;
-const BUBBLE_TIME_PER_LETTER = 0.055;
+// Long enough to read at a child's pace: 12 letters 3.6 s, 40 letters 6.1 s (docs/ux-audit/in-play.md row 17).
+const BUBBLE_TIME = 2.5;
+const BUBBLE_TIME_PER_LETTER = 0.09;
 /** How long a line being read stays when a scene begins. */
 const HUSH_TIME = 1.6;
 
-export function createHud(doc: Document, total: number, ghostNamed: () => boolean = () => false): Hud {
+/**
+ * `reading` stretches how long a bubble stays: longer with *Lugnare tempo* and with *Större text*.
+ */
+export function createHud(doc: Document, total: number, ghostNamed: () => boolean = () => false, reading: () => number = () => 1): Hud {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const bag = byId('bag');
   const number = byId('bagCount');
@@ -177,9 +182,10 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       const text = lines[next.line]!;
       byId('bubbleWho').textContent = next.who === 'spoket' && ghostNamed() ? sv.ghostName : sv.who[next.who];
       byId('bubbleLine').textContent = text;
+      byId('bubbleFace').innerHTML = faceSvg(next.who);
       bubble.dataset.who = next.who;
       bubble.hidden = false;
-      left = BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER;
+      left = (BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER) * reading();
     },
     end(title, count, onAgain, onNext, closing, hidden, code, onwardWord) {
       if (ended) return;

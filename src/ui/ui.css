@@ -225,7 +225,7 @@ body.lefty .btn-act span {
 /* Större text: what is said, and the words on buttons and in panels, a quarter bigger. */
 body.big-text .bubble {
   font-size: calc(26px * var(--k));
-  max-width: min(76%, 640px);
+  max-width: min(76%, 640px, 100% - 256px);
 }
 
 body.big-text .notice {
@@ -921,22 +921,32 @@ body.lefty .key-prompt {
   background: #e6d6b4;
 }
 
-/* --- a bubble: what someone says. The game has no voices (plan §3.7). ----------------------------- */
+/* --- a bubble: what someone says. The game has no voices (plan §3.7). -----------------------------
+   A scrap of Moa's paper with the speaker's face, name and colour, so whoever can't read the name still sees who
+   speaks (docs/ux-audit/in-play.md rows 14-16). Its full width, between the corner buttons and above them. */
 .bubble {
   position: absolute;
-  left: 50%;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
   top: calc(env(safe-area-inset-top) + 16px);
-  transform: translateX(-50%);
-  max-width: min(64%, 560px);
+  max-width: min(64%, 560px, 100% - 256px);
   display: grid;
-  gap: 2px;
-  padding: 10px 20px 12px;
-  border-radius: 22px;
-  background: #fffaf0;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+  align-items: center;
+  padding: 8px 18px 10px 10px;
+  border-left: 6px solid var(--who, #8a5a32);
+  border-radius: 8px;
+  background: #fff6e2;
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+  rotate: var(--tilt, 0deg);
   font-size: calc(21px * var(--k));
   line-height: 1.25;
-  text-align: center;
+  text-align: left;
+  text-wrap: balance;
   pointer-events: none;
 }
 
@@ -944,11 +954,44 @@ body.lefty .key-prompt {
   display: none;
 }
 
+.bubble .face {
+  grid-row: span 2;
+  width: calc(36px * var(--k));
+  height: calc(36px * var(--k));
+  border-radius: 50%;
+  background: #f3e6c8;
+  overflow: hidden;
+}
+
+.bubble .face svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .bubble b {
-  font-size: 0.62em;
+  font-size: calc(15px * var(--k));
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  opacity: 0.6;
+  color: var(--who-ink, #6b5a48);
+}
+
+/* Each speaker's colour: the colour of their sign in the world (src/render/props.ts), and a darker ink for the
+   name, 4.9:1 or more on the paper. */
+.bubble[data-who='mamma'] { --who: #bf3d36; --who-ink: #bf3d36; --tilt: 0.5deg; }
+.bubble[data-who='pappa'] { --who: #5a7d4a; --who-ink: #4b6b3d; --tilt: -0.4deg; }
+.bubble[data-who='moa'] { --who: #5b7fb5; --who-ink: #41659b; --tilt: -0.6deg; }
+.bubble[data-who='bertil'] { --who: #d98a2c; --who-ink: #9c5a17; --tilt: 0.4deg; }
+.bubble[data-who='elof'] { --who: #2f5f9e; --who-ink: #2f5f9e; --tilt: 0deg; }
+.bubble[data-who='spoket'] { --who: #8a5a32; --who-ink: #8a5a32; --tilt: -0.3deg; }
+
+/* Held upright the top is the corner buttons' row: what is said hangs below it, across the screen. */
+@media (orientation: portrait) {
+  .bubble,
+  body.big-text .bubble {
+    top: calc(env(safe-area-inset-top) + 160px);
+    max-width: calc(100% - 24px);
+  }
 }
 
 /* The card at a chapter's end: the candy in rows of ten, with the number beside it (plan §4.3). */
@@ -1264,18 +1307,30 @@ body.calm .moas-karta .way-on {
 }
 
 /* A line of news at the top, gone after a few seconds. */
+/* A find or a thanks: like a bubble, its full width between the corners and above them (in-play.md rows 14-15). */
 .notice {
   position: absolute;
-  left: 50%;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
   top: calc(env(safe-area-inset-top) + 14px);
-  transform: translateX(-50%);
-  max-width: min(70%, 520px);
+  max-width: min(70%, 520px, 100% - 256px);
   padding: 10px 18px;
   border-radius: 16px;
   background: rgb(236 223 198 / 0.95);
-  font-size: 15px;
+  font-size: 17px;
   text-align: center;
+  text-wrap: balance;
   pointer-events: none;
+}
+
+@media (orientation: portrait) {
+  .notice {
+    top: calc(env(safe-area-inset-top) + 160px);
+    max-width: calc(100% - 24px);
+  }
 }
 
 .notice[hidden] {

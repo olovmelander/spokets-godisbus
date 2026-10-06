@@ -182,7 +182,8 @@ function start(): void {
   const tutorialView = createTutorial(document);
   const isKlonk = () => ghostNamed(save.flags) || (chapter.id === 'epilog' && game.sim.flags.has('beat:named'));
   // The bag counts all the candy there is: the trail's, and the side candy off it.
-  const hud = createHud(document, chapter.candy.length + (chapter.side?.length ?? 0), isKlonk);
+  const hud = createHud(document, chapter.candy.length + (chapter.side?.length ?? 0), isKlonk,
+    () => (settings.slower ? 1.25 : 1) * (settings.bigText ? 1.2 : 1));
   const story = createStoryPanel(document, {
     named: isKlonk,
     answer(answer) {
@@ -919,7 +920,8 @@ function start(): void {
     sceneHeard = scene?.id ?? null;
     for (; told < game.sim.said.length; told++) {
       const beat = beats.get(game.sim.said[told]!);
-      if (beat) hud.say(beat.who, beat.line, beat.priority);
+      // In a held scene a line is said when it is acted: it takes the floor instead of waiting for the last one.
+      if (beat) hud.say(beat.who, beat.line, beat.priority || game.sim.held);
     }
     // What is said waits while a memory plays: its line comes after it.
     hud.tick(menuOpen() ? 0 : dt);
