@@ -1829,13 +1829,18 @@
 
 **For the next session, in this order:**
 
-- **The UX order of work** (`docs/ux-audit.md`, "The order of the work"), one pull request each, all in a cloud
-  session: 1, every word in its own type (the dropped font rules, Andika and Playpen Sans self-hosted, one size
-  scale, colour tokens, button states); 2, the controls a thumb can trust; 3, every speaker their own; 4, a clear
-  screen for the story; 5, a pause that is short; 6, one movement from the tap to the story; 7, the materials;
-  8, the UI's sound together with the narrative audit's step 3; 9, the page as a page; 10, the collections; 11, a
-  picture for every verb. They go up as one pull request each, in this order, each after the one before has merged
-  (#150 first); each pull request's text follows its commit's message. Built: steps 1 to 11 and every row after them: the HUD's own rows, the devices' small things, the page's map and tally, Följ fingret's ring, help that carries on, one switch for less motion, the bubbles' tones, the verbs' pictures in the world, the painting and carving close, the credits as the book's last pages, a picture for every player, and Moa's words in wax (see "State"). The narrative audit's later steps go on around them.
+- **The UX order of work is built** (`docs/ux-audit.md`, "The order of the work"), all in a cloud session: 1,
+  every word in its own type (the dropped font rules, Andika and Playpen Sans self-hosted, one size scale, colour
+  tokens, button states); 2, the controls a thumb can trust; 3, every speaker their own; 4, a clear screen for the
+  story; 5, a pause that is short; 6, one movement from the tap to the story; 7, the materials; 8, the UI's sound
+  together with the narrative audit's step 3; 9, the page as a page; 10, the collections; 11, a picture for every
+  verb; and every row after them: the HUD's own rows, the devices' small things, the page's map and tally, Följ
+  fingret's ring, help that carries on, one switch for less motion, the bubbles' tones, the verbs' pictures in
+  the world, the painting and carving close, the credits as the book's last pages, a picture for every player,
+  and Moa's words in wax (see "State"). #150 merged first; the rest went to `main` together in one pull request,
+  at Olov's word on 6 October ("merge push everything we have done to git and then merge it into main"), each
+  step its own commit with its own message. What is left of the audit waits on Olov's answers to its questions
+  (question 17) and on the likeness art (Olov's computer). The narrative audit's later steps go on around it.
 - **The story's pull requests (this session's: #148, merged, and the endings after it): Olov plays the new
   intro and the new chapter endings, and the story's work goes on in the overview's order**
   (`docs/narrative-audit.md`, "The order of the work"). Neither raises `RELEASED_CHAPTER`, touches likeness
@@ -2061,6 +2066,7 @@ The older list, still true where it is not struck:
 | The ghost's name | *Klonk*, after its footsteps. Elof names it in the epilogue; until then it is "spöket". | Olov asked for a name, 3 Oct; the name is the session's proposal |
 | Dates | None. Stages in order; a release goes out when its checkpoint has passed. | Olov, 3 Oct |
 | Going on without asking | Sessions work through the plan stage after stage, take the choice they would recommend, and write it here. A session merges its own green PR, except one that touches `RELEASED_CHAPTER`, likeness assets or `CLAUDE.md`. | Olov, 3 Oct: "Do not stop, just continue implement all phases in one shot. Do not wait for greenlight from me. Always do what you recommend doing." and "I want the full game plan implemented". That this covers merging is the session's reading. |
+| Merging the UX work | All of it goes to `main` in one pull request, merged by the session once it is green. None of it touches `RELEASED_CHAPTER`, likeness assets or the rules. | Olov, 6 Oct: "We need to merge push everything we have done to git and then merge it into main!!!" |
 | Order of work | Stage 1, the game itself in greybox, goes on while the look-dev of Stage 0b and the characters of Stage 0c wait | Olov, 3 Oct: "continue working with the implementation of the games, we can improve the character design later" |
 | Story and level direction | Plan version 5 improves visible opening causes, durable purpose, family cooperation and connected, reusable local puzzles. The implemented opening/context/family/finale and four chapter loops are development milestones; broader layouts, Byn's return loop and final art remain. | Olov's 4 Oct direction; `docs/storytelling-overhaul.md` records research and our design inference |
 | Finale explanation | Actual summit rescue, painted eyes and bag recovery reveal the welcome-home candy motive even if the optional mountain memory was missed. The memory separately guards old/childhood identity wording in purpose and recap cues. | 4 Oct overhaul implementation; existing story canon in plan §§2.4, 3.4 |
@@ -2316,6 +2322,3 @@ Choices the session made, for Olov to overrule if he wants:
     lettering or a typeface; white paper or kraft for the panels; the tune muffled under menus or silence; the
     candy number always or after each candy; whether Elof reads the bubbles himself; one start screen or straight
     into the morning; phones held upright; a gamepad; the grown-ups' settings behind a press.
-18. **May a session merge each UX pull request when it is green?** They go up one at a time, in the order of the
-    work, #150 first; none touches `RELEASED_CHAPTER`, likeness assets or the rules. The default: Olov merges each
-    one, and the session puts up the next as soon as he has.

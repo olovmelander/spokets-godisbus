@@ -135,8 +135,10 @@ try {
   // With Ljud off the UI is silent too.
   await page.uncheck('#setSound');
   const muted = await uiSounds();
-  await page.tap('#styleAventyr');
-  check('with Ljud off a press makes no sound', await uiSounds() === muted);
+  // A switch turned and turned back: a press that leaves the saved settings as they were.
+  await page.tap('#setLefty');
+  await page.tap('#setLefty');
+  check('with Ljud off a press makes no sound', await uiSounds() === muted && !(await levels(page)).lefty);
   await page.check('#setSound');
   // Back in play the tune comes out from under the paper.
   await page.tap('#pauseClose');

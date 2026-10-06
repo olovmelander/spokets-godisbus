@@ -329,6 +329,10 @@ try {
     check('a touch phone offers no key reference before a key is used', await page.locator('#controlsReferenceBtn').isHidden() && await page.locator('#pauseCode').isHidden());
     await page.keyboard.press('Tab');
     check('a key brings it', await page.locator('#controlsReferenceBtn').isVisible());
+    // Measured once the paper has landed: while it rises it is turned a little, and a busy software renderer can
+    // still be drawing that first frame.
+    await page.evaluate(() => Promise.all(document.getElementById('pause').getAnimations({ subtree: true })
+      .filter((animation) => animation.effect?.getTiming().iterations !== Infinity).map((animation) => animation.finished.catch(() => {}))));
     const widths = await page.locator('#pauseSettingsPage .switch:visible, #pauseSettingsPage .sound-row, #pauseSettingsPage .help-level').evaluateAll((rows) => rows.map((row) => row.scrollWidth <= row.clientWidth + 1 && row.getBoundingClientRect().right <= 390));
     check('every row fits the upright phone', widths.length >= 12 && widths.every(Boolean));
     // Where the browser offers to install the game, Pause has a button for it (access-and-devices.md row 21).

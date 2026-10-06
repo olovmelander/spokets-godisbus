@@ -261,9 +261,21 @@ try {
     await picture(page, join(shots, 'tutorial-follow-lefty.png'));
     // One switch for less motion, whichever source asks (docs/ux-audit/style-and-sound.md row 17).
     check('Lugna animationer sets the one motion switch', await page.evaluate(() => document.documentElement.dataset.motion === 'reduce'));
+    await finish();
+  }
+  {
+    // A debug start position never writes the save, so this page starts where a player does. The page's own head
+    // sets the switch from the save before the game's script has run: `interactive` comes before deferred scripts.
+    const atParse = () => document.addEventListener('readystatechange', () => {
+      if (document.readyState === 'interactive') window.__motionAtParse = document.documentElement.dataset.motion ?? null;
+    });
+    const { page, finish } = await open('motion from the save', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }, '?debug&standin&tier=low', atParse);
+    await page.tap('#pauseBtn');
+    await settingsPage(page);
+    await page.check('#setCalm');
     await page.reload();
     await ready(page);
-    check('after a reload the switch comes back from the save', await page.evaluate(() => document.documentElement.dataset.motion === 'reduce'));
+    check('after a reload the switch comes back from the save before the game\'s script runs', await page.evaluate(() => window.__motionAtParse === 'reduce' && document.documentElement.dataset.motion === 'reduce'));
     await finish();
   }
   {

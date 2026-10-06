@@ -2230,6 +2230,11 @@ body.big-text .bubble[data-tone='soft'] {
     font-size: 17px;
   }
 
+  /* Still smaller than the story (row 8). */
+  .panel.end .count b {
+    font-size: 15px;
+  }
+
   .page-picture figcaption {
     min-height: 26px;
     font-size: 16px;

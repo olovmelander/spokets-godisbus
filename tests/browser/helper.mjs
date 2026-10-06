@@ -128,7 +128,10 @@ try {
       check('actual forest page: the jay still loads and its portrait asks for help', await page.locator('#helpBtn circle').count() === 1);
       // The button's pips say how far the helper has come (docs/ux-audit/in-play.md rows 3 and 20).
       await page.waitForFunction(() => document.getElementById('helpBtn').dataset.step === '1');
-      check('actual forest page: one pip is filled for the first step', (await page.locator('#helpBtn .help-pips i').evaluateAll((pips) => pips.map((pip) => getComputedStyle(pip).backgroundColor))).filter((colour) => colour === 'rgb(196, 53, 43)').length === 1);
+      // A pip fills with a short transition, which a busy software renderer can still be in.
+      const filled = () => [...document.querySelectorAll('#helpBtn .help-pips i')].filter((pip) => getComputedStyle(pip).backgroundColor === 'rgb(196, 53, 43)').length;
+      await page.waitForFunction(filled, null, { timeout: 5000 }).catch(() => {});
+      check('actual forest page: one pip is filled for the first step', await page.evaluate(filled) === 1);
     }
     await page.locator('#helpBtn').click();
     await page.waitForFunction(() => window.__godis.state().help.step >= 2);
