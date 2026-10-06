@@ -300,6 +300,11 @@ keep its direction through story shots, wind, instancing and skinning. It fades 
 out with nightfall, using shared uniforms and the existing warmup for models that arrive later. Water,
 glow and transparent helper figures keep their own shading; the rim adds no draw or render target.
 
+**Deck edges** keep a thin board end over a slightly recessed fascia, whose grain runs along the edge.
+The trim follows the floor's pulled-back profile beside steps, where the leading camera sees it; it
+never extends beyond the existing front or above the walking plane. The narrow bog boardwalk keeps its
+own rim and peat underneath.
+
 **Village edges** use laid granite on raised paving: one course at the kerb, two staggered courses at
 the shop's physical riser, with recessed mortar and small chamfers. These join the existing house mesh
 and stay below the authored walking height. The street's upper surface remains planar where it draws

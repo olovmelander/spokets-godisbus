@@ -127,6 +127,59 @@ describe('a wooden floor', () => {
     expect(grain).toBeGreaterThan(5);
   });
 
+  it('ends in a thin board over a recessed fascia, with grain along it and the deep closure retained', () => {
+    const chapter = {
+      ...COURSES['garden']!,
+      ground: [{ x: -8, y: 2 }, { x: 16, y: 2 }],
+      surfaces: [{ from: -24, to: 32, kind: 'wood' as const }],
+    };
+    const shape = bankShapes(chapter, 'lawn').find(({ kind }) => kind === 'wood')!.shape;
+    const at = shape.getAttribute('position'), uv = shape.getAttribute('uv');
+    const top = 2 - tilted(TILT_ENDS);
+    const fascia = [0, 0];
+    const ends = new Set<number>();
+    let bottom = Infinity;
+    for (let i = 0; i < at.count; i++) {
+      const x = at.getX(i), y = at.getY(i), z = at.getZ(i);
+      bottom = Math.min(bottom, y);
+      if (Math.abs(z - TILT_ENDS) < 1e-5) ends.add(Math.round(y * 1e5) / 1e5);
+      // Across the fascia the texture spans one board; along it the grain follows the floor's edge.
+      const edge = Math.abs(uv.getX(i) - 0.0125) < 1e-5 ? 0 : Math.abs(uv.getX(i) - 0.4875) < 1e-5 ? 1 : -1;
+      if (edge < 0 || Math.abs(z - (TILT_ENDS - 0.05)) > 1e-5) continue;
+      expect(y).toBeCloseTo(top - 0.25 - edge * 0.65, 5);
+      expect(uv.getY(i)).toBeCloseTo(x / (BOARD * 2), 5);
+      fascia[edge]!++;
+    }
+    expect([...ends].sort((a, b) => b - a)).toEqual([top, top - 0.2].map((y) => Math.round(y * 1e5) / 1e5));
+    expect(fascia[0]).toBeGreaterThan(20);
+    expect(fascia[1]).toEqual(fascia[0]);
+    expect(bottom).toBeCloseTo(2 - 16, 5);
+    shape.dispose();
+  });
+
+  it('turns the fascia towards the normal play camera along the pulled-back edge of a rising step', () => {
+    const chapter = {
+      ...COURSES['garden']!,
+      ground: [{ x: -8, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 1 }, { x: 8, y: 1 }],
+      surfaces: [{ from: -24, to: 32, kind: 'wood' as const }],
+    };
+    const shape = bankShapes(chapter, 'lawn').find(({ kind }) => kind === 'wood')!.shape;
+    const at = shape.getAttribute('position'), normal = shape.getAttribute('normal'), uv = shape.getAttribute('uv');
+    let facing = 0;
+    for (let i = 0; i < at.count; i++) {
+      const x = at.getX(i), z = at.getZ(i);
+      if (x <= 0.05 || x >= 2.4 || at.getY(i) < -0.8 || Math.abs(uv.getX(i) - 0.0125) > 1e-5) continue;
+      // Elof is at x -0.3, but the camera leads him by 2.5. The physical -X riser faces away from it;
+      // this is the curved front edge that the camera actually sees, with a positive Z-facing normal.
+      expect(normal.getZ(i)).toBeGreaterThan(0.1);
+      expect(normal.getX(i) * (2.2 - x) + normal.getZ(i) * (9 - z)).toBeGreaterThan(0);
+      expect(Math.abs(normal.getY(i))).toBeLessThan(1e-5);
+      facing++;
+    }
+    expect(facing).toBeGreaterThan(3);
+    shape.dispose();
+  });
+
   it('is a walk of planks over the bog: narrow, with a front edge a step in front of the path', () => {
     let front = -Infinity;
     let under = 0;
