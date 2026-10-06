@@ -134,7 +134,9 @@ try {
     await page.keyboard.up('ArrowRight'); await page.keyboard.press('e');
     await until(state, (s) => s.flags.includes('lift'), 'Lugnt: helps the actual ghost');
     await page.keyboard.down('ArrowRight');
-    await until(state, (s) => s.y > 31.3 && s.grounded, 'Lugnt: existing lace climb', 20000);
+    // The walk to the lace and the climb take about 5 s of play. Drawn in software the game can run at a quarter of
+    // real time, so this waits as long as the climb back above does; the check is that he gets up, not how fast.
+    await until(state, (s) => s.y > 31.3 && s.grounded, 'Lugnt: existing lace climb', 60000);
     await page.keyboard.up('ArrowRight');
     const lifted = await state();
     check('Lugnt: main cooperation needs no Hoppa and never grants optional prize', lifted.bubbles === 0 && lifted.blown === 0 && !lifted.flags.includes('found:chokladpralin'));

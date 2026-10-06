@@ -2110,6 +2110,16 @@ The older list, still true where it is not struck:
 
 - **The UX audit's defects, not yet mended** (`docs/ux-audit.md`, in the order of the work): none. What is left of the
   audit waits on Olov's answers to its questions (`docs/ux-audit.md`) and on the likeness art (Olov's computer).
+- **The in-play UI costs more to draw in software since the materials** (6 October). In the browser suites'
+  SwiftShader at 844×390 on Low, the epilogue runs at about 9 frames a second against main's 11. With the UI hidden
+  both run at about 12. The step build before *Paper, wood and candy* still ran at 11, the one with it at 9.7.
+  - The HUD is no longer drawn in one layer: the bag, the helper's corner, the hint, the story's purpose and the
+    key prompt (as wide as the screen) are each composited on their own.
+  - No single effect accounts for it: turning off the filters, the shadows or the textures alone gains nothing
+    measurable.
+  - The game runs slower against the clock there, so the browser suites' waits have less to spare;
+    `mountain-loop`'s Lugnt climb now waits as long as its climb back.
+  - A real device composites on its GPU and is unlikely to notice, but this wants a trace on a phone and on CI.
 - **The prologue's stand-ins act roughly** (5 October): box figures in place of the family, so a kneel or a
   shrug reads stiffly, and Pappa's hand under Elof is a block. The private models have not been posed by the new
   acting yet; their bones' signs follow Elof's doll and are untested with it (Olov's computer).
