@@ -98,7 +98,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
     'beforeend',
     `<button class="bag" id="bag" type="button">${BAG}<span class="bag-tag"><span id="bagCount">0</span><span class="stickers" id="bagStickers"></span></span></button>
      <button class="corner" id="pauseBtn" type="button" aria-label="${p.open}">${PAUSE}</button>
-     <button class="corner help" id="helpBtn" type="button" aria-label="${sv.help}">${portrait}</button>
+     <button class="corner help" id="helpBtn" type="button" aria-label="${sv.help}" data-step="0">${portrait}<span class="help-pips" aria-hidden="true"><i></i><i></i><i></i></span></button>
      <div class="controls" id="controls" hidden>
        <div class="stick-zone" id="stickZone">
          <div class="stick-base" id="stickBase"><div class="stick-knob" id="stickKnob"></div></div>

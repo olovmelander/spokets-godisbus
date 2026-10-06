@@ -599,6 +599,33 @@ body.calm *::after {
   top: calc(env(safe-area-inset-top) + 10px + 64px * var(--k) + 14px);
 }
 
+/* Under the portrait, three 8 px pips: how far the helper has come, filled one by one as he asks again and emptied
+   when it leaves, so he sees that another press shows more (docs/ux-audit/in-play.md rows 3 and 20). */
+.corner.help > svg {
+  translate: 0 -4px;
+}
+.help-pips {
+  position: absolute;
+  left: 50%;
+  bottom: calc(9px * var(--k));
+  display: flex;
+  gap: 3px;
+  translate: -50% 0;
+}
+.help-pips i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgb(90 58 30 / 0.22);
+  transition: background-color var(--dur-quick) ease, scale var(--dur-quick) var(--ease-paper);
+}
+.corner.help:is([data-step="1"], [data-step="2"], [data-step="3"]) i:nth-child(1),
+.corner.help:is([data-step="2"], [data-step="3"]) i:nth-child(2),
+.corner.help[data-step="3"] i:nth-child(3) {
+  background-color: var(--crayon-red);
+  scale: 1.1;
+}
+
 /* The helper has knocked: a yellow ring with a dark edge round Använd, which shows on any ground and in every
    motion setting; where things may move it also breathes (docs/ux-audit/in-play.md row 8). Out of reach the
    button stays half bright: it shows what it will say there, and it cannot be pressed yet. */

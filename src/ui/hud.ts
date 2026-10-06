@@ -20,6 +20,8 @@ export interface Hud {
    * the word it will have there. `null`: the helper is away, or only looking.
    */
   knock(hint: { verb: Verb | null; word: string | null } | null): void;
+  /** The helper's step on the three pips under its portrait, emptied when it leaves (in-play.md rows 3 and 20). */
+  helped(step: number): void;
   /**
    * The hidden candy found so far (plan §4.3). A new one hangs from the bag on a tag with its name for three
    * seconds, then drops into the bag (docs/ux-audit/in-play.md rows 1 and 18); the stickers live in the album.
@@ -76,6 +78,8 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
   let offered = false;
   let knocked = false;
   const showPrompt = () => prompt.classList.toggle('on', offered || knocked);
+  const helpBtn = byId('helpBtn');
+  let helpShown = -1;
   const bubble = byId('bubble');
   let shown = -1;
   let wordShown: string | undefined;
@@ -169,6 +173,11 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
         hang(sv.found.replace('{name}', sv.kinds[kind] ?? kind), FIND_TIME, piece);
         tag.dataset.find = kind;
       }
+    },
+    helped(step) {
+      if (step === helpShown) return;
+      helpShown = step;
+      helpBtn.dataset.step = String(step);
     },
     knock(hint) {
       knocked = hint !== null && hint.verb !== null;

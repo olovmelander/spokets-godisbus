@@ -1048,6 +1048,8 @@ function start(): void {
     }
     hud.verb(game.sim.curr.verb, game.sim.curr.word);
     hud.knock(game.sim.help.step >= 2 ? game.sim.help : null);
+    // A story's own visit is the helper looking by itself, not a step he asked for.
+    hud.helped(game.sim.help.visit ? 0 : game.sim.help.step);
     // The album: what earlier chapters hold in the save, and what this one holds now.
     if (game.sim.flags.size !== flagsSeen) {
       flagsSeen = game.sim.flags.size;

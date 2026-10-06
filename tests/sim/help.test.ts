@@ -4,7 +4,7 @@ import { STORY } from '../../src/content/chapters';
 import { garden } from '../../src/content/chapters/garden';
 import { granskog } from '../../src/content/chapters/granskog';
 import { readSettings, settingsFor, simOptions } from '../../src/save/settings';
-import { GUIDE_AFTER, HELP_TIME, REMIND_AFTER, STEP } from '../../src/sim/constants';
+import { GUIDE_AFTER, HELP_KEPT, HELP_TIME, REMIND_AFTER, STEP } from '../../src/sim/constants';
 import { HINT_REACH, hintFor } from '../../src/sim/help';
 import { Sim } from '../../src/sim/sim';
 import type { ChapterData, SimOptions, SimStart, StepInput } from '../../src/sim/types';
@@ -140,6 +140,28 @@ describe('the helper', () => {
     sim.step({ ...idle, act: true });
     run(sim, 0.1);
     expect(sim.flags.has('ladybird')).toBe(true);
+    expect(sim.help.step).toBe(0);
+    ask(sim);
+    expect(sim.help.step).toBe(1);
+  });
+
+  it('goes on from where it got when he asks again within a minute, though it had left', () => {
+    const sim = at(garden, 39.4, 6.01);
+    ask(sim);
+    ask(sim);
+    expect(sim.help.step).toBe(2);
+    run(sim, HELP_TIME + 1);
+    expect(sim.help.step).toBe(0);
+    run(sim, 20);
+    ask(sim);
+    expect(sim.help.step).toBe(3);
+  });
+
+  it('starts over when a minute has gone since it left', () => {
+    const sim = at(garden, 39.4, 6.01);
+    ask(sim);
+    ask(sim);
+    run(sim, HELP_TIME + HELP_KEPT + 1);
     expect(sim.help.step).toBe(0);
     ask(sim);
     expect(sim.help.step).toBe(1);
