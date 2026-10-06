@@ -633,6 +633,11 @@ body.calm *::after {
   pointer-events: none;
 }
 
+.key-prompt svg {
+  width: 26px;
+  height: 26px;
+}
+
 .key-prompt kbd {
   display: grid;
   place-items: center;

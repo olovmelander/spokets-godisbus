@@ -2,6 +2,7 @@ import { stickerStyle } from './sticker';
 import { sv } from '../content/sv';
 import type { Speaker, Verb } from '../sim/types';
 import { faceSvg } from './faces';
+import { verbIcon } from './verbs';
 
 /**
  * What the page shows over the game while it is played: the candy bag in the corner (plan §4.3), the word
@@ -108,8 +109,13 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       act.disabled = verb === null;
       act.querySelector('span')!.textContent = text;
       act.setAttribute('aria-label', text);
+      // And a picture of it, for a child who does not read the word (in-play.md row 6).
+      act.querySelector('use')?.setAttribute('href', `#i-${verbIcon(verb, word)}`);
       offered = verb !== null;
-      if (offered || !knocked) promptWord.textContent = text;
+      if (offered || !knocked) {
+        promptWord.textContent = text;
+        prompt.querySelector('use')?.setAttribute('href', `#i-${verbIcon(verb, word)}`);
+      }
       showPrompt();
     },
     stickers(found) {
@@ -137,6 +143,8 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
         const text = actionWord(hint.verb, hint.word);
         act.querySelector('span')!.textContent = text;
         promptWord.textContent = text;
+        // The picture of what it will do there, too.
+        for (const where of [act, prompt]) where.querySelector('use')?.setAttribute('href', `#i-${verbIcon(hint.verb, hint.word)}`);
         wordShown = undefined;
       }
       showPrompt();

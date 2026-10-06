@@ -104,6 +104,26 @@ export const ICONS = {
   hop: lines('<path d="M12 20V5m0 0-6 6m6-6 6 6"/>', 2.4),
   /** Använd: an open hand. */
   hand: lines('<path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-3.5a1.5 1.5 0 0 1 3 0V10m0-2a1.5 1.5 0 0 1 3 0v6.5A6.5 6.5 0 0 1 11.5 21 6 6 0 0 1 6.7 18.6L4 14.5a1.5 1.5 0 0 1 2.4-1.8L9 15"/>', 1.8),
+  // Använd's pictures, one for each kind of thing he does (docs/ux-audit/in-play.md row 6), so a child who does not
+  // read the word still sees it: in the 24 box with a 1.8 line, as the hand.
+  /** Ta, Plocka: a hand closing over something. */
+  take: `${lines('<path d="M5 10c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5v2.5M8.5 9v3.5M12 7.5v5M15.5 9v3.5"/>', 1.8)}<circle cx="12" cy="17.5" r="3.2" fill="currentColor"/>`,
+  /** Ge: a hand held out, a sweet on it. */
+  give: `${lines('<path d="M2.5 14.5h3.5l4.5 2.5h6.5a1.75 1.75 0 0 1 0 3.5H11M6 20.5h11.5l4-3.5"/>', 1.8)}<path d="M9.5 6.5h5l2.2-1.7v6.4l-2.2-1.7h-5l-2.2 1.7V4.8z" fill="currentColor"/>`,
+  /** Ropa: two cupped hands, and the call going out. */
+  call: lines('<path d="M4 9.5c2 0 3.5 1.2 3.5 2.5S6 14.5 4 14.5M4 6.5c3.6 0 6.3 2.4 6.3 5.5s-2.7 5.5-6.3 5.5M14 9.5a3.5 3.5 0 0 1 0 5M17 7a7 7 0 0 1 0 10M20 4.5a10.5 10.5 0 0 1 0 15"/>', 1.8),
+  /** Knuffa, Dra, Vänd, Lyft: an arrow against a block. */
+  push: lines('<path d="M2.5 12h10m0 0-3.5-3.5m3.5 3.5-3.5 3.5"/><rect x="15" y="5.5" width="6.5" height="13" rx="1.5"/>', 1.8),
+  /** Kliv upp, Kliv på, Åk med: steps, and the way up them. */
+  climb: lines('<path d="M2.5 20.5h5v-5h5v-5h5v-5h4"/><path d="M6 11.5 12 5.5m0 0H8m4 0v4"/>', 1.8),
+  /** Åk ner: down a slide. */
+  slide: lines('<path d="M4 4.5c0 8 6 14.5 15.5 14.5m0 0-3-3m3 3-3 3"/><path d="M4 4.5h3"/>', 1.8),
+  /** Smaka: a sweet in its wrapper. */
+  taste: lines('<ellipse cx="12" cy="12" rx="5" ry="4"/><path d="M7.2 11 3 8v8l4.2-3M16.8 11 21 8v8l-4.2-3"/>', 1.8),
+  /** Borsta tänderna: a toothbrush. */
+  toothbrush: lines('<path d="M3.5 20.5 14 10"/><path d="M13 8.5 17.5 4l3 3-4.5 4.5z"/><path d="M15 7l2 2m-.5-3.5 2 2"/>', 1.8),
+  /** Kasta snöret, Sänk snöret: a ring on a string. */
+  lace: lines('<path d="M12 2.5v9"/><circle cx="12" cy="16" r="4.5"/><path d="M9.5 5.5h5"/>', 1.8),
   /** A big candy: the striped sweet on its stick that marks a safe place (plan §3.3, rule 4). */
   'big-candy': '<path d="M12 13v9" stroke="#f4efe6" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8.5" r="6.5" fill="#dd4b39"/><path d="M6.6 5.2c3.4 0 6.6 2.4 7.4 6.4M9.8 2.6c3.6.8 6.6 3.6 7.6 7.4" fill="none" stroke="#fff6ea" stroke-width="1.7" stroke-linecap="round"/>',
   /** Elof in mid-leap: the picture for Äventyr. */
