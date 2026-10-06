@@ -2,6 +2,13 @@
 
 ## State (5 October 2026)
 
+- **Controls a thumb can trust** (6 October, a cloud session; `docs/ux-audit.md`, step 2). *Hoppa* is 116 px and
+  *Använd* 100 px on the thumb's arc, with 15 px bold words at 4.6:1 and 5.1:1. The verb stands on a paper tag
+  beside *Använd*, which nearly steps out of the picture with nothing to use. A pressed button shows a ring round
+  the thumb; the stick goes back to rest when the thumb lifts; the helper's button is 64 px. The knock is a
+  yellow-and-ink ring in every motion setting, half bright out of reach, and with keys or a pad a prompt shows the
+  key and the verb. Not yet: the keys' hint only when needed, the bag's number and "Just nu" only on change, a
+  picture for every verb (step 11).
 - **Every word in Andika** (6 October, a cloud session; `docs/ux-audit.md`, step 1). The game's typeface (plan
   §5.7) is served from the site (`public/fonts/`, from `@fontsource/andika` 5.3.0, unchanged, 40 KB, preloaded).
   Three invalid `font:` rules that left *Hoppa*, *Använd*, the code and name fields and two buttons in the
@@ -1617,7 +1624,7 @@
   scale, colour tokens, button states); 2, the controls a thumb can trust; 3, every speaker their own; 4, a clear
   screen for the story; 5, a pause that is short; 6, one movement from the tap to the story; 7, the materials;
   8, the UI's sound together with the narrative audit's step 3; 9, the page as a page; 10, the collections; 11, a
-  picture for every verb. Built: step 1 (see "State"). The narrative audit's later steps go on around them.
+  picture for every verb. Built: steps 1 to 2 (see "State"). The narrative audit's later steps go on around them.
 - **The story's pull requests (this session's: #148, merged, and the endings after it): Olov plays the new
   intro and the new chapter endings, and the story's work goes on in the overview's order**
   (`docs/narrative-audit.md`, "The order of the work"). Neither raises `RELEASED_CHAPTER`, touches likeness
@@ -1884,9 +1891,8 @@ The older list, still true where it is not struck:
 ## Known bugs
 
 - **The UX audit's defects, not yet mended** (`docs/ux-audit.md`, in the order of the work): bubbles can only use
-  half the screen's width; *Mindre rörelse* hides the helper's knock, and keys and pad never see the verb; the HUD
-  stays at 28 % over held scenes and bright over a fade from black; Pause is 8.4 panel heights at 844×390 with its
-  ✕ scrolling away; *Foton* shows on Byn with nothing in it.
+  half the screen's width; the HUD stays at 28 % over held scenes and bright over a fade from black; Pause is 8.4
+  panel heights at 844×390 with its ✕ scrolling away; *Foton* shows on Byn with nothing in it.
 - **The prologue's stand-ins act roughly** (5 October): box figures in place of the family, so a kneel or a
   shrug reads stiffly, and Pappa's hand under Elof is a block. The private models have not been posed by the new
   acting yet; their bones' signs follow Elof's doll and are untested with it (Olov's computer).

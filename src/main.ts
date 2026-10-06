@@ -290,6 +290,9 @@ function start(): void {
     controls.hidden = d !== 'touch';
     hint.hidden = d === 'touch';
     hint.textContent = d === 'pad' ? sv.padHint : sv.keysHint;
+    // Which hand is in use, for what shows only to keys and pads: the prompt with what E (or X) will do.
+    document.body.dataset.device = d;
+    byId('keyPromptKey').textContent = d === 'pad' ? 'X' : 'E';
   };
   showDevice(device);
 

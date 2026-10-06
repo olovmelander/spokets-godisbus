@@ -128,9 +128,9 @@ textarea {
   border-radius: 50%;
   border: 3px solid rgb(255 255 255 / 0.8);
   color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1;
+  font-size: calc(15px * var(--k));
+  font-weight: 700;
+  line-height: 1.05;
   pointer-events: auto;
   touch-action: none;
   box-shadow: 0 3px 8px rgb(0 0 0 / 0.3);
@@ -142,30 +142,59 @@ textarea {
   height: 34px;
 }
 
+/* A press shows round the thumb, not only under it: a pale ring outside the disc. */
 .btn.down {
   transform: scale(0.93);
   filter: brightness(1.15);
+  box-shadow: 0 0 0 6px rgb(255 255 255 / 0.6), 0 3px 8px rgb(0 0 0 / 0.3);
 }
 
+/* With nothing to use, Använd keeps its place but nearly steps out of the picture; it comes forward when there is
+   something to do (research §2: controls follow the context). */
 .btn:disabled {
-  opacity: 0.35;
+  opacity: 0.2;
 }
 
-/* Hoppa: 96 px, lower right. Använd: 84 px, above it. Both inside the safe area (plan §4.1). */
+/* Hoppa: 116 px, lower right, about 2 cm on the family's phones. Använd: 100 px, up and to the left of it on the
+   thumb's arc, 12 px clear. Both inside the safe area (plan §4.1; docs/ux-audit/access-and-devices.md #2).
+   White words on these fills are 4.6:1 and 5.1:1 (WCAG AA). */
 .btn-hop {
-  width: calc(96px * var(--k));
-  height: calc(96px * var(--k));
+  width: calc(116px * var(--k));
+  height: calc(116px * var(--k));
   right: calc(env(safe-area-inset-right) + 20px);
   bottom: calc(env(safe-area-inset-bottom) + 20px);
-  background: #dd4b39;
+  background: #cf4434;
 }
 
 .btn-act {
-  width: calc(84px * var(--k));
-  height: calc(84px * var(--k));
-  right: calc(env(safe-area-inset-right) + 26px);
-  bottom: calc(env(safe-area-inset-bottom) + 20px + 96px * var(--k) + 16px);
-  background: #3f9a5a;
+  width: calc(100px * var(--k));
+  height: calc(100px * var(--k));
+  right: calc(env(safe-area-inset-right) + 20px + 108px * var(--k));
+  bottom: calc(env(safe-area-inset-bottom) + 20px + 74px * var(--k));
+  background: #2f7d47;
+}
+
+/* Använd says only its hand until there is something to do; then the word stands beside it on a scrap of
+   paper, so no word has to squeeze inside the disc (docs/ux-audit/in-play.md row 5). */
+.btn-act span {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: max-content;
+  max-width: 150px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #fff6e2;
+  color: #3d2b1f;
+  font-size: 16px;
+  line-height: 1.15;
+  text-align: center;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+}
+
+.btn-act:disabled:not(.pulse) span {
+  display: none;
 }
 
 /* Vänsterhänt: the stick and the buttons swap sides (plan §4.1). */
@@ -185,7 +214,12 @@ body.lefty .btn-hop {
 
 body.lefty .btn-act {
   right: auto;
-  left: calc(env(safe-area-inset-left) + 26px);
+  left: calc(env(safe-area-inset-left) + 20px + 108px * var(--k));
+}
+
+body.lefty .btn-act span {
+  right: auto;
+  left: calc(100% + 10px);
 }
 
 /* Större text: what is said, and the words on buttons and in panels, a quarter bigger. */
@@ -199,7 +233,12 @@ body.big-text .notice {
 }
 
 body.big-text .btn {
-  font-size: 16px;
+  font-size: calc(18px * var(--k));
+}
+
+body.big-text .btn-act span,
+body.big-text .key-prompt {
+  font-size: 19px;
 }
 
 body.big-text .panel {
@@ -348,34 +387,80 @@ body.calm *::after {
   height: 30px;
 }
 
-/* The helper's button sits under the pause button. It is small: help is there when he asks, not in the way. */
+/* The helper's button sits under the pause button, as big as it, 14 px below (plan §4.1's 64 px and 12 px). */
 .corner.help {
-  top: calc(env(safe-area-inset-top) + 10px + 64px * var(--k) + 10px);
-  width: calc(52px * var(--k));
-  height: calc(52px * var(--k));
-  right: calc(env(safe-area-inset-right) + 18px);
+  top: calc(env(safe-area-inset-top) + 10px + 64px * var(--k) + 14px);
 }
 
-/* The helper has knocked: Använd's word pulses, in reach or not. */
-.btn-act.pulse {
-  animation: act-pulse 0.7s ease-in-out infinite alternate;
-  opacity: 1;
+/* The helper has knocked: a yellow ring with a dark edge round Använd, which shows on any ground and in every
+   motion setting; where things may move it also breathes (docs/ux-audit/in-play.md row 8). Out of reach the
+   button stays half bright: it shows what it will say there, and it cannot be pressed yet. */
+.btn-act.pulse,
+.key-prompt.pulse {
+  box-shadow: 0 0 0 4px #ffd76a, 0 0 0 6px #3d2b1f, 0 3px 8px rgb(0 0 0 / 0.3);
+  animation: act-breath 1.4s ease-in-out infinite alternate;
 }
 
-@keyframes act-pulse {
+.btn-act.pulse:disabled {
+  opacity: 0.6;
+}
+
+@keyframes act-breath {
   from {
-    box-shadow: 0 0 0 0 rgb(255 215 106 / 0.9);
+    scale: 1;
   }
   to {
-    box-shadow: 0 0 0 calc(14px * var(--k)) rgb(255 215 106 / 0);
+    scale: 1.06;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .btn-act.pulse {
+  .btn-act.pulse,
+  .key-prompt.pulse {
     animation: none;
-    outline: 4px solid #ffd76a;
   }
+}
+
+/* With keys or a pad the on-screen controls are hidden, so what E (or X) will do shows as a prompt in Använd's
+   corner, only while there is something to use or the helper knocks (docs/ux-audit/in-play.md row 12). */
+.key-prompt {
+  position: absolute;
+  z-index: 2;
+  right: calc(env(safe-area-inset-right) + 20px);
+  bottom: calc(env(safe-area-inset-bottom) + 64px);
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 10px;
+  background: #fff6e2;
+  color: #3d2b1f;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.15;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  pointer-events: none;
+}
+
+.key-prompt kbd {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: #3d2b1f;
+  color: #fff6e2;
+  font: inherit;
+}
+
+body[data-device='keys'] .key-prompt.on,
+body[data-device='pad'] .key-prompt.on {
+  display: flex;
+}
+
+body.lefty .key-prompt {
+  right: auto;
+  left: calc(env(safe-area-inset-left) + 20px);
 }
 
 /* --- panels: a paper card over a dimmed game ------------------------------------------------------ */

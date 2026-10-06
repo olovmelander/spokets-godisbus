@@ -130,6 +130,27 @@ try {
     await page.locator('#helpBtn').click();
     await page.waitForFunction(() => window.__godis.state().help.step >= 2);
     check(`actual ${course} page: further hints keep the player in place`, Math.abs((await page.evaluate(() => window.__godis.state())).x - Number(at.split(',')[0])) < 0.2);
+    // The knock shows as a ring round Använd; out of reach the button stays half bright, never looking ready.
+    const knocked = await page.locator('#actBtn').evaluate((e) => ({ pulse: e.classList.contains('pulse'), disabled: e.disabled, opacity: getComputedStyle(e).opacity, ring: getComputedStyle(e).boxShadow }));
+    check(`actual ${course} page: the knock is a ring round Använd`, knocked.pulse && knocked.ring.includes('255, 215, 106'));
+    if (knocked.disabled) check(`actual ${course} page: out of reach the knocked button is half bright`, knocked.opacity === '0.6');
+    await page.close();
+  }
+  {
+    // With keys, the on-screen controls are hidden: what E will do shows as a prompt, and the knock rings it too.
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(`${origin}/spokets-godisbus/?dev&debug&standin&tier=low&course=granskog&at=36,0.01&flags=berry`);
+    await page.waitForFunction(() => window.__godis?.info().models.includes('boot/jay'));
+    // A key is a moment, used by the next step: wait until the game is stepping before pressing one.
+    await page.waitForFunction(() => window.__godis.state().steps >= 60, null, { timeout: 60000 });
+    check('keys: no prompt while there is nothing to use', await page.locator('#keyPrompt').isHidden());
+    await page.keyboard.press('KeyH');
+    await page.waitForFunction(() => window.__godis.state().help.step === 1);
+    await page.keyboard.press('KeyH');
+    await page.waitForFunction(() => window.__godis.state().help.step >= 2);
+    await page.waitForSelector('#keyPrompt.pulse', { state: 'visible', timeout: 10000 });
+    check('keys: the knock shows what E will do, with its key', await page.locator('#keyPromptKey').textContent() === 'E'
+      && (await page.locator('#keyPromptWord').textContent()).length > 1);
     await page.close();
   }
   console.log(`helper: ${checks} checks passed; captures in docs/shots/_work/helper/`);

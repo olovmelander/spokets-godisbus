@@ -216,6 +216,9 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     stick.id = null;
     stick.x = stick.y = 0;
     ui.stickBase.classList.remove('on', 'run');
+    // Back to its rest place: a ring left where the thumb last lay reads as a smudge over Elof.
+    ui.stickBase.style.left = '';
+    ui.stickBase.style.top = '';
     moveKnob();
   };
   on(zone, 'pointerup', endStick);

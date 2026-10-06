@@ -54,6 +54,12 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
   const bag = byId('bag');
   const number = byId('bagCount');
   const act = byId<HTMLButtonElement>('actBtn');
+  // With keys or a pad: what E (or X) will do, in Använd's corner (src/ui/ui.css, .key-prompt).
+  const prompt = byId('keyPrompt');
+  const promptWord = byId('keyPromptWord');
+  let offered = false;
+  let knocked = false;
+  const showPrompt = () => prompt.classList.toggle('on', offered || knocked);
   const bubble = byId('bubble');
   let shown = -1;
   let wordShown: string | undefined;
@@ -97,6 +103,9 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       act.disabled = verb === null;
       act.querySelector('span')!.textContent = text;
       act.setAttribute('aria-label', text);
+      offered = verb !== null;
+      if (offered || !knocked) promptWord.textContent = text;
+      showPrompt();
     },
     stickers(found) {
       if (stuck !== null && stuck.length === found.length) return;
@@ -115,13 +124,17 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       }
     },
     knock(hint) {
-      act.classList.toggle('pulse', hint !== null && hint.verb !== null);
+      knocked = hint !== null && hint.verb !== null;
+      act.classList.toggle('pulse', knocked);
+      prompt.classList.toggle('pulse', knocked);
       // Out of reach the button is dimmed: it shows what it will say when he is there.
       if (hint && hint.verb && act.disabled) {
         const text = actionWord(hint.verb, hint.word);
         act.querySelector('span')!.textContent = text;
+        promptWord.textContent = text;
         wordShown = undefined;
       }
+      showPrompt();
     },
     notice(text) {
       const notice = byId('notice');
