@@ -35,10 +35,10 @@ export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, su
   ground.setAttribute('shadowFade', fade);
   const material = new ShaderMaterial({
     uniforms: { contact: { value: 0 } },
-    vertexShader: `attribute vec2 shadowFade;
+    vertexShader: /* glsl */ `attribute vec2 shadowFade;
       varying vec2 vUv; varying vec2 vFade;
       void main(){vUv=uv;vFade=shadowFade;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.0);}`,
-    fragmentShader: `uniform float contact;varying vec2 vUv;varying vec2 vFade;
+    fragmentShader: /* glsl */ `uniform float contact;varying vec2 vUv;varying vec2 vFade;
       void main(){float r=length(vUv*2.0-1.0);if(r>=1.0)discard;
         float blob=.25*pow(1.0-r,1.6)*vFade.x;
         float core=contact*.28*exp(-22.0*r*r)*vFade.y;
