@@ -2,7 +2,7 @@ import { lessMotion } from '../platform/motion';
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
-  Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PlaneGeometry, PointLight,
+  Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PointLight,
   Scene, Shape, SphereGeometry, TorusGeometry, UnsignedIntType, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
@@ -39,6 +39,7 @@ import { createStage } from './stage';
 import { actPose } from './acting';
 import { createModelRig, createRehearsalRig, heightOf, STANDING, type Pose, type Rig, type Role } from './rig';
 import { createPlayerMotion, createPlayerStandIn } from './player-motion';
+import { createAurora } from './aurora';
 import { createFamilyMotion } from './family-motion';
 import { createSharedSweets } from './shared-sweets';
 import { saturdayBag } from './saturday-bag';
@@ -934,7 +935,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       camera.position.set(window.x, window.y + 0.65, window.z + shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
       camera.lookAt(window.x, window.y + 0.65, window.z);
     }
-    const darkness = night.update(flags, look.x, centreY, clock, dt);
+    const darkness = night.update(flags, dt, tier === 'low' ? 0.5 : 0.85, calmStory);
     if (dressing && place) {
       // What lives far off begins nothing while he is busy, and needs the lens to know what is in the picture.
       dressing.update(camera.position.x, look.y, clock, darkness, { gust, still: calmStory }, {
@@ -1280,9 +1281,9 @@ function buildGround(chapter: ChapterData): Mesh {
 }
 
 /**
- * Night and the northern lights (plan §3.4, the final). When the chapter's flag is set, the sky
- * darkens over a few seconds, the light turns low and blue, and three green ribbons wave far behind the
- * scene. The ribbons are there from the start, unseen, so that no shader is compiled when they flare.
+ * Night and the northern lights (plan §3.4, the final). When the chapter's flag is set, the sky darkens over
+ * a few seconds, the light turns low and blue, and the northern lights flare far behind the scene
+ * (./aurora.ts), lighting the tops of things a little green. Indoors only the windows show them.
  */
 function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLight, sun: DirectionalLight) {
   const group = new Group();
@@ -1291,39 +1292,23 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
   const day = sky.clone();
   // Night from the start is there at once: it doesn't fall while he watches.
   const dark = new Color('#14244a');
-  const lights = { hemisphere: hemisphere.intensity, sun: sun.intensity };
-  const ribbons = [0, 1, 2].map((i) => {
-    // A curtain of light: bright near its lower edge, fading upwards and towards its ends, and hanging in folds.
-    const geometry = new PlaneGeometry(60, 7 + i * 2, 24, 4);
-    const at = geometry.getAttribute('position');
-    const glow: number[] = [];
-    const rows = [0, 0.22, 0.55, 1, 0];
-    for (let v = 0; v < at.count; v++) {
-      const column = v % 25;
-      const ends = Math.sin((Math.PI * column) / 24);
-      const light = rows[Math.floor(v / 25)]! * ends;
-      glow.push(0.25 * light, light, 0.55 * light);
-      at.setY(v, at.getY(v) + Math.sin(column * 0.8 + i * 2) * 0.9 + Math.sin(column * 0.31 + i) * 1.4);
-    }
-    geometry.setAttribute('color', new Float32BufferAttribute(glow, 3));
-    const material = new MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0, fog: false, depthWrite: false, blending: AdditiveBlending, side: DoubleSide });
-    const ribbon = new Mesh(geometry, material);
-    ribbon.frustumCulled = false;
-    group.add(ribbon);
-    return ribbon;
-  });
+  const lights = { hemisphere: hemisphere.intensity, sun: sun.intensity, above: hemisphere.color.clone() };
+  const green = new Color('#8fffc8');
+  const aurora = chapter.house ? null : createAurora();
+  if (aurora) group.add(aurora.mesh);
   let k = after === null ? 1 : 0;
-  function update(flags: ReadonlySet<string>, x: number, y: number, clock: number, dt: number): number {
+  // The lights' own time stands still with less motion: they hang as they are.
+  let drift = 0;
+  /** `most` caps the lights: lower on Low, where they are added after the picture's tone mapping. */
+  function update(flags: ReadonlySet<string>, dt: number, most: number, still: boolean): number {
     k = Math.min(1, Math.max(0, k + (after === null || flags.has(after) ? dt : -dt) / 3));
+    if (!still) drift += dt;
     sky.copy(day).lerp(dark, k);
     hemisphere.intensity = lerp(lights.hemisphere, 0.75, k);
     sun.intensity = lerp(lights.sun, 0.7, k);
-    for (const [i, ribbon] of ribbons.entries()) {
-      ribbon.position.set(x + Math.sin(clock * 0.21 + i * 2.1) * 5, y + 9 + i * 2.5 + Math.sin(clock * 0.5 + i) * 0.5, -20 - i * 3);
-      ribbon.rotation.z = 0.08 * Math.sin(clock * 0.33 + i * 1.7) + (i - 1) * 0.07;
-      (ribbon.material as MeshBasicMaterial).opacity = k * (0.5 + 0.2 * Math.sin(clock * 0.9 + i * 2.4));
-      // Unseen, it is not drawn either: a ribbon is two draw calls, one for each of its sides.
-      drawnWhile(ribbon, k > 0);
+    if (aurora) {
+      aurora.update(k, drift, most);
+      hemisphere.color.copy(lights.above).lerp(green, 0.25 * k * (0.85 + 0.15 * Math.sin(drift * 0.9)));
     }
     return k;
   }

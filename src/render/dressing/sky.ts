@@ -97,14 +97,15 @@ export function backdrop(look: PlaceLook): CanvasTexture {
  * pixels, so each soft circle stays round in portrait, landscape and every graphics tier. They sit at
  * the far depth, before the transparent hills: rock, people, clouds and ridges still hide them.
  */
-export function stars(): Points {
+export function stars(): Points<BufferGeometry, ShaderMaterial> {
   const next = sequence(19);
   const positions: number[] = [];
   const sizes: number[] = [];
   const lights: number[] = [];
-  for (let i = 0; i < 110; i++) {
-    lights.push(0.35 + next() * 0.6);
-    sizes.push(1.6 + next() * 1.5);
+  // A hundred and ten small ones, and eight that stand out.
+  for (let i = 0; i < 118; i++) {
+    lights.push(i < 110 ? 0.35 + next() * 0.6 : 1);
+    sizes.push(i < 110 ? 1.6 + next() * 1.5 : 3.6 + next());
     positions.push(next() * 2 - 1, 1 - next() ** 1.6 * (300 / 256), 0);
   }
   const geometry = new BufferGeometry();
@@ -112,16 +113,17 @@ export function stars(): Points {
   geometry.setAttribute('size', new Float32BufferAttribute(sizes, 1));
   geometry.setAttribute('light', new Float32BufferAttribute(lights, 1));
   const material = new ShaderMaterial({
-    uniforms: { pixelRatio: { value: 1 }, colour: { value: new Color('#fffcf0') } },
+    uniforms: { pixelRatio: { value: 1 }, colour: { value: new Color('#fffcf0') }, time: { value: 0 } },
     vertexShader: /* glsl */ `
       attribute float size;
       attribute float light;
-      uniform float pixelRatio;
+      uniform float pixelRatio, time;
       varying float brightness;
       void main() {
         gl_Position = vec4(position.xy, 1.0, 1.0);
         gl_PointSize = size * pixelRatio;
-        brightness = light;
+        // Each twinkles at its own pace.
+        brightness = light * (0.8 + 0.2 * sin(time * (0.7 + 1.8 * fract(position.y * 53.7)) + position.x * 41.0));
       }
     `,
     fragmentShader: /* glsl */ `

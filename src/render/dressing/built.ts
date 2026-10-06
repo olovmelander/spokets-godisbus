@@ -94,22 +94,32 @@ export function built(chapter: ChapterData, indoors = false): Group {
     }
     // The wall is solid between the windows: it is cut by drawing the sky's own colour there, behind the frames.
     const sky = evening
-      ? drawn(32, 32, (c) => {
-          // The night outside, with the northern lights low over the trees.
+      ? drawn(320, 48, (c) => {
+          // The night outside, with the northern lights as the mountain has them (../aurora.ts): upright rays
+          // over a bright lower border that swings, violet at the top.
           c.fillStyle = '#142046';
-          c.fillRect(0, 0, 32, 32);
-          const lights = c.createLinearGradient(0, 4, 0, 26);
-          lights.addColorStop(0, 'rgba(90,240,170,0)');
-          lights.addColorStop(0.6, 'rgba(90,240,170,0.75)');
-          lights.addColorStop(1, 'rgba(90,240,170,0)');
-          c.fillStyle = lights;
-          c.fillRect(0, 4, 32, 22);
+          c.fillRect(0, 0, 320, 48);
+          for (let x = 0; x < 320; x++) {
+            const border = 34 + 4 * Math.sin(x * 0.035) + 1.5 * Math.sin(x * 0.15);
+            const ray = 0.35 + 0.65 * Math.abs(Math.sin(x * 0.9) * Math.sin(x * 0.23 + 1));
+            const light = c.createLinearGradient(0, border - 28, 0, border);
+            light.addColorStop(0, 'rgba(150,90,255,0)');
+            light.addColorStop(0.35, `rgba(150,90,255,${0.3 * ray})`);
+            light.addColorStop(0.8, `rgba(90,240,170,${0.75 * ray})`);
+            light.addColorStop(1, `rgba(210,255,225,${ray})`);
+            c.fillStyle = light;
+            c.fillRect(x, border - 28, 1, 28);
+          }
         })
       : null;
-    // In the morning the garden's far scenery is outside, each window with its own part of it.
+    // In the morning the garden's far scenery is outside, each window with its own part of it; at night, its
+    // own part of the sky.
     const glass = new MeshBasicMaterial({ map: sky ?? outlook(), fog: false });
     for (const [i, x] of house.windows.entries()) {
-      const pane = new Mesh(sky ? new PlaneGeometry(5.1, 5.2) : outlookPane(5.1, 5.2, i), glass);
+      const shape = sky ? new PlaneGeometry(5.1, 5.2) : outlookPane(5.1, 5.2, i);
+      const uv = shape.getAttribute('uv');
+      if (sky) for (let j = 0; j < uv.count; j++) uv.setX(j, (i + uv.getX(j)) / house.windows.length);
+      const pane = new Mesh(shape, glass);
       pane.position.set(x, heightAt(chapter, x) + 6, -8.95);
       group.add(pane);
     }
