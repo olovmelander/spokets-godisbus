@@ -97,6 +97,13 @@ export const DRAWING = {
  * The map as SVG markup. With a state of null it draws nothing. With `wayOn`, on a chapter's last page, Moa's
  * crayon draws the way on from where he is to where the ghost is heading (ui.css animates the stroke).
  */
+/** Each chapter's picture from Moa's map: on its card in Utforska vidare, and on its strip in the album. */
+const CHAPTER_PICTURE: Record<string, string> = {
+  prolog: DRAWING.star, garden: PICTURE.home, granskog: PICTURE.forest, myren: PICTURE.bog, berget: PICTURE.mountain,
+  norrsken: DRAWING.aurora, epilog: DRAWING.party, byn: DRAWING.shop,
+};
+export const chapterPicture = (id: string) => `<svg class="chapter-picture" viewBox="-26 -32 52 48" aria-hidden="true">${CHAPTER_PICTURE[id] ?? ''}</svg>`;
+
 export function mapSvg(state: MapState | null, named = false, wayOn = false): string {
   if (!state) return '';
   const route = state.drawn.map((place, i) => `${i === 0 ? 'M' : 'L'}${AT[place].x} ${AT[place].y + 20}`).join(' ');

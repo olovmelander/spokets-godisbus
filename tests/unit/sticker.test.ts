@@ -28,11 +28,11 @@ describe('the stickers of the hidden candy', () => {
     expect(stickerStyle('something else')).toBe('');
   });
 
-  it('in the album a found kind is a picture, and the keepsake keeps its round mark', () => {
+  it('in the album a found kind is a picture, and so is the keepsake', () => {
     const album = albumHtml(['gummiorm'], [], ['vittra']);
     expect(album).toContain(`<i class="kind" style="${stickerStyle('gummiorm')}"></i>`);
     expect(album.match(/class="kind"/g)).toHaveLength(1);
-    expect(album).toContain('data-keepsake="vittra"><i style="--colour:#f2df9a');
+    expect(album).toContain('data-keepsake="vittra"><svg class="thing"');
   });
 });
 

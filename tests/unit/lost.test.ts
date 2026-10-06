@@ -70,8 +70,9 @@ describe('the lost things under the deck', () => {
     const some = albumHtml([], ['coin']);
     expect(some).toContain(sv.lost.coin);
     expect(some).not.toContain(sv.lost.marble);
-    // The sixteen kinds are still sixteen.
-    expect(some.match(/<ul class="album-grid">(.*?)<\/ul>/)![1]!.match(/<li/g)).toHaveLength(16);
+    // The sixteen kinds are still sixteen, and each thing found is drawn.
+    expect(some.slice(some.indexOf('album-chapters'), some.indexOf(sv.lostTitle)).match(/<li/g)).toHaveLength(16);
+    expect(some).toMatch(/data-thing="coin"><svg class="thing"/);
   });
 
   it('is given back at the party: its owner sees it when he gives them candy', () => {

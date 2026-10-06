@@ -1036,31 +1036,49 @@ body.lefty .key-prompt {
   display: none;
 }
 
+/* The memory itself, with no interface round it (docs/ux-audit/story-presentation.md row 20): an old photo's oval,
+   three times as big as it was, on paper with its grain, the cut-outs each throwing a small shadow. Its name and
+   count are in the album; here only the ✕, faint until touched, and the way on. */
 .memory-card {
-  width: min(78vw, 82vh, 640px);
+  position: relative;
+  width: min(88vw, 144vh, 760px);
   aspect-ratio: 8 / 5;
   border-radius: 50% / 46%;
   overflow: hidden;
-  background: radial-gradient(ellipse at center, var(--sepia-light) 0%, var(--sepia) 62%, var(--sepia-deep) 100%);
+  background: var(--grain, none), radial-gradient(ellipse at center, var(--sepia-light) 0%, var(--sepia) 62%, var(--sepia-deep) 100%);
   box-shadow: 0 0 0 6px rgb(246 230 196 / 0.35), 0 12px 40px rgb(0 0 0 / 0.45);
   filter: sepia(0.35) contrast(0.96);
+  cursor: pointer;
 }
 
-.memory-panel { position: relative; display: grid; justify-items: center; gap: 10px; max-width: 100%; max-height: 100%; box-sizing: border-box; overflow: auto; padding: 12px; border-radius: 22px; color: var(--night-ink); }
-.memory-panel h2 { margin: 8px 60px; font-size: 18px; text-align: center; }
-.memory-panel .panel-close { color: var(--night-ink); }
-.memory-controls { display: flex; align-items: center; gap: 18px; }
-.memory-controls button { color: var(--ink-soft); font: inherit; }
+.memory-panel { position: relative; display: grid; justify-items: center; max-width: 100%; max-height: 100%; box-sizing: border-box; overflow: hidden; padding: 12px; color: var(--night-ink); }
+.memory-panel h2,
+.memory-controls #memoryProgress {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.memory-panel .panel-close { position: absolute; z-index: 1; top: 4px; right: 4px; opacity: 0.4; transition: opacity var(--dur-quick) ease-out; }
+.memory-panel .panel-close:is(:hover, :focus-visible, :active) { opacity: 1; }
+.memory-controls { position: absolute; z-index: 1; right: 8%; bottom: 14px; }
+.memory-controls .wide { width: 56px; min-height: 56px; padding: 0; border-radius: 50%; color: var(--wood-dark); }
 .memory-album { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
 .memory-thumb, .memory-missing { display: grid; align-content: center; justify-items: center; gap: 5px; min-height: 100px; border: 2px solid var(--paper-edge); border-radius: 12px; padding: 7px; background-color: var(--paper-2); }
 .memory-thumb svg { display: block; width: 100%; border-radius: 8px; }
 .memory-thumb .memory-play { width: 26px; height: 26px; border-radius: 0; }
-.memory-missing { border-style: dashed; color: var(--ink-faint); font-size: 30px; }
+.memory-missing { border-style: dashed; color: var(--ink-faint); }
+.memory-missing svg { width: 64px; height: 40px; opacity: 0.6; }
 
 .memory-card svg {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
+  filter: drop-shadow(1.5px 2.5px 1.2px rgb(58 38 20 / 0.35));
 }
 
 /* Entrance/return and picture fades use one suspendable presentation in memory.ts. The picture's
@@ -1243,39 +1261,71 @@ body.lefty .key-prompt {
   transform: rotate(5deg);
 }
 
-/* One he has not found yet: an empty ring, and a question mark for its name. */
+/* One he has not found yet: an empty paper ring, with nothing written under it (menus.md row 12). */
 .album-grid i.missing {
-  background: transparent;
+  background-color: var(--paper-bright);
   box-shadow: none;
-  border: 2px dashed rgb(123 90 54 / 0.5);
+  border: 2px solid rgb(123 90 54 / 0.8);
+}
+
+/* A strip for each chapter: its picture from Moa's map, its name and its count, then its four stickers. */
+.album-chapters {
+  display: grid;
+  gap: 10px;
+}
+
+@media (min-width: 700px) {
+  .album-chapters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.album-chapter {
+  display: grid;
+  gap: 8px;
+  padding: 8px 10px 10px;
+  border-radius: 8px 10px 9px 11px;
+  background-color: var(--paper-2);
+  background-image: var(--grain, none);
+}
+
+.album-place {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.album-place .chapter-picture {
+  width: 30px;
+  height: 28px;
+}
+
+.album-place b {
+  font-family: var(--font-hand);
+  font-weight: 700;
+  color: var(--crayon-blue);
+}
+
+.album-place small {
+  margin-left: auto;
+  font-size: 0.85em;
+  color: var(--ink-soft);
+}
+
+/* A drawn thing: a lost thing, or a keepsake, as big as a sticker. */
+.album-grid svg.thing {
+  width: 44px;
+  height: 44px;
 }
 
 .album-grid li:not(.got) span {
   color: var(--ink-faint);
 }
 
-/* Hittegods: the lost things he has found, as labels on a string. */
+/* Hittegods: the lost things, drawn, four in a row like the candy (menus.md row 13). */
 .lost-list {
-  list-style: none;
-  margin: 6px 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.lost-list li {
-  padding: 5px 12px;
-  border-radius: 999px;
-  border: 2px dashed rgb(123 90 54 / 0.4);
-  font-size: 0.8em;
-  color: var(--ink-faint);
-}
-
-.lost-list li.got {
-  border: 2px solid rgb(123 90 54 / 0.5);
-  background-color: var(--paper-bright);
-  color: var(--ink);
+  margin-top: 6px;
 }
 
 /* Moas karta: crayon on paper. */

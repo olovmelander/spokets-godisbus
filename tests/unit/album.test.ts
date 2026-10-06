@@ -3,8 +3,8 @@ import { albumComplete, KINDS } from '../../src/content/kinds';
 import { sv } from '../../src/content/sv';
 import { albumHtml } from '../../src/ui/album';
 
-/** The stickers' own part of the page: under it lies Hittegods, which has its own test. */
-const grid = (html: string) => html.match(/<ul class="album-grid">(.*?)<\/ul>/)?.[1] ?? '';
+/** The stickers' own part of the page, on its four chapter strips: under it lies Hittegods, which has its own test. */
+const grid = (html: string) => html.slice(html.indexOf('<div class="album-chapters">'), html.indexOf(`<h3>${sv.lostTitle}`));
 const slots = (html: string) => grid(html).match(/<li/g)?.length ?? 0;
 const got = (html: string) => grid(html).match(/<li class="got"/g)?.length ?? 0;
 
@@ -16,6 +16,15 @@ describe('the sticker album', () => {
     for (const kind of Object.keys(KINDS)) expect(empty, kind).not.toContain(sv.kinds[kind]);
     expect(empty).toContain('0 av 16 sorter');
     expect(empty).toContain(sv.album.title);
+    // A new album is not a page of question marks (menus.md row 12).
+    expect(empty).not.toContain('?');
+  });
+
+  it('lays the stickers out by chapter, in the story\'s order, each strip with its place and its count', () => {
+    const some = albumHtml(['gelehallon', 'gummibjorn', 'sockerbit']);
+    const strips = [...some.matchAll(/<section class="album-chapter" aria-label="([^"]+)">/g)].map((match) => match[1]);
+    expect(strips).toEqual(['Gården: 2 av 4', 'Granskogen: 1 av 4', 'Myren: 0 av 4', 'Berget: 0 av 4']);
+    expect(some.match(/class="chapter-picture"/g)).toHaveLength(4);
   });
 
   it('a kind he has found is a sticker in its colours, with its name', () => {
@@ -36,7 +45,7 @@ describe('the sticker album', () => {
     expect(got(all)).toBe(16);
     expect(all).toContain('16 av 16 sorter');
     expect(all).not.toContain('something else');
-    expect(all).not.toContain('class="missing"');
+    expect(grid(all)).not.toContain('class="missing"');
     expect(all).toContain('data-reward="golden"');
     expect(all).toContain(sv.album.golden);
     expect(all.match(/data-reward="golden"/g)).toHaveLength(1);

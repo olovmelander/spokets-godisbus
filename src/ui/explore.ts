@@ -4,15 +4,11 @@ import { stickerStyle } from './sticker';
 import { sv } from '../content/sv';
 import type { PlayerSave } from '../save/store';
 import { ghostNamed } from '../save/journey';
-import { DRAWING, mapState, mapSvg, PICTURE } from './map';
+import { chapterPicture, mapState, mapSvg } from './map';
 import { CROSS } from './icons';
 
 /** Each chapter's picture, in Moa's crayon (docs/ux-audit/menus.md row 18): her map's places, and four drawings more. */
-const CHAPTER_PICTURE: Record<string, string> = {
-  prolog: DRAWING.star, garden: PICTURE.home, granskog: PICTURE.forest, myren: PICTURE.bog, berget: PICTURE.mountain,
-  norrsken: DRAWING.aurora, epilog: DRAWING.party, byn: DRAWING.shop,
-};
-const chapterPicture = (id: string) => `<svg class="chapter-picture" viewBox="-26 -32 52 48" aria-hidden="true">${CHAPTER_PICTURE[id] ?? ''}</svg>`;
+
 /** The challenge's star: filled once its candy is found. */
 const challengeStar = (found: boolean) =>
   `<svg viewBox="-22 -24 44 42" aria-hidden="true"><path d="M0-22l6 12 13 2-9.5 9.5L12 15 0 8.5-12 15l2.5-13.5L-19-8l13-2z" fill="${found ? '#f4c542' : 'none'}" stroke="#806022" stroke-width="2.6" stroke-linejoin="round"/></svg>`;

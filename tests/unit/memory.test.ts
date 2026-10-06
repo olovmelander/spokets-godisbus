@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { STORY, chapterNumber } from '../../src/content/chapters';
-import { MEMORIES, MEMORY_RETURN_TIME, PICTURE_TIME, memoryAlbumHtml } from '../../src/ui/memory';
+import { MEMORIES, MEMORY_RETURN_TIME, PICTURE_TIME, memoryAlbumHtml, pictureTime } from '../../src/ui/memory';
 import { heightAt, playThrough } from '../robot/robot';
 
 const numbered = STORY.filter((chapter) => chapterNumber(chapter.id) > 0);
@@ -9,7 +9,9 @@ describe('the four memories', () => {
   it('lets the album replay only discovered memories, with the same existing cards', () => {
     const empty = memoryAlbumHtml({});
     expect(empty.match(/memory-missing/g)).toHaveLength(4);
-    expect(empty).not.toContain('<svg');
+    // An empty box shows the glowing curl that starts a memory, never one of its pictures (menus.md row 12).
+    expect(empty.match(/<svg viewBox="0 0 64 40"/g)).toHaveLength(4);
+    expect(empty).not.toContain('viewBox="0 0 320 200"');
     expect(empty).not.toContain('data-memory=');
     const found = memoryAlbumHtml({ garden: ['memory'], granskog: ['goal'], berget: ['memory'], unknown: ['memory'] });
     expect(found.match(/data-memory=/g)).toHaveLength(2);
@@ -39,8 +41,9 @@ describe('the four memories', () => {
   it('are six to ten seconds long, in three or four pictures', () => {
     for (const [id, pictures] of Object.entries(MEMORIES)) {
       expect(pictures.length, id).toBeGreaterThanOrEqual(3);
-      expect((pictures.length * PICTURE_TIME) / 1000, id).toBeGreaterThanOrEqual(6);
-      expect((pictures.length * PICTURE_TIME + MEMORY_RETURN_TIME) / 1000, id).toBeLessThanOrEqual(10);
+      expect((pictures.length * pictureTime(pictures.length)) / 1000, id).toBeGreaterThanOrEqual(6);
+      expect((pictures.length * pictureTime(pictures.length) + MEMORY_RETURN_TIME) / 1000, id).toBeLessThanOrEqual(10);
+      expect(pictureTime(pictures.length), id).toBeLessThanOrEqual(PICTURE_TIME);
     }
   });
 
