@@ -49,7 +49,7 @@ async function open(name, width, height, tier, start = { checkpoint: 4, flags: [
   await page.goto(`${origin}${BASE}?dev&debug&standin&course=berget&tier=${tier}`); await ready(page);
   await page.addStyleTag({ content: '#debug { display: none; }' });
   if (await page.locator('#startBtn').isVisible()) await page.locator('#startBtn').click();
-  if (await page.locator('#firstAventyr').isVisible()) await page.locator('#firstAventyr').click();
+  if (await page.locator('#startAventyr').isVisible()) await page.locator('#startAventyr').click();
   const state = () => page.evaluate(() => window.__godis.state());
   const info = () => page.evaluate(() => window.__godis.info());
   await until(state, (s) => s.grounded && !s.paused && s.steps > 60, `${name}: ready`);

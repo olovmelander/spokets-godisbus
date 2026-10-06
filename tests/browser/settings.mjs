@@ -230,10 +230,10 @@ try {
   console.log('settings: gamepad title, pause, reference and back');
   {
     const { page, state, finish } = await open('gamepad', {}, '?debug&standin&title&tier=low', installPad);
-    await padPress(page, 0); // A: Börja
-    check('gamepad A opens the first-start play styles', await page.locator('#firstAventyr').isVisible());
+    // A first start's two play styles are its start buttons; Äventyr has the focus.
+    check('the first start offers its play styles at once, with Äventyr focused', await page.locator('#startAventyr').isVisible() && await page.evaluate(() => document.activeElement?.id === 'startAventyr'));
     await padPress(page, 15); // D-pad right: Lugnt
-    check('gamepad D-pad changes menu focus', await page.evaluate(() => document.activeElement?.id === 'firstLugnt'));
+    check('gamepad D-pad changes menu focus', await page.evaluate(() => document.activeElement?.id === 'startLugnt'));
     await padPress(page, 0);
     check('gamepad A starts the chosen style', !(await state()).paused && (await state()).style === 'lugnt');
     await padPress(page, 9); // Start

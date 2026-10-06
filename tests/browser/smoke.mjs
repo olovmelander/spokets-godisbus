@@ -252,15 +252,20 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   const { page, state, finish } = await open('title-844x390', { viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 }, '?dev&debug&title');
   const before = await state();
   check('the title shows, and the game waits behind it', (await page.locator('#title').isVisible()) && before.title === true && before.paused === true);
-  check('with no saved game the button says Börja', (await page.locator('#startBtn .begin').isVisible()) && (await page.locator('#startOverBtn').isHidden()));
-  await page.tap('#startBtn');
-  check('Börja asks how to play, with two pictures', (await page.locator('#firstAventyr').isVisible()) && (await page.locator('#firstLugnt').isVisible()));
-  await page.tap('#firstLugnt');
+  // A first start: the two play styles, with their pictures, are the start buttons (first-minutes.md row 12).
+  check('with no saved game the two styles are the start buttons, and there is nothing to start over', (await page.locator('#startAventyr').isVisible()) && (await page.locator('#startLugnt').isVisible()) && (await page.locator('#startBtn').isHidden()) && (await page.locator('#startOverBtn').isHidden()));
+  check('the name is drawn, and its words are the heading', (await page.locator('#titleName .title-sign').isVisible()) && (await page.locator('#titleName').textContent()).includes('Elof och det stora godisäventyret'));
+  const card = await page.locator('#title .panel').boundingBox();
+  check('the card keeps to the left, and the picture shows beside it', card.x + card.width <= 844 * 0.6 && card.y >= 0 && card.y + card.height <= 390);
+  await page.tap('#startLugnt');
   const started = await until(state, (s) => s.said.length >= 1);
   check('choosing Lugnt starts the game on Lugnt', (await page.locator('#title').isHidden()) && started.style === 'lugnt' && started.paused === false, started.style);
   await page.reload();
   await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
-  check('with a saved game the button says Fortsätt', (await page.locator('#startBtn .resume').isVisible()) && (await page.locator('#startOverBtn').isVisible()));
+  check('with a saved game the button says Fortsätt', (await page.locator('#startBtn .resume').isVisible()) && (await page.locator('#startAventyr').isHidden()));
+  await page.tap('#playersBtn');
+  check('Börja om från början waits on the players\' page', await page.locator('#startOverBtn').isVisible());
+  await page.tap('#playersBack');
   await page.tap('#startBtn');
   const resumed = await state();
   check('Fortsätt goes on with the same style', resumed.title === false && resumed.style === 'lugnt', resumed.style);

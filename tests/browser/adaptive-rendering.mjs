@@ -81,8 +81,9 @@ try {
   check('selected Low stays within its pixel budget', title.width * title.height <= 1e6);
   await frames(page, 5);
   check('an idle title makes no dynamic resolution allocations', (await info(page)).resizes === title.resizes);
-  await page.click('#startBtn');
-  if (await page.locator('#firstAventyr').isVisible()) await page.click('#firstAventyr');
+  // A saved game has Fortsätt; a first start, its play styles as the start buttons.
+  if (await page.locator('#startBtn').isVisible()) await page.click('#startBtn');
+  else await page.click('#startAventyr');
   await page.waitForFunction(() => window.__godis.info().resolutionSteps >= 1, null, { timeout: 60000 });
   const reduced = await info(page);
   check('overloaded play reduces resolution by exactly 0.1 without changing tier', reduced.tier === 'low' && Math.abs(reduced.maxPixelRatio - reduced.pixelRatio - reduced.resolutionSteps * 0.1) < 1e-8);

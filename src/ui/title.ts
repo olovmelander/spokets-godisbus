@@ -28,11 +28,16 @@ export interface Title {
   back(): void;
 }
 
-/** Title and local player management. Names enter the DOM only as text, never as markup. */
+/**
+ * Title and local player management. Names enter the DOM only as text, never as markup.
+ * A first start offers the two play styles as its start buttons, one tap each; a saved game has *Fortsätt*. Under
+ * either, round buttons for the players, the settings, a code and, once the story is told, *Utforska vidare*
+ * (docs/ux-audit/first-minutes.md rows 7 and 12). Each page of the title has its way back at its top left (row 10).
+ */
 export function createTitle(doc: Document, handlers: TitleHandlers): Title {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const backdrop = byId('title');
-  const sections = ['titleFront', 'titleStyles', 'titlePlayers', 'titleNewPlayer', 'titleConfirm'];
+  const sections = ['titleFront', 'titleStyles', 'titlePlayers', 'titleNewPlayer', 'titleConfirm', 'titleCode'];
   let open = false;
   let saved = false;
   let state: TitlePlayers = { currentId: 'elof', players: [], available: true, unreadable: false };
@@ -50,9 +55,8 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
   function showStyles(): void { section('titleStyles', 'firstAventyr'); }
   function front(): void {
     pendingName = null;
-    byId('codeForm').hidden = true;
     byId('codeWrong').hidden = true;
-    section('titleFront', state.unreadable ? 'playersBtn' : 'startBtn');
+    section('titleFront', state.unreadable ? 'playersBtn' : saved ? 'startBtn' : 'startAventyr');
     handlers.onFront?.();
   }
   function confirm(text: string, action: () => boolean | void | Promise<boolean | void>, from: string): void {
@@ -115,8 +119,16 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
     if (saved) handlers.onStart(null);
     else showStyles();
   });
+  // A first start: the style is the start button.
+  for (const [id, style] of [['startAventyr', 'aventyr'], ['startLugnt', 'lugnt']] as const) {
+    byId(id).addEventListener('click', () => {
+      pendingName = null;
+      handlers.onStart(style);
+    });
+  }
   byId('titleSettingsBtn').addEventListener('click', () => handlers.onSettings?.());
-  byId('startOverBtn').addEventListener('click', () => confirm(sv.players.restartAsk.replace('{name}', state.players.find(p => p.id === state.currentId)?.name ?? 'Elof'), handlers.onStartOver, 'titleFront'));
+  // Börja om från början is on the players' page, and its question goes back there (first-minutes.md row 7).
+  byId('startOverBtn').addEventListener('click', () => confirm(sv.players.restartAsk.replace('{name}', state.players.find(p => p.id === state.currentId)?.name ?? 'Elof'), handlers.onStartOver, 'titlePlayers'));
   byId('playerConfirmNo').addEventListener('click', () => {
     if (busy) return;
     if (confirmReturn === 'titlePlayers') players();
@@ -132,12 +144,12 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
   const form = byId<HTMLFormElement>('codeForm');
   const field = byId<HTMLInputElement>('codeInput');
   const wrong = byId('codeWrong');
+  // A code has a page of its own (first-minutes.md row 15).
   byId('codeBtn').addEventListener('click', () => {
-    form.hidden = !form.hidden;
     wrong.hidden = true;
-    if (!form.hidden) field.focus();
-    else handlers.onFront?.();
+    section('titleCode', 'codeInput');
   });
+  byId('codeBack').addEventListener('click', front);
   field.addEventListener('input', () => (wrong.hidden = true));
   form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -159,18 +171,20 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
       if (playerState) state = playerState;
       open = true;
       backdrop.dataset.saved = String(saved);
+      backdrop.classList.remove('leaving');
       backdrop.hidden = false;
+      // Nothing of the play shows under the title: no bag, corners or controls for a game not begun (row 8).
+      doc.body.classList.add('at-title');
+      // The player is named on the players' button, not on a line of their own (first-minutes.md row 13).
       const current = state.players.find(p => p.id === state.currentId);
-      byId('currentPlayer').textContent = current?.name ?? '';
-      byId('currentPlayer').hidden = !current;
+      byId('currentPlayer').textContent = current?.name ?? sv.players.new;
       byId('startOverBtn').hidden = !saved && !state.unreadable;
       byId('playersBtn').hidden = !state.available && state.players.length === 0;
-      byId('playersBtn').querySelector('span')!.textContent = state.players.length ? sv.players.choose : sv.players.new;
       const indexUnreadable = state.unreadable && state.players.length === 0;
       byId<HTMLButtonElement>('startOverBtn').disabled = indexUnreadable;
       byId('playerUnreadable').textContent = indexUnreadable ? sv.players.indexUnreadable : sv.players.preserved;
       byId<HTMLButtonElement>('newPlayerBtn').disabled = !state.available || indexUnreadable;
-      byId<HTMLButtonElement>('startBtn').disabled = state.unreadable;
+      for (const id of ['startBtn', 'startAventyr', 'startLugnt']) byId<HTMLButtonElement>(id).disabled = state.unreadable;
       byId<HTMLButtonElement>('codeBtn').disabled = state.unreadable;
       byId<HTMLButtonElement>('titleSettingsBtn').disabled = state.unreadable;
       byId('playerUnreadable').hidden = !state.unreadable;
@@ -182,8 +196,21 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
       if (!byId('titleConfirm').hidden) byId('playerConfirmNo').click();
       else if (!byId('titleStyles').hidden && pendingName !== null) section('titleNewPlayer', 'playerName');
       else if (!byId('titleNewPlayer').hidden) players();
+      // From the code's page, too, Back goes to the front.
       else front();
     },
-    hide() { open = false; backdrop.hidden = true; },
+    hide() {
+      open = false;
+      doc.body.classList.remove('at-title');
+      // The card lifts away over the picture as the game begins: one movement from the tap to the story
+      // (first-minutes.md row 16). Without motion it simply goes.
+      const still = doc.body.classList.contains('calm') || doc.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (still || backdrop.hidden) { backdrop.hidden = true; return; }
+      backdrop.classList.add('leaving');
+      doc.defaultView?.setTimeout(() => {
+        backdrop.classList.remove('leaving');
+        if (!open) backdrop.hidden = true;
+      }, 400);
+    },
   };
 }

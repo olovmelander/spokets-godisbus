@@ -158,6 +158,8 @@ try {
       };
     }));
     await page.goto(`${origin}${BASE}?dev&debug&standin&tier=low&course=berget&title`); await ready(page);
+    // Börja om från början is on the players' page (docs/ux-audit/first-minutes.md row 7).
+    await page.click('#playersBtn');
     await page.click('#startOverBtn');
     await Promise.all([page.waitForEvent('framenavigated'), page.click('#playerConfirmYes')]);
     await ready(page);

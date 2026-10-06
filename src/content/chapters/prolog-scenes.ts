@@ -22,7 +22,32 @@ const PALM = { x: STAR + 1.0, y: 1.75, z: -0.55 };
 /** The deck's railing, along its far side (ends.ts, `prologue.rail`). */
 const RAIL = { z: -3.4 };
 
+/**
+ * The morning's first shot, alive, under the title (docs/ux-audit/first-minutes.md row 4): Pappa carves and the
+ * curls fly, Moa draws, Mamma sips, Bertil watches. The title shows it; the director never plays it. "Börja" goes
+ * on into the morning from this same shot, with no black between (row 16).
+ */
+export const TITLE_TABLEAU: SceneDef = {
+  id: 'title',
+  seconds: 0,
+  by: { done: 'scene:morgon' },
+  stage: {
+    shots: [{ at: 0, x: 5.85, y: 2.3, height: 2.5, width: 3.8, eye: 0.15, move: 0.01 }],
+    actors: {
+      pappa: [{ at: 0, x: 5.8, y: 0, z: -3.15, face: 0.25, move: 0.01, act: 'carve', holds: 'knife' }],
+      // As far carved as the morning has it when the title gives way to it.
+      ghost: [{ at: 0, x: 5.95, y: 2.1, z: -1.95, face: 0.25, move: 0.01, act: 'carved', rough: 0.76 }],
+      mamma: [{ at: 0, x: 10.4, y: 0, z: -2.0, face: 0.4, move: 0.01, act: 'sip', holdsLeft: 'mug', aim: { x: 6, y: 2.5, z: -2 } }],
+      bertil: [{ at: 0, x: 7.7, y: 0, z: -3.3, face: 0.28, move: 0.01, act: 'look', aim: { x: 5.9, y: 2.2, z: -2 } }],
+      moa: [{ at: 0, x: 9.05, y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }],
+    },
+    elof: [{ at: 0, act: 'watch', aim: { x: 5.9, y: 2.3, z: -2 } }],
+    fx: [{ at: 0, kind: 'shavings', from: { x: 5.95, y: 2.4, z: -1.9 }, seconds: 3600 }],
+  },
+};
+
 export const PROLOG_SCENES: SceneDef[] = [
+  TITLE_TABLEAU,
   {
     // 1. Lördagsmorgon. Pappa carves the ghost out of a block, the curls fly; Moa draws; Bertil's hand creeps
     // towards the Saturday bag, and Mamma's look stops it. Pappa blows the last shavings off, sets the ghost

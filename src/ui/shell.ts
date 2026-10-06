@@ -42,6 +42,27 @@ const TURN = svg(
   `<rect x="4" y="9" width="9" height="16" rx="2" ${line} stroke-width="1.8"/><rect x="15" y="16" width="16" height="9" rx="2" ${line} stroke-width="1.8" stroke-dasharray="2 2.5"/><path d="M14 6c5 0 9 2.5 10.5 7m0 0-3-1.4m3 1.4 1.2-3" ${line} stroke-width="1.8"/>`,
   '0 0 34 28',
 );
+/**
+ * The game's name as Pappa's sign (docs/ux-audit/first-minutes.md row 5, style-and-sound.md row 4): a plank of linden
+ * hung on two strings, "Elof och det stora" painted blue, and "godisäventyret" a letter in each candy colour inside the
+ * dark edge of its cut, in the game's own type. The words are the heading's, for a screen reader.
+ */
+const CANDY_PAINT = ['#e8483f', '#f6c445', '#58b368', '#4a90d9', '#ef7fb0', '#f08a3c'];
+const painted = (word: string) => [...word].map((letter, i) => `<tspan fill="${CANDY_PAINT[i % CANDY_PAINT.length]}">${letter}</tspan>`).join('');
+const TITLE_SIGN = `<svg class="title-sign" viewBox="0 0 620 172" aria-hidden="true"><path d="M150 2v22M470 2v22" stroke="#7b5a36" stroke-width="3" stroke-linecap="round"/><g transform="rotate(-1 310 96)"><rect x="8" y="20" width="604" height="148" rx="16" fill="#e6cfa4" stroke="#a17443" stroke-width="3"/><path d="M30 52c120-6 230 6 380-2s130 4 180 0M40 132c140 6 260-6 380 2s110-2 160 2" fill="none" stroke="#a17443" stroke-width="1.4" opacity="0.35"/><g font-weight="700" text-anchor="middle"><text x="310" y="70" font-size="40" fill="#2b5888">Elof och det stora</text><text x="310" y="146" font-size="76" stroke="#5a3a1e" stroke-width="5" stroke-linejoin="round" paint-order="stroke" textLength="560" lengthAdjust="spacingAndGlyphs">${painted('godisäventyret')}</text></g></g></svg>`;
+/** Elof as Moa's map draws him: a yellow tuft of hair on a blue shirt. */
+const elofAt = (x: number, y: number, limbs: string) =>
+  `<path d="${limbs}" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M${x - 6} ${y + 6}h12l2.5 14h-17z" fill="#8fb4dc" stroke="#3d2b1f" stroke-width="1.8" stroke-linejoin="round"/><circle cx="${x}" cy="${y}" r="7" fill="#f4c542" stroke="#3d2b1f" stroke-width="1.8"/>`;
+/** Äventyr: Elof in mid-leap over the dotted arc of his jump (first-minutes.md row 12). */
+const START_LEAP = svg(
+  `<path d="M8 72C30 16 82 10 114 58" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="0.5 8" opacity="0.8"/>${elofAt(64, 18, 'M58 27 47 17M70 27l11-11M60 40l-9 11M68 40l12 7')}`,
+  '0 0 120 80',
+);
+/** Lugnt: Elof strolling, with the jay beside him. */
+const START_STROLL = svg(
+  `<path d="M6 72h78" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.6"/>${elofAt(34, 24, 'M29 33l-5 12M39 33l5 11M32 46l-4 24M36 46l6 24')}<path d="M58 40c4-6 12-6 15-1l5-1-4 4c0 5-4 8-10 8h-5c-3 0-4-4-1-10z" fill="#6b88c4" stroke="#3d2b1f" stroke-width="1.6" stroke-linejoin="round"/><circle cx="68" cy="41" r="1.3" fill="#3d2b1f"/><path d="M62 50v5m4-5v5" stroke="#3d2b1f" stroke-width="1.6" stroke-linecap="round"/>`,
+  '0 0 90 80',
+);
 /** A paper bag with a folded top. The red inside rises as the bag fills (plan §4.3). */
 const BAG =
   '<svg viewBox="0 0 48 56" aria-hidden="true"><path d="M8 15h32l-3 37H11z" fill="#f1dfb8"/><rect class="bag-fill" x="9" y="16" width="30" height="36" fill="#e8483f"/><path d="M8 15h32l-3 37H11z" fill="none" stroke="#7b5a36" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 15l4-9 4 6 4-7 4 7 4-7 4 7 4-6 4 9z" fill="#f1dfb8" stroke="#7b5a36" stroke-width="2.5" stroke-linejoin="round"/></svg>';
@@ -244,39 +265,45 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
      <div class="panel-back title" id="title" hidden>
        <div class="panel" role="dialog" aria-modal="true" aria-labelledby="titleName">
          <div id="titleFront">
-           <h1 id="titleName">${sv.title}</h1>
-           <div class="story-title" id="titleStory" hidden><b id="titleStoryPurpose"></b><p id="titleStoryRecap"></p></div>
+           <h1 id="titleName" class="title-name"><span class="sr-only">${sv.title}</span>${TITLE_SIGN}</h1>
+           <div class="story-title" id="titleStory" hidden><span class="story-card" id="titleStoryCard"></span><b id="titleStoryPurpose"></b><p id="titleStoryRecap"></p></div>
            <p class="rotate">${TURN}<span>${sv.start.rotate}</span></p>
-           <p id="currentPlayer" class="current-player" hidden></p>
            <p id="playerUnreadable" role="status" hidden>${sv.players.preserved}</p>
+           <div class="start-styles" id="startStyles">
+             <button class="start-style go" id="startAventyr" type="button">${START_LEAP}<b>${p.aventyr}</b><small>${p.aventyrHint}</small></button>
+             <button class="start-style" id="startLugnt" type="button">${START_STROLL}<b>${p.lugnt}</b><small>${p.lugntHint}</small></button>
+           </div>
            <button class="wide go" id="startBtn" type="button">${PLAY}<span class="begin">${sv.start.begin}</span><span class="resume">${sv.start.resume}</span></button>
-           <button class="wide" id="playersBtn" type="button" hidden>${PEOPLE}<span>${sv.players.choose}</span></button>
-           <button class="wide" id="titleSettingsBtn" type="button">${sv.players.settings}</button>
-           <button class="wide small" id="startOverBtn" type="button" hidden>${sv.start.over}</button>
-           <button class="wide small" id="codeBtn" type="button">${sv.code.have}</button>
-           <button class="wide" id="titleExplore" type="button" hidden><span aria-hidden="true">♧</span><span>${sv.explore.title}</span></button>
-           <form class="code-form" id="codeForm" hidden>
-             <input id="codeInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" maxlength="40" aria-label="${sv.code.hint}" placeholder="${sv.code.hint}">
+           <div class="round-row">
+             <button class="round" id="playersBtn" type="button" hidden>${PEOPLE}<span id="currentPlayer"></span></button>
+             <button class="round" id="titleSettingsBtn" type="button">${COG}<span>${sv.players.settings}</span></button>
+             <button class="round" id="codeBtn" type="button">${TAG}<span>${sv.code.short}</span></button>
+             <button class="round" id="titleExplore" type="button" hidden>${FOLDED_MAP}<span>${sv.explore.short}</span></button>
+           </div>
+         </div>
+         <div id="titleCode" hidden>
+           <div class="section-head"><button class="round-back" id="codeBack" type="button" aria-label="${sv.players.back}">${BACK}</button><h2 id="codeTitle">${sv.code.have}</h2></div>
+           <form class="code-form" id="codeForm">
+             <input id="codeInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" maxlength="40" aria-labelledby="codeTitle" placeholder="${sv.code.hint}">
              <button class="wide go" id="codeGo" type="submit">${sv.code.open}</button>
              <p class="code-wrong" id="codeWrong" role="alert" hidden>${sv.code.wrong}</p>
            </form>
          </div>
          <div id="titleStyles" hidden>
-           <button class="wide small" id="stylesBack" type="button">${sv.players.back}</button>
-           <h2 id="howTitle">${sv.start.how}</h2>
+           <div class="section-head"><button class="round-back" id="stylesBack" type="button" aria-label="${sv.players.back}">${BACK}</button><h2 id="howTitle">${sv.start.how}</h2></div>
            <div class="styles" role="group" aria-labelledby="howTitle">
              <button class="style" id="firstAventyr" type="button">${LEAP}<b>${p.aventyr}</b><small>${p.aventyrHint}</small></button>
              <button class="style" id="firstLugnt" type="button">${STROLL}<b>${p.lugnt}</b><small>${p.lugntHint}</small></button>
            </div>
          </div>
          <div id="titlePlayers" hidden>
-           <h2>${sv.players.choose}</h2>
-           <button class="wide small" id="playersBack" type="button">${sv.players.back}</button>
+           <div class="section-head"><button class="round-back" id="playersBack" type="button" aria-label="${sv.players.back}">${BACK}</button><h2>${sv.players.title}</h2></div>
            <div id="playerList"></div>
            <button class="wide" id="newPlayerBtn" type="button">${PEOPLE}<span>${sv.players.new}</span></button>
+           <button class="wide small" id="startOverBtn" type="button" hidden>${sv.start.over}</button>
          </div>
          <div id="titleNewPlayer" hidden>
-           <button class="wide small" id="newPlayerBack" type="button">${sv.players.back}</button>
+           <div class="section-head"><button class="round-back" id="newPlayerBack" type="button" aria-label="${sv.players.back}">${BACK}</button><h2>${sv.players.new}</h2></div>
            <form class="code-form player-form" id="newPlayerForm">
              <label for="playerName">${sv.players.name}</label>
              <input id="playerName" required type="text" autocomplete="off" spellcheck="false" enterkeyhint="next" aria-describedby="playerLocal">

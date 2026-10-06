@@ -348,6 +348,8 @@ export const sv = {
   },
   explore: {
     title: 'Utforska vidare',
+    // The title's round button.
+    short: 'Utforska',
     hint: 'Välj en plats. Allt du har hittat finns kvar.',
     routeFound: 'Utmaningsgodiset hittat',
     routeWaiting: 'En utmaningsväg att utforska',
@@ -407,7 +409,8 @@ export const sv = {
   code: {
     // On a chapter's card, over the next chapter's three words.
     next: 'Kod till nästa kapitel',
-    // On the title.
+    // On the title: the round button's word, and its page's heading (docs/ux-audit/first-minutes.md rows 7 and 15).
+    short: 'Kod',
     have: 'Jag har en kod',
     hint: 'Skriv de tre orden',
     open: 'Öppna',
@@ -425,6 +428,8 @@ export const sv = {
 
   players: {
     choose: 'Byt spelare', new: 'Ny spelare', name: 'Vad vill du heta?',
+    // The players' page's heading.
+    title: 'Spelare',
     local: 'Namnet stannar på den här enheten. Alla spelar som Elof.',
     next: 'Välj spelsätt', back: 'Tillbaka', settings: 'Inställningar',
     remove: 'Ta bort {name}', removeAsk: 'Ta bort {name} och allt som spelaren har sparat?',

@@ -2,6 +2,19 @@
 
 ## State (5 October 2026)
 
+- **The title over the living morning** (6 October, a cloud session; `docs/ux-audit.md`, the first half of step 6).
+  The title lies over the game's own picture, alive: on a first start the morning's first shot, Pappa carving with
+  the curls flying and the family at the table; a game taken up again shows its own place, its wind and far life
+  moving. It is dark only behind its card on the left (from below on an upright phone), and nothing of the play shows
+  under it. *Börja* goes on into the morning from that same shot with no black between, and the card lifts away as
+  the game begins. The name is Pappa's sign: a linden plank on two strings, *Elof och det stora* painted blue and
+  *godisäventyret* a letter in each candy colour. A first start's two play styles are its start buttons, with
+  Elof mid-leap for *Äventyr* and strolling with the jay for *Lugnt*: one tap starts. A saved game has *Fortsätt*,
+  with the chapter's card word over what he is doing; a first start has no recap. Under them are round buttons: the
+  player (named), *Inställningar*, *Kod* and, once the story is told, *Utforska*. *Börja om från början* is on the
+  players' page, a code has a page of its own, and every page of the title has its way back at its top left. Not
+  yet: a press made while loading, the HUD coming in as the prologue needs it, the place's air under the title
+  (step 8), players with pictures and a held press to remove one, and the code as three fields.
 - **Every panel the same** (6 October, a cloud session; `docs/ux-audit.md`, step 5's small defects). The photo
   viewer and *Utforska vidare* have Pause's header: the title, and a drawn ✕ that stays put. A photo is a print laid
   on the paper, as big as the screen allows, with its name on a scrap under it, round arrows at its sides and the
@@ -1933,10 +1946,9 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
-- **The UX audit's defects, not yet mended** (`docs/ux-audit.md`, in the order of the work): on a phone held
-  sideways two menus come before the first input, and a tap made while loading is dropped (step 6); the panels are
-  still cream boxes with typed symbols, and a menu's taps are silent (steps 7 and 8); a chapter's page is still a
-  dialog (step 9).
+- **The UX audit's defects, not yet mended** (`docs/ux-audit.md`, in the order of the work): a start press made while
+  the game loads is dropped (step 6's second half); the panels are still cream boxes, and a menu's taps are silent
+  (steps 7 and 8); a chapter's page is still a dialog (step 9).
 - **The prologue's stand-ins act roughly** (5 October): box figures in place of the family, so a kneel or a
   shrug reads stiffly, and Pappa's hand under Elof is a block. The private models have not been posed by the new
   acting yet; their bones' signs follow Elof's doll and are untested with it (Olov's computer).

@@ -104,8 +104,8 @@ try {
   await page.locator('#setMusic').uncheck();
   await page.keyboard.press('Escape');
   check('title settings return to title without starting play', await page.locator('#title').isVisible() && (await state()).paused);
-  await page.locator('#startBtn').click();
-  await page.locator('#firstAventyr').click();
+  // A first start: its play styles are the start buttons.
+  await page.locator('#startAventyr').click();
   await home();
   const first = JSON.parse((await read())['godisbus.v1.player.elof']);
   check('first start creates Elof with the chosen settings', first.name === 'Elof' && first.settings.followFinger && first.settings.lefty && !first.settings.music);
@@ -125,12 +125,14 @@ try {
   await reloadAction('[data-player=elof]', 'elof');
   check('switching restores Elof settings and progress', (await state()).settings.followFinger && (await state()).settings.style === 'aventyr');
   const untouched = (await read())[`godisbus.v1.player.${newId}`];
+  // Börja om från början is on the players' page.
+  await page.locator('#playersBtn').click();
   await page.locator('#startOverBtn').click();
   await page.keyboard.press('Escape');
-  check('Escape cancels reset without deleting progress', await page.locator('#titleFront').isVisible() && !!(await read())['godisbus.v1.player.elof']);
+  check('Escape cancels reset without deleting progress', await page.locator('#titlePlayers').isVisible() && !!(await read())['godisbus.v1.player.elof']);
   await page.locator('#startOverBtn').click();
   await reloadAction('#playerConfirmYes', 'elof');
-  check('confirmed reset retains name and removes only current progress', await page.locator('#startBtn .begin').isVisible() && await page.locator('#currentPlayer').textContent() === 'Elof' && (await read())[`godisbus.v1.player.${newId}`] === untouched);
+  check('confirmed reset retains name and removes only current progress', await page.locator('#startAventyr').isVisible() && await page.locator('#currentPlayer').textContent() === 'Elof' && (await read())[`godisbus.v1.player.${newId}`] === untouched);
   await page.evaluate(async (second) => {
     const canvas = document.createElement('canvas'); canvas.width = canvas.height = 8;
     canvas.getContext('2d').fillRect(0, 0, 8, 8);
@@ -167,14 +169,15 @@ try {
   // A newer save is not silently replaced by the title, visibility or autosaving.
   await page.evaluate(() => localStorage.setItem('godisbus.v1.player.elof', '{"v":99,"name":"Elof"}'));
   await page.reload(); await ready(page);
-  check('unreadable save has a safe title with start disabled', await page.locator('#playerUnreadable').isVisible() && await page.locator('#startBtn').isDisabled());
+  check('unreadable save has a safe title with start disabled', await page.locator('#playerUnreadable').isVisible() && await page.locator('#startBtn').isDisabled() && await page.locator('#startAventyr').isDisabled() && await page.locator('#startLugnt').isDisabled());
   await frames(page, 5);
   check('unreadable save remains untouched', (await read())['godisbus.v1.player.elof'] === '{"v":99,"name":"Elof"}');
+  await page.locator('#playersBtn').click();
   await page.locator('#startOverBtn').click();
   await reloadAction('#playerConfirmYes', 'elof');
-  check('explicit confirmation can reset an unreadable save', await page.locator('#startBtn .begin').isVisible());
+  check('explicit confirmation can reset an unreadable save', await page.locator('#startAventyr').isVisible());
   // A failed create stays in the form and must not claim success or change the current player.
-  await page.locator('#startBtn').click(); await page.locator('#firstAventyr').click(); await home();
+  await page.locator('#startAventyr').click(); await home();
   await page.locator('#playersBtn').click(); await page.locator('#newPlayerBtn').click();
   await page.locator('#playerName').fill('Another');
   await page.locator('#newPlayerForm button[type=submit]').click();

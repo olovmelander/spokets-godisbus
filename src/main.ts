@@ -40,7 +40,7 @@ import { createPhotoAlbum } from './ui/photos';
 import { createOffline } from './platform/offline';
 import { createStoryPanel } from './ui/story';
 import { createSceneUi } from './ui/scene';
-import { endsInScene, sceneBeats } from './sim/scene';
+import { endsInScene, sceneBeats, sceneWaits } from './sim/scene';
 import { createDevicePlay, createHighLanding, isAndroid, isApple } from './platform/device';
 import './ui/ui.css';
 
@@ -468,6 +468,18 @@ function start(): void {
     if (!platformBlocked() && !menuOpen()) askedForHelp = true;
   });
 
+  // The title over the morning's first shot, alive (docs/ux-audit/first-minutes.md row 4): while the morning is
+  // still to come, the title shows its tableau, and "Börja" goes on into the morning from that same shot, past its
+  // fade from black (row 16). Any other game shows its own place, alive.
+  const morning = chapter.scenes?.find((scene) => scene.id === 'morgon');
+  const hasTableau = chapter.scenes?.some((scene) => scene.id === 'title') ?? false;
+  const handoff = Math.max(0, ...(morning?.stage?.fade ?? []).map((key) => key.at + (key.move ?? 0)));
+  let tableauSeconds = 0;
+  // Where a game taken up again is, as its chapter's card says it, over the title's recap (first-minutes.md row 9).
+  const cardWord = chapter.scenes?.find((scene) => scene.id === 'card' || scene.id === 'morgon')?.stage?.words?.find((word) => word.kind === 'caption')?.text;
+  byId('titleStoryCard').textContent = cardWord ? (sv.scene as Record<string, string>)[cardWord] ?? '' : '';
+  const tableauShown = () => hasTableau && morning !== undefined && title.open && !ended && game.sim.sceneFrame === null && sceneWaits(morning, game.sim.flags);
+
   // The title (plan §6.10). A chapter starts behind it; the test course and a debug session start at once.
   // ?title shows it in a debug session too, for the browser test.
   function showTitle(): void {
@@ -521,6 +533,7 @@ function start(): void {
     onStart(style) {
       if (!offline.canStart() || platformBlocked() || store.load().kind === 'unreadable') return;
       begun = true;
+      if (tableauShown()) game.sim.scene?.openAt('morgon', handoff);
       if (style) {
         settings = changeStyle(settings, style);
         game.sim.options = simOptions(settings);
@@ -561,7 +574,7 @@ function start(): void {
   });
   const offline = createOffline({
     isTitle: () => title.open && !ending.open && !explore.open && bootReady && !contextLost && byId('message').hidden && !profileMutationPending
-      && !byId('titleFront').hidden && byId('codeForm').hidden === true,
+      && !byId('titleFront').hidden,
     setUpdateLock: (locked) => { byId('title').inert = locked; },
   });
   const input = createInput(
@@ -889,10 +902,13 @@ function start(): void {
       writeSave();
     }
     const atGoal = game.sim.flags.has('goal');
+    const tableau = tableauShown();
+    if (tableau) tableauSeconds += dt;
     view.render({
-      prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: menuOpen() ? 0 : dt, atGoal,
+      // Under the title the place lives on (first-minutes.md row 4); under any other menu it stands still.
+      prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: menuOpen() && !title.open ? 0 : dt, atGoal,
       collected: game.sim.collected, side: game.sim.collectedSide, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
-      prologue: game.sim.prologue?.frame, scene: game.sim.sceneFrame, ending: ending.seconds,
+      prologue: game.sim.prologue?.frame, scene: tableau ? { id: 'title', seconds: tableauSeconds } : game.sim.sceneFrame, ending: ending.seconds,
       flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts, help: game.sim.help,
       berries: game.sim.berries,
       noteHits: game.sim.noteHits,
