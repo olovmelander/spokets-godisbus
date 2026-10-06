@@ -221,7 +221,9 @@ function start(): void {
   const isKlonk = () => ghostNamed(save.flags) || (chapter.id === 'epilog' && game.sim.flags.has('beat:named'));
   // The bag counts all the candy there is: the trail's, and the side candy off it.
   const hud = createHud(document, chapter.candy.length + (chapter.side?.length ?? 0), isKlonk,
-    () => (settings.slower ? 1.25 : 1) * (settings.bigText ? 1.2 : 1));
+    () => (settings.slower ? 1.25 : 1) * (settings.bigText ? 1.2 : 1),
+    // Something to use has come in reach: one soft knock of wood (in-play.md row 7).
+    () => audio.ui('press'));
   const story = createStoryPanel(document, {
     named: isKlonk,
     answer(answer) {

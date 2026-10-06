@@ -1,5 +1,6 @@
 import { sv } from '../content/sv';
 import { CHECK, CROSS } from './icons';
+import { faceBody } from './faces';
 import { createStrokeUI, strokeHtml } from './story-stroke';
 import { FRIENDS, PARTY_GUESTS, SWEETS, partyReward, sharingReward, type Friend, type PartyGuest, type StoryAction, type StoryAnswer, type Sweet } from '../sim/story';
 
@@ -9,10 +10,9 @@ const pictures: Record<Sweet, string> = {
   skumbanan: '<path d="M12 20q6 42 43 19q-10 29-38 10Q2 38 12 20z" fill="#e6be42" stroke="#fff0a4" stroke-width="2"/>',
   lingon: '<circle cx="34" cy="38" r="16" fill="#b33748"/><path d="M34 23q-2-17 12-16q-1 12-12 16" fill="#789451"/><circle cx="29" cy="33" r="3" fill="#e99994"/>',
 };
-const familyPortrait = (shirt: string, hair: string) => `<path d="M13 62V42q20-15 42 0v20" fill="${shirt}"/><circle cx="34" cy="24" r="18" fill="#dfb586"/><path d="M16 23Q12 2 34 2t18 23L42 13l-13 4-9-2z" fill="${hair}"/><path d="M27 29q7 8 14 0" fill="none" stroke="#765039" stroke-width="2"/>`;
+// The family as their bubbles draw them, in their signs' colours: one cast everywhere (story-presentation.md row 19).
 const portraits = {
-  mamma: familyPortrait('#829887', '#7a5739'), pappa: familyPortrait('#a88359', '#544137'),
-  moa: familyPortrait('#758dab', '#b79668'), bertil: familyPortrait('#baa061', '#976e46'),
+  mamma: faceBody('mamma'), pappa: faceBody('pappa'), moa: faceBody('moa'), bertil: faceBody('bertil'),
   tragubbe: '<path d="M18 58V31h30v27" fill="#bf8c58"/><circle cx="33" cy="27" r="13" fill="#dfbc84"/><path d="M16 21L33 2l18 19z" fill="#9c6a49"/>',
   spoket: '<path d="M14 55V26q0-23 20-23t20 23v29l-8-5-8 5-8-5-8 5z" fill="#e7d4a6"/><circle cx="27" cy="23" r="3"/><circle cx="40" cy="23" r="3"/><path d="M37 38h19v20H37z" fill="#a37243"/>',
   jay: '<path d="M14 39q3-27 25-21q19 5 11 26L29 54z" fill="#979ca0"/><path d="M15 36l18-8-4 19z" fill="#b08057"/><path d="M47 23l17 5-15 5z" fill="#555454"/><circle cx="44" cy="24" r="3"/>',
@@ -62,7 +62,7 @@ export function createStoryPanel(doc: Document, handlers: { named?(): boolean; a
       button.disabled = !chosen || !(kind === 'party' ? isGuest(friend) && partyReward(flags, friend, chosen) : isFriend(friend) && sharingReward(flags, friend, chosen));
       button.querySelector('small')!.innerHTML = given ? `${CHECK}${sv.sharing.given}` : '';
     }
-    byId('storyStatus').textContent = chosen ? sv.sharing.nowFriend.replace('{sweet}', sv.sharing.sweets[chosen]) : '';
+    byId('storyStatus').textContent = chosen ? sv.sharing.nowFriend.replace('{sweet}', sv.sharing.sweets[chosen]).replace('{it}', sv.sharing.it[chosen]) : '';
   }
   for (const sweet of SWEETS) element.querySelector(`[data-sweet="${sweet}"]`)!.addEventListener('click', () => { chosen = sweet; draw(); });
   for (const friend of ALL_FRIENDS) element.querySelector(`[data-friend="${friend}"]`)!.addEventListener('click', () => {

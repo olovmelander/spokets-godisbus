@@ -135,7 +135,7 @@ export function mapSvg(state: MapState | null, named = false, wayOn = false): st
   // sheet for its note.
   let box = '0 -16 380 180';
   if (!state.unfinished) {
-    const xs = [...state.drawn.map((place) => AT[place].x), here.x - 22, ...(to ? [to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)] : []),
+    const xs = [...state.drawn.map((place) => AT[place].x), here.x - 22, here.x - 30, ...(to ? [to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)] : []),
       // Names either side of a shared place reach further out.
       ...(together ? [here.x - 70, here.x + 60] : [])];
     const ys = state.drawn.map((place) => AT[place].y);

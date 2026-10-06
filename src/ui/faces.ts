@@ -21,3 +21,5 @@ const FACES: Record<Speaker, string> = {
 };
 
 export const faceSvg = (who: Speaker): string => `<svg viewBox="0 0 68 64" aria-hidden="true">${FACES[who]}</svg>`;
+/** The same faces, as the inside of a 68×64 picture: for the sharing panel's family. */
+export const faceBody = (who: Speaker): string => FACES[who];

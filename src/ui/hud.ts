@@ -3,6 +3,7 @@ import { sv } from '../content/sv';
 import type { Speaker, Verb } from '../sim/types';
 import { faceSvg } from './faces';
 import { verbIcon } from './verbs';
+import { candyRows } from './rolls';
 
 /**
  * What the page shows over the game while it is played: the candy bag in the corner (plan §4.3), the word
@@ -63,7 +64,8 @@ const HUSH_TIME = 1.6;
 /**
  * `reading` stretches how long a bubble stays: longer with *Lugnare tempo* and with *Större text*.
  */
-export function createHud(doc: Document, total: number, ghostNamed: () => boolean = () => false, reading: () => number = () => 1): Hud {
+export function createHud(doc: Document, total: number, ghostNamed: () => boolean = () => false, reading: () => number = () => 1,
+  arrived: () => void = () => {}): Hud {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const bag = byId('bag');
   const number = byId('bagCount');
@@ -136,6 +138,12 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       const text = verb ? actionWord(verb, word) : sv.act;
       if (text === wordShown && act.disabled === (verb === null)) return;
       wordShown = text;
+      // Something has come in reach: the button pops forward and a soft wood tick says so, so a running child's eye
+      // is caught (docs/ux-audit/in-play.md row 7). No pop under Mindre rörelse; the tick stays.
+      if (verb !== null && !offered) {
+        if (!still.matches) act.animate([{ transform: 'scale(0.86)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], { duration: 160, easing: 'ease-out' });
+        arrived();
+      }
       act.disabled = verb === null;
       act.querySelector('span')!.textContent = text;
       act.setAttribute('aria-label', text);
@@ -243,15 +251,8 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
         byId('endFound').hidden = false;
       }
       byId('endCount').textContent = String(count);
-      // Rows of ten, as on the chapter cards (plan §4.3).
-      const rows = byId('endRows');
-      rows.replaceChildren();
-      for (let i = 0; i < count; i += 10) {
-        const row = doc.createElement('div');
-        row.className = 'row';
-        for (let k = i; k < Math.min(count, i + 10); k++) row.appendChild(doc.createElement('i'));
-        rows.appendChild(row);
-      }
+      // In tens, each ten a roll, as on the chapter cards (plan §4.3).
+      byId('endRows').innerHTML = candyRows(count);
       if (code) {
         byId('endCodeWords').textContent = code;
         byId('endCode').hidden = false;

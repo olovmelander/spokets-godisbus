@@ -1841,15 +1841,22 @@ details.info-row p {
 }
 
 .rows {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
   gap: 5px;
-  max-height: 34vh;
-  overflow: auto;
 }
 
-.rows .row {
-  display: flex;
-  gap: 5px;
+/* Ten sweets wrapped in a roll: a striped tube with twisted ends, in its sweet's colour (story-presentation.md
+   row 12). */
+.rows i.roll {
+  width: 48px;
+  height: 12px;
+  background-image: radial-gradient(ellipse 30% 34% at 42% 30%, rgb(255 255 255 / 0.55), transparent 72%),
+    repeating-linear-gradient(90deg, transparent 0 7px, rgb(255 255 255 / 0.5) 7px 10px);
+  clip-path: polygon(0 10%, 8% 40%, 12% 15%, 20% 0, 80% 0, 88% 15%, 92% 40%, 100% 10%, 100% 90%, 92% 60%, 88% 85%,
+    80% 100%, 20% 100%, 12% 85%, 8% 60%, 0 90%);
 }
 
 /* Each is a small sweet in its wrapper: a round middle between two twisted ends. */
@@ -1977,8 +1984,18 @@ details.info-row p {
   font-size: 18px;
 }
 
-.page-tally .rows {
-  max-height: 18vh;
+/* Moa's map on the page, as wide as its page lets it be (story-presentation.md row 11). */
+.page-tally .map {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.page-tally .map-title {
+  margin: 0 0 -4px;
+  font-family: var(--font-hand);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--crayon-red);
 }
 
 /* Moa's crayon draws the way on, once the page is there. */
@@ -2075,9 +2092,6 @@ body.calm .moas-karta .way-on {
     max-height: 22vh;
   }
 
-  .page-tally .rows {
-    max-height: 9vh;
-  }
 
   .panel.end .wide {
     min-height: 52px;
@@ -3424,5 +3438,43 @@ body.keys-learned .hint {
 @media (prefers-reduced-motion: reduce) {
   .title-updating-ghost svg {
     animation: none;
+  }
+}
+
+/* What is said lands like a scrap of paper put down, and a find's tag swings in from the bag
+   (docs/ux-audit/style-and-sound.md row 16); under reduced motion both only fade. */
+@keyframes scrap-land {
+  from {
+    opacity: 0;
+    translate: 0 -8px;
+  }
+}
+
+@keyframes tag-swing {
+  from {
+    opacity: 0;
+    rotate: -9deg;
+  }
+}
+
+@keyframes only-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.bubble:not([hidden]) {
+  animation: scrap-land var(--dur-quick) var(--ease-out);
+}
+
+.notice:not([hidden]) {
+  transform-origin: 12% 0;
+  animation: tag-swing var(--dur-panel) var(--ease-paper);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble:not([hidden]),
+  .notice:not([hidden]) {
+    animation: only-fade var(--dur-quick) ease-out;
   }
 }

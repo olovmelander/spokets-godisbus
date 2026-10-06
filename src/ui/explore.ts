@@ -5,6 +5,7 @@ import { sv } from '../content/sv';
 import type { PlayerSave } from '../save/store';
 import { ghostNamed } from '../save/journey';
 import { chapterPicture, mapState, mapSvg } from './map';
+import { candyRows } from './rolls';
 import { CROSS } from './icons';
 
 /** Each chapter's picture, in Moa's crayon (docs/ux-audit/menus.md row 18): her map's places, and four drawings more. */
@@ -25,7 +26,7 @@ export function exploreHtml(save: PlayerSave, available: (id: string) => boolean
       + new Set((save.side?.[chapter.id] ?? []).filter((i) => i >= 0 && i < sideTotal)).size;
     const kinds = Object.entries(KINDS).filter(([, kind]) => kind.chapter === chapter.id);
     const stickers = kinds.map(([id]) => `<i class="${flags.includes(foundFlag(id)) ? 'got kind' : 'missing'}" style="${stickerStyle(id)}"></i>`).join('');
-    const rows = Array.from({ length: Math.ceil(candy / 10) }, (_, row) => `<span class="row">${'<i></i>'.repeat(Math.min(10, candy - row * 10))}</span>`).join('');
+    const rows = candyRows(candy);
     const challenge = chapter.hidden?.find((hidden) => hidden.route);
     const routeFound = challenge ? flags.includes(foundFlag(challenge.kind)) : false;
     // "Utmaning" is written under the star, and what it means is said to a screen reader.

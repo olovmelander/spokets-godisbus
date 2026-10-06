@@ -25,9 +25,11 @@ export const sv = {
   },
   sharing: {
     title: 'Dela godiset', choose: 'Välj något gott.', friend: 'Välj en vän.', back: 'Tillbaka',
-    bird: 'Lavskrikan får ett lingon ur fickan.', given: 'Har fått', nowFriend: '{sweet} – vem ska få den?',
+    bird: 'Lavskrikan får ett lingon ur fickan.', given: 'Har fått', nowFriend: '{sweet} – vem ska få {it}?',
     thanks: '{friend} fick {sweet}!',
     sweets: { gelehallon: 'Geléhallon', karamell: 'Karamell', skumbanan: 'Skumbanan', lingon: 'Lingon' },
+    // Ett geléhallon, en karamell, en skumbanan, ett lingon: what each is called after it.
+    it: { gelehallon: 'det', karamell: 'den', skumbanan: 'den', lingon: 'det' },
     friends: { tragubbe: 'Trägubben', spoket: 'Spöket', jay: 'Lavskrikan' },
   },
   party: {

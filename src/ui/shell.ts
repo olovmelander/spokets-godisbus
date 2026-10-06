@@ -288,6 +288,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
            <p class="next" id="endNext">${sv.end.next}</p>
          </div>
          <div class="page-tally">
+           <p class="map-title" aria-hidden="true">${sv.map.title}</p>
            <div class="map" id="endMap"></div>
            <div class="rows" id="endRows"></div>
            <p class="count"><b id="endCount"></b> ${sv.end.candy}</p>
