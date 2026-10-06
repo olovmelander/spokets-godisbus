@@ -2,6 +2,19 @@
 
 ## State (5 October 2026)
 
+- **The ghost's painted eyes, and which way it faces** (6 October, a cloud session; Olov: "After painting the ghost
+  in the beginning the ghost gets really wierd enes"). The two bugs only showed on the ghost modelled in Blender,
+  which cloud sessions and CI never load: they see the stand-in.
+  - **The eyes.** The pack stores the model's eyes in small whole numbers and gives each eye part the scale that
+    makes them metres again: 0.038 (KHR_mesh_quantization). The prologue's blink, from 5 October, set each eye's
+    height to the blink itself (1 when open), so after the painting both eyes stood 26 times too tall: two black
+    spikes out of its head. A blink now squeezes each eye from its own height (`src/render/ghost-model.ts`).
+  - **The turn.** The model faces the camera and is turned a quarter turn to face as the stand-in does. The turn
+    went the wrong way since Stage 0c, so the model always faced the opposite way to the stand-in. In the prologue's
+    scenes it showed its back where the stand-in shows its face, and in the chase it turned away from Elof. The
+    helper's copy already turned the right way; both now share one constant, `MODEL_TURN`.
+  - Seen here on a build with the private models (nothing of it committed): the waking ghost faces the camera with
+    its two round eyes, as the stand-in does, and in the chase it turns towards Elof.
 - **Moa's words in wax, a tape that shows, and the game installable on Android** (6 October, a cloud session;
   `docs/ux-audit/style-and-sound.md`, "Crayon"; `docs/ux-audit/access-and-devices.md` row 21). Her headings, the time
   card's place, the story card's words and the thanks are filled with wax: their colour, flecked where the crayon
