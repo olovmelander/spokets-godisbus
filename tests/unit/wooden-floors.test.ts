@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
 import { groundOf } from '../../src/render/dressing';
-import { TILT, TILT_ENDS, bankShapes, forwardAt } from '../../src/render/dressing/ground';
+import { BOARD, TILT, TILT_ENDS, bankShapes, forwardAt } from '../../src/render/dressing/ground';
 import { heightAt } from '../../src/render/dressing/kit';
 
 /** Every corner of a chapter's ground of some kinds that a triangle is drawn with. */
@@ -81,6 +81,50 @@ describe('a wooden floor', () => {
       if (Math.abs(corner.x - 14.5) < 0.3) between = Math.max(between, corner.z);
     }
     expect(between).toBeGreaterThan(3);
+  });
+
+  it('keeps the boards planar beside rising and falling steps, with grain measured along their surface', () => {
+    const chapter = {
+      ...COURSES['garden']!,
+      ground: [{ x: -8, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 1 }, { x: 8, y: 1 }, { x: 8, y: 0 }, { x: 16, y: 0 }],
+      surfaces: [{ from: -24, to: 32, kind: 'wood' as const }],
+    };
+    const beside = [0, 0];
+    let grain = 0;
+    for (const { shape } of bankShapes(chapter, 'lawn')) {
+      const at = shape.getAttribute('position');
+      const normal = shape.getAttribute('normal');
+      const uv = shape.getAttribute('uv');
+      const columns = new Map<number, { y: number; z: number; v: number }[]>();
+      for (let i = 0; i < at.count; i++) {
+        const x = at.getX(i);
+        const side = x > 0.05 && x < 2.4 ? 0 : x > 5.6 && x < 7.95 ? 1 : -1;
+        const y = at.getY(i);
+        const z = at.getZ(i);
+        // The upper floor's upward-facing corners, beyond its short curve at his feet. The lower floor
+        // continues under it; the vertical cut at its edge is not part of the plane.
+        if (side < 0 || y <= 0 || z < 1.6 || normal.getY(i) < 0.8) continue;
+        expect(y, `upper floor at x ${x.toFixed(2)}, z ${z.toFixed(2)}`).toBeCloseTo(1 - tilted(z), 5);
+        beside[side]! += 1;
+        const column = columns.get(x) ?? [];
+        column.push({ y, z, v: uv.getY(i) });
+        columns.set(x, column);
+      }
+      for (const column of columns.values()) {
+        column.sort((a, b) => a.z - b.z);
+        for (let i = 1; i < column.length; i++) {
+          const a = column[i - 1]!;
+          const b = column[i]!;
+          if (b.z - a.z < 0.01) continue;
+          expect(b.v - a.v).toBeCloseTo(Math.hypot(b.z - a.z, b.y - a.y) / (BOARD * 2), 5);
+          grain++;
+        }
+      }
+      shape.dispose();
+    }
+    expect(beside[0]).toBeGreaterThan(5);
+    expect(beside[1]).toBeGreaterThan(5);
+    expect(grain).toBeGreaterThan(5);
   });
 
   it('is a walk of planks over the bog: narrow, with a front edge a step in front of the path', () => {

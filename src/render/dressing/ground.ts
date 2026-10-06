@@ -506,7 +506,7 @@ const HOLLOW = [new Color('#5a4630'), new Color('#2a2018')];
  */
 function lengthsDown(profile: Row[], forward = 1): number[] {
   const down = [0];
-  for (let j = 1; j < profile.length; j++) down.push(down[j - 1]! + Math.hypot(depthOf(profile[j]!, forward) - depthOf(profile[j - 1]!, forward), profile[j]!.drop - profile[j - 1]!.drop));
+  for (let j = 1; j < profile.length; j++) down.push(down[j - 1]! + Math.hypot(depthOf(profile[j]!, forward) - depthOf(profile[j - 1]!, forward), dropOf(profile, profile[j]!, forward) - dropOf(profile, profile[j - 1]!, forward)));
   const level = profile.findIndex((row) => row.z >= -0.3);
   return down.map((d) => d - down[level]! + profile[level]!.z);
 }
@@ -514,6 +514,16 @@ function lengthsDown(profile: Row[], forward = 1): number[] {
 /** A row's depth where the front has drawn back by so much. */
 function depthOf(row: Row, forward: number): number {
   return row.z > EDGE ? EDGE + (row.z - EDGE) * forward : row.z;
+}
+
+/**
+ * A wooden floor stays on its plane where its edge draws back beside a step. Keeping the full-depth drop
+ * while shortening its depth bent the boards into a steep shoulder. Its cut keeps the same thickness
+ * below the floor; the bog's narrow planks and the other places keep their own profiles.
+ */
+function dropOf(profile: Row[], row: Row, forward: number): number {
+  if (profile !== PROFILE_FLOOR || row.z <= EDGE || forward === 1) return row.drop;
+  return row.drop - dropAt(profile, row.z) + dropAt(profile, depthOf(row, forward));
 }
 
 /** The bog's ground: as the bank in front, and sinking under the water behind the path. */
@@ -778,14 +788,14 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       const row = profile[j]!;
       const z = depthOf(row, forward);
       const swell = p.wall ? 0 : row.bump * look.bump * (noise(p.x * 1.15, row.z * 1.4 + 7) - 0.5) * 2;
-      const drop = row.drop + (block && row.ledge ? block.ledges[row.ledge - 1]! : 0);
+      const drop = dropOf(profile, row, forward) + (block && row.ledge ? block.ledges[row.ledge - 1]! : 0);
       let y = (p.shore !== undefined && row.z > EDGE ? p.shore : p.y) - drop + swell;
       let under = drop - front.lip * p.forward;
       if (wall) {
         // The face stands on the lower floor as that lies at this depth, and goes up to the upper one.
-        const upper = wall.top - row.drop;
-        const lowerDepth = EDGE + (z - EDGE) / Math.max(0.05, wall.footForward);
-        const lower = row.z <= EDGE ? wall.foot - row.drop : wall.floor - (lowerDepth > ends ? row.drop : dropAt(profile, lowerDepth));
+        const upper = wall.top - drop;
+        const lowerDepth = profile === PROFILE_FLOOR ? z : EDGE + (z - EDGE) / Math.max(0.05, wall.footForward);
+        const lower = row.z <= EDGE ? wall.foot - drop : wall.floor - (lowerDepth > ends ? drop : dropAt(profile, lowerDepth));
         y = Math.min(upper, lower) + (upper - Math.min(upper, lower)) * up;
         under = upper - y;
       }
