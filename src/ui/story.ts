@@ -1,4 +1,6 @@
 import { sv } from '../content/sv';
+import { CHECK, CROSS } from './icons';
+import { faceBody } from './faces';
 import { createStrokeUI, strokeHtml } from './story-stroke';
 import { FRIENDS, PARTY_GUESTS, SWEETS, partyReward, sharingReward, type Friend, type PartyGuest, type StoryAction, type StoryAnswer, type Sweet } from '../sim/story';
 
@@ -8,10 +10,9 @@ const pictures: Record<Sweet, string> = {
   skumbanan: '<path d="M12 20q6 42 43 19q-10 29-38 10Q2 38 12 20z" fill="#e6be42" stroke="#fff0a4" stroke-width="2"/>',
   lingon: '<circle cx="34" cy="38" r="16" fill="#b33748"/><path d="M34 23q-2-17 12-16q-1 12-12 16" fill="#789451"/><circle cx="29" cy="33" r="3" fill="#e99994"/>',
 };
-const familyPortrait = (shirt: string, hair: string) => `<path d="M13 62V42q20-15 42 0v20" fill="${shirt}"/><circle cx="34" cy="24" r="18" fill="#dfb586"/><path d="M16 23Q12 2 34 2t18 23L42 13l-13 4-9-2z" fill="${hair}"/><path d="M27 29q7 8 14 0" fill="none" stroke="#765039" stroke-width="2"/>`;
+// The family as their bubbles draw them, in their signs' colours: one cast everywhere (story-presentation.md row 19).
 const portraits = {
-  mamma: familyPortrait('#829887', '#7a5739'), pappa: familyPortrait('#a88359', '#544137'),
-  moa: familyPortrait('#758dab', '#b79668'), bertil: familyPortrait('#baa061', '#976e46'),
+  mamma: faceBody('mamma'), pappa: faceBody('pappa'), moa: faceBody('moa'), bertil: faceBody('bertil'),
   tragubbe: '<path d="M18 58V31h30v27" fill="#bf8c58"/><circle cx="33" cy="27" r="13" fill="#dfbc84"/><path d="M16 21L33 2l18 19z" fill="#9c6a49"/>',
   spoket: '<path d="M14 55V26q0-23 20-23t20 23v29l-8-5-8 5-8-5-8 5z" fill="#e7d4a6"/><circle cx="27" cy="23" r="3"/><circle cx="40" cy="23" r="3"/><path d="M37 38h19v20H37z" fill="#a37243"/>',
   jay: '<path d="M14 39q3-27 25-21q19 5 11 26L29 54z" fill="#979ca0"/><path d="M15 36l18-8-4 19z" fill="#b08057"/><path d="M47 23l17 5-15 5z" fill="#555454"/><circle cx="44" cy="24" r="3"/>',
@@ -24,7 +25,7 @@ const svg = (inside: string) => `<svg viewBox="0 0 68 64" aria-hidden="true">${i
 
 export const storyPanelHtml = `<div class="panel-back" id="storyPanel" hidden>
   <section class="panel story-panel" role="dialog" aria-modal="true" aria-labelledby="storyTitle" aria-describedby="storyHint">
-    <button class="panel-close" id="storyClose" aria-label="${sv.sharing.back}" type="button">✕</button>
+    <button class="panel-close" id="storyClose" aria-label="${sv.sharing.back}" type="button">${CROSS}</button>
     <h2 id="storyTitle">${sv.sharing.title}</h2>
     <p id="storyHint">${sv.sharing.choose}</p>
     <div id="sharingBody"><div id="shareSweets" class="share-sweets" role="group" aria-label="${sv.sharing.choose}">${SWEETS.map((sweet) => `<button type="button" class="share-choice" data-sweet="${sweet}" aria-pressed="false">${svg(pictures[sweet])}<span>${sv.sharing.sweets[sweet]}</span></button>`).join('')}</div>
@@ -35,13 +36,22 @@ export const storyPanelHtml = `<div class="panel-back" id="storyPanel" hidden>
   </section>
 </div>`;
 
-export function createStoryPanel(doc: Document, handlers: { named?(): boolean; answer(answer: StoryAnswer): boolean; cancel(): void }) {
+export function createStoryPanel(doc: Document, handlers: {
+  named?(): boolean; answer(answer: StoryAnswer): boolean; cancel(): void;
+  /** The story's next step, where it follows at once at the same place. */
+  next?(): StoryAction | null;
+}) {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const element = byId('storyPanel');
   const stroke = createStrokeUI(doc, (answer) => {
     if (!handlers.answer(answer)) return false;
-    element.hidden = true;
-    stroke.cancel();
+    // The carving's next cut, and then the eyes, follow in the same panel (story-presentation.md row 18).
+    const next = handlers.next?.() ?? null;
+    if (next) panel.show(next, flags);
+    else {
+      element.hidden = true;
+      stroke.cancel();
+    }
     return true;
   });
   let flags: ReadonlySet<string> = new Set();
@@ -59,9 +69,9 @@ export function createStoryPanel(doc: Document, handlers: { named?(): boolean; a
       button.hidden = kind === 'party' ? !isGuest(friend) : !isFriend(friend);
       button.querySelector('span')!.textContent = friend === 'spoket' && handlers.named?.() ? sv.ghostName : names[friend];
       button.disabled = !chosen || !(kind === 'party' ? isGuest(friend) && partyReward(flags, friend, chosen) : isFriend(friend) && sharingReward(flags, friend, chosen));
-      button.querySelector('small')!.textContent = given ? `✓ ${sv.sharing.given}` : '';
+      button.querySelector('small')!.innerHTML = given ? `${CHECK}${sv.sharing.given}` : '';
     }
-    byId('storyStatus').textContent = chosen ? sv.sharing.nowFriend.replace('{sweet}', sv.sharing.sweets[chosen]) : '';
+    byId('storyStatus').textContent = chosen ? sv.sharing.nowFriend.replace('{sweet}', sv.sharing.sweets[chosen]).replace('{it}', sv.sharing.it[chosen]) : '';
   }
   for (const sweet of SWEETS) element.querySelector(`[data-sweet="${sweet}"]`)!.addEventListener('click', () => { chosen = sweet; draw(); });
   for (const friend of ALL_FRIENDS) element.querySelector(`[data-friend="${friend}"]`)!.addEventListener('click', () => {
@@ -79,7 +89,7 @@ export function createStoryPanel(doc: Document, handlers: { named?(): boolean; a
   }
   byId('storyClose').addEventListener('click', back);
   element.addEventListener('click', (event) => { if (event.target === element) back(); });
-  return {
+  const panel = {
     element,
     get open() { return !element.hidden; },
     interrupt: () => stroke.interrupt(),
@@ -92,6 +102,8 @@ export function createStoryPanel(doc: Document, handlers: { named?(): boolean; a
       byId('sharingBody').classList.toggle('party', kind === 'party');
       element.querySelector<HTMLElement>('.share-bird-rule')!.hidden = kind === 'party';
       byId('strokeBody').hidden = sharing;
+      // Painting and carving: the picture has the panel, and its title is for a screen reader (row 17).
+      element.querySelector('.story-panel')!.classList.toggle('stroking', !sharing);
       byId('storyTitle').textContent = sharing ? kind === 'party' ? sv.party.title : sv.sharing.title : action.kind === 'carve' ? sv.carving.title : sv.painting.title;
       byId('storyHint').textContent = sharing ? sv.sharing.choose : action.kind === 'carve' ? sv.carving.hint : sv.painting.hint;
       byId('storyStatus').textContent = '';
@@ -103,4 +115,5 @@ export function createStoryPanel(doc: Document, handlers: { named?(): boolean; a
     },
     back,
   };
+  return panel;
 }

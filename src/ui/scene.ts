@@ -11,7 +11,8 @@ export const sceneUiHtml = `<div class="scene-ui" id="sceneUi" aria-hidden="true
   <i class="scene-fade" id="sceneFade"></i>
   <p class="scene-caption" id="sceneCaption"></p>
   <h1 class="scene-title" id="sceneTitle"></h1>
-</div>`;
+</div>
+<p class="sr-only" id="sceneSaid" role="status" aria-live="polite"></p>`;
 
 const smooth = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 
@@ -27,6 +28,9 @@ export function fadeAt(keys: NonNullable<SceneStage['fade']>, seconds: number): 
   return dark;
 }
 
+/** How long "Fortsätt" shows where he is, in seconds. */
+const REMINDED = 2.4;
+
 export function createSceneUi(doc: Document) {
   const byId = (id: string) => doc.getElementById(id)!;
   const fade = byId('sceneFade');
@@ -34,7 +38,16 @@ export function createSceneUi(doc: Document) {
   const title = byId('sceneTitle');
   const words: Record<string, string> = sv.scene;
   let shown = { bars: false, fade: -1, caption: '', captionOn: -1, title: '', titleOn: -1 };
+  /** A game taken up again says where he is, on the card's scrap, for a moment. */
+  let reminder: { text: string; from: number } | null = null;
   return {
+    /**
+     * "Fortsätt": the chapter's card word on its scrap of paper for 2.4 s, without holding him
+     * (docs/ux-audit/first-minutes.md row 9).
+     */
+    remind(text: string) {
+      reminder = text ? { text, from: performance.now() } : null;
+    },
     /** One frame: the scene playing now (or null), and whether a menu covers the picture. */
     show(scenes: readonly SceneDef[] | undefined, frame: SceneFrame | null, covered: boolean) {
       const scene = frame ? scenes?.find((def) => def.id === frame.id) : undefined;
@@ -51,9 +64,34 @@ export function createSceneUi(doc: Document) {
         if (word.kind === 'caption') { captionText = words[word.text] ?? ''; captionOn = on; }
         else { titleText = words[word.text] ?? ''; titleOn = on; }
       }
-      if (captionText !== shown.caption) caption.textContent = captionText;
+      if (!captionText && reminder) {
+        const age = (performance.now() - reminder.from) / 1000;
+        if (age > REMINDED) reminder = null;
+        else { captionText = reminder.text; captionOn = covered ? 0 : Math.min(1, age / 0.6, (REMINDED - age) / 0.6); }
+      }
+      if (captionText !== shown.caption) {
+        // The place in large letters and the time of day under it; the dot stays in the text for anyone who
+        // reads it aloud.
+        const [place, time] = captionText.split(' · ');
+        caption.replaceChildren();
+        const line = (cls: string, text: string) => {
+          const span = doc.createElement('span');
+          span.className = cls;
+          span.textContent = text;
+          caption.append(span);
+        };
+        if (place) line('place', place);
+        if (time) { line('dot', ' · '); line('time', time); }
+      }
+      // A chapter's card has the screen to itself: the play's corners step aside while it shows.
+      const card = scene?.id === 'card' && captionOn > 0;
+      if (card !== doc.body.classList.contains('scene-card')) doc.body.classList.toggle('scene-card', card);
       if (Math.abs(captionOn - shown.captionOn) > 0.002) caption.style.opacity = String(captionOn);
       if (titleText !== shown.title) title.textContent = titleText;
+      // What the picture shows in words is said too: the card's place and time, and the game's name
+      // (docs/ux-audit/access-and-devices.md row 19). The drawn words stay out of the reading order.
+      const said = captionText || titleText;
+      if (said && said !== shown.caption && said !== shown.title) doc.getElementById('sceneSaid')!.textContent = said;
       if (Math.abs(titleOn - shown.titleOn) > 0.002) title.style.opacity = String(titleOn);
       shown = { bars, fade: dark, caption: captionText, captionOn, title: titleText, titleOn };
     },

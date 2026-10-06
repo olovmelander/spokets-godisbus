@@ -113,8 +113,9 @@ try {
   check('a real offline reload restores WebGL and compressed boot models', (await page.evaluate(() => window.__godis.info())).compressedTextures > 0);
   check('runtime chapter pack works after offline reload', await fetchPack(page, 0) === fixture[0]);
   check('offline load reached no server', requests === beforeOffline);
-  await page.locator('#startBtn').click();
-  if (await page.locator('#firstAventyr').isVisible()) await page.locator('#firstAventyr').click();
+  // A saved game has Fortsätt; a first start, its play styles as the start buttons.
+  if (await page.locator('#startBtn').isVisible()) await page.locator('#startBtn').click();
+  else await page.locator('#startAventyr').click();
   await page.waitForFunction(() => !window.__godis.state().title);
   const x = (await page.evaluate(() => window.__godis.state())).x;
   await page.keyboard.down('ArrowRight');

@@ -1,6 +1,11 @@
+import { lessMotion } from '../platform/motion';
+import { GOES_ON, TONES } from '../content/tones';
 import { stickerStyle } from './sticker';
 import { sv } from '../content/sv';
 import type { Speaker, Verb } from '../sim/types';
+import { faceSvg } from './faces';
+import { verbIcon } from './verbs';
+import { candyRows } from './rolls';
 
 /**
  * What the page shows over the game while it is played: the candy bag in the corner (plan §4.3), the word
@@ -17,13 +22,17 @@ export interface Hud {
    * the word it will have there. `null`: the helper is away, or only looking.
    */
   knock(hint: { verb: Verb | null; word: string | null } | null): void;
+  /** The helper's step on the three pips under its portrait, emptied when it leaves (in-play.md rows 3 and 20). */
+  helped(step: number): void;
   /**
-   * Shows the stickers of the hidden candy found so far, on the bag. A new one slaps on, and its name is
-   * said at the top of the screen (plan §4.3).
+   * The hidden candy found so far (plan §4.3). A new one hangs from the bag on a tag with its name for three
+   * seconds, then drops into the bag (docs/ux-audit/in-play.md rows 1 and 18); the stickers live in the album.
    */
   stickers(found: readonly string[]): void;
-  /** Says something at the top of the screen for a few seconds: a find. */
-  notice(text: string): void;
+  /** Hangs a few words from the bag on a tag, for `seconds`: a find, a thanks. What is being said goes on. */
+  notice(text: string, seconds?: number): void;
+  /** While paused the bag says its number; in play only for a while after a candy (in-play.md row 2). */
+  paused(on: boolean): void;
   /** Puts a line in the queue of bubbles. Each is shown for a few seconds, one after another. */
   say(who: Speaker, line: string, priority?: boolean): void;
   /**
@@ -40,29 +49,49 @@ export interface Hud {
    * With `onNext` it leads on to the next chapter; without, it says that the story goes on later, or `closing`
    * where the story is over. `code` is the next chapter's three words, to open it on another device.
    */
-  end(title: string, count: number, onAgain: () => void, onNext?: () => void, closing?: string, hidden?: readonly { kind: string; found: boolean }[], code?: string | null, onwardWord?: string): void;
+  end(title: string, count: number, onAgain: () => void, onNext?: () => void, closing?: string, hidden?: readonly { kind: string; found: boolean }[], code?: string | null, onwardWord?: string, kicker?: string): void;
 }
 
+/** A find's tag hangs from the bag this long, and its sticker takes the last part of it to drop into the bag. */
+const FIND_TIME = 3;
+const DROP_TIME = 0.4;
+/** The tag's mark when it is not a find: a drawn sparkle (src/ui/sprite.ts). */
+const SPARKLE = '<svg class="i" aria-hidden="true"><use href="#i-sparkle"/></svg>';
+
 /** A bubble stays for this long, and a little longer for each letter. */
-const BUBBLE_TIME = 2.2;
-const BUBBLE_TIME_PER_LETTER = 0.055;
+// Long enough to read at a child's pace: 12 letters 3.6 s, 40 letters 6.1 s (docs/ux-audit/in-play.md row 17).
+const BUBBLE_TIME = 2.5;
+const BUBBLE_TIME_PER_LETTER = 0.09;
 /** How long a line being read stays when a scene begins. */
 const HUSH_TIME = 1.6;
 
-export function createHud(doc: Document, total: number, ghostNamed: () => boolean = () => false): Hud {
+/**
+ * `reading` stretches how long a bubble stays: longer with *Lugnare tempo* and with *Större text*.
+ */
+export function createHud(doc: Document, total: number, ghostNamed: () => boolean = () => false, reading: () => number = () => 1,
+  arrived: () => void = () => {}): Hud {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const bag = byId('bag');
   const number = byId('bagCount');
   const act = byId<HTMLButtonElement>('actBtn');
+  // With keys or a pad: what E (or X) will do, in Använd's corner (src/ui/ui.css, .key-prompt).
+  const prompt = byId('keyPrompt');
+  const promptWord = byId('keyPromptWord');
+  let offered = false;
+  let knocked = false;
+  const showPrompt = () => prompt.classList.toggle('on', offered || knocked);
+  const helpBtn = byId('helpBtn');
+  let helpShown = -1;
   const bubble = byId('bubble');
   let shown = -1;
   let wordShown: string | undefined;
   const queue: { who: Speaker; line: string }[] = [];
   let left = 0;
+  /** Whose the bubble is and the lines in it now, so that a line which goes on from them is added under them. */
+  let spoken: { who: Speaker; texts: string[] } | null = null;
   let ended = false;
   // Nothing bounces or slaps on when the device asks for less motion, or the player does (*Mindre rörelse*).
-  const less = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const still = { get matches() { return less.matches || doc.body.classList.contains('calm'); } };
+  const still = { get matches() { return lessMotion(doc); } };
   /** A sticker: a picture of the sweet, or an empty ring for one not found. */
   const sticker = (kind: string, found = true): HTMLElement => {
     const mark = doc.createElement('i');
@@ -73,6 +102,24 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
   };
   let stuck: string[] | null = null;
   let noticeFor = 0;
+  // How long the bag's number stays after a candy, and whether a menu is open, which keeps it.
+  const COUNT_TIME = 3;
+  let countFor = 0;
+  let pausedNow = false;
+  // Before the first candy the bag is only the bag.
+  bag.classList.add('quiet');
+  const tag = byId('notice');
+  const mark = byId('noticeMark');
+  const words = byId('noticeText');
+  /** Hangs the tag: its mark (a sticker, or a drawn sparkle) and its words. */
+  const hang = (text: string, seconds: number, picture: HTMLElement | null) => {
+    words.textContent = text;
+    mark.replaceChildren(...(picture ? [picture] : []));
+    mark.innerHTML ||= SPARKLE;
+    tag.hidden = false;
+    tag.classList.remove('dropping');
+    noticeFor = seconds;
+  };
   const verbs: Record<string, string> = sv.verbs;
   const lines: Record<string, string> = sv.lines;
   const actionWord = (verb: Verb, word?: string | null) => word === 'giveGhost' && ghostNamed() ? sv.giveKlonk : (verbs[word ?? verb] ?? verbs[verb] ?? sv.act);
@@ -83,20 +130,40 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       const grew = shown >= 0 && count > shown;
       shown = count;
       number.textContent = String(count);
+      if (grew) {
+        countFor = COUNT_TIME;
+        bag.classList.remove('quiet');
+      }
       bag.title = sv.storyContext.recovered;
       bag.setAttribute('aria-label', sv.storyContext.recoveredCount.replace('{count}', String(count)));
       bag.style.setProperty('--fill', String(total > 0 ? Math.min(1, count / total) : 0));
-      if (grew && !still.matches) {
-        bag.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 200, easing: 'ease-out' });
+      // With less motion the bag brightens for a moment in place of its bump.
+      if (grew) {
+        bag.animate(still.matches ? [{ filter: 'brightness(1.4)' }, { filter: 'none' }]
+          : [{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 200, easing: 'ease-out' });
       }
     },
     verb(verb, word = null) {
       const text = verb ? actionWord(verb, word) : sv.act;
       if (text === wordShown && act.disabled === (verb === null)) return;
       wordShown = text;
+      // Something has come in reach: the button pops forward and a soft wood tick says so, so a running child's eye
+      // is caught (docs/ux-audit/in-play.md row 7). No pop under Mindre rörelse; the tick stays.
+      if (verb !== null && !offered) {
+        if (!still.matches) act.animate([{ transform: 'scale(0.86)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], { duration: 160, easing: 'ease-out' });
+        arrived();
+      }
       act.disabled = verb === null;
       act.querySelector('span')!.textContent = text;
       act.setAttribute('aria-label', text);
+      // And a picture of it, for a child who does not read the word (in-play.md row 6).
+      act.querySelector('use')?.setAttribute('href', `#i-${verbIcon(verb, word)}`);
+      offered = verb !== null;
+      if (offered || !knocked) {
+        promptWord.textContent = text;
+        prompt.querySelector('use')?.setAttribute('href', `#i-${verbIcon(verb, word)}`);
+      }
+      showPrompt();
     },
     stickers(found) {
       if (stuck !== null && stuck.length === found.length) return;
@@ -105,43 +172,56 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       const row = byId('bagStickers');
       row.replaceChildren(...found.map((kind) => sticker(kind)));
       for (const kind of fresh) {
-        const at = found.indexOf(kind);
-        if (!still.matches) row.children[at]?.classList.add('new');
-        // Its name, at the top of the screen, for a few seconds.
-        const notice = byId('notice');
-        notice.textContent = sv.found.replace('{name}', sv.kinds[kind] ?? kind);
-        notice.hidden = false;
-        noticeFor = 3.5;
+        // The new one on a tag from the bag, at 40 px with its name; it drops into the bag when the tag goes.
+        const piece = sticker(kind);
+        // It slaps on, or with less motion lights up (ui.css).
+        piece.classList.add('new');
+        hang(sv.found.replace('{name}', sv.kinds[kind] ?? kind), FIND_TIME, piece);
+        tag.dataset.find = kind;
       }
     },
+    helped(step) {
+      if (step === helpShown) return;
+      helpShown = step;
+      helpBtn.dataset.step = String(step);
+    },
     knock(hint) {
-      act.classList.toggle('pulse', hint !== null && hint.verb !== null);
+      knocked = hint !== null && hint.verb !== null;
+      act.classList.toggle('pulse', knocked);
+      prompt.classList.toggle('pulse', knocked);
       // Out of reach the button is dimmed: it shows what it will say when he is there.
       if (hint && hint.verb && act.disabled) {
         const text = actionWord(hint.verb, hint.word);
         act.querySelector('span')!.textContent = text;
+        promptWord.textContent = text;
+        // The picture of what it will do there, too.
+        for (const where of [act, prompt]) where.querySelector('use')?.setAttribute('href', `#i-${verbIcon(hint.verb, hint.word)}`);
         wordShown = undefined;
       }
+      showPrompt();
     },
-    notice(text) {
-      const notice = byId('notice');
-      notice.textContent = text;
-      notice.hidden = false;
-      noticeFor = 3.5;
+    notice(text, seconds = FIND_TIME) {
+      hang(text, seconds, null);
+      delete tag.dataset.find;
+    },
+    paused(on) {
+      if (on === pausedNow) return;
+      pausedNow = on;
+      bag.classList.toggle('quiet', !on && countFor <= 0);
     },
     say(who, line, priority = false) {
       if (!lines[line]) return;
-      if (priority) { queue.length = 0; left = 0; }
+      if (priority) { queue.length = 0; left = 0; spoken = null; }
       queue.push({ who, line });
     },
     hush() {
       queue.length = 0;
+      // A scene takes the floor: the tag comes down, and a line being read gets a little longer.
       if (noticeFor > 0) {
         noticeFor = 0;
-        byId('notice').hidden = true;
-        left = 0;
-        bubble.hidden = true;
-      } else left = Math.min(left, HUSH_TIME);
+        tag.hidden = true;
+      }
+      left = Math.min(left, HUSH_TIME);
     },
     speaking() {
       return left > 0 || queue.length > 0;
@@ -149,29 +229,53 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
     tick(dt) {
       if (noticeFor > 0) {
         noticeFor -= dt;
-        if (noticeFor <= 0) byId('notice').hidden = true;
+        // A find's sticker drops into the bag as its tag goes (a fade under Mindre rörelse).
+        if (noticeFor <= DROP_TIME && tag.dataset.find && !tag.classList.contains('dropping')) tag.classList.add('dropping');
+        if (noticeFor <= 0) tag.hidden = true;
       }
-      // Finds and speech share a readable area. Keep the complete speech queued while a find is shown.
-      if (noticeFor > 0) { bubble.hidden = true; return; }
+      if (countFor > 0) {
+        countFor -= dt;
+        if (countFor <= 0 && !pausedNow) bag.classList.add('quiet');
+      }
       if (left > 0) {
         bubble.hidden = false;
         left -= dt;
-        if (left <= 0) bubble.hidden = true;
-        return;
+        if (left > 0) return;
+        // A line that goes on from this one is added under it, not put in its place (story-presentation.md row 22).
+        const after = queue[0];
+        if (!after || !GOES_ON.has(after.line) || after.who !== spoken?.who) {
+          bubble.hidden = true;
+          spoken = null;
+          return;
+        }
       }
       const next = queue.shift();
       if (!next) return;
       const text = lines[next.line]!;
+      const goesOn = GOES_ON.has(next.line) && !bubble.hidden && spoken?.who === next.who;
+      spoken = { who: next.who, texts: goesOn ? [...spoken!.texts, text].slice(-2) : [text] };
       byId('bubbleWho').textContent = next.who === 'spoket' && ghostNamed() ? sv.ghostName : sv.who[next.who];
-      byId('bubbleLine').textContent = text;
+      byId('bubbleLine').replaceChildren(...spoken.texts.flatMap((words, i) => {
+        const said = doc.createElement('span');
+        said.className = 'said';
+        said.textContent = words;
+        return i > 0 ? [doc.createTextNode(' '), said] : [said];
+      }));
+      // How it is said: a shout, a worry, a gentle word or a thought (src/content/tones.ts).
+      const tone = TONES[next.line];
+      if (tone) bubble.dataset.tone = tone;
+      else delete bubble.dataset.tone;
+      byId('bubbleFace').innerHTML = faceSvg(next.who);
       bubble.dataset.who = next.who;
       bubble.hidden = false;
-      left = BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER;
+      left = (BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER) * reading();
     },
-    end(title, count, onAgain, onNext, closing, hidden, code, onwardWord) {
+    end(title, count, onAgain, onNext, closing, hidden, code, onwardWord, kicker) {
       if (ended) return;
       ended = true;
       byId('endTitle').textContent = title;
+      byId('endKicker').textContent = kicker ?? '';
+      byId('endKicker').hidden = !kicker;
       if (closing) byId('endNext').textContent = closing;
       // The chapter's hidden candy: a sticker for each one found, an empty ring for each still out there.
       if (hidden && hidden.length > 0) {
@@ -179,15 +283,8 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
         byId('endFound').hidden = false;
       }
       byId('endCount').textContent = String(count);
-      // Rows of ten, as on the chapter cards (plan §4.3).
-      const rows = byId('endRows');
-      rows.replaceChildren();
-      for (let i = 0; i < count; i += 10) {
-        const row = doc.createElement('div');
-        row.className = 'row';
-        for (let k = i; k < Math.min(count, i + 10); k++) row.appendChild(doc.createElement('i'));
-        rows.appendChild(row);
-      }
+      // In tens, each ten a roll, as on the chapter cards (plan §4.3).
+      byId('endRows').innerHTML = candyRows(count);
       if (code) {
         byId('endCodeWords').textContent = code;
         byId('endCode').hidden = false;

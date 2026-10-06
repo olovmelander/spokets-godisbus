@@ -1,19 +1,25 @@
 import { sv } from '../content/sv';
 import type { AlbumPhoto, PhotoStore } from '../save/photos';
+import { CHECK, CROSS, NEXT, PREVIOUS, use } from './icons';
 
-const camera = '<svg viewBox="0 0 32 24" aria-hidden="true"><path d="M3 6h6l3-4h8l3 4h6v16H3z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="13" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+const camera = use('camera');
 
-/** Shared by the game and the menu preview; the pictures are always device-local object URLs. */
+/**
+ * Shared by the game and the menu preview; the pictures are always device-local object URLs. The photo is a print
+ * on the paper, as big as the screen lets it be, with round arrows at its sides and the panels' one header
+ * (docs/ux-audit/menus.md rows 4 and 17).
+ */
 export const photoAlbumHtml = `
   <div class="panel-back" id="photoAlbum" hidden>
     <section class="panel photo-panel" role="dialog" aria-modal="true" aria-labelledby="photoTitle">
-      <button class="panel-close" id="photoClose" type="button" aria-label="${sv.photos.back}">✕</button>
-      <h2 id="photoTitle">${sv.photos.title}</h2>
-      <figure id="photoFrame"><img id="photoImage" alt=""><figcaption id="photoCaption"></figcaption></figure>
-      <div class="photo-credits" id="photoCredits" hidden><span aria-hidden="true">✧</span><h3>${sv.photos.thanks}</h3><p>${sv.photos.credits}</p></div>
-      <p class="photo-count" id="photoCount" role="status" aria-live="polite"></p>
-      <div class="photo-nav"><button class="wide" id="photoPrevious" type="button">← ${sv.photos.previous}</button><button class="wide go" id="photoNext" type="button">${sv.photos.next} →</button></div>
-      <button class="wide" id="photoBack" type="button">↩ ${sv.photos.back}</button>
+      <div class="panel-head"><h2 id="photoTitle">${sv.photos.title}</h2><p class="photo-count" id="photoCount" role="status" aria-live="polite"></p><button class="panel-close" id="photoClose" type="button" aria-label="${sv.photos.back}">${CROSS}</button></div>
+      <div class="photo-stage">
+        <button class="photo-step" id="photoPrevious" type="button" aria-label="${sv.photos.previous}">${PREVIOUS}</button>
+        <figure class="photo-print" id="photoFrame"><img id="photoImage" alt=""><figcaption id="photoCaption"></figcaption></figure>
+        <figure class="photo-print second" id="photoFrame2" hidden><img id="photoImage2" alt=""><figcaption id="photoCaption2"></figcaption></figure>
+        <div class="photo-credits" id="photoCredits" hidden>${use('sparkle', 'credits-mark')}<h3>${sv.photos.thanks}</h3><p>${sv.photos.credits}</p></div>
+        <button class="photo-step go" id="photoNext" type="button" aria-label="${sv.photos.next}">${NEXT}</button>
+      </div>
     </section>
   </div>`;
 
@@ -28,22 +34,55 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
   let focus: HTMLElement | null = null;
   let focusMoment: string | null = null;
   let revision = 0;
+  /** The credits are the book's last pages, which turn by themselves (docs/ux-audit/story-presentation.md row 15). */
+  let turning: number | null = null;
 
-  const count = () => photos.length + (credits ? 1 : 0);
-  function draw(): void {
-    const photo = photos[index];
-    byId('photoFrame').hidden = !photo;
-    byId('photoCredits').hidden = !!photo;
-    const image = byId<HTMLImageElement>('photoImage');
+  /** In the credits two photos lie on each spread, and the thanks have the last page to themselves. */
+  const perPage = () => (credits ? 2 : 1);
+  const count = () => Math.ceil(photos.length / perPage()) + (credits ? 1 : 0);
+  const print = (frame: string, image: string, caption: string, photo: (typeof photos)[number] | undefined) => {
+    byId(frame).hidden = !photo;
+    const img = byId<HTMLImageElement>(image);
     if (photo) {
-      image.src = photo.url;
-      image.alt = sv.photos.moments[photo.moment];
-      byId('photoCaption').textContent = sv.photos.moments[photo.moment];
-    } else { image.removeAttribute('src'); image.alt = ''; }
+      img.src = photo.url;
+      img.alt = sv.photos.moments[photo.moment];
+      byId(caption).textContent = sv.photos.moments[photo.moment];
+    } else { img.removeAttribute('src'); img.alt = ''; }
+  };
+  const stopTurning = () => {
+    if (turning !== null) doc.defaultView?.clearInterval(turning);
+    turning = null;
+  };
+  function draw(): void {
+    const first = photos[index * perPage()];
+    print('photoFrame', 'photoImage', 'photoCaption', first);
+    print('photoFrame2', 'photoImage2', 'photoCaption2', credits && first ? photos[index * 2 + 1] : undefined);
+    byId('photoCredits').hidden = !!first;
     byId('photoTitle').textContent = credits ? sv.photos.journey : sv.photos.title;
     byId('photoCount').textContent = sv.photos.count.replace('{n}', String(index + 1)).replace('{total}', String(count()));
     byId<HTMLButtonElement>('photoPrevious').disabled = index <= 0;
-    byId('photoNext').textContent = index + 1 < count() ? `${sv.photos.next} →` : `✓ ${sv.photos.done}`;
+    // The last photo's arrow is a tick: done. On the book's last page it is the word itself, and only there.
+    const last = index + 1 >= count();
+    const next = byId('photoNext');
+    next.innerHTML = last ? credits ? `${CHECK}<span>${sv.photos.done}</span>` : CHECK : NEXT;
+    next.setAttribute('aria-label', last ? sv.photos.done : sv.photos.next);
+    panel.querySelector('.photo-panel')!.classList.toggle('book', credits);
+    panel.querySelector('.photo-panel')!.classList.toggle('last', last);
+    if (credits && last) {
+      stopTurning();
+      // The thanks open at the top of their page.
+      panel.querySelector<HTMLElement>('.photo-panel')!.scrollTop = 0;
+    }
+  }
+  /** One page on, as the book turns: a page laid over the last (ui.css), or with less motion a fade. */
+  function turn(): void {
+    if (index + 1 >= count()) return;
+    index++;
+    draw();
+    const stage = panel.querySelector<HTMLElement>('.photo-stage')!;
+    stage.classList.remove('turned');
+    void stage.offsetWidth;
+    stage.classList.add('turned');
   }
   function show(at: number, withCredits: boolean, from: HTMLElement, backTo: HTMLElement): void {
     index = Math.max(0, Math.min(at, photos.length - 1));
@@ -55,9 +94,13 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
     panel.hidden = false;
     draw();
     byId('photoNext').focus();
+    // Every 4 s a page turns by itself; a tap turns it sooner.
+    stopTurning();
+    if (credits && count() > 1) turning = doc.defaultView?.setInterval(turn, 4000) ?? null;
   }
   function back(): void {
     if (panel.hidden) return;
+    stopTurning();
     panel.hidden = true;
     if (source) source.hidden = false;
     // A capture can refresh the thumbnail list while this panel is open. Return to the same moment's
@@ -74,10 +117,17 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
   }
   byId('photoPrevious').addEventListener('click', () => { if (index > 0) { index--; draw(); } });
   byId('photoNext').addEventListener('click', () => {
-    if (index + 1 < count()) { index++; draw(); }
+    if (index + 1 < count()) {
+      if (credits) {
+        // A tap turns the page now, and the next one waits its full 4 s.
+        stopTurning();
+        turn();
+        if (index + 1 < count()) turning = doc.defaultView?.setInterval(turn, 4000) ?? null;
+      } else { index++; draw(); }
+    }
     else { const completedCredits = credits; back(); if (completedCredits) onCreditsDone?.(); }
   });
-  for (const id of ['photoClose', 'photoBack']) byId(id).addEventListener('click', back);
+  byId('photoClose').addEventListener('click', back);
   panel.addEventListener('click', (event) => { if (event.target === panel) back(); });
   panel.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowLeft' && index > 0) { index--; draw(); event.preventDefault(); }

@@ -1,3 +1,138 @@
+/* Andika (SIL, OFL 1.1), the game's typeface (plan §5.7): designed for readers who are learning, with clear å, ä
+   and ö. Self-hosted from @fontsource/andika 5.3.0's Latin files, unchanged (LICENSES.md). */
+@font-face {
+  font-family: 'Andika';
+  src: url('/fonts/andika-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Andika';
+  src: url('/fonts/andika-latin-700-normal.woff2') format('woff2');
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Playpen Sans (TypeTogether, OFL 1.1): Moa's hand, for her words only: the time cards, the map's names, panel
+   titles, section headings and the storybook page's title (docs/ux-audit/style-and-sound.md row 3). A subset of
+   @fontsource/playpen-sans 5.3.0 to the Swedish letters (LICENSES.md). */
+@font-face {
+  font-family: 'Playpen Sans';
+  src: url('/fonts/playpen-sans-700-sv.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- The game's colours, as tokens (docs/ux-audit/style-and-sound.md, "Colour"; row 7) -------------------------
+   Every rule reads these; no colour is written anywhere else in this file (tests/unit/tokens.test.ts). Paper is
+   for what is read, Pappa's painted wood for what is pressed, candy only for rewards. */
+:root {
+  /* Paper: Moa's drawing paper, for what is read. */
+  --paper: #fbf4e4;
+  --paper-2: #f2e5c8;
+  --paper-bright: #fffaf0;
+  --paper-edge: #d6bf95;
+  --tape: rgb(226 205 148 / 0.9);
+  /* Pappa's carving: the pale shaving the stroke peels off, and the notches cut into the block. */
+  --shaving: #f4dcae;
+  --shaving-edge: #9c7448;
+  --notch: #f0d6a2;
+  --notch-edge: #906a40;
+  --notch-cut: #5e3d22;
+  /* Ink. */
+  --ink: #33241a;
+  --ink-soft: #5f4733;
+  --ink-faint: #8a7258;
+  --ink-on-paint: #fff8ec;
+  /* Moa's crayons. */
+  --crayon-red: #c4352b;
+  --crayon-red-dark: #8f2a20;
+  --crayon-blue: #2e5c99;
+  --crayon-green: #3d7a3c;
+  --crayon-brown: #6b4a2c;
+  /* Pappa's wood and paint, for what is pressed. */
+  --linden: #e6cfa4;
+  --linden-rim: #e7cb98;
+  --linden-deep: #cdb48a;
+  --linden-edge: #a17443;
+  --wood-line: #7b5a36;
+  --wood-dark: #5a3a1e;
+  --paint-red: #9b3325;
+  --paint-red-dark: #4e1710;
+  --paint-green: #2c6a45;
+  --paint-green-dark: #163a24;
+  --paint-blue: #2b5888;
+  --paint-ochre: #c58d28;
+  /* Candy, for rewards only: the 3D kit's colours (src/render/candy.ts), its shine, and gold. */
+  --candy-red: #e8483f;
+  --candy-yellow: #f6c445;
+  --candy-green: #58b368;
+  --candy-blue: #4a90d9;
+  --candy-pink: #ef7fb0;
+  --candy-orange: #f08a3c;
+  --candy-shine: #ffe3d9;
+  --gold: #e8b636;
+  --gold-light: #fff9dc;
+  --gold-pale: #f1d88c;
+  --gold-deep: #7d5414;
+  /* Who speaks: their sign's colour, and an ink of it for their name (src/ui/faces.ts). */
+  --who-mamma: #bf3d36;
+  --who-pappa: #5a7d4a;
+  --who-pappa-ink: #4b6b3d;
+  --who-moa: #5b7fb5;
+  --who-moa-ink: #41659b;
+  --who-bertil: #d98a2c;
+  --who-bertil-ink: #9c5a17;
+  --who-elof: #2f5f9e;
+  --who-spoket: #8a5a32;
+  --who-none: #6b5a48;
+  /* A gamepad's buttons, as the pad has them: plain colours, no brand. */
+  --pad-a: #2f7d47;
+  --pad-a-edge: #1f5a31;
+  --pad-b: #b03a2e;
+  --pad-b-edge: #7f241c;
+  --pad-x: #2f62a8;
+  --pad-x-edge: #1f4479;
+  --pad-y: #e8b923;
+  --pad-y-edge: #a07a10;
+  /* The memories' sepia. */
+  --sepia-light: #f6e6c4;
+  --sepia: #ecd6a8;
+  --sepia-deep: #c9a56c;
+  /* States. */
+  --focus: #1d4f91;
+  --knock: #f6c445;
+  --knock-light: #ffd76a;
+  /* Over the picture and at night. */
+  --bars: #120d09;
+  --fade: #0b0806;
+  --night-ink: #fff6df;
+  --night-shade: rgb(16 26 42 / 0.5);
+  --print-dark: #27352e;
+  --debug-ink: #d8f5d0;
+  --black: #000;
+  /* The place's own shade, as r g b, under a panel: main.ts sets it for each place (src/ui/materials.ts). */
+  --place-shade: 36 64 74;
+  /* Type: Andika for what is read, Moa's hand for her words. */
+  --font-read: 'Andika', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-hand: 'Playpen Sans', var(--font-read);
+  /* Motion: wood goes down quickly and comes up a little slower; a sheet lands with a small overshoot. */
+  --dur-press: 80ms;
+  --dur-release: 140ms;
+  --dur-quick: 160ms;
+  --dur-panel: 240ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-paper: cubic-bezier(0.3, 1.25, 0.5, 1);
+  /* A sheet lying on the scene; a plank's light top and shaded foot, and the shadow it throws. */
+  --sheet-shadow: 0 1px 0 var(--paper-edge), 0 12px 26px rgb(30 20 10 / 0.34);
+  --bevel: inset 0 2px 0 rgb(255 247 228 / 0.6), inset 0 -2px 0 rgb(90 58 30 / 0.22);
+  --wood-shadow: 0 7px 12px rgb(30 18 8 / 0.26);
+}
+
 /* The page never scrolls, selects or zooms: it is a game surface (plan §6.7). */
 html,
 body {
@@ -13,16 +148,34 @@ body {
   user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  color: #3d2b1f;
+  font-family: var(--font-read);
+  color: var(--ink);
   /* Touch sizes grow by 15% on tablets (plan §4.1). */
   --k: 1;
 }
 
-@media (pointer: coarse) and (min-width: 900px) and (min-height: 600px) {
+@media (pointer: coarse) and (min-width: 600px) and (min-height: 600px) {
   body {
     --k: 1.15;
   }
+}
+
+/* Buttons and fields take the page's type, not the browser's own. A rule below sets their size and weight
+   apart: a `font:` shorthand cannot name `inherit` as its family, and a browser drops the whole rule if it does. */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* A drawn icon from the sprite (src/ui/sprite.ts): as big as the words beside it, unless its place says otherwise. */
+:where(svg.i) {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.25em;
 }
 
 #game {
@@ -87,7 +240,7 @@ body {
 }
 
 .stick-base.run .stick-knob {
-  background: #ffd76a;
+  background-color: var(--knock-light);
 }
 
 .btn {
@@ -98,9 +251,11 @@ body {
   gap: 2px;
   padding: 0;
   border-radius: 50%;
-  border: 3px solid rgb(255 255 255 / 0.8);
-  color: #fff;
-  font: 600 13px/1 inherit;
+  border: 3px solid var(--linden-rim);
+  color: var(--ink-on-paint);
+  font-size: calc(15px * var(--k));
+  font-weight: 700;
+  line-height: 1.05;
   pointer-events: auto;
   touch-action: none;
   box-shadow: 0 3px 8px rgb(0 0 0 / 0.3);
@@ -112,30 +267,60 @@ body {
   height: 34px;
 }
 
+/* A press shows round the thumb, not only under it: a pale ring outside the disc. */
 .btn.down {
   transform: scale(0.93);
   filter: brightness(1.15);
+  box-shadow: 0 0 0 6px rgb(255 255 255 / 0.6), 0 3px 8px rgb(0 0 0 / 0.3);
 }
 
+/* With nothing to use, Använd keeps its place but nearly steps out of the picture; it comes forward when there is
+   something to do (research §2: controls follow the context). */
 .btn:disabled {
-  opacity: 0.35;
+  opacity: 0.2;
 }
 
-/* Hoppa: 96 px, lower right. Använd: 84 px, above it. Both inside the safe area (plan §4.1). */
+/* Hoppa: 116 px, lower right, about 2 cm on the family's phones. Använd: 100 px, up and to the left of it on the
+   thumb's arc, 12 px clear. Both inside the safe area (plan §4.1; docs/ux-audit/access-and-devices.md #2).
+   They are Pappa's paint, rödfärg and green, with the linden showing where the paint has worn off the rim: the
+   cream words on them are 6.9:1 and 6.1:1 (style-and-sound.md rows 8 and 9). */
 .btn-hop {
-  width: calc(96px * var(--k));
-  height: calc(96px * var(--k));
+  width: calc(116px * var(--k));
+  height: calc(116px * var(--k));
   right: calc(env(safe-area-inset-right) + 20px);
   bottom: calc(env(safe-area-inset-bottom) + 20px);
-  background: #dd4b39;
+  background-color: var(--paint-red);
 }
 
 .btn-act {
-  width: calc(84px * var(--k));
-  height: calc(84px * var(--k));
-  right: calc(env(safe-area-inset-right) + 26px);
-  bottom: calc(env(safe-area-inset-bottom) + 20px + 96px * var(--k) + 16px);
-  background: #3f9a5a;
+  width: calc(100px * var(--k));
+  height: calc(100px * var(--k));
+  right: calc(env(safe-area-inset-right) + 20px + 108px * var(--k));
+  bottom: calc(env(safe-area-inset-bottom) + 20px + 74px * var(--k));
+  background-color: var(--paint-green);
+}
+
+/* Använd says only its hand until there is something to do; then the word stands beside it on a scrap of
+   paper, so no word has to squeeze inside the disc (docs/ux-audit/in-play.md row 5). */
+.btn-act span {
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: max-content;
+  max-width: 150px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.15;
+  text-align: center;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+}
+
+.btn-act:disabled:not(.pulse) span {
+  display: none;
 }
 
 /* Vänsterhänt: the stick and the buttons swap sides (plan §4.1). */
@@ -155,13 +340,18 @@ body.lefty .btn-hop {
 
 body.lefty .btn-act {
   right: auto;
-  left: calc(env(safe-area-inset-left) + 26px);
+  left: calc(env(safe-area-inset-left) + 20px + 108px * var(--k));
+}
+
+body.lefty .btn-act span {
+  right: auto;
+  left: calc(100% + 10px);
 }
 
 /* Större text: what is said, and the words on buttons and in panels, a quarter bigger. */
 body.big-text .bubble {
   font-size: calc(26px * var(--k));
-  max-width: min(76%, 640px);
+  max-width: min(76%, 640px, 100% - 256px);
 }
 
 body.big-text .notice {
@@ -169,23 +359,60 @@ body.big-text .notice {
 }
 
 body.big-text .btn {
-  font-size: 16px;
+  font-size: calc(18px * var(--k));
+}
+
+body.big-text .btn-act span,
+body.big-text .key-prompt {
+  font-size: 19px;
 }
 
 body.big-text .panel {
-  font-size: 22px;
+  font-size: calc(22px * var(--k));
 }
 
-body.big-text .album-grid li {
-  font-size: 15px;
+/* The map's words grow with the rest (docs/ux-audit/menus.md row 23). */
+body.big-text {
+  --map-text: 1.25;
 }
 
-/* Mindre rörelse: nothing bounces, pulses, slaps on or slides. */
-body.calm *,
-body.calm *::before,
-body.calm *::after {
-  animation: none !important;
-  transition: none !important;
+/* A panel opens like paper laid down: its backdrop fades in and the paper rises a little. Inside Pause a page
+   turns in from the side it comes from. Closing stays instant (docs/ux-audit/menus.md row 20). With less motion
+   each only fades ("Less motion", at the end). */
+@keyframes panel-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes panel-rise {
+  from {
+    transform: translateY(12px) rotate(-1.2deg);
+  }
+}
+
+@keyframes page-turn {
+  from {
+    opacity: 0;
+    transform: translateX(var(--turn-from, 24px));
+  }
+}
+
+:is(#pause, #explore, #photoAlbum, #storyPanel):not([hidden]) {
+  animation: panel-fade 160ms ease-out;
+}
+
+:is(#pause, #explore, #photoAlbum, #storyPanel):not([hidden]) > .panel {
+  animation: panel-rise var(--dur-panel) var(--ease-paper);
+}
+
+.turn:not([hidden]),
+.turn-back:not([hidden]) {
+  animation: page-turn 200ms ease-out;
+}
+
+.turn-back {
+  --turn-from: -24px;
 }
 
 /* --- the candy bag, top left: it fills as Elof collects (plan §4.3) ------------------------------ */
@@ -196,10 +423,10 @@ body.calm *::after {
   top: calc(env(safe-area-inset-top) + 10px);
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 14px 4px 8px;
-  border-radius: 999px;
-  background: rgb(236 223 198 / 0.9);
+  gap: 2px;
+  padding: 0;
+  border-radius: 10px;
+  background: none;
   font-weight: 700;
   font-size: calc(26px * var(--k));
   line-height: 1;
@@ -221,8 +448,8 @@ body.calm *::after {
   width: calc(13px * var(--k));
   height: calc(13px * var(--k));
   border-radius: 50%;
-  background: var(--colour);
-  box-shadow: inset 0 0 0 calc(3px * var(--k)) var(--mark), 0 0 0 1.5px #7b5a36;
+  background-color: var(--colour);
+  box-shadow: inset 0 0 0 calc(3px * var(--k)) var(--mark), 0 0 0 1.5px var(--wood-line);
 }
 
 /*
@@ -230,13 +457,15 @@ body.calm *::after {
  * in one sheet, six across and three down (src/ui/sticker.ts says which is where).
  */
 .stickers i.kind,
-.album-grid i.kind {
+.album-grid i.kind,
+.notice-mark i.kind,
+.player-token.kind {
   border-radius: 0;
   background: url('./kinds.webp') no-repeat;
   background-size: 600% 300%;
   background-position: calc(var(--sx) * 20%) calc(var(--sy) * 50%);
   box-shadow: none;
-  filter: drop-shadow(0 0.8px 0 #fffaf0) drop-shadow(0 -0.8px 0 #fffaf0) drop-shadow(0.8px 0 0 #fffaf0) drop-shadow(-0.8px 0 0 #fffaf0)
+  filter: drop-shadow(0 0.8px 0 var(--paper-bright)) drop-shadow(0 -0.8px 0 var(--paper-bright)) drop-shadow(0.8px 0 0 var(--paper-bright)) drop-shadow(-0.8px 0 0 var(--paper-bright))
     drop-shadow(0 1px 1px rgb(70 45 20 / 0.45));
 }
 
@@ -253,8 +482,23 @@ body.calm *::after {
   box-sizing: border-box;
 }
 
-.stickers i.new {
+.stickers i.new,
+.notice-mark i.new {
   animation: sticker-slap 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+/* In play the bag is the meter and the album's door, not a strip of stickers (docs/ux-audit/in-play.md row 1): its
+   number shows for a while after a candy and in Pause, and the stickers live in the album. */
+.bag .stickers {
+  display: none;
+}
+
+.bag-tag {
+  transition: opacity 0.4s ease-out;
+}
+
+.bag.quiet .bag-tag {
+  opacity: 0;
 }
 
 @keyframes sticker-slap {
@@ -282,8 +526,29 @@ body.calm *::after {
 }
 
 .bag svg {
-  width: calc(40px * var(--k));
-  height: calc(47px * var(--k));
+  position: relative;
+  z-index: 1;
+  width: calc(44px * var(--k));
+  height: calc(52px * var(--k));
+  filter: drop-shadow(0 2px 3px rgb(30 18 8 / 0.45));
+}
+
+/* The count and the stickers on a tag of Moa's paper, tucked under the bag's edge. */
+.bag-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: -6px;
+  padding: 4px 10px 5px 12px;
+  border-radius: 3px 7px 5px 4px;
+  background-color: var(--paper);
+  box-shadow: 0 2px 6px rgb(30 18 8 / 0.35);
+  rotate: -2deg;
+}
+
+.bag-tag #bagCount {
+  min-width: 1.2em;
+  text-align: center;
 }
 
 .bag-fill {
@@ -308,8 +573,8 @@ body.calm *::after {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: rgb(236 223 198 / 0.9);
-  color: #3d2b1f;
+  background-color: var(--linden);
+  color: var(--wood-dark);
   touch-action: manipulation;
 }
 
@@ -318,34 +583,105 @@ body.calm *::after {
   height: 30px;
 }
 
-/* The helper's button sits under the pause button. It is small: help is there when he asks, not in the way. */
+/* The helper's button sits under the pause button, as big as it, 14 px below (plan §4.1's 64 px and 12 px). */
 .corner.help {
-  top: calc(env(safe-area-inset-top) + 10px + 64px * var(--k) + 10px);
-  width: calc(52px * var(--k));
-  height: calc(52px * var(--k));
-  right: calc(env(safe-area-inset-right) + 18px);
+  top: calc(env(safe-area-inset-top) + 10px + 64px * var(--k) + 14px);
 }
 
-/* The helper has knocked: Använd's word pulses, in reach or not. */
-.btn-act.pulse {
-  animation: act-pulse 0.7s ease-in-out infinite alternate;
-  opacity: 1;
+/* Under the portrait, three 8 px pips: how far the helper has come, filled one by one as he asks again and emptied
+   when it leaves, so he sees that another press shows more (docs/ux-audit/in-play.md rows 3 and 20). */
+.corner.help > svg {
+  translate: 0 -4px;
+}
+.help-pips {
+  position: absolute;
+  left: 50%;
+  bottom: calc(9px * var(--k));
+  display: flex;
+  gap: 3px;
+  translate: -50% 0;
+}
+.help-pips i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgb(90 58 30 / 0.22);
+  transition: background-color var(--dur-quick) ease, scale var(--dur-quick) var(--ease-paper);
+}
+.corner.help:is([data-step="1"], [data-step="2"], [data-step="3"]) i:nth-child(1),
+.corner.help:is([data-step="2"], [data-step="3"]) i:nth-child(2),
+.corner.help[data-step="3"] i:nth-child(3) {
+  background-color: var(--crayon-red);
+  scale: 1.1;
 }
 
-@keyframes act-pulse {
+/* The helper has knocked: a yellow ring with a dark edge round Använd, which shows on any ground and in every
+   motion setting; where things may move it also breathes (docs/ux-audit/in-play.md row 8). Out of reach the
+   button stays half bright: it shows what it will say there, and it cannot be pressed yet. */
+.btn-act.pulse,
+.key-prompt.pulse {
+  box-shadow: 0 0 0 4px var(--knock-light), 0 0 0 6px var(--ink), 0 3px 8px rgb(0 0 0 / 0.3);
+  animation: act-breath 1.4s ease-in-out infinite alternate;
+}
+
+.btn-act.pulse:disabled {
+  opacity: 0.6;
+}
+
+@keyframes act-breath {
   from {
-    box-shadow: 0 0 0 0 rgb(255 215 106 / 0.9);
+    scale: 1;
   }
   to {
-    box-shadow: 0 0 0 calc(14px * var(--k)) rgb(255 215 106 / 0);
+    scale: 1.06;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .btn-act.pulse {
-    animation: none;
-    outline: 4px solid #ffd76a;
-  }
+/* With keys or a pad the on-screen controls are hidden, so what E (or X) will do shows as a prompt in Använd's
+   corner, only while there is something to use or the helper knocks (docs/ux-audit/in-play.md row 12). */
+.key-prompt {
+  position: absolute;
+  z-index: 2;
+  right: calc(env(safe-area-inset-right) + 20px);
+  bottom: calc(env(safe-area-inset-bottom) + 64px);
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 10px;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.15;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  pointer-events: none;
+}
+
+.key-prompt svg {
+  width: 26px;
+  height: 26px;
+}
+
+.key-prompt kbd {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background-color: var(--ink);
+  color: var(--paper);
+  font: inherit;
+}
+
+body[data-device='keys'] .key-prompt.on,
+body[data-device='pad'] .key-prompt.on {
+  display: flex;
+}
+
+body.lefty .key-prompt {
+  right: auto;
+  left: calc(env(safe-area-inset-left) + 20px);
 }
 
 /* --- panels: a paper card over a dimmed game ------------------------------------------------------ */
@@ -357,7 +693,7 @@ body.calm *::after {
   place-items: center;
   padding: calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 12px)
     calc(env(safe-area-inset-bottom) + 12px) calc(env(safe-area-inset-left) + 12px);
-  background: rgb(40 28 18 / 0.45);
+  background: radial-gradient(ellipse at center, rgb(var(--place-shade) / 0.3) 40%, rgb(var(--place-shade) / 0.5) 100%);
   overflow: auto;
 }
 
@@ -368,28 +704,35 @@ body.calm *::after {
 .panel {
   position: relative;
   box-sizing: border-box;
-  width: min(100%, 460px);
+  /* On a tablet the sheet and its words grow with the controls (access-and-devices.md row 7). */
+  width: min(100%, calc(460px * var(--k)));
   max-height: 100%;
   overflow: auto;
   display: grid;
   gap: 10px;
   padding: 18px 18px 20px;
-  border-radius: 22px;
-  background: #f4ead4;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
-  font-size: 18px;
+  border-radius: 5px 8px 6px 7px;
+  background-color: var(--paper);
+  box-shadow: var(--sheet-shadow);
+  font-size: calc(18px * var(--k));
 }
 
 .panel h2 {
   margin: 0 64px 0 4px;
+  font-family: var(--font-hand);
   font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--crayon-blue);
 }
 
 .panel h3 {
   margin: 6px 4px 0;
-  font-size: 16px;
-  font-weight: 600;
-  opacity: 0.75;
+  font-family: var(--font-hand);
+  font-size: 0.95em;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--crayon-blue);
 }
 
 .panel button {
@@ -411,9 +754,211 @@ body.calm *::after {
   background: transparent;
 }
 
-.panel-close svg {
-  width: 28px;
-  height: 28px;
+.panel-close svg,
+.panel-up svg {
+  box-sizing: border-box;
+  width: 46px;
+  height: 46px;
+  padding: 11px;
+  border-radius: 50%;
+  background-color: var(--linden);
+  color: var(--wood-dark);
+}
+
+/* --- Pause: a short first page, and pages of its own (docs/ux-audit/menus.md rows 1-4) ------------------- */
+/* What focus or a scroll brings into view stops below the sticky header, never under it. */
+.panel.pause {
+  padding-top: 0;
+  scroll-padding-top: 76px;
+}
+
+@media (min-width: 700px) {
+  .panel.pause {
+    width: min(100%, 760px);
+  }
+}
+
+/* One header for the panel, which stays put while the page under it scrolls: the way back always sits in the
+   same place (research §7). */
+.panel-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 4px;
+  min-height: 64px;
+  margin: 0 -18px;
+  padding: 0 4px 0 12px;
+  background-color: var(--paper);
+}
+
+.panel .panel-head h2 {
+  grid-column: 2;
+  margin: 0 4px;
+}
+
+.panel-head .panel-close {
+  position: static;
+  grid-column: 3;
+}
+
+.panel-up {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 64px;
+  padding: 0 12px 0 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-weight: 600;
+}
+
+.panel-up[hidden] {
+  display: none;
+}
+
+.panel-up svg {
+  width: 42px;
+  height: 42px;
+  padding: 10px;
+}
+
+.pause-options {
+  display: grid;
+  gap: 10px;
+}
+
+.pause-options[hidden],
+.pause-page[hidden] {
+  display: none;
+}
+
+.pause-home {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 700px) {
+  .pause-home {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.pause-story,
+.pause-actions {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+/* Moa's map is the picture of the goal (plan §4.6): first in Pause, with its name on it. */
+.map-card {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px 10px;
+  border-radius: 14px;
+  background-color: var(--paper-bright);
+}
+
+.map-card[hidden] {
+  display: none;
+}
+
+.panel .map-card h3 {
+  margin: 0;
+  color: var(--crayon-red);
+  font-size: 0.9em;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.tiles[hidden],
+.tile[hidden] {
+  display: none;
+}
+
+.tile {
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 10px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 13px 15px 14px 16px;
+  background-color: var(--linden);
+  text-align: left;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.tile svg {
+  grid-row: span 2;
+  width: 34px;
+  height: 34px;
+  font-size: 28px;
+  line-height: 34px;
+  text-align: center;
+}
+
+.tile small {
+  font-size: 0.78em;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.tile small:empty {
+  display: none;
+}
+
+/* The settings, in five groups (menus.md row 6), in two columns where there is room. */
+.pause-settings .group {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.panel .pause-settings h3 {
+  margin: 12px 4px 0;
+  font-size: 1.05em;
+}
+
+.panel h4 {
+  margin: 4px 4px 0;
+  font-size: 0.83em;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.panel h4 svg {
+  width: 22px;
+  height: 22px;
+  vertical-align: -4px;
+  margin-right: 6px;
+}
+
+/* Two columns where there is room, filled down the first and then the second, so no group waits beside a
+   taller one. A group is never split. */
+@media (min-width: 700px) {
+  .pause-settings:not([hidden]) {
+    display: block;
+    columns: 2;
+    column-gap: 18px;
+  }
+
+  .pause-settings .group {
+    break-inside: avoid;
+    margin-bottom: 10px;
+  }
 }
 
 .wide {
@@ -424,14 +969,14 @@ body.calm *::after {
   gap: 12px;
   padding: 0 20px;
   border: 0;
-  border-radius: 999px;
-  background: #e6d6b4;
-  font-weight: 600;
+  border-radius: 14px 16px 13px 15px;
+  background-color: var(--linden);
+  font-weight: 700;
 }
 
 .wide.go {
-  background: #dd4b39;
-  color: #fff;
+  background-color: var(--paint-red);
+  color: var(--ink-on-paint);
   font-size: 21px;
 }
 
@@ -453,14 +998,14 @@ body.calm *::after {
   align-content: center;
   gap: 2px;
   padding: 10px 8px;
-  border: 3px solid transparent;
-  border-radius: 18px;
-  background: #e6d6b4;
+  border: 3px solid var(--paper-edge);
+  border-radius: 9px 12px 10px 11px;
+  background-color: var(--paper-2);
 }
 
 .style.on {
-  border-color: #dd4b39;
-  background: #fff6e4;
+  border-color: var(--crayon-red);
+  background-color: var(--paper-bright);
 }
 
 .style svg {
@@ -473,9 +1018,9 @@ body.calm *::after {
 }
 
 .style small {
-  font-size: 13px;
+  font-size: 0.72em;
   line-height: 1.25;
-  opacity: 0.8;
+  color: var(--ink-soft);
 }
 
 /* The help level: three choices in a row. */
@@ -495,16 +1040,15 @@ body.calm *::after {
 .level {
   min-height: 64px;
   padding: 6px 8px;
-  border: 3px solid transparent;
-  border-radius: 16px;
-  background: #e6d6b4;
-  font-size: 15px;
+  border: 3px solid var(--paper-edge);
+  border-radius: 10px 12px 9px 11px;
+  background-color: var(--paper-2);
   line-height: 1.2;
 }
 
 .level.on {
-  border-color: #dd4b39;
-  background: #fff6e4;
+  border-color: var(--crayon-red);
+  background-color: var(--paper-bright);
 }
 
 /* --- a memory: sepia pictures, one after another, over a dimmed game (plan §2.4) -------------------- */
@@ -523,30 +1067,49 @@ body.calm *::after {
   display: none;
 }
 
+/* The memory itself, with no interface round it (docs/ux-audit/story-presentation.md row 20): an old photo's oval,
+   three times as big as it was, on paper with its grain, the cut-outs each throwing a small shadow. Its name and
+   count are in the album; here only the ✕, faint until touched, and the way on. */
 .memory-card {
-  width: min(78vw, 82vh, 640px);
+  position: relative;
+  width: min(88vw, 144vh, 760px);
   aspect-ratio: 8 / 5;
   border-radius: 50% / 46%;
   overflow: hidden;
-  background: radial-gradient(ellipse at center, #f6e6c4 0%, #ecd6a8 62%, #c9a56c 100%);
+  background: var(--grain, none), radial-gradient(ellipse at center, var(--sepia-light) 0%, var(--sepia) 62%, var(--sepia-deep) 100%);
   box-shadow: 0 0 0 6px rgb(246 230 196 / 0.35), 0 12px 40px rgb(0 0 0 / 0.45);
   filter: sepia(0.35) contrast(0.96);
+  cursor: pointer;
 }
 
-.memory-panel { position: relative; display: grid; justify-items: center; gap: 10px; max-width: 100%; max-height: 100%; box-sizing: border-box; overflow: auto; padding: 12px; border-radius: 22px; color: #f8edd6; }
-.memory-panel h2 { margin: 8px 60px; font-size: 18px; text-align: center; }
-.memory-panel .panel-close { color: #f8edd6; }
-.memory-controls { display: flex; align-items: center; gap: 18px; }
-.memory-controls button { color: #5a3d24; font: inherit; }
+.memory-panel { position: relative; display: grid; justify-items: center; max-width: 100%; max-height: 100%; box-sizing: border-box; overflow: hidden; padding: 12px; color: var(--night-ink); }
+.memory-panel h2,
+.memory-controls #memoryProgress {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.memory-panel .panel-close { position: absolute; z-index: 1; top: 4px; right: 4px; opacity: 0.4; transition: opacity var(--dur-quick) ease-out; }
+.memory-panel .panel-close:is(:hover, :focus-visible, :active) { opacity: 1; }
+.memory-controls { position: absolute; z-index: 1; right: 8%; bottom: 14px; }
+.memory-controls .wide { width: 56px; min-height: 56px; padding: 0; border-radius: 50%; color: var(--wood-dark); }
 .memory-album { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
-.memory-thumb, .memory-missing { display: grid; align-content: center; justify-items: center; gap: 5px; min-height: 100px; border: 2px solid #cbb490; border-radius: 12px; padding: 7px; background: #eee0c1; }
+.memory-thumb, .memory-missing { display: grid; align-content: center; justify-items: center; gap: 5px; min-height: 100px; border: 2px solid var(--paper-edge); border-radius: 12px; padding: 7px; background-color: var(--paper-2); }
 .memory-thumb svg { display: block; width: 100%; border-radius: 8px; }
-.memory-missing { border-style: dashed; color: #937850; font-size: 30px; }
+.memory-thumb .memory-play { width: 26px; height: 26px; border-radius: 0; }
+.memory-missing { border-style: dashed; color: var(--ink-faint); }
+.memory-missing svg { width: 64px; height: 40px; opacity: 0.6; }
 
 .memory-card svg {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
+  filter: drop-shadow(1.5px 2.5px 1.2px rgb(58 38 20 / 0.35));
 }
 
 /* Entrance/return and picture fades use one suspendable presentation in memory.ts. The picture's
@@ -560,37 +1123,192 @@ body.calm *::after {
 /* Local game-frame memories: small thumbnails and one quiet, keyboard-accessible album page. */
 .album-photos h3 { display: flex; align-items: center; gap: 10px; }
 .photo-thumbnails { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.photo-thumb { min-width: 0; padding: 7px; background: #fff9e9; border-radius: 10px; text-align: left; }
-.photo-thumb img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #27352e; border-radius: 5px; }
+.photo-thumb { min-width: 0; padding: 7px; background-color: var(--paper-bright); border-radius: 10px; text-align: left; }
+.photo-thumb img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background-color: var(--print-dark); border-radius: 5px; }
 .photo-thumb span { display: block; padding: 7px 2px 1px; font-size: 0.85rem; }
-.photo-panel { width: min(700px, calc(100vw - 36px)); }
-.photo-panel figure { margin: 0; }
-.photo-panel figure img { display: block; width: 100%; max-height: 45vh; object-fit: contain; border-radius: 8px; background: #27352e; }
-.photo-panel figcaption { padding: 12px 0 0; text-align: center; font-size: 1.1rem; }
-.photo-count { text-align: center; font-size: 0.9rem; margin: 10px 0; }
-.photo-nav { display: flex; gap: 12px; }
-.photo-nav .wide { flex: 1; }
+/* The photo viewer: the photo as a print laid on the paper, as big as the screen lets it be, with round arrows
+   at its sides and the count in the header (docs/ux-audit/menus.md row 17). */
+.panel.photo-panel {
+  width: min(100%, 760px);
+  padding-top: 0;
+  scroll-padding-top: 76px;
+}
+
+.photo-panel .panel-head {
+  grid-template-columns: auto 1fr auto auto;
+}
+
+.photo-panel .panel-head .panel-close {
+  grid-column: 4;
+}
+
+.photo-count {
+  grid-column: 3;
+  margin: 0 4px;
+  font-size: 0.85em;
+  color: var(--ink-soft);
+}
+
+.photo-stage {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 10px;
+}
+
+.photo-step {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background-color: var(--linden);
+}
+
+.photo-step.go {
+  background-color: var(--paint-red);
+  color: var(--ink-on-paint);
+}
+
+.photo-step svg {
+  width: 30px;
+  height: 30px;
+}
+
+.photo-print {
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.photo-print img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100dvh - 210px);
+  box-sizing: border-box;
+  border: 6px solid var(--paper-bright);
+  border-radius: 3px;
+  background-color: var(--paper-bright);
+  box-shadow: 0 6px 14px rgb(61 43 31 / 0.3);
+  transform: rotate(-1.5deg);
+}
+
+/* Its name on a scrap of paper under it. */
+.photo-print figcaption {
+  padding: 5px 14px;
+  border-radius: 4px;
+  background-color: var(--paper-bright);
+  box-shadow: 0 2px 4px rgb(61 43 31 / 0.18);
+  font-weight: 600;
+  transform: rotate(1deg);
+}
+
 .photo-credits { padding: 18px 12px; text-align: center; line-height: 1.65; }
-.photo-credits > span { font-size: 60px; color: #a95e27; }
+.photo-credits .credits-mark { width: 60px; height: 60px; color: var(--gold-deep); }
 .photo-panel [hidden], .album-photos[hidden] { display: none; }
-.photo-panel button:disabled { opacity: 0.4; }
+
+/* The credits are the book's last pages (docs/ux-audit/story-presentation.md row 15): two photos to a spread with
+   Moa's captions, a page turning by itself every 4 s and at a tap anywhere on it; no count and no arrows. The last
+   page has the thanks in her hand, and "Klart" only there. */
+.photo-panel.book .photo-count,
+.photo-panel.book #photoPrevious {
+  display: none;
+}
+.photo-panel.book .photo-stage {
+  position: relative;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+.photo-panel.book .photo-stage:has(#photoFrame2[hidden]) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.photo-panel.book .photo-print figcaption {
+  font-family: var(--font-hand);
+  font-weight: 700;
+}
+.photo-panel.book .photo-print.second img {
+  transform: rotate(1.4deg);
+}
+.photo-panel.book:not(.last) #photoNext {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  background: none;
+  box-shadow: none;
+}
+.photo-panel.book:not(.last) #photoNext svg {
+  display: none;
+}
+.photo-panel.book.last .photo-stage {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+.photo-panel.book.last #photoNext {
+  width: auto;
+  min-width: 200px;
+  height: 64px;
+  padding: 0 28px;
+  grid-auto-flow: column;
+  gap: 10px;
+  border-radius: 32px;
+  font-size: calc(20px * var(--k));
+  font-weight: 700;
+}
+.photo-panel.book .photo-credits h3 {
+  margin: 6px 0 10px;
+  font: 700 calc(34px * var(--k)) / 1.15 var(--font-hand);
+  color: var(--ink);
+}
+.photo-panel.book .photo-credits p {
+  font-size: calc(20px * var(--k));
+}
+.photo-stage.turned :is(.photo-print:not([hidden]), .photo-credits:not([hidden])) {
+  animation: page-turn 600ms var(--ease-out);
+}
 @media (max-height: 500px) {
-  .photo-panel figure img { max-height: 38vh; }
-  .photo-panel figcaption { padding-top: 5px; }
-  .photo-panel .wide { min-height: 40px; margin-top: 8px; }
-  .photo-panel #photoBack { display: none; }
+  .photo-panel.book .photo-credits {
+    padding: 4px 12px 0;
+    line-height: 1.45;
+  }
+  .photo-panel.book .photo-credits .credits-mark {
+    width: 40px;
+    height: 40px;
+  }
+}
+@media (orientation: portrait) {
+  .photo-panel.book .photo-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .photo-panel.book .photo-print img {
+    max-height: calc((100dvh - 300px) / 2);
+  }
+}
+
+
+@media (max-height: 500px) {
+  .photo-print img {
+    max-height: calc(100dvh - 160px);
+  }
 }
 .story-panel { width: min(760px, 100%); }
 .story-panel p { margin: 3px 0; }
 .share-sweets, .share-friends { display: grid; gap: 12px; }
 .share-sweets { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .share-friends { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.share-choice { border: 2px solid transparent; border-radius: 14px; background: #e6d6b4; padding: 8px; min-width: 64px; min-height: 88px; display: grid; justify-items: center; gap: 3px; }
+.share-choice { border: 2px solid var(--paper-edge); border-radius: 10px 13px 11px 12px; background-color: var(--paper-2); padding: 8px; min-width: 64px; min-height: 88px; display: grid; justify-items: center; gap: 3px; }
 .share-choice svg { width: 55px; height: 52px; }
 .share-choice span { font-size: 0.85em; }
 .share-choice small { font-size: 0.65em; }
-.share-choice[aria-pressed="true"] { border-color: #8b4738; background: #f8dba2; }
-.share-choice:disabled { opacity: 0.4; }
+.share-choice small svg { width: 1.1em; height: 1.1em; margin-right: 2px; vertical-align: -0.2em; }
+.share-choice[aria-pressed="true"] { border-color: var(--crayon-red); background-color: var(--gold-pale); }
+.share-choice:disabled { color: var(--ink-faint); }
+.share-choice:disabled svg { opacity: 0.45; }
 .share-bird-rule { font-size: 0.8em; }
 @media (max-width: 480px) { .share-sweets { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-height: 500px) { .share-choice { min-height: 68px; padding: 3px; } .share-choice svg { width: 36px; height: 34px; } .story-panel { gap: 8px; } }
@@ -601,8 +1319,8 @@ body.calm *::after {
 
 .album-count {
   margin: 2px 0 8px;
-  font-size: 15px;
-  opacity: 0.75;
+  font-size: 0.85em;
+  color: var(--ink-soft);
 }
 
 .golden-reward {
@@ -611,9 +1329,9 @@ body.calm *::after {
   gap: 3px;
   margin: 16px 0;
   padding: 10px;
-  border: 2px solid #c69732;
+  border: 2px solid var(--gold);
   border-radius: 18px;
-  background: radial-gradient(ellipse, #fff9dc, #f1d88c);
+  background: radial-gradient(ellipse, var(--gold-light), var(--gold-pale));
   font-weight: 600;
   text-align: center;
 }
@@ -633,7 +1351,7 @@ body.calm *::after {
   justify-items: center;
   align-content: start;
   gap: 4px;
-  font-size: 12px;
+  font-size: 0.67em;
   line-height: 1.15;
   text-align: center;
   overflow-wrap: anywhere;
@@ -644,8 +1362,8 @@ body.calm *::after {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--colour);
-  box-shadow: inset 0 0 0 10px var(--mark), 0 0 0 2px #7b5a36;
+  background-color: var(--colour);
+  box-shadow: inset 0 0 0 10px var(--mark), 0 0 0 2px var(--wood-line);
   transform: rotate(-6deg);
 }
 
@@ -653,39 +1371,71 @@ body.calm *::after {
   transform: rotate(5deg);
 }
 
-/* One he has not found yet: an empty ring, and a question mark for its name. */
+/* One he has not found yet: an empty paper ring, with nothing written under it (menus.md row 12). */
 .album-grid i.missing {
-  background: transparent;
+  background-color: var(--paper-bright);
   box-shadow: none;
-  border: 2px dashed rgb(123 90 54 / 0.5);
+  border: 2px solid rgb(123 90 54 / 0.8);
+}
+
+/* A strip for each chapter: its picture from Moa's map, its name and its count, then its four stickers. */
+.album-chapters {
+  display: grid;
+  gap: 10px;
+}
+
+@media (min-width: 700px) {
+  .album-chapters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.album-chapter {
+  display: grid;
+  gap: 8px;
+  padding: 8px 10px 10px;
+  border-radius: 8px 10px 9px 11px;
+  background-color: var(--paper-2);
+  background-image: var(--grain, none);
+}
+
+.album-place {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.album-place .chapter-picture {
+  width: 30px;
+  height: 28px;
+}
+
+.album-place b {
+  font-family: var(--font-hand);
+  font-weight: 700;
+  color: var(--crayon-blue);
+}
+
+.album-place small {
+  margin-left: auto;
+  font-size: 0.85em;
+  color: var(--ink-soft);
+}
+
+/* A drawn thing: a lost thing, or a keepsake, as big as a sticker. */
+.album-grid svg.thing {
+  width: 44px;
+  height: 44px;
 }
 
 .album-grid li:not(.got) span {
-  opacity: 0.5;
+  color: var(--ink-faint);
 }
 
-/* Hittegods: the lost things he has found, as labels on a string. */
+/* Hittegods: the lost things, drawn, four in a row like the candy (menus.md row 13). */
 .lost-list {
-  list-style: none;
-  margin: 6px 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.lost-list li {
-  padding: 5px 12px;
-  border-radius: 999px;
-  border: 2px dashed rgb(123 90 54 / 0.4);
-  font-size: 14px;
-  opacity: 0.6;
-}
-
-.lost-list li.got {
-  border: 2px solid rgb(123 90 54 / 0.5);
-  background: #fffaf0;
-  opacity: 1;
+  margin-top: 6px;
 }
 
 /* Moas karta: crayon on paper. */
@@ -695,7 +1445,7 @@ body.calm *::after {
 
 .map {
   border-radius: 14px;
-  background: #fffaf0;
+  background-color: var(--paper-bright);
   box-shadow: inset 0 0 0 2px rgb(123 90 54 / 0.18);
   padding: 4px 6px 0;
 }
@@ -706,61 +1456,339 @@ body.calm *::after {
   max-height: 180px;
 }
 
+/* Moa's writing, large enough to read on a phone (menus.md row 15). */
 .moas-karta text {
-  font-size: 11px;
+  font-family: var(--font-hand);
+  font-size: calc(16px * var(--map-text, 1));
   font-weight: 700;
-  fill: #5a4630;
+  fill: var(--crayon-brown);
 }
 
 .moas-karta text.here {
-  font-size: 9.5px;
-  fill: #b03a2e;
+  font-size: calc(14px * var(--map-text, 1));
+  fill: var(--crayon-red);
+}
+
+/* --- Inställningar: a row for each setting, with its picture (docs/ux-audit/menus.md rows 5-10) ---------- */
+.row-icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+}
+
+.row-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.row-words {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.row-words b,
+.help-level b {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.row-words small,
+.help-level small {
+  font-size: 0.78em;
+  line-height: 1.3;
+  color: var(--ink-soft);
 }
 
 .switch {
   min-height: 64px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 16px;
+  gap: 12px;
+  padding: 8px 12px 8px 14px;
   border-radius: 16px;
-  background: #ecdfc6;
+  background-color: var(--paper-2);
+  cursor: pointer;
 }
 
+/* A drawn switch: a wooden track and its knob, red with a tick when on. The whole row is its target. */
 .switch input {
-  width: 30px;
-  height: 30px;
-  accent-color: #dd4b39;
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 56px;
+  height: 32px;
+  margin: 0 0 0 auto;
+  box-sizing: border-box;
+  border: 2px solid var(--wood-line);
+  border-radius: 16px;
+  background-color: var(--linden-deep);
+  cursor: pointer;
 }
 
-.volume {
-  display: flex;
+.switch input::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--paper-bright);
+  box-shadow: 0 1px 2px rgb(61 43 31 / 0.35);
+  transition: transform 140ms ease-out;
+}
+
+.switch input:checked {
+  border-color: var(--crayon-red-dark);
+  background-color: var(--crayon-red);
+}
+
+.switch input:checked::before {
+  transform: translateX(24px);
+}
+
+.switch input:checked::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 33px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--crayon-red);
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+/* What the chosen style switches on, under its two cards (row 7). */
+.style-says {
+  margin: 0 4px;
+  font-size: 0.83em;
+  line-height: 1.35;
+}
+
+/* The help levels: the helper's portrait, how much it does in dots, and what it means (row 9). */
+.help-levels {
+  display: grid;
+  gap: 12px;
+}
+
+.help-level {
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-areas: 'icon name dots' 'icon says says';
   align-items: center;
-  justify-content: space-between;
+  column-gap: 12px;
+  row-gap: 2px;
+  padding: 8px 14px;
+  border: 3px solid var(--paper-edge);
+  border-radius: 11px 9px 12px 10px;
+  background-color: var(--paper-2);
+  text-align: left;
+}
+
+.help-level .row-icon {
+  grid-area: icon;
+}
+
+.help-level b {
+  grid-area: name;
+}
+
+.help-level small {
+  grid-area: says;
+}
+
+.help-level .dots {
+  grid-area: dots;
+  display: flex;
+  gap: 4px;
+}
+
+.help-level .dots i {
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border: 2px solid var(--wood-line);
+  border-radius: 50%;
+}
+
+.help-level .dots i.on {
+  background-color: var(--wood-line);
+}
+
+.help-level.on {
+  border-color: var(--crayon-red);
+  background-color: var(--paper-bright);
+}
+
+/* A sound: the picture mutes it and keeps its level; five candy pips are the level (row 8). */
+.sound-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 2px;
+  align-items: center;
+  padding: 8px 12px 8px 8px;
+  border-radius: 16px;
+  background-color: var(--paper-2);
+}
+
+.mute {
+  grid-row: span 2;
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background-color: var(--linden);
+  cursor: pointer;
+}
+
+.mute svg {
+  width: 36px;
+  height: 36px;
+}
+
+.mute input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.mute .slash,
+.muted .mute .sounding {
+  display: none;
+}
+
+.muted .mute .slash {
+  display: inline;
+}
+
+.muted .mute {
+  color: var(--wood-line);
+  background-color: var(--linden-deep);
+}
+
+.sound-word {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.pips {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 40px));
   gap: 8px;
-  padding: 0 8px 8px 16px;
-  flex-wrap: wrap;
+  padding: 2px 0;
+  border-radius: 12px;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
-.volume-steps {
+.pips i {
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  border: 3px solid var(--linden-edge);
+  border-radius: 50%;
+  background-color: var(--paper-bright);
+}
+
+.pips i.on {
+  border-color: var(--crayon-red-dark);
+  background: radial-gradient(circle at 34% 32%, var(--candy-shine) 0 16%, var(--candy-red) 19%);
+}
+
+.muted .pips i.on {
+  opacity: 0.45;
+}
+
+/* The grown-ups' rows: a button with a picture, the home-screen steps, and the chapter's code. */
+.wide.row-button {
+  justify-content: flex-start;
+  padding: 0 14px;
+  border-radius: 16px;
+}
+
+.row-button svg {
+  width: 32px;
+  height: 32px;
+}
+
+.info-row {
+  min-height: 64px;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 14px;
+  border-radius: 16px;
+  background-color: var(--paper-2);
+}
+
+details.info-row {
+  display: block;
+}
+
+details.info-row summary {
+  min-height: 48px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
 }
 
-.volume-steps button {
-  width: 48px;
-  height: 48px;
-  border: 2px solid transparent;
-  border-radius: 14px;
-  background: #e6d6b4;
-  font-size: 26px;
+details.info-row summary::-webkit-details-marker {
+  display: none;
 }
 
-.volume-steps output {
-  min-width: 5ch;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
+details.info-row p {
+  margin: 8px 0 0;
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+.code-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+}
+
+.code-words {
+  grid-column: 2;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* Focus: a 3 px blue ring 3 px outside, never the red of what is chosen (style-and-sound.md row 11). Over the
+   picture a paper halo fills the gap, so the ring shows on any place. */
+:is(.panel, .message, .ending-shot) :focus-visible,
+.mute:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+:is(.corner, .bag, .btn):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px var(--paper);
+}
+
+.panel button:active,
+.switch:active,
+.mute:active {
+  filter: brightness(0.94);
 }
 
 .ask {
@@ -769,7 +1797,7 @@ body.calm *::after {
   gap: 12px;
   padding: 12px;
   border-radius: 18px;
-  background: #fff6e4;
+  background-color: var(--paper-bright);
 }
 
 .ask[hidden] {
@@ -798,30 +1826,40 @@ body.calm *::after {
 }
 
 .ask .yes {
-  background: #3f9a5a;
-  color: #fff;
+  background-color: var(--paint-green);
+  color: var(--ink-on-paint);
 }
 
 .ask .no {
-  background: #e6d6b4;
+  background-color: var(--linden);
 }
 
-/* --- a bubble: what someone says. The game has no voices (plan §3.7). ----------------------------- */
+/* --- a bubble: what someone says. The game has no voices (plan §3.7). -----------------------------
+   A scrap of Moa's paper with the speaker's face, name and colour, so whoever can't read the name still sees who
+   speaks (docs/ux-audit/in-play.md rows 14-16). Its full width, between the corner buttons and above them. */
 .bubble {
   position: absolute;
-  left: 50%;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
   top: calc(env(safe-area-inset-top) + 16px);
-  transform: translateX(-50%);
-  max-width: min(64%, 560px);
+  max-width: min(64%, 560px, 100% - 256px);
   display: grid;
-  gap: 2px;
-  padding: 10px 20px 12px;
-  border-radius: 22px;
-  background: #fffaf0;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+  align-items: center;
+  padding: 8px 18px 10px 10px;
+  border-left: 6px solid var(--who, var(--who-spoket));
+  border-radius: 8px;
+  background-color: var(--paper);
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+  rotate: var(--tilt, 0deg);
   font-size: calc(21px * var(--k));
   line-height: 1.25;
-  text-align: center;
+  text-align: left;
+  text-wrap: balance;
   pointer-events: none;
 }
 
@@ -829,11 +1867,121 @@ body.calm *::after {
   display: none;
 }
 
+.bubble .face {
+  grid-row: span 2;
+  width: calc(36px * var(--k));
+  height: calc(36px * var(--k));
+  border-radius: 50%;
+  background-color: var(--paper-2);
+  overflow: hidden;
+}
+
+.bubble .face svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .bubble b {
-  font-size: 0.62em;
+  font-size: calc(15px * var(--k));
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  opacity: 0.6;
+  color: var(--who-ink, var(--who-none));
+}
+
+/* Each speaker's colour: the colour of their sign in the world (src/render/props.ts), and a darker ink for the
+   name, 4.9:1 or more on the paper. */
+.bubble[data-who='mamma'] { --who: var(--who-mamma); --who-ink: var(--who-mamma); --tilt: 0.5deg; }
+.bubble[data-who='pappa'] { --who: var(--who-pappa); --who-ink: var(--who-pappa-ink); --tilt: -0.4deg; }
+.bubble[data-who='moa'] { --who: var(--who-moa); --who-ink: var(--who-moa-ink); --tilt: -0.6deg; }
+.bubble[data-who='bertil'] { --who: var(--who-bertil); --who-ink: var(--who-bertil-ink); --tilt: 0.4deg; }
+.bubble[data-who='elof'] { --who: var(--who-elof); --who-ink: var(--who-elof); --tilt: 0deg; }
+.bubble[data-who='spoket'] { --who: var(--who-spoket); --who-ink: var(--who-spoket); --tilt: -0.3deg; }
+
+/* How a line is said (src/content/tones.ts; docs/ux-audit/story-presentation.md row 22). A shout bursts, bigger and
+   bold, and pops as it lands; a worry wavers; a gentle word is smaller and lies flat on the picture; a thought is a
+   cloud trailing three small rings down towards Elof. The burst, the wavering line and the cloud are drawn round the
+   paper in the speaker's colour, in place of its straight edge and its colour bar (src/ui/tones.ts). */
+.tone-edge,
+.think-rings {
+  display: none;
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+.tone-edge {
+  inset: -7px;
+  z-index: -1;
+  width: calc(100% + 14px);
+  height: calc(100% + 14px);
+  filter: drop-shadow(0 4px 7px rgb(0 0 0 / 0.22));
+}
+.tone-edge path,
+.think-rings circle {
+  display: none;
+  fill: var(--paper);
+  stroke: var(--who, var(--who-spoket));
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.bubble:is([data-tone='call'], [data-tone='worry'], [data-tone='think']) {
+  border-left-color: transparent;
+  background: none;
+  box-shadow: none;
+}
+.bubble:is([data-tone='call'], [data-tone='worry'], [data-tone='think']) .tone-edge {
+  display: block;
+}
+.bubble[data-tone='call'] .edge-call,
+.bubble[data-tone='worry'] .edge-worry,
+.bubble[data-tone='think'] .edge-think,
+.bubble[data-tone='think'] .think-rings circle {
+  display: inline;
+}
+.bubble[data-tone='call'] {
+  font-size: calc(24px * var(--k));
+  font-weight: 700;
+}
+body.big-text .bubble[data-tone='call'] {
+  font-size: calc(30px * var(--k));
+}
+.bubble[data-tone='call']:not([hidden]) {
+  animation: call-pop 0.2s var(--ease-paper);
+}
+@keyframes call-pop {
+  from {
+    opacity: 0;
+    scale: 0.82;
+  }
+}
+.bubble[data-tone='soft'] {
+  font-size: calc(18px * var(--k));
+  box-shadow: none;
+}
+body.big-text .bubble[data-tone='soft'] {
+  font-size: calc(22px * var(--k));
+}
+.bubble[data-tone='think'] .think-rings {
+  display: block;
+  top: calc(100% + 3px);
+  left: calc(50% - 34px);
+  width: 34px;
+  height: 30px;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.2));
+}
+/* A line that goes on from the one before stands under it, in the same bubble. */
+#bubbleLine .said {
+  display: block;
+}
+
+/* Held upright the top is the corner buttons' row: what is said hangs below it, across the screen. */
+@media (orientation: portrait) {
+  .bubble,
+  body.big-text .bubble {
+    top: calc(env(safe-area-inset-top) + 160px);
+    max-width: calc(100% - 24px);
+  }
 }
 
 /* The card at a chapter's end: the candy in rows of ten, with the number beside it (plan §4.3). */
@@ -843,48 +1991,82 @@ body.calm *::after {
 }
 
 .panel.end h2 {
-  margin: 4px 0 0;
-  font-size: 30px;
+  margin: 0;
+  font-size: 32px;
+}
+
+/* Above the name, which part of the story this is: "Kapitel 1" in small capitals (story-presentation.md row 7). */
+.page-kicker {
+  margin: 2px 0 -8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }
 
 .rows {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
   gap: 5px;
-  max-height: 34vh;
-  overflow: auto;
 }
 
-.rows .row {
-  display: flex;
-  gap: 5px;
+/* Ten sweets wrapped in a roll: a striped tube with twisted ends, in its sweet's colour (story-presentation.md
+   row 12). */
+.rows i.roll {
+  width: 48px;
+  height: 12px;
+  background-image: radial-gradient(ellipse 30% 34% at 42% 30%, rgb(255 255 255 / 0.55), transparent 72%),
+    repeating-linear-gradient(90deg, transparent 0 7px, rgb(255 255 255 / 0.5) 7px 10px);
+  clip-path: polygon(0 10%, 8% 40%, 12% 15%, 20% 0, 80% 0, 88% 15%, 92% 40%, 100% 10%, 100% 90%, 92% 60%, 88% 85%,
+    80% 100%, 20% 100%, 12% 85%, 8% 60%, 0 90%);
 }
 
 /* Each is a small sweet in its wrapper: a round middle between two twisted ends. */
 .rows i {
   width: 19px;
   height: 11px;
-  background: #e8483f;
+  background-color: var(--candy-red);
   clip-path: polygon(0 8%, 17% 38%, 24% 14%, 36% 0, 64% 0, 76% 14%, 83% 38%, 100% 8%, 100% 92%, 83% 62%, 76% 86%, 64% 100%, 36% 100%, 24% 86%, 17% 62%, 0 92%);
 }
 
-.rows i:nth-child(3n + 1) {
-  background: #f6c445;
+.rows i:nth-child(6n + 2) {
+  background-color: var(--candy-yellow);
 }
 
-.rows i:nth-child(3n + 2) {
-  background: #4a90d9;
+.rows i:nth-child(6n + 3) {
+  background-color: var(--candy-green);
+}
+
+.rows i:nth-child(6n + 4) {
+  background-color: var(--candy-blue);
+}
+
+.rows i:nth-child(6n + 5) {
+  background-color: var(--candy-pink);
+}
+
+.rows i:nth-child(6n) {
+  background-color: var(--candy-orange);
 }
 
 .panel.end p {
   margin: 0;
 }
 
+/* The story is the page's biggest words; the tally is smaller (row 8). */
 .panel.end .count b {
-  font-size: 30px;
+  font-size: 18px;
 }
 
-.panel.end .next {
-  opacity: 0.75;
+/* What comes next, or the story's last words, under the chapter's name. */
+.page-story .next {
+  max-width: 34ch;
+  font-size: 22px;
+  line-height: 1.35;
+  color: var(--ink);
 }
 
 /* The chapter's last page (docs/narrative-audit/threads.md §5.4): the coda's last picture glued in like a photo,
@@ -906,33 +2088,79 @@ body.calm *::after {
   min-width: 0;
 }
 
+/* A photo on the page: a 3:2 print with a white margin, its title written on the margin in Moa's hand, the print
+   and its words turned together (row 8). */
 .page-picture {
   margin: 4px 0 2px;
-  padding: 7px 7px 9px;
+  padding: 9px 9px 0;
   max-width: 100%;
-  background: #fffdf7;
+  display: grid;
+  justify-items: center;
+  background-color: var(--paper-bright);
   box-shadow: 0 3px 10px rgb(60 40 20 / 0.28);
   transform: rotate(-1.4deg);
+}
+
+.page-photo {
+  display: block;
 }
 
 .page-picture canvas {
   display: block;
   width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
   max-height: 32vh;
   object-fit: cover;
 }
 
+.page-picture figcaption {
+  min-height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 2px 8px 4px;
+  font-family: var(--font-hand);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.page-picture figcaption:empty {
+  min-height: 9px;
+  padding: 0;
+}
+
+/* The story under the chapter's name, in plain words: no box. */
 .page-story .story-handoff {
   margin: 0;
+  padding: 0;
+  background: none;
   text-align: center;
+  font-size: 19px;
+  line-height: 1.45;
+}
+
+.page-story .story-handoff p {
+  margin: 0;
 }
 
 .page-tally .count b {
-  font-size: 24px;
+  font-size: 18px;
 }
 
-.page-tally .rows {
-  max-height: 18vh;
+/* Moa's map on the page, as wide as its page lets it be (story-presentation.md row 11). */
+.page-tally .map {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.page-tally .map-title {
+  margin: 0 0 -4px;
+  font-family: var(--font-hand);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--crayon-red);
 }
 
 /* Moa's crayon draws the way on, once the page is there. */
@@ -946,22 +2174,37 @@ body.calm *::after {
   to { stroke-dashoffset: 0; }
 }
 
-body.calm .panel.end,
-body.calm .moas-karta .way-on {
-  animation: none;
-  stroke-dashoffset: 0;
-}
+/* Any screen held sideways: the page opens in two, as a book does, the story on the left and the tally on the right,
+   with the fold's shadow between them, so that nothing of it is scrolled out of sight (row 9). */
+@media (orientation: landscape) and (min-width: 700px) {
+  .panel.end {
+    width: min(100%, 1040px);
+    grid-template-columns: 1.15fr 1fr;
+    align-items: start;
+    column-gap: 28px;
+  }
 
-@media (prefers-reduced-motion: reduce) {
-  .panel.end,
-  .moas-karta .way-on {
-    animation: none;
-    stroke-dashoffset: 0;
+  .page-tally {
+    position: relative;
+  }
+
+  .page-tally::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -34px;
+    width: 20px;
+    background: linear-gradient(90deg, transparent, rgb(70 45 20 / 0.16));
+    pointer-events: none;
+  }
+
+  .page-picture canvas {
+    max-height: 44vh;
   }
 }
 
-/* A phone held sideways: the page opens in two, the story on the left and the tally on the right, so that
-   nothing of it is scrolled out of sight. */
+/* A phone held sideways: the spread draws in, so all of it is in view. */
 @media (orientation: landscape) and (max-height: 520px) {
   .panel.end {
     width: min(100%, 860px);
@@ -970,12 +2213,31 @@ body.calm .moas-karta .way-on {
     column-gap: 18px;
   }
 
+  .page-tally::before {
+    left: -29px;
+  }
+
   .page-picture canvas {
     max-height: 38vh;
   }
 
   .panel.end h2 {
-    font-size: 24px;
+    font-size: 26px;
+  }
+
+  .page-story .next,
+  .page-story .story-handoff {
+    font-size: 17px;
+  }
+
+  /* Still smaller than the story (row 8). */
+  .panel.end .count b {
+    font-size: 15px;
+  }
+
+  .page-picture figcaption {
+    min-height: 26px;
+    font-size: 16px;
   }
 
   .page-tally {
@@ -986,9 +2248,6 @@ body.calm .moas-karta .way-on {
     max-height: 22vh;
   }
 
-  .page-tally .rows {
-    max-height: 9vh;
-  }
 
   .panel.end .wide {
     min-height: 52px;
@@ -998,6 +2257,7 @@ body.calm .moas-karta .way-on {
   .panel.end #endAgain {
     min-height: 40px;
     background: transparent;
+    box-shadow: none;
     font-weight: 400;
     font-size: 16px;
     text-decoration: underline;
@@ -1005,30 +2265,374 @@ body.calm .moas-karta .way-on {
 }
 
 /* --- the title: the game's name, Börja or Fortsätt, and at a first start the two play styles ------- */
+/* It lies over the living picture, dark only behind its card on the left (from below on an upright phone), so the
+   morning shows beside it (docs/ux-audit/first-minutes.md row 4). */
 .panel-back.title {
   z-index: 12;
-  background: rgb(40 28 18 / 0.6);
+  place-items: center start;
+  background: linear-gradient(90deg, rgb(20 14 9 / 0.6) 0%, rgb(20 14 9 / 0.35) 40%, rgb(20 14 9 / 0) 65%);
 }
 
+@media (orientation: portrait) {
+  .panel-back.title {
+    place-items: end center;
+    background: linear-gradient(0deg, rgb(20 14 9 / 0.6) 0%, rgb(20 14 9 / 0.35) 40%, rgb(20 14 9 / 0) 65%);
+  }
+}
+
+/* Utforska vidare: it opens at the top, with a card for each chapter and Moa's drawing of it (menus.md row 18). */
 .panel-back.explore { z-index: 13; }
-.chapter-list { display: grid; gap: 12px; }
+
+.explore .panel {
+  padding-top: 0;
+  scroll-padding-top: 76px;
+}
+
+.chapter-list {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 700px) {
+  .explore .panel {
+    width: min(100%, 760px);
+  }
+
+  .chapter-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .chapter-choice {
   display: grid;
-  gap: 7px;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  grid-template-areas: 'picture name star' 'picture count star' 'rows rows rows' 'stickers stickers stickers';
+  align-items: center;
+  align-content: start;
+  column-gap: 12px;
+  row-gap: 6px;
   min-height: 96px;
-  padding: 15px;
-  border: 2px solid #cfb991;
+  padding: 12px 14px;
+  border: 2px solid var(--paper-edge);
   border-radius: 18px;
   text-align: left;
-  background: #fff6e2;
+  background-color: var(--paper);
 }
-.chapter-choice b { font-size: 21px; }
-.chapter-choice .rows { max-height: none; }
-.route-star { color: #806022; font-size: 26px; }
+
+.chapter-picture {
+  grid-area: picture;
+  width: 48px;
+  height: 44px;
+}
+
+.chapter-choice b {
+  grid-area: name;
+  font-size: 1.15em;
+}
+
+.chapter-count {
+  grid-area: count;
+  font-size: 0.85em;
+}
+
+.chapter-choice .rows {
+  grid-area: rows;
+  max-height: none;
+}
+
+.chapter-choice .stickers {
+  grid-area: stickers;
+  max-width: none;
+  gap: 6px;
+}
+
+.chapter-choice .stickers i,
+.chapter-choice .stickers i.kind {
+  width: 24px;
+  height: 24px;
+}
+
+.route-star {
+  grid-area: star;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  color: var(--gold-deep);
+}
+
+.route-star svg {
+  width: 30px;
+  height: 30px;
+}
+
+.route-star small {
+  font-size: 0.7em;
+  font-weight: 600;
+}
+
+/* Said to a screen reader, not shown. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 #pauseExplore[hidden] { display: none; }
 
 .title .panel {
+  width: min(100%, max(340px, 40vw), 460px);
   text-align: center;
+}
+
+/* While the game still loads, Moa's red crayon line crosses the card's foot as its models arrive
+   (first-minutes.md row 2). */
+.title .panel {
+  position: relative;
+}
+
+.title-loading {
+  position: absolute;
+  left: 18px;
+  bottom: 8px;
+  width: calc((100% - 36px) * var(--loaded, 0));
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--crayon-red);
+  transition: width 300ms ease-out, opacity 400ms ease-out;
+}
+
+.title-loading.done {
+  opacity: 0;
+}
+
+/* Under the title the picture is the game's alone: no bag, corners, controls or hints (first-minutes.md row 8). */
+body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) {
+  visibility: hidden;
+}
+
+/* Leaving: the card lifts and fades while the picture goes on under it (first-minutes.md row 16). */
+.panel-back.title.leaving {
+  pointer-events: none;
+  animation: title-leave 400ms ease-in forwards;
+}
+
+.panel-back.title.leaving > .panel {
+  animation: title-lift 400ms ease-in forwards;
+}
+
+@keyframes title-leave {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes title-lift {
+  to {
+    transform: translateY(-16px);
+  }
+}
+
+/* The game's name, carved (row 5). */
+.title-name {
+  margin: 0;
+  line-height: 0;
+}
+
+.title-sign {
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+}
+
+/* A phone held sideways: the card's parts draw in, so all of it is in view (rows 6 and 12). */
+@media (max-height: 500px) {
+  .title .panel {
+    padding: 10px 14px 12px;
+  }
+
+  .title #titleFront {
+    gap: 8px;
+  }
+
+  .title-sign {
+    max-height: 72px;
+  }
+
+  .start-style {
+    min-height: 0;
+    padding: 6px;
+  }
+
+  .start-style svg {
+    height: 40px;
+  }
+
+  .start-style b {
+    font-size: 20px;
+  }
+
+  .start-style small {
+    font-size: 14px;
+    line-height: 1.15;
+  }
+
+  .round svg {
+    width: 52px;
+    height: 52px;
+    padding: 12px;
+  }
+
+  .round {
+    gap: 2px;
+    font-size: 14px;
+  }
+
+  .title .story-title p {
+    display: none;
+  }
+
+  .title #startBtn {
+    min-height: 56px;
+  }
+}
+
+/* A first start: the two play styles are the start buttons, Äventyr the larger (row 12). */
+.start-styles {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 12px;
+}
+
+.title[data-saved='true'] .start-styles,
+.title[data-saved='false'] #startBtn,
+.title[data-saved='false'] #titleStory {
+  display: none;
+}
+
+.start-style {
+  min-height: 132px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border: 0;
+  border-radius: 20px;
+  background-color: var(--linden);
+}
+
+.start-style.go {
+  background-color: var(--paint-red);
+  color: var(--ink-on-paint);
+}
+
+.start-style svg {
+  width: 100%;
+  max-width: 120px;
+  height: 58px;
+}
+
+.start-style b {
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.start-style small {
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+/* A start pressed while the game loads: that button waits, with the loading ghost bobbing on it (row 1). */
+.title.waiting :is(#startAventyr, #startLugnt, #startBtn):not(.pressed) {
+  opacity: 0.45;
+}
+
+.pressed > svg:not(.waiting-ghost) {
+  display: none;
+}
+
+.waiting-ghost {
+  width: 32px;
+  height: 40px;
+  animation: bob 2.4s ease-in-out infinite;
+}
+
+/* Under the start: round buttons with a word under each (row 7). */
+.round-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px;
+}
+
+.round {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 64px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.round svg {
+  box-sizing: border-box;
+  width: 64px;
+  height: 64px;
+  padding: 16px;
+  border-radius: 50%;
+  background-color: var(--linden);
+}
+
+/* Each page of the title has its way back at its top left, beside its heading (row 10). */
+.section-head {
+  display: grid;
+  grid-template-columns: 64px 1fr 64px;
+  align-items: center;
+}
+
+.section-head h2 {
+  margin: 0;
+}
+
+.round-back {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background-color: var(--linden);
+}
+
+.round-back svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* A game taken up again: where he is, as the chapter's card says it, over what he is doing (row 9). */
+.title .story-title .story-card {
+  display: block;
+  color: var(--crayon-red);
+  font-family: var(--font-hand);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.title .story-title b {
+  font-size: 19px;
+}
+
+.title .story-title p {
+  font-size: 17px;
 }
 
 .title #titleFront,
@@ -1047,11 +2651,6 @@ body.calm .moas-karta .way-on {
   display: none !important;
 }
 
-.title h1 {
-  margin: 6px 0 2px;
-  font-size: clamp(24px, 6vw, 34px);
-  line-height: 1.15;
-}
 
 .title h2 {
   margin: 4px 0;
@@ -1071,21 +2670,17 @@ body.calm .moas-karta .way-on {
   text-decoration: underline;
 }
 
-/* A chapter code: on a chapter's card, and typed in on the title (plan §6.9). */
+/* A chapter code: a line at the page's foot, "Kod till nästa kapitel: GRAN KOTTE MOSSA" (plan §6.9; row 8). */
 .panel.end .code {
   margin: 0;
-  display: grid;
-  gap: 2px;
-  justify-items: center;
   font-size: 14px;
+  color: var(--ink-soft);
 }
 
 .panel.end .code b {
-  padding: 6px 14px;
-  border-radius: 12px;
-  background: #fffaf0;
-  box-shadow: inset 0 0 0 2px rgb(123 90 54 / 0.2);
-  font-size: 19px;
+  margin-left: 6px;
+  color: var(--ink);
+  font-size: 14px;
   letter-spacing: 0.06em;
   -webkit-user-select: text;
   user-select: text;
@@ -1103,9 +2698,11 @@ body.calm .moas-karta .way-on {
   padding: 0 16px;
   border: 2px solid rgb(123 90 54 / 0.4);
   border-radius: 16px;
-  background: #fffaf0;
+  background-color: var(--paper-bright);
   color: inherit;
-  font: 600 20px/1 inherit;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
   letter-spacing: 0.05em;
   text-align: center;
   text-transform: uppercase;
@@ -1113,11 +2710,31 @@ body.calm .moas-karta .way-on {
   user-select: text;
 }
 
+/* The code's three words, a field each (first-minutes.md row 15). */
+.code-hint {
+  margin: 0;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+
+.code-words-in {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.code-form input.code-word {
+  padding: 0 4px;
+  font-size: 19px;
+  letter-spacing: 0.02em;
+}
+
 .code-form input::placeholder {
   font-weight: 400;
   letter-spacing: 0;
   text-transform: none;
-  opacity: 0.55;
+  color: var(--ink-faint);
+  opacity: 1;
 }
 
 .code-wrong {
@@ -1132,7 +2749,7 @@ body.calm .moas-karta .way-on {
   justify-content: center;
   gap: 10px;
   margin: 0;
-  opacity: 0.8;
+  color: var(--ink-soft);
 }
 
 .rotate svg {
@@ -1140,25 +2757,39 @@ body.calm .moas-karta .way-on {
   height: 36px;
 }
 
-@media (orientation: portrait) and (pointer: coarse) {
+/* Only a phone held upright is asked to turn: an iPad held upright is as wide as a phone held sideways. */
+@media (orientation: portrait) and (pointer: coarse) and (max-width: 600px) {
   .rotate {
     display: flex;
   }
 }
 
 /* A line of news at the top, gone after a few seconds. */
+/* A find or a thanks: like a bubble, its full width between the corners and above them (in-play.md rows 14-15). */
 .notice {
   position: absolute;
-  left: 50%;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  width: max-content;
   top: calc(env(safe-area-inset-top) + 14px);
-  transform: translateX(-50%);
-  max-width: min(70%, 520px);
+  max-width: min(70%, 520px, 100% - 256px);
   padding: 10px 18px;
-  border-radius: 16px;
-  background: rgb(236 223 198 / 0.95);
-  font-size: 15px;
+  border-radius: 6px 9px 7px 8px;
+  background-color: var(--paper);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+  font-size: 17px;
   text-align: center;
+  text-wrap: balance;
   pointer-events: none;
+}
+
+@media (orientation: portrait) {
+  .notice {
+    top: calc(env(safe-area-inset-top) + 160px);
+    max-width: calc(100% - 24px);
+  }
 }
 
 .notice[hidden] {
@@ -1176,8 +2807,9 @@ body.calm .moas-karta .way-on {
   box-sizing: border-box;
   margin-inline: auto;
   padding: 8px 12px;
-  border-radius: 18px;
-  background: rgb(236 223 198 / 0.9);
+  border-radius: 6px 8px 7px 9px;
+  background-color: var(--paper);
+  box-shadow: 0 3px 10px rgb(0 0 0 / 0.22);
   font-size: 15px;
   line-height: 1.35;
   text-align: center;
@@ -1193,7 +2825,7 @@ body.calm .moas-karta .way-on {
   padding: 6px 8px;
   border-radius: 6px;
   background: rgb(0 0 0 / 0.6);
-  color: #d8f5d0;
+  color: var(--debug-ink);
   font: 11px/1.35 ui-monospace, Consolas, monospace;
   pointer-events: none;
   -webkit-user-select: text;
@@ -1206,11 +2838,55 @@ body.calm .moas-karta .way-on {
   z-index: 20;
   display: grid;
   place-content: center;
+  justify-items: center;
   gap: 16px;
   padding: 24px;
   text-align: center;
-  background: #ecdfc6;
+  background-color: var(--paper-2);
   font-size: 22px;
+}
+
+.message:focus {
+  outline: none;
+}
+
+.message p {
+  max-width: 32ch;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* The loading card's ghost: the screen still belongs to the game (menus.md row 19). It bobs while the picture
+   is on its way back. */
+.message-ghost svg {
+  display: block;
+  width: auto;
+  height: min(120px, 24vh);
+}
+
+.message.waiting .message-ghost svg {
+  animation: message-bob 2.4s ease-in-out infinite;
+}
+
+@keyframes message-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
+}
+
+.message .message-more {
+  font-size: 17px;
+  color: var(--ink-soft);
+}
+
+.message-more[hidden],
+.message button[hidden] {
+  display: none;
 }
 
 .message button {
@@ -1219,9 +2895,11 @@ body.calm .moas-karta .way-on {
   padding: 0 28px;
   border: 0;
   border-radius: 999px;
-  background: #dd4b39;
-  color: #fff;
-  font: 600 22px/1 inherit;
+  background-color: var(--paint-red);
+  color: var(--ink-on-paint);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .hint[hidden],
@@ -1243,23 +2921,25 @@ body.calm .moas-karta .way-on {
   align-items: center;
   gap: 8px;
   padding: 7px 11px;
-  border-radius: 14px;
-  background: rgb(255 250 240 / 0.94);
-  color: #3d2b1f;
-  font-size: 13px;
+  border-radius: 6px 9px 7px 8px;
+  background-color: var(--paper);
+  box-shadow: 0 3px 10px rgb(0 0 0 / 0.22);
+  color: var(--ink);
+  font-size: 17px;
   line-height: 1.3;
   pointer-events: none;
 }
 .story-purpose > span:last-child { display: grid; gap: 1px; }
-.story-purpose small { font-size: 10px; color: #7b5a36; }
-.story-purpose-reveal { margin-top: 3px; padding-top: 4px; border-top: 1px solid #e5d5b8; }
+.story-purpose small { font-size: 13px; color: var(--ink-soft); }
+.story-purpose-reveal { margin-top: 3px; padding-top: 4px; border-top: 1px solid var(--paper-edge); }
 .story-purpose-reveal[hidden] { display: none; }
-#storyPurposeIcon { font-size: 21px; }
+#storyPurposeIcon { display: grid; color: var(--crayon-blue); }
+#storyPurposeIcon svg { width: 24px; height: 24px; }
 .story-purpose[hidden] { display: none; }
 body:has(#bubble:not([hidden])) .story-purpose,
 body:has(#notice:not([hidden])) .story-purpose { visibility: hidden; }
-body.big-text .story-purpose { font-size: 16px; }
-.story-recap, .story-title, .story-handoff { padding: 12px; border-radius: 14px; background: #f8edd6; line-height: 1.4; }
+body.big-text .story-purpose { font-size: 21px; }
+.story-recap, .story-title, .story-handoff { padding: 12px; border-radius: 14px; background-color: var(--paper-2); line-height: 1.4; }
 .story-recap { margin: 14px 0; }
 .story-recap h3, .story-recap h4 { margin: 0 0 6px; }
 .story-recap h4 { margin-top: 10px; font-size: 0.9em; }
@@ -1269,6 +2949,55 @@ body.big-text .story-purpose { font-size: 16px; }
 
 /* Settings stay in one paused surface; the reference returns to it. */
 body.follow-finger .stick-base {
+  display: none;
+}
+
+/* Följ fingret: a ring round the held finger, its edge showing round the fingertip, and Moa's crayon arrow over his
+   head, turned toward it (docs/ux-audit/in-play.md row 11). The ring lands small and opens as the hold becomes a
+   walk; candy yellow says he runs. */
+.finger-ring,
+.follow-arrow {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.finger-ring {
+  box-sizing: border-box;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border: 3px solid rgb(255 255 255 / 0.7);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgb(40 26 14 / 0.22), inset 0 0 0 1px rgb(40 26 14 / 0.22);
+  scale: 0.72;
+  opacity: 0.6;
+  transition: scale 0.35s var(--ease-out), opacity var(--dur-quick) ease, border-color var(--dur-quick) ease;
+}
+.finger-ring.steering {
+  scale: 1;
+  opacity: 1;
+}
+.finger-ring.run {
+  border-color: rgb(255 215 106 / 0.92);
+}
+.follow-arrow {
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  color: var(--crayon-blue);
+  filter: drop-shadow(0 0 1.5px rgb(255 247 228 / 0.95)) drop-shadow(0 1px 2px rgb(40 26 14 / 0.35));
+}
+.follow-arrow.run {
+  color: var(--crayon-red);
+}
+.follow-arrow .i {
+  width: 100%;
+  height: 100%;
+}
+.finger-ring[hidden],
+.follow-arrow[hidden] {
   display: none;
 }
 
@@ -1299,17 +3028,110 @@ body.follow-finger .stick-base {
 }
 
 .controls-reference dl > div {
-  padding: 12px 4px;
-  border-bottom: 1px solid #ddcfb5;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--paper-edge);
 }
 
 .controls-reference dt {
-  font-weight: 700;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
 }
 
 .controls-reference dd {
-  margin: 4px 0 0;
-  line-height: 1.4;
+  margin: 0;
+  line-height: 1.3;
+}
+
+@media (min-width: 700px) {
+  .controls-reference:not([hidden]) {
+    grid-template-columns: 1fr 1fr;
+    gap: 0 24px;
+    align-items: start;
+  }
+}
+
+/* A key: a keycap of paper and wood. The pad's letters are its coloured buttons. */
+:is(.controls-reference, .hint) kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 7px;
+  border: 2px solid var(--wood-line);
+  border-bottom-width: 4px;
+  border-radius: 6px;
+  background-color: var(--paper-bright);
+  font: inherit;
+  font-size: 0.8em;
+  font-weight: 700;
+  line-height: 1;
+}
+
+:is(.controls-reference, .hint) kbd svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* The hint's keys, a little smaller, and each pair kept on one line. */
+.hint kbd {
+  min-width: 24px;
+  height: 24px;
+  margin-right: 2px;
+  vertical-align: -0.35em;
+}
+
+.hint kbd svg {
+  width: 15px;
+  height: 15px;
+}
+
+.hint-pair {
+  white-space: nowrap;
+}
+
+/* The space bar: a wide key with its bracket. */
+:is(.controls-reference, .hint) kbd.key-wide {
+  min-width: 56px;
+}
+
+:is(.controls-reference, .hint) kbd.key-wide svg {
+  width: 34px;
+}
+
+.controls-reference kbd.pad-a,
+.controls-reference kbd.pad-b,
+.controls-reference kbd.pad-x,
+.controls-reference kbd.pad-y {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-width: 2px;
+  border-radius: 50%;
+  color: var(--ink-on-paint);
+}
+
+.controls-reference kbd.pad-a { background-color: var(--pad-a); border-color: var(--pad-a-edge); }
+.controls-reference kbd.pad-b { background-color: var(--pad-b); border-color: var(--pad-b-edge); }
+.controls-reference kbd.pad-x { background-color: var(--pad-x); border-color: var(--pad-x-edge); }
+.controls-reference kbd.pad-y { background-color: var(--pad-y); border-color: var(--pad-y-edge); color: var(--ink); }
+
+.controls-reference kbd.pad-word {
+  border-radius: 999px;
+}
+
+.key-or,
+.key-plus {
+  font-size: 0.85em;
+  color: var(--ink-soft);
 }
 
 button.bag {
@@ -1322,50 +3144,150 @@ button.bag {
 }
 
 /* Each profile is a separate local adventure, with large touch targets. */
-.player-row { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 8px; }
-.player-row .wide { overflow-wrap: anywhere; }
-.player-row [aria-current='true'] { box-shadow: inset 0 0 0 3px #dd4b39; }
+/* Each player is a row with their own candy sticker and their name at 21 px. Taking one away, and starting over,
+   wait behind "Ändra", 16 px from everything else (docs/ux-audit/first-minutes.md row 14). */
+.player-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+#titlePlayers.editing .player-row { grid-template-columns: minmax(0, 1fr) 64px; }
+#titlePlayers:not(.editing) :is(.player-remove, #startOverBtn) { display: none; }
+.player-row .wide { overflow-wrap: anywhere; justify-content: start; gap: 14px; font-size: calc(21px * var(--k)); }
+.player-row [aria-current='true'] { box-shadow: inset 0 0 0 3px var(--crayon-red); }
+.player-token.kind { flex: none; width: calc(40px * var(--k)); height: calc(40px * var(--k)); }
+#titlePlayers .section-head { grid-template-columns: 64px 1fr auto; column-gap: 12px; }
+.players-edit[aria-pressed='true'] { box-shadow: inset 0 0 0 3px var(--crayon-red); }
+/* "Ja" to what cannot be undone is held for 1.5 s while a ring fills round its tick (ui/hold.ts). */
+@property --held {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+.hold-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+}
+.hold-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--crayon-red) var(--held), rgb(90 58 30 / 0.18) 0);
+  mask: radial-gradient(circle, transparent 15px, black 16px);
+}
+.hold-confirm {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+.hold-confirm > span {
+  display: grid;
+  text-align: left;
+}
+.hold-confirm small {
+  font-size: calc(14px * var(--k));
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+.hold-confirm.holding .hold-ring::before {
+  animation: hold-fill 1.5s linear forwards;
+}
+@keyframes hold-fill {
+  to {
+    --held: 100%;
+  }
+}
 .player-remove { padding: 0; font-size: 28px !important; }
 .current-player { margin: 0; font-weight: 700; }
 .player-form input { text-transform: none; letter-spacing: 0; }
 #playerError, #playerUnreadable { font-size: 16px; }
-.panel button:disabled { opacity: 0.45; }
+
 #pause [hidden] { display: none !important; }
 #strokePicture { display: block; width: 100%; height: min(42vh, 300px); touch-action: none; user-select: none; }
 #strokeAssist { min-height: 64px; margin-top: 10px; }
+/* Painting and carving (docs/ux-audit/story-presentation.md rows 17 and 18): the picture has the panel, and its
+   title is for a screen reader. On a phone held sideways the picture takes the panel's full height, about 300 px, and
+   the hint and Pappa's help stand beside it. */
+.story-panel.stroking #storyTitle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.story-panel.stroking #storyHint {
+  padding-right: calc(56px * var(--k));
+  font-weight: 700;
+}
 @media (max-height: 500px) and (orientation: landscape) {
-  #strokePicture { height: 140px; }
-  #strokeAssist { margin-top: 4px; }
+  .story-panel.stroking {
+    grid-template-columns: auto minmax(180px, 1fr);
+    grid-template-rows: 1fr auto auto auto 1fr;
+    column-gap: 18px;
+  }
+  .story-panel.stroking #strokeBody {
+    display: contents;
+  }
+  .story-panel.stroking #strokePicture {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    width: auto;
+    height: min(300px, calc(100dvh - 60px));
+  }
+  .story-panel.stroking #storyHint { grid-column: 2; grid-row: 2; }
+  .story-panel.stroking #strokeAssist { grid-column: 2; grid-row: 3; margin-top: 4px; }
+  .story-panel.stroking #storyStatus { grid-column: 2; grid-row: 4; }
+}
+/* Carving: the stroke peels a pale shaving off the block along its way, and a notch is cut for each stroke done. */
+#strokePicture.carving #strokeLine {
+  stroke: var(--shaving);
+  stroke-width: 9px;
+  filter: drop-shadow(0 1.5px 0 var(--shaving-edge));
+}
+#strokePicture .notch {
+  fill: var(--notch);
+  stroke: var(--notch-edge);
+  stroke-width: 1.5px;
+  stroke-linejoin: round;
+}
+#strokePicture .notch.done {
+  fill: var(--notch-cut);
 }
 
 .story-panel [hidden] { display: none !important; }
 .party .share-sweets { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 12px; }
 @media (min-width: 600px) { .party .share-friends { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 /* A single wordless cue, only after an idle prologue moment. It never catches a touch. */
-.tutorial { position: fixed; z-index: 15; pointer-events: none; width: 96px; height: 96px; transform: translate(-50%, -50%); color: #fff5dc; }
+.tutorial { position: fixed; z-index: 15; pointer-events: none; width: 96px; height: 96px; transform: translate(-50%, -50%); color: var(--night-ink); }
 .tutorial[hidden] { display: none; }
-.tutorial-hand { position: absolute; top: 30px; left: 34px; width: 60px; height: 60px; filter: drop-shadow(0 3px 3px #382410); animation: tutorial-press 1.7s ease-in-out infinite; }
+.tutorial-hand { position: absolute; top: 30px; left: 34px; width: 60px; height: 60px; filter: drop-shadow(0 3px 3px var(--wood-dark)); animation: tutorial-press 1.7s ease-in-out infinite; }
 .tutorial-hand svg { width: 100%; height: 100%; }
-.tutorial-target { position: absolute; inset: 2px; border: 3px solid #ffe299; border-radius: 50%; box-shadow: 0 0 0 5px #4a382544; }
-.tutorial-key { position: absolute; inset: 12px; display: grid; place-items: center; border-radius: 14px; background: #fff7e4; color: #513923; font: 700 32px/1 system-ui; box-shadow: 0 3px 8px #2a1a1844; }
+.tutorial-target { position: absolute; inset: 2px; border: 3px solid var(--knock-light); border-radius: 50%; box-shadow: 0 0 0 5px rgb(74 56 37 / 0.27); }
+.tutorial-key { position: absolute; inset: 12px; display: flex; align-items: center; justify-content: center; gap: 2px; border-radius: 14px; background-color: var(--paper-bright); color: var(--ink-soft); font: 700 32px/1 'Andika', system-ui, sans-serif; box-shadow: 0 3px 8px rgb(42 26 24 / 0.27); }
+.tutorial-key svg { width: 30px; height: 30px; }
 .tutorial[data-device="touch"] .tutorial-key { display: none; }
 .tutorial[data-device="keys"] .tutorial-target, .tutorial[data-device="pad"] .tutorial-target { display: none; }
 .tutorial[data-lesson="move"] .tutorial-hand { animation-name: tutorial-move; }
 .tutorial[data-lesson="move"][data-device="touch"] .tutorial-target { opacity: 0.4; }
 .tutorial[data-lesson="move"][data-follow="true"] .tutorial-hand { animation-name: tutorial-press; animation-duration: 2.8s; }
 @keyframes tutorial-press { 0%, 100% { transform: translate(12px, 14px) rotate(-14deg); opacity: .7; } 30%, 70% { transform: translate(0, 0) rotate(-14deg); opacity: 1; } }
+/* On touch the hand presses Hoppa and Använd at their lower left rim, so the button's word stays in sight
+   (docs/ux-audit/first-minutes.md row 20). */
+.tutorial[data-device="touch"]:is([data-lesson="act"], [data-lesson="hop"]) .tutorial-hand { top: 64px; left: -22px; animation-name: tutorial-rim; }
+@keyframes tutorial-rim { 0%, 100% { transform: translate(-8px, 10px) rotate(35deg); opacity: .7; } 30%, 70% { transform: translate(0, 0) rotate(35deg); opacity: 1; } }
 @keyframes tutorial-move { 0%, 100% { transform: translate(-14px, 0) rotate(-14deg); } 50% { transform: translate(22px, 0) rotate(-14deg); } }
-body.calm .tutorial-hand { animation: none !important; }
-@media (prefers-reduced-motion: reduce) { .tutorial-hand { animation: none !important; } }
 
 /* The last camera shot stays visible behind a short caption and one ordinary menu control. */
 .ending-shot {
   position: fixed; inset: 0; z-index: 11; display: flex; flex-direction: column;
   align-items: center; justify-content: space-between; padding: max(24px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
-  background: linear-gradient(#101a2a80, transparent 30%, transparent 72%, #101a2a80);
+  background: linear-gradient(var(--night-shade), transparent 30%, transparent 72%, var(--night-shade));
 }
 .ending-shot[hidden] { display: none; }
-.ending-shot p { max-width: 32ch; text-align: center; color: #fff6df; text-shadow: 0 2px 5px #000; font-size: clamp(18px, 4vw, 25px); }
+.ending-shot p { max-width: 32ch; text-align: center; color: var(--night-ink); text-shadow: 0 2px 5px var(--black); font-size: clamp(18px, 4vw, 25px); }
 .ending-shot button { max-width: 300px; }
 
 .ending-shot .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -1375,8 +3297,16 @@ body.calm .tutorial-hand { animation: none !important; }
 /* --- a scene of the story (src/ui/scene.ts): bars while it tells, a fade, a time card and the title ------- */
 .scene-ui {
   position: absolute;
+  z-index: 5;
   inset: 0;
   pointer-events: none;
+}
+
+/* Over a scene's fade and bars: what is said, and Pause, which always works (docs/ux-audit/story-presentation.md
+   row 2: the fade from black used to be drawn under the corners). */
+.bubble,
+#pauseBtn {
+  z-index: 6;
 }
 
 .scene-bar {
@@ -1384,7 +3314,7 @@ body.calm .tutorial-hand { animation: none !important; }
   left: 0;
   right: 0;
   height: 0;
-  background: #120d09;
+  background-color: var(--bars);
   transition: height 0.6s ease;
 }
 
@@ -1400,62 +3330,503 @@ body.scene-bars .scene-bar {
   height: 7.5vh;
 }
 
-/* While a scene tells, the hands rest: the controls fade back, and the purpose line steps aside. */
-body.scene-bars .controls,
-body.scene-bars .corner,
-body.scene-bars .bag {
-  opacity: 0.28;
+/* While a scene tells, while a chapter's card shows, and in the coda at its end, the picture has the screen: the
+   controls, the bag, the helper, the purpose line and the keys' hint step aside. Pause stays (story-presentation.md
+   rows 1, 4 and 5; Journey and Gris show nothing at such moments). */
+body.scene-bars :is(.controls, .bag, #helpBtn, .key-prompt, .story-purpose, .hint),
+body.coda :is(.controls, .bag, #helpBtn, .key-prompt, .story-purpose, .hint),
+body.scene-card :is(.bag, #helpBtn, .key-prompt, .story-purpose, .hint) {
+  opacity: 0;
+  pointer-events: none;
   transition: opacity 0.6s ease;
 }
 
-body.scene-bars .story-purpose,
-body.scene-bars .hint {
-  opacity: 0;
-  transition: opacity 0.6s ease;
+/* The prologue brings its controls in as they are needed (docs/ux-audit/first-minutes.md rows 8 and 18): Hoppa,
+   the helper and "Just nu" when the chase starts, the bag with its first candy, each over 0.4 s. */
+#hopBtn {
+  transition: transform 0.06s ease, opacity 0.4s ease-out, visibility 0.4s;
 }
+
+#helpBtn,
+.bag {
+  transition: opacity 0.4s ease-out, visibility 0.4s;
+}
+
+body.before-chase :is(#hopBtn, #helpBtn, .story-purpose),
+body.no-candy .bag {
+  opacity: 0;
+  visibility: hidden;
+}
+
+body.keys-later .hint {
+  visibility: hidden;
+}
+
+/* A chapter's card does not hold him: the stick and the buttons stay where his thumbs are. */
 
 .scene-fade {
   position: absolute;
   inset: 0;
-  background: #0b0806;
+  background-color: var(--fade);
   opacity: 0;
 }
 
-/* The time of day and the place, on a scrap of Moa's paper: above the keys' hint and the scene's bars. */
+/* The place and the time of day, on a torn scrap of Moa's paper (story-presentation.md row 4): the place large,
+   the time under it. In a held scene it is taped at the top bar's edge, out of the shot. */
 .scene-caption {
   position: absolute;
   left: 50%;
-  bottom: calc(env(safe-area-inset-bottom) + max(9vh, 66px));
+  bottom: calc(env(safe-area-inset-bottom) + max(12vh, 72px));
+  display: grid;
+  justify-items: center;
+  min-width: min(60vw, 320px);
   transform: translateX(-50%) rotate(-1.5deg);
   margin: 0;
-  padding: 8px 18px 9px;
-  border-radius: 6px;
-  background: #fff6e2;
-  color: #4a3520;
-  font-size: calc(21px * var(--k));
+  padding: 14px 34px 16px;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-hand);
   font-weight: 700;
-  letter-spacing: 0.06em;
-  box-shadow: 0 3px 12px rgb(0 0 0 / 0.3);
+  line-height: 1.15;
+  filter: drop-shadow(0 3px 8px rgb(0 0 0 / 0.35));
+  /* Torn at both ends. */
+  clip-path: polygon(0 4%, 3% 0, 97% 2%, 100% 0, 98% 18%, 100% 34%, 97% 52%, 100% 70%, 98% 86%, 100% 100%, 3% 98%,
+    0 100%, 2% 82%, 0 64%, 3% 46%, 0 28%, 2% 14%);
   opacity: 0;
   white-space: nowrap;
 }
 
+.scene-caption .place {
+  font-size: calc(34px * var(--k));
+  letter-spacing: 0.02em;
+}
+
+.scene-caption .dot {
+  display: none;
+}
+
+.scene-caption .time {
+  margin-top: 4px;
+  font-size: calc(20px * var(--k));
+  color: var(--crayon-brown);
+}
+
+body.scene-bars .scene-caption {
+  left: max(20px, 7vw);
+  top: calc(7.5vh - 14px);
+  bottom: auto;
+  min-width: 0;
+  padding: 8px 22px 10px;
+  transform: rotate(-2deg);
+}
+
+body.scene-bars .scene-caption .place {
+  font-size: calc(24px * var(--k));
+}
+
+@media (orientation: portrait) {
+  .scene-caption {
+    top: 26%;
+    bottom: auto;
+  }
+}
+
+/* The game's name over the garden's sky, on the side the ghost has gone, never across the family on the deck
+   (story-presentation.md row 3). */
 .scene-title {
   position: absolute;
-  left: 50%;
-  top: 40%;
+  left: 72%;
+  top: 26%;
   transform: translate(-50%, -50%);
-  width: min(92vw, 900px);
+  width: min(46vw, 560px);
   margin: 0;
   text-align: center;
-  color: #fff8e8;
-  font-size: clamp(30px, 6.4vw, 68px);
-  line-height: 1.1;
+  color: var(--night-ink);
+  font-size: clamp(28px, 5vw, 60px);
+  line-height: 1.08;
   text-shadow: 0 3px 18px rgb(0 0 0 / 0.55), 0 0 2px rgb(0 0 0 / 0.4);
   opacity: 0;
 }
 
-body.calm .scene-bar,
-body.calm .controls {
+@media (orientation: portrait) {
+  .scene-title {
+    left: 50%;
+    top: 18%;
+    width: 92vw;
+  }
+}
+
+/* --- The materials (docs/ux-audit/style-and-sound.md, "Materials"; rows 10, 11 and 14) ------------------------
+   One material for each job: Moa's paper for what is read, Pappa's painted linden for what is pressed, and candy
+   for rewards. The paper's tooth and the wood's grain are drawn once at boot (src/ui/materials.ts) and lie over
+   each colour, so neither is flat; without them both stay plain. */
+
+/* Paper's tooth, under everything read. */
+:where(.panel, .panel-head, .bubble, .notice, .hint, .story-purpose, .scene-caption, .btn-act span, .key-prompt,
+  .bag-tag, .map-card, .map, .photo-print figcaption, .chapter-choice, .ask, .story-recap, .story-title,
+  .story-handoff, .message, .switch, .sound-row, .info-row, .style, .level, .help-level, .share-choice,
+  .code-form input, .golden-reward) {
+  background-image: var(--grain, none);
+}
+
+/* Moa's masking tape holds the sheet at its top: two strips over its top edge, turned a little. */
+.panel-head::before,
+.panel-head::after {
+  content: '';
+  position: absolute;
+  top: -9px;
+  width: 78px;
+  height: 22px;
+  background-color: var(--tape);
+  clip-path: polygon(0 12%, 6% 0, 12% 14%, 18% 0, 82% 0, 88% 14%, 94% 0, 100% 12%, 100% 88%, 94% 100%, 88% 86%,
+    82% 100%, 18% 100%, 12% 86%, 6% 100%, 0 88%);
+  pointer-events: none;
+}
+
+.panel-head::before {
+  left: 24%;
+  rotate: -5deg;
+}
+
+.panel-head::after {
+  right: 24%;
+  rotate: 4deg;
+}
+
+/* Linden's grain under everything pressed, its light top, its 4 px thickness and its shadow. */
+:where(.wide:not(.small), .tile, .start-style, .round svg, .round-back, .photo-step, .mute, .ask button,
+  .corner, .panel-close svg, .panel-up svg, .btn) {
+  background-image: var(--woodgrain, none);
+  box-shadow: var(--bevel), 0 4px 0 var(--wood-dark), var(--wood-shadow);
+  transition: transform var(--dur-release) var(--ease-out), box-shadow var(--dur-release) var(--ease-out);
+}
+
+/* The small discs in a header and the round buttons lie lower: 3 px. */
+:where(.corner, .panel-close svg, .panel-up svg, .round svg, .round-back, .photo-step) {
+  box-shadow: inset 0 0 0 2px var(--linden-rim), var(--bevel), 0 3px 0 var(--wood-dark), var(--wood-shadow);
+}
+
+/* The corner discs have a worn rim, and the icon is cut in: a light lip under it. */
+.corner {
+  box-shadow: inset 0 0 0 3px var(--linden-rim), var(--bevel), 0 3px 0 var(--wood-dark), var(--wood-shadow);
+}
+
+:where(.corner, .round-back, .tile, .wide:not(.go)) svg {
+  filter: drop-shadow(0 1px 0 rgb(255 247 228 / 0.7));
+}
+
+/* Painted: rödfärg for the main press and Hoppa, green for Använd and Ja; their thickness is the paint's dark. */
+:where(.wide.go, .start-style.go, .photo-step.go, .message button) {
+  background-color: var(--paint-red);
+  color: var(--ink-on-paint);
+  background-image: var(--woodgrain, none);
+  box-shadow: var(--bevel), 0 4px 0 var(--paint-red-dark), var(--wood-shadow);
+}
+
+.btn-hop {
+  box-shadow: var(--bevel), 0 4px 0 var(--paint-red-dark), var(--wood-shadow);
+}
+
+.btn-act,
+.ask .yes {
+  box-shadow: var(--bevel), 0 4px 0 var(--paint-green-dark), var(--wood-shadow);
+}
+
+.ask .yes {
+  background-color: var(--paint-green);
+}
+
+/* Pressed, a plank sinks 3 px onto its edge in 80 ms; it rises again in 140 ms. */
+:where(.wide:not(.small), .tile, .start-style, .round-back, .photo-step, .ask button, .corner):active,
+:where(.round, .panel-close, .panel-up):active svg,
+.mute:active {
+  transform: translateY(3px);
+  box-shadow: var(--bevel), 0 1px 0 var(--wood-dark), 0 3px 6px rgb(30 18 8 / 0.2);
+  transition-duration: var(--dur-press);
+}
+
+:where(.wide.go, .start-style.go, .photo-step.go, .message button):active {
+  box-shadow: var(--bevel), 0 1px 0 var(--paint-red-dark), 0 3px 6px rgb(30 18 8 / 0.2);
+}
+
+/* Disabled: bare linden with faded words, opaque, and flat: no thickness (row 8). */
+:where(.wide:not(.small), .tile, .start-style, .photo-step, .ask button, .round-back):disabled {
+  background-color: var(--linden);
+  color: var(--ink-faint);
+  box-shadow: none;
+  transform: none;
+}
+
+:where(.round, .wide.small, .level, .style):disabled {
+  color: var(--ink-faint);
+}
+
+.round:disabled svg {
+  box-shadow: none;
+}
+
+.corner:active {
+  box-shadow: inset 0 0 0 3px var(--linden-rim), var(--bevel), 0 1px 0 var(--wood-dark), 0 3px 6px rgb(30 18 8 / 0.2);
+}
+
+/* Candy's shine, the only one in the UI: a white gleam at the upper left of each sweet (row 19). */
+.rows i {
+  background-image: radial-gradient(ellipse 30% 34% at 42% 30%, rgb(255 255 255 / 0.55), transparent 72%);
+}
+
+/* --- what the HUD keeps to itself (docs/ux-audit/in-play.md rows 1, 13 and 18) -------------------------------
+   A find, a thanks: a tag of Moa's paper hanging from the bag, with the sweet's sticker or a drawn sparkle, for
+   three seconds. It never covers what is being said, which goes on beside it. */
+.notice {
+  left: calc(env(safe-area-inset-left) + 14px);
+  right: auto;
+  margin: 0;
+  top: calc(env(safe-area-inset-top) + 10px + 56px * var(--k) + 4px);
+  max-width: min(330px, calc(100% - 28px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 8px;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: left;
+  rotate: -1.5deg;
+}
+
+.notice[hidden] {
+  display: none;
+}
+
+@media (orientation: portrait) {
+  .notice {
+    top: calc(env(safe-area-inset-top) + 10px + 56px * var(--k) + 4px);
+    max-width: min(330px, calc(100% - 28px));
+  }
+}
+
+.notice-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--gold-deep);
+}
+
+.notice-mark i {
+  width: 40px;
+  height: 40px;
+}
+
+.notice-mark svg {
+  width: 30px;
+  height: 30px;
+}
+
+/* As the tag goes, the sticker drops into the bag. */
+.notice.dropping .notice-mark i {
+  animation: into-bag 0.4s ease-in forwards;
+}
+
+@keyframes into-bag {
+  to {
+    transform: translate(-4px, -58px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+/* The keys: three caps with a word under each, until each has been used; the whole list is in Pause. */
+.hint {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  padding: 8px 16px 6px;
+}
+
+.hint-pair {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  font-size: 13px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.hint-keys {
+  display: flex;
+  gap: 3px;
+}
+
+.hint kbd {
+  min-width: 36px;
+  height: 36px;
+  margin: 0;
+  font-size: 16px;
+  vertical-align: 0;
+}
+
+.hint kbd svg {
+  width: 20px;
+  height: 20px;
+}
+
+body.keys-learned .hint {
+  display: none;
+}
+
+/* A mouse sees what it can press before it presses (docs/ux-audit/access-and-devices.md row 8). */
+@media (hover: hover) {
+  button,
+  .switch,
+  .mute,
+  .pips {
+    cursor: pointer;
+  }
+
+  :where(.wide, .tile, .start-style, .round, .round-back, .photo-step, .ask button, .corner, .panel-close, .panel-up,
+    .style, .level, .help-level, .share-choice, .chapter-choice, .memory-thumb, .photo-thumb):hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+}
+
+/* While a new version is put in place at the title: a line of paper with the loading card's ghost, bobbing. */
+.title-updating {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 6px 8px 7px 9px;
+  background-color: var(--paper-2);
+  font-weight: 700;
+}
+
+.title-updating[hidden] {
+  display: none;
+}
+
+.title-updating-ghost svg {
+  display: block;
+  width: auto;
+  height: 40px;
+  animation: message-bob 2.4s ease-in-out infinite;
+}
+
+/* What is said lands like a scrap of paper put down, and a find's tag swings in from the bag
+   (docs/ux-audit/style-and-sound.md row 16); under reduced motion both only fade. */
+@keyframes scrap-land {
+  from {
+    opacity: 0;
+    translate: 0 -8px;
+  }
+}
+
+@keyframes tag-swing {
+  from {
+    opacity: 0;
+    rotate: -9deg;
+  }
+}
+
+@keyframes only-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.bubble:not([hidden]) {
+  animation: scrap-land var(--dur-quick) var(--ease-out);
+}
+
+.notice:not([hidden]) {
+  transform-origin: 12% 0;
+  animation: tag-swing var(--dur-panel) var(--ease-paper);
+}
+
+/* Moa's words take wax (docs/ux-audit/style-and-sound.md, "Crayon"): her headings, the time card's place, the story
+   card's words and the thanks are filled with their colour and flecked where the crayon skipped over the paper's
+   tooth (--wax, src/ui/materials.ts). Without the tile, and where the system draws its own colours, they are plain. */
+:where(.panel h2, .panel h3, .scene-caption .place, .title .story-title .story-card, .photo-panel.book .photo-credits h3) {
+  background: var(--wax, none), linear-gradient(currentColor, currentColor);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@media (forced-colors: active) {
+  :where(.panel h2, .panel h3, .scene-caption .place, .title .story-title .story-card, .photo-panel.book .photo-credits h3) {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
+}
+
+/* --- Less motion (docs/ux-audit/style-and-sound.md row 17, "Motion") ----------------------------------------------
+   One switch for both of its sources, the device's setting and Mindre rörelse: <html data-motion="reduce">, set before
+   the first paint (index.html) and kept by main.ts (src/platform/motion.ts). Movement becomes a fade, never nothing:
+   a sheet, a page, a bubble and a notice only fade in, in 160 ms; wood sinks at once; loops stop; a candy lights up
+   in place of its bump and slap; the scene's bars fade in where they slid; and the helper's knock is the same still
+   ring for both sources. */
+:root[data-motion="reduce"] :is(#pause, #explore, #photoAlbum, #storyPanel):not([hidden]) > .panel,
+:root[data-motion="reduce"] .panel-back.title.leaving > .panel,
+:root[data-motion="reduce"] :is(.btn-act, .key-prompt).pulse,
+:root[data-motion="reduce"] .message.waiting .message-ghost svg,
+:root[data-motion="reduce"] .waiting-ghost,
+:root[data-motion="reduce"] .title-updating-ghost svg,
+:root[data-motion="reduce"] .moas-karta .way-on {
+  animation: none;
+}
+:root[data-motion="reduce"] .moas-karta .way-on {
+  stroke-dashoffset: 0;
+}
+:root[data-motion="reduce"] .tutorial-hand {
+  animation: none !important;
+}
+:root[data-motion="reduce"] .tutorial[data-device="touch"]:is([data-lesson="act"], [data-lesson="hop"]) .tutorial-hand {
+  transform: rotate(35deg);
+}
+:root[data-motion="reduce"] .photo-stage.turned :is(.photo-print:not([hidden]), .photo-credits:not([hidden])),
+:root[data-motion="reduce"] :is(.turn, .turn-back):not([hidden]),
+:root[data-motion="reduce"] .panel.end,
+:root[data-motion="reduce"] :is(.bubble, .notice):not([hidden]) {
+  animation: only-fade var(--dur-quick) ease-out both;
+}
+:root[data-motion="reduce"] :is(.stickers, .notice-mark) i.new {
+  animation: candy-lift 200ms ease-out;
+}
+@keyframes candy-lift {
+  from {
+    filter: brightness(1.6);
+  }
+}
+:root[data-motion="reduce"] .notice.dropping .notice-mark i {
+  animation: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+:root[data-motion="reduce"] .scene-bar {
+  height: 7.5vh;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+:root[data-motion="reduce"] body.scene-bars .scene-bar {
+  opacity: 1;
+}
+:root[data-motion="reduce"] :where(.wide:not(.small), .tile, .start-style, .round svg, .round-back, .photo-step, .mute,
+  .ask button, .corner, .panel-close svg, .panel-up svg, .btn) {
+  transition: box-shadow var(--dur-release) var(--ease-out);
+}
+:root[data-motion="reduce"] #hopBtn {
+  transition: opacity 0.4s ease-out, visibility 0.4s;
+}
+:root[data-motion="reduce"] .switch input::before {
   transition: none;
+}
+:root[data-motion="reduce"] .finger-ring {
+  scale: 1;
+  transition: opacity var(--dur-quick) ease, border-color var(--dur-quick) ease;
+}
+:root[data-motion="reduce"] .help-pips i {
+  scale: 1;
+  transition: background-color var(--dur-quick) ease;
 }

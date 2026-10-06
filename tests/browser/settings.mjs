@@ -6,6 +6,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { settingsPage } from './pause.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -125,6 +126,7 @@ try {
     await page.keyboard.press('Escape');
     const before = progress(await state());
     await page.evaluate(() => { window.__settingsPageIdentity = 'same game'; });
+    await settingsPage(page);
     await page.check('#setFollowFinger');
     check('an unrelated checkbox does not save a temporary ?tier override', (await state()).settings.graphics === 'auto' && (new URL(page.url())).searchParams.get('tier') === 'low');
     await page.click('#graphicsLow');
@@ -148,9 +150,13 @@ try {
     check('changing play style preserves Follow finger and graphics', chosen.settings.followFinger && chosen.settings.graphics === 'high');
     await page.focus('#setFollowFinger');
     await page.keyboard.press('Escape');
-    check('Escape closes settings when a checkbox has focus', (await page.locator('#pause').isHidden()) && !(await state()).paused);
+    check('Escape goes back from the settings to Pause\'s first page when a checkbox has focus',
+      (await state()).paused && await page.locator('#pauseHome').isVisible() && await page.locator('#pauseSettingsPage').isHidden());
+    await page.keyboard.press('Escape');
+    check('a second Escape closes the panel', (await page.locator('#pause').isHidden()) && !(await state()).paused);
     await page.keyboard.press('g');
     check('G opens the pause panel on the test course', (await state()).paused && await page.locator('#pause').isVisible());
+    await settingsPage(page);
     await page.click('#graphicsAuto');
     check('Auto can be selected from settings', (await state()).settings.graphics === 'auto');
     await page.click('#graphicsLow');
@@ -173,8 +179,9 @@ try {
   {
     const { page, context, state, finish } = await open('follow', { hasTouch: true, isMobile: true });
     await page.tap('#pauseBtn');
+    await settingsPage(page);
     await page.check('#setFollowFinger');
-    await page.tap('#resumeBtn');
+    await page.tap('#pauseClose');
     const cdp = await context.newCDPSession(page);
     const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
     for (const portrait of [false, true]) {
@@ -182,8 +189,9 @@ try {
         await page.setViewportSize({ width: 390, height: 844 });
         await frames(page);
         check('rotation opens pause before changing handedness', (await state()).paused);
+        await settingsPage(page);
         await page.check('#setLefty');
-        await page.tap('#resumeBtn');
+        await page.tap('#pauseClose');
       }
       const layout = portrait ? 'portrait, left-handed' : 'landscape';
       // Framing follows facing. After relayout it settles only once play resumes; choose a target
@@ -222,22 +230,25 @@ try {
   console.log('settings: gamepad title, pause, reference and back');
   {
     const { page, state, finish } = await open('gamepad', {}, '?debug&standin&title&tier=low', installPad);
-    await padPress(page, 0); // A: Börja
-    check('gamepad A opens the first-start play styles', await page.locator('#firstAventyr').isVisible());
+    // A first start's two play styles are its start buttons; Äventyr has the focus.
+    check('the first start offers its play styles at once, with Äventyr focused', await page.locator('#startAventyr').isVisible() && await page.evaluate(() => document.activeElement?.id === 'startAventyr'));
     await padPress(page, 15); // D-pad right: Lugnt
-    check('gamepad D-pad changes menu focus', await page.evaluate(() => document.activeElement?.id === 'firstLugnt'));
+    check('gamepad D-pad changes menu focus', await page.evaluate(() => document.activeElement?.id === 'startLugnt'));
     await padPress(page, 0);
     check('gamepad A starts the chosen style', !(await state()).paused && (await state()).style === 'lugnt');
     await padPress(page, 9); // Start
     check('gamepad Start pauses the game', (await state()).paused && await page.locator('#pause').isVisible());
     const still = progress(await state());
+    await padFocus(page, 'pauseSettingsBtn');
+    await padPress(page, 0);
+    check('gamepad A opens the settings page', await page.locator('#pauseSettingsPage').isVisible());
     await padFocus(page, 'setFollowFinger');
     await padPress(page, 0);
     check('gamepad A toggles a setting', (await state()).settings.followFinger);
     await padFocus(page, 'controlsReferenceBtn');
     await padPress(page, 0);
     check('gamepad opens the controls reference', await page.locator('#controlsReference').isVisible());
-    for (const [key, expected] of [['Tab', 'pauseClose'], ['Tab', 'controlsBack'], ['Shift+Tab', 'pauseClose'], ['Shift+Tab', 'controlsBack']]) {
+    for (const [key, expected] of [['Tab', 'pauseClose'], ['Tab', 'pauseBack'], ['Shift+Tab', 'pauseClose'], ['Shift+Tab', 'pauseBack']]) {
       await page.keyboard.press(key);
       assert.equal(await page.evaluate(() => document.activeElement?.id), expected, `${key} stays in the visible controls reference`);
     }
@@ -246,9 +257,96 @@ try {
     check('gamepad B returns to settings and remains paused', (await state()).paused && await page.locator('#controlsReference').isHidden());
     assert.deepEqual(progress(await state()), still, 'Menu navigation never advances the simulation');
     await padPress(page, 1);
-    check('a second B resumes the game', !(await state()).paused && await page.locator('#pause').isHidden());
+    check('a second B returns to Pause\'s first page', (await state()).paused && await page.locator('#pauseHome').isVisible());
+    await padPress(page, 1);
+    check('a third B resumes the game', !(await state()).paused && await page.locator('#pause').isHidden());
     await padPress(page, 8); // View: bag
     check('gamepad View opens the bag/pause panel', (await state()).paused && await page.locator('#pause').isVisible());
+    await finish();
+  }
+
+  console.log('settings: a row with a picture for each setting, Ditt eget sätt, and rows only where they work');
+  {
+    const { page, state, finish } = await open('rows', {}, '?dev&debug&course=garden&standin&tier=low');
+    await page.keyboard.press('Escape');
+    await settingsPage(page);
+    // Every switch is a drawn switch on a row with its picture, its name and a line saying what it does.
+    const rows = await page.locator('#pauseSettingsPage .switch:visible').evaluateAll((labels) => labels.map((label) => {
+      const input = label.querySelector('input');
+      const name = document.getElementById(input.getAttribute('aria-labelledby'))?.textContent ?? '';
+      const says = document.getElementById(input.getAttribute('aria-describedby'))?.textContent ?? '';
+      return { role: input.getAttribute('role'), name, says, picture: !!label.querySelector('.row-icon svg'), height: label.getBoundingClientRect().height };
+    }));
+    check('every switch row has its picture, its name, what it does and a 64 px target', rows.length >= 9 && rows.every((row) => row.role === 'switch' && row.name && row.says && row.picture && row.height >= 64));
+    check('Lugnare tempo is called Långsammare spel', await page.locator('#setSlowerName').textContent() === 'Långsammare spel');
+    await page.locator('#setSlowerSays').click();
+    check('a tap anywhere on the row turns its switch', (await state()).settings.slower && await page.isChecked('#setSlower'));
+    await page.locator('#setSlowerName').click();
+    check('and turns it back', !(await state()).settings.slower);
+    // The style's line, and its two helps that had no row (docs/ux-audit/menus.md row 7).
+    check('under the cards, a line says what Äventyr switches on', (await page.locator('#styleSays').textContent()).startsWith('Äventyr:') && await page.getAttribute('#styleAventyr', 'aria-checked') === 'true');
+    await page.click('#styleLugnt');
+    check('Lugnt switches on its four helps, the two hidden ones as rows of their own', (await page.isChecked('#setStopAtEdges')) && (await page.isChecked('#setGentle')) && (await page.isChecked('#setSwingHelp')) && (await page.isChecked('#setEasyJumps')) && (await page.locator('#styleSays').textContent()).startsWith('Lugnt:'));
+    await page.uncheck('#setStopAtEdges');
+    let now = await state();
+    check('a help changed on its own makes the style the player\'s own: neither card chosen, Ditt eget sätt shown', !now.settings.stopAtEdges && now.settings.gentle && await page.getAttribute('#styleLugnt', 'aria-checked') === 'false' && await page.getAttribute('#styleAventyr', 'aria-checked') === 'false' && (await page.locator('#styleSays').textContent()).startsWith('Ditt eget sätt'));
+    await page.click('#styleLugnt');
+    check('choosing the card again puts its helps back', (await state()).settings.stopAtEdges && await page.getAttribute('#styleLugnt', 'aria-checked') === 'true');
+    // The help levels: rows that say who helps and how, and a choice the arrows move (rows 9 and 22).
+    check('each help level says what it means', (await page.locator('#helpRemindSays').textContent()).startsWith('Hjälparen') && await page.locator('#helpRemind .dots i.on').count() === 2);
+    check('a choice is one Tab stop: its chosen button', await page.locator('#pauseSettingsPage [role="radio"][tabindex="0"]').count() === 3 && await page.getAttribute('#helpRemind', 'tabindex') === '0');
+    await page.focus('#helpRemind');
+    await page.keyboard.press('ArrowDown');
+    now = await state();
+    check('the arrow keys move the choice and its focus', now.settings.help === 'guide' && await page.evaluate(() => document.activeElement?.id === 'helpGuide'));
+    await page.keyboard.press('ArrowDown');
+    check('and come round at the end', (await state()).settings.help === 'ask');
+    // Rows only where they work (row 10), and the chapter's own code (row 6).
+    check('the silent-switch row shows only where the silent switch is a phone\'s', await page.locator('#loudSetting').isHidden());
+    check('the home-screen help shows only on a phone or a tablet', await page.locator('#homeScreenHelp').isHidden() && await page.locator('#homeScreenHelp').count() === 1);
+    check('the key reference is offered once a key has been used', await page.locator('#controlsReferenceBtn').isVisible());
+    check('the chapter\'s own code is there for another device', await page.locator('#pauseCode').isVisible() && await page.locator('#pauseCodeWords').textContent() === 'DAGG SNÖRE BRÄDA');
+    // Större text reaches every word in the panel (row 23).
+    const sizes = () => page.evaluate(() => ['#groupPlay', '#styleAventyr small', '#setSlowerSays'].map((selector) => parseFloat(getComputedStyle(document.querySelector(selector)).fontSize)));
+    const small = await sizes();
+    await page.check('#setBigText');
+    const big = await sizes();
+    check('Större text makes the headings and the small lines bigger too', big.every((size, i) => size >= small[i] * 1.2));
+    await page.uncheck('#setBigText');
+    // The key reference: keycaps, and the header's way back (row 24).
+    await page.click('#controlsReferenceBtn');
+    check('the key reference draws its keys as keycaps', await page.locator('#controlsReference kbd').count() >= 25 && await page.locator('#controlsReference .pad-a').count() >= 1);
+    check('its way back is the header\'s, named for the page it goes to', await page.locator('#pauseBack').isVisible() && await page.getAttribute('#pauseBack', 'aria-label') === 'Tillbaka till Inställningar' && await page.evaluate(() => document.activeElement?.id === 'pauseBack'));
+    await page.click('#pauseBack');
+    check('back from it, the settings again, at the button that opened it', await page.locator('#pauseSettingsPage').isVisible() && await page.evaluate(() => document.activeElement?.id === 'controlsReferenceBtn'));
+    await finish();
+  }
+  {
+    // On a phone, the key reference waits for a key; there is no chapter code on the test course.
+    const { page, finish } = await open('rows-phone', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    await page.tap('#pauseBtn');
+    await settingsPage(page);
+    check('a touch phone offers no key reference before a key is used', await page.locator('#controlsReferenceBtn').isHidden() && await page.locator('#pauseCode').isHidden());
+    await page.keyboard.press('Tab');
+    check('a key brings it', await page.locator('#controlsReferenceBtn').isVisible());
+    // Measured once the paper has landed: while it rises it is turned a little, and a busy software renderer can
+    // still be drawing that first frame.
+    await page.evaluate(() => Promise.all(document.getElementById('pause').getAnimations({ subtree: true })
+      .filter((animation) => animation.effect?.getTiming().iterations !== Infinity).map((animation) => animation.finished.catch(() => {}))));
+    const widths = await page.locator('#pauseSettingsPage .switch:visible, #pauseSettingsPage .sound-row, #pauseSettingsPage .help-level').evaluateAll((rows) => rows.map((row) => row.scrollWidth <= row.clientWidth + 1 && row.getBoundingClientRect().right <= 390));
+    check('every row fits the upright phone', widths.length >= 12 && widths.every(Boolean));
+    // Where the browser offers to install the game, Pause has a button for it (access-and-devices.md row 21).
+    check('no install button before the browser offers it', await page.locator('#installBtn').isHidden());
+    await page.evaluate(() => {
+      const offer = new Event('beforeinstallprompt', { cancelable: true });
+      offer.prompt = () => { window.__installPrompted = true; return Promise.resolve(); };
+      offer.userChoice = Promise.resolve({ outcome: 'accepted' });
+      window.dispatchEvent(offer);
+      window.__installKept = offer.defaultPrevented;
+    });
+    check('the browser\'s offer becomes Installera spelet in Pause', await page.locator('#installBtn').isVisible() && await page.evaluate(() => window.__installKept));
+    await page.tap('#installBtn');
+    check('Installera spelet asks the browser once, then goes', await page.evaluate(() => window.__installPrompted === true) && await page.locator('#installBtn').isHidden());
     await finish();
   }
 

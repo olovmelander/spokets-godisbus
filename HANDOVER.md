@@ -2,6 +2,228 @@
 
 ## State (5 October 2026)
 
+- **Moa's words in wax, a tape that shows, and the game installable on Android** (6 October, a cloud session;
+  `docs/ux-audit/style-and-sound.md`, "Crayon"; `docs/ux-audit/access-and-devices.md` row 21). Her headings, the time
+  card's place, the story card's words and the thanks are filled with wax: their colour, flecked where the crayon
+  skipped over the paper's tooth (`--wax`, drawn at boot; plain where the system draws its own colours). The tape is
+  a deeper straw, so it shows on the paper. Where the browser offers to install the game (Android), Pause has
+  *Installera spelet* in place of the steps, and the manifest has a maskable icon: the loading card's ghost on its
+  cream to the edges, inside the middle 80%. With this, the UX audit's 137 findings are all mended or answered.
+- **A picture for every player, and nothing taken away by one tap** (6 October, a cloud session;
+  `docs/ux-audit/first-minutes.md` rows 7 and 14). Each player has one of four candy stickers, given when the player
+  is made (the first one free; a player made before keeps theirs in the list's order), beside the name at 21 px, with
+  16 px between the rows. Taking a player away and *Börja om från början* wait behind *Ändra*, and their *Ja* is held
+  for 1.5 s while a ring fills round its tick ("Håll inne"); a quick tap does nothing. A gamepad's A, which cannot
+  be held, confirms at once.
+- **The credits are the book's last pages** (6 October, a cloud session; `docs/ux-audit/story-presentation.md` row
+  15). After the epilogue the photos lie two to a spread with Moa's captions, and a page turns by itself every 4 s or
+  at a tap anywhere on it: no count and no arrows (a fade with less motion). The last page has "Tack för äventyret!"
+  at 34 px in her hand and the credit line at 20 px, opens at its top, and is the only one with "Klart". The tune goes
+  on under it, heard through the paper. The photo viewer in Pause is as it was.
+- **Painting and carving, close** (6 October, a cloud session; `docs/ux-audit/story-presentation.md` rows 17 and 18).
+  The painting shows Pappa's ghost as the loading card draws it, its head whole and its eyes where the rings are; the
+  carving is seen over Elof's shoulder: his light-blue sleeve and small hand on the knife, Pappa's larger hand over his
+  with its green cuff, and the stroke peeling a pale shaving off the block. A notch is cut into the block for each
+  stroke in place of "Tag 1 av 3" (still said to a screen reader), and the next cut, then the new figure's eyes, and
+  the ghost's second eye follow at once in the same panel. On a phone held sideways the picture takes the panel's
+  height with the hint and Pappa's help beside it; the title is for a screen reader. Both drawings live in the page's
+  sprite, so they cost the script nothing.
+- **A lighter script: the meshes' decoder is a file of its own** (6 October, a cloud session). The pictures still
+  to come needed room under the 450 KB gate (plan §6.12, gate 2): it stood at 449.3 KB. Three carries meshoptimizer's
+  decoder as WebAssembly inside its script; the game now ships it as two small files (`src/render/meshopt/`, written
+  from three's copy by `scripts/meshopt-wasm.mjs`, MIT, in `LICENSES.md`) and drives it with the same few lines
+  (`src/render/meshopt.ts`). The script is 442.7 KB; a unit test holds the files equal to three's after an upgrade.
+- **What Använd will do, over the thing itself** (6 October, a cloud session; `docs/ux-audit/in-play.md` row 6, step
+  11's second half). The gold diamond over each usable thing is now the button's own picture, on a cream disc with a
+  gold rim, half an EL across: the hand with a sweet over the jay, the arrow against a block over the ladybird. The
+  pictures are read from the page's sprite once, when the chapter is built, so the script carries no drawing; the
+  mark bobs a little, is still with less motion, and stays sharp under High's soft background.
+- **What they feel shows on the bubble** (6 October, a cloud session; `docs/ux-audit/story-presentation.md` row 22).
+  A line can have a tone (`src/content/tones.ts`): a shout bursts, bigger and bold, and pops as it lands ("Ge
+  tillbaka mitt godis!", "Lillebror?! Du är ju pytteliten!"); a worry wavers ("Gör det ont?"); a gentle word is
+  smaller and lies flat (Pappa on the summit, Mamma's promise); and Elof working something out is a cloud with three
+  small rings down towards him. A line that goes on from the one before stands under it in the same bubble, two
+  lines at most, so Pappa's "Den täljde jag till dig / när du var liten, Elof." is read whole. No line got new words.
+- **Less motion is one switch** (6 October, a cloud session; `docs/ux-audit/style-and-sound.md` row 17). The device's
+  setting and *Mindre rörelse* now set the same `<html data-motion="reduce">`: index.html sets it from the current
+  player's save before the first paint, and `src/platform/motion.ts` keeps it. Under it movement becomes a fade, never
+  nothing: sheets, pages, bubbles and notices fade in, the title card fades away, wood sinks at once, loops stop, a
+  new sticker and the bag light up in place of their slap and bump, the scene's bars fade in where they slid, and the
+  helper's knock is the same still ring for both sources.
+- **Help that carries on, and a demonstration that reads** (6 October, a cloud session; `docs/ux-audit/in-play.md`
+  rows 3, 20 and 21). The helper keeps its last step at a place for a minute after it leaves (`HELP_KEPT`), so a
+  child who watches, tries and asks again 20 s later gets the knock or the demonstration, not the first look again;
+  a new place starts over. Three pips under its portrait fill with its step and empty when it goes. The dotted Elof
+  is drawn in dots twice as big, each on a darker dot at 30%, in front of every prop, and the jay perches 1.6 EL
+  over what it shows, never a second bird beside the one it points at.
+- **Följ fingret shows where he is going, and a far finger runs him** (6 October, a cloud session;
+  `docs/ux-audit/in-play.md` row 11). A 56 px ring, white at 70%, lands round the held finger, so its edge shows round
+  the fingertip; it opens to its size as the hold becomes a walk, and goes candy yellow when he runs. Over his head
+  Moa's crayon arrow turns toward it. A finger held more than 120 px from him runs him, in chases too; nearer, it
+  walks him as before. Still to try on a phone: the cone slope in Granskogen on *Äventyr* with it, as the audit asks.
+- **The page's map and tally, one cast, and a button that says when** (6 October, a cloud session;
+  `docs/ux-audit/story-presentation.md` rows 11, 12 and 19, `docs/ux-audit/in-play.md` row 7). On the page Moa's map
+  is as wide as its page, under her title, and "Här är du" no longer starts off the paper. The candy is counted in
+  tens, each ten a roll of sweets in its wrapper and the rest one by one, so 140 candies are two short lines, never a
+  box that scrolls; *Utforska vidare*'s cards count the same way. The sharing panel's family are the bubbles' own
+  faces, in their signs' colours, and each sweet has its word after it: "Geléhallon – vem ska få det?". When
+  something comes in reach, *Använd* pops forward and one soft knock of wood says so (no pop under *Mindre rörelse*).
+  What is said lands like a scrap of paper put down, and a find's tag swings in from the bag.
+- **Small things for every device** (6 October, a cloud session; `docs/ux-audit/access-and-devices.md` rows 7, 8, 19
+  and 21). The iPad keeps its larger controls held upright too, and is not asked to turn; its panels and their words
+  grow with them. A mouse sees what it can press: a pointer, and a plank that brightens under it. For a screen reader
+  the game's picture is named by its place and what he is doing ("Gården, klockan tio. Följ spöket. Hitta min
+  påse."), and the time cards and the game's name are said as they show. The web app is called *Elofs äventyr* on an
+  iPhone's home screen and has the ghost as its tab's picture; while a new version is put in place at the title, a
+  line says *Spelet uppdateras …* with the loading card's ghost, where the title used to freeze without a word. A
+  chapter code is typed in three fields, a word each, moving on at a space; a whole code typed or pasted into the
+  first spreads over them (`docs/ux-audit/first-minutes.md` row 15). Not yet: Android's own install button, a
+  maskable icon, and the code as three stickers to tap.
+- **What the HUD keeps to itself** (6 October, a cloud session; `docs/ux-audit/in-play.md` rows 1, 2, 13, 18 and
+  19, after step 11). In play the bag is the meter and the album's door: its number shows for three seconds after a
+  candy and all through Pause, and its stickers live in the album and on the page. A find hangs from the bag on a tag
+  of paper, the sweet's sticker at 40 px beside its name, and after three seconds the sticker drops into the bag;
+  a thanks or *Hela gräsmattan glittrar!* hangs there with a drawn sparkle. The tag no longer covers what is being
+  said, which goes on beside it, and the "cannot save" line goes the same way. With keys or a pad the hint is three
+  keycaps with one word under each (*springa*, *hoppa*, *använd*), until each has been used once or for half a
+  minute of play, and then never again on that device; the whole list stays in Pause. "Just nu" is at 17 px with
+  its label at 13. On Moa's map, Elof's and Klonk's names at the same place no longer cover each other.
+- **A picture for every verb** (6 October, a cloud session; `docs/ux-audit.md`, step 11). *Använd* shows what it
+  does, drawn, for a child who does not read the word: a hand closing over something (*Ta*, *Plocka*), a hand held out
+  with a sweet (*Ge*), two cupped hands calling (*Ropa*), an arrow against a block (*Knuffa*, *Dra*, *Vänd*,
+  *Lyft*), steps going up (*Kliv upp*, *Kliv på*, *Åk med myrorna*), a slide, Moa's brush, Pappa's knife, a sweet
+  (*Smaka*), the house (*Gå hem*), a toothbrush and a ring on a string (`src/ui/verbs.ts`); the open hand is only for
+  when there is nothing to do. The keys' and the pad's prompt shows the same picture, and so does a helper's knock
+  out of reach. Not yet: the same picture over the thing in the world, in place of the gold glint (a render change).
+- **The collections** (6 October, a cloud session; `docs/ux-audit.md`, step 10). The candy album is laid out by
+  chapter: a strip for each, with its picture from Moa's map, its name and how many of its four he has, then its
+  stickers; a sticker still out there is an empty paper ring with nothing written under it, so a new album is not a
+  page of question marks. *Hittegods* is drawn: Bertil's blue glass marble, Moa's pink hair clip, a red wooden toy
+  block and a krona, each a sticker with its name, and *Vittrornas tack* is a small paper picture of a lingonberry
+  sprig. A memory not yet found shows the glowing curl of shaving that starts one. A memory itself has no interface
+  round it: the oval is three times as big, on paper with its grain, the cut-outs each throwing a small shadow; its
+  name and count are kept for the album and a screen reader, the ✕ is faint until touched, a tap anywhere goes on,
+  and each picture dissolves into the next over 0.6 s while it is pushed in a little (only a fade under *Mindre
+  rörelse*), 3.2 s a picture and never more than ten seconds a memory.
+- **The page as a page** (6 October, a cloud session; `docs/ux-audit.md`, step 9). A chapter's last page reads as
+  a storybook's: it is headed by the chapter's name, *Gården*, under a small kicker, *Kapitel 1* (the parts without a
+  number have *Början*, *Finalen*, *Godiskalaset* over *Slut*, and *Ett kapitel till*). Its photo is a 3:2 print with
+  Elof a third of the way in (`src/render/crop.ts`), the story's title written on the print's white margin in Moa's
+  hand, and the story under the name at 19 px with no box; the count is smaller, and the next chapter's code a line
+  at the page's foot. Every screen held sideways opens the page in two, with the fold's shadow between, so it no
+  longer scrolls on the iPad or a computer. The story's last page glues the frame it ends on, the windowsill in the
+  moonlight, once the ending's shot is left. Not yet: a coda that looks back over Gården's lawn for its photo.
+- **The UI's sound** (6 October, a cloud session; `docs/ux-audit.md`, step 8). A menu no longer cuts the place to
+  silence: under Pause, the title, the album, a panel or a memory the world's own sounds stop where they are, the
+  place's air sinks 6 dB and the tune goes on 9 dB down, as if heard through the paper (a low-pass at 1.1 kHz). The
+  title has the place's air and tune from the first tap. Every press in a menu sounds, built from the game's own
+  knock, puff and pluck in the place's key and 8 to 12 dB under the candy: the way on two rising knocks of wood, the
+  way back two falling and a breath of paper, a choice Moa's crayon, a switch two plucks, a sheet landing a breath
+  of paper, the storybook page a page turning; a right code three plucks up, a wrong one two soft knocks down,
+  never a buzz. With *Ljud* off there is none of it. A menu left alone for half a minute fades out and the sound
+  rests until the next touch; a hidden page and the recovery message are silent as before. Not yet: the narrative
+  audit's step 3, "sound that carries the story", which goes on from here.
+- **Every picture drawn** (6 October, a cloud session; `docs/ux-audit.md`, the rest of step 7). The typed symbols
+  (♡ ✦ ✎ ≈ ⌂ △ ▶ ✓ ✕ × ● ← → ↩ ␣ ✚ and the rest), which every phone draws its own way and some as colour emoji, are
+  gone: one drawn set of icons on a 24-unit grid (`src/ui/sprite.ts`), put into the page once by Vite, so the game's
+  script carries none of the drawings and is lighter for it. "Just nu" shows a drawn picture of what he is doing
+  (a trail, a heart, a sparkle, Moa's brush, Pappa's knife, the mountain, water, the house, the village); the keys'
+  hint, the key reference and the tutorial draw their arrow keys, the wide space bar and the pad's cross, and a
+  screen reader still hears each key's name. The memories, the photo credits, the page's buttons, the player list
+  and the sharing panel draw theirs too, and the player playing now has Moa's red loop round the name instead of a
+  dot. `tests/unit/icons.test.ts` keeps typed symbols out of everything the player sees.
+- **Paper, wood and candy** (6 October, a cloud session; `docs/ux-audit.md`, step 7). The UI is made of the world's
+  own materials (`docs/ux-audit/style-and-sound.md`, "Materials"). What is read is Moa's drawing paper, its tooth
+  drawn at boot (`src/ui/materials.ts`): the panels, held at the top by two strips of masking tape, the bubbles, the
+  tags, "Just nu" and the time card. What is pressed is Pappa's linden, its grain drawn at boot: planks and discs with
+  a light top and a dark edge under them, which sink 3 px when pressed; *Börja*, *Spela vidare* and *Hoppa* are
+  painted rödfärg and *Använd* and *Ja* green, with cream words at 6.9:1 and 6.1:1. The corners, the ✕ and the way
+  back are small linden discs with a worn rim. The candy colours are kept for rewards: the bag's fill, the stickers,
+  and the rows of sweets, now in all six colours with a gleam. Moa's own words are in her hand, Playpen Sans (OFL,
+  self-hosted, 16 KB): panel titles and headings in her blue crayon, the map's names and the time cards. A choice is
+  a card of paper with her red crayon round the chosen one; focus is a blue ring outside a paper halo; a disabled
+  button is bare linden, lying flat; secondary words are a softer ink, never faded. Every colour is a token on
+  `:root`, and `tests/unit/tokens.test.ts` keeps hex values out of the rules. A panel dims the place in its own shade
+  and lighter, not one brown, and the bag's number is on a paper tag. Not yet: the crayon's wax on her words, the
+  sticker's pale edge baked into its sheet (Blender, on Olov's computer), and the drawn icons (the rest of step 7).
+- **Nothing lost while it loads, and one thing taught at a time** (6 October, a cloud session; `docs/ux-audit.md`, the
+  second half of step 6). A start pressed while the models still load is kept: its button shows the loading ghost,
+  and the game starts the moment they are in, while Moa's red crayon line crosses the title card's foot. Going on
+  from a chapter's page, the loading card is the next chapter's time card, black with its scrap, so the picture
+  fades up from it; *Fortsätt* shows where he is on that scrap for a moment. In the prologue the controls come in
+  as they are needed (*Hoppa*, the helper and "Just nu" at the chase, the bag with the first candy), and the line
+  of keys waits while the keycaps teach. He starts in reach of the brush, so the morning ends with "Måla ögonen!"
+  lit; the teaching hand presses at the button's rim, clear of its word, and its spoken label uses that word. Until
+  the carving wakes, a tap on it is only a dry tock. A turn of the phone opens Pause only in free play, and never
+  just after the title. Not yet: the place's air under the title (step 8), players with pictures, and the code as
+  three fields.
+- **The title over the living morning** (6 October, a cloud session; `docs/ux-audit.md`, the first half of step 6).
+  The title lies over the game's own picture, alive: on a first start the morning's first shot, Pappa carving with
+  the curls flying and the family at the table; a game taken up again shows its own place, its wind and far life
+  moving. It is dark only behind its card on the left (from below on an upright phone), and nothing of the play shows
+  under it. *Börja* goes on into the morning from that same shot with no black between, and the card lifts away as
+  the game begins. The name is Pappa's sign: a linden plank on two strings, *Elof och det stora* painted blue and
+  *godisäventyret* a letter in each candy colour. A first start's two play styles are its start buttons, with
+  Elof mid-leap for *Äventyr* and strolling with the jay for *Lugnt*: one tap starts. A saved game has *Fortsätt*,
+  with the chapter's card word over what he is doing; a first start has no recap. Under them are round buttons: the
+  player (named), *Inställningar*, *Kod* and, once the story is told, *Utforska*. *Börja om från början* is on the
+  players' page, a code has a page of its own, and every page of the title has its way back at its top left. Not
+  yet: a press made while loading, the HUD coming in as the prologue needs it, the place's air under the title
+  (step 8), players with pictures and a held press to remove one, and the code as three fields.
+- **Every panel the same** (6 October, a cloud session; `docs/ux-audit.md`, step 5's small defects). The photo
+  viewer and *Utforska vidare* have Pause's header: the title, and a drawn ✕ that stays put. A photo is a print laid
+  on the paper, as big as the screen allows, with its name on a scrap under it, round arrows at its sides and the
+  count in the header. *Utforska vidare* opens at the top; each chapter has Moa's drawing of it (her map's places,
+  and a star, the northern lights, the party's table and a shop), "Utmaning" is written under the challenge's star,
+  the stickers are 24 px, and the cards stand in two columns where there is room. When something breaks, the screen
+  shows the loading card's ghost and a button that does what it says: none without WebGL (a line for the grown-up
+  instead), none while the picture comes back (the ghost bobs), and *Ladda om spelet* after a lost picture. Panels
+  open like paper laid down, and Pause's pages turn in from the side; none of it moves under *Mindre rörelse*.
+- **Settings a child can read** (6 October, a cloud session; `docs/ux-audit.md`, the second half of step 5). Each
+  setting is a row with its own drawn picture, its name, a line saying what it does and a drawn wooden switch, in
+  five groups (*Så spelar du*, *Ljud*, *Styrning*, *Bild och text*, *För vuxna*). A line under the style cards says
+  what the style switches on. Lugnt's two hidden helps are rows of their own (*Stanna vid höga kanter*, *Spänning
+  utan brådska*), and a help changed on its own shows *Ditt eget sätt*. *Lugnare tempo* is *Långsammare spel*.
+  The help levels are rows with the helper, one to three dots and what each means. Each sound is one row: its
+  picture mutes it, five candy pips set the level, and the new level sounds once, even in Pause. Rows show only
+  where they work, and *För vuxna* has the chapter's code. *Större text* reaches every word in the panels and on
+  Moa's map. The key reference is keycaps and the pad's coloured buttons, with the header's way back. In a choice,
+  arrows and the pad's left and right move the choice, and on the pips the level. Not yet: the same header on the
+  photo viewer and *Utforska vidare*, and the panels' motion.
+- **A short Pause, with pages of its own** (6 October, a cloud session; `docs/ux-audit.md`, the first half of step
+  5). Pause opens on one short page: Moa's map, titled and fitted to what she has drawn, the story so far under it,
+  *Spela vidare*, and four tiles: *Godispåsen* with its count, *Jag har fastnat* (its question asks in place of
+  the tiles, where the finger was), *Inställningar* and *Till startsidan*, and *Utforska vidare* once the story is
+  done. The bag and the settings are pages of their own under one header that stays put: the ✕ always at the
+  right, the way back at the left. The corner bag, G and the pad's View open the bag's page straight from play,
+  and back from it goes straight back to play. At 700 px and wider the panel is 760 px in two columns, and
+  *Spela vidare* and the four tiles are in view at 844×390. The album and the photos belong to the story's
+  chapters, Byn too, and no longer show on the test and look courses. Not yet: the settings with pictures, drawn
+  switches and the volume as pips (the second half of step 5), and the same header on the photo viewer and
+  *Utforska vidare*.
+- **A clear screen for the story** (6 October, a cloud session; `docs/ux-audit.md`, step 4). In held scenes and in
+  the coda only Pause stays over the picture; a chapter's card keeps the stick and the buttons and nothing else;
+  the fade from black covers the corners. The time card is a torn scrap of Moa's paper with the place large and
+  the time under it, and "Lördagsmorgon" is taped at the top bar's edge. The game's name stands in the garden's
+  sky, not across the family. Not yet: the title held longer once the camera settles, a crayon clock on the cards,
+  and the coda's photo flying into the page.
+- **Every speaker their own** (6 October, a cloud session; `docs/ux-audit.md`, step 3). A bubble is a scrap of
+  Moa's paper with the speaker's face (`src/ui/faces.ts`, plain shapes), name and sign colour, at its full width
+  between the corners, and below the corner row when the phone is upright. It stays 2.5 s plus 0.09 s a letter,
+  longer with *Lugnare tempo* and *Större text*, and in a held scene a line takes the floor when it is acted. Not
+  yet: bubbles at the speaker with a tail, and the find tag on the bag.
+- **Controls a thumb can trust** (6 October, a cloud session; `docs/ux-audit.md`, step 2). *Hoppa* is 116 px and
+  *Använd* 100 px on the thumb's arc, with 15 px bold words at 4.6:1 and 5.1:1. The verb stands on a paper tag
+  beside *Använd*, which nearly steps out of the picture with nothing to use. A pressed button shows a ring round
+  the thumb; the stick goes back to rest when the thumb lifts; the helper's button is 64 px. The knock is a
+  yellow-and-ink ring in every motion setting, half bright out of reach, and with keys or a pad a prompt shows the
+  key and the verb. Not yet: the keys' hint only when needed, the bag's number and "Just nu" only on change, a
+  picture for every verb (step 11).
+- **Every word in Andika** (6 October, a cloud session; `docs/ux-audit.md`, step 1). The game's typeface (plan
+  §5.7) is served from the site (`public/fonts/`, from `@fontsource/andika` 5.3.0, unchanged, 40 KB, preloaded).
+  Three invalid `font:` rules that left *Hoppa*, *Använd*, the code and name fields and two buttons in the
+  browser's 13 px Arial are mended, and `tests/unit/type.test.ts` keeps such rules out. The colour tokens, the
+  button states and the focus ring come with the materials (step 7).
 - **The UX, UI and presentation audit, and chapters that open on their card** (5 October, a cloud session;
   `docs/ux-audit.md`). Olov: "we need to continue to audit the storytelling, story and the game to make sure
   everything is perfect and best in class ... I want best in class ux and ui and game to really get an atmosphere
@@ -1607,12 +1829,18 @@
 
 **For the next session, in this order:**
 
-- **The UX order of work** (`docs/ux-audit.md`, "The order of the work"), one pull request each, all in a cloud
-  session: 1, every word in its own type (the dropped font rules, Andika and Playpen Sans self-hosted, one size
-  scale, colour tokens, button states); 2, the controls a thumb can trust; 3, every speaker their own; 4, a clear
-  screen for the story; 5, a pause that is short; 6, one movement from the tap to the story; 7, the materials;
-  8, the UI's sound together with the narrative audit's step 3; 9, the page as a page; 10, the collections; 11, a
-  picture for every verb. The narrative audit's later steps go on around them.
+- **The UX order of work is built** (`docs/ux-audit.md`, "The order of the work"), all in a cloud session: 1,
+  every word in its own type (the dropped font rules, Andika and Playpen Sans self-hosted, one size scale, colour
+  tokens, button states); 2, the controls a thumb can trust; 3, every speaker their own; 4, a clear screen for the
+  story; 5, a pause that is short; 6, one movement from the tap to the story; 7, the materials; 8, the UI's sound
+  together with the narrative audit's step 3; 9, the page as a page; 10, the collections; 11, a picture for every
+  verb; and every row after them: the HUD's own rows, the devices' small things, the page's map and tally, Följ
+  fingret's ring, help that carries on, one switch for less motion, the bubbles' tones, the verbs' pictures in
+  the world, the painting and carving close, the credits as the book's last pages, a picture for every player,
+  and Moa's words in wax (see "State"). #150 merged first; the rest went to `main` together in one pull request,
+  at Olov's word on 6 October ("merge push everything we have done to git and then merge it into main"), each
+  step its own commit with its own message. What is left of the audit waits on Olov's answers to its questions
+  (question 17) and on the likeness art (Olov's computer). The narrative audit's later steps go on around it.
 - **The story's pull requests (this session's: #148, merged, and the endings after it): Olov plays the new
   intro and the new chapter endings, and the story's work goes on in the overview's order**
   (`docs/narrative-audit.md`, "The order of the work"). Neither raises `RELEASED_CHAPTER`, touches likeness
@@ -1838,6 +2066,7 @@ The older list, still true where it is not struck:
 | The ghost's name | *Klonk*, after its footsteps. Elof names it in the epilogue; until then it is "spöket". | Olov asked for a name, 3 Oct; the name is the session's proposal |
 | Dates | None. Stages in order; a release goes out when its checkpoint has passed. | Olov, 3 Oct |
 | Going on without asking | Sessions work through the plan stage after stage, take the choice they would recommend, and write it here. A session merges its own green PR, except one that touches `RELEASED_CHAPTER`, likeness assets or `CLAUDE.md`. | Olov, 3 Oct: "Do not stop, just continue implement all phases in one shot. Do not wait for greenlight from me. Always do what you recommend doing." and "I want the full game plan implemented". That this covers merging is the session's reading. |
+| Merging the UX work | All of it goes to `main` in one pull request, merged by the session once it is green. None of it touches `RELEASED_CHAPTER`, likeness assets or the rules. | Olov, 6 Oct: "We need to merge push everything we have done to git and then merge it into main!!!" |
 | Order of work | Stage 1, the game itself in greybox, goes on while the look-dev of Stage 0b and the characters of Stage 0c wait | Olov, 3 Oct: "continue working with the implementation of the games, we can improve the character design later" |
 | Story and level direction | Plan version 5 improves visible opening causes, durable purpose, family cooperation and connected, reusable local puzzles. The implemented opening/context/family/finale and four chapter loops are development milestones; broader layouts, Byn's return loop and final art remain. | Olov's 4 Oct direction; `docs/storytelling-overhaul.md` records research and our design inference |
 | Finale explanation | Actual summit rescue, painted eyes and bag recovery reveal the welcome-home candy motive even if the optional mountain memory was missed. The memory separately guards old/childhood identity wording in purpose and recap cues. | 4 Oct overhaul implementation; existing story canon in plan §§2.4, 3.4 |
@@ -1858,6 +2087,7 @@ The older list, still true where it is not struck:
 | Audience | A game for 11+: the UI, the story and the presentation are measured against the best adventure games for that age (A Short Hike, Alba, Tunic, Ori, Celeste, Firewatch, Unravel), not against apps for small children | Olov, 5 Oct: "It is a game for a 11+ year old" |
 | The UI's design language | One material for each job: Moa's paper and crayon for what is read, Pappa's painted wood for what you press, candy for rewards. Andika and Playpen Sans, self-hosted; colour tokens; a drawn icon set; taps that sound like wood and paper in the chapter's key | The UX audit's proposal, 5 Oct (`docs/ux-audit.md`); its questions are Olov's to answer |
 | Between chapters | "Nästa kapitel", "Spela igen" and a chapter code open the chapter on its time card; the title shows when the game is opened. Chapter changes replace the page, so Back never goes a chapter back | Session, 5 Oct (the UX audit) |
+| Settings | Lugnt's four helps are each a row, and changing one makes the style the player's own (*Ditt eget sätt*). A volume is five pips in fifths, one at the least: its picture is the way to silence. A row shows only where it works (the silent switch on an iPhone, the home-screen help on a phone or tablet not already running from it, the key reference once a key or pad has been used) | Session, 6 Oct (`docs/ux-audit/menus.md` rows 5–10) |
 | Story first | The narrative is the heart of the game: story is put into play (scenes the player stands in, choices that are his, the family's help shown), measured against `docs/narrative-audit.md` and its order of work. | Olov, 5 Oct: "we really need to shift our focus to the storytelling" |
 | Story scenes | A chapter's authored moments are data on the simulation's clock (`src/sim/scene.ts`): a held scene is 11 s at most and holds his input; only a finished scene is saved; one taken up later is passed over by its `until` flag or its place. The picture's side (shots, acting, props) never changes the play. | Session, 5 Oct |
 | Chapter endings | A chapter ends on a coda of about 3 s (the picture looks back and up, the tune closes on a held note, one of the family answers in their three notes) and a storybook page: the coda's picture, the chapter's name, what comes next, Moa's map with the way on. Every chapter after the prologue opens on a time card (plan §4.9). The prologue and the epilogue keep their own endings. | Session, 5 Oct, for Olov's "the chapter endings feel too sudden and flat" |
@@ -1873,16 +2103,23 @@ The older list, still true where it is not struck:
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, the prologue rebuilt as scenes with an outdoor deck, every chapter's ending (a coda, a storybook page, and a time card at the next one's start), and a UX, UI and presentation audit (137 findings, eleven steps) with chapters that open on their card instead of the title. Broader spatial work, Byn's return loop and the rest of its own story, final likeness/contact/acting/memory art, the story's further steps (sound next), listening and device checkpoints remain; no release is declared. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, the prologue rebuilt as scenes with an outdoor deck, every chapter's ending (a coda, a storybook page, and a time card at the next one's start), and a UX, UI and presentation audit (137 findings, eleven steps) with chapters that open on their card instead of the title. On 6 October, in a cloud session, its steps 1 to 11 and every row after them: the type, the controls, the speakers, a clear screen for the story, a short Pause with settings a child can read, a title over the living morning with one tap to play, the materials (paper, wood and candy, and every picture drawn), the UI's sound, the chapter's page as a storybook page, the collections, and a picture for every verb, on the button and over the thing; a HUD that keeps to itself, small things for every device, the page's map and tally, a ring round the held finger, help that carries on, one switch for less motion, what they feel on the bubbles, the painting and the carving close, the credits as the book's last pages, a picture for every player, Moa's words in wax, and the game installable on Android. Broader spatial work, Byn's return loop and the rest of its own story, final likeness/contact/acting/memory art, the story's further steps (sound next), listening and device checkpoints remain; no release is declared. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. |
 
 ## Known bugs
 
-- **The UX audit's defects, not yet mended** (`docs/ux-audit.md`, in the order of the work): three invalid CSS
-  `font:` rules leave *Hoppa*, *Använd*, the name and code fields and two buttons in the browser's 13.3 px Arial;
-  bubbles can only use half the screen's width; *Mindre rörelse* hides the helper's knock, and keys and pad never
-  see the verb; the HUD stays at 28 % over held scenes and bright over a fade from black; Pause is 8.4 panel
-  heights at 844×390 with its ✕ scrolling away; *Foton* shows on Byn with nothing in it.
+- **The UX audit's defects, not yet mended** (`docs/ux-audit.md`, in the order of the work): none. What is left of the
+  audit waits on Olov's answers to its questions (`docs/ux-audit.md`) and on the likeness art (Olov's computer).
+- **The in-play UI costs more to draw in software since the materials** (6 October). In the browser suites'
+  SwiftShader at 844×390 on Low, the epilogue runs at about 9 frames a second against main's 11. With the UI hidden
+  both run at about 12. The step build before *Paper, wood and candy* still ran at 11, the one with it at 9.7.
+  - The HUD is no longer drawn in one layer: the bag, the helper's corner, the hint, the story's purpose and the
+    key prompt (as wide as the screen) are each composited on their own.
+  - No single effect accounts for it: turning off the filters, the shadows or the textures alone gains nothing
+    measurable.
+  - The game runs slower against the clock there, so the browser suites' waits have less to spare;
+    `mountain-loop`'s Lugnt climb now waits as long as its climb back.
+  - A real device composites on its GPU and is unlikely to notice, but this wants a trace on a phone and on CI.
 - **The prologue's stand-ins act roughly** (5 October): box figures in place of the family, so a kneel or a
   shrug reads stiffly, and Pappa's hand under Elof is a block. The private models have not been posed by the new
   acting yet; their bones' signs follow Elof's doll and are untested with it (Olov's computer).

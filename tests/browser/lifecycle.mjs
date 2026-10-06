@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { settingsPage } from './pause.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -40,7 +41,7 @@ async function until(read, accepts, name, timeout = 15000) {
   assert.fail(`${name}: ${JSON.stringify(value)}`);
 }
 const progress = ({ x, y, steps, candy, flags, checkpoint }) => ({ x, y, steps, candy, flags, checkpoint });
-async function open(setup = async () => {}) {
+async function open(setup = async () => {}, query = '?debug&standin&tier=low') {
   // Keep the pack-failure assertions independent of a previously cached worker response.
   const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 844, height: 390 } });
   await context.addInitScript(() => {
@@ -53,7 +54,7 @@ async function open(setup = async () => {}) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(String(error)));
   await setup(page);
-  await page.goto(`${origin}${BASE}?debug&standin&tier=low`);
+  await page.goto(`${origin}${BASE}${query}`);
   await page.waitForFunction(() => window.__godis);
   return { page, context, errors, state: () => page.evaluate(() => window.__godis.state()), info: () => page.evaluate(() => window.__godis.info()) };
 }
@@ -130,6 +131,22 @@ try {
   assert.deepEqual(duringBoot.errors, []);
   await duringBoot.context.close();
 
+  // A start pressed while the models still load is kept, never dropped (docs/ux-audit/first-minutes.md row 1).
+  let releaseLate;
+  const lateGate = new Promise((resolve) => { releaseLate = resolve; });
+  const early = await open(async (page) => page.route('**/packs/boot/big-candy.glb*', async (route) => {
+    await lateGate;
+    await route.continue();
+  }), '?debug&standin&tier=low&title');
+  await early.page.locator('#startAventyr').click();
+  check('a start pressed while loading waits on its button with the ghost, under the title', (await early.state()).title && !(await early.state()).bootReady
+    && await early.page.locator('#title.waiting #startAventyr.pressed .waiting-ghost').count() === 1);
+  releaseLate();
+  await until(early.state, (s) => s.bootReady && !s.title && !s.paused, 'the kept start begins once the models are in', 60000);
+  check('the kept press starts the game on the style it chose', (await early.state()).style === 'aventyr');
+  assert.deepEqual(early.errors, []);
+  await early.context.close();
+
   const game = await open();
   await until(game.state, (s) => s.bootReady && s.steps > 0, 'boot ready', 60000);
   await game.page.keyboard.down('ArrowRight');
@@ -140,20 +157,24 @@ try {
   for (let cycle = 0; cycle < 10; cycle++) {
     await game.page.keyboard.press('Escape');
     await until(game.state, (s) => s.paused, 'pause');
-    await until(() => game.page.evaluate(() => window.__testAudio?.state), (state) => state === 'suspended', 'audio suspension');
+    // Under the paper the world is still and the tune goes on, muffled (docs/ux-audit/style-and-sound.md row 21).
+    await until(game.info, (i) => i.audioMode === 'menu', 'audio under the menu');
     const before = await game.info();
     await game.page.keyboard.press('Tab');
     await sleep(80);
-    check(`pause ${cycle + 1} silences music and effects`, !(await game.info()).sound && (await game.info()).soundsPlayed === before.soundsPlayed && (await game.info()).musicBars === before.musicBars);
+    const under = await game.info();
+    check(`pause ${cycle + 1} stops the world's sounds and keeps the tune going under the menu`, under.audioMode === 'menu' && under.soundsPlayed === before.soundsPlayed
+      && await game.page.evaluate(() => window.__testAudio?.state) === 'running');
     await game.page.keyboard.press('Escape');
     await until(game.state, (s) => !s.paused, 'resume');
     await until(game.info, (s) => s.sound, 'audio resumed');
   }
   // High owns HDR targets as well as meshes/textures; loss must restore those targets too.
   await game.page.keyboard.press('Escape');
+  await settingsPage(game.page);
   await game.page.locator('#graphicsHigh').click();
   await until(game.info, (s) => s.tier === 'high', 'High before context loss');
-  await game.page.keyboard.press('Escape');
+  await game.page.locator('#pauseClose').click();
   await game.page.evaluate(() => {
     const gl = document.getElementById('game').getContext('webgl2');
     window.__loss = gl.getExtension('WEBGL_lose_context');

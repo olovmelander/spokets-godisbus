@@ -67,6 +67,8 @@ export type Cue =
   | { kind: 'knocked' }
   | { kind: 'splash'; near: number }
   | { kind: 'wood' }
+  /** A tap on the carving before it wakes: dry wood, nothing more (docs/ux-audit/first-minutes.md row 21). */
+  | { kind: 'tock' }
   /** A stone that rings when he touches it: each one a step higher. */
   | { kind: 'note'; step: number }
   | { kind: 'bell'; midi: number }

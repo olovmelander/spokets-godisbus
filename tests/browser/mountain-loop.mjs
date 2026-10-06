@@ -6,6 +6,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
+import { settingsPage } from './pause.mjs';
 
 const BASE = '/spokets-godisbus/';
 const ROOT = fileURLToPath(new URL('../../', import.meta.url)), DIST = join(ROOT, 'dist');
@@ -48,7 +49,7 @@ async function open(name, width, height, tier, start = { checkpoint: 4, flags: [
   await page.goto(`${origin}${BASE}?dev&debug&standin&course=berget&tier=${tier}`); await ready(page);
   await page.addStyleTag({ content: '#debug { display: none; }' });
   if (await page.locator('#startBtn').isVisible()) await page.locator('#startBtn').click();
-  if (await page.locator('#firstAventyr').isVisible()) await page.locator('#firstAventyr').click();
+  if (await page.locator('#startAventyr').isVisible()) await page.locator('#startAventyr').click();
   const state = () => page.evaluate(() => window.__godis.state());
   const info = () => page.evaluate(() => window.__godis.info());
   await until(state, (s) => s.grounded && !s.paused && s.steps > 60, `${name}: ready`);
@@ -126,14 +127,16 @@ try {
 
   if (!process.env.MOUNTAIN_CASE || process.env.MOUNTAIN_CASE === 'lugnt') {
     const { page, state, info, finish } = await open('Lugnt', 844, 390, 'low', { checkpoint: 3, flags: ['flight'], style: 'lugnt' });
-    await page.keyboard.press('Escape'); await page.locator('#styleLugnt').click(); await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape'); await settingsPage(page); await page.locator('#styleLugnt').click(); await page.locator('#pauseClose').click();
     check('Lugnt: original lower-cliff restore still offers the existing lift', (await state()).style === 'lugnt');
     await page.keyboard.down('ArrowRight');
     await until(state, (s) => s.word === 'lift', 'Lugnt: lift offered');
     await page.keyboard.up('ArrowRight'); await page.keyboard.press('e');
     await until(state, (s) => s.flags.includes('lift'), 'Lugnt: helps the actual ghost');
     await page.keyboard.down('ArrowRight');
-    await until(state, (s) => s.y > 31.3 && s.grounded, 'Lugnt: existing lace climb', 20000);
+    // The walk to the lace and the climb take about 5 s of play. Drawn in software the game can run at a quarter of
+    // real time, so this waits as long as the climb back above does; the check is that he gets up, not how fast.
+    await until(state, (s) => s.y > 31.3 && s.grounded, 'Lugnt: existing lace climb', 60000);
     await page.keyboard.up('ArrowRight');
     const lifted = await state();
     check('Lugnt: main cooperation needs no Hoppa and never grants optional prize', lifted.bubbles === 0 && lifted.blown === 0 && !lifted.flags.includes('found:chokladpralin'));

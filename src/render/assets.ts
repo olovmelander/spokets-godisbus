@@ -1,10 +1,10 @@
 import { LoadingManager, type Group, type WebGLRenderer } from 'three';
-import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
 import transcoderJS from 'three/examples/jsm/libs/basis/basis_transcoder.js?url';
 import transcoderWASM from 'three/examples/jsm/libs/basis/basis_transcoder.wasm?url';
 import { fetchAsset } from './fetch-asset';
+import { createMeshoptDecoder } from './meshopt';
 import { createTextureOwnership, type TextureOwnershipInfo } from './texture-ownership';
 
 /** public/packs/manifest.json, as written by scripts/build-assets.mjs. */
@@ -29,7 +29,9 @@ export interface Assets {
 export function createAssets(renderer: WebGLRenderer): Assets {
   const manager = new LoadingManager();
   const ktx2 = new KTX2Loader(manager).setTranscoderPath('decoder/').detectSupport(renderer);
-  const loader = new GLTFLoader().setKTX2Loader(ktx2).setMeshoptDecoder(MeshoptDecoder);
+  // The meshes' decoder is a file of its own, fetched with the same retries as the packs (./meshopt.ts).
+  const meshopt = createMeshoptDecoder((url) => fetchAsset(url, (response) => response.arrayBuffer()));
+  const loader = new GLTFLoader().setKTX2Loader(ktx2).setMeshoptDecoder(meshopt);
   let decoder: Promise<void> | null = null;
   const initDecoder = () => decoder ??= (async () => {
     // The decoder is required too. Fetch its hashed Vite URLs with the same retry/deadline budget,
@@ -37,7 +39,7 @@ export function createAssets(renderer: WebGLRenderer): Assets {
     const files = await Promise.all([transcoderJS, transcoderWASM].map((url) => fetchAsset(url, (r) => r.blob())));
     const urls = files.map((file) => URL.createObjectURL(file));
     manager.setURLModifier((url) => url === 'decoder/basis_transcoder.js' ? urls[0]! : url === 'decoder/basis_transcoder.wasm' ? urls[1]! : url);
-    try { await ktx2.init(); }
+    try { await Promise.all([ktx2.init(), meshopt.ready]); }
     finally { urls.forEach((url) => URL.revokeObjectURL(url)); }
   })();
   let manifest: Promise<Manifest> | null = null;

@@ -129,14 +129,22 @@ describe('the blink: a beat of the story that takes time', () => {
     return sim;
   };
 
-  it('takes two completed strokes to paint the eyes', () => {
+  it('takes two completed strokes to paint the eyes, the second in the same panel', () => {
     const sim = atTheGhost();
     expect(sim.flags.has('eye')).toBe(true);
     expect(sim.flags.has('paint')).toBe(false);
-    expect(sim.curr.word).toBe('paintGhost');
-    sim.step({ ...idle, act: true });
+    expect(sim.story).toEqual({ kind: 'paint', spot: 'paint' });
     sim.finishStory({ kind: 'paint', traces: [guidedEye(204)] });
     expect(sim.flags.has('paint')).toBe(true);
+  });
+
+  it('leaves the second eye for later when he steps back from the first', () => {
+    const sim = atTheGhost();
+    sim.cancelStory();
+    run(sim, 0.1);
+    expect(sim.curr.word).toBe('paintGhost');
+    sim.step({ ...idle, act: true });
+    expect(sim.story).toEqual({ kind: 'paint', spot: 'paint' });
   });
 
   it('holds him while the ghost wakes and looks at the shelf and the bag, and then lets it run', () => {
@@ -228,15 +236,18 @@ describe('Epilog, Godiskalaset, in greybox', () => {
   it('takes three strokes, and then the eyes', () => {
     const sim = new Sim({ ...epilog, spawn: { x: 32, y: 0.01 } }, {}, { flags: ['knife'] });
     const words: (string | null)[] = [];
+    run(sim, 0.1);
+    words.push(sim.curr.word);
+    sim.step({ ...idle, act: true });
+    // Then each step follows the last in the same panel (docs/ux-audit/story-presentation.md row 18).
     for (let i = 0; i < 4; i++) {
-      run(sim, 0.1);
-      words.push(sim.curr.word);
-      sim.step({ ...idle, act: true });
+      words.push(sim.story?.spot ?? null);
       if (i < 3) sim.finishStory({ kind: 'carve', stroke: guidedCarve() });
       else sim.finishStory({ kind: 'paint', traces: [guidedEye(116), guidedEye(204)] });
     }
     run(sim, .1);
-    expect(words).toEqual(['carve', 'carve', 'carve', 'paintEyes']);
+    expect(words).toEqual(['carve', 'cut1', 'cut2', 'cut3', 'dots']);
+    expect(sim.story).toBeNull();
     expect(sim.flags.has('dots')).toBe(true);
     expect(sim.said).toContain('carved');
   });
@@ -268,7 +279,9 @@ describe('the story from its first scene to its last', () => {
   });
 
   it('gives each part without a number a name for its card, and the last one its closing words', () => {
-    for (const part of STORY) if (chapterNumber(part.id) === 0) expect(sv.end.named[part.id], part.id).toBeDefined();
+    for (const part of STORY) if (chapterNumber(part.id) === 0) expect(sv.end.kickers[part.id], part.id).toBeDefined();
+    // The page is headed by the chapter's name, never by "klart".
+    for (const part of STORY) expect(sv.end.headings[part.id] ?? sv.explore.chapters[part.id], part.id).toBeDefined();
     expect(sv.end.closing['epilog']).toBe('Klonk kunde inte säga det med ord. Men Elof förstod.');
   });
 

@@ -9,6 +9,8 @@ export const sv = {
     title: 'Lägg till på hemskärmen',
     apple: 'På iPhone och iPad: öppna spelet i Safari, tryck på Dela och välj Lägg till på hemskärmen.',
     android: 'På Android: öppna webbläsarens meny och välj Installera app eller Lägg till på startskärmen.',
+    // Where the browser offers to install the game itself (access-and-devices.md row 21).
+    install: 'Installera spelet',
     offline: 'Öppna spelet med internet först. Delar som har laddats kan sedan spelas utan internet, så länge enheten har plats att spara dem.',
   },
   painting: {
@@ -25,9 +27,11 @@ export const sv = {
   },
   sharing: {
     title: 'Dela godiset', choose: 'Välj något gott.', friend: 'Välj en vän.', back: 'Tillbaka',
-    bird: 'Lavskrikan får ett lingon ur fickan.', given: 'Har fått', nowFriend: '{sweet} – vem ska få den?',
+    bird: 'Lavskrikan får ett lingon ur fickan.', given: 'Har fått', nowFriend: '{sweet} – vem ska få {it}?',
     thanks: '{friend} fick {sweet}!',
     sweets: { gelehallon: 'Geléhallon', karamell: 'Karamell', skumbanan: 'Skumbanan', lingon: 'Lingon' },
+    // Ett geléhallon, en karamell, en skumbanan, ett lingon: what each is called after it.
+    it: { gelehallon: 'det', karamell: 'den', skumbanan: 'den', lingon: 'det' },
     friends: { tragubbe: 'Trägubben', spoket: 'Spöket', jay: 'Lavskrikan' },
   },
   party: {
@@ -42,17 +46,23 @@ export const sv = {
   help: 'Hjälp',
 
   // Shown instead of the on-screen controls when a keyboard or a gamepad is in use.
-  keysHint: '← → springa och gunga · Mellanslag hoppa och släppa · ↑ ↓ klättra · E använd · Shift gå',
-  padHint: 'Spaken springa, klättra och gunga · A hoppa och släppa · X använd',
+  // The keys' hint: three keycaps with a word under each, until each has been used (docs/ux-audit/in-play.md row
+  // 13); the whole list is in Pause. ← → ↑ ↓ name the arrow keys; they are drawn (src/ui/keys.ts).
+  keysHint: [['← →', 'springa'], ['Mellanslag', 'hoppa'], ['E', 'använd']],
+  padHint: [['Spaken', 'springa'], ['A', 'hoppa'], ['X', 'använd']],
+  // What a screen reader says for a drawn arrow key.
+  arrowKeys: { '←': 'vänsterpil', '→': 'högerpil', '↑': 'uppåtpil', '↓': 'nedåtpil' },
 
   // The tutorial is wordless on screen; these labels also make its pictures available to a screen reader.
   tutorial: {
-    keys: { move: '← →', hop: '␣', act: 'E' },
-    pad: { move: '✚', hop: 'A', act: 'X' },
-    touch: { move: 'För fingret åt sidan för att gå.', hop: 'Tryck på Hoppa.', act: 'Tryck på Använd för att ta stjärnan.' },
+    // The key each lesson shows (drawn in src/ui/keys.ts): the arrows, the space bar, E; the pad's cross, A, X.
+    keys: { move: '← →', hop: 'Mellanslag', act: 'E' },
+    pad: { move: 'styrkorset', hop: 'A', act: 'X' },
+    // Använd's lesson is said with the button's own word: "Tryck på Måla ögonen!" (first-minutes.md row 23).
+    touch: { move: 'För fingret åt sidan för att gå.', hop: 'Tryck på Hoppa.', act: 'Tryck på {word}' },
     // Spoken descriptions use the same controls as the key reference.
-    keyboard: { move: 'Gå med vänster och höger piltangent.', hop: 'Hoppa med mellanslag.', act: 'Ta stjärnan med E.' },
-    gamepad: { move: 'Gå med vänster spak eller styrkorset.', hop: 'Hoppa med A.', act: 'Ta stjärnan med X.' },
+    keyboard: { move: 'Gå med vänster och höger piltangent.', hop: 'Hoppa med mellanslag.', act: 'Tryck på {word} med E.' },
+    gamepad: { move: 'Gå med vänster spak eller styrkorset.', hop: 'Hoppa med A.', act: 'Tryck på {word} med X.' },
   },
 
   // What Använd says when there is something to use: one word for each thing Elof can do.
@@ -335,7 +345,7 @@ export const sv = {
   vittraSticker: 'Vittrornas tack',
   vittraFound: 'Ett klistermärke! Tack för lingonet.',
   // The album in the pause panel: every kind, found or not.
-  album: { title: 'Godisalbumet', count: '{found} av {total} sorter', golden: 'Det gyllene geléhallonet', goldenFound: 'Alla sorter! Ett geléhallon i guld.' },
+  album: { title: 'Godisalbumet', count: '{found} av {total} sorter', chapterCount: '{found} av {total}', golden: 'Det gyllene geléhallonet', goldenFound: 'Alla sorter! Ett geléhallon i guld.' },
   photos: {
     title: 'Foton', journey: 'Vårt äventyr', empty: 'Här samlas bilder från ditt äventyr.',
     open: 'Titta på {name}', previous: 'Förra', next: 'Nästa', back: 'Tillbaka', done: 'Klart',
@@ -348,18 +358,25 @@ export const sv = {
   },
   explore: {
     title: 'Utforska vidare',
+    // The title's round button.
+    short: 'Utforska',
     hint: 'Välj en plats. Allt du har hittat finns kvar.',
     routeFound: 'Utmaningsgodiset hittat',
     routeWaiting: 'En utmaningsväg att utforska',
+    // Under the star of a chapter's challenge (docs/ux-audit/menus.md row 18).
+    challenge: 'Utmaning',
     chapters: { prolog: 'Lördagsmorgon', garden: 'Gården', granskog: 'Granskogen', myren: 'Myren', berget: 'Berget', norrsken: 'Norrskenet', epilog: 'Godiskalaset', byn: 'Byn' } as Record<string, string>,
-    icons: { prolog: '☀', garden: '❀', granskog: '♧', myren: '≈', berget: '△', norrsken: '✧', epilog: '⌂', byn: '⌂' } as Record<string, string>,
   },
 
   // The card at a chapter's end.
   end: {
-    chapter: 'Kapitel {n} klart!',
-    // A part of the story with a name of its own, by its id.
-    named: { prolog: 'Lördagsmorgon', norrsken: 'Finalen klar!', epilog: 'Slut', byn: 'Byn klar!' } as Record<string, string>,
+    // The page is headed by the chapter's name (explore.chapters), under a small kicker that says which part it is
+    // (docs/ux-audit/story-presentation.md row 7), as a storybook names its chapters.
+    kicker: 'Kapitel {n}',
+    // The kicker of a part of the story without a number, by its id.
+    kickers: { prolog: 'Början', norrsken: 'Finalen', epilog: 'Godiskalaset', byn: 'Ett kapitel till' } as Record<string, string>,
+    // The heading where it is not the chapter's name: the story's last page says that it ends.
+    headings: { epilog: 'Slut' } as Record<string, string>,
     // The last card of the story, in place of "Fortsättning följer!".
     closing: {
       epilog: 'Klonk kunde inte säga det med ord. Men Elof förstod.',
@@ -406,9 +423,12 @@ export const sv = {
   code: {
     // On a chapter's card, over the next chapter's three words.
     next: 'Kod till nästa kapitel',
-    // On the title.
+    // On the title: the round button's word, and its page's heading (docs/ux-audit/first-minutes.md rows 7 and 15).
+    short: 'Kod',
     have: 'Jag har en kod',
     hint: 'Skriv de tre orden',
+    // Each of the three fields, for a screen reader.
+    word: 'Ord {n} av 3',
     open: 'Öppna',
     wrong: 'Den koden finns inte. Titta på kortet en gång till!',
   },
@@ -424,11 +444,15 @@ export const sv = {
 
   players: {
     choose: 'Byt spelare', new: 'Ny spelare', name: 'Vad vill du heta?',
+    // The players' page's heading.
+    title: 'Spelare',
     local: 'Namnet stannar på den här enheten. Alla spelar som Elof.',
     next: 'Välj spelsätt', back: 'Tillbaka', settings: 'Inställningar',
     remove: 'Ta bort {name}', removeAsk: 'Ta bort {name} och allt som spelaren har sparat?',
     restartAsk: 'Börja om från början för {name}? Godis, bilder och framsteg tas bort.',
     yes: 'Ja', no: 'Nej, gå tillbaka', unreadable: 'Kan inte läsas',
+    // Taking a player away and starting over wait behind "Ändra", and "Ja" is held (first-minutes.md row 14).
+    edit: 'Ändra', hold: 'Håll inne',
     error: 'Det gick inte att spara ändringen. Försök igen.',
     indexUnreadable: 'Spelarlistan gick inte att läsa. Det sparade finns kvar. Prova att ladda om sidan.',
     preserved: 'Det sparade spelet gick inte att läsa. Det finns kvar. Välj en annan spelare eller börja om.',
@@ -438,6 +462,12 @@ export const sv = {
   pause: {
     open: 'Paus',
     title: 'Paus',
+    // Pause's own pages (docs/ux-audit/menus.md rows 1 and 6).
+    bag: 'Godispåsen',
+    settings: 'Inställningar',
+    groups: { play: 'Så spelar du', sound: 'Ljud', controls: 'Styrning', picture: 'Bild och text', grownups: 'För vuxna' },
+    // The header's way back names the page it goes to.
+    backTo: 'Tillbaka till {page}',
     resume: 'Spela vidare',
     home: 'Till startsidan',
     close: 'Stäng',
@@ -446,14 +476,36 @@ export const sv = {
     aventyrHint: 'Du hoppar och gungar själv.',
     lugnt: 'Lugnt',
     lugntHint: 'Spelet hjälper dig med hopp och gungor.',
+    // Under the two cards: what the chosen style switches on, or that the helps are the player's own
+    // (docs/ux-audit/menus.md row 7).
+    styleSays: {
+      aventyr: 'Äventyr: ingen hjälp slås på. Hjälparen kommer när du frågar.',
+      lugnt: 'Lugnt: lätta hopp, hjälp med svingen, stopp vid kanter, ingen brådska och påminnelser.',
+      own: 'Ditt eget sätt: du har valt hjälpen själv.',
+    },
     swingHelp: 'Hjälp med svingen',
     easyJumps: 'Lätta hopp',
+    stopAtEdges: 'Stanna vid höga kanter',
+    gentle: 'Spänning utan brådska',
     followFinger: 'Följ fingret',
     vibration: 'Vibration vid landning',
     fullscreen: 'Helskärm',
     exitFullscreen: 'Lämna helskärm',
     fullscreenFailed: 'Helskärm kunde inte öppnas. Du kan spela vidare här.',
-    followHint: 'Håll fingret dit du vill gå. Släpp för att stanna.',
+    // Each switch's second line: what it does, in the voice of the style cards (menus.md row 5).
+    says: {
+      swingHelp: 'Gungan tar fart av sig själv.',
+      easyJumps: 'Hoppen går av sig själva vid kanterna.',
+      stopAtEdges: 'Elof stannar i stället för att falla.',
+      gentle: 'Så länge du rör dig hinner inget ikapp dig.',
+      slower: 'Allt går lite långsammare.',
+      loud: 'Telefonens tysta läge stänger inte av spelet.',
+      lefty: 'Spaken och knapparna byter sida.',
+      followFinger: 'Håll fingret dit du vill gå. Släpp för att stanna.',
+      vibration: 'Telefonen surrar lite när Elof landar högt ifrån.',
+      bigText: 'Det som sägs och orden på knapparna blir större.',
+      calm: 'Inget studsar, blinkar eller skakar.',
+    },
     graphics: 'Grafik',
     graphicsAuto: 'Auto',
     graphicsLow: 'Låg',
@@ -461,15 +513,13 @@ export const sv = {
     graphicsHigh: 'Hög',
     graphicsHint: 'Auto väljer åt dig. Låg gör bilden enklare.',
     graphicsFallback: 'Den här enheten använder Låg.',
-    slower: 'Lugnare tempo',
+    slower: 'Långsammare spel',
     sound: 'Ljud',
     music: 'Musik',
     effectsVolume: 'Ljudvolym',
     musicVolume: 'Musikvolym',
-    effectsQuieter: 'Sänk ljudvolymen',
-    effectsLouder: 'Höj ljudvolymen',
-    musicQuieter: 'Sänk musikvolymen',
-    musicLouder: 'Höj musikvolymen',
+    // A volume is five candy pips (menus.md row 8): "3 av 5".
+    pips: '{n} av 5',
     loud: 'Ljud även i tyst läge',
     lefty: 'Vänsterhänt',
     bigText: 'Större text',
@@ -479,6 +529,15 @@ export const sv = {
     helpAsk: 'Bara när jag frågar',
     helpRemind: 'Påminn mig',
     helpGuide: 'Guida mig',
+    // What each level means: who helps, and how (menus.md row 9; plan §4.6).
+    helpSays: {
+      ask: 'Hjälparen kommer när du trycker på den.',
+      remind: 'Hjälparen tittar förbi om inget händer på länge.',
+      guide: 'Hjälparen kommer själv och visar vad du kan göra.',
+    },
+    // The chapter's own three words, for opening it on another device (menus.md row 6).
+    code: 'Kod till det här kapitlet',
+    codeSays: 'Skriv orden under ”Jag har en kod” på en annan enhet.',
     stuck: 'Jag har fastnat',
     stuckAsk: 'Tillbaka till den stora godisbiten?',
     stuckYes: 'Ja, tillbaka',
@@ -487,12 +546,12 @@ export const sv = {
 
   controls: {
     title: 'Tangenter och handkontroll',
-    back: 'Tillbaka till paus',
     keyboard: 'Tangentbord',
     gamepad: 'Handkontroll',
+    // Drawn as keycaps: " / " separates the choices, " + " keys held together, a space keys side by side.
     keyboardRows: [
       ['← → / A D', 'Springa och gunga'],
-      ['Shift + ← → / A D', 'Gå långsamt'],
+      ['Shift + ← → / Shift + A D', 'Gå långsamt'],
       ['Mellanslag / ↑ / W', 'Hoppa. Håll för högre hopp.'],
       ['↑ ↓ / W S', 'Klättra på slang och snöre'],
       ['Mellanslag', 'Släpp gungan'],
@@ -514,6 +573,9 @@ export const sv = {
     ],
   },
 
+  // While a new version of the game is put in place at the title (docs/ux-audit/access-and-devices.md row 21).
+  updating: 'Spelet uppdateras …',
+
   // Saving (Sköldhästen's wording).
   saveOff: 'Spelet kan inte sparas i den här webbläsaren – men du kan spela ändå.',
   saveUnreadable: 'Det sparade spelet gick inte att läsa.',
@@ -524,10 +586,14 @@ export const sv = {
 
   // Sköldhästen's wording.
   noWebGL: 'Den här webbläsaren kan tyvärr inte visa spelet.',
+  // For the grown-up, under it: no button, as none would help (docs/ux-audit/menus.md row 19).
+  noWebGLMore: 'Prova en annan webbläsare, eller uppdatera enheten.',
   loadFailed: 'Något gick fel när spelet laddades.',
   contextLost: 'Bilden försvann en stund. Spelet är pausat och det du har gjort är sparat.',
   contextRestored: 'Bilden är tillbaka. Fortsätt när du är redo!',
   contextReloading: 'Vi hämtar tillbaka bilden. Spelet väntar.',
   recoveryTitle: 'Spelet väntar',
   retry: 'Försök igen',
+  // After a lost picture the button loads the page again: everything is saved.
+  reloadGame: 'Ladda om spelet',
 } as const;

@@ -217,6 +217,8 @@ export class SceneDirector {
   /** A scene is due and waits for quiet: he stands and listens. How long it has waited. */
   private listening = false;
   private waited = 0;
+  /** Where the next scene of this name begins, when it is not at its start. */
+  private opening: { id: string; seconds: number } | null = null;
 
   constructor(private readonly scenes: readonly SceneDef[], spawn: Vec, flags: Set<string>) {
     // A scene that waits for a place he starts beyond has been seen: the game was taken up after it.
@@ -256,6 +258,15 @@ export class SceneDirector {
     this.playing = null;
   }
 
+  /**
+   * The scene of this name begins this far in when it is next due: the picture before it was already its first
+   * shot (the title, docs/ux-audit/first-minutes.md rows 4 and 16), so it goes on from there, with no fade from black.
+   * What it would have set or said before that moment is set and said at once.
+   */
+  openAt(id: string, seconds: number): void {
+    this.opening = { id, seconds };
+  }
+
   /** "Jag har fastnat", or a story panel that takes over: the scene is let go, and plays again when due. */
   cancel(): void {
     this.playing = null;
@@ -283,7 +294,9 @@ export class SceneDirector {
       this.waited = 0;
       // Begun again after an interruption: its lines are said again, from the first.
       for (let i = 0; i < (scene.lines?.length ?? 0); i++) flags.delete(`beat:${scene.id}:${i}`);
-      this.playing = { def: scene, seconds: 0, cue: 0, line: 0 };
+      const from = this.opening?.id === scene.id ? Math.min(this.opening.seconds, scene.seconds) : 0;
+      this.opening = null;
+      this.playing = { def: scene, seconds: from, cue: 0, line: 0 };
       return;
     }
   }

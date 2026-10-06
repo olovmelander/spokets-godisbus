@@ -1,3 +1,4 @@
+import { lessMotion } from '../platform/motion';
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
@@ -40,6 +41,7 @@ import { createSharedSweets } from './shared-sweets';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
+import { buildVerbMarks } from './verb-marks';
 import type { Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
@@ -47,6 +49,7 @@ import { endsInScene, type SceneFrame } from '../sim/scene';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
+import { photoCut } from './crop';
 
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
@@ -131,6 +134,8 @@ export interface View {
   readonly maxResolutionSteps: number;
   /** Required public boot models are present; a failure keeps the loading/error card in front of play. */
   readonly ready: Promise<void>;
+  /** How much of what `ready` waits for has come, from 0 to 1: for the crayon line under the title. */
+  readonly loaded: number;
   /** Re-fetch released immutable textures before warming Three's restored GL resources. */
   restore(): Promise<void>;
   resize(): void;
@@ -138,8 +143,11 @@ export interface View {
   setTier(next: Tier): void;
   /** Whole 0.1 reductions from the tier cap. A changed step resizes existing targets, never shaders. */
   setResolutionSteps(steps: number): void;
-  /** The rendered player's centre on the play plane, in CSS client coordinates; null before the first frame. */
-  playerScreen(): { x: number; y: number } | null;
+  /**
+   * The rendered player's centre on the play plane, in CSS client coordinates; null before the first frame. `up` asks
+   * for another height on him instead, in his own lengths from his feet: 1.3 is just over his head.
+   */
+  playerScreen(up?: number): { x: number; y: number } | null;
   /** The visitor's centre for tapping the helper itself; null while it is away. */
   helperScreen(): { x: number; y: number } | null;
   /** The visible ghost's picture-bubble origin above its head; null while it is away or off screen. */
@@ -150,8 +158,11 @@ export interface View {
   render(frame: Frame): void;
   /** Read the last frame immediately after render(), with no retained WebGL drawing buffer. */
   capture(): Promise<Blob | null>;
-  /** A copy of the frame just drawn, as a canvas of its own: the picture on a chapter's last page. */
-  snapshot(): HTMLCanvasElement | null;
+  /**
+   * A copy of the frame just drawn, as a canvas of its own: the photo on a chapter's last page, a 3:2 cut with the
+   * given point (CSS client coordinates, Elof) a third of the way in, at most 720×480 (src/render/crop.ts).
+   */
+  snapshot(focus?: { x: number; y: number } | null): HTMLCanvasElement | null;
   info(): ViewInfo;
 }
 
@@ -255,7 +266,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const ledges = buildLedges(chapter.ledges ?? [], rods(chapter));
   const glitter = buildGlitter();
   const lace = buildLace();
-  const glints = buildGlints(chapter);
+  // What Använd will do, over each thing it can act on (in-play.md row 6).
+  const glints = buildVerbMarks(chapter);
   const lawnSong = songGlitter(chapter);
   const noteStrikes = new Map<string, number>();
   scene.add(lawnSong.group);
@@ -443,7 +455,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (atlas) wild.install(atlas);
     })
     .catch((error) => console.error('The life of the far scenery could not be loaded.', error)) : Promise.resolve();
-  const ready = Promise.all([candyReady, jayReady, sweetsReady, forestReady, housesReady, mountainReady, lifeReady]).then(() => undefined);
+  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, mountainReady, lifeReady];
+  let arrived = 0;
+  for (const part of parts) void part.then(() => { arrived++; }, () => {});
+  const ready = Promise.all(parts).then(() => undefined);
 
   // The ghost. A stand-in built here plays its part everywhere. The one modelled in Blender after Pappa's
   // carving takes its place where its private pack exists (HANDOVER.md): the manifest says whether it does.
@@ -682,7 +697,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const unculled: Object3D[] = [];
   const idle: Object3D[] = [];
   const projectedPlayer = new Vector3();
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let reaction: Reaction | null = null;
   let responseFor = 0;
   let calmResponse = false;
@@ -751,7 +765,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   function render({ prev, curr, alpha, dt, atGoal, collected, side, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue, scene: sceneFrame, ending }: Frame): void {
     inEndingShot = !!chapter.epilogue && ending !== null && ending !== undefined;
     rain.update(drips);
-    epilogueStage.update(flags, ending, reducedMotion.matches || document.body.classList.contains('calm'));
+    epilogueStage.update(flags, ending, lessMotion());
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     if (chapter.id === 'norrsken') {
       const eyes = scene.getObjectByName('first-carving-eyes');
@@ -762,7 +776,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const onShoulders = chapter.id === 'norrsken' && curr.mode === 'ride' && flags.has('home');
     if (onShoulders) homeJourney = true;
     const wantShoulders = onShoulders ? 4.25 : 0;
-    const calmStory = reducedMotion.matches || document.body.classList.contains('calm');
+    const calmStory = lessMotion();
     shoulderLift = calmStory ? wantShoulders : shoulderLift + Math.sign(wantShoulders - shoulderLift) * Math.min(Math.abs(wantShoulders - shoulderLift), dt * 8.5);
     clock += dt;
     // The scene playing now, if any: where the family and the ghost are, what they do, and the shot (./stage.ts).
@@ -774,11 +788,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       chapter.prologue && ghostState ? ghostState.x : Infinity);
     sideTrail.update(side ?? noSide, flags, x, y, dt, clock);
     ledges.update(flags, dt);
-    glints.update(flags, clock);
+    glints.update(flags, clock, lessMotion());
     lawnSong.update(flags, clock);
     for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
     cones.update(rollers, clock);
-    water.update(clock, reducedMotion.matches || document.body.classList.contains('calm'));
+    water.update(clock, lessMotion());
     for (const [i, t] of tussocks.entries()) tussockMeshes[i]?.position.set(t.x, t.y, 0);
     // A cranberry goes flat under him and springs back, a little past its shape.
     for (const [i, b] of (berries ?? []).entries()) {
@@ -831,7 +845,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (thing.prop && chapter.prologue && thing.spot.id === 'star') {
         const spilled = flags.has('blink') && flags.has('bag:torn') && (starDropTime > 0 || (x >= 37.5 && (ghostState?.x ?? 0) >= 40.5));
         if (spilled && dt > 0) starDropTime = Math.min(.65, starDropTime + dt);
-        const progress = reducedMotion.matches || document.body.classList.contains('calm') ? 1 : Math.min(1, starDropTime / .65);
+        const progress = lessMotion() ? 1 : Math.min(1, starDropTime / .65);
         thing.prop.group.visible = spilled && !flags.has('star');
         thing.prop.group.position.set(thing.spot.at.x + (1 - progress) * .3,
           thing.spot.at.y + (1 - progress * progress) * .9, -.35);
@@ -857,7 +871,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       poff = tall !== want;
       tall += Math.sign(want - tall) * Math.min(Math.abs(want - tall), ((sized.scale - 1) * dt) / 1.2);
     }
-    helper.update(help, x, y, curr.standY, clock, dt, reducedMotion.matches || document.body.classList.contains('calm'));
+    helper.update(help, x, y, curr.standY, clock, dt, lessMotion());
     // The helper is the same friend, not a second ghost alongside the one he is following.
     ghostPlace.visible = chapter.ghost !== undefined && !(ghostHelps && helper.active);
     hiddenSweets.update(flags, clock, dt, reaction?.kind === 'hidden' ? reaction.index : undefined, response);
@@ -1086,7 +1100,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostStaged = true;
     }
     ghostThought?.update(ghostState, flags, { x, y }, camera, clock, dt,
-      reducedMotion.matches || document.body.classList.contains('calm'), ghostPlace.visible);
+      lessMotion(), ghostPlace.visible);
     // The family: each turns a little towards him, and throws their arms up for a moment when he has given
     // them candy, or when they first come into the picture.
     for (const one of family) {
@@ -1098,7 +1112,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       one.model.rotation.y += (towards - one.model.rotation.y) * ease(4, dt);
       const up = one.joy > 0 ? Math.min(1, one.joy / 0.3, (1.8 - one.joy) / 0.25) : 0;
       // A small hop of delight, and otherwise the slow sway of someone standing.
-      one.model.position.y = reducedMotion.matches || document.body.classList.contains('calm') ? 0 : up * Math.abs(Math.sin(clock * 9)) * .36;
+      one.model.position.y = lessMotion() ? 0 : up * Math.abs(Math.sin(clock * 9)) * .36;
       for (const [i, arm] of one.arms.entries()) {
         bendJoint(arm, up > 0 ? -3.0 * up : Math.sin(clock * 1.1 + one.at + i) * 0.05, ease(10, dt));
         bendJoint(one.hands[i] ?? null, up > 0 ? -0.2 * up : -0.08, ease(10, dt));
@@ -1138,6 +1152,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     get resolutionSteps() { return resolutionSteps; },
     get maxResolutionSteps() { return maxResolutionSteps(maxPixelRatio); },
     ready,
+    get loaded() { return arrived / parts.length; },
     async restore() {
       await ready;
       await assets.restoreTextures();
@@ -1149,15 +1164,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     resize,
     render,
     capture: () => hasFrame ? captureFrame(canvas) : Promise.resolve(null),
-    snapshot() {
+    snapshot(focus) {
       // Call it right after a render, as `capture`: the drawing buffer is not kept.
       if (!hasFrame || canvas.width <= 0 || canvas.height <= 0) return null;
+      const rect = canvas.getBoundingClientRect();
+      const toCanvas = rect.width > 0 ? canvas.width / rect.width : 1;
+      const point = focus ? { x: (focus.x - rect.left) * toCanvas, y: (focus.y - rect.top) * toCanvas } : null;
+      const cut = photoCut(canvas.width, canvas.height, point);
       const copy = canvas.ownerDocument.createElement('canvas');
-      const scale = Math.min(1, 720 / canvas.width, 420 / canvas.height);
-      copy.width = Math.max(1, Math.round(canvas.width * scale));
-      copy.height = Math.max(1, Math.round(canvas.height * scale));
+      const scale = Math.min(1, 720 / cut.width, 480 / cut.height);
+      copy.width = Math.max(1, Math.round(cut.width * scale));
+      copy.height = Math.max(1, Math.round(cut.height * scale));
       try {
-        copy.getContext('2d')?.drawImage(canvas, 0, 0, copy.width, copy.height);
+        copy.getContext('2d')?.drawImage(canvas, cut.x, cut.y, cut.width, cut.height, 0, 0, copy.width, copy.height);
       } catch { return null; }
       return copy;
     },
@@ -1187,8 +1206,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       resolutionSteps = next;
       resize();
     },
-    playerScreen() {
-      elof.group.localToWorld(projectedPlayer.set(0, 0.5, 0));
+    playerScreen(up = 0.5) {
+      elof.group.localToWorld(projectedPlayer.set(0, up, 0));
       projectedPlayer.z = 0;
       return project(projectedPlayer);
     },
@@ -1691,32 +1710,6 @@ function buildRain(count: number) {
   return { group, update };
 }
 
-/**
- * A soft glint over each thing Använd can act on (plan §4.6): the lever, the place to call from. It is
- * gone once the thing has been used.
- */
-function buildGlints(chapter: ChapterData) {
-  const group = new Group();
-  const gold = new MeshBasicMaterial({ color: '#ffd76a', transparent: true, opacity: 0.9, depthWrite: false, blending: AdditiveBlending });
-  const spots = chapter.spots ?? [];
-  const meshes = spots.map((spot) => {
-    const glint = new Mesh(new OctahedronGeometry(0.16), gold);
-    glint.position.set(spot.at.x, spot.at.y + 1.5, 0);
-    group.add(glint);
-    return glint;
-  });
-  function update(flags: ReadonlySet<string>, clock: number): void {
-    for (const [i, spot] of spots.entries()) {
-      const glint = meshes[i]!;
-      const ready = !flags.has(spot.id) && (spot.needs === undefined || flags.has(spot.needs));
-      glint.scale.setScalar(ready ? 1 + 0.25 * Math.sin(clock * 4 + i) : 0);
-      drawnWhile(glint, ready);
-      glint.position.y = spot.at.y + 1.5 + Math.sin(clock * 2 + i) * 0.1;
-      glint.rotation.y = clock * 2;
-    }
-  }
-  return { group, update };
-}
 
 /**
  * A look (plan §3.4, the blink): while the chapter's beat lasts, a dotted line goes from the ghost's eyes to

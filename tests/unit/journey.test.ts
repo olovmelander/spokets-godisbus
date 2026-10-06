@@ -51,9 +51,14 @@ describe('visiting the story after its ending', () => {
     expect(EXPLORE_CHAPTERS.map((chapter) => chapter.id)).toEqual(['prolog', 'garden', 'granskog', 'myren', 'berget', 'norrsken', 'epilog', 'byn']);
     expect(html.match(/data-chapter=/g)).toHaveLength(8);
     expect(html).not.toContain('testbana');
-    expect(html).toContain('<span class="row"><i></i><i></i></span>');
+    // Two sweets, one by one; a ten would be a roll (docs/ux-audit/story-presentation.md row 12).
+    expect(html).toContain('<span class="rows" aria-hidden="true"><i></i><i></i></span>');
     expect(html).toContain('1 / 4 Gömt godis');
     expect(html).toContain('En utmaningsväg att utforska');
+    // Moa's drawings, not typed symbols that each system draws its own way (docs/ux-audit/menus.md row 18).
+    expect(html.match(/class="chapter-picture"/g)).toHaveLength(8);
+    expect(html).not.toMatch(/[☀❀♧≈△✧⌂☆★]/u);
+    expect(html).toContain('<small aria-hidden="true">Utmaning</small>');
     const released = exploreHtml(save, (id) => ['prolog', 'garden'].includes(id));
     expect(released.match(/data-chapter=/g)).toHaveLength(2);
     expect(released).not.toContain('data-chapter="byn"');

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
 import { withinDraws } from './budget.mjs';
+import { settingsPage } from './pause.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -159,9 +160,10 @@ try {
     const { page, context, state, finish } = await open(name, { viewport, hasTouch: true, isMobile: true }, query('40.6,-0.79', `&flags=${HAND}`));
     await until(state, s => s.grounded && s.verb === 'take' && s.steps > 30, 'near the hand');
     await page.tap('#pauseBtn');
+    await settingsPage(page);
     await page.check('#setFollowFinger');
     if (viewport.width === 390) await page.check('#setLefty');
-    await page.tap('#resumeBtn');
+    await page.tap('#pauseClose');
     const cdp = await context.newCDPSession(page);
     const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
     // Where the game offers the hand's action: over the hand, clear of Elof himself (Sim.actionAt).
@@ -193,7 +195,7 @@ try {
     check('movement prompt starts hidden', await page.locator('#tutorial').isHidden());
     await shown(page, 'move');
     check('the idle prompt never moves Elof or changes story flags', (await state()).x === initial.x && (await state()).flags.length === initial.flags.length);
-    check('keyboard movement cue is one keycap and has accessible text', (await page.locator('#tutorialKey').innerText()) === '← →' && (await page.locator('#tutorial').getAttribute('aria-label')).length > 0);
+    check('keyboard movement cue is the two arrow keys, drawn, and has accessible text', (await page.locator('#tutorialKey use').evaluateAll((uses) => uses.map((use) => use.getAttribute('href')).join(' '))) === '#i-key-left #i-key-right' && (await page.locator('#tutorial').getAttribute('aria-label')).length > 0);
     check('reduced motion stops the hand animation', await page.locator('.tutorial-hand').evaluate(el => getComputedStyle(el).animationName === 'none'));
     await picture(page, join(shots, 'tutorial-move-keys.png'));
     await page.keyboard.press('Escape');
@@ -209,7 +211,8 @@ try {
   }
   for (const viewport of [{ width: 844, height: 390 }, { width: 390, height: 844 }]) {
     const name = `tutorial-touch-${viewport.width}`;
-    const { page, state, finish } = await open(name, { viewport, hasTouch: true, isMobile: true }, query('29.4,0.01', '&flags=blink'));
+    // In the hall the chase is on, and Hoppa has come in (first-minutes.md row 8).
+    const { page, state, finish } = await open(name, { viewport, hasTouch: true, isMobile: true }, query('29.4,0.01', '&flags=blink,bag:torn'));
     // A harmless surface tap selects touch without discovering either movement or jump.
     await page.touchscreen.tap(15, viewport.height / 2);
     await shown(page, 'hop');
@@ -246,15 +249,60 @@ try {
   {
     const { page, state, finish } = await open('mirrored follow lesson', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }, query('1,0.01'));
     await page.tap('#pauseBtn');
+    await settingsPage(page);
     await page.check('#setFollowFinger');
     await page.check('#setLefty');
     await page.check('#setCalm');
-    await page.tap('#resumeBtn');
+    await page.tap('#pauseClose');
     await shown(page, 'move');
     const hint = await page.locator('#tutorial').boundingBox();
     check('mirrored Follow finger still teaches moving right into the story', hint.x + hint.width / 2 > (await state()).playerScreen.x && hint.x + hint.width <= 390);
     check('Lugna animationer stops the follow gesture cue', await page.locator('.tutorial-hand').evaluate(el => getComputedStyle(el).animationName === 'none'));
     await picture(page, join(shots, 'tutorial-follow-lefty.png'));
+    // One switch for less motion, whichever source asks (docs/ux-audit/style-and-sound.md row 17).
+    check('Lugna animationer sets the one motion switch', await page.evaluate(() => document.documentElement.dataset.motion === 'reduce'));
+    await finish();
+  }
+  {
+    // A debug start position never writes the save, so this page starts where a player does. The page's own head
+    // sets the switch from the save before the game's script has run: `interactive` comes before deferred scripts.
+    const atParse = () => document.addEventListener('readystatechange', () => {
+      if (document.readyState === 'interactive') window.__motionAtParse = document.documentElement.dataset.motion ?? null;
+    });
+    const { page, finish } = await open('motion from the save', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }, '?debug&standin&tier=low', atParse);
+    await page.tap('#pauseBtn');
+    await settingsPage(page);
+    await page.check('#setCalm');
+    await page.reload();
+    await ready(page);
+    check('after a reload the switch comes back from the save before the game\'s script runs', await page.evaluate(() => window.__motionAtParse === 'reduce' && document.documentElement.dataset.motion === 'reduce'));
+    await finish();
+  }
+  {
+    // Följ fingret rings the held finger; held far off it runs him, in the chase too, and the arrow over his head
+    // turns to it (docs/ux-audit/in-play.md row 11).
+    const { page, context, state, finish } = await open('follow ring', { viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }, query('29.4,0.01', '&flags=blink,bag:torn'));
+    await page.tap('#pauseBtn');
+    await settingsPage(page);
+    await page.check('#setFollowFinger');
+    await page.tap('#pauseClose');
+    await frames(page);
+    const cdp = await context.newCDPSession(page);
+    const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
+    const elof = (await state()).playerScreen;
+    const far = { x: Math.round(elof.x + 180), y: Math.round(elof.y), id: 1 };
+    await touch('touchStart', [far]);
+    await frames(page, 2);
+    const ring = await page.locator('#fingerRing').boundingBox();
+    check('Följ fingret rings the finger where it lands', !!ring && Math.abs(ring.x + ring.width / 2 - far.x) < 3 && Math.abs(ring.y + ring.height / 2 - far.y) < 3);
+    await until(state, s => s.vx > 2, 'a finger held far off runs him');
+    check('running to it, the ring goes yellow and the arrow over his head points at the finger',
+      await page.locator('#fingerRing.steering.run').count() === 1 && await page.locator('#followArrow').isVisible()
+      && Math.abs(await page.locator('#followArrow').evaluate((el) => parseFloat(el.style.rotate))) < 0.6);
+    await picture(page, join(shots, 'follow-ring.png'));
+    await touch('touchEnd', []);
+    await frames(page, 2);
+    check('the marks go with the finger', await page.locator('#fingerRing').isHidden() && await page.locator('#followArrow').isHidden());
     await finish();
   }
   console.log(`pointing/tutorial: ${checked} checks passed`);

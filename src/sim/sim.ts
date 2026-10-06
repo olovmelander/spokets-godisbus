@@ -10,7 +10,7 @@ import { DOWN_TIME, DROP_FALL, DROP_FROM, DROP_RADIUS, DROP_WARNING } from './co
 import { GHOST_CATCH, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_STEER, SPOT_REACH } from './constants';
 import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REACH } from './constants';
 import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
-import { GUIDE_AFTER, HELP_TIME, REMIND_AFTER } from './constants';
+import { GUIDE_AFTER, HELP_KEPT, HELP_TIME, REMIND_AFTER } from './constants';
 import { LEDGE_CORNER, LEDGE_GIVE, LEDGE_RISING, LEDGE_STAND, LEDGE_THICK } from './constants';
 import { hintFor } from './help';
 import { partyReward, sharingReward, type StoryAnswer } from './story';
@@ -178,6 +178,8 @@ export class Sim {
   readonly help: HelpState = { step: 0, at: null, verb: null, word: null };
   /** How long the helper has been at it, how long nothing has happened, and what "something happened" is read from. */
   private helpFor = 0;
+  /** The step the helper last left at a place, and how long ago, so that the next ask there goes on from it. */
+  private kept: { at: Vec; step: 1 | 2 | 3; ago: number } | null = null;
   /** For each beat that takes time: the step at which its time began, once it has. */
   private readonly began = new Map<string, number>();
   /** Whether he stands and watches such a beat now. */
@@ -403,7 +405,13 @@ export class Sim {
       : centres.length > 0 && answer.traces.length === centres.length && centres.every((cx, i) => validEyeStroke(answer.traces[i]!, cx)) ? [this.story.spot] : null;
     if (!reward) return false;
     for (const flag of reward) this.flags.add(flag);
-    this.story = null;
+    // The next step at the same place follows at once, in the same panel: the carving's next cut, then the new
+    // figure's eyes (docs/ux-audit/story-presentation.md row 18).
+    const done = this.story.spot;
+    const at = this.chapter.spots?.find((spot) => spot.id === done)?.at;
+    const next = at && this.chapter.spots?.find((spot) => spot.story && spot.needs === done && !this.flags.has(spot.id)
+      && spot.at.x === at.x && spot.at.y === at.y);
+    this.story = next ? { kind: next.story!, spot: next.id } : null;
     return true;
   }
 
@@ -551,6 +559,7 @@ export class Sim {
       this.helpFor += STEP;
       if (this.helpFor > (this.help.visit ? 5 : HELP_TIME)) this.leave();
     }
+    if (this.kept && (this.kept.ago += STEP) > HELP_KEPT) this.kept = null;
     const visit = this.chapter.helper?.visit;
     if (visit && this.curr.x >= visit.from && this.curr.x <= visit.to && !this.flags.has(`visit:${visit.id}`)) {
       // Remember the story beat in ordinary save flags, without moving Elof, the ghost's chase state or
@@ -569,10 +578,13 @@ export class Sim {
     if (!asked && (!byItself || this.help.visit)) return;
     const hint = hintFor(this, this.chapter);
     if (!hint) return;
-    const same = this.help.step > 0 && this.help.at !== null && this.help.at.x === hint.at.x && this.help.at.y === hint.at.y;
-    const step = byItself && !asked ? (level === 'guide' ? 2 : 1) : same ? Math.min(3, this.help.step + 1) : 1;
+    const there = (at: Vec | null | undefined) => !!at && at.x === hint.at.x && at.y === hint.at.y;
+    // Still here, or gone within the last minute from the same thing: one step further than it got.
+    const last = this.help.step > 0 && there(this.help.at) ? this.help.step : there(this.kept?.at) ? this.kept!.step : 0;
+    const step = byItself && !asked ? (level === 'guide' ? 2 : 1) : last > 0 ? Math.min(3, last + 1) : 1;
     if (byItself) this.reminded = true;
-    this.help.step = Math.max(same ? this.help.step : 0, step) as HelpState['step'];
+    this.help.step = Math.max(last, step) as HelpState['step'];
+    this.kept = null;
     this.help.at = { x: hint.at.x, y: hint.at.y };
     this.help.verb = hint.verb;
     this.help.word = hint.word;
@@ -582,8 +594,10 @@ export class Sim {
     this.helpFor = 0;
   }
 
-  /** The helper goes away. */
+  /** The helper goes away. What it had shown at a place is kept for a minute (HELP_KEPT); a story visit is not. */
   private leave(): void {
+    const step = this.help.step;
+    if (step !== 0 && this.help.at && !this.help.visit) this.kept = { at: { ...this.help.at }, step, ago: 0 };
     this.help.step = 0;
     this.help.at = null;
     this.help.verb = null;

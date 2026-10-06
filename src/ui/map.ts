@@ -68,7 +68,7 @@ const AT: Record<MapPlace, { x: number; y: number }> = {
   mountain: { x: 334, y: 58 },
 };
 const crayon = 'fill="none" stroke-linecap="round" stroke-linejoin="round"';
-const PICTURE: Record<MapPlace, string> = {
+export const PICTURE: Record<MapPlace, string> = {
   // The red house with its white corners.
   home: `<path d="M-15 8v-16l15-11 15 11v16z" fill="#c0392b" stroke="#7a2318" stroke-width="2"/><path d="M-4 8v-9h8v9" ${crayon} stroke="#fff6ea" stroke-width="2.4"/>`,
   // Three spruces.
@@ -82,9 +82,28 @@ const PICTURE: Record<MapPlace, string> = {
 };
 
 /**
+ * Moa's other drawings, for the chapters her map has no place for (docs/ux-audit/menus.md row 18): the morning's
+ * star, the northern lights, the party's table with its sweets, and a shop in the village. Drawn round 0 0 like the
+ * map's places.
+ */
+export const DRAWING = {
+  star: `<path d="M0-22l6 12 13 2-9.5 9.5L12 15 0 8.5-12 15l2.5-13.5L-19-8l13-2z" fill="#f4c542" stroke="#a07a10" stroke-width="2" stroke-linejoin="round"/>`,
+  aurora: `<path d="M-22 2c7-16 13 0 22-10s14 2 22-12" ${crayon} stroke="#5fc49a" stroke-width="5"/><path d="M-22 10c8-12 14 2 22-6s14 2 22-6" ${crayon} stroke="#9a7ad8" stroke-width="3.4"/><path d="M-16-18v.01M8-22v.01M18 6v.01" ${crayon} stroke="#f4c542" stroke-width="3"/>`,
+  party: `<path d="M-22 1h44M-17 1v13M17 1v13" ${crayon} stroke="#7b5a36" stroke-width="3"/><circle cx="-11" cy="-5" r="5" fill="#dd4b39" stroke="#8a2a1f" stroke-width="1.5"/><circle cx="0" cy="-6" r="5" fill="#3f9a5a" stroke="#27512a" stroke-width="1.5"/><circle cx="11" cy="-5" r="5" fill="#f4c542" stroke="#a07a10" stroke-width="1.5"/>`,
+  shop: `<path d="M-18 14v-20h36v20z" fill="#e8d5b0" stroke="#7b5a36" stroke-width="2"/><path d="M-21-6l4-9h34l4 9z" fill="#c0392b" stroke="#7a2318" stroke-width="2" stroke-linejoin="round"/><path d="M-9-15l-2 9M1-15v9M11-15l2 9" ${crayon} stroke="#fff6ea" stroke-width="2"/><path d="M-12 14V2h8v12M3 1h10v7H3z" ${crayon} stroke="#7b5a36" stroke-width="2"/>`,
+};
+
+/**
  * The map as SVG markup. With a state of null it draws nothing. With `wayOn`, on a chapter's last page, Moa's
  * crayon draws the way on from where he is to where the ghost is heading (ui.css animates the stroke).
  */
+/** Each chapter's picture from Moa's map: on its card in Utforska vidare, and on its strip in the album. */
+const CHAPTER_PICTURE: Record<string, string> = {
+  prolog: DRAWING.star, garden: PICTURE.home, granskog: PICTURE.forest, myren: PICTURE.bog, berget: PICTURE.mountain,
+  norrsken: DRAWING.aurora, epilog: DRAWING.party, byn: DRAWING.shop,
+};
+export const chapterPicture = (id: string) => `<svg class="chapter-picture" viewBox="-26 -32 52 48" aria-hidden="true">${CHAPTER_PICTURE[id] ?? ''}</svg>`;
+
 export function mapSvg(state: MapState | null, named = false, wayOn = false): string {
   if (!state) return '';
   const route = state.drawn.map((place, i) => `${i === 0 ? 'M' : 'L'}${AT[place].x} ${AT[place].y + 20}`).join(' ');
@@ -95,13 +114,15 @@ export function mapSvg(state: MapState | null, named = false, wayOn = false): st
     })
     .join('');
   const here = AT[state.here];
-  // A little Elof: a yellow tuft of hair on a blue shirt.
-  const elof = `<g transform="translate(${here.x - 22} ${here.y - 30})"><circle r="6" fill="#f4c542" stroke="#8a6a1a" stroke-width="1.5"/><path d="M-5 7h10l2 11h-14z" fill="#8fb4dc" stroke="#4a6a8c" stroke-width="1.5"/></g><text class="here" x="${here.x - 22}" y="${here.y - 42}" text-anchor="middle">${sv.map.here}</text>`;
   const ghostAt = state.ghost ?? (named ? state.here : null);
   const to = ghostAt && (named || ghostAt !== state.here) ? AT[ghostAt] : null;
+  // Elof and the ghost at the same place (Klonk, at home): their names go either side, so neither covers the other.
+  const together = to !== null && ghostAt === state.here;
+  // A little Elof: a yellow tuft of hair on a blue shirt.
+  const elof = `<g transform="translate(${here.x - 22} ${here.y - 30})"><circle r="6" fill="#f4c542" stroke="#8a6a1a" stroke-width="1.5"/><path d="M-5 7h10l2 11h-14z" fill="#8fb4dc" stroke="#4a6a8c" stroke-width="1.5"/></g><text class="here" x="${together ? here.x - 8 : here.x - 22}" y="${here.y - 42}" text-anchor="${together ? 'end' : 'middle'}">${sv.map.here}</text>`;
   // The ghost, where it is heading: on blank paper, when that place is not drawn yet.
   const ghost = to
-    ? `<g transform="translate(${to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)} ${to.y - (state.drawn.includes(ghostAt!) ? 26 : 0)})"><path d="M-7 10v-12a7 7 0 0 1 14 0v12z" fill="#e9d3a8" stroke="#8a6a3a" stroke-width="1.5"/><circle cx="-2.5" cy="-2" r="1.2"/><circle cx="2.5" cy="-2" r="1.2"/><text x="0" y="-15" text-anchor="middle">${named ? sv.ghostName : sv.who.spoket}</text></g>`
+    ? `<g transform="translate(${to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)} ${to.y - (state.drawn.includes(ghostAt!) ? 26 : 0)})"><path d="M-7 10v-12a7 7 0 0 1 14 0v12z" fill="#e9d3a8" stroke="#8a6a3a" stroke-width="1.5"/><circle cx="-2.5" cy="-2" r="1.2"/><circle cx="2.5" cy="-2" r="1.2"/><text x="${together ? -14 : 0}" y="-15" text-anchor="${together ? 'start' : 'middle'}">${named ? sv.ghostName : sv.who.spoket}</text></g>`
     : '';
   const note = state.unfinished ? `<text x="190" y="157" text-anchor="middle">${sv.map.unfinished}</text>` : '';
   // The way on: a red crayon stroke from him to the ghost's next place, a little wavy, as a child draws it.
@@ -109,5 +130,25 @@ export function mapSvg(state: MapState | null, named = false, wayOn = false): st
   const way = wayOn && to && ghostAt !== state.here
     ? `<path class="way-on" pathLength="1" d="M${from.x} ${from.y + 20}Q${(from.x + to.x) / 2} ${Math.min(from.y, to.y) - 4} ${to.x} ${to.y + 20}" ${crayon} stroke="#d4453b" stroke-width="3.4"/>`
     : '';
-  return `<svg class="moas-karta" viewBox="0 -16 380 180" role="img" aria-label="${sv.map.title}"><path d="${route}" ${crayon} stroke="#b9976a" stroke-width="3" stroke-dasharray="2 8"/>${way}${places}${ghost}${elof}${note}</svg>`;
+  // Moa's paper is as big as what she has drawn, so a first page is not mostly blank cream (docs/ux-audit/menus.md
+  // row 3): what is drawn, with room round it, and never narrower than 220 units. An unfinished map keeps the whole
+  // sheet for its note.
+  let box = '0 -16 380 180';
+  if (!state.unfinished) {
+    const xs = [...state.drawn.map((place) => AT[place].x), here.x - 22, here.x - 30, ...(to ? [to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)] : []),
+      // Names either side of a shared place reach further out.
+      ...(together ? [here.x - 70, here.x + 60] : [])];
+    const ys = state.drawn.map((place) => AT[place].y);
+    const top = Math.min(...ys.map((y) => y - 36), here.y - 58, ...(to ? [to.y - (state.drawn.includes(ghostAt!) ? 26 : 0) - 30] : []));
+    const bottom = Math.max(...ys) + 50;
+    let left = Math.min(...xs) - 34;
+    let right = Math.max(...xs) + 34;
+    if (right - left < 220) {
+      const grow = (220 - (right - left)) / 2;
+      left -= grow;
+      right += grow;
+    }
+    box = `${Math.round(left)} ${Math.round(top)} ${Math.round(right - left)} ${Math.round(bottom - top)}`;
+  }
+  return `<svg class="moas-karta" viewBox="${box}" role="img" aria-label="${sv.map.title}"><path d="${route}" ${crayon} stroke="#b9976a" stroke-width="3" stroke-dasharray="2 8"/>${way}${places}${ghost}${elof}${note}</svg>`;
 }

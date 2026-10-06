@@ -87,12 +87,12 @@ try {
     check(`${name}: pause holds the helper and demonstration`, JSON.stringify(paused.actor) === JSON.stringify(end.actor) && JSON.stringify(paused.figures) === JSON.stringify(end.figures));
     const repeated = await page.evaluate(() => { const p = window.probe; p.ask(); p.draw(0); return p.snapshot(); });
     check(`${name}: another request replays the short demonstration`, repeated.help.replay === first.help.replay + 1 && Math.abs(repeated.figures[0].at[0] - first.figures[0].at[0]) < 0.01);
-    const calm = await page.evaluate(() => { document.body.classList.add('calm'); const p = window.probe; p.draw(0); return p.snapshot(); });
+    const calm = await page.evaluate(() => { document.documentElement.dataset.motion = 'reduce'; const p = window.probe; p.draw(0); return p.snapshot(); });
     const calmLater = await page.evaluate(() => { const p = window.probe; p.draw(2); return p.snapshot(); });
     check(`${name}: Mindre rörelse keeps a static three-pose explanation`, calm.figures.every((f) => f.opacity > 0) && JSON.stringify(calm.figures) === JSON.stringify(calmLater.figures) && JSON.stringify(calm.actor) === JSON.stringify(calmLater.actor) && calm.programs === visit.programs);
     await picture(page, join(shots, `${name}-calm.png`));
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    const os = await page.evaluate(() => { document.body.classList.remove('calm'); const p = window.probe; p.draw(1); return p.snapshot(); });
+    const os = await page.evaluate(() => { delete document.documentElement.dataset.motion; const p = window.probe; p.draw(1); return p.snapshot(); });
     check(`${name}: device reduced-motion preference selects the same still explanation`, JSON.stringify(os.figures) === JSON.stringify(calm.figures));
     assert.deepEqual(errors, [], `${name}: browser errors`);
     console.log(`  draws ${name}: ${visit.drawCalls}/${middle.drawCalls}/${calm.drawCalls}`);
@@ -126,10 +126,37 @@ try {
       await page.locator('#helpBtn').click();
       await page.waitForFunction(() => window.__godis.state().help.step === 1);
       check('actual forest page: the jay still loads and its portrait asks for help', await page.locator('#helpBtn circle').count() === 1);
+      // The button's pips say how far the helper has come (docs/ux-audit/in-play.md rows 3 and 20).
+      await page.waitForFunction(() => document.getElementById('helpBtn').dataset.step === '1');
+      // A pip fills with a short transition, which a busy software renderer can still be in.
+      const filled = () => [...document.querySelectorAll('#helpBtn .help-pips i')].filter((pip) => getComputedStyle(pip).backgroundColor === 'rgb(196, 53, 43)').length;
+      await page.waitForFunction(filled, null, { timeout: 5000 }).catch(() => {});
+      check('actual forest page: one pip is filled for the first step', await page.evaluate(filled) === 1);
     }
     await page.locator('#helpBtn').click();
     await page.waitForFunction(() => window.__godis.state().help.step >= 2);
     check(`actual ${course} page: further hints keep the player in place`, Math.abs((await page.evaluate(() => window.__godis.state())).x - Number(at.split(',')[0])) < 0.2);
+    // The knock shows as a ring round Använd; out of reach the button stays half bright, never looking ready.
+    const knocked = await page.locator('#actBtn').evaluate((e) => ({ pulse: e.classList.contains('pulse'), disabled: e.disabled, opacity: getComputedStyle(e).opacity, ring: getComputedStyle(e).boxShadow }));
+    check(`actual ${course} page: the knock is a ring round Använd`, knocked.pulse && knocked.ring.includes('255, 215, 106'));
+    if (knocked.disabled) check(`actual ${course} page: out of reach the knocked button is half bright`, knocked.opacity === '0.6');
+    await page.close();
+  }
+  {
+    // With keys, the on-screen controls are hidden: what E will do shows as a prompt, and the knock rings it too.
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(`${origin}/spokets-godisbus/?dev&debug&standin&tier=low&course=granskog&at=36,0.01&flags=berry`);
+    await page.waitForFunction(() => window.__godis?.info().models.includes('boot/jay'));
+    // A key is a moment, used by the next step: wait until the game is stepping before pressing one.
+    await page.waitForFunction(() => window.__godis.state().steps >= 60, null, { timeout: 60000 });
+    check('keys: no prompt while there is nothing to use', await page.locator('#keyPrompt').isHidden());
+    await page.keyboard.press('KeyH');
+    await page.waitForFunction(() => window.__godis.state().help.step === 1);
+    await page.keyboard.press('KeyH');
+    await page.waitForFunction(() => window.__godis.state().help.step >= 2);
+    await page.waitForSelector('#keyPrompt.pulse', { state: 'visible', timeout: 10000 });
+    check('keys: the knock shows what E will do, with its key', await page.locator('#keyPromptKey').textContent() === 'E'
+      && (await page.locator('#keyPromptWord').textContent()).length > 1);
     await page.close();
   }
   console.log(`helper: ${checks} checks passed; captures in docs/shots/_work/helper/`);

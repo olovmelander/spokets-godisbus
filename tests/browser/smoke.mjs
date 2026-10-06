@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
 import { withinDraws } from './budget.mjs';
+import { settingsPage } from './pause.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -131,6 +132,9 @@ async function open(name, options, query = '?debug') {
   }
   check('the on-screen controls are hidden on a computer', await page.locator('#controls').isHidden());
   check('the key hint shows', await page.locator('#hint').isVisible());
+  // One drawn set of icons, in the page itself (src/ui/sprite.ts): the corner's pause draws from it.
+  check('the drawn icons are in the page, and the corners draw from them', await page.evaluate(() => !!document.querySelector('svg.sprite symbol#i-close')
+    && document.querySelector('#pauseBtn use')?.getBBox().width > 0 && document.querySelectorAll('#hint kbd svg').length >= 3));
 
   const before = await state();
   check('Elof stands on the ground', before.grounded === true && Math.abs(before.y) < 0.05, `y ${before.y.toFixed(3)}`);
@@ -156,23 +160,32 @@ async function open(name, options, query = '?debug') {
   // Sound (plan §6.8): it starts with the first key, and the run and the jump above made some.
   const heard = await info();
   check('sound runs after the first key, and effects were played', heard.sound === true && heard.soundsPlayed > 0, `${heard.soundsPlayed} effects`);
+  // The bag's number shows for a while after a candy, then the bag alone is the meter (docs/ux-audit/in-play.md row 2).
+  await page.waitForFunction(() => document.getElementById('bag').classList.contains('quiet'), null, { timeout: 15000 });
+  check('the bag\'s number goes quiet a while after the last candy', true);
 
   // The pause panel and the play style (plan §4.1, §6.10). Esc opens it, the game stands still, and what is
   // chosen is still chosen after the page is loaded again.
   await page.keyboard.press('Escape');
   check('Esc opens the pause panel', await page.locator('#pause').isVisible());
+  await sleep(200);
+  check('in Pause the bag says its number', await page.locator('#bag').evaluate((node) => !node.classList.contains('quiet')));
   const still = await state();
   await page.keyboard.down('ArrowRight');
   await sleep(400);
   await page.keyboard.up('ArrowRight');
   const stillThere = await state();
   check('the game stands still while it is open', stillThere.paused === true && stillThere.x === still.x, `x ${stillThere.x.toFixed(2)}`);
+  await settingsPage(page);
   await page.click('#styleLugnt');
   check('Lugnt switches on its helps', (await page.isChecked('#setSwingHelp')) && (await page.isChecked('#setEasyJumps')) && (await page.isChecked('#setLoud')));
   // Vänsterhänt (plan §4.1): the buttons swap sides.
   await page.check('#setLefty');
   const hop = await page.evaluate(() => ({ lefty: document.body.classList.contains('lefty'), left: getComputedStyle(document.getElementById('hopBtn')).left, right: getComputedStyle(document.getElementById('hopBtn')).right }));
   check('Vänsterhänt moves Hoppa to the left side', hop.lefty && hop.right === 'auto', `left ${hop.left}, right ${hop.right}`);
+  // The header's back arrow returns to the first page, where Spela vidare is.
+  await page.click('#pauseBack');
+  check('the header goes back to the first page', await page.locator('#pauseHome').isVisible() && await page.locator('#pauseSettingsPage').isHidden());
   await page.click('#resumeBtn');
   const resumed = await state();
   check('Spela vidare closes it', (await page.locator('#pause').isHidden()) && resumed.paused === false && resumed.style === 'lugnt', resumed.style);
@@ -212,9 +225,10 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   await sleep(600);
   const programs = (await info()).programs;
   await page.keyboard.down('ArrowRight');
-  // High's forest effects can slow SwiftShader enough to reach the boundary just after 15 seconds.
+  // SwiftShader can draw these slowly enough to reach the boundary just after 15 seconds: High's forest effects
+  // first, and every place since the in-play UI costs more to draw in software (HANDOVER.md, "Known bugs").
   // Keep the exact traversal and performance predicates; only this software-rendered wait gets longer.
-  const traversalTimeout = course === 'look-forest' && tier === 'high' ? 30000 : 15000;
+  const traversalTimeout = 30000;
   const ran = await until(state, (s) => s.x > far, traversalTimeout);
   await page.keyboard.up('ArrowRight');
   check(`${tier}: he runs through it`, ran.x > far, `x ${ran.x.toFixed(1)}`);
@@ -247,15 +261,23 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   const { page, state, finish } = await open('title-844x390', { viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 }, '?dev&debug&title');
   const before = await state();
   check('the title shows, and the game waits behind it', (await page.locator('#title').isVisible()) && before.title === true && before.paused === true);
-  check('with no saved game the button says Börja', (await page.locator('#startBtn .begin').isVisible()) && (await page.locator('#startOverBtn').isHidden()));
-  await page.tap('#startBtn');
-  check('Börja asks how to play, with two pictures', (await page.locator('#firstAventyr').isVisible()) && (await page.locator('#firstLugnt').isVisible()));
-  await page.tap('#firstLugnt');
+  // A first start: the two play styles, with their pictures, are the start buttons (first-minutes.md row 12).
+  check('with no saved game the two styles are the start buttons, and there is nothing to start over', (await page.locator('#startAventyr').isVisible()) && (await page.locator('#startLugnt').isVisible()) && (await page.locator('#startBtn').isHidden()) && (await page.locator('#startOverBtn').isHidden()));
+  check('the name is drawn, and its words are the heading', (await page.locator('#titleName .title-sign').isVisible()) && (await page.locator('#titleName').textContent()).includes('Elof och det stora godisäventyret'));
+  const card = await page.locator('#title .panel').boundingBox();
+  check('the card keeps to the left, and the picture shows beside it', card.x + card.width <= 844 * 0.6 && card.y >= 0 && card.y + card.height <= 390);
+  await page.tap('#startLugnt');
   const started = await until(state, (s) => s.said.length >= 1);
   check('choosing Lugnt starts the game on Lugnt', (await page.locator('#title').isHidden()) && started.style === 'lugnt' && started.paused === false, started.style);
   await page.reload();
   await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
-  check('with a saved game the button says Fortsätt', (await page.locator('#startBtn .resume').isVisible()) && (await page.locator('#startOverBtn').isVisible()));
+  check('with a saved game the button says Fortsätt', (await page.locator('#startBtn .resume').isVisible()) && (await page.locator('#startAventyr').isHidden()));
+  await page.tap('#playersBtn');
+  check('Börja om från början waits on the players\' page, behind Ändra', await page.locator('#startOverBtn').isHidden()
+    && await page.locator('#playersEdit').isVisible());
+  await page.tap('#playersEdit');
+  check('Ändra shows it', await page.locator('#startOverBtn').isVisible());
+  await page.tap('#playersBack');
   await page.tap('#startBtn');
   const resumed = await state();
   check('Fortsätt goes on with the same style', resumed.title === false && resumed.style === 'lugnt', resumed.style);
@@ -268,6 +290,8 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   const { page, state, finish } = await open('codes-1180x820', { viewport: { width: 1180, height: 820 } }, '?dev&debug&title');
   await page.click('#codeBtn');
   await page.fill('#codeInput', 'gran kotte');
+  // Three fields, a word each: a code typed into the first spreads over them (docs/ux-audit/first-minutes.md row 15).
+  check('a code spreads over its three fields', await page.locator('#codeInput2').inputValue() === 'kotte' && await page.locator('#codeInput3').inputValue() === '');
   await page.press('#codeInput', 'Enter');
   check('a wrong code says so, and the title stays', (await page.locator('#codeWrong').isVisible()) && (await state()).course === 'prolog');
   await page.fill('#codeInput', 'mossa, gran kotte');

@@ -5,6 +5,7 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
 import { sv } from './src/content/sv';
+import { spriteHtml } from './src/ui/sprite';
 
 const base = '/spokets-godisbus/';
 const hash = (content: string | Uint8Array) => createHash('sha256').update(content).digest('hex');
@@ -24,6 +25,10 @@ export default defineConfig(({ mode }) => {
     define: { __BUILD_VERSION__: JSON.stringify(version), __ASSET_VERSION__: JSON.stringify(assetVersion) },
     plugins: [
       ...(mode === 'lan' ? [basicSsl()] : []),
+      // The drawn icons, once, at the top of every page (src/ui/sprite.ts): the game's script carries none of them.
+      { name: 'icon-sprite', transformIndexHtml: (html: string) => html.replace(/<body([^>]*)>/, (body) => `${body}\n  ${spriteHtml()}`) },
+      // The home screen's name for the web app on an iPhone, from the game's words (access-and-devices.md row 21).
+      { name: 'short-name', transformIndexHtml: (html: string) => html.replace('%SHORT_NAME%', sv.homeScreen.shortName) },
       VitePWA({
         strategies: 'injectManifest', srcDir: 'src', filename: 'sw.ts',
         injectRegister: false, registerType: 'prompt',
@@ -32,7 +37,12 @@ export default defineConfig(({ mode }) => {
           lang: 'sv', start_url: base, scope: base, display: 'standalone',
           display_override: ['fullscreen', 'standalone'], orientation: 'landscape',
           theme_color: '#ecdfc6', background_color: '#ecdfc6',
-          icons: [192, 512].map((size) => ({ src: `icons/ghost-${size}.png`, sizes: `${size}x${size}`, type: 'image/png', purpose: 'any' })),
+          // Android cuts its own shape out of a maskable icon: the ghost on its cream to the edges, inside the middle
+          // 80 % (access-and-devices.md row 21).
+          icons: [
+            ...[192, 512].map((size) => ({ src: `icons/ghost-${size}.png`, sizes: `${size}x${size}`, type: 'image/png', purpose: 'any' })),
+            { src: 'icons/ghost-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          ],
         },
         injectManifest: {
           globPatterns: ['**/*.{js,wasm,css,html,woff2}', 'assets/*.webp', 'icons/*.png', 'packs/manifest.json', 'packs/boot/*.{glb,ktx2,m4a,webp}'],

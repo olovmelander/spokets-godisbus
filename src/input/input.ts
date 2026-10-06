@@ -66,6 +66,8 @@ export const TAP_PX = 14;
 export const WALK_KEYS = 0.6;
 /** Stick deflection at which the knob shows that Elof will run. */
 export const RUN_SHOWN_AT = 0.72;
+/** A finger held this far from Elof, in CSS px, runs him; nearer, it walks him (docs/ux-audit/in-play.md row 11). */
+export const RUN_FROM_PX = 120;
 /** Standard-mapping gamepad buttons. */
 export const PAD = { a: 0, b: 1, x: 2, y: 3, back: 8, start: 9, up: 12, down: 13, left: 14, right: 15 } as const;
 
@@ -161,6 +163,8 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   };
   const followAxis = (delta: number) => Math.abs(delta) <= TAP_PX ? 0
     : Math.sign(delta) * Math.min(1, (Math.abs(delta) - TAP_PX) / (STICK_RADIUS - TAP_PX));
+  /** Near him the finger walks him; far off it runs him, so a chase can be run with it too. */
+  const followX = (delta: number) => Math.abs(delta) > RUN_FROM_PX ? Math.sign(delta) : followAxis(delta) * WALK_KEYS;
 
   // --- the stick ---------------------------------------------------------------------------------
   const zone = ui.stickZone;
@@ -216,6 +220,9 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     stick.id = null;
     stick.x = stick.y = 0;
     ui.stickBase.classList.remove('on', 'run');
+    // Back to its rest place: a ring left where the thumb last lay reads as a smudge over Elof.
+    ui.stickBase.style.left = '';
+    ui.stickBase.style.top = '';
     moveKnob();
   };
   on(zone, 'pointerup', endStick);
@@ -344,12 +351,16 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
 
   // --- the gamepad (standard mapping) ------------------------------------------------------------
   // Play: the left stick or the D-pad moves, A is Hoppa, X is Använd, Y calls the helper, Start pauses.
-  // Menus: the D-pad or the stick moves the focus, A presses, B goes back.
+  // Menus: the D-pad or the stick moves the focus, A presses, B goes back. In a choice of several or on a
+  // sound's pips, left and right move the choice or the level, and up and down leave it (menus.md row 22).
   const pad = { x: 0, y: 0, prev: [] as boolean[], hopHeld: false, active: false, navAt: 0, navDir: 0, polledAt: -1 };
   const deadzone = (v: number) => (Math.abs(v) < 0.22 ? 0 : Math.sign(v) * Math.min(1, (Math.abs(v) - 0.22) / 0.72));
   const focusables = (scope: HTMLElement) =>
     [...scope.querySelectorAll<HTMLElement>('button, input, select, summary, [tabindex]:not([tabindex="-1"])')]
-      .filter((n) => !(n as HTMLButtonElement).disabled && n.getClientRects().length > 0 && !n.closest('[hidden], .controls'));
+      // A choice's buttons other than the chosen one are left out (tabIndex -1): the arrows move inside it.
+      .filter((n) => !(n as HTMLButtonElement).disabled && !(n.tabIndex < 0) && n.getClientRects().length > 0 && !n.closest('[hidden], .controls'));
+  /** A choice or a level that takes left and right itself: a radio button, or a slider. */
+  const sideways = (n: HTMLElement | null) => ['radio', 'slider'].includes(n?.getAttribute?.('role') ?? '');
   const moveFocus = (scope: HTMLElement, step: number) => {
     const list = focusables(scope);
     if (!list.length) return;
@@ -386,14 +397,18 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     if (scope) {
       pad.x = pad.y = 0;
       pad.hopHeld = false;
-      const dir = y > 0.5 || x < -0.5 ? -1 : y < -0.5 || x > 0.5 ? 1 : 0;
+      const focused = env.doc.activeElement as HTMLElement | null;
+      const across = Math.abs(x) > 0.5 && Math.abs(x) >= Math.abs(y) && sideways(focused) && scope.contains(focused);
+      // The direction: ±1 for the focus, ±2 for a choice's left and right, so that a change starts afresh.
+      const dir = across ? 2 * Math.sign(x) : y > 0.5 || x < -0.5 ? -1 : y < -0.5 || x > 0.5 ? 1 : 0;
       if (!dir) pad.navDir = 0;
       else if (dir !== pad.navDir || now >= pad.navAt) {
-        moveFocus(scope, dir);
+        // The same arrow a keyboard would give it: the choice or the level handles it as it handles a key.
+        if (across) focused!.dispatchEvent(Object.assign(new Event('keydown', { bubbles: true, cancelable: true }), { key: x < 0 ? 'ArrowLeft' : 'ArrowRight' }));
+        else moveFocus(scope, dir);
         pad.navAt = now + (dir === pad.navDir ? 140 : 380);
         pad.navDir = dir;
       }
-      const focused = env.doc.activeElement as HTMLElement | null;
       if (pressed(PAD.a)) {
         if (focused && scope.contains(focused)) focused.click();
         else moveFocus(scope, 1);
@@ -465,7 +480,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
         if (env.now() - follow.t >= TAP_MS) follow.active = true;
         const player = follow.active ? opts.playerScreen?.() : null;
         // Evaluate against the current projection, even when the finger stays still and the camera moves.
-        x = player ? followAxis(follow.x - player.x) * WALK_KEYS : 0;
+        x = player ? followX(follow.x - player.x) : 0;
         y = player ? followAxis(player.y - follow.y) : 0;
       }
       return { x, y, hopHeld: pointerHopHeld || verbs.has(' ') || (v === 'up' && !opts.upClimbs?.()) || pad.hopHeld };
@@ -476,6 +491,15 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
       const out = { ...edges };
       edges.hop = edges.act = edges.helper = false;
       return out;
+    },
+    /**
+     * The finger *Följ fingret* is holding, from the moment it lands: `steering` once it moves him, and `run` when
+     * it is far enough off to run him. The page rings it, so that the fingertip shows where he is going.
+     */
+    followPoint(): { x: number; y: number; steering: boolean; run: boolean } | null {
+      if (!follow) return null;
+      const player = follow.active ? opts.playerScreen?.() : null;
+      return { x: follow.x, y: follow.y, steering: follow.active, run: !!player && Math.abs(follow.x - player.x) > RUN_FROM_PX };
     },
     /** Reads the gamepad now: menus keep working while the game is paused. */
     poll: () => pollPad(),

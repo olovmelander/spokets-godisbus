@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { settingsPage } from './pause.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -80,8 +81,9 @@ try {
   check('selected Low stays within its pixel budget', title.width * title.height <= 1e6);
   await frames(page, 5);
   check('an idle title makes no dynamic resolution allocations', (await info(page)).resizes === title.resizes);
-  await page.click('#startBtn');
-  if (await page.locator('#firstAventyr').isVisible()) await page.click('#firstAventyr');
+  // A saved game has Fortsätt; a first start, its play styles as the start buttons.
+  if (await page.locator('#startBtn').isVisible()) await page.click('#startBtn');
+  else await page.click('#startAventyr');
   await page.waitForFunction(() => window.__godis.info().resolutionSteps >= 1, null, { timeout: 60000 });
   const reduced = await info(page);
   check('overloaded play reduces resolution by exactly 0.1 without changing tier', reduced.tier === 'low' && Math.abs(reduced.maxPixelRatio - reduced.pixelRatio - reduced.resolutionSteps * 0.1) < 1e-8);
@@ -96,6 +98,7 @@ try {
   check('pause does not change resolution under the same injected load', (await info(page)).resizes === paused.resizes);
 
   // Explicit settings/query choices are stable, and both HDR targets follow a viewport change once.
+  await settingsPage(page);
   await page.click('#graphicsHigh');
   await frames(page, 3);
   const high = await info(page);
@@ -109,7 +112,7 @@ try {
   const allocationsAfterResize = await page.evaluate(() => window.__renderTest.allocations);
   await frames(page, 5);
   check('stable HDR frames reuse their targets', (await page.evaluate(() => window.__renderTest.allocations)) === allocationsAfterResize);
-  await page.click('#resumeBtn');
+  await page.click('#pauseClose');
   await frames(page, 15);
   check('an explicit quality selection is not changed by adaptation', (await info(page)).resolutionSteps === 0 && (await info(page)).tier === 'high');
 

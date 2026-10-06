@@ -101,10 +101,12 @@ describe('nothing is drawn for what is not there', () => {
       expect(drawnForNothing(helper.group)).toEqual([]);
       expect(helper.group.children.every((part) => there(part) || idle(part))).toBe(true);
     }
-    expect([...seen].sort()).toEqual(['helper-actor', 'helper-demo-0', 'helper-demo-lace']);
+    // Each dotted figure lies on its darker dots (docs/ux-audit/in-play.md row 21).
+    expect([...seen].sort()).toEqual(['helper-actor', 'helper-demo-0', 'helper-demo-0-under', 'helper-demo-lace']);
     // Mindre rörelse: three still poses in place of the one that moves.
     helper.update(third, hook.x - 2, 0, 0, 1, 1 / 30, true);
-    expect(shown()).toEqual(['helper-actor', 'helper-demo-0', 'helper-demo-1', 'helper-demo-2', 'helper-demo-lace']);
+    expect(shown()).toEqual(['helper-actor', 'helper-demo-0', 'helper-demo-0-under', 'helper-demo-1', 'helper-demo-1-under',
+      'helper-demo-2', 'helper-demo-2-under', 'helper-demo-lace']);
     expect(drawnForNothing(helper.group)).toEqual([]);
     for (let i = 0; i < 60; i++) helper.update(away, hook.x - 2, 0, 0, 3 + i / 60, 1 / 60, false);
     expect(helper.group.children.every(idle)).toBe(true);

@@ -145,6 +145,11 @@ export const GUST_SLOW = 0.5;
 
 /** The helper stays this long at what it shows, in seconds, unless he does it sooner. */
 export const HELP_TIME = 12;
+/**
+ * After the helper leaves, its last step at a place is kept this long, in seconds: asked again about the same thing,
+ * it carries on from there instead of starting over (docs/ux-audit/in-play.md row 20).
+ */
+export const HELP_KEPT = 60;
 /** *Påminn mig*: after this long without progress the helper comes once, by itself. *Guida mig*: it knocks. */
 export const REMIND_AFTER = 40;
 export const GUIDE_AFTER = 30;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { markOnward, takeOnward } from '../../src/save/onward';
+import { CARD_KEY, markOnward, takeOnward } from '../../src/save/onward';
 
 /** A tab's session storage, in memory. */
 function session(): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> {
@@ -25,6 +25,19 @@ describe('going on to the next chapter', () => {
     markOnward('granskog', storage);
     expect(takeOnward('myren', storage)).toBe(false);
     expect(takeOnward('granskog', storage)).toBe(false);
+  });
+
+  it('keeps the next chapter\'s card words for the loading card, until the page has loaded', () => {
+    const storage = session();
+    markOnward('granskog', storage, 'Granskogen · halv tolv');
+    // index.html reads them before any script has arrived (docs/ux-audit/first-minutes.md row 2).
+    expect(storage.getItem(CARD_KEY)).toBe('Granskogen · halv tolv');
+    takeOnward('granskog', storage);
+    expect(storage.getItem(CARD_KEY)).toBeNull();
+    // A mark without words leaves no old ones behind.
+    storage.setItem(CARD_KEY, 'Myren · klockan ett');
+    markOnward('garden', storage);
+    expect(storage.getItem(CARD_KEY)).toBeNull();
   });
 
   it('shows the title when there is no session storage, or it fails', () => {

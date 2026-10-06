@@ -183,7 +183,7 @@ try {
     }
     await page.waitForSelector('#endCard:not([hidden])');
     check(`${name}: dismissal restores end and exploration controls`, await page.locator('#endingShot').isHidden() && await page.locator('#endExplore').isVisible());
-    check(`${name}: end menu is silent again`, !(await info()).sound);
+    check(`${name}: the end menu is back under the paper`, (await info()).audioMode !== 'play');
     await page.click('#endPhotos');
     await page.click('#photoNext');
     check(`${name}: repeated credits do not replay the last shot`, await page.locator('#endingShot').isHidden() && await page.locator('#endCard').isVisible());

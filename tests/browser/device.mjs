@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { settingsPage } from './pause.mjs';
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -65,6 +66,7 @@ try {
   await page.tap('#pauseBtn'); await frames(page);
   value = await read(page);
   check('pausing releases the lock', value.released === 1 && value.state.paused);
+  await settingsPage(page);
   check('Android offers an explicit fullscreen button and vibration setting', await page.isVisible('#fullscreenBtn') && await page.isVisible('#setVibration'));
   await page.tap('#fullscreenBtn');
   value = await read(page);
@@ -78,7 +80,7 @@ try {
   await page.check('#setVibration');
   await page.tap('#styleLugnt');
   check('switching style preserves the deliberate vibration choice', (await read(page)).state.settings.vibration === true);
-  await page.tap('#resumeBtn'); await frames(page);
+  await page.tap('#pauseClose'); await frames(page);
   check('resuming requests a fresh screen lock', (await read(page)).wakeRequests === 2);
   await page.keyboard.down('ArrowRight'); await frames(page, 6);
   const beforeResize = (await read(page)).state;
@@ -118,6 +120,7 @@ try {
     const tab = await apple.newPage();
     await tab.goto(url); await ready(tab);
     await tab.tap('#pauseBtn'); await frames(tab);
+    await settingsPage(tab);
     check('iPhone/iPad-style browsers hide fullscreen and vibration even when the APIs exist', !await tab.isVisible('#fullscreenBtn') && !await tab.isVisible('#setVibration'));
     await apple.close();
   }

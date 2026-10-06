@@ -1,4 +1,6 @@
+import { lessMotion } from '../platform/motion';
 import { sv } from '../content/sv';
+import { use } from './icons';
 
 /**
  * The four memories (plan §2.4, §3.3 rule 5): short, wordless pictures of the family some years ago, which
@@ -78,12 +80,15 @@ export const MEMORIES: Record<string, string[]> = {
   ],
 };
 
+/** A memory not yet found: a faint drawing of the glowing curl of shaving that starts one, not a "?" (menus.md row 12). */
+const CURL = '<svg viewBox="0 0 64 40" aria-hidden="true"><path d="M10 30c6-16 30-22 40-10 6 8-2 16-10 13-6-2-5-10 1-10" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M50 8l2-5m4 9 5-2m-3 8h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".7"/></svg>';
+
 /** Only discovered memories show their pictures. The other slots keep the story to themselves. */
 export function memoryAlbumHtml(flags: Record<string, string[]>): string {
   return `<h3>${sv.memories.title}</h3><div class="memory-album">${Object.entries(MEMORIES).map(([id, pictures]) =>
     flags[id]?.includes('memory')
-      ? `<button type="button" class="memory-thumb" data-memory="${id}" aria-label="${sv.memories.watch}: ${sv.explore.chapters[id]}">${pictures[0]}<span>${sv.explore.chapters[id]}</span><span aria-hidden="true">▶</span></button>`
-      : `<div class="memory-missing" aria-label="${sv.memories.waiting}">?</div>`,
+      ? `<button type="button" class="memory-thumb" data-memory="${id}" aria-label="${sv.memories.watch}: ${sv.explore.chapters[id]}">${pictures[0]}<span>${sv.explore.chapters[id]}</span>${use('play', 'memory-play')}</button>`
+      : `<div class="memory-missing" role="img" aria-label="${sv.memories.waiting}">${CURL}</div>`,
   ).join('')}</div>`;
 }
 
@@ -103,8 +108,12 @@ export interface MemoryPresentation {
   calm?: boolean;
 }
 
-/** How long each picture stays, in milliseconds. A memory is six to ten seconds (plan §3.3). */
-export const PICTURE_TIME = 2400;
+/** How long each picture stays, in milliseconds: 3.2 s (docs/ux-audit/story-presentation.md row 20), and less where
+ *  a memory has four, so that none is longer than ten seconds (plan §3.3). Each dissolves into the next over 0.6 s
+ *  while it is pushed in a little. */
+export const PICTURE_TIME = 3200;
+export const pictureTime = (count: number) => Math.min(PICTURE_TIME, Math.floor(9600 / Math.max(1, count)));
+export const DISSOLVE_TIME = 600;
 export const MEMORY_RETURN_TIME = 240;
 
 export function createMemory(doc: Document): Memory {
@@ -126,7 +135,6 @@ export function createMemory(doc: Document): Memory {
   let pendingTransition: (() => void) | null = null;
   const animations = new Set<Animation>();
   let movement: Animation[] = [];
-  let picture: Animation | null = null;
   let presentation: { kind: 'opening' | 'returning'; done: () => void; duration: number; width: number; height: number } | null = null;
   const cancelMovement = () => {
     transition++;
@@ -218,7 +226,6 @@ export function createMemory(doc: Document): Memory {
     cancelMovement();
     for (const animation of animations) animation.cancel();
     animations.clear();
-    picture = null;
     delete back.dataset.phase;
     delete back.dataset.suspended;
     back.hidden = true;
@@ -236,7 +243,8 @@ export function createMemory(doc: Document): Memory {
     present('returning', close);
   };
   closeButton.onclick = close;
-  back.addEventListener('click', (event) => { if (event.target === back) close(); });
+  // A tap anywhere goes on; only the ✕ leaves at once (row 20).
+  back.addEventListener('click', (event) => { if (event.target === back || event.target === panel) advance?.(); });
   return {
     get open() {
       return open;
@@ -250,8 +258,7 @@ export function createMemory(doc: Document): Memory {
       }
       open = true;
       returning = false;
-      calm = !!options.calm || doc.body.classList.contains('calm')
-        || !!doc.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      calm = !!options.calm || lessMotion(doc);
       origin = options.origin;
       back.hidden = false;
       const bounds = back.getBoundingClientRect();
@@ -276,13 +283,22 @@ export function createMemory(doc: Document): Memory {
           returnToBubble();
           return;
         }
-        if (picture) { animations.delete(picture); picture.cancel(); }
-        card.innerHTML = pictures[at]!;
+        // The picture before dissolves into this one: the oval stays, and later pictures do not grow from the source.
+        for (const old of [...card.children]) {
+          const fading = calm || at === 0 ? null : animate(old, [{ opacity: 1 }, { opacity: 0 }], DISSOLVE_TIME);
+          if (!fading) { old.remove(); continue; }
+          // Gone once faded, and never back at full strength for a frame between.
+          (old as HTMLElement).style.opacity = '0';
+          void fading.finished.then(() => old.remove(), () => {});
+        }
+        card.insertAdjacentHTML('beforeend', pictures[at]!);
+        const drawing = card.lastElementChild!;
         progress.textContent = `${at + 1} / ${pictures.length}`;
-        nextButton.textContent = at === pictures.length - 1 ? `${sv.memories.back} ↩` : `${sv.memories.next} →`;
-        // Fade only the drawing, not the oval: later pictures do not grow from the source again.
-        picture = calm ? null : animate(card.firstElementChild!, [{ opacity: 0 }, { opacity: 1 }], 320);
-        remaining = PICTURE_TIME;
+        nextButton.innerHTML = at === pictures.length - 1 ? `<span class="sr-only">${sv.memories.back}</span>${use('again')}` : `<span class="sr-only">${sv.memories.next}</span>${use('next')}`;
+        if (!calm) animate(drawing, [{ opacity: 0 }, { opacity: 1 }], at === 0 ? 320 : DISSOLVE_TIME);
+        // A slow push-in, as a camera moves over an old photo; never with Mindre rörelse.
+        if (!calm) animate(drawing, [{ transform: 'scale(1)' }, { transform: 'scale(1.04)' }], pictureTime(pictures.length) + DISSOLVE_TIME);
+        remaining = pictureTime(pictures.length);
         schedule();
       };
       advance = next;

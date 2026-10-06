@@ -154,6 +154,6 @@ describe('Final, Norrsken, in greybox', () => {
     expect(nextAfter('berget')?.id).toBe('norrsken');
     expect(chapterNumber('berget')).toBe(4);
     expect(chapterNumber('norrsken')).toBe(0);
-    expect(sv.end.named['norrsken']).toBeDefined();
+    expect(sv.end.kickers['norrsken']).toBeDefined();
   });
 });

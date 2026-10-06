@@ -4,6 +4,7 @@ import { sv } from '../../src/content/sv';
 import { STEP } from '../../src/sim/constants';
 import { QUIET_WAIT, SceneDirector, sceneBeats, type SceneDef } from '../../src/sim/scene';
 import type { PlayerState } from '../../src/sim/types';
+import { PROLOG_SCENES } from '../../src/content/chapters/prolog-scenes';
 
 /** Just what the director reads of him: where he is, and whether he stands on his own feet. */
 const standing = (x: number, more: Partial<PlayerState> = {}) => ({ x, y: 0, mode: 'free', grounded: true, ...more }) as PlayerState;
@@ -35,6 +36,38 @@ describe('the story\'s scenes', () => {
     expect(flags.has('scene:morning')).toBe(true);
     expect(director.frame).toBeNull();
     expect(director.holding).toBe(false);
+  });
+
+  it('opens a scene part-way in when the title already showed its first shot, and tells what came before at once', () => {
+    const flags = new Set<string>();
+    const said: string[] = [];
+    const director = new SceneDirector([morning], { x: 0, y: 0 }, flags);
+    // The title showed the morning's first shot: the morning goes on from 0.6 s, past its fade (first-minutes.md row 16).
+    director.openAt('morning', 0.6);
+    run(director, STEP, standing(0), flags, said);
+    expect(director.frame!.seconds).toBeGreaterThan(0.6);
+    expect(flags.has('woke')).toBe(true);
+    expect(said).toEqual(['morning:0']);
+    run(director, 1.5, standing(0), flags, said);
+    expect(flags.has('scene:morning')).toBe(true);
+    // Only the next time it is due: a scene played again starts from its beginning.
+    flags.delete('scene:morning');
+    run(director, STEP, standing(0), flags, said);
+    expect(director.frame!.seconds).toBeLessThan(0.05);
+  });
+
+  it('puts the morning\'s first shot under the title, alive, and never plays it as a scene', () => {
+    const tableau = PROLOG_SCENES.find((scene) => scene.id === 'title')!;
+    const first = PROLOG_SCENES.find((scene) => scene.id === 'morgon')!;
+    // The same shot as the morning opens on, so "Börja" goes on from it with no cut (first-minutes.md rows 4 and 16).
+    const { at: _a, move: _m, ...shot } = first.stage!.shots![0]!;
+    const { at: _b, move: _n, ...under } = tableau.stage!.shots![0]!;
+    expect(under).toEqual(shot);
+    expect(Object.keys(tableau.stage!.actors!).sort()).toEqual(Object.keys(first.stage!.actors!).sort());
+    const flags = new Set<string>();
+    const director = new SceneDirector([tableau], { x: 2.3, y: 0 }, flags);
+    run(director, 1, standing(2.3), flags, []);
+    expect(director.frame).toBeNull();
   });
 
   it('tells each line as a beat of its own, said once', () => {

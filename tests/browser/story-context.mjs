@@ -141,7 +141,7 @@ try {
   await resumed.page.waitForSelector('#pause:not([hidden])');
   await frames(resumed.page);
   check('pause recap explains the purpose and Pappa’s practical help', await resumed.page.locator('#pauseStoryPurpose').textContent() === 'Rulla kotten till gungbrädan.' && (await resumed.page.locator('#pauseStoryFamily').textContent()).includes('Pappa bygger gungbrädan'));
-  check('pause recap is the first section after resume with a named region', await resumed.page.locator('#pauseStory').evaluate((node) => node.previousElementSibling.id === 'resumeBtn' && node.getAttribute('aria-labelledby') === 'pauseStoryTitle'));
+  check('pause recap sits on the first page under Moa’s map, as a named region', await resumed.page.locator('#pauseStory').evaluate((node) => node.previousElementSibling.id === 'pauseMapCard' && node.closest('#pauseHome') !== null && node.getAttribute('aria-labelledby') === 'pauseStoryTitle'));
   check('pause keeps the existing resume-button focus and hides the field goal', await resumed.page.locator('#resumeBtn').evaluate((node) => document.activeElement === node) && await resumed.page.locator('#storyPurpose').isHidden());
   const before = await state(resumed.page), recap = await resumed.page.locator('#pauseStory').textContent();
   await frames(resumed.page, 20);

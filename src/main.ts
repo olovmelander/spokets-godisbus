@@ -2,12 +2,14 @@ import { Timer } from 'three';
 import { Pointing } from './app/pointing';
 import { Tutorial } from './app/tutorial';
 import { createTutorial } from './ui/tutorial';
+import { createFingerMarks } from './ui/finger';
+import { MOTION_QUERY, applyMotion, lessMotion } from './platform/motion';
 import { Game } from './app/game';
 import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
-import { bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, nextAvailable } from './content/chapters';
-import { album, albumComplete, foundFlag } from './content/kinds';
+import { BONUS, STORY, bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, nextAvailable } from './content/chapters';
+import { album, albumComplete, foundFlag, KINDS } from './content/kinds';
 import { lostFlag, lostFound } from './content/lost';
 import { cobbleMemory } from './content/cobbles';
 import { createPhotoMoments } from './content/photos';
@@ -23,25 +25,29 @@ import { createStoryContext } from './ui/story-context';
 import { createInput, type Device } from './input/input';
 import { createAutoTier, createDynamicResolution, tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
-import { changeStyle, settingsFor, simOptions, tempoOf, type Settings } from './save/settings';
+import { changeStyle, settingsFor, simOptions, tempoOf, type PlayStyle, type Settings } from './save/settings';
 import { codeFor } from './save/codes';
 import { createStore, newSave, type PlayerSave } from './save/store';
 import { createPhotoStore } from './save/photos';
 import { ghostNamed, rememberFlags, storyFinished, visitChapter } from './save/journey';
 import { markOnward, takeOnward } from './save/onward';
+import { keysLearned, learnKeys } from './save/keys';
 import type { SimStart, Vec } from './sim/types';
 import { createBench } from './ui/bench';
 import { createDebug, type Debug } from './ui/debug';
 import { createHud } from './ui/hud';
-import { createPause } from './ui/pause';
+import { createPause, type PausePage } from './ui/pause';
 import { mountShell } from './ui/shell';
+import { wireUiSound } from './ui/ui-sound';
+import { hintHtml } from './ui/keys';
+import { applyMaterials, applyPlace } from './ui/materials';
 import { createTitle } from './ui/title';
 import { createPhotoAlbum } from './ui/photos';
 import { createOffline } from './platform/offline';
 import { createStoryPanel } from './ui/story';
 import { createSceneUi } from './ui/scene';
-import { endsInScene, sceneBeats } from './sim/scene';
-import { createDevicePlay, createHighLanding, isAndroid } from './platform/device';
+import { endsInScene, sceneBeats, sceneWaits } from './sim/scene';
+import { createDevicePlay, createHighLanding, isAndroid, isApple } from './platform/device';
 import './ui/ui.css';
 
 declare global {
@@ -65,15 +71,25 @@ const CODA_FAMILY: Record<string, Person | null> = { garden: 'moa', granskog: 'b
 const benchOn = params.has('bench');
 const debugOn = params.has('debug') || benchOn;
 
-function showMessage(text: string, button: string = sv.retry, action: () => void = () => location.reload()): void {
+/**
+ * The one screen a family sees when something breaks (docs/ux-audit/menus.md row 19): the loading card's ghost,
+ * what happened, a line for the grown-up when there is one, and a button that does what it says. With no button
+ * (null), nothing a press could mend; `waiting`, the picture is on its way back and the ghost bobs meanwhile.
+ */
+function showMessage(text: string, button: string | null = sv.retry, action: () => void = () => location.reload(), more?: string, waiting = false): void {
   byId('messageText').textContent = text;
+  byId('messageMore').textContent = more ?? '';
+  byId('messageMore').hidden = !more;
   const element = byId<HTMLButtonElement>('messageButton');
-  element.textContent = button;
-  element.disabled = false;
+  element.textContent = button ?? '';
+  element.hidden = button === null;
+  element.disabled = button === null;
   element.onclick = action;
-  byId('message').hidden = false;
+  const message = byId('message');
+  message.classList.toggle('waiting', waiting);
+  message.hidden = false;
   byId('loading').classList.add('done');
-  element.focus();
+  (button === null ? message : element).focus();
 }
 
 /** With ?debug, ?at=x,y starts Elof there instead of at the chapter's start: for looking at one place. */
@@ -118,13 +134,27 @@ function start(): void {
   const chapter = at ? { ...course, spawn: at } : course;
   let save: PlayerSave = loaded.kind === 'save' ? loaded.save : newSave(Date.now(), chapter.id);
   let settings: Settings = debugOn && params.get('style') === 'lugnt' ? settingsFor('lugnt') : save.settings;
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  // Less motion is one switch, from Mindre rörelse or the device (src/platform/motion.ts).
+  window.matchMedia(MOTION_QUERY).addEventListener('change', () => applyMotion(document, settings.calm));
   // A URL tier is a temporary inspection override. A deliberate menu choice replaces it.
   let requestedGraphics = tierFromQuery(params.get('tier')) ?? settings.graphics;
   mountShell(document.body, chapter.helper?.kind);
+  // Moa's paper and Pappa's linden, drawn once; and the place's own shade under every panel (style-and-sound.md rows 10, 15).
+  applyMaterials(document);
+  applyPlace(document, chapter.place);
+  // The recovery screen shows the loading card's ghost: the screen still belongs to the game.
+  const loadingGhost = document.querySelector('#loading svg');
+  if (loadingGhost) {
+    byId('messageGhost').append(loadingGhost.cloneNode(true));
+    byId('titleUpdatingGhost').append(loadingGhost.cloneNode(true));
+  }
   const storyReminder = createStoryContext(document);
   const canvas = byId<HTMLCanvasElement>('game');
   canvas.tabIndex = -1;
+  // The picture is named for a screen reader: the place, as its card says it, and what he is doing now
+  // (docs/ux-audit/access-and-devices.md row 19). Set below whenever what he is doing changes.
+  canvas.setAttribute('role', 'img');
+  let pictureSaid = '';
   const devicePlay = createDevicePlay({
     userAgent: navigator.userAgent,
     requestWakeLock: navigator.wakeLock ? () => navigator.wakeLock.request('screen') : undefined,
@@ -132,6 +162,37 @@ function start(): void {
   });
   const highLanding = createHighLanding();
   byId('vibrationSetting').hidden = !isAndroid(navigator.userAgent) || typeof navigator.vibrate !== 'function';
+  // Rows only where they work (docs/ux-audit/menus.md row 10): the silent switch is an iPhone's, and the
+  // home-screen help is for a phone or a tablet that doesn't already run the game from its home screen.
+  byId('loudSetting').hidden = !('audioSession' in navigator);
+  const apple = isApple(navigator.userAgent, navigator.maxTouchPoints);
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  byId('homeScreenHelp').hidden = standalone || (!apple && !isAndroid(navigator.userAgent));
+  byId('homeScreenSteps').textContent = apple ? sv.homeScreen.apple : sv.homeScreen.android;
+  // Where the browser offers to install the game (Android), Pause has a button for it, in place of the steps.
+  type InstallOffer = Event & { prompt(): Promise<void>; userChoice: Promise<unknown> };
+  let installOffer: InstallOffer | null = null;
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    installOffer = event as InstallOffer;
+    byId('installBtn').hidden = false;
+    byId('homeScreenHelp').hidden = true;
+  });
+  window.addEventListener('appinstalled', () => {
+    installOffer = null;
+    byId('installBtn').hidden = true;
+  });
+  byId('installBtn').addEventListener('click', () => {
+    const offer = installOffer;
+    if (!offer) return;
+    installOffer = null;
+    byId('installBtn').hidden = true;
+    void offer.prompt().then(() => offer.userChoice).catch(() => { /* Declined, or the offer went stale. */ });
+  });
+  // The chapter's own code, as its card shows it, to open the place on another device (menus.md row 6).
+  const ownCode = codeFor(chapter.id);
+  byId('pauseCode').hidden = !ownCode;
+  byId('pauseCodeWords').textContent = ownCode ?? '';
   const fullscreen = byId<HTMLButtonElement>('fullscreenBtn');
   fullscreen.hidden = !isAndroid(navigator.userAgent) || !document.fullscreenEnabled || typeof document.documentElement.requestFullscreen !== 'function';
   fullscreen.addEventListener('click', () => {
@@ -143,7 +204,7 @@ function start(): void {
     } catch { byId('fullscreenFailed').hidden = false; }
   });
   document.addEventListener('fullscreenchange', () => {
-    fullscreen.textContent = document.fullscreenElement ? sv.pause.exitFullscreen : sv.pause.fullscreen;
+    byId('fullscreenWord').textContent = document.fullscreenElement ? sv.pause.exitFullscreen : sv.pause.fullscreen;
   });
   let bootReady = false;
   let contextLost = false;
@@ -157,7 +218,7 @@ function start(): void {
       debugOn ? { now: params.get('life'), seed: Number(params.get('seed')) || 0 } : { seed: Math.random() * 1000 });
   } catch (error) {
     console.error(error);
-    showMessage(sv.noWebGL);
+    showMessage(sv.noWebGL, null, undefined, sv.noWebGLMore);
     return;
   }
 
@@ -180,9 +241,13 @@ function start(): void {
   const pointing = new Pointing(game.sim);
   const tutorial = new Tutorial(chapter.id);
   const tutorialView = createTutorial(document);
+  const fingerMarks = createFingerMarks(document);
   const isKlonk = () => ghostNamed(save.flags) || (chapter.id === 'epilog' && game.sim.flags.has('beat:named'));
   // The bag counts all the candy there is: the trail's, and the side candy off it.
-  const hud = createHud(document, chapter.candy.length + (chapter.side?.length ?? 0), isKlonk);
+  const hud = createHud(document, chapter.candy.length + (chapter.side?.length ?? 0), isKlonk,
+    () => (settings.slower ? 1.25 : 1) * (settings.bigText ? 1.2 : 1),
+    // Something to use has come in reach: one soft knock of wood (in-play.md row 7).
+    () => audio.ui('press'));
   const story = createStoryPanel(document, {
     named: isKlonk,
     answer(answer) {
@@ -194,11 +259,14 @@ function start(): void {
         .replace('{friend}', answer.friend === 'spoket' && isKlonk() ? sv.ghostName : answer.kind === 'party' ? sv.party.friends[answer.friend] : sv.sharing.friends[answer.friend])
         .replace('{sweet}', sv.sharing.sweets[answer.sweet].toLocaleLowerCase('sv')));
       writeSave();
+      // The next step at the same place follows in the same panel.
+      if (game.sim.story) return true;
       input.release();
       game.resume();
       canvas.focus();
       return true;
     },
+    next: () => game.sim.story,
     cancel() { game.sim.cancelStory(); input.release(); game.resume(); canvas.focus(); },
   });
   // What is said along the way, and in the chapter's scenes (src/sim/scene.ts).
@@ -213,6 +281,8 @@ function start(): void {
   // Sound starts with the first tap, click or key: browsers allow it no earlier (plan §6.8).
   const audio = createAudio();
   audio.sleep(true);
+  // Every press in a menu sounds: wood, paper and crayon, in the place's key (style-and-sound.md row 20).
+  wireUiSound(document, (sound) => audio.ui(sound));
   /** What the settings change outside the simulation: the sound, and the page's looks. */
   const apply = () => {
     audio.setEffects(settings.sound ? settings.effectsVolume : 0);
@@ -220,7 +290,7 @@ function start(): void {
     audio.setLoud(settings.loud);
     document.body.classList.toggle('lefty', settings.lefty);
     document.body.classList.toggle('big-text', settings.bigText);
-    document.body.classList.toggle('calm', settings.calm);
+    applyMotion(document, settings.calm);
     document.body.classList.toggle('follow-finger', settings.followFinger);
   };
   apply();
@@ -276,29 +346,33 @@ function start(): void {
     playedFrom = now;
     if (!at && !again && loaded.kind !== 'unreadable') store.write(save);
   }
-  if (!store.available && !benchOn) {
-    const notice = byId('notice');
-    notice.textContent = sv.saveOff;
-    notice.hidden = false;
-    setTimeout(() => (notice.hidden = true), 7000);
-  }
+  // Through the HUD, like every other tag: it never lies over what is being said (in-play.md row 18).
+  if (!store.available && !benchOn) hud.notice(sv.saveOff, 7);
 
   // The on-screen controls follow the device in use, not the kind of computer (plan §4.1).
   let device: Device = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keys';
   const showDevice = (d: Device) => {
     device = d;
+    // The key reference, once a key or a pad has been used (menus.md row 10).
+    if (d !== 'touch') byId('controlsReferenceBtn').hidden = false;
     controls.hidden = d !== 'touch';
     hint.hidden = d === 'touch';
-    hint.textContent = d === 'pad' ? sv.padHint : sv.keysHint;
+    hint.innerHTML = hintHtml(d === 'pad' ? sv.padHint : sv.keysHint);
+    // Which hand is in use, for what shows only to keys and pads: the prompt with what E (or X) will do.
+    document.body.dataset.device = d;
+    byId('keyPromptKey').textContent = d === 'pad' ? 'X' : 'E';
   };
   showDevice(device);
 
   // Pause: the game stands still, and the panel has the play style and "Jag har fastnat" (plan §6.10).
   let paused = false;
   let ended = false;
+  // The story's last page glues the frame the story ends on, once the ending's shot is left (story-presentation.md row 6).
+  let reglue = false;
   const ending = createEnding(document, () => {
+    reglue = true;
     input.release();
-    audio.sleep(true);
+    audio.menu(true);
     audio.setPlace(arrangementFor(chapter.id, chapter.place));
   });
   const explore = createExplore(document, (id) => {
@@ -309,6 +383,7 @@ function start(): void {
     input.release();
     if (!title.open) writeSave();
     explore.show(save);
+    audio.ui('open');
   }
   for (const id of ['titleExplore', 'pauseExplore', 'endExplore']) {
     byId(id).hidden = !canEnter('epilog') || !storyFinished(save.flags);
@@ -335,14 +410,16 @@ function start(): void {
     if (ended) return byId('endCard');
     return null;
   }
-  function openPause(): void {
+  function openPause(page?: PausePage): void {
     if (menuOpen() || platformBlocked()) return;
     paused = true;
-    audio.sleep(true);
+    // The world stops, and the tune goes on under the paper (docs/ux-audit/style-and-sound.md rows 20 and 21).
+    audio.menu(true);
+    audio.ui('open');
     pointing.cancel();
     askedForUse = askedForHelp = false;
     input.release();
-    pause.show({ ...settings, graphics: requestedGraphics });
+    pause.show({ ...settings, graphics: requestedGraphics }, false, page);
     writeSave();
   }
   function resume(): void {
@@ -351,12 +428,15 @@ function start(): void {
       titleSettings = false;
       pause.hide();
       showTitle();
+      // Back where the hand was: on Inställningar (docs/ux-audit/menus.md row 11).
+      byId('titleSettingsBtn').focus();
       return;
     }
     paused = false;
     pause.hide();
     input.release();
     game.resume();
+    audio.menu(false);
     audio.sleep(document.hidden);
     audio.unlock();
     canvas.focus();
@@ -370,6 +450,10 @@ function start(): void {
     },
     onSettings(next, choice) {
       input.release();
+      // A sound's new level is heard at once, as one short note (menus.md row 8).
+      const heard = (on: boolean, level: number, was: boolean, before: number) => on && (!was || level !== before);
+      if (heard(next.sound, next.effectsVolume, settings.sound, settings.effectsVolume)) audio.preview('effects', next.effectsVolume);
+      if (heard(next.music, next.musicVolume, settings.music, settings.musicVolume)) audio.preview('music', next.musicVolume);
       // Merely changing sound or play style must not save a temporary ?tier inspection override.
       settings = { ...next, graphics: choice === 'graphics' ? next.graphics : settings.graphics };
       if (choice === 'graphics') {
@@ -398,25 +482,29 @@ function start(): void {
     if (chapter.epilogue && ended && !title.open && !profileMutationPending && !story.open && !memories.open && !explore.open && !platformBlocked() && ending.start()) {
       input.release(); pointing.cancel(); askedForUse = askedForHelp = false;
       audio.setPlace(null);
+      audio.menu(false);
       audio.sleep(false);
       audio.unlock();
     }
   });
   void photoAlbum.refresh();
-  byId('albumPhotos').hidden = !mapState(chapter.id, canEnter);
+  // The candy bag's page (the album and the photos) belongs to the story's chapters, Byn too, not to the test and
+  // look courses; Moa's map to the places she has drawn (docs/ux-audit/menus.md row 14).
+  const storyCourse = [...STORY, ...BONUS].some((c) => c.id === chapter.id);
+  byId('albumPhotos').hidden = !storyCourse;
+  byId('pauseBagBtn').hidden = !storyCourse;
+  byId('pauseMapCard').hidden = !mapState(chapter.id, canEnter);
   byId('endPhotos').addEventListener('click', () => photoAlbum.credits());
   byId('graphicsFallback').hidden = hdrAvailable;
   byId<HTMLButtonElement>('graphicsMid').disabled = !hdrAvailable;
   byId<HTMLButtonElement>('graphicsHigh').disabled = !hdrAvailable;
-  byId('pauseBtn').addEventListener('click', openPause);
+  byId('pauseBtn').addEventListener('click', () => openPause());
+  /** The bag, G or the pad's View: straight to the candy bag's page; back from it goes straight back to play. */
   function openBag(): void {
     if (platformBlocked() || title.open || ended || memories.open || photoAlbum.open || story.open || explore.open) return;
-    if (!pause.open) openPause();
-    const album = byId('pauseAlbum');
-    if (!byId('pauseOptions').hidden) {
-      album.scrollIntoView({ block: 'start' });
-      album.focus();
-    }
+    const page = storyCourse ? 'bag' : 'home';
+    if (!pause.open) openPause(page);
+    else pause.page(page);
   }
   byId('bag').addEventListener('click', openBag);
   // Moas karta, in the pause panel and on the chapter's card: where he is, and where the ghost is heading.
@@ -429,12 +517,25 @@ function start(): void {
     if (!platformBlocked() && !menuOpen()) askedForHelp = true;
   });
 
+  // The title over the morning's first shot, alive (docs/ux-audit/first-minutes.md row 4): while the morning is
+  // still to come, the title shows its tableau, and "Börja" goes on into the morning from that same shot, past its
+  // fade from black (row 16). Any other game shows its own place, alive.
+  const morning = chapter.scenes?.find((scene) => scene.id === 'morgon');
+  const hasTableau = chapter.scenes?.some((scene) => scene.id === 'title') ?? false;
+  const handoff = Math.max(0, ...(morning?.stage?.fade ?? []).map((key) => key.at + (key.move ?? 0)));
+  let tableauSeconds = 0;
+  // Where a game taken up again is, as its chapter's card says it, over the title's recap (first-minutes.md row 9).
+  const cardWord = chapter.scenes?.find((scene) => scene.id === 'card' || scene.id === 'morgon')?.stage?.words?.find((word) => word.kind === 'caption')?.text;
+  byId('titleStoryCard').textContent = cardWord ? (sv.scene as Record<string, string>)[cardWord] ?? '' : '';
+  const tableauShown = () => hasTableau && morning !== undefined && title.open && !ended && game.sim.sceneFrame === null && sceneWaits(morning, game.sim.flags);
+
   // The title (plan §6.10). A chapter starts behind it; the test course and a debug session start at once.
   // ?title shows it in a debug session too, for the browser test.
   function showTitle(): void {
     if (profileMutationPending) return;
     paused = true;
-    audio.sleep(true);
+    // The title has the place's air and tune from the first tap, ducked under its card (style-and-sound.md row 21).
+    audio.menu(true);
     input.release();
     title.show(begun, { currentId: store.currentId, players: store.players(), available: store.available, unreadable: store.load().kind === 'unreadable' });
     offline.check();
@@ -446,6 +547,38 @@ function start(): void {
     params.set('title', '');
     location.href = `${location.pathname}?${params}`;
   }
+  /** The words of a chapter's time card, which the loading card shows when the page goes on to it. */
+  function cardOf(id: string): string | undefined {
+    const text = [...STORY, ...BONUS].find((c) => c.id === id)?.scenes?.find((scene) => scene.id === 'card')?.stage?.words?.find((word) => word.kind === 'caption')?.text;
+    return text ? (sv.scene as Record<string, string>)[text] : undefined;
+  }
+  /** The game begins from the title: with the style chosen there, or the saved one for Fortsätt. */
+  function startPlay(style: PlayStyle | null): void {
+    pendingStart = null;
+    startedAt = performance.now();
+    begun = true;
+    if (tableauShown()) game.sim.scene?.openAt('morgon', handoff);
+    if (style) {
+      settings = changeStyle(settings, style);
+      game.sim.options = simOptions(settings);
+      game.tempo = tempoOf(settings);
+      apply();
+    }
+    // Fortsätt: where he is, on the card's scrap for a moment (first-minutes.md row 9). The tableau needs none.
+    if (!style && !tableauShown()) sceneUi.remind(byId('titleStoryCard').textContent ?? '');
+    title.hide();
+    paused = false;
+    input.release();
+    game.resume();
+    audio.menu(false);
+    audio.sleep(document.hidden);
+    audio.unlock();
+    canvas.focus();
+    writeSave();
+  }
+  let pendingStart: { style: PlayStyle | null } | null = null;
+  /** When the game began from the title: a turn of the phone just after does not open Pause. */
+  let startedAt = -Infinity;
   const newPlayerChapter = courseFor(new URLSearchParams(params.has('dev') ? 'dev' : ''), null).id;
   const title = createTitle(document, {
     onFront() { offline.check(); },
@@ -480,22 +613,16 @@ function start(): void {
       return true;
     },
     onStart(style) {
-      if (!offline.canStart() || platformBlocked() || store.load().kind === 'unreadable') return;
-      begun = true;
-      if (style) {
-        settings = changeStyle(settings, style);
-        game.sim.options = simOptions(settings);
-        game.tempo = tempoOf(settings);
-        apply();
+      if (!offline.canStart() || store.load().kind === 'unreadable') return;
+      // A start pressed while the models still load is kept, never dropped (docs/ux-audit/first-minutes.md row 1):
+      // the pressed button shows the loading ghost, and the game starts the moment the models are in.
+      if (!bootReady && !contextLost && byId('message').hidden && !document.hidden) {
+        pendingStart = { style };
+        title.waiting(style);
+        return;
       }
-      title.hide();
-      paused = false;
-      input.release();
-      game.resume();
-      audio.sleep(document.hidden);
-      audio.unlock();
-      canvas.focus();
-      writeSave();
+      if (platformBlocked()) return;
+      startPlay(style);
     },
     async onStartOver() {
       if (!offline.canStart()) return false;
@@ -506,15 +633,17 @@ function start(): void {
       reloadPlayer();
       return true;
     },
+    onCodeWrong: () => audio.ui('wrong'),
     onCode(id) {
       if (!offline.canStart() || !canEnter(id)) return false;
+      audio.ui('yes');
       // The chapter's start, with whatever this device has kept of the others. The code holds no candy.
       const others = <T>(all: Record<string, T>) => Object.fromEntries(Object.entries(all).filter(([key]) => key !== id)) as Record<string, T>;
       keepSavedPosition = false;
       save = { ...save, updated: Date.now(), settings, chapter: id, checkpoint: -1, checkpoints: others(save.checkpoints ?? {}), candy: others(save.candy), placed: others(save.placed), flags: others(save.flags) };
       store.write(save);
       again = true;
-      markOnward(id);
+      markOnward(id, undefined, cardOf(id));
       // Replaced, not added: Back must not reopen the chapter left behind and move the save back to it.
       location.replace(`${location.pathname}${courseQuery(params, id)}`);
       return true;
@@ -522,8 +651,12 @@ function start(): void {
   });
   const offline = createOffline({
     isTitle: () => title.open && !ending.open && !explore.open && bootReady && !contextLost && byId('message').hidden && !profileMutationPending
-      && !byId('titleFront').hidden && byId('codeForm').hidden === true,
-    setUpdateLock: (locked) => { byId('title').inert = locked; },
+      && !byId('titleFront').hidden,
+    // The title waits while a new version is put in place, and says so, with the loading card's ghost.
+    setUpdateLock: (locked) => {
+      byId('title').inert = locked;
+      byId('titleUpdating').hidden = !locked;
+    },
   });
   const input = createInput(
     {
@@ -542,8 +675,11 @@ function start(): void {
         if (!what) return;
         if (what.kind === 'use') askedForUse = true;
         else if (what.kind === 'helper') askedForHelp = true;
+        // Until it wakes, the carving is only wood: a dry tock, and no turn that would give its waking away
+        // (docs/ux-audit/first-minutes.md row 21).
+        else if (what.kind === 'ghost' && chapter.id === 'prolog' && !game.sim.flags.has('blink')) audio.play({ kind: 'tock' });
         else {
-          view.react(what, settings.calm || reducedMotion.matches);
+          view.react(what, lessMotion());
           if (what.kind === 'player') audio.play({ kind: 'say', who: 'elof' });
           else if (what.kind === 'ghost') audio.play({ kind: 'say', who: 'spoket' });
         }
@@ -587,16 +723,32 @@ function start(): void {
   for (const type of ['gesturestart', 'dblclick', 'contextmenu']) {
     document.addEventListener(type, (e) => e.preventDefault());
   }
+  // A turn of the phone opens Pause only in free play, and only when the picture turns between landscape and
+  // portrait: never over a held scene, nor in the first seconds after the title, when a child often turns the phone
+  // only after tapping (docs/ux-audit/first-minutes.md row 17). Any other change of size only redraws.
+  let landscape = innerWidth >= innerHeight;
+  /** When a key, a tap or a pad was last used: the prologue's line of keys waits for a quiet moment. */
+  let inputAt = performance.now();
+  // The keys' three caps stay until each has been used once, or for half a minute of play, then never again on
+  // this device (docs/ux-audit/in-play.md row 13). The whole list is in Pause.
+  const taught = { move: false, hop: false, act: false };
+  let keysShownFor = 0;
+  let learned = keysLearned();
+  document.body.classList.toggle('keys-learned', learned);
+  for (const type of ['keydown', 'pointerdown']) window.addEventListener(type, () => { inputAt = performance.now(); }, { capture: true });
   const relayout = () => {
-    story.interrupt();
+    const turned = (innerWidth >= innerHeight) !== landscape;
+    landscape = innerWidth >= innerHeight;
     pointing.cancel();
     askedForUse = askedForHelp = false;
     input.release();
-    openPause();
-    devicePlay.setPlaying(false);
     view.resize();
     auto?.suspend();
     resolution?.suspend();
+    if (!turned || menuOpen() || game.sim.scene?.holding || performance.now() - startedAt < 3000) return;
+    story.interrupt();
+    openPause();
+    devicePlay.setPlaying(false);
   };
   window.addEventListener('resize', relayout);
   window.addEventListener('orientationchange', relayout);
@@ -612,7 +764,8 @@ function start(): void {
   document.addEventListener('visibilitychange', () => {
     auto?.suspend();
     resolution?.suspend();
-    audio.sleep(platformBlocked() || menuOpen());
+    audio.sleep(platformBlocked());
+    audio.menu(menuOpen());
     devicePlay.setPlaying(!platformBlocked() && !menuOpen());
     memories.suspend(platformBlocked());
     if (document.hidden) { input.release(); pointing.cancel(); askedForUse = askedForHelp = false; story.interrupt(); writeSave(); }
@@ -631,7 +784,7 @@ function start(): void {
       }),
       screen: (at) => view.worldScreen(at),
       info: () => ({ ...view.info(), busyMs, autoSettled: auto?.settled ?? true,
-        sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars }),
+        sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars, soundPreviews: audio.previews, audioMode: audio.mode, uiSounds: audio.uiPlayed }),
     };
   }
 
@@ -646,7 +799,7 @@ function start(): void {
     save = visitChapter(save, id);
     store.write(save);
     again = true;
-    markOnward(id);
+    markOnward(id, undefined, cardOf(id));
     // Replaced, not added: Back must not reopen the chapter left behind and move the save back to it.
     location.replace(`${location.pathname}${courseQuery(params, id)}`);
   }
@@ -657,7 +810,7 @@ function start(): void {
     if (!keepSavedPosition) save = visitChapter(save, chapter.id, true);
     store.write(save);
     again = true;
-    markOnward(chapter.id);
+    markOnward(chapter.id, undefined, cardOf(chapter.id));
     location.replace(`${location.pathname}${courseQuery(params, chapter.id)}`);
   }
   let endFor = 0;
@@ -687,7 +840,8 @@ function start(): void {
           : [...panel.querySelectorAll<HTMLElement>('button,input')].find((element) => element.getClientRects().length > 0 && !element.hasAttribute('disabled'));
         target?.focus();
       } else canvas.focus();
-      audio.sleep(platformBlocked() || menuOpen());
+      audio.sleep(platformBlocked());
+      audio.menu(menuOpen());
       if (!menuOpen()) audio.unlock();
       if (title.open) offline.check();
     });
@@ -700,6 +854,8 @@ function start(): void {
     input.release();
     offerRecovery();
     if (title.open) offline.check();
+    // A start pressed while loading begins now, if the title still waits on its front for it.
+    if (pendingStart && title.open && !byId('titleFront').hidden && !platformBlocked()) startPlay(pendingStart.style);
   }).catch(() => {
     paused = true;
     input.release();
@@ -727,13 +883,12 @@ function start(): void {
     auto?.suspend();
     resolution?.suspend();
     writeSave();
-    showMessage(sv.contextLost);
+    showMessage(sv.contextLost, sv.reloadGame);
   });
   async function restorePicture(): Promise<void> {
     const ticket = ++restoreGeneration;
     restoreReady = false;
-    showMessage(sv.contextReloading);
-    byId<HTMLButtonElement>('messageButton').disabled = true;
+    showMessage(sv.contextReloading, null, undefined, undefined, true);
     try {
       await view.restore();
       if (ticket !== restoreGeneration || contextLost || again) return;
@@ -763,7 +918,7 @@ function start(): void {
     const rect = button.getBoundingClientRect();
     memories.play(id, () => { input.release(); game.resume(); }, {
       origin: rect.width > 0 && rect.height > 0 ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null,
-      calm: settings.calm || reducedMotion.matches,
+      calm: lessMotion(),
     });
   });
   let remembered = game.sim.flags.has('memory');
@@ -788,8 +943,10 @@ function start(): void {
     const blocked = platformBlocked();
     memories.suspend(blocked);
     storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !blocked && !menuOpen());
-    // On a chapter's last page the place's air goes on, and the tune's last note rings out.
-    audio.sleep(blocked || (menuOpen() && !ending.open && !(ended && coda)));
+    // Under a menu the world is still and the tune goes on, muffled; on a chapter's last page the place's air goes on,
+    // and the tune's last note rings out (docs/ux-audit/style-and-sound.md rows 20 and 21).
+    audio.sleep(blocked);
+    audio.menu(menuOpen() && !ending.open && !(ended && coda));
     if (blocked) {
       pointing.cancel();
       askedForUse = askedForHelp = false;
@@ -815,6 +972,17 @@ function start(): void {
       if (bench && !bench.done) ({ held, edges } = bench.play(game.sim.curr, time));
       edges = { ...edges, helper: edges.helper || askedForHelp, act: edges.act || askedForUse };
       held = pointing.steer(held, edges);
+      if (!learned && device !== 'touch') {
+        if (Math.abs(held.x) > 0.3) taught.move = true;
+        if (held.hopHeld) taught.hop = true;
+        if (edges.act) taught.act = true;
+        keysShownFor += dt;
+        if ((taught.move && taught.hop && taught.act) || keysShownFor > 30) {
+          learned = true;
+          document.body.classList.add('keys-learned');
+          learnKeys();
+        }
+      }
       game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld, talking: hud.speaking() }, edges);
       tutorial.update(dt, game.sim.curr, game.sim.flags, held, edges, game.sim.held);
       askedForUse = askedForHelp = false;
@@ -829,7 +997,8 @@ function start(): void {
       askedForUse = askedForHelp = false;
       input.release();
       story.show(game.sim.story, game.sim.flags);
-      audio.sleep(true);
+      audio.menu(true);
+      audio.ui('open');
     }
     if (!remembered && game.sim.flags.has('memory')) {
       remembered = true;
@@ -841,9 +1010,9 @@ function start(): void {
       memories.play(chapter.id, () => { input.release(); game.resume(); canvas.focus(); }, {
         // If the ghost is waiting beyond the camera, grow from the glowing shaving Elof just touched.
         origin: view.ghostScreen() ?? view.worldScreen({ x: shaving.x, y: shaving.y + 0.6 }),
-        calm: settings.calm || reducedMotion.matches,
+        calm: lessMotion(),
       });
-      audio.sleep(true);
+      audio.menu(true);
     }
     // A big candy is a safe place: the game saves there (plan §3.3, rule 4).
     if (game.sim.checkpoint !== savedAt) {
@@ -851,14 +1020,31 @@ function start(): void {
       writeSave();
     }
     const atGoal = game.sim.flags.has('goal');
+    const tableau = tableauShown();
+    if (tableau) tableauSeconds += dt;
+    // The crayon line under the title, while the models come (first-minutes.md row 2).
+    if (title.open) {
+      const line = byId('titleLoading');
+      line.style.setProperty('--loaded', String(bootReady ? 1 : view.loaded));
+      line.classList.toggle('done', bootReady);
+    }
     view.render({
-      prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: menuOpen() ? 0 : dt, atGoal,
+      // Under the title the place lives on (first-minutes.md row 4); under any other menu it stands still.
+      prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: menuOpen() && !title.open ? 0 : dt, atGoal,
       collected: game.sim.collected, side: game.sim.collectedSide, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
-      prologue: game.sim.prologue?.frame, scene: game.sim.sceneFrame, ending: ending.seconds,
+      prologue: game.sim.prologue?.frame, scene: tableau ? { id: 'title', seconds: tableauSeconds } : game.sim.sceneFrame, ending: ending.seconds,
       flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts, help: game.sim.help,
       berries: game.sim.berries,
       noteHits: game.sim.noteHits,
     });
+    if (reglue) {
+      reglue = false;
+      const frame = view.snapshot(null);
+      if (frame) {
+        byId('endPhoto').replaceChildren(frame);
+        byId('endPicture').hidden = false;
+      }
+    }
     // Copy this exact rendered frame now, before WebGL's drawing buffer is discarded. Encoding and
     // IndexedDB run afterwards; the ordinary render loop never keeps its drawing buffer alive.
     const moment = !photosStopped && !benchOn && !at
@@ -867,11 +1053,28 @@ function start(): void {
       if (blob && !photosStopped && await photoStore.put({ player: photoPlayer, moment, blob })) await photoAlbum.refresh();
     });
     tutorialView.show(menuOpen() || platformBlocked() ? null : tutorial.shown, device, settings.followFinger, view.playerScreen());
+    const finger = menuOpen() || platformBlocked() ? null : input.followPoint();
+    fingerMarks.show(finger, finger?.steering ? view.playerScreen(1.3) : null, finger?.steering ? view.playerScreen() : null);
     sceneUi.show(chapter.scenes, game.sim.sceneFrame, menuOpen() && !paused);
     hud.candy(game.sim.candyCount);
-    storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !menuOpen());
+    // In the prologue the keycaps teach, so the line of keys waits unless he has stood 10 s without a key
+    // (first-minutes.md row 22).
+    document.body.classList.toggle('keys-later', chapter.id === 'prolog' && performance.now() - inputAt < 10000);
+    // The prologue brings its controls in as they are needed (first-minutes.md rows 8 and 18).
+    document.body.classList.toggle('before-chase', chapter.id === 'prolog' && !game.sim.flags.has('bag:torn'));
+    document.body.classList.toggle('no-candy', chapter.id === 'prolog' && game.sim.candyCount === 0);
+    const context = storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags);
+    storyReminder.show(context, !menuOpen());
+    // "Gården, klockan tio. Följ spöket. Hitta min påse." for a screen reader, as the picture changes.
+    const said = [cardOf(chapter.id)?.replace(' · ', ', '), context?.purpose].filter(Boolean).join('. ') || sv.title;
+    if (said !== pictureSaid) {
+      pictureSaid = said;
+      canvas.setAttribute('aria-label', said);
+    }
     hud.verb(game.sim.curr.verb, game.sim.curr.word);
     hud.knock(game.sim.help.step >= 2 ? game.sim.help : null);
+    // A story's own visit is the helper looking by itself, not a step he asked for.
+    hud.helped(game.sim.help.visit ? 0 : game.sim.help.step);
     // The album: what earlier chapters hold in the save, and what this one holds now.
     if (game.sim.flags.size !== flagsSeen) {
       flagsSeen = game.sim.flags.size;
@@ -906,7 +1109,10 @@ function start(): void {
       }
       // The album's page, in the pause panel: in the story only.
       const keepsakes = Object.values(all).some((flags) => flags.includes('keepsake:vittra')) ? ['vittra'] : [];
-      byId('pauseAlbum').innerHTML = mapState(chapter.id, canEnter) ? albumHtml(found, lost, keepsakes) + memoryAlbumHtml(all) : '';
+      byId('pauseAlbum').innerHTML = storyCourse ? albumHtml(found, lost, keepsakes) + memoryAlbumHtml(all) : '';
+      const kinds = Object.keys(KINDS).length;
+      byId('pauseBagCount').textContent = sv.album.count.replace('{found}', String(found.length)).replace('{total}', String(kinds));
+      byId('pauseBagBtn').style.setProperty('--fill', String(kinds > 0 ? found.length / kinds : 0));
     }
     // A held scene takes the floor as it begins: what was said before it is not read over it.
     const scene = game.sim.sceneFrame;
@@ -916,16 +1122,20 @@ function start(): void {
     sceneHeard = scene?.id ?? null;
     for (; told < game.sim.said.length; told++) {
       const beat = beats.get(game.sim.said[told]!);
-      if (beat) hud.say(beat.who, beat.line, beat.priority);
+      // In a held scene a line is said when it is acted: it takes the floor instead of waiting for the last one.
+      if (beat) hud.say(beat.who, beat.line, beat.priority || game.sim.held);
     }
     // What is said waits while a memory plays: its line comes after it.
     hud.tick(menuOpen() ? 0 : dt);
+    hud.paused(menuOpen());
     // The end: a moment to arrive, then the card with the candy in rows of ten. The last words are let finish
     // first, for a few seconds at most: a chapter must not end over what someone is saying.
     if (atGoal) endFor += menuOpen() ? 0 : dt;
     if (atGoal && coda && !closing) {
       closing = true;
       audio.cadence();
+      // The coda is the picture alone: the play's corners and words step aside while the tune closes.
+      document.body.classList.add('coda');
     }
     // Only in the story: the test course has no family to answer.
     if (coda && !answered && endFor > CODA_ANSWER && Object.hasOwn(CODA_FAMILY, chapter.id)) {
@@ -936,10 +1146,13 @@ function start(): void {
     if (endFor > wait && (!hud.speaking() || endFor > wait + 5.6) && !benchOn && !ended) {
       ended = true;
       paused = true;
-      if (!coda) audio.sleep(true);
+      if (!coda) audio.menu(true);
+      // The storybook page turns in.
+      audio.ui('page');
       // The coda's last picture, for the page: copied now, right after it was drawn.
-      const picture = view.snapshot();
-      byId('endPicture').replaceChildren(...(picture ? [picture] : []));
+      // A photo of Elof walking into the picture; the story's last page glues its own frame (row 6).
+      const picture = view.snapshot(chapter.epilogue ? null : view.playerScreen());
+      byId('endPhoto').replaceChildren(...(picture ? [picture] : []));
       byId('endPicture').hidden = picture === null;
       pointing.cancel();
       askedForUse = askedForHelp = false;
@@ -950,10 +1163,12 @@ function start(): void {
       const number = chapterNumber(chapter.id);
       const next = nextAvailable(chapter.id, params);
       const bonus = next && bonusAfter(chapter.id)?.id === next.id;
-      const title = sv.end.named[chapter.id] ?? (number > 0 ? sv.end.chapter.replace('{n}', String(number)) : sv.end.course);
+      // The chapter's name, under its kicker: "Kapitel 1", "Gården" (story-presentation.md row 7).
+      const title = sv.end.headings[chapter.id] ?? sv.explore.chapters[chapter.id] ?? sv.end.course;
+      const kicker = sv.end.kickers[chapter.id] ?? (number > 0 ? sv.end.kicker.replace('{n}', String(number)) : '');
       const hidden = (chapter.hidden ?? []).map((h) => ({ kind: h.kind, found: game.sim.flags.has(foundFlag(h.kind)) }));
       storyReminder.handoff(storyHandoff(chapter.id, game.sim.flags));
-      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, bonus ? sv.end.bonus : undefined);
+      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, bonus ? sv.end.bonus : undefined, kicker);
       byId(canExplore ? 'endExplore' : next ? 'endOnward' : 'endAgain').focus();
       if (chapter.id === 'epilog') {
         byId('endPhotos').hidden = false;

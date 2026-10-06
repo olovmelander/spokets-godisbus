@@ -609,6 +609,11 @@ function bird(): Group {
   return group;
 }
 
+/** How far in front of the play plane the dotted Elof is drawn: 0.3 EL nearer than the nearest prop. */
+const DEMO_Z = 0.95;
+/** How high over what it shows the jay perches. */
+const BIRD_PERCH = 1.6;
+
 /**
  * The helper (plan §4.6): the existing wooden ghost in the garden, then the jay. The third hint samples
  * a dotted silhouette along a short action trajectory. Nothing here changes a rule or awards anything.
@@ -624,13 +629,24 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
   flyer.scale.setScalar(0);
   drawnWhile(flyer, false);
   const pale = () => new MeshStandardMaterial({ color: '#fff6dc', roughness: 1, transparent: true, opacity: 0, depthWrite: false, emissive: '#fff0c0', emissiveIntensity: 0.65 });
+  // The dotted Elof is drawn in front of every prop, and each of its 0.05 EL dots lies on a darker one at 30%, so
+  // that it holds on pale ground and never hides behind the thing it shows (docs/ux-audit/in-play.md row 21).
+  const dark = () => new MeshStandardMaterial({ color: '#24180e', roughness: 1, transparent: true, opacity: 0, depthWrite: false });
+  const unders: InstancedMesh<SphereGeometry, MeshStandardMaterial>[] = [];
   const figures = [0, 1, 2].map((i) => {
-    const mesh = new InstancedMesh(new SphereGeometry(0.026, 6, 4), pale(), 64);
+    const mesh = new InstancedMesh(new SphereGeometry(0.05, 8, 6), pale(), 64);
     mesh.name = `helper-demo-${i}`;
     drawnWhile(mesh, false);
     mesh.frustumCulled = false;
     mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-    group.add(mesh);
+    const under = new InstancedMesh(new SphereGeometry(0.068, 8, 6), dark(), 64);
+    under.name = `helper-demo-${i}-under`;
+    // The same dots, read from the same matrices.
+    under.instanceMatrix = mesh.instanceMatrix;
+    drawnWhile(under, false);
+    under.frustumCulled = false;
+    unders.push(under);
+    group.add(under, mesh);
     return mesh;
   });
   const rope = new Mesh(new CylinderGeometry(0.017, 0.017, 1, 6), pale());
@@ -668,7 +684,7 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     }
     mesh.count = n;
     mesh.instanceMatrix.needsUpdate = true;
-    mesh.position.set(pose.x, pose.y, 0.7);
+    mesh.position.set(pose.x, pose.y, DEMO_Z);
   }
   let shown = 0;
   let last = { x: 0, y: 0 };
@@ -685,8 +701,10 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     const cycle = clock % 3;
     const doubleKnock = Math.max(0, 1 - Math.abs(cycle - 0.9) / 0.12) + Math.max(0, 1 - Math.abs(cycle - 1.2) / 0.12);
     const knock = !still && (step >= 2 || help.visit) ? doubleKnock * 0.12 : 0;
-    const targetX = last.x - (ghost ? (help.verb === 'lace' || help.visit ? (step >= 3 ? 2.7 : 2.1) : 0.75) : 0.45);
-    const targetY = ghost ? demoFloor(chapter, targetX) : last.y + 0.25;
+    // The ghost stands beside what it shows; the jay perches 1.6 EL over it, so that it is never a second bird
+    // beside a bird it shows (in-play.md row 21).
+    const targetX = last.x - (ghost ? (help.verb === 'lace' || help.visit ? (step >= 3 ? 2.7 : 2.1) : 0.75) : 0.1);
+    const targetY = ghost ? demoFloor(chapter, targetX) : last.y + BIRD_PERCH;
     const to = here ? { x: targetX + knock, y: targetY + (still ? 0 : ghost ? Math.sin(Math.PI * shown) * 0.35 : Math.sin(clock * 5) * 0.04), z: 0.45 } : { x: flyer.position.x, y: flyer.position.y + dt * 4, z: 0.45 };
     const k = still ? 1 : 1 - Math.exp(-5 * dt);
     flyer.position.set(flyer.position.x + (to.x - flyer.position.x) * k, flyer.position.y + (to.y - flyer.position.y) * k, to.z);
@@ -707,17 +725,22 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     if (key) elapsed = Math.min(DEMO_SECONDS, elapsed + dt);
     for (const [i, figure] of figures.entries()) {
       const visible = key !== '' && (i === 0 || still);
+      const under = unders[i]!;
       figure.material.opacity = visible ? (still ? [0.24, 0.55, 0.35][i]! : 0.65) : 0;
+      under.material.opacity = figure.material.opacity * (0.3 / 0.65);
       drawnWhile(figure, visible);
+      drawnWhile(under, visible);
       if (!visible) continue;
       drawPose(figure, sampleDemo(demonstration, still ? [0, DEMO_SECONDS * 0.6, DEMO_SECONDS][i]! : elapsed));
+      under.count = figure.count;
+      under.position.set(figure.position.x, figure.position.y, DEMO_Z - 0.04);
     }
     const pose = key ? sampleDemo(demonstration, still ? DEMO_SECONDS * 0.6 : elapsed) : null;
     rope.material.opacity = pose?.rope ? 0.5 : 0;
     drawnWhile(rope, !!pose?.rope);
     if (pose?.rope) {
-      end.set(pose.x + 0.2, pose.y + 0.9, 0.7);
-      direction.set(pose.rope.x, pose.rope.y, 0.7).sub(end);
+      end.set(pose.x + 0.2, pose.y + 0.9, DEMO_Z);
+      direction.set(pose.rope.x, pose.rope.y, DEMO_Z).sub(end);
       rope.position.copy(end).addScaledVector(direction, 0.5);
       rope.scale.y = direction.length();
       rope.quaternion.setFromUnitVectors(up, direction.normalize());

@@ -1,4 +1,5 @@
 import { sv } from '../content/sv';
+import { keyFace } from './keys';
 import type { Lesson } from '../app/tutorial';
 import type { Device } from '../input/input';
 import type { Vec } from '../sim/types';
@@ -12,14 +13,20 @@ export function createTutorial(doc: Document) {
     show(lesson: Lesson | null, device: Device, follow: boolean, player: Vec | null): void {
       panel.hidden = lesson === null;
       if (!lesson) return;
-      const key = `${lesson}:${device}:${follow}`;
+      // Använd's lesson names what the button says now.
+      const word = lesson === 'act' ? doc.getElementById('actBtn')?.getAttribute('aria-label') ?? sv.act : '';
+      const key = `${lesson}:${device}:${follow}:${word}`;
       if (key !== previous) {
         previous = key;
         panel.dataset.lesson = lesson;
         panel.dataset.device = device;
         panel.dataset.follow = String(follow);
-        caption.textContent = device === 'keys' ? sv.tutorial.keys[lesson] : device === 'pad' ? sv.tutorial.pad[lesson] : '';
-        panel.setAttribute('aria-label', sv.tutorial[device === 'keys' ? 'keyboard' : device === 'pad' ? 'gamepad' : 'touch'][lesson]);
+        // The key, drawn as it is printed: the arrows side by side, the space bar, the pad's cross, or its letter.
+        const keys = device === 'keys' ? sv.tutorial.keys[lesson] : device === 'pad' ? sv.tutorial.pad[lesson] : '';
+        caption.innerHTML = keys.split(' ').map(keyFace).join('');
+        // With a key after it, the word loses its own "!": "Tryck på Måla ögonen med E."
+        const said = device === 'touch' ? word : word.replace(/[!.?]+$/u, '');
+        panel.setAttribute('aria-label', sv.tutorial[device === 'keys' ? 'keyboard' : device === 'pad' ? 'gamepad' : 'touch'][lesson].replace('{word}', said));
       }
       if (device === 'touch') {
         const id = lesson === 'move' ? 'stickBase' : lesson === 'hop' ? 'hopBtn' : 'actBtn';

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { PAD, STICK_RADIUS, TAP_MS, WALK_KEYS, createInput, type Device, type Input, type InputEnv, type InputUi, type MenuKey } from '../../src/input/input';
+import { PAD, RUN_FROM_PX, STICK_RADIUS, TAP_MS, WALK_KEYS, createInput, type Device, type Input, type InputEnv, type InputUi, type MenuKey } from '../../src/input/input';
 
 /** Just enough of an element for the input: events, a class list, a style and pointer capture. */
 class FakeElement extends EventTarget {
@@ -29,6 +29,10 @@ class FakeElement extends EventTarget {
   querySelectorAll() { return this.children; }
   closest() { return this.hidden || this.inControls ? this : null; }
   focus() { doc.activeElement = this as unknown as Element; }
+  role = '';
+  tabIndex = 0;
+  getAttribute(name: string) { return name === 'role' ? this.role : null; }
+  contains(other: FakeElement) { return this.children.includes(other); }
 }
 
 function fire(target: EventTarget, type: string, props: Record<string, unknown> = {}): Event {
@@ -334,7 +338,8 @@ describe('Följ fingret', () => {
     fire(target, 'pointermove', { pointerId: id, clientX: x, clientY: y });
   const hold = () => { clock += TAP_MS; };
 
-  beforeEach(() => { followFinger = true; });
+  // The finger lands 100 px ahead of him: near enough to walk him.
+  beforeEach(() => { followFinger = true; playerScreen = { x: 300, y: 200 }; });
 
   it.each(['world', 'stickZone'] as const)('keeps a quick %s tap as Peka, without first moving Elof', (target) => {
     down(ui[target]);
@@ -354,12 +359,37 @@ describe('Följ fingret', () => {
     expect(input.state().x).toBe(0);
     playerScreen = { x: 407, y: 200 }; // no jitter beside the target
     expect(input.state().x).toBe(0);
-    playerScreen = { x: 600, y: 200 };
+    playerScreen = { x: 460, y: 200 };
     expect(input.state().x).toBe(-WALK_KEYS);
     expect(input.consume()).toEqual({ hop: false, act: false, helper: false });
   });
 
+  it('runs him to a finger held more than 120 px off, either way, and walks him to a nearer one', () => {
+    down();
+    hold();
+    playerScreen = { x: 400 - RUN_FROM_PX - 1, y: 200 };
+    expect(input.state().x).toBe(1);
+    playerScreen = { x: 400 - RUN_FROM_PX, y: 200 };
+    expect(input.state().x).toBe(WALK_KEYS);
+    playerScreen = { x: 400 + RUN_FROM_PX + 1, y: 200 };
+    expect(input.state().x).toBe(-1);
+  });
+
+  it('reports the held finger from the moment it lands, for the ring round it', () => {
+    expect(input.followPoint()).toBeNull();
+    down();
+    expect(input.followPoint()).toEqual({ x: 400, y: 200, steering: false, run: false });
+    hold();
+    input.state();
+    expect(input.followPoint()).toEqual({ x: 400, y: 200, steering: true, run: false });
+    move(560, 180);
+    expect(input.followPoint()).toEqual({ x: 560, y: 180, steering: true, run: true });
+    fire(ui.world, 'pointerup', { pointerId: 3, clientX: 560, clientY: 180 });
+    expect(input.followPoint()).toBeNull();
+  });
+
   it('keeps vertical movement for climbing and changing the swing length, without jumping', () => {
+    playerScreen = { x: 200, y: 200 };
     down(ui.stickZone, 3, 200, 100);
     hold();
     expect(input.state()).toEqual({ x: 0, y: 1, hopHeld: false });
@@ -371,7 +401,7 @@ describe('Följ fingret', () => {
   it('starts a deliberate drag immediately and never also taps when it returns to its start', () => {
     down();
     move(430, 200);
-    expect(input.state().x).toBe(WALK_KEYS);
+    expect(input.state().x).toBe(1);
     move(400, 200);
     fire(ui.world, 'pointerup', { pointerId: 3, clientX: 400, clientY: 200 });
     expect(taps).toEqual([]);
@@ -450,7 +480,7 @@ describe('Följ fingret', () => {
     down();
     hold();
     expect(input.state()).toEqual({ x: 0, y: 0, hopHeld: false });
-    playerScreen = { x: 200, y: 200 };
+    playerScreen = { x: 300, y: 200 };
     expect(input.state().x).toBe(WALK_KEYS);
   });
 
@@ -491,5 +521,48 @@ describe('the gamepad', () => {
     expect(input.state().x).toBe(-1);
     pads = [];
     expect(input.state().x).toBe(0);
+  });
+
+  it('hands left and right to a choice or a level in a menu, and leaves it up and down', () => {
+    focusScope = new FakeElement();
+    const before = new FakeElement();
+    const chosen = new FakeElement();
+    chosen.role = 'radio';
+    const other = new FakeElement();
+    other.role = 'radio';
+    other.tabIndex = -1; // a choice's other buttons are no stop of their own
+    const pips = new FakeElement();
+    pips.role = 'slider';
+    focusScope.children = [before, chosen, other, pips];
+    const heard: string[] = [];
+    for (const target of [chosen, pips]) target.addEventListener('keydown', (event) => { heard.push((event as KeyboardEvent).key); event.preventDefault(); });
+    chosen.focus();
+    pads = [gamepad([0, 0], [PAD.right])];
+    input.state();
+    expect(heard).toEqual(['ArrowRight']);
+    expect(doc.activeElement).toBe(chosen);
+    pads = [gamepad([0, 0], [])];
+    input.state();
+    pads = [gamepad([0, 0], [PAD.down])];
+    input.state();
+    expect(doc.activeElement).toBe(pips);
+    pads = [gamepad([0, 0], [])];
+    input.state();
+    pads = [gamepad([0, 0], [PAD.left])];
+    input.state();
+    expect(heard).toEqual(['ArrowRight', 'ArrowLeft']);
+    pads = [gamepad([0, 0], [])];
+    input.state();
+    pads = [gamepad([0, 0], [PAD.up])];
+    input.state();
+    expect(doc.activeElement).toBe(chosen);
+    // An ordinary button still takes left and right as the stop before and after it.
+    pads = [gamepad([0, 0], [])];
+    input.state();
+    before.focus();
+    pads = [gamepad([0, 0], [PAD.right])];
+    input.state();
+    expect(doc.activeElement).toBe(chosen);
+    expect(heard).toEqual(['ArrowRight', 'ArrowLeft']);
   });
 });

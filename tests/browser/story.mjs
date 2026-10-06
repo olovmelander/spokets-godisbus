@@ -254,15 +254,16 @@ try {
     await drawStroke(page, outward, true);
     await until(state, (s) => s.flags.includes('cut1'), 'safe touch stroke cuts outwards');
     check('an outward touch stroke finishes the first cut', !(await state()).flags.includes('cut2'));
-    await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
+    // The next cut follows at once in the same panel, and a notch is cut for each one done (story-presentation.md row 18).
+    check('the next cut follows in the same panel, with a notch for the first', await page.locator('#storyPanel').isVisible()
+      && await page.locator('#carveNotch1.done').count() === 1 && await page.locator('#carveNotch2.done').count() === 0);
     await page.keyboard.press('Enter');
     await until(state, (s) => s.flags.includes('cut2'), 'keyboard guided carving');
     check('keyboard can take the next stroke with Pappa', !(await state()).flags.includes('cut3'));
-    await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
     await page.evaluate(installPad); await padPress(page, 0);
     await until(state, (s) => s.flags.includes('cut3'), 'gamepad guided carving');
     check('gamepad completes the third safe stroke', (await state()).flags.includes('cut3'));
-    await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
+    await page.waitForFunction(() => document.getElementById('paintingPicture').getAttribute('visibility') === 'visible');
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => document.getElementById('strokeGuide').getAttribute('cx') === '204');
     check('the new figure needs both painted eyes', !(await state()).flags.includes('dots'));
