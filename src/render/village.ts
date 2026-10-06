@@ -464,6 +464,55 @@ function yard(build: Build, kit: VillageKit, chapter: ChapterData, part: StreetP
   put(build, kit.get('bjork'), front, part.from + (part.to - part.from) * 0.4, paint);
 }
 
+/** Granite courses on a raised pavement's kerb or a shop's step, merged with the house above it. */
+function masonry(build: Build, chapter: ChapterData, part: StreetPart): void {
+  if (part.kind !== 'house' || part.depth !== 'near') return;
+  const line = chapter.ground;
+  const stone = new Color('#a5a69f');
+  const mortar = new Color('#4d5558');
+  const normal = new Vector3(), edge = new Vector3();
+  for (let i = 1; i < line.length; i++) {
+    const a = line[i - 1]!, b = line[i]!;
+    if (a.x !== b.x || a.y === b.y || Math.min(a.y, b.y) < 0) continue;
+    const side = b.y > a.y ? 1 : -1;
+    const on = a.x + side * 0.01;
+    if (on < part.from || on >= part.to || !chapter.surfaces?.some((s) =>
+      (s.kind === 'stone' || s.kind === 'paving') && (s.from === a.x || s.to === a.x) && on > s.from && on < s.to)) continue;
+    const low = Math.min(a.y, b.y), high = Math.max(a.y, b.y);
+    const back = STREET_DEPTH.near, front = 0.45;
+    // Wall coordinates: along its depth, up, and how far it stands proud of the collision face.
+    const quad = (corners: number[][], colour: Color, tone = 1) => {
+      const points = corners.map(([z, y, proud]) => new Vector3(a.x - side * proud!, y, z));
+      if (side < 0) points.reverse();
+      normal.subVectors(points[1]!, points[0]!).cross(edge.subVectors(points[2]!, points[0]!)).normalize();
+      const first = build.position.length / 3;
+      for (const point of points) {
+        build.position.push(point.x, point.y, point.z);
+        build.normal.push(normal.x, normal.y, normal.z);
+        build.colour.push(colour.r * tone, colour.g * tone, colour.b * tone);
+        build.glow.push(0, 0);
+      }
+      build.index.push(first, first + 1, first + 2, first, first + 2, first + 3);
+    };
+    // A solid recessed joint bed: nothing translucent and no coplanar overlay on the original bank.
+    quad([[back, low, 0.004], [front, low, 0.004], [front, high, 0.004], [back, high, 0.004]], mortar);
+    const courses = Math.max(1, Math.round((high - low) / 1.65));
+    for (let row = 0; row < courses; row++) {
+      const bottom = low + (high - low) * row / courses + (row ? 0.035 : 0);
+      const top = low + (high - low) * (row + 1) / courses - (row < courses - 1 ? 0.035 : 0);
+      for (let z = back - (row % 2) * 1.65; z < front; z += 3.3) {
+        const left = Math.max(back, z) + (z > back ? 0.025 : 0);
+        const right = Math.min(front, z + 3.3) - (z + 3.3 < front ? 0.025 : 0);
+        const outer = [[left, bottom, 0.012], [right, bottom, 0.012], [right, top, 0.012], [left, top, 0.012]];
+        const inner = [[left + 0.05, bottom + 0.05, 0.045], [right - 0.05, bottom + 0.05, 0.045], [right - 0.05, top - 0.05, 0.045], [left + 0.05, top - 0.05, 0.045]];
+        const tone = 0.9 + hash(a.x + z * 1.7 + row * 11) * 0.18;
+        quad(inner, stone, tone);
+        for (let k = 0; k < 4; k++) quad([outer[k]!, outer[(k + 1) % 4]!, inner[(k + 1) % 4]!, inner[k]!], stone, tone * (k === 2 ? 1.08 : k === 0 ? 0.86 : 0.97));
+      }
+    }
+  }
+}
+
 /**
  * Which of the street's stretches are drawn together. A near house is drawn by itself, and only while it is
  * in sight. Everything on the far side of a crossing is one shape: it is all in sight at once.
@@ -479,11 +528,12 @@ export function drawnTogether(parts: readonly StreetPart[]): number[][] {
 }
 
 /** Some stretches of the street as one shape: everything in it is drawn at once. */
-function assemble(kit: VillageKit, chapter: ChapterData, parts: readonly StreetPart[], which: readonly number[]): BufferGeometry {
+export function assemble(kit: VillageKit, chapter: ChapterData, parts: readonly StreetPart[], which: readonly number[]): BufferGeometry {
   const build: Build = { position: [], normal: [], colour: [], glow: [], index: [] };
   for (const i of which) {
     if (parts[i]!.kind === 'house') house(build, kit, chapter, parts, i);
     else yard(build, kit, chapter, parts[i]!);
+    masonry(build, chapter, parts[i]!);
   }
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute(build.position, 3));
