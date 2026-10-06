@@ -189,6 +189,8 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
   // has a spruce of its own to stand under.
   const doors = (chapter.spots ?? []).filter((spot) => spot.look === 'vittra-door' && spot.at.x >= from && spot.at.x < to);
   const trunks = new InstancedMesh(KIT.trunk, KIT.bark, Math.ceil(length / 4.5) + 1 + doors.length);
+  trunks.name = 'forest-trunks';
+  trunks.userData.casts = true;
   n = 0;
   for (let x = from + next() * 4; x < to && n < trunks.count - doors.length; x += 4.5 + next() * 6.5) {
     // Some stand close behind the path, and more of them further in.

@@ -184,6 +184,17 @@ const PROFILE_FOREST: Row[] = [
   { z: 5.3, drop: 10.5, shade: 0.9, bump: 0, cut: 1 },
   { z: 5.3, drop: 16, shade: 0.9, bump: 0, cut: 1 },
 ];
+/** Extra samples for soft diagonal trunk shadows, only on moss; the garden shares the original profile. */
+const PROFILE_FOREST_SHADE = PROFILE_FOREST.flatMap((row, i): Row[] => {
+  const before = PROFILE_FOREST[i - 1];
+  if (!before) return [row];
+  const between = [-4.5, -3.5, -1.8, -1.3].filter((z) => z > before.z && z < row.z).map((z) => {
+    const k = (z - before.z) / (row.z - before.z);
+    return { z, drop: before.drop + (row.drop - before.drop) * k,
+      shade: before.shade + (row.shade - before.shade) * k, bump: before.bump + (row.bump - before.bump) * k };
+  });
+  return [...between, row];
+});
 /** Where the forest's moss ends and its cut begins, down a face in front. */
 const LIP = 3.1;
 /** What the forest's floor goes into far behind: its haze, a little greener. */
@@ -736,7 +747,7 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
  */
 function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks: Block[] = []): BufferGeometry {
   const look = GROUNDS[kind];
-  const profile = front.rows;
+  const profile = kind === 'moss' ? PROFILE_FOREST_SHADE : front.rows;
   const whole = lengthsDown(profile);
   const rows = profile.length;
   const cuts = front.cuts;

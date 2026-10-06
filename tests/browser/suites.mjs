@@ -31,6 +31,7 @@ export const SUITES = [
   ['water-light', 63],
   ['epilogue', 22],
   ['character-shadows', 253],
+  ['forest-shadows', 90],
   ['memory-presentation', 12],
   ['ghost-thoughts', 177],
   ['story-context', 154],
