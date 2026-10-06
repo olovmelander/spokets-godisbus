@@ -312,6 +312,10 @@ back beside a step. Its separate forward stone cut has level granite courses wit
 painted on the existing surface using its own grain. This leaves the walking top unchanged and follows
 the world when the camera turns. A physical riser is not seen through that cut from the upper side.
 
+**Road cuts** show a thin wearing course, crushed stone beneath it, then earth fading into depth.
+These bands live only on exposed asphalt/paving faces, measured below the local tilted top. They reuse
+the existing grain, light and mesh; the walking surface and the drain's dark rear remain unchanged.
+
 **Forest landmarks** supply their own raised shape. The bank, its plants and effects use the ground
 under the cone, anthill, log and stone, while the game keeps the same playable top. The doorway remains
 on the anthill and the spruce roots reach into it. If a kit shape is missing, its socket keeps a solid
