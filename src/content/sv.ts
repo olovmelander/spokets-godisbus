@@ -227,12 +227,19 @@ export const sv = {
   // Words a scene lays over the picture (src/ui/scene.ts): a time of day as a part of the story opens, and the title.
   scene: {
     morning: 'Lördagsmorgon',
+    // Each chapter's time card: where, and the time of day (plan §4.9).
+    garden: 'Gården · klockan tio',
+    granskog: 'Granskogen · halv tolv',
+    myren: 'Myren · halv fem',
+    berget: 'Berget · klockan sex',
+    norrsken: 'Norrskenet · i skymningen',
+    epilog: 'Godiskalaset · klockan nio',
+    byn: 'Byn · en vecka senare',
     title: 'Elof och det stora godisäventyret',
   } as Record<string, string>,
 
   // What is said, in bubbles: the game has no voices. At most about 40 characters each (plan §3.7).
   lines: {
-    follow1: 'Jag ser dig. Vi håller ihop.',
     // The extra chapter, Byn: a Saturday later, on the way to the candy shop.
     // At the party, when what he found under the deck is given back (plan §4.8).
     clipBack: 'Mitt hårspänne! Tack, lillebror!',
@@ -246,7 +253,6 @@ export const sv = {
     shop: 'Framme! Det luktar godis.',
     shopInside: 'Godiset är större än jag!',
     shopBag: 'En påse att dela på!',
-    follow2: 'Vi följer stigen och hjälper dig.',
     stomp: 'Ge tillbaka mitt godis!',
     tiny: 'Lillebror?! Du är ju pytteliten!',
     rootFingers: 'Där kröp spöket in. Jag får inte plats!',

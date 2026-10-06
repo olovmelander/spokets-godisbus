@@ -35,6 +35,7 @@ export const SUITES = [
   ['ghost-thoughts', 177],
   ['story-context', 154],
   ['opening-story', 64],
+  ['endings', 150],
   ['forest-puzzles', 103],
   ['garden-loop', 480],
   ['mountain-loop', 178],

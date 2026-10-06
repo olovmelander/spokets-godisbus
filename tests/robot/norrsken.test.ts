@@ -25,7 +25,7 @@ describe('Final, Norrsken, in greybox', () => {
       const result = playThrough(fps, norrsken, {}, 200);
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
       // The story's steps, each one built on the one before.
-      const did = result.flags.filter((flag) => !flag.startsWith('beat:') && !flag.startsWith('gift:'));
+      const did = result.flags.filter((flag) => !flag.startsWith('beat:') && !flag.startsWith('gift:') && flag !== 'scene:card');
       expect(did.slice(0, 5)).toEqual(['lower', 'placed:tragubbe', 'crowberry', 'eyes', 'bag']);
       expect(did.slice(5, 8).sort()).toEqual(['share:jay', 'share:spoket', 'share:tragubbe']);
       expect(did.slice(8)).toEqual(['shared', 'taste', 'home', 'goal']);

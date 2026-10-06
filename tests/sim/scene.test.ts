@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COURSES } from '../../src/content/chapters';
+import { BONUS, COURSES, STORY } from '../../src/content/chapters';
 import { sv } from '../../src/content/sv';
 import { STEP } from '../../src/sim/constants';
 import { QUIET_WAIT, SceneDirector, sceneBeats, type SceneDef } from '../../src/sim/scene';
@@ -139,6 +139,18 @@ describe('the story\'s scenes', () => {
         for (const line of scene.lines ?? []) expect(lines[line.line], `${chapter.id}: ${line.line}`).toBeTruthy();
         for (const word of scene.stage?.words ?? []) expect(words[word.text], `${chapter.id}: ${word.text}`).toBeTruthy();
       }
+    }
+  });
+
+  it('opens every chapter after the prologue on its time card, not held', () => {
+    const words: Record<string, string> = sv.scene;
+    for (const chapter of [...STORY, ...BONUS].filter((c) => !c.prologue)) {
+      const card = chapter.scenes?.find((scene) => scene.id === 'card');
+      expect(card, chapter.id).toBeDefined();
+      expect(card!.hold, chapter.id).toBeFalsy();
+      expect(card!.at, chapter.id).toBeLessThan(chapter.spawn.x);
+      // Where, and when: "Gården · klockan tio".
+      expect(words[card!.stage?.words?.[0]?.text ?? ''], chapter.id).toMatch(/ · /);
     }
   });
 

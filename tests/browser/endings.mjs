@@ -1,0 +1,147 @@
+// A chapter's end and a chapter's beginning (docs/narrative-audit/threads.md §5.4): the coda before the last page,
+// the page itself (the coda's picture, what comes next, Moa's way on, the tally), and the time card a chapter opens
+// on. Run against a build.
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import { extname, join, normalize } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+import { picture } from './picture.mjs';
+
+const BASE = '/spokets-godisbus/';
+const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
+const TYPES = {
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css',
+  '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp',
+  '.woff2': 'font/woff2', '.wasm': 'application/wasm',
+};
+assert.ok(existsSync(join(DIST, 'index.html')), 'Run npm run build before the browser tests.');
+
+const server = createServer((req, res) => {
+  const path = decodeURIComponent(new URL(req.url, 'http://test').pathname);
+  const file = join(DIST, normalize(path.slice(BASE.length) || 'index.html'));
+  if (!path.startsWith(BASE) || !file.startsWith(DIST) || !existsSync(file)) {
+    res.writeHead(404).end();
+    return;
+  }
+  res.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream' }).end(readFileSync(file));
+});
+await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+const origin = `http://127.0.0.1:${server.address().port}`;
+let browser;
+let checked = 0;
+function check(name, condition) {
+  assert.ok(condition, name);
+  checked++;
+  console.log(`  ok   ${name}`);
+}
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function until(read, accepts, name, timeout = 12000) {
+  const end = Date.now() + timeout;
+  let value;
+  do {
+    value = await read();
+    if (accepts(value)) return value;
+    await sleep(35);
+  } while (Date.now() < end);
+  assert.fail(`${name}: timed out; last value ${JSON.stringify(value)}`);
+}
+async function frames(page, count = 3) {
+  await page.evaluate((left) => new Promise((resolve) => {
+    function frame() {
+      if (--left <= 0) resolve();
+      else requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }), count);
+}
+async function ready(page) {
+  await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
+  await frames(page);
+}
+
+async function open(name, options = {}, query = '?debug&standin&tier=low') {
+  const context = await browser.newContext({ viewport: { width: 844, height: 390 }, ...options });
+  const page = await context.newPage();
+  const errors = [];
+  const external = [];
+  page.on('pageerror', (error) => errors.push(String(error)));
+  page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+  page.on('request', (request) => {
+    const url = request.url();
+    if (!url.startsWith(origin) && !url.startsWith(`blob:${origin}`) && !url.startsWith('data:')) external.push(url);
+  });
+  await page.goto(`${origin}${BASE}${query}`);
+  await ready(page);
+  return {
+    page,
+    state: () => page.evaluate(() => window.__godis.state()),
+    async finish() {
+      assert.deepEqual(errors, [], `${name}: browser errors`);
+      assert.deepEqual(external, [], `${name}: external requests`);
+      await context.close();
+    },
+  };
+}
+/** Whether an element is wholly inside the window, as it is laid out now. */
+const inView = (page, selector) => page.locator(selector).evaluate((node) => {
+  const box = node.getBoundingClientRect();
+  return box.width > 0 && box.height > 0 && box.top >= 0 && box.left >= 0 && box.bottom <= innerHeight && box.right <= innerWidth;
+});
+
+try {
+  browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+
+  console.log('endings: the coda and the last page of Gården');
+  for (const [name, viewport] of [['garden-844x390', { width: 844, height: 390 }], ['garden-390x844', { width: 390, height: 844 }]]) {
+    const { page, state, finish } = await open(name, { viewport, hasTouch: true }, '?dev&debug&standin&course=garden&tier=low&at=207,0.01');
+    await page.keyboard.down('ArrowRight');
+    await until(state, (s) => s.flags.includes('goal'), `${name}: the goal`, 90000);
+    const reached = Date.now();
+    await page.keyboard.up('ArrowRight');
+    check(`${name}: no card at the goal itself: the coda plays first`, await page.locator('#endCard').isHidden());
+    await page.waitForSelector('#endCard:not([hidden])', { timeout: 90000 });
+    // The coda's seconds are counted in frame time, which never runs ahead of the clock.
+    check(`${name}: the page comes after the coda`, Date.now() - reached >= 4000);
+    check(`${name}: the coda's last picture is glued into the page`, await page.locator('#endPicture canvas').count() === 1
+      && await page.locator('#endPicture').isVisible());
+    check(`${name}: what comes next is the page's caption`, (await page.locator('#endStoryText').textContent()).length > 10
+      && await page.locator('#endStory').isVisible());
+    check(`${name}: Moa's map draws the way on`, await page.locator('#endMap path.way-on').count() === 1);
+    check(`${name}: the page names the chapter and the next one's code`, (await page.locator('#endTitle').textContent()).length > 0
+      && await page.locator('#endCodeWords').textContent() === 'GRAN KOTTE MOSSA');
+    // Held sideways, nothing of the story is scrolled out of sight: the picture, the name and the way on.
+    for (const selector of ['#endPicture', '#endTitle', '#endStory', '#endOnward']) {
+      check(`${name}: ${selector} is in view`, await inView(page, selector));
+    }
+    await picture(page, `/tmp/endings-${name}.png`);
+    await finish();
+  }
+
+  console.log('endings: a chapter opens on its time card');
+  {
+    const { page, state, finish } = await open('granskog-card', {}, '?dev&debug&standin&course=granskog&tier=low');
+    await until(state, (s) => s.scene?.id === 'card' && s.scene.seconds > 0.9, 'the time card', 30000);
+    check('granskog: the card says where and when', await page.locator('#sceneCaption').textContent() === 'Granskogen · halv tolv');
+    check('granskog: the card does not hold him', !(await state()).held);
+    const x = (await state()).x;
+    await page.keyboard.down('ArrowRight');
+    await until(state, (s) => s.x > x + 0.3, 'he sets off under the card', 30000);
+    await page.keyboard.up('ArrowRight');
+    check('granskog: he can set off at once', true);
+    await finish();
+  }
+  {
+    const { page, state, finish } = await open('garden-card', {}, '?dev&debug&standin&course=garden&tier=low');
+    await until(state, (s) => s.scene?.id === 'card' && s.scene.seconds > 0.9, 'the time card', 30000);
+    check('garden: Gården opens on its own card', await page.locator('#sceneCaption').textContent() === 'Gården · klockan tio');
+    await until(state, (s) => s.flags.includes('scene:card'), 'the card ends', 30000);
+    check('garden: nobody speaks from off screen as it opens', (await state()).said.length === 0);
+    await finish();
+  }
+  console.log(`endings: ${checked} checks passed`);
+} finally {
+  await browser?.close();
+  await new Promise((resolve) => server.close(resolve));
+}

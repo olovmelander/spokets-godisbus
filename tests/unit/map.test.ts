@@ -53,4 +53,13 @@ describe('Moas karta', () => {
     expect(mapSvg(mapState('garden'), true)).toContain('>Klonk<');
     expect(mapSvg(mapState('epilog'), true)).toContain('>Klonk<');
   });
+  it('draws the way on in crayon on a chapter\'s last page, to where the ghost is heading, and nowhere else', () => {
+    const garden = mapState('garden')!;
+    expect(mapSvg(garden, false, true)).toContain('class="way-on"');
+    // In the pause panel the map is as it was.
+    expect(mapSvg(garden)).not.toContain('way-on');
+    // When the ghost is with him there is no way on to draw.
+    expect(mapSvg(mapState('norrsken'), false, true)).not.toContain('way-on');
+    expect(mapSvg(mapState('epilog'), true, true)).not.toContain('way-on');
+  });
 });

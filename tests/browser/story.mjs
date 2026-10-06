@@ -45,6 +45,22 @@ async function until(read, accepts, name, timeout = 12000) {
   } while (Date.now() < end);
   assert.fail(`${name}: timed out; last value ${JSON.stringify(value)}`);
 }
+/**
+ * Walks him right until Använd offers `word`. The page looks at every frame itself: from here, a slow computer could
+ * carry him past it between two looks, as a run crosses its reach in about a third of a second.
+ */
+async function reach(page, word, name) {
+  await page.keyboard.down('Shift');
+  await page.keyboard.down('ArrowRight');
+  try {
+    await page.waitForFunction((want) => window.__godis.state().word === want, word, { polling: 'raf', timeout: 40000 });
+  } catch {
+    assert.fail(`${name}: timed out; last value ${JSON.stringify(await page.evaluate(() => window.__godis.state()))}`);
+  } finally {
+    await page.keyboard.up('ArrowRight');
+    await page.keyboard.up('Shift');
+  }
+}
 async function frames(page, count = 3) {
   await page.evaluate((left) => new Promise((resolve) => {
     function frame() {
@@ -227,7 +243,7 @@ try {
     const { page, state, finish } = await open('carving', { hasTouch: true }, '?dev&debug&standin&tier=low&course=epilog', () => {
       localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 1, candy: {}, placed: {}, flags: { epilog: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket', 'partied', 'knife'] }, playMs: 0 }));
     });
-    await page.keyboard.down('ArrowRight'); await until(state, (s) => s.word === 'carve', 'the wood becomes reachable'); await page.keyboard.up('ArrowRight');
+    await reach(page, 'carve', 'the wood becomes reachable');
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
     const outward = Array.from({ length: 13 }, (_, i) => ({ x: 100 + 144 * i / 12, y: 150 - 80 * i / 12 }));
     await drawStroke(page, [...outward].reverse(), true);
@@ -253,7 +269,7 @@ try {
     await page.keyboard.press('Enter'); await until(state, (s) => s.flags.includes('dots'), 'the new figure gets both eyes');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check('three cuts and both eyes are saved', ['cut1', 'cut2', 'cut3', 'dots'].every((flag) => saved.flags.epilog.includes(flag)));
-    await page.keyboard.down('ArrowRight'); await until(state, (s) => s.word === 'brush', 'toothbrush is reachable'); await page.keyboard.up('ArrowRight');
+    await reach(page, 'brush', 'toothbrush is reachable');
     await page.keyboard.press('e'); await until(state, (s) => s.flags.includes('goal'), 'the epilogue reaches bedtime', 20000);
     check('the epilogue can finish after carving', (await state()).flags.includes('teeth'));
     await finish();
@@ -263,7 +279,7 @@ try {
     const { page, state, finish } = await open('party', { hasTouch: true, viewport: { width: 390, height: 844 } }, '?dev&debug&standin&tier=low&course=epilog', () => {
       localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 0, candy: {}, placed: {}, flags: { berget: ['note:1'] }, playMs: 0 }));
     });
-    await page.keyboard.down('ArrowRight'); await until(state, (s) => s.word === 'giveMamma', 'first guest is reachable'); await page.keyboard.up('ArrowRight');
+    await reach(page, 'giveMamma', 'first guest is reachable');
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
     check('the family party offers three candies and five guests', await page.locator('[data-sweet]:visible').count() === 3 && await page.locator('[data-friend]:visible').count() === 5);
     await page.locator('[data-sweet="karamell"]').tap();
@@ -274,7 +290,7 @@ try {
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
     await page.focus('[data-sweet="gelehallon"]'); await page.keyboard.press('Enter');
     await page.focus('[data-friend="mamma"]'); await page.keyboard.press('Enter'); await until(state, (s) => s.flags.includes('party:mamma'), 'keyboard choice for Mamma');
-    await page.keyboard.down('ArrowRight'); await until(state, (s) => s.word === 'givePappa', 'next guest is reachable'); await page.keyboard.up('ArrowRight');
+    await reach(page, 'givePappa', 'next guest is reachable');
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
     await page.evaluate(installPad); await padFocus(page, '[data-sweet="skumbanan"]'); await padPress(page, 0);
     await padFocus(page, '[data-friend="moa"]'); await padPress(page, 0); await until(state, (s) => s.flags.includes('party:moa'), 'gamepad choice for Moa');
@@ -289,7 +305,7 @@ try {
     check('Pappa remembers the saved musical cobbles at the party', ['cobbles1', 'cobbles2', 'cobbles3'].every((id) => afterParty.said.includes(id)));
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check('the family candy choices persist', ['party-gift:bertil:karamell', 'party-gift:mamma:gelehallon', 'party-gift:moa:skumbanan', 'party-gift:spoket:karamell', 'party-gift:pappa:gelehallon'].every((flag) => saved.flags.epilog.includes(flag)));
-    await page.keyboard.down('ArrowRight'); await until(state, (s) => s.word === 'takeKnife', 'Pappa offers the knife after the naming'); await page.keyboard.up('ArrowRight');
+    await reach(page, 'takeKnife', 'Pappa offers the knife after the naming');
     check('the party continues into Pappa’s carving lesson', (await state()).flags.includes('partied'));
     await finish();
   }

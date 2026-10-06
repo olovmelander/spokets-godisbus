@@ -1,3 +1,4 @@
+import { timeCard } from './cards';
 import { BERRY_HEIGHT } from '../../sim/constants';
 import type { Candy, ChapterData, Hook, Jump, Ledge, Tussock, Vec } from '../../sim/types';
 
@@ -272,6 +273,8 @@ export const myren: ChapterData = {
   // The boardwalk and its ramp are planks.
   surfaces: [{ from: 104, to: 136, kind: 'wood' }],
   spawn: { x: 1, y: 0.01 },
+  // Where and when, as the chapter opens (./cards.ts).
+  scenes: [timeCard('myren', 1)],
   goalX: 197,
   ground: [
     { x: -3, y: 12 },

@@ -1,4 +1,5 @@
 import type { Candy, ChapterData, Jump, Vec } from '../../sim/types';
+import { timeCard } from './cards';
 
 /**
  * An extra chapter: Byn, the village's shopping street on a Saturday morning in October, in greybox rules
@@ -111,6 +112,8 @@ export const byn: ChapterData = {
     { from: 110, to: 122, depth: 'near', kind: 'house', wall: '#e3b24c', boards: 'upright', goods: 'candy', windows: [{ from: 112.6, to: 119.4 }] },
   ],
   spawn: { x: 1, y: 2.01 },
+  // Where and when, as the chapter opens (./cards.ts): a week after the story's Saturday.
+  scenes: [timeCard('byn', 1)],
   goalX: 158,
   ground: [
     { x: -3, y: 14 },

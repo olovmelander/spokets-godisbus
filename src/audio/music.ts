@@ -89,6 +89,25 @@ export const barsIn = (a: Arrangement) => POLSKA.length + a.rest;
 /** How long a bar is, in seconds. */
 export const barSeconds = (a: Arrangement) => (BEATS_PER_BAR * 60) / a.tempo;
 
+/** How much slower the close is than the tune: a chapter's end draws out. */
+export const CADENCE_SLOW = 0.8;
+
+/**
+ * A chapter's close (docs/narrative-audit/threads.md §5.4): the tune's last two bars, a little slower and whole
+ * even where the place plays only its bones, then the D it rests on, held. Times are from the close's start.
+ */
+export function cadenceOf(a: Arrangement): Sound[] {
+  const slow: Arrangement = { ...a, tempo: a.tempo * CADENCE_SLOW, melody: 'full', rhythm: 'none' };
+  const bar = barSeconds(slow);
+  const out: Sound[] = [];
+  for (const [i, index] of [POLSKA.length - 2, POLSKA.length - 1].entries()) {
+    for (const s of barOf(slow, index)) out.push({ ...s, at: s.at + i * bar });
+  }
+  out.push({ voice: 'pluck', at: 2 * bar, midi: 62 + a.transpose, seconds: RING, level: 0.7 });
+  if (a.bass) out.push({ voice: 'pluck', at: 2 * bar, midi: 50 + a.transpose, seconds: RING, level: 0.5 });
+  return out;
+}
+
 /** How loud the music's bus is, beside effects at 1: it lies under them. */
 export const MUSIC_LEVEL = 0.3;
 /** The longest a plucked note rings, in seconds. */

@@ -198,7 +198,7 @@ describe('the helper', () => {
     it(`visits the gully once on ${help}, without granting a puzzle or pulsing Använd`, () => {
       const sim = at(garden, 59.2, 0.01, { flags: ['ladybird'] }, { help });
       expect(sim.help).toMatchObject({ step: 1, at: { x: 63.5, y: 3.3 }, verb: null, visit: true });
-      expect([...sim.flags].filter((f) => !f.startsWith('beat:'))).toEqual(['ladybird', 'visit:gully']);
+      expect([...sim.flags].filter((f) => !f.startsWith('beat:') && f !== 'scene:card')).toEqual(['ladybird', 'visit:gully']);
       const visited = [...sim.flags];
       run(sim, 6);
       expect(sim.help.step).toBe(0);

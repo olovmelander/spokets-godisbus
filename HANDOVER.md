@@ -2,6 +2,44 @@
 
 ## State (5 October 2026)
 
+- **Chapters end on a storybook page, and open on a time card** (5 October, a cloud session; the narrative
+  audit's steps 1 and 2, `docs/narrative-audit.md`; branch `ccr-6078e7de-t0rxpz`, after #148). Olov: "the
+  chapter endings feel too sudden and flat; I want each one to conclude with real emotional weight and meaning".
+  - **The coda:** at a chapter's goal the picture breathes out for about three seconds, back over the way he came
+    and up into the sky, while the tune closes on its last two bars, slower, and a held D (`cadenceOf` in
+    `src/audio/music.ts`; the loop plays no more bars after it), and one of the family answers from afar in their
+    three notes: Moa after Gården, Bertil after Granskogen, Mamma after Myren, Pappa after Berget, all four after
+    the final (a new `motif` sound). The page comes 4.6 s after the goal, or later while someone still speaks. Not
+    in the prologue (its title scene is its coda) nor in the epilogue (its own ending).
+  - **The page:** the coda's last picture glued in like a photo (a copy of the frame just drawn,
+    `view.snapshot()`), the chapter's name, what comes next as its caption, and Moa's map with the way on drawn
+    in red crayon (`mapSvg(…, wayOn)`); the candy, the stickers, the code and the buttons after it. On a phone held
+    sideways the page opens in two so that the picture, the name, the caption and *Nästa kapitel* are all in view;
+    *Spela igen* is a plain link there. The place's air goes on under the page, and the tune's last note rings out.
+  - **The time cards:** every chapter after the prologue opens on a scrap of Moa's paper with the place and the
+    time of day (plan §4.9: Gården klockan tio, Granskogen halv tolv, Myren halv fem, Berget klockan sex,
+    Norrskenet i skymningen, Godiskalaset klockan nio; Byn *en vecka senare*), over a picture that comes up from
+    black. It does not hold him. A game taken up at a big candy has had it (`src/content/chapters/cards.ts`). The prologue's
+    "Lördagsmorgon" is the same paper now.
+  - **Gården opens quietly:** Pappa's two lines from off screen are gone (the promises were said on the deck).
+  - **Byn stays where it is, after the epilogue.** Olov asked first for it between Granskogen and Myren, then
+    for the place where it fits the game and the story best ("Maybe it is perfectly where it is now?"). It does:
+    its story stands on the ending (the ghost named Klonk and a friend, a star taken by choice, the Saturday
+    candy bought together), its street is an October morning after rain, a week after the story's Saturday, and the
+    chase runs out from the house and home again in one day (see "Decisions"). Its card now says *en vecka
+    senare*, and the friend no longer carries the Saturday bag that was given back on the summit
+    (`docs/narrative-audit/finale-and-home.md` row 22).
+  - **Not needed:** a skip for held scenes on a replay. A chapter played again keeps its story's flags, so its
+    scenes never play twice.
+  - **Checked** (stand-ins, cloud): typecheck; 1,204 unit, simulation and robot tests (new: the close's notes in
+    `tests/unit/music.test.ts`, the way on in `tests/unit/map.test.ts`); the build with its size gates (437.9 KB
+    of 450 gzipped); the privacy check; a new browser suite, `tests/browser/endings.mjs` (25 checks: the coda
+    before the page, the picture, the caption, the way on, everything in view at 844×390 and 390×844, the time
+    cards, Gården's quiet start), and the suites the change touches (`settings`, `journey`, `story-context`,
+    `smoke`, `prologue`, `pointing`, `village`), one at a time. The suites that wait for a chapter's page give
+    the coda room. A test holds that every chapter after the prologue opens on its card (`tests/sim/scene.test.ts`).
+  - **Not in this pull request:** the sound that carries the story (the overview's step 3), and the rest of
+    Byn's own story (the audit's rows 21, 23 and 24).
 - **The story: an audit, story scenes, and the intro rebuilt** (5 October, a cloud session;
   `docs/narrative-audit.md`; branch `ccr-6078e7de-t0rxpz`). Olov: "we really need to shift our focus to the
   storytelling. The narrative must become the heart of both the game and the player's experience ... an intro that
@@ -1548,19 +1586,25 @@
 
 **For the next session, in this order:**
 
-- **The story's pull request (this session's): Olov plays the new intro, and the story's work goes on in the
-  overview's order** (`docs/narrative-audit.md`, "The order of the work"). Nothing in it raises
-  `RELEASED_CHAPTER`, touches likeness assets or the rules.
+- **The story's pull requests (this session's: #148, merged, and the endings after it): Olov plays the new
+  intro and the new chapter endings, and the story's work goes on in the overview's order**
+  (`docs/narrative-audit.md`, "The order of the work"). Neither raises `RELEASED_CHAPTER`, touches likeness
+  assets or the rules.
   - **What to look at:** a new player under `?dev` (the prologue plays from the morning), on a phone held
     sideways and on the computer. `?dev&debug&course=prolog&at=37,0.01&flags=scene:morgon,eye,paint,woke,grab,blink,scene:vaknar,mamma:noticed,mamma:passed,bag:torn`
     starts on the veranda, before the star. Judge the order of things, the length of each held moment, what is
     said and when, and whether Moa's drawing explains the shrinking well enough for Elof. The family are stand-ins
     in the pictures; on Olov's computer the private models act the same keys.
-  - **Next, one pull request each:** step 1, Gården picks up where the prologue ends (no off-screen Pappa at its
-    start); step 2, every chapter ends on a storybook page and opens on a time card, with music; step 3, sound
-    that carries the story. Then the ghost's sharpening thought, the family
-    between help points, and each chapter's own moment, in story order. All can be done in a cloud session except
-    the Blender parts the overview marks.
+  - **The endings:** `?dev&debug&course=garden&at=207,0.01` starts a few steps before Gården's goal: the coda,
+    the page, then *Nästa kapitel* and Granskogen's time card. Judge the coda's length (the page comes 4.6 s
+    after the goal), who answers from afar, and whether the page reads like the end of a chapter in a book.
+  - **Byn stays after the epilogue** (Olov asked where it fits best; "Decisions" says why). The rest of its own
+    story is the audit's rows 21, 23 and 24 (`docs/narrative-audit/finale-and-home.md`): why the second star,
+    Klonk helping at the shop's step, and the ending with Mamma's hand. It comes in story order, after the
+    chapters before it, and its question 12 in `docs/narrative-audit.md` is still open.
+  - **Next, one pull request each:** step 3, sound that carries the story. Then the ghost's sharpening thought,
+    the family between help points, and each chapter's own moment, in story order. All can be done in a cloud
+    session except the Blender parts the overview marks.
   - **On Olov's computer:** pose the private family models with the new acting (`src/render/rig.ts`,
     `createModelRig`; the bones' signs follow Elof's doll) and look at them in the prologue's scenes; the kitchen,
     the veranda, the deck and the shelf figures are still plain shapes (question 11).
@@ -1786,6 +1830,8 @@ The older list, still true where it is not struck:
 | Tone mapping | Neutral, not AgX. The plan allows either (§6.5). With AgX the sky and every flat colour turned grey once the picture went through the HDR buffer; Neutral keeps a colour as it was set. Olov judges the look at H1a. | Session, 3 Oct (`src/render/view.ts`) |
 | Story first | The narrative is the heart of the game: story is put into play (scenes the player stands in, choices that are his, the family's help shown), measured against `docs/narrative-audit.md` and its order of work. | Olov, 5 Oct: "we really need to shift our focus to the storytelling" |
 | Story scenes | A chapter's authored moments are data on the simulation's clock (`src/sim/scene.ts`): a held scene is 11 s at most and holds his input; only a finished scene is saved; one taken up later is passed over by its `until` flag or its place. The picture's side (shots, acting, props) never changes the play. | Session, 5 Oct |
+| Chapter endings | A chapter ends on a coda of about 3 s (the picture looks back and up, the tune closes on a held note, one of the family answers in their three notes) and a storybook page: the coda's picture, the chapter's name, what comes next, Moa's map with the way on. Every chapter after the prologue opens on a time card (plan §4.9). The prologue and the epilogue keep their own endings. | Session, 5 Oct, for Olov's "the chapter endings feel too sudden and flat" |
+| Byn's place | After the epilogue, as built: a week after the story's Saturday, on an October morning after rain. Its story stands on the ending (Klonk named and a friend, a star taken by choice, the Saturday candy bought together), and the chase runs out from the house and home again in one day; a shopping street between the forest and the bog would break both. Its card says *en vecka senare*. | Olov, 5 Oct: first "I want byn to be between granskogen and myren.", then "Place byn where it is best fitted into the game and story" and "Maybe it is perfectly where it is now?". The place is the session's judgement. |
 | Why he shrinks | The ghost's magic runs into the Saturday bag as it takes it: a star from the bag makes Elof small, and the gold sweet glitters too and can make him big again. Moa saw the glitter and draws it; Pappa reads the hope. | Session's proposal, 5 Oct (question 15) |
 | Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
 
@@ -1797,7 +1843,7 @@ The older list, still true where it is not struck:
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, and the prologue rebuilt as scenes with an outdoor deck. Broader spatial work, Byn's return loop, final likeness/contact/acting/memory art, the story's further steps (endings first), listening and device checkpoints remain; no release is declared. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, the prologue rebuilt as scenes with an outdoor deck, and every chapter's ending (a coda, a storybook page, and a time card at the next one's start). Broader spatial work, Byn's return loop and the rest of its own story, final likeness/contact/acting/memory art, the story's further steps (sound next), listening and device checkpoints remain; no release is declared. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. |
 
 ## Known bugs
@@ -1808,8 +1854,6 @@ The older list, still true where it is not struck:
 - **The longest stretch Elof only watches is about 10.6 s** (the POFF with the kneeling family). A skip is not
   needed for a replay: a chapter played again keeps its story's flags (`src/save/journey.ts`), so its scenes do not
   play twice.
-- **A tally card still follows the prologue's title,** and Gården still opens with Pappa's two lines from off
-  screen: the overview's steps 2 and 1.
 - **Two browser suites failed by chance on GitHub this evening, and both are mended in #143** (merged):
   - `helper`, "visit and demonstration compile no new shaders and fit the draw budget (programs 29, 31, 31,
     31; draw calls 67, 318, 68, 67)", on #133 and #142. The suite waited for one of the place's models before
@@ -2009,3 +2053,6 @@ Choices the session made, for Olov to overrule if he wants:
     three matter soonest: music under scenes and endings (default: yes), the family seen between help points
     (default: two far sightings a chapter and an answer to every call), and the purpose line only on change
     (default: yes).
+16. **The chapter endings:** is about three seconds of coda before the page right, and the family member who
+    answers after each chapter (Moa after Gården, Bertil after Granskogen, Mamma after Myren, Pappa after Berget,
+    all four after the final)? The default: as built.

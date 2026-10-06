@@ -41,6 +41,12 @@ const saved = (chapter, checkpoint, flags) => ({ v: 1, name: 'Elof', updated: 1,
 const state = (page) => page.evaluate(() => window.__godis.state());
 const purpose = (page) => page.locator('#storyPurpose').getAttribute('data-purpose');
 
+/**
+ * The four Pappa lines' 14.135 seconds, and the coda the chapter now ends on before its last page (3.2 s longer
+ * than the 1.4 s the card used to wait; docs/narrative-audit/threads.md §5.4).
+ */
+const FAST_ROUTE = 14.135 + 3.2;
+
 async function fastEnd(page, fromSteps) {
   // Game caps simulation steps per rendered frame. Slow software rendering can make this short
   // logical route take more than 20 wall seconds; it must still advance and finish within its Sim budget.
@@ -56,7 +62,7 @@ async function fastEnd(page, fromSteps) {
         dialogs: [...document.querySelectorAll('[role="dialog"]')].filter(n => n.getClientRects().length).map(n => n.id) };
     });
     const diagnostic = JSON.stringify({ wallMs: Date.now() - started, ...current });
-    assert.ok((current.steps - fromSteps) / 120 < 14.135, `fast route exceeded its simulation budget: ${diagnostic}`);
+    assert.ok((current.steps - fromSteps) / 120 < FAST_ROUTE, `fast route exceeded its simulation budget: ${diagnostic}`);
     if (current.endShown) return;
     assert.ok(!current.paused && !current.title && !current.contextLost && !current.documentHidden &&
       !current.messageShown && current.dialogs.length === 0, `fast route is blocked: ${diagnostic}`);
@@ -297,9 +303,9 @@ try {
   await fastEnd(fast.page, beforeTaste.steps);
   await frames(fast.page);
   const arrived = await state(fast.page);
-  check('actual taste and home actions finish within the fast route’s 14.135 simulation-second bound',
+  check(`actual taste and home actions finish within the fast route’s ${FAST_ROUTE.toFixed(3)} simulation-second bound`,
     ['placed:tragubbe', 'eyes', 'bag', 'taste', 'home', 'goal'].every((flag) => arrived.flags.includes(flag)) &&
-    (arrived.steps - beforeTaste.steps) / 120 < 14.135);
+    (arrived.steps - beforeTaste.steps) / 120 < FAST_ROUTE);
   check('the end card preserves Pappa’s origin, the mountain loss and the candy motive without optional memory',
     await fast.page.locator('#endStoryText').textContent() === originText);
   check('the durable origin uses the existing end card and preserves Onward focus',
@@ -329,7 +335,8 @@ try {
   const ending = await open();
   await ending.page.goto(`${base}?dev&debug&standin&course=granskog&tier=low&at=204.6,-8&flags=placed:rescue`);
   await ready(ending.page);
-  await ending.page.waitForSelector('#endCard:not([hidden])', { timeout: 15000 });
+  // The chapter's coda plays before its last page.
+  await ending.page.waitForSelector('#endCard:not([hidden])', { timeout: 60000 });
   check('the existing chapter card explains why the next place follows', await ending.page.locator('#endStoryTitle').textContent() === 'Spöket väntar på mig' && (await ending.page.locator('#endStoryText').textContent()).includes('Jag hjälpte det ur vattnet'));
   check('transition context preserves onward focus without opening another dialog', await ending.page.locator('#endOnward').evaluate((node) => document.activeElement === node) && await ending.page.locator('[role=dialog]:visible').count() === 1);
   check('the transition explanation stays visible beside the focused next action', await ending.page.locator('#endStory').evaluate((node) => {

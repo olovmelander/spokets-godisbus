@@ -81,8 +81,11 @@ const PICTURE: Record<MapPlace, string> = {
   mountain: `<path d="M-24 14l18-34 9 13 6-8 15 29z" fill="#9a9aa4" stroke="#5c5c68" stroke-width="2" stroke-linejoin="round"/><path d="M-6-20v-9m-4 4l4-5 4 5" ${crayon} stroke="#27512a" stroke-width="2.2"/>`,
 };
 
-/** The map as SVG markup. With a state of null it draws nothing. */
-export function mapSvg(state: MapState | null, named = false): string {
+/**
+ * The map as SVG markup. With a state of null it draws nothing. With `wayOn`, on a chapter's last page, Moa's
+ * crayon draws the way on from where he is to where the ghost is heading (ui.css animates the stroke).
+ */
+export function mapSvg(state: MapState | null, named = false, wayOn = false): string {
   if (!state) return '';
   const route = state.drawn.map((place, i) => `${i === 0 ? 'M' : 'L'}${AT[place].x} ${AT[place].y + 20}`).join(' ');
   const places = state.drawn
@@ -101,5 +104,10 @@ export function mapSvg(state: MapState | null, named = false): string {
     ? `<g transform="translate(${to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)} ${to.y - (state.drawn.includes(ghostAt!) ? 26 : 0)})"><path d="M-7 10v-12a7 7 0 0 1 14 0v12z" fill="#e9d3a8" stroke="#8a6a3a" stroke-width="1.5"/><circle cx="-2.5" cy="-2" r="1.2"/><circle cx="2.5" cy="-2" r="1.2"/><text x="0" y="-15" text-anchor="middle">${named ? sv.ghostName : sv.who.spoket}</text></g>`
     : '';
   const note = state.unfinished ? `<text x="190" y="157" text-anchor="middle">${sv.map.unfinished}</text>` : '';
-  return `<svg class="moas-karta" viewBox="0 -16 380 180" role="img" aria-label="${sv.map.title}"><path d="${route}" ${crayon} stroke="#b9976a" stroke-width="3" stroke-dasharray="2 8"/>${places}${ghost}${elof}${note}</svg>`;
+  // The way on: a red crayon stroke from him to the ghost's next place, a little wavy, as a child draws it.
+  const from = AT[state.here];
+  const way = wayOn && to && ghostAt !== state.here
+    ? `<path class="way-on" pathLength="1" d="M${from.x} ${from.y + 20}Q${(from.x + to.x) / 2} ${Math.min(from.y, to.y) - 4} ${to.x} ${to.y + 20}" ${crayon} stroke="#d4453b" stroke-width="3.4"/>`
+    : '';
+  return `<svg class="moas-karta" viewBox="0 -16 380 180" role="img" aria-label="${sv.map.title}"><path d="${route}" ${crayon} stroke="#b9976a" stroke-width="3" stroke-dasharray="2 8"/>${way}${places}${ghost}${elof}${note}</svg>`;
 }

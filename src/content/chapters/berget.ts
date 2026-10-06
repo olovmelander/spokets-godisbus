@@ -1,3 +1,4 @@
+import { timeCard } from './cards';
 import type { Candy, ChapterData, Hook, Ledge } from '../../sim/types';
 
 /**
@@ -133,6 +134,8 @@ export const berget: ChapterData = {
     steps: CAIRN.map(({ x, y }) => ({ x, y })), return: { x: 150.6, y: 31.4 }, backtrack: true,
   }],
   spawn: { x: 1, y: 0.01 },
+  // Where and when, as the chapter opens (./cards.ts).
+  scenes: [timeCard('berget', 1)],
   goalX: 157,
   ground: [
     { x: -3, y: 12 },

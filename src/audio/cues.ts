@@ -86,6 +86,8 @@ export type Cue =
   | { kind: 'giggle' }
   /** He calls someone: his two notes, and then that one's own three in answer. */
   | { kind: 'call'; who: Person | null }
+  /** One of the family answers from afar, as a chapter ends: their three notes. Null: all four at once. */
+  | { kind: 'motif'; who: Person | null }
   | { kind: 'goal' };
 
 /** What the cues are worked out from: the little of the game's state that can be heard. */

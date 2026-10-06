@@ -43,7 +43,7 @@ import { drawnWhile } from './idle';
 import type { Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
-import type { SceneFrame } from '../sim/scene';
+import { endsInScene, type SceneFrame } from '../sim/scene';
 import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
@@ -54,6 +54,8 @@ const FOV = 30;
 const GROUND_FROM_BOTTOM = 0.35;
 /** How long the camera takes to come back to play after a scene's shot, in seconds. */
 const SHOT_RELEASE = 1.1;
+/** How long the picture takes to breathe out at a chapter's end. */
+const CODA_EASE = 3.2;
 
 export interface ViewInfo {
   tier: Tier;
@@ -148,6 +150,8 @@ export interface View {
   render(frame: Frame): void;
   /** Read the last frame immediately after render(), with no retained WebGL drawing buffer. */
   capture(): Promise<Blob | null>;
+  /** A copy of the frame just drawn, as a canvas of its own: the picture on a chapter's last page. */
+  snapshot(): HTMLCanvasElement | null;
   info(): ViewInfo;
 }
 
@@ -238,8 +242,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     return { place, sweet: place.getObjectByName('candy')!, reached: false, pop: 0, spin: 0 };
   });
   // Where a scene ends the chapter (the prologue's title), the scene is the end: no candy marks it.
-  const sceneEnds = chapter.goalNeeds !== undefined && (chapter.scenes ?? []).some((def) => def.cues?.some((cue) => cue.flag === chapter.goalNeeds));
+  const sceneEnds = endsInScene(chapter);
   if (sceneEnds) bigCandies.at(-1)!.place.visible = false;
+  // The coda (docs/narrative-audit/threads.md §5.4): at the goal the picture breathes out over the place he has
+  // crossed, while the tune closes. Not where a scene is the end, nor at home in the evening (its own end).
+  const coda = !sceneEnds && !chapter.epilogue;
+  let codaFor = 0;
   const trail = createTrail(chapter.candy);
   // Side candy, off the trail: hearts and lollipops, where the trail is sweets in wrappers.
   const sideTrail = createTrail(chapter.side ?? [], 'side');
@@ -860,7 +868,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     lace.update(curr.hook, x - Math.sin(hang) * 0.4, y + 0.5 + Math.cos(hang) * 0.4);
 
     // The simulation says where to look; the view only smooths it.
-    const want = cameraIntent(curr, chapter.cameras);
+    const want = { ...cameraIntent(curr, chapter.cameras) };
+    codaFor = coda && atGoal ? Math.min(CODA_EASE, codaFor + dt) : 0;
+    if (codaFor > 0) {
+      const out = codaFor / CODA_EASE;
+      const breath = out * out * (3 - 2 * out);
+      // Back a little over the way he came, and up: him small in the place he has crossed, under its sky.
+      want.zoom *= 1 + 0.5 * breath;
+      want.x -= 1.6 * breath * curr.facing;
+      want.y += 1.1 * breath;
+    }
     look.zoom += (want.zoom - look.zoom) * ease(1.6, dt);
     look.x += (want.x - look.x) * ease(3, dt);
     look.y += (want.y - look.y) * ease(2.5, dt);
@@ -1043,8 +1060,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (chapter.prologue) {
       paintedEyes.forEach((eye, i) => { eye.visible = flags.has(i === 0 && paintedEyes.length > 1 ? 'eye' : 'paint'); });
     }
-    // Keep the stolen paper bag distinct from the wooden pocket, across every chapter of the chase.
-    stolenBag.visible = ghostPlace.visible && (chapter.prologue ? flags.has('grab') || flags.has('blink') : chapter.id !== 'epilog') &&
+    // Keep the stolen paper bag distinct from the wooden pocket, across every chapter of the chase. It was given
+    // back on the summit, so neither the party nor Byn, a week later, has it.
+    stolenBag.visible = ghostPlace.visible && (chapter.prologue ? flags.has('grab') || flags.has('blink') : chapter.id !== 'epilog' && chapter.id !== 'byn') &&
       !(chapter.id === 'norrsken' && flags.has('eyes'));
     // The gold sweet glints at the bag's mouth all through the chase (plan §3.3 rule 3).
     const glint = stolenBag.getObjectByName('saturday-bag-glow');
@@ -1131,6 +1149,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     resize,
     render,
     capture: () => hasFrame ? captureFrame(canvas) : Promise.resolve(null),
+    snapshot() {
+      // Call it right after a render, as `capture`: the drawing buffer is not kept.
+      if (!hasFrame || canvas.width <= 0 || canvas.height <= 0) return null;
+      const copy = canvas.ownerDocument.createElement('canvas');
+      const scale = Math.min(1, 720 / canvas.width, 420 / canvas.height);
+      copy.width = Math.max(1, Math.round(canvas.width * scale));
+      copy.height = Math.max(1, Math.round(canvas.height * scale));
+      try {
+        copy.getContext('2d')?.drawImage(canvas, 0, 0, copy.width, copy.height);
+      } catch { return null; }
+      return copy;
+    },
     setTier(next) {
       const chosen = chooseTier(next, hdrAvailable);
       if (tier === chosen) return;
