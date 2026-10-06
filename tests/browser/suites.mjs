@@ -33,6 +33,7 @@ export const SUITES = [
   ['character-shadows', 253],
   ['forest-shadows', 90],
   ['rim-light', 8],
+  ['stone-courses', 8],
   ['memory-presentation', 12],
   ['ghost-thoughts', 177],
   ['story-context', 154],
