@@ -88,18 +88,64 @@ describe('the ledges, as they are drawn', () => {
     }
   });
 
-  it('a bough is spruce in the forest and a dead pine\'s in the bog', () => {
-    const colours = (place: 'forest' | 'bog') => {
+  it("a bough is spruce in the forest, a dead pine's in the bog and a birch's in the garden", () => {
+    const colours = (place: 'forest' | 'bog' | 'garden') => {
       const mesh = buildLedges([{ x: 0, y: 0, width: 3, look: 'branch' }], [], place).group.children[0] as Mesh;
       const colour = mesh.geometry.getAttribute('color');
       let green = 0;
-      for (let i = 0; i < colour.count; i++) if (colour.getY(i) > colour.getX(i) * 1.5 && colour.getY(i) > colour.getZ(i) * 1.5) green++;
+      let yellow = 0;
+      for (let i = 0; i < colour.count; i++) {
+        const [r, g, b] = [colour.getX(i), colour.getY(i), colour.getZ(i)];
+        if (g > r * 1.5 && g > b * 1.5) green++;
+        if (r > 0.5 && g > 0.35 && b < 0.1) yellow++;
+      }
       // How warm the bough itself is: brown bark against grey dead wood.
-      return { green, warmth: colour.getX(0) - colour.getZ(0) };
+      return { green, yellow, warmth: colour.getX(0) - colour.getZ(0) };
     };
     expect(colours('forest').green).toBeGreaterThan(50);
+    expect(colours('forest').yellow).toBe(0);
     expect(colours('bog').green).toBe(0);
     expect(colours('bog').warmth).toBeLessThan(colours('forest').warmth * 0.6);
+    // The birch's leaves: green, and the first of them yellow.
+    expect(colours('garden').green).toBeGreaterThan(20);
+    expect(colours('garden').yellow).toBeGreaterThan(0);
+  });
+
+  it('what hangs from a bough or stands out from a stem is under the line where he stands, and behind him', () => {
+    for (const place of ['forest', 'bog', 'garden'] as const) {
+      for (const look of ['branch', 'bark'] as const) {
+        const at = (buildLedges([{ x: 0, y: 0, width: 2.5, look }], [], place).group.children[0] as Mesh).geometry.getAttribute('position');
+        for (let i = 0; i < at.count; i++) {
+          // Only the stem goes on up, out of every picture.
+          if (Math.abs(at.getX(i)) > 0.35) expect(at.getY(i), `${look} in the ${place}`).toBeLessThanOrEqual(0.001);
+          expect(at.getZ(i), `${look} in the ${place}`).toBeLessThanOrEqual(0.001);
+        }
+      }
+    }
+  });
+
+  it("the bark look is a bracket fungus with its bands on its corners: the spruce's red-belted, the birch's pale", () => {
+    const fungus = (place: 'forest' | 'garden') => {
+      const mesh = buildLedges([{ x: 0, y: 0, width: 1.4, look: 'bark' }], [], place).group.children[0] as Mesh;
+      const at = mesh.geometry.getAttribute('position');
+      const colour = mesh.geometry.getAttribute('color');
+      let rust = 0;
+      let cream = 0;
+      // How far forward it comes out beside the stem, where a half round would be 0.27 behind its front edge.
+      let out = -Infinity;
+      for (let i = 0; i < colour.count; i++) {
+        const [r, g, b] = [colour.getX(i), colour.getY(i), colour.getZ(i)];
+        if (r > g * 2 && r > b * 3) rust++;
+        if (r > 0.75 && g > 0.65 && b > 0.45) cream++;
+        if (Math.abs(at.getX(i)) > 0.5) out = Math.max(out, at.getZ(i));
+      }
+      return { rust, cream, out };
+    };
+    expect(fungus('forest').rust).toBeGreaterThan(0);
+    expect(fungus('forest').cream).toBeGreaterThan(0);
+    expect(fungus('garden').rust).toBe(0);
+    expect(fungus('garden').cream).toBeGreaterThan(0);
+    expect(fungus('forest').out).toBeGreaterThan(-0.27);
   });
 
   it('a chapter without ledges draws nothing for them', () => {
