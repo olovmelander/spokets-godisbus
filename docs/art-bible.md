@@ -308,8 +308,9 @@ own rim and peat underneath.
 **Village edges** use laid granite on raised paving: one course at the kerb, two staggered courses at
 the shop's physical riser, with recessed mortar and small chamfers. These join the existing house mesh
 and stay below the authored walking height. The street's upper surface remains planar where it draws
-back beside a step. Its separate forward cut still needs a material pass; a riser cannot be seen through
-that cut when the camera is on the upper side.
+back beside a step. Its separate forward stone cut has level granite courses with staggered joints,
+painted on the existing surface using its own grain. This leaves the walking top unchanged and follows
+the world when the camera turns. A physical riser is not seen through that cut from the upper side.
 
 **Forest landmarks** supply their own raised shape. The bank, its plants and effects use the ground
 under the cone, anthill, log and stone, while the game keeps the same playable top. The doorway remains

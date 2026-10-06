@@ -1,5 +1,6 @@
 import { BufferGeometry, Color, Float32BufferAttribute, Group, Mesh, MeshStandardMaterial, type CanvasTexture } from 'three';
 import type { ChapterData, SurfaceKind } from '../../sim/types';
+import { stoneCourses } from '../stone-courses';
 import { MOSS, drawn, hash, heightAt, landscape, noise, sequence, surfaceAt } from './kit';
 
 // --- L3: the ground ---------------------------------------------------------------------------------------
@@ -682,7 +683,9 @@ export function bank(chapter: ChapterData, own: Ground): Group {
   for (const { kind, shape } of shapes) {
     const look = GROUNDS[kind];
     const map = look.boards ? maps.boards : look.rock || look.grit ? maps.granite : maps.speckles;
-    group.add(new Mesh(shape, new MeshStandardMaterial({ vertexColors: true, map, roughness: look.boards ? 0.8 : look.rock ? 0.9 : 1 })));
+    const material = new MeshStandardMaterial({ vertexColors: true, map, roughness: look.boards ? 0.8 : look.rock ? 0.9 : 1 });
+    if (chapter.place === 'village' && kind === 'stone') stoneCourses(material);
+    group.add(new Mesh(shape, material));
   }
   return group;
 }
