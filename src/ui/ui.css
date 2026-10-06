@@ -2964,6 +2964,7 @@ body.follow-finger .stick-base {
   pointer-events: none;
 }
 .finger-ring {
+  box-sizing: border-box;
   width: 56px;
   height: 56px;
   margin: -28px 0 0 -28px;
