@@ -68,7 +68,7 @@ const AT: Record<MapPlace, { x: number; y: number }> = {
   mountain: { x: 334, y: 58 },
 };
 const crayon = 'fill="none" stroke-linecap="round" stroke-linejoin="round"';
-const PICTURE: Record<MapPlace, string> = {
+export const PICTURE: Record<MapPlace, string> = {
   // The red house with its white corners.
   home: `<path d="M-15 8v-16l15-11 15 11v16z" fill="#c0392b" stroke="#7a2318" stroke-width="2"/><path d="M-4 8v-9h8v9" ${crayon} stroke="#fff6ea" stroke-width="2.4"/>`,
   // Three spruces.
@@ -79,6 +79,18 @@ const PICTURE: Record<MapPlace, string> = {
   bog: `<path d="M-16 6c2-8 8-8 10 0M-2 8c2-9 9-9 11 0M12 4c2-7 7-7 9 0" ${crayon} stroke="#b0672f" stroke-width="3"/><path d="M-18-8h14m6-5h16" ${crayon} stroke="#c9c2b2" stroke-width="3"/>`,
   // The mountain, with the old pine on it.
   mountain: `<path d="M-24 14l18-34 9 13 6-8 15 29z" fill="#9a9aa4" stroke="#5c5c68" stroke-width="2" stroke-linejoin="round"/><path d="M-6-20v-9m-4 4l4-5 4 5" ${crayon} stroke="#27512a" stroke-width="2.2"/>`,
+};
+
+/**
+ * Moa's other drawings, for the chapters her map has no place for (docs/ux-audit/menus.md row 18): the morning's
+ * star, the northern lights, the party's table with its sweets, and a shop in the village. Drawn round 0 0 like the
+ * map's places.
+ */
+export const DRAWING = {
+  star: `<path d="M0-22l6 12 13 2-9.5 9.5L12 15 0 8.5-12 15l2.5-13.5L-19-8l13-2z" fill="#f4c542" stroke="#a07a10" stroke-width="2" stroke-linejoin="round"/>`,
+  aurora: `<path d="M-22 2c7-16 13 0 22-10s14 2 22-12" ${crayon} stroke="#5fc49a" stroke-width="5"/><path d="M-22 10c8-12 14 2 22-6s14 2 22-6" ${crayon} stroke="#9a7ad8" stroke-width="3.4"/><path d="M-16-18v.01M8-22v.01M18 6v.01" ${crayon} stroke="#f4c542" stroke-width="3"/>`,
+  party: `<path d="M-22 1h44M-17 1v13M17 1v13" ${crayon} stroke="#7b5a36" stroke-width="3"/><circle cx="-11" cy="-5" r="5" fill="#dd4b39" stroke="#8a2a1f" stroke-width="1.5"/><circle cx="0" cy="-6" r="5" fill="#3f9a5a" stroke="#27512a" stroke-width="1.5"/><circle cx="11" cy="-5" r="5" fill="#f4c542" stroke="#a07a10" stroke-width="1.5"/>`,
+  shop: `<path d="M-18 14v-20h36v20z" fill="#e8d5b0" stroke="#7b5a36" stroke-width="2"/><path d="M-21-6l4-9h34l4 9z" fill="#c0392b" stroke="#7a2318" stroke-width="2" stroke-linejoin="round"/><path d="M-9-15l-2 9M1-15v9M11-15l2 9" ${crayon} stroke="#fff6ea" stroke-width="2"/><path d="M-12 14V2h8v12M3 1h10v7H3z" ${crayon} stroke="#7b5a36" stroke-width="2"/>`,
 };
 
 /**

@@ -65,15 +65,25 @@ const CODA_FAMILY: Record<string, Person | null> = { garden: 'moa', granskog: 'b
 const benchOn = params.has('bench');
 const debugOn = params.has('debug') || benchOn;
 
-function showMessage(text: string, button: string = sv.retry, action: () => void = () => location.reload()): void {
+/**
+ * The one screen a family sees when something breaks (docs/ux-audit/menus.md row 19): the loading card's ghost,
+ * what happened, a line for the grown-up when there is one, and a button that does what it says. With no button
+ * (null), nothing a press could mend; `waiting`, the picture is on its way back and the ghost bobs meanwhile.
+ */
+function showMessage(text: string, button: string | null = sv.retry, action: () => void = () => location.reload(), more?: string, waiting = false): void {
   byId('messageText').textContent = text;
+  byId('messageMore').textContent = more ?? '';
+  byId('messageMore').hidden = !more;
   const element = byId<HTMLButtonElement>('messageButton');
-  element.textContent = button;
-  element.disabled = false;
+  element.textContent = button ?? '';
+  element.hidden = button === null;
+  element.disabled = button === null;
   element.onclick = action;
-  byId('message').hidden = false;
+  const message = byId('message');
+  message.classList.toggle('waiting', waiting);
+  message.hidden = false;
   byId('loading').classList.add('done');
-  element.focus();
+  (button === null ? message : element).focus();
 }
 
 /** With ?debug, ?at=x,y starts Elof there instead of at the chapter's start: for looking at one place. */
@@ -122,6 +132,9 @@ function start(): void {
   // A URL tier is a temporary inspection override. A deliberate menu choice replaces it.
   let requestedGraphics = tierFromQuery(params.get('tier')) ?? settings.graphics;
   mountShell(document.body, chapter.helper?.kind);
+  // The recovery screen shows the loading card's ghost: the screen still belongs to the game.
+  const loadingGhost = document.querySelector('#loading svg');
+  if (loadingGhost) byId('messageGhost').append(loadingGhost.cloneNode(true));
   const storyReminder = createStoryContext(document);
   const canvas = byId<HTMLCanvasElement>('game');
   canvas.tabIndex = -1;
@@ -168,7 +181,7 @@ function start(): void {
       debugOn ? { now: params.get('life'), seed: Number(params.get('seed')) || 0 } : { seed: Math.random() * 1000 });
   } catch (error) {
     console.error(error);
-    showMessage(sv.noWebGL);
+    showMessage(sv.noWebGL, null, undefined, sv.noWebGLMore);
     return;
   }
 
@@ -753,13 +766,12 @@ function start(): void {
     auto?.suspend();
     resolution?.suspend();
     writeSave();
-    showMessage(sv.contextLost);
+    showMessage(sv.contextLost, sv.reloadGame);
   });
   async function restorePicture(): Promise<void> {
     const ticket = ++restoreGeneration;
     restoreReady = false;
-    showMessage(sv.contextReloading);
-    byId<HTMLButtonElement>('messageButton').disabled = true;
+    showMessage(sv.contextReloading, null, undefined, undefined, true);
     try {
       await view.restore();
       if (ticket !== restoreGeneration || contextLost || again) return;

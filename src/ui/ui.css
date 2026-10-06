@@ -258,6 +258,55 @@ body.calm *::after {
   transition: none !important;
 }
 
+/* A panel opens like paper laid down: its backdrop fades in and the paper rises a little. Inside Pause a page
+   turns in from the side it comes from. Closing stays instant. None of it with Mindre rörelse, above, or the
+   device's reduced motion (docs/ux-audit/menus.md row 20). */
+@keyframes panel-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes panel-rise {
+  from {
+    transform: translateY(12px);
+  }
+}
+
+@keyframes page-turn {
+  from {
+    opacity: 0;
+    transform: translateX(var(--turn-from, 24px));
+  }
+}
+
+:is(#pause, #explore, #photoAlbum, #storyPanel):not([hidden]) {
+  animation: panel-fade 160ms ease-out;
+}
+
+:is(#pause, #explore, #photoAlbum, #storyPanel):not([hidden]) > .panel {
+  animation: panel-rise 180ms ease-out;
+}
+
+.turn:not([hidden]),
+.turn-back:not([hidden]) {
+  animation: page-turn 200ms ease-out;
+}
+
+.turn-back {
+  --turn-from: -24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(#pause, #explore, #photoAlbum, #storyPanel):not([hidden]),
+  :is(#pause, #explore, #photoAlbum, #storyPanel):not([hidden]) > .panel,
+  .turn:not([hidden]),
+  .turn-back:not([hidden]),
+  .message.waiting .message-ghost svg {
+    animation: none;
+  }
+}
+
 /* --- the candy bag, top left: it fills as Elof collects (plan §4.3) ------------------------------ */
 .bag {
   position: absolute;
@@ -877,22 +926,96 @@ body.lefty .key-prompt {
 .photo-thumb { min-width: 0; padding: 7px; background: #fff9e9; border-radius: 10px; text-align: left; }
 .photo-thumb img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #27352e; border-radius: 5px; }
 .photo-thumb span { display: block; padding: 7px 2px 1px; font-size: 0.85rem; }
-.photo-panel { width: min(700px, calc(100vw - 36px)); }
-.photo-panel figure { margin: 0; }
-.photo-panel figure img { display: block; width: 100%; max-height: 45vh; object-fit: contain; border-radius: 8px; background: #27352e; }
-.photo-panel figcaption { padding: 12px 0 0; text-align: center; font-size: 1.1rem; }
-.photo-count { text-align: center; font-size: 0.9rem; margin: 10px 0; }
-.photo-nav { display: flex; gap: 12px; }
-.photo-nav .wide { flex: 1; }
+/* The photo viewer: the photo as a print laid on the paper, as big as the screen lets it be, with round arrows
+   at its sides and the count in the header (docs/ux-audit/menus.md row 17). */
+.panel.photo-panel {
+  width: min(100%, 760px);
+  padding-top: 0;
+  scroll-padding-top: 76px;
+}
+
+.photo-panel .panel-head {
+  grid-template-columns: auto 1fr auto auto;
+}
+
+.photo-panel .panel-head .panel-close {
+  grid-column: 4;
+}
+
+.photo-count {
+  grid-column: 3;
+  margin: 0 4px;
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+.photo-stage {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 10px;
+}
+
+.photo-step {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #e6d6b4;
+}
+
+.photo-step.go {
+  background: #dd4b39;
+  color: #fff;
+}
+
+.photo-step svg {
+  width: 30px;
+  height: 30px;
+}
+
+.photo-print {
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.photo-print img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100dvh - 210px);
+  box-sizing: border-box;
+  border: 6px solid #fffaf0;
+  border-radius: 3px;
+  background: #fffaf0;
+  box-shadow: 0 6px 14px rgb(61 43 31 / 0.3);
+  transform: rotate(-1.5deg);
+}
+
+/* Its name on a scrap of paper under it. */
+.photo-print figcaption {
+  padding: 5px 14px;
+  border-radius: 4px;
+  background: #fffaf0;
+  box-shadow: 0 2px 4px rgb(61 43 31 / 0.18);
+  font-weight: 600;
+  transform: rotate(1deg);
+}
+
 .photo-credits { padding: 18px 12px; text-align: center; line-height: 1.65; }
 .photo-credits > span { font-size: 60px; color: #a95e27; }
 .photo-panel [hidden], .album-photos[hidden] { display: none; }
-.photo-panel button:disabled { opacity: 0.4; }
+.photo-panel button:disabled { opacity: 0.35; }
+
 @media (max-height: 500px) {
-  .photo-panel figure img { max-height: 38vh; }
-  .photo-panel figcaption { padding-top: 5px; }
-  .photo-panel .wide { min-height: 40px; margin-top: 8px; }
-  .photo-panel #photoBack { display: none; }
+  .photo-print img {
+    max-height: calc(100dvh - 160px);
+  }
 }
 .story-panel { width: min(760px, 100%); }
 .story-panel p { margin: 3px 0; }
@@ -1641,21 +1764,107 @@ body.calm .moas-karta .way-on {
   background: rgb(40 28 18 / 0.6);
 }
 
+/* Utforska vidare: it opens at the top, with a card for each chapter and Moa's drawing of it (menus.md row 18). */
 .panel-back.explore { z-index: 13; }
-.chapter-list { display: grid; gap: 12px; }
+
+.explore .panel {
+  padding-top: 0;
+  scroll-padding-top: 76px;
+}
+
+.chapter-list {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 700px) {
+  .explore .panel {
+    width: min(100%, 760px);
+  }
+
+  .chapter-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .chapter-choice {
   display: grid;
-  gap: 7px;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  grid-template-areas: 'picture name star' 'picture count star' 'rows rows rows' 'stickers stickers stickers';
+  align-items: center;
+  align-content: start;
+  column-gap: 12px;
+  row-gap: 6px;
   min-height: 96px;
-  padding: 15px;
+  padding: 12px 14px;
   border: 2px solid #cfb991;
   border-radius: 18px;
   text-align: left;
   background: #fff6e2;
 }
-.chapter-choice b { font-size: 21px; }
-.chapter-choice .rows { max-height: none; }
-.route-star { color: #806022; font-size: 26px; }
+
+.chapter-picture {
+  grid-area: picture;
+  width: 48px;
+  height: 44px;
+}
+
+.chapter-choice b {
+  grid-area: name;
+  font-size: 1.15em;
+}
+
+.chapter-count {
+  grid-area: count;
+  font-size: 0.85em;
+}
+
+.chapter-choice .rows {
+  grid-area: rows;
+  max-height: none;
+}
+
+.chapter-choice .stickers {
+  grid-area: stickers;
+  max-width: none;
+  gap: 6px;
+}
+
+.chapter-choice .stickers i,
+.chapter-choice .stickers i.kind {
+  width: 24px;
+  height: 24px;
+}
+
+.route-star {
+  grid-area: star;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  color: #806022;
+}
+
+.route-star svg {
+  width: 30px;
+  height: 30px;
+}
+
+.route-star small {
+  font-size: 0.7em;
+  font-weight: 600;
+}
+
+/* Said to a screen reader, not shown. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 #pauseExplore[hidden] { display: none; }
 
 .title .panel {
@@ -1851,11 +2060,55 @@ body.calm .moas-karta .way-on {
   z-index: 20;
   display: grid;
   place-content: center;
+  justify-items: center;
   gap: 16px;
   padding: 24px;
   text-align: center;
   background: #ecdfc6;
   font-size: 22px;
+}
+
+.message:focus {
+  outline: none;
+}
+
+.message p {
+  max-width: 32ch;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* The loading card's ghost: the screen still belongs to the game (menus.md row 19). It bobs while the picture
+   is on its way back. */
+.message-ghost svg {
+  display: block;
+  width: auto;
+  height: min(120px, 24vh);
+}
+
+.message.waiting .message-ghost svg {
+  animation: message-bob 2.4s ease-in-out infinite;
+}
+
+@keyframes message-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
+}
+
+.message .message-more {
+  font-size: 17px;
+  opacity: 0.85;
+}
+
+.message-more[hidden],
+.message button[hidden] {
+  display: none;
 }
 
 .message button {

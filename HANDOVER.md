@@ -2,6 +2,15 @@
 
 ## State (5 October 2026)
 
+- **Every panel the same** (6 October, a cloud session; `docs/ux-audit.md`, step 5's small defects). The photo
+  viewer and *Utforska vidare* have Pause's header: the title, and a drawn ✕ that stays put. A photo is a print laid
+  on the paper, as big as the screen allows, with its name on a scrap under it, round arrows at its sides and the
+  count in the header. *Utforska vidare* opens at the top; each chapter has Moa's drawing of it (her map's places,
+  and a star, the northern lights, the party's table and a shop), "Utmaning" is written under the challenge's star,
+  the stickers are 24 px, and the cards stand in two columns where there is room. When something breaks, the screen
+  shows the loading card's ghost and a button that does what it says: none without WebGL (a line for the grown-up
+  instead), none while the picture comes back (the ghost bobs), and *Ladda om spelet* after a lost picture. Panels
+  open like paper laid down, and Pause's pages turn in from the side; none of it moves under *Mindre rörelse*.
 - **Settings a child can read** (6 October, a cloud session; `docs/ux-audit.md`, the second half of step 5). Each
   setting is a row with its own drawn picture, its name, a line saying what it does and a drawn wooden switch, in
   five groups (*Så spelar du*, *Ljud*, *Styrning*, *Bild och text*, *För vuxna*). A line under the style cards says

@@ -351,8 +351,9 @@ export const sv = {
     hint: 'Välj en plats. Allt du har hittat finns kvar.',
     routeFound: 'Utmaningsgodiset hittat',
     routeWaiting: 'En utmaningsväg att utforska',
+    // Under the star of a chapter's challenge (docs/ux-audit/menus.md row 18).
+    challenge: 'Utmaning',
     chapters: { prolog: 'Lördagsmorgon', garden: 'Gården', granskog: 'Granskogen', myren: 'Myren', berget: 'Berget', norrsken: 'Norrskenet', epilog: 'Godiskalaset', byn: 'Byn' } as Record<string, string>,
-    icons: { prolog: '☀', garden: '❀', granskog: '♧', myren: '≈', berget: '△', norrsken: '✧', epilog: '⌂', byn: '⌂' } as Record<string, string>,
   },
 
   // The card at a chapter's end.
@@ -559,10 +560,14 @@ export const sv = {
 
   // Sköldhästen's wording.
   noWebGL: 'Den här webbläsaren kan tyvärr inte visa spelet.',
+  // For the grown-up, under it: no button, as none would help (docs/ux-audit/menus.md row 19).
+  noWebGLMore: 'Prova en annan webbläsare, eller uppdatera enheten.',
   loadFailed: 'Något gick fel när spelet laddades.',
   contextLost: 'Bilden försvann en stund. Spelet är pausat och det du har gjort är sparat.',
   contextRestored: 'Bilden är tillbaka. Fortsätt när du är redo!',
   contextReloading: 'Vi hämtar tillbaka bilden. Spelet väntar.',
   recoveryTitle: 'Spelet väntar',
   retry: 'Försök igen',
+  // After a lost picture the button loads the page again: everything is saved.
+  reloadGame: 'Ladda om spelet',
 } as const;

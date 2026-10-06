@@ -1,19 +1,24 @@
 import { sv } from '../content/sv';
 import type { AlbumPhoto, PhotoStore } from '../save/photos';
+import { CHECK, CROSS, NEXT, PREVIOUS } from './icons';
 
 const camera = '<svg viewBox="0 0 32 24" aria-hidden="true"><path d="M3 6h6l3-4h8l3 4h6v16H3z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="13" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
 
-/** Shared by the game and the menu preview; the pictures are always device-local object URLs. */
+/**
+ * Shared by the game and the menu preview; the pictures are always device-local object URLs. The photo is a print
+ * on the paper, as big as the screen lets it be, with round arrows at its sides and the panels' one header
+ * (docs/ux-audit/menus.md rows 4 and 17).
+ */
 export const photoAlbumHtml = `
   <div class="panel-back" id="photoAlbum" hidden>
     <section class="panel photo-panel" role="dialog" aria-modal="true" aria-labelledby="photoTitle">
-      <button class="panel-close" id="photoClose" type="button" aria-label="${sv.photos.back}">✕</button>
-      <h2 id="photoTitle">${sv.photos.title}</h2>
-      <figure id="photoFrame"><img id="photoImage" alt=""><figcaption id="photoCaption"></figcaption></figure>
-      <div class="photo-credits" id="photoCredits" hidden><span aria-hidden="true">✧</span><h3>${sv.photos.thanks}</h3><p>${sv.photos.credits}</p></div>
-      <p class="photo-count" id="photoCount" role="status" aria-live="polite"></p>
-      <div class="photo-nav"><button class="wide" id="photoPrevious" type="button">← ${sv.photos.previous}</button><button class="wide go" id="photoNext" type="button">${sv.photos.next} →</button></div>
-      <button class="wide" id="photoBack" type="button">↩ ${sv.photos.back}</button>
+      <div class="panel-head"><h2 id="photoTitle">${sv.photos.title}</h2><p class="photo-count" id="photoCount" role="status" aria-live="polite"></p><button class="panel-close" id="photoClose" type="button" aria-label="${sv.photos.back}">${CROSS}</button></div>
+      <div class="photo-stage">
+        <button class="photo-step" id="photoPrevious" type="button" aria-label="${sv.photos.previous}">${PREVIOUS}</button>
+        <figure class="photo-print" id="photoFrame"><img id="photoImage" alt=""><figcaption id="photoCaption"></figcaption></figure>
+        <div class="photo-credits" id="photoCredits" hidden><span aria-hidden="true">✧</span><h3>${sv.photos.thanks}</h3><p>${sv.photos.credits}</p></div>
+        <button class="photo-step go" id="photoNext" type="button" aria-label="${sv.photos.next}">${NEXT}</button>
+      </div>
     </section>
   </div>`;
 
@@ -43,7 +48,10 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
     byId('photoTitle').textContent = credits ? sv.photos.journey : sv.photos.title;
     byId('photoCount').textContent = sv.photos.count.replace('{n}', String(index + 1)).replace('{total}', String(count()));
     byId<HTMLButtonElement>('photoPrevious').disabled = index <= 0;
-    byId('photoNext').textContent = index + 1 < count() ? `${sv.photos.next} →` : `✓ ${sv.photos.done}`;
+    // The last photo's arrow is a tick: done.
+    const last = index + 1 >= count();
+    byId('photoNext').innerHTML = last ? CHECK : NEXT;
+    byId('photoNext').setAttribute('aria-label', last ? sv.photos.done : sv.photos.next);
   }
   function show(at: number, withCredits: boolean, from: HTMLElement, backTo: HTMLElement): void {
     index = Math.max(0, Math.min(at, photos.length - 1));
@@ -77,7 +85,7 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
     if (index + 1 < count()) { index++; draw(); }
     else { const completedCredits = credits; back(); if (completedCredits) onCreditsDone?.(); }
   });
-  for (const id of ['photoClose', 'photoBack']) byId(id).addEventListener('click', back);
+  byId('photoClose').addEventListener('click', back);
   panel.addEventListener('click', (event) => { if (event.target === panel) back(); });
   panel.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowLeft' && index > 0) { index--; draw(); event.preventDefault(); }

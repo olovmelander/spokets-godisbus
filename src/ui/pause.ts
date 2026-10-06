@@ -175,13 +175,19 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
     }
   }
 
-  /** Turns to a page: the header names it, and offers the way back to where it was opened from. */
-  function go(next: PausePage, from?: PausePage): void {
+  /**
+   * Turns to a page: the header names it, and offers the way back to where it was opened from. Inside the open
+   * panel the page turns in from the side it comes from (docs/ux-audit/menus.md row 20); opening doesn't turn.
+   */
+  function go(next: PausePage, from?: PausePage, turn = true): void {
     const returning = from !== undefined;
     page = next;
     for (const [name, element] of Object.entries(pages)) element.hidden = name !== next;
     options.hidden = next === 'reference';
     reference.hidden = next !== 'reference';
+    const shown = next === 'reference' ? reference : pages[next];
+    shown.classList.toggle('turn', turn && !returning);
+    shown.classList.toggle('turn-back', turn && returning);
     byId('pauseTitle').textContent = titles[next];
     const up = next === entry ? null : parentOf[next];
     byId('pauseBack').hidden = up === null;
@@ -242,7 +248,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
       tiles.hidden = false;
       draw();
       back.hidden = false;
-      go(start);
+      go(start, undefined, false);
     },
     page(next) {
       if (open) go(next);

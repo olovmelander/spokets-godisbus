@@ -3,10 +3,9 @@ import { sv } from '../content/sv';
 import { endingHtml } from './ending';
 import { photoAlbumHtml } from './photos';
 import { storyPanelHtml } from './story';
+import { BACK, CHECK, CROSS, line, svg } from './icons';
 
-// Every picture on the page is a plain shape drawn here: no logotypes, no brand marks (plan §0).
-const svg = (body: string, box = '0 0 24 24') => `<svg viewBox="${box}" aria-hidden="true">${body}</svg>`;
-const line = 'fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"';
+// Every picture on the page is a plain shape drawn here or in icons.ts: no logotypes, no brand marks (plan §0).
 
 const HAND = svg(`<path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-3.5a1.5 1.5 0 0 1 3 0V10m0-2a1.5 1.5 0 0 1 3 0v6.5A6.5 6.5 0 0 1 11.5 21 6 6 0 0 1 6.7 18.6L4 14.5a1.5 1.5 0 0 1 2.4-1.8L9 15" ${line} stroke-width="1.8"/>`);
 const ARROW = svg(`<path d="M12 20V5m0 0-6 6m6-6 6 6" ${line} stroke-width="2.4"/>`);
@@ -18,16 +17,12 @@ const BIRD = svg(
 );
 /** The wooden ghost: round top, two painted eyes, two shoes, and its paper bag; no mouth. */
 const GHOST = svg(`<path d="M6 17V9a6 6 0 0 1 12 0v8c0 2-2 3-6 3s-6-1-6-3z" ${line} stroke-width="1.8"/><circle cx="10" cy="8.5" r="1" fill="currentColor"/><circle cx="14.5" cy="8.5" r="1" fill="currentColor"/><path d="M7 21h3m4 0h3M15 12h6v6h-6z" ${line} stroke-width="1.7"/>`);
-/** Back, to the page this one was opened from. */
-const BACK = svg(`<path d="M20 12H5m0 0 6-6m-6 6 6 6" ${line} stroke-width="2.4"/>`);
 /** Settings: a plain cog, with eight teeth. */
 const COG = svg(`<path d="M10.2 4.6L10.6 1.7L13.4 1.7L13.8 4.6A7.6 7.6 0 0 1 15.9 5.5L18.3 3.7L20.3 5.7L18.5 8.1A7.6 7.6 0 0 1 19.4 10.2L22.3 10.6L22.3 13.4L19.4 13.8A7.6 7.6 0 0 1 18.5 15.9L20.3 18.3L18.3 20.3L15.9 18.5A7.6 7.6 0 0 1 13.8 19.4L13.4 22.3L10.6 22.3L10.2 19.4A7.6 7.6 0 0 1 8.1 18.5L5.7 20.3L3.7 18.3L5.5 15.9A7.6 7.6 0 0 1 4.6 13.8L1.7 13.4L1.7 10.6L4.6 10.2A7.6 7.6 0 0 1 5.5 8.1L3.7 5.7L5.7 3.7L8.1 5.5A7.6 7.6 0 0 1 10.2 4.6Z" ${line} stroke-width="1.8"/><circle cx="12" cy="12" r="3.2" ${line} stroke-width="1.8"/>`);
 /** Utforska vidare: Moa's map, folded. */
 const FOLDED_MAP = svg(`<path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" ${line} stroke-width="2"/><path d="M9 4v13.5M15 6.5V20" ${line} stroke-width="2"/>`);
-const CROSS = svg(`<path d="M6 6l12 12M18 6 6 18" ${line} stroke-width="2.6"/>`);
 const PEOPLE = svg('<circle cx="8" cy="7" r="3" fill="currentColor"/><circle cx="17" cy="9" r="2.5" fill="currentColor"/><path d="M2 21v-4a6 6 0 0 1 12 0v4m1-7a5 5 0 0 1 7 5v2" fill="none" stroke="currentColor" stroke-width="2"/>');
 const HOME = svg(`<path d="m2 11 10-9 10 9M5 9v13h14V9m-10 13v-8h6v8" ${line} stroke-width="2"/>`);
-const CHECK = svg(`<path d="M5 12.5l4.5 4.5L19 7.5" ${line} stroke-width="2.8"/>`);
 /** A big candy: the striped sweet on its stick that marks a safe place (plan §3.3, rule 4). */
 const BIG_CANDY = svg(
   '<path d="M12 13v9" stroke="#f4efe6" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="8.5" r="6.5" fill="#dd4b39"/><path d="M6.6 5.2c3.4 0 6.6 2.4 7.4 6.4M9.8 2.6c3.6.8 6.6 3.6 7.6 7.4" fill="none" stroke="#fff6ea" stroke-width="1.7" stroke-linecap="round"/>',
@@ -322,8 +317,10 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
          </div>
        </div>
      </div>
-     <div class="message" id="message" role="alertdialog" aria-modal="true" aria-label="${sv.recoveryTitle}" aria-describedby="messageText" hidden>
+     <div class="message" id="message" role="alertdialog" aria-modal="true" aria-label="${sv.recoveryTitle}" aria-describedby="messageText messageMore" tabindex="-1" hidden>
+       <div class="message-ghost" id="messageGhost" aria-hidden="true"></div>
        <p id="messageText"></p>
+       <p class="message-more" id="messageMore" hidden></p>
        <button id="messageButton" type="button"></button>
      </div>`,
   );
