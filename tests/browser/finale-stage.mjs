@@ -78,6 +78,7 @@ try {
         return {...view.info(), word:sim.curr.word, mode:sim.curr.mode, player:[sim.curr.x,sim.curr.y], groundY:sim.curr.groundY,
           eyes:scene.getObjectByName('first-carving-eyes').visible, bag:bag.visible, stolen:scene.getObjectByName('stolen-saturday-bag').visible,
           elof:f.at(elof), pappa:f.at(pappa[0]), ghost:f.at(ghost), carving:f.at(carving),
+          pappaYaw:pappa[0].rotation.y, pappaPose:Array.from(pappa[0].children[0].instanceMatrix.array),
           corners:[elof,pappa[0],ghost,carving].map(f.corners), flags:[...sim.flags], relatives, shadows:f.shadows()}; };
       window.probe={f,draw,advance,snapshot,act:()=>sim.step({...idle,act:true}), restore:(x,flags)=>{
         sim=new f.Sim({...f.norrsken,spawn:{x,y:.01}}, {}, {placed:['tragubbe'],flags}); advance(.2); draw(.1);
@@ -96,10 +97,11 @@ try {
     check(`${name}: Pappa carries grown Elof with both carvings beside him`, Math.abs(ride.pappa[0]-ride.player[0])<.01 && Math.abs(ride.pappa[1]-ride.player[1])<.01 && ride.elof[1]-ride.pappa[1]>4 && Math.abs(ride.ghost[0]-ride.elof[0])<1.1 && Math.abs(ride.carving[0]-ride.elof[0])<1.1);
     check(`${name}: the whole shoulder composition fits the screen`, ride.corners.every(points=>points.every(([x,y])=>Math.abs(x)<1 && Math.abs(y)<1)));
     const pause=await page.evaluate(()=>{const p=window.probe;for(let i=0;i<20;i++)p.draw(0);return p.snapshot();});
-    check(`${name}: pausing holds the shoulder pose and GPU resources`, JSON.stringify(pause.elof)===JSON.stringify(ride.elof) && JSON.stringify(pause.pappa)===JSON.stringify(ride.pappa) && pause.geometries===ride.geometries && pause.textures===ride.textures);
+    check(`${name}: pausing holds the shoulder joints and GPU resources`, JSON.stringify(pause.elof)===JSON.stringify(ride.elof) && JSON.stringify(pause.pappa)===JSON.stringify(ride.pappa) && JSON.stringify(pause.pappaPose)===JSON.stringify(ride.pappaPose) && pause.pappaYaw===ride.pappaYaw && pause.geometries===ride.geometries && pause.textures===ride.textures);
     await picture(page, join(shots,`${name}-home.png`));
-    const after=await page.evaluate(()=>{const p=window.probe;p.advance(3);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});
+    const after=await page.evaluate(()=>{const p=window.probe;for(let i=0;i<12;i++){p.advance(.25);p.draw(.25);}return p.snapshot();});
     check(`${name}: the carried group follows the path with warmed shaders and bounded draws`, after.player[0]>ride.player[0]+3 && Math.abs(after.pappa[0]-after.player[0])<.01 && Math.abs(after.carving[0]-after.elof[0])<1.1 && after.programs===ride.programs && withinDraws(after.drawCalls, after.tier));
+    check(`${name}: Pappa faces home and strides with actual ride travel`, after.pappaYaw>1 && after.pappaYaw<1.4 && JSON.stringify(after.pappaPose.slice(11*16))!==JSON.stringify(ride.pappaPose.slice(11*16)));
     const late=await page.evaluate(()=>{const p=window.probe;p.advance(4.4);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});
     check(`${name}: eight seconds into home, ghost and Pappa shadows follow terrain support`, late.mode==='ride' && late.player[0]>60 && late.player[1]<-6 &&
       [late.ghost,late.pappa].every(at=>late.shadows.some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-(late.groundY+.018))<.01)));
@@ -119,7 +121,8 @@ try {
       movers:sim.movers,drips:sim.drips,flags:sim.flags,ghost:sim.ghost,rollers:sim.rollers,tussocks:sim.tussocks,gusts:sim.gusts,help:sim.help,berries:sim.berries});
     advance(.2);for(let i=0;i<12;i++)draw();
     const scene=f.renderedScene(),pappa=scene.getObjectByName('fixture-private-pappa');
-    const beforeReveal=view.info().programs,hidden=!pappa.parent.visible;
+    const beforeReveal=view.info().programs;let hidden=false;
+    for(let node=pappa;node;node=node.parent)if(!node.visible)hidden=true;
     sim.flags.add('taste');advance(.2);for(let i=0;i<12;i++)draw();
     const revealWarmed=beforeReveal===view.info().programs;
     const supported=at=>f.shadows().some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-(sim.curr.groundY+.018))<.01);

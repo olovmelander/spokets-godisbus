@@ -10,7 +10,7 @@ export interface Pose {
   lean: number;
   /** The head nods down (+) or looks up (−). */
   nod: number;
-  /** The head turns to the body's own left (+). The rehearsal figure only. */
+  /** The head turns to the body's own left (+). */
   turn: number;
   /** Each arm swings forward and up from hanging: π/2 points straight ahead, π straight up. */
   armL: number;
@@ -24,7 +24,7 @@ export interface Pose {
   /** Each knee bends, bringing the foot back. */
   kneeL: number;
   kneeR: number;
-  /** Arms held out from the sides: 0 at the sides. The rehearsal figure only. */
+  /** Arms held out from the sides: 0 at the sides. */
   spread: number;
   /** Where the hips are, over the ground, in an adult's units: null stands the body on its lowest foot or knee. */
   seat: number | null;
@@ -53,7 +53,10 @@ const KNEE = 0.28;
 /** The lowest point of a leg below its hip, the knee or the sole, for its two angles. */
 function legLow(hip: number, knee: number): number {
   const kneeY = -Math.cos(hip) * THIGH;
-  const footY = kneeY - Math.cos(hip - knee) * SHIN;
+  const angle = hip - knee;
+  // The boot turns with the shin: its toe and heel matter as much as its ankle.
+  const footY = kneeY + (-SHIN + 0.13) * Math.cos(angle) + 0.12 * Math.sin(angle)
+    - 0.13 * Math.abs(Math.cos(angle)) - 0.475 * Math.abs(Math.sin(angle));
   return Math.min(kneeY - KNEE, footY);
 }
 
@@ -192,6 +195,7 @@ export function createRehearsalRig(who: Role): Rig {
       mesh.setMatrixAt(i, part);
     }
     mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingBox();
     mesh.computeBoundingSphere();
     hands[0].set(0, -FORE - 0.12, 0.05).applyMatrix4(joints.elbowL).multiplyScalar(s);
     hands[1].set(0, -FORE - 0.12, 0.05).applyMatrix4(joints.elbowR).multiplyScalar(s);
@@ -213,14 +217,15 @@ interface Bone { node: Object3D; rest: Quaternion; sign: 1 | -1 }
 
 /**
  * A model from Blender, posed on its bones. They carry the animation library's joint names (plan §5.6) and bend
- * round their own x as Elof's do (`poseDoll` in src/render/view.ts): a negative turn brings an arm or a thigh
+ * round their own x: a negative turn brings an arm or a thigh
  * forward and bends an elbow; a positive one bends a knee, leans the spine and nods the head. Where a bone is
  * missing, that joint stays as it rests. The body stands on its lowest foot, or is sat at its seat.
- * The model is drawn `scale` times its own size, and is `height` EL tall as drawn.
+ * The model keeps its supplied scale, and is `height` EL tall as drawn.
  */
 export function createModelRig(model: Object3D, height: number): Rig {
   const group = new Group();
   group.add(model);
+  group.updateWorldMatrix(true, true);
   const bone = (name: string, sign: 1 | -1): Bone | null => {
     const node = model.getObjectByName(name);
     return node ? { node, rest: node.quaternion.clone(), sign } : null;
@@ -235,8 +240,16 @@ export function createModelRig(model: Object3D, height: number): Rig {
   // A hand is the far end of its forearm: the hand's own bone where the model has one.
   const handBones = [model.getObjectByName('hand_l') ?? null, model.getObjectByName('hand_r') ?? null];
   const turn = new Quaternion();
-  const bend = (b: Bone | null, angle: number) => {
-    if (b) b.node.quaternion.copy(b.rest).multiply(turn.setFromAxisAngle(X, angle * b.sign));
+  const orientation = model.getWorldQuaternion(new Quaternion());
+  // A head's up and an arm's outward axis belong to the body, not to a bone's arbitrary rest roll.
+  const axis = (b: Bone | null, direction: Vector3) => b ? direction.clone().applyQuaternion(orientation)
+    .applyQuaternion(b.node.getWorldQuaternion(new Quaternion()).invert()).normalize() : null;
+  const headUp = axis(bones.head, Y), leftOut = axis(bones.armL, Z), rightOut = axis(bones.armR, Z);
+  const bend = (b: Bone | null, angle: number, around: Vector3 | null = null, extra = 0) => {
+    if (!b) return;
+    b.node.quaternion.copy(b.rest);
+    if (around && extra !== 0) b.node.quaternion.multiply(turn.setFromAxisAngle(around, extra));
+    b.node.quaternion.multiply(turn.setFromAxisAngle(X, angle * b.sign));
   };
   const at = new Vector3(), elbow = new Vector3();
   const rest = model.position.y;
@@ -254,9 +267,9 @@ export function createModelRig(model: Object3D, height: number): Rig {
     height,
     pose(p) {
       bend(bones.spine, p.lean);
-      bend(bones.head, p.nod);
-      bend(bones.armL, p.armL);
-      bend(bones.armR, p.armR);
+      bend(bones.head, p.nod, headUp, p.turn);
+      bend(bones.armL, p.armL, leftOut, p.spread);
+      bend(bones.armR, p.armR, rightOut, -p.spread);
       bend(bones.elbowL, p.elbowL);
       bend(bones.elbowR, p.elbowR);
       bend(bones.legL, p.legL);
