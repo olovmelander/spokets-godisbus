@@ -2,7 +2,7 @@ import { lessMotion } from '../platform/motion';
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
-  Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PointLight,
+  Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PlaneGeometry, PointLight,
   Scene, Shape, SphereGeometry, TorusGeometry, UnsignedIntType, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
@@ -20,6 +20,7 @@ import { observeGpu, type GpuMemory } from './gpu-memory';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
+import { drawn } from './dressing/kit';
 import { createSky } from './dressing/sky';
 import type { LifeAsk } from './life';
 import { evening, nightBrightness } from './backdrop';
@@ -340,7 +341,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const tussockMeshes = buildTussocks(chapter, place?.tussock ?? null);
   const berryMeshes = buildBerries(chapter);
   for (const berry of berryMeshes) scene.add(berry);
-  const mist = buildMist(chapter, scene.fog as Fog, place?.haze ?? null);
+  const mist = buildMist(chapter, scene.fog as Fog, place?.haze ?? null, sun, hemisphere);
   const follower = buildFollower(chapter);
   const wind = buildWind(chapter);
   const night = buildNight(chapter, sky, hemisphere, sun);
@@ -1416,7 +1417,7 @@ function buildTussocks(chapter: ChapterData, colour: string | null): Mesh[] {
  * closes in over a few seconds, and a warm light goes with him. The light is in the scene from the start,
  * dark, so that no shader is compiled when it comes on.
  */
-function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: number } | null) {
+function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: number } | null, sun: DirectionalLight, hemisphere: HemisphereLight) {
   const group = new Group();
   const greybox = { near: fog.near, far: fog.far };
   if (!chapter.mist) return { group, update: () => {} };
@@ -1429,21 +1430,49 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
   const stick = new Mesh(new CylinderGeometry(0.018, 0.018, 0.4, 6), new MeshBasicMaterial({ color: '#fff6e0', fog: false }));
   stick.position.y = -0.3;
   glow.add(sweet, stick);
-  group.add(light, glow);
+  // Its light in the mist round it: a warm halo, brightest at the lantern (visual audit, myren rows 5 and 21).
+  const halo = new Mesh(new PlaneGeometry(3.2, 3.2), new MeshBasicMaterial({
+    map: drawn(64, 64, (c) => {
+      const round = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+      round.addColorStop(0, 'rgba(255,255,255,1)');
+      round.addColorStop(0.25, 'rgba(255,255,255,0.45)');
+      round.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = round;
+      c.fillRect(0, 0, 64, 64);
+    }),
+    color: '#ffc878', transparent: true, opacity: 0, fog: false, depthWrite: false, blending: AdditiveBlending,
+  }));
+  // Behind the near things the mist is a wall: the far layers, which no haze reaches, go into it. It stands on
+  // the water, so that the water in front of it is not painted over.
+  const level = Math.min(0, ...(chapter.water ?? []).map((w) => w.y));
+  const wall = new Mesh(new PlaneGeometry(90, 40).translate(0, 20, 0), new MeshBasicMaterial({ color: fog.color, transparent: true, opacity: 0, fog: false, depthWrite: false }));
+  group.add(light, glow, halo, wall);
+  // In the mist the sun goes pale and the air grey and cool, so that the lantern is the warmest thing there.
+  const clearDay = { sun: sun.intensity, sky: hemisphere.intensity, air: fog.color.clone() };
+  const grey = new Color('#c4c6bd');
   let k = 0;
   function update(flags: ReadonlySet<string>, x: number, y: number, facing: number, cameraZ: number, dt: number): void {
     k = Math.min(1, Math.max(0, k + (flags.has(after) ? dt : -dt) / 3));
-    // The mist begins just behind the plane he walks in: he and what is near him stay clear, and the rest fades.
-    // Before it comes, the air is the place's own: its haze begins behind the play plane.
+    // The mist begins just behind the plane he walks in: he, the candy and what is near him stay clear, what is
+    // further back goes pale, and 16 behind it is all mist. Before it comes, the air is the place's own.
     const clear = haze ? { near: cameraZ + haze.near, far: cameraZ + haze.far } : greybox;
-    fog.near = lerp(clear.near, cameraZ - 2, k);
-    fog.far = lerp(clear.far, cameraZ + 9, k);
+    fog.near = lerp(clear.near, cameraZ + 0.5, k);
+    fog.far = lerp(clear.far, cameraZ + 16, k);
+    sun.intensity = clearDay.sun * (1 - 0.45 * k);
+    hemisphere.intensity = clearDay.sky * (1 - 0.2 * k);
+    fog.color.copy(clearDay.air).lerp(grey, 0.5 * k);
     light.intensity = 7 * k;
     light.position.set(x + facing * 0.3, y + 1.4, 1);
     glow.position.set(x + facing * 0.32, y + 1.42, 0.25);
     glow.scale.setScalar(k);
-    // Only the lollipop goes out of the picture. The light stays, dark: taking a light out compiles every shader anew.
-    drawnWhile(glow, k > 0);
+    halo.position.set(x + facing * 0.32, y + 1.42, 0.3);
+    (halo.material as MeshBasicMaterial).opacity = 0.85 * k;
+    wall.position.set(x, level, -20);
+    (wall.material as MeshBasicMaterial).color.copy(fog.color);
+    (wall.material as MeshBasicMaterial).opacity = 0.92 * k;
+    // Only the lollipop, its halo and the wall go out of the picture. The light stays, dark: taking a light out
+    // compiles every shader anew.
+    for (const one of [glow, halo, wall]) drawnWhile(one, k > 0);
   }
   return { group, update };
 }

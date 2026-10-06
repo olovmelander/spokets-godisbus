@@ -50,3 +50,26 @@ describe('the stand-ins for things and animals', () => {
     }
   });
 });
+
+describe("the bog's shy tussocks", () => {
+  it('stand on peat columns up out of the water, not in the air, and are one draw each', async () => {
+    const { Box3 } = await import('three');
+    const { COURSES } = await import('../../src/content/chapters');
+    const myren = COURSES.myren!;
+    const water = Math.min(...(myren.water ?? []).map((w) => w.y));
+    const shy = (myren.movers ?? []).filter((mover) => mover.look === 'tussock');
+    expect(shy.length).toBe(6);
+    for (const mover of shy) {
+      const prop = moverProp(mover)!;
+      const meshes: unknown[] = [];
+      prop.traverse((node) => { if ((node as { isMesh?: boolean }).isMesh) meshes.push(node); });
+      expect(meshes.length, mover.id).toBe(1);
+      const box = new Box3().setFromObject(prop);
+      // From every place it stands, its column goes down under the water; its top is where he stands.
+      for (const stop of mover.stops) expect(stop.y + box.min.y, mover.id).toBeLessThan(water - 2);
+      expect(box.max.y, mover.id).toBeGreaterThan(mover.height);
+      // Its column stands behind the path he walks below it.
+      expect(box.min.z, mover.id).toBeLessThan(0);
+    }
+  });
+});

@@ -573,6 +573,23 @@ function dropOf(profile: Row[], row: Row, forward: number): number {
 
 /** The bog's ground: as the bank in front, and sinking under the water behind the path. */
 const PROFILE_ISLAND = PROFILE.map((row, i) => (i < 3 ? { ...row, drop: [3.2, 1.7, 0.3][i]!, bump: row.bump * 0.6 } : row));
+/**
+ * An island in the water rounds over into it soon in front, by 1.8, so that open water lies before it as far
+ * as the peat water's front (water.ts): it is drawn back as a front is at a wall's top (`forwardAt`).
+ */
+const IN_WATER = 0.62;
+/** Wet peat at the waterline, and how far above and below it the wet reaches. */
+const WET = new Color('#1a130e');
+const WET_REACH = 0.25;
+/**
+ * The side of an island down into the water, from its top: how far under the top, and how far out from the
+ * collision edge. Its moss hangs over in a lip, it comes in to the waterline and is undercut below it.
+ */
+function islandSide(top: number, foot: number, wet: number): [number, number][] {
+  const line = Math.max(0.35, top - wet);
+  return ([[0.12, 0.12], [0.3, 0.06], [line - 0.1, -0.12], [line, -0.2], [line + WET_REACH, -0.28], [line + 1.9, -0.6]] as [number, number][])
+    .filter(([under]) => under > 0 && under < top - foot - 0.05);
+}
 
 /** A wooden floor's front, a walk of planks' over the bog, and a bog's island's. */
 const FLOOR_FRONT: Front = { rows: PROFILE_FLOOR, cuts: true, lip: 0, hang: 0, course: 0.9, over: BUILT, jointed: false, far: FAR, shore: 'ground' };
@@ -677,6 +694,8 @@ interface BankPoint {
    * open in front.
    */
   shore?: number;
+  /** The water a bog's island stands in, where it does: its level. */
+  wet?: number;
   kind: Ground;
 }
 
@@ -736,6 +755,8 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
     ? Math.max(pool.y + SHORE_OVER, Math.min(heightAt(chapter, pool.from - 0.6), heightAt(chapter, pool.to + 0.6)))
     : pool.y + SHORE_OVER);
   const poolAt = (front: Front, x: number, y: number) => (front.shore === false ? undefined : (chapter.water ?? []).find((w) => x >= w.from && x <= w.to && y < w.y));
+  /** The level of the water a bog's island stands in at x, if it stands in any. */
+  const wetAt = (front: Front, x: number) => (front === ISLAND_FRONT ? (chapter.water ?? []).find((w) => x >= w.from && x <= w.to)?.y : undefined);
   // Points along the outline, close enough together for the moss to roll. A wall keeps its two corners.
   const points: BankPoint[] = [];
   let before = false;
@@ -769,20 +790,30 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
     if (steep && front === FRONTS.street && road(kindAt(a.x))) {
       const height = Math.abs(b.y - a.y);
       for (const depth of ROAD_SAMPLES) if (depth < height) steps.push((b.y < a.y ? depth / height : 1 - depth / height) * pieces);
-      steps.sort((a, b) => a - b);
     }
-    for (const k of new Set(steps)) {
-      const x = a.x + (dx * k) / pieces;
+    // Where along the segment each point stands, in pieces, and how far out from the outline.
+    const stops = [...new Set(steps)].map((k) => ({ k, out: 0 }));
+    // An island's side into the water has its lip, its waterline and its undercut between its two corners.
+    const wet = steep ? wetAt(front, a.x) : undefined;
+    if (wet !== undefined) {
+      const top = Math.max(a.y, b.y);
+      const away = b.y > a.y ? -1 : 1;
+      for (const [under, out] of islandSide(top, Math.min(a.y, b.y), wet)) stops.push({ k: (pieces * (top - under - a.y)) / (b.y - a.y), out: away * out });
+    }
+    stops.sort((p, q) => p.k - q.k);
+    for (const { k, out } of stops) {
+      const x = a.x + (dx * k) / pieces + out;
       // The corner at a wall's top or foot is a wall's too.
       const y = a.y + ((b.y - a.y) * k) / pieces;
       const corner = steep || before;
-      const kind = kindAt(x);
+      const kind = kindAt(x - out);
       const mine = frontFor(kind, own);
-      const forward = !mine.cuts ? 1 : ends ? ends[0]! + ((ends[1]! - ends[0]!) * k) / pieces : corner ? forwardAtCorner(chapter, x, y, mine.over) : forwardAt(chapter, x, mine.over);
+      const here = wetAt(mine, x - out);
+      const forward = here !== undefined ? IN_WATER : !mine.cuts ? 1 : ends ? ends[0]! + ((ends[1]! - ends[0]!) * k) / pieces : corner ? forwardAtCorner(chapter, x, y, mine.over) : forwardAt(chapter, x, mine.over);
       const pool = poolAt(mine, x, y);
       points.push({
         x, y, wall: corner, face: steep, along: along + (length * k) / pieces, forward: pool ? 1 : forward,
-        ...(rises ? { rises } : {}), ...(pool ? { shore: shoreOf(mine, pool) } : {}), kind,
+        ...(rises ? { rises } : {}), ...(pool ? { shore: shoreOf(mine, pool) } : {}), ...(here !== undefined ? { wet: here } : {}), kind,
       });
       before = steep;
     }
@@ -866,7 +897,9 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
           else if (look.rock) c.lerp(rockCutAt(kind, p.x, z, under, scratch), cut);
           else c.lerp(look.wall, 0.82 * cut);
         }
-      } else if (face) c.lerp(look.wall, 0.82);
+      } else if (face) c.lerp(look.wall, p.wet === undefined ? 0.82 : 0.82 * Math.min(1, Math.max(0, (p.wet + 0.45 - y) / 0.3)));
+      // At the waterline an island is dark and wet, along its sides and its front; over the water its lip is moss.
+      if (p.wet !== undefined) c.lerp(WET, 0.85 * Math.max(0, 1 - Math.abs(y - p.wet) / WET_REACH));
       // A rim board is one long board, not a board to each board of the deck: one tone, drifting along it.
       if (row.rim !== undefined && !face) c.copy(look.colours[1]!).lerp(look.colours[2]!, noise(p.x * 0.31 + 5, 3));
       c.lerp(look.shade, (1 - row.shade) * 0.9);
