@@ -217,8 +217,9 @@ interface Bone { node: Object3D; rest: Quaternion; sign: 1 | -1 }
 
 /**
  * A model from Blender, posed on its bones. They carry the animation library's joint names (plan §5.6) and bend
- * round their own x: a negative turn brings an arm or a thigh
- * forward and bends an elbow; a positive one bends a knee, leans the spine and nods the head. Where a bone is
+ * round their own x. Exported limbs hang half a turn round z from the body, so their +y runs down the limb and
+ * their +z still faces forward: a positive turn brings an arm or a thigh forward, bends an elbow, leans the spine
+ * and nods the head; a negative one bends a knee. Where a bone is
  * missing, that joint stays as it rests. The body stands on its lowest foot, or is sat at its seat.
  * The model keeps its supplied scale, and is `height` EL tall as drawn.
  */
@@ -232,8 +233,8 @@ export function createModelRig(model: Object3D, height: number): Rig {
   };
   const bones = {
     spine: bone('spine_01', 1), head: bone('Head', 1) ?? bone('head', 1),
-    armL: bone('upperarm_l', -1), armR: bone('upperarm_r', -1), elbowL: bone('lowerarm_l', -1), elbowR: bone('lowerarm_r', -1),
-    legL: bone('thigh_l', -1), legR: bone('thigh_r', -1), kneeL: bone('calf_l', 1), kneeR: bone('calf_r', 1),
+    armL: bone('upperarm_l', 1), armR: bone('upperarm_r', 1), elbowL: bone('lowerarm_l', 1), elbowR: bone('lowerarm_r', 1),
+    legL: bone('thigh_l', 1), legR: bone('thigh_r', 1), kneeL: bone('calf_l', -1), kneeR: bone('calf_r', -1),
   };
   const feet = ['foot_l', 'foot_r'].map((name) => model.getObjectByName(name)).filter((n): n is Object3D => n !== undefined);
   const knees = [bones.kneeL?.node, bones.kneeR?.node].filter((n): n is Object3D => n !== undefined);

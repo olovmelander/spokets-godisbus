@@ -121,8 +121,9 @@ describe('the player’s existing named-bone adapter', () => {
         lower.name = `${leg ? 'calf' : 'lowerarm'}_${side}`;
         end.name = `${leg ? 'foot' : 'hand'}_${side}`;
         upper.position.set(x, leg ? 0.4 : 0.65, 0);
-        // Local +Y runs down the limb and local -X bends it towards the body's +Z.
-        upper.rotation.x = Math.PI;
+        // As Blender exports them: half a turn round z, so local +Y runs down the limb and local +Z still faces
+        // the body's front. A positive turn round local X then brings the limb forward.
+        upper.rotation.z = Math.PI;
         lower.position.y = leg ? 0.19 : 0.145; end.position.y = leg ? 0.21 : 0.145;
         lower.add(end); upper.add(lower); model.add(upper); limbs.push({ upper, lower, end });
       }
@@ -136,13 +137,18 @@ describe('the player’s existing named-bone adapter', () => {
     rig.pose({ ...STANDING, armL: 0.7, elbowL: 0.4, legL: 0.6, kneeL: 0.8 }); parent.updateWorldMatrix(true, true);
     const reaching = rig.group.worldToLocal(hand.getWorldPosition(new Vector3()));
     expect(reaching.x).toBeGreaterThan(before.x + 0.15);
+    // The thigh brings its knee forward, and the knee bends the foot back behind it, in the model's own space.
+    const inModel = (name: string) => model.worldToLocal(model.getObjectByName(name)!.getWorldPosition(new Vector3()));
+    expect(inModel('calf_l').z).toBeGreaterThan(inModel('thigh_l').z + 0.1);
+    expect(inModel('foot_l').z).toBeLessThan(inModel('calf_l').z - 0.03);
+    expect(inModel('lowerarm_l').z).toBeGreaterThan(inModel('upperarm_l').z + 0.05);
     const feet = ['foot_l', 'foot_r'].map((name) => rig.group.worldToLocal(model.getObjectByName(name)!.getWorldPosition(new Vector3())).y);
     expect(Math.min(...feet)).toBeCloseTo(0, 6);
     const posed = limbs[0]!.upper.quaternion.clone();
     rig.pose({ ...STANDING, armL: 0.7, elbowL: 0.4, legL: 0.6, kneeL: 0.8 });
     expect(limbs[0]!.upper.quaternion.angleTo(posed)).toBeLessThan(1e-7);
     rig.pose({ ...STANDING, armL: 0, armR: 0, elbowL: 0, elbowR: 0 });
-    const rest = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI);
+    const rest = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI);
     for (const limb of limbs) expect(limb.upper.quaternion.angleTo(rest)).toBeLessThan(1e-7);
   });
 });
