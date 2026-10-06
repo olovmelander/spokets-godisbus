@@ -2,6 +2,30 @@
 
 ## State (6 October 2026)
 
+- **Graphics, cloud stage 10: articulated player motion** (6 October,
+  `codex/graphics-stage-player-motion`, following stage 9). Olov asked to continue the graphics and improve
+  the family and main player's rigs, animations and movement, still without Blender MCP.
+  - Elof's public rehearsal figure keeps its rounded shapes, colours, hair and backpack, with working knees,
+    elbows and neck. Actual rendered travel drives opposing arms and legs; blocked movement and paused
+    frames do not march. Rising and falling jumps have different poses, and bent knees soften the landing.
+    Climbing, sliding, ledges, swings, rides and recovery use their own held poses.
+  - The approved-model path now uses the existing shared named-bone Rig rather than a second player-only
+    joint convention. Its rest rotations and local-X-forward contract are checked with a synthetic skeleton.
+    Story poses retain priority; rendering owns no simulation changes. Boot-corner grounding, explicit
+    seats, teleport resets and return from a story pose are checked. Private models are unavailable here,
+    so this does not claim a visual review of their skinning, bone rolls or likeness.
+  - **Checked:** typecheck, all 1,294 unit/simulation/robot tests, build/size and local privacy checks.
+    The registered player-motion browser suite passes 22 checks on Low landscape and High portrait, plus
+    exact pause/restore joint assertions. Normal draws are 65–67 on Low and 61–64 on High; shader, geometry
+    and texture counts remain stable through play. Story gestures override locomotion in the real view.
+    Script is 447.5 KB gzipped of 450 KB; boot is 1,467.9 KB of 3,072 KB. The matched run probe shows
+    articulated arms and legs while preserving the silhouette. Footage uses actual game rendering and public
+    stand-ins on a labelled, controlled animation rehearsal trajectory; gameplay and detail cameras are
+    captured from the same frozen source and clock.
+  - **Next in this continuing session:** give the family at help points the articulated Rig already used
+    in story scenes, with attentive idle poses and grounded greetings. Mesh weights, new authored clips
+    and private-model visual review still need Olov's computer. No release, questions or *Senare* changes.
+
 - **Graphics, cloud stage 9: the road's exposed section has layers** (6 October,
   `codex/graphics-stage-street-section`, following stage 8).
   - Asphalt and paving cuts show a thin wearing course, roughly 1.8 EL of crushed stone, then earth
@@ -2032,6 +2056,11 @@
 
 **For the next session, in this order:**
 
+- **Character motion, Olov's latest request:** continue from the shared player pose controller and the
+  family helper rig work recorded at the top of State. Keep cloud changes in small visual checkpoints;
+  capture motion as well as still frames. Approved private-model skinning and authored clips remain for
+  Olov's computer. Environment work (drain, haze, broader shadows and bog waterline) remains separate.
+
 - **The UX order of work is built** (`docs/ux-audit.md`, "The order of the work"), all in a cloud session: 1,
   every word in its own type (the dropped font rules, Andika and Playpen Sans self-hosted, one size scale, colour
   tokens, button states); 2, the controls a thumb can trust; 3, every speaker their own; 4, a clear screen for the
@@ -2318,7 +2347,7 @@ The older list, still true where it is not struck:
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. On 6 October, cloud graphics stage 1 unifies linear haze and the graded sky across tiers, with no new assets or passes. Cloud stage 2 adds forest trunk shadows on High and soft ground shade on Low/Mid; stage 3 adds camera-correct rim lighting; stage 4 reveals the forest landmark silhouettes; stage 5 keeps deck boards planar beside steps; stage 6 gives the village kerb/shop riser masonry and planar street edges; stage 7 adds a fascia to the visible deck edge; stage 8 gives the shop’s visible front granite courses; stage 9 adds layered road sections, with matching comparisons for each visual checkpoint. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
 | 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, the prologue rebuilt as scenes with an outdoor deck, every chapter's ending (a coda, a storybook page, and a time card at the next one's start), and a UX, UI and presentation audit (137 findings, eleven steps) with chapters that open on their card instead of the title. On 6 October, in a cloud session, its steps 1 to 11 and every row after them: the type, the controls, the speakers, a clear screen for the story, a short Pause with settings a child can read, a title over the living morning with one tap to play, the materials (paper, wood and candy, and every picture drawn), the UI's sound, the chapter's page as a storybook page, the collections, and a picture for every verb, on the button and over the thing; a HUD that keeps to itself, small things for every device, the page's map and tally, a ring round the held finger, help that carries on, one switch for less motion, what they feel on the bubbles, the painting and the carving close, the credits as the book's last pages, a picture for every player, Moa's words in wax, and the game installable on Android. Broader spatial work, Byn's return loop and the rest of its own story, final likeness/contact/acting/memory art, the story's further steps (sound next), listening and device checkpoints remain; no release is declared. |
-| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. |
+| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Private-model visual review and authored clips remain. |
 
 ## Known bugs
 

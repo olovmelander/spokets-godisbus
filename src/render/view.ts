@@ -37,7 +37,8 @@ import { createEpilogueStage } from './epilogue-stage';
 import { createPrologueStage } from './prologue-stage';
 import { createStage } from './stage';
 import { actPose } from './acting';
-import { STANDING, type Pose } from './rig';
+import { createModelRig, STANDING, type Pose } from './rig';
+import { createPlayerMotion, createPlayerStandIn } from './player-motion';
 import { createFamilyRehearsal } from './family-rehearsal';
 import { createSharedSweets } from './shared-sweets';
 import { saturdayBag } from './saturday-bag';
@@ -49,7 +50,7 @@ import type { Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { endsInScene, type SceneFrame } from '../sim/scene';
-import { BERRY_HALF, BERRY_HEIGHT, RUN_SPEED } from '../sim/constants';
+import { BERRY_HALF, BERRY_HEIGHT } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
 import { photoCut } from './crop';
@@ -511,7 +512,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
 
   // Elof, modelled in Blender after his sheets and photos. He too is only here where the private pack is;
   // everywhere else the stand-in built in code plays his part.
-  let doll: Doll | null = null;
+  const elof = createPlayerStandIn();
+  let playerBody: { pose(pose: Pose): void } = elof;
+  const playerMotion = createPlayerMotion();
   assets
     .manifest()
     .then((manifest) => (!standIns && manifest.packs.private?.files['elof.glb'] ? assets.model('private', 'elof') : null))
@@ -520,27 +523,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // Exported from Blender he faces +z, and the stand-in faces +x. A quarter turn makes them agree.
       model.rotation.y = Math.PI / 2;
       elof.group.clear();
-      elof.group.add(model);
-      // A skinned Elof has bones, which keep the turn they rest in; the older one has loose parts that rest unturned.
-      const part = (name: string, forward: 1 | -1): Joint | null => {
-        const node = model.getObjectByName(name);
-        if (!node) return null;
-        const bone = (node as { isBone?: boolean }).isBone === true;
-        return { node, rest: bone ? node.quaternion.clone() : null, forward: bone ? forward : 1, angle: 0 };
-      };
-      doll = {
-        spine: part('spine_01', 1),
-        head: part('Head', 1) ?? part('head', 1),
-        thighs: [part('thigh_l', -1), part('thigh_r', -1)],
-        calves: [part('calf_l', -1), part('calf_r', -1)],
-        upperArms: [part('upperarm_l', -1), part('upperarm_r', -1)],
-        lowerArms: [part('lowerarm_l', -1), part('lowerarm_r', -1)],
-      };
+      const rig = createModelRig(model, 1);
+      elof.group.add(rig.group);
+      playerBody = rig;
       models.push('private/elof');
       modelInstallations++;
     })
     .catch((error) => console.error('Elof could not be loaded; the stand-in stays.', error));
-  const elof = buildElof();
   elof.group.name = 'elof';
   scene.add(elof.group);
 
@@ -643,7 +632,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let cssWidth = 0;
   let cssHeight = 0;
   const look = cameraIntent({ ...startState(chapter) }, chapter.cameras);
-  let stride = 0;
   let turn = 0;
   let squash = 1;
   let wasGrounded = true;
@@ -975,28 +963,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const scripted = directions.elof;
     const facingAngle = scripted?.face != null ? -scripted.face * Math.PI * 2 : onHose ? Math.PI / 2 : curr.facing > 0 ? -0.35 : Math.PI + 0.35;
     turn += (facingAngle - turn) * ease(14, dt);
-    if (curr.grounded) stride += Math.abs(curr.vx) * dt * 5.5;
-    const swing = curr.grounded ? Math.sin(stride) * 0.75 * Math.min(1, Math.abs(curr.vx) / RUN_SPEED + 0.25) : 0.5;
-    const moving = Math.abs(curr.vx) > 0.05 || (!curr.grounded && curr.bubble === 0);
-    elof.legLeft.rotation.z = moving ? swing : 0;
-    elof.legRight.rotation.z = moving ? -swing : 0;
-    const waving = reaction?.kind === 'player' && curr.grounded;
-    elof.arm.rotation.z = waving ? -2 + response * 0.3 : 0;
-    if (doll) poseDoll(doll, curr, stride, dt, waving ? responseFor : 0, calmResponse);
-    // His part in a held scene: he startles, points, looks at his hands, holds up the star (./acting.ts).
-    let acted = 0;
+    // A held scene owns the pose. Otherwise actual travel drives the same articulated pose on both bodies.
+    let scriptedPose: Pose | null = null;
     if (scripted?.act && curr.grounded) {
-      // His acting is measured as an adult's: his own height stands for an adult's 5.2.
       const unit = 5.2 / Math.max(0.5, tall);
       const facing = Math.cos(facingAngle) >= 0 ? 1 : -1;
-      actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null, stride: 0, pace: 0, calm: calmStory }, elofPose);
-      elof.arm.rotation.z = -elofPose.armR;
-      elof.legLeft.rotation.z = elofPose.legL;
-      elof.legRight.rotation.z = -elofPose.legR * 0.2;
-      acted = elofPose.bounce * 0.35;
-      if (doll) actDoll(doll, elofPose);
+      scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null, stride: 0, pace: 0, calm: calmStory }, elofPose);
     }
-    if (curr.grounded && !wasGrounded) squash = 0.82; // a soft landing
+    const waving = reaction?.kind === 'player' && curr.grounded;
+    playerBody.pose(playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse));
+    if (curr.grounded && !wasGrounded) squash = 0.94; // the knees take most of the landing
     wasGrounded = curr.grounded;
     squash += (1 - squash) * ease(12, dt);
     const stretch = curr.grounded ? squash : 1 + clamp(curr.vy * 0.012, -0.05, 0.1);
@@ -1004,7 +980,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const lying = curr.mode === 'down' ? Math.min(1, curr.t / 0.15, (1 - curr.t) / 0.25) * 1.4 * curr.facing : 0;
     // The tilt turns about his middle, where the lace's pull goes through.
     const lift = scripted?.lift;
-    elof.group.position.set(x - Math.sin(hang) * 0.5 + (lift?.x ?? 0), y + 0.5 - Math.cos(hang) * 0.5 + shoulderLift + (lift?.y ?? 0) + acted, lift?.z ?? 0);
+    elof.group.position.set(x - Math.sin(hang) * 0.5 + (lift?.x ?? 0), y + 0.5 - Math.cos(hang) * 0.5 + shoulderLift + (lift?.y ?? 0), lift?.z ?? 0);
     // On a mark in the place itself, such as Pappa's palm: wherever the run left him.
     if (scripted && scripted.ontoWeight > 0) {
       const on = scripted.ontoWeight;
@@ -1015,7 +991,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     elof.group.rotation.set(0, turn, lying - hang, 'ZYX');
     elof.group.scale.set(tall / Math.sqrt(stretch), tall * stretch, tall / Math.sqrt(stretch));
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
-    elof.body.rotation.z = scripted?.act ? -elofPose.lean : -clamp(curr.vx / RUN_SPEED, -1, 1) * 0.12 * curr.facing;
 
     playerGroundY = curr.groundY;
 
@@ -1265,16 +1240,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   };
 }
 
-/** The joints of the Elof made in Blender. They are named after the animation library's skeleton (plan §5.6). */
-interface Doll {
-  spine: Joint | null;
-  head: Joint | null;
-  thighs: (Joint | null)[];
-  calves: (Joint | null)[];
-  upperArms: (Joint | null)[];
-  lowerArms: (Joint | null)[];
-}
-
 /**
  * One joint and how far it is bent. A bone turns round its own x axis from the turn it rests in, and `forward`
  * says which way that axis swings it; a loose part has no rest and turns round the model's x axis.
@@ -1317,64 +1282,6 @@ function bendJoint(joint: Joint | null, angle: number, quick: number): void {
   joint.angle += (angle - joint.angle) * quick;
   if (joint.rest) joint.node.quaternion.copy(joint.rest).multiply(turn.setFromAxisAngle(X_AXIS, joint.angle * joint.forward));
   else joint.node.rotation.x = joint.angle;
-}
-
-/**
- * Poses the doll in code until the library's clips drive it: a walk and a run that follow the distance he
- * covers, and a jump. He faces +z in his own space, so a joint swings forward with a negative turn round x.
- */
-function poseDoll(doll: Doll, player: PlayerState, stride: number, dt: number, wave = 0, calm = false): void {
-  const quick = ease(18, dt);
-  const bend = (joint: Joint | null, angle: number) => {
-    if (!joint) return;
-    joint.angle += (angle - joint.angle) * quick;
-    if (joint.rest) joint.node.quaternion.copy(joint.rest).multiply(turn.setFromAxisAngle(X_AXIS, joint.angle * joint.forward));
-    else joint.node.rotation.x = joint.angle;
-  };
-  const speed = clamp(Math.abs(player.vx) / RUN_SPEED, 0, 1);
-  if (!player.grounded) {
-    // In the air: one knee up, the other leg trailing, arms thrown forward.
-    bend(doll.thighs[0]!, -0.75);
-    bend(doll.thighs[1]!, 0.3);
-    bend(doll.calves[0]!, 0.9);
-    bend(doll.calves[1]!, 0.5);
-    bend(doll.upperArms[0]!, -0.9);
-    bend(doll.upperArms[1]!, -1.3);
-    bend(doll.lowerArms[0]!, -0.5);
-    bend(doll.lowerArms[1]!, -0.3);
-    bend(doll.spine, 0.06);
-    return;
-  }
-  const reach = speed > 0.01 ? 0.22 + 0.62 * speed : 0;
-  for (const [index, side] of [[0, 1], [1, -1]] as const) {
-    const swing = Math.sin(stride) * side;
-    bend(doll.thighs[index]!, -swing * reach);
-    // The knee bends while the leg comes forward from behind.
-    bend(doll.calves[index]!, Math.max(0, Math.cos(stride) * side) * reach * 1.25);
-    bend(doll.upperArms[index]!, swing * reach * 0.9);
-    bend(doll.lowerArms[index]!, speed > 0.01 ? -(0.25 + 0.6 * speed) : -0.06);
-  }
-  bend(doll.spine, 0.14 * speed);
-  bend(doll.head, -0.08 * speed);
-  if (wave > 0) {
-    bend(doll.upperArms[0]!, -2);
-    bend(doll.lowerArms[0]!, -0.7 + (calm ? 0 : Math.sin(wave * 22) * 0.3));
-  }
-}
-
-/** A scene's pose on the Elof made in Blender: the same signs as the walk in `poseDoll`. */
-function actDoll(doll: Doll, pose: Pose): void {
-  const now = (joint: Joint | null, angle: number) => bendJoint(joint, angle, 1);
-  now(doll.upperArms[0]!, -pose.armL);
-  now(doll.upperArms[1]!, -pose.armR);
-  now(doll.lowerArms[0]!, -pose.elbowL);
-  now(doll.lowerArms[1]!, -pose.elbowR);
-  now(doll.thighs[0]!, -pose.legL);
-  now(doll.thighs[1]!, -pose.legR);
-  now(doll.calves[0]!, pose.kneeL);
-  now(doll.calves[1]!, pose.kneeR);
-  now(doll.spine, pose.lean);
-  now(doll.head, pose.nod);
 }
 
 function startState(chapter: ChapterData): PlayerState {
@@ -2077,54 +1984,4 @@ function buildGhost(): Group {
   bag.position.set(0.3, 0.5, 0);
   group.add(bag);
   return group;
-}
-
-/**
- * A stand-in for Elof: simple shapes in the colours of his sheet, one EL tall, facing +x.
- * The real model is built in Blender in Stage 0c and lives in the private repository.
- */
-function buildElof() {
-  const group = new Group();
-  const body = new Group();
-  const material = (color: string, roughness = 0.9) => new MeshStandardMaterial({ color, roughness });
-  const shirt = material('#9db9e3');
-  const jeans = material('#2f4b7c');
-  const boot = material('#6b4a2e');
-  const skin = material('#f2cba8');
-  const hair = material('#ecc967');
-
-  const leg = (z: number) => {
-    const pivot = new Group();
-    pivot.position.set(0, 0.4, z);
-    const thigh = new Mesh(new BoxGeometry(0.12, 0.34, 0.12), jeans);
-    thigh.position.y = -0.19;
-    const foot = new Mesh(new BoxGeometry(0.2, 0.09, 0.13), boot);
-    foot.position.set(0.035, -0.355, 0);
-    pivot.add(thigh, foot);
-    return pivot;
-  };
-  const legLeft = leg(0.075);
-  const legRight = leg(-0.075);
-
-  const torso = new Mesh(new CapsuleGeometry(0.15, 0.16, 6, 14), shirt);
-  torso.position.y = 0.54;
-  const head = new Mesh(new SphereGeometry(0.19, 20, 14), skin);
-  head.position.y = 0.81;
-  const hairTop = new Mesh(new SphereGeometry(0.2, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), hair);
-  hairTop.position.set(-0.012, 0.83, 0);
-  const fringe = new Mesh(new ConeGeometry(0.075, 0.18, 8), hair);
-  fringe.position.set(0.13, 0.985, 0);
-  fringe.rotation.z = -0.85;
-  const backpack = new Mesh(new BoxGeometry(0.13, 0.24, 0.22), material('#6f6a40'));
-  backpack.position.set(-0.19, 0.56, 0);
-  const arm = (z: number) => {
-    const mesh = new Mesh(new CapsuleGeometry(0.045, 0.2, 4, 8), shirt);
-    mesh.position.set(0.02, 0.5, z);
-    return mesh;
-  };
-
-  const nearArm = arm(0.19);
-  body.add(torso, head, hairTop, fringe, backpack, nearArm, arm(-0.19));
-  group.add(body, legLeft, legRight);
-  return { group, body, legLeft, legRight, arm: nearArm };
 }
