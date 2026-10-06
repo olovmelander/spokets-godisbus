@@ -114,7 +114,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
      <div class="tutorial" id="tutorial" role="img" hidden>
        <i class="tutorial-target"></i><span class="tutorial-key" id="tutorialKey"></span><span class="tutorial-hand">${HAND}</span>
      </div>
-     <div class="notice" id="notice" role="status" hidden></div>
+     <div class="notice" id="notice" role="status" hidden><span class="notice-mark" id="noticeMark" aria-hidden="true"></span><span id="noticeText"></span></div>
      <pre class="debug" id="debug" hidden></pre>
      <div class="panel-back" id="pause" hidden>
        <div class="panel pause" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">

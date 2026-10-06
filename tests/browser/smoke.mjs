@@ -134,7 +134,7 @@ async function open(name, options, query = '?debug') {
   check('the key hint shows', await page.locator('#hint').isVisible());
   // One drawn set of icons, in the page itself (src/ui/sprite.ts): the corner's pause draws from it.
   check('the drawn icons are in the page, and the corners draw from them', await page.evaluate(() => !!document.querySelector('svg.sprite symbol#i-close')
-    && document.querySelector('#pauseBtn use')?.getBBox().width > 0 && document.querySelectorAll('#hint kbd svg').length >= 4));
+    && document.querySelector('#pauseBtn use')?.getBBox().width > 0 && document.querySelectorAll('#hint kbd svg').length >= 3));
 
   const before = await state();
   check('Elof stands on the ground', before.grounded === true && Math.abs(before.y) < 0.05, `y ${before.y.toFixed(3)}`);
@@ -160,11 +160,16 @@ async function open(name, options, query = '?debug') {
   // Sound (plan §6.8): it starts with the first key, and the run and the jump above made some.
   const heard = await info();
   check('sound runs after the first key, and effects were played', heard.sound === true && heard.soundsPlayed > 0, `${heard.soundsPlayed} effects`);
+  // The bag's number shows for a while after a candy, then the bag alone is the meter (docs/ux-audit/in-play.md row 2).
+  await page.waitForFunction(() => document.getElementById('bag').classList.contains('quiet'), null, { timeout: 15000 });
+  check('the bag\'s number goes quiet a while after the last candy', true);
 
   // The pause panel and the play style (plan §4.1, §6.10). Esc opens it, the game stands still, and what is
   // chosen is still chosen after the page is loaded again.
   await page.keyboard.press('Escape');
   check('Esc opens the pause panel', await page.locator('#pause').isVisible());
+  await sleep(200);
+  check('in Pause the bag says its number', await page.locator('#bag').evaluate((node) => !node.classList.contains('quiet')));
   const still = await state();
   await page.keyboard.down('ArrowRight');
   await sleep(400);

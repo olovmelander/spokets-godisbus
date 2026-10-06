@@ -20,12 +20,14 @@ export interface Hud {
    */
   knock(hint: { verb: Verb | null; word: string | null } | null): void;
   /**
-   * Shows the stickers of the hidden candy found so far, on the bag. A new one slaps on, and its name is
-   * said at the top of the screen (plan §4.3).
+   * The hidden candy found so far (plan §4.3). A new one hangs from the bag on a tag with its name for three
+   * seconds, then drops into the bag (docs/ux-audit/in-play.md rows 1 and 18); the stickers live in the album.
    */
   stickers(found: readonly string[]): void;
-  /** Says something at the top of the screen for a few seconds: a find. */
-  notice(text: string): void;
+  /** Hangs a few words from the bag on a tag, for `seconds`: a find, a thanks. What is being said goes on. */
+  notice(text: string, seconds?: number): void;
+  /** While paused the bag says its number; in play only for a while after a candy (in-play.md row 2). */
+  paused(on: boolean): void;
   /** Puts a line in the queue of bubbles. Each is shown for a few seconds, one after another. */
   say(who: Speaker, line: string, priority?: boolean): void;
   /**
@@ -44,6 +46,12 @@ export interface Hud {
    */
   end(title: string, count: number, onAgain: () => void, onNext?: () => void, closing?: string, hidden?: readonly { kind: string; found: boolean }[], code?: string | null, onwardWord?: string, kicker?: string): void;
 }
+
+/** A find's tag hangs from the bag this long, and its sticker takes the last part of it to drop into the bag. */
+const FIND_TIME = 3;
+const DROP_TIME = 0.4;
+/** The tag's mark when it is not a find: a drawn sparkle (src/ui/sprite.ts). */
+const SPARKLE = '<svg class="i" aria-hidden="true"><use href="#i-sparkle"/></svg>';
 
 /** A bubble stays for this long, and a little longer for each letter. */
 // Long enough to read at a child's pace: 12 letters 3.6 s, 40 letters 6.1 s (docs/ux-audit/in-play.md row 17).
@@ -85,6 +93,24 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
   };
   let stuck: string[] | null = null;
   let noticeFor = 0;
+  // How long the bag's number stays after a candy, and whether a menu is open, which keeps it.
+  const COUNT_TIME = 3;
+  let countFor = 0;
+  let pausedNow = false;
+  // Before the first candy the bag is only the bag.
+  bag.classList.add('quiet');
+  const tag = byId('notice');
+  const mark = byId('noticeMark');
+  const words = byId('noticeText');
+  /** Hangs the tag: its mark (a sticker, or a drawn sparkle) and its words. */
+  const hang = (text: string, seconds: number, picture: HTMLElement | null) => {
+    words.textContent = text;
+    mark.replaceChildren(...(picture ? [picture] : []));
+    mark.innerHTML ||= SPARKLE;
+    tag.hidden = false;
+    tag.classList.remove('dropping');
+    noticeFor = seconds;
+  };
   const verbs: Record<string, string> = sv.verbs;
   const lines: Record<string, string> = sv.lines;
   const actionWord = (verb: Verb, word?: string | null) => word === 'giveGhost' && ghostNamed() ? sv.giveKlonk : (verbs[word ?? verb] ?? verbs[verb] ?? sv.act);
@@ -95,6 +121,10 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       const grew = shown >= 0 && count > shown;
       shown = count;
       number.textContent = String(count);
+      if (grew) {
+        countFor = COUNT_TIME;
+        bag.classList.remove('quiet');
+      }
       bag.title = sv.storyContext.recovered;
       bag.setAttribute('aria-label', sv.storyContext.recoveredCount.replace('{count}', String(count)));
       bag.style.setProperty('--fill', String(total > 0 ? Math.min(1, count / total) : 0));
@@ -125,13 +155,11 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       const row = byId('bagStickers');
       row.replaceChildren(...found.map((kind) => sticker(kind)));
       for (const kind of fresh) {
-        const at = found.indexOf(kind);
-        if (!still.matches) row.children[at]?.classList.add('new');
-        // Its name, at the top of the screen, for a few seconds.
-        const notice = byId('notice');
-        notice.textContent = sv.found.replace('{name}', sv.kinds[kind] ?? kind);
-        notice.hidden = false;
-        noticeFor = 3.5;
+        // The new one on a tag from the bag, at 40 px with its name; it drops into the bag when the tag goes.
+        const piece = sticker(kind);
+        if (!still.matches) piece.classList.add('new');
+        hang(sv.found.replace('{name}', sv.kinds[kind] ?? kind), FIND_TIME, piece);
+        tag.dataset.find = kind;
       }
     },
     knock(hint) {
@@ -149,11 +177,14 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       }
       showPrompt();
     },
-    notice(text) {
-      const notice = byId('notice');
-      notice.textContent = text;
-      notice.hidden = false;
-      noticeFor = 3.5;
+    notice(text, seconds = FIND_TIME) {
+      hang(text, seconds, null);
+      delete tag.dataset.find;
+    },
+    paused(on) {
+      if (on === pausedNow) return;
+      pausedNow = on;
+      bag.classList.toggle('quiet', !on && countFor <= 0);
     },
     say(who, line, priority = false) {
       if (!lines[line]) return;
@@ -162,12 +193,12 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
     },
     hush() {
       queue.length = 0;
+      // A scene takes the floor: the tag comes down, and a line being read gets a little longer.
       if (noticeFor > 0) {
         noticeFor = 0;
-        byId('notice').hidden = true;
-        left = 0;
-        bubble.hidden = true;
-      } else left = Math.min(left, HUSH_TIME);
+        tag.hidden = true;
+      }
+      left = Math.min(left, HUSH_TIME);
     },
     speaking() {
       return left > 0 || queue.length > 0;
@@ -175,10 +206,14 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
     tick(dt) {
       if (noticeFor > 0) {
         noticeFor -= dt;
-        if (noticeFor <= 0) byId('notice').hidden = true;
+        // A find's sticker drops into the bag as its tag goes (a fade under Mindre rörelse).
+        if (noticeFor <= DROP_TIME && tag.dataset.find && !tag.classList.contains('dropping')) tag.classList.add('dropping');
+        if (noticeFor <= 0) tag.hidden = true;
       }
-      // Finds and speech share a readable area. Keep the complete speech queued while a find is shown.
-      if (noticeFor > 0) { bubble.hidden = true; return; }
+      if (countFor > 0) {
+        countFor -= dt;
+        if (countFor <= 0 && !pausedNow) bag.classList.add('quiet');
+      }
       if (left > 0) {
         bubble.hidden = false;
         left -= dt;

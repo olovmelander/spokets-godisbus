@@ -469,7 +469,8 @@ body.calm *::after {
  * in one sheet, six across and three down (src/ui/sticker.ts says which is where).
  */
 .stickers i.kind,
-.album-grid i.kind {
+.album-grid i.kind,
+.notice-mark i.kind {
   border-radius: 0;
   background: url('./kinds.webp') no-repeat;
   background-size: 600% 300%;
@@ -492,8 +493,23 @@ body.calm *::after {
   box-sizing: border-box;
 }
 
-.stickers i.new {
+.stickers i.new,
+.notice-mark i.new {
   animation: sticker-slap 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+/* In play the bag is the meter and the album's door, not a strip of stickers (docs/ux-audit/in-play.md row 1): its
+   number shows for a while after a candy and in Pause, and the stickers live in the album. */
+.bag .stickers {
+  display: none;
+}
+
+.bag-tag {
+  transition: opacity 0.4s ease-out;
+}
+
+.bag.quiet .bag-tag {
+  opacity: 0;
 }
 
 @keyframes sticker-slap {
@@ -2724,12 +2740,12 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   background-color: var(--paper);
   box-shadow: 0 3px 10px rgb(0 0 0 / 0.22);
   color: var(--ink);
-  font-size: 13px;
+  font-size: 17px;
   line-height: 1.3;
   pointer-events: none;
 }
 .story-purpose > span:last-child { display: grid; gap: 1px; }
-.story-purpose small { font-size: 10px; color: var(--ink-soft); }
+.story-purpose small { font-size: 13px; color: var(--ink-soft); }
 .story-purpose-reveal { margin-top: 3px; padding-top: 4px; border-top: 1px solid var(--paper-edge); }
 .story-purpose-reveal[hidden] { display: none; }
 #storyPurposeIcon { display: grid; color: var(--crayon-blue); }
@@ -2737,7 +2753,7 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 .story-purpose[hidden] { display: none; }
 body:has(#bubble:not([hidden])) .story-purpose,
 body:has(#notice:not([hidden])) .story-purpose { visibility: hidden; }
-body.big-text .story-purpose { font-size: 16px; }
+body.big-text .story-purpose { font-size: 21px; }
 .story-recap, .story-title, .story-handoff { padding: 12px; border-radius: 14px; background-color: var(--paper-2); line-height: 1.4; }
 .story-recap { margin: 14px 0; }
 .story-recap h3, .story-recap h4 { margin: 0 0 6px; }
@@ -3234,4 +3250,113 @@ body.calm .controls {
 /* Candy's shine, the only one in the UI: a white gleam at the upper left of each sweet (row 19). */
 .rows i {
   background-image: radial-gradient(ellipse 30% 34% at 42% 30%, rgb(255 255 255 / 0.55), transparent 72%);
+}
+
+/* --- what the HUD keeps to itself (docs/ux-audit/in-play.md rows 1, 13 and 18) -------------------------------
+   A find, a thanks: a tag of Moa's paper hanging from the bag, with the sweet's sticker or a drawn sparkle, for
+   three seconds. It never covers what is being said, which goes on beside it. */
+.notice {
+  left: calc(env(safe-area-inset-left) + 14px);
+  right: auto;
+  margin: 0;
+  top: calc(env(safe-area-inset-top) + 10px + 56px * var(--k) + 4px);
+  max-width: min(330px, calc(100% - 28px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 8px;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: left;
+  rotate: -1.5deg;
+}
+
+.notice[hidden] {
+  display: none;
+}
+
+@media (orientation: portrait) {
+  .notice {
+    top: calc(env(safe-area-inset-top) + 10px + 56px * var(--k) + 4px);
+    max-width: min(330px, calc(100% - 28px));
+  }
+}
+
+.notice-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--gold-deep);
+}
+
+.notice-mark i {
+  width: 40px;
+  height: 40px;
+}
+
+.notice-mark svg {
+  width: 30px;
+  height: 30px;
+}
+
+/* As the tag goes, the sticker drops into the bag. */
+.notice.dropping .notice-mark i {
+  animation: into-bag 0.4s ease-in forwards;
+}
+
+@keyframes into-bag {
+  to {
+    transform: translate(-4px, -58px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notice.dropping .notice-mark i {
+    animation: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+}
+
+/* The keys: three caps with a word under each, until each has been used; the whole list is in Pause. */
+.hint {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  padding: 8px 16px 6px;
+}
+
+.hint-pair {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  font-size: 13px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.hint-keys {
+  display: flex;
+  gap: 3px;
+}
+
+.hint kbd {
+  min-width: 36px;
+  height: 36px;
+  margin: 0;
+  font-size: 16px;
+  vertical-align: 0;
+}
+
+.hint kbd svg {
+  width: 20px;
+  height: 20px;
+}
+
+body.keys-learned .hint {
+  display: none;
 }

@@ -42,9 +42,10 @@ export const sv = {
   help: 'Hjälp',
 
   // Shown instead of the on-screen controls when a keyboard or a gamepad is in use.
-  // The keys' hint, as keycaps and what each does. ← → ↑ ↓ name the arrow keys; they are drawn (src/ui/keys.ts).
-  keysHint: [['← →', 'springa och gunga'], ['Mellanslag', 'hoppa och släppa'], ['↑ ↓', 'klättra'], ['E', 'använd'], ['Shift', 'gå']],
-  padHint: [['Spaken', 'springa, klättra och gunga'], ['A', 'hoppa och släppa'], ['X', 'använd']],
+  // The keys' hint: three keycaps with a word under each, until each has been used (docs/ux-audit/in-play.md row
+  // 13); the whole list is in Pause. ← → ↑ ↓ name the arrow keys; they are drawn (src/ui/keys.ts).
+  keysHint: [['← →', 'springa'], ['Mellanslag', 'hoppa'], ['E', 'använd']],
+  padHint: [['Spaken', 'springa'], ['A', 'hoppa'], ['X', 'använd']],
   // What a screen reader says for a drawn arrow key.
   arrowKeys: { '←': 'vänsterpil', '→': 'högerpil', '↑': 'uppåtpil', '↓': 'nedåtpil' },
 

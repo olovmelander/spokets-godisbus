@@ -140,8 +140,9 @@ try {
     const state=()=>({bubble:!document.getElementById('bubble').hidden,notice:!document.getElementById('notice').hidden,line:document.getElementById('bubbleLine').textContent});
     hud.say('pappa','tinyElof',true);hud.tick(0);const initial=state();hud.notice('Hittat!');hud.tick(1);const find=state();hud.tick(2.6);const resumed=state();hud.tick(1);const readable=state();
     hud.say('elof','stolenBag',true);hud.tick(0);return{initial,find,resumed,readable,priority:state()};});
-  check('Portrait: a find hides speech while keeping it queued',speech.initial.bubble && speech.find.notice && !speech.find.bubble);
-  check('Portrait: the causal line resumes with reading time after the find',speech.resumed.bubble && !speech.resumed.notice && speech.resumed.line===speech.initial.line && speech.readable.bubble);
+  // A find hangs from the bag now, so what is being said goes on beside it (docs/ux-audit/in-play.md row 18).
+  check('Portrait: a find leaves speech where it is',speech.initial.bubble && speech.find.notice && speech.find.bubble && speech.find.line===speech.initial.line);
+  check('Portrait: the causal line keeps its reading time after the find',speech.resumed.bubble && !speech.resumed.notice && speech.resumed.line===speech.initial.line && speech.readable.bubble);
   check('Portrait: a new causal priority line replaces stale dialogue',speech.priority.bubble && speech.priority.line!==speech.initial.line);
   await page.close();console.log(`Finale staging: ${checks} browser checks passed.`);
 } finally {await browser.close();await server.close();}

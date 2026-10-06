@@ -29,6 +29,7 @@ import { createStore, newSave, type PlayerSave } from './save/store';
 import { createPhotoStore } from './save/photos';
 import { ghostNamed, rememberFlags, storyFinished, visitChapter } from './save/journey';
 import { markOnward, takeOnward } from './save/onward';
+import { keysLearned, learnKeys } from './save/keys';
 import type { SimStart, Vec } from './sim/types';
 import { createBench } from './ui/bench';
 import { createDebug, type Debug } from './ui/debug';
@@ -309,12 +310,8 @@ function start(): void {
     playedFrom = now;
     if (!at && !again && loaded.kind !== 'unreadable') store.write(save);
   }
-  if (!store.available && !benchOn) {
-    const notice = byId('notice');
-    notice.textContent = sv.saveOff;
-    notice.hidden = false;
-    setTimeout(() => (notice.hidden = true), 7000);
-  }
+  // Through the HUD, like every other tag: it never lies over what is being said (in-play.md row 18).
+  if (!store.available && !benchOn) hud.notice(sv.saveOff, 7);
 
   // The on-screen controls follow the device in use, not the kind of computer (plan §4.1).
   let device: Device = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keys';
@@ -692,6 +689,12 @@ function start(): void {
   let landscape = innerWidth >= innerHeight;
   /** When a key, a tap or a pad was last used: the prologue's line of keys waits for a quiet moment. */
   let inputAt = performance.now();
+  // The keys' three caps stay until each has been used once, or for half a minute of play, then never again on
+  // this device (docs/ux-audit/in-play.md row 13). The whole list is in Pause.
+  const taught = { move: false, hop: false, act: false };
+  let keysShownFor = 0;
+  let learned = keysLearned();
+  document.body.classList.toggle('keys-learned', learned);
   for (const type of ['keydown', 'pointerdown']) window.addEventListener(type, () => { inputAt = performance.now(); }, { capture: true });
   const relayout = () => {
     const turned = (innerWidth >= innerHeight) !== landscape;
@@ -929,6 +932,17 @@ function start(): void {
       if (bench && !bench.done) ({ held, edges } = bench.play(game.sim.curr, time));
       edges = { ...edges, helper: edges.helper || askedForHelp, act: edges.act || askedForUse };
       held = pointing.steer(held, edges);
+      if (!learned && device !== 'touch') {
+        if (Math.abs(held.x) > 0.3) taught.move = true;
+        if (held.hopHeld) taught.hop = true;
+        if (edges.act) taught.act = true;
+        keysShownFor += dt;
+        if ((taught.move && taught.hop && taught.act) || keysShownFor > 30) {
+          learned = true;
+          document.body.classList.add('keys-learned');
+          learnKeys();
+        }
+      }
       game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld, talking: hud.speaking() }, edges);
       tutorial.update(dt, game.sim.curr, game.sim.flags, held, edges, game.sim.held);
       askedForUse = askedForHelp = false;
@@ -1062,6 +1076,7 @@ function start(): void {
     }
     // What is said waits while a memory plays: its line comes after it.
     hud.tick(menuOpen() ? 0 : dt);
+    hud.paused(menuOpen());
     // The end: a moment to arrive, then the card with the candy in rows of ten. The last words are let finish
     // first, for a few seconds at most: a chapter must not end over what someone is saying.
     if (atGoal) endFor += menuOpen() ? 0 : dt;

@@ -114,13 +114,15 @@ export function mapSvg(state: MapState | null, named = false, wayOn = false): st
     })
     .join('');
   const here = AT[state.here];
-  // A little Elof: a yellow tuft of hair on a blue shirt.
-  const elof = `<g transform="translate(${here.x - 22} ${here.y - 30})"><circle r="6" fill="#f4c542" stroke="#8a6a1a" stroke-width="1.5"/><path d="M-5 7h10l2 11h-14z" fill="#8fb4dc" stroke="#4a6a8c" stroke-width="1.5"/></g><text class="here" x="${here.x - 22}" y="${here.y - 42}" text-anchor="middle">${sv.map.here}</text>`;
   const ghostAt = state.ghost ?? (named ? state.here : null);
   const to = ghostAt && (named || ghostAt !== state.here) ? AT[ghostAt] : null;
+  // Elof and the ghost at the same place (Klonk, at home): their names go either side, so neither covers the other.
+  const together = to !== null && ghostAt === state.here;
+  // A little Elof: a yellow tuft of hair on a blue shirt.
+  const elof = `<g transform="translate(${here.x - 22} ${here.y - 30})"><circle r="6" fill="#f4c542" stroke="#8a6a1a" stroke-width="1.5"/><path d="M-5 7h10l2 11h-14z" fill="#8fb4dc" stroke="#4a6a8c" stroke-width="1.5"/></g><text class="here" x="${together ? here.x - 8 : here.x - 22}" y="${here.y - 42}" text-anchor="${together ? 'end' : 'middle'}">${sv.map.here}</text>`;
   // The ghost, where it is heading: on blank paper, when that place is not drawn yet.
   const ghost = to
-    ? `<g transform="translate(${to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)} ${to.y - (state.drawn.includes(ghostAt!) ? 26 : 0)})"><path d="M-7 10v-12a7 7 0 0 1 14 0v12z" fill="#e9d3a8" stroke="#8a6a3a" stroke-width="1.5"/><circle cx="-2.5" cy="-2" r="1.2"/><circle cx="2.5" cy="-2" r="1.2"/><text x="0" y="-15" text-anchor="middle">${named ? sv.ghostName : sv.who.spoket}</text></g>`
+    ? `<g transform="translate(${to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)} ${to.y - (state.drawn.includes(ghostAt!) ? 26 : 0)})"><path d="M-7 10v-12a7 7 0 0 1 14 0v12z" fill="#e9d3a8" stroke="#8a6a3a" stroke-width="1.5"/><circle cx="-2.5" cy="-2" r="1.2"/><circle cx="2.5" cy="-2" r="1.2"/><text x="${together ? -14 : 0}" y="-15" text-anchor="${together ? 'start' : 'middle'}">${named ? sv.ghostName : sv.who.spoket}</text></g>`
     : '';
   const note = state.unfinished ? `<text x="190" y="157" text-anchor="middle">${sv.map.unfinished}</text>` : '';
   // The way on: a red crayon stroke from him to the ghost's next place, a little wavy, as a child draws it.
@@ -133,7 +135,9 @@ export function mapSvg(state: MapState | null, named = false, wayOn = false): st
   // sheet for its note.
   let box = '0 -16 380 180';
   if (!state.unfinished) {
-    const xs = [...state.drawn.map((place) => AT[place].x), here.x - 22, ...(to ? [to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)] : [])];
+    const xs = [...state.drawn.map((place) => AT[place].x), here.x - 22, ...(to ? [to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)] : []),
+      // Names either side of a shared place reach further out.
+      ...(together ? [here.x - 70, here.x + 60] : [])];
     const ys = state.drawn.map((place) => AT[place].y);
     const top = Math.min(...ys.map((y) => y - 36), here.y - 58, ...(to ? [to.y - (state.drawn.includes(ghostAt!) ? 26 : 0) - 30] : []));
     const bottom = Math.max(...ys) + 50;

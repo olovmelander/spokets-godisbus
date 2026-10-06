@@ -14,6 +14,6 @@ export const keyFace = (key: string) => DRAWN[key] ? `${use(DRAWN[key]!)}<span c
 /** One key or keys side by side ("← →"), each in its own cap; the space bar's cap is wide. */
 export const keycapsOf = (keys: string) => keys.split(' ').map((key) => `<kbd${key === 'Mellanslag' ? ' class="key-wide"' : ''}>${keyFace(key)}</kbd>`).join('');
 
-/** The hint line for keys or a pad: each key, and what it does. */
+/** The hint for keys or a pad: each key, with what it does under it. */
 export const hintHtml = (pairs: readonly (readonly [string, string])[]) =>
-  pairs.map(([keys, does]) => `<span class="hint-pair">${keycapsOf(keys)} ${does}</span>`).join('<span class="hint-dot" aria-hidden="true"> · </span>');
+  pairs.map(([keys, does]) => `<span class="hint-pair"><span class="hint-keys">${keycapsOf(keys)}</span><span>${does}</span></span>`).join('');
