@@ -474,9 +474,20 @@ const RIM = 0.76;
 
 /**
  * A wooden floor: boards, level where he walks, and in front of the path the tilted plane (`TILTED`). It was
- * a face at first: the boards' picture ran down it 16 lengths deep, a plank fence with black gaps.
+ * a face at first: the boards' picture ran down it 16 lengths deep, a plank fence with black gaps. Where
+ * its edge draws back beside a step, board ends overhang a recessed fascia whose grain runs along it.
+ * Repeated corners keep the underside's shade and the fascia's grain from bleeding into one another.
  */
-const PROFILE_FLOOR: Row[] = [...BOARDS_BEHIND.filter((row) => row.z <= EDGE), ...TILTED];
+const FLOOR_DROP = TILT * (TILT_ENDS - EDGE);
+const PROFILE_FLOOR: Row[] = [
+  ...BOARDS_BEHIND.filter((row) => row.z <= EDGE),
+  ...TILTED.slice(0, -2),
+  { z: TILT_ENDS - 0.05, drop: FLOOR_DROP + 0.25, shade: 0.18, bump: 0, cut: 1 },
+  { z: TILT_ENDS - 0.05, drop: FLOOR_DROP + 0.25, shade: 0.82, bump: 0, cut: 1, rim: 0 },
+  { z: TILT_ENDS - 0.05, drop: FLOOR_DROP + 0.9, shade: 0.76, bump: 0, cut: 1, rim: 1 },
+  { z: TILT_ENDS - 0.05, drop: FLOOR_DROP + 0.9, shade: 0.4, bump: 0, cut: 1 },
+  ...TILTED.slice(-2),
+];
 
 /**
  * A walk of planks laid over a bog is narrow: it has a front edge. The boards' ends, a line of shadow under
