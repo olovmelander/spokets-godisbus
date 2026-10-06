@@ -4,6 +4,7 @@ import {
   type DirectionalLight, type Scene, type WebGLRenderer,
 } from 'three';
 import type { Tier } from './quality';
+import { setBakedShade } from './forest-shadows';
 
 export const CHARACTER_SHADOW_SIZE = 1024;
 const CAPACITY = 64;
@@ -18,12 +19,16 @@ export interface ShadowCharacter {
   active?(): boolean;
 }
 
-/** Bounded character-only shadows. Decorative plants/props never enter the shadow caster pass. */
+/** Bounded character shadows, with explicitly marked world casters sharing High's existing map. */
 export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, sun: DirectionalLight) {
   const characters: ShadowCharacter[] = [];
   const place = new Object3D();
   const at = new Vector3(), scale = new Vector3();
-  const direction = sun.position.clone().sub(sun.target.position).normalize().multiplyScalar(50);
+  let worldCasters = false;
+  scene.traverse((object) => { if (object instanceof Mesh && object.userData.casts === true) worldCasters = true; });
+  // The backmost spruces cast across the path from over 50 EL towards the sun. Move the light back,
+  // not its map bounds: otherwise the near plane clips the trees whose shade reaches the foreground.
+  const direction = sun.position.clone().sub(sun.target.position).normalize().multiplyScalar(worldCasters ? 80 : 50);
   let tier: Tier = 'low';
   const fade = new InstancedBufferAttribute(new Float32Array(CAPACITY * 2), 2).setUsage(DynamicDrawUsage);
   const ground = new PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
@@ -64,7 +69,7 @@ export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, su
   sun.shadow.radius = 2;
   sun.shadow.intensity = .55;
   sun.shadow.camera.near = .1;
-  sun.shadow.camera.far = 110;
+  sun.shadow.camera.far = worldCasters ? 150 : 110;
 
   function releaseMap(): void {
     sun.shadow.map?.depthTexture?.dispose();
@@ -77,6 +82,7 @@ export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, su
     tier = next;
     material.uniforms.contact!.value = tier === 'low' ? 0 : 1;
     renderer.shadowMap.enabled = sun.castShadow = casters.visible = tier === 'high';
+    scene.traverse((object) => setBakedShade(object, tier !== 'high'));
     if (tier !== 'high') releaseMap();
     else sun.shadow.needsUpdate = true;
   }
@@ -94,10 +100,12 @@ export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, su
     /** Called only during the existing loading/menu warmup, including after private models arrive. */
     prepareReceivers(): void {
       scene.traverse((object) => {
+        // A ground mesh installed after the last tier change must take the current tier's shade too.
+        setBakedShade(object, tier !== 'high');
         if (!(object instanceof Mesh) || object === casters || object === blobs) return;
         const materials = Array.isArray(object.material) ? object.material : [object.material];
         if (materials.some((m) => 'isMeshStandardMaterial' in m || 'isMeshLambertMaterial' in m)) object.receiveShadow = true;
-        object.castShadow = false;
+        object.castShadow = object.userData.casts === true;
       });
     },
     update(focusX: number, focusY: number, span: number): void {

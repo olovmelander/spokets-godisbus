@@ -2,6 +2,33 @@
 
 ## State (6 October 2026)
 
+- **Graphics, cloud stage 2: the spruces cast across the path** (6 October,
+  `codex/graphics-stage-forest-shadows`, after stage 1; implementation checkpoint `6f41c46`). Olov asked to
+  continue in small stages and show screenshots. Stage 1's PR #153 is green; this branch follows it.
+  - High admits only the marked trunk instances into the existing 1024-square shadow map, alongside the
+    character proxies. The forest's light sits 80 EL behind its target with a 150 EL far plane: a tree at
+    z -22 can cast onto the foreground from beyond the old light position. The map's width and resolution
+    stay the same. The existing warmup marks replacement trunks after the forest kit arrives.
+  - Low and Mid sample the same trunks' transforms, tilt and taper once into the bank's vertex colours.
+    Their softer shade follows slopes and cut faces, stops at the trunk's height, and never multiplies
+    darkness where trees overlap. High restores the exact original colours, avoiding double shade.
+    Four extra rows smooth the bands on forest moss; the garden keeps its original ground profile.
+  - **Checked:** typecheck; all 1,267 unit/simulation/robot tests; build and size gates (445.2 KB gzipped
+    script of 450 KB; boot 1,498.4 KB of 3,072 KB); local built-in privacy scan. The new forest-shadow
+    browser suite passes 18 checks, including actual pixels from offscreen trees, camera movement,
+    replacement assets, repeated tier switches and map release. The existing shadow/settings suite
+    passes for Granskogen and Gården (32 checks). No shaders compile during play after warmup.
+  - **Before/after:** Granskogen x 63 and x 106 at 844×390 and 1180×820, Low and High, with the same camera
+    and frozen frame. Low keeps all draw/program counts (49–65 draws, 28 programs). High adds 8–9 draws
+    (64–79 total, of 200) and two warmed programs (64 total). The extra rows add 5,384 visible triangles;
+    High's trunk pass brings the full increase to 11,544–11,852. The moss reads in bands and the doorway
+    remains clear; no new bark acne was seen. Comparisons were delivered to Olov, using stand-in figures.
+    Iteration captures stay in ignored `docs/shots/_work/forest-shadows/`, not an H1a checkpoint.
+  - **Next:** rim light as its own cloud stage, following the actual camera during story shots and fading
+    with nightfall. Roofs, boulders and canopy shadows remain separate work. Device timing and private
+    models still need Olov's review; new Blender assets need his computer. The script has 4.8 KB left.
+    `RELEASED_CHAPTER` is still `null`; no new bugs, questions or *Senare* items arose from this stage.
+
 - **Graphics, cloud stage 1: the same haze and sky colour pipeline on every tier** (6 October,
   `codex/graphics-stage-haze`, from `main` at `c4a2b8a`; first checkpoint `9006cd4`). Olov asked to continue
   the handover from the latest main, without Blender MCP, in small stages with regular git checkpoints.
@@ -1952,10 +1979,10 @@
 - **The look, the next steps** (`docs/visual-audit.md`, "The order of the work"; the "Still wrong" lists in
   the state above and in each pull request). In the order I would take them:
   1. **The base haze and sky pipeline is shared across tiers** (cloud stage 1, above; pipeline row 3).
-     Height-dependent haze (row 15) and translucent/additive light balance remain. The next bounded
-     lighting stage is forest trunk shadows: explicit casters on High, soft ground shade on Low/Mid,
-     using the same existing trunk placements. Review at Granskogen x 63 on a tablet and phone before
-     expanding to roofs or mountain props. Rim light follows separately; its sun direction must follow
+     Height-dependent haze (row 15) and translucent/additive light balance remain. **Forest trunk shadows
+     are built** (cloud stage 2): explicit casters on High, soft ground shade on Low/Mid, using the same
+     trunk placements, reviewed at x 63 and x 106 on tablet and phone sizes. Roofs and mountain props
+     remain separate work. **Rim light is next** as a small cloud stage; its sun direction must follow
      the actual camera during story shots and its strength must fade with nightfall.
   2. **The ground leaves out the blocks that are things:** `chapter.landmarks` (the forest's cone, log,
      anthill and stone) and the mountain's shelves say where; the bank and its cut walls behind them go.
@@ -2107,6 +2134,7 @@ The older list, still true where it is not struck:
 | Renderer | Three.js r186 `WebGLRenderer` on WebGL 2 | Olov, 3 Oct |
 | Where work happens | Mostly on Olov's laptop (Windows, RTX 3070, 8 GB), with Blender through *MCP for Blender*; image-to-3D on his other computer (RTX 5080, 16 GB); cloud sessions for code | Olov, 3 Oct |
 | Graphics in cloud sessions | Continue from the latest main and repository handover, without Blender MCP. One bounded visible stage at a time, with git checkpoints before starting another. | Olov, 6 Oct |
+| Forest shadows | Only explicitly marked trunks join High's existing character shadow map. Low/Mid use soft ground shade from the same transforms; High restores the unbaked colours. Other world casters wait for their own stage. | Session, 6 Oct |
 | Scale | (a): Elof shrinks to the ghost's size at the end of the prologue | Olov, 3 Oct |
 | The secret | Pappa's first trägubbe, carved for Elof when he was about three and lost on the mountain. Little Elof shared his Saturday sweets with it, which is why the ghost takes the bag. The game names no year. | Olov, 3 Oct; the retelling in plan §2.4 and §3.4 is the session's |
 | The ghost's name | *Klonk*, after its footsteps. Elof names it in the epilogue; until then it is "spöket". | Olov asked for a name, 3 Oct; the name is the session's proposal |
@@ -2147,7 +2175,7 @@ The older list, still true where it is not struck:
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 recorded | — / 2 | Original plan versions 1–4; `main` and the placeholder page; the reference pictures gathered. Version 5 on 4 October adds the researched story/level overhaul and its acceptance criteria; no new session or review count is inferred. |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. On 6 October, cloud graphics stage 1 unifies linear haze and the graded sky across tiers, with no new assets or passes. Final visual and physical-device review remains. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. On 6 October, cloud graphics stage 1 unifies linear haze and the graded sky across tiers, with no new assets or passes. Cloud stage 2 adds forest trunk shadows on High and soft ground shade on Low/Mid; phone/tablet before-and-after pictures delivered, each stage checkpointed in git. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
 | 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, the prologue rebuilt as scenes with an outdoor deck, every chapter's ending (a coda, a storybook page, and a time card at the next one's start), and a UX, UI and presentation audit (137 findings, eleven steps) with chapters that open on their card instead of the title. On 6 October, in a cloud session, its steps 1 to 11 and every row after them: the type, the controls, the speakers, a clear screen for the story, a short Pause with settings a child can read, a title over the living morning with one tap to play, the materials (paper, wood and candy, and every picture drawn), the UI's sound, the chapter's page as a storybook page, the collections, and a picture for every verb, on the button and over the thing; a HUD that keeps to itself, small things for every device, the page's map and tally, a ring round the held finger, help that carries on, one switch for less motion, what they feel on the bubbles, the painting and the carving close, the credits as the book's last pages, a picture for every player, Moa's words in wax, and the game installable on Android. Broader spatial work, Byn's return loop and the rest of its own story, final likeness/contact/acting/memory art, the story's further steps (sound next), listening and device checkpoints remain; no release is declared. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. |

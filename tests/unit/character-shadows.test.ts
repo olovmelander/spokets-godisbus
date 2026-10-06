@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DirectionalLight, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, Scene, Vector3, WebGLRenderTarget, DepthTexture, type WebGLRenderer, type InstancedMesh } from 'three';
 import { CHARACTER_SHADOW_SIZE, createCharacterShadows } from '../../src/render/character-shadows';
+import { setBakedShade } from '../../src/render/forest-shadows';
 
 function fixture() {
   const scene = new Scene();
@@ -67,5 +68,48 @@ describe('bounded character shadows', () => {
     scene.traverse((object) => { if (object instanceof Mesh && object.castShadow) casters.push(object.name); });
     expect(casters).toEqual(['character-shadow-casters']);
     expect(sun.shadow.mapSize.toArray()).toEqual([1024, 1024]);
+  });
+
+  it('whitelists world casters through repeated warmups and keeps far-tree shadow rays ahead of the near plane', () => {
+    const scene = new Scene();
+    const tree = new Mesh(new PlaneGeometry(), new MeshStandardMaterial());
+    tree.userData.casts = true;
+    const prop = new Mesh(new PlaneGeometry(), new MeshStandardMaterial());
+    prop.castShadow = true;
+    scene.add(tree, prop);
+    const sun = new DirectionalLight(); sun.position.set(-7, 5, -4); scene.add(sun);
+    const renderer = { shadowMap: { enabled: false, type: -1 } } as unknown as WebGLRenderer;
+    const shadows = createCharacterShadows(renderer, scene, sun);
+    shadows.setTier('high');
+    shadows.prepareReceivers(); shadows.prepareReceivers();
+    expect(tree.castShadow).toBe(true);
+    expect(prop.castShadow).toBe(false);
+    shadows.update(63, 0, 10);
+    sun.updateWorldMatrix(true, false);
+    sun.shadow.updateMatrices(sun);
+    // A trunk at z=-22 occludes the sun seen from z=5 at this point 64 EL towards the light.
+    const intercept = new Vector3(63 - 7 * 6.75, 5 * 6.75, -22).project(sun.shadow.camera);
+    for (const axis of ['x', 'y', 'z'] as const) expect(Math.abs(intercept[axis])).toBeLessThan(1);
+    expect(sun.shadow.mapSize.toArray()).toEqual([1024, 1024]);
+    shadows.setTier('mid'); expect(renderer.shadowMap.enabled).toBe(false);
+  });
+
+  it('switches baked shade with the tier, including ground installed after a tier change', () => {
+    const { scene, shadows } = fixture();
+    shadows.setTier('high');
+    const ground = new Mesh(new PlaneGeometry(), new MeshStandardMaterial());
+    const original = new Float32Array(ground.geometry.getAttribute('position').count * 3).fill(.8);
+    const shaded = original.map((value) => value * .7);
+    ground.geometry.setAttribute('color', ground.geometry.getAttribute('position').clone());
+    ground.geometry.getAttribute('color').array.set(original);
+    ground.userData.shadowBake = { original, shaded, active: false };
+    setBakedShade(ground, true);
+    scene.add(ground);
+    shadows.prepareReceivers();
+    expect(ground.geometry.getAttribute('color').array).toEqual(original);
+    for (const tier of ['low', 'mid', 'high'] as const) {
+      shadows.setTier(tier); shadows.prepareReceivers();
+      expect(ground.geometry.getAttribute('color').array).toEqual(tier === 'high' ? original : shaded);
+    }
   });
 });

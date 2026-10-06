@@ -294,6 +294,15 @@ camera-locked triangle in the scene, outside the fog, so it receives that same g
 changes its brightness and the live haze colour together. This does not make whole frames identical:
 High still has its depth blur, glow and shadows, and transparent layers blend in the tier's output space.
 
+**Forest shadows** follow the existing spruces and the place's sun. On High, only the marked trunks join
+the characters in the existing 1024-pixel shadow map: their shade crosses the moss, the cut bank and the
+figures. The light reaches far enough behind the path to include a tree outside the camera whose shadow
+falls into view. Low and Mid use a softer shade sampled once into the bank's vertex colours from those
+same trunk transforms, including slopes and the door's spruce. Extra rows on the moss keep the bands
+smooth; the garden keeps its own mesh. Switching to High restores the original colours before the live
+map is used, so the two kinds of shade never stack. Roofs, boulders and canopy shadows are still separate
+work; this pass uses the trees already in the game and no new assets.
+
 **Water** (`src/render/water.ts`) is one mesh in a chapter and one shader on every tier:
 - **It mirrors its place.** The backdrop's sky, and the far layers' pictures standing on their heads, hinged
   where the nearest of them meets the water; a street puddle mirrors the house fronts behind it instead. The

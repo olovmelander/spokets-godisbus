@@ -322,6 +322,8 @@ describe('the forest\'s floor with the kit', () => {
       expect(group.children.length).toBe(8);
       standIn += triangles(group);
       expect(restock(group, forest, kit)).toBe(true);
+      const trunks = group.getObjectByName('forest-trunks')!;
+      expect(trunks.userData.casts).toBe(true);
       expect(group.children.length).toBeLessThanOrEqual(7);
       expect((group.children[0] as InstancedMesh).geometry).toBe(kit.shape('tuva'));
       fromKit += triangles(group);

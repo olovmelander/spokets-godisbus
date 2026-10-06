@@ -10,6 +10,7 @@ import { fell } from './fell';
 import { foreground, type Growth } from './foreground';
 import { stretch } from './forest';
 import { setWind, type Blow } from '../wind';
+import { bakeForestShadows } from '../forest-shadows';
 import { bank, type Ground } from './ground';
 import { heightAt, makeKit, type PlaceLook } from './kit';
 import { lawn } from './lawn';
@@ -180,6 +181,8 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   makeKit();
   // What stands on the ground comes first: the bee is told where the dandelions are.
   const standing = scatter(chapter, from, to, look.id);
+  const ground = bank(chapter, own);
+  if (look.id === 'forest') bakeForestShadows(ground, standing, look.sun.from);
   const air = effects(chapter, from, to, look.id, standing);
   const front = foreground(chapter, from, to, OWN[look.id].growth, standing);
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
@@ -198,7 +201,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   if (wild) group.add(wild.mesh);
   group.add(
     far.group,
-    bank(chapter, own),
+    ground,
     standing,
     built(chapter, look.id === 'home'),
     houses?.group ?? new Group(),

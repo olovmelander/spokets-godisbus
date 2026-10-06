@@ -61,6 +61,12 @@ Measured in this audit and used below (phone costs are reasoned from texture rea
 - Do this before any tuning of looks: everything tuned afterwards is tuned once.
 
 **3. Shadows from the world (rows 20, 10's fold, 2, 12).**
+- **6 October, cloud stage 2:** the forest-trunk pilot is built. High reuses the character map for the
+  explicitly marked trunks; Low/Mid bake softer bands from the same transforms into the bank, with four
+  extra moss rows. Distant offscreen casters are inside the light's depth range. Before/after at x 63 and
+  x 106 keeps Low's draws unchanged and adds 8–9 on High (64–79 total). The current tier limits are
+  120/160/200, superseding the audit's original 105 target below. Roofs, mountain props and broader static
+  contact work remain. See `HANDOVER.md` for the tests and device-review limits.
 - Built, in order: (a) win the draws back: instanced cards, stretches culled by x, no water copy without water, the output folded into the grade (granskog 63 on High from 101 to 91 or less); (b) High: the casters; (c) Low and Mid: the baked shade and the extra z rows; (d) the static contact blobs.
 - Done when: at granskog 63 on High two or three dark bands 2 to 3 EL wide lie across the moss from upper left to lower right, over the path and down the bank, and Elof darkens as he walks through one; at garden 60 the earth under the deck is in cool shade at about 45% of its sunlit value and the stripes of sun are the only bright thing there; at berget 108 each ledge stack and boulder throws a shadow 3.3 times its height to the right; Low shows the soft baked version of the same; draw calls with stand-ins stay at 105 or less.
 - Could go wrong: acne on the rolling moss and on thin ledges (bias and `normalBias` are set for capsules); a moving ledge must not be in the bake; a blob inside a trunk's shadow darkens twice (lower the blob there or accept it); Mid may not afford the map.
