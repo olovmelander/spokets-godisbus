@@ -14,6 +14,22 @@
   <link rel="preload" href="%BASE_URL%fonts/andika-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="%BASE_URL%fonts/playpen-sans-700-sv.woff2" as="font" type="font/woff2" crossorigin>
   <title>Elof och det stora godisäventyret</title>
+  <script>
+    // Less motion before the first paint (src/platform/motion.ts): the device's setting, or Mindre rörelse in the
+    // current player's save. main.ts keeps it from then on.
+    (function () {
+      try {
+        var calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!calm) {
+          var index = JSON.parse(localStorage.getItem('godisbus.v1.index') || 'null');
+          var id = index && typeof index.current === 'string' ? index.current : 'elof';
+          var saved = JSON.parse(localStorage.getItem('godisbus.v1.player.' + id) || 'null');
+          calm = !!(saved && saved.settings && saved.settings.calm === true);
+        }
+        if (calm) document.documentElement.dataset.motion = 'reduce';
+      } catch (e) { /* Without storage it is set as soon as the game's script runs. */ }
+    })();
+  </script>
   <!-- The loading card is inline, so it shows before any script has arrived. No external requests. -->
   <style>
     html, body { position: fixed; inset: 0; margin: 0; overflow: hidden; background: #ecdfc6; }
@@ -27,7 +43,7 @@
       0%, 100% { transform: translateY(0) rotate(-2deg); }
       50% { transform: translateY(-6px) rotate(2deg); }
     }
-    @media (prefers-reduced-motion: reduce) { .loading svg { animation: none; } }
+    :root[data-motion="reduce"] .loading svg { animation: none; }
     /* Going on from a chapter's last page, the card is the next chapter's time card: black, with its scrap of Moa's
        paper where the chapter's own card has it, so the picture fades up from it (docs/ux-audit/first-minutes.md
        row 2). The words come from the page before, through this tab's session (src/save/onward.ts). */

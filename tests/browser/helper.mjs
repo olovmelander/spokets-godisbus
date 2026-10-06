@@ -87,12 +87,12 @@ try {
     check(`${name}: pause holds the helper and demonstration`, JSON.stringify(paused.actor) === JSON.stringify(end.actor) && JSON.stringify(paused.figures) === JSON.stringify(end.figures));
     const repeated = await page.evaluate(() => { const p = window.probe; p.ask(); p.draw(0); return p.snapshot(); });
     check(`${name}: another request replays the short demonstration`, repeated.help.replay === first.help.replay + 1 && Math.abs(repeated.figures[0].at[0] - first.figures[0].at[0]) < 0.01);
-    const calm = await page.evaluate(() => { document.body.classList.add('calm'); const p = window.probe; p.draw(0); return p.snapshot(); });
+    const calm = await page.evaluate(() => { document.documentElement.dataset.motion = 'reduce'; const p = window.probe; p.draw(0); return p.snapshot(); });
     const calmLater = await page.evaluate(() => { const p = window.probe; p.draw(2); return p.snapshot(); });
     check(`${name}: Mindre rörelse keeps a static three-pose explanation`, calm.figures.every((f) => f.opacity > 0) && JSON.stringify(calm.figures) === JSON.stringify(calmLater.figures) && JSON.stringify(calm.actor) === JSON.stringify(calmLater.actor) && calm.programs === visit.programs);
     await picture(page, join(shots, `${name}-calm.png`));
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    const os = await page.evaluate(() => { document.body.classList.remove('calm'); const p = window.probe; p.draw(1); return p.snapshot(); });
+    const os = await page.evaluate(() => { delete document.documentElement.dataset.motion; const p = window.probe; p.draw(1); return p.snapshot(); });
     check(`${name}: device reduced-motion preference selects the same still explanation`, JSON.stringify(os.figures) === JSON.stringify(calm.figures));
     assert.deepEqual(errors, [], `${name}: browser errors`);
     console.log(`  draws ${name}: ${visit.drawCalls}/${middle.drawCalls}/${calm.drawCalls}`);

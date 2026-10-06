@@ -91,10 +91,10 @@ try {
     await picture(page, join(shots, `${name}.png`));
     const paused = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 20; i++) p.draw(0); return p.snapshot(); });
     check(`${name}: pause freezes placement and opacity without changing the simulation`, JSON.stringify(paused.at) === JSON.stringify(shown.at) && paused.opacity === shown.opacity && paused.sim === shown.sim);
-    const calm = await page.evaluate(() => { const p = window.probe; document.body.classList.add('calm'); p.draw(0.2); const a = p.snapshot(); for (let i = 0; i < 40; i++) p.draw(0.1); return { a, b: p.snapshot() }; });
+    const calm = await page.evaluate(() => { const p = window.probe; document.documentElement.dataset.motion = 'reduce'; p.draw(0.2); const a = p.snapshot(); for (let i = 0; i < 40; i++) p.draw(0.1); return { a, b: p.snapshot() }; });
     check(`${name}: calm motion keeps the picture still without new textures or shaders`, JSON.stringify(calm.a.at) === JSON.stringify(calm.b.at) && calm.b.textures === shown.textures && calm.b.geometries === shown.geometries && calm.b.programs === shown.programs && calm.b.version === shown.version);
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    const os = await page.evaluate(() => { const p = window.probe; document.body.classList.remove('calm'); p.draw(0.2); const a = p.snapshot(); p.draw(1); return { a, b: p.snapshot() }; });
+    const os = await page.evaluate(() => { const p = window.probe; delete document.documentElement.dataset.motion; p.draw(0.2); const a = p.snapshot(); p.draw(1); return { a, b: p.snapshot() }; });
     check(`${name}: OS reduced motion uses the same static picture`, JSON.stringify(os.a.at) === JSON.stringify(os.b.at) && JSON.stringify(os.a.at) === JSON.stringify(calm.a.at));
     const departed = await page.evaluate((course) => { const p = window.probe; if (course === 'berget') p.sim.flags.add('lift'); else p.sim.ghost.gone = true; p.draw(0); return p.snapshot(); }, course);
     check(`${name}: leaving or helping at Lift immediately clears the picture`, departed.opacity === 0 && departed.scale === 0);

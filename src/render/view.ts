@@ -1,3 +1,4 @@
+import { lessMotion } from '../platform/motion';
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
@@ -694,7 +695,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const unculled: Object3D[] = [];
   const idle: Object3D[] = [];
   const projectedPlayer = new Vector3();
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let reaction: Reaction | null = null;
   let responseFor = 0;
   let calmResponse = false;
@@ -763,7 +763,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   function render({ prev, curr, alpha, dt, atGoal, collected, side, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue, scene: sceneFrame, ending }: Frame): void {
     inEndingShot = !!chapter.epilogue && ending !== null && ending !== undefined;
     rain.update(drips);
-    epilogueStage.update(flags, ending, reducedMotion.matches || document.body.classList.contains('calm'));
+    epilogueStage.update(flags, ending, lessMotion());
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     if (chapter.id === 'norrsken') {
       const eyes = scene.getObjectByName('first-carving-eyes');
@@ -774,7 +774,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const onShoulders = chapter.id === 'norrsken' && curr.mode === 'ride' && flags.has('home');
     if (onShoulders) homeJourney = true;
     const wantShoulders = onShoulders ? 4.25 : 0;
-    const calmStory = reducedMotion.matches || document.body.classList.contains('calm');
+    const calmStory = lessMotion();
     shoulderLift = calmStory ? wantShoulders : shoulderLift + Math.sign(wantShoulders - shoulderLift) * Math.min(Math.abs(wantShoulders - shoulderLift), dt * 8.5);
     clock += dt;
     // The scene playing now, if any: where the family and the ghost are, what they do, and the shot (./stage.ts).
@@ -790,7 +790,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     lawnSong.update(flags, clock);
     for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
     cones.update(rollers, clock);
-    water.update(clock, reducedMotion.matches || document.body.classList.contains('calm'));
+    water.update(clock, lessMotion());
     for (const [i, t] of tussocks.entries()) tussockMeshes[i]?.position.set(t.x, t.y, 0);
     // A cranberry goes flat under him and springs back, a little past its shape.
     for (const [i, b] of (berries ?? []).entries()) {
@@ -843,7 +843,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (thing.prop && chapter.prologue && thing.spot.id === 'star') {
         const spilled = flags.has('blink') && flags.has('bag:torn') && (starDropTime > 0 || (x >= 37.5 && (ghostState?.x ?? 0) >= 40.5));
         if (spilled && dt > 0) starDropTime = Math.min(.65, starDropTime + dt);
-        const progress = reducedMotion.matches || document.body.classList.contains('calm') ? 1 : Math.min(1, starDropTime / .65);
+        const progress = lessMotion() ? 1 : Math.min(1, starDropTime / .65);
         thing.prop.group.visible = spilled && !flags.has('star');
         thing.prop.group.position.set(thing.spot.at.x + (1 - progress) * .3,
           thing.spot.at.y + (1 - progress * progress) * .9, -.35);
@@ -869,7 +869,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       poff = tall !== want;
       tall += Math.sign(want - tall) * Math.min(Math.abs(want - tall), ((sized.scale - 1) * dt) / 1.2);
     }
-    helper.update(help, x, y, curr.standY, clock, dt, reducedMotion.matches || document.body.classList.contains('calm'));
+    helper.update(help, x, y, curr.standY, clock, dt, lessMotion());
     // The helper is the same friend, not a second ghost alongside the one he is following.
     ghostPlace.visible = chapter.ghost !== undefined && !(ghostHelps && helper.active);
     hiddenSweets.update(flags, clock, dt, reaction?.kind === 'hidden' ? reaction.index : undefined, response);
@@ -1098,7 +1098,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostStaged = true;
     }
     ghostThought?.update(ghostState, flags, { x, y }, camera, clock, dt,
-      reducedMotion.matches || document.body.classList.contains('calm'), ghostPlace.visible);
+      lessMotion(), ghostPlace.visible);
     // The family: each turns a little towards him, and throws their arms up for a moment when he has given
     // them candy, or when they first come into the picture.
     for (const one of family) {
@@ -1110,7 +1110,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       one.model.rotation.y += (towards - one.model.rotation.y) * ease(4, dt);
       const up = one.joy > 0 ? Math.min(1, one.joy / 0.3, (1.8 - one.joy) / 0.25) : 0;
       // A small hop of delight, and otherwise the slow sway of someone standing.
-      one.model.position.y = reducedMotion.matches || document.body.classList.contains('calm') ? 0 : up * Math.abs(Math.sin(clock * 9)) * .36;
+      one.model.position.y = lessMotion() ? 0 : up * Math.abs(Math.sin(clock * 9)) * .36;
       for (const [i, arm] of one.arms.entries()) {
         bendJoint(arm, up > 0 ? -3.0 * up : Math.sin(clock * 1.1 + one.at + i) * 0.05, ease(10, dt));
         bendJoint(one.hands[i] ?? null, up > 0 ? -0.2 * up : -0.08, ease(10, dt));

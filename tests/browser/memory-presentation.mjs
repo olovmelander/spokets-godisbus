@@ -99,12 +99,13 @@ try {
   for (const mode of ['option', 'saved', 'system']) {
     await page.emulateMedia({ reducedMotion: mode === 'system' ? 'reduce' : 'no-preference' });
     await page.evaluate((mode) => {
-      document.body.classList.toggle('calm', mode === 'saved');
+      if (mode === 'saved') document.documentElement.dataset.motion = 'reduce';
+      else delete document.documentElement.dataset.motion;
       window.playMemory({ calm: mode === 'option' }); window.memory.suspend(true);
     }, mode);
     start = await snapshot();
     check(`${mode} reduced motion uses a centred fade without travel`, start.transform === 'none' && start.centre.x > 300 && start.width > 200);
-    await page.evaluate(() => { window.memory.close(); window.memory.suspend(false); document.body.classList.remove('calm'); });
+    await page.evaluate(() => { window.memory.close(); window.memory.suspend(false); delete document.documentElement.dataset.motion; });
   }
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   for (const value of [null, { x: -10, y: 20 }, { x: NaN, y: 20 }]) {

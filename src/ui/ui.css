@@ -370,17 +370,9 @@ body.big-text {
   --map-text: 1.25;
 }
 
-/* Mindre rörelse: nothing bounces, pulses, slaps on or slides. */
-body.calm *,
-body.calm *::before,
-body.calm *::after {
-  animation: none !important;
-  transition: none !important;
-}
-
 /* A panel opens like paper laid down: its backdrop fades in and the paper rises a little. Inside Pause a page
-   turns in from the side it comes from. Closing stays instant. None of it with Mindre rörelse, above, or the
-   device's reduced motion (docs/ux-audit/menus.md row 20). */
+   turns in from the side it comes from. Closing stays instant (docs/ux-audit/menus.md row 20). With less motion
+   each only fades ("Less motion", at the end). */
 @keyframes panel-fade {
   from {
     opacity: 0;
@@ -415,16 +407,6 @@ body.calm *::after {
 
 .turn-back {
   --turn-from: -24px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :is(#pause, #explore, #photoAlbum, #storyPanel):not([hidden]),
-  :is(#pause, #explore, #photoAlbum, #storyPanel):not([hidden]) > .panel,
-  .turn:not([hidden]),
-  .turn-back:not([hidden]),
-  .message.waiting .message-ghost svg {
-    animation: none;
-  }
 }
 
 /* --- the candy bag, top left: it fills as Elof collects (plan §4.3) ------------------------------ */
@@ -645,13 +627,6 @@ body.calm *::after {
   }
   to {
     scale: 1.06;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .btn-act.pulse,
-  .key-prompt.pulse {
-    animation: none;
   }
 }
 
@@ -2036,20 +2011,6 @@ details.info-row p {
   to { stroke-dashoffset: 0; }
 }
 
-body.calm .panel.end,
-body.calm .moas-karta .way-on {
-  animation: none;
-  stroke-dashoffset: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .panel.end,
-  .moas-karta .way-on {
-    animation: none;
-    stroke-dashoffset: 0;
-  }
-}
-
 /* Any screen held sideways: the page opens in two, as a book does, the story on the left and the tally on the right,
    with the fold's shadow between them, so that nothing of it is scrolled out of sight (row 9). */
 @media (orientation: landscape) and (min-width: 700px) {
@@ -2430,12 +2391,6 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   width: 32px;
   height: 40px;
   animation: bob 2.4s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .waiting-ghost {
-    animation: none;
-  }
 }
 
 /* Under the start: round buttons with a word under each (row 7). */
@@ -2876,9 +2831,6 @@ body.follow-finger .stick-base {
 .follow-arrow[hidden] {
   display: none;
 }
-body.calm .finger-ring {
-  transition: none;
-}
 
 .pause-options,
 .controls-reference {
@@ -3060,11 +3012,7 @@ button.bag {
    (docs/ux-audit/first-minutes.md row 20). */
 .tutorial[data-device="touch"]:is([data-lesson="act"], [data-lesson="hop"]) .tutorial-hand { top: 64px; left: -22px; animation-name: tutorial-rim; }
 @keyframes tutorial-rim { 0%, 100% { transform: translate(-8px, 10px) rotate(35deg); opacity: .7; } 30%, 70% { transform: translate(0, 0) rotate(35deg); opacity: 1; } }
-body.calm .tutorial[data-device="touch"]:is([data-lesson="act"], [data-lesson="hop"]) .tutorial-hand { transform: rotate(35deg); }
-@media (prefers-reduced-motion: reduce) { .tutorial[data-device="touch"]:is([data-lesson="act"], [data-lesson="hop"]) .tutorial-hand { transform: rotate(35deg); } }
 @keyframes tutorial-move { 0%, 100% { transform: translate(-14px, 0) rotate(-14deg); } 50% { transform: translate(22px, 0) rotate(-14deg); } }
-body.calm .tutorial-hand { animation: none !important; }
-@media (prefers-reduced-motion: reduce) { .tutorial-hand { animation: none !important; } }
 
 /* The last camera shot stays visible behind a short caption and one ordinary menu control. */
 .ending-shot {
@@ -3240,11 +3188,6 @@ body.scene-bars .scene-caption .place {
     top: 18%;
     width: 92vw;
   }
-}
-
-body.calm .scene-bar,
-body.calm .controls {
-  transition: none;
 }
 
 /* --- The materials (docs/ux-audit/style-and-sound.md, "Materials"; rows 10, 11 and 14) ------------------------
@@ -3427,14 +3370,6 @@ body.calm .controls {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .notice.dropping .notice-mark i {
-    animation: none;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-}
-
 /* The keys: three caps with a word under each, until each has been used; the whole list is in Pause. */
 .hint {
   display: flex;
@@ -3513,12 +3448,6 @@ body.keys-learned .hint {
   animation: message-bob 2.4s ease-in-out infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .title-updating-ghost svg {
-    animation: none;
-  }
-}
-
 /* What is said lands like a scrap of paper put down, and a find's tag swings in from the bag
    (docs/ux-audit/style-and-sound.md row 16); under reduced motion both only fade. */
 @keyframes scrap-land {
@@ -3550,9 +3479,71 @@ body.keys-learned .hint {
   animation: tag-swing var(--dur-panel) var(--ease-paper);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .bubble:not([hidden]),
-  .notice:not([hidden]) {
-    animation: only-fade var(--dur-quick) ease-out;
+/* --- Less motion (docs/ux-audit/style-and-sound.md row 17, "Motion") ----------------------------------------------
+   One switch for both of its sources, the device's setting and Mindre rörelse: <html data-motion="reduce">, set before
+   the first paint (index.html) and kept by main.ts (src/platform/motion.ts). Movement becomes a fade, never nothing:
+   a sheet, a page, a bubble and a notice only fade in, in 160 ms; wood sinks at once; loops stop; a candy lights up
+   in place of its bump and slap; the scene's bars fade in where they slid; and the helper's knock is the same still
+   ring for both sources. */
+:root[data-motion="reduce"] :is(#pause, #explore, #photoAlbum, #storyPanel):not([hidden]) > .panel,
+:root[data-motion="reduce"] .panel-back.title.leaving > .panel,
+:root[data-motion="reduce"] :is(.btn-act, .key-prompt).pulse,
+:root[data-motion="reduce"] .message.waiting .message-ghost svg,
+:root[data-motion="reduce"] .waiting-ghost,
+:root[data-motion="reduce"] .title-updating-ghost svg,
+:root[data-motion="reduce"] .moas-karta .way-on {
+  animation: none;
+}
+:root[data-motion="reduce"] .moas-karta .way-on {
+  stroke-dashoffset: 0;
+}
+:root[data-motion="reduce"] .tutorial-hand {
+  animation: none !important;
+}
+:root[data-motion="reduce"] .tutorial[data-device="touch"]:is([data-lesson="act"], [data-lesson="hop"]) .tutorial-hand {
+  transform: rotate(35deg);
+}
+:root[data-motion="reduce"] :is(.turn, .turn-back):not([hidden]),
+:root[data-motion="reduce"] .panel.end,
+:root[data-motion="reduce"] :is(.bubble, .notice):not([hidden]) {
+  animation: only-fade var(--dur-quick) ease-out both;
+}
+:root[data-motion="reduce"] :is(.stickers, .notice-mark) i.new {
+  animation: candy-lift 200ms ease-out;
+}
+@keyframes candy-lift {
+  from {
+    filter: brightness(1.6);
   }
+}
+:root[data-motion="reduce"] .notice.dropping .notice-mark i {
+  animation: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+:root[data-motion="reduce"] .scene-bar {
+  height: 7.5vh;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+:root[data-motion="reduce"] body.scene-bars .scene-bar {
+  opacity: 1;
+}
+:root[data-motion="reduce"] :where(.wide:not(.small), .tile, .start-style, .round svg, .round-back, .photo-step, .mute,
+  .ask button, .corner, .panel-close svg, .panel-up svg, .btn) {
+  transition: box-shadow var(--dur-release) var(--ease-out);
+}
+:root[data-motion="reduce"] #hopBtn {
+  transition: opacity 0.4s ease-out, visibility 0.4s;
+}
+:root[data-motion="reduce"] .switch input::before {
+  transition: none;
+}
+:root[data-motion="reduce"] .finger-ring {
+  scale: 1;
+  transition: opacity var(--dur-quick) ease, border-color var(--dur-quick) ease;
+}
+:root[data-motion="reduce"] .help-pips i {
+  scale: 1;
+  transition: background-color var(--dur-quick) ease;
 }

@@ -1,3 +1,4 @@
+import { lessMotion } from '../platform/motion';
 import { stickerStyle } from './sticker';
 import { sv } from '../content/sv';
 import type { Speaker, Verb } from '../sim/types';
@@ -87,8 +88,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
   let left = 0;
   let ended = false;
   // Nothing bounces or slaps on when the device asks for less motion, or the player does (*Mindre rörelse*).
-  const less = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const still = { get matches() { return less.matches || doc.body.classList.contains('calm'); } };
+  const still = { get matches() { return lessMotion(doc); } };
   /** A sticker: a picture of the sweet, or an empty ring for one not found. */
   const sticker = (kind: string, found = true): HTMLElement => {
     const mark = doc.createElement('i');
@@ -134,8 +134,10 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       bag.title = sv.storyContext.recovered;
       bag.setAttribute('aria-label', sv.storyContext.recoveredCount.replace('{count}', String(count)));
       bag.style.setProperty('--fill', String(total > 0 ? Math.min(1, count / total) : 0));
-      if (grew && !still.matches) {
-        bag.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 200, easing: 'ease-out' });
+      // With less motion the bag brightens for a moment in place of its bump.
+      if (grew) {
+        bag.animate(still.matches ? [{ filter: 'brightness(1.4)' }, { filter: 'none' }]
+          : [{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 200, easing: 'ease-out' });
       }
     },
     verb(verb, word = null) {
@@ -169,7 +171,8 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       for (const kind of fresh) {
         // The new one on a tag from the bag, at 40 px with its name; it drops into the bag when the tag goes.
         const piece = sticker(kind);
-        if (!still.matches) piece.classList.add('new');
+        // It slaps on, or with less motion lights up (ui.css).
+        piece.classList.add('new');
         hang(sv.found.replace('{name}', sv.kinds[kind] ?? kind), FIND_TIME, piece);
         tag.dataset.find = kind;
       }

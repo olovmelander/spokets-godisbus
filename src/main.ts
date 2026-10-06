@@ -3,6 +3,7 @@ import { Pointing } from './app/pointing';
 import { Tutorial } from './app/tutorial';
 import { createTutorial } from './ui/tutorial';
 import { createFingerMarks } from './ui/finger';
+import { MOTION_QUERY, applyMotion, lessMotion } from './platform/motion';
 import { Game } from './app/game';
 import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
@@ -133,7 +134,8 @@ function start(): void {
   const chapter = at ? { ...course, spawn: at } : course;
   let save: PlayerSave = loaded.kind === 'save' ? loaded.save : newSave(Date.now(), chapter.id);
   let settings: Settings = debugOn && params.get('style') === 'lugnt' ? settingsFor('lugnt') : save.settings;
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  // Less motion is one switch, from Mindre rörelse or the device (src/platform/motion.ts).
+  window.matchMedia(MOTION_QUERY).addEventListener('change', () => applyMotion(document, settings.calm));
   // A URL tier is a temporary inspection override. A deliberate menu choice replaces it.
   let requestedGraphics = tierFromQuery(params.get('tier')) ?? settings.graphics;
   mountShell(document.body, chapter.helper?.kind);
@@ -265,7 +267,7 @@ function start(): void {
     audio.setLoud(settings.loud);
     document.body.classList.toggle('lefty', settings.lefty);
     document.body.classList.toggle('big-text', settings.bigText);
-    document.body.classList.toggle('calm', settings.calm);
+    applyMotion(document, settings.calm);
     document.body.classList.toggle('follow-finger', settings.followFinger);
   };
   apply();
@@ -654,7 +656,7 @@ function start(): void {
         // (docs/ux-audit/first-minutes.md row 21).
         else if (what.kind === 'ghost' && chapter.id === 'prolog' && !game.sim.flags.has('blink')) audio.play({ kind: 'tock' });
         else {
-          view.react(what, settings.calm || reducedMotion.matches);
+          view.react(what, lessMotion());
           if (what.kind === 'player') audio.play({ kind: 'say', who: 'elof' });
           else if (what.kind === 'ghost') audio.play({ kind: 'say', who: 'spoket' });
         }
@@ -893,7 +895,7 @@ function start(): void {
     const rect = button.getBoundingClientRect();
     memories.play(id, () => { input.release(); game.resume(); }, {
       origin: rect.width > 0 && rect.height > 0 ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null,
-      calm: settings.calm || reducedMotion.matches,
+      calm: lessMotion(),
     });
   });
   let remembered = game.sim.flags.has('memory');
@@ -985,7 +987,7 @@ function start(): void {
       memories.play(chapter.id, () => { input.release(); game.resume(); canvas.focus(); }, {
         // If the ghost is waiting beyond the camera, grow from the glowing shaving Elof just touched.
         origin: view.ghostScreen() ?? view.worldScreen({ x: shaving.x, y: shaving.y + 0.6 }),
-        calm: settings.calm || reducedMotion.matches,
+        calm: lessMotion(),
       });
       audio.menu(true);
     }

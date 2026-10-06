@@ -1,3 +1,4 @@
+import { lessMotion } from '../platform/motion';
 import { sv } from '../content/sv';
 import type { StoryAction, StoryAnswer } from '../sim/story';
 import { use } from './icons';
@@ -55,8 +56,9 @@ export function createStrokeUI(doc: Document, done: (answer: StoryAnswer) => boo
     busy = true;
     assist.disabled = true;
     draw(path);
-    const calm = doc.body.classList.contains('calm') || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!calm) line.animate([{ opacity: .3 }, { opacity: 1 }], { duration: 350 });
+    // A fade, so it stays with less motion too; there the lesson goes on at once.
+    const calm = lessMotion(doc);
+    line.animate([{ opacity: .3 }, { opacity: 1 }], { duration: 350 });
     window.setTimeout(() => {
       if (ticket !== generation || !action) return;
       busy = false;

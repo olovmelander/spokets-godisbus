@@ -259,6 +259,11 @@ try {
     check('mirrored Follow finger still teaches moving right into the story', hint.x + hint.width / 2 > (await state()).playerScreen.x && hint.x + hint.width <= 390);
     check('Lugna animationer stops the follow gesture cue', await page.locator('.tutorial-hand').evaluate(el => getComputedStyle(el).animationName === 'none'));
     await picture(page, join(shots, 'tutorial-follow-lefty.png'));
+    // One switch for less motion, whichever source asks (docs/ux-audit/style-and-sound.md row 17).
+    check('Lugna animationer sets the one motion switch', await page.evaluate(() => document.documentElement.dataset.motion === 'reduce'));
+    await page.reload();
+    await ready(page);
+    check('after a reload the switch comes back from the save', await page.evaluate(() => document.documentElement.dataset.motion === 'reduce'));
     await finish();
   }
   {

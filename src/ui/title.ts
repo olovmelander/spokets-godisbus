@@ -245,9 +245,8 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
       open = false;
       doc.body.classList.remove('at-title');
       // The card lifts away over the picture as the game begins: one movement from the tap to the story
-      // (first-minutes.md row 16). Without motion it simply goes.
-      const still = doc.body.classList.contains('calm') || doc.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (still || backdrop.hidden) { backdrop.hidden = true; return; }
+      // (first-minutes.md row 16). With less motion it only fades (ui.css).
+      if (backdrop.hidden) return;
       backdrop.classList.add('leaving');
       doc.defaultView?.setTimeout(() => {
         backdrop.classList.remove('leaving');

@@ -1,3 +1,4 @@
+import { lessMotion } from '../platform/motion';
 import { sv } from '../content/sv';
 import { use } from './icons';
 
@@ -257,8 +258,7 @@ export function createMemory(doc: Document): Memory {
       }
       open = true;
       returning = false;
-      calm = !!options.calm || doc.body.classList.contains('calm')
-        || !!doc.defaultView?.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      calm = !!options.calm || lessMotion(doc);
       origin = options.origin;
       back.hidden = false;
       const bounds = back.getBoundingClientRect();
