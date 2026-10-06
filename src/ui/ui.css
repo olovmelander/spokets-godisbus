@@ -148,7 +148,7 @@ body {
   --k: 1;
 }
 
-@media (pointer: coarse) and (min-width: 900px) and (min-height: 600px) {
+@media (pointer: coarse) and (min-width: 600px) and (min-height: 600px) {
   body {
     --k: 1.15;
   }
@@ -362,7 +362,7 @@ body.big-text .key-prompt {
 }
 
 body.big-text .panel {
-  font-size: 22px;
+  font-size: calc(22px * var(--k));
 }
 
 /* The map's words grow with the rest (docs/ux-audit/menus.md row 23). */
@@ -695,7 +695,8 @@ body.lefty .key-prompt {
 .panel {
   position: relative;
   box-sizing: border-box;
-  width: min(100%, 460px);
+  /* On a tablet the sheet and its words grow with the controls (access-and-devices.md row 7). */
+  width: min(100%, calc(460px * var(--k)));
   max-height: 100%;
   overflow: auto;
   display: grid;
@@ -704,7 +705,7 @@ body.lefty .key-prompt {
   border-radius: 5px 8px 6px 7px;
   background-color: var(--paper);
   box-shadow: var(--sheet-shadow);
-  font-size: 18px;
+  font-size: calc(18px * var(--k));
 }
 
 .panel h2 {
@@ -2545,6 +2546,25 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   user-select: text;
 }
 
+/* The code's three words, a field each (first-minutes.md row 15). */
+.code-hint {
+  margin: 0;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+
+.code-words-in {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.code-form input.code-word {
+  padding: 0 4px;
+  font-size: 19px;
+  letter-spacing: 0.02em;
+}
+
 .code-form input::placeholder {
   font-weight: 400;
   letter-spacing: 0;
@@ -2573,7 +2593,8 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   height: 36px;
 }
 
-@media (orientation: portrait) and (pointer: coarse) {
+/* Only a phone held upright is asked to turn: an iPad held upright is as wide as a phone held sideways. */
+@media (orientation: portrait) and (pointer: coarse) and (max-width: 600px) {
   .rotate {
     display: flex;
   }
@@ -3359,4 +3380,49 @@ body.calm .controls {
 
 body.keys-learned .hint {
   display: none;
+}
+
+/* A mouse sees what it can press before it presses (docs/ux-audit/access-and-devices.md row 8). */
+@media (hover: hover) {
+  button,
+  .switch,
+  .mute,
+  .pips {
+    cursor: pointer;
+  }
+
+  :where(.wide, .tile, .start-style, .round, .round-back, .photo-step, .ask button, .corner, .panel-close, .panel-up,
+    .style, .level, .help-level, .share-choice, .chapter-choice, .memory-thumb, .photo-thumb):hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+}
+
+/* While a new version is put in place at the title: a line of paper with the loading card's ghost, bobbing. */
+.title-updating {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 6px 8px 7px 9px;
+  background-color: var(--paper-2);
+  font-weight: 700;
+}
+
+.title-updating[hidden] {
+  display: none;
+}
+
+.title-updating-ghost svg {
+  display: block;
+  width: auto;
+  height: 40px;
+  animation: message-bob 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-updating-ghost svg {
+    animation: none;
+  }
 }

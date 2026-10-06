@@ -27,6 +27,8 @@ export default defineConfig(({ mode }) => {
       ...(mode === 'lan' ? [basicSsl()] : []),
       // The drawn icons, once, at the top of every page (src/ui/sprite.ts): the game's script carries none of them.
       { name: 'icon-sprite', transformIndexHtml: (html: string) => html.replace(/<body([^>]*)>/, (body) => `${body}\n  ${spriteHtml()}`) },
+      // The home screen's name for the web app on an iPhone, from the game's words (access-and-devices.md row 21).
+      { name: 'short-name', transformIndexHtml: (html: string) => html.replace('%SHORT_NAME%', sv.homeScreen.shortName) },
       VitePWA({
         strategies: 'injectManifest', srcDir: 'src', filename: 'sw.ts',
         injectRegister: false, registerType: 'prompt',

@@ -423,6 +423,8 @@ export const sv = {
     short: 'Kod',
     have: 'Jag har en kod',
     hint: 'Skriv de tre orden',
+    // Each of the three fields, for a screen reader.
+    word: 'Ord {n} av 3',
     open: 'Öppna',
     wrong: 'Den koden finns inte. Titta på kortet en gång till!',
   },
@@ -564,6 +566,9 @@ export const sv = {
       ['A / B', 'Tryck / tillbaka i menyer'],
     ],
   },
+
+  // While a new version of the game is put in place at the title (docs/ux-audit/access-and-devices.md row 21).
+  updating: 'Spelet uppdateras …',
 
   // Saving (Sköldhästen's wording).
   saveOff: 'Spelet kan inte sparas i den här webbläsaren – men du kan spela ändå.',

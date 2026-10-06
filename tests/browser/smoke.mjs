@@ -286,6 +286,8 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   const { page, state, finish } = await open('codes-1180x820', { viewport: { width: 1180, height: 820 } }, '?dev&debug&title');
   await page.click('#codeBtn');
   await page.fill('#codeInput', 'gran kotte');
+  // Three fields, a word each: a code typed into the first spreads over them (docs/ux-audit/first-minutes.md row 15).
+  check('a code spreads over its three fields', await page.locator('#codeInput2').inputValue() === 'kotte' && await page.locator('#codeInput3').inputValue() === '');
   await page.press('#codeInput', 'Enter');
   check('a wrong code says so, and the title stays', (await page.locator('#codeWrong').isVisible()) && (await state()).course === 'prolog');
   await page.fill('#codeInput', 'mossa, gran kotte');

@@ -236,7 +236,8 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
          <div id="titleCode" hidden>
            <div class="section-head"><button class="round-back" id="codeBack" type="button" aria-label="${sv.players.back}">${BACK}</button><h2 id="codeTitle">${sv.code.have}</h2></div>
            <form class="code-form" id="codeForm">
-             <input id="codeInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" maxlength="40" aria-labelledby="codeTitle" placeholder="${sv.code.hint}">
+             <p class="code-hint" id="codeHint">${sv.code.hint}</p>
+             <div class="code-words-in" role="group" aria-labelledby="codeTitle" aria-describedby="codeHint">${[1, 2, 3].map((n) => `<input id="${n === 1 ? 'codeInput' : `codeInput${n}`}" class="code-word" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="${n === 3 ? 'go' : 'next'}" maxlength="40" aria-label="${sv.code.word.replace('{n}', String(n))}">`).join('')}</div>
              <button class="wide go" id="codeGo" type="submit" data-sound="press">${sv.code.open}</button>
              <p class="code-wrong" id="codeWrong" role="alert" hidden>${sv.code.wrong}</p>
            </form>
@@ -269,6 +270,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
            <button class="wide" id="playerConfirmYes" type="button">${CHECK}<span>${sv.players.yes}</span></button>
          </div>
          <p id="playerError" role="alert" hidden>${sv.players.error}</p>
+         <p class="title-updating" id="titleUpdating" role="status" hidden><span class="title-updating-ghost" id="titleUpdatingGhost" aria-hidden="true"></span><span>${sv.updating}</span></p>
          <i class="title-loading" id="titleLoading" aria-hidden="true"></i>
        </div>
      </div>

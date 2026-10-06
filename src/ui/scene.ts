@@ -11,7 +11,8 @@ export const sceneUiHtml = `<div class="scene-ui" id="sceneUi" aria-hidden="true
   <i class="scene-fade" id="sceneFade"></i>
   <p class="scene-caption" id="sceneCaption"></p>
   <h1 class="scene-title" id="sceneTitle"></h1>
-</div>`;
+</div>
+<p class="sr-only" id="sceneSaid" role="status" aria-live="polite"></p>`;
 
 const smooth = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 
@@ -87,6 +88,10 @@ export function createSceneUi(doc: Document) {
       if (card !== doc.body.classList.contains('scene-card')) doc.body.classList.toggle('scene-card', card);
       if (Math.abs(captionOn - shown.captionOn) > 0.002) caption.style.opacity = String(captionOn);
       if (titleText !== shown.title) title.textContent = titleText;
+      // What the picture shows in words is said too: the card's place and time, and the game's name
+      // (docs/ux-audit/access-and-devices.md row 19). The drawn words stay out of the reading order.
+      const said = captionText || titleText;
+      if (said && said !== shown.caption && said !== shown.title) doc.getElementById('sceneSaid')!.textContent = said;
       if (Math.abs(titleOn - shown.titleOn) > 0.002) title.style.opacity = String(titleOn);
       shown = { bars, fade: dark, caption: captionText, captionOn, title: titleText, titleOn };
     },

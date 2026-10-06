@@ -154,18 +154,32 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
     finally { busy = false; byId<HTMLButtonElement>('playerConfirmYes').disabled = false; }
   });
   const form = byId<HTMLFormElement>('codeForm');
-  const field = byId<HTMLInputElement>('codeInput');
+  // Three fields, one word each, moving on at a space; a whole code typed or pasted into one spreads over them
+  // (docs/ux-audit/first-minutes.md row 15).
+  const fields = ['codeInput', 'codeInput2', 'codeInput3'].map((id) => byId<HTMLInputElement>(id));
   const wrong = byId('codeWrong');
+  const spread = (from: number) => {
+    const words = fields[from]!.value.split(/[^\p{L}]+/u);
+    if (words.length < 2) return;
+    for (let i = 0; i < words.length && from + i < fields.length; i++) fields[from + i]!.value = words[i] ?? '';
+    const next = fields.find((input, i) => i > from && input.value === '') ?? fields[Math.min(fields.length - 1, from + words.length - 1)]!;
+    next.focus();
+  };
+  fields.forEach((input, i) => {
+    input.addEventListener('input', () => { wrong.hidden = true; spread(i); });
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Backspace' && input.value === '' && i > 0) { event.preventDefault(); fields[i - 1]!.focus(); }
+    });
+  });
   // A code has a page of its own (first-minutes.md row 15).
   byId('codeBtn').addEventListener('click', () => {
     wrong.hidden = true;
     section('titleCode', 'codeInput');
   });
   byId('codeBack').addEventListener('click', front);
-  field.addEventListener('input', () => (wrong.hidden = true));
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    const chapter = chapterFor(field.value);
+    const chapter = chapterFor(fields.map((input) => input.value).join(' '));
     if (!chapter || handlers.onCode(chapter) === false) {
       wrong.hidden = false;
       handlers.onCodeWrong?.();

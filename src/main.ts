@@ -141,10 +141,17 @@ function start(): void {
   applyPlace(document, chapter.place);
   // The recovery screen shows the loading card's ghost: the screen still belongs to the game.
   const loadingGhost = document.querySelector('#loading svg');
-  if (loadingGhost) byId('messageGhost').append(loadingGhost.cloneNode(true));
+  if (loadingGhost) {
+    byId('messageGhost').append(loadingGhost.cloneNode(true));
+    byId('titleUpdatingGhost').append(loadingGhost.cloneNode(true));
+  }
   const storyReminder = createStoryContext(document);
   const canvas = byId<HTMLCanvasElement>('game');
   canvas.tabIndex = -1;
+  // The picture is named for a screen reader: the place, as its card says it, and what he is doing now
+  // (docs/ux-audit/access-and-devices.md row 19). Set below whenever what he is doing changes.
+  canvas.setAttribute('role', 'img');
+  let pictureSaid = '';
   const devicePlay = createDevicePlay({
     userAgent: navigator.userAgent,
     requestWakeLock: navigator.wakeLock ? () => navigator.wakeLock.request('screen') : undefined,
@@ -616,7 +623,11 @@ function start(): void {
   const offline = createOffline({
     isTitle: () => title.open && !ending.open && !explore.open && bootReady && !contextLost && byId('message').hidden && !profileMutationPending
       && !byId('titleFront').hidden,
-    setUpdateLock: (locked) => { byId('title').inert = locked; },
+    // The title waits while a new version is put in place, and says so, with the loading card's ghost.
+    setUpdateLock: (locked) => {
+      byId('title').inert = locked;
+      byId('titleUpdating').hidden = !locked;
+    },
   });
   const input = createInput(
     {
@@ -1021,7 +1032,14 @@ function start(): void {
     // The prologue brings its controls in as they are needed (first-minutes.md rows 8 and 18).
     document.body.classList.toggle('before-chase', chapter.id === 'prolog' && !game.sim.flags.has('bag:torn'));
     document.body.classList.toggle('no-candy', chapter.id === 'prolog' && game.sim.candyCount === 0);
-    storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !menuOpen());
+    const context = storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags);
+    storyReminder.show(context, !menuOpen());
+    // "Gården, klockan tio. Följ spöket. Hitta min påse." for a screen reader, as the picture changes.
+    const said = [cardOf(chapter.id)?.replace(' · ', ', '), context?.purpose].filter(Boolean).join('. ') || sv.title;
+    if (said !== pictureSaid) {
+      pictureSaid = said;
+      canvas.setAttribute('aria-label', said);
+    }
     hud.verb(game.sim.curr.verb, game.sim.curr.word);
     hud.knock(game.sim.help.step >= 2 ? game.sim.help : null);
     // The album: what earlier chapters hold in the save, and what this one holds now.
