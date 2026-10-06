@@ -195,7 +195,7 @@ try {
     check('movement prompt starts hidden', await page.locator('#tutorial').isHidden());
     await shown(page, 'move');
     check('the idle prompt never moves Elof or changes story flags', (await state()).x === initial.x && (await state()).flags.length === initial.flags.length);
-    check('keyboard movement cue is one keycap and has accessible text', (await page.locator('#tutorialKey').innerText()) === '← →' && (await page.locator('#tutorial').getAttribute('aria-label')).length > 0);
+    check('keyboard movement cue is the two arrow keys, drawn, and has accessible text', (await page.locator('#tutorialKey use').evaluateAll((uses) => uses.map((use) => use.getAttribute('href')).join(' '))) === '#i-key-left #i-key-right' && (await page.locator('#tutorial').getAttribute('aria-label')).length > 0);
     check('reduced motion stops the hand animation', await page.locator('.tutorial-hand').evaluate(el => getComputedStyle(el).animationName === 'none'));
     await picture(page, join(shots, 'tutorial-move-keys.png'));
     await page.keyboard.press('Escape');

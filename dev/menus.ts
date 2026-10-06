@@ -10,6 +10,7 @@ import { createPause } from '../src/ui/pause';
 import { createHud } from '../src/ui/hud';
 import { createTitle } from '../src/ui/title';
 import { mountShell } from '../src/ui/shell';
+import { hintHtml } from '../src/ui/keys';
 import { createPhotoStore } from '../src/save/photos';
 import { createPhotoAlbum } from '../src/ui/photos';
 import { createStoryPanel } from '../src/ui/story';
@@ -43,10 +44,10 @@ if (shown.has('carving')) story.show({ kind: 'carve', spot: 'cut2' }, new Set(['
 if (shown.has('party')) story.show({ kind: 'party', spot: 'party:mamma' }, new Set());
 byId('controls').hidden = !shown.has('touch');
 
-const hint = shown.has('goal') ? sv.goal : shown.has('pad') ? sv.padHint : shown.has('keys') ? sv.keysHint : '';
+const hint = shown.has('goal') ? sv.goal : shown.has('pad') ? hintHtml(sv.padHint) : shown.has('keys') ? hintHtml(sv.keysHint) : '';
 if (hint) {
   byId('hint').hidden = false;
-  byId('hint').textContent = hint;
+  byId('hint').innerHTML = hint;
 }
 // Three of every four kinds found: the stickers on the bag and in the album, and the empty rings between them.
 const someKinds = Object.keys(KINDS).filter((_, i) => i % 4 !== 3);

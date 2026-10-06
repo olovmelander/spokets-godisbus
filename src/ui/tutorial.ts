@@ -1,4 +1,5 @@
 import { sv } from '../content/sv';
+import { keyFace } from './keys';
 import type { Lesson } from '../app/tutorial';
 import type { Device } from '../input/input';
 import type { Vec } from '../sim/types';
@@ -20,7 +21,9 @@ export function createTutorial(doc: Document) {
         panel.dataset.lesson = lesson;
         panel.dataset.device = device;
         panel.dataset.follow = String(follow);
-        caption.textContent = device === 'keys' ? sv.tutorial.keys[lesson] : device === 'pad' ? sv.tutorial.pad[lesson] : '';
+        // The key, drawn as it is printed: the arrows side by side, the space bar, the pad's cross, or its letter.
+        const keys = device === 'keys' ? sv.tutorial.keys[lesson] : device === 'pad' ? sv.tutorial.pad[lesson] : '';
+        caption.innerHTML = keys.split(' ').map(keyFace).join('');
         // With a key after it, the word loses its own "!": "Tryck på Måla ögonen med E."
         const said = device === 'touch' ? word : word.replace(/[!.?]+$/u, '');
         panel.setAttribute('aria-label', sv.tutorial[device === 'keys' ? 'keyboard' : device === 'pad' ? 'gamepad' : 'touch'][lesson].replace('{word}', said));

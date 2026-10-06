@@ -1,4 +1,5 @@
 import type { StoryContext } from '../content/story-context';
+import { use } from './icons';
 
 /** Untimed story reminders. No animation, input handler, focus change or progress of their own. */
 export function createStoryContext(doc: Document) {
@@ -17,7 +18,7 @@ export function createStoryContext(doc: Document) {
       shown = key;
       if (!context) return;
       purpose.dataset.purpose = context.id;
-      byId('storyPurposeIcon').textContent = context.icon;
+      byId('storyPurposeIcon').innerHTML = use(context.icon);
       byId('storyPurposeText').textContent = context.purpose;
       byId('storyPurposeReveal').hidden = context.reveal === null;
       byId('storyPurposeReveal').textContent = context.reveal;

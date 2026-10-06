@@ -42,13 +42,17 @@ export const sv = {
   help: 'Hjälp',
 
   // Shown instead of the on-screen controls when a keyboard or a gamepad is in use.
-  keysHint: '← → springa och gunga · Mellanslag hoppa och släppa · ↑ ↓ klättra · E använd · Shift gå',
-  padHint: 'Spaken springa, klättra och gunga · A hoppa och släppa · X använd',
+  // The keys' hint, as keycaps and what each does. ← → ↑ ↓ name the arrow keys; they are drawn (src/ui/keys.ts).
+  keysHint: [['← →', 'springa och gunga'], ['Mellanslag', 'hoppa och släppa'], ['↑ ↓', 'klättra'], ['E', 'använd'], ['Shift', 'gå']],
+  padHint: [['Spaken', 'springa, klättra och gunga'], ['A', 'hoppa och släppa'], ['X', 'använd']],
+  // What a screen reader says for a drawn arrow key.
+  arrowKeys: { '←': 'vänsterpil', '→': 'högerpil', '↑': 'uppåtpil', '↓': 'nedåtpil' },
 
   // The tutorial is wordless on screen; these labels also make its pictures available to a screen reader.
   tutorial: {
-    keys: { move: '← →', hop: '␣', act: 'E' },
-    pad: { move: '✚', hop: 'A', act: 'X' },
+    // The key each lesson shows (drawn in src/ui/keys.ts): the arrows, the space bar, E; the pad's cross, A, X.
+    keys: { move: '← →', hop: 'Mellanslag', act: 'E' },
+    pad: { move: 'styrkorset', hop: 'A', act: 'X' },
     // Använd's lesson is said with the button's own word: "Tryck på Måla ögonen!" (first-minutes.md row 23).
     touch: { move: 'För fingret åt sidan för att gå.', hop: 'Tryck på Hoppa.', act: 'Tryck på {word}' },
     // Spoken descriptions use the same controls as the key reference.

@@ -1,6 +1,11 @@
 import { sv } from '../content/sv';
 import type { StoryAction, StoryAnswer } from '../sim/story';
+import { use } from './icons';
 import { carveStrokeProgress, eyeCentres, finishEyeStroke, guidedCarve, guidedEye, validCarveStroke, type StrokePoint } from '../sim/story-stroke';
+
+/** Moa's brush for the painting, Pappa's knife for the carving. */
+const BRUSH = use('brush');
+const KNIFE = use('knife');
 
 export const strokeHtml = `<div id="strokeBody" hidden>
   <svg id="strokePicture" viewBox="0 0 320 220" role="img" aria-label="${sv.painting.picture}">
@@ -24,7 +29,7 @@ export const strokeHtml = `<div id="strokeBody" hidden>
     </g>
     <path id="strokeLine" fill="none" stroke="#373031" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>
-  <button type="button" class="wide" id="strokeAssist">✎ ${sv.painting.assist}</button>
+  <button type="button" class="wide" id="strokeAssist">${BRUSH}<span>${sv.painting.assist}</span></button>
 </div>`;
 
 export function createStrokeUI(doc: Document, done: (answer: StoryAnswer) => boolean) {
@@ -125,7 +130,7 @@ export function createStrokeUI(doc: Document, done: (answer: StoryAnswer) => boo
       doc.getElementById('paintShape')!.setAttribute('d', next.spot === 'dots'
         ? 'M101 136Q75 116 79 76Q86 17 165 17Q244 22 245 78Q245 119 220 136L239 190l-45 8-31-32-31 36-40-14z'
         : 'M62 196V75Q62 15 160 15T258 75v121l-24-16-24 16-24-16-26 16-26-16-24 16-24-16z');
-      assist.textContent = carving ? sv.carving.assist : `✎ ${sv.painting.assist}`;
+      assist.innerHTML = carving ? `${KNIFE}<span>${sv.carving.assist}</span>` : `${BRUSH}<span>${sv.painting.assist}</span>`;
       if (carving) {
         const step = Number(next.spot.slice(-1));
         for (let n = 1; n <= 3; n++) doc.getElementById(`carveFacet${n}`)!.setAttribute('opacity', n < step ? '1' : '.2');

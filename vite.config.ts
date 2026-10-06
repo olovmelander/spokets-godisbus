@@ -5,6 +5,7 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
 import { sv } from './src/content/sv';
+import { spriteHtml } from './src/ui/sprite';
 
 const base = '/spokets-godisbus/';
 const hash = (content: string | Uint8Array) => createHash('sha256').update(content).digest('hex');
@@ -24,6 +25,8 @@ export default defineConfig(({ mode }) => {
     define: { __BUILD_VERSION__: JSON.stringify(version), __ASSET_VERSION__: JSON.stringify(assetVersion) },
     plugins: [
       ...(mode === 'lan' ? [basicSsl()] : []),
+      // The drawn icons, once, at the top of every page (src/ui/sprite.ts): the game's script carries none of them.
+      { name: 'icon-sprite', transformIndexHtml: (html: string) => html.replace(/<body([^>]*)>/, (body) => `${body}\n  ${spriteHtml()}`) },
       VitePWA({
         strategies: 'injectManifest', srcDir: 'src', filename: 'sw.ts',
         injectRegister: false, registerType: 'prompt',

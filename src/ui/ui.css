@@ -164,6 +164,14 @@ textarea {
   color: inherit;
 }
 
+/* A drawn icon from the sprite (src/ui/sprite.ts): as big as the words beside it, unless its place says otherwise. */
+:where(svg.i) {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  vertical-align: -0.25em;
+}
+
 #game {
   position: absolute;
   inset: 0;
@@ -1046,6 +1054,7 @@ body.lefty .key-prompt {
 .memory-album { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
 .memory-thumb, .memory-missing { display: grid; align-content: center; justify-items: center; gap: 5px; min-height: 100px; border: 2px solid var(--paper-edge); border-radius: 12px; padding: 7px; background-color: var(--paper-2); }
 .memory-thumb svg { display: block; width: 100%; border-radius: 8px; }
+.memory-thumb .memory-play { width: 26px; height: 26px; border-radius: 0; }
 .memory-missing { border-style: dashed; color: var(--ink-faint); font-size: 30px; }
 
 .memory-card svg {
@@ -1150,7 +1159,7 @@ body.lefty .key-prompt {
 }
 
 .photo-credits { padding: 18px 12px; text-align: center; line-height: 1.65; }
-.photo-credits > span { font-size: 60px; color: var(--gold-deep); }
+.photo-credits .credits-mark { width: 60px; height: 60px; color: var(--gold-deep); }
 .photo-panel [hidden], .album-photos[hidden] { display: none; }
 
 
@@ -1168,6 +1177,7 @@ body.lefty .key-prompt {
 .share-choice svg { width: 55px; height: 52px; }
 .share-choice span { font-size: 0.85em; }
 .share-choice small { font-size: 0.65em; }
+.share-choice small svg { width: 1.1em; height: 1.1em; margin-right: 2px; vertical-align: -0.2em; }
 .share-choice[aria-pressed="true"] { border-color: var(--crayon-red); background-color: var(--gold-pale); }
 .share-choice:disabled { color: var(--ink-faint); }
 .share-choice:disabled svg { opacity: 0.45; }
@@ -2577,7 +2587,8 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 .story-purpose small { font-size: 10px; color: var(--ink-soft); }
 .story-purpose-reveal { margin-top: 3px; padding-top: 4px; border-top: 1px solid var(--paper-edge); }
 .story-purpose-reveal[hidden] { display: none; }
-#storyPurposeIcon { font-size: 21px; }
+#storyPurposeIcon { display: grid; color: var(--crayon-blue); }
+#storyPurposeIcon svg { width: 24px; height: 24px; }
 .story-purpose[hidden] { display: none; }
 body:has(#bubble:not([hidden])) .story-purpose,
 body:has(#notice:not([hidden])) .story-purpose { visibility: hidden; }
@@ -2651,7 +2662,7 @@ body.follow-finger .stick-base {
 }
 
 /* A key: a keycap of paper and wood. The pad's letters are its coloured buttons. */
-.controls-reference kbd {
+:is(.controls-reference, .hint) kbd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2670,9 +2681,35 @@ body.follow-finger .stick-base {
   line-height: 1;
 }
 
-.controls-reference kbd svg {
+:is(.controls-reference, .hint) kbd svg {
   width: 18px;
   height: 18px;
+}
+
+/* The hint's keys, a little smaller, and each pair kept on one line. */
+.hint kbd {
+  min-width: 24px;
+  height: 24px;
+  margin-right: 2px;
+  vertical-align: -0.35em;
+}
+
+.hint kbd svg {
+  width: 15px;
+  height: 15px;
+}
+
+.hint-pair {
+  white-space: nowrap;
+}
+
+/* The space bar: a wide key with its bracket. */
+:is(.controls-reference, .hint) kbd.key-wide {
+  min-width: 56px;
+}
+
+:is(.controls-reference, .hint) kbd.key-wide svg {
+  width: 34px;
 }
 
 .controls-reference kbd.pad-a,
@@ -2737,7 +2774,8 @@ button.bag {
 .tutorial-hand { position: absolute; top: 30px; left: 34px; width: 60px; height: 60px; filter: drop-shadow(0 3px 3px var(--wood-dark)); animation: tutorial-press 1.7s ease-in-out infinite; }
 .tutorial-hand svg { width: 100%; height: 100%; }
 .tutorial-target { position: absolute; inset: 2px; border: 3px solid var(--knock-light); border-radius: 50%; box-shadow: 0 0 0 5px rgb(74 56 37 / 0.27); }
-.tutorial-key { position: absolute; inset: 12px; display: grid; place-items: center; border-radius: 14px; background-color: var(--paper-bright); color: var(--ink-soft); font: 700 32px/1 'Andika', system-ui, sans-serif; box-shadow: 0 3px 8px rgb(42 26 24 / 0.27); }
+.tutorial-key { position: absolute; inset: 12px; display: flex; align-items: center; justify-content: center; gap: 2px; border-radius: 14px; background-color: var(--paper-bright); color: var(--ink-soft); font: 700 32px/1 'Andika', system-ui, sans-serif; box-shadow: 0 3px 8px rgb(42 26 24 / 0.27); }
+.tutorial-key svg { width: 30px; height: 30px; }
 .tutorial[data-device="touch"] .tutorial-key { display: none; }
 .tutorial[data-device="keys"] .tutorial-target, .tutorial[data-device="pad"] .tutorial-target { display: none; }
 .tutorial[data-lesson="move"] .tutorial-hand { animation-name: tutorial-move; }

@@ -35,6 +35,7 @@ import { createDebug, type Debug } from './ui/debug';
 import { createHud } from './ui/hud';
 import { createPause, type PausePage } from './ui/pause';
 import { mountShell } from './ui/shell';
+import { hintHtml } from './ui/keys';
 import { applyMaterials, applyPlace } from './ui/materials';
 import { createTitle } from './ui/title';
 import { createPhotoAlbum } from './ui/photos';
@@ -320,7 +321,7 @@ function start(): void {
     if (d !== 'touch') byId('controlsReferenceBtn').hidden = false;
     controls.hidden = d !== 'touch';
     hint.hidden = d === 'touch';
-    hint.textContent = d === 'pad' ? sv.padHint : sv.keysHint;
+    hint.innerHTML = hintHtml(d === 'pad' ? sv.padHint : sv.keysHint);
     // Which hand is in use, for what shows only to keys and pads: the prompt with what E (or X) will do.
     document.body.dataset.device = d;
     byId('keyPromptKey').textContent = d === 'pad' ? 'X' : 'E';

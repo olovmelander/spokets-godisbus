@@ -2,6 +2,7 @@ import { chapterFor } from '../save/codes';
 import { PLAYER_NAME_MAX, type PlayerProfile } from '../save/store';
 import type { PlayStyle } from '../save/settings';
 import { sv } from '../content/sv';
+import { CROSS } from './icons';
 
 /** The buttons that start the game from the title's front. */
 const START_BUTTONS = ['startAventyr', 'startLugnt', 'startBtn'];
@@ -83,7 +84,8 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
       select.type = 'button';
       select.className = 'wide';
       select.dataset.player = player.id;
-      select.textContent = `${player.id === state.currentId ? '● ' : '○ '}${player.name}${player.kind === 'unreadable' ? ` — ${sv.players.unreadable}` : ''}`;
+      // The name as typed, never as markup; the one playing now has Moa's crayon loop round it.
+      select.textContent = `${player.name}${player.kind === 'unreadable' ? ` — ${sv.players.unreadable}` : ''}`;
       select.setAttribute('aria-current', String(player.id === state.currentId));
       select.addEventListener('click', () => {
         if (player.id === state.currentId) front();
@@ -92,7 +94,7 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
       const remove = doc.createElement('button');
       remove.type = 'button';
       remove.className = 'wide player-remove';
-      remove.textContent = '×';
+      remove.innerHTML = CROSS;
       remove.setAttribute('aria-label', sv.players.remove.replace('{name}', player.name));
       remove.addEventListener('click', () => confirm(sv.players.removeAsk.replace('{name}', player.name), () => handlers.onDelete?.(player.id) ?? false, 'titlePlayers'));
       row.append(select, remove);

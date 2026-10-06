@@ -1,4 +1,5 @@
 import { sv } from '../content/sv';
+import { use } from './icons';
 
 /**
  * The four memories (plan §2.4, §3.3 rule 5): short, wordless pictures of the family some years ago, which
@@ -82,7 +83,7 @@ export const MEMORIES: Record<string, string[]> = {
 export function memoryAlbumHtml(flags: Record<string, string[]>): string {
   return `<h3>${sv.memories.title}</h3><div class="memory-album">${Object.entries(MEMORIES).map(([id, pictures]) =>
     flags[id]?.includes('memory')
-      ? `<button type="button" class="memory-thumb" data-memory="${id}" aria-label="${sv.memories.watch}: ${sv.explore.chapters[id]}">${pictures[0]}<span>${sv.explore.chapters[id]}</span><span aria-hidden="true">▶</span></button>`
+      ? `<button type="button" class="memory-thumb" data-memory="${id}" aria-label="${sv.memories.watch}: ${sv.explore.chapters[id]}">${pictures[0]}<span>${sv.explore.chapters[id]}</span>${use('play', 'memory-play')}</button>`
       : `<div class="memory-missing" aria-label="${sv.memories.waiting}">?</div>`,
   ).join('')}</div>`;
 }
@@ -279,7 +280,7 @@ export function createMemory(doc: Document): Memory {
         if (picture) { animations.delete(picture); picture.cancel(); }
         card.innerHTML = pictures[at]!;
         progress.textContent = `${at + 1} / ${pictures.length}`;
-        nextButton.textContent = at === pictures.length - 1 ? `${sv.memories.back} ↩` : `${sv.memories.next} →`;
+        nextButton.innerHTML = at === pictures.length - 1 ? `<span>${sv.memories.back}</span>${use('again')}` : `<span>${sv.memories.next}</span>${use('next')}`;
         // Fade only the drawing, not the oval: later pictures do not grow from the source again.
         picture = calm ? null : animate(card.firstElementChild!, [{ opacity: 0 }, { opacity: 1 }], 320);
         remaining = PICTURE_TIME;

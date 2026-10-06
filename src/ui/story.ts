@@ -1,4 +1,5 @@
 import { sv } from '../content/sv';
+import { CHECK, CROSS } from './icons';
 import { createStrokeUI, strokeHtml } from './story-stroke';
 import { FRIENDS, PARTY_GUESTS, SWEETS, partyReward, sharingReward, type Friend, type PartyGuest, type StoryAction, type StoryAnswer, type Sweet } from '../sim/story';
 
@@ -24,7 +25,7 @@ const svg = (inside: string) => `<svg viewBox="0 0 68 64" aria-hidden="true">${i
 
 export const storyPanelHtml = `<div class="panel-back" id="storyPanel" hidden>
   <section class="panel story-panel" role="dialog" aria-modal="true" aria-labelledby="storyTitle" aria-describedby="storyHint">
-    <button class="panel-close" id="storyClose" aria-label="${sv.sharing.back}" type="button">✕</button>
+    <button class="panel-close" id="storyClose" aria-label="${sv.sharing.back}" type="button">${CROSS}</button>
     <h2 id="storyTitle">${sv.sharing.title}</h2>
     <p id="storyHint">${sv.sharing.choose}</p>
     <div id="sharingBody"><div id="shareSweets" class="share-sweets" role="group" aria-label="${sv.sharing.choose}">${SWEETS.map((sweet) => `<button type="button" class="share-choice" data-sweet="${sweet}" aria-pressed="false">${svg(pictures[sweet])}<span>${sv.sharing.sweets[sweet]}</span></button>`).join('')}</div>
@@ -59,7 +60,7 @@ export function createStoryPanel(doc: Document, handlers: { named?(): boolean; a
       button.hidden = kind === 'party' ? !isGuest(friend) : !isFriend(friend);
       button.querySelector('span')!.textContent = friend === 'spoket' && handlers.named?.() ? sv.ghostName : names[friend];
       button.disabled = !chosen || !(kind === 'party' ? isGuest(friend) && partyReward(flags, friend, chosen) : isFriend(friend) && sharingReward(flags, friend, chosen));
-      button.querySelector('small')!.textContent = given ? `✓ ${sv.sharing.given}` : '';
+      button.querySelector('small')!.innerHTML = given ? `${CHECK}${sv.sharing.given}` : '';
     }
     byId('storyStatus').textContent = chosen ? sv.sharing.nowFriend.replace('{sweet}', sv.sharing.sweets[chosen]) : '';
   }

@@ -1,8 +1,8 @@
 import { sv } from '../content/sv';
 import type { AlbumPhoto, PhotoStore } from '../save/photos';
-import { CHECK, CROSS, NEXT, PREVIOUS } from './icons';
+import { CHECK, CROSS, NEXT, PREVIOUS, use } from './icons';
 
-const camera = '<svg viewBox="0 0 32 24" aria-hidden="true"><path d="M3 6h6l3-4h8l3 4h6v16H3z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="13" r="5" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+const camera = use('camera');
 
 /**
  * Shared by the game and the menu preview; the pictures are always device-local object URLs. The photo is a print
@@ -16,7 +16,7 @@ export const photoAlbumHtml = `
       <div class="photo-stage">
         <button class="photo-step" id="photoPrevious" type="button" aria-label="${sv.photos.previous}">${PREVIOUS}</button>
         <figure class="photo-print" id="photoFrame"><img id="photoImage" alt=""><figcaption id="photoCaption"></figcaption></figure>
-        <div class="photo-credits" id="photoCredits" hidden><span aria-hidden="true">✧</span><h3>${sv.photos.thanks}</h3><p>${sv.photos.credits}</p></div>
+        <div class="photo-credits" id="photoCredits" hidden>${use('sparkle', 'credits-mark')}<h3>${sv.photos.thanks}</h3><p>${sv.photos.credits}</p></div>
         <button class="photo-step go" id="photoNext" type="button" aria-label="${sv.photos.next}">${NEXT}</button>
       </div>
     </section>

@@ -132,6 +132,9 @@ async function open(name, options, query = '?debug') {
   }
   check('the on-screen controls are hidden on a computer', await page.locator('#controls').isHidden());
   check('the key hint shows', await page.locator('#hint').isVisible());
+  // One drawn set of icons, in the page itself (src/ui/sprite.ts): the corner's pause draws from it.
+  check('the drawn icons are in the page, and the corners draw from them', await page.evaluate(() => !!document.querySelector('svg.sprite symbol#i-close')
+    && document.querySelector('#pauseBtn use')?.getBBox().width > 0 && document.querySelectorAll('#hint kbd svg').length >= 4));
 
   const before = await state();
   check('Elof stands on the ground', before.grounded === true && Math.abs(before.y) < 0.05, `y ${before.y.toFixed(3)}`);
