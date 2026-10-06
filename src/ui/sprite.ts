@@ -102,6 +102,8 @@ export const ICONS = {
   // --- the play buttons and the styles' pictures --------------------------------------------------------------
   /** Hoppa: an arrow up. */
   hop: lines('<path d="M12 20V5m0 0-6 6m6-6 6 6"/>', 2.4),
+  /** Följ fingret: the crayon arrow over his head, turned toward the held finger. */
+  toward: lines('<path d="M4 12.5c4-.8 9.5-.6 15-.5m0 0-5.5-5.5M19 12l-5.5 5.5"/>', 3),
   /** Använd: an open hand. */
   hand: lines('<path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-3.5a1.5 1.5 0 0 1 3 0V10m0-2a1.5 1.5 0 0 1 3 0v6.5A6.5 6.5 0 0 1 11.5 21 6 6 0 0 1 6.7 18.6L4 14.5a1.5 1.5 0 0 1 2.4-1.8L9 15"/>', 1.8),
   // Använd's pictures, one for each kind of thing he does (docs/ux-audit/in-play.md row 6), so a child who does not

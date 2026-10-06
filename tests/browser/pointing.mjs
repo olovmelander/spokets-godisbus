@@ -261,6 +261,33 @@ try {
     await picture(page, join(shots, 'tutorial-follow-lefty.png'));
     await finish();
   }
+  {
+    // Följ fingret rings the held finger; held far off it runs him, in the chase too, and the arrow over his head
+    // turns to it (docs/ux-audit/in-play.md row 11).
+    const { page, context, state, finish } = await open('follow ring', { viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true }, query('29.4,0.01', '&flags=blink,bag:torn'));
+    await page.tap('#pauseBtn');
+    await settingsPage(page);
+    await page.check('#setFollowFinger');
+    await page.tap('#pauseClose');
+    await frames(page);
+    const cdp = await context.newCDPSession(page);
+    const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
+    const elof = (await state()).playerScreen;
+    const far = { x: Math.round(elof.x + 180), y: Math.round(elof.y), id: 1 };
+    await touch('touchStart', [far]);
+    await frames(page, 2);
+    const ring = await page.locator('#fingerRing').boundingBox();
+    check('Följ fingret rings the finger where it lands', !!ring && Math.abs(ring.x + ring.width / 2 - far.x) < 3 && Math.abs(ring.y + ring.height / 2 - far.y) < 3);
+    await until(state, s => s.vx > 2, 'a finger held far off runs him');
+    check('running to it, the ring goes yellow and the arrow over his head points at the finger',
+      await page.locator('#fingerRing.steering.run').count() === 1 && await page.locator('#followArrow').isVisible()
+      && Math.abs(await page.locator('#followArrow').evaluate((el) => parseFloat(el.style.rotate))) < 0.6);
+    await picture(page, join(shots, 'follow-ring.png'));
+    await touch('touchEnd', []);
+    await frames(page, 2);
+    check('the marks go with the finger', await page.locator('#fingerRing').isHidden() && await page.locator('#followArrow').isHidden());
+    await finish();
+  }
   console.log(`pointing/tutorial: ${checked} checks passed`);
 } finally {
   await browser?.close();

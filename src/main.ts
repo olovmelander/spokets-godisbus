@@ -2,6 +2,7 @@ import { Timer } from 'three';
 import { Pointing } from './app/pointing';
 import { Tutorial } from './app/tutorial';
 import { createTutorial } from './ui/tutorial';
+import { createFingerMarks } from './ui/finger';
 import { Game } from './app/game';
 import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
@@ -218,6 +219,7 @@ function start(): void {
   const pointing = new Pointing(game.sim);
   const tutorial = new Tutorial(chapter.id);
   const tutorialView = createTutorial(document);
+  const fingerMarks = createFingerMarks(document);
   const isKlonk = () => ghostNamed(save.flags) || (chapter.id === 'epilog' && game.sim.flags.has('beat:named'));
   // The bag counts all the candy there is: the trail's, and the side candy off it.
   const hud = createHud(document, chapter.candy.length + (chapter.side?.length ?? 0), isKlonk,
@@ -1026,6 +1028,8 @@ function start(): void {
       if (blob && !photosStopped && await photoStore.put({ player: photoPlayer, moment, blob })) await photoAlbum.refresh();
     });
     tutorialView.show(menuOpen() || platformBlocked() ? null : tutorial.shown, device, settings.followFinger, view.playerScreen());
+    const finger = menuOpen() || platformBlocked() ? null : input.followPoint();
+    fingerMarks.show(finger, finger?.steering ? view.playerScreen(1.3) : null, finger?.steering ? view.playerScreen() : null);
     sceneUi.show(chapter.scenes, game.sim.sceneFrame, menuOpen() && !paused);
     hud.candy(game.sim.candyCount);
     // In the prologue the keycaps teach, so the line of keys waits unless he has stood 10 s without a key

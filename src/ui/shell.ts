@@ -106,6 +106,8 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
        <button class="btn btn-act" id="actBtn" type="button" disabled>${HAND}<span></span></button>
        <button class="btn btn-hop" id="hopBtn" type="button">${ARROW}<span></span></button>
      </div>
+     <i class="finger-ring" id="fingerRing" aria-hidden="true" hidden></i>
+     <i class="follow-arrow" id="followArrow" aria-hidden="true" hidden>${use('toward')}</i>
      <div class="key-prompt" id="keyPrompt" aria-hidden="true"><kbd id="keyPromptKey">E</kbd>${HAND}<span id="keyPromptWord"></span></div>
      ${sceneUiHtml}
      <div class="bubble" id="bubble" role="status" hidden><span class="face" id="bubbleFace" aria-hidden="true"></span><b id="bubbleWho"></b><span id="bubbleLine"></span></div>

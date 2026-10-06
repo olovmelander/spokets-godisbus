@@ -141,8 +141,11 @@ export interface View {
   setTier(next: Tier): void;
   /** Whole 0.1 reductions from the tier cap. A changed step resizes existing targets, never shaders. */
   setResolutionSteps(steps: number): void;
-  /** The rendered player's centre on the play plane, in CSS client coordinates; null before the first frame. */
-  playerScreen(): { x: number; y: number } | null;
+  /**
+   * The rendered player's centre on the play plane, in CSS client coordinates; null before the first frame. `up` asks
+   * for another height on him instead, in his own lengths from his feet: 1.3 is just over his head.
+   */
+  playerScreen(up?: number): { x: number; y: number } | null;
   /** The visitor's centre for tapping the helper itself; null while it is away. */
   helperScreen(): { x: number; y: number } | null;
   /** The visible ghost's picture-bubble origin above its head; null while it is away or off screen. */
@@ -1201,8 +1204,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       resolutionSteps = next;
       resize();
     },
-    playerScreen() {
-      elof.group.localToWorld(projectedPlayer.set(0, 0.5, 0));
+    playerScreen(up = 0.5) {
+      elof.group.localToWorld(projectedPlayer.set(0, up, 0));
       projectedPlayer.z = 0;
       return project(projectedPlayer);
     },

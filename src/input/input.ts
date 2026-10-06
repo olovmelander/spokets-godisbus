@@ -66,6 +66,8 @@ export const TAP_PX = 14;
 export const WALK_KEYS = 0.6;
 /** Stick deflection at which the knob shows that Elof will run. */
 export const RUN_SHOWN_AT = 0.72;
+/** A finger held this far from Elof, in CSS px, runs him; nearer, it walks him (docs/ux-audit/in-play.md row 11). */
+export const RUN_FROM_PX = 120;
 /** Standard-mapping gamepad buttons. */
 export const PAD = { a: 0, b: 1, x: 2, y: 3, back: 8, start: 9, up: 12, down: 13, left: 14, right: 15 } as const;
 
@@ -161,6 +163,8 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   };
   const followAxis = (delta: number) => Math.abs(delta) <= TAP_PX ? 0
     : Math.sign(delta) * Math.min(1, (Math.abs(delta) - TAP_PX) / (STICK_RADIUS - TAP_PX));
+  /** Near him the finger walks him; far off it runs him, so a chase can be run with it too. */
+  const followX = (delta: number) => Math.abs(delta) > RUN_FROM_PX ? Math.sign(delta) : followAxis(delta) * WALK_KEYS;
 
   // --- the stick ---------------------------------------------------------------------------------
   const zone = ui.stickZone;
@@ -476,7 +480,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
         if (env.now() - follow.t >= TAP_MS) follow.active = true;
         const player = follow.active ? opts.playerScreen?.() : null;
         // Evaluate against the current projection, even when the finger stays still and the camera moves.
-        x = player ? followAxis(follow.x - player.x) * WALK_KEYS : 0;
+        x = player ? followX(follow.x - player.x) : 0;
         y = player ? followAxis(player.y - follow.y) : 0;
       }
       return { x, y, hopHeld: pointerHopHeld || verbs.has(' ') || (v === 'up' && !opts.upClimbs?.()) || pad.hopHeld };
@@ -487,6 +491,15 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
       const out = { ...edges };
       edges.hop = edges.act = edges.helper = false;
       return out;
+    },
+    /**
+     * The finger *Följ fingret* is holding, from the moment it lands: `steering` once it moves him, and `run` when
+     * it is far enough off to run him. The page rings it, so that the fingertip shows where he is going.
+     */
+    followPoint(): { x: number; y: number; steering: boolean; run: boolean } | null {
+      if (!follow) return null;
+      const player = follow.active ? opts.playerScreen?.() : null;
+      return { x: follow.x, y: follow.y, steering: follow.active, run: !!player && Math.abs(follow.x - player.x) > RUN_FROM_PX };
     },
     /** Reads the gamepad now: menus keep working while the game is paused. */
     poll: () => pollPad(),
