@@ -1,7 +1,31 @@
-import { BufferGeometry, Color, Float32BufferAttribute, Points, ShaderMaterial, type CanvasTexture } from 'three';
+import { BufferGeometry, Color, Float32BufferAttribute, Mesh, MeshBasicMaterial, Points, ShaderMaterial, type CanvasTexture, type Texture } from 'three';
 import { drawn, sequence, type PlaceLook } from './kit';
 
 // --- L0: the backdrop ------------------------------------------------------------------------------------
+
+/**
+ * A sky in the scene follows the same grade and output as everything under it. three's native background
+ * bypasses the material patch on Low. This replaces its one draw, fills every camera/aspect, and leaves
+ * the depth buffer at the far plane so stars and transparent distant layers still stand in front of it.
+ */
+export function createSky(map: Texture | null, colour: Color): Mesh<BufferGeometry, MeshBasicMaterial> {
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3));
+  geometry.setAttribute('uv', new Float32BufferAttribute([0, 0, 2, 0, 0, 2], 2));
+  const material = new MeshBasicMaterial({ map, color: map ? 0xffffff : colour, fog: false, depthTest: false, depthWrite: false });
+  material.customProgramCacheKey = () => 'place-sky-v1';
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader.replace('#include <project_vertex>', `
+      #include <project_vertex>
+      gl_Position = vec4(position.xy, 1.0, 1.0);
+    `);
+  };
+  const sky = new Mesh(geometry, material);
+  sky.name = 'place-sky';
+  sky.frustumCulled = false;
+  sky.renderOrder = -1000;
+  return sky;
+}
 
 /**
  * Where the sun is in the picture at all, it is a veiled disc inside its glow: low over the bog in the late

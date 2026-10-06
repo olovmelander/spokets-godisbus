@@ -105,7 +105,9 @@ try {
       const far = [];
       scene.traverse((object) => { if (object.name.startsWith('far-dusk-')) far.push(object); });
       const snapshot = () => ({
-        ...view.info(), background: scene.backgroundIntensity, far: far.map((card) => card.material.color.r),
+        ...view.info(), background: scene.backgroundIntensity,
+        sky: scene.getObjectByName('place-sky').material.color.r,
+        far: far.map((card) => card.material.color.r),
         fog: scene.fog.color.toArray(), state: JSON.stringify(sim.curr),
         familyShown: (() => { let count=0;scene.traverse(object=>{if(!object.userData.familyRole)return;
           for(let node=object;node;node=node.parent)if(!node.visible)return;count++;});return count; })(),
@@ -114,7 +116,7 @@ try {
       return snapshot();
     }, { tier });
     check(`${name}: real finale assets loaded`, early.models.length >= 4 && early.models.includes('boot/mountain-kit'));
-    check(`${name}: blue-hour sky and five far layers start at full brightness`, early.background === 1 && early.far.length === 5 && early.far.every((v) => v === 1));
+    check(`${name}: blue-hour sky and five far layers start at full brightness`, early.background === 1 && early.sky === 1 && early.far.length === 5 && early.far.every((v) => v === 1));
     check(`${name}: precompiled family stays hidden until the golden sweet`, early.familyShown === 0);
     await picture(page, join(shots, `${name}-early.png`));
     const transition = await page.evaluate(() => {
@@ -128,7 +130,7 @@ try {
       }
       return { frames, paused, beforePause };
     });
-    check(`${name}: sky and hills darken together`, transition.frames.every((s) => s.far.every((v) => Math.abs(v - s.background) < 1e-9)) && transition.frames.at(-1).background < 0.35);
+    check(`${name}: sky and hills darken together`, transition.frames.every((s) => s.sky === s.background && s.far.every((v) => Math.abs(v - s.background) < 1e-9)) && transition.frames.at(-1).background < 0.35);
     check(`${name}: night haze changes with the sky`, transition.frames.at(-1).fog.every((v, i) => v < early.fog[i]));
     check(`${name}: tasting reveals the same four family figures`, transition.frames.every(s=>s.familyShown === 4));
     check(`${name}: no shader compiles or simulation changes during nightfall`, transition.frames.every((s) => s.programs === early.programs && s.state === early.state));
@@ -149,7 +151,7 @@ try {
       for (let i = 0; i < 7; i++) p.draw(0.5);
       return p.snapshot();
     });
-    check(`${name}: reversing nightfall restores sky, hills and haze without drift`, returned.background === early.background && returned.far.every((v) => v === 1) && returned.fog.every((v, i) => Math.abs(v - early.fog[i]) < 1e-9));
+    check(`${name}: reversing nightfall restores sky, hills and haze without drift`, returned.background === early.background && returned.sky === early.sky && returned.far.every((v) => v === 1) && returned.fog.every((v, i) => Math.abs(v - early.fog[i]) < 1e-9));
     assert.deepEqual(errors, [], `${name}: browser errors`);
     await page.close();
   }

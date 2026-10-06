@@ -19,6 +19,7 @@ const server = await createServer({ root, server: { host: '127.0.0.1', port: 0, 
     export { createView } from ${JSON.stringify(join(root, 'src/render/view.ts'))};
     export { createGradePass, createMaterialGrade, GARDEN_MORNING } from ${JSON.stringify(join(root, 'src/render/grade.ts'))};
     export { createDepthBlur } from ${JSON.stringify(join(root, 'src/render/depth-blur.ts'))};
+    export { createSky } from ${JSON.stringify(join(root, 'src/render/dressing/sky.ts'))};
     export { PLACES } from ${JSON.stringify(join(root, 'src/render/dressing/index.ts'))};
     export { Sim } from ${JSON.stringify(join(root, 'src/sim/sim.ts'))};
     export { COURSES } from ${JSON.stringify(join(root, 'src/content/chapters/index.ts'))};
@@ -93,7 +94,83 @@ try {
     blur.setSize(257, 255, true);
     const oddHalf = [blur.texture.image.width, blur.texture.image.height];
     blur.setSize(257, 255, false);
-    return { deltas, frontDelta, backDelta, half, oddHalf, released: blur.texture === null };
+    pass.setDepthBlur(null, null, camera.near, camera.far, camera.position.z);
+
+    // An independent colour oracle catches two equally wrong pipelines agreeing with each other.
+    // Fog is mixed in linear light, then the authored grade, Neutral, and one sRGB conversion follow.
+    const display = (rgb) => {
+      let colour = rgb.map((v, i) => v * grade.exposure * grade.tint[i]);
+      const light = colour[0] * 0.2126 + colour[1] * 0.7152 + colour[2] * 0.0722;
+      colour = colour.map((v) => Math.max(0, (light + (v - light) * grade.saturation - 0.18) * grade.contrast + 0.18));
+      const darkest = Math.min(...colour);
+      const offset = darkest < 0.08 ? darkest - 6.25 * darkest * darkest : 0.04;
+      colour = colour.map((v) => v - offset);
+      const peak = Math.max(...colour);
+      if (peak >= 0.76) {
+        const compressed = 1 - 0.24 * 0.24 / (peak + 0.24 - 0.76);
+        const desaturate = 1 - 1 / (0.15 * (peak - compressed) + 1);
+        colour = colour.map((v) => v * compressed / peak * (1 - desaturate) + compressed * desaturate);
+      }
+      return colour.map((v) => Math.round(Math.min(1, Math.max(0, v <= 0.0031308 ? v * 12.92 : Math.pow(v, 0.41666) * 1.055 - 0.055)) * 255));
+    };
+    const difference = (a, b) => Math.max(...a.map((v, i) => Math.abs(v - b[i])));
+    const centre = () => Array.from(read().slice((128 * 256 + 128) * 4, (128 * 256 + 128) * 4 + 3));
+    const fog = new T.Fog('#cfe2ea', 5, 15);
+    const fogScene = new T.Scene(); fogScene.fog = fog;
+    const pigment = [0.018, 0.032, 0.008];
+    const hazedMaterial = new T.MeshBasicMaterial({ color: new T.Color(...pigment) });
+    const clearMaterial = new T.MeshBasicMaterial({ color: new T.Color(...pigment), fog: false });
+    const patch = new T.Mesh(new T.PlaneGeometry(12, 12), hazedMaterial); fogScene.add(patch);
+    const fogGrade = f.createMaterialGrade(grade, fog); fogGrade.apply(fogScene);
+    patch.material = clearMaterial; fogGrade.apply(fogScene);
+    const drawScene = (targetScene, transform, lowTier) => {
+      transform.setEnabled(lowTier);
+      renderer.setRenderTarget(lowTier ? null : hdr); renderer.render(targetScene, camera);
+      if (!lowTier) { pass.render(renderer, graded, hdr); output.render(renderer, graded, graded, 0, false); }
+      return centre();
+    };
+    // Warm both material fog settings and both output paths before checking uniform-only changes.
+    for (const one of [clearMaterial, hazedMaterial]) {
+      patch.material = one;
+      for (const lowTier of [true, false]) drawScene(fogScene, fogGrade, lowTier);
+    }
+    const fogPrograms = renderer.info.programs.length;
+    const fogSamples = [];
+    for (const [near, far, colour] of [[5, 15, '#cfe2ea'], [9, 13, '#37224a'], [10, 20, '#ccb879'], [0, 5, '#496486']]) {
+      fog.near = near; fog.far = far; fog.color.set(colour);
+      const t = Math.min(1, Math.max(0, (10 - near) / (far - near)));
+      const weight = t * t * (3 - 2 * t);
+      const reference = display(pigment.map((v, i) => v * (1 - weight) + fog.color.toArray()[i] * weight));
+      const lowPixel = drawScene(fogScene, fogGrade, true), hdrPixel = drawScene(fogScene, fogGrade, false);
+      fogSamples.push({ lowPixel, hdrPixel, reference, parity: difference(lowPixel, hdrPixel), expected: Math.max(difference(lowPixel, reference), difference(hdrPixel, reference)) });
+    }
+    patch.material = clearMaterial;
+    const clearExpected = display(pigment);
+    const clearSamples = [true, false].map((lowTier) => drawScene(fogScene, fogGrade, lowTier));
+    const fogStable = renderer.info.programs.length === fogPrograms;
+
+    // The old native background bypassed Low's grade. Use a coloured sRGB texture, thick scene fog,
+    // and the real sky helper so this also holds its fog exclusion and reversible nightfall dimming.
+    const skyMap = new T.DataTexture(new Uint8Array([180, 160, 220, 255]), 1, 1);
+    skyMap.colorSpace = T.SRGBColorSpace; skyMap.needsUpdate = true;
+    const sky = f.createSky(skyMap, new T.Color('white'));
+    const skyScene = new T.Scene(); skyScene.fog = fog; skyScene.add(sky);
+    const skyGrade = f.createMaterialGrade(grade, fog); skyGrade.apply(skyScene);
+    for (const lowTier of [true, false]) drawScene(skyScene, skyGrade, lowTier);
+    const skyPrograms = renderer.info.programs.length;
+    const skyLinear = new T.Color().setRGB(180 / 255, 160 / 255, 220 / 255, T.SRGBColorSpace).toArray();
+    const skySamples = [];
+    for (const brightness of [1, 0.23, 1]) {
+      sky.material.color.setScalar(brightness);
+      const reference = display(skyLinear.map((v) => v * brightness));
+      const lowPixel = drawScene(skyScene, skyGrade, true), hdrPixel = drawScene(skyScene, skyGrade, false);
+      skySamples.push({ lowPixel, hdrPixel, reference, parity: difference(lowPixel, hdrPixel), expected: Math.max(difference(lowPixel, reference), difference(hdrPixel, reference)) });
+    }
+    const skyStable = renderer.info.programs.length === skyPrograms;
+    return {
+      deltas, frontDelta, backDelta, half, oddHalf, released: blur.texture === null,
+      fogSamples, clearSamples, clearExpected, fogStable, skySamples, skyStable,
+    };
   });
   console.log('       numerical', numerical);
   check('Low material grade and HDR LUT agree through one Neutral/sRGB conversion, from black to 32x HDR', numerical.deltas.every((n) => n <= 2));
@@ -101,6 +178,12 @@ try {
   check('depth blur visibly softens the rear grid', numerical.backDelta > 2000);
   check('High target is half resolution, including odd drawing-buffer sizes', String(numerical.half) === '128,128' && String(numerical.oddHalf) === '129,128');
   check('leaving High releases the half-resolution target', numerical.released);
+  check('fog mixes in linear light before grade/output on Low and HDR, including dynamic range and colour', numerical.fogSamples.every((s) => s.parity <= 2 && s.expected <= 2));
+  check('materials with fog:false retain their authored colour in fully hazed scenes', numerical.clearSamples.every((s) => s.every((v, i) => Math.abs(v - numerical.clearExpected[i]) <= 2)));
+  check('fog range/colour changes and repeated Low/HDR switches compile no new programs after warm-up', numerical.fogStable);
+  check('textured sky is graded exactly once on Low/HDR and remains outside scene fog', numerical.skySamples.every((s) => s.parity <= 2 && s.expected <= 2));
+  check('nightfall dims and restores the sky without colour drift', numerical.skySamples[1].lowPixel.every((v, i) => v < numerical.skySamples[0].lowPixel[i]) && String(numerical.skySamples[0].lowPixel) === String(numerical.skySamples[2].lowPixel) && String(numerical.skySamples[0].hdrPixel) === String(numerical.skySamples[2].hdrPixel));
+  check('sky brightness changes compile no new programs after warm-up', numerical.skyStable);
   await probe.close();
   for (const course of ['garden', 'norrsken']) for (const [width, height] of [[844, 390], [390, 844]]) {
     const page = await pageFor(width, height);

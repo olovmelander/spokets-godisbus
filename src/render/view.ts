@@ -20,6 +20,7 @@ import { observeGpu, type GpuMemory } from './gpu-memory';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
+import { createSky } from './dressing/sky';
 import type { LifeAsk } from './life';
 import { evening, nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
@@ -207,8 +208,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const place = chapter.place ? PLACES[chapter.place] : null;
   const grade = place?.grade ?? GARDEN_MORNING;
   const gradePass = hdrAvailable ? createGradePass(grade) : null;
-  const materialGrade = createMaterialGrade(grade);
-  materialGrade.setEnabled(tier === 'low');
   const depthBlur = hdrAvailable ? createDepthBlur() : null;
   const bloom = hdrAvailable ? createBloom() : null;
   const outputPass = hdrAvailable ? new OutputPass() : null;
@@ -222,8 +221,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const scene = new Scene();
   // A place brings its own light, haze and layers. Without one the chapter is greybox.
   const sky = new Color(place?.haze.colour ?? '#c4dcea');
-  scene.background = sky;
   scene.fog = new Fog(sky, 14, 44);
+  const materialGrade = createMaterialGrade(grade, scene.fog);
+  materialGrade.setEnabled(tier === 'low');
   // Lights are created once and never toggled: every change would compile a new shader (plan §6.2).
   const hemisphere = new HemisphereLight(place?.hemisphere.sky ?? '#e2efff', place?.hemisphere.ground ?? '#6a5338', place?.hemisphere.intensity ?? 1.25);
   scene.add(hemisphere);
@@ -236,8 +236,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   fill.position.set(4, 3, 10);
   scene.add(fill);
   const dressing = place ? dress(chapter, place, life) : null;
+  const skyPicture = createSky(dressing?.background ?? null, sky);
+  scene.add(skyPicture);
   if (dressing) {
-    scene.background = dressing.background;
     scene.add(dressing.group);
   }
 
@@ -954,6 +955,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       }
       // The mountain's hour goes on as he does: the sky dims with the far ridges (backdrop.ts).
       if (place.id === 'mountain') scene.backgroundIntensity = evening(look.x, chapter.ground[0]!.x, chapter.ground[chapter.ground.length - 1]!.x).sky;
+      skyPicture.material.color.setScalar(scene.backgroundIntensity);
       // The haze begins behind the play plane, however far the camera has pulled back.
       if (!chapter.mist) {
         (scene.fog as Fog).near = camera.position.z + place.haze.near;
