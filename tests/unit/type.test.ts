@@ -21,7 +21,17 @@ describe("the game's type", () => {
 
   it('sets the page in Andika, with the system font only as a fallback', () => {
     const body = /body\s*\{[^}]*font-family:\s*([^;]+);/.exec(css);
-    expect(body?.[1]?.trim().startsWith("'Andika'")).toBe(true);
+    expect(body?.[1]?.trim()).toBe('var(--font-read)');
+    expect(/--font-read:\s*([^;]+);/.exec(css)?.[1]?.trim().startsWith("'Andika'")).toBe(true);
+  });
+
+  it("writes Moa's words in her hand, and only hers", () => {
+    // Playpen Sans for the time cards, the map's names, panel titles and section headings (style-and-sound.md row 3).
+    expect(/--font-hand:\s*'Playpen Sans',\s*var\(--font-read\);/.test(css)).toBe(true);
+    const hand = [...css.matchAll(/([^{}]+)\{[^}]*font-family:\s*var\(--font-hand\)/g)].map((match) => match[1]!.trim());
+    for (const selector of ['.panel h2', '.panel h3', '.moas-karta text', '.scene-caption']) expect(hand, selector).toContain(selector);
+    // Reading text never is: a bubble, a button and the body stay in Andika.
+    for (const selector of hand) expect(selector, selector).not.toMatch(/\.bubble|\.btn|^body/);
   });
 
   it('lets buttons and fields take the page type instead of the browser\'s', () => {
@@ -36,6 +46,7 @@ describe("the game's type", () => {
       expect(licences, file).toContain(file);
     }
     expect(existsSync(new URL('../../public/fonts/Andika-OFL.txt', import.meta.url))).toBe(true);
+    expect(existsSync(new URL('../../public/fonts/PlaypenSans-OFL.txt', import.meta.url))).toBe(true);
     // Nothing is fetched from anyone else (plan §5.6): no font from a font service.
     expect(css).not.toMatch(/fonts\.(googleapis|gstatic)|@import\s+url\(\s*['"]?https?:/);
   });

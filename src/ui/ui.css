@@ -16,6 +16,117 @@
   font-display: swap;
 }
 
+/* Playpen Sans (TypeTogether, OFL 1.1): Moa's hand, for her words only: the time cards, the map's names, panel
+   titles, section headings and the storybook page's title (docs/ux-audit/style-and-sound.md row 3). A subset of
+   @fontsource/playpen-sans 5.3.0 to the Swedish letters (LICENSES.md). */
+@font-face {
+  font-family: 'Playpen Sans';
+  src: url('/fonts/playpen-sans-700-sv.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- The game's colours, as tokens (docs/ux-audit/style-and-sound.md, "Colour"; row 7) -------------------------
+   Every rule reads these; no colour is written anywhere else in this file (tests/unit/tokens.test.ts). Paper is
+   for what is read, Pappa's painted wood for what is pressed, candy only for rewards. */
+:root {
+  /* Paper: Moa's drawing paper, for what is read. */
+  --paper: #fbf4e4;
+  --paper-2: #f2e5c8;
+  --paper-bright: #fffaf0;
+  --paper-edge: #d6bf95;
+  --tape: rgb(239 224 176 / 0.82);
+  /* Ink. */
+  --ink: #33241a;
+  --ink-soft: #5f4733;
+  --ink-faint: #8a7258;
+  --ink-on-paint: #fff8ec;
+  /* Moa's crayons. */
+  --crayon-red: #c4352b;
+  --crayon-red-dark: #8f2a20;
+  --crayon-blue: #2e5c99;
+  --crayon-green: #3d7a3c;
+  --crayon-brown: #6b4a2c;
+  /* Pappa's wood and paint, for what is pressed. */
+  --linden: #e6cfa4;
+  --linden-rim: #e7cb98;
+  --linden-deep: #cdb48a;
+  --linden-edge: #a17443;
+  --wood-line: #7b5a36;
+  --wood-dark: #5a3a1e;
+  --paint-red: #9b3325;
+  --paint-red-dark: #4e1710;
+  --paint-green: #2c6a45;
+  --paint-green-dark: #163a24;
+  --paint-blue: #2b5888;
+  --paint-ochre: #c58d28;
+  /* Candy, for rewards only: the 3D kit's colours (src/render/candy.ts), its shine, and gold. */
+  --candy-red: #e8483f;
+  --candy-yellow: #f6c445;
+  --candy-green: #58b368;
+  --candy-blue: #4a90d9;
+  --candy-pink: #ef7fb0;
+  --candy-orange: #f08a3c;
+  --candy-shine: #ffe3d9;
+  --gold: #e8b636;
+  --gold-light: #fff9dc;
+  --gold-pale: #f1d88c;
+  --gold-deep: #7d5414;
+  /* Who speaks: their sign's colour, and an ink of it for their name (src/ui/faces.ts). */
+  --who-mamma: #bf3d36;
+  --who-pappa: #5a7d4a;
+  --who-pappa-ink: #4b6b3d;
+  --who-moa: #5b7fb5;
+  --who-moa-ink: #41659b;
+  --who-bertil: #d98a2c;
+  --who-bertil-ink: #9c5a17;
+  --who-elof: #2f5f9e;
+  --who-spoket: #8a5a32;
+  --who-none: #6b5a48;
+  /* A gamepad's buttons, as the pad has them: plain colours, no brand. */
+  --pad-a: #2f7d47;
+  --pad-a-edge: #1f5a31;
+  --pad-b: #b03a2e;
+  --pad-b-edge: #7f241c;
+  --pad-x: #2f62a8;
+  --pad-x-edge: #1f4479;
+  --pad-y: #e8b923;
+  --pad-y-edge: #a07a10;
+  /* The memories' sepia. */
+  --sepia-light: #f6e6c4;
+  --sepia: #ecd6a8;
+  --sepia-deep: #c9a56c;
+  /* States. */
+  --focus: #1d4f91;
+  --knock: #f6c445;
+  --knock-light: #ffd76a;
+  /* Over the picture and at night. */
+  --bars: #120d09;
+  --fade: #0b0806;
+  --night-ink: #fff6df;
+  --night-shade: rgb(16 26 42 / 0.5);
+  --print-dark: #27352e;
+  --debug-ink: #d8f5d0;
+  --black: #000;
+  /* The place's own shade, as r g b, under a panel: main.ts sets it for each place (src/ui/materials.ts). */
+  --place-shade: 36 64 74;
+  /* Type: Andika for what is read, Moa's hand for her words. */
+  --font-read: 'Andika', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-hand: 'Playpen Sans', var(--font-read);
+  /* Motion: wood goes down quickly and comes up a little slower; a sheet lands with a small overshoot. */
+  --dur-press: 80ms;
+  --dur-release: 140ms;
+  --dur-quick: 160ms;
+  --dur-panel: 240ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-paper: cubic-bezier(0.3, 1.25, 0.5, 1);
+  /* A sheet lying on the scene; a plank's light top and shaded foot, and the shadow it throws. */
+  --sheet-shadow: 0 1px 0 var(--paper-edge), 0 12px 26px rgb(30 20 10 / 0.34);
+  --bevel: inset 0 2px 0 rgb(255 247 228 / 0.6), inset 0 -2px 0 rgb(90 58 30 / 0.22);
+  --wood-shadow: 0 7px 12px rgb(30 18 8 / 0.26);
+}
+
 /* The page never scrolls, selects or zooms: it is a game surface (plan §6.7). */
 html,
 body {
@@ -31,8 +142,8 @@ body {
   user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
-  font-family: 'Andika', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  color: #3d2b1f;
+  font-family: var(--font-read);
+  color: var(--ink);
   /* Touch sizes grow by 15% on tablets (plan §4.1). */
   --k: 1;
 }
@@ -115,7 +226,7 @@ textarea {
 }
 
 .stick-base.run .stick-knob {
-  background: #ffd76a;
+  background-color: var(--knock-light);
 }
 
 .btn {
@@ -126,8 +237,8 @@ textarea {
   gap: 2px;
   padding: 0;
   border-radius: 50%;
-  border: 3px solid rgb(255 255 255 / 0.8);
-  color: #fff;
+  border: 3px solid var(--linden-rim);
+  color: var(--ink-on-paint);
   font-size: calc(15px * var(--k));
   font-weight: 700;
   line-height: 1.05;
@@ -157,13 +268,14 @@ textarea {
 
 /* Hoppa: 116 px, lower right, about 2 cm on the family's phones. Använd: 100 px, up and to the left of it on the
    thumb's arc, 12 px clear. Both inside the safe area (plan §4.1; docs/ux-audit/access-and-devices.md #2).
-   White words on these fills are 4.6:1 and 5.1:1 (WCAG AA). */
+   They are Pappa's paint, rödfärg and green, with the linden showing where the paint has worn off the rim: the
+   cream words on them are 6.9:1 and 6.1:1 (style-and-sound.md rows 8 and 9). */
 .btn-hop {
   width: calc(116px * var(--k));
   height: calc(116px * var(--k));
   right: calc(env(safe-area-inset-right) + 20px);
   bottom: calc(env(safe-area-inset-bottom) + 20px);
-  background: #cf4434;
+  background-color: var(--paint-red);
 }
 
 .btn-act {
@@ -171,7 +283,7 @@ textarea {
   height: calc(100px * var(--k));
   right: calc(env(safe-area-inset-right) + 20px + 108px * var(--k));
   bottom: calc(env(safe-area-inset-bottom) + 20px + 74px * var(--k));
-  background: #2f7d47;
+  background-color: var(--paint-green);
 }
 
 /* Använd says only its hand until there is something to do; then the word stands beside it on a scrap of
@@ -185,8 +297,8 @@ textarea {
   max-width: 150px;
   padding: 6px 10px;
   border-radius: 6px;
-  background: #fff6e2;
-  color: #3d2b1f;
+  background-color: var(--paper);
+  color: var(--ink);
   font-size: 16px;
   line-height: 1.15;
   text-align: center;
@@ -269,7 +381,7 @@ body.calm *::after {
 
 @keyframes panel-rise {
   from {
-    transform: translateY(12px);
+    transform: translateY(12px) rotate(-1.2deg);
   }
 }
 
@@ -285,7 +397,7 @@ body.calm *::after {
 }
 
 :is(#pause, #explore, #photoAlbum, #storyPanel):not([hidden]) > .panel {
-  animation: panel-rise 180ms ease-out;
+  animation: panel-rise var(--dur-panel) var(--ease-paper);
 }
 
 .turn:not([hidden]),
@@ -315,10 +427,10 @@ body.calm *::after {
   top: calc(env(safe-area-inset-top) + 10px);
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 14px 4px 8px;
-  border-radius: 999px;
-  background: rgb(236 223 198 / 0.9);
+  gap: 2px;
+  padding: 0;
+  border-radius: 10px;
+  background: none;
   font-weight: 700;
   font-size: calc(26px * var(--k));
   line-height: 1;
@@ -340,8 +452,8 @@ body.calm *::after {
   width: calc(13px * var(--k));
   height: calc(13px * var(--k));
   border-radius: 50%;
-  background: var(--colour);
-  box-shadow: inset 0 0 0 calc(3px * var(--k)) var(--mark), 0 0 0 1.5px #7b5a36;
+  background-color: var(--colour);
+  box-shadow: inset 0 0 0 calc(3px * var(--k)) var(--mark), 0 0 0 1.5px var(--wood-line);
 }
 
 /*
@@ -355,7 +467,7 @@ body.calm *::after {
   background-size: 600% 300%;
   background-position: calc(var(--sx) * 20%) calc(var(--sy) * 50%);
   box-shadow: none;
-  filter: drop-shadow(0 0.8px 0 #fffaf0) drop-shadow(0 -0.8px 0 #fffaf0) drop-shadow(0.8px 0 0 #fffaf0) drop-shadow(-0.8px 0 0 #fffaf0)
+  filter: drop-shadow(0 0.8px 0 var(--paper-bright)) drop-shadow(0 -0.8px 0 var(--paper-bright)) drop-shadow(0.8px 0 0 var(--paper-bright)) drop-shadow(-0.8px 0 0 var(--paper-bright))
     drop-shadow(0 1px 1px rgb(70 45 20 / 0.45));
 }
 
@@ -401,8 +513,29 @@ body.calm *::after {
 }
 
 .bag svg {
-  width: calc(40px * var(--k));
-  height: calc(47px * var(--k));
+  position: relative;
+  z-index: 1;
+  width: calc(44px * var(--k));
+  height: calc(52px * var(--k));
+  filter: drop-shadow(0 2px 3px rgb(30 18 8 / 0.45));
+}
+
+/* The count and the stickers on a tag of Moa's paper, tucked under the bag's edge. */
+.bag-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: -6px;
+  padding: 4px 10px 5px 12px;
+  border-radius: 3px 7px 5px 4px;
+  background-color: var(--paper);
+  box-shadow: 0 2px 6px rgb(30 18 8 / 0.35);
+  rotate: -2deg;
+}
+
+.bag-tag #bagCount {
+  min-width: 1.2em;
+  text-align: center;
 }
 
 .bag-fill {
@@ -427,8 +560,8 @@ body.calm *::after {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: rgb(236 223 198 / 0.9);
-  color: #3d2b1f;
+  background-color: var(--linden);
+  color: var(--wood-dark);
   touch-action: manipulation;
 }
 
@@ -447,7 +580,7 @@ body.calm *::after {
    button stays half bright: it shows what it will say there, and it cannot be pressed yet. */
 .btn-act.pulse,
 .key-prompt.pulse {
-  box-shadow: 0 0 0 4px #ffd76a, 0 0 0 6px #3d2b1f, 0 3px 8px rgb(0 0 0 / 0.3);
+  box-shadow: 0 0 0 4px var(--knock-light), 0 0 0 6px var(--ink), 0 3px 8px rgb(0 0 0 / 0.3);
   animation: act-breath 1.4s ease-in-out infinite alternate;
 }
 
@@ -483,8 +616,8 @@ body.calm *::after {
   gap: 8px;
   padding: 6px 12px 6px 6px;
   border-radius: 10px;
-  background: #fff6e2;
-  color: #3d2b1f;
+  background-color: var(--paper);
+  color: var(--ink);
   font-size: 16px;
   font-weight: 700;
   line-height: 1.15;
@@ -498,8 +631,8 @@ body.calm *::after {
   min-width: 30px;
   height: 30px;
   border-radius: 7px;
-  background: #3d2b1f;
-  color: #fff6e2;
+  background-color: var(--ink);
+  color: var(--paper);
   font: inherit;
 }
 
@@ -522,7 +655,7 @@ body.lefty .key-prompt {
   place-items: center;
   padding: calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 12px)
     calc(env(safe-area-inset-bottom) + 12px) calc(env(safe-area-inset-left) + 12px);
-  background: rgb(40 28 18 / 0.45);
+  background: radial-gradient(ellipse at center, rgb(var(--place-shade) / 0.3) 40%, rgb(var(--place-shade) / 0.5) 100%);
   overflow: auto;
 }
 
@@ -539,22 +672,28 @@ body.lefty .key-prompt {
   display: grid;
   gap: 10px;
   padding: 18px 18px 20px;
-  border-radius: 22px;
-  background: #f4ead4;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+  border-radius: 5px 8px 6px 7px;
+  background-color: var(--paper);
+  box-shadow: var(--sheet-shadow);
   font-size: 18px;
 }
 
 .panel h2 {
   margin: 0 64px 0 4px;
+  font-family: var(--font-hand);
   font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--crayon-blue);
 }
 
 .panel h3 {
   margin: 6px 4px 0;
-  font-size: 0.9em;
-  font-weight: 600;
-  opacity: 0.75;
+  font-family: var(--font-hand);
+  font-size: 0.95em;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--crayon-blue);
 }
 
 .panel button {
@@ -576,9 +715,15 @@ body.lefty .key-prompt {
   background: transparent;
 }
 
-.panel-close svg {
-  width: 28px;
-  height: 28px;
+.panel-close svg,
+.panel-up svg {
+  box-sizing: border-box;
+  width: 46px;
+  height: 46px;
+  padding: 11px;
+  border-radius: 50%;
+  background-color: var(--linden);
+  color: var(--wood-dark);
 }
 
 /* --- Pause: a short first page, and pages of its own (docs/ux-audit/menus.md rows 1-4) ------------------- */
@@ -607,7 +752,7 @@ body.lefty .key-prompt {
   min-height: 64px;
   margin: 0 -18px;
   padding: 0 4px 0 12px;
-  background: #f4ead4;
+  background-color: var(--paper);
 }
 
 .panel .panel-head h2 {
@@ -638,8 +783,9 @@ body.lefty .key-prompt {
 }
 
 .panel-up svg {
-  width: 26px;
-  height: 26px;
+  width: 42px;
+  height: 42px;
+  padding: 10px;
 }
 
 .pause-options {
@@ -677,7 +823,7 @@ body.lefty .key-prompt {
   gap: 4px;
   padding: 8px 10px 10px;
   border-radius: 14px;
-  background: #fffaf0;
+  background-color: var(--paper-bright);
 }
 
 .map-card[hidden] {
@@ -686,10 +832,8 @@ body.lefty .key-prompt {
 
 .panel .map-card h3 {
   margin: 0;
-  color: #b03a2e;
-  font-size: 0.83em;
-  font-weight: 700;
-  opacity: 1;
+  color: var(--crayon-red);
+  font-size: 0.9em;
 }
 
 .tiles {
@@ -711,10 +855,10 @@ body.lefty .key-prompt {
   column-gap: 10px;
   padding: 8px 12px;
   border: 0;
-  border-radius: 16px;
-  background: #e6d6b4;
+  border-radius: 13px 15px 14px 16px;
+  background-color: var(--linden);
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.15;
 }
 
@@ -730,7 +874,7 @@ body.lefty .key-prompt {
 .tile small {
   font-size: 0.78em;
   font-weight: 400;
-  color: #5a4630;
+  color: var(--ink-soft);
 }
 
 .tile small:empty {
@@ -746,16 +890,14 @@ body.lefty .key-prompt {
 
 .panel .pause-settings h3 {
   margin: 12px 4px 0;
-  font-size: 1em;
-  font-weight: 700;
-  opacity: 1;
+  font-size: 1.05em;
 }
 
 .panel h4 {
   margin: 4px 4px 0;
   font-size: 0.83em;
-  font-weight: 600;
-  opacity: 0.8;
+  font-weight: 700;
+  color: var(--ink-soft);
 }
 
 .panel h4 svg {
@@ -788,14 +930,14 @@ body.lefty .key-prompt {
   gap: 12px;
   padding: 0 20px;
   border: 0;
-  border-radius: 999px;
-  background: #e6d6b4;
-  font-weight: 600;
+  border-radius: 14px 16px 13px 15px;
+  background-color: var(--linden);
+  font-weight: 700;
 }
 
 .wide.go {
-  background: #dd4b39;
-  color: #fff;
+  background-color: var(--paint-red);
+  color: var(--ink-on-paint);
   font-size: 21px;
 }
 
@@ -817,14 +959,14 @@ body.lefty .key-prompt {
   align-content: center;
   gap: 2px;
   padding: 10px 8px;
-  border: 3px solid transparent;
-  border-radius: 18px;
-  background: #e6d6b4;
+  border: 3px solid var(--paper-edge);
+  border-radius: 9px 12px 10px 11px;
+  background-color: var(--paper-2);
 }
 
 .style.on {
-  border-color: #dd4b39;
-  background: #fff6e4;
+  border-color: var(--crayon-red);
+  background-color: var(--paper-bright);
 }
 
 .style svg {
@@ -839,7 +981,7 @@ body.lefty .key-prompt {
 .style small {
   font-size: 0.72em;
   line-height: 1.25;
-  opacity: 0.8;
+  color: var(--ink-soft);
 }
 
 /* The help level: three choices in a row. */
@@ -859,15 +1001,15 @@ body.lefty .key-prompt {
 .level {
   min-height: 64px;
   padding: 6px 8px;
-  border: 3px solid transparent;
-  border-radius: 16px;
-  background: #e6d6b4;
+  border: 3px solid var(--paper-edge);
+  border-radius: 10px 12px 9px 11px;
+  background-color: var(--paper-2);
   line-height: 1.2;
 }
 
 .level.on {
-  border-color: #dd4b39;
-  background: #fff6e4;
+  border-color: var(--crayon-red);
+  background-color: var(--paper-bright);
 }
 
 /* --- a memory: sepia pictures, one after another, over a dimmed game (plan §2.4) -------------------- */
@@ -891,20 +1033,20 @@ body.lefty .key-prompt {
   aspect-ratio: 8 / 5;
   border-radius: 50% / 46%;
   overflow: hidden;
-  background: radial-gradient(ellipse at center, #f6e6c4 0%, #ecd6a8 62%, #c9a56c 100%);
+  background: radial-gradient(ellipse at center, var(--sepia-light) 0%, var(--sepia) 62%, var(--sepia-deep) 100%);
   box-shadow: 0 0 0 6px rgb(246 230 196 / 0.35), 0 12px 40px rgb(0 0 0 / 0.45);
   filter: sepia(0.35) contrast(0.96);
 }
 
-.memory-panel { position: relative; display: grid; justify-items: center; gap: 10px; max-width: 100%; max-height: 100%; box-sizing: border-box; overflow: auto; padding: 12px; border-radius: 22px; color: #f8edd6; }
+.memory-panel { position: relative; display: grid; justify-items: center; gap: 10px; max-width: 100%; max-height: 100%; box-sizing: border-box; overflow: auto; padding: 12px; border-radius: 22px; color: var(--night-ink); }
 .memory-panel h2 { margin: 8px 60px; font-size: 18px; text-align: center; }
-.memory-panel .panel-close { color: #f8edd6; }
+.memory-panel .panel-close { color: var(--night-ink); }
 .memory-controls { display: flex; align-items: center; gap: 18px; }
-.memory-controls button { color: #5a3d24; font: inherit; }
+.memory-controls button { color: var(--ink-soft); font: inherit; }
 .memory-album { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
-.memory-thumb, .memory-missing { display: grid; align-content: center; justify-items: center; gap: 5px; min-height: 100px; border: 2px solid #cbb490; border-radius: 12px; padding: 7px; background: #eee0c1; }
+.memory-thumb, .memory-missing { display: grid; align-content: center; justify-items: center; gap: 5px; min-height: 100px; border: 2px solid var(--paper-edge); border-radius: 12px; padding: 7px; background-color: var(--paper-2); }
 .memory-thumb svg { display: block; width: 100%; border-radius: 8px; }
-.memory-missing { border-style: dashed; color: #937850; font-size: 30px; }
+.memory-missing { border-style: dashed; color: var(--ink-faint); font-size: 30px; }
 
 .memory-card svg {
   display: block;
@@ -923,8 +1065,8 @@ body.lefty .key-prompt {
 /* Local game-frame memories: small thumbnails and one quiet, keyboard-accessible album page. */
 .album-photos h3 { display: flex; align-items: center; gap: 10px; }
 .photo-thumbnails { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.photo-thumb { min-width: 0; padding: 7px; background: #fff9e9; border-radius: 10px; text-align: left; }
-.photo-thumb img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background: #27352e; border-radius: 5px; }
+.photo-thumb { min-width: 0; padding: 7px; background-color: var(--paper-bright); border-radius: 10px; text-align: left; }
+.photo-thumb img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: contain; background-color: var(--print-dark); border-radius: 5px; }
 .photo-thumb span { display: block; padding: 7px 2px 1px; font-size: 0.85rem; }
 /* The photo viewer: the photo as a print laid on the paper, as big as the screen lets it be, with round arrows
    at its sides and the count in the header (docs/ux-audit/menus.md row 17). */
@@ -946,7 +1088,7 @@ body.lefty .key-prompt {
   grid-column: 3;
   margin: 0 4px;
   font-size: 0.85em;
-  opacity: 0.8;
+  color: var(--ink-soft);
 }
 
 .photo-stage {
@@ -964,12 +1106,12 @@ body.lefty .key-prompt {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #e6d6b4;
+  background-color: var(--linden);
 }
 
 .photo-step.go {
-  background: #dd4b39;
-  color: #fff;
+  background-color: var(--paint-red);
+  color: var(--ink-on-paint);
 }
 
 .photo-step svg {
@@ -990,9 +1132,9 @@ body.lefty .key-prompt {
   max-width: 100%;
   max-height: calc(100dvh - 210px);
   box-sizing: border-box;
-  border: 6px solid #fffaf0;
+  border: 6px solid var(--paper-bright);
   border-radius: 3px;
-  background: #fffaf0;
+  background-color: var(--paper-bright);
   box-shadow: 0 6px 14px rgb(61 43 31 / 0.3);
   transform: rotate(-1.5deg);
 }
@@ -1001,16 +1143,16 @@ body.lefty .key-prompt {
 .photo-print figcaption {
   padding: 5px 14px;
   border-radius: 4px;
-  background: #fffaf0;
+  background-color: var(--paper-bright);
   box-shadow: 0 2px 4px rgb(61 43 31 / 0.18);
   font-weight: 600;
   transform: rotate(1deg);
 }
 
 .photo-credits { padding: 18px 12px; text-align: center; line-height: 1.65; }
-.photo-credits > span { font-size: 60px; color: #a95e27; }
+.photo-credits > span { font-size: 60px; color: var(--gold-deep); }
 .photo-panel [hidden], .album-photos[hidden] { display: none; }
-.photo-panel button:disabled { opacity: 0.35; }
+
 
 @media (max-height: 500px) {
   .photo-print img {
@@ -1022,12 +1164,13 @@ body.lefty .key-prompt {
 .share-sweets, .share-friends { display: grid; gap: 12px; }
 .share-sweets { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .share-friends { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.share-choice { border: 2px solid transparent; border-radius: 14px; background: #e6d6b4; padding: 8px; min-width: 64px; min-height: 88px; display: grid; justify-items: center; gap: 3px; }
+.share-choice { border: 2px solid var(--paper-edge); border-radius: 10px 13px 11px 12px; background-color: var(--paper-2); padding: 8px; min-width: 64px; min-height: 88px; display: grid; justify-items: center; gap: 3px; }
 .share-choice svg { width: 55px; height: 52px; }
 .share-choice span { font-size: 0.85em; }
 .share-choice small { font-size: 0.65em; }
-.share-choice[aria-pressed="true"] { border-color: #8b4738; background: #f8dba2; }
-.share-choice:disabled { opacity: 0.4; }
+.share-choice[aria-pressed="true"] { border-color: var(--crayon-red); background-color: var(--gold-pale); }
+.share-choice:disabled { color: var(--ink-faint); }
+.share-choice:disabled svg { opacity: 0.45; }
 .share-bird-rule { font-size: 0.8em; }
 @media (max-width: 480px) { .share-sweets { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-height: 500px) { .share-choice { min-height: 68px; padding: 3px; } .share-choice svg { width: 36px; height: 34px; } .story-panel { gap: 8px; } }
@@ -1039,7 +1182,7 @@ body.lefty .key-prompt {
 .album-count {
   margin: 2px 0 8px;
   font-size: 0.85em;
-  opacity: 0.75;
+  color: var(--ink-soft);
 }
 
 .golden-reward {
@@ -1048,9 +1191,9 @@ body.lefty .key-prompt {
   gap: 3px;
   margin: 16px 0;
   padding: 10px;
-  border: 2px solid #c69732;
+  border: 2px solid var(--gold);
   border-radius: 18px;
-  background: radial-gradient(ellipse, #fff9dc, #f1d88c);
+  background: radial-gradient(ellipse, var(--gold-light), var(--gold-pale));
   font-weight: 600;
   text-align: center;
 }
@@ -1081,8 +1224,8 @@ body.lefty .key-prompt {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--colour);
-  box-shadow: inset 0 0 0 10px var(--mark), 0 0 0 2px #7b5a36;
+  background-color: var(--colour);
+  box-shadow: inset 0 0 0 10px var(--mark), 0 0 0 2px var(--wood-line);
   transform: rotate(-6deg);
 }
 
@@ -1098,7 +1241,7 @@ body.lefty .key-prompt {
 }
 
 .album-grid li:not(.got) span {
-  opacity: 0.5;
+  color: var(--ink-faint);
 }
 
 /* Hittegods: the lost things he has found, as labels on a string. */
@@ -1116,13 +1259,13 @@ body.lefty .key-prompt {
   border-radius: 999px;
   border: 2px dashed rgb(123 90 54 / 0.4);
   font-size: 0.8em;
-  opacity: 0.6;
+  color: var(--ink-faint);
 }
 
 .lost-list li.got {
   border: 2px solid rgb(123 90 54 / 0.5);
-  background: #fffaf0;
-  opacity: 1;
+  background-color: var(--paper-bright);
+  color: var(--ink);
 }
 
 /* Moas karta: crayon on paper. */
@@ -1132,7 +1275,7 @@ body.lefty .key-prompt {
 
 .map {
   border-radius: 14px;
-  background: #fffaf0;
+  background-color: var(--paper-bright);
   box-shadow: inset 0 0 0 2px rgb(123 90 54 / 0.18);
   padding: 4px 6px 0;
 }
@@ -1145,14 +1288,15 @@ body.lefty .key-prompt {
 
 /* Moa's writing, large enough to read on a phone (menus.md row 15). */
 .moas-karta text {
+  font-family: var(--font-hand);
   font-size: calc(16px * var(--map-text, 1));
   font-weight: 700;
-  fill: #5a4630;
+  fill: var(--crayon-brown);
 }
 
 .moas-karta text.here {
   font-size: calc(14px * var(--map-text, 1));
-  fill: #b03a2e;
+  fill: var(--crayon-red);
 }
 
 /* --- Inställningar: a row for each setting, with its picture (docs/ux-audit/menus.md rows 5-10) ---------- */
@@ -1162,7 +1306,7 @@ body.lefty .key-prompt {
   height: 32px;
   display: grid;
   place-items: center;
-  color: #5a4630;
+  color: var(--ink-soft);
 }
 
 .row-icon svg {
@@ -1186,7 +1330,7 @@ body.lefty .key-prompt {
 .help-level small {
   font-size: 0.78em;
   line-height: 1.3;
-  color: #5a4630;
+  color: var(--ink-soft);
 }
 
 .switch {
@@ -1197,7 +1341,7 @@ body.lefty .key-prompt {
   gap: 12px;
   padding: 8px 12px 8px 14px;
   border-radius: 16px;
-  background: #ecdfc6;
+  background-color: var(--paper-2);
   cursor: pointer;
 }
 
@@ -1210,9 +1354,9 @@ body.lefty .key-prompt {
   height: 32px;
   margin: 0 0 0 auto;
   box-sizing: border-box;
-  border: 2px solid #7b5a36;
+  border: 2px solid var(--wood-line);
   border-radius: 16px;
-  background: #c9b590;
+  background-color: var(--linden-deep);
   cursor: pointer;
 }
 
@@ -1224,14 +1368,14 @@ body.lefty .key-prompt {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #fffaf0;
+  background-color: var(--paper-bright);
   box-shadow: 0 1px 2px rgb(61 43 31 / 0.35);
   transition: transform 140ms ease-out;
 }
 
 .switch input:checked {
-  border-color: #a5301f;
-  background: #dd4b39;
+  border-color: var(--crayon-red-dark);
+  background-color: var(--crayon-red);
 }
 
 .switch input:checked::before {
@@ -1245,7 +1389,7 @@ body.lefty .key-prompt {
   left: 33px;
   width: 5px;
   height: 10px;
-  border: solid #dd4b39;
+  border: solid var(--crayon-red);
   border-width: 0 3px 3px 0;
   transform: rotate(45deg);
 }
@@ -1272,9 +1416,9 @@ body.lefty .key-prompt {
   column-gap: 12px;
   row-gap: 2px;
   padding: 8px 14px;
-  border: 3px solid transparent;
-  border-radius: 16px;
-  background: #e6d6b4;
+  border: 3px solid var(--paper-edge);
+  border-radius: 11px 9px 12px 10px;
+  background-color: var(--paper-2);
   text-align: left;
 }
 
@@ -1300,17 +1444,17 @@ body.lefty .key-prompt {
   width: 10px;
   height: 10px;
   box-sizing: border-box;
-  border: 2px solid #7b5a36;
+  border: 2px solid var(--wood-line);
   border-radius: 50%;
 }
 
 .help-level .dots i.on {
-  background: #7b5a36;
+  background-color: var(--wood-line);
 }
 
 .help-level.on {
-  border-color: #dd4b39;
-  background: #fff6e4;
+  border-color: var(--crayon-red);
+  background-color: var(--paper-bright);
 }
 
 /* A sound: the picture mutes it and keeps its level; five candy pips are the level (row 8). */
@@ -1322,7 +1466,7 @@ body.lefty .key-prompt {
   align-items: center;
   padding: 8px 12px 8px 8px;
   border-radius: 16px;
-  background: #ecdfc6;
+  background-color: var(--paper-2);
 }
 
 .mute {
@@ -1333,7 +1477,7 @@ body.lefty .key-prompt {
   display: grid;
   place-items: center;
   border-radius: 16px;
-  background: #e0cfaa;
+  background-color: var(--linden);
   cursor: pointer;
 }
 
@@ -1362,8 +1506,8 @@ body.lefty .key-prompt {
 }
 
 .muted .mute {
-  color: #7b5a36;
-  background: #d6c4a0;
+  color: var(--wood-line);
+  background-color: var(--linden-deep);
 }
 
 .sound-word {
@@ -1384,14 +1528,14 @@ body.lefty .key-prompt {
 .pips i {
   aspect-ratio: 1;
   box-sizing: border-box;
-  border: 3px solid #a08a63;
+  border: 3px solid var(--linden-edge);
   border-radius: 50%;
-  background: #fffaf0;
+  background-color: var(--paper-bright);
 }
 
 .pips i.on {
-  border-color: #a5301f;
-  background: radial-gradient(circle at 34% 32%, #ffe3d9 0 16%, #dd4b39 19%);
+  border-color: var(--crayon-red-dark);
+  background: radial-gradient(circle at 34% 32%, var(--candy-shine) 0 16%, var(--candy-red) 19%);
 }
 
 .muted .pips i.on {
@@ -1419,7 +1563,7 @@ body.lefty .key-prompt {
   gap: 8px 12px;
   padding: 8px 14px;
   border-radius: 16px;
-  background: #ecdfc6;
+  background-color: var(--paper-2);
 }
 
 details.info-row {
@@ -1457,15 +1601,18 @@ details.info-row p {
   letter-spacing: 0.06em;
 }
 
-/* Focus that never reads as the red of what is chosen, and a press you can see (row 21). */
-.panel :focus-visible {
-  outline: 3px solid #3d2b1f;
+/* Focus: a 3 px blue ring 3 px outside, never the red of what is chosen (style-and-sound.md row 11). Over the
+   picture a paper halo fills the gap, so the ring shows on any place. */
+:is(.panel, .message, .ending-shot) :focus-visible,
+.mute:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 
-.mute:has(input:focus-visible) {
-  outline: 3px solid #3d2b1f;
+:is(.corner, .bag, .btn):focus-visible {
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
+  box-shadow: 0 0 0 3px var(--paper);
 }
 
 .panel button:active,
@@ -1480,7 +1627,7 @@ details.info-row p {
   gap: 12px;
   padding: 12px;
   border-radius: 18px;
-  background: #fff6e4;
+  background-color: var(--paper-bright);
 }
 
 .ask[hidden] {
@@ -1509,12 +1656,12 @@ details.info-row p {
 }
 
 .ask .yes {
-  background: #3f9a5a;
-  color: #fff;
+  background-color: var(--paint-green);
+  color: var(--ink-on-paint);
 }
 
 .ask .no {
-  background: #e6d6b4;
+  background-color: var(--linden);
 }
 
 /* --- a bubble: what someone says. The game has no voices (plan §3.7). -----------------------------
@@ -1534,9 +1681,9 @@ details.info-row p {
   column-gap: 12px;
   align-items: center;
   padding: 8px 18px 10px 10px;
-  border-left: 6px solid var(--who, #8a5a32);
+  border-left: 6px solid var(--who, var(--who-spoket));
   border-radius: 8px;
-  background: #fff6e2;
+  background-color: var(--paper);
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
   rotate: var(--tilt, 0deg);
   font-size: calc(21px * var(--k));
@@ -1555,7 +1702,7 @@ details.info-row p {
   width: calc(36px * var(--k));
   height: calc(36px * var(--k));
   border-radius: 50%;
-  background: #f3e6c8;
+  background-color: var(--paper-2);
   overflow: hidden;
 }
 
@@ -1569,17 +1716,17 @@ details.info-row p {
   font-size: calc(15px * var(--k));
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--who-ink, #6b5a48);
+  color: var(--who-ink, var(--who-none));
 }
 
 /* Each speaker's colour: the colour of their sign in the world (src/render/props.ts), and a darker ink for the
    name, 4.9:1 or more on the paper. */
-.bubble[data-who='mamma'] { --who: #bf3d36; --who-ink: #bf3d36; --tilt: 0.5deg; }
-.bubble[data-who='pappa'] { --who: #5a7d4a; --who-ink: #4b6b3d; --tilt: -0.4deg; }
-.bubble[data-who='moa'] { --who: #5b7fb5; --who-ink: #41659b; --tilt: -0.6deg; }
-.bubble[data-who='bertil'] { --who: #d98a2c; --who-ink: #9c5a17; --tilt: 0.4deg; }
-.bubble[data-who='elof'] { --who: #2f5f9e; --who-ink: #2f5f9e; --tilt: 0deg; }
-.bubble[data-who='spoket'] { --who: #8a5a32; --who-ink: #8a5a32; --tilt: -0.3deg; }
+.bubble[data-who='mamma'] { --who: var(--who-mamma); --who-ink: var(--who-mamma); --tilt: 0.5deg; }
+.bubble[data-who='pappa'] { --who: var(--who-pappa); --who-ink: var(--who-pappa-ink); --tilt: -0.4deg; }
+.bubble[data-who='moa'] { --who: var(--who-moa); --who-ink: var(--who-moa-ink); --tilt: -0.6deg; }
+.bubble[data-who='bertil'] { --who: var(--who-bertil); --who-ink: var(--who-bertil-ink); --tilt: 0.4deg; }
+.bubble[data-who='elof'] { --who: var(--who-elof); --who-ink: var(--who-elof); --tilt: 0deg; }
+.bubble[data-who='spoket'] { --who: var(--who-spoket); --who-ink: var(--who-spoket); --tilt: -0.3deg; }
 
 /* Held upright the top is the corner buttons' row: what is said hangs below it, across the screen. */
 @media (orientation: portrait) {
@@ -1617,16 +1764,28 @@ details.info-row p {
 .rows i {
   width: 19px;
   height: 11px;
-  background: #e8483f;
+  background-color: var(--candy-red);
   clip-path: polygon(0 8%, 17% 38%, 24% 14%, 36% 0, 64% 0, 76% 14%, 83% 38%, 100% 8%, 100% 92%, 83% 62%, 76% 86%, 64% 100%, 36% 100%, 24% 86%, 17% 62%, 0 92%);
 }
 
-.rows i:nth-child(3n + 1) {
-  background: #f6c445;
+.rows i:nth-child(6n + 2) {
+  background-color: var(--candy-yellow);
 }
 
-.rows i:nth-child(3n + 2) {
-  background: #4a90d9;
+.rows i:nth-child(6n + 3) {
+  background-color: var(--candy-green);
+}
+
+.rows i:nth-child(6n + 4) {
+  background-color: var(--candy-blue);
+}
+
+.rows i:nth-child(6n + 5) {
+  background-color: var(--candy-pink);
+}
+
+.rows i:nth-child(6n) {
+  background-color: var(--candy-orange);
 }
 
 .panel.end p {
@@ -1638,7 +1797,7 @@ details.info-row p {
 }
 
 .panel.end .next {
-  opacity: 0.75;
+  color: var(--ink-soft);
 }
 
 /* The chapter's last page (docs/narrative-audit/threads.md §5.4): the coda's last picture glued in like a photo,
@@ -1664,7 +1823,7 @@ details.info-row p {
   margin: 4px 0 2px;
   padding: 7px 7px 9px;
   max-width: 100%;
-  background: #fffdf7;
+  background-color: var(--paper-bright);
   box-shadow: 0 3px 10px rgb(60 40 20 / 0.28);
   transform: rotate(-1.4deg);
 }
@@ -1752,6 +1911,7 @@ body.calm .moas-karta .way-on {
   .panel.end #endAgain {
     min-height: 40px;
     background: transparent;
+    box-shadow: none;
     font-weight: 400;
     font-size: 16px;
     text-decoration: underline;
@@ -1807,10 +1967,10 @@ body.calm .moas-karta .way-on {
   row-gap: 6px;
   min-height: 96px;
   padding: 12px 14px;
-  border: 2px solid #cfb991;
+  border: 2px solid var(--paper-edge);
   border-radius: 18px;
   text-align: left;
-  background: #fff6e2;
+  background-color: var(--paper);
 }
 
 .chapter-picture {
@@ -1851,7 +2011,7 @@ body.calm .moas-karta .way-on {
   display: grid;
   justify-items: center;
   gap: 2px;
-  color: #806022;
+  color: var(--gold-deep);
 }
 
 .route-star svg {
@@ -1895,7 +2055,7 @@ body.calm .moas-karta .way-on {
   width: calc((100% - 36px) * var(--loaded, 0));
   height: 4px;
   border-radius: 2px;
-  background: #c8312a;
+  background-color: var(--crayon-red);
   transition: width 300ms ease-out, opacity 400ms ease-out;
 }
 
@@ -2016,12 +2176,12 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   padding: 8px 6px;
   border: 0;
   border-radius: 20px;
-  background: #e6d6b4;
+  background-color: var(--linden);
 }
 
 .start-style.go {
-  background: #dd4b39;
-  color: #fff6ea;
+  background-color: var(--paint-red);
+  color: var(--ink-on-paint);
 }
 
 .start-style svg {
@@ -2088,7 +2248,7 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   height: 64px;
   padding: 16px;
   border-radius: 50%;
-  background: #e6d6b4;
+  background-color: var(--linden);
 }
 
 /* Each page of the title has its way back at its top left, beside its heading (row 10). */
@@ -2110,7 +2270,7 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #e6d6b4;
+  background-color: var(--linden);
 }
 
 .round-back svg {
@@ -2121,7 +2281,8 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 /* A game taken up again: where he is, as the chapter's card says it, over what he is doing (row 9). */
 .title .story-title .story-card {
   display: block;
-  color: #b03a2e;
+  color: var(--crayon-red);
+  font-family: var(--font-hand);
   font-size: 20px;
   font-weight: 700;
 }
@@ -2181,7 +2342,7 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 .panel.end .code b {
   padding: 6px 14px;
   border-radius: 12px;
-  background: #fffaf0;
+  background-color: var(--paper-bright);
   box-shadow: inset 0 0 0 2px rgb(123 90 54 / 0.2);
   font-size: 19px;
   letter-spacing: 0.06em;
@@ -2201,7 +2362,7 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   padding: 0 16px;
   border: 2px solid rgb(123 90 54 / 0.4);
   border-radius: 16px;
-  background: #fffaf0;
+  background-color: var(--paper-bright);
   color: inherit;
   font-size: 20px;
   font-weight: 600;
@@ -2217,7 +2378,8 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   font-weight: 400;
   letter-spacing: 0;
   text-transform: none;
-  opacity: 0.55;
+  color: var(--ink-faint);
+  opacity: 1;
 }
 
 .code-wrong {
@@ -2232,7 +2394,7 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   justify-content: center;
   gap: 10px;
   margin: 0;
-  opacity: 0.8;
+  color: var(--ink-soft);
 }
 
 .rotate svg {
@@ -2258,8 +2420,9 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   top: calc(env(safe-area-inset-top) + 14px);
   max-width: min(70%, 520px, 100% - 256px);
   padding: 10px 18px;
-  border-radius: 16px;
-  background: rgb(236 223 198 / 0.95);
+  border-radius: 6px 9px 7px 8px;
+  background-color: var(--paper);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
   font-size: 17px;
   text-align: center;
   text-wrap: balance;
@@ -2288,8 +2451,9 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   box-sizing: border-box;
   margin-inline: auto;
   padding: 8px 12px;
-  border-radius: 18px;
-  background: rgb(236 223 198 / 0.9);
+  border-radius: 6px 8px 7px 9px;
+  background-color: var(--paper);
+  box-shadow: 0 3px 10px rgb(0 0 0 / 0.22);
   font-size: 15px;
   line-height: 1.35;
   text-align: center;
@@ -2305,7 +2469,7 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   padding: 6px 8px;
   border-radius: 6px;
   background: rgb(0 0 0 / 0.6);
-  color: #d8f5d0;
+  color: var(--debug-ink);
   font: 11px/1.35 ui-monospace, Consolas, monospace;
   pointer-events: none;
   -webkit-user-select: text;
@@ -2322,7 +2486,7 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   gap: 16px;
   padding: 24px;
   text-align: center;
-  background: #ecdfc6;
+  background-color: var(--paper-2);
   font-size: 22px;
 }
 
@@ -2361,7 +2525,7 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 
 .message .message-more {
   font-size: 17px;
-  opacity: 0.85;
+  color: var(--ink-soft);
 }
 
 .message-more[hidden],
@@ -2375,8 +2539,8 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   padding: 0 28px;
   border: 0;
   border-radius: 999px;
-  background: #dd4b39;
-  color: #fff;
+  background-color: var(--paint-red);
+  color: var(--ink-on-paint);
   font-size: 22px;
   font-weight: 600;
   line-height: 1;
@@ -2401,23 +2565,24 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   align-items: center;
   gap: 8px;
   padding: 7px 11px;
-  border-radius: 14px;
-  background: rgb(255 250 240 / 0.94);
-  color: #3d2b1f;
+  border-radius: 6px 9px 7px 8px;
+  background-color: var(--paper);
+  box-shadow: 0 3px 10px rgb(0 0 0 / 0.22);
+  color: var(--ink);
   font-size: 13px;
   line-height: 1.3;
   pointer-events: none;
 }
 .story-purpose > span:last-child { display: grid; gap: 1px; }
-.story-purpose small { font-size: 10px; color: #7b5a36; }
-.story-purpose-reveal { margin-top: 3px; padding-top: 4px; border-top: 1px solid #e5d5b8; }
+.story-purpose small { font-size: 10px; color: var(--ink-soft); }
+.story-purpose-reveal { margin-top: 3px; padding-top: 4px; border-top: 1px solid var(--paper-edge); }
 .story-purpose-reveal[hidden] { display: none; }
 #storyPurposeIcon { font-size: 21px; }
 .story-purpose[hidden] { display: none; }
 body:has(#bubble:not([hidden])) .story-purpose,
 body:has(#notice:not([hidden])) .story-purpose { visibility: hidden; }
 body.big-text .story-purpose { font-size: 16px; }
-.story-recap, .story-title, .story-handoff { padding: 12px; border-radius: 14px; background: #f8edd6; line-height: 1.4; }
+.story-recap, .story-title, .story-handoff { padding: 12px; border-radius: 14px; background-color: var(--paper-2); line-height: 1.4; }
 .story-recap { margin: 14px 0; }
 .story-recap h3, .story-recap h4 { margin: 0 0 6px; }
 .story-recap h4 { margin-top: 10px; font-size: 0.9em; }
@@ -2462,7 +2627,7 @@ body.follow-finger .stick-base {
   align-items: center;
   gap: 4px 12px;
   padding: 8px 4px;
-  border-bottom: 1px solid #ddcfb5;
+  border-bottom: 1px solid var(--paper-edge);
 }
 
 .controls-reference dt {
@@ -2495,10 +2660,10 @@ body.follow-finger .stick-base {
   height: 28px;
   box-sizing: border-box;
   padding: 0 7px;
-  border: 2px solid #7b5a36;
+  border: 2px solid var(--wood-line);
   border-bottom-width: 4px;
   border-radius: 6px;
-  background: #fffaf0;
+  background-color: var(--paper-bright);
   font: inherit;
   font-size: 0.8em;
   font-weight: 700;
@@ -2519,13 +2684,13 @@ body.follow-finger .stick-base {
   padding: 0;
   border-width: 2px;
   border-radius: 50%;
-  color: #fff;
+  color: var(--ink-on-paint);
 }
 
-.controls-reference kbd.pad-a { background: #2f7d47; border-color: #1f5a31; }
-.controls-reference kbd.pad-b { background: #b03a2e; border-color: #7f241c; }
-.controls-reference kbd.pad-x { background: #2f62a8; border-color: #1f4479; }
-.controls-reference kbd.pad-y { background: #e8b923; border-color: #a07a10; color: #3d2b1f; }
+.controls-reference kbd.pad-a { background-color: var(--pad-a); border-color: var(--pad-a-edge); }
+.controls-reference kbd.pad-b { background-color: var(--pad-b); border-color: var(--pad-b-edge); }
+.controls-reference kbd.pad-x { background-color: var(--pad-x); border-color: var(--pad-x-edge); }
+.controls-reference kbd.pad-y { background-color: var(--pad-y); border-color: var(--pad-y-edge); color: var(--ink); }
 
 .controls-reference kbd.pad-word {
   border-radius: 999px;
@@ -2534,7 +2699,7 @@ body.follow-finger .stick-base {
 .key-or,
 .key-plus {
   font-size: 0.85em;
-  opacity: 0.7;
+  color: var(--ink-soft);
 }
 
 button.bag {
@@ -2549,12 +2714,12 @@ button.bag {
 /* Each profile is a separate local adventure, with large touch targets. */
 .player-row { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 8px; }
 .player-row .wide { overflow-wrap: anywhere; }
-.player-row [aria-current='true'] { box-shadow: inset 0 0 0 3px #dd4b39; }
+.player-row [aria-current='true'] { box-shadow: inset 0 0 0 3px var(--crayon-red); }
 .player-remove { padding: 0; font-size: 28px !important; }
 .current-player { margin: 0; font-weight: 700; }
 .player-form input { text-transform: none; letter-spacing: 0; }
 #playerError, #playerUnreadable { font-size: 16px; }
-.panel button:disabled { opacity: 0.45; }
+
 #pause [hidden] { display: none !important; }
 #strokePicture { display: block; width: 100%; height: min(42vh, 300px); touch-action: none; user-select: none; }
 #strokeAssist { min-height: 64px; margin-top: 10px; }
@@ -2567,12 +2732,12 @@ button.bag {
 .party .share-sweets { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 12px; }
 @media (min-width: 600px) { .party .share-friends { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 /* A single wordless cue, only after an idle prologue moment. It never catches a touch. */
-.tutorial { position: fixed; z-index: 15; pointer-events: none; width: 96px; height: 96px; transform: translate(-50%, -50%); color: #fff5dc; }
+.tutorial { position: fixed; z-index: 15; pointer-events: none; width: 96px; height: 96px; transform: translate(-50%, -50%); color: var(--night-ink); }
 .tutorial[hidden] { display: none; }
-.tutorial-hand { position: absolute; top: 30px; left: 34px; width: 60px; height: 60px; filter: drop-shadow(0 3px 3px #382410); animation: tutorial-press 1.7s ease-in-out infinite; }
+.tutorial-hand { position: absolute; top: 30px; left: 34px; width: 60px; height: 60px; filter: drop-shadow(0 3px 3px var(--wood-dark)); animation: tutorial-press 1.7s ease-in-out infinite; }
 .tutorial-hand svg { width: 100%; height: 100%; }
-.tutorial-target { position: absolute; inset: 2px; border: 3px solid #ffe299; border-radius: 50%; box-shadow: 0 0 0 5px #4a382544; }
-.tutorial-key { position: absolute; inset: 12px; display: grid; place-items: center; border-radius: 14px; background: #fff7e4; color: #513923; font: 700 32px/1 'Andika', system-ui, sans-serif; box-shadow: 0 3px 8px #2a1a1844; }
+.tutorial-target { position: absolute; inset: 2px; border: 3px solid var(--knock-light); border-radius: 50%; box-shadow: 0 0 0 5px rgb(74 56 37 / 0.27); }
+.tutorial-key { position: absolute; inset: 12px; display: grid; place-items: center; border-radius: 14px; background-color: var(--paper-bright); color: var(--ink-soft); font: 700 32px/1 'Andika', system-ui, sans-serif; box-shadow: 0 3px 8px rgb(42 26 24 / 0.27); }
 .tutorial[data-device="touch"] .tutorial-key { display: none; }
 .tutorial[data-device="keys"] .tutorial-target, .tutorial[data-device="pad"] .tutorial-target { display: none; }
 .tutorial[data-lesson="move"] .tutorial-hand { animation-name: tutorial-move; }
@@ -2593,10 +2758,10 @@ body.calm .tutorial-hand { animation: none !important; }
 .ending-shot {
   position: fixed; inset: 0; z-index: 11; display: flex; flex-direction: column;
   align-items: center; justify-content: space-between; padding: max(24px, env(safe-area-inset-top)) 18px max(28px, env(safe-area-inset-bottom));
-  background: linear-gradient(#101a2a80, transparent 30%, transparent 72%, #101a2a80);
+  background: linear-gradient(var(--night-shade), transparent 30%, transparent 72%, var(--night-shade));
 }
 .ending-shot[hidden] { display: none; }
-.ending-shot p { max-width: 32ch; text-align: center; color: #fff6df; text-shadow: 0 2px 5px #000; font-size: clamp(18px, 4vw, 25px); }
+.ending-shot p { max-width: 32ch; text-align: center; color: var(--night-ink); text-shadow: 0 2px 5px var(--black); font-size: clamp(18px, 4vw, 25px); }
 .ending-shot button { max-width: 300px; }
 
 .ending-shot .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -2623,7 +2788,7 @@ body.calm .tutorial-hand { animation: none !important; }
   left: 0;
   right: 0;
   height: 0;
-  background: #120d09;
+  background-color: var(--bars);
   transition: height 0.6s ease;
 }
 
@@ -2676,7 +2841,7 @@ body.keys-later .hint {
 .scene-fade {
   position: absolute;
   inset: 0;
-  background: #0b0806;
+  background-color: var(--fade);
   opacity: 0;
 }
 
@@ -2692,10 +2857,11 @@ body.keys-later .hint {
   transform: translateX(-50%) rotate(-1.5deg);
   margin: 0;
   padding: 14px 34px 16px;
-  background: #fff6e2;
-  color: #4a3520;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-hand);
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.15;
   filter: drop-shadow(0 3px 8px rgb(0 0 0 / 0.35));
   /* Torn at both ends. */
   clip-path: polygon(0 4%, 3% 0, 97% 2%, 100% 0, 98% 18%, 100% 34%, 97% 52%, 100% 70%, 98% 86%, 100% 100%, 3% 98%,
@@ -2716,8 +2882,7 @@ body.keys-later .hint {
 .scene-caption .time {
   margin-top: 4px;
   font-size: calc(20px * var(--k));
-  font-weight: 400;
-  color: #6b4f33;
+  color: var(--crayon-brown);
 }
 
 body.scene-bars .scene-caption {
@@ -2750,7 +2915,7 @@ body.scene-bars .scene-caption .place {
   width: min(46vw, 560px);
   margin: 0;
   text-align: center;
-  color: #fff8e8;
+  color: var(--night-ink);
   font-size: clamp(28px, 5vw, 60px);
   line-height: 1.08;
   text-shadow: 0 3px 18px rgb(0 0 0 / 0.55), 0 0 2px rgb(0 0 0 / 0.4);
@@ -2768,4 +2933,122 @@ body.scene-bars .scene-caption .place {
 body.calm .scene-bar,
 body.calm .controls {
   transition: none;
+}
+
+/* --- The materials (docs/ux-audit/style-and-sound.md, "Materials"; rows 10, 11 and 14) ------------------------
+   One material for each job: Moa's paper for what is read, Pappa's painted linden for what is pressed, and candy
+   for rewards. The paper's tooth and the wood's grain are drawn once at boot (src/ui/materials.ts) and lie over
+   each colour, so neither is flat; without them both stay plain. */
+
+/* Paper's tooth, under everything read. */
+:where(.panel, .panel-head, .bubble, .notice, .hint, .story-purpose, .scene-caption, .btn-act span, .key-prompt,
+  .bag-tag, .map-card, .map, .photo-print figcaption, .chapter-choice, .ask, .story-recap, .story-title,
+  .story-handoff, .message, .switch, .sound-row, .info-row, .style, .level, .help-level, .share-choice,
+  .code-form input, .panel.end .code b, .golden-reward) {
+  background-image: var(--grain, none);
+}
+
+/* Moa's masking tape holds the sheet at its top: two strips over its top edge, turned a little. */
+.panel-head::before,
+.panel-head::after {
+  content: '';
+  position: absolute;
+  top: -9px;
+  width: 78px;
+  height: 22px;
+  background-color: var(--tape);
+  clip-path: polygon(0 12%, 6% 0, 12% 14%, 18% 0, 82% 0, 88% 14%, 94% 0, 100% 12%, 100% 88%, 94% 100%, 88% 86%,
+    82% 100%, 18% 100%, 12% 86%, 6% 100%, 0 88%);
+  pointer-events: none;
+}
+
+.panel-head::before {
+  left: 24%;
+  rotate: -5deg;
+}
+
+.panel-head::after {
+  right: 24%;
+  rotate: 4deg;
+}
+
+/* Linden's grain under everything pressed, its light top, its 4 px thickness and its shadow. */
+:where(.wide:not(.small), .tile, .start-style, .round svg, .round-back, .photo-step, .mute, .ask button,
+  .corner, .panel-close svg, .panel-up svg, .btn) {
+  background-image: var(--woodgrain, none);
+  box-shadow: var(--bevel), 0 4px 0 var(--wood-dark), var(--wood-shadow);
+  transition: transform var(--dur-release) var(--ease-out), box-shadow var(--dur-release) var(--ease-out);
+}
+
+/* The small discs in a header and the round buttons lie lower: 3 px. */
+:where(.corner, .panel-close svg, .panel-up svg, .round svg, .round-back, .photo-step) {
+  box-shadow: inset 0 0 0 2px var(--linden-rim), var(--bevel), 0 3px 0 var(--wood-dark), var(--wood-shadow);
+}
+
+/* The corner discs have a worn rim, and the icon is cut in: a light lip under it. */
+.corner {
+  box-shadow: inset 0 0 0 3px var(--linden-rim), var(--bevel), 0 3px 0 var(--wood-dark), var(--wood-shadow);
+}
+
+:where(.corner, .round-back, .tile, .wide:not(.go)) svg {
+  filter: drop-shadow(0 1px 0 rgb(255 247 228 / 0.7));
+}
+
+/* Painted: rödfärg for the main press and Hoppa, green for Använd and Ja; their thickness is the paint's dark. */
+:where(.wide.go, .start-style.go, .photo-step.go, .message button) {
+  background-color: var(--paint-red);
+  color: var(--ink-on-paint);
+  background-image: var(--woodgrain, none);
+  box-shadow: var(--bevel), 0 4px 0 var(--paint-red-dark), var(--wood-shadow);
+}
+
+.btn-hop {
+  box-shadow: var(--bevel), 0 4px 0 var(--paint-red-dark), var(--wood-shadow);
+}
+
+.btn-act,
+.ask .yes {
+  box-shadow: var(--bevel), 0 4px 0 var(--paint-green-dark), var(--wood-shadow);
+}
+
+.ask .yes {
+  background-color: var(--paint-green);
+}
+
+/* Pressed, a plank sinks 3 px onto its edge in 80 ms; it rises again in 140 ms. */
+:where(.wide:not(.small), .tile, .start-style, .round-back, .photo-step, .ask button, .corner):active,
+:where(.round, .panel-close, .panel-up):active svg,
+.mute:active {
+  transform: translateY(3px);
+  box-shadow: var(--bevel), 0 1px 0 var(--wood-dark), 0 3px 6px rgb(30 18 8 / 0.2);
+  transition-duration: var(--dur-press);
+}
+
+:where(.wide.go, .start-style.go, .photo-step.go, .message button):active {
+  box-shadow: var(--bevel), 0 1px 0 var(--paint-red-dark), 0 3px 6px rgb(30 18 8 / 0.2);
+}
+
+/* Disabled: bare linden with faded words, opaque, and flat: no thickness (row 8). */
+:where(.wide:not(.small), .tile, .start-style, .photo-step, .ask button, .round-back):disabled {
+  background-color: var(--linden);
+  color: var(--ink-faint);
+  box-shadow: none;
+  transform: none;
+}
+
+:where(.round, .wide.small, .level, .style):disabled {
+  color: var(--ink-faint);
+}
+
+.round:disabled svg {
+  box-shadow: none;
+}
+
+.corner:active {
+  box-shadow: inset 0 0 0 3px var(--linden-rim), var(--bevel), 0 1px 0 var(--wood-dark), 0 3px 6px rgb(30 18 8 / 0.2);
+}
+
+/* Candy's shine, the only one in the UI: a white gleam at the upper left of each sweet (row 19). */
+.rows i {
+  background-image: radial-gradient(ellipse 30% 34% at 42% 30%, rgb(255 255 255 / 0.55), transparent 72%);
 }

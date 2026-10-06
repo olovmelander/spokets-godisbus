@@ -11,6 +11,7 @@
   <!-- The game's typeface, fetched at once so the first words are not set twice (src/ui/ui.css). -->
   <link rel="preload" href="%BASE_URL%fonts/andika-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="%BASE_URL%fonts/andika-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="%BASE_URL%fonts/playpen-sans-700-sv.woff2" as="font" type="font/woff2" crossorigin>
   <title>Elof och det stora godisäventyret</title>
   <!-- The loading card is inline, so it shows before any script has arrived. No external requests. -->
   <style>
@@ -29,17 +30,17 @@
     /* Going on from a chapter's last page, the card is the next chapter's time card: black, with its scrap of Moa's
        paper where the chapter's own card has it, so the picture fades up from it (docs/ux-audit/first-minutes.md
        row 2). The words come from the page before, through this tab's session (src/save/onward.ts). */
-    @font-face { font-family: 'Andika'; font-weight: 700; font-display: swap; src: url('%BASE_URL%fonts/andika-latin-700-normal.woff2') format('woff2'); }
+    @font-face { font-family: 'Playpen Sans'; font-weight: 700; font-display: swap; src: url('%BASE_URL%fonts/playpen-sans-700-sv.woff2') format('woff2'); }
     .loading.onward { background: #0b0806; }
     .loading.onward svg, .loading-card { display: none; }
     .loading.onward .loading-card {
       position: absolute; left: 50%; bottom: max(12vh, 72px); display: grid; justify-items: center;
       min-width: min(60vw, 320px); margin: 0; padding: 14px 34px 16px; transform: translateX(-50%) rotate(-1.5deg);
-      background: #fff6e2; color: #4a3520; font: 700 34px/1.1 'Andika', sans-serif; white-space: nowrap;
+      background: #fbf4e4; color: #33241a; font: 700 34px/1.15 'Playpen Sans', 'Andika', sans-serif; white-space: nowrap;
       clip-path: polygon(0 4%, 3% 0, 97% 2%, 100% 0, 98% 18%, 100% 34%, 97% 52%, 100% 70%, 98% 86%, 100% 100%, 3% 98%,
         0 100%, 2% 82%, 0 64%, 3% 46%, 0 28%, 2% 14%);
     }
-    .loading-card small { margin-top: 4px; font-size: 20px; font-weight: 400; color: #6b4f33; }
+    .loading-card small { margin-top: 4px; font-size: 20px; color: #6b4a2c; }
     @media (orientation: portrait) { .loading.onward .loading-card { top: 26%; bottom: auto; } }
   </style>
 </head>

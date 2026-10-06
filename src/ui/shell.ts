@@ -144,7 +144,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
   const portrait = helper === 'ghost' ? GHOST : BIRD;
   root.insertAdjacentHTML(
     'beforeend',
-    `<button class="bag" id="bag" type="button">${BAG}<span id="bagCount">0</span><span class="stickers" id="bagStickers"></span></button>
+    `<button class="bag" id="bag" type="button">${BAG}<span class="bag-tag"><span id="bagCount">0</span><span class="stickers" id="bagStickers"></span></span></button>
      <button class="corner" id="pauseBtn" type="button" aria-label="${p.open}">${PAUSE}</button>
      <button class="corner help" id="helpBtn" type="button" aria-label="${sv.help}">${portrait}</button>
      <div class="controls" id="controls" hidden>

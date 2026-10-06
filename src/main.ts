@@ -35,6 +35,7 @@ import { createDebug, type Debug } from './ui/debug';
 import { createHud } from './ui/hud';
 import { createPause, type PausePage } from './ui/pause';
 import { mountShell } from './ui/shell';
+import { applyMaterials, applyPlace } from './ui/materials';
 import { createTitle } from './ui/title';
 import { createPhotoAlbum } from './ui/photos';
 import { createOffline } from './platform/offline';
@@ -132,6 +133,9 @@ function start(): void {
   // A URL tier is a temporary inspection override. A deliberate menu choice replaces it.
   let requestedGraphics = tierFromQuery(params.get('tier')) ?? settings.graphics;
   mountShell(document.body, chapter.helper?.kind);
+  // Moa's paper and Pappa's linden, drawn once; and the place's own shade under every panel (style-and-sound.md rows 10, 15).
+  applyMaterials(document);
+  applyPlace(document, chapter.place);
   // The recovery screen shows the loading card's ghost: the screen still belongs to the game.
   const loadingGhost = document.querySelector('#loading svg');
   if (loadingGhost) byId('messageGhost').append(loadingGhost.cloneNode(true));
