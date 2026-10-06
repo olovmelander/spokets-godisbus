@@ -347,12 +347,16 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
 
   // --- the gamepad (standard mapping) ------------------------------------------------------------
   // Play: the left stick or the D-pad moves, A is Hoppa, X is Använd, Y calls the helper, Start pauses.
-  // Menus: the D-pad or the stick moves the focus, A presses, B goes back.
+  // Menus: the D-pad or the stick moves the focus, A presses, B goes back. In a choice of several or on a
+  // sound's pips, left and right move the choice or the level, and up and down leave it (menus.md row 22).
   const pad = { x: 0, y: 0, prev: [] as boolean[], hopHeld: false, active: false, navAt: 0, navDir: 0, polledAt: -1 };
   const deadzone = (v: number) => (Math.abs(v) < 0.22 ? 0 : Math.sign(v) * Math.min(1, (Math.abs(v) - 0.22) / 0.72));
   const focusables = (scope: HTMLElement) =>
     [...scope.querySelectorAll<HTMLElement>('button, input, select, summary, [tabindex]:not([tabindex="-1"])')]
-      .filter((n) => !(n as HTMLButtonElement).disabled && n.getClientRects().length > 0 && !n.closest('[hidden], .controls'));
+      // A choice's buttons other than the chosen one are left out (tabIndex -1): the arrows move inside it.
+      .filter((n) => !(n as HTMLButtonElement).disabled && !(n.tabIndex < 0) && n.getClientRects().length > 0 && !n.closest('[hidden], .controls'));
+  /** A choice or a level that takes left and right itself: a radio button, or a slider. */
+  const sideways = (n: HTMLElement | null) => ['radio', 'slider'].includes(n?.getAttribute?.('role') ?? '');
   const moveFocus = (scope: HTMLElement, step: number) => {
     const list = focusables(scope);
     if (!list.length) return;
@@ -389,14 +393,18 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     if (scope) {
       pad.x = pad.y = 0;
       pad.hopHeld = false;
-      const dir = y > 0.5 || x < -0.5 ? -1 : y < -0.5 || x > 0.5 ? 1 : 0;
+      const focused = env.doc.activeElement as HTMLElement | null;
+      const across = Math.abs(x) > 0.5 && Math.abs(x) >= Math.abs(y) && sideways(focused) && scope.contains(focused);
+      // The direction: ±1 for the focus, ±2 for a choice's left and right, so that a change starts afresh.
+      const dir = across ? 2 * Math.sign(x) : y > 0.5 || x < -0.5 ? -1 : y < -0.5 || x > 0.5 ? 1 : 0;
       if (!dir) pad.navDir = 0;
       else if (dir !== pad.navDir || now >= pad.navAt) {
-        moveFocus(scope, dir);
+        // The same arrow a keyboard would give it: the choice or the level handles it as it handles a key.
+        if (across) focused!.dispatchEvent(Object.assign(new Event('keydown', { bubbles: true, cancelable: true }), { key: x < 0 ? 'ArrowLeft' : 'ArrowRight' }));
+        else moveFocus(scope, dir);
         pad.navAt = now + (dir === pad.navDir ? 140 : 380);
         pad.navDir = dir;
       }
-      const focused = env.doc.activeElement as HTMLElement | null;
       if (pressed(PAD.a)) {
         if (focused && scope.contains(focused)) focused.click();
         else moveFocus(scope, 1);

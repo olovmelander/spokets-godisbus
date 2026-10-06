@@ -19,7 +19,11 @@ export interface Settings {
   swingHelp: boolean;
   /** *Lätta hopp*: running to a marked edge jumps by itself, and the jump is steered to its landing. */
   easyJumps: boolean;
-  /** *Lugnare tempo*: the whole game runs at 80%. */
+  /** *Stanna vid höga kanter*: he stops at every drop too long to land, at a run too, instead of falling. */
+  stopAtEdges: boolean;
+  /** *Spänning utan brådska*: in the exciting sequences nothing needs timing while he moves. */
+  gentle: boolean;
+  /** *Långsammare spel*: the whole game runs at 80%. */
   slower: boolean;
   /** *Ljud*: the effects and the place's air. Off is silent. */
   sound: boolean;
@@ -42,14 +46,14 @@ export interface Settings {
 
 /** The switches each style starts with. Every one of them can then be changed on its own. */
 const SWITCHES: Record<PlayStyle, Omit<Settings, 'style'>> = {
-  aventyr: { followFinger: false, vibration: false, graphics: 'auto', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true, effectsVolume: 1, musicVolume: 1, lefty: false, bigText: false, calm: false, loud: false, help: 'ask' },
+  aventyr: { followFinger: false, vibration: false, graphics: 'auto', swingHelp: false, easyJumps: false, stopAtEdges: false, gentle: false, slower: false, sound: true, music: true, effectsVolume: 1, musicVolume: 1, lefty: false, bigText: false, calm: false, loud: false, help: 'ask' },
   // On Lugnt the sounds carry what a younger player can't read, so the silent switch doesn't take them.
-  lugnt: { followFinger: false, vibration: false, graphics: 'auto', swingHelp: true, easyJumps: true, slower: false, sound: true, music: true, effectsVolume: 1, musicVolume: 1, lefty: false, bigText: false, calm: false, loud: true, help: 'remind' },
+  lugnt: { followFinger: false, vibration: false, graphics: 'auto', swingHelp: true, easyJumps: true, stopAtEdges: true, gentle: true, slower: false, sound: true, music: true, effectsVolume: 1, musicVolume: 1, lefty: false, bigText: false, calm: false, loud: true, help: 'remind' },
 };
 
 /** The settings that are a switch: on or off. */
-export type Switch = 'followFinger' | 'vibration' | 'swingHelp' | 'easyJumps' | 'slower' | 'sound' | 'music' | 'lefty' | 'bigText' | 'calm' | 'loud';
-export const SWITCH_NAMES: Switch[] = ['followFinger', 'vibration', 'swingHelp', 'easyJumps', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm', 'loud'];
+export type Switch = 'followFinger' | 'vibration' | 'swingHelp' | 'easyJumps' | 'stopAtEdges' | 'gentle' | 'slower' | 'sound' | 'music' | 'lefty' | 'bigText' | 'calm' | 'loud';
+export const SWITCH_NAMES: Switch[] = ['followFinger', 'vibration', 'swingHelp', 'easyJumps', 'stopAtEdges', 'gentle', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm', 'loud'];
 /** The ones that are the player's own, whatever the style: choosing a style leaves them as they are. */
 export const OWN_SWITCHES: Switch[] = ['followFinger', 'vibration', 'slower', 'sound', 'music', 'lefty', 'bigText', 'calm'];
 export type Volume = 'effectsVolume' | 'musicVolume';
@@ -59,6 +63,18 @@ export const SLOWER_TEMPO = 0.8;
 
 export function settingsFor(style: PlayStyle): Settings {
   return { style, ...SWITCHES[style] };
+}
+
+/** What a style decides: its switches, and how much the helper does. */
+const STYLE_KEYS = [...SWITCH_NAMES.filter((key) => !OWN_SWITCHES.includes(key)), 'help'] as const;
+
+/**
+ * The style the settings are, or null when a help has been changed on its own: *Ditt eget sätt*
+ * (docs/ux-audit/menus.md row 7). The player's own switches, the sound and the picture don't count.
+ */
+export function styleOf(settings: Settings): PlayStyle | null {
+  const preset = SWITCHES[settings.style];
+  return STYLE_KEYS.every((key) => settings[key] === preset[key]) ? settings.style : null;
 }
 
 /** Style changes alter the helps, not a player's controls, picture or sound preferences. */
@@ -75,13 +91,9 @@ export function readVolume(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 1;
 }
 
-/**
- * What the simulation needs to know. In *Lugnt* Elof also stops at every long drop instead of falling, and
- * the exciting sequences need no timing.
- */
+/** What the simulation needs to know. *Lugnt* switches on all four helps; each can be changed on its own. */
 export function simOptions(settings: Settings): SimOptions {
-  const lugnt = settings.style === 'lugnt';
-  return { swingHelp: settings.swingHelp, easyJumps: settings.easyJumps, stopAtEdges: lugnt, gentle: lugnt, help: settings.help };
+  return { swingHelp: settings.swingHelp, easyJumps: settings.easyJumps, stopAtEdges: settings.stopAtEdges, gentle: settings.gentle, help: settings.help };
 }
 
 export function tempoOf(settings: Settings): number {
@@ -96,5 +108,5 @@ export function readSettings(value: unknown): Settings {
   const flag = (key: Switch) => (typeof from[key] === 'boolean' ? (from[key] as boolean) : base[key]);
   const help: HelpLevel = from.help === 'ask' || from.help === 'remind' || from.help === 'guide' ? from.help : base.help;
   const graphics: Graphics = tierFromQuery(typeof from.graphics === 'string' ? from.graphics : null) ?? 'auto';
-  return { style, followFinger: flag('followFinger'), vibration: flag('vibration'), graphics, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), slower: flag('slower'), sound: flag('sound'), music: flag('music'), effectsVolume: readVolume(from.effectsVolume), musicVolume: readVolume(from.musicVolume), lefty: flag('lefty'), bigText: flag('bigText'), calm: flag('calm'), loud: flag('loud'), help };
+  return { style, followFinger: flag('followFinger'), vibration: flag('vibration'), graphics, swingHelp: flag('swingHelp'), easyJumps: flag('easyJumps'), stopAtEdges: flag('stopAtEdges'), gentle: flag('gentle'), slower: flag('slower'), sound: flag('sound'), music: flag('music'), effectsVolume: readVolume(from.effectsVolume), musicVolume: readVolume(from.musicVolume), lefty: flag('lefty'), bigText: flag('bigText'), calm: flag('calm'), loud: flag('loud'), help };
 }

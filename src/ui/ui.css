@@ -245,8 +245,9 @@ body.big-text .panel {
   font-size: 22px;
 }
 
-body.big-text .album-grid li {
-  font-size: 15px;
+/* The map's words grow with the rest (docs/ux-audit/menus.md row 23). */
+body.big-text {
+  --map-text: 1.25;
 }
 
 /* Mindre rörelse: nothing bounces, pulses, slaps on or slides. */
@@ -502,7 +503,7 @@ body.lefty .key-prompt {
 
 .panel h3 {
   margin: 6px 4px 0;
-  font-size: 16px;
+  font-size: 0.9em;
   font-weight: 600;
   opacity: 0.75;
 }
@@ -637,7 +638,7 @@ body.lefty .key-prompt {
 .panel .map-card h3 {
   margin: 0;
   color: #b03a2e;
-  font-size: 15px;
+  font-size: 0.83em;
   font-weight: 700;
   opacity: 1;
 }
@@ -678,7 +679,7 @@ body.lefty .key-prompt {
 }
 
 .tile small {
-  font-size: 14px;
+  font-size: 0.78em;
   font-weight: 400;
   color: #5a4630;
 }
@@ -696,14 +697,14 @@ body.lefty .key-prompt {
 
 .panel .pause-settings h3 {
   margin: 12px 4px 0;
-  font-size: 18px;
+  font-size: 1em;
   font-weight: 700;
   opacity: 1;
 }
 
 .panel h4 {
   margin: 4px 4px 0;
-  font-size: 15px;
+  font-size: 0.83em;
   font-weight: 600;
   opacity: 0.8;
 }
@@ -715,12 +716,18 @@ body.lefty .key-prompt {
   margin-right: 6px;
 }
 
+/* Two columns where there is room, filled down the first and then the second, so no group waits beside a
+   taller one. A group is never split. */
 @media (min-width: 700px) {
   .pause-settings:not([hidden]) {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 18px;
-    align-items: start;
+    display: block;
+    columns: 2;
+    column-gap: 18px;
+  }
+
+  .pause-settings .group {
+    break-inside: avoid;
+    margin-bottom: 10px;
   }
 }
 
@@ -781,7 +788,7 @@ body.lefty .key-prompt {
 }
 
 .style small {
-  font-size: 13px;
+  font-size: 0.72em;
   line-height: 1.25;
   opacity: 0.8;
 }
@@ -806,7 +813,6 @@ body.lefty .key-prompt {
   border: 3px solid transparent;
   border-radius: 16px;
   background: #e6d6b4;
-  font-size: 15px;
   line-height: 1.2;
 }
 
@@ -909,7 +915,7 @@ body.lefty .key-prompt {
 
 .album-count {
   margin: 2px 0 8px;
-  font-size: 15px;
+  font-size: 0.85em;
   opacity: 0.75;
 }
 
@@ -941,7 +947,7 @@ body.lefty .key-prompt {
   justify-items: center;
   align-content: start;
   gap: 4px;
-  font-size: 12px;
+  font-size: 0.67em;
   line-height: 1.15;
   text-align: center;
   overflow-wrap: anywhere;
@@ -986,7 +992,7 @@ body.lefty .key-prompt {
   padding: 5px 12px;
   border-radius: 999px;
   border: 2px dashed rgb(123 90 54 / 0.4);
-  font-size: 14px;
+  font-size: 0.8em;
   opacity: 0.6;
 }
 
@@ -1016,60 +1022,333 @@ body.lefty .key-prompt {
 
 /* Moa's writing, large enough to read on a phone (menus.md row 15). */
 .moas-karta text {
-  font-size: 16px;
+  font-size: calc(16px * var(--map-text, 1));
   font-weight: 700;
   fill: #5a4630;
 }
 
 .moas-karta text.here {
-  font-size: 14px;
+  font-size: calc(14px * var(--map-text, 1));
   fill: #b03a2e;
+}
+
+/* --- Inställningar: a row for each setting, with its picture (docs/ux-audit/menus.md rows 5-10) ---------- */
+.row-icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: #5a4630;
+}
+
+.row-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.row-words {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.row-words b,
+.help-level b {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.row-words small,
+.help-level small {
+  font-size: 0.78em;
+  line-height: 1.3;
+  color: #5a4630;
 }
 
 .switch {
   min-height: 64px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 16px;
+  gap: 12px;
+  padding: 8px 12px 8px 14px;
+  border-radius: 16px;
+  background: #ecdfc6;
+  cursor: pointer;
+}
+
+/* A drawn switch: a wooden track and its knob, red with a tick when on. The whole row is its target. */
+.switch input {
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 56px;
+  height: 32px;
+  margin: 0 0 0 auto;
+  box-sizing: border-box;
+  border: 2px solid #7b5a36;
+  border-radius: 16px;
+  background: #c9b590;
+  cursor: pointer;
+}
+
+.switch input::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fffaf0;
+  box-shadow: 0 1px 2px rgb(61 43 31 / 0.35);
+  transition: transform 140ms ease-out;
+}
+
+.switch input:checked {
+  border-color: #a5301f;
+  background: #dd4b39;
+}
+
+.switch input:checked::before {
+  transform: translateX(24px);
+}
+
+.switch input:checked::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 33px;
+  width: 5px;
+  height: 10px;
+  border: solid #dd4b39;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+/* What the chosen style switches on, under its two cards (row 7). */
+.style-says {
+  margin: 0 4px;
+  font-size: 0.83em;
+  line-height: 1.35;
+}
+
+/* The help levels: the helper's portrait, how much it does in dots, and what it means (row 9). */
+.help-levels {
+  display: grid;
+  gap: 12px;
+}
+
+.help-level {
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-areas: 'icon name dots' 'icon says says';
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 2px;
+  padding: 8px 14px;
+  border: 3px solid transparent;
+  border-radius: 16px;
+  background: #e6d6b4;
+  text-align: left;
+}
+
+.help-level .row-icon {
+  grid-area: icon;
+}
+
+.help-level b {
+  grid-area: name;
+}
+
+.help-level small {
+  grid-area: says;
+}
+
+.help-level .dots {
+  grid-area: dots;
+  display: flex;
+  gap: 4px;
+}
+
+.help-level .dots i {
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border: 2px solid #7b5a36;
+  border-radius: 50%;
+}
+
+.help-level .dots i.on {
+  background: #7b5a36;
+}
+
+.help-level.on {
+  border-color: #dd4b39;
+  background: #fff6e4;
+}
+
+/* A sound: the picture mutes it and keeps its level; five candy pips are the level (row 8). */
+.sound-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 2px;
+  align-items: center;
+  padding: 8px 12px 8px 8px;
   border-radius: 16px;
   background: #ecdfc6;
 }
 
-.switch input {
-  width: 30px;
-  height: 30px;
-  accent-color: #dd4b39;
+.mute {
+  grid-row: span 2;
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: #e0cfaa;
+  cursor: pointer;
 }
 
-.volume {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.mute svg {
+  width: 36px;
+  height: 36px;
+}
+
+.mute input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.mute .slash,
+.muted .mute .sounding {
+  display: none;
+}
+
+.muted .mute .slash {
+  display: inline;
+}
+
+.muted .mute {
+  color: #7b5a36;
+  background: #d6c4a0;
+}
+
+.sound-word {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.pips {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 40px));
   gap: 8px;
-  padding: 0 8px 8px 16px;
-  flex-wrap: wrap;
+  padding: 2px 0;
+  border-radius: 12px;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
-.volume-steps {
+.pips i {
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  border: 3px solid #a08a63;
+  border-radius: 50%;
+  background: #fffaf0;
+}
+
+.pips i.on {
+  border-color: #a5301f;
+  background: radial-gradient(circle at 34% 32%, #ffe3d9 0 16%, #dd4b39 19%);
+}
+
+.muted .pips i.on {
+  opacity: 0.45;
+}
+
+/* The grown-ups' rows: a button with a picture, the home-screen steps, and the chapter's code. */
+.wide.row-button {
+  justify-content: flex-start;
+  padding: 0 14px;
+  border-radius: 16px;
+}
+
+.row-button svg {
+  width: 32px;
+  height: 32px;
+}
+
+.info-row {
+  min-height: 64px;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 14px;
+  border-radius: 16px;
+  background: #ecdfc6;
+}
+
+details.info-row {
+  display: block;
+}
+
+details.info-row summary {
+  min-height: 48px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
 }
 
-.volume-steps button {
-  width: 48px;
-  height: 48px;
-  border: 2px solid transparent;
-  border-radius: 14px;
-  background: #e6d6b4;
-  font-size: 26px;
+details.info-row summary::-webkit-details-marker {
+  display: none;
 }
 
-.volume-steps output {
-  min-width: 5ch;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
+details.info-row p {
+  margin: 8px 0 0;
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+.code-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+}
+
+.code-words {
+  grid-column: 2;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* Focus that never reads as the red of what is chosen, and a press you can see (row 21). */
+.panel :focus-visible {
+  outline: 3px solid #3d2b1f;
+  outline-offset: 3px;
+}
+
+.mute:has(input:focus-visible) {
+  outline: 3px solid #3d2b1f;
+  outline-offset: 3px;
+}
+
+.panel button:active,
+.switch:active,
+.mute:active {
+  filter: brightness(0.94);
 }
 
 .ask {
@@ -1667,17 +1946,84 @@ body.follow-finger .stick-base {
 }
 
 .controls-reference dl > div {
-  padding: 12px 4px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 4px;
   border-bottom: 1px solid #ddcfb5;
 }
 
 .controls-reference dt {
-  font-weight: 700;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
 }
 
 .controls-reference dd {
-  margin: 4px 0 0;
-  line-height: 1.4;
+  margin: 0;
+  line-height: 1.3;
+}
+
+@media (min-width: 700px) {
+  .controls-reference:not([hidden]) {
+    grid-template-columns: 1fr 1fr;
+    gap: 0 24px;
+    align-items: start;
+  }
+}
+
+/* A key: a keycap of paper and wood. The pad's letters are its coloured buttons. */
+.controls-reference kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 7px;
+  border: 2px solid #7b5a36;
+  border-bottom-width: 4px;
+  border-radius: 6px;
+  background: #fffaf0;
+  font: inherit;
+  font-size: 0.8em;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.controls-reference kbd svg {
+  width: 18px;
+  height: 18px;
+}
+
+.controls-reference kbd.pad-a,
+.controls-reference kbd.pad-b,
+.controls-reference kbd.pad-x,
+.controls-reference kbd.pad-y {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-width: 2px;
+  border-radius: 50%;
+  color: #fff;
+}
+
+.controls-reference kbd.pad-a { background: #2f7d47; border-color: #1f5a31; }
+.controls-reference kbd.pad-b { background: #b03a2e; border-color: #7f241c; }
+.controls-reference kbd.pad-x { background: #2f62a8; border-color: #1f4479; }
+.controls-reference kbd.pad-y { background: #e8b923; border-color: #a07a10; color: #3d2b1f; }
+
+.controls-reference kbd.pad-word {
+  border-radius: 999px;
+}
+
+.key-or,
+.key-plus {
+  font-size: 0.85em;
+  opacity: 0.7;
 }
 
 button.bag {

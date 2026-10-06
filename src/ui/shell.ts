@@ -51,7 +51,73 @@ const TURN = svg(
 const BAG =
   '<svg viewBox="0 0 48 56" aria-hidden="true"><path d="M8 15h32l-3 37H11z" fill="#f1dfb8"/><rect class="bag-fill" x="9" y="16" width="30" height="36" fill="#e8483f"/><path d="M8 15h32l-3 37H11z" fill="none" stroke="#7b5a36" stroke-width="2.5" stroke-linejoin="round"/><path d="M8 15l4-9 4 6 4-7 4 7 4-7 4 7 4-6 4 9z" fill="#f1dfb8" stroke="#7b5a36" stroke-width="2.5" stroke-linejoin="round"/></svg>';
 
+// The settings' pictures (docs/ux-audit/menus.md row 5): one line drawing for each row, in the ink of the words.
+const icon = (body: string, width = 2) => svg(body.replaceAll('/>', ` ${line} stroke-width="${width}"/>`));
+/** Hjälp med svingen: a swing seat on its two ropes, and the arc it swings. */
+const SWING = icon('<path d="M4 3h16M8 3v11M16 3v11M6 14h12"/><path d="M3 19.5c4 2 14 2 18 0" stroke-dasharray="0.5 3.2"/>');
+/** Lätta hopp: a dotted arc from one ledge to the next. */
+const ARC = icon('<path d="M2 20h5M17 14h5v6"/><path d="M5 17C8 6 15 5 18.5 11" stroke-dasharray="0.5 3.4"/>');
+/** Stanna vid höga kanter: Elof standing at a high edge. */
+const EDGE = icon('<path d="M2 10h12v12"/><circle cx="11" cy="3.4" r="1.6"/><path d="M11 5.4v2.4m0 0-1.4 1.8m1.4-1.8 1.2 1.8"/><path d="M19 12v2.5m0 3v2.5" stroke-dasharray="0.5 3"/>');
+/** Spänning utan brådska: an hourglass. */
+const HOURGLASS = icon('<path d="M6 3h12M6 21h12M7.5 3v2c0 3.2 4.5 4.6 4.5 7s-4.5 3.8-4.5 7v2M16.5 3v2c0 3.2-4.5 4.6-4.5 7s4.5 3.8 4.5 7v2M9.5 19.5h5"/>');
+/** Långsammare spel: a snail. */
+const SNAIL = icon('<circle cx="10" cy="12.5" r="5.5"/><path d="M10 12.5a2.4 2.4 0 1 1 2.4-2.4M3 18.5h15a3 3 0 0 0 3-3v-3m0 0 1-3m-2.6 3-1-3"/>');
+/** Ljud: a speaker; a slash when it is off. */
+const SPEAKER = icon('<path d="M4 9.5h3.5L13 5v14l-5.5-4.5H4z"/><path class="sounding" d="M16.5 9a4.2 4.2 0 0 1 0 6M19 6.5a7.8 7.8 0 0 1 0 11"/><path class="slash" d="M3 3l18 18"/>');
+/** Musik: a note; a slash when it is off. */
+const NOTE = icon('<path d="M9 18V6.5l10-2.5v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/><path class="slash" d="M3 3l18 18"/>');
+/** Ljud även i tyst läge: a phone with its side switch, sounding. */
+const LOUD = icon('<rect x="6" y="2.5" width="9.5" height="19" rx="2.4"/><path d="M3.5 6.5v3.5M18.5 9a4 4 0 0 1 0 6M21 7a7 7 0 0 1 0 10"/>');
+/** Vänsterhänt: the two sides change places. */
+const SWAP = icon('<path d="M4 8h14m0 0-3.5-3.5M18 8l-3.5 3.5M20 16H6m0 0 3.5-3.5M6 16l3.5 3.5"/>');
+/** Vibration vid landning: a phone buzzing. */
+const BUZZ = icon('<rect x="8" y="3" width="8" height="18" rx="2.2"/><path d="M4.5 8.5v7M2 10.5v3M19.5 8.5v7M22 10.5v3"/>');
+/** Större text: a big and a small letter. */
+const LETTERS = svg('<text x="0.5" y="19" fill="currentColor" font-size="17" font-weight="700">A</text><text x="12.5" y="19" fill="currentColor" font-size="12" font-weight="700">a</text>');
+/** Mindre rörelse: a wave that comes to rest. */
+const STILL = icon('<path d="M2 12c1.6-5 3.4-5 5 0s3.4 5 5 0M14.5 12H22"/>');
+/** Helskärm: the four corners of a screen. */
+const CORNERS = icon('<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>');
+/** Tangenter och handkontroll: a keyboard. */
+const KEYBOARD = icon('<rect x="2" y="6" width="20" height="12" rx="2.2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7.5 14h9"/>');
+/** Lägg till på hemskärmen: a phone with a plus. */
+const ADD_PHONE = icon('<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 9v6M9 12h6"/>');
+/** The chapter's code: three words on a tag. */
+const TAG = icon('<path d="M3 5.5h11l7 6.5-7 6.5H3z"/><path d="M6.5 10h6M6.5 14h4"/>');
+/** The pad's stick and its cross, for the key reference. */
+const STICK = icon('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/>');
+const CROSS_PAD = icon('<path d="M9.5 3h5v6.5H21v5h-6.5V21h-5v-6.5H3v-5h6.5z"/>');
+
 const p = sv.pause;
+
+/** A setting that is on or off: its picture, its name, what it does, and a drawn switch (menus.md row 5). */
+const switchRow = (id: string, key: keyof typeof p.says, picture: string, attributes = '') =>
+  `<label class="switch" ${attributes}><span class="row-icon">${picture}</span><span class="row-words"><b id="${id}Name">${p[key]}</b><small id="${id}Says">${p.says[key]}</small></span><input type="checkbox" role="switch" id="${id}" aria-labelledby="${id}Name" aria-describedby="${id}Says"></label>`;
+
+/**
+ * A sound (menus.md row 8): the picture mutes it and keeps its level; five candy pips set the level, and a tap
+ * anywhere along them chooses the nearest.
+ */
+const soundRow = (bus: 'effects' | 'music', id: string, word: string, picture: string) =>
+  `<div class="sound-row" id="${bus}Row"><label class="mute">${picture}<input type="checkbox" id="${id}" aria-label="${word}"></label><span class="sound-word" aria-hidden="true">${word}</span><div class="pips" id="${bus}Volume" role="slider" tabindex="0" aria-label="${bus === 'effects' ? p.effectsVolume : p.musicVolume}" aria-valuemin="0" aria-valuemax="5">${'<i></i>'.repeat(5)}</div></div>`;
+
+/** How much the helper does: its portrait, one to three dots, and what it means (menus.md row 9). */
+const helpRow = (id: string, level: keyof typeof p.helpSays, word: string, portrait: string, dots: number) =>
+  `<button class="help-level" id="${id}" type="button" role="radio" aria-describedby="${id}Says"><span class="row-icon">${portrait}</span><b>${word}</b><span class="dots" aria-hidden="true">${'<i class="on"></i>'.repeat(dots)}${'<i></i>'.repeat(3 - dots)}</span><small id="${id}Says">${p.helpSays[level]}</small></button>`;
+
+/** A key reference row's keys, as keycaps: " / " parts the choices, " + " joins keys held together. */
+const keycaps = (keys: string) =>
+  keys.split(' / ').map((choice) => choice.split(' + ').map((held) => held.split(' ').map((key) => `<kbd>${key}</kbd>`).join('')).join('<span class="key-plus">+</span>')).join('<span class="key-or">/</span>');
+/** The pad's names, as the pad shows them: coloured letters, and the stick and the cross drawn. */
+const PAD_KEYS: Record<string, string> = {
+  A: '<kbd class="pad-a">A</kbd>', B: '<kbd class="pad-b">B</kbd>', X: '<kbd class="pad-x">X</kbd>', Y: '<kbd class="pad-y">Y</kbd>',
+  Spaken: `<kbd class="pad-word">${STICK}Spaken</kbd>`, styrkorset: `<kbd class="pad-word">${CROSS_PAD}styrkorset</kbd>`,
+};
+const padKeys = (keys: string) =>
+  keys.split(' / ').map((key) => PAD_KEYS[key] ?? `<kbd>${key}</kbd>`).join('<span class="key-or">/</span>');
+const referenceRows = (rows: readonly (readonly [string, string])[], caps: (keys: string) => string) =>
+  rows.map(([keys, action]) => `<div><dt>${caps(keys)}</dt><dd>${action}</dd></div>`).join('');
 
 /**
  * Builds everything that lies over the game view: the candy bag, the pause button and its panel, the
@@ -119,52 +185,40 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
            <section class="group" aria-labelledby="groupPlay">
              <h3 id="groupPlay">${p.groups.play}</h3>
              <h4 id="styleTitle">${p.style}</h4>
-             <div class="styles" role="radiogroup" aria-labelledby="styleTitle">
+             <div class="styles" role="radiogroup" aria-labelledby="styleTitle" aria-describedby="styleSays">
                <button class="style" id="styleAventyr" type="button" role="radio">${LEAP}<b>${p.aventyr}</b><small>${p.aventyrHint}</small></button>
                <button class="style" id="styleLugnt" type="button" role="radio">${STROLL}<b>${p.lugnt}</b><small>${p.lugntHint}</small></button>
              </div>
-             <h4 id="helpTitle">${portrait}<span>${p.help}</span></h4>
-             <div class="levels" role="radiogroup" aria-labelledby="helpTitle">
-               <button class="level" id="helpAsk" type="button" role="radio">${p.helpAsk}</button>
-               <button class="level" id="helpRemind" type="button" role="radio">${p.helpRemind}</button>
-               <button class="level" id="helpGuide" type="button" role="radio">${p.helpGuide}</button>
+             <p class="style-says" id="styleSays"></p>
+             <h4 id="helpTitle">${p.help}</h4>
+             <div class="help-levels" role="radiogroup" aria-labelledby="helpTitle">
+               ${helpRow('helpAsk', 'ask', p.helpAsk, portrait, 1)}
+               ${helpRow('helpRemind', 'remind', p.helpRemind, portrait, 2)}
+               ${helpRow('helpGuide', 'guide', p.helpGuide, portrait, 3)}
              </div>
-             <label class="switch"><input type="checkbox" id="setSwingHelp"><span>${p.swingHelp}</span></label>
-             <label class="switch"><input type="checkbox" id="setEasyJumps"><span>${p.easyJumps}</span></label>
-             <label class="switch"><input type="checkbox" id="setSlower"><span>${p.slower}</span></label>
+             ${switchRow('setSwingHelp', 'swingHelp', SWING)}
+             ${switchRow('setEasyJumps', 'easyJumps', ARC)}
+             ${switchRow('setStopAtEdges', 'stopAtEdges', EDGE)}
+             ${switchRow('setGentle', 'gentle', HOURGLASS)}
+             ${switchRow('setSlower', 'slower', SNAIL)}
            </section>
            <section class="group" aria-labelledby="groupSound">
              <h3 id="groupSound">${p.groups.sound}</h3>
-             <label class="switch"><input type="checkbox" id="setSound"><span>${p.sound}</span></label>
-             <div class="volume" role="group" aria-labelledby="effectsVolumeLabel">
-               <span id="effectsVolumeLabel">${p.effectsVolume}</span><div class="volume-steps">
-                 <button id="effectsVolumeDown" type="button" aria-label="${p.effectsQuieter}" aria-describedby="effectsVolumeValue">−</button>
-                 <output id="effectsVolumeValue" aria-live="polite" aria-atomic="true">100 %</output>
-                 <button id="effectsVolumeUp" type="button" aria-label="${p.effectsLouder}" aria-describedby="effectsVolumeValue">+</button>
-               </div>
-             </div>
-             <label class="switch"><input type="checkbox" id="setMusic"><span>${p.music}</span></label>
-             <div class="volume" role="group" aria-labelledby="musicVolumeLabel">
-               <span id="musicVolumeLabel">${p.musicVolume}</span><div class="volume-steps">
-                 <button id="musicVolumeDown" type="button" aria-label="${p.musicQuieter}" aria-describedby="musicVolumeValue">−</button>
-                 <output id="musicVolumeValue" aria-live="polite" aria-atomic="true">100 %</output>
-                 <button id="musicVolumeUp" type="button" aria-label="${p.musicLouder}" aria-describedby="musicVolumeValue">+</button>
-               </div>
-             </div>
-             <label class="switch"><input type="checkbox" id="setLoud"><span>${p.loud}</span></label>
+             ${soundRow('effects', 'setSound', p.sound, SPEAKER)}
+             ${soundRow('music', 'setMusic', p.music, NOTE)}
+             ${switchRow('setLoud', 'loud', LOUD, 'id="loudSetting" hidden')}
            </section>
            <section class="group" aria-labelledby="groupControls">
              <h3 id="groupControls">${p.groups.controls}</h3>
-             <label class="switch"><input type="checkbox" id="setLefty"><span>${p.lefty}</span></label>
-             <label class="switch"><input type="checkbox" id="setFollowFinger" aria-describedby="followHint"><span>${p.followFinger}</span></label>
-             <p class="setting-hint" id="followHint">${p.followHint}</p>
-             <label class="switch" id="vibrationSetting" hidden><input type="checkbox" id="setVibration"><span>${p.vibration}</span></label>
+             ${switchRow('setLefty', 'lefty', SWAP)}
+             ${switchRow('setFollowFinger', 'followFinger', HAND)}
+             ${switchRow('setVibration', 'vibration', BUZZ, 'id="vibrationSetting" hidden')}
            </section>
            <section class="group" aria-labelledby="groupPicture">
              <h3 id="groupPicture">${p.groups.picture}</h3>
-             <label class="switch"><input type="checkbox" id="setBigText"><span>${p.bigText}</span></label>
-             <label class="switch"><input type="checkbox" id="setCalm"><span>${p.calm}</span></label>
-             <button class="wide" id="fullscreenBtn" type="button" hidden>${p.fullscreen}</button>
+             ${switchRow('setBigText', 'bigText', LETTERS)}
+             ${switchRow('setCalm', 'calm', STILL)}
+             <button class="wide row-button" id="fullscreenBtn" type="button" hidden><span class="row-icon">${CORNERS}</span><span id="fullscreenWord">${p.fullscreen}</span></button>
              <p class="setting-hint" id="fullscreenFailed" role="status" hidden>${p.fullscreenFailed}</p>
            </section>
            <section class="group" aria-labelledby="groupGrownups">
@@ -178,19 +232,17 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
              </div>
              <p class="setting-hint" id="graphicsHint">${p.graphicsHint}</p>
              <p class="setting-hint" id="graphicsFallback" role="status" hidden>${p.graphicsFallback}</p>
-             <button class="wide" id="controlsReferenceBtn" type="button">${sv.controls.title}</button>
-             <details class="setting-hint" id="homeScreenHelp"><summary>${sv.homeScreen.title}</summary>
-               <p>${sv.homeScreen.apple}</p><p>${sv.homeScreen.android}</p><p>${sv.homeScreen.offline}</p>
+             <button class="wide row-button" id="controlsReferenceBtn" type="button" hidden><span class="row-icon">${KEYBOARD}</span><span>${sv.controls.title}</span></button>
+             <details class="info-row" id="homeScreenHelp" hidden><summary><span class="row-icon">${ADD_PHONE}</span><span>${sv.homeScreen.title}</span></summary>
+               <p id="homeScreenSteps"></p><p>${sv.homeScreen.offline}</p>
              </details>
+             <div class="info-row code-row" id="pauseCode" hidden><span class="row-icon">${TAG}</span><span class="row-words"><b>${p.code}</b><small>${p.codeSays}</small></span><span class="code-words" id="pauseCodeWords"></span></div>
            </section>
          </div>
          </div>
          <div class="controls-reference" id="controlsReference" hidden>
-           <button class="wide" id="controlsBack" type="button">${sv.controls.back}</button>
-           <h3>${sv.controls.keyboard}</h3>
-           <dl>${sv.controls.keyboardRows.map(([key, action]) => `<div><dt>${key}</dt><dd>${action}</dd></div>`).join('')}</dl>
-           <h3>${sv.controls.gamepad}</h3>
-           <dl>${sv.controls.gamepadRows.map(([key, action]) => `<div><dt>${key}</dt><dd>${action}</dd></div>`).join('')}</dl>
+           <section aria-labelledby="keysTitle"><h3 id="keysTitle">${sv.controls.keyboard}</h3><dl>${referenceRows(sv.controls.keyboardRows, keycaps)}</dl></section>
+           <section aria-labelledby="padTitle"><h3 id="padTitle">${sv.controls.gamepad}</h3><dl>${referenceRows(sv.controls.gamepadRows, padKeys)}</dl></section>
          </div>
        </div>
      </div>

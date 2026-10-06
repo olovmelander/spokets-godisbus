@@ -41,7 +41,7 @@ import { createOffline } from './platform/offline';
 import { createStoryPanel } from './ui/story';
 import { createSceneUi } from './ui/scene';
 import { endsInScene, sceneBeats } from './sim/scene';
-import { createDevicePlay, createHighLanding, isAndroid } from './platform/device';
+import { createDevicePlay, createHighLanding, isAndroid, isApple } from './platform/device';
 import './ui/ui.css';
 
 declare global {
@@ -132,6 +132,17 @@ function start(): void {
   });
   const highLanding = createHighLanding();
   byId('vibrationSetting').hidden = !isAndroid(navigator.userAgent) || typeof navigator.vibrate !== 'function';
+  // Rows only where they work (docs/ux-audit/menus.md row 10): the silent switch is an iPhone's, and the
+  // home-screen help is for a phone or a tablet that doesn't already run the game from its home screen.
+  byId('loudSetting').hidden = !('audioSession' in navigator);
+  const apple = isApple(navigator.userAgent, navigator.maxTouchPoints);
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  byId('homeScreenHelp').hidden = standalone || (!apple && !isAndroid(navigator.userAgent));
+  byId('homeScreenSteps').textContent = apple ? sv.homeScreen.apple : sv.homeScreen.android;
+  // The chapter's own code, as its card shows it, to open the place on another device (menus.md row 6).
+  const ownCode = codeFor(chapter.id);
+  byId('pauseCode').hidden = !ownCode;
+  byId('pauseCodeWords').textContent = ownCode ?? '';
   const fullscreen = byId<HTMLButtonElement>('fullscreenBtn');
   fullscreen.hidden = !isAndroid(navigator.userAgent) || !document.fullscreenEnabled || typeof document.documentElement.requestFullscreen !== 'function';
   fullscreen.addEventListener('click', () => {
@@ -143,7 +154,7 @@ function start(): void {
     } catch { byId('fullscreenFailed').hidden = false; }
   });
   document.addEventListener('fullscreenchange', () => {
-    fullscreen.textContent = document.fullscreenElement ? sv.pause.exitFullscreen : sv.pause.fullscreen;
+    byId('fullscreenWord').textContent = document.fullscreenElement ? sv.pause.exitFullscreen : sv.pause.fullscreen;
   });
   let bootReady = false;
   let contextLost = false;
@@ -288,6 +299,8 @@ function start(): void {
   let device: Device = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keys';
   const showDevice = (d: Device) => {
     device = d;
+    // The key reference, once a key or a pad has been used (menus.md row 10).
+    if (d !== 'touch') byId('controlsReferenceBtn').hidden = false;
     controls.hidden = d !== 'touch';
     hint.hidden = d === 'touch';
     hint.textContent = d === 'pad' ? sv.padHint : sv.keysHint;
@@ -376,6 +389,10 @@ function start(): void {
     },
     onSettings(next, choice) {
       input.release();
+      // A sound's new level is heard at once, as one short note (menus.md row 8).
+      const heard = (on: boolean, level: number, was: boolean, before: number) => on && (!was || level !== before);
+      if (heard(next.sound, next.effectsVolume, settings.sound, settings.effectsVolume)) audio.preview('effects', next.effectsVolume);
+      if (heard(next.music, next.musicVolume, settings.music, settings.musicVolume)) audio.preview('music', next.musicVolume);
       // Merely changing sound or play style must not save a temporary ?tier inspection override.
       settings = { ...next, graphics: choice === 'graphics' ? next.graphics : settings.graphics };
       if (choice === 'graphics') {
@@ -640,7 +657,7 @@ function start(): void {
       }),
       screen: (at) => view.worldScreen(at),
       info: () => ({ ...view.info(), busyMs, autoSettled: auto?.settled ?? true,
-        sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars }),
+        sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars, soundPreviews: audio.previews }),
     };
   }
 

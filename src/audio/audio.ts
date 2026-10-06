@@ -19,6 +19,11 @@ export interface Audio {
   setMusic(volume: number): void;
   /** *Ljud även i tyst läge*: whether an iPhone's silent switch is passed by (plan §6.8). */
   setLoud(on: boolean): void;
+  /**
+   * One short note at a sound's new level, heard even while a menu has the game asleep: what a volume pip
+   * sounds like (docs/ux-audit/menus.md row 8). Call it from the tap or the key that changed the level.
+   */
+  preview(bus: 'effects' | 'music', volume: number): void;
   /** How this part of the story plays the tune, and its air; null is neither. It begins once sound runs. */
   setPlace(arrangement: Arrangement | null): void;
   /**
@@ -37,6 +42,8 @@ export interface Audio {
   readonly running: boolean;
   /** How many effects have been started. */
   readonly played: number;
+  /** How many notes a volume's pips have sounded. */
+  readonly previews: number;
   /** How many bars of music have been given their notes. */
   readonly bars: number;
 }
@@ -66,6 +73,10 @@ export function createAudio(): Audio {
   let volume = 1;
   let musicVolume = 1;
   let played = 0;
+  // The pips' notes go round the master, which a sleep silences, straight to the speakers.
+  let previewOut: GainNode | null = null;
+  let previews = 0;
+  let previewSleep: ReturnType<typeof setTimeout> | null = null;
   // The music: which arrangement, which bar comes next and when, and each string once it has been made.
   let arrangement: Arrangement | null = null;
   let started = false;
@@ -90,7 +101,7 @@ export function createAudio(): Audio {
     context = new Ctor();
     const compressor = context.createDynamicsCompressor();
     master = context.createGain();
-    master.gain.value = 0.8;
+    master.gain.value = sleeping ? 0 : 0.8;
     effects = context.createGain();
     effects.gain.value = volume;
     master.connect(compressor).connect(context.destination);
@@ -458,6 +469,33 @@ export function createAudio(): Audio {
     setLoud(on) {
       if (session) session.type = on ? 'playback' : 'ambient';
     },
+    preview(bus, level) {
+      build();
+      if (!context || level <= 0) return;
+      previews++;
+      if (!previewOut) {
+        previewOut = context.createGain();
+        previewOut.connect(context.destination);
+      }
+      // As loud as the bus would make it: the master's 0.8, and the tune's own level for the music.
+      previewOut.gain.value = 0.8 * level * (bus === 'music' ? MUSIC_LEVEL : 1);
+      const at = context.currentTime + 0.03;
+      if (bus === 'effects') {
+        // A candy, as the bag hears one.
+        toneAt(previewOut, at, 'triangle', note(7), note(7), 0.16, 0.2);
+        toneAt(previewOut, at + 0.02, 'sine', note(19), note(19), 0.22, 0.09);
+      } else {
+        toneAt(previewOut, at, 'sine', 392, 392, 0.5, 0.6);
+        toneAt(previewOut, at, 'sine', 784, 784, 0.3, 0.15);
+      }
+      if (context.state !== 'running') void context.resume().catch(() => {});
+      // A sleeping game sleeps again once the note has sounded.
+      if (previewSleep) clearTimeout(previewSleep);
+      previewSleep = setTimeout(() => {
+        previewSleep = null;
+        if (sleeping && context) void context.suspend().catch(() => {});
+      }, 700);
+    },
     setPlace(next) {
       arrangement = next;
       started = false;
@@ -517,6 +555,9 @@ export function createAudio(): Audio {
     },
     get played() {
       return played;
+    },
+    get previews() {
+      return previews;
     },
     get bars() {
       return bars;

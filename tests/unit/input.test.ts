@@ -29,6 +29,10 @@ class FakeElement extends EventTarget {
   querySelectorAll() { return this.children; }
   closest() { return this.hidden || this.inControls ? this : null; }
   focus() { doc.activeElement = this as unknown as Element; }
+  role = '';
+  tabIndex = 0;
+  getAttribute(name: string) { return name === 'role' ? this.role : null; }
+  contains(other: FakeElement) { return this.children.includes(other); }
 }
 
 function fire(target: EventTarget, type: string, props: Record<string, unknown> = {}): Event {
@@ -491,5 +495,48 @@ describe('the gamepad', () => {
     expect(input.state().x).toBe(-1);
     pads = [];
     expect(input.state().x).toBe(0);
+  });
+
+  it('hands left and right to a choice or a level in a menu, and leaves it up and down', () => {
+    focusScope = new FakeElement();
+    const before = new FakeElement();
+    const chosen = new FakeElement();
+    chosen.role = 'radio';
+    const other = new FakeElement();
+    other.role = 'radio';
+    other.tabIndex = -1; // a choice's other buttons are no stop of their own
+    const pips = new FakeElement();
+    pips.role = 'slider';
+    focusScope.children = [before, chosen, other, pips];
+    const heard: string[] = [];
+    for (const target of [chosen, pips]) target.addEventListener('keydown', (event) => { heard.push((event as KeyboardEvent).key); event.preventDefault(); });
+    chosen.focus();
+    pads = [gamepad([0, 0], [PAD.right])];
+    input.state();
+    expect(heard).toEqual(['ArrowRight']);
+    expect(doc.activeElement).toBe(chosen);
+    pads = [gamepad([0, 0], [])];
+    input.state();
+    pads = [gamepad([0, 0], [PAD.down])];
+    input.state();
+    expect(doc.activeElement).toBe(pips);
+    pads = [gamepad([0, 0], [])];
+    input.state();
+    pads = [gamepad([0, 0], [PAD.left])];
+    input.state();
+    expect(heard).toEqual(['ArrowRight', 'ArrowLeft']);
+    pads = [gamepad([0, 0], [])];
+    input.state();
+    pads = [gamepad([0, 0], [PAD.up])];
+    input.state();
+    expect(doc.activeElement).toBe(chosen);
+    // An ordinary button still takes left and right as the stop before and after it.
+    pads = [gamepad([0, 0], [])];
+    input.state();
+    before.focus();
+    pads = [gamepad([0, 0], [PAD.right])];
+    input.state();
+    expect(doc.activeElement).toBe(chosen);
+    expect(heard).toEqual(['ArrowRight', 'ArrowLeft']);
   });
 });

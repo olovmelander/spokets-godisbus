@@ -442,6 +442,8 @@ export const sv = {
     bag: 'Godispåsen',
     settings: 'Inställningar',
     groups: { play: 'Så spelar du', sound: 'Ljud', controls: 'Styrning', picture: 'Bild och text', grownups: 'För vuxna' },
+    // The header's way back names the page it goes to.
+    backTo: 'Tillbaka till {page}',
     resume: 'Spela vidare',
     home: 'Till startsidan',
     close: 'Stäng',
@@ -450,14 +452,36 @@ export const sv = {
     aventyrHint: 'Du hoppar och gungar själv.',
     lugnt: 'Lugnt',
     lugntHint: 'Spelet hjälper dig med hopp och gungor.',
+    // Under the two cards: what the chosen style switches on, or that the helps are the player's own
+    // (docs/ux-audit/menus.md row 7).
+    styleSays: {
+      aventyr: 'Äventyr: ingen hjälp slås på. Hjälparen kommer när du frågar.',
+      lugnt: 'Lugnt: lätta hopp, hjälp med svingen, stopp vid kanter, ingen brådska och påminnelser.',
+      own: 'Ditt eget sätt: du har valt hjälpen själv.',
+    },
     swingHelp: 'Hjälp med svingen',
     easyJumps: 'Lätta hopp',
+    stopAtEdges: 'Stanna vid höga kanter',
+    gentle: 'Spänning utan brådska',
     followFinger: 'Följ fingret',
     vibration: 'Vibration vid landning',
     fullscreen: 'Helskärm',
     exitFullscreen: 'Lämna helskärm',
     fullscreenFailed: 'Helskärm kunde inte öppnas. Du kan spela vidare här.',
-    followHint: 'Håll fingret dit du vill gå. Släpp för att stanna.',
+    // Each switch's second line: what it does, in the voice of the style cards (menus.md row 5).
+    says: {
+      swingHelp: 'Gungan tar fart av sig själv.',
+      easyJumps: 'Hoppen går av sig själva vid kanterna.',
+      stopAtEdges: 'Elof stannar i stället för att falla.',
+      gentle: 'Så länge du rör dig hinner inget ikapp dig.',
+      slower: 'Allt går lite långsammare.',
+      loud: 'Telefonens tysta läge stänger inte av spelet.',
+      lefty: 'Spaken och knapparna byter sida.',
+      followFinger: 'Håll fingret dit du vill gå. Släpp för att stanna.',
+      vibration: 'Telefonen surrar lite när Elof landar högt ifrån.',
+      bigText: 'Det som sägs och orden på knapparna blir större.',
+      calm: 'Inget studsar, blinkar eller skakar.',
+    },
     graphics: 'Grafik',
     graphicsAuto: 'Auto',
     graphicsLow: 'Låg',
@@ -465,15 +489,13 @@ export const sv = {
     graphicsHigh: 'Hög',
     graphicsHint: 'Auto väljer åt dig. Låg gör bilden enklare.',
     graphicsFallback: 'Den här enheten använder Låg.',
-    slower: 'Lugnare tempo',
+    slower: 'Långsammare spel',
     sound: 'Ljud',
     music: 'Musik',
     effectsVolume: 'Ljudvolym',
     musicVolume: 'Musikvolym',
-    effectsQuieter: 'Sänk ljudvolymen',
-    effectsLouder: 'Höj ljudvolymen',
-    musicQuieter: 'Sänk musikvolymen',
-    musicLouder: 'Höj musikvolymen',
+    // A volume is five candy pips (menus.md row 8): "3 av 5".
+    pips: '{n} av 5',
     loud: 'Ljud även i tyst läge',
     lefty: 'Vänsterhänt',
     bigText: 'Större text',
@@ -483,6 +505,15 @@ export const sv = {
     helpAsk: 'Bara när jag frågar',
     helpRemind: 'Påminn mig',
     helpGuide: 'Guida mig',
+    // What each level means: who helps, and how (menus.md row 9; plan §4.6).
+    helpSays: {
+      ask: 'Hjälparen kommer när du trycker på den.',
+      remind: 'Hjälparen tittar förbi om inget händer på länge.',
+      guide: 'Hjälparen kommer själv och visar vad du kan göra.',
+    },
+    // The chapter's own three words, for opening it on another device (menus.md row 6).
+    code: 'Kod till det här kapitlet',
+    codeSays: 'Skriv orden under ”Jag har en kod” på en annan enhet.',
     stuck: 'Jag har fastnat',
     stuckAsk: 'Tillbaka till den stora godisbiten?',
     stuckYes: 'Ja, tillbaka',
@@ -491,12 +522,12 @@ export const sv = {
 
   controls: {
     title: 'Tangenter och handkontroll',
-    back: 'Tillbaka till paus',
     keyboard: 'Tangentbord',
     gamepad: 'Handkontroll',
+    // Drawn as keycaps: " / " separates the choices, " + " keys held together, a space keys side by side.
     keyboardRows: [
       ['← → / A D', 'Springa och gunga'],
-      ['Shift + ← → / A D', 'Gå långsamt'],
+      ['Shift + ← → / Shift + A D', 'Gå långsamt'],
       ['Mellanslag / ↑ / W', 'Hoppa. Håll för högre hopp.'],
       ['↑ ↓ / W S', 'Klättra på slang och snöre'],
       ['Mellanslag', 'Släpp gungan'],

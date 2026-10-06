@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OWN_SWITCHES, readSettings, settingsFor, simOptions, SLOWER_TEMPO, SWITCH_NAMES, tempoOf } from '../../src/save/settings';
+import { changeStyle, OWN_SWITCHES, readSettings, settingsFor, simOptions, SLOWER_TEMPO, styleOf, SWITCH_NAMES, tempoOf } from '../../src/save/settings';
 import { createStore, newSave, PLAYER_NAME_MAX, readSave, SAVE_VERSION } from '../../src/save/store';
 
 /** A stand-in for localStorage. */
@@ -17,7 +17,7 @@ describe('the two play styles', () => {
   it('Äventyr leaves the jumps and the swing to the player', () => {
     const settings = settingsFor('aventyr');
     expect(settings).toEqual({
-      style: 'aventyr', followFinger: false, vibration: false, graphics: 'auto', swingHelp: false, easyJumps: false, slower: false, sound: true, music: true,
+      style: 'aventyr', followFinger: false, vibration: false, graphics: 'auto', swingHelp: false, easyJumps: false, stopAtEdges: false, gentle: false, slower: false, sound: true, music: true,
       effectsVolume: 1, musicVolume: 1,
       lefty: false, bigText: false, calm: false, loud: false, help: 'ask',
     });
@@ -66,6 +66,29 @@ describe('the two play styles', () => {
     const settings = { ...settingsFor('aventyr'), swingHelp: true, slower: true };
     expect(simOptions(settings)).toEqual({ swingHelp: true, easyJumps: false, stopAtEdges: false, gentle: false, help: 'ask' });
     expect(tempoOf(settings)).toBe(SLOWER_TEMPO);
+    // Lugnt's two helps that had no row are rows of their own now (docs/ux-audit/menus.md row 7).
+    expect(simOptions({ ...settingsFor('lugnt'), stopAtEdges: false })).toEqual({ swingHelp: true, easyJumps: true, stopAtEdges: false, gentle: true, help: 'remind' });
+    expect(simOptions({ ...settingsFor('aventyr'), gentle: true })).toEqual({ swingHelp: false, easyJumps: false, stopAtEdges: false, gentle: true, help: 'ask' });
+  });
+
+  it('says when the helps are the player\'s own: Ditt eget sätt', () => {
+    expect(styleOf(settingsFor('aventyr'))).toBe('aventyr');
+    expect(styleOf(settingsFor('lugnt'))).toBe('lugnt');
+    // The player's own switches, the sound and the picture are no part of a style.
+    expect(styleOf({ ...settingsFor('lugnt'), lefty: true, bigText: true, effectsVolume: 0.4, music: false, graphics: 'low' })).toBe('lugnt');
+    for (const help of ['swingHelp', 'easyJumps', 'stopAtEdges', 'gentle', 'loud'] as const) {
+      expect(styleOf({ ...settingsFor('lugnt'), [help]: false }), help).toBeNull();
+      expect(styleOf({ ...settingsFor('aventyr'), [help]: true }), help).toBeNull();
+    }
+    expect(styleOf({ ...settingsFor('aventyr'), help: 'guide' })).toBeNull();
+    // Choosing a card again puts every help back as that style has it.
+    expect(styleOf(changeStyle({ ...settingsFor('lugnt'), gentle: false }, 'lugnt'))).toBe('lugnt');
+  });
+
+  it('reads the two helps of an older Lugnt save as Lugnt had them', () => {
+    const old = { style: 'lugnt', swingHelp: true, easyJumps: true, loud: true, help: 'remind' };
+    expect(readSettings(old)).toEqual(settingsFor('lugnt'));
+    expect(simOptions(readSettings(old))).toEqual(simOptions(settingsFor('lugnt')));
   });
 
   it('reads settings from whatever a save holds', () => {

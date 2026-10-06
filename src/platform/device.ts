@@ -11,6 +11,9 @@ export interface DeviceHost {
 }
 
 export const isAndroid = (userAgent: string): boolean => /Android/i.test(userAgent);
+/** An iPhone or an iPad: an iPad asks for the computer's pages, so it is told apart by its touch points. */
+export const isApple = (userAgent: string, touchPoints = 0): boolean =>
+  /iPhone|iPad|iPod/.test(userAgent) || (/Macintosh/.test(userAgent) && touchPoints > 1);
 
 /** A request that finishes after a pause is immediately released. Refused requests retry only after
  * a new play/visibility transition, never on every animation frame. */
