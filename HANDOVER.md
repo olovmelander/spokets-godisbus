@@ -2,6 +2,27 @@
 
 ## State (5 October 2026)
 
+- **The UX, UI and presentation audit, and chapters that open on their card** (5 October, a cloud session;
+  `docs/ux-audit.md`). Olov: "we need to continue to audit the storytelling, story and the game to make sure
+  everything is perfect and best in class ... I want best in class ux and ui and game to really get an atmosphere
+  and style that suits this game!", and "It is a game for a 11+ year old".
+  - **The audit:** six auditors (the first minutes, in play, the menus, the story's presentation, the UI's style and
+    sound, access and devices), 137 findings with the fix for each, measured in the built game at 844×390, 390×844,
+    780×360, 1180×820 and 1440×900 with stand-ins, and a research note on how the best games make their UI part of
+    their world (`docs/research/ux-craft.md`; most of its sources were read only through search excerpts). The
+    overview says what works, the eight things that let it down most, a design language (Moa's paper for what is
+    read, Pappa's painted wood for what you press, candy for rewards; Andika and Playpen Sans self-hosted; colour
+    tokens; drawn icons; UI sound), the order of the work in eleven pull requests, and nine questions for Olov,
+    each with a default.
+  - **Mended in this pull request:** "Nästa kapitel", "Spela igen" and a right code opened the next load on the
+    title menu ("Fortsätt", "Börja om från början") before the chapter's time card; now the page that leaves marks
+    the chapter in the tab's session (`src/save/onward.ts`) and the chapter opens on its card. Opening the game by
+    hand still shows the title. The three chapter changes replace the page instead of adding one, so Android's
+    Back gesture no longer reopens the chapter left behind and moves the save back to it.
+  - **Checked:** typecheck; 1,207 unit, simulation and robot tests (new: `tests/unit/onward.test.ts`); the build
+    (438.0 KB of 450 gzipped); the privacy check; `endings` (30 checks; new: the mark that "Nästa kapitel" leaves,
+    no step added to Back, and outside debug a marked load that opens on its card with no title) and
+    `release-routing`, locally.
 - **Chapters end on a storybook page, and open on a time card** (5 October, a cloud session; the narrative
   audit's steps 1 and 2, `docs/narrative-audit.md`; branch `ccr-6078e7de-t0rxpz`, after #148). Olov: "the
   chapter endings feel too sudden and flat; I want each one to conclude with real emotional weight and meaning".
@@ -1586,6 +1607,12 @@
 
 **For the next session, in this order:**
 
+- **The UX order of work** (`docs/ux-audit.md`, "The order of the work"), one pull request each, all in a cloud
+  session: 1, every word in its own type (the dropped font rules, Andika and Playpen Sans self-hosted, one size
+  scale, colour tokens, button states); 2, the controls a thumb can trust; 3, every speaker their own; 4, a clear
+  screen for the story; 5, a pause that is short; 6, one movement from the tap to the story; 7, the materials;
+  8, the UI's sound together with the narrative audit's step 3; 9, the page as a page; 10, the collections; 11, a
+  picture for every verb. The narrative audit's later steps go on around them.
 - **The story's pull requests (this session's: #148, merged, and the endings after it): Olov plays the new
   intro and the new chapter endings, and the story's work goes on in the overview's order**
   (`docs/narrative-audit.md`, "The order of the work"). Neither raises `RELEASED_CHAPTER`, touches likeness
@@ -1828,6 +1855,9 @@ The older list, still true where it is not struck:
 | planck's scale | `lengthUnitsPerMeter` is 0.2, as the plan says. planck doesn't scale its polygon skin with it, so a body rests 0.019 EL above the ground; the simulation takes that off Elof's reported height. | Session, 3 Oct (`src/sim/sim.ts`) |
 | Draw calls | 120 on Low, 160 on Mid, 200 on High, where it was 120 on every tier. The game is tuned for High, which the family's devices are expected to run; Low keeps the old number for older phones, and what is added for High stays out of Low's picture where it would not fit. A check that cannot say its tier is held to Low's. The numbers are in `tests/browser/budget.mjs`. They are an estimate (about 4 ms of a 10 ms frame at 200): the frame time on the devices, from `?bench`, is what will tell. | Olov, 5 Oct: "Raise the graphical threshold to enable for better graphics" |
 | Tone mapping | Neutral, not AgX. The plan allows either (§6.5). With AgX the sky and every flat colour turned grey once the picture went through the HDR buffer; Neutral keeps a colour as it was set. Olov judges the look at H1a. | Session, 3 Oct (`src/render/view.ts`) |
+| Audience | A game for 11+: the UI, the story and the presentation are measured against the best adventure games for that age (A Short Hike, Alba, Tunic, Ori, Celeste, Firewatch, Unravel), not against apps for small children | Olov, 5 Oct: "It is a game for a 11+ year old" |
+| The UI's design language | One material for each job: Moa's paper and crayon for what is read, Pappa's painted wood for what you press, candy for rewards. Andika and Playpen Sans, self-hosted; colour tokens; a drawn icon set; taps that sound like wood and paper in the chapter's key | The UX audit's proposal, 5 Oct (`docs/ux-audit.md`); its questions are Olov's to answer |
+| Between chapters | "Nästa kapitel", "Spela igen" and a chapter code open the chapter on its time card; the title shows when the game is opened. Chapter changes replace the page, so Back never goes a chapter back | Session, 5 Oct (the UX audit) |
 | Story first | The narrative is the heart of the game: story is put into play (scenes the player stands in, choices that are his, the family's help shown), measured against `docs/narrative-audit.md` and its order of work. | Olov, 5 Oct: "we really need to shift our focus to the storytelling" |
 | Story scenes | A chapter's authored moments are data on the simulation's clock (`src/sim/scene.ts`): a held scene is 11 s at most and holds his input; only a finished scene is saved; one taken up later is passed over by its `until` flag or its place. The picture's side (shots, acting, props) never changes the play. | Session, 5 Oct |
 | Chapter endings | A chapter ends on a coda of about 3 s (the picture looks back and up, the tune closes on a held note, one of the family answers in their three notes) and a storybook page: the coda's picture, the chapter's name, what comes next, Moa's map with the way on. Every chapter after the prologue opens on a time card (plan §4.9). The prologue and the epilogue keep their own endings. | Session, 5 Oct, for Olov's "the chapter endings feel too sudden and flat" |
@@ -1843,11 +1873,16 @@ The older list, still true where it is not struck:
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
-| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, the prologue rebuilt as scenes with an outdoor deck, and every chapter's ending (a coda, a storybook page, and a time card at the next one's start). Broader spatial work, Byn's return loop and the rest of its own story, final likeness/contact/acting/memory art, the story's further steps (sound next), listening and device checkpoints remain; no release is declared. |
+| 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, the prologue rebuilt as scenes with an outdoor deck, every chapter's ending (a coda, a storybook page, and a time card at the next one's start), and a UX, UI and presentation audit (137 findings, eleven steps) with chapters that open on their card instead of the title. Broader spatial work, Byn's return loop and the rest of its own story, final likeness/contact/acting/memory art, the story's further steps (sound next), listening and device checkpoints remain; no release is declared. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. |
 
 ## Known bugs
 
+- **The UX audit's defects, not yet mended** (`docs/ux-audit.md`, in the order of the work): three invalid CSS
+  `font:` rules leave *Hoppa*, *Använd*, the name and code fields and two buttons in the browser's 13.3 px Arial;
+  bubbles can only use half the screen's width; *Mindre rörelse* hides the helper's knock, and keys and pad never
+  see the verb; the HUD stays at 28 % over held scenes and bright over a fade from black; Pause is 8.4 panel
+  heights at 844×390 with its ✕ scrolling away; *Foton* shows on Byn with nothing in it.
 - **The prologue's stand-ins act roughly** (5 October): box figures in place of the family, so a kneel or a
   shrug reads stiffly, and Pappa's hand under Elof is a block. The private models have not been posed by the new
   acting yet; their bones' signs follow Elof's doll and are untested with it (Olov's computer).
@@ -2056,3 +2091,7 @@ Choices the session made, for Olov to overrule if he wants:
 16. **The chapter endings:** is about three seconds of coda before the page right, and the family member who
     answers after each chapter (Moa after Gården, Bertil after Granskogen, Mamma after Myren, Pappa after Berget,
     all four after the final)? The default: as built.
+17. **The UX audit's nine questions** (`docs/ux-audit.md`, "For Olov to decide"), each with a default: Moa's own
+    lettering or a typeface; white paper or kraft for the panels; the tune muffled under menus or silence; the
+    candy number always or after each candy; whether Elof reads the bubbles himself; one start screen or straight
+    into the morning; phones held upright; a gamepad; the grown-ups' settings behind a press.
