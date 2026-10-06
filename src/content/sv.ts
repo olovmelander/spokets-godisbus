@@ -449,6 +449,8 @@ export const sv = {
     remove: 'Ta bort {name}', removeAsk: 'Ta bort {name} och allt som spelaren har sparat?',
     restartAsk: 'Börja om från början för {name}? Godis, bilder och framsteg tas bort.',
     yes: 'Ja', no: 'Nej, gå tillbaka', unreadable: 'Kan inte läsas',
+    // Taking a player away and starting over wait behind "Ändra", and "Ja" is held (first-minutes.md row 14).
+    edit: 'Ändra', hold: 'Håll inne',
     error: 'Det gick inte att spara ändringen. Försök igen.',
     indexUnreadable: 'Spelarlistan gick inte att läsa. Det sparade finns kvar. Prova att ladda om sidan.',
     preserved: 'Det sparade spelet gick inte att läsa. Det finns kvar. Välj en annan spelare eller börja om.',

@@ -111,7 +111,7 @@ describe('local player profiles', () => {
     const storage = fakeStorage({ [key('elof')]: raw });
     const store = createStore(storage);
     expect(store.currentId).toBe('elof');
-    expect(store.players()).toEqual([{ id: 'elof', name: 'Elof', kind: 'save' }]);
+    expect(store.players()).toEqual([{ id: 'elof', name: 'Elof', kind: 'save', token: 0 }]);
     expect(store.load()).toEqual({ kind: 'save', save: { ...oldSave, checkpoints: { [oldSave.chapter]: oldSave.checkpoint } } });
     expect(storage.items.get(indexKey)).toBeUndefined();
     expect(storage.items.get(key('elof'))).toBe(raw);
@@ -136,8 +136,19 @@ describe('local player profiles', () => {
     expect(store.select(otherId)).toBe(true);
     expect(store.load()).toEqual({ kind: 'save', save: { ...moa, checkpoints: { [moa.chapter]: moa.checkpoint } } });
     expect(store.players()).toEqual([
-      { id: 'elof', name: 'Elof', kind: 'save' }, { id: otherId, name: 'Moa', kind: 'save' },
+      { id: 'elof', name: 'Elof', kind: 'save', token: 0 }, { id: otherId, name: 'Moa', kind: 'save', token: 1 },
     ]);
+  });
+
+  it('gives each new player a candy sticker of its own, and keeps it when another goes', () => {
+    const store = createStore(fakeStorage());
+    const ids = ['Moa', 'Bertil', 'Alva', 'Ida', 'Sixten'].map((name) => store.create(name, 'aventyr', 'prolog', 100)!);
+    expect(store.players().map((p) => p.token)).toEqual([0, 1, 2, 3, 0]);
+    expect(store.remove(ids[1]!)).toBe(true);
+    expect(store.players().map((p) => p.token)).toEqual([0, 2, 3, 0]);
+    // The one free now goes to the next.
+    store.create('Majken', 'aventyr', 'prolog', 100);
+    expect(store.players().map((p) => p.token)).toEqual([0, 2, 3, 0, 1]);
   });
 
   it('uses distinct opaque IDs for equal names and bounds names without splitting Unicode characters', () => {
@@ -173,7 +184,7 @@ describe('local player profiles', () => {
     const other = store.create('Moa', 'lugnt', 'prolog', 200)!;
     expect(store.clear()).toBe(true);
     expect(store.load()).toEqual({ kind: 'none' });
-    expect(store.players().find((p) => p.id === other)).toEqual({ id: other, name: 'Moa', kind: 'none' });
+    expect(store.players().find((p) => p.id === other)).toEqual({ id: other, name: 'Moa', kind: 'none', token: 1 });
     expect(storage.items.get(key('elof'))).toBe(elof);
     expect(store.write(newSave(300, 'prolog'))).toBe(true);
     const loaded = store.load();
@@ -201,7 +212,7 @@ describe('local player profiles', () => {
     const raw = '{ broken save';
     const storage = fakeStorage({ [key('elof')]: raw });
     const store = createStore(storage);
-    expect(store.players()).toEqual([{ id: 'elof', name: 'Elof', kind: 'unreadable' }]);
+    expect(store.players()).toEqual([{ id: 'elof', name: 'Elof', kind: 'unreadable', token: 0 }]);
     expect(store.write(newSave(100, 'prolog'))).toBe(false); // protected even before load()
     const other = store.create('Moa', 'lugnt', 'prolog', 200)!;
     expect(store.load().kind).toBe('save');

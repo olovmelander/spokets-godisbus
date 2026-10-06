@@ -458,7 +458,8 @@ body.big-text {
  */
 .stickers i.kind,
 .album-grid i.kind,
-.notice-mark i.kind {
+.notice-mark i.kind,
+.player-token.kind {
   border-radius: 0;
   background: url('./kinds.webp') no-repeat;
   background-size: 600% 300%;
@@ -3137,9 +3138,61 @@ button.bag {
 }
 
 /* Each profile is a separate local adventure, with large touch targets. */
-.player-row { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 8px; }
-.player-row .wide { overflow-wrap: anywhere; }
+/* Each player is a row with their own candy sticker and their name at 21 px. Taking one away, and starting over,
+   wait behind "Ändra", 16 px from everything else (docs/ux-audit/first-minutes.md row 14). */
+.player-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+#titlePlayers.editing .player-row { grid-template-columns: minmax(0, 1fr) 64px; }
+#titlePlayers:not(.editing) :is(.player-remove, #startOverBtn) { display: none; }
+.player-row .wide { overflow-wrap: anywhere; justify-content: start; gap: 14px; font-size: calc(21px * var(--k)); }
 .player-row [aria-current='true'] { box-shadow: inset 0 0 0 3px var(--crayon-red); }
+.player-token.kind { flex: none; width: calc(40px * var(--k)); height: calc(40px * var(--k)); }
+#titlePlayers .section-head { grid-template-columns: 64px 1fr auto; column-gap: 12px; }
+.players-edit[aria-pressed='true'] { box-shadow: inset 0 0 0 3px var(--crayon-red); }
+/* "Ja" to what cannot be undone is held for 1.5 s while a ring fills round its tick (ui/hold.ts). */
+@property --held {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+.hold-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+}
+.hold-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--crayon-red) var(--held), rgb(90 58 30 / 0.18) 0);
+  mask: radial-gradient(circle, transparent 15px, black 16px);
+}
+.hold-confirm {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+.hold-confirm > span {
+  display: grid;
+  text-align: left;
+}
+.hold-confirm small {
+  font-size: calc(14px * var(--k));
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+.hold-confirm.holding .hold-ring::before {
+  animation: hold-fill 1.5s linear forwards;
+}
+@keyframes hold-fill {
+  to {
+    --held: 100%;
+  }
+}
 .player-remove { padding: 0; font-size: 28px !important; }
 .current-player { margin: 0; font-weight: 700; }
 .player-form input { text-transform: none; letter-spacing: 0; }

@@ -80,7 +80,11 @@ if (shown.has('pause') || shown.has('stuck') || shown.has('album') || shown.has(
 }
 if (shown.has('title') || shown.has('saved') || shown.has('styles')) {
   const title = createTitle(document, { onStart: () => title.hide(), onStartOver: () => {}, onCode: () => title.hide() });
-  title.show(shown.has('saved'));
+  // ?show=saved,players: the players' page with three of them.
+  title.show(shown.has('saved'), shown.has('players') ? { currentId: 'elof', available: true, unreadable: false, players: [
+    { id: 'elof', name: 'Elof', kind: 'save', token: 0 }, { id: 'p_moa', name: 'Moa', kind: 'save', token: 1 },
+    { id: 'p_bertil', name: 'Bertil', kind: 'none', token: 2 },
+  ] } : undefined);
   if (shown.has('styles')) title.showStyles();
 }
 if (shown.has('end') || shown.has('bubble')) {

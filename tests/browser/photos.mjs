@@ -160,8 +160,13 @@ try {
     await page.goto(`${origin}${BASE}?dev&debug&standin&tier=low&course=berget&title`); await ready(page);
     // Börja om från början is on the players' page (docs/ux-audit/first-minutes.md row 7).
     await page.click('#playersBtn');
+    await page.click('#playersEdit');
     await page.click('#startOverBtn');
-    await Promise.all([page.waitForEvent('framenavigated'), page.click('#playerConfirmYes')]);
+    // "Ja" is held (docs/ux-audit/first-minutes.md row 14).
+    const yes = await page.locator('#playerConfirmYes').boundingBox();
+    await page.mouse.move(yes.x + yes.width / 2, yes.y + yes.height / 2);
+    await Promise.all([page.waitForEvent('framenavigated'), page.mouse.down()]);
+    await page.mouse.up();
     await ready(page);
     const left = await until(() => savedFrames(page), (rows) => rows.length === 1 && rows[0].player === 'second-player', 'reset clears only active player');
     check('reset removes all of this player’s photos and preserves another player’s photos', left[0].player === 'second-player');

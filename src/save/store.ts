@@ -18,13 +18,30 @@ export interface PlayerProfile {
   id: string;
   name: string;
   kind: Loaded['kind'];
+  /** Which of the four candy stickers is this player's picture (docs/ux-audit/first-minutes.md row 14). */
+  token: number;
 }
+
+/** How many candy stickers there are for the players' pictures. */
+export const PLAYER_TOKENS = 4;
 
 interface PlayerIndex {
   v: number;
-  players: { id: string; name: string; generation?: string }[];
+  players: { id: string; name: string; generation?: string; token?: number }[];
   current: string;
 }
+
+const isToken = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0 && (value as number) < PLAYER_TOKENS;
+/** The first sticker no one has yet, and when all are taken, the one fewest have. */
+const freeToken = (taken: readonly (number | undefined)[]): number => {
+  const uses = Array.from({ length: PLAYER_TOKENS }, (_, token) => taken.filter((t) => t === token).length);
+  return uses.indexOf(Math.min(...uses));
+};
+/** Each player's sticker. One made before the stickers has none saved: it gets the first free, in the list's order. */
+const tokensOf = (players: PlayerIndex['players']): number[] => {
+  const taken = players.map((profile) => profile.token);
+  return players.map((profile, i) => (taken[i] = profile.token ?? freeToken(taken.filter((_, k) => k !== i))));
+};
 
 export interface PlayerSave {
   v: number;
@@ -173,8 +190,10 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
       for (const item of from.players) {
         if (!item || typeof item !== 'object' || typeof item.id !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(item.id)
           || (item.generation !== undefined && typeof item.generation !== 'string')
+          || (item.token !== undefined && !isToken(item.token))
           || typeof item.name !== 'string' || !playerName(item.name) || players.some((p) => p.id === item.id)) return null;
-        players.push({ id: item.id, name: playerName(item.name), ...(item.generation ? { generation: item.generation } : {}) });
+        players.push({ id: item.id, name: playerName(item.name), ...(item.generation ? { generation: item.generation } : {}),
+          ...(isToken(item.token) ? { token: item.token } : {}) });
       }
       if (players.length ? !players.some((p) => p.id === from.current) : from.current !== FIRST_PLAYER.id) return null;
       return { raw, index: { v: SAVE_VERSION, players, current: from.current } };
@@ -202,13 +221,14 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
       if (!storage) return [];
       const data = readIndex();
       if (!data) return [];
-      return data.index.players.map((profile) => {
+      const tokens = tokensOf(data.index.players);
+      return data.index.players.map((profile, i) => {
         let kind: PlayerProfile['kind'] = 'unreadable';
         try {
           // A profile whose progress was explicitly cleared is a valid player with no save yet.
           kind = readSave(get(playerKey(profile.id))).kind;
         } catch { /* Keep the profile visible when a read is refused. */ }
-        return { id: profile.id, name: profile.name, kind };
+        return { id: profile.id, name: profile.name, kind, token: tokens[i]! };
       });
     },
     select(id) {
@@ -245,7 +265,8 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
         const save = newSave(now, chapter, settingsFor(style), nameToSave);
         storage.setItem(playerKey(id), JSON.stringify(save));
         try {
-          putIndex({ ...data.index, players: [...data.index.players, { id, name: nameToSave }], current: id });
+          const token = freeToken(tokensOf(data.index.players));
+          putIndex({ ...data.index, players: [...data.index.players, { id, name: nameToSave, token }], current: id });
         } catch (error) {
           restore(playerKey(id), null);
           throw error;

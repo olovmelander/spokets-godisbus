@@ -1,5 +1,7 @@
 import { chapterFor } from '../save/codes';
 import { PLAYER_NAME_MAX, type PlayerProfile } from '../save/store';
+import { holdToConfirm } from './hold';
+import { stickerStyle } from './sticker';
 import type { PlayStyle } from '../save/settings';
 import { sv } from '../content/sv';
 import { CROSS } from './icons';
@@ -19,6 +21,9 @@ export interface TitleHandlers {
   onCreate?(name: string, style: PlayStyle): boolean;
   onDelete?(id: string): boolean | Promise<boolean>;
 }
+
+/** The four candy stickers a player can have as their picture, by `PlayerProfile.token`. */
+const PLAYER_STICKERS = ['gelehallon', 'skumbanan', 'polkagris', 'gummibjorn'] as const;
 
 export interface TitlePlayers {
   currentId: string;
@@ -76,6 +81,11 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
     confirmReturn = from;
     section('titleConfirm', 'playerConfirmNo');
   }
+  /** Taking a player away and starting over wait behind "Ändra" (first-minutes.md row 14). */
+  const editing = (on: boolean) => {
+    byId('titlePlayers').classList.toggle('editing', on);
+    byId('playersEdit').setAttribute('aria-pressed', String(on));
+  };
   function players(): void {
     const list = byId('playerList');
     list.replaceChildren();
@@ -86,8 +96,15 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
       select.type = 'button';
       select.className = 'wide';
       select.dataset.player = player.id;
-      // The name as typed, never as markup; the one playing now has Moa's crayon loop round it.
-      select.textContent = `${player.name}${player.kind === 'unreadable' ? ` — ${sv.players.unreadable}` : ''}`;
+      // Each player's own candy sticker, and the name as typed, never as markup; the one playing now has Moa's
+      // crayon loop round it.
+      const token = doc.createElement('i');
+      token.className = 'player-token kind';
+      token.style.cssText = stickerStyle(PLAYER_STICKERS[player.token] ?? PLAYER_STICKERS[0]!);
+      token.setAttribute('aria-hidden', 'true');
+      const said = doc.createElement('span');
+      said.textContent = `${player.name}${player.kind === 'unreadable' ? ` — ${sv.players.unreadable}` : ''}`;
+      select.append(token, said);
       select.setAttribute('aria-current', String(player.id === state.currentId));
       select.addEventListener('click', () => {
         if (player.id === state.currentId) front();
@@ -108,7 +125,8 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
     if (state.players.length === 0 && !state.unreadable) byId('newPlayerBtn').click();
     else players();
   });
-  byId('playersBack').addEventListener('click', front);
+  byId('playersBack').addEventListener('click', () => { editing(false); front(); });
+  byId('playersEdit').addEventListener('click', () => editing(byId('playersEdit').getAttribute('aria-pressed') !== 'true'));
   byId('newPlayerBtn').addEventListener('click', () => {
     byId<HTMLInputElement>('playerName').value = '';
     section('titleNewPlayer', 'playerName');
@@ -146,7 +164,8 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
     if (confirmReturn === 'titlePlayers') players();
     else front();
   });
-  byId('playerConfirmYes').addEventListener('click', async () => {
+  // What cannot be undone is confirmed by holding "Ja" while a ring fills (first-minutes.md rows 7 and 14).
+  holdToConfirm(byId<HTMLButtonElement>('playerConfirmYes'), async () => {
     if (!confirmAction || busy) return;
     busy = true;
     byId<HTMLButtonElement>('playerConfirmYes').disabled = true;

@@ -253,7 +253,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
            </div>
          </div>
          <div id="titlePlayers" hidden>
-           <div class="section-head"><button class="round-back" id="playersBack" type="button" aria-label="${sv.players.back}">${BACK}</button><h2>${sv.players.title}</h2></div>
+           <div class="section-head"><button class="round-back" id="playersBack" type="button" aria-label="${sv.players.back}">${BACK}</button><h2>${sv.players.title}</h2><button class="wide small players-edit" id="playersEdit" type="button" aria-pressed="false">${sv.players.edit}</button></div>
            <div id="playerList"></div>
            <button class="wide" id="newPlayerBtn" type="button">${PLAYER_ADD}<span>${sv.players.new}</span></button>
            <button class="wide small" id="startOverBtn" type="button" hidden>${sv.start.over}</button>
@@ -270,7 +270,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
          <div id="titleConfirm" hidden>
            <p id="playerConfirmText"></p>
            <button class="wide" id="playerConfirmNo" type="button">${CROSS}<span>${sv.players.no}</span></button>
-           <button class="wide" id="playerConfirmYes" type="button">${CHECK}<span>${sv.players.yes}</span></button>
+           <button class="wide hold-confirm" id="playerConfirmYes" type="button"><i class="hold-ring" aria-hidden="true">${CHECK}</i><span>${sv.players.yes}<small>${sv.players.hold}</small></span></button>
          </div>
          <p id="playerError" role="alert" hidden>${sv.players.error}</p>
          <p class="title-updating" id="titleUpdating" role="status" hidden><span class="title-updating-ghost" id="titleUpdatingGhost" aria-hidden="true"></span><span>${sv.updating}</span></p>

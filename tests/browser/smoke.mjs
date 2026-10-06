@@ -272,7 +272,10 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
   check('with a saved game the button says Fortsätt', (await page.locator('#startBtn .resume').isVisible()) && (await page.locator('#startAventyr').isHidden()));
   await page.tap('#playersBtn');
-  check('Börja om från början waits on the players\' page', await page.locator('#startOverBtn').isVisible());
+  check('Börja om från början waits on the players\' page, behind Ändra', await page.locator('#startOverBtn').isHidden()
+    && await page.locator('#playersEdit').isVisible());
+  await page.tap('#playersEdit');
+  check('Ändra shows it', await page.locator('#startOverBtn').isVisible());
   await page.tap('#playersBack');
   await page.tap('#startBtn');
   const resumed = await state();
