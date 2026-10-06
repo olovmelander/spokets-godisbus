@@ -2,6 +2,7 @@ import {
   BoxGeometry, BufferGeometry, CanvasTexture, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, LatheGeometry,
   MeshStandardMaterial, RepeatWrapping, SRGBColorSpace, SphereGeometry, Vector2,
 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData, PlaceId, SurfaceKind } from '../../sim/types';
 import type { Grade } from '../grade';
 import { sway } from '../wind';
@@ -180,6 +181,7 @@ function kit() {
     cone: new LatheGeometry(profile.map(([r, y]) => new Vector2(r!, y!)), 9),
     needle: new BoxGeometry(1, 0.012, 0.014),
     trunk: trunk(),
+    snag: snag(),
     boulder: boulder(),
     moss: new MeshStandardMaterial({ roughness: 1 }),
     // The sun stands behind the grass and shines through: a little light of its own stands in for that.
@@ -207,7 +209,7 @@ function kit() {
     straw: new MeshStandardMaterial({ roughness: 0.75, side: DoubleSide, emissive: '#8a7430', emissiveIntensity: 0.45 }),
     redLeaf: new MeshStandardMaterial({ color: '#c4472c', roughness: 0.55, emissive: '#70200c', emissiveIntensity: 0.3 }),
     orangeLeaf: new MeshStandardMaterial({ color: '#dd8a2c', roughness: 0.6, emissive: '#7a3c08', emissiveIntensity: 0.25 }),
-    deadwood: new MeshStandardMaterial({ color: '#a9a69e', roughness: 1 }),
+    deadwood: new MeshStandardMaterial({ vertexColors: true, roughness: 1 }),
     // Reindeer lichen is the brightest thing on the mountain's ground: its colours are on its corners, and a
     // little light of its own keeps it white where the low sun does not reach.
     lichen: new MeshStandardMaterial({ vertexColors: true, roughness: 1, emissive: '#8a8f84', emissiveIntensity: 0.25 }),
@@ -252,6 +254,42 @@ function trunk(): BufferGeometry {
   }
   geometry.setAttribute('color', new Float32BufferAttribute(colour, 3));
   return geometry;
+}
+
+/**
+ * A dead pine of the bog (visual audit, myren row 8), about 9 tall: its bark gone, silver-grey with dark checks
+ * along the twist of its grain, a flared foot green with lichen, the stubs of its old branches, and its top
+ * broken off in splinters. Its colours are on its corners.
+ */
+function snag(): BufferGeometry {
+  const profile: [number, number][] = [[0.95, 0], [0.6, 0.3], [0.47, 0.9], [0.42, 2.5], [0.33, 5.5], [0.25, 8.2], [0.2, 8.6], [0, 8.1]];
+  const trunk = new LatheGeometry(profile.map(([r, y]) => new Vector2(r, y)), 12);
+  const at = trunk.getAttribute('position');
+  for (let i = 0; i < at.count; i++) {
+    // The top is broken, not sawn: splinters stand up from its rim.
+    const a = Math.atan2(at.getZ(i), at.getX(i));
+    if (at.getY(i) > 8.5) at.setY(i, at.getY(i) + Math.max(0, Math.sin(a * 3) + 0.4 * Math.sin(a * 7)) * 0.7);
+  }
+  const silver = new Color('#b4b0a6');
+  const check = new Color('#5c5953');
+  const lichen = new Color('#7f8a5e');
+  const c = new Color();
+  const parts = [trunk, ...[[3.1, 0.4, 0.9], [3.9, 2.6, 0.5], [4.8, 4.4, 1.1], [5.6, 1.4, 0.4], [6.4, 3.4, 0.7], [7.3, 5.6, 0.45]].map(([y, a, long]) =>
+    new CylinderGeometry(0.05, 0.1, long!, 5).translate(0, long! / 2, 0).rotateZ(-1.15).rotateY(-a!).translate(Math.cos(a!) * 0.3, y!, Math.sin(a!) * 0.3))];
+  for (const part of parts) {
+    const p = part.getAttribute('position');
+    const colour: number[] = [];
+    for (let i = 0; i < p.count; i++) {
+      const y = p.getY(i);
+      const a = Math.atan2(p.getZ(i), p.getX(i));
+      // Dark checks run up the grain as it twists; the foot is green on one side.
+      const grain = Math.max(0, Math.sin(a * 6 + y * 0.8) - 0.75) * 4;
+      c.copy(silver).lerp(check, Math.min(0.85, grain)).lerp(lichen, Math.max(0, Math.min(1, 1.3 - y / (0.8 + 0.5 * Math.sin(a)))));
+      colour.push(c.r, c.g, c.b);
+    }
+    part.setAttribute('color', new Float32BufferAttribute(colour, 3));
+  }
+  return mergeGeometries(parts.map((part) => part.toNonIndexed()));
 }
 
 /** A shape with one colour on all its corners, for a material that reads its colours there. */

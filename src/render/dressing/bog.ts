@@ -98,17 +98,19 @@ export function bog(chapter: ChapterData, from: number, to: number, seed: number
   }
   berries.count = n;
 
-  // Dead pines: grey and bare, far apart.
-  const dead = new InstancedMesh(KIT.trunk, KIT.deadwood, 2);
+  // Dead pines: grey and bare, far apart, some leaning, none taller than the picture.
+  const dead = new InstancedMesh(KIT.snag, KIT.deadwood, 2);
   n = 0;
   for (let i = 0; i < 2; i++) {
     const x = from + next() * length;
     const z = -6 - next() * 12;
     if (next() > 0.45 || !grows(chapter, x)) continue;
-    const radius = 0.4 + next() * 0.35;
-    place.rotation.set(0, next() * 6.28, (next() - 0.5) * 0.14);
+    // Its broken top stays in the picture: from about 0.8 over the path, 10.5 in front of it, the camera sees
+    // up to tan(15°) of the distance higher. The nearer, the smaller.
+    const size = ((1.3 + Math.tan(Math.PI / 12) * (10.5 - z)) / 9.6) * (0.75 + next() * 0.2);
+    place.rotation.set((next() - 0.5) * 0.1, next() * 6.28, (next() - 0.5) * 0.2);
     place.position.set(x, heightAt(chapter, x) - 0.5, z);
-    place.scale.set(radius, 0.42, radius);
+    place.scale.setScalar(size);
     place.updateMatrix();
     dead.setMatrixAt(n++, place.matrix);
   }
