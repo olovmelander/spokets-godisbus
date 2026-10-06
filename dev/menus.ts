@@ -1,6 +1,6 @@
 // dev/menus.html: every piece of DOM that lies over the game, shown without WebGL (plan §6.10).
-// Choose what to show with ?show=touch, keys, pad, goal, pause, stuck, album, message or debug; several can be
-// joined with commas.
+// Choose what to show with ?show=touch, keys, pad, goal, pause, stuck, album, settings, message or debug; several
+// can be joined with commas. Pause opens on its first page, or on the candy bag's or the settings' page.
 // It uses the same shell and the same style sheet as the game, so it shows what the game shows.
 import { KINDS } from '../src/content/kinds';
 import { sv } from '../src/content/sv';
@@ -18,7 +18,7 @@ import { storyContext, storyHandoff } from '../src/content/story-context';
 import { createStoryContext } from '../src/ui/story-context';
 import '../src/ui/ui.css';
 
-const VIEWS = ['touch', 'keys', 'pad', 'purpose', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'album', 'end', 'photos', 'memory', 'sharing', 'painting', 'carving', 'party', 'bubble', 'message', 'debug'] as const;
+const VIEWS = ['touch', 'keys', 'pad', 'purpose', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'album', 'settings', 'end', 'photos', 'memory', 'sharing', 'painting', 'carving', 'party', 'bubble', 'message', 'debug'] as const;
 const params = new URLSearchParams(location.search);
 const shown = new Set((params.get('show') ?? 'touch').split(','));
 const byId = (id: string) => document.getElementById(id)!;
@@ -50,9 +50,9 @@ if (hint) {
 }
 // Three of every four kinds found: the stickers on the bag and in the album, and the empty rings between them.
 const someKinds = Object.keys(KINDS).filter((_, i) => i % 4 !== 3);
-if (shown.has('pause') || shown.has('stuck') || shown.has('album')) {
+if (shown.has('pause') || shown.has('stuck') || shown.has('album') || shown.has('settings')) {
   const pause = createPause(document, { onResume: () => pause.hide(), onSettings: () => {}, onStuck: () => pause.hide() });
-  pause.show(settingsFor('aventyr'));
+  pause.show(settingsFor('aventyr'), false, shown.has('album') ? 'bag' : shown.has('settings') ? 'settings' : 'home');
   if (shown.has('stuck')) byId('stuckBtn').click();
   if (shown.has('album')) {
     byId('pauseAlbum').innerHTML = albumHtml(shown.has('all') ? Object.keys(KINDS) : someKinds);

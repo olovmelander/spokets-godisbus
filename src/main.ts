@@ -6,8 +6,8 @@ import { Game } from './app/game';
 import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
-import { bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, nextAvailable } from './content/chapters';
-import { album, albumComplete, foundFlag } from './content/kinds';
+import { BONUS, STORY, bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, nextAvailable } from './content/chapters';
+import { album, albumComplete, foundFlag, KINDS } from './content/kinds';
 import { lostFlag, lostFound } from './content/lost';
 import { cobbleMemory } from './content/cobbles';
 import { createPhotoMoments } from './content/photos';
@@ -33,7 +33,7 @@ import type { SimStart, Vec } from './sim/types';
 import { createBench } from './ui/bench';
 import { createDebug, type Debug } from './ui/debug';
 import { createHud } from './ui/hud';
-import { createPause } from './ui/pause';
+import { createPause, type PausePage } from './ui/pause';
 import { mountShell } from './ui/shell';
 import { createTitle } from './ui/title';
 import { createPhotoAlbum } from './ui/photos';
@@ -339,14 +339,14 @@ function start(): void {
     if (ended) return byId('endCard');
     return null;
   }
-  function openPause(): void {
+  function openPause(page?: PausePage): void {
     if (menuOpen() || platformBlocked()) return;
     paused = true;
     audio.sleep(true);
     pointing.cancel();
     askedForUse = askedForHelp = false;
     input.release();
-    pause.show({ ...settings, graphics: requestedGraphics });
+    pause.show({ ...settings, graphics: requestedGraphics }, false, page);
     writeSave();
   }
   function resume(): void {
@@ -355,6 +355,8 @@ function start(): void {
       titleSettings = false;
       pause.hide();
       showTitle();
+      // Back where the hand was: on Inställningar (docs/ux-audit/menus.md row 11).
+      byId('titleSettingsBtn').focus();
       return;
     }
     paused = false;
@@ -407,20 +409,23 @@ function start(): void {
     }
   });
   void photoAlbum.refresh();
-  byId('albumPhotos').hidden = !mapState(chapter.id, canEnter);
+  // The candy bag's page (the album and the photos) belongs to the story's chapters, Byn too, not to the test and
+  // look courses; Moa's map to the places she has drawn (docs/ux-audit/menus.md row 14).
+  const storyCourse = [...STORY, ...BONUS].some((c) => c.id === chapter.id);
+  byId('albumPhotos').hidden = !storyCourse;
+  byId('pauseBagBtn').hidden = !storyCourse;
+  byId('pauseMapCard').hidden = !mapState(chapter.id, canEnter);
   byId('endPhotos').addEventListener('click', () => photoAlbum.credits());
   byId('graphicsFallback').hidden = hdrAvailable;
   byId<HTMLButtonElement>('graphicsMid').disabled = !hdrAvailable;
   byId<HTMLButtonElement>('graphicsHigh').disabled = !hdrAvailable;
-  byId('pauseBtn').addEventListener('click', openPause);
+  byId('pauseBtn').addEventListener('click', () => openPause());
+  /** The bag, G or the pad's View: straight to the candy bag's page; back from it goes straight back to play. */
   function openBag(): void {
     if (platformBlocked() || title.open || ended || memories.open || photoAlbum.open || story.open || explore.open) return;
-    if (!pause.open) openPause();
-    const album = byId('pauseAlbum');
-    if (!byId('pauseOptions').hidden) {
-      album.scrollIntoView({ block: 'start' });
-      album.focus();
-    }
+    const page = storyCourse ? 'bag' : 'home';
+    if (!pause.open) openPause(page);
+    else pause.page(page);
   }
   byId('bag').addEventListener('click', openBag);
   // Moas karta, in the pause panel and on the chapter's card: where he is, and where the ghost is heading.
@@ -910,7 +915,10 @@ function start(): void {
       }
       // The album's page, in the pause panel: in the story only.
       const keepsakes = Object.values(all).some((flags) => flags.includes('keepsake:vittra')) ? ['vittra'] : [];
-      byId('pauseAlbum').innerHTML = mapState(chapter.id, canEnter) ? albumHtml(found, lost, keepsakes) + memoryAlbumHtml(all) : '';
+      byId('pauseAlbum').innerHTML = storyCourse ? albumHtml(found, lost, keepsakes) + memoryAlbumHtml(all) : '';
+      const kinds = Object.keys(KINDS).length;
+      byId('pauseBagCount').textContent = sv.album.count.replace('{found}', String(found.length)).replace('{total}', String(kinds));
+      byId('pauseBagBtn').style.setProperty('--fill', String(kinds > 0 ? found.length / kinds : 0));
     }
     // A held scene takes the floor as it begins: what was said before it is not read over it.
     const scene = game.sim.sceneFrame;

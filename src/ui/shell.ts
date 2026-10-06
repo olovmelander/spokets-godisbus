@@ -18,6 +18,12 @@ const BIRD = svg(
 );
 /** The wooden ghost: round top, two painted eyes, two shoes, and its paper bag; no mouth. */
 const GHOST = svg(`<path d="M6 17V9a6 6 0 0 1 12 0v8c0 2-2 3-6 3s-6-1-6-3z" ${line} stroke-width="1.8"/><circle cx="10" cy="8.5" r="1" fill="currentColor"/><circle cx="14.5" cy="8.5" r="1" fill="currentColor"/><path d="M7 21h3m4 0h3M15 12h6v6h-6z" ${line} stroke-width="1.7"/>`);
+/** Back, to the page this one was opened from. */
+const BACK = svg(`<path d="M20 12H5m0 0 6-6m-6 6 6 6" ${line} stroke-width="2.4"/>`);
+/** Settings: a plain cog, with eight teeth. */
+const COG = svg(`<path d="M10.2 4.6L10.6 1.7L13.4 1.7L13.8 4.6A7.6 7.6 0 0 1 15.9 5.5L18.3 3.7L20.3 5.7L18.5 8.1A7.6 7.6 0 0 1 19.4 10.2L22.3 10.6L22.3 13.4L19.4 13.8A7.6 7.6 0 0 1 18.5 15.9L20.3 18.3L18.3 20.3L15.9 18.5A7.6 7.6 0 0 1 13.8 19.4L13.4 22.3L10.6 22.3L10.2 19.4A7.6 7.6 0 0 1 8.1 18.5L5.7 20.3L3.7 18.3L5.5 15.9A7.6 7.6 0 0 1 4.6 13.8L1.7 13.4L1.7 10.6L4.6 10.2A7.6 7.6 0 0 1 5.5 8.1L3.7 5.7L5.7 3.7L8.1 5.5A7.6 7.6 0 0 1 10.2 4.6Z" ${line} stroke-width="1.8"/><circle cx="12" cy="12" r="3.2" ${line} stroke-width="1.8"/>`);
+/** Utforska vidare: Moa's map, folded. */
+const FOLDED_MAP = svg(`<path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" ${line} stroke-width="2"/><path d="M9 4v13.5M15 6.5V20" ${line} stroke-width="2"/>`);
 const CROSS = svg(`<path d="M6 6l12 12M18 6 6 18" ${line} stroke-width="2.6"/>`);
 const PEOPLE = svg('<circle cx="8" cy="7" r="3" fill="currentColor"/><circle cx="17" cy="9" r="2.5" fill="currentColor"/><path d="M2 21v-4a6 6 0 0 1 12 0v4m1-7a5 5 0 0 1 7 5v2" fill="none" stroke="currentColor" stroke-width="2"/>');
 const HOME = svg(`<path d="m2 11 10-9 10 9M5 9v13h14V9m-10 13v-8h6v8" ${line} stroke-width="2"/>`);
@@ -77,74 +83,106 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
      <div class="notice" id="notice" role="status" hidden></div>
      <pre class="debug" id="debug" hidden></pre>
      <div class="panel-back" id="pause" hidden>
-       <div class="panel" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
-         <button class="panel-close" id="pauseClose" type="button" aria-label="${p.close}">${CROSS}</button>
-         <h2 id="pauseTitle">${p.title}</h2>
+       <div class="panel pause" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+         <div class="panel-head">
+           <button class="panel-up" id="pauseBack" type="button" hidden>${BACK}<span id="pauseBackWord">${p.title}</span></button>
+           <h2 id="pauseTitle">${p.title}</h2>
+           <button class="panel-close" id="pauseClose" type="button" aria-label="${p.close}">${CROSS}</button>
+         </div>
          <div class="pause-options" id="pauseOptions">
-         <button class="wide go" id="resumeBtn" type="button">${PLAY}<span>${p.resume}</span></button>
-         <section class="story-recap" id="pauseStory" aria-labelledby="pauseStoryTitle" hidden><h3 id="pauseStoryTitle">${sv.storyContext.recap}</h3><b id="pauseStoryPurpose"></b><p id="pauseStoryRecap"></p><h4>${sv.storyContext.family}</h4><p id="pauseStoryFamily"></p></section>
-         <button class="wide" id="fullscreenBtn" type="button" hidden>${p.fullscreen}</button>
-         <p class="setting-hint" id="fullscreenFailed" role="status" hidden>${p.fullscreenFailed}</p>
-         <h3 id="styleTitle">${p.style}</h3>
-         <div class="styles" role="radiogroup" aria-labelledby="styleTitle">
-           <button class="style" id="styleAventyr" type="button" role="radio">${LEAP}<b>${p.aventyr}</b><small>${p.aventyrHint}</small></button>
-           <button class="style" id="styleLugnt" type="button" role="radio">${STROLL}<b>${p.lugnt}</b><small>${p.lugntHint}</small></button>
-         </div>
-         <label class="switch"><input type="checkbox" id="setSwingHelp"><span>${p.swingHelp}</span></label>
-         <label class="switch"><input type="checkbox" id="setEasyJumps"><span>${p.easyJumps}</span></label>
-         <label class="switch"><input type="checkbox" id="setFollowFinger" aria-describedby="followHint"><span>${p.followFinger}</span></label>
-         <p class="setting-hint" id="followHint">${p.followHint}</p>
-         <label class="switch" id="vibrationSetting" hidden><input type="checkbox" id="setVibration"><span>${p.vibration}</span></label>
-         <label class="switch"><input type="checkbox" id="setSlower"><span>${p.slower}</span></label>
-         <label class="switch"><input type="checkbox" id="setSound"><span>${p.sound}</span></label>
-         <div class="volume" role="group" aria-labelledby="effectsVolumeLabel">
-           <span id="effectsVolumeLabel">${p.effectsVolume}</span><div class="volume-steps">
-             <button id="effectsVolumeDown" type="button" aria-label="${p.effectsQuieter}" aria-describedby="effectsVolumeValue">−</button>
-             <output id="effectsVolumeValue" aria-live="polite" aria-atomic="true">100 %</output>
-             <button id="effectsVolumeUp" type="button" aria-label="${p.effectsLouder}" aria-describedby="effectsVolumeValue">+</button>
+         <div class="pause-page pause-home" id="pauseHome">
+           <div class="pause-story">
+             <section class="map-card" id="pauseMapCard" aria-labelledby="pauseMapTitle"><h3 id="pauseMapTitle">${sv.map.title}</h3><div class="map" id="pauseMap"></div></section>
+             <section class="story-recap" id="pauseStory" aria-labelledby="pauseStoryTitle" hidden><h3 id="pauseStoryTitle">${sv.storyContext.recap}</h3><b id="pauseStoryPurpose"></b><p id="pauseStoryRecap"></p><h4>${sv.storyContext.family}</h4><p id="pauseStoryFamily"></p></section>
+           </div>
+           <div class="pause-actions">
+             <button class="wide go" id="resumeBtn" type="button">${PLAY}<span>${p.resume}</span></button>
+             <div class="ask" id="stuckAsk" hidden>
+               <p>${p.stuckAsk}</p>
+               <button class="yes" id="stuckYes" type="button" aria-label="${p.stuckYes}">${CHECK}${BIG_CANDY}</button>
+               <button class="no" id="stuckNo" type="button" aria-label="${p.stuckNo}">${CROSS}${PLAY}</button>
+             </div>
+             <div class="tiles" id="pauseTiles">
+               <button class="tile" id="pauseBagBtn" type="button">${BAG}<span>${p.bag}</span><small id="pauseBagCount"></small></button>
+               <button class="tile" id="stuckBtn" type="button">${BIG_CANDY}<span>${p.stuck}</span></button>
+               <button class="tile" id="pauseSettingsBtn" type="button">${COG}<span>${p.settings}</span></button>
+               <button class="tile" id="titleBtn" type="button">${HOME}<span>${p.home}</span></button>
+               <button class="tile" id="pauseExplore" type="button" hidden>${FOLDED_MAP}<span>${sv.explore.title}</span></button>
+             </div>
            </div>
          </div>
-         <label class="switch"><input type="checkbox" id="setMusic"><span>${p.music}</span></label>
-         <div class="volume" role="group" aria-labelledby="musicVolumeLabel">
-           <span id="musicVolumeLabel">${p.musicVolume}</span><div class="volume-steps">
-             <button id="musicVolumeDown" type="button" aria-label="${p.musicQuieter}" aria-describedby="musicVolumeValue">−</button>
-             <output id="musicVolumeValue" aria-live="polite" aria-atomic="true">100 %</output>
-             <button id="musicVolumeUp" type="button" aria-label="${p.musicLouder}" aria-describedby="musicVolumeValue">+</button>
-           </div>
+         <div class="pause-page" id="pauseBagPage" hidden>
+           <div class="album" id="pauseAlbum" tabindex="-1"></div>
+           <section id="albumPhotos" class="album-photos" aria-label="${sv.photos.title}"></section>
          </div>
-         <label class="switch"><input type="checkbox" id="setLoud"><span>${p.loud}</span></label>
-         <label class="switch"><input type="checkbox" id="setLefty"><span>${p.lefty}</span></label>
-         <label class="switch"><input type="checkbox" id="setBigText"><span>${p.bigText}</span></label>
-         <label class="switch"><input type="checkbox" id="setCalm"><span>${p.calm}</span></label>
-         <h3 id="graphicsTitle">${p.graphics}</h3>
-         <div class="levels graphics" role="radiogroup" aria-labelledby="graphicsTitle" aria-describedby="graphicsHint">
-           <button class="level" id="graphicsAuto" type="button" role="radio">${p.graphicsAuto}</button>
-           <button class="level" id="graphicsLow" type="button" role="radio">${p.graphicsLow}</button>
-           <button class="level" id="graphicsMid" type="button" role="radio">${p.graphicsMid}</button>
-           <button class="level" id="graphicsHigh" type="button" role="radio">${p.graphicsHigh}</button>
-         </div>
-         <p class="setting-hint" id="graphicsHint">${p.graphicsHint}</p>
-         <p class="setting-hint" id="graphicsFallback" role="status" hidden>${p.graphicsFallback}</p>
-         <button class="wide" id="controlsReferenceBtn" type="button">${sv.controls.title}</button>
-         <details class="setting-hint" id="homeScreenHelp"><summary>${sv.homeScreen.title}</summary>
-           <p>${sv.homeScreen.apple}</p><p>${sv.homeScreen.android}</p><p>${sv.homeScreen.offline}</p>
-         </details>
-         <h3 id="helpTitle">${portrait}<span>${p.help}</span></h3>
-         <div class="levels" role="radiogroup" aria-labelledby="helpTitle">
-           <button class="level" id="helpAsk" type="button" role="radio">${p.helpAsk}</button>
-           <button class="level" id="helpRemind" type="button" role="radio">${p.helpRemind}</button>
-           <button class="level" id="helpGuide" type="button" role="radio">${p.helpGuide}</button>
-         </div>
-         <div class="map" id="pauseMap"></div>
-         <button class="wide" id="pauseExplore" type="button" hidden><span aria-hidden="true">♧</span><span>${sv.explore.title}</span></button>
-         <div class="album" id="pauseAlbum" tabindex="-1"></div>
-         <button class="wide" id="titleBtn" type="button">${HOME}<span>${p.home}</span></button>
-         <section id="albumPhotos" class="album-photos" aria-label="${sv.photos.title}"></section>
-         <button class="wide" id="stuckBtn" type="button">${BIG_CANDY}<span>${p.stuck}</span></button>
-         <div class="ask" id="stuckAsk" hidden>
-           <p>${p.stuckAsk}</p>
-           <button class="yes" id="stuckYes" type="button" aria-label="${p.stuckYes}">${CHECK}${BIG_CANDY}</button>
-           <button class="no" id="stuckNo" type="button" aria-label="${p.stuckNo}">${CROSS}${PLAY}</button>
+         <div class="pause-page pause-settings" id="pauseSettingsPage" hidden>
+           <section class="group" aria-labelledby="groupPlay">
+             <h3 id="groupPlay">${p.groups.play}</h3>
+             <h4 id="styleTitle">${p.style}</h4>
+             <div class="styles" role="radiogroup" aria-labelledby="styleTitle">
+               <button class="style" id="styleAventyr" type="button" role="radio">${LEAP}<b>${p.aventyr}</b><small>${p.aventyrHint}</small></button>
+               <button class="style" id="styleLugnt" type="button" role="radio">${STROLL}<b>${p.lugnt}</b><small>${p.lugntHint}</small></button>
+             </div>
+             <h4 id="helpTitle">${portrait}<span>${p.help}</span></h4>
+             <div class="levels" role="radiogroup" aria-labelledby="helpTitle">
+               <button class="level" id="helpAsk" type="button" role="radio">${p.helpAsk}</button>
+               <button class="level" id="helpRemind" type="button" role="radio">${p.helpRemind}</button>
+               <button class="level" id="helpGuide" type="button" role="radio">${p.helpGuide}</button>
+             </div>
+             <label class="switch"><input type="checkbox" id="setSwingHelp"><span>${p.swingHelp}</span></label>
+             <label class="switch"><input type="checkbox" id="setEasyJumps"><span>${p.easyJumps}</span></label>
+             <label class="switch"><input type="checkbox" id="setSlower"><span>${p.slower}</span></label>
+           </section>
+           <section class="group" aria-labelledby="groupSound">
+             <h3 id="groupSound">${p.groups.sound}</h3>
+             <label class="switch"><input type="checkbox" id="setSound"><span>${p.sound}</span></label>
+             <div class="volume" role="group" aria-labelledby="effectsVolumeLabel">
+               <span id="effectsVolumeLabel">${p.effectsVolume}</span><div class="volume-steps">
+                 <button id="effectsVolumeDown" type="button" aria-label="${p.effectsQuieter}" aria-describedby="effectsVolumeValue">−</button>
+                 <output id="effectsVolumeValue" aria-live="polite" aria-atomic="true">100 %</output>
+                 <button id="effectsVolumeUp" type="button" aria-label="${p.effectsLouder}" aria-describedby="effectsVolumeValue">+</button>
+               </div>
+             </div>
+             <label class="switch"><input type="checkbox" id="setMusic"><span>${p.music}</span></label>
+             <div class="volume" role="group" aria-labelledby="musicVolumeLabel">
+               <span id="musicVolumeLabel">${p.musicVolume}</span><div class="volume-steps">
+                 <button id="musicVolumeDown" type="button" aria-label="${p.musicQuieter}" aria-describedby="musicVolumeValue">−</button>
+                 <output id="musicVolumeValue" aria-live="polite" aria-atomic="true">100 %</output>
+                 <button id="musicVolumeUp" type="button" aria-label="${p.musicLouder}" aria-describedby="musicVolumeValue">+</button>
+               </div>
+             </div>
+             <label class="switch"><input type="checkbox" id="setLoud"><span>${p.loud}</span></label>
+           </section>
+           <section class="group" aria-labelledby="groupControls">
+             <h3 id="groupControls">${p.groups.controls}</h3>
+             <label class="switch"><input type="checkbox" id="setLefty"><span>${p.lefty}</span></label>
+             <label class="switch"><input type="checkbox" id="setFollowFinger" aria-describedby="followHint"><span>${p.followFinger}</span></label>
+             <p class="setting-hint" id="followHint">${p.followHint}</p>
+             <label class="switch" id="vibrationSetting" hidden><input type="checkbox" id="setVibration"><span>${p.vibration}</span></label>
+           </section>
+           <section class="group" aria-labelledby="groupPicture">
+             <h3 id="groupPicture">${p.groups.picture}</h3>
+             <label class="switch"><input type="checkbox" id="setBigText"><span>${p.bigText}</span></label>
+             <label class="switch"><input type="checkbox" id="setCalm"><span>${p.calm}</span></label>
+             <button class="wide" id="fullscreenBtn" type="button" hidden>${p.fullscreen}</button>
+             <p class="setting-hint" id="fullscreenFailed" role="status" hidden>${p.fullscreenFailed}</p>
+           </section>
+           <section class="group" aria-labelledby="groupGrownups">
+             <h3 id="groupGrownups">${p.groups.grownups}</h3>
+             <h4 id="graphicsTitle">${p.graphics}</h4>
+             <div class="levels graphics" role="radiogroup" aria-labelledby="graphicsTitle" aria-describedby="graphicsHint">
+               <button class="level" id="graphicsAuto" type="button" role="radio">${p.graphicsAuto}</button>
+               <button class="level" id="graphicsLow" type="button" role="radio">${p.graphicsLow}</button>
+               <button class="level" id="graphicsMid" type="button" role="radio">${p.graphicsMid}</button>
+               <button class="level" id="graphicsHigh" type="button" role="radio">${p.graphicsHigh}</button>
+             </div>
+             <p class="setting-hint" id="graphicsHint">${p.graphicsHint}</p>
+             <p class="setting-hint" id="graphicsFallback" role="status" hidden>${p.graphicsFallback}</p>
+             <button class="wide" id="controlsReferenceBtn" type="button">${sv.controls.title}</button>
+             <details class="setting-hint" id="homeScreenHelp"><summary>${sv.homeScreen.title}</summary>
+               <p>${sv.homeScreen.apple}</p><p>${sv.homeScreen.android}</p><p>${sv.homeScreen.offline}</p>
+             </details>
+           </section>
          </div>
          </div>
          <div class="controls-reference" id="controlsReference" hidden>

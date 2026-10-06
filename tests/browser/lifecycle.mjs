@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { settingsPage } from './pause.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -151,9 +152,10 @@ try {
   }
   // High owns HDR targets as well as meshes/textures; loss must restore those targets too.
   await game.page.keyboard.press('Escape');
+  await settingsPage(game.page);
   await game.page.locator('#graphicsHigh').click();
   await until(game.info, (s) => s.tier === 'high', 'High before context loss');
-  await game.page.keyboard.press('Escape');
+  await game.page.locator('#pauseClose').click();
   await game.page.evaluate(() => {
     const gl = document.getElementById('game').getContext('webgl2');
     window.__loss = gl.getExtension('WEBGL_lose_context');

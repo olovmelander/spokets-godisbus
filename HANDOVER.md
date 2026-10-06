@@ -2,6 +2,17 @@
 
 ## State (5 October 2026)
 
+- **A short Pause, with pages of its own** (6 October, a cloud session; `docs/ux-audit.md`, the first half of step
+  5). Pause opens on one short page: Moa's map, titled and fitted to what she has drawn, the story so far under it,
+  *Spela vidare*, and four tiles: *Godispåsen* with its count, *Jag har fastnat* (its question asks in place of
+  the tiles, where the finger was), *Inställningar* and *Till startsidan*, and *Utforska vidare* once the story is
+  done. The bag and the settings are pages of their own under one header that stays put: the ✕ always at the
+  right, the way back at the left. The corner bag, G and the pad's View open the bag's page straight from play,
+  and back from it goes straight back to play. At 700 px and wider the panel is 760 px in two columns, and
+  *Spela vidare* and the four tiles are in view at 844×390. The album and the photos belong to the story's
+  chapters, Byn too, and no longer show on the test and look courses. Not yet: the settings with pictures, drawn
+  switches and the volume as pips (the second half of step 5), and the same header on the photo viewer and
+  *Utforska vidare*.
 - **A clear screen for the story** (6 October, a cloud session; `docs/ux-audit.md`, step 4). In held scenes and in
   the coda only Pause stays over the picture; a chapter's card keeps the stick and the buttons and nothing else;
   the fade from black covers the corners. The time card is a torn scrap of Moa's paper with the place large and
@@ -1635,7 +1646,7 @@
   scale, colour tokens, button states); 2, the controls a thumb can trust; 3, every speaker their own; 4, a clear
   screen for the story; 5, a pause that is short; 6, one movement from the tap to the story; 7, the materials;
   8, the UI's sound together with the narrative audit's step 3; 9, the page as a page; 10, the collections; 11, a
-  picture for every verb. Built: steps 1 to 4 (see "State"). The narrative audit's later steps go on around them.
+  picture for every verb. Built: steps 1 to 4, and the first half of 5 (see "State"). The narrative audit's later steps go on around them.
 - **The story's pull requests (this session's: #148, merged, and the endings after it): Olov plays the new
   intro and the new chapter endings, and the story's work goes on in the overview's order**
   (`docs/narrative-audit.md`, "The order of the work"). Neither raises `RELEASED_CHAPTER`, touches likeness
@@ -1901,8 +1912,8 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
-- **The UX audit's defects, not yet mended** (`docs/ux-audit.md`, in the order of the work): Pause is 8.4 panel
-  heights at 844×390 with its ✕ scrolling away; *Foton* shows on Byn with nothing in it.
+- **The UX audit's defects, not yet mended** (`docs/ux-audit.md`, in the order of the work): the settings are still
+  browser checkboxes and steppers with no pictures, on a page of their own now; a pad walks them one stop at a time.
 - **The prologue's stand-ins act roughly** (5 October): box figures in place of the family, so a kneel or a
   shrug reads stiffly, and Pappa's hand under Elof is a block. The private models have not been posed by the new
   acting yet; their bones' signs follow Elof's doll and are untested with it (Olov's computer).

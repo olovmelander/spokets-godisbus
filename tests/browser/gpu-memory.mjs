@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { settingsPage } from './pause.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -61,6 +62,7 @@ try {
     await frames(page);
     const low = await info(page);
     gate(`${course} Low tablet`, low);
+    await settingsPage(page);
     for (const tier of ['mid', 'high']) {
       await page.locator(`#graphics${tier[0].toUpperCase()}${tier.slice(1)}`).click();
       await frames(page);
@@ -96,6 +98,8 @@ try {
     assert.deepEqual(footprint(await info(page)), footprint(high), `resize ${cycle + 1}: tablet storage returns to baseline`);
   }
   check('repeated viewport changes retain no abandoned render targets', true);
+  // Back to Pause's first page, where Escape closes the panel.
+  await page.locator('#pauseBack').click();
   for (let cycle = 0; cycle < 10; cycle++) {
     await page.keyboard.press('Escape');
     await frames(page, 2);

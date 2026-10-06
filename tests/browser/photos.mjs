@@ -126,7 +126,9 @@ try {
       };
     }));
     check('the saved frame contains actual rendered pixels at thumbnail dimensions', pixels.width <= 640 && pixels.height <= 360 && pixels.colours > 100);
-    await page.keyboard.press('Escape');
+    // G opens the candy bag's own page in Pause, where the album is (docs/ux-audit/menus.md row 1).
+    await page.keyboard.press('g');
+    check('G opens the candy bag’s page with its photos', await page.locator('#pauseBagPage').isVisible() && await page.locator('.photo-thumb').isVisible() && (await state()).paused);
     await page.locator('.photo-thumb').click();
     const before = await state();
     check('thumbnail opens its named image while the game remains paused', await page.locator('#photoCaption').textContent() === 'På tranans rygg' && before.paused && await page.locator('#pause').isHidden());
@@ -135,9 +137,9 @@ try {
     await page.keyboard.press('ArrowLeft');
     check('photo navigation leaves simulation stopped', (await state()).steps === before.steps);
     await page.keyboard.press('Escape');
-    check('Escape returns to the paused album and restores thumbnail focus', await page.locator('#pause').isVisible() && await page.evaluate(() => document.activeElement.classList.contains('photo-thumb')) && (await state()).paused);
+    check('Escape returns to the paused album and restores thumbnail focus', await page.locator('#pause').isVisible() && await page.locator('#pauseBagPage').isVisible() && await page.evaluate(() => document.activeElement.classList.contains('photo-thumb')) && (await state()).paused);
     await page.keyboard.press('Escape');
-    check('a second Escape resumes play', !(await state()).paused);
+    check('a second Escape goes straight back to play, as the bag was opened from play', !(await state()).paused);
     await page.reload(); await ready(page);
     check('the same photo survives a reload', (await savedFrames(page)).length === 1);
     await sleep(2600);
@@ -170,8 +172,8 @@ try {
       ? () => { Object.defineProperty(window, 'indexedDB', { get() { throw new DOMException('Denied', 'SecurityError'); } }); }
       : () => { IDBObjectStore.prototype.put = function () { throw new DOMException('Full', 'QuotaExceededError'); }; });
     await until(state, (s) => s.x > 4, 'crane keeps flying when photo storage fails', 30000);
-    await page.keyboard.press('Escape');
-    check(`${failure} storage silently leaves a usable album without photos`, (await state()).paused && await page.locator('.photo-thumb').count() === 0 && await page.locator('#message').isHidden());
+    await page.keyboard.press('g');
+    check(`${failure} storage silently leaves a usable album without photos`, (await state()).paused && await page.locator('#pauseAlbum').isVisible() && await page.locator('.photo-thumb').count() === 0 && await page.locator('#message').isHidden());
     await page.keyboard.press('Escape');
     check(`${failure} storage still allows play to resume`, !(await state()).paused);
     await finish();

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
 import { withinDraws } from './budget.mjs';
+import { settingsPage } from './pause.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -167,12 +168,16 @@ async function open(name, options, query = '?debug') {
   await page.keyboard.up('ArrowRight');
   const stillThere = await state();
   check('the game stands still while it is open', stillThere.paused === true && stillThere.x === still.x, `x ${stillThere.x.toFixed(2)}`);
+  await settingsPage(page);
   await page.click('#styleLugnt');
   check('Lugnt switches on its helps', (await page.isChecked('#setSwingHelp')) && (await page.isChecked('#setEasyJumps')) && (await page.isChecked('#setLoud')));
   // Vänsterhänt (plan §4.1): the buttons swap sides.
   await page.check('#setLefty');
   const hop = await page.evaluate(() => ({ lefty: document.body.classList.contains('lefty'), left: getComputedStyle(document.getElementById('hopBtn')).left, right: getComputedStyle(document.getElementById('hopBtn')).right }));
   check('Vänsterhänt moves Hoppa to the left side', hop.lefty && hop.right === 'auto', `left ${hop.left}, right ${hop.right}`);
+  // The header's back arrow returns to the first page, where Spela vidare is.
+  await page.click('#pauseBack');
+  check('the header goes back to the first page', await page.locator('#pauseHome').isVisible() && await page.locator('#pauseSettingsPage').isHidden());
   await page.click('#resumeBtn');
   const resumed = await state();
   check('Spela vidare closes it', (await page.locator('#pause').isHidden()) && resumed.paused === false && resumed.style === 'lugnt', resumed.style);

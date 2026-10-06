@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { settingsPage } from './pause.mjs';
 import { picture } from './picture.mjs';
 import { withinDraws } from './budget.mjs';
 const BASE = '/spokets-godisbus/';
@@ -36,12 +37,13 @@ try {
     await frames(page);
     await page.keyboard.press('Escape');
     for (const tier of (process.env.SHADOW_VISUAL ? ['low', 'mid', 'high'] : course === 'garden' ? ['low', 'mid', 'high', 'mid', 'high', 'low'] : ['low', 'mid', 'high', 'low'])) {
+      await settingsPage(page);
       await page.click(`#graphics${tier[0].toUpperCase()}${tier.slice(1)}`);
       await frames(page);
       const drawn = await info(page);
       check(`${course} ${tier}: correct contact/map variant`, drawn.shadows.characters >= 1 && drawn.shadows.contact === (tier !== 'low') && drawn.shadows.mapSize === (tier === 'high' ? 1024 : 0));
       check(`${course} ${tier}: bounded draws`, withinDraws(drawn.drawCalls, drawn.tier));
-      await page.click('#resumeBtn');
+      await page.click('#pauseClose');
       const programs = (await info(page)).programs;
       await frames(page);
       check(`${course} ${tier}: no shader compiled during play`, (await info(page)).programs === programs);

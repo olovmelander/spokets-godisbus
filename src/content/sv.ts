@@ -438,6 +438,10 @@ export const sv = {
   pause: {
     open: 'Paus',
     title: 'Paus',
+    // Pause's own pages (docs/ux-audit/menus.md rows 1 and 6).
+    bag: 'Godispåsen',
+    settings: 'Inställningar',
+    groups: { play: 'Så spelar du', sound: 'Ljud', controls: 'Styrning', picture: 'Bild och text', grownups: 'För vuxna' },
     resume: 'Spela vidare',
     home: 'Till startsidan',
     close: 'Stäng',

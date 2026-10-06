@@ -109,5 +109,23 @@ export function mapSvg(state: MapState | null, named = false, wayOn = false): st
   const way = wayOn && to && ghostAt !== state.here
     ? `<path class="way-on" pathLength="1" d="M${from.x} ${from.y + 20}Q${(from.x + to.x) / 2} ${Math.min(from.y, to.y) - 4} ${to.x} ${to.y + 20}" ${crayon} stroke="#d4453b" stroke-width="3.4"/>`
     : '';
-  return `<svg class="moas-karta" viewBox="0 -16 380 180" role="img" aria-label="${sv.map.title}"><path d="${route}" ${crayon} stroke="#b9976a" stroke-width="3" stroke-dasharray="2 8"/>${way}${places}${ghost}${elof}${note}</svg>`;
+  // Moa's paper is as big as what she has drawn, so a first page is not mostly blank cream (docs/ux-audit/menus.md
+  // row 3): what is drawn, with room round it, and never narrower than 220 units. An unfinished map keeps the whole
+  // sheet for its note.
+  let box = '0 -16 380 180';
+  if (!state.unfinished) {
+    const xs = [...state.drawn.map((place) => AT[place].x), here.x - 22, ...(to ? [to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)] : [])];
+    const ys = state.drawn.map((place) => AT[place].y);
+    const top = Math.min(...ys.map((y) => y - 36), here.y - 58, ...(to ? [to.y - (state.drawn.includes(ghostAt!) ? 26 : 0) - 30] : []));
+    const bottom = Math.max(...ys) + 50;
+    let left = Math.min(...xs) - 34;
+    let right = Math.max(...xs) + 34;
+    if (right - left < 220) {
+      const grow = (220 - (right - left)) / 2;
+      left -= grow;
+      right += grow;
+    }
+    box = `${Math.round(left)} ${Math.round(top)} ${Math.round(right - left)} ${Math.round(bottom - top)}`;
+  }
+  return `<svg class="moas-karta" viewBox="${box}" role="img" aria-label="${sv.map.title}"><path d="${route}" ${crayon} stroke="#b9976a" stroke-width="3" stroke-dasharray="2 8"/>${way}${places}${ghost}${elof}${note}</svg>`;
 }

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
 import { withinDraws } from './budget.mjs';
+import { settingsPage } from './pause.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -159,9 +160,10 @@ try {
     const { page, context, state, finish } = await open(name, { viewport, hasTouch: true, isMobile: true }, query('40.6,-0.79', `&flags=${HAND}`));
     await until(state, s => s.grounded && s.verb === 'take' && s.steps > 30, 'near the hand');
     await page.tap('#pauseBtn');
+    await settingsPage(page);
     await page.check('#setFollowFinger');
     if (viewport.width === 390) await page.check('#setLefty');
-    await page.tap('#resumeBtn');
+    await page.tap('#pauseClose');
     const cdp = await context.newCDPSession(page);
     const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
     // Where the game offers the hand's action: over the hand, clear of Elof himself (Sim.actionAt).
@@ -246,10 +248,11 @@ try {
   {
     const { page, state, finish } = await open('mirrored follow lesson', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }, query('1,0.01'));
     await page.tap('#pauseBtn');
+    await settingsPage(page);
     await page.check('#setFollowFinger');
     await page.check('#setLefty');
     await page.check('#setCalm');
-    await page.tap('#resumeBtn');
+    await page.tap('#pauseClose');
     await shown(page, 'move');
     const hint = await page.locator('#tutorial').boundingBox();
     check('mirrored Follow finger still teaches moving right into the story', hint.x + hint.width / 2 > (await state()).playerScreen.x && hint.x + hint.width <= 390);

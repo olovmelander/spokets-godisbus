@@ -6,6 +6,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
+import { settingsPage } from './pause.mjs';
 
 const BASE = '/spokets-godisbus/';
 const ROOT = fileURLToPath(new URL('../../', import.meta.url)), DIST = join(ROOT, 'dist');
@@ -126,7 +127,7 @@ try {
 
   if (!process.env.MOUNTAIN_CASE || process.env.MOUNTAIN_CASE === 'lugnt') {
     const { page, state, info, finish } = await open('Lugnt', 844, 390, 'low', { checkpoint: 3, flags: ['flight'], style: 'lugnt' });
-    await page.keyboard.press('Escape'); await page.locator('#styleLugnt').click(); await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape'); await settingsPage(page); await page.locator('#styleLugnt').click(); await page.locator('#pauseClose').click();
     check('Lugnt: original lower-cliff restore still offers the existing lift', (await state()).style === 'lugnt');
     await page.keyboard.down('ArrowRight');
     await until(state, (s) => s.word === 'lift', 'Lugnt: lift offered');

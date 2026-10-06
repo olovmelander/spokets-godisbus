@@ -6,6 +6,7 @@ import { createServer } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { settingsPage } from './pause.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -125,6 +126,7 @@ try {
     await page.keyboard.press('Escape');
     const before = progress(await state());
     await page.evaluate(() => { window.__settingsPageIdentity = 'same game'; });
+    await settingsPage(page);
     await page.check('#setFollowFinger');
     check('an unrelated checkbox does not save a temporary ?tier override', (await state()).settings.graphics === 'auto' && (new URL(page.url())).searchParams.get('tier') === 'low');
     await page.click('#graphicsLow');
@@ -148,9 +150,13 @@ try {
     check('changing play style preserves Follow finger and graphics', chosen.settings.followFinger && chosen.settings.graphics === 'high');
     await page.focus('#setFollowFinger');
     await page.keyboard.press('Escape');
-    check('Escape closes settings when a checkbox has focus', (await page.locator('#pause').isHidden()) && !(await state()).paused);
+    check('Escape goes back from the settings to Pause\'s first page when a checkbox has focus',
+      (await state()).paused && await page.locator('#pauseHome').isVisible() && await page.locator('#pauseSettingsPage').isHidden());
+    await page.keyboard.press('Escape');
+    check('a second Escape closes the panel', (await page.locator('#pause').isHidden()) && !(await state()).paused);
     await page.keyboard.press('g');
     check('G opens the pause panel on the test course', (await state()).paused && await page.locator('#pause').isVisible());
+    await settingsPage(page);
     await page.click('#graphicsAuto');
     check('Auto can be selected from settings', (await state()).settings.graphics === 'auto');
     await page.click('#graphicsLow');
@@ -173,8 +179,9 @@ try {
   {
     const { page, context, state, finish } = await open('follow', { hasTouch: true, isMobile: true });
     await page.tap('#pauseBtn');
+    await settingsPage(page);
     await page.check('#setFollowFinger');
-    await page.tap('#resumeBtn');
+    await page.tap('#pauseClose');
     const cdp = await context.newCDPSession(page);
     const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
     for (const portrait of [false, true]) {
@@ -182,8 +189,9 @@ try {
         await page.setViewportSize({ width: 390, height: 844 });
         await frames(page);
         check('rotation opens pause before changing handedness', (await state()).paused);
+        await settingsPage(page);
         await page.check('#setLefty');
-        await page.tap('#resumeBtn');
+        await page.tap('#pauseClose');
       }
       const layout = portrait ? 'portrait, left-handed' : 'landscape';
       // Framing follows facing. After relayout it settles only once play resumes; choose a target
@@ -231,6 +239,9 @@ try {
     await padPress(page, 9); // Start
     check('gamepad Start pauses the game', (await state()).paused && await page.locator('#pause').isVisible());
     const still = progress(await state());
+    await padFocus(page, 'pauseSettingsBtn');
+    await padPress(page, 0);
+    check('gamepad A opens the settings page', await page.locator('#pauseSettingsPage').isVisible());
     await padFocus(page, 'setFollowFinger');
     await padPress(page, 0);
     check('gamepad A toggles a setting', (await state()).settings.followFinger);
@@ -246,7 +257,9 @@ try {
     check('gamepad B returns to settings and remains paused', (await state()).paused && await page.locator('#controlsReference').isHidden());
     assert.deepEqual(progress(await state()), still, 'Menu navigation never advances the simulation');
     await padPress(page, 1);
-    check('a second B resumes the game', !(await state()).paused && await page.locator('#pause').isHidden());
+    check('a second B returns to Pause\'s first page', (await state()).paused && await page.locator('#pauseHome').isVisible());
+    await padPress(page, 1);
+    check('a third B resumes the game', !(await state()).paused && await page.locator('#pause').isHidden());
     await padPress(page, 8); // View: bag
     check('gamepad View opens the bag/pause panel', (await state()).paused && await page.locator('#pause').isVisible());
     await finish();

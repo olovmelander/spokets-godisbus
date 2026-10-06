@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { settingsPage } from './pause.mjs';
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -62,6 +63,7 @@ try {
   await ready(page);
   check('loading settings creates no AudioContext and does not bypass autoplay', await page.evaluate(() => window.__audioContexts === 0));
   await page.tap('#pauseBtn');
+  await settingsPage(page);
   const full = await gains(page);
   assert.equal(full.length, 4, 'the gesture builds master, effects, music and ambience buses');
   const musicBase = full[2];

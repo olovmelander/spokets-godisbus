@@ -3,9 +3,13 @@ import type { HelpLevel } from '../sim/types';
 import { sv } from '../content/sv';
 
 /**
- * The pause panel (plan §6.10): Spela vidare, the play style and its switches, and "Jag har fastnat".
+ * The pause panel (plan §6.10): a short first page (Moa's map and the story so far, Spela vidare, and four
+ * tiles: Godispåsen, Jag har fastnat, Inställningar, Till startsidan), with the candy bag and the settings as
+ * pages of their own under one header that stays put (docs/ux-audit/menus.md rows 1-4). Back returns to where
+ * the panel was entered: a page opened straight from play goes straight back to play.
  * Its markup is built by the shell, so dev/menus.html shows the same panel as the game.
  */
+export type PausePage = 'home' | 'bag' | 'settings' | 'reference';
 export interface PauseHandlers {
   /** The player wants to go on: the ✕, the backdrop, or Spela vidare. */
   onResume(): void;
@@ -18,9 +22,12 @@ export interface PauseHandlers {
 
 export interface Pause {
   readonly open: boolean;
-  show(settings: Settings, fromTitle?: boolean): void;
+  /** Opens the panel, on its first page or on `page`; from the title, on the settings. */
+  show(settings: Settings, fromTitle?: boolean, page?: PausePage): void;
+  /** Turns to a page while the panel is open. */
+  page(page: PausePage): void;
   hide(): void;
-  /** Back from the reference/confirmation first; otherwise resume. */
+  /** Back one step: the stuck question, then the page, then out of the panel. */
   back(): void;
 }
 
@@ -43,8 +50,16 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   };
   const levels: Record<HelpLevel, HTMLButtonElement> = { ask: byId('helpAsk'), remind: byId('helpRemind'), guide: byId('helpGuide') };
   const ask = byId('stuckAsk');
+  const tiles = byId('pauseTiles');
   const options = byId('pauseOptions');
   const reference = byId('controlsReference');
+  const pages: Record<Exclude<PausePage, 'reference'>, HTMLElement> = {
+    home: byId('pauseHome'), bag: byId('pauseBagPage'), settings: byId('pauseSettingsPage'),
+  };
+  const titles: Record<PausePage, string> = { home: sv.pause.title, bag: sv.pause.bag, settings: sv.pause.settings, reference: sv.controls.title };
+  const parentOf: Record<PausePage, PausePage | null> = { home: null, bag: 'home', settings: 'home', reference: 'settings' };
+  let page: PausePage = 'home';
+  let entry: PausePage = 'home';
   const graphics: Record<Graphics, HTMLButtonElement> = {
     auto: byId('graphicsAuto'), low: byId('graphicsLow'), mid: byId('graphicsMid'), high: byId('graphicsHigh'),
   };
@@ -112,35 +127,57 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
     }
   }
 
-  function showReference(show: boolean): void {
-    reference.hidden = !show;
-    options.hidden = show;
-    byId('pauseTitle').textContent = show ? sv.controls.title : sv.pause.title;
-    byId(show ? 'controlsBack' : 'controlsReferenceBtn').focus();
+  /** Turns to a page: the header names it, and offers the way back to where it was opened from. */
+  function go(next: PausePage, from?: PausePage): void {
+    const returning = from !== undefined;
+    page = next;
+    for (const [name, element] of Object.entries(pages)) element.hidden = name !== next;
+    options.hidden = next === 'reference';
+    reference.hidden = next !== 'reference';
+    byId('pauseTitle').textContent = titles[next];
+    // The key reference has its own way back, so the header doesn't offer a second one.
+    const up = next === entry || next === 'reference' ? null : parentOf[next];
+    byId('pauseBack').hidden = up === null;
+    if (up) byId('pauseBackWord').textContent = titles[up];
+    if (next !== 'home') stuck(false);
+    byId<HTMLElement>('pause').querySelector<HTMLElement>('.panel')!.scrollTop = 0;
+    // Focus where the hand is wanted: coming back, on the tile that opened the page left behind.
+    const focus = returning && next === 'home' ? (from === 'bag' ? 'pauseBagBtn' : from === 'settings' ? 'pauseSettingsBtn' : 'resumeBtn')
+      : returning && next === 'settings' ? 'controlsReferenceBtn'
+        : next === 'home' ? 'resumeBtn' : next === 'bag' ? 'pauseAlbum' : next === 'settings' ? (settings.style === 'lugnt' ? 'styleLugnt' : 'styleAventyr') : 'controlsBack';
+    byId(focus).focus({ preventScroll: true });
+  }
+  /** "Jag har fastnat" asks in place of the tiles, so ✓ and ✕ come where the finger was. */
+  function stuck(asking: boolean): void {
+    ask.hidden = !asking;
+    tiles.hidden = asking;
+    if (asking) byId('stuckYes').focus();
   }
   function backOne(): void {
-    if (!reference.hidden) showReference(false);
-    else if (!ask.hidden) {
-      ask.hidden = true;
+    if (!ask.hidden) {
+      stuck(false);
       byId('stuckBtn').focus();
-    } else handlers.onResume();
+    } else if (page !== entry && parentOf[page]) go(parentOf[page]!, page);
+    else handlers.onResume();
   }
-  byId('controlsReferenceBtn').addEventListener('click', () => showReference(true));
-  byId('controlsBack').addEventListener('click', () => showReference(false));
+  byId('controlsReferenceBtn').addEventListener('click', () => go('reference'));
+  byId('controlsBack').addEventListener('click', () => go('settings', 'reference'));
+  byId('pauseBagBtn').addEventListener('click', () => go('bag'));
+  byId('pauseSettingsBtn').addEventListener('click', () => go('settings'));
+  byId('pauseBack').addEventListener('click', () => { if (parentOf[page]) go(parentOf[page]!, page); });
 
   byId('titleBtn').addEventListener('click', () => handlers.onTitle?.());
   byId('resumeBtn').addEventListener('click', () => handlers.onResume());
-  byId('pauseClose').addEventListener('click', backOne);
-  // A tap on the backdrop closes the panel; a tap inside it doesn't.
+  // The ✕ always closes the panel, from any page.
+  byId('pauseClose').addEventListener('click', () => handlers.onResume());
+  // A tap on the backdrop goes back as Escape does; a tap inside the panel doesn't.
   back.addEventListener('click', (event) => {
     if (event.target === back) backOne();
   });
-  byId('stuckBtn').addEventListener('click', () => {
-    ask.hidden = false;
-    byId('stuckYes').focus();
-  });
+  byId('stuckBtn').addEventListener('click', () => stuck(true));
   byId('stuckNo').addEventListener('click', () => {
-    ask.hidden = true;
+    stuck(false);
+    byId('stuckBtn').focus();
   });
   byId('stuckYes').addEventListener('click', () => handlers.onStuck());
 
@@ -148,18 +185,18 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
     get open() {
       return open;
     },
-    show(current, fromTitle = false) {
-      byId('resumeBtn').querySelector('span')!.textContent = fromTitle ? sv.players.back : sv.pause.resume;
-      for (const id of ['pauseMap', 'pauseAlbum', 'albumPhotos', 'stuckBtn', 'titleBtn']) byId(id).hidden = fromTitle;
+    show(current, fromTitle = false, start: PausePage = fromTitle ? 'settings' : 'home') {
       settings = current;
       open = true;
+      entry = start;
       ask.hidden = true;
-      reference.hidden = true;
-      options.hidden = false;
-      byId('pauseTitle').textContent = sv.pause.title;
+      tiles.hidden = false;
       draw();
       back.hidden = false;
-      byId('resumeBtn').focus();
+      go(start);
+    },
+    page(next) {
+      if (open) go(next);
     },
     hide() {
       open = false;
