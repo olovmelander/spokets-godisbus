@@ -206,7 +206,7 @@ describe('the wind', () => {
     expect(blades.customProgramCacheKey()).toBe(stalk.customProgramCacheKey());
     expect(blades.customProgramCacheKey()).not.toBe(plain.customProgramCacheKey());
     expect(blades.customProgramCacheKey()).toContain('wind-v1');
-    expect(blades.customProgramCacheKey()).toContain('place-grade-v1');
+    expect(blades.customProgramCacheKey()).toContain('place-grade-v2');
 
     const compiled = (material: MeshStandardMaterial) => {
       const shader = {

@@ -288,6 +288,12 @@ boulders. Two things are different in the open:
 - **The bog's ground is islands.** It goes down into the water behind the path, and the water lies as far
   back as the eye reaches. The soft tussocks are mounds of paler moss.
 
+**Haze and sky** use one colour order on every tier: linear light, haze, the place's grade, then Neutral
+and sRGB. Low grades inside each material; Mid and High grade the complete HDR picture. The sky is a
+camera-locked triangle in the scene, outside the fog, so it receives that same grade on Low too. Nightfall
+changes its brightness and the live haze colour together. This does not make whole frames identical:
+High still has its depth blur, glow and shadows, and transparent layers blend in the tier's output space.
+
 **Water** (`src/render/water.ts`) is one mesh in a chapter and one shader on every tier:
 - **It mirrors its place.** The backdrop's sky, and the far layers' pictures standing on their heads, hinged
   where the nearest of them meets the water; a street puddle mirrors the house fronts behind it instead. The
