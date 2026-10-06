@@ -1,19 +1,25 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createAudio } from '../../src/audio/audio';
+import { createAudio, uiKey } from '../../src/audio/audio';
 import { arrangementFor } from '../../src/audio/music';
 
 class Parameter {
   value = 0;
+  /** Where the last ramp goes: what the level will be once it has glided there. */
+  target: number | null = null;
   setValueAtTime() {}
-  exponentialRampToValueAtTime() {}
-  linearRampToValueAtTime() {}
+  exponentialRampToValueAtTime(to: number) { this.target = to; }
+  linearRampToValueAtTime(to: number) { this.target = to; }
+  setTargetAtTime(to: number) { this.target = to; }
+  cancelScheduledValues() { this.target = null; }
 }
 class Node {
   gain = new Parameter(); frequency = new Parameter(); Q = new Parameter();
+  type = '';
   onended: (() => void) | null = null;
   starts: number[] = []; stops: (number | undefined)[] = [];
   connect(other: Node) { return other; }
   disconnect() {}
+  addEventListener() {}
   start(at = 0) { this.starts.push(at); }
   stop(at?: number) { this.stops.push(at); }
 }
@@ -24,7 +30,8 @@ class Context {
   constructor() { Context.instance = this; }
   createDynamicsCompressor() { return new Node(); }
   createGain() { const gain = new Node(); this.gains.push(gain); return gain; }
-  createBiquadFilter() { return new Node(); }
+  filters: Node[] = [];
+  createBiquadFilter() { const filter = new Node(); this.filters.push(filter); return filter; }
   createBuffer(_channels: number, frames: number) { return { getChannelData: () => new Float32Array(frames) }; }
   createBufferSource() { const source = new Node(); this.sources.push(source); return source; }
   createOscillator() { return this.createBufferSource(); }
@@ -74,5 +81,79 @@ describe('audio pause lifecycle', () => {
     audio.sleep(true);
     audio.unlock();
     expect(ctor).not.toHaveBeenCalled();
+  });
+});
+
+describe('sound under a menu (docs/ux-audit/style-and-sound.md rows 20 and 21)', () => {
+  it('stops the world, keeps the tune going muffled and the air lower, and lets the UI sound', () => {
+    vi.stubGlobal('window', { AudioContext: Context });
+    const audio = createAudio();
+    audio.setPlace(arrangementFor('garden', 'garden'));
+    audio.unlock();
+    const context = Context.instance;
+    context.state = 'running';
+    context.currentTime = 0.3;
+    audio.tick(false);
+    audio.play({ kind: 'call', who: 'mamma' });
+    const calling = context.sources.filter((s) => s.starts.some((at) => at > 0.3));
+    const played = audio.played;
+    audio.menu(true);
+    expect(audio.mode).toBe('menu');
+    expect(audio.running).toBe(true);
+    // The world's sounds are cut; the tune's are not.
+    expect(calling.some((s) => s.stops.includes(undefined))).toBe(true);
+    const [master, effects, music, ambience] = context.gains;
+    // The first filter the context makes is the paper the tune is heard through.
+    const muffle = context.filters[0]!;
+    expect(muffle.frequency.target).toBe(1100);
+    expect(music!.gain.target).toBeCloseTo(music!.gain.value * 0.355);
+    expect(ambience!.gain.target).toBeCloseTo(effects!.gain.value * 0.5);
+    audio.play({ kind: 'jump' });
+    expect(audio.played).toBe(played);
+    const bars = audio.bars;
+    for (let t = 1; t <= 4; t++) { context.currentTime = 0.3 + t; audio.tick(false); }
+    expect(audio.bars).toBeGreaterThan(bars);
+    const sources = context.sources.length;
+    audio.ui('press');
+    expect(audio.uiPlayed).toBe(1);
+    expect(context.sources.length).toBeGreaterThan(sources);
+
+    // Left alone for half a minute the menu goes quiet; the next touch wakes it.
+    context.currentTime = 40;
+    audio.tick(false);
+    expect(audio.mode).toBe('off');
+    expect(master!.gain.target).toBe(0);
+    audio.unlock();
+    expect(audio.mode).toBe('menu');
+    expect(master!.gain.value).toBe(0.8);
+
+    audio.menu(false);
+    expect(audio.mode).toBe('play');
+    expect(muffle.frequency.target).toBe(20000);
+    audio.play({ kind: 'jump' });
+    expect(audio.played).toBe(played + 1);
+  });
+
+  it('is silent with Ljud off, and off while the page is hidden', () => {
+    vi.stubGlobal('window', { AudioContext: Context });
+    const audio = createAudio();
+    audio.unlock();
+    Context.instance.state = 'running';
+    audio.menu(true);
+    audio.setEffects(0);
+    audio.ui('press');
+    expect(audio.uiPlayed).toBe(0);
+    audio.setEffects(1);
+    audio.sleep(true);
+    audio.ui('press');
+    expect(audio.uiPlayed).toBe(0);
+    expect(audio.mode).toBe('off');
+  });
+
+  it('plays the UI in the place\'s key, folded round D', () => {
+    expect(uiKey(0)).toBe(0);
+    expect(uiKey(-12)).toBe(0);
+    expect(uiKey(-5)).toBe(7);
+    expect(uiKey(9)).toBe(-3);
   });
 });

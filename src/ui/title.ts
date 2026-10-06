@@ -11,6 +11,8 @@ export interface TitleHandlers {
   onStart(style: PlayStyle | null): void;
   onStartOver(): boolean | void | Promise<boolean | void>;
   onCode(chapter: string): boolean | void;
+  /** A code that opens nothing: two soft knocks, falling. */
+  onCodeWrong?(): void;
   onSettings?(): void;
   onFront?(): void;
   onSelect?(id: string): boolean;
@@ -164,7 +166,10 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     const chapter = chapterFor(field.value);
-    if (!chapter || handlers.onCode(chapter) === false) wrong.hidden = false;
+    if (!chapter || handlers.onCode(chapter) === false) {
+      wrong.hidden = false;
+      handlers.onCodeWrong?.();
+    }
   });
   for (const [id, style] of [['firstAventyr', 'aventyr'], ['firstLugnt', 'lugnt']] as const) {
     byId(id).addEventListener('click', () => {

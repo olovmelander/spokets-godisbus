@@ -157,11 +157,14 @@ try {
   for (let cycle = 0; cycle < 10; cycle++) {
     await game.page.keyboard.press('Escape');
     await until(game.state, (s) => s.paused, 'pause');
-    await until(() => game.page.evaluate(() => window.__testAudio?.state), (state) => state === 'suspended', 'audio suspension');
+    // Under the paper the world is still and the tune goes on, muffled (docs/ux-audit/style-and-sound.md row 21).
+    await until(game.info, (i) => i.audioMode === 'menu', 'audio under the menu');
     const before = await game.info();
     await game.page.keyboard.press('Tab');
     await sleep(80);
-    check(`pause ${cycle + 1} silences music and effects`, !(await game.info()).sound && (await game.info()).soundsPlayed === before.soundsPlayed && (await game.info()).musicBars === before.musicBars);
+    const under = await game.info();
+    check(`pause ${cycle + 1} stops the world's sounds and keeps the tune going under the menu`, under.audioMode === 'menu' && under.soundsPlayed === before.soundsPlayed
+      && await game.page.evaluate(() => window.__testAudio?.state) === 'running');
     await game.page.keyboard.press('Escape');
     await until(game.state, (s) => !s.paused, 'resume');
     await until(game.info, (s) => s.sound, 'audio resumed');

@@ -35,6 +35,7 @@ import { createDebug, type Debug } from './ui/debug';
 import { createHud } from './ui/hud';
 import { createPause, type PausePage } from './ui/pause';
 import { mountShell } from './ui/shell';
+import { wireUiSound } from './ui/ui-sound';
 import { hintHtml } from './ui/keys';
 import { applyMaterials, applyPlace } from './ui/materials';
 import { createTitle } from './ui/title';
@@ -243,6 +244,8 @@ function start(): void {
   // Sound starts with the first tap, click or key: browsers allow it no earlier (plan §6.8).
   const audio = createAudio();
   audio.sleep(true);
+  // Every press in a menu sounds: wood, paper and crayon, in the place's key (style-and-sound.md row 20).
+  wireUiSound(document, (sound) => audio.ui(sound));
   /** What the settings change outside the simulation: the sound, and the page's looks. */
   const apply = () => {
     audio.setEffects(settings.sound ? settings.effectsVolume : 0);
@@ -333,7 +336,7 @@ function start(): void {
   let ended = false;
   const ending = createEnding(document, () => {
     input.release();
-    audio.sleep(true);
+    audio.menu(true);
     audio.setPlace(arrangementFor(chapter.id, chapter.place));
   });
   const explore = createExplore(document, (id) => {
@@ -344,6 +347,7 @@ function start(): void {
     input.release();
     if (!title.open) writeSave();
     explore.show(save);
+    audio.ui('open');
   }
   for (const id of ['titleExplore', 'pauseExplore', 'endExplore']) {
     byId(id).hidden = !canEnter('epilog') || !storyFinished(save.flags);
@@ -373,7 +377,9 @@ function start(): void {
   function openPause(page?: PausePage): void {
     if (menuOpen() || platformBlocked()) return;
     paused = true;
-    audio.sleep(true);
+    // The world stops, and the tune goes on under the paper (docs/ux-audit/style-and-sound.md rows 20 and 21).
+    audio.menu(true);
+    audio.ui('open');
     pointing.cancel();
     askedForUse = askedForHelp = false;
     input.release();
@@ -394,6 +400,7 @@ function start(): void {
     pause.hide();
     input.release();
     game.resume();
+    audio.menu(false);
     audio.sleep(document.hidden);
     audio.unlock();
     canvas.focus();
@@ -439,6 +446,7 @@ function start(): void {
     if (chapter.epilogue && ended && !title.open && !profileMutationPending && !story.open && !memories.open && !explore.open && !platformBlocked() && ending.start()) {
       input.release(); pointing.cancel(); askedForUse = askedForHelp = false;
       audio.setPlace(null);
+      audio.menu(false);
       audio.sleep(false);
       audio.unlock();
     }
@@ -490,7 +498,8 @@ function start(): void {
   function showTitle(): void {
     if (profileMutationPending) return;
     paused = true;
-    audio.sleep(true);
+    // The title has the place's air and tune from the first tap, ducked under its card (style-and-sound.md row 21).
+    audio.menu(true);
     input.release();
     title.show(begun, { currentId: store.currentId, players: store.players(), available: store.available, unreadable: store.load().kind === 'unreadable' });
     offline.check();
@@ -525,6 +534,7 @@ function start(): void {
     paused = false;
     input.release();
     game.resume();
+    audio.menu(false);
     audio.sleep(document.hidden);
     audio.unlock();
     canvas.focus();
@@ -587,8 +597,10 @@ function start(): void {
       reloadPlayer();
       return true;
     },
+    onCodeWrong: () => audio.ui('wrong'),
     onCode(id) {
       if (!offline.canStart() || !canEnter(id)) return false;
+      audio.ui('yes');
       // The chapter's start, with whatever this device has kept of the others. The code holds no candy.
       const others = <T>(all: Record<string, T>) => Object.fromEntries(Object.entries(all).filter(([key]) => key !== id)) as Record<string, T>;
       keepSavedPosition = false;
@@ -706,7 +718,8 @@ function start(): void {
   document.addEventListener('visibilitychange', () => {
     auto?.suspend();
     resolution?.suspend();
-    audio.sleep(platformBlocked() || menuOpen());
+    audio.sleep(platformBlocked());
+    audio.menu(menuOpen());
     devicePlay.setPlaying(!platformBlocked() && !menuOpen());
     memories.suspend(platformBlocked());
     if (document.hidden) { input.release(); pointing.cancel(); askedForUse = askedForHelp = false; story.interrupt(); writeSave(); }
@@ -725,7 +738,7 @@ function start(): void {
       }),
       screen: (at) => view.worldScreen(at),
       info: () => ({ ...view.info(), busyMs, autoSettled: auto?.settled ?? true,
-        sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars, soundPreviews: audio.previews }),
+        sound: audio.running, soundsPlayed: audio.played, musicBars: audio.bars, soundPreviews: audio.previews, audioMode: audio.mode, uiSounds: audio.uiPlayed }),
     };
   }
 
@@ -781,7 +794,8 @@ function start(): void {
           : [...panel.querySelectorAll<HTMLElement>('button,input')].find((element) => element.getClientRects().length > 0 && !element.hasAttribute('disabled'));
         target?.focus();
       } else canvas.focus();
-      audio.sleep(platformBlocked() || menuOpen());
+      audio.sleep(platformBlocked());
+      audio.menu(menuOpen());
       if (!menuOpen()) audio.unlock();
       if (title.open) offline.check();
     });
@@ -883,8 +897,10 @@ function start(): void {
     const blocked = platformBlocked();
     memories.suspend(blocked);
     storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !blocked && !menuOpen());
-    // On a chapter's last page the place's air goes on, and the tune's last note rings out.
-    audio.sleep(blocked || (menuOpen() && !ending.open && !(ended && coda)));
+    // Under a menu the world is still and the tune goes on, muffled; on a chapter's last page the place's air goes on,
+    // and the tune's last note rings out (docs/ux-audit/style-and-sound.md rows 20 and 21).
+    audio.sleep(blocked);
+    audio.menu(menuOpen() && !ending.open && !(ended && coda));
     if (blocked) {
       pointing.cancel();
       askedForUse = askedForHelp = false;
@@ -924,7 +940,8 @@ function start(): void {
       askedForUse = askedForHelp = false;
       input.release();
       story.show(game.sim.story, game.sim.flags);
-      audio.sleep(true);
+      audio.menu(true);
+      audio.ui('open');
     }
     if (!remembered && game.sim.flags.has('memory')) {
       remembered = true;
@@ -938,7 +955,7 @@ function start(): void {
         origin: view.ghostScreen() ?? view.worldScreen({ x: shaving.x, y: shaving.y + 0.6 }),
         calm: settings.calm || reducedMotion.matches,
       });
-      audio.sleep(true);
+      audio.menu(true);
     }
     // A big candy is a safe place: the game saves there (plan §3.3, rule 4).
     if (game.sim.checkpoint !== savedAt) {
@@ -1052,7 +1069,9 @@ function start(): void {
     if (endFor > wait && (!hud.speaking() || endFor > wait + 5.6) && !benchOn && !ended) {
       ended = true;
       paused = true;
-      if (!coda) audio.sleep(true);
+      if (!coda) audio.menu(true);
+      // The storybook page turns in.
+      audio.ui('page');
       // The coda's last picture, for the page: copied now, right after it was drawn.
       const picture = view.snapshot();
       byId('endPicture').replaceChildren(...(picture ? [picture] : []));

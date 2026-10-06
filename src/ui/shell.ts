@@ -237,7 +237,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
            <div class="section-head"><button class="round-back" id="codeBack" type="button" aria-label="${sv.players.back}">${BACK}</button><h2 id="codeTitle">${sv.code.have}</h2></div>
            <form class="code-form" id="codeForm">
              <input id="codeInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" maxlength="40" aria-labelledby="codeTitle" placeholder="${sv.code.hint}">
-             <button class="wide go" id="codeGo" type="submit">${sv.code.open}</button>
+             <button class="wide go" id="codeGo" type="submit" data-sound="press">${sv.code.open}</button>
              <p class="code-wrong" id="codeWrong" role="alert" hidden>${sv.code.wrong}</p>
            </form>
          </div>

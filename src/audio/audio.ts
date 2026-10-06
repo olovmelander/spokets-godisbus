@@ -6,9 +6,15 @@ import { AIRS, barOf, barSeconds, barsIn, cadenceOf, frequencyOf, MUSIC_LEVEL, p
  * The game's sound (plan §5.8, §6.8). All of it is made in code, so sound costs no download.
  * There are no voices and no recordings: characters will make short wordless sounds, never words.
  *
- * One AudioContext, unlocked by the first tap, click or key. Three buses, music, effects and ambience, go to
- * the master and a compressor. *Ljud* is the effects and the place's air; *Musik* is the tune.
+ * One AudioContext, unlocked by the first tap, click or key. Four buses, music, effects, ambience and the UI's own,
+ * go to the master and a compressor. *Ljud* is the effects, the place's air and the UI; *Musik* is the tune.
+ *
+ * Three ways to sound (docs/ux-audit/style-and-sound.md, "UI sound"): playing; under a menu, where the world's
+ * effects stop, the air sinks 6 dB and the tune goes on 9 dB down as if heard through the paper, while the UI's taps
+ * sound; and off (a hidden page, a lost picture, the recovery message, before the game has loaded).
  */
+export type UiSound = 'press' | 'go' | 'back' | 'open' | 'on' | 'off' | 'choose' | 'page' | 'yes' | 'wrong';
+
 export interface Audio {
   /** Call from a pointerup, a click or a keydown: browsers start sound only from those. */
   unlock(): void;
@@ -36,8 +42,16 @@ export interface Audio {
    * more until the next place. The air goes on.
    */
   cadence(): void;
-  /** Pause/hidden/recovery silence every bus and cancel scheduled sounds; resume starts fresh. */
+  /** Hidden/recovery silence every bus and cancel scheduled sounds; resume starts fresh. */
   sleep(hidden: boolean): void;
+  /** A menu is open: the world's effects stop, the air and the tune go on, ducked and muffled, and the UI sounds. */
+  menu(open: boolean): void;
+  /** One of the UI's own sounds: wood, paper and plucks, in the place's key, 8 to 12 dB under the candy. */
+  ui(sound: UiSound): void;
+  /** How it sounds now: for the debug text and the tests. */
+  readonly mode: 'play' | 'menu' | 'off';
+  /** How many UI sounds have been played. */
+  readonly uiPlayed: number;
   /** True once the context runs: for the debug text and the tests. */
   readonly running: boolean;
   /** How many effects have been started. */
@@ -46,6 +60,21 @@ export interface Audio {
   readonly previews: number;
   /** How many bars of music have been given their notes. */
   readonly bars: number;
+}
+
+/** Under a menu the tune is 9 dB down and heard through paper: a low-pass closed to 1.1 kHz. The air is 6 dB down. */
+const MENU_MUSIC = 0.355;
+const MENU_AIR = 0.5;
+const MUFFLED = 1100;
+const OPEN = 20000;
+/** A menu left alone this long goes quiet, and the context rests until the next touch. */
+const REST_AFTER = 30;
+
+/** The place's key, folded into an octave round D (docs/ux-audit/style-and-sound.md, "UI sound"): every place is in
+ *  D today but Myren, in A. */
+export function uiKey(transpose: number): number {
+  const key = ((transpose % 12) + 12) % 12;
+  return key > 7 ? key - 12 : key;
 }
 
 /** A pentatonic scale, in semitones: candy collected in a row steps up it (plan §5.8). */
@@ -69,6 +98,17 @@ export function createAudio(): Audio {
   let effects: GainNode | null = null;
   let music: GainNode | null = null;
   let ambience: GainNode | null = null;
+  // The UI's own bus, at the effects' level; and the paper the tune is heard through under a menu.
+  let ui: GainNode | null = null;
+  let muffle: BiquadFilterNode | null = null;
+  // What sounds on the effects bus: the world's sounds, which a menu stops.
+  const world = new Set<AudioScheduledSourceNode>();
+  let inMenu = false;
+  // A menu left alone goes quiet after a while, and the context rests until the next touch.
+  let touchedAt = 0;
+  let resting = false;
+  let uiPlayed = 0;
+  const uiStrings = new Map<number, AudioBuffer>();
   let noise: AudioBuffer | null = null;
   let volume = 1;
   let musicVolume = 1;
@@ -107,11 +147,17 @@ export function createAudio(): Audio {
     master.connect(compressor).connect(context.destination);
     effects.connect(master);
     music = context.createGain();
-    music.gain.value = MUSIC_LEVEL * musicVolume;
-    music.connect(master);
+    music.gain.value = MUSIC_LEVEL * musicVolume * (inMenu ? MENU_MUSIC : 1);
+    muffle = context.createBiquadFilter();
+    muffle.type = 'lowpass';
+    muffle.frequency.value = inMenu ? MUFFLED : OPEN;
+    music.connect(muffle).connect(master);
     ambience = context.createGain();
-    ambience.gain.value = volume;
+    ambience.gain.value = volume * (inMenu ? MENU_AIR : 1);
     ambience.connect(master);
+    ui = context.createGain();
+    ui.gain.value = volume;
+    ui.connect(master);
     // Four seconds of noise, made with a fixed sequence: the same sound every time, and long enough for a
     // wind that doesn't come round audibly.
     noise = context.createBuffer(1, context.sampleRate * 4, context.sampleRate);
@@ -141,6 +187,13 @@ export function createAudio(): Audio {
     oscillator.connect(gain).connect(bus);
     oscillator.start(at);
     oscillator.stop(at + length + 0.02);
+    if (bus === effects) inWorld(oscillator);
+  }
+
+  /** A sound of the world: a menu stops it. */
+  function inWorld(source: AudioScheduledSourceNode): void {
+    world.add(source);
+    source.addEventListener('ended', () => world.delete(source));
   }
 
   /** A puff of filtered noise: steps, landings, splashes, whooshes. */
@@ -164,6 +217,7 @@ export function createAudio(): Audio {
     source.connect(filter).connect(gain).connect(bus);
     source.start(at, (played * 0.137) % 0.5);
     source.stop(at + length + 0.02);
+    if (bus === effects) inWorld(source);
   }
 
   /** One footstep, on what he walks on (plan §5.8). The left foot and the right differ a little. */
@@ -212,6 +266,116 @@ export function createAudio(): Audio {
   function knock(pitch: number, level: number, delay = 0): void {
     tone('sine', pitch, pitch * 0.72, 0.05, level, delay);
     puff('bandpass', 1800, 1100, 0.03, level * 0.4, delay, 6);
+  }
+
+  /** A plucked string on the UI's bus, in the place's key: the UI's own strings, kept apart from the tune's. */
+  function uiPluck(midi: number, level: number, delay: number): void {
+    if (!context || !ui) return;
+    const pitch = midi + uiKey(arrangement?.transpose ?? 0);
+    let buffer = uiStrings.get(pitch);
+    if (!buffer) {
+      const data = pluck(frequencyOf(pitch), RING, context.sampleRate, 0.6);
+      buffer = context.createBuffer(1, data.length, context.sampleRate);
+      buffer.getChannelData(0).set(data);
+      uiStrings.set(pitch, buffer);
+    }
+    const source = track(context.createBufferSource());
+    source.buffer = buffer;
+    const gain = context.createGain();
+    gain.gain.value = level;
+    source.connect(gain).connect(ui);
+    source.start(context.currentTime + delay);
+  }
+
+  /** Wood on wood, on the UI's bus: a plank pressed. */
+  function uiKnock(midi: number, level: number, delay = 0): void {
+    if (!context || !ui) return;
+    const at = context.currentTime + delay;
+    const pitch = frequencyOf(midi + uiKey(arrangement?.transpose ?? 0));
+    toneAt(ui, at, 'sine', pitch, pitch * 0.72, 0.05, level);
+    puffAt(ui, at, 'bandpass', 1800, 1100, 0.03, level * 0.4, 6);
+  }
+
+  /** The UI's sounds (docs/ux-audit/style-and-sound.md, "UI sound"): wood, paper and plucks, in the place's key. */
+  function uiSound(kind: UiSound): void {
+    if (!context || !ui) return;
+    const at = context.currentTime;
+    // A4, D5, F4, D4 and D3 in the garden's D dorian; the place's key moves them all.
+    const [A4, D5, F4, D4, D3] = [69, 74, 65, 62, 50];
+    switch (kind) {
+      case 'press':
+        uiKnock(A4, 0.07);
+        break;
+      case 'go':
+        uiKnock(A4, 0.08);
+        uiKnock(D5, 0.08, 0.07);
+        break;
+      case 'back':
+        uiKnock(D5, 0.06);
+        uiKnock(A4, 0.06, 0.06);
+        puffAt(ui, at + 0.02, 'bandpass', 3400, 1400, 0.12, 0.04, 1.2);
+        break;
+      case 'open':
+        // A sheet lands: a breath of paper, rising.
+        puffAt(ui, at, 'bandpass', 1400, 3400, 0.16, 0.05, 1.2);
+        break;
+      case 'on':
+        uiPluck(F4, 0.07, 0);
+        uiPluck(A4, 0.07, 0.06);
+        break;
+      case 'off':
+        uiPluck(A4, 0.07, 0);
+        uiPluck(F4, 0.07, 0.06);
+        break;
+      case 'choose':
+        // Moa's crayon round it: a scribble of three strokes, and a pluck as the loop closes.
+        for (let i = 0; i < 3; i++) puffAt(ui, at + i * 0.07, 'bandpass', 2600, 2200, 0.08, 0.035, 2);
+        uiPluck(D5, 0.05, 0.22);
+        break;
+      case 'page':
+        puffAt(ui, at, 'bandpass', 1200, 3000, 0.18, 0.05, 1);
+        puffAt(ui, at + 0.09, 'bandpass', 1000, 2600, 0.18, 0.04, 1);
+        uiPluck(D3, 0.06, 0.2);
+        break;
+      case 'yes':
+        for (const [i, midi] of [D4, F4, A4].entries()) uiPluck(midi, 0.08, i * 0.08);
+        break;
+      case 'wrong':
+        // Two soft knocks, falling: never a buzz.
+        uiKnock(A4, 0.05);
+        uiKnock(F4, 0.05, 0.09);
+        break;
+    }
+  }
+
+  /** Moves a level to where it belongs over `seconds`, ending exactly there. */
+  function glide(param: AudioParam, to: number, seconds: number, exponential = false): void {
+    if (!context) return;
+    const now = context.currentTime;
+    param.cancelScheduledValues(now);
+    param.setValueAtTime(param.value, now);
+    if (exponential) param.exponentialRampToValueAtTime(Math.max(1, to), now + seconds);
+    else param.linearRampToValueAtTime(to, now + seconds);
+  }
+
+  /** Under a menu, or out of one: the tune and the air sink, and come back, over a fifth of a second. */
+  function duck(): void {
+    if (!context || !music || !ambience || !muffle) return;
+    glide(muffle.frequency, inMenu ? MUFFLED : OPEN, 0.2, true);
+    glide(music.gain, MUSIC_LEVEL * musicVolume * (inMenu ? MENU_MUSIC : 1), 0.2);
+    glide(ambience.gain, volume * (inMenu ? MENU_AIR : 1), 0.15);
+  }
+
+  /** A touch: a menu that had gone quiet wakes. */
+  function touched(): void {
+    if (!context) return;
+    touchedAt = context.currentTime;
+    if (!resting) return;
+    resting = false;
+    if (master && !sleeping) {
+      master.gain.cancelScheduledValues(context.currentTime);
+      master.gain.value = 0.8;
+    }
   }
 
   /** A few wordless syllables in someone's own voice: never a word (plan §5.8). */
@@ -451,23 +615,53 @@ export function createAudio(): Audio {
     unlock() {
       if (sleeping) return;
       build();
+      touched();
       // iOS leaves the context "interrupted" after a call; any later tap wakes it again.
       if (context && context.state !== 'running') void context.resume().catch(() => {});
       begin();
     },
     play(cue) {
-      if (sleeping || !context || context.state !== 'running' || volume <= 0) return;
+      // Under a menu the world is still: its sounds wait for play to go on.
+      if (sleeping || inMenu || !context || context.state !== 'running' || volume <= 0) return;
       played++;
       sound(cue);
+    },
+    ui(kind) {
+      if (sleeping || !context || volume <= 0) return;
+      touched();
+      if (context.state !== 'running') {
+        // The tap itself wakes the context; the sound comes once it runs.
+        void context.resume().then(() => { if (!sleeping) uiSound(kind); }).catch(() => {});
+      } else uiSound(kind);
+      uiPlayed++;
+    },
+    menu(open) {
+      if (inMenu === open) return;
+      inMenu = open;
+      if (open) {
+        // The world stops where it is: what it was sounding is cut, as a held breath.
+        for (const source of world) { try { source.stop(); } catch { /* Already ended. */ } }
+        world.clear();
+      }
+      if (context) touchedAt = context.currentTime;
+      if (!open && resting) touched();
+      duck();
     },
     setEffects(next) {
       volume = Math.max(0, Math.min(1, next));
       if (effects) effects.gain.value = volume;
-      if (ambience) ambience.gain.value = volume;
+      if (ui) ui.gain.value = volume;
+      if (ambience) {
+        ambience.gain.cancelScheduledValues(0);
+        ambience.gain.value = volume * (inMenu ? MENU_AIR : 1);
+      }
     },
     setMusic(next) {
       musicVolume = Math.max(0, Math.min(1, next));
-      if (music) music.gain.value = MUSIC_LEVEL * musicVolume;
+      if (music) {
+        music.gain.cancelScheduledValues(0);
+        music.gain.value = MUSIC_LEVEL * musicVolume * (inMenu ? MENU_MUSIC : 1);
+      }
     },
     setLoud(on) {
       if (session) session.type = on ? 'playback' : 'ambient';
@@ -516,6 +710,15 @@ export function createAudio(): Audio {
       if (sleeping || !context || context.state !== 'running' || !arrangement || !ambience) return;
       begin();
       const now = context.currentTime;
+      // A menu left alone goes quiet, and the context rests: the next touch wakes it (touched()).
+      if (inMenu && !resting && now - touchedAt > REST_AFTER && master) {
+        resting = true;
+        master.gain.setTargetAtTime(0, now, 0.4);
+        // Faded out, the context rests; the next tap, click or key resumes it (unlock()).
+        setTimeout(() => { if (resting && context) void context.suspend().catch(() => {}); }, 2000);
+        return;
+      }
+      if (resting) return;
       // After a sleep, or a long frame, the tune goes on from now: never a heap of late bars at once.
       if (nextBar < now) nextBar = now + 0.1;
       if (nextBar < now + 0.3 && !closed) {
@@ -548,13 +751,22 @@ export function createAudio(): Audio {
         started = false;
         void context.suspend().catch(() => {});
       } else {
+        resting = false;
+        touchedAt = context.currentTime;
         if (master) master.gain.value = 0.8;
         void context.resume().catch(() => {});
         begin();
+        duck();
       }
     },
     get running() {
-      return !sleeping && context?.state === 'running';
+      return !sleeping && !resting && context?.state === 'running';
+    },
+    get mode() {
+      return sleeping || resting ? 'off' : inMenu ? 'menu' : 'play';
+    },
+    get uiPlayed() {
+      return uiPlayed;
     },
     get played() {
       return played;

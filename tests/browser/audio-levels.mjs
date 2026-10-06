@@ -64,16 +64,21 @@ try {
   check('loading settings creates no AudioContext and does not bypass autoplay', await page.evaluate(() => window.__audioContexts === 0));
   await page.tap('#pauseBtn');
   await settingsPage(page);
+  // Under the paper the tune and the air go on, ducked; give them their fifth of a second to settle.
+  await page.waitForTimeout(400);
   const full = await gains(page);
   assert.equal(full.length, 4, 'the gesture builds master, effects, music and ambience buses');
   const musicBase = full[2];
+  // The air is 6 dB down under a menu, and comes back with play (docs/ux-audit/style-and-sound.md row 21).
+  const AIR = 0.5;
+  check('under Pause the world is still and the tune and the air go on, quieter', await page.evaluate(() => window.__godis.info().audioMode) === 'menu' && closeTo(full[3], full[1] * AIR));
   const previews = () => page.evaluate(() => window.__godis.info().soundPreviews);
   const pip = (bus, n) => page.locator(`#${bus}Volume i`).nth(n - 1);
   // One row per sound (docs/ux-audit/menus.md row 8): five candy pips are the level, in fifths.
   await pip('effects', 4).tap();
   let value = await levels(page);
   let bus = await gains(page);
-  check('a tap on the fourth pip sets effects and ambience together, leaving music unchanged', value.effectsVolume === 0.8 && closeTo(bus[1], 0.8) && closeTo(bus[3], 0.8) && closeTo(bus[2], musicBase));
+  check('a tap on the fourth pip sets effects and ambience together, leaving music unchanged', value.effectsVolume === 0.8 && closeTo(bus[1], 0.8) && closeTo(bus[3], 0.8 * AIR) && closeTo(bus[2], musicBase));
   check('the new level is heard at once, as one note, though the game sleeps', await previews() === 1 && await page.evaluate(() => window.__godis.state().paused));
   check('the pips show and say their level', await page.locator('#effectsVolume i.on').count() === 4 && await page.getAttribute('#effectsVolume', 'aria-valuetext') === '4 av 5' && await page.getAttribute('#effectsVolume', 'role') === 'slider');
   await page.focus('#musicVolume');
@@ -90,16 +95,23 @@ try {
   check('a muted sound shows its slash', await page.locator('#effectsRow').evaluate((row) => row.classList.contains('muted') && getComputedStyle(row.querySelector('.slash')).display !== 'none'));
   await page.check('#setSound');
   bus = await gains(page);
-  check('unmuting restores the chosen effects level, and sounds it', closeTo(bus[1], 0.6) && closeTo(bus[3], 0.6) && await previews() === 3);
+  check('unmuting restores the chosen effects level, and sounds it', closeTo(bus[1], 0.6) && closeTo(bus[3], 0.6 * AIR) && await previews() === 3);
   await page.uncheck('#setMusic');
   await page.focus('#musicVolume');
   await page.keyboard.press('ArrowLeft');
   check('music mute keeps its chosen level independently', !(await levels(page)).music && (await levels(page)).musicVolume === 0.6 && (await gains(page))[2] === 0);
   await page.check('#setMusic');
   check('unmuting music restores its own gain', closeTo((await gains(page))[2], musicBase * 0.6));
+  // Every press in a menu sounds: a choice is Moa's crayon, a switch two plucks, the way back wood and paper.
+  const uiSounds = () => page.evaluate(() => window.__godis.info().uiSounds);
+  const pressed = await uiSounds();
   await page.tap('#styleLugnt');
   value = await levels(page);
   check('switching play style preserves both levels and mute choices', value.style === 'lugnt' && value.effectsVolume === 0.6 && value.musicVolume === 0.6 && value.sound && value.music);
+  check('a choice in a menu sounds', await uiSounds() === pressed + 1);
+  await page.tap('#setLefty');
+  check('a switch sounds once', await uiSounds() === pressed + 2);
+  await page.tap('#setLefty');
 
   // Real gamepad menu polling: down from the picture reaches the pips; left and right change the level.
   await page.focus('#setSound');
@@ -120,6 +132,17 @@ try {
   const row = await page.locator('#effectsRow').boundingBox();
   const fifth = await pip('effects', 5).boundingBox();
   check('the narrow phone layout keeps the pips and the picture within the panel', row.x + row.width <= 390 && fifth.x + fifth.width <= row.x + row.width && fifth.width >= 30 && (await page.locator('#effectsRow .mute').boundingBox()).width >= 64);
+  // With Ljud off the UI is silent too.
+  await page.uncheck('#setSound');
+  const muted = await uiSounds();
+  await page.tap('#styleAventyr');
+  check('with Ljud off a press makes no sound', await uiSounds() === muted);
+  await page.check('#setSound');
+  // Back in play the tune comes out from under the paper.
+  await page.tap('#pauseClose');
+  await page.waitForTimeout(400);
+  bus = await gains(page);
+  check('closing Pause lets the air and the tune out again', await page.evaluate(() => window.__godis.info().audioMode) === 'play' && closeTo(bus[3], bus[1]));
   await page.reload();
   await ready(page);
   value = await levels(page);
