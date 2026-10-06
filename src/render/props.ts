@@ -8,6 +8,7 @@ import { sweetSocket } from './candy';
 import { forestSocket, standingCone } from './forest-kit';
 import type { MountainSocket } from './mountain-kit';
 import { saturdayBag } from './saturday-bag';
+import { MODEL_TURN } from './ghost-model';
 
 /**
  * Stand-ins for the things and the animals of the story, built in code: each is recognisable, and none is
@@ -749,7 +750,7 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
   return { group, actor: flyer, update, get active() { return shown > 0.001; }, replaceGhost(model: Group) {
     if (!ghost) return;
     flyer.clear();
-    model.rotation.y = Math.PI / 2;
+    model.rotation.y = MODEL_TURN;
     flyer.add(model);
   } };
 }

@@ -42,6 +42,7 @@ import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
 import { buildVerbMarks } from './verb-marks';
+import { MODEL_TURN, blinkEyes, eyeNodes } from './ghost-model';
 import type { Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
@@ -479,7 +480,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const epilogueStage = createEpilogueStage(chapter.epilogue);
   scene.add(epilogueStage.group);
   let ghostFoot: Object3D | null = null;
-  // The stand-in faces +x, as the stand-in Elof does; the model from Blender faces the camera.
+  // The stand-in faces +x, as the stand-in Elof does; the model from Blender faces the camera, and is turned to
+  // face as the stand-in does (./ghost-model.ts).
   let ghostFaces = 0;
   let ghostTurn = Math.PI;
   let clock = 0;
@@ -496,7 +498,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghost = model;
       paintedEyes = eyeNodes(model);
       if (ghostHelps) helper.replaceGhost(model.clone());
-      ghostFaces = -Math.PI / 2;
+      ghostFaces = MODEL_TURN;
       // GLTFLoader drops the dot from Blender's names: foot.L arrives as footL.
       ghostFoot = model.getObjectByName('footL') ?? null;
       models.push('private/ghost');
@@ -1068,7 +1070,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         if (ghostFoot) ghostFoot.rotation.x = 0;
         ghostStaged = true;
       }
-      for (const eye of paintedEyes) eye.scale.y = staged?.blink ?? 1;
+      blinkEyes(paintedEyes, staged?.blink ?? 1);
       looking.update(staged?.look ? ghostPlace.position : null, staged?.look ?? null, clock, dt);
     }
     if (chapter.prologue) {
@@ -2068,21 +2070,6 @@ function buildGhost(): Group {
   bag.position.set(0.3, 0.5, 0);
   group.add(bag);
   return group;
-}
-
-/** Named eye parts keep painted marks tied to the two existing story strokes, without editing a pack. */
-function eyeNodes(model: Object3D): Object3D[] {
-  const nodes: Object3D[] = [];
-  model.traverse((node) => {
-    if (/^(ghost-eye-[01]|eye[._-]?[lr12]|eyes)$/i.test(node.name)) nodes.push(node);
-  });
-  // A named parent must stay visible when its first named child is painted.
-  const leaves = nodes.filter((node) => !nodes.some((child) => {
-    for (let parent = child.parent; parent; parent = parent.parent) if (parent === node) return true;
-    return false;
-  }));
-  if (leaves.length === 1 && leaves[0]!.children.length === 2) return [...leaves[0]!.children];
-  return leaves;
 }
 
 /**
