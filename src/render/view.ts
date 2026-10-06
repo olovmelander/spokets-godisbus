@@ -29,6 +29,7 @@ import { createDepthBlur } from './depth-blur';
 import { createBloom } from './bloom';
 import { createWater } from './water';
 import { createCharacterShadows } from './character-shadows';
+import { createRimLight } from './rim-light';
 import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './quality';
 import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
@@ -230,6 +231,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const sun = new DirectionalLight(place?.sun.colour ?? '#ffe1ae', place?.sun.intensity ?? 2.4);
   sun.position.set(...(place?.sun.from ?? ([-6, 5, 8] as const)));
   scene.add(sun);
+  const rimLight = createRimLight(sun);
   // A place's sun stands behind the scene, so a faint light from the camera's side lifts the faces. It is
   // there in greybox too, dark, so that every chapter uses the same shaders.
   const fill = new DirectionalLight(place?.fill.colour ?? '#ffffff', place?.fill.intensity ?? 0);
@@ -718,6 +720,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (warm > 0) {
       water.applyCaustics(scene);
       characterShadows.prepareReceivers();
+      rimLight.apply(scene);
       materialGrade.apply(scene);
       // What only Mid and High draw (./rich.ts) is laid here, so that a model which arrived late is laid too.
       layRich(scene);
@@ -962,6 +965,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         (scene.fog as Fog).far = camera.position.z + place.haze.far;
       }
     }
+
+    rimLight.setStrength(scene.backgroundIntensity * (1 - darkness));
 
     // The stand-in Elof: turned a little towards the camera, legs swinging with the distance he covers.
     // On a hose he turns his back to the camera, as a climber does.

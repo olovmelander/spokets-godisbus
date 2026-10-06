@@ -294,6 +294,12 @@ camera-locked triangle in the scene, outside the fog, so it receives that same g
 changes its brightness and the live haze colour together. This does not make whole frames identical:
 High still has its depth blur, glow and shadows, and transparent layers blend in the tier's output space.
 
+**Rim light** follows the sun around grazing edges of opaque figures, candy, grass and stone. It is
+bounded by their pigment, so black eyes remain black. Native view-space normals and the actual camera
+keep its direction through story shots, wind, instancing and skinning. It fades with evening and goes
+out with nightfall, using shared uniforms and the existing warmup for models that arrive later. Water,
+glow and transparent helper figures keep their own shading; the rim adds no draw or render target.
+
 **Forest shadows** follow the existing spruces and the place's sun. On High, only the marked trunks join
 the characters in the existing 1024-pixel shadow map: their shade crosses the moss, the cut bank and the
 figures. The light reaches far enough behind the path to include a tree outside the camera whose shadow
