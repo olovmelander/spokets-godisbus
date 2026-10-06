@@ -196,7 +196,8 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   // The village has its houses and its yard behind the street.
   const houses = look.id === 'village' ? fronts(chapter, from, to) : null;
   if (life) group.add(life.group);
-  if (look.id === 'dusk') group.add(stars());
+  const sky = look.id === 'dusk' ? stars() : null;
+  if (sky) group.add(sky);
   // A moose in the mist, cranes, smoke from a far chimney: among the far pictures, and only there.
   // The far village's picture hangs among the houses, 52 lengths behind the path: its chimneys smoke.
   const wild = createLife(chapter, look.id, land, houses?.group.children.find((child) => child.position.z === -52), asked);
@@ -226,6 +227,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
       far.update(cameraX, groundY, clock, night);
       if (quiet) wild?.update(cameraX, groundY, clock, night, quiet);
       life?.update(clock);
+      if (sky) sky.material.uniforms.time!.value = still ? 0 : clock;
     },
   };
 }
