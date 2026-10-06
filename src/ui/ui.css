@@ -36,7 +36,7 @@
   --paper-2: #f2e5c8;
   --paper-bright: #fffaf0;
   --paper-edge: #d6bf95;
-  --tape: rgb(239 224 176 / 0.82);
+  --tape: rgb(226 205 148 / 0.9);
   /* Pappa's carving: the pale shaving the stroke peels off, and the notches cut into the block. */
   --shaving: #f4dcae;
   --shaving-edge: #9c7448;
@@ -3737,6 +3737,22 @@ body.keys-learned .hint {
 .notice:not([hidden]) {
   transform-origin: 12% 0;
   animation: tag-swing var(--dur-panel) var(--ease-paper);
+}
+
+/* Moa's words take wax (docs/ux-audit/style-and-sound.md, "Crayon"): her headings, the time card's place, the story
+   card's words and the thanks are filled with their colour and flecked where the crayon skipped over the paper's
+   tooth (--wax, src/ui/materials.ts). Without the tile, and where the system draws its own colours, they are plain. */
+:where(.panel h2, .panel h3, .scene-caption .place, .title .story-title .story-card, .photo-panel.book .photo-credits h3) {
+  background: var(--wax, none), linear-gradient(currentColor, currentColor);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@media (forced-colors: active) {
+  :where(.panel h2, .panel h3, .scene-caption .place, .title .story-title .story-card, .photo-panel.book .photo-credits h3) {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
 }
 
 /* --- Less motion (docs/ux-audit/style-and-sound.md row 17, "Motion") ----------------------------------------------

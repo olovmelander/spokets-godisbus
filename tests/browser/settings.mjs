@@ -331,6 +331,18 @@ try {
     check('a key brings it', await page.locator('#controlsReferenceBtn').isVisible());
     const widths = await page.locator('#pauseSettingsPage .switch:visible, #pauseSettingsPage .sound-row, #pauseSettingsPage .help-level').evaluateAll((rows) => rows.map((row) => row.scrollWidth <= row.clientWidth + 1 && row.getBoundingClientRect().right <= 390));
     check('every row fits the upright phone', widths.length >= 12 && widths.every(Boolean));
+    // Where the browser offers to install the game, Pause has a button for it (access-and-devices.md row 21).
+    check('no install button before the browser offers it', await page.locator('#installBtn').isHidden());
+    await page.evaluate(() => {
+      const offer = new Event('beforeinstallprompt', { cancelable: true });
+      offer.prompt = () => { window.__installPrompted = true; return Promise.resolve(); };
+      offer.userChoice = Promise.resolve({ outcome: 'accepted' });
+      window.dispatchEvent(offer);
+      window.__installKept = offer.defaultPrevented;
+    });
+    check('the browser\'s offer becomes Installera spelet in Pause', await page.locator('#installBtn').isVisible() && await page.evaluate(() => window.__installKept));
+    await page.tap('#installBtn');
+    check('Installera spelet asks the browser once, then goes', await page.evaluate(() => window.__installPrompted === true) && await page.locator('#installBtn').isHidden());
     await finish();
   }
 

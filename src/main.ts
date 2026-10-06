@@ -169,6 +169,26 @@ function start(): void {
   const standalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
   byId('homeScreenHelp').hidden = standalone || (!apple && !isAndroid(navigator.userAgent));
   byId('homeScreenSteps').textContent = apple ? sv.homeScreen.apple : sv.homeScreen.android;
+  // Where the browser offers to install the game (Android), Pause has a button for it, in place of the steps.
+  type InstallOffer = Event & { prompt(): Promise<void>; userChoice: Promise<unknown> };
+  let installOffer: InstallOffer | null = null;
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    installOffer = event as InstallOffer;
+    byId('installBtn').hidden = false;
+    byId('homeScreenHelp').hidden = true;
+  });
+  window.addEventListener('appinstalled', () => {
+    installOffer = null;
+    byId('installBtn').hidden = true;
+  });
+  byId('installBtn').addEventListener('click', () => {
+    const offer = installOffer;
+    if (!offer) return;
+    installOffer = null;
+    byId('installBtn').hidden = true;
+    void offer.prompt().then(() => offer.userChoice).catch(() => { /* Declined, or the offer went stale. */ });
+  });
   // The chapter's own code, as its card shows it, to open the place on another device (menus.md row 6).
   const ownCode = codeFor(chapter.id);
   byId('pauseCode').hidden = !ownCode;

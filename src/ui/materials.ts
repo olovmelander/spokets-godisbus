@@ -30,6 +30,25 @@ function paper(doc: Document): string | null {
   return canvas.toDataURL('image/png');
 }
 
+/** A 64×64 tile of paper-coloured specks: where Moa's wax crayon skipped over the paper's tooth. */
+function crayon(doc: Document): string | null {
+  const canvas = doc.createElement('canvas');
+  canvas.width = canvas.height = 64;
+  const pen = canvas.getContext('2d');
+  if (!pen) return null;
+  const roll = dice(2016);
+  const skips = pen.createImageData(64, 64);
+  for (let i = 0; i < skips.data.length; i += 4) {
+    skips.data[i] = 251;
+    skips.data[i + 1] = 244;
+    skips.data[i + 2] = 228;
+    // Most of the wax holds; here and there the paper shows through it.
+    skips.data[i + 3] = roll() < 0.1 ? Math.floor(70 + roll() * 110) : 0;
+  }
+  pen.putImageData(skips, 0, 0);
+  return canvas.toDataURL('image/png');
+}
+
 /** A 256×96 tile of 46 wavering fibres along its length: the linden's grain. */
 function linden(doc: Document): string | null {
   const canvas = doc.createElement('canvas');
@@ -56,14 +75,17 @@ function linden(doc: Document): string | null {
   return canvas.toDataURL('image/png');
 }
 
-/** Sets the paper's tooth and the wood's grain on the page as `--grain` and `--woodgrain`. Without a 2D canvas
+/** Sets the paper's tooth, the wood's grain and the crayon's wax on the page as `--grain`, `--woodgrain` and `--wax`.
+ *  Without a 2D canvas
  *  paper and wood stay flat, and nothing else changes. */
 export function applyMaterials(doc: Document): void {
   try {
     const tooth = paper(doc);
     const grain = linden(doc);
+    const wax = crayon(doc);
     if (tooth) doc.documentElement.style.setProperty('--grain', `url(${tooth})`);
     if (grain) doc.documentElement.style.setProperty('--woodgrain', `url(${grain})`);
+    if (wax) doc.documentElement.style.setProperty('--wax', `url(${wax})`);
   } catch {
     // A canvas that can't be read back (a privacy setting) leaves the materials flat.
   }

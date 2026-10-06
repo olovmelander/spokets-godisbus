@@ -45,6 +45,7 @@ the files made with it). three's Basis transcoder (Apache-2.0) is served with th
 | File | What it is | Source and licence |
 | --- | --- | --- |
 | `src/render/meshopt/decoder-{base,simd}.wasm` | The meshes' decoder: meshoptimizer 1.1's WebAssembly, as files of their own, and the few lines that drive it in `src/render/meshopt.ts` | meshoptimizer by Arseny Kapoulkine, MIT. Written out by `scripts/meshopt-wasm.mjs` from the copy three 0.186.1 carries inside `examples/jsm/libs/meshopt_decoder.module.js` (MIT); a unit test holds them equal. |
+| `public/icons/ghost-maskable-512.png` | Android's maskable icon | The same SVG ghost from `index.html`, on its cream background to the edges and inside the middle 80 %, rendered with sharp. Made in code for this game; no reference image or new likeness. |
 | `public/icons/ghost-{180,192,512}.png` | Home Screen icons | Exact SVG ghost already drawn in `index.html`, rendered on its existing cream background with sharp. Made in code for this game; no reference image or new likeness. |
 | In-memory thought pictures in `src/render/ghost-thought.ts` | Symbolic mountain, pine/crack and the existing pointed-cap first-figure icon | Plain canvas cutouts made in code for this game, in the existing story-card style. No reference picture, third-party art, character model or new likeness asset. |
 | `art/baked/boot/big-candy.glb` | The big candy: a round swirl lollipop on a stick, with a bow | Made for this game in Blender by `art/blender/big-candy.py`, which also paints its texture. Nothing in it comes from anyone else. |

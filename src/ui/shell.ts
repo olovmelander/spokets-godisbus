@@ -204,6 +204,7 @@ export function mountShell(root: HTMLElement, helper: 'ghost' | 'jay' = 'jay'): 
              <p class="setting-hint" id="graphicsHint">${p.graphicsHint}</p>
              <p class="setting-hint" id="graphicsFallback" role="status" hidden>${p.graphicsFallback}</p>
              <button class="wide row-button" id="controlsReferenceBtn" type="button" hidden><span class="row-icon">${KEYBOARD}</span><span>${sv.controls.title}</span></button>
+             <button class="wide row-button" id="installBtn" type="button" hidden><span class="row-icon">${ADD_PHONE}</span><span>${sv.homeScreen.install}</span></button>
              <details class="info-row" id="homeScreenHelp" hidden><summary><span class="row-icon">${ADD_PHONE}</span><span>${sv.homeScreen.title}</span></summary>
                <p id="homeScreenSteps"></p><p>${sv.homeScreen.offline}</p>
              </details>

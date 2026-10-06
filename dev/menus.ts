@@ -2,6 +2,7 @@
 // Choose what to show with ?show=touch, keys, pad, goal, pause, stuck, album, settings, message or debug; several
 // can be joined with commas. Pause opens on its first page, or on the candy bag's or the settings' page.
 // It uses the same shell and the same style sheet as the game, so it shows what the game shows.
+import { applyMaterials } from '../src/ui/materials';
 import type { Speaker } from '../src/sim/types';
 import { KINDS } from '../src/content/kinds';
 import { sv } from '../src/content/sv';
@@ -21,6 +22,8 @@ import { createStoryContext } from '../src/ui/story-context';
 import '../src/ui/ui.css';
 
 const VIEWS = ['touch', 'keys', 'pad', 'purpose', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'album', 'settings', 'end', 'photos', 'memory', 'sharing', 'painting', 'carving', 'party', 'bubble', 'message', 'debug'] as const;
+// The paper's tooth, the wood's grain and the crayon's wax, as the game draws them.
+applyMaterials(document);
 const params = new URLSearchParams(location.search);
 const shown = new Set((params.get('show') ?? 'touch').split(','));
 const byId = (id: string) => document.getElementById(id)!;

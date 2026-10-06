@@ -9,6 +9,8 @@ export const sv = {
     title: 'Lägg till på hemskärmen',
     apple: 'På iPhone och iPad: öppna spelet i Safari, tryck på Dela och välj Lägg till på hemskärmen.',
     android: 'På Android: öppna webbläsarens meny och välj Installera app eller Lägg till på startskärmen.',
+    // Where the browser offers to install the game itself (access-and-devices.md row 21).
+    install: 'Installera spelet',
     offline: 'Öppna spelet med internet först. Delar som har laddats kan sedan spelas utan internet, så länge enheten har plats att spara dem.',
   },
   painting: {

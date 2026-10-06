@@ -37,7 +37,12 @@ export default defineConfig(({ mode }) => {
           lang: 'sv', start_url: base, scope: base, display: 'standalone',
           display_override: ['fullscreen', 'standalone'], orientation: 'landscape',
           theme_color: '#ecdfc6', background_color: '#ecdfc6',
-          icons: [192, 512].map((size) => ({ src: `icons/ghost-${size}.png`, sizes: `${size}x${size}`, type: 'image/png', purpose: 'any' })),
+          // Android cuts its own shape out of a maskable icon: the ghost on its cream to the edges, inside the middle
+          // 80 % (access-and-devices.md row 21).
+          icons: [
+            ...[192, 512].map((size) => ({ src: `icons/ghost-${size}.png`, sizes: `${size}x${size}`, type: 'image/png', purpose: 'any' })),
+            { src: 'icons/ghost-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          ],
         },
         injectManifest: {
           globPatterns: ['**/*.{js,wasm,css,html,woff2}', 'assets/*.webp', 'icons/*.png', 'packs/manifest.json', 'packs/boot/*.{glb,ktx2,m4a,webp}'],
