@@ -168,8 +168,9 @@ async function open(name, options, query = '?debug') {
   // chosen is still chosen after the page is loaded again.
   await page.keyboard.press('Escape');
   check('Esc opens the pause panel', await page.locator('#pause').isVisible());
-  await sleep(200);
-  check('in Pause the bag says its number', await page.locator('#bag').evaluate((node) => !node.classList.contains('quiet')));
+  // The bag speaks up on the next frame, which a software renderer can draw well after 200 ms.
+  const told = await page.waitForFunction(() => !document.getElementById('bag').classList.contains('quiet'), null, { timeout: 5000 }).then(() => true, () => false);
+  check('in Pause the bag says its number', told);
   const still = await state();
   await page.keyboard.down('ArrowRight');
   await sleep(400);
