@@ -61,17 +61,33 @@ try {
       const visible = (a) => { for (let n=a; n; n=n.parent) if (!n.visible) return false; return true; };
       const snapshot = () => ({ ...view.info(), at: actor.position.toArray(), rotation: actor.rotation.toArray(),
         visible: visible(actor), corners: f.corners(actor), family: actors.map((a) => ({ who: a.userData.familyRole, visible: visible(a), corners: f.corners(a) })),
-        meshes: actor.children.length, instances: actor.children[0].count });
+        meshes: actor.children.length, instances: actor.children[0].count, pose: Array.from(actor.children[0].instanceMatrix.array),
+        foot: actor.children[0].boundingBox.min.y, player: { ...sim.curr } });
       window.probe = { draw, snapshot, sim }; return snapshot();
     }, { course, x, y, who, flags, tier });
-    check(`${name}: the named relative has a visible body with one instanced draw`, shown.visible && shown.meshes === 1 && shown.instances === 13);
+    check(`${name}: the named relative has articulated arms and legs in one instanced draw`, shown.visible && shown.meshes === 1 && shown.instances === 17);
     check(`${name}: the helper's head and feet fit the shared composition`, shown.corners.every(([x,y]) => Math.abs(x) < 1 && Math.abs(y) < 1));
     if (course === 'norrsken') check(`${name}: all four relatives fit the reunion shot`, shown.family.length === 4 && shown.family.every((a) => a.visible && a.corners.every(([x,y]) => Math.abs(x)<1 && Math.abs(y)<1)));
     const paused = await page.evaluate(() => { const p=window.probe; for(let i=0;i<20;i++)p.draw(0); return p.snapshot(); });
-    check(`${name}: pausing retains family pose and GPU resources`, JSON.stringify(paused.at) === JSON.stringify(shown.at) && JSON.stringify(paused.rotation) === JSON.stringify(shown.rotation) && paused.textures === shown.textures && paused.geometries === shown.geometries);
+    check(`${name}: pausing retains the actual joint pose and GPU resources`, JSON.stringify(paused.at) === JSON.stringify(shown.at) && JSON.stringify(paused.rotation) === JSON.stringify(shown.rotation) && JSON.stringify(paused.pose) === JSON.stringify(shown.pose) && paused.textures === shown.textures && paused.geometries === shown.geometries);
     const calm = await page.evaluate(() => { const p=window.probe; for(let i=0;i<20;i++)p.draw(.1); return p.snapshot(); });
-    check(`${name}: reduced motion keeps the actor grounded and shaders/draws bounded`, calm.at[1] === 0 && calm.programs === shown.programs && withinDraws(calm.drawCalls, calm.tier));
+    check(`${name}: reduced motion keeps the actor grounded and shaders/draws bounded`, calm.at[1] === 0 && Math.abs(calm.foot) < 1e-5 && calm.programs === shown.programs && withinDraws(calm.drawCalls, calm.tier));
     await picture(page, join(shots, `${name}.png`));
+    if (course === 'garden' && tier === 'low') {
+      const still = await page.evaluate(() => { const p=window.probe; for(let i=0;i<10;i++)p.draw(.1); return p.snapshot(); });
+      check(`${name}: reduced motion removes idle joint loops`, JSON.stringify(still.pose) === JSON.stringify(calm.pose));
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      const movement = await page.evaluate(() => { const p=window.probe; p.sim.flags.delete('moa'); p.draw(.1);
+        const a=p.snapshot();for(let i=0;i<8;i++)p.draw(.1);const b=p.snapshot();
+        p.sim.flags.add('moa');for(let i=0;i<5;i++)p.draw(.1);return{a,b,hello:p.snapshot()}; });
+      check(`${name}: normal idle and greeting articulate without moving the actor or simulation`,
+        JSON.stringify(movement.a.pose)!==JSON.stringify(movement.b.pose) &&
+        JSON.stringify(movement.b.pose)!==JSON.stringify(movement.hello.pose) &&
+        JSON.stringify(movement.a.at)===JSON.stringify(movement.hello.at) &&
+        JSON.stringify(movement.a.player)===JSON.stringify(movement.hello.player) && Math.abs(movement.hello.foot)<1e-5);
+      check(`${name}: greeting reuses warmed shaders`, movement.hello.programs===shown.programs);
+      await picture(page, join(shots, `${name}-greeting.png`));
+    }
     if (course === 'norrsken') {
       const before = await page.evaluate(() => { const p=window.probe; p.sim.flags.delete('taste'); p.draw(0); return p.snapshot(); });
       check(`${name}: reunion relatives remain hidden before Elof grows back`, before.family.every((a) => !a.visible));

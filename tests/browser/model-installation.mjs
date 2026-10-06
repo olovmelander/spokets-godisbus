@@ -34,7 +34,7 @@ const server = await createServer({
           restoreTextures: async () => {}, textureInfo: () => ({}),
         }; }
       `;
-      if (id === fixtureId) return `import { Scene } from 'three';
+      if (id === fixtureId) return `import { Scene, Vector3 } from 'three';
         export { createView } from ${JSON.stringify(join(root, 'src/render/view.ts'))};
         export { Sim } from ${JSON.stringify(join(root, 'src/sim/sim.ts'))};
         export { myren } from ${JSON.stringify(join(root, 'src/content/chapters/myren.ts'))};
@@ -49,7 +49,7 @@ const server = await createServer({
             if (!node.name.startsWith('installed-mamma-')) return;
             models.push({ name: node.name, graded: node.material.customProgramCacheKey().includes('place-grade-v2'),
               rim: node.material.customProgramCacheKey().includes('place-rim-v1'),
-              receiveShadow: node.receiveShadow, x: node.parent.parent.position.x });
+              receiveShadow: node.receiveShadow, x: node.getWorldPosition(new Vector3()).x });
           }); return models;
         };
       `;

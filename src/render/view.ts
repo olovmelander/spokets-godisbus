@@ -2,7 +2,7 @@ import { lessMotion } from '../platform/motion';
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
-  Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PlaneGeometry, PointLight, Quaternion,
+  Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PlaneGeometry, PointLight,
   Scene, Shape, SphereGeometry, TorusGeometry, UnsignedIntType, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
@@ -37,9 +37,9 @@ import { createEpilogueStage } from './epilogue-stage';
 import { createPrologueStage } from './prologue-stage';
 import { createStage } from './stage';
 import { actPose } from './acting';
-import { createModelRig, STANDING, type Pose } from './rig';
+import { createModelRig, createRehearsalRig, heightOf, STANDING, type Pose, type Rig, type Role } from './rig';
 import { createPlayerMotion, createPlayerStandIn } from './player-motion';
-import { createFamilyRehearsal } from './family-rehearsal';
+import { createFamilyMotion } from './family-motion';
 import { createSharedSweets } from './shared-sweets';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
@@ -541,9 +541,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after })),
   ].filter((stand) => stand.look === 'sign' && stand.prop !== null && personFor(stand.word) !== null);
   for (const stand of stands) {
-    const model = createFamilyRehearsal(personFor(stand.word)!);
-    stand.prop!.group.clear(); stand.prop!.group.add(model);
-    family.push({ model, at: stand.at, glad: stand.glad, was: false, joy: 0, arms: [], hands: [] });
+    const who = personFor(stand.word)!, rig = createRehearsalRig(who);
+    stand.prop!.group.clear(); stand.prop!.group.add(rig.group);
+    family.push({ rig, who, motion: createFamilyMotion(who, stand.at), at: stand.at, glad: stand.glad, was: false, joy: 0 });
   }
   if (stage.actors.size > 0 && !standIns) {
     assets.manifest().then(async (manifest) => {
@@ -551,7 +551,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         if (!manifest.packs.private?.files[`${who}.glb`]) continue;
         const model = await assets.model('private', who);
         const placed = stage.replace(who, model);
-        if (placed) characterShadows.add({ object: placed, height: 1.6, radius: .3, active: () => placed.parent !== null && placed.visible });
+        const height = stage.actors.get(who)!.rig.height;
+        if (placed) characterShadows.add({ object: placed, height, radius: .45 * height / 5.2,
+          active: () => placed.parent !== null && placed.visible });
         if (!models.includes(`private/${who}`)) models.push(`private/${who}`);
         modelInstallations++;
       }
@@ -568,18 +570,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           const model = await assets.model('private', who);
           // Modelled with Elof's height as the unit, and drawn as big as he is drawn when he is a boy.
           model.scale.setScalar(3);
-          const old = family.findIndex((one) => one.model.parent === stand.prop!.group);
-          if (old >= 0) family.splice(old, 1);
+          const one = family.find((one) => one.rig.group.parent === stand.prop!.group)!;
+          const rig = createModelRig(model, heightOf(who));
+          rig.group.userData.familyRole = who;
+          rig.group.position.copy(one.rig.group.position);
+          rig.group.quaternion.copy(one.rig.group.quaternion);
+          one.rig = rig;
           stand.prop!.group.clear();
-          stand.prop!.group.add(model);
-          characterShadows.add({ object: model, height: 1.6, radius: .3,
+          stand.prop!.group.add(rig.group);
+          characterShadows.add({ object: rig.group, height: rig.height, radius: .45 * rig.height / 5.2,
             groundY: () => chapter.id === 'norrsken' && homeJourney && who === 'pappa'
               ? playerGroundY : stand.prop!.group.position.y });
-          family.push({
-            model, at: stand.at, glad: stand.glad, was: false, joy: 0,
-            arms: [jointOf(model, 'upperarm_l', -1), jointOf(model, 'upperarm_r', -1)],
-            hands: [jointOf(model, 'lowerarm_l', -1), jointOf(model, 'lowerarm_r', -1)],
-          });
           if (!models.includes(`private/${who}`)) models.push(`private/${who}`);
           modelInstallations++;
         }
@@ -599,7 +600,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const animal = { ladybird: [.5, .45], jay: [.7, .34], ants: [.3, .5], crane: [2.2, .4] } as const;
   for (const stand of stands) {
     const model = stand.prop!.group.children[0]!;
-    characterShadows.add({ object: model, height: 5.2, radius: .45,
+    const height = heightOf(personFor(stand.word)!);
+    characterShadows.add({ object: model, height, radius: .45 * height / 5.2,
       active: () => model.parent === stand.prop!.group && stand.prop!.group.visible,
       groundY: () => chapter.id === 'norrsken' && homeJourney && personFor(stand.word) === 'pappa'
         ? playerGroundY : stand.prop!.group.position.y });
@@ -1085,22 +1087,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     ghostThought?.update(ghostState, flags, { x, y }, camera, clock, dt,
       lessMotion(), ghostPlace.visible);
-    // The family: each turns a little towards him, and throws their arms up for a moment when he has given
-    // them candy, or when they first come into the picture.
+    // The same jointed body greets him at help points and in the story; its outer root remains the place's.
     for (const one of family) {
       const now = one.glad !== undefined && flags.has(one.glad);
       if (now && !one.was) one.joy = 1.8;
       one.was = now;
       one.joy = Math.max(0, one.joy - dt);
       const towards = clamp((x - one.at) * 0.22, -0.75, 0.75);
-      one.model.rotation.y += (towards - one.model.rotation.y) * ease(4, dt);
-      const up = one.joy > 0 ? Math.min(1, one.joy / 0.3, (1.8 - one.joy) / 0.25) : 0;
-      // A small hop of delight, and otherwise the slow sway of someone standing.
-      one.model.position.y = lessMotion() ? 0 : up * Math.abs(Math.sin(clock * 9)) * .36;
-      for (const [i, arm] of one.arms.entries()) {
-        bendJoint(arm, up > 0 ? -3.0 * up : Math.sin(clock * 1.1 + one.at + i) * 0.05, ease(10, dt));
-        bendJoint(one.hands[i] ?? null, up > 0 ? -0.2 * up : -0.08, ease(10, dt));
-      }
+      const carrying = chapter.id === 'norrsken' && homeJourney && flags.has('home') && one.who === 'pappa';
+      const turn = (carrying ? Math.PI / 2 - .35 : towards) - one.rig.group.rotation.y;
+      one.rig.group.rotation.y += Math.atan2(Math.sin(turn), Math.cos(turn)) * ease(4, dt);
+      one.rig.group.position.set(0, 0, 0);
+      one.rig.pose(one.motion.update(dt, clock, one.joy, towards, carrying ? x : null, calmStory));
     }
     if (chapter.id === 'norrsken') {
       const carving = scene.getObjectByName('mover:tragubbe');
@@ -1111,7 +1109,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         const model = pappa?.prop?.group.children[0];
         if (model && pappa) {
           model.position.set(x - pappa.at, y - pappa.prop!.group.position.y, 0);
-          model.rotation.y = .35;
         }
         ghostPlace.visible = true; ghostPlace.position.set(x - .8, y + shoulderLift, .12); ghostPlace.scale.setScalar(1);
         ghostGroundY = playerGroundY;
@@ -1240,23 +1237,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   };
 }
 
-/**
- * One joint and how far it is bent. A bone turns round its own x axis from the turn it rests in, and `forward`
- * says which way that axis swings it; a loose part has no rest and turns round the model's x axis.
- */
-interface Joint {
-  node: Object3D;
-  rest: Quaternion | null;
-  forward: 1 | -1;
-  angle: number;
-}
-
-const X_AXIS = new Vector3(1, 0, 0);
-const turn = new Quaternion();
-
-/** One of the family, standing where their sign stood: the model, and the joints that move. */
+/** One of the family at a help point; replacement keeps its greeting and movement state. */
 interface Relative {
-  model: Object3D;
+  rig: Rig;
+  who: Role;
+  motion: ReturnType<typeof createFamilyMotion>;
   /** Where they stand, along the course. */
   at: number;
   /** The flag that makes them glad, and whether it was set when last looked at. */
@@ -1264,24 +1249,6 @@ interface Relative {
   was: boolean;
   /** Seconds of delight left. */
   joy: number;
-  arms: (Joint | null)[];
-  hands: (Joint | null)[];
-}
-
-/** A joint of a model by its bone's name, or null when the model has no such bone. */
-function jointOf(model: Object3D, name: string, forward: 1 | -1): Joint | null {
-  const node = model.getObjectByName(name);
-  if (!node) return null;
-  const bone = (node as { isBone?: boolean }).isBone === true;
-  return { node, rest: bone ? node.quaternion.clone() : null, forward: bone ? forward : 1, angle: 0 };
-}
-
-/** Bends a joint towards an angle, a share of the way each frame. */
-function bendJoint(joint: Joint | null, angle: number, quick: number): void {
-  if (!joint) return;
-  joint.angle += (angle - joint.angle) * quick;
-  if (joint.rest) joint.node.quaternion.copy(joint.rest).multiply(turn.setFromAxisAngle(X_AXIS, joint.angle * joint.forward));
-  else joint.node.rotation.x = joint.angle;
 }
 
 function startState(chapter: ChapterData): PlayerState {
