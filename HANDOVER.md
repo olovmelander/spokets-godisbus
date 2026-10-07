@@ -1,6 +1,33 @@
 # Handover
 
-## State (6 October 2026)
+## State (7 October 2026)
+
+- **Graphics, cloud stage 19: the bog's spång, its shy lights and Mamma's lamp** (7 October, cloud session, branch
+  `ccr-6078e7de-t0rxpz`; the visual audit's `myren` rows 7, 19 and 21).
+  - **The boardwalk is a spång** (`src/render/dressing/spang.ts`; `ridge` in `src/render/dressing/ground.ts`).
+    From x 104 to 136 the chapter marks its ground as wood, and over the bog that drew the garden's deck: orange
+    boards across the path, 16 deep, over a near-black wall. Now three silver planks lie along the path, their tops
+    on the line he walks on, in lengths of 8 with staggered joints and some lichen. Round sleepers lie under them
+    every 4, their ends showing in front, and battens lie across the ramp. Under them is the bog's own peat in a
+    low ridge: a plank and a sleeper below the line where the planks lie, sinking into the bog behind, rounding
+    off in front. One mesh with the boards' picture, one draw more where it is in sight, no new shader. The deck
+    front that drew the old walk is gone.
+  - **The shy lights are soft glows** (`wisp` in `src/render/props.ts`, row 19). Each was a yellow ball in a green
+    shell, two draws. Now each is one glow, pale gold at its heart and green towards its rim, added to the mist
+    behind it. It bobs, and shimmers slowly with two waves together, never a flicker. Its picture is worked out in
+    numbers, with no canvas.
+  - **Mamma's lamp** (`buildMist` in `src/render/view.ts`, row 21; `mist.lamp` in `myren.ts`). Once the mist rolls
+    in, a warm halo with a small bright flame glows at x 127 on the boardwalk: a second warm point, where he came
+    from.
+  - **Checked:**
+    - Before/after on High 1180×820 and Low 844×390, with stand-in figures: the walk at myren x 106, 116, 126 and
+      132; the shy lights at 147.2 and 152.8, and the lamp from 124 and 138, in the mist.
+    - Suites: smoke, myren-loop and water-light.
+    - New unit tests: `bog-spang.test.ts` (three planks with their tops on the line, sleepers whose ends show,
+      battens on the ramp, the ridge under them a plank and a sleeper down) and the shy light in `props.test.ts`
+      (one additive glow without a canvas, that bobs). The bog's walk in `wooden-floors.test.ts` now checks the
+      ridge.
+    - The script is 432.2 KB of 450 (+1.2 KB).
 
 - **Graphics, cloud stage 18: the colaflaska's nest, and room in the script** (7 October, cloud session, branch
   `ccr-6078e7de-t0rxpz`; the visual audit's `granskogen` row 4, its last part).
@@ -90,8 +117,8 @@
       water), the shy tussocks in `props.test.ts`, and `bog-snags.test.ts` (shape, and none taller than the
       picture). Each fails against the old code.
     - The script is 446.9 KB of 450.
-  - **Still to do in the bog:** the crane (Blender), the shy lights as soft glows (row 19), Mamma's lamp seen
-    from the mist (row 21), and the boardwalk (row 7). The dead pine as a ledge is built (cloud stage 17).
+  - **Still to do in the bog:** the crane (Blender). The dead pine as a ledge is built (cloud stage 17); the
+    boardwalk, the shy lights and Mamma's lamp too (cloud stage 19).
 
 - **Room in the script: shaders without their padding** (6 October, cloud session, branch
   `ccr-6078e7de-t0rxpz`).
@@ -2321,8 +2348,8 @@
 - **Room in the script for more graphics:** the gate (plan §6.12) is 450 KB of gzipped JS. After stage 12
   it stood at 448.7 KB; the build now ships shaders without their padding (`scripts/squeeze-glsl.mjs`, see
   "State"), which took it to 445.5 KB. After stages 13 to 17 it stood at 448.0 KB. Stage 18 left out three's
-  Zstandard decoder, which no texture of the game's needs (`scripts/no-zstd.mjs`): it stands at 431.0 KB, 19 KB
-  left. The gate counts every `.js` in the build, so splitting code into chunks
+  Zstandard decoder, which no texture of the game's needs (`scripts/no-zstd.mjs`): it stood at 431.0 KB. After
+  stage 19 it stands at 432.2 KB, nearly 18 KB left. The gate counts every `.js` in the build, so splitting code into chunks
   does not help. Mark a new shader's template literal `/* glsl */` so that it is squeezed too. When room runs
   out again: a smaller minifier setting saves about 1.5 KB more (terser on top of the default, measured),
   then dead code. Raising the gate is Olov's decision.
@@ -2344,8 +2371,9 @@
      cast-iron form is still separate work.
      A physical shop riser is correctly hidden when the camera has already passed it.
   4. **The bog's hummocks with a waterline, and its things:** dead pines, the crane as a model. Built in cloud
-     stages 13 to 16: the hummocks, the shy tussocks, the scattered snags and the mist with the lantern; and
-     the dead pine's bough as a ledge in stage 17. The crane remains.
+     stages 13 to 16: the hummocks, the shy tussocks, the scattered snags and the mist with the lantern; the
+     dead pine's bough as a ledge in stage 17; the spång, the shy lights and Mamma's lamp in stage 19. The
+     crane remains.
   5. **The garden's things,** with Moa's paper plane; the house and home's rooms wait for Olov (below).
   6. Ledges that belong to their place (built: cloud stages 17 and 18, the boughs, the bracket fungi and the
      nest; the shelves of rock are the mountain kit's); the mist and the lantern (built: cloud stage 16); the northern lights
@@ -2533,7 +2561,7 @@ The older list, still true where it is not struck:
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 recorded | — / 2 | Original plan versions 1–4; `main` and the placeholder page; the reference pictures gathered. Version 5 on 4 October adds the researched story/level overhaul and its acceptance criteria; no new session or review count is inferred. |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. On 6 October, cloud graphics stage 1 unifies linear haze and the graded sky across tiers, with no new assets or passes. Cloud stage 2 adds forest trunk shadows on High and soft ground shade on Low/Mid; stage 3 adds camera-correct rim lighting; stage 4 reveals the forest landmark silhouettes; stage 5 keeps deck boards planar beside steps; stage 6 gives the village kerb/shop riser masonry and planar street edges; stage 7 adds a fascia to the visible deck edge; stage 8 gives the shop’s visible front granite courses; stage 9 adds layered road sections, with matching comparisons for each visual checkpoint. Stage 12 gives the finale curtains of northern lights with rays and twinkling stars; stages 13 to 16 stand the bog's tussocks in the water, put the shy ones on sedge pedestals, make the dead pines snags and let the mist hide what is far; stage 17 grows the boughs from their stems with each place's own foliage and makes the bark plates bracket fungi. Stage 18 puts the colaflaska in a nest and gives the young stems bark and dead twigs. Final visual and physical-device review remains. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. On 6 October, cloud graphics stage 1 unifies linear haze and the graded sky across tiers, with no new assets or passes. Cloud stage 2 adds forest trunk shadows on High and soft ground shade on Low/Mid; stage 3 adds camera-correct rim lighting; stage 4 reveals the forest landmark silhouettes; stage 5 keeps deck boards planar beside steps; stage 6 gives the village kerb/shop riser masonry and planar street edges; stage 7 adds a fascia to the visible deck edge; stage 8 gives the shop’s visible front granite courses; stage 9 adds layered road sections, with matching comparisons for each visual checkpoint. Stage 12 gives the finale curtains of northern lights with rays and twinkling stars; stages 13 to 16 stand the bog's tussocks in the water, put the shy ones on sedge pedestals, make the dead pines snags and let the mist hide what is far; stage 17 grows the boughs from their stems with each place's own foliage and makes the bark plates bracket fungi. Stage 18 puts the colaflaska in a nest and gives the young stems bark and dead twigs. Stage 19 lays a spång over the bog and makes its shy lights and Mamma's lamp soft glows in the mist. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
 | 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, the prologue rebuilt as scenes with an outdoor deck, every chapter's ending (a coda, a storybook page, and a time card at the next one's start), and a UX, UI and presentation audit (137 findings, eleven steps) with chapters that open on their card instead of the title. On 6 October, in a cloud session, its steps 1 to 11 and every row after them: the type, the controls, the speakers, a clear screen for the story, a short Pause with settings a child can read, a title over the living morning with one tap to play, the materials (paper, wood and candy, and every picture drawn), the UI's sound, the chapter's page as a storybook page, the collections, and a picture for every verb, on the button and over the thing; a HUD that keeps to itself, small things for every device, the page's map and tally, a ring round the held finger, help that carries on, one switch for less motion, what they feel on the bubbles, the painting and the carving close, the credits as the book's last pages, a picture for every player, Moa's words in wax, and the game installable on Android. Broader spatial work, Byn's return loop and the rest of its own story, final likeness/contact/acting/memory art, the story's further steps (sound next), listening and device checkpoints remain; no release is declared. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. Review on a device and authored clips remain. |
