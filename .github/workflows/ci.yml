@@ -36,15 +36,15 @@ jobs:
       - run: npm run privacy-check
 
   # The browser suites play the built game in a headless browser. GitHub has no graphics card, so the game is
-  # drawn in software there, and in one job the suites took 44 to 75 minutes. They are shared out over six
-  # jobs that run side by side (tests/browser/suites.mjs says how), and each job runs all its suites, also
-  # after one has failed. `npm run test:browser` still runs every suite in a row.
+  # drawn in software there, and in one job the suites would take nearly two hours. They are shared out over
+  # eight jobs that run side by side, by the seconds each took (tests/browser/suites.mjs says how), and each
+  # job runs all its suites, also after one has failed. `npm run test:browser` still runs every suite in a row.
   browser:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        part: [1, 2, 3, 4, 5, 6]
+        part: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -57,4 +57,4 @@ jobs:
       - run: npm run build
       # Playwright is pinned to 1.56.1, the version whose browser cloud sessions have (CLAUDE.md).
       - run: npx playwright install --with-deps chromium
-      - run: node tests/browser/run.mjs --part ${{ matrix.part }}/6
+      - run: node tests/browser/run.mjs --part ${{ matrix.part }}/8
