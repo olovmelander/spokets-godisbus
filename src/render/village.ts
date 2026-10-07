@@ -784,6 +784,57 @@ function pits(chapter: ChapterData): { from: number; to: number }[] {
 }
 
 /**
+ * What a puddle in the street mirrors (docs/visual-audit/byn.md row 8): the street's far side, painted from
+ * the street list as it stands 20 EL behind the path, at the kit's heights and in its colours. It is a
+ * picture, not a reflection. Only the band the water can show is in it: the far pavement's kerb, the foot of
+ * each house, and the yard's low wall, fence, gateposts and hedge. A near house, which the water shows past
+ * its end, is painted there too. Over it all is the sky, which the water has of its own.
+ */
+export const MIRRORED = {
+  kerb: '#9c988f', joint: '#5d5b56', stone: '#8a877f', drip: '#d6d3ca', boards: '#a3a097', rails: '#77746c',
+  post: '#a09c93', hedge: ['#4d5a2d', '#6f7b3c'], door: '#4a3a2e',
+} as const;
+
+export function paintStreetMirror(chapter: ChapterData, c: CanvasRenderingContext2D, column: (x: number) => number, row: (y: number) => number): void {
+  const box = (x0: number, x1: number, y0: number, y1: number, colour: string | CanvasGradient) => {
+    c.fillStyle = colour;
+    c.fillRect(column(x0), row(y1), column(x1) - column(x0), row(y0) - row(y1));
+  };
+  for (const part of chapter.street ?? []) {
+    const foot = footOf(chapter, part);
+    // The far pavement's kerb, in granite blocks 6.7 long.
+    if (part.depth === 'far') {
+      box(part.from, part.to, 0, foot, MIRRORED.kerb);
+      for (let x = part.from + 3.35; x < part.to; x += 6.7) box(x - 0.05, x + 0.05, 0, foot, MIRRORED.joint);
+    }
+    if (part.kind === 'yard') {
+      // The hedge, darker low down; the fence's boards on their rails in front of it, four to a length of
+      // the kit's fence; the low wall under them; a gatepost at each end.
+      const hedge = c.createLinearGradient(0, row(foot), 0, row(foot + 5.6));
+      hedge.addColorStop(0, MIRRORED.hedge[0]);
+      hedge.addColorStop(1, MIRRORED.hedge[1]);
+      box(part.from, part.to, foot, foot + 5.6, hedge);
+      const from = part.from + 1.4, to = part.to - 1.4;
+      const count = Math.max(1, Math.round((to - from) / 3.8));
+      const wide = (to - from) / (3.8 * count);
+      for (let i = 0; i < count * 4; i++) {
+        const x = from + (Math.floor(i / 4) * 3.8 + 0.15 + 0.95 * (i % 4)) * wide;
+        box(x, x + 0.65 * wide, foot + 0.62, foot + 4.6, MIRRORED.boards);
+      }
+      for (const y of [1.4, 3.5]) box(from, to, foot + y, foot + y + 0.4, MIRRORED.rails);
+      box(part.from, part.to, foot, foot + 0.5, MIRRORED.stone);
+      for (const x of [part.from + 0.7, part.to - 0.7]) box(x - 0.6, x + 0.6, foot, foot + 5.2, MIRRORED.post);
+    } else {
+      // A house: its stone foot, the white drip board on it, its wall in its own colour, and its door.
+      box(part.from, part.to, foot, foot + 1.6, MIRRORED.stone);
+      box(part.from, part.to, foot + 1.6, foot + 1.98, MIRRORED.drip);
+      box(part.from, part.to, foot + 1.98, foot + 12, part.wall ?? MIRRORED.drip);
+      if (part.door) box(part.door.from + 1, part.door.to - 1, foot, foot + 13, MIRRORED.door);
+    }
+  }
+}
+
+/**
  * Everything that stands behind the street: its houses and its yard, the far village beyond them, the dark
  * under the street, the bicycle and the shop's room. `install` puts the houses together again from the kit
  * modelled in Blender, once it has arrived.

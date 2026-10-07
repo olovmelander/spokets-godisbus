@@ -70,7 +70,7 @@ export interface WaterKind {
   /** The bed of shallow water, and its wet shore. */
   bedColour: string;
   shoreColour: string;
-  /** What it mirrors, where the far scenery is hidden: the flat things that stand at this z (the street's house fronts). */
+  /** What it mirrors, where the far scenery is hidden: what the street has standing at this z, painted by it. */
   stands: number | null;
 }
 
@@ -93,7 +93,7 @@ const KINDS: Partial<Record<PlaceId, WaterKind>> = {
   village: {
     front: 0.65, corner: 0.65, back: -9, thins: -9, behind: null, feather: 0, depth: 6, bed: 0.5, shore: -13.4,
     dim: 0.7, faceTop: '#3d4954', faceDeep: '#2a323b', ramp: 0.6, faceAlpha: 1, faceBelow: 1, murk: 0.08, through: '#ffffff',
-    mirror: 0.75, tint: '#d9dde4', ripple: 0.6, bedColour: '#23262b', shoreColour: '#3a3a3c', stands: -13,
+    mirror: 0.75, tint: '#d9dde4', ripple: 0.6, bedColour: '#23262b', shoreColour: '#3a3a3c', stands: -20,
   },
 };
 
@@ -191,8 +191,8 @@ export interface WaterSetting {
   far?: Object3D[];
   /** The chapter's ground at x: a shallow puddle's far shore lies at the street's height. */
   street?: (x: number) => number;
-  /** The place's dressing. A street's puddle mirrors the house fronts that stand in it, behind the water. */
-  dressing?: Object3D;
+  /** A street's puddle mirrors its far side: the street paints it (village.ts `paintStreetMirror`), at its x and y. */
+  stands?: (c: CanvasRenderingContext2D, column: (x: number) => number, row: (y: number) => number) => void;
 }
 
 interface FarCard { card: Mesh; map: Texture; z: number; every: number; tall: number; eye: number }
@@ -216,6 +216,8 @@ function farCard(object: Object3D): FarCard | null {
 
 /** The mirror strip's size, and how far it reaches over and under the height of his eyes, in EL. */
 const STRIP = { wide: 512, high: 128, above: 24, below: 4 };
+/** How much higher a street's puddle shows what stands behind it than a mirror would. */
+export const MIRROR_REACH = 3.5;
 /** Where the camera stands, for the strip's sake: this far in front of the path, and this far under the far pictures' eye row. */
 const SEEN_FROM = { z: 10.5, under: 0.55 };
 
@@ -257,52 +259,15 @@ function mirrorStrip(cards: Object3D[]): { map: CanvasTexture; frame: Vector4; a
 }
 
 /**
- * The same for water that has houses behind it and not the far scenery: every flat thing that stands at `z`
- * and faces the camera, between `from` and `to`, drawn into one picture that stands still in the world.
+ * The same for water that has a street behind it and not the far scenery: what stands at `z` between `from`
+ * and `to`, as the street paints it, in one picture that stands still in the world.
  */
-function standingStrip(root: Object3D, z: number, from: number, to: number, base: number): { map: CanvasTexture; frame: Vector4; slide: Vector3 } | null {
+function standingStrip(paint: NonNullable<WaterSetting['stands']>, z: number, from: number, to: number, base: number): { map: CanvasTexture; frame: Vector4; slide: Vector3 } | null {
   if (typeof document === 'undefined') return null;
-  root.updateWorldMatrix(true, true);
-  const at = new Vector3();
-  const fronts: { mesh: Mesh; x: number; y: number; z: number; wide: number; tall: number }[] = [];
-  root.traverse((object) => {
-    const mesh = object as Mesh;
-    const size = (mesh.geometry as { parameters?: { width?: number; height?: number } } | undefined)?.parameters;
-    if (!mesh.isMesh || mesh.geometry.type !== 'PlaneGeometry' || !size?.width || !size.height) return;
-    if (!(mesh.material as MeshBasicMaterial).isMeshBasicMaterial || mesh.rotation.x !== 0 || mesh.rotation.y !== 0 || mesh.rotation.z !== 0) return;
-    mesh.getWorldPosition(at);
-    if (Math.abs(at.z - z) > 1 || at.x + size.width / 2 < from || at.x - size.width / 2 > to) return;
-    fronts.push({ mesh, x: at.x, y: at.y, z: at.z, wide: size.width, tall: size.height });
-  });
-  if (!fronts.length) return null;
   const canvas = document.createElement('canvas');
   canvas.width = STRIP.wide;
   canvas.height = STRIP.high;
-  const c = canvas.getContext('2d')!;
-  const column = (x: number) => ((x - from) / (to - from)) * STRIP.wide;
-  const row = (y: number) => ((STRIP.above - (y - base)) / (STRIP.above + STRIP.below)) * STRIP.high;
-  for (const front of fronts.sort((a, b) => a.z - b.z)) {
-    const material = front.mesh.material as MeshBasicMaterial;
-    const left = column(front.x - front.wide / 2);
-    const top = row(front.y + front.tall / 2);
-    const wide = column(front.x + front.wide / 2) - left;
-    const tall = row(front.y - front.tall / 2) - top;
-    const image = material.map?.image as HTMLCanvasElement | undefined;
-    c.save();
-    c.beginPath();
-    c.rect(left, top, wide, tall);
-    c.clip();
-    c.globalAlpha = material.opacity;
-    if (image) {
-      // A fence's picture repeats along it.
-      const times = Math.max(1, material.map!.repeat.x);
-      for (let k = 0; k < times; k++) c.drawImage(image, left + (k * wide) / times, top, wide / times, tall);
-    } else {
-      c.fillStyle = material.color.getStyle();
-      c.fillRect(left, top, wide, tall);
-    }
-    c.restore();
-  }
+  paint(canvas.getContext('2d')!, (x) => ((x - from) / (to - from)) * STRIP.wide, (y) => ((STRIP.above - (y - base)) / (STRIP.above + STRIP.below)) * STRIP.high);
   const map = new CanvasTexture(canvas);
   map.name = 'water-mirror';
   map.colorSpace = SRGBColorSpace;
@@ -330,10 +295,10 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   const pools = chapter.water ?? [];
   const kind = waterKind(setting.place ?? chapter.place, look !== null);
   const details = { value: 0 }, time = { value: 0 };
-  // A puddle between houses mirrors them: as far to each side as the camera can see them in it.
+  // A puddle in the street mirrors what stands across it: as far to each side as the camera can see it in it.
   const puddle = pools[0];
-  const standing = puddle && kind.stands !== null && setting.dressing
-    ? standingStrip(setting.dressing, kind.stands, puddle.from - 16, pools[pools.length - 1]!.to + 16, setting.street?.(puddle.from - 0.2) ?? puddle.y)
+  const standing = puddle && kind.stands !== null && setting.stands
+    ? standingStrip(setting.stands, kind.stands, puddle.from - 16, pools[pools.length - 1]!.to + 16, setting.street?.(puddle.from - 0.2) ?? puddle.y)
     : null;
   const mirror = pools.length && !standing ? mirrorStrip(setting.far ?? []) : null;
   const sky = setting.sky ?? { top: '#8fb6d8', middle: '#dfeaf0', glow: '#fff6dc' };
@@ -349,6 +314,10 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     mirrorFrame: { value: standing?.frame ?? mirror?.frame ?? new Vector4(-40, 80, STRIP.above + STRIP.below, STRIP.below) },
     // Where that card is now: its x, how far its picture has slid, and the height of its eye row.
     mirrorSlide: { value: new Vector3() },
+    // How much higher up what stands behind it the water shows than a mirror would, and how much more its
+    // ripples sway it: a puddle seen as flat as the street's shows a picture of all of the yard, not only its
+    // kerb, and wavering (docs/visual-audit/byn.md row 8).
+    mirrorReach: { value: standing ? MIRROR_REACH : 1 },
     skyTop: { value: new Color(sky.top) }, skyMiddle: { value: new Color(sky.middle) }, skyGlow: { value: new Color(sky.glow) },
     mirrorTint: { value: new Color(kind.tint) },
     faceTop: { value: new Color(kind.faceTop) }, faceDeep: { value: new Color(kind.faceDeep) },
@@ -380,7 +349,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     fragmentShader: /* glsl */ `
       uniform sampler2D flowMap, refraction, mirrorMap;
       uniform vec3 waterColour, sunDirection, skyTop, skyMiddle, skyGlow, mirrorTint, faceTop, faceDeep, through, bedColour, shoreColour;
-      uniform float time, details, opacity, refractOn, cameraFar;
+      uniform float time, details, opacity, refractOn, cameraFar, mirrorReach;
       uniform vec4 mirrorFrame, body, surface;
       uniform vec3 mirrorSlide;
       uniform vec2 resolution;
@@ -417,7 +386,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         float run = max(waterWorld.z - mirrorFrame.x, 0.0);
         float away = max(-ray.z, 0.05);
         float rise = max(-ray.y / away + slope.y * 1.6, 0.0);
-        vec2 hit = vec2(waterWorld.x + ray.x / away * run + slope.x * (2.0 + rise * run), waterWorld.y + rise * run);
+        vec2 hit = vec2(waterWorld.x + ray.x / away * run + slope.x * (2.0 + rise * run) * mirrorReach, waterWorld.y + rise * run * mirrorReach);
         vec4 far = texture2D(mirrorMap, vec2((hit.x - mirrorSlide.x) / mirrorFrame.y + mirrorSlide.y, (hit.y - mirrorSlide.z + mirrorFrame.w) / mirrorFrame.z));
         // The sky is the backdrop's own: its gradient by how high the mirrored ray goes, and its glow where the sun stands.
         float high = rise / 0.536;
@@ -548,6 +517,8 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   return {
     group,
     get refracting() { return target !== null; },
+    /** How high the water stands now against its pools' own height: it rises and falls a little. */
+    get level() { return body.position.y; },
     /** `still`: with reduced motion the water all but stands. */
     update(clock: number, still = false) {
       time.value += (clock - before) * (still ? 0.12 : 1);

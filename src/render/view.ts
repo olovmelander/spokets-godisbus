@@ -9,7 +9,9 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
 import { windWisp } from './wind-wisp';
+import { createAfloat } from './afloat';
 import { createRain } from './rain';
+import { paintStreetMirror } from './village';
 import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
 import { forestKit, forestSocket, installForest, rollingCone } from './forest-kit';
 import { buildLedges } from './ledges';
@@ -30,7 +32,7 @@ import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
 import { createDepthBlur } from './depth-blur';
 import { createBloom } from './bloom';
-import { createWater } from './water';
+import { createWater, waterKind } from './water';
 import { createCharacterShadows } from './character-shadows';
 import { createRimLight } from './rim-light';
 import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './quality';
@@ -336,10 +338,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const farCards: Object3D[] = [];
   dressing?.group.traverse((object) => { if (object.name.startsWith('far-')) farCards.push(object); });
   const water = createWater(chapter, place?.water ?? null, place?.sun.from,
-    place && dressing ? { place: place.id, sky: place.sky, far: farCards, dressing: dressing.group, street: (x) => heightOfGroundAt(chapter, x) } : undefined);
+    place && dressing ? {
+      place: place.id, sky: place.sky, far: farCards, street: (x) => heightOfGroundAt(chapter, x),
+      ...(chapter.street ? { stands: (c: CanvasRenderingContext2D, column: (x: number) => number, row: (y: number) => number) => paintStreetMirror(chapter, c, column, row) } : {}),
+    } : undefined);
   // It is drawn in the scene's own pass, after what stands in it and the far layers, and before what
   // drifts over it (the bog's mist sheets, the shafts of light, the dust): its render order says where.
   scene.add(water.group);
+  // A puddle in the street has birch leaves on it, from the yard across it (./afloat.ts).
+  const afloat = createAfloat(place && dressing && waterKind(place.id).bed > 0 ? chapter.water ?? [] : []);
+  scene.add(afloat.group);
   const tussockMeshes = buildTussocks(chapter, place?.tussock ?? null);
   const berryMeshes = buildBerries(chapter);
   for (const berry of berryMeshes) scene.add(berry);
@@ -793,6 +801,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
     cones.update(rollers, clock);
     water.update(clock, lessMotion());
+    afloat.update(clock, water.level, lessMotion());
     for (const [i, t] of tussocks.entries()) tussockMeshes[i]?.position.set(t.x, t.y, 0);
     // A cranberry goes flat under him and springs back, a little past its shape.
     for (const [i, b] of (berries ?? []).entries()) {

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { BONUS, STORY } from '../../src/content/chapters';
 import { PLACES } from '../../src/render/dressing';
 import { createWater, waterKind, waterShape, type WaterShape } from '../../src/render/water';
+import { STREET_DEPTH } from '../../src/render/village';
 import type { ChapterData } from '../../src/sim/types';
 
 const wet = [...STORY, ...BONUS].filter((chapter) => (chapter.water ?? []).length > 0);
@@ -92,9 +93,10 @@ describe('the water, as it is drawn', () => {
     const shore = all.filter((corner) => corner.part === 2);
     const pool = byn.water![0]!;
     expect(Math.max(...shore.map((corner) => corner.y))).toBe(ground(byn, pool.from - 0.2));
-    // The house fronts stand 13 EL behind the path (village.ts).
+    // The far shore reaches back towards the far pavement's kerb, 16 EL behind the path.
     expect(Math.min(...shore.map((corner) => corner.z))).toBeLessThanOrEqual(-13);
-    expect(kind.stands).toBe(-13);
+    // It mirrors the street's far side, which stands 20 EL behind the path (village.ts).
+    expect(kind.stands).toBe(STREET_DEPTH.far);
   });
 
   it('is dark where it is deep, and mirrors less than half of the sky', () => {

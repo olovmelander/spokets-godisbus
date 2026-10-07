@@ -2,6 +2,7 @@ import { BufferGeometry, Color, Float32BufferAttribute, Group, Mesh, MeshStandar
 import type { ChapterData, SurfaceKind } from '../../sim/types';
 import { cliffJoints } from '../cliff-joints';
 import { stoneCourses } from '../stone-courses';
+import { waterKind } from '../water';
 import { MOSS, drawn, hash, heightAt, landscape, noise, sequence, surfaceAt } from './kit';
 
 // --- L3: the ground ---------------------------------------------------------------------------------------
@@ -619,6 +620,14 @@ const PROFILE_ISLAND = PROFILE.map((row, i) => (i < 3 ? { ...row, drop: [3.2, 1.
  * as the peat water's front (water.ts): it is drawn back as a front is at a wall's top (`forwardAt`).
  */
 const IN_WATER = 0.62;
+/**
+ * Round a puddle in the street the road is wet (docs/visual-audit/byn.md row 8): darker and cooler, as far
+ * as a step and a half out from the water, at its sides and behind it.
+ */
+const DAMP = new Color(0.6, 0.64, 0.72);
+const DAMP_REACH = 1.5;
+const PUDDLE_BACK = waterKind('village').back;
+
 /** Wet peat at the waterline, and how far above and below it the wet reaches. */
 const WET = new Color('#1a130e');
 const WET_REACH = 0.25;
@@ -829,6 +838,8 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
     ? Math.max(pool.y + SHORE_OVER, Math.min(heightAt(chapter, pool.from - 0.6), heightAt(chapter, pool.to + 0.6)))
     : pool.y + SHORE_OVER);
   const poolAt = (front: Front, x: number, y: number) => (front.shore === false ? undefined : (chapter.water ?? []).find((w) => x >= w.from && x <= w.to && y < w.y));
+  /** Round a puddle in the street: how wet the road is at x, 1 at the water and nothing a step and a half out. */
+  const dampAt = (x: number) => Math.max(0, ...(chapter.water ?? []).map((w) => 1 - Math.max(w.from - x, x - w.to, 0) / DAMP_REACH));
   /** The level of the water a bog's island stands in at x, if it stands in any. */
   const wetAt = (front: Front, x: number) => (front === ISLAND_FRONT ? (chapter.water ?? []).find((w) => x >= w.from && x <= w.to)?.y : undefined);
   const drains = drainsOf(chapter);
@@ -912,7 +923,7 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
     const stretch = points.slice(start, Math.min(points.length, i + 1));
     const kind = points[start]!.kind;
     const front = frontFor(kind, own);
-    if (stretch.length > 1) shapes.push({ kind, shape: stretchOfGround(stretch, kind, front, front.jointed ? blocks : []) });
+    if (stretch.length > 1) shapes.push({ kind, shape: stretchOfGround(stretch, kind, front, front.jointed ? blocks : [], front.shore === 'ground' ? dampAt : undefined) });
     start = i;
   }
   return shapes;
@@ -922,7 +933,7 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
  * One stretch, as columns of points across the profile. The top and a wall's face have a column each where
  * they meet, so that each keeps its own colour and its own lie of the picture, and the corner is a corner.
  */
-function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks: Block[] = []): BufferGeometry {
+function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks: Block[] = [], dampAt?: (x: number) => number): BufferGeometry {
   const look = GROUNDS[kind];
   const street = front === FRONTS.street && (road(kind) || kind === 'iron');
   const profile = street ? PROFILE_ROAD : kind === 'moss' ? PROFILE_FOREST_SHADE : front.rows;
@@ -936,6 +947,7 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
   const uv: number[] = [];
   const index: number[] = [];
   const c = new Color();
+  const wetted = new Color();
   const tile = tileOf(kind);
 
   /**
@@ -975,6 +987,10 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       const ironWork = p.drain !== undefined && !shut;
       toneAt(shut ? DRAIN_ROAD : kind, p.x, down[j]!, c);
       if (ironWork && !face && p.y < p.drain! - 1) c.copy(WELL);
+      // Round the street's puddle the road is wet, and behind the puddle as far again: its top, and the lip
+      // of its shore over the water, but not the road's front, which is cut through.
+      const damp = dampAt?.(p.x) ?? 0;
+      if (damp > 0 && (row.z <= EDGE || drop < 0.12)) c.multiply(wetted.setRGB(1, 1, 1).lerp(DAMP, damp * Math.min(1, Math.max(0, 1 - (PUDDLE_BACK - z) / DAMP_REACH))));
       if (cuts) {
         // A face is cut all the way; the front is cut under its lip, and where it has drawn back to a wall.
         const cut = face ? 1 : Math.max(row.cut ?? 0, row.z > EDGE ? 1 - p.forward : 0);
