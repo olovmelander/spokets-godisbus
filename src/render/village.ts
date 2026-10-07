@@ -6,6 +6,7 @@ import type { ChapterData, StreetGoods, StreetPart, Vec } from '../sim/types';
 import { sweetSocket } from './candy';
 import { drainsOf } from './dressing/ground';
 import { glowTexture } from './glow';
+import { paperBag, SATURDAY_BAG_TALL } from './saturday-bag';
 
 /**
  * The village street (the extra chapter Byn): its houses and its yard, a lamp post now and then, a bicycle
@@ -1082,16 +1083,25 @@ function shopInterior(chapter: ChapterData): Group {
   // Wrapped sweets from the kit take the balls' place: the same piles, in the same colours.
   sweetSocket(sweets, { shape: 'burk', scale: 3.1 });
   group.add(sweets, lids, jars, lamps(chapter, floor));
-  // A plain paper bag, open at its top, beside the final candy. No sign, price or brand.
-  const paper = new MeshStandardMaterial({ color: '#d5b57e', roughness: 1 });
-  const dark = new MeshBasicMaterial({ color: '#6a5035' });
-  const bagX = chapter.goalX + 1.9;
-  block(bagX, floor + 1.7, -2.7, 3.2, 3.4, 0.16, paper);
-  block(bagX - 1.52, floor + 1.7, -3.45, 0.16, 3.4, 1.5, paper);
-  block(bagX + 1.52, floor + 1.7, -3.45, 0.16, 3.4, 1.5, paper);
-  const opening = new Mesh(new PlaneGeometry(2.9, 1.3), dark);
-  opening.rotation.x = -Math.PI / 2; opening.position.set(bagX, floor + 0.05, -3.45); group.add(opening);
+  group.add(shopBag(chapter, floor));
   return group;
+}
+
+/**
+ * The bag to share, in the chapter's last picture (docs/visual-audit/byn.md row 20): one of the shop's
+ * striped paper bags, as his Saturday bag is, taller than he is, open, with sweets looking out over its
+ * pinked top. It stands a little turned, clear of the big candy. No sign, price or brand. Measured from the
+ * big candy's place, on the floor.
+ */
+export const SHOP_BAG = { tall: 3.4, past: 2.8, z: -2.4, turn: -0.42 } as const;
+
+export function shopBag(chapter: ChapterData, floor: number): Group {
+  const bag = paperBag();
+  bag.name = 'shop-bag';
+  bag.scale.setScalar(SHOP_BAG.tall / SATURDAY_BAG_TALL);
+  bag.position.set(chapter.goalX + SHOP_BAG.past, floor, SHOP_BAG.z);
+  bag.rotation.y = SHOP_BAG.turn;
+  return bag;
 }
 
 /**
