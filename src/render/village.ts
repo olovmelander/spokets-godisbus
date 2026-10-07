@@ -1223,50 +1223,96 @@ function bicycle(chapter: ChapterData): Group {
 
 const LEAVES = ['#e8b63a', '#d99a2b', '#f0cf5a', '#c9792a', '#b8943a'].map((hex) => new Color(hex));
 
-/** One stretch of the street: the birches' leaves on the ground, and a lamp post in every second stretch. */
+/**
+ * A birch leaf as it lies on the street (docs/visual-audit/byn.md row 16): a pointed egg, broadest near its
+ * stalk, toothed round its edge and folded along its midrib. Its tip is along +x and its face up. On the
+ * ground each is tipped a little towards the camera, so that it shows its face and never its underside.
+ */
+export const STREET_LEAF = { long: 0.42, wide: 0.32, fold: 0.13, teeth: 9, tip: [0.05, 0.3] as const, steps: 18 } as const;
+
+export function streetLeaf(): BufferGeometry {
+  const { long, wide, fold, teeth, steps } = STREET_LEAF;
+  const at = (t: number) => -long / 2 + long * t;
+  // How wide each half is along the midrib, from the foot (t 0) to the tip (t 1), with a tooth every so often.
+  const half = (t: number) => (wide / 2) * Math.sin(Math.PI * t ** 0.7) * (0.93 + 0.07 * ((t * teeth) % 1));
+  const position: number[] = [];
+  for (const side of [1, -1]) {
+    for (let i = 0; i < steps; i++) {
+      const [t0, t1] = [i / steps, (i + 1) / steps];
+      const m0 = [at(t0), 0, 0], m1 = [at(t1), 0, 0];
+      // Each half rises from the midrib to its edge: the leaf is folded.
+      const e0 = [at(t0), side * half(t0), fold * half(t0)], e1 = [at(t1), side * half(t1), fold * half(t1)];
+      // Two triangles between the midrib and the edge; at the foot and the tip, where the edge meets the
+      // midrib, only the one that has any size.
+      const outer = side > 0 ? [m0, e1, e0] : [m0, e0, e1];
+      const inner = side > 0 ? [m0, m1, e1] : [m0, e1, m1];
+      for (const corner of [...(half(t0) > 1e-6 ? outer : []), ...(half(t1) > 1e-6 ? inner : [])]) position.push(...corner);
+    }
+  }
+  const leaf = new BufferGeometry();
+  leaf.setAttribute('position', new Float32BufferAttribute(position, 3));
+  leaf.rotateX(-Math.PI / 2);
+  leaf.computeVertexNormals();
+  return leaf;
+}
+
+/** Where leaves gather in a stretch of the street: at the foot of each near wall, and against each step. */
+function drifts(chapter: ChapterData, from: number, to: number, next: () => number): { x: number; z: number }[] {
+  const spots: { x: number; z: number }[] = [];
+  for (const part of chapter.street ?? []) {
+    if (part.depth !== 'near') continue;
+    const a = Math.max(from, part.from + 1), b = Math.min(to, part.to - 1);
+    for (let x = a + next() * 5; x < b; x += 5 + next() * 6) spots.push({ x, z: STREET_DEPTH.near + 0.6 + next() * 0.3 });
+  }
+  const line = chapter.ground;
+  for (let i = 1; i < line.length; i++) {
+    const p = line[i - 1]!, q = line[i]!;
+    if (p.x !== q.x || p.x < from || p.x >= to) continue;
+    // On its lower side, where that is the street; at the edge of its upper side where it drops into a pit.
+    const left = heightAt(chapter, p.x - 0.5), right = heightAt(chapter, p.x + 0.5);
+    const lower = left < right ? -1 : 1;
+    const side = Math.min(left, right) > -1 ? lower : -lower;
+    spots.push({ x: p.x + side * (0.35 + next() * 0.3), z: -0.9 - next() * 4 });
+  }
+  return spots;
+}
+
+/**
+ * One stretch of the street: the birches' leaves on the ground. (Its lamp posts are to stand where the
+ * chapter says, docs/visual-audit/byn.md row 15: the ones drawn by chance here never found a place they could
+ * stand in either street, and are gone.)
+ */
 export function street(chapter: ChapterData, from: number, to: number, seed: number): Group {
   const group = new Group();
   const next = sequence(seed);
   const place = new Object3D();
-  // A birch leaf: small, and nearly round, with a point.
-  const leaves = new InstancedMesh(new CircleGeometry(0.2, 7).scale(1.3, 1, 1), new MeshStandardMaterial({ color: '#ffffff', roughness: 0.85, side: DoubleSide }), 46);
+  const most = 46;
+  // Two-sided as the rest of the street's thin things are, so that it shares their shader.
+  const leaves = new InstancedMesh(streetLeaf(), new MeshStandardMaterial({ color: '#ffffff', roughness: 0.85, side: DoubleSide }), most);
+  leaves.name = 'street-leaves';
   let count = 0;
-  for (let i = 0; i < 46; i++) {
-    const x = from + next() * (to - from);
-    // Behind the path, or in front of it: never where he walks.
-    const z = next() < 0.72 ? -0.6 - next() * 7 : 0.6 + next() * 1.6;
-    const turn = next() * Math.PI * 2;
-    const tilt = (next() - 0.5) * 0.5;
-    const tone = LEAVES[Math.floor(next() * LEAVES.length)]!;
+  const lay = (x: number, z: number) => {
     const y = heightAt(chapter, x);
-    // None over the drain, in the well or on the puddle's bottom.
-    if ((chapter.shop && x >= chapter.shop.door) || y < -2 || Math.abs(heightAt(chapter, x + 0.4) - y) > 0.2 || Math.abs(heightAt(chapter, x - 0.4) - y) > 0.2) continue;
-    place.position.set(x, y + 0.03 + next() * 0.02, z);
-    place.rotation.set(-Math.PI / 2 + tilt, 0, turn);
-    place.scale.setScalar(0.7 + next() * 0.8);
+    // None in the shop, over the drain, in the well or on the puddle's bottom, and none on a step's edge.
+    if ((chapter.shop && x >= chapter.shop.door) || y < -2 || Math.abs(heightAt(chapter, x + 0.4) - y) > 0.2 || Math.abs(heightAt(chapter, x - 0.4) - y) > 0.2) return;
+    const [low, high] = STREET_LEAF.tip;
+    place.position.set(x, y + 0.012 + next() * 0.01, z);
+    // Turned any way about, and tipped towards the camera.
+    place.rotation.set(low + (high - low) * next(), next() * Math.PI * 2, 0);
+    place.scale.setScalar(0.8 + next() * 0.5);
     place.updateMatrix();
     leaves.setMatrixAt(count, place.matrix);
-    leaves.setColorAt(count, tone);
+    leaves.setColorAt(count, LEAVES[Math.floor(next() * LEAVES.length)]!);
     count++;
+  };
+  // Most lie where the wind has left them, five to nine together, against a wall's foot or a step...
+  for (const spot of drifts(chapter, from, to, next)) {
+    for (let k = 5 + Math.floor(next() * 5); k > 0 && count < most * 0.6; k--) lay(spot.x + (next() - 0.5) * 1.2, spot.z + (next() - 0.5) * 0.8);
   }
+  // ...and the rest anywhere: behind the path, or in front of it, never where he walks.
+  for (let i = count; i < most; i++) lay(from + next() * (to - from), next() < 0.72 ? -0.6 - next() * 7 : 0.6 + next() * 1.6);
   leaves.count = count;
   leaves.computeBoundingSphere();
   if (count > 0) group.add(leaves);
-
-  // A lamp post: a dark green column on a foot, going up out of the picture.
-  if (Math.round(from / 18) % 2 === 0) {
-    const x = from + 4 + next() * 8;
-    const y = heightAt(chapter, x);
-    // Not where a near house stands: its wall is in front of the post's place.
-    const indoors = chapter.street?.some((part) => part.depth === 'near' && x >= part.from && x < part.to) ?? false;
-    if (y > -2 && !indoors && (!chapter.shop || x < chapter.shop.door)) {
-      const iron = new MeshStandardMaterial({ color: '#2f4a3c', roughness: 0.6 });
-      const post = new Mesh(new CylinderGeometry(0.42, 0.55, 40, 14), iron);
-      post.position.set(x, y + 20, -8.2);
-      const foot = new Mesh(new CylinderGeometry(0.95, 1.25, 2.2, 14), iron);
-      foot.position.set(x, y + 1.1, -8.2);
-      group.add(post, foot);
-    }
-  }
   return group;
 }

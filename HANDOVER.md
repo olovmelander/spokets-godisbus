@@ -2,6 +2,39 @@
 
 ## State (7 October 2026)
 
+- **Graphics, cloud stage 29: the street's birch leaves** (7 October, cloud session, branch
+  `ccr-6078e7de-t0rxpz`; the visual audit's `byn` row 16).
+  - **Before:** the street's leaves were flat seven-sided discs up to 0.78 EL long.
+    - They tilted either way, so that a third showed their undersides, which the sun does not reach, and went
+      nearly black.
+    - They were spread evenly along the street.
+  - **Birch leaves** (`STREET_LEAF` and `streetLeaf` in `src/render/village.ts`).
+    - Each is a pointed egg 0.42 long and 0.32 across, broadest near its stalk, toothed round its edge and
+      folded along its midrib.
+    - Each is tipped 3° to 17° towards the camera, so that it always shows its face. The camera looks along
+      the street at about 5°, and a smaller tip would turn the fold's near half away from it.
+  - **Where they lie** (`drifts` and `street` in the same file).
+    - Most lie in drifts of five to nine against the foot of a near wall or a step. That includes the drain's
+      steps, the puddle's shores and the shop's step.
+    - The rest are spread as before: behind the path or in front of it, never where he walks, and none in the
+      shop, the drain or the pit.
+    - Still one draw a stretch.
+  - **The lamp post that never stood.** The street's lamp post was drawn by chance from the same numbers as
+    the leaves. In both street chapters it never found a place it could stand. It is gone, so that the leaves
+    cannot move it into the picture. The posts are to stand where the chapter says (`byn` row 15).
+  - **Checked:**
+    - Before/after at byn x 8, 36, 65, 70 and 107 on High 1180×820 and Low 844×390.
+    - Suites: village, smoke, gpu-memory and journey.
+    - New unit tests in `street-leaves.test.ts`:
+      - the leaf is a pointed egg, broadest near its stalk, folded along its midrib, with its face up;
+      - every leaf on the street shows its face, tipped towards the camera, and lies on the street, never
+        where he walks or in the shop;
+      - more than half lie in drifts against a wall's or a step's foot;
+      - it is one draw a stretch.
+    - The script is 440.0 KB of 450 (+0.4 KB).
+  - **Left for later:** the village's falling motes as leaves tumbling down (row 16), and the lamp posts where
+    the chapter says (row 15).
+
 - **Graphics, cloud stage 28: the shop's bag in the last picture** (7 October, cloud session, branch
   `ccr-6078e7de-t0rxpz`; the visual audit's `byn` row 20).
   - **Before:** the chapter ended on three flat tan boxes, 3.2 × 3.4, with the big candy in front of their left
@@ -2608,7 +2641,7 @@
   it stood at 448.7 KB; the build now ships shaders without their padding (`scripts/squeeze-glsl.mjs`, see
   "State"), which took it to 445.5 KB. After stages 13 to 17 it stood at 448.0 KB. Stage 18 left out three's
   Zstandard decoder, which no texture of the game's needs (`scripts/no-zstd.mjs`): it stood at 431.0 KB. After
-  stage 19 it stood at 432.2 KB, after stage 25 at 437.5 KB, after stage 26 at 438.6 KB and after stage 27 at 439.7 KB; after stage 28 it stands at 439.6 KB, about 10.4 KB left. The gate counts every `.js` in the build, so splitting code into chunks
+  stage 19 it stood at 432.2 KB, after stage 25 at 437.5 KB, after stage 26 at 438.6 KB and after stage 27 at 439.7 KB and after stage 28 at 439.6 KB; after stage 29 it stands at 440.0 KB, about 10 KB left. The gate counts every `.js` in the build, so splitting code into chunks
   does not help. Mark a new shader's template literal `/* glsl */` so that it is squeezed too. When room runs
   out again: a smaller minifier setting saves about 1.5 KB more (terser on top of the default, measured),
   then dead code. Raising the gate is Olov's decision.
@@ -2637,7 +2670,9 @@
   6. Ledges that belong to their place (built: cloud stages 17 and 18, the boughs, the bracket fungi and the
      nest; the shelves of rock are the mountain kit's); the mist and the lantern (built: cloud stage 16); the northern lights
      with rays (built: cloud stage 12); the awning (built: cloud stage 22); the drain (built: cloud stage 23);
-     the puddle's picture of the yard, its leaves and the wet road round it (built: cloud stage 27);
+     the puddle's picture of the yard, its leaves and the wet road round it (built: cloud stage 27); the
+     street's birch leaves and their drifts (built: cloud stage 29), while the falling ones and the lamp
+     posts remain (`byn` rows 15 and 16);
      the shop's jars and lamps (built: cloud stage 25), while its shelves, counter, daylight and floor front
      remain (`byn` row 19); the bag in the last picture (built: cloud stage 28); the matchbox on the shop's
      step (built: cloud stage 26), while the step's nosing, a boot scraper and the doorway remain (`byn`
