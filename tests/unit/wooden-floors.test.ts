@@ -157,6 +157,35 @@ describe('a wooden floor', () => {
     shape.dispose();
   });
 
+  it('is dark under its rim board, where the boards\' picture used to run on down like a fence', () => {
+    const chapter = {
+      ...COURSES['garden']!,
+      ground: [{ x: -8, y: 2 }, { x: 16, y: 2 }],
+      surfaces: [{ from: -24, to: 32, kind: 'wood' as const }],
+    };
+    const shape = bankShapes(chapter, 'lawn').find(({ kind }) => kind === 'wood')!.shape;
+    const at = shape.getAttribute('position'), colour = shape.getAttribute('color');
+    const top = 2 - tilted(TILT_ENDS);
+    const light = (i: number) => colour.getX(i) * 0.3 + colour.getY(i) * 0.6 + colour.getZ(i) * 0.1;
+    let under = 0;
+    const rim = { top: 0, foot: 0 };
+    for (let i = 0; i < at.count; i++) {
+      if (at.getZ(i) < TILT_ENDS - 0.2) continue;
+      const y = at.getY(i);
+      if (y < top - 0.9 - 1e-5) {
+        expect(light(i)).toBeLessThan(0.005);
+        under++;
+      }
+      // The rim board itself, from its upper edge to its lower one, is lit.
+      if (light(i) > 0.1 && Math.abs(y - (top - 0.25)) < 1e-5) rim.top++;
+      if (light(i) > 0.1 && Math.abs(y - (top - 0.9)) < 1e-5) rim.foot++;
+    }
+    expect(under).toBeGreaterThan(20);
+    expect(rim.top).toBeGreaterThan(20);
+    expect(rim.foot).toBe(rim.top);
+    shape.dispose();
+  });
+
   it('turns the fascia towards the normal play camera along the pulled-back edge of a rising step', () => {
     const chapter = {
       ...COURSES['garden']!,

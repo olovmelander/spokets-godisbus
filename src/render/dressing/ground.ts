@@ -127,6 +127,8 @@ interface Row {
   ledge?: 1 | 2;
   /** On a deck's rim board: 0 at its upper edge, 1 at its lower. The board lies along the path. */
   rim?: number;
+  /** Under a floor's rim board: the dark under the boards, which no light reaches. */
+  under?: true;
   /** A section sample between two original rows: stay on their line even where the front draws back. */
   between?: readonly [Row, Row, number];
 }
@@ -568,17 +570,21 @@ const BOARDS_BEHIND: Row[] = [
  * A wooden floor: boards, level where he walks, and in front of the path the tilted plane (`TILTED`). It was
  * a face at first: the boards' picture ran down it 16 lengths deep, a plank fence with black gaps. Where
  * its edge draws back beside a step, board ends overhang a recessed fascia whose grain runs along it.
- * Repeated corners keep the underside's shade and the fascia's grain from bleeding into one another.
+ * Repeated corners keep the underside's shade and the fascia's grain from bleeding into one another. Under
+ * the rim board is the dark under the boards (docs/visual-audit/byn.md row 19, garden-and-home.md row 2): it
+ * was the boards' picture running on down, a plank fence over the foot of every picture on a phone.
  */
 const FLOOR_DROP = TILT * (TILT_ENDS - EDGE);
+/** The dark under a floor, too dark for the fill light to lift. */
+const UNDER = new Color('#0b0907');
 const PROFILE_FLOOR: Row[] = [
   ...BOARDS_BEHIND.filter((row) => row.z <= EDGE),
   ...TILTED.slice(0, -2),
   { z: TILT_ENDS - 0.05, drop: FLOOR_DROP + 0.25, shade: 0.18, bump: 0, cut: 1 },
   { z: TILT_ENDS - 0.05, drop: FLOOR_DROP + 0.25, shade: 0.82, bump: 0, cut: 1, rim: 0 },
   { z: TILT_ENDS - 0.05, drop: FLOOR_DROP + 0.9, shade: 0.76, bump: 0, cut: 1, rim: 1 },
-  { z: TILT_ENDS - 0.05, drop: FLOOR_DROP + 0.9, shade: 0.4, bump: 0, cut: 1 },
-  ...TILTED.slice(-2),
+  { z: TILT_ENDS - 0.05, drop: FLOOR_DROP + 0.9, shade: 0.4, bump: 0, cut: 1, under: true },
+  ...TILTED.slice(-2).map((row) => ({ ...row, under: true as const })),
 ];
 
 /**
@@ -1021,6 +1027,7 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       // A joint is a dark line down the faces, and a faint one across the ledges and the top.
       if (seam) c.multiplyScalar(row.cut ? 0.5 : row.z > EDGE ? 0.8 : 0.93);
       if (row.pale && !face) c.lerp(WHITE, row.pale);
+      if (row.under) c.copy(UNDER);
       if (row.far) c.lerp(front.far, row.far);
       colour.push(c.r, c.g, c.b);
       // The rim board lies along the path: across it the picture spans one board, between two gaps, and its
