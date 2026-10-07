@@ -267,6 +267,25 @@ function rockCutAt(kind: Ground, x: number, z: number, under: number, out: Color
   return out.lerp(ROCK_DEEP, Math.min(1, Math.max(0, (under - 1.5) / 10)) * 0.7);
 }
 
+/** How deep a bar of the drain's grate is: cast iron that deep, and under it the dark of the well. */
+const BAR_DEEP = 1.2;
+const WORN = new Color('#8b9098');
+const RUST = new Color('#6b4630');
+const WELL = new Color('#06080c');
+/** What the road a drain lies in is made of, in front of its grate and behind it. */
+const DRAIN_ROAD: Ground = 'asphalt';
+
+/**
+ * A bar of the drain's grate where it is cut or seen from the side: cast iron a bar deep, its edge worn
+ * bright where feet go over it, rust along its underside, and below it the well, going down into the dark.
+ */
+function ironCutAt(x: number, z: number, under: number, out: Color): Color {
+  if (under >= BAR_DEEP) return out.copy(WELL).lerp(RUST, Math.max(0, 1 - (under - BAR_DEEP) / 0.25) * 0.35);
+  out.copy(GROUNDS.iron.wall);
+  if (under < 0.1) out.lerp(WORN, (1 - under / 0.1) * 0.55);
+  return out.lerp(RUST, Math.min(1, Math.max(0, (under - 0.7) / 0.5)) * (0.35 + noise(x * 2.9, z * 1.7) * 0.4));
+}
+
 /** What grows in soil: where such ground is cut, there is humus under it, and what grows hangs over the edge. */
 const IN_SOIL: ReadonlySet<Ground> = new Set<Ground>(['moss', 'lawn', 'sphagnum', 'earth']);
 
@@ -303,11 +322,56 @@ const TILTED: Row[] = [
   { z: TILT_ENDS - 0.1, drop: 16, shade: 0.3, bump: 0, cut: 1 },
 ];
 
+/**
+ * Where a drain's grate ends behind the path. In front it ends where the path's level ground does (EDGE).
+ * Between the two its bars and the dark between them are as the outline has them; in front of the grate and
+ * behind it, the road goes on over them.
+ */
+export const DRAIN_BACK = -5.5;
+export const DRAIN_FRONT = EDGE;
+
+/**
+ * The drains in a chapter's road: its bars of iron, side by side, and the pits around them, each from the edge
+ * down into the first pit to the edge up out of the last. `y` is the height of the bars' tops.
+ */
+export function drainsOf(chapter: ChapterData): { from: number; to: number; y: number }[] {
+  const bars = (chapter.surfaces ?? []).filter((s) => s.kind === 'iron').sort((a, b) => a.from - b.from);
+  const groups: { from: number; to: number; y: number }[] = [];
+  for (const bar of bars) {
+    // The height of a bar's top, read on the bar: between two bars is the dark.
+    const top = heightAt(chapter, (bar.from + bar.to) / 2);
+    const last = groups.at(-1);
+    if (last && bar.from - last.to < 3) {
+      last.to = bar.to;
+      last.y = Math.max(last.y, top);
+    } else groups.push({ from: bar.from, to: bar.to, y: top });
+  }
+  const line = chapter.ground;
+  const drains: { from: number; to: number; y: number }[] = [];
+  for (const group of groups) {
+    const y = group.y;
+    // The edges of the well: the last wall down into it before the bars, and the first one up out of it after.
+    let from: number | undefined;
+    let to: number | undefined;
+    for (let i = 0; i < line.length - 1; i++) {
+      const a = line[i]!;
+      const b = line[i + 1]!;
+      if (a.x !== b.x) continue;
+      if (a.x <= group.from && a.y >= y - 0.01 && b.y < y - 2) from = a.x;
+      if (to === undefined && a.x >= group.to && a.y < y - 2 && b.y >= y - 0.01) to = a.x;
+    }
+    if (from !== undefined && to !== undefined) drains.push({ from, to, y });
+  }
+  return drains;
+}
+
 /** A street is built: level and without a bank behind the path, and tilted in front of it. */
 const PROFILE_STREET: Row[] = [
   { z: -16, drop: 0, shade: 0.74, bump: 0 },
   { z: -10, drop: 0, shade: 0.82, bump: 0 },
-  { z: -5.5, drop: 0, shade: 0.9, bump: 0 },
+  // A drain's grate ends here behind the path: the road goes on over its well, which has a wall here.
+  { z: DRAIN_BACK - 0.06, drop: 0, shade: 0.9, bump: 0 },
+  { z: DRAIN_BACK, drop: 0, shade: 0.9, bump: 0 },
   { z: -2.6, drop: 0, shade: 0.96, bump: 0 },
   { z: -0.9, drop: 0, shade: 1, bump: 0 },
   { z: -0.3, drop: 0, shade: 1, bump: 0 },
@@ -411,6 +475,9 @@ const FRONTS: Record<'plain' | 'forest' | 'lawn' | 'rock' | 'street', Front> = {
 /** The front of a place whose own ground is this. */
 const frontOf = (own: Ground): Front =>
   (own === 'moss' ? FRONTS.forest : own === 'lawn' ? FRONTS.lawn : own === 'granite' ? FRONTS.rock : own === 'asphalt' ? FRONTS.street : FRONTS.plain);
+
+/** How far under the path's height a street lies at a depth: level behind, tilting away in front. */
+export const streetDrop = (z: number) => dropAt(PROFILE_STREET, z);
 
 /** How far under the outline a profile lies at a depth, between its rows. */
 function dropAt(rows: Row[], z: number): number {
@@ -631,7 +698,7 @@ const GROUNDS: Record<Ground, GroundLook> = {
   // The village street: pale slabs, dark asphalt with a little grit, and the grate's iron.
   paving: { colours: tones('#9c9a94', '#aeaca5', '#bdbbb3', '#cbc8be'), wall: new Color('#8e8c88'), shade: new Color('#3a3c44'), bump: 0, boards: false },
   asphalt: { colours: tones('#4c4f56', '#575a61', '#62656b', '#70727a'), wall: new Color('#45484e'), shade: new Color('#2a3038'), bump: 0.12, boards: false, grit: true },
-  iron: { colours: tones('#2e3136', '#383b41', '#44474d', '#52555b'), wall: new Color('#26282c'), shade: new Color('#22262c'), bump: 0, boards: false },
+  iron: { colours: tones('#262c35', '#2e3540', '#38404b', '#444c58'), wall: new Color('#2a3039'), shade: new Color('#1a2230'), bump: 0, boards: false, grit: true },
 };
 /** How wide a deck board is: 12 cm. */
 export const BOARD = 0.8;
@@ -688,6 +755,8 @@ interface BankPoint {
   shore?: number;
   /** The water a bog's island stands in, where it does: its level. */
   wet?: number;
+  /** In a drain: the height of its bars. In front of its grate and behind it, the road goes on at that height. */
+  drain?: number;
   kind: Ground;
 }
 
@@ -753,6 +822,11 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
   const poolAt = (front: Front, x: number, y: number) => (front.shore === false ? undefined : (chapter.water ?? []).find((w) => x >= w.from && x <= w.to && y < w.y));
   /** The level of the water a bog's island stands in at x, if it stands in any. */
   const wetAt = (front: Front, x: number) => (front === ISLAND_FRONT ? (chapter.water ?? []).find((w) => x >= w.from && x <= w.to)?.y : undefined);
+  const drains = drainsOf(chapter);
+  /** The drain at x, if x is in one: its front is the road's, which closes it, and does not draw back. */
+  const drainAt = (x: number) => drains.find((d) => x >= d.from - 1e-6 && x <= d.to + 1e-6);
+  // The fronts beside a drain do not draw back either: the road shuts its well in front.
+  const fronts = drains.length === 0 ? chapter : { ...chapter, ground: line.map((at) => ({ x: at.x, y: Math.max(at.y, drainAt(at.x)?.y ?? at.y) })) };
   // Points along the outline, close enough together for the moss to roll. A wall keeps its two corners.
   const points: BankPoint[] = [];
   let before = false;
@@ -767,7 +841,8 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
     // A cut face is banded by its height, so a tall one needs points up it.
     const pieces = Math.max(1, Math.ceil(Math.abs(dx) / 0.45), steep && front.cuts ? Math.ceil(Math.abs(b.y - a.y) / front.course) : 1);
     const length = Math.hypot(dx, b.y - a.y);
-    const ends = front.cuts && steep ? [forwardAtCorner(chapter, a.x, a.y, front.over), forwardAtCorner(chapter, b.x, b.y, front.over)] : null;
+    const drained = steep ? drainAt(a.x) : undefined;
+    const ends = front.cuts && steep ? (drained ? [1, 1] : [forwardAtCorner(fronts, a.x, a.y, front.over), forwardAtCorner(fronts, b.x, b.y, front.over)]) : null;
     let rises: Wall | undefined;
     if (ends) {
       const up = b.y > a.y;
@@ -777,8 +852,8 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
       const below = frontFor(lower, own);
       const pool = poolAt(below, foot.x, foot.y);
       rises = {
-        top: top.y, foot: foot.y, floor: pool ? shoreOf(below, pool) : foot.y,
-        topForward: up ? ends[1]! : ends[0]!, footForward: pool ? 1 : up ? ends[0]! : ends[1]!,
+        top: top.y, foot: foot.y, floor: pool ? shoreOf(below, pool) : drained ? drained.y : foot.y,
+        topForward: up ? ends[1]! : ends[0]!, footForward: pool || drained ? 1 : up ? ends[0]! : ends[1]!,
         x: foot.x, side: up ? 1 : -1, lean: Math.abs(top.x - foot.x), along: up ? along : along + length, lower,
       };
     }
@@ -805,11 +880,13 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
       const kind = kindAt(x - out);
       const mine = frontFor(kind, own);
       const here = wetAt(mine, x - out);
-      const forward = here !== undefined ? IN_WATER : !mine.cuts ? 1 : ends ? ends[0]! + ((ends[1]! - ends[0]!) * k) / pieces : corner ? forwardAtCorner(chapter, x, y, mine.over) : forwardAt(chapter, x, mine.over);
+      const forward = here !== undefined ? IN_WATER : !mine.cuts ? 1 : ends ? ends[0]! + ((ends[1]! - ends[0]!) * k) / pieces : corner ? forwardAtCorner(fronts, x, y, mine.over) : forwardAt(fronts, x, mine.over);
       const pool = poolAt(mine, x, y);
+      const drain = drainAt(x - out);
       points.push({
-        x, y, wall: corner, face: steep, along: along + (length * k) / pieces, forward: pool ? 1 : forward,
-        ...(rises ? { rises } : {}), ...(pool ? { shore: shoreOf(mine, pool) } : {}), ...(here !== undefined ? { wet: here } : {}), kind,
+        x, y, wall: corner, face: steep, along: along + (length * k) / pieces, forward: pool || drain ? 1 : forward,
+        ...(rises ? { rises } : {}), ...(pool ? { shore: shoreOf(mine, pool) } : {}), ...(here !== undefined ? { wet: here } : {}),
+        ...(drain ? { drain: drain.y } : {}), kind,
       });
       before = steep;
     }
@@ -838,7 +915,7 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
  */
 function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks: Block[] = []): BufferGeometry {
   const look = GROUNDS[kind];
-  const street = front === FRONTS.street && road(kind);
+  const street = front === FRONTS.street && (road(kind) || kind === 'iron');
   const profile = street ? PROFILE_ROAD : kind === 'moss' ? PROFILE_FOREST_SHADE : front.rows;
   const whole = lengthsDown(profile);
   const rows = profile.length;
@@ -863,6 +940,8 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
     const down = forward < 1 ? lengthsDown(profile, forward) : whole;
     // A pool's near shore stands up out of its bed, and the picture goes up it.
     const rise = p.shore !== undefined ? Math.max(0, p.shore - p.y) : 0;
+    // In a drain's well the picture goes down its back wall and up its front wall, as up a pool's shore.
+    const sink = p.drain !== undefined ? Math.max(0, p.drain - p.y) : 0;
     // How far up its wall the point is.
     const up = wall && wall.top > wall.foot ? Math.min(1, Math.max(0, (p.y - wall.foot) / (wall.top - wall.foot))) : 0;
     for (let j = 0; j < rows; j++) {
@@ -870,18 +949,23 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       const z = depthOf(row, forward);
       const swell = p.wall ? 0 : row.bump * look.bump * (noise(p.x * 1.15, row.z * 1.4 + 7) - 0.5) * 2;
       const drop = dropOf(profile, row, forward) + (block && row.ledge ? block.ledges[row.ledge - 1]! : 0);
-      let y = (p.shore !== undefined && row.z > EDGE ? p.shore : p.y) - drop + swell;
+      // A drain is only as deep, front to back, as its grate: in front of it and behind it the road is shut.
+      const shut = p.drain !== undefined && (row.z > EDGE || row.z < DRAIN_BACK);
+      let y = (p.shore !== undefined && row.z > EDGE ? p.shore : shut ? p.drain! : p.y) - drop + swell;
       let under = drop - front.lip * p.forward;
       if (wall) {
         // The face stands on the lower floor as that lies at this depth, and goes up to the upper one.
         const upper = wall.top - drop;
         const lowerDepth = profile === PROFILE_FLOOR || profile === PROFILE_STREET || profile === PROFILE_ROAD ? z : EDGE + (z - EDGE) / Math.max(0.05, wall.footForward);
         const lower = row.z <= EDGE ? wall.foot - drop : wall.floor - (lowerDepth > ends ? drop : dropAt(profile, lowerDepth));
-        y = Math.min(upper, lower) + (upper - Math.min(upper, lower)) * up;
+        y = shut ? upper : Math.min(upper, lower) + (upper - Math.min(upper, lower)) * up;
         under = upper - y;
       }
       position.push(p.x, y, z);
-      toneAt(kind, p.x, down[j]!, c);
+      // Where the road goes on over a drain, it is the road's. In the well under the grate it is dark.
+      const ironWork = p.drain !== undefined && !shut;
+      toneAt(shut ? DRAIN_ROAD : kind, p.x, down[j]!, c);
+      if (ironWork && !face && p.y < p.drain! - 1) c.copy(WELL);
       if (cuts) {
         // A face is cut all the way; the front is cut under its lip, and where it has drawn back to a wall.
         const cut = face ? 1 : Math.max(row.cut ?? 0, row.z > EDGE ? 1 - p.forward : 0);
@@ -891,18 +975,22 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
         if (cut > 0 && under > hang) {
           if (soil) c.lerp(cutAt(p.x, z, under - hang, scratch), cut);
           else if (look.rock) c.lerp(rockCutAt(kind, p.x, z, under, scratch), cut);
+          else if (ironWork) c.lerp(ironCutAt(p.x, z, under, scratch), cut);
           else c.lerp(look.wall, 0.82 * cut);
         }
+        // A bar's top edges are worn bright by feet.
+        if (ironWork && kind === 'iron' && p.wall && !face && p.y > p.drain! - 0.01) c.lerp(WORN, 0.3);
       } else if (face) c.lerp(look.wall, p.wet === undefined ? 0.82 : 0.82 * Math.min(1, Math.max(0, (p.wet + 0.45 - y) / 0.3)));
       // At the waterline an island is dark and wet, along its sides and its front; over the water its lip is moss.
       if (p.wet !== undefined) c.lerp(WET, 0.85 * Math.max(0, 1 - Math.abs(y - p.wet) / WET_REACH));
       // A rim board is one long board, not a board to each board of the deck: one tone, drifting along it.
       if (row.rim !== undefined && !face) c.copy(look.colours[1]!).lerp(look.colours[2]!, noise(p.x * 0.31 + 5, 3));
-      c.lerp(look.shade, (1 - row.shade) * 0.9);
+      // Where the road goes on over a drain, it goes into the road's own shade.
+      c.lerp((shut ? GROUNDS[DRAIN_ROAD] : look).shade, (1 - row.shade) * 0.9);
       // Retraction also marks the tilted top as a generic cut; it is still road, not exposed aggregate.
-      if (street && (face || row.cut)) {
+      if (street && !ironWork && (face || row.cut)) {
         const depth = face ? under : drop - dropAt(profile, z);
-        if (depth > 0) roadCutAt(kind, p.x, z, depth, c);
+        if (depth > 0) roadCutAt(kind === 'iron' ? DRAIN_ROAD : kind, p.x, z, depth, c);
       }
       if (block) c.multiplyScalar(block.tone);
       // A joint is a dark line down the faces, and a faint one across the ledges and the top.
@@ -913,7 +1001,7 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       // The rim board lies along the path: across it the picture spans one board, between two gaps, and its
       // grain runs along.
       if (row.rim !== undefined && !face) uv.push(0.0125 + row.rim * 0.475, p.x * tile);
-      else if (!face) uv.push((look.boards ? p.x : p.along) * tile, (down[j]! + (row.z > EDGE ? rise : 0)) * tile);
+      else if (!face) uv.push((look.boards ? p.x : p.along) * tile, (down[j]! + (row.z > EDGE ? rise + sink : 0) + (row.z >= DRAIN_BACK ? sink : 0)) * tile);
       // A face lies in the depth and along the wall. A board there is a board on edge, its grain into the depth.
       else if (look.boards) uv.push((p.x * ux + y * uy) * tile, z * tile);
       else uv.push(z * tile, (p.x * ux + y * uy) * tile);

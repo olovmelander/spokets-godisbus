@@ -3,6 +3,7 @@ import type { ChapterData, PlaceId } from '../../sim/types';
 import { scenery } from '../backdrop';
 import { createLife, type Life, type LifeAsk, type Quiet } from '../life';
 import { fronts, street, villageLife } from '../village';
+import { drainFrame } from './drain';
 import { bog } from './bog';
 import { built } from './built';
 import { effects } from './effects';
@@ -190,6 +191,8 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   const front = foreground(landChapter, from, to, OWN[look.id].growth, standing);
   // Over the bog, what is marked wood is a walk of planks on a ridge of its own peat.
   const walk = look.id === 'bog' ? spang(landChapter) : null;
+  // In the village's road, a drain's grate lies in its cast frame.
+  const grate = look.id === 'village' ? drainFrame(landChapter) : null;
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
   // What the far pictures count their sinking from: the land around the chapter's start.
@@ -215,6 +218,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
     air.group,
     front.group,
     walk ?? new Group(),
+    grate ?? new Group(),
   );
   return {
     group,

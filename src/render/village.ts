@@ -4,6 +4,7 @@ import {
 } from 'three';
 import type { ChapterData, StreetGoods, StreetPart, Vec } from '../sim/types';
 import { sweetSocket } from './candy';
+import { drainsOf } from './dressing/ground';
 
 /**
  * The village street (the extra chapter Byn): its houses and its yard, a lamp post now and then, a bicycle
@@ -760,8 +761,8 @@ function wallMaterial(): MeshStandardMaterial {
 }
 
 /**
- * The street's pits that are open to the back: the drain and the puddle, each from its first edge to its last.
- * A pit behind which a near house stands is closed by that house's foot.
+ * The street's pits that are open to the back: the puddle, from its first edge to its last. A pit behind
+ * which a near house stands is closed by that house's foot, and a drain's by the road behind its grate.
  */
 function pits(chapter: ChapterData): { from: number; to: number }[] {
   const out: { from: number; to: number }[] = [];
@@ -775,7 +776,10 @@ function pits(chapter: ChapterData): { from: number; to: number }[] {
     if (last && a.x - last.to < 3) last.to = b.x;
     else out.push({ from: a.x, to: b.x });
   }
-  return out.filter((pit) => !chapter.street?.some((part) => part.depth === 'near' && (pit.from + pit.to) / 2 >= part.from && (pit.from + pit.to) / 2 < part.to));
+  // A drain's well is shut by the road behind its grate (./dressing/ground.ts): nothing is seen behind it.
+  const drains = drainsOf(chapter);
+  return out.filter((pit) => !chapter.street?.some((part) => part.depth === 'near' && (pit.from + pit.to) / 2 >= part.from && (pit.from + pit.to) / 2 < part.to)
+    && !drains.some((drain) => (pit.from + pit.to) / 2 >= drain.from && (pit.from + pit.to) / 2 <= drain.to));
 }
 
 /**
@@ -803,8 +807,8 @@ export function fronts(chapter: ChapterData, from: number, to: number): { group:
     if (streaks) group.add(new Mesh(streaks, glass));
   }
   group.add(skyline(from, to, foot));
-  // Under the street it is dark: the drain and the puddle go down into it. Each has its own piece of the dark,
-  // which is drawn only while that pit is in sight.
+  // Under the street it is dark: the puddle goes down into it. Each pit open to the back has its own piece of
+  // the dark, which is drawn only while that pit is in sight.
   const dark = new MeshBasicMaterial({ color: '#1d2024', fog: false });
   for (const pit of pits(chapter)) {
     const under = new Mesh(new PlaneGeometry(pit.to - pit.from + 2, 16), dark);
