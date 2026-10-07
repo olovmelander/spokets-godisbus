@@ -1,10 +1,11 @@
 import {
-  BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, InstancedMesh, Matrix3, Mesh,
-  MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector3,
+  AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Matrix3, Mesh,
+  MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
 import type { ChapterData, StreetGoods, StreetPart, Vec } from '../sim/types';
 import { sweetSocket } from './candy';
 import { drainsOf } from './dressing/ground';
+import { glowTexture } from './glow';
 
 /**
  * The village street (the extra chapter Byn): its houses and its yard, a lamp post now and then, a bicycle
@@ -831,6 +832,138 @@ export function fronts(chapter: ChapterData, from: number, to: number): { group:
   };
 }
 
+/**
+ * A sweet shop's jar as a profile turned round its axis, from the shelf up: a base, a straight body 3.6
+ * across, a shoulder curving in to a neck 2.6 across, and a rolled rim.
+ */
+export const JAR: readonly (readonly [number, number])[] = [
+  [0, 0.02], [1.7, 0.02], [1.8, 0.12], [1.8, 3.9], [1.74, 4.25], [1.56, 4.6], [1.36, 4.85],
+  [1.3, 5], [1.3, 5.12], [1.38, 5.18], [1.4, 5.26], [1.34, 5.32],
+];
+/** Its domed lid with a knob, sitting on the rim. */
+const LID: readonly (readonly [number, number])[] = [
+  [1.42, 5.28], [1.5, 5.32], [1.5, 5.42], [1.3, 5.5], [0.95, 5.66], [0.5, 5.76], [0.24, 5.79],
+  [0.24, 5.92], [0.3, 6], [0.22, 6.1], [0, 6.12],
+];
+/** The streaks of light on a jar's glass: where round its front, how wide, and how bright. */
+const STREAKS = [{ turn: -0.58, wide: 0.24, alpha: 0.42 }, { turn: 0.78, wide: 0.1, alpha: 0.22 }];
+
+/**
+ * A jar's glass. The camera never turns, so glass is read as glass is: nearly clear where it faces the camera
+ * and bright at its outline, with alpha baked from the normal, a thicker base, and two streaks of light
+ * down its body. The colour's fourth part is that alpha.
+ */
+export function jarShape(): BufferGeometry {
+  const lathe = new LatheGeometry(JAR.map(([r, y]) => new Vector2(r, y)), 32);
+  const at = lathe.getAttribute('position');
+  const turned = lathe.getAttribute('normal');
+  const position: number[] = Array.from(at.array as ArrayLike<number>);
+  const normal: number[] = Array.from(turned.array as ArrayLike<number>);
+  const colour: number[] = [];
+  const glass = new Color('#e8f0e6');
+  for (let i = 0; i < at.count; i++) {
+    const facing = Math.abs(turned.getZ(i));
+    const base = at.getY(i) < 0.3 ? 0.18 : 0;
+    colour.push(glass.r, glass.g, glass.b, Math.min(0.75, 0.08 + 0.52 * (1 - facing) ** 1.5 + base));
+  }
+  const index: number[] = Array.from(lathe.getIndex()!.array as ArrayLike<number>);
+  // Each streak: a strip just outside the body, from near its foot to under its shoulder.
+  const round = JAR[3]![0] + 0.006;
+  for (const streak of STREAKS) {
+    const first = position.length / 3;
+    const out = [Math.sin(streak.turn), 0, Math.cos(streak.turn)];
+    const along = [Math.cos(streak.turn), 0, -Math.sin(streak.turn)];
+    for (const y of [0.5, 3.7]) {
+      for (const side of [-0.5, 0.5]) {
+        position.push(out[0]! * round + along[0]! * side * streak.wide, y, out[2]! * round + along[2]! * side * streak.wide);
+        normal.push(...out);
+        colour.push(1, 1, 1, streak.alpha);
+      }
+    }
+    index.push(first, first + 1, first + 3, first, first + 3, first + 2);
+  }
+  lathe.dispose();
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute(position, 3));
+  geometry.setAttribute('normal', new Float32BufferAttribute(normal, 3));
+  geometry.setAttribute('color', new Float32BufferAttribute(colour, 4));
+  geometry.setIndex(index);
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
+/** Where the sweets in a jar lie: a heap from its floor, each layer fewer and narrower, never up to its shoulder. */
+export function jarHeap(): { x: number; y: number; z: number }[] {
+  const layers = [[14, 1.42], [12, 1.3], [10, 1.14], [8, 0.94], [6, 0.7], [4, 0.42]] as const;
+  const out: { x: number; y: number; z: number }[] = [];
+  for (const [l, [count, reach]] of layers.entries()) {
+    for (let k = 0; k < count; k++) {
+      // Spread over the layer like the seeds of a sunflower, so that none sits on another.
+      const turn = k * 2.39996 + l * 0.7;
+      const r = reach * Math.sqrt((k + 0.5) / count);
+      out.push({ x: Math.cos(turn) * r, y: 0.42 + l * 0.5, z: Math.sin(turn) * r * 0.9 });
+    }
+  }
+  return out;
+}
+
+/**
+ * A lamp in the shop, over a ring the lace swings from (docs/visual-audit/byn.md row 19): an enamel shade 3
+ * across on the ring's own flex, green outside and white inside, with a bulb that gives off light, and the
+ * warm pool it throws on the floor. The ring hangs under it as a lamp's ring does. Measured from the ring.
+ */
+export const LAMP = {
+  /** The shade's rim over the ring, and its profile from the rim up: radius, height over the rim. */
+  rim: 1.35,
+  shade: [[1.5, 0], [1.46, 0.08], [1.25, 0.32], [0.82, 0.62], [0.42, 0.82], [0.2, 0.92], [0.2, 1.08], [0, 1.1]] as [number, number][],
+  bulb: 0.3,
+  /** How far across the pool of light on the floor is, and how strong. */
+  pool: 6,
+  warmth: '#ffcf8a',
+} as const;
+
+/** The shop's lamps: one over each ring in the room that hangs on its own flex. */
+export function shopLamps(chapter: ChapterData): Vec[] {
+  const shop = chapter.shop;
+  if (!shop) return [];
+  return (chapter.hooks ?? []).filter((hook) => hook.hangs !== undefined && hook.x > shop.door && hook.x < shop.to).map((hook) => ({ x: hook.x, y: hook.y }));
+}
+
+/**
+ * The lamps as drawn: their shades outside and in, their bulbs, a glow round each bulb for the tiers that
+ * have no bloom, and their pools on the floor. Each part is one draw for every lamp.
+ */
+function lamps(chapter: ChapterData, floor: number): Group {
+  const group = new Group();
+  group.name = 'shop-lamps';
+  const at = shopLamps(chapter);
+  if (at.length === 0) return group;
+  const shade = new LatheGeometry(LAMP.shade.map(([r, y]) => new Vector2(r, y)), 28);
+  const outside = new InstancedMesh(shade, new MeshStandardMaterial({ color: '#3f6b4a', roughness: 0.35 }), at.length);
+  // The enamel inside is white, and lit by its bulb.
+  const inside = new InstancedMesh(shade, new MeshStandardMaterial({ color: '#f2efe6', emissive: '#ffd9a0', emissiveIntensity: 0.55, roughness: 0.5, side: BackSide }), at.length);
+  const bulbs = new InstancedMesh(new SphereGeometry(LAMP.bulb, 14, 10), new MeshBasicMaterial({ color: new Color('#fff3d6').multiplyScalar(3) }), at.length);
+  const glow = glowTexture();
+  const halos = new InstancedMesh(new PlaneGeometry(2.6, 2.6), new MeshBasicMaterial({ color: LAMP.warmth, map: glow, transparent: true, opacity: 0.55, depthWrite: false, blending: AdditiveBlending }), at.length);
+  const pools = new InstancedMesh(new PlaneGeometry(LAMP.pool, LAMP.pool), new MeshBasicMaterial({ color: LAMP.warmth, map: glow, transparent: true, opacity: 0.45, depthWrite: false, blending: AdditiveBlending }), at.length);
+  const place = new Object3D();
+  for (const [i, ring] of at.entries()) {
+    const rim = ring.y + LAMP.rim;
+    place.position.set(ring.x, rim, -0.05); place.rotation.set(0, 0, 0); place.updateMatrix();
+    outside.setMatrixAt(i, place.matrix); inside.setMatrixAt(i, place.matrix);
+    place.position.set(ring.x, rim + 0.12, -0.05); place.updateMatrix(); bulbs.setMatrixAt(i, place.matrix);
+    place.position.set(ring.x, rim + 0.05, 0.3); place.updateMatrix(); halos.setMatrixAt(i, place.matrix);
+    // The pool lies on the floor under it, round the line he walks on.
+    place.position.set(ring.x, floor + 0.02, -0.5); place.rotation.set(-Math.PI / 2, 0, 0); place.updateMatrix(); pools.setMatrixAt(i, place.matrix);
+  }
+  for (const mesh of [outside, inside, bulbs, halos, pools]) mesh.computeBoundingSphere();
+  outside.name = 'lamp-shades';
+  pools.name = 'lamp-pools';
+  halos.renderOrder = 2;
+  group.add(pools, outside, inside, bulbs, halos);
+  return group;
+}
+
 /** A cutaway room continuous with the outdoor step: huge jars, plain shelves and a bag to share. */
 function shopInterior(chapter: ChapterData): Group {
   const group = new Group();
@@ -872,11 +1005,11 @@ function shopInterior(chapter: ChapterData): Group {
   block((door + to) / 2, floor + 1.2, -8.1, to - door + 1, 2.4, 0.3);
   for (const y of [floor + 1, floor + 8.4]) block(door + 23, y, -5.9, 43, 0.36, 4.2);
 
-  const jarGeometry = new CylinderGeometry(1.8, 1.95, 5.2, 18, 1, true);
-  const glass = new MeshStandardMaterial({ color: '#f4f4e5', roughness: 0.18, transparent: true, opacity: 0.17, depthWrite: false, side: DoubleSide });
-  const jars = new InstancedMesh(jarGeometry, glass, 10);
-  const lids = new InstancedMesh(new CylinderGeometry(1.98, 1.98, 0.28, 18), brass, 10);
-  const perJar = 54;
+  const glass = new MeshStandardMaterial({ vertexColors: true, roughness: 0.18, transparent: true, depthWrite: false, side: DoubleSide });
+  const jars = new InstancedMesh(jarShape(), glass, 10);
+  const lids = new InstancedMesh(new LatheGeometry(LID.map(([r, y]) => new Vector2(r, y)), 24), brass, 10);
+  const heap = jarHeap();
+  const perJar = heap.length;
   const sweets = new InstancedMesh(new SphereGeometry(0.32, 7, 5), new MeshStandardMaterial({ roughness: 0.45 }), 10 * perJar);
   const place = new Object3D();
   const next = sequence(708);
@@ -884,13 +1017,11 @@ function shopInterior(chapter: ChapterData): Group {
   for (let i = 0; i < 10; i++) {
     const x = door + 7 + (i % 5) * 8;
     const shelf = floor + (i < 5 ? 1.18 : 8.58);
-    place.position.set(x, shelf + 2.6, -5.9); place.updateMatrix(); jars.setMatrixAt(i, place.matrix);
-    place.position.y = shelf + 5.35; place.updateMatrix(); lids.setMatrixAt(i, place.matrix);
-    for (let j = 0; j < perJar; j++) {
-      // A loose pile from the bottom up, not sweets floating throughout an empty jar.
-      place.position.set(x + ((j % 3) - 1) * 0.73 + (next() - 0.5) * 0.12,
-        shelf + 0.35 + Math.floor(j / 9) * 0.56,
-        -5.9 + ((Math.floor(j / 3) % 3) - 1) * 0.73 + (next() - 0.5) * 0.12);
+    // The jar and its lid are measured from the shelf.
+    place.position.set(x, shelf, -5.9); place.updateMatrix(); jars.setMatrixAt(i, place.matrix); lids.setMatrixAt(i, place.matrix);
+    for (const [j, at] of heap.entries()) {
+      // A heap from the bottom up, not sweets floating throughout an empty jar.
+      place.position.set(x + at.x + (next() - 0.5) * 0.1, shelf + at.y + (next() - 0.5) * 0.08, -5.9 + at.z + (next() - 0.5) * 0.1);
       place.rotation.set(next(), next(), next()); place.scale.set(1.1, 0.95, 0.9); place.updateMatrix();
       sweets.setMatrixAt(i * perJar + j, place.matrix); sweets.setColorAt(i * perJar + j, tones[i % tones.length]!);
     }
@@ -899,7 +1030,7 @@ function shopInterior(chapter: ChapterData): Group {
   for (const mesh of [jars, lids, sweets]) mesh.computeBoundingSphere();
   // Wrapped sweets from the kit take the balls' place: the same piles, in the same colours.
   sweetSocket(sweets, { shape: 'burk', scale: 3.1 });
-  group.add(sweets, lids, jars);
+  group.add(sweets, lids, jars, lamps(chapter, floor));
   // A plain paper bag, open at its top, beside the final candy. No sign, price or brand.
   const paper = new MeshStandardMaterial({ color: '#d5b57e', roughness: 1 });
   const dark = new MeshBasicMaterial({ color: '#6a5035' });
