@@ -1,6 +1,6 @@
 import { Bone, Group, Mesh, Quaternion, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { JUMP_SPEED, RUN_SPEED } from '../../src/sim/constants';
+import { CLIMB_SPEED, JUMP_SPEED, RUN_SPEED, WALK_SPEED } from '../../src/sim/constants';
 import type { PlayerState } from '../../src/sim/types';
 import { createPlayerMotion, createPlayerStandIn, playerPose } from '../../src/render/player-motion';
 import { createModelRig, STANDING, type Pose } from '../../src/render/rig';
@@ -20,10 +20,93 @@ describe('the player’s shared motion', () => {
     expect(reach).toBeGreaterThan(0.3);
     expect(running.elbowR).toBeGreaterThan(0.6);
     for (let i = 0; i < 30; i++) expect(motion.update(state, RUN_SPEED * 31 / 60, 0, null)).toEqual(running);
-    for (const mode of ['climb', 'slide', 'ledge', 'swing', 'ride', 'down', 'bubble'] as const) {
+    for (const mode of ['slide', 'ledge', 'swing', 'ride', 'down', 'bubble'] as const) {
       const special = player({ mode, grounded: false });
       expect(target(special, 0, 0)).toEqual(target(special, 9, 1));
     }
+  });
+
+  it('extends the supporting leg, folds only the recovering foot, and gives running more reach than walking', () => {
+    const walk = target(player(), 0, WALK_SPEED / RUN_SPEED), run = target(player(), 0, 1);
+    expect(walk.kneeL).toBeGreaterThan(0.2); expect(walk.kneeR).toBe(0);
+    expect(run.kneeL).toBeGreaterThan(walk.kneeL + 0.5); expect(run.kneeR).toBe(0);
+    const opposite = target(player(), Math.PI, 1);
+    expect(opposite.kneeL).toBe(0); expect(opposite.kneeR).toBeCloseTo(run.kneeL);
+    const walkReach = target(player(), Math.PI / 2, WALK_SPEED / RUN_SPEED);
+    const runReach = target(player(), Math.PI / 2, 1);
+    expect(runReach.legL).toBeGreaterThan(walkReach.legL + 0.3);
+    expect(runReach.armL).toBeLessThan(0); expect(runReach.armR).toBeGreaterThan(0);
+    expect(runReach.elbowR).toBeGreaterThan(runReach.elbowL);
+  });
+
+  it('climbs hand over hand from vertical travel, and holds its grip when stopped or paused', () => {
+    const motion = createPlayerMotion(), state = player({ mode: 'climb', grounded: false, vy: CLIMB_SPEED });
+    for (let frame = 0; frame < 90; frame++) motion.update(state, 0, 1 / 60, null);
+    const blocked = { ...motion.update(state, 0, 1 / 60, null) };
+    expect(blocked.armL).toBeCloseTo(blocked.armR, 6);
+    let separation = 0;
+    for (let frame = 0; frame < 45; frame++) {
+      state.y += CLIMB_SPEED / 60;
+      const p = motion.update(state, 0, 1 / 60, null);
+      separation = Math.max(separation, Math.abs(p.armL - p.armR));
+    }
+    expect(separation).toBeGreaterThan(0.4);
+    const climbing = { ...motion.update(state, 0, 0, null) };
+    for (let frame = 0; frame < 30; frame++) expect(motion.update(state, 0, 0, null)).toEqual(climbing);
+    for (let frame = 0; frame < 90; frame++) motion.update(state, 0, 1 / 60, null);
+    const holding = { ...motion.update(state, 0, 1 / 60, null) };
+    for (let frame = 0; frame < 90; frame++) motion.update(state, 0, 1 / 60, null);
+    const still = motion.update(state, 0, 1 / 60, null);
+    expect(still.armL).toBeCloseTo(holding.armL, 6); expect(still.kneeR).toBeCloseTo(holding.kneeR, 6);
+  });
+
+  it('pulls over a ledge in stages, braces for a slide, and looks down at a protected edge', () => {
+    const hanging = target(player({ mode: 'ledge', grounded: false, t: 0 }));
+    const pulling = target(player({ mode: 'ledge', grounded: false, t: 0.5 }));
+    const standing = target(player({ mode: 'ledge', grounded: false, t: 1 }));
+    expect(hanging.armL).toBeGreaterThan(2.5);
+    expect(pulling.armL).toBeLessThan(hanging.armL); expect(pulling.kneeL).toBeGreaterThan(hanging.kneeL);
+    expect(pulling.lean).toBeGreaterThan(0.2);
+    expect(standing.armL).toBe(0); expect(standing.kneeL).toBe(0); expect(standing.lean).toBe(0);
+    const slide = target(player({ mode: 'slide', grounded: false }));
+    expect(slide.lean).toBeLessThan(0); expect(slide.nod).toBeGreaterThan(0);
+    const edge = target(player({ atEdge: true }));
+    expect(edge.nod).toBeGreaterThan(0.2); expect(edge.spread).toBeGreaterThan(0.1);
+    expect(edge).toEqual(target(player({ atEdge: true }), 5, 1));
+  });
+
+  it('absorbs a harder fall more deeply than a small step down without lifting the planted sole', () => {
+    const land = (speed: number) => {
+      const motion = createPlayerMotion(), state = player({ grounded: false, vy: -speed });
+      for (let frame = 0; frame < 30; frame++) motion.update(state, 0, 1 / 60, null);
+      const before = motion.update(state, 0, 1 / 60, null).kneeL;
+      let bend = 0;
+      for (let frame = 0; frame < 20; frame++) {
+        const p = motion.update(player(), 0, 1 / 60, null);
+        bend = Math.max(bend, p.kneeL);
+        expect(p.bounce).toBe(0); expect(p.seat).toBeNull();
+      }
+      return { bend, compression: bend - before };
+    };
+    const hard = land(JUMP_SPEED), soft = land(JUMP_SPEED * 0.15);
+    expect(hard.bend).toBeGreaterThan(soft.bend + 0.1);
+    expect(hard.compression).toBeGreaterThan(soft.compression + 0.25);
+  });
+
+  it('breathes quietly while idle, freezes when paused, and settles still with reduced motion', () => {
+    const motion = createPlayerMotion(), state = player();
+    for (let frame = 0; frame < 90; frame++) motion.update(state, 0, 1 / 60, null);
+    const first = { ...motion.update(state, 0, 1 / 60, null) };
+    for (let frame = 0; frame < 90; frame++) motion.update(state, 0, 1 / 60, null);
+    const later = { ...motion.update(state, 0, 1 / 60, null) };
+    expect(Math.abs(later.nod - first.nod)).toBeGreaterThan(0.015);
+    expect(later.legL).toBe(0); expect(later.bounce).toBe(0);
+    expect(motion.update(state, 0, 0, null)).toEqual(later);
+    for (let frame = 0; frame < 90; frame++) motion.update(state, 0, 1 / 60, null, 0, true);
+    const calm = { ...motion.update(state, 0, 1 / 60, null, 0, true) };
+    for (let frame = 0; frame < 90; frame++) motion.update(state, 0, 1 / 60, null, 0, true);
+    const still = motion.update(state, 0, 1 / 60, null, 0, true);
+    expect(still.nod).toBeCloseTo(calm.nod, 8); expect(still.turn).toBeCloseTo(calm.turn, 8);
   });
 
   it('keeps gait phase with distance at different frame rates and resets after a teleport', () => {
@@ -74,7 +157,7 @@ describe('the rounded public player', () => {
     body.group.position.set(7, 4, -2); body.group.rotation.y = 0.7; body.group.scale.set(2, 3, 2);
     const point = new Vector3();
     const poses = Array.from({ length: 40 }, (_, frame) => target(player(), frame * Math.PI / 20, 1));
-    poses.push(target(player(), 0, 0, 1), target(player({ grounded: false, vy: JUMP_SPEED })), target(player({ grounded: false, vy: -JUMP_SPEED })));
+    poses.push(target(player(), 0, 0, 1), target(player({ atEdge: true })), target(player({ grounded: false, vy: JUMP_SPEED })), target(player({ grounded: false, vy: -JUMP_SPEED })));
     for (const p of poses) {
       body.pose(p); body.group.updateWorldMatrix(true, true);
       if (p.legR < 0) {

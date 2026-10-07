@@ -51,7 +51,7 @@ import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
 import { buildVerbMarks } from './verb-marks';
-import { MODEL_TURN, blinkEyes, eyeNodes } from './ghost-model';
+import { MODEL_TURN, blinkEyes, createGhostMotion, eyeNodes } from './ghost-model';
 import type { Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
@@ -495,7 +495,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(prologueStage.group);
   const epilogueStage = createEpilogueStage(chapter.epilogue);
   scene.add(epilogueStage.group);
-  let ghostFoot: Object3D | null = null;
+  let ghostMotion = createGhostMotion(ghost, true);
   // The stand-in faces +x, as the stand-in Elof does; the model from Blender faces the camera, and is turned to
   // face as the stand-in does (./ghost-model.ts).
   let ghostFaces = 0;
@@ -515,8 +515,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       paintedEyes = eyeNodes(model);
       if (ghostHelps) helper.replaceGhost(model.clone());
       ghostFaces = MODEL_TURN;
-      // GLTFLoader drops the dot from Blender's names: foot.L arrives as footL.
-      ghostFoot = model.getObjectByName('footL') ?? null;
+      ghostMotion = createGhostMotion(model);
       models.push('private/ghost');
       modelInstallations++;
     })
@@ -986,7 +985,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null, stride: 0, pace: 0, calm: calmStory }, elofPose);
     }
     const waving = reaction?.kind === 'player' && curr.grounded;
-    playerBody.pose(playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse));
+    playerBody.pose(playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory));
     if (curr.grounded && !wasGrounded) squash = 0.94; // the knees take most of the landing
     wasGrounded = curr.grounded;
     squash += (1 - squash) * ease(12, dt);
@@ -1041,15 +1040,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4;
       ghostTurn += (wanted - ghostTurn) * ease(7, dt);
       const awake = !chapter.prologue || flags.has('blink');
-      ghost.rotation.set(0, ghostFaces + ghostTurn, !awake ? 0 : hopping ? -0.25 * Math.sin(Math.PI * ghostState.t) : Math.sin(clock * 1.7) * 0.035);
-      if (ghostFoot) ghostFoot.rotation.x = hopping ? 0 : -Math.max(0, Math.sin(clock * 9)) * (Math.sin(clock * 0.9) > 0.2 ? 0.45 : 0);
+      ghost.rotation.set(0, ghostFaces + ghostTurn, !awake ? 0 : hopping ? -0.25 * Math.sin(Math.PI * ghostState.t) : calmStory ? 0 : Math.sin(clock * 1.7) * 0.035);
       if (chapter.prologue && prologue) {
         const pose = prologuePose(chapter.prologue, prologue);
         ghostPlace.position.set(pose.x, pose.y, pose.z);
         ghostSize = pose.scale;
         ghostPlace.scale.setScalar(ghostSize);
         ghost.rotation.set(0, ghostFaces + pose.turn, pose.tilt);
-        if (ghostFoot) ghostFoot.rotation.x = 0;
         ghostStaged = true;
       } else if (chapter.prologue && flags.has('pappa:done') && !chapter.prologue.edge) {
         ghostSize = 0;
@@ -1064,10 +1061,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostPlace.scale.setScalar(1);
         ghostTurn = -staged.face * Math.PI * 2;
         ghost.rotation.set(0, ghostFaces + ghostTurn, staged.tilt);
-        if (ghostFoot) ghostFoot.rotation.x = 0;
         ghostStaged = true;
       }
       blinkEyes(paintedEyes, staged?.blink ?? 1);
+      ghostMotion.update({ dt, clock, hop: hopping ? ghostState.t : null, calm: calmStory, awake, staged: ghostStaged });
       looking.update(staged?.look ? ghostPlace.position : null, staged?.look ?? null, clock, dt);
     }
     if (chapter.prologue) {
@@ -1095,7 +1092,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostPlace.position.set(chapter.shelf.x - 2.4, chapter.shelf.y + 0.08, -8.5);
       ghostPlace.scale.setScalar(1);
       ghost.rotation.set(0, ghostFaces - Math.PI / 2, 0);
-      if (ghostFoot) ghostFoot.rotation.x = 0;
+      ghostMotion.update({ dt, clock, hop: null, calm: calmStory, awake: true, staged: true });
       ghostStaged = true;
     }
     ghostThought?.update(ghostState, flags, { x, y }, camera, clock, dt,
@@ -1124,6 +1121,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           model.position.set(x - pappa.at, y - pappa.prop!.group.position.y, 0);
         }
         ghostPlace.visible = true; ghostPlace.position.set(x - .8, y + shoulderLift, .12); ghostPlace.scale.setScalar(1);
+        ghostMotion.update({ dt, clock, hop: null, calm: calmStory, awake: true, staged: true });
         ghostGroundY = playerGroundY;
         if (carving) carving.position.set(x + .8, y + shoulderLift, .12);
       }
@@ -1937,6 +1935,7 @@ function buildGhost(): Group {
     eye.name = `ghost-eye-${i}`;
     eye.position.set(0.235, 0.82, z);
     const shoe = new Mesh(new BoxGeometry(0.24, 0.1, 0.14), red);
+    shoe.name = i === 0 ? 'footL' : 'footR';
     shoe.position.set(0.05, 0.05, z * 1.3);
     group.add(eye, shoe);
   }

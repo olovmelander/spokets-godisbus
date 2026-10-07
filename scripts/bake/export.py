@@ -10,6 +10,9 @@ Headless, in a cloud session or on Olov's computer:
         "OUT='art/baked/<pack>/<name>.glb'; exec(open('scripts/bake/export.py').read())"
 
 The game's asset build (scripts/build-assets.mjs) then compresses the meshes and turns the textures into KTX2.
+For a character review scene, select its game collection and set
+    bpy.context.scene['_export_selected_only'] = True
+before this script. The one-shot flag is consumed by the export, keeping reference-image empties out of the GLB.
 """
 import bpy
 
@@ -23,6 +26,7 @@ bpy.ops.export_scene.gltf(
     export_lights=False,
     export_animations=True,
     export_image_format='AUTO',  # textures stay PNG here; the asset build makes them KTX2
-    use_selection=False,
+    # A character review can request its selected game meshes, excluding the reference-image empties.
+    use_selection=bpy.context.scene.pop('_export_selected_only', False),
 )
 print('exported', OUT)  # noqa: F821

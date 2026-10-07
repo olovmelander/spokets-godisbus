@@ -4,6 +4,61 @@ import { createFamilyMotion } from '../../src/render/family-motion';
 import { createModelRig, createRehearsalRig, STANDING, type Pose } from '../../src/render/rig';
 
 describe('family help-point movement', () => {
+  it('gives the family distinct, readable greetings and keeps them still with reduced motion', () => {
+    const roles = ['pappa', 'mamma', 'moa', 'bertil'] as const;
+    const poses = roles.map((who) => {
+      const motion = createFamilyMotion(who, 27);
+      const greeting = { ...motion.update(.1, 1, 1.1, .4, null, true) };
+      expect(motion.update(.1, 80, .9, .4, null, true)).toEqual(greeting);
+      expect(greeting.bounce).toBe(0); expect(greeting.legL).toBe(0); expect(greeting.legR).toBe(0);
+      return greeting;
+    });
+    const [pappa, mamma, moa, bertil] = poses;
+    // A reassuring hand, a lower welcome, a one-handed wave, and a two-handed cheer.
+    expect(pappa!.armL).toBeLessThan(.6); expect(pappa!.armR).toBeGreaterThan(1.4);
+    expect(mamma!.armL).toBeGreaterThan(pappa!.armL); expect(mamma!.armR).toBeLessThan(1.5);
+    expect(moa!.armL).toBeLessThan(.5); expect(moa!.armR).toBeGreaterThan(2.3);
+    expect(bertil!.armL).toBeGreaterThan(2); expect(bertil!.armR).toBeGreaterThan(2.3);
+    const idle = roles.map((who) => createFamilyMotion(who, 27).update(.1, 0, 0, 0, null, true));
+    expect(idle[2]!.elbowL).toBeGreaterThan(idle[2]!.elbowR + .4);
+    expect(idle[0]!.nod).toBeGreaterThan(idle[3]!.nod);
+  });
+
+  it('anticipates a greeting with the head, follows with the arms, and eases fully back to rest', () => {
+    for (const who of ['pappa', 'mamma', 'moa', 'bertil'] as const) {
+      const motion = createFamilyMotion(who, 27);
+      const quiet = { ...motion.update(1 / 60, 0, 0, 0, null, false) };
+      const starting = { ...motion.update(1 / 60, 0, 1.8, 0, null, false) };
+      expect(starting).toEqual(quiet);
+      const anticipating = { ...motion.update(1 / 60, 0, 1.76, 0, null, false) };
+      expect(anticipating.nod).toBeGreaterThan(quiet.nod + .02);
+      expect(anticipating.armR).toBe(quiet.armR);
+      let previous = starting;
+      for (let frame = 1; frame <= 108; frame++) {
+        const current = { ...motion.update(1 / 60, 0, 1.8 - frame / 60, 0, null, false) };
+        for (const joint of ['armL', 'armR', 'elbowL', 'elbowR', 'nod'] as const) {
+          expect(Math.abs(current[joint] - previous[joint]), `${who} ${joint} frame ${frame}`).toBeLessThan(.3);
+        }
+        previous = current;
+      }
+      expect(previous).toEqual(quiet);
+      expect(motion.update(.1, 0, 2.5, 0, null, false)).toEqual(quiet);
+    }
+  });
+
+  it('follows Elof smoothly at the same rate on every screen and freezes the actual gaze on pause', () => {
+    const poses = [30, 60, 120].map((fps) => {
+      const motion = createFamilyMotion('mamma', 27);
+      const before = { ...motion.update(1 / fps, 0, 0, -.75, null, false) };
+      let result = { ...before };
+      for (let frame = 1; frame <= fps / 10; frame++) result = { ...motion.update(1 / fps, frame / fps, 0, .75, null, false) };
+      expect(result.turn).toBeGreaterThan(before.turn); expect(result.turn).toBeLessThan(.165);
+      expect(motion.update(0, 50, 0, -.75, null, false)).toEqual(result);
+      return result;
+    });
+    for (const pose of poses) expect(pose.turn).toBeCloseTo(poses[0]!.turn, 10);
+  });
+
   it('greets with jointed arms, offsets idle by role, and freezes the actual pose while paused', () => {
     const motion = createFamilyMotion('moa', 165);
     const quiet = { ...motion.update(.1, 1, 0, .4, null, false) };
@@ -48,8 +103,23 @@ describe('family help-point movement', () => {
     expect(Math.abs(stride.legL)).toBeGreaterThan(.1); expect(stride.bounce).toBe(0);
   });
 
+  it('lowers the supporting arms after carrying without marching, and skips that transition in reduced motion', () => {
+    const motion = createFamilyMotion('pappa', 27);
+    const carry = { ...motion.update(1 / 60, 0, 0, 0, 0, false) };
+    let lowering = { ...motion.update(1 / 60, 0, 0, 0, null, false) };
+    expect(lowering.armR).toBeLessThan(carry.armR); expect(lowering.armR).toBeGreaterThan(1.7);
+    expect(motion.update(0, 30, 0, 0, null, false)).toEqual(lowering);
+    for (let frame = 0; frame < 30; frame++) {
+      lowering = { ...motion.update(1 / 60, 0, 0, 0, null, false) };
+      expect(lowering.legL).toBe(0); expect(lowering.legR).toBe(0); expect(lowering.bounce).toBe(0);
+    }
+    expect(lowering).toEqual(createFamilyMotion('pappa', 27).update(.1, 0, 0, 0, null, false));
+    motion.update(.1, 0, 0, 0, 0, true);
+    expect(motion.update(.1, 0, 0, 0, null, true)).toEqual(createFamilyMotion('pappa', 27).update(.1, 0, 0, 0, null, true));
+  });
+
   it('grounds actual boot corners through greetings and carry strides without moving any outer root', () => {
-    for (const who of ['pappa', 'moa', 'bertil'] as const) {
+    for (const who of ['pappa', 'mamma', 'moa', 'bertil'] as const) {
       const motion = createFamilyMotion(who, 27), rig = createRehearsalRig(who);
       rig.group.position.set(15, -8, .4); rig.group.rotation.y = 1.2;
       const mesh = rig.group.children[0] as InstancedMesh, matrix = new Matrix4(), point = new Vector3();

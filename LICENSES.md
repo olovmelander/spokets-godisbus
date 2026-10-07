@@ -44,6 +44,7 @@ the files made with it). three's Basis transcoder (Apache-2.0) is served with th
 
 | File | What it is | Source and licence |
 | --- | --- | --- |
+| Private character pack: Elof, Mamma, Pappa, Moa, Bertil and the ghost; revised Blender sources and the ghost's baked wood atlas | Character design and rig refinement, 7 October 2026 | Made locally for this game in Blender from the family's supplied references, with consent. The wood grain and cavity colour are authored procedurally; no third-party textures or generated-service output. Sources and models remain in the private family repository, and reference pictures and review renders remain local. |
 | `src/render/meshopt/decoder-{base,simd}.wasm` | The meshes' decoder: meshoptimizer 1.1's WebAssembly, as files of their own, and the few lines that drive it in `src/render/meshopt.ts` | meshoptimizer by Arseny Kapoulkine, MIT. Written out by `scripts/meshopt-wasm.mjs` from the copy three 0.186.1 carries inside `examples/jsm/libs/meshopt_decoder.module.js` (MIT); a unit test holds them equal. |
 | `public/icons/ghost-maskable-512.png` | Android's maskable icon | The same SVG ghost from `index.html`, on its cream background to the edges and inside the middle 80 %, rendered with sharp. Made in code for this game; no reference image or new likeness. |
 | `public/icons/ghost-{180,192,512}.png` | Home Screen icons | Exact SVG ghost already drawn in `index.html`, rendered on its existing cream background with sharp. Made in code for this game; no reference image or new likeness. |

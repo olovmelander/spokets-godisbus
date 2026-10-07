@@ -1,16 +1,34 @@
 import { BoxGeometry, CapsuleGeometry, ConeGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry } from 'three';
-import { JUMP_SPEED, RUN_SPEED } from '../sim/constants';
+import { CLIMB_SPEED, JUMP_SPEED, RUN_SPEED } from '../sim/constants';
 import type { PlayerState } from '../sim/types';
 import { blendPose, STANDING, type Pose } from './rig';
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
+const smooth = (n: number) => { const t = clamp(n); return t * t * (3 - 2 * t); };
+type MotionState = Pick<PlayerState, 'mode' | 'grounded' | 'vy'> & Partial<Pick<PlayerState, 't' | 'atEdge'>>;
 
 /** One pose language for the rounded public figure and the approved model's named bones. */
-export function playerPose(player: Pick<PlayerState, 'mode' | 'grounded' | 'vy'>, phase: number, pace: number, landing: number, out: Pose): Pose {
+export function playerPose(player: MotionState, phase: number, pace: number, landing: number, out: Pose): Pose {
   Object.assign(out, STANDING);
-  if (player.mode === 'climb' || player.mode === 'slide' || player.mode === 'ledge') {
-    out.armL = 2.65; out.armR = 2.35; out.elbowL = out.elbowR = 0.35;
-    out.legL = 0.65; out.legR = 0.25; out.kneeL = 0.9; out.kneeR = 0.55;
+  if (player.mode === 'climb') {
+    const step = Math.sin(phase);
+    out.armL = 2.5 + step * 0.3; out.armR = 2.5 - step * 0.3;
+    out.elbowL = 0.4 - step * 0.22; out.elbowR = 0.4 + step * 0.22;
+    out.legL = 0.45 - step * 0.3; out.legR = 0.45 + step * 0.3;
+    out.kneeL = 0.65 - step * 0.3; out.kneeR = 0.65 + step * 0.3;
+    out.lean = -0.06; out.nod = -0.18;
+  } else if (player.mode === 'slide') {
+    out.armL = 2.45; out.armR = 2.25; out.elbowL = 0.55; out.elbowR = 0.65;
+    out.legL = 0.7; out.legR = 0.45; out.kneeL = 0.85; out.kneeR = 0.7;
+    out.lean = -0.16; out.nod = 0.15;
+  } else if (player.mode === 'ledge') {
+    // Reach, pull the chest over the rim, then plant a knee and stand up.
+    const pull = smooth((player.t ?? 0) / 0.6), stand = smooth(((player.t ?? 0) - 0.55) / 0.45);
+    out.armL = (2.8 - pull * 1.6) * (1 - stand); out.armR = (2.6 - pull * 1.4) * (1 - stand);
+    out.elbowL = out.elbowR = (0.2 + 0.8 * pull) * (1 - stand);
+    out.legL = (0.35 + pull * 0.85) * (1 - stand); out.legR = 0.2 * (1 - stand);
+    out.kneeL = (0.55 + pull * 0.65) * (1 - stand); out.kneeR = 0.35 * (1 - stand);
+    out.lean = 0.35 * pull * (1 - stand); out.nod = -0.2 * (1 - pull);
   } else if (player.mode === 'swing') {
     out.armL = out.armR = 2.9; out.elbowL = out.elbowR = 0.15;
     out.legL = out.legR = 0.2; out.kneeL = out.kneeR = 0.45;
@@ -20,6 +38,7 @@ export function playerPose(player: Pick<PlayerState, 'mode' | 'grounded' | 'vy'>
   } else if (player.mode === 'down' || player.mode === 'bubble') {
     out.armL = out.armR = 0.45; out.elbowL = out.elbowR = 0.9;
     out.legL = out.legR = 0.4; out.kneeL = out.kneeR = 0.8;
+    out.spread = player.mode === 'bubble' ? 0.25 : 0;
   } else if (!player.grounded) {
     const rise = clamp(player.vy / JUMP_SPEED), fall = clamp(-player.vy / JUMP_SPEED);
     out.legL = 0.4 + 0.35 * rise - 0.25 * fall; out.legR = 0.15 - 0.4 * rise + 0.05 * fall;
@@ -27,14 +46,22 @@ export function playerPose(player: Pick<PlayerState, 'mode' | 'grounded' | 'vy'>
     out.armL = 0.65 + 0.5 * rise + 0.15 * fall; out.armR = 0.8 + 0.5 * rise + 0.25 * fall;
     out.elbowL = out.elbowR = 0.25 + 0.35 * rise;
     out.lean = 0.08 * rise - 0.04 * fall;
+  } else if (player.atEdge) {
+    out.lean = -0.16; out.nod = 0.35; out.spread = 0.18;
+    out.armL = 0.25; out.armR = 0.4; out.elbowL = out.elbowR = 0.3;
+    out.legL = 0.1; out.legR = -0.12; out.kneeL = 0.1; out.kneeR = 0.18;
   } else {
-    const reach = 0.7 * pace, swing = Math.sin(phase) * reach;
+    const effort = Math.sqrt(clamp(pace)), run = smooth((pace - 0.35) / 0.65);
+    const reach = effort * (0.44 + 0.3 * run), swing = Math.sin(phase) * reach;
+    const recovery = Math.cos(phase), fold = effort * (0.45 + 0.65 * run);
     out.legL = swing + 0.45 * landing; out.legR = -swing + 0.45 * landing;
-    out.kneeL = Math.max(0, Math.cos(phase)) * reach * 1.25 + 0.9 * landing;
-    out.kneeR = Math.max(0, -Math.cos(phase)) * reach * 1.25 + 0.9 * landing;
+    // The recovering foot folds behind the knee; the supporting leg extends on its way back.
+    // Squaring the lift makes both ends of contact smooth instead of snapping the knee straight.
+    out.kneeL = Math.max(0, recovery) ** 2 * fold + 0.9 * landing;
+    out.kneeR = Math.max(0, -recovery) ** 2 * fold + 0.9 * landing;
     out.armL = -swing * 0.9; out.armR = swing * 0.9;
-    out.elbowL = out.elbowR = 0.08 + 0.6 * pace;
-    out.lean = 0.1 * pace + 0.2 * landing; out.nod = -0.05 * pace;
+    out.elbowL = 0.08 + 0.6 * effort - swing * 0.12; out.elbowR = 0.08 + 0.6 * effort + swing * 0.12;
+    out.lean = 0.12 * pace + 0.2 * landing; out.nod = -0.05 * pace - 0.12 * landing;
   }
   return out;
 }
@@ -42,13 +69,15 @@ export function playerPose(player: Pick<PlayerState, 'mode' | 'grounded' | 'vy'>
 /** Only actual travel advances a stride: blocked movement, rides and a paused view never march. */
 export function createPlayerMotion() {
   const target = { ...STANDING }, pose = { ...STANDING };
-  let lastX: number | null = null, grounded = true, free = false, phase = 0, landing = 0;
+  let lastX: number | null = null, lastY = 0, lastMode: PlayerState['mode'] = 'free';
+  let grounded = true, free = false, phase = 0, landing = 0, impact = 0, idle = 0;
   return {
     update(player: PlayerState, x: number, dt: number, scripted: Pose | null, wave = 0, calm = false): Pose {
       const distance = lastX === null ? 0 : Math.abs(x - lastX);
-      lastX = x;
+      const climb = lastMode === 'climb' && player.mode === 'climb' ? player.y - lastY : 0;
+      lastX = x; lastY = player.y; lastMode = player.mode;
       if (scripted) {
-        grounded = player.grounded; free = false; landing = 0;
+        grounded = player.grounded; free = false; landing = 0; impact = 0; idle = 0;
         return Object.assign(pose, scripted);
       }
       if (dt <= 0) return pose;
@@ -56,11 +85,19 @@ export function createPlayerMotion() {
       const continuous = distance <= RUN_SPEED * dt * 2 + 0.05;
       const pace = walking && free && continuous ? clamp(distance / (dt * RUN_SPEED)) : 0;
       if (pace > 0) phase += distance * 5.5;
-      if (!continuous) { phase = 0; landing = 0; Object.assign(pose, STANDING); }
-      if (walking && !grounded && continuous) landing = 1;
-      else landing = Math.max(0, landing - dt * 5);
+      if (Math.abs(climb) <= CLIMB_SPEED * dt * 3 + 0.05) phase += climb * 7;
+      if (!continuous) { phase = 0; landing = 0; impact = 0; Object.assign(pose, STANDING); }
+      if (walking && !grounded && continuous) landing = 0.2 + 0.8 * clamp(impact / JUMP_SPEED);
+      else landing *= Math.exp(-12 * dt);
+      impact = player.mode === 'free' && !player.grounded ? Math.max(impact, -player.vy) : 0;
       grounded = player.grounded; free = walking;
       playerPose(player, phase, pace, landing, target);
+      idle = walking && pace === 0 && !player.atEdge && wave <= 0 ? idle + dt : 0;
+      if (!calm && idle > 0.4) {
+        const breath = Math.sin(idle * 1.8) * smooth((idle - 0.4) / 0.8);
+        target.lean += breath * 0.015; target.nod += breath * 0.025;
+        target.turn = Math.sin(idle * 0.65) * smooth((idle - 2) / 2) * 0.06;
+      }
       if (wave > 0 && walking) {
         target.armR = 2; target.elbowR = 0.7 + (calm ? 0 : Math.sin(wave * 22) * 0.3);
       }

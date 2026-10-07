@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, Group, InstancedMesh, Matrix4, MeshLambertMaterial, Object3D, Quaternion, Vector3 } from 'three';
+import { BoxGeometry, Color, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
 
 /**
  * A body's pose, as a scene's acting asks for it (src/render/acting.ts). Angles are in radians. The body faces
@@ -215,6 +215,58 @@ export function createRehearsalRig(who: Role): Rig {
 /** One bone, the turn it rests in, and which way round its x it bends a joint forward. */
 interface Bone { node: Object3D; rest: Quaternion; sign: 1 | -1 }
 
+/** Cache a small support cloud in each boot's bone space; never skin or scan the mesh during a pose. */
+function bootContacts(model: Object3D, foot: Object3D): Vector3[] {
+  const points: Vector3[] = [], transform = new Matrix4();
+  model.traverse((node) => {
+    if (!(node instanceof Mesh)) return;
+    const positions = node.geometry.getAttribute('position');
+    if (!positions) return;
+    if (node instanceof SkinnedMesh) {
+      const index = node.skeleton.bones.findIndex((bone) => bone === foot);
+      const indices = node.geometry.getAttribute('skinIndex'), weights = node.geometry.getAttribute('skinWeight');
+      if (index < 0 || !indices || !weights) return;
+      transform.multiplyMatrices(node.skeleton.boneInverses[index]!, node.bindMatrix);
+      for (let i = 0; i < positions.count; i++) {
+        // Shoes in the Blender models are rigidly weighted to their foot, including their soles and laces.
+        for (let channel = 0; channel < 4; channel++) {
+          if (indices.getComponent(i, channel) === index && weights.getComponent(i, channel) > .999) {
+            points.push(new Vector3().fromBufferAttribute(positions, i).applyMatrix4(transform));
+            break;
+          }
+        }
+      }
+    } else {
+      let parent: Object3D | null = node;
+      while (parent && parent !== foot) parent = parent.parent;
+      if (!parent) return;
+      transform.copy(foot.matrixWorld).invert().multiply(node.matrixWorld);
+      for (let i = 0; i < positions.count; i++) points.push(new Vector3().fromBufferAttribute(positions, i).applyMatrix4(transform));
+    }
+  });
+  if (points.length === 0) return points;
+  // Rotating a boot changes which part supports it: heel, toe, sole and (when kneeling) the upper.
+  // Side-tilted directions also retain the edges of boots whose bones splay out slightly in their rest pose.
+  const support = new Set<Vector3>();
+  const keep = (x: number, y: number, z: number) => {
+    let lowest = Infinity, contact = points[0]!;
+    for (const point of points) {
+      const distance = point.x * x + point.y * y + point.z * z;
+      if (distance < lowest) { lowest = distance; contact = point; }
+    }
+    support.add(contact);
+  };
+  for (let i = 0; i < 64; i++) {
+    const angle = i * Math.PI / 32;
+    for (const side of [-.5, -.08, 0, .08, .5]) keep(side, Math.cos(angle), Math.sin(angle));
+  }
+  keep(-1, 0, 0); keep(1, 0, 0);
+  // Include the exact standing direction, even when a foot bone has an unusual rest roll.
+  const rest = foot.matrixWorld.elements;
+  keep(rest[1]!, rest[5]!, rest[9]!);
+  return [...support];
+}
+
 /**
  * A model from Blender, posed on its bones. They carry the animation library's joint names (plan §5.6) and bend
  * round their own x. Exported limbs hang half a turn round z from the body, so their +y runs down the limb and
@@ -252,16 +304,23 @@ export function createModelRig(model: Object3D, height: number): Rig {
     if (around && extra !== 0) b.node.quaternion.multiply(turn.setFromAxisAngle(around, extra));
     b.node.quaternion.multiply(turn.setFromAxisAngle(X, angle * b.sign));
   };
-  const at = new Vector3(), elbow = new Vector3();
+  const at = new Vector3();
   const rest = model.position.y;
   const unit = height / ADULT;
   group.updateWorldMatrix(true, true);
-  // Where the feet's bones are when the body stands as it rests: its soles are on the ground then.
+  const supports = feet.map((foot) => ({ foot, points: bootContacts(model, foot) }));
+  const toGroup = new Matrix4(), inverseGroup = new Matrix4();
+  // Models without boot geometry retain the ankle-height fallback.
   const sole = feet.length > 0 ? Math.min(...feet.map((foot) => group.worldToLocal(foot.getWorldPosition(at)).y)) : 0;
-  // A forearm is about as long as its upper arm.
+  const hips = [bones.legL, bones.legR].filter((b): b is Bone => b !== null);
+  const restHip = hips.length > 0
+    ? hips.reduce((sum, b) => sum + group.worldToLocal(b.node.getWorldPosition(at)).y, 0) / hips.length
+    : HIP * unit;
+  // Without a hand bone, approximate the forearm by the upper arm, measured in the lower bone's own units.
+  // Keeping a world-space length here would shorten the reach if a scene later enlarged the whole figure.
   const fore = [bones.armL, bones.armR].map((upper, i) => {
     const lower = i === 0 ? bones.elbowL : bones.elbowR;
-    return upper && lower ? upper.node.getWorldPosition(at).distanceTo(lower.node.getWorldPosition(elbow)) : 0;
+    return upper && lower ? lower.node.worldToLocal(upper.node.getWorldPosition(at)).length() : 0;
   });
   return {
     group,
@@ -279,7 +338,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
       bend(bones.kneeR, p.kneeR);
       model.position.y = rest;
       if (p.seat !== null) {
-        model.position.y = rest + (p.seat - HIP + p.bounce) * unit;
+        model.position.y = rest + (p.seat + p.bounce) * unit - restHip;
         return;
       }
       if (feet.length === 0) {
@@ -287,19 +346,24 @@ export function createModelRig(model: Object3D, height: number): Rig {
         return;
       }
       group.updateWorldMatrix(true, true);
+      inverseGroup.copy(group.matrixWorld).invert();
       // The lowest of the soles, or of the knees for a body that kneels.
       let low = Infinity;
-      for (const foot of feet) low = Math.min(low, group.worldToLocal(foot.getWorldPosition(at)).y - sole);
-      for (const knee of knees) low = Math.min(low, group.worldToLocal(knee.getWorldPosition(at)).y - KNEE * unit);
+      for (const { foot, points } of supports) {
+        toGroup.multiplyMatrices(inverseGroup, foot.matrixWorld);
+        if (points.length === 0) low = Math.min(low, at.setFromMatrixPosition(toGroup).y - sole);
+        else for (const point of points) low = Math.min(low, at.copy(point).applyMatrix4(toGroup).y);
+      }
+      for (const knee of knees) low = Math.min(low, at.setFromMatrixPosition(knee.matrixWorld).applyMatrix4(inverseGroup).y - KNEE * unit);
       model.position.y = rest - low + p.bounce * unit;
     },
     hand(side, out) {
       const own = handBones[side];
       if (own) return own.getWorldPosition(out);
       const lower = side === 0 ? bones.elbowL : bones.elbowR;
-      if (!lower) return group.getWorldPosition(out).setY(out.y + height * 0.45);
+      if (!lower) return group.localToWorld(out.set(0, height * 0.45, 0));
       // Blender's bones lie along their own +y: the hand is a forearm's length along it from the elbow.
-      return lower.node.localToWorld(out.set(0, fore[side]! / Math.max(1e-6, lower.node.getWorldScale(at).y), 0));
+      return lower.node.localToWorld(out.set(0, fore[side]!, 0));
     },
   };
 }
