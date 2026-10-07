@@ -34,6 +34,8 @@ export function estimateKtx2(bytes) {
   // estimate before shipping: treating them as four bytes per texel could undercount.
   const model = bytes[dfdOffset + 12];
   if (!(format === 0 && (model === 163 || model === 166)) && format !== 37 && format !== 43) fail(`unsupported KTX2 format ${format}/${model}`);
+  // The game's KTX2Loader carries no Zstandard decoder (scripts/no-zstd.mjs): such an image would not load.
+  if (bytes.readUInt32LE(44) === 2) fail('a KTX2 image is supercompressed with Zstandard, which the game cannot decode');
   for (let i = 0; i < Math.max(1, levels); i++) {
     const offset = Number(bytes.readBigUInt64LE(80 + i * 24));
     const length = Number(bytes.readBigUInt64LE(88 + i * 24));
