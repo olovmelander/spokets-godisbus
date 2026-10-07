@@ -27,6 +27,7 @@ bpy.ops.export_scene.gltf(
     export_animations=True,
     export_image_format='AUTO',  # textures stay PNG here; the asset build makes them KTX2
     # A character review can request its selected game meshes, excluding the reference-image empties.
+    use_active_scene=bool(bpy.context.scene.get('_export_selected_only', False)),
     use_selection=bpy.context.scene.pop('_export_selected_only', False),
 )
 print('exported', OUT)  # noqa: F821

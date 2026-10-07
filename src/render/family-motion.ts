@@ -2,7 +2,7 @@ import { actPose } from './acting';
 import { STANDING, type Pose, type Role } from './rig';
 
 const smooth = (t: number) => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
-const UPPER = ['lean', 'nod', 'armL', 'armR', 'elbowL', 'elbowR', 'spread'] as const;
+const UPPER = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'spread'] as const;
 
 // The sheets' personalities read in the silhouette, even with the rehearsal bodies.
 const CHARACTER = {
@@ -13,48 +13,59 @@ const CHARACTER = {
 } satisfies Record<Role, object>;
 
 /** Helpers stay on their feet: a personal greeting, a quiet look, or Pappa supporting his passenger. */
-export function createFamilyMotion(who: Role, at: number) {
-  const pose: Pose = { ...STANDING };
+export function createFamilyMotion(who: Role, at: number, purpose = '') {
+  const pose: Pose = { ...STANDING }, helping: Pose = { ...STANDING };
   const character = CHARACTER[who];
+  const gift = purpose.startsWith('party:');
+  const task = purpose === 'moa' || gift ? 'offer' : purpose === 'cap' ? 'reach' : purpose === 'seesaw' ? 'point'
+    : purpose === 'mamma' || purpose === 'bog:return-bridge' ? 'lift' : null;
   const offset = ['pappa', 'mamma', 'moa', 'bertil'].indexOf(who) * 1.7 + at * 0.13;
-  let lastX: number | null = null, walked = 0;
-  let gaze: number | null = null, release = 0;
-  let releasedFrom: Pose | null = null;
+  let lastX: number | null = null, walked = 0, pace = 0, lastJoy = 0, ready = false;
+  let gaze: number | null = null, pitch: number | null = null, settling = 0;
+  let from: Pose | null = null;
   return {
-    update(dt: number, clock: number, joy: number, towards: number, carryX: number | null, calm: boolean): Pose {
+    update(dt: number, clock: number, joy: number, towards: number, carryX: number | null, calm: boolean,
+      look?: { ahead: number; up: number }): Pose {
       if (dt <= 0) return pose;
-      if (lastX !== null && carryX === null) {
-        releasedFrom = { ...pose };
-        release = 0;
+      if (ready && ((lastX === null) !== (carryX === null) || lastJoy > 0 && joy > lastJoy + .1 || lastJoy > .4 && joy === 0)) {
+        from = { ...pose };
+        settling = 0;
       }
+      ready = true; lastJoy = joy;
       Object.assign(pose, STANDING);
       if (carryX !== null) {
-        releasedFrom = null;
-        gaze = 0;
+        gaze = 0; pitch = character.nod;
         const distance = lastX === null ? 0 : Math.abs(carryX - lastX);
         // A restored ride changes its place, not the phase of a long unseen march.
-        const pace = distance < dt * 12 + 0.05 ? Math.min(1, distance / dt / 2.6) : 0;
-        if (pace > 0) walked += distance;
+        const travel = distance < dt * 12 + .05;
+        const want = travel ? Math.min(1, distance / dt / 2.6) : 0;
+        pace = travel ? pace + (want - pace) * -Math.expm1(-dt * 12) : 0;
+        if (want > 0) walked += distance;
         actPose('walk', { t: clock, aim: null, stride: walked / 1.25, pace: pace * 0.65, calm }, pose);
-        pose.armL = pose.armR = 1.85;
+        // Keep the supporting forearms raised while the chest eases into a step.
+        pose.armL = pose.armR = 1.85 + pose.lean;
         pose.elbowL = pose.elbowR = 0.55;
         pose.spread = 0.12;
       } else {
+        pace = 0;
         const t = calm ? 0 : clock + offset;
         const breathe = calm ? 0 : Math.sin(t * 1.3);
         const elapsed = Math.max(0, 1.8 - joy);
         const active = joy > 0;
+        const greeting = active && !task && purpose !== 'braid';
         // The head acknowledges Elof before the arms rise; the second arm follows, then both settle gently.
-        const right = active ? calm ? 1 : smooth((elapsed - 0.05) / 0.24) * smooth(joy / 0.4) : 0;
-        const left = active ? calm ? 1 : smooth((elapsed - 0.12) / 0.3) * smooth(joy / 0.46) : 0;
-        const wave = calm ? 0 : Math.sin(elapsed * character.tempo) * character.wave * right;
+        const right = greeting ? calm ? 1 : smooth((elapsed - 0.05) / 0.24) * smooth(joy / 0.4) : 0;
+        const left = greeting ? calm ? 1 : smooth((elapsed - 0.12) / 0.3) * smooth(joy / 0.46) : 0;
+        const wave = calm ? 0 : Math.sin(elapsed * character.tempo) * character.wave * right * smooth((1.3 - elapsed) / .45);
         pose.lean = character.lean + 0.012 * breathe + 0.035 * right;
         pose.nod = character.nod + 0.018 * breathe + (active && !calm ? 0.075 * Math.sin(Math.min(1, elapsed / 0.24) * Math.PI) : 0);
-        const target = Math.max(-0.75, Math.min(0.75, towards)) * 0.22;
+        const target = Math.max(-.5, Math.min(.5, towards));
         gaze = gaze === null || calm ? target : gaze + (target - gaze) * -Math.expm1(-dt * 9);
         pose.turn = gaze;
-        pose.armL = 0.06 + (calm ? 0 : Math.sin(t * 1.1) * 0.02);
-        pose.armR = 0.04 + (calm ? 0 : Math.sin(t * 1.1 + 1) * 0.02);
+        const down = look ? Math.max(-.5, Math.min(.65, Math.atan2(4.65 - look.up, Math.max(1, look.ahead)))) : character.nod;
+        pitch = pitch === null || calm ? down : pitch + (down - pitch) * -Math.expm1(-dt * 7);
+        pose.nod += pitch - character.nod;
+        pose.armL = .06; pose.armR = .04;
         pose.elbowL = character.elbow + character.left;
         pose.elbowR = character.elbow;
         pose.armL += (character.armL - pose.armL) * left;
@@ -62,13 +73,26 @@ export function createFamilyMotion(who: Role, at: number) {
         pose.elbowL += (character.elbowL - pose.elbowL) * left;
         pose.elbowR += (character.elbowR - pose.elbowR) * right + wave;
         pose.spread = character.spread * right;
-        if (releasedFrom && !calm) {
-          // Lower the supporting hands after the passenger leaves, without taking another step.
-          const k = smooth((release += dt) / 0.32);
-          for (const joint of UPPER) pose[joint] = releasedFrom[joint] + (pose[joint] - releasedFrom[joint]) * k;
-          if (k === 1) releasedFrom = null;
-        } else releasedFrom = null;
+        const weight = active ? calm ? 1 : smooth(elapsed / .5) * smooth(joy / .5) : 0;
+        if (active && task) {
+          // The same flag that moves the help object gives its helper a purposeful, weighted gesture.
+          actPose(task, { t: calm ? 3 : elapsed, aim: gift && look ? look : { ahead: task === 'point' ? 4 : 1.4,
+            up: purpose === 'cap' ? 1.0 : task === 'lift' ? 3.15 : gift ? 1.6 : 3.5 }, stride: 0, pace: 0, calm, role: who }, helping);
+          for (const joint of [...UPPER, 'legL', 'legR', 'kneeL', 'kneeR'] as const) {
+            if (joint !== 'turn' && joint !== 'nod') pose[joint] += (helping[joint] - pose[joint]) * weight;
+          }
+        } else if (active && purpose === 'braid') {
+          pose.armL += (2.6 - pose.armL) * weight;
+          pose.elbowL += (1.4 - pose.elbowL) * weight;
+          pose.armR += (.9 - pose.armR) * weight;
+        }
       }
+      if (from && !calm) {
+        // Boarding, alighting and interrupted reactions retain the previous hands, then settle.
+        const k = smooth((settling += dt) / .32);
+        for (const joint of UPPER) pose[joint] = from[joint] + (pose[joint] - from[joint]) * k;
+        if (k === 1) from = null;
+      } else from = null;
       lastX = carryX;
       pose.bounce = 0;
       return pose;

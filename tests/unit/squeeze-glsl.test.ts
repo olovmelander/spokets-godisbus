@@ -30,6 +30,13 @@ describe('shaders without padding', () => {
     expect(squeezeGlsl('  \n  ')).toBe('\n');
   });
 
+  it('keeps Windows shader literals on separate preprocessor lines when joined to an include', () => {
+    const shader = '\r\n  #ifdef USE_INSTANCING\r\n    transformed.x += 1.0;\r\n  #endif\r\n  ';
+    const joined = '#endif' + squeezeGlsl(shader) + '#include <project_vertex>';
+    expect(joined).toBe('#endif\n#ifdef USE_INSTANCING\ntransformed.x += 1.0;\n#endif\n#include <project_vertex>');
+    expect(tokens(joined)).toEqual(tokens('#endif' + shader + '#include <project_vertex>'));
+  });
+
   it('squeeze three\'s quoted chunks and literals marked glsl, keeping the comments of one with script in it', () => {
     const three = 'var a_fragment = "#ifdef A\\n\\tfoo(); // c\\n#endif";\nvar name = "plain";';
     expect(squeezeShaders(three, '/x/node_modules/three/build/three.module.js')).toBe('var a_fragment = "#ifdef A\\nfoo();\\n#endif";\nvar name = "plain";');

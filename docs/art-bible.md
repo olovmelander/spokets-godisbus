@@ -86,18 +86,27 @@ No one here sculpts by hand. Two routes were looked at on 3 October, and neither
 
 ### 1.5 How the ghost is built
 
-1. Follow the render and the poster for the forms (the draped sheet, the sleeve folds, the fists), and the two
-   photos of the real carving for the facts (plan §2.2).
+**Updated direction, Olov, 7 October 2026:** `photos/ghost-render.png` is the primary appearance reference for
+the playable 3D ghost. Match its wider draped silhouette, hanging sleeves, substantial hands, pale carved
+wood, dotted bag and full red shoes. The real-carving photographs are supporting references; their narrower
+proportions do not override the render. Local image-to-3D followed by Blender cleanup is authorized.
+
+1. Follow `ghost-render.png` for the forms, proportions and finish. Keep the other supplied references beside
+   the model for review.
 2. Model in planes: every surface is a knife cut. Ridges are clean and slightly chamfered.
-3. Bake one 1024² colour texture: pale lime wood, grain along the form, darker inside the cuts, lighter on the
-   ridges. The eyes, the bag's dots, the socks and the shoes are painted on the wood, as on the carving.
-4. Five rigid parts, moved in code. It never bends (plan §5.6).
+3. Bake colour textures: pale lime wood, grain along the form, darker inside the cuts, lighter on the ridges.
+   The detailed reference-derived ghost uses a 2048² body atlas and a shared 1024² shoe atlas, within the
+   character triangle and packed boot budgets. No normal map. Keep the bag's dots, striped socks and shoe
+   paint from the reference; the separate glossy eyes support the prologue's painting and runtime blinking.
+4. Keep named rigid body, feet and eye parts. The eyes must disappear individually during the prologue's
+   painting and blink independently of the body; the shoes pivot at their ankles. The carved bag and arms
+   may remain part of the rigid body until authored hand gestures require separate pivots.
 
 ### 1.6 Image-to-3D from the sheets (Olov's decision, 3 October 2026)
 
 Olov, after seeing the third scripted Elof: "We need to go image to 3d way!" Elof and the family are generated
-from his sheets and finished in Blender. The ghost is not: carved facets are what modelling by script does well
-(§1.5).
+from his sheets and finished in Blender. On 7 October he also authorized a local image-to-3D trial for the
+ghost, using `ghost-render.png` as the appearance reference (§1.5).
 
 **No sheet has been uploaded yet.** The service is not chosen, because the one the plan examined fails one of
 the plan's own checks.

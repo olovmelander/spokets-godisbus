@@ -1,7 +1,8 @@
-import { BoxGeometry, CapsuleGeometry, ConeGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry } from 'three';
+import { BoxGeometry, CapsuleGeometry, ConeGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3 } from 'three';
 import { CLIMB_SPEED, JUMP_SPEED, RUN_AFTER, RUN_SPEED } from '../sim/constants';
 import type { PlayerState } from '../sim/types';
 import { blendPose, STANDING, type Pose } from './rig';
+import { createArmContact } from './arm-contact';
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
 const smooth = (n: number) => { const t = clamp(n); return t * t * (3 - 2 * t); };
@@ -32,6 +33,7 @@ export function playerPose(player: MotionState, phase: number, pace: number, lan
   } else if (player.mode === 'swing') {
     out.armL = out.armR = 2.9; out.elbowL = out.elbowR = 0.15;
     out.legL = out.legR = 0.2; out.kneeL = out.kneeR = 0.45;
+    out.lean = -.08; out.nod = -.12;
   } else if (player.mode === 'ride') {
     out.legL = out.legR = 1.25; out.kneeL = out.kneeR = 1.3;
     out.armL = out.armR = 0.3; out.elbowL = out.elbowR = 0.6;
@@ -76,6 +78,9 @@ export function createPlayerMotion() {
     update(player: PlayerState, x: number, dt: number, scripted: Pose | null, wave = 0, calm = false): Pose {
       const travel = lastX === null ? 0 : x - lastX, distance = Math.abs(travel), previousMode = lastMode;
       const climb = lastMode === 'climb' && player.mode === 'climb' ? player.y - lastY : 0;
+      // Assisted arcs move a kinematic body: its reported velocity stays zero.
+      const vy = player.mode === 'fly' && previousMode === 'fly' && dt > 0 ? (player.y - lastY) / dt : player.vy;
+      const airborne = player.mode === 'free' || player.mode === 'fly';
       lastX = x; lastY = player.y; lastMode = player.mode;
       if (scripted) {
         grounded = player.grounded; free = false; landing = 0; impact = 0; idle = 0; speed = 0;
@@ -83,7 +88,7 @@ export function createPlayerMotion() {
       }
       if (dt <= 0) return pose;
       const walking = player.mode === 'free' && player.grounded;
-      const continuous = distance <= RUN_SPEED * dt * 2 + 0.05;
+      const continuous = distance <= Math.max(RUN_SPEED * 2, Math.abs(player.vx) * 1.5) * dt + 0.05;
       const pace = walking && free && continuous ? clamp(distance / (dt * RUN_SPEED)) : 0;
       // Filter measured travel before taking acceleration, so interpolation does not shake the torso.
       const before = speed;
@@ -95,14 +100,14 @@ export function createPlayerMotion() {
       if (Math.abs(climb) <= CLIMB_SPEED * dt * 3 + 0.05) phase += climb * 7;
       if (!continuous) { phase = 0; landing = 0; impact = 0; speed = 0; Object.assign(pose, STANDING); }
       // A running jump leads with the foot already ahead. Keep that choice through the whole flight.
-      if (player.mode === 'free' && !player.grounded && grounded) lead = pose.legL >= pose.legR ? 1 : -1;
+      if (airborne && !player.grounded && grounded) lead = pose.legL >= pose.legR ? 1 : -1;
       // Stepping off a ride, a hose or the finished clamber is not a fall onto the ground.
-      if (walking && !grounded && previousMode === 'free' && impact > 0 && continuous) landing = 0.2 + 0.8 * clamp(impact / JUMP_SPEED);
+      if (walking && !grounded && (previousMode === 'free' || previousMode === 'fly') && impact > 0 && continuous) landing = 0.2 + 0.8 * clamp(impact / JUMP_SPEED);
       else landing *= Math.exp(-12 * dt);
-      impact = player.mode === 'free' && !player.grounded ? Math.max(impact, -player.vy) : 0;
+      impact = airborne && !player.grounded ? Math.max(impact, -vy) : 0;
       grounded = player.grounded; free = walking;
-      playerPose(player, phase, pace, landing, target);
-      if (player.mode === 'free' && !player.grounded && lead < 0) {
+      playerPose(player.mode === 'fly' ? { ...player, vy } : player, phase, pace, landing, target);
+      if (airborne && !player.grounded && lead < 0) {
         [target.legL, target.legR] = [target.legR, target.legL];
         [target.kneeL, target.kneeR] = [target.kneeR, target.kneeL];
         [target.armL, target.armR] = [target.armR, target.armL];
@@ -154,6 +159,7 @@ export function createPlayerStandIn() {
   const legs = [leg(-0.075), leg(0.075)];
   const torso = new Mesh(new CapsuleGeometry(0.15, 0.16, 6, 14), shirt); torso.position.y = 0.14;
   const head = new Mesh(new SphereGeometry(0.19, 20, 14), skin); head.position.y = 0.41;
+  head.name = 'player-head';
   const hairTop = new Mesh(new SphereGeometry(0.2, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), hair);
   hairTop.position.set(-0.012, 0.43, 0);
   const fringe = new Mesh(new ConeGeometry(0.075, 0.18, 8), hair); fringe.position.set(0.13, 0.585, 0); fringe.rotation.z = -0.85;
@@ -170,6 +176,8 @@ export function createPlayerStandIn() {
     return { shoulder, elbow };
   };
   const arms = [arm(-0.19), arm(0.19)];
+  const handTip = new Vector3(0, -.145, 0);
+  const contacts = arms.map(arm => createArmContact(arm.shoulder, arm.elbow, handTip));
   for (const [i, side] of ['left', 'right'].entries()) {
     legs[i]!.hip.name = `player-hip-${side}`; legs[i]!.knee.name = `player-knee-${side}`;
     legs[i]!.knee.children[1]!.name = `player-boot-${side}`;
@@ -177,6 +185,8 @@ export function createPlayerStandIn() {
   }
   return {
     group,
+    hand(side: 0 | 1, out: Vector3) { return arms[side]!.elbow.localToWorld(out.copy(handTip)); },
+    reach(side: 0 | 1, target: Vector3, weight = 1) { contacts[side]!(target, weight); },
     pose(p: Pose) {
       body.rotation.z = -p.lean;
       neck.rotation.z = -p.nod;
@@ -186,8 +196,8 @@ export function createPlayerStandIn() {
         [0, p.legL, p.kneeL, p.armL, p.elbowL], [1, p.legR, p.kneeR, p.armR, p.elbowR],
       ] as const) {
         legs[i]!.hip.rotation.z = hipAngle; legs[i]!.knee.rotation.z = -kneeAngle;
-        arms[i]!.shoulder.rotation.z = armAngle; arms[i]!.elbow.rotation.z = elbowAngle;
-        arms[i]!.shoulder.rotation.x = (i === 0 ? 1 : -1) * p.spread;
+        arms[i]!.shoulder.rotation.set((i === 0 ? 1 : -1) * p.spread, 0, armAngle);
+        arms[i]!.elbow.rotation.set(0, 0, elbowAngle);
         const angle = hipAngle - kneeAngle;
         // The full boot's four sole corners, not just its ankle; a turned toe never enters the floor.
         lowest = Math.min(lowest, 0.4 - 0.19 * Math.cos(hipAngle) + 0.035 * Math.sin(angle) - 0.165 * Math.cos(angle)

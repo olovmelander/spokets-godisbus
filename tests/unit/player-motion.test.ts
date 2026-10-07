@@ -2,6 +2,7 @@ import { Bone, Group, Mesh, Quaternion, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { CLIMB_SPEED, JUMP_SPEED, RUN_SPEED, WALK_SPEED } from '../../src/sim/constants';
 import type { PlayerState } from '../../src/sim/types';
+import { Sim } from '../../src/sim/sim';
 import { createPlayerMotion, createPlayerStandIn, playerPose } from '../../src/render/player-motion';
 import { createModelRig, STANDING, type Pose } from '../../src/render/rig';
 
@@ -123,6 +124,52 @@ describe('the player’s shared motion', () => {
     }
   });
 
+  it('reads the rise and fall of an actual assisted jump, then absorbs its landing', () => {
+    const sim = new Sim({ id: 'assisted-motion', spawn: { x: 0, y: .01 }, goalX: 100,
+      ground: [{ x: -6, y: 0 }, { x: 12, y: 0 }], candy: [],
+      jumps: [{ at: { x: 2, y: 0 }, dir: 1, land: { x: 4.5, y: 0 } }] }, { easyJumps: true });
+    const motion = createPlayerMotion(), samples: { state: PlayerState; pose: Pose; vy: number }[] = [];
+    let previous = sim.curr.y;
+    for (let frame = 0; frame < 150; frame++) {
+      for (let step = 0; step < 2; step++) sim.step({ x: frame < 70 ? 1 : 0, y: 0, hop: false, hopHeld: false, act: false });
+      const pose = { ...motion.update(sim.curr, sim.curr.x, 1 / 60, null) };
+      samples.push({ state: { ...sim.curr }, pose, vy: (sim.curr.y - previous) * 60 });
+      previous = sim.curr.y;
+      expect(motion.update(sim.curr, sim.curr.x, 0, null)).toEqual(pose);
+    }
+    const rising = samples.filter(s => s.state.mode === 'fly' && s.vy > 3);
+    const falling = samples.filter(s => s.state.mode === 'fly' && s.vy < -3);
+    expect(rising.length).toBeGreaterThan(4); expect(falling.length).toBeGreaterThan(4);
+    expect([...rising, ...falling].every(s => s.state.vy === 0)).toBe(true);
+    const fold = (p: Pose) => Math.max(p.kneeL, p.kneeR);
+    expect(Math.max(...rising.map(s => fold(s.pose)))).toBeGreaterThan(Math.min(...falling.map(s => fold(s.pose))) + .25);
+    const landed = samples.findIndex((s, i) => i > 0 && s.state.grounded && samples[i - 1]!.state.mode === 'fly');
+    expect(landed).toBeGreaterThan(0);
+    expect(Math.max(...samples.slice(landed, landed + 5).map(s => Math.min(s.pose.kneeL, s.pose.kneeR))))
+      .toBeGreaterThan(Math.min(samples[landed - 1]!.pose.kneeL, samples[landed - 1]!.pose.kneeR) + .15);
+  });
+
+  it('keeps both arms raised through fast real swings at slower frame rates', () => {
+    for (const fps of [20, 30, 60]) {
+      const sim = new Sim({ id: 'swing-motion', spawn: { x: -.2, y: .01 }, goalX: 100,
+        ground: [{ x: -8, y: 0 }, { x: 0, y: 0 }, { x: 0, y: -6 }, { x: 5, y: -6 }, { x: 5, y: 0 }, { x: 14, y: 0 }], candy: [],
+        hooks: [{ x: 2.3, y: 3.5, length: 3 }] });
+      const input = { x: 0, y: 0, hop: false, hopHeld: false, act: false };
+      for (let step = 0; step < 24; step++) sim.step(input);
+      sim.step({ ...input, act: true });
+      const motion = createPlayerMotion(); let fastest = 0;
+      for (let frame = 0; frame < fps * 8; frame++) {
+        for (let step = 0; step < 120 / fps; step++) sim.step({ ...input, x: sim.curr.vx < -.05 ? -1 : 1 });
+        fastest = Math.max(fastest, Math.abs(sim.curr.vx));
+        const pose = motion.update(sim.curr, sim.curr.x, 1 / fps, null);
+        if (frame > fps) { expect(pose.armL).toBeCloseTo(2.9, 5); expect(pose.armR).toBeCloseTo(2.9, 5); }
+      }
+      expect(fastest).toBeGreaterThan(8.5);
+      const restored = motion.update(player({ vx: RUN_SPEED }), 90, 1 / fps, null);
+      expect(restored.legL).toBe(0); expect(restored.armL).toBeLessThan(.02);
+    }
+  });
+
   it('climbs hand over hand from vertical travel, and holds its grip when stopped or paused', () => {
     const motion = createPlayerMotion(), state = player({ mode: 'climb', grounded: false, vy: CLIMB_SPEED });
     for (let frame = 0; frame < 90; frame++) motion.update(state, 0, 1 / 60, null);
@@ -236,6 +283,23 @@ describe('the player’s shared motion', () => {
 });
 
 describe('the rounded public player', () => {
+  it('closes both hands onto a swing grip and restores the authored arms on release', () => {
+    const body = createPlayerStandIn(), p = target(player({ mode: 'swing', grounded: false }));
+    body.group.position.set(4, 2, -.1); body.group.rotation.set(0, -.35, .9, 'ZYX'); body.group.scale.setScalar(2);
+    body.pose(p);
+    const before = ['left', 'right'].map(side => body.group.getObjectByName(`player-shoulder-${side}`)!.quaternion.clone());
+    const a = body.hand(0, new Vector3()), b = body.hand(1, new Vector3()), centre = a.clone().add(b).multiplyScalar(.5);
+    const up = new Vector3(-Math.sin(.9), Math.cos(.9), 0);
+    centre.addScaledVector(up, -.16);
+    body.reach(0, centre); expect(body.hand(0, a).distanceTo(centre)).toBeLessThan(1e-6);
+    centre.addScaledVector(up, -.12);
+    body.reach(1, centre); expect(body.hand(1, b).distanceTo(centre)).toBeLessThan(1e-6);
+    body.pose(p);
+    for (const [i, side] of ['left', 'right'].entries()) {
+      expect(body.group.getObjectByName(`player-shoulder-${side}`)!.quaternion.angleTo(before[i]!)).toBeLessThan(1e-7);
+    }
+  });
+
   it('keeps every boot corner above the floor through the gait, jump and landing, with one sole planted', () => {
     const body = createPlayerStandIn();
     body.group.position.set(7, 4, -2); body.group.rotation.y = 0.7; body.group.scale.set(2, 3, 2);

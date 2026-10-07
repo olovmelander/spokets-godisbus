@@ -43,7 +43,8 @@ describe('story character motion', () => {
     const rig = actor(stage), hand = rig.hand(0, new Vector3());
     expect(hand.y).toBeGreaterThan(3.3);
     const mug = stage.group.getObjectByName('stage-thing:mug')!;
-    expect(mug.position.distanceTo(hand)).toBeLessThan(1e-8);
+    const grip = stage.group.getObjectByName('sipping-mug-grip')!;
+    expect(mug.position.distanceTo(grip.position)).toBeCloseTo(.18, 8);
     const first = snapshot(stage).joints;
     show(stage, 3.15);
     expect(snapshot(stage).joints).not.toEqual(first);

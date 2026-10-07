@@ -13,16 +13,25 @@ const virtual = '\0family-help-fixture';
 const server = await createServer({ root,
   server: { host: '127.0.0.1', port: 0, fs: { allow: [root, realpathSync(join(root, 'node_modules'))] } },
   plugins: [{ name: 'family-help-fixture', resolveId(id) { if (id === '/family-help-fixture.js') return virtual; },
-    load(id) { if (id !== virtual) return; return `import { Scene, Box3, Vector3 } from 'three';
+    load(id) { if (id !== virtual) return; return `import { Scene, Box3, Matrix4, Vector3 } from 'three';
       export { createView } from ${JSON.stringify(join(root, 'src/render/view.ts'))};
       export { Sim } from ${JSON.stringify(join(root, 'src/sim/sim.ts'))};
       export { COURSES } from ${JSON.stringify(join(root, 'src/content/chapters/index.ts'))};
       let scene, camera; const before = Scene.prototype.onBeforeRender;
       Scene.prototype.onBeforeRender = function (...args) { if (this.getObjectByName('chase-ghost')) { scene = this; camera = args[2]; } before.apply(this, args); };
       export const renderedScene = () => scene;
-      export function corners(object) { const b = new Box3().setFromObject(object), points = [];
-        for (const x of [b.min.x,b.max.x]) for (const y of [b.min.y,b.max.y]) for (const z of [b.min.z,b.max.z]) points.push(new Vector3(x,y,z).project(camera).toArray());
-        return points; }
+      export function corners(object) { const points = [], matrix = new Matrix4();
+        // Project the actual articulated boxes: a whole-body world AABB invents empty corners in front of the head.
+        object.traverse(node => { if (!node.isInstancedMesh) return;
+          node.geometry.computeBoundingBox(); const b = node.geometry.boundingBox;
+          for(let i=0;i<node.count;i++) { node.getMatrixAt(i,matrix); matrix.premultiply(node.matrixWorld);
+            for(const x of [b.min.x,b.max.x]) for(const y of [b.min.y,b.max.y]) for(const z of [b.min.z,b.max.z])
+              points.push(new Vector3(x,y,z).applyMatrix4(matrix).project(camera).toArray());
+          }
+        });
+        if (!points.length) { const b = new Box3().setFromObject(object);
+          for (const x of [b.min.x,b.max.x]) for (const y of [b.min.y,b.max.y]) for (const z of [b.min.z,b.max.z]) points.push(new Vector3(x,y,z).project(camera).toArray());
+        } return points; }
     `; } }],
 });
 await server.listen();
@@ -61,7 +70,7 @@ try {
       const visible = (a) => { for (let n=a; n; n=n.parent) if (!n.visible) return false; return true; };
       const snapshot = () => ({ ...view.info(), at: actor.position.toArray(), rotation: actor.rotation.toArray(),
         visible: visible(actor), corners: f.corners(actor), family: actors.map((a) => ({ who: a.userData.familyRole, visible: visible(a), corners: f.corners(a) })),
-        meshes: actor.children.length, instances: actor.children[0].count, pose: Array.from(actor.children[0].instanceMatrix.array),
+        meshes: actor.children.filter(child => child.isMesh).length, instances: actor.children[0].count, pose: Array.from(actor.children[0].instanceMatrix.array),
         foot: actor.children[0].boundingBox.min.y, player: { ...sim.curr } });
       window.probe = { draw, snapshot, sim }; return snapshot();
     }, { course, x, y, who, flags, tier });
