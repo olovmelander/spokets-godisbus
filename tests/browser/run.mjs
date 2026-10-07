@@ -1,7 +1,7 @@
 // Runs the browser suites against a build (`npm run build` first).
 //   node tests/browser/run.mjs              every suite, one after another; stops at the first that fails
-//   node tests/browser/run.mjs --part 2/6   the second of six parts: GitHub runs the parts side by side
-//   node tests/browser/run.mjs --parts 6    says which suite is in which part, and runs nothing
+//   node tests/browser/run.mjs --part 2/8   the second of eight parts: GitHub runs the parts side by side
+//   node tests/browser/run.mjs --parts 8    says which suite is in which part, and runs nothing
 // A part runs all its suites, also after one has failed, so that one run shows everything that is wrong.
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +23,7 @@ const part = value('--part');
 if (part) {
   const [which, of] = part.split('/').map(Number);
   if (!Number.isInteger(which) || !Number.isInteger(of) || which < 1 || which > of) {
-    console.error(`--part wants "2/6", not "${part}"`);
+    console.error(`--part wants "2/8", not "${part}"`);
     process.exit(1);
   }
   names = parts(of)[which - 1].suites;

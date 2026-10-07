@@ -29,7 +29,7 @@ describe('the browser suites', () => {
   it('are shared out evenly: the heaviest part is little more than its share', () => {
     const all = SUITES.reduce((sum, [, seconds]) => sum + seconds, 0);
     const heaviest = Math.max(...SUITES.map(([, seconds]) => seconds));
-    for (const count of [4, 6]) {
+    for (const count of [4, 6, 8]) {
       const most = Math.max(...parts(count).map((part) => part.seconds));
       expect(most).toBeLessThanOrEqual(Math.max(heaviest, (all / count) * 1.1));
     }

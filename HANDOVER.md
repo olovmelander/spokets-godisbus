@@ -2,6 +2,21 @@
 
 ## State (7 October 2026)
 
+- **CI: the browser suites in eight jobs, shared by the seconds each takes** (7 October, cloud session, branch
+  `ccr-6078e7de-t0rxpz`; Olov asked whether the slow browser tests must run every time).
+  - **Before:** the suites ran in six jobs, shared by the seconds each took on 5 October. They have grown since
+    (`prologue` from 61 s to 435, `gpu-memory` from 381 to 639), so the parts came out uneven: one took 26
+    minutes while the others took 16 to 20, and every pull request waited for it.
+  - **Now:** the weights in `tests/browser/suites.mjs` are the seconds each suite took on GitHub on 7 October
+    (#180's jobs, 111 minutes in all), and `.github/workflows/ci.yml` runs eight parts. Each comes to about 14
+    minutes, so a run should take about 15 instead of 26. Every suite still runs on every pull request.
+  - **Not done:** caching the browser's install. A job's setup takes about 46 seconds, the install 21 of them,
+    so a cache would save about 15 seconds.
+  - **When a part runs long again:** copy the seconds from the "Browser suites:" line at the end of each job's
+    log into `suites.mjs`; `node tests/browser/run.mjs --parts 8` shows how they then fall.
+  - **#181 was merged before its browser jobs had finished,** at Olov's word: its `check` job was green, and
+    the village, smoke, gpu-memory and journey suites had passed locally on its code.
+
 - **Graphics, cloud stage 32: two lamp posts on the village's far pavement** (7 October, cloud session,
   branch `ccr-6078e7de-t0rxpz`; the visual audit's `byn` row 15).
   - **Before:** the street had no lamp post. The one drawn by chance never found a place it could stand, and
@@ -2627,8 +2642,9 @@
 
 - **Where 7 October's cloud session ended: everything built is on `main`, and no pull request is open.**
   Graphics stages 26 to 32 came in one pull request each (#176 to #180), except 31 and 32, which went in
-  together when Olov asked to wrap up and merge everything to `main`. **Olov looks at them in play,** on a
-  device, about 15 minutes after the last merge, and opens the game once on each device Elof plays on:
+  together (#181) when Olov asked to wrap up and merge everything to `main`. The last pull request shares
+  CI's browser suites over eight jobs (see "State"). **Olov looks at them in play,** on a device, about 15
+  minutes after the last merge, and opens the game once on each device Elof plays on:
   - `?dev&course=byn`: the matchbox on the shop's step, the puddle with its picture of the yard and its
     leaves, the street's leaves and the ones falling, the two lamp posts, and the bag in the last picture;
   - the dark under the wooden floors: the garden's deck (`?dev&course=garden`), the shop, and the rooms at
@@ -3027,7 +3043,8 @@ The older list, still true where it is not struck:
   pull request that changed only this file (`myren-loop.mjs`, at 1180×820 on High). Every screenshot in the
   suites was an iteration picture and never a check, so all 54 now go through `tests/browser/picture.mjs`,
   which waits two minutes and then goes on without the picture. A run on GitHub took 43 minutes or more
-  until the suites were shared out over six jobs on 5 October; it now takes about 13.
+  until the suites were shared out over six jobs on 5 October, and about 13 then. By 7 October the slowest
+  of the six took 26 minutes; they are now shared over eight jobs by the seconds each took that day.
 - **Two sessions in one checkout get in each other's way.** On 4 October a second session started in the main
   checkout while the first had a dev server running there. Its `npm ci` could not delete rolldown's native file,
   which the server held open, and stopped with `EPERM` after removing most of `node_modules`; and each
