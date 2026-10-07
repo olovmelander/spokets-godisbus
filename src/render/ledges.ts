@@ -1,6 +1,6 @@
 import {
   BoxGeometry, Color, ConeGeometry, CylinderGeometry, DynamicDrawUsage, Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Mesh, MeshStandardMaterial,
-  Object3D, OctahedronGeometry, SphereGeometry, Vector2, type BufferGeometry,
+  Object3D, OctahedronGeometry, SphereGeometry, Vector2, Vector3, type BufferGeometry,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { LEDGE_THICK } from '../sim/constants';
@@ -13,9 +13,9 @@ import { ROD_COLOUR, rodShape, type Rod } from './lines';
  * behind the plane he moves in, with its front edge on it, so that he passes in front of one that is higher
  * than his feet and stands on its edge once he is up.
  *
- * Nothing floats: a leaf has its stalk, a bough and a bracket fungus their young stem, a shelf of rock its
- * pillar, a plank the batten that holds it to the wall, a trestle its legs. What holds a ledge is part of its
- * shape and goes far down, into the ground under it.
+ * Nothing floats: a leaf has its stalk, a bough and a bracket fungus their young stem, a nest its fork, a shelf
+ * of rock its pillar, a plank the batten that holds it to the wall, a trestle its legs. What holds a ledge is
+ * part of its shape and goes far down, into the ground under it.
  *
  * A chapter's ledges lie in a few places far apart, one for each side way. **A place is one mesh:** its
  * ledges of every look, what holds each of them, and the cords, lines and poles its rings hang from, all one
@@ -48,8 +48,32 @@ interface Look {
   colours?: Partial<Record<PlaceId, string>>;
 }
 
-/** A young tree's stem behind a ledge's middle, its top out of every picture. */
-const stem = (radius: number, z: number, colour: string) => painted(upright(radius * 0.8, radius, 9, 16, z), colour);
+/**
+ * A young tree's stem behind a ledge's middle, its top out of every picture: its bark in strips from `dark` to
+ * `light` round it, and the dead twigs of its lowest whorls standing out from it above the ledge, back from the
+ * plane he moves in.
+ */
+function stem(radius: number, z: number, dark: string, light: string): BufferGeometry {
+  const trunk = upright(radius * 0.8, radius, 9, 16, z);
+  const from = new Color(dark);
+  const at = trunk.getAttribute('position');
+  const colours = new Float32Array(at.count * 3);
+  for (let i = 0; i < at.count; i++) {
+    // Each of its nine sides a strip of its own tone; the seam's corner is the first side's.
+    tint.set(light).lerp(from, draws((i % 10) % 9)[0]);
+    colours.set([tint.r, tint.g, tint.b], i * 3);
+  }
+  trunk.setAttribute('color', new Float32BufferAttribute(colours, 3));
+  // A dead twig droops out from the stem, back from the plane, with two twiglets off it.
+  const twigs = [1.3, 2.7].flatMap((up, whorl) => [-1, 1].flatMap((side) => {
+    const long = 0.32 + 0.14 * whorl;
+    const twig = (length: number, thick: number, from: number, turn: number) => painted(new CylinderGeometry(thick * 0.4, thick, length, 3)
+      .translate(0, length / 2, 0).rotateZ(turn).translate(0, from, 0), '#857a6d');
+    return [twig(long, 0.025, 0, 0), twig(long * 0.4, 0.012, long * 0.45, -0.7), twig(long * 0.35, 0.012, long * 0.7, 0.7)].map((part) =>
+      part.rotateZ(-side * (2.0 - 0.1 * whorl)).rotateY(side * 0.5).translate(side * radius * 0.6, up + 0.2 * side, z - radius * 0.3));
+  }));
+  return together(trunk, ...twigs);
+}
 
 const LOOKS: Record<LedgeLook, Look> = {
   // A sawn board: the end of a deck plank, a sill, a shelf. A batten under its back edge holds it to the wall.
@@ -88,7 +112,7 @@ const LOOKS: Record<LedgeLook, Look> = {
     holder: (width, place) => {
       const bog = place === 'bog';
       const hanging = bog ? stubs(width) : place === 'garden' ? leaves(width) : needles(width);
-      return together(stem(bog ? 0.24 : 0.3, -0.72, bog ? '#9c998f' : '#5c4a3a'), ...hanging);
+      return together(bog ? stem(0.24, -0.72, '#86837b', '#aeaba3') : stem(0.3, -0.72, '#4f3f32', '#7d6753'), ...hanging);
     },
   },
   // A bracket fungus standing out from a young stem (the look was a plate of bark, and the chapters still call
@@ -98,7 +122,15 @@ const LOOKS: Record<LedgeLook, Look> = {
   bark: {
     colour: '#8a735c', roughness: 0.9,
     shape: (place) => bracket(place === 'garden' ? BIRCH_FUNGUS : SPRUCE_FUNGUS),
-    holder: () => stem(0.33, -0.86, '#6e5a46'),
+    holder: () => stem(0.33, -0.86, '#5c4a3a', '#8a735c'),
+  },
+  // A nest in the fork of a stem: a shallow bowl of twigs, moss inside, as wide as the ledge. It leans towards
+  // the camera, so that its front rim is the line where he stands and its back rim stands up behind him; two
+  // boughs of the stem hold it from under.
+  nest: {
+    colour: '#6b5236', roughness: 1,
+    shape: nest,
+    holder: (width) => together(stem(0.3, -1.12, '#4f3f32', '#7d6753'), ...loose(width), ...woven(width), ...[-1, 1].map((side) => fork(side * Math.min(0.32 * width, 0.6)))),
   },
   // A shelf of rock on the pillar it has weathered out of. This is its stand-in: the mountain kit has each
   // shelf as a slab on its own blocks, and puts it here once it has arrived (`install` below).
@@ -215,6 +247,76 @@ function leaves(width: number): BufferGeometry[] {
     }
   }
   return parts;
+}
+
+/** A nest's twigs, its rim's and its moss's colours, from under it round to its middle. */
+const NEST: [number, number, string][] = [
+  [0.02, -0.34, '#4a3a2a'], [0.3, -0.31, '#5a4430'], [0.4, -0.24, '#6e5538'], [0.46, -0.14, '#57432e'], [0.5, -0.04, '#7f6443'],
+  [0.5, 0.04, '#5f4a32'], [0.48, 0.11, '#937552'], [0.44, 0.14, '#7a5f40'], [0.38, 0.07, '#57472f'], [0.32, 0.01, '#55703a'],
+  [0.15, 0, '#4f6a36'], [0.02, 0, '#4f6a36'],
+];
+/** How far a nest leans towards the camera: its height falls by this for each EL forward. */
+const LEAN = 0.3;
+
+/**
+ * A nest one EL wide, from the ledge's back to its front edge: a bowl turned from its profile, its twigs a little
+ * lighter or darker all round it, leaning towards the camera.
+ */
+function nest(): BufferGeometry {
+  const shape = new LatheGeometry(NEST.map(([out, y]) => new Vector2(out, y)), 28);
+  const at = shape.getAttribute('position');
+  const colour = new Float32Array(at.count * 3);
+  for (let i = 0; i < at.count; i++) {
+    const [out, , hex] = NEST[i % NEST.length]!;
+    // The twigs of each turn are their own, lighter or darker, and its wall and rim bulge in and out a little:
+    // the moss inside is one, and its front is where the ledge's is.
+    const [light, , bulge] = draws(Math.floor(i / NEST.length) % 28);
+    const twigs = out > 0.39 || at.getY(i) < -0.05;
+    tint.set(hex).multiplyScalar(twigs ? 0.7 + 0.6 * light : 1);
+    colour.set([tint.r, tint.g, tint.b], i * 3);
+    const grow = twigs ? 1 + 0.08 * (bulge - 0.5) * (1 - Math.max(0, at.getZ(i) / out) ** 4) : 1;
+    // It leans: its front comes down to the line where he stands, its back goes up.
+    at.setXYZ(i, at.getX(i) * grow, at.getY(i) - LEAN * at.getZ(i), at.getZ(i) * grow);
+  }
+  shape.setAttribute('color', new Float32BufferAttribute(colour, 3));
+  shape.computeVertexNormals();
+  return shape.scale(1, 1, DEPTH).translate(0, 0, -DEPTH / 2);
+}
+
+/** A few loose twigs standing out from round the back of a nest `width` wide, at their own size. */
+function loose(width: number): BufferGeometry[] {
+  return Array.from({ length: 12 }, (_, i) => {
+    const [long, lift] = draws(i + 40);
+    const round = Math.PI * (0.62 + (0.76 * i) / 11);
+    const [x, z] = [0.47 * Math.sin(round), 0.47 * Math.cos(round)];
+    return painted(new CylinderGeometry(0.006, 0.012, 0.18 + 0.14 * long, 3).translate(0, 0.09 + 0.07 * long, 0).rotateZ(-1.2 + 0.5 * lift)
+      .rotateY(Math.atan2(-z * DEPTH, x * width)).translate(x * width, 0.12 - LEAN * z, z * DEPTH - DEPTH / 2), '#7a5f40');
+  });
+}
+
+const TWIGS = ['#6b5236', '#8a6c48', '#4f3d2a', '#7a5f40'];
+/** Twigs laid round the outside of a nest `width` wide, at their own size, each across the ones under it. */
+function woven(width: number): BufferGeometry[] {
+  return Array.from({ length: 22 }, (_, i) => {
+    const [round, high, slope] = draws(i + 60);
+    const turn = Math.PI * (2 * round - 1);
+    const [x, z] = [0.47 * Math.sin(turn), 0.47 * Math.cos(turn)];
+    const long = 0.35 + 0.25 * slope;
+    // Along the wall where it lies: its way round the nest, as wide and deep as the nest is. Where that way
+    // slants, its middle is set back so that neither end comes in front of the plane he moves in.
+    const way = Math.atan2(x * DEPTH, z * width);
+    const back = Math.min(z * DEPTH - DEPTH / 2, -(long / 2) * Math.abs(Math.sin(way)) - 0.02);
+    return painted(new CylinderGeometry(0.012, 0.018, long, 4).rotateZ(-Math.PI / 2).rotateZ((slope - 0.5) * 0.7)
+      .rotateY(way).translate(x * width, -0.2 + 0.24 * high - LEAN * z, back), TWIGS[i % 4]!);
+  });
+}
+
+/** A bough of a stem that a nest sits on: from the stem behind it out to under the nest, `x` to one side. */
+function fork(x: number): BufferGeometry {
+  const from = new Vector3(0, -1.1, -1.12);
+  const to = new Vector3(x, -0.17, -0.5);
+  const along = to.clone().sub(from);
+  return painted(new CylinderGeometry(0.035, 0.06, along.length(), 6).rotateX(Math.PI / 2).lookAt(along).translate((from.x + to.x) / 2, (from.y + to.y) / 2, (from.z + to.z) / 2), '#5c4a3a');
 }
 
 /** A bracket fungus's colours: under it, at its rim, the band inside the rim, its top, its rings, and its top at the stem. */

@@ -212,7 +212,7 @@ export const granskog: ChapterData = {
     { x: 138.6, y: -7.1, width: 1.4, look: 'bark' },
     { x: 139.8, y: -6.2, width: 1.4, look: 'bark' },
     { x: 138.6, y: -5.3, width: 1.4, look: 'bark' },
-    { x: 140.05, y: -4.4, width: 2.1, look: 'branch' },
+    { x: 140.05, y: -4.4, width: 2.1, look: 'nest' },
     // The bough the two rings end on, high over the big candy. From its end he drops to the floor before
     // Bertil's sign.
     { x: 151.4, y: -5.6, width: 3.6, look: 'branch' },
