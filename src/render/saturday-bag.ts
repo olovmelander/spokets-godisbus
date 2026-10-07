@@ -15,15 +15,15 @@ function boxes(rows: Box[]): InstancedMesh {
   return mesh;
 }
 
+/** How tall the Saturday bag is, at its own size. */
+export const SATURDAY_BAG_TALL = 0.6;
+
 /**
- * Elof's striped Saturday bag, visibly distinct from the ghost's small carved pocket. The bag modelled in
- * Blender (art/blender/candy.py: striped paper, pinked at its top, with sweets looking out) takes the place
- * of the one built here from boxes, once the candy kit has arrived. Its tear is a part of its own, shown
- * when the story says so.
+ * A striped paper bag of the sweet shop's, as Elof's Saturday bag is. The bag modelled in Blender
+ * (art/blender/candy.py: striped paper, pinked at its top, with sweets looking out) takes the place of the
+ * one built here from boxes, once the candy kit has arrived.
  */
-export function saturdayBag(): Group {
-  const group = new Group();
-  group.name = 'saturday-bag';
+export function paperBag(): Group {
   const parts: Box[] = [
     [0, .28, 0, .42, .56, .3, '#efdfbd'],
     [0, .59, 0, .45, .08, .32, '#bd986e'],
@@ -31,7 +31,17 @@ export function saturdayBag(): Group {
   for (const z of [-.155, .155]) for (const y of [.14, .29, .44]) {
     parts.push([0, y, z, .425, .055, .016, '#5379a3']);
   }
-  group.add(sweetSocket(new Group().add(boxes(parts)), { shape: 'lordagspase', paper: true }));
+  return sweetSocket(new Group().add(boxes(parts)), { shape: 'lordagspase', paper: true });
+}
+
+/**
+ * Elof's striped Saturday bag, visibly distinct from the ghost's small carved pocket. Its tear is a part of
+ * its own, shown when the story says so.
+ */
+export function saturdayBag(): Group {
+  const group = new Group();
+  group.name = 'saturday-bag';
+  group.add(paperBag());
   const tear = sweetSocket(new Group().add(boxes([[0, 0, 0, .11, .085, .02, '#725441']])), { shape: 'reva', paper: true });
   tear.position.set(.11, .21, .167);
   tear.name = 'saturday-bag-tear';
