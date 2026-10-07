@@ -162,6 +162,8 @@ const PASSAGE = { near: -10.7, wide: 5.4, post: 0.5 };
 const SIDE = { near: 17, far: 8 };
 /** The colour of each shop's door. */
 const DOORS: Record<StreetGoods, string> = { candy: '#7a5632', bread: '#6b8494', boots: '#5d4a36', yarn: '#6a4a3a' };
+/** How much of its colour a corner gives off where the kit says it glows: the lamps in a shop window. */
+const GLOW = 2.2;
 /**
  * An awning on a near wall (docs/art-bible.md §2.3: Byn's striped awnings), measured from its house's foot.
  * Its cloth comes out of a box high on the wall and slopes down to a bar over the line he walks on. Under the
@@ -187,24 +189,6 @@ export const AWNING = {
   crank: { in: 0.45, end: 4.1 },
 } as const;
 
-/** Where the tips of an awning's scallops are along it. */
-function scallopTips(awning: { from: number; to: number }): number[] {
-  const count = Math.max(1, Math.round((awning.to - awning.from) / AWNING.stripe));
-  const wide = (awning.to - awning.from) / count;
-  return Array.from({ length: count }, (_, i) => awning.from + (i + 0.5) * wide);
-}
-
-/** Every scallop's tip along a chapter's street: the drops under an awning hang from these, and fall. */
-export function awningTips(chapter: ChapterData): Vec[] {
-  return (chapter.street ?? []).flatMap((part) => {
-    if (part.kind !== 'house' || part.depth !== 'near' || !part.awnings) return [];
-    const y = footOf(chapter, part) + AWNING.bar.up - AWNING.hang.tip;
-    return part.awnings.flatMap((awning) => scallopTips(awning).map((x) => ({ x, y })));
-  });
-}
-/** How much of its colour a corner gives off where the kit says it glows: the lamps in a shop window. */
-const GLOW = 2.2;
-
 type End = 'side' | 'flat' | 'none';
 
 /**
@@ -223,8 +207,8 @@ function ends(parts: readonly StreetPart[], i: number): { left: End; right: End 
 
 /**
  * The upright parts of a house's front, each from one side to the other: its corner boards, the casings of
- * its windows, its door, its pipes and its sign. None of a near house's may stand behind a big candy or a
- * hook's ring (tests/unit/street.test.ts).
+ * its windows, its door, its pipes, its sign and the rod in its awning's crank. None of a near house's may
+ * stand behind a big candy or a hook's ring (tests/unit/street.test.ts).
  */
 export function uprights(parts: readonly StreetPart[], i: number): { what: string; from: number; to: number }[] {
   const part = parts[i]!;
@@ -445,6 +429,22 @@ function side(build: Build, kit: VillageKit, wall: Wall, long: number, corner: '
   run(build, kit, 'sockel', wall, to, stone[1], paint);
 }
 
+/** Where the tips of an awning's scallops are along it. */
+function scallopTips(awning: { from: number; to: number }): number[] {
+  const count = Math.max(1, Math.round((awning.to - awning.from) / AWNING.stripe));
+  const wide = (awning.to - awning.from) / count;
+  return Array.from({ length: count }, (_, i) => awning.from + (i + 0.5) * wide);
+}
+
+/** Every scallop's tip along a chapter's street: the drops under an awning hang from these, and fall. */
+export function awningTips(chapter: ChapterData): Vec[] {
+  return (chapter.street ?? []).flatMap((part) => {
+    if (part.kind !== 'house' || part.depth !== 'near' || !part.awnings) return [];
+    const y = footOf(chapter, part) + AWNING.bar.up - AWNING.hang.tip;
+    return part.awnings.flatMap((awning) => scallopTips(awning).map((x) => ({ x, y })));
+  });
+}
+
 /** One corner of a piece being put together, with no glow. Gives its number. */
 function corner(build: Build, x: number, y: number, z: number, normal: readonly number[], colour: Color): number {
   build.position.push(x, y, z);
@@ -496,7 +496,11 @@ function awning(build: Build, at: { from: number; to: number }, foot: number, wa
     const x1 = tip + wide / 2;
     const cloth = cloths[s % 2]!;
     const sheet = build.position.length / 3;
-    for (const row of line) for (const x of [x0, x1]) corner(build, x, row.y, row.z, row.normal, cloth);
+    // A little darker towards the box, in its shadow.
+    for (const [r, row] of line.entries()) {
+      const tone = cloth.clone().multiplyScalar(0.8 + (0.2 * r) / ROWS);
+      for (const x of [x0, x1]) corner(build, x, row.y, row.z, row.normal, tone);
+    }
     for (let r = 0; r < ROWS; r++) {
       const a = sheet + r * 2;
       build.index.push(a, a + 2, a + 3, a, a + 3, a + 1);

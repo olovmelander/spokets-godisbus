@@ -1,4 +1,4 @@
-import { AdditiveBlending, Color, Matrix4, Vector3, type MeshBasicMaterial } from 'three';
+import { AdditiveBlending, Color, Matrix4, Vector3, type InstancedMesh, type MeshBasicMaterial } from 'three';
 import { describe, expect, it } from 'vitest';
 import { byn } from '../../src/content/chapters/byn';
 import { garden } from '../../src/content/chapters/garden';
@@ -10,7 +10,7 @@ import type { ChapterData } from '../../src/sim/types';
 const still = (chapter: ChapterData) => chapter.drips!.map((drip) => ({ x: drip.at.x, y: drip.at.y, shadow: 0, height: -1 }));
 
 /** Where an instance of a mesh is, and how big. */
-function pose(mesh: ReturnType<typeof createRain>['drops'], i: number) {
+function pose(mesh: InstancedMesh, i: number) {
   const matrix = new Matrix4();
   mesh.getMatrixAt(i, matrix);
   return { at: new Vector3().setFromMatrixPosition(matrix), size: new Vector3().setFromMatrixScale(matrix) };

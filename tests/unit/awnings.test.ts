@@ -106,7 +106,7 @@ describe('the awnings of the village', () => {
     expect(far(shaded).colour).toEqual(far(plain).colour);
   });
 
-  it('leaves a rod hanging in the first awning\'s crank, out from the wall beside the big candy', () => {
+  it('leaves a rod hanging in the first awning\'s crank, clear of every big candy', () => {
     const rod = byn.street![bakery]!.awnings![0]!.from + AWNING.crank.in;
     const checkpoints = byn.checkpoints!.map((at) => at.x);
     for (const x of checkpoints) expect(Math.abs(x - rod)).toBeGreaterThanOrEqual(1.5);
