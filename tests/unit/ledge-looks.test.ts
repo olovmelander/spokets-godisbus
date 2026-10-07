@@ -116,8 +116,9 @@ describe('the ledges, as they are drawn', () => {
       for (const look of ['branch', 'bark'] as const) {
         const at = (buildLedges([{ x: 0, y: 0, width: 2.5, look }], [], place).group.children[0] as Mesh).geometry.getAttribute('position');
         for (let i = 0; i < at.count; i++) {
-          // Only the stem goes on up, out of every picture.
-          if (Math.abs(at.getX(i)) > 0.35) expect(at.getY(i), `${look} in the ${place}`).toBeLessThanOrEqual(0.001);
+          // Only the stem goes on up, out of every picture, and the dead twigs of its lowest whorls stand out
+          // from it well clear of the line.
+          if (Math.abs(at.getX(i)) > 0.35 && at.getY(i) > 0.001) expect(at.getY(i), `${look} in the ${place}`).toBeGreaterThan(0.8);
           expect(at.getZ(i), `${look} in the ${place}`).toBeLessThanOrEqual(0.001);
         }
       }
@@ -146,6 +147,25 @@ describe('the ledges, as they are drawn', () => {
     expect(fungus('garden').rust).toBe(0);
     expect(fungus('garden').cream).toBeGreaterThan(0);
     expect(fungus('forest').out).toBeGreaterThan(-0.27);
+  });
+
+  it('a nest is a bowl of twigs with moss inside, leaning towards the camera: its front at the line where he stands', () => {
+    const mesh = buildLedges([{ x: 0, y: 0, width: 2.1, look: 'nest' }], [], 'forest').group.children[0] as Mesh;
+    const at = mesh.geometry.getAttribute('position');
+    const colour = mesh.geometry.getAttribute('color');
+    let front = -Infinity;
+    let back = -Infinity;
+    let moss = 0;
+    for (let i = 0; i < at.count; i++) {
+      // The nest and what lies on it: not the stem going on up, nor its dead twigs.
+      if (at.getY(i) > 1) continue;
+      if (at.getZ(i) > -0.1) front = Math.max(front, at.getY(i));
+      if (at.getZ(i) < -0.75 && Math.abs(at.getX(i)) > 0.4) back = Math.max(back, at.getY(i));
+      if (colour.getY(i) > colour.getX(i) * 1.4 && colour.getY(i) > colour.getZ(i) * 1.4) moss++;
+    }
+    expect(front).toBeLessThan(0.06);
+    expect(back).toBeGreaterThan(0.2);
+    expect(moss).toBeGreaterThan(0);
   });
 
   it('a chapter without ledges draws nothing for them', () => {

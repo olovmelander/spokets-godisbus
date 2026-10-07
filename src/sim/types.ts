@@ -343,7 +343,7 @@ export interface SimStart {
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
 export type MoverLook = 'plank' | 'block' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone';
-export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'stone';
+export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone';
 export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'vittra-door' | 'keepsake';
 export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none';
 

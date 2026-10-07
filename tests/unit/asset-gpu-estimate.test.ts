@@ -14,7 +14,7 @@ function glb(json: object, binary: Buffer = Buffer.alloc(0)): Buffer {
   header.writeUInt32LE(encoded.length, 12); header.writeUInt32LE(0x4e4f534a, 16);
   return Buffer.concat([header, encoded, bin]);
 }
-function ktx(width: number, height: number, options: { depth?: number; layers?: number; faces?: number; levels?: number; format?: number } = {}): Buffer {
+function ktx(width: number, height: number, options: { depth?: number; layers?: number; faces?: number; levels?: number; format?: number; supercompression?: number } = {}): Buffer {
   const levels = options.levels ?? 1;
   const entries = Math.max(1, levels);
   const dfd = 80 + entries * 24;
@@ -22,6 +22,7 @@ function ktx(width: number, height: number, options: { depth?: number; layers?: 
   Buffer.from([0xab, 0x4b, 0x54, 0x58, 0x20, 0x32, 0x30, 0xbb, 0x0d, 0x0a, 0x1a, 0x0a]).copy(bytes);
   bytes.writeUInt32LE(options.format ?? 0, 12); bytes.writeUInt32LE(1, 16);
   [width, height, options.depth ?? 0, options.layers ?? 0, options.faces ?? 1, levels].forEach((value, i) => bytes.writeUInt32LE(value, 20 + i * 4));
+  bytes.writeUInt32LE(options.supercompression ?? 1, 44);
   bytes.writeUInt32LE(dfd, 48); bytes.writeUInt32LE(24, 52); bytes.writeUInt32LE(24, dfd); bytes[dfd + 12] = 163;
   for (let i = 0; i < entries; i++) {
     bytes.writeBigUInt64LE(BigInt(dfd + 24 + i), 80 + i * 24);
@@ -122,6 +123,12 @@ describe('KTX2 fallback inventory', () => {
     expect(() => estimateKtx2(ktx(4, 4).subarray(0, 80))).toThrow('mip index');
     expect(() => estimateGlb(glb({ images: [{ uri: 'image.ktx2' }] }))).toThrow('embedded');
     expect(() => estimateGlb(glb({ images: [{ mimeType: 'image/png', bufferView: 0 }] }))).toThrow('KTX2');
+  });
+  it('fails an image supercompressed with Zstandard: the game ships no decoder for it', () => {
+    expect(() => estimateKtx2(ktx(4, 4, { supercompression: 2 }))).toThrow('Zstandard');
+    // BasisLZ, as ETC1S comes, and none at all.
+    expect(() => estimateKtx2(ktx(4, 4, { supercompression: 1 }))).not.toThrow();
+    expect(() => estimateKtx2(ktx(4, 4, { supercompression: 0 }))).not.toThrow();
   });
 });
 
