@@ -1,3 +1,4 @@
+import { AdditiveBlending, type Mesh, type MeshBasicMaterial } from 'three';
 import { describe, expect, it } from 'vitest';
 import { STORY } from '../../src/content/chapters';
 import { testbana } from '../../src/content/chapters/testbana';
@@ -48,6 +49,25 @@ describe('the stand-ins for things and animals', () => {
         if (spot.look === 'ladybird' || spot.look === 'berry' || spot.look === 'lollipop' || spot.look === 'bag') expect(prop.group.scale.x, `the ${spot.id}`).toBe(0);
       }
     }
+  });
+});
+
+describe("the bog's shy lights", () => {
+  it('are each one soft glow added to the mist, worked out without a canvas, that bobs and shimmers', () => {
+    const prop = spotProp({ id: 'shy:1', look: 'wisp', at: { x: 150, y: 3.8 }, verb: 'take', touch: true })!;
+    const meshes: Mesh[] = [];
+    prop.group.traverse((thing) => { if ((thing as Mesh).isMesh) meshes.push(thing as Mesh); });
+    expect(meshes).toHaveLength(1);
+    const material = meshes[0]!.material as MeshBasicMaterial;
+    expect(material.blending).toBe(AdditiveBlending);
+    expect(material.depthWrite).toBe(false);
+    // Bright at its heart and gone at its edge: its brightness is in its alpha.
+    const { data, width } = material.map!.image as { data: Uint8Array; width: number };
+    const alpha = (x: number, y: number) => data[(y * width + x) * 4 + 3]!;
+    expect(alpha(width / 2, width / 2)).toBeGreaterThan(200);
+    expect(alpha(0, width / 2)).toBeLessThan(10);
+    const heights = [0, 0.6, 1.2].map((clock) => { prop.update(false, clock, 0.016); return meshes[0]!.position.y; });
+    expect(new Set(heights).size).toBe(3);
   });
 });
 

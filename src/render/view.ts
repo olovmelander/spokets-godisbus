@@ -1446,7 +1446,16 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
   // the water, so that the water in front of it is not painted over.
   const level = Math.min(0, ...(chapter.water ?? []).map((w) => w.y));
   const wall = new Mesh(new PlaneGeometry(90, 40).translate(0, 20, 0), new MeshBasicMaterial({ color: fog.color, transparent: true, opacity: 0, fog: false, depthWrite: false }));
-  group.add(light, glow, halo, wall);
+  // Mamma's lamp on the boardwalk, behind him: a second warm point in the mist, where he came from (visual
+  // audit, myren row 21). In the mist's own light, its halo's.
+  const lamp = new Mesh(new PlaneGeometry(2.5, 2.5), (halo.material as MeshBasicMaterial).clone());
+  const flame = new Mesh(new SphereGeometry(0.07, 8, 6), new MeshBasicMaterial({ color: '#fff0c8', fog: false }));
+  const at = chapter.mist.lamp;
+  if (at) {
+    lamp.position.set(at.x, at.y, -0.5);
+    flame.position.set(at.x, at.y, -0.45);
+  }
+  group.add(light, glow, halo, wall, ...(at ? [lamp, flame] : []));
   // In the mist the sun goes pale and the air grey and cool, so that the lantern is the warmest thing there.
   const clearDay = { sun: sun.intensity, sky: hemisphere.intensity, air: fog.color.clone() };
   const grey = new Color('#c4c6bd');
@@ -1470,9 +1479,11 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
     wall.position.set(x, level, -20);
     (wall.material as MeshBasicMaterial).color.copy(fog.color);
     (wall.material as MeshBasicMaterial).opacity = 0.92 * k;
-    // Only the lollipop, its halo and the wall go out of the picture. The light stays, dark: taking a light out
-    // compiles every shader anew.
-    for (const one of [glow, halo, wall]) drawnWhile(one, k > 0);
+    (lamp.material as MeshBasicMaterial).opacity = 0.6 * k;
+    flame.scale.setScalar(k);
+    // Only the lollipop, the halos, the lamp's flame and the wall go out of the picture. The light stays, dark:
+    // taking a light out compiles every shader anew.
+    for (const one of [glow, halo, wall, lamp, flame]) drawnWhile(one, k > 0);
   }
   return { group, update };
 }

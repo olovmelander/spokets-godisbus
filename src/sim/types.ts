@@ -553,8 +553,8 @@ export interface ChapterData {
   glance?: { from: string; until: string; seconds: number; at: { x: number; y: number; z: number }[] };
   /** For the picture: night falls and the northern lights flare when this flag is set. Null: it is night from the start. */
   night?: { after: string | null };
-  /** For the picture: the mist rolls in when this flag is set, and he carries a light. */
-  mist?: { after: string };
+  /** For the picture: the mist rolls in when this flag is set, and he carries a light. `lamp` glows behind him in it. */
+  mist?: { after: string; lamp?: Vec };
   /**
    * For the picture: someone small who waits at `at`, follows him once `after` is set, and stays at `home`
    * once `until` is set. The flags come from things he touches.

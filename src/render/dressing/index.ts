@@ -15,6 +15,7 @@ import { forestLandmarks } from '../forest-kit';
 import { bank, type Ground } from './ground';
 import { heightAt, landscape, makeKit, type PlaceLook } from './kit';
 import { lawn } from './lawn';
+import { spang } from './spang';
 import { backdrop, stars } from './sky';
 
 /**
@@ -187,6 +188,8 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   if (look.id === 'forest') bakeForestShadows(ground, standing, look.sun.from);
   const air = effects(landChapter, from, to, look.id, standing);
   const front = foreground(landChapter, from, to, OWN[look.id].growth, standing);
+  // Over the bog, what is marked wood is a walk of planks on a ridge of its own peat.
+  const walk = look.id === 'bog' ? spang(landChapter) : null;
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
   // What the far pictures count their sinking from: the land around the chapter's start.
@@ -211,6 +214,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
     houses?.group ?? new Group(),
     air.group,
     front.group,
+    walk ?? new Group(),
   );
   return {
     group,

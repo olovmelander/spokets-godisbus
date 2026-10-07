@@ -33,8 +33,8 @@ import type { Candy, ChapterData, Hook, Jump, Ledge, Tussock, Vec } from '../../
  * soft tussocks, up to a bough of a dead pine, and something glints in the moss under the foot of the arch.
  * Standing still there, on a tussock that sinks, is how he is thrown up to them.
  *
- * Not built yet: the tussocks' dip under his feet, Mamma's mug and her lamp behind
- * him, the rings of the cranes' calls as a thing to follow, memory 3,
+ * Not built yet: the tussocks' dip under his feet, Mamma's mug, the rings of the cranes' calls as a thing to
+ * follow, memory 3,
  * the cranes' dance, the jay.
  */
 
@@ -406,7 +406,8 @@ export const myren: ChapterData = {
   ],
   rides: [{ id: 'crane', look: 'crane', ...CRANE }, { id: 'toss', look: 'none', ...TOSS }],
   jumps: [...hops(OUT), ...hops(HOME)],
-  mist: { after: 'light' },
+  // Mamma's lamp on the boardwalk is a warm point in the mist behind him.
+  mist: { after: 'light', lamp: { x: 127, y: 6.1 } },
   // For the picture only (content/life.ts): what happens far off, where the trail is calm. A moose walks out of
   // the mist on the far shore while he crosses the wide firm tussocks after the second big candy: open water
   // before it, and nothing to use anywhere in the picture. Cranes cross the sky where he comes down from the
