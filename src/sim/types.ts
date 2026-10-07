@@ -486,6 +486,8 @@ export interface ChapterData {
    * tests/unit/street.test.ts holds its rules.
    */
   street?: StreetPart[];
+  /** For the picture: where the street's lamp posts stand, on the far pavement across the crossing. */
+  lampPosts?: number[];
   /** For the picture: an open shop door leading into a room beside the street, at the path's height. */
   shop?: { door: number; to: number; floor: number };
   /** The ground as one open line, from left to right. Elof walks on its upper side. */

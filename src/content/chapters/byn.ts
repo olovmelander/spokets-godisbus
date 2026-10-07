@@ -114,6 +114,9 @@ export const byn: ChapterData = {
     // The sweet shop, ochre, up on the stone step: its window is the most colourful, and stands only here.
     { from: 110, to: 122, depth: 'near', kind: 'house', wall: '#e3b24c', boards: 'upright', goods: 'candy', windows: [{ from: 112.6, to: 119.4 }] },
   ],
+  // Two lamp posts on the far pavement: one between the shoemaker's window and its sign, and one in the yard
+  // behind the puddle. Neither stands behind a big candy, whichever way he faces at it.
+  lampPosts: [23.2, 52],
   spawn: { x: 1, y: 2.01 },
   // Where and when, as the chapter opens (./cards.ts): a week after the story's Saturday.
   scenes: [timeCard('byn', 1)],

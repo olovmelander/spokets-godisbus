@@ -2,6 +2,7 @@ import {
   AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Matrix3, Mesh,
   MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData, StreetGoods, StreetPart, Vec } from '../sim/types';
 import { sweetSocket } from './candy';
 import { drainsOf } from './dressing/ground';
@@ -9,8 +10,8 @@ import { glowTexture } from './glow';
 import { paperBag, SATURDAY_BAG_TALL } from './saturday-bag';
 
 /**
- * The village street (the extra chapter Byn): its houses and its yard, a lamp post now and then, a bicycle
- * leaning by a cellar window, and the birches' yellow leaves on the ground.
+ * The village street (the extra chapter Byn): its houses and its yard, two lamp posts on its far pavement, a
+ * bicycle leaning by a cellar window, and the birches' yellow leaves on the ground.
  *
  * The houses are put together from a kit of parts modelled in Blender (art/blender/village.py): a stone foot
  * with its drip board, boards with cover strips, casings, a door behind its step, a downpipe, and a shop
@@ -788,12 +789,12 @@ function pits(chapter: ChapterData): { from: number; to: number }[] {
  * What a puddle in the street mirrors (docs/visual-audit/byn.md row 8): the street's far side, painted from
  * the street list as it stands 20 EL behind the path, at the kit's heights and in its colours. It is a
  * picture, not a reflection. Only the band the water can show is in it: the far pavement's kerb, the foot of
- * each house, and the yard's low wall, fence, gateposts and hedge. A near house, which the water shows past
- * its end, is painted there too. Over it all is the sky, which the water has of its own.
+ * each house, the yard's low wall, fence, gateposts and hedge, and the lamp posts before them. A near house,
+ * which the water shows past its end, is painted there too. Over it all is the sky, which the water has of its own.
  */
 export const MIRRORED = {
   kerb: '#9c988f', joint: '#5d5b56', stone: '#8a877f', drip: '#d6d3ca', boards: '#a3a097', rails: '#77746c',
-  post: '#a09c93', hedge: ['#4d5a2d', '#6f7b3c'], door: '#4a3a2e',
+  post: '#a09c93', hedge: ['#4d5a2d', '#6f7b3c'], door: '#4a3a2e', lamp: '#2b4136',
 } as const;
 
 export function paintStreetMirror(chapter: ChapterData, c: CanvasRenderingContext2D, column: (x: number) => number, row: (y: number) => number): void {
@@ -833,6 +834,95 @@ export function paintStreetMirror(chapter: ChapterData, c: CanvasRenderingContex
       if (part.door) box(part.door.from + 1, part.door.to - 1, foot, foot + 13, MIRRORED.door);
     }
   }
+  // The lamp posts stand on the far pavement, in front of what is behind them: their foot, collar and shaft.
+  for (const { x, foot } of postsOf(chapter)) {
+    box(x - 1.2, x + 1.2, foot, foot + 2.3, MIRRORED.lamp);
+    box(x - 0.6, x + 0.6, foot + 2.3, foot + 2.9, MIRRORED.lamp);
+    box(x - 0.5, x + 0.5, foot + 2.9, foot + 24, MIRRORED.lamp);
+  }
+}
+
+/**
+ * A lamp post on the far pavement (docs/visual-audit/byn.md row 15), cast iron painted dark green: an
+ * eight-sided foot on its plinth, with a moulding, a hatch in its seam held by two bolts on the side towards the
+ * street, and a collar where the shaft begins; and a fluted shaft that narrows up to a ring and goes on up out
+ * of every picture. The paint is chipped to a lighter green on its edges, and the street's dirt has splashed
+ * its foot. Where they stand is the chapter's (`lampPosts`); all of them are one draw.
+ */
+export const LAMP_POST = {
+  z: -17.6, green: '#2f4a3c', chipped: '#4b6857', seam: '#15221b',
+  /** Its foot, eight-sided: half across its flats as it goes up, and whether that edge is chipped. */
+  foot: [[1.2, 0, 0], [1.2, 0.3, 1], [1.08, 0.42, 0], [1.04, 2.02, 0], [1.12, 2.12, 1], [1.12, 2.3, 1], [0.6, 2.62, 0], [0.6, 2.86, 1], [0.5, 2.96, 0]],
+  /** The hatch towards the street: how wide and how tall it is, and how high its middle is. */
+  door: { wide: 0.62, tall: 1.3, up: 1.22 },
+  /** The shaft: half across at its foot and at its top, its flutes up to the ring, and how tall it goes. */
+  shaft: [0.5, 0.42], flutes: 8, ring: 9, tall: 22,
+} as const;
+
+export function lampPostShape(): BufferGeometry {
+  const { foot, door, shaft, flutes, ring, tall } = LAMP_POST;
+  const green = new Color(LAMP_POST.green), chipped = new Color(LAMP_POST.chipped), seam = new Color(LAMP_POST.seam);
+  // A lathe's radius is to its corners: with eight of them, each flat lies at cos(π / 8) of it. One flat
+  // faces the street.
+  const corner = 1 / Math.cos(Math.PI / 8);
+  const base = new LatheGeometry(foot.map(([out, y]) => new Vector2(out * corner, y)), 8, Math.PI / 8).toNonIndexed();
+  // The shaft, round, with its seam at the back: its flutes up to the ring, which stands proud, and plain above.
+  const top = foot.at(-1)![1] - 0.05;
+  const narrow = (y: number) => shaft[0] + ((shaft[1] - shaft[0]) * (y - top)) / (tall - top);
+  const column = new LatheGeometry([
+    [narrow(top), top], [narrow(ring), ring], [narrow(ring) + 0.08, ring + 0.04], [narrow(ring) + 0.08, ring + 0.3],
+    [narrow(ring + 0.34), ring + 0.34], [shaft[1], tall],
+  ].map(([out, y]) => new Vector2(out, y)), 48, Math.PI);
+  const at = column.getAttribute('position');
+  for (let i = 0; i < at.count; i++) {
+    if (at.getY(i) > ring + 0.01) continue;
+    const out = 1 + 0.07 * Math.cos(Math.atan2(at.getZ(i), at.getX(i)) * flutes);
+    at.setXYZ(i, at.getX(i) * out, at.getY(i), at.getZ(i) * out);
+  }
+  column.computeVertexNormals();
+  const fluted = column.toNonIndexed();
+  // The hatch stands a little proud of the flat it is on, in a dark seam, and a bolt holds it at its top and
+  // at its foot.
+  const flat = foot[2][0] + ((foot[3][0] - foot[2][0]) * (door.up - foot[2][1])) / (foot[3][1] - foot[2][1]);
+  const parts: [BufferGeometry, Color][] = [
+    [base, green], [fluted, green],
+    [new BoxGeometry(door.wide + 0.1, door.tall + 0.1, 0.1).translate(0, door.up, flat - 0.02).toNonIndexed(), seam],
+    [new BoxGeometry(door.wide, door.tall, 0.1).translate(0, door.up, flat).toNonIndexed(), green],
+    ...[1, -1].map((side): [BufferGeometry, Color] => [new BoxGeometry(0.11, 0.11, 0.06).translate(0, door.up + side * (door.tall / 2 - 0.14), flat + 0.06).toNonIndexed(), chipped]),
+  ];
+  for (const [part, paint] of parts) {
+    part.deleteAttribute('uv');
+    if (part !== fluted) part.computeVertexNormals();
+    const p = part.getAttribute('position');
+    const colour: number[] = [];
+    for (let i = 0; i < p.count; i++) {
+      const y = p.getY(i);
+      // The edges of the plinth, the moulding and the collar are chipped, as the bolts' heads are.
+      const c = part === base && foot.some(([, edge, is]) => is && Math.abs(edge - y) < 1e-4) ? chipped : paint;
+      // The street's dirt, splashed up its foot.
+      const k = Math.min(1, 0.68 + 0.32 * y);
+      colour.push(c.r * k, c.g * k, c.b * k);
+    }
+    part.setAttribute('color', new Float32BufferAttribute(colour, 3));
+  }
+  return mergeGeometries(parts.map(([part]) => part));
+}
+
+/** Where each lamp post stands: on the far pavement, at the foot of the far house or yard behind it. */
+function postsOf(chapter: ChapterData): { x: number; foot: number }[] {
+  return (chapter.lampPosts ?? []).flatMap((x) => {
+    const part = chapter.street?.find((one) => one.depth === 'far' && x >= one.from && x < one.to);
+    return part ? [{ x, foot: footOf(chapter, part) }] : [];
+  });
+}
+
+/** The street's lamp posts, where the chapter says: one draw for all of them. */
+export function lampPosts(chapter: ChapterData): Mesh | null {
+  const shapes = postsOf(chapter).map(({ x, foot }) => lampPostShape().translate(x, foot, LAMP_POST.z));
+  if (!shapes.length) return null;
+  const posts = new Mesh(mergeGeometries(shapes), new MeshStandardMaterial({ vertexColors: true, roughness: 0.55 }));
+  posts.name = 'lamp-posts';
+  return posts;
 }
 
 /**
@@ -870,6 +960,8 @@ export function fronts(chapter: ChapterData, from: number, to: number): { group:
     group.add(under);
   }
   group.add(bicycle(chapter), shopInterior(chapter));
+  const posts = lampPosts(chapter);
+  if (posts) group.add(posts);
   return {
     group,
     install(model) {
@@ -1278,9 +1370,8 @@ function drifts(chapter: ChapterData, from: number, to: number, next: () => numb
 }
 
 /**
- * One stretch of the street: the birches' leaves on the ground. (Its lamp posts are to stand where the
- * chapter says, docs/visual-audit/byn.md row 15: the ones drawn by chance here never found a place they could
- * stand in either street, and are gone.)
+ * One stretch of the street: the birches' leaves on the ground. (Its lamp posts stand where the chapter says,
+ * in `lampPosts`.)
  */
 export function street(chapter: ChapterData, from: number, to: number, seed: number): Group {
   const group = new Group();
