@@ -1,4 +1,5 @@
 import { Matrix4, Mesh, Quaternion, Vector3, type Object3D } from 'three';
+import type { Act } from '../sim/scene';
 
 /**
  * The ghost modelled in Blender, where its private pack exists (HANDOVER.md): how it is turned, and its painted eyes.
@@ -42,14 +43,22 @@ export interface GhostMotionFrame {
   calm: boolean;
   awake: boolean;
   staged: boolean;
+  /** A scene owns the body arc and clock; its moving acts can still articulate the separate wooden shoes. */
+  performance?: { act: Act; actT: number };
 }
+
+const smooth = (t: number) => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+const hopAngle = (phase: number, side: number) => Math.sin(Math.PI * phase) *
+  (.72 * (1 - phase) - .52 * phase + (side % 2 ? -1 : 1) * .065 * Math.sin(Math.PI * 2 * phase));
 
 /** The carved body stays rigid; its two separate shoes can trail a hop, prepare to land, or tap a toe. */
 export function createGhostMotion(model: Object3D, facesX = false): { update(frame: GhostMotionFrame): void } {
   model.updateWorldMatrix(true, true);
   const orientation = model.getWorldQuaternion(new Quaternion());
   const rotation = new Quaternion(), point = new Vector3(), transform = new Matrix4();
-  const feet: { node: Object3D; position: Vector3; rest: Quaternion; axis: Vector3; up: Vector3; contacts: Vector3[]; sole: number }[] = [];
+  const feet: { node: Object3D; position: Vector3; rest: Quaternion; axis: Vector3; up: Vector3; contacts: Vector3[]; sole: number;
+    angle: number; lift: number; takeoffAngle: number; takeoffLift: number }[] = [];
+  let lastActivity = -Infinity, wasHopping = false;
   model.traverse((node) => {
     if (!/^foot[._-]?[lr12]$/i.test(node.name)) return;
     const parent = node.parent!;
@@ -78,36 +87,57 @@ export function createGhostMotion(model: Object3D, facesX = false): { update(fra
     }
     const contacts = [...support];
     feet.push({ node, position: node.position.clone(), rest: node.quaternion.clone(), axis, up, contacts,
+      angle: 0, lift: 0, takeoffAngle: 0, takeoffLift: 0,
       sole: contacts.length ? Math.min(...contacts.map((contact) => contact.dot(up))) : 0 });
   });
-  function pose(index: number, angle: number, planted: boolean): void {
+  function pose(index: number, angle: number, planted: boolean, lift = 0): void {
     const foot = feet[index]!;
-    foot.node.position.copy(foot.position);
+    foot.angle = angle;
+    foot.lift = lift;
     rotation.setFromAxisAngle(foot.axis, angle);
     foot.node.quaternion.copy(rotation).multiply(foot.rest);
-    if (!planted || angle === 0 || foot.contacts.length === 0) return;
-    let low = Infinity;
-    for (const contact of foot.contacts) low = Math.min(low, point.copy(contact).applyQuaternion(rotation).dot(foot.up));
-    foot.node.position.addScaledVector(foot.up, foot.sole - low);
+    if (planted && angle !== 0 && foot.contacts.length > 0) {
+      let low = Infinity;
+      for (const contact of foot.contacts) low = Math.min(low, point.copy(contact).applyQuaternion(rotation).dot(foot.up));
+      foot.lift += foot.sole - low;
+    }
+    foot.node.position.copy(foot.position).addScaledVector(foot.up, foot.lift);
   }
   return {
-    update({ dt, clock, hop, calm, awake, staged }) {
+    update({ dt, clock, hop, calm, awake, staged, performance }) {
       if (staged || !awake) {
-        for (let i = 0; i < feet.length; i++) pose(i, 0, false);
+        lastActivity = clock;
+        wasHopping = false;
+        for (let i = 0; i < feet.length; i++) {
+          let angle = 0;
+          // Authored time is authoritative even while paused or arriving partway through a scene.
+          if (staged && performance && !calm) {
+            const { act, actT } = performance, t = Math.max(0, actT);
+            if (act === 'waddle' || act === 'run') angle = Math.sin(t * (act === 'run' ? 18 : 11)) * (i % 2 ? 1 : -1) * (act === 'run' ? .32 : .22);
+            else if (act === 'hop') angle = hopAngle((t * 6 % Math.PI) / Math.PI, i);
+            else if (act === 'wake' && t > .7 && t < 1.05) angle = hopAngle((t - .7) / .35, i);
+          }
+          pose(i, angle, false);
+        }
         return;
       }
       if (dt <= 0) return;
       const phase = hop === null ? null : Math.max(0, Math.min(1, hop));
+      if (phase !== null) {
+        if (!wasHopping) for (const foot of feet) { foot.takeoffAngle = foot.angle; foot.takeoffLift = foot.lift; }
+        lastActivity = clock;
+      } else if (calm) lastActivity = clock;
+      wasHopping = phase !== null;
       const cycle = Math.floor(clock / 6.4), tapTime = (clock - cycle * 6.4 - 4.6) / .7;
-      const tap = !calm && phase === null && tapTime > 0 && tapTime < 1 ? -.18 * Math.sin(Math.PI * tapTime) ** 2 : 0;
+      // A landing or the end of a held scene gets a quiet beat before idle acting resumes.
+      const settled = smooth((clock - lastActivity - .45) / .35);
+      const tap = !calm && phase === null && tapTime > 0 && tapTime < 1 ? -.18 * Math.sin(Math.PI * tapTime) ** 2 * settled : 0;
       for (let i = 0; i < feet.length; i++) {
         if (phase === null) pose(i, i === cycle % Math.max(1, feet.length) ? tap : 0, true);
         else {
           // Both shoes trail on takeoff, then reach forward before landing; neither moves the carved body.
-          const arch = Math.sin(Math.PI * phase);
-          const trailing = .72 * (1 - phase) - .52 * phase;
-          const offset = (i % 2 ? -1 : 1) * .065 * Math.sin(Math.PI * 2 * phase);
-          pose(i, arch * (trailing + offset) * (calm ? .4 : 1), false);
+          const foot = feet[i]!, release = 1 - smooth(phase / .18);
+          pose(i, hopAngle(phase, i) * (calm ? .4 : 1) + foot.takeoffAngle * release, false, foot.takeoffLift * release);
         }
       }
     },

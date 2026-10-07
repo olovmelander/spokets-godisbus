@@ -39,6 +39,90 @@ describe('the player’s shared motion', () => {
     expect(runReach.elbowR).toBeGreaterThan(runReach.elbowL);
   });
 
+  it('leans into acceleration, plants to stop, then settles without marching in place', () => {
+    const motion = createPlayerMotion(), state = player();
+    let x = 0, startingLean = 0;
+    motion.update(state, x, 1 / 60, null);
+    for (let frame = 1; frame <= 60; frame++) {
+      x += RUN_SPEED * Math.min(1, frame / 18) / 60;
+      const p = motion.update(state, x, 1 / 60, null);
+      if (frame <= 24) startingLean = Math.max(startingLean, p.lean);
+    }
+    const cruising = { ...motion.update(state, x + RUN_SPEED / 60, 1 / 60, null) };
+    x += RUN_SPEED / 60;
+    expect(startingLean).toBeGreaterThan(cruising.lean + 0.045);
+    let stoppingLean = Infinity, planted = 0;
+    for (let frame = 1; frame <= 15; frame++) {
+      x += RUN_SPEED * Math.max(0, 1 - frame / 9) / 60;
+      const p = motion.update(state, x, 1 / 60, null);
+      stoppingLean = Math.min(stoppingLean, p.lean);
+      if (frame >= 9) planted = Math.max(planted, Math.min(p.kneeL, p.kneeR));
+      expect(p.bounce).toBe(0); expect(p.seat).toBeNull();
+    }
+    expect(stoppingLean).toBeLessThan(-0.03); expect(planted).toBeGreaterThan(0.07);
+    for (let frame = 0; frame < 90; frame++) motion.update(state, x, 1 / 60, null);
+    const settled = motion.update(state, x, 1 / 60, null);
+    expect(Math.abs(settled.legL)).toBeLessThan(1e-7); expect(settled.kneeR).toBeLessThan(1e-7);
+  });
+
+  it('plants for a reversal and directs the weight shift into the new facing, with quieter reduced motion', () => {
+    const reverse = (facing: 1 | -1, calm: boolean) => {
+      const motion = createPlayerMotion(), state = player();
+      let x = 0;
+      motion.update(state, x, 1 / 60, null, 0, calm);
+      for (let frame = 0; frame < 45; frame++) {
+        x += RUN_SPEED / 60;
+        motion.update(state, x, 1 / 60, null, 0, calm);
+      }
+      state.facing = facing;
+      for (let frame = 1; frame <= 9; frame++) {
+        x += RUN_SPEED * (1 - frame / 9) / 60;
+        motion.update(state, x, 1 / 60, null, 0, calm);
+      }
+      return { ...motion.update(state, x, 0, null, 0, calm) };
+    };
+    const stopping = reverse(1, false), turning = reverse(-1, false), calm = reverse(-1, true);
+    expect(turning.lean).toBeGreaterThan(stopping.lean + 0.15);
+    expect(turning.nod).toBeLessThan(stopping.nod);
+    expect(turning.lean).toBeGreaterThan(calm.lean + 0.04);
+    expect(calm.kneeL).toBeCloseTo(turning.kneeL, 8); expect(calm.kneeR).toBeCloseTo(turning.kneeR, 8);
+  });
+
+  it('takes off with the leg already leading instead of choosing the same knee for every jump', () => {
+    const jump = (frames: number) => {
+      const motion = createPlayerMotion(), state = player();
+      let x = 0;
+      motion.update(state, x, 1 / 60, null);
+      for (let frame = 0; frame < frames; frame++) {
+        x += RUN_SPEED / 60;
+        motion.update(state, x, 1 / 60, null);
+      }
+      const before = { ...motion.update(state, x, 0, null) };
+      state.grounded = false; state.vy = JUMP_SPEED;
+      for (let frame = 0; frame < 12; frame++) {
+        x += RUN_SPEED / 60;
+        motion.update(state, x, 1 / 60, null);
+      }
+      const rising = { ...motion.update(state, x, 0, null) };
+      expect(Math.sign(rising.legL - rising.legR)).toBe(Math.sign(before.legL - before.legR));
+      expect(Math.sign(rising.kneeL - rising.kneeR)).toBe(Math.sign(before.legL - before.legR));
+      expect(motion.update(state, x, 0, null)).toEqual(rising);
+      return rising;
+    };
+    expect(jump(8).legL).toBeGreaterThan(jump(18).legL + 0.5);
+  });
+
+  it('steps out of carried modes without adding a false landing impact', () => {
+    for (const mode of ['climb', 'slide', 'ledge', 'ride', 'bubble', 'down'] as const) {
+      const motion = createPlayerMotion(), state = player({ mode, grounded: false, t: 1 });
+      for (let frame = 0; frame < 45; frame++) motion.update(state, 0, 1 / 60, null);
+      const before = { ...motion.update(state, 0, 0, null) };
+      const released = motion.update(player(), 0, 1 / 60, null);
+      expect(released.kneeL).toBeCloseTo(before.kneeL * Math.exp(-18 / 60), 8);
+      expect(released.kneeR).toBeCloseTo(before.kneeR * Math.exp(-18 / 60), 8);
+    }
+  });
+
   it('climbs hand over hand from vertical travel, and holds its grip when stopped or paused', () => {
     const motion = createPlayerMotion(), state = player({ mode: 'climb', grounded: false, vy: CLIMB_SPEED });
     for (let frame = 0; frame < 90; frame++) motion.update(state, 0, 1 / 60, null);

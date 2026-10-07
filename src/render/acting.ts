@@ -67,6 +67,21 @@ function handTo(p: Pose, ahead: number, up: number, side: 0 | 1 = 1, k = 1): voi
   }
 }
 
+/** The wrist before an action changes the torso: its path starts from the stance's actual hand. */
+function handFrom(p: Pose, side: 0 | 1): { ahead: number; up: number } {
+  const arm = (side === 0 ? p.armL : p.armR) - p.lean;
+  const elbow = arm + (side === 0 ? p.elbowL : p.elbowR);
+  return {
+    ahead: Math.sin(p.lean) * SHOULDER + Math.sin(arm) * UPPER + Math.sin(elbow) * FORE,
+    up: hipsOf(p) + Math.cos(p.lean) * SHOULDER - Math.cos(arm) * UPPER - Math.cos(elbow) * FORE,
+  };
+}
+
+/** Solve the arm along a hand-space path, so the elbow follows the hand instead of flinging a held prop. */
+function handAlong(p: Pose, from: { ahead: number; up: number }, ahead: number, up: number, travel: number, lift: number, arc: number, side: 0 | 1): void {
+  handTo(p, from.ahead + (ahead - from.ahead) * travel, from.up + (up - from.up) * lift + Math.sin(Math.PI * lift) * arc, side);
+}
+
 /** Where a standing adult's chest is, from the feet: the hands come here to hold something before them. */
 const CHEST = 3.55;
 
@@ -117,7 +132,7 @@ function walking(p: Pose, c: ActContext): Pose {
   p.armR = swing * 0.7;
   p.elbowL = p.elbowR = 0.25;
   p.lean = 0.06 * c.pace;
-  p.bounce = Math.abs(Math.cos(c.stride * Math.PI)) * 0.06 * c.pace;
+  p.bounce = c.calm ? 0 : Math.abs(Math.cos(c.stride * Math.PI)) * 0.06 * c.pace;
   return p;
 }
 
@@ -136,7 +151,8 @@ function look(p: Pose, c: ActContext, k = 1): void {
 export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'stand'): Pose {
   Object.assign(out, STANDING);
   const loop = c.calm ? 0 : 1;
-  const t = c.t;
+  // A reduced-motion act holds its completed, readable pose; authored keys still decide when acts change.
+  const t = c.calm ? 3 : Math.max(0, c.t);
   const under = () => (stance === 'sit' ? sitting(out) : stance === 'kneel' ? kneeling(out) : stance === 'crouch' ? crouching(out) : out);
   switch (act) {
     case 'stand':
@@ -225,11 +241,12 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       const target = c.aim ?? { ahead: 6, up: CHEST };
       const hips = hipsOf(out);
       const k = rise(t, 0.3);
-      // Straight at it: the hand goes as far as the arm reaches along the line to it.
-      const dx = target.ahead, dy = target.up - (hips + SHOULDER);
-      const far = Math.hypot(dx, dy) || 1;
-      handTo(out, dx / far * 1.7, hips + SHOULDER + dy / far * 1.7, 1, k);
       out.lean += 0.06 * k;
+      // Straight at it: the hand goes as far as the arm reaches along the line to it.
+      const shoulderAhead = Math.sin(out.lean) * SHOULDER, shoulderUp = hips + Math.cos(out.lean) * SHOULDER;
+      const dx = target.ahead - shoulderAhead, dy = target.up - shoulderUp;
+      const far = Math.hypot(dx, dy) || 1;
+      handTo(out, shoulderAhead + dx / far * 1.7, shoulderUp + dy / far * 1.7, 1, k);
       look(out, c, k);
       return out;
     }
@@ -244,9 +261,10 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
     case 'cheer': {
       under();
       const k = rise(t, 0.2);
-      out.armL = out.armR = 2.85 * k;
+      out.armR = 2.85 * k;
+      out.armL = 2.85 * rise(t - 0.06, 0.26);
       out.elbowL = out.elbowR = 0.25;
-      out.bounce = loop * Math.abs(Math.sin(t * 7.5)) * 0.32 * (t < 1.6 ? 1 : 0);
+      out.bounce = loop * Math.sin(t * 7.5) ** 2 * 0.24 * rise(t, 0.16) * smooth((1.6 - t) / 0.35);
       return out;
     }
     case 'offer':
@@ -254,13 +272,31 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
     case 'lift': {
       under();
       const target = c.aim ?? { ahead: 1.6, up: CHEST };
+      const fromR = handFrom(out, 1), fromL = handFrom(out, 0);
       const k = rise(t, act === 'lift' ? 1.1 : 0.5);
-      // Reaching low, the back bends to it; lifting, it straightens as the hand comes up.
       const hips = hipsOf(out);
       const low = Math.max(0, hips + 0.4 - target.up);
+      // A low standing reach shares the work with the knees; seated and kneeling contacts retain their stance.
+      if (act === 'reach' && stance === 'stand') {
+        const bend = Math.min(1, low / 2) * rise(t, 0.3);
+        out.legL = out.legR = 0.5 * bend;
+        out.kneeL = out.kneeR = 0.85 * bend;
+      }
       out.lean += (act === 'reach' ? Math.min(0.8, 0.2 + low * 0.35) : act === 'lift' ? 0.15 : 0.1) * k;
-      handTo(out, target.ahead, target.up, 1, k);
-      if (act !== 'offer') handTo(out, target.ahead - 0.15, target.up - 0.1, 0, k * 0.6);
+      if (act === 'reach' && target.ahead > 0) {
+        // Bring the shoulder close enough to the object, rather than holding a fully stretched hand short of it.
+        const up = target.up - hipsOf(out), far = Math.hypot(target.ahead, up);
+        const reach = UPPER + FORE - 0.08;
+        const angle = Math.acos(Math.max(-1, Math.min(1, (far * far + SHOULDER * SHOULDER - reach * reach) / (2 * far * SHOULDER))));
+        out.lean = Math.max(out.lean, Math.min(stance === 'kneel' ? 1.1 : 0.8, Math.atan2(target.ahead, up) - angle) * k);
+      }
+      // Lift close to the body before extending; offering clears the lap, reaching takes a smaller curved path.
+      const lifted = act === 'lift' ? rise(t, 0.85) : k;
+      handAlong(out, fromR, target.ahead, target.up, k, lifted, act === 'offer' ? 0.3 : 0.14, 1);
+      if (act !== 'offer') {
+        const support = rise(t - 0.08, act === 'lift' ? 1.02 : 0.42);
+        handAlong(out, fromL, target.ahead - 0.15, target.up - 0.1, support, support, 0.1, 0);
+      }
       out.nod = (act === 'offer' ? 0.18 : Math.min(0.7, 0.25 + low * 0.2)) * k;
       look(out, c, k);
       return out;
@@ -288,11 +324,11 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
     }
     case 'shrug': {
       under();
-      const k = Math.sin(Math.min(1, t / 0.9) * Math.PI);
+      const k = c.calm ? 1 : rise(t, 0.2) * (1 - rise(t - 0.55, 0.35));
       out.armL = out.armR = 0.25;
       out.elbowL = out.elbowR = 0.3 + 1.2 * k;
       out.spread = 0.35 * k;
-      out.bounce = 0.06 * k;
+      out.bounce = 0;
       out.nod = -0.1 * k;
       return out;
     }
@@ -335,11 +371,11 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
     case 'hands': {
       under();
       const k = rise(t, 0.4);
+      out.lean = 0.12 * k;
       const hips = hipsOf(out);
       handTo(out, 0.7, hips + SHOULDER - 0.3, 0, k);
       handTo(out, 0.75, hips + SHOULDER - 0.25, 1, k);
       out.nod = 0.65 * k;
-      out.lean = 0.12 * k;
       return out;
     }
     case 'paint': {

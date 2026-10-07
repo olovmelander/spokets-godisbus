@@ -56,7 +56,7 @@ import type { Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { endsInScene, type SceneFrame } from '../sim/scene';
-import { BERRY_HALF, BERRY_HEIGHT } from '../sim/constants';
+import { BERRY_HALF, BERRY_HEIGHT, JUMP_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
 import { photoCut } from './crop';
@@ -647,7 +647,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const look = cameraIntent({ ...startState(chapter) }, chapter.cameras);
   let turn = 0;
   let squash = 1;
-  let wasGrounded = true;
+  let fallingSpeed = 0;
 
   function resize(): void {
     const width = canvas.clientWidth || window.innerWidth;
@@ -976,7 +976,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // In a held scene the scene may turn him: towards his family, or out over the garden.
     const scripted = directions.elof;
     const facingAngle = scripted?.face != null ? -scripted.face * Math.PI * 2 : onHose ? Math.PI / 2 : curr.facing > 0 ? -0.35 : Math.PI + 0.35;
-    turn += (facingAngle - turn) * ease(14, dt);
+    const turnDelta = facingAngle - turn;
+    turn += Math.atan2(Math.sin(turnDelta), Math.cos(turnDelta)) * ease(14, dt);
     // A held scene owns the pose. Otherwise actual travel drives the same articulated pose on both bodies.
     let scriptedPose: Pose | null = null;
     if (scripted?.act && curr.grounded) {
@@ -986,10 +987,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     const waving = reaction?.kind === 'player' && curr.grounded;
     playerBody.pose(playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory));
-    if (curr.grounded && !wasGrounded) squash = 0.94; // the knees take most of the landing
-    wasGrounded = curr.grounded;
-    squash += (1 - squash) * ease(12, dt);
-    const stretch = curr.grounded ? squash : 1 + clamp(curr.vy * 0.012, -0.05, 0.1);
+    const elastic = curr.mode === 'free' && !scriptedPose && !calmStory;
+    if (dt > 0) {
+      if (!elastic) { squash = 1; fallingSpeed = 0; }
+      else if (curr.grounded) {
+        if (fallingSpeed > 0) squash = 1 - .025 - .04 * clamp(fallingSpeed / JUMP_SPEED, 0, 1);
+        fallingSpeed = 0;
+      } else fallingSpeed = Math.max(fallingSpeed, -curr.vy);
+      squash += (1 - squash) * ease(12, dt);
+    }
+    // Only a real jump/fall stretches the body: climbing, rides and story lifts keep their proportions.
+    const stretch = !elastic ? 1 : curr.grounded ? squash : 1 + clamp(curr.vy * 0.012, -0.05, 0.1);
     // Knocked over by a drop he goes down on his back, lies a moment, and gets up.
     const lying = curr.mode === 'down' ? Math.min(1, curr.t / 0.15, (1 - curr.t) / 0.25) * 1.4 * curr.facing : 0;
     // The tilt turns about his middle, where the lace's pull goes through.
@@ -1038,7 +1046,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (!hopping) ghostGroundY = ghostState.y;
       // 0 faces along the course; a half turn faces back at him.
       const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4;
-      ghostTurn += (wanted - ghostTurn) * ease(7, dt);
+      const ghostDelta = wanted - ghostTurn;
+      ghostTurn += Math.atan2(Math.sin(ghostDelta), Math.cos(ghostDelta)) * ease(7, dt);
       const awake = !chapter.prologue || flags.has('blink');
       ghost.rotation.set(0, ghostFaces + ghostTurn, !awake ? 0 : hopping ? -0.25 * Math.sin(Math.PI * ghostState.t) : calmStory ? 0 : Math.sin(clock * 1.7) * 0.035);
       if (chapter.prologue && prologue) {
@@ -1064,7 +1073,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostStaged = true;
       }
       blinkEyes(paintedEyes, staged?.blink ?? 1);
-      ghostMotion.update({ dt, clock, hop: hopping ? ghostState.t : null, calm: calmStory, awake, staged: ghostStaged });
+      ghostMotion.update({ dt, clock, hop: hopping ? ghostState.t : null, calm: calmStory, awake, staged: ghostStaged, performance: staged ?? undefined });
       looking.update(staged?.look ? ghostPlace.position : null, staged?.look ?? null, clock, dt);
     }
     if (chapter.prologue) {

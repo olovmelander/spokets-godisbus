@@ -1,5 +1,5 @@
 import { BoxGeometry, CapsuleGeometry, ConeGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry } from 'three';
-import { CLIMB_SPEED, JUMP_SPEED, RUN_SPEED } from '../sim/constants';
+import { CLIMB_SPEED, JUMP_SPEED, RUN_AFTER, RUN_SPEED } from '../sim/constants';
 import type { PlayerState } from '../sim/types';
 import { blendPose, STANDING, type Pose } from './rig';
 
@@ -71,27 +71,51 @@ export function createPlayerMotion() {
   const target = { ...STANDING }, pose = { ...STANDING };
   let lastX: number | null = null, lastY = 0, lastMode: PlayerState['mode'] = 'free';
   let grounded = true, free = false, phase = 0, landing = 0, impact = 0, idle = 0;
+  let speed = 0, lead = 1;
   return {
     update(player: PlayerState, x: number, dt: number, scripted: Pose | null, wave = 0, calm = false): Pose {
-      const distance = lastX === null ? 0 : Math.abs(x - lastX);
+      const travel = lastX === null ? 0 : x - lastX, distance = Math.abs(travel), previousMode = lastMode;
       const climb = lastMode === 'climb' && player.mode === 'climb' ? player.y - lastY : 0;
       lastX = x; lastY = player.y; lastMode = player.mode;
       if (scripted) {
-        grounded = player.grounded; free = false; landing = 0; impact = 0; idle = 0;
+        grounded = player.grounded; free = false; landing = 0; impact = 0; idle = 0; speed = 0;
         return Object.assign(pose, scripted);
       }
       if (dt <= 0) return pose;
       const walking = player.mode === 'free' && player.grounded;
       const continuous = distance <= RUN_SPEED * dt * 2 + 0.05;
       const pace = walking && free && continuous ? clamp(distance / (dt * RUN_SPEED)) : 0;
+      // Filter measured travel before taking acceleration, so interpolation does not shake the torso.
+      const before = speed;
+      speed = walking && free && continuous && !player.atEdge ? speed + (travel / dt - speed) * (1 - Math.exp(-16 * dt)) : 0;
+      const acceleration = walking && free && continuous && !player.atEdge
+        ? Math.max(-1, Math.min(1, (speed - before) * RUN_AFTER / (dt * RUN_SPEED))) : 0;
+      const braking = Math.abs(speed) < Math.abs(before) ? Math.abs(acceleration) : 0;
       if (pace > 0) phase += distance * 5.5;
       if (Math.abs(climb) <= CLIMB_SPEED * dt * 3 + 0.05) phase += climb * 7;
-      if (!continuous) { phase = 0; landing = 0; impact = 0; Object.assign(pose, STANDING); }
-      if (walking && !grounded && continuous) landing = 0.2 + 0.8 * clamp(impact / JUMP_SPEED);
+      if (!continuous) { phase = 0; landing = 0; impact = 0; speed = 0; Object.assign(pose, STANDING); }
+      // A running jump leads with the foot already ahead. Keep that choice through the whole flight.
+      if (player.mode === 'free' && !player.grounded && grounded) lead = pose.legL >= pose.legR ? 1 : -1;
+      // Stepping off a ride, a hose or the finished clamber is not a fall onto the ground.
+      if (walking && !grounded && previousMode === 'free' && impact > 0 && continuous) landing = 0.2 + 0.8 * clamp(impact / JUMP_SPEED);
       else landing *= Math.exp(-12 * dt);
       impact = player.mode === 'free' && !player.grounded ? Math.max(impact, -player.vy) : 0;
       grounded = player.grounded; free = walking;
       playerPose(player, phase, pace, landing, target);
+      if (player.mode === 'free' && !player.grounded && lead < 0) {
+        [target.legL, target.legR] = [target.legR, target.legL];
+        [target.kneeL, target.kneeR] = [target.kneeR, target.kneeL];
+        [target.armL, target.armR] = [target.armR, target.armL];
+        [target.elbowL, target.elbowR] = [target.elbowR, target.elbowL];
+      }
+      if (walking && !player.atEdge) {
+        // Lean into a start or a change of direction; plant and soften both knees while stopping.
+        const weight = calm ? 0.45 : 1, drive = acceleration * player.facing;
+        target.lean += drive * 0.18 * weight; target.nod -= drive * 0.08 * weight;
+        target.legL += braking * 0.12; target.legR += braking * 0.12;
+        target.kneeL += braking * 0.28; target.kneeR += braking * 0.28;
+        target.armL += braking * 0.18 * weight; target.armR += braking * 0.18 * weight;
+      }
       idle = walking && pace === 0 && !player.atEdge && wave <= 0 ? idle + dt : 0;
       if (!calm && idle > 0.4) {
         const breath = Math.sin(idle * 1.8) * smooth((idle - 0.4) / 0.8);

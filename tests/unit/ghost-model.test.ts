@@ -122,6 +122,60 @@ describe('the carved ghost’s separate feet', () => {
     }
     expect(() => createGhostMotion(new Group()).update(footFrame({ hop: .5 }))).not.toThrow();
   });
+
+  it('lands into a quiet planted pose even when the global idle clock is at a tap peak', () => {
+    const { model, feet } = ghostFeet(), motion = createGhostMotion(model);
+    motion.update(footFrame({ clock: 4.95 - 1 / 60, hop: .99 }));
+    const before = feet.map(foot => foot.quaternion.clone());
+    // This is the view's actual transition: a completed hop becomes null, rather than an explicit phase 1.
+    motion.update(footFrame({ clock: 4.95, hop: null }));
+    feet.forEach((foot, i) => expect(foot.quaternion.angleTo(before[i]!)).toBeLessThan(.025));
+    for (const clock of [5, 5.1, 5.2]) {
+      motion.update(footFrame({ clock }));
+      for (const foot of feet) expect(foot.rotation.x).toBeCloseTo(0, 8);
+    }
+    motion.update(footFrame({ clock: 11.35 }));
+    expect(feet[1]!.rotation.x).toBeCloseTo(-.18, 6);
+  });
+
+  it('carries a lifted toe smoothly into takeoff instead of snapping it back to its rest transform', () => {
+    const { model, feet } = ghostFeet(), motion = createGhostMotion(model);
+    motion.update(footFrame({ clock: 4.95 }));
+    const rotation = feet[0]!.quaternion.clone(), position = feet[0]!.position.clone();
+    motion.update(footFrame({ clock: 4.95 + 1 / 60, hop: 0 }));
+    expect(feet[0]!.quaternion.angleTo(rotation)).toBeLessThan(1e-7);
+    expect(feet[0]!.position.distanceTo(position)).toBeLessThan(1e-8);
+    motion.update(footFrame({ clock: 5.2, hop: .25 }));
+    expect(feet[0]!.rotation.x).toBeGreaterThan(.2);
+    expect(feet[0]!.position.y).toBeCloseTo(.19, 8);
+  });
+
+  it('articulates story walks, runs and hops from authored time, including a seek while paused', () => {
+    const { model, feet } = ghostFeet(true), motion = createGhostMotion(model);
+    const rest = feet.map(foot => foot.quaternion.clone());
+    for (const act of ['waddle', 'run', 'hop', 'wake'] as const) {
+      const actT = act === 'wake' ? .8 : .12;
+      motion.update(footFrame({ staged: true, performance: { act, actT }, awake: false }));
+      feet.forEach((foot, i) => expect(foot.quaternion.angleTo(rest[i]!)).toBeGreaterThan(.05));
+      const sought = feet.map(foot => foot.quaternion.clone());
+      motion.update(footFrame({ staged: true, performance: { act: 'freeze', actT: 10 } }));
+      motion.update(footFrame({ staged: true, performance: { act, actT }, clock: 100, dt: 0 }));
+      feet.forEach((foot, i) => {
+        expect(foot.quaternion.angleTo(sought[i]!)).toBeLessThan(1e-7);
+        expect(foot.scale.toArray()).toEqual([.0378, .0378, .0378]);
+      });
+      motion.update(footFrame({ staged: true, performance: { act, actT }, calm: true }));
+      feet.forEach((foot, i) => expect(foot.quaternion.angleTo(rest[i]!)).toBeLessThan(1e-7));
+    }
+  });
+
+  it('puts story shoes flat at each body bounce contact and when the carving freezes', () => {
+    const { model, feet } = ghostFeet(), motion = createGhostMotion(model);
+    for (const [act, actT] of [['waddle', Math.PI / 11], ['run', Math.PI / 18], ['hop', Math.PI / 6], ['wake', 1.05], ['freeze', .2]] as const) {
+      motion.update(footFrame({ staged: true, performance: { act, actT } }));
+      for (const foot of feet) expect(foot.rotation.x).toBeCloseTo(0, 7);
+    }
+  });
 });
 
 describe("the ghost's painted eyes", () => {

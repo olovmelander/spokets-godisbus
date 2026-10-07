@@ -30,7 +30,7 @@ interface State {
   act: Act;
   /** When the act began, and the act and stance before it, for the blend between them. */
   actAt: number;
-  before: { act: Act; at: number; stance: Stance } | null;
+  before: { act: Act; at: number; stance: Stance; aim: Point | null } | null;
   stance: Stance;
   aim: Point | null;
   follow: number | null;
@@ -81,13 +81,13 @@ function apply(state: State, key: ActorKey, since: number): void {
     state.face = mixTurn(state.face, toward, smooth(since / 0.4));
   }
   if (key.act !== undefined && key.act !== state.act) {
-    state.before = { act: state.act, at: state.actAt, stance: state.stance };
+    state.before = { act: state.act, at: state.actAt, stance: state.stance, aim: state.aim };
     state.stance = stanceOf(key.act, state.stance);
     state.act = key.act;
     state.actAt = key.at;
   } else if (key.act !== undefined && state.actAt < key.at - 1e-6 && key.act === state.act) {
     // The same act begun again: its own clock starts over (a second stroke, a second wave).
-    state.before = { act: state.act, at: state.actAt, stance: state.stance };
+    state.before = { act: state.act, at: state.actAt, stance: state.stance, aim: state.aim };
     state.actAt = key.at;
   }
   if (key.aim !== undefined) state.aim = key.aim;
@@ -165,7 +165,7 @@ export interface Directions {
   /** Thin bars above and below: a scene is telling. */
   bars: boolean;
   /** The ghost, staged by the scene: where it is, how it is turned and tilted, and its eyes. Null: as the simulation has it. */
-  ghost: { x: number; y: number; z: number; face: number; tilt: number; bounce: number; blink: number; rough: number; look: Point | null } | null;
+  ghost: { x: number; y: number; z: number; face: number; tilt: number; bounce: number; blink: number; rough: number; look: Point | null; act: Act; actT: number } | null;
   /** Elof, in a held scene: lifted, acting, facing, and how big. */
   /** `onto`: where his feet are drawn in the place itself (on a hand), as much as `ontoWeight` says (0 to 1). */
   elof: {
@@ -342,7 +342,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   const drawing = moasDrawing();
   const things = new Map<Thing, Mesh>();
   const rigs = new Map<Role, Rig>();
-  const live = new Map<Role, { x: number; y: number; z: number; face: number; walked: number }>();
+  const live = new Map<Role, { x: number; y: number; z: number; face: number; walked: number; pace: number; velocity: number }>();
   const holders = new Group();
   holders.name = 'stage-things';
   group.add(holders);
@@ -468,18 +468,24 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         drawnWhile(rig.group, state !== undefined);
         if (!state) continue;
         const was = live.get(who);
-        let x = state.x, y = state.y, z = state.z, face = state.face, pace = 0, walked = was?.walked ?? 0;
+        let x = state.x, y = state.y, z = state.z, face = state.face, pace = 0, velocity = 0, walked = was?.walked ?? 0;
         if (!scene && state.follow !== null && was) {
-          // Between scenes the family walks along behind him, and stops where he stops.
+          // A follower accelerates, turns and eases into their place, without walking through a pause or restore.
           const want = elof.x - state.follow;
-          const step = Math.sign(want - was.x) * Math.min(Math.abs(want - was.x), dt * 2.6);
-          const far = Math.abs(want - was.x) > 14;
-          x = far ? want : was.x + (Math.abs(want - was.x) > 0.4 ? step : 0);
-          y = ground(x);
-          z = state.z;
-          pace = dt > 0 && Math.abs(x - was.x) > 1e-4 ? Math.min(1, Math.abs(x - was.x) / dt / 2.6) : 0;
-          face = pace > 0 ? (x > was.x ? 0 : 0.5) : mixTurn(was.face, state.face, Math.min(1, dt * 3));
-          walked += Math.abs(x - was.x);
+          if (dt <= 0) {
+            ({ x, y, z, face, walked, pace, velocity } = was);
+          } else if (Math.abs(want - was.x) > 14) {
+            x = want; y = ground(x); face = state.face;
+          } else {
+            const gap = want - was.x;
+            const speed = Math.sign(gap) * Math.min(2.6, Math.max(0, Math.abs(gap) - 0.25) * 4);
+            velocity = was.velocity + (speed - was.velocity) * -Math.expm1(-9 * dt);
+            const step = Math.sign(velocity) * Math.min(Math.abs(velocity * dt), Math.abs(gap));
+            x = was.x + step; y = ground(x);
+            pace = Math.min(1, Math.abs(step) / dt / 2.6);
+            face = mixTurn(was.face, pace > 0.04 ? (step > 0 ? 0 : 0.5) : state.face, -Math.expm1(-7 * dt));
+            walked += Math.abs(step);
+          }
         } else if (state.walk) {
           const w = state.walk;
           const p = smooth((t - w.at) / w.seconds);
@@ -488,28 +494,44 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           const travel = Math.atan2(w.toX - w.fromX, w.toZ - w.fromZ) / (Math.PI * 2);
           face = mixTurn(face, 0.25 - travel, Math.min(1, pace * 1.5));
         }
-        live.set(who, { x, y, z, face, walked });
+        live.set(who, { x, y, z, face, walked, pace, velocity });
         rig.group.position.set(x, y, z);
         rig.group.rotation.y = yaw(face);
         // The aim, from the feet in the body's own side view, in an adult's units.
         const unit = 5.2 / rig.height;
-        let aim: { ahead: number; up: number } | null = null;
-        if (state.aim) {
+        const aimFor = (target: Point | null) => {
+          if (!target) return null;
           const turned = yaw(face);
-          const ahead = (state.aim.x - x) * Math.sin(turned) + ((state.aim.z ?? 0) - z) * Math.cos(turned);
-          aim = { ahead: ahead * unit, up: (state.aim.y - y) * unit };
-        }
+          const ahead = (target.x - x) * Math.sin(turned) + ((target.z ?? 0) - z) * Math.cos(turned);
+          return { ahead: ahead * unit, up: (target.y - y) * unit };
+        };
+        const aim = aimFor(state.aim);
         const time = scene && keys ? t : clock;
         const since = (at: number) => (scene && keys ? Math.max(0, t - at) : clock + 10);
         actPose(state.act, { t: since(state.actAt), aim, stride: walked / (1.25 * rig.height / 5.2), pace, calm }, pose, state.before?.stance ?? state.stance);
         if (state.stance !== 'stand' && !SEATED.includes(state.act)) actPose(state.act, { t: since(state.actAt), aim, stride: 0, pace: 0, calm }, pose, state.stance);
         if (state.before && scene && keys && t - state.actAt < 0.45) {
-          actPose(state.before.act, { t: Math.max(0, state.actAt - state.before.at), aim, stride: 0, pace: 0, calm }, before, state.before.stance);
+          actPose(state.before.act, { t: Math.max(0, state.actAt - state.before.at), aim: aimFor(state.before.aim), stride: 0, pace: 0, calm }, before, state.before.stance);
           blendPose(before, pose, smooth((t - state.actAt) / 0.45), pose);
         }
         if (pace > 0.01) {
           actPose('walk', { t: time, aim: null, stride: walked / (1.25 * rig.height / 5.2), pace: 1, calm }, walking);
-          blendPose(pose, walking, Math.min(1, pace), pose);
+          const weight = Math.min(1, pace);
+          const acting = !['stand', 'watch', 'look', 'walk'].includes(state.act);
+          // Walking supplies the legs; an offer, a drawing or a mug keeps its hands and torso in the act.
+          for (const joint of ['legL', 'legR', 'kneeL', 'kneeR', 'bounce'] as const) pose[joint] += (walking[joint] - pose[joint]) * weight;
+          if (!acting) {
+            pose.lean += (walking.lean - pose.lean) * weight;
+            if (!state.holdsLeft && state.holds !== 'drawing') {
+              pose.armL += (walking.armL - pose.armL) * weight;
+              pose.elbowL += (walking.elbowL - pose.elbowL) * weight;
+            }
+            if (!state.holds && state.holdsLeft !== 'drawing') {
+              pose.armR += (walking.armR - pose.armR) * weight;
+              pose.elbowR += (walking.elbowR - pose.elbowR) * weight;
+            }
+          }
+          pose.seat = null;
         }
         rig.pose(pose);
         // What they hold: in the right hand, and in the left. Moa's drawing is held up in both.
@@ -662,10 +684,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             tilt = -0.18 * Math.sin(Math.min(1, since / 0.5) * Math.PI);
             break;
           case 'hop':
-            bounce = Math.abs(Math.sin(since * 6)) * 0.3;
+            bounce = calm ? 0 : Math.abs(Math.sin(since * 6)) * 0.3;
             break;
           case 'peek':
-            tilt = 0.2 + 0.08 * Math.sin(since * 3);
+            tilt = 0.2 + (calm ? 0 : 0.08 * Math.sin(since * 3));
             break;
           case 'freeze':
             blink = 1;
@@ -673,7 +695,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           default:
             break;
         }
-        ghost = { x: state.x, y: state.y, z: state.z, face: state.face, tilt, bounce, blink, rough: state.rough, look: state.act === 'look' ? state.aim : null };
+        ghost = { x: state.x, y: state.y, z: state.z, face: state.face, tilt, bounce, blink, rough: state.rough, look: state.act === 'look' ? state.aim : null, act: state.act, actT: since };
       }
       // The block of wood round the ghost, while there is any left.
       const rough = ghost?.rough ?? 0;

@@ -22,7 +22,7 @@ const server = await createServer({ root,
         actor.traverse(node => { if (node.name.startsWith('player-')) parts[node.name] = { rotation: node.rotation.toArray().slice(0,3), matrix: node.matrix.toArray() }; });
         const bounds = new Box3().setFromObject(actor), corners = [];
         for (const x of [bounds.min.x,bounds.max.x]) for (const y of [bounds.min.y,bounds.max.y]) for (const z of [bounds.min.z,bounds.max.z]) corners.push(new Vector3(x,y,z).project(camera).toArray());
-        return { parts, at:actor.position.toArray(), scale:actor.scale.toArray(), bounds:[bounds.min.toArray(),bounds.max.toArray()], corners };
+        return { parts, at:actor.position.toArray(), scale:actor.scale.toArray(), turn:actor.rotation.y, bounds:[bounds.min.toArray(),bounds.max.toArray()], corners };
       }
     `; } }],
 });
@@ -85,6 +85,18 @@ try {
     check(`${name}: actual play camera keeps jump visible`, [air.rise,air.fall].every(s => s.corners.every(([x,y,z]) => Math.abs(x)<1 && Math.abs(y)<1 && Math.abs(z)<1)));
     const settled = await page.evaluate(() => window.motionProbe.step({vx:0,vy:0,y:0,grounded:true},48));
     check(`${name}: landing recovers standing height`, settled.bounds[1][1]-settled.bounds[0][1]>.9 && Math.abs(settled.scale[1]-1)<.01);
+    const reversal = await page.evaluate(() => {
+      const p=window.motionProbe, before=p.step({facing:1,vx:0},60), after=p.step({facing:-1,vx:-1.2},1);
+      return {before,after};
+    });
+    check(`${name}: direction change turns the short way towards the camera`, reversal.after.turn < reversal.before.turn && reversal.after.turn > reversal.before.turn-.7);
+    const climbExit = await page.evaluate(() => {
+      const p=window.motionProbe;
+      const climb=p.step({mode:'climb',grounded:false,vx:0,vy:1,y:.5},12);
+      const stand=p.step({mode:'free',grounded:true,vy:0,y:0},1);
+      return {climb,stand};
+    });
+    check(`${name}: climbing and stepping off a hose preserve body proportions`, climbExit.climb.scale.every(v=>Math.abs(v-1)<1e-8) && climbExit.stand.scale.every(v=>Math.abs(v-1)<1e-8));
     const story = await page.evaluate(() => {
       const p=window.motionProbe;p.story({id:'motion-pose',seconds:.8});
       const first=p.step({vx:3.5},1),later=p.step({vx:3.5},12);p.story(null);
@@ -92,6 +104,7 @@ try {
     });
     assert.deepEqual(story.later.parts,story.first.parts,`${name}: authored cheer ignores locomotion phase`);
     check(`${name}: story pose overrides a moving player's arms`, moved(settled,story.first,'player-shoulder-'));
+    check(`${name}: story posing preserves body proportions`, story.first.scale.every(v=>Math.abs(v-1)<1e-8));
     const restored = await page.evaluate(async () => {
       const p=window.motionProbe;p.step({vx:0},36);
       const before=p.snapshot();await p.view.restore();
