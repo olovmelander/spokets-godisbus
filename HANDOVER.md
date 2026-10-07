@@ -56,13 +56,17 @@
     motion/carving review tabs remain useful for the runtime work below.
   - **Persistence:** photos, raw/generated models, Blender files, review scripts
     and renders are git-ignored and stay on this computer; this public commit
-    records their locations and state, not those private files. Keep the photos
-    and local tool folders when cleaning up. Code work can continue elsewhere;
+    records their locations and state, not those private files. Keep `photos/`,
+    `art/private/` and the local tool folders when cleaning up. The separate
+    `art/private` repository is also on `character-design-motion` and has earlier
+    uncommitted ghost, build-script, child-model and Elof-study work; this public
+    checkpoint does not commit or push that private repository. A clean public
+    working tree does not mean the private repository is clean. Code work can continue elsewhere;
     continuing the model needs this laptop and Blender MCP on port9876.
   - **Checks at wrap-up:** typecheck,161test files/1,512tests,production build and
     privacy scan passed. JavaScript449.9KB/450KB; boot2,890.5KB/3,072KB with the
     existing local private pack. `git diff --check` passed. PR browser CI and merge
-    status are recorded in the pull request; the model viewer's structural pass
+    status are recorded in [PR #183](https://github.com/olovmelander/spokets-godisbus/pull/183); the model viewer's structural pass
     does not remove the visual/topology work listed above.
 
 - **Elof image-to-3D: Pixal seed/precision comparisons improve the jaw, not overall likeness yet.**
