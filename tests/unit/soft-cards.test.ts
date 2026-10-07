@@ -11,7 +11,7 @@ import { cameraIntent } from '../../src/sim/camera-intent';
 import type { ChapterData, PlayerState } from '../../src/sim/types';
 
 /** The places with something soft in front of the path, and what grows there. */
-const GROWN: [course: string, growth: Growth][] = [['garden', 'bright'], ['granskog', 'dark'], ['myren', 'straw'], ['byn', 'kerb']];
+const GROWN: [course: string, growth: Growth][] = [['garden', 'bright'], ['granskog', 'dark'], ['myren', 'straw'], ['byn', 'kerb'], ['berget', 'fell'], ['norrsken', 'night']];
 
 /** The screens the contact sheets are taken at, a small phone, and a large screen. */
 const SCREENS = [[844, 390], [780, 360], [1180, 820], [1440, 900], [1920, 1080], [390, 844]] as const;

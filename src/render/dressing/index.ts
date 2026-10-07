@@ -164,8 +164,8 @@ const OWN: Record<PlaceId, { ground: Ground; growth: Growth | null }> = {
   forest: { ground: 'moss', growth: 'dark' },
   garden: { ground: 'lawn', growth: 'bright' },
   bog: { ground: 'sphagnum', growth: 'straw' },
-  mountain: { ground: 'granite', growth: null },
-  dusk: { ground: 'granite', growth: null },
+  mountain: { ground: 'granite', growth: 'fell' },
+  dusk: { ground: 'granite', growth: 'night' },
   home: { ground: 'wood', growth: null },
   village: { ground: 'asphalt', growth: 'kerb' },
 };
