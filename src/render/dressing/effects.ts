@@ -8,7 +8,9 @@ import { KIT, drawn, grows, heightAt, sequence } from './kit';
 // --- effects: shafts of light, what floats in them, and what flies -------------------------------------------
 
 /** What falls and flies is small, slow and in nobody's way: dull colours, behind the path, and never red or gold. */
-export const LIFE = { needle: '#6b4a2a', leaf: '#a39a4c', wing: '#e6ecb4', gauze: '#f4f4ea', midge: '#3a3022', bee: '#2a2118', band: '#a08c46', tail: '#d9d6c6' };
+export const LIFE = { needle: '#6b4a2a', leaf: '#a39a4c', birch: '#a8913f', wing: '#e6ecb4', gauze: '#f4f4ea', midge: '#3a3022', bee: '#2a2118', band: '#a08c46', tail: '#d9d6c6' };
+/** The village's birch leaves as they fall (docs/visual-audit/byn.md row 16): how many are in the air, and how big. */
+export const FALLING_BIRCH = { count: 9, long: 0.2, wide: 0.15 } as const;
 
 export function effects(chapter: ChapterData, from: number, to: number, where: PlaceId, built: Object3D = new Group()) {
   const group = new Group();
@@ -17,6 +19,7 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
   const garden = where === 'garden';
   const bog = where === 'bog';
   const fell = where === 'mountain';
+  const village = where === 'village';
   // Everything here is one picture: a shaft on the left; then a dot for a mote, a leaf and a bumblebee.
   const lights = drawn(128, 128, (c) => {
     const across = c.createLinearGradient(0, 0, 64, 0);
@@ -87,7 +90,8 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
   // What floats in the light, and stays with the camera. In the forest it is dust, high in the shafts; in
   // the garden dew, near the ground; over the bog a few seeds of cotton grass, and on the mountain seed
   // fluff, both low and blown along. Nothing floats up into an open sky, where it would be a star by day.
-  const MOTES = where === 'dusk' ? 0 : fell ? 30 : bog ? 10 : 70;
+  // In the village fewer: there the birches' leaves fall through the sun instead.
+  const MOTES = where === 'dusk' ? 0 : fell ? 30 : bog ? 10 : village ? 24 : 70;
   const mote = () => ({ x: next(), y: next(), z: next(), speed: 0.3 + next() * 0.7, size: 0.03 + next() * 0.06 });
   const seeds = Array.from({ length: MOTES }, mote);
   const SPAN = 30;
@@ -112,7 +116,8 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
   // What falls and flies: needles and a leaf now and then in the forest; a bumblebee and two brimstone
   // butterflies in the garden; midges over the bog's water. All of it is behind the path, so that none of it
   // is ever in front of him, and dark or pale: a bright speck beside a sweet would be taken for its glitter.
-  const FALLING = where === 'forest' ? 5 : 0;
+  // In the village the yard's birches drop their leaves, out of doors only.
+  const FALLING = where === 'forest' ? 5 : village ? FALLING_BIRCH.count : 0;
   const heads = garden ? standing(built, KIT.petal).map((head) => head.at).filter((head) => head.z > -3.6) : [];
   const FLYING = garden ? 7 : 0;
   // Where the midges dance: over the water, every dozen EL of it. Three clouds of twenty are in the air.
@@ -120,8 +125,8 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
   for (const w of chapter.water ?? []) for (let x = w.from + 6; x < w.to; x += 12) swarms.push({ x, y: w.y });
   const midges = Array.from({ length: bog && swarms.length ? 60 : 0 }, mote);
   const life = quadBatch(FALLING + FLYING + midges.length, new MeshBasicMaterial({ map: lights, transparent: true, vertexColors: true, fog: false, depthWrite: false }), true);
-  const falling = Array.from({ length: FALLING }, (_, i) => ({ x: next(), z: -0.9 - next() * 3.2, every: 6 + next() * 4, phase: next(), leaf: i % 2 === 0 }));
-  const tints = { needle: new Color(LIFE.needle), leaf: new Color(LIFE.leaf), wing: new Color(LIFE.wing), gauze: new Color(LIFE.gauze), midge: new Color(LIFE.midge) };
+  const falling = Array.from({ length: FALLING }, (_, i) => ({ x: next(), z: -0.9 - next() * 3.2, every: 6 + next() * 4, phase: next(), leaf: village || i % 2 === 0 }));
+  const tints = { needle: new Color(LIFE.needle), leaf: new Color(village ? LIFE.birch : LIFE.leaf), wing: new Color(LIFE.wing), gauze: new Color(LIFE.gauze), midge: new Color(LIFE.midge) };
   // The garden's first card is the bee and a midge is a dot; every other is a leaf, a needle or a wing.
   for (let i = 0; i < life.count; i++) {
     const cell = bog ? DOT : garden && i === 0 ? BEE : LEAF;
@@ -182,12 +187,15 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
       const fall = (time / one.every + one.phase) % 1;
       const x = cameraX - 13 + (((one.x * 26 - cameraX) % 26) + 26) % 26 + Math.sin(time * 1.3 + i) * 0.35 + windAt(cameraX) * 0.1;
       const turn = time * (one.leaf ? 1.9 : 0.6) + i;
-      // A leaf tumbles, so it is seen now flat and now on edge; a needle is thin and only turns.
-      const wide = one.leaf ? 0.01 + 0.06 * Math.abs(Math.cos(time * 2.3 + i)) : 0.008;
-      const long = one.leaf ? 0.07 : 0.065;
+      // A leaf tumbles, so it is seen now flat and now on edge; a needle is thin and only turns. A birch
+      // leaf is as big as those that lie on the street.
+      const [long, flat] = village ? [FALLING_BIRCH.long, FALLING_BIRCH.wide] : [one.leaf ? 0.07 : 0.065, 0.06];
+      const wide = one.leaf ? flat / 6 + flat * Math.abs(Math.cos(time * 2.3 + i)) : 0.008;
       life.put(i, x, groundY + 5 - fall * 5.2, one.z, Math.cos(turn) * long, Math.sin(turn) * long, -Math.sin(turn) * wide, Math.cos(turn) * wide);
       const tint = one.leaf ? tints.leaf : tints.needle;
-      life.tint(i, tint.r, tint.g, tint.b, still ? 0 : Math.min(0.8, fall * 8, (1 - fall) * 12));
+      // None falls indoors, in the shop.
+      const out = !chapter.shop || x < chapter.shop.door - 1;
+      life.tint(i, tint.r, tint.g, tint.b, still || !out ? 0 : Math.min(0.8, fall * 8, (1 - fall) * 12));
     }
 
     if (FLYING) {
