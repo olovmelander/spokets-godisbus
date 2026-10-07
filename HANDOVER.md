@@ -2,6 +2,37 @@
 
 ## State (7 October 2026)
 
+- **Graphics, cloud stage 26: the matchbox on the shop's step** (7 October, cloud session, branch
+  `ccr-6078e7de-t0rxpz`; the visual audit's `byn` row 17).
+  - **Before:** the matchbox was the test course's wooden block: a tan box 1.1 deep with darker bands at its
+    ends, taken for a crate. The red ring is drawn at z 0.2, inside that box, so only a sliver of it showed at
+    the box's left side.
+  - **A matchbox** (`MATCHBOX` and `matchboxShape` in `src/render/matchbox.ts`; the look `matchbox` in
+    `moverProp`). It stands on its end with its label to the camera, and fills the simulation's box.
+    - The sleeve is plain blue paper (`#3d5f8a`), worn pale along its edges and dark where it stands, with the
+      dark striking strips down both narrow sides.
+    - The label is a cream panel in a thin dark-blue frame, with a drawn match and its flame in orange and
+      yellow on it: a picture, with no letters and no mark.
+    - The tray is pushed 0.3 up out of the top: pale card with its inside in shade, and five brown match heads
+      (`#5a3a2a`) against its end, no two quite alike. He stands on the tray's end, where the simulation's top is.
+    - The box is 0.62 thick, with its label just behind the ring, so the whole ring shows on its lower left
+      corner, on the step and on the street.
+    - One draw where the block took three, about 1,300 triangles. The test course's block is still the block.
+  - **Checked:**
+    - Before/after at byn x 108.2, with the box on the step, pulled down, and from x 107.5, on High 1180×820,
+      Low 844×390 and High 390×844.
+    - Suites: village and journey.
+    - New unit tests in `matchbox.test.ts`:
+      - the box he pulls is a matchbox, and the test course's block stays a block;
+      - it fills the simulation's box, he stands on the tray's end, and its label is just behind the ring;
+      - the tray is out of the sleeve with five heads in it, the strips are down both narrow sides, and the
+        label and its flame are on the sleeve's front;
+      - it is one draw, and none of its colours is a red.
+    - The script is 438.6 KB of 450 (+1.1 KB).
+  - **Left for later** (the rest of row 17): the step's nosing and worn hollow, an iron boot scraper, and the
+    doorway: the wall cut through, a real door leaf standing open, a brass threshold, a coir mat. The painted
+    door goes then.
+
 - **Graphics, cloud stage 25: the shop's jars as glass, and its lamps** (7 October, cloud session, branch
   `ccr-6078e7de-t0rxpz`; the visual audit's `byn` rows 18 and 19).
   - **Before:** each jar was an open cylinder at opacity 0.17, with no rim, shoulder or base. On High it could
@@ -2509,7 +2540,7 @@
   it stood at 448.7 KB; the build now ships shaders without their padding (`scripts/squeeze-glsl.mjs`, see
   "State"), which took it to 445.5 KB. After stages 13 to 17 it stood at 448.0 KB. Stage 18 left out three's
   Zstandard decoder, which no texture of the game's needs (`scripts/no-zstd.mjs`): it stood at 431.0 KB. After
-  stage 19 it stood at 432.2 KB; after stage 25 it stands at 437.5 KB, about 12.5 KB left. The gate counts every `.js` in the build, so splitting code into chunks
+  stage 19 it stood at 432.2 KB, and after stage 25 at 437.5 KB; after stage 26 it stands at 438.6 KB, about 11.4 KB left. The gate counts every `.js` in the build, so splitting code into chunks
   does not help. Mark a new shader's template literal `/* glsl */` so that it is squeezed too. When room runs
   out again: a smaller minifier setting saves about 1.5 KB more (terser on top of the default, measured),
   then dead code. Raising the gate is Olov's decision.
@@ -2539,7 +2570,8 @@
      nest; the shelves of rock are the mountain kit's); the mist and the lantern (built: cloud stage 16); the northern lights
      with rays (built: cloud stage 12); the awning (built: cloud stage 22); the drain (built: cloud stage 23);
      the shop's jars and lamps (built: cloud stage 25), while its shelves, counter, daylight, floor front and
-     bag remain (`byn` rows 19 and 20).
+     bag remain (`byn` rows 19 and 20); the matchbox on the shop's step (built: cloud stage 26), while the
+     step's nosing, a boot scraper and the doorway remain (`byn` row 17).
 - **How this session worked, for the one that goes on:** a builder for each step in its own worktree under
   `.claude/worktrees/`, briefed from the audit's rows (the briefs are in the memory note "Other sessions
   share the checkout"), judged on before and after pictures on a tablet, a phone and Low, then merged as its

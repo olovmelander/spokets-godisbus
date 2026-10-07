@@ -195,7 +195,7 @@ export const byn: ChapterData = {
   ],
   movers: [
     // A matchbox on the step's edge, with a red ring: pulled down, it is the step up.
-    { id: 'box', look: 'block', width: 1.2, height: 1.5, verb: 'pull', ring: { x: -0.5, y: 0.3 }, stops: [{ x: 110.7, y: 3.3 }, { x: 109.3, y: 0 }] },
+    { id: 'box', look: 'matchbox', width: 1.2, height: 1.5, verb: 'pull', ring: { x: -0.5, y: 0.3 }, stops: [{ x: 110.7, y: 3.3 }, { x: 109.3, y: 0 }] },
   ],
   // The awnings drip: a run of three under each, with the dry pier and a big candy between them.
   drips: [
