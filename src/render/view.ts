@@ -1,6 +1,6 @@
 import { lessMotion } from '../platform/motion';
 import {
-  AdditiveBlending, BoxGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
+  AdditiveBlending, BoxGeometry, CapsuleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
   Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PlaneGeometry, PointLight,
   Scene, Shape, SphereGeometry, TorusGeometry, UnsignedIntType, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
@@ -9,6 +9,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
 import { windWisp } from './wind-wisp';
+import { createRain } from './rain';
 import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
 import { forestKit, forestSocket, installForest, rollingCone } from './forest-kit';
 import { buildLedges } from './ledges';
@@ -324,7 +325,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const moverMeshes = buildMovers(chapter);
   const sharedSweets = chapter.id === 'norrsken' ? createSharedSweets() : null;
   if (sharedSweets) scene.add(sharedSweets.group);
-  const rain = buildRain(chapter.drips?.length ?? 0);
+  const rain = createRain(chapter);
   const cones = buildCones(chapter.rollers?.length ?? 0);
   scene.add(...moverMeshes, rain.group, cones.mesh);
   const climbs = buildClimbs(chapter);
@@ -763,7 +764,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
 
   function render({ prev, curr, alpha, dt, atGoal, collected, side, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue, scene: sceneFrame, ending }: Frame): void {
     inEndingShot = !!chapter.epilogue && ending !== null && ending !== undefined;
-    rain.update(drips);
+    rain.update(drips, dt);
     epilogueStage.update(flags, ending, lessMotion());
     for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
     if (chapter.id === 'norrsken') {
@@ -1576,56 +1577,6 @@ function buildCones(count: number) {
   }
   return { mesh, update };
 }
-
-/**
- * The falling drops and their shadows (plan §4.7, E1): the shadow grows on the ground for a second before
- * the drop lands, so the way through is read from the ground. Two instanced meshes, whatever their number.
- */
-function buildRain(count: number) {
-  const group = new Group();
-  const size = Math.max(1, count);
-  const drops = new InstancedMesh(
-    new SphereGeometry(0.2, 14, 10),
-    new MeshStandardMaterial({ color: '#a9d8f5', roughness: 0.08, transparent: true, opacity: 0.85 }),
-    size,
-  );
-  const shadows = new InstancedMesh(
-    new CircleGeometry(0.5, 20),
-    new MeshBasicMaterial({ color: '#10202c', transparent: true, opacity: 0.4, depthWrite: false }),
-    size,
-  );
-  for (const mesh of [drops, shadows]) {
-    mesh.count = count;
-    mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-    mesh.frustumCulled = false;
-  }
-  shadows.renderOrder = 1;
-  group.add(shadows, drops);
-  const place = new Object3D();
-
-  function update(drips: readonly { x: number; y: number; shadow: number; height: number }[]): void {
-    // Each is drawn while one of its own has a size: a drop on its way down, a shadow that has begun to grow.
-    drawnWhile(drops, drips.some((drip) => drip.height >= 0));
-    drawnWhile(shadows, drips.some((drip) => drip.shadow > 0));
-    for (const [i, drip] of drips.entries()) {
-      // The shadow lies on the ground, and the drop is a little taller than wide on its way down.
-      place.position.set(drip.x, drip.y + 0.015, 0);
-      place.rotation.set(-Math.PI / 2, 0, 0);
-      place.scale.setScalar(drip.shadow);
-      place.updateMatrix();
-      shadows.setMatrixAt(i, place.matrix);
-      place.position.set(drip.x, drip.y + Math.max(0, drip.height) + 0.2, 0);
-      place.rotation.set(0, 0, 0);
-      place.scale.set(drip.height >= 0 ? 1 : 0, drip.height >= 0 ? 1.35 : 0, drip.height >= 0 ? 1 : 0);
-      place.updateMatrix();
-      drops.setMatrixAt(i, place.matrix);
-    }
-    drops.instanceMatrix.needsUpdate = true;
-    shadows.instanceMatrix.needsUpdate = true;
-  }
-  return { group, update };
-}
-
 
 /**
  * A look (plan §3.4, the blink): while the chapter's beat lasts, a dotted line goes from the ghost's eyes to
