@@ -38,7 +38,9 @@ describe('the village masonry', () => {
       triangles += shape.index!.count / 3;
     }
     expect(triangles).toBeLessThan(400);
-    for (const part of [1, 2, 3]) expect(facing(chapter, part).index!.count).toBe(0);
+    // The bakery's awnings are built in code too (awnings.test.ts): without them, it has no stone facing.
+    const bare = { ...chapter, street: chapter.street!.map((part) => ({ ...part, awnings: undefined })) };
+    for (const part of [1, 2, 3]) expect(facing(bare, part).index!.count).toBe(0);
     const frame = COURSES['look-street']!;
     const kerb = facing(frame);
     kerb.computeBoundingBox();

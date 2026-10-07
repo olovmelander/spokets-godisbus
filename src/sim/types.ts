@@ -391,6 +391,11 @@ export interface StreetPart {
   pipes?: number[];
   sign?: number;
   cellar?: number;
+  /**
+   * Its awnings, each from one end to the other: striped cloth from high on a near wall out over the line he
+   * walks on. Last night's rain drips from the tips of its scalloped edge.
+   */
+  awnings?: { from: number; to: number }[];
 }
 
 /** A raised optional path. Fixed waypoints keep all three helper hints steady even on moving platforms. */

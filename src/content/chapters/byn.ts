@@ -107,6 +107,9 @@ export const byn: ChapterData = {
     {
       from: 62, to: 110, depth: 'near', kind: 'house', wall: '#e9e6dc', boards: 'upright', goods: 'bread',
       windows: [{ from: 85.5, to: 90.7 }], door: { from: 96, to: 102 }, pipes: [63.7, 108.2], sign: 79.6, cellar: 74.2,
+      // An awning over the window and one over the door, each a whole number of scallops: the drops fall from
+      // their tips. The pier between them is dry.
+      awnings: [{ from: 84.35, to: 92.05 }, { from: 94.2, to: 104.1 }],
     },
     // The sweet shop, ochre, up on the stone step: its window is the most colourful, and stands only here.
     { from: 110, to: 122, depth: 'near', kind: 'house', wall: '#e3b24c', boards: 'upright', goods: 'candy', windows: [{ from: 112.6, to: 119.4 }] },
@@ -194,7 +197,7 @@ export const byn: ChapterData = {
     // A matchbox on the step's edge, with a red ring: pulled down, it is the step up.
     { id: 'box', look: 'block', width: 1.2, height: 1.5, verb: 'pull', ring: { x: -0.5, y: 0.3 }, stops: [{ x: 110.7, y: 3.3 }, { x: 109.3, y: 0 }] },
   ],
-  // The awning drips: two runs of three, with a dry place and a big candy between them.
+  // The awnings drip: a run of three under each, with the dry pier and a big candy between them.
   drips: [
     { at: { x: 86, y: 0 }, every: 1.8, first: 0.2 },
     { at: { x: 88.2, y: 0 }, every: 2.2, first: 1.1 },

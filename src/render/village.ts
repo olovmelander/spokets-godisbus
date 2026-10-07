@@ -2,7 +2,7 @@ import {
   BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, InstancedMesh, Matrix3, Mesh,
   MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector3,
 } from 'three';
-import type { ChapterData, StreetGoods, StreetPart } from '../sim/types';
+import type { ChapterData, StreetGoods, StreetPart, Vec } from '../sim/types';
 import { sweetSocket } from './candy';
 
 /**
@@ -164,6 +164,30 @@ const SIDE = { near: 17, far: 8 };
 const DOORS: Record<StreetGoods, string> = { candy: '#7a5632', bread: '#6b8494', boots: '#5d4a36', yarn: '#6a4a3a' };
 /** How much of its colour a corner gives off where the kit says it glows: the lamps in a shop window. */
 const GLOW = 2.2;
+/**
+ * An awning on a near wall (docs/art-bible.md §2.3: Byn's striped awnings), measured from its house's foot.
+ * Its cloth comes out of a box high on the wall and slopes down to a bar over the line he walks on. Under the
+ * bar hangs its edge, one scallop to each stripe, and last night's rain drips from the scallops' tips: a drop
+ * hangs there and swells, and then falls (rain.ts). The edge is low enough to come into the top of the
+ * picture on a tablet held sideways, and high enough to stay out of a phone's, and far over his jumps. Its
+ * green is the lamp post's: red is the candy's.
+ */
+export const AWNING = {
+  /** How wide one stripe is, and the scallop under it. */
+  stripe: 1.1,
+  colours: ['#3b6a54', '#ece4cc'],
+  /** The box its cloth rolls into: how far it stands out from the wall, and between which heights. */
+  box: { out: 0.7, from: 10.95, to: 11.55 },
+  /** Where the cloth comes out of its box, and where its bar is: how far in front of the path, and how high. */
+  roller: { out: 0.45, up: 11 },
+  bar: { z: -0.3, up: 5.1 },
+  /** How far its cloth sags between the box and the bar. */
+  sag: 0.16,
+  /** How far its edge hangs under the bar: at the notch between two scallops, and at a scallop's tip. */
+  hang: { notch: 0.38, tip: 0.62 },
+  /** The rod left in its crank: how far in from the awning's first end, and how high over the foot it ends. */
+  crank: { in: 0.45, end: 4.1 },
+} as const;
 
 type End = 'side' | 'flat' | 'none';
 
@@ -183,8 +207,8 @@ function ends(parts: readonly StreetPart[], i: number): { left: End; right: End 
 
 /**
  * The upright parts of a house's front, each from one side to the other: its corner boards, the casings of
- * its windows, its door, its pipes and its sign. None of a near house's may stand behind a big candy or a
- * hook's ring (tests/unit/street.test.ts).
+ * its windows, its door, its pipes, its sign and the rod in its awning's crank. None of a near house's may
+ * stand behind a big candy or a hook's ring (tests/unit/street.test.ts).
  */
 export function uprights(parts: readonly StreetPart[], i: number): { what: string; from: number; to: number }[] {
   const part = parts[i]!;
@@ -198,6 +222,9 @@ export function uprights(parts: readonly StreetPart[], i: number): { what: strin
   for (const x of part.pipes ?? []) out.push({ what: 'pipe', from: x - PIPE, to: x + PIPE });
   const half = part.goods ? SIGN[part.goods] : undefined;
   if (part.sign !== undefined && half !== undefined) out.push({ what: 'sign', from: part.sign - half, to: part.sign + half });
+  // The rod hangs down the wall from the first awning's crank, a thin dark line.
+  const crank = part.awnings?.[0];
+  if (crank) out.push({ what: 'crank', from: crank.from + AWNING.crank.in - 0.05, to: crank.from + AWNING.crank.in + 0.05 });
   return out;
 }
 
@@ -402,9 +429,143 @@ function side(build: Build, kit: VillageKit, wall: Wall, long: number, corner: '
   run(build, kit, 'sockel', wall, to, stone[1], paint);
 }
 
+/** Where the tips of an awning's scallops are along it. */
+function scallopTips(awning: { from: number; to: number }): number[] {
+  const count = Math.max(1, Math.round((awning.to - awning.from) / AWNING.stripe));
+  const wide = (awning.to - awning.from) / count;
+  return Array.from({ length: count }, (_, i) => awning.from + (i + 0.5) * wide);
+}
+
+/** Every scallop's tip along a chapter's street: the drops under an awning hang from these, and fall. */
+export function awningTips(chapter: ChapterData): Vec[] {
+  return (chapter.street ?? []).flatMap((part) => {
+    if (part.kind !== 'house' || part.depth !== 'near' || !part.awnings) return [];
+    const y = footOf(chapter, part) + AWNING.bar.up - AWNING.hang.tip;
+    return part.awnings.flatMap((awning) => scallopTips(awning).map((x) => ({ x, y })));
+  });
+}
+
+/** One corner of a piece being put together, with no glow. Gives its number. */
+function corner(build: Build, x: number, y: number, z: number, normal: readonly number[], colour: Color): number {
+  build.position.push(x, y, z);
+  build.normal.push(normal[0]!, normal[1]!, normal[2]!);
+  build.colour.push(colour.r, colour.g, colour.b);
+  build.glow.push(0, 0);
+  return build.position.length / 3 - 1;
+}
+
+/** A small block: its front, its two ends and its underside. Its top and its back are never in the picture. */
+function block(build: Build, [x0, x1]: [number, number], [y0, y1]: [number, number], [z0, z1]: [number, number], colour: Color): void {
+  const faces: [number[], number[][]][] = [
+    [[0, 0, 1], [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]]],
+    [[-1, 0, 0], [[x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0]]],
+    [[1, 0, 0], [[x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1]]],
+    [[0, -1, 0], [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]]],
+  ];
+  for (const [normal, corners] of faces) {
+    const first = build.position.length / 3;
+    for (const [x, y, z] of corners) corner(build, x!, y!, z!, normal, colour);
+    build.index.push(first, first + 1, first + 2, first, first + 2, first + 3);
+  }
+}
+
+/**
+ * An awning on a near wall (AWNING): its box, its cloth sloping down from the box to its bar, and the
+ * scalloped edge under the bar. Each stripe is a piece of its own, so that its colour ends sharp at its side.
+ * `crank`: the rod is left hanging in its crank.
+ */
+function awning(build: Build, at: { from: number; to: number }, foot: number, wall: number, crank: boolean): void {
+  const { box, roller, bar, sag, hang } = AWNING;
+  const cloths = AWNING.colours.map((colour) => new Color(colour));
+  const tips = scallopTips(at);
+  const wide = (at.to - at.from) / tips.length;
+  // The cloth's line from the box to the bar, sagging between them, and which way its top faces there.
+  const ROWS = 4;
+  const high = { z: wall + roller.out, y: foot + roller.up };
+  const low = { z: bar.z, y: foot + bar.up };
+  const line = Array.from({ length: ROWS + 1 }, (_, r) => {
+    const t = r / ROWS;
+    const dz = low.z - high.z;
+    const dy = low.y - high.y - sag * Math.PI * Math.cos(Math.PI * t);
+    const long = Math.hypot(dz, dy);
+    return { z: high.z + dz * t, y: high.y + (low.y - high.y) * t - sag * Math.sin(Math.PI * t), normal: [0, dz / long, -dy / long] };
+  });
+  const SEGMENTS = 8;
+  for (const [s, tip] of tips.entries()) {
+    const x0 = tip - wide / 2;
+    const x1 = tip + wide / 2;
+    const cloth = cloths[s % 2]!;
+    const sheet = build.position.length / 3;
+    // A little darker towards the box, in its shadow.
+    for (const [r, row] of line.entries()) {
+      const tone = cloth.clone().multiplyScalar(0.8 + (0.2 * r) / ROWS);
+      for (const x of [x0, x1]) corner(build, x, row.y, row.z, row.normal, tone);
+    }
+    for (let r = 0; r < ROWS; r++) {
+      const a = sheet + r * 2;
+      build.index.push(a, a + 2, a + 3, a, a + 3, a + 1);
+    }
+    // The scallop: round at its tip, and pointed where it meets the next. Its corners lie closer together
+    // towards its sides, where its edge is steep.
+    const edge = build.position.length / 3;
+    for (let k = 0; k <= SEGMENTS; k++) {
+      const u = -Math.cos((Math.PI * k) / SEGMENTS);
+      const x = tip + (u * wide) / 2;
+      const y = foot + bar.up - hang.notch - (hang.tip - hang.notch) * Math.sqrt(Math.max(0, 1 - u * u));
+      corner(build, x, y, bar.z + 0.02, [0, 0, 1], cloth);
+      corner(build, x, foot + bar.up + 0.04, bar.z + 0.02, [0, 0, 1], cloth);
+    }
+    for (let k = 0; k < SEGMENTS; k++) {
+      const a = edge + k * 2;
+      build.index.push(a, a + 2, a + 3, a, a + 3, a + 1);
+    }
+  }
+  // The bar the edge hangs from, and the box on the wall: painted a darker green than the cloth.
+  const paint = cloths[0]!.clone().multiplyScalar(0.55);
+  block(build, [at.from - 0.05, at.to + 0.05], [foot + bar.up - 0.05, foot + bar.up + 0.09], [bar.z - 0.04, bar.z + 0.06], paint);
+  block(build, [at.from - 0.1, at.to + 0.1], [foot + box.from, foot + box.to], [wall + 0.02, wall + box.out], paint);
+  if (!crank) return;
+  // The rod in the crank at the box's first end: straight down the wall, then bent into its handle.
+  const iron = new Color('#3a3e42');
+  const x = at.from + AWNING.crank.in;
+  const end = foot + AWNING.crank.end;
+  const z: [number, number] = [wall + 0.5, wall + 0.57];
+  block(build, [x - 0.035, x + 0.035], [end, foot + box.from], z, iron);
+  block(build, [x - 0.035, x + 0.3], [end - 0.07, end], z, iron);
+  block(build, [x + 0.23, x + 0.3], [end - 0.36, end - 0.07], z, iron);
+}
+
+/**
+ * Under an awning the wall has less of the sky: it darkens towards the cloth, and its shade is cool
+ * (docs/art-bible.md §2.2). What gives off its own light, the glass and the lamps of a shop window, does not.
+ * Only the front's corners from `first` on are shaded.
+ */
+function shadeUnder(build: Build, first: number, awnings: readonly { from: number; to: number }[], foot: number, wall: number): void {
+  const smooth = (t: number) => {
+    const k = Math.min(1, Math.max(0, t));
+    return k * k * (3 - 2 * k);
+  };
+  for (let i = first; i < build.position.length / 3; i++) {
+    if (build.glow[i * 2]! > 0) continue;
+    const x = build.position[i * 3]!;
+    const y = build.position[i * 3 + 1]!;
+    const z = build.position[i * 3 + 2]!;
+    if (Math.abs(z - wall) > 1.5) continue;
+    let shade = 0;
+    for (const at of awnings) {
+      const under = smooth((Math.min(x - at.from, at.to - x) + 0.6) / 1.2);
+      shade = Math.max(shade, 0.5 * under * (0.35 + 0.65 * smooth((y - foot - 0.3) / 5.5)));
+    }
+    build.colour[i * 3] = build.colour[i * 3]! * (1 - shade);
+    build.colour[i * 3 + 1] = build.colour[i * 3 + 1]! * (1 - 0.9 * shade);
+    build.colour[i * 3 + 2] = build.colour[i * 3 + 2]! * (1 - 0.74 * shade);
+  }
+}
+
 /** A house: its front with everything the chapter gives it, and a side wall at each end that is seen. */
 function house(build: Build, kit: VillageKit, chapter: ChapterData, parts: readonly StreetPart[], i: number): void {
   const part = parts[i]!;
+  const first = build.position.length / 3;
   const end = ends(parts, i);
   const foot = footOf(chapter, part);
   const z = STREET_DEPTH[part.depth];
@@ -440,6 +601,11 @@ function house(build: Build, kit: VillageKit, chapter: ChapterData, parts: reado
   for (const x of part.pipes ?? []) put(build, kit.get('ror'), front, x, paint);
   if (part.sign !== undefined) put(build, kit.get(`skylt-${goods}`), front, part.sign, paint);
   if (part.cellar !== undefined) put(build, kit.get('kallarfonster'), front, part.cellar, paint);
+  // Its awnings, and the shade they give the wall under them. Only a near wall has any: over the path.
+  if (part.depth === 'near' && part.awnings?.length) {
+    shadeUnder(build, first, part.awnings, foot, z);
+    for (const [k, at] of part.awnings.entries()) awning(build, at, foot, z, k === 0);
+  }
 
   // The side walls. A near house's has the passage where the street behind the houses comes through, with
   // its floor at the road's height: one step under the far side's foot.
