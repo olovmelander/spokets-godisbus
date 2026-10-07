@@ -10,6 +10,7 @@ import { forestSocket, standingCone } from './forest-kit';
 import type { MountainSocket } from './mountain-kit';
 import { saturdayBag } from './saturday-bag';
 import { MODEL_TURN } from './ghost-model';
+import { matchboxShape } from './matchbox';
 
 /**
  * Stand-ins for the things and the animals of the story, built in code: each is recognisable, and none is
@@ -50,6 +51,10 @@ export function moverProp(mover: Mover): Group | null {
       group.add(body);
       break;
     }
+    case 'matchbox':
+      // The one on the shop's step: blue paper, a drawn flame, its tray pushed up (./matchbox.ts). One draw.
+      group.add(new Mesh(matchboxShape(w, h), solid('#ffffff', 0.85, { vertexColors: true })));
+      break;
     case 'curl': {
       // A shaving from Pappa's knife: pale wood, thin, curled.
       const pale = solid('#f1dfb4', 0.7, { side: DoubleSide });
