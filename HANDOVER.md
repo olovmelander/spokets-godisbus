@@ -2,6 +2,26 @@
 
 ## State (7 October 2026)
 
+- **Graphics, cloud stage 30: the dark under a wooden floor** (7 October, cloud session, branch
+  `ccr-6078e7de-t0rxpz`; the visual audit's `byn` row 19 and `garden-and-home` row 2).
+  - **Before:** under a wooden floor's rim board, the boards' picture ran on down the cut face. On a phone
+    held upright that is a plank fence over the foot of every picture of the deck, the shop and the rooms at
+    home.
+  - **The dark under the boards** (`UNDER` and the rows marked `under` in `PROFILE_FLOOR`,
+    `src/render/dressing/ground.ts`).
+    - The rows under the rim board are now `#0b0907`, too dark for the fill light to lift.
+    - The board ends and the rim board itself are as they were.
+    - Every wooden floor gets it: the garden's deck, the shop, the rooms of the prologue and the epilogue, and
+      the deck's golden frame.
+  - **Checked:**
+    - Before/after at garden x 20, byn x 140 and epilog x 8 on High 390×844; on a tablet the floor's front is
+      below the picture.
+    - Suites: village, garden-loop, endings, smoke and journey.
+    - New unit test in `wooden-floors.test.ts`: it is dark under the rim board, and the rim board itself is
+      lit from its upper edge to its lower.
+    - The script is 440.0 KB of 450 (±0).
+  - **Left for later:** the deck's posts on plinths every 8 EL under its rim (`garden-and-home` row 2).
+
 - **Graphics, cloud stage 29: the street's birch leaves** (7 October, cloud session, branch
   `ccr-6078e7de-t0rxpz`; the visual audit's `byn` row 16).
   - **Before:** the street's leaves were flat seven-sided discs up to 0.78 EL long.
@@ -2641,7 +2661,7 @@
   it stood at 448.7 KB; the build now ships shaders without their padding (`scripts/squeeze-glsl.mjs`, see
   "State"), which took it to 445.5 KB. After stages 13 to 17 it stood at 448.0 KB. Stage 18 left out three's
   Zstandard decoder, which no texture of the game's needs (`scripts/no-zstd.mjs`): it stood at 431.0 KB. After
-  stage 19 it stood at 432.2 KB, after stage 25 at 437.5 KB, after stage 26 at 438.6 KB and after stage 27 at 439.7 KB and after stage 28 at 439.6 KB; after stage 29 it stands at 440.0 KB, about 10 KB left. The gate counts every `.js` in the build, so splitting code into chunks
+  stage 19 it stood at 432.2 KB, after stage 25 at 437.5 KB, after stage 26 at 438.6 KB and after stage 27 at 439.7 KB and after stage 28 at 439.6 KB; after stages 29 and 30 it stands at 440.0 KB, about 10 KB left. The gate counts every `.js` in the build, so splitting code into chunks
   does not help. Mark a new shader's template literal `/* glsl */` so that it is squeezed too. When room runs
   out again: a smaller minifier setting saves about 1.5 KB more (terser on top of the default, measured),
   then dead code. Raising the gate is Olov's decision.
@@ -2658,9 +2678,10 @@
      shoulder steps are actual terrain, not duplicate landmark blocks; treat them separately.
   3. **Steps and walls in what is built:** the deck's warped rows are repaired (cloud stage 5); the village
      has kerb/shop riser masonry and planar street edges (cloud stage 6). The deck's visible fascia is
-     built (cloud stage 7). The shop's forward cut has granite courses (cloud stage 8), and the exposed
-     road section has its own layers (cloud stage 9), while the rear pit darkness remains. The drain is a
-     cast-iron grate in the road (cloud stage 23).
+     built (cloud stage 7), and under a wooden floor's rim board it is dark (cloud stage 30). The shop's
+     forward cut has granite courses (cloud stage 8), and the exposed road section has its own layers (cloud
+     stage 9), while the rear pit darkness remains. The drain is a cast-iron grate in the road (cloud stage
+     23).
      A physical shop riser is correctly hidden when the camera has already passed it.
   4. **The bog's hummocks with a waterline, and its things:** dead pines, the crane as a model. Built in cloud
      stages 13 to 16: the hummocks, the shy tussocks, the scattered snags and the mist with the lantern; the
