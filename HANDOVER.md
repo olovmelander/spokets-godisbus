@@ -2,6 +2,29 @@
 
 ## State (7 October 2026)
 
+- **Graphics, cloud stage 28: the shop's bag in the last picture** (7 October, cloud session, branch
+  `ccr-6078e7de-t0rxpz`; the visual audit's `byn` row 20).
+  - **Before:** the chapter ended on three flat tan boxes, 3.2 × 3.4, with the big candy in front of their left
+    edge and the bag's dark opening lying on the floor under them.
+  - **A bag of the shop's** (`paperBag` in `src/render/saturday-bag.ts`; `SHOP_BAG` and `shopBag` in
+    `src/render/village.ts`).
+    - It is one of the shop's striped paper bags, as his Saturday bag is: the candy kit's, pinked at its top
+      and open, with sweets looking out over its edge. Until the kit has come, its boxes stand in for it.
+    - It stands 3.4 EL tall, taller than he is, a little turned so that its side shows. Its near side is more
+      than 1 EL past the big candy, and it stands 2.4 EL behind the path.
+    - His Saturday bag is the same bag at its own size: `saturdayBag` is `paperBag` with its tear and its glow.
+    - Two to four draws fewer where it is in view, and one shader program fewer.
+  - **Checked:**
+    - Before/after at byn x 154 and 157.3 on High 1180×820 and Low 844×390, and on High 390×844, where it is
+      in the picture too.
+    - Suites: village, smoke, gpu-memory and journey.
+    - New unit tests in `shop-bag.test.ts`: it is the kit's striped bag, 3.4 EL tall on the floor and a little
+      turned; it stands clear of the big candy and behind the path.
+    - The script is 439.6 KB of 450 (−0.1 KB).
+  - **Left for later:**
+    - A lamp's pool on the bag and the candy (`byn` row 20). There is no lamp over the end of the room.
+    - A brass scoop beside the bag. One was tried, and lying on the floor it read as a pipe, not a scoop.
+
 - **Graphics, cloud stage 27: the puddle mirrors the yard, with leaves and rings on it** (7 October, cloud
   session, branch `ccr-6078e7de-t0rxpz`; the visual audit's `byn` row 8).
   - **Before:** the puddle mirrored nothing of what stands across the street.
@@ -2585,7 +2608,7 @@
   it stood at 448.7 KB; the build now ships shaders without their padding (`scripts/squeeze-glsl.mjs`, see
   "State"), which took it to 445.5 KB. After stages 13 to 17 it stood at 448.0 KB. Stage 18 left out three's
   Zstandard decoder, which no texture of the game's needs (`scripts/no-zstd.mjs`): it stood at 431.0 KB. After
-  stage 19 it stood at 432.2 KB, after stage 25 at 437.5 KB and after stage 26 at 438.6 KB; after stage 27 it stands at 439.7 KB, about 10.3 KB left. The gate counts every `.js` in the build, so splitting code into chunks
+  stage 19 it stood at 432.2 KB, after stage 25 at 437.5 KB, after stage 26 at 438.6 KB and after stage 27 at 439.7 KB; after stage 28 it stands at 439.6 KB, about 10.4 KB left. The gate counts every `.js` in the build, so splitting code into chunks
   does not help. Mark a new shader's template literal `/* glsl */` so that it is squeezed too. When room runs
   out again: a smaller minifier setting saves about 1.5 KB more (terser on top of the default, measured),
   then dead code. Raising the gate is Olov's decision.
@@ -2615,9 +2638,10 @@
      nest; the shelves of rock are the mountain kit's); the mist and the lantern (built: cloud stage 16); the northern lights
      with rays (built: cloud stage 12); the awning (built: cloud stage 22); the drain (built: cloud stage 23);
      the puddle's picture of the yard, its leaves and the wet road round it (built: cloud stage 27);
-     the shop's jars and lamps (built: cloud stage 25), while its shelves, counter, daylight, floor front and
-     bag remain (`byn` rows 19 and 20); the matchbox on the shop's step (built: cloud stage 26), while the
-     step's nosing, a boot scraper and the doorway remain (`byn` row 17).
+     the shop's jars and lamps (built: cloud stage 25), while its shelves, counter, daylight and floor front
+     remain (`byn` row 19); the bag in the last picture (built: cloud stage 28); the matchbox on the shop's
+     step (built: cloud stage 26), while the step's nosing, a boot scraper and the doorway remain (`byn`
+     row 17).
 - **How this session worked, for the one that goes on:** a builder for each step in its own worktree under
   `.claude/worktrees/`, briefed from the audit's rows (the briefs are in the memory note "Other sessions
   share the checkout"), judged on before and after pictures on a tablet, a phone and Low, then merged as its
