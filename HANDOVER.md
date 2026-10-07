@@ -2,6 +2,51 @@
 
 ## State (7 October 2026)
 
+- **Graphics, cloud stage 27: the puddle mirrors the yard, with leaves and rings on it** (7 October, cloud
+  session, branch `ccr-6078e7de-t0rxpz`; the visual audit's `byn` row 8).
+  - **Before:** the puddle mirrored nothing of what stands across the street.
+    - Its mirror looked for flat canvas fronts 13 EL back (`standingStrip`). The houses have been the kit's
+      meshes since, so it found none and fell back on the far scenery's card.
+    - That left a pale band of sky at its back, read as a kerb, and its near water as dark as the asphalt.
+    - Nothing floated on it, and the road round it was dry.
+  - **The yard in the water** (`paintStreetMirror` and `MIRRORED` in `src/render/village.ts`; `standingStrip` and
+    `MIRROR_REACH` in `src/render/water.ts`).
+    - The street paints its far side into the water's mirror strip, from the street list, at the kit's heights
+      and in its colours:
+      - the far pavement's kerb;
+      - each house's stone foot, drip board, wall and door;
+      - the yard's low wall, its fence (boards four to a length, on two rails), its gateposts, and the hedge
+        between and over them.
+    - Seen as flat as the camera sees the street, a true mirror would show only the kerb. The street's puddle
+      shows 3.5 times higher up what stands behind it, so the whole fence lies in it upside down, with the hedge
+      between its boards and the sky at its near edge. Its ripples sway the picture as much more, so the boards
+      waver.
+    - The village's water now mirrors what stands 20 EL back (`STREET_DEPTH.far`), not 13. One more uniform,
+      and no new shader variant.
+  - **Leaves afloat** (`AFLOAT`, `afloat` and `createAfloat` in `src/render/afloat.ts`).
+    - Six birch leaves from the yard lie on the puddle: behind the line he sails along, in front of its far
+      shore, and none near another.
+    - Each drifts and turns a little, and rises and falls with the water. Now and then a ring widens from it
+      and fades.
+    - One draw for the leaves and one for the rings. With reduced motion the leaves lie still and no ring comes.
+  - **The road wet round it** (`DAMP` in `src/render/dressing/ground.ts`).
+    - It is darker and cooler up to 1.5 EL from the water at the puddle's sides and behind it, and on the lip
+      of its near shore.
+    - The road's front, which is cut through, stays dry.
+  - **Checked:**
+    - Before/after at byn x 41.5 and 63 on High 1180×820 and Low 844×390, and at 41.5 on High 390×844.
+    - Three frames 0.4 s apart on Low, to see the picture in the water sway.
+    - Suites: village, gpu-memory, smoke and journey.
+    - New unit tests in `puddle.test.ts`:
+      - the puddle mirrors the far side as the kit builds it: the yard's boards on their rails before the
+        hedge, the wall, the gateposts and the kerb; each house's foot under its own wall;
+      - the leaves lie behind his line, in front of the far shore and apart; they turn with the water, and their
+        rings fade as they widen; with reduced motion all stands still;
+      - the road is wet up to a step and a half from the water, and dry beyond.
+    - The script is 439.7 KB of 450 (+1.1 KB).
+  - **Still wrong:** what stands in the water is not mirrored (he, the leaf he rides, the candy over it). The
+    birch's crown is too high for the water to show.
+
 - **Graphics, cloud stage 26: the matchbox on the shop's step** (7 October, cloud session, branch
   `ccr-6078e7de-t0rxpz`; the visual audit's `byn` row 17).
   - **Before:** the matchbox was the test course's wooden block: a tan box 1.1 deep with darker bands at its
@@ -2540,7 +2585,7 @@
   it stood at 448.7 KB; the build now ships shaders without their padding (`scripts/squeeze-glsl.mjs`, see
   "State"), which took it to 445.5 KB. After stages 13 to 17 it stood at 448.0 KB. Stage 18 left out three's
   Zstandard decoder, which no texture of the game's needs (`scripts/no-zstd.mjs`): it stood at 431.0 KB. After
-  stage 19 it stood at 432.2 KB, and after stage 25 at 437.5 KB; after stage 26 it stands at 438.6 KB, about 11.4 KB left. The gate counts every `.js` in the build, so splitting code into chunks
+  stage 19 it stood at 432.2 KB, after stage 25 at 437.5 KB and after stage 26 at 438.6 KB; after stage 27 it stands at 439.7 KB, about 10.3 KB left. The gate counts every `.js` in the build, so splitting code into chunks
   does not help. Mark a new shader's template literal `/* glsl */` so that it is squeezed too. When room runs
   out again: a smaller minifier setting saves about 1.5 KB more (terser on top of the default, measured),
   then dead code. Raising the gate is Olov's decision.
@@ -2569,6 +2614,7 @@
   6. Ledges that belong to their place (built: cloud stages 17 and 18, the boughs, the bracket fungi and the
      nest; the shelves of rock are the mountain kit's); the mist and the lantern (built: cloud stage 16); the northern lights
      with rays (built: cloud stage 12); the awning (built: cloud stage 22); the drain (built: cloud stage 23);
+     the puddle's picture of the yard, its leaves and the wet road round it (built: cloud stage 27);
      the shop's jars and lamps (built: cloud stage 25), while its shelves, counter, daylight, floor front and
      bag remain (`byn` rows 19 and 20); the matchbox on the shop's step (built: cloud stage 26), while the
      step's nosing, a boot scraper and the doorway remain (`byn` row 17).
