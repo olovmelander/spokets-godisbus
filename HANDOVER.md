@@ -2,6 +2,37 @@
 
 ## State (7 October 2026)
 
+- **Graphics, cloud stage 32: two lamp posts on the village's far pavement** (7 October, cloud session,
+  branch `ccr-6078e7de-t0rxpz`; the visual audit's `byn` row 15).
+  - **Before:** the street had no lamp post. The one drawn by chance never found a place it could stand, and
+    went in stage 29.
+  - **Two lamp posts of cast iron** (`LAMP_POST`, `lampPostShape` and `lampPosts` in `src/render/village.ts`;
+    their places are `lampPosts` in `src/content/chapters/byn.ts`).
+    - One stands at x 23.2, between the shoemaker's window and his sign; one in the yard behind the puddle, at
+      x 52. Both are on the far pavement, 17.6 EL behind the path.
+    - Each has an eight-sided foot 2.4 across, with a plinth, a moulding and a collar; a hatch in its dark
+      seam, held by two bolts, faces the street. The fluted shaft narrows up to a ring and goes on up out of
+      every picture.
+    - Dark green, chipped lighter on the edges of the foot, and darker where the street's dirt has splashed it.
+    - The puddle shows the one in the yard, in front of what is behind it (`MIRRORED.lamp`).
+    - One draw for both, with a material whose shader the village already has: no new program.
+    - The audit's place for the first one was x 22. Seen from the big candy at x 15.6 with Elof facing left,
+      on a phone held sideways, its foot came out from behind the candy's edge; at 23.2 it is clear.
+  - **Checked:**
+    - Before/after at byn x 15.6, 20 and 49 on High 1180×820, Low 780×360 and High 390×844.
+    - Suites: village, smoke, gpu-memory and journey.
+    - New unit tests in `lamp-posts.test.ts`:
+      - where they stand, on the far pavement at the foot of what is behind them;
+      - one draw;
+      - behind no big candy or hook when he stands at it, facing either way, on all five screens;
+      - out of the top of every picture they are in;
+      - the foot's shape, the hatch, the bolts and the flutes;
+      - the paint, which is never red;
+      - the puddle's picture of the one in the yard.
+    - The script is 440.9 KB of 450 (+0.8 KB).
+  - **Left for later:** their long shadows on the road (`byn` row 5), and a lantern for a picture that ever
+    shows the top of one.
+
 - **Graphics, cloud stage 31: birch leaves falling in the village** (7 October, cloud session, branch
   `ccr-6078e7de-t0rxpz`; the rest of the visual audit's `byn` row 16).
   - **Before:** seventy specks of dust drifted in the village's sun, and nothing fell. Only the forest had
@@ -2594,6 +2625,17 @@
 
 **For the next session, in this order:**
 
+- **Where 7 October's cloud session ended: everything built is on `main`, and no pull request is open.**
+  Graphics stages 26 to 32 came in one pull request each (#176 to #180), except 31 and 32, which went in
+  together when Olov asked to wrap up and merge everything to `main`. **Olov looks at them in play,** on a
+  device, about 15 minutes after the last merge, and opens the game once on each device Elof plays on:
+  - `?dev&course=byn`: the matchbox on the shop's step, the puddle with its picture of the yard and its
+    leaves, the street's leaves and the ones falling, the two lamp posts, and the bag in the last picture;
+  - the dark under the wooden floors: the garden's deck (`?dev&course=garden`), the shop, and the rooms at
+    home in the prologue and the epilogue, on a phone held upright.
+  - What his eyes are needed for: whether the falling leaves are calm or busy, and whether the lamp posts
+    stand well or crowd the shoemaker's window and the yard.
+
 - **Character motion, Olov's latest request:** continue from the shared player pose controller and the
   family helper rig work recorded at the top of State. Keep cloud changes in small visual checkpoints;
   capture motion as well as still frames. Approved private-model skinning and authored clips remain for
@@ -2682,7 +2724,7 @@
   it stood at 448.7 KB; the build now ships shaders without their padding (`scripts/squeeze-glsl.mjs`, see
   "State"), which took it to 445.5 KB. After stages 13 to 17 it stood at 448.0 KB. Stage 18 left out three's
   Zstandard decoder, which no texture of the game's needs (`scripts/no-zstd.mjs`): it stood at 431.0 KB. After
-  stage 19 it stood at 432.2 KB, after stage 25 at 437.5 KB, after stage 26 at 438.6 KB and after stage 27 at 439.7 KB and after stage 28 at 439.6 KB and after stages 29 and 30 at 440.0 KB; after stage 31 it stands at 440.1 KB, about 9.9 KB left. The gate counts every `.js` in the build, so splitting code into chunks
+  stage 19 it stood at 432.2 KB, after stage 25 at 437.5 KB, after stage 26 at 438.6 KB and after stage 27 at 439.7 KB and after stage 28 at 439.6 KB and after stages 29 and 30 at 440.0 KB, after stage 31 at 440.1 KB; after stage 32 it stands at 440.9 KB, about 9.1 KB left. The gate counts every `.js` in the build, so splitting code into chunks
   does not help. Mark a new shader's template literal `/* glsl */` so that it is squeezed too. When room runs
   out again: a smaller minifier setting saves about 1.5 KB more (terser on top of the default, measured),
   then dead code. Raising the gate is Olov's decision.
@@ -2713,12 +2755,12 @@
      nest; the shelves of rock are the mountain kit's); the mist and the lantern (built: cloud stage 16); the northern lights
      with rays (built: cloud stage 12); the awning (built: cloud stage 22); the drain (built: cloud stage 23);
      the puddle's picture of the yard, its leaves and the wet road round it (built: cloud stage 27); the
-     street's birch leaves and their drifts, and leaves falling (built: cloud stages 29 and 31), while the
-     lamp posts remain (`byn` row 15);
-     the shop's jars and lamps (built: cloud stage 25), while its shelves, counter, daylight and floor front
-     remain (`byn` row 19); the bag in the last picture (built: cloud stage 28); the matchbox on the shop's
-     step (built: cloud stage 26), while the step's nosing, a boot scraper and the doorway remain (`byn`
-     row 17).
+     street's birch leaves and their drifts, and leaves falling (built: cloud stages 29 and 31); the lamp
+     posts (built: cloud stage 32), while their long shadows remain (`byn` rows 5 and 15);
+     the shop's jars and lamps (built: cloud stage 25) and the dark under its floor (built: cloud stage
+     30), while its shelves, counter, daylight and the joist ends under its floor remain (`byn` row 19);
+     the bag in the last picture (built: cloud stage 28); the matchbox on the shop's step (built: cloud stage
+     26), while the step's nosing, a boot scraper and the doorway remain (`byn` row 17).
 - **How this session worked, for the one that goes on:** a builder for each step in its own worktree under
   `.claude/worktrees/`, briefed from the audit's rows (the briefs are in the memory note "Other sessions
   share the checkout"), judged on before and after pictures on a tablet, a phone and Low, then merged as its
@@ -2902,7 +2944,7 @@ The older list, still true where it is not struck:
 | --- | --- | --- | --- | --- |
 | Planning | 1 | 3 recorded | — / 2 | Original plan versions 1–4; `main` and the placeholder page; the reference pictures gathered. Version 5 on 4 October adds the researched story/level overhaul and its acceptance criteria; no new session or review count is inferred. |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. On 6 October, cloud graphics stage 1 unifies linear haze and the graded sky across tiers, with no new assets or passes. Cloud stage 2 adds forest trunk shadows on High and soft ground shade on Low/Mid; stage 3 adds camera-correct rim lighting; stage 4 reveals the forest landmark silhouettes; stage 5 keeps deck boards planar beside steps; stage 6 gives the village kerb/shop riser masonry and planar street edges; stage 7 adds a fascia to the visible deck edge; stage 8 gives the shop’s visible front granite courses; stage 9 adds layered road sections, with matching comparisons for each visual checkpoint. Stage 12 gives the finale curtains of northern lights with rays and twinkling stars; stages 13 to 16 stand the bog's tussocks in the water, put the shy ones on sedge pedestals, make the dead pines snags and let the mist hide what is far; stage 17 grows the boughs from their stems with each place's own foliage and makes the bark plates bracket fungi. Stage 18 puts the colaflaska in a nest and gives the young stems bark and dead twigs. Stage 19 lays a spång over the bog and makes its shy lights and Mamma's lamp soft glows in the mist. Stage 20 makes the mountain's gusts wisps of air and gives the mountain a foreground; stage 21 marks the finale's crack and lets the shared gifts glow warm. Stage 22 hangs two striped awnings on Byn's bakery, with drops that hang from their scallops, fall and splash. Stage 23 makes Byn's drain a cast-iron grate in the road. Stage 24 breaks the mountain's cliffs into granite blocks along their joints. Stage 25 makes the shop's jars glass and hangs lamps over its rings. Final visual and physical-device review remains. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. On 6 October, cloud graphics stage 1 unifies linear haze and the graded sky across tiers, with no new assets or passes. Cloud stage 2 adds forest trunk shadows on High and soft ground shade on Low/Mid; stage 3 adds camera-correct rim lighting; stage 4 reveals the forest landmark silhouettes; stage 5 keeps deck boards planar beside steps; stage 6 gives the village kerb/shop riser masonry and planar street edges; stage 7 adds a fascia to the visible deck edge; stage 8 gives the shop’s visible front granite courses; stage 9 adds layered road sections, with matching comparisons for each visual checkpoint. Stage 12 gives the finale curtains of northern lights with rays and twinkling stars; stages 13 to 16 stand the bog's tussocks in the water, put the shy ones on sedge pedestals, make the dead pines snags and let the mist hide what is far; stage 17 grows the boughs from their stems with each place's own foliage and makes the bark plates bracket fungi. Stage 18 puts the colaflaska in a nest and gives the young stems bark and dead twigs. Stage 19 lays a spång over the bog and makes its shy lights and Mamma's lamp soft glows in the mist. Stage 20 makes the mountain's gusts wisps of air and gives the mountain a foreground; stage 21 marks the finale's crack and lets the shared gifts glow warm. Stage 22 hangs two striped awnings on Byn's bakery, with drops that hang from their scallops, fall and splash. Stage 23 makes Byn's drain a cast-iron grate in the road. Stage 24 breaks the mountain's cliffs into granite blocks along their joints. Stage 25 makes the shop's jars glass and hangs lamps over its rings. On 7 October, stage 26 stands a matchbox on the shop's step; stage 27 lets the puddle mirror the yard, with leaves afloat and the road wet round it; stage 28 puts the shop's bag in the last picture; stage 29 folds the street's birch leaves and drifts them against the walls; stage 30 makes it dark under a wooden floor's rim board; stage 31 lets birch leaves fall in the village; stage 32 stands two cast-iron lamp posts on its far pavement. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
 | 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, the prologue rebuilt as scenes with an outdoor deck, every chapter's ending (a coda, a storybook page, and a time card at the next one's start), and a UX, UI and presentation audit (137 findings, eleven steps) with chapters that open on their card instead of the title. On 6 October, in a cloud session, its steps 1 to 11 and every row after them: the type, the controls, the speakers, a clear screen for the story, a short Pause with settings a child can read, a title over the living morning with one tap to play, the materials (paper, wood and candy, and every picture drawn), the UI's sound, the chapter's page as a storybook page, the collections, and a picture for every verb, on the button and over the thing; a HUD that keeps to itself, small things for every device, the page's map and tally, a ring round the held finger, help that carries on, one switch for less motion, what they feel on the bubbles, the painting and the carving close, the credits as the book's last pages, a picture for every player, Moa's words in wax, and the game installable on Android. Broader spatial work, Byn's return loop and the rest of its own story, final likeness/contact/acting/memory art, the story's further steps (sound next), listening and device checkpoints remain; no release is declared. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. Review on a device and authored clips remain. |
