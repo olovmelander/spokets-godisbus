@@ -47,8 +47,8 @@ export const prolog: ChapterData = {
   ],
   furniture: [
     { look: 'table', at: { x: 5.5, y: 0 }, z: -1.5 },
-    { look: 'chair', at: { x: 5.8, y: 0 }, z: -3.15, face: 0.25 },
-    { look: 'chair', at: { x: 9.05, y: 0 }, z: -1.5, face: 0.5 },
+    { look: 'chair', at: { x: 5.5, y: 0 }, z: -3.5, face: 0.25 },
+    { look: 'chair', at: { x: 8.8, y: 0 }, z: -1.5, face: 0.5 },
   ],
   scenes: PROLOG_SCENES,
   // Pappa's line after his freeze joke has its own moment: Elof sees the ghost slip away.

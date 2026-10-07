@@ -18,7 +18,7 @@ const EMPTY = { x: -1.2, y: 6.1, z: -8.5 };
 const WINDOW = { x: 9.4, y: 5.4, z: -9 };
 /** Where Elof is when he runs into the star and it makes him small (the star lies a reach further on). */
 const STAR = 40.5;
-const PALM = { x: STAR + 1.0, y: 1.75, z: -0.55 };
+const PALM = { x: STAR + 0.8, y: 1.3, z: 0.05 };
 /** The deck's railing, along its far side (ends.ts, `prologue.rail`). */
 const RAIL = { z: -3.4 };
 
@@ -36,10 +36,10 @@ export const TITLE_TABLEAU: SceneDef = {
     actors: {
       pappa: [{ at: 0, x: 5.8, y: 0, z: -3.15, face: 0.25, move: 0.01, act: 'carve', holds: 'knife' }],
       // As far carved as the morning has it when the title gives way to it.
-      ghost: [{ at: 0, x: 5.95, y: 2.1, z: -1.95, face: 0.25, move: 0.01, act: 'carved', rough: 0.76 }],
+      ghost: [{ at: 0, x: 5.95, y: 1.75, z: -2.05, face: 0.25, move: 0.01, act: 'carved', rough: 0.76 }],
       mamma: [{ at: 0, x: 10.4, y: 0, z: -2.0, face: 0.4, move: 0.01, act: 'sip', holdsLeft: 'mug', aim: { x: 6, y: 2.5, z: -2 } }],
       bertil: [{ at: 0, x: 7.7, y: 0, z: -3.3, face: 0.28, move: 0.01, act: 'look', aim: { x: 5.9, y: 2.2, z: -2 } }],
-      moa: [{ at: 0, x: 9.05, y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }],
+      moa: [{ at: 0, x: 8.55, y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }],
     },
     elof: [{ at: 0, act: 'watch', aim: { x: 5.9, y: 2.3, z: -2 } }],
     fx: [{ at: 0, kind: 'shavings', from: { x: 5.95, y: 2.4, z: -1.9 }, seconds: 3600 }],
@@ -78,7 +78,7 @@ export const PROLOG_SCENES: SceneDef[] = [
           { at: 8.9, act: 'offer', holds: 'brush', aim: { x: 2.3, y: 2.3, z: 0 } },
         ],
         ghost: [
-          { at: 0, x: 5.95, y: 2.1, z: -1.95, face: 0.25, move: 0.01, act: 'carved', rough: 1 },
+          { at: 0, x: 5.95, y: 1.75, z: -2.05, face: 0.25, move: 0.01, act: 'carved', rough: 1 },
           { at: 0.3, rough: 0, move: 6.6 },
           { at: 8.0, x: CARVING.x, y: CARVING.y, z: CARVING.z, move: 0.8 },
         ],
@@ -95,7 +95,7 @@ export const PROLOG_SCENES: SceneDef[] = [
           { at: 7.3, act: 'look', aim: { x: CARVING.x, y: 2.2, z: CARVING.z } },
         ],
         moa: [
-          { at: 0, x: 9.05, y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' },
+          { at: 0, x: 8.55, y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' },
           { at: 8.4, act: 'sit', holds: null, aim: { x: CARVING.x, y: 2.2, z: CARVING.z } },
         ],
       },
@@ -130,12 +130,14 @@ export const PROLOG_SCENES: SceneDef[] = [
       ],
       actors: {
         mamma: [
-          { at: 0, act: 'point', aim: WINDOW, face: 0.62 },
+          { at: 0, act: 'point', aim: WINDOW, face: 0.72 },
           { at: 0.7, x: 9.7, z: -3.7, move: 0.8, face: 0.74, act: 'look', aim: WINDOW },
         ],
         pappa: [
-          { at: 0.2, act: 'stand', holds: null },
-          { at: 0.6, x: 7.7, z: -4.3, move: 1.0, face: 0.7, act: 'look', aim: WINDOW },
+          { at: 0.2, x: 6, move: 0.4, act: 'stand', holds: null },
+          // Leave beside the chair before turning behind its back towards the window.
+          { at: 0.6, x: 7, move: 0.5, face: 0, act: 'look', aim: WINDOW },
+          { at: 1.1, x: 7.7, z: -4.3, move: 0.5, face: 0.7 },
         ],
         bertil: [{ at: 0.3, x: 8.9, z: -4.7, move: 0.9, face: 0.76, act: 'look', aim: WINDOW }],
         moa: [
@@ -182,7 +184,7 @@ export const PROLOG_SCENES: SceneDef[] = [
           { at: 0, face: 0.05, act: 'look', aim: { x: 10.9, y: 0.6, z: 0 } },
           { at: 0.5, x: 10.4, z: -1.9, move: 0.9, face: 0.08, act: 'look', aim: { x: 10.9, y: 0.4, z: 0 } },
           { at: 1.5, act: 'shrug' },
-          { at: 2.4, act: 'stand', follow: 5.2 },
+          { at: 2.4, act: 'stand', follow: 5.2, holdsLeft: null },
         ],
         pappa: [
           { at: 0.2, face: 0.32, act: 'look', aim: { x: 6, y: 1.5, z: 0 } },
@@ -190,7 +192,9 @@ export const PROLOG_SCENES: SceneDef[] = [
         ],
         moa: [
           { at: 0.3, act: 'stand', face: 0.3 },
-          { at: 2.4, act: 'stand', follow: 3.7, z: -1.5 },
+          // Rise first, then step beside the chair into the clear aisle before following Elof.
+          { at: 0.8, z: 0.3, move: 1.1 },
+          { at: 2.4, act: 'stand', follow: 3.7 },
         ],
         bertil: [
           { at: 0.25, act: 'startle', face: 0.3 },
@@ -264,7 +268,7 @@ export const PROLOG_SCENES: SceneDef[] = [
           { at: 3.4, act: 'look', aim: { x: STAR, y: -0.4, z: 0 } },
         ],
         pappa: [
-          { at: 0.2, x: 43.1, y: -0.8, z: -1.4, face: 0.36, move: 1.0 },
+          { at: 0.2, x: 42.3, y: -0.8, z: -0.8, face: 0.36, move: 1.0 },
           { at: 1.2, act: 'kneel', aim: { x: STAR, y: -0.4, z: 0 } },
           { at: 3.6, act: 'reach', aim: { x: STAR + 0.7, y: -0.65, z: -0.15 } },
         ],
@@ -304,8 +308,7 @@ export const PROLOG_SCENES: SceneDef[] = [
       actors: {
         pappa: [
           { at: 0, act: 'reach', aim: { x: STAR + 0.7, y: -0.65, z: -0.15 } },
-          { at: 0.7, act: 'lift', aim: PALM },
-          { at: 8.3, act: 'look', aim: { x: 44.4, y: -0.4, z: 0 } },
+          { at: 0.7, act: 'lift', aim: PALM, face: 0.25 },
           { at: 9.2, act: 'reach', aim: { x: STAR + 0.4, y: -0.7, z: -0.2 } },
         ],
         mamma: [{ at: 0.5, act: 'look', aim: { x: PALM.x, y: PALM.y + 0.6, z: PALM.z } }],

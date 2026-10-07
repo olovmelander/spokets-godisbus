@@ -2,6 +2,461 @@
 
 ## State (7 October 2026)
 
+- **Session checkpoint: character motion work ready for integration; Elof Blender candidate saved for continuation.**
+  Olov asked to wrap up, commit, push and merge the work into `main`. The pending
+  integration includes the character locomotion, family/story contacts, carving,
+  rig grounding and regression tests documented below. It does not replace the
+  deployed Elof with the new generated candidate. `RELEASED_CHAPTER`, the consent
+  rules, "Senare" and open questions are unchanged. Merging this branch triggers
+  the existing Pages deployment for the game code and its existing private pack.
+  - **Current local model:** `photos/renders/2026-10-07-elof-blender-complete/elof-complete-working.blend`
+    (642,080,838 bytes), saved after the final repair/export checks. Open scene
+    `Elof Complete 2026-10-07`, objects `Elof game mesh` and `elof_complete`.
+    Untouched AI sources, earlier rejected assembly, clean sculpt intermediates,
+    supplied references and the current game candidate have separate collections.
+    The original live `art/private/elof/three-study/elof-three.blend` was preserved.
+  - **Source and process:** original Pixal3D-D 512, seed42, dense/sparse steps50/30,
+    CFG7/7, camera0.2, mesh scale0.9, FP32 parameter storage with FP16 neural autocast
+    and CPU offload. The portrait source has4,680,252triangles; the matching body
+    generated this session has715,690triangles and took277.66seconds (peak GPU
+    reserve5.83GiB, host RSS12,738,277,376bytes). Source aliases are
+    `photos/renders/2026-10-07-elof-pixal3d/head-fp32-weights-model.glb` and
+    `body-fp32-weights-model.glb`. No DINOv3, account or reference upload was used.
+    Blender alignment, voxel reconstruction before reduction, bounded skin
+    smoothing, neck joining and measured sleeve/palm separation replaced the
+    visibly broken first direct-decimation attempt. Reference camera projection
+    supplies the front colours; approximate sheet side/back projection and a
+    palette fill supply other surfaces. This is an initial skinned candidate,
+    not finished animation topology or an exact reconstruction of the reference.
+  - **Saved review export:** `elof-game-candidate.glb` in the same complete-model
+    folder,2,074,524bytes,14,782exported triangles,7,349physical /16,788UV-split
+    vertices,one mesh/material/1024-square atlas,15named game bones,max2weights.
+    SHA256:`b576571f013a01a2f1ae86bb161114a9716d2161cbe7ea8a2e1734848a103f81`.
+    There are no embedded motion clips; the viewer drives the actual game rig.
+    Walk and reach move correctly without the former large torso ribbon; geometry,
+    UVs and weights are finite, weight sums/joint indices pass, and the browser
+    reports no errors or offsite requests. Standing height is0.99465EL.
+  - **Unfinished / do not promote yet:** jagged neck/collar ring, plate-like hair
+    and dark gaps, small hand-coloured remnants at the hip during reach, hooked
+    hand silhouette, soft eye/mouth detail and a crude backpack. The topology
+    audit reports28boundary edges,5nonmanifold edges and3components; export cleaned
+    5degenerate triangles, so the warning must not be described as a clean mesh
+    approval. Final likeness approval (H1b), finger/face work and authored clips
+    remain. The candidate stays outside the private pack and public repository.
+  - **Resume here on Olov's laptop:** open the saved Blender file, inspect
+    `candidate-validation.json`, `candidate-*.png`, `blender-complete-head.png`
+    and `blender-complete-threequarter.png` in that folder, then repair topology,
+    neck/hair and hands before further rig review. Private scripts01-13 record
+    the work, but are staged mutations, not an idempotent rebuild: do not rerun
+    them blindly against the saved scene. Export through `scripts/bake/export.py`.
+    The viewer is `photos/renders/2026-10-07-elof-blender-complete/review.html`.
+    Start `npm exec vite -- --host 127.0.0.1 --port 5182 --strictPort` if needed,
+    then open `http://127.0.0.1:5182/spokets-godisbus/photos/renders/2026-10-07-elof-blender-complete/review.html`.
+    Port5173 belonged to another app during this session. The existing private
+    motion/carving review tabs remain useful for the runtime work below.
+  - **Persistence:** photos, raw/generated models, Blender files, review scripts
+    and renders are git-ignored and stay on this computer; this public commit
+    records their locations and state, not those private files. Keep `photos/`,
+    `art/private/` and the local tool folders when cleaning up. The separate
+    `art/private` repository is also on `character-design-motion` and has earlier
+    uncommitted ghost, build-script, child-model and Elof-study work; this public
+    checkpoint does not commit or push that private repository. A clean public
+    working tree does not mean the private repository is clean. Code work can continue elsewhere;
+    continuing the model needs this laptop and Blender MCP on port9876.
+  - **Checks at wrap-up:** typecheck,161test files/1,512tests,production build and
+    privacy scan passed. JavaScript449.9KB/450KB; boot2,890.5KB/3,072KB with the
+    existing local private pack. `git diff --check` passed. PR browser CI and merge
+    status are recorded in [PR #183](https://github.com/olovmelander/spokets-godisbus/pull/183); the model viewer's structural pass
+    does not remove the visual/topology work listed above.
+
+- **Elof image-to-3D: Pixal seed/precision comparisons improve the jaw, not overall likeness yet.**
+  - Olov clarified again that he cannot use DINOv3. Drop the Meta-access request and
+    keep LocalMesh/TRELLIS.2 inactive. The rejected trial used original Microsoft TRELLIS
+    image-large with the already cached DINOv2 encoder, no account or image uploads.
+    Official source is retained at `C:\Users\olov_\tools\trellis-elof`; four public
+    mesh-only checkpoints downloaded and passed publisher hashes. A separate WSL
+    overlay at `/home/melolo/tools/trellis-runtime` passed actual spconv/attention GPU
+    checks. The runner stages models on GPU and extracts the full mesh on CPU. It
+    uses lazy imports to exclude restricted Gaussian/radiance renderers. Portrait
+    generation completed at25/25 steps, CFG5, seed42:685,124triangles/342,538vertices,
+    141.58seconds,4.47GiB peakGPUreserve,8.72GiB peakCPU RSS. Finite, watertight and
+    winding-consistent; GLB/browser checks passed. **Olov rejected it as much worse.**
+    Eyes/mouth lose definition and face/hair proportions are coarser than Pixal512.
+    Keep it as a rejected comparison (?model=trellis), never a new working base.
+    Two same-input Pixal512 comparisons completed: sparseguidance5/seed42 gives
+    4,284,758triangles in349.81seconds but essentially unchanged likeness/defects;
+    seed17/defaultguidance7 gives4,035,418triangles in349.09seconds. Seed17 largely
+    removes the diagonal side-jaw flap and improves continuity, but heavier eye folds,
+    hooked mouth corners and clumped hair remain. Keep it as an alternate, not an
+    approved replacement. Both are finite/watertight/winding-consistent and pass
+    matched browser front/face/side checks with zero errors/offsite requests/idle renders.
+    FP32-weight-storage / FP16-autocast comparison completed with baseline seed42/
+    settings:4,680,252triangles/2,339,930vertices in381.31seconds,5.94GiB peakGPU
+    reserve and12.97GiB peakCPU RSS, below the6.58GiB measured Torch allocator cap.
+    Fresh strict loading preserves F32 source values; the denseVAE source is already
+    F16, so upcasting it adds no source precision. This is not fullFP32 inference.
+    CPU load/dtype checks and matched browser checks passed; finite/watertight/
+    winding-consistent. The diagonal jaw flap is absent, and frontal expression
+    stays closer to baseline than seed17, but eye/lid/mouth/nose defects and plated/
+    wiry hair persist, with extra specks. Neither alternate is a clear overall
+    likeness winner. Retain cleaned512 and both alternatives. The later complete Blender candidate
+    is recorded above; no further1024 generation ran. Review keys:guidance5,seed17,fp32-weights.
+    Repeat: `run-elof.ps1 -Role head -WeightPrecision fp32 -Experiment fp32-weights`.
+  - Olov confirms64GB RAM and asks whether longer processing can improve quality.
+    Ryzen7 5800H has8physical/16logical cores; WSL exposes29.31GiB RAM/16CPUs.
+    Current8CPUthreads match physical cores. CPU offload already enabled original
+    trained1024 inference: all160,935tokens retained,6.55GiB peakGPUreserve and
+    12.10GiB hostRSS. More RAM/threads chiefly expand capacity or change speed;
+    seed/camera/precision comparisons may change quality but require visual review.
+    See private hardware-quality-audit.txt. No WSL memory override/restart was needed.
+  - On 7 October, after reviewing generation options, Olov explicitly said to try
+    the retained LocalMesh/TRELLIS.2 route with DINOv3. Its portrait launcher was
+    attempted with `-Head -Tier draft -Seed 42` and stopped before inference:
+    trained DINOv3 weights are absent from Downloads and the configured model cache.
+    Runtime/public generation weights remain installed; no new LocalMesh mesh exists
+    and no private image was uploaded. This attempt is superseded by his subsequent
+    instruction that DINOv3 is unavailable; do not request access or resume this route.
+  - Earlier Direct3D/Pixal experiments below remain available for comparison.
+  - Earlier alternative: Direct3D-S2 v1.1 with DINOv2. Do not resume the Meta
+    access/import route. Direct3D code is isolated at
+    `C:\Users\olov_\tools\direct3d-s2-lowvram`; public model downloads go to
+    `C:\Users\olov_\tools\direct3d-s2-runtime`.
+    **Runtime rebuilt; actual 512 and 1024 Elof generation passed offline on this laptop.**
+    The self-contained WSL runtime at `/home/melolo/tools/direct3d-s2-runtime` owns its
+    Python 3.11, Torch 2.5.1/CUDA 12.4, TorchSparse, FlashAttention and compiler.
+    It no longer depends on the `unirig` or `hunyuan3d` environments removed during cleanup.
+    All public S2 and DINOv2 downloads completed; S2 weights passed publisher SHA256 checks.
+    FlashAttention, TorchSparse convolution/downsampling and UDF passed actual GPU checks.
+    Full-body 512 generation: 921,830 triangles, 110 seconds, 1.46 GiB peak GPU reserve.
+    Full-body 1024 generation: 6,585,154 triangles, 273 seconds, 4.05 GiB peak GPU reserve.
+    Both are closed, finite meshes. Browser inspection passed; more triangles did not fix
+    the rough face/hair. Portrait 512 succeeded (4,087,562 triangles, 220 s, 5.33 GiB
+    peak reserve); it captures the smile/ears/proportions better but has eye/nose artifacts
+    and torn hair. Portrait 1024 was interrupted after 484 s because it spilled beyond
+    dedicated VRAM (9.11 GiB peak reserve, >2 minutes per sampling step); no output.
+    CPU cleanup produced a closed 628,122-triangle body base. Blender MCP imported it
+    with five references and saved `elof-direct3d-trial-7dbffbf7.blend` in the review folder.
+    A separate Blender portrait cleanup was saved as `elof-portrait-refined-v2.blend`;
+    `head-refined.glb` has 249,792 triangles, finite geometry, and passes browser checks.
+    It is still not watertight or ready to rig; the cleanup is a comparison experiment.
+    Both Blender copies include existing scenes; original live file/objects were preserved.
+    User asks whether a heavier model could improve likeness. Current S2 checkpoints
+    contain 1.579B diffusion parameters across three stages; higher resolution alone
+    has not improved likeness. TRELLIS Image Large (1.2B, DINOv2) is an alternative,
+    not a larger model; its subsequent local trial is recorded above and was rejected.
+    Its mesh-only inference fit this laptop using CPU offload and CPU extraction.
+    TRELLIS.2 is 4B but uses DINOv3 and officially requires 24 GB.
+    **Original Pixal3D-D body512, portrait512 and trained portrait1024 passed locally.**
+    Source `C:\Users\olov_\tools\pixal3d-paper`, paper commit
+    `ecca45f82e81a5f3b426dded6f2c3df401c6331e`; model revision
+    `2317299ac1c39847c883584a2d479f4380f96258`. All four dense/512 weights passed
+    publisher SHA256 and strict loading. CPU offload and sparse-only projection
+    preserve the original 50/30-step stages; the subsequent trained1024 test is below.
+    Body512: 719,478 triangles, 147.5 seconds, 6.29 GiB peak GPU reserve; finite,
+    closed, winding-consistent. Browser checks passed. Facial/clothing structure
+    is more coherent than the old body, but eyes/hair/hand details remain poor and
+    two detached blobs float behind the boots. Portrait512: 4,290,122 triangles,
+    360.8 seconds, 6.41 GiB peak reserve; finite, closed, winding-consistent. Eyelids,
+    nose and hair direction are clearer than Direct3D's portrait, but hair remains
+    chunky and the side cheek has surface artifacts. Both are untextured/unrigged.
+    The comparison uses raw512 Direct3D/Pixal meshes, identical gray shading and
+    the same input crops. All four browser comparisons passed with no errors,
+    offsite requests or mobile overflow; idle rendering remains on demand.
+    Safe-mode Blender MCP saved separate copies with five reference images:
+    `elof-pixal3d-body-512-trial-0e2e4174-255.blend` and
+    `elof-pixal3d-head-512-trial-05aec685-56c.blend` in the Pixal review folder.
+    Copies include existing scenes; original live filepath/objects/selection retained.
+    A conservative Blender portrait cleanup is saved separately as
+    `elof-pixal-head-local-refinement-7eccdaf3.blend`. It smooths selected cheek,
+    neck and eyelid areas without remeshing; nose, mouth and ear masks are protected.
+    The subsequent `head-refined-clean.glb` retains the main connected component:
+    4,067,830 triangles after removing 467 secondary components (222,292 triangles).
+    Retained coordinates and bounds are unchanged by component removal; geometry
+    is finite, closed and winding-consistent. Browser validation passed. The visual
+    improvement is small: fewer loose fragments, with side folds and wiry hair remaining.
+    This is a cleanup comparison, not a substantial likeness improvement.
+    Controlled portrait settings test: sparse sampling 30 -> 60, everything else
+    unchanged, succeeded with 4,300,506 triangles in 821.0 seconds and 6.41 GiB
+    peak GPU reserve. Front/side inspection shows essentially unchanged likeness,
+    hair clumps and side folds; extra steps are not established as a quality gain.
+    MoGe v1 is now installed separately in the Pixal venv and passed strict offline
+    GPU inference. Estimated portrait FOV is .3036599016 rad (17.398 degrees),
+    versus fixed .2 rad; a lower-resolution check gave .3186676702 rad. Body estimate
+    is .5022404461 rad. These are model estimates, not measured camera calibration.
+    Camera-only portrait trial (.3036599016 rad, original 50/30 steps/CFG7/seed42)
+    also succeeded: 3,730,072 triangles, 345.8 seconds, 6.40 GiB peak GPU reserve.
+    It changes the hair and profile but does not establish a closer facial likeness;
+    the mouth appears more distorted and cheek/neck artifacts remain. Preserve the
+    original .2-radian portrait as the comparison baseline for further refinement.
+    **Original trained1024 refinement now completed on the RTX3070Laptop8GB.**
+    The separate runner refines the immutable512 portrait using the original sparse1024
+    weights, 15 steps, CFG7 and seed42. All weights passed publisher SHA256 and strict
+    loading. Query-chunked attention retains every key/query and original normalization;
+    pointwise MLP chunks, fixed-point UDF/slab reduction, CPU conditioning and streamed
+    VAE decoding bound memory. Attention selection, UDF coordinates and a trained decoder
+    overlap test matched the original paths; MLP differences were small FP16 rounding.
+    Actual full run: 20,787,678 triangles / 10,394,475 vertices in 756.3 seconds; peak
+    GPU reserve6.55GiB under the measured6.70GiB cap, CPU RSS12.10GiB. No token truncation.
+    The415.8MB GLB is finite, closed and winding-consistent. Raw front/face/side browser
+    checks passed with no errors/offsite requests; the1024 quick check excludes mobile.
+    **More detailed, but not a clear likeness improvement:** sharper small eye/ear/hair
+    features also bring skin specks, nose ridges and rougher lips. The cheek seam remains.
+    Keep the cleaner512/refined512 as the working Blender face;1024 stays a comparison
+    and possible source of selected detail. It was not imported into the live Blender
+    scene; a prepared import script is retained, without a saved1024 Blender snapshot.
+    A stronger Blender finishing trial on the cleaned512 base was saved separately as
+    `elof-blender-finetuned-v2-d3299ed6.blend` / `head-blender-v2.glb`, but is **rejected**:
+    matched renders reveal a distorted mouth and an oval flap at the cheek seam, despite
+    finite/watertight geometry and retained connectivity. Do not promote this candidate.
+    Original scene/file/objects/selection and the cleaned512 base were preserved.
+    Olov then paused Blender finishing to assess ways to improve generation first.
+    Controlled512 seed/guidance comparisons are recorded above. The full upstream
+    two-stage scale optimization has not run. The earlier MoGe trial changed
+    FOV only. Newer Pixal multi-view inference uses DINOv3 and conflicts with his constraint.
+    The native portrait crop is263x292 without downsampling; the phone screenshot is only
+    a display enlargement, not a better original. Current game assets remain unchanged.
+    Reproduce1024 with `local-setup/run-refine-1024.sh` under the existing WSL Pixal env;
+    provenance, memory/numerical checks and completed results are in `README-1024.md`.
+    These raw comparisons were untextured/unrigged. The later complete Blender
+    candidate is tracked above; it has not been approved or installed in the game.
+    Own WSL Pixal venv reads the existing Direct3D packages without modifying them;
+    retain that base runtime. Pixal adds verified NATTEN0.17.5 for Torch2.5/CUDA12.4.
+    NAF's root Apache license hid a DINOv3-licensed rotary helper: configured inference
+    excludes it and uses an independent MIT mathematical equivalent. Original helper
+    was never executed. Full NAF and scalar rotary GPU checks passed; no DINOv3 model.
+    Private Pixal output/review: `photos/renders/2026-10-07-elof-pixal3d/`.
+    Re-run from PowerShell: `C:\Users\olov_\tools\pixal3d-paper\local-setup\run-elof.ps1`
+    with `-Role body` or `-Role head`. Model/photos stay offline and game assets unchanged.
+    Typecheck, all1,512 tests, production build/size gates and privacy check passed.
+    Private outputs: `photos/renders/2026-10-07-elof-direct3d/`; `review.html` compares
+    generated geometry against the supplied references and the previous game character.
+    Commercial core licenses: S2 code/weights MIT, standard DINOv2 code/weights Apache-2.0.
+    Optional mesh postprocessing is excluded from the first geometry-only trial.
+    **These raw comparison outputs remain geometry trials; the later textured/rigged
+    Blender candidate is tracked above and has not replaced a game asset.**
+  - LocalMesh setup is retained but inactive because DINOv3 is unavailable:
+  - Olov stopped the procedural character experiment and authorized installing/testing LocalMesh
+    locally on this RTX 3070 laptop. Native Windows setup is isolated at
+    `C:\Users\olov_\tools\localmesh-engine`; weights/cache at the sibling `localmesh-runtime`.
+    Its `local-setup/README.md` records versions, checks and continuation commands.
+  - All public single-image weights downloaded without an account and passed integrity checks.
+    All six required GPU component checks passed. Actual Elof background removal passed offline.
+    A DINOv3 ViT-L/16 architecture test with random weights passed at 512/1024, reserving at most
+    1.492 GiB; this does not test pretrained features or complete 3D generation.
+  - The resumed Meta-direct plan requires:
+    `dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth`. The prepared CPU/offline importer is
+    `local-setup/import_meta_dino.py`; preserve the terms accepted at Meta's form.
+    The file remains missing; Olov subsequently said he cannot use DINOv3. Do not
+    repeat that access request or resume this route without a new instruction.
+  - Private inputs/comparison viewer: `photos/renders/2026-10-07-elof-localmesh/`.
+    **No new LocalMesh 3D candidate exists yet; current game models and Blender masters are unchanged.**
+    The optional four-view NATTEN wheel fails on this GPU and needs a compatible build before use.
+    `olovs-hemsida` has reusable Blender human base meshes/rigging work, but its DINOv3 references
+    are precomputed canopy-height maps and do not provide the missing encoder weights.
+
+- **Character contact, pointing and furniture audit** (branch `character-design-motion`).
+  - Family reach, offer, lift and point actions now solve their world-space targets with each rig's
+    actual arm lengths. Completed lateral points follow the intended direction, including Sofie's
+    window cue, Bertil's chase cue and Elof's three scripted points. Entry, interrupted gestures and
+    release blend continuously; distant targets start releasing immediately instead of holding a
+    locked straight arm until the last frames. Carving, mug, drawing and shoulder-carry contacts retain
+    their own hand placement.
+  - Emil approaches closer before kneeling and lifting Elof. The lift holds Elof beside his face,
+    fully visible from the authored camera, with both hands below him. Removing the premature look
+    cue keeps the supporting palm raised through Elof's pointing beat, until the authored putdown at
+    9.2 seconds. The settled private wrist reaches its target within .00000001 EL and Elof follows
+    the authored palm anchor without drift. This is not exact mesh support: the right boot is .068 EL
+    above the right-hand surface and the left boot center lies outside that hand's footprint (the
+    second hand and forearm were not included in this surface probe). Deformed head bounds
+    stay separated by at least .0335 EL during the settled hold. The low deck reach improves from
+    1.275 to .432 EL short, with grounded boots and unchanged arm lengths; that remaining gap and the
+    palm surface contact need a future stance/rig pass.
+  - Moa rises, steps into the aisle and then follows without returning into the chair. Emil leaves
+    beside his chair before turning toward the window. Small chair offsets preserve their original
+    seated acting/table contacts. Emil's private torso has a brief residual chair intersection at the
+    start of the exit (.6 seconds); later samples clear it. The public rehearsal body's wider forearm
+    also briefly grazes the back; its trunk and legs clear throughout the exit, and the whole figure
+    clears before the turn behind the chair.
+  - **Checked:** typecheck and all 1,512 tests (161 files) pass, including interrupted reach, release,
+    pause, seeking, calmer motion and furniture paths. Browser suites pass 38 player-motion, 60 opening
+    and 84 finale checks, with opening/finale covering five screen sizes. Full production asset build,
+    strict size gates and privacy check pass: JavaScript 449.9 KB / 450 KB, served boot 2,890.5 KB /
+    3,072 KB. The private review contains 774 samples: 358 matched before/after film frames, 205 for
+    the complete authored-camera palm ride and putdown, 179 calmer-motion frames, 12 prop/rise checks,
+    12 player-point samples and eight hand-surface probes. All are finite with clean consoles. Pauses show
+    no meaningful drift (maximum .000000000000002 EL). The comparisons use the same valid player
+    positions and settled scales; initial exploratory captures are excluded from the review.
+  - Local comparison review: `.claude/character-work/motion-contact-audit/`, linked from the existing
+    motion gallery. This pass changes runtime motion and staging; private models/references stay local.
+    Code work can continue anywhere; remaining model, rigid-hand and authored-clip work needs Olov's
+    computer. Physical-device review and H1b remain outstanding. No release, "Senare" or question changes.
+
+- **Character motion audit and continuity fixes** (branch `character-design-motion`).
+  - Family actors now leave seated, crouched and kneeling stances when their keys ask them to stand.
+    Interrupted actions retain the unfinished blend, including Emil's quick rising/lifting sequence.
+    Moa's changes of gaze ease between head angles without restarting her seated action. Authored-key
+    boundary sampling found no head jumps above .01 EL after the fix; the baseline reached 1.956 EL.
+    Sitting/standing transitions resolve ground support from each rig's actual soles: rehearsal feet no
+    longer sink, and private models no longer hover before dropping at the end. Fixed seats and shoulder
+    carrying retain their placement. Sixty-two private foot samples show no measurable penetration;
+    the former .664 EL (Emil) and .393 EL (Moa) single-frame endpoint drops are removed.
+  - Assisted jumps use actual vertical travel for ascent, descent and landing absorption. Fast swings
+    retain their pose at 20, 30 and 60 fps. The rope follows the wrists through the swing, clears Elof's
+    face and releases with the simulation. A straight-arm reach reconstructs the same elbow position
+    after any prior pose: history-dependent drift was .284-.469 EL on the five private family rigs and is now zero.
+  - Local before/after evidence is under `.claude/character-work/motion-audit-next/`, linked from the
+    existing motion gallery. Blender MCP on port 9876 was checked read-only; this pass changes runtime
+    animation, without new model exports or likeness approval. Four comparison films contain 338
+    rendered pose samples, split equally between before and after, with additional stills and measurements.
+  - **Checked:** typecheck and all 1,492 tests (159 files) pass. Private swing checks cover five angles,
+    pause and release: wrist/rope error is below .000000002 EL, with no head-surface intersections and
+    at least .0259 EL clearance beyond the rope's radius. Hands remain rigid, without finger wrapping.
+    Browser suites pass 36 player-motion, 60 opening and 84 finale checks. Opening/finale include five
+    screen sizes and preserve the shoulder ride, boot support, pause and dismount after the floor fix.
+    Production build, strict size gates and privacy check pass: JavaScript is 449.7 KB / 450 KB and
+    served boot is 2,890.3 KB / 3,072 KB. The final authored-key boundary audit also passes.
+  - **Remaining audit priorities:** low reaches can miss the intended point, lateral pointing needs
+    better alignment, and crouches raise the heels. Private rigs also expose cuff/wrist seams and lack
+    facial/finger controls; Moa's dress overlaps her chair when she stands in place. These are recorded
+    in the local review for the next motion/rig pass.
+    Physical-device review and H1b remain outstanding. Code work can continue anywhere; private model
+    and authored clip work needs Olov's computer. No release, "Senare" or question changes.
+
+- **Family acting throughout the game, local motion pass** (branch `character-design-motion`).
+  - Sofie, Moa and Bertil have distinct reaction timing and weight. Looks anticipate gestures and track
+    Elof's height; waves, nods, surprise and cheers settle instead of repeating indefinitely. The shared
+    acting also applies to Emil's later appearances and preserves the opening carving contacts.
+  - Sofie's mug meets her lips, tilts around its near rim and rests against her supporting palm. Moa makes
+    three deliberate marks with lifted returns on a visible sheet; her other hand steadies it. Her chair
+    sits close enough to the table for her actual arms. Showing the drawing keeps her face visible and
+    both palms on the sheet's edges. First placement uses the authored stance immediately. Contact poses
+    blend when actions change, including putting the mug away and entering a scene from free play.
+  - Every later family help point uses its task: Moa offers the plane, Bertil reaches down for the cap,
+    Emil points toward the seesaw, Sofie lifts for the bridges and guides the braid. Reunion greetings
+    retain each person's character; party recipients reach toward Elof. The shoulder ride eases into its
+    stride and supporting pose, including boarding, stopping and alighting. Elof's pelvis follows Emil's
+    shoulders and both palms support his boots using the models' actual joint positions. Both carried
+    figures follow the seated position below Elof's face.
+  - **Coverage:** the private review covers all 86 authored family intervals in 10 prologue scenes and
+    all 14 later family placements. It samples normal and reduced motion, pause, completed prop contacts,
+    and scene/free-play transitions: 483 broad samples and 814 dense boundary samples. Completed paper,
+    crayon, mug and boot support contacts are within 0.00000005 EL of their intended targets. Berget and
+    Byn have no family actor placements in the current chapter data. Three before/after comparisons
+    include 540 newly rendered frames, including the complete home ride and settled dismount.
+  - **Checked:** typecheck, all 1,470 tests (158 files), production build/size gates and privacy checks pass.
+    Browser suites pass 60 opening, 55 family-help and 84 finale checks, including five screen sizes,
+    pause, calmer mode, grounded helpers, supported carrying and settled empty hands after dismount.
+    JavaScript totals 449.1 KB / 450 KB; served boot is 2,889.7 KB / 3,072 KB.
+  - This changes runtime motion on the existing rigs. Individual fingers and richer authored Blender
+    clips remain future work; physical-device review and H1b likeness approval are still outstanding.
+    Nearby family members can still partially obscure Moa from some frontal camera angles.
+    Local review files stay in `.claude/character-work/family-review/`, linked from the existing motion
+    gallery. Code work can continue anywhere; private model and clip authoring needs Olov's computer.
+    No release, private asset publication, "Senare" or question changes.
+
+- **Emil's opening carving, local motion pass** (branch `character-design-motion`).
+  - The title and morning use three short cuts, lifted returns and an inspection pause, with small head and
+    torso follow-through. The lower, faceted wood blank leaves Emil's face visible; cuts follow its visible
+    left surface. The supporting arm keeps a comfortable bend.
+  - The imported and rehearsal rigs solve contact from their actual arm lengths. The knife sits at the palm
+    centre, with the wrist turned around its grip, and its tip touches the tapered wooden surface during a cut.
+    Hand rotations reset with each authored pose; contacts release into blowing and reaching. Fingers remain
+    the existing rigid hand geometry, without individual finger articulation.
+  - Small shavings begin at each cut's contact, retain their birth position as the blank changes shape and
+    fade at the end of the carving. Motion follows the scene clock, including seeking and pause; calmer mode
+    holds an inspection pose without cutting or flying chips.
+  - Local before/after footage and contact measurements are under `.claude/character-work/carving-review/`,
+    linked from the existing `motion-review/index.html`. No private model or reference was changed or published.
+  - **Checked:** typecheck, all 1,443 tests (157 files), production build/size gates and privacy checks pass.
+    The private review covers 500 Low/High/reduced-motion frames with no browser, shader or asset errors;
+    the knife tip misses its target by at most 0.000000014 EL, and the handle stays exactly at the palm centre.
+    All 60 opening-story browser checks pass across five phone/desktop sizes. JavaScript totals 446.7 KB /
+    450 KB; served boot is 2,887.3 KB / 3,072 KB.
+  - **Next:** review the scene on a physical device; individual finger acting and authored Blender clips remain.
+    Code work can continue anywhere; further private model/clip authoring needs Olov's computer. Existing
+    likeness approval, release status, "Senare" wishes and questions remain as recorded below.
+
+- **Reference-derived ghost, local Blender finish** (branch `character-design-motion`).
+  - Olov selected `photos/ghost-render.png` as the primary appearance reference for the playable model.
+    A local TripoSR reconstruction was rebuilt and finished through the configured Blender MCP on port
+    9876. The original reference remains unchanged; no reference was uploaded to a service.
+  - **Model:** the broad hanging cape, substantial hands, dotted bag, striped socks and red shoes now follow
+    the render. The dense source was simplified while preserving its silhouette; finger grooves were carved,
+    small holes repaired, and the shoes separated at their actual ankles. Low robe tips stay with the rigid
+    body during hops. Separate glossy eyes still support painting, reveal and blinking.
+  - **Detail and budget:** 14,175 triangles, five rigid meshes, three materials; a 2048 body colour atlas and
+    shared 1024 shoe atlas. Visible paint is projected from the reference, with restrained procedural grain
+    on unseen surfaces. No normal maps. The packed ghost is 895,004 bytes; main JS is 444.0 KB / 450 KB and
+    served boot is 2,884.6 KB / 3,072 KB. The back remains an interpretation of a single view and is softer
+    than the reference-facing surfaces; this is not final likeness approval or a scan.
+  - **Saved locally:** `art/private/ghost/ghost.blend` and `art/private/baked/private/ghost.glb` are the new
+    master/export. `node art/private/build-character.mjs ghost` now uses the saved master by default;
+    the earlier procedural generators are studies. Private `ghost/README.md` records the MCP workflow.
+    The original model, comparison viewer, final renders and validation reports remain under ignored
+    `photos/renders/2026-10-07-ghost-detail/`. Nothing was published.
+  - **Checked:** raw and KTX2/meshopt-packed model loading, eye painting/blinks, both shoe hops, reset,
+    story waddle/run/hop/wake, reduced motion and sole contact pass. The body stays rigid during shoe motion.
+    Typecheck and all 1,415 tests pass; production build/size, full browser smoke and privacy checks pass. A Windows
+    CRLF issue found during the wider forest smoke check is fixed in the GLSL minifier with a regression test.
+    Packed model-installation passes 30 checks; 12 GPU checks use the actual private models in prolog,
+    garden and granskog through Low/Mid/High/Low. High peaks at 116.81 MB / 220 MB; Low stays below 28.04 MB.
+
+- **Character motion, second local pass** (branch `character-design-motion`).
+  - **Elof:** acceleration and reversal lean, braking knees and arm follow-through, and a running jump that
+    keeps the leading foot. Landing impact now requires an actual free-mode descent. Leaving a hose, ledge
+    or ride does not trigger landing squash; climbing and story lifts retain the body's proportions. Turns
+    take the shortest path instead of spinning the long way round.
+  - **Interaction acting:** reach, offer and lift follow curved hand paths, with knees sharing a low reach and
+    the second hand arriving to support a lift. Pointing accounts for the torso's lean. Stage transitions retain
+    the previous hand target; walking supplies the legs while held objects and interaction arms keep their pose.
+    Cheers settle gradually, shrugs stay planted, and reduced-motion actions hold readable poses.
+  - **Family following:** acceleration and eased turns replace abrupt full-speed starts and flips. Paused
+    followers retain their exact pose and position; a far restore does not add a fictitious walking stride.
+  - **Ghost:** the rigid shoes now articulate during story waddles, runs, hops and waking, driven by the story
+    clock. A landing gets a quiet beat before idle toe taps, and a lifted tapping shoe blends into takeoff.
+    Static/carried scenes retain their reset, with deterministic seek and pause behavior.
+  - **Checked:** typecheck, all 1,414 tests (154 files), production build and privacy check pass. Main JS is
+    445.4 KB / 450 KB; served boot is 2,239.1 KB / 3,072 KB. The public browser motion suite passes 28 Low/High
+    checks. Private recordings cover 156 real gameplay frames and 327 authored story frames, without browser,
+    shader or asset errors: worst player sole penetration is 0.000305 EL, the brush stays attached to the hand,
+    Elof stays on Pappa's palm and story shoes preserve pause. The local videos and measurements are in
+    `.claude/character-work/motion-review/index.html` (ignored, never public screenshots).
+  - **Next:** physical-device review and richer authored clips/expressions remain. This pass improves runtime
+    animation on the existing private models; it does not complete the likeness checkpoint H1b. Code work can
+    continue anywhere; reviewing the private models and authoring Blender clips needs Olov's computer.
+    No release change, asset publication or change to the existing "Senare" wishes.
+
+- **Character design and motion, local Blender pass** (branch `character-design-motion` in both repositories).
+  - Olov asked for the models themselves to move closer to `sheet-player`, `sheet-family`, `sheet-siblings`
+    and `ghost-render`, alongside improvements to movement. All six main characters were rebuilt through the
+    configured Blender MCP on port 9876. Telemetry was verified off; the initial open scene was saved locally.
+  - **Private models:** smaller eyes, softened cheek/jaw transitions, swept hair and rounded sleeve shoulders.
+    Elof has finer, softer shirt stripes and folded cuffs; Mamma a swept crown and longer braid; Moa flowing
+    locks, a denim jacket with pockets and three cream dress tiers; Pappa lighter glasses; Bertil a clearer
+    collar and plain cap badge. Pappa's and Bertil's crown/brim construction was corrected after close-up review.
+    The ghost has deeper hanging folds, carved fingers, visible painted eyes and a baked 1024 wood/cavity atlas,
+    shared by two materials. Existing named bones and rigid parts remain compatible with the game.
+  - **Movement:** distance-driven walk/run recovery, vertical-travel climbing, separate slide and ledge poses,
+    impact-sensitive landing, edge balance and quiet idle motion. Each relative has a distinct greeting,
+    delayed arm follow-through and a smoother gaze. Both ghost shoes now articulate in hops and occasionally
+    tap while perched; scripted acting, carrying, pause and reduced motion control those gestures.
+  - **Contact:** imported rigs cache support points from their actual boots instead of treating ankles as soles;
+    sitting uses the imported hip height, and fallback hands retain their reach when a scene scales a body.
+  - **Review/rebuild:** `art/private/build-character.mjs` generates, renders, validates, saves and exports one
+    character through `scripts/bake/export.py`. Its selection-only export excludes reference empties. Comparison
+    renders stay in ignored `photos/renders/2026-10-07-character-design/`; the Blender sources and GLBs remain
+    private. No references were uploaded, and no private changes were published by this session.
+  - **Checked:** typecheck, all 1,396 unit/simulation/robot tests, production build/size gates and privacy check
+    pass. Browser acceptance covers garden, granskog and myren in Low/High: 36 checks with stand-ins and 50 with
+    the actual private models, with no browser/shader/asset errors. A sweep of 240 gait poses per packed family
+    model found at most 0.00255 EL sole penetration (acceptance 0.005 EL). Screenshots and probes remain ignored.
+    Each family model is below 15,000 triangles; the ghost is 2,202 triangles and 227,520 bytes packed. Main JS
+    is 444.3 KB / 450 KB and served boot is 2,238.0 KB / 3,072 KB. Privacy used its built-in rules and media scan;
+    no local denylist or exiftool was available. The local review gallery is the comparison folder's `index.html`.
+  - **Still needed:** final likeness approval (H1b), richer face expressions, authored story animation and
+    physical-device review. These models are visibly revised but still simpler than the sheets; the existing
+    image-to-3D investigation remains open. Further model work needs Olov's Blender computer. No release change.
+
 - **CI: the browser suites in eight jobs, shared by the seconds each takes** (7 October, cloud session, branch
   `ccr-6078e7de-t0rxpz`; Olov asked whether the slow browser tests must run every time).
   - **Before:** the suites ran in six jobs, shared by the seconds each took on 5 October. They have grown since
@@ -2963,9 +3418,11 @@ The older list, still true where it is not struck:
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. On 6 October, cloud graphics stage 1 unifies linear haze and the graded sky across tiers, with no new assets or passes. Cloud stage 2 adds forest trunk shadows on High and soft ground shade on Low/Mid; stage 3 adds camera-correct rim lighting; stage 4 reveals the forest landmark silhouettes; stage 5 keeps deck boards planar beside steps; stage 6 gives the village kerb/shop riser masonry and planar street edges; stage 7 adds a fascia to the visible deck edge; stage 8 gives the shop’s visible front granite courses; stage 9 adds layered road sections, with matching comparisons for each visual checkpoint. Stage 12 gives the finale curtains of northern lights with rays and twinkling stars; stages 13 to 16 stand the bog's tussocks in the water, put the shy ones on sedge pedestals, make the dead pines snags and let the mist hide what is far; stage 17 grows the boughs from their stems with each place's own foliage and makes the bark plates bracket fungi. Stage 18 puts the colaflaska in a nest and gives the young stems bark and dead twigs. Stage 19 lays a spång over the bog and makes its shy lights and Mamma's lamp soft glows in the mist. Stage 20 makes the mountain's gusts wisps of air and gives the mountain a foreground; stage 21 marks the finale's crack and lets the shared gifts glow warm. Stage 22 hangs two striped awnings on Byn's bakery, with drops that hang from their scallops, fall and splash. Stage 23 makes Byn's drain a cast-iron grate in the road. Stage 24 breaks the mountain's cliffs into granite blocks along their joints. Stage 25 makes the shop's jars glass and hangs lamps over its rings. On 7 October, stage 26 stands a matchbox on the shop's step; stage 27 lets the puddle mirror the yard, with leaves afloat and the road wet round it; stage 28 puts the shop's bag in the last picture; stage 29 folds the street's birch leaves and drifts them against the walls; stage 30 makes it dark under a wooden floor's rim board; stage 31 lets birch leaves fall in the village; stage 32 stands two cast-iron lamp posts on its far pavement. Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
 | 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, the prologue rebuilt as scenes with an outdoor deck, every chapter's ending (a coda, a storybook page, and a time card at the next one's start), and a UX, UI and presentation audit (137 findings, eleven steps) with chapters that open on their card instead of the title. On 6 October, in a cloud session, its steps 1 to 11 and every row after them: the type, the controls, the speakers, a clear screen for the story, a short Pause with settings a child can read, a title over the living morning with one tap to play, the materials (paper, wood and candy, and every picture drawn), the UI's sound, the chapter's page as a storybook page, the collections, and a picture for every verb, on the button and over the thing; a HUD that keeps to itself, small things for every device, the page's map and tally, a ring round the held finger, help that carries on, one switch for less motion, what they feel on the bubbles, the painting and the carving close, the credits as the book's last pages, a picture for every player, Moa's words in wax, and the game installable on Android. Broader spatial work, Byn's return loop and the rest of its own story, final likeness/contact/acting/memory art, the story's further steps (sound next), listening and device checkpoints remain; no release is declared. |
-| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. Review on a device and authored clips remain. |
+| 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. On 7 October, a local Blender pass revises all six main models against the sheets, bakes the ghost's carved wood, refines locomotion and family greetings, and grounds imported boots from their actual geometry. All six private models pass Low/High browser checks; this remains a local revision, with faces, hair and clothes still simpler than the sheets. A second local motion pass adds start/stop/reversal weight, leading-foot jumps, hand paths and carried-arm layering, eased family following and story-driven ghost shoes; 1,414 tests pass. A focused opening-carving pass then adds planted support, a palm-centred knife grip, visible surface cuts, lifted returns and cut-timed shavings. A further family pass gives Sofie, Moa and Bertil distinct timing, precise mug and drawing contacts, purposeful gestures at every later help point, and smoother reunion/carry transitions. A subsequent audit fixes retained seated stances, interrupted-action snaps, abrupt glances, assisted-jump poses, fast-swing resets and history-dependent elbows; swing hands now follow the rope clear of the face. Sitting/standing blends use each rig's actual sole support, removing penetration and endpoint drops. A further contact audit adds accurate 3D pointing and reach/release blending, a visible supported palm lift held through Elof's cue, and chair exit paths for Moa and Emil. All 1,512 tests pass. A residual .432 EL low-reach gap, approximate palm surface support, brief chair contacts at Emil's exit, rig seams, review on a device, H1b and authored clips remain. Local Direct3D/Pixal trials now run offline on the RTX3070 laptop. Pixal60-step and estimated-camera tests give no clear likeness gain; the trained1024 portrait fits8GB and adds detail but also surface noise. The cleaner512 face remains the retained base; the seed17 alternate improves the jaw but not overall likeness, and the precision comparison is recorded above. A complete Blender candidate now combines the FP32-storage portrait/body, reference atlas and game rig. The saved14,782-triangle candidate still needs neck/hair/hand and topology repairs; H1b remains and no game replacement was made. Resume details are at the top of this handover. |
 
 ## Known bugs
+
+- **Private generated Elof candidate remains unfinished.** The saved Blender checkpoint has a rough neck/hair silhouette and hand remnants during reach, plus28boundary and5nonmanifold edges. See the current checkpoint above before continuing. It is not installed in the game.
 
 - **The UX audit's defects, not yet mended** (`docs/ux-audit.md`, in the order of the work): none. What is left of the
   audit waits on Olov's answers to its questions (`docs/ux-audit.md`) and on the likeness art (Olov's computer).
@@ -2979,9 +3436,17 @@ The older list, still true where it is not struck:
   - The game runs slower against the clock there, so the browser suites' waits have less to spare;
     `mountain-loop`'s Lugnt climb now waits as long as its climb back.
   - A real device composites on its GPU and is unlikely to notice, but this wants a trace on a phone and on CI.
-- **The prologue's stand-ins act roughly** (5 October): box figures in place of the family, so a kneel or a
-  shrug reads stiffly, and Pappa's hand under Elof is a block. The private models have not been posed by the new
-  acting yet; their bones' signs follow Elof's doll and are untested with it (Olov's computer).
+- **Character motion still needs contact and rig polish** (audited locally 7 October): Emil's low deck
+  reach is now .432 EL short (formerly 1.275 EL); the lift anchor and lateral pointing align on the real
+  rigs. Palm riding follows the wrist anchor exactly, but the right boot is .068 EL above the hand mesh
+  and the left boot center is outside the right-hand footprint; this probe excludes the second hand
+  and forearm. Fingers remain rigid.
+  Emil's private torso briefly intersects the chair at the start of his exit (.6 seconds), clearing it
+  in subsequent samples; the public rehearsal body's wider forearm also grazes the back, while its
+  trunk/legs and final turn clear it. Deep crouches lift the heels; cuff/wrist seams and rigid
+  hands remain visible on the private models. The latest evidence is in the ignored
+  `.claude/character-work/motion-contact-audit/` review, alongside the previous motion review.
+  Asset and authored-clip changes need Olov's computer.
 - **The longest stretch Elof only watches is about 10.6 s** (the POFF with the kneeling family). A skip is not
   needed for a replay: a chapter played again keeps its story's flags (`src/save/journey.ts`), so its scenes do not
   play twice.
@@ -3112,33 +3577,24 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
 
 3. **Is the small boy on Pappa's lap in `family-pappa-viewpoint.jpg` Elof?** Little Elof in the memories is
    modelled on him, flat cap and all (plan §2.4). The default: yes.
-4. **Which image-to-3D service?** You chose image-to-3D for Elof and the family on 3 October. Nothing has been
-   uploaded, because Meshy Pro, the service the plan examined, fails the plan's own check: its terms let it
-   train on what paying users upload, with no way to switch that off below its Enterprise plan (art bible
-   §1.6 has the wording). The parents' yes was to a paid Meshy plan, so anything else is asked of them first.
-   - **(a) Tripo's paid plan,** if its terms say what its help pages are reported to say: no training on paid
-     users' uploads, private models, you own them. Read that on the site before uploading; the session could
-     not open the pages.
-   - **(b) Meshy Pro all the same,** if you and the parents accept the training clause.
-   - **(c) An open model on your own computer: this is the plan.** You asked for an open, local alternative,
-     and your other computer has an RTX 5080 with 16 GB. The order to try: TRELLIS.2 through ComfyUI, then
-     the first TRELLIS. Both are Microsoft's, MIT, free, and nothing is uploaded. Neither is tried yet, and
-     whether TRELLIS.2 fits in 16 GB is not known. **Pixal3D may be better, and its licence allows it:** MIT
-     since 20 May 2026, code and weights; the EU limit belonged to the terms it had for its first eight days
-     (art bible §1.6). Say if you want it tried first.
-     - **What a session on that computer needs:** this repository cloned; Elof's three views from
-       `art/private/elof/image-to-3d/` (or the whole `photos/` folder), carried over on a USB stick or the
-       home network, never through git; and about 30 GB of free disk.
-     - **What it does:** installs ComfyUI, runs Elof's views through the models in that order, and saves the
-       best GLB to `art/private/elof/image-to-3d/`. Blender work can then happen on either computer.
-     - The laptop with the RTX 3070 has 11 GB free on C: and cannot hold the install as it is.
-   - Whichever you choose, better pictures give a better model: each view of Elof alone, full height, 1024 by
-     1536, plain background, arms a little out. The views cut from the sheet are small and soft; they are in
-     `art/private/elof/image-to-3d/` and will do for a first try.
+4. **Which image-to-3D service?** Answered on 7 October: use an open model locally on the
+   **RTX 3070 laptop (8 GB)**. Do not move this work to the RTX 5080 computer or upload
+   the references to a service without a new instruction. Olov briefly authorized
+   LocalMesh, then clarified that he cannot use DINOv3. He rejected the completed
+   original TRELLIS/DINOv2 comparison as worse; controlled Pixal settings trials
+   have resumed. No Meta access request remains actionable.
+   Direct3D-S2 and original Pixal3D-D trials now run locally; the current results, memory
+   adaptations and remaining likeness limitations are recorded in **State** above. No new
+   service choice or installation approval is pending. The 263?292 portrait uses the PNG's
+   native pixels; the phone screenshot is an enlarged JPEG copy, not a sharper original.
+   A larger original reference would help future work, but is not required to continue these
+   authorized local tests. The generated candidates still require likeness review and Blender
+   finishing before replacing game assets.
 6. *(Answered on 4 October: yes. Pappa, Mamma, Moa and Bertil are on the site.)* **Still open:** should
    three-year-old Elof go up too, before any memory uses him? The default is no. And what is wrong with
    each likeness: the pictures are in `photos/renders/2026-10-04-family/`, and the list of what the
-   session itself would correct is under "The family, first models".
+   session itself would correct is under "The family, first models". The latest reference/before/after comparisons
+   for all six are in `photos/renders/2026-10-07-character-design/index.html`; this new pass is local only.
 5. **May the village street be called by its own name?** You asked for it as a chapter by name. The game
    calls it *Byn*, as a child would, and the street's name is not written in this repository. The reason:
    CLAUDE.md says never a street address, and a street's name beside the children's first names is most of
@@ -3148,7 +3604,8 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
 5. **Are the ghost and Elof right?** Olov called them "the good looking Elof and ghost" on 3 October and asked
    for them on the site, which the session reads as: good enough to show. It is not H1b: the plan's yes, or up
    to three corrections each, is still his to give. Open `art/private/ghost/ghost.blend` and
-   `art/private/elof/elof.blend` in Blender, where each stands between its pictures.
+   `art/private/elof/elof.blend` in Blender, where each stands between its pictures. On 7 October Olov said the
+   models still did not look like the sheets; the new local pass improves them but does not resolve H1b.
 6. **Where should the ghost's files live?** Answered by what Olov asked for on 3 October: in the private
    repository with Elof's, and shown on the public site through the deploy. It can always be taken down.
 

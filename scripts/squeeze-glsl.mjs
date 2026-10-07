@@ -7,6 +7,8 @@
  * (`#include` must start a line).
  */
 export function squeezeGlsl(glsl, comments = true) {
+  // Windows checkouts carry CRLF inside shader literals too; their boundary must remain a line break.
+  glsl = glsl.replace(/\r\n/g, '\n');
   const end = (gap, edge) => (gap.test(glsl) ? '\n' : edge.test(glsl) ? ' ' : '');
   const core = glsl.split('\n')
     .map((line) => (comments && !line.includes('/*') && !line.includes('*/') ? line.replace(/\/\/.*$/, '') : line).trim())

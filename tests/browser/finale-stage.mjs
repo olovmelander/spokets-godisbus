@@ -43,6 +43,24 @@ const server = await createServer({ root,
         for (const x of [b.min.x,b.max.x]) for (const y of [b.min.y,b.max.y]) for (const z of [b.min.z,b.max.z]) points.push(new Vector3(x,y,z).project(camera).toArray());
         return points; }
       export const at = (object) => object.getWorldPosition(new Vector3()).toArray();
+      export function carrySupport(elof, pappa, toys) {
+        const feet = ['left','right'].map((side,i)=>elof.getObjectByName('player-boot-'+side) ?? elof.getObjectByName(i===0?'foot_l':'foot_r'));
+        const figure = elof.getObjectByName('player-figure');
+        const head = elof.getObjectByName('Head') ?? elof.getObjectByName('head') ?? figure?.children[0]?.children[1]?.children[0];
+        const body = pappa.children.find(child=>child.isInstancedMesh);
+        if (!head || !body || feet.some(foot=>!foot)) return null;
+        const matrix = new Matrix4(), hands = [], shoulders = [];
+        const gaps = feet.map((foot, side)=>{
+          body.getMatrixAt(side===0?7:10,matrix);
+          // The palm lies at the hand box's centre, behind its small forward skin offset.
+          const palm = new Vector3(0,0,-.02/.36).applyMatrix4(matrix).applyMatrix4(body.matrixWorld);
+          hands.push(palm.toArray());
+          body.getMatrixAt(side===0?5:8,matrix);
+          shoulders.push(new Vector3(0,.5,0).applyMatrix4(matrix).applyMatrix4(body.matrixWorld).y);
+          return palm.distanceTo(foot.getWorldPosition(new Vector3()));
+        });
+        return { gaps, hands, shoulders, headY:head.getWorldPosition(new Vector3()).y, tops:toys.map(toy=>new Box3().setFromObject(toy).max.y) };
+      }
       export function shadows() { const blobs = scene.getObjectByName('character-blobs'), matrix = new Matrix4(), positions = [];
         for (let i=0; i<blobs.count; i++) { blobs.getMatrixAt(i,matrix); positions.push(new Vector3().setFromMatrixPosition(matrix).toArray()); }
         return positions; }
@@ -78,6 +96,7 @@ try {
         return {...view.info(), word:sim.curr.word, mode:sim.curr.mode, player:[sim.curr.x,sim.curr.y], groundY:sim.curr.groundY,
           eyes:scene.getObjectByName('first-carving-eyes').visible, bag:bag.visible, stolen:scene.getObjectByName('stolen-saturday-bag').visible,
           elof:f.at(elof), pappa:f.at(pappa[0]), ghost:f.at(ghost), carving:f.at(carving),
+          support:f.carrySupport(elof,pappa[0],[ghost,carving]),
           pappaYaw:pappa[0].rotation.y, pappaPose:Array.from(pappa[0].children[0].instanceMatrix.array),
           corners:[elof,pappa[0],ghost,carving].map(f.corners), flags:[...sim.flags], relatives, shadows:f.shadows()}; };
       window.probe={f,draw,advance,snapshot,act:()=>sim.step({...idle,act:true}), restore:(x,flags)=>{
@@ -95,6 +114,9 @@ try {
       ride.beforeHome.shadows.some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-.018)<.01)));
     check(`${name}: Go home starts the actual simulation ride`, ride.flags.includes('home') && ride.mode==='ride');
     check(`${name}: Pappa carries grown Elof with both carvings beside him`, Math.abs(ride.pappa[0]-ride.player[0])<.01 && Math.abs(ride.pappa[1]-ride.player[1])<.01 && ride.elof[1]-ride.pappa[1]>4 && Math.abs(ride.ghost[0]-ride.elof[0])<1.1 && Math.abs(ride.carving[0]-ride.elof[0])<1.1);
+    check(`${name}: both palms support Elof's ankles and the carvings stay below his face near his hands`, ride.support &&
+      ride.support.gaps.every(gap=>gap<.15) && ride.support.tops.every(top=>top<ride.support.headY-.1) &&
+      [ride.ghost,ride.carving].every(toy=>Math.abs(toy[2]-ride.elof[2])<.6));
     check(`${name}: the whole shoulder composition fits the screen`, ride.corners.every(points=>points.every(([x,y])=>Math.abs(x)<1 && Math.abs(y)<1)));
     const pause=await page.evaluate(()=>{const p=window.probe;for(let i=0;i<20;i++)p.draw(0);return p.snapshot();});
     check(`${name}: pausing holds the shoulder joints and GPU resources`, JSON.stringify(pause.elof)===JSON.stringify(ride.elof) && JSON.stringify(pause.pappa)===JSON.stringify(ride.pappa) && JSON.stringify(pause.pappaPose)===JSON.stringify(ride.pappaPose) && pause.pappaYaw===ride.pappaYaw && pause.geometries===ride.geometries && pause.textures===ride.textures);
@@ -102,9 +124,15 @@ try {
     const after=await page.evaluate(()=>{const p=window.probe;for(let i=0;i<12;i++){p.advance(.25);p.draw(.25);}return p.snapshot();});
     check(`${name}: the carried group follows the path with warmed shaders and bounded draws`, after.player[0]>ride.player[0]+3 && Math.abs(after.pappa[0]-after.player[0])<.01 && Math.abs(after.carving[0]-after.elof[0])<1.1 && after.programs===ride.programs && withinDraws(after.drawCalls, after.tier));
     check(`${name}: Pappa faces home and strides with actual ride travel`, after.pappaYaw>1 && after.pappaYaw<1.4 && JSON.stringify(after.pappaPose.slice(11*16))!==JSON.stringify(ride.pappaPose.slice(11*16)));
+    check(`${name}: supporting palms stay at his ankles while Pappa walks`, after.support && after.support.gaps.every(gap=>gap<.15));
     const late=await page.evaluate(()=>{const p=window.probe;p.advance(4.4);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});
     check(`${name}: eight seconds into home, ghost and Pappa shadows follow terrain support`, late.mode==='ride' && late.player[0]>60 && late.player[1]<-6 &&
       [late.ghost,late.pappa].every(at=>late.shadows.some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-(late.groundY+.018))<.01)));
+    const landed=await page.evaluate(()=>{const p=window.probe;p.advance(3.5);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});
+    check(`${name}: after Elof dismounts Pappa settles both empty hands below his shoulders`, landed.mode!=='ride' && landed.support &&
+      landed.support.hands.every((hand,i)=>hand[1]<landed.support.shoulders[i]-.55));
+    const resting=await page.evaluate(()=>{const p=window.probe;for(let i=0;i<20;i++)p.draw(0);return p.snapshot();});
+    check(`${name}: pausing after dismount retains the settled hands`, JSON.stringify(resting.pappaPose)===JSON.stringify(landed.pappaPose));
     assert.deepEqual(errors,[],`${name}: browser errors`);await page.close();
   }
   // The private-model replacement receives the same support callback as the rehearsal figure.

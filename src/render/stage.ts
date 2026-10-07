@@ -5,7 +5,8 @@ import {
 } from 'three';
 import type { ChapterData } from '../sim/types';
 import { sceneWaits, type Act, type ActorKey, type ElofKey, type Point, type SceneDef, type SceneFrame, type ShotKey, type Thing } from '../sim/scene';
-import { actPose, stanceOf, type Stance } from './acting';
+import { actPose, drawingAt, sippingAt, stanceOf, type Stance } from './acting';
+import { carvingAt, CARVING_SHAVING_LIFETIME, type CarvingMotion, type CarvingPoint } from './carving-motion';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, STANDING, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
 
@@ -20,7 +21,7 @@ import { drawnWhile } from './idle';
 const FAMILY: readonly Role[] = ['pappa', 'mamma', 'moa', 'bertil'];
 const SEATED: readonly Act[] = ['sit', 'carve', 'draw'];
 /** Acts whose aim the whole body turns to. */
-const TURNS_TO: readonly Act[] = ['reach', 'lift', 'offer'];
+const TURNS_TO: readonly Act[] = ['reach', 'lift', 'offer', 'point'];
 
 /** Where an actor is and what it does, at one moment of the story. */
 interface State {
@@ -30,9 +31,10 @@ interface State {
   act: Act;
   /** When the act began, and the act and stance before it, for the blend between them. */
   actAt: number;
-  before: { act: Act; at: number; stance: Stance } | null;
+  before: { act: Act; t: number; stance: Stance; aim: Point | null; mug: 0 | 1 | null; previous: State['before'] } | null;
   stance: Stance;
   aim: Point | null;
+  glance: { from: Point; weight: number } | null;
   follow: number | null;
   holds: Thing | null;
   holdsLeft: Thing | null;
@@ -42,7 +44,7 @@ interface State {
 }
 
 const fresh = (): State => ({
-  x: 0, y: 0, z: 0, face: 0.25, act: 'stand', actAt: -99, before: null, stance: 'stand', aim: null, follow: null,
+  x: 0, y: 0, z: 0, face: 0.25, act: 'stand', actAt: -99, before: null, stance: 'stand', aim: null, glance: null, follow: null,
   holds: null, holdsLeft: null, rough: 0, walk: null,
 });
 const smooth = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
@@ -63,8 +65,9 @@ export const yaw = (face: number) => Math.PI / 2 - face * Math.PI * 2;
  * the actor was at that moment; a new act takes over from the old one with a short blend.
  */
 function apply(state: State, key: ActorKey, since: number): void {
+  const first = state.actAt === -99;
   const move = key.move ?? 0.6;
-  const p = since >= move ? 1 : smooth(since / move);
+  const p = first || since >= move ? 1 : smooth(since / move);
   const toX = key.x ?? state.x, toY = key.y ?? state.y, toZ = key.z ?? state.z;
   const far = Math.hypot(toX - state.x, toZ - state.z);
   if (far > 0.25 && p < 1 && !SEATED.includes(key.act ?? state.act)) {
@@ -73,24 +76,27 @@ function apply(state: State, key: ActorKey, since: number): void {
   state.x = mix(state.x, toX, p);
   state.y = mix(state.y, toY, p);
   state.z = mix(state.z, toZ, p);
-  if (key.face !== undefined) state.face = mixTurn(state.face, key.face, smooth(since / Math.max(0.35, move)));
+  if (key.face !== undefined) state.face = first ? key.face : mixTurn(state.face, key.face, smooth(since / Math.max(0.35, move)));
   else if (key.aim && key.act !== undefined && TURNS_TO.includes(key.act) && stanceOf(key.act, state.stance) !== 'sit') {
     // Reaching for something, lifting it somewhere or holding it out, the body turns to it: the arms only
     // swing forward, so this is how the hand comes where it is aimed.
     const toward = 0.25 - Math.atan2(key.aim.x - toX, (key.aim.z ?? 0) - toZ) / (Math.PI * 2);
     state.face = mixTurn(state.face, toward, smooth(since / 0.4));
   }
-  if (key.act !== undefined && key.act !== state.act) {
-    state.before = { act: state.act, at: state.actAt, stance: state.stance };
+  if (key.act !== undefined && (key.act !== state.act || state.actAt < key.at - 1e-6)) {
+    // Keep any unfinished blend when the next key interrupts it. Relative ages also survive scene changes.
+    const age = Math.max(0, key.at - state.actAt);
+    state.before = first ? null : { act: state.act, t: age, stance: state.stance, aim: state.aim,
+      mug: state.holds === 'mug' ? 1 : state.holdsLeft === 'mug' ? 0 : null, previous: age < .45 ? state.before : null };
     state.stance = stanceOf(key.act, state.stance);
     state.act = key.act;
     state.actAt = key.at;
-  } else if (key.act !== undefined && state.actAt < key.at - 1e-6 && key.act === state.act) {
-    // The same act begun again: its own clock starts over (a second stroke, a second wave).
-    state.before = { act: state.act, at: state.actAt, stance: state.stance };
-    state.actAt = key.at;
+    state.glance = null;
   }
-  if (key.aim !== undefined) state.aim = key.aim;
+  if (key.aim !== undefined) {
+    state.glance = key.act === undefined && state.aim && key.aim && p < 1 ? { from: state.aim, weight: p } : null;
+    state.aim = key.aim;
+  }
   if (key.follow !== undefined) state.follow = key.follow;
   if (key.holds !== undefined) state.holds = key.holds;
   if (key.holdsLeft !== undefined) state.holdsLeft = key.holdsLeft;
@@ -165,7 +171,7 @@ export interface Directions {
   /** Thin bars above and below: a scene is telling. */
   bars: boolean;
   /** The ghost, staged by the scene: where it is, how it is turned and tilted, and its eyes. Null: as the simulation has it. */
-  ghost: { x: number; y: number; z: number; face: number; tilt: number; bounce: number; blink: number; rough: number; look: Point | null } | null;
+  ghost: { x: number; y: number; z: number; face: number; tilt: number; bounce: number; blink: number; rough: number; look: Point | null; act: Act; actT: number } | null;
   /** Elof, in a held scene: lifted, acting, facing, and how big. */
   /** `onto`: where his feet are drawn in the place itself (on a hand), as much as `ontoWeight` says (0 to 1). */
   elof: {
@@ -177,10 +183,12 @@ export interface Directions {
 function thing(kind: Thing, drawing: CanvasTexture): Mesh {
   switch (kind) {
     case 'knife': {
-      const handle = new Mesh(new BoxGeometry(0.09, 0.32, 0.09), new MeshStandardMaterial({ color: '#7a3a2a', roughness: 0.7 }));
+      const handle = new Mesh(new BoxGeometry(0.09, 0.32, 0.09), new MeshStandardMaterial({ color: '#963c30', roughness: 0.7 }));
       const blade = new Mesh(new BoxGeometry(0.03, 0.24, 0.07), new MeshStandardMaterial({ color: '#cfd6d9', roughness: 0.25, metalness: 0.6 }));
+      blade.name = 'carving-blade';
       blade.position.y = 0.28;
       handle.add(blade);
+      const tip = new Object3D(); tip.name = 'carving-knife-tip'; tip.position.y = .4; handle.add(tip);
       return handle;
     }
     case 'brush': {
@@ -198,8 +206,11 @@ function thing(kind: Thing, drawing: CanvasTexture): Mesh {
       mug.add(heart);
       return mug;
     }
-    case 'crayon':
-      return new Mesh(new CylinderGeometry(0.035, 0.035, 0.3, 6), new MeshStandardMaterial({ color: '#d9a13a', roughness: 0.6 }));
+    case 'crayon': {
+      const crayon = new Mesh(new CylinderGeometry(0.035, 0.035, 0.3, 6), new MeshStandardMaterial({ color: '#d9a13a', roughness: 0.6 }));
+      const tip = new Object3D(); tip.name = 'drawing-crayon-tip'; tip.position.y = -.15; crayon.add(tip);
+      return crayon;
+    }
     case 'drawing': {
       const sheet = new Mesh(new PlaneGeometry(1.9, 1.5), new MeshBasicMaterial({ map: drawing, side: DoubleSide }));
       return sheet;
@@ -342,7 +353,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   const drawing = moasDrawing();
   const things = new Map<Thing, Mesh>();
   const rigs = new Map<Role, Rig>();
-  const live = new Map<Role, { x: number; y: number; z: number; face: number; walked: number }>();
+  const live = new Map<Role, { x: number; y: number; z: number; face: number; walked: number; pace: number; velocity: number; act: Act; elapsed: number }>();
   const holders = new Group();
   holders.name = 'stage-things';
   group.add(holders);
@@ -354,7 +365,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   }
   // Each family member's things: one of each that the scenes ask for, so nothing is made during play.
   for (const scene of scenes) for (const keys of Object.values(scene.stage?.actors ?? {})) for (const key of keys ?? []) {
-    for (const held of [key.holds, key.holdsLeft]) if (held && !things.has(held)) {
+    for (const held of [key.holds, key.holdsLeft, key.act === 'draw' ? 'drawing' as const : null]) if (held && !things.has(held)) {
       const mesh = thing(held, drawing);
       mesh.name = `stage-thing:${held}`;
       drawnWhile(mesh, false);
@@ -375,6 +386,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   const sparks = new InstancedMesh(new OctahedronGeometry(0.06), new MeshBasicMaterial({ color: '#fff0b0', transparent: true, opacity: 0.95, depthWrite: false, blending: AdditiveBlending }), SPARKS);
   const glows = new InstancedMesh(new SphereGeometry(0.5, 16, 12), new MeshBasicMaterial({ color: '#ffd774', transparent: true, opacity: 0.22, depthWrite: false, blending: AdditiveBlending }), GLOWS);
   const curls = new InstancedMesh(new BoxGeometry(0.16, 0.03, 0.1), new MeshStandardMaterial({ color: '#ecd3a2', roughness: 0.8 }), CURLS);
+  curls.name = 'carving-shavings';
   for (const mesh of [sparks, glows, curls]) {
     mesh.instanceMatrix.setUsage(DynamicDrawUsage);
     mesh.frustumCulled = false;
@@ -391,11 +403,44 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   const jayFlies = scenes.some((scene) => scene.stage?.fx?.some((fx) => fx.kind === 'jay'));
   if (jayFlies) group.add(jay);
   // The block of wood Pappa carves the ghost out of: it shrinks away as the shavings fly.
-  const block = new Mesh(new BoxGeometry(0.7, 1.2, 0.6), new MeshStandardMaterial({ color: '#d8bf8e', roughness: 0.85 }));
+  const block = new Mesh(new CylinderGeometry(.43, .38, 1.08, 7), new MeshStandardMaterial({ color: '#d8bf8e', roughness: 0.85, flatShading: true }));
   block.name = 'stage-block';
   block.scale.setScalar(0);
   drawnWhile(block, false);
   group.add(block);
+  const supportMark = new Object3D(), contactMark = new Object3D(), gripMark = new Object3D();
+  supportMark.name = 'carving-support-target'; contactMark.name = 'carving-knife-contact';
+  gripMark.name = 'carving-knife-grip';
+  group.add(supportMark, contactMark, gripMark);
+  const knifeDirection = new Vector3(), wristTarget = new Vector3(), up = new Vector3(0, 1, 0);
+  const fingerDirection = new Vector3();
+  const across = new Vector3(), forward = new Vector3(), surfaceDirection = new Vector3();
+  const mark = (name: string) => { const node = new Object3D(); node.name = name; group.add(node); return node; };
+  const paperContact = mark('drawing-paper-contact'), paperSupport = mark('drawing-paper-support');
+  const crayonGrip = mark('drawing-crayon-grip'), mugGrip = mark('sipping-mug-grip'), mouth = mark('sipping-mouth');
+  const sheetLeft = mark('drawing-left-grip'), sheetRight = mark('drawing-right-grip');
+  const heldPoint = new Vector3(), otherHand = new Vector3(), toolAxis = new Vector3(), rim = new Vector3();
+  const drawingHome = scenes.flatMap(scene => scene.stage?.actors?.moa ?? []).find(key => key.act === 'draw');
+  const table = chapter.furniture?.find(piece => piece.look === 'table');
+  // Contact runs down the near-left facet, separated from the supporting hand on the opposite side.
+  function cutPoint(point: CarvingPoint, wood: State, face: number, clearance: number, out: Vector3): Vector3 {
+    const travel = Math.max(0, Math.min(1, (point.ahead - 1.05) / .35));
+    const side = -.96 + .1 * travel;
+    across.set(Math.cos(yaw(face)), 0, -Math.sin(yaw(face)));
+    forward.set(Math.sin(yaw(face)), 0, Math.cos(yaw(face)));
+    surfaceDirection.copy(across).multiplyScalar(side).addScaledVector(forward, Math.sqrt(1 - side * side));
+    // Intersect the tapered seven-sided blank, rather than placing the blade on an enclosing circle.
+    const scale = .76 + .24 * wood.rough;
+    const height = Math.max(0, Math.min(1, ((.24 + point.up - 2.45) / scale + .54) / 1.08));
+    let plane = 0;
+    for (let i = 0; i < 7; i++) {
+      const angle = (i + .5) * Math.PI * 2 / 7;
+      plane = Math.max(plane, Math.sin(angle) * surfaceDirection.x + Math.cos(angle) * surfaceDirection.z);
+    }
+    const radius = (.38 + .05 * height) * scale * Math.cos(Math.PI / 7) / plane;
+    return out.set(wood.x, wood.y + .78 + point.up - 2.45, wood.z)
+      .addScaledVector(surfaceDirection, radius + clearance);
+  }
 
   const place = new Object3D();
   const hand = new Vector3();
@@ -414,6 +459,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         state.walk = null;
         states.set(who, state);
       }
+      // Retained acts keep their age when the next scene starts its own clock at zero.
+      for (const state of states.values()) state.actAt -= scene.seconds;
     }
     return states;
   }
@@ -446,6 +493,11 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       const active = frame ? scenes.findIndex((scene) => scene.id === frame.id) : -1;
       const scene = active >= 0 ? scenes[active]! : null;
       const t = frame?.seconds ?? 0;
+      const ghostKeys = scene?.stage?.actors?.ghost;
+      const workpiece = ghostKeys && ghostKeys[0]!.at <= t ? fresh() : null;
+      if (workpiece) play(workpiece, ghostKeys!, t);
+      let carving: { motion: CarvingMotion; at: number; face: number } | null = null;
+      contactMark.userData.cut = 0;
       // Who rests where: the scenes told before the one playing now, or all of them told so far.
       const resting = rest(flags, active >= 0 ? active : scenes.length);
       // A scene that has just begun starts each actor from where they are drawn now.
@@ -453,7 +505,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         starts.clear();
         for (const [who, now] of live) {
           const state = resting.get(who) ?? fresh();
-          starts.set(who, { ...state, x: now.x, y: now.y, z: now.z, face: now.face, walk: null });
+          starts.set(who, { ...state, x: now.x, y: now.y, z: now.z, face: now.face, walk: null,
+            actAt: lastScene === null && now.act === state.act ? -now.elapsed : state.actAt });
         }
       }
       lastScene = scene?.id ?? null;
@@ -468,18 +521,24 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         drawnWhile(rig.group, state !== undefined);
         if (!state) continue;
         const was = live.get(who);
-        let x = state.x, y = state.y, z = state.z, face = state.face, pace = 0, walked = was?.walked ?? 0;
+        let x = state.x, y = state.y, z = state.z, face = state.face, pace = 0, velocity = 0, walked = was?.walked ?? 0;
         if (!scene && state.follow !== null && was) {
-          // Between scenes the family walks along behind him, and stops where he stops.
+          // A follower accelerates, turns and eases into their place, without walking through a pause or restore.
           const want = elof.x - state.follow;
-          const step = Math.sign(want - was.x) * Math.min(Math.abs(want - was.x), dt * 2.6);
-          const far = Math.abs(want - was.x) > 14;
-          x = far ? want : was.x + (Math.abs(want - was.x) > 0.4 ? step : 0);
-          y = ground(x);
-          z = state.z;
-          pace = dt > 0 && Math.abs(x - was.x) > 1e-4 ? Math.min(1, Math.abs(x - was.x) / dt / 2.6) : 0;
-          face = pace > 0 ? (x > was.x ? 0 : 0.5) : mixTurn(was.face, state.face, Math.min(1, dt * 3));
-          walked += Math.abs(x - was.x);
+          if (dt <= 0) {
+            ({ x, y, z, face, walked, pace, velocity } = was);
+          } else if (Math.abs(want - was.x) > 14) {
+            x = want; y = ground(x); face = state.face;
+          } else {
+            const gap = want - was.x;
+            const speed = Math.sign(gap) * Math.min(2.6, Math.max(0, Math.abs(gap) - 0.25) * 4);
+            velocity = was.velocity + (speed - was.velocity) * -Math.expm1(-9 * dt);
+            const step = Math.sign(velocity) * Math.min(Math.abs(velocity * dt), Math.abs(gap));
+            x = was.x + step; y = ground(x);
+            pace = Math.min(1, Math.abs(step) / dt / 2.6);
+            face = mixTurn(was.face, pace > 0.04 ? (step > 0 ? 0 : 0.5) : state.face, -Math.expm1(-7 * dt));
+            walked += Math.abs(step);
+          }
         } else if (state.walk) {
           const w = state.walk;
           const p = smooth((t - w.at) / w.seconds);
@@ -488,46 +547,178 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           const travel = Math.atan2(w.toX - w.fromX, w.toZ - w.fromZ) / (Math.PI * 2);
           face = mixTurn(face, 0.25 - travel, Math.min(1, pace * 1.5));
         }
-        live.set(who, { x, y, z, face, walked });
         rig.group.position.set(x, y, z);
         rig.group.rotation.y = yaw(face);
         // The aim, from the feet in the body's own side view, in an adult's units.
         const unit = 5.2 / rig.height;
-        let aim: { ahead: number; up: number } | null = null;
-        if (state.aim) {
+        const aimFor = (target: Point | null) => {
+          if (!target) return null;
           const turned = yaw(face);
-          const ahead = (state.aim.x - x) * Math.sin(turned) + ((state.aim.z ?? 0) - z) * Math.cos(turned);
-          aim = { ahead: ahead * unit, up: (state.aim.y - y) * unit };
-        }
+          const ahead = (target.x - x) * Math.sin(turned) + ((target.z ?? 0) - z) * Math.cos(turned);
+          const side = (target.x - x) * Math.cos(turned) - ((target.z ?? 0) - z) * Math.sin(turned);
+          return { ahead: ahead * unit, side: side * unit, up: (target.y - y) * unit };
+        };
+        const aim = aimFor(state.aim);
         const time = scene && keys ? t : clock;
-        const since = (at: number) => (scene && keys ? Math.max(0, t - at) : clock + 10);
-        actPose(state.act, { t: since(state.actAt), aim, stride: walked / (1.25 * rig.height / 5.2), pace, calm }, pose, state.before?.stance ?? state.stance);
-        if (state.stance !== 'stand' && !SEATED.includes(state.act)) actPose(state.act, { t: since(state.actAt), aim, stride: 0, pace: 0, calm }, pose, state.stance);
-        if (state.before && scene && keys && t - state.actAt < 0.45) {
-          actPose(state.before.act, { t: Math.max(0, state.actAt - state.before.at), aim, stride: 0, pace: 0, calm }, before, state.before.stance);
-          blendPose(before, pose, smooth((t - state.actAt) / 0.45), pose);
+        // Between scenes finish the current sip, then hold the cup down; pausing never advances this clock.
+        const prior = was?.act === state.act ? was.elapsed : Math.max(0, -state.actAt);
+        const elapsed = scene && keys ? Math.max(0, t - state.actAt)
+          : prior + (state.act === 'sip' && sippingAt(prior, false, who).raise === 0 ? 0 : Math.max(0, dt));
+        live.set(who, { x, y, z, face, walked, pace, velocity, act: state.act, elapsed });
+        const since = (at: number) => (scene && keys ? Math.max(0, t - at) : elapsed);
+        const context = { t: since(state.actAt), aim, stride: walked / (1.25 * rig.height / 5.2), pace, calm, role: who };
+        actPose(state.act, context, pose, state.stance);
+        if (state.glance) {
+          // Blend the head angles, avoiding a whip through targets passing close behind the body.
+          actPose(state.act, { ...context, aim: aimFor(state.glance.from) }, before, state.stance);
+          pose.nod = mix(before.nod, pose.nod, state.glance.weight);
+          pose.turn = mix(before.turn, pose.turn, state.glance.weight);
+        }
+        if (state.before && elapsed < 0.45) {
+          const previous = (old: NonNullable<State['before']>, out: Pose): Pose => {
+            actPose(old.act, { t: old.t, aim: aimFor(old.aim), stride: 0, pace: 0, calm, role: who }, out, old.stance);
+            if (old.previous) blendPose(previous(old.previous, { ...STANDING }), out, smooth(old.t / .45), out, true);
+            return out;
+          };
+          blendPose(previous(state.before, before), pose, smooth(elapsed / 0.45), pose, true);
         }
         if (pace > 0.01) {
-          actPose('walk', { t: time, aim: null, stride: walked / (1.25 * rig.height / 5.2), pace: 1, calm }, walking);
-          blendPose(pose, walking, Math.min(1, pace), pose);
+          actPose('walk', { t: time, aim: null, stride: walked / (1.25 * rig.height / 5.2), pace: 1, calm, role: who }, walking);
+          const weight = Math.min(1, pace);
+          const acting = !['stand', 'watch', 'look', 'walk'].includes(state.act);
+          // Walking supplies the legs; an offer, a drawing or a mug keeps its hands and torso in the act.
+          for (const joint of ['legL', 'legR', 'kneeL', 'kneeR', 'bounce'] as const) pose[joint] += (walking[joint] - pose[joint]) * weight;
+          if (!acting) {
+            pose.lean += (walking.lean - pose.lean) * weight;
+            if (!state.holdsLeft && state.holds !== 'drawing') {
+              pose.armL += (walking.armL - pose.armL) * weight;
+              pose.elbowL += (walking.elbowL - pose.elbowL) * weight;
+            }
+            if (!state.holds && state.holdsLeft !== 'drawing') {
+              pose.armR += (walking.armR - pose.armR) * weight;
+              pose.elbowR += (walking.elbowR - pose.elbowR) * weight;
+            }
+          }
+          pose.seat = null;
         }
         rig.pose(pose);
+        // Resolve authored interaction targets in 3D. Interrupted acts retain their contact share,
+        // and unreachable targets stay at the real arm's limit rather than stretching the body.
+        hand.set(0, 0, 0); otherHand.set(0, 0, 0);
+        let rightWeight = 0, leftWeight = 0;
+        const reach = (act: Act, age: number, target: Point | null, old: State['before'], share: number): void => {
+          const k = old ? smooth(age / .45) : 1;
+          if (old && k < 1) reach(old.act, old.t, old.aim, old.previous, share * (1 - k));
+          if (!target || !TURNS_TO.includes(act)) return;
+          const t = calm ? 3 : age, weight = share * k;
+          heldPoint.set(target.x, target.y, target.z ?? 0);
+          const right = weight * smooth(t / (act === 'lift' ? 1.1 : act === 'point' ? .3 : .5));
+          hand.addScaledVector(heldPoint, right); rightWeight += right;
+          if (act === 'reach' || act === 'lift') {
+            const left = weight * smooth((t - .08) / (act === 'lift' ? 1.02 : .42));
+            heldPoint.x += .3 * Math.cos(yaw(face)) / unit;
+            heldPoint.y -= .1 / unit;
+            heldPoint.z -= .3 * Math.sin(yaw(face)) / unit;
+            otherHand.addScaledVector(heldPoint, left); leftWeight += left;
+          }
+        };
+        reach(state.act, elapsed, state.aim, state.before, 1);
+        if (rightWeight > 0) rig.reach(1, hand.divideScalar(rightWeight), rightWeight);
+        if (leftWeight > 0) rig.reach(0, otherHand.divideScalar(leftWeight), leftWeight);
+        // The working hands follow the wood, using each body's real arm lengths and the blade's tip.
+        const leavesCarving = state.before?.act === 'carve' && elapsed < .45;
+        if (who === 'pappa' && workpiece?.act === 'carved' && (state.act === 'carve' || leavesCarving)) {
+          const carvingTime = state.act === 'carve' ? since(state.actAt) : state.before!.t;
+          const motion = carvingAt(carvingTime, calm);
+          const weight = state.act === 'carve' ? 1 : 1 - smooth(elapsed / .45);
+          cutPoint(motion.right, workpiece, face, motion.clearance, contactMark.position);
+          supportMark.position.set(workpiece.x, workpiece.y + .65, workpiece.z)
+            .addScaledVector(across, .41 + .06 * workpiece.rough).addScaledVector(forward, -.12);
+          knifeDirection.copy(across).multiplyScalar(.95).addScaledVector(forward, motion.knifeDirection.ahead * .12);
+          knifeDirection.y = motion.knifeDirection.up;
+          knifeDirection.normalize();
+          wristTarget.copy(contactMark.position).addScaledVector(knifeDirection, -.4);
+          rig.reach(0, supportMark.position, weight);
+          fingerDirection.copy(forward).addScaledVector(up, -.25).normalize();
+          rig.grip(1, wristTarget, fingerDirection, gripMark.position, weight);
+          contactMark.userData.cut = motion.cut;
+          if (state.act === 'carve') carving = { motion, at: state.actAt, face };
+        }
+        across.set(Math.cos(yaw(face)), 0, -Math.sin(yaw(face)));
+        forward.set(Math.sin(yaw(face)), 0, Math.cos(yaw(face)));
+        const sheet = things.get('drawing');
+        let drawingContact = false;
+        const leavesDrawing = state.before?.act === 'draw' && elapsed < .45;
+        if (who === 'moa' && drawingHome && table && state.stance === 'sit' && sheet) {
+          const turn = yaw(drawingHome.face ?? .25);
+          sheet.position.set((drawingHome.x ?? x) + Math.sin(turn) * 1.15 / unit, table.at.y + 1.658,
+            (drawingHome.z ?? z) + Math.cos(turn) * 1.15 / unit);
+          sheet.rotation.set(-Math.PI / 2, turn, 0, 'YXZ'); sheet.scale.setScalar(.43);
+          holding.add(sheet);
+          if (state.act === 'draw' || leavesDrawing) {
+            drawingContact = true;
+            const pen = drawingAt(state.act === 'draw' ? since(state.actAt) : state.before!.t, calm, who);
+            const weight = state.act === 'draw' ? 1 : 1 - smooth(elapsed / .45);
+            paperContact.position.copy(sheet.position).addScaledVector(across, pen.across / unit).addScaledVector(forward, pen.ahead / unit);
+            paperContact.position.y += .008 + pen.lift / unit;
+            paperContact.userData.contact = pen.contact;
+            paperSupport.position.copy(sheet.position).addScaledVector(across, .3).addScaledVector(forward, -.08);
+            paperSupport.position.y += .045;
+            fingerDirection.copy(forward).addScaledVector(up, -.15).normalize();
+            rig.grip(0, paperSupport.position, fingerDirection, otherHand, weight);
+            toolAxis.copy(up).addScaledVector(forward, -.45).normalize();
+            heldPoint.copy(paperContact.position).addScaledVector(toolAxis, .15);
+            rig.grip(1, heldPoint, fingerDirection, crayonGrip.position, weight);
+          }
+        }
+        const showsDrawing = state.holds === 'drawing' || state.holdsLeft === 'drawing';
+        const leavesShowing = state.before?.act === 'show' && elapsed < .45;
+        if (sheet && (showsDrawing || leavesShowing)) {
+          rig.mouth(heldPoint).addScaledVector(up, -.64 / unit).addScaledVector(forward, .45 / unit);
+          rig.hand(1, hand); rig.hand(0, otherHand); hand.add(otherHand).multiplyScalar(.5).addScaledVector(up, .18);
+          const arrival = calm || leavesShowing ? 1 : smooth(since(state.actAt) / .5);
+          sheet.position.copy(hand).lerp(heldPoint, arrival);
+          sheet.rotation.set(0, yaw(face), 0); sheet.scale.setScalar(.52);
+          sheetLeft.position.copy(sheet.position).addScaledVector(across, .494).addScaledVector(up, -.18);
+          sheetRight.position.copy(sheet.position).addScaledVector(across, -.494).addScaledVector(up, -.18);
+          const weight = showsDrawing ? arrival : 1 - smooth(elapsed / .45);
+          rig.grip(0, sheetLeft.position, up, otherHand, weight);
+          rig.grip(1, sheetRight.position, up, hand, weight);
+        }
         // What they hold: in the right hand, and in the left. Moa's drawing is held up in both.
-        for (const [side, held] of [[1, state.holds], [0, state.holdsLeft]] as const) {
+        const releasingMug = state.before && elapsed < .45 ? state.before.mug : null;
+        for (const [side, current] of [[1, state.holds], [0, state.holdsLeft]] as const) {
+          const held = current ?? (side === releasingMug ? 'mug' : null);
           if (!held) continue;
           const mesh = things.get(held);
           if (!mesh) continue;
-          holding.add(mesh);
+          if (current) holding.add(mesh);
           rig.hand(side, hand);
-          if (held === 'drawing') {
-            const other = rig.hand(side === 1 ? 0 : 1, new Vector3());
-            hand.add(other).multiplyScalar(0.5);
-            // Held up to the others and to the camera, so that its picture reads.
-            mesh.position.set(hand.x, hand.y + 0.55, hand.z + 0.15);
-            mesh.rotation.set(0, 0, 0);
+          if (held === 'drawing') continue;
+          if (held === 'mug') {
+            const sip = sippingAt(state.act === 'sip' ? since(state.actAt) : 0, calm, who);
+            if (state.before?.act === 'sip' && elapsed < .45) {
+              const old = sippingAt(state.before.t, calm, who), k = smooth(elapsed / .45);
+              sip.raise = mix(old.raise, sip.raise, k); sip.tilt = mix(old.tilt, sip.tilt, k);
+            }
+            rig.mouth(mouth.position);
+            // The nearest rim meets the lips; the cup turns around that contact while she drinks.
+            mesh.rotation.set(-.42 * sip.tilt, yaw(face), 0, 'YXZ');
+            rim.set(0, .16, -.15).applyQuaternion(mesh.quaternion);
+            heldPoint.set(x, mouth.position.y - .9 / unit, z).addScaledVector(across, .4 / unit).addScaledVector(forward, .38 / unit);
+            hand.copy(mouth.position).sub(rim); heldPoint.lerp(hand, sip.raise);
+            fingerDirection.copy(up);
+            // Her hand wraps the side of the cup, rather than occupying its centre.
+            hand.copy(heldPoint).addScaledVector(across, .18);
+            rig.grip(side, hand, fingerDirection, mugGrip.position, current ? 1 : 1 - smooth(elapsed / .45));
+            mesh.position.copy(mugGrip.position).addScaledVector(across, -.18);
           } else {
+            if (held === 'knife' && state.act === 'carve' && workpiece?.act === 'carved') hand.copy(gripMark.position);
+            if (held === 'crayon' && state.act === 'draw' && drawingContact) hand.copy(crayonGrip.position);
             mesh.position.copy(hand);
-            mesh.rotation.set(0, yaw(face), held === 'knife' || held === 'brush' || held === 'crayon' ? -0.6 : 0);
+            if (held === 'knife' && state.act === 'carve' && workpiece?.act === 'carved') mesh.quaternion.setFromUnitVectors(up, knifeDirection);
+            else if (held === 'crayon' && state.act === 'draw' && drawingContact) mesh.quaternion.setFromUnitVectors(up, toolAxis);
+            else mesh.rotation.set(0, yaw(face), held === 'knife' || held === 'brush' || held === 'crayon' ? -0.6 : 0);
           }
         }
       }
@@ -603,6 +794,26 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             break;
           }
           case 'shavings': {
+            if (carving && workpiece) {
+              if (calm) break;
+              for (const chip of carving.motion.shavings) {
+                if (carving.at + chip.born < fx.at) continue;
+                const woodAtBirth = fresh();
+                play(woodAtBirth, ghostKeys!, carving.at + chip.born);
+                cutPoint(chip.right, woodAtBirth, carving.face, 0, wristTarget);
+                for (let i = 0; i < 3 && curl < CURLS; i++, curl++) {
+                  const age = chip.age, seed = chip.id * 3 + i, life = age / CARVING_SHAVING_LIFETIME;
+                  place.position.copy(wristTarget).addScaledVector(across, -(0.25 + i * .13) * age)
+                    .addScaledVector(forward, (.25 + i * .09) * age);
+                  place.position.y += (.35 + i * .12) * age - 2.6 * age * age;
+                  place.rotation.set(seed + age * 7, seed * 1.7, age * 9);
+                  place.scale.setScalar(.28 * fade * smooth(age / .04) * (1 - smooth((life - .55) / .45)));
+                  place.updateMatrix(); curls.setMatrixAt(curl, place.matrix);
+                }
+              }
+              break;
+            }
+            if (calm) break;
             // A curl leaves the knife with each stroke, and falls to the table.
             for (let i = 0; i < 9 && curl < CURLS; i++, curl++) {
               const each = (age * 1.6 + i / 9) % 1;
@@ -634,11 +845,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
 
       // The ghost, where the scene stages it.
       let ghost: Directions['ghost'] = null;
-      const ghostKeys = scene?.stage?.actors?.ghost;
-      if (scene && ghostKeys && ghostKeys[0]!.at <= t) {
-        const state = fresh();
-        state.rough = 0;
-        play(state, ghostKeys, t);
+      if (scene && workpiece) {
+        const state = workpiece;
         const since = t - state.actAt;
         let tilt = 0, bounce = 0, blink = 1;
         switch (state.act) {
@@ -662,10 +870,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             tilt = -0.18 * Math.sin(Math.min(1, since / 0.5) * Math.PI);
             break;
           case 'hop':
-            bounce = Math.abs(Math.sin(since * 6)) * 0.3;
+            bounce = calm ? 0 : Math.abs(Math.sin(since * 6)) * 0.3;
             break;
           case 'peek':
-            tilt = 0.2 + 0.08 * Math.sin(since * 3);
+            tilt = 0.2 + (calm ? 0 : 0.08 * Math.sin(since * 3));
             break;
           case 'freeze':
             blink = 1;
@@ -673,13 +881,13 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           default:
             break;
         }
-        ghost = { x: state.x, y: state.y, z: state.z, face: state.face, tilt, bounce, blink, rough: state.rough, look: state.act === 'look' ? state.aim : null };
+        ghost = { x: state.x, y: state.y, z: state.z, face: state.face, tilt, bounce, blink, rough: state.rough, look: state.act === 'look' ? state.aim : null, act: state.act, actT: since };
       }
       // The block of wood round the ghost, while there is any left.
       const rough = ghost?.rough ?? 0;
-      block.scale.set(rough > 0 ? 0.55 + rough * 0.6 : 0, rough > 0 ? 0.8 + rough * 0.35 : 0, rough > 0 ? 0.55 + rough * 0.6 : 0);
+      block.scale.setScalar(rough > 0 ? .76 + rough * .24 : 0);
       drawnWhile(block, rough > 0);
-      if (ghost && rough > 0) block.position.set(ghost.x, ghost.y + 0.6, ghost.z);
+      if (ghost && rough > 0) block.position.set(ghost.x, ghost.y + .54, ghost.z);
 
       const shot = scene?.stage?.shots ? shotAt(scene.stage.shots, t) : null;
       const elofKeys = scene?.stage?.elof;

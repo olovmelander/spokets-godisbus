@@ -51,12 +51,12 @@ import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
 import { buildVerbMarks } from './verb-marks';
-import { MODEL_TURN, blinkEyes, eyeNodes } from './ghost-model';
+import { MODEL_TURN, blinkEyes, createGhostMotion, eyeNodes } from './ghost-model';
 import type { Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { endsInScene, type SceneFrame } from '../sim/scene';
-import { BERRY_HALF, BERRY_HEIGHT } from '../sim/constants';
+import { BERRY_HALF, BERRY_HEIGHT, JUMP_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
 import { photoCut } from './crop';
@@ -495,7 +495,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(prologueStage.group);
   const epilogueStage = createEpilogueStage(chapter.epilogue);
   scene.add(epilogueStage.group);
-  let ghostFoot: Object3D | null = null;
+  let ghostMotion = createGhostMotion(ghost, true);
   // The stand-in faces +x, as the stand-in Elof does; the model from Blender faces the camera, and is turned to
   // face as the stand-in does (./ghost-model.ts).
   let ghostFaces = 0;
@@ -515,8 +515,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       paintedEyes = eyeNodes(model);
       if (ghostHelps) helper.replaceGhost(model.clone());
       ghostFaces = MODEL_TURN;
-      // GLTFLoader drops the dot from Blender's names: foot.L arrives as footL.
-      ghostFoot = model.getObjectByName('footL') ?? null;
+      ghostMotion = createGhostMotion(model);
       models.push('private/ghost');
       modelInstallations++;
     })
@@ -525,7 +524,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Elof, modelled in Blender after his sheets and photos. He too is only here where the private pack is;
   // everywhere else the stand-in built in code plays his part.
   const elof = createPlayerStandIn();
-  let playerBody: { pose(pose: Pose): void } = elof;
+  let playerBody: Pick<Rig, 'pose' | 'hand' | 'reach'> = elof;
+  let playerHips = ['left', 'right'].map(side => elof.group.getObjectByName(`player-hip-${side}`));
+  let playerFeet = ['left', 'right'].map(side => elof.group.getObjectByName(`player-boot-${side}`));
+  const shoulderPose: Pose = { ...STANDING }, seat = new Vector3(), boot = new Vector3(), palm = new Vector3();
+  const carryAhead = new Vector3(), carryUp = new Vector3(0, 1, 0);
+  const laceHand = new Vector3(), laceAlong = new Vector3();
   const playerMotion = createPlayerMotion();
   assets
     .manifest()
@@ -538,6 +542,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const rig = createModelRig(model, 1);
       elof.group.add(rig.group);
       playerBody = rig;
+      playerHips = ['thigh_l', 'thigh_r'].map(name => model.getObjectByName(name));
+      playerFeet = ['foot_l', 'foot_r'].map(name => model.getObjectByName(name));
       models.push('private/elof');
       modelInstallations++;
     })
@@ -555,7 +561,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   for (const stand of stands) {
     const who = personFor(stand.word)!, rig = createRehearsalRig(who);
     stand.prop!.group.clear(); stand.prop!.group.add(rig.group);
-    family.push({ rig, who, motion: createFamilyMotion(who, stand.at), at: stand.at, glad: stand.glad, was: false, joy: 0 });
+    family.push({ rig, who, motion: createFamilyMotion(who, stand.at, stand.glad), at: stand.at, glad: stand.glad, was: false, joy: 0 });
   }
   if (stage.actors.size > 0 && !standIns) {
     assets.manifest().then(async (manifest) => {
@@ -588,6 +594,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           rig.group.position.copy(one.rig.group.position);
           rig.group.quaternion.copy(one.rig.group.quaternion);
           one.rig = rig;
+          one.neck = model.getObjectByName('Head') ?? model.getObjectByName('head');
           stand.prop!.group.clear();
           stand.prop!.group.add(rig.group);
           characterShadows.add({ object: rig.group, height: rig.height, radius: .45 * rig.height / 5.2,
@@ -648,7 +655,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const look = cameraIntent({ ...startState(chapter) }, chapter.cameras);
   let turn = 0;
   let squash = 1;
-  let wasGrounded = true;
+  let fallingSpeed = 0;
 
   function resize(): void {
     const width = canvas.clientWidth || window.innerWidth;
@@ -888,7 +895,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     glitter.update(curr.bubble, x, y, clock);
     // He hangs by his hands, his body along the lace.
     const hang = curr.hook ? Math.atan2(curr.hook.x - x, curr.hook.y - (y + 0.5)) : 0;
-    lace.update(curr.hook, x - Math.sin(hang) * 0.4, y + 0.5 + Math.cos(hang) * 0.4);
 
     // The simulation says where to look; the view only smooths it.
     const want = { ...cameraIntent(curr, chapter.cameras) };
@@ -977,7 +983,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // In a held scene the scene may turn him: towards his family, or out over the garden.
     const scripted = directions.elof;
     const facingAngle = scripted?.face != null ? -scripted.face * Math.PI * 2 : onHose ? Math.PI / 2 : curr.facing > 0 ? -0.35 : Math.PI + 0.35;
-    turn += (facingAngle - turn) * ease(14, dt);
+    const turnDelta = facingAngle - turn;
+    turn += Math.atan2(Math.sin(turnDelta), Math.cos(turnDelta)) * ease(14, dt);
     // A held scene owns the pose. Otherwise actual travel drives the same articulated pose on both bodies.
     let scriptedPose: Pose | null = null;
     if (scripted?.act && curr.grounded) {
@@ -986,11 +993,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null, stride: 0, pace: 0, calm: calmStory }, elofPose);
     }
     const waving = reaction?.kind === 'player' && curr.grounded;
-    playerBody.pose(playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse));
-    if (curr.grounded && !wasGrounded) squash = 0.94; // the knees take most of the landing
-    wasGrounded = curr.grounded;
-    squash += (1 - squash) * ease(12, dt);
-    const stretch = curr.grounded ? squash : 1 + clamp(curr.vy * 0.012, -0.05, 0.1);
+    const playerPose = playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory);
+    playerBody.pose(playerPose);
+    const elastic = curr.mode === 'free' && !scriptedPose && !calmStory;
+    if (dt > 0) {
+      if (!elastic) { squash = 1; fallingSpeed = 0; }
+      else if (curr.grounded) {
+        if (fallingSpeed > 0) squash = 1 - .025 - .04 * clamp(fallingSpeed / JUMP_SPEED, 0, 1);
+        fallingSpeed = 0;
+      } else fallingSpeed = Math.max(fallingSpeed, -curr.vy);
+      squash += (1 - squash) * ease(12, dt);
+    }
+    // Only a real jump/fall stretches the body: climbing, rides and story lifts keep their proportions.
+    const stretch = !elastic ? 1 : curr.grounded ? squash : 1 + clamp(curr.vy * 0.012, -0.05, 0.1);
     // Knocked over by a drop he goes down on his back, lies a moment, and gets up.
     const lying = curr.mode === 'down' ? Math.min(1, curr.t / 0.15, (1 - curr.t) / 0.25) * 1.4 * curr.facing : 0;
     // The tilt turns about his middle, where the lace's pull goes through.
@@ -1005,6 +1020,20 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     elof.group.rotation.set(0, turn, lying - hang, 'ZYX');
     elof.group.scale.set(tall / Math.sqrt(stretch), tall * stretch, tall / Math.sqrt(stretch));
+    if (scriptedPose && scripted?.act === 'point' && scripted.aim) {
+      const k = calmStory ? 1 : clamp(scripted.actT / .3, 0, 1);
+      playerBody.reach(1, boot.set(scripted.aim.x, scripted.aim.y, scripted.aim.z ?? 0), k * k * (3 - 2 * k));
+    }
+    if (curr.hook) {
+      playerBody.hand(0, laceHand).add(playerBody.hand(1, laceAlong)).multiplyScalar(.5);
+      laceHand.addScaledVector(boot.set(1, 0, 0).applyQuaternion(elof.group.quaternion), .15 * tall);
+      laceAlong.set(curr.hook.x, curr.hook.y, 0).sub(laceHand).normalize();
+      // Close both hands on the same lace, with the lower hand supporting its visible end.
+      playerBody.reach(0, laceHand.addScaledVector(laceAlong, -.2 * tall));
+      playerBody.reach(1, laceHand.addScaledVector(laceAlong, -.06 * tall));
+      playerBody.hand(1, laceHand);
+    }
+    lace.update(curr.hook, laceHand);
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
 
     playerGroundY = curr.groundY;
@@ -1039,17 +1068,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (!hopping) ghostGroundY = ghostState.y;
       // 0 faces along the course; a half turn faces back at him.
       const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4;
-      ghostTurn += (wanted - ghostTurn) * ease(7, dt);
+      const ghostDelta = wanted - ghostTurn;
+      ghostTurn += Math.atan2(Math.sin(ghostDelta), Math.cos(ghostDelta)) * ease(7, dt);
       const awake = !chapter.prologue || flags.has('blink');
-      ghost.rotation.set(0, ghostFaces + ghostTurn, !awake ? 0 : hopping ? -0.25 * Math.sin(Math.PI * ghostState.t) : Math.sin(clock * 1.7) * 0.035);
-      if (ghostFoot) ghostFoot.rotation.x = hopping ? 0 : -Math.max(0, Math.sin(clock * 9)) * (Math.sin(clock * 0.9) > 0.2 ? 0.45 : 0);
+      ghost.rotation.set(0, ghostFaces + ghostTurn, !awake ? 0 : hopping ? -0.25 * Math.sin(Math.PI * ghostState.t) : calmStory ? 0 : Math.sin(clock * 1.7) * 0.035);
       if (chapter.prologue && prologue) {
         const pose = prologuePose(chapter.prologue, prologue);
         ghostPlace.position.set(pose.x, pose.y, pose.z);
         ghostSize = pose.scale;
         ghostPlace.scale.setScalar(ghostSize);
         ghost.rotation.set(0, ghostFaces + pose.turn, pose.tilt);
-        if (ghostFoot) ghostFoot.rotation.x = 0;
         ghostStaged = true;
       } else if (chapter.prologue && flags.has('pappa:done') && !chapter.prologue.edge) {
         ghostSize = 0;
@@ -1064,10 +1092,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostPlace.scale.setScalar(1);
         ghostTurn = -staged.face * Math.PI * 2;
         ghost.rotation.set(0, ghostFaces + ghostTurn, staged.tilt);
-        if (ghostFoot) ghostFoot.rotation.x = 0;
         ghostStaged = true;
       }
       blinkEyes(paintedEyes, staged?.blink ?? 1);
+      ghostMotion.update({ dt, clock, hop: hopping ? ghostState.t : null, calm: calmStory, awake, staged: ghostStaged, performance: staged ?? undefined });
       looking.update(staged?.look ? ghostPlace.position : null, staged?.look ?? null, clock, dt);
     }
     if (chapter.prologue) {
@@ -1095,7 +1123,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostPlace.position.set(chapter.shelf.x - 2.4, chapter.shelf.y + 0.08, -8.5);
       ghostPlace.scale.setScalar(1);
       ghost.rotation.set(0, ghostFaces - Math.PI / 2, 0);
-      if (ghostFoot) ghostFoot.rotation.x = 0;
+      ghostMotion.update({ dt, clock, hop: null, calm: calmStory, awake: true, staged: true });
       ghostStaged = true;
     }
     ghostThought?.update(ghostState, flags, { x, y }, camera, clock, dt,
@@ -1103,29 +1131,59 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // The same jointed body greets him at help points and in the story; its outer root remains the place's.
     for (const one of family) {
       const now = one.glad !== undefined && flags.has(one.glad);
-      if (now && !one.was) one.joy = 1.8;
-      one.was = now;
-      one.joy = Math.max(0, one.joy - dt);
+      if (dt > 0) {
+        if (now && !one.was) one.joy = 1.8;
+        one.was = now;
+        one.joy = Math.max(0, one.joy - dt);
+      }
       const towards = clamp((x - one.at) * 0.22, -0.75, 0.75);
-      const carrying = chapter.id === 'norrsken' && homeJourney && flags.has('home') && one.who === 'pappa';
-      const turn = (carrying ? Math.PI / 2 - .35 : towards) - one.rig.group.rotation.y;
-      one.rig.group.rotation.y += Math.atan2(Math.sin(turn), Math.cos(turn)) * ease(4, dt);
+      const carrying = onShoulders && one.who === 'pappa';
+      const facing = carrying ? Math.PI / 2 - .35 : towards;
+      const turn = facing - one.rig.group.rotation.y;
+      if (calmStory && dt > 0) one.rig.group.rotation.y = facing;
+      else one.rig.group.rotation.y += Math.atan2(Math.sin(turn), Math.cos(turn)) * ease(4, dt);
       one.rig.group.position.set(0, 0, 0);
-      one.rig.pose(one.motion.update(dt, clock, one.joy, towards, carrying ? x : null, calmStory));
+      one.rig.pose(one.motion.update(dt, clock, one.joy, towards - one.rig.group.rotation.y, carrying ? x : null, calmStory, {
+        ahead: Math.abs(x - one.at) * 5.2 / one.rig.height,
+        up: (y + tall * .8 - one.rig.group.parent!.position.y) * 5.2 / one.rig.height,
+      }));
     }
     if (chapter.id === 'norrsken') {
       const carving = scene.getObjectByName('mover:tragubbe');
       if (carving && flags.has('taste') && ghostState && !homeJourney) carving.position.set(ghostState.x - .5, ghostState.y, 0);
       if (homeJourney && flags.has('home')) {
         // The home ride is visibly Pappa carrying Elof, with both returned carvings alongside him.
-        const pappa = stands.find((stand) => personFor(stand.word) === 'pappa');
-        const model = pappa?.prop?.group.children[0];
+        const k = clamp(shoulderLift / 4.25, 0, 1), weight = k * k * (3 - 2 * k);
+        const pappa = family.find(one => one.who === 'pappa'), model = pappa?.rig.group;
         if (model && pappa) {
-          model.position.set(x - pappa.at, y - pappa.prop!.group.position.y, 0);
+          model.position.set(x - pappa.at, y - model.parent!.position.y, 0);
+          if (shoulderLift > 0) {
+            carryAhead.set(Math.sin(model.rotation.y), 0, Math.cos(model.rotation.y));
+            if (pappa.neck) pappa.neck.getWorldPosition(seat);
+            else pappa.rig.mouth(seat).addScaledVector(carryUp, -.25).addScaledVector(carryAhead, -.38);
+            seat.addScaledVector(carryAhead, -.14 * tall).addScaledVector(carryUp, .1 * tall);
+            const hips = playerHips[0] && playerHips[1]
+              ? (playerHips[0].getWorldPosition(boot).y + playerHips[1].getWorldPosition(palm).y) / 2 - elof.group.position.y : .4 * tall;
+            Object.assign(shoulderPose, playerPose);
+            shoulderPose.legL = lerp(playerPose.legL, .85, weight); shoulderPose.legR = lerp(playerPose.legR, .85, weight);
+            shoulderPose.kneeL = lerp(playerPose.kneeL, 1.15, weight); shoulderPose.kneeR = lerp(playerPose.kneeR, 1.15, weight);
+            shoulderPose.seat = hips * 5.2 / tall * (1 - weight);
+            playerBody.pose(shoulderPose);
+            elof.group.position.lerp(seat, weight);
+            for (const side of [0, 1] as const) {
+              const foot = playerFeet[side];
+              if (!foot) continue;
+              foot.getWorldPosition(boot).addScaledVector(carryUp, -.025 * tall);
+              pappa.rig.grip(side, boot, carryUp, palm, weight);
+            }
+          }
         }
-        ghostPlace.visible = true; ghostPlace.position.set(x - .8, y + shoulderLift, .12); ghostPlace.scale.setScalar(1);
+        seat.copy(elof.group.position); seat.y -= .16 * tall; seat.z += .1 * tall;
+        seat.lerp(boot.set(x, y + shoulderLift, .12), 1 - weight);
+        ghostPlace.visible = true; ghostPlace.position.copy(seat); ghostPlace.position.x -= .8; ghostPlace.scale.setScalar(1);
+        ghostMotion.update({ dt, clock, hop: null, calm: calmStory, awake: true, staged: true });
         ghostGroundY = playerGroundY;
-        if (carving) carving.position.set(x + .8, y + shoulderLift, .12);
+        if (carving) { carving.position.copy(seat); carving.position.x += .8; }
       }
       sharedSweets?.update(flags, ghostPlace.position, carving?.position);
     }
@@ -1253,6 +1311,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
 /** One of the family at a help point; replacement keeps its greeting and movement state. */
 interface Relative {
   rig: Rig;
+  neck?: Object3D;
   who: Role;
   motion: ReturnType<typeof createFamilyMotion>;
   /** Where they stand, along the course. */
@@ -1759,20 +1818,21 @@ function buildMovers(chapter: ChapterData): Group[] {
  */
 function buildLace() {
   const mesh = new Mesh(new CylinderGeometry(0.022, 0.022, 1, 6), new MeshStandardMaterial({ color: '#e0463a', roughness: 0.5 }));
+  mesh.name = 'player-lace';
+  const up = new Vector3(0, 1, 0), along = new Vector3();
   mesh.frustumCulled = false;
   mesh.scale.setScalar(0);
   drawnWhile(mesh, false);
-  function update(hook: { x: number; y: number } | null, handX: number, handY: number): void {
+  function update(hook: { x: number; y: number } | null, hand: Vector3): void {
     drawnWhile(mesh, hook !== null);
     if (!hook) {
       mesh.scale.setScalar(0);
       return;
     }
-    const dx = hook.x - handX;
-    const dy = hook.y - handY;
-    mesh.position.set((hook.x + handX) / 2, (hook.y + handY) / 2, 0);
-    mesh.rotation.z = -Math.atan2(dx, dy);
-    mesh.scale.set(1, Math.hypot(dx, dy), 1);
+    const length = along.set(hook.x, hook.y, 0).sub(hand).length();
+    mesh.position.copy(hand).addScaledVector(along, .5);
+    mesh.quaternion.setFromUnitVectors(up, along.normalize());
+    mesh.scale.set(1, length, 1);
   }
   return { mesh, update };
 }
@@ -1937,6 +1997,7 @@ function buildGhost(): Group {
     eye.name = `ghost-eye-${i}`;
     eye.position.set(0.235, 0.82, z);
     const shoe = new Mesh(new BoxGeometry(0.24, 0.1, 0.14), red);
+    shoe.name = i === 0 ? 'footL' : 'footR';
     shoe.position.set(0.05, 0.05, z * 1.3);
     group.add(eye, shoe);
   }
