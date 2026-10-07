@@ -181,17 +181,15 @@ describe('a wooden floor', () => {
   });
 
   it('is a walk of planks over the bog: narrow, with a front edge a step in front of the path', () => {
-    let front = -Infinity;
+    // Over the bog the boards are no floor: the planks (./spang.ts, and bog-spang.test.ts for their front
+    // edge) lie on a ridge of the bog's own peat, which goes down in front of them.
     let under = 0;
     const bog = COURSES['myren']!;
-    for (const corner of corners('myren', wood)) {
-      front = Math.max(front, corner.z);
-      if (Math.abs(heightAt(bog, corner.x - 0.5) - heightAt(bog, corner.x + 0.5)) < 0.01 && corner.z > 0.5) under = Math.max(under, heightAt(bog, corner.x) - corner.y);
+    for (const corner of corners('myren', (kind) => kind === 'ridge')) {
+      if (Math.abs(heightAt(bog, corner.x - 0.5) - heightAt(bog, corner.x + 0.5)) < 0.01 && corner.z > 1.3) under = Math.max(under, heightAt(bog, corner.x) - corner.y);
     }
-    expect(front).toBeGreaterThan(0.9);
-    expect(front).toBeLessThan(1.3);
-    // Under its edge it goes down: a rim, and the peat it lies on.
     expect(under).toBeGreaterThan(4);
+    expect([...corners('myren', wood)]).toHaveLength(0);
   });
 });
 

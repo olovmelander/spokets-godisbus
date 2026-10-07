@@ -125,8 +125,6 @@ interface Row {
   ledge?: 1 | 2;
   /** On a deck's rim board: 0 at its upper edge, 1 at its lower. The board lies along the path. */
   rim?: number;
-  /** The dark under a walk of planks: how far its tone has gone into it. Nothing is lit there. */
-  hollow?: number;
   /** A section sample between two original rows: stay on their line even where the front draws back. */
   between?: readonly [Row, Row, number];
 }
@@ -497,10 +495,6 @@ const BOARDS_BEHIND: Row[] = [
   { z: EDGE, drop: 0, shade: 1, bump: 0 },
   { z: 1.1, drop: 0, shade: 1, bump: 0 },
 ];
-/** How thick a plank is at its end, and how high the rim board under a walk of planks: a board on edge. */
-const BOARD_END = 0.19;
-const RIM = 0.76;
-
 /**
  * A wooden floor: boards, level where he walks, and in front of the path the tilted plane (`TILTED`). It was
  * a face at first: the boards' picture ran down it 16 lengths deep, a plank fence with black gaps. Where
@@ -517,27 +511,6 @@ const PROFILE_FLOOR: Row[] = [
   { z: TILT_ENDS - 0.05, drop: FLOOR_DROP + 0.9, shade: 0.4, bump: 0, cut: 1 },
   ...TILTED.slice(-2),
 ];
-
-/**
- * A walk of planks laid over a bog is narrow: it has a front edge. The boards' ends, a line of shadow under
- * their overhang, one rim board along the path that catches the light, and under it the dark.
- * Two rows may stand in one place: the colour changes there at once, as at an edge, and not over a slope.
- */
-const PROFILE_PLANKS: Row[] = [
-  ...BOARDS_BEHIND,
-  { z: 1.1, drop: BOARD_END, shade: 0.86, bump: 0 },
-  { z: 1.1, drop: BOARD_END, shade: 0.12, bump: 0 },
-  { z: 1.0, drop: BOARD_END, shade: 0.12, bump: 0 },
-  { z: 1.0, drop: BOARD_END + 0.15, shade: 0.12, bump: 0 },
-  { z: 1.0, drop: BOARD_END + 0.15, shade: 1, bump: 0, rim: 0 },
-  { z: 1.0, drop: BOARD_END + 0.15 + RIM, shade: 0.92, bump: 0, rim: 1 },
-  { z: 1.0, drop: BOARD_END + 0.15 + RIM, shade: 1, bump: 0, hollow: 0.55 },
-  { z: 0.72, drop: BOARD_END + 0.2 + RIM, shade: 1, bump: 0, hollow: 0.75 },
-  { z: 0.72, drop: BOARD_END + 2.4 + RIM, shade: 1, bump: 0, hollow: 1 },
-  { z: 0.72, drop: 16, shade: 1, bump: 0, hollow: 1 },
-];
-/** Under a walk of planks: the peat it lies on, in its shadow just under the rim and darker further down. */
-const HOLLOW = [new Color('#5a4630'), new Color('#2a2018')];
 
 /**
  * How far down a profile each of its rows lies, measured along the surface, and counted so that it is the
@@ -591,23 +564,40 @@ function islandSide(top: number, foot: number, wet: number): [number, number][] 
     .filter(([under]) => under > 0 && under < top - foot - 0.05);
 }
 
-/** A wooden floor's front, a walk of planks' over the bog, and a bog's island's. */
+/**
+ * Under a walk of planks over the bog (./spang.ts): the bog's own peat in a low ridge. Where the planks lie it
+ * is a plank and a sleeper under the line he walks on, in their shade; behind them it sinks into the bog as the
+ * islands do, and in front it rounds off as the bank does (visual audit, myren row 7).
+ */
+const PROFILE_RIDGE: Row[] = [
+  ...PROFILE_ISLAND.slice(0, 3),
+  { z: -2.4, drop: 0.3, shade: 0.94, bump: 0.08 },
+  { z: -1.3, drop: 0.36, shade: 0.8, bump: 0 },
+  { z: -0.3, drop: 0.36, shade: 0.75, bump: 0 },
+  { z: EDGE, drop: 0.36, shade: 0.75, bump: 0 },
+  { z: 1.3, drop: 0.4, shade: 0.82, bump: 0 },
+  { z: 1.7, drop: 0.62, shade: 0.8, bump: 0.08 },
+  ...PROFILE.slice(9),
+];
+
+/** A wooden floor's front, a bog's island's, and the ridge under a walk of planks over the bog. */
 const FLOOR_FRONT: Front = { rows: PROFILE_FLOOR, cuts: true, lip: 0, hang: 0, course: 0.9, over: BUILT, jointed: false, far: FAR, shore: 'ground' };
-const PLANKS_FRONT: Front = { rows: PROFILE_PLANKS, cuts: false, lip: 0, hang: 0, course: Infinity, over: SOFT, jointed: false, far: FAR, shore: false };
 const ISLAND_FRONT: Front = { rows: PROFILE_ISLAND, cuts: false, lip: 0, hang: 0, course: Infinity, over: SOFT, jointed: false, far: FAR, shore: false };
+const RIDGE_FRONT: Front = { rows: PROFILE_RIDGE, cuts: false, lip: 0, hang: 0, course: Infinity, over: SOFT, jointed: false, far: FAR, shore: false };
 
 /**
- * The front of a kind of ground in a place: boards are a floor, or a walk of planks where the place is a
- * bog; a bog's own ground is islands; everything else has the place's front, in its own stuff.
+ * The front of a kind of ground in a place: boards are a floor; under a walk of planks over a bog the ground
+ * is a ridge; a bog's own ground is islands; everything else has the place's front, in its own stuff.
  */
 function frontFor(kind: Ground, own: Ground): Front {
-  if (GROUNDS[kind].boards) return GROUNDS[own].sinks ? PLANKS_FRONT : FLOOR_FRONT;
+  if (kind === 'ridge') return RIDGE_FRONT;
+  if (GROUNDS[kind].boards) return FLOOR_FRONT;
   if (GROUNDS[kind].sinks) return ISLAND_FRONT;
   return frontOf(own);
 }
 
 /** What the ground is made of: a place's own, or what a chapter marks a stretch as. */
-export type Ground = 'moss' | 'lawn' | 'sphagnum' | 'granite' | SurfaceKind;
+export type Ground = 'moss' | 'lawn' | 'sphagnum' | 'granite' | 'ridge' | SurfaceKind;
 interface GroundLook {
   /** Four tones, from deep to bright. */
   colours: Color[];
@@ -630,6 +620,8 @@ const GROUNDS: Record<Ground, GroundLook> = {
   moss: { colours: MOSS, wall: SOIL, shade: SHADE, bump: 1, boards: false },
   lawn: { colours: tones('#3f6a22', '#5c962b', '#7fb238', '#aecb52'), wall: new Color('#4a3826'), shade: new Color('#2a4a3a'), bump: 0.8, boards: false },
   sphagnum: { colours: tones('#6e3226', '#8f4d2b', '#7d8a36', '#bca94c'), wall: new Color('#2e241c'), shade: new Color('#2a3438'), bump: 1, boards: false, sinks: true },
+  // The bog's peat under its walk of planks: the bog's own, a little browner and drier.
+  ridge: { colours: tones('#5e3324', '#7a4a2c', '#76803a', '#a89a4a'), wall: new Color('#2e241c'), shade: new Color('#2a3438'), bump: 1, boards: false, sinks: true },
   granite: { colours: tones('#8f939d', '#a4a8b2', '#bcbfc6', '#d6d5d6'), wall: new Color('#8f929a'), shade: new Color('#46527e'), bump: 0.25, boards: false, rock: true },
   wood: { colours: tones('#a48a69', '#b49a78', '#c2a988', '#ccb696'), wall: new Color('#a38866'), shade: new Color('#2b2a33'), bump: 0, boards: true },
   earth: { colours: tones('#57432e', '#695037', '#7a5e41', '#8a6c4b'), wall: new Color('#4a3826'), shade: new Color('#2c2a2e'), bump: 0.5, boards: false },
@@ -749,7 +741,11 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
   const first = line[0]!;
   const last = line[line.length - 1]!;
   const outline = [{ x: first.x - 16, y: first.y }, ...line, { x: last.x + 16, y: last.y }];
-  const kindAt = (x: number): Ground => surfaceAt(chapter, x) ?? own;
+  // Over a bog what is marked wood is a walk of planks (./spang.ts) on a ridge of the bog's own peat.
+  const kindAt = (x: number): Ground => {
+    const kind = surfaceAt(chapter, x) ?? own;
+    return GROUNDS[own].sinks && GROUNDS[kind].boards ? 'ridge' : kind;
+  };
   /** How high a pool's near shore lies in a front that has one. */
   const shoreOf = (front: Front, pool: { from: number; to: number; y: number }) => (front.shore === 'ground'
     ? Math.max(pool.y + SHORE_OVER, Math.min(heightAt(chapter, pool.from - 0.6), heightAt(chapter, pool.to + 0.6)))
@@ -908,7 +904,6 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
         const depth = face ? under : drop - dropAt(profile, z);
         if (depth > 0) roadCutAt(kind, p.x, z, depth, c);
       }
-      if (row.hollow !== undefined) c.copy(HOLLOW[0]!).lerp(HOLLOW[1]!, row.hollow);
       if (block) c.multiplyScalar(block.tone);
       // A joint is a dark line down the faces, and a faint one across the ledges and the top.
       if (seam) c.multiplyScalar(row.cut ? 0.5 : row.z > EDGE ? 0.8 : 0.93);

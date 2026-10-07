@@ -1,6 +1,6 @@
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {
-  BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
+  AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
@@ -225,6 +225,29 @@ const SIGNS: Record<string, string> = {
 };
 
 /** A thing at a spot, a little behind the path so that he passes in front of it. Null: only the glint. */
+/**
+ * A shy light's glow, worked out in numbers so that it needs no canvas: pale gold at its heart, green towards its
+ * rim, and gone at its edge. Its brightness is in its alpha, so that it adds to what is behind it.
+ */
+function wispLight(): DataTexture {
+  const size = 32;
+  const data = new Uint8Array(size * size * 4);
+  const [rim, gold, heart] = [new Color('#8ac5a0'), new Color('#fff2b0'), new Color('#fffbe8')];
+  const tone = new Color();
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const out = Math.hypot(x + 0.5 - size / 2, y + 0.5 - size / 2) / (size / 2);
+      const core = Math.max(0, 1 - out / 0.12);
+      tone.copy(rim).lerp(gold, Math.max(0, 1 - out / 0.4)).lerp(heart, core);
+      data.set([tone.r * 255, tone.g * 255, tone.b * 255, 255 * Math.min(1, core + 0.85 * Math.max(0, 1 - out) ** 2)], (y * size + x) * 4);
+    }
+  }
+  const texture = new DataTexture(data, size, size);
+  texture.magFilter = texture.minFilter = LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 export function spotProp(spot: Spot): SpotProp | null {
   const group = new Group();
   group.position.set(spot.at.x, spot.at.y, -0.6);
@@ -254,14 +277,19 @@ export function spotProp(spot: Spot): SpotProp | null {
       return { group, update() {} };
     }
     case 'wisp': {
-      const light = solid('#fff2b0', 0.25, { emissive: '#ffe8a0', emissiveIntensity: 1.8 });
-      const glow = ball(0.18, light, 0, 0.65);
-      const halo = ball(0.32, solid('#b0e1b7', 0.4, { transparent: true, opacity: 0.3, depthWrite: false, emissive: '#8ac5a0', emissiveIntensity: 0.6 }), 0, 0.65);
-      group.add(glow, halo);
+      // A shy light over the bog: a soft glow, pale gold at its heart and green towards its rim, added to the
+      // mist behind it, that bobs and shimmers (visual audit, myren row 19). It was a ball in a shell.
+      const material = new MeshBasicMaterial({ map: wispLight(), transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false });
+      const glow = new Mesh(new PlaneGeometry(1.4, 1.4), material);
+      glow.position.y = 0.65;
+      group.add(glow);
       group.visible = false;
+      // Each shimmers at its own pace: slowly, two waves together, never a flicker.
+      const pace = 0.8 + (Math.abs(spot.at.x * 7.3) % 1) * 0.6;
       return { group, update(used, clock, dt) {
         vanish(used, dt, 0.6);
-        glow.position.y = halo.position.y = 0.65 + Math.sin(clock * 2.5) * 0.12;
+        glow.position.y = 0.65 + Math.sin(clock * 2.5) * 0.12;
+        material.color.setScalar(0.88 + 0.12 * Math.sin(clock * 2.3 * pace) * Math.sin(clock * 1.1 * pace + 1));
       } };
     }
     case 'ladybird': {
