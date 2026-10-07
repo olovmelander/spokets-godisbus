@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
 import { groundOf } from '../../src/render/dressing';
-import { BOARD, TILT, TILT_ENDS, bankShapes, forwardAt, tileOf } from '../../src/render/dressing/ground';
+import { BOARD, DRAIN_BACK, DRAIN_FRONT, TILT, TILT_ENDS, bankShapes, drainsOf, forwardAt, streetDrop, tileOf } from '../../src/render/dressing/ground';
 import { heightAt } from '../../src/render/dressing/kit';
 
 /** Every corner of a chapter's ground of some kinds that a triangle is drawn with. */
@@ -240,7 +240,9 @@ describe('a street', () => {
     let sloping = 0;
     for (const corner of corners('byn', built)) {
       const pool = (street.water ?? []).some((w) => corner.x >= w.from - 1 && corner.x <= w.to + 1);
-      if (pool || !open('byn', corner.x)) continue;
+      // The drain's well is shut by the street in front of its grate: see below.
+      const drain = drainsOf(street).some((d) => corner.x >= d.from - 1 && corner.x <= d.to + 1);
+      if (pool || drain || !open('byn', corner.x)) continue;
       const under = heightAt(street, corner.x) - corner.y;
       if (corner.z >= -0.35 && corner.z <= 0.451) expect(under, `at x ${corner.x.toFixed(2)}`).toBeCloseTo(0, 5);
       else if (corner.z >= 1.6 - 1e-4 && corner.z <= TILT_ENDS + 1e-4 && under < tilted(TILT_ENDS) + 0.01) {
@@ -249,6 +251,32 @@ describe('a street', () => {
       }
     }
     expect(sloping).toBeGreaterThan(80);
+  });
+
+  it('shuts its drain with the street: in front of the grate and behind it, the ground is at the bars\' height', () => {
+    const [drain] = drainsOf(street);
+    expect(drain).toEqual({ from: 18, to: 34.6, y: 0 });
+    let front = 0, behind = 0, well = 0;
+    for (const { kind, shape } of bankShapes(street, 'asphalt')) {
+      if (kind !== 'asphalt' && kind !== 'iron') continue;
+      const at = shape.getAttribute('position');
+      for (let i = 0; i < at.count; i++) {
+        const x = at.getX(i), y = at.getY(i), z = at.getZ(i);
+        if (x < drain!.from + 0.05 || x > drain!.to - 0.05) continue;
+        if (z > DRAIN_FRONT + 0.01 && z <= TILT_ENDS - 0.2) {
+          front += 1;
+          expect(y, `at x ${x.toFixed(2)}, z ${z.toFixed(2)}`).toBeCloseTo(drain!.y - streetDrop(z), 4);
+        } else if (z < DRAIN_BACK - 0.01) {
+          behind += 1;
+          expect(y, `at x ${x.toFixed(2)}, z ${z.toFixed(2)}`).toBeCloseTo(drain!.y, 5);
+        } else if (z > DRAIN_BACK + 0.01 && z < DRAIN_FRONT - 0.01 && y < -1) well += 1;
+      }
+      shape.dispose();
+    }
+    expect(front).toBeGreaterThan(50);
+    expect(behind).toBeGreaterThan(20);
+    // Between the two, the dark between the bars goes down as deep as the simulation's.
+    expect(well).toBeGreaterThan(10);
   });
 
   it('closes its puddle with the street itself: in front of the water the ground is at street level', () => {

@@ -50,11 +50,12 @@ describe('the street exposed in section', () => {
   });
 
   it('adds collinear front samples without moving the original street surface, even beside retracted edges', () => {
-    // Iron still uses the original street profile. Its shape is an independent reference for the road's
-    // surface; new section rows may split its segments, never move beyond them or towards the camera.
-    const reference = section('iron');
+    // Stone (the shop's step) still uses the original street profile. Its shape is an independent reference
+    // for the road's surface; new section rows may split its segments, never move beyond them or towards the
+    // camera. The profile has 19 rows: one is where a drain's grate ends behind the path.
+    const reference = section('stone');
     const before = reference.getAttribute('position');
-    const originalRows = 18;
+    const originalRows = 19;
     const columns = new Map<number, Vector3[][]>();
     for (let first = 0; first < before.count; first += originalRows) {
       const points = Array.from({ length: originalRows }, (_, row) => new Vector3().fromBufferAttribute(before, first + row));
@@ -92,7 +93,7 @@ describe('the street exposed in section', () => {
   });
 
   it('keeps the playable top normals and texture coordinates of the unchanged street profile', () => {
-    const reference = section('iron');
+    const reference = section('stone');
     const oldAt = reference.getAttribute('position'), oldNormal = reference.getAttribute('normal'), oldUv = reference.getAttribute('uv');
     const tops = new Map<string, { normal: number[]; uv: number[] }[]>();
     for (let i = 0; i < oldAt.count; i++) {
