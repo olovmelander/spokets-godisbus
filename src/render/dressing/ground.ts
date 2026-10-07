@@ -1,5 +1,6 @@
 import { BufferGeometry, Color, Float32BufferAttribute, Group, Mesh, MeshStandardMaterial, type CanvasTexture } from 'three';
 import type { ChapterData, SurfaceKind } from '../../sim/types';
+import { cliffJoints } from '../cliff-joints';
 import { stoneCourses } from '../stone-courses';
 import { MOSS, drawn, hash, heightAt, landscape, noise, sequence, surfaceAt } from './kit';
 
@@ -796,11 +797,19 @@ export function bank(chapter: ChapterData, own: Ground): Group {
   for (const { kind, shape } of shapes) {
     const look = GROUNDS[kind];
     const map = look.boards ? maps.boards : look.rock || look.grit ? maps.granite : maps.speckles;
-    const material = new MeshStandardMaterial({ vertexColors: true, map, roughness: look.boards ? 0.8 : look.rock ? 0.9 : 1 });
-    if (chapter.place === 'village' && kind === 'stone') stoneCourses(material);
-    group.add(new Mesh(shape, material));
+    group.add(new Mesh(shape, groundMaterial(chapter, kind, map)));
   }
   return group;
+}
+
+/** What a stretch of ground is drawn with: its colours at its corners, its picture, and its own kind's touches. */
+export function groundMaterial(chapter: ChapterData, kind: Ground, map: CanvasTexture | null): MeshStandardMaterial {
+  const look = GROUNDS[kind];
+  const material = new MeshStandardMaterial({ vertexColors: true, map, roughness: look.boards ? 0.8 : look.rock ? 0.9 : 1 });
+  if (chapter.place === 'village' && kind === 'stone') stoneCourses(material);
+  // Granite's cliffs break into blocks along their joints.
+  if (kind === 'granite') cliffJoints(material);
+  return material;
 }
 
 /** The shapes of a chapter's ground, a stretch of one kind at a time. No picture is drawn for them here. */
