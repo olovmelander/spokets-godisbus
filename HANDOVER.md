@@ -2,6 +2,27 @@
 
 ## State (7 October 2026)
 
+- **Graphics, cloud stage 31: birch leaves falling in the village** (7 October, cloud session, branch
+  `ccr-6078e7de-t0rxpz`; the rest of the visual audit's `byn` row 16).
+  - **Before:** seventy specks of dust drifted in the village's sun, and nothing fell. Only the forest had
+    anything falling: five tiny needles and leaves.
+  - **Falling birch leaves** (`FALLING_BIRCH` and `LIFE.birch` in `src/render/dressing/effects.ts`).
+    - Nine birch leaves, as big as those on the street, tumble down behind the path, now flat and now on
+      edge. Each falls from out of the picture to the ground at about 0.6 EL a second, in its own time.
+    - They are a dull birch yellow, since what falls is never gold.
+    - None falls in the shop, and with reduced motion none falls at all.
+    - Twenty-four specks of dust are left in the sun.
+    - One draw for all of them: the village gains that one.
+    - The forest's needles and small leaves are as they were.
+  - **Checked:**
+    - Pictures at byn x 30 and 90 on High 1180×820, four frames 0.7 s apart, to see them fall.
+    - Suites: village, smoke, gpu-memory and journey.
+    - New unit tests in `falling-leaves.test.ts`, with a stand-in canvas:
+      - nine leaves, as big as those on the street, all behind the path;
+      - none in the shop, and none at all with reduced motion;
+      - the forest keeps its needles and small leaves.
+    - The script is 440.1 KB of 450 (+0.1 KB).
+
 - **Graphics, cloud stage 30: the dark under a wooden floor** (7 October, cloud session, branch
   `ccr-6078e7de-t0rxpz`; the visual audit's `byn` row 19 and `garden-and-home` row 2).
   - **Before:** under a wooden floor's rim board, the boards' picture ran on down the cut face. On a phone
@@ -2661,7 +2682,7 @@
   it stood at 448.7 KB; the build now ships shaders without their padding (`scripts/squeeze-glsl.mjs`, see
   "State"), which took it to 445.5 KB. After stages 13 to 17 it stood at 448.0 KB. Stage 18 left out three's
   Zstandard decoder, which no texture of the game's needs (`scripts/no-zstd.mjs`): it stood at 431.0 KB. After
-  stage 19 it stood at 432.2 KB, after stage 25 at 437.5 KB, after stage 26 at 438.6 KB and after stage 27 at 439.7 KB and after stage 28 at 439.6 KB; after stages 29 and 30 it stands at 440.0 KB, about 10 KB left. The gate counts every `.js` in the build, so splitting code into chunks
+  stage 19 it stood at 432.2 KB, after stage 25 at 437.5 KB, after stage 26 at 438.6 KB and after stage 27 at 439.7 KB and after stage 28 at 439.6 KB and after stages 29 and 30 at 440.0 KB; after stage 31 it stands at 440.1 KB, about 9.9 KB left. The gate counts every `.js` in the build, so splitting code into chunks
   does not help. Mark a new shader's template literal `/* glsl */` so that it is squeezed too. When room runs
   out again: a smaller minifier setting saves about 1.5 KB more (terser on top of the default, measured),
   then dead code. Raising the gate is Olov's decision.
@@ -2692,8 +2713,8 @@
      nest; the shelves of rock are the mountain kit's); the mist and the lantern (built: cloud stage 16); the northern lights
      with rays (built: cloud stage 12); the awning (built: cloud stage 22); the drain (built: cloud stage 23);
      the puddle's picture of the yard, its leaves and the wet road round it (built: cloud stage 27); the
-     street's birch leaves and their drifts (built: cloud stage 29), while the falling ones and the lamp
-     posts remain (`byn` rows 15 and 16);
+     street's birch leaves and their drifts, and leaves falling (built: cloud stages 29 and 31), while the
+     lamp posts remain (`byn` row 15);
      the shop's jars and lamps (built: cloud stage 25), while its shelves, counter, daylight and floor front
      remain (`byn` row 19); the bag in the last picture (built: cloud stage 28); the matchbox on the shop's
      step (built: cloud stage 26), while the step's nosing, a boot scraper and the doorway remain (`byn`
