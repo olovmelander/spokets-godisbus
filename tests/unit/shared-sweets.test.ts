@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, Matrix4, MeshStandardMaterial, Vector3 } from 'three';
+import { AdditiveBlending, BoxGeometry, Color, Matrix4, MeshStandardMaterial, Vector3, type MeshBasicMaterial } from 'three';
 import { describe, expect, it } from 'vitest';
 import type { CandyKit } from '../../src/render/candy';
 import { createSharedSweets } from '../../src/render/shared-sweets';
@@ -28,6 +28,24 @@ describe('the sweets given to the three friends', () => {
     expect(pose(mesh, 1).at.y).toBeCloseTo(4.45);
     expect(pose(mesh, 2).size.x).toBeLessThan(pose(mesh, 1).size.x);
   });
+  it('glows warm behind each gift once it is given, and not before', () => {
+    const { halos, update } = createSharedSweets();
+    update(new Set(), null);
+    expect(halos.visible).toBe(false);
+    update(new Set(['share:spoket', 'gift:spoket:karamell']), { x: 50, y: 4 });
+    expect(halos.visible).toBe(true);
+    const matrix = new Matrix4();
+    const halo = (i: number) => { halos.getMatrixAt(i, matrix); return { at: new Vector3().setFromMatrixPosition(matrix), size: new Vector3().setFromMatrixScale(matrix) }; };
+    expect(halo(0).size.x).toBe(0);
+    expect(halo(1).size.x).toBe(1);
+    expect(halo(1).at.x).toBeCloseTo(50.26);
+    expect(halo(1).at.y).toBeCloseTo(4.45);
+    // Behind the sweet, which is at 0.24.
+    expect(halo(1).at.z).toBeLessThan(0.24);
+    const material = halos.material as MeshBasicMaterial;
+    expect(material.blending).toBe(AdditiveBlending);
+    expect(material.color.getHexString()).toBe('ffd9a0');
+  });
   it('reuses one instanced draw and its resources through repeated frames', () => {
     const { mesh, update } = createSharedSweets(), geometry = mesh.geometry, material = mesh.material;
     for (let i = 0; i < 100; i++) update(new Set(['share:jay']), { x: i, y: 0 });
@@ -46,7 +64,7 @@ describe('the sweets given to the three friends, once the kit from Blender has c
     const { group, mesh, install, update } = createSharedSweets();
     expect(install(kit('gelehallon', 'karamell', 'skumbanan'))).toBe(true);
     update(new Set(['share:spoket', 'gift:spoket:skumbanan', 'share:jay']), { x: 50, y: 4 });
-    const shown = group.children.filter((child) => child !== mesh && child.visible).map((child) => child.name);
+    const shown = group.children.filter((child) => child.name.startsWith('shared:') && child.visible).map((child) => child.name);
     expect(shown).toEqual(['shared:spoket:skumbanan']);
     expect(group.getObjectByName('shared:spoket:skumbanan')!.position.x).toBeCloseTo(50.26);
     const scale = new Vector3(), matrix = new Matrix4();
@@ -65,6 +83,6 @@ describe('the sweets given to the three friends, once the kit from Blender has c
   it('keeps the balls when the kit lacks a sweet', () => {
     const { group, install } = createSharedSweets();
     expect(install(kit('gelehallon'))).toBe(false);
-    expect(group.children).toHaveLength(1);
+    expect(group.children.filter((child) => child.name.startsWith('shared:'))).toHaveLength(0);
   });
 });

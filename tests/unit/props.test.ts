@@ -52,6 +52,22 @@ describe('the stand-ins for things and animals', () => {
   });
 });
 
+describe("the finale's crack", () => {
+  it('is marked: pale stones at its lips and crowberry at its back, one draw, nothing on the line he walks on', () => {
+    const prop = spotProp({ id: 'decor:0', look: 'crack', at: { x: 12.4, y: 0 }, verb: 'take' })!;
+    const meshes: Mesh[] = [];
+    prop.group.traverse((thing) => { if ((thing as Mesh).isMesh) meshes.push(thing as Mesh); });
+    expect(meshes).toHaveLength(1);
+    const at = meshes[0]!.geometry.getAttribute('position');
+    for (let i = 0; i < at.count; i++) {
+      // Beside the crack, which is 0.36 wide, and off the line he walks on: behind it or in front of it.
+      expect(Math.abs(at.getX(i))).toBeGreaterThan(0.18);
+      expect(Math.abs(at.getZ(i))).toBeGreaterThan(0.38);
+      expect(at.getY(i)).toBeLessThan(0.15);
+    }
+  });
+});
+
 describe("the bog's shy lights", () => {
   it('are each one soft glow added to the mist, worked out without a canvas, that bobs and shimmers', () => {
     const prop = spotProp({ id: 'shy:1', look: 'wisp', at: { x: 150, y: 3.8 }, verb: 'take', touch: true })!;

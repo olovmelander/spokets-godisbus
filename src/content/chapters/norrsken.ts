@@ -89,6 +89,8 @@ export const norrsken: ChapterData = {
   // The family on the summit (plan §7.4): when the northern lights flare and he is big again, there they
   // stand, where the way home begins. Signs, until the private pack has their models.
   decor: [
+    // The crack, marked: its lips weathered pale, and crowberry at its back.
+    { look: 'crack', at: { x: FIGURE, y: 0 }, z: 0 },
     { look: 'sign', at: { x: 27.3, y: 0 }, word: 'callBertil', after: 'taste' },
     { look: 'sign', at: { x: 29, y: 0 }, word: 'callMoa', after: 'taste' },
     { look: 'sign', at: { x: 30.8, y: 0 }, word: 'callMamma', after: 'taste' },

@@ -1,6 +1,7 @@
-import { Color, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D, SphereGeometry } from 'three';
+import { AdditiveBlending, Color, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, SphereGeometry } from 'three';
 import type { Vec } from '../sim/types';
 import type { CandyKit } from './candy';
+import { glowTexture } from './glow';
 import { drawnWhile } from './idle';
 
 const FRIENDS = ['tragubbe', 'spoket', 'jay'] as const;
@@ -22,12 +23,24 @@ export function createSharedSweets() {
   const colours: Record<string, string> = { gelehallon: '#c73650', karamell: '#dfb65f', skumbanan: '#eed382', lingon: '#b22e3b' };
   const shape = new Object3D(), colour = new Color();
   for (let i = 0; i < 3; i++) balls.setColorAt(i, colour.set('#c73650'));
+  // Each gift glows a little where it is given: the only warm lights in the blue (visual audit,
+  // berget-and-norrsken row 22). One draw for the three. A faint light added over whatever is there, so that the
+  // ghost's own shape, beside its gift, does not hide it.
+  const halos = new InstancedMesh(new PlaneGeometry(0.7, 0.7), new MeshBasicMaterial({
+    map: glowTexture(), color: '#ffd9a0', transparent: true, opacity: 0.35, depthWrite: false, depthTest: false, blending: AdditiveBlending,
+  }), 3);
+  halos.name = 'shared-halos';
+  halos.frustumCulled = false;
+  halos.renderOrder = 6;
+  group.add(halos);
   /** For each friend, the kit's sweets he may be given, all there from the start and shown one at a time. */
   const shaped: Record<string, Object3D>[] = [];
   return {
     group,
     /** The balls: one instanced draw, whatever is given. */
     mesh: balls,
+    /** The gifts' warm glows: one instanced draw. */
+    halos,
     /** The kit's sweets take the balls' place. All of them exist from now on, so giving one compiles nothing. */
     install(kit: CandyKit): boolean {
       if (shaped.length > 0 || Object.values(SHAPED).some((sweet) => !kit.shape(sweet.shape))) return false;
@@ -52,6 +65,7 @@ export function createSharedSweets() {
     },
     update(flags: ReadonlySet<string>, ghost: Vec | null, figure?: Vec) {
       let any = false;
+      let given = false;
       for (const [i, friend] of FRIENDS.entries()) {
         const prefix = `gift:${friend}:`, gift = [...flags].find((flag) => flag.startsWith(prefix));
         const kind = gift?.slice(prefix.length) ?? (friend === 'jay' ? 'lingon' : 'gelehallon');
@@ -68,7 +82,13 @@ export function createSharedSweets() {
         shape.scale.set(size, size * (kind === 'skumbanan' ? .55 : 1.2), size);
         shape.updateMatrix(); balls.setMatrixAt(i, shape.matrix);
         balls.setColorAt(i, colour.set(colours[kind] ?? '#c73650'));
+        given ||= shown;
+        shape.position.set(x, y, .2);
+        shape.scale.setScalar(shown ? 1 : 0);
+        shape.updateMatrix(); halos.setMatrixAt(i, shape.matrix);
       }
+      drawnWhile(halos, given);
+      halos.instanceMatrix.needsUpdate = true;
       // Before anything is given, and where the kit's sweets have taken their place, no ball has a size (./idle.ts).
       drawnWhile(balls, any);
       balls.instanceMatrix.needsUpdate = true;
