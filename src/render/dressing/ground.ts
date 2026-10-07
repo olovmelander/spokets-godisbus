@@ -985,7 +985,8 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       if (p.wet !== undefined) c.lerp(WET, 0.85 * Math.max(0, 1 - Math.abs(y - p.wet) / WET_REACH));
       // A rim board is one long board, not a board to each board of the deck: one tone, drifting along it.
       if (row.rim !== undefined && !face) c.copy(look.colours[1]!).lerp(look.colours[2]!, noise(p.x * 0.31 + 5, 3));
-      c.lerp(look.shade, (1 - row.shade) * 0.9);
+      // Where the road goes on over a drain, it goes into the road's own shade.
+      c.lerp((shut ? GROUNDS[DRAIN_ROAD] : look).shade, (1 - row.shade) * 0.9);
       // Retraction also marks the tilted top as a generic cut; it is still road, not exposed aggregate.
       if (street && !ironWork && (face || row.cut)) {
         const depth = face ? under : drop - dropAt(profile, z);
