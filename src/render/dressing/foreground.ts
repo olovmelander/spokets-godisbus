@@ -9,9 +9,10 @@ import { KIT, drawn, grows, heightAt, sequence, surfaceAt } from './kit';
 
 /**
  * What grows out of focus in front of the picture, and softly far behind the path: the forest's dark ferns
- * and twigs, the garden's bright grass, the bog's straw sedge, and what comes up in a kerb's joint.
+ * and twigs, the garden's bright grass, the bog's straw sedge, what comes up in a kerb's joint, and on the
+ * mountain the shoulders of boulders, dry grass and crowberry: in the low sun (`fell`), and at night.
  */
-export type Growth = 'dark' | 'bright' | 'straw' | 'kerb';
+export type Growth = 'dark' | 'bright' | 'straw' | 'kerb' | 'fell' | 'night';
 
 type Pen = CanvasRenderingContext2D;
 
@@ -21,6 +22,9 @@ export const INK: Record<Growth, readonly [core: string, rim: string]> = {
   bright: ['#1f4a1c', '#8fc43a'],
   straw: ['#54441e', '#ad9850'],
   kerb: ['#1d2b1f', '#71893f'],
+  // The mountain's shade is blue-violet and only the sun is warm (art bible §2.3): a sand-warm rim, never pink.
+  fell: ['#2c2a44', '#d4b494'],
+  night: ['#0c1230', '#4a5a86'],
 };
 /** A dandelion's clock and the cotton grass's wool: pale, and never bright. */
 export const PALE = '#b4b5a2';
@@ -102,6 +106,33 @@ function blades(c: Pen, next: () => number, count: number, x: number, apart: num
   for (let k = 0; k < count; k++) blade(c, x + k * apart + next() * apart * 0.4, (k - (count - 1) / 2) * fan + (next() - 0.5) * lean, tall * (0.62 + next() * 0.38), wide * (0.7 + next() * 0.5));
 }
 
+/** The mountain's foreground, by day and at night: the same things, in their own light (`INK`). */
+const FELL: [size: number, draw: (c: Pen, next: () => number) => void][] = [
+  // The shoulder of a boulder, rounded by the ice, with a crack and a step in its outline.
+  [2.8, (c) => {
+    c.beginPath();
+    c.moveTo(2, 134);
+    c.bezierCurveTo(4, 72, 30, 34, 62, 30);
+    c.bezierCurveTo(78, 28, 84, 38, 92, 36);
+    c.bezierCurveTo(112, 34, 126, 78, 126, 134);
+    c.closePath();
+    c.fill();
+  }],
+  // Dry grass in a tuft, thin and leaning.
+  [2, (c, next) => blades(c, next, 8, 16, 13, 9, 20, 120, 8)],
+  // Crowberry: low dense sprigs of needle leaves.
+  [1.5, (c, next) => {
+    for (const x of [20, 46, 72, 98, 118]) spray(c, x, 134, x + (next() - 0.5) * 44, 34 + next() * 34, (next() - 0.5) * 0.4, 10, 12, 4.5, 1.05, 0.3);
+  }],
+  // A small stone half sunk, with grass beside it.
+  [1.8, (c, next) => {
+    c.beginPath();
+    c.ellipse(52, 132, 40, 30, 0, Math.PI, 0);
+    c.fill();
+    blades(c, next, 4, 92, 9, 8, 16, 104, 7);
+  }],
+];
+
 /**
  * What a growth's cards show: one drawing to a cell, and how many EL across its card is, so that a sprig is
  * small and a fern is large. Each fills its cell from the foot to the top, since only the upper part of a
@@ -180,6 +211,8 @@ const DRAWINGS: Record<Growth, [size: number, draw: (c: Pen, next: () => number)
     // A dandelion gone to seed: its leaves, and two clocks.
     [2, (c, next) => rosette(c, 62, next, 100, (x, y) => pale(c, x, y + 2, 12, 12))],
   ],
+  fell: FELL,
+  night: FELL,
 };
 
 /** The share of a card's height, at its top, that its drawing leaves clear when it has been made soft. */
@@ -234,9 +267,9 @@ export function tuftSheet(growth: Growth, soft = 1): CanvasTexture {
 /** A low shrub far out of focus: a soft mound with a fringe of leaves. */
 function blurredShrub(seed: number, growth: Growth): CanvasTexture {
   const next = sequence(seed);
-  const lift = growth === 'bright' ? 1.9 : 1;
-  // Dwarf birch in autumn: rust and orange.
-  const [red, blue] = growth === 'straw' ? [1.7, 0.4] : [0.5, 0.56];
+  const lift = growth === 'bright' ? 1.9 : growth === 'night' ? 0.5 : 1;
+  // Dwarf birch in autumn: rust and orange, in the bog and on the mountain; at night only its dark.
+  const [red, blue] = growth === 'straw' || growth === 'fell' ? [1.7, 0.4] : growth === 'night' ? [0.7, 1.6] : [0.5, 0.56];
   return drawn(96, 64, (c) => {
     for (let i = 0; i < 46; i++) {
       const x = 12 + next() * 72;
@@ -420,7 +453,7 @@ function cards(list: Card[], map: CanvasTexture, pictures: number, order: number
 
 export function foreground(chapter: ChapterData, from: number, to: number, growth: Growth | null, built: Object3D = new Group()) {
   const group = new Group();
-  // Bare rock has nothing soft in front of it, and neither has a floor indoors.
+  // A floor indoors has nothing soft in front of it.
   if (growth === null) return { group, update() {} };
   const front = tufts(chapter, growth);
   const batch = cards(front, tuftSheet(growth), DRAWINGS[growth].length, 5, false);

@@ -1,6 +1,6 @@
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {
-  AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
+  AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
@@ -262,6 +262,29 @@ export function spotProp(spot: Spot): SpotProp | null {
     drawnWhile(group, size > 0);
   };
   switch (spot.look) {
+    case 'crack': {
+      // The crack the finale walks to, beside the old pine (visual audit, berget-and-norrsken row 22): its lips
+      // weathered pale and chipped, and crowberry at its back. It was a slit with nothing to mark it. The stones
+      // lie behind the line he walks on and in front of it, never on it.
+      const parts: BufferGeometry[] = [];
+      const pale = ['#c9c6bc', '#b8b5ab', '#d6d3c8'];
+      for (const [i, [side, z, w]] of ([[-1, -0.9, 0.2], [1, -0.6, 0.17], [-1, 0.55, 0.14], [1, 0.68, 0.2], [-1, 1.1, 0.16], [1, 1.35, 0.13], [-1, -1.6, 0.18], [1, -1.3, 0.15]] as const).entries()) {
+        // Each on its lip, its inner edge just outside the crack, which is 0.36 wide.
+        const stone = new OctahedronGeometry(1, 1).scale(w * 1.3, w * 0.35, w).rotateY(i * 1.3).translate(side * (0.2 + w * 1.3), w * 0.1, z);
+        const tone = new Color(pale[i % pale.length]);
+        stone.setAttribute('color', new Float32BufferAttribute(Array.from({ length: stone.getAttribute('position').count }, () => [tone.r, tone.g, tone.b]).flat(), 3));
+        parts.push(stone);
+      }
+      // Crowberry at the back lip: low dark sprigs.
+      for (const [x, z] of [[-0.45, -1.15], [0.48, -0.95], [0.5, -1.7]] as const) {
+        const sprig = new SphereGeometry(0.14, 7, 5).scale(1.4, 0.55, 1.1).translate(x, 0.04, z);
+        const tone = new Color('#25391f');
+        sprig.setAttribute('color', new Float32BufferAttribute(Array.from({ length: sprig.getAttribute('position').count }, () => [tone.r, tone.g, tone.b]).flat(), 3));
+        parts.push(sprig.toNonIndexed());
+      }
+      group.add(new Mesh(mergeGeometries(parts.map((part) => (part.index ? part.toNonIndexed() : part))), solid('#ffffff', 0.95, { vertexColors: true, flatShading: true })));
+      return { group, update() {} };
+    }
     case 'cairn': {
       const stones = new InstancedMesh(new SphereGeometry(1, 10, 7), solid('#b5b9ad', 1, { flatShading: true }), 3);
       const at = new Object3D();

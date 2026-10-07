@@ -8,6 +8,7 @@ import {
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
+import { windWisp } from './wind-wisp';
 import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
 import { forestKit, forestSocket, installForest, rollingCone } from './forest-kit';
 import { buildLedges } from './ledges';
@@ -1320,18 +1321,25 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
  * The gusts (plan §4.7, E4), in greybox: boulders to shelter behind, and pale streaks over the open ground.
  * In the second before a gust the streaks show faintly where it will come; while it blows they sweep across,
  * against the way he is going.
+ *
+ * A streak is a wisp of air: soft, a little wavy, thickest in its middle and gone at both ends, added to what is
+ * behind it, and fainter in front of the plane he moves in than behind it (visual audit, berget row 8). They were
+ * hard white lines, like a broken display.
  */
 function buildWind(chapter: ChapterData) {
   const group = new Group();
   const STREAKS = 14;
   const stone = new MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
+  const wisp = windWisp();
+  const shade = new Color();
   const stretches = (chapter.gusts ?? []).map((def) => {
     // The boulders: plain lumps in one mesh, until the mountain kit's are there, each with its lee shelves as its own steps.
     group.add(shelterStandIn(def, stone));
-    const material = new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, depthWrite: false });
-    const streaks = new InstancedMesh(new BoxGeometry(1, 0.035, 0.035), material, STREAKS);
+    const material = new MeshBasicMaterial({ color: '#fff6ee', map: wisp, transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending });
+    const streaks = new InstancedMesh(new PlaneGeometry(1, 0.32), material, STREAKS);
     streaks.instanceMatrix.setUsage(DynamicDrawUsage);
     streaks.frustumCulled = false;
+    for (let k = 0; k < STREAKS; k++) streaks.setColorAt(k, shade.setScalar(k % 3 === 0 ? 0.45 : 0.8 + (k % 2) * 0.2));
     group.add(streaks);
     return { def, material, streaks };
   });
@@ -1345,13 +1353,13 @@ function buildWind(chapter: ChapterData) {
       const warn = gust?.warn ?? 0;
       // It swells and dies down as the streaks do.
       if (blow > 0) blowing = { from: def.from, to: def.to, blow: Math.sin(Math.PI * Math.min(1, blow)) };
-      material.opacity = blow > 0 ? 0.85 * Math.sin(Math.PI * Math.min(1, blow)) + 0.1 : warn * 0.3;
+      material.opacity = blow > 0 ? 0.7 * Math.sin(Math.PI * Math.min(1, blow)) + 0.08 : warn * 0.25;
       drawnWhile(streaks, material.opacity > 0);
       const span = def.to - def.from;
       for (let k = 0; k < STREAKS; k++) {
         const along = (k * 0.618 + (blow > 0 ? blow * 1.6 : 0)) % 1;
         place.position.set(def.to - along * span, def.y + 0.25 + (k % 5) * 0.34 + Math.sin(clock * 5 + k) * 0.03, 0.4 - (k % 3) * 0.5);
-        place.scale.set(blow > 0 ? 2.6 : 0.7 + warn * 0.6, 1, 1);
+        place.scale.set((blow > 0 ? 2.6 : 0.9 + warn * 0.7) * (0.8 + (k % 4) * 0.12), 1, 1);
         place.updateMatrix();
         streaks.setMatrixAt(k, place.matrix);
       }
