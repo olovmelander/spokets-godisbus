@@ -134,7 +134,16 @@ try {
     });
     check(`${name}: shrinking follows the story clock and pauses at its intermediate size`,
       Math.abs(change.midway.scale - 2) < .01 && change.paused.scale === change.midway.scale);
-    check(`${name}: Elof becomes one third as tall while the same family remains beside him`, Math.abs(change.after.scale - 1) < .01 && change.after.family.every((actor, i) => actor.visible && JSON.stringify(actor.at) === JSON.stringify(before.family[i].at)) && !change.after.star);
+    check(`${name}: pausing the transformation holds every relative in place`, change.paused.family.every((actor, i) =>
+      actor.visible === change.midway.family[i].visible && JSON.stringify(actor.at) === JSON.stringify(change.midway.family[i].at)));
+    check(`${name}: Elof becomes one third as tall while the same family remains beside him`,
+      Math.abs(change.after.scale - 1) < .01 && change.after.family.every((actor) => actor.visible) && !change.after.star);
+    // Pappa deliberately steps closer before kneeling; the other three keep their following positions.
+    const pappa = change.after.family[1];
+    check(`${name}: Pappa reaches his supportive mark while the other relatives stay nearby`,
+      pappa.at.every((value, i) => Math.abs(value - [39.6, -.8, -1.4][i]) < 1e-6) &&
+      pappa.at[0] > before.family[1].at[0] &&
+      change.after.family.every((actor, i) => i === 1 || JSON.stringify(actor.at) === JSON.stringify(before.family[i].at)));
     check(`${name}: story staging stays inside the draw budget with warmed shaders`, withinDraws(change.after.drawCalls, change.after.tier) && change.after.programs === before.programs);
     const kneeling = await page.evaluate(() => {
       const p = window.probe;

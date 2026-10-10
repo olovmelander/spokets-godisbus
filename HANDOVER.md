@@ -23,6 +23,13 @@
     Browser checks cover the opening through star choice, the transformation through the chapter ending,
     interruption/save recovery, all five reassurance layouts, deliberate cap boarding and the completed
     bridge's instructions. Large-text dialogue checks and 104 presentation tests pass after final staging.
+    CI follow-up: the eighth browser shard found an old assertion requiring every relative to stay at
+    their pre-transformation coordinates. Pappa deliberately steps closer before kneeling. The corrected
+    test checks his authored mark, the other relatives' retained positions, Elof's size, the swallowed
+    star and all four relatives' positional stillness during pause. Production staging is unchanged.
+    The corrected opening suite passes **30 checks** across 390×844 Low and 1440×900 High, including
+    warm shader/draw budgets and restored progress. The remaining seven original CI shards passed;
+    the pushed assertion correction starts a fresh CI run.
     The focused painting suite passes 8 checks; the story-door return passes 22 checks across both phone
     orientations, including exact reduced-motion stillness after the camera finishes framing the card.
     The privacy check passes for tracked files and the build using its built-in metadata/path rules;
