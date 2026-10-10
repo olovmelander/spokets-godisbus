@@ -6,7 +6,7 @@ import { COURSES } from '../../src/content/chapters';
 import { assemble, villageKit } from '../../src/render/village';
 
 const chapter = COURSES['byn']!;
-/** An absent kit leaves only the procedural stone facing, which survives every kit replacement. */
+/** With decorative procedural surfaces excluded, an absent kit isolates the stone facing. */
 const facing = (course = chapter, part = 0) => assemble(new Map(), course, course.street!, [part]);
 const mesh = (shape: BufferGeometry) => new Mesh(shape, new MeshBasicMaterial());
 
@@ -38,8 +38,8 @@ describe('the village masonry', () => {
       triangles += shape.index!.count / 3;
     }
     expect(triangles).toBeLessThan(400);
-    // The bakery's awnings are built in code too (awnings.test.ts): without them, it has no stone facing.
-    const bare = { ...chapter, street: chapter.street!.map((part) => ({ ...part, awnings: undefined })) };
+    // Awnings and smooth plaster are also built without the kit. Exclude both to isolate stone facing.
+    const bare = { ...chapter, street: chapter.street!.map((part) => ({ ...part, awnings: undefined, finish: undefined })) };
     for (const part of [1, 2, 3]) expect(facing(bare, part).index!.count).toBe(0);
     const frame = COURSES['look-street']!;
     const kerb = facing(frame);

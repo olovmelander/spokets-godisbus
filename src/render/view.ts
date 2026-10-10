@@ -446,6 +446,21 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       modelInstallations++;
     })
     .catch((error) => console.error('The village kit could not be loaded; the plain fronts stay.', error)) : Promise.resolve();
+  // Original public Bredbyn architecture, baked once instead of generating immutable geometry at boot.
+  const bredbynReady = chapter.place === 'village' ? assets.manifest()
+    .then(manifest => manifest.packs.boot?.files['bredbyn.glb'] ? assets.model('boot', 'bredbyn') : null)
+    .then(model => {
+      if (!model) return;
+      const landmarks = model.getObjectByName('bredbyn-landmarks');
+      if (landmarks) {
+        landmarks.position.set(chapter.id === 'look-street' ? 13 : 46, 2.3, -29);
+        landmarks.scale.setScalar(0.53);
+      }
+      scene.add(model);
+      models.push('boot/bredbyn');
+      modelInstallations++;
+    })
+    .catch(error => console.error('The Bredbyn environment could not be loaded.', error)) : Promise.resolve();
   // The things of the mountain, modelled in Blender (art/blender/mountain-kit.py), take the place of the plain
   // shapes built in code, and bring the pines. A build without the file keeps the plain shapes, as does a failed load.
   const mountainReady = mountain ? assets
@@ -472,7 +487,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (atlas) wild.install(atlas);
     })
     .catch((error) => console.error('The life of the far scenery could not be loaded.', error)) : Promise.resolve();
-  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, mountainReady, lifeReady];
+  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, bredbynReady, mountainReady, lifeReady];
   let arrived = 0;
   for (const part of parts) void part.then(() => { arrived++; }, () => {});
   const ready = Promise.all(parts).then(() => undefined);

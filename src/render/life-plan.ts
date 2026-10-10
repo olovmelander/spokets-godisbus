@@ -158,7 +158,7 @@ export function lifePlan(place: PlaceId, stages: readonly LifeStage[] = [], seed
     // Smoke: puffs rise from each chimney in sight, lean with the wind, grow and thin out.
     const smoke = cast!.smoke;
     if (smoke && smokeInk && !on?.role.slot) for (const [p, y] of chimneys ?? smoke.at) {
-      const x = p + Math.round((centre - p) / smoke.every) * smoke.every - centre;
+      const x = p + (smoke.every ? Math.round((centre - p) / smoke.every) * smoke.every : 0) - centre;
       if (Math.abs(x) > reach + 3) continue;
       for (let i = 0; i < smoke.puffs; i++) {
         // With reduced motion it all but stands.

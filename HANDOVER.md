@@ -2,6 +2,41 @@
 
 ## State (10 October 2026)
 
+- **Bredbyn identity — a separate Byn visual checkpoint.** Olov asked for reference-led
+  improvements to Byn, especially the beautiful Anundsjö church and Köpmangatan.
+  Eight public photographs were retrieved and inspected; their dates, photographers,
+  licences, original URLs and hashes are recorded in
+  [`docs/bredbyn-reference-study.md`](docs/bredbyn-reference-study.md) and its source manifest.
+  Originals stay outside git and the game. The newest inspected street view is from 2021;
+  this is an interpretation of the architecture, not a present-day survey or exact map.
+  - Original baked geometry replaces the repeating generic skyline: a long white church
+    with its steep shingle roof, arched windows and porch, a separate ornate timber clock
+    tower, and six varied timber/plaster buildings. Rounded wooded hills replace the
+    borrowed garden background. The yellow timber shop, pale plaster bakery and lower
+    yard boundary carry the reference cues into the playable street.
+  - The church view is checked on the actual leaf crossing, with the existing
+    candy, checkpoints, hooks and save coordinates intact. Smoke follows two real chimney
+    caps instead of a repeating painted skyline. The village look course uses the bank too.
+  - This checkpoint is on `codex/byn-bredbyn-identity`, stacked on story/opening PR #184.
+    Review captures: [`docs/shots/bredbyn/`](docs/shots/bredbyn/). `RELEASED_CHAPTER`,
+    private family assets and **Senare** are unchanged. Public street reference use is
+    explicitly requested; the chapter keeps its familiar name **Byn**.
+  - **Validation:** 169 test files / **1,586 tests**, typecheck and production build pass.
+    JavaScript is **447.4 KB / 450 KB**; boot is **1,552.3 KB / 3,072 KB** with public stand-ins.
+    The new browser suite passes **70 checks across 12 cases**, including five High viewport
+    sizes, both phone orientations on Low, real leaf boarding, the shore camera transitions,
+    opaque-scene visibility, pause/reduced motion, stable renderer allocations and the village
+    look course. Roof ornaments remain in view. The landscape view includes the blue facade;
+    not all six authored buildings are visible, and portrait crops the left end of the nave.
+    The existing shop browser walkthrough passes four checks. All **14** Byn GPU checks pass,
+    including repeated quality/viewport changes, ten pause cycles and context loss/restoration.
+    Accounted memory is 16.43 MB on Low, 53.47 MB on Mid and 100.28 MB on High; restored High
+    returns to the same allocation baseline. These are browser measurements with public stand-ins.
+    The privacy scan passes tracked
+    files and the build using built-in rules; no private denylist or exiftool is available here.
+  - Cloud code and original procedural assets can continue here. Final Blender refinement,
+    private-character composition and physical-device review still need Olov's computer.
+
 - **Opening emotion and family help — continued cloud checkpoint.** Olov asked to keep improving the
   whole opening, specifically the bird, awakening/theft and Elof eating the shrinking star, and to make
   the family's practical help clear throughout the game. The touch-only star direction is superseded:
@@ -3126,8 +3161,8 @@
     - **Built from what the robot already knows:** each stretch has the measures of one in an earlier
       chapter (the bog's firm tussocks, the forest pool's boat, the garden's gully, dew rain and wall), so
       it was playable at once. Tests: `tests/robot/byn.test.ts` (13); the browser test runs through it.
-    - **Its name:** the game says *Byn*. The street's own name is not written anywhere in this
-      repository: see question 5 under "Frågor till Olov".
+    - **Its name:** the game says *Byn*. Public Köpmangatan reference use was later explicitly
+      requested on 10 October; see the current Bredbyn checkpoint and question 5 below.
     - **The village behind the street** (branch `stage-2-byn-skyline`): the houses now have the colours
       of the village's own wooden houses (ochre yellow, white, Falu red, pale plaster, with white trim).
       After every second house there is a yard with a red picket fence and a hedge, and over it the far
@@ -3476,6 +3511,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Bredbyn identity (10 October) | Reference-led Byn visual improvements | 1 cloud continuation | — / 0 | Eight inspected public references; original church, separate clock tower, varied street buildings, rounded valley and clearer crossing view. Reuses the existing route and save positions. Device review and final Blender refinement remain. |
 | Chase and story clarity (10 October) | Current request | 1 cloud implementation | — / 0 so far | Minimum ghost separation, player-paced essential dialogue, thirteen animated memory illustrations with Swedish captions and previous/next, plus larger in-world thought pictures. Checkpoint captures in `docs/shots/story-pacing/`. Physical-device review remains. |
 | Opening emotion and family help (10 October, continuation) | Continue auditing and improving the chapter | 1 cloud continuation | — / 0 | Bird/awakening/theft staging, deliberate star tasting and gradual shrinking, family reassurance, wordless sound, contextual reading UI and practical family help. Save compatibility repaired; 1,577 tests and the production size gate pass. Physical-device and private-model review remain. |
 | Planning | 1 | 3 recorded | — / 2 | Original plan versions 1–4; `main` and the placeholder page; the reference pictures gathered. Version 5 on 4 October adds the researched story/level overhaul and its acceptance criteria; no new session or review count is inferred. |
@@ -3660,11 +3696,10 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
    each likeness: the pictures are in `photos/renders/2026-10-04-family/`, and the list of what the
    session itself would correct is under "The family, first models". The latest reference/before/after comparisons
    for all six are in `photos/renders/2026-10-07-character-design/index.html`; this new pass is local only.
-5. **May the village street be called by its own name?** You asked for it as a chapter by name. The game
-   calls it *Byn*, as a child would, and the street's name is not written in this repository. The reason:
-   CLAUDE.md says never a street address, and a street's name beside the children's first names is most of
-   one if anyone in the family lives or goes to school there. This repository is public and its history is
-   permanent. If the street is only where the shops are, say so, and the name can go on the chapter's card.
+5. **Public village references — answered on 10 October.** Olov explicitly requested photographs
+   of Köpmangatan, Anundsjö church and Bredbyn for the chapter's visual identity. The public shopping
+   street name may therefore appear in source/reference documentation. The game still calls the chapter
+   **Byn**; no chapter rename was requested. This does not authorise a family address, school or house number.
    - Until then the third, sculpted Elof stays in the game, and the ghost is redone as stylized carved wood.
 5. **Are the ghost and Elof right?** Olov called them "the good looking Elof and ghost" on 3 October and asked
    for them on the site, which the session reads as: good enough to show. It is not H1b: the plan's yes, or up

@@ -101,7 +101,7 @@ export interface Role {
 /** A place's chimneys: where each stands in the slot's own measure, and how far over the eye line its top is. */
 export interface Smoke {
   at: readonly (readonly [number, number])[];
-  /** The picture the chimneys are painted on repeats this far on. */
+  /** Repeating painted scenery's period; zero for individually authored world chimneys. */
   every: number;
   puffs: number;
   ink: Ink;
@@ -169,12 +169,12 @@ export const LIFE: Partial<Record<PlaceId, PlaceLife>> = {
   },
   village: {
     haze: [216, 221, 230],
-    // Just in front of the far village's picture, which stands in the world (village.ts).
+    // At the authored street's chimneys, which stand in the world (village.ts).
     slots: [{ z: -51.9, hold: 1, sink: 0, haze: 0.3 }],
     // Between the houses of the street there is too little sky for a flock.
     roles: {},
-    // The batch finds the chimneys on the far village's picture, and counts heights from that picture's top.
-    smoke: { at: [], every: 96, puffs: 6, ink: SMOKE_INK, alpha: 0.65 },
+    // The world anchor supplies the baked building's actual chimney tops. They never repeat.
+    smoke: { at: [], every: 0, puffs: 6, ink: SMOKE_INK, alpha: 0.65 },
   },
   dusk: {
     haze: [62, 74, 122],

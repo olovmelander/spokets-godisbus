@@ -1037,12 +1037,20 @@ export function outlookPane(wide: number, tall: number, index: number): PlaneGeo
   return geometry;
 }
 
-/** Every place's far layers, from the farthest to the nearest. Indoors there is nothing far away. */
-/**
- * The village has the garden's sky and its far hills. What stands between them and the street, the far
- * village with its red roofs, is drawn with the street's houses (village.ts).
- */
-const VILLAGE = GARDEN.slice(0, 2);
+/** Bredbyn sits in a wooded valley: a broad rounded ridge, with autumn trees below it.
+ * The actual church and street silhouettes are separate lit geometry, never repeated on this layer. */
+const VILLAGE: Layer[] = [
+  { ...GARDEN[0]!, drift: 0.26 },
+  {
+    z: -76, hold: 0.24, sink: 0.02, every: 240, eye: 188, soft: 1,
+    draw(c) {
+      const haze: Ink = [209, 219, 221];
+      ridge(c, 158, 18, back([[0, 0.3], [0.14, 0.7], [0.3, 0.85], [0.43, 0.8], [0.6, 0.3], [0.76, 0.45], [0.9, 0.55]]), [135, 157, 170], haze, 1.2, 24, 61);
+      ridge(c, 179, 10, back([[0, 0.45], [0.2, 0.8], [0.44, 0.3], [0.68, 0.55], [0.85, 0.6]]), [114, 140, 126], haze, 3, 28, 73);
+      floor(c, 196, [166, 177, 138], [172, 182, 148]);
+    },
+  },
+];
 
 const LAYERS: Record<PlaceId, Layer[]> = { forest: FOREST, garden: GARDEN, bog: BOG, mountain: MOUNTAIN, dusk: DUSK, home: [], village: VILLAGE };
 

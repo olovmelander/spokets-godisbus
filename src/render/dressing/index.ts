@@ -205,8 +205,8 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   const sky = look.id === 'dusk' ? stars() : null;
   if (sky) group.add(sky);
   // A moose in the mist, cranes, smoke from a far chimney: among the far pictures, and only there.
-  // The far village's picture hangs among the houses, 52 lengths behind the path: its chimneys smoke.
-  const wild = createLife(chapter, look.id, land, houses?.group.children.find((child) => child.position.z === -52), asked);
+  // Bredbyn's smoke is anchored to the actual baked buildings' chimney caps.
+  const wild = createLife(chapter, look.id, land, houses?.group.getObjectByName('bredbyn-smoke'), asked);
   if (wild) group.add(wild.mesh);
   group.add(
     far.group,

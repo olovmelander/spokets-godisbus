@@ -97,15 +97,15 @@ export const byn: ChapterData = {
   // No upright part of a near wall (a casing, a pipe, a corner, a sign) stands behind a big candy or the hook.
   street: [
     // The yarn shop, pale, with lying boards. It stands on the pavement, and its window is behind the start.
-    { from: -22, to: 12, depth: 'near', kind: 'house', wall: '#efe6c8', boards: 'lying', goods: 'yarn', windows: [{ from: -1.6, to: 5.4 }], pipes: [10.3] },
+    { from: -22, to: 12, depth: 'near', kind: 'house', wall: '#e4cf91', boards: 'lying', goods: 'yarn', windows: [{ from: -1.6, to: 5.4 }], pipes: [10.3] },
     // Across the crossing: the shoemaker's, the street's one Falu red house, in shade and haze...
     { from: 12, to: 38, depth: 'far', kind: 'house', foot: 1, wall: '#8f2d22', boards: 'upright', goods: 'boots', windows: [{ from: 14.4, to: 22.6 }], door: { from: 29.2, to: 35.2 }, sign: 26 },
     // ...and a yard behind the puddle: a grey fence, a birch and a hedge, and the far village and the sky.
-    { from: 38, to: 62, depth: 'far', kind: 'yard', foot: 1 },
-    // The bakery, white, with upright boards: the bicycle leans on its wall over the cellar window's well, the
+    { from: 38, to: 62, depth: 'far', kind: 'yard', foot: 1, lowFence: true },
+    // The bakery, pale plaster among the timber fronts: the bicycle leans on its wall over the cellar window's well, the
     // first run of drops falls before its window, the dry place is the pier, and the second run is at its door.
     {
-      from: 62, to: 110, depth: 'near', kind: 'house', wall: '#e9e6dc', boards: 'upright', goods: 'bread',
+      from: 62, to: 110, depth: 'near', kind: 'house', wall: '#e1ded0', boards: 'upright', finish: 'plaster', goods: 'bread',
       windows: [{ from: 85.5, to: 90.7 }], door: { from: 96, to: 102 }, pipes: [63.7, 108.2], sign: 79.6, cellar: 74.2,
       // An awning over the window and one over the door, each a whole number of scallops: the drops fall from
       // their tips. The pier between them is dry.
@@ -116,7 +116,7 @@ export const byn: ChapterData = {
   ],
   // Two lamp posts on the far pavement: one between the shoemaker's window and its sign, and one in the yard
   // behind the puddle. Neither stands behind a big candy, whichever way he faces at it.
-  lampPosts: [23.2, 52],
+  lampPosts: [23.2, 58.5],
   spawn: { x: 1, y: 2.01 },
   // Where and when, as the chapter opens (./cards.ts): a week after the story's Saturday.
   scenes: [timeCard('byn', 1)],
@@ -246,7 +246,9 @@ export const byn: ChapterData = {
   ],
   cameras: [
     { from: 16, to: 36, zoom: 1.2 },
-    { from: 40, to: 64, zoom: 1.3 },
+    // The leaf's low riding camera opens upward over the water to reveal the church and clock tower.
+    { from: 42, to: 62, zoom: 1.55, lift: 2.3 },
+    { from: 40, to: 64, zoom: 1.55, lift: 0.65 },
     { from: 68, to: 80, zoom: 1.25, lift: 0.4 },
     { from: 84, to: 103, zoom: 1.25, lead: 3.2 },
     // Up on the shelves the picture rises with him, so that the lamps' rings and the far shelf are in it.
