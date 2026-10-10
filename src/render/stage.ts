@@ -5,7 +5,7 @@ import {
 } from 'three';
 import type { ChapterData } from '../sim/types';
 import { sceneWaits, type Act, type ActorKey, type ElofKey, type Point, type SceneDef, type SceneFrame, type ShotKey, type Thing } from '../sim/scene';
-import { actPose, drawingAt, sippingAt, stanceOf, type Stance } from './acting';
+import { actPose, drawingAt, eatingAt, sippingAt, stanceOf, type Stance } from './acting';
 import { carvingAt, CARVING_SHAVING_LIFETIME, type CarvingMotion, type CarvingPoint } from './carving-motion';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, STANDING, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
@@ -159,7 +159,7 @@ function elofAt(keys: readonly ElofKey[], t: number) {
     if (key.act !== undefined && key.act !== out.act) { out.act = key.act; out.actAt = key.at; }
     if (key.aim !== undefined) out.aim = key.aim;
     if (key.face !== undefined) out.face = key.face;
-    if (key.size !== undefined) out.size = key.size;
+    if (key.size !== undefined) out.size = out.size === null ? key.size : mix(out.size, key.size, p);
   }
   return out;
 }
@@ -323,10 +323,16 @@ function windowJay(): Group {
   const body = new Mesh(new SphereGeometry(0.22, 10, 8), grey);
   body.scale.set(1.3, 1, 1);
   const head = new Mesh(new SphereGeometry(0.14, 10, 8), grey);
+  head.name = 'head';
   head.position.set(0.24, 0.16, 0);
   const tail = new Mesh(new BoxGeometry(0.3, 0.06, 0.12), rust);
   tail.position.set(-0.32, -0.02, 0);
   bird.add(body, head, tail);
+  for (const side of [-1, 1]) {
+    const wing = new Mesh(new BoxGeometry(.35, .05, .18), rust);
+    wing.name = side > 0 ? 'wingNear' : 'wingFar';
+    wing.position.set(-.04, .04, side * .17); bird.add(wing);
+  }
   group.add(bird);
   return group;
 }
@@ -339,6 +345,8 @@ export interface Stage {
   replace(who: string, model: Object3D): Object3D | null;
   /** One frame: what to do with the ghost, Elof and the camera. `dt` is 0 while the game stands still. */
   update(frame: SceneFrame | null, flags: ReadonlySet<string>, elof: { x: number; y: number }, clock: number, dt: number, calm: boolean): Directions;
+  /** Attach the story sweet after Elof's actual body has been posed and placed. */
+  updateElof(rig: Pick<Rig, 'hand' | 'mouth' | 'reach'>, direction: Directions['elof'], height: number, calm: boolean): void;
   /** Everyone the stage has: for the shadows and the tests. */
   readonly actors: ReadonlyMap<Role, { rig: Rig; visible: () => boolean }>;
 }
@@ -402,6 +410,16 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   // Only a chapter whose scenes bring the jay to the window has it: no other one fetches the jay's model.
   const jayFlies = scenes.some((scene) => scene.stage?.fx?.some((fx) => fx.kind === 'jay'));
   if (jayFlies) group.add(jay);
+  const star = new Group(); star.name = 'elof-star';
+  const gold = new MeshStandardMaterial({ color: '#ffdb65', emissive: '#db7b25', emissiveIntensity: .55, roughness: .35 });
+  for (let i = 0; i < 5; i++) {
+    const point = new Mesh(new CylinderGeometry(0, .12, .3, 3), gold), angle = i * Math.PI * 2 / 5;
+    point.position.set(Math.sin(angle) * .13, Math.cos(angle) * .13, 0); point.rotation.z = -angle; star.add(point);
+  }
+  star.add(new Mesh(new SphereGeometry(.13, 8, 6), gold));
+  drawnWhile(star, false);
+  if (scenes.some(scene => scene.id === 'poff')) group.add(star);
+  let starOn = false;
   // The block of wood Pappa carves the ghost out of: it shrinks away as the shavings fly.
   const block = new Mesh(new CylinderGeometry(.43, .38, 1.08, 7), new MeshStandardMaterial({ color: '#d8bf8e', roughness: 0.85, flatShading: true }));
   block.name = 'stage-block';
@@ -469,6 +487,23 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
 
   return {
     group,
+    updateElof(rig, direction, height, calm) {
+      const shown = starOn && (direction?.act === 'show' || direction?.act === 'eat');
+      const bite = eatingAt(direction?.actT ?? 0, calm);
+      const size = shown ? direction?.act === 'eat' ? bite.sweet : 1 : 0;
+      drawnWhile(star, size > 0);
+      if (!shown) return;
+      const unit = height / 3;
+      rig.hand(1, hand);
+      if (direction?.act === 'eat') {
+        rig.mouth(heldPoint); heldPoint.z += .045 * unit;
+        hand.lerp(heldPoint, bite.mouth);
+        rig.reach(1, hand); rig.hand(1, hand);
+      }
+      star.position.copy(hand);
+      star.scale.setScalar(size * unit);
+      star.rotation.set(0, 0, -.12);
+    },
     birds: jayFlies ? [jay.getObjectByName('bird')!] : [],
     // Read each time: a model from Blender may have taken a rehearsal figure's place since.
     get actors() {
@@ -492,6 +527,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
     update(frame, flags, elof, clock, dt, calm) {
       const active = frame ? scenes.findIndex((scene) => scene.id === frame.id) : -1;
       const scene = active >= 0 ? scenes[active]! : null;
+      starOn = scene?.id === 'poff';
       const t = frame?.seconds ?? 0;
       const ghostKeys = scene?.stage?.actors?.ghost;
       const workpiece = ghostKeys && ghostKeys[0]!.at <= t ? fresh() : null;
@@ -732,17 +768,20 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         const age = t - fx.at;
         if (age < 0 || age > fx.seconds) continue;
         const life = age / fx.seconds;
+        const motion = calm ? .7 : age;
         const fade = Math.min(1, age / 0.25, (fx.seconds - age) / 0.35);
-        const at = fx.from;
+        // The chosen bite can happen on either side of the sweet: its magic belongs to Elof, not the mark.
+        const at = scene?.id === 'poff' && scene.resumeAt ? { ...fx.from,
+          x: fx.from.x + elof.x - scene.resumeAt.x, y: fx.from.y + elof.y - scene.resumeAt.y } : fx.from;
         switch (fx.kind) {
           case 'sparkle': {
             for (let i = 0; i < 16 && spark < SPARKS; i++, spark++) {
-              const a = i * 2.39996 + age * (1.4 + (i % 4) * 0.4);
-              const r = 0.35 + 0.25 * Math.sin(age * 3 + i);
-              const up = ((i / 16) + age * 0.35) % 1;
+              const a = i * 2.39996 + motion * (1.4 + (i % 4) * 0.4);
+              const r = 0.35 + 0.25 * Math.sin(motion * 3 + i);
+              const up = ((i / 16) + motion * 0.35) % 1;
               place.position.set(at.x + Math.cos(a) * r, at.y + up * 1.4 - 0.2, (at.z ?? 0) + Math.sin(a) * r);
-              place.rotation.set(age * 3 + i, age * 2 + i, 0);
-              place.scale.setScalar(fade * (0.5 + 0.5 * Math.sin(age * 9 + i)) * (1 - up * 0.6));
+              place.rotation.set(motion * 3 + i, motion * 2 + i, 0);
+              place.scale.setScalar(fade * (0.5 + 0.5 * Math.sin(motion * 9 + i)) * (1 - up * 0.6));
               place.updateMatrix();
               sparks.setMatrixAt(spark, place.matrix);
             }
@@ -751,10 +790,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           case 'stream': {
             const to = fx.to ?? at;
             for (let i = 0; i < 14 && spark < SPARKS; i++, spark++) {
-              const k = ((i / 14) + age * 0.9) % 1;
+              const k = ((i / 14) + motion * 0.9) % 1;
               const arc = Math.sin(k * Math.PI) * 0.5;
-              place.position.set(mix(at.x, to.x, k), mix(at.y, to.y, k) + arc, mix(at.z ?? 0, to.z ?? 0, k) + Math.sin(i * 1.7 + age * 4) * 0.08);
-              place.rotation.set(age * 4 + i, i, 0);
+              place.position.set(mix(at.x, to.x, k), mix(at.y, to.y, k) + arc, mix(at.z ?? 0, to.z ?? 0, k) + Math.sin(i * 1.7 + motion * 4) * 0.08);
+              place.rotation.set(motion * 4 + i, i, 0);
               place.scale.setScalar(fade * 0.8);
               place.updateMatrix();
               sparks.setMatrixAt(spark, place.matrix);
@@ -762,22 +801,22 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             break;
           }
           case 'poff': {
-            // A burst outwards from him, and a soft flash that grows and fades.
+            // A warm spiral settles down with him: the world becomes enormous around the same little boy.
             for (let i = 0; i < 24 && spark < SPARKS; i++, spark++) {
               const up = 1 - (2 * (i + 0.5)) / 24;
               const ring = Math.sqrt(1 - up * up);
-              const a = i * 2.39996;
-              const r = 0.3 + life * 2.4;
-              place.position.set(at.x + Math.cos(a) * ring * r, at.y + up * r, (at.z ?? 0) + Math.sin(a) * ring * r);
-              place.rotation.set(i, age * 5, 0);
-              place.scale.setScalar(Math.max(0, 1.4 * (1 - life)));
+              const p = calm ? .5 : life, a = i * 2.39996 + (calm ? 0 : age * 1.25);
+              const r = .4 + Math.sin(p * Math.PI) * 1.45;
+              place.position.set(at.x + Math.cos(a) * ring * r, at.y + (1 - p) * (up + 1) * 1.4, (at.z ?? 0) + Math.sin(a) * ring * r);
+              place.rotation.set(i, motion * 3, 0);
+              place.scale.setScalar(fade * (calm ? .75 : 1.4 * (1 - life * .7)));
               place.updateMatrix();
               sparks.setMatrixAt(spark, place.matrix);
             }
             if (glow < GLOWS) {
               place.position.set(at.x, at.y, at.z ?? 0);
               place.rotation.set(0, 0, 0);
-              place.scale.setScalar((0.4 + life * 4) * Math.max(0, 1 - life));
+              place.scale.setScalar(fade * (calm ? 1 : .6 + Math.sin(life * Math.PI) * 1.5));
               place.updateMatrix();
               glows.setMatrixAt(glow++, place.matrix);
             }
@@ -828,9 +867,17 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           }
           case 'jay': {
             jayOn = true;
-            jay.position.set(at.x, at.y + (1 - smooth(age / 0.6)) * 1.5, at.z ?? 0);
-            jay.scale.setScalar(1.6 * smooth(Math.min(1, age / 0.3, (fx.seconds - age) / 0.3)));
+            const landing = calm ? 1 : smooth(age / 1.6), fly = 1 - landing;
+            jay.position.set(at.x + fly * 2.8, at.y + fly * 1.8, (at.z ?? 0) + fly * .8);
+            jay.scale.setScalar(1.6 * smooth(Math.min(1, age / .3, (fx.seconds - age) / .4)));
             jay.rotation.y = Math.PI / 2 * 0.6;
+            jay.rotation.z = calm ? 0 : -.18 * fly + .045 * Math.sin(Math.max(0, age - 1.6) * 1.8);
+            const wingBeat = calm ? 0 : Math.sin(age * 19) * .9 * fly;
+            const near = jay.getObjectByName('wingNear'), far = jay.getObjectByName('wingFar');
+            if (near) near.rotation.x = -wingBeat;
+            if (far) far.rotation.x = wingBeat;
+            const head = jay.getObjectByName('head');
+            if (head) head.rotation.z = calm ? 0 : Math.sin(Math.max(0, age - 1.6) * 2) * .12;
             break;
           }
         }
@@ -851,10 +898,11 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         let tilt = 0, bounce = 0, blink = 1;
         switch (state.act) {
           case 'wake': {
-            // Its first blink, a wobble, and a little hop of surprise.
-            blink = since > 0.5 && since < 0.68 ? 0.1 : 1;
-            bounce = since > 0.7 && since < 1.05 ? Math.sin(((since - 0.7) / 0.35) * Math.PI) * 0.18 : 0;
-            tilt = calm ? 0 : Math.sin(since * 9) * 0.08 * Math.max(0, 1 - since / 0.6);
+            // Two astonished blinks, then a deliberate first lift from the tabletop.
+            blink = calm ? 1 : 1 - .9 * Math.sin(Math.PI * smooth((since - .3) / .35)) ** 2
+              - .9 * Math.sin(Math.PI * smooth((since - 1) / .4)) ** 2;
+            bounce = calm ? 0 : Math.sin(Math.PI * smooth((since - 1.45) / .75)) * .18;
+            tilt = calm ? .08 : -.12 * smooth(since / .8) + .2 * smooth((since - .8) / 1.1);
             break;
           }
           case 'tilt':
@@ -867,7 +915,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             bounce = calm ? 0 : Math.abs(Math.sin(since * (state.act === 'run' ? 18 : 11))) * 0.08;
             break;
           case 'grab':
-            tilt = -0.18 * Math.sin(Math.min(1, since / 0.5) * Math.PI);
+            tilt = calm ? .06 : -.24 * Math.sin(Math.min(1, since / 1.1) * Math.PI) + .06 * smooth((since - .9) / .45);
             break;
           case 'hop':
             bounce = calm ? 0 : Math.abs(Math.sin(since * 6)) * 0.3;

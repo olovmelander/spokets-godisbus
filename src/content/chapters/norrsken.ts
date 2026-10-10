@@ -103,6 +103,7 @@ export const norrsken: ChapterData = {
   ],
   rides: [{ id: 'home', look: 'none', ...HOME }],
   night: { after: 'taste' },
+  ghostMeet: true,
   ghost: [
     // It is his partner now: it stays where each thing is done.
     { at: { x: 9.2, y: 0 }, until: 'placed:tragubbe' },

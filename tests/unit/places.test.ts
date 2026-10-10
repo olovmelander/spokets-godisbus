@@ -59,15 +59,16 @@ describe('the places', () => {
 
   it('draws him as a boy among small things at home, and as small as the ghost in between', () => {
     const sized = Object.fromEntries(STORY.map((part) => [part.id, part.size]));
-    // The prologue: big until the star. The final: big again from the golden candy. The epilogue: big all through.
-    expect(sized['prolog']).toEqual({ scale: 3, until: 'star' });
+    // The prologue's scene animates the change before small becomes permanent. The finale restores his size.
+    expect(sized['prolog']).toEqual({ scale: 3, until: 'scene:poff' });
     expect(sized['norrsken']).toEqual({ scale: 3, after: 'taste' });
     expect(sized['epilog']).toEqual({ scale: 3 });
     for (const id of ['garden', 'granskog', 'myren', 'berget']) expect(sized[id], id).toBeUndefined();
     // The flags he changes size on are ones the chapter can set.
     for (const part of STORY) {
       for (const flag of [part.size?.after, part.size?.until]) {
-        if (flag !== undefined) expect((part.spots ?? []).some((s) => s.id === flag), `${part.id}: ${flag}`).toBe(true);
+        if (flag !== undefined) expect((part.spots ?? []).some((s) => s.id === flag)
+          || (part.scenes ?? []).some((scene) => `scene:${scene.id}` === flag), `${part.id}: ${flag}`).toBe(true);
       }
     }
   });

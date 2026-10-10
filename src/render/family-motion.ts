@@ -17,20 +17,26 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
   const pose: Pose = { ...STANDING }, helping: Pose = { ...STANDING };
   const character = CHARACTER[who];
   const gift = purpose.startsWith('party:');
-  const task = purpose === 'moa' || gift ? 'offer' : purpose === 'cap' ? 'reach' : purpose === 'seesaw' ? 'point'
+  const task = purpose === 'moa' || gift ? 'offer' : purpose === 'cap' || purpose === 'cap:ready' ? 'reach' : purpose === 'seesaw' ? 'point'
     : purpose === 'mamma' || purpose === 'bog:return-bridge' ? 'lift' : null;
   const offset = ['pappa', 'mamma', 'moa', 'bertil'].indexOf(who) * 1.7 + at * 0.13;
   let lastX: number | null = null, walked = 0, pace = 0, lastJoy = 0, ready = false;
-  let gaze: number | null = null, pitch: number | null = null, settling = 0;
+  let gaze: number | null = null, pitch: number | null = null, settling = 0, presence = 0;
+  let lastHelp: boolean | undefined, blendLegs = false;
   let from: Pose | null = null;
   return {
     update(dt: number, clock: number, joy: number, towards: number, carryX: number | null, calm: boolean,
-      look?: { ahead: number; up: number }): Pose {
+      look?: { ahead: number; up: number }, help?: { ready: boolean; near: boolean }): Pose {
       if (dt <= 0) return pose;
-      if (ready && ((lastX === null) !== (carryX === null) || lastJoy > 0 && joy > lastJoy + .1 || lastJoy > .4 && joy === 0)) {
+      const close = help?.near ? 1 : 0;
+      presence = calm ? close : presence + (close - presence) * -Math.expm1(-dt * 5);
+      const changedHelp = help?.ready !== lastHelp;
+      if (ready && (changedHelp || (lastX === null) !== (carryX === null) || lastJoy > 0 && joy > lastJoy + .1 || lastJoy > .4 && joy === 0)) {
         from = { ...pose };
+        blendLegs = changedHelp;
         settling = 0;
       }
+      lastHelp = help?.ready;
       ready = true; lastJoy = joy;
       Object.assign(pose, STANDING);
       if (carryX !== null) {
@@ -51,11 +57,14 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
         const t = calm ? 0 : clock + offset;
         const breathe = calm ? 0 : Math.sin(t * 1.3);
         const elapsed = Math.max(0, 1.8 - joy);
-        const active = joy > 0;
+        const active = joy > 0 || !!help?.ready && presence > .001;
         const greeting = active && !task && purpose !== 'braid';
+        // An open greeting says "I'm here for you" before the call. Once asked, the same hands
+        // keep showing the offered solution while Elof studies it or gets ready to board.
+        const welcome = help && !help.ready ? presence : 0;
         // The head acknowledges Elof before the arms rise; the second arm follows, then both settle gently.
-        const right = greeting ? calm ? 1 : smooth((elapsed - 0.05) / 0.24) * smooth(joy / 0.4) : 0;
-        const left = greeting ? calm ? 1 : smooth((elapsed - 0.12) / 0.3) * smooth(joy / 0.46) : 0;
+        const right = Math.max(welcome, greeting ? calm ? 1 : smooth((elapsed - 0.05) / 0.24) * smooth(joy / 0.4) : 0);
+        const left = Math.max(welcome, greeting ? calm ? 1 : smooth((elapsed - 0.12) / 0.3) * smooth(joy / 0.46) : 0);
         const wave = calm ? 0 : Math.sin(elapsed * character.tempo) * character.wave * right * smooth((1.3 - elapsed) / .45);
         pose.lean = character.lean + 0.012 * breathe + 0.035 * right;
         pose.nod = character.nod + 0.018 * breathe + (active && !calm ? 0.075 * Math.sin(Math.min(1, elapsed / 0.24) * Math.PI) : 0);
@@ -73,11 +82,11 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
         pose.elbowL += (character.elbowL - pose.elbowL) * left;
         pose.elbowR += (character.elbowR - pose.elbowR) * right + wave;
         pose.spread = character.spread * right;
-        const weight = active ? calm ? 1 : smooth(elapsed / .5) * smooth(joy / .5) : 0;
+        const weight = Math.max(help?.ready ? presence : 0, joy > 0 ? calm ? 1 : smooth(elapsed / .5) * smooth(joy / .5) : 0);
         if (active && task) {
           // The same flag that moves the help object gives its helper a purposeful, weighted gesture.
           actPose(task, { t: calm ? 3 : elapsed, aim: gift && look ? look : { ahead: task === 'point' ? 4 : 1.4,
-            up: purpose === 'cap' ? 1.0 : task === 'lift' ? 3.15 : gift ? 1.6 : 3.5 }, stride: 0, pace: 0, calm, role: who }, helping);
+            up: purpose === 'cap' || purpose === 'cap:ready' ? 1.0 : task === 'lift' ? 3.15 : gift ? 1.6 : 3.5 }, stride: 0, pace: 0, calm, role: who }, helping);
           for (const joint of [...UPPER, 'legL', 'legR', 'kneeL', 'kneeR'] as const) {
             if (joint !== 'turn' && joint !== 'nod') pose[joint] += (helping[joint] - pose[joint]) * weight;
           }
@@ -91,6 +100,7 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
         // Boarding, alighting and interrupted reactions retain the previous hands, then settle.
         const k = smooth((settling += dt) / .32);
         for (const joint of UPPER) pose[joint] = from[joint] + (pose[joint] - from[joint]) * k;
+        if (blendLegs) for (const joint of ['legL', 'legR', 'kneeL', 'kneeR'] as const) pose[joint] = from[joint] + (pose[joint] - from[joint]) * k;
         if (k === 1) from = null;
       } else from = null;
       lastX = carryX;

@@ -8,6 +8,7 @@ import { createServer } from 'vite';
 import { picture } from './picture.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
+const filter = process.env.FOREST_FILTER;
 const shots = join(root, 'docs/shots/_work/forest-puzzles'); mkdirSync(shots, { recursive: true });
 const virtual = '\0forest-puzzle-fixture';
 const server = await createServer({ root, cacheDir: join(root, '.vite/forest-puzzles'),
@@ -25,6 +26,7 @@ const server = await createServer({ root, cacheDir: join(root, '.vite/forest-puz
         let scene, camera; const before = Scene.prototype.onBeforeRender;
         Scene.prototype.onBeforeRender = function (...args) { if (this.getObjectByName('chase-ghost')) { scene = this; camera = args[2]; } before.apply(this, args); };
         export const renderedScene = () => scene;
+        export const cameraPosition = () => camera.position.toArray();
         export const projected = (x,y) => new Vector3(x,y,0).project(camera).toArray();
         export function corners(mesh) { return [[-0.5,-0.5],[0.5,0.5]].map(([x,y]) => mesh.localToWorld(new Vector3(x * mesh.geometry.parameters.width, y * mesh.geometry.parameters.height, 0)).project(camera).toArray()); }
       `;
@@ -104,6 +106,7 @@ try {
     [false, 390, 844, 'low', false, 144],
   ]) {
     const name = `${smallFirst ? 'trial' : 'heavy-first'}-${width}x${height}-${gentle ? 'lugnt' : tier}`;
+    if (filter && !name.includes(filter)) continue;
     const { page, errors, initial } = await open(progress, width, height, tier, gentle);
     check(`${name}: large cone is visible before calling Pappa`, Math.abs(initial.heavy[0]) < 0.95 && Math.abs(initial.heavy[1]) < 1 && !initial.flags.includes('seesaw'));
     check(`${name}: skipping the optional berry loop never grants its picture`, initial.opacity === 0 && !initial.flags.includes('keepsake:vittra'));
@@ -139,6 +142,7 @@ try {
 
   for (const [width, height, tier] of [[390, 844, 'high'], [844, 390, 'low']]) {
     const name = `door-return-${width}x${height}-${tier}`;
+    if (filter && !name.includes(filter)) continue;
     const { page, errors, initial } = await open({ checkpoint: 3, flags: ['berry', 'jay', 'antlift', 'vittra:berry'], placed: ['twig'] }, width, height, tier);
     check(`${name}: no clue before a real gift and revisit`, initial.opacity === 0 && initial.atlas[0] === 512 && initial.atlas[1] === 192);
     const below = await page.evaluate(() => {
@@ -159,19 +163,24 @@ try {
       const before = p.snapshot(); for (let i = 0; i < 10; i++) p.draw(0);
       const paused = p.snapshot();
       p.run(0.2); for (let i = 0; i < 10; i++) p.draw(0.1);
-      const pixels = p.card.material.map.image.getContext('2d').getImageData(256, 0, 256, 192).data;
-      const symbols = { paper: 0, figure: 0, eyes: 0, pine: 0 };
+      // Inspect the displayed tile, not an assumed slot or atlas resolution. The silhouette now uses
+      // darker ink, while eyes, the pine and mountain colours belong only to later story pictures.
+      const map = p.card.material.map, canvas = map.image;
+      const width = Math.round(canvas.width * map.repeat.x), height = canvas.height;
+      const pixels = canvas.getContext('2d').getImageData(Math.round(canvas.width * map.offset.x), 0, width, height).data;
+      const symbols = { paper: 0, figure: 0, eyes: 0, pine: 0, mountain: 0, area: width * height };
       for (let i = 0; i < pixels.length; i += 4) {
         if (pixels[i] === 255 && pixels[i+1] === 246 && pixels[i+2] === 226) symbols.paper++;
-        if (pixels[i] === 139 && pixels[i+1] === 129 && pixels[i+2] === 114) symbols.figure++;
+        if (pixels[i] === 117 && pixels[i+1] === 99 && pixels[i+2] === 79) symbols.figure++;
         if (pixels[i] === 93 && pixels[i+1] === 90 && pixels[i+2] === 83) symbols.eyes++;
         if (pixels[i] === 95 && pixels[i+1] === 109 && pixels[i+2] === 87) symbols.pine++;
+        if (pixels[i] === 139 && pixels[i+1] === 129 && pixels[i+2] === 114) symbols.mountain++;
       }
       return { before, paused, returned: p.snapshot(), symbols };
     });
     const { returned } = arrival;
     check(`${name}: pausing a newly discovered picture freezes its entrance and clock`, arrival.before.opacity > 0 && arrival.before.opacity < 0.9 && arrival.before.opacity === arrival.paused.opacity && arrival.before.sim === arrival.paused.sim && JSON.stringify(arrival.before.at) === JSON.stringify(arrival.paused.at));
-    check(`${name}: folded-paper clue contains only a small silhouette, without eyes or later mountain clues`, arrival.symbols.paper > 15000 && arrival.symbols.figure > 2500 && arrival.symbols.eyes === 0 && arrival.symbols.pine === 0);
+    check(`${name}: folded-paper clue contains only a small silhouette, without eyes or later mountain clues (${JSON.stringify(arrival.symbols)})`, arrival.symbols.paper / arrival.symbols.area > 0.3 && arrival.symbols.figure / arrival.symbols.area > 0.05 && arrival.symbols.eyes === 0 && arrival.symbols.pine === 0 && arrival.symbols.mountain === 0);
     check(`${name}: actual climb back reveals the persisted vittra picture beside the keepsake`, returned.flags.includes('keepsake:vittra') && returned.flags.includes('beat:vittra-clue') && returned.opacity > 0.9 && returned.uv === 0.5);
     check(`${name}: actual ghost remains at its next lower perch, with one chase mesh`, returned.ghost.perch === 9 && Math.abs(returned.ghost.x - 76) < 0.1 && returned.ghost.y < 0.1 && returned.ghosts === 1);
     check(`${name}: card stays legible inside portrait/landscape framing`, returned.corners.every((point) => Math.abs(point[0]) <= 0.99 && Math.abs(point[1]) <= 0.99));
@@ -180,11 +189,26 @@ try {
     const paused = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 10; i++) p.draw(0); return p.snapshot(); });
     check(`${name}: pause freezes clue entrance, location and simulation`, returned.sim === paused.sim && returned.opacity === paused.opacity && JSON.stringify(returned.at) === JSON.stringify(paused.at));
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    const calm = await page.evaluate(() => { const p = window.probe; p.draw(0.2); const a = p.snapshot(); p.draw(1); return { a, b: p.snapshot() }; });
-    check(`${name}: OS calm keeps the paper picture still`, JSON.stringify(calm.a.at) === JSON.stringify(calm.b.at));
+    await page.waitForFunction(() => matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const calm = await page.evaluate(() => {
+      const p = window.probe;
+      // The larger card follows the viewport clamp while the camera settles after the climb.
+      // Settle that framing before checking that reduced motion removes the picture's own drift.
+      let camera = JSON.stringify(p.f.cameraPosition()), settled = 0;
+      for (let i = 0; i < 40 && settled < 2; i++) {
+        p.draw(1);
+        const next = JSON.stringify(p.f.cameraPosition());
+        settled = next === camera ? settled + 1 : 0;
+        camera = next;
+      }
+      p.draw(0.2); const a = p.snapshot(); p.draw(1);
+      return { a, b: p.snapshot(), settled: settled === 2 };
+    });
+    check(`${name}: OS calm keeps the paper picture still after camera settling`, calm.settled && JSON.stringify(calm.a.at) === JSON.stringify(calm.b.at));
     const left = await page.evaluate(() => { const p = window.probe; p.walkTo(65.8); p.step({ act: true }); p.run(3); return p.snapshot(); });
     check(`${name}: returning below clears the local picture while retaining the saved discovery`, left.opacity === 0 && left.flags.includes('keepsake:vittra'));
     assert.deepEqual(errors, [], `${name}: browser errors`); await page.close();
   }
+  assert.ok(checks > 0, 'FOREST_FILTER must match a forest puzzle case.');
   console.log(`Forest puzzles: ${checks} browser checks passed.`);
 } finally { await browser.close(); await server.close(); }

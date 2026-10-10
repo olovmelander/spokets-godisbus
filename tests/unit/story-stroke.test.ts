@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { epilog, prolog } from '../../src/content/chapters/ends';
 import { Sim } from '../../src/sim/sim';
+import { STEP } from '../../src/sim/constants';
 import { finishEyeStroke, guidedCarve, guidedEye, validCarveStroke, validEyeStroke } from '../../src/sim/story-stroke';
 
 const idle = { x: 0, y: 0, hop: false, hopHeld: false, act: false };
@@ -35,11 +36,17 @@ describe('painting with Pappa', () => {
     expect(sim.story?.spot).toBe('paint');
     expect(sim.finishStory({ kind: 'paint', traces: [guidedEye(116)] })).toBe(false);
     expect(sim.finishStory({ kind: 'paint', traces: [guidedEye(204)] })).toBe(true);
-    // The waking is a scene he watches; it ends with the ghost running off with the bag.
-    for (let i = 0; i < 360; i++) sim.step(idle);
+    // The full waking now gives the bird, shared look and theft their own moments. Painting the
+    // second eye begins that scene; it must not release the chase before the authored ending.
+    const waking = prolog.scenes!.find(scene => scene.id === 'vaknar')!;
+    for (let i = 0; i < Math.round((waking.seconds - 0.1) / STEP); i++) sim.step(idle);
+    expect(sim.sceneFrame?.id).toBe('vaknar');
+    expect(sim.held).toBe(true);
+    expect(sim.flags.has('grab')).toBe(true);
     expect(sim.flags.has('blink')).toBe(false);
-    for (let i = 0; i < 600; i++) sim.step(idle);
+    for (let i = 0; i < Math.round(0.1 / STEP); i++) sim.step(idle);
     expect(sim.flags.has('blink')).toBe(true);
+    expect(sim.flags.has('scene:vaknar')).toBe(true);
   });
 });
 

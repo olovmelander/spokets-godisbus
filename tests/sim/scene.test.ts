@@ -158,7 +158,7 @@ describe('the story\'s scenes', () => {
     expect(director.frame?.id).toBe('titel');
   });
 
-  it('keeps every held scene short, its moments inside it, and its lines among the game\'s words', () => {
+  it('keeps each unbroken story stretch short, its moments inside it, and its lines among the game\'s words', () => {
     const lines: Record<string, string> = sv.lines;
     const words: Record<string, string> = sv.scene;
     for (const chapter of Object.values(COURSES)) {
@@ -166,9 +166,13 @@ describe('the story\'s scenes', () => {
       for (const scene of chapter.scenes ?? []) {
         expect(ids.has(scene.id), `${chapter.id}: ${scene.id} twice`).toBe(false);
         ids.add(scene.id);
-        // He watches a held scene with his hands still: at most 11 seconds of it at a time.
-        if (scene.hold) expect(scene.seconds, `${chapter.id}: ${scene.id}`).toBeLessThanOrEqual(11);
-        for (const moment of [...(scene.cues ?? []), ...(scene.lines ?? [])]) expect(moment.at).toBeLessThanOrEqual(scene.seconds);
+        // Held dialogue now waits for Fortsätt. Limit the action between those reading stops, not the
+        // entire player-paced scene: extending a bird's arrival must not remove the child's control.
+        if (scene.hold) {
+          const stops = [0, ...(scene.lines ?? []).map(line => line.at), scene.seconds];
+          for (let i = 1; i < stops.length; i++) expect(stops[i]! - stops[i - 1]!, `${chapter.id}: ${scene.id}`).toBeLessThanOrEqual(11);
+        }
+        for (const moment of [...(scene.cues ?? []), ...(scene.lines ?? []), ...(scene.sounds ?? [])]) expect(moment.at).toBeLessThanOrEqual(scene.seconds);
         for (const line of scene.lines ?? []) expect(lines[line.line], `${chapter.id}: ${line.line}`).toBeTruthy();
         for (const word of scene.stage?.words ?? []) expect(words[word.text], `${chapter.id}: ${word.text}`).toBeTruthy();
       }

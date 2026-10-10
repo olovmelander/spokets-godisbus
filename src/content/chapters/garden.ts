@@ -15,7 +15,7 @@ import type { Candy, ChapterData } from '../../sim/types';
  *      at the top of the last one hangs a hidden candy. From there the crossing's own hook is in reach, and
  *      takes him over the gully. Missing costs nothing: he lands on the ground below, or the glitter bubble
  *      carries him back from the gully.
- * 4. **The dandelion:** the ghost stumbles, and can nearly be caught.
+ * 4. **The dandelion:** the ghost stumbles and spills sweets, then escapes out of reach.
  * 5. **The lawn:** the birch's roots, and a boulder.
  * 6. **Under the birch** (E1): the dew rain.
  * 7. **Pappa's shavings** (P4): a curl pulled down as a step, and a second pushed across the gap at the top.
@@ -352,7 +352,7 @@ export const garden: ChapterData = {
     { at: { x: 50.5, y: 0 } },
     { at: { x: 58.6, y: 0 } },
     { at: { x: 68.6, y: 0 } },
-    // the dandelion
+    // The dandelion makes it spill sweets while escaping, safely ahead of Elof.
     { at: { x: 74, y: 0 }, catch: 'dandelion' },
     { at: { x: 78.4, y: 0 } },
     { at: { x: 84.5, y: 1.4 } },
@@ -373,12 +373,15 @@ export const garden: ChapterData = {
     // The chapter opens on its time card, without words: the family's promises were said on the deck.
     { id: 'stomp', at: 155.6, who: 'elof', line: 'stomp' },
     // Moa saw him made small on the deck: here she sees why it is good to be small.
-    { id: 'moa1', at: 161.5, who: 'moa', line: 'rootFingers' },
-    { id: 'garden:ready', on: 'moa', who: 'moa', line: 'gardenReady' },
-    { id: 'garden:pocket', on: 'moa', who: 'moa', line: 'gardenPocket' },
+    { id: 'moa1', at: 161.5, until: 'moa', who: 'moa', line: 'rootFingers', read: true },
+    { id: 'family:moa', at: 163.3, until: 'moa', who: 'moa', line: 'familyMoa', read: true },
+    { id: 'family:plane', on: 'family:plane-ready', until: 'plane:board', within: [159, 171], who: 'moa', line: 'familyMoaPlan', read: true },
+    { id: 'garden:ready', on: 'family:plane-ready', until: 'plane:board', within: [159, 171], who: 'moa', line: 'gardenReady', read: true },
+    { id: 'garden:pocket', on: 'family:plane-ready', until: 'plane:board', within: [159, 171], who: 'moa', line: 'gardenPocket' },
     { id: 'garden:found', on: 'garden:paper', who: 'elof', line: 'gardenFound' },
     { id: 'garden:thanks', on: 'garden:shared-paper', who: 'moa', line: 'gardenThanks' },
   ],
+  later: [{ flag: 'family:plane-ready', after: 'moa', until: 'plane:board', within: [159, 171], seconds: 1.2, hold: true }],
   cameras: [
     // Up on the window sills the picture is wider and looks down a little: the deck he can drop to stays in it.
     { from: 22, to: 36, above: 8.2, zoom: 1.3, lift: -1.2 },

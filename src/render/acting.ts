@@ -60,6 +60,13 @@ export function sippingAt(seconds: number, calm = false, role?: Role) {
   return { raise: pulse(t, .9, .8, .95, 1.05), tilt: pulse(t, 1.75, .35, .35, .35) };
 }
 
+/** One deliberate bite: inspect, touch the lips, swallow, then lower the empty hand. */
+export function eatingAt(seconds: number, calm = false) {
+  const t = Math.max(0, seconds);
+  return { mouth: calm ? 1 : rise(t, .85) * (1 - rise(t - 1.6, .65)),
+    sweet: 1 - rise(t - .95, .45), swallow: calm ? 0 : pulse(t, 1.4, .2, .12, .4) };
+}
+
 /**
  * Two joints that put a hand at a point (ahead, up) from the shoulder, in the body's side view. The elbow bends
  * forward only: an arm that cannot reach points straight at it.
@@ -340,6 +347,14 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       handAlong(out, fromL, 1.05, hips + SHOULDER + .22, k, rise(t, .5), .2, 0);
       handAlong(out, fromR, 1.05, hips + SHOULDER + .22, k, rise(t, .5), .2, 1);
       out.nod = -0.08 * k;
+      return out;
+    }
+    case 'eat': {
+      under();
+      const bite = eatingAt(c.t, c.calm), hips = hipsOf(out);
+      out.nod = -.08 + .12 * bite.swallow;
+      handTo(out, 1.05 - .62 * bite.mouth, hips + SHOULDER + .22 + .12 * bite.mouth, 1);
+      handTo(out, 1.05 - .3 * bite.mouth, hips + SHOULDER + .22 - .42 * bite.mouth, 0);
       return out;
     }
     case 'blow': {

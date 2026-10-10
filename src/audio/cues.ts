@@ -1,4 +1,5 @@
 import { personFor, type Person } from '../content/people';
+import type { StorySound } from '../sim/scene';
 import type { ChapterData, Mode, PlaceId, Speaker, SurfaceKind } from '../sim/types';
 
 /**
@@ -86,6 +87,8 @@ export type Cue =
   /** Elof himself, without words: a gasp as the glitter takes him, a giggle at something good. */
   | { kind: 'gasp' }
   | { kind: 'giggle' }
+  /** The opening's small sounds, timed with its acting rather than with the reading speed. */
+  | { kind: 'story'; sound: StorySound }
   /** He calls someone: his two notes, and then that one's own three in answer. */
   | { kind: 'call'; who: Person | null }
   /** One of the family answers from afar, as a chapter ends: their three notes. Null: all four at once. */

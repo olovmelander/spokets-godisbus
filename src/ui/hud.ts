@@ -33,8 +33,14 @@ export interface Hud {
   notice(text: string, seconds?: number): void;
   /** While paused the bag says its number; in play only for a while after a candy (in-play.md row 2). */
   paused(on: boolean): void;
-  /** Puts a line in the queue of bubbles. Each is shown for a few seconds, one after another. */
-  say(who: Speaker, line: string, priority?: boolean): void;
+  /** Story lines wait for Fortsätt; incidental lines stay for a few seconds. */
+  say(who: Speaker, line: string, priority?: boolean, read?: boolean): void;
+  /** A story line is being read, or waits next. Its picture and the game wait with it. */
+  reading(): boolean;
+  /** A fresh press advances one story line, after the short accidental-press guard. */
+  advance(): boolean;
+  /** A deliberate checkpoint restart discards the interrupted dialogue, which its scene tells again. */
+  clear(): void;
   /**
    * A scene takes the floor: lines still waiting are dropped, and so is one a find has hidden. A line being read
    * is let stay a little longer, so the scene's own lines come when they are acted.
@@ -85,8 +91,10 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
   const bubble = byId('bubble');
   let shown = -1;
   let wordShown: string | undefined;
-  const queue: { who: Speaker; line: string }[] = [];
+  const queue: { who: Speaker; line: string; read: boolean }[] = [];
   let left = 0;
+  let manual = false;
+  let readFor = 0;
   /** Whose the bubble is and the lines in it now, so that a line which goes on from them is added under them. */
   let spoken: { who: Speaker; texts: string[] } | null = null;
   let ended = false;
@@ -209,22 +217,48 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       pausedNow = on;
       bag.classList.toggle('quiet', !on && countFor <= 0);
     },
-    say(who, line, priority = false) {
+    say(who, line, priority = false, read = false) {
       if (!lines[line]) return;
-      if (priority) { queue.length = 0; left = 0; spoken = null; }
-      queue.push({ who, line });
+      // A later event cannot replace a line the player has not finished reading.
+      if ((priority || read) && !manual) {
+        const unread = queue.filter((next) => next.read);
+        queue.splice(0, queue.length, ...unread);
+        left = 0;
+        spoken = null;
+      }
+      queue.push({ who, line, read });
+    },
+    reading() {
+      return manual || queue.some((next) => next.read);
+    },
+    advance() {
+      if (!manual || readFor < 0.25) return false;
+      manual = false;
+      left = 0;
+      bubble.hidden = true;
+      spoken = null;
+      return true;
+    },
+    clear() {
+      queue.length = 0;
+      manual = false;
+      left = 0;
+      spoken = null;
+      bubble.hidden = true;
     },
     hush() {
-      queue.length = 0;
+      // Scene transitions may remove passing remarks, never unread story lines.
+      const unread = queue.filter((next) => next.read);
+      queue.splice(0, queue.length, ...unread);
       // A scene takes the floor: the tag comes down, and a line being read gets a little longer.
       if (noticeFor > 0) {
         noticeFor = 0;
         tag.hidden = true;
       }
-      left = Math.min(left, HUSH_TIME);
+      if (!manual) left = Math.min(left, HUSH_TIME);
     },
     speaking() {
-      return left > 0 || queue.length > 0;
+      return manual || left > 0 || queue.length > 0;
     },
     tick(dt) {
       if (noticeFor > 0) {
@@ -236,6 +270,10 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       if (countFor > 0) {
         countFor -= dt;
         if (countFor <= 0 && !pausedNow) bag.classList.add('quiet');
+      }
+      if (manual) {
+        readFor += dt;
+        return;
       }
       if (left > 0) {
         bubble.hidden = false;
@@ -268,6 +306,8 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       byId('bubbleFace').innerHTML = faceSvg(next.who);
       bubble.dataset.who = next.who;
       bubble.hidden = false;
+      manual = next.read;
+      readFor = 0;
       left = (BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER) * reading();
     },
     end(title, count, onAgain, onNext, closing, hidden, code, onwardWord, kicker) {

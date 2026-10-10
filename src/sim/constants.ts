@@ -103,11 +103,13 @@ export const DOWN_TIME = 0.9;
 
 /** The ghost hops on when Elof comes this close: it keeps its distance (plan §4.2). */
 export const GHOST_NEAR = 4;
+/** During the chase even a swing, a short hop or a story wait keeps this much space around the ghost. */
+export const GHOST_CLEARANCE = 3;
 /** How fast the ghost hops from one place to the next. Faster than Elof runs: the chase can't be won early. */
 export const GHOST_SPEED = 6;
-/** At a near-catch it lets him come this close, and Använd says Ta! */
+/** In a chapter that allows meetings, a near-catch offers Ta! at this distance. */
 export const GHOST_CATCH = 1.5;
-/** At a near-catch it slips away by itself when he comes this close without grabbing. */
+/** In a close meeting it slips away at this distance if he does not grab. */
 export const GHOST_SLIP = 0.6;
 /** Standing this close to a thing to use, Använd offers it. */
 export const SPOT_REACH = 1.2;

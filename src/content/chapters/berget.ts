@@ -206,8 +206,8 @@ export const berget: ChapterData = {
     // stuck below the cliff, with the bag too heavy: it doesn't run
     { at: { x: 145, y: 26.4 }, until: 'lift', thought: { picture: 'lonely-figure', until: 'lift' } },
     // up, it waits by the pine
-    { at: { x: 151, y: 31.4 }, near: 1.6 },
-    { at: { x: 159, y: 31.4 }, near: 1.6 },
+    { at: { x: 151, y: 31.4 } },
+    { at: { x: 159, y: 31.4 } },
   ],
   // He understands when he has seen it.
   beats: [

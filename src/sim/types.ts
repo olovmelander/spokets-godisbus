@@ -150,6 +150,12 @@ export interface Beat {
   needs?: string;
   /** A new causal scene replaces stale queued dialogue. */
   priority?: boolean;
+  /** An explanation is no longer useful once this next action is complete. */
+  until?: string;
+  /** A local explanation waits until Elof is back at its help encounter. */
+  within?: readonly [number, number];
+  /** An essential explanation waits for Fortsätt before gameplay continues. */
+  read?: boolean;
   who: Speaker;
   /** A key of `sv.lines`. */
   line: string;
@@ -241,11 +247,11 @@ export interface Roller {
  */
 export interface GhostPerch {
   at: Vec;
-  /** How close he may come before it hops on. Left out: 4 EL. */
+  /** Takeoff distance, default 4 EL. Only close meetings may use a smaller value. */
   near?: number;
-  /** A near-catch: it stays until he is within 1.5 EL, and Använd says Ta! Grabbing sets this flag. */
+  /** Candy spilled on departure. Close meetings may instead offer Ta! and set it when grabbed. */
   catch?: string;
-  /** It waits here, however close he comes, until this flag is set. */
+  /** It waits here until this flag is set; in a chase it rises out of reach if he approaches. */
   until?: string;
   /** A wordless picture at this story stop; progress makes the ghost's thoughts clearer (§3.3). */
   thought?: { picture: 'mountain' | 'pine-crack' | 'lonely-figure' | 'small-figure'; after?: string; until?: string };
@@ -533,6 +539,8 @@ export interface ChapterData {
   spots?: Spot[];
   /** The places where the ghost waits for him, in order. Left out: the chapter has no ghost. */
   ghost?: GhostPerch[];
+  /** The opening and ending let Elof meet the ghost. Everywhere else it stays out of reach. */
+  ghostMeet?: boolean;
   /** Kapitel 1's helper is the ghost. A story visit happens once regardless of the chosen help level. */
   helper?: { kind: 'ghost' | 'jay'; visit?: { id: string; from: number; to: number; at: Vec } };
   /** Where cones roll. */
@@ -552,7 +560,7 @@ export interface ChapterData {
    * A beat of the story that takes time: `flag` is set this many seconds after `after` was. With `hold` he
    * stands and watches until then: the stick and the buttons do nothing. Keep such a beat short.
    */
-  later?: { flag: string; after: string; seconds: number; hold?: boolean }[];
+  later?: { flag: string; after: string; seconds: number; hold?: boolean; until?: string; within?: readonly [number, number] }[];
   /**
    * For the picture: while `from` is set and `until` is not, someone looks at these places, one after the
    * other, each for the same share of the time: the ghost looks at the empty place on the shelf, and at the bag.

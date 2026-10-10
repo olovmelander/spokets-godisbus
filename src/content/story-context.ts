@@ -1,5 +1,5 @@
 import { sv } from './sv';
-import type { Vec } from '../sim/types';
+import type { Speaker, Vec } from '../sim/types';
 
 /** The purpose line's pictures (src/ui/sprite.ts): what Elof is doing, drawn, not typed. */
 export type PurposeIcon = 'trail' | 'heart' | 'sparkle' | 'brush' | 'knife' | 'mountain' | 'water' | 'house' | 'village';
@@ -13,6 +13,8 @@ export interface StoryContext {
   reveal: string | null;
   recap: string;
   family: string;
+  /** The named relative whose help is the current playable action. */
+  guide?: Speaker;
 }
 type History = Readonly<Record<string, readonly string[]>>;
 
@@ -30,13 +32,17 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       ? `${story} ${knownFigure ? sv.storyContext.welcomeMemory : sv.storyContext.welcomeFigure}` : story;
     const reveal = chapter === 'norrsken' && homeParty
       ? knownFigure ? sv.storyContext.purposes.welcome.recap : sv.storyContext.welcomeFigure : null;
-    return { id, icon, purpose: copy.purpose, reveal, recap, family: sv.storyContext.helpers[helper] };
+    const guide = helper === 'moa' || helper === 'pappa' || helper === 'bertil' ? helper
+      : ['mamma', 'bridgeCross', 'braid', 'braidClimb'].includes(id) ? 'mamma' as const : undefined;
+    return { id, icon, purpose: copy.purpose, reveal, recap, family: sv.storyContext.helpers[helper], guide };
   };
   switch (chapter) {
     case 'prolog':
       if (has('pappa:done')) return context('handoff', 'trail');
       if (has('star') && has('scene:familj') && !has('hand') && !has('pappa:noticed')) return context('hand', 'home', 'heart');
+      if (has('star') && !has('scene:poff') && !has('scene:familj') && !has('hand') && !has('pappa:noticed')) return context('starWonder', 'home', 'sparkle');
       if (has('star')) return context(has('pappa:noticed') ? 'handoff' : 'tiny', 'trail', 'sparkle');
+      if (has('scene:stjarnan')) return context('starTaste', 'home', 'sparkle');
       if (has('bag:torn')) return context('starTrail', 'home', 'sparkle');
       if (has('blink')) return context('chase', 'home');
       if (has('paint')) return context('awakening', 'home', 'sparkle');
@@ -62,6 +68,7 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       if (has('placed:rescue')) return context('waiting', 'forest', 'trail');
       if (at >= 179) return context('eddy', 'bertil', 'heart');
       if (has('cap')) return context('capRide', 'bertil', 'water');
+      if (has('cap:ready') && at >= 150) return context('capBoard', 'bertil', 'water');
       if (at >= 150) return context('cap', 'bertil', 'water');
       if (has('placed:cone') && !has('launch')) return context('launch', 'pappa');
       if (has('seesaw:trial') && !has('launch')) return context('coneRetry', 'pappa');
@@ -85,7 +92,9 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       if (has('chick')) return context('chick', 'bog', 'heart');
       if (has('light')) return context('mist', 'bog', 'sparkle');
       if (at >= 133) return context('light', 'bog', 'sparkle');
+      if (has('braid') && at >= 98 && at < 106 && player.y < 4.1) return context('braidClimb', 'bog');
       if (at >= 98 && !has('braid')) return context('braid', 'bog');
+      if (has('mamma') && at >= 80 && at < 98) return context('bridgeCross', 'bog', 'water');
       if (at >= 80 && !has('mamma')) return context('mamma', 'bog', 'water');
       return context('bog', 'bog');
     case 'berget':

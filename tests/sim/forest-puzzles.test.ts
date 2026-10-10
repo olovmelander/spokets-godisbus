@@ -182,7 +182,7 @@ describe('Pappas two counterweights on the actual forest ground', () => {
   });
 
   it('all three requested hints consistently show the return to the heavy push side', () => {
-    const game = new Game({ ...granskog, spawn: { x: 116.5, y: -7.99 } }, {}, { flags: ['seesaw', 'seesaw:trial'], placed: ['twig', 'cone-small'] });
+    const game = new Game({ ...granskog, spawn: { x: 116.5, y: -7.99 } }, {}, { flags: ['seesaw', 'family:seesaw-ready', 'beat:family:seesaw', 'seesaw:trial'], placed: ['twig', 'cone-small'] });
     run(game, 0.2);
     const target = counterweightTarget(game.sim, granskog)!;
     const x = game.sim.curr.x;

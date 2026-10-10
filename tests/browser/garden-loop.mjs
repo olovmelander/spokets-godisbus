@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
 import { withinDraws } from './budget.mjs';
+import { continueDialogue } from './dialogue.mjs';
 
 const base = '/spokets-godisbus/';
 const dist = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -57,7 +58,7 @@ async function open(name, viewport, tier, touch, oldCalled = false) {
   await page.goto(`${origin}${base}?dev&debug&standin&course=garden&tier=${tier}`);
   await ready();
   const programs = (await info()).programs;
-  let maximumDraws = 0;
+  let maximumDraws = 0, moving = 0;
   // Software WebGL can advance fewer than 60 simulation steps per wall-clock second.
   async function until(accepts, label, timeout = 60000) {
     const end = Date.now() + timeout;
@@ -65,6 +66,12 @@ async function open(name, viewport, tier, touch, oldCalled = false) {
     do {
       last = await state();
       maximumDraws = Math.max(maximumDraws, (await info()).drawCalls);
+      if (last.storyReading) {
+        const resume = moving;
+        await release(); await continueDialogue(page);
+        if (resume) await hold(resume);
+        continue;
+      }
       if (accepts(last)) return last;
       await sleep(40);
     } while (Date.now() < end);
@@ -73,12 +80,14 @@ async function open(name, viewport, tier, touch, oldCalled = false) {
   const cdp = touch ? await context.newCDPSession(page) : null;
   const stickY = viewport.height - 100;
   async function hold(dir) {
+    moving = dir;
     if (touch) {
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 120, y: stickY, id: 1 }] });
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 120 + dir * 65, y: stickY, id: 1 }] });
     } else await page.keyboard.down(dir > 0 ? 'ArrowRight' : 'ArrowLeft');
   }
   async function release() {
+    moving = 0;
     if (touch) await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     else { await page.keyboard.up('ArrowRight'); await page.keyboard.up('ArrowLeft'); }
   }

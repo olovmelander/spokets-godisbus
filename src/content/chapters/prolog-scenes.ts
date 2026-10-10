@@ -15,8 +15,9 @@ const CARVING = { x: 4.6, y: 1.65, z: -1.15 };
 const BAG = { x: 7.1, y: 1.65, z: -1.25 };
 /** The empty place first in the row on Pappa's shelf (the shelf's middle less 3.6). */
 const EMPTY = { x: -1.2, y: 6.1, z: -8.5 };
-const WINDOW = { x: 9.4, y: 5.4, z: -9 };
-/** Where Elof is when he runs into the star and it makes him small (the star lies a reach further on). */
+// The right end of the sill stays visible beside the family when they turn toward the bird.
+const WINDOW = { x: 11.2, y: 3.55, z: -9 };
+/** The deck mark for the star encounter: Elof stops here to look, taste, and become small. */
 const STAR = 40.5;
 const PALM = { x: STAR + 0.8, y: 1.3, z: 0.05 };
 /** The deck's railing, along its far side (ends.ts, `prologue.rail`). */
@@ -113,62 +114,69 @@ export const PROLOG_SCENES: SceneDef[] = [
     id: 'vaknar',
     on: 'paint',
     until: 'blink',
-    seconds: 7.4,
+    seconds: 18,
     hold: true,
-    cues: [{ at: 5.0, flag: 'woke' }, { at: 5.6, flag: 'grab' }, { at: 7.4, flag: 'blink' }],
+    // Each settled picture waits for its line to be read. The bird, the first shared look and the bag's
+    // magic are separate discoveries; the chase starts only after Elof has seen whose bag it took.
+    sounds: [{ at: 1.6, sound: 'bird' }, { at: 5.2, sound: 'blink' }, { at: 13.3, sound: 'paper' }],
+    cues: [{ at: 11.5, flag: 'woke' }, { at: 13.3, flag: 'grab' }, { at: 18, flag: 'blink' }],
     lines: [
-      { at: 0.15, who: 'mamma', line: 'jayWindow' },
-      { at: 6.3, who: 'elof', line: 'stolenBag' },
+      { at: 2.0, who: 'mamma', line: 'jayWindow' },
+      { at: 7.2, who: 'elof', line: 'eyesAlive' },
+      { at: 14.5, who: 'moa', line: 'bagGlitters' },
+      { at: 16.5, who: 'elof', line: 'stolenBag' },
     ],
     stage: {
       shots: [
-        { at: 0, x: 5.6, y: 3.0, height: 5.4, width: 9, move: 0.8 },
-        { at: 1.6, x: 4.7, y: 2.35, height: 3.1, width: 5.2, move: 0.9 },
-        { at: 3.2, x: 2.4, y: 4.1, height: 6.8, width: 9, move: 0.9 },
-        { at: 4.4, x: 5.7, y: 2.5, height: 4.2, width: 7.2, move: 0.8 },
-        { at: 6.0, x: 7.4, y: 2.7, height: 6.4, width: 12, move: 1.0 },
+        // The window gets a real establishing shot: the bird lands before Mamma names it.
+        { at: 0, x: 8.8, y: 4.0, height: 6.2, width: 8.5, move: 1.3 },
+        { at: 3.4, x: 4.7, y: 2.35, height: 3.1, width: 5.2, move: 1.0 },
+        { at: 8.4, x: 2.4, y: 4.1, height: 6.8, width: 9, move: 1.1 },
+        { at: 10.4, x: 5.7, y: 2.5, height: 4.2, width: 7.2, move: 1.1 },
+        { at: 15.5, x: 7.4, y: 2.7, height: 6.4, width: 12, move: 0.9 },
       ],
       actors: {
         mamma: [
           { at: 0, act: 'point', aim: WINDOW, face: 0.72 },
-          { at: 0.7, x: 9.7, z: -3.7, move: 0.8, face: 0.74, act: 'look', aim: WINDOW },
+          { at: 0.7, x: 9.0, z: -3.7, move: 0.8, face: 0.74, act: 'look', aim: WINDOW },
         ],
         pappa: [
           { at: 0.2, x: 6, move: 0.4, act: 'stand', holds: null },
           // Leave beside the chair before turning behind its back towards the window.
           { at: 0.6, x: 7, move: 0.5, face: 0, act: 'look', aim: WINDOW },
-          { at: 1.1, x: 7.7, z: -4.3, move: 0.5, face: 0.7 },
+          { at: 1.1, x: 7.2, z: -4.3, move: 0.5, face: 0.7 },
         ],
-        bertil: [{ at: 0.3, x: 8.9, z: -4.7, move: 0.9, face: 0.76, act: 'look', aim: WINDOW }],
+        bertil: [{ at: 0.3, x: 8.4, z: -4.7, move: 0.9, face: 0.76, act: 'look', aim: WINDOW }],
         moa: [
           { at: 0.4, face: 0.66, act: 'sit', aim: WINDOW },
           // Only Moa looks back at the table, as the magic runs into the bag: she sees it glitter (she says so
           // on the deck), and is turned to the jay again before the ghost hops away.
-          { at: 5.3, face: 0.5, move: 0.3, aim: { x: BAG.x, y: BAG.y + 0.3, z: BAG.z } },
-          { at: 6.15, face: 0.66, move: 0.3, aim: WINDOW },
+          { at: 14.0, face: 0.5, move: 0.5, aim: { x: BAG.x, y: BAG.y + 0.3, z: BAG.z } },
+          { at: 15.8, face: 0.66, move: 0.5, aim: WINDOW },
         ],
         ghost: [
           { at: 0, x: CARVING.x, y: CARVING.y, z: CARVING.z, face: 0.25, move: 0.01, act: 'carved' },
-          { at: 0.6, act: 'wake' },
-          { at: 1.8, act: 'tilt' },
-          { at: 2.5, act: 'look', aim: { x: 3.7, y: 2.6, z: 0.2 }, face: 0.38 },
-          { at: 3.2, act: 'look', aim: EMPTY, face: 0.6 },
-          { at: 4.4, act: 'look', aim: { x: BAG.x, y: BAG.y + 0.4, z: BAG.z }, face: 0 },
-          { at: 5.0, act: 'waddle', x: 6.5, y: CARVING.y, z: -1.2, move: 0.6 },
-          { at: 5.6, act: 'grab' },
-          { at: 6.4, act: 'hop', face: 0 },
+          { at: 4.0, act: 'wake' },
+          { at: 6.4, act: 'look', aim: { x: 3.7, y: 2.6, z: 0.2 }, face: 0.38, move: 0.6 },
+          { at: 8.7, act: 'look', aim: EMPTY, face: 0.6, move: 0.7 },
+          { at: 10.6, act: 'look', aim: { x: BAG.x, y: BAG.y + 0.4, z: BAG.z }, face: 0, move: 0.7 },
+          { at: 11.5, act: 'waddle', x: 6.5, y: CARVING.y, z: -1.2, move: 0.8 },
+          { at: 13.3, act: 'grab' },
+          { at: 16.0, act: 'hop', face: 0 },
         ],
       },
       elof: [
-        { at: 2.5, act: 'startle', aim: { x: CARVING.x, y: 2.4, z: CARVING.z } },
-        { at: 3.4, act: 'watch', aim: EMPTY },
-        { at: 4.5, act: 'watch', aim: { x: BAG.x, y: 2.0, z: BAG.z } },
-        { at: 6.2, act: 'point', aim: { x: 6.5, y: 2.2, z: -1.2 } },
+        { at: 0, act: 'watch', aim: WINDOW },
+        { at: 4.4, act: 'startle', aim: { x: CARVING.x, y: 2.4, z: CARVING.z } },
+        { at: 6.3, act: 'watch', aim: { x: CARVING.x, y: 2.4, z: CARVING.z } },
+        { at: 8.9, act: 'watch', aim: EMPTY },
+        { at: 10.7, act: 'watch', aim: { x: BAG.x, y: 2.0, z: BAG.z } },
+        { at: 15.8, act: 'point', aim: { x: 6.5, y: 2.2, z: -1.2 } },
       ],
       fx: [
-        { at: 0, kind: 'jay', from: { x: WINDOW.x, y: 3.55, z: -8.6 }, seconds: 7.4 },
-        { at: 0.6, kind: 'sparkle', from: { x: CARVING.x, y: 2.0, z: CARVING.z }, seconds: 1.9 },
-        { at: 5.6, kind: 'stream', from: { x: 6.5, y: 2.5, z: -1.2 }, to: { x: 7.0, y: 2.25, z: -1.35 }, seconds: 1.2 },
+        { at: 0, kind: 'jay', from: { x: WINDOW.x, y: WINDOW.y, z: -8.6 }, seconds: 18 },
+        { at: 4.0, kind: 'sparkle', from: { x: CARVING.x, y: 2.0, z: CARVING.z }, seconds: 1.9 },
+        { at: 13.4, kind: 'stream', from: { x: 6.5, y: 2.5, z: -1.2 }, to: { x: 7.0, y: 2.25, z: -1.35 }, seconds: 2.0 },
       ],
     },
   },
@@ -205,43 +213,75 @@ export const PROLOG_SCENES: SceneDef[] = [
     },
   },
   {
-    // 3. POFF. He holds up the star that fell from the torn bag; it glitters as the bag did, and makes him as
-    // small as the ghost. The camera goes down with him to the planks. The ghost turns: they look at each other.
+    // The fallen star gets its own quiet discovery. Nothing is eaten just by walking into it: after
+    // the picture, the player chooses Smaka på stjärnan. Ordinary trail candy is still only collected.
+    id: 'stjarnan',
+    on: 'bag:torn',
+    from: 39.5,
+    until: 'star',
+    seconds: 4.2,
+    hold: true,
+    lines: [
+      { at: 1.2, who: 'moa', line: 'fallenStar' },
+      { at: 3.1, who: 'elof', line: 'starWonder' },
+    ],
+    stage: {
+      shots: [{ at: 0, x: 40.8, y: 1.1, height: 5.1, width: 8.2, move: 1.0 }],
+      elof: [{ at: 0, act: 'watch', aim: { x: 41.7, y: -0.35, z: -0.35 } }],
+    },
+  },
+  {
+    // 3. A taste, a held breath, then POFF. The star is raised to his mouth and swallowed before the
+    // magic travels through him. The camera descends slowly with him, leaving a quiet tiny moment
+    // before his family answers. Reading stops come after the action, never halfway through the bite.
     id: 'poff',
+    resumeAt: { x: STAR, y: -0.8 },
     on: 'star',
     from: 39.5,
     until: 'pappa:noticed',
-    seconds: 4.4,
+    seconds: 10.2,
     hold: true,
-    lines: [{ at: 2.7, who: 'elof', line: 'sameSize' }],
+    soundQuiet: [2, 7],
+    sounds: [{ at: 2.8, sound: 'taste' }, { at: 3.65, sound: 'swell' }, { at: 4.0, sound: 'poff' }, { at: 6.5, sound: 'breath' }],
+    lines: [
+      { at: 7.3, who: 'elof', line: 'tinyCall' },
+      { at: 9.0, who: 'elof', line: 'sameSize' },
+    ],
     stage: {
       shots: [
-        { at: 0, x: 40.4, y: 1.6, height: 6.4, width: 10.5, move: 0.7 },
-        { at: 1.0, x: 41.2, y: -0.15, height: 3.0, width: 5.2, eye: -0.1, move: 1.3 },
-        { at: 2.8, x: 42.6, y: 0.05, height: 3.3, width: 6.8, move: 0.9 },
+        { at: 0, x: 41.7, y: 1.1, height: 4.4, width: 4.4, move: 0.8 },
+        { at: 3.7, x: 41.7, y: -0.15, height: 3.0, width: 3.6, eye: -0.1, move: 2.8 },
+        { at: 8.0, x: 42.2, y: 0.1, height: 3.5, width: 5.4, move: 0.9 },
       ],
       actors: {
-        mamma: [{ at: 1.0, act: 'gasp' }],
-        pappa: [{ at: 1.0, act: 'startle', follow: null }, { at: 1.8, act: 'look', aim: { x: STAR, y: -0.4, z: 0 } }],
-        moa: [{ at: 1.0, act: 'startle', follow: null }, { at: 1.8, act: 'look', aim: { x: STAR, y: -0.4, z: 0 } }],
-        bertil: [{ at: 1.0, act: 'startle', follow: null }, { at: 1.8, act: 'look', aim: { x: STAR, y: -0.4, z: 0 } }],
+        mamma: [{ at: 4.1, act: 'gasp' }],
+        pappa: [
+          // A familiar grown-up remains in the picture as the world grows around Elof. His boots
+          // establish scale first; he kneels only after seeing the magic change his son.
+          { at: 0, x: 39.6, y: -0.8, z: -1.4, face: 0.05, move: 1.2, act: 'look', follow: null, aim: { x: STAR, y: 1.2, z: 0 } },
+          { at: 4.1, act: 'gasp' },
+          { at: 4.8, act: 'kneel', aim: { x: STAR, y: -0.4, z: 0 } },
+        ],
+        moa: [{ at: 4.1, act: 'startle', follow: null }, { at: 5.0, act: 'look', aim: { x: STAR, y: -0.4, z: 0 } }],
+        bertil: [{ at: 4.1, act: 'startle', follow: null }, { at: 5.0, act: 'look', aim: { x: STAR, y: -0.4, z: 0 } }],
         ghost: [
           { at: 0, x: 44.4, y: -0.8, z: 0, face: 0, move: 0.01, act: 'stand' },
-          { at: 1.2, face: 0.5, act: 'look', aim: { x: STAR, y: -0.3, z: 0 } },
-          { at: 2.0, act: 'tilt' },
-          { at: 3.2, act: 'peek' },
+          { at: 4.4, face: 0.5, act: 'look', aim: { x: STAR, y: -0.3, z: 0 } },
+          { at: 6.0, act: 'tilt' },
+          { at: 8.4, act: 'peek' },
         ],
       },
       elof: [
         { at: 0, act: 'show', size: 3 },
-        { at: 1.0, act: 'startle', size: 1 },
-        { at: 2.4, act: 'hands' },
-        { at: 3.4, act: 'watch', aim: { x: 44.4, y: -0.3, z: 0 } },
+        { at: 2.0, act: 'eat' },
+        { at: 4.0, act: 'startle', size: 1, move: 2.5 },
+        { at: 6.5, act: 'hands' },
+        { at: 7.8, act: 'watch', aim: { x: 44.4, y: -0.3, z: 0 } },
       ],
       fx: [
-        { at: 0, kind: 'glow', from: { x: STAR + 0.3, y: 2.5, z: 0.3 }, seconds: 1.1 },
-        { at: 0, kind: 'sparkle', from: { x: STAR, y: 1.9, z: 0.1 }, seconds: 1.3 },
-        { at: 1.0, kind: 'poff', from: { x: STAR, y: 0.2, z: 0.2 }, seconds: 1.2 },
+        { at: 0, kind: 'glow', from: { x: STAR + 0.3, y: 1.7, z: 0.3 }, seconds: 3.8 },
+        { at: 3.6, kind: 'sparkle', from: { x: STAR, y: 1.3, z: 0.1 }, seconds: 3.1 },
+        { at: 4.0, kind: 'poff', from: { x: STAR, y: 0.2, z: 0.2 }, seconds: 2.5 },
       ],
     },
   },
@@ -249,14 +289,17 @@ export const PROLOG_SCENES: SceneDef[] = [
     // 4. The giants come down to him: Mamma on her knees with her hands to her mouth, Moa and Bertil crouched,
     // and Pappa holds his open hand on the planks beside him. The camera is at Elof's height, looking up.
     id: 'familj',
+    resumeAt: { x: STAR, y: -0.8 },
     on: 'scene:poff',
     from: 39.5,
     until: 'pappa:noticed',
-    seconds: 6.2,
+    seconds: 9.2,
     hold: true,
     lines: [
-      { at: 1.3, who: 'moa', line: 'tiny' },
-      { at: 4.6, who: 'mamma', line: 'hurt' },
+      { at: 1.6, who: 'moa', line: 'tiny' },
+      { at: 3.8, who: 'mamma', line: 'hurt' },
+      { at: 5.6, who: 'elof', line: 'notHurt' },
+      { at: 7.6, who: 'mamma', line: 'safeHere' },
     ],
     stage: {
       shots: [{ at: 0, x: 41.5, y: 1.5, height: 6.4, width: 8.8, eye: -1.4, move: 0.9 }],
@@ -270,18 +313,23 @@ export const PROLOG_SCENES: SceneDef[] = [
         pappa: [
           { at: 0.2, x: 42.3, y: -0.8, z: -0.8, face: 0.36, move: 1.0 },
           { at: 1.2, act: 'kneel', aim: { x: STAR, y: -0.4, z: 0 } },
-          { at: 3.6, act: 'reach', aim: { x: STAR + 0.7, y: -0.65, z: -0.15 } },
+          // Let every face answer Elof first; his offered hand is the next clear story action.
+          { at: 8.2, act: 'reach', aim: { x: STAR + 0.7, y: -0.65, z: -0.15 } },
         ],
         moa: [
-          { at: 0.1, x: 40.1, y: -0.8, z: -2.6, face: 0.26, move: 1.0 },
+          { at: 0.1, x: 40.8, y: -0.8, z: -2.6, face: 0.26, move: 1.0 },
           { at: 1.1, act: 'crouch', aim: { x: STAR, y: -0.4, z: 0 } },
         ],
         bertil: [
-          { at: 0.3, x: 42.3, y: -0.8, z: -2.9, face: 0.3, move: 1.0 },
+          { at: 0.3, x: 43.7, y: -0.8, z: -2.9, face: 0.3, move: 1.0 },
           { at: 1.3, act: 'crouch', aim: { x: STAR, y: -0.4, z: 0 } },
         ],
       },
-      elof: [{ at: 0, act: 'watch', aim: { x: STAR + 0.5, y: 3.2, z: -1.5 } }],
+      elof: [
+        { at: 0, act: 'watch', aim: { x: STAR + 0.5, y: 3.2, z: -1.5 } },
+        { at: 5.0, act: 'hands' },
+        { at: 6.8, act: 'watch', aim: { x: 39.4, y: 2.0, z: -1.3 } },
+      ],
     },
   },
   {
@@ -289,6 +337,7 @@ export const PROLOG_SCENES: SceneDef[] = [
     // magic go into the bag, and has drawn it: the star made him small, and the gold sweet still in the bag
     // glitters too. Pappa reads her drawing: the gold one can make him big again. Then Elof sees the ghost.
     id: 'handen',
+    resumeAt: { x: STAR, y: -0.8 },
     on: 'hand',
     from: 39.5,
     until: 'pappa:noticed',
@@ -296,7 +345,9 @@ export const PROLOG_SCENES: SceneDef[] = [
     hold: true,
     lines: [
       { at: 2.4, who: 'moa', line: 'sawGlitter' },
+      { at: 4.3, who: 'moa', line: 'starMagic' },
       { at: 6.3, who: 'pappa', line: 'goldHope' },
+      { at: 8.2, who: 'elof', line: 'goldInBag' },
     ],
     stage: {
       shots: [
@@ -326,7 +377,7 @@ export const PROLOG_SCENES: SceneDef[] = [
       elof: [
         // He steps onto Pappa's hand on the planks, and goes up with it to their faces.
         { at: 0, rides: 'pappa', move: 0.5, act: 'watch', aim: { x: 43.1, y: 2.6, z: -1.4 } },
-        { at: 2.6, act: 'watch', aim: { x: 40.4, y: 3.2, z: -2.4 } },
+        { at: 2.6, act: 'watch', aim: { x: 40.8, y: 3.2, z: -2.4 } },
         { at: 6.3, act: 'watch', aim: { x: 43.1, y: 2.6, z: -1.4 } },
         { at: 8.2, act: 'point', aim: { x: 44.4, y: -0.4, z: 0 } },
         // Set down on the planks again, he steps off.
@@ -390,13 +441,15 @@ export const PROLOG_SCENES: SceneDef[] = [
     id: 'titel',
     at: 51.4,
     needs: 'pappa:done',
-    seconds: 7.6,
+    seconds: 11.4,
     hold: true,
     // Their promises are let finish first: he stands at the edge and listens.
     quiet: true,
-    cues: [{ at: 0.9, flag: 'leap' }, { at: 7.4, flag: 'titel' }],
+    cues: [{ at: 0.9, flag: 'leap' }, { at: 11.2, flag: 'titel' }],
+    lines: [{ at: 2.8, who: 'elof', line: 'findBag' }],
     stage: {
-      words: [{ at: 4.6, seconds: 3.0, kind: 'title', text: 'title' }],
+      // The garden is revealed first. Its title then has four unhurried seconds in the settled shot.
+      words: [{ at: 7.0, seconds: 4.2, kind: 'title', text: 'title' }],
       shots: [
         { at: 0, x: 52.2, y: -0.1, height: 2.9, width: 5.2, eye: -0.05, move: 0.8 },
         // Down over the edge with it, to the lawn where it lands.

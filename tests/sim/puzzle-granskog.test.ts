@@ -39,8 +39,8 @@ const PLACED = `placed:${cone.id}`;
 
 /** A saved game at the slope's first big candy: the jay and the ants are behind him, and the cones roll. */
 const ROLLING: SimStart = { checkpoint: 5, flags: ['berry', 'jay', 'antlift', 'avalanche'], placed: ['twig'] };
-/** The same slope once Pappa has been called: the cones have stopped, and he has come back up it. */
-const CALM: SimStart = { ...ROLLING, flags: [...ROLLING.flags!, 'seesaw'] };
+/** Back up the calm slope after Pappa has prepared and explained the seesaw. */
+const CALM: SimStart = { ...ROLLING, flags: [...ROLLING.flags!, 'seesaw', 'family:seesaw-ready', 'beat:family:seesaw'] };
 /** At the top of the slope, before he has nudged the loose cone. */
 const AT_THE_TOP: SimStart = { checkpoint: 4, flags: ['berry', 'jay', 'antlift'], placed: ['twig'] };
 /** The calm slope with the cone already out at the tip. */

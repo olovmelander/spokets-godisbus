@@ -33,7 +33,9 @@ describe('the current purpose follows Elof’s actual story progress', () => {
       { flags: ['eye'], id: 'paintSecond' },
       { flags: ['eye', 'paint', 'blink'], id: 'chase' },
       { flags: ['eye', 'paint', 'blink', 'bag:torn'], id: 'starTrail' },
-      { flags: ['eye', 'paint', 'blink', 'bag:torn', 'star'], id: 'tiny' },
+      { flags: ['eye', 'paint', 'blink', 'bag:torn', 'scene:stjarnan'], id: 'starTaste' },
+      { flags: ['eye', 'paint', 'blink', 'bag:torn', 'star'], id: 'starWonder' },
+      { flags: ['eye', 'paint', 'blink', 'bag:torn', 'star', 'scene:poff'], id: 'tiny' },
       { flags: ['eye', 'paint', 'blink', 'bag:torn', 'star', 'pappa:noticed', 'pappa:done'], id: 'handoff' },
     ];
     for (const stage of stages) {
@@ -52,6 +54,9 @@ describe('the current purpose follows Elof’s actual story progress', () => {
   });
 
   it('makes rescuing the ghost replace the chase with following a friend', () => {
+    const waiting = context('granskog', ['cap:ready'], checkpoint(granskog, 150));
+    expect(waiting.id).toBe('capBoard');
+    expect(waiting.guide).toBe('bertil');
     expect(context('granskog', ['cap'], checkpoint(granskog, 150)).id).toBe('capRide');
     expect(context('granskog', ['cap'], checkpoint(granskog, 179)).id).toBe('eddy');
     const saved = context('granskog', ['cap', 'placed:rescue'], checkpoint(granskog, 194.6));
@@ -61,6 +66,16 @@ describe('the current purpose follows Elof’s actual story progress', () => {
     for (const flags of [['beat:thanked'], ['rescue']]) {
       expect(context('granskog', flags, checkpoint(granskog, 179)).id).toBe('eddy');
     }
+  });
+
+  it('keeps Mamma’s actual crossing available after her call, until Elof finishes it', () => {
+    const bridge = context('myren', ['mamma', 'placed:pine'], { x: 90, y: 0 });
+    expect(bridge.id).toBe('bridgeCross'); expect(bridge.guide).toBe('mamma');
+    const braid = context('myren', ['mamma', 'braid'], { x: 103.7, y: 2 });
+    expect(braid.id).toBe('braidClimb'); expect(braid.guide).toBe('mamma');
+    expect(context('myren', ['mamma', 'braid'], { x: 108, y: 4.5 }).id).toBe('bog');
+    expect(context('garden', ['moa'], { x: 165, y: 0 }).guide).toBe('moa');
+    expect(context('granskog', ['seesaw'], { x: 109, y: -8 }).guide).toBe('pappa');
   });
 
   it('explains the small-cone attempt and the heavier retry before the real launch', () => {
@@ -168,7 +183,7 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
   });
 
   it.each([
-    { chapter: prolog, x: 45.5, flags: ['eye', 'paint', 'blink', 'bag:torn', 'star'], id: 'tiny' },
+    { chapter: prolog, x: 45.5, flags: ['eye', 'paint', 'blink', 'bag:torn', 'star', 'scene:poff'], id: 'tiny' },
     { chapter: garden, x: 118.2, flags: ['ladybird', 'dandelion'], id: 'garden' },
     { chapter: granskog, x: 106.5, flags: ['jay', 'placed:twig', 'antlift'], id: 'seesaw' },
     { chapter: granskog, x: 179, flags: ['launch', 'cap'], id: 'eddy' },

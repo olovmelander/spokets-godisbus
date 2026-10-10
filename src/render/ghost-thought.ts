@@ -6,7 +6,7 @@ import { drawnWhile } from './idle';
 
 type Picture = NonNullable<GhostPerch['thought']>['picture'];
 const WIDTH = 256, HEIGHT = 192;
-const CARD_WIDTH = 1.9, CARD_HEIGHT = CARD_WIDTH * HEIGHT / WIDTH;
+const CARD_WIDTH = 2.6, CARD_HEIGHT = CARD_WIDTH * HEIGHT / WIDTH;
 
 /** Thoughts belong to a settled, nearby story stop, never a later chapter or a travelling ghost. */
 export function thoughtAt(chapter: ChapterData, ghost: GhostState | null, flags: ReadonlySet<string>, player: Vec): Picture | null {
@@ -22,9 +22,10 @@ export function thoughtAt(chapter: ChapterData, ghost: GhostState | null, flags:
 function drawPicture(c: CanvasRenderingContext2D, picture: Picture): void {
   if (picture === 'small-figure') {
     // A little paper picture left with the vittror's thank-you, rather than a thought from an absent ghost.
-    c.fillStyle = '#fff6e2'; c.beginPath(); c.roundRect(35, 10, 186, 146, 13); c.fill();
+    c.fillStyle = '#fff6e2'; c.strokeStyle = '#92734f'; c.lineWidth = 3;
+    c.beginPath(); c.roundRect(35, 10, 186, 146, 13); c.fill(); c.stroke();
     c.fillStyle = '#decfb3'; c.beginPath(); c.moveTo(190, 10); c.lineTo(221, 40); c.lineTo(190, 40); c.closePath(); c.fill();
-    c.save(); c.filter = 'blur(1.2px)'; c.fillStyle = '#8b8172';
+    c.save(); c.fillStyle = '#75634f';
     c.beginPath(); c.moveTo(99, 105); c.lineTo(151, 105); c.lineTo(161, 141); c.lineTo(91, 141); c.closePath(); c.fill();
     c.beginPath(); c.ellipse(127, 89, 21, 23, -0.12, 0, Math.PI * 2); c.fill();
     c.beginPath(); c.moveTo(103, 75); c.lineTo(132, 32); c.lineTo(147, 79); c.closePath(); c.fill();
@@ -34,15 +35,25 @@ function drawPicture(c: CanvasRenderingContext2D, picture: Picture): void {
     return;
   }
   c.fillStyle = '#fff6e2';
-  c.beginPath(); c.ellipse(128, 77, 117, 70, 0, 0, Math.PI * 2); c.fill();
+  c.strokeStyle = '#92734f'; c.lineWidth = 3;
+  c.beginPath(); c.ellipse(128, 77, 117, 70, 0, 0, Math.PI * 2); c.fill(); c.stroke();
   c.beginPath(); c.ellipse(111, 161, 10, 7, -0.5, 0, Math.PI * 2); c.fill();
   c.beginPath(); c.ellipse(126, 181, 5, 4, 0, 0, Math.PI * 2); c.fill();
   c.save();
   c.beginPath(); c.ellipse(128, 77, 105, 59, 0, 0, Math.PI * 2); c.clip();
+  // A warm paper rim and cool sky separate the destination from the scenery behind the bubble.
+  const sky = c.createLinearGradient(0, 18, 0, 136);
+  sky.addColorStop(0, '#a7c6d7'); sky.addColorStop(1, '#f4e2b7');
+  c.fillStyle = sky; c.fillRect(20, 15, 216, 124);
+  c.fillStyle = '#fff4ca'; c.beginPath(); c.arc(192, 42, 15, 0, Math.PI * 2); c.fill();
   // Kapitel 2 can point the way, but cannot reveal what is lost there yet.
   c.fillStyle = '#8b8172';
   c.beginPath(); c.moveTo(23, 126); c.lineTo(90, 31); c.lineTo(125, 70);
   c.lineTo(149, 48); c.lineTo(235, 126); c.closePath(); c.fill();
+  c.fillStyle = '#f7f0df';
+  c.beginPath(); c.moveTo(72, 57); c.lineTo(90, 31); c.lineTo(112, 56); c.lineTo(94, 49); c.lineTo(87, 55); c.closePath(); c.fill();
+  c.fillStyle = '#bca486';
+  c.beginPath(); c.moveTo(90, 31); c.lineTo(125, 70); c.lineTo(162, 126); c.lineTo(107, 103); c.closePath(); c.fill();
   if (picture !== 'mountain') {
     // From Kapitel 3 the old pine and the crack are unmistakable, the thing inside is still grey.
     c.strokeStyle = '#5f6d57'; c.lineWidth = 7; c.lineCap = 'round'; c.lineJoin = 'round';

@@ -16,6 +16,19 @@ three-year-old Elof; the ghost wants to bring it home and share Saturday sweets 
 called *spöket* until Elof names it Klonk in the epilogue. There is no spoken dialogue or recording.
 The existing family consent, asset rules and release checkpoint still apply.
 
+## Reading and chase direction — 10 October 2026
+
+Olov asks for a story that is easier to follow, with time to understand the painted memory pictures.
+Important dialogue and memories now wait for the player's deliberate next action. This supersedes
+the earlier six-to-ten-second limit for the complete memory: a short animation can finish while its
+picture and caption remain. Previous/next controls let the player revisit the cause before the result;
+reduced motion preserves the same story and controls without continuous scene movement.
+
+The chase keeps the ghost out of reach. Close meetings belong to the opening and ending, as Olov
+explicitly clarified. A waiting ghost still leads from a distance; helping it in the middle chapters
+does not enable a catch. Hint visits must respect the same separation as the main ghost. Existing
+story flags, chapter rewards and puzzle completion retain their saved meanings.
+
 ## Research and our design inference
 
 The sources below are developer writing, official developer/publisher pages or their published game
@@ -41,6 +54,18 @@ puzzles must let the player understand, experiment and see a consequence.
 The player should be able to follow the opening in the world without having to read a plot summary.
 Pace it through readable actions and short pauses, rather than several unrelated pop-up explanations.
 
+On 10 October Olov asked for a larger emotional transformation, explicitly including Elof eating the star,
+and clearer family help throughout the adventure. This supersedes the earlier touch-only star direction.
+The bird now lands before Mamma names it; waking, the shared look, and taking the bag each have room to read.
+The player first discovers the star, then deliberately chooses **Smaka på stjärnan**. A visible bite precedes
+the gradual change of scale; the music softens, Elof calls for Mamma, and reassurance comes before the plan.
+Essential lines and the family's promises wait for **Fortsätt**. The title stays over the settled garden view.
+
+At helper encounters, greeting poses and named portraits identify the available family member. Short held
+preparation moments show what they do; their explanation waits for the player. Moa's plane and Bertil's
+cap are prepared before a separate boarding action. Pappa explains the cone and seesaw, while Mamma's bridge
+and braid each explain the route they open. Ready messages follow the actual preparation or placed bridge.
+
 | Beat | Visible evidence | What the player should understand |
 | --- | --- | --- |
 | 1. A Saturday morning together | Full-sized Elof, the unfinished wooden ghost, Pappa's work and Elof's distinct Saturday-sweets bag share the table/deck setting. The first empty shelf place is a background question. | This is Elof's home and family; the bag belongs to him. |
@@ -48,9 +73,9 @@ Pace it through readable actions and short pauses, rather than several unrelated
 | 3. The ghost takes the bag | The large striped Saturday bag visibly moves from the table into the ghost's possession. Its own small carved pocket remains a separate part of it. It looks to the empty place before taking the sweets. | The ghost took this particular bag. Its purpose is still a mystery. |
 | 4. A freeze joke | A nearby grown-up turns towards it, it becomes an ordinary still carving, and it moves again when the gaze passes. | The grown-ups cannot catch it simply by watching. |
 | 5. The bag tears | The hinge catches the bag. The tear and the first falling sweets occur at the same place; the trail continues from there. | The scattered candy is the accident that gives Elof a route to follow. |
-| 6. A star falls from the bag | The magic star is absent before the theft. It spills after the tear and visibly lands near Elof and the family. Elof touches it; he does not eat candy found on the ground. | This star, from his own bag, causes the magic. |
+| 6. A star falls from the bag | The magic star is absent before the theft. It spills after the tear near Elof and the family. Its discovery waits for reading; Elof deliberately tastes the star from his own bag, raising it to his mouth before the magic begins. | This particular sweet causes the magic. Walking through it does not consume it. |
 | 7. The family witnesses shrinking | Keep full-sized Elof and the nearby family in a shared readable composition as the change happens. The camera drops with him while the same planks, legs and railing establish the new scale. | Elof became small here, in front of his family. They know what happened. |
-| 8. Reassurance and a practical plan | The family bends or looks towards him nearby. Pappa reassures him. Their larger path is visible or explained with a simple picture/gesture; they can help at crossings, while Elof can enter roots and small passages. | He has support. Following the candy is his immediate action, and being small gives him a role adults cannot fill. |
+| 8. Reassurance and a practical plan | The family bends towards him. Mamma answers his call and reassures him; Pappa offers his hand. Their larger path is visible or explained with a simple picture/gesture; they can help at crossings, while Elof can enter roots and small passages. | He has support. Following the candy is his immediate action, and being small gives him a role adults cannot fill. |
 
 No long walk should separate shrinking from the family's first acknowledgement. Family support continues
 through visible places and actions in subsequent chapters; they do not need to duplicate Elof's exact
@@ -74,7 +99,7 @@ memory can be revisited in the album, but an undiscovered memory must not appear
 
 | Phase | What Elof knows and wants | Family role and world evidence |
 | --- | --- | --- |
-| Prologue | His eyes woke the ghost; it took his bag; touching its spilled star made him small. Find the candy trail. | The family witnesses it, reassures him and stays reachable on the larger route. |
+| Prologue | His eyes woke the ghost; it took his bag; eating its spilled star made him small. Find the candy trail. | The family witnesses it, reassures him and stays reachable on the larger route. |
 | Garden | Recover his sweets and follow the ghost into the forest. A memory connects a little Elof to Pappa's first carving without explaining the theft yet. | Helping the ladybird and arranging the shavings opens routes. Calling Moa prepares the plane; boarding is a separate deliberate action. Her optional paper pocket reconnects to the completed bridge. |
 | Forest, before rescue | Follow the scattered sweets, gain the jay's help and cross the roots and water. The ghost giving something away makes its behaviour puzzling. | Elof makes a useful friendship; Pappa and Bertil help him perform crossings he cannot do alone. |
 | Forest, after rescue | He has rescued the ghost, which now waits instead of only fleeing. Find out where it is leading him. | The waiting ghost, a gift and a clearer destination picture make the relationship change observable. |

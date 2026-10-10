@@ -54,10 +54,18 @@ try {
   await page.goto(`${origin}${base}?dev&debug&standin&tier=low&course=garden`);
   await ready();
   await page.keyboard.press('KeyG');
+  await page.waitForSelector('#pause:not([hidden])');
   assert.equal(await page.locator('[data-reward="golden"]').count(), 0, 'Fifteen discoveries do not award the final piece');
   await page.keyboard.press('Escape');
+  await page.waitForSelector('#pause[hidden]', { state: 'attached' });
   await page.keyboard.down('ArrowLeft');
-  await page.waitForFunction(() => window.__godis.state().flags.includes('found:gelehallon'));
+  await page.waitForFunction(() => window.__godis.state().flags.includes('found:gelehallon')).catch(async (error) => {
+    console.log('Initial pickup diagnostic', await state(), await page.evaluate(() => ({
+      focus: document.activeElement?.id, pause: !document.getElementById('pause').hidden,
+      memory: !document.getElementById('memory').hidden, message: !document.getElementById('message').hidden,
+    })));
+    throw error;
+  });
   await page.keyboard.up('ArrowLeft');
   assert.equal(await page.locator('#notice').textContent(), 'Alla sorter! Ett geléhallon i guld.');
   await page.keyboard.press('KeyG');
@@ -96,7 +104,7 @@ try {
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-memory')), 'garden');
   assert.equal((await state()).steps, progress.steps, 'Replay leaves the game paused');
   assert.deepEqual(await saved(), saveBeforeMemory, 'Watching a memory changes no saved progress');
-  // Visibility and renderer interruptions keep the current picture, including its remaining time.
+  // Visibility and renderer interruptions keep the current picture until the reader continues.
   await page.locator('[data-memory="garden"]').tap();
   await page.evaluate(() => {
     window.__memoryHidden = true;
@@ -107,6 +115,8 @@ try {
   await new Promise((resolve) => setTimeout(resolve, 2700));
   assert.equal(await page.locator('#memoryProgress').textContent(), hiddenPicture, 'Hidden pages hold the memory picture');
   await page.evaluate(() => { window.__memoryHidden = false; document.dispatchEvent(new Event('visibilitychange')); });
+  assert.equal(await page.locator('#memoryProgress').textContent(), hiddenPicture, 'Returning to the page never skips the picture');
+  await page.locator('#memoryNext').tap();
   await page.waitForFunction((before) => document.getElementById('memoryProgress').textContent !== before, hiddenPicture);
   await page.locator('#memoryClose').tap();
   await page.locator('[data-memory="garden"]').tap();
@@ -123,6 +133,8 @@ try {
   await new Promise((resolve) => setTimeout(resolve, 2700));
   assert.equal(await page.locator('#memoryProgress').textContent(), lostPicture, 'Recovery confirmation keeps the memory paused');
   await page.locator('#messageButton').click();
+  assert.equal(await page.locator('#memoryProgress').textContent(), lostPicture, 'Recovery leaves the reader on the same picture');
+  await page.locator('#memoryNext').tap();
   await page.waitForFunction((before) => document.getElementById('memoryProgress').textContent !== before, lostPicture);
   assert.equal((await state()).steps, progress.steps, 'Memory recovery returns to paused play');
   await page.locator('#memoryClose').tap();
@@ -136,8 +148,11 @@ try {
   assert.equal(await page.locator('#memoryProgress').textContent(), '2 / 4', 'Controller A advances a frame');
   await page.locator('#memoryClose').tap();
   await page.locator('[data-memory="garden"]').tap();
+  await page.locator('#memoryNext').tap();
+  await page.locator('#memoryNext').tap();
+  await page.locator('#memoryNext').tap();
   await page.waitForSelector('#memory[hidden]', { state: 'attached', timeout: 15000 });
-  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-memory')), 'garden', 'Automatic completion returns to the same album button');
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-memory')), 'garden', 'Finishing the memory returns to the same album button');
   assert.equal((await state()).steps, progress.steps);
   // The first encounter still plays automatically, then returns to the world with no held movement.
   await page.goto(`${origin}${base}?dev&debug&standin&tier=low&course=granskog&at=144,-7.99`);

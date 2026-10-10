@@ -2935,6 +2935,8 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 .story-purpose-reveal[hidden] { display: none; }
 #storyPurposeIcon { display: grid; color: var(--crayon-blue); }
 #storyPurposeIcon svg { width: 24px; height: 24px; }
+.story-purpose[data-guide]:not([data-guide=""]) { border-left: 3px solid var(--crayon-blue); }
+.story-purpose[data-guide]:not([data-guide=""]) #storyPurposeIcon svg { width: 36px; height: 36px; }
 .story-purpose[hidden] { display: none; }
 body:has(#bubble:not([hidden])) .story-purpose,
 body:has(#notice:not([hidden])) .story-purpose { visibility: hidden; }

@@ -46,6 +46,8 @@ export interface Audio {
   sleep(hidden: boolean): void;
   /** A menu is open: the world's effects stop, the air and the tune go on, ducked and muffled, and the UI sounds. */
   menu(open: boolean): void;
+  /** The first breath after the star: the tune and air leave space, without silencing the family. */
+  storyQuiet(quiet: boolean): void;
   /** One of the UI's own sounds: wood, paper and plucks, in the place's key, 8 to 12 dB under the candy. */
   ui(sound: UiSound): void;
   /** How it sounds now: for the debug text and the tests. */
@@ -104,6 +106,9 @@ export function createAudio(): Audio {
   // What sounds on the effects bus: the world's sounds, which a menu stops.
   const world = new Set<AudioScheduledSourceNode>();
   let inMenu = false;
+  let quietStory = false;
+  const musicDuck = () => (inMenu ? MENU_MUSIC : 1) * (quietStory ? 0.18 : 1);
+  const airDuck = () => (inMenu ? MENU_AIR : 1) * (quietStory ? 0.15 : 1);
   // A menu left alone goes quiet after a while, and the context rests until the next touch.
   let touchedAt = 0;
   let resting = false;
@@ -147,13 +152,13 @@ export function createAudio(): Audio {
     master.connect(compressor).connect(context.destination);
     effects.connect(master);
     music = context.createGain();
-    music.gain.value = MUSIC_LEVEL * musicVolume * (inMenu ? MENU_MUSIC : 1);
+    music.gain.value = MUSIC_LEVEL * musicVolume * musicDuck();
     muffle = context.createBiquadFilter();
     muffle.type = 'lowpass';
     muffle.frequency.value = inMenu ? MUFFLED : OPEN;
     music.connect(muffle).connect(master);
     ambience = context.createGain();
-    ambience.gain.value = volume * (inMenu ? MENU_AIR : 1);
+    ambience.gain.value = volume * airDuck();
     ambience.connect(master);
     ui = context.createGain();
     ui.gain.value = volume;
@@ -362,8 +367,8 @@ export function createAudio(): Audio {
   function duck(): void {
     if (!context || !music || !ambience || !muffle) return;
     glide(muffle.frequency, inMenu ? MUFFLED : OPEN, 0.2, true);
-    glide(music.gain, MUSIC_LEVEL * musicVolume * (inMenu ? MENU_MUSIC : 1), 0.2);
-    glide(ambience.gain, volume * (inMenu ? MENU_AIR : 1), 0.15);
+    glide(music.gain, MUSIC_LEVEL * musicVolume * musicDuck(), 0.2);
+    glide(ambience.gain, volume * airDuck(), 0.15);
   }
 
   /** A touch: a menu that had gone quiet wakes. */
@@ -391,6 +396,45 @@ export function createAudio(): Audio {
 
   function sound(cue: Cue): void {
     switch (cue.kind) {
+      case 'story':
+        switch (cue.sound) {
+          case 'bird':
+            // A flutter settles, then a two-part jay call draws everyone to the window.
+            puff('bandpass', 900, 2200, 0.22, 0.035);
+            tone('sine', 1700, 2600, 0.13, 0.055, 0.08);
+            tone('sine', 2450, 1400, 0.2, 0.045, 0.3);
+            break;
+          case 'blink':
+            knock(620, 0.055);
+            tone('sine', 1174, 1174, 0.55, 0.055, 0.04);
+            tone('sine', 1760, 1760, 0.45, 0.035, 0.12);
+            break;
+          case 'paper':
+            puff('highpass', 1800, 3600, 0.16, 0.09);
+            puff('bandpass', 2800, 900, 0.2, 0.05, 0.1, 2);
+            break;
+          case 'taste':
+            // A tiny candy crack, not another collection fanfare.
+            puff('highpass', 4200, 1900, 0.06, 0.045);
+            tone('triangle', 880, 660, 0.14, 0.04, 0.08);
+            break;
+          case 'swell':
+            for (const [i, semitones] of [0, 7, 12, 19].entries()) {
+              const pitch = note(semitones, 293.66);
+              tone('sine', pitch, pitch * 1.015, 0.8, 0.065, i * 0.13);
+            }
+            puff('bandpass', 350, 1700, 0.85, 0.045, 0, 0.6);
+            break;
+          case 'poff':
+            // A soft expanding puff; the wonder is in the falling bell, never a bang.
+            puff('lowpass', 1100, 110, 0.48, 0.13);
+            tone('sine', 1174, 294, 0.9, 0.09);
+            break;
+          case 'breath':
+            puff('bandpass', 550, 950, 0.7, 0.026, 0, 0.5);
+            break;
+        }
+        break;
       case 'step':
         step(cue.on, cue.left);
         break;
@@ -647,20 +691,25 @@ export function createAudio(): Audio {
       if (!open && resting) touched();
       duck();
     },
+    storyQuiet(quiet) {
+      if (quietStory === quiet) return;
+      quietStory = quiet;
+      duck();
+    },
     setEffects(next) {
       volume = Math.max(0, Math.min(1, next));
       if (effects) effects.gain.value = volume;
       if (ui) ui.gain.value = volume;
       if (ambience) {
         ambience.gain.cancelScheduledValues(0);
-        ambience.gain.value = volume * (inMenu ? MENU_AIR : 1);
+        ambience.gain.value = volume * airDuck();
       }
     },
     setMusic(next) {
       musicVolume = Math.max(0, Math.min(1, next));
       if (music) {
         music.gain.cancelScheduledValues(0);
-        music.gain.value = MUSIC_LEVEL * musicVolume * (inMenu ? MENU_MUSIC : 1);
+        music.gain.value = MUSIC_LEVEL * musicVolume * musicDuck();
       }
     },
     setLoud(on) {

@@ -289,6 +289,10 @@ online features, accounts, ads, purchases, analytics or tracking, or live AI.
 
 ### The first minutes, as Elof should experience them
 
+The original times below are rough route estimates. The 10 October revision lets essential dialogue wait
+for the player, separates the bird, awakening and theft, and changes the star from a touch trigger to a
+deliberate taste followed by a gradual transformation and family reassurance (§3.4).
+
 | Time | Experience | What it proves |
 | --- | --- | --- |
 | 0:00–2:00 | The kitchen table on a Saturday morning, close up. Pappa's figures stand on their shelf behind, with one empty place first in the row. Pappa's hands give Elof the brush; he paints the ghost's two eyes. *Pling* — it blinks, glances at the empty place, grabs the giant candy bag and wobbles off. Elof chases it across the veranda (an animated hand shows the stick only if he hasn't moved within a few seconds); the bag tears, candy trickles out. He catches a glittering star: POFF. Pappa sees tiny Elof, picks up the frozen ghost and puts it on the railing, and it sneaks off behind his back. "Följ godisspåret, Elof. Vi är nära dig hela tiden." Title. | The hook, the likeness, the magic, the Toy Story gag, the seed of the secret. Works without reading or sound. |
@@ -569,8 +573,9 @@ From the end of Kapitel 2 on: "Varför tog spöket godiset – och varför vänt
    - The rule is taught as a joke twice in the prologue: Mamma at the door, and Pappa at the railing. Moa's grab in
      Kapitel 1 shows rule 8.
 3. **Glittrande godis är trollgodis.**
-   - When the ghost grabbed the bag, two candies started to glitter. A star fell out on the steps: touching it
-     makes you small. A geléhallon in gold paper stayed in the bag, and it glints there all game: eating it makes
+   - When the ghost grabbed the bag, two candies started to glitter. A star fell out on the steps: eating it
+     makes you small (Olov's revised direction, 10 October 2026). Discovering it and choosing **Smaka på stjärnan**
+     are separate moments; walking through it never consumes it. A geléhallon in gold paper stayed in the bag, and it glints there all game: eating it makes
      you big again.
    - Some of the star's glitter stays on Elof. When he falls too far, misses a jump over water or wet moss, or is
      bowled over by a cone, it catches him in a bubble and floats him back: the glitter bubble (§4.2). The first
@@ -622,8 +627,10 @@ and challenge routes **C1–C4** (§4.7).
 4. **The chase** at normal scale. An animated hand shows a control only if Elof hasn't found it within a few
    seconds (§4.1): the stick, then Hoppa at the veranda door sill.
    - The bag tears on the door hinge, and candy trickles out behind the ghost without it noticing.
-5. **The star.** A glittering star rolls out onto the deck steps. The Använd button shows a hand: *Ta*.
-   *POFF* — Elof shrinks, and the camera drops with him to the planks. A few sparkles stay on him (rule 3).
+5. **The star.** A glittering star rolls out onto the deck steps. Its discovery waits for reading, then Använd
+   says **Smaka på stjärnan**. Elof raises it to his mouth, takes a bite and swallows before the magic begins.
+   *POFF* — Elof gradually shrinks, and the camera descends with him to the planks. A few sparkles stay on him
+   (rule 3). There is room for a quiet breath and his call for Mamma before the family reassures him.
 6. **Pappa** steps out in time to see tiny Elof on the step. The ghost freezes as he looks.
    - He picks it up, puzzled, and puts it on the railing. While he turns to Elof, it sneaks off behind his back.
    - Elof points; Pappa sees an empty railing.

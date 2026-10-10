@@ -154,7 +154,7 @@ describe('the carved ghost’s separate feet', () => {
     const { model, feet } = ghostFeet(true), motion = createGhostMotion(model);
     const rest = feet.map(foot => foot.quaternion.clone());
     for (const act of ['waddle', 'run', 'hop', 'wake'] as const) {
-      const actT = act === 'wake' ? .8 : .12;
+      const actT = act === 'wake' ? 1.7 : .12;
       motion.update(footFrame({ staged: true, performance: { act, actT }, awake: false }));
       feet.forEach((foot, i) => expect(foot.quaternion.angleTo(rest[i]!)).toBeGreaterThan(.05));
       const sought = feet.map(foot => foot.quaternion.clone());
@@ -171,7 +171,7 @@ describe('the carved ghost’s separate feet', () => {
 
   it('puts story shoes flat at each body bounce contact and when the carving freezes', () => {
     const { model, feet } = ghostFeet(), motion = createGhostMotion(model);
-    for (const [act, actT] of [['waddle', Math.PI / 11], ['run', Math.PI / 18], ['hop', Math.PI / 6], ['wake', 1.05], ['freeze', .2]] as const) {
+    for (const [act, actT] of [['waddle', Math.PI / 11], ['run', Math.PI / 18], ['hop', Math.PI / 6], ['wake', 2.2], ['freeze', .2]] as const) {
       motion.update(footFrame({ staged: true, performance: { act, actT } }));
       for (const foot of feet) expect(foot.rotation.x).toBeCloseTo(0, 7);
     }

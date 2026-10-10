@@ -46,6 +46,7 @@ import { createPhotoAlbum } from './ui/photos';
 import { createOffline } from './platform/offline';
 import { createStoryPanel } from './ui/story';
 import { createSceneUi } from './ui/scene';
+import { openingCues, openingQuiet } from './audio/opening';
 import { endsInScene, sceneBeats, sceneWaits } from './sim/scene';
 import { createDevicePlay, createHighLanding, isAndroid, isApple } from './platform/device';
 import './ui/ui.css';
@@ -271,10 +272,31 @@ function start(): void {
   });
   // What is said along the way, and in the chapter's scenes (src/sim/scene.ts).
   const beats = new Map([...(chapter.beats ?? []), ...sceneBeats(chapter.scenes)].map((beat) => [beat.id, beat]));
-  const sceneUi = createSceneUi(document);
+  const readingBeats = new Set(benchOn ? [] : [
+    ...(chapter.beats ?? []).filter((beat) => beat.read).map((beat) => beat.id),
+    ...sceneBeats(chapter.scenes?.filter((scene) => scene.hold)).map((beat) => beat.id),
+    ...(chapter.id === 'norrsken' ? ['first1', 'first2', 'first3', 'first4'] : []),
+  ]);
+  // Emitting a line is not reading it. Only Fortsätt acknowledges a manual line for the next save.
+  const readBeats = new Set([...readingBeats].filter((id) => game.sim.flags.has(`beat:${id}`)));
+  const unreadBeats: string[] = [];
+  const advanceStory = () => {
+    if (menuOpen() || platformBlocked() || !hud.advance()) return;
+    const read = unreadBeats.shift();
+    if (read) readBeats.add(read);
+    // The press belongs to the words. It must never also jump, walk or use something in the world.
+    pointing.cancel();
+    askedForUse = askedForHelp = false;
+    input.release();
+    game.resume();
+    canvas.focus();
+  };
+  const sceneUi = createSceneUi(document, advanceStory);
   // What was said before this game was taken up again is not said again.
   let told = game.sim.said.length;
   let sceneHeard: string | null = null;
+  let scoredScene = game.sim.sceneFrame;
+  let bagTorn = game.sim.flags.has('bag:torn');
   const controls = byId('controls');
   const hint = byId('hint');
 
@@ -340,7 +362,8 @@ function start(): void {
       candy: { ...save.candy, [chapter.id]: game.sim.collected.flatMap((got, i) => (got ? [i] : [])) },
       side: { ...save.side, [chapter.id]: game.sim.collectedSide.flatMap((got, i) => (got ? [i] : [])) },
       placed: { ...save.placed, [chapter.id]: game.sim.placed },
-      flags: { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags) },
+      flags: { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags)
+        .filter((flag) => !flag.startsWith('beat:') || !readingBeats.has(flag.slice(5)) || readBeats.has(flag.slice(5))) },
       playMs: save.playMs + (now - playedFrom),
     };
     playedFrom = now;
@@ -474,6 +497,9 @@ function start(): void {
     onStuck() {
       highLanding.reset();
       game.sim.toCheckpoint();
+      for (const id of unreadBeats) game.sim.flags.delete(`beat:${id}`);
+      unreadBeats.length = 0;
+      hud.clear();
       resume();
     },
   });
@@ -670,7 +696,7 @@ function start(): void {
     {
       onDevice: showDevice,
       onTap(x, y) {
-        if (platformBlocked() || menuOpen()) return;
+        if (platformBlocked() || menuOpen() || hud.reading()) return;
         const what = pointing.tap({ x, y }, { world: (at) => view.worldScreen(at), player: () => view.playerScreen(), helper: () => view.helperScreen() });
         if (!what) return;
         if (what.kind === 'use') askedForUse = true;
@@ -745,7 +771,7 @@ function start(): void {
     view.resize();
     auto?.suspend();
     resolution?.suspend();
-    if (!turned || menuOpen() || game.sim.scene?.holding || performance.now() - startedAt < 3000) return;
+    if (!turned || menuOpen() || game.sim.scene?.holding || hud.reading() || performance.now() - startedAt < 3000) return;
     story.interrupt();
     openPause();
     devicePlay.setPlaying(false);
@@ -780,7 +806,7 @@ function start(): void {
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
         pointing: { last: pointing.last, walking: pointing.walking }, tutorial: tutorial.shown, playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(), noteHits: game.sim.noteHits, bootReady, contextLost, ending: { open: ending.open, seconds: ending.seconds }, prologue: game.sim.prologue?.frame ?? null,
-        scene: game.sim.sceneFrame, held: game.sim.held,
+        scene: game.sim.sceneFrame, held: game.sim.held, storyReading: hud.reading(), ghost: game.sim.ghost ? { ...game.sim.ghost } : null,
       }),
       screen: (at) => view.worldScreen(at),
       info: () => ({ ...view.info(), busyMs, autoSettled: auto?.settled ?? true,
@@ -983,8 +1009,15 @@ function start(): void {
           learnKeys();
         }
       }
-      game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld, talking: hud.speaking() }, edges);
-      tutorial.update(dt, game.sim.curr, game.sim.flags, held, edges, game.sim.held);
+      if (hud.reading()) {
+        // The whole authored moment waits, including its actors, camera and story flags.
+        pointing.cancel();
+        if (edges.act) advanceStory();
+        game.resume();
+      } else {
+        game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld, talking: hud.speaking() }, edges);
+        tutorial.update(dt, game.sim.curr, game.sim.flags, held, edges, game.sim.held);
+      }
       askedForUse = askedForHelp = false;
       if (highLanding(game.sim.curr)) devicePlay.landing(settings.vibration);
       playTime += dt * game.tempo;
@@ -992,6 +1025,12 @@ function start(): void {
       for (const cue of cuesFor(heard, now, memory)) audio.play(cue);
       heard = now;
     }
+    const score = game.sim.sceneFrame;
+    for (const cue of openingCues(scoredScene, score, chapter.scenes ?? [])) audio.play(cue);
+    scoredScene = score;
+    audio.storyQuiet(openingQuiet(score, chapter.scenes ?? []));
+    if (!bagTorn && game.sim.flags.has('bag:torn')) audio.play({ kind: 'story', sound: 'paper' });
+    bagTorn = game.sim.flags.has('bag:torn');
     if (game.sim.story && !story.open) {
       pointing.cancel();
       askedForUse = askedForHelp = false;
@@ -1121,12 +1160,19 @@ function start(): void {
     }
     sceneHeard = scene?.id ?? null;
     for (; told < game.sim.said.length; told++) {
-      const beat = beats.get(game.sim.said[told]!);
-      // In a held scene a line is said when it is acted: it takes the floor instead of waiting for the last one.
-      if (beat) hud.say(beat.who, beat.line, beat.priority || game.sim.held);
+      const id = game.sim.said[told]!;
+      const beat = beats.get(id);
+      const sceneLine = !!scene && id.startsWith(`${scene.id}:`) && game.sim.scene?.holding === true;
+      // The opening's causes and the final reveal wait for the reader; passing remarks remain timed.
+      const read = readingBeats.has(id);
+      if (read) unreadBeats.push(id);
+      if (beat) hud.say(beat.who, beat.line, beat.priority || sceneLine, read);
+      if (beat?.line === 'safeHere') audio.play({ kind: 'motif', who: 'mamma' });
     }
     // What is said waits while a memory plays: its line comes after it.
     hud.tick(menuOpen() ? 0 : dt);
+    sceneUi.reading(hud.reading() && !menuOpen() && !platformBlocked(), device,
+      sv.dialogue.moments[scene?.id ?? ''] ?? (readingBeats.has(unreadBeats[0] ?? '') ? sv.storyContext.family : ''));
     hud.paused(menuOpen());
     // The end: a moment to arrive, then the card with the candy in rows of ten. The last words are let finish
     // first, for a few seconds at most: a chapter must not end over what someone is saying.
@@ -1143,7 +1189,7 @@ function start(): void {
       audio.play({ kind: 'motif', who: CODA_FAMILY[chapter.id]! });
     }
     const wait = coda ? CODA : 1.4;
-    if (endFor > wait && (!hud.speaking() || endFor > wait + 5.6) && !benchOn && !ended) {
+    if (endFor > wait && !hud.reading() && (!hud.speaking() || endFor > wait + 5.6) && !benchOn && !ended) {
       ended = true;
       paused = true;
       if (!coda) audio.menu(true);
