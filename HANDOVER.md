@@ -2,6 +2,47 @@
 
 ## State (10 October 2026)
 
+- **Home garden identity — Chapter 1 exterior checkpoint.** Olov supplied three photographs and
+  explicitly requested the red family home/veranda/deck, green playhouse and timber fjällkåta on the
+  lawn. The photographs establish the buildings' appearance, not their relative positions; the game
+  composition keeps the existing route, jumps, candy, eleven checkpoints and saved coordinates.
+  - The three detailed buildings are authored in Blender **4.5.14**, with original opaque
+    vertex-coloured geometry and no photograph textures. Their sources, `.blend` and exported
+    `baked/garden/home-landmarks.glb` belong to the private family repository. All three available
+    references are opened there as external image references and excluded from the game export.
+    The originals and private comparison renders stay outside git.
+  - Chapter 1 loads the private pack when present and otherwise uses a small, generic public Blender
+    fallback. `standIns` also selects generic architecture for repository-safe screenshots. The old
+    wall remains as a last fallback if both models fail. This is a separate chapter checkpoint,
+    stacked after Bredbyn; it does not change `RELEASED_CHAPTER` or deploy the new assets.
+    The models are in [private asset PR #1](https://github.com/olovmelander/spokets-godisbus-familj/pull/1),
+    and the game branch is `codex/garden-home-landmarks`.
+  - Sightlines, deck alignment and gentle camera views make the landmarks readable. The optional
+    root puzzle retains its original close framing and hidden-ring discovery. Two short held
+    observations and the purpose reminder connect the lawn to Elof's home; Moa's plane leads from
+    the same garden to the forest edge.
+  - This managed environment can run headless Blender through the pinned `bpy` package, unlike the
+    older cloud limitation recorded below. Sources and game integration can continue here. Family
+    visual review and physical-device checks remain; kitchen/interior reconstruction is separate.
+    **Senare** and consent decisions are unchanged.
+  - **Validation:** 170 test files / **1,592 tests** pass. Six new loader regressions protect the
+    quantized mesh transforms, private-asset bypass in stand-in mode, and missing/broken pack recovery.
+    The opaque-scene browser audit found and fixed erased decoding transforms that had sunk the
+    buildings into the terrain. It now checks the lower façades as well as roofs.
+    **150 checks across 18 private/fallback cases** pass, including five High viewport sizes,
+    Low phone views, real plane boarding/flight, stable pause/reduced-motion geometry, and context
+    loss/restoration. Draws range from **46 to 80**. The restored High playhouse view returns to
+    **192 geometries, 27 textures and 80 draws**, matching its settled reduced-motion baseline.
+    Another **50 checks across five public viewport cases** pass. Reference-led captures stay outside
+    git; public fallback captures are in `docs/shots/garden-home/`.
+    All captures use public stand-in figures; physical devices remain untested in this session.
+    The three private meshes have **19,504 triangles**, one shared opaque material and no textures;
+    the compressed pack is **56.9 KB as served**. The production build includes all six existing
+    private characters as well as the new architecture. Typecheck and production build pass;
+    JavaScript is **448.3 KB / 450 KB** and boot is **2,140.2 KB / 3,072 KB as served**.
+    The privacy check passes 542 tracked files, 36 built files and 81 media files using built-in
+    rules and metadata scanning; no private denylist or exiftool is available here.
+
 - **Bredbyn identity — a separate Byn visual checkpoint.** Olov asked for reference-led
   improvements to Byn, especially the beautiful Anundsjö church and Köpmangatan.
   Eight public photographs were retrieved and inspected; their dates, photographers,
@@ -34,6 +75,7 @@
     returns to the same allocation baseline. These are browser measurements with public stand-ins.
     The privacy scan passes tracked
     files and the build using built-in rules; no private denylist or exiftool is available here.
+    GitHub CI now also passes its check job and all eight browser shards for PR #185.
   - Cloud code and original procedural assets can continue here. Final Blender refinement,
     private-character composition and physical-device review still need Olov's computer.
 
@@ -64,7 +106,7 @@
     star and all four relatives' positional stillness during pause. Production staging is unchanged.
     The corrected opening suite passes **30 checks** across 390×844 Low and 1440×900 High, including
     warm shader/draw budgets and restored progress. The remaining seven original CI shards passed;
-    the pushed assertion correction starts a fresh CI run.
+    the corrected PR #184 head now passes the check job and all eight GitHub browser shards.
     The focused painting suite passes 8 checks; the story-door return passes 22 checks across both phone
     orientations, including exact reduced-motion stillness after the camera finishes framing the card.
     The privacy check passes for tracked files and the build using its built-in metadata/path rules;
@@ -3511,6 +3553,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Home garden identity (10 October) | Rework Chapter 1 from three supplied building photographs | 1 cloud continuation | — / 0 | Dimensional red home/veranda/deck, green playhouse and timber fjällkåta authored in Blender 4.5.14 in the private repository; a generic public fallback and chapter framing preserve the route. The photos do not establish a surveyed garden layout. Device and family visual review remain. |
 | Bredbyn identity (10 October) | Reference-led Byn visual improvements | 1 cloud continuation | — / 0 | Eight inspected public references; original church, separate clock tower, varied street buildings, rounded valley and clearer crossing view. Reuses the existing route and save positions. Device review and final Blender refinement remain. |
 | Chase and story clarity (10 October) | Current request | 1 cloud implementation | — / 0 so far | Minimum ghost separation, player-paced essential dialogue, thirteen animated memory illustrations with Swedish captions and previous/next, plus larger in-world thought pictures. Checkpoint captures in `docs/shots/story-pacing/`. Physical-device review remains. |
 | Opening emotion and family help (10 October, continuation) | Continue auditing and improving the chapter | 1 cloud continuation | — / 0 | Bird/awakening/theft staging, deliberate star tasting and gradual shrinking, family reassurance, wordless sound, contextual reading UI and practical family help. Save compatibility repaired; 1,577 tests and the production size gate pass. Physical-device and private-model review remain. |
@@ -3725,9 +3768,10 @@ Choices the session made, for Olov to overrule if he wants:
 10. **What do the devices say?** The draw-call budget went from 120 to 160 on Mid and 200 on High on my
     estimate (about 4 ms of a 10 ms frame), not on a measurement. `?dev&bench&course=granskog` on the iPad and
     on a phone, pasted into a session, settles it. The default: the numbers stand.
-11. **The house and home's rooms:** the audit asks for the house's front as a model and the kitchen and the
-    veranda rebuilt. They are the family's house, so they wait for a session with you at the screen, the
-    photos open beside the model.
+11. **The house and home's rooms:** the 10 October request and three attached photographs authorise the
+    Chapter 1 exterior: the red house/veranda/deck, green playhouse and timber fjällkåta. These are being
+    built and reviewed beside the supplied references in Blender, with sources and geometry private.
+    The kitchen/interior reconstruction remains a separate task; it does not block this exterior pass.
 12. **Is Bertil's cap right?** It is a red-and-white trucker cap with a plain dark-blue round patch where a
     mark would be (no logotype). The builder had no picture of the real cap: say its colours if they differ.
 13. **Is the old pine the tree you meant?** Short, twisted, a flat crown swept by the wind, one dead silver

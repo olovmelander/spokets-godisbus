@@ -371,6 +371,8 @@ export const garden: ChapterData = {
   ],
   beats: [
     // The chapter opens on its time card, without words: the family's promises were said on the deck.
+    { id: 'garden:home', at: 91.5, within: [91.5, 104], who: 'elof', line: 'gardenHome', read: true },
+    { id: 'garden:kota', at: 119.5, within: [119.5, 128], who: 'elof', line: 'gardenKota', read: true },
     { id: 'stomp', at: 155.6, who: 'elof', line: 'stomp' },
     // Moa saw him made small on the deck: here she sees why it is good to be small.
     { id: 'moa1', at: 161.5, until: 'moa', who: 'moa', line: 'rootFingers', read: true },
@@ -400,6 +402,12 @@ export const garden: ChapterData = {
     // the usual one; the top of a held jump on the root's top reaches the bark's height and stirs it, as a
     // jump on the boulder does under the clothes line.
     { from: 82.8, to: 89, above: 2.25, zoom: 1.35, lift: 0.2 },
+    // Broad views belong last: climbing and swinging keep their precise framing above.
+    { from: -3, to: 46, zoom: 1.5, lift: 0.35 },
+    // The optional curl puzzle keeps its close ground view: the prize appears before the ring.
+    { from: 70, to: 77.5, zoom: 1.3, lift: 0.45 },
+    { from: 90.2, to: 104.2, zoom: 1.3, lift: 0.45 },
+    { from: 128, to: 130, zoom: 1.3, lift: 0.35 },
   ],
   candy: [
     // 1. the deck

@@ -2,6 +2,7 @@ import { Color, Group, InstancedMesh, Object3D } from 'three';
 import type { ChapterData } from '../../sim/types';
 import { floorDrop } from './ground';
 import { KIT, grows, heightAt, sequence } from './kit';
+import { gardenViewGap } from '../garden-home';
 
 // --- the garden ---------------------------------------------------------------------------------------------
 
@@ -33,7 +34,9 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
     if (!grows(chapter, x)) continue;
     place.position.set(x, top(x, z), z);
     place.rotation.set((next() - 0.5) * 0.5, next() * 6.28, (next() - 0.5) * 0.5);
-    place.scale.set(0.06 + next() * 0.07, tall, 1);
+    // Mown openings let the garden buildings meet the lawn; taller grass stays between them.
+    const high = chapter.id === 'garden' && gardenViewGap(x) ? Math.min(tall, 1) : tall;
+    place.scale.set(0.06 + next() * 0.07, high, 1);
     place.updateMatrix();
     grass.setMatrixAt(n, place.matrix);
     grass.setColorAt(n++, next() < 0.14 ? tint.set('#c2c552').multiplyScalar(0.8 + next() * 0.3) : tint.set('#6fae34').multiplyScalar(0.7 + next() * 0.5));
@@ -124,7 +127,7 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
   for (let i = 0; i < (birches ? 2 : 0); i++) {
     const x = from + next() * length;
     const z = -8 - next() * 9;
-    if (next() > 0.4 || !grows(chapter, x)) continue;
+    if (next() > 0.4 || !grows(chapter, x) || (chapter.id === 'garden' && gardenViewGap(x))) continue;
     const radius = 0.8 + next() * 0.4;
     place.rotation.set(0, next() * 6.28, (next() - 0.5) * 0.06);
     place.position.set(x, heightAt(chapter, x) - 0.5, z);

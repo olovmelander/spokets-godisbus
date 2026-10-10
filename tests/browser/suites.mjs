@@ -44,6 +44,7 @@ export const SUITES = [
   ['endings', 177],
   ['forest-puzzles', 134],
   ['garden-loop', 685],
+  ['garden-home', 320],
   ['mountain-loop', 251],
   ['player-motion', 79],
   ['family-help', 192],
