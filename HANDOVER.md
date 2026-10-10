@@ -2,6 +2,19 @@
 
 ## State (10 October 2026)
 
+- **Public story release.** Olov asked to see the merged improvements on the normal GitHub Pages
+  address. `RELEASED_CHAPTER` is now `epilog`: a new player starts in the prologue and can continue
+  through the full story without `?dev`. Byn is still an unnumbered bonus after the epilogue, and now
+  opens publicly through its end card, chapter selection, saved progress, chapter code or direct link.
+  The test course remains available by requesting `?course=testbana`. This release changes neither
+  checkpoint identities nor consent boundaries. Physical iPad, iPhone and Android play, family likeness
+  review and listening review remain for Olov; cloud browser checks do not replace them.
+  - **Validation:** typecheck, **170 test files / 1,593 tests**, the production build's size gate and the
+    privacy check pass. JavaScript is **448.3 KB / 450 KB** and boot is **2,140.3 KB / 3,072 KB as
+    served**, with all six private characters and the home landmarks. Twelve real-browser public-route
+    checks pass: bare-page title, prologue, Byn link, chapter code, garden onward, epilogue bonus and
+    saved progress without `?dev`.
+
 - **Home garden identity — Chapter 1 exterior checkpoint.** Olov supplied three photographs and
   explicitly requested the red family home/veranda/deck, green playhouse and timber fjällkåta on the
   lawn. The photographs establish the buildings' appearance, not their relative positions; the game
@@ -13,10 +26,9 @@
     The originals and private comparison renders stay outside git.
   - Chapter 1 loads the private pack when present and otherwise uses a small, generic public Blender
     fallback. `standIns` also selects generic architecture for repository-safe screenshots. The old
-    wall remains as a last fallback if both models fail. This is a separate chapter checkpoint,
-    stacked after Bredbyn; it does not change `RELEASED_CHAPTER` or deploy the new assets.
-    The models are in [private asset PR #1](https://github.com/olovmelander/spokets-godisbus-familj/pull/1),
-    and the game branch is `codex/garden-home-landmarks`.
+    wall remains as a last fallback if both models fail. The garden checkpoint merged as
+    [game PR #186](https://github.com/olovmelander/spokets-godisbus/pull/186), after Bredbyn.
+    The models merged in [private asset PR #1](https://github.com/olovmelander/spokets-godisbus-familj/pull/1).
   - Sightlines, deck alignment and gentle camera views make the landmarks readable. The optional
     root puzzle retains its original close framing and hidden-ring discovery. Two short held
     observations and the purpose reminder connect the lawn to Elof's home; Moa's plane leads from
@@ -58,7 +70,8 @@
   - The church view is checked on the actual leaf crossing, with the existing
     candy, checkpoints, hooks and save coordinates intact. Smoke follows two real chimney
     caps instead of a repeating painted skyline. The village look course uses the bank too.
-  - This checkpoint is on `codex/byn-bredbyn-identity`, stacked on story/opening PR #184.
+  - This checkpoint merged as [PR #185](https://github.com/olovmelander/spokets-godisbus/pull/185),
+    after story/opening PR #184.
     Review captures: [`docs/shots/bredbyn/`](docs/shots/bredbyn/). `RELEASED_CHAPTER`,
     private family assets and **Senare** are unchanged. Public street reference use is
     explicitly requested; the chapter keeps its familiar name **Byn**.
@@ -91,7 +104,7 @@
     Named portraits in the current-purpose reminder connect each person with the next action.
     Brief preparation beats precede instructions; plane and cap boarding are separate choices.
     The bridge-ready line waits for the actual placed log, and the braid explains the climb.
-  - Review continues in [PR #184](https://github.com/olovmelander/spokets-godisbus/pull/184).
+  - The changes merged in [PR #184](https://github.com/olovmelander/spokets-godisbus/pull/184).
     Typecheck, **167 test files / 1,577 tests**, and production build pass. JavaScript is
     **447.5 KB / 450 KB**; boot is **1,496.9 KB / 3,072 KB** with public stand-ins.
     The save audit preserves unread helper introductions, defers old unfinished help until Elof is
@@ -3230,6 +3243,11 @@
 
 **For the next session, in this order:**
 
+- **Check the public release on Olov's devices:** open the normal Pages address at least 15 minutes
+  after deployment on each device Elof uses, so the service worker updates. Start a new local player
+  in the prologue, continue into Gården, and inspect Byn from its public link or the epilogue's card.
+  Check touch play, family likeness and sound; these physical-device reviews are still outstanding.
+
 - **Review the 10 October chase/story checkpoint:** try the opening and final reunion without racing
   the dialogue, read/revisit all four memories, and follow the ghost through rescue and mountain
   help. Confirm on a physical phone that captions, previous/next and **Fortsätt** are comfortable.
@@ -3450,8 +3468,8 @@
   the H1a/H1b/H2 checks or listening approval.
 - Look-dev: review the repaired finale nightfall and round stars on Olov's devices at H1a.
 - Physical iPad/iPhone/Android play, installed Safari/Home Screen behavior, performance and sound review
-  remain outstanding. Finish those checkpoints before a separate release decision; keep
-  `RELEASED_CHAPTER` at `null` meanwhile.
+  remain outstanding. Olov explicitly requested the public release while these reviews remain; gather
+  his results before treating the family-device and listening checkpoints as complete.
 
 The older list, still true where it is not struck:
 

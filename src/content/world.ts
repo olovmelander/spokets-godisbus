@@ -6,4 +6,4 @@ export type ChapterId = (typeof CHAPTER_IDS)[number];
  * The last released chapter. Raising it IS the release (CLAUDE.md).
  * null: nothing is released yet, and the page shows Stage 0a's test course.
  */
-export const RELEASED_CHAPTER: ChapterId | null = null;
+export const RELEASED_CHAPTER: ChapterId | null = 'epilog';

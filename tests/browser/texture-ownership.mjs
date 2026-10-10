@@ -64,7 +64,7 @@ async function open(workers = 'block') {
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(`${origin}${BASE}?debug&standin&tier=high`);
+  await page.goto(`${origin}${BASE}?debug&standin&tier=high&course=testbana`);
   await page.waitForFunction(() => window.__godis);
   return { context, page, errors };
 }

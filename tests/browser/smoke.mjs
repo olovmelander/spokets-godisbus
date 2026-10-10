@@ -77,7 +77,7 @@ async function topOfJump(state, timeout = 15000) {
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 mkdirSync(SHOTS, { recursive: true });
 
-async function open(name, options, query = '?debug') {
+async function open(name, options, query = '?debug&course=testbana') {
   const context = await browser.newContext(options);
   const page = await context.newPage();
   const requests = [];
@@ -201,7 +201,7 @@ async function open(name, options, query = '?debug') {
 // --- the other tiers --------------------------------------------------------------------------------
 for (const tier of ['low', 'high']) {
   console.log(`tier ${tier}, 1180×820`);
-  const { info, finish } = await open(`tier-${tier}-1180x820`, { viewport: { width: 1180, height: 820 }, deviceScaleFactor: 2 }, `?debug&tier=${tier}`);
+  const { info, finish } = await open(`tier-${tier}-1180x820`, { viewport: { width: 1180, height: 820 }, deviceScaleFactor: 2 }, `?debug&course=testbana&tier=${tier}`);
   const drawn = await until(info, (i) => i.models.includes('boot/big-candy'), 30000);
   check(`?tier=${tier} is honoured`, drawn.tier === tier, drawn.tier);
   check(`${tier}: the scene and the model are drawn`, drawn.drawCalls > 0 && drawn.models.includes('boot/big-candy'), `${drawn.drawCalls} draw calls`);

@@ -10,6 +10,17 @@ const dev = new URLSearchParams('dev');
 const canEnter = (release: ChapterId | null) => (id: string) => courseAvailable(publicPage, id, release);
 
 describe('the public release boundary', () => {
+  it('opens the full story and bonus on the normal page', () => {
+    expect(courseFor(publicPage).id).toBe('prolog');
+    expect(courseFor(new URLSearchParams('course=garden')).id).toBe('garden');
+    expect(courseFor(new URLSearchParams('course=byn')).id).toBe('byn');
+    expect(courseFor(publicPage, 'byn').id).toBe('byn');
+    expect(courseFor(new URLSearchParams('course=testbana')).id).toBe('testbana');
+    expect(nextAvailable('epilog', publicPage)?.id).toBe('byn');
+    expect(courseAvailable(publicPage, chapterFor(codeFor('byn')!)!)).toBe(true);
+    expect(courseAvailable(publicPage, 'look-street')).toBe(false);
+  });
+
   it('with no release, a URL, debug flag, save or chapter code cannot open story work', () => {
     for (const id of Object.keys(COURSES).filter((id) => id !== 'testbana')) {
       expect(courseFor(new URLSearchParams(`debug&course=${id}`), null, null).id, id).toBe('testbana');
@@ -27,11 +38,11 @@ describe('the public release boundary', () => {
       ['myr', ['prolog', 'garden', 'granskog', 'myren']],
       ['berg', ['prolog', 'garden', 'granskog', 'myren', 'berget']],
       ['final', ['prolog', 'garden', 'granskog', 'myren', 'berget', 'norrsken']],
-      ['epilog', ['prolog', 'garden', 'granskog', 'myren', 'berget', 'norrsken', 'epilog']],
+      ['epilog', ['prolog', 'garden', 'granskog', 'myren', 'berget', 'norrsken', 'epilog', 'byn']],
     ] as const) {
       expect(Object.keys(COURSES).filter((id) => id !== 'testbana' && courseAvailable(publicPage, id, release)), release).toEqual(allowed);
       expect(courseFor(publicPage, allowed.at(-1)!, release).id).toBe(allowed.at(-1));
-      expect(courseFor(new URLSearchParams('course=byn'), null, release).id).toBe('prolog');
+      expect(courseFor(new URLSearchParams('course=byn'), null, release).id).toBe(release === 'epilog' ? 'byn' : 'prolog');
     }
     expect(courseFor(publicPage, 'epilog', 'garden').id).toBe('prolog');
     expect(courseFor(new URLSearchParams('course=epilog'), 'garden', 'garden').id).toBe('garden');
@@ -54,7 +65,8 @@ describe('the public release boundary', () => {
     expect(nextAvailable('granskog', publicPage, 'forsen')).toBeNull();
     expect(nextAvailable('granskog', publicPage, 'myr')?.id).toBe('myren');
     expect(nextAvailable('norrsken', publicPage, 'epilog')?.id).toBe('epilog');
-    expect(nextAvailable('epilog', publicPage, 'epilog')).toBeNull();
+    expect(nextAvailable('epilog', publicPage, 'epilog')?.id).toBe('byn');
+    expect(nextAvailable('byn', publicPage, 'epilog')).toBeNull();
     expect(nextAvailable('epilog', dev)?.id).toBe('byn');
     expect(nextAvailable('byn', dev)).toBeNull();
     for (const id of Object.keys(COURSES)) expect(courseFor(new URLSearchParams(`dev&course=${id}`)).id).toBe(id);

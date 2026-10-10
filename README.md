@@ -4,10 +4,10 @@ A 2.5D adventure for a seven-year-old, in the forests and bogs of Ångermanland.
 alive, steals Elof's giant bag of Saturday sweets and drops a trail of candy behind it. Elof follows it,
 through the yard, the spruce forest, past the brook and over the misty bog, up the mountain, to find out *why*.
 
-- **Status:** the prologue, four chapters, final and epilogue are playable with
-  [`?dev`](https://olovmelander.github.io/spokets-godisbus/?dev), followed by the bonus chapter
-  [Byn](https://olovmelander.github.io/spokets-godisbus/?dev&course=byn). The plain address keeps the grey
-  test course until Olov releases a chapter. `HANDOVER.md` records the remaining art and device checkpoints.
+- **Play:** the [normal game page](https://olovmelander.github.io/spokets-godisbus/) opens the prologue
+  and follows the full story through the epilogue. The bonus chapter
+  [Byn](https://olovmelander.github.io/spokets-godisbus/?course=byn) follows it and is also available
+  from chapter selection. `HANDOVER.md` records the remaining art and device checkpoints.
 - **Run it:** `npm ci`, then `npm run dev` and open `http://localhost:5173/spokets-godisbus/?debug`.
   - It needs the KTX-Software `ktx` tool for the asset build; `HANDOVER.md` says how to install it.
   - `npm test` runs the simulation tests and the robot; `npm run build && npm run test:browser` plays it in a

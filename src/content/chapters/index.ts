@@ -56,6 +56,8 @@ export function courseAvailable(params: URLSearchParams, id: string, released: C
   const canonical = courseId(id);
   if (!Object.hasOwn(COURSES, canonical)) return false;
   if (canonical === 'testbana' || params.has('dev')) return true;
+  // Byn is the unnumbered bonus after the epilogue; it opens with the completed story.
+  if (canonical === 'byn') return released === 'epilog';
   const stable = RELEASE_IDS[canonical];
   return released !== null && stable !== undefined && CHAPTER_IDS.indexOf(stable) <= CHAPTER_IDS.indexOf(released);
 }
@@ -69,7 +71,7 @@ export function courseFor(params: URLSearchParams, saved: string | null = null, 
   return courseAvailable(params, 'prolog', released) ? prolog : testbana;
 }
 
-/** The end card's destination. Bonus and look-development courses have no public release ID. */
+/** The end card's destination; the bonus follows the fully released story. */
 export function nextAvailable(id: string, params: URLSearchParams, released: ChapterId | null = RELEASED_CHAPTER): ChapterData | null {
   const following = nextAfter(courseId(id)) ?? bonusAfter(courseId(id));
   return following && courseAvailable(params, following.id, released) ? following : null;
