@@ -388,6 +388,10 @@ export interface StreetPart {
   /** A house's wall: its colour, and which way its boards run. */
   wall?: string;
   boards?: 'upright' | 'lying';
+  /** Rendered plaster among the timber fronts; no effect on collisions. */
+  finish?: 'plaster';
+  /** A low boundary and side birch leave the public village landmarks in view. */
+  lowFence?: boolean;
   goods?: StreetGoods;
   /** Its shop windows, each from one side of the glass to the other. */
   windows?: { from: number; to: number }[];

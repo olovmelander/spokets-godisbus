@@ -55,6 +55,7 @@ try {
   });
   // Stand-ins are the public build. Family assets need the same ?bench gate on Olov's devices.
   for (const course of ['prolog', 'garden', 'granskog', 'myren', 'berget', 'norrsken', 'epilog', 'byn']) {
+    if (process.env.GPU_COURSE && course !== process.env.GPU_COURSE) continue;
     await page.goto(`${origin}${BASE}?dev&debug&standin&course=${course}&tier=low`);
     await ready(page);
     await page.keyboard.press('Escape');

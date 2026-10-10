@@ -184,12 +184,12 @@ describe("the village's lamp posts", () => {
     paintStreetMirror(byn, c as unknown as CanvasRenderingContext2D, (x) => x, (y) => -y);
     const puddle = byn.water![0]!;
     const inPuddle = byn.lampPosts!.filter((x) => x > puddle.from && x < puddle.to);
-    expect(inPuddle).toEqual([52]);
+    expect(inPuddle).toEqual([58.5]);
     const posts = boxes.filter((b) => b.colour === MIRRORED.lamp);
     expect(posts.length).toBe(byn.lampPosts!.length * 3);
     // The last thing painted, so that nothing behind covers them.
     expect(boxes.slice(-posts.length).every((b) => b.colour === MIRRORED.lamp)).toBe(true);
-    const own = posts.filter((b) => b.x0 < 52 && b.x1 > 52);
+    const own = posts.filter((b) => b.x0 < inPuddle[0]! && b.x1 > inPuddle[0]!);
     expect(Math.min(...own.map((b) => b.y0))).toBe(1);
     expect(Math.max(...own.map((b) => b.y1))).toBeGreaterThan(20);
     expect(Math.max(...own.map((b) => b.x1 - b.x0))).toBeCloseTo(2.4, 5);

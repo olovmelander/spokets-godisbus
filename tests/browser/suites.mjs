@@ -28,6 +28,7 @@ export const SUITES = [
   ['colour-pipeline', 65],
   ['nightfall', 72],
   ['village', 395],
+  ['bredbyn', 320],
   ['gpu-memory', 639],
   ['water-light', 74],
   ['epilogue', 34],

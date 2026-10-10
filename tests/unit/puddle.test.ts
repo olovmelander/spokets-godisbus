@@ -10,23 +10,26 @@ const byn = COURSES['byn']!;
 const puddle = byn.water![0]!;
 
 /** What the street paints for the puddle to mirror, as boxes in EL: a context that only remembers. */
-function painted() {
+function painted(chapter = byn) {
   const boxes: { x0: number; x1: number; y0: number; y1: number; colour: unknown }[] = [];
   const c = {
     fillStyle: '' as unknown,
     fillRect(x: number, y: number, w: number, h: number) { boxes.push({ x0: x, x1: x + w, y0: -y - h, y1: -y, colour: this.fillStyle }); },
     createLinearGradient: () => ({ addColorStop() {} }),
   };
-  paintStreetMirror(byn, c as unknown as CanvasRenderingContext2D, (x) => x, (y) => -y);
+  paintStreetMirror(chapter, c as unknown as CanvasRenderingContext2D, (x) => x, (y) => -y);
   return boxes;
 }
 
 describe("the village's puddle", () => {
-  it("mirrors the street's far side as the kit builds it: the yard's boards on their rails before the hedge, its wall and gateposts, and the kerb", () => {
+  it.each([
+    { name: 'Byn’s low boundary', chapter: byn, height: 0.42 },
+    { name: 'the full-height fence', chapter: { ...byn, street: byn.street!.map((part) => ({ ...part, lowFence: false })) }, height: 1 },
+  ])("mirrors $name as the kit builds it: boards on rails before the hedge, its wall and gateposts, and the kerb", ({ chapter, height }) => {
     expect(waterKind('village').stands).toBe(STREET_DEPTH.far);
-    const yard = byn.street!.find((part) => part.kind === 'yard')!;
+    const yard = chapter.street!.find((part) => part.kind === 'yard')!;
     const foot = yard.foot!;
-    const boxes = painted();
+    const boxes = painted(chapter);
     const boards = boxes.filter((b) => b.colour === MIRRORED.boards);
     // Four boards to each length of the kit's fence, between the gateposts, from just over the wall up.
     expect(boards.length % 4).toBe(0);
@@ -34,18 +37,35 @@ describe("the village's puddle", () => {
     for (const board of boards) {
       expect(board.x0).toBeGreaterThan(yard.from + 1.3);
       expect(board.x1).toBeLessThan(yard.to - 1.3);
-      expect(board.y0).toBeCloseTo(foot + 0.62, 5);
-      expect(board.y1).toBeCloseTo(foot + 4.6, 5);
+      expect(board.y0).toBeCloseTo(foot + 0.62 * height, 5);
+      expect(board.y1).toBeCloseTo(foot + 4.6 * height, 5);
     }
     // The hedge shows between the boards: they cover less than four fifths of the fence.
     const covered = boards.reduce((sum, b) => sum + b.x1 - b.x0, 0);
     expect(covered / (yard.to - yard.from - 2.8)).toBeLessThan(0.8);
     expect(covered / (yard.to - yard.from - 2.8)).toBeGreaterThan(0.5);
     // The hedge is painted first, and everything of the fence over it.
-    const hedge = boxes.findIndex((b) => b.y0 === foot && b.y1 === foot + 5.6);
+    const hedge = boxes.findIndex((b) => b.x0 === yard.from && b.x1 === yard.to && typeof b.colour === 'object');
     expect(hedge).toBeGreaterThanOrEqual(0);
+    expect(boxes[hedge]!.y0).toBeCloseTo(foot, 5);
+    expect(boxes[hedge]!.y1).toBeCloseTo(foot + 5.6 * height, 5);
     expect(boxes.findIndex((b) => b.colour === MIRRORED.boards)).toBeGreaterThan(hedge);
-    expect(boxes.filter((b) => b.colour === MIRRORED.post).length).toBe(2);
+    const rails = boxes.filter((b) => b.colour === MIRRORED.rails);
+    expect(rails).toHaveLength(2);
+    for (const [i, rail] of rails.entries()) {
+      expect(rail.y0).toBeCloseTo(foot + [1.4, 3.5][i]! * height, 5);
+      expect(rail.y1 - rail.y0).toBeCloseTo(0.4 * height, 5);
+    }
+    const posts = boxes.filter((b) => b.colour === MIRRORED.post);
+    expect(posts).toHaveLength(2);
+    for (const post of posts) {
+      expect(post.y0).toBeCloseTo(foot, 5);
+      expect(post.y1).toBeCloseTo(foot + 5.2 * height, 5);
+    }
+    // Lowering the wooden boundary never shrinks its supporting stone wall or pavement.
+    const wall = boxes.find((b) => b.colour === MIRRORED.stone && b.x0 === yard.from && b.x1 === yard.to)!;
+    expect(wall.y0).toBeCloseTo(foot, 5);
+    expect(wall.y1).toBeCloseTo(foot + 0.5, 5);
     // The far pavement's kerb, from the street up to the far side's foot, under the yard and the far house.
     const kerbs = boxes.filter((b) => b.colour === MIRRORED.kerb);
     expect(kerbs.some((b) => b.x0 <= puddle.from && b.x1 >= puddle.to && b.y0 === 0 && b.y1 === foot)).toBe(true);

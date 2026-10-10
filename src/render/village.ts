@@ -8,6 +8,7 @@ import { sweetSocket } from './candy';
 import { drainsOf } from './dressing/ground';
 import { glowTexture } from './glow';
 import { paperBag, SATURDAY_BAG_TALL } from './saturday-bag';
+import { BRED_BYN_CHIMNEYS, BRED_BYN_SMOKE_Z } from '../content/bredbyn';
 
 /**
  * The village street (the extra chapter Byn): its houses and its yard, two lamp posts on its far pavement, a
@@ -60,83 +61,6 @@ function heightAt(chapter: ChapterData, x: number): number {
   return x < line[0]!.x ? line[0]!.y : line[line.length - 1]!.y;
 }
 
-/**
- * The village beyond the street, far off and soft: wooden houses with weathered tin roofs, birches in their
- * October yellow, spruces, and the low blue hills of the valley. It is one long picture far behind the
- * fronts, seen over the fences: as he walks, it slides past more slowly than the houses do.
- */
-function skyline(from: number, to: number, foot: number): Mesh {
-  const next = sequence(211);
-  // Drawn at twice the size it is measured in, and a little out of focus: it is far away.
-  const picture = drawn(1024, 256, (c) => {
-    c.scale(2, 2);
-    c.clearRect(0, 0, 512, 128);
-    c.filter = 'blur(1.1px)';
-    // Two ridges of hills, the far one paler.
-    for (const [base, tall, colour] of [[78, 30, '#a9b9cc'], [92, 22, '#8fa3bd']] as const) {
-      c.fillStyle = colour;
-      c.beginPath();
-      c.moveTo(0, 128);
-      for (let px = 0; px <= 512; px += 8) c.lineTo(px, base - tall * (0.5 + 0.5 * Math.sin(px * 0.0123 + base) * Math.cos(px * 0.031 + tall)));
-      c.lineTo(512, 128);
-      c.fill();
-    }
-    // Spruces and birches between the houses.
-    for (let i = 0; i < 34; i++) {
-      const px = next() * 512;
-      const birch = next() < 0.5;
-      const tall = 16 + next() * 16;
-      c.fillStyle = birch ? ['#d0b24a', '#bfa846', '#a9b060'][i % 3]! : '#3f5a48';
-      c.beginPath();
-      if (birch) c.ellipse(px, 104 - tall * 0.6, tall * 0.36, tall * 0.6, 0, 0, Math.PI * 2);
-      else {
-        c.moveTo(px, 104 - tall * 1.2);
-        c.lineTo(px + tall * 0.3, 106);
-        c.lineTo(px - tall * 0.3, 106);
-      }
-      c.fill();
-    }
-    // The houses: a wall, a broken roof of tin, white gable boards, a chimney, a few windows. None is red:
-    // red is the candy's (docs/art-bible.md §2.2).
-    const walls = ['#e3b24c', '#e9e6dc', '#e3b24c', '#c9c4b4', '#efe6c8', '#e3b24c'];
-    for (let i = 0; i < 9; i++) {
-      const px = 20 + i * 56 + (next() - 0.5) * 16;
-      const wide = 30 + next() * 12;
-      const top = 80 + next() * 6;
-      c.fillStyle = walls[i % walls.length]!;
-      c.fillRect(px - wide / 2, top, wide, 112 - top);
-      c.fillStyle = '#a8736a';
-      c.beginPath();
-      c.moveTo(px - wide / 2 - 2, top);
-      c.lineTo(px - wide * 0.34, top - 12);
-      c.lineTo(px, top - 19);
-      c.lineTo(px + wide * 0.34, top - 12);
-      c.lineTo(px + wide / 2 + 2, top);
-      c.fill();
-      c.fillRect(px + wide * 0.12, top - 22, 4, 6);
-      c.fillStyle = '#fbf6ea';
-      c.fillRect(px - wide / 2 - 2, top - 1, wide + 4, 1.5);
-      c.fillStyle = '#56687c';
-      for (const wx of [-0.28, 0, 0.28]) c.fillRect(px + wx * wide - 2, top + 6, 4, 6);
-    }
-    // The haze of the valley lies over all of it, thickest at the foot.
-    const haze = c.createLinearGradient(0, 40, 0, 128);
-    haze.addColorStop(0, 'rgba(216,221,230,0.25)');
-    haze.addColorStop(1, 'rgba(216,221,230,0.62)');
-    c.globalCompositeOperation = 'source-atop';
-    c.fillStyle = haze;
-    c.fillRect(0, 0, 512, 128);
-  });
-  picture.wrapS = RepeatWrapping;
-  const wide = to - from + 220;
-  picture.repeat.set(wide / 96, 1);
-  const plate = new Mesh(new PlaneGeometry(wide, 24), new MeshBasicMaterial({ map: picture, transparent: true, fog: false, depthWrite: false }));
-  plate.position.set((from + to) / 2, foot + 14.6, -52);
-  // Sorted by depth with the far scenery's cards: in front of the sky's hills, which are further off.
-  plate.renderOrder = -3;
-  return plate;
-}
-
 // --- the houses of the street ----------------------------------------------------------------------------------
 
 /** How far behind the path a wall stands: right behind him, or on the other side of the crossing. */
@@ -152,7 +76,7 @@ const SIGN: Partial<Record<StreetGoods, number>> = { bread: 1.7, boots: 2.1 };
 /** How far a stone foot stands out from its wall. */
 const PROUD = 0.35;
 /** The kit's parts that go on along a wall, and how long one of each is. */
-const TILES = { sockel: 4, panel: 1.35, liggande: 4, mur: 4, staket: 3.8, hack: 6 } as const;
+const TILES = { sockel: 4, panel: 1.35, liggande: 4, puts: 4, mur: 4, staket: 3.8, hack: 6 } as const;
 /** Where the kit's walls end: nothing of a house is built above 12 EL, and the picture never reaches there. */
 const TOP = 12;
 /** A shop window's sill, over its house's foot: the floor its wares stand on. */
@@ -356,26 +280,29 @@ interface Paint {
 /** How a part is set on a wall: stretched along it, mirrored, moved up, a tone lighter or darker. */
 interface Placing {
   wide?: number;
+  tall?: number;
   mirror?: boolean;
   up?: number;
   tone?: number;
 }
 const PLAIN = new Color('#ffffff');
+// Köpmangatan mixes painted timber with smooth rendered shop fronts.
+const PLASTER_PANEL = flat([[0, 4, 1.95, TOP, 0, '#ffffff', 0.5]]);
 
 /** Sets a part of the kit on a wall, `at` along it, in the house's colours. A part the kit lacks is left out. */
 function put(build: Build, shape: Shape | undefined, wall: Wall, at: number, paint: Paint, placing: Placing = {}): void {
   if (!shape) return;
-  const { wide = 1, mirror = false, up = 0, tone = 1 } = placing;
+  const { wide = 1, tall = 1, mirror = false, up = 0, tone = 1 } = placing;
   const stretch = mirror ? -wide : wide;
   const first = build.position.length / 3;
   for (let i = 0; i < shape.whose.length; i++) {
     const x = shape.position[i * 3]! * stretch + at;
     const y = shape.position[i * 3 + 1]!;
     const z = shape.position[i * 3 + 2]!;
-    build.position.push(wall.x + wall.along[0] * x + wall.out[0] * z, wall.y + up + y, wall.z + wall.along[1] * x + wall.out[1] * z);
+    build.position.push(wall.x + wall.along[0] * x + wall.out[0] * z, wall.y + up + y * tall, wall.z + wall.along[1] * x + wall.out[1] * z);
     // A stretched part's faces turn: their normals are divided by the stretch, and made one long again.
     const nx = shape.normal[i * 3]! / stretch;
-    const ny = shape.normal[i * 3 + 1]!;
+    const ny = shape.normal[i * 3 + 1]! / tall;
     const nz = shape.normal[i * 3 + 2]!;
     const long = Math.hypot(nx, ny, nz) || 1;
     build.normal.push((wall.along[0] * nx + wall.out[0] * nz) / long, ny / long, (wall.along[1] * nx + wall.out[1] * nz) / long);
@@ -398,7 +325,7 @@ function run(build: Build, kit: VillageKit, name: keyof typeof TILES, wall: Wall
   const count = Math.max(1, Math.round((to - from) / pitch));
   const wide = (to - from) / (pitch * count);
   // Each board is its own tone, as boards painted in different years are.
-  for (let i = 0; i < count; i++) put(build, kit.get(name), wall, from + i * pitch * wide, paint, { ...placing, wide, tone: 0.965 + 0.07 * hash(from * 3.1 + i) });
+  for (let i = 0; i < count; i++) put(build, name === 'puts' ? PLASTER_PANEL : kit.get(name), wall, from + i * pitch * wide, paint, { ...placing, wide, tone: name === 'puts' ? 1 : 0.965 + 0.07 * hash(from * 3.1 + i) });
 }
 
 /** How high a part's foot stands: where the chapter says, or on the highest ground under it. */
@@ -415,7 +342,7 @@ function footOf(chapter: ChapterData, part: StreetPart): number {
  * A house's side wall, going back from its front's corner: its foot and its boards, and for a near house the
  * dark opening of the passage. `corner` says at which end of the wall the front is.
  */
-function side(build: Build, kit: VillageKit, wall: Wall, long: number, corner: 'first' | 'last', boards: 'panel' | 'liggande', paint: Paint, passage: { at: number; up: number } | null): void {
+function side(build: Build, kit: VillageKit, wall: Wall, long: number, corner: 'first' | 'last', boards: 'panel' | 'liggande' | 'puts', paint: Paint, passage: { at: number; up: number } | null): void {
   // The front's corner board goes round the corner and covers the wall's first bit.
   const wood: [number, number] = corner === 'first' ? [CORNER, long] : [0, long - CORNER];
   const stone: [number, number] = corner === 'first' ? [-PROUD, long] : [0, long + PROUD];
@@ -575,7 +502,7 @@ function house(build: Build, kit: VillageKit, chapter: ChapterData, parts: reado
   const z = STREET_DEPTH[part.depth];
   const goods = part.goods ?? 'bread';
   const paint = { wall: new Color(part.wall ?? '#e9e6dc'), door: new Color(DOORS[goods]) };
-  const boards = part.boards === 'lying' ? 'liggande' : 'panel';
+  const boards = part.finish === 'plaster' ? 'puts' : part.boards === 'lying' ? 'liggande' : 'panel';
   // What the ground's own end wall hides is not built.
   const from = Math.max(part.from, chapter.ground[0]!.x - 1);
   const to = Math.min(part.to, chapter.ground[chapter.ground.length - 1]!.x + 1);
@@ -627,11 +554,12 @@ function house(build: Build, kit: VillageKit, chapter: ChapterData, parts: reado
 function yard(build: Build, kit: VillageKit, chapter: ChapterData, part: StreetPart): void {
   const paint = { wall: PLAIN, door: PLAIN };
   const front: Wall = { x: 0, y: footOf(chapter, part), z: STREET_DEPTH[part.depth], along: [1, 0], out: [0, 1] };
+  const fence = { tall: part.lowFence ? 0.42 : 1 };
   run(build, kit, 'mur', front, part.from, part.to, paint);
-  run(build, kit, 'staket', front, part.from + 1.4, part.to - 1.4, paint);
-  for (const x of [part.from + 0.7, part.to - 0.7]) put(build, kit.get('grindstolpe'), front, x, paint);
-  run(build, kit, 'hack', front, part.from, part.to, paint);
-  put(build, kit.get('bjork'), front, part.from + (part.to - part.from) * 0.4, paint);
+  run(build, kit, 'staket', front, part.from + 1.4, part.to - 1.4, paint, fence);
+  for (const x of [part.from + 0.7, part.to - 0.7]) put(build, kit.get('grindstolpe'), front, x, paint, fence);
+  run(build, kit, 'hack', front, part.from, part.to, paint, fence);
+  put(build, kit.get('bjork'), front, part.from + (part.lowFence ? 2 : (part.to - part.from) * 0.4), paint);
 }
 
 /** Granite courses on a raised pavement's kerb or a shop's step, merged with the house above it. */
@@ -810,22 +738,23 @@ export function paintStreetMirror(chapter: ChapterData, c: CanvasRenderingContex
       for (let x = part.from + 3.35; x < part.to; x += 6.7) box(x - 0.05, x + 0.05, 0, foot, MIRRORED.joint);
     }
     if (part.kind === 'yard') {
+      const h = part.lowFence ? 0.42 : 1;
       // The hedge, darker low down; the fence's boards on their rails in front of it, four to a length of
       // the kit's fence; the low wall under them; a gatepost at each end.
-      const hedge = c.createLinearGradient(0, row(foot), 0, row(foot + 5.6));
+      const hedge = c.createLinearGradient(0, row(foot), 0, row(foot + 5.6 * h));
       hedge.addColorStop(0, MIRRORED.hedge[0]);
       hedge.addColorStop(1, MIRRORED.hedge[1]);
-      box(part.from, part.to, foot, foot + 5.6, hedge);
+      box(part.from, part.to, foot, foot + 5.6 * h, hedge);
       const from = part.from + 1.4, to = part.to - 1.4;
       const count = Math.max(1, Math.round((to - from) / 3.8));
       const wide = (to - from) / (3.8 * count);
       for (let i = 0; i < count * 4; i++) {
         const x = from + (Math.floor(i / 4) * 3.8 + 0.15 + 0.95 * (i % 4)) * wide;
-        box(x, x + 0.65 * wide, foot + 0.62, foot + 4.6, MIRRORED.boards);
+        box(x, x + 0.65 * wide, foot + 0.62 * h, foot + 4.6 * h, MIRRORED.boards);
       }
-      for (const y of [1.4, 3.5]) box(from, to, foot + y, foot + y + 0.4, MIRRORED.rails);
+      for (const y of [1.4, 3.5]) box(from, to, foot + y * h, foot + (y + 0.4) * h, MIRRORED.rails);
       box(part.from, part.to, foot, foot + 0.5, MIRRORED.stone);
-      for (const x of [part.from + 0.7, part.to - 0.7]) box(x - 0.6, x + 0.6, foot, foot + 5.2, MIRRORED.post);
+      for (const x of [part.from + 0.7, part.to - 0.7]) box(x - 0.6, x + 0.6, foot, foot + 5.2 * h, MIRRORED.post);
     } else {
       // A house: its stone foot, the white drip board on it, its wall in its own colour, and its door.
       box(part.from, part.to, foot, foot + 1.6, MIRRORED.stone);
@@ -930,10 +859,9 @@ export function lampPosts(chapter: ChapterData): Mesh | null {
  * under the street, the bicycle and the shop's room. `install` puts the houses together again from the kit
  * modelled in Blender, once it has arrived.
  */
-export function fronts(chapter: ChapterData, from: number, to: number): { group: Group; install(model: Object3D): boolean } {
+export function fronts(chapter: ChapterData, from: number, _to: number): { group: Group; install(model: Object3D): boolean } {
   const group = new Group();
   const floor = heightAt(chapter, from + 20);
-  const foot = Math.min(floor, 0) - 0.6;
   const parts = chapter.street ?? [];
   const material = wallMaterial();
   const plain = standIn();
@@ -949,7 +877,13 @@ export function fronts(chapter: ChapterData, from: number, to: number): { group:
     const streaks = panes(chapter, part);
     if (streaks) group.add(new Mesh(streaks, glass));
   }
-  group.add(skyline(from, to, foot));
+  if (chapter.place === 'village') {
+    const chimneys = new Group();
+    chimneys.name = 'bredbyn-smoke';
+    chimneys.position.z = BRED_BYN_SMOKE_Z;
+    chimneys.userData.chimneys = BRED_BYN_CHIMNEYS;
+    group.add(chimneys);
+  }
   // Under the street it is dark: the puddle goes down into it. Each pit open to the back has its own piece of
   // the dark, which is drawn only while that pit is in sight.
   const dark = new MeshBasicMaterial({ color: '#1d2024', fog: false });

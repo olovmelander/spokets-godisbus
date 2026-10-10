@@ -55,9 +55,8 @@ try {
           checkpoint: s.checkpoint, movers: s.movers, drips: s.drips, flags: s.flags, ghost: s.ghost,
           rollers: s.rollers, tussocks: s.tussocks, gusts: s.gusts, help: s.help, berries: s.berries,
         }); };
-        const until = performance.now() + 15000;
-        // Four models arrive for this chapter: the big candy, the jay, the candy kit and the village kit.
-        while (view.info().models.length < 4 && performance.now() < until) await new Promise((r) => setTimeout(r, 25));
+        // Include chapter-specific scenery such as Bredbyn's landmarks before measuring or capturing.
+        await view.ready;
         for (let i = 0; i < 4; i++) draw();
         const scene = f.renderedScene();
         const shoes = scene.getObjectByName('passing-shoes'), car = scene.getObjectByName('passing-car');

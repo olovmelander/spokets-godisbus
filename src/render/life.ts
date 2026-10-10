@@ -1,8 +1,7 @@
-import { BufferAttribute, BufferGeometry, DataTexture, DynamicDrawUsage, Mesh, MeshBasicMaterial, SRGBColorSpace, type Object3D, type PlaneGeometry, type Texture } from 'three';
+import { BufferAttribute, BufferGeometry, DataTexture, DynamicDrawUsage, Mesh, MeshBasicMaterial, SRGBColorSpace, type Object3D, type Texture } from 'three';
 import { LIFE, type Smoke } from '../content/life';
 import type { ChapterData, PlaceId } from '../sim/types';
 import { sunk } from './backdrop';
-import { sequence } from './dressing/kit';
 import { drawnWhile } from './idle';
 import { QUADS, STRIDE, lifePlan, type Watch } from './life-plan';
 
@@ -44,30 +43,13 @@ export interface Life {
 const EYE = 1.4;
 
 /**
- * The far village's chimneys, read off its picture as village.ts paints it: the same numbers in the same
- * order (thirty-four trees, then nine houses), 512 across 96 EL and 128 down 24. Every third house smokes.
- */
-function chimneys(plate: Mesh): Smoke['at'] {
-  const next = sequence(211);
-  for (let i = 0; i < 102; i++) next();
-  const left = plate.position.x - (plate.geometry as PlaneGeometry).parameters.width / 2;
-  const out: [number, number][] = [];
-  for (let i = 0; i < 9; i++) {
-    const x = 20 + i * 56 + (next() - 0.5) * 16;
-    const wide = 30 + next() * 12;
-    const top = 80 + next() * 6;
-    if (i % 3 === 1) out.push([left + ((x + wide * 0.12 + 2) * 96) / 512, ((22 - top) * 24) / 128]);
-  }
-  return out;
-}
-
-/**
  * Builds a place's life. `anchor` is the height the chapter starts at, as the far pictures count their
- * sinking from. `plate` is the far village's picture, where there is one: its smoke stands in the world.
+ * sinking from. `plate` is an optional world anchor with local chimney coordinates in userData.chimneys.
  */
 export function createLife(chapter: ChapterData, place: PlaceId, anchor: number, plate: Object3D | undefined, ask: LifeAsk = {}): Life | null {
   const cast = LIFE[place];
-  const plan = lifePlan(place, chapter.life, ask.seed ?? 0, ask.now ?? null, plate ? chimneys(plate as Mesh) : undefined);
+  const chimneys = (plate?.userData.chimneys as Smoke['at'] | undefined)?.map(([x, y]) => [x + plate!.position.x, y] as const);
+  const plan = lifePlan(place, chapter.life, ask.seed ?? 0, ask.now ?? null, chimneys);
   if (!cast || !plan) return null;
   const at = new BufferAttribute(new Float32Array(QUADS * 12), 3).setUsage(DynamicDrawUsage);
   const uv = new BufferAttribute(new Float32Array(QUADS * 8), 2).setUsage(DynamicDrawUsage);
@@ -104,8 +86,8 @@ export function createLife(chapter: ChapterData, place: PlaceId, anchor: number,
       if (!count) return;
       const slot = cast.slots[plan.slot]!;
       // The far village stands in the world; everything else hangs at the height of his eyes, as the far pictures do.
-      const level = plate ? plate.position.y + 12 : groundY + EYE - sunk(slot.sink, groundY - anchor);
-      mesh.position.set(cameraX, level, slot.z);
+      const level = plate ? plate.position.y : groundY + EYE - sunk(slot.sink, groundY - anchor);
+      mesh.position.set(cameraX, level, plate?.position.z ?? slot.z);
       const q = plan.quads;
       for (let i = 0; i < count; i++) {
         const o = i * STRIDE;
