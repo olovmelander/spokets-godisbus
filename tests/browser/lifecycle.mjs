@@ -41,7 +41,7 @@ async function until(read, accepts, name, timeout = 15000) {
   assert.fail(`${name}: ${JSON.stringify(value)}`);
 }
 const progress = ({ x, y, steps, candy, flags, checkpoint }) => ({ x, y, steps, candy, flags, checkpoint });
-async function open(setup = async () => {}, query = '?debug&standin&tier=low') {
+async function open(setup = async () => {}, query = '?debug&standin&tier=low&course=testbana') {
   // Keep the pack-failure assertions independent of a previously cached worker response.
   const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 844, height: 390 } });
   await context.addInitScript(() => {
@@ -137,7 +137,7 @@ try {
   const early = await open(async (page) => page.route('**/packs/boot/big-candy.glb*', async (route) => {
     await lateGate;
     await route.continue();
-  }), '?debug&standin&tier=low&title');
+  }), '?debug&standin&tier=low&course=testbana&title');
   await early.page.locator('#startAventyr').click();
   check('a start pressed while loading waits on its button with the ghost, under the title', (await early.state()).title && !(await early.state()).bootReady
     && await early.page.locator('#title.waiting #startAventyr.pressed .waiting-ghost').count() === 1);

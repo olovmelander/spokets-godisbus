@@ -71,7 +71,7 @@ try {
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(`${origin}${BASE}?debug&standin&title`);
+  await page.goto(`${origin}${BASE}?debug&standin&title&course=testbana`);
   await ready(page);
   await page.waitForFunction(() => window.__godis.info().autoSettled, null, { timeout: 60000 });
   const title = await info(page);
@@ -125,11 +125,11 @@ try {
   await frames(page, 3);
   check('visibility restoration resumes rendering', (await page.evaluate(() => window.__renderTest.draws)) > hiddenDraws);
 
-  await page.goto(`${origin}${BASE}?debug&standin&tier=mid`);
+  await page.goto(`${origin}${BASE}?debug&standin&tier=mid&course=testbana`);
   await ready(page);
   await frames(page, 15);
   check('a query tier override keeps its cap and bypasses Auto', (await info(page)).tier === 'mid' && (await info(page)).resolutionSteps === 0);
-  await page.goto(`${origin}${BASE}?bench&standin&tier=low`);
+  await page.goto(`${origin}${BASE}?bench&standin&tier=low&course=testbana`);
   await ready(page);
   await frames(page, 15);
   check('bench stays at its requested reproducible resolution', (await info(page)).tier === 'low' && (await info(page)).resolutionSteps === 0);

@@ -57,7 +57,7 @@ try {
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  const url = `${origin}${BASE}?debug&standin&tier=low`;
+  const url = `${origin}${BASE}?debug&standin&tier=low&course=testbana`;
   await page.goto(url);
   await ready(page); await frames(page);
   let value = await read(page);

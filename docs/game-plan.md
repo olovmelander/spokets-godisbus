@@ -35,7 +35,8 @@ after a five-angle review.
 with the causal opening, durable context, family rehearsal bodies, finale staging and local loops in
 Gården, Granskogen, Myren and Berget developed in a separate PR stack. `HANDOVER.md` records the current
 code, verification and deployment state. Main collectible/checkpoint identities and old-save progression
-remain intact; `RELEASED_CHAPTER` remains `null`. Final art, acting, broader spatial world work, a Byn
+remain intact; Olov requested the full story on the normal page on 10 October, so the release boundary
+is now `epilog` and Byn opens as its unnumbered bonus. Final art, acting, broader spatial world work, a Byn
 return loop, listening and family-device checkpoints remain open. The durations,
 budgets and hardware assumptions in the original proposal are starting values, not new measurements.
 Appendix A records the original planning checks.
