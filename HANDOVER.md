@@ -23,6 +23,8 @@
     Browser checks cover the opening through star choice, the transformation through the chapter ending,
     interruption/save recovery, all five reassurance layouts, deliberate cap boarding and the completed
     bridge's instructions. Large-text dialogue checks and 104 presentation tests pass after final staging.
+    The focused painting suite passes 8 checks; the story-door return passes 22 checks across both phone
+    orientations, including exact reduced-motion stillness after the camera finishes framing the card.
     The privacy check passes for tracked files and the build using its built-in metadata/path rules;
     this cloud environment has no private denylist or exiftool.
     Review captures: [`docs/shots/opening-emotion/`](docs/shots/opening-emotion/).

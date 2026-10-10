@@ -26,6 +26,7 @@ const server = await createServer({ root, cacheDir: join(root, '.vite/forest-puz
         let scene, camera; const before = Scene.prototype.onBeforeRender;
         Scene.prototype.onBeforeRender = function (...args) { if (this.getObjectByName('chase-ghost')) { scene = this; camera = args[2]; } before.apply(this, args); };
         export const renderedScene = () => scene;
+        export const cameraPosition = () => camera.position.toArray();
         export const projected = (x,y) => new Vector3(x,y,0).project(camera).toArray();
         export function corners(mesh) { return [[-0.5,-0.5],[0.5,0.5]].map(([x,y]) => mesh.localToWorld(new Vector3(x * mesh.geometry.parameters.width, y * mesh.geometry.parameters.height, 0)).project(camera).toArray()); }
       `;
@@ -188,8 +189,22 @@ try {
     const paused = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 10; i++) p.draw(0); return p.snapshot(); });
     check(`${name}: pause freezes clue entrance, location and simulation`, returned.sim === paused.sim && returned.opacity === paused.opacity && JSON.stringify(returned.at) === JSON.stringify(paused.at));
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    const calm = await page.evaluate(() => { const p = window.probe; p.draw(0.2); const a = p.snapshot(); p.draw(1); return { a, b: p.snapshot() }; });
-    check(`${name}: OS calm keeps the paper picture still`, JSON.stringify(calm.a.at) === JSON.stringify(calm.b.at));
+    await page.waitForFunction(() => matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const calm = await page.evaluate(() => {
+      const p = window.probe;
+      // The larger card follows the viewport clamp while the camera settles after the climb.
+      // Settle that framing before checking that reduced motion removes the picture's own drift.
+      let camera = JSON.stringify(p.f.cameraPosition()), settled = 0;
+      for (let i = 0; i < 40 && settled < 2; i++) {
+        p.draw(1);
+        const next = JSON.stringify(p.f.cameraPosition());
+        settled = next === camera ? settled + 1 : 0;
+        camera = next;
+      }
+      p.draw(0.2); const a = p.snapshot(); p.draw(1);
+      return { a, b: p.snapshot(), settled: settled === 2 };
+    });
+    check(`${name}: OS calm keeps the paper picture still after camera settling`, calm.settled && JSON.stringify(calm.a.at) === JSON.stringify(calm.b.at));
     const left = await page.evaluate(() => { const p = window.probe; p.walkTo(65.8); p.step({ act: true }); p.run(3); return p.snapshot(); });
     check(`${name}: returning below clears the local picture while retaining the saved discovery`, left.opacity === 0 && left.flags.includes('keepsake:vittra'));
     assert.deepEqual(errors, [], `${name}: browser errors`); await page.close();
