@@ -7,6 +7,7 @@ test-results/
 Thumbs.db
 .vite/
 .claude/
+scratch/
 
 # Private references and raw scans never enter the repository (plan §2.6)
 /art/private/

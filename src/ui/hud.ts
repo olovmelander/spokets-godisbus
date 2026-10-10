@@ -6,6 +6,7 @@ import type { Speaker, Verb } from '../sim/types';
 import { faceSvg } from './faces';
 import { verbIcon } from './verbs';
 import { candyRows } from './rolls';
+import { playVoice, stopVoice } from '../audio/voice-player';
 
 /**
  * What the page shows over the game while it is played: the candy bag in the corner (plan §4.3), the word
@@ -233,6 +234,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
     },
     advance() {
       if (!manual || readFor < 0.25) return false;
+      stopVoice();
       manual = false;
       left = 0;
       bubble.hidden = true;
@@ -240,6 +242,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       return true;
     },
     clear() {
+      stopVoice();
       queue.length = 0;
       manual = false;
       left = 0;
@@ -247,6 +250,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       bubble.hidden = true;
     },
     hush() {
+      stopVoice();
       // Scene transitions may remove passing remarks, never unread story lines.
       const unread = queue.filter((next) => next.read);
       queue.splice(0, queue.length, ...unread);
@@ -289,6 +293,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       }
       const next = queue.shift();
       if (!next) return;
+      playVoice(next.line);
       const text = lines[next.line]!;
       const goesOn = GOES_ON.has(next.line) && !bubble.hidden && spoken?.who === next.who;
       spoken = { who: next.who, texts: goesOn ? [...spoken!.texts, text].slice(-2) : [text] };
@@ -316,7 +321,10 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       byId('endTitle').textContent = title;
       byId('endKicker').textContent = kicker ?? '';
       byId('endKicker').hidden = !kicker;
-      if (closing) byId('endNext').textContent = closing;
+      if (closing) {
+        byId('endNext').textContent = closing;
+        playVoice(closing === sv.end.closing.epilog ? 'end_epilog' : 'end_byn');
+      }
       // The chapter's hidden candy: a sticker for each one found, an empty ring for each still out there.
       if (hidden && hidden.length > 0) {
         byId('endStickers').replaceChildren(...hidden.map((h) => sticker(h.kind, h.found)));

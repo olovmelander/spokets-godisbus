@@ -23,14 +23,17 @@ function* files(dir) {
 
 let js = 0;
 let boot = 0;
+let voices = 0;
 const rows = [];
 for (const path of files(DIST)) {
+  const relPath = relative(DIST, path).replaceAll('\\', '/');
   const raw = readFileSync(path);
   const ext = extname(path).toLowerCase();
   const served = COMPRESSED.has(ext) ? gzipSync(raw, { level: 9 }).length : raw.length;
   if (ext === '.js') js += served;
-  boot += served;
-  rows.push([relative(DIST, path).replaceAll('\\', '/'), raw.length, served]);
+  if (relPath.startsWith('audio/') || ext === '.mp3') voices += served;
+  else boot += served;
+  rows.push([relPath, raw.length, served]);
 }
 
 const kb = (bytes) => `${(bytes / 1024).toFixed(1)} KB`;
@@ -39,6 +42,7 @@ for (const [name, raw, served] of rows.sort((a, b) => b[2] - a[2])) {
 }
 console.log(`JS, gzipped:      ${kb(js)} of ${kb(JS_GZIP_MAX)}`);
 console.log(`Boot, as served:  ${kb(boot)} of ${kb(BOOT_MAX)}`);
+if (voices > 0) console.log(`Voices (audio):   ${kb(voices)}`);
 
 const broken = [];
 if (js > JS_GZIP_MAX) broken.push(`the JS is ${kb(js)} gzipped; the gate is ${kb(JS_GZIP_MAX)}`);

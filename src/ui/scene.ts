@@ -1,6 +1,7 @@
 import { sv } from '../content/sv';
 import type { SceneDef, SceneFrame, SceneStage } from '../sim/scene';
 import type { Device } from '../input/input';
+import { playVoice } from '../audio/voice-player';
 import './scene.css';
 export { sceneUiHtml } from './scene-html';
 
@@ -34,6 +35,7 @@ export function createSceneUi(doc: Document, advance: () => void) {
   byId('sceneNext').onclick = advance;
   const words: Record<string, string> = sv.scene;
   let shown = { bars: false, fade: -1, caption: '', captionOn: -1, title: '', titleOn: -1 };
+  let voicedWord: string | null = null;
   /** A game taken up again says where he is, on the card's scrap, for a moment. */
   let reminder: { text: string; from: number } | null = null;
   return {
@@ -66,7 +68,14 @@ export function createSceneUi(doc: Document, advance: () => void) {
         const age = t - word.at;
         if (age < 0 || age > word.seconds) continue;
         const on = Math.min(1, age / 0.6, (word.seconds - age) / 0.6);
-        if (word.kind === 'caption') { captionText = words[word.text] ?? ''; captionOn = on; }
+        if (word.kind === 'caption') {
+          captionText = words[word.text] ?? '';
+          captionOn = on;
+          if (word.text && word.text !== voicedWord && age > 0.05 && !covered) {
+            voicedWord = word.text;
+            playVoice(`scene_${word.text}`);
+          }
+        }
         else { titleText = words[word.text] ?? ''; titleOn = on; }
       }
       if (!captionText && reminder) {

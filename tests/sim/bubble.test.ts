@@ -123,6 +123,44 @@ describe('the glitter bubble', () => {
     expect(sim.curr.y).toBeCloseTo(0, 1);
     expect(sim.curr.grounded).toBe(true);
   });
+
+  it('toCheckpoint carries him back to checkpoint even while in a bubble', () => {
+    const chapter: ChapterData = {
+      id: 'water-test',
+      spawn: { x: 0, y: 0 },
+      checkpoints: [{ x: 0, y: 0 }],
+      goalX: 100,
+      ground: [{ x: -10, y: 0 }, { x: 5, y: 0 }, { x: 5, y: -10 }, { x: 15, y: -10 }, { x: 15, y: 0 }, { x: 30, y: 0 }],
+      water: [{ from: 5, to: 15, y: -5 }],
+      candy: [],
+    };
+    const sim = new Sim(chapter);
+    until(sim, 5, { x: 1 }, () => sim.curr.mode === 'bubble');
+    expect(sim.curr.mode).toBe('bubble');
+    sim.toCheckpoint();
+    expect(sim.curr.mode).toBe('bubble');
+    expect(until(sim, 3, {}, () => sim.curr.bubble === 0 && sim.curr.grounded)).toBe(true);
+    expect(sim.curr.x).toBeCloseTo(0, 0.5);
+    expect(sim.curr.y).toBeCloseTo(0, 0.5);
+  });
+
+  it('falling into water never chooses water as safe return ground', () => {
+    const chapter: ChapterData = {
+      id: 'eddy-test',
+      spawn: { x: 0, y: 0 },
+      goalX: 100,
+      ground: [{ x: -5, y: 0 }, { x: 5, y: 0 }, { x: 5, y: -10 }, { x: 15, y: -10 }, { x: 15, y: 0 }, { x: 25, y: 0 }],
+      water: [{ from: 5, to: 15, y: -5 }],
+      movers: [{ id: 'rescue', look: 'leaf', width: 2.9, height: 0.3, verb: 'pull', stops: [{ x: 10, y: -5.2 }, { x: 10, y: 0 }] }],
+      candy: [],
+    };
+    const sim = new Sim(chapter);
+    until(sim, 5, { x: 1 }, () => sim.curr.mode === 'bubble');
+    expect(sim.curr.mode).toBe('bubble');
+    expect(until(sim, 3, {}, () => sim.curr.bubble === 0 && sim.curr.grounded)).toBe(true);
+    expect(sim.curr.x).toBeLessThan(5);
+    expect(sim.curr.y).toBeCloseTo(0, 0.5);
+  });
 });
 
 describe('an edge with a long drop', () => {

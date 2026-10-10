@@ -927,12 +927,18 @@ export class Sim {
     this.scene?.cancel();
     this.resetChallenges(true);
     this.story = null;
-    if (this.state.kind === 'bubble') return;
     const to = sceneResumeAt(this.chapter.scenes, this.flags, this.checkpoints[this.checkpoint] ?? this.chapter.spawn);
     // Sent back to before a ride he has taken, he can take it again: otherwise he would be left on its near side.
     this.readyRides(to.x);
     this.safe.x = to.x;
     this.safe.y = to.y;
+    this.last.x = to.x;
+    this.last.y = to.y;
+    this.stoodFor = 0;
+    for (const slot of this.stood) {
+      slot.x = to.x;
+      slot.y = to.y;
+    }
     this.carry(true);
     this.state = { kind: 'bubble', fromX: this.curr.x, fromY: this.curr.y, t: 0 };
     this.curr = { ...this.curr, mode: 'bubble', bubble: Number.MIN_VALUE, verb: null, hook: null };
@@ -1542,6 +1548,8 @@ export class Sim {
     if (this.tussocks.some((t) => this.isOn(t))) return;
     // A moving ant column may have gone by the time the bubble returns. Use a firm rest ledge instead.
     if (this.movers.some((m) => m.def.cycle && Math.abs(p.x - m.x) <= m.def.width / 2 + ELOF_HALF_WIDTH && Math.abs(p.y - m.y - m.def.height) < 0.25)) return;
+    // In or near water is never safe ground to return to.
+    if ((this.chapter.water ?? []).some((w) => p.x >= w.from - 0.4 && p.x <= w.to + 0.4 && p.y < w.y + 0.8)) return;
     // Solid ground has to be under both his sides. A corner he only clips on the way down is not a place
     // to be put back on.
     const solid = (x: number) => Math.abs(this.groundBelow(x, p.y) - p.y) < 0.25;
@@ -1568,6 +1576,12 @@ export class Sim {
     const to = near ? back : this.last;
     this.safe.x = to.x;
     this.safe.y = to.y;
+    // If the chosen spot is in or near water, fall back to the checkpoint or spawn.
+    if ((this.chapter.water ?? []).some((w) => this.safe.x >= w.from - 0.5 && this.safe.x <= w.to + 0.5 && this.safe.y < w.y + 0.8)) {
+      const cp = this.checkpoints[this.checkpoint] ?? this.chapter.spawn;
+      this.safe.x = cp.x;
+      this.safe.y = cp.y;
+    }
   }
 
   /** Puts every trail candy within reach of Elof's middle in the bag. */

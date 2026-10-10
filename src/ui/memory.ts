@@ -2,6 +2,7 @@ import { lessMotion } from '../platform/motion';
 import { sv } from '../content/sv';
 import { use } from './icons';
 import './memory.css';
+import { playVoice, stopVoice } from '../audio/voice-player';
 
 import { MEMORIES } from './memory-art';
 export { MEMORIES } from './memory-art';
@@ -168,6 +169,7 @@ export function createMemory(doc: Document): Memory {
   let finish: (() => void) | null = null;
   const close = () => {
     if (!open) return;
+    stopVoice();
     open = false;
     returning = false;
     advance = null;
@@ -252,6 +254,7 @@ export function createMemory(doc: Document): Memory {
         const drawing = card.lastElementChild!;
         const words = story.captions[at]!;
         caption.textContent = words;
+        playVoice(`memory_${chapter}_${at + 1}`);
         card.setAttribute('aria-label', words);
         progress.textContent = `${at + 1} / ${pictures.length}`;
         dots.innerHTML = pictures.map((_, i) => `<i class="${i === at ? 'current' : i < at ? 'read' : ''}"></i>`).join('');

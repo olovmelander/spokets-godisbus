@@ -159,6 +159,7 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
   byId('titleSettingsBtn').addEventListener('click', () => handlers.onSettings?.());
   // Börja om från början is on the players' page, and its question goes back there (first-minutes.md row 7).
   byId('startOverBtn').addEventListener('click', () => confirm(sv.players.restartAsk.replace('{name}', state.players.find(p => p.id === state.currentId)?.name ?? 'Elof'), handlers.onStartOver, 'titlePlayers'));
+  byId('titleStartOverBtn').addEventListener('click', () => confirm(sv.players.restartAsk.replace('{name}', state.players.find(p => p.id === state.currentId)?.name ?? 'Elof'), handlers.onStartOver, 'titleFront'));
   byId('playerConfirmNo').addEventListener('click', () => {
     if (busy) return;
     if (confirmReturn === 'titlePlayers') players();
@@ -229,9 +230,11 @@ export function createTitle(doc: Document, handlers: TitleHandlers): Title {
       const current = state.players.find(p => p.id === state.currentId);
       byId('currentPlayer').textContent = current?.name ?? sv.players.new;
       byId('startOverBtn').hidden = !saved && !state.unreadable;
+      byId('titleStartOverBtn').hidden = !saved && !state.unreadable;
       byId('playersBtn').hidden = !state.available && state.players.length === 0;
       const indexUnreadable = state.unreadable && state.players.length === 0;
       byId<HTMLButtonElement>('startOverBtn').disabled = indexUnreadable;
+      byId<HTMLButtonElement>('titleStartOverBtn').disabled = indexUnreadable || state.unreadable;
       byId('playerUnreadable').textContent = indexUnreadable ? sv.players.indexUnreadable : sv.players.preserved;
       byId<HTMLButtonElement>('newPlayerBtn').disabled = !state.available || indexUnreadable;
       for (const id of ['startBtn', 'startAventyr', 'startLugnt']) byId<HTMLButtonElement>(id).disabled = state.unreadable;

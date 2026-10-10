@@ -8,6 +8,7 @@ import { Game } from './app/game';
 import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
+import { setVoiceSettings, stopVoice } from './audio/voice-player';
 import { BONUS, STORY, bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, nextAvailable } from './content/chapters';
 import { album, albumComplete, foundFlag, KINDS } from './content/kinds';
 import { lostFlag, lostFound } from './content/lost';
@@ -227,13 +228,25 @@ function start(): void {
   // In a debug session, ?flags=a,b starts with those set: a moment late in a chapter can be looked at alone.
   const seeded = debugOn ? (params.get('flags') ?? '').split(',').filter((flag) => flag !== '') : [];
   const carried = [...(chapter.id === 'epilog' ? [...lostFound(save.flags).map(lostFlag), ...cobbleMemory(save.flags)] : []), ...seeded];
+  const startCheckpoint = at
+    ? -1
+    : (courseId(save.chapter) === chapter.id ? save.checkpoint : (save.checkpoints?.[chapter.id] ?? -1));
+  const chapterFlags = (save.flags[chapter.id] ?? []).filter((flag) => {
+    if (flag === 'goal') return false;
+    // When starting a chapter from its beginning, in-chapter spoken remarks and the scene card
+    // must not be silenced by flags saved from an earlier completion.
+    if (startCheckpoint < 0 && (flag.startsWith('scene:') || (flag.startsWith('beat:') && flag !== 'beat:named'))) return false;
+    return true;
+  });
   const from: SimStart =
     at
       ? (carried.length > 0 ? { flags: carried } : {})
       : {
-          checkpoint: courseId(save.chapter) === chapter.id ? save.checkpoint : (save.checkpoints?.[chapter.id] ?? -1), collected: save.candy[chapter.id] ?? [], side: save.side?.[chapter.id] ?? [], placed: save.placed[chapter.id] ?? [],
-          // Reaching the end is not kept: a game taken up again can reach it again.
-          flags: [...(save.flags[chapter.id] ?? []).filter((flag) => flag !== 'goal'), ...carried],
+          checkpoint: startCheckpoint,
+          collected: save.candy[chapter.id] ?? [],
+          side: save.side?.[chapter.id] ?? [],
+          placed: save.placed[chapter.id] ?? [],
+          flags: [...chapterFlags, ...carried],
         };
 
   const game = new Game(chapter, simOptions(settings), from);
@@ -310,6 +323,7 @@ function start(): void {
     audio.setEffects(settings.sound ? settings.effectsVolume : 0);
     audio.setMusic(settings.music ? settings.musicVolume : 0);
     audio.setLoud(settings.loud);
+    setVoiceSettings(settings.sound, settings.effectsVolume);
     document.body.classList.toggle('lefty', settings.lefty);
     document.body.classList.toggle('big-text', settings.bigText);
     applyMotion(document, settings.calm);
@@ -436,6 +450,7 @@ function start(): void {
   function openPause(page?: PausePage): void {
     if (menuOpen() || platformBlocked()) return;
     paused = true;
+    stopVoice();
     // The world stops, and the tune goes on under the paper (docs/ux-audit/style-and-sound.md rows 20 and 21).
     audio.menu(true);
     audio.ui('open');

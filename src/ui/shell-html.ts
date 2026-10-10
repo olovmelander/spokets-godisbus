@@ -4,7 +4,7 @@ import { sv } from '../content/sv';
 import { endingHtml } from './ending';
 import { photoAlbumHtml } from './photos';
 import { storyPanelHtml } from './story';
-import { BACK, CHECK, CROSS, NEXT, line, svg, use } from './icons';
+import { AGAIN, BACK, CHECK, CROSS, NEXT, line, svg, use } from './icons';
 import { keycapsOf } from './keys';
 
 // Every picture on the page is a plain shape drawn in sprite.ts, here or in icons.ts: no logotypes, no brand marks
@@ -224,6 +224,7 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
              <button class="start-style" id="startLugnt" type="button">${START_STROLL}<b>${p.lugnt}</b><small>${p.lugntHint}</small></button>
            </div>
            <button class="wide go" id="startBtn" type="button">${PLAY}<span class="begin">${sv.start.begin}</span><span class="resume">${sv.start.resume}</span></button>
+           <button class="wide small title-restart" id="titleStartOverBtn" type="button" hidden>${AGAIN}<span>${sv.start.over}</span></button>
            <div class="round-row">
              <button class="round" id="playersBtn" type="button" hidden>${PEOPLE}<span id="currentPlayer"></span></button>
              <button class="round" id="titleSettingsBtn" type="button">${COG}<span>${sv.players.settings}</span></button>

@@ -20,3 +20,4 @@ export const BACK = use('back');
 export const PREVIOUS = use('previous');
 export const NEXT = use('next');
 export const CHECK = use('check');
+export const AGAIN = use('again');

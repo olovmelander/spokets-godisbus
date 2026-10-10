@@ -1,0 +1,709 @@
+{
+  "again": {
+    "speaker": "elof",
+    "text": "En stjärna till. Nu handlar vi!",
+    "tag": "[cute 6-year-old boy, excited and happy]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:27.382Z"
+  },
+  "lake": {
+    "speaker": "elof",
+    "text": "En sjö! Mitt på gatan.",
+    "tag": "[cute little boy in wonder, excited]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:28.649Z"
+  },
+  "shop": {
+    "speaker": "elof",
+    "text": "Framme! Det luktar godis.",
+    "tag": "[joyful little boy, sniffing sweet candy]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:30.084Z"
+  },
+  "shopInside": {
+    "speaker": "elof",
+    "text": "Godiset är större än jag!",
+    "tag": "[amazed little boy, looking up in awe]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:31.369Z"
+  },
+  "shopBag": {
+    "speaker": "elof",
+    "text": "En påse att dela på!",
+    "tag": "[happy little boy, proud child]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:32.497Z"
+  },
+  "stomp": {
+    "speaker": "elof",
+    "text": "Ge tillbaka mitt godis!",
+    "tag": "[stomping small feet, determined child shout]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:33.694Z"
+  },
+  "gardenHome": {
+    "speaker": "elof",
+    "text": "Lekstugan! Jag är fortfarande hemma.",
+    "tag": "[relieved little boy, recognizing home]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:35.117Z"
+  },
+  "gardenKota": {
+    "speaker": "elof",
+    "text": "Och fjällkåtan står vid björkarna.",
+    "tag": "[gentle little boy, observational]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:36.325Z"
+  },
+  "gardenFound": {
+    "speaker": "elof",
+    "text": "En lövteckning! Den är Moas.",
+    "tag": "[happy little boy, discovering]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:37.609Z"
+  },
+  "givesAway": {
+    "speaker": "elof",
+    "text": "Spöket ger bort mitt godis!?",
+    "tag": "[puzzled little boy, surprised whisper]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:39.049Z"
+  },
+  "vittraBerry": {
+    "speaker": "elof",
+    "text": "Ett lingon till er också.",
+    "tag": "[gentle, friendly small boy whisper]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:40.103Z"
+  },
+  "forestVittraClue": {
+    "speaker": "elof",
+    "text": "En liten bild från vittrorna.",
+    "tag": "[curious, thoughtful little boy]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:41.229Z"
+  },
+  "forestTrial": {
+    "speaker": "elof",
+    "text": "Oj! Nästan. Den större väger mer.",
+    "tag": "[thinking little boy, working it out]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:42.885Z"
+  },
+  "thanked": {
+    "speaker": "elof",
+    "text": "Spöket tackade mig!",
+    "tag": "[warmly surprised little boy, gentle smile]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:44.070Z"
+  },
+  "bogChickLight": {
+    "speaker": "elof",
+    "text": "Följ mitt ljus hem till din familj.",
+    "tag": "[soft, comforting little boy whisper]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:45.448Z"
+  },
+  "bogLightReturn": {
+    "speaker": "elof",
+    "text": "Nu går spången åt båda hållen!",
+    "tag": "[cheerful discovery, happy little boy]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:46.605Z"
+  },
+  "fetch": {
+    "speaker": "elof",
+    "text": "Spöket vill hämta hem min trägubbe!",
+    "tag": "[sudden realization, thoughtful little boy]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:47.915Z"
+  },
+  "mountainLoop": {
+    "speaker": "elof",
+    "text": "Snöret runt röset. En väg ner!",
+    "tag": "[satisfied little boy, problem solved]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:49.191Z"
+  },
+  "eyesAlive": {
+    "speaker": "elof",
+    "text": "Du blinkade! Kan du se mig?",
+    "tag": "[whispering in awe, breathless little boy]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:50.408Z"
+  },
+  "starWonder": {
+    "speaker": "elof",
+    "text": "En godisstjärna … den lyser!",
+    "tag": "[in wonder, gentle gasp from a small boy]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:52.170Z"
+  },
+  "tinyCall": {
+    "speaker": "elof",
+    "text": "Mamma? Var är du?",
+    "tag": "[anxious, small 6-year-old boy voice, calling out]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:53.488Z"
+  },
+  "notHurt": {
+    "speaker": "elof",
+    "text": "Nej. Men allting är jättestort.",
+    "tag": "[reassuring, slightly overwhelmed small boy]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:54.865Z"
+  },
+  "sameSize": {
+    "speaker": "elof",
+    "text": "Jag är lika liten som spöket!",
+    "tag": "[amazed small boy, slightly nervous laugh]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:56.065Z"
+  },
+  "goldInBag": {
+    "speaker": "elof",
+    "text": "Det ligger kvar i spökets påse!",
+    "tag": "[hopeful little boy, pointing]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:57.241Z"
+  },
+  "findBag": {
+    "speaker": "elof",
+    "text": "Jag följer godiset och hittar påsen!",
+    "tag": "[determined, brave 6-year-old child voice]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:58.472Z"
+  },
+  "snuck": {
+    "speaker": "elof",
+    "text": "Det smiter!",
+    "tag": "[alert little boy, shouting to family]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:49:59.415Z"
+  },
+  "stolenBag": {
+    "speaker": "elof",
+    "text": "Pappa! Spöket tog min godispåse!",
+    "tag": "[calling out loudly, urgent little boy]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:50:00.610Z"
+  },
+  "named": {
+    "speaker": "elof",
+    "text": "Du ska heta Klonk!",
+    "tag": "[joyful, affectionate declaration from a little boy]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:50:01.769Z"
+  },
+  "carved": {
+    "speaker": "elof",
+    "text": "Jag kan tälja!",
+    "tag": "[proud little boy, beaming with joy]",
+    "voiceId": "dJzZcvlDgItQyHtAWC1J",
+    "generatedAt": "2026-10-10T11:50:02.724Z"
+  },
+  "clipBack": {
+    "speaker": "moa",
+    "text": "Mitt hårspänne! Tack, lillebror!",
+    "tag": "[delighted, hugging brother]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:21:53.434Z"
+  },
+  "tiny": {
+    "speaker": "moa",
+    "text": "Lillebror?! Du är ju pytteliten!",
+    "tag": "[startled, gasping in shock]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:21:54.765Z"
+  },
+  "rootFingers": {
+    "speaker": "moa",
+    "text": "Där kröp spöket in. Jag får inte plats!",
+    "tag": "[worried, trying to reach]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:21:56.143Z"
+  },
+  "gardenReady": {
+    "speaker": "moa",
+    "text": "Planet väntar. Vi lyfter när du vill.",
+    "tag": "[encouraging, gentle]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:21:57.412Z"
+  },
+  "familyMoa": {
+    "speaker": "moa",
+    "text": "Jag hjälper dig vidare, lillebror.",
+    "tag": "[warm, caring big sister]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:21:58.651Z"
+  },
+  "familyMoaPlan": {
+    "speaker": "moa",
+    "text": "Mitt pappersplan når skogskanten.",
+    "tag": "[confident, enthusiastic]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:21:59.861Z"
+  },
+  "gardenPocket": {
+    "speaker": "moa",
+    "text": "Min lövteckning föll under spånbron!",
+    "tag": "[sad, worried sigh]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:22:01.282Z"
+  },
+  "gardenThanks": {
+    "speaker": "moa",
+    "text": "Du hittade den! Vi hjälps åt, lillebror.",
+    "tag": "[relieved, loving and proud]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:22:02.678Z"
+  },
+  "bagGlitters": {
+    "speaker": "moa",
+    "text": "Två godisar lyser i påsen!",
+    "tag": "[whispering in awe]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:22:03.750Z"
+  },
+  "sawGlitter": {
+    "speaker": "moa",
+    "text": "Spökets magi hamnade i godispåsen.",
+    "tag": "[explaining, gentle wonder]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:22:04.993Z"
+  },
+  "starMagic": {
+    "speaker": "moa",
+    "text": "Du smakade på stjärnan. Då blev du liten.",
+    "tag": "[gentle explanation, understanding]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:22:06.300Z"
+  },
+  "mapForYou": {
+    "speaker": "moa",
+    "text": "Jag ritar en karta åt dig!",
+    "tag": "[enthusiastic, creative]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:22:07.348Z"
+  },
+  "fallenStar": {
+    "speaker": "moa",
+    "text": "Där! Stjärnan trillade ur spökets påse.",
+    "tag": "[calling out, pointing excitedly]",
+    "voiceId": "1Iztu4UHnTb9SUjJcpS1",
+    "generatedAt": "2026-10-10T11:22:08.735Z"
+  },
+  "marbleBack": {
+    "speaker": "bertil",
+    "text": "Kula! Min kula!",
+    "tag": "[excited older brother, shouting happily]",
+    "voiceId": "ISDDl0xPNLMD73L5PQj4",
+    "generatedAt": "2026-10-10T11:50:03.874Z"
+  },
+  "familyBertil": {
+    "speaker": "bertil",
+    "text": "Min keps blir din båt, lillebror.",
+    "tag": "[proud, cheerful older brother]",
+    "voiceId": "ISDDl0xPNLMD73L5PQj4",
+    "generatedAt": "2026-10-10T11:50:05.097Z"
+  },
+  "familyCapReady": {
+    "speaker": "bertil",
+    "text": "Kliv i när du vill. Jag hejar på dig.",
+    "tag": "[encouraging, supportive older brother]",
+    "voiceId": "ISDDl0xPNLMD73L5PQj4",
+    "generatedAt": "2026-10-10T11:50:06.345Z"
+  },
+  "heja": {
+    "speaker": "bertil",
+    "text": "Heja lillebror!",
+    "tag": "[loud cheering, enthusiastic older brother]",
+    "voiceId": "ISDDl0xPNLMD73L5PQj4",
+    "generatedAt": "2026-10-10T11:50:07.369Z"
+  },
+  "familyMamma": {
+    "speaker": "mamma",
+    "text": "Jag lägger en stock över vattnet.",
+    "tag": "[warm, maternal, calm]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:08.490Z"
+  },
+  "familyBridgeReady": {
+    "speaker": "mamma",
+    "text": "Så! Följ stocken över. Jag är nära.",
+    "tag": "[encouraging, reassuring mother]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:09.923Z"
+  },
+  "familyBraid": {
+    "speaker": "mamma",
+    "text": "Min fläta blir en stege upp till mig.",
+    "tag": "[warm, playful and gentle]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:11.369Z"
+  },
+  "familyBraidReady": {
+    "speaker": "mamma",
+    "text": "Ta tag i flätan och klättra upp.",
+    "tag": "[supportive, encouraging]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:12.492Z"
+  },
+  "spangen": {
+    "speaker": "mamma",
+    "text": "På myren går vi på spången.",
+    "tag": "[gentle motherly reminder]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:13.579Z"
+  },
+  "bogFamilyHome": {
+    "speaker": "mamma",
+    "text": "Ungen är hemma. Vill du ha en spång?",
+    "tag": "[pleased, kind]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:14.785Z"
+  },
+  "bogBridgeReady": {
+    "speaker": "mamma",
+    "text": "Över dimman, och tillbaka igen.",
+    "tag": "[warm, satisfied]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:16.004Z"
+  },
+  "notYet": {
+    "speaker": "mamma",
+    "text": "Bertil! Godiset öppnar vi ikväll.",
+    "tag": "[loving reprimand, gentle smile]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:17.355Z"
+  },
+  "jayWindow": {
+    "speaker": "mamma",
+    "text": "Titta! En lavskrika!",
+    "tag": "[delighted whisper, looking out]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:18.567Z"
+  },
+  "safeHere": {
+    "speaker": "mamma",
+    "text": "Jag är här. Du är inte ensam.",
+    "tag": "[soothing, protective mother]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:19.692Z"
+  },
+  "dropped": {
+    "speaker": "mamma",
+    "text": "Hoppsan! Vem tappade spöket?",
+    "tag": "[gentle, playful]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:20.787Z"
+  },
+  "hurt": {
+    "speaker": "mamma",
+    "text": "Gör det ont?",
+    "tag": "[caring, concerned mother]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:21.767Z"
+  },
+  "nearYou": {
+    "speaker": "mamma",
+    "text": "Vi är nära dig hela tiden.",
+    "tag": "[warm promise, soothing]",
+    "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+    "generatedAt": "2026-10-10T11:50:22.975Z"
+  },
+  "coinBack": {
+    "speaker": "pappa",
+    "text": "En krona! Den får du behålla.",
+    "tag": "[warm chuckle, generous dad]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:24.489Z"
+  },
+  "cobbles1": {
+    "speaker": "pappa",
+    "text": "Stenarna på berget var en strand.",
+    "tag": "[storytelling, gentle dad voice]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:25.744Z"
+  },
+  "cobbles2": {
+    "speaker": "pappa",
+    "text": "Havet nådde ända dit en gång.",
+    "tag": "[calm, educational, gentle]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:26.888Z"
+  },
+  "cobbles3": {
+    "speaker": "pappa",
+    "text": "Vågorna gjorde dem runda.",
+    "tag": "[gentle, educational]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:27.889Z"
+  },
+  "familyPappa": {
+    "speaker": "pappa",
+    "text": "Här är för långt att hoppa, Elof.",
+    "tag": "[calm, caring father]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:29.122Z"
+  },
+  "familySeesaw": {
+    "speaker": "pappa",
+    "text": "Jag håller brädan. Rulla hit en kotte.",
+    "tag": "[steady, guiding craftsman]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:30.329Z"
+  },
+  "familySeesawReady": {
+    "speaker": "pappa",
+    "text": "Bra! Ställ dig på den låga änden.",
+    "tag": "[encouraging, cheerful]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:31.687Z"
+  },
+  "first1": {
+    "speaker": "pappa",
+    "text": "Min allra första trägubbe …",
+    "tag": "[nostalgic, emotional, soft]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:32.967Z"
+  },
+  "first2": {
+    "speaker": "pappa",
+    "text": "Den täljde jag till dig",
+    "tag": "[deeply loving, tender]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:34.107Z"
+  },
+  "first3": {
+    "speaker": "pappa",
+    "text": "när du var liten, Elof.",
+    "tag": "[tender fatherly memory]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:35.278Z"
+  },
+  "first4": {
+    "speaker": "pappa",
+    "text": "Vi tappade den här uppe.",
+    "tag": "[gentle sadness, lingering regret]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:36.444Z"
+  },
+  "newGhost": {
+    "speaker": "pappa",
+    "text": "Jag har täljt ett spöke. Måla ögonen!",
+    "tag": "[proud craftsman, warm invitation]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:37.768Z"
+  },
+  "goldHope": {
+    "speaker": "pappa",
+    "text": "Guldgodiset kan göra dig stor igen.",
+    "tag": "[reassuring, gentle confidence]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:39.047Z"
+  },
+  "onlyWood": {
+    "speaker": "pappa",
+    "text": "Det är ju bara trä.",
+    "tag": "[matter of fact, calm]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:40.165Z"
+  },
+  "followTrail": {
+    "speaker": "pappa",
+    "text": "Följ godisspåret, Elof.",
+    "tag": "[encouraging guidance, warm]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:41.347Z"
+  },
+  "away": {
+    "speaker": "pappa",
+    "text": "Alltid bort från kroppen.",
+    "tag": "[kind teacher, careful instruction]",
+    "voiceId": "wVebHqxy2EFBILywVrdC",
+    "generatedAt": "2026-10-10T11:50:42.566Z"
+  },
+  "klonk": {
+    "speaker": "spoket",
+    "text": "Klonk, klonk!",
+    "tag": "[playful wooden voice, cheerful]",
+    "voiceId": "N2lVS1w4EtoT3dr4eOWO",
+    "generatedAt": "2026-10-10T11:22:48.733Z"
+  },
+  "scene_title": {
+    "speaker": "storyteller",
+    "text": "Elof och det stora godisäventyret.",
+    "tag": "[warm storyteller, inviting, slow pace]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:22:50.526Z"
+  },
+  "scene_morning": {
+    "speaker": "storyteller",
+    "text": "Lördagsmorgon.",
+    "tag": "[cozy morning storytelling, soft]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:22:51.588Z"
+  },
+  "scene_garden": {
+    "speaker": "storyteller",
+    "text": "Gården. Klockan tio.",
+    "tag": "[fairytale narrator, peaceful]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:22:52.786Z"
+  },
+  "scene_granskog": {
+    "speaker": "storyteller",
+    "text": "Granskogen. Halv tolv.",
+    "tag": "[fairytale narrator, atmospheric]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:22:53.897Z"
+  },
+  "scene_myren": {
+    "speaker": "storyteller",
+    "text": "Myren. Halv fem.",
+    "tag": "[mysterious, gentle mist narrator]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:22:55.040Z"
+  },
+  "scene_berget": {
+    "speaker": "storyteller",
+    "text": "Berget. Klockan sex.",
+    "tag": "[grand, quiet mountain narrator]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:22:56.205Z"
+  },
+  "scene_norrsken": {
+    "speaker": "storyteller",
+    "text": "Norrskenet. I skymningen.",
+    "tag": "[magical, awe-inspiring narrator]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:22:57.428Z"
+  },
+  "scene_epilog": {
+    "speaker": "storyteller",
+    "text": "Godiskalaset. Klockan nio.",
+    "tag": "[warm, cozy home narrator]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:22:58.635Z"
+  },
+  "scene_byn": {
+    "speaker": "storyteller",
+    "text": "Byn. En vecka senare.",
+    "tag": "[cheerful village stroll narrator]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:22:59.838Z"
+  },
+  "memory_garden_1": {
+    "speaker": "storyteller",
+    "text": "Pappa täljer en liten trägubbe. Elof tittar på.",
+    "tag": "[warm nostalgia, gentle pace]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:01.338Z"
+  },
+  "memory_garden_2": {
+    "speaker": "storyteller",
+    "text": "Pappa ger trägubben till Elof. Den är gjord bara för honom.",
+    "tag": "[warm nostalgia, gentle pace]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:03.022Z"
+  },
+  "memory_garden_3": {
+    "speaker": "storyteller",
+    "text": "Det är Elof som liten! Trägubben blir hans vän.",
+    "tag": "[warm nostalgia, smiling]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:04.488Z"
+  },
+  "memory_granskog_1": {
+    "speaker": "storyteller",
+    "text": "Elof tar med trägubben på familjens skogspromenad.",
+    "tag": "[warm nostalgia, storytelling]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:06.059Z"
+  },
+  "memory_granskog_2": {
+    "speaker": "storyteller",
+    "text": "Elof sätter sin vän på en stubbe. De delar på lördagsgodiset.",
+    "tag": "[warm nostalgia, cozy]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:07.775Z"
+  },
+  "memory_granskog_3": {
+    "speaker": "storyteller",
+    "text": "En godis till dig, en till mig. Pappa tar ett foto.",
+    "tag": "[warm nostalgia, tender]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:09.227Z"
+  },
+  "memory_myren_1": {
+    "speaker": "storyteller",
+    "text": "Familjen går över myren. Elof åker på Pappas axlar.",
+    "tag": "[warm nostalgia, storytelling]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:10.808Z"
+  },
+  "memory_myren_2": {
+    "speaker": "storyteller",
+    "text": "Elof lyfter trägubben så att den också får se.",
+    "tag": "[warm nostalgia, tender]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:12.357Z"
+  },
+  "memory_myren_3": {
+    "speaker": "storyteller",
+    "text": "Långt borta syns berget med den gamla tallen. Dit är de på väg.",
+    "tag": "[warm nostalgia, looking into distance]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:14.019Z"
+  },
+  "memory_berget_1": {
+    "speaker": "storyteller",
+    "text": "Vid den gamla tallen ställer Elof trägubben på en sten.",
+    "tag": "[gentle storytelling, quiet tone]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:15.331Z"
+  },
+  "memory_berget_2": {
+    "speaker": "storyteller",
+    "text": "En vindpust! Trägubben faller ner i en djup spricka.",
+    "tag": "[soft, slight suspense, dramatic]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:16.988Z"
+  },
+  "memory_berget_3": {
+    "speaker": "storyteller",
+    "text": "Elof lämnar sin sista godis vid sprickan, till sin vän.",
+    "tag": "[tender sadness, quiet child kindness]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:18.522Z"
+  },
+  "memory_berget_4": {
+    "speaker": "storyteller",
+    "text": "Familjen måste gå hem. Trägubben blir ensam kvar på berget.",
+    "tag": "[poignant, gentle and wistful]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:20.011Z"
+  },
+  "end_epilog": {
+    "speaker": "storyteller",
+    "text": "Klonk kunde inte säga det med ord. Men Elof förstod.",
+    "tag": "[tender, emotionally resonant fairytale conclusion]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:21.765Z"
+  },
+  "end_window": {
+    "speaker": "storyteller",
+    "text": "Elofs lilla trägubbe står i månljuset. Dess målade ögon blinkar.",
+    "tag": "[gentle, magical bedtime ending]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:23.665Z"
+  },
+  "end_byn": {
+    "speaker": "storyteller",
+    "text": "Lördagsgodiset är köpt. Nu går vi hem.",
+    "tag": "[cheerful, contented stroll home]",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
+    "generatedAt": "2026-10-10T11:23:25.064Z"
+  }
+}

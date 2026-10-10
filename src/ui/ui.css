@@ -2498,6 +2498,11 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   .title #startBtn {
     min-height: 56px;
   }
+
+  .title #titleStartOverBtn {
+    min-height: 36px;
+    font-size: 14px;
+  }
 }
 
 /* A first start: the two play styles are the start buttons, Äventyr the larger (row 12). */
@@ -2509,6 +2514,7 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 
 .title[data-saved='true'] .start-styles,
 .title[data-saved='false'] #startBtn,
+.title[data-saved='false'] #titleStartOverBtn,
 .title[data-saved='false'] #titleStory {
   display: none;
 }
@@ -2668,6 +2674,27 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   font-weight: 400;
   font-size: 16px;
   text-decoration: underline;
+}
+
+.title #titleStartOverBtn {
+  min-height: 44px;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 14px;
+  opacity: 0.9;
+}
+
+.title #titleStartOverBtn:hover,
+.title #titleStartOverBtn:focus-visible {
+  text-decoration: underline;
+  opacity: 1;
+}
+
+.title #titleStartOverBtn svg {
+  width: 20px;
+  height: 20px;
 }
 
 /* A chapter code: a line at the page's foot, "Kod till nästa kapitel: GRAN KOTTE MOSSA" (plan §6.9; row 8). */

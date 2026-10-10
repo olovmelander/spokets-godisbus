@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Provlyssna röster för hela familjen</title>
+  <style>
+    :root {
+      --bg: #14111f;
+      --card-bg: #1e192c;
+      --border: #332b45;
+      --text: #f0ecfa;
+      --muted: #b1a7c7;
+      --accent: #ffd166;
+      --green: #06d6a0;
+      --pink: #ef476f;
+      --blue: #118ab2;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 860px;
+      margin: 32px auto;
+      padding: 0 20px 60px 20px;
+      line-height: 1.5;
+    }
+    h1 { color: var(--accent); margin-bottom: 6px; font-size: 1.8rem; }
+    p.lead { color: var(--muted); margin-top: 0; margin-bottom: 24px; font-size: 1.05rem; }
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 36px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border);
+      font-size: 1.35rem;
+    }
+    h2.elof { color: #ffd166; border-color: #ffd16644; }
+    h2.bertil { color: #f78c6b; border-color: #f78c6b44; }
+    h2.moa { color: #ef476f; border-color: #ef476f44; }
+    h2.mamma { color: #06d6a0; border-color: #06d6a044; }
+    h2.pappa { color: #118ab2; border-color: #118ab244; }
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      transition: transform 0.1s ease, border-color 0.1s ease;
+    }
+    .card:hover {
+      border-color: #554873;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+    .card h3 { margin: 0; font-size: 1.05rem; color: #fff; }
+    .card p { margin: 0 0 10px 0; color: var(--muted); font-size: 0.9rem; }
+    audio { width: 100%; height: 36px; outline: none; }
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      background: #2e2640;
+      color: var(--accent);
+      font-weight: 500;
+    }
+    .badge.chosen {
+      background: var(--green);
+      color: #0b1e16;
+      font-weight: bold;
+    }
+    .badge.recommended {
+      background: #ffd166;
+      color: #2b1f02;
+      font-weight: bold;
+    }
+    .quote {
+      font-style: italic;
+      color: #ded7ee;
+    }
+  </style>
+</head>
+<body>
+  <h1>🍬 Provlyssna röster för hela familjen</h1>
+  <p class="lead">Klicka på play-knapparna nedan för att jämföra röstkandidaterna med svenskt uttal i ElevenLabs v4.</p>
+
+  <!-- ELOF -->
+  <h2 class="elof">🧒 Elof (Lillebror, ~6–7 år)</h2>
+  <div class="card">
+    <div class="card-header">
+      <h3>Elin som ung Elof <span class="badge chosen">Vald! Liten 6–7-årig kille</span></h3>
+    </div>
+    <p><span class="quote">"En stjärna till! Nu handlar vi!"</span> – Ljus, söt och genuint barnslig röst med full energi.</p>
+    <audio controls src="audio/test_candidates/elof_elin_as_elof.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Olivia som ung Elof</h3>
+    </div>
+    <p><span class="quote">"En stjärna till! Nu handlar vi!"</span> – Sprallig och glad liten kille.</p>
+    <audio controls src="audio/test_candidates/elof_olivia_as_elof.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Filip (Förra versionen)</h3>
+    </div>
+    <p><span class="quote">"En stjärna till. Nu handlar vi!"</span> – Lät lite äldre (passar nu istället som storebror Bertil!).</p>
+    <audio controls src="audio/voices/again.mp3"></audio>
+  </div>
+
+  <!-- BERTIL -->
+  <h2 class="bertil">👦 Bertil (Storebror)</h2>
+  <div class="card">
+    <div class="card-header">
+      <h3>Filip som storebror Bertil <span class="badge chosen">Vald! Energisk storebror</span></h3>
+    </div>
+    <p><span class="quote">"Heja lillebror! Min keps blir din båt, lillebror."</span> – Pigg, stöttande och 100% svensk utan brytning.</p>
+    <audio controls src="audio/test_candidates/bertil_filip_as_bertil.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Simon (Svensk ung kille)</h3>
+    </div>
+    <p><span class="quote">"Heja lillebror! Min keps blir din båt, lillebror."</span> – Varm västsvensk kille.</p>
+    <audio controls src="audio/test_candidates/bertil_simon_as_bertil.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Liam (Förra versionen)</h3>
+    </div>
+    <p><span class="quote">"Heja lillebror!"</span> – Den tidigare versionen som lät lite norsk/äldre.</p>
+    <audio controls src="audio/voices/heja.mp3"></audio>
+  </div>
+
+  <!-- MOA -->
+  <h2 class="moa">👧 Moa (Storasyster, ~10–12 år)</h2>
+  <div class="card">
+    <div class="card-header">
+      <h3>Alternativ 1: Anna <span class="badge chosen">Nuvarande röst</span></h3>
+    </div>
+    <p><span class="quote">"Mitt hårspänne! Tack, lillebror! Jag hjälper dig vidare."</span> – Melodisk, klar och trygg svensk tjejröst.</p>
+    <audio controls src="audio/test_candidates/moa_anna_current.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Alternativ 2: Olivia <span class="badge recommended">Rekommenderad – Pigg & ungdomlig</span></h3>
+    </div>
+    <p><span class="quote">"Mitt hårspänne! Tack, lillebror! Jag hjälper dig vidare."</span> – Mycket pigg, ungdomlig och levande tjejröst.</p>
+    <audio controls src="audio/test_candidates/moa_olivia_sister.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Alternativ 3: Saga</h3>
+    </div>
+    <p><span class="quote">"Mitt hårspänne! Tack, lillebror! Jag hjälper dig vidare."</span> – Glad, modern svensk tjejröst.</p>
+    <audio controls src="audio/test_candidates/moa_saga_sister.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Alternativ 4: Elin</h3>
+    </div>
+    <p><span class="quote">"Mitt hårspänne! Tack, lillebror! Jag hjälper dig vidare."</span> – Mjuk, snäll och omtänksam storasyster.</p>
+    <audio controls src="audio/test_candidates/moa_elin_sister.mp3"></audio>
+  </div>
+
+  <!-- MAMMA SOFIE -->
+  <h2 class="mamma">👩 Mamma Sofie (Mamma)</h2>
+  <div class="card">
+    <div class="card-header">
+      <h3>Alternativ 1: Evelina <span class="badge recommended">Rekommenderad – Varm & naturlig svensk mamma</span></h3>
+    </div>
+    <p><span class="quote">"Jag lägger en stock över vattnet. Jag är här, Elof. Du är inte ensam."</span> – Varm, lugn, empatisk och naturlig svensk modersröst.</p>
+    <audio controls src="audio/test_candidates/mamma_evelina_mamma.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Alternativ 2: Louise</h3>
+    </div>
+    <p><span class="quote">"Jag lägger en stock över vattnet. Jag är här, Elof. Du är inte ensam."</span> – Rofylld, mjuk och tröstande modersstämma.</p>
+    <audio controls src="audio/test_candidates/mamma_louise_mamma.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Alternativ 3: Maria</h3>
+    </div>
+    <p><span class="quote">"Jag lägger en stock över vattnet. Jag är här, Elof. Du är inte ensam."</span> – Trygg, självklar och varm svensk kvinna.</p>
+    <audio controls src="audio/test_candidates/mamma_maria_mamma.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Förra versionen: Sarah</h3>
+    </div>
+    <p><span class="quote">"Jag lägger en stock över vattnet. Jag är här, Elof. Du är inte ensam."</span> – Den tidigare premade rösten.</p>
+    <audio controls src="audio/test_candidates/mamma_sarah_current.mp3"></audio>
+  </div>
+
+  <!-- PAPPA EMIL -->
+  <h2 class="pappa">👨 Pappa Emil (Pappa, slöjdare)</h2>
+  <div class="card">
+    <div class="card-header">
+      <h3>Alternativ 1: Andreas <span class="badge recommended">Rekommenderad – Djup, trygg slöjdpappa</span></h3>
+    </div>
+    <p><span class="quote">"Tälj alltid bort från dig, Elof. Så här. En krona! Den får du behålla."</span> – Djup, lugn, artikulerad och varm svensk fadersröst.</p>
+    <audio controls src="audio/test_candidates/pappa_andreas_pappa.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Alternativ 2: Benny</h3>
+    </div>
+    <p><span class="quote">"Tälj alltid bort från dig, Elof. Så här. En krona! Den får du behålla."</span> – Varm, godmodig och folklig svensk papparöst.</p>
+    <audio controls src="audio/test_candidates/pappa_benny_pappa.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Alternativ 3: Ola Paulakoski</h3>
+    </div>
+    <p><span class="quote">"Tälj alltid bort från dig, Elof. Så här. En krona! Den får du behålla."</span> – Mjuk och engagerande papparöst.</p>
+    <audio controls src="audio/test_candidates/pappa_ola_pappa.mp3"></audio>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <h3>Förra versionen: Brian</h3>
+    </div>
+    <p><span class="quote">"Tälj alltid bort från dig, Elof. Så här. En krona! Den får du behålla."</span> – Den tidigare premade rösten.</p>
+    <audio controls src="audio/test_candidates/pappa_brian_current.mp3"></audio>
+  </div>
+</body>
+</html>
