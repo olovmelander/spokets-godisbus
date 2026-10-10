@@ -12,7 +12,7 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/helper');
 mkdirSync(shots, { recursive: true });
 const virtual = '\0helper-fixture';
-const server = await createServer({ root, server: { host: '127.0.0.1', port: 0, fs: { allow: [root, realpathSync(join(root, 'node_modules'))] } }, plugins: [{
+const server = await createServer({ root, cacheDir: 'node_modules/.vite-helper', server: { host: '127.0.0.1', port: 0, watch: null, fs: { allow: [root, realpathSync(join(root, 'node_modules'))] } }, plugins: [{
   name: 'helper-fixture', resolveId(id) { if (id === '/helper-fixture.js') return virtual; },
   load(id) {
     if (id !== virtual) return;
@@ -49,7 +49,7 @@ try {
       const game = new f.Game(chapter, {}, { flags: ['ladybird'] });
       for (let i = 0; i < 24; i++) game.sim.step({ x: 0, y: 0, hopHeld: false, hop: false, act: false });
       const view = f.createView(document.getElementById('game'), chapter, tier, true);
-      const draw = (dt = 0) => { const s = game.sim; view.render({ prev: s.prev, curr: s.curr, alpha: 1, dt,
+      const draw = (dt = 0, alpha = 1) => { const s = game.sim; view.render({ prev: s.prev, curr: s.curr, alpha, dt,
         atGoal: s.flags.has('goal'), collected: s.collected, checkpoint: s.checkpoint, movers: s.movers,
         drips: s.drips, flags: s.flags, ghost: s.ghost, rollers: s.rollers, tussocks: s.tussocks, gusts: s.gusts,
         help: s.help, berries: s.berries }); };
@@ -62,6 +62,8 @@ try {
       for (let i = 0; i < 4; i++) draw(0.25);
       const scene = f.renderedScene(), actor = scene.getObjectByName('helper-actor');
       const snapshot = () => ({ ...view.info(), actor: actor.position.toArray(), screen: view.helperScreen(),
+        clearance: Math.hypot(actor.position.x - game.sim.curr.x, actor.position.y - game.sim.curr.y),
+        bounds: [0, 0.95].map(y => view.worldScreen({ x: actor.position.x, y: actor.position.y + y })),
         ghostCount: Number(scene.getObjectByName('chase-ghost').visible) + Number(actor.scale.x > 0),
         bird: !!actor.getObjectByName('bird'),
         figures: [0, 1, 2].map((i) => { const m = scene.getObjectByName(`helper-demo-${i}`); return { at: m.position.toArray(), opacity: m.material.opacity, matrix: Array.from(m.instanceMatrix.array) }; }),
@@ -73,7 +75,7 @@ try {
       return snapshot();
     }, { tier });
     check(`${name}: one ghost visits the actual gully without a jay download or Använd hint`, visit.ghostCount === 1 && !visit.bird && visit.help.step === 1 && visit.help.visit && visit.help.verb === null && visit.models.includes('boot/big-candy') && !visit.models.includes('boot/jay') && !fetched.some((url) => url.includes('/jay.glb')));
-    check(`${name}: visitor is visible and within draw budget`, visit.screen && visit.screen.x > 0 && visit.screen.x < width && withinDraws(visit.drawCalls, visit.tier));
+    check(`${name}: visitor stays out of reach, fully visible and within draw budget`, visit.clearance >= 3 && visit.screen && visit.bounds.every(p => p && p.x > 0 && p.x < width && p.y > 0 && p.y < height) && withinDraws(visit.drawCalls, visit.tier));
     await picture(page, join(shots, `${name}-visit.png`));
     const first = await page.evaluate(() => { const p = window.probe; p.ask(); p.ask(); p.draw(0); return p.snapshot(); });
     const middle = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 5; i++) p.draw(0.5); return p.snapshot(); });
@@ -94,11 +96,22 @@ try {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const os = await page.evaluate(() => { delete document.documentElement.dataset.motion; const p = window.probe; p.draw(1); return p.snapshot(); });
     check(`${name}: device reduced-motion preference selects the same still explanation`, JSON.stringify(os.figures) === JSON.stringify(calm.figures));
+    const betweenSteps = await page.evaluate(() => {
+      const p = window.probe, s = p.game.sim;
+      Object.assign(s.help, { step: 0, at: null });
+      Object.assign(s.ghost, { x: 63, y: 0, t: 1, gone: false });
+      Object.assign(s.curr, { x: 60, y: 0 });
+      Object.assign(s.prev, { x: 60.2, y: 0 });
+      p.draw(0, 0.5);
+      const ghost = p.f.renderedScene().getObjectByName('chase-ghost');
+      return ghost.visible && Math.hypot(ghost.position.x - 60.1, ghost.position.y) >= 3 - 1e-6;
+    });
+    check(`${name}: interpolated frames preserve the chase clearance`, betweenSteps);
     assert.deepEqual(errors, [], `${name}: browser errors`);
     console.log(`  draws ${name}: ${visit.drawCalls}/${middle.drawCalls}/${calm.drawCalls}`);
     await page.close();
   }
-  for (const [course, at, flags, ghost] of [['garden', '60,0.01', 'ladybird', true], ['granskog', '36,0.01', 'berry', false]]) {
+  for (const [course, at, flags, ghost] of process.env.HELPER_CASE ? [] : [['garden', '60,0.01', 'ladybird', true], ['granskog', '36,0.01', 'berry', false]]) {
     const page = await browser.newPage({ viewport: { width: 844, height: 390 }, hasTouch: true });
     await page.goto(`${origin}/spokets-godisbus/?dev&debug&standin&tier=low&course=${course}&at=${at}&flags=${flags}`);
     await page.waitForFunction(() => window.__godis?.info().models.includes('boot/big-candy'));
@@ -142,7 +155,7 @@ try {
     if (knocked.disabled) check(`actual ${course} page: out of reach the knocked button is half bright`, knocked.opacity === '0.6');
     await page.close();
   }
-  {
+  if (!process.env.HELPER_CASE) {
     // With keys, the on-screen controls are hidden: what E will do shows as a prompt, and the knock rings it too.
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await page.goto(`${origin}/spokets-godisbus/?dev&debug&standin&tier=low&course=granskog&at=36,0.01&flags=berry`);

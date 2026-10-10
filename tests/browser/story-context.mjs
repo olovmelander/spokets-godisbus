@@ -6,12 +6,13 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { picture } from './picture.mjs';
+import { continueDialogue } from './dialogue.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/story-context');
 mkdirSync(shots, { recursive: true });
 const server = await createServer({ root,
-  server: { host: '127.0.0.1', port: 0, fs: { allow: [root, realpathSync(join(root, 'node_modules'))] } },
+  server: { host: '127.0.0.1', port: 0, watch: null, fs: { allow: [root, realpathSync(join(root, 'node_modules'))] } },
 });
 await server.listen();
 const origin = `http://127.0.0.1:${server.httpServer.address().port}`;
@@ -25,7 +26,9 @@ const frames = (page, count = 3) => page.evaluate((left) => new Promise((resolve
 async function open(viewport = { width: 844, height: 390 }, save) {
   const context = await browser.newContext({ viewport, hasTouch: viewport.width === 390 || viewport.width === 1180,
     reducedMotion: 'reduce', serviceWorkers: 'block' });
-  if (save) await context.addInitScript((value) => localStorage.setItem('godisbus.v1.player.elof', JSON.stringify(value)), save);
+  if (save) await context.addInitScript((value) => {
+    if (!localStorage.getItem('godisbus.v1.player.elof')) localStorage.setItem('godisbus.v1.player.elof', JSON.stringify(value));
+  }, save);
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (error) => errors.push(String(error)));
@@ -74,6 +77,7 @@ async function fastEnd(page, fromSteps) {
 }
 
 try {
+  if (!process.env.STORY_READING_ONLY) {
   for (const [width, height, chapter, flags, expected] of [
     [390, 844, 'granskog', 'seesaw:trial', 'coneRetry'],
     [780, 360, 'norrsken', 'placed:tragubbe,eyes,bag', 'share'],
@@ -275,6 +279,35 @@ try {
   await picture(known.page, join(shots, 'finale-understanding.png'));
   await known.finish();
 
+  }
+  // The finale emits its four lines together. Saving or restarting must not mark unread words as read.
+  const reading = await open({ width: 844, height: 390 }, saved('norrsken', 1, { norrsken: ['placed:tragubbe', 'eyes', 'bag', 'shared', 'taste'] }));
+  await reading.page.goto(`${base}?dev&debug&standin&course=norrsken&tier=low`);
+  await ready(reading.page);
+  await reading.page.waitForFunction(() => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === 'Min allra första trägubbe …');
+  await picture(reading.page, join(shots, 'reading-844x390.png'));
+  await reading.page.setViewportSize({ width: 390, height: 844 });
+  await frames(reading.page);
+  check('turning the phone preserves the current reading without opening pause', !(await state(reading.page)).paused && (await state(reading.page)).storyReading);
+  await picture(reading.page, join(shots, 'reading-390x844.png'));
+  await continueDialogue(reading.page);
+  await reading.page.waitForFunction(() => document.getElementById('bubbleLine').textContent === 'Den täljde jag till dig');
+  await reading.page.keyboard.press('Escape');
+  const readFlags = await reading.page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')).flags.norrsken);
+  check('saving records the acknowledged line and keeps every unread reveal pending',
+    readFlags.includes('beat:first1') && !['beat:first2', 'beat:first3', 'beat:first4'].some((flag) => readFlags.includes(flag)) && readFlags.includes('taste'));
+  await reading.page.reload();
+  await ready(reading.page);
+  await reading.page.waitForFunction(() => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === 'Den täljde jag till dig');
+  check('reload resumes the first unread line without replaying the acknowledged line', (await state(reading.page)).said[0] === 'first2');
+  await reading.page.keyboard.press('Escape');
+  await reading.page.click('#stuckBtn');
+  await reading.page.click('#stuckYes');
+  await reading.page.waitForFunction(() => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === 'Den täljde jag till dig');
+  check('checkpoint restart re-arms the unread reveal', (await state(reading.page)).storyReading);
+  await reading.finish();
+
+  if (!process.env.STORY_READING_ONLY) {
   // This saved route can finish within the four Pappa lines' 14.135-second duration at normal speed.
   // The bound below measures simulation time; dialogue reading uses a separate frame-time clock.
   // The required Smaka stage is another real source for the untimed origin at the end card.
@@ -295,6 +328,10 @@ try {
     !/min gamla|min första/.test(await fast.page.locator('#pauseStoryRecap').textContent()));
   await fast.page.keyboard.press('e');
   await fast.page.waitForFunction(() => window.__godis.state().flags.includes('taste'));
+  for (const words of ['Min allra första trägubbe …', 'Den täljde jag till dig', 'när du var liten, Elof.', 'Vi tappade den här uppe.']) {
+    await fast.page.waitForFunction((line) => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === line, words);
+    await continueDialogue(fast.page);
+  }
   await fast.page.keyboard.down('ArrowRight');
   await fast.page.waitForFunction(() => window.__godis.state().word === 'goHome', null, { timeout: 15000 });
   await fast.page.keyboard.up('ArrowRight');
@@ -344,5 +381,6 @@ try {
   }));
   await picture(ending.page, join(shots, 'forest-handoff.png'));
   await ending.finish();
+  }
   console.log(`Story context: ${checks} browser checks passed.`);
 } finally { await browser.close(); await server.close(); }

@@ -8,7 +8,7 @@ import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
-const server = await createServer({ configFile: false, root, logLevel: 'error', server: { host: '127.0.0.1', port: 0 } });
+const server = await createServer({ configFile: false, root, logLevel: 'error', server: { host: '127.0.0.1', port: 0, watch: null } });
 let browser, checks = 0;
 function check(name, value, detail) { assert.ok(value, detail ? `${name}: ${JSON.stringify(detail)}` : name); checks++; console.log(`  ok   ${name}`); }
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -27,7 +27,10 @@ try {
     await import('/src/ui/ui.css');
     const { createMemory } = await import('/src/ui/memory.ts');
     const { mountShell } = await import('/src/ui/shell.ts');
-    document.body.innerHTML = '<button id="source" style="position:absolute;left:70px;top:180px;width:60px;height:40px">▶</button>';
+    const { spriteHtml } = await import('/src/ui/sprite.ts');
+    const { applyMaterials } = await import('/src/ui/materials.ts');
+    document.body.innerHTML = spriteHtml() + '<button id="source" style="position:absolute;left:70px;top:180px;width:60px;height:40px">▶</button>';
+    applyMaterials(document);
     mountShell(document.body, 'ghost');
     // In the game the typeface has long arrived when a memory opens; here it must not arrive in the middle of one.
     await Promise.all([document.fonts.load('400 16px Andika'), document.fonts.load('700 16px Andika')]);
@@ -36,7 +39,7 @@ try {
     window.playMemory = (options = {}) => {
       document.getElementById('source').focus();
       const rect = document.getElementById('source').getBoundingClientRect();
-      window.memory.play('garden', () => { window.finished++; }, {
+      window.memory.play(options.chapter ?? 'garden', () => { window.finished++; }, {
         origin: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, ...options,
       });
     };
@@ -47,10 +50,12 @@ try {
     return { phase: document.getElementById('memory').dataset.phase, open: window.memory.open,
       finished: window.finished, focus: document.activeElement.id,
       centre: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, width: rect.width,
-      transform: getComputedStyle(panel).transform, opacity: getComputedStyle(card.firstElementChild).opacity,
+      transform: getComputedStyle(panel).transform, opacity: card.firstElementChild ? getComputedStyle(card.firstElementChild).opacity : null,
       picture: document.getElementById('memoryProgress').textContent,
       times: document.getAnimations().map((animation) => animation.currentTime) };
   });
+  check('memory controls use installed icon artwork', await page.evaluate(() => [...document.querySelectorAll('#memory use')]
+    .every((use) => document.querySelector(use.getAttribute('href')))));
   await page.evaluate(() => { window.playMemory(); window.memory.suspend(true); });
   await sleep(80);
   let start = await snapshot();
@@ -64,15 +69,24 @@ try {
   await page.evaluate(() => window.memory.suspend(false));
   await page.waitForFunction(() => document.getElementById('memory').dataset.phase === 'pictures');
   let full = await snapshot();
-  check('the oval grows to its full central size', full.width > start.width * 10 && full.centre.x > 300);
+  check('the painting grows to its full reading size', full.width > start.width * 10 && full.centre.x > 180, { start, full });
   check('the next button owns focus throughout opening', full.focus === 'memoryNext');
+  const repeats = await page.evaluate(() => {
+    const next = document.getElementById('memoryNext');
+    return ['ArrowRight', 'ArrowLeft', 'Enter', ' '].every((key) => {
+      const event = new KeyboardEvent('keydown', { key, repeat: true, bubbles: true, cancelable: true });
+      next.dispatchEvent(event);
+      return event.defaultPrevented;
+    });
+  });
+  check('held movement and activation keys cannot race through a newly opened memory', repeats && (await snapshot()).picture === '1 / 3');
   await page.locator('#memoryNext').tap();
   await sleep(80);
   await page.evaluate(() => window.memory.suspend(true));
   start = await snapshot();
   await sleep(420);
   held = await snapshot();
-  check('interruption freezes a picture fade and its playback timer', held.opacity === start.opacity && held.picture === '2 / 3' && JSON.stringify(held.times) === JSON.stringify(start.times));
+  check('interruption freezes a picture fade and all illustrated layers', held.opacity === start.opacity && held.picture === '2 / 3' && JSON.stringify(held.times) === JSON.stringify(start.times));
   await page.evaluate(() => window.memory.close());
   let closed = await snapshot();
   check('cancellation is immediate, releases animations and calls done once', !closed.open && closed.finished === 1 && closed.times.length === 0);
@@ -104,7 +118,7 @@ try {
       window.playMemory({ calm: mode === 'option' }); window.memory.suspend(true);
     }, mode);
     start = await snapshot();
-    check(`${mode} reduced motion uses a centred fade without travel`, start.transform === 'none' && start.centre.x > 300 && start.width > 200);
+    check(`${mode} reduced motion uses a fade in the reading layout without travel`, start.transform === 'none' && start.centre.x > 180 && start.width > 200);
     await page.evaluate(() => { window.memory.close(); window.memory.suspend(false); delete document.documentElement.dataset.motion; });
   }
   await page.emulateMedia({ reducedMotion: 'no-preference' });
@@ -145,8 +159,21 @@ try {
   await page.evaluate(() => window.memory.suspend(false));
   await page.waitForFunction(() => document.getElementById('memory').dataset.phase === 'pictures');
   await page.evaluate(() => { document.getElementById('memoryNext').click(); document.getElementById('memoryNext').click(); });
-  await page.waitForFunction(() => !window.memory.open, null, { timeout: 4000 });
-  check('the final picture also returns automatically', (await snapshot()).focus === 'source');
+  await sleep(3600);
+  check('the final picture waits for the reader instead of returning automatically', (await snapshot()).open && (await snapshot()).picture === '3 / 3');
+  await page.locator('#memoryPrevious').click();
+  check('the previous button revisits a picture and its caption', (await snapshot()).picture === '2 / 3' && (await page.locator('#memoryCaption').textContent()).includes('ger trägubben'));
+  await page.locator('#memoryCard').click();
+  check('tapping the painting does not skip its story', (await snapshot()).picture === '2 / 3');
+  await page.keyboard.press('ArrowLeft');
+  check('left arrow revisits the opening and disables previous at the start', (await snapshot()).picture === '1 / 3' && await page.locator('#memoryPrevious').isDisabled());
+  await sleep(3600);
+  check('the opening picture also waits as long as the reader needs', (await snapshot()).picture === '1 / 3');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowRight');
+  await page.locator('#memoryNext').click();
+  await page.waitForFunction(() => !window.memory.open);
+  check('the explicit last button returns focus to the source', (await snapshot()).focus === 'source');
 
   for (const [width, height] of [[390, 844], [844, 390], [780, 360], [1180, 820], [1440, 900]]) {
     await page.setViewportSize({ width, height });
@@ -161,6 +188,36 @@ try {
     check(`${width}×${height}: the oval and controls fit`, fits);
     await picture(page, join(shots, `${width}x${height}.png`));
     await page.evaluate(() => { window.memory.close(); window.memory.suspend(false); });
+  }
+  for (const [width, height] of [[390, 844], [780, 360]]) {
+    await page.setViewportSize({ width, height });
+    await page.evaluate(() => {
+      document.body.classList.add('big-text');
+      window.playMemory({ chapter: 'berget', calm: true });
+      const next = document.getElementById('memoryNext'); next.click(); next.click(); next.click();
+    });
+    const fits = await page.evaluate(() => {
+      const panel = document.querySelector('.memory-panel');
+      return ['memoryClose', 'memoryCaption', 'memoryNext', 'memoryPrevious'].every((id) => {
+        const rect = document.getElementById(id).getBoundingClientRect();
+        return rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight;
+      }) && panel.scrollWidth <= panel.clientWidth;
+    });
+    check(`${width}×${height}: the final caption and full return button fit with large text`, fits);
+    await picture(page, join(shots, `${width}x${height}-final-bigtext.png`));
+    await page.evaluate(() => { window.memory.close(); document.body.classList.remove('big-text'); });
+  }
+  await page.setViewportSize({ width: 1180, height: 820 });
+  for (const chapter of ['garden', 'granskog', 'myren', 'berget']) {
+    await page.evaluate((chapter) => window.playMemory({ chapter, calm: true }), chapter);
+    const count = chapter === 'berget' ? 4 : 3;
+    for (let i = 0; i < count; i++) {
+      const label = await page.locator('#memoryCard').getAttribute('aria-label');
+      check(`${chapter} picture ${i + 1} has matching visible and accessible storytelling`, label === await page.locator('#memoryCaption').textContent() && label.length > 15);
+      await picture(page, join(shots, `${chapter}-${i + 1}.png`));
+      if (i < count - 1) await page.locator('#memoryNext').click();
+    }
+    await page.evaluate(() => window.memory.close());
   }
   check('presentation makes no browser errors', errors.length === 0);
   console.log(`${checks} memory-presentation browser checks passed.`);

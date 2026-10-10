@@ -1,6 +1,28 @@
 # Handover
 
-## State (7 October 2026)
+## State (10 October 2026)
+
+- **Clearer chase and player-paced story (cloud session).** Olov clarified that the ghost must stay out
+  of Elof's reach during gameplay; close meetings belong to the opening and ending. The chase now
+  protects its distance during hops, fast rides, restored checkpoints and puzzle waits. Former
+  near-catch candy still spills with the same saved reward flags. The garden's visiting helper follows
+  the same rule. Essential dialogue waits for **Fortsätt**, and the painted memories have illustrated
+  scenes, short Swedish captions and previous/next controls. The player chooses the reading time;
+  this explicitly replaces the old automatic six-to-ten-second memory limit.
+  - Release setting, private character assets, consent rules, **Senare** and existing questions are
+    unchanged. No new question is needed for the direction Olov gave in this session.
+  - Code and illustrated UI work can continue in the cloud. Likeness/model refinement still needs
+    Olov's computer as recorded below. Physical-device and family-model visual review remain.
+  - **Checks:** typecheck, 164 test files / 1,539 tests, production build and privacy scan pass.
+    JavaScript is 444.3 KB / 450 KB; boot is 1,493.5 KB / 3,072 KB with public stand-ins.
+    The 52-check memory presentation suite and built album suite pass, including manual progress,
+    all thirteen captions, large text, reduced motion and interruption recovery. Helper checks pass
+    across four viewport/tier variants, with an additional interpolation-distance regression.
+    Dialogue checks cover manual advancement and four real-game save/reload, checkpoint and rotation
+    cases. Review captures: [`docs/shots/story-pacing/`](docs/shots/story-pacing/).
+  - The production build stores static story art and initial UI markup in inert HTML templates to
+    retain the existing JavaScript budget; development and production use the same authored sources.
+    The review branch is `codex/story-and-ghost-chase`; Olov's merge/release review remains.
 
 - **Session checkpoint: character motion work ready for integration; Elof Blender candidate saved for continuation.**
   Olov asked to wrap up, commit, push and merge the work into `main`. The pending
@@ -3095,6 +3117,11 @@
 
 **For the next session, in this order:**
 
+- **Review the 10 October chase/story checkpoint:** try the opening and final reunion without racing
+  the dialogue, read/revisit all four memories, and follow the ghost through rescue and mountain
+  help. Confirm on a physical phone that captions, previous/next and **Fortsätt** are comfortable.
+  The cloud checks use public stand-ins; this does not replace the pending likeness review.
+
 - **Where 7 October's cloud session ended: everything built is on `main`, and no pull request is open.**
   Graphics stages 26 to 32 came in one pull request each (#176 to #180), except 31 and 32, which went in
   together (#181) when Olov asked to wrap up and merge everything to `main`. The last pull request shares
@@ -3413,6 +3440,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Chase and story clarity (10 October) | Current request | 1 cloud implementation | — / 0 so far | Minimum ghost separation, player-paced essential dialogue, thirteen animated memory illustrations with Swedish captions and previous/next, plus larger in-world thought pictures. Checkpoint captures in `docs/shots/story-pacing/`. Physical-device review remains. |
 | Planning | 1 | 3 recorded | — / 2 | Original plan versions 1–4; `main` and the placeholder page; the reference pictures gathered. Version 5 on 4 October adds the researched story/level overhaul and its acceptance criteria; no new session or review count is inferred. |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
 | 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. On 6 October, cloud graphics stage 1 unifies linear haze and the graded sky across tiers, with no new assets or passes. Cloud stage 2 adds forest trunk shadows on High and soft ground shade on Low/Mid; stage 3 adds camera-correct rim lighting; stage 4 reveals the forest landmark silhouettes; stage 5 keeps deck boards planar beside steps; stage 6 gives the village kerb/shop riser masonry and planar street edges; stage 7 adds a fascia to the visible deck edge; stage 8 gives the shop’s visible front granite courses; stage 9 adds layered road sections, with matching comparisons for each visual checkpoint. Stage 12 gives the finale curtains of northern lights with rays and twinkling stars; stages 13 to 16 stand the bog's tussocks in the water, put the shy ones on sedge pedestals, make the dead pines snags and let the mist hide what is far; stage 17 grows the boughs from their stems with each place's own foliage and makes the bark plates bracket fungi. Stage 18 puts the colaflaska in a nest and gives the young stems bark and dead twigs. Stage 19 lays a spång over the bog and makes its shy lights and Mamma's lamp soft glows in the mist. Stage 20 makes the mountain's gusts wisps of air and gives the mountain a foreground; stage 21 marks the finale's crack and lets the shared gifts glow warm. Stage 22 hangs two striped awnings on Byn's bakery, with drops that hang from their scallops, fall and splash. Stage 23 makes Byn's drain a cast-iron grate in the road. Stage 24 breaks the mountain's cliffs into granite blocks along their joints. Stage 25 makes the shop's jars glass and hangs lamps over its rings. On 7 October, stage 26 stands a matchbox on the shop's step; stage 27 lets the puddle mirror the yard, with leaves afloat and the road wet round it; stage 28 puts the shop's bag in the last picture; stage 29 folds the street's birch leaves and drifts them against the walls; stage 30 makes it dark under a wooden floor's rim board; stage 31 lets birch leaves fall in the village; stage 32 stands two cast-iron lamp posts on its far pavement. Final visual and physical-device review remains. |

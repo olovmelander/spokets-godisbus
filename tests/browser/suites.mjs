@@ -36,6 +36,7 @@ export const SUITES = [
   ['rim-light', 2],
   ['stone-courses', 1],
   ['memory-presentation', 11],
+  ['dialogue-reading', 5],
   ['ghost-thoughts', 197],
   ['story-context', 229],
   ['opening-story', 261],
@@ -51,7 +52,7 @@ export const SUITES = [
 ];
 
 /** The files in tests/browser that are not suites: what the suites share, and this list's own two files. */
-export const NOT_SUITES = ['budget', 'pause', 'picture', 'run', 'suites'];
+export const NOT_SUITES = ['budget', 'dialogue', 'pause', 'picture', 'run', 'suites'];
 
 /**
  * The suites shared out over a number of parts, as evenly as their seconds allow: the heaviest suite goes to

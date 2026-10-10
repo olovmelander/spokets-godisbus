@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GHOST_CATCH, GHOST_NEAR, STEP, WALK_DEFLECTION } from '../../src/sim/constants';
+import { GHOST_CATCH, GHOST_CLEARANCE, GHOST_NEAR, STEP, WALK_DEFLECTION } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
 import type { ChapterData, StepInput } from '../../src/sim/types';
 
@@ -12,6 +12,7 @@ const course: ChapterData = {
   goalX: 1000,
   ground: [{ x: -10, y: 8 }, { x: -10, y: 0 }, { x: 60, y: 0 }, { x: 60, y: 8 }],
   candy: [{ x: 1, y: 0.45 }, { x: 19, y: 0.5, after: 'caught' }, { x: 19.6, y: 0.5, after: 'caught' }],
+  ghostMeet: true,
   ghost: [{ at: { x: 5, y: 0 } }, { at: { x: 11.5, y: 0 } }, { at: { x: 18, y: 0 }, catch: 'caught' }, { at: { x: 24, y: 0 } }],
 };
 
@@ -28,6 +29,78 @@ function until(sim: Sim, seconds: number, input: Partial<StepInput>, test: () =>
 }
 
 const gap = (sim: Sim) => sim.ghost!.x - sim.curr.x;
+
+const chase: ChapterData = { ...course, ghostMeet: false };
+function expectOutOfReach(sim: Sim): void {
+  if (!sim.ghost || sim.ghost.gone) return;
+  expect(Math.hypot(sim.ghost.x - sim.curr.x, sim.ghost.y - sim.curr.y)).toBeGreaterThanOrEqual(GHOST_CLEARANCE - 1e-8);
+  expect(sim.curr.verb).not.toBe('grab');
+}
+
+describe('the ghost stays out of reach until their meeting', () => {
+  it('keeps its distance throughout the run, including former near-catches, and spills their sweets', () => {
+    const sim = new Sim(chase);
+    for (let i = 0; i < 14 / STEP; i++) {
+      sim.step({ ...idle, x: 1, act: true });
+      expectOutOfReach(sim);
+    }
+    expect(sim.flags.has('caught')).toBe(true);
+    expect(sim.candyCount).toBe(3);
+    expect(sim.ghost!.gone).toBe(true);
+  });
+
+  it('waits out of reach at an unsolved puzzle, even if Elof passes it and turns back', () => {
+    const sim = new Sim({ ...chase, ghost: [{ at: { x: 8, y: 0 }, until: 'lever' }, { at: { x: 22, y: 0 } }] });
+    for (const x of [1, -1, 1]) {
+      for (let i = 0; i < 4 / STEP; i++) { sim.step({ ...idle, x }); expectOutOfReach(sim); }
+    }
+    expect(sim.ghost!.perch).toBe(0);
+    expect(sim.ghost!.gone).toBe(false);
+    expect(sim.flags.has('lever')).toBe(false);
+    sim.flags.add('lever');
+    run(sim, 2, { x: 1 });
+    expect(sim.ghost!.perch).toBe(1);
+    expectOutOfReach(sim);
+  });
+
+  it('cannot be caught while landing fast across tightly spaced perches or returning to a checkpoint', () => {
+    const sim = new Sim({
+      ...chase, checkpoints: [{ x: 10, y: 0 }],
+      ghost: [5, 5.5, 6, 6.5, 7, 12, 12.5, 20, 21, 28].map((x) => ({ at: { x, y: 0 }, near: 0.5 })),
+      rides: [{ id: 'fast', from: { x: 0, y: 0 }, to: { x: 20, y: 0 }, rise: 1, time: 0.35, corridor: 0 }],
+      spots: [{ id: 'ride', at: { x: 0, y: 0 }, verb: 'take', ride: 'fast' }],
+    });
+    run(sim, 0.15);
+    sim.step({ ...idle, act: true });
+    expect(sim.curr.mode).toBe('ride');
+    for (let i = 0; i < 1 / STEP; i++) { sim.step(idle); expectOutOfReach(sim); }
+    sim.toCheckpoint();
+    for (let i = 0; i < 3 / STEP; i++) { sim.step({ ...idle, x: 1 }); expectOutOfReach(sim); }
+  });
+
+  it('is already out of reach on the first frame of a resumed save, including a locked story stop', () => {
+    for (const waiting of [false, true]) {
+      const sim = new Sim({ ...chase, checkpoints: [{ x: 16.8, y: 0 }],
+        ghost: [{ at: { x: 18, y: 0 }, ...(waiting ? { until: 'lever' } : {}) }, { at: { x: 24, y: 0 } }],
+      }, {}, { checkpoint: 0, flags: [] });
+      expectOutOfReach(sim);
+      for (let i = 0; i < 2 / STEP; i++) { sim.step({ ...idle, x: 1 }); expectOutOfReach(sim); }
+    }
+  });
+
+  it('hops on when a raised waiting ghost is helped, even if Elof stays still', () => {
+    const sim = new Sim({ ...chase, spawn: { x: 6, y: 0 },
+      ghost: [{ at: { x: 8, y: 0 }, until: 'lever' }, { at: { x: 16, y: 0 } }],
+    });
+    run(sim, 2);
+    expect(sim.ghost!.perch).toBe(0);
+    expect(sim.ghost!.y).toBeGreaterThan(3);
+    sim.flags.add('lever');
+    sim.step(idle);
+    expect(sim.ghost!.perch).toBe(1);
+    expectOutOfReach(sim);
+  });
+});
 
 describe('the ghost', () => {
   it('waits where it is while Elof keeps away', () => {

@@ -93,7 +93,7 @@ export const testbana: ChapterData = {
     { at: { x: 37.6, y: 2.8 } },
     { at: { x: 41.6, y: 6 } },
     { at: { x: 45.2, y: 0 } },
-    // the near-catch
+    // The ghost spills sweets while escaping, without a catch.
     { at: { x: 52.6, y: 0 }, catch: 'caught' },
     { at: { x: 55.2, y: 0 } },
     { at: { x: 62.4, y: 0 } },

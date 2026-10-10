@@ -435,9 +435,9 @@ export const myren: ChapterData = {
     // it has left him the lollipop, and goes on into the mist
     { at: { x: 146.5, y: 0 } },
     { at: { x: 160.7, y: 0.3 } },
-    // it waits on firm ground, and lets him come close
-    { at: { x: 172.5, y: 0 }, near: 1.6, thought: { picture: 'pine-crack', after: 'home' } },
-    { at: { x: 186.5, y: 0 }, near: 1.6, thought: { picture: 'pine-crack', after: 'home' } },
+    // It waits on firm ground to show its thought, and hops on before Elof reaches it.
+    { at: { x: 172.5, y: 0 }, thought: { picture: 'pine-crack', after: 'home' } },
+    { at: { x: 186.5, y: 0 }, thought: { picture: 'pine-crack', after: 'home' } },
   ],
   beats: [
     { id: 'spangen', at: 105.4, who: 'mamma', line: 'spangen' },

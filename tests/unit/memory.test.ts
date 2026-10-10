@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { STORY, chapterNumber } from '../../src/content/chapters';
-import { MEMORIES, MEMORY_RETURN_TIME, PICTURE_TIME, memoryAlbumHtml, pictureTime } from '../../src/ui/memory';
+import { MEMORIES, memoryAlbumHtml } from '../../src/ui/memory';
+import { sv } from '../../src/content/sv';
 import { heightAt, playThrough } from '../robot/robot';
 
 const numbered = STORY.filter((chapter) => chapterNumber(chapter.id) > 0);
@@ -38,12 +39,16 @@ describe('the four memories', () => {
     // Four whole chapters are played: give it time on a busy computer.
   }, 60000);
 
-  it('are six to ten seconds long, in three or four pictures', () => {
+  it('have one short, readable caption per picture, in three or four steps', () => {
     for (const [id, pictures] of Object.entries(MEMORIES)) {
       expect(pictures.length, id).toBeGreaterThanOrEqual(3);
-      expect((pictures.length * pictureTime(pictures.length)) / 1000, id).toBeGreaterThanOrEqual(6);
-      expect((pictures.length * pictureTime(pictures.length) + MEMORY_RETURN_TIME) / 1000, id).toBeLessThanOrEqual(10);
-      expect(pictureTime(pictures.length), id).toBeLessThanOrEqual(PICTURE_TIME);
+      expect(pictures.length, id).toBeLessThanOrEqual(4);
+      expect(sv.memories.chapters[id].title.length, id).toBeGreaterThan(5);
+      expect(sv.memories.chapters[id].captions, id).toHaveLength(pictures.length);
+      for (const caption of sv.memories.chapters[id].captions) {
+        expect(caption.length, id).toBeGreaterThan(15);
+        expect(caption.length, id).toBeLessThan(110);
+      }
     }
   });
 
@@ -59,6 +64,16 @@ describe('the four memories', () => {
 
   it('show little Elof in light blue every time, as the plan says', () => {
     for (const [id, pictures] of Object.entries(MEMORIES)) expect(pictures.some((picture) => picture.includes('#9cc4e4')), id).toBe(true);
+  });
+
+  it('gives every painting layered scene motion without an independently moving wooden friend', () => {
+    for (const pictures of Object.values(MEMORIES)) for (const picture of pictures) {
+      expect(picture).toContain('data-memory-motion="light"');
+      expect(picture).toContain('data-memory-motion="motes"');
+      expect(picture).not.toContain('class="tragubbe" data-memory-motion');
+    }
+    expect(sv.memories.chapters.garden.captions.join(' ')).not.toContain('spricka');
+    expect(sv.memories.chapters.granskog.captions.join(' ')).not.toContain('spricka');
   });
 
   it('let Elof understand at the old pine only when he has seen the last one', () => {

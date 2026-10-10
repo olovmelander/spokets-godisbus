@@ -3,6 +3,7 @@ import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
+import { GHOST_CLEARANCE } from '../sim/constants';
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
 import { drawnWhile } from './idle';
 import { sweetSocket } from './candy';
@@ -740,6 +741,9 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
   rope.name = 'helper-demo-lace';
   drawnWhile(rope, false);
   group.add(flyer, rope);
+  // A ring keeps the first hint precise even though the ghost itself stays beyond Elof's reach.
+  const focus = ghost ? new Mesh(new TorusGeometry(0.26, 0.027, 6, 24), pale()) : null;
+  if (focus) { focus.name = 'helper-focus'; drawnWhile(focus, false); group.add(focus); }
   // Its first thought is only a smudge, not words or the later story's revealed figure (§3.4).
   let thought: Mesh<PlaneGeometry, MeshBasicMaterial> | null = null;
   if (ghost) {
@@ -782,22 +786,37 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     const { step, at } = help;
     const here = step > 0 && at !== null;
     if (at) last = at;
-    // It comes from where he is, and leaves upwards.
-    if (here && shown === 0) flyer.position.set(x - 0.6, y + 1.4, 0.4);
+    // The ghost helps from above the trail: calling it must not bypass the chase's distance.
+    // The jay still flies up from beside Elof, and both leave upwards.
+    const ahead = GHOST_CLEARANCE * 0.75;
+    if (here && shown === 0) flyer.position.set(x + (ghost ? ahead : -0.6), y + (ghost ? ahead : 1.4), 0.4);
     shown = still ? (here ? 1 : 0) : Math.min(1, Math.max(0, shown + (here ? dt : -dt) / 0.4));
     const cycle = clock % 3;
     const doubleKnock = Math.max(0, 1 - Math.abs(cycle - 0.9) / 0.12) + Math.max(0, 1 - Math.abs(cycle - 1.2) / 0.12);
     const knock = !still && (step >= 2 || help.visit) ? doubleKnock * 0.12 : 0;
-    // The ghost stands beside what it shows; the jay perches 1.6 EL over it, so that it is never a second bird
-    // beside a bird it shows (in-play.md row 21).
-    const targetX = last.x - (ghost ? (help.verb === 'lace' || help.visit ? (step >= 3 ? 2.7 : 2.1) : 0.75) : 0.1);
-    const targetY = ghost ? demoFloor(chapter, targetX) : last.y + BIRD_PERCH;
+    // Keep the ghost in sight ahead and above Elof, with the demonstrated action still at its real hook
+    // or obstacle. A purely horizontal retreat would leave the narrow portrait view.
+    const targetX = ghost ? x + ahead : last.x - 0.1;
+    const targetY = ghost ? Math.max(y + ahead, demoFloor(chapter, targetX) + 0.6) : last.y + BIRD_PERCH;
     const to = here ? { x: targetX + knock, y: targetY + (still ? 0 : ghost ? Math.sin(Math.PI * shown) * 0.35 : Math.sin(clock * 5) * 0.04), z: 0.45 } : { x: flyer.position.x, y: flyer.position.y + dt * 4, z: 0.45 };
     const k = still ? 1 : 1 - Math.exp(-5 * dt);
     flyer.position.set(flyer.position.x + (to.x - flyer.position.x) * k, flyer.position.y + (to.y - flyer.position.y) * k, to.z);
+    // Clamp after smoothing too: running, jumping, a checkpoint restore or its exit must never let Elof
+    // move through the helper while its transform catches up. Both axes together exceed the clearance.
+    if (ghost) {
+      flyer.position.x = Math.max(flyer.position.x, x + ahead);
+      flyer.position.y = Math.max(flyer.position.y, y + ahead);
+    }
     flyer.scale.setScalar(shown * 0.9);
     drawnWhile(flyer, shown > 0);
     flyer.rotation.z = ghost ? -knock * 0.8 : 0;
+    if (ghost) flyer.rotation.y = last.x < flyer.position.x ? Math.PI : 0;
+    if (focus) {
+      focus.position.set(last.x, last.y, DEMO_Z);
+      focus.scale.setScalar(1 + knock);
+      focus.material.opacity = here ? shown * 0.85 : 0;
+      drawnWhile(focus, focus.material.opacity > 0);
+    }
     if (thought) {
       thought.material.opacity = help.visit ? shown * 0.9 : 0;
       drawnWhile(thought, thought.material.opacity > 0);

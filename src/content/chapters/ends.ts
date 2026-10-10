@@ -35,6 +35,7 @@ function row(from: number, to: number, ground: number, every = 2, after?: string
  */
 export const prolog: ChapterData = {
   id: 'prolog',
+  ghostMeet: true,
   place: 'home',
   // He is a boy among small things, until the star shrinks him. The POFF scene says when he is drawn small.
   size: { scale: 3, until: 'star' },
@@ -161,6 +162,7 @@ const GUESTS = [
  */
 export const epilog: ChapterData = {
   id: 'epilog',
+  ghostMeet: true,
   place: 'home',
   // He has grown back: a boy among small things, all through.
   size: { scale: 3 },

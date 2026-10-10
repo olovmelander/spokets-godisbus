@@ -7,7 +7,7 @@ import {
 } from './constants';
 import { CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER, MOVE_TIME, MOVER_RESET, PUSH_REACH } from './constants';
 import { DOWN_TIME, DROP_FALL, DROP_FROM, DROP_RADIUS, DROP_WARNING } from './constants';
-import { GHOST_CATCH, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_STEER, SPOT_REACH } from './constants';
+import { GHOST_CATCH, GHOST_CLEARANCE, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_STEER, SPOT_REACH } from './constants';
 import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REACH } from './constants';
 import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
 import { GUIDE_AFTER, HELP_KEPT, HELP_TIME, REMIND_AFTER } from './constants';
@@ -393,6 +393,7 @@ export class Sim {
     this.stood = Array.from({ length: SAFE_STEPS }, () => ({ x: spawn.x, y: spawn.y }));
     this.curr = this.read(false);
     this.prev = this.curr;
+    if (!chapter.ghostMeet && this.ghost) this.chaseGhost();
     this.resetChallenges(true);
   }
 
@@ -462,7 +463,7 @@ export class Sim {
     this.blow();
     this.sink();
     for (const berry of this.berries) berry.squash = Math.max(0, berry.squash - STEP / BERRY_SQUASH);
-    if (!this.prologue?.frame) this.haunt();
+    if (this.chapter.ghostMeet && !this.prologue?.frame) this.haunt();
     this.tell();
     this.assist(input.help === true);
 
@@ -476,6 +477,8 @@ export class Sim {
     } else {
       this.curr = this.read(false);
     }
+    // Use the position after physics and rides: a fast swing or return bubble must not get a frame's head start.
+    if (!this.chapter.ghostMeet) this.haunt();
     // The bubble only carries. Everywhere else, candy he comes near is his: up a hose too.
     if (this.state.kind !== 'bubble') this.collect();
     this.resetChallenges();
@@ -686,11 +689,12 @@ export class Sim {
 
   /**
    * One step for the ghost. It stands at a place until Elof comes near, and then hops to the next: always a
-   * little ahead. At a near-catch it lets him come close; grabbed or not, it gets away.
+   * little ahead. Only the opening and ending allow a close meeting.
    */
   private haunt(): void {
     const ghost = this.ghost;
     if (!ghost || ghost.gone) return;
+    if (!this.chapter.ghostMeet) { this.chaseGhost(); return; }
     const perch = this.perches[ghost.perch]!;
     if (ghost.t < 1) {
       ghost.t = Math.min(1, ghost.t + STEP / this.hop.time);
@@ -716,8 +720,66 @@ export class Sim {
     ghost.t = 0;
   }
 
+  /** Follow the authored route, shortening a hop when Elof is faster than its normal animation. */
+  private chaseGhost(): void {
+    const ghost = this.ghost!;
+    const p = this.curr;
+    // A little reaction room avoids starting each hop slowly while a runner catches its heels.
+    const safe = (x: number, y: number) => Math.hypot(x - p.x, y - p.y) >= GHOST_CLEARANCE;
+    for (let tries = 0; tries <= this.perches.length; tries++) {
+      const perch = this.perches[ghost.perch]!;
+      const waiting = perch.until !== undefined && !this.flags.has(perch.until);
+      if (ghost.t < 1) {
+        const start = Math.min(1, ghost.t + STEP / this.hop.time);
+        let found = false;
+        // Short perches and high-speed landings can overtake the normal easing. Look along the whole
+        // remaining arc, rather than clamping x into a cliff or letting him touch it for one frame.
+        for (let i = 0; i <= 24; i++) {
+          const t = start + (1 - start) * i / 24;
+          const k = smooth(t);
+          const x = mix(this.hop.fromX, perch.at.x, k);
+          const y = mix(this.hop.fromY, perch.at.y, k) + Math.sin(Math.PI * t) * this.hop.lift;
+          if (!safe(x, y) || x < p.x) continue;
+          ghost.t = t; ghost.x = x; ghost.y = y;
+          found = true;
+          break;
+        }
+        if (found && ghost.t < 1) return;
+        // No safe point on this hop: continue to the following authored landing, still in this step.
+        if (!found) {
+          ghost.t = 1;
+          if (waiting) { ghost.x = perch.at.x; ghost.y = perch.at.y; }
+        }
+      }
+      if (waiting) {
+        // A trapped ghost still belongs to the rescue/lift puzzle. It rises out of reach at that
+        // same stop instead of jumping past the unsolved story beat, and settles when he backs away.
+        const dx = Math.abs(ghost.x - p.x);
+        const desired = dx < GHOST_NEAR ? Math.max(perch.at.y, p.y + Math.sqrt(GHOST_NEAR ** 2 - dx ** 2)) : perch.at.y;
+        ghost.y += Math.sign(desired - ghost.y) * Math.min(Math.abs(desired - ghost.y), GHOST_SPEED * STEP);
+        if (!safe(ghost.x, ghost.y)) ghost.y = p.y + Math.sqrt(Math.max(0, GHOST_CLEARANCE ** 2 - dx ** 2));
+        return;
+      }
+      // Once helped, the raised waiting pose must not make the ghost think Elof is still far away.
+      const away = perch.until ? Math.hypot(p.x - perch.at.x, p.y - perch.at.y)
+        : Math.hypot(p.x - ghost.x, p.y - ghost.y);
+      if (safe(ghost.x, ghost.y) && ghost.x >= p.x &&
+        away >= Math.max(GHOST_NEAR, perch.near ?? GHOST_NEAR)) return;
+      // Keep the old flag/candy indices: the joke now spills its sweets while escaping at a distance.
+      if (perch.catch) this.flags.add(perch.catch);
+      const next = this.perches[ghost.perch + 1];
+      if (!next) { ghost.gone = true; return; }
+      const far = Math.hypot(next.at.x - ghost.x, next.at.y - ghost.y);
+      this.hop = { fromX: ghost.x, fromY: ghost.y, time: Math.min(1.4, Math.max(0.35, far / GHOST_SPEED)), lift: Math.min(1.3, 0.35 + far * 0.12) };
+      ghost.perch++;
+      ghost.t = 0;
+      if (safe(ghost.x, ghost.y) && ghost.x >= p.x) return;
+    }
+  }
+
   /** The flag a grab would set, when the ghost stands within reach at a near-catch. */
   private ghostInReach(): string | null {
+    if (!this.chapter.ghostMeet) return null;
     const ghost = this.ghost;
     if (!ghost || ghost.gone || ghost.t < 1) return null;
     const perch = this.perches[ghost.perch]!;

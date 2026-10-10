@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
 import { withinDraws } from './budget.mjs';
+import { continueDialogue } from './dialogue.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -42,6 +43,7 @@ async function until(read, accepts, name, timeout = 12000) {
   do {
     value = await read();
     if (accepts(value)) return value;
+    if (value.storyReading && read.page) await continueDialogue(read.page);
     await sleep(35);
   } while (Date.now() < end);
   assert.fail(`${name}: timed out; last value ${JSON.stringify(value)}`);
@@ -73,9 +75,10 @@ async function open(name, options = {}, query = '?debug&standin&tier=low', init)
   });
   await page.goto(`${origin}${BASE}${query}`);
   await ready(page);
+  const state = Object.assign(() => page.evaluate(() => window.__godis.state()), { page });
   return {
     page, context,
-    state: () => page.evaluate(() => window.__godis.state()),
+    state,
     info: () => page.evaluate(() => window.__godis.info()),
     async finish() {
       assert.deepEqual(errors, [], `${name}: browser errors`);
@@ -110,6 +113,18 @@ try {
     check('morning: a pause holds the scene\'s clock', (await state()).scene.seconds === paused.scene.seconds);
     await page.keyboard.press('Escape');
     check('morning: draw budget', withinDraws((await info()).drawCalls, (await info()).tier));
+    await until(state, (s) => s.storyReading, 'Mamma waits for the reader', 120000);
+    const reading = await state();
+    const line = await page.locator('#bubbleLine').textContent();
+    await sleep(1300);
+    check('morning: words and story time never advance without Fortsätt',
+      (await state()).scene.seconds === reading.scene.seconds && await page.locator('#bubbleLine').textContent() === line);
+    await page.keyboard.press('Escape');
+    await sleep(300);
+    await page.keyboard.press('Escape');
+    check('morning: the same unread line survives pause',
+      (await state()).storyReading && await page.locator('#bubbleLine').textContent() === line);
+    await page.keyboard.press('e');
     await until(state, (s) => s.said.includes('morgon:1'), 'Pappa holds out the brush', 120000);
     check('morning: Pappa asks him to paint the eyes', await page.locator('#bubbleLine').textContent() === 'Jag har täljt ett spöke. Måla ögonen!');
     await until(state, (s) => !s.held && s.scene === null, 'the morning ends', 120000);
@@ -152,7 +167,7 @@ try {
     check('shrinking: stepping onto the hand is his choice', await page.locator('#actBtn').textContent() === 'Kliv upp' && !(await state()).flags.includes('hand'));
     await page.keyboard.press('e');
     await until(state, (s) => s.scene?.id === 'handen', 'he is lifted', 120000);
-    await page.waitForFunction(() => document.getElementById('bubbleLine').textContent === 'Jag såg det! Påsen började glittra.', null, { timeout: 120000 });
+    await page.waitForFunction(() => document.getElementById('bubbleLine').textContent === 'Spökets magi hamnade i godispåsen.', null, { timeout: 120000 });
     await page.keyboard.press('Escape');
     const lifted = await state();
     await sleep(350);
@@ -161,7 +176,7 @@ try {
     await picture(page, '/tmp/prologue-hand.png');
     await page.locator('#pause').evaluate((node) => { node.style.visibility = ''; });
     await page.keyboard.press('Escape');
-    await page.waitForFunction(() => document.getElementById('bubbleLine').textContent === 'Guldgodiset kan göra dig stor igen.', null, { timeout: 120000 });
+    await until(state, (s) => s.said.includes('handen:2'), 'Pappa explains the golden candy', 120000);
     check('shrinking: Pappa reads the hope in Moa\'s drawing', await page.locator('#bubble').getAttribute('data-who') === 'pappa');
     // Set down again, he has his feet back: Pappa notices the ghost as he sets off towards it.
     await until(state, (s) => s.flags.includes('scene:handen') && !s.held, 'he is set down', 120000);

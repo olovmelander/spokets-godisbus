@@ -15,7 +15,7 @@ import type { Candy, ChapterData } from '../../sim/types';
  *      at the top of the last one hangs a hidden candy. From there the crossing's own hook is in reach, and
  *      takes him over the gully. Missing costs nothing: he lands on the ground below, or the glitter bubble
  *      carries him back from the gully.
- * 4. **The dandelion:** the ghost stumbles, and can nearly be caught.
+ * 4. **The dandelion:** the ghost stumbles and spills sweets, then escapes out of reach.
  * 5. **The lawn:** the birch's roots, and a boulder.
  * 6. **Under the birch** (E1): the dew rain.
  * 7. **Pappa's shavings** (P4): a curl pulled down as a step, and a second pushed across the gap at the top.
@@ -352,7 +352,7 @@ export const garden: ChapterData = {
     { at: { x: 50.5, y: 0 } },
     { at: { x: 58.6, y: 0 } },
     { at: { x: 68.6, y: 0 } },
-    // the dandelion
+    // The dandelion makes it spill sweets while escaping, safely ahead of Elof.
     { at: { x: 74, y: 0 }, catch: 'dandelion' },
     { at: { x: 78.4, y: 0 } },
     { at: { x: 84.5, y: 1.4 } },

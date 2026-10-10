@@ -48,7 +48,7 @@ describe('Prolog, Lördagsmorgon', () => {
       expect(did(result.flags).filter((flag) => flag.startsWith('scene:'))).toEqual(
         ['scene:morgon', 'scene:vaknar', 'scene:poff', 'scene:familj', 'scene:handen', 'scene:lofte']);
       expect(result.said).toEqual(['morgon:0', 'morgon:1', 'vaknar:0', 'vaknar:1', 'dropped', 'fallenStar', 'poff:0', 'familj:0', 'familj:1',
-        'handen:0', 'handen:1', 'onlyWood', 'snuck', 'nearYou', 'mapForYou', 'heja', 'followTrail']);
+        'handen:0', 'handen:1', 'handen:2', 'handen:3', 'onlyWood', 'snuck', 'nearYou', 'mapForYou', 'heja', 'followTrail', 'titel:0']);
       expect(result.bubbles).toBe(0);
       expect(result.missed).toEqual([]);
     });

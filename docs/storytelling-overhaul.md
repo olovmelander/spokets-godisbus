@@ -16,6 +16,19 @@ three-year-old Elof; the ghost wants to bring it home and share Saturday sweets 
 called *spöket* until Elof names it Klonk in the epilogue. There is no spoken dialogue or recording.
 The existing family consent, asset rules and release checkpoint still apply.
 
+## Reading and chase direction — 10 October 2026
+
+Olov asks for a story that is easier to follow, with time to understand the painted memory pictures.
+Important dialogue and memories now wait for the player's deliberate next action. This supersedes
+the earlier six-to-ten-second limit for the complete memory: a short animation can finish while its
+picture and caption remain. Previous/next controls let the player revisit the cause before the result;
+reduced motion preserves the same story and controls without continuous scene movement.
+
+The chase keeps the ghost out of reach. Close meetings belong to the opening and ending, as Olov
+explicitly clarified. A waiting ghost still leads from a distance; helping it in the middle chapters
+does not enable a catch. Hint visits must respect the same separation as the main ghost. Existing
+story flags, chapter rewards and puzzle completion retain their saved meanings.
+
 ## Research and our design inference
 
 The sources below are developer writing, official developer/publisher pages or their published game

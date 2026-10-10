@@ -15,7 +15,7 @@ import type { Candy, ChapterData } from '../../sim/types';
  * 5. **Pappas gungbräda** (P8): "Ropa på Pappa". The small cone near the ravine gives a playful low bounce;
  *    the big one further up the slope carries him across. Go back for it, push it to his hand, and stand
  *    on the low end. He can also choose the big cone first and skip the trial.
- * 6. **The fallen log:** the ghost can nearly be caught.
+ * 6. **The fallen log:** the ghost spills sweets as it escapes out of reach.
  * 7. **Kepsbåten** (S3): "Ropa på Bertil", and his cap carries Elof across the forest pool.
  * 8. **Spöket i virveln** (P10): from a stone, the lace pulls the ghost ashore. It leaves one candy on the
  *    stone, and from now on it waits for him.
@@ -323,7 +323,7 @@ export const granskog: ChapterData = {
     { at: { x: 100, y: slope(100) } },
     { at: { x: 107, y: -8 } },
     { at: { x: 116.6, y: -8 } },
-    // across the ravine, and the near-catch on the log
+    // Across the ravine; the log makes it spill sweets while hopping away.
     { at: { x: 127.6, y: -8 } },
     { at: { x: 134.5, y: -7.2 }, catch: 'log' },
     { at: { x: 141, y: -8 } },
@@ -332,9 +332,9 @@ export const granskog: ChapterData = {
     // over the pool on a leaf, and into the eddy, where it stays until he pulls it out
     { at: { x: 180.5, y: -8 } },
     { at: { x: 186.8, y: -9 }, until: 'placed:rescue' },
-    // from now on it waits for him
-    { at: { x: 197, y: -8 }, near: 1.6, thought: { picture: 'mountain', after: 'placed:rescue' } },
-    { at: { x: 205.5, y: -8 }, near: 1.6, thought: { picture: 'mountain', after: 'placed:rescue' } },
+    // It waits to show the way, still several Elof lengths ahead.
+    { at: { x: 197, y: -8 }, thought: { picture: 'mountain', after: 'placed:rescue' } },
+    { at: { x: 205.5, y: -8 }, thought: { picture: 'mountain', after: 'placed:rescue' } },
   ],
   beats: [
     { id: 'vittra', at: 61.8, who: 'elof', line: 'givesAway' },

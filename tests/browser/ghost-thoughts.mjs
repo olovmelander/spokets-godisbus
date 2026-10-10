@@ -11,8 +11,8 @@ import { withinDraws } from './budget.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/ghost-thoughts'); mkdirSync(shots, { recursive: true });
 const virtual = '\0ghost-thought-fixture';
-const server = await createServer({ root,
-  server: { host: '127.0.0.1', port: 0, fs: { allow: [root, realpathSync(join(root, 'node_modules'))] } },
+const server = await createServer({ root, cacheDir: 'node_modules/.vite-ghost-thoughts',
+  server: { host: '127.0.0.1', port: 0, watch: null, fs: { allow: [root, realpathSync(join(root, 'node_modules'))] } },
   plugins: [{ name: 'ghost-thought-fixture',
     resolveId(id) { if (id === '/ghost-thought-fixture.js') return virtual; },
     load(id) {
@@ -36,9 +36,10 @@ const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--ena
 let checks = 0;
 const check = (name, value) => { assert.ok(value, name); checks++; console.log(`  ok   ${name}`); };
 try {
+  // The chase now departs within four EL: observe its thought from a safe, settled distance.
   for (const [course, x, y, gate, expected] of [
-    ['granskog', 194, -8, 'placed:rescue', 'mountain'],
-    ['myren', 183, 0, 'home', 'pine-crack'],
+    ['granskog', 192.5, -8, 'placed:rescue', 'mountain'],
+    ['myren', 182, 0, 'home', 'pine-crack'],
     ['berget', 141.8, 26.4, null, 'lonely-figure'],
   ]) for (const [width, height, tier] of [[844, 390, 'low'], [390, 844, 'high']]) {
     const name = `${course}-${width}x${height}-${tier}`;

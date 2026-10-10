@@ -56,7 +56,7 @@ import type { Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { endsInScene, type SceneFrame } from '../sim/scene';
-import { BERRY_HALF, BERRY_HEIGHT, JUMP_SPEED } from '../sim/constants';
+import { BERRY_HALF, BERRY_HEIGHT, GHOST_CLEARANCE, JUMP_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
 import { photoCut } from './crop';
@@ -1093,6 +1093,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostTurn = -staged.face * Math.PI * 2;
         ghost.rotation.set(0, ghostFaces + ghostTurn, staged.tilt);
         ghostStaged = true;
+      }
+      // Elof is interpolated between simulation steps. Keep that intermediate picture outside the
+      // same chase clearance, without advancing the ghost past a puzzle's waiting perch.
+      if (!chapter.ghostMeet) {
+        const dx = ghostPlace.position.x - x, dy = ghostPlace.position.y - y;
+        if (Math.hypot(dx, dy) < GHOST_CLEARANCE) {
+          ghostPlace.position.y = y + (dy < 0 ? -1 : 1) * Math.sqrt(GHOST_CLEARANCE ** 2 - dx ** 2);
+        }
       }
       blinkEyes(paintedEyes, staged?.blink ?? 1);
       ghostMotion.update({ dt, clock, hop: hopping ? ghostState.t : null, calm: calmStory, awake, staged: ghostStaged, performance: staged ?? undefined });

@@ -6,6 +6,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
+import { continueDialogue } from './dialogue.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -41,6 +42,7 @@ async function until(read, accepts, name, timeout = 12000) {
   do {
     value = await read();
     if (accepts(value)) return value;
+    if (value.storyReading && read.page) await continueDialogue(read.page);
     await sleep(35);
   } while (Date.now() < end);
   assert.fail(`${name}: timed out; last value ${JSON.stringify(value)}`);
@@ -88,9 +90,10 @@ async function open(name, options = {}, query = '?debug&standin&tier=low', init)
   });
   await page.goto(`${origin}${BASE}${query}`);
   await ready(page);
+  const state = Object.assign(() => page.evaluate(() => window.__godis.state()), { page });
   return {
     page, context,
-    state: () => page.evaluate(() => window.__godis.state()),
+    state,
     info: () => page.evaluate(() => window.__godis.info()),
     async finish() {
       assert.deepEqual(errors, [], `${name}: browser errors`);
@@ -200,8 +203,9 @@ try {
     const { page, state, finish } = await open('painting', {}, '?dev&debug&standin&tier=low&course=prolog', () => {
       localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'prolog', checkpoint: 0, candy: {}, placed: {}, flags: {}, playMs: 0 }));
     });
-    await page.keyboard.down('ArrowRight');
     // The morning's scene plays first: he watches it, and walks to the brush once it has ended.
+    await until(state, (s) => s.flags.includes('scene:morgon'), 'read the morning before walking', 120000);
+    await page.keyboard.down('ArrowRight');
     await until(state, (s) => s.word === 'paintGhost', 'the brush becomes reachable', 120000);
     await page.keyboard.up('ArrowRight');
     await page.keyboard.press('e');

@@ -296,7 +296,9 @@ export const PROLOG_SCENES: SceneDef[] = [
     hold: true,
     lines: [
       { at: 2.4, who: 'moa', line: 'sawGlitter' },
+      { at: 4.3, who: 'moa', line: 'starMagic' },
       { at: 6.3, who: 'pappa', line: 'goldHope' },
+      { at: 8.2, who: 'elof', line: 'goldInBag' },
     ],
     stage: {
       shots: [
@@ -395,6 +397,7 @@ export const PROLOG_SCENES: SceneDef[] = [
     // Their promises are let finish first: he stands at the edge and listens.
     quiet: true,
     cues: [{ at: 0.9, flag: 'leap' }, { at: 7.4, flag: 'titel' }],
+    lines: [{ at: 2.8, who: 'elof', line: 'findBag' }],
     stage: {
       words: [{ at: 4.6, seconds: 3.0, kind: 'title', text: 'title' }],
       shots: [
