@@ -18,7 +18,7 @@ const TEXT = new Set([
 ]);
 // EXIF tags that say where, by whom or with which device a picture was taken.
 const EXIF_TAGS = { 0x8825: 'GPS', 0x013b: 'Artist', 0x8298: 'Copyright', 0x010f: 'Make', 0x0110: 'Model', 0xa430: 'OwnerName' };
-const EXIFTOOL_FIELDS = /^(GPS|Artist|Creator|By-line|Copyright|Rights|OwnerName|CameraOwnerName|SerialNumber|Make$|Model$|Location|City|Sub-location)/;
+const EXIFTOOL_FIELDS = /^(GPS|Artist|Creator|By-line|Copyright$|CopyrightNotice|Rights|OwnerName|CameraOwnerName|SerialNumber|Make$|Model$|Location|City|Sub-location)/;
 
 const problems = [];
 const rel = (path) => relative(ROOT, path).replaceAll('\\', '/');
