@@ -10,12 +10,12 @@ export const VERB_ICON: Record<string, IconId> = {
   slide: 'slide', lace: 'lace', push: 'push', pull: 'push', turn: 'push', take: 'take', call: 'call', give: 'give', grab: 'take',
   // By the word, where it says more than its verb.
   callMoa: 'call', callPappa: 'call', callBertil: 'call', callMamma: 'call',
-  gardenBoard: 'climb', climbOn: 'climb', board: 'climb', rideAnts: 'climb', standOn: 'climb',
+  gardenBoard: 'climb', capBoard: 'climb', climbOn: 'climb', board: 'climb', rideAnts: 'climb', standOn: 'climb',
   gardenGiveDrawing: 'give', giveTragubbe: 'give', giveGhost: 'give', giveJay: 'give', giveMamma: 'give', givePappa: 'give',
   giveMoa: 'give', giveBertil: 'give', leaveBerry: 'give',
   takeLight: 'take', takeBag: 'take', takeKnife: 'take', pick: 'take',
   lift: 'push', lowerLace: 'lace',
-  paintEyes: 'brush', paintGhost: 'brush', carve: 'knife', brush: 'toothbrush', taste: 'taste', goHome: 'house',
+  paintEyes: 'brush', paintGhost: 'brush', carve: 'knife', brush: 'toothbrush', taste: 'taste', tasteStar: 'taste', goHome: 'house',
 };
 
 /** The picture for what Använd does now. */

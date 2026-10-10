@@ -127,7 +127,7 @@ describe('authored changes of stance', () => {
 
   it('turns Moa’s head smoothly between the jay and the bag without restarting her seated action', () => {
     const { stage, rig, pose } = watch('moa');
-    for (const at of [5.3, 6.15]) {
+    for (const at of [14, 15.8]) {
       show(stage, 'vaknar', at - 1e-6);
       let previous = rig.mouth(new Vector3());
       const initial = previous.clone();
@@ -142,12 +142,12 @@ describe('authored changes of stance', () => {
       }
       expect(previous.distanceTo(initial)).toBeGreaterThan(.25);
     }
-    show(stage, 'vaknar', 5.45);
+    show(stage, 'vaknar', 14.15);
     const halfway = rig.mouth(new Vector3()).toArray();
-    show(stage, 'vaknar', 6.5);
-    show(stage, 'vaknar', 5.45);
+    show(stage, 'vaknar', 16.1);
+    show(stage, 'vaknar', 14.15);
     expect(rig.mouth(new Vector3()).toArray()).toEqual(halfway);
-    show(stage, 'vaknar', 5.45, false, 0, 900);
+    show(stage, 'vaknar', 14.15, false, 0, 900);
     expect(rig.mouth(new Vector3()).toArray()).toEqual(halfway);
   });
 });

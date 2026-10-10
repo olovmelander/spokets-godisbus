@@ -186,6 +186,7 @@ export function createPlayerStandIn() {
   return {
     group,
     hand(side: 0 | 1, out: Vector3) { return arms[side]!.elbow.localToWorld(out.copy(handTip)); },
+    mouth(out: Vector3) { return neck.localToWorld(out.set(.17, .1, 0)); },
     reach(side: 0 | 1, target: Vector3, weight = 1) { contacts[side]!(target, weight); },
     pose(p: Pose) {
       body.rotation.z = -p.lean;

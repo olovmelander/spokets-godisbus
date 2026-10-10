@@ -104,5 +104,5 @@ it.each([false, true])('Pappa keeps his body and legs beside the chair before tu
     if (previous) expect(rig.group.position.distanceTo(previous)).toBeLessThan(.07);
     previous = rig.group.position.clone();
   }
-  expect(rig.group.position.toArray()).toEqual([7.7, 0, -4.3]);
+  expect(rig.group.position.toArray()).toEqual([7.2, 0, -4.3]);
 });

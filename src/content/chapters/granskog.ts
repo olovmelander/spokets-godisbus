@@ -242,7 +242,9 @@ export const granskog: ChapterData = {
     { id: 'launch', look: 'seesaw', at: { x: 113.2, y: -8 }, verb: 'take', word: 'standOn', needs: 'placed:cone', ride: 'launch' },
     // Memory 2, after the log: the autumn walk, and the Saturday sweets he shared.
     { id: 'memory', look: 'memory', at: { x: 144, y: -8 }, verb: 'take', touch: true },
-    { id: 'cap', look: 'sign', at: { x: 154.6, y: -8 }, verb: 'call', word: 'callBertil', ride: 'cap' },
+    // Calling prepares the boat. Elof can read Bertil's offer and choose when to board.
+    { id: 'cap:ready', look: 'sign', at: { x: 154.6, y: -8 }, verb: 'call', word: 'callBertil' },
+    { id: 'cap', look: 'sign', at: { x: 154.6, y: -8 }, verb: 'take', word: 'capBoard', needs: 'family:cap-ready', ride: 'cap' },
     // The same seesaw, with the lighter counterweight. The successful launch above takes priority once ready.
     { id: 'seesaw:trial', at: LAUNCH.from, verb: 'take', word: 'standOn', needs: 'placed:cone-small', ride: 'seesaw:trial', extra: true },
   ],
@@ -339,12 +341,21 @@ export const granskog: ChapterData = {
   beats: [
     { id: 'vittra', at: 61.8, who: 'elof', line: 'givesAway' },
     { id: 'vittra-gift', on: 'vittra:gift', who: 'elof', line: 'vittraBerry' },
+    { id: 'family:pappa', at: 106.8, until: 'seesaw', who: 'pappa', line: 'familyPappa', read: true },
+    { id: 'family:seesaw', on: 'family:seesaw-ready', until: 'launch', within: [103, 118], who: 'pappa', line: 'familySeesaw', read: true },
+    { id: 'family:seesaw-ready', on: 'placed:cone', until: 'launch', within: [103, 118], who: 'pappa', line: 'familySeesawReady', read: true },
+    { id: 'family:bertil', at: 152.4, until: 'cap', who: 'bertil', line: 'familyBertil', read: true },
+    { id: 'family:cap-ready', on: 'family:cap-ready', until: 'cap', within: [149, 158], who: 'bertil', line: 'familyCapReady', read: true },
     { id: 'heja', at: 166, who: 'bertil', line: 'heja' },
     { id: 'thanked', on: 'placed:rescue', who: 'elof', line: 'thanked' },
     { id: 'vittra-clue', on: 'keepsake:vittra', who: 'elof', line: 'forestVittraClue' },
     { id: 'seesaw-trial', on: 'seesaw:trial:landed', who: 'elof', line: 'forestTrial' },
   ],
-  later: [{ flag: 'seesaw:trial:landed', after: 'seesaw:trial', seconds: TRIAL.time }],
+  later: [
+    { flag: 'seesaw:trial:landed', after: 'seesaw:trial', seconds: TRIAL.time },
+    { flag: 'family:seesaw-ready', after: 'seesaw', until: 'launch', within: [103, 118], seconds: 1, hold: true },
+    { flag: 'family:cap-ready', after: 'cap:ready', until: 'cap', within: [149, 158], seconds: 1.2, hold: true },
+  ],
   cameras: [
     // Up on the boughs and in the nest the picture is wider and looks down a little, so that the ring over
     // him and the trail under him are both in it: further down from the nest, which is higher. Each begins

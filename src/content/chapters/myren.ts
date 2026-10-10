@@ -440,12 +440,17 @@ export const myren: ChapterData = {
     { at: { x: 186.5, y: 0 }, thought: { picture: 'pine-crack', after: 'home' } },
   ],
   beats: [
+    { id: 'family:mamma', at: 82.6, until: 'mamma', who: 'mamma', line: 'familyMamma', read: true },
+    { id: 'family:bridge-ready', on: 'placed:pine', until: 'braid', within: [80, 99], who: 'mamma', line: 'familyBridgeReady', read: true },
+    { id: 'family:braid', at: 99.8, until: 'braid', who: 'mamma', line: 'familyBraid', read: true },
+    { id: 'family:braid-ready', on: 'family:braid-ready', until: 'light', within: [98, 107], who: 'mamma', line: 'familyBraidReady', read: true },
     { id: 'spangen', at: 105.4, who: 'mamma', line: 'spangen' },
     { id: 'bog:chick-light', on: 'chick', who: 'elof', line: 'bogChickLight' },
     { id: 'bog:family-home', on: 'home', who: 'mamma', line: 'bogFamilyHome' },
     { id: 'bog:bridge-ready', on: 'placed:bog-boardwalk', who: 'mamma', line: 'bogBridgeReady' },
     { id: 'bog:light-return', on: 'bog:lantern-return', who: 'elof', line: 'bogLightReturn' },
   ],
+  later: [{ flag: 'family:braid-ready', after: 'braid', until: 'light', within: [98, 107], seconds: 1.2, hold: true }],
   cameras: [
     // The upper route needs its next landing and the lower way home in portrait as well as landscape.
     { from: 145.8, to: 163, above: 1.55, zoom: 1.45, lift: 0.6, lead: 0.8 },

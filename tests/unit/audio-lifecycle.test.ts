@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAudio, uiKey } from '../../src/audio/audio';
-import { arrangementFor } from '../../src/audio/music';
+import { arrangementFor, MUSIC_LEVEL } from '../../src/audio/music';
 
 class Parameter {
   value = 0;
@@ -41,6 +41,67 @@ class Context {
 
 afterEach(() => vi.unstubAllGlobals());
 describe('audio pause lifecycle', () => {
+  it('keeps the star hush independent of mute, volume, menus and page sleep', () => {
+    vi.stubGlobal('window', { AudioContext: Context });
+    const audio = createAudio();
+    audio.storyQuiet(true);
+    audio.unlock();
+    const context = Context.instance;
+    const [, effects, music, ambience] = context.gains;
+    expect(music!.gain.value).toBeCloseTo(MUSIC_LEVEL * 0.18);
+    expect(ambience!.gain.value).toBeCloseTo(0.15);
+    audio.setMusic(0.4);
+    audio.setEffects(0.6);
+    expect(effects!.gain.value).toBe(0.6);
+    expect(music!.gain.value).toBeCloseTo(MUSIC_LEVEL * 0.4 * 0.18);
+    expect(ambience!.gain.value).toBeCloseTo(0.6 * 0.15);
+    audio.menu(true);
+    expect(music!.gain.target).toBeCloseTo(MUSIC_LEVEL * 0.4 * 0.18 * 0.355);
+    expect(ambience!.gain.target).toBeCloseTo(0.6 * 0.15 * 0.5);
+    audio.setMusic(0);
+    audio.setEffects(0);
+    audio.storyQuiet(false);
+    expect(music!.gain.target).toBe(0);
+    expect(ambience!.gain.target).toBe(0);
+    audio.sleep(true);
+    audio.storyQuiet(true);
+    expect(audio.mode).toBe('off');
+    audio.setMusic(0.4);
+    audio.setEffects(0.6);
+    audio.sleep(false);
+    expect(music!.gain.target).toBeCloseTo(MUSIC_LEVEL * 0.4 * 0.18 * 0.355);
+    audio.storyQuiet(false);
+    audio.menu(false);
+    expect(music!.gain.target).toBeCloseTo(MUSIC_LEVEL * 0.4);
+    expect(ambience!.gain.target).toBeCloseTo(0.6);
+  });
+
+  it.each(['bird', 'blink', 'paper', 'taste', 'swell', 'poff', 'breath'] as const)('cancels the opening %s sound on pause and never plays it muted or hidden', sound => {
+    vi.stubGlobal('window', { AudioContext: Context });
+    const audio = createAudio();
+    const cue = { kind: 'story', sound } as const;
+    audio.play(cue);
+    expect(audio.played).toBe(0);
+    audio.unlock();
+    const context = Context.instance;
+    audio.play(cue);
+    expect(audio.played).toBe(1);
+    const sources = [...context.sources];
+    expect(sources.length).toBeGreaterThan(0);
+    audio.menu(true);
+    for (const source of sources) expect(source.stops).toContain(undefined);
+    audio.play(cue);
+    audio.menu(false);
+    audio.setEffects(0);
+    audio.play(cue);
+    audio.setEffects(1);
+    audio.sleep(true);
+    audio.play(cue);
+    audio.sleep(false);
+    expect(context.sources).toHaveLength(sources.length);
+    expect(audio.played).toBe(1);
+  });
+
   it('silences every bus, cancels delayed effects/music, and menu inputs cannot wake it', () => {
     vi.stubGlobal('window', { AudioContext: Context });
     const audio = createAudio();

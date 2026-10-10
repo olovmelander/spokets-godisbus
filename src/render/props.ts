@@ -227,7 +227,7 @@ export interface SpotProp {
 const SIGNS: Record<string, string> = {
   callMoa: '#5b7fb5', callPappa: '#5a7d4a', callBertil: '#d98a2c', callMamma: '#f1ece2', goHome: '#5a7d4a',
   giveMoa: '#5b7fb5', givePappa: '#5a7d4a', giveBertil: '#d98a2c', giveMamma: '#f1ece2', takeKnife: '#5a7d4a',
-  gardenBoard: '#334e72',
+  gardenBoard: '#334e72', capBoard: '#d98a2c',
 };
 
 /** A thing at a spot, a little behind the path so that he passes in front of it. Null: only the glint. */
@@ -458,6 +458,13 @@ export function spotProp(spot: Spot): SpotProp | null {
         sheet.lineTo(-0.08, 1.3); sheet.closePath();
         const paper = new Mesh(new ShapeGeometry(sheet), solid('#faf5e6', 0.8, { side: DoubleSide }));
         paper.name = 'garden-boarding-glyph'; paper.position.z = 0.055; group.add(paper);
+      }
+      if (spot.word === 'capBoard') {
+        const cap = new Shape();
+        cap.moveTo(-.23, 1.4); cap.quadraticCurveTo(-.18, 1.15, .16, 1.26);
+        cap.lineTo(.27, 1.4); cap.lineTo(.1, 1.37); cap.closePath();
+        const glyph = new Mesh(new ShapeGeometry(cap), solid('#faf5e6', .8, { side: DoubleSide }));
+        glyph.name = 'cap-boarding-glyph'; glyph.position.z = .055; group.add(glyph);
       }
       group.position.z = -0.9;
       return { group, update: (_used, clock) => void (board.rotation.z = face.rotation.z = Math.sin(clock * 1.3 + spot.at.x) * 0.05) };

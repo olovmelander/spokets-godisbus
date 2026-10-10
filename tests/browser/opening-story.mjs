@@ -13,7 +13,7 @@ const shots = join(root, 'docs/shots/_work/opening-story');
 mkdirSync(shots, { recursive: true });
 const virtual = '\0opening-story-fixture';
 const server = await createServer({ root,
-  server: { host: '127.0.0.1', port: 0, fs: { allow: [root, realpathSync(join(root, 'node_modules'))] } },
+  server: { host: '127.0.0.1', port: 0, watch: null, fs: { allow: [root, realpathSync(join(root, 'node_modules'))] } },
   plugins: [{ name: 'opening-story-fixture',
     resolveId(id) { if (id === '/opening-story-fixture.js') return virtual; },
     load(id) {
@@ -54,6 +54,7 @@ const check = (name, condition) => { assert.ok(condition, name); checks++; conso
 try {
   for (const [width, height, tier] of [[390, 844, 'low'], [844, 390, 'low'], [780, 360, 'low'], [1180, 820, 'high'], [1440, 900, 'high']]) {
     const name = `${width}x${height}-${tier}`;
+    if (process.env.OPENING_CASE && process.env.OPENING_CASE !== name) continue;
     const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
     const errors = [];
     page.on('pageerror', (error) => errors.push(String(error)));
@@ -79,7 +80,8 @@ try {
       const snapshot = () => ({ ...view.info(), eyes: [0, 1].map((i) => ghost.getObjectByName(`ghost-eye-${i}`).visible),
         bag: bag.visible, tear: bag.getObjectByName('saturday-bag-tear').visible,
         star: scene.getObjectByName('spot:star').visible, family: relatives.map((actor) => ({ visible: actor.visible, at: actor.position.toArray(), corners: f.bounds(actor) })),
-        scale: scene.getObjectByName('elof').scale.y, candy: f.candyScales(scene.getObjectByName('trail-candy')) });
+        scale: scene.getObjectByName('elof').scale.y, sweet: { visible: scene.getObjectByName('elof-star').visible,
+          scale: scene.getObjectByName('elof-star').scale.x, at: scene.getObjectByName('elof-star').position.toArray() }, candy: f.candyScales(scene.getObjectByName('trail-candy')) });
       window.probe = { f, sim, view, draw, scene, snapshot, at: (next) => { frame = next; } };
       const opening = snapshot();
       frame = null;
@@ -112,12 +114,26 @@ try {
     check(`${name}: the spilled star lies ahead of him, and the family has followed him out`, before.star
       && before.family.every((actor) => actor.visible && actor.at[0] < 40.5 && actor.at[0] > 30));
     await picture(page, join(shots, `${name}-before.png`));
-    const change = await page.evaluate(() => {
-      const p = window.probe; p.sim.flags.add('star'); p.draw(.4); const midway = p.snapshot();
-      for (let i = 0; i < 12; i++) p.draw(0); const paused = p.snapshot();
-      for (let i = 0; i < 10; i++) p.draw(.1); return { midway, paused, after: p.snapshot() };
+    const taste = await page.evaluate(() => {
+      const p = window.probe; p.sim.flags.add('star');
+      p.at({ id: 'poff', seconds: 1 }); p.draw(.1); const show = p.snapshot();
+      p.at({ id: 'poff', seconds: 2.9 }); p.draw(.1); const mouth = p.snapshot();
+      p.at({ id: 'poff', seconds: 3.65 }); p.draw(.1); return { show, mouth, swallowed: p.snapshot() };
     });
-    check(`${name}: shrinking is visible and pauses at its intermediate size`, change.midway.scale > 1 && change.midway.scale < 3 && change.paused.scale === change.midway.scale);
+    check(`${name}: the chosen star is shown, raised and swallowed while Elof stays his original size`,
+      taste.show.sweet.visible && taste.mouth.sweet.visible && !taste.swallowed.sweet.visible &&
+      taste.mouth.sweet.at[1] > taste.show.sweet.at[1] &&
+      [taste.show, taste.mouth, taste.swallowed].every(moment => Math.abs(moment.scale - 3) < .01 && !moment.star));
+    await page.evaluate(() => { window.probe.at({ id: 'poff', seconds: 2.9 }); window.probe.draw(0); });
+    await picture(page, join(shots, `${name}-taste.png`));
+    const change = await page.evaluate(() => {
+      const p = window.probe;
+      p.at({ id: 'poff', seconds: 5.25 }); p.draw(.1); const midway = p.snapshot();
+      for (let i = 0; i < 12; i++) p.draw(0); const paused = p.snapshot();
+      p.at({ id: 'poff', seconds: 6.5 }); p.draw(.1); return { midway, paused, after: p.snapshot() };
+    });
+    check(`${name}: shrinking follows the story clock and pauses at its intermediate size`,
+      Math.abs(change.midway.scale - 2) < .01 && change.paused.scale === change.midway.scale);
     check(`${name}: Elof becomes one third as tall while the same family remains beside him`, Math.abs(change.after.scale - 1) < .01 && change.after.family.every((actor, i) => actor.visible && JSON.stringify(actor.at) === JSON.stringify(before.family[i].at)) && !change.after.star);
     check(`${name}: story staging stays inside the draw budget with warmed shaders`, withinDraws(change.after.drawCalls, change.after.tier) && change.after.programs === before.programs);
     const kneeling = await page.evaluate(() => {
@@ -132,11 +148,11 @@ try {
     check(`${name}: the family's scene fits the draw budget with warmed shaders`, withinDraws(kneeling.drawCalls, kneeling.tier) && kneeling.programs === before.programs);
     await picture(page, join(shots, `${name}-after.png`));
     const restored = await page.evaluate(async ({ tier }) => {
-      // The saved checkpoint is beyond the completed ride; a save before it deliberately replays it.
+      // The transformation is complete; even if the unfinished family scene resumes, Elof already starts small.
       const p = window.probe, chapter = { ...p.f.prolog, spawn: { x: 45, y: -0.79 } };
       const oldCanvas = document.getElementById('game'), canvas = document.createElement('canvas');
       canvas.id = 'game'; canvas.style.cssText = oldCanvas.style.cssText; oldCanvas.replaceWith(canvas);
-      p.sim = new p.f.Sim(chapter, {}, { flags: ['eye', 'paint', 'blink', 'mamma:passed', 'bag:torn', 'star'] });
+      p.sim = new p.f.Sim(chapter, {}, { flags: ['eye', 'paint', 'blink', 'mamma:passed', 'bag:torn', 'star', 'scene:poff'] });
       p.view = p.f.createView(canvas, chapter, tier, true);
       await p.view.ready;
       // draw closes over the original view/sim, so render the restored pair directly.

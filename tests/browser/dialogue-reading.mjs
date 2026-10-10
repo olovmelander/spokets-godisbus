@@ -55,9 +55,12 @@ try {
     await page.setViewportSize({ width, height });
     const layout = await page.evaluate(() => {
       document.body.classList.add('big-text');
-      window.dialogue.scene.reading(true, 'keys');
+      window.dialogue.scene.reading(true, 'keys', 'Stjärnan från påsen');
       const button = document.getElementById('sceneNext'), rect = button.getBoundingClientRect();
-      return rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight && rect.height >= 44 && button.scrollWidth <= button.clientWidth;
+      const panel = document.getElementById('sceneReading').getBoundingClientRect();
+      return rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight && rect.height >= 44 && button.scrollWidth <= button.clientWidth
+        && panel.left >= 0 && panel.right <= innerWidth && panel.top >= 0 && panel.bottom <= innerHeight
+        && document.getElementById('sceneMoment').textContent === 'Stjärnan från påsen';
     });
     assert.ok(layout, `${width}×${height}: large reading control stays in view`);
   }

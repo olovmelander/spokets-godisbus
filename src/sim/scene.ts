@@ -26,13 +26,19 @@ export interface SceneDef {
    * up at an earlier big candy never plays it where he is not.
    */
   from?: number;
+  /**
+   * A safe mark for replaying this unfinished scene after recovery. A checkpoint must not put Elof
+   * away from its camera and the hands he needs next once he has chosen to begin this moment.
+   */
+  resumeAt?: Vec;
   /** It is never played once this flag is set: the story has gone past it, in an older save too. */
   until?: string;
   /** How long it lasts, in seconds of game time. */
   seconds: number;
   /**
    * He stands and watches it: the stick and the buttons do nothing. A held scene begins only when he stands on
-   * his own feet, so he is never stopped in the air or on a hose. Keep a held scene short (a test says how short).
+   * his own feet, so he is never stopped in the air or on a hose. Keep uninterrupted acting short; essential
+   * lines provide reading stops between the actions (the chapter tests check this pacing).
    */
   hold?: boolean;
   /**
@@ -47,6 +53,10 @@ export interface SceneDef {
    * beat with the id `<scene id>:<index>`, said once.
    */
   lines?: readonly { at: number; who: Speaker; line: string }[];
+  /** Wordless sounds follow the same clock as the acting, including reading pauses. */
+  sounds?: readonly { at: number; sound: StorySound }[];
+  /** Music and ambience soften during this span, leaving room for the story's small sounds. */
+  soundQuiet?: readonly [start: number, end: number];
   /** For the picture only: who does what, and where the camera looks. */
   stage?: SceneStage;
   /**
@@ -58,6 +68,7 @@ export interface SceneDef {
 
 /** Who acts in a scene. Elof is the player: in a held scene he acts too. */
 export type Actor = 'pappa' | 'mamma' | 'moa' | 'bertil' | 'ghost' | 'elof';
+export type StorySound = 'bird' | 'blink' | 'paper' | 'taste' | 'swell' | 'poff' | 'breath';
 
 /**
  * What an actor does from a moment on. Each is a movement made in code on the body's joints (src/render/acting.ts),
@@ -67,7 +78,7 @@ export type Act =
   // the family, and Elof where it suits him
   | 'stand' | 'walk' | 'sit' | 'carve' | 'draw' | 'sip' | 'sneak' | 'kneel' | 'crouch' | 'gasp' | 'point'
   | 'wave' | 'cheer' | 'offer' | 'reach' | 'lift' | 'show' | 'blow' | 'shrug' | 'hug' | 'nod' | 'look'
-  | 'startle' | 'stomp' | 'hands' | 'watch' | 'paint'
+  | 'startle' | 'stomp' | 'hands' | 'watch' | 'paint' | 'eat'
   // the ghost: a wooden toy that has come alive, and never bends
   | 'carved' | 'wake' | 'waddle' | 'grab' | 'run' | 'freeze' | 'tilt' | 'hop' | 'peek';
 
@@ -208,6 +219,13 @@ export function sceneWaits(scene: SceneDef, flags: ReadonlySet<string>): boolean
   return !flags.has(scene.by?.done ?? sceneDone(scene.id)) && (scene.until === undefined || !flags.has(scene.until));
 }
 
+/** Keep an interrupted, triggered tableau in its authored place when a checkpoint lies elsewhere. */
+export function sceneResumeAt(scenes: readonly SceneDef[] | undefined, flags: ReadonlySet<string>, checkpoint: Vec): Vec {
+  const scene = scenes?.find((candidate) => candidate.resumeAt && candidate.on && flags.has(candidate.on)
+    && (candidate.needs === undefined || flags.has(candidate.needs)) && sceneWaits(candidate, flags));
+  return scene?.resumeAt ?? checkpoint;
+}
+
 /**
  * Plays a chapter's scenes, one at a time, in the simulation's steps. They are tried in the order the chapter
  * lists them; a held scene that is due waits for Elof to stand, and those after it wait with it.
@@ -223,6 +241,9 @@ export class SceneDirector {
   constructor(private readonly scenes: readonly SceneDef[], spawn: Vec, flags: Set<string>) {
     // A scene that waits for a place he starts beyond has been seen: the game was taken up after it.
     for (const scene of scenes) if (scene.at !== undefined && scene.on === undefined && scene.at < spawn.x - 0.5) flags.add(sceneDone(scene.id));
+    // An older save can remember the later action without the scene added around it. Its until flag
+    // already means the story has passed this scene; retain that completion for presentation too.
+    for (const scene of scenes) if (scene.until && flags.has(scene.until)) flags.add(sceneDone(scene.id));
   }
 
   /** The scene playing now, or null. */

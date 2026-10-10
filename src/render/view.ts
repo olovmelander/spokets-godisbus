@@ -524,7 +524,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Elof, modelled in Blender after his sheets and photos. He too is only here where the private pack is;
   // everywhere else the stand-in built in code plays his part.
   const elof = createPlayerStandIn();
-  let playerBody: Pick<Rig, 'pose' | 'hand' | 'reach'> = elof;
+  let playerBody: Pick<Rig, 'pose' | 'hand' | 'mouth' | 'reach'> = elof;
   let playerHips = ['left', 'right'].map(side => elof.group.getObjectByName(`player-hip-${side}`));
   let playerFeet = ['left', 'right'].map(side => elof.group.getObjectByName(`player-boot-${side}`));
   const shoulderPose: Pose = { ...STANDING }, seat = new Vector3(), boot = new Vector3(), palm = new Vector3();
@@ -824,22 +824,26 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const riding = curr.mode === 'ride';
     // Which ride he is on is read from where he is: no two rides share a stretch.
     const carrier = riding ? carriers.find((c) => x >= c.ride.from.x - 0.5 && x <= c.ride.to.x + 0.5) : undefined;
-    const size = riding ? Math.min(1, curr.t / 0.05, (1 - curr.t) / 0.05) : 0;
+    const prepared = carrier?.ride.id === 'plane' && flags.has('moa') || carrier?.ride.id === 'cap' && flags.has('cap:ready');
+    const size = riding ? Math.min(1, prepared ? 1 : curr.t / 0.05, (1 - curr.t) / 0.05) : 0;
     const heading = riding ? Math.atan2(curr.y - prev.y, Math.max(1e-4, curr.x - prev.x)) : 0;
     // What does not carry him now lies under his feet at no size, and is out of the picture (./idle.ts).
-    const planeSize = carrier && carrier.ride.look !== undefined && carrier.ride.look !== 'plane' ? 0 : size;
+    const waitingPlane = chapter.id === 'garden' && flags.has('moa') && !flags.has('plane:board');
+    const planeSize = waitingPlane ? 1 : carrier && carrier.ride.look !== undefined && carrier.ride.look !== 'plane' ? 0 : size;
     plane.scale.setScalar(planeSize);
     drawnWhile(plane, planeSize > 0);
-    plane.position.set(x, y - 0.05, 0);
-    plane.rotation.z = heading;
+    const planeStart = waitingPlane ? chapter.rides?.find(ride => ride.id === 'plane')?.from : undefined;
+    plane.position.set(planeStart?.x ?? x, (planeStart?.y ?? y) - 0.05, 0);
+    plane.rotation.z = waitingPlane ? 0 : heading;
     for (const c of carriers) {
       if (!c.prop) continue;
-      const propSize = c === carrier ? size : 0;
+      const waitingCap = chapter.id === 'granskog' && c.ride.id === 'cap' && flags.has('cap:ready') && !flags.has('cap');
+      const propSize = waitingCap ? 1 : c === carrier ? size : 0;
       c.prop.scale.setScalar(propSize);
       drawnWhile(c.prop, propSize > 0);
-      c.prop.position.set(x, y - 0.05, 0);
+      c.prop.position.set(waitingCap ? c.ride.from.x : x, (waitingCap ? c.ride.from.y : y) - 0.05, 0);
       // A boat lies level on the water; a bird points the way it flies, and beats its wings.
-      c.prop.rotation.z = c.ride.look === 'cap' ? Math.sin(clock * 2.4) * 0.05 : heading * 0.6;
+      c.prop.rotation.z = c.ride.look === 'cap' ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : heading * 0.6;
       const beat = Math.sin(clock * 7) * 0.5;
       const near = c.prop.getObjectByName('wingNear');
       const far = c.prop.getObjectByName('wingFar');
@@ -857,6 +861,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // Shy lights take turns appearing; unrevealed ones must not betray the hiding place.
       // One that has been taken has shrunk away, and stays out of the picture.
       if (thing.prop && thing.spot.look === 'wisp') thing.prop.group.visible = (thing.spot.needs === undefined || flags.has(thing.spot.needs)) && thing.prop.group.scale.x > 0;
+      if (thing.prop && (thing.spot.word === 'gardenBoard' || thing.spot.word === 'capBoard')) {
+        thing.prop.group.visible = flags.has(thing.spot.needs!) && !flags.has(thing.spot.id);
+      }
       // The star comes from the torn bag; the returned bag is offered only after the repaired eyes.
       if (thing.prop && chapter.prologue && thing.spot.id === 'star') {
         const spilled = flags.has('blink') && flags.has('bag:torn') && (starDropTime > 0 || (x >= 37.5 && (ghostState?.x ?? 0) >= 40.5));
@@ -885,7 +892,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const want = directions.elof?.size ?? (big ? sized.scale : 1);
       if (!hasFrame) tall = want; // A restored small Elof must not replay a change that already happened.
       poff = tall !== want;
-      tall += Math.sign(want - tall) * Math.min(Math.abs(want - tall), ((sized.scale - 1) * dt) / 1.2);
+      tall = directions.elof?.size != null ? want : tall + Math.sign(want - tall) * Math.min(Math.abs(want - tall), ((sized.scale - 1) * dt) / 1.2);
     }
     helper.update(help, x, y, curr.standY, clock, dt, lessMotion());
     // The helper is the same friend, not a second ghost alongside the one he is following.
@@ -1024,6 +1031,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const k = calmStory ? 1 : clamp(scripted.actT / .3, 0, 1);
       playerBody.reach(1, boot.set(scripted.aim.x, scripted.aim.y, scripted.aim.z ?? 0), k * k * (3 - 2 * k));
     }
+    stage.updateElof(playerBody, scripted, tall, calmStory);
     if (curr.hook) {
       playerBody.hand(0, laceHand).add(playerBody.hand(1, laceAlong)).multiplyScalar(.5);
       laceHand.addScaledVector(boot.set(1, 0, 0).applyQuaternion(elof.group.quaternion), .15 * tall);
@@ -1154,7 +1162,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       one.rig.pose(one.motion.update(dt, clock, one.joy, towards - one.rig.group.rotation.y, carrying ? x : null, calmStory, {
         ahead: Math.abs(x - one.at) * 5.2 / one.rig.height,
         up: (y + tall * .8 - one.rig.group.parent!.position.y) * 5.2 / one.rig.height,
-      }));
+      }, one.glad && ['moa', 'seesaw', 'cap:ready', 'mamma', 'braid', 'bog:return-bridge'].includes(one.glad)
+        ? { ready: now, near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined));
     }
     if (chapter.id === 'norrsken') {
       const carving = scene.getObjectByName('mover:tragubbe');

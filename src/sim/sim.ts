@@ -16,7 +16,7 @@ import { hintFor } from './help';
 import { partyReward, sharingReward, type StoryAnswer } from './story';
 import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
 import { PrologueSequence } from './prologue';
-import { SceneDirector } from './scene';
+import { SceneDirector, sceneResumeAt } from './scene';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
@@ -267,7 +267,7 @@ export class Sim {
     this.jumps = chapter.jumps ?? [];
     // A saved game starts at its big candy. One the chapter doesn't know means the chapter's start.
     const saved = start.checkpoint !== undefined ? this.checkpoints[start.checkpoint] : undefined;
-    const spawn = saved ?? chapter.spawn;
+    const spawn = sceneResumeAt(chapter.scenes, new Set(start.flags), saved ?? chapter.spawn);
     if (saved) this.checkpoint = start.checkpoint!;
     this.world = new World({ gravity: new Vec2(0, -GRAVITY), allowSleep: false });
 
@@ -339,8 +339,9 @@ export class Sim {
     this.readyRides(spawn.x);
     this.placeLedges();
     for (const mover of this.movers) if (!mover.def.extra && !mover.def.cycle && mover.stop === mover.def.stops.length - 1) this.flags.add(`placed:${mover.def.id}`);
-    // What was said before the place he starts at is not said again.
-    for (const beat of chapter.beats ?? []) if (beat.at !== undefined && beat.at < spawn.x - 0.5) this.flags.add(`beat:${beat.id}`);
+    // Passing remarks before a checkpoint stay past. A reading receipt must come from the save:
+    // the candy magnet may have collected the next checkpoint before the player read this line.
+    for (const beat of chapter.beats ?? []) if ((!beat.read || !saved) && beat.at !== undefined && beat.at < spawn.x - 0.5) this.flags.add(`beat:${beat.id}`);
     this.spots = chapter.spots ?? [];
     this.berries = (chapter.bouncers ?? []).map((b) => ({ ...b, squash: 0 }));
     this.perches = chapter.ghost ?? [];
@@ -651,7 +652,8 @@ export class Sim {
     // Beats that take time: each begins when its first flag is set, and ends by setting its own.
     this.watching = false;
     for (const beat of this.chapter.later ?? []) {
-      if (this.flags.has(beat.flag) || !this.flags.has(beat.after)) continue;
+      if (this.flags.has(beat.flag) || !this.flags.has(beat.after) || beat.until !== undefined && this.flags.has(beat.until)) continue;
+      if (beat.within && (this.curr.x < beat.within[0] || this.curr.x > beat.within[1])) continue;
       const from = this.began.get(beat.flag) ?? this.steps;
       this.began.set(beat.flag, from);
       if ((this.steps - from) * STEP >= beat.seconds) this.flags.add(beat.flag);
@@ -659,6 +661,8 @@ export class Sim {
     }
     for (const beat of this.chapter.beats ?? []) {
       if (beat.needs !== undefined && !this.flags.has(beat.needs)) continue;
+      if (beat.until !== undefined && this.flags.has(beat.until)) continue;
+      if (beat.within && (this.curr.x < beat.within[0] || this.curr.x > beat.within[1])) continue;
       const flag = `beat:${beat.id}`;
       if (this.flags.has(flag)) continue;
       const passed = beat.at !== undefined && this.curr.x >= beat.at;
@@ -924,7 +928,7 @@ export class Sim {
     this.resetChallenges(true);
     this.story = null;
     if (this.state.kind === 'bubble') return;
-    const to = this.checkpoints[this.checkpoint] ?? this.chapter.spawn;
+    const to = sceneResumeAt(this.chapter.scenes, this.flags, this.checkpoints[this.checkpoint] ?? this.chapter.spawn);
     // Sent back to before a ride he has taken, he can take it again: otherwise he would be left on its near side.
     this.readyRides(to.x);
     this.safe.x = to.x;

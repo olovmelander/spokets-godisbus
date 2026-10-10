@@ -115,7 +115,7 @@ export function createGhostMotion(model: Object3D, facesX = false): { update(fra
             const { act, actT } = performance, t = Math.max(0, actT);
             if (act === 'waddle' || act === 'run') angle = Math.sin(t * (act === 'run' ? 18 : 11)) * (i % 2 ? 1 : -1) * (act === 'run' ? .32 : .22);
             else if (act === 'hop') angle = hopAngle((t * 6 % Math.PI) / Math.PI, i);
-            else if (act === 'wake' && t > .7 && t < 1.05) angle = hopAngle((t - .7) / .35, i);
+            else if (act === 'wake' && t > 1.45 && t < 2.2) angle = hopAngle(smooth((t - 1.45) / .75), i);
           }
           pose(i, angle, false);
         }

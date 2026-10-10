@@ -219,11 +219,14 @@ describe('side candy', () => {
 
 describe('"Jag har fastnat" after a ride', () => {
   it('lets him take the ride again, instead of leaving him on its near side', () => {
-    // Bertil's cap over the forest pool: called at 154.6, it lands at 177.4, before the next big candy.
+    // Bertil prepares the cap, then Elof boards. It lands before the next big candy.
     const cap = granskog.spots!.find((spot) => spot.ride === 'cap')!;
     const before = granskog.checkpoints!.findIndex((c) => c.x > cap.at.x) - 1;
     const sim = new Sim(granskog, {}, { checkpoint: before });
     walkTo(sim, cap.at.x);
+    sim.step({ ...idle, act: true });
+    run(sim, 1.3);
+    expect(sim.curr.word).toBe('capBoard');
     sim.step({ ...idle, act: true });
     for (let i = 0; i < 3000 && sim.curr.mode !== 'free'; i++) sim.step(idle);
     run(sim, 0.3);

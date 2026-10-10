@@ -15,6 +15,68 @@ const toHand = ['scene:morgon', 'eye', 'paint', 'woke', 'grab', 'blink', 'scene:
 const told = [...toHand, 'hand', 'scene:handen'];
 const layout = prolog.prologue!;
 
+describe('the star is a choice', () => {
+  const beforeStar = ['scene:morgon', 'eye', 'paint', 'woke', 'grab', 'blink', 'scene:vaknar', 'mamma:noticed', 'mamma:passed', 'bag:torn', 'scene:stjarnan'];
+
+  it('never consumes the star when he walks through it in either direction', () => {
+    const sim = new Sim({ ...prolog, spawn: { x: 40.4, y: -0.79 } }, {}, { flags: beforeStar });
+    tick(sim, 1.1, go);
+    expect(sim.curr.x).toBeGreaterThan(42.8);
+    expect(sim.flags.has('star')).toBe(false);
+    tick(sim, 1.7, { ...idle, x: -1 });
+    expect(sim.curr.x).toBeLessThan(40.5);
+    expect(sim.flags.has('star')).toBe(false);
+  });
+
+  it('replays an interrupted taste on the deck without asking him to consume the star twice', () => {
+    const sim = new Sim(prolog, {}, { checkpoint: 1, flags: [...beforeStar, 'star'] });
+    expect(sim.curr.x).toBeCloseTo(40.5);
+    expect(sim.checkpoint).toBe(1);
+    for (let i = 0; i < 30 && !sim.sceneFrame; i++) sim.step(idle);
+    expect(sim.sceneFrame?.id).toBe('poff');
+    expect(sim.sceneFrame!.seconds).toBeLessThan(0.05);
+    tick(sim, 10.3);
+    expect(sim.flags.has('scene:poff')).toBe(true);
+  });
+
+  it('replays a taste inside its picture after he has first saved beyond the uneaten star', () => {
+    const sim = new Sim(prolog, {}, { checkpoint: 2, flags: beforeStar });
+    expect(sim.curr.x).toBeCloseTo(45.5);
+    tick(sim, 0.2);
+    for (let i = 0; i < 360 && sim.curr.word !== 'tasteStar'; i++) sim.step({ ...idle, x: -1 });
+    expect(sim.curr.word).toBe('tasteStar');
+    sim.step({ ...idle, act: true });
+    tick(sim, 0.3);
+    expect(sim.sceneFrame?.id).toBe('poff');
+    expect(sim.checkpoint).toBe(2);
+
+    const restored = new Sim(prolog, {}, { checkpoint: sim.checkpoint, flags: [...sim.flags] });
+    expect(restored.curr.x).toBeCloseTo(40.5);
+    tick(restored, 0.2);
+    expect(restored.sceneFrame?.id).toBe('poff');
+    expect(restored.flags.has('star')).toBe(true);
+    // Jag har fastnat uses the same authored recovery mark, not the later candy outside this shot.
+    sim.toCheckpoint();
+    tick(sim, 4);
+    expect(sim.sceneFrame?.id).toBe('poff');
+    expect(sim.curr.x).toBeCloseTo(40.5, 1);
+  });
+
+  it('uses the normal checkpoint again after the deck scenes are finished', () => {
+    const sim = new Sim(prolog, {}, { checkpoint: 2, flags: [...beforeStar, 'star', 'scene:poff', 'scene:familj', 'hand', 'scene:handen'] });
+    expect(sim.curr.x).toBeCloseTo(45.5);
+  });
+
+  it('recognises completed shrinking in an older save that only remembers the later railing joke', () => {
+    const sim = new Sim(prolog, {}, { checkpoint: 2, flags: ['eye', 'paint', 'blink', 'star', 'pappa:noticed'] });
+    expect(sim.curr.x).toBeCloseTo(45.5);
+    expect(sim.flags.has('scene:poff')).toBe(true);
+    expect(sim.flags.has('scene:familj')).toBe(true);
+    expect(sim.flags.has('scene:handen')).toBe(true);
+    expect(sim.flags.has(prolog.size!.until!)).toBe(true);
+  });
+});
+
 describe('the prologue freeze jokes', () => {
   it('freezes and topples the hopping ghost before the hinge tears the bag', () => {
     const sim = new Sim({ ...prolog, spawn: { x: 5.5, y: 0.01 } }, {}, { flags: ['scene:morgon', 'eye', 'paint', 'woke', 'grab', 'blink', 'scene:vaknar'] });

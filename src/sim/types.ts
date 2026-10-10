@@ -150,6 +150,12 @@ export interface Beat {
   needs?: string;
   /** A new causal scene replaces stale queued dialogue. */
   priority?: boolean;
+  /** An explanation is no longer useful once this next action is complete. */
+  until?: string;
+  /** A local explanation waits until Elof is back at its help encounter. */
+  within?: readonly [number, number];
+  /** An essential explanation waits for Fortsätt before gameplay continues. */
+  read?: boolean;
   who: Speaker;
   /** A key of `sv.lines`. */
   line: string;
@@ -554,7 +560,7 @@ export interface ChapterData {
    * A beat of the story that takes time: `flag` is set this many seconds after `after` was. With `hold` he
    * stands and watches until then: the stick and the buttons do nothing. Keep such a beat short.
    */
-  later?: { flag: string; after: string; seconds: number; hold?: boolean }[];
+  later?: { flag: string; after: string; seconds: number; hold?: boolean; until?: string; within?: readonly [number, number] }[];
   /**
    * For the picture: while `from` is set and `until` is not, someone looks at these places, one after the
    * other, each for the same share of the time: the ghost looks at the empty place on the shelf, and at the bag.

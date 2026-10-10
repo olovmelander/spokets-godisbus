@@ -4,6 +4,38 @@ import { createFamilyMotion } from '../../src/render/family-motion';
 import { createModelRig, createRehearsalRig, STANDING, type Pose } from '../../src/render/rig';
 
 describe('family help-point movement', () => {
+  it('welcomes Elof before calling, keeps the offered help readable, and holds it through pause', () => {
+    for (const [who, purpose] of [['moa', 'moa'], ['pappa', 'seesaw'], ['bertil', 'cap:ready'], ['mamma', 'braid']] as const) {
+      const motion = createFamilyMotion(who, 80, purpose);
+      const look = { ahead: 2, up: .8 };
+      const idle = { ...motion.update(.1, 1, 0, 0, null, true, look, { ready: false, near: false }) };
+      const welcome = { ...motion.update(.1, 1, 0, 0, null, true, look, { ready: false, near: true }) };
+      expect(welcome.armR).toBeGreaterThan(idle.armR + 1);
+      const offered = { ...motion.update(.1, 1, 0, 0, null, true, look, { ready: true, near: true }) };
+      expect(offered).not.toEqual(welcome);
+      for (const clock of [10, 100, 900]) {
+        expect(motion.update(.1, clock, 0, 0, null, true, look, { ready: true, near: true })).toEqual(offered);
+        expect(motion.update(0, clock, 0, 0, null, false, look, { ready: false, near: false })).toEqual(offered);
+      }
+      expect(motion.update(.1, 1, 0, 0, null, true, look, { ready: true, near: false })).toEqual(idle);
+    }
+  });
+
+  it('blends the welcoming hands and knees into a practical help gesture', () => {
+    const motion = createFamilyMotion('bertil', 154.6, 'cap:ready');
+    const look = { ahead: 2, up: .8 };
+    for (let i = 0; i < 90; i++) motion.update(1 / 60, 0, 0, 0, null, false, look, { ready: false, near: true });
+    let before = { ...motion.update(0, 0, 0, 0, null, false) };
+    for (let i = 0; i < 90; i++) {
+      const after = { ...motion.update(1 / 60, 0, 0, 0, null, false, look, { ready: true, near: true }) };
+      for (const joint of ['armR', 'armL', 'elbowR', 'elbowL', 'kneeR', 'kneeL'] as const) {
+        expect(Math.abs(after[joint] - before[joint]), joint).toBeLessThan(.3);
+      }
+      before = after;
+    }
+    expect(before.kneeL).toBeGreaterThan(.2);
+  });
+
   it('gives the family distinct, readable greetings and keeps them still with reduced motion', () => {
     const roles = ['pappa', 'mamma', 'moa', 'bertil'] as const;
     const poses = roles.map((who) => {

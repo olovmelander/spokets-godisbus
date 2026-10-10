@@ -46,8 +46,8 @@ describe('Prolog, Lördagsmorgon', () => {
         'pappa:noticed', 'snuck', 'pappa:done', 'leap', 'titel', 'goal']);
       // The title is still on the screen when the chapter reaches its goal: its scene ends behind the card.
       expect(did(result.flags).filter((flag) => flag.startsWith('scene:'))).toEqual(
-        ['scene:morgon', 'scene:vaknar', 'scene:poff', 'scene:familj', 'scene:handen', 'scene:lofte']);
-      expect(result.said).toEqual(['morgon:0', 'morgon:1', 'vaknar:0', 'vaknar:1', 'dropped', 'fallenStar', 'poff:0', 'familj:0', 'familj:1',
+        ['scene:morgon', 'scene:vaknar', 'scene:stjarnan', 'scene:poff', 'scene:familj', 'scene:handen', 'scene:lofte']);
+      expect(result.said).toEqual(['morgon:0', 'morgon:1', 'vaknar:0', 'vaknar:1', 'vaknar:2', 'vaknar:3', 'dropped', 'stjarnan:0', 'stjarnan:1', 'poff:0', 'poff:1', 'familj:0', 'familj:1', 'familj:2', 'familj:3',
         'handen:0', 'handen:1', 'handen:2', 'handen:3', 'onlyWood', 'snuck', 'nearYou', 'mapForYou', 'heja', 'followTrail', 'titel:0']);
       expect(result.bubbles).toBe(0);
       expect(result.missed).toEqual([]);
@@ -70,7 +70,7 @@ describe('Prolog, Lördagsmorgon', () => {
     run(sim, 25, { x: 1, hopHeld: true });
     expect(sim.curr.x).toBeGreaterThan(38.5);
     expect(sim.flags.has('blink')).toBe(false);
-    expect(sim.said).not.toContain('fallenStar');
+    expect(sim.said).not.toContain('stjarnan:0');
     expect(sim.said).not.toContain('tinyElof');
   });
 
@@ -98,15 +98,28 @@ describe('Prolog, Lördagsmorgon', () => {
     expect(sim.curr.word).toBe('paintGhost');
   });
 
-  it('makes him small when he runs into the star, and lets him choose Pappa\'s hand', () => {
+  it('lets him discover the star, choose to taste it, and then choose Pappa\'s hand', () => {
     const sim = new Sim({ ...prolog, spawn: { x: 39, y: -0.79 } }, {}, { flags: ['eye', 'paint', 'blink', 'mamma:passed', 'bag:torn'] });
-    run(sim, 0.3);
+    run(sim, 1, { x: 1 });
+    expect(sim.sceneFrame?.id).toBe('stjarnan');
     expect(sim.flags.has('star')).toBe(false);
-    run(sim, 0.8, { x: 1 });
-    expect(sim.flags.has('star')).toBe(true);
+    const x = sim.curr.x;
+    run(sim, 2.5, { x: 1, act: true });
+    expect(sim.flags.has('star')).toBe(false);
+    run(sim, 2);
+    expect(sim.flags.has('scene:stjarnan')).toBe(true);
+    expect(sim.flags.has('star')).toBe(false);
+    expect(sim.curr.x).toBeLessThan(x + 2);
+    for (let i = 0; i < 240 && sim.curr.word !== 'tasteStar'; i++) sim.step({ ...idle, x: 1 });
+    expect(sim.curr.word).toBe('tasteStar');
+    // Waiting beside it or brushing past it is not eating. The action is a fresh, deliberate press.
+    run(sim, 5);
+    expect(sim.flags.has('star')).toBe(false);
+    sim.step({ ...idle, act: true });
     run(sim, 0.2);
+    expect(sim.flags.has('star')).toBe(true);
     expect(sim.sceneFrame?.id).toBe('poff');
-    run(sim, 11);
+    run(sim, 20);
     expect(sim.flags.has('scene:familj')).toBe(true);
     // Nothing goes on until he steps onto the hand himself.
     run(sim, 5);
@@ -153,16 +166,16 @@ describe('the blink: a beat of the story that takes time', () => {
     sim.finishStory({ kind: 'paint', traces: [guidedEye(204)] });
     const x = sim.curr.x;
     // He watches: the stick does nothing, and the ghost is still on the table.
-    run(sim, 4.6, { x: 1, hop: true, hopHeld: true });
+    run(sim, 10.5, { x: 1, hop: true, hopHeld: true });
     expect(sim.flags.has('blink')).toBe(false);
     expect(sim.curr.x).toBeCloseTo(x, 1);
     expect(sim.curr.grounded).toBe(true);
     expect(sim.ghost!.x).toBeCloseTo(4.6, 1);
     // It takes the bag, and the bag's magic begins: the chase starts at the scene's end.
-    run(sim, 1.4);
+    run(sim, 3.5);
     expect(sim.flags.has('grab')).toBe(true);
     expect(sim.ghost!.x).toBeCloseTo(6.5, 1);
-    run(sim, 1.6);
+    run(sim, 4.2);
     expect(sim.flags.has('blink')).toBe(true);
     run(sim, 6, { x: 1 });
     expect(sim.curr.x).toBeGreaterThan(x + 2);
@@ -179,7 +192,7 @@ describe('the blink: a beat of the story that takes time', () => {
     run(sim, 0.1);
     expect(sim.sceneFrame).toEqual({ id: 'vaknar', seconds: expect.any(Number) });
     expect(sim.sceneFrame!.seconds).toBeLessThan(0.2);
-    run(sim, 7.5);
+    run(sim, 18);
     expect(sim.flags.has('blink')).toBe(true);
   });
 

@@ -38,9 +38,12 @@ export function createSceneUi(doc: Document, advance: () => void) {
   let reminder: { text: string; from: number } | null = null;
   return {
     /** The same continue action on touch, keys and controller; Pause remains available. */
-    reading(on: boolean, device: Device) {
+    reading(on: boolean, device: Device, moment = '') {
       reading.hidden = !on;
       doc.body.classList.toggle('story-reading', on);
+      const label = byId('sceneMoment');
+      label.hidden = !moment;
+      if (label.textContent !== moment) label.textContent = moment;
       byId('sceneNextKey').textContent = device === 'touch' ? '' : device === 'pad' ? sv.dialogue.gamepad : sv.dialogue.keyboard;
     },
     /**

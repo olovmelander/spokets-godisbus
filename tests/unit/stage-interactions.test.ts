@@ -34,7 +34,7 @@ const rigFor = (stage: Stage, who: Role = 'pappa') => stage.actors.get(who)!.rig
 
 describe('3D story interactions', () => {
   it.each([
-    ['vaknar', .55, 'mamma', [9.4, 5.4, -9]],
+    ['vaknar', .55, 'mamma', [11.2, 3.55, -9]],
     ['prologue:pappa', 2.6, 'bertil', [50, -.3, 0]],
   ] as const)('points %s’s actual forearm at its lateral story target', (id, seconds, who, target) => {
     const stage = createStage(prolog, () => 0);

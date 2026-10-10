@@ -134,7 +134,9 @@ try {
   }
   await loops.finish();
 
-  const resumed = await open({ width: 844, height: 390 }, saved('granskog', 7, { granskog: ['seesaw'] }));
+  const resumed = await open({ width: 844, height: 390 }, saved('granskog', 7, {
+    granskog: ['seesaw', 'family:seesaw-ready', 'beat:family:pappa', 'beat:family:seesaw'],
+  }));
   await resumed.page.goto(`${base}?dev&debug&standin&course=granskog&tier=low&title`);
   await ready(resumed.page);
   check('restored checkpoint gets its next action on the title card', await resumed.page.locator('#titleStoryPurpose').textContent() === 'Rulla kotten till gungbrädan.' && await purpose(resumed.page) === 'cone');

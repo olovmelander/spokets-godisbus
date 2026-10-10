@@ -46,6 +46,7 @@ export const SUITES = [
   ['mountain-loop', 251],
   ['player-motion', 79],
   ['family-help', 192],
+  ['family-story', 100],
   ['myren-loop', 169],
   ['finale-stage', 147],
   ['model-installation', 25],

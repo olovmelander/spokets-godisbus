@@ -55,7 +55,7 @@ describe('Moa’s departure hub and optional shaving-pocket return', () => {
   });
 
   for (const calm of [false, true]) it(`slides down, finds the drawing and climbs back without Hoppa (${calm ? 'Lugnt' : 'Äventyr'})`, () => {
-    const game = make(141.8, 3.3, { placed, flags: ['moa', 'memory'], collected: [0, 30, 60] }, calm);
+    const game = make(141.8, 3.3, { placed, flags: ['moa', 'family:plane-ready', 'memory'], collected: [0, 30, 60] }, calm);
     expect(game.sim.curr.verb).toBe('slide');
     act(game); wait(game, 1.5);
     expect(game.sim.curr.y).toBeCloseTo(-2, 1);

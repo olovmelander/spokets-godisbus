@@ -16,6 +16,8 @@ const TYPES = {
   '.woff2': 'font/woff2', '.wasm': 'application/wasm',
 };
 assert.ok(existsSync(join(DIST, 'index.html')), 'Run npm run build before the browser tests.');
+const filter = process.env.STORY_FILTER;
+assert.ok(!filter || ['sharing', 'painting', 'carving', 'party'].includes(filter), 'STORY_FILTER must name a story case.');
 
 const server = createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url, 'http://test').pathname);
@@ -148,8 +150,8 @@ async function drawStroke(page, points, touch = false) {
 
 try {
   browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-  console.log('story: sharing food and choosing a friend');
-  {
+  if (!filter || filter === 'sharing') {
+    console.log('story: sharing food and choosing a friend');
     const { page, state, finish } = await open('sharing', { viewport: { width: 390, height: 844 }, hasTouch: true }, '?dev&debug&standin&tier=low&course=norrsken', () => {
       if (!localStorage.getItem('godisbus.v1.player.elof')) localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({
         v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'norrsken', checkpoint: 1,
@@ -198,12 +200,16 @@ try {
     check('the normal finale continues after sharing', (await state()).flags.includes('taste'));
     await finish();
   }
-  console.log('story: painting starts the prologue');
-  {
+  if (!filter || filter === 'painting') {
+    console.log('story: painting starts the prologue');
     const { page, state, finish } = await open('painting', {}, '?dev&debug&standin&tier=low&course=prolog', () => {
       localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'prolog', checkpoint: 0, candy: {}, placed: {}, flags: {}, playMs: 0 }));
     });
-    // The morning's scene plays first: he watches it, and walks to the brush once it has ended.
+    // This resumed checkpoint is before the morning's trigger. Walk into the real scene before
+    // reading it; the title's fresh-start staging does not run in this development fixture.
+    await page.keyboard.down('ArrowRight');
+    await until(state, (s) => s.scene?.id === 'morgon' && s.held, 'walk into the morning scene', 40000);
+    await page.keyboard.up('ArrowRight');
     await until(state, (s) => s.flags.includes('scene:morgon'), 'read the morning before walking', 120000);
     await page.keyboard.down('ArrowRight');
     await until(state, (s) => s.word === 'paintGhost', 'the brush becomes reachable', 120000);
@@ -242,8 +248,8 @@ try {
     check('finished eyes persist with this player', saved.flags.prolog.includes('eye') && saved.flags.prolog.includes('paint'));
     await finish();
   }
-  console.log('story: carving safely with Pappa');
-  {
+  if (!filter || filter === 'carving') {
+    console.log('story: carving safely with Pappa');
     const { page, state, finish } = await open('carving', { hasTouch: true }, '?dev&debug&standin&tier=low&course=epilog', () => {
       localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 1, candy: {}, placed: {}, flags: { epilog: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket', 'partied', 'knife'] }, playMs: 0 }));
     });
@@ -279,8 +285,8 @@ try {
     check('the epilogue can finish after carving', (await state()).flags.includes('teeth'));
     await finish();
   }
-  console.log('story: family candy choices');
-  {
+  if (!filter || filter === 'party') {
+    console.log('story: family candy choices');
     const { page, state, finish } = await open('party', { hasTouch: true, viewport: { width: 390, height: 844 } }, '?dev&debug&standin&tier=low&course=epilog', () => {
       localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 0, candy: {}, placed: {}, flags: { berget: ['note:1'] }, playMs: 0 }));
     });

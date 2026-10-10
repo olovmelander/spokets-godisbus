@@ -25,7 +25,7 @@ function row(from: number, to: number, ground: number, every = 2, after?: string
  * 3. **It wakes** (a scene): the jay at the window turns every grown-up's head; the ghost blinks, looks at the
  *    empty place on the shelf and at the bag, takes the bag, and its magic makes two sweets in it glitter.
  * 4. **The chase**, with Mamma's freeze joke at the doorway, whose hinge tears the bag: the candy trail.
- * 5. **The star** on the deck: *Ta*, and POFF (a scene): he is as small as the ghost.
+ * 5. **The star** on the deck: look, choose *Smaka på stjärnan*, eat, and POFF: he is as small as the ghost.
  * 6. **The family** (scenes): they kneel round him; he steps onto Pappa's hand; Moa's drawing says what the
  *    star did and what the gold sweet could do; Pappa's freeze joke at the railing; their promises as he
  *    walks to the deck's edge, and the game's title over the garden.
@@ -38,7 +38,7 @@ export const prolog: ChapterData = {
   ghostMeet: true,
   place: 'home',
   // He is a boy among small things, until the star shrinks him. The POFF scene says when he is drawn small.
-  size: { scale: 3, until: 'star' },
+  size: { scale: 3, until: 'scene:poff' },
   // Pappa's shelf, with the first place in the row empty: the first trägubbe is not there.
   shelf: { x: 2.4, y: 5.4 },
   decor: [
@@ -93,8 +93,8 @@ export const prolog: ChapterData = {
     // Two eyes: a brush stroke for each; Pappa finishes a short stroke.
     { id: 'eye', at: { x: 3.7, y: 0 }, verb: 'give', word: 'paintGhost', story: 'paint' },
     { id: 'paint', at: { x: 3.7, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye', story: 'paint' },
-    // The star that fell from the torn bag, glittering as the bag did: running into it, he is made small.
-    { id: 'star', look: 'star', at: { x: 41.7, y: -0.8 }, verb: 'take', touch: true, needs: 'blink' },
+    // He first sees where the star came from, then chooses to taste it. Walking past never consumes it.
+    { id: 'star', look: 'star', at: { x: 41.7, y: -0.8 }, verb: 'take', word: 'tasteStar', needs: 'scene:stjarnan' },
     // Pappa's open hand on the planks: he chooses to step onto it.
     { id: 'hand', at: { x: 40.9, y: -0.8 }, verb: 'take', word: 'climbOn', needs: 'scene:familj' },
   ],
@@ -117,14 +117,13 @@ export const prolog: ChapterData = {
   ],
   beats: [
     { id: 'dropped', on: 'mamma:noticed', who: 'mamma', line: 'dropped' },
-    { id: 'fallenStar', at: 38.5, needs: 'bag:torn', who: 'moa', line: 'fallenStar', priority: true },
     { id: 'onlyWood', on: 'pappa:noticed', who: 'pappa', line: 'onlyWood', priority: true },
     { id: 'snuck', on: 'snuck', who: 'elof', line: 'snuck' },
     // Their promises, one from each as he passes them on the deck.
-    { id: 'nearYou', at: 45.0, needs: 'pappa:done', who: 'mamma', line: 'nearYou' },
-    { id: 'mapForYou', at: 47.0, needs: 'pappa:done', who: 'moa', line: 'mapForYou' },
-    { id: 'heja', at: 48.8, needs: 'pappa:done', who: 'bertil', line: 'heja' },
-    { id: 'followTrail', at: 50.8, needs: 'pappa:done', who: 'pappa', line: 'followTrail' },
+    { id: 'nearYou', at: 45.0, needs: 'pappa:done', who: 'mamma', line: 'nearYou', read: true },
+    { id: 'mapForYou', at: 47.0, needs: 'pappa:done', who: 'moa', line: 'mapForYou', read: true },
+    { id: 'heja', at: 48.8, needs: 'pappa:done', who: 'bertil', line: 'heja', read: true },
+    { id: 'followTrail', at: 50.8, needs: 'pappa:done', who: 'pappa', line: 'followTrail', read: true },
   ],
   // Indoors the picture is wide while he is big; on the deck it frames him small among the kneeling family.
   cameras: [{ from: -3, to: 38, zoom: 1.5, lift: 0.3 }, { from: 38, to: 60, zoom: 1.7, lift: 1.5 }],

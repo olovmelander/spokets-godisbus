@@ -46,6 +46,7 @@ import { createPhotoAlbum } from './ui/photos';
 import { createOffline } from './platform/offline';
 import { createStoryPanel } from './ui/story';
 import { createSceneUi } from './ui/scene';
+import { openingCues, openingQuiet } from './audio/opening';
 import { endsInScene, sceneBeats, sceneWaits } from './sim/scene';
 import { createDevicePlay, createHighLanding, isAndroid, isApple } from './platform/device';
 import './ui/ui.css';
@@ -272,6 +273,7 @@ function start(): void {
   // What is said along the way, and in the chapter's scenes (src/sim/scene.ts).
   const beats = new Map([...(chapter.beats ?? []), ...sceneBeats(chapter.scenes)].map((beat) => [beat.id, beat]));
   const readingBeats = new Set(benchOn ? [] : [
+    ...(chapter.beats ?? []).filter((beat) => beat.read).map((beat) => beat.id),
     ...sceneBeats(chapter.scenes?.filter((scene) => scene.hold)).map((beat) => beat.id),
     ...(chapter.id === 'norrsken' ? ['first1', 'first2', 'first3', 'first4'] : []),
   ]);
@@ -293,6 +295,8 @@ function start(): void {
   // What was said before this game was taken up again is not said again.
   let told = game.sim.said.length;
   let sceneHeard: string | null = null;
+  let scoredScene = game.sim.sceneFrame;
+  let bagTorn = game.sim.flags.has('bag:torn');
   const controls = byId('controls');
   const hint = byId('hint');
 
@@ -1021,6 +1025,12 @@ function start(): void {
       for (const cue of cuesFor(heard, now, memory)) audio.play(cue);
       heard = now;
     }
+    const score = game.sim.sceneFrame;
+    for (const cue of openingCues(scoredScene, score, chapter.scenes ?? [])) audio.play(cue);
+    scoredScene = score;
+    audio.storyQuiet(openingQuiet(score, chapter.scenes ?? []));
+    if (!bagTorn && game.sim.flags.has('bag:torn')) audio.play({ kind: 'story', sound: 'paper' });
+    bagTorn = game.sim.flags.has('bag:torn');
     if (game.sim.story && !story.open) {
       pointing.cancel();
       askedForUse = askedForHelp = false;
@@ -1157,10 +1167,12 @@ function start(): void {
       const read = readingBeats.has(id);
       if (read) unreadBeats.push(id);
       if (beat) hud.say(beat.who, beat.line, beat.priority || sceneLine, read);
+      if (beat?.line === 'safeHere') audio.play({ kind: 'motif', who: 'mamma' });
     }
     // What is said waits while a memory plays: its line comes after it.
     hud.tick(menuOpen() ? 0 : dt);
-    sceneUi.reading(hud.reading() && !menuOpen() && !platformBlocked(), device);
+    sceneUi.reading(hud.reading() && !menuOpen() && !platformBlocked(), device,
+      sv.dialogue.moments[scene?.id ?? ''] ?? (readingBeats.has(unreadBeats[0] ?? '') ? sv.storyContext.family : ''));
     hud.paused(menuOpen());
     // The end: a moment to arrive, then the card with the candy in rows of ten. The last words are let finish
     // first, for a few seconds at most: a chapter must not end over what someone is saying.
