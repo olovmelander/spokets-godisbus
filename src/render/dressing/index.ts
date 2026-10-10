@@ -198,6 +198,9 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   // What the far pictures count their sinking from: the land around the chapter's start.
   const land = heightAt(chapter, from) - (chapter.outlook ?? 0);
   const far = scenery(out ? 'garden' : look.id, land, from, to);
+  // The house now has a roof and a veranda in the yard. The old nearest shrub card belongs
+  // beyond those buildings, where it cannot paint a green strip across their windows.
+  const gardenLeaves = chapter.id === 'garden' ? far.group.getObjectByName('far-garden-32') : undefined;
   const life = look.id === 'village' ? villageLife(chapter) : null;
   // The village has its houses and its yard behind the street.
   const houses = look.id === 'village' ? fronts(chapter, from, to) : null;
@@ -233,6 +236,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
       air.update(cameraX, groundY, clock, still);
       front.update(still);
       far.update(cameraX, groundY, clock, night);
+      if (gardenLeaves) gardenLeaves.position.z = -54;
       if (quiet) wild?.update(cameraX, groundY, clock, night, quiet);
       life?.update(clock);
       if (sky) sky.material.uniforms.time!.value = still ? 0 : clock;

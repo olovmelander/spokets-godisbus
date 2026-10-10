@@ -8,6 +8,7 @@ import {
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
+import { installGardenHome } from './garden-home';
 import { windWisp } from './wind-wisp';
 import { createAfloat } from './afloat';
 import { createRain } from './rain';
@@ -183,8 +184,8 @@ const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
 
 /**
  * Stage 0a's greybox scene: the test course, a stand-in Elof in his colours, and the big candy.
- * `asked` is the tier from settings or ?tier=, or null for Auto. With `standIns` the figures built in code are kept even
- * where the private pack has the family's models: for pictures that go into the repository.
+ * `asked` is the tier from settings or ?tier=, or null for Auto. With `standIns` the figures built in code and
+ * generic home environment are kept even where private assets exist: for pictures that go into the repository.
  */
 export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, asked: Tier | null = null, standIns = false, trackGpu = false, life: LifeAsk = {}): View {
   // The context is made here, so that support is known before allocating HDR targets: Mid and High need
@@ -461,6 +462,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       modelInstallations++;
     })
     .catch(error => console.error('The Bredbyn environment could not be loaded.', error)) : Promise.resolve();
+  const gardenReady = chapter.id === 'garden' ? installGardenHome(scene, assets, standIns)
+    .then(model => {
+      if (!model) return;
+      models.push(model);
+      modelInstallations++;
+    })
+    .catch(error => console.warn('The garden buildings could not be loaded.', error)) : Promise.resolve();
   // The things of the mountain, modelled in Blender (art/blender/mountain-kit.py), take the place of the plain
   // shapes built in code, and bring the pines. A build without the file keeps the plain shapes, as does a failed load.
   const mountainReady = mountain ? assets
@@ -487,7 +495,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (atlas) wild.install(atlas);
     })
     .catch((error) => console.error('The life of the far scenery could not be loaded.', error)) : Promise.resolve();
-  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, bredbynReady, mountainReady, lifeReady];
+  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady];
   let arrived = 0;
   for (const part of parts) void part.then(() => { arrived++; }, () => {});
   const ready = Promise.all(parts).then(() => undefined);

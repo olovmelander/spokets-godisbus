@@ -124,6 +124,11 @@ export function built(chapter: ChapterData, indoors = false): Group {
       group.add(pane);
     }
   } else if (house) {
+    // Kept while the environment loads, and for the older deck look course. The garden's baked
+    // veranda and whole house replace this plain wall before the first playable frame.
+    const exterior = new Group();
+    if (chapter.id === 'garden') exterior.name = 'garden-home-placeholder';
+    group.add(exterior);
     const long = house.to - house.from;
     const floor = Math.min(...chapter.ground.map((p) => p.y));
     // Falu red boards with their cover strips, lit from the left.
@@ -158,11 +163,11 @@ export function built(chapter: ChapterData, indoors = false): Group {
       c.fillRect(13, 17, 8, 12);
     });
     const glass = new MeshBasicMaterial({ map: pane });
-    group.add(boards, corner);
+    exterior.add(boards, corner);
     for (const x of house.windows) {
       const window = new Mesh(new PlaneGeometry(7.5, 10), glass);
       window.position.set(x, heightAt(chapter, x) + 15, -20.9);
-      group.add(window);
+      exterior.add(window);
     }
   }
   for (const roof of chapter.roofs ?? []) {

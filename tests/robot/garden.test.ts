@@ -18,7 +18,7 @@ describe('Kapitel 1, Gården, in greybox', () => {
       // The things it had to do: the ladybird, the dandelion, both curls, and Moa.
       expect(result.flags).toEqual(expect.arrayContaining(['ladybird', 'dandelion', 'moa', 'plane:board', 'goal']));
       // What was said, in order.
-      expect(result.said).toEqual(['stomp', 'moa1', 'family:moa', 'family:plane', 'garden:ready', 'garden:pocket']);
+      expect(result.said).toEqual(['garden:home', 'garden:kota', 'stomp', 'moa1', 'family:moa', 'family:plane', 'garden:ready', 'garden:pocket']);
     });
   }
 
