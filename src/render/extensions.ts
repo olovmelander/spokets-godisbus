@@ -1,5 +1,5 @@
 import type { Camera, Color, DirectionalLight, Group, HemisphereLight, Object3D, Scene } from 'three';
-import type { ChapterData, Mover, RideLook, Spot } from '../sim/types';
+import type { ChapterData, Mode, Mover, RideLook, Spot } from '../sim/types';
 import type { PlaceLook } from './dressing/kit';
 import type { SpotProp } from './props';
 
@@ -17,6 +17,10 @@ export interface ExtraContext {
   sky: Color;
   hemisphere: HemisphereLight;
   sun: DirectionalLight;
+  /** The place's light and haze as this chapter has them (Äventyr 2's own where it has one), or null for none. */
+  place?: PlaceLook | null;
+  /** What the dressing built for the place: grass, trunks, stones, cards. Null where nothing is dressed. */
+  dressing?: Group | null;
 }
 
 /** What it is given each frame. */
@@ -34,10 +38,20 @@ export interface ExtraFrame {
   tier: 'low' | 'mid' | 'high';
   /** He is on a ride now. */
   riding: boolean;
+  /** How he moves: his speed along and up, which way he faces, whether he stands, and his mode. */
+  vx?: number;
+  vy?: number;
+  facing?: 1 | -1;
+  grounded?: boolean;
+  mode?: Mode;
+  /** How dark the place is now, 0 by day to 1 at its darkest (the night falling in Norrsken, the dusk). */
+  darkness?: number;
 }
 
 export interface ViewExtra {
   update(frame: ExtraFrame): void;
+  /** Patches the scene's materials once, at warm-up, as the rim light does: one program key each, nothing in play. */
+  patch?(root: Object3D): void;
 }
 
 export const PACK = {
@@ -51,4 +65,10 @@ export const PACK = {
   movers: new Map<string, (mover: Mover) => Group | null>(),
   /** Additions to the whole picture: weather, flashes, figures far off. Each says itself whether it applies. */
   extras: [] as ((context: ExtraContext) => ViewExtra | null)[],
+  /**
+   * The visual upgrade's systems (src/render/lift/, docs/visual-upgrade.md): life, light, air, flora and materials
+   * that every chapter of both adventures gets. Like `extras`, but updated after the dressing, so that the wind
+   * they read (./wind.ts) is this frame's.
+   */
+  lifts: [] as ((context: ExtraContext) => ViewExtra | null)[],
 };

@@ -34,7 +34,7 @@ export function createSky(map: Texture | null, colour: Color): Mesh<BufferGeomet
  * picture's height (1.3 degrees of the camera's 30 is 0.043). Elsewhere the sun stands too high to be seen,
  * or has set, and there is no moon: it would fight the northern lights.
  */
-const SUNS: Partial<Record<PlaceLook['id'], { x: number; y: number; wide: number; colour: [number, number, number] }>> = {
+export const SUNS: Partial<Record<PlaceLook['id'], { x: number; y: number; wide: number; colour: [number, number, number] }>> = {
   bog: { x: 0.33, y: 0.325, wide: 0.05, colour: [255, 252, 238] },
   mountain: { x: 0.31, y: 0.37, wide: 0.055, colour: [255, 244, 214] },
 };

@@ -485,7 +485,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       const car = alven.beats!.find((b) => b.id === 'al:car')!;
       expect(car.who).toBe('mamma');
       expect(car.on).toBe('beat:al:billsta');
-      expect(lines[alven.beats!.find((b) => b.id === 'al:window')!.line]).toBe('Tre mil! Till mormor och morfar!');
+      expect(lines[alven.beats!.find((b) => b.id === 'al:window')!.line]).toBe('Mormor och morfar kan hjälpa oss leta!');
       // The car stands on the road behind the river, its lights on from the moment Pappa speaks; no window far off.
       const parked = alven.storm!.buildings!.find((d) => d.kind === 'car')!;
       expect(parked.lit).toBe('beat:al:billsta');

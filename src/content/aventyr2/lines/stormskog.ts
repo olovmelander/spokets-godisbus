@@ -34,8 +34,8 @@ export const words: ChapterWords = {
     // 7. the old one's memory
     ssHollowSeen: 'En mörk håla. Vad tänker du på, Klonk?',
     ssHollowKlonk: 'Klonk …',
-    ssAlone: 'Han var ensam i mörkret i flera år.',
-    ssWhy: 'Därför väntar han inte.',
+    ssAlone: 'Gamla trägubben låg ensam i flera år.',
+    ssWhy: 'Därför skyndar han. Lillgubben är ensam!',
     ssBoth: 'Kom, Klonk. Vi ska hitta dem båda!',
     // 8. the jay
     ssJaySeen: 'Lavskrikan! Den gömmer sig för regnet.',
@@ -59,7 +59,7 @@ export const words: ChapterWords = {
     ssPappa: { purpose: 'Ropa på Pappa vid klyftan.', recap: 'Här är för brett att hoppa, och så mörkt. Pappa har ficklampan.' },
     ssPlank: { purpose: 'Gå över bron. Det är Klonk!', recap: 'Pappa lyste på Klonk, och Klonk blev stel som en planka.' },
     ssFollow: { purpose: 'Följ Klonk vidare in i skogen.', recap: 'Pappa tittade bort, och då vaknade Klonk igen.' },
-    ssMemory: { purpose: 'Följ spåret efter gamla trägubben.', recap: 'Gamla trägubben var ensam i mörkret i flera år. Därför väntar han inte.' },
+    ssMemory: { purpose: 'Följ spåret efter gamla trägubben.', recap: 'Gamla trägubben vet hur det är att vara ensam i mörkret. Därför skyndar han efter lillgubben.' },
     ssJay: { purpose: 'Ge lavskrikan ett lingon.', recap: 'Lavskrikan från förra äventyret gömmer sig för stormen.' },
     ssLichen: { purpose: 'Klättra upp längs laven.', recap: 'Lavskrikan fick ett lingon. Den visade mig laven upp på roten.' },
     ssDown: { purpose: 'Följ spåret ner mot byn.', recap: 'Gamla trägubben skyndar mot byn. Där är alla fönster mörka.' },

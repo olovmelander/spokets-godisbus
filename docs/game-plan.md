@@ -2162,7 +2162,9 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
 1. **No third-party requests,** ever, and no analytics. A browser test checks this, and every page carries
    `noindex`.
 2. **First playable:** the `boot` pack (the title and the table-top opening) in at most 3 MB *as served*, with at
-   most 450 KB of gzipped JS.
+   most 520 KB of gzipped JS. (It was 450 KB until 4 November 2026, when Olov widened the graphics budget for the
+   visual upgrade: "utöka budgeten för grafiken". three r187 alone took the last of the 450 KB; 70 KB more is about
+   60 ms on the 10 Mbps profile.)
    - The libraries alone are about 240 KB gzipped (three about 192 KB, planck about 45 KB), so game code gets about
      200 KB. Chapter code loads with its pack.
    - CI gates the bytes. The 5-second time on a throttled 10 Mbps / 100 ms profile is measured on the family's

@@ -2,6 +2,85 @@
 
 ## State (4 November 2026)
 
+- **PR #189's browser job, and a new computer (4 November 2026, evening).** The job failed in two suites, and Olov
+  asked to merge once it is green.
+  - **A real bug in the surface patch:** it went by the tier of the last frame, but a change in the menu warms up
+    before any frame has told it the new tier. So Low → High laid nothing, and High → Low laid the patch on Low, on
+    117 of granskog's materials, compiling it in the menu. It now keeps the tier of the picture's first frame,
+    as `docs/visual-upgrade.md` always said; a unit test covers both directions.
+  - **`garden-loop` ran out of time on High:** 0.46 EL short of the hose after 60 s, on GitHub's software rendering
+    (the suite 477 → 682 s, `forest-puzzles` 98 → 229 s). Its limit is now 120 s. High's frame time on real devices is
+    still Olov's call (gate 5, `?bench`).
+  - **Validation:** typecheck, **188 test files / 1,978 tests**, the build (boot JS 487.7 KB / 520 KB), the privacy
+    check, and `garden-loop`'s High touch case on SwiftShader (15 checks) pass.
+  - **The new computer:** Olov now works from a fresh clone. `photos/` and the private work that was never pushed
+    (the local `character-design-motion` branch of `art/private`: `build-character.mjs`, `elof/three-study/`,
+    `lill-elof/`, perhaps a newer ghost) are on his old computer. **Until he brings them over, work that needs the
+    pictures (characters, the ghost, the house) can't be done here.** Code work isn't affected. `art/private` here is a
+    clone of the private repository's `main`. Installed here: `ktx` 4.4.2 and Playwright 1.56.1's Chromium. Blender
+    here is 5.2, not the 4.5 LTS that `CLAUDE.md` asks for; `exiftool` isn't installed.
+- **Äventyr 2's story and gameplay audit (4 November 2026, later still).** Olov asked for an audit of the story, all
+  the conversations and all the gameplay, so that the adventure holds together, feels epic, has a red thread, and is
+  fun and kind. [`docs/aventyr-2-audit.md`](docs/aventyr-2-audit.md) has the method (the robot played every chapter
+  and wrote down everything said, in order), the threads chapter by chapter, and the changes.
+  - **The family drives the long ways:** to Flärken, six kilometres, as to Billsta.
+  - **Why the old one never waits** is answered clearly in Stormskogen ("Därför skyndar han. Lillgubben är ensam!").
+    Elof cheers him on at Flärken instead of begging him to wait. In Billsta it closes: "Nu är lillgubben inte
+    ensam längre."
+  - **The finale's end matches the morning:** mormor and morfar come home to breakfast.
+  - **The third floating-bridge puzzle is gone:** Billsta's log is now **Klonk's seesaw** (built by the Billsta
+    agent), where Klonk jumps on and flings Elof over the brook, so the ghost actively helps his friend before the
+    finale.
+  - **Smaller fixes:** where Mamma's boat comes from, no repeated "tre mil", and no repeated "precis som Klonk".
+  - Äventyr 1's lines are unchanged because of their voices.
+  - The voice list has 268 entries; nothing was generated.
+  - Äventyr 2's robot, chapter and unit tests pass: 11 files, 257 tests.
+- **The visual upgrade, and three.js r187 (4 November 2026, later still).** Olov asked for "en total visuell och
+  grafisk uppgradering" that keeps the art style and lifts everything: assets, places, materials, composition, light,
+  effects. He also asked for richer Nordic forest life, lush birches and deep pine forests, plants that bend around
+  Elof, a synced global wind, god rays, dust and falling leaves, ground mist and depth haze, and the contrast between
+  matte carved wood and wet glossy moss, in every chapter of both adventures and with a bigger budget. He also asked
+  for three.js r187. The brief and what was built are in [`docs/visual-upgrade.md`](docs/visual-upgrade.md).
+  - **r187:** `three` and `@types/three` 0.187.0. None of the APIs it changes is used here, and the meshopt decoder
+    is unchanged.
+  - **Budgets widened, as Olov asked:**
+    - boot JS 450 → **520 KB** gzipped (r187 alone took the last 0.4 KB of the 450);
+    - draw calls Mid 160 → **220** and High 200 → **300**;
+    - **Low stays 120**: the upgrade is almost all on the `rich` layer, and adds at most 1–2 draws on Low.
+  - **Built by five agents in parallel**, one area each, into `src/render/lift/` (the `PACK.lifts` registry, made for
+    every chapter and updated after the wind):
+    - **atmosphere:** screen-space light shafts on Mid and High, depth haze, shaft cards on every tier, motes in the
+      light, falling leaves and ground mist;
+    - **fauna:**
+      - squirrels, a fox far back, tits, thrushes and sparrows that lift as Elof comes, butterflies, dragonflies, an
+        owl and fireflies;
+      - little moss-and-bark beings and pale carved figures peeking by stones;
+      - life hides in the storm;
+    - **flora:** birch crowns, spruce boughs and pines with warm leaf light, moss with a velvet edge, ferns, tall
+      grass, mushrooms that glow in the dark, plants that bend away from Elof, and leaves that whirl up;
+    - **materials:**
+      - carved wood matte with knife facets against damp glossy moss;
+      - wet ground by water, in the storm and on Byn's street;
+      - dew;
+      - water that mirrors its banks: from the picture on High, from known shapes on Mid;
+    - **characters:** Elof's, the family's and the ghost's idles, and hair, caps, scarves and hems in the shared wind.
+  - **Plan exceptions Olov's request makes** (recorded in the brief):
+    - screen-space light shafts, not ray marching (plan §5.3 forbade ray-marched god rays);
+    - near life that notices Elof (far life still answers nothing);
+    - procedural sway of hair and caps (not the cloth or hair simulation that plan §5.5 forbids);
+    - a cheap screen-space water mirror on High (plan §5.5 said no screen-space reflections).
+  - **Validation:**
+    - typecheck clean;
+    - **188 test files / 1,976 tests**;
+    - the build with its gates: boot JS 487.4 KB of 520;
+    - the privacy check;
+    - browser suites: __BROWSER__.
+    - Every measured picture is far under its draw budget, and programs stay stable during play.
+    - Review captures before and after: __CAPTURES__.
+  - **Where the next step runs:**
+    - judging it on Elof's devices (frame time, gate 5, with `?bench`) needs the devices;
+    - giving the private models the wind needs Olov's computer: bones named hair*, braid*, fringe*, cap*, brim*,
+      scarf*, hem*, coat*, cloth* or cape*.
 - **Billsta moved inland: a car trip to mormor and morfar (4 November 2026, later still).** Olov corrected the
   geography: Billsta lies three mil (30 km) from Bredbyn, so the family goes there by car, and mormor and morfar's
   house stands by a road near the forest, not by a shore.
@@ -3700,8 +3779,9 @@ The older list, still true where it is not struck:
 | Why he shrinks | The ghost's magic runs into the Saturday bag as it takes it: a star from the bag makes Elof small, and the gold sweet glitters too and can make him big again. Moa saw the glitter and draws it; Pappa reads the hope. | Session's proposal, 5 Oct (question 15) |
 | Äventyr 2 | *Stormnatten* (`docs/aventyr-2.md`): seven chapters after Byn, opened when Äventyr 1 is finished. The little carving is named **Fjun**. Its story, worlds, puzzles and lines are the session's, built from Olov's request. | Olov, 4 Nov: "skapa nästa del av äventyret … ett nytt unikt kapitel bestående av flera världar … Implementera nu detta i one shot." |
 | Äventyr 2, version 2 | Ten chapters: Olympia, Flärken (Flärkenbadet, the former Sjön), Älven and Billsta between Byn i stormen and Stormens öga, which lies in the narrow at Billsta. Mormor and morfar are "Mormor" and "Morfar" only, as plain stand-ins; their house is an interpretation of Olov's picture without its address or number, and the picture is never committed. | Olov, 4 Nov: "ännu fler miljöer … Billsta, Själevad där mormor och morfar bor … badplatsen Flärken … Olympia i Bredbyn … pussel med en fotboll" |
+| The visual upgrade | `docs/visual-upgrade.md`: same art style, more life, light, air and plants in every chapter; Low keeps 120 draws and gets almost none of it; red, pink and gold stay the candy's; nothing scary; everything still with reduced motion; nothing compiled in play. Screen-space light shafts, near life that notices Elof, procedural hair/cap sway and a cheap water mirror on High are allowed now. | Olov, 4 Nov: "en total visuell och grafisk uppgradering … behålla vår befintliga artstyle" |
 | The `iron` surface | Only for a street drain's grate in the village: elsewhere the ground's picture digs a well round it (a test checks Äventyr 2). | Session, 4 Nov, after the visual sweep |
-| Chapter packs and the size gate | The plan's 450 KB is the first playable's JavaScript. A chunk fetched only later (`import()`), such as Äventyr 2's pack or the debug tools, is counted on its own and has its own 160 KB gate (`scripts/size-gate.mjs`). The boot budget has about 0.4 KB left: a boot change that grows it must win the bytes back. | Session, 4 Nov, for Äventyr 2 |
+| Chapter packs and the size gate | The plan's 450 KB is the first playable's JavaScript. A chunk fetched only later (`import()`), such as Äventyr 2's pack or the debug tools, is counted on its own and has its own 160 KB gate (`scripts/size-gate.mjs`). The boot JS gate is **520 KB** since 4 November (it was 450 KB; three r187 alone took the last 0.4 KB), widened at Olov's request for the visual upgrade. | Session, 4 Nov, for Äventyr 2; Olov, 4 Nov: "utöka budgeten för grafiken" |
 | Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
 
 ## Planned against actual
@@ -3723,6 +3803,9 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **`settings`' touch check fails on Windows:** "portrait, left-handed: a held finger walks towards its position"
+  wants `vx` at most 1.3 and gets about −3.4 on this computer, on `main` (eb13ed5) as well as with PR #189, which
+  touches no input or simulation code. It passed on GitHub on PR #188. Not looked into further.
 - **Äventyr 2's pictures, from the 4 November sweeps (none blocks play):** from Billaberget's brow the narrow is
   only a dark band at the horizon (the garden's nearest far picture and the lawn's bank behind the path leave it
   little room) and the two figures on the far stone are tiny; flybys cannot land on far decor (they are fixed at
@@ -3943,6 +4026,16 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
 22. **Things said about the family in the new worlds:** Bertil says "Jag är bäst på frisparkar" at Olympia, Mamma
     rows the boat at Flärken, and Pappa lowers his scarf from the bridge in Bredbyn. Are those right for them? The
     default: as built; one line each changes if not.
+23. **The visual upgrade (4 November):**
+    - Is the life, the light and the mist calm enough for Elof, and are the little forest beings and the peeking
+      carvings friendly?
+    - With reduced motion Elof stands quite still, breath included, as before. Should he breathe?
+    - The grass's own glow is dimmed at night (it had looked neon). Is that right?
+    - The frame time on the family's devices (gate 5) is the real budget: `?bench` on each one settles it.
+      High carries the whole upgrade. In software rendering, Granskogen on High went from 4.5 to 2.5 fps, while
+      Low and Mid are as fast as before. `?nolift=flora` (or `fauna`, `atmosphere`, `materials`) shows what each
+      area costs.
+    - The defaults: as built.
 
 Choices the session made, for Olov to overrule if he wants:
 - the bow on the big candy, its pinwheel turn, and how much a sweet shines by itself (see "The candy is

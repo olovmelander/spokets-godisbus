@@ -8,7 +8,7 @@ import type { ChapterWords } from './words';
 export const words: ChapterWords = {
   lines: {
     // 1. the road, by the car
-    biArrive: 'Tre mil med bilen! Nu är vi i Billsta.',
+    biArrive: 'Framme i Billsta, hos mormor och morfar!',
     biKlonk: 'Klonk!',
     biWindow: 'Titta! Det lyser hos mormor och morfar.',
     biKlonkKlonk: 'Klonk, klonk!',
@@ -29,11 +29,12 @@ export const words: ChapterWords = {
     biHatch: 'En lucka i golvet. Jag hoppar över!',
     biRoof: 'Upp på taket! Här blåser det hårt.',
     biForest: 'Bakom huset börjar skogen!',
-    // 5. the brook, the log, the roots, Billaberget's boulders, the hazel and the gusts
+    // 5. the brook, Klonk's seesaw, Billaberget's boulders, the hazel and the gusts
     biBrook: 'En bäck! Jag hoppar på stenarna.',
-    biLogIdea: 'Om jag knuffar stocken blir den en bro!',
-    biBridge: 'Nu ligger stocken över bäcken!',
-    biRoot: 'En granrot! Jag klättrar uppför den.',
+    biSeesaw: 'En gungbräda! Men jag är för lätt.',
+    biJumpOn: 'Klonk, hoppa på andra änden!',
+    biFly: 'Jag flyger över bäcken!',
+    biThanksKlonk: 'Tack, Klonk! Du är min bästa vän.',
     biHill: 'Billaberget! Vilka stora stenar.',
     biHazel: 'Här växer hassel, full av nötter!',
     biWind: 'Blåsten! Jag gömmer mig bakom stenarna.',
@@ -41,6 +42,7 @@ export const words: ChapterWords = {
     // 6. the brow: the flash, and the owl far off
     biThere: 'Där nere! På en sten i sundet!',
     biHolds: 'Gamla trägubben håller i lillgubben!',
+    biNotAlone: 'Nu är lillgubben inte ensam längre.',
     biOwl: 'Uhu … Hör du? Det är ugglan!',
     biToNarrow: 'Kom, vi går ner till sundet.',
     biKlonkCheer: 'Klonk! Klonk! Klonk!',
@@ -48,6 +50,7 @@ export const words: ChapterWords = {
   verbs: {
     biCallMorfar: 'Ropa på morfar',
     biCallMormor: 'Ropa på mormor',
+    biCallKlonk: 'Ropa på Klonk',
   },
   purposes: {
     billstaRoad: { purpose: 'Gå längs vägen mot det tända fönstret.', recap: 'Vi åkte tre mil med bilen till Billsta, där mormor och morfar bor.' },
@@ -59,9 +62,9 @@ export const words: ChapterWords = {
     billstaLoft: { purpose: 'Ta dig genom höloftet upp på taket.', recap: 'Mormors lykta lyser i det mörka höloftet.' },
     billstaRoof: { purpose: 'Gå över taket. Göm dig när det blåser.', recap: 'Uppe på ladans tak blåser stormen hårt.' },
     billstaBrook: { purpose: 'Hoppa över bäcken på stenarna.', recap: 'Bakom huset börjar skogen. Där rinner en bäck.' },
-    billstaLog: { purpose: 'Knuffa stocken ut i bäcken.', recap: 'Här är bäcken för bred. Stormen har fällt en torr gran.' },
-    billstaBridge: { purpose: 'Gå över bäcken på stocken.', recap: 'Stocken ligger över bäcken som en bro.' },
-    billstaRoot: { purpose: 'Klättra uppför granens rot.', recap: 'Här börjar Billaberget. Backen är brant, men en granrot hänger ner.' },
+    billstaSeesaw: { purpose: 'Ropa på Klonk vid gungbrädan.', recap: 'Bäcken är för bred. En torr gran ligger som en gungbräda.' },
+    billstaKlonkOn: { purpose: 'Stå kvar. Klonk hoppar på!', recap: 'Jag står på den låga änden. Klonk hoppar på den höga.' },
+    billstaFly: { purpose: 'Flyg över bäcken!', recap: 'Klonk hoppade på gungbrädan, och jag flög över bäcken.' },
     billstaBoulders: { purpose: 'Följ godisspåret över stenarna.', recap: 'På Billaberget ligger jättestora stenar. Hasseln är full av nötter.' },
     billstaWind: { purpose: 'Göm dig bakom stenarna när det blåser.', recap: 'Stormen blåser över backen. Bakom stenarna är det lä.' },
     billstaBrow: { purpose: 'Gå upp på toppen av Billaberget.', recap: 'Härifrån ser man långt, ända ner till sundet.' },
@@ -73,5 +76,6 @@ export const words: ChapterWords = {
     billstaMormor: 'Mormor lyser åt mig med sin lykta.',
     billstaBoth: 'Mormor och morfar hjälper mig.',
     billstaForest: 'Mormor kommer efter med sin lykta.',
+    billstaKlonk: 'Klonk hjälper mig över bäcken.',
   },
 };

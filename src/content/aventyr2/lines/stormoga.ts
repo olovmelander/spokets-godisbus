@@ -17,9 +17,9 @@ export const words: ChapterWords = {
     soPappa: 'Och där är mina två trägubbar!',
     soMoa: 'Alla är hittade, lillebror!',
     soBertil: 'Bästa natten någonsin!',
-    soMormor: 'Välkomna, allihop! Vilken natt!',
-    soMorfar: 'Hemma hos oss finns det varm choklad.',
-    soHome: 'Nu går vi hem till mormor och morfar.',
+    soMormor: 'Vilken natt! Ni är så modiga, allihop.',
+    soMorfar: 'Vi följer med hem och äter frukost!',
+    soHome: 'Nu åker vi hem, allihop!',
   },
   verbs: {
     soCallOwl: 'Ropa på ugglan',
@@ -32,7 +32,7 @@ export const words: ChapterWords = {
     soMeet: { purpose: 'Gå fram till trägubbarna.', recap: 'Stormen tystnade. Vi är i stormens öga, under stjärnorna.' },
     soTaste: { purpose: 'Smaka på guldgodiset.', recap: 'Gamla trägubben hade sparat ett geléhallon åt mig. Nu delar han med mig.' },
     soGrow: { purpose: 'Guldgodiset gör mig stor igen.', recap: 'Jag har båda trägubbarna i händerna.' },
-    soGoHome: { purpose: 'Gå hem till mormor och morfar.', recap: 'Alla är hittade. Mormors lykta lyser på stranden.' },
+    soGoHome: { purpose: 'Åk hem med allihop.', recap: 'Alla är hittade. Mormor och morfar följer med hem till frukost.' },
   },
   helpers: {
     soFamilyLamps: 'Familjen lyser med sina lampor från bryggan.',

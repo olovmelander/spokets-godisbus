@@ -1,7 +1,7 @@
 import { Color, Group, InstancedMesh, Object3D } from 'three';
 import type { ChapterData } from '../../sim/types';
 import { toneAt } from './ground';
-import { KIT, grows, heightAt, sequence } from './kit';
+import { KIT, TALL_BLADES, grows, heightAt, sequence, tallGrass } from './kit';
 
 // --- the bog ------------------------------------------------------------------------------------------------
 
@@ -33,14 +33,16 @@ export function bog(chapter: ChapterData, from: number, to: number, seed: number
   cushions.count = n;
 
   // Sedge: straw-coloured in late September, in tufts.
-  const sedge = new InstancedMesh(KIT.blade, KIT.straw, Math.round(length * 8));
+  const clumps = Math.round(length * 0.4);
+  const sedge = new InstancedMesh(KIT.blade, KIT.straw, Math.round(length * 8) + clumps * TALL_BLADES);
+  const sedges = Math.round(length * 8);
   n = 0;
-  for (let tuft = 0; n < sedge.count && tuft < sedge.count; tuft++) {
+  for (let tuft = 0; n < sedges && tuft < sedges; tuft++) {
     const x = from + next() * length;
     const z = next() < 0.12 ? 0.6 + next() * 0.35 : -0.6 - next() ** 1.3 * 6.5;
     if (!grows(chapter, x)) continue;
     const tall = z > 0 ? 0.3 + next() * 0.35 : 0.6 + next() * 1.2;
-    for (let k = 0; k < 4 + Math.floor(next() * 5) && n < sedge.count; k++) {
+    for (let k = 0; k < 4 + Math.floor(next() * 5) && n < sedges; k++) {
       const bx = x + (next() - 0.5) * 0.3;
       place.position.set(bx, top(bx, z), z + (next() - 0.5) * 0.25);
       place.rotation.set((next() - 0.5) * 0.7, next() * 6.28, (next() - 0.5) * 0.7);
@@ -51,6 +53,8 @@ export function bog(chapter: ChapterData, from: number, to: number, seed: number
     }
   }
   sedge.count = n;
+  // Taller sedge where the moss ends at a pool, and in the back rows.
+  tallGrass(sedge, chapter, from, to, seed, top, clumps, [1.4, 2.3], 0.06, ['#d2b968', '#8f9a48', '#c2b070']);
 
   // Dwarf birch: low twigs with small round leaves, red in autumn. Cloudberry leaves, orange, near the moss.
   const twigs = Math.round(length * 0.9);

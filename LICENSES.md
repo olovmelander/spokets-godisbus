@@ -19,7 +19,7 @@ served; the rest are tools.
 
 | Library | Version | Licence | Used for |
 | --- | --- | --- | --- |
-| three | 0.186.1 | MIT | Rendering |
+| three | 0.187.0 | MIT | Rendering |
 | planck | 1.5.0 | MIT | Physics |
 | vite | 8.3.2 | MIT | Build and dev server |
 | typescript | 7.0.2 | Apache-2.0 | Type checking |
@@ -27,7 +27,7 @@ served; the rest are tools.
 | playwright | 1.56.1 | Apache-2.0 | Browser tests |
 | @vitejs/plugin-basic-ssl | 2.3.0 | MIT | HTTPS for `npm run dev:lan` |
 | @gltf-transform/cli | 4.5.1 | MIT | The asset build: KTX2 textures and meshopt |
-| @types/three | 0.186.0 | MIT | Types |
+| @types/three | 0.187.0 | MIT | Types |
 | vite-plugin-pwa | 1.3.0 | MIT | Web app manifest and service-worker build |
 | workbox-core, workbox-precaching, workbox-routing, workbox-strategies, workbox-expiration | 7.4.1 | MIT | Offline shell, bounded chapter caches and safe updates |
 
@@ -53,7 +53,7 @@ the files made with it). three's Basis transcoder (Apache-2.0) is served with th
 | Private Elof Direct3D-S2 geometry trials (7 October 2026) | Local full-body and portrait reconstruction tests from the supplied Elof sheet; raw sculpts and separate review meshes | Generated offline on Olov's computer; no reference uploads or game-asset replacement. [Direct3D-S2](https://github.com/DreamTechAI/Direct3D-S2) code and v1.1 weights are MIT; the retained low-memory fork is MIT. Standard [DINOv2](https://github.com/facebookresearch/dinov2) ViT-L/14-register code and weights are Apache-2.0; no DINOv3. Cached [BiRefNet_HR](https://huggingface.co/ZhengPeng7/BiRefNet_HR) is MIT. CPU preview reduction uses [fast-simplification](https://github.com/pyvista/fast-simplification) 0.2.0 (MIT). Optional PyMeshFix repair is excluded. Detailed revisions, hashes and dependency notices remain in the local tool's `local-setup/LICENSES-and-SOURCES.txt`. References and trial files remain local and ignored. |
 | Private ghost model, reconstructed Blender source and baked colour atlas (7 October 2026) | Local image-to-3D reconstruction of Olov's `ghost-render.png`, simplified and repaired in Blender, with calibrated source-colour projection, separate glossy eyes and pivoted feet | Made locally from Olov's supplied reference; no uploads or paid service. [TripoSR code](https://github.com/VAST-AI-Research/TripoSR/blob/main/LICENSE) and [model weights](https://huggingface.co/stabilityai/TripoSR) are MIT, Tripo AI and Stability AI. No Hunyuan inference was used; an already-installed ONNX Runtime dependency was borrowed from another local Python environment. The shoe patch is plain. Sources, intermediate meshes and final GLB remain private; reference images and comparison renders remain local. |
 | Private character pack: Elof, Mamma, Pappa, Moa and Bertil; revised Blender sources | Character design and rig refinement, 7 October 2026 | Made locally for this game in Blender from the family's supplied references, with consent; no third-party textures or generated-service output. Sources and models remain in the private family repository, and reference pictures and review renders remain local. The ghost's later reconstruction is documented separately above. |
-| `src/render/meshopt/decoder-{base,simd}.wasm` | The meshes' decoder: meshoptimizer 1.1's WebAssembly, as files of their own, and the few lines that drive it in `src/render/meshopt.ts` | meshoptimizer by Arseny Kapoulkine, MIT. Written out by `scripts/meshopt-wasm.mjs` from the copy three 0.186.1 carries inside `examples/jsm/libs/meshopt_decoder.module.js` (MIT); a unit test holds them equal. |
+| `src/render/meshopt/decoder-{base,simd}.wasm` | The meshes' decoder: meshoptimizer 1.1's WebAssembly, as files of their own, and the few lines that drive it in `src/render/meshopt.ts` | meshoptimizer by Arseny Kapoulkine, MIT. Written out by `scripts/meshopt-wasm.mjs` from the copy three 0.187.0 carries inside `examples/jsm/libs/meshopt_decoder.module.js` (MIT); a unit test holds them equal. |
 | `public/icons/ghost-maskable-512.png` | Android's maskable icon | The same SVG ghost from `index.html`, on its cream background to the edges and inside the middle 80 %, rendered with sharp. Made in code for this game; no reference image or new likeness. |
 | `public/icons/ghost-{180,192,512}.png` | Home Screen icons | Exact SVG ghost already drawn in `index.html`, rendered on its existing cream background with sharp. Made in code for this game; no reference image or new likeness. |
 | In-memory thought pictures in `src/render/ghost-thought.ts` | Symbolic mountain, pine/crack and the existing pointed-cap first-figure icon | Plain canvas cutouts made in code for this game, in the existing story-card style. No reference picture, third-party art, character model or new likeness asset. |

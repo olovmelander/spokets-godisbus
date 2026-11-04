@@ -20,7 +20,7 @@ through the yard, the spruce forest, past the brook and over the misty bog, up t
   - `?tier=low`, `mid` or `high` temporarily overrides saved graphics for inspection.
 - **The plan:** [`docs/game-plan.md`](docs/game-plan.md), covering:
   - the design, and the art direction after *Unravel*;
-  - the technology: Three.js r186 (`WebGLRenderer`), Vite, Blender and GitHub Pages;
+  - the technology: Three.js r187 (`WebGLRenderer`), Vite, Blender and GitHub Pages;
   - the delivery stages.
 
   Its §0 holds Olov's answers, and the two questions that are still open.

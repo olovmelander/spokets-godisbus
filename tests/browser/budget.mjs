@@ -8,7 +8,11 @@
 //
 // The number that matters in the end is the frame time on the devices (gate 5), which only Olov can measure,
 // with ?bench. This one stands in for it in the checks, because a count does not depend on the computer.
-export const DRAW_CALLS = { low: 120, mid: 160, high: 200 };
+//
+// On 4 November 2026 Olov widened the graphics budget again for the visual upgrade (docs/visual-upgrade.md):
+// "utöka budgeten för grafiken". Mid went from 160 to 220 and High from 200 to 300. Low stays at 120: the
+// upgrade's richer life, light and plants are on the `rich` layer (src/render/rich.ts) or counted down on Low.
+export const DRAW_CALLS = { low: 120, mid: 220, high: 300 };
 
 /**
  * Whether a picture is within its tier's budget. A check that cannot say which tier it measured is held to

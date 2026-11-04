@@ -59,8 +59,9 @@ async function open(name, viewport, tier, touch, oldCalled = false) {
   await ready();
   const programs = (await info()).programs;
   let maximumDraws = 0, moving = 0;
-  // Software WebGL can advance fewer than 60 simulation steps per wall-clock second.
-  async function until(accepts, label, timeout = 60000) {
+  // Software WebGL can advance fewer than 60 simulation steps per wall-clock second, and far fewer on High since
+  // the visual upgrade: a long walk there can take well over a minute on GitHub, where nothing has a graphics card.
+  async function until(accepts, label, timeout = 120000) {
     const end = Date.now() + timeout;
     let last;
     do {

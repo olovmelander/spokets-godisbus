@@ -187,7 +187,9 @@ export function estimateBuild(packs) {
       const targets = tier === 'low' ? 0 : pixels * 20; // two RGBA16F colours + DEPTH24 (four bytes).
       const halfTargets = tier === 'high' ? Math.ceil(width / 2) * Math.ceil(height / 2) * 24 : 0; // blur, glow, water.
       const shadowBytes = tier === 'high' ? 1024 * 1024 * 8 : 0;
-      const renderTargetBytes = targets + halfTargets + shadowBytes;
+      // The light shafts (src/render/light-shafts.ts): two single-channel R8 targets at a quarter of each side.
+      const shaftTargets = tier === 'low' ? 0 : Math.ceil(width / 4) * Math.ceil(height / 4) * 2;
+      const renderTargetBytes = targets + halfTargets + shaftTargets + shadowBytes;
       const knownProceduralTextureBytes = tier === 'low' ? 0 : 32 ** 3 * 8 + 32 ** 2 * 4; // LUT + flow.
       const knownBytes = sum([assetBytes, canvasBytes, renderTargetBytes, knownProceduralTextureBytes]);
       if (knownBytes > GPU_BUDGETS[tier]) fail(`${name}/${tier} known estimate exceeds ${GPU_BUDGETS[tier] / MB} MB`);

@@ -1,8 +1,49 @@
 import { actPose } from './acting';
+import { seeded } from './player-motion';
 import { STANDING, type Pose, type Role } from './rig';
 
 const smooth = (t: number) => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
 const UPPER = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'spread'] as const;
+const JOINTS = [...UPPER, 'legL', 'legR', 'kneeL', 'kneeR'] as const;
+const pulse = (t: number, at: number, up: number, hold: number, down: number) => smooth((t - at) / up) * (1 - smooth((t - at - up - hold) / down));
+
+/** What they do while they wait for him, in seconds: shift their weight, glance about, fold their arms, look at the sky. */
+export const WAITING = { shift: 4.6, glance: 2.8, fold: 5.2, sky: 3.6 } as const;
+export type Waiting = keyof typeof WAITING;
+
+/**
+ * A quiet idle, added to the waiting pose `u` seconds into it. `side` picks the leg that rests and the way a glance
+ * goes. A resting knee bends with its thigh, so that its boot stays level and the other stands on the ground.
+ */
+function waitPose(act: Waiting, u: number, side: 1 | -1, grown: boolean, out: Pose): void {
+  switch (act) {
+    case 'shift': {
+      const e = pulse(u, 0, .8, 2.8, 1);
+      if (side > 0) { out.legL += .1 * e; out.kneeL += .1 * e; out.armL += .06 * e; } else { out.legR += .1 * e; out.kneeR += .1 * e; out.armR += .06 * e; }
+      out.lean -= .02 * e;
+      return;
+    }
+    case 'glance': {
+      const e = pulse(u, 0, .45, 1.3, .55);
+      out.turn += side * .55 * e; out.nod -= .08 * e;
+      return;
+    }
+    case 'fold': {
+      const e = pulse(u, 0, .7, 3.6, .8);
+      out.armL += (.42 - out.armL) * e; out.armR += (.42 - out.armR) * e;
+      out.elbowL += (1.85 - out.elbowL) * e; out.elbowR += (1.85 - out.elbowR) * e;
+      out.spread += (-.2 - out.spread) * e; out.nod += .03 * e;
+      return;
+    }
+    case 'sky': {
+      // Up at the sky; a grown-up shades the eyes with a hand.
+      const e = pulse(u, 0, .6, 2.2, .7);
+      out.nod += (-.5 - out.nod) * e; out.turn += side * .15 * e; out.lean -= .02 * e;
+      if (grown) { out.armR += (2.45 - out.armR) * e * .9; out.elbowR += (2.1 - out.elbowR) * e * .9; }
+      return;
+    }
+  }
+}
 
 // The sheets' personalities read in the silhouette, even with the rehearsal bodies.
 const CHARACTER = {
@@ -24,7 +65,13 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
   let gaze: number | null = null, pitch: number | null = null, settling = 0, presence = 0;
   let lastHelp: boolean | undefined, blendLegs = false;
   let from: Pose | null = null;
+  // Waiting idles, each of the family in an order and a time of their own; they fade when anything else begins.
+  const random = seeded(Math.round(offset * 1000) + 1), waiting: Pose = { ...STANDING }, grown = who === 'mamma' || who === 'pappa';
+  let quiet = 0, act: Waiting | null = null, actT = 0, nextAt = 0, fade = 0, side: 1 | -1 = 1, last: Waiting | null = null;
+  const bag: Waiting[] = [];
   return {
+    /** What they do while they wait, if anything. */
+    get waiting(): Waiting | null { return act; },
     update(dt: number, clock: number, joy: number, towards: number, carryX: number | null, calm: boolean,
       look?: { ahead: number; up: number }, help?: { ready: boolean; near: boolean }): Pose {
       if (dt <= 0) return pose;
@@ -95,6 +142,30 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
           pose.elbowL += (1.4 - pose.elbowL) * weight;
           pose.armR += (.9 - pose.armR) * weight;
         }
+      }
+      // Nobody needs them: no greeting, no help to give or show, nothing carried, and no reduced motion.
+      const idle = !calm && carryX === null && joy === 0 && !help?.ready && presence < 1e-3 && !from;
+      // Each quiet spell waits a while of its own before the first idle.
+      if (idle && quiet === 0) nextAt = 2.6 + random() * 2.4;
+      quiet = idle ? quiet + dt : 0;
+      fade = idle ? fade + (1 - fade) * -Math.expm1(-dt * 3) : fade * Math.exp(-dt * 8);
+      if (act && (actT += dt) >= WAITING[act]) { act = null; nextAt = quiet + 2 + random() * 3.5; }
+      if (!idle && fade < 1e-3) { act = null; fade = 0; }
+      if (idle && !act && quiet >= nextAt) {
+        if (bag.length === 0) {
+          // A shuffled round of all four, never starting with the one that ended the last round.
+          bag.push('shift', 'glance', 'fold', 'sky');
+          for (let i = 3; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [bag[i], bag[j]] = [bag[j]!, bag[i]!]; }
+          if (bag[3] === last) [bag[0], bag[3]] = [bag[3]!, bag[0]!];
+        }
+        act = last = bag.pop()!;
+        actT = 0; side = random() < .5 ? 1 : -1;
+        // A glance goes away from where they look now.
+        if (act === 'glance' && Math.abs(pose.turn) > .1) side = pose.turn > 0 ? -1 : 1;
+      }
+      if (act && fade > 0) {
+        waitPose(act, actT, side, grown, Object.assign(waiting, pose));
+        for (const joint of JOINTS) pose[joint] += (waiting[joint] - pose[joint]) * fade;
       }
       if (from && !calm) {
         // Boarding, alighting and interrupted reactions retain the previous hands, then settle.

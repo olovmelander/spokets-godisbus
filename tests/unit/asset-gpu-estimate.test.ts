@@ -155,8 +155,10 @@ describe('build estimate load groups and tier budgets', () => {
     expect(PIXEL_CAPS).toEqual(PIXEL_CAP);
     const { low, mid, high } = estimateBuild({ boot: pack(1000) }).loadGroups.common.tiers;
     expect(low.renderTargetBytes).toBe(0);
-    expect(mid.renderTargetBytes).toBe(mid.width * mid.height * 20);
-    expect(high.renderTargetBytes).toBe(high.width * high.height * 20 + Math.ceil(high.width / 2) * Math.ceil(high.height / 2) * 24 + 1024 ** 2 * 8);
+    // The light shafts' two R8 quarter-size targets, on Mid and High (src/render/light-shafts.ts).
+    const shafts = (t: { width: number; height: number }) => Math.ceil(t.width / 4) * Math.ceil(t.height / 4) * 2;
+    expect(mid.renderTargetBytes).toBe(mid.width * mid.height * 20 + shafts(mid));
+    expect(high.renderTargetBytes).toBe(high.width * high.height * 20 + Math.ceil(high.width / 2) * Math.ceil(high.height / 2) * 24 + shafts(high) + 1024 ** 2 * 8);
     expect(high.canvasBytes).toBe(high.width * high.height * 8);
     expect(high.knownBytes).toBe(1000 + high.canvasBytes + high.renderTargetBytes + high.knownProceduralTextureBytes);
     expect(high.renderTargetBytes).toBeLessThan(HIGH_TARGET_LIMIT);
