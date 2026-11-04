@@ -380,6 +380,10 @@ export const billsta: ChapterData = {
       // The family's car on the road, just stopped after the drive, its inside light on.
       { kind: 'car', x: CAR.x, z: CAR.z, width: CAR.width, lit: '', size: 0.62 },
       { kind: 'mailbox', x: 11.6, z: -2.4 },
+      // The road's wooden poles, with their wires across the sky, and a lamp on each.
+      { kind: 'pole', x: -30, z: -9, height: 19, width: 34, lit: '' },
+      { kind: 'pole', x: 4, z: -9, height: 19, width: 34, lit: '' },
+      { kind: 'pole', x: 38, z: -9, height: 19, width: 34, lit: '' },
       // Spruces across the road.
       { kind: 'spruce', x: -26, z: -30, y: -6, height: 62 },
       { kind: 'spruce', x: -12, z: -42, y: -7, height: 70 },

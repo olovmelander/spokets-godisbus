@@ -1,6 +1,6 @@
 import {
-  BoxGeometry, BufferGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial,
-  IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, SphereGeometry, TorusGeometry, Vector3,
+  BoxGeometry, BufferGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, ExtrudeGeometry, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial,
+  IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, TorusGeometry, Vector3,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Storm } from '../../sim/types';
@@ -250,8 +250,9 @@ function hut(def: BuildingDef) {
   const w = def.width ?? 10;
   const h = def.height ?? 15;
   const d = 8;
-  const parts: BufferGeometry[] = [box(w - 0.6, h, d - 0.6, 0, h / 2, 0, '#8a6232'), gable(w - 0.2, 3, d - 0.2, 0, h, 0, '#a97a42'), ...roof(w, 3, d, 0, h, 0, '#7a8c9a', 0.9)];
-  const tones = ['#b98a4e', '#a97a42', '#c49658'];
+  const tar = def.tar === true;
+  const parts: BufferGeometry[] = [box(w - 0.6, h, d - 0.6, 0, h / 2, 0, tar ? '#1e1a18' : '#8a6232'), gable(w - 0.2, 3, d - 0.2, 0, h, 0, tar ? '#26211e' : '#a97a42'), ...roof(w, 3, d, 0, h, 0, '#7a8c9a', 0.9)];
+  const tones = tar ? ['#2a2522', '#231f1c', '#302a26'] : ['#b98a4e', '#a97a42', '#c49658'];
   const logs = Math.max(6, Math.round(h / 0.62));
   for (let i = 0; i < logs; i++) {
     const y = (i + 0.5) * (h / logs);
@@ -261,6 +262,8 @@ function hut(def: BuildingDef) {
     parts.push(paint(new CylinderGeometry(r, r, d + 0.5, 12).rotateX(Math.PI / 2).translate(-w / 2 + 0.3, y, 0), tones[(i + 2) % 3]!));
   }
   parts.push(box(w * 0.36, h * 0.7, 0.4, 0, h * 0.35, d / 2 + 0.4, '#5a3e22'));
+  // A tarred hut has white trim round its door and its corners.
+  if (tar) parts.push(box(w * 0.44, 0.5, 0.2, 0, h * 0.72, d / 2 + 0.62, '#e4e0d6'), box(0.5, h * 0.72, 0.2, -w * 0.2, h * 0.36, d / 2 + 0.62, '#e4e0d6'), box(0.5, h * 0.72, 0.2, w * 0.2, h * 0.36, d / 2 + 0.62, '#e4e0d6'));
   return { parts, panes: [] };
 }
 
@@ -345,11 +348,51 @@ function spruce(def: BuildingDef) {
 }
 
 function car(def: BuildingDef) {
-  // The family's car: no badge, no plate, only its shape. Slate blue, because red is the candy's (art bible §2.2).
+  // The family's estate car: no badge, no plate, only its shape. Slate blue, because red is the candy's (art bible §2.2).
   const w = def.width ?? 29;
-  const parts: BufferGeometry[] = [box(w, 6, 11, 0, 5, 0, '#3b4f66'), box(w * 0.55, 5, 10, -w * 0.05, 10.5, 0, '#34465b')];
-  for (const x of [-w * 0.32, w * 0.32]) for (const z of [-5, 5]) parts.push(paint(new CylinderGeometry(2.6, 2.6, 1.6, 14).rotateX(Math.PI / 2).translate(x, 2.6, z), '#1c1c1e'));
-  const panes = [new PlaneGeometry(w * 0.45, 3.6).translate(-w * 0.05, 10.8, 5.05)];
+  const side = (x: number) => x * w;
+  // Its side, drawn once and pushed out to its width: low nose, raked windscreen, long roof, upright tail.
+  const shape = new Shape();
+  shape.moveTo(side(-0.5), 2.4);
+  shape.quadraticCurveTo(side(-0.505), 4.4, side(-0.495), 5.2);
+  shape.quadraticCurveTo(side(-0.49), 8.6, side(-0.44), 9.8);
+  shape.quadraticCurveTo(side(-0.4), 10.5, side(-0.3), 10.6);
+  shape.lineTo(side(0.06), 10.5);
+  shape.quadraticCurveTo(side(0.14), 10.3, side(0.19), 9.2);
+  shape.lineTo(side(0.28), 7.1);
+  shape.quadraticCurveTo(side(0.4), 6.6, side(0.48), 5.9);
+  shape.quadraticCurveTo(side(0.51), 5, side(0.5), 2.4);
+  shape.closePath();
+  const body = new ExtrudeGeometry(shape, { depth: 11, bevelEnabled: true, bevelSize: 0.45, bevelThickness: 0.5, bevelSegments: 2, curveSegments: 8 }).translate(0, 0, -5.5);
+  const parts: BufferGeometry[] = [paint(body.toNonIndexed(), '#3f5670')];
+  const NEAR = 6.03;
+  const dark = '#1a1d22';
+  // The dark sill, and the seams of its doors, on the side that shows.
+  parts.push(box(w * 0.94, 0.9, 0.08, 0, 2.5, NEAR, dark));
+  for (const x of [-0.15, 0.07]) parts.push(box(0.14, 6.6, 0.06, side(x), 6, NEAR, '#2a3a4c'));
+  for (const x of [-0.11, 0.11]) parts.push(box(1.4, 0.3, 0.1, side(x), 7.3, NEAR, '#8a929c'));
+  // Wheels in their arches: a dark arch, a tyre, a pale rim and its hub.
+  for (const x of [-0.31, 0.32]) {
+    parts.push(paint(new CircleGeometry(3.3, 20).translate(side(x), 2.9, NEAR + 0.01), dark));
+    for (const z of [-5.2, 5.2]) parts.push(paint(new CylinderGeometry(2.7, 2.7, 1.8, 20).rotateX(Math.PI / 2).translate(side(x), 2.7, z), '#14161a'));
+    parts.push(paint(new CylinderGeometry(1.5, 1.5, 0.3, 16).rotateX(Math.PI / 2).translate(side(x), 2.7, 6.2), '#9aa2ac'));
+    parts.push(paint(new CylinderGeometry(0.5, 0.5, 0.36, 10).rotateX(Math.PI / 2).translate(side(x), 2.7, 6.26), '#4a5058'));
+  }
+  // Roof rails, a lamp at the nose and one at the tail.
+  parts.push(box(w * 0.46, 0.3, 0.3, side(-0.14), 11.1, 4.4, '#2a2e34'), box(w * 0.46, 0.3, 0.3, side(-0.14), 11.1, -4.4, '#2a2e34'));
+  parts.push(box(1.6, 1, 0.1, side(0.46), 5.4, NEAR, '#d6d8cc'), box(0.9, 2.2, 0.1, side(-0.485), 6.6, NEAR, '#6e2a24'));
+  // Its side windows, on either side of a pillar, following the roof.
+  const pane = (points: readonly (readonly [number, number])[]) => {
+    const glass = new Shape();
+    glass.moveTo(side(points[0]![0]), points[0]![1]);
+    for (const [x, y] of points.slice(1)) glass.lineTo(side(x), y);
+    glass.closePath();
+    return new ShapeGeometry(glass).translate(0, 0, NEAR + 0.02);
+  };
+  const panes = [
+    pane([[-0.44, 7.3], [-0.42, 9.7], [-0.3, 10], [-0.17, 10], [-0.17, 7.3]]),
+    pane([[-0.13, 7.3], [-0.13, 10], [0.05, 9.9], [0.13, 9.6], [0.21, 7.3]]),
+  ];
   return { parts, panes };
 }
 
@@ -560,8 +603,53 @@ function cliff(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
+function pole(def: BuildingDef) {
+  // A country road's wooden power pole, with a lamp on an arm, and its wires on to the next one, sagging across the sky.
+  const h = def.height ?? 26;
+  const span = def.width ?? 40;
+  const wood = '#7a6048';
+  const parts: BufferGeometry[] = [paint(new CylinderGeometry(0.4, 0.62, h, 8).translate(0, h / 2, 0), wood), box(7.5, 0.5, 0.5, 0, h - 1.1, 0, wood)];
+  parts.push(box(4.4, 0.26, 0.26, 2.2, h - 4.4, 1, '#54585e'), box(1.8, 0.42, 0.8, 4.4, h - 4.6, 1, '#2a2c30'));
+  const LINKS = 14;
+  const sagged = (t: number) => h - 0.7 - 4 * t * (1 - t) * 2.4;
+  for (const z of [-3.4, 0, 3.4]) {
+    for (let i = 0; i < LINKS; i++) {
+      const [a, b] = [i / LINKS, (i + 1) / LINKS];
+      const [dx, dy] = [span * (b - a), sagged(b) - sagged(a)];
+      parts.push(tilted(Math.hypot(dx, dy) + 0.04, 0.09, 0.09, 0, Math.atan2(dy, dx), span * (a + b) / 2, (sagged(a) + sagged(b)) / 2, z, '#2a2e36'));
+    }
+  }
+  // Its lamp's glass, under the head.
+  const panes = [new PlaneGeometry(1.5, 0.7).rotateX(Math.PI / 2).translate(4.4, h - 4.83, 1)];
+  return { parts, panes };
+}
+
+function store(def: BuildingDef) {
+  // Olympia's little store: red boards under broad white trim, and a red-and-white striped awning over its counter.
+  const w = def.width ?? 20;
+  const h = def.height ?? 11;
+  const d = 9;
+  const parts: BufferGeometry[] = [box(w, h, d, 0, h / 2, 0, '#6e2622'), gable(w, 3.4, d, 0, h, 0, '#6e2622'), ...roof(w, 3.4, d, 0, h, 0, '#3a3e44')];
+  for (let x = -w / 2 + 0.9; x < w / 2; x += 1.8) parts.push(box(0.1, h - 0.4, 0.06, x, h / 2, d / 2 + 0.02, '#541c1a'));
+  // The white trim: under the eaves, at the corners, and round the counter's opening.
+  parts.push(box(w + 0.5, 0.8, 0.3, 0, h - 0.3, d / 2 + 0.1, '#e4e0d6'));
+  for (const x of [-w / 2, w / 2]) parts.push(box(0.7, h, 0.3, x, h / 2, d / 2 + 0.1, '#e4e0d6'));
+  const counter = { x: -w * 0.1, wide: w * 0.56, high: h * 0.36, at: h * 0.52 };
+  parts.push(box(counter.wide + 1, counter.high + 1, 0.2, counter.x, counter.at, d / 2 + 0.08, '#e4e0d6'));
+  parts.push(box(counter.wide + 1.4, 0.5, 2, counter.x, counter.at - counter.high / 2 - 0.7, d / 2 + 1, '#d8d2c4'));
+  // The door, and the awning: one sloping stripe after the other.
+  parts.push(box(w * 0.14, h * 0.72, 0.2, w * 0.33, h * 0.36, d / 2 + 0.08, '#e4e0d6'), box(w * 0.11, h * 0.66, 0.26, w * 0.33, h * 0.33, d / 2 + 0.1, '#3a3e44'));
+  const STRIPES = 10;
+  for (let i = 0; i < STRIPES; i++) {
+    const wide = (counter.wide + 2) / STRIPES;
+    parts.push(tilted(wide, 0.2, 3.6, 0.5, 0, counter.x - (counter.wide + 2) / 2 + (i + 0.5) * wide, counter.at + counter.high / 2 + 0.4, d / 2 + 1.7, i % 2 ? '#e8e2d6' : '#8a2a24'));
+  }
+  const panes = [new PlaneGeometry(counter.wide, counter.high).translate(counter.x, counter.at, d / 2 + 0.2)];
+  return { parts, panes };
+}
+
 const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGeometry[]; panes: BufferGeometry[] }> = {
-  pitch, chess, sunboard, villa, barn, playhouse, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
+  pole, store, pitch, chess, sunboard, villa, barn, playhouse, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
   church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce,
 };
 

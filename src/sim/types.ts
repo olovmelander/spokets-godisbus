@@ -686,9 +686,11 @@ export interface Storm {
    * once that flag is set (or from the start with an empty string).
    */
   buildings?: {
-    kind: 'pitch' | 'chess' | 'sunboard' | 'villa' | 'barn' | 'playhouse' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
+    kind: 'pole' | 'store' | 'pitch' | 'chess' | 'sunboard' | 'villa' | 'barn' | 'playhouse' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
       | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce';
     x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string; marks?: { halfway: number; box?: { x: number; long: number }; front?: number }; model?: string; size?: number;
+    /** A hut's logs tarred black, with white trim. */
+    tar?: boolean;
     /** Turned about the upright, in quarter turns: a net or a table seen from its end. */
     turn?: number;
   }[];

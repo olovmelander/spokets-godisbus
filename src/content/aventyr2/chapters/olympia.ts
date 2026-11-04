@@ -250,6 +250,8 @@ export const olympia: ChapterData = {
     buildings: [
       // The pitch, flat from the near touchline back to the stand: the path runs along its edge.
       { kind: 'pitch', x: 84.4, z: -0.6, width: 135.2, height: 22, y: 0.01, marks: { halfway: 51.1, box: { x: 8, long: 18 }, front: 7 } },
+      // The little store beside the ground, under its striped awning, closed in the storm.
+      { kind: 'store', x: 4, z: -40, width: 22 },
       { kind: 'floodlight', x: 30, z: -36, height: 90 },
       // The red hall under its arch, across the pitch (art/blender/olympia.py).
       { kind: 'clubhouse', x: 50, z: -66, width: 36, height: 18, model: 'olympia-hall' },

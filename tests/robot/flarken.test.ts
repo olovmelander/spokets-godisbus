@@ -325,7 +325,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     });
 
     it('stands the huts behind their roofs, and the net where he bounces', () => {
-      const huts = buildings.filter((d) => d.kind === 'hut');
+      const huts = buildings.filter((d) => d.kind === 'hut' && !d.tar);
       expect(huts.length).toBe(2);
       for (const [i, hut] of huts.entries()) {
         expect(hut.x).toBeCloseTo(roofs[i]!.x, 5);

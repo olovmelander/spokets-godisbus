@@ -5,7 +5,7 @@ import type { Storm } from '../../src/sim/types';
 
 /** Äventyr 2's buildings (src/content/aventyr2/buildings.ts): each is built, stands on its foot, and costs two draws at most. */
 describe('Äventyr 2: the buildings', () => {
-  const kinds: NonNullable<Storm['buildings']>[number]['kind'][] = ['pitch', 'chess', 'sunboard', 'villa', 'barn', 'playhouse', 'goal', 'floodlight', 'stand', 'clubhouse', 'tower', 'hut', 'birch', 'car', 'kota', 'church', 'bridge', 'woodshed', 'rowboat', 'swings', 'slide', 'picnic', 'volleyball', 'lodge', 'mailbox', 'cliff', 'spruce'];
+  const kinds: NonNullable<Storm['buildings']>[number]['kind'][] = ['pole', 'store', 'pitch', 'chess', 'sunboard', 'villa', 'barn', 'playhouse', 'goal', 'floodlight', 'stand', 'clubhouse', 'tower', 'hut', 'birch', 'car', 'kota', 'church', 'bridge', 'woodshed', 'rowboat', 'swings', 'slide', 'picnic', 'volleyball', 'lodge', 'mailbox', 'cliff', 'spruce'];
   for (const kind of kinds) {
     it(`builds the ${kind} in at most two meshes, standing where it is put`, () => {
       const made = building({ kind, x: 10, z: -8 });
