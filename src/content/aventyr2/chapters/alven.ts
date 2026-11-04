@@ -382,8 +382,6 @@ export const alven: ChapterData = {
     { id: 'al:logs-wait', at: 34.6, who: 'elof', line: 'alLogsWait', read: true },
     { id: 'al:leaf-seen', on: FELL_IN, within: [GRAVEL.from, BANK.from], until: 'al:leaf', who: 'elof', line: 'alLeafSeen', read: true },
     // 2. the stones and the logs
-    { id: 'al:bob', at: 58.4, who: 'elof', line: 'alBob' },
-    { id: 'al:eddy', at: 70.8, who: 'elof', line: 'alEddy' },
     // 3. Bredbyn, the rapids, and Pappa on the bridge
     { id: 'al:bredbyn', at: 82.6, who: 'elof', line: 'alBredbyn' },
     { id: 'al:rapids', at: 85, until: 'al:lift', who: 'elof', line: 'alRapids' },
@@ -395,7 +393,6 @@ export const alven: ChapterData = {
     { id: 'al:thanks', at: 110.8, needs: 'al:lift', who: 'elof', line: 'alThanks' },
     { id: 'al:follow', at: 112.6, needs: 'al:lift', who: 'pappa', line: 'alFollow' },
     // 4. the beaver's place
-    { id: 'al:stumps', at: 114.6, who: 'elof', line: 'alStumps' },
     { id: 'al:lodge', at: 120.8, who: 'elof', line: 'alLodge' },
     { id: 'al:otter', at: 126.4, who: 'elof', line: 'alOtter' },
     // 5. the lake, and the owl

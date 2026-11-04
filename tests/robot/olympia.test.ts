@@ -27,13 +27,10 @@ vi.setConfig({ testTimeout: 90000 });
 
 /** What is said on the way, in the story's order. */
 const SAID = [
-  'ol:arrive', 'ol:klonk', 'ol:lights', 'ol:fence', 'ol:top', 'ol:little',
+  'ol:arrive', 'ol:klonk', 'ol:lights', 'ol:top', 'ol:little',
   'ol:wind', 'ol:jump', 'ol:klonk-balls', 'ol:phew',
-  'ol:puddle', 'ol:idea', 'ol:splash', 'ol:klonk-ball', 'ol:in-goal',
-  'ol:flag', 'ol:benches', 'ol:crowd',
-  'ol:circle', 'ol:old-one', 'ol:bertil-here', 'ol:kick-ready', 'ol:fly', 'ol:goal', 'ol:cheer', 'ol:thanks',
-  'ol:range', 'ol:all-white',
-  'ol:trail', 'ol:gust', 'ol:north', 'ol:follow', 'ol:car', 'ol:klonk-end',
+  'ol:puddle', 'ol:idea', 'ol:splash', 'ol:klonk-ball', 'ol:in-goal', 'ol:crowd', 'ol:old-one', 'ol:bertil-here', 'ol:kick-ready', 'ol:fly', 'ol:goal', 'ol:cheer', 'ol:thanks',
+  'ol:range', 'ol:all-white', 'ol:gust', 'ol:north', 'ol:follow', 'ol:car', 'ol:klonk-end',
 ];
 /** The ball floated, Bertil called, his ball ready and ridden, and the end. */
 const PUZZLES = ['placed:ol-ball', 'ol:bertil', 'ol:kick-ready', 'ol:kick', 'goal'];

@@ -27,11 +27,10 @@ vi.setConfig({ testTimeout: 90000 });
 
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
-  'sjon:arrive', 'sjon:swings', 'sjon:slide', 'sjon:dry', 'sjon:dry-klonk', 'sjon:net', 'sjon:door',
-  'sjon:stones', 'sjon:reeds', 'sjon:mats', 'sjon:wood', 'sjon:flash',
+  'sjon:arrive', 'sjon:dry-klonk', 'sjon:door', 'sjon:mats', 'sjon:wood', 'sjon:flash',
   'sjon:jetty', 'sjon:posts', 'sjon:old-one',
   'sjon:broken', 'sjon:family:mamma', 'sjon:boat-ready', 'sjon:steady', 'sjon:thanks',
-  'sjon:near', 'sjon:tower', 'sjon:lookout', 'sjon:dive',
+  'sjon:near', 'sjon:tower', 'sjon:lookout',
   'sjon:gap', 'sjon:stone-idea', 'sjon:plop', 'sjon:plop-klonk', 'sjon:bark-idea', 'sjon:raft', 'sjon:klonk-raft',
   'sjon:outlet', 'sjon:log', 'sjon:floated', 'sjon:car', 'sjon:klonk-cheer',
 ];
@@ -253,9 +252,6 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       expect(table.y).toBeGreaterThan(1 + 0.5);
       for (let x = benches[0]!.to + 0.1; x < benches[1]!.from; x += 0.2) expect(heightAt(flarken, x)).toBe(0);
       expect(flarken.ghost!.some((perch) => perch.at.x > benches[0]!.to && perch.at.x < benches[1]!.from && perch.at.y === 0)).toBe(true);
-      const dry = flarken.beats!.find((beat) => beat.id === 'sjon:dry')!;
-      expect(dry.at!).toBeGreaterThan(benches[0]!.to);
-      expect(dry.at!).toBeLessThan(benches[1]!.from);
       expect(buildings.some((d) => d.kind === 'picnic' && Math.abs(d.x - table.x) < 1e-6 && d.height === table.y)).toBe(true);
     });
 

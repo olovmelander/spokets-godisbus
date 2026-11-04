@@ -470,17 +470,11 @@ export const flarken: ChapterData = {
   beats: [
     // 1. the parking and the playground
     { id: 'sjon:arrive', at: 2.5, who: 'elof', line: 'sjArrive' },
-    { id: 'sjon:swings', at: 5.4, who: 'elof', line: 'sjSwings' },
-    { id: 'sjon:slide', at: 24.8, who: 'elof', line: 'sjSlide' },
     // 2. the picnic table and the net
-    { id: 'sjon:dry', at: 38.2, who: 'elof', line: 'sjDry' },
     { id: 'sjon:dry-klonk', at: 38.8, who: 'spoket', line: 'sjKlonkRaft' },
-    { id: 'sjon:net', at: 42.8, who: 'elof', line: 'sjNet' },
     // 3. the changing rooms
     { id: 'sjon:door', at: 50.2, who: 'elof', line: 'sjDoor' },
     // 4. the stones, the reeds and the mats
-    { id: 'sjon:stones', at: 60.8, who: 'elof', line: 'sjStones' },
-    { id: 'sjon:reeds', at: 74.2, who: 'elof', line: 'sjReeds' },
     { id: 'sjon:mats', at: 87.6, who: 'elof', line: 'sjMats' },
     { id: 'sjon:wood', at: 98.6, who: 'elof', line: 'sjKlonkWood' },
     { id: 'sjon:flash', at: 110.8, who: 'elof', line: 'sjFlash' },
@@ -498,7 +492,6 @@ export const flarken: ChapterData = {
     // 7. the diving tower
     { id: 'sjon:tower', at: 152.6, who: 'elof', line: 'sjTower' },
     { id: 'sjon:lookout', at: 155.6, who: 'elof', line: 'sjLookout', read: true },
-    { id: 'sjon:dive', at: 157.4, who: 'elof', line: 'sjDive' },
     // 8. the bark raft
     { id: 'sjon:gap', at: 165.4, who: 'elof', line: 'sjGap' },
     { id: 'sjon:stone-idea', at: 165.9, until: `placed:${STONE.id}`, who: 'elof', line: 'sjStoneIdea', read: true },

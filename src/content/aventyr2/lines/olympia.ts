@@ -12,7 +12,6 @@ export const words: ChapterWords = {
     olKlonk: 'Klonk!',
     olKlonkKlonk: 'Klonk, klonk!',
     olLights: 'Inte ens strålkastarna lyser!',
-    olFence: 'Staketet! Jag klättrar över.',
     olTop: 'Blixten! Nu ser jag hela planen!',
     olLittle: 'Lillgubben! Han flyger över planen!',
     // 2. the balls the wind rolls across the pitch
@@ -27,11 +26,8 @@ export const words: ChapterWords = {
     // 4. up the net to the crossbar
     olLookout: 'Uppe på ribban! Vilken utsikt!',
     // 5. the corner flag and the benches
-    olFlag: 'Hörnflaggan smäller i vinden!',
-    olBenches: 'Taket droppar. Titta på skuggorna!',
     olCrowd: 'Stormen låter som en hel läktare!',
     // 6. Bertil's free kick over the flooded centre circle
-    olCircle: 'Mittcirkeln är en hel sjö!',
     olOldOne: 'Gamla trägubben seglar över vattnet!',
     olBertilHere: 'Ropa på mig! Jag är bäst på frisparkar.',
     olBertilReady: 'Upp på bollen! Jag skjuter, du flyger!',
@@ -43,7 +39,6 @@ export const words: ChapterWords = {
     olRange: 'Fem svarta måltavlor! Jag kastar kottar.',
     olAllWhite: 'Alla fem är vita! Fullträff!',
     // 8. the floodlit trail, and the strongest gust
-    olTrail: 'Elljusspåret är också mörkt.',
     olGust: 'Där! Vinden tar lillgubben norrut!',
     olNorth: 'Upp mot sjön vid Flärken!',
     olFollow: 'Gamla trägubben flyger efter honom!',

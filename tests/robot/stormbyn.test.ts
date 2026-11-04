@@ -24,8 +24,8 @@ import { decide, heightAt, playThrough } from './robot';
 
 /** Everything the robot says on the way, in order. */
 const SAID = [
-  'sbDark', 'sbKlonkHere', 'sbAwning', 'sbCandle', 'sbRiver', 'sbGrate', 'sbWall', 'family:moa', 'family:umbrella',
-  'sbFloat', 'sbLanded', 'sbSign', 'sbCap', 'sbToLake', 'sbKlonkCap', 'sbDrops', 'sbSteps', 'sbShore',
+  'sbDark', 'sbKlonkHere', 'sbAwning', 'sbCandle', 'sbRiver', 'family:moa', 'family:umbrella',
+  'sbFloat', 'sbLanded', 'sbCap', 'sbToLake', 'sbKlonkCap', 'sbShore',
 ];
 
 /** Where the street ends: with its ground. */
@@ -202,7 +202,7 @@ describe('Kapitel 3, Byn i stormen', () => {
     expect(sim.checkpoint).toBe(stormbyn.checkpoints!.length - 1);
     expect(sim.bubbles).toBe(0);
     expect(sim.knocks).toBe(0);
-    expect(sim.said).toEqual(SAID.slice(SAID.indexOf('sbSign')));
+    expect(sim.said).toEqual(SAID.slice(SAID.indexOf('sbCap')));
   });
 
   it('resumes on the wall before Moa is called, and calls her', () => {

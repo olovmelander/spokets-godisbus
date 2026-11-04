@@ -20,7 +20,7 @@ import { decide, heightAt, playThrough } from './robot';
 
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
-  'ss:dark', 'ss:klonk', 'ss:flash', 'ss:cones', 'ss:cones-done', 'ss:boughs', 'ss:owl', 'ss:owl-free', 'ss:windthrow',
+  'ss:dark', 'ss:klonk', 'ss:flash', 'ss:cones', 'ss:owl', 'ss:owl-free', 'ss:windthrow',
   'ss:owl-waits', 'ss:owl-fly', 'ss:pappa', 'ss:wide', 'ss:beam', 'ss:stiff', 'ss:tiptoe', 'ss:away', 'ss:awake',
   'ss:thanks', 'ss:hollow-seen', 'ss:hollow', 'ss:alone', 'ss:why', 'ss:both', 'ss:jay', 'ss:jay-glad', 'ss:see-old',
   'ss:village', 'ss:onward',

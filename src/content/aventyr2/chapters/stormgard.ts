@@ -327,7 +327,6 @@ export const stormgard: ChapterData = {
     { id: 'sg:gusts', at: 40.8, who: 'elof', line: 'sgPots' },
     { id: 'sg:pot-klonk', at: 45.2, who: 'spoket', line: 'sgKlonk' },
     { id: 'sg:pot', at: 46.2, who: 'elof', line: 'sgFlowerpot' },
-    { id: 'sg:calm', at: 72.8, who: 'elof', line: 'sgCalm' },
     // 4. Regntunnan: Klonk on the barrel shows the way up
     { id: 'sg:ditch', at: 77, who: 'elof', line: 'sgDitch' },
     { id: 'sg:barrel', at: 78.4, who: 'spoket', line: 'sgKlonkKlonk' },

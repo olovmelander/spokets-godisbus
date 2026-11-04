@@ -304,7 +304,6 @@ export const olympia: ChapterData = {
     { id: 'ol:arrive', at: 1.6, who: 'elof', line: 'olArrive' },
     { id: 'ol:klonk', at: 4.4, who: 'spoket', line: 'olKlonk' },
     { id: 'ol:lights', at: 8.6, who: 'elof', line: 'olLights' },
-    { id: 'ol:fence', at: 12.6, who: 'elof', line: 'olFence' },
     { id: 'ol:top', at: 16.2, who: 'elof', line: 'olTop' },
     { id: 'ol:little', on: 'beat:ol:top', who: 'elof', line: 'olLittle' },
     // 2. the balls in the wind: the first beat sets them rolling
@@ -321,11 +320,8 @@ export const olympia: ChapterData = {
     // 4. up on the crossbar (the side way)
     { id: 'ol:lookout', on: 'ol:lookout', who: 'elof', line: 'olLookout' },
     // 5. the corner flag and the benches
-    { id: 'ol:flag', at: 90.6, who: 'elof', line: 'olFlag' },
-    { id: 'ol:benches', at: 93.2, who: 'elof', line: 'olBenches' },
     { id: 'ol:crowd', at: 113.4, who: 'elof', line: 'olCrowd' },
     // 6. Bertil's free kick
-    { id: 'ol:circle', at: 116.6, who: 'elof', line: 'olCircle' },
     { id: 'ol:old-one', at: 118.4, who: 'elof', line: 'olOldOne' },
     { id: 'ol:bertil-here', at: 120, until: 'ol:bertil', who: 'bertil', line: 'olBertilHere', read: true },
     { id: 'ol:kick-ready', on: 'ol:kick-ready', until: 'ol:kick', within: [116, 126], who: 'bertil', line: 'olBertilReady', read: true },
@@ -337,7 +333,6 @@ export const olympia: ChapterData = {
     { id: 'ol:range', at: 156, who: 'elof', line: 'olRange' },
     { id: 'ol:all-white', on: 'ol:all-white', who: 'elof', line: 'olAllWhite' },
     // 8. the trail, and the strongest gust
-    { id: 'ol:trail', at: 168.4, who: 'elof', line: 'olTrail' },
     { id: 'ol:gust', at: 172.8, who: 'elof', line: 'olGust', read: true },
     { id: 'ol:north', on: 'beat:ol:gust', who: 'elof', line: 'olNorth' },
     { id: 'ol:follow', on: 'beat:ol:north', who: 'elof', line: 'olFollow' },

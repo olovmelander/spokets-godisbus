@@ -486,12 +486,9 @@ export const billsta: ChapterData = {
     { id: 'bi:open', on: `placed:${DOOR.id}`, who: 'elof', line: 'biOpen' },
     // 4. the hay loft, the roof, and down behind the house
     { id: 'bi:loft', at: 57.8, needs: `placed:${DOOR.id}`, who: 'elof', line: 'biLoft' },
-    { id: 'bi:hatch', at: 61.8, who: 'elof', line: 'biHatch' },
     { id: 'bi:roof', at: 70.2, who: 'elof', line: 'biRoof' },
     { id: 'bi:roof-klonk', at: 73.4, who: 'spoket', line: 'biKlonk' },
-    { id: 'bi:forest', at: 101.4, who: 'elof', line: 'biForest' },
     // 5. the brook, Klonk's seesaw, and Billaberget
-    { id: 'bi:brook', at: 108.6, who: 'elof', line: 'biBrook' },
     { id: 'bi:seesaw', at: 126.4, until: 'bi:call-klonk', who: 'elof', line: 'biSeesaw', read: true },
     { id: 'bi:call', on: 'bi:call-klonk', who: 'elof', line: 'biJumpOn' },
     { id: 'bi:klonk-jump', on: 'beat:bi:call', who: 'spoket', line: 'biKlonk' },
@@ -503,10 +500,8 @@ export const billsta: ChapterData = {
     { id: 'bi:fly', on: 'bi:fling', who: 'elof', line: 'biFly' },
     { id: 'bi:thanks-klonk', at: 141, needs: 'bi:fling', who: 'elof', line: 'biThanksKlonk' },
     { id: 'bi:klonk-glad', on: 'beat:bi:thanks-klonk', who: 'spoket', line: 'biKlonkKlonk' },
-    { id: 'bi:hill', at: 142.8, who: 'elof', line: 'biHill' },
     { id: 'bi:hazel', at: 150.2, who: 'elof', line: 'biHazel' },
     { id: 'bi:wind', at: 162.4, who: 'elof', line: 'biWind', read: true },
-    { id: 'bi:top', at: 187.6, who: 'elof', line: 'biTop' },
     // 6. the brow: a flash, both trägubbar on a stone in the narrow far below, and the owl far off
     { id: 'bi:there', at: 193.2, who: 'elof', line: 'biThere', read: true },
     { id: 'bi:holds', on: 'bi:landed', who: 'elof', line: 'biHolds' },

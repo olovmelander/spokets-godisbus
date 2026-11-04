@@ -20,8 +20,6 @@ export const words: ChapterWords = {
     alLogsWait: 'Stockar i virveln! Jag väntar in dem.',
     alLeafSeen: 'Ett björklöv, som i rännstenen!',
     // 2. the stones, the bobbing logs and the eddy
-    alBob: 'Stocken guppar, men den håller!',
-    alEddy: 'Bakom stenen snurrar vattnet runt.',
     // 3. the bridge in Bredbyn, and Pappa's scarf
     alBredbyn: 'Bredbyn igen! Där borta är Olympia.',
     alRapids: 'Forsen är alldeles för vild!',
@@ -33,7 +31,6 @@ export const words: ChapterWords = {
     alThanks: 'Tack, Pappa! Din halsduk är så varm.',
     alFollow: 'Vi kör efter dig längs ån.',
     // 4. the beaver's stumps and lodge, and an otter
-    alStumps: 'Gnagda stubbar! Här bor en bäver.',
     alLodge: 'En bäverhydda! Tyst, bävern sover.',
     alOtter: 'En utter! Den simmar ut mot stenen.',
     // 5. the lake, and the owl from the forest

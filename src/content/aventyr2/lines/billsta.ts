@@ -27,11 +27,8 @@ export const words: ChapterWords = {
     biOpen: 'Ladudörren är öppen! Tack, mormor!',
     // 4. the hay loft, the roof, and down behind the house
     biLoft: 'Höloftet! Det luktar sommar här.',
-    biHatch: 'En lucka i golvet. Jag hoppar över!',
     biRoof: 'Upp på taket! Här blåser det hårt.',
-    biForest: 'Bakom huset börjar skogen!',
     // 5. the brook, Klonk's seesaw, Billaberget's boulders, the hazel and the gusts
-    biBrook: 'En bäck! Jag hoppar på stenarna.',
     biSeesaw: 'En gungbräda! Vem tar andra änden?',
     biJumpOn: 'Klonk, hoppa på andra änden!',
     biTooLight: 'Du väger ju ingenting, Klonk!',
@@ -40,10 +37,8 @@ export const words: ChapterWords = {
     biNearMiddle: 'Nu står jag nära mitten!',
     biFly: 'Jag flyger över bäcken!',
     biThanksKlonk: 'Tack, Klonk! Du är min bästa vän.',
-    biHill: 'Billaberget! Vilka stora stenar.',
     biHazel: 'Här växer hassel, full av nötter!',
     biWind: 'Blåsten! Jag gömmer mig bakom stenarna.',
-    biTop: 'Snart är jag uppe på toppen!',
     // 6. the brow: the flash, and the owl far off
     biThere: 'Där nere! På en sten i sundet!',
     biHolds: 'Gamla trägubben håller i lillgubben!',

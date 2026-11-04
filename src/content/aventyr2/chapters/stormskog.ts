@@ -264,9 +264,7 @@ export const stormskog: ChapterData = {
     { id: 'ss:flash', at: 8.5, who: 'elof', line: 'ssFlash' },
     // 2. the cone rain
     { id: 'ss:cones', at: 14.6, within: [14.6, 34], who: 'elof', line: 'ssCones', read: true },
-    { id: 'ss:cones-done', at: 35, who: 'elof', line: 'ssConesDone' },
     // 3. the boughs
-    { id: 'ss:boughs', at: 41, who: 'elof', line: 'ssBoughs' },
     // 4. the owl
     { id: 'ss:owl', at: 64.5, until: 'placed:owl-twig', who: 'elof', line: 'ssOwlStuck', read: true },
     { id: 'ss:owl-free', on: 'placed:owl-twig', who: 'elof', line: 'ssOwlFree' },

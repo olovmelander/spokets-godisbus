@@ -27,9 +27,7 @@ vi.setConfig({ testTimeout: 90000 });
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
   'al:arrive', 'al:klonk-floats', 'al:klonk', 'al:flash', 'al:raft-seen', 'al:current', 'al:old-one', 'al:logs-wait',
-  'al:bob', 'al:eddy',
-  'al:bredbyn', 'al:rapids', 'al:pappa-here', 'al:scarf-down', 'al:take-hold', 'al:up', 'al:over', 'al:thanks', 'al:follow',
-  'al:stumps', 'al:lodge', 'al:otter',
+  'al:bredbyn', 'al:rapids', 'al:pappa-here', 'al:scarf-down', 'al:take-hold', 'al:up', 'al:over', 'al:thanks', 'al:follow', 'al:lodge', 'al:otter',
   'al:lake', 'al:owl-seen', 'al:owl-here', 'al:owl-fly', 'al:see-little', 'al:owl-thanks',
   'al:moalven', 'al:old-ahead',
   'al:last', 'al:gone', 'al:afraid', 'al:klonk-near', 'al:moa-never', 'al:bertil-pocket', 'al:moa-trail',

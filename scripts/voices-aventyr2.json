@@ -231,13 +231,6 @@
     "text": "Klonk! Vinden tog dig ner i krukan!"
   },
   {
-    "key": "sgCalm",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormgard",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Puh! Vi klarade stormbyarna!"
-  },
-  {
     "key": "sgDitch",
     "speaker": "elof",
     "situation": "Äventyr 2, stormgard",
@@ -362,20 +355,6 @@
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Kottar faller! Titta på skuggorna."
-  },
-  {
-    "key": "ssConesDone",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormskog",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Puh! Vilket kottregn!"
-  },
-  {
-    "key": "ssBoughs",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormskog",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Grenarna gungar som båtar i vinden!"
   },
   {
     "key": "ssOwlStuck",
@@ -581,20 +560,6 @@
     "text": "Rännstenen har blivit en fors!"
   },
   {
-    "key": "sbGrate",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormbyn",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Gallret! Jag hoppar från järn till järn."
-  },
-  {
-    "key": "sbWall",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormbyn",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Uppför trappan, upp på muren!"
-  },
-  {
     "key": "sbMoaHere",
     "speaker": "moa",
     "situation": "Äventyr 2, stormbyn",
@@ -623,13 +588,6 @@
     "text": "Snyggt landat, lillebror!"
   },
   {
-    "key": "sbSign",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormbyn",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Skylten gungar i blåsten!"
-  },
-  {
     "key": "sbCap",
     "speaker": "elof",
     "situation": "Äventyr 2, stormbyn",
@@ -649,20 +607,6 @@
     "situation": "Äventyr 2, stormbyn",
     "tag": "[playful wooden voice, wordless]",
     "text": "Klonk, klonk!"
-  },
-  {
-    "key": "sbDrops",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormbyn",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Stora droppar! Jag tittar på skuggorna."
-  },
-  {
-    "key": "sbSteps",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormbyn",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Trappan ner mot Olympia!"
   },
   {
     "key": "sbShore",
@@ -698,13 +642,6 @@
     "situation": "Äventyr 2, olympia",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Inte ens strålkastarna lyser!"
-  },
-  {
-    "key": "olFence",
-    "speaker": "elof",
-    "situation": "Äventyr 2, olympia",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Staketet! Jag klättrar över."
   },
   {
     "key": "olTop",
@@ -784,32 +721,11 @@
     "text": "Uppe på ribban! Vilken utsikt!"
   },
   {
-    "key": "olFlag",
-    "speaker": "elof",
-    "situation": "Äventyr 2, olympia",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Hörnflaggan smäller i vinden!"
-  },
-  {
-    "key": "olBenches",
-    "speaker": "elof",
-    "situation": "Äventyr 2, olympia",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Taket droppar. Titta på skuggorna!"
-  },
-  {
     "key": "olCrowd",
     "speaker": "elof",
     "situation": "Äventyr 2, olympia",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Stormen låter som en hel läktare!"
-  },
-  {
-    "key": "olCircle",
-    "speaker": "elof",
-    "situation": "Äventyr 2, olympia",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Mittcirkeln är en hel sjö!"
   },
   {
     "key": "olOldOne",
@@ -875,13 +791,6 @@
     "text": "Alla fem är vita! Fullträff!"
   },
   {
-    "key": "olTrail",
-    "speaker": "elof",
-    "situation": "Äventyr 2, olympia",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Elljusspåret är också mörkt."
-  },
-  {
     "key": "olGust",
     "speaker": "elof",
     "situation": "Äventyr 2, olympia",
@@ -924,27 +833,6 @@
     "text": "Flärken! Badplatsen är alldeles tom."
   },
   {
-    "key": "sjSwings",
-    "speaker": "elof",
-    "situation": "Äventyr 2, flarken",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Gungorna! Jag kastar snöret dit."
-  },
-  {
-    "key": "sjSlide",
-    "speaker": "elof",
-    "situation": "Äventyr 2, flarken",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Uppför stegen och nerför rutschkanan!"
-  },
-  {
-    "key": "sjDry",
-    "speaker": "elof",
-    "situation": "Äventyr 2, flarken",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Under bordet är det torrt."
-  },
-  {
     "key": "sjKlonkRaft",
     "speaker": "spoket",
     "situation": "Äventyr 2, flarken",
@@ -952,32 +840,11 @@
     "text": "Klonk-klonk!"
   },
   {
-    "key": "sjNet",
-    "speaker": "elof",
-    "situation": "Äventyr 2, flarken",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Nätet gungar som en studsmatta!"
-  },
-  {
     "key": "sjDoor",
     "speaker": "elof",
     "situation": "Äventyr 2, flarken",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Dörren smäller i vinden. Pang!"
-  },
-  {
-    "key": "sjStones",
-    "speaker": "elof",
-    "situation": "Äventyr 2, flarken",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Blöta stenar. Jag hoppar som en groda!"
-  },
-  {
-    "key": "sjReeds",
-    "speaker": "elof",
-    "situation": "Äventyr 2, flarken",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Vassen är stark. Jag klättrar upp!"
   },
   {
     "key": "sjMats",
@@ -1076,13 +943,6 @@
     "situation": "Äventyr 2, flarken",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Där är lillgubben! Där ån börjar!"
-  },
-  {
-    "key": "sjDive",
-    "speaker": "elof",
-    "situation": "Äventyr 2, flarken",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Nu hoppar jag ner på bryggan!"
   },
   {
     "key": "sjGap",
@@ -1232,20 +1092,6 @@
     "text": "Ett björklöv, som i rännstenen!"
   },
   {
-    "key": "alBob",
-    "speaker": "elof",
-    "situation": "Äventyr 2, alven",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Stocken guppar, men den håller!"
-  },
-  {
-    "key": "alEddy",
-    "speaker": "elof",
-    "situation": "Äventyr 2, alven",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Bakom stenen snurrar vattnet runt."
-  },
-  {
     "key": "alBredbyn",
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
@@ -1307,13 +1153,6 @@
     "situation": "Äventyr 2, alven",
     "tag": "[warm, steady father]",
     "text": "Vi kör efter dig längs ån."
-  },
-  {
-    "key": "alStumps",
-    "speaker": "elof",
-    "situation": "Äventyr 2, alven",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Gnagda stubbar! Här bor en bäver."
   },
   {
     "key": "alLodge",
@@ -1582,32 +1421,11 @@
     "text": "Höloftet! Det luktar sommar här."
   },
   {
-    "key": "biHatch",
-    "speaker": "elof",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "En lucka i golvet. Jag hoppar över!"
-  },
-  {
     "key": "biRoof",
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Upp på taket! Här blåser det hårt."
-  },
-  {
-    "key": "biForest",
-    "speaker": "elof",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Bakom huset börjar skogen!"
-  },
-  {
-    "key": "biBrook",
-    "speaker": "elof",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "En bäck! Jag hoppar på stenarna."
   },
   {
     "key": "biSeesaw",
@@ -1666,13 +1484,6 @@
     "text": "Tack, Klonk! Du är min bästa vän."
   },
   {
-    "key": "biHill",
-    "speaker": "elof",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Billaberget! Vilka stora stenar."
-  },
-  {
     "key": "biHazel",
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
@@ -1685,13 +1496,6 @@
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Blåsten! Jag gömmer mig bakom stenarna."
-  },
-  {
-    "key": "biTop",
-    "speaker": "elof",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Snart är jag uppe på toppen!"
   },
   {
     "key": "biThere",

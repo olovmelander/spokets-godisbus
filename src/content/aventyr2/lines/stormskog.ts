@@ -12,9 +12,7 @@ export const words: ChapterWords = {
     ssFlash: 'Blixten! Där blåste lillgubben förbi!',
     // 2. the cone rain
     ssCones: 'Kottar faller! Titta på skuggorna.',
-    ssConesDone: 'Puh! Vilket kottregn!',
     // 3. the boughs
-    ssBoughs: 'Grenarna gungar som båtar i vinden!',
     // 4. the owl
     ssOwlStuck: 'En uggla! En pinne stänger in den.',
     ssOwlFree: 'Fri! Ugglan blinkar som tack.',

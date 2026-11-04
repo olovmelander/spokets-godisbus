@@ -9,16 +9,10 @@ export const words: ChapterWords = {
   lines: {
     // 1. the parking and the playground
     sjArrive: 'Flärken! Badplatsen är alldeles tom.',
-    sjSwings: 'Gungorna! Jag kastar snöret dit.',
-    sjSlide: 'Uppför stegen och nerför rutschkanan!',
     // 2. the picnic table and the volleyball net
-    sjDry: 'Under bordet är det torrt.',
-    sjNet: 'Nätet gungar som en studsmatta!',
     // 3. the changing rooms
     sjDoor: 'Dörren smäller i vinden. Pang!',
     // 4. the beach stones, the reeds and the reed mats
-    sjStones: 'Blöta stenar. Jag hoppar som en groda!',
-    sjReeds: 'Vassen är stark. Jag klättrar upp!',
     sjMats: 'Gungfly! Det sjunker om jag står still.',
     sjKlonkWood: 'Lätt för dig, Klonk. Trä flyter ju!',
     sjFlash: 'Lillgubben! Han blåser ut över sjön!',
@@ -36,7 +30,6 @@ export const words: ChapterWords = {
     sjTower: 'Hopptornet! Där uppe ser man allt.',
     sjNear: 'Jag ror bredvid dig hela vägen.',
     sjLookout: 'Där är lillgubben! Där ån börjar!',
-    sjDive: 'Nu hoppar jag ner på bryggan!',
     // 8. the bark raft
     sjGap: 'Plankorna är borta. Vad gör jag nu?',
     sjStoneIdea: 'En sten! Den kan ligga i luckan.',
