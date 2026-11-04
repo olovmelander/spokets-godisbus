@@ -2,6 +2,52 @@
 
 ## State (4 November 2026)
 
+- **The visual upgrade, and three.js r187 (4 November 2026, later still).** Olov asked for "en total visuell och
+  grafisk uppgradering" that keeps the art style and lifts everything: assets, places, materials, composition, light,
+  effects. He also asked for richer Nordic forest life, lush birches and deep pine forests, plants that bend around
+  Elof, a synced global wind, god rays, dust and falling leaves, ground mist and depth haze, and the contrast between
+  matte carved wood and wet glossy moss, in every chapter of both adventures and with a bigger budget. He also asked
+  for three.js r187. The brief and what was built are in [`docs/visual-upgrade.md`](docs/visual-upgrade.md).
+  - **r187:** `three` and `@types/three` 0.187.0. None of the APIs it changes is used here, and the meshopt decoder
+    is unchanged.
+  - **Budgets widened, as Olov asked:**
+    - boot JS 450 → **520 KB** gzipped (r187 alone took the last 0.4 KB of the 450);
+    - draw calls Mid 160 → **220** and High 200 → **300**;
+    - **Low stays 120**: the upgrade is almost all on the `rich` layer, and adds at most 1–2 draws on Low.
+  - **Built by five agents in parallel**, one area each, into `src/render/lift/` (the `PACK.lifts` registry, made for
+    every chapter and updated after the wind):
+    - **atmosphere:** screen-space light shafts on Mid and High, depth haze, shaft cards on every tier, motes in the
+      light, falling leaves and ground mist;
+    - **fauna:**
+      - squirrels, a fox far back, tits, thrushes and sparrows that lift as Elof comes, butterflies, dragonflies, an
+        owl and fireflies;
+      - little moss-and-bark beings and pale carved figures peeking by stones;
+      - life hides in the storm;
+    - **flora:** birch crowns, spruce boughs and pines with warm leaf light, moss with a velvet edge, ferns, tall
+      grass, mushrooms that glow in the dark, plants that bend away from Elof, and leaves that whirl up;
+    - **materials:**
+      - carved wood matte with knife facets against damp glossy moss;
+      - wet ground by water, in the storm and on Byn's street;
+      - dew;
+      - water that mirrors its banks: from the picture on High, from known shapes on Mid;
+    - **characters:** Elof's, the family's and the ghost's idles, and hair, caps, scarves and hems in the shared wind.
+  - **Plan exceptions Olov's request makes** (recorded in the brief):
+    - screen-space light shafts, not ray marching (plan §5.3 forbade ray-marched god rays);
+    - near life that notices Elof (far life still answers nothing);
+    - procedural sway of hair and caps (not the cloth or hair simulation that plan §5.5 forbids);
+    - a cheap screen-space water mirror on High (plan §5.5 said no screen-space reflections).
+  - **Validation:**
+    - typecheck clean;
+    - **188 test files / 1,976 tests**;
+    - the build with its gates: boot JS 487.4 KB of 520;
+    - the privacy check;
+    - browser suites: __BROWSER__.
+    - Every measured picture is far under its draw budget, and programs stay stable during play.
+    - Review captures before and after: __CAPTURES__.
+  - **Where the next step runs:**
+    - judging it on Elof's devices (frame time, gate 5, with `?bench`) needs the devices;
+    - giving the private models the wind needs Olov's computer: bones named hair*, braid*, fringe*, cap*, brim*,
+      scarf*, hem*, coat*, cloth* or cape*.
 - **Billsta moved inland: a car trip to mormor and morfar (4 November 2026, later still).** Olov corrected the
   geography: Billsta lies three mil (30 km) from Bredbyn, so the family goes there by car, and mormor and morfar's
   house stands by a road near the forest, not by a shore.
@@ -3700,6 +3746,7 @@ The older list, still true where it is not struck:
 | Why he shrinks | The ghost's magic runs into the Saturday bag as it takes it: a star from the bag makes Elof small, and the gold sweet glitters too and can make him big again. Moa saw the glitter and draws it; Pappa reads the hope. | Session's proposal, 5 Oct (question 15) |
 | Äventyr 2 | *Stormnatten* (`docs/aventyr-2.md`): seven chapters after Byn, opened when Äventyr 1 is finished. The little carving is named **Fjun**. Its story, worlds, puzzles and lines are the session's, built from Olov's request. | Olov, 4 Nov: "skapa nästa del av äventyret … ett nytt unikt kapitel bestående av flera världar … Implementera nu detta i one shot." |
 | Äventyr 2, version 2 | Ten chapters: Olympia, Flärken (Flärkenbadet, the former Sjön), Älven and Billsta between Byn i stormen and Stormens öga, which lies in the narrow at Billsta. Mormor and morfar are "Mormor" and "Morfar" only, as plain stand-ins; their house is an interpretation of Olov's picture without its address or number, and the picture is never committed. | Olov, 4 Nov: "ännu fler miljöer … Billsta, Själevad där mormor och morfar bor … badplatsen Flärken … Olympia i Bredbyn … pussel med en fotboll" |
+| The visual upgrade | `docs/visual-upgrade.md`: same art style, more life, light, air and plants in every chapter; Low keeps 120 draws and gets almost none of it; red, pink and gold stay the candy's; nothing scary; everything still with reduced motion; nothing compiled in play. Screen-space light shafts, near life that notices Elof, procedural hair/cap sway and a cheap water mirror on High are allowed now. | Olov, 4 Nov: "en total visuell och grafisk uppgradering … behålla vår befintliga artstyle" |
 | The `iron` surface | Only for a street drain's grate in the village: elsewhere the ground's picture digs a well round it (a test checks Äventyr 2). | Session, 4 Nov, after the visual sweep |
 | Chapter packs and the size gate | The plan's 450 KB is the first playable's JavaScript. A chunk fetched only later (`import()`), such as Äventyr 2's pack or the debug tools, is counted on its own and has its own 160 KB gate (`scripts/size-gate.mjs`). The boot JS gate is **520 KB** since 4 November (it was 450 KB; three r187 alone took the last 0.4 KB), widened at Olov's request for the visual upgrade. | Session, 4 Nov, for Äventyr 2; Olov, 4 Nov: "utöka budgeten för grafiken" |
 | Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
@@ -3943,6 +3990,13 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
 22. **Things said about the family in the new worlds:** Bertil says "Jag är bäst på frisparkar" at Olympia, Mamma
     rows the boat at Flärken, and Pappa lowers his scarf from the bridge in Bredbyn. Are those right for them? The
     default: as built; one line each changes if not.
+23. **The visual upgrade (4 November):**
+    - Is the life, the light and the mist calm enough for Elof, and are the little forest beings and the peeking
+      carvings friendly?
+    - With reduced motion Elof stands quite still, breath included, as before. Should he breathe?
+    - The grass's own glow is dimmed at night (it had looked neon). Is that right?
+    - The frame time on the family's devices (gate 5) is the real budget: `?bench` on each one settles it.
+    - The defaults: as built.
 
 Choices the session made, for Olov to overrule if he wants:
 - the bow on the big candy, its pinwheel turn, and how much a sweet shines by itself (see "The candy is

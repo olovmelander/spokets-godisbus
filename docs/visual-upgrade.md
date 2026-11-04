@@ -127,3 +127,113 @@ rain. Fireflies and glowing mushrooms belong to the calm of the storm's eye and 
 - **Browser:** each chapter on Low, Mid and High is within its draw calls, compiles no program during play, and is
   within GPU memory. The existing suites must stay green.
 - **Pictures:** review captures of every chapter before and after, with the stand-ins.
+
+## As built (4 November 2026)
+
+Built in one cloud session by five agents working side by side, one area each, from this brief. The main session
+did the integration and the checks.
+
+### Atmosphere and light (`src/render/light-shafts.ts`, `src/render/lift/atmosphere.ts`, `dressing/effects.ts`, `grade.ts`)
+
+- **Light shafts on Mid and High.**
+  - A mask is made at a quarter of each side from the HDR scene's colour and depth: light where nothing near wrote
+    depth and the sky is bright.
+  - Two 16-tap radial blurs follow, into two single-channel R8 targets, about 0.33 MB on High.
+  - The grade adds the result before the LUT, in the place's colour, and only 10 % over the sky and far layers.
+  - The shafts fan from above the picture along the sun's direction, from the painted sun on the bog and the
+    mountain, and from the moon in the storm's eye.
+  - Strength by place: forest 2.4, garden 1.3, bog 0.9, mountain 0.7, dusk 0.55, village 0.8.
+  - None in a room, none in a raging storm, and none at night.
+  - Where a place asks for none, the pass is skipped. It is drawn during warm-up, so its programs compile then.
+- **Depth haze.** On Mid and High, the same grade program adds a distance term with a height falloff and a light
+  sink for the far layers, in the live fog colour.
+- **Shaft cards on every tier.** Each shaft is a broad card with a core and a glow where it lands. They stand in the
+  forest, through the garden's birches, wide on the bog, and through each window at home onto the floor.
+- **Motes.** 55–70 % of them gather inside the shafts and are lit warm there; the rest drift with the wind as dew,
+  seed fluff or dust.
+- **Falling leaves and needles.**
+  - In every outdoor place: needles and birch leaves in the forest, birch leaves in the garden and the village, and
+    dwarf-birch leaves on the bog.
+  - They ride the shared wind, with more while it blows.
+  - In the storm there are half as many, blown fast.
+- **Ground mist.** Layered cards behind the path (z ≤ −2.5) in the forest, on the bog and as faint dew in the garden.
+  Morgonen efter has a breath of mist outside each window, and the storm's eye has mist on the water once the calm
+  comes.
+
+### Fauna (`src/render/lift/fauna.ts`, `fauna/plan.ts`, `fauna/shapes.ts`)
+
+- **How it is built.**
+  - Everything is built in code, one `InstancedMesh` for each kind, all on the `rich` layer, so Low draws none of it.
+  - Parts move in the vertex stage: one rig shader turns tails, heads, wings and lids from per-vertex pivots and a
+    per-instance act.
+  - Placement is seeded by the chapter id. It reads the dressing's trunks, birches, snags and dandelions.
+- **The cast.**
+  - Squirrels on the forest's spruces and the garden's birches dash up and round, flick their tails, and run higher
+    when Elof comes near.
+  - A fox far back in the forest (z −12…−24) steps out, trots, sits, looks and trots off, never towards him.
+  - Great tits, blue tits, thrushes and sparrows hop behind the path. They lift and fly off when he comes within about
+    3 EL, and come back later.
+  - Butterflies (brimstone, wood white, a blue) settle on the garden's dandelions and over the bog's meadow.
+  - Dragonflies dart over the bog's water and the brook pools.
+  - An owl in Norrsken and in Äventyr 2's storms, never within 16 EL of the story owl.
+  - Fireflies at dusk and in the storm's eye.
+- **The little forest beings.** Round, made of moss and bark, with lichen caps and soft dark eyes. They peek over
+  stones and stumps in the forest, on the bog and on the mountain.
+- **The carvings.** Small figures in pale carved wood: a bird, a hare, a figure with a pointed cap. They sit quietly
+  by stones in both adventures.
+- **In the storm the life hides.** Only birds sheltering on branches remain, plus the owl.
+
+### Flora and interaction (`src/render/lift/flora/`, `wind.ts`, the dressing's plant files)
+
+- **Trees and their light.**
+  - Birch crowns and hanging strands around every birch trunk, and young birches in the middle layer.
+  - Spruce boughs on the forest's trunks, kept under the top of the picture, with pines and young spruces between
+    the path and the far plates.
+  - Leaves are lit by one shared `leaf-v1` program, a wrap-light and back-light term that follows the sun.
+- **On the ground.**
+  - A velvet moss sheen on cushions and stones.
+  - Moss caps on the forest's and the mountain's stones.
+  - More and larger ferns, and tall grass in the back rows.
+- **Glowing mushrooms.** Blue-green or pale violet, glowing only in the dark, at least 1.8 EL from every candy.
+- **Plants that bend.** They lean away from Elof and swing back, through a player uniform in the one `wind-v1`
+  program: no new program. With reduced motion they lean at half strength and don't spring.
+- **Whirling leaves.** Leaves whirl up when he runs, lands or turns. None with reduced motion, on Low or indoors.
+- **The grass at night.** Its own glow drops to 40 % at night and in the storm; it had glowed neon there.
+
+### Materials and water (`src/render/lift/materials/`, `water.ts`)
+
+- **One scene-wide patch.** It is laid at warm-up under one key, `lift-surface-v1`, and what each material is
+  (carved wood, planed wood, moss, ground, street) is a uniform.
+- **Carved wood.** Matte, with grain and knife facets: the trägubbar, Klonk, the carvings and Pappa's shelf figures.
+- **Planed wood.** Matte, with grain: the floors, decks and planks.
+- **Moss.** Darker and glossy in its hollows, catching the low sun.
+- **Wet surfaces.** Within 1.9 EL of water, everything outdoors in Äventyr 2's storm, and Byn's street, with slow
+  glints.
+- **Dew.** Beads on grass tips and leaves in the morning places, and drops on the window panes in Morgonen efter.
+- **Water.**
+  - On High, what stands on the banks is mirrored from the half-size copy of the picture, in screen space, with
+    ripple wobble.
+  - On Mid, the painted mirror draws the pools' banks, the nearest trunks and the bog's islands.
+  - On both, a dark band where water meets a bank.
+
+### Characters (`player-motion.ts`, `family-motion.ts`, `ghost-model.ts`, `rig.ts`)
+
+- **Elof's idles while he waits,** from a shuffled bag: he looks around, rocks onto his toes, scratches his head,
+  follows a falling leaf, taps a heel, and after a long wait stretches. In a strong wind he leans into it with his
+  arm up. His feet never slide.
+- **The family's waiting idles:** they shift their weight, glance about, fold their arms and look at the sky.
+- **The ghost:** a bob, looking about, and a curious tilt towards Elof. Its tip now turns about its own side axis.
+- **Wind in the characters' details.** Hair, fringes, caps' brims, scarves and hems sway as damped springs on
+  `windAt(x)`. There is none indoors, more in the storm, and nothing moves with reduced motion.
+  - A private Blender model's bones get the wind only if their names start with hair, braid, fringe, cap, brim,
+    scarf, hem, coat, cloth or cape.
+
+### Cost
+
+- **Boot JS:** 487.4 KB of 520 KB gzipped (it was 450.8 KB with r187 before the upgrade).
+- **Draw calls at 1180×820, measured in the busiest pictures of every place:**
+  - Low: 45–76 of 120. The upgrade adds at most +1 or +2 on Low.
+  - Mid: 53–84 of 220.
+  - High: 51–98 of 300.
+- **Programs:** stable during play in every measured picture.
+- **High's render targets:** about 34 MB at 1180×820.
