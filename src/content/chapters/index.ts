@@ -5,7 +5,6 @@ import { byn } from './byn';
 import { epilog, prolog } from './ends';
 import { garden } from './garden';
 import { granskog } from './granskog';
-import { lookDeck, lookForest, lookStreet } from './look';
 import { myren } from './myren';
 import { norrsken } from './norrsken';
 import { testbana } from './testbana';
@@ -15,8 +14,18 @@ import { testbana } from './testbana';
  * where every move can be tried, and as what the page shows while no chapter is released.
  */
 export const COURSES: Record<string, ChapterData> = {
-  testbana, prolog, garden, granskog, myren, berget, norrsken, epilog, byn, 'look-forest': lookForest, 'look-deck': lookDeck, 'look-street': lookStreet,
+  testbana, prolog, garden, granskog, myren, berget, norrsken, epilog, byn,
 };
+
+/**
+ * The look-development courses (./look.ts) are a chunk of their own: only `?dev&course=look-…` asks for them, so the
+ * players' first download does not carry them. The unit tests put them in at once (tests/setup.ts).
+ */
+export const LOOK_IDS: readonly string[] = ['look-forest', 'look-deck', 'look-street'];
+export function addLookCourses(look: typeof import('./look')): void {
+  Object.assign(COURSES, { 'look-forest': look.lookForest, 'look-deck': look.lookDeck, 'look-street': look.lookStreet });
+}
+export const loadLookCourses = (): Promise<void> => import('./look').then(addLookCourses);
 
 /** The chapters of the story, in order. Each end card leads to the next one that is built. */
 export const STORY: ChapterData[] = [prolog, garden, granskog, myren, berget, norrsken, epilog];
@@ -33,7 +42,7 @@ export function bonusAfter(id: string): ChapterData | null {
  * Äventyr 2, Stormnatten (docs/aventyr-2.md), in order. Its chapters are a pack of their own: the ids are known
  * from the start, and the chapters themselves come into ADVENTURE2 (and COURSES) once loadAdventure2() is done.
  */
-export const ADVENTURE2_IDS: readonly string[] = ['stormkvall', 'stormgard', 'stormskog', 'stormbyn', 'sjon', 'stormoga', 'morgonen'];
+export const ADVENTURE2_IDS: readonly string[] = ['stormkvall', 'stormgard', 'stormskog', 'stormbyn', 'olympia', 'flarken', 'alven', 'billsta', 'stormoga', 'morgonen'];
 export const ADVENTURE2: ChapterData[] = [];
 export const isAdventure2 = (id: string): boolean => ADVENTURE2_IDS.includes(id);
 /** Byn, the last of the first adventure, leads on to the second. */
@@ -83,7 +92,7 @@ export const courseId = (id: string): string => Object.hasOwn(COURSE_ALIASES, id
 /** One release boundary for links, saves, codes and chapter selection. Debug alone never opens a chapter. */
 export function courseAvailable(params: URLSearchParams, id: string, released: ChapterId | null = RELEASED_CHAPTER): boolean {
   const canonical = courseId(id);
-  if (!Object.hasOwn(COURSES, canonical) && !isAdventure2(canonical)) return false;
+  if (!Object.hasOwn(COURSES, canonical) && !isAdventure2(canonical) && !LOOK_IDS.includes(canonical)) return false;
   if (canonical === 'testbana' || params.has('dev')) return true;
   const stable = RELEASE_IDS[canonical];
   return released !== null && stable !== undefined && CHAPTER_IDS.indexOf(stable) <= CHAPTER_IDS.indexOf(released);

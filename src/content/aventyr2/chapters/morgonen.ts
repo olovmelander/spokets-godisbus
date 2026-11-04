@@ -7,7 +7,7 @@ import { row } from '../kit';
  * Äventyr 2, Epilog: Morgonen efter (docs/aventyr-2.md). Units: EL. Sunday morning at home, still and bright
  * after the storm, with leaves on the floor. He is a boy among small things all through.
  *
- * 1. **Frukost** (a held scene): the family at the table, sleepy and happy.
+ * 1. **Frukost** (a held scene): the family at the table, sleepy and happy; mormor and morfar came home with them.
  * 2. **Hyllan:** he puts the old trägubbe back in its place, first in the row, and the little one beside it.
  * 3. **Fönsterhaken:** Pappa has fitted a new latch. *Vrid fönsterhaken*: "Nu blåser ingen bort."
  * 4. **Namnet:** the little one flew like a wisp of fluff in the storm. "Du ska heta Fjun!" Klonk: klonk, klonk.
@@ -23,13 +23,16 @@ const SCENES: SceneDef[] = [
   {
     id: 'frukost',
     at: 0.6,
-    seconds: 9.4,
+    seconds: 13.4,
     hold: true,
     lines: [
       { at: 1.6, who: 'mamma', line: 'moMorning' },
       { at: 3.8, who: 'bertil', line: 'moBranches' },
       { at: 6.0, who: 'moa', line: 'moSleepy' },
       { at: 8.0, who: 'pappa', line: 'moShelf' },
+      // Mormor and morfar came home with them in the night, for breakfast.
+      { at: 10.0, who: 'mormor', line: 'moMormor' },
+      { at: 12.0, who: 'morfar', line: 'moMorfar' },
     ],
     stage: {
       fade: [{ at: 0, to: 1, move: 0.01 }, { at: 0.1, to: 0, move: 1.4 }],

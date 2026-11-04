@@ -9,7 +9,7 @@ const person = (shirt: string, hair: string, extra = '') =>
   `<path d="M13 62V42q20-15 42 0v20" fill="${shirt}"/><circle cx="34" cy="24" r="18" fill="#dfb586"/>` +
   `<path d="M16 23Q12 2 34 2t18 23L42 13l-13 4-9-2z" fill="${hair}"/>${extra}`;
 
-const FACES: Record<Speaker, string> = {
+export const FACES: Partial<Record<Speaker, string>> = {
   // Mamma's sign is white with a red heart.
   mamma: person('#f1ece2', '#7a5739', '<path d="M34 55l-6-6q-3-4 1-6q3-1 5 2q2-3 5-2q4 2 1 6z" fill="#bf3d36"/>'),
   pappa: person('#5a7d4a', '#544137'),
@@ -20,6 +20,6 @@ const FACES: Record<Speaker, string> = {
   spoket: '<path d="M14 55V26q0-23 20-23t20 23v29l-8-5-8 5-8-5-8 5z" fill="#e7d4a6"/><circle cx="27" cy="23" r="3"/><circle cx="40" cy="23" r="3"/>',
 };
 
-export const faceSvg = (who: Speaker): string => `<svg viewBox="0 0 68 64" aria-hidden="true">${FACES[who]}</svg>`;
+export const faceSvg = (who: Speaker): string => `<svg viewBox="0 0 68 64" aria-hidden="true">${FACES[who] ?? ''}</svg>`;
 /** The same faces, as the inside of a 68×64 picture: for the sharing panel's family. */
-export const faceBody = (who: Speaker): string => FACES[who];
+export const faceBody = (who: Speaker): string => FACES[who] ?? '';

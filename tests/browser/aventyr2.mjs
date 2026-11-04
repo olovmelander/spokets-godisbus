@@ -1,5 +1,5 @@
 // Äventyr 2, Stormnatten (docs/aventyr-2.md), in the built game: its pack is fetched only when it is played, each
-// of its chapters starts, draws within the draw budget, moves and shows its storm, and none makes a request off
+// of its ten chapters starts, draws within the draw budget, moves and shows its storm, and none makes a request off
 // the site. Byn's last card leads on to it. Run after a build.
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -106,7 +106,10 @@ try {
     ['stormgard', '', ''],
     ['stormskog', '', ''],
     ['stormbyn', '', ''],
-    ['sjon', '', ''],
+    ['olympia', '', ''],
+    ['flarken', '', ''],
+    ['alven', '', ''],
+    ['billsta', '', ''],
     ['stormoga', '44,0.6', 'owl:call,owl:ready,owl'],
     ['morgonen', '', ''],
   ];

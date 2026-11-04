@@ -51,7 +51,7 @@ describe('Kapitel 3, Byn i stormen', () => {
   it('is the pack\'s third world, after the forest and before the lake', () => {
     expect(AVENTYR2.map((chapter) => chapter.id)).toContain('stormbyn');
     expect(nextAfter('stormskog')?.id).toBe('stormbyn');
-    expect(nextAfter('stormbyn')?.id).toBe('sjon');
+    expect(nextAfter('stormbyn')?.id).toBe('olympia');
     expect(stormbyn.place).toBe('village');
     expect(stormbyn.coda).toBe('moa');
     expect(stormbyn.goalX).toBeGreaterThanOrEqual(165);
@@ -188,7 +188,7 @@ describe('Kapitel 3, Byn i stormen', () => {
     expect(cap).toMatchObject({ look: 'tiny-cap', touch: true });
     expect(heightAt(stormbyn, cap.at.x)).toBe(cap.at.y);
     const lines = stormbyn.beats!.filter((beat) => beat.on === 'cap');
-    expect(lines.map((beat) => sv.lines[beat.line as keyof typeof sv.lines])).toEqual(['Lillgubbens mössa!', 'Rännstenen rinner ner till sjön!', 'Klonk, klonk!']);
+    expect(lines.map((beat) => sv.lines[beat.line as keyof typeof sv.lines])).toEqual(['Lillgubbens mössa!', 'Vinden tar honom mot fotbollsplanen!', 'Klonk, klonk!']);
     expect(lines[1]!.read).toBe(true);
     // Klonk thinks of the little one once the cap is found.
     const thought = stormbyn.ghost!.find((perch) => perch.thought)!;

@@ -6,7 +6,7 @@ export const words: ChapterWords = {
     // The street, dark: the power is out in the whole village.
     sbDark: 'Hela byn är mörk. Strömmen är borta!',
     sbKlonkHere: 'Klonk!',
-    sbAwning: 'Markisen fladdrar som en studsmatta!',
+    sbAwning: 'Markisen studsar som en studsmatta!',
     sbCandle: 'Någon har tänt ett ljus i fönstret.',
     // Rännstensforsen, and the grate.
     sbRiver: 'Rännstenen har blivit en fors!',
@@ -20,11 +20,11 @@ export const words: ChapterWords = {
     // The swinging sign, and the little one's cap in the gutter.
     sbSign: 'Skylten gungar i blåsten!',
     sbCap: 'Lillgubbens mössa!',
-    sbToLake: 'Rännstenen rinner ner till sjön!',
+    sbToLake: 'Vinden tar honom mot fotbollsplanen!',
     sbKlonkCap: 'Klonk, klonk!',
     // The awnings pour, and the steps go down to the shore.
     sbDrops: 'Stora droppar! Jag tittar på skuggorna.',
-    sbSteps: 'Trappan ner mot sjön!',
+    sbSteps: 'Trappan ner mot Olympia!',
     sbShore: 'Vänta på oss, lillgubben! Vi kommer!',
   },
   verbs: { sbUmbrella: 'Håll i paraplyet' },
@@ -35,7 +35,7 @@ export const words: ChapterWords = {
     sbCallMoa: { purpose: 'Gå upp på muren och ropa på Moa.', recap: 'Korsningen är översvämmad. Moa har sitt paraply med sig.' },
     sbBoard: { purpose: 'Håll i Moas paraply och sväva över.', recap: 'Moa håller ut sitt paraply åt mig över korsningen.' },
     sbGutter: { purpose: 'Följ godisspåret längs rännstenen.', recap: 'Moas paraply bar mig över den översvämmade korsningen.' },
-    sbLake: { purpose: 'Gå nerför trappan till sjön.', recap: 'Lillgubbens mössa låg i rännstenen. Vattnet rinner ner till sjön.' },
+    sbLake: { purpose: 'Gå nerför trappan mot Olympia.', recap: 'Lillgubbens mössa låg i rännstenen. Vinden blåser honom mot fotbollsplanen.' },
   },
   helpers: {
     sbFamily: 'Familjen letar på gatan med sina lampor.',

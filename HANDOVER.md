@@ -2,6 +2,67 @@
 
 ## State (4 November 2026)
 
+- **Äventyr 2, version 2: three new worlds, a reworked lake, and an audit (4 November 2026, later the same day).**
+  Olov asked for "ännu fler miljöer, mer pussel och ett ännu mer episkt äventyr", naming **Billsta in Själevad,
+  where mormor and morfar live**, **Flärken**, the bathing place at Kubbe/Norrflärke, and **Olympia** in Bredbyn
+  with football puzzles; for an audit of everything built; and for all storytelling in good, correct Swedish. No
+  TTS was to be generated.
+  - **Research:** [`docs/aventyr-2-reference-study.md`](docs/aventyr-2-reference-study.md), by a research agent,
+    separates verified facts from inference. The water really ties the journey together: Flärken → Norra
+    Anundsjöån south → Bredbyn (where it meets Södra Anundsjöån) → Anundsjösjön → Moälven → Billstasundet →
+    Själevadsfjärden, with Själevad's white eight-sided church at the lake's end. **No photograph could be opened:**
+    this environment's network denies commons.wikimedia.org, upload.wikimedia.org, sv.wikipedia.org,
+    ornskoldsvik.se and openstreetmap.org, and no freely licensed picture of Flärkenbadet or Olympia was found. The
+    only picture used is the one Olov sent of mormor and morfar's house, as a look reference only: it shows the
+    street address and house number, which are never written, modelled or committed; the picture stays outside git.
+  - **Ten chapters, ~1,510 EL** (Äventyr 1 is ~944): Stormkvällen, Stormgården, Stormskogen, Byn i stormen,
+    **Olympia** (goal 179 EL: over the ball-stop fence, footballs bowled by the wind, the ball kicked into the
+    flooded goalmouth as a stepping stone, the goal's net and crossbar, Bertil's free kick over the flooded centre
+    circle, biathlon targets, the dark floodlit trail), **Flärken** (the former "Sjön", reworked into Flärkenbadet,
+    goal 188 EL: swings and slide, picnic table, the torn volleyball net, changing huts, stones and reed mats, the
+    jetty in the waves, Mamma's boat, the diving tower, the bark raft), **Älven** (goal 186 EL: raft and leaf down
+    the current, stones and logs, Pappa's scarf from the bridge in Bredbyn over the rapids, the beaver's lodge,
+    the owl over the lake, Moälven), **Billsta** (goal 194.4 EL: through the narrow on a leaf, Billaberget's
+    boulders and hazel, morfar's ladder over the ditch, mormor's lantern and the red barn, the hay loft and the
+    roof in the gusts, the flash over the narrow), Stormens öga (moved to the narrow at Billsta) and Morgonen efter
+    (mormor and morfar at the Sunday breakfast). The four new worlds were authored in parallel by agents from
+    `docs/aventyr-2.md`; "As built" there has the details. The chapter id `sjon` became `flarken` (its line keys
+    keep their `sj` prefix); nothing released ever used it, and the release boundary is unchanged.
+  - **Mormor and morfar** are "Mormor" and "Morfar" only: no names, no likeness (plain giant stand-ins in code),
+    no traits beyond the story's (a lantern, a ladder). Their house is an interpretation in plain shapes of Olov's
+    picture. They are not on plan §2.6's consent list; Olov asked for them himself (see "Frågor till Olov").
+  - **New in the pack:** code-built buildings, 23 kinds (Billsta's white two-gabled house and red barn, Själevad's
+    church, goals, floodlight masts, a stand, a clubhouse, the diving tower, changing huts, swings, slide, picnic
+    tables, a volleyball net, a beaver lodge, a bridge, a woodshed, a rowing boat, birches, a mailbox, a car, the
+    garden's playhouse, a kåta and Billaberget's granite face); a football to kick (movers can carry their own
+    button word: "Sparka"), ride and dodge; a raft, buoys, a life ring, a corner flag, mormor's lantern, biathlon
+    targets; mormor's and morfar's faces, names and wordless voices; **Moa's map of Äventyr 2**; trampoline, awning
+    and sagging-net bouncers; flower pots, jetty posts, granite boulders and roof vents as the gusts' lee (one look
+    per gust); falling cones; footballs as rollers; open water behind the path; Pappa's scarf drawn from the bridge.
+  - **Audit fixes:** the Swedish of every Äventyr 2 line (the figures are consistently "han/honom"; oidiomatic
+    lines such as "granar som pinnar", "flyga mig över", "Se skuggorna" and "Bryggan är av" are rewritten);
+    Stormgården finally shows a playhouse and birches; no rain indoors; Klonk no longer carries Äventyr 1's stolen
+    bag; the prologue gained the flashlight errand for Pappa; flyby flashes put their bolt in the sky. A visual
+    sweep (`at=` every 14 EL through every chapter, in the browser) found that the `iron` surface, a street drain's
+    grate, had been used for Olympia's fence and Stormgården's watering can, and that the ground's picture dug a
+    drain's well round each: a dark wall stood in front of the camera over most of Olympia. Both are now plain
+    surfaces, and a unit test keeps `iron` to the village. Olympia's wooden range mat drew the deck's front over the
+    camera and is now paving. Äventyr 1's lines were not changed, because their ElevenLabs voices would no longer
+    match.
+  - **Boot budget:** the look-development courses moved to a chunk fetched only for `?dev&course=look-…` (the
+    unit tests add them in `tests/setup.ts`), which won back 0.7 KB. Boot JavaScript is **449.6 KB / 450 KB** (0.4 KB left: Äventyr 2's new hooks in the boot code used what the move won), Äventyr 2's pack **48.1 KB / 160 KB**, boot **1,560.6 KB / 3,072 KB**.
+  - **Voices:** `scripts/voices-aventyr2.json` now lists all 261 of Äventyr 2's lines, cards and closings with their
+    speakers (mormor and morfar included). Nothing was generated, as Olov asked.
+  - **Validation:** typecheck, **183 test files / 1,914 tests** (the robot plays all ten chapters at 30, 60 and
+    144 Hz and on Lugnt; Olympia, Flärken, Älven and Billsta each have their own puzzle test, with every line in
+    order, a resume from every checkpoint and Lugnt without Hoppa), the production build with its size gates and the
+    privacy check pass. `tests/browser/aventyr2.mjs` passes **42 checks** over all ten chapters (each fetches the
+    pack, starts, draws 51–80 draws on Low without errors or off-site requests); `smoke` and `release-routing` (10)
+    pass. A visual sweep through every chapter in the browser (a picture every 14 EL) is what found the drain-well
+    wall; the review gallery [`docs/shots/aventyr2/`](docs/shots/aventyr2/) has one picture of each new world.
+    Physical devices are untested.
+  - **Where the next step runs:** playing it through and judging it on Elof's devices needs no particular computer;
+    replacing the code stand-ins (buildings, figures, mormor and morfar) with Blender art needs Olov's computer.
 - **Äventyr 2: Stormnatten — the second adventure, built in one cloud session (4 November 2026).** Olov asked for
   "nästa del av äventyret": a new, unique adventure of several worlds, about as long as the first, with new puzzles,
   good conversations and a real story, which opens once the first adventure (the ghost and the trägubbar) is done.
@@ -3288,14 +3349,17 @@
 **For the next session, in this order:**
 
 - **Play Äventyr 2 (`docs/aventyr-2.md`) from Stormkvällen to Morgonen efter** with `?dev&course=stormkvall`, or
-  by finishing Byn. Judge the storm's darkness and lightning on a real phone and tablet (calm enough for Elof?),
-  the reading pace of its held scenes, the frozen-Klonk bridge and the owl's flights. Then decide whether to
+  by finishing Byn; the new worlds open directly with `?dev&course=olympia`, `flarken`, `alven` and `billsta`.
+  Judge the storm's darkness and lightning on a real phone and tablet (calm enough for Elof?), the reading pace of
+  its held scenes, the frozen-Klonk bridge, the owl's flights, Bertil's free kick, Pappa's scarf and mormor and
+  morfar. The whole of it is now about one and a half times Äventyr 1: is that too long for one night's story? Then decide whether to
   release it (raise `RELEASED_CHAPTER` to `morgonen` after Äventyr 1 is released) — that is Olov's call.
 - **Generate Äventyr 2's voices** once an ElevenLabs key is readable as `ELEVENLABS_API_KEY`:
   `node scripts/generate-voices.mjs --generate` takes the new lines from `scripts/voices-aventyr2.json`.
   Listen to them, as the first adventure's were.
-- **Äventyr 2's art, in later stages:** the trägubbar, the owl, the pumpkin, the boot and the umbrella are code
-  stand-ins like Äventyr 1's first ones; a Blender pass on Olov's computer can replace them through the same looks.
+- **Äventyr 2's art, in later stages:** the trägubbar, the owl, the pumpkin, the boot, the umbrella, the buildings
+  and mormor and morfar are code stand-ins like Äventyr 1's first ones; a Blender pass on Olov's computer can replace
+  them through the same looks (mormor and morfar only as plain figures unless their consent says otherwise).
 
 - **Review the 10 October chase/story checkpoint:** try the opening and final reunion without racing
   the dialogue, read/revisit all four memories, and follow the ghost through rescue and mountain
@@ -3615,6 +3679,8 @@ The older list, still true where it is not struck:
 | Byn's place | After the epilogue, as built: a week after the story's Saturday, on an October morning after rain. Its story stands on the ending (Klonk named and a friend, a star taken by choice, the Saturday candy bought together), and the chase runs out from the house and home again in one day; a shopping street between the forest and the bog would break both. Its card says *en vecka senare*. | Olov, 5 Oct: first "I want byn to be between granskogen and myren.", then "Place byn where it is best fitted into the game and story" and "Maybe it is perfectly where it is now?". The place is the session's judgement. |
 | Why he shrinks | The ghost's magic runs into the Saturday bag as it takes it: a star from the bag makes Elof small, and the gold sweet glitters too and can make him big again. Moa saw the glitter and draws it; Pappa reads the hope. | Session's proposal, 5 Oct (question 15) |
 | Äventyr 2 | *Stormnatten* (`docs/aventyr-2.md`): seven chapters after Byn, opened when Äventyr 1 is finished. The little carving is named **Fjun**. Its story, worlds, puzzles and lines are the session's, built from Olov's request. | Olov, 4 Nov: "skapa nästa del av äventyret … ett nytt unikt kapitel bestående av flera världar … Implementera nu detta i one shot." |
+| Äventyr 2, version 2 | Ten chapters: Olympia, Flärken (Flärkenbadet, the former Sjön), Älven and Billsta between Byn i stormen and Stormens öga, which lies in the narrow at Billsta. Mormor and morfar are "Mormor" and "Morfar" only, as plain stand-ins; their house is an interpretation of Olov's picture without its address or number, and the picture is never committed. | Olov, 4 Nov: "ännu fler miljöer … Billsta, Själevad där mormor och morfar bor … badplatsen Flärken … Olympia i Bredbyn … pussel med en fotboll" |
+| The `iron` surface | Only for a street drain's grate in the village: elsewhere the ground's picture digs a well round it (a test checks Äventyr 2). | Session, 4 Nov, after the visual sweep |
 | Chapter packs and the size gate | The plan's 450 KB is the first playable's JavaScript. A chunk fetched only later (`import()`), such as Äventyr 2's pack or the debug tools, is counted on its own and has its own 160 KB gate (`scripts/size-gate.mjs`). The boot budget has about 0.4 KB left: a boot change that grows it must win the bytes back. | Session, 4 Nov, for Äventyr 2 |
 | Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
 
@@ -3623,6 +3689,7 @@ The older list, still true where it is not struck:
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
 | Äventyr 2: Stormnatten (4 November) | Olov's request: a second adventure of several worlds, about as long as the first | 1 cloud session, with four parallel world-building agents | — / 0 | Seven chapters (~940 EL), a lazily loaded pack with its own size gate, storm visuals in code, 1,773 tests and a 30-check browser suite. Voices, device review and Blender art remain. |
+| Äventyr 2, version 2 (4 November) | Olov's request: more worlds and puzzles, Billsta, Flärken and Olympia, an audit, good Swedish | the same cloud session, with a research agent and four world-building agents | — / 0 | Ten chapters (~1,510 EL), 23 code-built building kinds, Moa's map of Äventyr 2, a visual sweep that found and fixed the drain-well wall over Olympia, 1,914 tests and a 42-check browser suite. Pictures of the places, voices, device review and Blender art remain. |
 | Home garden identity (10 October) | Rework Chapter 1 from three supplied building photographs | 1 cloud continuation | — / 0 | Dimensional red home/veranda/deck, green playhouse and timber fjällkåta authored in Blender 4.5.14 in the private repository; a generic public fallback and chapter framing preserve the route. The photos do not establish a surveyed garden layout. Device and family visual review remain. |
 | Bredbyn identity (10 October) | Reference-led Byn visual improvements | 1 cloud continuation | — / 0 | Eight inspected public references; original church, separate clock tower, varied street buildings, rounded valley and clearer crossing view. Reuses the existing route and save positions. Device review and final Blender refinement remain. |
 | Chase and story clarity (10 October) | Current request | 1 cloud implementation | — / 0 so far | Minimum ghost separation, player-paced essential dialogue, thirteen animated memory illustrations with Swedish captions and previous/next, plus larger in-world thought pictures. Checkpoint captures in `docs/shots/story-pacing/`. Physical-device review remains. |
@@ -3635,6 +3702,12 @@ The older list, still true where it is not struck:
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. On 7 October, a local Blender pass revises all six main models against the sheets, bakes the ghost's carved wood, refines locomotion and family greetings, and grounds imported boots from their actual geometry. All six private models pass Low/High browser checks; this remains a local revision, with faces, hair and clothes still simpler than the sheets. A second local motion pass adds start/stop/reversal weight, leading-foot jumps, hand paths and carried-arm layering, eased family following and story-driven ghost shoes; 1,414 tests pass. A focused opening-carving pass then adds planted support, a palm-centred knife grip, visible surface cuts, lifted returns and cut-timed shavings. A further family pass gives Sofie, Moa and Bertil distinct timing, precise mug and drawing contacts, purposeful gestures at every later help point, and smoother reunion/carry transitions. A subsequent audit fixes retained seated stances, interrupted-action snaps, abrupt glances, assisted-jump poses, fast-swing resets and history-dependent elbows; swing hands now follow the rope clear of the face. Sitting/standing blends use each rig's actual sole support, removing penetration and endpoint drops. A further contact audit adds accurate 3D pointing and reach/release blending, a visible supported palm lift held through Elof's cue, and chair exit paths for Moa and Emil. All 1,512 tests pass. A residual .432 EL low-reach gap, approximate palm surface support, brief chair contacts at Emil's exit, rig seams, review on a device, H1b and authored clips remain. Local Direct3D/Pixal trials now run offline on the RTX3070 laptop. Pixal60-step and estimated-camera tests give no clear likeness gain; the trained1024 portrait fits8GB and adds detail but also surface noise. The cleaner512 face remains the retained base; the seed17 alternate improves the jaw but not overall likeness, and the precision comparison is recorded above. A complete Blender candidate now combines the FP32-storage portrait/body, reference atlas and game rig. The saved14,782-triangle candidate still needs neck/hair/hand and topology repairs; H1b remains and no game replacement was made. Resume details are at the top of this handover. |
 
 ## Known bugs
+
+- **Äventyr 2's pictures, from the 4 November sweep (none blocks play):** at Billsta's end the camera is level with
+  the low eaves, so the narrow's water is a thin dark band and the far stone is small; the barn is a full-size
+  backdrop, so the loft and roof Elof walks read as a lean-to in front of it; Billaberget's rock shelves stand on
+  the ledge look's own pillars in front of the granite face; Flärken's start shows the family's car very large (it
+  is a real car's size to him). The `volleyball` building kind is now unused (Flärken's net is its bouncer).
 
 - **Private generated Elof candidate remains unfinished.** The saved Blender checkpoint has a rough neck/hair silhouette and hand remnants during reach, plus28boundary and5nonmanifold edges. See the current checkpoint above before continuing. It is not installed in the game.
 
@@ -3778,7 +3851,12 @@ The older list, still true where it is not struck:
 ## Senare (wishes for a later release)
 
 - Äventyr 2's own hidden candy kinds and stickers (its chapters have none, so the album's totals and the golden
-  geléhallon of Äventyr 1 keep their meaning), and Moa's map for its places.
+  geléhallon of Äventyr 1 keep their meaning). (Moa's map of its places was built on 4 November.)
+- Äventyr 2 from real pictures: Olympia, Flärkenbadet and Billsta are built from the research text and, for
+  mormor and morfar's house, one picture; a session that can open photographs (see "Frågor till Olov", 21) could
+  match the pitch, the bathing place and the narrow more closely.
+- The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
+  line now).
 
 ## Frågor till Olov
 
@@ -3829,6 +3907,19 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
 19. **ElevenLabs for Äventyr 2's voices:** the session could not read a key. Add it in the environment's settings
     as an environment variable named `ELEVENLABS_API_KEY` (never in the chat), and a new session generates the
     lines listed in `scripts/voices-aventyr2.json`.
+20. **Mormor and morfar in Äventyr 2 (4 November):** Olov asked for them and their home in Billsta. They are only
+    "Mormor" and "Morfar", plain stand-ins with no likeness, each with one thing of the story's (morfar's ladder,
+    mormor's lantern), and their house is an interpretation in plain shapes of Olov's picture, with no address or
+    house number. They are not on plan §2.6's consent list: is it all right with them, and with Elof's parents?
+    The default: as built, and anything comes out again if anyone asks.
+21. **Pictures for the places:** the research could not open any photograph, because the environment's network
+    denies the image hosts. To let a session look, add `commons.wikimedia.org`, `upload.wikimedia.org`,
+    `sv.wikipedia.org`, `ornskoldsvik.se` and `openstreetmap.org` under the environment's *Network access →
+    Allowed domains* (https://code.claude.com/docs/en/cloud-environments#network-access), or attach your own
+    pictures of Olympia, Flärkenbadet and the narrow at Billsta. The default: plain shapes from the research text.
+22. **Things said about the family in the new worlds:** Bertil says "Jag är bäst på frisparkar" at Olympia, Mamma
+    rows the boat at Flärken, and Pappa lowers his scarf from the bridge in Bredbyn. Are those right for them? The
+    default: as built; one line each changes if not.
 
 Choices the session made, for Olov to overrule if he wants:
 - the bow on the big candy, its pinwheel turn, and how much a sweet shines by itself (see "The candy is

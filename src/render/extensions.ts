@@ -32,6 +32,8 @@ export interface ExtraFrame {
   still: boolean;
   /** The quality tier: Low gets less. */
   tier: 'low' | 'mid' | 'high';
+  /** He is on a ride now. */
+  riding: boolean;
 }
 
 export interface ViewExtra {

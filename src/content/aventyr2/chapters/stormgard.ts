@@ -150,6 +150,13 @@ export const stormgard: ChapterData = {
       // And at the hedge: the little one, tumbling over it towards the forest.
       { on: 'beat:sg:flash', from: { x: 176, y: 5 }, to: { x: 200, y: 10 }, seconds: 2.5, who: 'lillgubbe' },
     ],
+    // The playhouse the trail climbs, its green walls just behind the roof he walks on; birches by the hedge.
+    buildings: [
+      { kind: 'playhouse', x: (PLAYHOUSE.from + PLAYHOUSE.to) / 2, z: -2.4, width: PLAYHOUSE.to - PLAYHOUSE.from, height: PLAYHOUSE.eaves, lit: '' },
+      { kind: 'birch', x: 160, z: -16, height: 60 },
+      { kind: 'birch', x: 184, z: -22, height: 72 },
+      { kind: 'birch', x: 58, z: -26, height: 66 },
+    ],
     glows: [
       // Mamma's candles in the house's windows, which src/render/dressing/built.ts draws 15 EL over the deck.
       { at: { x: 4, y: DECK + 15 }, z: -20.6, size: 3 },
@@ -163,7 +170,8 @@ export const stormgard: ChapterData = {
     { from: -19, to: STEPS[4]!.x, kind: 'wood' },
     { from: BED.from, to: BED.to, kind: 'stone' },
     { from: BARREL.from, to: BARREL.to, kind: 'wood' },
-    { from: CAN.from, to: CAN.to, kind: 'iron' },
+    // Zinc, pale grey (not 'iron': that is a street drain's grate, and the picture would dig a well round it).
+    { from: CAN.from, to: CAN.to, kind: 'paving' },
     { from: PLAYHOUSE.from, to: PLAYHOUSE.to, kind: 'wood' },
     { from: HEDGE.from, to: 196, kind: 'hedge' },
   ],

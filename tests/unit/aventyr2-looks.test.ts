@@ -24,9 +24,18 @@ describe('Äventyr 2: the pictures', () => {
     }
   });
 
+  it('keeps the iron grate for a street drain: elsewhere the ground would dig a well in front of the camera', () => {
+    // The ground's picture (src/render/dressing/ground.ts, drainsOf) raises the front between and round iron bars to
+    // the grate's height: on Olympia's fence it stood a wall five of him high in front of the whole pitch.
+    for (const chapter of AVENTYR2) {
+      if (chapter.place === 'village') continue;
+      expect((chapter.surfaces ?? []).filter((s) => s.kind === 'iron'), chapter.id).toEqual([]);
+    }
+  });
+
   it('adds the storm to the picture only where a chapter has one', () => {
     expect(PACK.extras.length).toBe(1);
-    expect(AVENTYR2.filter((chapter) => chapter.storm).map((chapter) => chapter.id)).toEqual(['stormkvall', 'stormgard', 'stormskog', 'stormbyn', 'sjon', 'stormoga']);
+    expect(AVENTYR2.filter((chapter) => chapter.storm).map((chapter) => chapter.id)).toEqual(['stormkvall', 'stormgard', 'stormskog', 'stormbyn', 'olympia', 'flarken', 'alven', 'billsta', 'stormoga']);
     // Klonk's frozen bridge is a ledge the storm knows.
     const skog = AVENTYR2.find((chapter) => chapter.id === 'stormskog')!;
     expect(skog.ledges?.some((ledge) => ledge.needs === skog.storm?.frozen)).toBe(true);

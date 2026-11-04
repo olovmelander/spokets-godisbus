@@ -17,10 +17,10 @@ export const words: ChapterWords = {
     ssBoughs: 'Grenarna gungar som båtar i vinden!',
     // 4. the owl
     ssOwlStuck: 'En uggla! En pinne stänger in den.',
-    ssOwlFree: 'Fri! Ugglan blinkar tack åt mig.',
+    ssOwlFree: 'Fri! Ugglan blinkar som tack.',
     // 5. the windthrow
-    ssWindthrow: 'Stormen har fällt granar som pinnar!',
-    ssOwlWaits: 'Ugglan väntar! Den kan flyga mig över.',
+    ssWindthrow: 'Stormen fällde granar som tändstickor!',
+    ssOwlWaits: 'Ugglan väntar! Den kan bära mig över.',
     ssOwlFly: 'Hu-hu! Vi flyger över vindfällen!',
     // 6. Pappa's flashlight
     ssPappaHere: 'Elof? Jag hör dig! Var är du?',
@@ -34,9 +34,9 @@ export const words: ChapterWords = {
     // 7. the old one's memory
     ssHollowSeen: 'En mörk håla. Vad tänker du på, Klonk?',
     ssHollowKlonk: 'Klonk …',
-    ssAlone: 'Den var ensam i mörkret i flera år.',
-    ssWhy: 'Därför väntar den inte.',
-    ssBoth: 'Kom, Klonk. Vi hittar dem båda!',
+    ssAlone: 'Han var ensam i mörkret i flera år.',
+    ssWhy: 'Därför väntar han inte.',
+    ssBoth: 'Kom, Klonk. Vi ska hitta dem båda!',
     // 8. the jay
     ssJaySeen: 'Lavskrikan! Den gömmer sig för regnet.',
     ssJayGlad: 'Ett lingon åt dig. Visa vägen, vän!',
@@ -59,7 +59,7 @@ export const words: ChapterWords = {
     ssPappa: { purpose: 'Ropa på Pappa vid klyftan.', recap: 'Här är för brett att hoppa, och så mörkt. Pappa har ficklampan.' },
     ssPlank: { purpose: 'Gå över bron. Det är Klonk!', recap: 'Pappa lyste på Klonk, och Klonk blev stel som en planka.' },
     ssFollow: { purpose: 'Följ Klonk vidare in i skogen.', recap: 'Pappa tittade bort, och då vaknade Klonk igen.' },
-    ssMemory: { purpose: 'Följ spåret efter gamla trägubben.', recap: 'Gamla trägubben var ensam i mörkret i flera år. Därför väntar den inte.' },
+    ssMemory: { purpose: 'Följ spåret efter gamla trägubben.', recap: 'Gamla trägubben var ensam i mörkret i flera år. Därför väntar han inte.' },
     ssJay: { purpose: 'Ge lavskrikan ett lingon.', recap: 'Lavskrikan från förra äventyret gömmer sig för stormen.' },
     ssLichen: { purpose: 'Klättra upp längs laven.', recap: 'Lavskrikan fick ett lingon. Den visade mig laven upp på roten.' },
     ssDown: { purpose: 'Följ spåret ner mot byn.', recap: 'Gamla trägubben skyndar mot byn. Där är alla fönster mörka.' },

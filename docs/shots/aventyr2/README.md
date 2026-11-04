@@ -25,6 +25,12 @@ One picture from each of the other chapters, at 844 × 390:
 | [Stormkvällen](1-stormkvall-844x390.webp) | Small again on the deck, the storm-dark garden below |
 | [Stormskogen](3-stormskog-844x390.webp) | Pappa's beam has frozen Klonk stiff as a plank across the gap |
 | [Byn i stormen](4-stormbyn-844x390.webp) | On the wall, about to call Moa for her umbrella |
-| [Sjön](5-sjon-844x390.webp) | Sheltering behind the jetty's posts from the waves |
-| [Stormens öga](6-stormoga-844x390.webp) | The storm's eye: stars and moon, the two trägubbar on the stone |
-| [Morgonen efter](7-morgonen-844x390.webp) | Sunday morning, both figures back on the shelf |
+| [Olympia](5-olympia-844x390.webp) | The big football before the flooded goalmouth: "Sparka" |
+| [Flärken](6-flarken-844x390.webp) | At the broken jetty by the diving tower, about to call Mamma and her boat |
+| [Älven](7-alven-844x390.webp) | Under the bridge in Bredbyn, Pappa above the rapids |
+| [Billsta](8-billsta-844x390.webp) | Morfar at the flooded ditch with his ladder, Klonk waiting |
+| [Stormens öga](9-stormoga-844x390.webp) | The storm's eye: stars and moon, the two trägubbar on the stone |
+| [Morgonen efter](10-morgonen-844x390.webp) | Sunday morning, both figures back on the shelf |
+
+The four new worlds' captures (4 November, version 2) are of the production build at 844 × 390 on High, with the
+public stand-ins; mormor and morfar are plain figures in code, never a likeness.

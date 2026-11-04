@@ -26,7 +26,7 @@ const onClimb = (chapter: ChapterData, c: { x: number; y: number }) => (chapter.
 const onTussock = (chapter: ChapterData, c: { x: number; y: number }) => (chapter.tussocks ?? []).some((t) => Math.abs(t.x - c.x) < t.width / 2 + 1.2);
 
 describe('Äventyr 2: the pack', () => {
-  it('puts its seven chapters into the game, in order, after Byn', () => {
+  it('puts its ten chapters into the game, in order, after Byn', () => {
     expect(AVENTYR2.map((chapter) => chapter.id)).toEqual([...ADVENTURE2_IDS]);
     expect(ADVENTURE2).toEqual(AVENTYR2);
     for (const chapter of AVENTYR2) expect(COURSES[chapter.id]).toBe(chapter);

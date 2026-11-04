@@ -26,7 +26,7 @@ export const MOTIFS: Record<Person, readonly [number, number, number]> = {
   bertil: [0, 0, 7],
 };
 
-export const VOICES: Record<Speaker, Voice> = {
+export const VOICES: Partial<Record<Speaker, Voice>> & Record<'elof', Voice> = {
   elof: { wave: 'triangle', pitch: 520, steps: [0, 3, 5, 3], pace: 0.1 },
   mamma: { wave: 'sine', pitch: 350, steps: [4, 2, 0, 2], pace: 0.13 },
   pappa: { wave: 'triangle', pitch: 175, steps: [0, 0, 3], pace: 0.16 },

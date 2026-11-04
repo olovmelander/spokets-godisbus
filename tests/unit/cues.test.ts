@@ -90,9 +90,9 @@ describe('what a moment of play sounds like', () => {
       expect(voice.pitch, who).toBeLessThan(700);
     }
     // Pappa is the lowest, the children are higher than their parents, and the ghost has no voice: it knocks.
-    expect(VOICES.pappa.pitch).toBeLessThan(VOICES.mamma.pitch);
-    for (const child of ['elof', 'moa', 'bertil'] as const) expect(VOICES[child].pitch, child).toBeGreaterThan(VOICES.mamma.pitch);
-    expect(VOICES.spoket.wave).toBe('wood');
+    expect(VOICES.pappa!.pitch).toBeLessThan(VOICES.mamma!.pitch);
+    for (const child of ['elof', 'moa', 'bertil'] as const) expect(VOICES[child]!.pitch, child).toBeGreaterThan(VOICES.mamma!.pitch);
+    expect(VOICES.spoket!.wave).toBe('wood');
     expect(Object.values(VOICES).filter((voice) => voice.wave === 'wood')).toHaveLength(1);
   });
 

@@ -9,7 +9,7 @@ import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
 import { setVoiceSettings, stopVoice } from './audio/voice-player';
-import { ADVENTURE2, BONUS, STORY, bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, isAdventure2, loadAdventure2, nextAvailable } from './content/chapters';
+import { ADVENTURE2, BONUS, STORY, bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, isAdventure2, loadAdventure2, loadLookCourses, LOOK_IDS, nextAvailable } from './content/chapters';
 import { album, albumComplete, foundFlag, KINDS } from './content/kinds';
 import { lostFlag, lostFound } from './content/lost';
 import { cobbleMemory } from './content/cobbles';
@@ -125,6 +125,7 @@ async function start(): Promise<void> {
   if (isAdventure2(wanted) || wanted === 'byn' || (loaded.kind === 'save' && storyFinished(loaded.save.flags))) {
     await loadAdventure2().catch(() => undefined);
   }
+  if (LOOK_IDS.includes(wanted)) await loadLookCourses().catch(() => undefined);
   // The profile store supplies its stable ID; older single-player saves use the original Elof ID.
   const photoPlayer = store.currentId;
   let database: IDBFactory | null = null;

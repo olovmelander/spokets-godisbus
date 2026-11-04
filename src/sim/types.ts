@@ -97,6 +97,8 @@ export interface Mover {
   extra?: boolean;
   /** A toy/side puzzle: keep its final placement in saves, but do not steer the main hint trail into it. */
   optional?: boolean;
+  /** The word on the button where Knuffa or Dra is too plain: a key of `sv.verbs`, as "Sparka" for a football. */
+  word?: string;
   /** A repeating platform, between its two stops. Its phase is local, never saved as puzzle progress. */
   cycle?: { seconds: number; phase?: number };
 }
@@ -136,7 +138,9 @@ export interface Spot {
 }
 
 /** Who a bubble belongs to. Each has a name in `sv.who`. */
-export type Speaker = 'mamma' | 'pappa' | 'moa' | 'bertil' | 'elof' | 'spoket';
+export type Speaker = 'mamma' | 'pappa' | 'moa' | 'bertil' | 'elof' | 'spoket'
+  // Äventyr 2's grandparents: their faces, names and voices come with its pack (src/content/aventyr2/render.ts).
+  | 'mormor' | 'morfar';
 
 /**
  * Something said, in a bubble (plan §3.7): the game has no voices. It comes when Elof first passes `at`, or
@@ -350,17 +354,21 @@ export interface SimStart {
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
 export type MoverLook = 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
-  | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank';
+  | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy';
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone';
 export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
-  | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed';
-export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none' | 'boot' | 'umbrella' | 'owl';
+  | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
+  | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';
+export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none' | 'boot' | 'umbrella' | 'owl' | 'football' | 'raft';
 
 /** The places of the story, each with its own light and layers (plan §5.4). The picture's business only. */
 export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home' | 'village';
 
 /** What a stretch of ground is made of, where it isn't the place's own ground. The picture's business only. */
+/** What a gust's shelters are drawn as, in a storm: see Storm.shelters. */
+export type Shelter = 'pots' | 'posts' | 'vents' | 'rocks';
+
 export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron';
 
 /**
@@ -634,12 +642,48 @@ export interface Storm {
    * while it is set and Elof has not crossed, Klonk lies across, and the ghost is not drawn standing anywhere else.
    */
   frozen?: string;
+  /**
+   * The chapter's ledges that are always there are drawn as a goal's white frame bar: the crossbar he walks along,
+   * where Äventyr 1 would have drawn a trestle.
+   */
+  bars?: 'goal';
+  /**
+   * A rope or a scarf held down to him from above while he is on a ride: from where it is held (`from`) to his
+   * hands, for the ride's whole way. Pappa's scarf from the bridge.
+   */
+  ropes?: { ride: string; from: Vec; z?: number; colour?: string }[];
   /** What falls at the chapter's drips, where it is not water: cones shaken from the spruces. */
   drips?: 'cone';
-  /** What the gusts' shelters are, where they are not boulders: the garden's upturned flower pots, the jetty's posts. */
-  shelters?: 'pots' | 'posts';
-  /** What the chapter's bouncers are, where they are not cranberries: the garden's trampoline, an awning's flap. */
-  bouncers?: 'trampoline' | 'awning';
+  /**
+   * What the gusts' shelters are, where they are not boulders: the garden's upturned flower pots, the jetty's posts,
+   * a barn roof's ventilation hoods. One for all the gusts, or one for each gust in order ('stones' keeps a gust's
+   * boulders).
+   */
+  shelters?: Shelter | (Shelter | 'stones')[];
+  /**
+   * Open water behind the play plane, for the picture only: a lake or a narrow seen past the path's end, from `near`
+   * (default −4) back to the far shore.
+   */
+  lakes?: { from: number; to: number; y: number; near?: number }[];
+  /** What the chapter's rollers are, where they are not cones: footballs bowled along by the wind. */
+  rollers?: 'football';
+  /**
+   * What the chapter's bouncers are, where they are not cranberries: the garden's trampoline, an awning's flap, a
+   * volleyball net torn loose and sagging between its posts.
+   */
+  bouncers?: 'trampoline' | 'awning' | 'net';
+  /**
+   * Buildings and big things standing behind the play plane, built in code by the adventure's pack: picture only,
+   * never ground. Sizes are in EL (one Elof length, 15 cm), so a real house towers over him. `lit`: its windows glow
+   * once that flag is set (or from the start with an empty string).
+   */
+  buildings?: {
+    kind: 'villa' | 'barn' | 'playhouse' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
+      | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff';
+    x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string;
+    /** Turned about the upright, in quarter turns: a net or a table seen from its end. */
+    turn?: number;
+  }[];
   /** Warm windows of lit candles and lanterns, which glow through the rain. */
   glows?: { at: Vec; z?: number; size?: number; after?: string }[];
 }

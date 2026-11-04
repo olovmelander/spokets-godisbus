@@ -1,8 +1,10 @@
 import {
   AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage,
   Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry,
-  Points, PointsMaterial, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, type Material,
+  CatmullRomCurve3, Points, PointsMaterial, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
+  type Material,
 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { PLACES } from '../../render/dressing';
 import type { PlaceLook } from '../../render/dressing/kit';
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../render/extensions';
@@ -10,6 +12,7 @@ import { glowTexture } from '../../render/glow';
 import { drawnWhile } from '../../render/idle';
 import type { SpotProp } from '../../render/props';
 import type { Mover, RideLook, Spot } from '../../sim/types';
+import { box, building, PANE, rock } from './buildings';
 
 /**
  * Äventyr 2's pictures (docs/aventyr-2.md), built in code like the first adventure's stand-ins: each is
@@ -33,6 +36,8 @@ const ball = (radius: number, material: Material, x = 0, y = 0, z = 0, squash: r
   mesh.scale.set(...squash);
   return mesh;
 };
+const UP = new Vector3(0, 1, 0);
+const tmp = new Vector3();
 const smooth = (t: number) => { const k = Math.min(1, Math.max(0, t)); return k * k * (3 - 2 * k); };
 /** A fixed scatter: the same in every session and every screenshot. */
 function scatter(seed: number): () => number {
@@ -105,7 +110,7 @@ const LOOKS: Record<string, PlaceLook> = {
     water: { colour: '#283446', opacity: 0.88 },
     tussock: '#5a5a58',
   },
-  sjon: {
+  flarken: {
     ...PLACES.bog,
     grade: grade(0.8, 0.86, [0.86, 0.96, 1.12]),
     haze: { colour: '#273a4c', near: 5, far: 64 },
@@ -115,6 +120,40 @@ const LOOKS: Record<string, PlaceLook> = {
     fill: { colour: '#a8bce4', intensity: 0.7 },
     water: { colour: '#24384e', opacity: 0.9 },
     tussock: '#6a6c4c',
+  },
+  // The new worlds' first light, until their own is set: the football pitch, the river and Billsta at night.
+  olympia: {
+    ...PLACES.garden,
+    grade: grade(0.82, 0.86, [0.88, 0.96, 1.1]),
+    haze: { colour: '#2a3650', near: 6, far: 70 },
+    sky: { top: '#0a1222', middle: '#2a3856', bottom: '#1e283a', glow: '#94a8cc' },
+    hemisphere: { sky: '#8ea2d2', ground: '#34402e', intensity: 1.05 },
+    sun: { colour: '#c4d2ff', intensity: 1.7, from: [-6, 6, -3] },
+    fill: { colour: '#a8bce8', intensity: 0.7 },
+    water: { colour: '#2b4260', opacity: 0.86 },
+    tussock: '#55663f',
+  },
+  alven: {
+    ...PLACES.forest,
+    grade: grade(0.8, 0.86, [0.88, 0.97, 1.1]),
+    haze: { colour: '#24343e', near: 5, far: 60 },
+    sky: { top: '#081218', middle: '#22343c', bottom: '#18262c', glow: '#90b0bc' },
+    hemisphere: { sky: '#88a6bc', ground: '#2e3a28', intensity: 1.05 },
+    sun: { colour: '#c4d6ff', intensity: 1.6, from: [-7, 5, -4] },
+    fill: { colour: '#a4c0e0', intensity: 0.7 },
+    water: { colour: '#264654', opacity: 0.88 },
+    tussock: '#56663c',
+  },
+  billsta: {
+    ...PLACES.garden,
+    grade: grade(0.84, 0.88, [0.9, 0.97, 1.1]),
+    haze: { colour: '#283450', near: 6, far: 72 },
+    sky: { top: '#0a1224', middle: '#2a3a5a', bottom: '#1e2a40', glow: '#a0b4d8' },
+    hemisphere: { sky: '#90a4d4', ground: '#363f30', intensity: 1.08 },
+    sun: { colour: '#c8d4ff', intensity: 1.75, from: [-6, 6, -3] },
+    fill: { colour: '#aabce8', intensity: 0.7 },
+    water: { colour: '#2a405e', opacity: 0.86 },
+    tussock: '#56663f',
   },
   stormoga: {
     ...PLACES.bog,
@@ -138,10 +177,10 @@ const LOOKS: Record<string, PlaceLook> = {
 /** The night's tint on what no lamp lights: the painted far scenery, the soft foreground. `calm`: the storm's eye. */
 const TINT: Record<string, readonly [number, number, number]> = {
   stormkvall: [0.42, 0.46, 0.62], stormgard: [0.46, 0.5, 0.66], stormskog: [0.42, 0.48, 0.58], stormbyn: [0.5, 0.52, 0.64],
-  sjon: [0.46, 0.51, 0.66], stormoga: [0.42, 0.46, 0.64], calm: [0.58, 0.64, 0.88],
+  olympia: [0.46, 0.5, 0.66], flarken: [0.46, 0.51, 0.66], alven: [0.42, 0.48, 0.6], billsta: [0.48, 0.52, 0.68], stormoga: [0.42, 0.46, 0.64], calm: [0.58, 0.64, 0.88],
 };
 /** How much of the painted far scenery shows through the storm's dark: the backdrop is dimmed to night. */
-const DIM: Record<string, number> = { stormkvall: 0.34, stormgard: 0.42, stormskog: 0.36, stormbyn: 0.46, sjon: 0.4, stormoga: 0.38 };
+const DIM: Record<string, number> = { stormkvall: 0.34, stormgard: 0.42, stormskog: 0.36, stormbyn: 0.46, olympia: 0.42, flarken: 0.4, alven: 0.38, billsta: 0.44, stormoga: 0.38 };
 
 // --- the storm -------------------------------------------------------------------------------------------------
 
@@ -238,6 +277,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const flybys = (storm?.flybys ?? []).map((def) => {
     const figure = (def.who === 'lillgubbe' ? littleFigure : oldFigure)(true);
     figure.scale.setScalar(1.2);
+    // Floating down the water, the old one rides a log.
+    if (def.who === 'tragubbe' && Math.max(def.from.y, def.to.y) < 1.5) {
+      const log = new Mesh(new CylinderGeometry(0.22, 0.25, 2.2, 8), solid('#5a4632', 0.9));
+      log.rotation.z = Math.PI / 2;
+      log.position.y = -0.1;
+      figure.add(log);
+    }
     figure.visible = false;
     group.add(figure);
     return { def, figure, start: -1, seen: false };
@@ -292,6 +338,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   });
   const tint = new Color();
 
+  // The big things standing behind the play plane: houses, a barn, goals, masts, a diving tower (./buildings.ts).
+  const buildings = (storm?.buildings ?? []).map((def) => {
+    const made = building(def);
+    group.add(made.group);
+    return made;
+  });
+
   // The rain barrel under each tap: wooden staves and iron hoops, standing on the ground the tap's block stands on.
   for (const spot of chapter.spots ?? []) if (spot.look === 'tap') group.add(barrel(chapter.ground, spot.at.x, spot.at.y));
 
@@ -307,11 +360,17 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     coneDrops.geometry = new LatheGeometry(scales, 9);
     coneDrops.material = solid('#6a4428', 0.9, { flatShading: true });
   }
+  // Footballs bowled along by the wind, where the chapter's rollers are: round, and patched.
+  const balls = storm?.rollers === 'football' ? scene.getObjectByName('rollers') as InstancedMesh | undefined : undefined;
+  if (balls) {
+    balls.geometry = footballGeometry().scale(1, 1, 1 / 1.9);
+    balls.material = footballMaterial();
+  }
   // The bouncers as what they are here: the garden's trampoline, or the striped flap of an awning.
   if (storm?.bouncers) {
     for (const holder of scene.children.filter((child) => child.name === 'bouncer')) {
       holder.clear();
-      holder.add(storm.bouncers === 'trampoline' ? trampoline() : awningFlap());
+      holder.add(storm.bouncers === 'trampoline' ? trampoline() : storm.bouncers === 'net' ? saggingNet() : awningFlap());
     }
   }
 
@@ -326,8 +385,34 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
 
   // The gusts' shelters as what they are here: upturned flower pots on the lawn, or the jetty's posts.
   // (The boulders they stand in for join the scene after this is built: they are put away on the first frame.)
-  if (storm?.shelters) {
-    for (const gust of chapter.gusts ?? []) for (const x of gust.shelters) group.add(storm.shelters === 'pots' ? flowerPot(x, gust.y) : jettyPost(x, gust.y));
+  const shelterOf = (i: number) => (Array.isArray(storm?.shelters) ? storm.shelters[i] ?? 'stones' : storm?.shelters ?? 'stones');
+  for (const [i, gust] of (chapter.gusts ?? []).entries()) {
+    const kind = shelterOf(i);
+    if (kind !== 'stones') for (const x of gust.shelters) group.add(kind === 'pots' ? flowerPot(x, gust.y) : kind === 'vents' ? roofVent(x, gust.y) : kind === 'rocks' ? boulder(x, gust.y) : jettyPost(x, gust.y));
+  }
+
+  // Boulders that are blocks of the ground (landmarks), where no kit of the place draws them: faceted granite in
+  // place of the plain box that stands in for them. The forest's kit has its own stones and is left to them.
+  if (chapter.place !== 'forest') {
+    for (const holder of scene.getObjectsByProperty('name', 'landmark:stone')) {
+      const box = holder.children.find((child): child is Mesh => child instanceof Mesh && child.geometry instanceof BoxGeometry);
+      if (!box) continue;
+      const { width, height } = (box.geometry as BoxGeometry).parameters;
+      box.geometry.dispose();
+      box.geometry = rock(Math.round(holder.position.x * 10), width / 2 * 1.08, height / 2 * 1.04, 1.8);
+      box.material = solid('#8c9096', 0.95, { flatShading: true });
+    }
+  }
+
+  // Open water past the path: dark, a little glossy, catching the flashes.
+  for (const lake of storm?.lakes ?? []) {
+    const near = lake.near ?? -4;
+    const depth = 120;
+    const sheet = new Mesh(new PlaneGeometry(lake.to - lake.from, depth), solid('#1a2a3c', 0.22, { metalness: 0.2 }));
+    sheet.rotation.x = -Math.PI / 2;
+    sheet.position.set((lake.from + lake.to) / 2, lake.y, near - depth / 2);
+    sheet.name = 'lake';
+    group.add(sheet);
   }
 
   // Klonk, frozen stiff in Pappa's beam, lying across the gap as a plank.
@@ -337,13 +422,34 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const planks: Object3D[] = [];
   if (frozenLedge) scene.traverse((object) => { if (object.name.startsWith('ledges:') && object.name.endsWith(':plank')) planks.push(object); });
 
+  // A goal's crossbar as what it is: white, round-cornered steel, joined to the frame that runs back into the picture.
+  if (storm?.bars === 'goal') {
+    scene.traverse((object) => {
+      if (!(object instanceof Mesh) || !/^ledges:\d+$/.test(object.name) || object.userData.rods) return;
+      const at = (object.userData.ledges as number[]).map((i) => chapter.ledges![i]!);
+      object.geometry.dispose();
+      object.geometry = mergeGeometries(at.map((ledge) => box(ledge.width, 0.3, 0.6, ledge.x, ledge.y - 0.15, -0.25, '#f4f4f0')));
+      object.geometry.computeBoundingSphere();
+    });
+  }
+
+  // A rope or Pappa's scarf from above down to his hands, while he rides on it.
+  const ropes = (storm?.ropes ?? []).map((def) => {
+    const ride = chapter.rides?.find((r) => r.id === def.ride);
+    const mesh = new Mesh(new CylinderGeometry(0.09, 0.09, 1, 6).translate(0, 0.5, 0), solid(def.colour ?? '#c8372a', 0.9));
+    mesh.visible = false;
+    group.add(mesh);
+    return { def, ride, mesh };
+  });
+
   let first = true;
   return {
-    update({ dt, clock, flags, x, camera, still, tier }: ExtraFrame) {
+    update({ dt, clock, flags, x, y, camera, still, tier, riding }: ExtraFrame) {
       if (first) {
         // A flyby whose moment has passed already (a game taken up later) is not played again.
         for (const f of flybys) if (flags.has(f.def.on)) f.seen = true;
-        if (storm?.shelters) for (const stone of scene.getObjectsByProperty('name', 'shelters')) stone.visible = false;
+        // The boulders the gusts' shelters stand in for are put away, where something else is drawn: one mesh a gust.
+        for (const [i, stone] of scene.getObjectsByProperty('name', 'shelters').entries()) if (shelterOf(i) !== 'stones') stone.visible = false;
         first = false;
       }
       const calmFlag = storm?.calm;
@@ -404,8 +510,11 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         f.figure.visible = k < 1 && f.start >= 0;
         if (!f.figure.visible) continue;
         const e = smooth(k);
-        f.figure.position.set(f.def.from.x + (f.def.to.x - f.def.from.x) * e, f.def.from.y + (f.def.to.y - f.def.from.y) * e + Math.sin(Math.PI * k) * 2.2, -4);
-        f.figure.rotation.z = still ? 0.4 : -k * 9;
+        // On the water a figure floats, bobbing along; in the air it tumbles across the sky.
+        const floating = Math.max(f.def.from.y, f.def.to.y) < 1.5;
+        const lift = floating ? 0.12 * Math.sin(clock * 3) : Math.sin(Math.PI * k) * 2.2;
+        f.figure.position.set(f.def.from.x + (f.def.to.x - f.def.from.x) * e, f.def.from.y + (f.def.to.y - f.def.from.y) * e + lift, -4);
+        f.figure.rotation.z = still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * 0.25 : -k * 9;
       }
       for (const g of glows) {
         const lit = g.def.after === undefined || flags.has(g.def.after);
@@ -435,6 +544,24 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           // The plank the simulation stands him on is Klonk: its own picture is not drawn.
           for (const plank of planks) plank.visible = !lying && plank.visible;
         }
+      }
+      for (const b of buildings) {
+        if (!b.panes) continue;
+        const lit = b.def.lit !== undefined && (b.def.lit === '' || flags.has(b.def.lit));
+        b.panes.color.copy(lit ? PANE.lit : PANE.dark);
+        if (lit && !still) b.panes.color.multiplyScalar(0.92 + 0.08 * Math.sin(clock * 2.1 + b.def.x));
+      }
+      for (const rope of ropes) {
+        const on = riding && !!rope.ride && x >= Math.min(rope.ride.from.x, rope.ride.to.x) - 0.3 && x <= Math.max(rope.ride.from.x, rope.ride.to.x) + 0.3;
+        rope.mesh.visible = on;
+        if (!on) continue;
+        // From where it is held to his raised hands.
+        const hx = x, hy = y + 1.05, hz = 0.1, fz = rope.def.z ?? -1;
+        const dx = rope.def.from.x - hx, dy = rope.def.from.y - hy, dz = fz - hz;
+        const length = Math.hypot(dx, dy, dz);
+        rope.mesh.position.set(hx, hy, hz);
+        rope.mesh.scale.set(1, length, 1);
+        rope.mesh.quaternion.setFromUnitVectors(UP, tmp.set(dx, dy, dz).normalize());
       }
       starMaterial.opacity = calm;
       drawnWhile(starField, calm > 0);
@@ -496,6 +623,28 @@ function flowerPot(x: number, y: number): Group {
   return group;
 }
 
+/** A boulder of the hillside, granite grey and faceted, as big as the lumps it stands in for. */
+function boulder(x: number, y: number): Mesh {
+  const stone = new Mesh(rock(Math.round(x * 10), 1.0, 1.2, 0.85), solid('#8c9096', 0.95, { flatShading: true }));
+  stone.position.set(x, y + 0.7, -1.3);
+  return stone;
+}
+
+/** A barn roof's ventilation hood: a little red-painted wooden box with its own pointed roof, standing on the ridge. */
+function roofVent(x: number, y: number): Group {
+  const group = new Group();
+  const box = new Mesh(new BoxGeometry(1.1, 1.9, 1.1), solid('#8a2c22', 0.9));
+  box.position.y = 0.95;
+  const slats = new Mesh(new BoxGeometry(1.14, 0.7, 1.14), solid('#2a1c18', 0.9));
+  slats.position.y = 1.35;
+  const cap = new Mesh(new ConeGeometry(0.95, 0.7, 4), solid('#5a5c60', 0.6, { metalness: 0.3 }));
+  cap.rotation.y = Math.PI / 4;
+  cap.position.y = 2.25;
+  group.add(box, slats, cap);
+  group.position.set(x, y, -1.2);
+  return group;
+}
+
 /** A jetty's post, dark and wet, standing up out of the boards: a shelter from the waves' spray. */
 function jettyPost(x: number, y: number): Group {
   const group = new Group();
@@ -523,6 +672,37 @@ function trampoline(): Group {
     group.add(leg);
   }
   group.position.z = -0.3;
+  return group;
+}
+
+/**
+ * A volleyball net torn loose and sagging low between its two posts: a white top band dipping to the
+ * bouncer's top in the middle, the mesh hanging under it. He lands in the dip.
+ */
+function saggingNet(): Group {
+  const group = new Group();
+  const white = solid('#f2f2ee', 0.7);
+  const mesh = solid('#d4d6d2', 0.8);
+  const sag = (x: number) => 0.5 + 1.6 * (x / 2.4) ** 2;
+  const points = Array.from({ length: 13 }, (_, i) => new Vector3(-2.4 + (i / 12) * 4.8, sag(-2.4 + (i / 12) * 4.8), 0));
+  const band = new Mesh(new TubeGeometry(new CatmullRomCurve3(points), 24, 0.07, 6), white);
+  group.add(band);
+  for (let i = 0; i <= 12; i++) {
+    const x = -2.1 + i * 0.35;
+    const strand = new Mesh(new BoxGeometry(0.025, 0.42, 0.025), mesh);
+    strand.position.set(x, sag(x) - 0.22, 0);
+    group.add(strand);
+  }
+  for (const k of [1, 2]) {
+    const lower = points.map((p) => new Vector3(p.x, p.y - k * 0.18, 0));
+    group.add(new Mesh(new TubeGeometry(new CatmullRomCurve3(lower), 24, 0.02, 4), mesh));
+  }
+  for (const x of [-2.5, 2.5]) {
+    const post = new Mesh(new CylinderGeometry(0.06, 0.07, 2.4, 8), solid('#c8ccce', 0.5, { metalness: 0.4 }));
+    post.position.set(x, 1.2, 0);
+    group.add(post);
+  }
+  group.position.z = -0.2;
   return group;
 }
 
@@ -599,6 +779,80 @@ function standing(spot: Spot, group: Group, alive?: (clock: number) => void): Sp
 }
 
 // --- the things of the story -----------------------------------------------------------------------------------
+
+/** A football's skin: white, with the dark patches where an icosahedron's corners are. Radius 1, at the origin. */
+function footballGeometry(): BufferGeometry {
+  const geometry = new SphereGeometry(1, 28, 18);
+  const t = (1 + Math.sqrt(5)) / 2;
+  const corners = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]]
+    .map(([x, y, z]) => { const l = Math.hypot(x!, y!, z!); return [x! / l, y! / l, z! / l] as const; });
+  const at = geometry.getAttribute('position');
+  const colours: number[] = [];
+  for (let i = 0; i < at.count; i++) {
+    const x = at.getX(i), y = at.getY(i), z = at.getZ(i);
+    const near = Math.max(...corners.map(([cx, cy, cz]) => x * cx + y * cy + z * cz));
+    const dark = near > 0.94;
+    colours.push(...(dark ? [0.08, 0.08, 0.09] : [0.95, 0.95, 0.93]));
+  }
+  geometry.setAttribute('color', new Float32BufferAttribute(colours, 3));
+  return geometry;
+}
+const footballMaterial = () => new MeshStandardMaterial({ vertexColors: true, roughness: 0.45 });
+function football(radius: number): Mesh {
+  const ball = new Mesh(footballGeometry(), footballMaterial());
+  ball.scale.setScalar(radius);
+  ball.position.y = radius;
+  return ball;
+}
+
+/**
+ * Mormor or Morfar, as plain giant stand-in figures (docs/aventyr-2.md): no likeness of anyone, no face but two
+ * dots, as tall to him as a grown-up is to a 15 cm boy. Mormor holds her lantern; Morfar wears a cap.
+ */
+function grandparent(who: 'mormor' | 'morfar'): { group: Group; light: Mesh | null } {
+  const group = new Group();
+  const coat = solid(who === 'mormor' ? '#7a3a4a' : '#3c5a44', 0.85);
+  const legs = solid(who === 'mormor' ? '#3a3440' : '#38383c', 0.9);
+  const skin = solid('#dfb586', 0.8);
+  const hair = solid('#c8c6c0', 0.9);
+  for (const z of [-0.7, 0.7]) {
+    const leg = new Mesh(new CylinderGeometry(0.55, 0.6, 4.6, 8), legs);
+    leg.position.set(0, 2.3, z);
+    group.add(leg);
+  }
+  const body = new Mesh(new CylinderGeometry(1.5, 1.9, 5, 10), coat);
+  body.position.y = 7;
+  group.add(body, ball(1.15, skin, 0, 10.4, 0), ball(1.2, hair, -0.15, 10.9, 0, [1, 0.6, 1]));
+  for (const z of [-0.38, 0.38]) group.add(ball(0.09, solid('#2a2420', 0.5), 1.05, 10.5, z));
+  for (const side of [-1, 1]) {
+    const arm = new Mesh(new CylinderGeometry(0.4, 0.45, 4.4, 8), coat);
+    arm.position.set(0.4, 7.2, side * 2);
+    arm.rotation.x = side * 0.25;
+    group.add(arm);
+  }
+  let light: Mesh | null = null;
+  if (who === 'morfar') {
+    const cap = new Mesh(new CylinderGeometry(1.25, 1.25, 0.45, 14), solid('#4a4a46', 0.9));
+    cap.position.y = 11.45;
+    const peak = new Mesh(new BoxGeometry(1.2, 0.15, 1.8), solid('#4a4a46', 0.9));
+    peak.position.set(1.15, 11.3, 0);
+    group.add(cap, peak);
+  } else {
+    // Her lantern, held low so that its light falls where he walks.
+    const lantern = new Group();
+    lantern.add(new Mesh(new CylinderGeometry(0.4, 0.45, 1, 8), new MeshBasicMaterial({ color: '#ffd27a' })));
+    const frame = new Mesh(new CylinderGeometry(0.5, 0.5, 0.15, 8), solid('#2a2a2a', 0.5));
+    frame.position.y = 0.55;
+    lantern.add(frame);
+    light = glow('#ffc070', 7, 0.6);
+    lantern.add(light);
+    lantern.position.set(1.6, 4.4, 2.2);
+    group.add(lantern);
+  }
+  group.position.z = -2.4;
+  group.rotation.y = -0.35;
+  return { group, light };
+}
 
 /** A carved pumpkin lantern, as tall as two of him, its face lit from inside by a candle. */
 function pumpkin(): { group: Group; light: Mesh; face: MeshBasicMaterial } {
@@ -824,6 +1078,67 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       group.add(hook, eye);
       return standing(spot, group);
     },
+    football: (spot) => standing(spot, (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
+    target: (spot) => {
+      // A biathlon target on its stand: a black disc on a white plate, white too once it is hit. It stays.
+      const root = new Group();
+      root.position.set(spot.at.x, spot.at.y, -1.2);
+      const stand = new Mesh(new BoxGeometry(0.16, 2.2, 0.16), solid('#5a5a5e', 0.7));
+      stand.position.y = 1.1;
+      const plate = new Mesh(new BoxGeometry(1.1, 1.1, 0.08), solid('#e8e8e2', 0.7));
+      plate.position.y = 2.6;
+      const disc = new Mesh(new CylinderGeometry(0.38, 0.38, 0.06, 20), solid('#141414', 0.6));
+      disc.rotation.x = Math.PI / 2;
+      disc.position.set(0, 2.6, 0.06);
+      root.add(stand, plate, disc);
+      const black = new Color('#141414');
+      const white = new Color('#f2f2ee');
+      return { group: root, update(used) { (disc.material as MeshStandardMaterial).color.copy(used ? white : black); } };
+    },
+    lifebuoy: (spot) => {
+      // A life ring on its post: red and white, its rope coiled.
+      const group = new Group();
+      const pole = new Mesh(new CylinderGeometry(0.12, 0.12, 6, 8), solid('#e6e2d8', 0.7));
+      pole.position.y = 3;
+      const ring = new Group();
+      for (let i = 0; i < 8; i++) {
+        const piece = new Mesh(new TorusGeometry(1, 0.28, 8, 6, Math.PI / 4), solid(i % 2 ? '#f2f0ea' : '#d8352a', 0.5));
+        piece.rotation.z = (i * Math.PI) / 4;
+        ring.add(piece);
+      }
+      ring.position.set(0, 4.6, 0.3);
+      group.add(pole, ring);
+      return standing(spot, group, (clock) => { ring.rotation.z = Math.sin(clock * 1.7) * 0.12; });
+    },
+    flag: (spot) => {
+      // A corner flag, snapping in the storm.
+      const group = new Group();
+      const pole = new Mesh(new CylinderGeometry(0.1, 0.1, 10, 6), solid('#f2e64a', 0.6));
+      pole.position.y = 5;
+      const cloth = new Mesh(new PlaneGeometry(3, 2, 6, 1), solid('#d83a2a', 0.8, { side: DoubleSide }));
+      cloth.geometry.translate(1.5, 0, 0);
+      cloth.position.y = 9;
+      group.add(pole, cloth);
+      const base = cloth.geometry.getAttribute('position').array.slice();
+      return standing(spot, group, (clock) => {
+        const at = cloth.geometry.getAttribute('position');
+        for (let i = 0; i < at.count; i++) at.setZ(i, Math.sin(clock * 9 + base[i * 3]! * 2) * 0.35 * (base[i * 3]! / 3));
+        at.needsUpdate = true;
+      });
+    },
+    lantern: (spot) => {
+      const group = new Group();
+      group.add(new Mesh(new CylinderGeometry(0.35, 0.4, 0.9, 8), new MeshBasicMaterial({ color: '#ffd27a' })));
+      const light = glow('#ffc070', 5, 0.7);
+      group.add(light);
+      group.position.y = 0.45;
+      return standing(spot, group, (clock) => { (light.material as MeshBasicMaterial).opacity = 0.6 + 0.1 * Math.sin(clock * 7); });
+    },
+    mormor: (spot) => {
+      const { group, light } = grandparent('mormor');
+      return standing(spot, group, (clock) => { if (light) (light.material as MeshBasicMaterial).opacity = 0.55 + 0.08 * Math.sin(clock * 6.3); });
+    },
+    morfar: (spot) => standing(spot, grandparent('morfar').group),
     reed: (spot) => {
       // Reeds standing out of the shallows: tall stems with brown seed heads, bending in the wind.
       const group = new Group();
@@ -846,7 +1161,30 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
 }
 
 function rideLooks(): Record<string, (look: RideLook) => Object3D | null> {
-  return { boot: () => boot(), umbrella: () => umbrella(), owl: () => owl(true) };
+  return {
+    boot: () => boot(), umbrella: () => umbrella(), owl: () => owl(true),
+    // The ball Bertil kicks, under his feet as it flies.
+    football: () => { const g = new Group(); const b = football(0.8); b.position.y = -1.55; g.add(b); return g; },
+    raft: () => { const g = new Group(); g.add(raft(3.2, 0.5)); g.children[0]!.position.y = -0.5; return g; },
+  };
+}
+
+/** A raft of logs lashed together, with its top at `h`, `w` long. */
+function raft(w: number, h: number): Group {
+  const group = new Group();
+  const logs = Math.max(3, Math.round(1.6 / 0.32));
+  for (let i = 0; i < logs; i++) {
+    const log = new Mesh(new CylinderGeometry(h / 2, h / 2, w, 8), solid(i % 2 ? '#7a5a3c' : '#6a4c32', 0.9));
+    log.rotation.z = Math.PI / 2;
+    log.position.set(0, h / 2, -0.8 + i * (1.6 / (logs - 1)));
+    group.add(log);
+  }
+  for (const x of [-w * 0.35, w * 0.35]) {
+    const rope = new Mesh(new BoxGeometry(0.12, h + 0.05, 1.8), solid('#c8b080', 0.9));
+    rope.position.set(x, h / 2, 0);
+    group.add(rope);
+  }
+  return group;
 }
 
 function moverLooks(): Record<string, (mover: Mover) => Group | null> {
@@ -866,13 +1204,29 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
     },
     bark: (mover) => {
       const group = new Group();
-      const slab = new Mesh(new BoxGeometry(mover.width, mover.height, 1.2, 6, 1, 3), solid('#6a4a32', 1, { flatShading: true }));
+      // Pine bark, grey-brown and furrowed: pale enough to be told in the storm's dark.
+      const slab = new Mesh(new BoxGeometry(mover.width, mover.height, 1.2, 6, 2, 3), solid('#9a7656', 1, { flatShading: true, emissive: '#3a2614', emissiveIntensity: 0.5 }));
       const at = slab.geometry.getAttribute('position');
       const r = scatter(Math.round(mover.width * 100));
-      for (let i = 0; i < at.count; i++) if (at.getY(i) > 0) at.setY(i, at.getY(i) + (r() - 0.5) * 0.08);
+      // Rounded off along its top, as a thick piece of bark is, and uneven.
+      for (let i = 0; i < at.count; i++) if (at.getY(i) > 0) {
+        at.setY(i, at.getY(i) + (r() - 0.5) * 0.08);
+        at.setX(i, at.getX(i) * 0.9);
+        at.setZ(i, at.getZ(i) * 0.8);
+      }
       slab.geometry.computeVertexNormals();
       slab.position.y = mover.height / 2;
       group.add(slab);
+      // The cracks along its face, between the bark's plates, and its paler top where he will stand.
+      for (const [k, y] of [0.3, 0.62, 0.95].entries()) {
+        const crack = new Mesh(new BoxGeometry(mover.width * (0.7 - k * 0.12), 0.06, 0.04), solid('#4a3424', 1));
+        crack.position.set((k - 1) * 0.3, mover.height * y, 0.6 - y * 0.12);
+        crack.rotation.z = (k - 1) * 0.05;
+        group.add(crack);
+      }
+      const top = new Mesh(new BoxGeometry(mover.width * 0.86, 0.06, 0.9), solid('#b8966e', 1));
+      top.position.y = mover.height + 0.02;
+      group.add(top);
       return group;
     },
     'swing-sign': (mover) => {
@@ -889,6 +1243,20 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
         group.add(chain);
       }
       return group;
+    },
+    football: (mover) => { const g = new Group(); g.add(football(Math.min(mover.width, mover.height) / 2)); return g; },
+    raft: (mover) => { const g = new Group(); g.add(raft(mover.width, mover.height)); return g; },
+    buoy: (mover) => {
+      // A swimming buoy: a white float with a red band, bobbing.
+      const g = new Group();
+      const float = new Mesh(new SphereGeometry(mover.width / 2, 14, 10), solid('#f2f0ea', 0.4));
+      float.scale.y = mover.height / mover.width;
+      float.position.y = mover.height / 2;
+      const band = new Mesh(new TorusGeometry(mover.width / 2 * 0.98, 0.08, 6, 20), solid('#d8352a', 0.5));
+      band.rotation.x = Math.PI / 2;
+      band.position.y = mover.height / 2;
+      g.add(float, band);
+      return g;
     },
     'jetty-plank': (mover) => {
       const group = new Group();

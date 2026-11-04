@@ -988,7 +988,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       camera.lookAt(window.x, window.y + 0.65, window.z);
     }
     const darkness = night.update(flags, dt, tier === 'low' ? 0.5 : 0.85, calmStory);
-    for (const extra of extras) extra.update({ dt, clock, flags, x, y, camera, still: calmStory, tier });
+    for (const extra of extras) extra.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride' });
     if (dressing && place) {
       // What lives far off begins nothing while he is busy, and needs the lens to know what is in the picture.
       dressing.update(camera.position.x, look.y, clock, darkness, { gust, still: calmStory }, {
@@ -1670,6 +1670,7 @@ function buildFollower(chapter: ChapterData) {
 /** The rolling cones of the avalanche (plan §4.7, E2): brown, long, turning as they go. One instanced mesh. */
 function buildCones(count: number) {
   const mesh = forestSocket(new InstancedMesh(new SphereGeometry(1, 12, 8), new MeshStandardMaterial({ color: '#7a5230', roughness: 0.9 }), Math.max(1, count)), rollingCone(1.9));
+  mesh.name = 'rollers';
   mesh.count = count;
   mesh.instanceMatrix.setUsage(DynamicDrawUsage);
   mesh.frustumCulled = false;

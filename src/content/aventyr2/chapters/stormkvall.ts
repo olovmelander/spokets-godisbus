@@ -7,16 +7,17 @@ import { jump, round, row } from '../kit';
  * Äventyr 2, Prolog: Stormkvällen (docs/aventyr-2.md). Units: EL. A Saturday evening at the end of October, at
  * home, while the autumn storm comes in over the village. Elof begins as a boy among small things.
  *
- * 1. **Kvällen** (a held scene): rain on the windows, the lights go out, Mamma lights candles, Pappa finds the
- *    flashlight, Bertil thinks the house creaks like a ship.
- * 2. **Godnatt:** at Pappa's shelf Elof says goodnight to his own little trägubbe and to the old one, the
+ * 1. **Kvällen** (a held scene): rain on the windows, the lights go out, Mamma lights candles, Bertil thinks the
+ *    house creaks like a ship, and Pappa can't find the flashlight in the dark.
+ * 2. **Ficklampan:** Elof takes it from the table and gives it to Pappa: *Ta ficklampan*, *Ge Pappa*.
+ * 3. **Godnatt:** at Pappa's shelf Elof says goodnight to his own little trägubbe and to the old one, the
  *    first, home again on the shelf. *Säg godnatt.*
- * 3. **Fönstret** (a held scene): a gust bursts the window open; the little one is swept out into the dark,
- *    and the old one leaps after it. Pappa sees only two empty places on the shelf.
- * 4. **Klonks stjärna:** Klonk has kept one last star in its carved bag. *Smaka på stjärnan*: POFF.
- * 5. **Vi letar tillsammans:** the family pull on raincoats and take their lamps. A candy lies on the floor, then
+ * 4. **Fönstret** (a held scene): a gust bursts the window open; the little one is swept out into the dark,
+ *    and the old one leaps after him. Pappa sees only two empty places on the shelf.
+ * 5. **Klonks stjärna:** Klonk has kept one last star in its carved bag. *Smaka på stjärnan*: POFF.
+ * 6. **Vi letar tillsammans:** the family pull on raincoats and take their lamps. A candy lies on the floor, then
  *    another: the old trägubbe's trail. Tiny, he crosses the giant room, the door sill and the veranda.
- * 6. **Stormnatten:** at the deck's edge the stormy garden opens below him, and the adventure's title.
+ * 7. **Stormnatten:** at the deck's edge the stormy garden opens below him, and the adventure's title.
  *
  * The family are the same rehearsal figures as the first adventure's prologue (src/render/stage.ts).
  */
@@ -51,7 +52,7 @@ const SCENES: SceneDef[] = [
       shots: [{ at: 0, x: 6.2, y: 3.4, height: 7.2, width: 11, move: 0.01 }],
       actors: {
         mamma: [{ at: 0, x: 12.4, y: 0, z: -2.4, face: 0.4, move: 0.01, act: 'stand' }, { at: 1.6, act: 'lift', aim: { x: 13.6, y: 2.0, z: -1.6 } }],
-        pappa: [{ at: 0, x: 15.2, y: 0, z: -3.0, face: 0.45, move: 0.01, act: 'look', aim: { x: 9.4, y: 6, z: -8.9 } }, { at: 3.6, act: 'reach', aim: { x: 14.6, y: 1.8, z: -1.4 } }],
+        pappa: [{ at: 0, x: 12.4, y: 0, z: -2.6, face: 0.3, move: 0.01, act: 'look', aim: { x: 9.4, y: 6, z: -8.9 } }, { at: 3.6, act: 'shrug' }],
         bertil: [{ at: 0, x: 10.6, y: 0, z: -3.4, face: 0.3, move: 0.01, act: 'look', aim: { x: 9.4, y: 6, z: -8.9 } }, { at: 5.6, act: 'point', aim: { x: 9.4, y: 6, z: -8.9 } }],
         moa: [{ at: 0, x: 13.8, y: 0, z: -1.2, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }],
         ghost: [{ at: 0, x: SHELF.x - 2.1, y: SHELF.y + 0.08, z: -8.4, face: 0.25, move: 0.01, act: 'freeze' }],
@@ -230,7 +231,8 @@ export const stormkvall: ChapterData = {
     { look: 'tragubbe', at: { x: OLD.x, y: OLD.y }, z: OLD.z, until: 'gust' },
     { look: 'lillgubbe', at: { x: LITTLE.x, y: LITTLE.y }, z: LITTLE.z, until: 'gust' },
     { look: 'candle', at: { x: 13.6, y: 1.65 }, z: -1.6 },
-    { look: 'flashlight', at: { x: 15, y: 1.65 }, z: -1.3 },
+    // The flashlight on the table, until Elof has taken it to Pappa.
+    { look: 'flashlight', at: { x: 15, y: 1.65 }, z: -1.3, until: 'lamp:take' },
   ],
   furniture: [
     { look: 'table', at: { x: 14, y: 0 }, z: -1.5 },
@@ -264,7 +266,10 @@ export const stormkvall: ChapterData = {
   outdoors: 38,
   checkpoints: [{ x: 6, y: 0 }, { x: 18, y: 0 }, { x: 36, y: 0 }, { x: 45.5, y: -0.8 }],
   spots: [
-    { id: 'goodnight', at: { x: GOODNIGHT, y: 0 }, verb: 'give', word: 'skGoodnight', needs: 'scene:kvall' },
+    // Pappa feels for the flashlight in the dark: Elof takes it from the table and gives it to him.
+    { id: 'lamp:take', at: { x: 15, y: 0 }, verb: 'take', word: 'skTakeLamp', needs: 'scene:kvall' },
+    { id: 'lamp:give', at: { x: 12.6, y: 0 }, verb: 'give', word: 'givePappa', needs: 'lamp:take' },
+    { id: 'goodnight', at: { x: GOODNIGHT, y: 0 }, verb: 'give', word: 'skGoodnight', needs: 'beat:skLampThanks' },
     { id: 'star', look: 'star', at: { x: STAR, y: 0 }, verb: 'take', word: 'tasteStar', needs: 'scene:klonkstar' },
   ],
   jumps: [jump({ x: 29.8, y: 0 }, { x: 30.6, y: 0.5 })],
@@ -284,6 +289,7 @@ export const stormkvall: ChapterData = {
     { at: { x: 57.5, y: -7 }, near: 0 },
   ],
   beats: [
+    { id: 'skLampThanks', on: 'lamp:give', who: 'pappa', line: 'skLampThanks', read: true },
     // The first candy on the floor, where the old one leapt: a trail.
     { id: 'skTrail', at: 10.6, needs: 'scene:tillsammans', who: 'elof', line: 'skTrail', read: true },
     { id: 'skSill', at: 27.6, who: 'spoket', line: 'skKlonkHop' },
@@ -309,6 +315,8 @@ export const context: Chooser = (has) => {
   if (has('scene:tillsammans')) return ['skFollowTrail', 'skFamilyLamps', 'trail'];
   if (has('star')) return ['skShrinking', 'skFamilyHome', 'sparkle'];
   if (has('gust')) return ['skStar', 'skFamilyHome', 'sparkle'];
-  if (has('scene:kvall')) return ['skGoodnightPurpose', 'skFamilyHome', 'heart'];
+  if (has('lamp:give')) return ['skGoodnightPurpose', 'skFamilyHome', 'heart'];
+  if (has('lamp:take')) return ['skGiveLamp', 'skFamilyHome', 'heart', 'pappa'];
+  if (has('scene:kvall')) return ['skFetchLamp', 'skFamilyHome', 'house', 'pappa'];
   return ['skEvening', 'skFamilyHome', 'house'];
 };

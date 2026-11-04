@@ -3,7 +3,10 @@ import { words as stormkvall } from './lines/stormkvall';
 import { words as stormgard } from './lines/stormgard';
 import { words as stormskog } from './lines/stormskog';
 import { words as stormbyn } from './lines/stormbyn';
-import { words as sjon } from './lines/sjon';
+import { words as olympia } from './lines/olympia';
+import { words as flarken } from './lines/flarken';
+import { words as alven } from './lines/alven';
+import { words as billsta } from './lines/billsta';
 import { words as stormoga } from './lines/stormoga';
 import { words as morgonen } from './lines/morgonen';
 
@@ -12,7 +15,7 @@ import { words as morgonen } from './lines/morgonen';
  * `sv` when it loads (./aventyr2.ts), so the rest of the game finds them where it finds the first adventure's.
  */
 
-export const CHAPTER_WORDS: Record<string, ChapterWords> = { stormkvall, stormgard, stormskog, stormbyn, sjon, stormoga, morgonen };
+export const CHAPTER_WORDS: Record<string, ChapterWords> = { stormkvall, stormgard, stormskog, stormbyn, olympia, flarken, alven, billsta, stormoga, morgonen };
 
 const merged = <K extends keyof ChapterWords>(key: K) => Object.assign({}, ...Object.values(CHAPTER_WORDS).map((words) => words[key] ?? {})) as NonNullable<ChapterWords[K]>;
 
@@ -30,19 +33,23 @@ export const A2 = {
     stormgard: 'Stormgården · klockan åtta',
     stormskog: 'Stormskogen · klockan nio',
     stormbyn: 'Byn i stormen · klockan tio',
-    sjon: 'Sjön · klockan elva',
+    olympia: 'Olympia · halv elva',
+    flarken: 'Flärken · klockan elva',
+    alven: 'Älven · halv tolv',
+    billsta: 'Billsta · nästan midnatt',
     stormoga: 'Stormens öga · vid midnatt',
     morgonen: 'Morgonen efter · söndag',
     a2title: 'Stormnatten',
   } as Record<string, string>,
   explore: {
     stormkvall: 'Stormkvällen', stormgard: 'Stormgården', stormskog: 'Stormskogen', stormbyn: 'Byn i stormen',
-    sjon: 'Sjön', stormoga: 'Stormens öga', morgonen: 'Morgonen efter',
+    olympia: 'Olympia', flarken: 'Flärken', alven: 'Älven', billsta: 'Billsta', stormoga: 'Stormens öga', morgonen: 'Morgonen efter',
   } as Record<string, string>,
   end: {
     kickers: {
       stormkvall: 'Äventyr 2 · Början', stormgard: 'Äventyr 2 · Kapitel 1', stormskog: 'Äventyr 2 · Kapitel 2',
-      stormbyn: 'Äventyr 2 · Kapitel 3', sjon: 'Äventyr 2 · Kapitel 4', stormoga: 'Äventyr 2 · Finalen', morgonen: 'Äventyr 2 · Slutet',
+      stormbyn: 'Äventyr 2 · Kapitel 3', olympia: 'Äventyr 2 · Kapitel 4', flarken: 'Äventyr 2 · Kapitel 5',
+      alven: 'Äventyr 2 · Kapitel 6', billsta: 'Äventyr 2 · Kapitel 7', stormoga: 'Äventyr 2 · Finalen', morgonen: 'Äventyr 2 · Slutet',
     } as Record<string, string>,
     headings: { morgonen: 'Slut' } as Record<string, string>,
     closing: {
@@ -52,10 +59,13 @@ export const A2 = {
   /** A bridge to the next place, inside the chapter's last card. */
   handoffs: {
     stormkvall: { title: 'Ut i stormen', text: 'Gamla trägubben lämnar godis åt mig. Jag följer spåret, och familjen letar med sina lampor.' },
-    stormgard: { title: 'Vidare till skogen', text: 'Blixten visade lillgubben över häcken. Klonk och jag följer efter in i skogen.' },
-    stormskog: { title: 'Ner mot byn', text: 'Gamla trägubben väntar inte på någon. Den vet hur det är att vara ensam i mörkret.' },
-    stormbyn: { title: 'Ner till sjön', text: 'Rännstenen rinner ner till sjön. Dit har vattnet tagit lillgubben.' },
-    sjon: { title: 'Ut på sjön', text: 'Där ute, på en sten i vågorna: båda trägubbarna. Ugglan kommer tillbaka.' },
-    stormoga: { title: 'Hem igen', text: 'Alla är hittade. Familjens lampor lyser hela vägen hem.' },
+    stormgard: { title: 'Vidare till skogen', text: 'I blixtens sken flög lillgubben över häcken. Klonk och jag följer efter in i skogen.' },
+    stormskog: { title: 'Ner mot byn', text: 'Gamla trägubben väntar inte på någon. Han vet hur det är att vara ensam i mörkret.' },
+    stormbyn: { title: 'Mot Olympia', text: 'Vinden tog lillgubben över taken mot fotbollsplanen. Gamla trägubben är redan på väg.' },
+    flarken: { title: 'Nerför ån', text: 'Trä flyter. Ån bär lillgubben söderut, och gamla trägubben följer efter på en stock.' },
+    olympia: { title: 'Upp till Flärken', text: 'Den starkaste stormbyn tog lillgubben norrut, upp mot sjön vid Flärken.' },
+    alven: { title: 'Till Billsta', text: 'Älven bär dem ända till sundet i Billsta, där mormor och morfar bor.' },
+    billsta: { title: 'Ut i sundet', text: 'Där ute, på en sten i vågorna: båda trägubbarna. Ugglan kommer tillbaka.' },
+    stormoga: { title: 'Hem igen', text: 'Alla är hittade. Mormor och morfar följer med hem till frukost.' },
   } as Record<string, { title: string; text: string }>,
 };

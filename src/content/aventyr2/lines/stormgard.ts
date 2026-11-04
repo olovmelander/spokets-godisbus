@@ -8,13 +8,13 @@ export const words: ChapterWords = {
   lines: {
     // 1. the veranda, in the rain
     sgMoaLight: 'Jag lyser för dig från fönstret!',
-    sgGutter: 'Takrännan svämmar över! Se skuggorna.',
+    sgGutter: 'Takrännan svämmar över! Se på skuggorna.',
     // 2. the pumpkin lantern on the steps
     sgPumpkin: 'Gamla trägubben lämnar godis åt oss!',
     sgKlonk: 'Klonk!',
     sgKlonkKlonk: 'Klonk, klonk!',
     // 3. Stormbyarna
-    sgPots: 'Stormbyar! Vi gömmer oss vid krukorna.',
+    sgPots: 'Stormbyar! Vi gömmer oss bakom krukorna.',
     sgFlowerpot: 'Klonk! Du blåste ner i blomkrukan!',
     sgCalm: 'Puh! Vi klarade stormbyarna!',
     // 4. Regntunnan
@@ -27,12 +27,12 @@ export const words: ChapterWords = {
     sgThanks: 'Tack, Bertil! Bästa båten i stormen!',
     // 6. the playhouse
     sgPlayhouse: 'Gamla trägubben! Uppe på lekstugan!',
-    sgLonely: 'Den ser så ensam ut, gamla trägubben.',
-    sgWhy: 'Varför väntar den aldrig på oss?',
+    sgLonely: 'Han ser så ensam ut, gamla trägubben.',
+    sgWhy: 'Varför väntar han aldrig på oss?',
     sgLookout: 'Jag ser hela trädgården härifrån!',
     // 7. the hedge
     sgFlash: 'Där! Lillgubben flyger över häcken!',
-    sgForest: 'Den flög mot skogen. Kom, Klonk!',
+    sgForest: 'Han flög mot skogen. Kom, Klonk!',
   },
   verbs: {
     sgTurnTap: 'Vrid på kranen',
@@ -48,8 +48,8 @@ export const words: ChapterWords = {
     sgBoard: { purpose: 'Kliv i Bertils stövelbåt.', recap: 'Bertil har lagt sin stövel på vattnet. Jag väljer när vi åker.' },
     sgBoot: { purpose: 'Åk över i Bertils stövel.', recap: 'Bertils stövel bär mig över den översvämmade gräsmattan.' },
     sgPlayhouse: { purpose: 'Klättra upp på lekstugans tak.', recap: 'Gamla trägubben stod på lekstugan. Godisspåret går upp dit.' },
-    sgLonely: { purpose: 'Följ spåret mot häcken.', recap: 'Gamla trägubben såg så ensam ut. Varför väntar den aldrig på oss?' },
-    sgHedge: { purpose: 'Följ lillgubben mot skogen.', recap: 'Blixten visade lillgubben. Den flög över häcken mot skogen.' },
+    sgLonely: { purpose: 'Följ spåret mot häcken.', recap: 'Gamla trägubben såg så ensam ut. Varför väntar han aldrig på oss?' },
+    sgHedge: { purpose: 'Följ lillgubben mot skogen.', recap: 'I blixtens sken såg jag lillgubben. Han flög över häcken mot skogen.' },
   },
   helpers: {
     sgMoa: 'Moa lyser för mig från fönstret.',

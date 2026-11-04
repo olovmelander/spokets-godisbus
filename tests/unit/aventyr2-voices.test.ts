@@ -20,6 +20,8 @@ const TAGS: Record<VoiceLine['speaker'], string> = {
   mamma: '[warm, calm mother]',
   pappa: '[warm, steady father]',
   spoket: '[playful wooden voice, wordless]',
+  mormor: '[warm, kind grandmother]',
+  morfar: '[warm, cheerful grandfather]',
   storyteller: '[warm storyteller, gentle pace]',
 };
 

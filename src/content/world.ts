@@ -2,7 +2,7 @@
 export const CHAPTER_IDS = [
   'prolog', 'garden', 'granskog', 'forsen', 'myr', 'berg', 'final', 'epilog',
   // Äventyr 2, Stormnatten (docs/aventyr-2.md): released after the first adventure, in its own pack.
-  'stormkvall', 'stormgard', 'stormskog', 'stormbyn', 'sjon', 'stormoga', 'morgonen',
+  'stormkvall', 'stormgard', 'stormskog', 'stormbyn', 'olympia', 'flarken', 'alven', 'billsta', 'stormoga', 'morgonen',
 ] as const;
 export type ChapterId = (typeof CHAPTER_IDS)[number];
 

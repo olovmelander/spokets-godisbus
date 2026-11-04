@@ -4,19 +4,20 @@ import type { Chooser } from '../context';
 import { alongAll, row, timeCard } from '../kit';
 
 /**
- * Äventyr 2, Finalen: Stormens öga (docs/aventyr-2.md). Units: EL. Out on the lake, at midnight. Every step is
- * something Elof does with Använd; nothing here can go wrong.
+ * Äventyr 2, Finalen: Stormens öga (docs/aventyr-2.md). Units: EL. In the narrow at Billsta, at midnight, where
+ * Moälven runs out into Själevadsfjärden. Every step is something Elof does with Använd; nothing can go wrong.
  *
- * 1. **Bryggans ände:** the stone is too far out to jump to. *Ropa på ugglan*: the owl from Stormskogen comes
- *    back, and flies him out over the waves.
+ * 1. **Mormor och morfars brygga:** the stone is too far out to jump to. *Ropa på ugglan*: the owl from
+ *    Stormskogen comes back, and flies him out over the waves. Far down the lake Själevad's white church stands
+ *    in the flashes, and behind him on the shore mormor and morfar's windows are lit.
  * 2. **Stormens öga:** as he lands on the stone the wind drops, the rain stops, the clouds part: stars, and the
  *    moon on the water.
  * 3. **Mötet** (a held scene): the old trägubbe holds the little one. It did not wait, all night, because it knows
  *    how long one night alone in the dark is.
  * 4. **Guldgodiset:** the old one gives him a geléhallon in gold paper it saved for him, the kind little Elof once
  *    shared with it. *Ta emot*, and *Smaka*: he grows, standing in the shallows with both figures in his hands,
- *    and the family's lamps reach the shore.
- * 5. **Hem:** *Gå hem*, along the shore, all of them together.
+ *    and the family's lamps, with mormor and morfar, reach the shore.
+ * 5. **Upp till huset:** *Gå hem*, along the shore and up to mormor and morfar's lit house, all of them together.
  */
 
 /** The owl's flight from the jetty's end to the stone, and the walk home along the shore once he is big. */
@@ -70,7 +71,7 @@ const SCENES: SceneDef[] = [
     // 4. He grows, in the moonlight, with the two of them in his hands; the lamps reach the shore.
     id: 'stor',
     on: 'taste',
-    seconds: 11.8,
+    seconds: 15.6,
     hold: true,
     soundQuiet: [0.6, 5],
     sounds: [{ at: 0.8, sound: 'taste' }, { at: 1.6, sound: 'swell' }, { at: 2.0, sound: 'poff' }],
@@ -79,7 +80,9 @@ const SCENES: SceneDef[] = [
       { at: 6.0, who: 'pappa', line: 'soPappa' },
       { at: 7.8, who: 'moa', line: 'soMoa' },
       { at: 9.4, who: 'bertil', line: 'soBertil' },
-      { at: 11.2, who: 'elof', line: 'soHome' },
+      { at: 11.2, who: 'mormor', line: 'soMormor' },
+      { at: 13.0, who: 'morfar', line: 'soMorfar' },
+      { at: 14.8, who: 'elof', line: 'soHome' },
     ],
     stage: {
       shots: [
@@ -113,7 +116,19 @@ export const stormoga: ChapterData = {
   place: 'bog',
   // The golden geléhallon: he grows back on the stone, with both carvings in his hands.
   size: { scale: 3, after: 'taste' },
-  storm: { rain: 0.9, lightning: 6, calm: 'eye' },
+  storm: {
+    rain: 0.9, lightning: 6, calm: 'eye',
+    // The shore behind: mormor and morfar's white house with its windows lit, the red barn, birches; and far down
+    // the lake, Själevad's church. Interpretations in plain shapes, never surveys (docs/aventyr-2.md).
+    buildings: [
+      { kind: 'villa', x: -30, z: -62, y: 0, width: 44, height: 28, lit: '' },
+      { kind: 'barn', x: -78, z: -66, y: 0, width: 34, height: 17 },
+      { kind: 'birch', x: -4, z: -40, height: 70 },
+      { kind: 'birch', x: 92, z: -36, height: 64 },
+      { kind: 'church', x: 128, z: -74, y: -2, width: 26, height: 18 },
+    ],
+    glows: [{ at: { x: 66.4, y: 4.6 }, z: -1.2, size: 4, after: 'taste' }],
+  },
   spawn: { x: 1, y: 0.01 },
   goalX: 86,
   coda: 'all',
@@ -160,9 +175,11 @@ export const stormoga: ChapterData = {
     // The two trägubbar on the stone, the old one holding the little one; he carries them once he is big.
     { look: 'tragubbe', at: { x: FIGURES, y: 0.6 }, z: -0.5, until: 'taste' },
     { look: 'lillgubbe', at: { x: FIGURES + 0.32, y: 0.6 }, z: -0.3, until: 'taste' },
-    // The family on the far shore with their lamps, once the storm has let go.
+    // The family on the far shore with their lamps, once the storm has let go; mormor with her lantern, morfar.
     { look: 'flashlight', at: { x: 66.2, y: 1.6 }, z: -1.6, after: 'taste' },
     { look: 'flashlight', at: { x: 68.4, y: 1.8 }, z: -2.2, after: 'taste' },
+    { look: 'mormor', at: { x: 73.4, y: 0 }, z: -1, after: 'taste' },
+    { look: 'morfar', at: { x: 77.6, y: 0 }, z: -1, after: 'taste' },
   ],
   ghost: [
     // Klonk is beside him now: on the jetty, then across with the owl, then by the figures.
