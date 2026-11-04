@@ -391,7 +391,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       const lodge = alven.storm!.buildings!.find((b) => b.kind === 'lodge')!;
       expect(Math.abs(lodge.x - stick.x)).toBeLessThan(lodge.width! / 2);
       expect(lodge.z).toBeLessThan(-(lodge.width! / 3));
-      expect(alven.surfaces!.some((s) => s.kind === 'wood' && s.from < stick.x && s.to > stick.x)).toBe(true);
+      expect(alven.surfaces!.some((s) => s.kind === 'earth' && s.from < stick.x && s.to > stick.x)).toBe(true);
     });
 
     it('is climbed by walking: up the stumps, up the stick and over the top, and down to the lake', () => {

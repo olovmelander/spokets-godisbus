@@ -560,6 +560,19 @@ function lodge(def: BuildingDef) {
   const w = def.width ?? 24;
   const h = def.height ?? 9;
   const parts: BufferGeometry[] = [paint(new SphereGeometry(1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(w / 2, h, w / 3), '#5a4632')];
+  // Layer on layer of gnawed sticks over the dome, each lying its own way, their cut ends pale.
+  const STICKS = 90;
+  for (let i = 0; i < STICKS; i++) {
+    const a = 0.12 + (i * 2.4) % (Math.PI - 0.24);
+    const up = (i % 9) / 9;
+    const long = 4 + (i % 5) * 1.3;
+    const lean = ((i * 7) % 11) / 11 * 2.4 - 1.2;
+    const x = Math.cos(a) * (w / 2) * Math.cos(up * 1.2);
+    const y = h * Math.sin(up * 1.2) + 0.5;
+    const z = (w / 3) * Math.cos(up * 1.2) * Math.sin(a) + 0.2;
+    parts.push(paint(new CylinderGeometry(0.18, 0.26, long, 5).rotateZ(lean).translate(x, y, z), i % 3 === 0 ? '#7a6248' : '#4a3a2a'));
+    if (i % 3 === 0) parts.push(paint(new SphereGeometry(0.2, 5, 4).translate(x - Math.sin(lean) * long / 2, y + Math.cos(lean) * long / 2, z), '#c2a678'));
+  }
   for (let i = 0; i < 18; i++) {
     const a = (i / 18) * Math.PI;
     parts.push(paint(new CylinderGeometry(0.25, 0.3, w * 0.5, 5).rotateZ(Math.PI / 2 - a + 0.3 * Math.sin(i)).translate(Math.cos(a) * w * 0.3, Math.sin(a) * h * 0.8, (i % 3 - 1) * 2), '#8a6a48'));

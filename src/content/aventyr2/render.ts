@@ -118,12 +118,13 @@ const LOOKS: Record<string, PlaceLook> = {
   },
   stormbyn: {
     ...PLACES.village,
-    grade: grade(0.82, 0.9, [0.95, 0.96, 1.08]),
+    // The power is out: no street lamp, and the walls only as pale as a night lets them be.
+    grade: grade(0.72, 0.88, [0.92, 0.95, 1.1]),
     haze: { colour: '#2a3246', near: 7, far: 80 },
     sky: { top: '#0c1222', middle: '#2c3650', bottom: '#2a2c38', glow: '#b0a6c4' },
-    hemisphere: { sky: '#98a6cc', ground: '#3c3a3c', intensity: 1.05 },
-    sun: { colour: '#ffd8a4', intensity: 1.5, from: [-8, 3.4, -4] },
-    fill: { colour: '#b4c2ec', intensity: STORM_FILL },
+    hemisphere: { sky: '#8c9cc8', ground: '#34343a', intensity: 0.85 },
+    sun: { colour: '#c4d0f4', intensity: 1.1, from: [-8, 3.4, -4] },
+    fill: { colour: '#a8b8e8', intensity: STORM_FILL * 0.7 },
     water: { colour: '#283446', opacity: 0.88 },
     tussock: '#5a5a58',
   },
@@ -207,7 +208,7 @@ const LOOKS: Record<string, PlaceLook> = {
 };
 /** The night's tint on what no lamp lights: the painted far scenery, the soft foreground. `calm`: the storm's eye. */
 const TINT: Record<string, readonly [number, number, number]> = {
-  stormkvall: [0.42, 0.46, 0.62], stormgard: [0.46, 0.5, 0.66], stormskog: [0.42, 0.48, 0.58], stormbyn: [0.5, 0.52, 0.64],
+  stormkvall: [0.42, 0.46, 0.62], stormgard: [0.3, 0.34, 0.48], stormskog: [0.42, 0.48, 0.58], stormbyn: [0.5, 0.52, 0.64],
   olympia: [0.42, 0.56, 0.56], flarken: [0.54, 0.6, 0.74], alven: [0.5, 0.5, 0.42], billsta: [0.5, 0.48, 0.74], stormoga: [0.42, 0.46, 0.64], calm: [0.58, 0.64, 0.88],
 };
 /** How much of the painted far scenery shows through the storm's dark: the backdrop is dimmed to night. */
@@ -1568,6 +1569,34 @@ function aftermath(): SpotProp {
     }
   }
   group.add(new Mesh(mergeGeometries(coats), new MeshStandardMaterial({ vertexColors: true, roughness: 0.42 })));
+  // The rest of the room, down towards the door: a sofa with a blanket left on it, a plant in the window, a floor lamp,
+  // and Moa's drawings taped to the wall.
+  const home: BufferGeometry[] = [];
+  const SOFA = { x: 44.5, z: -6.6 };
+  home.push(box(11, 1.5, 3.6, SOFA.x, 1.15, SOFA.z, '#5c6c4c'), box(11, 3.4, 1, SOFA.x, 2.5, SOFA.z - 1.6, '#566644'));
+  for (const side of [-5.6, 5.6]) home.push(box(1, 2.5, 3.8, SOFA.x + side, 1.55, SOFA.z, '#4e5c3e'));
+  for (const side of [-1, 1]) home.push(box(0.3, 0.45, 3.2, SOFA.x + side * 4.8, 0.22, SOFA.z, '#3a2c20'));
+  // Bertil's blanket, pulled half off it, and a cushion.
+  home.push(box(3.4, 0.28, 3.9, SOFA.x - 2.2, 2.02, SOFA.z + 0.1, '#b89a4a'), box(3.4, 1.6, 0.26, SOFA.x - 2.2, 1.2, SOFA.z + 2, '#b89a4a'));
+  home.push(paint(new SphereGeometry(0.9, 10, 8).scale(1, 0.85, 0.4).rotateZ(0.3).translate(SOFA.x + 3.6, 2.7, SOFA.z - 0.8), '#a8604a'));
+  // The floor lamp, and the plant.
+  home.push(paint(new CylinderGeometry(0.7, 0.8, 0.14, 12).translate(36.4, 0.07, -7.4), '#3a3e44'), paint(new CylinderGeometry(0.07, 0.07, 6, 8).translate(36.4, 3, -7.4), '#3a3e44'));
+  home.push(paint(new CylinderGeometry(0.75, 1.15, 1.2, 14, 1, true).translate(36.4, 6.4, -7.4), '#e4d8bc'));
+  home.push(paint(new CylinderGeometry(0.72, 0.56, 1.1, 12).translate(55, 0.55, -7.8), '#a8704a'));
+  for (let i = 0; i < 9; i++) {
+    const turn = (i / 9) * Math.PI * 2;
+    const lean = 0.35 + (i % 3) * 0.22;
+    home.push(paint(new ConeGeometry(0.28, 2.8, 5).scale(1, 1, 0.3).rotateZ(lean).rotateY(turn).translate(55 - Math.cos(turn) * lean * 1.2, 2.3, -7.8 + Math.sin(turn) * lean * 1.2), i % 2 ? '#4a7238' : '#3a5e30'));
+  }
+  // Moa's drawings: paper on the wall, each with a sun, a house or two figures in crayon, and no words.
+  for (const [x, y, wide] of [[33.6, 3.2, 1.9], [35.8, 3.5, 1.6], [37.6, 3, 1.5]] as const) {
+    home.push(box(wide, wide * 1.3, 0.04, x, y, WALL - 0.34, '#f4f0e4'), box(0.14, 0.14, 0.05, x, y + wide * 0.62, WALL - 0.31, '#d8c078'));
+  }
+  home.push(paint(new CircleGeometry(0.34, 12).translate(33.3, 3.8, WALL - 0.3), '#d8a838'));
+  home.push(box(0.9, 0.7, 0.02, 33.8, 2.6, WALL - 0.31, '#a84a3a'), paint(new ConeGeometry(0.72, 0.5, 4).rotateY(Math.PI / 4).scale(1, 1, 0.02).translate(33.8, 3.2, WALL - 0.31), '#3f5a7a'));
+  home.push(box(0.3, 0.9, 0.02, 35.5, 3.4, WALL - 0.31, '#3f6a8a'), box(0.24, 0.66, 0.02, 36.1, 3.28, WALL - 0.31, '#b89a30'));
+  home.push(box(1.1, 0.5, 0.02, 37.6, 2.6, WALL - 0.31, '#5c7a48'), paint(new CircleGeometry(0.3, 10).translate(37.5, 3.3, WALL - 0.31), '#4a6a9a'));
+  group.add(new Mesh(mergeGeometries(home), new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 })));
   // The pool they stand in: flat, and giving back the room's light.
   const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(17.4, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
   group.add(pool);

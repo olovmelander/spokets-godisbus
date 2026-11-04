@@ -236,8 +236,8 @@ export const alven: ChapterData = {
   surfaces: [
     { from: GRAVEL.from, to: GRAVEL.to, kind: 'stone' },
     ...[S1, S2, BIG, FLAT, OTTER, CREEK].map((s) => ({ from: s.from, to: s.to, kind: 'stone' as const })),
-    // The stumps and the lodge are wood: gnawed sticks and mud.
-    { from: STUMP1.from, to: SLOPE_END, kind: 'wood' },
+    // The stumps and the lodge are gnawed sticks and mud.
+    { from: STUMP1.from, to: SLOPE_END, kind: 'earth' },
   ],
   // The big stones in the stream, for the picture: boulders worn by the water.
   landmarks: [S1, S2, BIG, OTTER, CREEK].map((s) => ({ look: 'stone' as const, from: s.from, to: s.to, base: DEEP })),

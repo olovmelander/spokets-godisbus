@@ -1,6 +1,6 @@
 import {
-  AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Matrix3, Mesh,
-  MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
+  AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, ExtrudeGeometry, Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Matrix3, Mesh,
+  MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, Shape as Outline, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData, StreetGoods, StreetPart, Vec } from '../sim/types';
@@ -1159,9 +1159,19 @@ export function villageLife(chapter: ChapterData): { group: Group; update(clock:
   // Cream, not red: red is the candy's and the hook's, and the hook hangs where the car passes.
   const paint = new MeshStandardMaterial({ color: '#d8cdb0', roughness: 0.65 });
   const window = new MeshStandardMaterial({ color: '#809ba6', roughness: 0.5 });
-  shape(car, paint, 0, 3.3, 0, 18, 3.3, 4);
-  shape(car, paint, -0.8, 6, 0, 9.5, 3.1, 3.6);
-  shape(car, window, -0.8, 6.1, 1.82, 8.4, 2.2, 0.06);
+  // A round old car, seen from the side and pushed out to its width.
+  const side = new Outline();
+  side.moveTo(-9, 1.7);
+  side.quadraticCurveTo(-9.4, 3.6, -8.6, 4.8);
+  side.quadraticCurveTo(-7, 5.3, -5.8, 5.4);
+  side.quadraticCurveTo(-4.6, 7.6, -1.4, 7.6);
+  side.quadraticCurveTo(1.8, 7.6, 3.4, 5.2);
+  side.quadraticCurveTo(7, 5, 8.6, 4.2);
+  side.quadraticCurveTo(9.2, 3, 9, 1.7);
+  side.closePath();
+  car.add(new Mesh(new ExtrudeGeometry(side, { depth: 3.6, bevelSize: 0.2, bevelThickness: 0.2, bevelSegments: 2, curveSegments: 8 }).translate(0, 0, -1.8), paint));
+  shape(car, window, -1.3, 6.1, 2.02, 5.6, 1.7, 0.06);
+  shape(car, window, 1.6, 5.9, 2.02, 2, 1.2, 0.06);
   const wheel = new InstancedMesh(new TorusGeometry(1.8, 0.42, 8, 24), rubber, 4);
   const hubs = new InstancedMesh(new CircleGeometry(1.2, 16), new MeshBasicMaterial({ color: '#c4c2b9', side: DoubleSide }), 4);
   const place = new Object3D();
