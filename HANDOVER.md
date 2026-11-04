@@ -2,6 +2,26 @@
 
 ## State (4 November 2026)
 
+- **Billsta moved inland: a car trip to mormor and morfar (4 November 2026, later still).** Olov corrected the
+  geography: Billsta lies three mil (30 km) from Bredbyn, so the family goes there by car, and mormor and morfar's
+  house stands by a road near the forest, not by a shore.
+  - **Älven** now ends with the family's car on the road by the river, its headlights on. Pappa: "Älven rinner ända
+    till Billsta." Mamma: "Hoppa in, Elof! Vi kör dit med bilen." Elof: "Tre mil! Till mormor och morfar!" The far
+    lit window is gone, and the end card says they drive the three mil.
+  - **Billsta** was rebuilt (by an agent, from the brief in this session) in the order of the trip: out of the car
+    on the road, the lit window ahead and spruces across the road; morfar's ladder over the flooded ditch; the
+    yard, the woodshed's stack and mormor's lantern at the barn; the hay loft and the roof in the gusts; then the
+    forest behind the house: a brook on stones, a new puzzle (a dry spruce's log pushed three times into the brook
+    as a bridge), a spruce root up onto Billaberget, its boulders, shelves and hazel, the slope in the gusts; and at
+    the brow a flash shows both figures far below on a stone in the narrow. Goal 194.6 EL, 113 trail candies,
+    31 chapter tests.
+  - **Stormens öga** keeps the narrow, but its shore has Billaberget's granite and spruces behind it, no house or
+    barn: mormor and morfar come down with everyone, and the walk home goes up through the forest ("Hemma hos oss
+    finns det varm choklad.", "Nu går vi hem till mormor och morfar."). Moa's map draws the car on the road to
+    Billsta. A `spruce` building kind was added.
+  - **Validation:** typecheck, **183 test files / 1,921 tests**, the build (boot JS 449.6 KB / 450 KB, Äventyr 2's
+    pack 49.1 KB / 160 KB), the privacy check, `tests/browser/aventyr2.mjs` (42 checks) and `smoke` pass. The voice
+    list (`scripts/voices-aventyr2.json`) has 265 entries; nothing was generated.
 - **Äventyr 2, version 2: three new worlds, a reworked lake, and an audit (4 November 2026, later the same day).**
   Olov asked for "ännu fler miljöer, mer pussel och ett ännu mer episkt äventyr", naming **Billsta in Själevad,
   where mormor and morfar live**, **Flärken**, the bathing place at Kubbe/Norrflärke, and **Olympia** in Bredbyn
@@ -3703,11 +3723,14 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
-- **Äventyr 2's pictures, from the 4 November sweep (none blocks play):** at Billsta's end the camera is level with
-  the low eaves, so the narrow's water is a thin dark band and the far stone is small; the barn is a full-size
-  backdrop, so the loft and roof Elof walks read as a lean-to in front of it; Billaberget's rock shelves stand on
-  the ledge look's own pillars in front of the granite face; Flärken's start shows the family's car very large (it
-  is a real car's size to him). The `volleyball` building kind is now unused (Flärken's net is its bouncer).
+- **Äventyr 2's pictures, from the 4 November sweeps (none blocks play):** from Billaberget's brow the narrow is
+  only a dark band at the horizon (the garden's nearest far picture and the lawn's bank behind the path leave it
+  little room) and the two figures on the far stone are tiny; flybys cannot land on far decor (they are fixed at
+  z −4); the garden's painted backdrop (lawn, a white house) shows even in Billsta's forest; the `root` climb is a
+  thin rod outside the forest and the `log` mover is grey and bare; the barn is a full-size backdrop, so the loft
+  and roof Elof walks read as a lean-to in front of it; Billaberget's rock shelves stand on the ledge look's own
+  pillars; the family's car at Billsta and Flärken is very large (a real car's size to him). The `volleyball`
+  building kind is unused (Flärken's net is its bouncer).
 
 - **Private generated Elof candidate remains unfinished.** The saved Blender checkpoint has a rough neck/hair silhouette and hand remnants during reach, plus28boundary and5nonmanifold edges. See the current checkpoint above before continuing. It is not installed in the game.
 
@@ -3909,8 +3932,8 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
     lines listed in `scripts/voices-aventyr2.json`.
 20. **Mormor and morfar in Äventyr 2 (4 November):** Olov asked for them and their home in Billsta. They are only
     "Mormor" and "Morfar", plain stand-ins with no likeness, each with one thing of the story's (morfar's ladder,
-    mormor's lantern), and their house is an interpretation in plain shapes of Olov's picture, with no address or
-    house number. They are not on plan §2.6's consent list: is it all right with them, and with Elof's parents?
+    mormor's lantern), and their house is an interpretation in plain shapes of Olov's picture, by the road near the
+    forest as Olov described it, with no address or house number. They are not on plan §2.6's consent list: is it all right with them, and with Elof's parents?
     The default: as built, and anything comes out again if anyone asks.
 21. **Pictures for the places:** the research could not open any photograph, because the environment's network
     denies the image hosts. To let a session look, add `commons.wikimedia.org`, `upload.wikimedia.org`,

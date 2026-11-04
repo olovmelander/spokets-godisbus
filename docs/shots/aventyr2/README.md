@@ -28,7 +28,7 @@ One picture from each of the other chapters, at 844 × 390:
 | [Olympia](5-olympia-844x390.webp) | The big football before the flooded goalmouth: "Sparka" |
 | [Flärken](6-flarken-844x390.webp) | At the broken jetty by the diving tower, about to call Mamma and her boat |
 | [Älven](7-alven-844x390.webp) | Under the bridge in Bredbyn, Pappa above the rapids |
-| [Billsta](8-billsta-844x390.webp) | Morfar at the flooded ditch with his ladder, Klonk waiting |
+| [Billsta](8-billsta-844x390.webp) | Out of the car on the road after three mil, mormor and morfar's window lit ahead |
 | [Stormens öga](9-stormoga-844x390.webp) | The storm's eye: stars and moon, the two trägubbar on the stone |
 | [Morgonen efter](10-morgonen-844x390.webp) | Sunday morning, both figures back on the shelf |
 

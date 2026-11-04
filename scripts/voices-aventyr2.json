@@ -1345,17 +1345,24 @@
   },
   {
     "key": "alBillsta",
-    "speaker": "elof",
+    "speaker": "pappa",
     "situation": "Äventyr 2, alven",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Mot Billsta, där mormor och morfar bor!"
+    "tag": "[warm, steady father]",
+    "text": "Älven rinner ända till Billsta."
+  },
+  {
+    "key": "alCar",
+    "speaker": "mamma",
+    "situation": "Äventyr 2, alven",
+    "tag": "[warm, calm mother]",
+    "text": "Hoppa in, Elof! Vi kör dit med bilen."
   },
   {
     "key": "alWindow",
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Ett ljus i mormor och morfars fönster!"
+    "text": "Tre mil! Till mormor och morfar!"
   },
   {
     "key": "alKlonkEnd",
@@ -1376,7 +1383,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Billsta! Här bor ju mormor och morfar."
+    "text": "Tre mil med bilen! Nu är vi i Billsta."
   },
   {
     "key": "biKlonk",
@@ -1386,53 +1393,11 @@
     "text": "Klonk!"
   },
   {
-    "key": "biCurrent",
-    "speaker": "elof",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Strömmen bär mig genom sundet!"
-  },
-  {
-    "key": "biJetty",
-    "speaker": "elof",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "En brygga! Här går jag i land."
-  },
-  {
-    "key": "biReeds",
-    "speaker": "elof",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Jag klättrar i vassen som en mus!"
-  },
-  {
-    "key": "biHill",
-    "speaker": "elof",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Billaberget! Vilka stora stenar."
-  },
-  {
-    "key": "biHazel",
-    "speaker": "elof",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Här växer hassel, full av nötter!"
-  },
-  {
-    "key": "biWind",
-    "speaker": "elof",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Blåsten! Jag gömmer mig bakom stenarna."
-  },
-  {
     "key": "biWindow",
-    "speaker": "elof",
+    "speaker": "moa",
     "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Där! Mormor och morfars fönster lyser!"
+    "tag": "[warm big sister, lively]",
+    "text": "Titta! Det lyser hos mormor och morfar."
   },
   {
     "key": "biKlonkKlonk",
@@ -1488,7 +1453,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Mormor och morfars gård! Nu är vi nära."
+    "text": "Mormor och morfars gård! Så stor den är."
   },
   {
     "key": "biMormorHere",
@@ -1533,11 +1498,74 @@
     "text": "Upp på taket! Här blåser det hårt."
   },
   {
+    "key": "biForest",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Bakom huset börjar skogen!"
+  },
+  {
+    "key": "biBrook",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "En bäck! Jag hoppar på stenarna."
+  },
+  {
+    "key": "biLogIdea",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Om jag knuffar stocken blir den en bro!"
+  },
+  {
+    "key": "biBridge",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Nu ligger stocken över bäcken!"
+  },
+  {
+    "key": "biRoot",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "En granrot! Jag klättrar uppför den."
+  },
+  {
+    "key": "biHill",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Billaberget! Vilka stora stenar."
+  },
+  {
+    "key": "biHazel",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Här växer hassel, full av nötter!"
+  },
+  {
+    "key": "biWind",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Blåsten! Jag gömmer mig bakom stenarna."
+  },
+  {
+    "key": "biTop",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Snart är jag uppe på toppen!"
+  },
+  {
     "key": "biThere",
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Där! På stenen ute i sundet!"
+    "text": "Där nere! På en sten i sundet!"
   },
   {
     "key": "biHolds",
@@ -1554,11 +1582,11 @@
     "text": "Uhu … Hör du? Det är ugglan!"
   },
   {
-    "key": "biDownToJetty",
+    "key": "biToNarrow",
     "speaker": "mormor",
     "situation": "Äventyr 2, billsta",
     "tag": "[warm, kind grandmother]",
-    "text": "Kom, vi går ner till bryggan."
+    "text": "Kom, vi går ner till sundet."
   },
   {
     "key": "biKlonkCheer",
@@ -1684,14 +1712,14 @@
     "speaker": "morfar",
     "situation": "Äventyr 2, stormoga",
     "tag": "[warm, cheerful grandfather]",
-    "text": "Kom in och värm er. Det finns choklad."
+    "text": "Hemma hos oss finns det varm choklad."
   },
   {
     "key": "soHome",
     "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Nu går vi upp till mormor och morfar."
+    "text": "Nu går vi hem till mormor och morfar."
   },
   {
     "key": "scene_stormoga",

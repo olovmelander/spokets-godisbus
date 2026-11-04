@@ -17,7 +17,7 @@ import { decide, heightAt, playThrough } from './robot';
  * Äventyr 2, Kapitel 7: Billsta (docs/aventyr-2.md). tests/robot/aventyr2.test.ts holds it to the rules every chapter
  * of the adventure keeps; here are its own: the car on the road and the lit window from the start, morfar's ladder
  * over the ditch, mormor's lantern and the barn's door, the loft and the roof, the soft drop behind the house, the
- * brook's stones, the log pushed into the brook as a bridge, the roots up the hill's bank, Billaberget's boulders
+ * brook's stones, the log pushed into the brook as a bridge, the root up the hill's bank, Billaberget's boulders
  * and gusts, the flash from the brow at the end, its two second ways, and a game taken up at every big candy.
  */
 
@@ -30,7 +30,7 @@ const SAID = [
   'bi:ditch', 'bi:morfar-here', 'bi:ladder-lay', 'bi:ladder', 'bi:thanks', 'bi:to-mormor',
   'bi:yard', 'bi:mormor-here', 'bi:lantern', 'bi:open',
   'bi:loft', 'bi:hatch', 'bi:roof', 'bi:roof-klonk', 'bi:forest',
-  'bi:brook', 'bi:log', 'bi:bridge', 'bi:bridge-klonk', 'bi:roots', 'bi:hill', 'bi:hazel', 'bi:wind', 'bi:top',
+  'bi:brook', 'bi:log', 'bi:bridge', 'bi:bridge-klonk', 'bi:root', 'bi:hill', 'bi:hazel', 'bi:wind', 'bi:top',
   'bi:there', 'bi:holds', 'bi:owl', 'bi:down', 'bi:cheer',
 ];
 /** The big candies by name: their places in billsta.checkpoints. */
@@ -148,7 +148,8 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       const buildings = billsta.storm!.buildings!;
       const car = buildings.find((b) => b.kind === 'car')!;
       expect(car.lit).toBe('');
-      expect(car.z).toBeCloseTo(-8, 0);
+      // Well back from the play plane, so its wheels, body and cabin are in the picture; in front of the house.
+      expect(car.z).toBeLessThanOrEqual(-8);
       // He stands beside it, on the asphalt.
       expect(Math.abs(billsta.spawn.x - car.x)).toBeLessThan((car.width ?? 29) / 2);
       const road = billsta.surfaces!.find((s) => s.kind === 'asphalt')!;
@@ -165,6 +166,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       const villa = buildings.find((b) => b.kind === 'villa')!;
       expect(villa.lit).toBe('');
       expect(villa.z).toBeLessThanOrEqual(-25);
+      expect(car.z).toBeGreaterThan(villa.z);
       const barn = buildings.find((b) => b.kind === 'barn')!;
       expect(barn.x).toBeGreaterThan(villa.x);
       // The first words: three mil by car, and the lit window.
@@ -175,10 +177,12 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
     });
 
     it('is by the road near the forest, not by the water: no lake beside the house', () => {
-      // Only the narrow, seen far below from the brow, far behind the forest.
+      // Only the narrow, seen far off from the brow, behind the forest: nowhere near the house, and too high to be
+      // seen from anywhere lower than the brow.
       for (const lake of billsta.storm!.lakes ?? []) {
-        expect(lake.near!).toBeLessThanOrEqual(-25);
-        expect(lake.y).toBeGreaterThan(heightAt(billsta, slopeGust!.from) + 1);
+        expect(lake.near!).toBeLessThanOrEqual(-15);
+        expect(lake.from).toBeGreaterThan(slopeGust!.to - 4);
+        expect(lake.y).toBeGreaterThan(heightAt(billsta, slopeGust!.from) + 2.5);
       }
       expect(billsta.rides ?? []).toEqual([]);
     });
@@ -500,11 +504,14 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       const far = billsta.decor!.filter((d) => d.z !== undefined && d.z <= -25);
       expect(far.map((d) => d.look).sort()).toEqual(['lillgubbe', 'tragubbe']);
       for (const d of far) expect(['beat:bi:there', 'bi:landed']).toContain(d.after);
+      // They stand on their stone out on the narrow's water, in front of the far scenery (the garden's nearest far
+      // picture is 32 behind the path, and covers what is behind it).
       const narrow = billsta.storm!.lakes![0]!;
       for (const d of far) {
         expect(d.at.x).toBeGreaterThan(narrow.from);
-        expect(d.at.y).toBeLessThan(heightAt(billsta, there.at!));
+        expect(d.at.y - narrow.y).toBeCloseTo(0.3, 5);
         expect(d.z!).toBeLessThan(narrow.near!);
+        expect(d.z!).toBeGreaterThan(-32);
       }
       expect(billsta.storm!.flybys!.some((f) => f.on === 'beat:bi:there')).toBe(true);
       expect(words.lines.biOwl).toMatch(/ugglan/);
@@ -562,7 +569,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
     }
     expect(seen).toEqual([
       'billstaRoad', 'billstaMorfar/morfar', 'billstaLadder/morfar', 'billstaYard', 'billstaMormor/mormor', 'billstaBarn/mormor',
-      'billstaLoft', 'billstaRoof', 'billstaBrook', 'billstaLog', 'billstaBridge', 'billstaRoots', 'billstaBoulders', 'billstaWind',
+      'billstaLoft', 'billstaRoof', 'billstaBrook', 'billstaLog', 'billstaBridge', 'billstaRoot', 'billstaBoulders', 'billstaWind',
       'billstaBrow', 'billstaFound',
     ]);
     // Every purpose the chooser can give has its words.

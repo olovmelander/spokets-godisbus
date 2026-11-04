@@ -194,7 +194,8 @@ Själevadsfjärden.
 3. **Mormor and morfar's place:** the gravel drive, the lawn, birches, a woodshed and its stack of firewood, a
    rowing boat on trestles for the winter. **Mormor** lights the way with her lantern and opens the barn.
 4. **The red barn** with its rusty roof: up the planks, through the hay loft and along the roof in the gusts.
-5. **The forest behind the house** and **Billaberget's boulders**, its granite face and October hazelnuts.
+5. **The forest behind the house:** a brook on stones, a log pushed in as a bridge, a spruce root up the bank, and
+   **Billaberget's boulders**, its granite face and October hazelnuts.
 6. From the brow of Billaberget, a flash: both trägubbar far below on a stone in the narrow. Mormor: "Kom, vi går
    ner till sundet."
 
@@ -237,6 +238,7 @@ Själevadsfjärden.
 | The playground's swings and slide; the volleyball net; the diving tower | hooks, climbs, bouncers, ledges |
 | Down the river on bark and logs; Pappa's scarf from the bridge | rides, cycle movers, a call and a climb |
 | Morfar's ladder across the ditch; mormor's lantern and the barn door | call spots, held beats, ledges and movers |
+| The log pushed into the forest brook as a bridge | a *push* mover into the water |
 | Moa's map of the whole journey | src/content/aventyr2/map.ts |
 
 ## As built (4 November 2026)
@@ -271,14 +273,16 @@ The worlds were authored from this design and keep its beats, with these details
   bridge to his hands for the whole lift); the beaver's gnawed stumps and lodge, an otter; the owl from Stormskogen
   over the lake; Moälven widening; at the end the family's car on the road by the river, its headlights on, to
   drive the three mil to Billsta.
-- **Billsta** (goal at 194.4 EL, 112 candies, 9 checkpoints): from a stone in the current a birch leaf
-  through the narrow to an old jetty in the reeds, and up a reed onto the bank; Billaberget's boulders, a crack,
-  and rock shelves jutting from its granite face with hazelnut side candy; the open slope in the gusts, behind the
-  boulders; the road and its flooded ditch, where morfar lays his long ladder across ("Gå på stegen, lilla vän");
-  the gravel drive, the rowing boat on its trestles and the woodshed's stack; mormor with her lantern opens the red
-  barn; through the dark hay loft, over a bale and a hatch, and along the barn's long roof in the gusts, sheltering
-  behind its ventilation hoods; at the low eaves by the water, a flash shows both figures on a stone in the narrow,
-  and the owl is heard. Mormor: "Kom, vi går ner till bryggan."
+- **Billsta** (rebuilt after Olov's correction: the house is by the road near the forest, three mil from Bredbyn by
+  car; goal at 194.6 EL, 113 trail candies, 12 side candies, 9 checkpoints): out of the family's car on the road
+  ("Tre mil med bilen! Nu är vi i Billsta."), the lit window ahead and the spruces across the road; morfar lays his
+  long ladder across the flooded ditch ("Gå på stegen, lilla vän"); the gravel drive, the rowing boat on its
+  trestles and the woodshed's stack; mormor with her lantern opens the red barn; through the dark hay loft, over a
+  bale and a hatch, and along the barn's long roof in the gusts, sheltering behind its ventilation hoods; into the
+  forest behind the house: a brook crossed on stones, and where it runs deep, a dry spruce's log pushed three times
+  ("Knuffa") into it as a bridge; up a spruce root onto Billaberget, its boulders, a crack, rock shelves with
+  hazelnuts against its granite face, and the slope in the gusts behind the boulders; at the brow a flash shows both
+  figures far below on a stone in the narrow, the owl is heard, and mormor: "Kom, vi går ner till sundet."
 - **Stormens öga** now lies in the narrow at Billsta, below Billaberget's granite and spruces, with Själevad's
   church far down the lake; mormor and morfar's house is not on the shore. Mormor and morfar come down with
   everyone and welcome them ("Hemma hos oss finns det varm choklad."), and come to breakfast in Morgonen efter.

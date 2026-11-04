@@ -23,7 +23,7 @@ import { hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
  * 5. **Skogen och Billaberget:** a forest brook behind the house, crossed on three stones. Further on the brook is
  *    too wide, and a dry spruce the storm has blown down lies on its bank: three pushes ("Knuffa") roll its log
  *    into the brook, where it lies across from bank to bank, a bridge (the puzzle). Then the hill's steep bank, with
- *    a spruce's roots hanging down it to climb; Billaberget's boulders, a crack, and rock shelves jutting from its
+ *    a spruce's root hanging down it to climb; Billaberget's boulders, a crack, and rock shelves jutting from its
  *    granite face with October's hazelnuts on them (side candy); and the open slope in the gusts, the boulders the
  *    lee.
  * 6. **Krönet:** up on Billaberget's brow, a flash: far below in the narrow, on a stone, the old trägubbe holds the
@@ -98,8 +98,11 @@ const MORMOR = { x: 47.4, y: 0 };
 
 // --- 5. the forest behind the house, and Billaberget ---------------------------------------------------------------
 
-/** The brook's bed and the crack in the hill are pits this deep; the brook's surface is where the bubble catches him. */
-const BED = -3;
+/**
+ * The brook's bed is a pit this deep, deeper than a fall he lands, so that over it the camera stays at the height he
+ * stands on (src/sim/camera-intent.ts); its surface is where the bubble catches him.
+ */
+const BED = -5;
 const BROOK_WATER = -0.5;
 
 /** The forest's edge behind the house, where he lands off the eaves. */
@@ -118,10 +121,10 @@ const BROOK_WAY: Stone[] = [{ from: EDGE.from, to: EDGE.to, y: 0 }, ...STONES, {
 /**
  * Further on, the brook runs deep and wide: twice a running jump. On its near bank lies the log of a dry spruce the
  * storm has blown down, and each push rolls it on along the bank; the third rolls it into the brook, where it lies
- * across from bank to bank with its top level with both, a bridge. It is taller than he pulls himself up
+ * across from bank to bank with its top at his feet, a bridge he walks over. It is taller than he pulls himself up
  * (LEDGE_REACH), so a run stops at it with Knuffa on the button.
  */
-const POOL = { from: BANK.to, to: 138.2, bottom: -4 };
+const POOL = { from: BANK.to, to: 138.2, bottom: BED };
 const POOL_WATER = -0.6;
 const LOG_HIGH = 1.5;
 const LOG_LONG = 5;
@@ -137,17 +140,17 @@ const LOG: Mover = {
   ],
 };
 
-/** The far bank, and the hill's steep bank beyond it: more than two jumps high. A spruce's roots hang down it. */
+/** The far bank, and the hill's steep bank beyond it: more than two jumps high. A spruce's root hangs down it. */
 const FAR = { from: POOL.to, to: 141.2 };
 const TOP = { from: FAR.to, to: 144.4, y: 3.2 };
-const ROOTS = { x: round(FAR.to - 0.3), bottom: 0, top: TOP.y, exit: 1 as const, look: 'root' as const };
+const ROOT = { x: round(FAR.to - 0.3), bottom: 0, top: TOP.y, exit: 1 as const, look: 'root' as const };
 
 /**
  * Billaberget's boulders (verified: a boulder field below its cliff, with hazel): one a held jump up, a crack
  * between it and the next, a step down, and a big one in two steps, with a soft drop off its far side.
  */
 const B1 = { from: TOP.to, to: 147.9, y: 4.4 };
-const CRACK = { from: B1.to, to: 149.3, bottom: BED };
+const CRACK = { from: B1.to, to: 149.3, bottom: -3 };
 const B2 = { from: CRACK.to, to: 153.5, y: 4.4 };
 const B3 = { from: 155.9, mid: 157.9, to: 160.7, low: 4.4, high: 5.6 };
 
@@ -171,11 +174,13 @@ const SHELVES: Ledge[] = [
 ];
 
 /**
- * The narrow far below the brow, behind the forest: a sheet of dark water at the horizon, far back, a little under
- * the brow so that the ground's bank does not hide it. The two figures sit on a stone out in it.
+ * The narrow far below the brow, behind the forest, for the picture: from the brow, a dark band of water at the
+ * horizon. The sheet lies a little over the brow's own ground, where the ground's bank behind the path does not
+ * hide it, and starts in front of the garden's nearest far picture (32 behind the path), which covers whatever is
+ * behind it. From lower down the hill it is above the camera, and not seen. The two figures sit on a stone in it.
  */
-const NARROW = { from: 150, to: 290, y: 5.9, near: -30 };
-const STONE_OUT = { x: 197.4, y: round(NARROW.y + 0.3), z: -36 };
+const NARROW = { from: 182, to: 300, y: 6.75, near: -20 };
+const STONE_OUT = { x: 195, y: round(NARROW.y + 0.3), z: -27 };
 
 /** A heart over a ledge, where he takes it standing there. */
 const over = (ledge: Ledge, dx = 0, lift = 0.55): Candy => ({ x: round(ledge.x + dx), y: round(ledge.y + lift) });
@@ -282,7 +287,7 @@ export const billsta: ChapterData = {
     // The forest floor behind the house, the stones in the brook, and Billaberget's boulders.
     { from: EDGE.from, to: EDGE.to, kind: 'earth' },
     ...STONES.map((s) => ({ from: s.from, to: s.to, kind: 'stone' as const })),
-    { from: BANK.from, to: TOP.to, kind: 'earth' },
+    { from: BANK.from, to: BANK.to, kind: 'earth' },
     { from: B1.from, to: B3.to, kind: 'stone' },
   ],
   // What the stones and the boulders are, for the picture only: granite of Billaberget's boulder field.
@@ -309,7 +314,7 @@ export const billsta: ChapterData = {
     { from: ROOF_LEE[0]!, to: ROOF_LEE[ROOF_LEE.length - 1]!, y: ROOF.y, every: 4, length: 1.4, first: 0.5, shelters: ROOF_LEE },
     { from: LEE[0]!, to: LEE[LEE.length - 1]!, y: SLOPE, every: 4, length: 1.4, first: 0.5, shelters: LEE },
   ],
-  climbs: [ROOTS],
+  climbs: [ROOT],
   ledges: [LADDER, ...BEAMS, ...SHELVES],
   spots: [
     // Morfar at the ditch, with his long ladder.
@@ -346,7 +351,7 @@ export const billsta: ChapterData = {
     lakes: [NARROW],
     flybys: [
       // From the brow: a wave of wind tosses the little one away towards the narrow, onto the stone out in it.
-      { on: 'beat:bi:there', from: { x: 192.4, y: 11 }, to: { x: 206, y: 9 }, seconds: 1.6, who: 'lillgubbe' },
+      { on: 'beat:bi:there', from: { x: 188.4, y: 12 }, to: { x: STONE_OUT.x + 1, y: 9 }, seconds: 1.6, who: 'lillgubbe' },
     ],
     // Mormor and morfar's place by the road near the forest: the white house with its lit window behind the yard,
     // the red barn beside it, whose windows glow once mormor has taken her lantern in; the woodshed, the rowing boat
@@ -357,9 +362,9 @@ export const billsta: ChapterData = {
       { kind: 'car', x: CAR.x, z: CAR.z, width: CAR.width, lit: '' },
       { kind: 'mailbox', x: 11.6, z: -2.4 },
       // Spruces across the road.
-      { kind: 'spruce', x: -26, z: -30, height: 62 },
-      { kind: 'spruce', x: -12, z: -42, height: 70 },
-      { kind: 'spruce', x: -1, z: -34, height: 54 },
+      { kind: 'spruce', x: -26, z: -30, y: -6, height: 62 },
+      { kind: 'spruce', x: -12, z: -42, y: -7, height: 70 },
+      { kind: 'spruce', x: -1, z: -34, y: -5, height: 54 },
       // The house behind the yard, in sight from the road, with the barn beside it: neither stands in the other.
       { kind: 'villa', x: 33, z: -30, width: 44, lit: '' },
       { kind: 'barn', x: 78, z: -16, lit: 'bi:mormor' },
@@ -367,16 +372,21 @@ export const billsta: ChapterData = {
       { kind: 'rowboat', x: 24, z: -5, width: 16 },
       { kind: 'birch', x: 18, z: -10, height: 56 },
       { kind: 'birch', x: 104, z: -22, height: 60 },
-      // The forest behind the house, and up Billaberget.
-      { kind: 'spruce', x: 114, z: -14, height: 56 },
-      { kind: 'spruce', x: 126, z: -24, height: 66 },
-      { kind: 'spruce', x: 139, z: -12, height: 52 },
-      { kind: 'spruce', x: 145, z: -7, y: TOP.y, height: 40 },
+      // The forest behind the house, and up Billaberget. Each spruce stands a little sunk, so that its lowest
+      // boughs come down near the ground, as a Norrland spruce's do, and none hangs over the path as a dark roof.
+      { kind: 'spruce', x: 113, z: -30, y: -6, height: 46 },
+      { kind: 'spruce', x: 120, z: -26, y: -5, height: 38 },
+      { kind: 'spruce', x: 127, z: -31, y: -7, height: 54 },
+      { kind: 'spruce', x: 133, z: -27, y: -5, height: 40 },
+      { kind: 'spruce', x: 140, z: -30, y: -5, height: 44 },
+      // The spruce on the bank's top, whose root hangs down the bank.
+      { kind: 'spruce', x: 143.6, z: -10, y: round(TOP.y - 4), height: 36 },
       // Billaberget's face behind its shelves: the shelves jut out of the granite.
       { kind: 'cliff', x: 154.9, z: -3.2, width: 14, height: 11 },
-      { kind: 'spruce', x: 166, z: -16, y: SLOPE, height: 58 },
-      { kind: 'spruce', x: 178, z: -24, y: SLOPE, height: 64 },
-      { kind: 'spruce', x: 186, z: -12, y: SLOPE, height: 50 },
+      { kind: 'spruce', x: 159, z: -31, y: round(SLOPE - 7), height: 50 },
+      { kind: 'spruce', x: 166, z: -28, y: round(SLOPE - 6), height: 46 },
+      { kind: 'spruce', x: 173, z: -26, y: round(SLOPE - 5), height: 40 },
+      { kind: 'spruce', x: 179, z: -31, y: round(SLOPE - 7), height: 52 },
     ],
     glows: [
       // The car's headlights, still on.
@@ -462,7 +472,7 @@ export const billsta: ChapterData = {
     { id: 'bi:log', at: 123.8, until: `placed:${LOG.id}`, who: 'elof', line: 'biLogIdea', read: true },
     { id: 'bi:bridge', on: `placed:${LOG.id}`, who: 'elof', line: 'biBridge' },
     { id: 'bi:bridge-klonk', on: `placed:${LOG.id}`, who: 'spoket', line: 'biKlonkKlonk' },
-    { id: 'bi:roots', at: 139.4, who: 'elof', line: 'biRoots' },
+    { id: 'bi:root', at: 139.4, who: 'elof', line: 'biRoot' },
     { id: 'bi:hill', at: 142.8, who: 'elof', line: 'biHill' },
     { id: 'bi:hazel', at: 150.2, who: 'elof', line: 'biHazel' },
     { id: 'bi:wind', at: 162.4, who: 'elof', line: 'biWind', read: true },
@@ -490,13 +500,14 @@ export const billsta: ChapterData = {
     { from: 99, to: 110, zoom: 1.4, lift: 0.6, lead: 3.2 },
     { from: 110, to: 123, zoom: 1.35, lift: 0.4 },
     // The log, the bank where it rolls and the deep brook in one picture.
-    { from: 123, to: 141, zoom: 1.4, lift: 0.8, lead: 3 },
+    { from: 123, to: 133, zoom: 1.4, lift: 0.8, lead: 3 },
+    { from: 133, to: 141, zoom: 1.4 },
     { from: 141, to: 162, zoom: 1.3, lift: 0.4 },
     // From lee to lee the next boulder is in the picture.
     { from: 162, to: 187, zoom: 1.35 },
     // Up on the brow the picture opens out over the forest towards the narrow far below. It looks little ahead: the
     // end of the world is well to the right, out of the picture.
-    { from: 187, to: 210, zoom: 1.6, lift: 1.4, lead: 1 },
+    { from: 187, to: 210, zoom: 1.6, lift: 2.6, lead: 1 },
   ],
   candy: [
     // 1. along the road to the ditch
@@ -539,8 +550,8 @@ export const billsta: ChapterData = {
     ...row(134.4, 136.4, 0, 2, `placed:${LOG.id}`),
     { x: 138.6, y: 0.45 },
     // up the roots onto the hill's bank
-    { x: ROOTS.x, y: 1.6 },
-    { x: ROOTS.x, y: 2.6 },
+    { x: ROOT.x, y: 1.6 },
+    { x: ROOT.x, y: 2.6 },
     { x: 141.8, y: round(TOP.y + 0.45) },
     // up the first boulder, over the crack, along the second, down, and up the big one
     ...hopUp(B1.from, B1.y),
@@ -593,7 +604,7 @@ export const context: Chooser = (has, player) => {
   if (at > LEE[LEE.length - 1]! + 0.8) return ['billstaBrow', 'billstaForest', 'mountain'];
   if (at >= LEE[0]! - 1.5) return ['billstaWind', 'billstaForest', 'mountain'];
   if (at >= TOP.from + 0.3 && player.y >= TOP.y - 0.3) return ['billstaBoulders', 'billstaForest', 'mountain'];
-  if (has(`placed:${LOG.id}`) && at >= BANK.from) return at < POOL.to + 0.4 ? ['billstaBridge', 'billstaForest', 'water'] : ['billstaRoots', 'billstaForest', 'mountain'];
+  if (has(`placed:${LOG.id}`) && at >= BANK.from) return at < POOL.to + 0.4 ? ['billstaBridge', 'billstaForest', 'water'] : ['billstaRoot', 'billstaForest', 'mountain'];
   if (at >= BANK.from - 0.5) return ['billstaLog', 'billstaForest', 'water'];
   if (at >= EAVES.to && player.y < EAVES.y) return ['billstaBrook', 'billstaForest', 'water'];
   if (at >= ROOF.from - 0.2 && (player.y > LOFT + 1.6 || at > ROOF.to)) return ['billstaRoof', 'billstaMormor'];
