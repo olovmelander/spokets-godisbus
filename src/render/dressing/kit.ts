@@ -4,6 +4,7 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData, PlaceId, SurfaceKind } from '../../sim/types';
+import type { FarId } from '../backdrop';
 import type { Grade } from '../grade';
 import { mossy } from '../lift/flora/light';
 import { sway } from '../wind';
@@ -27,7 +28,7 @@ export interface PlaceLook {
   water: { colour: string; opacity: number };
   tussock: string;
   /** Another place's far pictures, where this one's are wrong for the chapter. */
-  far?: PlaceId;
+  far?: FarId;
   /** Only the far pictures beyond this depth: nearer ones would lie over the place's buildings. */
   farBeyond?: number;
 }

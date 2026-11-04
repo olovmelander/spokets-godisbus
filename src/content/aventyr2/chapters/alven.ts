@@ -285,6 +285,12 @@ export const alven: ChapterData = {
       { at: { x: 177.6, y: 1.4 }, z: -2.6, size: 1.6, after: 'beat:al:billsta' },
       { at: { x: 178.6, y: 1.4 }, z: -2.6, size: 1.6, after: 'beat:al:billsta' },
     ],
+    // Cream foam on the black water: below the outlet and down through the rapids.
+    foam: [
+      { from: OUTLET.to, to: GRAVEL.from, y: CURRENT, speed: 1.6 },
+      { from: GRAVEL.to, to: BANK.from, y: CURRENT, speed: 1.6 },
+      { from: RAPIDS.from, to: RAPIDS.to, y: RAPID, speed: 2.6 },
+    ],
     buildings: [
       { kind: 'birch', x: 8, z: -12 },
       // The bridge in Bredbyn over the rapids: its piers stand in the water.

@@ -32,6 +32,9 @@ type Pen = CanvasRenderingContext2D;
 type Ink = readonly [number, number, number];
 
 /** A picture's size, and the margin that is drawn round it so that the blur joins where the picture repeats. */
+/** A set of far pictures: a place's own, or one of Äventyr 2's. */
+export type FarId = PlaceId | 'wall' | 'river' | 'billaberget';
+
 const W = 512;
 const H = 256;
 const MARGIN = 64;
@@ -1052,7 +1055,89 @@ const VILLAGE: Layer[] = [
   },
 ];
 
-const LAYERS: Record<PlaceId, Layer[]> = { forest: FOREST, garden: GARDEN, bog: BOG, mountain: MOUNTAIN, dusk: DUSK, home: [], village: VILLAGE };
+// --- Äventyr 2's own far pictures (docs/aventyr-2-overhaul.md) ---------------------------------------------------
+
+/** A row of spruces along a foot: near-black, close together, each its own height. */
+function spruceRow(c: Pen, seed: number, foot: number, count: number, low: number, high: number, colour: Ink): void {
+  const next = sequence(seed);
+  for (let i = 0; i < count; i++) spruce(c, (i / count) * W + next() * 6, foot + next() * 4, low + next() * (high - low), colour, 1.2);
+}
+
+/** Olympia: a clearing cut out of a forested hill. The forest stands straight up behind the stand. */
+const WALL: Layer[] = [
+  { ...FOREST[0]!, z: -90 },
+  {
+    z: -76, hold: 0.3, sink: 0.02, every: 180, eye: 190, soft: 1,
+    draw(c) {
+      const dark: Ink = [40, 62, 58];
+      ridge(c, 86, 34, back([[0, 0.5], [0.16, 0.8], [0.34, 1], [0.5, 0.74], [0.68, 0.62], [0.84, 0.9], [1, 0.5]]), dark, dark, 4, 110, 83);
+      spruceRow(c, 89, 196, 34, 34, 62, [30, 48, 46]);
+      band(c, 192, 256, [30, 48, 46], 1);
+    },
+  },
+];
+
+/** Älven: long wooded ridges, and hay meadows by the mirror reach at Bredbyn, with their poles, a log barn and the white column. */
+const RIVER: Layer[] = [
+  { z: -90, hold: 0.08, sink: 0, every: 160, eye: 200, soft: 2, drift: 0.3, draw: (c) => clouds(c, 7, 200, 6, [214, 222, 232], [120, 136, 156], 0.7) },
+  {
+    z: -76, hold: 0.26, sink: 0.02, every: 220, eye: 190, soft: 1,
+    draw(c) {
+      const far: Ink = [86, 112, 112];
+      ridge(c, 146, 20, back([[0, 0.5], [0.2, 0.8], [0.42, 1], [0.6, 0.6], [0.8, 0.8], [1, 0.5]]), far, far, 3, 60, 61);
+      const near: Ink = [52, 78, 72];
+      ridge(c, 164, 16, back([[0, 0.8], [0.18, 0.5], [0.4, 0.7], [0.66, 1], [0.86, 0.6], [1, 0.8]]), near, near, 4, 40, 67);
+      // The hay meadows, pale, running down to the water.
+      band(c, 182, 196, [128, 136, 96], 1);
+      band(c, 196, 256, [150, 158, 112], 1);
+      // Wooden poles and their wires across the sky.
+      for (const x of [34, 150, 266, 382, 498]) {
+        c.fillStyle = ink([58, 48, 40]);
+        c.fillRect(x, 150, 2, 46);
+        c.fillRect(x - 5, 153, 12, 1.5);
+      }
+      c.strokeStyle = ink([58, 48, 40], 0.6);
+      c.lineWidth = 0.7;
+      c.beginPath();
+      for (let x = 34; x < 498; x += 116) { c.moveTo(x, 153); c.quadraticCurveTo(x + 58, 160, x + 116, 153); }
+      c.stroke();
+      // A grey log barn at the bank.
+      c.fillStyle = ink([104, 100, 94]);
+      c.fillRect(214, 182, 26, 14);
+      c.beginPath(); c.moveTo(210, 183); c.lineTo(227, 172); c.lineTo(244, 183); c.closePath();
+      c.fillStyle = ink([74, 72, 72]);
+      c.fill();
+      // The white column on the water meadow, with its grey hood.
+      c.fillStyle = ink([232, 230, 222]);
+      c.fillRect(424, 158, 8, 38);
+      c.fillStyle = ink([116, 120, 124]);
+      c.fillRect(422, 154, 12, 5);
+      c.fillStyle = ink([168, 62, 56]);
+      c.fillRect(426.5, 168, 3, 16);
+      birch(c, 112, 196, 46, [226, 226, 216], [40, 40, 38], [[176, 164, 76], [146, 150, 70]] as readonly Ink[], 1, 26);
+      birch(c, 322, 198, 52, [226, 226, 216], [40, 40, 38], [[186, 150, 60], [160, 150, 70]] as readonly Ink[], 1, 26);
+    },
+  },
+];
+
+/** Billsta: Billaberget, a dome with one steep end and grey rock bands, over the dark forest behind the house. */
+const BILLABERGET: Layer[] = [
+  { z: -90, hold: 0.08, sink: 0, every: 160, eye: 200, soft: 2, drift: 0.3, draw: (c) => clouds(c, 13, 200, 6, [214, 222, 232], [120, 136, 156], 0.7) },
+  {
+    z: -76, hold: 0.28, sink: 0.02, every: 260, eye: 190, soft: 1,
+    draw(c) {
+      const wood: Ink = [52, 76, 70];
+      const dome = back([[0, 0.05], [0.14, 0.34], [0.3, 0.72], [0.42, 0.96], [0.5, 1], [0.56, 0.9], [0.62, 0.42], [0.68, 0.16], [0.82, 0.08], [1, 0.05]]);
+      ridge(c, 96, 74, dome, wood, wood, 3, 90, 71);
+      // Its rock, showing through the thin pines at the steep end.
+      for (const [x, y, w, h] of [[300, 118, 26, 5], [296, 132, 30, 4], [306, 104, 16, 4], [288, 146, 26, 4]] as const) blob(c, x, y, w, h, [150, 152, 150], 0.8);
+      spruceRow(c, 97, 196, 40, 24, 46, [34, 54, 50]);
+      band(c, 192, 256, [34, 54, 50], 1);
+    },
+  },
+];
+
+const LAYERS: Record<FarId, Layer[]> = { wall: WALL, river: RIVER, billaberget: BILLABERGET, forest: FOREST, garden: GARDEN, bog: BOG, mountain: MOUNTAIN, dusk: DUSK, home: [], village: VILLAGE };
 
 /** Where a place's far layers hang and how they pass, from the farthest to the nearest. Each is one draw call. */
 export const farLayers = (place: PlaceId): { z: number; hold: number; sink: number; drift: number }[] =>
@@ -1088,7 +1173,7 @@ export function evening(x: number, from: number, to: number): { tint: readonly [
  * lower if it starts on a height (a chapter's `outlook`). Above it the nearer layers sink under the farther
  * ones, and below it they rise. `from` and `to` are the chapter's ends: the mountain's hour goes by them.
  */
-export function scenery(place: PlaceId, anchor: number, from = 0, to = 0, beyond = 0): Scenery {
+export function scenery(place: FarId, anchor: number, from = 0, to = 0, beyond = 0): Scenery {
   const group = new Group();
   // Pictures are see-through and drawn last, so one nearer than a building is drawn over it: a place with
   // big buildings far back keeps only those beyond them.

@@ -2,6 +2,10 @@
 
 ## State (4 November 2026)
 
+- **Own far pictures (4 November 2026, late).** `backdrop.ts` has three new sets, `FarId` `wall` (Olympia's dark forest hill),
+  `river` (Älven's ridges, hay meadows, poles, log barn and white column) and `billaberget` (the dome over Billsta's
+  forest). Älven's water is near black with cream foam drifting on it (`storm.foam`), and its haze thin. So Olympia,
+  Billsta and Älven no longer look like the garden and the forest, and Stormens öga's two moons are still to mend.
 - **Mormor and morfar's house in Billsta (4 November 2026, late).** Built in Blender 5.2 from Olov's picture
   (`art/private/billsta/billsta-house.py`, **in the private repository**, so that it can be taken down): the pale grey
   boards, three tall gables, the valley's downpipe, the dark roof and black chimney, the windows, the steel ladder, and

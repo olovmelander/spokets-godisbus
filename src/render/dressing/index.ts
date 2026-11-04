@@ -209,7 +209,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   if (sky) group.add(sky);
   // A moose in the mist, cranes, smoke from a far chimney: among the far pictures, and only there.
   // Bredbyn's smoke is anchored to the actual baked buildings' chimney caps.
-  const wild = createLife(chapter, look.far ?? look.id, land, houses?.group.getObjectByName('bredbyn-smoke'), asked);
+  const wild = createLife(chapter, look.far ? 'forest' : look.id, land, houses?.group.getObjectByName('bredbyn-smoke'), asked);
   if (wild) group.add(wild.mesh);
   group.add(
     far.group,

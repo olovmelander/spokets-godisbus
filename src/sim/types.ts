@@ -675,6 +675,10 @@ export interface Storm {
    */
   bouncers?: 'trampoline' | 'awning' | 'net';
   /**
+   * For the picture: where cream foam drifts on the water, and how fast, in EL a second.
+   */
+  foam?: { from: number; to: number; y: number; speed: number }[];
+  /**
    * Buildings and big things standing behind the play plane, built in code by the adventure's pack: picture only,
    * never ground. Sizes are in EL (one Elof length, 15 cm), so a real house towers over him. `lit`: its windows glow
    * once that flag is set (or from the start with an empty string).

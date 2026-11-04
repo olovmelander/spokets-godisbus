@@ -138,7 +138,8 @@ One pull request for each visible outcome.
    for Billaberget.
 5. **Flärken:** the raft tower, the sand, the rust-red slide, the log huts, giant chess and the painted sun are built. Left:
    a raft that rocks, the jetty's L, the tarred hut, and its own far shore.
-6. **Älven:** three rivers in one chapter, real water colours, the meadow mirror, the otter.
+6. **Älven:** its own far picture (ridges, hay meadows, poles, the log barn, the white column), black water and cream foam
+   are built. Left: the forest torrent's first stretch, tea-brown rapids, and the otter.
 7. **Own light and far picture for every chapter,** so that no two look alike; two moons mended.
 8. **Real puzzles:** "Vad flyter?" at Flärken, a real seesaw at Billsta, Olympia's and Flärken's answers given later, a
    storm that gets harder, a river he plays.

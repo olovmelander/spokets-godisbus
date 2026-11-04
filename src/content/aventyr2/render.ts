@@ -1,5 +1,5 @@
 import {
-  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage,
+  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage,
   Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry,
   CatmullRomCurve3, Points, PointsMaterial, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
   type Material,
@@ -12,7 +12,7 @@ import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../
 import { glowTexture } from '../../render/glow';
 import { drawnWhile } from '../../render/idle';
 import type { SpotProp } from '../../render/props';
-import type { Mover, RideLook, Spot } from '../../sim/types';
+import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
 import { box, building, PANE, rock } from './buildings';
 import { createGrandparent, type Grandparent } from './grandparents';
 
@@ -142,7 +142,7 @@ const LOOKS: Record<string, PlaceLook> = {
   olympia: {
     ...PLACES.garden,
     // A clearing cut out of a forested hill: the forest stands right behind the stand, and no garden.
-    far: 'forest',
+    far: 'wall',
     farBeyond: -70,
     grade: grade(0.82, 0.86, [0.88, 0.96, 1.1]),
     // Thin haze: the hall and the stand are what this place is, and they stand well back.
@@ -156,19 +156,22 @@ const LOOKS: Record<string, PlaceLook> = {
   },
   alven: {
     ...PLACES.forest,
+    // Ridges and hay meadows, and the river's own black water.
+    far: 'river',
+    farBeyond: -70,
     grade: grade(0.88, 0.86, [0.88, 0.97, 1.1]),
-    haze: { colour: '#24343e', near: 5, far: 60 },
+    haze: { colour: '#24343e', near: 10, far: 120 },
     sky: { top: '#081218', middle: '#22343c', bottom: '#18262c', glow: '#90b0bc' },
     hemisphere: { sky: '#88a6bc', ground: '#2e3a28', intensity: 1.05 },
     sun: { colour: '#c4d6ff', intensity: 1.6, from: [-7, 5, -4] },
     fill: { colour: '#a4c0e0', intensity: STORM_FILL },
-    water: { colour: '#264654', opacity: 0.88 },
+    water: { colour: '#16262a', opacity: 0.95 },
     tussock: '#56663c',
   },
   billsta: {
     ...PLACES.garden,
     // By the road near the forest: spruce behind the house, and no other garden's house far off.
-    far: 'forest',
+    far: 'billaberget',
     farBeyond: -70,
     grade: grade(0.84, 0.88, [0.9, 0.97, 1.1]),
     haze: { colour: '#283450', near: 16, far: 170 },
@@ -371,6 +374,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     return made;
   });
 
+  const drift = createFoam(storm?.foam, group);
+
   // The rain barrel under each tap: wooden staves and iron hoops, standing on the ground the tap's block stands on.
   for (const spot of chapter.spots ?? []) if (spot.look === 'tap') group.add(barrel(chapter.ground, spot.at.x, spot.at.y));
 
@@ -473,6 +478,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     update({ dt, clock, flags, x, y, camera, still, tier, riding }: ExtraFrame) {
       elof.x = x;
       elof.flags = flags;
+      drift?.(dt, still);
       if (first) {
         // A flyby whose moment has passed already (a game taken up later) is not played again.
         for (const f of flybys) if (flags.has(f.def.on)) f.seen = true;
@@ -878,6 +884,40 @@ async function installModels(assets: Assets, scene: Object3D): Promise<boolean> 
     }
   }
   return arrived;
+}
+
+/** Cream foam drifting on black water, as it does below a rapid: one mesh of flecks, carried by the current. */
+function createFoam(foam: NonNullable<ChapterData['storm']>['foam'], group: Group): ((dt: number, still: boolean) => void) | null {
+  if (!foam?.length) return null;
+  const flecks = foam.flatMap((run) => Array.from({ length: Math.round((run.to - run.from) * 3) }, (_, i) => ({
+    run,
+    x: run.from + ((i * 0.618) % 1) * (run.to - run.from),
+    z: -0.3 - ((i * 0.381) % 1) * 7,
+    size: 0.05 + ((i * 0.733) % 1) * 0.16,
+  })));
+  const mesh = new InstancedMesh(new CircleGeometry(1, 8).rotateX(-Math.PI / 2), new MeshBasicMaterial({ color: '#dcd4c0', transparent: true, opacity: 0.42, depthWrite: false }), flecks.length);
+  mesh.name = 'river-foam';
+  mesh.frustumCulled = false;
+  group.add(mesh);
+  const place = new Object3D();
+  const write = () => {
+    for (const [i, fleck] of flecks.entries()) {
+      place.position.set(fleck.x, fleck.run.y + 0.03, fleck.z);
+      place.scale.set(fleck.size * 2.6, 1, fleck.size);
+      place.updateMatrix();
+      mesh.setMatrixAt(i, place.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  };
+  write();
+  return (dt, still) => {
+    if (still) return;
+    for (const fleck of flecks) {
+      fleck.x += fleck.run.speed * dt * (0.7 + fleck.size);
+      if (fleck.x > fleck.run.to) fleck.x = fleck.run.from;
+    }
+    write();
+  };
 }
 
 /** Mormor's lantern, whose light falls where he walks: it hangs from its top, and its glow goes with it. */
