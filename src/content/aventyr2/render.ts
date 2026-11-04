@@ -1496,6 +1496,21 @@ const TIPPED = -0.16;
 
 function moverLooks(): Record<string, (mover: Mover) => Group | null> {
   return {
+    riverLog: (mover) => {
+      // A wet trunk floating half under: dark bark, and pale sawn ends that catch what light there is.
+      const group = new Group();
+      const r = mover.height / 2;
+      const bark = new Mesh(new CylinderGeometry(r, r * 1.05, mover.width, 14).rotateZ(Math.PI / 2), solid('#42342a', 0.62));
+      bark.position.y = r;
+      bark.castShadow = true;
+      const pale = solid('#c2a678', 0.8);
+      const near = new Mesh(new CircleGeometry(r * 0.98, 14).rotateY(Math.PI / 2), pale);
+      near.position.set(mover.width / 2 + 0.002, r, 0);
+      const far = new Mesh(new CircleGeometry(r * 0.98, 14).rotateY(-Math.PI / 2), pale);
+      far.position.set(-mover.width / 2 - 0.002, r, 0);
+      group.add(bark, near, far);
+      return group;
+    },
     lid: (mover) => {
       // The rain barrel's round wooden lid, floating: boards across it, and a handle.
       const group = new Group();

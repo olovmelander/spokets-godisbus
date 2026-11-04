@@ -73,7 +73,7 @@ const STONES: Stone[] = [BANK, S1, L1, S2, L2, BIG, L3, FLAT];
 const BOB = 0.07;
 const LOG_HIGH = 0.9;
 const bobbing = (id: string, log: Stone, seconds: number, phase: number): Mover => ({
-  id, look: 'log', width: log.to - log.from, height: LOG_HIGH, verb: 'push',
+  id, look: 'riverLog', width: log.to - log.from, height: LOG_HIGH, verb: 'push',
   cycle: { seconds, phase },
   stops: [{ x: (log.from + log.to) / 2, y: round(log.y - LOG_HIGH - BOB) }, { x: (log.from + log.to) / 2, y: round(log.y - LOG_HIGH + BOB) }],
 });
@@ -85,7 +85,7 @@ const bobbing = (id: string, log: Stone, seconds: number, phase: number): Mover 
 const TURN = 5.2;
 const EDDY_WIDTH = 2.2;
 const turning = (id: string, from: number, to: number, phase: number): Mover => ({
-  id, look: 'log', width: EDDY_WIDTH, height: LOG_HIGH, verb: 'push',
+  id, look: 'riverLog', width: EDDY_WIDTH, height: LOG_HIGH, verb: 'push',
   cycle: { seconds: TURN, phase, wait: true },
   stops: [{ x: from, y: round(GRAVEL.y - LOG_HIGH) }, { x: to, y: round(GRAVEL.y - LOG_HIGH) }],
 });
@@ -124,7 +124,7 @@ const OTTER: Stone = { from: 145.2, to: 148.2, y: 0.5 };
  */
 const ROLL = { seconds: 3.4, width: 2, high: 0.6 };
 const rolling = (id: string, x: number, phase: number): Mover => ({
-  id, look: 'log', width: ROLL.width, height: ROLL.high, verb: 'push', extra: true,
+  id, look: 'riverLog', width: ROLL.width, height: ROLL.high, verb: 'push', extra: true,
   cycle: { seconds: ROLL.seconds, phase },
   stops: [{ x: x - 0.2, y: -ROLL.high - 0.06 }, { x: x + 0.2, y: -ROLL.high + 0.06 }],
 });
