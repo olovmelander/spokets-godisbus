@@ -1,4 +1,5 @@
-// Gate 2 (plan §6.12): the first playable in at most 3 MB as served, with at most 450 KB of gzipped JS.
+// Gate 2 (plan §6.12): the first playable in at most 3 MB as served, with at most 520 KB of gzipped JS (450 KB until
+// 4 November 2026, when Olov widened the budget for the visual upgrade; three r187 alone took the last of the 450).
 // Runs after `vite build`. Everything in dist/ is the boot pack, except a chapter pack's own JavaScript: Äventyr 2
 // (docs/aventyr-2.md) is a chunk that is fetched only when it is played, and has a gate of its own.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -7,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
-const JS_GZIP_MAX = 450 * 1024;
+const JS_GZIP_MAX = 520 * 1024;
 const BOOT_MAX = 3 * 1024 * 1024;
 const PACK_JS_MAX = 160 * 1024;
 
