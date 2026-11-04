@@ -143,9 +143,10 @@ One pull request for each visible outcome.
 7. **Own light and far picture for every chapter,** so that no two look alike; two moons mended.
 8. **Real puzzles:** "Vad flyter?" at Flärken is built (the stone sinks, then the bark). Left: a real seesaw at Billsta,
    Olympia's answer given later, a storm that gets harder, a river he plays.
-9. **The finale:** a family relay at the jetty, a real meeting, the old one moves, the cap goes back on.
+9. **The finale:** the cap goes back on, the lamps have hands, one moon, and mormor and morfar stand with the family. Left:
+   a family relay at the jetty, and the old one and the little one moving in the meeting.
 10. **Animals:** the fixes above, one owl, birds and life back in the calm and the morning.
-11. **Words:** the Swedish pass, fewer captions, the owl hint.
+11. **Words:** the worst lines are mended. Left: fewer captions, and the owl hint.
 
 ## Sources
 

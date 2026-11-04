@@ -22,7 +22,7 @@ export const words: ChapterWords = {
     alBob: 'Stocken guppar, men den håller!',
     alEddy: 'Bakom stenen snurrar vattnet runt.',
     // 3. the bridge in Bredbyn, and Pappa's scarf
-    alBredbyn: 'Bredbyn! Här rinner två åar ihop.',
+    alBredbyn: 'Bredbyn igen! Där borta är Olympia.',
     alRapids: 'Forsen är alldeles för vild!',
     alPappaHere: 'Elof! Jag står här uppe på bron!',
     alScarfDown: 'Jag sänker ner min halsduk.',

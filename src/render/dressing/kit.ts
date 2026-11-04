@@ -29,6 +29,8 @@ export interface PlaceLook {
   tussock: string;
   /** Another place's far pictures, where this one's are wrong for the chapter. */
   far?: FarId;
+  /** No sun painted in the sky: the storm hides it, or the chapter has a moon of its own. */
+  noSun?: boolean;
   /** Only the far pictures beyond this depth: nearer ones would lie over the place's buildings. */
   farBeyond?: number;
 }

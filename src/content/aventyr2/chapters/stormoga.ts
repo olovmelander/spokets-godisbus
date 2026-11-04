@@ -55,13 +55,14 @@ const SCENES: SceneDef[] = [
     id: 'motet',
     on: 'scene:oga',
     from: EYE - 1,
-    seconds: 10.8,
+    seconds: 13.2,
     hold: true,
     lines: [
       { at: 1.0, who: 'elof', line: 'soFound' },
       { at: 3.2, who: 'spoket', line: 'soKlonk' },
       { at: 5.4, who: 'elof', line: 'soHeld' },
       { at: 8.0, who: 'elof', line: 'soKnow' },
+      { at: 10.4, who: 'elof', line: 'soCapBack' },
     ],
     stage: {
       shots: [{ at: 0, x: FIGURES - 1.2, y: 1.3, height: 3.4, width: 5.6, move: 1.0 }],
@@ -130,7 +131,12 @@ export const stormoga: ChapterData = {
       { kind: 'birch', x: 92, z: -36, height: 64 },
       { kind: 'church', x: 128, z: -74, y: -2, width: 26, height: 18 },
     ],
-    glows: [{ at: { x: 66.4, y: 4.6 }, z: -1.2, size: 4, after: 'taste' }],
+    // The family's lamps: light in their hands on the shore, and not lamps on nothing.
+    glows: [
+      { at: { x: 66.4, y: 4.6 }, z: -1.2, size: 4, after: 'taste' },
+      { at: { x: 66.6, y: 2.8 }, z: -1.8, size: 2.2, after: 'taste' },
+      { at: { x: 69.8, y: 2.6 }, z: -2, size: 2.2, after: 'taste' },
+    ],
   },
   spawn: { x: 1, y: 0.01 },
   goalX: 86,
@@ -178,11 +184,11 @@ export const stormoga: ChapterData = {
     // The two trägubbar on the stone, the old one holding the little one; he carries them once he is big.
     { look: 'tragubbe', at: { x: FIGURES, y: 0.6 }, z: -0.5, until: 'taste' },
     { look: 'lillgubbe', at: { x: FIGURES + 0.32, y: 0.6 }, z: -0.3, until: 'taste' },
+    // The cap he found in the gutter in Byn, back on the little one's head.
+    { look: 'tiny-cap', at: { x: FIGURES + 0.32, y: 1.08 }, z: -0.3, after: 'scene:motet', until: 'taste' },
     // The family on the far shore with their lamps, once the storm has let go; mormor with her lantern, morfar.
-    { look: 'flashlight', at: { x: 66.2, y: 1.6 }, z: -1.6, after: 'taste' },
-    { look: 'flashlight', at: { x: 68.4, y: 1.8 }, z: -2.2, after: 'taste' },
-    { look: 'mormor', at: { x: 63.4, y: 0 }, z: -1, after: 'taste' },
-    { look: 'morfar', at: { x: 65.6, y: 0 }, z: -1.4, after: 'taste' },
+    { look: 'mormor', at: { x: 61.6, y: 0 }, z: -1, after: 'taste' },
+    { look: 'morfar', at: { x: 63.4, y: 0 }, z: -1.4, after: 'taste' },
   ],
   ghost: [
     // Klonk is beside him now: on the jetty, then across with the owl, then by the figures.

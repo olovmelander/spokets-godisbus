@@ -28,7 +28,7 @@ export const words: ChapterWords = {
     sjOldOne: 'Spring, gamla trägubben! Vi kommer!',
     // 6. Mamma's boat
     sjBroken: 'Bryggan är trasig! Det är för långt.',
-    sjMamma: 'Jag hittade en roddbåt. Ropa på mig!',
+    sjMamma: 'Elof! Jag har en roddbåt här!',
     sjBoatReady: 'Jag håller båten still. Gå på kanten.',
     sjSteady: 'Lugnt och fint. Jag släpper inte.',
     sjThanks: 'Tack, Mamma! Du är bäst.',

@@ -15,7 +15,7 @@ export const words: ChapterWords = {
     sgKlonkKlonk: 'Klonk, klonk!',
     // 3. Stormbyarna
     sgPots: 'Stormbyar! Vi gömmer oss bakom krukorna.',
-    sgFlowerpot: 'Klonk! Du blåste ner i blomkrukan!',
+    sgFlowerpot: 'Klonk! Vinden tog dig ner i krukan!',
     sgCalm: 'Puh! Vi klarade stormbyarna!',
     // 4. Regntunnan
     sgDitch: 'Diket är alldeles för brett!',

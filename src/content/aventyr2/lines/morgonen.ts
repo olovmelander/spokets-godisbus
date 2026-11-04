@@ -3,12 +3,12 @@ import type { ChapterWords } from './words';
 /** What is said in Morgonen efter, the second adventure's epilogue (docs/aventyr-2.md). */
 export const words: ChapterWords = {
   lines: {
-    moMorning: 'God morgon, mina nattvandrare!',
+    moMorning: 'God morgon, mina sjusovare!',
     moBranches: 'Stormen fällde massor av grenar!',
     moSleepy: 'Jag är trött som en uggla på dagen.',
     moShelf: 'Hyllan väntar på två små gubbar.',
     moMormor: 'Vi följde med er hem i natt.',
-    moMorfar: 'Och nu blir det frukost, Elof!',
+    moMorfar: 'Elof! Så stor du har blivit!',
     moOldHome: 'Först i raden. Där hör du hemma.',
     moSmallHome: 'Och du bredvid. Nu är ni två.',
     moLatchLine: 'En ny hake. Nu blåser ingen bort.',

@@ -129,6 +129,7 @@ const LOOKS: Record<string, PlaceLook> = {
   },
   flarken: {
     ...PLACES.bog,
+    noSun: true,
     grade: grade(0.88, 0.86, [0.86, 0.96, 1.12]),
     haze: { colour: '#273a4c', near: 5, far: 64 },
     sky: { top: '#0a1424', middle: '#283c56', bottom: '#1c2c3c', glow: '#98b0cc' },
@@ -184,6 +185,7 @@ const LOOKS: Record<string, PlaceLook> = {
   },
   stormoga: {
     ...PLACES.bog,
+    noSun: true,
     grade: grade(0.86, 0.9, [0.88, 0.96, 1.14]),
     haze: { colour: '#1e2c48', near: 6, far: 80 },
     sky: { top: '#060c1e', middle: '#1c2a4c', bottom: '#2a3454', glow: '#d8e2ff' },

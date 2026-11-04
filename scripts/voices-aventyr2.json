@@ -228,7 +228,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormgard",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Klonk! Du blåste ner i blomkrukan!"
+    "text": "Klonk! Vinden tog dig ner i krukan!"
   },
   {
     "key": "sgCalm",
@@ -669,7 +669,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormbyn",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Vänta på oss, lillgubben! Vi kommer!"
+    "text": "Håll ut, lillgubben! Vi kommer!"
   },
   {
     "key": "scene_stormbyn",
@@ -718,7 +718,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, olympia",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Lillgubben! Han blåser över planen!"
+    "text": "Lillgubben! Han flyger över planen!"
   },
   {
     "key": "olWind",
@@ -1033,7 +1033,7 @@
     "speaker": "mamma",
     "situation": "Äventyr 2, flarken",
     "tag": "[warm, calm mother]",
-    "text": "Jag hittade en roddbåt. Ropa på mig!"
+    "text": "Elof! Jag har en roddbåt här!"
   },
   {
     "key": "sjBoatReady",
@@ -1243,7 +1243,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Bredbyn! Här rinner två åar ihop."
+    "text": "Bredbyn igen! Där borta är Olympia."
   },
   {
     "key": "alRapids",
@@ -1712,14 +1712,14 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Stenen är för långt bort att hoppa till."
+    "text": "Stenen är för långt borta."
   },
   {
     "key": "soOwlCome",
     "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Ugglan! Du kom tillbaka!"
+    "text": "Ugglan! Du hörde mig!"
   },
   {
     "key": "soGoldLine",
@@ -1782,7 +1782,14 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Du vet hur det är att vara ensam."
+    "text": "Nu är ingen av er ensam."
+  },
+  {
+    "key": "soCapBack",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Här är din mössa, lillgubben."
   },
   {
     "key": "soMamma",
@@ -1824,7 +1831,7 @@
     "speaker": "morfar",
     "situation": "Äventyr 2, stormoga",
     "tag": "[warm, cheerful grandfather]",
-    "text": "Vi följer med hem och äter frukost!"
+    "text": "Nu är vi alla här."
   },
   {
     "key": "soHome",
@@ -1915,7 +1922,7 @@
     "speaker": "mamma",
     "situation": "Äventyr 2, morgonen",
     "tag": "[warm, calm mother]",
-    "text": "God morgon, mina nattvandrare!"
+    "text": "God morgon, mina sjusovare!"
   },
   {
     "key": "moBranches",
@@ -1950,7 +1957,7 @@
     "speaker": "morfar",
     "situation": "Äventyr 2, morgonen",
     "tag": "[warm, cheerful grandfather]",
-    "text": "Och nu blir det frukost, Elof!"
+    "text": "Elof! Så stor du har blivit!"
   },
   {
     "key": "scene_morgonen",

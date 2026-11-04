@@ -14,7 +14,7 @@ export const words: ChapterWords = {
     olLights: 'Inte ens strålkastarna lyser!',
     olFence: 'Staketet! Jag klättrar över.',
     olTop: 'Blixten! Nu ser jag hela planen!',
-    olLittle: 'Lillgubben! Han blåser över planen!',
+    olLittle: 'Lillgubben! Han flyger över planen!',
     // 2. the balls the wind rolls across the pitch
     olWind: 'Vinden rullar bollar över planen!',
     olJump: 'De kommer bakifrån. Hoppa över!',

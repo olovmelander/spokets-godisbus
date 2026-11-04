@@ -25,7 +25,7 @@ export const words: ChapterWords = {
     // The awnings pour, and the steps go down to the shore.
     sbDrops: 'Stora droppar! Jag tittar på skuggorna.',
     sbSteps: 'Trappan ner mot Olympia!',
-    sbShore: 'Vänta på oss, lillgubben! Vi kommer!',
+    sbShore: 'Håll ut, lillgubben! Vi kommer!',
   },
   verbs: { sbUmbrella: 'Håll i paraplyet' },
   purposes: {

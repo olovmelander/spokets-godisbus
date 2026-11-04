@@ -3,14 +3,15 @@ import type { ChapterWords } from './words';
 /** What is said in Stormens öga, the second adventure's final (docs/aventyr-2.md). */
 export const words: ChapterWords = {
   lines: {
-    soFarLine: 'Stenen är för långt bort att hoppa till.',
-    soOwlCome: 'Ugglan! Du kom tillbaka!',
+    soFarLine: 'Stenen är för långt borta.',
+    soOwlCome: 'Ugglan! Du hörde mig!',
     soQuiet: 'Det blev alldeles tyst …',
     soStars: 'Stjärnorna! Vi är i stormens öga.',
     soFound: 'Där är ni! Jag har letat överallt.',
     soKlonk: 'Klonk …',
     soHeld: 'Du följde honom hela natten.',
-    soKnow: 'Du vet hur det är att vara ensam.',
+    soKnow: 'Nu är ingen av er ensam.',
+    soCapBack: 'Här är din mössa, lillgubben.',
     soGoldLine: 'Ett geléhallon i guldpapper!',
     soLastOne: 'Ditt allra sista. Det sparade du åt mig.',
     soShareLine: 'Samma sort som jag delade med dig.',
@@ -19,7 +20,7 @@ export const words: ChapterWords = {
     soMoa: 'Alla är hittade, lillebror!',
     soBertil: 'Bästa natten någonsin!',
     soMormor: 'Vilken natt! Ni är så modiga, allihop.',
-    soMorfar: 'Vi följer med hem och äter frukost!',
+    soMorfar: 'Nu är vi alla här.',
     soHome: 'Nu åker vi hem, allihop!',
   },
   verbs: {
