@@ -1134,6 +1134,57 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
   return {
     // He leaps away, as he does all night, except where Elof lifts him up.
     tragubbe: (spot) => standing(spot, oldFigure(), undefined, spot.id.startsWith('decor:') && spot.word !== 'lifted' ? 'leap' : 'shrink'),
+    seesawLog: (spot) => {
+      // The dry spruce over its stone, measured from its low end, where he stands. Thick at the root, thin at the
+      // top, with the stubs of its boughs. It turns about the stone, wherever the stone is.
+      const LENGTH = 5;
+      const STONE_TOP = 0.6;
+      const EVEN = 2.5;
+      const SHORT = 1.2;
+      const group = new Group();
+      group.position.set(spot.at.x + 0.4, spot.at.y, -0.34);
+      const wood = solid('#94806a', 0.85);
+      const pale = solid('#b4a288', 0.9);
+      const log = new Group();
+      const body = new Group();
+      const trunk = new Mesh(new CylinderGeometry(0.08, 0.2, LENGTH, 10).rotateZ(-Math.PI / 2), wood);
+      trunk.castShadow = true;
+      body.add(trunk);
+      for (const [x, side] of [[-1.9, 1], [-1.3, -1], [-0.6, 1], [0.1, -1], [0.8, 1], [1.5, -1]] as const) {
+        const stub = new Mesh(new CylinderGeometry(0.02, 0.05, 0.52, 6), pale);
+        stub.position.set(x, 0.24 * side, 0.05);
+        stub.rotation.z = side > 0 ? -0.6 : Math.PI + 0.6;
+        body.add(stub);
+      }
+      const root = new Mesh(new CircleGeometry(0.2, 10).rotateY(-Math.PI / 2), pale);
+      root.position.x = -LENGTH / 2 - 0.001;
+      body.add(root);
+      log.add(body);
+      group.add(log);
+      let arm = EVEN;
+      let rocked = 0;
+      let since = 0;
+      let first = true;
+      return {
+        group,
+        update: (used, _clock, dt) => {
+          const moved = elof.flags?.has('placed:bi-pivot') ?? false;
+          const on = elof.flags?.has('bi:klonk-on') ?? false;
+          const wanted = moved ? SHORT : EVEN;
+          arm = first ? wanted : arm + (wanted - arm) * Math.min(1, dt * 6);
+          first = false;
+          rocked = on ? rocked + dt : 0;
+          since = used ? since + dt : 0;
+          const rest = Math.atan2(STONE_TOP - 0.1, arm);
+          // Klonk lands on the even arms, and it hardly stirs.
+          const stir = on && !moved ? -0.05 * Math.exp(-rocked * 2.2) * Math.cos(rocked * 8) : 0;
+          const fall = Math.min(1, since / 0.24);
+          log.position.set(arm, STONE_TOP, 0);
+          body.position.x = LENGTH / 2 - arm;
+          log.rotation.z = rest + stir + (TIPPED - rest - stir) * fall * fall;
+        },
+      };
+    },
     otter: (spot) => {
       const { group, head } = otter();
       return standing(spot, group, (clock) => {
@@ -1343,6 +1394,9 @@ function raft(w: number, h: number): Group {
   }
   return group;
 }
+
+/** The fallen long arm of Klonk's seesaw comes to rest with its top on the ground. */
+const TIPPED = -0.16;
 
 function moverLooks(): Record<string, (mover: Mover) => Group | null> {
   return {

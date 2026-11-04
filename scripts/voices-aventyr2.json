@@ -1607,7 +1607,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "En gungbräda! Men jag är för lätt."
+    "text": "En gungbräda! Vem tar andra änden?"
   },
   {
     "key": "biJumpOn",
@@ -1615,6 +1615,34 @@
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Klonk, hoppa på andra änden!"
+  },
+  {
+    "key": "biTooLight",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Du väger ju ingenting, Klonk!"
+  },
+  {
+    "key": "biMiddle",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Pappa sitter nära mitten när vi gungar."
+  },
+  {
+    "key": "biTheStone",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Stenen är mitten. Kan den flyttas?"
+  },
+  {
+    "key": "biNearMiddle",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Nu står jag nära mitten!"
   },
   {
     "key": "biFly",

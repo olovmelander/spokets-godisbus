@@ -897,7 +897,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (thing.prop) thing.prop.group.rotation.z -= thing.reactionTurn;
       // The light counterweight tips the same board only during its safe bounce, then resets for another try.
       const trialTip = chapter.counterweight && thing.spot.id === chapter.counterweight.launch && riding
-        && x < chapter.counterweight.to && flags.has(chapter.counterweight.trial) && !flags.has(chapter.counterweight.launch);
+        && x < chapter.counterweight.to && flags.has(chapter.counterweight.trial ?? chapter.counterweight.launch) && !flags.has(chapter.counterweight.launch);
       thing.prop?.update(flags.has(thing.spot.id) || !!trialTip, clock, dt, noteStrikes.get(thing.spot.id));
       thing.reactionTurn = reaction?.kind === 'spot' && reaction.index === i ? response * 0.14 : 0;
       if (thing.prop) thing.prop.group.rotation.z += thing.reactionTurn;

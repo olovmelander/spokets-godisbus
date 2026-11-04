@@ -759,7 +759,7 @@ export class Sim {
         // A trapped ghost still belongs to the rescue/lift puzzle. It rises out of reach at that
         // same stop instead of jumping past the unsolved story beat, and settles when he backs away.
         const dx = Math.abs(ghost.x - p.x);
-        const desired = dx < GHOST_NEAR ? Math.max(perch.at.y, p.y + Math.sqrt(GHOST_NEAR ** 2 - dx ** 2)) : perch.at.y;
+        const desired = dx < GHOST_NEAR && !perch.still ? Math.max(perch.at.y, p.y + Math.sqrt(GHOST_NEAR ** 2 - dx ** 2)) : perch.at.y;
         ghost.y += Math.sign(desired - ghost.y) * Math.min(Math.abs(desired - ghost.y), GHOST_SPEED * STEP);
         if (!safe(ghost.x, ghost.y)) ghost.y = p.y + Math.sqrt(Math.max(0, GHOST_CLEARANCE ** 2 - dx ** 2));
         return;

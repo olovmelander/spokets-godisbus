@@ -22,8 +22,9 @@ import { alongAll, hopCandy, jump, round, row, slopeRow, timeCard } from '../kit
  *    and a soft drop takes him to the ground behind the house.
  * 5. **Skogen och Billaberget:** a forest brook behind the house, crossed on three stones. Further on the brook runs
  *    deep and wide below the hill's steep bank, and a dry spruce the storm has blown down lies over a stone on the
- *    near bank: a seesaw (the puzzle, and Klonk's own help). Elof stands on its low end, too light alone. "Ropa på
- *    Klonk": Klonk jumps onto the high end, and Elof is flung over the brook, up onto the bank. Then Billaberget's
+ *    near bank: a seesaw (the puzzle, and Klonk's own help). "Ropa på Klonk": Klonk jumps onto the high end, and it
+ *    hardly stirs: he weighs nothing. The way is the lever: he goes round the stone and pushes it back towards his
+ *    own end, so that Klonk has the long arm, and Elof is flung over the brook, up onto the bank. Then Billaberget's
  *    boulders, a crack, and rock shelves jutting from its granite face with October's hazelnuts on them (side
  *    candy); and the open slope in the gusts, the boulders the lee.
  * 6. **Krönet:** up on Billaberget's brow, a flash: far below in the narrow, on a stone, the old trägubbe holds the
@@ -127,17 +128,27 @@ const POOL_WATER = -0.6;
 const TOP = { from: POOL.to, to: 144.4, y: 3.2 };
 
 /**
- * Klonk's seesaw (the puzzle): a dry spruce the storm has blown down, lying over a stone on the near bank. Its
- * picture (the spot's look) runs from 0.9 before the spot to 3.5 after it, with its stone 1.3 after it and the low
- * end where he comes, so he stands on the low end when he calls. Klonk waits over the stone, jumps onto the high
- * end when called (a short held beat, while Elof stands still), and the seesaw flings Elof over the brook, up onto
- * the bank. The fling begins by itself once Klonk is on: he is already standing there.
+ * Klonk's seesaw (the puzzle): a dry spruce the storm has blown down, lying over a stone on the near bank, the stone
+ * under its middle. Klonk waits by the high end and jumps on when called (a short held beat), and nothing comes of it:
+ * with the arms even he is far too light. What moves it is the lever, as when a grown-up sits near the middle: Elof goes
+ * round the stone and pushes it back towards his own end. Now Klonk has the long arm, high in the air, and when
+ * Elof steps on the short one it falls and flings him over the brook, up onto the bank.
  */
-const SEESAW = { x: 129.3 };
-const KLONK_WAITS = { x: 130.8, y: 0 };
-/** The high end, where Klonk lands: it comes down to the ground under him, and Elof's end goes up. */
-const HIGH_END = { x: round(SEESAW.x + 3.5), y: 0 };
-const FLING = { from: { x: round(SEESAW.x - 0.95), y: 0 }, to: { x: 140.4, y: TOP.y }, rise: 4, time: 1.8, corridor: 0.4 };
+const SEESAW = { low: 127.9, middle: 130.4, short: 129.1 };
+/** Where its fling is touched: a little before the low end, so that the stone's top beside it is out of reach. */
+const TOUCHED = 127.5;
+const CALL_AT = round(SEESAW.low + 0.95);
+const KLONK_WAITS = { x: 132.2, y: 0 };
+/** Where the high end stands, with Klonk on it: first with the arms even, then on the long arm. */
+const HIGH_END = { x: 132.7, y: 1.1 };
+const HIGH_ARM = { x: 132.5, y: 1.55 };
+/** The stone under the spruce: a low boulder he jumps over, and pushes only from the far side. */
+const PIVOT: Mover = {
+  id: 'bi-pivot', look: 'stone', width: 1.2, height: 0.6, verb: 'push', needs: 'bi:klonk-on',
+  stops: [{ x: SEESAW.middle, y: 0 }, { x: SEESAW.short, y: 0 }],
+};
+const PIVOT_PLACED = `placed:${PIVOT.id}`;
+const FLING = { from: { x: SEESAW.low, y: 0 }, to: { x: 140.4, y: TOP.y }, rise: 4, time: 1.8, corridor: 0.4 };
 
 /**
  * Billaberget's boulders (verified: a boulder field below its cliff, with hazel): one a held jump up, a crack
@@ -313,17 +324,21 @@ export const billsta: ChapterData = {
     // Mormor by the woodshed, with her lantern.
     { id: 'bi:mormor', look: 'mormor', at: MORMOR, verb: 'call', word: 'biCallMormor' },
     // Klonk at the seesaw: he is too light alone, and calls his friend.
-    { id: 'bi:call-klonk', at: { x: SEESAW.x, y: 0 }, verb: 'call', word: 'biCallKlonk' },
-    // The seesaw itself. Once Klonk is on its high end, it flings him over the brook.
-    { id: 'bi:fling', look: 'seesaw', at: { x: SEESAW.x, y: 0 }, verb: 'take', touch: true, needs: 'bi:klonk-on', ride: 'bi:fling' },
+    { id: 'bi:call-klonk', at: { x: CALL_AT, y: 0 }, verb: 'call', word: 'biCallKlonk' },
+    // The seesaw itself. Once the stone is near his end, Klonk's long arm flings him over the brook.
+    { id: 'bi:fling', look: 'seesawLog', at: { x: TOUCHED, y: 0 }, verb: 'take', touch: true, needs: PIVOT_PLACED, ride: 'bi:fling' },
   ],
   rides: [{ id: 'bi:fling', look: 'none', ...FLING }],
-  movers: [DOOR],
+  movers: [DOOR, PIVOT],
+  counterweight: { from: BANK.from, to: POOL.from, call: 'bi:call-klonk', heavy: PIVOT.id, launch: 'bi:fling' },
   // Morfar lays his ladder over the ditch: Elof stands and watches until it lies still.
   later: [
     { flag: 'bi:ladder', after: 'bi:morfar', seconds: 1.6, hold: true, within: [6, 20] },
     // Klonk jumps onto the seesaw's high end: Elof stands on the low end and watches until Klonk is on.
     { flag: 'bi:klonk-on', after: 'bi:call-klonk', seconds: 1.2, hold: true, within: [BANK.from, POOL.from] },
+    // If he stands and thinks, he remembers something, and a little later he looks at the stone.
+    { flag: 'bi:think', after: 'bi:klonk-on', seconds: 10, until: PIVOT_PLACED },
+    { flag: 'bi:think-more', after: 'bi:klonk-on', seconds: 22, until: PIVOT_PLACED },
     // The little one, tossed onto the stone by a wave, where the old one catches him.
     { flag: 'bi:landed', after: 'beat:bi:there', seconds: 1.6 },
   ],
@@ -335,6 +350,9 @@ export const billsta: ChapterData = {
     jump({ x: round(HATCH.from - 0.2), y: LOFT }, { x: round(HATCH.to + 0.9), y: LOFT }),
     ...HAY.map((s, i) => jump({ x: round(s.x - 0.2), y: i === 0 ? LOFT : HAY[i - 1]!.y }, { x: round(s.x + 0.45), y: s.y })),
     ...hops(BROOK_WAY),
+    // Over the stone under the spruce: past it, to its far side, and back again when it has been pushed.
+    { at: { x: 129.2, y: 0 }, dir: 1, land: { x: 131.6, y: 0 }, until: PIVOT_PLACED },
+    { at: { x: 130.2, y: 0 }, dir: -1, land: { x: 128.1, y: 0 }, needs: PIVOT.id },
     jump({ x: round(B1.from - 0.2), y: TOP.y }, { x: round(B1.from + 0.7), y: B1.y }),
     jump({ x: round(CRACK.from - 0.2), y: B1.y }, { x: round(CRACK.to + 0.9), y: B2.y }),
     jump({ x: round(B3.from - 0.2), y: SLOPE }, { x: round(B3.from + 0.7), y: B3.low }),
@@ -430,8 +448,9 @@ export const billsta: ChapterData = {
     { at: { x: 112, y: STONES[0]!.y } },
     { at: { x: 115.8, y: STONES[1]!.y } },
     { at: { x: 119.6, y: STONES[2]!.y } },
-    { at: KLONK_WAITS, until: 'bi:call-klonk' },
-    { at: HIGH_END, until: 'bi:fling' },
+    { at: KLONK_WAITS, until: 'bi:call-klonk', near: 8, still: true },
+    { at: HIGH_END, until: PIVOT_PLACED, near: 8, z: -0.34, still: true },
+    { at: HIGH_ARM, until: 'bi:fling', near: 8, z: -0.34, still: true },
     { at: { x: 143, y: TOP.y } },
     { at: { x: 146.3, y: B1.y } },
     { at: { x: 151.1, y: B2.y } },
@@ -473,6 +492,11 @@ export const billsta: ChapterData = {
     { id: 'bi:seesaw', at: 126.4, until: 'bi:call-klonk', who: 'elof', line: 'biSeesaw', read: true },
     { id: 'bi:call', on: 'bi:call-klonk', who: 'elof', line: 'biJumpOn' },
     { id: 'bi:klonk-jump', on: 'beat:bi:call', who: 'spoket', line: 'biKlonk' },
+    { id: 'bi:too-light', on: 'bi:klonk-on', who: 'elof', line: 'biTooLight' },
+    { id: 'bi:klonk-sorry', on: 'beat:bi:too-light', who: 'spoket', line: 'biKlonk' },
+    { id: 'bi:middle', on: 'bi:think', until: PIVOT_PLACED, who: 'elof', line: 'biMiddle' },
+    { id: 'bi:the-stone', on: 'bi:think-more', until: PIVOT_PLACED, who: 'elof', line: 'biTheStone' },
+    { id: 'bi:near-middle', on: PIVOT_PLACED, who: 'elof', line: 'biNearMiddle' },
     { id: 'bi:fly', on: 'bi:fling', who: 'elof', line: 'biFly' },
     { id: 'bi:thanks-klonk', at: 141, needs: 'bi:fling', who: 'elof', line: 'biThanksKlonk' },
     { id: 'bi:klonk-glad', on: 'beat:bi:thanks-klonk', who: 'spoket', line: 'biKlonkKlonk' },
@@ -605,6 +629,8 @@ export const context: Chooser = (has, player) => {
   if (at >= LEE[0]! - 1.5) return ['billstaWind', 'billstaForest', 'mountain'];
   if (at >= TOP.from + 0.3 && player.y >= TOP.y - 0.3) return ['billstaBoulders', 'billstaForest', 'mountain'];
   if (has('bi:fling')) return ['billstaFly', 'billstaKlonk', 'water', 'spoket'];
+  if (has(PIVOT_PLACED)) return ['billstaShortEnd', 'billstaKlonk', 'water', 'spoket'];
+  if (has('bi:klonk-on')) return ['billstaLever', 'billstaKlonk', 'water', 'spoket'];
   if (has('bi:call-klonk')) return ['billstaKlonkOn', 'billstaKlonk', 'water', 'spoket'];
   if (at >= BANK.from - 0.5) return ['billstaSeesaw', 'billstaKlonk', 'water', 'spoket'];
   if (at >= EAVES.to && player.y < EAVES.y) return ['billstaBrook', 'billstaForest', 'water'];

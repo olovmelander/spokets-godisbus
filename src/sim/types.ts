@@ -250,6 +250,8 @@ export interface Roller {
  * always a little ahead: the chase can't be lost, and it can't be won before the story says so.
  */
 export interface GhostPerch {
+  /** It stays where it stands while it waits, near as he comes, and does not rise out of reach: it is on something. */
+  still?: boolean;
   at: Vec;
   /** Takeoff distance, default 4 EL. Only close meetings may use a smaller value. */
   near?: number;
@@ -356,7 +358,7 @@ export type MoverLook = 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy';
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder';
-export type SpotLook = 'mormorHome' | 'otter' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
+export type SpotLook = 'mormorHome' | 'otter' | 'seesawLog' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
   | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';
@@ -442,7 +444,7 @@ export interface ChapterData {
   /** An optional melody toy. Consecutive repeat bumps are allowed; other wrong notes restart it. */
   song?: { notes: string[]; flag: string };
   /** A weight puzzle: the trial is optional; the helper can guide a deliberate return to the heavy mover. */
-  counterweight?: { from: number; to: number; call: string; heavy: string; launch: string; trial: string };
+  counterweight?: { from: number; to: number; call: string; heavy: string; launch: string; trial?: string };
   /** Once he chooses to leave a gift, a nearby return route can guide him back to its picture clue. */
   returnClue?: { from: number; to: number; gift: string; away: string; clue: string; root: Climb; door: Vec };
   /** A picture left at a landmark, revealed by a saved discovery rather than by moving the chase ghost. */
