@@ -369,7 +369,7 @@ export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home'
 /** What a gust's shelters are drawn as, in a storm: see Storm.shelters. */
 export type Shelter = 'pots' | 'posts' | 'vents' | 'rocks';
 
-export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron' | 'turf';
+export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron' | 'turf' | 'sand';
 
 /**
  * A thing that a block of the ground is, for the picture only: the block runs from `from` to `to` along the
@@ -680,7 +680,7 @@ export interface Storm {
    * once that flag is set (or from the start with an empty string).
    */
   buildings?: {
-    kind: 'pitch' | 'villa' | 'barn' | 'playhouse' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
+    kind: 'pitch' | 'chess' | 'sunboard' | 'villa' | 'barn' | 'playhouse' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
       | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce';
     x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string; marks?: { halfway: number; box?: { x: number; long: number }; front?: number }; model?: string; size?: number;
     /** Turned about the upright, in quarter turns: a net or a table seen from its end. */

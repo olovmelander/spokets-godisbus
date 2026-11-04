@@ -312,11 +312,12 @@ export const flarken: ChapterData = {
   tussocks: [...MATS_A, ...MATS_B].map(mat),
   surfaces: [
     // The parking's gravel and the playground's sand; the picnic table's benches; the court's sand and the beach.
-    { from: -3, to: BENCH_A.from, kind: 'earth' },
+    { from: -3, to: 10, kind: 'earth' },
+    { from: 10, to: BENCH_A.from, kind: 'sand' },
     { from: BENCH_A.from, to: BENCH_A.to, kind: 'wood' },
-    { from: BENCH_A.to, to: BENCH_B.from, kind: 'earth' },
+    { from: BENCH_A.to, to: BENCH_B.from, kind: 'sand' },
     { from: BENCH_B.from, to: BENCH_B.to, kind: 'wood' },
-    { from: BENCH_B.to, to: STONES[0]!.from, kind: 'earth' },
+    { from: BENCH_B.to, to: STONES[0]!.from, kind: 'sand' },
     { from: STONES[0]!.from, to: STONES[2]!.to, kind: 'stone' },
     { from: HIGH.from, to: STEP.to, kind: 'stone' },
     { from: ISLAND.from, to: ISLAND.to, kind: 'stone' },
@@ -404,6 +405,9 @@ export const flarken: ChapterData = {
       // The diving tower in the water, its ladder where his is, its platform where he stands.
       { kind: 'tower', x: TOWER.ladder + 2.9, y: DECK, z: -3.4, width: 3, height: TOWER.y - DECK },
       // Birches round the bay, the October leaves nearly gone.
+      // The giant chess on its gravel pad, and the painted board with the smiling sun.
+      { kind: 'chess', x: 56, z: -16, width: 16 },
+      { kind: 'sunboard', x: 70, z: -30, width: 13, height: 8.5 },
       { kind: 'birch', x: 6, z: -22, height: 64 },
       { kind: 'birch', x: 40, z: -26, height: 72 },
       { kind: 'birch', x: 64, z: -18, height: 58 },
