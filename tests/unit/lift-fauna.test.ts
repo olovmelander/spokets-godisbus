@@ -7,6 +7,7 @@ import { PLACES, dress } from '../../src/render/dressing';
 import type { ExtraFrame, ViewExtra } from '../../src/render/extensions';
 import { createFauna } from '../../src/render/lift/fauna';
 import { faunaPlan, type Plan } from '../../src/render/lift/fauna/plan';
+import { squirrel } from '../../src/render/lift/fauna/shapes';
 import type { ChapterData } from '../../src/sim/types';
 
 /** The near life (src/render/lift/fauna.ts): squirrels, a fox, owls, small birds, fireflies, dragonflies, butterflies, beings, carvings. */
@@ -264,5 +265,15 @@ describe('the near life', () => {
         }
       }
     }
+  });
+});
+
+describe('the squirrel', () => {
+  it('has legs that gallop in turn, by a number the head and the tail do not listen to', () => {
+    const rig = squirrel().getAttribute('rig');
+    const legs = new Set<number>();
+    for (let i = 0; i < rig.count; i++) if (rig.getX(i) === 1 && rig.getY(i) === 0) legs.add(rig.getZ(i));
+    // Fore and hind go opposite ways.
+    expect([...legs].sort()).toEqual([-1, 1]);
   });
 });

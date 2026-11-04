@@ -165,11 +165,14 @@ type Kind = ((now: Now, calm: number) => void) | null;
 
 // --- squirrels: dash up and round their trunk, pause, flick the tail, dash on ------------------------------------
 
+/** How far a squirrel comes in one stride, in EL. */
+const STRIDE = 0.5;
+
 function squirrels(plan: Plan, add: Add): Kind {
   if (!plan.squirrels.length) return null;
   const crowd = add(squirrel(), plan.squirrels.length, undefined, 'squirrels');
   const next = sequence(11);
-  const all = plan.squirrels.map((s) => ({ ...s, a0: s.a, h0: s.h, a1: s.a, h1: s.h, k: 1, run: 0.5, wait: next() * 2, fa: 0, fh: 1, flick: next() * 2 }));
+  const all = plan.squirrels.map((s) => ({ ...s, a0: s.a, h0: s.h, a1: s.a, h1: s.h, k: 1, run: 0.5, long: 1, wait: next() * 2, fa: 0, fh: 1, flick: next() * 2 }));
   return (now) => {
     for (const [i, q] of all.entries()) {
       const tree = q.tree;
@@ -187,6 +190,7 @@ function squirrels(plan: Plan, add: Add): Kind {
         q.fa = across / long;
         q.fh = (q.h1 - q.h0) / long;
         q.run = long / (near ? 5.5 : 3.8);
+        q.long = long;
         q.k = 0;
         q.wait = 0.9 + next() * 2.6;
       }
@@ -198,14 +202,16 @@ function squirrels(plan: Plan, add: Add): Kind {
       U.set(Math.sin(q.a), 0, Math.cos(q.a));
       F.set(Math.cos(q.a) * q.fa, q.fh, -Math.sin(q.a) * q.fa).normalize();
       W.crossVectors(F, U);
-      const out = girth(tree, q.h) + 0.03 + (dash ? 0.05 * Math.abs(Math.sin(now.t * 26 + i)) : 0);
+      // It bounds: a stride for each half length it has come, so that no foot slides on the bark.
+      const stride = (e * q.long * Math.PI * 2) / STRIDE;
+      const out = girth(tree, q.h) + 0.03 + (dash ? 0.05 * Math.abs(Math.sin(stride)) : 0);
       M.makeBasis(F, U, W).setPosition(tree.x + U.x * out, tree.y + q.h, tree.z + U.z * out);
       crowd.matrix(i, M);
       // A pause has a flick of the tail now and then, and a look round; a dash streams it out behind.
       if (!dash && !now.still) q.flick -= now.dt;
       if (q.flick < -0.8) q.flick = 1 + next() * 2.5;
       const flick = q.flick < 0 ? Math.sin(-q.flick * 20) * Math.exp(q.flick * 4) * 0.6 : 0;
-      crowd.pose(i, 0, dash ? 0.3 + 0.12 * Math.sin(now.t * 30) : flick, dash ? 0 : 0.35 * Math.sin(now.t * 0.8 + i * 2));
+      crowd.pose(i, 0, dash ? 0.3 + 0.12 * Math.sin(stride + 1) : flick, dash ? 0 : 0.35 * Math.sin(now.t * 0.8 + i * 2), dash ? 0.8 * Math.sin(stride) : 0);
     }
   };
 }
@@ -316,6 +322,8 @@ function birds(plan: Plan, add: Add): Kind {
       return {
         crowd: meshes.get(f.species)!, i, rest: [...b.at] as [number, number, number], yaw: b.yaw, home: b.at,
         doing: 0, k: 0, long: 0, wait: next() * 2, look: 0, hop: 0,
+        // Where it has come down in a tree, while he goes by.
+        perch: null as V3 | null,
         fly: null as null | { a: V3; b: V3; c: V3; k: number; long: number; out: boolean },
         gone: false,
       };
@@ -330,7 +338,7 @@ function birds(plan: Plan, add: Add): Kind {
       if (now.still) {
         // With less motion every bird is where it sits.
         f.away = false;
-        for (const b of f.birds) { b.fly = null; b.gone = false; b.doing = 0; b.rest = [...b.home]; }
+        for (const b of f.birds) { b.fly = null; b.gone = false; b.perch = null; b.doing = 0; b.rest = [...b.home]; }
       }
       if (!f.shelter && !now.still && show) {
         const near = Math.abs(now.x - f.x) < 2.9 + f.birds.length * 0.3 && Math.abs(now.y - f.y) < 3.5;
@@ -342,9 +350,11 @@ function birds(plan: Plan, add: Add): Kind {
           const tree = plan.trees.find((t) => Math.sign(t.x - f.x) === f.side && Math.abs(t.x - f.x) > 3 && Math.abs(t.x - f.x) < 11 && t.z < -3 && t.z > -12);
           for (const b of f.birds) {
             const r = b.rest;
+            // Onto a bough of that tree, in the picture; with no tree near, up and away out of it.
             const c: V3 = tree
-              ? [tree.x - f.side * 0.3, tree.y + 6 + next() * 3, tree.z - girth(tree, 6) - 0.6]
+              ? [tree.x + (next() < 0.5 ? -1 : 1) * (1.1 + next()), tree.y + 5 + next() * 2.6, tree.z + 0.3]
               : [r[0] + f.side * (8 + next() * 3), r[1] + 8 + next() * 2, r[2] - 3 - next() * 4];
+            b.perch = tree ? c : null;
             b.fly = flight([...r], [r[0] + f.side * 1.2, r[1] + 2.2, r[2] - 0.5], c, 1.3 + next() * 0.6, true, next() * 0.35);
             b.doing = 0;
           }
@@ -356,16 +366,23 @@ function birds(plan: Plan, add: Add): Kind {
           for (const b of f.birds) {
             const r = b.home;
             b.rest = [...r];
-            b.fly = flight([r[0] + side * (5 + next() * 3), r[1] + 5.5, r[2] - 3 - next() * 3], [r[0] + side * 1.4, r[1] + 1.6, r[2] - 0.4], r, 1.7 + next() * 0.5, false, next() * 0.5);
+            b.fly = flight(b.perch ? [...b.perch] : [r[0] + side * (5 + next() * 3), r[1] + 5.5, r[2] - 3 - next() * 3], [r[0] + side * 1.4, r[1] + 1.6, r[2] - 0.4], r, 1.7 + next() * 0.5, false, next() * 0.5);
             b.gone = false;
+            b.perch = null;
           }
           f.away = false;
         }
       }
       for (const [k, b] of f.birds.entries()) {
         const { crowd, i } = b;
-        if (!show || b.gone || (k > 1 && now.share < 1)) { crowd.hide(i); continue; }
+        if (!show || (b.gone && !b.perch) || (k > 1 && now.share < 1)) { crowd.hide(i); continue; }
         const s = size(f.species);
+        if (b.gone && b.perch) {
+          // On its bough, looking about, until he has gone by.
+          crowd.put(i, b.perch[0], b.perch[1], b.perch[2], b.yaw, s);
+          crowd.pose(i, 0, 0, Math.sin(now.t * 0.9 + i) * 0.7, 0);
+          continue;
+        }
         if (b.fly) {
           const fl = b.fly;
           fl.k += now.dt / fl.long;
@@ -376,17 +393,28 @@ function birds(plan: Plan, add: Add): Kind {
           }
           if (fl.k >= 1) {
             b.fly = null;
-            if (fl.out) { b.gone = true; crowd.hide(i); continue; }
+            if (fl.out) {
+              b.gone = true;
+              if (!b.perch) crowd.hide(i);
+              continue;
+            }
           } else {
             // Out it speeds up; coming back it slows to land.
             const k1 = fl.out ? fl.k ** 1.4 : 1 - (1 - fl.k) ** 2;
             const m = 1 - k1;
             const at = [0, 1, 2].map((j) => m * m * fl.a[j]! + 2 * m * k1 * fl.b[j]! + k1 * k1 * fl.c[j]!);
             const d = [0, 1, 2].map((j) => 2 * m * (fl.b[j]! - fl.a[j]!) + 2 * k1 * (fl.c[j]! - fl.b[j]!));
-            const yaw = Math.atan2(-d[2]!, d[0]!);
-            crowd.put(i, at[0]!, at[1]!, at[2]!, yaw, s, Math.atan2(d[1]!, Math.hypot(d[0]!, d[2]!)) * 0.6);
-            if (!fl.out && fl.k > 0.85) b.yaw = yaw;
-            crowd.pose(i, 0.95 * Math.sin(now.t * 44 + i * 1.7), Math.min(1, fl.k * 6, (1 - fl.k) * (fl.out ? 9 : 4)), 0, 0);
+            // It turns into its way, and never in one frame.
+            const wanted = Math.atan2(-d[2]!, d[0]!);
+            b.yaw += Math.atan2(Math.sin(wanted - b.yaw), Math.cos(wanted - b.yaw)) * Math.min(1, now.dt * 9);
+            // A small bird flies in bursts: a few quick beats, then wings shut for a moment, so that it rises and dips.
+            // Coming down it brakes, with its wings wide and its beats slower.
+            const coming = (!fl.out || !!b.perch) && fl.k > 0.72;
+            const beating = coming || Math.sin(now.t * 7 + i * 2.1) > -0.35;
+            const dip = coming ? 0 : Math.sin(now.t * 7 + i * 2.1 - 1) * 0.09 * Math.min(1, fl.k * 5);
+            crowd.put(i, at[0]!, at[1]! + dip, at[2]!, b.yaw, s, Math.atan2(d[1]!, Math.hypot(d[0]!, d[2]!)) * 0.6);
+            const spread = Math.min(1, fl.k * 6, coming ? 1 : (1 - fl.k) * 9);
+            crowd.pose(i, (beating ? 0.95 : 0.12) * Math.sin(now.t * (coming ? 30 : 46 + (i % 4) * 3) + i * 1.7), spread * (beating ? 1 : 0.25), 0, 0);
             continue;
           }
         }
