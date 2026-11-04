@@ -14,9 +14,10 @@ import { alongAll, round, row, slopeRow, timeCard } from '../kit';
  * 2. **Bollarna i blåsten** (the exciting sequence): the wind rolls balls across the small pitch from behind him.
  *    He jumps each one; one that reaches his legs bowls him into the glitter bubble, as the cones on Granskogen's
  *    slope do. The trail floats a little higher here, so that he takes it running or jumping.
- * 3. **Bollen i målet** (the puzzle): the goalmouth of the small goal is a deep puddle, too wide to jump. A big
- *    football lies on the turf before it. Balls float, like Klonk: kicked three times, it rolls into the puddle and
- *    floats there with its top at his feet, a stepping stone. Then into the goal: "Mål! Jag gjorde mål själv!"
+ * 3. **Bollen i målet** (the puzzle): the goalmouth of the small goal is a deep puddle, too wide to jump, and a small
+ *    ball bobs in it. The answer is behind him: he has run under a table with a big football on it. He goes back, climbs
+ *    up behind it, kicks it down onto the turf and on, and it rolls into the puddle and floats there with its top at
+ *    his feet, a stepping stone. Then into the goal: "Mål! Jag gjorde mål själv!"
  * 4. **Nätet och ribban** (a side way): a held jump up to the back of the goal's net, the net climbed to the top
  *    of the goal, and the crossbar walked along with the hearts, to a lookout over the whole pitch.
  * 5. **Hörnflaggan och bänkarna:** the corner flag snapping in the wind, and the team benches' roofs pouring:
@@ -77,14 +78,15 @@ const BANK: Stone = { from: 64, to: 75, y: 0 };
 const AFLOAT: Stone = { from: 76.2, to: 77.7, y: 0 };
 const FAR: Stone = { from: 78.9, to: 90, y: 0 };
 const PUDDLE = { from: BANK.to, to: FAR.from, water: -0.7 };
+/** The table the big football lies on: he runs under it on his way to the puddle, and climbs it on his way back. */
+const KIT: Ledge = { x: 66.5, y: 1.1, width: 3.8, look: 'plank' };
 /**
- * The big football (the puzzle): it lies on the turf before the goalmouth, taller than he pulls himself up
- * (LEDGE_REACH), so a run stops at it with Sparka on the button. Two kicks roll it to the puddle's edge, and the
- * third into the water.
+ * The big football (the puzzle): it lies up on the table, out of his way, and Sparka comes only from behind it, up
+ * there. One kick brings it down onto the turf, two roll it to the puddle's edge, and the fourth into the water.
  */
 const BALL: Mover = {
   id: 'ol-ball', look: 'football', width: AFLOAT.to - AFLOAT.from, height: BALL_HIGH, verb: 'push', word: 'olKick',
-  stops: [{ x: 70, y: 0 }, { x: 72.4, y: 0 }, { x: round(BANK.to - BALL_HIGH / 2), y: 0 }, { x: round((AFLOAT.from + AFLOAT.to) / 2), y: AFLOAT.y - BALL_HIGH }],
+  stops: [{ x: 66.9, y: KIT.y }, { x: 71.8, y: 0 }, { x: 73, y: 0 }, { x: round(BANK.to - BALL_HIGH / 2), y: 0 }, { x: round((AFLOAT.from + AFLOAT.to) / 2), y: AFLOAT.y - BALL_HIGH }],
 };
 const BALL_WAY: Stone[] = [BANK, AFLOAT, FAR];
 
@@ -210,9 +212,10 @@ export const olympia: ChapterData = {
     { x: 172, y: trailAt(172) },
   ],
   climbs: [FENCE_DOWN, FENCE_UP, NET],
-  ledges: [CROSSBAR],
+  ledges: [CROSSBAR, KIT],
   rollers: ROLLERS,
   movers: [BALL],
+  counterweight: { from: BANK.from - 2, to: PUDDLE.from, call: 'beat:ol:puddle', heavy: BALL.id, launch: `placed:${BALL.id}` },
   drips: DRIPS,
   spots: [
     // On the crossbar's end, over the goal's mouth: the whole pitch in view.
@@ -225,9 +228,18 @@ export const olympia: ChapterData = {
   ],
   sets: [{ flag: 'ol:all-white', when: TARGETS.map((_, i) => `ol:target-${i + 1}`) }],
   rides: [{ id: 'kick', look: 'football', ...KICK }],
-  later: [{ flag: 'ol:kick-ready', after: 'ol:bertil', until: 'ol:kick', within: [116, 126], seconds: 1.2, hold: true }],
+  later: [
+    { flag: 'ol:kick-ready', after: 'ol:bertil', until: 'ol:kick', within: [116, 126], seconds: 1.2, hold: true },
+    // If he stands at the water and thinks, he sees the small ball, and then what that means.
+    { flag: 'ol:think', after: 'beat:ol:puddle', until: `placed:${BALL.id}`, seconds: 12 },
+    { flag: 'ol:think-more', after: 'beat:ol:puddle', until: `placed:${BALL.id}`, seconds: 24 },
+  ],
   // Lätta hopp: onto the floating ball and off it, once it floats in the goalmouth.
-  jumps: hops(BALL_WAY, { needs: BALL.id }),
+  jumps: [
+    ...hops(BALL_WAY, { needs: BALL.id }),
+    // Up onto the table behind the ball, coming back to it.
+    { at: { x: 66.4, y: 0 }, dir: -1, land: { x: 65.85, y: KIT.y }, until: `placed:${BALL.id}` },
+  ],
   storm: {
     // The crossbar he walks is the goal's own white frame, not a trestle.
     bars: 'goal',
@@ -256,6 +268,7 @@ export const olympia: ChapterData = {
       // The red hall under its arch, across the pitch (art/blender/olympia.py).
       { kind: 'clubhouse', x: 50, z: -66, width: 36, height: 18, model: 'olympia-hall' },
       { kind: 'goal', x: GOAL.x, z: -6.4, width: GOAL.depth, height: GOAL.height },
+      { kind: 'picnic', x: KIT.x, z: 0, width: KIT.width, height: KIT.y },
       { kind: 'floodlight', x: 92, z: -30, height: 90 },
       // The long timber stand on the far side, the forest straight behind it.
       { kind: 'stand', x: 118, z: -29, width: 44, model: 'olympia-stand' },
@@ -267,6 +280,8 @@ export const olympia: ChapterData = {
     ],
   },
   decor: [
+    // A small ball from the torn bag, bobbing in the goalmouth's puddle: the clue.
+    { look: 'floatBall', at: { x: PUDDLE.from + 1.2, y: PUDDLE.water }, z: -0.3, until: `placed:${BALL.id}` },
     // The ball bag at the foot of the fence, torn open by the wind: the balls roll out of it.
     { look: 'football', at: { x: BALLS.from, y: 0 }, z: -1.2 },
     // The corner flag, snapping in the wind.
@@ -314,8 +329,9 @@ export const olympia: ChapterData = {
     { id: 'ol:klonk-balls', at: 34, who: 'spoket', line: 'olKlonkKlonk' },
     { id: 'ol:phew', at: 61, who: 'elof', line: 'olPhew' },
     // 3. Bollen i målet
-    { id: 'ol:puddle', at: 65.6, who: 'elof', line: 'olPuddle' },
-    { id: 'ol:idea', at: 67.4, until: `placed:${BALL.id}`, who: 'elof', line: 'olIdea', read: true },
+    { id: 'ol:puddle', at: 73.6, who: 'elof', line: 'olPuddle' },
+    { id: 'ol:idea', on: 'ol:think', until: `placed:${BALL.id}`, who: 'elof', line: 'olIdea', read: true },
+    { id: 'ol:idea-more', on: 'ol:think-more', until: `placed:${BALL.id}`, who: 'elof', line: 'olIdeaMore', read: true },
     { id: 'ol:splash', on: `placed:${BALL.id}`, who: 'elof', line: 'olSplash' },
     { id: 'ol:klonk-ball', on: `placed:${BALL.id}`, who: 'spoket', line: 'olKlonkKlonk' },
     { id: 'ol:in-goal', at: 81, who: 'elof', line: 'olInGoal' },

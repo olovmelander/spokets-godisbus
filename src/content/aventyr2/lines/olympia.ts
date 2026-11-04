@@ -20,7 +20,8 @@ export const words: ChapterWords = {
     olPhew: 'Puh! Ingen boll fick tag i mig!',
     // 3. Bollen i målet
     olPuddle: 'Målet står mitt i en stor pöl!',
-    olIdea: 'Bollar flyter! Bollen kan bära mig.',
+    olIdea: 'Den lilla bollen flyter ju!',
+    olIdeaMore: 'En större boll skulle kunna bära mig.',
     olSplash: 'Plask! Bollen flyter. Nu hoppar jag!',
     olInGoal: 'Mål! Jag gjorde mål själv!',
     // 4. up the net to the crossbar
@@ -54,7 +55,7 @@ export const words: ChapterWords = {
     olympiaFence: { purpose: 'Klättra över staketet.', recap: 'Staketet runt planen är högt, men nätet går att klättra på.' },
     olympiaTrail: { purpose: 'Följ godisspåret över planen.', recap: 'Gamla trägubben lämnar godis åt mig, en bit i taget.' },
     olympiaBalls: { purpose: 'Hoppa över bollarna som rullar.', recap: 'Vinden rullar bollar över planen. De kommer bakifrån.' },
-    olympiaKick: { purpose: 'Sparka ut bollen i vattnet.', recap: 'Målet står mitt i en stor pöl. Men bollar flyter!' },
+    olympiaKick: { purpose: 'Hur tar jag mig över pölen?', recap: 'Målet står mitt i en stor pöl. Den är för bred.' },
     olympiaHop: { purpose: 'Hoppa över på bollen.', recap: 'Bollen flyter i pölen framför målet. Den bär mig.' },
     olympiaBenches: { purpose: 'Spring förbi bänkarna mellan dropparna.', recap: 'Det droppar från bänkarnas tak. Skuggorna visar var dropparna landar.' },
     olympiaCallBertil: { purpose: 'Ropa på Bertil vid mittcirkeln.', recap: 'Mittcirkeln är en hel sjö. Bertil är bäst på frisparkar.' },

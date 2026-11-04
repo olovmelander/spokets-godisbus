@@ -1331,6 +1331,18 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       return standing(spot, group);
     },
     football: (spot) => standing(spot, (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
+    floatBall: (spot) => {
+      // A small ball adrift in a puddle, turning slowly and bobbing on the rain's rings.
+      const group = new Group();
+      const small = football(0.36);
+      small.position.y = 0.26;
+      group.add(small);
+      return standing(spot, group, (clock) => {
+        group.position.y = Math.sin(clock * 1.6) * 0.05;
+        small.rotation.z = Math.sin(clock * 0.7) * 0.5;
+        small.rotation.y = clock * 0.3;
+      });
+    },
     target: (spot) => {
       // A biathlon target on its stand: a black disc on a white plate, white too once it is hit. It stays.
       const root = new Group();

@@ -110,7 +110,7 @@ export function decide(game: Game, chapter: ChapterData): Decision {
   // At a thing in the way it jumps, unless the jump is marked and made for it (Lätta hopp).
   const overing = (obstacle: MoverState, direction: number) => {
     const near = direction < 0 ? p.x - obstacle.x - obstacle.def.width / 2 : obstacle.x - obstacle.def.width / 2 - p.x;
-    return !!direction && p.grounded && !game.sim.options.easyJumps && near > -0.1 && near < 1.05 && obstacle.y + obstacle.def.height > p.y + 0.3;
+    return !!direction && p.grounded && !game.sim.options.easyJumps && near > -0.1 && near < 1.05 && obstacle.y + obstacle.def.height > p.y + 0.3 && obstacle.y < p.y + 0.9;
   };
   // A readable weight puzzle deliberately sends him back to a passed cone, onto its push side.
   // Its authored hint supplies the current target; the robot still reads/clears the actual obstacle.
@@ -118,8 +118,12 @@ export function decide(game: Game, chapter: ChapterData): Decision {
   if (weight && chapter.counterweight && game.sim.flags.has(chapter.counterweight.call)
     && !game.sim.flags.has(`placed:${chapter.counterweight.heavy}`) && weight.verb === null) {
     const obstacle = movers.find((m) => m.def.id === chapter.counterweight!.heavy)!;
-    const direction = Math.abs(p.x - weight.at.x) < 0.08 ? 0 : Math.sign(weight.at.x - p.x);
-    return { ...wait, x: direction, ahead: overing(obstacle, direction) };
+    // Up onto what it lies on, from under it and a little back, or a jump would take hold of the thing itself.
+    const low = weight.at.y > p.y + 0.5;
+    const aim = low ? weight.at.x - 0.5 : weight.at.x;
+    const direction = Math.abs(p.x - aim) < 0.08 ? 0 : Math.sign(aim - p.x);
+    const up = low && direction === 0 && p.grounded && !game.sim.options.easyJumps;
+    return { ...wait, x: direction, ahead: up || overing(obstacle, direction) };
   }
   // A launch he only has to touch: back to it, over what he moved.
   const launch = chapter.counterweight && chapter.spots?.find((s) => s.id === chapter.counterweight!.launch);
