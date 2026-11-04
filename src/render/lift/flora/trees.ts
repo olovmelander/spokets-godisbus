@@ -51,21 +51,37 @@ const SPRUCE = ['#2c4636', '#34523a', '#283f30', '#3e5838'].map(hex);
 const PINE = ['#506c3a', '#5c7440', '#4a6438'].map(hex);
 const WHITE = hex('#ffffff');
 const BARK = hex('#a08c74');
+/** A birch's boughs are dark, not white: they show as thin lines between its leaves. */
+const TWIG = hex('#6a5a4a');
 
-/** A young birch, 12 high: a white stem, a crown like an egg of leaf clumps, and strands hanging at its edge. */
+/** The foot of a card `long` that lies round a point: a card grows from its foot, so a crown of feet is empty inside. */
+const round = (at: readonly [number, number, number], angle: number, long: number) =>
+  [at[0] - (Math.cos(angle) * long) / 2, at[1] - (Math.sin(angle) * long) / 2, at[2]] as const;
+
+/**
+ * A young birch, 12 high: a white stem, dark boughs rising out of it, a crown like an egg of leaf clumps all the way
+ * through, and strands hanging from it. The cards' own shade darkens the crown's middle, which gives it its volume.
+ */
 function birch(): BufferGeometry {
   const next = sequence(71);
   const H = 12;
   const cards = new Cards(new Vector3(0, H * 0.68, 0), new Vector3(3.2, H * 0.32, 1.6));
   cards.stem(0, 0, 0, H * 0.96, 0.3, 0.05, 'birch', WHITE, 0.4);
-  for (let i = 0; i < 54; i++) {
+  for (let i = 0; i < 6; i++) {
+    const side = i % 2 === 0 ? -1 : 1;
+    // They end inside the crown: a bough out through the top of it is a thin straight line against the sky.
+    const from = H * (0.4 + i * 0.05);
+    cards.stem(0, 0.1, from, from + H * (0.14 + next() * 0.06), 0.09, 0.02, 'birch', TWIG, side * (1.5 + next() * 0.8));
+  }
+  for (let i = 0; i < 72; i++) {
     const [ux, uy, uz] = ball(next);
-    const foot = [ux * 3.1, H * 0.68 + uy * H * 0.3, uz * 1.5] as const;
-    cards.card(foot, Math.atan2(uy + 0.3, ux) + (next() - 0.5) * 0.8, 1.5 + next() * 0.8, 1.5 + next() * 0.7, 'clump', BIRCH[Math.floor(next() * 5)]!, (next() - 0.5) * 1.2);
+    const long = 1.5 + next() * 0.8;
+    const angle = Math.atan2(uy + 0.3, ux) + (next() - 0.5) * 0.8;
+    cards.card(round([ux * 3.1, H * 0.68 + uy * H * 0.3, uz * 1.5], angle, long), angle, long, 1.5 + next() * 0.7, 'clump', BIRCH[Math.floor(next() * 5)]!, (next() - 0.5) * 1.2);
   }
   for (let i = 0; i < 16; i++) {
     const side = next() < 0.5 ? -1 : 1;
-    const foot = [side * (1.4 + next() * 1.8), H * (0.5 + next() * 0.25), (next() - 0.5) * 2.4] as const;
+    const foot = [side * (0.9 + next() * 2.1), H * (0.5 + next() * 0.25), (next() - 0.5) * 2.4] as const;
     cards.card(foot, -Math.PI / 2 + side * (0.15 + next() * 0.2), 1.8 + next() * 1.6, 1 + next() * 0.4, 'strand', BIRCH[Math.floor(next() * 3)]!, (next() - 0.5) * 0.8, -side * 0.25);
   }
   return cards.build(1 / H);
@@ -81,8 +97,9 @@ function birchBoughs(): BufferGeometry {
   const cards = new Cards(new Vector3(0, 5, 0), new Vector3(5, 3.5, 1.6));
   for (let i = 0; i < 46; i++) {
     const x = (next() - 0.5) * 11;
-    const foot = [x, 3.2 + next() * 5 - Math.abs(x) * 0.25, (next() - 0.5) * 3.2] as const;
-    cards.card(foot, Math.atan2(0.4, x) + (next() - 0.5) * 0.9, 1.4 + next() * 0.8, 1.5 + next() * 0.7, 'clump', BIRCH[Math.floor(next() * 5)]!, (next() - 0.5) * 1.2);
+    const long = 1.4 + next() * 0.8;
+    const angle = Math.atan2(0.4, x) + (next() - 0.5) * 0.9;
+    cards.card(round([x, 3.2 + next() * 5 - Math.abs(x) * 0.25, (next() - 0.5) * 3.2], angle, long), angle, long, 1.5 + next() * 0.7, 'clump', BIRCH[Math.floor(next() * 5)]!, (next() - 0.5) * 1.2);
   }
   for (let i = 0; i < 26; i++) {
     const x = (next() - 0.5) * 10;
@@ -144,8 +161,7 @@ function pine(): BufferGeometry {
 function ball(next: () => number): [number, number, number] {
   for (;;) {
     const p: [number, number, number] = [next() * 2 - 1, next() * 2 - 1, next() * 2 - 1];
-    const r = Math.hypot(...p);
-    if (r <= 1 && r > 0.35) return p;
+    if (Math.hypot(...p) <= 1) return p;
   }
 }
 

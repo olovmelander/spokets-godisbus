@@ -203,16 +203,17 @@ did the integration and the checks.
 ### Materials and water (`src/render/lift/materials/`, `water.ts`)
 
 - **One scene-wide patch, on High only.** It is laid at warm-up under one key, `lift-surface-v1`, and what each
-  material is (carved wood, planed wood, moss, ground, street) is a uniform.
+  material is (carved wood, furniture's planed wood, moss) is a uniform. The ground, streets, decks, floors and
+  planks keep their own light: over them it cost half a frame in software rendering.
   - It is laid only on a picture that starts on High. Low and Mid keep the place's own materials. A change of
     tier in the menu neither lays it nor lifts it: that waits for the next picture.
   - Moss means the kit's stones and bark, not every vertex-coloured material.
   - Measured in software rendering, the first version cost about a third of every frame on every tier.
 - **Carved wood.** Matte, with grain and knife facets: the trägubbar, Klonk, the carvings and Pappa's shelf figures.
-- **Planed wood.** Matte, with grain: the floors, decks and planks.
+- **Planed wood.** Matte, with grain: furniture only.
 - **Moss.** Darker and glossy in its hollows, catching the low sun.
-- **Wet surfaces.** Within 1.9 EL of water, everything outdoors in Äventyr 2's storm, and Byn's street, with slow
-  glints.
+- **Wet surfaces.** Moss and carved wood only: within 1.9 EL of water and outdoors in Äventyr 2's storm, with slow
+  glints. Ground and streets do not look wet (see `HANDOVER.md`, "Next").
 - **Dew.** Beads on grass tips and leaves in the morning places, and drops on the window panes in Morgonen efter.
 - **Water.**
   - On High, what stands on the banks is mirrored from the half-size copy of the picture, in screen space, with
