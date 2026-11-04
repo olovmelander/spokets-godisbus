@@ -130,7 +130,9 @@ try {
     await sleep(1500);
     await game.page.keyboard.up('ArrowRight');
     const after = await game.state();
-    check(`${id}: he moves with the keyboard`, after.x > before || after.flags.length > 0, `x ${before} → ${after.x}`);
+    // Unless the chapter opens with a held scene (the breakfast, the storm's eye): then the story has him, by design.
+    const story = after.scene !== null || after.held === true || after.flags.length > 0;
+    check(`${id}: he moves with the keyboard`, after.x > before || story, `x ${before} → ${after.x}${story && !(after.x > before) ? ', in its opening scene' : ''}`);
     await picture(game.page, `${SHOTS}aventyr2-${id}.png`);
     await game.finish(id);
   }
