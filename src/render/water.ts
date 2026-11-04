@@ -297,12 +297,14 @@ function islandRow(chapter: ChapterData, kind: WaterKind, street: ((x: number) =
   const first = chapter.ground?.[0], last = chapter.ground?.[chapter.ground.length - 1];
   if (kind.behind === null || !street || !pools.length || !first || !last) return null;
   const from = first.x - 8, wide = last.x - first.x + 16, row = new Uint8Array(1024);
-  for (let i = 0; i < row.length; i++) row[i] = Math.round(Math.min(1, Math.max(0, (street(from + (i / 1023) * wide) - pools[0]!.y) / 4)) * 255);
+  // From the lowest pool's surface up: each pool reads it against its own.
+  const base = Math.min(...pools.map((w) => w.y));
+  for (let i = 0; i < row.length; i++) row[i] = Math.round(Math.min(1, Math.max(0, (street(from + (i / 1023) * wide) - base) / 4)) * 255);
   const map = new DataTexture(row, 1024, 1, RedFormat);
   map.name = 'water-islands';
   map.magFilter = map.minFilter = LinearFilter;
   map.needsUpdate = true;
-  return { map, frame: new Vector4(from, wide, 1.65, 1) };
+  return { map, frame: new Vector4(from, wide, 1.65, base) };
 }
 
 /** A clear pixel: what the water mirrors of the far scenery where there is none. */
@@ -316,8 +318,10 @@ function nothingFar(): DataTexture {
 /**
  * The water of a chapter: one mesh, one shader, the same on every tier. It mirrors the place's sky and the
  * far scenery standing on its head, darkens with depth where it is cut in front, and thins out into the haze
- * instead of ending in an edge. Mid adds the sun's glitter and caustics on what is under water; High also
- * shows what lies just under the surface, from a half-size copy of the picture behind it.
+ * instead of ending in an edge. Mid adds the sun's glitter and caustics on what is under water, and mirrors its
+ * banks: a pool's two ends, the trunks nearest it and the bog's islands, with a dark wet band where it meets a
+ * bank. High also shows what lies just under the surface, from a half-size copy of the picture behind it, and
+ * mirrors what stands on its banks from that same copy, in screen space (Olov's exception, 4 November 2026).
  */
 export function createWater(chapter: ChapterData, look: { colour: string; opacity: number } | null, sun: readonly [number, number, number] = [-7, 5, -4], setting: WaterSetting = {}) {
   const group = new Group();
@@ -358,8 +362,8 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     bankFace: { value: new Color((BANKS[setting.place ?? chapter.place!] ?? BANKS.forest!)[1]) },
     viewProjection: { value: new Matrix4() },
     islands: { value: (islands?.map ?? nothingFar()) as Texture },
-    // Where the islands' row begins, how wide it is, where their fronts go under the water, and whether there are any.
-    islandFrame: { value: islands?.frame ?? new Vector4(0, 1, 0, 0) },
+    // Where the islands' row begins and how wide it is (none: 0), where their fronts go under the water, and the height it counts from.
+    islandFrame: { value: islands?.frame ?? new Vector4(0, 0, 0, 0) },
     mirrorTint: { value: new Color(kind.tint) },
     faceTop: { value: new Color(kind.faceTop) }, faceDeep: { value: new Color(kind.faceDeep) },
     through: { value: new Color(kind.through) },
@@ -472,23 +476,23 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           }
           // The bog's islands, where the water lies in front of them: their fronts, on their heads.
           float front = (waterWorld.z - islandFrame.z) / max(-d.z, 0.05);
-          if (islandFrame.w > 0.5 && front > 0.0 && front < near) {
-            float high = texture2D(islands, vec2((waterWorld.x + d.x * front - islandFrame.x) / islandFrame.y, 0.5)).r * 4.0;
+          if (islandFrame.y > 0.0 && front > 0.0 && front < near) {
+            float high = textureLod(islands, vec2((waterWorld.x + d.x * front - islandFrame.x) / islandFrame.y, 0.5), 0.0).r * 4.0 + islandFrame.w - waterPart.w;
             float under = -d.y * front;
             if (under < high - 0.02) { near = front; standing = mix(bankFace, bankTop, smoothstep(high - 0.5, high - 0.12, under)) * (0.7 + 0.3 * smoothstep(0.0, 0.5, under)); }
           }
           float stands = near < 1e8 ? 0.92 * (1.0 - smoothstep(14.0, 32.0, near)) : 0.0;
-          if (refractOn > 0.5) {
+          if (refractOn > 0.5 && waterDepth < 45.0) {
             // The picture so far, mirrored: the mirrored ray in growing steps against the picture's own depth.
             vec3 r = reflect(d, vec3(0.0, 1.0, 0.0));
             float s = 0.25, last = 0.0;
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 8; i++) {
               vec4 clip = viewProjection * vec4(waterWorld + r * s, 1.0);
               vec2 uv = clip.xy / clip.w * 0.5 + 0.5;
               if (uv.y > 1.0 || uv.x < 0.0 || uv.x > 1.0) break;
               float gap = clip.w - textureLod(refraction, uv, 0.0).a * cameraFar;
               if (gap > 0.0 && gap < 0.5 + s * 0.35) {
-                for (int j = 0; j < 4; j++) {
+                for (int j = 0; j < 3; j++) {
                   float m = (last + s) * 0.5;
                   vec4 mc = viewProjection * vec4(waterWorld + r * m, 1.0);
                   vec2 mu = mc.xy / mc.w * 0.5 + 0.5;
@@ -502,7 +506,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
                 break;
               }
               last = s;
-              s = s * 1.55 + 0.2;
+              s = s * 1.7 + 0.2;
             }
           }
           mirrored = mix(mirrored, standing * mirrorTint, stands);

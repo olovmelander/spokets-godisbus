@@ -1,5 +1,5 @@
 import {
-  Color, DirectionalLight, Group, HemisphereLight, Mesh, MeshStandardMaterial, PerspectiveCamera, Scene, ShaderLib, ShaderMaterial,
+  Color, DirectionalLight, Float32BufferAttribute, Group, HemisphereLight, Mesh, MeshStandardMaterial, PerspectiveCamera, Scene, ShaderLib, ShaderMaterial,
   SphereGeometry, type InstancedMesh, type Material, type WebGLProgramParametersWithUniforms, type WebGLRenderer,
 } from 'three';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -7,7 +7,7 @@ import { ADVENTURE2, BONUS, STORY, loadAdventure2 } from '../../src/content/chap
 import { PLACES, dress } from '../../src/render/dressing';
 import { PACK, type ExtraContext, type ExtraFrame } from '../../src/render/extensions';
 import { DEW, createDew, dewPlaces } from '../../src/render/lift/materials/dew';
-import { CARVED, RIM, classify, createSurfaces, dewy, wetOf, woodColoured } from '../../src/render/lift/materials/surface';
+import { CARVED, PALED, RIM, classify, createSurfaces, dewy, wetOf, woodColoured } from '../../src/render/lift/materials/surface';
 import { createWater } from '../../src/render/water';
 import type { ChapterData } from '../../src/sim/types';
 
@@ -15,6 +15,7 @@ beforeAll(async () => {
   // The dressing draws its pictures on canvases: there are none here, and none are needed.
   const fake: object = new Proxy(function () {}, { get: (_, key) => (key === Symbol.toPrimitive ? () => 0 : fake), apply: () => fake, set: () => true });
   vi.stubGlobal('document', { createElement: () => ({ width: 0, height: 0, style: {}, getContext: () => fake }) });
+  vi.stubGlobal('window', { innerWidth: 1180, innerHeight: 820, devicePixelRatio: 1 });
   await loadAdventure2();
 });
 afterAll(() => vi.unstubAllGlobals());
@@ -102,6 +103,14 @@ describe('the visual upgrade: wood, moss and the wet', () => {
     figure.add(body, eye);
     expect(classify(body, body.material, ctx.dressing ?? null, granskog)).toBe(CARVED);
     expect(classify(eye, eye.material, ctx.dressing ?? null, granskog)).toBeNull();
+    // A figure painted on its corners, as the forest's carved figures are (../src/render/lift/fauna.ts).
+    const painted = new SphereGeometry();
+    const pale = new Color('#d6bf98');
+    painted.setAttribute('color', new Float32BufferAttribute(Array.from({ length: painted.getAttribute('position').count }, () => [pale.r, pale.g, pale.b]).flat(), 3));
+    const carving = new Mesh(painted, new MeshStandardMaterial({ vertexColors: true, flatShading: true }));
+    carving.name = 'fauna-carving:gubbe';
+    new Group().add(carving).name = 'fauna';
+    expect(classify(carving, carving.material, ctx.dressing ?? null, granskog)).toBe(CARVED);
     expect(woodColoured(new Color('#e6cfa2'))).toBe(true);
     expect(woodColoured(new Color('#6f8a45'))).toBe(false);
   });
@@ -136,7 +145,7 @@ describe('the visual upgrade: wood, moss and the wet', () => {
     expect(wetOf(byId('stormkvall'), 'home').y).toBe(byId('stormkvall').outdoors);
     expect(wetOf(byId('morgonen'), 'home').x).toBe(0);
     expect(wetOf(byId('byn'), 'village').w).toBeGreaterThan(0.3);
-    expect(wetOf(byId('berget'), 'mountain').toArray().filter((v, i) => i !== 1)).toEqual([0, 0, 0]);
+    expect(wetOf(byId('berget'), 'mountain').toArray().filter((_, i) => i !== 1)).toEqual([0, 0, 0]);
   });
 
   it('holds its glints and the dew still with reduced motion', () => {
@@ -189,8 +198,7 @@ describe('the visual upgrade: wood, moss and the wet', () => {
     for (const chapter of all()) {
       const look = PACK.looks.get(chapter.id) ?? PLACES[chapter.place!];
       const sun = new Color(look.sun.colour);
-      expect(candyColoured(ink(sun.clone().lerp(new Color(1, 1, 1), 0.55))), chapter.id).toBe(false);
-      expect(candyColoured(ink(sun.clone().lerp(new Color(1, 1, 1), 0.5))), chapter.id).toBe(false);
+      expect(candyColoured(ink(sun.clone().lerp(new Color(1, 1, 1), PALED))), chapter.id).toBe(false);
     }
   });
 });
@@ -204,7 +212,7 @@ describe('the water that mirrors its banks', () => {
       expect(material.uniforms.banks!.value, chapter.id).toHaveLength(8);
       expect(material.fragmentShader).toContain('textureLod(refraction');
       // The bog's islands are mirrored on Mid from a row of their heights.
-      expect(material.uniforms.islandFrame!.value.w, chapter.id).toBe(look.id === 'bog' ? 1 : 0);
+      expect(material.uniforms.islandFrame!.value.y > 0, chapter.id).toBe(look.id === 'bog');
     }
   });
 });

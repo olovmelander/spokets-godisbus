@@ -768,7 +768,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       characterShadows.prepareReceivers();
       rimLight.apply(scene);
       materialGrade.apply(scene);
-      for (const lift of lifts) (lift as { patch?: (root: Object3D) => void }).patch?.(scene);
+      for (const lift of lifts) lift.patch?.(scene);
       // What only Mid and High draw (./rich.ts) is laid here, so that a model which arrived late is laid too.
       layRich(scene);
       scene.traverse((object) => {

@@ -133,7 +133,7 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
   }
   context.scene.add(group);
   // For a session's pictures: what of it is drawn (src/main.ts's ?debug has the draw calls). Not in a build.
-  if (import.meta.env.DEV && typeof window !== 'undefined') (window as { __fauna?: Group }).__fauna = group;
+  if (import.meta.env.DEV && typeof window !== 'undefined') (window as { __fauna?: Group }).__fauna = Object.assign(group, { plan });
 
   let clock = 0;
   return {
@@ -242,9 +242,11 @@ function foxes(plan: Plan, add: Add): Kind {
       if (fx.sit >= 1 && (fx.stay -= now.dt) <= 0) fx.sat = true;
     } else {
       fx.sit = Math.max(0, fx.sit - now.dt / 0.6);
+      // It goes the way it faces: turning round, it stops until it has.
+      const pace = 1.7 * now.dt * Math.max(0, Math.cos(fx.yaw - (fx.dir > 0 ? 0 : Math.PI)));
       if (fx.sit === 0) {
-        fx.x += fx.dir * 1.7 * now.dt;
-        fx.walked += 1.7 * now.dt;
+        fx.x += fx.dir * pace;
+        fx.walked += pace;
         fx.steps += now.dt * 9;
       }
     }
@@ -455,9 +457,10 @@ function butterflies(plan: Plan, add: Add): Kind {
       const x = lerp(fx, b.flower[0], k), y = lerp(fy, b.flower[1], k), z = lerp(fz, b.flower[2], k);
       if (!now.still && Math.hypot(x - b.x, z - b.z) > 1e-4) b.yaw = Math.atan2(-(z - b.z), x - b.x);
       b.x = x; b.y = y; b.z = z;
-      crowd.put(i, x, y, z, b.yaw, 1, 0, 0);
-      // Flying, its wings beat about three times a second; sitting, they stand closed over its back and open slowly.
-      crowd.pose(i, k > 0.95 ? -1.35 + 0.3 * (0.5 + 0.5 * Math.sin(t * 1.4)) : lerp(0.95 * Math.sin(t * 17), -1.2, k), 1);
+      crowd.put(i, x, y, z, b.yaw, 1.4, 0, 0);
+      // Flying, its wings beat about three times a second, held up in a V; sitting, they stand closed over its back
+      // and open slowly.
+      crowd.pose(i, k > 0.95 ? -1.35 + 0.3 * (0.5 + 0.5 * Math.sin(t * 1.4)) : lerp(-0.45 + 0.9 * Math.sin(t * 17), -1.2, k), 1);
     }
   };
 }
@@ -485,8 +488,9 @@ function beings(plan: Plan, add: Add): Kind {
       }
       const out = smooth(b.out);
       const shut = b.blink < 0 ? Math.sin((-b.blink / 0.3) * Math.PI) : 0;
-      crowd.put(i, b.at[0] + b.side * lerp(b.wide - 0.45, b.wide + 0.05, out), b.at[1] - lerp(0.85, 0.03, out), b.at[2], -Math.PI / 2 + b.side * 0.35, BEING, 0,
-        -b.side * (0.22 * out + 0.05 * Math.sin(now.t * 0.7 + i)));
+      // Behind its stone: out, its eyes are just over the top, and it leans out to one side to look.
+      crowd.put(i, b.at[0] + b.side * b.wide * lerp(0.05, 0.32, out), b.top - lerp(0.82, 0.36, out), b.at[2] - b.deep - 0.28, -Math.PI / 2 + b.side * 0.3, BEING, 0,
+        -b.side * (0.16 * out + 0.04 * Math.sin(now.t * 0.7 + i)));
       crowd.pose(i, 0, 0, 0, shut);
     }
   };

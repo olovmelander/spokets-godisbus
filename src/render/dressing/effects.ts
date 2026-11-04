@@ -201,7 +201,8 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
   // water, in the forest's morning, and as dew in the garden. Indoors none, but on the washed morning a breath of
   // it outside each window. In the storm none, but on the water in its eye.
   const sheets: { wide: number; tall: number; opacity: number; x: number; y: number; z: number; speed: number }[] = [];
-  for (let i = 0; i < counts.sheets; i++) {
+  // A storm that never calms has none at all, so that it costs no draw.
+  for (let i = 0; i < (chapter.storm && !chapter.storm.calm ? 0 : counts.sheets); i++) {
     sheets.push(bog
       ? { wide: 22 + next() * 14, tall: 2.6 + next() * 1.8, opacity: 0.2 + next() * 0.14, x: next(), y: 0.5 + next() * 1.1, z: -2.5 - next() * 9, speed: 0.25 + next() * 0.4 }
       : forest
@@ -227,6 +228,7 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
   if (mist.count) group.add(mist.mesh);
 
   let before = 0;
+  let gust = 0;
   const wrap = (v: number, span: number) => ((v % span) + span) % span;
   /** Nothing drawn: a quad of no size. */
   const off = (batch: typeof light, i: number) => batch.put(i, 0, -999, 0, 0, 0, 0, 0);
@@ -244,7 +246,9 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
     // A room has no rays over its cards: its windows' beams keep all their light on every tier.
     const lit = home ? day : Math.min(1, Math.max(0, mood.light));
     const glow = chapter.storm ? tint.copy(moon).multiplyScalar(3) : shine;
-    const gust = Math.min(1, Math.max(0, (Math.abs(windAt(cameraX)) - 1.6) / 2));
+    // How hard the wind blows here, slowly followed: more leaves are in the air while it does.
+    const blowing = Math.min(1, Math.max(0, (Math.abs(windAt(cameraX)) - 1.6) / 2));
+    gust += (blowing - gust) * Math.min(1, dt * (blowing > gust ? 1.5 : 0.4));
 
     for (const [i, sheet] of sheets.entries()) {
       const window = 70;
@@ -284,23 +288,25 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
     for (const [i, mote] of motes.entries()) {
       const at = 3 * S + i;
       if (i >= shown || day <= 0) { off(light, at); continue; }
-      // Each drifts on the wind, a little, and never by itself with reduced motion.
-      mote.drift += windAt(cameraX + mote.x * 20) * 0.05 * dt;
       if (i < inShafts) {
-        // In a shaft: it floats slowly down its length and sways across it, and is lit warm by it.
+        // In a shaft: it floats slowly down its length, sways across it as the wind does, and is lit warm by it. A
+        // shaft far out of the picture keeps its motes unseen.
         const shaft = shafts[nearest[i % turns]!]!;
+        const near = Math.min(1, Math.max(0, (18 - Math.abs(shaft.x - cameraX)) / 4));
         const along = wrap(mote.y - time * 0.006 * mote.speed, 1) * 0.76 + 0.12;
-        const across = (mote.x - 0.5) * 0.8 + Math.sin(time * 0.3 * mote.speed + i) * 0.08 + Math.max(-0.2, Math.min(0.2, mote.drift * 0.1));
+        const across = (mote.x - 0.5) * 0.8 + Math.sin(time * 0.3 * mote.speed + i) * 0.08 + Math.max(-0.25, Math.min(0.25, windAt(shaft.x) * 0.03));
         const ux = shaft.floor ? 1 : Math.cos(shaft.turn), uy = shaft.floor ? 0 : Math.sin(shaft.turn);
         const half = shaft.long / 2, t = (along - 0.5) * 2;
         const x = shaft.x + ux * across * shaft.wide / 2 - Math.sin(shaft.turn) * half * t;
         const y = shaft.y + uy * across * shaft.wide / 2 + Math.cos(shaft.turn) * half * t;
         const size = mote.size * (home ? 1.4 : 1) * (0.7 + 0.3 * Math.sin(time * 1.3 * mote.speed + i * 2.3));
         light.put(at, x, y, Math.min(-0.85, shaft.z + (mote.z - 0.5) * 0.6), size / 2, 0, 0, size / 2);
-        const bright = day * Math.min(1, along * 5, (1 - along) * 5);
+        const bright = day * near * Math.min(1, along * 5, (1 - along) * 5);
         light.tint(at, (inside.r + glow.r) / 2, (inside.g + glow.g) / 2, (inside.b + glow.b) / 2, (garden ? 0.9 : 0.75) * bright);
         continue;
       }
+      // Each drifts on the wind, a little, and never by itself with reduced motion.
+      mote.drift += windAt(cameraX + mote.x * 20) * 0.05 * dt;
       const drift = (garden ? 0 : fell ? -time * (0.4 + mote.speed * 0.8) : bog ? time * 0.4 : time * 0.12 * mote.speed) + mote.drift;
       // Each keeps its place in a window that follows the camera, and wraps round at its ends.
       const x = cameraX - SPAN / 2 + wrap(mote.x * SPAN + drift - cameraX, SPAN);

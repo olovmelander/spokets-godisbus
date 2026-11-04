@@ -50,6 +50,8 @@ export interface ExtraFrame {
 
 export interface ViewExtra {
   update(frame: ExtraFrame): void;
+  /** Patches the scene's materials once, at warm-up, as the rim light does: one program key each, nothing in play. */
+  patch?(root: Object3D): void;
 }
 
 export const PACK = {

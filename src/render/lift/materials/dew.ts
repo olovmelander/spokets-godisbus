@@ -4,7 +4,7 @@ import {
 import type { ExtraContext, ExtraFrame, ViewExtra } from '../../extensions';
 import { KIT, heightAt, sequence } from '../../dressing/kit';
 import { sway } from '../../wind';
-import { dewy } from './surface';
+import { PALED, dewy } from './surface';
 
 /**
  * Dew (docs/visual-upgrade.md): tiny bright beads on the tips of the grass and on the leaves of a morning out of
@@ -152,7 +152,7 @@ export function createDew(context: ExtraContext): ViewExtra | null {
       mesh.count = Math.round(places.length * SHARE[frame.tier]);
       const s = context.sun;
       // The sun's light in the drop: its colour, paled, as bright as it is now, and nothing at night.
-      sun.value.copy(s.color).lerp(WHITE, 0.55).multiplyScalar(Math.min(1.6, s.intensity * 0.45) * (1 - (frame.darkness ?? 0)));
+      sun.value.copy(s.color).lerp(WHITE, PALED).multiplyScalar(Math.min(1.6, s.intensity * 0.45) * (1 - (frame.darkness ?? 0)));
     },
   };
 }

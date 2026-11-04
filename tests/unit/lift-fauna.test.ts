@@ -209,6 +209,30 @@ describe('the near life', () => {
     expect(heights().length).toBe(flock.birds.length);
   });
 
+  it('shows a fox far back now and then, which never trots towards him', () => {
+    const chapter = COURSES.granskog!;
+    const { extra, group } = built.get('granskog')!;
+    const fox = group.children.find((c) => c.name === 'fauna-fox') as InstancedMesh;
+    const m = new Matrix4();
+    let clock = 500, seen = 0, before: number | null = null;
+    // He dawdles along the forest, a third of an EL a second, for four minutes.
+    for (let k = 0; k < 240 * 30; k++) {
+      const x = 2 + k / 90;
+      extra!.update(frame(chapter, x, (clock += 1 / 30)));
+      fox.getMatrixAt(0, m);
+      if (!fox.visible || m.determinant() === 0) { before = null; continue; }
+      // Its middle, which it turns about.
+      at.set(0, 0.8, 0).applyMatrix4(m);
+      seen++;
+      expect(at.z).toBeLessThanOrEqual(-12);
+      expect(at.z).toBeGreaterThanOrEqual(-30);
+      // A step of its trot, not the settling of its sitting down.
+      if (before !== null && Math.abs(at.x - x) > 2 && Math.abs(at.x - before) > 0.02) expect(Math.sign(at.x - before) * Math.sign(x - at.x), `at ${x.toFixed(1)}`).toBeLessThanOrEqual(0);
+      before = at.x;
+    }
+    expect(seen).toBeGreaterThan(60);
+  });
+
   it('is drawn on Mid and High only, one draw call a kind, with no colour of the candy', () => {
     for (const chapter of chapters) {
       const { group } = built.get(chapter.id)!;

@@ -4,6 +4,7 @@ import {
 import type { ChapterData, PlaceId } from '../../../sim/types';
 import type { ExtraContext, ExtraFrame } from '../../extensions';
 import { KIT } from '../../dressing/kit';
+import { waterKind } from '../../water';
 
 /**
  * Matte carved wood against wet, glossy moss (docs/visual-upgrade.md, "Ljus och luft"), and surfaces that are wet
@@ -30,7 +31,7 @@ const STREET: SurfaceClass = [0, 0, 1, 1];
 /** A carved figure or the ghost, by a name on it or above it: Elof's own figure is not one. */
 const CARVING = /trägubbe|tragubbe|carving|ghost|stage-block|figure|carved/i;
 /** People, animals and what they hold keep their own materials. */
-const ACTOR = /^(player|stage-|helper|bird$|owl|jay|elof|ghost-thought)/i;
+const ACTOR = /^(player|stage-|helper|bird$|owl|jay|elof|ghost-thought|fauna)/i;
 /** What stands about in a place and gets wet with it, where it is not in the dressing. */
 const PROP = /^(spot:|mover:|ledges:|landmark:|storm$|furniture:|decor)/;
 const GROUND_CLASS: Record<string, SurfaceClass> = {
@@ -46,6 +47,17 @@ export function woodColoured(colour: Color): boolean {
   const hsl = { h: 0, s: 0, l: 0 };
   const hue = c.getHSL(hsl).h * 360;
   return max > 0.2 && max < 0.93 && (max - min) / max > 0.07 && hue >= 14 && hue <= 62 && r >= b;
+}
+
+/** The colour a shape is painted in on its corners, on the whole: what a material with vertex colours shows. */
+function paintOf(mesh: Mesh, tint: Color): Color {
+  const colour = mesh.geometry.getAttribute('color');
+  const sum = new Color(0, 0, 0);
+  if (!colour) return tint;
+  const step = Math.max(1, Math.floor(colour.count / 64));
+  let n = 0;
+  for (let i = 0; i < colour.count; i += step, n++) sum.r += colour.getX(i), sum.g += colour.getY(i), sum.b += colour.getZ(i);
+  return n ? sum.multiplyScalar(1 / n).multiply(tint) : tint;
 }
 
 /** What a place's wet is: in its moss's hollows, on its street, and how much of all out of doors in a storm, from where. */
@@ -83,7 +95,7 @@ export function classify(mesh: Mesh, material: MeshStandardMaterial, dressing: O
     if (PROP.test(name)) scenery = true;
   }
   if (player) return null;
-  const wood = woodColoured(material.color);
+  const wood = woodColoured(material.vertexColors ? paintOf(mesh, material.color) : material.color);
   // A carving's parts that are not its body keep theirs: its eyes, its moss, and the knife's marks on it.
   if (carved) return wood && mesh.geometry.type !== 'BoxGeometry' ? CARVED : null;
   if (actor) return null;
@@ -140,7 +152,7 @@ const VERTEX = /* glsl */ `
 /**
  * Before the light is summed: the wet darkens and smooths what it lies on, moss is damp in its hollows, and wood
  * is matt, its grain in its colour and its knife's facets in its normal. `liftPlace`: the tier (0 Low, 1 Mid, 2
- * High), daylight, whether the place has dew, and the water's height now.
+ * High), daylight, and whether the place has dew.
  */
 const SURFACE = /* glsl */ `
 float liftWetness = 0.0, liftBand = 0.0, liftMossy = 0.0, liftNoiseA = 0.5, liftFilm = 0.0;
@@ -155,8 +167,9 @@ vec3 liftN = normalize((vec4(normal, 0.0) * viewMatrix).xyz);
     float wet = liftWet.x * step(liftWet.y, liftWorld.x);
     for (int i = 0; i < 8; i++) {
       vec4 pool = liftPools[i];
+      if (pool.z < -1e5) break;
       float side = max(max(pool.x - liftWorld.x, liftWorld.x - pool.y), 0.0);
-      float up = liftWorld.y - pool.z - liftPlace.w;
+      float up = liftWorld.y - pool.z;
       float inside = step(liftWorld.z, pool.w) * step(-3.0, up);
       wet = max(wet, inside * (1.0 - smoothstep(0.4, 1.9, side)) * (1.0 - smoothstep(0.05, 0.85, up)));
       liftBand = max(liftBand, inside * (1.0 - smoothstep(0.25, 0.9, side)) * (1.0 - smoothstep(0.03, 0.2, abs(up - 0.05))));
@@ -169,7 +182,7 @@ vec3 liftN = normalize((vec4(normal, 0.0) * viewMatrix).xyz);
       wet = max(wet, liftWet.w * liftSurface.w * smoothstep(0.3, 0.6, liftNoiseA + 0.15));
       wet *= 0.7 + 0.3 * smoothstep(0.25, 0.6, liftNoiseA);
       // On a street the wet lies in broad flat patches, a film of water that gives back the sky as a puddle does.
-      liftFilm = liftSurface.w * smoothstep(0.2, 0.6, wet) * smoothstep(0.56, 0.74, liftNoise(liftWorld * vec3(0.42, 0.42, 0.8) + 9.0)) * step(0.7, liftN.y);
+      if (liftSurface.w > 0.5) liftFilm = smoothstep(0.2, 0.6, wet) * smoothstep(0.56, 0.74, liftNoise(liftWorld * vec3(0.42, 0.42, 0.8) + 9.0)) * step(0.7, liftN.y);
     } else wet = max(wet, max(liftWet.z * liftMossy * 0.5, liftWet.w * liftSurface.w));
     liftWetness = clamp(max(wet, liftBand), 0.0, 1.0);
     float porous = mix(0.68, 0.55, max(liftMossy, liftSurface.w));
@@ -230,15 +243,18 @@ const LIGHT = /* glsl */ `
 #include <opaque_fragment>`;
 
 const PALE = new Vector3(1, 1, 1);
+/** How far the sun's colour is paled towards white where it shines in a drop or a wet point. */
+export const PALED = 0.8;
 
 /** The surfaces of a chapter: `apply` patches what is in the scene, `update` sets this frame's light and wet. */
 export function createSurfaces(context: ExtraContext) {
   const { chapter, sun, sky } = context;
   const pools = chapter.water ?? [];
-  const front = 0.65;
+  const kind = waterKind(chapter.place);
   // Peat water lies behind the whole bog: its shore runs along every island's back, at the pools' height.
-  const behind = chapter.place === 'bog' && pools.length ? [{ from: -1e5, to: 1e5, y: pools[0]!.y, z: -5 }] : [];
-  const all = [...pools.map((w) => ({ ...w, z: chapter.place === 'bog' ? 2.4 : front })), ...behind];
+  const behind = kind.behind !== null && pools.length ? [{ from: -1e5, to: 1e5, y: pools[0]!.y, z: kind.behind + 0.5 }] : [];
+  // Each pool, as far towards the camera as its water comes.
+  const all = [...pools.map((w) => ({ ...w, z: kind.front })), ...behind];
   const shared = {
     liftWet: { value: wetOf(chapter, chapter.place) },
     liftPools: { value: Array.from({ length: 8 }, () => new Vector4(0, 0, -1e6, -1e6)) },
@@ -264,12 +280,12 @@ export function createSurfaces(context: ExtraContext) {
         }
       });
     },
-    update(frame: ExtraFrame, water = 0) {
+    update(frame: ExtraFrame) {
       if (!frame.still) time += frame.dt;
       shared.liftTime.value = time;
       // The sun in a wet point is its own light, paled: never gold.
-      shared.liftSun.value.set(sun.color.r, sun.color.g, sun.color.b).lerp(PALE, 0.5).multiplyScalar(sun.intensity);
-      shared.liftPlace.value.set(frame.tier === 'low' ? 0 : frame.tier === 'mid' ? 1 : 2, 1 - (frame.darkness ?? 0), shared.liftPlace.value.z, water);
+      shared.liftSun.value.set(sun.color.r, sun.color.g, sun.color.b).lerp(PALE, PALED).multiplyScalar(sun.intensity);
+      shared.liftPlace.value.set(frame.tier === 'low' ? 0 : frame.tier === 'mid' ? 1 : 2, 1 - (frame.darkness ?? 0), shared.liftPlace.value.z, 0);
       // The eight pools nearest him, when a chapter has more.
       for (const one of near) one.d = Math.max(one.pool.from - frame.x, frame.x - one.pool.to, 0);
       if (near.length > 8) near.sort((a, b) => a.d - b.d);

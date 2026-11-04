@@ -45,7 +45,7 @@ export const AIR: Record<PlaceId, PlaceAir> = {
  */
 export const PAINTED_SUN: Partial<Record<PlaceId, readonly [number, number]>> = { bog: [0.33, 0.325], mountain: [0.31, 0.37] };
 /** The moon in the storm's eye: cool rays from where it stands in the sky. */
-export const MOON = { shafts: 1.6, colour: '#d6e0ff', cut: [0.2, 0.6] as const };
+export const MOON = { shafts: 2.4, colour: '#d6e0ff', cut: [0.2, 0.6] as const };
 /** Low, Mid and High draw this share of every count (plan §6.5). */
 export const SHARE = { low: 0.3, mid: 0.6, high: 1 } as const;
 /** On Mid and High the cards stand under the god rays, and show less of their own. */

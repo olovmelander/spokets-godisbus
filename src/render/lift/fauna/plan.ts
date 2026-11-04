@@ -17,7 +17,8 @@ export interface Climber { tree: Tree; a: number; h: number }
 /** A place to rest: where, and which way it faces (a turn about the upright: 0 along +x). */
 export interface Rest { at: V3; yaw: number }
 export interface Flock { x: number; y: number; species: Species; birds: Rest[]; perch: boolean; shelter: boolean }
-export interface Peek { at: V3; side: number; wide: number; lichen: boolean }
+/** A stone or a stump to peek from behind: its foot, how high its top is, how deep and wide it is, and the side to peek out on. */
+export interface Peek { at: V3; top: number; deep: number; wide: number; side: number; lichen: boolean }
 export interface Carved extends Rest { shape: Carving }
 
 export interface Plan {
@@ -235,7 +236,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
       const ground_ = [-0.8, 0.6].map((dx): V3 => [c + dx, ground(c + dx) + 0.32, z]).filter((f) => soil(f[0]));
       const flowers = (heads.length ? heads.filter((h) => Math.abs(h[0] - c) < 4) : ground_).filter((f) => clear(f[0], f[1], f[2])).slice(0, 4);
       if (!flowers.length) continue;
-      butterflies.push({ home: [c, ground(c) + 1.1, z], flowers });
+      butterflies.push({ home: [c, ground(c) + 1.7, z], flowers });
       x = Math.max(x, c);
       k++;
     }
@@ -271,20 +272,21 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
     for (const { x, z } of tried) {
       if (out.length >= n || taken.concat(out.map((o) => o.at[0])).some((t) => Math.abs(t - x) < 10)) continue;
       const y = ground(x);
-      const size = 1 + next() * 0.3;
-      const stumpy = place === 'forest' && next() < 0.45;
+      // As high as the moss and the ferns round it, or a little higher, so that what peeks over it is seen.
+      const size = 1.25 + next() * 0.3;
+      const stumpy = place === 'forest' && next() < 0.4;
       const yaw = next() * 6.28;
       props.push(...placed(
-        stumpy ? stump(0.85, 0.4) : place === 'mountain' ? stone(size, '#9a9da4', '#c4c6b4') : place === 'bog' ? stone(size, '#7d8a36', '#9aa246') : place === 'garden' ? stone(size, '#8f918c', '#a4ab7a') : stone(size, '#8a877c', '#5f7a34'),
+        stumpy ? stump(0.95, 0.42) : place === 'mountain' ? stone(size, '#9a9da4', '#c4c6b4') : place === 'bog' ? stone(size, '#7d8a36', '#9aa246') : place === 'garden' ? stone(size, '#8f918c', '#a4ab7a') : stone(size, '#8a877c', '#5f7a34'),
         x, y - 0.06, z, stumpy ? yaw : yaw * 0.1));
-      // Close behind it, clear of its back.
-      out.push({ at: [x, y, z - (stumpy ? 0.66 : size * 0.45 + 0.3)], side: next() < 0.5 ? -1 : 1, wide: stumpy ? 0.44 : size * 0.55, lichen: place !== 'forest' });
+      out.push({ at: [x, y, z], top: y + (stumpy ? 0.97 : size * 0.68), deep: stumpy ? 0.45 : size * 0.45, wide: stumpy ? 0.44 : size * 0.55, side: next() < 0.5 ? -1 : 1, lichen: place !== 'forest' });
     }
     return out;
   };
   const beings = hideouts(cast.beings ?? 0, []);
   const carvings = hideouts(CARVED[source.id] ?? 0, beings.map((b) => b.at[0])).map((h): Carved => ({
-    at: [h.at[0] + h.side * h.wide * 0.95, h.at[1] - 0.02, h.at[2] + 0.2], yaw: -Math.PI / 2 + h.side * 0.7,
+    // Left on the top of its stone, a little back, as if someone had put it there.
+    at: [h.at[0] + h.side * h.wide * 0.25, h.top - 0.05, h.at[2] - h.deep * 0.3], yaw: -Math.PI / 2 + h.side * 0.5,
     shape: (['bird', 'hare', 'nisse'] as const)[Math.floor(next() * 3)]!,
   }));
 
