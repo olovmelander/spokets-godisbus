@@ -3803,6 +3803,9 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **`settings`' touch check fails on Windows:** "portrait, left-handed: a held finger walks towards its position"
+  wants `vx` at most 1.3 and gets about −3.4 on this computer, on `main` (eb13ed5) as well as with PR #189, which
+  touches no input or simulation code. It passed on GitHub on PR #188. Not looked into further.
 - **Äventyr 2's pictures, from the 4 November sweeps (none blocks play):** from Billaberget's brow the narrow is
   only a dark band at the horizon (the garden's nearest far picture and the lawn's bank behind the path leave it
   little room) and the two figures on the far stone are tiny; flybys cannot land on far decor (they are fixed at

@@ -204,7 +204,8 @@ did the integration and the checks.
 
 - **One scene-wide patch, on High only.** It is laid at warm-up under one key, `lift-surface-v1`, and what each
   material is (carved wood, planed wood, moss, ground, street) is a uniform.
-  - It is laid only on a picture that starts on High. Low and Mid keep the place's own materials.
+  - It is laid only on a picture that starts on High. Low and Mid keep the place's own materials. A change of
+    tier in the menu neither lays it nor lifts it: that waits for the next picture.
   - Moss means the kit's stones and bark, not every vertex-coloured material.
   - Measured in software rendering, the first version cost about a third of every frame on every tier.
 - **Carved wood.** Matte, with grain and knife facets: the trägubbar, Klonk, the carvings and Pappa's shelf figures.
