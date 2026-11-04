@@ -3877,6 +3877,8 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **`challenges` timed out once on GitHub** (PR #193, 4 November): "c2-prize-844-low: root returns". Nothing in that PR touches it,
+  and it passed locally and in #194's run of the same code, so it looks like software rendering's timing. Watch for it again.
 - **`settings`' touch check fails on Windows:** "portrait, left-handed: a held finger walks towards its position"
   wants `vx` at most 1.3 and gets about −3.4 on this computer, on `main` (eb13ed5) as well as with PR #189, which
   touches no input or simulation code. It passed on GitHub on PR #188. Not looked into further.
