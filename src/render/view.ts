@@ -506,7 +506,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (atlas) wild.install(atlas);
     })
     .catch((error) => console.error('The life of the far scenery could not be loaded.', error)) : Promise.resolve();
-  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady];
+  // What an adventure's pack puts in the picture from its own models: Äventyr 2's buildings, made in Blender.
+  const packReady = Promise.all(PACK.models.map((load) => load(assets, scene)))
+    .then((arrived) => { if (arrived.includes(true)) modelInstallations++; })
+    .catch((error) => console.error('A building could not be loaded; its stand-in stays.', error));
+  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady, packReady];
   let arrived = 0;
   for (const part of parts) void part.then(() => { arrived++; }, () => {});
   const ready = Promise.all(parts).then(() => undefined);

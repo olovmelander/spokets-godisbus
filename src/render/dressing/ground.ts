@@ -714,6 +714,8 @@ const GROUNDS: Record<Ground, GroundLook> = {
   // The village street: pale slabs, dark asphalt with a little grit, and the grate's iron.
   paving: { colours: tones('#9c9a94', '#aeaca5', '#bdbbb3', '#cbc8be'), wall: new Color('#8e8c88'), shade: new Color('#3a3c44'), bump: 0, boards: false },
   asphalt: { colours: tones('#4c4f56', '#575a61', '#62656b', '#70727a'), wall: new Color('#45484e'), shade: new Color('#2a3038'), bump: 0.12, boards: false, grit: true },
+  // Artificial turf: a pitch's flat, even green, with none of a lawn's roll, and nothing grows in it.
+  turf: { colours: tones('#2c6a2e', '#317331', '#367c34', '#3b8437'), wall: new Color('#26502a'), shade: new Color('#1c3a22'), bump: 0, boards: false },
   iron: { colours: tones('#262c35', '#2e3540', '#38404b', '#444c58'), wall: new Color('#2a3039'), shade: new Color('#1a2230'), bump: 0, boards: false, grit: true },
 };
 /** How wide a deck board is: 12 cm. */

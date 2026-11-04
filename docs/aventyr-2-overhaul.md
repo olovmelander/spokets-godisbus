@@ -5,7 +5,8 @@ designed and well animated, "designade av en art designer och game developer som
 behind that work, what the real places look like, and the order of the work. `HANDOVER.md` records what is built.
 
 **About the pictures.** The research opened real photographs for the first time. They are other people's, mostly of
-unknown licence, and are references to look at. They are never committed, and never used as textures or plates.
+unknown licence, and are references to look at. They are never committed, and never used as textures or plates. On
+Olov's computer they are in `photos/landscape/aventyr2/`, which git ignores.
 Sources are listed at the end. The house in Billsta is drawn from Olov's picture alone. Nobody searches for it, and its
 address and number are never written, drawn or modelled.
 
@@ -60,14 +61,15 @@ not a stadium (inferred).
   grey flashing runs across at wing height, over a dark recessed porch with a white post, a timber ramp with a tube
   rail, and a low concrete plinth on a gravel yard. Low wings at the sides, asymmetric. Frontage about 3.4 × height; the
   arch rises about 1:5.5 of its span and covers about 70 % of the frontage (inferred from the old photograph).
-- **Plain shapes stand in** for its script name, the two crests and the sponsor boards.
+- **Its name** stands over the windows in white letters in the game's own hand, as Olov asked. Plain walls stand in for
+  the two crests and the sponsor boards.
 - **The stand (seen):** seven or eight long tiers of warm tan timber on a low bank, under a thin dark roof on slender
   columns, with a curved beam at its end, three stairs and a ramp with white tube rails. It seats about 300, on the
   south long side (reported).
 - **Around it (seen):** a near-black wall of spruce and birch right behind the stand; a bare earth bank with long pale
   boards; blue bins; chain-link; a small goal beside the stand; a slim pole with one lamp head. Red store building with
   broad white trim and a red-and-white striped awning. A big pale gravel yard between hall and pitch.
-- **Not confirmed:** floodlights on the pitch. The game's four tall masts should wait for a picture, or for Olov.
+- **Floodlights:** Olov confirms the ground has them, so the masts stay, though no photograph shows them.
 - **The pitch** is 110 × 65 m (reported), so saturated flat turf with white lines. Mown stripes and worn goalmouths sell it.
 
 ### Flärkenbadet
@@ -82,8 +84,8 @@ A sheltered bay on a forested lake (seen). Volunteer-run (reported).
   flagpole; picnic tables; a white-and-salmon rowing boat; giant chess on gravel; a swing beam between two birches; a
   hand-painted board with a smiling wooden sun, which stands in here without lettering (seen).
 - **Across the water:** a dark forested ridge, a meadow strip at its foot, a treed point, red farms (seen).
-- **In October** the raft and jetties have probably come ashore (inferred; ask Olov). A raft that rocks and drags at its
-  moorings in the storm suits the chapter better than a fixed tower.
+- **The raft stays in the game (Olov's decision),** though it has probably come ashore by October in reality. A raft that
+  rocks and drags at its moorings in the storm suits the chapter better than a fixed tower.
 
 ### Älven
 
@@ -129,7 +131,8 @@ One pull request for each visible outcome.
 
 1. ~~Mormor and morfar.~~ Done.
 2. ~~The trail runs out: the night's low point.~~ Done.
-3. **Olympia:** the hall, the stand, the pitch, the forest wall, its own light and far picture.
+3. **Olympia:** the hall, the stand, the pitch, its name and the forest behind it are built. Left: its own light, the
+   store with the striped awning, the gravel yard, the bank, and a truly dark forest wall (see `HANDOVER.md`).
 4. **Billsta:** the house, the barn, the road with its poles and ditch, a forest floor and dome for Billaberget.
 5. **Flärken:** the raft tower, the jetty, the sand and the red slide, the log hut, its own far shore.
 6. **Älven:** three rivers in one chapter, real water colours, the meadow mirror, the otter.

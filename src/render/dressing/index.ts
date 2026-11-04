@@ -197,7 +197,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   // however high he climbs: backdrop.ts.
   // What the far pictures count their sinking from: the land around the chapter's start.
   const land = heightAt(chapter, from) - (chapter.outlook ?? 0);
-  const far = scenery(out ? 'garden' : look.id, land, from, to);
+  const far = scenery(out ? 'garden' : look.far ?? look.id, land, from, to, look.farBeyond);
   // The house now has a roof and a veranda in the yard. The old nearest shrub card belongs
   // beyond those buildings, where it cannot paint a green strip across their windows.
   const gardenLeaves = chapter.id === 'garden' ? far.group.getObjectByName('far-garden-32') : undefined;
@@ -209,7 +209,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   if (sky) group.add(sky);
   // A moose in the mist, cranes, smoke from a far chimney: among the far pictures, and only there.
   // Bredbyn's smoke is anchored to the actual baked buildings' chimney caps.
-  const wild = createLife(chapter, look.id, land, houses?.group.getObjectByName('bredbyn-smoke'), asked);
+  const wild = createLife(chapter, look.far ?? look.id, land, houses?.group.getObjectByName('bredbyn-smoke'), asked);
   if (wild) group.add(wild.mesh);
   group.add(
     far.group,

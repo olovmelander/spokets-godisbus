@@ -134,10 +134,50 @@ function goal(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
+/**
+ * The pitch, from its near touchline back towards the stand: mown stripes across it and its white lines, flat on the
+ * ground in one shape. `width` is along the path. The lines stand a little over the stripes, and the goals are the
+ * chapter's own. `marks`, from the pitch's middle: where the halfway line and its circle lie, a goal's box, and how
+ * far it runs on towards the camera past the path, so that he runs on the pitch and not along its edge.
+ */
+function pitch(def: BuildingDef) {
+  const w = def.width ?? 130;
+  const deep = def.height ?? 70;
+  const halfway = def.marks?.halfway ?? 0;
+  const box6 = def.marks?.box ?? null;
+  const front = def.marks?.front ?? 0;
+  const flat = (wide: number, long: number, x: number, z: number, y: number, colour: string) => box(wide, 0.04, long, x, y, z, colour);
+  const parts: BufferGeometry[] = [];
+  const stripe = 9;
+  for (let i = 0; i * stripe < w; i++) parts.push(flat(stripe, deep + front, -w / 2 + (i + 0.5) * stripe, (front - deep) / 2, 0.02, i % 2 ? '#2a6630' : '#3f8c3e'));
+  const line = '#dfe8e0';
+  const y = 0.06;
+  parts.push(flat(w, 0.4, 0, front - 1.2, y, line), flat(w, 0.4, 0, -deep + 2, y, line));
+  parts.push(flat(0.4, deep - 3, halfway, -deep / 2 - 0.3, y, line));
+  // The centre circle: lying on the turf behind the flooded part of it.
+  const middle = -deep * 0.42;
+  const radius = 11;
+  const sides = 48;
+  for (let i = 0; i < sides; i++) {
+    const a = (i / sides) * Math.PI * 2;
+    parts.push(flat(0.4, (Math.PI * 2 * radius) / sides + 0.1, halfway + Math.cos(a) * radius, middle + Math.sin(a) * radius, y, line).rotateY(0));
+    const seg = parts.pop()!;
+    seg.translate(-(halfway + Math.cos(a) * radius), 0, -(middle + Math.sin(a) * radius));
+    seg.rotateY(-a);
+    seg.translate(halfway + Math.cos(a) * radius, 0, middle + Math.sin(a) * radius);
+    parts.push(seg);
+  }
+  if (box6) {
+    parts.push(flat(box6.long, 0.4, box6.x - box6.long / 2, -deep * 0.2, y, line), flat(box6.long, 0.4, box6.x - box6.long / 2, -deep * 0.62, y, line));
+    parts.push(flat(0.4, deep * 0.42, box6.x - box6.long, -deep * 0.41, y, line));
+  }
+  return { parts, panes: [] };
+}
+
 function floodlight(def: BuildingDef) {
   // A floodlight mast, dark in the storm: the power is out. A rack of lamps at its top, high over the stand.
   const h = def.height ?? 110;
-  const parts: BufferGeometry[] = [post(0.9, h, 0, 0, 0, '#8a9096', 10)];
+  const parts: BufferGeometry[] = [post(0.5, h, 0, 0, 0, '#8a9096', 10)];
   parts.push(box(10, 5, 1.4, 0, h + 1, 0.6, '#5a5e64'));
   for (let i = 0; i < 6; i++) parts.push(box(1.4, 1.4, 0.8, -3.75 + i * 1.5, h + 1.8 - (i % 2) * 2.2, 1.4, '#d8dce0'));
   return { parts, panes: [] };
@@ -436,7 +476,7 @@ function cliff(def: BuildingDef) {
 }
 
 const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGeometry[]; panes: BufferGeometry[] }> = {
-  villa, barn, playhouse, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
+  pitch, villa, barn, playhouse, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
   church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce,
 };
 
@@ -445,6 +485,7 @@ export function building(def: BuildingDef): Building {
   const { parts, panes } = BUILD[def.kind](def);
   const group = new Group();
   group.name = `building:${def.kind}`;
+  if (def.model) group.userData.model = def.model;
   group.add(new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.85 })));
   let paneMaterial: MeshBasicMaterial | null = null;
   if (panes.length) {

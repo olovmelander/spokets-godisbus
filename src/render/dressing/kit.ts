@@ -26,6 +26,10 @@ export interface PlaceLook {
   /** Its water, and the soft tussocks that float in it. */
   water: { colour: string; opacity: number };
   tussock: string;
+  /** Another place's far pictures, where this one's are wrong for the chapter. */
+  far?: PlaceId;
+  /** Only the far pictures beyond this depth: nearer ones would lie over the place's buildings. */
+  farBeyond?: number;
 }
 
 // --- small tools ----------------------------------------------------------------------------------------

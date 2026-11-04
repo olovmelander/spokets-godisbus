@@ -5,6 +5,7 @@ import {
   type Material,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import type { Assets } from '../../render/assets';
 import { PLACES } from '../../render/dressing';
 import type { PlaceLook } from '../../render/dressing/kit';
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../render/extensions';
@@ -140,8 +141,12 @@ const LOOKS: Record<string, PlaceLook> = {
   // The new worlds' first light, until their own is set: the football pitch, the river and Billsta at night.
   olympia: {
     ...PLACES.garden,
+    // A clearing cut out of a forested hill: the forest stands right behind the stand, and no garden.
+    far: 'forest',
+    farBeyond: -70,
     grade: grade(0.82, 0.86, [0.88, 0.96, 1.1]),
-    haze: { colour: '#2a3650', near: 6, far: 70 },
+    // Thin haze: the hall and the stand are what this place is, and they stand well back.
+    haze: { colour: '#2a3650', near: 12, far: 130 },
     sky: { top: '#0a1222', middle: '#2a3856', bottom: '#1e283a', glow: '#94a8cc' },
     hemisphere: { sky: '#8ea2d2', ground: '#34402e', intensity: 1.05 },
     sun: { colour: '#c4d2ff', intensity: 1.7, from: [-6, 6, -3] },
@@ -825,6 +830,33 @@ function football(radius: number): Mesh {
   return ball;
 }
 
+/**
+ * The buildings that are made in Blender: each takes the place of its stand-in once the pack has loaded, so that the
+ * picture is never empty. A stand-in stays where the file is missing.
+ */
+async function installModels(assets: Assets, scene: Object3D): Promise<boolean> {
+  const wanted: Object3D[] = [];
+  scene.traverse((object) => { if (typeof object.userData.model === 'string') wanted.push(object); });
+  if (wanted.length === 0) return false;
+  const manifest = await assets.manifest();
+  if (!manifest.packs.aventyr2?.files['olympia.glb']) return false;
+  const model = await assets.model('aventyr2', 'olympia');
+  for (const place of wanted) {
+    const made = model.getObjectByName(place.userData.model as string);
+    if (!made) continue;
+    place.clear();
+    // Packed models keep their own scale and offset, so the placing stays on the group round it.
+    place.add(made);
+    // A name on a wall is kept white: it stands in the shade at night, and still has to be read.
+    const name = model.getObjectByName(`${place.userData.model as string}-name`) as Mesh | undefined;
+    if (name) {
+      name.material = new MeshBasicMaterial({ color: '#e8ecec' });
+      place.add(name);
+    }
+  }
+  return true;
+}
+
 /** Mormor's lantern, whose light falls where he walks: it hangs from its top, and its glow goes with it. */
 function lantern(): { group: Group; light: Mesh } {
   const group = new Group();
@@ -1274,6 +1306,7 @@ export function installPictures(): void {
   for (const [look, make] of Object.entries(rideLooks())) PACK.rides.set(look, make);
   for (const [look, make] of Object.entries(moverLooks())) PACK.movers.set(look, make);
   if (!PACK.extras.includes(stormExtra)) PACK.extras.push(stormExtra);
+  if (!PACK.models.includes(installModels)) PACK.models.push(installModels);
 }
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */

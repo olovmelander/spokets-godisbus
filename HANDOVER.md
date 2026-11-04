@@ -2,6 +2,24 @@
 
 ## State (4 November 2026)
 
+- **Olympia is Olympia (4 November 2026, night).** The third step of the overhaul (`docs/aventyr-2-overhaul.md`, which
+  has the audit, what the real places look like, and the order of the work). **Start there.**
+  - **The hall and the stand are the first models made in Blender 5.2** (`art/blender/olympia.py`, run headless;
+    `art/baked/aventyr2/olympia.glb`, 41.6 KB as served): the wine-red hall under its barrel arch, white fascia, ribbon of
+    windows, porch and ramp; the long tan timber stand under its thin roof. Interpreted from photographs, which are
+    not in them. Each is one draw, with the shade of its creases baked into its corners.
+  - **The name:** white letters, "Olympia", in Playpen Sans, as Olov asked: the one exception to no lettering
+    (`CLAUDE.md`, in PR #192). It is an object of its own with an unlit material, so it stays white at night.
+  - **The pitch:** a new ground `turf` where nothing grows, and a `pitch` building: mown stripes and white lines, running on
+    past the path towards the camera so that he runs on it. The dandelions are gone.
+  - **How a model comes in:** `model` on a building names it; `PACK.models` swaps it in when the pack has loaded, and the
+    code stand-in stays where the file is missing.
+  - **Far pictures:** `PlaceLook.far` borrows another place's, and `farBeyond` keeps only those behind a depth. They are
+    see-through and drawn last, so a nearer card lies over a building like a ghost. This is why the hall stands at z −66.
+  - **Left at Olympia:** its own light (it is still Stormgården's), the store with the striped awning, the gravel yard
+    and the bank. The forest behind the hall is thin: the far card at −76 is mostly sky. Goals and masts are still code.
+  - **Reference pictures** from the web are in `photos/landscape/aventyr2/`, and Olov's picture of the house in Billsta
+    is `photos/billsta-hus.jpg`. All of it is ignored by git. The house's address and number are never written.
 - **The trail runs out (4 November 2026, night).** Olov's decision, from the story audit: nothing went wrong all night,
   so the ending relieved nothing, and the story stood still from Byn to Älven.
   - **Set up in Stormkvällen:** Moa says the old one took a handful from the bowl, and Bertil asks if it will last.

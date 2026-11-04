@@ -1088,9 +1088,11 @@ export function evening(x: number, from: number, to: number): { tint: readonly [
  * lower if it starts on a height (a chapter's `outlook`). Above it the nearer layers sink under the farther
  * ones, and below it they rise. `from` and `to` are the chapter's ends: the mountain's hour goes by them.
  */
-export function scenery(place: PlaceId, anchor: number, from = 0, to = 0): Scenery {
+export function scenery(place: PlaceId, anchor: number, from = 0, to = 0, beyond = 0): Scenery {
   const group = new Group();
-  const cards = LAYERS[place].map((layer) => {
+  // Pictures are see-through and drawn last, so one nearer than a building is drawn over it: a place with
+  // big buildings far back keeps only those beyond them.
+  const cards = LAYERS[place].filter((layer) => layer.z <= beyond).map((layer) => {
     const map = picture(layer.soft, layer.draw);
     const tall = layer.every / 2;
     const below = tall * (1 - layer.eye / H);

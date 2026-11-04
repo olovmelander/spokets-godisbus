@@ -29,7 +29,8 @@ import { alongAll, round, row, slopeRow, timeCard } from '../kit';
  * 8. **Elljusspåret:** the floodlit trail goes up into the forest, its lamps dark too. A flash: the strongest gust
  *    takes the little one north over the treetops, up towards the lake at Flärken, and the old trägubbe follows.
  *
- * Nothing here has a name, a crest or a letter on it (plan §0, §2.6): the club's goals, nets, benches and boards
+ * Nothing here has a crest or a sponsor's mark on it. The one word is the hall's name, in white letters, which Olov
+ * asked for (CLAUDE.md); otherwise there is no name or letter (plan §0, §2.6): the club's goals, nets, benches and boards
  * are plain. To the simulation the two flooded places are pits, with the water drawn in them.
  */
 
@@ -189,6 +190,7 @@ export const olympia: ChapterData = {
     { from: STEPS[1]!.to, to: FENCE.from, kind: 'earth' },
     // (Not 'iron': that is a street drain's grate, and the picture would dig a well round it.)
     { from: FENCE.from, to: FENCE.to, kind: 'asphalt' },
+    { from: FENCE.to, to: 152, kind: 'turf' },
     { from: 152, to: 157, kind: 'earth' },
     { from: 157, to: 166, kind: 'paving' },
     { from: 166, to: 186, kind: 'earth' },
@@ -246,11 +248,15 @@ export const olympia: ChapterData = {
     // kick ends in, the dark floodlight masts, the stand behind the benches, the club's house, and birches where
     // the trail goes into the forest.
     buildings: [
+      // The pitch, flat from the near touchline back to the stand: the path runs along its edge.
+      { kind: 'pitch', x: 84.4, z: -0.6, width: 135.2, height: 22, y: 0.01, marks: { halfway: 51.1, box: { x: 8, long: 18 }, front: 7 } },
       { kind: 'floodlight', x: 30, z: -36, height: 90 },
-      { kind: 'clubhouse', x: 52, z: -36, width: 36, height: 18 },
+      // The red hall under its arch, across the pitch (art/blender/olympia.py).
+      { kind: 'clubhouse', x: 50, z: -66, width: 36, height: 18, model: 'olympia-hall' },
       { kind: 'goal', x: GOAL.x, z: -6.4, width: GOAL.depth, height: GOAL.height },
       { kind: 'floodlight', x: 92, z: -30, height: 90 },
-      { kind: 'stand', x: 108, z: -18, width: 44 },
+      // The long timber stand on the far side, the forest straight behind it.
+      { kind: 'stand', x: 118, z: -29, width: 44, model: 'olympia-stand' },
       { kind: 'floodlight', x: 136, z: -38, height: 90 },
       { kind: 'goal', x: FAR_GOAL.x, z: -9, width: FAR_GOAL.depth, height: FAR_GOAL.height },
       { kind: 'floodlight', x: 164, z: -28, height: 70 },

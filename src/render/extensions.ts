@@ -1,5 +1,6 @@
 import type { Camera, Color, DirectionalLight, Group, HemisphereLight, Object3D, Scene } from 'three';
 import type { ChapterData, Mode, Mover, RideLook, Spot } from '../sim/types';
+import type { Assets } from './assets';
 import type { PlaceLook } from './dressing/kit';
 import type { SpotProp } from './props';
 
@@ -71,4 +72,6 @@ export const PACK = {
    * they read (./wind.ts) is this frame's.
    */
   lifts: [] as ((context: ExtraContext) => ViewExtra | null)[],
+  /** What a pack puts in the picture from its own models, once they have loaded. True: something arrived. */
+  models: [] as ((assets: Assets, scene: Object3D) => Promise<boolean>)[],
 };

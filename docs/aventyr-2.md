@@ -45,7 +45,8 @@ del"). The first adventure (prologue, Gården, Granskogen, Myren, Berget, the fi
 - Klonk is named and is Elof's friend. It has no mouth; it speaks in thought pictures and *klonk*. It freezes into
   plain wood when a grown-up looks (the Toy Story rule), which Stormskogen turns into a puzzle.
 - The family helps as kind giants, one at each big crossing, each with something of their own.
-- No surnames, no address, no house number, no school, no logotypes. Real places nearby may be named, but Äventyr
+- No surnames, no address, no house number, no school, no logotypes (the one exception is the name Olympia in white
+  letters on the red hall, which Olov asked for). Real places nearby may be named, but Äventyr
   2 names only "byn" and "sjön".
 - Nothing frightening chases Elof. The storm is wild, loud and beautiful, never a monster. The family is out in
   it with him, in raincoats, with lamps.
