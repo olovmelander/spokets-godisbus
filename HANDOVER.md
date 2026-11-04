@@ -2,6 +2,22 @@
 
 ## State (4 November 2026)
 
+- **Äventyr 2's story and gameplay audit (4 November 2026, later still).** Olov asked for an audit of the story, all
+  the conversations and all the gameplay, so that the adventure holds together, feels epic, has a red thread, and is
+  fun and kind. [`docs/aventyr-2-audit.md`](docs/aventyr-2-audit.md) has the method (the robot played every chapter
+  and wrote down everything said, in order), the threads chapter by chapter, and the changes.
+  - **The family drives the long ways:** to Flärken, six kilometres, as to Billsta.
+  - **Why the old one never waits** is answered clearly in Stormskogen ("Därför skyndar han. Lillgubben är ensam!").
+    Elof cheers him on at Flärken instead of begging him to wait. In Billsta it closes: "Nu är lillgubben inte
+    ensam längre."
+  - **The finale's end matches the morning:** mormor and morfar come home to breakfast.
+  - **The third floating-bridge puzzle is gone:** Billsta's log is now **Klonk's seesaw** (built by the Billsta
+    agent), where Klonk jumps on and flings Elof over the brook, so the ghost actively helps his friend before the
+    finale.
+  - **Smaller fixes:** where Mamma's boat comes from, no repeated "tre mil", and no repeated "precis som Klonk".
+  - Äventyr 1's lines are unchanged because of their voices.
+  - The voice list has 268 entries; nothing was generated.
+  - Äventyr 2's robot, chapter and unit tests pass: 11 files, 257 tests.
 - **The visual upgrade, and three.js r187 (4 November 2026, later still).** Olov asked for "en total visuell och
   grafisk uppgradering" that keeps the art style and lifts everything: assets, places, materials, composition, light,
   effects. He also asked for richer Nordic forest life, lush birches and deep pine forests, plants that bend around

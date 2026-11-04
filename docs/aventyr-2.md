@@ -195,7 +195,7 @@ Själevadsfjärden.
 3. **Mormor and morfar's place:** the gravel drive, the lawn, birches, a woodshed and its stack of firewood, a
    rowing boat on trestles for the winter. **Mormor** lights the way with her lantern and opens the barn.
 4. **The red barn** with its rusty roof: up the planks, through the hay loft and along the roof in the gusts.
-5. **The forest behind the house:** a brook on stones, a log pushed in as a bridge, a spruce root up the bank, and
+5. **The forest behind the house:** a brook on stones, Klonk's seesaw over the deep brook up onto the bank, and
    **Billaberget's boulders**, its granite face and October hazelnuts.
 6. From the brow of Billaberget, a flash: both trägubbar far below on a stone in the narrow. Mormor: "Kom, vi går
    ner till sundet."
@@ -239,7 +239,7 @@ Själevadsfjärden.
 | The playground's swings and slide; the volleyball net; the diving tower | hooks, climbs, bouncers, ledges |
 | Down the river on bark and logs; Pappa's scarf from the bridge | rides, cycle movers, a call and a climb |
 | Morfar's ladder across the ditch; mormor's lantern and the barn door | call spots, held beats, ledges and movers |
-| The log pushed into the forest brook as a bridge | a *push* mover into the water |
+| Klonk's seesaw over the forest brook: he jumps on the high end and flings Elof over | a *call* spot, a held beat, Klonk's perch on the high end, and a ride |
 | Moa's map of the whole journey | src/content/aventyr2/map.ts |
 
 The audit of 4 November (`docs/aventyr-2-audit.md`) tightened the story's thread and gameplay; what it changed is
@@ -283,8 +283,9 @@ The worlds were authored from this design and keep its beats, with these details
   long ladder across the flooded ditch ("Gå på stegen, lilla vän"); the gravel drive, the rowing boat on its
   trestles and the woodshed's stack; mormor with her lantern opens the red barn; through the dark hay loft, over a
   bale and a hatch, and along the barn's long roof in the gusts, sheltering behind its ventilation hoods; into the
-  forest behind the house: a brook crossed on stones, and where it runs deep, a dry spruce's log pushed three times
-  ("Knuffa") into it as a bridge; up a spruce root onto Billaberget, its boulders, a crack, rock shelves with
+  forest behind the house: a brook crossed on stones, and where it runs deep, **Klonk's seesaw**: a dry spruce lies
+  over a stone, Elof is too light, "Ropa på Klonk", Klonk jumps on the high end and flings him over the brook up onto
+  Billaberget's bank ("Tack, Klonk! Du är min bästa vän."); then its boulders, a crack, rock shelves with
   hazelnuts against its granite face, and the slope in the gusts behind the boulders; at the brow a flash shows both
   figures far below on a stone in the narrow, the owl is heard, and mormor: "Kom, vi går ner till sundet."
 - **Stormens öga** now lies in the narrow at Billsta, below Billaberget's granite and spruces, with Själevad's

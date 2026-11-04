@@ -1,7 +1,7 @@
 import { GRAVITY, RUN_SPEED } from '../../../sim/constants';
 import type { Candy, ChapterData, Jump, Ledge, Mover, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
-import { hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
+import { alongAll, hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
 
 /**
  * Äventyr 2, Kapitel 7: Billsta (docs/aventyr-2.md), nearly midnight. Units: EL. Billsta is three mil from Bredbyn,
@@ -20,12 +20,12 @@ import { hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
  *    hatch in its floor, and out onto the long roof against the barn, where the gusts blow and the ventilation
  *    hoods are the lee. Two beams over the loft are a second way. The roof's far end slopes down to its low eaves,
  *    and a soft drop takes him to the ground behind the house.
- * 5. **Skogen och Billaberget:** a forest brook behind the house, crossed on three stones. Further on the brook is
- *    too wide, and a dry spruce the storm has blown down lies on its bank: three pushes ("Knuffa") roll its log
- *    into the brook, where it lies across from bank to bank, a bridge (the puzzle). Then the hill's steep bank, with
- *    a spruce's root hanging down it to climb; Billaberget's boulders, a crack, and rock shelves jutting from its
- *    granite face with October's hazelnuts on them (side candy); and the open slope in the gusts, the boulders the
- *    lee.
+ * 5. **Skogen och Billaberget:** a forest brook behind the house, crossed on three stones. Further on the brook runs
+ *    deep and wide below the hill's steep bank, and a dry spruce the storm has blown down lies over a stone on the
+ *    near bank: a seesaw (the puzzle, and Klonk's own help). Elof stands on its low end, too light alone. "Ropa på
+ *    Klonk": Klonk jumps onto the high end, and Elof is flung over the brook, up onto the bank. Then Billaberget's
+ *    boulders, a crack, and rock shelves jutting from its granite face with October's hazelnuts on them (side
+ *    candy); and the open slope in the gusts, the boulders the lee.
  * 6. **Krönet:** up on Billaberget's brow, a flash: far below in the narrow, on a stone, the old trägubbe holds the
  *    little one. The owl hoots far off, and mormor, come up the path with her lantern, will take him down to the
  *    narrow's shore, where the final begins.
@@ -119,31 +119,25 @@ const BANK = { from: 122.2, to: 133.6 };
 const BROOK_WAY: Stone[] = [{ from: EDGE.from, to: EDGE.to, y: 0 }, ...STONES, { from: BANK.from, to: BANK.to, y: 0 }];
 
 /**
- * Further on, the brook runs deep and wide: twice a running jump. On its near bank lies the log of a dry spruce the
- * storm has blown down, and each push rolls it on along the bank; the third rolls it into the brook, where it lies
- * across from bank to bank with its top at his feet, a bridge he walks over. It is taller than he pulls himself up
- * (LEDGE_REACH), so a run stops at it with Knuffa on the button.
+ * Further on, the brook runs deep and wide, twice a running jump, and on its far side the hill's steep bank rises
+ * straight out of it, out of every jump's reach: walking back off the bank ends in the glitter bubble, back on it.
  */
 const POOL = { from: BANK.to, to: 138.2, bottom: BED };
 const POOL_WATER = -0.6;
-const LOG_HIGH = 1.5;
-const LOG_LONG = 5;
-const LOG_SINK = 0.04;
-const LOG: Mover = {
-  id: 'bi-log', look: 'log', width: LOG_LONG, height: LOG_HIGH, verb: 'push',
-  stops: [
-    { x: 127.7, y: 0 },
-    { x: 129.4, y: 0 },
-    { x: round(BANK.to - LOG_LONG / 2), y: 0 },
-    // A hair under the banks, so that he steps down onto it and up off it, and never catches on its corner.
-    { x: round((POOL.from + POOL.to) / 2), y: -LOG_HIGH - LOG_SINK },
-  ],
-};
+const TOP = { from: POOL.to, to: 144.4, y: 3.2 };
 
-/** The far bank, and the hill's steep bank beyond it: more than two jumps high. A spruce's root hangs down it. */
-const FAR = { from: POOL.to, to: 141.2 };
-const TOP = { from: FAR.to, to: 144.4, y: 3.2 };
-const ROOT = { x: round(FAR.to - 0.3), bottom: 0, top: TOP.y, exit: 1 as const, look: 'root' as const };
+/**
+ * Klonk's seesaw (the puzzle): a dry spruce the storm has blown down, lying over a stone on the near bank. Its
+ * picture (the spot's look) runs from 0.9 before the spot to 3.5 after it, with its stone 1.3 after it and the low
+ * end where he comes, so he stands on the low end when he calls. Klonk waits over the stone, jumps onto the high
+ * end when called (a short held beat, while Elof stands still), and the seesaw flings Elof over the brook, up onto
+ * the bank. The fling begins by itself once Klonk is on: he is already standing there.
+ */
+const SEESAW = { x: 129.3 };
+const KLONK_WAITS = { x: 130.8, y: 0 };
+/** The high end, where Klonk lands: it comes down to the ground under him, and Elof's end goes up. */
+const HIGH_END = { x: round(SEESAW.x + 3.5), y: 0 };
+const FLING = { from: { x: round(SEESAW.x - 0.95), y: 0 }, to: { x: 140.4, y: TOP.y }, rise: 4, time: 1.8, corridor: 0.4 };
 
 /**
  * Billaberget's boulders (verified: a boulder field below its cliff, with hazel): one a held jump up, a crack
@@ -245,15 +239,13 @@ export const billsta: ChapterData = {
     { x: EAVES.from, y: EAVES.y },
     { x: EAVES.to, y: EAVES.y },
     { x: EAVES.to, y: 0 },
-    // 5. the brook and its stones, the bank where the log lies, the deep brook, and the hill's steep bank
+    // 5. the brook and its stones, the bank where the seesaw lies, the deep brook, and the hill's steep bank
     { x: EDGE.to, y: 0 },
     { x: EDGE.to, y: BED },
     ...STONES.flatMap(island),
     { x: BANK.from, y: BED },
     { x: BANK.from, y: 0 },
-    ...pit(POOL.from, POOL.to, POOL.bottom, 0),
-    { x: FAR.to, y: 0 },
-    { x: FAR.to, y: TOP.y },
+    ...pit(POOL.from, POOL.to, POOL.bottom, 0, TOP.y),
     // Billaberget's boulders: up the first, over the crack, down, and up the big one in two steps
     { x: B1.from, y: TOP.y },
     { x: B1.from, y: B1.y },
@@ -314,18 +306,24 @@ export const billsta: ChapterData = {
     { from: ROOF_LEE[0]!, to: ROOF_LEE[ROOF_LEE.length - 1]!, y: ROOF.y, every: 4, length: 1.4, first: 0.5, shelters: ROOF_LEE },
     { from: LEE[0]!, to: LEE[LEE.length - 1]!, y: SLOPE, every: 4, length: 1.4, first: 0.5, shelters: LEE },
   ],
-  climbs: [ROOT],
   ledges: [LADDER, ...BEAMS, ...SHELVES],
   spots: [
     // Morfar at the ditch, with his long ladder.
     { id: 'bi:morfar', look: 'morfar', at: MORFAR, verb: 'call', word: 'biCallMorfar' },
     // Mormor by the woodshed, with her lantern.
     { id: 'bi:mormor', look: 'mormor', at: MORMOR, verb: 'call', word: 'biCallMormor' },
+    // Klonk at the seesaw: he is too light alone, and calls his friend.
+    { id: 'bi:call-klonk', at: { x: SEESAW.x, y: 0 }, verb: 'call', word: 'biCallKlonk' },
+    // The seesaw itself. Once Klonk is on its high end, it flings him over the brook.
+    { id: 'bi:fling', look: 'seesaw', at: { x: SEESAW.x, y: 0 }, verb: 'take', touch: true, needs: 'bi:klonk-on', ride: 'bi:fling' },
   ],
-  movers: [DOOR, LOG],
+  rides: [{ id: 'bi:fling', look: 'none', ...FLING }],
+  movers: [DOOR],
   // Morfar lays his ladder over the ditch: Elof stands and watches until it lies still.
   later: [
     { flag: 'bi:ladder', after: 'bi:morfar', seconds: 1.6, hold: true, within: [6, 20] },
+    // Klonk jumps onto the seesaw's high end: Elof stands on the low end and watches until Klonk is on.
+    { flag: 'bi:klonk-on', after: 'bi:call-klonk', seconds: 1.2, hold: true, within: [BANK.from, POOL.from] },
     // The little one, tossed onto the stone by a wave, where the old one catches him.
     { flag: 'bi:landed', after: 'beat:bi:there', seconds: 1.6 },
   ],
@@ -379,7 +377,7 @@ export const billsta: ChapterData = {
       { kind: 'spruce', x: 127, z: -31, y: -7, height: 54 },
       { kind: 'spruce', x: 133, z: -27, y: -5, height: 40 },
       { kind: 'spruce', x: 140, z: -30, y: -5, height: 44 },
-      // The spruce on the bank's top, whose root hangs down the bank.
+      // A spruce on the bank's top, over the brook.
       { kind: 'spruce', x: 143.6, z: -10, y: round(TOP.y - 4), height: 36 },
       // Billaberget's face behind its shelves: the shelves jut out of the granite.
       { kind: 'cliff', x: 154.9, z: -3.2, width: 14, height: 11 },
@@ -407,8 +405,9 @@ export const billsta: ChapterData = {
     { look: 'lillgubbe', at: { x: STONE_OUT.x + 0.6, y: STONE_OUT.y }, z: STONE_OUT.z, after: 'bi:landed' },
   ],
   // Klonk, ahead of him all the way, on firm ground. It waits at the ditch for the ladder and at the barn's door
-  // for mormor; on the roof and the slope it hops from lee to lee; over the brook it waits on the far bank; at the
-  // end it thinks of the little one.
+  // for mormor; on the roof and the slope it hops from lee to lee; at the seesaw it waits over the stone until he
+  // calls, jumps onto the high end and stays there until he flies, and then follows him over the brook; at the end
+  // it thinks of the little one.
   ghost: [
     { at: { x: 3.9, y: 0 } },
     { at: { x: 9.4, y: 0 } },
@@ -431,7 +430,8 @@ export const billsta: ChapterData = {
     { at: { x: 112, y: STONES[0]!.y } },
     { at: { x: 115.8, y: STONES[1]!.y } },
     { at: { x: 119.6, y: STONES[2]!.y } },
-    { at: { x: 139.6, y: 0 } },
+    { at: KLONK_WAITS, until: 'bi:call-klonk' },
+    { at: HIGH_END, until: 'bi:fling' },
     { at: { x: 143, y: TOP.y } },
     { at: { x: 146.3, y: B1.y } },
     { at: { x: 151.1, y: B2.y } },
@@ -467,12 +467,14 @@ export const billsta: ChapterData = {
     { id: 'bi:roof', at: 70.2, who: 'elof', line: 'biRoof' },
     { id: 'bi:roof-klonk', at: 73.4, who: 'spoket', line: 'biKlonk' },
     { id: 'bi:forest', at: 101.4, who: 'elof', line: 'biForest' },
-    // 5. the brook, the log, the roots and Billaberget
+    // 5. the brook, Klonk's seesaw, and Billaberget
     { id: 'bi:brook', at: 108.6, who: 'elof', line: 'biBrook' },
-    { id: 'bi:log', at: 123.8, until: `placed:${LOG.id}`, who: 'elof', line: 'biLogIdea', read: true },
-    { id: 'bi:bridge', on: `placed:${LOG.id}`, who: 'elof', line: 'biBridge' },
-    { id: 'bi:bridge-klonk', on: `placed:${LOG.id}`, who: 'spoket', line: 'biKlonkKlonk' },
-    { id: 'bi:root', at: 139.4, who: 'elof', line: 'biRoot' },
+    { id: 'bi:seesaw', at: 126.4, until: 'bi:call-klonk', who: 'elof', line: 'biSeesaw', read: true },
+    { id: 'bi:call', on: 'bi:call-klonk', who: 'elof', line: 'biJumpOn' },
+    { id: 'bi:klonk-jump', on: 'beat:bi:call', who: 'spoket', line: 'biKlonk' },
+    { id: 'bi:fly', on: 'bi:fling', who: 'elof', line: 'biFly' },
+    { id: 'bi:thanks-klonk', at: 141, needs: 'bi:fling', who: 'elof', line: 'biThanksKlonk' },
+    { id: 'bi:klonk-glad', on: 'beat:bi:thanks-klonk', who: 'spoket', line: 'biKlonkKlonk' },
     { id: 'bi:hill', at: 142.8, who: 'elof', line: 'biHill' },
     { id: 'bi:hazel', at: 150.2, who: 'elof', line: 'biHazel' },
     { id: 'bi:wind', at: 162.4, who: 'elof', line: 'biWind', read: true },
@@ -480,7 +482,9 @@ export const billsta: ChapterData = {
     // 6. the brow: a flash, both trägubbar on a stone in the narrow far below, and the owl far off
     { id: 'bi:there', at: 193.2, who: 'elof', line: 'biThere', read: true },
     { id: 'bi:holds', on: 'bi:landed', who: 'elof', line: 'biHolds' },
-    { id: 'bi:owl', on: 'beat:bi:holds', who: 'elof', line: 'biOwl' },
+    // The old one reached him: what he hurried for all night (Stormskogen's hollow).
+    { id: 'bi:not-alone', on: 'beat:bi:holds', who: 'elof', line: 'biNotAlone' },
+    { id: 'bi:owl', on: 'beat:bi:not-alone', who: 'elof', line: 'biOwl' },
     { id: 'bi:down', on: 'beat:bi:owl', who: 'mormor', line: 'biToNarrow' },
     { id: 'bi:cheer', on: 'beat:bi:down', who: 'spoket', line: 'biKlonkCheer' },
   ],
@@ -499,9 +503,9 @@ export const billsta: ChapterData = {
     // Down off the roof's end, the brook and its stones in sight ahead.
     { from: 99, to: 110, zoom: 1.4, lift: 0.6, lead: 3.2 },
     { from: 110, to: 123, zoom: 1.35, lift: 0.4 },
-    // The log, the bank where it rolls and the deep brook in one picture.
-    { from: 123, to: 133, zoom: 1.4, lift: 0.8, lead: 3 },
-    { from: 133, to: 141, zoom: 1.4 },
+    // The seesaw, Klonk on its high end, the deep brook and the bank beyond in one picture.
+    { from: 123, to: 138, zoom: 1.5, lift: 1, lead: 3.4 },
+    { from: 138, to: 141, zoom: 1.4 },
     { from: 141, to: 162, zoom: 1.3, lift: 0.4 },
     // From lee to lee the next boulder is in the picture.
     { from: 162, to: 187, zoom: 1.35 },
@@ -544,14 +548,9 @@ export const billsta: ChapterData = {
     { x: 108.6, y: 0.45 },
     // 5. over the brook on its stones
     ...across(BROOK_WAY),
-    // along the bank where the log rolls: in sight beside it at first, and taken once it has rolled on
-    ...row(123.4, 133.4, 0),
-    // over the deep brook on the log, once it lies across
-    ...row(134.4, 136.4, 0, 2, `placed:${LOG.id}`),
-    { x: 138.6, y: 0.45 },
-    // up the roots onto the hill's bank
-    { x: ROOT.x, y: 1.6 },
-    { x: ROOT.x, y: 2.6 },
+    // along the bank to the seesaw's low end, along the fling over the deep brook, and on the bank beyond
+    ...row(123.4, 127.4, 0),
+    ...alongAll(FLING, [0.12, 0.25, 0.38, 0.5, 0.62, 0.75, 0.88]),
     { x: 141.8, y: round(TOP.y + 0.45) },
     // up the first boulder, over the crack, along the second, down, and up the big one
     ...hopUp(B1.from, B1.y),
@@ -594,9 +593,9 @@ export const billsta: ChapterData = {
 
 /**
  * What "Just nu" says here (src/content/aventyr2/context.ts): along the road to morfar at the ditch and mormor at
- * the barn, through the loft and along the roof, over the brook and the log, up the roots and Billaberget's
- * boulders and gusts, to the brow and the two found on the stone. Morfar and mormor guide where their help is the
- * next thing to do.
+ * the barn, through the loft and along the roof, over the brook's stones, Klonk's seesaw over the deep brook,
+ * Billaberget's boulders and gusts, to the brow and the two found on the stone. Morfar, mormor and Klonk guide where
+ * their help is the next thing to do.
  */
 export const context: Chooser = (has, player) => {
   const at = player.x;
@@ -604,8 +603,9 @@ export const context: Chooser = (has, player) => {
   if (at > LEE[LEE.length - 1]! + 0.8) return ['billstaBrow', 'billstaForest', 'mountain'];
   if (at >= LEE[0]! - 1.5) return ['billstaWind', 'billstaForest', 'mountain'];
   if (at >= TOP.from + 0.3 && player.y >= TOP.y - 0.3) return ['billstaBoulders', 'billstaForest', 'mountain'];
-  if (has(`placed:${LOG.id}`) && at >= BANK.from) return at < POOL.to + 0.4 ? ['billstaBridge', 'billstaForest', 'water'] : ['billstaRoot', 'billstaForest', 'mountain'];
-  if (at >= BANK.from - 0.5) return ['billstaLog', 'billstaForest', 'water'];
+  if (has('bi:fling')) return ['billstaFly', 'billstaKlonk', 'water', 'spoket'];
+  if (has('bi:call-klonk')) return ['billstaKlonkOn', 'billstaKlonk', 'water', 'spoket'];
+  if (at >= BANK.from - 0.5) return ['billstaSeesaw', 'billstaKlonk', 'water', 'spoket'];
   if (at >= EAVES.to && player.y < EAVES.y) return ['billstaBrook', 'billstaForest', 'water'];
   if (at >= ROOF.from - 0.2 && (player.y > LOFT + 1.6 || at > ROOF.to)) return ['billstaRoof', 'billstaMormor'];
   if (has('bi:mormor')) return at < DOOR.stops[0]!.x ? ['billstaBarn', 'billstaMormor', 'house', 'mormor'] : ['billstaLoft', 'billstaMormor', 'house'];

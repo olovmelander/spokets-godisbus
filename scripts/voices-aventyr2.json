@@ -473,14 +473,14 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Han var ensam i mörkret i flera år."
+    "text": "Gamla trägubben låg ensam i flera år."
   },
   {
     "key": "ssWhy",
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Därför väntar han inte."
+    "text": "Därför skyndar han. Lillgubben är ensam!"
   },
   {
     "key": "ssBoth",
@@ -746,7 +746,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, olympia",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Bollar flyter, precis som Klonk!"
+    "text": "Bollar flyter! Bollen kan bära mig."
   },
   {
     "key": "olSplash",
@@ -889,6 +889,13 @@
     "text": "Gamla trägubben flyger efter honom!"
   },
   {
+    "key": "olCar",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, olympia",
+    "tag": "[cheerful older brother, excited]",
+    "text": "Hoppa in i bilen! Vi åker till Flärken."
+  },
+  {
     "key": "scene_olympia",
     "speaker": "storyteller",
     "situation": "Äventyr 2, olympia card",
@@ -998,7 +1005,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, flarken",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Gamla trägubben! Vänta på oss!"
+    "text": "Spring, gamla trägubben! Vi kommer!"
   },
   {
     "key": "sjBroken",
@@ -1012,7 +1019,7 @@
     "speaker": "mamma",
     "situation": "Äventyr 2, flarken",
     "tag": "[warm, calm mother]",
-    "text": "Ropa på mig. Jag har roddbåten."
+    "text": "Jag hittade en roddbåt. Ropa på mig!"
   },
   {
     "key": "sjBoatReady",
@@ -1362,7 +1369,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Tre mil! Till mormor och morfar!"
+    "text": "Mormor och morfar kan hjälpa oss leta!"
   },
   {
     "key": "alKlonkEnd",
@@ -1383,7 +1390,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Tre mil med bilen! Nu är vi i Billsta."
+    "text": "Framme i Billsta, hos mormor och morfar!"
   },
   {
     "key": "biKlonk",
@@ -1512,25 +1519,32 @@
     "text": "En bäck! Jag hoppar på stenarna."
   },
   {
-    "key": "biLogIdea",
+    "key": "biSeesaw",
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Om jag knuffar stocken blir den en bro!"
+    "text": "En gungbräda! Men jag är för lätt."
   },
   {
-    "key": "biBridge",
+    "key": "biJumpOn",
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Nu ligger stocken över bäcken!"
+    "text": "Klonk, hoppa på andra änden!"
   },
   {
-    "key": "biRoot",
+    "key": "biFly",
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "En granrot! Jag klättrar uppför den."
+    "text": "Jag flyger över bäcken!"
+  },
+  {
+    "key": "biThanksKlonk",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Tack, Klonk! Du är min bästa vän."
   },
   {
     "key": "biHill",
@@ -1573,6 +1587,13 @@
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Gamla trägubben håller i lillgubben!"
+  },
+  {
+    "key": "biNotAlone",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Nu är lillgubben inte ensam längre."
   },
   {
     "key": "biOwl",
@@ -1705,21 +1726,21 @@
     "speaker": "mormor",
     "situation": "Äventyr 2, stormoga",
     "tag": "[warm, kind grandmother]",
-    "text": "Välkomna, allihop! Vilken natt!"
+    "text": "Vilken natt! Ni är så modiga, allihop."
   },
   {
     "key": "soMorfar",
     "speaker": "morfar",
     "situation": "Äventyr 2, stormoga",
     "tag": "[warm, cheerful grandfather]",
-    "text": "Hemma hos oss finns det varm choklad."
+    "text": "Vi följer med hem och äter frukost!"
   },
   {
     "key": "soHome",
     "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Nu går vi hem till mormor och morfar."
+    "text": "Nu åker vi hem, allihop!"
   },
   {
     "key": "scene_stormoga",
