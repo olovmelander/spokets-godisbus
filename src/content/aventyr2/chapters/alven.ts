@@ -1,3 +1,4 @@
+import { FELL_IN } from '../../../sim/constants';
 import type { Candy, ChapterData, GhostPerch, Jump, Mover, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
 import { alongAll, hopCandy, round, row, slopeRow, timeCard } from '../kit';
@@ -9,8 +10,10 @@ import { alongAll, hopCandy, round, row, slopeRow, timeCard } from '../kit';
  * towards Billsta (docs/aventyr-2-reference-study.md §4). It is a fairy-tale river: no dam and no power station.
  * The places, from the left:
  *
- * 1. **Strömmen:** from the outlet's bank a little raft carries him down the current to a gravel bank, and a birch
- *    leaf, as in the village's gutter, on to the next bank. Klonk floats beside him: he is wood.
+ * 1. **Strömmen:** from the outlet's bank a little raft carries him down the current to a gravel bank. Beyond it the
+ *    water turns round in eddies with three logs in them, each a hop from the next only for a moment: he waits, and
+ *    goes. Anyone who has fallen in, or plays on Lugnt, is offered a birch leaf as in the village's gutter, which
+ *    carries him over. Klonk floats beside him: he is wood.
  * 2. **Stenar och stockar:** stones in the stream with logs between them, each a hop from the last. The logs bob a
  *    little in the eddies, never more than his feet can take; behind the big stone the water turns round.
  * 3. **Bron i Bredbyn:** the rapids under the bridge are far too wild. "Ropa på Pappa": from the bridge he lowers
@@ -74,6 +77,23 @@ const bobbing = (id: string, log: Stone, seconds: number, phase: number): Mover 
   cycle: { seconds, phase },
   stops: [{ x: (log.from + log.to) / 2, y: round(log.y - LOG_HIGH - BOB) }, { x: (log.from + log.to) / 2, y: round(log.y - LOG_HIGH + BOB) }],
 });
+
+/**
+ * The eddies below the gravel bank: logs the water turns to and fro, at the gravel's height. Two neighbours go opposite
+ * ways, so that each comes to the next once a round, end to end, and each end of the row comes to its bank.
+ */
+const TURN = 5.2;
+const EDDY_WIDTH = 2.2;
+const turning = (id: string, from: number, to: number, phase: number): Mover => ({
+  id, look: 'log', width: EDDY_WIDTH, height: LOG_HIGH, verb: 'push',
+  cycle: { seconds: TURN, phase, wait: true },
+  stops: [{ x: from, y: round(GRAVEL.y - LOG_HIGH) }, { x: to, y: round(GRAVEL.y - LOG_HIGH) }],
+});
+const EDDY: Mover[] = [
+  turning('al-eddy-1', 38.7, 41.2, 0),
+  turning('al-eddy-2', 43.4, 45.4, TURN / 2),
+  turning('al-eddy-3', 47.6, 48.4, 0),
+];
 
 // 3. Bredbyn: the bank, the rapids under the bridge, and the far bank. Pappa's scarf lifts him over.
 const BREDBYN: Stone = { from: 81.6, to: 92.4, y: 0 };
@@ -232,6 +252,7 @@ export const alven: ChapterData = {
     { x: 168.4, y: MOALVEN.y },
   ],
   movers: [
+    ...EDDY,
     bobbing('al-log-1', L1, 2.8, 0),
     bobbing('al-log-2', L2, 3.1, 1.2),
     bobbing('al-log-3', L3, 2.6, 0.6),
@@ -241,7 +262,8 @@ export const alven: ChapterData = {
   spots: [
     // The raft at the outlet's bank, and the birch leaf at the gravel bank's end: he steps on, the current carries him.
     { id: 'al:raft', at: RAFT.from, verb: 'take', word: 'board', ride: 'al:raft' },
-    { id: 'al:leaf', at: LEAF.from, verb: 'take', word: 'board', ride: 'al:leaf' },
+    // The gentle way: offered to anyone who has fallen in, or plays on Lugnt.
+    { id: 'al:leaf', at: LEAF.from, verb: 'take', word: 'board', needs: FELL_IN, ride: 'al:leaf' },
     // On the bank before the rapids: he calls Pappa, who lowers his scarf from the bridge; then he takes hold.
     { id: 'al:pappa', look: 'sign', at: { x: CALL_PAPPA, y: 0 }, verb: 'call', word: 'callPappa' },
     { id: 'al:lift', at: LIFT.from, verb: 'take', word: 'alScarf', needs: 'al:scarf', ride: 'al:lift' },
@@ -357,7 +379,8 @@ export const alven: ChapterData = {
     { id: 'al:raft-seen', at: 11, until: 'al:raft', who: 'elof', line: 'alRaftSeen', read: true },
     { id: 'al:current', on: 'al:raft', within: [12, 31], who: 'elof', line: 'alCurrent' },
     { id: 'al:old-one', at: 31.6, who: 'elof', line: 'alOldOne' },
-    { id: 'al:leaf-seen', at: 34.6, until: 'al:leaf', who: 'elof', line: 'alLeafSeen', read: true },
+    { id: 'al:logs-wait', at: 34.6, who: 'elof', line: 'alLogsWait', read: true },
+    { id: 'al:leaf-seen', on: FELL_IN, within: [GRAVEL.from, BANK.from], until: 'al:leaf', who: 'elof', line: 'alLeafSeen', read: true },
     // 2. the stones and the logs
     { id: 'al:bob', at: 58.4, who: 'elof', line: 'alBob' },
     { id: 'al:eddy', at: 70.8, who: 'elof', line: 'alEddy' },
@@ -418,7 +441,7 @@ export const alven: ChapterData = {
     // 1. on the raft down the current, across the gravel bank, and on the birch leaf
     ...alongAll(RAFT, [0.1, 0.2, 0.32, 0.44, 0.56, 0.68, 0.8, 0.92]),
     ...row(31.4, 35.4, GRAVEL.y),
-    ...alongAll(LEAF, [0.1, 0.22, 0.36, 0.5, 0.64, 0.78, 0.92]),
+    ...alongAll(LEAF, [0.1, 0.22, 0.36, 0.5, 0.6, 0.8, 0.92]),
     { x: 51.8, y: 0.45 },
     // 2. from stone to log to stone, and along the flat stone
     ...over(STONES),
@@ -474,7 +497,7 @@ export const context: Chooser = (has, player) => {
   if (at >= BREDBYN.from + 3) return ['alvenPappa', 'alvenPappa', 'water', 'pappa'];
   if (at >= BANK.from + 2) return ['alvenStones', 'alvenFamily', 'water'];
   if (has('al:leaf')) return ['alvenCurrent', 'alvenFamily', 'water'];
-  if (has('al:raft')) return at >= GRAVEL.from ? ['alvenLeaf', 'alvenFamily', 'water'] : ['alvenCurrent', 'alvenFamily', 'water'];
+  if (has('al:raft')) return at >= GRAVEL.from ? [has(FELL_IN) ? 'alvenLeaf' : 'alvenEddy', 'alvenFamily', 'water'] : ['alvenCurrent', 'alvenFamily', 'water'];
   if (at >= 9) return ['alvenRaft', 'alvenFamily', 'water'];
   return ['alvenOutlet', 'alvenFamily', 'water'];
 };

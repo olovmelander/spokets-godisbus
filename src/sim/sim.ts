@@ -1,6 +1,6 @@
 import { BoxShape, ChainShape, Settings, Vec2, World, type Body, type Contact, type Fixture } from 'planck';
 import {
-  BUBBLE_LIFT, BUBBLE_TIME, CANDY_MAGNET, CLIMB_EXIT, CLIMB_GRAB, CLIMB_SPEED, COYOTE_TIME, EDGE_REACH, ELOF_HALF_WIDTH, ELOF_HEIGHT,
+  BUBBLE_LIFT, BUBBLE_TIME, CANDY_MAGNET, CLIMB_EXIT, CLIMB_GRAB, CLIMB_SPEED, COYOTE_TIME, EDGE_REACH, ELOF_HALF_WIDTH, ELOF_HEIGHT, FELL_IN,
   BERRY_HALF, BERRY_SQUASH, FALL_LIMIT, GRAVITY, HOP_GRAVITY_SCALE, JUMP_BUFFER, JUMP_SPEED, LEDGE_REACH, LEDGE_TIME, MAX_FALL_SPEED, REGRAB_AFTER,
   RUN_AFTER, RUN_DEFLECTION, RUN_SPEED, SAFE_AFTER, SAFE_REACH, SLIDE_REACH, SLIDE_TIME, STEEP_SLIDE_SPEED, STEP,
   STEP_HEIGHT, STOP_WITHIN, WALK_DEFLECTION, WALK_SPEED,
@@ -296,6 +296,7 @@ export class Sim {
       userData: FOOT,
     });
 
+    if (options.gentle) this.flags.add(FELL_IN);
     // Things on rails are moved by the game, never by the physics: nothing can knock them off.
     this.movers = (chapter.movers ?? []).map((def) => {
       const stop = !def.cycle && start.placed?.includes(def.id) ? def.stops.length - 1 : 0;
@@ -1370,6 +1371,7 @@ export class Sim {
     this.carry(true);
     this.state = { kind: 'bubble', fromX: this.curr.x, fromY: this.curr.y, t: 0 };
     this.bubbles++;
+    this.flags.add(FELL_IN);
     // The state says so from this very step, though the bubble has not moved him yet.
     this.curr = { ...this.curr, mode: 'bubble', bubble: Number.MIN_VALUE };
   }

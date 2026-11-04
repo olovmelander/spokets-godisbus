@@ -99,8 +99,8 @@ export interface Mover {
   optional?: boolean;
   /** The word on the button where Knuffa or Dra is too plain: a key of `sv.verbs`, as "Sparka" for a football. */
   word?: string;
-  /** A repeating platform, between its two stops. Its phase is local, never saved as puzzle progress. */
-  cycle?: { seconds: number; phase?: number };
+  /** A repeating platform, between its two stops. Its phase is local, never saved as puzzle progress. `wait`: it is a hop away only for a moment, and he waits for that. */
+  cycle?: { seconds: number; phase?: number; wait?: boolean };
 }
 
 /** A trail candy: where it floats, and the flag that has to be set before it is there at all. */

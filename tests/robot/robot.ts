@@ -86,6 +86,22 @@ export function decide(game: Game, chapter: ChapterData): Decision {
       if (gust.blow > 0 || gust.until < (next - 0.5 - p.x) / RUN_SPEED + 0.4) return wait;
     }
   }
+  // Logs the water turns to and fro: it goes to the end of what it stands on, and waits until the next is a hop away.
+  // On Lugnt it takes the gentle way, which is offered there.
+  const turning = movers.filter((m) => m.def.cycle?.wait);
+  if (turning.length > 0 && p.grounded && !game.sim.options.gentle) {
+    const on = turning.find((m) => Math.abs(p.x - m.x) <= m.def.width / 2 + 0.2 && Math.abs(m.y + m.def.height - p.y) < 0.2);
+    const next = turning.filter((m) => m !== on && m.x - m.def.width / 2 > p.x).sort((a, b) => a.x - b.x)[0];
+    if (on || (next && next.x - next.def.width / 2 - p.x < 4)) {
+      let edge = on ? on.x + on.def.width / 2 : p.x;
+      if (!on) while (heightAt(chapter, edge + 0.1) > p.y - 1) edge += 0.1;
+      let far = next ? next.x - next.def.width / 2 : edge;
+      if (!next) while (heightAt(chapter, far) < p.y - 1) far += 0.1;
+      if (p.x < edge - 0.35) return { ...wait, x: 1 };
+      if (far - edge > 0.9) return wait;
+      return { ...wait, x: 1, ahead: true };
+    }
+  }
   // A thing on its way along its rail: wait for it.
   if (movers.some((m) => m.t < 1)) return wait;
   // Something to do where it stands: stand still and do it. It taps, as a player does: one thing done may

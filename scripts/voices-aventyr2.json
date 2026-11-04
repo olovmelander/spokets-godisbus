@@ -1218,6 +1218,13 @@
     "text": "Där! Gamla trägubben på en stock!"
   },
   {
+    "key": "alLogsWait",
+    "speaker": "elof",
+    "situation": "Äventyr 2, alven",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Stockar i virveln! Jag väntar in dem."
+  },
+  {
     "key": "alLeafSeen",
     "speaker": "elof",
     "situation": "Äventyr 2, alven",

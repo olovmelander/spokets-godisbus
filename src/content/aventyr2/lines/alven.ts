@@ -17,6 +17,7 @@ export const words: ChapterWords = {
     alRaftSeen: 'En liten flotte! Den kan bära mig.',
     alCurrent: 'Strömmen tar oss! Håll i dig, Klonk!',
     alOldOne: 'Där! Gamla trägubben på en stock!',
+    alLogsWait: 'Stockar i virveln! Jag väntar in dem.',
     alLeafSeen: 'Ett björklöv, som i rännstenen!',
     // 2. the stones, the bobbing logs and the eddy
     alBob: 'Stocken guppar, men den håller!',
@@ -66,6 +67,7 @@ export const words: ChapterWords = {
     alvenOutlet: { purpose: 'Följ ån efter lillgubben.', recap: 'Lillgubben föll i sjön, och ån tog honom. Gamla trägubben följde efter på en stock.' },
     alvenRaft: { purpose: 'Kliv på flotten vid stranden.', recap: 'Ån är för bred att hoppa över. En liten flotte ligger vid stranden.' },
     alvenCurrent: { purpose: 'Åk med strömmen nerför ån.', recap: 'Strömmen bär mig. Klonk flyter bredvid, för trä flyter.' },
+    alvenEddy: { purpose: 'Vänta in stockarna och hoppa.', recap: 'Vattnet snurrar stockarna fram och tillbaka i virveln.' },
     alvenLeaf: { purpose: 'Kliv på björklövet.', recap: 'Gamla trägubben flyter före på sin stock och lämnar godis åt mig.' },
     alvenStones: { purpose: 'Hoppa på stenarna och stockarna.', recap: 'Stockarna guppar i strömmen, men de håller mig.' },
     alvenPappa: { purpose: 'Ropa på Pappa vid bron.', recap: 'Forsen vid bron i Bredbyn är för vild. Pappa står uppe på bron.' },
