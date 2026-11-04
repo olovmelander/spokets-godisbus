@@ -213,7 +213,7 @@ did the integration and the checks.
 - **Planed wood.** Matte, with grain: furniture only.
 - **Moss.** Darker and glossy in its hollows, catching the low sun.
 - **Wet surfaces.** Moss and carved wood only: within 1.9 EL of water and outdoors in Äventyr 2's storm, with slow
-  glints. Ground and streets do not look wet (see `HANDOVER.md`, "Next").
+  glints. The ground's own wet is the puddles, below.
 - **Dew.** Beads on grass tips and leaves in the morning places, and drops on the window panes in Morgonen efter.
 - **Puddles.** On hard ground in the rain (`materials/puddles.ts`): it gives back the sky's glow, in pools from one
   small tiling picture and in a thin film between them, looked along more than from above, and brightens with each
