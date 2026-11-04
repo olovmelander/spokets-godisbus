@@ -177,7 +177,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
     // The nearest trunk towards the chapter's middle.
     const score = (t: Tree) => Math.abs(t.x - (from + to) * 0.45) / 25 + Math.abs(t.z + 5);
     const tree = trees.filter((t) => t.z > -14 && t.z < -3 && far(t.x, t.z)).sort((p, q) => score(p) - score(q))[0];
-    const sit = tree && perchOn(tree, (tree.snag ? 2.4 : 2.9) + next() * 0.6, next() < 0.5 ? -1 : 1, 1.3);
+    const sit = tree && perchOn(tree, (tree.snag ? 2 : 2.3) + next() * 0.5, next() < 0.5 ? -1 : 1, 1.3);
     if (sit) owls.push({ at: sit(0.62), yaw: -Math.PI / 2 });
     else {
       for (let k = 0; k < 40; k++) {
