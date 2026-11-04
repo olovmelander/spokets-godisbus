@@ -182,7 +182,7 @@ export const stormoga: ChapterData = {
   ],
   decor: [
     // The two trägubbar on the stone, the old one holding the little one; he carries them once he is big.
-    { look: 'tragubbe', at: { x: FIGURES, y: 0.6 }, z: -0.5, until: 'taste' },
+    { look: 'tragubbe', at: { x: FIGURES, y: 0.6 }, z: -0.5, until: 'taste', word: 'lifted' },
     { look: 'lillgubbe', at: { x: FIGURES + 0.32, y: 0.6 }, z: -0.3, until: 'taste' },
     // The cap he found in the gutter in Byn, back on the little one's head.
     { look: 'tiny-cap', at: { x: FIGURES + 0.32, y: 1.08 }, z: -0.3, after: 'scene:motet', until: 'taste' },

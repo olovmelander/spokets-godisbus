@@ -306,6 +306,8 @@ export const alven: ChapterData = {
   // Far across the lake a moose may come down to the water.
   life: [{ kind: 'moose', from: 128, to: 137 }],
   decor: [
+    // The otter on its stone.
+    { look: 'otter', at: { x: (OTTER.from + OTTER.to) / 2, y: OTTER.y }, z: 0.1 },
     // Reeds along the banks, and in the shallows by them.
     ...[3.6, 10.8, 49.9, 82.6, 113, 131.8].map((x) => ({ look: 'reed' as const, at: { x, y: 0 } })),
     ...[165.4, 177.4, 190.4].map((x) => ({ look: 'reed' as const, at: { x, y: ON.y } })),

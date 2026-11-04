@@ -247,7 +247,8 @@ function foxes(plan: Plan, add: Add): Kind {
       if (fx.sit === 0) {
         fx.x += fx.dir * pace;
         fx.walked += pace;
-        fx.steps += now.dt * 9;
+        // Its legs go by the way it has come, so that no foot slides over the ground, and it never trots on the spot.
+        fx.steps += pace * 3.8;
       }
     }
     // Gone once it has trotted out of the picture; it comes again after a while.

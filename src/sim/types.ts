@@ -356,7 +356,7 @@ export type MoverLook = 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy';
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder';
-export type SpotLook = 'mormorHome' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
+export type SpotLook = 'mormorHome' | 'otter' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
   | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';

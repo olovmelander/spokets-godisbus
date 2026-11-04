@@ -797,7 +797,7 @@ function littleFigure(silhouette = false): Group {
 }
 
 /** A thing that stands about: it shrinks away when its flag says it is gone, and may move a little while it is there. */
-function standing(spot: Spot, group: Group, alive?: (clock: number) => void): SpotProp {
+function standing(spot: Spot, group: Group, alive?: (clock: number) => void, leaves: 'shrink' | 'leap' | 'fly' = 'shrink'): SpotProp {
   const root = new Group();
   root.position.set(spot.at.x, spot.at.y, -0.6);
   root.add(group);
@@ -806,12 +806,61 @@ function standing(spot: Spot, group: Group, alive?: (clock: number) => void): Sp
     group: root,
     update(used, clock, dt) {
       since = used ? since + dt : 0;
-      const size = Math.max(0, 1 - since / 0.4);
-      root.scale.setScalar(size);
-      drawnWhile(root, size > 0);
       alive?.(clock);
+      if (leaves === 'shrink' || since === 0) {
+        const size = Math.max(0, 1 - since / 0.4);
+        root.scale.setScalar(size);
+        root.position.x = spot.at.x;
+        root.position.y = spot.at.y;
+        root.rotation.z = 0;
+        drawnWhile(root, size > 0);
+        return;
+      }
+      if (leaves === 'leap') {
+        // A crouch, and away in one long arc, spinning a little: he never waits.
+        const crouch = Math.min(1, since / 0.16);
+        const k = Math.max(0, (since - 0.16) / 0.62);
+        root.scale.set(1, k === 0 ? 1 - 0.2 * crouch : 1, 1);
+        root.position.x = spot.at.x + k * 5.5;
+        root.position.y = spot.at.y + Math.sin(Math.min(k, 1) * Math.PI) * 2.6 - Math.max(0, k - 1) * 8;
+        root.rotation.z = -k * 2.2;
+        drawnWhile(root, k < 1.2);
+        return;
+      }
+      // Up and away on its wings, faster and faster.
+      const k = since / 1.5;
+      root.position.x = spot.at.x + k * 8;
+      root.position.y = spot.at.y + k * k * 11;
+      root.rotation.z = 0.25;
+      const flap = Math.sin(clock * 26) * 0.7;
+      const near = group.getObjectByName('wingNear');
+      const far = group.getObjectByName('wingFar');
+      if (near) near.rotation.x = flap;
+      if (far) far.rotation.x = -flap;
+      drawnWhile(root, k < 1);
     },
   };
+}
+
+/** An otter sitting up on its stone, its head turning and its back bobbing a little: it is real, and it has seen him. */
+function otter(): { group: Group; head: Group } {
+  const group = new Group();
+  const fur = solid('#7a5c42', 0.55);
+  const pale = solid('#b8a488', 0.7);
+  const body = new Mesh(new SphereGeometry(0.36, 14, 10).scale(1, 1.5, 0.9), fur);
+  body.position.y = 0.5;
+  const belly = new Mesh(new SphereGeometry(0.24, 12, 8).scale(1, 1.5, 0.7), pale);
+  belly.position.set(0, 0.5, 0.2);
+  const tail = new Mesh(new ConeGeometry(0.16, 1.1, 10).rotateZ(Math.PI / 2), fur);
+  tail.position.set(-0.62, 0.12, -0.05);
+  const head = new Group();
+  head.position.y = 1.08;
+  head.add(new Mesh(new SphereGeometry(0.26, 14, 10).scale(1, 0.85, 0.95), fur), ball(0.14, pale, 0, -0.06, 0.2, [1, 0.7, 0.8]));
+  for (const x of [-0.11, 0.11]) head.add(ball(0.035, solid('#141010', 0.25), x, 0.05, 0.23), ball(0.07, fur, x * 1.9, 0.18, 0));
+  head.add(ball(0.04, solid('#141010', 0.3), 0, -0.02, 0.32));
+  group.add(body, belly, tail, head);
+  group.scale.setScalar(0.72);
+  return { group, head };
 }
 
 // --- the things of the story -----------------------------------------------------------------------------------
@@ -1081,7 +1130,16 @@ function umbrella(): Group {
 
 function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
   return {
-    tragubbe: (spot) => standing(spot, oldFigure()),
+    // He leaps away, as he does all night, except where Elof lifts him up.
+    tragubbe: (spot) => standing(spot, oldFigure(), undefined, spot.id.startsWith('decor:') && spot.word !== 'lifted' ? 'leap' : 'shrink'),
+    otter: (spot) => {
+      const { group, head } = otter();
+      return standing(spot, group, (clock) => {
+        group.position.y = Math.sin(clock * 1.7) * 0.03;
+        head.rotation.y = Math.sin(clock * 0.8) * 0.7;
+        head.rotation.x = Math.sin(clock * 1.3 + 1) * 0.12;
+      });
+    },
     lillgubbe: (spot) => {
       const figure = littleFigure();
       return standing(spot, figure, (clock) => { figure.rotation.z = Math.sin(clock * 5.3) * 0.03; });
@@ -1096,7 +1154,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     owl: (spot) => {
       const bird = owl();
-      return standing(spot, bird, (clock) => { bird.rotation.y = Math.sin(clock * 0.7) * 0.25; });
+      // One that is ridden has its own picture; one that only sits there flies off.
+      return standing(spot, bird, (clock) => { bird.rotation.y = Math.sin(clock * 0.7) * 0.25; }, spot.id.startsWith('decor:') ? 'fly' : 'shrink');
     },
     tap: (spot) => {
       // The rain barrel's brass tap, and the water that pours from it once it is turned.
