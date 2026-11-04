@@ -1,12 +1,14 @@
 import {
   Color, DirectionalLight, Float32BufferAttribute, Group, HemisphereLight, Mesh, MeshStandardMaterial, PerspectiveCamera, Scene, ShaderLib, ShaderMaterial,
-  SphereGeometry, type InstancedMesh, type Material, type WebGLProgramParametersWithUniforms, type WebGLRenderer,
+  SphereGeometry, type InstancedMesh, type Vector4, type Material, type WebGLProgramParametersWithUniforms, type WebGLRenderer,
 } from 'three';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { building } from '../../src/content/aventyr2/buildings';
 import { ADVENTURE2, BONUS, STORY, loadAdventure2 } from '../../src/content/chapters';
 import { PLACES, dress } from '../../src/render/dressing';
 import { PACK, type ExtraContext, type ExtraFrame } from '../../src/render/extensions';
 import { DEW, createDew, dewPlaces } from '../../src/render/lift/materials/dew';
+import { HOLDS, createPuddles, lampsOf } from '../../src/render/lift/materials/puddles';
 import { CARVED, PALED, RIM, classify, createSurfaces, dewy, wetOf, woodColoured } from '../../src/render/lift/materials/surface';
 import { createWater } from '../../src/render/water';
 import type { ChapterData } from '../../src/sim/types';
@@ -139,6 +141,94 @@ describe('the visual upgrade: wood, moss and the wet', () => {
     started.update(frame({ tier: 'low' }));
     started.apply(high.scene);
     expect(patchedIn(high.scene)).toBe(laid);
+  });
+
+  describe('puddles', () => {
+    const wet = (scene: Scene) => {
+      const found = new Set<MeshStandardMaterial>();
+      scene.traverse((object) => {
+        const material = (object as Mesh).material as MeshStandardMaterial | undefined;
+        if (material?.customProgramCacheKey?.().includes('lift-puddles-v1')) found.add(material);
+      });
+      return [...found];
+    };
+    const billsta = () => ADVENTURE2.find((c) => c.id === 'billsta')!;
+
+    it('lies only where it rains', () => {
+      for (const chapter of STORY) if (!chapter.storm?.rain) expect(createPuddles(context(chapter)), chapter.id).toBeNull();
+      expect(createPuddles(context(billsta()))).not.toBeNull();
+    });
+
+    it('lies on the hard ground, once, under one program key, and leaves the lawn and the moss dry', () => {
+      const ctx = context(billsta());
+      const puddles = createPuddles(ctx)!;
+      puddles.update(frame());
+      puddles.patch!(ctx.scene);
+      puddles.patch!(ctx.scene);
+      const materials = wet(ctx.scene);
+      expect(materials.length).toBeGreaterThan(0);
+      for (const material of materials) {
+        expect(HOLDS[material.userData.ground as string], material.userData.ground as string).toBeGreaterThan(0);
+        expect(material.customProgramCacheKey().split(':lift-puddles-v1').length - 1).toBe(1);
+        const shader = compile(material);
+        expect(shader.fragmentShader).toContain('wetFresnel');
+        expect(shader.fragmentShader).toContain('#include <opaque_fragment>');
+        expect(shader.vertexShader).toContain('wetWorld = ');
+      }
+    });
+
+    it('goes by the tier the picture started on: a picture that starts on Low stays as it was, whatever the menu does', () => {
+      const ctx = context(billsta());
+      const puddles = createPuddles(ctx)!;
+      puddles.update(frame({ tier: 'low' }));
+      puddles.patch!(ctx.scene);
+      puddles.update(frame({ tier: 'high' }));
+      puddles.patch!(ctx.scene);
+      expect(wet(ctx.scene)).toEqual([]);
+    });
+
+    it('knows the lit windows of a street and of a building, and only of a building that is lit', () => {
+      const byn = ADVENTURE2.find((c) => c.id === 'stormbyn')!;
+      expect(lampsOf(byn, new Scene()).length).toBeGreaterThan(0);
+      const scene = new Scene();
+      const lit = building({ kind: 'villa', x: 40, z: -30, lit: 'home' });
+      const dark = building({ kind: 'villa', x: 90, z: -30 });
+      scene.add(lit.group, dark.group);
+      const lamps = lampsOf(billsta(), scene).filter((lamp) => lamp.on === 'home');
+      expect(lamps.length).toBeGreaterThan(0);
+      for (const lamp of lamps) expect(Math.abs(lamp.x - 40)).toBeLessThan(40);
+      expect(dark.group.userData.lamps).toBeUndefined();
+    });
+
+    it('gives the four nearest lit windows their warmth, and none to a window that is dark', () => {
+      const ctx = context(billsta());
+      const near = { x: 22, z: -20, on: '' };
+      const far = { x: 500, z: -20, on: '' };
+      const off = { x: 21, z: -20, on: 'not-yet' };
+      const holder = new Group();
+      holder.userData.lamps = [far, off, near];
+      ctx.scene.add(holder);
+      const puddles = createPuddles(ctx)!;
+      puddles.update(frame({ x: 20 }));
+      puddles.patch!(ctx.scene);
+      puddles.update(frame({ x: 20 }));
+      const uniforms = compile(wet(ctx.scene)[0]!).uniforms as unknown as { wetLampX: { value: Vector4 }; wetLampOn: { value: Vector4 } };
+      expect(uniforms.wetLampX.value.x).toBe(22);
+      expect(uniforms.wetLampOn.value.x).toBeGreaterThan(0.9);
+      expect(uniforms.wetLampOn.value.y).toBe(0);
+    });
+
+    it('brightens with the flash, as the sky it gives back does', () => {
+      const ctx = context(billsta());
+      const puddles = createPuddles(ctx)!;
+      puddles.update(frame());
+      puddles.patch!(ctx.scene);
+      const uniforms = compile(wet(ctx.scene)[0]!).uniforms as unknown as { wetSky: { value: Color } };
+      const before = uniforms.wetSky.value.r;
+      ctx.hemisphere.intensity *= 2;
+      puddles.update(frame());
+      expect(uniforms.wetSky.value.r).toBeCloseTo(before * 2, 5);
+    });
   });
 
   it('knows matte carved wood from the moss: the boards, the figures, the moss cushions, and leaves the banks', () => {

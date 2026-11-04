@@ -2,6 +2,18 @@
 
 ## State (4 November 2026)
 
+- **The storm's light (4 November 2026, evening).** Near shapes crushed to pure black, and Elof was lost against them.
+  - **Why:** the sun stands behind the scene, so what faces the player gets only the fill and the ambient, and the
+    grade's contrast (1.09, pivoting on middle grey) took the rest to zero. `DUSK`, which looks right at night,
+    has an exposure of 1.02 where the storm had 0.78 to 0.86.
+  - **The light:** `STORM_FILL` 1.8 (it was 0.7) out of doors, contrast 1.02, and the three darkest chapters at
+    exposure 0.88. The fill doesn't reach the sky, so the sky stays dark. Pixels under 8 of 255, against `norrsken`'s
+    6 % as the target: `stormskog` 32 → 8 %, `billsta` 30 → 4 %, `stormbyn` 21 → 1 %, `olympia` 14 → 4 %, `flarken`
+    24 → 9 %, `alven` 24 → 12 %. Numbers from 1280×800 stills on High, averaged over three spots in each chapter.
+  - **Puddles** (`src/render/lift/materials/puddles.ts`): hard ground in the rain gives back the sky and flashes
+    with it. A lit window lays a warm streak over the wet towards the eye, and so do the car's lights: the warm
+    against the cold. One small texture and a few sums, no new draw. The surface patch was narrowed because a noise
+    in every fragment of the ground cost half a frame, so this has none. Mid and High only, by the first frame's tier.
 - **The birches (4 November 2026, evening).** The first step after a look at every chapter on High (see "Next").
   - **Crowns:** a young birch's crown was a ring of leaves round the sky: its clumps kept out of the middle and grew
     outwards from there. Now they fill it, each lying round its point, over dark boughs that end inside the crown.
@@ -3455,10 +3467,9 @@
 **The picture, from three stills of every chapter on High (4 November 2026), biggest gain first. One pull request
 each. The forest, the bog and the mountain are already strong, and are the standard for the rest:**
 
-1. **The storm's light (ten chapters).** Near shapes crush to pure black (`stormskog`, `olympia`, `billsta`,
-   `flarken`, `stormbyn`), and Elof is lost against them. The fix is warm against cold, not only brighter: window
-   light spilling onto the ground, rim light from the lightning, a floor under the blacks, and a wet look for ground
-   and streets, which the surface patch left when it was narrowed to moss and carved wood.
+1. **The storm's light** has its first pass (see "State"). Left of it: the lightning as a rim of light on near shapes,
+   and judging it on a real phone and tablet (calm enough for Elof?). Olov's call: is it now dark enough to feel like
+   night? The village's walls (`stormbyn`) are the palest.
 2. **The rooms (`prolog`, `epilog`, `stormkvall`, `morgonen`): the first and last pictures of both adventures.** One
    flat wall and one colour. They need window light on the floor, a lamp's pool of warmth, and depth where wall meets
    floor. The floorboards' black gaps are too heavy.

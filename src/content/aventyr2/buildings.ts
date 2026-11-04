@@ -1,6 +1,6 @@
 import {
   BoxGeometry, BufferGeometry, Color, ConeGeometry, CylinderGeometry, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial,
-  IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, SphereGeometry,
+  IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, SphereGeometry, Vector3,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Storm } from '../../sim/types';
@@ -448,6 +448,15 @@ export function building(def: BuildingDef): Building {
   group.add(new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.85 })));
   let paneMaterial: MeshBasicMaterial | null = null;
   if (panes.length) {
+    // Where its windows are, for what their light falls on (../../render/lift/materials/puddles.ts), which has
+    // no business with this pack. A building turned sideways shines past the path.
+    if (def.lit !== undefined && !def.turn) {
+      group.userData.lamps = panes.map((pane) => {
+        pane.computeBoundingBox();
+        const middle = pane.boundingBox!.getCenter(new Vector3());
+        return { x: def.x + (def.flip ? -middle.x : middle.x), z: def.z + middle.z, on: def.lit };
+      });
+    }
     paneMaterial = glass();
     group.add(new Mesh(mergeGeometries(panes.map((p) => { p.deleteAttribute('uv'); return p; })), paneMaterial));
   }
