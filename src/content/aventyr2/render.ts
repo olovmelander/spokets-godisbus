@@ -819,7 +819,7 @@ function littleFigure(silhouette = false): Group {
 }
 
 /** A thing that stands about: it shrinks away when its flag says it is gone, and may move a little while it is there. */
-function standing(spot: Spot, group: Group, alive?: (clock: number) => void, leaves: 'shrink' | 'leap' | 'fly' = 'shrink'): SpotProp {
+function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) => void, leaves: 'shrink' | 'leap' | 'fly' = 'shrink'): SpotProp {
   const root = new Group();
   root.position.set(spot.at.x, spot.at.y, -0.6);
   root.add(group);
@@ -828,7 +828,7 @@ function standing(spot: Spot, group: Group, alive?: (clock: number) => void, lea
     group: root,
     update(used, clock, dt) {
       since = used ? since + dt : 0;
-      alive?.(clock);
+      alive?.(clock, dt);
       if (leaves === 'shrink' || since === 0) {
         const size = Math.max(0, 1 - since / 0.4);
         root.scale.setScalar(size);
@@ -1153,7 +1153,16 @@ function umbrella(): Group {
 function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
   return {
     // He leaps away, as he does all night, except where Elof lifts him up.
-    tragubbe: (spot) => standing(spot, oldFigure(), undefined, spot.id.startsWith('decor:') && spot.word !== 'lifted' ? 'leap' : 'shrink'),
+    tragubbe: (spot) => {
+      const figure = oldFigure();
+      // On the stone in the storm's eye it rocks the little one a little, and turns to him when he has come.
+      const met = spot.word === 'lifted';
+      return standing(spot, figure, met ? (clock, dt) => {
+        figure.rotation.z = Math.sin(clock * 1.1) * 0.04;
+        const seen = elof.flags?.has('eye') && Math.abs(elof.x - spot.at.x) < 5;
+        figure.rotation.y += ((seen ? -0.9 : 0) - figure.rotation.y) * Math.min(1, dt * 1.6);
+      } : undefined, spot.id.startsWith('decor:') && !met ? 'leap' : 'shrink');
+    },
     seesawLog: (spot) => {
       // The dry spruce over its stone, measured from its low end, where he stands. Thick at the root, thin at the
       // top, with the stubs of its boughs. It turns about the stone, wherever the stone is.
@@ -1215,7 +1224,12 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     lillgubbe: (spot) => {
       const figure = littleFigure();
-      return standing(spot, figure, (clock) => { figure.rotation.z = Math.sin(clock * 5.3) * 0.03; });
+      // It trembles until it has its cap back, and then it hops.
+      return standing(spot, figure, (clock) => {
+        const glad = elof.flags?.has('scene:motet') ?? false;
+        figure.rotation.z = glad ? Math.sin(clock * 1.7) * 0.06 : Math.sin(clock * 5.3) * 0.03;
+        figure.position.y = glad ? gladHop(clock) : 0;
+      });
     },
     pumpkin: (spot) => {
       const { group, light, face } = pumpkin();
@@ -1293,10 +1307,12 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // Fjun's cap, lost in the gutter: a little knitted red cone with a white bobble.
       const group = new Group();
       const cap = new Mesh(new ConeGeometry(0.16, 0.3, 10), solid('#c23a2e', 0.9));
-      cap.rotation.z = 1.2;
-      cap.position.y = 0.1;
-      group.add(cap, ball(0.06, solid('#f4efe4', 0.9), 0.17, 0.2, 0));
-      return standing(spot, group, (clock) => { group.position.y = 0.04 * Math.sin(clock * 3); });
+      // Back on its head it sits straight and goes with its hops; lost, it lies on its side and bobs.
+      const worn = spot.word === 'worn';
+      cap.rotation.z = worn ? 0 : 1.2;
+      cap.position.y = worn ? 0.15 : 0.1;
+      group.add(cap, ball(0.06, solid('#f4efe4', 0.9), worn ? 0 : 0.17, worn ? 0.32 : 0.2, 0));
+      return standing(spot, group, (clock) => { group.position.y = worn ? gladHop(clock) : 0.04 * Math.sin(clock * 3); });
     },
     latch: (spot) => {
       const group = new Group();
@@ -1471,6 +1487,9 @@ function raft(w: number, h: number): Group {
   }
   return group;
 }
+
+/** The little one's hops when it is glad: short, and well apart. Its cap goes with them. */
+const gladHop = (clock: number) => Math.abs(Math.sin(clock * 2.6)) ** 6 * 0.24;
 
 /** The fallen long arm of Klonk's seesaw comes to rest with its top on the ground. */
 const TIPPED = -0.16;

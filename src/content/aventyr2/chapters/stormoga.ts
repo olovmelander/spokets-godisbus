@@ -188,6 +188,8 @@ export const stormoga: ChapterData = {
     ],
     // The family's lamps: light in their hands on the shore, and not lamps on nothing.
     glows: [
+      // A warm place on the cold stone, where the two of them are.
+      { at: { x: FIGURES + 0.1, y: 1.2 }, z: -1, size: 3.8, after: 'eye' },
       { at: { x: 66.4, y: 4.6 }, z: -1.2, size: 4, after: 'taste' },
       { at: { x: 66.6, y: 2.8 }, z: -1.8, size: 2.2, after: 'taste' },
       { at: { x: 69.8, y: 2.6 }, z: -2, size: 2.2, after: 'taste' },
@@ -253,7 +255,7 @@ export const stormoga: ChapterData = {
     { look: 'tragubbe', at: { x: FIGURES, y: 0.6 }, z: -0.5, until: 'taste', word: 'lifted' },
     { look: 'lillgubbe', at: { x: FIGURES + 0.32, y: 0.6 }, z: -0.3, until: 'taste' },
     // The cap he found in the gutter in Byn, back on the little one's head.
-    { look: 'tiny-cap', at: { x: FIGURES + 0.32, y: 1.08 }, z: -0.3, after: 'scene:motet', until: 'taste' },
+    { look: 'tiny-cap', word: 'worn', at: { x: FIGURES + 0.32, y: 1.08 }, z: -0.3, after: 'scene:motet', until: 'taste' },
     // The family on the far shore with their lamps, once the storm has let go; mormor with her lantern, morfar.
     { look: 'mormor', at: { x: 61.6, y: 0 }, z: -1, after: 'taste' },
     { look: 'morfar', at: { x: 63.4, y: 0 }, z: -1.4, after: 'taste' },
@@ -282,7 +284,8 @@ export const stormoga: ChapterData = {
   candy: [
     ...row(2.4, 8.4, 0),
     ...alongAll(OWL, [0.12, 0.24, 0.36, 0.48, 0.6, 0.72, 0.84, 0.94]),
-    ...row(41.4, 53.4, 0.6),
+    // Nothing sweet stands between him and the two of them.
+    ...row(41.4, 53.4, 0.6).map((candy) => (Math.abs(candy.x - FIGURES) < 0.8 ? { ...candy, x: candy.x + 1 } : candy)),
     ...alongAll(HOME, [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85]),
   ],
 };
