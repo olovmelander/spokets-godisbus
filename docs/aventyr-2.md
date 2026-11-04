@@ -20,10 +20,12 @@ del"). The first adventure (prologue, Gården, Granskogen, Myren, Berget, the fi
   Pappas ficklampa som får Klonk att stelna till en bro), Byn i stormen (rännstensforsen, gallret och Moas
   paraply), Olympia (fotbollsplanen i Bredbyn: bollen som flyter, nätet upp till ribban och Bertils frispark),
   Flärken (badplatsen: lekplatsen, hopptornet, bryggan och Mammas båt), Älven (strömmen ner förbi Bredbyn och
-  Moälven) och Billsta (sundet där mormor och morfar bor, Billaberget, ladan och det tända fönstret).
+  Moälven) och Billsta (mormor och morfars hus vid vägen intill skogen, ladan och Billaberget).
 - **Vägen:** stormen blåser lillgubben norrut till Flärken. Där faller han i vattnet, och trä flyter: ån bär honom
-  söderut förbi Bredbyn och nerför Moälven, ända till Billstasundet. Finalen, Stormens öga, är en sten ute i sundet
-  där stormen plötsligt tystnar och stjärnorna kommer fram, och Själevads vita kyrka syns vid sjöns ände.
+  söderut förbi Bredbyn och nerför Moälven, som rinner ända till Billstasundet. Billsta ligger tre mil bort, så
+  familjen tar bilen dit, till mormor och morfar, vars hus står vid vägen intill skogen. Bakom huset går Elof upp på
+  Billaberget, och därifrån syns trägubbarna nere i sundet. Finalen, Stormens öga, är en sten ute i sundet där
+  stormen plötsligt tystnar och stjärnorna kommer fram, och Själevads vita kyrka syns vid sjöns ände.
 - **Frågan som drar framåt:** "Varför väntar gamla trägubben aldrig på oss?" Svaret kommer i bilder: han låg
   ensam i en mörk spricka i flera år. Han vet hur lång en enda natt ensam i mörkret känns.
 - **Slutet vänder på Äventyr 1.** Där delade Elof med sin trägubbe. Nu är det trägubbens tur: han har sparat ett
@@ -71,16 +73,19 @@ white eight-sided church stands at the lake's end.
 | `olympia` | Kapitel 4: **Olympia** | Bredbyn's football ground at night | **Bertil** kicks the ball | ~175 EL |
 | `flarken` | Kapitel 5: **Flärken** | Flärkenbadet, the bathing place | **Mamma** steadies the boat | ~185 EL |
 | `alven` | Kapitel 6: **Älven** | down the river by night | **Pappa** on the bridge | ~180 EL |
-| `billsta` | Kapitel 7: **Billsta** | the narrow at Billsta, mormor och morfar's | **Mormor** and **Morfar** | ~185 EL |
+| `billsta` | Kapitel 7: **Billsta** | mormor och morfar's house by the road, the forest, Billaberget | **Mormor** and **Morfar** | ~190 EL |
 | `stormoga` | Finalen: **Stormens öga** | Själevadsfjärden, under clearing sky | everyone, with their lamps | ~85 EL |
 | `morgonen` | Epilog: **Morgonen efter** | home, a still sunny morning | Pappa; mormor and morfar at breakfast | ~55 EL |
 
 **The journey a child follows.** The storm carries the little one from the window over the garden and the forest
 into the village; across Olympia's pitch; and on the strongest gust north up the valley to the lake at Flärken.
 There he falls into the water, and wood floats: the river carries him back south past Bredbyn and down the big
-river, all the way to the narrow at Billsta, where mormor and morfar live. The old trägubbe follows every step of
-the way, leaving candy; the family follow by road with their lamps, and mormor and morfar's lit window waits at the
-end. Lightning shows the little one far ahead, again and again.
+river, which runs on all the way to the narrow at Billsta. The old trägubbe follows every step of the way, leaving
+candy; the family follow by road with their lamps. Billsta is three mil (30 km) from Bredbyn, so at the end of the
+river the family's car stops for Elof, and they drive to mormor and morfar, whose house stands by the road near the
+forest (Olov, 4 November). From the house the way goes through the forest and up Billaberget, and from its brow a
+flash shows both figures far below on a stone in the narrow. Lightning shows the little one far ahead, again and
+again.
 
 **Mormor and morfar.** Olov asked for them and for their home on 4 November. They are "Mormor" and "Morfar" only:
 no names, no likeness (plain stand-in figures), and their house is a loose interpretation in plain shapes of the
@@ -175,29 +180,34 @@ Norra Anundsjöån past Bredbyn and down Moälven: the long way home of the wate
 3. A beaver's lodge and its gnawed stumps; an otter slipping past.
 4. The wide lake of Anundsjösjön under the storm; the owl comes back for the widest stretch.
 5. Flashes show the little one ahead, always further down the river.
+6. At the end the family's car stops on the road by the river. Pappa: "Älven rinner ända till Billsta." Mamma:
+   "Hoppa in, Elof! Vi kör dit med bilen." Three mil, to mormor and morfar.
 
-### Kapitel 7: Billsta (the narrow at Billsta, where mormor and morfar live)
+### Kapitel 7: Billsta (mormor and morfar's house by the road, near the forest)
 
-Moälven runs through Billstasundet into Själevadsfjärden; Billaberget rises beside the road, its boulder field and
-hazel below its cliff.
+The family arrive by car after three mil. Mormor and morfar's house stands by the road near the forest, not by the
+water; behind it the forest climbs Billaberget, which rises above Billstasundet, where Moälven runs into
+Själevadsfjärden.
 
-1. **The narrow:** the current on a leaf, reeds to climb, a jetty.
-2. **Billaberget's boulders** and October hazelnuts.
-3. **Mormor and morfar's place:** the gravel drive, the lawn, birches, a woodshed and its stack of firewood, an
-   overturned rowing boat on trestles with a flapping tarp, garden furniture under a tarp.
-4. **Morfar** lays his long ladder across the ditch; **Mormor** lights the way with her lantern and opens the barn.
-5. **The red barn** with its rusty roof: up the planks and along the roof; the lit window of the white house waits.
-6. From the barn roof, a flash: both trägubbar out on a stone in the narrow.
+1. **The road:** the car stops, its headlights in the rain; the lit window of the white house; the mailbox.
+2. **Morfar** lays his long ladder across the flooded ditch by the road.
+3. **Mormor and morfar's place:** the gravel drive, the lawn, birches, a woodshed and its stack of firewood, a
+   rowing boat on trestles for the winter. **Mormor** lights the way with her lantern and opens the barn.
+4. **The red barn** with its rusty roof: up the planks, through the hay loft and along the roof in the gusts.
+5. **The forest behind the house** and **Billaberget's boulders**, its granite face and October hazelnuts.
+6. From the brow of Billaberget, a flash: both trägubbar far below on a stone in the narrow. Mormor: "Kom, vi går
+   ner till sundet."
 
 ### Finalen: Stormens öga (in the narrow at Billsta, Själevadsfjärden beyond)
 
-1. From mormor and morfar's jetty the owl comes back and flies Elof out over the waves. Far down the lake,
-   Själevad's white church stands in the flashes.
+1. From a jetty below Billaberget (not mormor and morfar's: their house is up by the road) the owl comes back and
+   flies Elof out over the waves. Far down the lake, Själevad's white church stands in the flashes.
 2. **The storm's eye:** the wind drops, the clouds part, stars and the moon. On the stone the old trägubbe holds
    the little one. They are cold and still, and then they see him.
 3. **The golden sweet:** the old one gives Elof a geléhallon in gold paper it saved for him. *Smaka*: he grows,
    standing in the shallows with both figures in his hands.
-4. The family's lamps, and mormor's lantern, on the shore; the walk up to mormor and morfar's lit house.
+4. The family's lamps, and mormor's lantern, on the shore; the walk home through the forest to mormor and
+   morfar's lit house by the road.
 
 ### Epilog: Morgonen efter
 
@@ -259,7 +269,8 @@ The worlds were authored from this design and keep its beats, with these details
 - **Älven** (goal at 186 EL, 92 candies): a little raft and a birch leaf down the current; stones and bobbing logs; the rapids
   under the bridge in Bredbyn, where Pappa lowers his scarf and lifts Elof over (the scarf is drawn from the
   bridge to his hands for the whole lift); the beaver's gnawed stumps and lodge, an otter; the owl from Stormskogen
-  over the lake; Moälven widening, and mormor and morfar's window lit far off.
+  over the lake; Moälven widening; at the end the family's car on the road by the river, its headlights on, to
+  drive the three mil to Billsta.
 - **Billsta** (goal at 194.4 EL, 112 candies, 9 checkpoints): from a stone in the current a birch leaf
   through the narrow to an old jetty in the reeds, and up a reed onto the bank; Billaberget's boulders, a crack,
   and rock shelves jutting from its granite face with hazelnut side candy; the open slope in the gusts, behind the
@@ -268,9 +279,9 @@ The worlds were authored from this design and keep its beats, with these details
   barn; through the dark hay loft, over a bale and a hatch, and along the barn's long roof in the gusts, sheltering
   behind its ventilation hoods; at the low eaves by the water, a flash shows both figures on a stone in the narrow,
   and the owl is heard. Mormor: "Kom, vi går ner till bryggan."
-- **Stormens öga** now lies in the narrow at Billsta: mormor and morfar's lit white house and red barn on the
-  shore, Själevad's church far down the lake. Mormor and morfar welcome everyone at the end, and come to breakfast
-  in Morgonen efter.
+- **Stormens öga** now lies in the narrow at Billsta, below Billaberget's granite and spruces, with Själevad's
+  church far down the lake; mormor and morfar's house is not on the shore. Mormor and morfar come down with
+  everyone and welcome them ("Hemma hos oss finns det varm choklad."), and come to breakfast in Morgonen efter.
 
 The audit after version 2 also fixed the picture in several places: the `iron` surface (a street drain's grate)
 had been used for Olympia's fence and Stormgården's watering can, and the ground's picture dug a drain's well

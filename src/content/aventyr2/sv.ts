@@ -64,8 +64,8 @@ export const A2 = {
     stormbyn: { title: 'Mot Olympia', text: 'Vinden tog lillgubben över taken mot fotbollsplanen. Gamla trägubben är redan på väg.' },
     flarken: { title: 'Nerför ån', text: 'Trä flyter. Ån bär lillgubben söderut, och gamla trägubben följer efter på en stock.' },
     olympia: { title: 'Upp till Flärken', text: 'Den starkaste stormbyn tog lillgubben norrut, upp mot sjön vid Flärken.' },
-    alven: { title: 'Till Billsta', text: 'Älven bär dem ända till sundet i Billsta, där mormor och morfar bor.' },
-    billsta: { title: 'Ut i sundet', text: 'Där ute, på en sten i vågorna: båda trägubbarna. Ugglan kommer tillbaka.' },
+    alven: { title: 'Till Billsta', text: 'Älven bär trägubbarna mot Billsta. Vi kör de tre milen dit, till mormor och morfar.' },
+    billsta: { title: 'Ner till sundet', text: 'Från Billaberget syns de: båda trägubbarna på en sten nere i sundet.' },
     stormoga: { title: 'Hem igen', text: 'Alla är hittade. Mormor och morfar följer med hem till frukost.' },
   } as Record<string, { title: string; text: string }>,
 };

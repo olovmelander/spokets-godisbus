@@ -679,7 +679,7 @@ export interface Storm {
    */
   buildings?: {
     kind: 'villa' | 'barn' | 'playhouse' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
-      | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff';
+      | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce';
     x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string;
     /** Turned about the upright, in quarter turns: a net or a table seen from its end. */
     turn?: number;

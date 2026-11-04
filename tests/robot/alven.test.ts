@@ -31,7 +31,7 @@ const SAID = [
   'al:bredbyn', 'al:rapids', 'al:pappa-here', 'al:scarf-down', 'al:take-hold', 'al:up', 'al:over', 'al:thanks', 'al:follow',
   'al:stumps', 'al:lodge', 'al:otter',
   'al:lake', 'al:owl-seen', 'al:owl-here', 'al:owl-fly', 'al:see-little', 'al:owl-thanks',
-  'al:moalven', 'al:old-ahead', 'al:wider', 'al:billsta', 'al:window', 'al:klonk-end',
+  'al:moalven', 'al:old-ahead', 'al:wider', 'al:billsta', 'al:car', 'al:window', 'al:klonk-end',
 ];
 /** The big candies by name: their places in alven.checkpoints. */
 const CP = { gravel: 1, bank: 2, stone: 3, bredbyn: 4, farBank: 5, lake: 6, moalven: 7 };
@@ -320,7 +320,8 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
 
     it('has Pappa answer warmly: he calls from the bridge, lowers his scarf, holds it, and follows', () => {
       const his = alven.beats!.filter((b) => b.who === 'pappa').map((b) => b.line);
-      expect(his).toEqual(['alPappaHere', 'alScarfDown', 'alTakeHold', 'alOver', 'alFollow']);
+      // ... and at the end, by the car, he tells where the river goes.
+      expect(his).toEqual(['alPappaHere', 'alScarfDown', 'alTakeHold', 'alOver', 'alFollow', 'alBillsta']);
       expect(lines.alTakeHold).toBe('Ta tag i halsduken, Elof!');
       for (const line of his) expect(lines[line]).toBeTruthy();
       // His three lines before the lift are read before Elof goes on.
@@ -474,16 +475,22 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       }
     });
 
-    it('ends as the river widens towards Billsta, where mormor and morfar\'s window is lit far off', () => {
+    it('ends with the family\'s car on the road by the river: three mil to Billsta, where mormor and morfar live', () => {
       const billsta = alven.beats!.find((b) => b.id === 'al:billsta')!;
-      expect(billsta.who).toBe('elof');
+      expect(billsta.who).toBe('pappa');
       expect(billsta.read).toBe(true);
-      expect(lines[billsta.line]).toBe('Mot Billsta, där mormor och morfar bor!');
+      expect(lines[billsta.line]).toBe('Älven rinner ända till Billsta.');
       expect(billsta.at!).toBeGreaterThan(alven.checkpoints![alven.checkpoints!.length - 1]!.x);
       expect(billsta.at!).toBeLessThan(alven.goalX);
-      const window = alven.storm!.glows!.find((g) => g.after === `beat:${billsta.id}`)!;
-      expect(window.at.x).toBeGreaterThan(alven.goalX);
-      expect(window.z!).toBeLessThan(-20);
+      const car = alven.beats!.find((b) => b.id === 'al:car')!;
+      expect(car.who).toBe('mamma');
+      expect(car.on).toBe('beat:al:billsta');
+      expect(lines[alven.beats!.find((b) => b.id === 'al:window')!.line]).toBe('Tre mil! Till mormor och morfar!');
+      // The car stands on the road behind the river, its lights on from the moment Pappa speaks; no window far off.
+      const parked = alven.storm!.buildings!.find((d) => d.kind === 'car')!;
+      expect(parked.lit).toBe('beat:al:billsta');
+      expect(Math.abs(parked.x - alven.goalX)).toBeLessThan(12);
+      for (const glow of alven.storm!.glows!.filter((g) => g.after === 'beat:al:billsta')) expect(glow.z!).toBeGreaterThan(-6);
     });
   });
 

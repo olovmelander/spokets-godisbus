@@ -211,6 +211,20 @@ function birch(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
+function spruce(def: BuildingDef) {
+  // A spruce of the forest by the road: a dark narrow cone in tiers, drooping, its trunk showing at the foot.
+  const h = def.height ?? 60;
+  const parts: BufferGeometry[] = [paint(new CylinderGeometry(0.5, 1.1, h * 0.3, 7).translate(0, h * 0.15, 0), '#4a3a2c')];
+  const tiers = 7;
+  for (let i = 0; i < tiers; i++) {
+    const t = i / tiers;
+    const r = (h * 0.2) * (1 - t * 0.85);
+    const tall = h * 0.2;
+    parts.push(paint(new ConeGeometry(r, tall, 9).translate(0, h * 0.18 + t * h * 0.74 + tall / 2, 0), i % 2 ? '#1f3a2a' : '#24402e'));
+  }
+  return { parts, panes: [] };
+}
+
 function car(def: BuildingDef) {
   // A plain red car in the drive: no badge, no plate, only its shape.
   const w = def.width ?? 29;
@@ -378,7 +392,7 @@ function cliff(def: BuildingDef) {
 
 const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGeometry[]; panes: BufferGeometry[] }> = {
   villa, barn, playhouse, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
-  church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff,
+  church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce,
 };
 
 /** One building, placed: its foot at (x, y), `z` behind the play plane, mirrored with `flip`. */

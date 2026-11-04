@@ -7,9 +7,9 @@ import { alongAll, row, timeCard } from '../kit';
  * Äventyr 2, Finalen: Stormens öga (docs/aventyr-2.md). Units: EL. In the narrow at Billsta, at midnight, where
  * Moälven runs out into Själevadsfjärden. Every step is something Elof does with Använd; nothing can go wrong.
  *
- * 1. **Mormor och morfars brygga:** the stone is too far out to jump to. *Ropa på ugglan*: the owl from
- *    Stormskogen comes back, and flies him out over the waves. Far down the lake Själevad's white church stands
- *    in the flashes, and behind him on the shore mormor and morfar's windows are lit.
+ * 1. **Bryggan nedanför Billaberget:** down through the forest from mormor and morfar's house by the road, a jetty
+ *    in the narrow. The stone is too far out to jump to. *Ropa på ugglan*: the owl from Stormskogen comes back,
+ *    and flies him out over the waves. Far down the lake Själevad's white church stands in the flashes.
  * 2. **Stormens öga:** as he lands on the stone the wind drops, the rain stops, the clouds part: stars, and the
  *    moon on the water.
  * 3. **Mötet** (a held scene): the old trägubbe holds the little one. It did not wait, all night, because it knows
@@ -17,7 +17,8 @@ import { alongAll, row, timeCard } from '../kit';
  * 4. **Guldgodiset:** the old one gives him a geléhallon in gold paper it saved for him, the kind little Elof once
  *    shared with it. *Ta emot*, and *Smaka*: he grows, standing in the shallows with both figures in his hands,
  *    and the family's lamps, with mormor and morfar, reach the shore.
- * 5. **Upp till huset:** *Gå hem*, along the shore and up to mormor and morfar's lit house, all of them together.
+ * 5. **Hem till mormor och morfar:** *Gå hem*, along the shore and up through the forest to their house by the
+ *    road, all of them together.
  */
 
 /** The owl's flight from the jetty's end to the stone, and the walk home along the shore once he is big. */
@@ -118,11 +119,13 @@ export const stormoga: ChapterData = {
   size: { scale: 3, after: 'taste' },
   storm: {
     rain: 0.9, lightning: 6, calm: 'eye',
-    // The shore behind: mormor and morfar's white house with its windows lit, the red barn, birches; and far down
-    // the lake, Själevad's church. Interpretations in plain shapes, never surveys (docs/aventyr-2.md).
+    // The shore behind: Billaberget's granite and its forest, which the path from mormor and morfar's house by the
+    // road comes down through, and birches; far down the lake, Själevad's church. The house is not on the shore.
     buildings: [
-      { kind: 'villa', x: -30, z: -62, y: 0, width: 44, height: 28, lit: '' },
-      { kind: 'barn', x: -78, z: -66, y: 0, width: 34, height: 17 },
+      { kind: 'cliff', x: -34, z: -46, y: 0, width: 40, height: 26 },
+      { kind: 'spruce', x: -58, z: -58, height: 70 },
+      { kind: 'spruce', x: -20, z: -62, height: 64 },
+      { kind: 'spruce', x: 6, z: -54, height: 58 },
       { kind: 'birch', x: -4, z: -40, height: 70 },
       { kind: 'birch', x: 92, z: -36, height: 64 },
       { kind: 'church', x: 128, z: -74, y: -2, width: 26, height: 18 },

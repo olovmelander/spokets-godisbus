@@ -19,8 +19,9 @@ import { alongAll, hopCandy, round, row, slopeRow, timeCard } from '../kit';
  *    climb. Over its top, quietly, and down its far side; an otter swims out towards a stone in the lake.
  * 5. **Sjön:** the widest water of all. The owl from Stormskogen has followed: "Ropa på ugglan", and it flies him
  *    over. Two logs roll in the shallows out to the otter's stone, a way of its own with sweets, never needed.
- * 6. **Moälven:** the river widens towards Billsta. Flashes show the two figures floating further ahead each time,
- *    and far off mormor and morfar's window is lit.
+ * 6. **Moälven:** the river widens. Flashes show the two figures floating further ahead each time. At the end the
+ *    family's car stops on the road by the river: the water runs all the way to Billsta, three mil off, where mormor
+ *    and morfar live, and they will drive there.
  *
  * To the simulation the river is pits, with the water drawn in them: a fall into it is the glitter bubble.
  */
@@ -279,8 +280,9 @@ export const alven: ChapterData = {
     glows: [
       // Pappa's lamp up on the bridge, once he is called.
       { at: { x: 99.6, y: 8.4 }, z: -2.4, size: 1.4, after: 'al:pappa' },
-      // Far off down the river: mormor and morfar's lit window.
-      { at: { x: 202, y: 4.6 }, z: -38, size: 2.4, after: 'beat:al:billsta' },
+      // The family's car on the road by the river, its headlights on: they drive to Billsta.
+      { at: { x: 177.6, y: 1.4 }, z: -2.6, size: 1.6, after: 'beat:al:billsta' },
+      { at: { x: 178.6, y: 1.4 }, z: -2.6, size: 1.6, after: 'beat:al:billsta' },
     ],
     buildings: [
       { kind: 'birch', x: 8, z: -12 },
@@ -290,6 +292,8 @@ export const alven: ChapterData = {
       // The beaver's lodge, a heap of sticks behind the stumps and the slope he climbs.
       { kind: 'lodge', x: 122.4, z: -7, y: CURRENT, width: 18, height: 7.4 },
       { kind: 'birch', x: 181, z: -18 },
+      // The road along the river, where the family's car stops for him at the end.
+      { kind: 'car', x: 192, z: -9, lit: 'beat:al:billsta' },
     ],
   },
   // Far across the lake a moose may come down to the water.
@@ -366,12 +370,13 @@ export const alven: ChapterData = {
     { id: 'al:owl-fly', on: 'al:owl', within: [134, 167], who: 'elof', line: 'alOwlFly' },
     { id: 'al:see-little', at: 152, needs: 'al:owl', who: 'elof', line: 'alSeeLittle' },
     { id: 'al:owl-thanks', at: 167, needs: 'al:owl', who: 'elof', line: 'alOwlThanks' },
-    // 6. Moälven, towards Billsta
+    // 6. Moälven; the family's car, and the drive to Billsta
     { id: 'al:moalven', at: 169.6, who: 'elof', line: 'alMoalven' },
     { id: 'al:old-ahead', at: 178.4, who: 'elof', line: 'alOldAhead' },
     { id: 'al:wider', at: 181, who: 'elof', line: 'alWider' },
-    { id: 'al:billsta', at: 183.2, who: 'elof', line: 'alBillsta', read: true },
-    { id: 'al:window', on: 'beat:al:billsta', who: 'elof', line: 'alWindow' },
+    { id: 'al:billsta', at: 183.2, who: 'pappa', line: 'alBillsta', read: true },
+    { id: 'al:car', on: 'beat:al:billsta', who: 'mamma', line: 'alCar' },
+    { id: 'al:window', on: 'beat:al:car', who: 'elof', line: 'alWindow' },
     { id: 'al:klonk-end', on: 'beat:al:window', who: 'spoket', line: 'alKlonkEnd' },
   ],
   cameras: [
@@ -384,7 +389,7 @@ export const alven: ChapterData = {
     { from: 110, to: 132, zoom: 1.35, lift: 0.9 },
     // Over the lake the picture opens out, the owl's arc and the far shore in it.
     { from: 132, to: 168, zoom: 1.6, lift: 1.4, lead: 3.4 },
-    // At the end the river widens towards Billsta.
+    // At the end the river widens, and the family's car waits on the road.
     { from: 168, to: 194, zoom: 1.55, lift: 0.8 },
   ],
   candy: [
@@ -434,7 +439,7 @@ export const alven: ChapterData = {
 
 /**
  * What "Just nu" says here (src/content/aventyr2/context.ts): the current, the stones, Pappa at the bridge, the
- * beaver's lodge, the owl over the lake, and Moälven towards Billsta.
+ * beaver's lodge, the owl over the lake, Moälven, and the car to Billsta.
  */
 export const context: Chooser = (has, player) => {
   const at = player.x;

@@ -3,7 +3,8 @@ import type { ChapterWords } from './words';
 /**
  * What is said in Älven (docs/aventyr-2.md, Kapitel 6): at most about 40 characters a line, Swedish, no names but
  * the family's and the real places'. The river carries the two figures south from Flärken past Bredbyn, through the
- * lake and down Moälven towards Billsta, where mormor and morfar live. Wood floats: Klonk floats beside him too.
+ * lake and down Moälven; then the family's car, to Billsta three mil off, where mormor and morfar live. Wood
+ * floats: Klonk floats beside him too.
  */
 export const words: ChapterWords = {
   lines: {
@@ -41,12 +42,13 @@ export const words: ChapterWords = {
     alOwlFly: 'Hu-hu! Vi flyger över sjön!',
     alSeeLittle: 'Lillgubben! Långt fram på älven!',
     alOwlThanks: 'Tack, uggla! Du är en riktig vän.',
-    // 6. Moälven, widening towards Billsta
+    // 6. Moälven, and the family's car to Billsta
     alMoalven: 'Nu heter ån Moälven. Så stor den är!',
     alOldAhead: 'Gamla trägubben! Han flyter före oss.',
     alWider: 'Älven blir bredare och bredare.',
-    alBillsta: 'Mot Billsta, där mormor och morfar bor!',
-    alWindow: 'Ett ljus i mormor och morfars fönster!',
+    alBillsta: 'Älven rinner ända till Billsta.',
+    alCar: 'Hoppa in, Elof! Vi kör dit med bilen.',
+    alWindow: 'Tre mil! Till mormor och morfar!',
     alKlonkEnd: 'Klonk, klonk!',
   },
   verbs: {
@@ -68,7 +70,7 @@ export const words: ChapterWords = {
     alvenBoard: { purpose: 'Kliv upp på ugglan.', recap: 'Ugglan har landat bredvid mig. Den vill bära mig över sjön.' },
     alvenFly: { purpose: 'Flyg med ugglan över sjön.', recap: 'Ugglan bär mig högt över den stora sjön.' },
     alvenMoalven: { purpose: 'Följ älven mot Billsta.', recap: 'Nu heter ån Moälven. Lillgubben och gamla trägubben flyter före.' },
-    alvenBillsta: { purpose: 'Följ älven till Billsta.', recap: 'Mormor och morfar bor i Billsta. Ett fönster lyser där borta.' },
+    alvenBillsta: { purpose: 'Åk med familjen till Billsta.', recap: 'Älven rinner till Billsta, där mormor och morfar bor. Dit är det tre mil med bilen.' },
   },
   helpers: {
     alvenFamily: 'Familjen kör längs vägen och lyser med lamporna.',

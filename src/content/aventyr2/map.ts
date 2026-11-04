@@ -32,10 +32,11 @@ const PLACES: Record<(typeof ROUTE)[number], { at: { x: number; y: number }; nam
     at: { x: 286, y: 96 }, name: 'Älven',
     picture: `<path d="M-20-10c8 4 4 10 12 12s6 8 16 8M-14-12c8 4 4 10 12 12s6 8 16 8" ${crayon} stroke="#3f8fc4" stroke-width="2.8"/><path d="M10-6h8" ${crayon} stroke="#7b5a36" stroke-width="3"/>`,
   },
-  // Mormor and morfar's white house with its two gables, and a heart.
+  // Mormor and morfar's white house with its two gables, the family's car on the road in front, and a heart. Three
+  // mil from home: Moa draws it a long way off.
   billsta: {
     at: { x: 344, y: 132 }, name: 'Billsta',
-    picture: `<path d="M-18 10v-14l9-8 9 8 9-8 9 8v14z" fill="#f2f0ea" stroke="#6a6e74" stroke-width="2" stroke-linejoin="round"/><path d="M-10 2h5M5 2h5" ${crayon} stroke="#f4c542" stroke-width="3"/><path d="M20-18c-3-4-8 0-4 4l4 4 4-4c4-4-1-8-4-4z" fill="#dd4b39"/>`,
+    picture: `<path d="M-24 18h28" ${crayon} stroke="#6a6e74" stroke-width="2.4" stroke-dasharray="4 3"/><path d="M-30 16v-4l3-4h8l3 4v4z" fill="#c8372a" stroke="#7a2a22" stroke-width="1.4" stroke-linejoin="round"/><circle cx="-26" cy="17" r="2" fill="#2a2a2a"/><circle cx="-19" cy="17" r="2" fill="#2a2a2a"/><path d="M-18 10v-14l9-8 9 8 9-8 9 8v14z" fill="#f2f0ea" stroke="#6a6e74" stroke-width="2" stroke-linejoin="round"/><path d="M-10 2h5M5 2h5" ${crayon} stroke="#f4c542" stroke-width="3"/><path d="M20-18c-3-4-8 0-4 4l4 4 4-4c4-4-1-8-4-4z" fill="#dd4b39"/>`,
   },
 };
 
