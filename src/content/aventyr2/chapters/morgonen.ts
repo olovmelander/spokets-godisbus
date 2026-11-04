@@ -86,6 +86,9 @@ export const morgonen: ChapterData = {
     // The two back on the shelf, first in the row: placed by his own hands.
     { look: 'tragubbe', at: { x: FIRST.x, y: FIRST.y }, z: FIRST.z, after: 'shelf:old' },
     { look: 'lillgubbe', at: { x: FIRST.x + 0.7, y: FIRST.y }, z: FIRST.z + 0.2, after: 'shelf:small' },
+    // Mormor and morfar, who came home with them in the night for the Sunday breakfast.
+    { look: 'mormorHome', at: { x: 4.6, y: 0 }, z: -1.2 },
+    { look: 'morfar', at: { x: 16, y: 0 }, z: -0.8 },
     // The new latch on the window.
     { look: 'latch', at: { x: WINDOW + 2.4, y: 5.4 }, z: -8.8 },
   ],

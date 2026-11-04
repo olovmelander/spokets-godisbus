@@ -13,6 +13,7 @@ import { drawnWhile } from '../../render/idle';
 import type { SpotProp } from '../../render/props';
 import type { Mover, RideLook, Spot } from '../../sim/types';
 import { box, building, PANE, rock } from './buildings';
+import { createGrandparent, type Grandparent } from './grandparents';
 
 /**
  * Äventyr 2's pictures (docs/aventyr-2.md), built in code like the first adventure's stand-ins: each is
@@ -49,6 +50,11 @@ function scatter(seed: number): () => number {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+
+/** Where Elof is, for those who look at him, and how far the story has come. */
+const elof: { x: number; flags: ReadonlySet<string> | null } = { x: 0, flags: null };
+/** The flag that puts the ladder's ledge over the ditch at Billsta. */
+const LADDER_LAID = 'bi:ladder';
 
 let glowMap: ReturnType<typeof glowTexture> | null = null;
 /** A soft additive glow of a colour, as big as `size`. */
@@ -457,6 +463,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   let first = true;
   return {
     update({ dt, clock, flags, x, y, camera, still, tier, riding }: ExtraFrame) {
+      elof.x = x;
+      elof.flags = flags;
       if (first) {
         // A flyby whose moment has passed already (a game taken up later) is not played again.
         for (const f of flybys) if (flags.has(f.def.on)) f.seen = true;
@@ -817,53 +825,33 @@ function football(radius: number): Mesh {
   return ball;
 }
 
-/**
- * Mormor or Morfar, as plain giant stand-in figures (docs/aventyr-2.md): no likeness of anyone, no face but two
- * dots, as tall to him as a grown-up is to a 15 cm boy. Mormor holds her lantern; Morfar wears a cap.
- */
-function grandparent(who: 'mormor' | 'morfar'): { group: Group; light: Mesh | null } {
+/** Mormor's lantern, whose light falls where he walks: it hangs from its top, and its glow goes with it. */
+function lantern(): { group: Group; light: Mesh } {
   const group = new Group();
-  const coat = solid(who === 'mormor' ? '#7a3a4a' : '#3c5a44', 0.85);
-  const legs = solid(who === 'mormor' ? '#3a3440' : '#38383c', 0.9);
-  const skin = solid('#dfb586', 0.8);
-  const hair = solid('#c8c6c0', 0.9);
-  for (const z of [-0.7, 0.7]) {
-    const leg = new Mesh(new CylinderGeometry(0.55, 0.6, 4.6, 8), legs);
-    leg.position.set(0, 2.3, z);
-    group.add(leg);
-  }
-  const body = new Mesh(new CylinderGeometry(1.5, 1.9, 5, 10), coat);
-  body.position.y = 7;
-  group.add(body, ball(1.15, skin, 0, 10.4, 0), ball(1.2, hair, -0.15, 10.9, 0, [1, 0.6, 1]));
-  for (const z of [-0.38, 0.38]) group.add(ball(0.09, solid('#2a2420', 0.5), 1.05, 10.5, z));
-  for (const side of [-1, 1]) {
-    const arm = new Mesh(new CylinderGeometry(0.4, 0.45, 4.4, 8), coat);
-    arm.position.set(0.4, 7.2, side * 2);
-    arm.rotation.x = side * 0.25;
-    group.add(arm);
-  }
-  let light: Mesh | null = null;
-  if (who === 'morfar') {
-    const cap = new Mesh(new CylinderGeometry(1.25, 1.25, 0.45, 14), solid('#4a4a46', 0.9));
-    cap.position.y = 11.45;
-    const peak = new Mesh(new BoxGeometry(1.2, 0.15, 1.8), solid('#4a4a46', 0.9));
-    peak.position.set(1.15, 11.3, 0);
-    group.add(cap, peak);
-  } else {
-    // Her lantern, held low so that its light falls where he walks.
-    const lantern = new Group();
-    lantern.add(new Mesh(new CylinderGeometry(0.4, 0.45, 1, 8), new MeshBasicMaterial({ color: '#ffd27a' })));
-    const frame = new Mesh(new CylinderGeometry(0.5, 0.5, 0.15, 8), solid('#2a2a2a', 0.5));
-    frame.position.y = 0.55;
-    lantern.add(frame);
-    light = glow('#ffc070', 7, 0.6);
-    lantern.add(light);
-    lantern.position.set(1.6, 4.4, 2.2);
-    group.add(lantern);
-  }
-  group.position.z = -2.4;
-  group.rotation.y = -0.35;
+  const body = new Mesh(new CylinderGeometry(0.2, 0.24, 0.52, 8), new MeshBasicMaterial({ color: '#ffd27a' }));
+  body.position.y = -0.46;
+  const roof = new Mesh(new CylinderGeometry(0.1, 0.3, 0.16, 8), solid('#2a2a2a', 0.5));
+  roof.position.y = -0.14;
+  const floor = new Mesh(new CylinderGeometry(0.27, 0.27, 0.06, 8), solid('#2a2a2a', 0.5));
+  floor.position.y = -0.74;
+  const light = glow('#ffc070', 6, 0.6);
+  light.position.y = -0.46;
+  group.add(body, roof, floor, light);
   return { group, light };
+}
+
+/** Mormor or Morfar in the picture: no longer a thing he uses up, so they stay when he calls. */
+function figure(spot: Spot, who: Grandparent, lit = who === 'mormor'): SpotProp {
+  const carried = lit ? lantern() : null;
+  const made = createGrandparent(who, carried?.group ?? null, spot.id.startsWith('decor:'));
+  made.group.position.set(spot.at.x, spot.at.y, -0.6);
+  return {
+    group: made.group,
+    update(used, clock, dt) {
+      made.update(used, clock, dt, elof.x, elof.flags?.has(LADDER_LAID));
+      if (carried) (carried.light.material as MeshBasicMaterial).opacity = 0.55 + 0.08 * Math.sin(clock * 6.3);
+    },
+  };
 }
 
 /** A carved pumpkin lantern, as tall as two of him, its face lit from inside by a candle. */
@@ -1146,11 +1134,10 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       group.position.y = 0.45;
       return standing(spot, group, (clock) => { (light.material as MeshBasicMaterial).opacity = 0.6 + 0.1 * Math.sin(clock * 7); });
     },
-    mormor: (spot) => {
-      const { group, light } = grandparent('mormor');
-      return standing(spot, group, (clock) => { if (light) (light.material as MeshBasicMaterial).opacity = 0.55 + 0.08 * Math.sin(clock * 6.3); });
-    },
-    morfar: (spot) => standing(spot, grandparent('morfar').group),
+    mormor: (spot) => figure(spot, 'mormor'),
+    morfar: (spot) => figure(spot, 'morfar'),
+    // At home in the morning her lantern has been put out.
+    mormorHome: (spot) => figure(spot, 'mormor', false),
     reed: (spot) => {
       // Reeds standing out of the shallows: tall stems with brown seed heads, bending in the wind.
       const group = new Group();

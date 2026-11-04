@@ -45,7 +45,7 @@ const CAR = { x: -8, z: -17, width: 29 };
 /** The road's ditch, full of rushing rain: twice a running jump. Morfar's ladder lies over it, rim to rim. */
 const DITCH = { from: 14.6, to: 19.2, bottom: -5 };
 const DITCH_WATER = -0.3;
-const LADDER: Ledge = { x: (DITCH.from + DITCH.to) / 2, y: 0, width: DITCH.to - DITCH.from + 0.4, look: 'plank', needs: 'bi:ladder' };
+const LADDER: Ledge = { x: (DITCH.from + DITCH.to) / 2, y: 0, width: DITCH.to - DITCH.from + 0.4, look: 'ladder', needs: 'bi:ladder' };
 
 /** The gravel drive up from the road to the yard. */
 const DRIVE = { from: DITCH.to, to: 29 };

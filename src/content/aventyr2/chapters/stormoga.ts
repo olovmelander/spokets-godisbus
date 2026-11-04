@@ -181,8 +181,8 @@ export const stormoga: ChapterData = {
     // The family on the far shore with their lamps, once the storm has let go; mormor with her lantern, morfar.
     { look: 'flashlight', at: { x: 66.2, y: 1.6 }, z: -1.6, after: 'taste' },
     { look: 'flashlight', at: { x: 68.4, y: 1.8 }, z: -2.2, after: 'taste' },
-    { look: 'mormor', at: { x: 73.4, y: 0 }, z: -1, after: 'taste' },
-    { look: 'morfar', at: { x: 77.6, y: 0 }, z: -1, after: 'taste' },
+    { look: 'mormor', at: { x: 63.4, y: 0 }, z: -1, after: 'taste' },
+    { look: 'morfar', at: { x: 65.6, y: 0 }, z: -1.4, after: 'taste' },
   ],
   ghost: [
     // Klonk is beside him now: on the jetty, then across with the owl, then by the figures.
