@@ -83,6 +83,8 @@ export const morgonen: ChapterData = {
     { id: 'cocoa', look: 'candle', at: { x: 44, y: 0 }, verb: 'take', word: 'moCocoa', needs: 'beat:moName' },
   ],
   decor: [
+    // What the night left in the room: wet raincoats and boots, leaves on the floor, mormor's lantern put out.
+    { look: 'aftermath', at: { x: 0, y: 0 } },
     // The two back on the shelf, first in the row: placed by his own hands.
     { look: 'tragubbe', at: { x: FIRST.x, y: FIRST.y }, z: FIRST.z, after: 'shelf:old' },
     { look: 'lillgubbe', at: { x: FIRST.x + 0.7, y: FIRST.y }, z: FIRST.z + 0.2, after: 'shelf:small' },

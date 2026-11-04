@@ -21,7 +21,7 @@ export interface Building { group: Group; panes: MeshBasicMaterial | null; def: 
 
 const tint = new Color();
 /** A part in one colour, ready to merge. */
-function paint(geometry: BufferGeometry, colour: string): BufferGeometry {
+export function paint(geometry: BufferGeometry, colour: string): BufferGeometry {
   const part = geometry.index ? geometry.toNonIndexed() : geometry;
   tint.set(colour);
   const count = part.getAttribute('position').count;

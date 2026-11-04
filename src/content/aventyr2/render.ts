@@ -13,7 +13,7 @@ import { glowTexture } from '../../render/glow';
 import { drawnWhile } from '../../render/idle';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
-import { box, building, PANE, rock } from './buildings';
+import { box, building, paint, PANE, rock } from './buildings';
 import { createGrandparent, type Grandparent } from './grandparents';
 
 /**
@@ -1436,6 +1436,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
         },
       };
     },
+    aftermath: () => aftermath(),
     mormor: (spot) => figure(spot, 'mormor'),
     morfar: (spot) => figure(spot, 'morfar'),
     // At home in the morning her lantern has been put out.
@@ -1486,6 +1487,117 @@ function raft(w: number, h: number): Group {
     group.add(rope);
   }
   return group;
+}
+
+/** A little picture drawn in code, where there is anything to draw with. */
+function drawnPicture(width: number, height: number, draw: (c: CanvasRenderingContext2D) => void): CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const c = canvas.getContext('2d');
+  if (c) draw(c);
+  return new CanvasTexture(canvas);
+}
+
+/** A rag rug's stripes, seen from above: the same every time. */
+function ragRug(): CanvasTexture | null {
+  const random = scatter(23);
+  const STRIPES = ['#a8483a', '#e4d8bc', '#3f6a8a', '#d0a43a', '#62784e', '#e4d8bc'];
+  const texture = drawnPicture(256, 64, (c) => {
+    for (let x = 0; x < 256;) {
+      const wide = 5 + random() * 15;
+      c.fillStyle = STRIPES[Math.floor(random() * STRIPES.length)]!;
+      c.fillRect(x, 0, wide + 1, 64);
+      x += wide;
+    }
+  });
+  if (texture) texture.colorSpace = SRGBColorSpace;
+  return texture;
+}
+
+/** The light of a window lying on the floor: four soft panes on black, which added to the floor is nothing. */
+const paneLight = () => drawnPicture(128, 128, (c) => {
+  c.fillStyle = '#000';
+  c.fillRect(0, 0, 128, 128);
+  c.filter = 'blur(3px)';
+  c.fillStyle = '#fff';
+  for (const [x, y] of [[14, 14], [68, 14], [14, 68], [68, 68]] as const) c.fillRect(x, y, 46, 46);
+});
+
+/**
+ * Sunday morning's room: what the night left. Wet raincoats on their hooks and boots in a pool, leaves blown in at the
+ * window, mormor's lantern put out on the table, and the sun lying on the floor. All of it stands in the room's own
+ * places, counted from the room's start. The coats go on dripping.
+ */
+function aftermath(): SpotProp {
+  const group = new Group();
+  const WALL = -8.5;
+  const coats: BufferGeometry[] = [];
+  const COATS = [{ x: 15.9, tall: 2.7, colour: '#2e5a46' }, { x: 17, tall: 2.5, colour: '#c8a02c' }, { x: 18.1, tall: 1.9, colour: '#ad3f30' }, { x: 19, tall: 1.5, colour: '#2f6aa0' }];
+  coats.push(paint(new BoxGeometry(4.2, 0.16, 0.16).translate(17.45, 5.6, WALL - 0.24), '#6a4a2c'));
+  for (const coat of COATS) {
+    const mid = 5.45 - coat.tall / 2;
+    coats.push(paint(new CylinderGeometry(0.3, 0.56, coat.tall, 10).scale(1, 1, 0.36).translate(coat.x, mid, WALL), coat.colour));
+    coats.push(paint(new SphereGeometry(0.27, 10, 8).scale(1, 0.85, 0.6).translate(coat.x, 5.5, WALL), coat.colour));
+  }
+  const BOOTS = [{ x: 15.8, colour: '#2b2f36' }, { x: 16.9, colour: '#6e3226' }, { x: 18, colour: '#3f6a8a' }, { x: 19, colour: '#b89a30' }];
+  for (const boot of BOOTS) {
+    for (const side of [-0.2, 0.2]) {
+      coats.push(paint(new BoxGeometry(0.3, 0.74, 0.26).translate(boot.x + side, 0.37, WALL + 1), boot.colour));
+      coats.push(paint(new BoxGeometry(0.34, 0.16, 0.46).translate(boot.x + side, 0.08, WALL + 1.1), boot.colour));
+    }
+  }
+  group.add(new Mesh(mergeGeometries(coats), new MeshStandardMaterial({ vertexColors: true, roughness: 0.42 })));
+  // The pool they stand in: flat, and giving back the room's light.
+  const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(17.4, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
+  group.add(pool);
+  // The rug under the table.
+  const rug = new Mesh(new PlaneGeometry(13, 9).rotateX(-Math.PI / 2).translate(10, 0.01, -0.8), new MeshStandardMaterial({ map: ragRug(), roughness: 0.95 }));
+  group.add(rug);
+  // The sun on the floor, one window's worth from each, lying a little aslant.
+  const light = new PlaneGeometry(4.8, 10.5, 1, 1).rotateX(-Math.PI / 2);
+  const at = light.getAttribute('position');
+  for (let i = 0; i < at.count; i++) at.setX(i, at.getX(i) + at.getZ(i) * -0.42);
+  const panes = mergeGeometries([4, 13, 22, 40, 49].map((x) => light.clone().translate(x + 0.8, 0.02, 1)));
+  group.add(new Mesh(panes, new MeshBasicMaterial({ map: paneLight(), color: '#ffe6b0', transparent: true, opacity: 0.2, blending: AdditiveBlending, depthWrite: false, fog: false })));
+  // Birch leaves that came in at the window with the storm.
+  const random = scatter(61);
+  const leaves = new InstancedMesh(new SphereGeometry(0.2, 6, 4).scale(1, 0.05, 0.68), new MeshStandardMaterial({ roughness: 0.75 }), 30);
+  const place = new Object3D();
+  const tint = new Color();
+  for (let i = 0; i < leaves.count; i++) {
+    const near = i % 3 === 0 ? 22 : i % 3 === 1 ? 13 : 40;
+    place.position.set(near + (random() - 0.5) * 8, 0.03, 0.5 + random() * 5.5);
+    place.rotation.set(0, random() * 6.28, (random() - 0.5) * 0.14);
+    place.updateMatrix();
+    leaves.setMatrixAt(i, place.matrix);
+    leaves.setColorAt(i, tint.set(random() < 0.6 ? '#c9a23a' : '#a8703a').multiplyScalar(0.8 + random() * 0.3));
+  }
+  group.add(leaves);
+  // Mormor's lantern on the table, put out.
+  const out = lantern();
+  out.light.visible = false;
+  out.group.position.set(8, 2.68, -1.5);
+  group.add(out.group);
+  // Three slow drops from the coats' hems.
+  const fall = new SphereGeometry(0.05, 6, 4);
+  const wet = solid('#b8ccdc', 0.1);
+  const drops = COATS.slice(0, 3).map((coat, i) => {
+    const drop = new Mesh(fall, wet);
+    drop.position.set(coat.x, 0, WALL + 0.1);
+    group.add(drop);
+    return { drop, from: 5.45 - coat.tall, phase: i * 0.83 };
+  });
+  return {
+    group,
+    update(_used, clock) {
+      for (const { drop, from, phase } of drops) {
+        const k = (clock * 0.45 + phase) % 1;
+        drop.position.y = from * (1 - k * k);
+      }
+    },
+  };
 }
 
 /** The little one's hops when it is glad: short, and well apart. Its cap goes with them. */
