@@ -2,8 +2,15 @@
 
 ## State (4 November 2026)
 
+- **The birches (4 November 2026, evening).** The first step after a look at every chapter on High (see "Next").
+  - **Crowns:** a young birch's crown was a ring of leaves round the sky: its clumps kept out of the middle and grew
+    outwards from there. Now they fill it, each lying round its point, over dark boughs that end inside the crown.
+  - **Äventyr 2's trunks:** the bark's marks were black boxes as wide as the stem, standing out of it. They are now
+    thin lenses that follow the round of the stem, many towards a darkened foot, in the same mesh: no new draw.
+  - Unit tests measure the leaves' cover of the crown's middle, that no mark leaves the stem, and that the marks
+    face outwards.
 - **PR #189's browser job, and a new computer (4 November 2026, evening).** The job failed in two suites, and Olov
-  asked to merge once it is green.
+  asked to merge once it is green. It is merged and deployed (`1948ec2`).
   - **A real bug in the surface patch:** it went by the tier of the last frame, but a change in the menu warms up
     before any frame has told it the new tier. So Low → High laid nothing, and High → Low laid the patch on Low, on
     117 of granskog's materials, compiling it in the menu. It now keeps the tier of the picture's first frame,
@@ -3444,6 +3451,21 @@
     KhronosGroup/KTX-Software releases and run it with `/S /D=%LOCALAPPDATA%\Programs\KTX-Software`.
 
 ## Next
+
+**The picture, from three stills of every chapter on High (4 November 2026), biggest gain first. One pull request
+each. The forest, the bog and the mountain are already strong, and are the standard for the rest:**
+
+1. **The storm's light (ten chapters).** Near shapes crush to pure black (`stormskog`, `olympia`, `billsta`,
+   `flarken`, `stormbyn`), and Elof is lost against them. The fix is warm against cold, not only brighter: window
+   light spilling onto the ground, rim light from the lightning, a floor under the blacks, and a wet look for ground
+   and streets, which the surface patch left when it was narrowed to moss and carved wood.
+2. **The rooms (`prolog`, `epilog`, `stormkvall`, `morgonen`): the first and last pictures of both adventures.** One
+   flat wall and one colour. They need window light on the floor, a lamp's pool of warmth, and depth where wall meets
+   floor. The floorboards' black gaps are too heavy.
+3. **Grounding, everywhere:** contact shadows and ambient occlusion, High first, so that figures and props sit on
+   the ground.
+4. **Äventyr 2's stand-ins:** the spruces of stacked cones (`billsta`, `stormoga`) beside the forest's real ones, flat
+   building faces, and the garden's backdrop behind places that are not the garden (see "Known bugs").
 
 **For the next session, in this order:**
 

@@ -8,7 +8,7 @@ import type { ExtraFrame, ViewExtra } from '../../src/render/extensions';
 import { flora, SHARE } from '../../src/render/lift/flora';
 import { MUSHROOM_INKS, clearOfCandy } from '../../src/render/lift/flora/floor';
 import { MUSH_BREATH, PLANT } from '../../src/render/lift/flora/light';
-import { TOP, pictureTop } from '../../src/render/lift/flora/trees';
+import { SHAPES, TOP, pictureTop } from '../../src/render/lift/flora/trees';
 import { WHIRL } from '../../src/render/lift/flora/whirl';
 import { WIND, bendAt, setPlayer, setWind, windAt } from '../../src/render/wind';
 import type { ChapterData } from '../../src/sim/types';
@@ -193,6 +193,31 @@ describe('the flora', () => {
       expect((object as InstancedMesh).count).toBe(t[0] + t[1]);
     });
     expect(tall).toBeGreaterThan(3);
+  });
+
+  it('fills a birch to its middle: leaves all through its crown, not a ring of them round the sky', () => {
+    const shape = SHAPES.birch();
+    const position = shape.getAttribute('position');
+    const index = shape.getIndex()!;
+    // The middle third of a young birch's crown, in its shape's own units (1 high).
+    const cells: [number, number][] = [];
+    for (let i = -8; i <= 8; i++) {
+      for (let j = -8; j <= 8; j++) if (Math.hypot(i, j) <= 8) cells.push([(i / 8) * 0.09, 0.68 + (j / 8) * 0.1]);
+    }
+    const hit = new Set<[number, number]>();
+    for (let t = 0; t < index.count; t += 3) {
+      const [a, b, c] = [index.getX(t), index.getX(t + 1), index.getX(t + 2)];
+      const [ax, ay, bx, by, cx, cy] = [position.getX(a), position.getY(a), position.getX(b), position.getY(b), position.getX(c), position.getY(c)];
+      const area = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay);
+      // A stem or a bough is thin, and a stem through the middle is not leaves.
+      if (Math.abs(area) < 2e-3) continue;
+      for (const cell of cells) {
+        const u = ((cell[0] - ax) * (cy - ay) - (cx - ax) * (cell[1] - ay)) / area;
+        const v = ((bx - ax) * (cell[1] - ay) - (cell[0] - ax) * (by - ay)) / area;
+        if (u >= 0 && v >= 0 && u + v <= 1) hit.add(cell);
+      }
+    }
+    expect(hit.size / cells.length).toBeGreaterThan(0.9);
   });
 
   it('hangs the boughs of the old trunks under the top of the picture, and gives them their crowns over it', () => {

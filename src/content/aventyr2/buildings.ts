@@ -200,11 +200,56 @@ function hut(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
+/** How wide a birch's stem is at a height: 1.6 at its foot, 0.9 at its top. */
+const stemAt = (y: number, h: number) => 1.6 + ((0.9 - 1.6) * y) / h;
+
+/**
+ * A dark mark on a birch's bark: a thin lens across the stem, pointed at both ends. It follows the round of the stem
+ * just over its surface, so it stays inside the stem's outline at any size.
+ */
+function barkMark(h: number, y: number, middle: number, wide: number, tall: number, colour: string): BufferGeometry {
+  const g = new BufferGeometry();
+  const position: number[] = [];
+  const normal: number[] = [];
+  const index: number[] = [];
+  const rows = 6;
+  for (let k = 0; k <= rows; k++) {
+    const a = middle + (k / rows - 0.5) * wide;
+    const half = (Math.sin((k / rows) * Math.PI) * tall) / 2;
+    for (const side of [-1, 1]) {
+      const at = y + side * half;
+      const r = stemAt(at, h) + 0.02;
+      position.push(Math.sin(a) * r, at, Math.cos(a) * r);
+      normal.push(Math.sin(a), 0, Math.cos(a));
+    }
+    if (k < rows) index.push(k * 2, k * 2 + 2, k * 2 + 1, k * 2 + 1, k * 2 + 2, k * 2 + 3);
+  }
+  g.setAttribute('position', new Float32BufferAttribute(position, 3));
+  g.setAttribute('normal', new Float32BufferAttribute(normal, 3));
+  g.setIndex(index);
+  return paint(g, colour);
+}
+
 function birch(def: BuildingDef) {
-  // A birch: white bark with black marks, and a thin crown of October's last yellow leaves.
+  // A birch: white bark with dark marks across it, thick and many towards its dark foot, and a thin crown of
+  // October's last yellow leaves. The stem has rows enough for its foot to darken gradually.
   const h = def.height ?? 70;
-  const parts: BufferGeometry[] = [paint(new CylinderGeometry(0.9, 1.6, h, 9).translate(0, h / 2, 0), '#e8e6de')];
-  for (let y = 3; y < h * 0.8; y += 3.4) parts.push(box(2.2, 0.5, 0.4, (y % 2) - 0.5, y, 1.4, '#2a2622'));
+  const stem = paint(new CylinderGeometry(0.9, 1.6, h, 18, 36).translate(0, h / 2, 0), '#e8e6de');
+  const shade = stem.getAttribute('color');
+  const up = stem.getAttribute('position');
+  for (let i = 0; i < up.count; i++) {
+    const foot = Math.max(0, 1 - up.getY(i) / 6);
+    const light = 1 - 0.72 * foot * foot;
+    shade.setXYZ(i, shade.getX(i) * light, shade.getY(i) * light * 0.97, shade.getZ(i) * light * 0.93);
+  }
+  const parts: BufferGeometry[] = [stem];
+  let seed = Math.abs(Math.round(def.x * 7 + def.z * 3)) + 11;
+  const next = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  // Long and thin: a wide short mark reads as an eye in the stem.
+  for (let y = 0.6; y < h * 0.62; y += 0.3 + next() * (y < 12 ? 0.55 : 1.3)) {
+    const low = Math.max(0, 1 - y / 14);
+    parts.push(barkMark(h, y, (next() - 0.5) * 2.6, 0.4 + next() * (0.8 + low * 0.5), 0.08 + next() * (0.1 + low * 0.1), next() < 0.7 ? '#2a2622' : '#4a443c'));
+  }
   for (const [x, y, s] of [[0, h, 14], [-8, h * 0.85, 10], [8, h * 0.82, 11], [-4, h * 0.7, 8], [5, h * 0.66, 7]] as const) {
     parts.push(paint(new SphereGeometry(s, 9, 6).scale(1, 0.75, 0.6).translate(x, y, -2), '#b89838'));
   }

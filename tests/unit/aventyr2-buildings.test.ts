@@ -1,3 +1,4 @@
+import { Vector3, type Mesh } from 'three';
 import { describe, expect, it } from 'vitest';
 import { building } from '../../src/content/aventyr2/buildings';
 import type { Storm } from '../../src/sim/types';
@@ -18,4 +19,56 @@ describe('Äventyr 2: the buildings', () => {
       }
     });
   }
+
+  it('keeps the marks of a birch on its bark: nothing stands out of the stem below its crown', () => {
+    const h = 70;
+    const made = building({ kind: 'birch', x: 0, z: 0, height: h });
+    const position = (made.group.children[0] as Mesh).geometry.getAttribute('position');
+    let marks = 0;
+    for (let i = 0; i < position.count; i++) {
+      const y = position.getY(i);
+      // The crown's lowest leaves hang from 0.66 of its height, less their own size.
+      if (y > h * 0.5) continue;
+      const bark = 1.6 + (0.9 - 1.6) * (y / h);
+      const out = Math.hypot(position.getX(i), position.getZ(i));
+      expect(out).toBeLessThan(bark + 0.1);
+      if (out > bark + 0.005) marks++;
+    }
+    expect(marks).toBeGreaterThan(100);
+  });
+
+  it('turns the marks of a birch outwards, where the eye is: wound the other way they are never drawn', () => {
+    const h = 70;
+    const made = building({ kind: 'birch', x: 0, z: 0, height: h });
+    const position = (made.group.children[0] as Mesh).geometry.getAttribute('position');
+    const corner = (i: number) => new Vector3().fromBufferAttribute(position, i);
+    let seen = 0;
+    for (let t = 0; t + 2 < position.count; t += 3) {
+      const [a, b, c] = [corner(t), corner(t + 1), corner(t + 2)];
+      const middle = a.clone().add(b).add(c).divideScalar(3);
+      if (middle.y > h * 0.5 || Math.hypot(middle.x, middle.z) < 1.6 + (0.9 - 1.6) * (middle.y / h) + 0.005) continue;
+      const facing = b.clone().sub(a).cross(c.clone().sub(a));
+      // A mark comes to a point at each end, and a triangle closed to a line has no side to turn.
+      if (facing.length() < 1e-5) continue;
+      seen++;
+      expect(facing.dot(new Vector3(middle.x, 0, middle.z))).toBeGreaterThan(0);
+    }
+    expect(seen).toBeGreaterThan(50);
+  });
+
+  it('darkens a birch at its foot, as an old one is, and keeps it white above', () => {
+    const made = building({ kind: 'birch', x: 0, z: 0, height: 70 });
+    const geometry = (made.group.children[0] as Mesh).geometry;
+    const position = geometry.getAttribute('position');
+    const colour = geometry.getAttribute('color');
+    const light = (from: number, to: number) => {
+      let sum = 0, count = 0;
+      for (let i = 0; i < position.count; i++) {
+        const y = position.getY(i);
+        if (y >= from && y <= to) { sum += colour.getX(i); count++; }
+      }
+      return sum / count;
+    };
+    expect(light(0, 1)).toBeLessThan(light(20, 30) * 0.6);
+  });
 });
