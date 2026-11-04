@@ -673,6 +673,7 @@ const RIDGE_FRONT: Front = { rows: PROFILE_RIDGE, cuts: false, lip: 0, hang: 0, 
  * is a ridge; a bog's own ground is islands; everything else has the place's front, in its own stuff.
  */
 function frontFor(kind: Ground, own: Ground): Front {
+  if (kind === 'moss') return FRONTS.forest;
   if (kind === 'ridge') return RIDGE_FRONT;
   if (GROUNDS[kind].boards) return FLOOR_FRONT;
   if (GROUNDS[kind].sinks) return ISLAND_FRONT;

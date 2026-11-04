@@ -154,6 +154,8 @@ function scatter(chapter: ChapterData, from: number, to: number, place: PlaceId,
   const start = place === 'home' ? Math.max(chapter.outdoors!, ...(chapter.surfaces ?? []).map((s) => s.to)) + 4 : from - 12;
   for (let a = start; a < to + 12; a += STRETCH) {
     const seed = Math.round(a * 7 + 97);
+    // A forest behind the house: where a chapter that is not a forest marks moss, it grows as a forest does.
+    if (place !== 'forest' && chapter.surfaces?.some((s) => s.kind === 'moss' && s.from < a + STRETCH && s.to > a)) group.add(stretch(chapter, a, a + STRETCH, seed));
     if (place === 'bog') group.add(bog(chapter, a, a + STRETCH, seed, own));
     else group.add(place === 'home' ? lawn(chapter, a, a + STRETCH, seed, false) : build(chapter, a, a + STRETCH, seed));
   }

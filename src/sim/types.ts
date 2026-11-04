@@ -371,7 +371,7 @@ export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home'
 /** What a gust's shelters are drawn as, in a storm: see Storm.shelters. */
 export type Shelter = 'pots' | 'posts' | 'vents' | 'rocks';
 
-export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron' | 'turf' | 'sand';
+export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron' | 'turf' | 'sand' | 'moss';
 
 /**
  * A thing that a block of the ground is, for the picture only: the block runs from `from` to `to` along the

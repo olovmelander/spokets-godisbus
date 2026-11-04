@@ -34,8 +34,22 @@ export function restock(group: Group, chapter: ChapterData, kit: ForestKit): boo
   return true;
 }
 
+/** A chapter that is not a forest, as its stretches of forest see it: everything but what it marks as moss is built on. */
+function woodland(chapter: ChapterData): ChapterData {
+  const moss = (chapter.surfaces ?? []).filter((s) => s.kind === 'moss').sort((a, b) => a.from - b.from);
+  if (moss.length === 0) return chapter;
+  const surfaces = (chapter.surfaces ?? []).filter((s) => s.kind !== 'moss');
+  let from = -Infinity;
+  for (const stretch of moss) {
+    surfaces.push({ from, to: stretch.from, kind: 'wood' });
+    from = stretch.to;
+  }
+  surfaces.push({ from, to: Infinity, kind: 'wood' });
+  return { ...chapter, surfaces };
+}
+
 function grown(chapter: ChapterData, from: number, to: number, seed: number, kit?: ForestKit): Object3D[] {
-  chapter = landscape(chapter);
+  chapter = woodland(landscape(chapter));
   const next = sequence(seed);
   const place = new Object3D();
   const tint = new Color();
