@@ -2,6 +2,12 @@
 
 ## State (4 November 2026)
 
+- **Mormor and morfar's house in Billsta (4 November 2026, late).** Built in Blender 5.2 from Olov's picture
+  (`art/private/billsta/billsta-house.py`, **in the private repository**, so that it can be taken down): the pale grey
+  boards, three tall gables, the valley's downpipe, the dark roof and black chimney, the windows, the steel ladder, and
+  the rusty old barn. `spokets-godisbus-familj` PR #2 must be merged for the site to show it; without it the code
+  stand-ins stay. Its lit windows are their own object, warm and out of the haze. A building can now have a `size`.
+  Billsta uses the forest's far pictures. Spruces hang in points, and the woodshed's logs are round with sawn ends.
 - **Olympia is Olympia (4 November 2026, night).** The third step of the overhaul (`docs/aventyr-2-overhaul.md`, which
   has the audit, what the real places look like, and the order of the work). **Start there.**
   - **The hall and the stand are the first models made in Blender 5.2** (`art/blender/olympia.py`, run headless;

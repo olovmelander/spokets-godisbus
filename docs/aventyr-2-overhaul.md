@@ -133,7 +133,9 @@ One pull request for each visible outcome.
 2. ~~The trail runs out: the night's low point.~~ Done.
 3. **Olympia:** the hall, the stand, the pitch, its name and the forest behind it are built. Left: its own light, the
    store with the striped awning, the gravel yard, the bank, and a truly dark forest wall (see `HANDOVER.md`).
-4. **Billsta:** the house, the barn, the road with its poles and ditch, a forest floor and dome for Billaberget.
+4. **Billsta:** the house and barn are built, in the private repository (see `HANDOVER.md`), with morfar's and mormor's
+   yard, spruces with hanging boughs and round logs. Left: the road with its poles and ditch, a forest floor and dome
+   for Billaberget.
 5. **Flärken:** the raft tower, the jetty, the sand and the red slide, the log hut, its own far shore.
 6. **Älven:** three rivers in one chapter, real water colours, the meadow mirror, the otter.
 7. **Own light and far picture for every chapter,** so that no two look alike; two moons mended.

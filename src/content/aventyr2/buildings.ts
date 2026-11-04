@@ -1,5 +1,5 @@
 import {
-  BoxGeometry, BufferGeometry, Color, ConeGeometry, CylinderGeometry, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial,
+  BoxGeometry, BufferGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial,
   IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, SphereGeometry, Vector3,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -300,12 +300,22 @@ function spruce(def: BuildingDef) {
   // A spruce of the forest by the road: a dark narrow cone in tiers, drooping, its trunk showing at the foot.
   const h = def.height ?? 60;
   const parts: BufferGeometry[] = [paint(new CylinderGeometry(0.5, 1.1, h * 0.3, 7).translate(0, h * 0.15, 0), '#4a3a2c')];
-  const tiers = 7;
+  // Many tiers, each hanging in points at its edge: a spruce's boughs, not a stack of cones.
+  const tiers = 11;
   for (let i = 0; i < tiers; i++) {
     const t = i / tiers;
-    const r = (h * 0.2) * (1 - t * 0.85);
-    const tall = h * 0.2;
-    parts.push(paint(new ConeGeometry(r, tall, 9).translate(0, h * 0.18 + t * h * 0.74 + tall / 2, 0), i % 2 ? '#1f3a2a' : '#24402e'));
+    const r = (h * 0.21) * (1 - t * 0.9);
+    const tall = h * 0.15;
+    const tier = new ConeGeometry(r, tall, 14, 1, true).toNonIndexed();
+    const at = tier.getAttribute('position');
+    for (let v = 0; v < at.count; v++) {
+      if (at.getY(v) > 0) continue;
+      const a = Math.atan2(at.getZ(v), at.getX(v));
+      const k = Math.round(((a + Math.PI) / (Math.PI * 2)) * 14) % 2;
+      at.setXYZ(v, at.getX(v) * (k ? 1.08 : 0.62), at.getY(v) - (k ? 0.14 : 0) * tall, at.getZ(v) * (k ? 1.08 : 0.62));
+    }
+    tier.computeVertexNormals();
+    parts.push(paint(tier.translate(0, h * 0.2 + t * h * 0.72 + tall / 2, 0), i % 3 === 0 ? '#1d3829' : i % 3 === 1 ? '#254531' : '#1a3226'));
   }
   return { parts, panes: [] };
 }
@@ -361,8 +371,19 @@ function woodshed(def: BuildingDef) {
   const d = 10;
   const parts: BufferGeometry[] = [box(w, h, 0.6, 0, h / 2, -d / 2, '#7a3428'), ...roof(w, 3, d, 0, h, 0, '#5a4a3c', 0.6)];
   for (const x of [-w / 2, w / 2]) parts.push(box(0.6, h, d, x, h / 2, 0, '#7a3428'));
-  for (let row = 0; row < 7; row++) for (let i = 0; i < Math.floor(w / 1.4) - 1; i++) {
-    parts.push(paint(new CylinderGeometry(0.62, 0.62, d * 0.8, 6).rotateX(Math.PI / 2).translate(-w / 2 + 1.4 + i * 1.4 + (row % 2) * 0.7, 0.7 + row * 1.25, 0), row % 3 ? '#c8a878' : '#b8986a'));
+  // Round logs, each a little its own: bark, and the pale sawn end with its darker ring.
+  let seed = 41;
+  const next = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let row = 0; row < 7; row++) {
+    for (let i = 0; i < Math.floor(w / 1.4) - 1; i++) {
+      const r = 0.52 + next() * 0.14;
+      const x = -w / 2 + 1.4 + i * 1.4 + (row % 2) * 0.7 + (next() - 0.5) * 0.12;
+      const y = 0.7 + row * 1.2 + (next() - 0.5) * 0.08;
+      const end = d * 0.4 + (next() - 0.5) * 0.3;
+      parts.push(paint(new CylinderGeometry(r, r, d * 0.8, 11).rotateX(Math.PI / 2).translate(x, y, 0), next() < 0.5 ? '#4e3a2c' : '#5e4636'));
+      parts.push(paint(new CircleGeometry(r * 0.97, 11).translate(x, y, end + 0.03), next() < 0.5 ? '#c9a978' : '#b99a6c'));
+      parts.push(paint(new CircleGeometry(r * 0.62, 9).translate(x, y, end + 0.05), '#a98a5e'));
+    }
   }
   return { parts, panes: [] };
 }
@@ -502,7 +523,8 @@ export function building(def: BuildingDef): Building {
     group.add(new Mesh(mergeGeometries(panes.map((p) => { p.deleteAttribute('uv'); return p; })), paneMaterial));
   }
   group.position.set(def.x, def.y ?? 0, def.z);
-  if (def.flip) group.scale.x = -1;
+  if (def.size) group.scale.setScalar(def.size);
+  if (def.flip) group.scale.x = -group.scale.x;
   if (def.turn) group.rotation.y = (def.turn * Math.PI) / 2;
   return { group, panes: paneMaterial, def };
 }

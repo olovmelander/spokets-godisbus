@@ -167,8 +167,11 @@ const LOOKS: Record<string, PlaceLook> = {
   },
   billsta: {
     ...PLACES.garden,
+    // By the road near the forest: spruce behind the house, and no other garden's house far off.
+    far: 'forest',
+    farBeyond: -70,
     grade: grade(0.84, 0.88, [0.9, 0.97, 1.1]),
-    haze: { colour: '#283450', near: 6, far: 72 },
+    haze: { colour: '#283450', near: 16, far: 170 },
     sky: { top: '#0a1224', middle: '#2a3a5a', bottom: '#1e2a40', glow: '#a0b4d8' },
     hemisphere: { sky: '#90a4d4', ground: '#363f30', intensity: 1.08 },
     sun: { colour: '#c8d4ff', intensity: 1.75, from: [-6, 6, -3] },
@@ -830,6 +833,14 @@ function football(radius: number): Mesh {
   return ball;
 }
 
+/** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
+const FILES: Record<string, readonly [pack: string, file: string]> = {
+  'olympia-hall': ['aventyr2', 'olympia'],
+  'olympia-stand': ['aventyr2', 'olympia'],
+  'billsta-house': ['private', 'billsta-house'],
+  'billsta-barn': ['private', 'billsta-house'],
+};
+
 /**
  * The buildings that are made in Blender: each takes the place of its stand-in once the pack has loaded, so that the
  * picture is never empty. A stand-in stays where the file is missing.
@@ -839,22 +850,34 @@ async function installModels(assets: Assets, scene: Object3D): Promise<boolean> 
   scene.traverse((object) => { if (typeof object.userData.model === 'string') wanted.push(object); });
   if (wanted.length === 0) return false;
   const manifest = await assets.manifest();
-  if (!manifest.packs.aventyr2?.files['olympia.glb']) return false;
-  const model = await assets.model('aventyr2', 'olympia');
+  const files = new Map<string, Promise<Group>>();
+  let arrived = false;
   for (const place of wanted) {
-    const made = model.getObjectByName(place.userData.model as string);
+    const name = place.userData.model as string;
+    const [pack, file] = FILES[name] ?? [];
+    if (!pack || !file || !manifest.packs[pack]?.files[`${file}.glb`]) continue;
+    if (!files.has(file)) files.set(file, assets.model(pack, file));
+    const model = await files.get(file)!;
+    const made = model.getObjectByName(name);
     if (!made) continue;
+    arrived = true;
     place.clear();
     // Packed models keep their own scale and offset, so the placing stays on the group round it.
     place.add(made);
     // A name on a wall is kept white: it stands in the shade at night, and still has to be read.
-    const name = model.getObjectByName(`${place.userData.model as string}-name`) as Mesh | undefined;
-    if (name) {
-      name.material = new MeshBasicMaterial({ color: '#e8ecec' });
-      place.add(name);
+    const sign = model.getObjectByName(`${name}-name`) as Mesh | undefined;
+    if (sign) {
+      sign.material = new MeshBasicMaterial({ color: '#e8ecec' });
+      place.add(sign);
+    }
+    // Windows with the lamps on: warm and unlit, whatever the storm does.
+    const lit = model.getObjectByName(`${name}-glow`) as Mesh | undefined;
+    if (lit) {
+      lit.material = new MeshBasicMaterial({ color: '#ffc870', fog: false });
+      place.add(lit);
     }
   }
-  return true;
+  return arrived;
 }
 
 /** Mormor's lantern, whose light falls where he walks: it hangs from its top, and its glow goes with it. */

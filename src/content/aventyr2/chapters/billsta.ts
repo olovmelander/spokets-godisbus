@@ -357,15 +357,15 @@ export const billsta: ChapterData = {
     // house, up Billaberget.
     buildings: [
       // The family's car on the road, just stopped after the drive, its inside light on.
-      { kind: 'car', x: CAR.x, z: CAR.z, width: CAR.width, lit: '' },
+      { kind: 'car', x: CAR.x, z: CAR.z, width: CAR.width, lit: '', size: 0.62 },
       { kind: 'mailbox', x: 11.6, z: -2.4 },
       // Spruces across the road.
       { kind: 'spruce', x: -26, z: -30, y: -6, height: 62 },
       { kind: 'spruce', x: -12, z: -42, y: -7, height: 70 },
       { kind: 'spruce', x: -1, z: -34, y: -5, height: 54 },
       // The house behind the yard, in sight from the road, with the barn beside it: neither stands in the other.
-      { kind: 'villa', x: 33, z: -30, width: 44, lit: '' },
-      { kind: 'barn', x: 78, z: -16, lit: 'bi:mormor' },
+      { kind: 'villa', x: 34, z: -62, width: 44, lit: '', model: 'billsta-house', size: 0.72 },
+      { kind: 'barn', x: 94, z: -44, lit: 'bi:mormor', model: 'billsta-barn', size: 0.8 },
       { kind: 'woodshed', x: 42, z: -7 },
       { kind: 'rowboat', x: 24, z: -5, width: 16 },
       { kind: 'birch', x: 18, z: -10, height: 56 },
