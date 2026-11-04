@@ -270,6 +270,9 @@ function bolt(seed: number): Mesh {
   return mesh;
 }
 
+/** The storm's night outside a lit house. */
+const OUT_OF_DOORS = { sky: new Color('#7488b8'), ground: new Color('#2c3830'), sun: new Color('#a8bce8'), far: new Color('#6a7088') };
+
 /**
  * The storm round the camera. Its flashes are soft and seldom (Harding's rule: never more than three a second);
  * with less motion the rain hangs still and there are none.
@@ -299,6 +302,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const bolts = [bolt(3), bolt(11)];
   for (const b of bolts) group.add(b);
   const base = { hemisphere: hemisphere.intensity, sun: sun.intensity };
+  // A home with a door out into the storm: the room's warm lamps stay behind him, and the night has the light.
+  const doorway = rain > 0 ? chapter.outdoors : undefined;
+  const room = { sky: hemisphere.color.clone(), ground: hemisphere.groundColor.clone(), sun: sun.color.clone() };
   let nextFlash = (storm?.lightning ?? 0) * 0.5;
   let flashAt = -99;
   let flashBolt = 0;
@@ -488,6 +494,14 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         for (const f of flybys) if (flags.has(f.def.on)) f.seen = true;
         // The boulders the gusts' shelters stand in for are put away, where something else is drawn: one mesh a gust.
         for (const [i, stone] of scene.getObjectsByProperty('name', 'shelters').entries()) if (shelterOf(i) !== 'stones') stone.visible = false;
+        // The garden's far pictures are drawn by day: beyond the door they are the same garden in the storm's night.
+        if (doorway !== undefined) {
+          scene.traverse((object) => {
+            if (!object.name.startsWith('far-')) return;
+            const seen = unlit.find((u) => u.material === (object as Mesh).material);
+            seen?.base.multiply(OUT_OF_DOORS.far);
+          });
+        }
         first = false;
       }
       const calmFlag = storm?.calm;
@@ -534,8 +548,14 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       }
       const flash = still ? 0 : flashOf(clock - flashAt) * (1 - calm);
       bolts.forEach((b, i) => { (b.material as MeshBasicMaterial).opacity = i === flashBolt ? flash * 0.9 : 0; drawnWhile(b, i === flashBolt && flash > 0.01); });
-      const baseHemisphere = chapter.night ? hemisphere.intensity : base.hemisphere;
-      const baseSun = chapter.night ? sun.intensity : base.sun;
+      const out = doorway === undefined ? 0 : Math.min(1, Math.max(0, (camera.position.x - doorway + 2) / 8));
+      if (doorway !== undefined) {
+        hemisphere.color.lerpColors(room.sky, OUT_OF_DOORS.sky, out);
+        hemisphere.groundColor.lerpColors(room.ground, OUT_OF_DOORS.ground, out);
+        sun.color.lerpColors(room.sun, OUT_OF_DOORS.sun, out);
+      }
+      const baseHemisphere = (chapter.night ? hemisphere.intensity : base.hemisphere) * (1 - 0.3 * out);
+      const baseSun = (chapter.night ? sun.intensity : base.sun) * (1 - 0.5 * out);
       hemisphere.intensity = baseHemisphere * (1 + 1.1 * flash + 0.25 * calm);
       sun.intensity = baseSun * (1 + 0.8 * flash + 0.3 * calm);
       if (dim !== undefined) scene.backgroundIntensity = Math.min(1, dim + 0.14 * calm + 0.6 * flash);
