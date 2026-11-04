@@ -6,6 +6,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { ChapterData, PlaceId, SurfaceKind } from '../../sim/types';
 import type { FarId } from '../backdrop';
 import type { Grade } from '../grade';
+import type { Ground } from './ground';
 import { mossy } from '../lift/flora/light';
 import { sway } from '../wind';
 
@@ -27,6 +28,8 @@ export interface PlaceLook {
   /** Its water, and the soft tussocks that float in it. */
   water: { colour: string; opacity: number };
   tussock: string;
+  /** Another ground than the place's own, where its own is wrong for the chapter. */
+  ground?: Ground;
   /** Another place's far pictures, where this one's are wrong for the chapter. */
   far?: FarId;
   /** No sun painted in the sky: the storm hides it, or the chapter has a moon of its own. */

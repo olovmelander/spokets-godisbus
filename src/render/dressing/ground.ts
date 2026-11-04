@@ -291,7 +291,7 @@ function ironCutAt(x: number, z: number, under: number, out: Color): Color {
 }
 
 /** What grows in soil: where such ground is cut, there is humus under it, and what grows hangs over the edge. */
-const IN_SOIL: ReadonlySet<Ground> = new Set<Ground>(['moss', 'lawn', 'sphagnum', 'earth']);
+const IN_SOIL: ReadonlySet<Ground> = new Set<Ground>(['moss', 'lawn', 'sphagnum', 'shore', 'earth']);
 
 /** How much what is built falls for each length it comes towards the camera in front of the path. */
 export const TILT = 0.3;
@@ -680,7 +680,7 @@ function frontFor(kind: Ground, own: Ground): Front {
 }
 
 /** What the ground is made of: a place's own, or what a chapter marks a stretch as. */
-export type Ground = 'moss' | 'lawn' | 'sphagnum' | 'granite' | 'ridge' | SurfaceKind;
+export type Ground = 'moss' | 'lawn' | 'sphagnum' | 'shore' | 'granite' | 'ridge' | SurfaceKind;
 interface GroundLook {
   /** Four tones, from deep to bright. */
   colours: Color[];
@@ -703,6 +703,8 @@ const GROUNDS: Record<Ground, GroundLook> = {
   moss: { colours: MOSS, wall: SOIL, shade: SHADE, bump: 1, boards: false },
   lawn: { colours: tones('#3f6a22', '#5c962b', '#7fb238', '#aecb52'), wall: new Color('#4a3826'), shade: new Color('#2a4a3a'), bump: 0.8, boards: false },
   sphagnum: { colours: tones('#6e3226', '#8f4d2b', '#7d8a36', '#bca94c'), wall: new Color('#2e241c'), shade: new Color('#2a3438'), bump: 1, boards: false, sinks: true },
+  // A lake's shore: as the bog's islands stand in water, but in worn grass and sedge, with none of its red.
+  shore: { colours: tones('#3e4c2a', '#566234', '#74783e', '#a4985e'), wall: new Color('#2e2a1e'), shade: new Color('#26343a'), bump: 0.8, boards: false, sinks: true },
   // The bog's peat under its walk of planks: the bog's own, a little browner and drier.
   ridge: { colours: tones('#5e3324', '#7a4a2c', '#76803a', '#a89a4a'), wall: new Color('#2e241c'), shade: new Color('#2a3438'), bump: 1, boards: false, sinks: true },
   granite: { colours: tones('#8f939d', '#a4a8b2', '#bcbfc6', '#d6d5d6'), wall: new Color('#8f929a'), shade: new Color('#46527e'), bump: 0.25, boards: false, rock: true },

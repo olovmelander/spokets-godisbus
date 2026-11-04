@@ -129,6 +129,8 @@ const LOOKS: Record<string, PlaceLook> = {
   },
   flarken: {
     ...PLACES.bog,
+    // A lake's shore, not a bog: the same islands in the water, in worn grass and with none of the red moss.
+    ground: 'shore',
     noSun: true,
     grade: grade(0.92, 0.84, [0.9, 0.96, 1.08]),
     haze: { colour: '#3c5068', near: 8, far: 90 },
