@@ -191,7 +191,7 @@ const END_POST = { x: 189.4, y: DECK };
 const BARK_HIGH = 1.5;
 /** The wrong idea, which is the puzzle's first half: a stone, pushed out along the planks, rolls in and sinks. */
 const STONE: Mover = {
-  id: 'sjon-stone', look: 'stone', width: 1.1, height: 1.1, verb: 'push',
+  id: 'sjon-stone', look: 'stone', width: 1.4, height: BARK_HIGH, verb: 'push',
   stops: [{ x: 167.5, y: 0 }, { x: (RAFT.from + RAFT.to) / 2, y: -3.6 }],
 };
 const BARK: Mover = {
