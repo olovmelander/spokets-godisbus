@@ -1,7 +1,8 @@
-import { Color, Vector2, Vector3, Vector4, type Fog, type Mesh, type Object3D } from 'three';
+import { Color, Vector2, Vector3, Vector4, type Fog, type Object3D } from 'three';
 import type { PlaceId } from '../../sim/types';
 import type { AirMood } from '../dressing/effects';
 import { heightAt } from '../dressing/kit';
+import { SUNS } from '../dressing/sky';
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../extensions';
 import { AIR_KEY, type AirAsk } from '../light-shafts';
 
@@ -43,7 +44,9 @@ export const AIR: Record<PlaceId, PlaceAir> = {
  * Where the sky's own picture paints the sun (dressing/sky.ts, SUNS): over the bog and from the mountain it is in
  * the picture, low to the left, and the rays fan out from it. From the left and the top, as the sky gives them.
  */
-export const PAINTED_SUN: Partial<Record<PlaceId, readonly [number, number]>> = { bog: [0.33, 0.325], mountain: [0.31, 0.37] };
+export const PAINTED_SUN: Partial<Record<PlaceId, readonly [number, number]>> = Object.fromEntries(
+  Object.entries(SUNS).map(([id, sun]) => [id, [sun!.x, sun!.y] as const]),
+);
 /** The moon in the storm's eye: cool rays from where it stands in the sky. */
 export const MOON = { shafts: 2.4, colour: '#d6e0ff', cut: [0.2, 0.6] as const };
 /** Low, Mid and High draw this share of every count (plan §6.5). */
@@ -67,7 +70,7 @@ export function makeAir({ chapter, scene, sun, place, dressing }: ExtraContext):
   scene.userData[AIR_KEY] = ask;
   const mood = (dressing?.getObjectByName('air')?.userData.mood ?? null) as AirMood | null;
   // The moon of the storm's eye (aventyr2/render.ts): the storm's group holds it, as a ball and its glow.
-  const moon = storm?.calm ? scene.getObjectByName('storm')?.children.find((o) => (o.children[0] as Mesh | undefined)?.geometry?.type === 'SphereGeometry') ?? null : null;
+  const moon = storm?.calm ? scene.getObjectByName('storm')?.getObjectByName('moon') ?? null : null;
   const moonAt = new Vector3();
   const day = new Color(own.colour);
   const night = new Color(MOON.colour);

@@ -306,6 +306,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const starField = new Points(starGeometry, starMaterial);
   starField.frustumCulled = false;
   const moon = new Group();
+  // Named: the light shafts of the visual upgrade find the moon by it (src/render/lift/atmosphere.ts).
+  moon.name = 'moon';
   moon.add(new Mesh(new SphereGeometry(3.2, 24, 16), new MeshBasicMaterial({ color: '#f4f2e6', transparent: true, opacity: 0, fog: false })), glow('#c8d8ff', 26, 0));
   if (storm?.calm) group.add(starField, moon);
   let calm = 0;
