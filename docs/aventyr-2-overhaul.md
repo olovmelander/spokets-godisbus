@@ -141,8 +141,8 @@ One pull request for each visible outcome.
 6. **Älven:** its own far picture (ridges, hay meadows, poles, the log barn, the white column), black water and cream foam
    are built. Left: the forest torrent's first stretch, tea-brown rapids, and the otter.
 7. **Own light and far picture for every chapter,** so that no two look alike; two moons mended.
-8. **Real puzzles:** "Vad flyter?" at Flärken, a real seesaw at Billsta, Olympia's and Flärken's answers given later, a
-   storm that gets harder, a river he plays.
+8. **Real puzzles:** "Vad flyter?" at Flärken is built (the stone sinks, then the bark). Left: a real seesaw at Billsta,
+   Olympia's answer given later, a storm that gets harder, a river he plays.
 9. **The finale:** a family relay at the jetty, a real meeting, the old one moves, the cap goes back on.
 10. **Animals:** the fixes above, one owl, birds and life back in the calm and the morning.
 11. **Words:** the Swedish pass, fewer captions, the owl hint.

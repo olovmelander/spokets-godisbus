@@ -32,7 +32,7 @@ const SAID = [
   'sjon:jetty', 'sjon:posts', 'sjon:old-one',
   'sjon:broken', 'sjon:family:mamma', 'sjon:boat-ready', 'sjon:steady', 'sjon:thanks',
   'sjon:near', 'sjon:tower', 'sjon:lookout', 'sjon:dive',
-  'sjon:gap', 'sjon:bark-idea', 'sjon:raft', 'sjon:klonk-raft',
+  'sjon:gap', 'sjon:stone-idea', 'sjon:plop', 'sjon:plop-klonk', 'sjon:bark-idea', 'sjon:raft', 'sjon:klonk-raft',
   'sjon:outlet', 'sjon:log', 'sjon:floated', 'sjon:car', 'sjon:klonk-cheer',
 ];
 /** The big candies by name: their places in flarken.checkpoints. */
@@ -602,9 +602,31 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     const atTheBark = () => {
       const sim = new Sim(flarken, {}, { checkpoint: CP.tower, flags: BOAT });
       run(sim, 0.2);
+      // The wrong idea comes first: he pushes the stone out, and it sinks.
+      const stone = flarken.movers!.find((mover) => mover.id === 'sjon-stone')!;
+      runOn(sim, stone.stops[0]!.x - stone.width / 2 - 1.5);
+      runInto(sim, 1);
+      expect(sim.curr.verb).toBe('push');
+      use(sim);
+      run(sim, 3);
+      expect(sim.flags.has('placed:sjon-stone')).toBe(true);
       runOn(sim, bark.stops[0]!.x - bark.width / 2 - 1.5);
       return sim;
     };
+
+    it('has the stone first: his own idea, which sinks, and only then can the bark be moved', () => {
+      const stone = flarken.movers!.find((mover) => mover.id === 'sjon-stone')!;
+      expect(stone.stops[0]!.x).toBeLessThan(bark.stops[0]!.x);
+      expect(bark.needs).toBe('placed:sjon-stone');
+      const last = stone.stops[stone.stops.length - 1]!;
+      // It goes down in the gap, under the water, where nothing can stand on it.
+      const water = flarken.water!.find((w) => w.from <= last.x && w.to >= last.x)!;
+      expect(last.y + stone.height).toBeLessThan(water.y - 1);
+      expect(flarken.beats!.find((b) => b.id === 'sjon:plop')!.on).toBe('placed:sjon-stone');
+      // The answer comes when he has seen the stone sink, and stands by the bark.
+      const idea = flarken.beats!.find((b) => b.id === 'sjon:bark-idea')!;
+      expect(idea.needs).toBe('placed:sjon-stone');
+    });
 
     it('is a gap too wide to jump, where the bark floats with its top at his feet, a hop from each side', () => {
       expect(barkGap.to - barkGap.from).toBeGreaterThan(RUNNING_JUMP_REACH + 1);
@@ -719,7 +741,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     }
     expect(seen).toEqual([
       'sjonPark', 'sjonSwings', 'sjonSlide', 'sjonShore', 'sjonReeds', 'sjonShore', 'sjonMats', 'sjonJetty',
-      'sjonMamma/mamma', 'sjonBoat/mamma', 'sjonOut', 'sjonTower', 'sjonDive', 'sjonBark', 'sjonRaft', 'sjonEnd', 'sjonRiver',
+      'sjonMamma/mamma', 'sjonBoat/mamma', 'sjonOut', 'sjonTower', 'sjonDive', 'sjonGap', 'sjonBark', 'sjonRaft', 'sjonEnd', 'sjonRiver',
     ]);
   });
 

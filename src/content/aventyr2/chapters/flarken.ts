@@ -27,8 +27,9 @@ import { hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
  * 7. **Hopptornet:** the diving tower stands in the water between two stretches of jetty. Up its ladder to the top,
  *    the lookout: a flash shows the little one far out, where the river begins. A run off its far side lands him
  *    on the jetty beyond.
- * 8. **Barkflotten** (the puzzle): the last planks are gone, and the gap is too wide to jump. Bark floats, like
- *    Klonk: pushed three times, it slides into the gap and floats there, a stepping stone.
+ * 8. **Vad flyter?** (the puzzle): the last planks are gone, and the gap is too wide to jump. A stone lies first on the
+ *    planks, and Elof has an idea of his own: he pushes it out. Plopp: it sinks. Only then can he think what floats:
+ *    Klonk does, and bark is wood. Pushed three times, the bark slides into the gap and floats there, a stepping stone.
  * 9. **The jetty's end:** a flash, and the outlet takes the little one down the river; the old trägubbe leaps onto
  *    a log after him. "Trä flyter!" Mamma: "Vi följer ån med bilen."
  *
@@ -188,8 +189,13 @@ const END_POST = { x: 189.4, y: DECK };
  * jump climbs it, as on Granskogen's cone.
  */
 const BARK_HIGH = 1.5;
+/** The wrong idea, which is the puzzle's first half: a stone, pushed out along the planks, rolls in and sinks. */
+const STONE: Mover = {
+  id: 'sjon-stone', look: 'stone', width: 1.1, height: 1.1, verb: 'push',
+  stops: [{ x: 167.5, y: 0 }, { x: (RAFT.from + RAFT.to) / 2, y: -3.6 }],
+};
 const BARK: Mover = {
-  id: 'sjon-bark', look: 'bark', width: RAFT.to - RAFT.from, height: BARK_HIGH, verb: 'push',
+  id: 'sjon-bark', look: 'bark', width: RAFT.to - RAFT.from, height: BARK_HIGH, verb: 'push', needs: `placed:${STONE.id}`,
   stops: [{ x: 169, y: 0 }, { x: 170.8, y: 0 }, { x: 172.4, y: 0 }, { x: (RAFT.from + RAFT.to) / 2, y: RAFT.y - BARK_HIGH }],
 };
 
@@ -357,7 +363,7 @@ export const flarken: ChapterData = {
     // At the broken end: Mamma rows up with the boat when he calls.
     { id: 'sjon:mamma', look: 'sign', at: { x: 142, y: DECK }, verb: 'call', word: 'callMamma' },
   ],
-  movers: [DOOR, BARK],
+  movers: [DOOR, STONE, BARK],
   jumps: [
     // Up onto the picnic table's benches.
     jump({ x: round(BENCH_A.from - 0.2), y: 0 }, { x: round(BENCH_A.from + 0.7), y: BENCH_A.y }),
@@ -495,7 +501,10 @@ export const flarken: ChapterData = {
     { id: 'sjon:dive', at: 157.4, who: 'elof', line: 'sjDive' },
     // 8. the bark raft
     { id: 'sjon:gap', at: 165.4, who: 'elof', line: 'sjGap' },
-    { id: 'sjon:bark-idea', at: 166.8, until: `placed:${BARK.id}`, who: 'elof', line: 'sjBarkIdea', read: true },
+    { id: 'sjon:stone-idea', at: 165.9, until: `placed:${STONE.id}`, who: 'elof', line: 'sjStoneIdea', read: true },
+    { id: 'sjon:plop', on: `placed:${STONE.id}`, who: 'elof', line: 'sjPlop', read: true },
+    { id: 'sjon:plop-klonk', on: 'beat:sjon:plop', who: 'spoket', line: 'sjPlopKlonk' },
+    { id: 'sjon:bark-idea', at: 167.6, needs: `placed:${STONE.id}`, until: `placed:${BARK.id}`, who: 'elof', line: 'sjBarkIdea', read: true },
     { id: 'sjon:raft', on: `placed:${BARK.id}`, who: 'elof', line: 'sjRaft' },
     { id: 'sjon:klonk-raft', on: `placed:${BARK.id}`, who: 'spoket', line: 'sjKlonkRaft' },
     // 9. the jetty's end: the outlet takes them both, and the family will follow the river by car
@@ -649,7 +658,8 @@ export const context: Chooser = (has, player) => {
   const at = player.x;
   if (has('beat:sjon:outlet')) return ['sjonRiver', 'sjonMamma', 'water'];
   if (has(`placed:${BARK.id}`)) return [at < FAR.from ? 'sjonRaft' : 'sjonEnd', 'sjonMamma', 'water'];
-  if (at >= TOWER.to) return ['sjonBark', 'sjonMamma', 'water'];
+  if (has(`placed:${STONE.id}`)) return at >= TOWER.to ? ['sjonBark', 'sjonMamma', 'water'] : ['sjonTower', 'sjonMamma'];
+  if (at >= TOWER.to) return ['sjonGap', 'sjonMamma', 'water'];
   if (at >= TOWER.ladder - 0.6) return has('beat:sjon:lookout') ? ['sjonDive', 'sjonMamma', 'water'] : ['sjonTower', 'sjonMamma'];
   if (has('sjon:boat')) return at < BREAK.to + 0.5 ? ['sjonBoat', 'sjonMamma', 'water', 'mamma'] : ['sjonOut', 'sjonMamma'];
   if (at >= 137.6) return ['sjonMamma', 'sjonFamily', 'water', 'mamma'];

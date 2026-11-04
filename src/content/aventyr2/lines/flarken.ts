@@ -39,7 +39,10 @@ export const words: ChapterWords = {
     sjDive: 'Nu hoppar jag ner på bryggan!',
     // 8. the bark raft
     sjGap: 'Plankorna är borta. Vad gör jag nu?',
-    sjBarkIdea: 'Bark flyter, precis som Klonk!',
+    sjStoneIdea: 'En sten! Den kan ligga i luckan.',
+    sjPlop: 'Plopp! Stenen sjönk.',
+    sjPlopKlonk: 'Klonk!',
+    sjBarkIdea: 'Klonk flyter. Bark är ju trä!',
     sjRaft: 'En barkflotte! Nu kan jag hoppa.',
     sjKlonkRaft: 'Klonk-klonk!',
     // 9. the jetty's end: the outlet takes them
@@ -62,7 +65,8 @@ export const words: ChapterWords = {
     sjonOut: { purpose: 'Följ godiset ut till hopptornet.', recap: 'Mamma ror bredvid mig. Gamla trägubben lämnar godis hela vägen ut.' },
     sjonTower: { purpose: 'Klättra uppför hopptornets stege.', recap: 'Från hopptornet ser jag ut över hela sjön.' },
     sjonDive: { purpose: 'Spring och hoppa ner på bryggan.', recap: 'Blixten visade lillgubben långt ute, där ån börjar.' },
-    sjonBark: { purpose: 'Knuffa ut barken i vattnet.', recap: 'Plankorna är borta. Bark flyter, precis som Klonk.' },
+    sjonGap: { purpose: 'Hitta något som kan ligga i luckan.', recap: 'Plankorna är borta, och luckan är för bred att hoppa över.' },
+    sjonBark: { purpose: 'Stenen sjönk. Vad flyter?', recap: 'Plankorna är borta. Stenen sjönk i luckan.' },
     sjonRaft: { purpose: 'Hoppa över på barkflotten.', recap: 'Barken flyter i luckan. Den håller för mig.' },
     sjonEnd: { purpose: 'Gå ut till bryggans ände.', recap: 'Barkflotten bar mig. Snart är jag längst ut på bryggan.' },
     sjonRiver: { purpose: 'Följ ån! Familjen tar bilen.', recap: 'Ån bär lillgubben. Gamla trägubben följer efter på en stock.' },

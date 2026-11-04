@@ -1092,11 +1092,32 @@
     "text": "Plankorna är borta. Vad gör jag nu?"
   },
   {
+    "key": "sjStoneIdea",
+    "speaker": "elof",
+    "situation": "Äventyr 2, flarken",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "En sten! Den kan ligga i luckan."
+  },
+  {
+    "key": "sjPlop",
+    "speaker": "elof",
+    "situation": "Äventyr 2, flarken",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Plopp! Stenen sjönk."
+  },
+  {
+    "key": "sjPlopKlonk",
+    "speaker": "spoket",
+    "situation": "Äventyr 2, flarken",
+    "tag": "[playful wooden voice, wordless]",
+    "text": "Klonk!"
+  },
+  {
     "key": "sjBarkIdea",
     "speaker": "elof",
     "situation": "Äventyr 2, flarken",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Bark flyter, precis som Klonk!"
+    "text": "Klonk flyter. Bark är ju trä!"
   },
   {
     "key": "sjRaft",
