@@ -202,8 +202,11 @@ did the integration and the checks.
 
 ### Materials and water (`src/render/lift/materials/`, `water.ts`)
 
-- **One scene-wide patch.** It is laid at warm-up under one key, `lift-surface-v1`, and what each material is
-  (carved wood, planed wood, moss, ground, street) is a uniform.
+- **One scene-wide patch, on High only.** It is laid at warm-up under one key, `lift-surface-v1`, and what each
+  material is (carved wood, planed wood, moss, ground, street) is a uniform.
+  - It is laid only on a picture that starts on High. Low and Mid keep the place's own materials.
+  - Moss means the kit's stones and bark, not every vertex-coloured material.
+  - Measured in software rendering, the first version cost about a third of every frame on every tier.
 - **Carved wood.** Matte, with grain and knife facets: the trägubbar, Klonk, the carvings and Pappa's shelf figures.
 - **Planed wood.** Matte, with grain: the floors, decks and planks.
 - **Moss.** Darker and glossy in its hollows, catching the low sun.
@@ -230,7 +233,21 @@ did the integration and the checks.
 
 ### Cost
 
-- **Boot JS:** 487.4 KB of 520 KB gzipped (it was 450.8 KB with r187 before the upgrade).
+- **Boot JS:** 487.7 KB of 520 KB gzipped (it was 450.8 KB with r187 before the upgrade).
+- **Frame rate in software rendering (SwiftShader), measured against the build just before the upgrade, back to
+  back on the same machine:**
+
+  | Chapter, tier | Before | After |
+  | --- | --- | --- |
+  | Gården, Low | 9.0 fps | 8.8 fps |
+  | Norrsken, Low | 8.8 fps | 8.5 fps |
+  | Gården, Mid | 7.8 fps | 7.8 fps |
+  | Granskogen, High | 4.5 fps | 2.5 fps |
+
+  High carries the whole upgrade and is the heaviest. Software rendering exaggerates fragment work, so the
+  devices decide (gate 5, `?bench`). On a slow device Auto and the dynamic resolution step down.
+- **`?nolift=…`:** `atmosphere`, `fauna`, `flora`, `materials` (or its halves `surface` and `dew`) leaves an area
+  out, so its cost can be compared on a device.
 - **Draw calls at 1180×820, measured in the busiest pictures of every place:**
   - Low: 45–76 of 120. The upgrade adds at most +1 or +2 on Low.
   - Mid: 53–84 of 220.

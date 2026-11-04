@@ -4012,6 +4012,9 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
     - With reduced motion Elof stands quite still, breath included, as before. Should he breathe?
     - The grass's own glow is dimmed at night (it had looked neon). Is that right?
     - The frame time on the family's devices (gate 5) is the real budget: `?bench` on each one settles it.
+      High carries the whole upgrade. In software rendering, Granskogen on High went from 4.5 to 2.5 fps, while
+      Low and Mid are as fast as before. `?nolift=flora` (or `fauna`, `atmosphere`, `materials`) shows what each
+      area costs.
     - The defaults: as built.
 
 Choices the session made, for Olov to overrule if he wants:
