@@ -449,6 +449,7 @@ export const billsta: ChapterData = {
     { id: 'bi:klonk', at: 1.9, who: 'spoket', line: 'biKlonk' },
     { id: 'bi:window', at: 4.6, who: 'moa', line: 'biWindow', read: true },
     { id: 'bi:window-klonk', on: 'beat:bi:window', who: 'spoket', line: 'biKlonkKlonk' },
+    { id: 'bi:new-trail', at: 7.4, who: 'moa', line: 'biNewTrail' },
     // 2. Morfar at the ditch
     { id: 'bi:ditch', at: 10.6, who: 'elof', line: 'biDitch' },
     { id: 'bi:morfar-here', at: 11.4, until: 'bi:morfar', who: 'morfar', line: 'biMorfarHere', read: true },

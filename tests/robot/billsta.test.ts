@@ -26,7 +26,7 @@ vi.setConfig({ testTimeout: 90000 });
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
   'bi:arrive', 'bi:klonk', 'bi:window', 'bi:window-klonk',
-  'bi:ditch', 'bi:morfar-here', 'bi:ladder-lay', 'bi:ladder', 'bi:thanks', 'bi:to-mormor',
+  'bi:new-trail', 'bi:ditch', 'bi:morfar-here', 'bi:ladder-lay', 'bi:ladder', 'bi:thanks', 'bi:to-mormor',
   'bi:yard', 'bi:mormor-here', 'bi:lantern', 'bi:open',
   'bi:loft', 'bi:hatch', 'bi:roof', 'bi:roof-klonk', 'bi:forest',
   'bi:brook', 'bi:seesaw', 'bi:call', 'bi:klonk-jump', 'bi:fly', 'bi:thanks-klonk', 'bi:klonk-glad',
@@ -221,7 +221,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(sim.ghost!.perch).toBeGreaterThan(edge);
       expect(runPast(sim, 21)).toBe(true);
       expect(sim.bubbles).toBe(0);
-      expect(sim.said).toEqual(['bi:ditch', 'bi:morfar-here', 'bi:ladder-lay', 'bi:ladder', 'bi:thanks']);
+      expect(sim.said).toEqual(['bi:new-trail', 'bi:ditch', 'bi:morfar-here', 'bi:ladder-lay', 'bi:ladder', 'bi:thanks']);
     });
 
     it('is glad and amazed to see him so small, and says only what he does: the ladder, and where mormor is', () => {

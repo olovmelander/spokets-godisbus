@@ -151,6 +151,7 @@ export const alven: ChapterData = {
   // Where and when, as the chapter opens (src/content/chapters/cards.ts).
   scenes: [timeCard('alven', 1)],
   goalX: 186,
+  trailEnds: true,
   // Pappa answers in the coda: he follows by car along the river.
   coda: 'pappa',
   ground: [
@@ -293,7 +294,7 @@ export const alven: ChapterData = {
       { kind: 'lodge', x: 122.4, z: -7, y: CURRENT, width: 18, height: 7.4 },
       { kind: 'birch', x: 181, z: -18 },
       // The road along the river, where the family's car stops for him at the end.
-      { kind: 'car', x: 192, z: -9, lit: 'beat:al:billsta' },
+      { kind: 'car', x: 195, z: -17, lit: 'beat:al:billsta' },
     ],
   },
   // Far across the lake a moose may come down to the water.
@@ -302,6 +303,9 @@ export const alven: ChapterData = {
     // Reeds along the banks, and in the shallows by them.
     ...[3.6, 10.8, 49.9, 82.6, 113, 131.8].map((x) => ({ look: 'reed' as const, at: { x, y: 0 } })),
     ...[165.4, 177.4, 190.4].map((x) => ({ look: 'reed' as const, at: { x, y: ON.y } })),
+    // Moa and Bertil, come down from the road, when the trail has run out.
+    { look: 'sign', at: { x: 183.2, y: ON.y }, word: 'callMoa', after: 'beat:al:last' },
+    { look: 'sign', at: { x: 185.4, y: ON.y }, word: 'callBertil', after: 'beat:al:last' },
     ...[15.2, 48.8].map((x) => ({ look: 'reed' as const, at: { x, y: CURRENT } })),
     { look: 'reed', at: { x: 164.4, y: LAKE } },
   ],
@@ -373,8 +377,16 @@ export const alven: ChapterData = {
     // 6. Moälven; the family's car, and the drive to Billsta
     { id: 'al:moalven', at: 169.6, who: 'elof', line: 'alMoalven' },
     { id: 'al:old-ahead', at: 178.4, who: 'elof', line: 'alOldAhead' },
-    { id: 'al:wider', at: 181, who: 'elof', line: 'alWider' },
-    { id: 'al:billsta', at: 183.2, who: 'pappa', line: 'alBillsta', read: true },
+    // The handful from the bowl is gone: the trail ends here, and with it he has lost them. The night's lowest point,
+    // and the family lifts him out of it. From here to Billsta the trail is Moa's and Bertil's.
+    { id: 'al:last', at: 181, who: 'elof', line: 'alLast', read: true },
+    { id: 'al:gone', on: 'beat:al:last', who: 'elof', line: 'alGone', read: true },
+    { id: 'al:afraid', on: 'beat:al:gone', who: 'elof', line: 'alAfraid', read: true },
+    { id: 'al:klonk-near', on: 'beat:al:afraid', who: 'spoket', line: 'alKlonkNear', read: true },
+    { id: 'al:moa-never', on: 'beat:al:klonk-near', who: 'moa', line: 'alMoaNever', read: true },
+    { id: 'al:bertil-pocket', on: 'beat:al:moa-never', who: 'bertil', line: 'alBertilPocket', read: true },
+    { id: 'al:moa-trail', on: 'beat:al:bertil-pocket', who: 'moa', line: 'alMoaTrail', read: true },
+    { id: 'al:billsta', on: 'beat:al:moa-trail', who: 'pappa', line: 'alBillsta', read: true },
     { id: 'al:car', on: 'beat:al:billsta', who: 'mamma', line: 'alCar' },
     { id: 'al:window', on: 'beat:al:car', who: 'elof', line: 'alWindow' },
     { id: 'al:klonk-end', on: 'beat:al:window', who: 'spoket', line: 'alKlonkEnd' },
@@ -426,7 +438,8 @@ export const alven: ChapterData = {
     // 6. along Moälven, over the stream, and on towards Billsta
     ...row(167.4, 171.4, MOALVEN.y),
     ...over(CREEK_WAY),
-    ...row(177.8, 185.8, ON.y),
+    // The last of the handful from the bowl.
+    ...row(177.8, 180.6, ON.y),
   ],
   // Side candy: hearts and lollipops on the way out to the otter's stone, one over each rolling log, where he stands
   // on it, and two on the stone. None is taken from the shore or from the owl's back. New ones are added at the end.
@@ -444,6 +457,7 @@ export const alven: ChapterData = {
 export const context: Chooser = (has, player) => {
   const at = player.x;
   if (has('beat:al:billsta')) return ['alvenBillsta', 'alvenFamily', 'house'];
+  if (has('beat:al:last')) return ['alvenLost', 'alvenFamily', 'water'];
   if (has('al:owl')) return at < OWL.to.x ? ['alvenFly', 'alvenOwl', 'sparkle'] : ['alvenMoalven', 'alvenFamily', 'water'];
   if (has('al:owl-ready')) return ['alvenBoard', 'alvenOwl', 'sparkle'];
   if (at >= SLOPE_END - 1) return ['alvenLake', 'alvenOwl', 'water'];

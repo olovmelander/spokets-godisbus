@@ -517,6 +517,8 @@ export interface ChapterData {
   spawn: Vec;
   /** Reaching this x sets the flag "goal". */
   goalX: number;
+  /** For the picture: the trail has run out before the goal, so no big candy stands there. */
+  trailEnds?: boolean;
   /** A final story beat can finish before the safe walk to the chapter card. */
   goalNeeds?: string;
   /** The prologue's two freeze jokes and the hinge that tears the bag. */

@@ -271,9 +271,9 @@ function spruce(def: BuildingDef) {
 }
 
 function car(def: BuildingDef) {
-  // A plain red car in the drive: no badge, no plate, only its shape.
+  // The family's car: no badge, no plate, only its shape. Slate blue, because red is the candy's (art bible §2.2).
   const w = def.width ?? 29;
-  const parts: BufferGeometry[] = [box(w, 6, 11, 0, 5, 0, '#b8262a'), box(w * 0.55, 5, 10, -w * 0.05, 10.5, 0, '#a82226')];
+  const parts: BufferGeometry[] = [box(w, 6, 11, 0, 5, 0, '#3b4f66'), box(w * 0.55, 5, 10, -w * 0.05, 10.5, 0, '#34465b')];
   for (const x of [-w * 0.32, w * 0.32]) for (const z of [-5, 5]) parts.push(paint(new CylinderGeometry(2.6, 2.6, 1.6, 14).rotateX(Math.PI / 2).translate(x, 2.6, z), '#1c1c1e'));
   const panes = [new PlaneGeometry(w * 0.45, 3.6).translate(-w * 0.05, 10.8, 5.05)];
   return { parts, panes };

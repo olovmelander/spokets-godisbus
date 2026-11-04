@@ -14,6 +14,20 @@
     "text": "Ett godis på golvet! Ett spår!"
   },
   {
+    "key": "skHandful",
+    "speaker": "moa",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[warm big sister, lively]",
+    "text": "Han tog en näve ur godisskålen!"
+  },
+  {
+    "key": "skEnough",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[cheerful older brother, excited]",
+    "text": "Räcker godiset hela vägen?"
+  },
+  {
     "key": "skKlonkHop",
     "speaker": "spoket",
     "situation": "Äventyr 2, stormkvall",
@@ -1344,11 +1358,53 @@
     "text": "Gamla trägubben! Han flyter före oss."
   },
   {
-    "key": "alWider",
+    "key": "alLast",
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Älven blir bredare och bredare."
+    "text": "Här är det sista godiset …"
+  },
+  {
+    "key": "alGone",
+    "speaker": "elof",
+    "situation": "Äventyr 2, alven",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Spåret är slut. Jag ser dem inte längre."
+  },
+  {
+    "key": "alAfraid",
+    "speaker": "elof",
+    "situation": "Äventyr 2, alven",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Tänk om vi aldrig hittar dem …"
+  },
+  {
+    "key": "alKlonkNear",
+    "speaker": "spoket",
+    "situation": "Äventyr 2, alven",
+    "tag": "[playful wooden voice, wordless]",
+    "text": "Klonk …"
+  },
+  {
+    "key": "alMoaNever",
+    "speaker": "moa",
+    "situation": "Äventyr 2, alven",
+    "tag": "[warm big sister, lively]",
+    "text": "Vi ger aldrig upp, lillebror."
+  },
+  {
+    "key": "alBertilPocket",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, alven",
+    "tag": "[cheerful older brother, excited]",
+    "text": "Jag har godis i fickan!"
+  },
+  {
+    "key": "alMoaTrail",
+    "speaker": "moa",
+    "situation": "Äventyr 2, alven",
+    "tag": "[warm big sister, lively]",
+    "text": "Då lägger vi ett nytt spår åt dig!"
   },
   {
     "key": "alBillsta",
@@ -1412,6 +1468,13 @@
     "situation": "Äventyr 2, billsta",
     "tag": "[playful wooden voice, wordless]",
     "text": "Klonk, klonk!"
+  },
+  {
+    "key": "biNewTrail",
+    "speaker": "moa",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[warm big sister, lively]",
+    "text": "Vi springer före och lägger spåret!"
   },
   {
     "key": "biDitch",
@@ -1593,7 +1656,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Nu är lillgubben inte ensam längre."
+    "text": "De är tillsammans! Vi kommer!"
   },
   {
     "key": "biOwl",
@@ -1645,6 +1708,13 @@
     "text": "Ett geléhallon i guldpapper!"
   },
   {
+    "key": "soLastOne",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Ditt allra sista. Det sparade du åt mig."
+  },
+  {
     "key": "soShareLine",
     "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
@@ -1684,7 +1754,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Du har hållit om lillgubben hela natten."
+    "text": "Du följde honom hela natten."
   },
   {
     "key": "soKnow",
@@ -1705,7 +1775,7 @@
     "speaker": "pappa",
     "situation": "Äventyr 2, stormoga",
     "tag": "[warm, steady father]",
-    "text": "Och där är mina två trägubbar!"
+    "text": "Och där är båda trägubbarna!"
   },
   {
     "key": "soMoa",

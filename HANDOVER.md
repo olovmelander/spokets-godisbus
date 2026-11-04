@@ -2,6 +2,16 @@
 
 ## State (4 November 2026)
 
+- **The trail runs out (4 November 2026, night).** Olov's decision, from the story audit: nothing went wrong all night,
+  so the ending relieved nothing, and the story stood still from Byn to Älven.
+  - **Set up in Stormkvällen:** Moa says the old one took a handful from the bowl, and Bertil asks if it will last.
+  - **The low point at Älven's end:** "Här är det sista godiset …", "Spåret är slut.", "Tänk om vi aldrig hittar dem …",
+    and Klonk close by. Moa and Bertil stand beside him: they never give up, Bertil has sweets in his pocket, and they
+    lay a new trail. The chapter's end has no big candy now (`trailEnds`), so what he says is true.
+  - **Billsta:** the trail is Moa's and Bertil's, running ahead of him.
+  - **The payoff in the finale:** the gold sweet was the old one's very last, saved for Elof. Three false or spent lines
+    went with it (`soHeld`, `soPappa`, `biNotAlone`).
+  - The family's car is slate blue, because red is the candy's, and stands further back at Älven. It is still two boxes.
 - **Mormor and morfar are people (4 November 2026, night).** The first step of Olov's overhaul of Äventyr 2. They were
   primitives more than twice the family's height, who shrank away when called, so that their lines came from nobody.
   - **The body** (`src/content/aventyr2/grandparents.ts`): a soft figure built in code on the bone names of a model

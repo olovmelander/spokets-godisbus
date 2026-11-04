@@ -15,7 +15,11 @@ del"). The first adventure (prologue, Gården, Granskogen, Myren, Berget, the fi
   honom utan att tveka. Klonk har sparat en sista stjärna i sin snidade påse. POFF – Elof blir liten igen, och
   hela familjen drar på sig regnkläder och pannlampor: "Vi letar tillsammans!"
 - **Godisspåret** är gamla trägubbens: han tog en näve lördagsgodis ur skålen när han hoppade, och lämnar en bit
-  i taget så att Elof kan följa efter. Han minns att lilla Elof en gång delade sitt godis med honom.
+  i taget så att Elof kan följa efter. Han minns att lilla Elof en gång delade sitt godis med honom. Bertil undrar
+  redan hemma om det räcker hela vägen.
+- **Spåret tar slut.** Vid slutet av Älven ligger det sista godiset. Elof ser dem inte längre, och det är nattens
+  lägsta punkt. Då säger Moa att de aldrig ger upp, Bertil har godis i fickan, och i Billsta springer de före och
+  lägger ett nytt spår åt honom.
 - **Världarna:** Stormgården (blåst, regntunna och Bertils stövelbåt), Stormskogen (gungande grenar, ugglan och
   Pappas ficklampa som får Klonk att stelna till en bro), Byn i stormen (rännstensforsen, gallret och Moas
   paraply), Olympia (fotbollsplanen i Bredbyn: bollen som flyter, nätet upp till ribban och Bertils frispark),
@@ -28,8 +32,8 @@ del"). The first adventure (prologue, Gården, Granskogen, Myren, Berget, the fi
   stormen plötsligt tystnar och stjärnorna kommer fram, och Själevads vita kyrka syns vid sjöns ände.
 - **Frågan som drar framåt:** "Varför väntar gamla trägubben aldrig på oss?" Svaret kommer i bilder: han låg
   ensam i en mörk spricka i flera år. Han vet hur lång en enda natt ensam i mörkret känns.
-- **Slutet vänder på Äventyr 1.** Där delade Elof med sin trägubbe. Nu är det trägubbens tur: han har sparat ett
-  geléhallon i guldpapper åt Elof, samma sort som lilla Elof delade med honom. Elof växer, står i det grunda vattnet
+- **Slutet vänder på Äventyr 1.** Där delade Elof med sin trägubbe. Nu är det trägubbens tur: hans allra sista bit,
+  ett geléhallon i guldpapper, sparade han åt Elof. Det är samma sort som lilla Elof delade med honom. Elof växer, står i det grunda vattnet
   med båda trägubbarna i händerna, och familjens lampor och mormors lykta lyser från stranden.
 - **Morgonen efter** ställer Elof tillbaka dem på hyllan, lagar fönsterhaken med Pappa och ger sin lilla trägubbe
   ett namn: **Fjun** – för att han flög som ett fjun i stormen. Mormor och morfar är med på frukosten.

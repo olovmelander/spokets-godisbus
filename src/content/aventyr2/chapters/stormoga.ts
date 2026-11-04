@@ -195,6 +195,7 @@ export const stormoga: ChapterData = {
     { id: 'soFar', at: 5.4, who: 'elof', line: 'soFarLine', read: true },
     { id: 'soOwl', on: 'owl:ready', who: 'elof', line: 'soOwlCome', read: true },
     { id: 'soGold', on: 'gift', who: 'elof', line: 'soGoldLine', read: true },
+    { id: 'soLast', on: 'gift', who: 'elof', line: 'soLastOne', read: true },
     { id: 'soShare', on: 'gift', who: 'elof', line: 'soShareLine', read: true },
   ],
   cameras: [
