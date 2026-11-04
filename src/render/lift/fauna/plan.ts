@@ -108,7 +108,10 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
   // Nothing rests by a candy: the trail, the side candy, the hidden ones and the big ones.
   const sweets = [...source.candy, ...(source.side ?? []), ...(source.hidden ?? []), ...(source.checkpoints ?? [])];
   const clear = (x: number, y: number, z: number, d = 1.5) => sweets.every((c) => (c.x - x) ** 2 + (c.y - y) ** 2 + z * z >= d * d);
-  // Nor where the story has its things, or where he begins.
+  /** And, seen from the front, not over or under one: how far along the path the nearest candy at about that height is. */
+  const gap = (x: number, y: number) => Math.min(9, ...sweets.filter((c) => Math.abs(c.y - y) < 1.5).map((c) => Math.abs(c.x - x)));
+  // Nor where the story has its things. (Not by where he begins: a game taken up at a checkpoint, or a picture
+  // taken with ?at, begins elsewhere, and the life must stand where it always does.)
   const busy: [number, number][] = [];
   const mark = (x: number, pad: number) => busy.push([x - pad, x + pad]);
   for (const s of source.spots ?? []) mark(s.at.x, 1.8);
@@ -122,7 +125,6 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
   for (const b of source.storm?.buildings ?? []) if (b.z > -9) mark(b.x, (b.width ?? 4) / 2 + 1.5);
   if (source.pine) mark(source.pine.x, 5.5);
   if (source.shop) busy.push([source.shop.door - 1, source.shop.to + 1]);
-  mark(source.spawn.x, 2.5);
   const free = (x: number) => x > from + 2 && x < to - 2 && !busy.some(([a, b]) => x >= a && x <= b);
   const level = (x: number) => Math.abs(ground(x - 0.8) - ground(x)) < 0.12 && Math.abs(ground(x + 0.8) - ground(x)) < 0.12;
   // Bare earth (gravel, sand) is ground too, for what stands or hops on it.
@@ -181,10 +183,10 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
     if (sit) owls.push({ at: sit(0.62), yaw: -Math.PI / 2 });
     else {
       for (let k = 0; k < 40; k++) {
-        const x = source.spawn.x + 4 + next() * (source.goalX - source.spawn.x - 8);
+        const x = from + 6 + next() * (source.goalX - from - 10);
         const z = -4.2 - next() * 1.6;
         // A stump stands on the ground, by the level where he plays; four EL back it is in nobody's way.
-        if (!far(x, z) || !level(x) || !grows(bare, x) || Math.abs(ground(x) - ground(source.spawn.x)) > 4 || (source.pine && Math.abs(x - source.pine.x) < 5.5) || !clear(x, ground(x) + 2, z, 3)) continue;
+        if (!far(x, z) || !level(x) || !grows(bare, x) || Math.abs(ground(x) - ground(from + 4)) > 4 || (source.pine && Math.abs(x - source.pine.x) < 5.5) || !clear(x, ground(x) + 2, z, 3)) continue;
         const tall = 1.4 + next() * 0.5;
         props.push(...placed(stump(tall, 0.32), x, ground(x) - 0.1, z, next() * 6));
         owls.push({ at: [x, ground(x) + tall - 0.12, z], yaw: -Math.PI / 2 + (next() - 0.5) * 0.4 });
@@ -196,7 +198,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
   // Small birds: in twos and threes, on the ground just behind the path, or on a low branch, every twenty or thirty EL.
   const flocks: Flock[] = [];
   const kinds = cast.birds ?? [];
-  for (let x = from + 7 + next() * 8; kinds.length && x < to - 5; x += 20 + next() * 12) {
+  for (let x = from + 7 + next() * 8; kinds.length && x < to - 5; x += 16 + next() * 12) {
     const species = kinds[Math.floor(next() * kinds.length)]!;
     const n = next() < 0.6 ? 3 : 2;
     const near = trees.find((t) => !t.snag && Math.abs(t.x - x) < 3 && t.z > -7 && t.z < -3 && free(t.x));
@@ -208,7 +210,8 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
     }
     // Each its own step from the middle, depth and way it faces; the flock settles where all of them can.
     const spots = Array.from({ length: n }, (_, k) => [(k - (n - 1) / 2) * (0.7 + next() * 0.5), -1.9 + (back + 1.9) * next(), (next() < 0.5 ? 0 : Math.PI) + (next() - 0.5) * 1.2] as const);
-    const c = nearest(x, 9, (c) => spots.every(([dx, z]) => (soil(c + dx) || (place === 'village' && paved(c + dx))) && clear(c + dx, ground(c + dx), z, 2.3)));
+    // Well clear of the candy, a hop either way included.
+    const c = nearest(x, 12, (c) => spots.every(([dx, z]) => (soil(c + dx) || (place === 'village' && paved(c + dx))) && clear(c + dx, ground(c + dx), z, 2.3)));
     if (c === null) continue;
     flocks.push({ x: c, y: ground(c), species, birds: spots.map(([dx, z, yaw]) => ({ at: [c + dx, ground(c + dx), z], yaw })), perch: false, shelter: false });
     x = Math.max(x, c);
@@ -269,7 +272,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
       const z = place === 'bog' ? -2.1 : -2.5 - next() * 0.9;
       const y = ground(x);
       if (!soil(x) || !clear(x, y + 0.4, z, 2.8)) continue;
-      tried.push({ x, z, gap: Math.min(9, ...sweets.filter((c) => Math.abs(c.y - y) < 3).map((c) => Math.abs(c.x - x))) });
+      tried.push({ x, z, gap: gap(x, y) });
     }
     tried.sort((a, b) => b.gap - a.gap);
     const out: Peek[] = [];

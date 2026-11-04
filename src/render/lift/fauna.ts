@@ -231,7 +231,7 @@ function foxes(plan: Plan, add: Add): Kind {
       const tree = plan.trees.find((t) => !t.snag && t.z < -7 && t.z > -18 && Math.abs(t.x - now.cx) < (now.cz - t.z) * now.slope * 0.6);
       const dir = tree ? Math.sign(tree.x - now.x) || 1 : 1;
       if (!tree || !flat(tree.x, dir)) { fx.wait = 3; return; }
-      Object.assign(fx, { on: true, x: tree.x, z: Math.max(-30, Math.min(-12, tree.z - 5 - next() * 6)), dir, yaw: dir > 0 ? 0 : Math.PI, sat: false, sit: 0, k: 0, walked: 0, stay: 2.5 + next() * 1.5 });
+      Object.assign(fx, { on: true, x: tree.x, z: Math.max(-24, Math.min(-12, tree.z - 3 - next() * 4)), dir, yaw: dir > 0 ? 0 : Math.PI, sat: false, sit: 0, k: 0, walked: 0, stay: 2.5 + next() * 1.5 });
     }
     // Never towards him: if he is ahead of it, it turns and trots the other way.
     if (!now.still && Math.sign(now.x - fx.x) === fx.dir && Math.abs(now.x - fx.x) > 1.5 && Math.abs(now.x - fx.x) < 30) fx.dir = -fx.dir;
@@ -412,7 +412,7 @@ function birds(plan: Plan, add: Add): Kind {
             b.rest[0] += Math.cos(b.yaw) * step;
             // It keeps near where it came down: a hop on either side, and no nearer the path.
             if (z < -1.25 && Math.abs(z - b.home[2]) < 0.5) b.rest[2] = z;
-            if (k >= 1 && (next() < 0.35 || Math.abs(b.rest[0] - b.home[0]) > 0.7)) b.yaw += Math.PI;
+            if (k >= 1 && (next() < 0.35 || Math.abs(b.rest[0] - b.home[0]) > 0.3)) b.yaw += Math.PI;
           }
           if (b.k >= 1) { b.doing = 0; b.wait = f.shelter ? 3 + next() * 5 : 0.3 + next() * 1.6; }
         }

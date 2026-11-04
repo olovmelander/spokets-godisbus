@@ -143,6 +143,16 @@ describe('the near life', () => {
     }
   });
 
+  it('stands where it always does, wherever he begins', () => {
+    // A game taken up at a checkpoint, or a picture taken with ?at, starts him elsewhere (src/main.ts).
+    for (const id of ['granskog', 'garden', 'norrsken', 'flarken']) {
+      const chapter = COURSES[id]!;
+      const dressing = built.get(id)!.scene.children[0]!;
+      const plan = (spawn: { x: number; y: number }) => JSON.stringify(faunaPlan({ ...chapter, spawn }, dressing));
+      expect(plan({ x: chapter.goalX - 20, y: 0 }), id).toBe(plan(chapter.spawn));
+    }
+  });
+
   it('keeps behind the path wherever it goes', () => {
     const m = new Matrix4();
     for (const chapter of chapters) {
