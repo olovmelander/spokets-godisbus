@@ -2,6 +2,23 @@
 
 ## State (4 November 2026)
 
+- **PR #189's browser job, and a new computer (4 November 2026, evening).** The job failed in two suites, and Olov
+  asked to merge once it is green.
+  - **A real bug in the surface patch:** it went by the tier of the last frame, but a change in the menu warms up
+    before any frame has told it the new tier. So Low → High laid nothing, and High → Low laid the patch on Low, on
+    117 of granskog's materials, compiling it in the menu. It now keeps the tier of the picture's first frame,
+    as `docs/visual-upgrade.md` always said; a unit test covers both directions.
+  - **`garden-loop` ran out of time on High:** 0.46 EL short of the hose after 60 s, on GitHub's software rendering
+    (the suite 477 → 682 s, `forest-puzzles` 98 → 229 s). Its limit is now 120 s. High's frame time on real devices is
+    still Olov's call (gate 5, `?bench`).
+  - **Validation:** typecheck, **188 test files / 1,978 tests**, the build (boot JS 487.7 KB / 520 KB), the privacy
+    check, and `garden-loop`'s High touch case on SwiftShader (15 checks) pass.
+  - **The new computer:** Olov now works from a fresh clone. `photos/` and the private work that was never pushed
+    (the local `character-design-motion` branch of `art/private`: `build-character.mjs`, `elof/three-study/`,
+    `lill-elof/`, perhaps a newer ghost) are on his old computer. **Until he brings them over, work that needs the
+    pictures (characters, the ghost, the house) can't be done here.** Code work isn't affected. `art/private` here is a
+    clone of the private repository's `main`. Installed here: `ktx` 4.4.2 and Playwright 1.56.1's Chromium. Blender
+    here is 5.2, not the 4.5 LTS that `CLAUDE.md` asks for; `exiftool` isn't installed.
 - **Äventyr 2's story and gameplay audit (4 November 2026, later still).** Olov asked for an audit of the story, all
   the conversations and all the gameplay, so that the adventure holds together, feels epic, has a red thread, and is
   fun and kind. [`docs/aventyr-2-audit.md`](docs/aventyr-2-audit.md) has the method (the robot played every chapter
@@ -3786,6 +3803,9 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **`settings`' touch check fails on Windows:** "portrait, left-handed: a held finger walks towards its position"
+  wants `vx` at most 1.3 and gets about −3.4 on this computer, on `main` (eb13ed5) as well as with PR #189, which
+  touches no input or simulation code. It passed on GitHub on PR #188. Not looked into further.
 - **Äventyr 2's pictures, from the 4 November sweeps (none blocks play):** from Billaberget's brow the narrow is
   only a dark band at the horizon (the garden's nearest far picture and the lawn's bank behind the path leave it
   little room) and the two figures on the far stone are tiny; flybys cannot land on far decor (they are fixed at

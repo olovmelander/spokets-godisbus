@@ -291,16 +291,18 @@ export function createSurfaces(context: ExtraContext) {
   const near = all.map((pool) => ({ pool, d: 0 }));
   let time = 0;
   /**
-   * Whether this picture has the patch at all, decided by the tier of its first frame and never again: a change of
-   * tier in play must compile nothing (gate 6). Only High has it. In software rendering a patched material pays
-   * its whole cost even where a branch skips it, and Low and Mid are for phones whose GPUs are short of fragment
-   * time (docs/visual-upgrade.md, "As built"). Unknown until the first frame (as in the unit tests): patched.
+   * The tier of the picture's first frame, kept: only a picture that starts on High is patched, and a change of
+   * tier in play never lays or lifts it (gate 6). The menu's warm-up runs before any frame has told this the new
+   * tier, so following the tier laid the patch on the way back to Low and compiled it there. In software rendering a
+   * patched material pays its whole cost even where a branch skips it, and Low and Mid are for phones whose GPUs are
+   * short of fragment time (docs/visual-upgrade.md, "As built"). Unknown until the first frame (as in the unit
+   * tests): patched.
    */
-  let rich: boolean | null = null;
+  let startedOn: ExtraFrame['tier'] | null = null;
   return {
-    /** Patches every material in `root` that is wood, moss or ground. Again at each warm-up: only new ones are touched. */
+    /** Patches the moss and the carved wood in `root`. Again at each warm-up: only new ones are touched. */
     apply(root: Object3D) {
-      if (rich === false) return;
+      if (startedOn !== null && startedOn !== 'high') return;
       root.traverse((object) => {
         const mesh = object as Mesh;
         if (!mesh.isMesh) return;
@@ -312,7 +314,7 @@ export function createSurfaces(context: ExtraContext) {
       });
     },
     update(frame: ExtraFrame) {
-      rich ??= frame.tier === 'high';
+      startedOn ??= frame.tier;
       if (!frame.still) time += frame.dt;
       shared.liftTime.value = time;
       // The sun in a wet point is its own light, paled: never gold.
