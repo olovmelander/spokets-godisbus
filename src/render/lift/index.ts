@@ -19,7 +19,7 @@ import { installMaterials } from './materials';
 let installed = false;
 
 /**
- * `?nolift=fauna,flora` leaves those areas out (and `surface` or `dew`, the two halves of the materials), to compare their cost on a device (`?bench`) or in a picture. What
+ * `?nolift=fauna,flora` leaves those areas out (and `surface`, `dew` or `puddles`, the parts of the materials), to compare their cost on a device (`?bench`) or in a picture. What
  * an area changed in the place's own dressing (the grass's tall clumps, the shared wind's bend, the effects' cards)
  * stays; only its systems here are not made.
  */

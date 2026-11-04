@@ -215,6 +215,11 @@ did the integration and the checks.
 - **Wet surfaces.** Moss and carved wood only: within 1.9 EL of water and outdoors in Äventyr 2's storm, with slow
   glints. Ground and streets do not look wet (see `HANDOVER.md`, "Next").
 - **Dew.** Beads on grass tips and leaves in the morning places, and drops on the window panes in Morgonen efter.
+- **Puddles.** On hard ground in the rain (`materials/puddles.ts`): it gives back the sky's glow, in pools from one
+  small tiling picture and in a thin film between them, looked along more than from above, and brightens with each
+  flash. A lit window lays a warm streak over the wet towards the eye, along the line from the window to the camera:
+  the four nearest, as a few sums, with no mirror and no new draw. Patched by the tier of the picture's first frame,
+  as the surfaces are, so a picture that starts on Low stays as it was.
 - **Water.**
   - On High, what stands on the banks is mirrored from the half-size copy of the picture, in screen space, with
     ripple wobble.
@@ -248,7 +253,7 @@ did the integration and the checks.
 
   High carries the whole upgrade and is the heaviest. Software rendering exaggerates fragment work, so the
   devices decide (gate 5, `?bench`). On a slow device Auto and the dynamic resolution step down.
-- **`?nolift=…`:** `atmosphere`, `fauna`, `flora`, `materials` (or its halves `surface` and `dew`) leaves an area
+- **`?nolift=…`:** `atmosphere`, `fauna`, `flora`, `materials` (or its parts `surface`, `dew` and `puddles`) leaves an area
   out, so its cost can be compared on a device.
 - **Draw calls at 1180×820, measured in the busiest pictures of every place:**
   - Low: 45–76 of 120. The upgrade adds at most +1 or +2 on Low.
