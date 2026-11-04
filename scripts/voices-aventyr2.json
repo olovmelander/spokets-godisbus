@@ -1747,7 +1747,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Ugglan! Du hörde mig!"
+    "text": "Ugglan! Du såg ljuset!"
   },
   {
     "key": "soGoldLine",
@@ -1769,6 +1769,62 @@
     "situation": "Äventyr 2, stormoga",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Samma sort som jag delade med dig."
+  },
+  {
+    "key": "soDark",
+    "speaker": "pappa",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[warm, steady father]",
+    "text": "Stormen släckte alla våra lampor!"
+  },
+  {
+    "key": "soCalling",
+    "speaker": "mamma",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[warm, calm mother]",
+    "text": "Elof! Eloooof!"
+  },
+  {
+    "key": "soTooSmall",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Jag är här! Men jag är för liten."
+  },
+  {
+    "key": "soMormorSecret",
+    "speaker": "mormor",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[warm, kind grandmother]",
+    "text": "Tänd deras lampor, lille vän."
+  },
+  {
+    "key": "soLampMamma",
+    "speaker": "mamma",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[warm, calm mother]",
+    "text": "Min lampa tändes av sig själv!"
+  },
+  {
+    "key": "soLampPappa",
+    "speaker": "pappa",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[warm, steady father]",
+    "text": "Ficklampan som Elof gav mig!"
+  },
+  {
+    "key": "soLampMoa",
+    "speaker": "moa",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[warm big sister, lively]",
+    "text": "Det är Elof. Jag vet att det är Elof."
+  },
+  {
+    "key": "soLampBertil",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[cheerful older brother, excited]",
+    "text": "Elof! Vi lyser åt dig!"
   },
   {
     "key": "soQuiet",

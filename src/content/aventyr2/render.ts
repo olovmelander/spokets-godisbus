@@ -1363,6 +1363,63 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       group.position.y = 0.45;
       return standing(spot, group, (clock) => { (light.material as MeshBasicMaterial).opacity = 0.6 + 0.1 * Math.sin(clock * 7); });
     },
+    deadLamp: (spot) => {
+      // A flashlight the storm has put out, set down on the boards: a dull body and a pale, dark glass.
+      const group = new Group();
+      const body = new Mesh(new CylinderGeometry(0.1, 0.1, 0.62, 10).rotateZ(Math.PI / 2), solid('#3c4048', 0.5));
+      const head = new Mesh(new CylinderGeometry(0.17, 0.11, 0.2, 12).rotateZ(-Math.PI / 2), solid('#50565e', 0.45));
+      head.position.x = 0.4;
+      const glass = new Mesh(new CircleGeometry(0.15, 12).rotateY(Math.PI / 2), solid('#aab4c0', 0.2));
+      glass.position.x = 0.505;
+      group.add(body, head, glass);
+      group.position.y = 0.17;
+      return standing(spot, group, () => {});
+    },
+    lampBeam: (spot) => {
+      // A lit lamp held up: its beam goes out over the water, towards the stone.
+      const group = new Group();
+      const body = new Mesh(new CylinderGeometry(0.1, 0.1, 0.62, 10).rotateZ(Math.PI / 2), solid('#3c4048', 0.5));
+      const head = new Mesh(new CylinderGeometry(0.17, 0.11, 0.2, 12).rotateZ(-Math.PI / 2), solid('#50565e', 0.45));
+      head.position.x = 0.4;
+      // Added to the night, so that what is black is nothing: it fades away from the lamp and has no end to see.
+      const cone = new ConeGeometry(1.6, 15, 18, 5, true);
+      const at = cone.getAttribute('position');
+      const fade = new Float32Array(at.count * 3);
+      for (let i = 0; i < at.count; i++) fade.fill(((at.getY(i) + 7.5) / 15) ** 1.6, i * 3, i * 3 + 3);
+      cone.setAttribute('color', new Float32BufferAttribute(fade, 3));
+      const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.16, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, fog: false }));
+      beam.rotation.z = Math.PI / 2;
+      beam.position.x = 7.9;
+      const light = glow('#fff0c0', 1.5, 0.95);
+      light.position.x = 0.52;
+      group.add(body, head, beam, light);
+      group.rotation.z = 0.06;
+      return standing(spot, group);
+    },
+    owlLanding: (spot) => {
+      // It has seen the light, and comes in from the lake: down out of the storm, onto the jetty's end.
+      const sitting = owl();
+      const flying = owl(true);
+      const root = new Group();
+      root.add(sitting, flying);
+      root.position.set(spot.at.x, spot.at.y, -0.6);
+      let since = 0;
+      return {
+        group: root,
+        update(used, clock, dt) {
+          const called = elof.flags?.has('owl:call') ?? false;
+          since = called ? since + dt : 0;
+          const k = Math.min(1, since / 1.3);
+          const left = (1 - k) ** 3;
+          root.position.x = spot.at.x + left * 26;
+          root.position.y = spot.at.y + left * 9;
+          sitting.rotation.y = Math.sin(clock * 0.7) * 0.25;
+          sitting.visible = k >= 1;
+          flying.visible = k < 1;
+          drawnWhile(root, called && !used);
+        },
+      };
+    },
     mormor: (spot) => figure(spot, 'mormor'),
     morfar: (spot) => figure(spot, 'morfar'),
     // At home in the morning her lantern has been put out.

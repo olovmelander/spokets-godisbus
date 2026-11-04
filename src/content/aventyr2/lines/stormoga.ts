@@ -3,8 +3,16 @@ import type { ChapterWords } from './words';
 /** What is said in Stormens öga, the second adventure's final (docs/aventyr-2.md). */
 export const words: ChapterWords = {
   lines: {
+    soDark: 'Stormen släckte alla våra lampor!',
+    soCalling: 'Elof! Eloooof!',
+    soTooSmall: 'Jag är här! Men jag är för liten.',
+    soMormorSecret: 'Tänd deras lampor, lille vän.',
+    soLampMamma: 'Min lampa tändes av sig själv!',
+    soLampPappa: 'Ficklampan som Elof gav mig!',
+    soLampMoa: 'Det är Elof. Jag vet att det är Elof.',
+    soLampBertil: 'Elof! Vi lyser åt dig!',
     soFarLine: 'Stenen är för långt borta.',
-    soOwlCome: 'Ugglan! Du hörde mig!',
+    soOwlCome: 'Ugglan! Du såg ljuset!',
     soQuiet: 'Det blev alldeles tyst …',
     soStars: 'Stjärnorna! Vi är i stormens öga.',
     soFound: 'Där är ni! Jag har letat överallt.',
@@ -24,11 +32,13 @@ export const words: ChapterWords = {
     soHome: 'Nu åker vi hem, allihop!',
   },
   verbs: {
+    soLightLamp: 'Tänd lampan',
     soCallOwl: 'Ropa på ugglan',
     soBoardOwl: 'Kliv upp på ugglan',
     soTakeGold: 'Ta emot guldgodiset',
   },
   purposes: {
+    soLamps: { purpose: 'Tänd familjens lampor, en i taget.', recap: 'Stormen släckte lamporna. De ser mig inte, så liten som jag är.' },
     soReach: { purpose: 'Ta dig ut till stenen i sundet.', recap: 'Båda trägubbarna sitter på en sten långt ute i vågorna.' },
     soRide: { purpose: 'Flyg med ugglan ut till stenen.', recap: 'Ugglan från skogen kom tillbaka för att hjälpa mig.' },
     soMeet: { purpose: 'Gå fram till trägubbarna.', recap: 'Stormen tystnade. Vi är i stormens öga, under stjärnorna.' },
@@ -37,6 +47,7 @@ export const words: ChapterWords = {
     soGoHome: { purpose: 'Åk hem med allihop.', recap: 'Alla är hittade. Mormor och morfar följer med hem till frukost.' },
   },
   helpers: {
+    soFamilyDark: 'Mormors lykta är det enda ljuset på bryggan.',
     soFamilyLamps: 'Familjen lyser med sina lampor från bryggan.',
     soFriends: 'Klonk och ugglan är här. Familjen är på väg.',
     soFamilyShore: 'Familjen, mormor och morfar väntar på stranden.',
