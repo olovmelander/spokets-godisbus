@@ -63,7 +63,17 @@ function glow(colour: string, size: number, opacity = 1): Mesh {
 
 // --- the night looks -------------------------------------------------------------------------------------------
 
-const grade = (exposure: number, saturation: number, tint: readonly [number, number, number]) => ({ tint: [...tint] as [number, number, number], exposure, contrast: 1.09, saturation, vignette: 0.4, grain: 0.04 });
+/**
+ * A night's grade. Its contrast stays near 1: it pivots on middle grey, so in a picture this dark more of it turns
+ * the near shapes to pure black, where Elof is lost.
+ */
+const grade = (exposure: number, saturation: number, tint: readonly [number, number, number]) => ({ tint: [...tint] as [number, number, number], exposure, contrast: 1.02, saturation, vignette: 0.4, grain: 0.04 });
+
+/**
+ * The light from the camera's side, out of doors in the storm. The sun stands behind the scene, so this is what
+ * falls on what faces him: strong enough that near shapes read, while the sky, which it doesn't light, stays dark.
+ */
+const STORM_FILL = 1.8;
 
 /** Each chapter's light, in place of its place's (its `id` stays the place's, for the place's kits). */
 const LOOKS: Record<string, PlaceLook> = {
@@ -84,18 +94,18 @@ const LOOKS: Record<string, PlaceLook> = {
     sky: { top: '#0b1324', middle: '#2b3a58', bottom: '#1e2a3e', glow: '#91a6cc' },
     hemisphere: { sky: '#8ea2d2', ground: '#34402e', intensity: 1.05 },
     sun: { colour: '#c4d2ff', intensity: 1.7, from: [-6, 6, -3] },
-    fill: { colour: '#a8bce8', intensity: 0.7 },
+    fill: { colour: '#a8bce8', intensity: STORM_FILL },
     water: { colour: '#2b4260', opacity: 0.86 },
     tussock: '#55663f',
   },
   stormskog: {
     ...PLACES.forest,
-    grade: grade(0.78, 0.84, [0.86, 0.97, 1.1]),
+    grade: grade(0.88, 0.84, [0.86, 0.97, 1.1]),
     haze: { colour: '#22333a', near: 4, far: 50 },
     sky: { top: '#081218', middle: '#203238', bottom: '#18262a', glow: '#8fb2b8' },
     hemisphere: { sky: '#86a6b8', ground: '#2c3a24', intensity: 1.05 },
     sun: { colour: '#c0d6ff', intensity: 1.6, from: [-7, 5, -4] },
-    fill: { colour: '#a4c0e0', intensity: 0.7 },
+    fill: { colour: '#a4c0e0', intensity: STORM_FILL },
     water: { colour: '#2a4a52', opacity: 0.86 },
     tussock: '#56663c',
   },
@@ -106,18 +116,18 @@ const LOOKS: Record<string, PlaceLook> = {
     sky: { top: '#0c1222', middle: '#2c3650', bottom: '#2a2c38', glow: '#b0a6c4' },
     hemisphere: { sky: '#98a6cc', ground: '#3c3a3c', intensity: 1.05 },
     sun: { colour: '#ffd8a4', intensity: 1.5, from: [-8, 3.4, -4] },
-    fill: { colour: '#b4c2ec', intensity: 0.7 },
+    fill: { colour: '#b4c2ec', intensity: STORM_FILL },
     water: { colour: '#283446', opacity: 0.88 },
     tussock: '#5a5a58',
   },
   flarken: {
     ...PLACES.bog,
-    grade: grade(0.8, 0.86, [0.86, 0.96, 1.12]),
+    grade: grade(0.88, 0.86, [0.86, 0.96, 1.12]),
     haze: { colour: '#273a4c', near: 5, far: 64 },
     sky: { top: '#0a1424', middle: '#283c56', bottom: '#1c2c3c', glow: '#98b0cc' },
     hemisphere: { sky: '#90a8d0', ground: '#3a3a2e', intensity: 1.05 },
     sun: { colour: '#c8d6ff', intensity: 1.6, from: [-8, 4, -4] },
-    fill: { colour: '#a8bce4', intensity: 0.7 },
+    fill: { colour: '#a8bce4', intensity: STORM_FILL },
     water: { colour: '#24384e', opacity: 0.9 },
     tussock: '#6a6c4c',
   },
@@ -129,18 +139,18 @@ const LOOKS: Record<string, PlaceLook> = {
     sky: { top: '#0a1222', middle: '#2a3856', bottom: '#1e283a', glow: '#94a8cc' },
     hemisphere: { sky: '#8ea2d2', ground: '#34402e', intensity: 1.05 },
     sun: { colour: '#c4d2ff', intensity: 1.7, from: [-6, 6, -3] },
-    fill: { colour: '#a8bce8', intensity: 0.7 },
+    fill: { colour: '#a8bce8', intensity: STORM_FILL },
     water: { colour: '#2b4260', opacity: 0.86 },
     tussock: '#55663f',
   },
   alven: {
     ...PLACES.forest,
-    grade: grade(0.8, 0.86, [0.88, 0.97, 1.1]),
+    grade: grade(0.88, 0.86, [0.88, 0.97, 1.1]),
     haze: { colour: '#24343e', near: 5, far: 60 },
     sky: { top: '#081218', middle: '#22343c', bottom: '#18262c', glow: '#90b0bc' },
     hemisphere: { sky: '#88a6bc', ground: '#2e3a28', intensity: 1.05 },
     sun: { colour: '#c4d6ff', intensity: 1.6, from: [-7, 5, -4] },
-    fill: { colour: '#a4c0e0', intensity: 0.7 },
+    fill: { colour: '#a4c0e0', intensity: STORM_FILL },
     water: { colour: '#264654', opacity: 0.88 },
     tussock: '#56663c',
   },
@@ -151,7 +161,7 @@ const LOOKS: Record<string, PlaceLook> = {
     sky: { top: '#0a1224', middle: '#2a3a5a', bottom: '#1e2a40', glow: '#a0b4d8' },
     hemisphere: { sky: '#90a4d4', ground: '#363f30', intensity: 1.08 },
     sun: { colour: '#c8d4ff', intensity: 1.75, from: [-6, 6, -3] },
-    fill: { colour: '#aabce8', intensity: 0.7 },
+    fill: { colour: '#aabce8', intensity: STORM_FILL },
     water: { colour: '#2a405e', opacity: 0.86 },
     tussock: '#56663f',
   },
