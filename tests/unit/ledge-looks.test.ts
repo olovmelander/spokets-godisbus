@@ -59,12 +59,12 @@ describe('the ledges, as they are drawn', () => {
     expect(buildLedges([], [rod]).group.children).toHaveLength(1);
   });
 
-  it('nothing floats: a stalk, a stem, a pillar or legs go down from a ledge into the ground, and a plank has its batten', () => {
+  it('nothing floats: a stalk, a stem, a pillar or legs go down from a ledge into the ground, a plank has its batten, and a ladder lies on the rims of its gap', () => {
     for (const look of LEDGE_LOOKS) {
       const shape = box(buildLedges([{ x: 0, y: 0, width: 1.5, look }]).group.children[0] as Mesh);
       // Its top is the ledge's top (a stem goes on above it), and what holds it reaches below the ledge.
       expect(shape.max.y, look).toBeGreaterThanOrEqual(-0.001);
-      expect(shape.min.y, look).toBeLessThan(look === 'plank' ? -0.3 : -10);
+      expect(shape.min.y, look).toBeLessThan(look === 'plank' ? -0.3 : look === 'ladder' ? -0.1 : -10);
       // Nothing of it stands in front of the plane he moves in.
       expect(shape.max.z, look).toBeLessThanOrEqual(0.001);
     }

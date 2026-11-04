@@ -24,6 +24,8 @@ export const words: ChapterWords = {
     skUmbrella: 'Och jag tar mitt paraply!',
     skOut: 'Vi kommer, lillgubben! Håll ut!',
     skTrail: 'Ett godis på golvet! Ett spår!',
+    skHandful: 'Han tog en näve ur godisskålen!',
+    skEnough: 'Räcker godiset hela vägen?',
     skKlonkHop: 'Klonk, klonk!',
     skRainLine: 'Brr! Dropparna är stora som bollar.',
   },

@@ -45,7 +45,7 @@ const CAR = { x: -8, z: -17, width: 29 };
 /** The road's ditch, full of rushing rain: twice a running jump. Morfar's ladder lies over it, rim to rim. */
 const DITCH = { from: 14.6, to: 19.2, bottom: -5 };
 const DITCH_WATER = -0.3;
-const LADDER: Ledge = { x: (DITCH.from + DITCH.to) / 2, y: 0, width: DITCH.to - DITCH.from + 0.4, look: 'plank', needs: 'bi:ladder' };
+const LADDER: Ledge = { x: (DITCH.from + DITCH.to) / 2, y: 0, width: DITCH.to - DITCH.from + 0.4, look: 'ladder', needs: 'bi:ladder' };
 
 /** The gravel drive up from the road to the yard. */
 const DRIVE = { from: DITCH.to, to: 29 };
@@ -449,6 +449,7 @@ export const billsta: ChapterData = {
     { id: 'bi:klonk', at: 1.9, who: 'spoket', line: 'biKlonk' },
     { id: 'bi:window', at: 4.6, who: 'moa', line: 'biWindow', read: true },
     { id: 'bi:window-klonk', on: 'beat:bi:window', who: 'spoket', line: 'biKlonkKlonk' },
+    { id: 'bi:new-trail', at: 7.4, who: 'moa', line: 'biNewTrail' },
     // 2. Morfar at the ditch
     { id: 'bi:ditch', at: 10.6, who: 'elof', line: 'biDitch' },
     { id: 'bi:morfar-here', at: 11.4, until: 'bi:morfar', who: 'morfar', line: 'biMorfarHere', read: true },

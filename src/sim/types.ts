@@ -355,8 +355,8 @@ export interface SimStart {
 export type MoverLook = 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy';
-export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone';
-export type SpotLook = 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
+export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder';
+export type SpotLook = 'mormorHome' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
   | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';
@@ -517,6 +517,8 @@ export interface ChapterData {
   spawn: Vec;
   /** Reaching this x sets the flag "goal". */
   goalX: number;
+  /** For the picture: the trail has run out before the goal, so no big candy stands there. */
+  trailEnds?: boolean;
   /** A final story beat can finish before the safe walk to the chapter card. */
   goalNeeds?: string;
   /** The prologue's two freeze jokes and the hinge that tears the bag. */

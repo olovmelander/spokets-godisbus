@@ -31,7 +31,9 @@ const SAID = [
   'al:bredbyn', 'al:rapids', 'al:pappa-here', 'al:scarf-down', 'al:take-hold', 'al:up', 'al:over', 'al:thanks', 'al:follow',
   'al:stumps', 'al:lodge', 'al:otter',
   'al:lake', 'al:owl-seen', 'al:owl-here', 'al:owl-fly', 'al:see-little', 'al:owl-thanks',
-  'al:moalven', 'al:old-ahead', 'al:wider', 'al:billsta', 'al:car', 'al:window', 'al:klonk-end',
+  'al:moalven', 'al:old-ahead',
+  'al:last', 'al:gone', 'al:afraid', 'al:klonk-near', 'al:moa-never', 'al:bertil-pocket', 'al:moa-trail',
+  'al:billsta', 'al:car', 'al:window', 'al:klonk-end',
 ];
 /** The big candies by name: their places in alven.checkpoints. */
 const CP = { gravel: 1, bank: 2, stone: 3, bredbyn: 4, farBank: 5, lake: 6, moalven: 7 };
@@ -196,7 +198,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       for (let i = 1; i < perches.length; i++) expect(perches[i]!.at.x).toBeGreaterThan(perches[i - 1]!.at.x);
       for (const perch of perches.filter((p) => p.z === undefined)) expect(heightAt(alven, perch.at.x), `the perch at ${perch.at.x}`).toBeCloseTo(perch.at.y, 3);
       for (const perch of perches) expect(perch.catch).toBeUndefined();
-      for (const beat of alven.beats!.filter((b) => b.who === 'spoket')) expect(lines[beat.line]).toMatch(/^(Klonk[-,!]? ?)+(klonk!?)?$/i);
+      for (const beat of alven.beats!.filter((b) => b.who === 'spoket')) expect(lines[beat.line]).toMatch(/^(Klonk[-,!]? ?)+(klonk!?)?( …)?$/i);
       expect(lines.alKlonkFloats).toBe('Klonk, du flyter! Du är ju av trä.');
     });
   });
@@ -475,13 +477,33 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       }
     });
 
+    it('lets the trail run out: the last of the handful, the night\'s lowest point, and the family lifts him out of it', () => {
+      const last = alven.beats!.find((b) => b.id === 'al:last')!;
+      expect(last.at!).toBeGreaterThan(alven.checkpoints![alven.checkpoints!.length - 1]!.x);
+      expect(last.at!).toBeLessThan(alven.goalX);
+      // The trail stops where he says so: past this there is no candy to follow, all the way to the goal.
+      expect(alven.candy.filter((c) => c.x > last.at!)).toEqual([]);
+      expect(alven.trailEnds).toBe(true);
+      expect(alven.candy.filter((c) => c.x > last.at! - 4).length).toBeGreaterThan(0);
+      const chain = ['al:last', 'al:gone', 'al:afraid', 'al:klonk-near', 'al:moa-never', 'al:bertil-pocket', 'al:moa-trail', 'al:billsta'];
+      for (const [i, id] of chain.entries()) {
+        const beat = alven.beats!.find((b) => b.id === id)!;
+        expect(beat.read, id).toBe(true);
+        if (i > 0) expect(beat.on, id).toBe(`beat:${chain[i - 1]}`);
+      }
+      expect(alven.beats!.find((b) => b.id === 'al:moa-trail')!.who).toBe('moa');
+      expect(alven.beats!.find((b) => b.id === 'al:bertil-pocket')!.who).toBe('bertil');
+      // Moa and Bertil are there, by the road, when he needs them.
+      const family = (alven.decor ?? []).filter((d) => d.after === 'beat:al:last');
+      expect(family.map((d) => d.word).sort()).toEqual(['callBertil', 'callMoa']);
+    });
+
     it('ends with the family\'s car on the road by the river: three mil to Billsta, where mormor and morfar live', () => {
       const billsta = alven.beats!.find((b) => b.id === 'al:billsta')!;
       expect(billsta.who).toBe('pappa');
       expect(billsta.read).toBe(true);
       expect(lines[billsta.line]).toBe('Älven rinner ända till Billsta.');
-      expect(billsta.at!).toBeGreaterThan(alven.checkpoints![alven.checkpoints!.length - 1]!.x);
-      expect(billsta.at!).toBeLessThan(alven.goalX);
+      expect(billsta.on).toBe('beat:al:moa-trail');
       const car = alven.beats!.find((b) => b.id === 'al:car')!;
       expect(car.who).toBe('mamma');
       expect(car.on).toBe('beat:al:billsta');

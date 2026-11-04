@@ -84,6 +84,14 @@ const LOOKS: Record<LedgeLook, Look> = {
       new BoxGeometry(0.86, 0.3, 0.12).translate(0, -LEDGE_THICK - 0.15, -DEPTH + 0.1),
     ),
   },
+  // A ladder laid flat over a gap: two rails along it and the rungs between them, which he walks on.
+  ladder: {
+    colour: '#8f7f68', roughness: 0.85,
+    shape: () => together(
+      ...[-0.11, -DEPTH + 0.11].map((z) => new BoxGeometry(1, LEDGE_THICK, 0.14).translate(0, -LEDGE_THICK / 2, z)),
+      ...Array.from({ length: 10 }, (_, i) => new BoxGeometry(0.02, LEDGE_THICK * 0.7, DEPTH - 0.2).translate(-0.45 + i * 0.1, -LEDGE_THICK * 0.4, -DEPTH / 2)),
+    ),
+  },
   // A board on four legs, where there is no wall to hold it: a step, a bench, a table on a floor. Its legs
   // stand back from the plane he moves in, so he walks past in front of them.
   trestle: {

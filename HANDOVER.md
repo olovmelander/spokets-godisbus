@@ -2,6 +2,29 @@
 
 ## State (4 November 2026)
 
+- **The trail runs out (4 November 2026, night).** Olov's decision, from the story audit: nothing went wrong all night,
+  so the ending relieved nothing, and the story stood still from Byn to Älven.
+  - **Set up in Stormkvällen:** Moa says the old one took a handful from the bowl, and Bertil asks if it will last.
+  - **The low point at Älven's end:** "Här är det sista godiset …", "Spåret är slut.", "Tänk om vi aldrig hittar dem …",
+    and Klonk close by. Moa and Bertil stand beside him: they never give up, Bertil has sweets in his pocket, and they
+    lay a new trail. The chapter's end has no big candy now (`trailEnds`), so what he says is true.
+  - **Billsta:** the trail is Moa's and Bertil's, running ahead of him.
+  - **The payoff in the finale:** the gold sweet was the old one's very last, saved for Elof. Three false or spent lines
+    went with it (`soHeld`, `soPappa`, `biNotAlone`).
+  - The family's car is slate blue, because red is the candy's, and stands further back at Älven. It is still two boxes.
+- **Mormor and morfar are people (4 November 2026, night).** The first step of Olov's overhaul of Äventyr 2. They were
+  primitives more than twice the family's height, who shrank away when called, so that their lines came from nobody.
+  - **The body** (`src/content/aventyr2/grandparents.ts`): a soft figure built in code on the bone names of a model
+    from Blender, so that `createModelRig` poses it as it does the family, in one draw each, at the family's height.
+    Plain figures with no likeness: grey hair (Olov's decision), a cap, and the story's lantern and ladder.
+  - **What they do:** they follow Elof with their heads, blink and breathe, and kneel to his height when he comes near.
+    Morfar stands with a hand on his ladder, lets it down over the ditch with a small bounce, and shows the way.
+    Mormor's lantern hangs from her hand on a pendulum, and she lifts it when she's called. **They stay.**
+  - **Where:** they now stand in the finale's picture (they were past its last shot) and at the Sunday breakfast, where
+    her lantern is out. `ladder` is a new ledge look: rails and rungs in place of the plank.
+  - **Blender:** Olov has said it may be used. It starts, but the add-on here is Blender Lab's `mcp` on port 9876, not
+    the `mcp-for-blender` of `.mcp.json`, so the MCP tools can't connect. Running Blender headless with a script needs
+    neither (`scripts/bake/export.py` works in 5.2.2). Swapping the add-ons is Olov's call.
 - **The storm's light (4 November 2026, evening).** Near shapes crushed to pure black, and Elof was lost against them.
   - **Why:** the sun stands behind the scene, so what faces the player gets only the fill and the ambient, and the
     grade's contrast (1.09, pivoting on middle grey) took the rest to zero. `DUSK`, which looks right at night,

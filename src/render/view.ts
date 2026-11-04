@@ -272,7 +272,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   });
   // Where a scene ends the chapter (the prologue's title), the scene is the end: no candy marks it.
   const sceneEnds = endsInScene(chapter);
-  if (sceneEnds) bigCandies.at(-1)!.place.visible = false;
+  if (sceneEnds || chapter.trailEnds) bigCandies.at(-1)!.place.visible = false;
   // The coda (docs/narrative-audit/threads.md §5.4): at the goal the picture breathes out over the place he has
   // crossed, while the tune closes. Not where a scene is the end, nor at home in the evening (its own end).
   const coda = !sceneEnds && !chapter.epilogue;
