@@ -104,6 +104,37 @@ describe('the visual upgrade: wood, moss and the wet', () => {
     }
   });
 
+  it('goes by the tier the picture started on: changing graphics lays no patch, on the way to Low or to High', () => {
+    const patchedIn = (scene: Scene) => {
+      let patched = 0;
+      scene.traverse((object) => {
+        const material = (object as Mesh).material as MeshStandardMaterial | undefined;
+        if (material?.customProgramCacheKey?.().includes('lift-surface-v1')) patched++;
+      });
+      return patched;
+    };
+    const ctx = context(STORY.find((c) => c.id === 'granskog')!);
+    const surfaces = createSurfaces(ctx);
+    surfaces.update(frame({ tier: 'low' }));
+    surfaces.apply(ctx.scene);
+    // A change in the menu warms up before any frame has told the surfaces the new tier, and again after one has.
+    surfaces.update(frame({ tier: 'high' }));
+    surfaces.apply(ctx.scene);
+    surfaces.update(frame({ tier: 'low' }));
+    surfaces.apply(ctx.scene);
+    expect(patchedIn(ctx.scene)).toBe(0);
+
+    const high = context(STORY.find((c) => c.id === 'granskog')!);
+    const started = createSurfaces(high);
+    started.update(frame({ tier: 'high' }));
+    started.apply(high.scene);
+    const laid = patchedIn(high.scene);
+    expect(laid).toBeGreaterThan(0);
+    started.update(frame({ tier: 'low' }));
+    started.apply(high.scene);
+    expect(patchedIn(high.scene)).toBe(laid);
+  });
+
   it('knows matte carved wood from the moss: the boards, the figures, the moss on the ground', () => {
     const granskog = STORY.find((chapter) => chapter.id === 'granskog')!;
     const ctx = context(granskog);

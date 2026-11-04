@@ -278,15 +278,17 @@ export function createSurfaces(context: ExtraContext) {
   const near = all.map((pool) => ({ pool, d: 0 }));
   let time = 0;
   /**
-   * The tier of the last frame. Only a picture that starts on High is patched: the patch costs about a third of a
-   * frame in software rendering, and its work is all in the fragments, which is what a phone's GPU is short of. Low
-   * and Mid keep the place's own materials (docs/visual-upgrade.md, "As built").
+   * The tier of the picture's first frame. Only a picture that starts on High is patched: the patch costs about a
+   * third of a frame in software rendering, and its work is all in the fragments, which is what a phone's GPU is
+   * short of. Low and Mid keep the place's own materials (docs/visual-upgrade.md, "As built"). It does not follow a
+   * later change: the menu's warm-up runs before any frame has told this the new tier, so following it laid the
+   * patch on the way back to Low, and compiled it there in the menu.
    */
-  let tier: ExtraFrame['tier'] | null = null;
+  let startedOn: ExtraFrame['tier'] | null = null;
   return {
     /** Patches every material in `root` that is wood, moss or ground. Again at each warm-up: only new ones are touched. */
     apply(root: Object3D) {
-      if (tier !== null && tier !== 'high') return;
+      if (startedOn !== null && startedOn !== 'high') return;
       root.traverse((object) => {
         const mesh = object as Mesh;
         if (!mesh.isMesh) return;
@@ -298,7 +300,7 @@ export function createSurfaces(context: ExtraContext) {
       });
     },
     update(frame: ExtraFrame) {
-      tier = frame.tier;
+      startedOn ??= frame.tier;
       if (!frame.still) time += frame.dt;
       shared.liftTime.value = time;
       // The sun in a wet point is its own light, paled: never gold.

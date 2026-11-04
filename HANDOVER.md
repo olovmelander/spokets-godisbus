@@ -2,6 +2,23 @@
 
 ## State (4 November 2026)
 
+- **PR #189's browser job, and a new computer (4 November 2026, evening).** The job failed in two suites, and Olov
+  asked to merge once it is green.
+  - **A real bug in the surface patch:** it went by the tier of the last frame, but a change in the menu warms up
+    before any frame has told it the new tier. So Low → High laid nothing, and High → Low laid the patch on Low, on
+    117 of granskog's materials, compiling it in the menu. It now keeps the tier of the picture's first frame,
+    as `docs/visual-upgrade.md` always said; a unit test covers both directions.
+  - **`garden-loop` ran out of time on High:** 0.46 EL short of the hose after 60 s, on GitHub's software rendering
+    (the suite 477 → 682 s, `forest-puzzles` 98 → 229 s). Its limit is now 120 s. High's frame time on real devices is
+    still Olov's call (gate 5, `?bench`).
+  - **Validation:** typecheck, **188 test files / 1,978 tests**, the build (boot JS 487.7 KB / 520 KB), the privacy
+    check, and `garden-loop`'s High touch case on SwiftShader (15 checks) pass.
+  - **The new computer:** Olov now works from a fresh clone. `photos/` and the private work that was never pushed
+    (the local `character-design-motion` branch of `art/private`: `build-character.mjs`, `elof/three-study/`,
+    `lill-elof/`, perhaps a newer ghost) are on his old computer. **Until he brings them over, work that needs the
+    pictures (characters, the ghost, the house) can't be done here.** Code work isn't affected. `art/private` here is a
+    clone of the private repository's `main`. Installed here: `ktx` 4.4.2 and Playwright 1.56.1's Chromium. Blender
+    here is 5.2, not the 4.5 LTS that `CLAUDE.md` asks for; `exiftool` isn't installed.
 - **Äventyr 2's story and gameplay audit (4 November 2026, later still).** Olov asked for an audit of the story, all
   the conversations and all the gameplay, so that the adventure holds together, feels epic, has a red thread, and is
   fun and kind. [`docs/aventyr-2-audit.md`](docs/aventyr-2-audit.md) has the method (the robot played every chapter
