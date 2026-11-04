@@ -35,7 +35,9 @@ Olov still has to answer. Read both before anything else.
 ## Rules that protect the family (plan §2.6)
 
 Both parents have said yes to everything in the plan's consent list, and every name may be used (3 October
-2026). Everything in this repository and on the site is still public, and git history is permanent.
+2026). Olov reports that they also consent to all of his development of this game, whatever he chooses to build
+(4 November 2026). Everything in this repository and on the site is still public, and git history is permanent,
+so the rules below stay.
 
 - **Names.** The children are Elof, Moa and Bertil; the parents are Mamma Sofie and Pappa Emil. In the game Elof
   calls them Mamma and Pappa. Never a surname.
@@ -55,8 +57,8 @@ Both parents have said yes to everything in the plan's consent list, and every n
     `spokets-godisbus-familj` (plan §6.11), so they can always be taken down.
 - **Voices.** The game has none: nothing is read aloud and nothing is recorded (plan §0 Q9). Characters make
   short wordless sounds.
-- **Consent.** Anything comes out again if a parent asks. Anything personal not on the consent list is asked
-  about first (plan §2.6).
+- **Consent.** Anything comes out again if a parent asks. What Olov himself asks for is covered. Anything personal
+  a session thinks of by itself is asked about first (plan §2.6).
 
 ## Olov's standing decisions (plan §0)
 
@@ -75,7 +77,8 @@ Both parents have said yes to everything in the plan's consent list, and every n
   opting in uploads screenshots and scene data, which would include the family's models.
 - In the add-on's panel only *Poly Haven* is ticked. *Hyper3D Rodin* and *Sketchfab* stay off unless a task needs
   one and follows the rules below.
-- Blender 4.5 LTS, matching `bpy` 4.5.14 in cloud sessions.
+- Blender 5.2 LTS (Olov's decision, 4 November 2026). Cloud sessions' `bpy` stays at 4.5.14, so don't count on them
+  opening a `.blend` saved in 5.2: `.blend` work belongs on Olov's computer. Exported GLBs work everywhere.
 - Save and commit before large operations. Exports go through `scripts/bake/export.py`.
 - Every asset fetched or generated through it gets a `LICENSES.md` entry. Sketchfab and Poly Pizza: CC0 or CC BY
   only. Never Hunyuan3D.

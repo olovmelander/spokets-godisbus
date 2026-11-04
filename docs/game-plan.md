@@ -485,9 +485,12 @@ Both parents allow an exact house (§0 Q4).
 - sending the character sheets and photos to Claude, and to a paid Meshy plan (allowed, but no such plan is
   used: §0 Q15).
 
+On 4 November 2026 Olov reported that the parents also consent to all of his development of this game, whatever he
+chooses to build. That covers what he asks for himself, such as mormor and morfar with grey hair.
+
 Anything comes out of the game, the site and the current files if a parent asks, but what has been pushed stays
-in the public git history; v2's §0 Q4 said so when consent was asked. Anything personal that is *not* on the list
-is asked about first.
+in the public git history; v2's §0 Q4 said so when consent was asked. Anything personal that a session thinks of by
+itself is asked about first.
 Place names are allowed, but the game uses them the way a child does: Moa's map says "Hemma" (§4.9).
 
 **What stays out anyway.** None of this limits the game; it only keeps a stranger from finding the children:
@@ -1446,9 +1449,10 @@ Every source and licence goes into `LICENSES.md` (§7.5). Three categories are a
   - **Safe mode on.** It checks every script before it runs and blocks direct file, network and process access,
     while modelling, materials, rendering, saving and import and export still work. It guards against prompt
     injection in third-party asset descriptions. A session that truly needs more turns it off for that task only.
-  - **Version.** Blender 4.5 LTS (4.5.9 on Olov's computer), so files open in the cloud sessions' headless `bpy`
-    4.5.14 too. `bpy` 5.1 and later need Python 3.13, which the cloud containers don't have. Move both together,
-    deliberately, if ever.
+  - **Version.** Blender 5.2 LTS on Olov's computer (his decision, 4 November 2026; it was 4.5 LTS). The cloud
+    sessions' headless `bpy` stays at 4.5.14, because `bpy` 5.1 and later need Python 3.13, which the cloud containers
+    don't have. So don't count on a cloud session opening a `.blend` saved in 5.2: `.blend` work belongs on Olov's
+    computer, and exported GLBs work everywhere.
 - **Asset integrations get the same licence check as anything else:**
   - Poly Haven: CC0; use freely.
   - Sketchfab: only models marked CC0 or CC BY (credited in `LICENSES.md`); never NC, ND, or the store's
@@ -1705,7 +1709,7 @@ All versions were checked on npm on 3 October 2026 (Appendix A).
 | Font | Andika (`@fontsource/andika`, OFL-1.1) | 5.3.0 | Self-hosted subset |
 | Local HTTPS for device tests | `@vitejs/plugin-basic-ssl` (dev only) | 2.3.0 | Supports Vite 8; `npm run dev:lan` (§6.14) |
 | Node | 24 in CI and on Olov's computer (26 becomes LTS on 28 Oct 2026) | — | — |
-| Art tools (Olov's computer) | Blender 4.5 LTS with *MCP for Blender* | 2.1.3 | §5.6, §6.14 |
+| Art tools (Olov's computer) | Blender 5.2 LTS with *MCP for Blender* | 2.1.3 | §5.6, §6.14 |
 
 **Not used:**
 - **Asset files whose licences forbid a public repository:** Mixamo, ActorCore, Megascans/Fab, Textures.com,
@@ -2250,7 +2254,7 @@ Cloud sessions stay useful for code-only work and reviews, and both follow the s
 - **Already there** (checked on 3 October, Appendix A):
   - Node 24 and git;
   - Claude Code, in VS Code;
-  - Blender 4.5.9 LTS with the *MCP for Blender* add-on running, and Poly Haven ticked in its panel;
+  - Blender 5.2 LTS with the *MCP for Blender* add-on running, and Poly Haven ticked in its panel;
   - the reference pictures, in `photos/`.
 - **Still to install:**
   - `uv`, for `uvx`, which starts the MCP server declared in `.mcp.json` (§5.6). Until then a session has no
@@ -2545,7 +2549,8 @@ Cloud sessions stay useful for code-only work and reviews, and both follow the s
     Blender after the 84 reference pictures in `photos/landscape/`, which are openly licensed but mostly CC BY-SA,
     so they are for looking at only. Scanned rocks, stumps and plants come from Poly Haven, and ambience is CC0 or
     synthesised.
-11. **Olov's computer** (§6.14): Windows 11 with an RTX 3070, Blender 4.5.9 and Node 24. The Blender MCP server is
+11. **Olov's computer** (§6.14): Windows 11 with an RTX 5080 laptop GPU, Blender 5.2 and Node 24 (since November 2026;
+    before that an RTX 3070 and Blender 4.5.9). The Blender MCP server is
     declared in `.mcp.json`, and still needs `uv` to start.
 12. **References** (§2, §2.6) are in `photos/`, which git ignores, instead of `references/`.
 13. **The candy** (§3.4, §4.3): the family likes every kind, so Elof chooses what each of them gets at the party,

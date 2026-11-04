@@ -37,7 +37,7 @@
     `lill-elof/`, perhaps a newer ghost) are on his old computer. **Until he brings them over, work that needs the
     pictures (characters, the ghost, the house) can't be done here.** Code work isn't affected. `art/private` here is a
     clone of the private repository's `main`. Installed here: `ktx` 4.4.2 and Playwright 1.56.1's Chromium. Blender
-    here is 5.2, not the 4.5 LTS that `CLAUDE.md` asks for; `exiftool` isn't installed.
+    here is 5.2.2 LTS, which Olov has chosen (`CLAUDE.md`); `exiftool` isn't installed.
 - **Äventyr 2's story and gameplay audit (4 November 2026, later still).** Olov asked for an audit of the story, all
   the conversations and all the gameplay, so that the adventure holds together, feels epic, has a red thread, and is
   fun and kind. [`docs/aventyr-2-audit.md`](docs/aventyr-2-audit.md) has the method (the robot played every chapter
@@ -3455,7 +3455,10 @@
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate counts both
   gzipped since `size-gate-as-served`: the boot pack is about 0.7 MB of its 3 MB as served.
-- **Olov's computer** (checked 3 October): Windows 11, an RTX 3070, Node 24.14, git, and Blender 4.5.9 LTS with
+- **Olov's computer** (checked 4 November): Windows 11, an RTX 5080 laptop GPU, Node 24.20, `gh`, `uv`, Blender 5.2.2
+  LTS, Playwright 1.56.1's Chromium, and `ktx` 4.4.2 in `%LOCALAPPDATA%\Programs\KTX-Software\bin`. No `exiftool`. The
+  Blender add-on must be running for the MCP tools to work.
+- **His old computer** (checked 3 October; `photos/` and the unpushed private work are on it): Windows 11, an RTX 3070, Node 24.14, git, and Blender 4.5.9 LTS with
   the *MCP for Blender* add-on running on port 9876, with only Poly Haven ticked, `uv` 0.12, Playwright
   1.56.1's Chromium, and the `ktx` tool 4.4.2 in `%LOCALAPPDATA%\Programs\KTX-Software\bin` (the asset build
   finds it there). Not installed: `gh`, `exiftool`.
@@ -4050,7 +4053,8 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
     "Mormor" and "Morfar", plain stand-ins with no likeness, each with one thing of the story's (morfar's ladder,
     mormor's lantern), and their house is an interpretation in plain shapes of Olov's picture, by the road near the
     forest as Olov described it, with no address or house number. They are not on plan §2.6's consent list: is it all right with them, and with Elof's parents?
-    The default: as built, and anything comes out again if anyone asks.
+    The default: as built, and anything comes out again if anyone asks. **Answered (4 November):** the parents consent to
+    all of Olov's development of this game, and mormor and morfar may have grey hair.
 21. **Pictures for the places:** the research could not open any photograph, because the environment's network
     denies the image hosts. To let a session look, add `commons.wikimedia.org`, `upload.wikimedia.org`,
     `sv.wikipedia.org`, `ornskoldsvik.se` and `openstreetmap.org` under the environment's *Network access →
