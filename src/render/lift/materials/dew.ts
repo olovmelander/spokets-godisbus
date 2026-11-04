@@ -87,8 +87,8 @@ export function dewPlaces(context: ExtraContext): { at: Vector3; size: number; b
     dressing.traverse((object) => {
       const mesh = object as InstancedMesh;
       if (!mesh.isInstancedMesh) return;
-      const blades = mesh.material === KIT.grass || mesh.material === KIT.lawn;
-      const leaves = mesh.material === KIT.leaf || mesh.material === KIT.clover;
+      const blades = !!KIT && (mesh.material === KIT.grass || mesh.material === KIT.lawn);
+      const leaves = !!KIT && (mesh.material === KIT.leaf || mesh.material === KIT.clover);
       if (!blades && !leaves) return;
       for (let i = 0; i < mesh.count; i++) {
         if (next() > (blades ? 0.1 : 0.18)) continue;

@@ -41,7 +41,7 @@ function counted(mesh: InstancedMesh, all: number, tier: ExtraFrame['tier']): vo
 
 export function flora(context: ExtraContext): ViewExtra | null {
   const { chapter, scene, sun, dressing } = context;
-  if (!chapter.place) return null;
+  if (!chapter.place || !dressing || !KIT) return null;
   const group = new Group();
   group.name = 'flora';
   // The sun's direction does not change as the shadow's camera follows him.

@@ -74,7 +74,7 @@ export function treesOf(dressing: Object3D): Tree[] {
   const m = new Matrix4(), p = new Vector3(), q = new Quaternion(), s = new Vector3();
   dressing.traverse((object) => {
     const mesh = object as InstancedMesh;
-    if (!mesh.isInstancedMesh || (mesh.geometry !== KIT.trunk && mesh.geometry !== KIT.snag)) return;
+    if (!KIT || !mesh.isInstancedMesh || (mesh.geometry !== KIT.trunk && mesh.geometry !== KIT.snag)) return;
     for (let i = 0; i < mesh.count; i++) {
       mesh.getMatrixAt(i, m);
       m.decompose(p, q, s);
@@ -234,7 +234,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
   // Butterflies by day: over the garden's lawn, settling on its dandelions; over the bog's meadow, on its moss.
   const butterflies: Plan['butterflies'] = [];
   if (cast.butterflies) {
-    const heads = place === 'garden' ? standing(dressing, KIT.petal).map((h) => [h.at.x, h.at.y + 0.04, h.at.z] as V3).filter((h) => h[2] < -1.2) : [];
+    const heads = place === 'garden' && KIT ? standing(dressing, KIT.petal).map((h) => [h.at.x, h.at.y + 0.04, h.at.z] as V3).filter((h) => h[2] < -1.2) : [];
     for (let k = 0, x = from + 5 + next() * 10; k < cast.butterflies && x < to - 4; x += 16 + next() * 18) {
       const c = nearest(x, 8, soil);
       const z = -1.6 - next() * (place === 'bog' ? 0.7 : 2.4);

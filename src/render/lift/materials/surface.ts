@@ -101,9 +101,10 @@ export function classify(mesh: Mesh, material: MeshStandardMaterial, dressing: O
   if (actor) return null;
   if (furniture) return wood ? PLANED_DRY : null;
   if (!scenery) return null;
-  if (material === KIT.moss) return MOSS;
-  if (material === KIT.stone || material === KIT.bark || (material.vertexColors && !material.map)) return MOSSY;
-  if (mesh.name === 'spang' || material === KIT.deadwood) return PLANED;
+  // The dressing's kit exists only once a place has been dressed (the title alone has none).
+  if (KIT && material === KIT.moss) return MOSS;
+  if ((KIT && (material === KIT.stone || material === KIT.bark)) || (material.vertexColors && !material.map)) return MOSSY;
+  if (mesh.name === 'spang' || (KIT && material === KIT.deadwood)) return PLANED;
   // At home the figures on Pappa's shelf are carved, the shelf and the furniture planed.
   if (chapter.place === 'home' && wood) return mesh.geometry.type === 'BoxGeometry' ? PLANED : CARVED;
   return wood ? PLANED : GROUND;
