@@ -268,7 +268,7 @@ export const olympia: ChapterData = {
       // The red hall under its arch, across the pitch (art/blender/olympia.py).
       { kind: 'clubhouse', x: 50, z: -66, width: 36, height: 18, model: 'olympia-hall' },
       { kind: 'goal', x: GOAL.x, z: -6.4, width: GOAL.depth, height: GOAL.height },
-      { kind: 'picnic', x: KIT.x, z: 0, width: KIT.width, height: KIT.y },
+      { kind: 'trestleTable', x: KIT.x, z: 0, width: KIT.width, height: KIT.y },
       { kind: 'floodlight', x: 92, z: -30, height: 90 },
       // The long timber stand on the far side, the forest straight behind it.
       { kind: 'stand', x: 118, z: -29, width: 44, model: 'olympia-stand' },

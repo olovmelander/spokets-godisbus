@@ -624,6 +624,15 @@ function pole(def: BuildingDef) {
   return { parts, panes };
 }
 
+function trestleTable(def: BuildingDef) {
+  // A plain table on two trestles, the club's for its kit: open underneath, so that he is seen as he runs under it.
+  const w = def.width ?? 4;
+  const h = def.height ?? 1.1;
+  const parts: BufferGeometry[] = [box(w, 0.14, 2.2, 0, h - 0.07, -0.2, '#8a7458')];
+  for (const x of [-w / 2 + 0.3, w / 2 - 0.3]) for (const z of [-1.2, 0.8]) parts.push(box(0.14, h, 0.14, x, h / 2, z, '#6a5640'));
+  return { parts, panes: [] };
+}
+
 function store(def: BuildingDef) {
   // Olympia's little store: red boards under broad white trim, and a red-and-white striped awning over its counter.
   const w = def.width ?? 20;
@@ -649,7 +658,7 @@ function store(def: BuildingDef) {
 }
 
 const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGeometry[]; panes: BufferGeometry[] }> = {
-  pole, store, pitch, chess, sunboard, villa, barn, playhouse, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
+  pole, store, trestleTable, pitch, chess, sunboard, villa, barn, playhouse, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
   church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce,
 };
 
