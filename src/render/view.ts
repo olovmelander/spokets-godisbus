@@ -12,6 +12,7 @@ import { installGardenHome } from './garden-home';
 import { windWisp } from './wind-wisp';
 import { createAfloat } from './afloat';
 import { createRain } from './rain';
+import { PACK } from './extensions';
 import { paintStreetMirror } from './village';
 import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
 import { forestKit, forestSocket, installForest, rollingCone } from './forest-kit';
@@ -214,7 +215,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // r186's outputBufferType is fixed at construction. Own the two HDR targets so a settings change can
   // release them and draw Low straight to the canvas, keeping this renderer, its assets and the scene.
   // Mid and High keep the same linear HDR → grade → Neutral/sRGB stages as r186's native setEffects path.
-  const place = chapter.place ? PLACES[chapter.place] : null;
+  const place = chapter.place ? (PACK.looks.get(chapter.id) ?? PLACES[chapter.place]) : null;
   const grade = place?.grade ?? GARDEN_MORNING;
   const gradePass = hdrAvailable ? createGradePass(grade) : null;
   const depthBlur = hdrAvailable ? createDepthBlur() : null;
@@ -249,6 +250,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const skyPicture = createSky(dressing?.background ?? null, sky);
   scene.add(skyPicture);
   if (dressing) {
+    dressing.group.name = 'dressing';
     scene.add(dressing.group);
   }
 
@@ -357,6 +359,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const wind = buildWind(chapter);
   const night = buildNight(chapter, sky, hemisphere, sun);
   scene.add(night.group);
+  // What a chapter pack adds: Äventyr 2's storm (./extensions.ts).
+  const extras = PACK.extras.map((make) => make({ chapter, scene, sky, hemisphere, sun })).filter((extra) => extra !== null);
   scene.add(...tussockMeshes, mist.group, follower.group, wind.group);
   const mountain = createMountain(chapter, ledges);
   if (mountain) scene.add(mountain.group);
@@ -984,6 +988,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       camera.lookAt(window.x, window.y + 0.65, window.z);
     }
     const darkness = night.update(flags, dt, tier === 'low' ? 0.5 : 0.85, calmStory);
+    for (const extra of extras) extra.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride' });
     if (dressing && place) {
       // What lives far off begins nothing while he is busy, and needs the lens to know what is in the picture.
       dressing.update(camera.position.x, look.y, clock, darkness, { gust, still: calmStory }, {
@@ -1142,7 +1147,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     // Keep the stolen paper bag distinct from the wooden pocket, across every chapter of the chase. It was given
     // back on the summit, so neither the party nor Byn, a week later, has it.
-    stolenBag.visible = ghostPlace.visible && (chapter.prologue ? flags.has('grab') || flags.has('blink') : chapter.id !== 'epilog' && chapter.id !== 'byn') &&
+    stolenBag.visible = ghostPlace.visible && (chapter.prologue ? flags.has('grab') || flags.has('blink') : chapter.id !== 'epilog' && chapter.id !== 'byn' && !chapter.named) &&
       !(chapter.id === 'norrsken' && flags.has('eyes'));
     // The gold sweet glints at the bag's mouth all through the chase (plan §3.3 rule 3).
     const glint = stolenBag.getObjectByName('saturday-bag-glow');
@@ -1488,6 +1493,7 @@ function buildBerries(chapter: ChapterData): Group[] {
   const dark = new MeshStandardMaterial({ color: '#4a1218', roughness: 0.8 });
   return (chapter.bouncers ?? []).map((b) => {
     const group = new Group();
+    group.name = 'bouncer';
     const berry = new Mesh(new SphereGeometry(BERRY_HALF, 24, 16), skin);
     berry.scale.y = BERRY_HEIGHT / (2 * BERRY_HALF);
     berry.position.y = BERRY_HEIGHT / 2;
@@ -1664,6 +1670,7 @@ function buildFollower(chapter: ChapterData) {
 /** The rolling cones of the avalanche (plan §4.7, E2): brown, long, turning as they go. One instanced mesh. */
 function buildCones(count: number) {
   const mesh = forestSocket(new InstancedMesh(new SphereGeometry(1, 12, 8), new MeshStandardMaterial({ color: '#7a5230', roughness: 0.9 }), Math.max(1, count)), rollingCone(1.9));
+  mesh.name = 'rollers';
   mesh.count = count;
   mesh.instanceMatrix.setUsage(DynamicDrawUsage);
   mesh.frustumCulled = false;

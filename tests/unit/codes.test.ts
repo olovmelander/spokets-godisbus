@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BONUS, STORY } from '../../src/content/chapters';
+import { ADVENTURE2_IDS, BONUS, STORY } from '../../src/content/chapters';
 import { sv } from '../../src/content/sv';
 import { chapterFor, codeFor } from '../../src/save/codes';
 
@@ -8,8 +8,8 @@ describe('chapter codes', () => {
     for (const part of STORY.slice(1)) expect(codeFor(part.id), part.id).not.toBeNull();
     expect(codeFor('prolog')).toBeNull();
     expect(codeFor('testbana')).toBeNull();
-    // And each extra chapter has one too.
-    expect(Object.keys(sv.codes).sort()).toEqual([...STORY.slice(1), ...BONUS].map((part) => part.id).sort());
+    // And each extra chapter has one too, and every part of Äventyr 2, its beginning as well: no Börja leads there.
+    expect(Object.keys(sv.codes).sort()).toEqual([...[...STORY.slice(1), ...BONUS].map((part) => part.id), ...ADVENTURE2_IDS].sort());
   });
 
   it('is three short plain words in capitals, and no word is in two codes', () => {
@@ -25,12 +25,13 @@ describe('chapter codes', () => {
 
   it('names nobody, and does not give the ghost its name', () => {
     for (const word of Object.values(sv.codes).flat()) {
-      for (const name of ['ELOF', 'MOA', 'BERTIL', 'SOFIE', 'EMIL', 'MAMMA', 'PAPPA', 'KLONK']) expect(word).not.toBe(name);
+      for (const name of ['ELOF', 'MOA', 'BERTIL', 'SOFIE', 'EMIL', 'MAMMA', 'PAPPA', 'KLONK', 'FJUN']) expect(word).not.toBe(name);
     }
   });
 
   it('opens its chapter, however a child types it', () => {
     for (const part of STORY.slice(1)) expect(chapterFor(codeFor(part.id)!), part.id).toBe(part.id);
+    for (const id of ADVENTURE2_IDS) expect(chapterFor(codeFor(id)!), id).toBe(id);
     expect(chapterFor('gran kotte mossa')).toBe('granskog');
     expect(chapterFor('  Mossa,  gran - KOTTE ')).toBe('granskog');
     // Without å, ä and ö, as on a keyboard that lacks them.

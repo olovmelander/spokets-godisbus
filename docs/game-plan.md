@@ -2,6 +2,12 @@
 
 Game plan, version 6 — 4 October 2026. Repository `olovmelander/spokets-godisbus`.
 
+**Äventyr 2 (4 November 2026).** Olov asked for the next part of the adventure: a new, unique adventure of several
+worlds, about as long as the first, that opens once the first is finished. Its canon is
+[Äventyr 2: Stormnatten](aventyr-2.md): an autumn storm night, Elof's own little carving and Pappa's first trägubbe
+blown out into the dark, and a rescue through the stormy garden, the forest, the village and the lake. Everything in
+this plan about the first adventure stands; the chapters before it are now called **Äventyr 1**.
+
 Version 6 records Olov's direction that the game "feels very linear" and should take "the best things from the
 best platformers" (Super Mario, Rayman, Braid, Unravel, Little Nightmares, Inside, Ori). The research and its
 sources are in [the research report](research/platformer-level-design.md), and what follows from it for the

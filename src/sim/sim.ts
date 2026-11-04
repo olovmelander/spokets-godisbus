@@ -1092,7 +1092,7 @@ export class Sim {
     const grab = hook ? null : this.ghostInReach();
     const spot = hook || grab || moved ? null : this.spotInReach();
     this.verb = hook ? 'lace' : grab ? 'grab' : pulled ? 'pull' : pushed ? 'push' : spot ? spot.verb : below ? 'slide' : null;
-    this.word = this.verb === spot?.verb ? (spot?.word ?? null) : null;
+    this.word = moved?.def.word ?? (this.verb === spot?.verb ? (spot?.word ?? null) : null);
     if (hook && input.act) {
       this.throwLace(hook);
       return;

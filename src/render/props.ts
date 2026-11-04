@@ -12,6 +12,7 @@ import type { MountainSocket } from './mountain-kit';
 import { saturdayBag } from './saturday-bag';
 import { MODEL_TURN } from './ghost-model';
 import { matchboxShape } from './matchbox';
+import { PACK } from './extensions';
 
 /**
  * Stand-ins for the things and the animals of the story, built in code: each is recognisable, and none is
@@ -209,7 +210,7 @@ export function moverProp(mover: Mover): Group | null {
       break;
     }
     default:
-      return null;
+      return PACK.movers.get(mover.look ?? '')?.(mover) ?? null;
   }
   return group;
 }
@@ -675,7 +676,7 @@ export function spotProp(spot: Spot): SpotProp | null {
       return { group, update: (used, clock, dt) => { vanish(used, dt); sweet.rotation.y = clock * 1.4; sweet.position.y = 0.5 + Math.sin(clock * 2) * 0.06; } };
     }
     default:
-      return null;
+      return PACK.spots.get(spot.look ?? '')?.(spot) ?? null;
   }
 }
 
@@ -929,7 +930,7 @@ export function rideProp(look: RideLook): Object3D | null {
       break;
     }
     default:
-      return null;
+      return PACK.rides.get(look)?.(look) ?? null;
   }
   return group;
 }

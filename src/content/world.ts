@@ -1,5 +1,9 @@
 /** Stable chapter IDs (plan §4.9). "Kapitel N" is computed from the released order and never stored. */
-export const CHAPTER_IDS = ['prolog', 'garden', 'granskog', 'forsen', 'myr', 'berg', 'final', 'epilog'] as const;
+export const CHAPTER_IDS = [
+  'prolog', 'garden', 'granskog', 'forsen', 'myr', 'berg', 'final', 'epilog',
+  // Äventyr 2, Stormnatten (docs/aventyr-2.md): released after the first adventure, in its own pack.
+  'stormkvall', 'stormgard', 'stormskog', 'stormbyn', 'olympia', 'flarken', 'alven', 'billsta', 'stormoga', 'morgonen',
+] as const;
 export type ChapterId = (typeof CHAPTER_IDS)[number];
 
 /**

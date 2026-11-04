@@ -1,4 +1,4 @@
-import { BONUS, STORY } from '../content/chapters';
+import { ADVENTURE2, BONUS, STORY } from '../content/chapters';
 import { foundFlag, KINDS } from '../content/kinds';
 import { stickerStyle } from './sticker';
 import { sv } from '../content/sv';
@@ -16,9 +16,11 @@ const challengeStar = (found: boolean) =>
 
 /** Only authored, already built chapters; neither test courses nor future places appear. */
 export const EXPLORE_CHAPTERS = [...STORY, ...BONUS];
+/** And Äventyr 2's, once its pack is in (docs/aventyr-2.md). */
+const exploring = () => [...EXPLORE_CHAPTERS, ...ADVENTURE2];
 
 export function exploreHtml(save: PlayerSave, available: (id: string) => boolean = () => true): string {
-  return EXPLORE_CHAPTERS.filter((chapter) => available(chapter.id)).map((chapter) => {
+  return exploring().filter((chapter) => available(chapter.id)).map((chapter) => {
     const flags = save.flags[chapter.id] ?? [];
     // All the candy he has from here, and all there is: the trail's, and the side candy off it.
     const sideTotal = chapter.side?.length ?? 0;
@@ -53,7 +55,7 @@ export function createExplore(doc: Document, onSelect: (id: string) => void, ava
   back.addEventListener('click', (event) => {
     if (event.target === back) hide();
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-chapter]') : null;
-    if (button && available(button.dataset.chapter!) && EXPLORE_CHAPTERS.some((chapter) => chapter.id === button.dataset.chapter)) onSelect(button.dataset.chapter!);
+    if (button && available(button.dataset.chapter!) && exploring().some((chapter) => chapter.id === button.dataset.chapter)) onSelect(button.dataset.chapter!);
   });
   return {
     element: back,
@@ -67,7 +69,7 @@ export function createExplore(doc: Document, onSelect: (id: string) => void, ava
       // It opens at the top, with its title, the map and the hint in sight. Focus waits on this chapter, and only
       // keys and a pad, which need to see it, scroll to it (menus.md row 18).
       const touch = doc.body.dataset.device === 'touch';
-      back.querySelector<HTMLButtonElement>(`[data-chapter="${EXPLORE_CHAPTERS.some((chapter) => chapter.id === save.chapter && available(chapter.id)) ? save.chapter : EXPLORE_CHAPTERS.find((chapter) => available(chapter.id))?.id}"]`)?.focus({ preventScroll: touch });
+      back.querySelector<HTMLButtonElement>(`[data-chapter="${exploring().some((chapter) => chapter.id === save.chapter && available(chapter.id)) ? save.chapter : exploring().find((chapter) => available(chapter.id))?.id}"]`)?.focus({ preventScroll: touch });
     },
     back: hide,
   };

@@ -118,7 +118,7 @@ export const sv = {
     bertil: 'Bertil',
     elof: 'Elof',
     spoket: 'Spöket',
-  },
+  } as Record<string, string>,
   ghostName: 'Klonk',
   giveKlonk: 'Ge Klonk',
   storyContext: {
@@ -448,6 +448,8 @@ export const sv = {
     } as Record<string, string>,
     // On the story's last card, the button to an extra chapter.
     bonus: 'Ett kapitel till',
+    // On the first adventure's last card, the button on into the second.
+    adventure: 'Nästa äventyr',
     window: 'Elofs lilla trägubbe står i månljuset. Dess målade ögon blinkar.',
     course: 'Framme!',
     next: 'Fortsättning följer!',
@@ -483,6 +485,17 @@ export const sv = {
     norrsken: ['TOPP', 'KVÄLL', 'STJÄRNA'],
     epilog: ['KNIV', 'SPÅN', 'LÖRDAG'],
     byn: ['GATA', 'LÖV', 'CYKEL'],
+    // Äventyr 2 (docs/aventyr-2.md). Known from the start, so a code opens it on a device that has not loaded it.
+    stormkvall: ['REGN', 'LJUS', 'FÖNSTER'],
+    stormgard: ['STORM', 'TUNNA', 'STÖVEL'],
+    stormskog: ['UGGLA', 'GREN', 'LAMPA'],
+    stormbyn: ['RÄNNSTEN', 'GALLER', 'PARAPLY'],
+    olympia: ['BOLL', 'MÅL', 'LÄKTARE'],
+    flarken: ['SAND', 'HOPPTORN', 'LIVBOJ'],
+    alven: ['ÄLV', 'FORS', 'STOCK'],
+    billsta: ['LADA', 'BJÖRK', 'GRUS'],
+    stormoga: ['ÖGA', 'MÅNE', 'BLIXT'],
+    morgonen: ['HAKE', 'HYLLA', 'SOLSKEN'],
   } as Record<string, readonly [string, string, string]>,
   code: {
     // On a chapter's card, over the next chapter's three words.

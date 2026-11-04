@@ -385,7 +385,7 @@ export function createAudio(): Audio {
 
   /** A few wordless syllables in someone's own voice: never a word (plan §5.8). */
   function babble(who: Speaker): void {
-    const voice = VOICES[who];
+    const voice = VOICES[who] ?? VOICES.elof;
     for (const [i, step] of voice.steps.entries()) {
       const pitch = note(step, voice.pitch);
       if (voice.wave === 'wood') knock(pitch, 0.12, i * voice.pace);
@@ -481,7 +481,7 @@ export function createAudio(): Audio {
       case 'motif': {
         // One of the family answers from afar, in the three notes that are theirs; all four together at the end.
         for (const who of cue.who ? [cue.who] : (['mamma', 'pappa', 'moa', 'bertil'] as const)) {
-          const voice = VOICES[who];
+          const voice = VOICES[who] ?? VOICES.elof;
           for (const [i, step] of MOTIFS[who].entries()) {
             const answer = note(step, voice.pitch);
             tone(voice.wave === 'wood' ? 'sine' : voice.wave, answer, answer * 0.97, i === 2 ? 0.5 : 0.24, 0.07, i * 0.26);
@@ -496,7 +496,7 @@ export function createAudio(): Audio {
         tone('triangle', note(5, pitch), note(4, pitch), 0.34, 0.12, 0.18);
         // And the one he called answers, in three notes that are theirs.
         if (cue.who) {
-          const voice = VOICES[cue.who];
+          const voice = VOICES[cue.who] ?? VOICES.elof;
           for (const [i, step] of MOTIFS[cue.who].entries()) {
             const answer = note(step, voice.pitch);
             tone(voice.wave === 'wood' ? 'sine' : voice.wave, answer, answer * 0.97, i === 2 ? 0.42 : 0.2, 0.11, 0.75 + i * 0.22);

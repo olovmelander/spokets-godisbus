@@ -52,7 +52,11 @@ try {
   });
   await open('course=epilog&title');
   await page.locator('#titleExplore').tap();
-  assert.equal(await page.locator('#explore [data-chapter]').count(), 8);
+  // Äventyr 1's eight; with ?dev, Äventyr 2's ten follow them once its pack is in (the save has the story finished).
+  const listed = await page.locator('#explore [data-chapter]').evaluateAll((buttons) => buttons.map((b) => b.getAttribute('data-chapter')));
+  const second = new Set(['stormkvall', 'stormgard', 'stormskog', 'stormbyn', 'olympia', 'flarken', 'alven', 'billsta', 'stormoga', 'morgonen']);
+  assert.equal(listed.filter((id) => !second.has(id)).length, 8, 'Äventyr 1 lists its eight chapters');
+  assert.ok(listed.slice(0, 8).every((id) => !second.has(id)), 'Äventyr 1 comes first, Äventyr 2 after it');
   assert.ok((await page.locator('#explore .map').textContent()).includes('Klonk'), 'The saved name appears on the map');
   const paused = await state();
   await pad(13);
@@ -62,11 +66,13 @@ try {
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'titleExplore');
   assert.equal((await state()).steps, paused.steps, 'Browsing the map keeps play paused');
   await page.keyboard.press('Enter');
-  await page.locator('#explore [data-chapter="byn"]').focus();
+  // From the last chapter (Äventyr 2's last, with ?dev and its pack in), Tab goes round to the close button.
+  const last = listed.at(-1);
+  await page.locator(`#explore [data-chapter="${last}"]`).focus();
   await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(() => document.activeElement?.className), 'panel-close', 'Tab stays inside selector');
   await page.keyboard.press('Shift+Tab');
-  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-chapter')), 'byn');
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-chapter')), last);
   await page.locator('#explore [data-chapter="garden"]').focus();
   await Promise.all([page.waitForURL(/course=garden/), page.keyboard.press('Enter')]);
   await ready();

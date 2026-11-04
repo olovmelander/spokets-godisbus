@@ -18,6 +18,9 @@ export interface StoryContext {
 }
 type History = Readonly<Record<string, readonly string[]>>;
 
+/** A chapter pack's own reminders, by chapter id (docs/aventyr-2.md): put here when the pack loads. */
+export const PACK_CONTEXTS = new Map<string, (flags: ReadonlySet<string>, player: Vec) => StoryContext | null>();
+
 /** A reminder of what Elof knows now. Reads existing progress; never unlocks or repeats a story beat. */
 export function storyContext(chapter: string, flags: ReadonlySet<string>, player: Vec, history: History = {}): StoryContext | null {
   const has = (flag: string) => flags.has(flag);
@@ -120,7 +123,7 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       return context('party', 'home', 'heart');
     case 'byn':
       return context(at >= 124 ? 'shopDone' : at >= 111 ? 'shop' : 'village', 'village', 'village');
-    default: return null;
+    default: return PACK_CONTEXTS.get(chapter)?.(flags, player) ?? null;
   }
 }
 

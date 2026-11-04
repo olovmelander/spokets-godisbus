@@ -1,0 +1,80 @@
+import type { ChapterWords } from './words';
+
+/**
+ * What is said in Älven (docs/aventyr-2.md, Kapitel 6): at most about 40 characters a line, Swedish, no names but
+ * the family's and the real places'. The river carries the two figures south from Flärken past Bredbyn, through the
+ * lake and down Moälven; then the family's car, to Billsta three mil off, where mormor and morfar live. Wood
+ * floats: Klonk floats beside him too.
+ */
+export const words: ChapterWords = {
+  lines: {
+    // 0. the lake's outlet
+    alArrive: 'Ån rinner ut ur sjön. Där åkte de!',
+    alKlonkFloats: 'Klonk, du flyter! Du är ju av trä.',
+    alKlonk: 'Klonk!',
+    alFlash: 'Blixten! Lillgubben guppar på ån!',
+    // 1. the current: the raft, the gravel bank, the birch leaf
+    alRaftSeen: 'En liten flotte! Den kan bära mig.',
+    alCurrent: 'Strömmen tar oss! Håll i dig, Klonk!',
+    alOldOne: 'Där! Gamla trägubben på en stock!',
+    alLeafSeen: 'Ett björklöv, som i rännstenen!',
+    // 2. the stones, the bobbing logs and the eddy
+    alBob: 'Stocken guppar, men den håller!',
+    alEddy: 'Bakom stenen snurrar vattnet runt.',
+    // 3. the bridge in Bredbyn, and Pappa's scarf
+    alBredbyn: 'Bredbyn! Här rinner två åar ihop.',
+    alRapids: 'Forsen är alldeles för vild!',
+    alPappaHere: 'Elof! Jag står här uppe på bron!',
+    alScarfDown: 'Jag sänker ner min halsduk.',
+    alTakeHold: 'Ta tag i halsduken, Elof!',
+    alUp: 'Pappa lyfter mig över forsen!',
+    alOver: 'Där! Nu är du förbi forsen.',
+    alThanks: 'Tack, Pappa! Din halsduk är så varm.',
+    alFollow: 'Vi kör efter dig längs ån.',
+    // 4. the beaver's stumps and lodge, and an otter
+    alStumps: 'Gnagda stubbar! Här bor en bäver.',
+    alLodge: 'En bäverhydda! Tyst, bävern sover.',
+    alOtter: 'En utter! Den simmar ut mot stenen.',
+    // 5. the lake, and the owl from the forest
+    alLake: 'Sjön! Den är alldeles för bred.',
+    alOwlSeen: 'Ugglan från skogen! Den har följt oss!',
+    alOwlHere: 'Vill du bära mig över sjön, uggla?',
+    alOwlFly: 'Hu-hu! Vi flyger över sjön!',
+    alSeeLittle: 'Lillgubben! Långt fram på älven!',
+    alOwlThanks: 'Tack, uggla! Du är en riktig vän.',
+    // 6. Moälven, and the family's car to Billsta
+    alMoalven: 'Nu heter ån Moälven. Så stor den är!',
+    alOldAhead: 'Gamla trägubben! Han flyter före oss.',
+    alWider: 'Älven blir bredare och bredare.',
+    alBillsta: 'Älven rinner ända till Billsta.',
+    alCar: 'Hoppa in, Elof! Vi kör dit med bilen.',
+    alWindow: 'Tre mil! Till mormor och morfar!',
+    alKlonkEnd: 'Klonk, klonk!',
+  },
+  verbs: {
+    alScarf: 'Ta tag i halsduken',
+    alCallOwl: 'Ropa på ugglan',
+    alBoardOwl: 'Kliv upp på ugglan',
+  },
+  purposes: {
+    alvenOutlet: { purpose: 'Följ ån efter lillgubben.', recap: 'Lillgubben föll i sjön, och ån tog honom. Gamla trägubben följde efter på en stock.' },
+    alvenRaft: { purpose: 'Kliv på flotten vid stranden.', recap: 'Ån är för bred att hoppa över. En liten flotte ligger vid stranden.' },
+    alvenCurrent: { purpose: 'Åk med strömmen nerför ån.', recap: 'Strömmen bär mig. Klonk flyter bredvid, för trä flyter.' },
+    alvenLeaf: { purpose: 'Kliv på björklövet.', recap: 'Gamla trägubben flyter före på sin stock och lämnar godis åt mig.' },
+    alvenStones: { purpose: 'Hoppa på stenarna och stockarna.', recap: 'Stockarna guppar i strömmen, men de håller mig.' },
+    alvenPappa: { purpose: 'Ropa på Pappa vid bron.', recap: 'Forsen vid bron i Bredbyn är för vild. Pappa står uppe på bron.' },
+    alvenScarf: { purpose: 'Ta tag i Pappas halsduk.', recap: 'Pappa har sänkt ner sin halsduk från bron. Han håller i den.' },
+    alvenLifted: { purpose: 'Håll i halsduken. Pappa lyfter dig!', recap: 'Jag hänger i Pappas halsduk, högt över forsen.' },
+    alvenLodge: { purpose: 'Klättra över bäverhyddan.', recap: 'Pappa lyfte mig över forsen. Här bor en bäver.' },
+    alvenLake: { purpose: 'Ropa på ugglan vid sjön.', recap: 'Sjön är för bred. Ugglan från skogen har följt efter oss.' },
+    alvenBoard: { purpose: 'Kliv upp på ugglan.', recap: 'Ugglan har landat bredvid mig. Den vill bära mig över sjön.' },
+    alvenFly: { purpose: 'Flyg med ugglan över sjön.', recap: 'Ugglan bär mig högt över den stora sjön.' },
+    alvenMoalven: { purpose: 'Följ älven mot Billsta.', recap: 'Nu heter ån Moälven. Lillgubben och gamla trägubben flyter före.' },
+    alvenBillsta: { purpose: 'Åk med familjen till Billsta.', recap: 'Älven rinner till Billsta, där mormor och morfar bor. Dit är det tre mil med bilen.' },
+  },
+  helpers: {
+    alvenFamily: 'Familjen kör längs vägen och lyser med lamporna.',
+    alvenPappa: 'Pappa står på bron i Bredbyn med sin lampa.',
+    alvenOwl: 'Ugglan från skogen hjälper mig igen.',
+  },
+};

@@ -6,7 +6,8 @@ import { sv } from '../content/sv';
  * ghost is drawn where it is heading: the goal as a picture, which never says how (plan §4.6).
  * It is drawn here, in code: no picture file, and nothing of the real map of the place.
  */
-export type MapPlace = 'home' | 'forest' | 'brook' | 'bog' | 'mountain';
+/** A place on a map: the first adventure's five, and those a chapter pack adds (Äventyr 2's are its chapters' ids). */
+export type MapPlace = string;
 
 export interface MapState {
   /** The places drawn so far, in the order of the route. */
@@ -17,7 +18,12 @@ export interface MapState {
   ghost: MapPlace | null;
   /** Some places are still outside the public release. */
   unfinished?: boolean;
+  /** The whole route of the map this state is on, where it is not the first adventure's. */
+  route?: MapPlace[];
 }
+
+/** A chapter pack's maps, by chapter id: Äventyr 2's route, drawn by Moa as well. */
+export const MAP_STATES = new Map<string, MapState>();
 
 const ROUTE: MapPlace[] = ['home', 'forest', 'brook', 'bog', 'mountain'];
 
@@ -41,7 +47,7 @@ function reachedState(chapter: string): MapState | null {
     case 'epilog':
       return { drawn: upTo('mountain'), here: 'home', ghost: null };
     default:
-      return null;
+      return MAP_STATES.get(chapter) ?? null;
   }
 }
 
@@ -51,16 +57,16 @@ export function mapState(chapter: string, available?: (id: string) => boolean): 
   if (!state || !available) return state;
   if (!available(chapter)) return null;
   const chapters: Record<MapPlace, string> = { home: 'prolog', forest: 'granskog', brook: 'granskog', bog: 'myren', mountain: 'berget' };
-  const allowed = (place: MapPlace) => available(chapters[place]);
+  const allowed = (place: MapPlace) => available(chapters[place] ?? place);
   return {
     ...state, drawn: state.drawn.filter(allowed),
     ghost: state.ghost && allowed(state.ghost) ? state.ghost : null,
-    unfinished: ROUTE.some((place) => !allowed(place)),
+    unfinished: (state.route ?? ROUTE).some((place) => !allowed(place)),
   };
 }
 
 /** Where each place lies on the paper, and how it is drawn: crayon colours, a little crooked. */
-const AT: Record<MapPlace, { x: number; y: number }> = {
+export const AT: Record<MapPlace, { x: number; y: number }> = {
   home: { x: 44, y: 112 },
   forest: { x: 124, y: 96 },
   brook: { x: 192, y: 112 },
@@ -98,7 +104,7 @@ export const DRAWING = {
  * crayon draws the way on from where he is to where the ghost is heading (ui.css animates the stroke).
  */
 /** Each chapter's picture from Moa's map: on its card in Utforska vidare, and on its strip in the album. */
-const CHAPTER_PICTURE: Record<string, string> = {
+export const CHAPTER_PICTURE: Record<string, string> = {
   prolog: DRAWING.star, garden: PICTURE.home, granskog: PICTURE.forest, myren: PICTURE.bog, berget: PICTURE.mountain,
   norrsken: DRAWING.aurora, epilog: DRAWING.party, byn: DRAWING.shop,
 };
@@ -110,7 +116,7 @@ export function mapSvg(state: MapState | null, named = false, wayOn = false): st
   const places = state.drawn
     .map((place) => {
       const { x, y } = AT[place];
-      return `<g transform="translate(${x} ${y})">${PICTURE[place]}</g><text x="${x}" y="${y + 42}" text-anchor="middle">${sv.map[place]}</text>`;
+      return `<g transform="translate(${x} ${y})">${PICTURE[place]}</g><text x="${x}" y="${y + 42}" text-anchor="middle">${(sv.map as Record<string, string>)[place]}</text>`;
     })
     .join('');
   const here = AT[state.here];
