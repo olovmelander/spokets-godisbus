@@ -88,6 +88,22 @@ describe('the visual upgrade: wood, moss and the wet', () => {
     }
   });
 
+  it('patches only a picture that starts on High: Low and Mid keep the place\'s own materials', () => {
+    for (const tier of ['low', 'mid', 'high'] as const) {
+      const ctx = context(STORY.find((c) => c.id === 'granskog')!);
+      const surfaces = createSurfaces(ctx);
+      surfaces.update(frame({ tier }));
+      surfaces.apply(ctx.scene);
+      let patched = 0;
+      ctx.scene.traverse((object) => {
+        const material = (object as Mesh).material as MeshStandardMaterial | undefined;
+        if (material?.customProgramCacheKey?.().includes('lift-surface-v1')) patched++;
+      });
+      if (tier === 'high') expect(patched, tier).toBeGreaterThan(0);
+      else expect(patched, tier).toBe(0);
+    }
+  });
+
   it('knows matte carved wood from the moss: the boards, the figures, the moss on the ground', () => {
     const granskog = STORY.find((chapter) => chapter.id === 'granskog')!;
     const ctx = context(granskog);

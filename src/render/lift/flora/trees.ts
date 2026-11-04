@@ -4,6 +4,9 @@ import { KIT, grows, heightAt, sequence } from '../../dressing/kit';
 import { gardenViewGap } from '../../garden-home';
 import { backRise } from '../../mountain-kit';
 import { STREET_DEPTH } from '../../village';
+
+/** Where the village's church and belfry stand far behind the street (src/render/view.ts): no tree in front of them. */
+const CHURCH_X = 46;
 import { walkLine } from '../../dressing/foreground';
 import { Cards } from './light';
 
@@ -244,8 +247,10 @@ export function plant(chapter: ChapterData, dressing: Group | null | undefined):
     for (let x = from - 10 + next() * every; x < to + 10; x += every * (0.6 + next() * 0.8)) {
       const z = near + (far - near) * next();
       const wide = kind === 'pine' ? 5 : kind === 'birch' ? 6.5 : 6;
-      // In the village only where a yard opens the street, behind its fence.
+      // In the village only where a yard opens the street, behind its fence, and never in front of Anundsjö's church
+      // and belfry far behind it (src/render/view.ts stands them at x 46, z −29; tests/browser/bredbyn.mjs).
       if (place === 'village' && !(chapter.street ?? []).some((part) => part.kind === 'yard' && x > part.from + 3 && x < part.to - 3)) continue;
+      if (place === 'village' && Math.abs(x - CHURCH_X) < 18) continue;
       if (!free(x, z, wide)) continue;
       const tall = crown > 0 ? reaching(z, crown, 1.5) : 5 + next() * 7;
       trees[kind].push({ x, y: ground(x, z) - 0.2, z, tall: Math.max(kind === 'pine' ? 9 : 6, tall), flip: next() < 0.5, tone: tone() });

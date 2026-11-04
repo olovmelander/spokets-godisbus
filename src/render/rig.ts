@@ -329,6 +329,8 @@ export function createRehearsalRig(who: Role): Rig {
     },
     mouth(out) { return group.localToWorld(out.set(0, .25, .38).applyMatrix4(joints.neck).multiplyScalar(s)); },
     breeze(wind, dt, calm) {
+      // Paused (no time passing), the hair and the brim hold exactly as they are.
+      if (dt <= 0) return;
       const angle = sway.step(wind, dt, calm);
       if (angle === 0 && bend.w === 1) return;
       // Which way the wind goes through the figure, from its last matrix: its front is +z and its own left +x.
@@ -479,7 +481,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
   return {
     group,
     height,
-    breeze(wind, dt, still, ruffle = 0) { soft(sway.step(wind, dt, still), still ? 0 : ruffle); },
+    breeze(wind, dt, still, ruffle = 0) { if (dt > 0) soft(sway.step(wind, dt, still), still ? 0 : ruffle); },
     mouth(out) { return bones.head ? bones.head.node.localToWorld(out.copy(mouth)) : group.localToWorld(out.set(0, height * .89, height * .075)); },
     reach(side, target, weight = 1) { contacts[side]?.(target, weight); },
     grip(side, target, direction, out, weight = 1) {

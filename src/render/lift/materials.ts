@@ -11,9 +11,12 @@ import { createSurfaces } from './materials/surface';
  * The surfaces are a patch on the scene's own materials: the view lays it at each warm-up (`patch`), as it does
  * the rim light, so that a model which arrives late is patched before it is drawn.
  */
-export function installMaterials(): void {
-  PACK.lifts.push((context) => {
-    const surfaces = createSurfaces(context);
-    return { update: (frame) => surfaces.update(frame), patch: (root: Object3D) => surfaces.apply(root) };
-  }, createDew);
+export function installMaterials(out: ReadonlySet<string> = new Set()): void {
+  if (!out.has('surface')) {
+    PACK.lifts.push((context) => {
+      const surfaces = createSurfaces(context);
+      return { update: (frame) => surfaces.update(frame), patch: (root: Object3D) => surfaces.apply(root) };
+    });
+  }
+  if (!out.has('dew')) PACK.lifts.push(createDew);
 }

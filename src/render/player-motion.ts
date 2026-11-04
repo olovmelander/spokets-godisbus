@@ -338,6 +338,8 @@ export function createPlayerStandIn() {
     mouth(out: Vector3) { return neck.localToWorld(out.set(.17, .1, 0)); },
     /** The wind in his hair (`windAt` where he stands), and a hand in it: secondary motion, never the simulation. */
     breeze(wind: number, dt: number, still: boolean, ruffle = 0) {
+      // Paused (no time passing), the hair holds exactly as it is.
+      if (dt <= 0) return;
       const angle = sway.step(wind, dt, still), e = neck.matrixWorld.elements;
       // His front is +x: a wind from behind lays the fringe forward, one in his face lifts it.
       const ahead = e[0]! / (Math.hypot(e[0]!, e[1]!, e[2]!) || 1), turn = still ? 0 : -ahead * angle * 1.3 + ruffle * .22;

@@ -103,7 +103,9 @@ export function classify(mesh: Mesh, material: MeshStandardMaterial, dressing: O
   if (!scenery) return null;
   // The dressing's kit exists only once a place has been dressed (the title alone has none).
   if (KIT && material === KIT.moss) return MOSS;
-  if ((KIT && (material === KIT.stone || material === KIT.bark)) || (material.vertexColors && !material.map)) return MOSSY;
+  // Moss and its damp only where moss is: the kit's stones and bark. Grass, leaves and buildings, which are vertex
+  // coloured too, keep their own light: patched, they ran the wet and the noise over most of the picture.
+  if (KIT && (material === KIT.stone || material === KIT.bark)) return MOSSY;
   if (mesh.name === 'spang' || (KIT && material === KIT.deadwood)) return PLANED;
   // At home the figures on Pappa's shelf are carved, the shelf and the furniture planed.
   if (chapter.place === 'home' && wood) return mesh.geometry.type === 'BoxGeometry' ? PLANED : CARVED;
@@ -175,7 +177,9 @@ vec3 liftN = normalize((vec4(normal, 0.0) * viewMatrix).xyz);
       wet = max(wet, inside * (1.0 - smoothstep(0.4, 1.9, side)) * (1.0 - smoothstep(0.05, 0.85, up)));
       liftBand = max(liftBand, inside * (1.0 - smoothstep(0.25, 0.9, side)) * (1.0 - smoothstep(0.03, 0.2, abs(up - 0.05))));
     }
-    if (liftPlace.x > 0.5) {
+    // The noise only where it shows: on moss, on a street, or where it is wet already. A dry stone or bank in a dry
+    // place keeps its plain light, and the fragment skips the noise (a third of the frame in software rendering).
+    if (liftPlace.x > 1.5 && (wet > 0.0 || liftMossy * liftWet.z > 0.0 || liftSurface.w * liftWet.w > 0.0)) {
       liftNoiseA = liftNoise(liftWorld * 1.3) * 0.65 + liftNoise(liftWorld * 4.3) * 0.35;
       // Damp moss: in its hollows, broken by the noise, more on its sides than on its tops.
       float hollow = smoothstep(0.5, 0.68, liftNoiseA + 0.15 * (1.0 - liftN.y));
@@ -197,7 +201,8 @@ vec3 liftN = normalize((vec4(normal, 0.0) * viewMatrix).xyz);
   if (liftSurface.x > 0.25) {
     // Wood: matt where it is dry, with its grain along it and, carved, the knife's facets.
     roughnessFactor = max(roughnessFactor, mix(0.9, 0.5, liftWetness));
-    if (liftPlace.x > 0.5) {
+    // The grain and the knife's facets on High: on Mid the wood is matt and plain.
+    if (liftPlace.x > 1.5) {
       vec3 g = normalize(liftGrain);
       float along = dot(liftLocal, g);
       vec3 across = liftLocal - g * along;
@@ -231,15 +236,19 @@ const LIGHT = /* glsl */ `
     float fresnel = 0.04 + 0.96 * pow(1.0 - facing, 5.0);
     outgoingLight += liftSky * (liftWetness * fresnel * mix(0.4, 0.3, liftMossy) * (0.75 + 0.5 * liftNoiseA) + liftFilm * (0.06 + 0.22 * fresnel));
   }
-  if (liftPlace.x > 0.5) {
+  // The sun's sheen and glints on High; the carving's warm edge on Mid too.
+  if (liftPlace.x > 1.5) {
     float sunny = saturate(dot(liftN, normalize(liftSunDir))) * liftPlace.y;
     // Damp moss catches the low sun in a soft sheen, wider than the light's own highlight.
-    vec3 toSun = normalize(view + normalize((viewMatrix * vec4(liftSunDir, 0.0)).xyz));
-    outgoingLight += liftSun * liftMossy * liftWetness * pow(saturate(dot(normal, toSun)), 10.0) * 0.1 * liftPlace.y;
-    float glints = liftWetness * liftGlints(liftWorld, 0.07, 0.22) + liftPlace.z * liftMossy * liftGlints(liftWorld + 3.1, 0.05, 0.08);
+    if (liftMossy * liftWetness > 0.0) {
+      vec3 toSun = normalize(view + normalize((viewMatrix * vec4(liftSunDir, 0.0)).xyz));
+      outgoingLight += liftSun * liftMossy * liftWetness * pow(saturate(dot(normal, toSun)), 10.0) * 0.1 * liftPlace.y;
+    }
+    float glints = liftWetness > 0.02 ? liftWetness * liftGlints(liftWorld, 0.07, 0.22) : 0.0;
+    if (liftPlace.z * liftMossy > 0.0) glints += liftPlace.z * liftMossy * liftGlints(liftWorld + 3.1, 0.05, 0.08);
     outgoingLight += liftSun * glints * sunny * 0.9;
-    if (liftSurface.x > 0.75) outgoingLight += diffuseColor.rgb * vec3(${RIM.map((c) => c.toFixed(2)).join(', ')}) * pow(1.0 - facing, 3.0) * 0.22 * (0.4 + 0.6 * liftPlace.y);
   }
+  if (liftPlace.x > 0.5 && liftSurface.x > 0.75) outgoingLight += diffuseColor.rgb * vec3(${RIM.map((c) => c.toFixed(2)).join(', ')}) * pow(1.0 - facing, 3.0) * 0.22 * (0.4 + 0.6 * liftPlace.y);
 }
 #include <opaque_fragment>`;
 
@@ -268,9 +277,16 @@ export function createSurfaces(context: ExtraContext) {
   const patched = new WeakSet<Material>();
   const near = all.map((pool) => ({ pool, d: 0 }));
   let time = 0;
+  /**
+   * The tier of the last frame. Only a picture that starts on High is patched: the patch costs about a third of a
+   * frame in software rendering, and its work is all in the fragments, which is what a phone's GPU is short of. Low
+   * and Mid keep the place's own materials (docs/visual-upgrade.md, "As built").
+   */
+  let tier: ExtraFrame['tier'] | null = null;
   return {
     /** Patches every material in `root` that is wood, moss or ground. Again at each warm-up: only new ones are touched. */
     apply(root: Object3D) {
+      if (tier !== null && tier !== 'high') return;
       root.traverse((object) => {
         const mesh = object as Mesh;
         if (!mesh.isMesh) return;
@@ -282,6 +298,7 @@ export function createSurfaces(context: ExtraContext) {
       });
     },
     update(frame: ExtraFrame) {
+      tier = frame.tier;
       if (!frame.still) time += frame.dt;
       shared.liftTime.value = time;
       // The sun in a wet point is its own light, paled: never gold.
