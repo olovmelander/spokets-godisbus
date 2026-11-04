@@ -199,7 +199,7 @@ export function fox(): BufferGeometry {
 /** A tawny owl, round and soft: a pale face with dark eyes that have no shine, and lids that close slowly. 1 tall. */
 export function owl(): BufferGeometry {
   const brown = '#76644e';
-  const face = '#c7b79a';
+  const face = '#d2c3a2';
   const head: Rig = [2, 1, 0, [0, 0.74, 0]];
   return build([
     ['b', brown, [0, 0.42, 0], [0.3, 0.38, 0.28]],
@@ -207,10 +207,14 @@ export function owl(): BufferGeometry {
     ...both((s) => ['b', '#665643', [-0.02, 0.44, s * 0.2], [0.25, 0.32, 0.08], [s * 0.12, 0, 0]]),
     ['b', '#5e4f3e', [-0.14, 0.12, 0], [0.1, 0.16, 0.12], [0, 0, -0.3]],
     ['b', brown, [0.02, 0.85, 0], [0.27, 0.24, 0.27], NONE, head],
-    ['b', face, [0.16, 0.85, 0], [0.13, 0.2, 0.22], NONE, head],
-    ['c', '#8a7a5e', [0.3, 0.81, 0], [0.028, 0.08, 0.028], [0, 0, Math.PI], head],
-    ...both((s) => ['e', EYE, [0.265, 0.89, s * 0.085], 0.058, NONE, head]),
-    ...both((s) => ['b', '#b9a88b', [0.268, 0.89, s * 0.085], 0.068, NONE, [4, 1, 0, [0.268, 0.958, s * 0.085]]]),
+    ['b', face, [0.15, 0.86, 0], [0.13, 0.2, 0.23], NONE, head],
+    ['c', '#a89878', [0.29, 0.83, 0], [0.022, 0.06, 0.022], [0, 0, Math.PI], head],
+    // Round eyes in pale rims: soft brown round a small dark middle, nothing in them that shines, and the lids
+    // resting half down.
+    ...both((s) => ['e', '#e6dcc2', [0.25, 0.89, s * 0.088], [0.045, 0.075, 0.075], NONE, head]),
+    ...both((s) => ['e', '#6a5844', [0.275, 0.89, s * 0.088], [0.03, 0.055, 0.055], NONE, head]),
+    ...both((s) => ['e', EYE, [0.293, 0.89, s * 0.088], [0.016, 0.032, 0.032], NONE, head]),
+    ...both((s) => ['b', '#8c7a5e', [0.262, 0.89, s * 0.088], [0.06, 0.082, 0.082], NONE, [4, 1, 0, [0.262, 0.972, s * 0.088]]]),
     ...both((s) => ['b', '#8a7a5e', [0.1, 0.03, s * 0.08], [0.07, 0.035, 0.05]]),
   ]);
 }

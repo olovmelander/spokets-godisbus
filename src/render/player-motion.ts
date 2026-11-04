@@ -268,7 +268,8 @@ export function createPlayerMotion() {
         if (windy > 0) {
           const into = -Math.sign(blown) * player.facing > 0, arm = near > 0 ? 'armR' : 'armL', elbow = near > 0 ? 'elbowR' : 'elbowL';
           target.lean += (into ? .17 : -.07) * windy; target.nod += (into ? .14 : -.05) * windy;
-          target[arm] += ((into ? 2.25 : 2.6) - target[arm]) * windy; target[elbow] += ((into ? 1.9 : 2.05) - target[elbow]) * windy;
+          // The forearm folds ahead of the upper arm, so the hand comes up by his face rather than reaching out.
+          target[arm] += ((into ? 2.25 : 2.6) - target[arm]) * windy; target[elbow] += ((into ? 1.9 : 2.05) - target[elbow]) * smooth(windy * 1.6);
           const { hip, knee } = onToe(-.07 * windy);
           target.legL += hip; target.legR += hip; target.kneeL += knee; target.kneeR += knee;
         }

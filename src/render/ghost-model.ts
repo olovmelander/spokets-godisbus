@@ -163,7 +163,8 @@ export function createGhostMotion(model: Object3D, facesX = false): { update(fra
       const glance = round === 2 || round === 3 ? (round === 2 ? 1 : -1) * (.5 * pulse(at, 1.4, .4, .5, .4) - .4 * pulse(at, 2.6, .4, .45, .4)) : 0;
       idle.look = glance * quiet * (1 - near);
       idle.pitch = .07 * near;
-      idle.roll = near * (.12 + .04 * Math.sin(clock * 1.1));
+      // Turned to face him, a roll the way he stands from it brings its top over towards him too.
+      idle.roll = near * (.12 + .04 * Math.sin(clock * 1.1)) * (elof !== undefined && elof < 0 ? -1 : 1);
       for (let i = 0; i < feet.length; i++) {
         if (phase === null && bounce !== null) pose(i, hopAngle(bounce, i) * .35 * quiet, false);
         else if (phase === null) pose(i, i === cycle % Math.max(1, feet.length) ? tap : 0, true);

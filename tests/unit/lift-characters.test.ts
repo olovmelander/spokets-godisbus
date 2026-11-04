@@ -290,7 +290,9 @@ describe('the ghost’s idles', () => {
     expect(left).toBeGreaterThan(.3); expect(right).toBeLessThan(-.25);
     expect(roll).toBe(0);
     for (let frame = 0; frame < 120; frame++) previous = { ...motion.update(ghostFrame({ clock: 70 + frame / 60, elof: -3.2 })) };
-    expect(previous.roll).toBeGreaterThan(.07); expect(previous.pitch).toBeGreaterThan(.05); expect(previous.look).toBe(0);
+    expect(previous.roll).toBeLessThan(-.07); expect(previous.pitch).toBeGreaterThan(.05); expect(previous.look).toBe(0);
+    for (let frame = 0; frame < 30; frame++) previous = { ...motion.update(ghostFrame({ clock: 72 + frame / 60, elof: 3.2 })) };
+    expect(previous.roll).toBeGreaterThan(.07);
   });
 
   it('holds still in a scene, asleep, in a hop and with reduced motion, and freezes on pause', () => {

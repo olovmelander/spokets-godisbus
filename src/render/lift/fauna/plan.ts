@@ -117,6 +117,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
   for (const m of source.movers ?? []) for (const s of m.stops) mark(s.x, m.width / 2 + 1);
   for (const r of source.rides ?? []) { mark(r.from.x, 2); mark(r.to.x, 2); }
   for (const c of source.climbs ?? []) mark(c.x, 1.2);
+  for (const d of source.drips ?? []) mark(d.at.x, 1.5);
   for (const l of source.landmarks ?? []) busy.push([l.from - 1.2, l.to + 1.2]);
   for (const b of source.storm?.buildings ?? []) if (b.z > -9) mark(b.x, (b.width ?? 4) / 2 + 1.5);
   if (source.pine) mark(source.pine.x, 5.5);
@@ -127,7 +128,8 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
   // Bare earth (gravel, sand) is ground too, for what stands or hops on it.
   const bare = { ...chapter, surfaces: (chapter.surfaces ?? []).filter((s) => s.kind !== 'earth') };
   const soil = (x: number) => free(x) && level(x) && grows(bare, x) && grows(bare, x - 0.8) && grows(bare, x + 0.8);
-  const paved = (x: number) => free(x) && level(x) && ['paving', 'asphalt'].includes(surfaceAt(chapter, x) ?? '');
+  // Pavement, not its puddles.
+  const paved = (x: number) => free(x) && level(x) && ['paving', 'asphalt'].includes(surfaceAt(chapter, x) ?? '') && (source.water ?? []).every((w) => x < w.from - 1 || x > w.to + 1);
   // The bog's islands go down into the water behind the path: what stands on them stays near it.
   const back = place === 'bog' ? -2.4 : -3.6;
   // The story's own owl in Äventyr 2: none of ours sits near where it is.
@@ -169,10 +171,12 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
   // The owl, at dusk and by night: on a branch of a near trunk, or on a stump behind the path.
   const owls: Rest[] = [];
   if (night && place !== 'village') {
-    const far = (x: number) => owlsAt.every((o) => Math.abs(o - x) > 16) && x > from + 4 && x < to - 4;
+    // Nor behind one of the storm's buildings, which would hide it.
+    const far = (x: number, z = -4) => owlsAt.every((o) => Math.abs(o - x) > 16) && x > from + 4 && x < to - 4
+      && (source.storm?.buildings ?? []).every((b) => b.z < z - 3 || Math.abs(b.x - x) > (b.width ?? 6) / 2 + 2);
     // The nearest trunk towards the chapter's middle.
     const score = (t: Tree) => Math.abs(t.x - (from + to) * 0.45) / 25 + Math.abs(t.z + 5);
-    const tree = trees.filter((t) => t.z > -14 && t.z < -3 && far(t.x)).sort((p, q) => score(p) - score(q))[0];
+    const tree = trees.filter((t) => t.z > -14 && t.z < -3 && far(t.x, t.z)).sort((p, q) => score(p) - score(q))[0];
     const sit = tree && perchOn(tree, (tree.snag ? 2.4 : 2.9) + next() * 0.6, next() < 0.5 ? -1 : 1, 1.3);
     if (sit) owls.push({ at: sit(0.62), yaw: -Math.PI / 2 });
     else {
@@ -180,7 +184,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
         const x = source.spawn.x + 4 + next() * (source.goalX - source.spawn.x - 8);
         const z = -4.2 - next() * 1.6;
         // A stump stands on the ground, by the level where he plays; four EL back it is in nobody's way.
-        if (!far(x) || !level(x) || !grows(bare, x) || Math.abs(ground(x) - ground(source.spawn.x)) > 4 || (source.pine && Math.abs(x - source.pine.x) < 5.5) || !clear(x, ground(x) + 2, z, 3)) continue;
+        if (!far(x, z) || !level(x) || !grows(bare, x) || Math.abs(ground(x) - ground(source.spawn.x)) > 4 || (source.pine && Math.abs(x - source.pine.x) < 5.5) || !clear(x, ground(x) + 2, z, 3)) continue;
         const tall = 1.4 + next() * 0.5;
         props.push(...placed(stump(tall, 0.32), x, ground(x) - 0.1, z, next() * 6));
         owls.push({ at: [x, ground(x) + tall - 0.12, z], yaw: -Math.PI / 2 + (next() - 0.5) * 0.4 });

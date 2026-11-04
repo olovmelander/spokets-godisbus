@@ -34,7 +34,7 @@ export const AIR: Record<PlaceId, PlaceAir> = {
   forest: { shafts: 2.4, colour: '#fff0c4', cut: [0.3, 0.85], haze: [6, 70, 0.14, 0.07], thins: 5 },
   garden: { shafts: 1.3, colour: '#fff6dc', cut: [0.45, 1.05], haze: [8, 90, 0.1, 0.05], thins: 6 },
   bog: { shafts: 0.9, colour: '#fff2dc', cut: [0.55, 1.15], haze: [5, 70, 0.16, 0.08], thins: 3 },
-  mountain: { shafts: 0.7, colour: '#fdecda', cut: [0.6, 1.15], haze: [9, 95, 0.14, 0.06], thins: 9 },
+  mountain: { shafts: 0.7, colour: '#fdecda', cut: [0.6, 1.15], haze: [9, 95, 0.12, 0.04], thins: 9 },
   dusk: { shafts: 0.55, colour: '#e6e0f4', cut: [0.2, 0.7], haze: [8, 85, 0.1, 0.05], thins: 8 },
   village: { shafts: 0.8, colour: '#fff4dc', cut: [0.45, 1.1], haze: [8, 95, 0.08, 0.05], thins: 8 },
   home: { shafts: 0, colour: '#fff1d2', cut: [0.5, 1.2], haze: [10, 90, 0, 0], thins: 8 },
@@ -65,7 +65,6 @@ export function makeAir({ chapter, scene, sun, place, dressing }: ExtraContext):
     haze: fog?.color ?? new Color(place.haze.colour), hazeShape: new Vector4(...own.haze), ground: heightAt(chapter, chapter.spawn.x), thins: own.thins,
   };
   scene.userData[AIR_KEY] = ask;
-  (globalThis as { __air?: unknown }).__air = { ask, moon: () => !!moon }; // TEMP-AIR
   const mood = (dressing?.getObjectByName('air')?.userData.mood ?? null) as AirMood | null;
   // The moon of the storm's eye (aventyr2/render.ts): the storm's group holds it, as a ball and its glow.
   const moon = storm?.calm ? scene.getObjectByName('storm')?.children.find((o) => (o.children[0] as Mesh | undefined)?.geometry?.type === 'SphereGeometry') ?? null : null;

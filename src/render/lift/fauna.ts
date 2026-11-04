@@ -289,8 +289,9 @@ function owls(plan: Plan, add: Add): Kind {
       o.blink -= now.dt;
       if (o.blink < -1) o.blink = 3 + next() * 4;
       // Down in 0.35 s, shut for a moment, and up again in 0.45.
-      const shut = o.blink >= 0 ? 0 : -o.blink < 0.35 ? smooth(-o.blink / 0.35) : -o.blink < 0.55 ? 1 : 1 - smooth((-o.blink - 0.55) / 0.45);
-      crowd.put(i, o.at[0], o.at[1], o.at[2], o.yaw, 2.1);
+      // Its lids rest half down, sleepy and kind.
+      const shut = 0.45 + 0.55 * (o.blink >= 0 ? 0 : -o.blink < 0.35 ? smooth(-o.blink / 0.35) : -o.blink < 0.55 ? 1 : 1 - smooth((-o.blink - 0.55) / 0.45));
+      crowd.put(i, o.at[0], o.at[1], o.at[2], o.yaw, 1.8);
       crowd.pose(i, 0, 0, lerp(o.from, o.to, smooth(o.k)), shut);
     }
   };
@@ -529,7 +530,7 @@ function carvings(plan: Plan, add: Add): Kind {
 // --- glints: fireflies at dusk and in the storm's calm; dragonflies over the water by day, their wings glints -----
 
 /** Fireflies' soft warm green, and a dragonfly wing's pale shine. */
-const GREEN = new Color('#c8e88c');
+const GREEN = new Color('#d4f09a');
 const SHEEN = new Color('#cfe6ea');
 
 function lights(plan: Plan, add: Add, shine: Crowd, glow: { value: number }): Kind {
@@ -541,7 +542,7 @@ function lights(plan: Plan, add: Add, shine: Crowd, glow: { value: number }): Ki
   const next = sequence(71);
   const SPAN = 30;
   const swarm = Array.from({ length: fireflies }, (_, i) => {
-    fly.setXYZW(flies * 2 + i, next() * 6.28, 0.4 + next() * 0.5, 0.25 + next() * 0.3, 0.7 + next() * 0.3);
+    fly.setXYZW(flies * 2 + i, next() * 6.28, 0.4 + next() * 0.5, 0.25 + next() * 0.3, 1.1 + next() * 0.5);
     shine.mesh.setColorAt(flies * 2 + i, GREEN);
     return { k: next() * SPAN, up: 0.3 + next() * 1.9, z: -1.9 - next() * 5, at: NaN };
   });
@@ -559,7 +560,7 @@ function lights(plan: Plan, add: Add, shine: Crowd, glow: { value: number }): Ki
       const at = now.cx - SPAN / 2 + ((((s.k - now.cx) % SPAN) + SPAN) % SPAN);
       if (at === s.at) { shine.keep(); continue; }
       s.at = at;
-      shine.matrix(flies * 2 + i, M.makeScale(0.2, 0.2, 1).setPosition(at, plan.ground(at) + s.up, s.z));
+      shine.matrix(flies * 2 + i, M.makeScale(0.3, 0.3, 1).setPosition(at, plan.ground(at) + s.up, s.z));
     }
     for (const [d, f] of darts.entries()) {
       if (!bodies || d >= quota(flies, now) || now.day < 0.5 || !seen(now, f.home[0], f.home[2], 2)) {

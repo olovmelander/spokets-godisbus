@@ -145,7 +145,7 @@ export function floor(chapter: ChapterData, dressing: Group | null | undefined, 
     }
     for (const tree of pines) if (tree.z > -16 && next() < 0.5) cluster(tree.x + (next() - 0.5) * 1.2, tree.z + 0.6);
     // And on their own now and then, on the moss behind the path.
-    for (let x = from + next() * 9; x < to; x += 7 + next() * 12) cluster(x, -1.2 - next() * 3.5);
+    for (let x = from + next() * 5; x < to; x += 4 + next() * 7) cluster(x, -1.2 - next() * 4.5);
   }
   if (place === 'mountain' || place === 'dusk') {
     // Moss on the mountain's stones: a soft green cushion on the tops of some, damp in their hollows.

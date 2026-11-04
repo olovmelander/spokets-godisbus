@@ -183,7 +183,7 @@ export function createLightShafts() {
       shape.set(lens.position.z + ask.hazeShape.x, lens.position.z + ask.hazeShape.y, ask.hazeShape.z, ask.hazeShape.w);
       eye.set(lens.position.y, Math.tan((lens.fov * Math.PI) / 360), ask.ground, ask.thins);
       const drawn = !!(mask && rays) && (ask.strength > 0.002 || warm);
-      light.copy(ask.colour).multiplyScalar(drawn ? ask.strength * ((globalThis as { __airGain?: number }).__airGain ?? 1) : 0); // TEMP-AIR
+      light.copy(ask.colour).multiplyScalar(drawn ? ask.strength : 0);
       grade.setAir({ shafts: drawn ? rays!.texture : null, light, haze: ask.haze, shape, eye });
       if (!drawn) return;
       marking.uniforms.tDiffuse!.value = read.texture;

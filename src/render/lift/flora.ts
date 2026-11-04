@@ -42,8 +42,6 @@ function counted(mesh: InstancedMesh, all: number, tier: ExtraFrame['tier']): vo
 export function flora(context: ExtraContext): ViewExtra | null {
   const { chapter, scene, sun, dressing } = context;
   if (!chapter.place) return null;
-  // TEMP(flora): measuring what the flora costs. Removed before hand-off.
-  if (import.meta.env.DEV && typeof location !== 'undefined' && location.search.includes('noflora')) return null;
   const group = new Group();
   group.name = 'flora';
   // The sun's direction does not change as the shadow's camera follows him.
@@ -86,11 +84,11 @@ export function flora(context: ExtraContext): ViewExtra | null {
   const air = whirl(chapter, single(), litter);
   if (air) group.add(air.mesh);
   scene.add(group);
-  // TEMP(flora): for measuring, removed before hand-off.
-  if (import.meta.env.DEV && typeof window !== 'undefined') (window as unknown as { __flora?: Group }).__flora = group;
 
   // How dark it is for the mushrooms: the frame's night, the blue hour, and Äventyr 2's stormy night.
   const night = chapter.storm ? 0.85 : chapter.place === 'dusk' ? 0.45 : 0;
+  // The grass's light of its own is the sun shining through it (dressing/kit.ts): in the night it is less.
+  const blades = [KIT.grass, KIT.lawn, KIT.straw].map((material) => ({ material, day: material.emissiveIntensity }));
   let tier: ExtraFrame['tier'] | null = null;
   let since = 0;
   const sheen = new Color();
@@ -108,6 +106,8 @@ export function flora(context: ExtraContext): ViewExtra | null {
       const dark = Math.max(frame.darkness ?? 0, night);
       PLANT.mushGlow.value = 2.4 * Math.min(1, Math.max(0, (dark - 0.15) / 0.6)) ** 1.5;
       if (!still) PLANT.mushTime.value += dt;
+      const through = 1 - 0.6 * Math.max(frame.darkness ?? 0, chapter.storm ? 1 : 0);
+      for (const { material, day } of blades) material.emissiveIntensity = day * through;
       // What is counted down by the tier, when the tier changes; and the dressing's tall grass every few seconds
       // too, since the forest's stretches are built again when its kit arrives.
       since += dt;

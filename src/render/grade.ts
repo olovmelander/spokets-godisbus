@@ -172,7 +172,7 @@ const FRAGMENT = /* glsl */ `
       float low = exp(-max(airEye.x + up * airEye.y * dist - airEye.z, 0.0) / airEye.w);
       float open = step(0.99999, d);
       scene = mix(scene, airHaze, mix(smoothstep(airShape.x, airShape.y, dist) * airShape.z * (0.45 + 0.55 * low), airShape.w * (1.0 - smoothstep(-0.25, 0.5, up)), open));
-      scene += texture2D(tShafts, vUv).r * airLight * (1.0 - 0.75 * open);
+      scene += texture2D(tShafts, vUv).r * airLight * (1.0 - 0.9 * open);
     }
     float light = dot(scene * exposure * tint, vec3(0.2126, 0.7152, 0.0722));
     // Scale exceptionally bright HDR values into the LUT, then extrapolate the affine grade about its
