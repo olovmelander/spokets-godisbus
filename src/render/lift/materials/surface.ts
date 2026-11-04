@@ -21,12 +21,9 @@ import { waterKind } from '../../water';
 export type SurfaceClass = readonly [wood: number, moss: number, wet: number, street: number];
 
 export const CARVED: SurfaceClass = [1, 0, 0, 0];
-const PLANED: SurfaceClass = [0.5, 0, 1, 0];
 const PLANED_DRY: SurfaceClass = [0.5, 0, 0, 0];
 const MOSS: SurfaceClass = [0, 1, 1, 0];
 const MOSSY: SurfaceClass = [0, 0.5, 1, 0];
-const GROUND: SurfaceClass = [0, 0, 1, 0];
-const STREET: SurfaceClass = [0, 0, 1, 1];
 
 /** A carved figure or the ghost, by a name on it or above it: Elof's own figure is not one. */
 const CARVING = /trägubbe|tragubbe|carving|ghost|stage-block|figure|carved/i;
@@ -34,9 +31,6 @@ const CARVING = /trägubbe|tragubbe|carving|ghost|stage-block|figure|carved/i;
 const ACTOR = /^(player|stage-|helper|bird$|owl|jay|elof|ghost-thought|fauna)/i;
 /** What stands about in a place and gets wet with it, where it is not in the dressing. */
 const PROP = /^(spot:|mover:|ledges:|landmark:|storm$|furniture:|decor)/;
-const GROUND_CLASS: Record<string, SurfaceClass> = {
-  wood: PLANED, moss: MOSS, sphagnum: MOSS, ridge: MOSS, asphalt: STREET, paving: STREET, stone: STREET, iron: STREET,
-};
 
 /** Bare wood's colours: warm, not grey, not bright, not painted. */
 export function woodColoured(colour: Color): boolean {
@@ -81,8 +75,10 @@ export function classify(mesh: Mesh, material: MeshStandardMaterial, dressing: O
     || material.blending !== NormalBlending || mesh.name === 'lake') return null;
   // What gives off light of its own keeps it: a lamp's shade, a window.
   if (material.emissiveIntensity * Math.max(material.emissive.r, material.emissive.g, material.emissive.b) > 0.4) return null;
+  // Of the ground, only its boards: the banks of moss, lawn, peat and street are most of the picture, and the patch
+  // over them halved the frame in software rendering. The contrast shows where it is seen: figures, boards, moss.
   const ground = material.userData.ground as string | undefined;
-  if (ground) return GROUND_CLASS[ground] ?? GROUND;
+  if (ground) return null;
   let carved = false, actor = false, scenery = false, furniture = false, player = false;
   const ghostHelps = chapter.helper?.kind === 'ghost';
   for (let o: Object3D | null = mesh; o; o = o.parent) {
@@ -106,19 +102,24 @@ export function classify(mesh: Mesh, material: MeshStandardMaterial, dressing: O
   // Moss and its damp only where moss is: the kit's stones and bark. Grass, leaves and buildings, which are vertex
   // coloured too, keep their own light: patched, they ran the wet and the noise over most of the picture.
   if (KIT && (material === KIT.stone || material === KIT.bark)) return MOSSY;
-  if (mesh.name === 'spang' || (KIT && material === KIT.deadwood)) return PLANED;
-  // At home the figures on Pappa's shelf are carved, the shelf and the furniture planed.
-  if (chapter.place === 'home' && wood) return mesh.geometry.type === 'BoxGeometry' ? PLANED : CARVED;
-  return wood ? PLANED : GROUND;
+  // At home the figures on Pappa's shelf are carved; the shelf, the furniture, the boards and the planks keep their
+  // own light (large planed areas: a deck, a floor, the bog's walk).
+  if (chapter.place === 'home' && wood) return mesh.geometry.type === 'BoxGeometry' ? null : CARVED;
+  return null;
 }
 
-const NOISE = /* glsl */ `
+/** Value noise, for both stages. */
+const NOISE_CORE = /* glsl */ `
 float liftHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float liftNoise(vec3 x) {
   vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(mix(liftHash(i), liftHash(i + vec3(1, 0, 0)), f.x), mix(liftHash(i + vec3(0, 1, 0)), liftHash(i + vec3(1, 1, 0)), f.x), f.y),
     mix(mix(liftHash(i + vec3(0, 0, 1)), liftHash(i + vec3(1, 0, 1)), f.x), mix(liftHash(i + vec3(0, 1, 1)), liftHash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
 }
+`;
+
+/** The glints, for the fragments only (fwidth). */
+const NOISE = NOISE_CORE + /* glsl */ `
 // A few bright points on a surface, each in a cell of its own, that twinkle slowly: never faster than once in
 // four seconds, and not at all while the clock stands. Below a pixel they fade instead of flickering.
 float liftGlints(vec3 p, float cell, float share) {
@@ -133,11 +134,14 @@ float liftGlints(vec3 p, float cell, float share) {
 }
 `;
 
+/** The value noise for the vertex stage (the glints use fwidth, which only fragments have). */
+const NOISE_VERTEX = NOISE_CORE;
+
 const DECLARE = /* glsl */ `
 uniform vec4 liftSurface, liftWet, liftPools[8], liftPlace;
 uniform vec3 liftSunDir, liftSun, liftSky, liftGrain;
 uniform float liftTime;
-varying vec3 liftWorld, liftLocal;
+varying vec3 liftWorld, liftLocal, liftPoolV;
 `;
 
 /** In the vertex stage, after the wind has moved it: where the corner is in the world, and in its own shape at the world's size. */
@@ -149,6 +153,20 @@ const VERTEX = /* glsl */ `
   #endif
   liftWorld = (liftM * vec4(transformed, 1.0)).xyz;
   liftLocal = transformed * vec3(length(liftM[0].xyz), length(liftM[1].xyz), length(liftM[2].xyz));
+  // On High, what changes slowly over a surface, per corner: the pools' wet, the shore's dark band, the noise.
+  liftPoolV = vec3(0.0, 0.0, 0.5);
+  if (liftPlace.x > 1.5 && liftSurface.z > 0.5) {
+    for (int i = 0; i < 8; i++) {
+      vec4 pool = liftPools[i];
+      if (pool.z < -1e5) break;
+      float side = max(max(pool.x - liftWorld.x, liftWorld.x - pool.y), 0.0);
+      float up = liftWorld.y - pool.z;
+      float inside = step(liftWorld.z, pool.w) * step(-3.0, up);
+      liftPoolV.x = max(liftPoolV.x, inside * (1.0 - smoothstep(0.4, 1.9, side)) * (1.0 - smoothstep(0.05, 0.85, up)));
+      liftPoolV.y = max(liftPoolV.y, inside * (1.0 - smoothstep(0.25, 0.9, side)) * (1.0 - smoothstep(0.03, 0.2, abs(up - 0.05))));
+    }
+    liftPoolV.z = liftNoise(liftWorld * 1.3) * 0.65 + liftNoise(liftWorld * 4.3) * 0.35;
+  }
 }
 #include <project_vertex>`;
 
@@ -159,28 +177,23 @@ const VERTEX = /* glsl */ `
  */
 const SURFACE = /* glsl */ `
 float liftWetness = 0.0, liftBand = 0.0, liftMossy = 0.0, liftNoiseA = 0.5, liftFilm = 0.0;
-vec3 liftN = normalize((vec4(normal, 0.0) * viewMatrix).xyz);
-{
+vec3 liftN = normal;
+// All of it on High only: Low and Mid keep the place's own materials, and skip it in one branch on a uniform (the
+// patch cost about a third of a frame there in software rendering, and a phone's GPU is short of fragment time).
+if (liftPlace.x > 1.5) {
+  liftN = normalize((vec4(normal, 0.0) * viewMatrix).xyz);
   vec3 c = diffuseColor.rgb;
   float top = max(c.r, max(c.g, c.b));
   float byColour = smoothstep(0.25, 0.45, (top - min(c.r, min(c.g, c.b))) / max(top, 1e-4))
     * smoothstep(0.85, 1.05, c.g / max(c.r, 1e-4)) * smoothstep(1.4, 2.2, c.g / max(c.b, 1e-4));
   liftMossy = liftSurface.y > 0.75 ? 1.0 : liftSurface.y * 2.0 * byColour;
   if (liftSurface.z > 0.5) {
-    float wet = liftWet.x * step(liftWet.y, liftWorld.x);
-    for (int i = 0; i < 8; i++) {
-      vec4 pool = liftPools[i];
-      if (pool.z < -1e5) break;
-      float side = max(max(pool.x - liftWorld.x, liftWorld.x - pool.y), 0.0);
-      float up = liftWorld.y - pool.z;
-      float inside = step(liftWorld.z, pool.w) * step(-3.0, up);
-      wet = max(wet, inside * (1.0 - smoothstep(0.4, 1.9, side)) * (1.0 - smoothstep(0.05, 0.85, up)));
-      liftBand = max(liftBand, inside * (1.0 - smoothstep(0.25, 0.9, side)) * (1.0 - smoothstep(0.03, 0.2, abs(up - 0.05))));
-    }
-    // The noise only where it shows: on moss, on a street, or where it is wet already. A dry stone or bank in a dry
-    // place keeps its plain light, and the fragment skips the noise (a third of the frame in software rendering).
+    // The pools' wet and the shore's band, and the noise, come from the corners (VERTEX): they change slowly over
+    // the ground, and a loop and two octaves of noise in every fragment cost half a frame in software rendering.
+    float wet = max(liftWet.x * step(liftWet.y, liftWorld.x), liftPoolV.x);
+    liftBand = liftPoolV.y;
     if (liftPlace.x > 1.5 && (wet > 0.0 || liftMossy * liftWet.z > 0.0 || liftSurface.w * liftWet.w > 0.0)) {
-      liftNoiseA = liftNoise(liftWorld * 1.3) * 0.65 + liftNoise(liftWorld * 4.3) * 0.35;
+      liftNoiseA = liftPoolV.z;
       // Damp moss: in its hollows, broken by the noise, more on its sides than on its tops.
       float hollow = smoothstep(0.5, 0.68, liftNoiseA + 0.15 * (1.0 - liftN.y));
       wet = max(wet, liftWet.z * liftMossy * hollow);
@@ -229,7 +242,7 @@ vec3 liftN = normalize((vec4(normal, 0.0) * viewMatrix).xyz);
 /** The warm light at a carving's edge: pale, never gold (docs/visual-upgrade.md). */
 export const RIM = [1, 0.87, 0.7] as const;
 const LIGHT = /* glsl */ `
-{
+if (liftPlace.x > 1.5) {
   vec3 view = normalize(vViewPosition);
   float facing = saturate(dot(normal, view));
   if (liftWetness > 0.0) {
@@ -278,15 +291,16 @@ export function createSurfaces(context: ExtraContext) {
   const near = all.map((pool) => ({ pool, d: 0 }));
   let time = 0;
   /**
-   * The tier of the last frame. Only a picture that starts on High is patched: the patch costs about a third of a
-   * frame in software rendering, and its work is all in the fragments, which is what a phone's GPU is short of. Low
-   * and Mid keep the place's own materials (docs/visual-upgrade.md, "As built").
+   * Whether this picture has the patch at all, decided by the tier of its first frame and never again: a change of
+   * tier in play must compile nothing (gate 6). Only High has it. In software rendering a patched material pays
+   * its whole cost even where a branch skips it, and Low and Mid are for phones whose GPUs are short of fragment
+   * time (docs/visual-upgrade.md, "As built"). Unknown until the first frame (as in the unit tests): patched.
    */
-  let tier: ExtraFrame['tier'] | null = null;
+  let rich: boolean | null = null;
   return {
     /** Patches every material in `root` that is wood, moss or ground. Again at each warm-up: only new ones are touched. */
     apply(root: Object3D) {
-      if (tier !== null && tier !== 'high') return;
+      if (rich === false) return;
       root.traverse((object) => {
         const mesh = object as Mesh;
         if (!mesh.isMesh) return;
@@ -298,7 +312,7 @@ export function createSurfaces(context: ExtraContext) {
       });
     },
     update(frame: ExtraFrame) {
-      tier = frame.tier;
+      rich ??= frame.tier === 'high';
       if (!frame.still) time += frame.dt;
       shared.liftTime.value = time;
       // The sun in a wet point is its own light, paled: never gold.
@@ -328,7 +342,8 @@ export function createSurfaces(context: ExtraContext) {
     material.onBeforeCompile = (shader, renderer) => {
       before.call(material, shader, renderer);
       Object.assign(shader.uniforms, shared, own);
-      shader.vertexShader = 'varying vec3 liftWorld, liftLocal;\n' + shader.vertexShader.replace('#include <project_vertex>', VERTEX);
+      shader.vertexShader = 'uniform vec4 liftSurface, liftPools[8], liftPlace;\nvarying vec3 liftWorld, liftLocal, liftPoolV;\n' + NOISE_VERTEX
+        + shader.vertexShader.replace('#include <project_vertex>', VERTEX);
       shader.fragmentShader = DECLARE + NOISE + shader.fragmentShader
         .replace('#include <emissivemap_fragment>', SURFACE)
         .replace('#include <opaque_fragment>', LIGHT);

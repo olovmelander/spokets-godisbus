@@ -64,7 +64,7 @@ function candyColoured([r, g, b]: number[]): boolean {
 const ink = (colour: Color) => { const c = colour.clone().convertLinearToSRGB(); return [c.r * 255, c.g * 255, c.b * 255]; };
 
 describe('the visual upgrade: wood, moss and the wet', () => {
-  it('patches the ground, the moss and the wood of every chapter of both adventures, with one program key each', () => {
+  it('patches the moss and the carved wood where a chapter has them, with one program key each', () => {
     for (const chapter of all()) {
       const ctx = context(chapter);
       const surfaces = createSurfaces(ctx);
@@ -72,7 +72,9 @@ describe('the visual upgrade: wood, moss and the wet', () => {
       // Again, as each warm-up does: nothing is patched twice.
       surfaces.apply(ctx.scene);
       const materials = patched(ctx.scene);
-      expect(materials.length, chapter.id).toBeGreaterThan(0);
+      // The places with moss on their stones and in their cushions always have some.
+      if (['forest', 'bog', 'mountain'].includes(chapter.place ?? '')) expect(materials.length, chapter.id).toBeGreaterThan(0);
+      if (materials.length === 0) continue;
       for (const material of materials) {
         const key = material.customProgramCacheKey();
         expect(key.split(':lift-surface-v1').length - 1, chapter.id).toBe(1);
@@ -88,29 +90,34 @@ describe('the visual upgrade: wood, moss and the wet', () => {
     }
   });
 
-  it('patches only a picture that starts on High: Low and Mid keep the place\'s own materials', () => {
+  it('decides by the tier of its first frame, once: only a picture that starts on High is patched', () => {
     for (const tier of ['low', 'mid', 'high'] as const) {
       const ctx = context(STORY.find((c) => c.id === 'granskog')!);
       const surfaces = createSurfaces(ctx);
       surfaces.update(frame({ tier }));
+      // A change of tier later changes nothing: no patch arrives in play, so nothing compiles (gate 6).
+      surfaces.update(frame({ tier: tier === 'high' ? 'low' : 'high' }));
       surfaces.apply(ctx.scene);
-      let patched = 0;
-      ctx.scene.traverse((object) => {
-        const material = (object as Mesh).material as MeshStandardMaterial | undefined;
-        if (material?.customProgramCacheKey?.().includes('lift-surface-v1')) patched++;
-      });
-      if (tier === 'high') expect(patched, tier).toBeGreaterThan(0);
-      else expect(patched, tier).toBe(0);
+      const materials = patched(ctx.scene);
+      if (tier !== 'high') {
+        expect(materials, tier).toEqual([]);
+        continue;
+      }
+      expect(materials.length).toBeGreaterThan(0);
+      // Both of its parts open with the High-only branch on the tier uniform, so a picture that falls to Low
+      // after starting on High does less.
+      for (const material of materials) expect((compile(material).fragmentShader.match(/if \(liftPlace\.x > 1\.5\) \{/g) ?? []).length).toBeGreaterThanOrEqual(2);
     }
   });
 
-  it('knows matte carved wood from the moss: the boards, the figures, the moss on the ground', () => {
+  it('knows matte carved wood from the moss: the boards, the figures, the moss cushions, and leaves the banks', () => {
     const granskog = STORY.find((chapter) => chapter.id === 'granskog')!;
     const ctx = context(granskog);
     createSurfaces(ctx).apply(ctx.scene);
-    const moss = patched(ctx.scene).filter((material) => material.userData.ground === 'moss');
+    // The moss is the kit's cushions; the banks of ground (most of the picture) keep their own light.
+    const moss = patched(ctx.scene).filter((material) => (material.userData.liftSurface as { y: number } | undefined)?.y === 1);
     expect(moss.length).toBeGreaterThan(0);
-    for (const material of moss) expect((material.userData.liftSurface as { y: number }).y).toBe(1);
+    expect(patched(ctx.scene).filter((material) => material.userData.ground && material.userData.ground !== 'wood')).toEqual([]);
     // A figure carved of grey old wood and one of pale linden are carved; their dark eyes are not.
     const figure = new Group();
     figure.name = 'old-trägubbe';
@@ -165,8 +172,8 @@ describe('the visual upgrade: wood, moss and the wet', () => {
   });
 
   it('holds its glints and the dew still with reduced motion', () => {
-    const garden = STORY.find((chapter) => chapter.id === 'garden')!;
-    const ctx = context(garden);
+    const granskog = STORY.find((chapter) => chapter.id === 'granskog')!;
+    const ctx = context(granskog);
     const surfaces = createSurfaces(ctx);
     surfaces.apply(ctx.scene);
     const shader = compile(patched(ctx.scene)[0]!);
