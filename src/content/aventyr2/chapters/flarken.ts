@@ -381,8 +381,8 @@ export const flarken: ChapterData = {
     shelters: 'posts',
     // The volleyball net, sagging with rain, is the bouncer here.
     bouncers: 'net',
-    rain: 0.8,
-    lightning: 8,
+    rain: 0.95,
+    lightning: 7,
     flybys: [
       // On the far side of the reed mats: the little one, blown out over the lake.
       { on: 'beat:sjon:flash', from: { x: 102, y: 9 }, to: { x: 140, y: 12 }, seconds: 2.6, who: 'lillgubbe' },

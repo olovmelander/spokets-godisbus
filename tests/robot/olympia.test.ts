@@ -444,7 +444,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       for (const f of flybys) expect(f.to.y - f.from.y).toBeGreaterThan(10);
       const lines: Record<string, string> = sv.lines;
       expect(lines.olNorth).toBe('Upp mot sjön vid Flärken!');
-      expect(olympia.storm).toMatchObject({ rain: 0.85, lightning: 9, rollers: 'football' });
+      expect(olympia.storm).toMatchObject({ rain: 0.9, lightning: 8, rollers: 'football' });
     });
   });
 

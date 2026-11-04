@@ -384,6 +384,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     return made;
   });
 
+  // A bathing raft moored in the bay rocks and drags at its moorings: the tower stands on it.
+  const rocking = buildings.filter((_, i) => storm?.buildings?.[i]?.kind === 'tower').map((made) => ({ made, y: made.group.position.y }));
+
   const drift = createFoam(storm?.foam, group);
 
   // The rain barrel under each tap: wooden staves and iron hoops, standing on the ground the tap's block stands on.
@@ -489,6 +492,10 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       elof.x = x;
       elof.flags = flags;
       drift?.(dt, still);
+      for (const [i, raft] of rocking.entries()) {
+        raft.made.group.position.y = raft.y + (still ? 0 : Math.sin(clock * 0.9 + i) * 0.09);
+        raft.made.group.rotation.z = still ? 0 : Math.sin(clock * 0.63 + i) * 0.018;
+      }
       if (first) {
         // A flyby whose moment has passed already (a game taken up later) is not played again.
         for (const f of flybys) if (flags.has(f.def.on)) f.seen = true;

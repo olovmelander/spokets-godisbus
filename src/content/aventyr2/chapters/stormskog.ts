@@ -62,8 +62,8 @@ export const stormskog: ChapterData = {
   scenes: [timeCard('stormskog', 1)],
   goalX: 205,
   coda: 'pappa',
-  storm: { frozen: 'ss:frozen', drips: 'cone', rain: 0.7,
-    lightning: 11,
+  storm: { frozen: 'ss:frozen', drips: 'cone', rain: 0.75,
+    lightning: 10,
     flybys: [
       // At the forest's edge: the little one, tumbling over the treetops ahead.
       { on: 'beat:ss:flash', from: { x: 4, y: 9 }, to: { x: 26, y: 7 }, seconds: 2.6, who: 'lillgubbe' },

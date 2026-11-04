@@ -142,8 +142,8 @@ export const stormgard: ChapterData = {
   storm: { shelters: 'pots',
     // The bouncer on the lawn is the garden's trampoline, not a cranberry.
     bouncers: 'trampoline',
-    rain: 0.8,
-    lightning: 9,
+    rain: 0.7,
+    lightning: 10,
     flybys: [
       // A flash: the old trägubbe on the playhouse roof leaps away towards the hedge.
       { on: 'beat:sg:playhouse', from: { x: PLAYHOUSE.ridge.x, y: PLAYHOUSE.ridge.y + 0.6 }, to: { x: 172, y: 8 }, seconds: 2.5, who: 'tragubbe' },

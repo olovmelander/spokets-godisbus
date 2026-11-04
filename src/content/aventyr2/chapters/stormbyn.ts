@@ -140,8 +140,8 @@ export const stormbyn: ChapterData = {
   // Two lamp posts on the far pavement, dark tonight: one in the yard across the river, one at the far end of
   // the flooded crossing, out of the tall picture from the wall's top. Neither stands behind a big candy.
   lampPosts: [44.4, 114.4],
-  storm: { bouncers: 'awning', rain: 0.9,
-    lightning: 10,
+  storm: { bouncers: 'awning', rain: 0.85,
+    lightning: 9,
     // A candle in each near window, just in front of its glass.
     glows: [
       { at: { x: 20.5, y: PAVEMENT + 3.4 }, z: -6 },

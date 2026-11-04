@@ -174,7 +174,7 @@ export const stormoga: ChapterData = {
   // The golden geléhallon: he grows back on the stone, with both carvings in his hands.
   size: { scale: 3, after: 'taste' },
   storm: {
-    rain: 0.9, lightning: 6, calm: 'eye',
+    rain: 1, lightning: 4.5, calm: 'eye',
     // The shore behind: Billaberget's granite and its forest, which the path from mormor and morfar's house by the
     // road comes down through, and birches; far down the lake, Själevad's church. The house is not on the shore.
     buildings: [

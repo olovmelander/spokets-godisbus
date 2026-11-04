@@ -286,8 +286,8 @@ export const alven: ChapterData = {
   ],
   jumps: [...hops(STONES), ...hops(CREEK_WAY)],
   storm: {
-    rain: 0.8,
-    lightning: 9,
+    rain: 1,
+    lightning: 7.5,
     // Pappa's scarf, held down from the bridge's railing to Elof's hands all the way over the rapids.
     ropes: [{ ride: 'al:lift', from: { x: BRIDGE.x, y: BRIDGE.height + 2.4 }, z: -2, colour: '#3a6a9a' }],
     flybys: [

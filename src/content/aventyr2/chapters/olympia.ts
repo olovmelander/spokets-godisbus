@@ -231,8 +231,8 @@ export const olympia: ChapterData = {
   storm: {
     // The crossbar he walks is the goal's own white frame, not a trestle.
     bars: 'goal',
-    rain: 0.85,
-    lightning: 9,
+    rain: 0.9,
+    lightning: 8,
     // What rolls in the wind is balls, not cones.
     rollers: 'football',
     flybys: [

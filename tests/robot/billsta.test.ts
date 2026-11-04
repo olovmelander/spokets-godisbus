@@ -576,7 +576,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
     });
 
     it('is a stormy night near midnight, with the house\'s window warm from the start', () => {
-      expect(billsta.storm).toMatchObject({ rain: 0.85, lightning: 8 });
+      expect(billsta.storm).toMatchObject({ rain: 1, lightning: 5.5 });
       expect(billsta.storm!.calm).toBeUndefined();
       expect(billsta.coda).toBe('all');
       expect(billsta.place).toBe('garden');

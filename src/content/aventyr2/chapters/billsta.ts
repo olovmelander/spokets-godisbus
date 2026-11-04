@@ -317,8 +317,8 @@ export const billsta: ChapterData = {
   // The storm over the barn's roof and over the open slope: every four seconds a gust for a little more than one.
   // A dash from one lee to the next takes half the calm between, as on Berget.
   gusts: [
-    { from: ROOF_LEE[0]!, to: ROOF_LEE[ROOF_LEE.length - 1]!, y: ROOF.y, every: 4, length: 1.4, first: 0.5, shelters: ROOF_LEE },
-    { from: LEE[0]!, to: LEE[LEE.length - 1]!, y: SLOPE, every: 4, length: 1.4, first: 0.5, shelters: LEE },
+    { from: ROOF_LEE[0]!, to: ROOF_LEE[ROOF_LEE.length - 1]!, y: ROOF.y, every: 3.6, length: 1.7, first: 0.5, shelters: ROOF_LEE },
+    { from: LEE[0]!, to: LEE[LEE.length - 1]!, y: SLOPE, every: 3.6, length: 1.6, first: 0.5, shelters: LEE },
   ],
   ledges: [LADDER, ...BEAMS, ...SHELVES],
   spots: [
@@ -362,8 +362,8 @@ export const billsta: ChapterData = {
     jump({ x: round(B3.mid - 0.2), y: B3.low }, { x: round(B3.mid + 0.7), y: B3.high }),
   ],
   storm: {
-    rain: 0.85,
-    lightning: 8,
+    rain: 1,
+    lightning: 5.5,
     // On the barn's roof the lee is the ventilation hoods along the ridge; on Billaberget it is its boulders.
     shelters: ['vents', 'rocks'],
     // The narrow, far below the brow beyond the forest, where the two figures are.

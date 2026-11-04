@@ -706,7 +706,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       const lines: Record<string, string> = sv.lines;
       expect(Object.values(words.lines)).not.toContain('Där! På stenen ute i sjön!');
       expect(lines.sjFloated).toMatch(/^Trä flyter!/);
-      expect(flarken.storm).toMatchObject({ rain: 0.8, lightning: 8, shelters: 'posts' });
+      expect(flarken.storm).toMatchObject({ rain: 0.95, lightning: 7, shelters: 'posts' });
     });
   });
 
