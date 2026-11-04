@@ -13,6 +13,7 @@ import { windWisp } from './wind-wisp';
 import { createAfloat } from './afloat';
 import { createRain } from './rain';
 import { PACK } from './extensions';
+import { installLift } from './lift';
 import { paintStreetMirror } from './village';
 import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
 import { forestKit, forestSocket, installForest, rollingCone } from './forest-kit';
@@ -361,6 +362,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(night.group);
   // What a chapter pack adds: Äventyr 2's storm (./extensions.ts).
   const extras = PACK.extras.map((make) => make({ chapter, scene, sky, hemisphere, sun })).filter((extra) => extra !== null);
+  // The visual upgrade's systems, for every chapter (./lift/, docs/visual-upgrade.md).
+  installLift();
+  const lifts = PACK.lifts.map((make) => make({ chapter, scene, sky, hemisphere, sun, place, dressing: dressing?.group ?? null })).filter((lift) => lift !== null);
   scene.add(...tussockMeshes, mist.group, follower.group, wind.group);
   const mountain = createMountain(chapter, ledges);
   if (mountain) scene.add(mountain.group);
@@ -1008,6 +1012,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         (scene.fog as Fog).near = camera.position.z + place.haze.near;
         (scene.fog as Fog).far = camera.position.z + place.haze.far;
       }
+    }
+    // The visual upgrade's systems, after the dressing, so that this frame's wind is set (./lift/).
+    for (const lift of lifts) {
+      lift.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride', vx: curr.vx, vy: curr.vy, facing: curr.facing, grounded: curr.grounded, mode: curr.mode, darkness });
     }
 
     rimLight.setStrength(scene.backgroundIntensity * (1 - darkness));
