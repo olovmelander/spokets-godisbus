@@ -35,6 +35,7 @@ import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
 import { createDepthBlur } from './depth-blur';
 import { createBloom } from './bloom';
+import { createLightShafts } from './light-shafts';
 import { createWater, waterKind } from './water';
 import { createCharacterShadows } from './character-shadows';
 import { createRimLight } from './rim-light';
@@ -45,7 +46,7 @@ import { createEpilogueStage } from './epilogue-stage';
 import { createPrologueStage } from './prologue-stage';
 import { createStage } from './stage';
 import { actPose } from './acting';
-import { createModelRig, createRehearsalRig, heightOf, STANDING, type Pose, type Rig, type Role } from './rig';
+import { createModelRig, createRehearsalRig, galeOf, heightOf, STANDING, type Pose, type Rig, type Role } from './rig';
 import { createPlayerMotion, createPlayerStandIn } from './player-motion';
 import { createAurora } from './aurora';
 import { createFamilyMotion } from './family-motion';
@@ -55,7 +56,7 @@ import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
 import { buildVerbMarks } from './verb-marks';
 import { MODEL_TURN, blinkEyes, createGhostMotion, eyeNodes } from './ghost-model';
-import type { Blow } from './wind';
+import { windAt, type Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
 import { endsInScene, type SceneFrame } from '../sim/scene';
@@ -221,6 +222,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const gradePass = hdrAvailable ? createGradePass(grade) : null;
   const depthBlur = hdrAvailable ? createDepthBlur() : null;
   const bloom = hdrAvailable ? createBloom() : null;
+  // Mid and High: shafts of light at a quarter of the width and height, which the grade adds (./light-shafts.ts).
+  const lightShafts = hdrAvailable ? createLightShafts() : null;
   const outputPass = hdrAvailable ? new OutputPass() : null;
   if (outputPass) outputPass.renderToScreen = true;
   let hdr: { scene: WebGLRenderTarget; grade: WebGLRenderTarget } | null = null;
@@ -531,6 +534,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // face as the stand-in does (./ghost-model.ts).
   let ghostFaces = 0;
   let ghostTurn = Math.PI;
+  // Its idle look about (./ghost-model.ts) turns it, and the bag it carries, the way it turns to face him.
+  let ghostLook = 0;
   let clock = 0;
   let starDropTime = 0;
   let shoulderLift = 0;
@@ -555,7 +560,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Elof, modelled in Blender after his sheets and photos. He too is only here where the private pack is;
   // everywhere else the stand-in built in code plays his part.
   const elof = createPlayerStandIn();
-  let playerBody: Pick<Rig, 'pose' | 'hand' | 'mouth' | 'reach'> = elof;
+  let playerBody: Pick<Rig, 'pose' | 'hand' | 'mouth' | 'reach' | 'breeze'> = elof;
   let playerHips = ['left', 'right'].map(side => elof.group.getObjectByName(`player-hip-${side}`));
   let playerFeet = ['left', 'right'].map(side => elof.group.getObjectByName(`player-boot-${side}`));
   const shoulderPose: Pose = { ...STANDING }, seat = new Vector3(), boot = new Vector3(), palm = new Vector3();
@@ -717,6 +722,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     depthBlur?.setSize(canvas.width, canvas.height, tier === 'high');
     bloom?.setSize(canvas.width, canvas.height, tier === 'high');
+    lightShafts?.setSize(canvas.width, canvas.height, tier !== 'low');
     water.setSize(canvas.width, canvas.height, tier);
     camera.aspect = width / height;
     // Elof is about 78 px tall on a phone held sideways, and the view is never narrower than 6 EL.
@@ -762,6 +768,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       characterShadows.prepareReceivers();
       rimLight.apply(scene);
       materialGrade.apply(scene);
+      for (const lift of lifts) (lift as { patch?: (root: Object3D) => void }).patch?.(scene);
       // What only Mid and High draw (./rich.ts) is laid here, so that a model which arrived late is laid too.
       layRich(scene);
       scene.traverse((object) => {
@@ -793,6 +800,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         // The final macro shot focuses on the window figure, outside the usual z=0 play plane.
         if (!inEndingShot) depthBlur?.render(renderer, hdr.scene, camera);
         gradePass.setDepthBlur(inEndingShot ? null : depthBlur?.texture ?? null, hdr.scene.depthTexture, camera.near, camera.far, camera.position.z);
+        lightShafts?.render(renderer, hdr.scene, camera, scene, gradePass, warm > 0);
         gradePass.render(renderer, hdr.grade, hdr.scene);
         outputPass.render(renderer, hdr.grade, hdr.grade, 0, false);
       }
@@ -1036,8 +1044,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null, stride: 0, pace: 0, calm: calmStory }, elofPose);
     }
     const waving = reaction?.kind === 'player' && curr.grounded;
-    const playerPose = playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory);
+    // The one wind (./wind.ts) as it reaches each of them where they stand: none indoors, and more in the storm.
+    const gale = galeOf(chapter, flags);
+    const breeze = gale * windAt(x);
+    const playerPose = playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze);
     playerBody.pose(playerPose);
+    playerBody.breeze?.(breeze, dt, calmStory, playerMotion.ruffle);
     const elastic = curr.mode === 'free' && !scriptedPose && !calmStory;
     if (dt > 0) {
       if (!elastic) { squash = 1; fallingSpeed = 0; }
@@ -1111,11 +1123,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // Its shadow lies where it stands. In a hop it is off the ground, and the shadow waits where it will land.
       if (!hopping) ghostGroundY = ghostState.y;
       // 0 faces along the course; a half turn faces back at him.
-      const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4;
+      const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : (hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4) + ghostLook;
       const ghostDelta = wanted - ghostTurn;
       ghostTurn += Math.atan2(Math.sin(ghostDelta), Math.cos(ghostDelta)) * ease(7, dt);
       const awake = !chapter.prologue || flags.has('blink');
-      ghost.rotation.set(0, ghostFaces + ghostTurn, !awake ? 0 : hopping ? -0.25 * Math.sin(Math.PI * ghostState.t) : calmStory ? 0 : Math.sin(clock * 1.7) * 0.035);
+      // It tips forward in a hop and rocks a little standing, about its own side: the stand-in's z, and the model's x,
+      // which faces its own +z and is turned a quarter (./ghost-model.ts). The yaw goes first, so each is its own.
+      const tip = !awake ? 0 : hopping ? 0.25 * Math.sin(Math.PI * ghostState.t) : calmStory ? 0 : Math.sin(clock * 1.7) * 0.035;
+      ghost.rotation.set(ghostFaces ? tip : 0, ghostFaces + ghostTurn, ghostFaces ? 0 : -tip, 'YXZ');
       if (chapter.prologue && prologue) {
         const pose = prologuePose(chapter.prologue, prologue);
         ghostPlace.position.set(pose.x, pose.y, pose.z);
@@ -1147,7 +1162,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         }
       }
       blinkEyes(paintedEyes, staged?.blink ?? 1);
-      ghostMotion.update({ dt, clock, hop: hopping ? ghostState.t : null, calm: calmStory, awake, staged: ghostStaged, performance: staged ?? undefined });
+      const ghostIdle = ghostMotion.update({ dt, clock, hop: hopping ? ghostState.t : null, calm: calmStory, awake, staged: ghostStaged,
+        performance: staged ?? undefined, elof: x - ghostPlace.position.x, wind: gale * windAt(ghostPlace.position.x) });
+      ghostLook = ghostStaged ? 0 : ghostIdle.look;
+      if (!ghostStaged) {
+        // Its idle: a bob of the whole toy with its bag, and a curious tilt towards him when he is near.
+        ghostPlace.position.y += ghostIdle.bob;
+        ghost.rotation.x += ghostFaces ? ghostIdle.pitch : ghostIdle.roll;
+        ghost.rotation.z += ghostFaces ? ghostIdle.roll : -ghostIdle.pitch;
+      }
       looking.update(staged?.look ? ghostPlace.position : null, staged?.look ?? null, clock, dt);
     }
     if (chapter.prologue) {
@@ -1200,6 +1223,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         up: (y + tall * .8 - one.rig.group.parent!.position.y) * 5.2 / one.rig.height,
       }, one.glad && ['moa', 'seesaw', 'cap:ready', 'mamma', 'braid', 'bog:return-bridge'].includes(one.glad)
         ? { ready: now, near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined));
+      one.rig.breeze?.(gale * windAt(carrying ? x : one.at), dt, calmStory);
+    }
+    // The family in a scene, too: their hair and caps in the same wind, where each stands now.
+    for (const actor of stage.actors.values()) {
+      if (actor.visible()) actor.rig.breeze?.(gale * windAt(actor.rig.group.matrixWorld.elements[12]!), dt, calmStory);
     }
     if (chapter.id === 'norrsken') {
       const carving = scene.getObjectByName('mover:tragubbe');

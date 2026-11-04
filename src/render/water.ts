@@ -1,10 +1,11 @@
 import {
   BufferGeometry, CanvasTexture, ClampToEdgeWrapping, Color, DataTexture, DoubleSide, Float32BufferAttribute, Group,
-  HalfFloatType, LinearFilter, Mesh, MeshBasicMaterial, OrthographicCamera, RepeatWrapping, SRGBColorSpace, ShaderMaterial,
-  Vector2, Vector3, Vector4, WebGLRenderTarget, type Camera, type Material, type Object3D, type PerspectiveCamera,
+  HalfFloatType, LinearFilter, Matrix4, Mesh, RedFormat, MeshBasicMaterial, OrthographicCamera, RepeatWrapping, SRGBColorSpace, ShaderMaterial,
+  Vector2, Vector3, Vector4, WebGLRenderTarget, type Camera, type InstancedMesh, type Material, type Object3D, type PerspectiveCamera,
   type Texture, type WebGLRenderer,
 } from 'three';
 import type { ChapterData, PlaceId } from '../sim/types';
+import { KIT } from './dressing/kit';
 import type { Tier } from './quality';
 
 /** A tiny generated flow field: mostly downstream, with gentle eddies. No downloaded texture. */
@@ -96,6 +97,17 @@ const KINDS: Partial<Record<PlaceId, WaterKind>> = {
     mirror: 0.75, tint: '#d9dde4', ripple: 0.6, bedColour: '#23262b', shoreColour: '#3a3a3c', stands: -20,
   },
 };
+
+/** A pool's banks as its water mirrors them: the top of the bank, and its cut face down to the water. */
+const BANKS: Partial<Record<PlaceId, [string, string]>> = { forest: ['#55752a', '#3a2d20'], garden: ['#4f7d2a', '#4a3826'], bog: ['#6f5a30', '#2a201a'] };
+/** What stands near the water, as its mirror shows it: a spruce's bark, a birch's, a dead pine's. */
+const TRUNKS = () => new Map<Material | undefined, { tint: Color; tall: number; wide: number }>([
+  [KIT?.bark, { tint: new Color('#4f4030'), tall: 60, wide: 1 }],
+  [KIT?.birch, { tint: new Color('#d8d2c4'), tall: 60, wide: 1 }],
+  [KIT?.deadwood, { tint: new Color('#a8a49a'), tall: 8.5, wide: 0.42 }],
+]);
+/** How many banks and trunks a picture of water mirrors at once: those nearest the camera. */
+const MIRRORED = { banks: 8, trunks: 6 };
 
 /** Greybox: a block of blue water a few EL deep, as before a place is dressed. */
 const GREYBOX: WaterKind = { ...POOL, back: -3.95, thins: -3.95, feather: 0 };
@@ -276,6 +288,23 @@ function standingStrip(paint: NonNullable<WaterSetting['stands']>, z: number, fr
   return { map, frame: new Vector4(z, to - from, STRIP.above + STRIP.below, STRIP.below), slide: new Vector3(from, 0, base) };
 }
 
+/**
+ * The bog's islands as its water mirrors them on Mid, where there is no picture to mirror: how high the ground
+ * stands over the water along the chapter, one row, and where its front goes under the water.
+ */
+function islandRow(chapter: ChapterData, kind: WaterKind, street: ((x: number) => number) | undefined): { map: DataTexture; frame: Vector4 } | null {
+  const pools = chapter.water ?? [];
+  const first = chapter.ground?.[0], last = chapter.ground?.[chapter.ground.length - 1];
+  if (kind.behind === null || !street || !pools.length || !first || !last) return null;
+  const from = first.x - 8, wide = last.x - first.x + 16, row = new Uint8Array(1024);
+  for (let i = 0; i < row.length; i++) row[i] = Math.round(Math.min(1, Math.max(0, (street(from + (i / 1023) * wide) - pools[0]!.y) / 4)) * 255);
+  const map = new DataTexture(row, 1024, 1, RedFormat);
+  map.name = 'water-islands';
+  map.magFilter = map.minFilter = LinearFilter;
+  map.needsUpdate = true;
+  return { map, frame: new Vector4(from, wide, 1.65, 1) };
+}
+
 /** A clear pixel: what the water mirrors of the far scenery where there is none. */
 function nothingFar(): DataTexture {
   const texture = new DataTexture(new Uint8Array(4), 1, 1);
@@ -302,6 +331,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     : null;
   const mirror = pools.length && !standing ? mirrorStrip(setting.far ?? []) : null;
   const sky = setting.sky ?? { top: '#8fb6d8', middle: '#dfeaf0', glow: '#fff6dc' };
+  const islands = look ? islandRow(chapter, kind, setting.street) : null;
   const uniforms = {
     flowMap: { value: flowField() }, time, details,
     sunDirection: { value: new Vector3(...sun).normalize() },
@@ -319,6 +349,17 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     // kerb, and wavering (docs/visual-audit/byn.md row 8).
     mirrorReach: { value: standing ? MIRROR_REACH : 1 },
     skyTop: { value: new Color(sky.top) }, skyMiddle: { value: new Color(sky.middle) }, skyGlow: { value: new Color(sky.glow) },
+    // What stands on the banks (Mid and High): each pool's two end banks, from, to and the height of each top; the
+    // trunks nearest the camera, x, z, radius and top, and their colours; and on High the picture's own projection.
+    banks: { value: Array.from({ length: MIRRORED.banks }, () => new Vector4(0, 0, -1e6, -1e6)) },
+    columns: { value: Array.from({ length: MIRRORED.trunks }, () => new Vector4(0, 0, 0, -1e6)) },
+    columnTint: { value: Array.from({ length: MIRRORED.trunks }, () => new Color()) },
+    bankTop: { value: new Color((BANKS[setting.place ?? chapter.place!] ?? BANKS.forest!)[0]) },
+    bankFace: { value: new Color((BANKS[setting.place ?? chapter.place!] ?? BANKS.forest!)[1]) },
+    viewProjection: { value: new Matrix4() },
+    islands: { value: (islands?.map ?? nothingFar()) as Texture },
+    // Where the islands' row begins, how wide it is, where their fronts go under the water, and whether there are any.
+    islandFrame: { value: islands?.frame ?? new Vector4(0, 1, 0, 0) },
     mirrorTint: { value: new Color(kind.tint) },
     faceTop: { value: new Color(kind.faceTop) }, faceDeep: { value: new Color(kind.faceDeep) },
     through: { value: new Color(kind.through) },
@@ -347,11 +388,12 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         #include <fog_vertex>
       }`,
     fragmentShader: /* glsl */ `
-      uniform sampler2D flowMap, refraction, mirrorMap;
+      uniform sampler2D flowMap, refraction, mirrorMap, islands;
       uniform vec3 waterColour, sunDirection, skyTop, skyMiddle, skyGlow, mirrorTint, faceTop, faceDeep, through, bedColour, shoreColour;
       uniform float time, details, opacity, refractOn, cameraFar, mirrorReach;
-      uniform vec4 mirrorFrame, body, surface;
-      uniform vec3 mirrorSlide;
+      uniform vec4 mirrorFrame, islandFrame, body, surface, banks[${MIRRORED.banks}], columns[${MIRRORED.trunks}];
+      uniform vec3 mirrorSlide, columnTint[${MIRRORED.trunks}], bankTop, bankFace;
+      uniform mat4 viewProjection;
       uniform vec2 resolution;
       varying vec3 waterWorld; varying float waterDepth; varying vec4 waterPart;
       #include <fog_pars_fragment>
@@ -394,6 +436,77 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         float glow = clamp(1.0 - length(vec2(screen.x + slope.x * 2.0 - 0.273, high - 0.129)) / 0.664, 0.0, 1.0);
         sky = mix(sky, skyGlow, glow);
         vec3 mirrored = (sky * (1.0 - far.a) + far.rgb) * mirrorTint;
+        // What stands on its banks, mirrored about its surface (Olov's exception of 4 November 2026): the view ray
+        // goes on under the surface into the mirrored world. Mid and High: a pool's end banks and the trunks near
+        // it, from what is known of them; High: the picture so far itself, in a few steps in screen space.
+        float banked = 0.0;
+        if (details > 0.5 && isTop > 0.5 && body.w <= 0.0) {
+          vec3 d = normalize(ray + vec3(slope.x * 5.0, 0.0, slope.y * 2.0) * length(ray));
+          float near = 1e9;
+          vec3 standing = vec3(0.0);
+          for (int i = 0; i < ${MIRRORED.banks}; i++) {
+            vec4 b = banks[i];
+            if (waterWorld.x < b.x - 0.05 || waterWorld.x > b.y + 0.05) continue;
+            // A dark wet band where it meets a bank.
+            float left = b.z - waterPart.w, right = b.w - waterPart.w;
+            banked = max(banked, max(step(0.05, left) * (1.0 - smoothstep(0.0, 0.5, waterWorld.x - b.x)), step(0.05, right) * (1.0 - smoothstep(0.0, 0.5, b.y - waterWorld.x))));
+            float t = ((d.x < 0.0 ? b.x : b.y) - waterWorld.x) / (abs(d.x) < 1e-4 ? 1e-4 : d.x);
+            float high = d.x < 0.0 ? left : right;
+            float under = -d.y * t;
+            if (t > 0.0 && t < near && under < high && waterWorld.z + d.z * t > -16.0) {
+              near = t;
+              standing = mix(bankFace, bankTop, smoothstep(high - 0.45, high - 0.1, under)) * (0.7 + 0.3 * smoothstep(0.0, 0.6, under));
+            }
+          }
+          for (int i = 0; i < ${MIRRORED.trunks}; i++) {
+            vec4 c = columns[i];
+            vec2 o = waterWorld.xz - c.xy;
+            float a = dot(d.xz, d.xz), b = dot(o, d.xz), k = b * b - a * (dot(o, o) - c.z * c.z);
+            if (k <= 0.0) continue;
+            float t = (-b - sqrt(k)) / max(a, 1e-6);
+            if (t > 0.0 && t < near && -d.y * t < c.w - waterPart.w) {
+              near = t;
+              vec2 side = (o + d.xz * t) / c.z;
+              standing = columnTint[i] * (0.6 + 0.4 * clamp(side.x * sign(sunDirection.x), 0.0, 1.0));
+            }
+          }
+          // The bog's islands, where the water lies in front of them: their fronts, on their heads.
+          float front = (waterWorld.z - islandFrame.z) / max(-d.z, 0.05);
+          if (islandFrame.w > 0.5 && front > 0.0 && front < near) {
+            float high = texture2D(islands, vec2((waterWorld.x + d.x * front - islandFrame.x) / islandFrame.y, 0.5)).r * 4.0;
+            float under = -d.y * front;
+            if (under < high - 0.02) { near = front; standing = mix(bankFace, bankTop, smoothstep(high - 0.5, high - 0.12, under)) * (0.7 + 0.3 * smoothstep(0.0, 0.5, under)); }
+          }
+          float stands = near < 1e8 ? 0.92 * (1.0 - smoothstep(14.0, 32.0, near)) : 0.0;
+          if (refractOn > 0.5) {
+            // The picture so far, mirrored: the mirrored ray in growing steps against the picture's own depth.
+            vec3 r = reflect(d, vec3(0.0, 1.0, 0.0));
+            float s = 0.25, last = 0.0;
+            for (int i = 0; i < 10; i++) {
+              vec4 clip = viewProjection * vec4(waterWorld + r * s, 1.0);
+              vec2 uv = clip.xy / clip.w * 0.5 + 0.5;
+              if (uv.y > 1.0 || uv.x < 0.0 || uv.x > 1.0) break;
+              float gap = clip.w - textureLod(refraction, uv, 0.0).a * cameraFar;
+              if (gap > 0.0 && gap < 0.5 + s * 0.35) {
+                for (int j = 0; j < 4; j++) {
+                  float m = (last + s) * 0.5;
+                  vec4 mc = viewProjection * vec4(waterWorld + r * m, 1.0);
+                  vec2 mu = mc.xy / mc.w * 0.5 + 0.5;
+                  if (mc.w - textureLod(refraction, mu, 0.0).a * cameraFar > 0.0) { s = m; uv = mu; } else last = m;
+                }
+                // It fades where the mirrored point is off the picture, and the further it is from the water.
+                float fade = smoothstep(1.0, 0.82, uv.y) * smoothstep(0.0, 0.05, uv.x) * smoothstep(1.0, 0.95, uv.x) * (1.0 - smoothstep(8.0, 22.0, s));
+                vec3 seen = textureLod(refraction, uv, 0.0).rgb;
+                standing = stands > 0.0 ? mix(standing, seen, fade) : seen;
+                stands = max(stands, fade);
+                break;
+              }
+              last = s;
+              s = s * 1.55 + 0.2;
+            }
+          }
+          mirrored = mix(mirrored, standing * mirrorTint, stands);
+        }
         // Dark things are darker in water than in the air, and the sky keeps its light.
         mirrored *= 0.55 + 0.75 * dot(mirrored, vec3(0.3, 0.6, 0.1));
         // Water mirrors most where it is looked along, and a ripple's near side is looked into.
@@ -411,7 +524,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           own = mix(bedColour * (0.88 + 0.24 * grit), own, water);
           solid = 1.0;
         }
-        vec3 top = mix(own, mirrored, mirrors);
+        vec3 top = mix(own, mirrored, mirrors) * (1.0 - 0.3 * banked);
         if (details > 0.5) {
           // The low sun's glitter: where two crests meet, under the sky's glow.
           vec3 normal = normalize(vec3(-slope.x, 1.0, -slope.y));
@@ -499,7 +612,46 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   }
   // The water is drawn in the scene's own pass, after what stands in it. Just before it, High copies the
   // picture so far at half size, to see through the surface: only while water is in the picture at all.
-  body.onBeforeRender = (renderer: WebGLRenderer, _scene, camera: Camera) => {
+  // The banks: each pool's two ends, and how high the ground stands over them.
+  const banks = pools.map((w) => ({ w, left: setting.street?.(w.from - 0.4) ?? -1e6, right: setting.street?.(w.to + 0.4) ?? -1e6, d: 0 }));
+  // The trunks near the water, found in the scene the first time it is drawn.
+  let trunks: { x: number; z: number; wide: number; top: number; tint: Color; d: number }[] | null = null;
+  const findTrunks = (scene: Object3D) => {
+    const kinds = TRUNKS();
+    const found: NonNullable<typeof trunks> = [];
+    const m = new Matrix4(), at = new Vector3(), size = new Vector3();
+    scene.traverse((object) => {
+      const many = object as InstancedMesh;
+      const kind = many.isInstancedMesh ? kinds.get(many.material as Material) : undefined;
+      if (!kind) return;
+      for (let i = 0; i < many.count; i++) {
+        many.getMatrixAt(i, m);
+        m.premultiply(many.matrixWorld);
+        at.setFromMatrixPosition(m);
+        size.setFromMatrixScale(m);
+        if (at.z > -0.5 || at.z < -16 || !pools.some((w) => at.x > w.from - 6 && at.x < w.to + 6)) continue;
+        found.push({ x: at.x, z: at.z, wide: kind.wide * size.x, top: at.y + kind.tall * size.y, tint: kind.tint, d: 0 });
+      }
+    });
+    return found;
+  };
+  /** The banks and trunks nearest the camera, for this picture. */
+  const nearest = (x: number) => {
+    for (const b of banks) b.d = Math.max(b.w.from - x, x - b.w.to, 0);
+    if (banks.length > MIRRORED.banks) banks.sort((a, b) => a.d - b.d);
+    uniforms.banks.value.forEach((v, i) => { const b = banks[i]; v.set(b?.w.from ?? 0, b?.w.to ?? 0, b?.left ?? -1e6, b?.right ?? -1e6); });
+    for (const t of trunks!) t.d = Math.abs(t.x - x);
+    trunks!.sort((a, b) => a.d - b.d);
+    uniforms.columns.value.forEach((v, i) => {
+      const t = trunks![i];
+      v.set(t?.x ?? 0, t?.z ?? 0, t?.wide ?? 0, t?.top ?? -1e6);
+      if (t) uniforms.columnTint.value[i]!.copy(t.tint);
+    });
+  };
+  body.onBeforeRender = (renderer: WebGLRenderer, scene, camera: Camera) => {
+    trunks ??= findTrunks(scene);
+    nearest(camera.position.x);
+    uniforms.viewProjection.value.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     if (standing) uniforms.mirrorSlide.value.copy(standing.slide);
     else if (mirror) {
       const { card, map } = mirror.anchor;

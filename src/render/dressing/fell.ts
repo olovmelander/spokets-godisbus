@@ -2,7 +2,7 @@ import { Color, Group, InstancedMesh, Mesh, Object3D } from 'three';
 import type { ChapterData } from '../../sim/types';
 import { backRise, shapeOf, stones, type MountainSocket, type StonePlace } from '../mountain-kit';
 import { forwardAt } from './ground';
-import { KIT, grows, heightAt, sequence } from './kit';
+import { KIT, TALL_BLADES, grows, heightAt, sequence, tallGrass } from './kit';
 
 // --- the mountain -------------------------------------------------------------------------------------------
 
@@ -124,14 +124,16 @@ export function fell(chapter: ChapterData, from: number, to: number, seed: numbe
   berries.count = berry;
 
   // Dry grass, where there is a crack for it.
-  const grass = new InstancedMesh(KIT.blade, KIT.straw, Math.round(length * 3.5));
+  const tufts = Math.round(length * 3.5);
+  const clumps = Math.round(length * 0.25);
+  const grass = new InstancedMesh(KIT.blade, KIT.straw, tufts + clumps * TALL_BLADES);
   n = 0;
-  for (let tuft = 0; n < grass.count && tuft < grass.count; tuft++) {
+  for (let tuft = 0; n < tufts && tuft < tufts; tuft++) {
     const x = from + next() * length;
     const z = next() < 0.15 ? 0.6 + next() * 0.35 : -0.6 - next() ** 1.3 * 6;
     if (!grows(chapter, x) || !stands(x, z)) continue;
     const tall = 0.3 + next() * 0.6;
-    for (let k = 0; k < 3 + Math.floor(next() * 4) && n < grass.count; k++) {
+    for (let k = 0; k < 3 + Math.floor(next() * 4) && n < tufts; k++) {
       const bx = x + (next() - 0.5) * 0.2;
       place.position.set(bx, top(bx, z), z + (next() - 0.5) * 0.2);
       place.rotation.set((next() - 0.5) * 0.8, next() * 6.28, (next() - 0.5) * 0.8);
@@ -142,6 +144,8 @@ export function fell(chapter: ChapterData, from: number, to: number, seed: numbe
     }
   }
   grass.count = n;
+  // Taller dry grass at the rock's edges and far behind, where no stone lies.
+  tallGrass(grass, chapter, from, to, seed, top, clumps, [0.9, 1.6], 0.045, ['#cdb878', '#b0a878', '#bfae80'], (x, z) => stands(x, z) && !taken(x, z, 0.4));
 
   const meshes = [lichen, leaves, berries, grass];
 

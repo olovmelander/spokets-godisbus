@@ -1,0 +1,210 @@
+import {
+  Color, DirectionalLight, Group, HemisphereLight, Mesh, MeshStandardMaterial, PerspectiveCamera, Scene, ShaderLib, ShaderMaterial,
+  SphereGeometry, type InstancedMesh, type Material, type WebGLProgramParametersWithUniforms, type WebGLRenderer,
+} from 'three';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { ADVENTURE2, BONUS, STORY, loadAdventure2 } from '../../src/content/chapters';
+import { PLACES, dress } from '../../src/render/dressing';
+import { PACK, type ExtraContext, type ExtraFrame } from '../../src/render/extensions';
+import { DEW, createDew, dewPlaces } from '../../src/render/lift/materials/dew';
+import { CARVED, RIM, classify, createSurfaces, dewy, wetOf, woodColoured } from '../../src/render/lift/materials/surface';
+import { createWater } from '../../src/render/water';
+import type { ChapterData } from '../../src/sim/types';
+
+beforeAll(async () => {
+  // The dressing draws its pictures on canvases: there are none here, and none are needed.
+  const fake: object = new Proxy(function () {}, { get: (_, key) => (key === Symbol.toPrimitive ? () => 0 : fake), apply: () => fake, set: () => true });
+  vi.stubGlobal('document', { createElement: () => ({ width: 0, height: 0, style: {}, getContext: () => fake }) });
+  await loadAdventure2();
+});
+afterAll(() => vi.unstubAllGlobals());
+
+const all = () => [...STORY, ...BONUS, ...ADVENTURE2];
+
+function context(chapter: ChapterData): ExtraContext {
+  const look = PACK.looks.get(chapter.id) ?? PLACES[chapter.place!];
+  const scene = new Scene();
+  const sun = new DirectionalLight(look.sun.colour, look.sun.intensity);
+  sun.position.set(...look.sun.from);
+  const dressing = dress(chapter, look);
+  scene.add(dressing.group);
+  return { chapter, scene, sky: new Color(look.haze.colour), hemisphere: new HemisphereLight(), sun, place: look, dressing: dressing.group };
+}
+
+const frame = (over: Partial<ExtraFrame> = {}): ExtraFrame => ({
+  dt: 0.5, clock: 1, flags: new Set(), x: 20, y: 0, camera: new PerspectiveCamera(), still: false, tier: 'high', riding: false, darkness: 0, ...over,
+});
+
+/** Runs a material's patches on three's own standard shader, as the renderer would when it compiles it. */
+function compile(material: Material): WebGLProgramParametersWithUniforms {
+  const shader = { uniforms: {}, vertexShader: ShaderLib.standard.vertexShader, fragmentShader: ShaderLib.standard.fragmentShader } as unknown as WebGLProgramParametersWithUniforms;
+  material.onBeforeCompile(shader, {} as WebGLRenderer);
+  return shader;
+}
+
+const patched = (root: Group | Scene) => {
+  const found = new Set<MeshStandardMaterial>();
+  root.traverse((object) => {
+    const material = (object as Mesh).material;
+    for (const one of Array.isArray(material) ? material : material ? [material] : []) if (one.userData.liftSurface) found.add(one as MeshStandardMaterial);
+  });
+  return [...found];
+};
+
+/** Red, pink and gold are the candy's and the hook's (tests/unit/life.test.ts). */
+function candyColoured([r, g, b]: number[]): boolean {
+  const most = Math.max(r!, g!, b!);
+  const chroma = most - Math.min(r!, g!, b!);
+  if (chroma <= 40) return false;
+  if (chroma > 120) return true;
+  const hue = 60 * (most === r ? (((g! - b!) / chroma) + 6) % 6 : most === g ? (b! - r!) / chroma + 2 : (r! - g!) / chroma + 4);
+  return hue < 30 || hue > 270;
+}
+const ink = (colour: Color) => { const c = colour.clone().convertLinearToSRGB(); return [c.r * 255, c.g * 255, c.b * 255]; };
+
+describe('the visual upgrade: wood, moss and the wet', () => {
+  it('patches the ground, the moss and the wood of every chapter of both adventures, with one program key each', () => {
+    for (const chapter of all()) {
+      const ctx = context(chapter);
+      const surfaces = createSurfaces(ctx);
+      surfaces.apply(ctx.scene);
+      // Again, as each warm-up does: nothing is patched twice.
+      surfaces.apply(ctx.scene);
+      const materials = patched(ctx.scene);
+      expect(materials.length, chapter.id).toBeGreaterThan(0);
+      for (const material of materials) {
+        const key = material.customProgramCacheKey();
+        expect(key.split(':lift-surface-v1').length - 1, chapter.id).toBe(1);
+      }
+      // What it adds, it adds to three's own chunks, and leaves them in.
+      const shader = compile(materials[0]!);
+      expect(shader.vertexShader).toContain('liftWorld = ');
+      expect(shader.vertexShader).toContain('#include <project_vertex>');
+      expect(shader.fragmentShader).toContain('liftWetness');
+      expect(shader.fragmentShader).toContain('#include <emissivemap_fragment>');
+      expect(shader.fragmentShader).toContain('#include <opaque_fragment>');
+      surfaces.update(frame());
+    }
+  });
+
+  it('knows matte carved wood from the moss: the boards, the figures, the moss on the ground', () => {
+    const granskog = STORY.find((chapter) => chapter.id === 'granskog')!;
+    const ctx = context(granskog);
+    createSurfaces(ctx).apply(ctx.scene);
+    const moss = patched(ctx.scene).filter((material) => material.userData.ground === 'moss');
+    expect(moss.length).toBeGreaterThan(0);
+    for (const material of moss) expect((material.userData.liftSurface as { y: number }).y).toBe(1);
+    // A figure carved of grey old wood and one of pale linden are carved; their dark eyes are not.
+    const figure = new Group();
+    figure.name = 'old-trägubbe';
+    const body = new Mesh(new SphereGeometry(), new MeshStandardMaterial({ color: '#8f8c7e' }));
+    const eye = new Mesh(new SphereGeometry(), new MeshStandardMaterial({ color: '#1a1530' }));
+    figure.add(body, eye);
+    expect(classify(body, body.material, ctx.dressing ?? null, granskog)).toBe(CARVED);
+    expect(classify(eye, eye.material, ctx.dressing ?? null, granskog)).toBeNull();
+    expect(woodColoured(new Color('#e6cfa2'))).toBe(true);
+    expect(woodColoured(new Color('#6f8a45'))).toBe(false);
+  });
+
+  it('keeps its hands off him, his family, the candy and what gives off light', () => {
+    const garden = STORY.find((chapter) => chapter.id === 'garden')!;
+    const ctx = context(garden);
+    const elof = new Group();
+    elof.name = 'player-figure';
+    const skin = new Mesh(new SphereGeometry(), new MeshStandardMaterial({ color: '#e0b48a' }));
+    elof.add(skin);
+    ctx.dressing!.add(elof);
+    expect(classify(skin, skin.material, ctx.dressing ?? null, garden)).toBeNull();
+    const pappa = new Group();
+    pappa.name = 'stage-pappa';
+    const coat = new Mesh(new SphereGeometry(), new MeshStandardMaterial({ color: '#5a7d4a' }));
+    pappa.add(coat);
+    expect(classify(coat, coat.material, ctx.dressing ?? null, garden)).toBeNull();
+    const sweet = new Mesh(new SphereGeometry(), new MeshStandardMaterial({ color: '#e8483f' }));
+    sweet.material.userData.candy = {};
+    ctx.dressing!.add(sweet);
+    expect(classify(sweet, sweet.material, ctx.dressing ?? null, garden)).toBeNull();
+    const lamp = new Mesh(new SphereGeometry(), new MeshStandardMaterial({ color: '#ffffff', emissive: '#ffd9a0', emissiveIntensity: 0.8 }));
+    ctx.dressing!.add(lamp);
+    expect(classify(lamp, lamp.material, ctx.dressing ?? null, garden)).toBeNull();
+  });
+
+  it('wets everything out of doors in the storm, the street after rain, and nothing at home indoors', () => {
+    const byId = (id: string) => all().find((chapter) => chapter.id === id)!;
+    for (const id of ['stormgard', 'stormskog', 'stormbyn', 'flarken', 'alven', 'billsta']) expect(wetOf(byId(id), byId(id).place).x, id).toBeGreaterThanOrEqual(0.8);
+    // At home only what is past the door gets wet.
+    expect(wetOf(byId('stormkvall'), 'home').y).toBe(byId('stormkvall').outdoors);
+    expect(wetOf(byId('morgonen'), 'home').x).toBe(0);
+    expect(wetOf(byId('byn'), 'village').w).toBeGreaterThan(0.3);
+    expect(wetOf(byId('berget'), 'mountain').toArray().filter((v, i) => i !== 1)).toEqual([0, 0, 0]);
+  });
+
+  it('holds its glints and the dew still with reduced motion', () => {
+    const garden = STORY.find((chapter) => chapter.id === 'garden')!;
+    const ctx = context(garden);
+    const surfaces = createSurfaces(ctx);
+    surfaces.apply(ctx.scene);
+    const shader = compile(patched(ctx.scene)[0]!);
+    const time = (shader.uniforms as Record<string, { value: number }>).liftTime!;
+    surfaces.update(frame({ still: true }));
+    surfaces.update(frame({ still: true }));
+    expect(time.value).toBe(0);
+    surfaces.update(frame());
+    expect(time.value).toBeGreaterThan(0);
+    const dew = createDew(ctx)!;
+    const mesh = ctx.scene.getObjectByName('lift-dew') as InstancedMesh;
+    const dewTime = (compile(mesh.material as Material).uniforms as Record<string, { value: number }>).dewTime!;
+    dew.update(frame({ still: true }));
+    dew.update(frame({ still: true }));
+    expect(dewTime.value).toBe(0);
+  });
+
+  it('puts dew only behind the path, of a morning out of doors, on the rich layer and fewer on Mid', () => {
+    for (const chapter of all()) {
+      const places = dewPlaces(context(chapter));
+      if (!dewy(chapter) && chapter.id !== 'morgonen') { expect(places, chapter.id).toEqual([]); continue; }
+      for (const dew of places) expect(dew.at.z, chapter.id).toBeLessThan(-0.8);
+    }
+    for (const id of ['garden', 'granskog', 'morgonen']) {
+      const chapter = all().find((one) => one.id === id)!;
+      const ctx = context(chapter);
+      const dew = createDew(ctx)!;
+      expect(dew, id).not.toBeNull();
+      const mesh = ctx.scene.getObjectByName('lift-dew') as InstancedMesh;
+      expect(mesh.userData.rich).toBe(true);
+      const most = mesh.instanceMatrix.count;
+      expect(most, id).toBeGreaterThan(10);
+      dew.update(frame({ tier: 'low' }));
+      expect(mesh.count).toBe(0);
+      dew.update(frame({ tier: 'mid' }));
+      expect(mesh.count).toBe(Math.round(most * 0.6));
+      dew.update(frame({ tier: 'high' }));
+      expect(mesh.count).toBe(most);
+    }
+  });
+
+  it('adds no red, pink or gold: the dew, its sun, the glints and a carving\'s rim are pale', () => {
+    expect(candyColoured(ink(new Color(DEW)))).toBe(false);
+    expect(candyColoured(RIM.map((c) => c * 255))).toBe(false);
+    for (const chapter of all()) {
+      const look = PACK.looks.get(chapter.id) ?? PLACES[chapter.place!];
+      const sun = new Color(look.sun.colour);
+      expect(candyColoured(ink(sun.clone().lerp(new Color(1, 1, 1), 0.55))), chapter.id).toBe(false);
+      expect(candyColoured(ink(sun.clone().lerp(new Color(1, 1, 1), 0.5))), chapter.id).toBe(false);
+    }
+  });
+});
+
+describe('the water that mirrors its banks', () => {
+  it('mirrors each pool\'s ends, the trunks near it and, on High, the picture so far', () => {
+    for (const chapter of all().filter((one) => (one.water ?? []).length > 0)) {
+      const look = PACK.looks.get(chapter.id) ?? PLACES[chapter.place!];
+      const water = createWater(chapter, look.water, look.sun.from, { place: look.id, street: (x) => x * 0 });
+      const material = (water.group.children[0] as Mesh).material as ShaderMaterial;
+      expect(material.uniforms.banks!.value, chapter.id).toHaveLength(8);
+      expect(material.fragmentShader).toContain('textureLod(refraction');
+      // The bog's islands are mirrored on Mid from a row of their heights.
+      expect(material.uniforms.islandFrame!.value.w, chapter.id).toBe(look.id === 'bog' ? 1 : 0);
+    }
+  });
+});

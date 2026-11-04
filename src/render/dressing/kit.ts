@@ -1,10 +1,11 @@
 import {
   BoxGeometry, BufferGeometry, CanvasTexture, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, LatheGeometry,
-  MeshStandardMaterial, RepeatWrapping, SRGBColorSpace, SphereGeometry, Vector2,
+  MeshStandardMaterial, Object3D, RepeatWrapping, SRGBColorSpace, SphereGeometry, Vector2, type InstancedMesh, type Material,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData, PlaceId, SurfaceKind } from '../../sim/types';
 import type { Grade } from '../grade';
+import { mossy } from '../lift/flora/light';
 import { sway } from '../wind';
 
 // What every part of the dressing uses: the type of a place's look, the small tools, the moss's colours, and
@@ -227,7 +228,57 @@ export function makeKit(): void {
   for (const blades of [KIT.grass, KIT.lawn, KIT.straw]) sway(blades, 0.07);
   sway(KIT.stem, 0, 0.045);
   sway(KIT.petal, 0, 0, 0.045);
-  sway(KIT.lichen, 0, 0, 0.02, 0);
+  sway(KIT.lichen, 0, 0, 0.02, 0, 0);
+  // Moss is soft: its edges catch the light like velvet (../lift/flora/light.ts).
+  mossy(KIT.moss);
+}
+
+const soft = new WeakMap<Material, Material>();
+/** The forest kit's cushions in a soft moss of their own: the kit's material is the stones' and the cones' too. */
+export function softMoss(material: MeshStandardMaterial): Material {
+  let moss = soft.get(material);
+  if (!moss) soft.set(material, (moss = mossy(material.clone())));
+  return moss;
+}
+
+/** How many blades `tallGrass` puts in at most, for the clumps it is asked for. */
+export const TALL_BLADES = 9;
+
+/**
+ * Tall grass at the edges and in the back rows (docs/visual-upgrade.md): clumps of blades taller than he is, where
+ * the ground ends at a wall or a pool, and here and there far behind the path. They go at the end of a stretch's
+ * mesh of blades (which has room for `clumps` × TALL_BLADES more), so that a tier can show fewer of them: its
+ * `userData.tall` says from where and how many (../lift/flora.ts). They sway, and bend from him, as all grass does.
+ */
+export function tallGrass(
+  mesh: InstancedMesh, chapter: ChapterData, from: number, to: number, seed: number, top: (x: number, z: number) => number,
+  clumps: number, high: readonly [number, number], thin: number, inks: readonly string[], stands: (x: number, z: number) => boolean = () => true,
+): void {
+  const next = sequence(seed * 41 + 13);
+  const place = new Object3D();
+  const tint = new Color();
+  const base = mesh.count;
+  const room = mesh.instanceMatrix.count;
+  for (let i = 0; i < clumps; i++) {
+    const x = from + next() * (to - from);
+    const edge = !grows(chapter, x - 1.4) || !grows(chapter, x + 1.4);
+    const z = edge ? -0.8 - next() * 2.4 : -2.4 - next() * 5;
+    const tall = high[0] + next() * (high[1] - high[0]);
+    const ink = inks[Math.floor(next() * inks.length)]!;
+    const keep = edge || next() < 0.5;
+    if (!keep || !grows(chapter, x) || !stands(x, z)) continue;
+    for (let k = 0; k < TALL_BLADES && mesh.count < room; k++) {
+      const bx = x + (next() - 0.5) * 0.45;
+      const bz = z + (next() - 0.5) * 0.35;
+      place.position.set(bx, top(bx, bz), bz);
+      place.rotation.set((next() - 0.5) * 0.45, next() * 6.28, (next() - 0.5) * 0.45);
+      place.scale.set(thin * (0.7 + next() * 0.6), tall * (0.6 + next() * 0.45), 1);
+      place.updateMatrix();
+      mesh.setMatrixAt(mesh.count, place.matrix);
+      mesh.setColorAt(mesh.count++, tint.set(ink).multiplyScalar(0.72 + next() * 0.4));
+    }
+  }
+  mesh.userData.tall = [base, mesh.count - base];
 }
 
 /**

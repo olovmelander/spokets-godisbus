@@ -821,6 +821,8 @@ export function bank(chapter: ChapterData, own: Ground): Group {
 export function groundMaterial(chapter: ChapterData, kind: Ground, map: CanvasTexture | null): MeshStandardMaterial {
   const look = GROUNDS[kind];
   const material = new MeshStandardMaterial({ vertexColors: true, map, roughness: look.boards ? 0.8 : look.rock ? 0.9 : 1 });
+  // What it is made of, for how it is wet (../lift/materials/surface.ts): wet moss shines, wet asphalt gives back the sky.
+  material.userData.ground = kind;
   if (chapter.place === 'village' && kind === 'stone') stoneCourses(material);
   // Granite's cliffs break into blocks along their joints.
   if (kind === 'granite') cliffJoints(material);

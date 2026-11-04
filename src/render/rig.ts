@@ -1,4 +1,5 @@
-import { BoxGeometry, Color, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
+import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
+import type { ChapterData } from '../sim/types';
 import { createArmContact, createHandGrip } from './arm-contact';
 
 /**
@@ -112,8 +113,77 @@ export interface Rig {
   reach(side: 0 | 1, target: Vector3, weight?: number): void;
   /** Place and aim the palm around a held thing; returns its actual centre after clamping the reach. */
   grip(side: 0 | 1, target: Vector3, fingerDirection: Vector3, out: Vector3, weight?: number): Vector3;
+  /**
+   * The wind in the soft parts, after posing: `wind` is `windAt` at the body's own x (./wind.ts), and `ruffle` a
+   * hand in the hair (−1 to 1). With `still` they are at rest at once.
+   */
+  breeze?(wind: number, dt: number, still: boolean, ruffle?: number): void;
   /** How tall the body stands, in EL. */
   readonly height: number;
+}
+
+/**
+ * Secondary motion in the one shared wind: a hair tip, a cap's brim, a scarf or a hem follows the wind with a little
+ * lag and overshoot, as on a spring. Not a simulation: one damped angle, in radians, towards +x for a wind to the right.
+ * It leans about 0.07 in still air, 0.2 in a breath and 0.3 in a gust. Paused (dt 0) it holds; `still` rests it at once.
+ */
+export function createSway(stiffness = 40, damping = 4.4) {
+  let at = 0, speed = 0;
+  return {
+    step(wind: number, dt: number, still: boolean): number {
+      if (still) return at = speed = 0;
+      const target = Math.max(-.45, Math.min(.45, wind * .07));
+      for (let left = Math.min(dt, .25); left > 1e-9; left -= 1 / 60) {
+        const h = Math.min(left, 1 / 60);
+        speed += (stiffness * (target - at) - damping * speed) * h;
+        at += speed * h;
+      }
+      return at;
+    },
+  };
+}
+
+/** How much of the shared wind reaches the characters in a chapter: none indoors at home, more while the storm rains. */
+export function galeOf(chapter: Pick<ChapterData, 'place' | 'storm'>, flags: ReadonlySet<string>): number {
+  const storm = chapter.storm, raining = storm?.rain && !(storm.calm && flags.has(storm.calm)) ? storm.rain : 0;
+  return chapter.place === 'home' ? 0 : 1 + .6 * raining;
+}
+
+const SOFT = /^(hair|fringe|bangs|braid|pony|lock|cap|brim|visor|scarf|hem|coat|skirt|cloth|cape)/i;
+
+/**
+ * The soft parts of a model from Blender, found by name (hair, braid, cap, brim, scarf, hem, coat, cloth, …): each bends
+ * its tip downwind about its own root by the sway's angle, and a brim lifts. Parts bend along their own +y, as Blender's
+ * bones lie. Called after posing, so the parents' matrices are this frame's or the last one's.
+ */
+export function softParts(root: Object3D, only: (node: Object3D) => boolean = (node) => (node as { isBone?: boolean }).isBone === true) {
+  const parts: { node: Object3D; rest: Quaternion; brim: boolean; hair: boolean }[] = [];
+  root.traverse((node) => {
+    if (node !== root && node.parent && SOFT.test(node.name) && only(node)) {
+      parts.push({ node, rest: node.quaternion.clone(), brim: /^(cap|brim|visor)/i.test(node.name), hair: /^(hair|fringe|bangs|braid|pony|lock)/i.test(node.name) });
+    }
+  });
+  const along = new Vector3(), axis = new Vector3(), basis = new Matrix4(), frame = new Quaternion(), bend = new Quaternion();
+  let resting = true;
+  return (angle: number, ruffle = 0): void => {
+    if (angle === 0 && ruffle === 0) {
+      if (!resting) for (const part of parts) part.node.quaternion.copy(part.rest);
+      resting = true;
+      return;
+    }
+    resting = false;
+    for (const { node, rest, brim, hair } of parts) {
+      frame.setFromRotationMatrix(basis.extractRotation(node.parent!.matrixWorld)).multiply(rest);
+      along.set(0, 1, 0).applyQuaternion(frame);
+      // Turning about (along × x) brings the tip towards +x; a part lying along x, or a brim, lifts instead.
+      let turn = angle + (hair ? ruffle * .12 : 0);
+      axis.crossVectors(along, X);
+      if (brim || axis.lengthSq() < .1) { axis.crossVectors(along, Y); turn = Math.min(.15, Math.abs(angle) * .5); }
+      if (axis.lengthSq() < 1e-6) { node.quaternion.copy(rest); continue; }
+      axis.normalize().applyQuaternion(frame.invert());
+      node.quaternion.copy(rest).multiply(bend.setFromAxisAngle(axis, turn));
+    }
+  };
 }
 
 type JointName = 'root' | 'spine' | 'neck' | 'shoulderL' | 'elbowL' | 'handL' | 'shoulderR' | 'elbowR' | 'handR' | 'hipL' | 'kneeL' | 'hipR' | 'kneeR';
@@ -193,12 +263,21 @@ export function createRehearsalRig(who: Role): Rig {
       elbow: side === 0 ? 'elbowL' as const : 'elbowR' as const,
       hand: side === 0 ? 'handL' as const : 'handR' as const };
   });
-  function writeParts(): void {
-    for (const [i, { joint, box: [x, y, z, w, h, d] }] of parts.entries()) {
-      box.compose(place.set(x, y, z), still, size.set(w, h, d));
-      part.multiplyMatrices(joints[joint], box).premultiply(scaleAll);
-      mesh.setMatrixAt(i, part);
+  // The fifth part is the soft one: the hair hangs from its top, and a cap's brim lifts about the cap's back edge.
+  const sway = createSway(), bend = new Quaternion(), hinge = role.cap ? new Vector3(0, 0.815, -0.36) : new Vector3(0.42, 0.73, -0.05);
+  const pivot = new Matrix4(), turned = new Euler();
+  function writePart(i: number): void {
+    const { joint, box: [x, y, z, w, h, d] } = parts[i]!;
+    box.compose(place.set(x, y, z), still, size.set(w, h, d));
+    if (i === 4 && bend.w < 1) {
+      box.premultiply(pivot.makeTranslation(-hinge.x, -hinge.y, -hinge.z)).premultiply(pivot.makeRotationFromQuaternion(bend))
+        .premultiply(pivot.makeTranslation(hinge.x, hinge.y, hinge.z));
     }
+    part.multiplyMatrices(joints[joint], box).premultiply(scaleAll);
+    mesh.setMatrixAt(i, part);
+  }
+  function writeParts(): void {
+    for (let i = 0; i < parts.length; i++) writePart(i);
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingBox();
     mesh.computeBoundingSphere();
@@ -249,6 +328,19 @@ export function createRehearsalRig(who: Role): Rig {
       return out.copy(hands[side]).applyMatrix4(group.matrixWorld);
     },
     mouth(out) { return group.localToWorld(out.set(0, .25, .38).applyMatrix4(joints.neck).multiplyScalar(s)); },
+    breeze(wind, dt, calm) {
+      const angle = sway.step(wind, dt, calm);
+      if (angle === 0 && bend.w === 1) return;
+      // Which way the wind goes through the figure, from its last matrix: its front is +z and its own left +x.
+      const e = group.matrixWorld.elements;
+      const ahead = e[8]! / (Math.hypot(e[8]!, e[9]!, e[10]!) || 1), left = e[0]! / (Math.hypot(e[0]!, e[1]!, e[2]!) || 1);
+      if (angle === 0) bend.identity();
+      // A headwind lifts the brim most; the hair's tip goes downwind.
+      else if (role.cap) bend.setFromAxisAngle(X, -Math.min(.12, .3 * Math.abs(angle) + .4 * Math.max(0, -ahead * angle)));
+      else bend.setFromEuler(turned.set(-ahead * angle, 0, left * angle));
+      writePart(4);
+      mesh.instanceMatrix.needsUpdate = true;
+    },
     reach(side, target, weight = 1) {
       contacts[side].solve(target, weight);
       contactParts(side);
@@ -383,9 +475,11 @@ export function createModelRig(model: Object3D, height: number): Rig {
     const lower = i === 0 ? bones.elbowL : bones.elbowR;
     return hand && lower && contacts[i] ? createHandGrip(lower.node, hand, contacts[i]!) : null;
   });
+  const sway = createSway(), soft = softParts(model);
   return {
     group,
     height,
+    breeze(wind, dt, still, ruffle = 0) { soft(sway.step(wind, dt, still), still ? 0 : ruffle); },
     mouth(out) { return bones.head ? bones.head.node.localToWorld(out.copy(mouth)) : group.localToWorld(out.set(0, height * .89, height * .075)); },
     reach(side, target, weight = 1) { contacts[side]?.(target, weight); },
     grip(side, target, direction, out, weight = 1) {

@@ -1,5 +1,6 @@
 import { Matrix4, Mesh, Quaternion, Vector3, type Object3D } from 'three';
 import type { Act } from '../sim/scene';
+import { createSway, softParts } from './rig';
 
 /**
  * The ghost modelled in Blender, where its private pack exists (HANDOVER.md): how it is turned, and its painted eyes.
@@ -45,14 +46,32 @@ export interface GhostMotionFrame {
   staged: boolean;
   /** A scene owns the body arc and clock; its moving acts can still articulate the separate wooden shoes. */
   performance?: { act: Act; actT: number };
+  /** How far Elof is along the course from it, in EL: near, it tilts its head at him. */
+  elof?: number;
+  /** The shared wind where it stands (`windAt`, ./wind.ts), for a cloth hem if the model has one. */
+  wind?: number;
 }
 
+/**
+ * The ghost's own idle while it stands awake, for the view to add to the whole toy: a little double bob, a look about,
+ * and a curious tilt towards Elof when he is near. `pitch` tips it forward and `roll` cocks it to its side, each about
+ * its own axes; `bob` lifts it, in EL. All are 0 in a hop, in a scene, asleep and with reduced motion.
+ */
+export interface GhostIdle { bob: number; look: number; pitch: number; roll: number }
+
 const smooth = (t: number) => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+const pulse = (t: number, at: number, up: number, hold: number, down: number) => smooth((t - at) / up) * (1 - smooth((t - at - up - hold) / down));
 const hopAngle = (phase: number, side: number) => Math.sin(Math.PI * phase) *
   (.72 * (1 - phase) - .52 * phase + (side % 2 ? -1 : 1) * .065 * Math.sin(Math.PI * 2 * phase));
 
+/** Which of its idles a 6.4 s round of the ghost's plays between its taps: a bob, a look about, or neither. */
+const roundOf = (cycle: number) => ((Math.imul(cycle + 11, 0x9e3779b1) >>> 7) % 5) as 0 | 1 | 2 | 3 | 4;
+
 /** The carved body stays rigid; its two separate shoes can trail a hop, prepare to land, or tap a toe. */
-export function createGhostMotion(model: Object3D, facesX = false): { update(frame: GhostMotionFrame): void } {
+export function createGhostMotion(model: Object3D, facesX = false): { update(frame: GhostMotionFrame): GhostIdle } {
+  const idle: GhostIdle = { bob: 0, look: 0, pitch: 0, roll: 0 }, held: GhostIdle = { ...idle };
+  // A cloth hem or a scarf, if the model has one: the carved wood itself never bends.
+  const sway = createSway(), cloth = softParts(model, () => true);
   model.updateWorldMatrix(true, true);
   const orientation = model.getWorldQuaternion(new Quaternion());
   const rotation = new Quaternion(), point = new Vector3(), transform = new Matrix4();
@@ -104,7 +123,9 @@ export function createGhostMotion(model: Object3D, facesX = false): { update(fra
     foot.node.position.copy(foot.position).addScaledVector(foot.up, foot.lift);
   }
   return {
-    update({ dt, clock, hop, calm, awake, staged, performance }) {
+    update({ dt, clock, hop, calm, awake, staged, performance, elof, wind = 0 }) {
+      idle.bob = idle.look = idle.pitch = idle.roll = 0;
+      if (dt > 0 || calm) cloth(sway.step(wind, dt, calm));
       if (staged || !awake) {
         lastActivity = clock;
         wasHopping = false;
@@ -119,9 +140,9 @@ export function createGhostMotion(model: Object3D, facesX = false): { update(fra
           }
           pose(i, angle, false);
         }
-        return;
+        return idle;
       }
-      if (dt <= 0) return;
+      if (dt <= 0) return held;
       const phase = hop === null ? null : Math.max(0, Math.min(1, hop));
       if (phase !== null) {
         if (!wasHopping) for (const foot of feet) { foot.takeoffAngle = foot.angle; foot.takeoffLift = foot.lift; }
@@ -132,14 +153,28 @@ export function createGhostMotion(model: Object3D, facesX = false): { update(fra
       // A landing or the end of a held scene gets a quiet beat before idle acting resumes.
       const settled = smooth((clock - lastActivity - .45) / .35);
       const tap = !calm && phase === null && tapTime > 0 && tapTime < 1 ? -.18 * Math.sin(Math.PI * tapTime) ** 2 * settled : 0;
+      // Between its taps a round may hold two small hops in place, or a look about; near Elof it watches him instead,
+      // its head cocked. The order goes by the round, so no two rounds in a row need do the same.
+      const at = clock - cycle * 6.4, round = roundOf(cycle), quiet = !calm && phase === null ? settled : 0;
+      const near = quiet * smooth((5.5 - Math.abs(elof ?? Infinity)) / 2);
+      const from = quiet > 0 && round < 2 ? at >= 2.3 && at < 2.62 ? 2.3 : at >= 2.7 && at < 3.02 ? 2.7 : null : null;
+      const bounce = from === null ? null : (at - from) / .32;
+      if (bounce !== null) idle.bob = .18 * bounce * (1 - bounce) * quiet;
+      const glance = round === 2 || round === 3 ? (round === 2 ? 1 : -1) * (.5 * pulse(at, 1.4, .4, .5, .4) - .4 * pulse(at, 2.6, .4, .45, .4)) : 0;
+      idle.look = glance * quiet * (1 - near);
+      idle.pitch = .07 * near;
+      idle.roll = near * (.12 + .04 * Math.sin(clock * 1.1));
       for (let i = 0; i < feet.length; i++) {
-        if (phase === null) pose(i, i === cycle % Math.max(1, feet.length) ? tap : 0, true);
+        if (phase === null && bounce !== null) pose(i, hopAngle(bounce, i) * .35 * quiet, false);
+        else if (phase === null) pose(i, i === cycle % Math.max(1, feet.length) ? tap : 0, true);
         else {
           // Both shoes trail on takeoff, then reach forward before landing; neither moves the carved body.
           const foot = feet[i]!, release = 1 - smooth(phase / .18);
           pose(i, hopAngle(phase, i) * (calm ? .4 : 1) + foot.takeoffAngle * release, false, foot.takeoffLift * release);
         }
       }
+      Object.assign(held, idle);
+      return idle;
     },
   };
 }

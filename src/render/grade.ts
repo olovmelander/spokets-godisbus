@@ -1,5 +1,6 @@
 import {
   BufferGeometry, Data3DTexture, DataUtils, Float32BufferAttribute, HalfFloatType, LinearFilter, Mesh, OrthographicCamera, RGBAFormat, ShaderChunk, ShaderMaterial, Vector3,
+  Color, Vector4,
   type Fog, type FogExp2, type Material, type Object3D, type Texture,
   type WebGLRenderTarget, type WebGLRenderer,
 } from 'three';
@@ -142,6 +143,10 @@ const FRAGMENT = /* glsl */ `
   uniform float seed;
   uniform float glow;
   uniform sampler2D tBloom;
+  uniform float airOn;
+  uniform sampler2D tShafts;
+  uniform vec3 airLight, airHaze;
+  uniform vec4 airShape, airEye;
   varying vec2 vUv;
 
   float hash(vec2 p) {
@@ -159,6 +164,16 @@ const FRAGMENT = /* glsl */ `
     }
     // High's threshold light is gathered once at half resolution; keep it HDR until output.
     if (glow > 0.0) scene += texture2D(tBloom, vUv).rgb * glow;
+    // The air (./light-shafts.ts): a haze that takes what is far, thicker low down, and the shafts of light.
+    if (airOn > 0.5) {
+      float d = texture2D(tDepth, vUv).r;
+      float dist = depthCamera.x * depthCamera.y / (depthCamera.y - (depthCamera.y - depthCamera.x) * min(d, 0.99999));
+      float up = vUv.y * 2.0 - 1.0;
+      float low = exp(-max(airEye.x + up * airEye.y * dist - airEye.z, 0.0) / airEye.w);
+      float open = step(0.99999, d);
+      scene = mix(scene, airHaze, mix(smoothstep(airShape.x, airShape.y, dist) * airShape.z * (0.45 + 0.55 * low), airShape.w * (1.0 - smoothstep(-0.25, 0.5, up)), open));
+      scene += texture2D(tShafts, vUv).r * airLight * (1.0 - 0.75 * open);
+    }
     float light = dot(scene * exposure * tint, vec3(0.2126, 0.7152, 0.0722));
     // Scale exceptionally bright HDR values into the LUT, then extrapolate the affine grade about its
     // black offset. Highlights remain HDR until OutputPass applies Neutral and sRGB exactly once.
@@ -183,7 +198,16 @@ export interface GradePass extends Effect {
   setGlow(strength: number): void;
   setBloom(texture: Texture | null): void;
   setDepthBlur(texture: Texture | null, depth: Texture | null, near: number, far: number, cameraZ: number): void;
+  /** The air of ./light-shafts.ts, which reads the depth that setDepthBlur gives. Null: none. */
+  setAir(air: GradeAir | null): void;
 }
+
+/**
+ * The air: the shafts' picture and their light (linear, with its strength), the haze's colour, where it begins and
+ * is full (EL from the camera) and how much on what stands and on the far layers, and the eye: the camera's height,
+ * the tangent of half its view, the ground's height and how many EL the haze takes to thin upwards.
+ */
+export interface GradeAir { shafts: Texture | null; light: Color; haze: Color; shape: Vector4; eye: Vector4 }
 
 /** In linear light, 1 is white. What glows is what is nearly that bright and brighter: the sun on something pale, a lit window, a glint. */
 export const GLOW_FROM = 0.72;
@@ -201,6 +225,8 @@ export function createGradePass(grade: Grade): GradePass {
     uniforms: {
       glow: { value: 0 },
       tBloom: { value: null },
+      airOn: { value: 0 }, tShafts: { value: null }, airLight: { value: new Color(0, 0, 0) }, airHaze: { value: new Color() },
+      airShape: { value: new Vector4(1, 2, 0, 0) }, airEye: { value: new Vector4(0, 0.27, 0, 1) },
       tDiffuse: { value: null },
       tint: { value: new Vector3(...grade.tint) },
       exposure: { value: grade.exposure },
@@ -244,6 +270,16 @@ export function createGradePass(grade: Grade): GradePass {
     },
     setGlow(strength) {
       material.uniforms.glow!.value = Math.max(0, strength);
+    },
+    setAir(air) {
+      const u = material.uniforms;
+      u.airOn!.value = air ? 1 : 0;
+      if (!air) return;
+      u.tShafts!.value = air.shafts;
+      (u.airLight!.value as Color).copy(air.light);
+      (u.airHaze!.value as Color).copy(air.haze);
+      (u.airShape!.value as Vector4).copy(air.shape);
+      (u.airEye!.value as Vector4).copy(air.eye);
     },
   };
 }

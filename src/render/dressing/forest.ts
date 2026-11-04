@@ -2,7 +2,7 @@ import { Color, Group, InstancedMesh, Mesh, Object3D } from 'three';
 import type { ChapterData } from '../../sim/types';
 import { placing, together, type ForestKit, type Placed } from '../forest-kit';
 import { floorDrop, shoreAt } from './ground';
-import { KIT, grows, heightAt, landscape, mossAt, sequence } from './kit';
+import { KIT, TALL_BLADES, grows, heightAt, landscape, mossAt, sequence, softMoss, tallGrass } from './kit';
 
 // --- the forest ---------------------------------------------------------------------------------------------
 
@@ -54,7 +54,9 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
   const hummock = kit?.shape('tuva');
   const ballsBehind = Math.round(length * 22);
   const cushionsBehind = hummock ? Math.round(length * HUMMOCKS) : ballsBehind;
-  const cushions = new InstancedMesh(hummock ?? KIT.ball, hummock ? kit!.material : KIT.moss, cushionsBehind + Math.round(length * (hummock ? HUMMOCKS_IN_FRONT : FRONT.cushions)));
+  // With room for the moss on the stones' tops, which is put in last.
+  const capping = Math.max(1, Math.round(length * 0.2));
+  const cushions = new InstancedMesh(hummock ?? KIT.ball, hummock ? softMoss(kit!.material) : KIT.moss, cushionsBehind + Math.round(length * (hummock ? HUMMOCKS_IN_FRONT : FRONT.cushions)) + capping);
   let n = 0;
   // The balls' numbers are drawn with the kit too, so that everything after them stands where it stood.
   for (let i = 0; i < ballsBehind; i++) {
@@ -93,7 +95,8 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
 
   // Grass and sedge: thin blades in tufts, mostly behind him, some already autumn gold.
   const bladesBehind = Math.round(length * 9);
-  const grass = new InstancedMesh(KIT.blade, KIT.grass, bladesBehind + Math.round(length * FRONT.blades));
+  const clumps = Math.round(length * TALL_CLUMPS);
+  const grass = new InstancedMesh(KIT.blade, KIT.grass, bladesBehind + Math.round(length * FRONT.blades) + clumps * TALL_BLADES);
   n = 0;
   for (let tuft = 0; n < bladesBehind && tuft < bladesBehind; tuft++) {
     const x = from + next() * length;
@@ -222,8 +225,10 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
   trunks.count = n;
 
   // Stones under the moss.
-  const stonesBehind = Math.max(1, Math.round(length * 0.2));
+  const stonesBehind = capping;
   const stones = new InstancedMesh(KIT.boulder, KIT.stone, stonesBehind + Math.round(length * FRONT.stones));
+  /** The stones behind the path, for the moss on their tops. */
+  const mossed: { x: number; y: number; z: number; size: number; turn: number; shape: string }[] = [];
   n = 0;
   for (let i = 0; i < stonesBehind; i++) {
     const x = from + next() * length;
@@ -233,6 +238,7 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
     place.position.set(x, top(x, z) + size * 0.15, z);
     place.rotation.set(0, next() * 6.28, 0);
     place.scale.set(size * 1.3, size * 0.8, size);
+    mossed.push({ x, y: top(x, z), z, size, turn: place.rotation.y, shape: STONES[i % 3]! });
     if (kit) put(STONES[i % 3]!, x, top(x, z) - size * 0.12, z, place.rotation.y, size * 1.25, 0.9 + own() * 0.25);
     place.updateMatrix();
     stones.setMatrixAt(n, place.matrix);
@@ -349,6 +355,34 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
     stones.setColorAt(stones.count++, tint.set('#ffffff').multiplyScalar(shade));
   }
 
+  // Moss on the stones' tops behind the path: a soft rounded cushion, a little darker and damper than the floor's.
+  const capped = sequence(seed * 19 + 3);
+  for (const stone of mossed) {
+    const lie = [capped(), capped() * 6.28, capped(), capped()];
+    if (lie[0]! > 0.75) continue;
+    let [x, z, crown, wide] = [stone.x, stone.z, stone.y + stone.size * 0.99, stone.size * 0.55];
+    if (kit) {
+      const shape = kit.shape(stone.shape)!;
+      if (!shape.boundingBox) shape.computeBoundingBox();
+      const box = shape.boundingBox!;
+      const big = stone.size * 1.25;
+      const [mx, mz] = [((box.min.x + box.max.x) / 2) * big, ((box.min.z + box.max.z) / 2) * big];
+      x += mx * Math.cos(stone.turn) + mz * Math.sin(stone.turn);
+      z += mz * Math.cos(stone.turn) - mx * Math.sin(stone.turn);
+      crown = stone.y - stone.size * 0.12 + box.max.y * big;
+      wide = Math.min(box.max.x - box.min.x, box.max.z - box.min.z) * big * 0.34;
+    }
+    const high = wide * (0.3 + lie[2]! * 0.16);
+    place.position.set(x, crown - high * (hummock ? 0.55 : 0.45), z);
+    place.rotation.set(0, lie[1]!, 0);
+    place.scale.set(wide * (1 + lie[3]! * 0.2), hummock ? high * 2 : high, wide);
+    place.updateMatrix();
+    cushions.setMatrixAt(cushions.count, place.matrix);
+    cushions.setColorAt(cushions.count++, mossAt(x * 2.1 + 5, z * 2.1, tint).multiplyScalar(0.8 + lie[3]! * 0.15));
+  }
+  // Tall grass where the floor ends at a wall or a pool, and in the clearings far behind.
+  tallGrass(grass, chapter, from, to, seed, top, clumps, [1.5, 2.8], 0.13, ['#6f9434', '#7f9a3c', '#b4ac58']);
+
   const kinds: (InstancedMesh | Mesh)[] = [cushions, grass, leaves, berries, needles, trunks];
   if (kit) {
     undergrowth(chapter, from, to, seed, put, top, lie);
@@ -370,6 +404,8 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
 }
 
 const STONES = ['sten-a', 'sten-b', 'sten-c'];
+/** Clumps of tall grass to the length of a stretch (`tallGrass`). */
+const TALL_CLUMPS = 0.45;
 /** How many of the kit's cushions lie behind the path and in front of it, to the length: the balls that stand in for them are 22 and 5. */
 const HUMMOCKS = 9;
 const HUMMOCKS_IN_FRONT = 3.5;

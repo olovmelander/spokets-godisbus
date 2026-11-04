@@ -1,12 +1,110 @@
 import { BoxGeometry, CapsuleGeometry, ConeGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3 } from 'three';
 import { CLIMB_SPEED, JUMP_SPEED, RUN_AFTER, RUN_SPEED } from '../sim/constants';
 import type { PlayerState } from '../sim/types';
-import { blendPose, STANDING, type Pose } from './rig';
+import { blendPose, createSway, STANDING, type Pose } from './rig';
 import { createArmContact } from './arm-contact';
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
 const smooth = (n: number) => { const t = clamp(n); return t * t * (3 - 2 * t); };
 type MotionState = Pick<PlayerState, 'mode' | 'grounded' | 'vy'> & Partial<Pick<PlayerState, 't' | 'atEdge'>>;
+/** 0 → 1 over `up` seconds from `at`, held for `hold`, and back to 0 over `down`. */
+const pulse = (t: number, at: number, up: number, hold: number, down: number) => smooth((t - at) / up) * (1 - smooth((t - at - up - hold) / down));
+/** A small seeded random (mulberry32): the idles' order is shuffled, the same in every run. */
+export const seeded = (seed: number) => () => {
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
+/** What he does while he waits, in its seconds. After a long wait he stretches. */
+export const IDLES = { look: 4.4, rock: 3.6, scratch: 2.8, leaf: 3.8, tap: 3.2, stretch: 3.4 } as const;
+export type IdleAct = keyof typeof IDLES;
+/** The first idle begins this long after he stops, and a stretch only after this long a wait. */
+const FIRST = 3.4, STRETCH = 18;
+const JOINTS = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'legL', 'legR', 'kneeL', 'kneeR', 'spread'] as const;
+
+/**
+ * The thigh and knee that lift a heel by tipping the boot `tip` (< 0) about its toe, which stays where it stood: the
+ * public figure's measures (thigh 0.19, toe 0.135 ahead of and 0.21 below the knee).
+ */
+function onToe(tip: number): { hip: number; knee: number } {
+  const hip = Math.asin(Math.max(-1, Math.min(1, (0.135 * (1 - Math.cos(tip)) - 0.21 * Math.sin(tip)) / 0.19)));
+  return { hip, knee: hip - tip };
+}
+
+/**
+ * A short readable idle, added to the standing target at `u` seconds into it. Nothing moves a foot from its place: a
+ * heel lifts about its toe, and the rest is spine, head and arms. `near` is +1 when his right arm is nearer the camera
+ * (facing right), and `toward` turns the head towards the camera. Returns a hand in the hair, −1 to 1.
+ */
+function idlePose(act: IdleAct, u: number, near: 1 | -1, out: Pose): number {
+  const d = IDLES[act];
+  const arm = near > 0 ? 'armR' : 'armL', elbow = near > 0 ? 'elbowR' : 'elbowL';
+  const toward = -near;
+  const lift = (tip: number, legs: 'both' | 'near') => {
+    const { hip, knee } = onToe(tip);
+    if (legs === 'both' || near < 0) { out.legL += hip; out.kneeL += knee; }
+    if (legs === 'both' || near > 0) { out.legR += hip; out.kneeR += knee; }
+  };
+  switch (act) {
+    case 'look': {
+      // Over his shoulder towards us, away into the place, then up.
+      const first = pulse(u, .15, .5, .7, .45), second = pulse(u, 1.75, .5, .55, .45), up = pulse(u, 3, .45, .5, .45);
+      out.turn += toward * (.6 * first - .45 * second) + .08 * up;
+      out.nod += .04 * first - .36 * up;
+      out.lean -= .025 * up;
+      return 0;
+    }
+    case 'rock': {
+      // Up on his toes and back, twice, with his hands behind his back.
+      const e = pulse(u, 0, .45, d - .95, .5), wave = Math.sin(u * Math.PI * 2 / 1.65);
+      const up = e * Math.max(0, wave), back = e * Math.max(0, -wave);
+      lift(-.13 * up, 'both');
+      out.lean += .05 * up - .045 * back; out.nod += .03 * back - .03 * up;
+      out.armL += (-.42 - out.armL) * e; out.armR += (-.42 - out.armR) * e;
+      out.elbowL += (.55 - out.elbowL) * e; out.elbowR += (.55 - out.elbowR) * e;
+      return 0;
+    }
+    case 'scratch': {
+      // The nearer hand up to the side of his head (or his cap's brim), a quick scratch, and down.
+      const raise = pulse(u, .1, .5, 1.6, .55);
+      const rub = Math.sin(u * 26) * smooth((u - .6) / .2) * (1 - smooth((u - 1.9) / .2));
+      out[arm] += (2.55 - out[arm]) * raise; out[elbow] += (2.05 - out[elbow]) * raise + .13 * rub;
+      out.nod += .12 * raise; out.turn += toward * .1 * raise; out.lean += .02 * raise;
+      return rub;
+    }
+    case 'leaf': {
+      // Up at a falling leaf, following it down as it drifts, and a hand opens for it.
+      const watch = pulse(u, 0, .5, 2.8, .5), follow = smooth((u - .5) / 2.6), take = pulse(u, 2.2, .45, .5, .6);
+      out.nod += watch * (-.5 + .62 * follow);
+      out.turn += watch * .16 * Math.sin(u * 2.4) * (1 - .5 * follow);
+      out.lean -= .03 * watch * (1 - follow);
+      out[arm] += (.75 - out[arm]) * take; out[elbow] += (.7 - out[elbow]) * take;
+      return 0;
+    }
+    case 'tap': {
+      // Arms folded across his chest, and the nearer heel taps about its toe.
+      const e = pulse(u, 0, .45, d - .95, .5), beat = Math.max(0, Math.sin((u - .5) * Math.PI * 2 * 2.1)) * smooth((u - .5) / .15) * (1 - smooth((u - d + .7) / .2));
+      out.armL += (.5 - out.armL) * e; out.armR += (.55 - out.armR) * e;
+      out.elbowL += (1.9 - out.elbowL) * e; out.elbowR += (1.85 - out.elbowR) * e;
+      out.spread -= .25 * e;
+      lift(-.12 * beat, 'near');
+      out.nod += .035 * beat;
+      return 0;
+    }
+    case 'stretch': {
+      // Both arms up high, up on his toes a little, and down again through the sides.
+      const up = pulse(u, .1, .7, 1.4, .9), toes = pulse(u, .5, .5, .8, .5);
+      out.armL += (2.95 - out.armL) * up; out.armR += (2.95 - out.armR) * up;
+      out.elbowL += (.12 - out.elbowL) * up; out.elbowR += (.12 - out.elbowR) * up;
+      out.spread += .18 * up + .35 * pulse(u, 2.2, .3, .2, .5);
+      out.lean -= .1 * up; out.nod -= .28 * up;
+      lift(-.09 * toes, 'both');
+      return 0;
+    }
+  }
+}
 
 /** One pose language for the rounded public figure and the approved model's named bones. */
 export function playerPose(player: MotionState, phase: number, pace: number, landing: number, out: Pose): Pose {
@@ -74,8 +172,29 @@ export function createPlayerMotion() {
   let lastX: number | null = null, lastY = 0, lastMode: PlayerState['mode'] = 'free';
   let grounded = true, free = false, phase = 0, landing = 0, impact = 0, idle = 0;
   let speed = 0, lead = 1;
+  // The idles: a shuffled bag, so that no two rounds go the same way, and a quiet gap of its own before each.
+  const random = seeded(7), bag: IdleAct[] = [];
+  let act: IdleAct | null = null, actAt = 0, nextAt = FIRST, stretchedAt = -Infinity, last: IdleAct | null = null;
+  let ruffle = 0, blown = 0;
+  const acted = { ...STANDING };
+  const draw = (): IdleAct => {
+    if (bag.length === 0) {
+      bag.push('look', 'rock', 'scratch', 'leaf', 'tap');
+      for (let i = bag.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [bag[i], bag[j]] = [bag[j]!, bag[i]!]; }
+      if (bag[bag.length - 1] === last) [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1]!, bag[0]!];
+    }
+    return last = bag.pop()!;
+  };
   return {
-    update(player: PlayerState, x: number, dt: number, scripted: Pose | null, wave = 0, calm = false): Pose {
+    /** The idle playing now, if any. */
+    get idling(): IdleAct | null { return act; },
+    /** A hand in his hair: −1 to 1 while he scratches his head. */
+    get ruffle(): number { return ruffle; },
+    /**
+     * `wind` is the shared wind where he stands (`windAt`, ./wind.ts): standing in a strong one, he leans into it with
+     * an arm up. It never moves the simulation, and with `calm` (reduced motion) he stands quite still.
+     */
+    update(player: PlayerState, x: number, dt: number, scripted: Pose | null, wave = 0, calm = false, wind = 0): Pose {
       const travel = lastX === null ? 0 : x - lastX, distance = Math.abs(travel), previousMode = lastMode;
       const climb = lastMode === 'climb' && player.mode === 'climb' ? player.y - lastY : 0;
       // Assisted arcs move a kinematic body: its reported velocity stays zero.
@@ -122,10 +241,37 @@ export function createPlayerMotion() {
         target.armL += braking * 0.18 * weight; target.armR += braking * 0.18 * weight;
       }
       idle = walking && pace === 0 && !player.atEdge && wave <= 0 ? idle + dt : 0;
+      ruffle = 0;
+      if (idle === 0) { act = null; nextAt = FIRST + random() * 1.2; stretchedAt = -Infinity; }
+      blown = calm ? 0 : blown + (wind - blown) * -Math.expm1(-dt / .35);
       if (!calm && idle > 0.4) {
         const breath = Math.sin(idle * 1.8) * smooth((idle - 0.4) / 0.8);
         target.lean += breath * 0.015; target.nod += breath * 0.025;
         target.turn = Math.sin(idle * 0.65) * smooth((idle - 2) / 2) * 0.06;
+        // A strong wind where he stands: he leans into it, braced, with the nearer arm up before his face (or on his
+        // hair, with the wind at his back). It pauses the little idles while it blows. A gust blows to the left, against
+        // the way he goes (./wind.ts); the breaths that pass to the right lay the grass over, and it takes a storm's
+        // for him to brace against one.
+        const windy = smooth(blown < 0 ? (-blown - 1.7) / 1.1 : (blown - 3.4) / 1) * smooth((idle - .25) / .3);
+        if (act && idle - actAt >= IDLES[act]) { act = null; nextAt = idle + 1.6 + random() * 2.6; }
+        if (!act && idle >= nextAt && windy < .05) {
+          act = idle >= STRETCH && idle - stretchedAt > 30 ? 'stretch' : draw();
+          if (act === 'stretch') stretchedAt = idle;
+          actAt = idle;
+        }
+        const near = player.facing > 0 ? 1 : -1;
+        if (act) {
+          const rub = idlePose(act, idle - actAt, near, Object.assign(acted, target)), k = 1 - windy;
+          for (const joint of JOINTS) target[joint] += (acted[joint] - target[joint]) * k;
+          ruffle = rub * k;
+        }
+        if (windy > 0) {
+          const into = -Math.sign(blown) * player.facing > 0, arm = near > 0 ? 'armR' : 'armL', elbow = near > 0 ? 'elbowR' : 'elbowL';
+          target.lean += (into ? .17 : -.07) * windy; target.nod += (into ? .14 : -.05) * windy;
+          target[arm] += ((into ? 2.25 : 2.6) - target[arm]) * windy; target[elbow] += ((into ? 1.9 : 2.05) - target[elbow]) * windy;
+          const { hip, knee } = onToe(-.07 * windy);
+          target.legL += hip; target.legR += hip; target.kneeL += knee; target.kneeR += knee;
+        }
       }
       if (wave > 0 && walking) {
         target.armR = 2; target.elbowR = 0.7 + (calm ? 0 : Math.sin(wave * 22) * 0.3);
@@ -166,6 +312,8 @@ export function createPlayerStandIn() {
   const backpack = new Mesh(new BoxGeometry(0.13, 0.24, 0.22), material('#6f6a40')); backpack.position.set(-0.19, 0.16, 0);
   const neck = new Group(); neck.position.y = 0.3;
   for (const part of [head, hairTop, fringe]) { part.position.y -= 0.3; neck.add(part); }
+  // The fringe bends about its root on the brow; the hair's crown turns a little with it.
+  const sway = createSway(), root = new Vector3(0.13 - 0.09 * Math.sin(0.85), 0.285 - 0.09 * Math.cos(0.85), 0);
   body.add(torso, neck, backpack);
   const arm = (z: number) => {
     const shoulder = new Group(), elbow = new Group();
@@ -187,6 +335,15 @@ export function createPlayerStandIn() {
     group,
     hand(side: 0 | 1, out: Vector3) { return arms[side]!.elbow.localToWorld(out.copy(handTip)); },
     mouth(out: Vector3) { return neck.localToWorld(out.set(.17, .1, 0)); },
+    /** The wind in his hair (`windAt` where he stands), and a hand in it: secondary motion, never the simulation. */
+    breeze(wind: number, dt: number, still: boolean, ruffle = 0) {
+      const angle = sway.step(wind, dt, still), e = neck.matrixWorld.elements;
+      // His front is +x: a wind from behind lays the fringe forward, one in his face lifts it.
+      const ahead = e[0]! / (Math.hypot(e[0]!, e[1]!, e[2]!) || 1), turn = still ? 0 : -ahead * angle * 1.3 + ruffle * .22;
+      fringe.rotation.z = -0.85 + turn;
+      fringe.position.set(root.x + 0.09 * Math.sin(0.85 - turn), root.y + 0.09 * Math.cos(0.85 - turn), 0);
+      hairTop.rotation.z = still ? 0 : -ahead * angle * .35 + ruffle * .06;
+    },
     reach(side: 0 | 1, target: Vector3, weight = 1) { contacts[side]!(target, weight); },
     pose(p: Pose) {
       body.rotation.z = -p.lean;

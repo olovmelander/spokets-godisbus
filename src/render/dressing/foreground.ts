@@ -2,7 +2,7 @@ import { Group, Matrix4, MeshBasicMaterial, Vector3, type CanvasTexture, type In
 import { FALL_LIMIT } from '../../sim/constants';
 import type { ChapterData } from '../../sim/types';
 import { quadBatch } from '../quads';
-import { windAt } from '../wind';
+import { bendAt, windAt } from '../wind';
 import { KIT, drawn, grows, heightAt, sequence, surfaceAt } from './kit';
 
 // --- L4: the foreground ---------------------------------------------------------------------------------
@@ -477,15 +477,20 @@ export function foreground(chapter: ChapterData, from: number, to: number, growt
   for (const stone of standing(built, KIT.stone)) if (stone.at.z < -1) shrubs.push({ x: stone.at.x, y: stone.at.y - stone.wide * 0.1, z: stone.at.z + stone.wide * 0.8, wide: stone.wide * 2.6, tall: stone.wide * 0.9, picture: 3 });
   if (shrubs.length) group.add(cards(shrubs, sheet([...[7, 8, 9].map((seed) => blurredShrub(seed, growth)), skirt()]), 4, -1, true, 0.8).mesh);
 
-  let leaning = false;
-  /** The cards in front lean with the wind: their tops are pushed, their feet stay. Still, they stand as built. */
+  let leaning = true;
+  /**
+   * The cards in front lean with the wind, and away from him as he passes them (../wind.ts `bendAt`): their tops
+   * are pushed, their feet stay. Still, they stand as built, and lean only gently from him.
+   */
   function update(still: boolean): void {
-    if (still && !leaning) return;
-    leaning = !still;
+    let now = !still;
     for (const [i, card] of front.entries()) {
-      const push = windAt(card.x) * 0.05;
+      const push = windAt(card.x) * 0.05 + bendAt(card.x) * card.tall * 0.03;
+      if (Math.abs(push) > 1e-4) now = true;
+      else if (!leaning) continue;
       batch.put(i, card.x + push / 2, card.y, card.z, card.wide / 2, 0, push / 2, card.tall / 2);
     }
+    leaning = now;
   }
   return { group, update };
 }

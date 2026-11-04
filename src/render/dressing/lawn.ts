@@ -1,7 +1,7 @@
 import { Color, Group, InstancedMesh, Object3D } from 'three';
 import type { ChapterData } from '../../sim/types';
 import { floorDrop } from './ground';
-import { KIT, grows, heightAt, sequence } from './kit';
+import { KIT, TALL_BLADES, grows, heightAt, sequence, tallGrass } from './kit';
 import { gardenViewGap } from '../garden-home';
 
 // --- the garden ---------------------------------------------------------------------------------------------
@@ -23,7 +23,8 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
   const depth = (back: number, front = 0.25) => (next() < front ? 0.5 + next() * 0.45 : -0.45 - next() ** 1.6 * back);
 
   const bladesBehind = Math.round(length * 36);
-  const grass = new InstancedMesh(KIT.blade, KIT.lawn, bladesBehind + Math.round(length * FRONT.blades));
+  const clumps = Math.round(length * 0.6);
+  const grass = new InstancedMesh(KIT.blade, KIT.lawn, bladesBehind + Math.round(length * FRONT.blades) + clumps * TALL_BLADES);
   let n = 0;
   for (let i = 0; i < bladesBehind; i++) {
     const x = from + next() * length;
@@ -188,6 +189,9 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
     place.updateMatrix();
     dew.setMatrixAt(dew.count++, place.matrix);
   }
+
+  // Tall grass in the back rows and where the lawn ends, but not in the openings kept for the buildings.
+  tallGrass(grass, chapter, from, to, seed, top, clumps, [2, 3.4], 0.12, ['#74a63c', '#8aa848', '#a8ac58'], (x) => !(chapter.id === 'garden' && gardenViewGap(x)));
 
   for (const mesh of [grass, dew, stalks, heads, clover, fallen, trunks]) {
     mesh.instanceMatrix.needsUpdate = true;
