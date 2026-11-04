@@ -1,11 +1,42 @@
 # Handover
 
-## State (4 November 2026)
+## State (5 November 2026)
 
+- **The overhaul's long night (4 to 5 November 2026).** Stacked pull requests, one outcome each, none of them merged
+  yet. **Merge in number order:** #192, then #195 to #201 (their base is `main`, so rebase or retarget as they land), then
+  #202 to #214, each on top of the one before, and `spokets-godisbus-familj` PR #2 for the real house in Billsta. #187 is
+  old and raises `RELEASED_CHAPTER`: leave it. Everything since #201, in order:
+  - **#202, own light.** Olympia under a neutral sky so that the hall reads wine-red, Flärken pale slate, Älven olive and
+    tea, Billsta indigo. `PlaceLook.ground`: Flärken's ground is the new `shore`, because the bog's red sphagnum read as
+    blood.
+  - **#203, a real puzzle at Billsta.** Klonk is too light on the even seesaw. Elof goes round the stone and pushes it back
+    towards his own end, so that Klonk has the long arm. Hints come only if he stands thinking ("Pappa sitter nära
+    mitten när vi gungar."). `counterweight` hints now work from either side of a push, and `trial` is optional. A perch
+    can be `still`: the ghost does not rise out of reach, because it stands on something.
+  - **#204, Billsta's forest.** A surface kind `moss`: a chapter that is not a forest grows a forest there
+    (`woodland()` in `dressing/forest.ts`). No more lawn and dandelions behind the house or on Billaberget.
+  - **#205, Stormkvällen's door.** Past `outdoors` the storm's night takes the lights, and the far pictures darken through
+    the storm's `unlit` list (setting their colour directly is overwritten every frame).
+  - **#206, the finale's jetty.** The family stands in the dark and never sees him; only mormor knows. He lights their
+    lamps one by one (Pappa: "Ficklampan som Elof gav mig!", Moa: "Det är Elof. Jag vet att det är Elof."), and the
+    row of beams brings the owl, which now flies in (`owlLanding`).
+  - **#207, the meeting.** The old one rocks the little one and turns to him; the little one trembles until its cap is back,
+    straight on its head, then hops. `MOON.shafts` went from 2.4 to 1.1, because the moonlight was milk.
+  - **#208, a river he plays.** Three logs the eddies turn to and fro (`cycle.wait`) replace the leaf's ride. The leaf is
+    offered through `FELL_IN` (`fell-in`), set by a fall and from the start on Lugnt. Älven has a look `riverLog`.
+  - **#209, the morning.** `aftermath`: dripping raincoats, boots in a pool, leaves, mormor's lantern put out, a rag rug
+    and the sun on the floor. The camera sees the floor in front of him, so that is where it all lies.
+  - **#210, the animals.** The squirrel's legs gallop by the way it has come (`act.w`, rig 1). Small birds fly in bursts,
+    turn smoothly and land on a bough. This also shows in Äventyr 1.
+  - **#211, the storm grows.** Rain and lightning rise chapter by chapter, and Billsta's gusts blow longer. Flärken's waves
+    stay, because a test holds the posts to a margin. The raft rocks.
+  - **#212, fewer captions.** Twenty-eight lines that only said what the picture shows.
+  - **#213, the road.** The car has a real side (`ExtrudeGeometry`), Billsta has poles (`pole`), Olympia its store (`store`,
+    dark: the power is out), Flärken its tarred hut (`tar`).
 - **Own far pictures (4 November 2026, late).** `backdrop.ts` has three new sets, `FarId` `wall` (Olympia's dark forest hill),
   `river` (Älven's ridges, hay meadows, poles, log barn and white column) and `billaberget` (the dome over Billsta's
   forest). Älven's water is near black with cream foam drifting on it (`storm.foam`), and its haze thin. So Olympia,
-  Billsta and Älven no longer look like the garden and the forest, and Stormens öga's two moons are still to mend.
+  Billsta and Älven no longer look like the garden and the forest.
 - **Mormor and morfar's house in Billsta (4 November 2026, late).** Built in Blender 5.2 from Olov's picture
   (`art/private/billsta/billsta-house.py`, **in the private repository**, so that it can be taken down): the pale grey
   boards, three tall gables, the valley's downpipe, the dark roof and black chimney, the windows, the steel ladder, and
@@ -26,8 +57,8 @@
     code stand-in stays where the file is missing.
   - **Far pictures:** `PlaceLook.far` borrows another place's, and `farBeyond` keeps only those behind a depth. They are
     see-through and drawn last, so a nearer card lies over a building like a ghost. This is why the hall stands at z −66.
-  - **Left at Olympia:** its own light (it is still Stormgården's), the store with the striped awning, the gravel yard
-    and the bank. The forest behind the hall is thin: the far card at −76 is mostly sky. Goals and masts are still code.
+  - **Left at Olympia:** the gravel yard and the bank. The forest behind the hall is thin: the far card at −76 is mostly
+    sky. Goals and masts are still code.
   - **Reference pictures** from the web are in `photos/landscape/aventyr2/`, and Olov's picture of the house in Billsta
     is `photos/billsta-hus.jpg`. All of it is ignored by git. The house's address and number are never written.
 - **The trail runs out (4 November 2026, night).** Olov's decision, from the story audit: nothing went wrong all night,
@@ -3515,6 +3546,11 @@
 
 ## Next
 
+**For Olov, first:** merge in the order under "State", and play the jetty at the start of `?dev&course=stormoga`, the seesaw
+at the end of `?dev&course=billsta` and the eddies at `?dev&course=alven`. Whether the night is dark enough, and whether the
+seesaw's thought is fair for Elof, only a person can judge. The rest of the order of work is in `docs/aventyr-2-overhaul.md`.
+None of it needs Olov's computer except new models and anything from `photos/`, which is on his old computer.
+
 **The picture, from three stills of every chapter on High (4 November 2026), biggest gain first. One pull request
 each. The forest, the bog and the mountain are already strong, and are the standard for the rest:**
 
@@ -3872,6 +3908,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Äventyr 2's overhaul (4 to 5 November) | Olov's request: audit and overhaul of every world, puzzle, figure and animal | 1 session on Olov's computer, until 02:30 | — / 0 so far | 20 pull requests, #192 and #195 to #214, none played by Olov yet |
 | Äventyr 2: Stormnatten (4 November) | Olov's request: a second adventure of several worlds, about as long as the first | 1 cloud session, with four parallel world-building agents | — / 0 | Seven chapters (~940 EL), a lazily loaded pack with its own size gate, storm visuals in code, 1,773 tests and a 30-check browser suite. Voices, device review and Blender art remain. |
 | Äventyr 2, version 2 (4 November) | Olov's request: more worlds and puzzles, Billsta, Flärken and Olympia, an audit, good Swedish | the same cloud session, with a research agent and four world-building agents | — / 0 | Ten chapters (~1,510 EL), 23 code-built building kinds, Moa's map of Äventyr 2, a visual sweep that found and fixed the drain-well wall over Olympia, 1,914 tests and a 42-check browser suite. Pictures of the places, voices, device review and Blender art remain. |
 | Home garden identity (10 October) | Rework Chapter 1 from three supplied building photographs | 1 cloud continuation | — / 0 | Dimensional red home/veranda/deck, green playhouse and timber fjällkåta authored in Blender 4.5.14 in the private repository; a generic public fallback and chapter framing preserve the route. The photos do not establish a surveyed garden layout. Device and family visual review remain. |
@@ -3887,6 +3924,8 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Two more browser timeouts on GitHub** (4 November, part 4 of 8): "Controller moves through chapter choices" (#198) and
+  "golden candy becomes reachable" (#201). Each passed on a rerun or on the PR above it, which holds the same code.
 - **`challenges` timed out once on GitHub** (PR #193, 4 November): "c2-prize-844-low: root returns". Nothing in that PR touches it,
   and it passed locally and in #194's run of the same code, so it looks like software rendering's timing. Watch for it again.
 - **`settings`' touch check fails on Windows:** "portrait, left-handed: a held finger walks towards its position"
