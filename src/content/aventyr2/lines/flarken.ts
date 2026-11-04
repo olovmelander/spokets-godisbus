@@ -25,10 +25,10 @@ export const words: ChapterWords = {
     // 5. the jetty in the waves
     sjJetty: 'Bryggan! Vågorna sköljer över den.',
     sjPosts: 'Jag gömmer mig bakom stolparna.',
-    sjOldOne: 'Gamla trägubben! Vänta på oss!',
+    sjOldOne: 'Spring, gamla trägubben! Vi kommer!',
     // 6. Mamma's boat
     sjBroken: 'Bryggan är trasig! Det är för långt.',
-    sjMamma: 'Ropa på mig. Jag har roddbåten.',
+    sjMamma: 'Jag hittade en roddbåt. Ropa på mig!',
     sjBoatReady: 'Jag håller båten still. Gå på kanten.',
     sjSteady: 'Lugnt och fint. Jag släpper inte.',
     sjThanks: 'Tack, Mamma! Du är bäst.',
@@ -50,7 +50,7 @@ export const words: ChapterWords = {
     sjKlonkCheer: 'Klonk! Klonk! Klonk!',
   },
   purposes: {
-    sjonPark: { purpose: 'Följ godisspåret ner mot sjön.', recap: 'Stormen blåste lillgubben norrut, ända hit till Flärken.' },
+    sjonPark: { purpose: 'Följ godisspåret ner mot sjön.', recap: 'Vi tog bilen upp till Flärken. Hit blåste stormen lillgubben.' },
     sjonSwings: { purpose: 'Kasta snöret till gungorna.', recap: 'Pölen under gungan är för bred att hoppa över. Gungan bär mig.' },
     sjonSlide: { purpose: 'Klättra upp och åk nerför rutschkanan.', recap: 'Rutschkanan är vägen ner till stranden.' },
     sjonShore: { purpose: 'Följ godisspåret längs stranden.', recap: 'Badplatsen är tom i stormen. Gamla trägubben lämnar godis åt mig.' },

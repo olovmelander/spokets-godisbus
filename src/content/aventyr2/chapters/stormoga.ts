@@ -17,8 +17,8 @@ import { alongAll, row, timeCard } from '../kit';
  * 4. **Guldgodiset:** the old one gives him a geléhallon in gold paper it saved for him, the kind little Elof once
  *    shared with it. *Ta emot*, and *Smaka*: he grows, standing in the shallows with both figures in his hands,
  *    and the family's lamps, with mormor and morfar, reach the shore.
- * 5. **Hem till mormor och morfar:** *Gå hem*, along the shore and up through the forest to their house by the
- *    road, all of them together.
+ * 5. **Hem:** *Gå hem*, all of them together, to the cars and home; mormor and morfar come along to the Sunday
+ *    breakfast (Morgonen efter).
  */
 
 /** The owl's flight from the jetty's end to the stone, and the walk home along the shore once he is big. */

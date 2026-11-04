@@ -63,7 +63,7 @@ export const A2 = {
     stormskog: { title: 'Ner mot byn', text: 'Gamla trägubben väntar inte på någon. Han vet hur det är att vara ensam i mörkret.' },
     stormbyn: { title: 'Mot Olympia', text: 'Vinden tog lillgubben över taken mot fotbollsplanen. Gamla trägubben är redan på väg.' },
     flarken: { title: 'Nerför ån', text: 'Trä flyter. Ån bär lillgubben söderut, och gamla trägubben följer efter på en stock.' },
-    olympia: { title: 'Upp till Flärken', text: 'Den starkaste stormbyn tog lillgubben norrut, upp mot sjön vid Flärken.' },
+    olympia: { title: 'Upp till Flärken', text: 'Den starkaste stormbyn tog lillgubben norrut. Vi åker bil upp till sjön vid Flärken.' },
     alven: { title: 'Till Billsta', text: 'Älven bär trägubbarna mot Billsta. Vi kör de tre milen dit, till mormor och morfar.' },
     billsta: { title: 'Ner till sundet', text: 'Från Billaberget syns de: båda trägubbarna på en sten nere i sundet.' },
     stormoga: { title: 'Hem igen', text: 'Alla är hittade. Mormor och morfar följer med hem till frukost.' },

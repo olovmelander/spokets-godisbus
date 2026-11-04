@@ -335,7 +335,9 @@ export const olympia: ChapterData = {
     { id: 'ol:gust', at: 172.8, who: 'elof', line: 'olGust', read: true },
     { id: 'ol:north', on: 'beat:ol:gust', who: 'elof', line: 'olNorth' },
     { id: 'ol:follow', on: 'beat:ol:north', who: 'elof', line: 'olFollow' },
-    { id: 'ol:klonk-end', on: 'beat:ol:follow', who: 'spoket', line: 'olKlonkKlonk' },
+    // Flärken is six kilometres north: the family drives there, as they will to Billsta.
+    { id: 'ol:car', on: 'beat:ol:follow', who: 'bertil', line: 'olCar' },
+    { id: 'ol:klonk-end', on: 'beat:ol:car', who: 'spoket', line: 'olKlonkKlonk' },
   ],
   cameras: [
     // Up on the crossbar: wider and lower, the bar, the hearts and the goal's mouth in view.

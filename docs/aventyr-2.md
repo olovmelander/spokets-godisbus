@@ -155,7 +155,8 @@ the pitch. A football is one and a half Elofs high: the puzzles are football puz
 5. **The corner flag** snapping in the gusts, and the benches' roofs dripping, with a dry way under them.
 6. **Bertil's free kick:** "Ropa på Bertil". He kicks the ball, and Elof rides it in a great arc into the far goal.
 7. **The biathlon range:** knock the targets white, one by one (optional), for side candy.
-8. At the far end the strongest gust takes the little one north, up the valley towards the lake.
+8. At the far end the strongest gust takes the little one north, up the valley towards the lake. Flärken is six
+   kilometres off, so the family takes the car: Bertil, "Hoppa in i bilen! Vi åker till Flärken."
 
 ### Kapitel 5: Flärken (Flärkenbadet, the bathing place, Kubbe and Norrflärke)
 
@@ -181,7 +182,7 @@ Norra Anundsjöån past Bredbyn and down Moälven: the long way home of the wate
 4. The wide lake of Anundsjösjön under the storm; the owl comes back for the widest stretch.
 5. Flashes show the little one ahead, always further down the river.
 6. At the end the family's car stops on the road by the river. Pappa: "Älven rinner ända till Billsta." Mamma:
-   "Hoppa in, Elof! Vi kör dit med bilen." Three mil, to mormor and morfar.
+   "Hoppa in, Elof! Vi kör dit med bilen." Elof: "Mormor och morfar kan hjälpa oss leta!" Three mil, by car.
 
 ### Kapitel 7: Billsta (mormor and morfar's house by the road, near the forest)
 
@@ -207,8 +208,8 @@ Själevadsfjärden.
    the little one. They are cold and still, and then they see him.
 3. **The golden sweet:** the old one gives Elof a geléhallon in gold paper it saved for him. *Smaka*: he grows,
    standing in the shallows with both figures in his hands.
-4. The family's lamps, and mormor's lantern, on the shore; the walk home through the forest to mormor and
-   morfar's lit house by the road.
+4. The family's lamps, and mormor's lantern, on the shore. Morfar: "Vi följer med hem och äter frukost!" They all
+   drive home, and mormor and morfar stay for the Sunday breakfast.
 
 ### Epilog: Morgonen efter
 
@@ -240,6 +241,9 @@ Själevadsfjärden.
 | Morfar's ladder across the ditch; mormor's lantern and the barn door | call spots, held beats, ledges and movers |
 | The log pushed into the forest brook as a bridge | a *push* mover into the water |
 | Moa's map of the whole journey | src/content/aventyr2/map.ts |
+
+The audit of 4 November (`docs/aventyr-2-audit.md`) tightened the story's thread and gameplay; what it changed is
+recorded there.
 
 ## As built (4 November 2026)
 

@@ -33,7 +33,7 @@ const SAID = [
   'ol:flag', 'ol:benches', 'ol:crowd',
   'ol:circle', 'ol:old-one', 'ol:bertil-here', 'ol:kick-ready', 'ol:fly', 'ol:goal', 'ol:cheer', 'ol:thanks',
   'ol:range', 'ol:all-white',
-  'ol:trail', 'ol:gust', 'ol:north', 'ol:follow', 'ol:klonk-end',
+  'ol:trail', 'ol:gust', 'ol:north', 'ol:follow', 'ol:car', 'ol:klonk-end',
 ];
 /** The ball floated, Bertil called, his ball ready and ridden, and the end. */
 const PUZZLES = ['placed:ol-ball', 'ol:bertil', 'ol:kick-ready', 'ol:kick', 'goal'];
@@ -521,7 +521,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     for (const beat of olympia.beats!.filter((b) => b.who === 'spoket')) expect(all[beat.line]).toMatch(/^Klonk(, klonk)?!$/);
     // Bertil calls Elof lillebror, and his free kick is his own.
     expect(all.olBertilReady).toBe('Upp på bollen! Jag skjuter, du flyger!');
-    expect(all.olIdea).toBe('Bollar flyter, precis som Klonk!');
+    expect(all.olIdea).toBe('Bollar flyter! Bollen kan bära mig.');
   });
 
   it('is Kapitel 4: after Byn i stormen and before Flärken, Bertil\'s chapter, about as long as the plan says', () => {

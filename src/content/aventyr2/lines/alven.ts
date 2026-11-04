@@ -48,7 +48,7 @@ export const words: ChapterWords = {
     alWider: 'Älven blir bredare och bredare.',
     alBillsta: 'Älven rinner ända till Billsta.',
     alCar: 'Hoppa in, Elof! Vi kör dit med bilen.',
-    alWindow: 'Tre mil! Till mormor och morfar!',
+    alWindow: 'Mormor och morfar kan hjälpa oss leta!',
     alKlonkEnd: 'Klonk, klonk!',
   },
   verbs: {

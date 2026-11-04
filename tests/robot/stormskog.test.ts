@@ -251,8 +251,8 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
       expect(memory.map((beat) => [beat.who, beat.line, beat.read ?? false])).toEqual([
         ['spoket', 'ssHollowKlonk', false], ['elof', 'ssAlone', true], ['elof', 'ssWhy', true],
       ]);
-      expect(words.lines.ssAlone).toBe('Han var ensam i mörkret i flera år.');
-      expect(words.lines.ssWhy).toBe('Därför väntar han inte.');
+      expect(words.lines.ssAlone).toBe('Gamla trägubben låg ensam i flera år.');
+      expect(words.lines.ssWhy).toBe('Därför skyndar han. Lillgubben är ensam!');
       expect(sim.said).toEqual(['ss:hollow-seen', 'ss:hollow', 'ss:alone', 'ss:why']);
       run(sim, 1);
       expect(sim.ghost!.perch).toBeGreaterThan(waiting);
