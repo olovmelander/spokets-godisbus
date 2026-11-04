@@ -205,6 +205,10 @@ export const VOICE_LINES = [
   { key: 'end_byn', speaker: 'storyteller', situation: 'Bonus chapter closing', tag: '[cheerful, contented stroll home]', text: 'Lördagsgodiset är köpt. Nu går vi hem.' },
 ];
 
+// Äventyr 2's lines (docs/aventyr-2.md), kept in step with its pack by tests/unit/aventyr2-voices.test.ts.
+const ADVENTURE2_PATH = join(ROOT, 'scripts', 'voices-aventyr2.json');
+if (existsSync(ADVENTURE2_PATH)) VOICE_LINES.push(...JSON.parse(readFileSync(ADVENTURE2_PATH, 'utf8')));
+
 /** Load voice configuration (voice ID per character). */
 function loadVoiceConfig() {
   if (existsSync(CONFIG_PATH)) {

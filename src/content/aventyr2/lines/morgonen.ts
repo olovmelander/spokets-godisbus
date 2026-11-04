@@ -1,0 +1,40 @@
+import type { ChapterWords } from './words';
+
+/** What is said in Morgonen efter, the second adventure's epilogue (docs/aventyr-2.md). */
+export const words: ChapterWords = {
+  lines: {
+    moMorning: 'God morgon, mina nattvandrare!',
+    moBranches: 'Stormen fällde massor av grenar!',
+    moSleepy: 'Jag är sömnig som en uggla.',
+    moShelf: 'Hyllan väntar på två små gubbar.',
+    moOldHome: 'Först i raden. Där hör du hemma.',
+    moSmallHome: 'Och du bredvid. Nu är ni två.',
+    moLatchLine: 'En ny hake. Nu blåser ingen bort.',
+    moFluffLine: 'Du flög som ett fjun i stormen.',
+    moNameLine: 'Du ska heta Fjun!',
+    moKlonkLine: 'Klonk, klonk!',
+    moNiceLine: 'Fjun! Vilket fint namn.',
+    moWelcomeLine: 'Välkommen hem, lilla Fjun.',
+    moCupLine: 'Varm choklad efter stormen.',
+    moAllLine: 'Alla är hemma. Det är bäst av allt.',
+  },
+  verbs: {
+    moPutOld: 'Ställ upp trägubben',
+    moPutSmall: 'Ställ upp lillgubben',
+    moLatch: 'Vrid fönsterhaken',
+    moCocoa: 'Ta en kopp choklad',
+  },
+  purposes: {
+    moShelfPurpose: { purpose: 'Ställ tillbaka gamla trägubben på hyllan.', recap: 'Stormen är över. Alla kom hem i natt.' },
+    moSmallPurpose: { purpose: 'Ställ lillgubben bredvid den gamla.', recap: 'Gamla trägubben står först i raden igen.' },
+    moLatchPurpose: { purpose: 'Vrid den nya fönsterhaken.', recap: 'Båda trägubbarna står på hyllan. Pappa har satt en ny hake på fönstret.' },
+    moNamePurpose: { purpose: 'Ge lillgubben ett namn.', recap: 'Nu kan inget fönster blåsa upp igen.' },
+    moCocoaPurpose: { purpose: 'Ta en kopp varm choklad.', recap: 'Lillgubben heter Fjun, för att den flög som ett fjun i stormen.' },
+    moSunday: { purpose: 'Ut i söndagsmorgonen.', recap: 'Ingen ska behöva vara ensam i mörkret.' },
+  },
+  helpers: {
+    moFamily: 'Hela familjen äter frukost tillsammans.',
+    moPappa: 'Pappa har lagat fönstret.',
+  },
+  moments: { frukost: 'Morgonen efter' },
+};

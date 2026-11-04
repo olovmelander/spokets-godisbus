@@ -323,7 +323,8 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       byId('endKicker').hidden = !kicker;
       if (closing) {
         byId('endNext').textContent = closing;
-        playVoice(closing === sv.end.closing.epilog ? 'end_epilog' : 'end_byn');
+        // The closing card's own voice, by the chapter whose words it is: end_epilog, end_byn, end_morgonen.
+        playVoice(`end_${Object.keys(sv.end.closing).find((id) => sv.end.closing[id] === closing)}`);
       }
       // The chapter's hidden candy: a sticker for each one found, an empty ring for each still out there.
       if (hidden && hidden.length > 0) {

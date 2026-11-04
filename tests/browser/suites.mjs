@@ -52,6 +52,7 @@ export const SUITES = [
   ['myren-loop', 169],
   ['finale-stage', 147],
   ['model-installation', 25],
+  ['aventyr2', 240],
 ];
 
 /** The files in tests/browser that are not suites: what the suites share, and this list's own two files. */

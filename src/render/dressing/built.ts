@@ -114,7 +114,7 @@ export function built(chapter: ChapterData, indoors = false): Group {
       : null;
     // In the morning the garden's far scenery is outside, each window with its own part of it; at night, its
     // own part of the sky.
-    const glass = new MeshBasicMaterial({ map: sky ?? outlook(), fog: false });
+    const glass = new MeshBasicMaterial({ map: sky ?? outlook(), fog: false, name: 'window-glass' });
     for (const [i, x] of house.windows.entries()) {
       const shape = sky ? new PlaneGeometry(5.1, 5.2) : outlookPane(5.1, 5.2, i);
       const uv = shape.getAttribute('uv');

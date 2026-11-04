@@ -98,7 +98,7 @@ export const DRAWING = {
  * crayon draws the way on from where he is to where the ghost is heading (ui.css animates the stroke).
  */
 /** Each chapter's picture from Moa's map: on its card in Utforska vidare, and on its strip in the album. */
-const CHAPTER_PICTURE: Record<string, string> = {
+export const CHAPTER_PICTURE: Record<string, string> = {
   prolog: DRAWING.star, garden: PICTURE.home, granskog: PICTURE.forest, myren: PICTURE.bog, berget: PICTURE.mountain,
   norrsken: DRAWING.aurora, epilog: DRAWING.party, byn: DRAWING.shop,
 };

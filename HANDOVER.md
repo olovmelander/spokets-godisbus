@@ -1,6 +1,63 @@
 # Handover
 
-## State (10 October 2026)
+## State (4 November 2026)
+
+- **Äventyr 2: Stormnatten — the second adventure, built in one cloud session (4 November 2026).** Olov asked for
+  "nästa del av äventyret": a new, unique adventure of several worlds, about as long as the first, with new puzzles,
+  good conversations and a real story, which opens once the first adventure (the ghost and the trägubbar) is done.
+  The chapters of the first are now called **Äventyr 1**. Canon: [`docs/aventyr-2.md`](docs/aventyr-2.md).
+  - **The story.** A storm night in late October: the window by Pappa's shelf bursts open, the wind takes Elof's own
+    little carving (the one he carved in Äventyr 1's epilogue) and Pappa's first trägubbe leaps after it. Klonk gives
+    Elof its last star; the whole family goes out with lamps. The old trägubbe leaves a candy trail for him. Through
+    the stormy garden, the forest, the village and the lake; in the storm's eye the old one gives Elof a golden
+    geléhallon it saved — the sharing of Äventyr 1 turned round — and he grows. The next morning the little one is
+    named **Fjun**. Theme: *ingen ska behöva vara ensam i mörkret*.
+  - **Seven chapters, ~940 EL** (Äventyr 1 is ~944): Stormkvällen (prologue, home), Stormgården (garden: gutter
+    drops, gusts on the lawn, the rain barrel's tap floats a lid into a bridge, Bertil's rubber-boot boat, the
+    playhouse and trampoline), Stormskogen (forest: falling cones, swaying boughs, the owl's blocked nest, Pappa's
+    flashlight freezes Klonk stiff as a plank bridge, the old trägubbe's memory, the jay), Byn i stormen (village
+    street at night: the flapping awning, the gutter river on a leaf, the drain grate, Moa's umbrella, Fjun's cap),
+    Sjön (lake shore: reeds, floating reed mats, gusts on the jetty, Mamma holds the boat, the bark raft), Stormens öga
+    (the owl flies him out, the eye opens, the golden sweet) and Morgonen efter (shelf, latch, the naming).
+  - **How it is built.** Äventyr 2 is a **chapter pack of its own**: `src/content/aventyr2/` (chapters, Swedish words,
+    reminders, music arrangements, pictures) is a separate chunk fetched only when it is played, when Byn leads on to
+    it, or when the save shows Äventyr 1 finished. The boot JavaScript stays under the plan's 450 KB: the size gate
+    now counts chunks that are only fetched later (`import()`) on their own, each under 160 KB. The debug panel and
+    bench moved to such a chunk too. Boot code got small extension points only: `src/render/extensions.ts` (a
+    chapter's own light, spot/ride/mover looks, whole-picture extras), `PACK_CONTEXTS` for "Just nu", the window glass
+    and dressing names, `ChapterData.storm/named/coda`. A2's words are merged into `sv` when the pack loads; this is
+    the one deviation from "all Swedish text in `src/content/sv.ts`" (chapter codes and the "Nästa äventyr" button
+    stay there).
+  - **Pictures, all built in code:** night looks per chapter, slanting rain round the camera (none indoors), soft
+    lightning with a far bolt (never more than a double pulse every few seconds; none with less motion), figures
+    blown across the sky in a flash, candlelit windows, stars and moon in the storm's eye, both trägubbar, the pumpkin
+    lantern, the owl, the rain barrel and tap, Bertil's boot, Moa's umbrella, the frozen Klonk bridge and more.
+    No third-party asset; nothing for `LICENSES.md`.
+  - **Release:** `RELEASED_CHAPTER` is unchanged (`null`): Äventyr 2 plays with `?dev`, and raising the release
+    boundary to `morgonen` releases it after the first adventure. The epilogue's card leads straight to it where Byn
+    is not open.
+  - **Voices:** `scripts/voices-aventyr2.json` lists all 150 of its lines, cards and closing with their speakers, and
+    `scripts/generate-voices.mjs` includes them. They are **not generated**: no ElevenLabs key was readable in this
+    session (see "Frågor till Olov"). Until then its bubbles are silent, which the game already allows.
+  - **Content:** 470 trail candies, 60 side candies, 46 big candies, 141 lines (each at most 40 characters),
+    12 new button words and 60 "Just nu" reminders. Klonk leads on firm ground and never comes within reach.
+    No hidden candy kinds: Äventyr 1's sixteen and its golden album stay as they are (see "Senare").
+  - **Validation:** typecheck, **178 test files / 1,773 tests** (the robot plays every Äventyr 2 chapter at 30, 60
+    and 144 Hz and on Lugnt; each world has its own puzzle test, written by the four parallel agents that authored
+    Stormgården, Stormskogen, Byn i stormen and Sjön from this design), the production build and the privacy check
+    pass. Boot JavaScript **449.6 KB / 450 KB** (0.4 KB left), Äventyr 2's pack **28.1 KB / 160 KB**, boot
+    **1,560.6 KB / 3,072 KB**. The new browser suite `tests/browser/aventyr2.mjs` passes **30 checks**: the first
+    adventure does not fetch the pack, each of the seven chapters fetches it, starts, draws within Low's budget
+    (51–80 draws) without errors or off-site requests, and Byn's last card offers "Nästa äventyr". Review captures:
+    [`docs/shots/aventyr2/`](docs/shots/aventyr2/), with public stand-ins. Physical devices are untested.
+  - **Existing browser suites run here:** `smoke`, `release-routing` (10) and `endings` (58) pass. `village`
+    could not be judged in this container: its probe page's Vite websocket is refused by the container's newer
+    Chromium (`ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS`, `ERR_UNSAFE_PORT`), and those four websocket messages
+    are its only errors; CI's pinned browser runs it. The container has Playwright's browser build 1243 where the
+    pinned 1.56.1 expects 1194; the session linked the preinstalled headless shell under the expected path.
+  - **Rules note:** `CLAUDE.md` still says the game has no voices; Olov's own 10 October commit added ElevenLabs
+    voices, and on 4 November he pointed the session at an ElevenLabs key for Äventyr 2's lines. The session did not
+    edit `CLAUDE.md` (it is Olov's); he may want to update its "Voices" rule.
 
 - **Home garden identity — Chapter 1 exterior checkpoint.** Olov supplied three photographs and
   explicitly requested the red family home/veranda/deck, green playhouse and timber fjällkåta on the
@@ -3230,6 +3287,16 @@
 
 **For the next session, in this order:**
 
+- **Play Äventyr 2 (`docs/aventyr-2.md`) from Stormkvällen to Morgonen efter** with `?dev&course=stormkvall`, or
+  by finishing Byn. Judge the storm's darkness and lightning on a real phone and tablet (calm enough for Elof?),
+  the reading pace of its held scenes, the frozen-Klonk bridge and the owl's flights. Then decide whether to
+  release it (raise `RELEASED_CHAPTER` to `morgonen` after Äventyr 1 is released) — that is Olov's call.
+- **Generate Äventyr 2's voices** once an ElevenLabs key is readable as `ELEVENLABS_API_KEY`:
+  `node scripts/generate-voices.mjs --generate` takes the new lines from `scripts/voices-aventyr2.json`.
+  Listen to them, as the first adventure's were.
+- **Äventyr 2's art, in later stages:** the trägubbar, the owl, the pumpkin, the boot and the umbrella are code
+  stand-ins like Äventyr 1's first ones; a Blender pass on Olov's computer can replace them through the same looks.
+
 - **Review the 10 October chase/story checkpoint:** try the opening and final reunion without racing
   the dialogue, read/revisit all four memories, and follow the ghost through rescue and mountain
   help. Confirm on a physical phone that captions, previous/next and **Fortsätt** are comfortable.
@@ -3547,12 +3614,15 @@ The older list, still true where it is not struck:
 | Chapter endings | A chapter ends on a coda of about 3 s (the picture looks back and up, the tune closes on a held note, one of the family answers in their three notes) and a storybook page: the coda's picture, the chapter's name, what comes next, Moa's map with the way on. Every chapter after the prologue opens on a time card (plan §4.9). The prologue and the epilogue keep their own endings. | Session, 5 Oct, for Olov's "the chapter endings feel too sudden and flat" |
 | Byn's place | After the epilogue, as built: a week after the story's Saturday, on an October morning after rain. Its story stands on the ending (Klonk named and a friend, a star taken by choice, the Saturday candy bought together), and the chase runs out from the house and home again in one day; a shopping street between the forest and the bog would break both. Its card says *en vecka senare*. | Olov, 5 Oct: first "I want byn to be between granskogen and myren.", then "Place byn where it is best fitted into the game and story" and "Maybe it is perfectly where it is now?". The place is the session's judgement. |
 | Why he shrinks | The ghost's magic runs into the Saturday bag as it takes it: a star from the bag makes Elof small, and the gold sweet glitters too and can make him big again. Moa saw the glitter and draws it; Pappa reads the hope. | Session's proposal, 5 Oct (question 15) |
+| Äventyr 2 | *Stormnatten* (`docs/aventyr-2.md`): seven chapters after Byn, opened when Äventyr 1 is finished. The little carving is named **Fjun**. Its story, worlds, puzzles and lines are the session's, built from Olov's request. | Olov, 4 Nov: "skapa nästa del av äventyret … ett nytt unikt kapitel bestående av flera världar … Implementera nu detta i one shot." |
+| Chapter packs and the size gate | The plan's 450 KB is the first playable's JavaScript. A chunk fetched only later (`import()`), such as Äventyr 2's pack or the debug tools, is counted on its own and has its own 160 KB gate (`scripts/size-gate.mjs`). The boot budget has about 0.4 KB left: a boot change that grows it must win the bytes back. | Session, 4 Nov, for Äventyr 2 |
 | Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
 
 ## Planned against actual
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Äventyr 2: Stormnatten (4 November) | Olov's request: a second adventure of several worlds, about as long as the first | 1 cloud session, with four parallel world-building agents | — / 0 | Seven chapters (~940 EL), a lazily loaded pack with its own size gate, storm visuals in code, 1,773 tests and a 30-check browser suite. Voices, device review and Blender art remain. |
 | Home garden identity (10 October) | Rework Chapter 1 from three supplied building photographs | 1 cloud continuation | — / 0 | Dimensional red home/veranda/deck, green playhouse and timber fjällkåta authored in Blender 4.5.14 in the private repository; a generic public fallback and chapter framing preserve the route. The photos do not establish a surveyed garden layout. Device and family visual review remain. |
 | Bredbyn identity (10 October) | Reference-led Byn visual improvements | 1 cloud continuation | — / 0 | Eight inspected public references; original church, separate clock tower, varied street buildings, rounded valley and clearer crossing view. Reuses the existing route and save positions. Device review and final Blender refinement remain. |
 | Chase and story clarity (10 October) | Current request | 1 cloud implementation | — / 0 so far | Minimum ghost separation, player-paced essential dialogue, thirteen animated memory illustrations with Swedish captions and previous/next, plus larger in-world thought pictures. Checkpoint captures in `docs/shots/story-pacing/`. Physical-device review remains. |
@@ -3707,7 +3777,8 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
-- (empty)
+- Äventyr 2's own hidden candy kinds and stickers (its chapters have none, so the album's totals and the golden
+  geléhallon of Äventyr 1 keep their meaning), and Moa's map for its places.
 
 ## Frågor till Olov
 
@@ -3751,6 +3822,13 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
    models still did not look like the sheets; the new local pass improves them but does not resolve H1b.
 6. **Where should the ghost's files live?** Answered by what Olov asked for on 3 October: in the private
    repository with Elof's, and shown on the public site through the deploy. It can always be taken down.
+
+18. **Äventyr 2 (4 November):** is **Fjun** the right name for Elof's little carving (it flew like fluff in the
+    storm; Kvist and Flisa were the other two)? Is the storm's lightning calm enough, and should Halloween's pumpkin
+    stay in the garden? The defaults: as built.
+19. **ElevenLabs for Äventyr 2's voices:** the session could not read a key. Add it in the environment's settings
+    as an environment variable named `ELEVENLABS_API_KEY` (never in the chat), and a new session generates the
+    lines listed in `scripts/voices-aventyr2.json`.
 
 Choices the session made, for Olov to overrule if he wants:
 - the bow on the big candy, its pinwheel turn, and how much a sweet shines by itself (see "The candy is

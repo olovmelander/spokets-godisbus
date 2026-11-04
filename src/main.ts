@@ -9,7 +9,7 @@ import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
 import { setVoiceSettings, stopVoice } from './audio/voice-player';
-import { BONUS, STORY, bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, nextAvailable } from './content/chapters';
+import { ADVENTURE2, BONUS, STORY, bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, isAdventure2, loadAdventure2, nextAvailable } from './content/chapters';
 import { album, albumComplete, foundFlag, KINDS } from './content/kinds';
 import { lostFlag, lostFound } from './content/lost';
 import { cobbleMemory } from './content/cobbles';
@@ -34,8 +34,7 @@ import { ghostNamed, rememberFlags, storyFinished, visitChapter } from './save/j
 import { markOnward, takeOnward } from './save/onward';
 import { keysLearned, learnKeys } from './save/keys';
 import type { SimStart, Vec } from './sim/types';
-import { createBench } from './ui/bench';
-import { createDebug, type Debug } from './ui/debug';
+import type { Debug } from './ui/debug';
 import { createHud } from './ui/hud';
 import { createPause, type PausePage } from './ui/pause';
 import { mountShell } from './ui/shell';
@@ -70,6 +69,8 @@ const CODA = 4.6;
 const CODA_ANSWER = 1.6;
 /** Who answers from afar as each chapter ends; null is all four together. */
 const CODA_FAMILY: Record<string, Person | null> = { garden: 'moa', granskog: 'bertil', myren: 'mamma', berget: 'pappa', norrsken: null, byn: 'mamma' };
+/** Every chapter of the story, the extra one and Äventyr 2's, once its pack is in. */
+const storyChapters = () => [...STORY, ...BONUS, ...ADVENTURE2];
 const benchOn = params.has('bench');
 const debugOn = params.has('debug') || benchOn;
 
@@ -111,11 +112,19 @@ function storage(): Storage | null {
   }
 }
 
-function start(): void {
+async function start(): Promise<void> {
   const at = debugStart();
   // The saved game (plan §6.9). ?bench plays without one, and a debug start position never writes one.
   const store = createStore(benchOn ? null : storage());
   const loaded = store.load();
+  // The debug panel and the bench come in their own small chunk, for a session that asks for them.
+  const devtools = debugOn ? await import('./ui/devtools') : null;
+  // Äventyr 2 is a pack of its own (docs/aventyr-2.md): fetched when this page plays it, leads on to it, or the
+  // first adventure is done, so that its chapters are there to choose. Without it the first adventure plays on.
+  const wanted = courseId(params.get('course') ?? (loaded.kind === 'save' ? loaded.save.chapter : ''));
+  if (isAdventure2(wanted) || wanted === 'byn' || (loaded.kind === 'save' && storyFinished(loaded.save.flags))) {
+    await loadAdventure2().catch(() => undefined);
+  }
   // The profile store supplies its stable ID; older single-player saves use the original Elof ID.
   const photoPlayer = store.currentId;
   let database: IDBFactory | null = null;
@@ -256,7 +265,8 @@ function start(): void {
   const tutorial = new Tutorial(chapter.id);
   const tutorialView = createTutorial(document);
   const fingerMarks = createFingerMarks(document);
-  const isKlonk = () => ghostNamed(save.flags) || (chapter.id === 'epilog' && game.sim.flags.has('beat:named'));
+  // In Äventyr 2 he has had his name all along.
+  const isKlonk = () => ghostNamed(save.flags) || !!chapter.named || (chapter.id === 'epilog' && game.sim.flags.has('beat:named'));
   // The bag counts all the candy there is: the trail's, and the side candy off it.
   const hud = createHud(document, chapter.candy.length + (chapter.side?.length ?? 0), isKlonk,
     () => (settings.slower ? 1.25 : 1) * (settings.bigText ? 1.2 : 1),
@@ -531,7 +541,7 @@ function start(): void {
   void photoAlbum.refresh();
   // The candy bag's page (the album and the photos) belongs to the story's chapters, Byn too, not to the test and
   // look courses; Moa's map to the places she has drawn (docs/ux-audit/menus.md row 14).
-  const storyCourse = [...STORY, ...BONUS].some((c) => c.id === chapter.id);
+  const storyCourse = storyChapters().some((c) => c.id === chapter.id);
   byId('albumPhotos').hidden = !storyCourse;
   byId('pauseBagBtn').hidden = !storyCourse;
   byId('pauseMapCard').hidden = !mapState(chapter.id, canEnter);
@@ -590,7 +600,7 @@ function start(): void {
   }
   /** The words of a chapter's time card, which the loading card shows when the page goes on to it. */
   function cardOf(id: string): string | undefined {
-    const text = [...STORY, ...BONUS].find((c) => c.id === id)?.scenes?.find((scene) => scene.id === 'card')?.stage?.words?.find((word) => word.kind === 'caption')?.text;
+    const text = storyChapters().find((c) => c.id === id)?.scenes?.find((scene) => scene.id === 'card')?.stage?.words?.find((word) => word.kind === 'caption')?.text;
     return text ? (sv.scene as Record<string, string>)[text] : undefined;
   }
   /** The game begins from the title: with the style chosen there, or the saved one for Fortsätt. */
@@ -814,7 +824,7 @@ function start(): void {
   });
   window.addEventListener('pagehide', () => { devicePlay.setPlaying(false); writeSave(); });
 
-  const debug: Debug | null = debugOn ? createDebug(byId('debug')) : null;
+  const debug: Debug | null = devtools ? devtools.createDebug(byId('debug')) : null;
   if (debugOn) {
     window.__godis = {
       state: () => ({
@@ -830,7 +840,7 @@ function start(): void {
   }
 
   // ?bench plays the course by itself for 30 seconds and then shows numbers to paste into a session.
-  const bench = benchOn ? createBench(30, chapter) : null;
+  const bench = benchOn && devtools ? devtools.createBench(30, chapter) : null;
 
   /** "Nästa kapitel": the saved game moves on to the next chapter's start, and the page loads it. */
   function goOn(id: string): void {
@@ -1199,9 +1209,10 @@ function start(): void {
       document.body.classList.add('coda');
     }
     // Only in the story: the test course has no family to answer.
-    if (coda && !answered && endFor > CODA_ANSWER && Object.hasOwn(CODA_FAMILY, chapter.id)) {
+    const codaWho = Object.hasOwn(CODA_FAMILY, chapter.id) ? CODA_FAMILY[chapter.id]! : chapter.coda === 'all' ? null : chapter.coda;
+    if (coda && !answered && endFor > CODA_ANSWER && codaWho !== undefined) {
       answered = true;
-      audio.play({ kind: 'motif', who: CODA_FAMILY[chapter.id]! });
+      audio.play({ kind: 'motif', who: codaWho });
     }
     const wait = coda ? CODA : 1.4;
     if (endFor > wait && !hud.reading() && (!hud.speaking() || endFor > wait + 5.6) && !benchOn && !ended) {
@@ -1224,12 +1235,14 @@ function start(): void {
       const number = chapterNumber(chapter.id);
       const next = nextAvailable(chapter.id, params);
       const bonus = next && bonusAfter(chapter.id)?.id === next.id;
+      // Into the second adventure from the first: its own word on the button.
+      const onward = bonus ? sv.end.bonus : next && isAdventure2(next.id) && !isAdventure2(chapter.id) ? sv.end.adventure : undefined;
       // The chapter's name, under its kicker: "Kapitel 1", "Gården" (story-presentation.md row 7).
       const title = sv.end.headings[chapter.id] ?? sv.explore.chapters[chapter.id] ?? sv.end.course;
       const kicker = sv.end.kickers[chapter.id] ?? (number > 0 ? sv.end.kicker.replace('{n}', String(number)) : '');
       const hidden = (chapter.hidden ?? []).map((h) => ({ kind: h.kind, found: game.sim.flags.has(foundFlag(h.kind)) }));
       storyReminder.handoff(storyHandoff(chapter.id, game.sim.flags));
-      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, bonus ? sv.end.bonus : undefined, kicker);
+      hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, onward, kicker);
       byId(canExplore ? 'endExplore' : next ? 'endOnward' : 'endAgain').focus();
       if (chapter.id === 'epilog') {
         byId('endPhotos').hidden = false;
@@ -1288,4 +1301,4 @@ function start(): void {
   requestAnimationFrame(frame);
 }
 
-start();
+void start();
