@@ -698,6 +698,8 @@ function flowerPot(x: number, y: number): Group {
   rim.position.y = 0.14;
   group.add(pot, rim);
   group.position.set(x, y, -1.3);
+  group.userData.model = 'kruka';
+  group.userData.turn = x * 1.7;
   return group;
 }
 
@@ -737,6 +739,7 @@ function jettyPost(x: number, y: number): Group {
   cap.position.y = 2.86;
   group.add(post, cap);
   group.position.set(x, y, -1.1);
+  group.userData.model = 'bryggstolpe';
   return group;
 }
 
@@ -945,9 +948,11 @@ function football(radius: number): Mesh {
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
 const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
   'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
+const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta'];
 const CREATURES = ['tragubbe', 'lillgubbe', 'uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter'];
 const FILES: Record<string, readonly [pack: string, file: string]> = {
   ...Object.fromEntries(CREATURES.map((name) => [name, ['aventyr2', 'creatures'] as const])),
+  ...Object.fromEntries(PROPS.map((name) => [name, ['aventyr2', 'props'] as const])),
   ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
   'olympia-hall': ['aventyr2', 'olympia'],
   'olympia-stand': ['aventyr2', 'olympia'],
@@ -985,6 +990,7 @@ async function installModels(assets: Assets, scene: Object3D): Promise<boolean> 
     const fit = place.userData.fit as number | undefined;
     if (fit) copy.scale.setScalar(fit);
     if (typeof place.userData.turn === 'number') copy.rotation.y = place.userData.turn as number;
+    if (typeof place.userData.lift === 'number') copy.position.y = place.userData.lift as number;
     if (block) {
       const size = new Box3().setFromObject(made).getSize(new Vector3());
       copy.scale.set(block.width / size.x, block.height / size.y, block.depth / size.z);
@@ -1046,6 +1052,9 @@ function createFoam(foam: NonNullable<ChapterData['storm']>['foam'], group: Grou
 /** Mormor's lantern, whose light falls where he walks: it hangs from its top, and its glow goes with it. */
 function lantern(): { group: Group; light: Mesh } {
   const group = new Group();
+  const tin = new Group();
+  tin.userData.model = 'lykta';
+  group.add(tin);
   const body = new Mesh(new CylinderGeometry(0.2, 0.24, 0.52, 8), new MeshBasicMaterial({ color: '#ffd27a' }));
   body.position.y = -0.46;
   const roof = new Mesh(new CylinderGeometry(0.1, 0.3, 0.16, 8), solid('#2a2a2a', 0.5));
@@ -1208,6 +1217,7 @@ function boot(): Group {
   rim.position.set(-0.5, 0.55, 0);
   group.add(foot, toe, leg, keel, rim);
   group.position.y = -0.1;
+  group.userData.model = 'stovel';
   return group;
 }
 
@@ -1228,6 +1238,8 @@ function umbrella(): Group {
   hook.position.set(0.14, 0.82, 0);
   hook.rotation.z = Math.PI;
   group.add(shaft, hook);
+  group.userData.model = 'paraply';
+  group.userData.lift = 0.72;
   return group;
 }
 
@@ -1649,6 +1661,8 @@ function raft(w: number, h: number): Group {
     rope.position.set(x, h / 2, 0);
     group.add(rope);
   }
+  group.userData.model = 'flotte';
+  group.userData.block = { width: w, height: h, depth: 2, x: 0, y: h * 1.5 };
   return group;
 }
 
