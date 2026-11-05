@@ -358,7 +358,7 @@ export const olympia: ChapterData = {
     { id: 'ol:all-white', on: 'ol:all-white', who: 'elof', line: 'olAllWhite' },
     // 8. the trail, and the strongest gust
     { id: 'ol:gust', at: 172.8, who: 'elof', line: 'olGust', read: true },
-    { id: 'ol:north', on: 'beat:ol:gust', who: 'elof', line: 'olNorth' },
+    { id: 'ol:north', on: 'beat:ol:gust', who: 'bertil', line: 'olNorth' },
     { id: 'ol:follow', on: 'beat:ol:north', who: 'elof', line: 'olFollow' },
     // Flärken is six kilometres north: the family drives there, as they will to Billsta.
     { id: 'ol:car', on: 'beat:ol:follow', who: 'bertil', line: 'olCar' },

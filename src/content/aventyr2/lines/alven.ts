@@ -10,7 +10,7 @@ export const words: ChapterWords = {
   lines: {
     // 0. the lake's outlet
     alArrive: 'Ån rinner ut ur sjön. Där åkte de!',
-    alKlonkFloats: 'Klonk, du flyter! Du är ju av trä.',
+    alKlonkFloats: 'Klonk! Du simmar utan att sprattla!',
     alKlonk: 'Klonk!',
     alFlash: 'Blixten! Lillgubben guppar på ån!',
     // 1. the current: the raft, the gravel bank, the birch leaf
@@ -26,12 +26,12 @@ export const words: ChapterWords = {
     alPappaHere: 'Elof! Jag står här uppe på bron!',
     alScarfDown: 'Jag sänker ner min halsduk.',
     alTakeHold: 'Ta tag i halsduken, Elof!',
-    alUp: 'Pappa lyfter mig över forsen!',
+    alUp: 'Nu åker halsdukshissen!',
     alOver: 'Där! Nu är du förbi forsen.',
-    alThanks: 'Tack, Pappa! Din halsduk är så varm.',
+    alThanks: 'Tack, Pappa! Världens mjukaste hiss.',
     alFollow: 'Vi kör efter dig längs ån.',
     // 4. the beaver's stumps and lodge, and an otter
-    alLodge: 'En bäverhydda! Tyst, bävern sover.',
+    alLodge: 'En bäverhydda. Jag smyger över taket.',
     alOtter: 'En utter! Den simmar ut mot stenen.',
     // 5. the lake, and the owl from the forest
     alLake: 'Sjön! Den är alldeles för bred.',
@@ -43,13 +43,13 @@ export const words: ChapterWords = {
     // 6. Moälven, and the family's car to Billsta
     alMoalven: 'Nu heter ån Moälven. Så stor den är!',
     alOldAhead: 'Gamla trägubben! Han flyter före oss.',
-    alLast: 'Här är det sista godiset …',
+    alLast: 'En godisbit till. Men sedan … inget.',
     alGone: 'Spåret är slut. Jag ser dem inte längre.',
     alAfraid: 'Tänk om vi aldrig hittar dem …',
     alKlonkNear: 'Klonk …',
-    alMoaNever: 'Vi ger aldrig upp, lillebror.',
-    alBertilPocket: 'Jag har godis i fickan!',
-    alMoaTrail: 'Då lägger vi ett nytt spår åt dig!',
+    alMoaNever: 'Vi letar tillsammans. Jag är här.',
+    alBertilPocket: 'Vänta! Jag har godis i fickan!',
+    alMoaTrail: 'Då lägger vi ett eget spår åt dig!',
     alBillsta: 'Älven rinner ända till Billsta.',
     alCar: 'Hoppa in, Elof! Vi kör dit med bilen.',
     alWindow: 'Mormor och morfar kan hjälpa oss leta!',
@@ -74,9 +74,9 @@ export const words: ChapterWords = {
     alvenLake: { purpose: 'Ropa på ugglan vid sjön.', recap: 'Sjön är för bred. Ugglan från skogen har följt efter oss.' },
     alvenBoard: { purpose: 'Kliv upp på ugglan.', recap: 'Ugglan har landat bredvid mig. Den vill bära mig över sjön.' },
     alvenFly: { purpose: 'Flyg med ugglan över sjön.', recap: 'Ugglan bär mig högt över den stora sjön.' },
-    alvenMoalven: { purpose: 'Följ älven mot Billsta.', recap: 'Nu heter ån Moälven. Lillgubben och gamla trägubben flyter före.' },
-    alvenLost: { purpose: 'Spåret är slut. Vad gör vi nu?', recap: 'Gamla trägubbens godis tog slut här vid älven.' },
-    alvenBillsta: { purpose: 'Åk med familjen till Billsta.', recap: 'Älven rinner till Billsta, där mormor och morfar bor. Dit är det tre mil med bilen.' },
+    alvenMoalven: { purpose: 'Följ trägubbarna nerför älven.', recap: 'Nu heter ån Moälven. Lillgubben och gamla trägubben flyter före.' },
+    alvenLost: { purpose: 'Spåret är slut. Vad gör vi nu?', recap: 'Här slutar godisspåret. Jag har tappat trägubbarna ur sikte.' },
+    alvenBillsta: { purpose: 'Åk med familjen till Billsta.', recap: 'Godisspåret tog slut. Vi kör tre mil till Billsta och letar vidare med mormor och morfar.' },
   },
   helpers: {
     alvenFamily: 'Familjen kör längs vägen och lyser med lamporna.',

@@ -17,32 +17,32 @@ export const words: ChapterWords = {
     // 2. the balls the wind rolls across the pitch
     olWind: 'Vinden rullar bollar över planen!',
     olJump: 'De kommer bakifrån. Hoppa över!',
-    olPhew: 'Puh! Ingen boll fick tag i mig!',
+    olPhew: 'Puh! Nu är jag förbi bollarna.',
     // 3. Bollen i målet
     olPuddle: 'Målet står mitt i en stor pöl!',
     olIdea: 'Den lilla bollen flyter ju!',
     olIdeaMore: 'En större boll skulle kunna bära mig.',
     olSplash: 'Plask! Bollen flyter. Nu hoppar jag!',
-    olInGoal: 'Mål! Jag gjorde mål själv!',
+    olInGoal: 'Mål! Fast det var jag som gick in!',
     // 4. up the net to the crossbar
     olLookout: 'Uppe på ribban! Vilken utsikt!',
     // 5. the corner flag and the benches
     olCrowd: 'Stormen låter som en hel läktare!',
     // 6. Bertil's free kick over the flooded centre circle
     olOldOne: 'Gamla trägubben seglar över vattnet!',
-    olBertilHere: 'Ropa på mig! Jag är bäst på frisparkar.',
+    olBertilHere: 'Lillebror! Behöver du en frispark?',
     olBertilReady: 'Upp på bollen! Jag skjuter, du flyger!',
     olFly: 'Jag flyger över hela planen!',
     olGoal: 'Mål! Rakt in i nätet!',
-    olBertilCheer: 'Snyggt flugit, lillebror! Bra skott, va?',
-    olThanks: 'Tack, Bertil! Vilken spark!',
+    olBertilCheer: 'Snyggt, lillebror! Vi gjorde mål ihop!',
+    olThanks: 'Tack! Du sköt. Jag stod för flyget!',
     // 7. the biathlon range
-    olRange: 'Fem svarta måltavlor! Jag kastar kottar.',
+    olRange: 'Fem tavlor. Hinner jag pricka en?',
     olAllWhite: 'Alla fem är vita! Fullträff!',
     // 8. the floodlit trail, and the strongest gust
     olGust: 'Där! Vinden tar lillgubben norrut!',
     olNorth: 'Upp mot sjön vid Flärken!',
-    olFollow: 'Gamla trägubben flyger efter honom!',
+    olFollow: 'Gamla trägubben följer efter honom!',
     olCar: 'Hoppa in i bilen! Vi åker till Flärken.',
   },
   verbs: {
@@ -58,7 +58,7 @@ export const words: ChapterWords = {
     olympiaKick: { purpose: 'Hur tar jag mig över pölen?', recap: 'Målet står mitt i en stor pöl. Den är för bred.' },
     olympiaHop: { purpose: 'Hoppa över på bollen.', recap: 'Bollen flyter i pölen framför målet. Den bär mig.' },
     olympiaBenches: { purpose: 'Spring förbi bänkarna mellan dropparna.', recap: 'Det droppar från bänkarnas tak. Skuggorna visar var dropparna landar.' },
-    olympiaCallBertil: { purpose: 'Ropa på Bertil vid mittcirkeln.', recap: 'Mittcirkeln är en hel sjö. Bertil är bäst på frisparkar.' },
+    olympiaCallBertil: { purpose: 'Ropa på Bertil vid mittcirkeln.', recap: 'Mittcirkeln är en hel sjö. Bertil kan skjuta mig över på sin boll.' },
     olympiaBoard: { purpose: 'Hoppa upp på bollen.', recap: 'Bertil har lagt bollen till rätta. Han skjuter, och jag flyger.' },
     olympiaFly: { purpose: 'Flyg över mittcirkeln på bollen.', recap: 'Bertil sköt en frispark, och jag åker med bollen.' },
     olympiaStadium: { purpose: 'Följ godisspåret till skidstadion.', recap: 'Mål! Bertils frispark bar mig över mittcirkeln.' },

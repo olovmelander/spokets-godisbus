@@ -18,9 +18,9 @@ import { alongAll, round, row, slopeRow, timeCard } from '../kit';
  *    she holds her umbrella out to him, and he floats down under it to the far side.
  * 5. **The swinging sign:** the shoemaker's sign swings in the wind over the pavement. From the bench under
  *    it he can ride it up to the hearts over it and on to a stand. A toy too.
- * 6. **Fjun's cap:** the little figure's carved cap lies in the gutter. "Rännstenen rinner ner till sjön!"
+ * 6. **The little one's cap:** Elof keeps it for him. The candy trail leads on towards Olympia.
  * 7. **Under the bakery's awnings** the rain pours off their scalloped edges. He reads the drops from their
- *    shadows, with a dry pier between the two runs. Then **the steps** go down to the lake's shore path.
+ *    shadows, with a dry pier between the two runs. Then **the steps** lead down towards Olympia.
  *
  * Nothing here is a real shop, and no house has a number: a shop is told by the wares in its window, and
  * nothing on the street is a letter (plan §0, §2.6). To the simulation the river and the crossing are pits,
@@ -155,6 +155,8 @@ export const stormbyn: ChapterData = {
   // Where and when, as the chapter opens.
   scenes: [timeCard('stormbyn', 1)],
   goalX: 180,
+  // Elof returns the cap in the finale: he must take it with him, even if he jumped over it at first.
+  goalNeeds: 'cap',
   ground: [
     { x: -3, y: 14 },
     { x: -3, y: 3 },
@@ -311,7 +313,7 @@ export const stormbyn: ChapterData = {
     { id: 'family:umbrella', on: 'family:umbrella-ready', until: 'umbrella', within: [95, 104], who: 'moa', line: 'sbMoaHold', read: true },
     { id: 'sbFloat', on: 'umbrella', within: [100, 120], who: 'elof', line: 'sbFloat' },
     { id: 'sbLanded', at: 120.6, needs: 'umbrella', who: 'moa', line: 'sbMoaLanded' },
-    { id: 'sbCap', on: 'cap', who: 'elof', line: 'sbCap' },
+    { id: 'sbCap', on: 'cap', who: 'elof', line: 'sbCap', read: true },
     { id: 'sbToLake', on: 'cap', who: 'elof', line: 'sbToLake', read: true },
     { id: 'sbKlonkCap', on: 'cap', who: 'spoket', line: 'sbKlonkCap' },
     { id: 'sbShore', at: 176, who: 'elof', line: 'sbShore' },
@@ -367,7 +369,8 @@ export const stormbyn: ChapterData = {
 
 /** What "Just nu" says here: along the street, at the river, at Moa's wall, and once the cap is found. */
 export const context: Chooser = (has, player) => {
-  if (has('cap')) return ['sbLake', 'sbFamily', 'water'];
+  if (has('cap')) return ['sbLake', 'sbFamily', 'village'];
+  if (player.x >= 141) return ['sbFindCap', 'sbFamily', 'village'];
   if (has('umbrella') || player.x >= WALL_TO + 4) return ['sbGutter', 'sbFamily', 'village'];
   if (has('umbrella:ready')) return ['sbBoard', 'sbMoa', 'village', 'moa'];
   if (player.x >= 89) return ['sbCallMoa', 'sbMoa', 'village', 'moa'];

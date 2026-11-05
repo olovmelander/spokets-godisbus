@@ -506,7 +506,11 @@ export const billsta: ChapterData = {
     { id: 'bi:yard', at: 26.4, who: 'elof', line: 'biYard' },
     { id: 'bi:mormor-here', at: 45, until: 'bi:mormor', who: 'mormor', line: 'biMormorHere', read: true },
     { id: 'bi:lantern', on: 'bi:mormor', who: 'mormor', line: 'biLantern', read: true },
-    { id: 'bi:open', on: `placed:${DOOR.id}`, who: 'elof', line: 'biOpen' },
+    { id: 'bi:open', on: `placed:${DOOR.id}`, who: 'elof', line: 'biOpen', read: true },
+    // A lookout is the next lead after the river's trail ends; the barn is the way up to it.
+    { id: 'bi:lookout', on: 'beat:bi:open', within: [MORMOR.x - 2.6, ROOF.from], who: 'mormor', line: 'biLookout', read: true },
+    { id: 'bi:way', on: 'beat:bi:lookout', within: [MORMOR.x - 2.6, ROOF.from], who: 'mormor', line: 'biWay', read: true },
+    { id: 'bi:onward', on: 'beat:bi:way', within: [MORMOR.x - 2.6, ROOF.from], who: 'elof', line: 'biOnward', read: true },
     // 4. the hay loft, the roof, and down behind the house
     { id: 'bi:loft', at: 57.8, needs: `placed:${DOOR.id}`, who: 'elof', line: 'biLoft' },
     { id: 'bi:roof', at: 70.2, who: 'elof', line: 'biRoof' },
@@ -645,7 +649,8 @@ export const billsta: ChapterData = {
  */
 export const context: Chooser = (has, player) => {
   const at = player.x;
-  if (has('beat:bi:there')) return ['billstaFound', 'billstaForest', 'heart'];
+  if (has('bi:landed')) return ['billstaFound', 'billstaForest', 'heart'];
+  if (has('beat:bi:there')) return ['billstaLook', 'billstaForest', 'water'];
   if (at > LEE[LEE.length - 1]! + 0.8) return ['billstaBrow', 'billstaForest', 'mountain'];
   if (at >= LEE[0]! - 1.5) return ['billstaWind', 'billstaForest', 'mountain'];
   if (at >= TOP.from + 0.3 && player.y >= TOP.y - 0.3) return ['billstaBoulders', 'billstaForest', 'mountain'];

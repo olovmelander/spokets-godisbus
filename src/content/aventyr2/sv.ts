@@ -60,12 +60,12 @@ export const A2 = {
   handoffs: {
     stormkvall: { title: 'Ut i stormen', text: 'Gamla trägubben lämnar godis åt mig. Jag följer spåret, och familjen letar med sina lampor.' },
     stormgard: { title: 'Vidare till skogen', text: 'I blixtens sken flög lillgubben över häcken. Klonk och jag följer efter in i skogen.' },
-    stormskog: { title: 'Ner mot byn', text: 'Gamla trägubben väntar inte på någon. Han vet hur det är att vara ensam i mörkret.' },
-    stormbyn: { title: 'Mot Olympia', text: 'Vinden tog lillgubben över taken mot fotbollsplanen. Gamla trägubben är redan på väg.' },
+    stormskog: { title: 'Ner mot byn', text: 'Gamla trägubben skyndar för att lillgubben inte ska vara ensam i mörkret. Spåret leder ner mot byn.' },
+    stormbyn: { title: 'Mot Olympia', text: 'Jag har lillgubbens mössa. Godisspåret fortsätter mot Olympia. Vi måste hinna ikapp honom.' },
     flarken: { title: 'Nerför ån', text: 'Trä flyter. Ån bär lillgubben söderut, och gamla trägubben följer efter på en stock.' },
     olympia: { title: 'Upp till Flärken', text: 'Den starkaste stormbyn tog lillgubben norrut. Vi åker bil upp till sjön vid Flärken.' },
-    alven: { title: 'Till Billsta', text: 'Älven bär trägubbarna mot Billsta. Vi kör de tre milen dit, till mormor och morfar.' },
+    alven: { title: 'Till Billsta', text: 'Spåret tog slut, men vi fortsätter leta. Älven rinner mot Billsta, så vi kör dit. Moa och Bertil ska lägga ett nytt spår.' },
     billsta: { title: 'Ner till sundet', text: 'Från Billaberget syns de: båda trägubbarna på en sten nere i sundet.' },
-    stormoga: { title: 'Hem igen', text: 'Alla är hittade. Mormor och morfar följer med hem till frukost.' },
+    stormoga: { title: 'Hem igen', text: 'Alla är hittade. Mormor och morfar följer med hem och stannar till frukost.' },
   } as Record<string, { title: string; text: string }>,
 };

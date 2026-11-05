@@ -34,6 +34,8 @@ describe('Äventyr 2: Stormkvällen', () => {
     expect(game.sim.checkpoint).toBe(-1);
     expect(game.sim.flags.has('star:out')).toBe(false);
     expect(game.sim.candyCount).toBe(0);
+    expect(game.sim.said).not.toContain('skSill');
+    expect(game.sim.said).not.toContain('skRain');
   });
 
   it('brings the star out in the scene after the window, before it can be tasted', () => {
@@ -58,8 +60,19 @@ describe('Äventyr 2: Stormens öga', () => {
     const result = playThrough(60, stormoga, {}, 300);
     expect(result.goal).toBe(true);
     expect(result.flags).toEqual(expect.arrayContaining(['owl:call', 'owl:ready', 'owl', 'eye', 'scene:oga', 'scene:motet', 'gift', 'taste', 'scene:stor', 'home']));
-    const order = ['soFar', 'soOwl', 'oga:1', 'motet:3', 'soGold', 'soShare', 'stor:4', 'stor:5', 'stor:6'];
+    const order = ['soFar', 'soOwl', 'oga:1', 'motet:3', 'soGold', 'soShare', 'soMagic', 'stor:4', 'stor:5', 'stor:6'];
     expect(result.said.filter((id) => order.includes(id))).toEqual(order);
+  });
+
+  it('reveals the saved golden sweet only after the reunion, then recalls its magic before tasting', () => {
+    const gift = stormoga.spots!.find((spot) => spot.id === 'gift')!;
+    expect(gift.after).toBe('scene:motet');
+    const game = new Game({ ...stormoga, spawn: gift.at }, {}, { flags: ['eye', 'scene:oga'] });
+    game.frame(1 / 60, { x: 0, hopHeld: false }, { hop: false, act: true, helper: false });
+    expect(game.sim.flags.has('gift')).toBe(false);
+    const result = playThrough(60, stormoga, {}, 300);
+    const steps = ['scene:motet', 'gift', 'beat:soShare', 'beat:soMagic', 'taste'];
+    expect(result.flags.filter((flag) => steps.includes(flag))).toEqual(steps);
   });
 });
 
@@ -68,8 +81,9 @@ describe('Äventyr 2: Morgonen efter', () => {
     const result = playThrough(60, morgonen, {}, 300);
     expect(result.goal).toBe(true);
     expect(result.flags).toEqual(expect.arrayContaining(['shelf:old', 'shelf:small', 'latch', 'beat:moName', 'cocoa']));
-    const order = ['moOld', 'moSmall', 'moLatched', 'moFluff', 'moName', 'moNice', 'moWelcome', 'moAll'];
+    const order = ['moOld', 'moSmall', 'moLatched', 'moFluff', 'moName', 'moNice', 'moWelcome', 'moKnew', 'moAnswer', 'moAll'];
     expect(result.said.filter((id) => order.includes(id))).toEqual(order);
+    expect(morgonen.decor).toContainEqual(expect.objectContaining({ look: 'tiny-cap', word: 'worn', after: 'shelf:small' }));
   });
 
   it('does not end before the cocoa: walking past everything leaves him at the end of the room', () => {

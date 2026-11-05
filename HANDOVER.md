@@ -2,6 +2,38 @@
 
 ## State (5 November 2026)
 
+- **Äventyr 2, full story and dialogue audit (5 November 2026, cloud session, branch `audit/adventure-2-story`).**
+  Olov asked for the whole second adventure to have a clear, funny, coherent story and good conversations. All ten chapters'
+  dialogue, scenes, clues, context and handoffs were read against their actual triggers. The chapter-by-chapter findings and
+  changes are in [`docs/aventyr-2-audit.md`](docs/aventyr-2-audit.md), with the previous audit preserved below the new one.
+  - **The story's causes are explicit:** identify both carvings at the shelf, choose to shrink before tasting, explain Klonk's
+    adult-gaze rule, follow a concrete clue towards Olympia, distinguish Mamma's boat help from the family's road journey,
+    and explain Mormor's route through the barn to the lookout on Billaberget. The exhausted trail remains distinct from the
+    golden sweet saved for Elof and from Moa and Bertil's replacement trail.
+  - **Conversations answer each other:** the opening's ship becomes a flashlight errand, the owl is addressed as a friend,
+    Moa answers the floating-seed joke, Bertil celebrates their joint goal, and the boot, scarf and failed stone experiment
+    have short jokes. The ending has relief and a slippers joke; breakfast returns to the boot and lets Elof answer Moa:
+    "Du lyste för mig. Jag lyste för dig." Lines stay within 42 characters; Klonk remains wordless.
+  - **Clues reach the reader:** the forest motive has a fallback for progress beyond its touch spot; Stormbyn requires the
+    cap and gives a return objective if missed, including from its final checkpoint. The cap discovery, barn exchange,
+    river travel and morning answer survive the real reading queue. Billsta's reminder waits for the little figure's landing.
+    New goodnight, barn and golden-sweet exchanges are scoped to their story stage, so old saves cannot replay them too late.
+  - **The reunion is visible:** the golden sweet appears only after the meeting, and Elof recognises its magic before
+    tasting. Both rescued figures and the cap stay in his actual hands through growth and the walk home, reusing the existing
+    objects and models. Rewinding to a checkpoint restores their original stone staging. The returned cap stays on Fjun on
+    the morning shelf. The finale's public stand-ins were visually inspected before growth, after growth and on the shore.
+  - **Delivery:** code, text, regression tests, audit and matching `scripts/voices-aventyr2.json`; no new voice recordings,
+    private models or release-boundary changes.
+  - **Validation:** typecheck; **191 test files / 2,041 tests**; production build and size gates; built-in privacy check
+    (no configured denylist or exiftool in this cloud environment). The built Adventure 2 browser suite passed **42 checks**,
+    the shared opening suite **75 checks**, and the reading-queue suite passed its controls, five screen sizes and five
+    Adventure 2 exchanges. Six old-save regressions and four carried-figure tests cover the final compatibility changes.
+    The final public build is about 2.25 MiB as served and its Adventure 2 chunk about 65.7 KiB; private-model/device review
+    remains a separate check. No new gameplay failures were found.
+  - **Next:** review the PR and play the revised story, especially the rescue and breakfast, on the family devices. Private
+    model contact, acting and subjective reading pace still need Olov's review. No new decision, known gameplay bug, *Senare*
+    item or question for Olov was introduced. This implementation needed no Blender work or access to Olov's computer.
+
 - **Stormkvällen's opening, restaged (5 November 2026, afternoon, cloud session, branch `ccr-77db4123-5s8xa3`).** Olov: the
   beginning of Äventyr 2 showed what should come later, lying on the floor from the first picture. Klonk's star glowed by the
   shelf all through the evening, the window and Pappa's look at the empty shelf. The trail's first big candy (a checkpoint at
@@ -3664,6 +3696,9 @@
 
 ## Next
 
+The latest story audit is complete on `audit/adventure-2-story`; review its PR and the revised ten-chapter route before
+recording new voices. The older art/device checkpoints below remain; the current release boundary is already `morgonen`.
+
 **Stormkvällen's opening** (this session's branch, `ccr-77db4123-5s8xa3`): Olov reviews and merges its pull request, then plays
 `?course=stormkvall` with the real figures. Nothing in it needs his computer.
 
@@ -4041,6 +4076,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Äventyr 2 story audit, 5 Nov | One complete narrative pass | One cloud session | 1 / 1 | All ten chapters audited and revised, clue/reading continuity repaired, visible finale carry restored, audit and voice script updated. Device/acting review and new recordings remain. |
 | Stormkvällen's opening (5 November, afternoon) | Olov's request: nothing lying visible before the story brings it | 1 cloud session | — / 0 so far | The star rises out of Klonk's bag behind the grown-ups' backs, the star is in Elof's hand at the POFF, Klonk is placed in every scene, and the trail's big candies come with the trail. Code only. |
 | The family rebuilt and everything released (5 November) | Olov's request: every human figure's design and motion, in one style | 1 session on Olov's computer, with Blender | 1 / 8 (faces, hair, caps, bodies, Mamma's hair, Mormor and Morfar) | One outline for all heads; seven people from short files; released to `morgonen` |
 | Äventyr 2's overhaul (4 to 5 November) | Olov's request: audit and overhaul of every world, puzzle, figure and animal | 1 session on Olov's computer, until 02:30 | — / 0 so far | 29 pull requests, #192 and #195 to #223, none played by Olov yet |

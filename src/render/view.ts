@@ -51,6 +51,7 @@ import { createPlayerMotion, createPlayerStandIn } from './player-motion';
 import { createAurora } from './aurora';
 import { createFamilyMotion } from './family-motion';
 import { createSharedSweets } from './shared-sweets';
+import { createRescuedFigures } from './rescued-figures';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
@@ -321,6 +322,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (d.def.turn !== undefined) d.prop.group.rotation.y = d.def.turn;
     scene.add(d.prop.group);
   }
+  const rescuedFigures = createRescuedFigures(chapter, decor);
   // How big he is drawn: a boy among small things, or as small as the ghost (plan §5.2).
   const sized = chapter.size;
   let tall = sized && sized.after === undefined ? sized.scale : 1;
@@ -938,6 +940,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         if (tear) tear.visible = true;
       }
     }
+    rescuedFigures?.restore();
     for (const d of decor) {
       d.prop?.update(d.def.until !== undefined && flags.has(d.def.until), clock, dt);
       if (d.prop && d.def.after !== undefined) d.prop.group.visible = flags.has(d.def.after) && d.prop.group.scale.x > 0;
@@ -1100,6 +1103,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       playerBody.reach(1, boot.set(scripted.aim.x, scripted.aim.y, scripted.aim.z ?? 0), k * k * (3 - 2 * k));
     }
     stage.updateElof(playerBody, scripted, tall, calmStory);
+    rescuedFigures?.update(flags, elof.group, playerBody, tall);
     if (curr.hook) {
       playerBody.hand(0, laceHand).add(playerBody.hand(1, laceAlong)).multiplyScalar(.5);
       laceHand.addScaledVector(boot.set(1, 0, 0).applyQuaternion(elof.group.quaternion), .15 * tall);

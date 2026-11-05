@@ -226,7 +226,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       for (const perch of perches.filter((p) => p.z === undefined)) expect(heightAt(alven, perch.at.x), `the perch at ${perch.at.x}`).toBeCloseTo(perch.at.y, 3);
       for (const perch of perches) expect(perch.catch).toBeUndefined();
       for (const beat of alven.beats!.filter((b) => b.who === 'spoket')) expect(lines[beat.line]).toMatch(/^(Klonk[-,!]? ?)+(klonk!?)?( …)?$/i);
-      expect(lines.alKlonkFloats).toBe('Klonk, du flyter! Du är ju av trä.');
+      expect(lines.alKlonkFloats).toBe('Klonk! Du simmar utan att sprattla!');
     });
   });
 

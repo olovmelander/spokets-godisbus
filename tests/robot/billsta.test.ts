@@ -27,7 +27,7 @@ vi.setConfig({ testTimeout: 90000 });
 const SAID = [
   'bi:arrive', 'bi:klonk', 'bi:window', 'bi:window-klonk',
   'bi:new-trail', 'bi:ditch', 'bi:morfar-here', 'bi:ladder-lay', 'bi:ladder', 'bi:thanks', 'bi:to-mormor',
-  'bi:yard', 'bi:mormor-here', 'bi:lantern', 'bi:open',
+  'bi:yard', 'bi:mormor-here', 'bi:lantern', 'bi:open', 'bi:lookout', 'bi:way', 'bi:onward',
   'bi:loft', 'bi:roof', 'bi:roof-klonk', 'bi:seesaw', 'bi:call', 'bi:klonk-jump', 'bi:too-light', 'bi:klonk-sorry', 'bi:near-middle', 'bi:fly', 'bi:thanks-klonk', 'bi:klonk-glad', 'bi:hazel', 'bi:wind',
   'bi:there', 'bi:holds', 'bi:not-alone', 'bi:owl', 'bi:down', 'bi:cheer',
 ];
@@ -267,7 +267,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(storm.glows!.some((g) => g.after === 'beat:bi:owl' && g.at.x > slopeGust!.to)).toBe(true);
       expect(words.lines.biMormorHere).toBe('Lilla Elof! Är det verkligen du?');
       const mormor = billsta.beats!.filter((b) => b.who === 'mormor');
-      expect(mormor.map((b) => b.line)).toEqual(['biMormorHere', 'biLantern', 'biToNarrow']);
+      expect(mormor.map((b) => b.line)).toEqual(['biMormorHere', 'biLantern', 'biLookout', 'biWay', 'biToNarrow']);
     });
   });
 
@@ -415,7 +415,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(sim.curr.mode).toBe('free');
       expect(sim.flags.has(fling.id)).toBe(false);
       expect(sim.said).toContain('bi:too-light');
-      expect(lines.biTooLight).toBe('Du väger ju ingenting, Klonk!');
+      expect(lines.biTooLight).toBe('Du är lite för lätt. Vi får klura!');
       // Nothing offers itself: from his own side of the stone there is nothing to push.
       expect(sim.curr.verb).toBeNull();
     });
@@ -453,7 +453,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       run(sim, 1.2);
       expect(sim.flags.has(`placed:${pivot.id}`)).toBe(true);
       expect(sim.said).toContain('bi:near-middle');
-      expect(lines.biNearMiddle).toBe('Nu står jag nära mitten!');
+      expect(lines.biNearMiddle).toBe('Så! Nu har Klonk den långa änden.');
       expect(sim.flags.has(fling.id)).toBe(false);
       // Back over it, onto the short end: it flings him by itself.
       leap(sim, -1, sim.curr.x);
@@ -573,6 +573,16 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(game.sim.said.filter((id) => SAID.indexOf(id) >= SAID.indexOf('bi:there'))).toEqual(['bi:there', 'bi:holds', 'bi:not-alone', 'bi:owl', 'bi:down', 'bi:cheer']);
     });
 
+    it('lets the little one land before saying both figures are safe on the stone', () => {
+      const game = new Game(billsta, {}, saveAt(CP.gusts).start);
+      play(game, 60, () => game.sim.flags.has('beat:bi:there'));
+      expect(game.sim.flags.has('bi:landed')).toBe(false);
+      expect(storyContext('billsta', game.sim.flags, game.sim.curr)?.id).toBe('billstaLook');
+      play(game, 10, () => game.sim.flags.has('bi:landed'));
+      expect(game.sim.flags.has('bi:landed')).toBe(true);
+      expect(storyContext('billsta', game.sim.flags, game.sim.curr)?.id).toBe('billstaFound');
+    });
+
     it('is a stormy night near midnight, with the house\'s window warm from the start', () => {
       expect(billsta.storm).toMatchObject({ rain: 1, lightning: 5.5 });
       expect(billsta.storm!.calm).toBeUndefined();
@@ -616,7 +626,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
     expect(seen).toEqual([
       'billstaRoad', 'billstaMorfar/morfar', 'billstaLadder/morfar', 'billstaYard', 'billstaMormor/mormor', 'billstaBarn/mormor',
       'billstaLoft', 'billstaRoof', 'billstaBrook', 'billstaSeesaw/spoket', 'billstaKlonkOn/spoket', 'billstaLever/spoket', 'billstaShortEnd/spoket', 'billstaFly/spoket',
-      'billstaBoulders', 'billstaWind', 'billstaBrow', 'billstaFound',
+      'billstaBoulders', 'billstaWind', 'billstaBrow', 'billstaLook', 'billstaFound',
     ]);
     // Every purpose the chooser can give has its words.
     for (let x = -2; x <= 205; x += 2) {
