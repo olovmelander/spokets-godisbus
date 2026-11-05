@@ -936,7 +936,7 @@ function football(radius: number): Mesh {
 const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
   'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
 const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra', 'rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel'];
-const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter'];
+const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
 const CARVINGS = ['tragubbe', 'lillgubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];
 const FILES: Record<string, readonly [pack: string, file: string]> = {
@@ -1616,6 +1616,14 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       model.userData.model = spot.word;
       if (spot.word?.startsWith('hylla')) model.add(new Mesh(rock(Math.round(spot.at.x * 10), 1.1, 0.5, 0.9), solid('#7a7e80', 0.9, { flatShading: true })));
       group.add(model);
+      const phase = spot.at.x * 1.7;
+      // What is alive breathes, and what is afloat lifts on the water.
+      if (spot.word === 'and' || spot.word === 'and-hona') {
+        return { group, update: (_, clock) => { model.position.y = 0.05 * Math.sin(clock * 1.5 + phase); model.rotation.z = 0.04 * Math.sin(clock * 1.1 + phase); } };
+      }
+      if (spot.word === 'igelkott' || spot.word === 'groda') {
+        return { group, update: (_, clock) => { model.scale.y = 1 + 0.035 * Math.sin(clock * 2.1 + phase); } };
+      }
       return { group, update: () => {} };
     },
     aftermath: () => aftermath(),

@@ -1,4 +1,4 @@
-"""Aventyr 2's creatures: the owl and the otter (docs/aventyr-2-overhaul.md).
+"""Aventyr 2's creatures: the owl, the otter and the small lives in the storm (docs/aventyr-2-overhaul.md).
 
 Sent to Blender by scripts/bake/send-kit.mjs, after kit-tools.py. A name in ONLY builds that thing alone.
 
@@ -248,3 +248,118 @@ if wanted('utter'):
         (0.0, 0.2, 0.26, 0.2, 0.2), (0.0, 0.48, 0.12, 0.15, 0.13), (0.1, 0.82, 0.06, 0.1, 0.08), (0.24, 1.1, 0.03, 0.05, 0.04), (0.34, 1.26, 0.02, 0.012, 0.012),
     ], 8, OTTER_FUR)
     finish(part, 'utter', sharp=180.0, strength=0.5, reach=0.3, floor=0.0, leaf=True)
+
+
+# --- small lives in the storm -------------------------------------------------------------------------------------
+# Few points each: the size gate is near. Each stands on its origin, its front towards -Y, its size as it is to a small Elof.
+
+def stuck(part, verts, centre, size):
+    """A lump's points, moved from the unit ball to where it belongs: `lump` makes its own, so this is only for what is pushed."""
+    for vert in verts:
+        vert.co = Vector((centre[0] + vert.co.x * size[0], centre[1] + vert.co.y * size[1], centre[2] + vert.co.z * size[2]))
+
+
+# A hedgehog, sheltering: a dome of spines, each a little cone with a pale tip, and a pointed face low at the front.
+if wanted('igelkott'):
+    part = new_part()
+    SPINE = tone('#4a3a2c')
+    TIP = tone('#d8ccb4')
+    FUR = tone('#8a6e50')
+    ball(part, Vector((0.0, 0.1, 0.46)), (0.72, 0.92, 0.46), 2, tone('#3a2c20'))
+    for i in range(120):
+        t = (i + 0.5) / 120.0
+        z = 1.0 - t * 1.25
+        r = math.sqrt(max(0.0, 1.0 - z * z))
+        turn = i * 2.399963
+        out = Vector((r * math.cos(turn), r * math.sin(turn), z))
+        if out.y < -0.72 and out.z < 0.5:
+            continue
+        root = Vector((out.x * 0.72, 0.1 + out.y * 0.92, 0.46 + out.z * 0.46))
+        lean = out + Vector((0.0, 0.5, 0.2))
+        lean.normalize()
+        tip = root + lean * (0.3 + 0.08 * rnd(i, 1.0))
+        side = lean.cross(UP)
+        side.normalize()
+        up_ = side.cross(lean)
+        a = put(part, root + side * 0.05, SPINE)
+        b = put(part, root - side * 0.05, SPINE)
+        c = put(part, root + up_ * 0.06, SPINE)
+        d = put(part, tip, TIP)
+        face(part, (a, c, d))
+        face(part, (c, b, d))
+    # The face: a soft wedge, a shining nose, two small dark eyes, round ears.
+    ball(part, Vector((0.0, -0.8, 0.28)), (0.3, 0.42, 0.24), 2, FUR)
+    ball(part, Vector((0.0, -1.2, 0.27)), (0.07, 0.07, 0.065), 1, tone('#14100e'))
+    for side in (-1.0, 1.0):
+        ball(part, Vector((side * 0.16, -0.94, 0.4)), (0.05, 0.03, 0.055), 1, tone('#14100e'))
+        ball(part, Vector((side * 0.3, -0.56, 0.52)), (0.09, 0.05, 0.1), 1, tone('#6a5038'))
+        ball(part, Vector((side * 0.34, -0.62, 0.06)), (0.13, 0.17, 0.06), 1, FUR)
+    finish(part, 'igelkott', sharp=60.0, strength=0.4, reach=0.3, floor=0.0, leaf=True)
+
+
+# A garden snail going slowly up something: its striped shell, and its grey foot with two horns.
+if wanted('snigel'):
+    part = new_part()
+    SHELL = tone('#c8a060')
+    BAND = tone('#5a3a24')
+    FOOT = tone('#8a8478')
+    path = []
+    radii = []
+    tones = []
+    for i in range(30):
+        t = i / 29.0
+        turn = t * 14.0
+        far = 0.42 * (1.0 - t) ** 0.8
+        path.append(Vector((far * math.cos(turn), 0.5 * (1.0 - t) * 0.5, 0.56 + far * math.sin(turn))))
+        radii.append(0.24 * (1.0 - t) ** 0.7 + 0.02)
+        tones.append(BAND if i % 4 == 1 else SHELL)
+    tube(part, path, radii, tones, 8)
+    tube(part, [Vector((0.5, -0.1, 0.08)), Vector((0.2, -0.05, 0.1)), Vector((-0.3, -0.02, 0.12)), Vector((-0.62, -0.02, 0.2)), Vector((-0.8, -0.04, 0.32))], [0.06, 0.15, 0.17, 0.13, 0.1], [FOOT] * 5, 7)
+    for side in (-1.0, 1.0):
+        tube(part, [Vector((-0.82, side * 0.05, 0.36)), Vector((-0.96, side * 0.1, 0.6))], [0.03, 0.018], [FOOT, FOOT], 5)
+        ball(part, Vector((-0.97, side * 0.105, 0.62)), (0.04, 0.04, 0.04), 1, tone('#2a2622'))
+    finish(part, 'snigel', sharp=60.0, strength=0.4, reach=0.2, floor=0.0, leaf=True)
+
+
+# A common frog sitting on a stone, in the browns and greens of the brook.
+if wanted('groda'):
+    part = new_part()
+    SKIN_ = tone('#7a7a3a')
+    DARK = tone('#3a3c20')
+    BELLY = tone('#c8c090')
+    ball(part, Vector((0.0, 0.1, 0.32)), (0.38, 0.52, 0.3), 2, SKIN_)
+    ball(part, Vector((0.0, -0.36, 0.42)), (0.33, 0.3, 0.2), 2, SKIN_)
+    ball(part, Vector((0.0, -0.32, 0.26)), (0.27, 0.27, 0.12), 1, BELLY)
+    for side in (-1.0, 1.0):
+        ball(part, Vector((side * 0.2, -0.4, 0.58)), (0.1, 0.1, 0.1), 1, SKIN_)
+        ball(part, Vector((side * 0.235, -0.44, 0.6)), (0.07, 0.07, 0.07), 1, tone('#c89a30'))
+        ball(part, Vector((side * 0.26, -0.49, 0.6)), (0.038, 0.03, 0.044), 1, tone('#100e0a'))
+        ball(part, Vector((side * 0.42, 0.34, 0.2)), (0.17, 0.42, 0.17), 2, SKIN_)
+        ball(part, Vector((side * 0.56, 0.0, 0.05)), (0.17, 0.3, 0.05), 1, DARK)
+        ball(part, Vector((side * 0.3, -0.52, 0.09)), (0.07, 0.2, 0.08), 1, SKIN_)
+        ball(part, Vector((side * 0.36, -0.7, 0.03)), (0.13, 0.1, 0.03), 1, DARK)
+    # Dark patches, as a frog has, and the mask behind its eye.
+    for i in range(9):
+        a = rnd(i, 1.0) * TAU
+        ball(part, Vector((0.33 * math.cos(a), 0.14 + 0.45 * math.sin(a), 0.5 + 0.08 * rnd(i, 2.0))), (0.05, 0.07, 0.02), 1, DARK)
+    finish(part, 'groda', sharp=60.0, strength=0.4, reach=0.2, floor=0.0, leaf=True)
+
+
+# A mallard's duck and a drake, afloat with their heads drawn in, their keels at the water.
+def duck(name, body, head, breast, tail):
+    if not wanted(name):
+        return
+    part = new_part()
+    ball(part, Vector((0.0, 0.0, 0.3)), (0.33, 0.68, 0.32), 2, body)
+    ball(part, Vector((0.0, -0.4, 0.38)), (0.27, 0.34, 0.28), 2, breast)
+    ball(part, Vector((0.0, 0.66, 0.46)), (0.16, 0.26, 0.1), 1, tail)
+    ball(part, Vector((0.0, -0.44, 0.78)), (0.19, 0.22, 0.2), 2, head)
+    ball(part, Vector((0.0, -0.72, 0.74)), (0.09, 0.14, 0.04), 1, tone('#d8a838'))
+    for side in (-1.0, 1.0):
+        ball(part, Vector((side * 0.34, 0.1, 0.4)), (0.05, 0.44, 0.17), 1, lit(body, 0.8))
+        ball(part, Vector((side * 0.13, -0.56, 0.84)), (0.03, 0.03, 0.03), 1, tone('#100e0a'))
+    finish(part, name, sharp=60.0, strength=0.4, reach=0.2, floor=-0.1, leaf=True)
+
+
+duck('and', tone('#8a8a84'), tone('#2a5a44'), tone('#6a4a34'), tone('#e8e4d8'))
+duck('and-hona', tone('#7a6248'), tone('#8a7054'), tone('#7a6248'), tone('#a89878'))

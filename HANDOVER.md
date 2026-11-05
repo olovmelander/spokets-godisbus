@@ -19,6 +19,8 @@
     stretches meet under what stands in them (`RIVER` in `src/render/water.ts`). Älven, Billsta's brook and Stormgård's
     flood have it. Its stones are lichen boulders, and `wetRock` rounds over into the water. Olympia does not: its water is
     puddles in a pitch, and a river's water showed in front of the turf.
+  - **Rides checked with the real figures:** the boot, the leaf, the raft, the umbrella and the free kick. On a ride the picture sinks with him, so over open water it went under the surface: Stormgård's boot stretch has `lift: 2`. Any new ride over a `river` needs the same look. Bertil's ball now flies under his feet.
+  - **Small lives** in the creatures' kit (`igelkott`, `snigel`, `groda`, `and`, `and-hona`), placed as `kit` decor: they breathe or lift on the water, and do nothing else.
   - **The car** is a model (`bil`, and `bil-gra` going by in Stormbyn). No badge, no plate. Its windows are kept from the
     stand-in (`userData.keep`) so that they can light.
   - **Pappa's carvings:** nine figures in the way of his real ones (private `tragubbar/tragubbar.py`): flat knife cuts, thin
@@ -31,7 +33,7 @@
     the one that did not (Stormskogen, x 36 to 55).
   - **Lamps in their hands** in the finale: held `lamp-*` Things, with a beam that fades. Always check a scene with the real
     figures: the rehearsal figures stand differently.
-  - **The size gate is nearly full:** 3044 of 3072 KB as served. The carvings were halved to get there. More models need
+  - **The size gate is full:** 3065 of 3072 KB as served. The carvings were halved to get there. More models need
     room (see "Frågor till Olov").
 - **The overhaul's long night (4 to 5 November 2026).** Stacked pull requests, one outcome each, none of them merged
   yet. **Merge in number order:** #192, then #195 to #201 (their base is `main`, so rebase or retarget as they land), then

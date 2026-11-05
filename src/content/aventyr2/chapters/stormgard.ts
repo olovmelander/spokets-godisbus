@@ -184,6 +184,9 @@ export const stormgard: ChapterData = {
     { from: HEDGE.from, to: 196, kind: 'hedge' },
   ],
   decor: [
+    // Who else is out in it: a hedgehog in the lee of a pot, and a snail going up his blocks.
+    { look: 'kit', word: 'igelkott', at: { x: 51.4, y: 0 }, z: -2.3, turn: -0.7 },
+    { look: 'kit', word: 'snigel', at: { x: 141.6, y: 2.7 }, z: 0.9, turn: 0.4, scale: 0.8 },
     // The pumpkin lantern, a little behind the step's big candy.
     { look: 'pumpkin', at: { x: LANTERN.x, y: LANTERN.y }, z: LANTERN.z },
     // The old trägubbe, seen ahead on the playhouse roof until the flash that shows it leaping away.

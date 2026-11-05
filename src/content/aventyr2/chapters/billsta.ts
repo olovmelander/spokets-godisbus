@@ -425,6 +425,9 @@ export const billsta: ChapterData = {
     ],
   },
   decor: [
+    // A frog on the middle stone of the brook, and another on its bank.
+    { look: 'kit', word: 'groda', at: { x: 115.6, y: 0.4 }, z: -1.4, turn: 0.6, scale: 0.8 },
+    { look: 'kit', word: 'groda', at: { x: 124.6, y: 0 }, z: -1.2, turn: -0.5, scale: 0.7 },
     // The forest behind the house: fallen branches, a mossy log and a sawn stump.
     { look: 'kit', word: 'gren-a', at: { x: 124.6, y: 0 }, z: -1.6, turn: 0.4 },
     { look: 'kit', word: 'stubbe-sagad', at: { x: 125.8, y: 0 }, z: -2.6, turn: 1.1 },

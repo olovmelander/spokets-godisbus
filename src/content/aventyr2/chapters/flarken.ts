@@ -428,6 +428,9 @@ export const flarken: ChapterData = {
     ],
   },
   decor: [
+    // A pair of mallards, sheltering behind the reeds.
+    { look: 'kit', word: 'and', at: { x: 93.9, y: -0.6 }, z: -3.4, turn: 1.1, scale: 1.2 },
+    { look: 'kit', word: 'and-hona', at: { x: 95.8, y: -0.6 }, z: -4.2, turn: 0.9, scale: 1.2 },
     // The rocks at the water, where he climbs.
     ...[68, 69.4, 72].map((x, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x, y: i === 0 ? 1.85 : 2.75 }, z: -0.5, scale: 0.55 })),
     // Reeds along the shore, among the mats and at the foot of the jetty. Two of them are climbed.

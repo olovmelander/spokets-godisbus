@@ -329,6 +329,8 @@ export const alven: ChapterData = {
   // Far across the lake a moose may come down to the water.
   life: [{ kind: 'moose', from: 128, to: 137 }],
   decor: [
+    // A frog on the bank, by the reeds.
+    { look: 'kit', word: 'groda', at: { x: 111.6, y: 0 }, z: -1.3, turn: 0.5, scale: 0.8 },
     // Gnawed stumps on the beaver's steps, and what he has felled and dropped along the banks.
     { look: 'kit', word: 'stubbe-gnagd', at: { x: 117.1, y: 0.9 }, z: -0.9, turn: 0.4 },
     { look: 'kit', word: 'stubbe-gnagd', at: { x: 118.9, y: 1.8 }, z: -1.1, turn: 1.9, scale: 1.2 },
