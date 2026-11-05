@@ -35,8 +35,6 @@ const EYE = 42.2;
 /** Where the family stands on the jetty in the dark, and where each one's dead lamp lies. */
 const FAMILY = { mamma: 4, pappa: 5.8, moa: 7.4, bertil: 8.8 } as const;
 const LAMP = { mamma: 4.7, pappa: 6.5, moa: 8, bertil: 9.4 } as const;
-/** Where each one holds it up, out over the water: the hand of an arm held forward. */
-const HELD = { mamma: { x: 5.2, y: 3.2 }, pappa: { x: 6.8, y: 3.2 }, moa: { x: 8.3, y: 2.55 }, bertil: { x: 9.4, y: 2 } } as const;
 type Lit = keyof typeof FAMILY;
 const LIT: Lit[] = ['mamma', 'pappa', 'moa', 'bertil'];
 /** They look out over the water, for him. */
@@ -52,7 +50,7 @@ const lit = (who: Lit, line: string, seconds: number): SceneDef => ({
   hold: true,
   sounds: [{ at: 0.1, sound: 'blink' }],
   lines: [{ at: 0.5, who, line }],
-  stage: { actors: { [who]: [{ at: 0, act: 'gasp' }, { at: 0.5, act: 'wave' }] } },
+  stage: { actors: { [who]: [{ at: 0, act: 'gasp' }, { at: 0.4, act: 'point', aim: { x: 40, y: 6, z: -2 }, holds: `lamp-${who}` as const }] } },
 });
 
 const SCENES: SceneDef[] = [
@@ -186,13 +184,9 @@ export const stormoga: ChapterData = {
       { kind: 'birch', x: 92, z: -36, height: 64 },
       { kind: 'church', x: 128, z: -74, y: -2, width: 26, height: 18 },
     ],
-    // The family's lamps: light in their hands on the shore, and not lamps on nothing.
     glows: [
       // A warm place on the cold stone, where the two of them are.
       { at: { x: FIGURES + 0.1, y: 1.2 }, z: -1, size: 3.8, after: 'eye' },
-      { at: { x: 66.4, y: 4.6 }, z: -1.2, size: 4, after: 'taste' },
-      { at: { x: 66.6, y: 2.8 }, z: -1.8, size: 2.2, after: 'taste' },
-      { at: { x: 69.8, y: 2.6 }, z: -2, size: 2.2, after: 'taste' },
     ],
   },
   spawn: { x: 1, y: 0.01 },
@@ -249,8 +243,6 @@ export const stormoga: ChapterData = {
     { look: 'mormor', at: { x: -0.6, y: 0 }, z: -1.2, until: 'owl' },
     { look: 'morfar', at: { x: -2.2, y: 0 }, z: -1.6, until: 'owl' },
     ...LIT.map((who) => ({ look: 'deadLamp' as const, at: { x: LAMP[who], y: 0 }, z: -0.5, until: `so:${who}` })),
-    // Once lit, each is held up: the row of light goes out over the water.
-    ...LIT.map((who) => ({ look: 'lampBeam' as const, at: HELD[who], z: AT_Z[who] + 0.2, after: `so:${who}` })),
     // The two trägubbar on the stone, the old one holding the little one; he carries them once he is big.
     { look: 'tragubbe', at: { x: FIGURES, y: 0.6 }, z: -0.5, until: 'taste', word: 'lifted' },
     { look: 'lillgubbe', word: 'lifted', at: { x: FIGURES + 0.32, y: 0.6 }, z: -0.3, until: 'taste' },

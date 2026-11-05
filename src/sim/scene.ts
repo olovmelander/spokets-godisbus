@@ -121,7 +121,7 @@ export interface ActorKey {
 }
 
 /** Things the family hold in a scene. */
-export type Thing = 'knife' | 'brush' | 'mug' | 'crayon' | 'drawing';
+export type Thing = 'knife' | 'brush' | 'mug' | 'crayon' | 'drawing' | 'lamp-mamma' | 'lamp-pappa' | 'lamp-moa' | 'lamp-bertil';
 
 /** One moment of the camera: what it looks at, and how much of the place it shows. */
 export interface ShotKey {

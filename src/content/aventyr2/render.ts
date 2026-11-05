@@ -1514,27 +1514,6 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       group.position.y = 0.17;
       return standing(spot, group, () => {});
     },
-    lampBeam: (spot) => {
-      // A lit lamp held up: its beam goes out over the water, towards the stone.
-      const group = new Group();
-      const body = new Mesh(new CylinderGeometry(0.1, 0.1, 0.62, 10).rotateZ(Math.PI / 2), solid('#3c4048', 0.5));
-      const head = new Mesh(new CylinderGeometry(0.17, 0.11, 0.2, 12).rotateZ(-Math.PI / 2), solid('#50565e', 0.45));
-      head.position.x = 0.4;
-      // Added to the night, so that what is black is nothing: it fades away from the lamp and has no end to see.
-      const cone = new ConeGeometry(1.6, 15, 18, 5, true);
-      const at = cone.getAttribute('position');
-      const fade = new Float32Array(at.count * 3);
-      for (let i = 0; i < at.count; i++) fade.fill(((at.getY(i) + 7.5) / 15) ** 1.6, i * 3, i * 3 + 3);
-      cone.setAttribute('color', new Float32BufferAttribute(fade, 3));
-      const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.16, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, fog: false }));
-      beam.rotation.z = Math.PI / 2;
-      beam.position.x = 7.9;
-      const light = glow('#fff0c0', 1.5, 0.95);
-      light.position.x = 0.52;
-      group.add(body, head, beam, light);
-      group.rotation.z = 0.06;
-      return standing(spot, group);
-    },
     owlLanding: (spot) => {
       // It has seen the light, and comes in from the lake: down out of the storm, onto the jetty's end.
       const sitting = owl();
