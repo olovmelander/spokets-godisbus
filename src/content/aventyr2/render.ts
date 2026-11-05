@@ -13,7 +13,7 @@ import { glowTexture } from '../../render/glow';
 import { drawnWhile } from '../../render/idle';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
-import { owl as tawnyOwl } from '../../render/lift/fauna/shapes';
+import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
 import { box, building, paint, PANE, rock } from './buildings';
 import { createGrandparent, type Grandparent } from './grandparents';
 
@@ -1670,6 +1670,7 @@ function roomThings(at: { sofa: number; lamp: number; plant: number; drawings: n
 function aftermath(): SpotProp {
   const group = new Group();
   const WALL = -8.5;
+  const SILL = 3.2;
   const coats: BufferGeometry[] = [];
   const COATS = [{ x: 15.9, tall: 2.7, colour: '#2e5a46' }, { x: 17, tall: 2.5, colour: '#c8a02c' }, { x: 18.1, tall: 1.9, colour: '#ad3f30' }, { x: 19, tall: 1.5, colour: '#2f6aa0' }];
   coats.push(paint(new BoxGeometry(4.2, 0.16, 0.16).translate(17.45, 5.6, WALL - 0.24), '#6a4a2c'));
@@ -1715,6 +1716,11 @@ function aftermath(): SpotProp {
   out.light.visible = false;
   out.group.position.set(8, 2.68, -1.5);
   group.add(out.group);
+  // A great tit on the sill of the window with the new latch: the storm is over, and it has come for what the night left.
+  const tit = new Mesh(smallBird(BIRDS.tit), new MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }));
+  tit.scale.setScalar(1);
+  tit.position.set(22, SILL, WALL + 0.12);
+  group.add(tit);
   // Three slow drops from the coats' hems.
   const fall = new SphereGeometry(0.05, 6, 4);
   const wet = solid('#b8ccdc', 0.1);
@@ -1727,6 +1733,15 @@ function aftermath(): SpotProp {
   return {
     group,
     update(_used, clock) {
+      // A hop along the sill now and then, a peck, and it turns about.
+      const round = clock % 7.2;
+      const hop = Math.max(0, 1 - Math.abs(round - 2) / 0.22);
+      const back = Math.max(0, 1 - Math.abs(round - 5.4) / 0.22);
+      const along = Math.min(1, Math.max(0, (round - 1.8) / 0.4)) - Math.min(1, Math.max(0, (round - 5.2) / 0.4));
+      tit.position.x = 21.4 + along * 1.5;
+      tit.position.y = SILL + (hop + back) * 0.16;
+      tit.rotation.y = round > 2.2 && round < 5.2 ? Math.PI + 0.5 : 0.5;
+      tit.rotation.z = (round > 3 && round < 3.4) || (round > 6.2 && round < 6.6) ? -0.6 : 0;
       for (const { drop, from, phase } of drops) {
         const k = (clock * 0.45 + phase) % 1;
         drop.position.y = from * (1 - k * k);
