@@ -390,6 +390,15 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   });
 
   // A bathing raft moored in the bay rocks and drags at its moorings: the tower stands on it.
+  // A boat that is rowed in: until its model has come, a plain hull. Whoever sits in it goes with it.
+  const boat = storm?.boat ? new Group() : null;
+  if (boat) {
+    boat.userData.model = 'roddbat';
+    boat.add(new Mesh(new BoxGeometry(6.2, 1.2, 2.2).translate(0, 0.6, 0), solid('#d8d4c8', 0.8)));
+    group.add(boat);
+  }
+  let rowed = 0;
+
   const rocking = buildings.filter((_, i) => storm?.buildings?.[i]?.kind === 'tower').map((made) => ({ made, y: made.group.position.y }));
 
   const drift = createFoam(storm?.foam, group);
@@ -447,7 +456,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     passing.userData.lift = -0.45;
   }
   // The rain barrel and the watering can stand on the lawn, their tops where the outline has them.
-  for (const [look, model] of [['barrel', 'tunna'], ['can', 'kanna'], ['playhouse', 'lekstuga'], ['slide', 'rutschkana'], ['picnic', 'picknick'], ['fence', 'staket'], ['stairs', 'trappa'], ['woodpile', 'vedstapel'], ['skerry', 'holme']] as const) {
+  for (const [look, model] of [['barrel', 'tunna'], ['can', 'kanna'], ['playhouse', 'lekstuga'], ['slide', 'rutschkana'], ['picnic', 'picknick'], ['fence', 'staket'], ['stairs', 'trappa'], ['woodpile', 'vedstapel'], ['skerry', 'holme'], ['edging', 'rabatt']] as const) {
     for (const holder of scene.getObjectsByProperty('name', `landmark:${look}`)) {
       holder.userData.model = model;
       const mark = chapter.landmarks?.find((one) => one.look === look && one.from === holder.position.x);
@@ -529,6 +538,18 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him.
       const beat = still ? 0.2 : 0.2 + 0.46 * Math.sin(clock * 5.4);
       for (const wing of owlWings) wing.rotation.x = beat * (wing.userData.side as number);
+      if (boat && storm?.boat) {
+        const { from, to, y, after, spot } = storm.boat;
+        if (elof.flags?.has(after)) rowed = Math.min(1, rowed + dt / 1.4);
+        const way = rowed * rowed * (3 - 2 * rowed);
+        const bob = still ? 0 : Math.sin(clock * 1.2) * (0.06 - 0.05 * way);
+        boat.position.set(from.x + (to.x - from.x) * way, y + bob, from.z + (to.z - from.z) * way);
+        boat.rotation.y = (1 - way) * 0.7;
+        // Whoever rows sits on the middle thwart with their back to the bow, looking the way he comes.
+        const rower = scene.getObjectByName(`spot:${spot}`);
+        rower?.position.set(boat.position.x, boat.position.y - 0.7, boat.position.z);
+        rower?.rotation.set(0, boat.rotation.y - Math.PI / 2, 0);
+      }
       for (const [i, raft] of rocking.entries()) {
         raft.made.group.position.y = raft.y + (still ? 0 : Math.sin(clock * 0.9 + i) * 0.09);
         raft.made.group.rotation.z = still ? 0 : Math.sin(clock * 0.63 + i) * 0.018;
@@ -938,7 +959,7 @@ function football(radius: number): Mesh {
 const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
   'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
 const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra'];
-const BUILT = ['rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel'];
+const BUILT = ['rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel', 'rabatt', 'roddbat'];
 const ROOM = ['soffa', 'soffa-filt', 'golvlampa', 'krukvaxt', 'bord', 'stol', 'pall', 'holme'];
 const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
@@ -1413,9 +1434,14 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       const head = new Mesh(new CylinderGeometry(0.15, 0.1, 0.18, 12), solid('#2a2a2a', 0.4));
       head.rotation.z = Math.PI / 2;
       head.position.x = 0.38;
-      const beam = new Mesh(new ConeGeometry(1.2, 5, 18, 1, true), new MeshBasicMaterial({ color: '#fff2c8', transparent: true, opacity: 0.12, depthWrite: false, blending: AdditiveBlending, side: DoubleSide }));
-      beam.rotation.z = Math.PI / 2;
-      beam.position.x = 2.9;
+      // Its beam fades away from the lamp, and has no end to see.
+      const long = 7;
+      const cone = new ConeGeometry(1.5, long, 18, 5, true).rotateZ(Math.PI / 2).translate(long / 2 + 0.46, 0, 0);
+      const place = cone.getAttribute('position');
+      const fade = new Float32Array(place.count * 3);
+      for (let i = 0; i < place.count; i++) fade.fill((1 - (place.getX(i) - 0.46) / long) ** 1.6, i * 3, i * 3 + 3);
+      cone.setAttribute('color', new Float32BufferAttribute(fade, 3));
+      const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.2, depthWrite: false, side: DoubleSide, blending: AdditiveBlending }));
       const light = glow('#fff0c0', 1.2, 0.9);
       light.position.x = 0.48;
       group.add(body, head, beam, light);

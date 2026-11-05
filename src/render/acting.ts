@@ -122,7 +122,7 @@ function handAlong(p: Pose, from: { ahead: number; up: number }, ahead: number, 
 const CHEST = 3.55;
 
 /** The body sitting on a chair. */
-function sitting(p: Pose): Pose {
+export function sitting(p: Pose): Pose {
   p.legL = p.legR = 1.5;
   p.kneeL = p.kneeR = 1.45;
   p.seat = 1.5;

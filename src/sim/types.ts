@@ -116,6 +116,8 @@ export interface Candy extends Vec {
 export interface Spot {
   id: string;
   at: Vec;
+  /** For the picture: whoever of the family is shown here sits, in a boat, say. */
+  seated?: boolean;
   verb: 'turn' | 'take' | 'call' | 'give';
   /** A flag that has to be set before it can be used. A thing on a rail sets `placed:<its id>` once in place. */
   needs?: string;
@@ -371,14 +373,14 @@ export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home'
 /** What a gust's shelters are drawn as, in a storm: see Storm.shelters. */
 export type Shelter = 'pots' | 'posts' | 'vents' | 'rocks';
 
-export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron' | 'turf' | 'sand' | 'moss' | 'wetRock';
+export type SurfaceKind = 'roof' | 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron' | 'turf' | 'sand' | 'moss' | 'wetRock';
 
 /**
  * A thing that a block of the ground is, for the picture only: the block runs from `from` to `to` along the
  * outline, and `base` is the height of the ground at its foot.
  */
 /** Things on the floor that he walks on, each a model of its own: the land goes on under them. */
-export type LandmarkThing = 'barrel' | 'can' | 'playhouse' | 'slide' | 'picnic' | 'fence' | 'stairs' | 'woodpile' | 'skerry';
+export type LandmarkThing = 'barrel' | 'can' | 'playhouse' | 'slide' | 'picnic' | 'fence' | 'stairs' | 'woodpile' | 'skerry' | 'edging';
 
 export interface Landmark {
   look: 'cone' | 'log' | 'anthill' | 'stone' | LandmarkThing;
@@ -638,6 +640,8 @@ export interface ChapterData {
  * simulation never reads it. Drawn by the adventure's own pack.
  */
 export interface Storm {
+  /** A boat that is rowed in once `after` is set, from far out to its place, carrying whoever the spot `spot` shows. */
+  boat?: { spot: string; after: string; y: number; from: { x: number; z: number }; to: { x: number; z: number } };
   /** How hard it rains, from 0 to 1. Left out: no rain. */
   rain?: number;
   /** About how many seconds pass between two flashes of lightning. Left out: none. */

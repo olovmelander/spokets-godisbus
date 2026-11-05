@@ -157,7 +157,7 @@ const POSTS = [118.6, 123.8, 129, 134.2];
 const OLD_ONE = { x: 138.7, y: DECK };
 /** Where it has broken off: Mamma's boat lies along the gap, and its gunwale is level with the planks. */
 const BREAK = { from: 144, to: 150 };
-const GUNWALE: Ledge = { x: (BREAK.from + BREAK.to) / 2, y: DECK, width: BREAK.to - BREAK.from + 0.2, look: 'plank', needs: 'sjon:boat' };
+const GUNWALE: Ledge = { x: (BREAK.from + BREAK.to) / 2, y: DECK, width: BREAK.to - BREAK.from + 0.2, look: 'shelf', needs: 'sjon:boat' };
 /** The jetty on beyond the boat, out to the diving tower's ladder. */
 const OUTER = { from: BREAK.to, to: 154 };
 /**
@@ -366,7 +366,7 @@ export const flarken: ChapterData = {
   bouncers: [NET],
   spots: [
     // At the broken end: Mamma rows up with the boat when he calls.
-    { id: 'sjon:mamma', look: 'sign', at: { x: 142, y: DECK }, verb: 'call', word: 'callMamma' },
+    { id: 'sjon:mamma', look: 'sign', at: { x: 142, y: DECK }, verb: 'call', word: 'callMamma', seated: true },
   ],
   movers: [DOOR, STONE, BARK],
   jumps: [
@@ -400,7 +400,9 @@ export const flarken: ChapterData = {
       { on: 'beat:sjon:log', from: { x: END_POST.x, y: END_POST.y + 0.8 }, to: { x: 206, y: 0 }, seconds: 2.4, who: 'tragubbe' },
     ],
     // Mamma's lantern in the boat, once she has rowed up.
-    glows: [{ at: { x: 147, y: 1.6 }, z: -1.2, size: 1, after: 'sjon:mamma' }],
+    // Mamma's boat, rowed in from out on the bay, and the lantern in its bow.
+    boat: { spot: 'sjon:mamma', after: 'sjon:mamma', y: -0.6, from: { x: 150, z: -13 }, to: { x: (BREAK.from + BREAK.to) / 2, z: -1.1 } },
+    glows: [{ at: { x: 149.8, y: 1.2 }, z: -1.1, size: 1, after: 'sjon:boat' }],
     buildings: [
       // The family's car at the parking, where they left it to search the shore, its inside light on.
       { kind: 'car', x: 1, z: -14, lit: '' },

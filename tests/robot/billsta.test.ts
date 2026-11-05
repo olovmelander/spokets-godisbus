@@ -287,8 +287,8 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(hatch.to - hatch.from).toBeLessThan(RUNNING_JUMP_REACH - 0.6);
       for (let x = roofGust!.from; x <= roofGust!.to; x += 0.2) expect(heightAt(billsta, x), `at ${x}`).toBeCloseTo(roofGust!.y, 6);
       for (let i = 1; i < roofGust!.shelters.length; i++) expect(roofGust!.shelters[i]! - roofGust!.shelters[i - 1]!).toBeCloseTo(5.2, 6);
-      // Boards all the way, from the planks to the eaves.
-      expect(billsta.surfaces!.find((s) => s.kind === 'wood' && s.from <= roofGust!.from && s.to >= roofGust!.to)).toBeDefined();
+      // Tarred boards all along the long roof.
+      expect(billsta.surfaces!.find((s) => s.kind === 'roof' && s.from <= roofGust!.from && s.to >= roofGust!.to)).toBeDefined();
       // On the roof the lee is the ventilation hoods; on Billaberget it is its boulders.
       expect(billsta.storm!.shelters).toEqual(['vents', 'rocks']);
     });

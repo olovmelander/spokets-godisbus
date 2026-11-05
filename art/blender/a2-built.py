@@ -301,3 +301,117 @@ if wanted('vedstapel'):
                 heart = [Vector((x + 0.45 * (p.x - x), y - 0.004, z + 0.45 * (p.z - z))) for p in near]
                 part['flat'][face(part, [put(part, p, lit(end, 0.8)) for p in heart])] = lit(end, 0.8)
     finish(part, 'vedstapel', sharp=46.0, strength=0.5, reach=0.3, floor=0.0, leaf=True)
+
+
+# --- the edge of the flower bed ------------------------------------------------------------------------------------------
+# Cobbles set in two rows across the path, 2 wide with their tops at 0.8, dark soil between them, and the bed's last flowers
+# going away behind, beaten down by the rain. Its origin is at the near foot of the first row.
+
+if wanted('rabatt'):
+    part = new_part()
+    STONE_ = tone('#8a8c8a')
+    STONE_DARK = tone('#6a6e72')
+    SOIL = tone('#2e2620')
+    STALK = tone('#4e7038')
+    # A low dry wall of field stones, three courses high at its front, and a top of flat ones he can stand on.
+    n = 0
+    for course in range(3):
+        x = -0.05 + 0.12 * (course % 2)
+        while x < 2.05:
+            n += 1
+            wide = 0.3 + 0.12 * rnd(n, 1.0)
+            tone_ = blend(blend(STONE_, tone('#a8aaa4'), rnd(n, 2.0)), tone('#6e7a4a'), 0.3 * rnd(n, 4.0))
+            lump(part, Vector((x + wide, -1.7, 0.15 + course * 0.25)), (wide * 1.08, 0.3, 0.18), 1, lit(tone_, 1.25))
+            x += wide * 2.0
+    for i in range(18):
+        y = -1.5 + i * 0.4
+        for x in (0.32, 1.68):
+            n += 1
+            wide = 0.26 + 0.1 * rnd(n, 1.0)
+            lump(part, Vector((x, y, 0.64)), (wide * 1.3, 0.26, 0.18), 1, lit(blend(STONE_, tone('#a8aaa4'), rnd(n, 2.0)), 1.25))
+    pad_soil = [Vector((0.2, -1.8, 0.62)), Vector((1.8, -1.8, 0.62)), Vector((1.8, 5.0, 0.62)), Vector((0.2, 5.0, 0.62))]
+    part['flat'][face(part, [put(part, p, SOIL) for p in pad_soil])] = SOIL
+    # What grows on behind the stones: tall stalks, and a few heavy heads hanging in the wet.
+    for i in range(16):
+        x = 2.2 + 3.0 * rnd(i, 1.0)
+        y = 0.8 + 4.0 * rnd(i, 2.0)
+        tall = 1.6 + 2.0 * rnd(i, 3.0)
+        lean = 0.5 + 0.6 * rnd(i, 4.0)
+        top = Vector((x + lean, y, tall))
+        tube(part, [Vector((x, y, 0.0)), Vector((x + lean * 0.2, y, tall * 0.7)), top], [0.05, 0.04, 0.03], [STALK] * 3, 5)
+        head = blend(tone('#c8a03c'), tone('#a8605a'), rnd(i, 5.0))
+        lump(part, top + Vector((0.08, 0.0, -0.06)), (0.2, 0.2, 0.15), 1, head)
+    timber(part, (0.04, -1.5, 0.0), (1.96, 5.0, 0.6), tone('#3a3c3a'), 9.0)
+    finish(part, 'rabatt', sharp=36.0, strength=0.3, reach=0.2, floor=0.0, leaf=True)
+
+
+# --- Mamma's rowing boat -------------------------------------------------------------------------------------------------
+# Clinker built, white with a dark sheer strake, 6.4 long and 2.2 across, its gunwale 1.2 over the water: he walks along it.
+# Its origin is amidships at the waterline, its bow towards +X. A lantern stands on a short staff in the bow.
+
+if wanted('roddbat'):
+    part = new_part()
+    WHITE_ = tone('#d8d4c8')
+    SHEER = tone('#34506a')
+    TAR = tone('#23211f')
+    RAIL = tone('#a87c4c')
+    INSIDE = tone('#b49a70')
+    BOARD = tone('#c8a878')
+    LONG = 3.2
+    BEAM = 1.1
+    SHEER_Z = 1.2
+
+    def half(t):
+        """How wide she is at t, -1 at the stern and 1 at the bow."""
+        return BEAM * (1.0 - abs(t) ** 2.6 * (0.2 if t < 0.0 else 1.0)) ** 0.8
+
+    rings = []
+    tones = []
+    STEPS = 18
+    STRAKES = 6
+    for i in range(STEPS + 1):
+        t = -1.0 + 2.0 * i / STEPS
+        x = LONG * t
+        wide = max(half(t), 0.015)
+        keel = -0.5 + 0.9 * max(0.0, t) ** 3.0 + 0.5 * max(0.0, -t) ** 4.0
+        ring = []
+        shades = []
+        for s in range(-STRAKES, STRAKES + 1):
+            k = abs(s) / STRAKES
+            y = wide * (1.0 if s > 0 else -1.0) * (1.0 - (1.0 - k) ** 2.2)
+            z = keel + (SHEER_Z + 0.1 * abs(t) ** 2.0 - keel) * k ** 1.3
+            # Each plank laps the one under it.
+            y *= 1.0 + 0.016 * (abs(s) % 2)
+            ring.append(Vector((x, y, z)))
+            colour = SHEER if abs(s) == STRAKES else (TAR if z < 0.06 else WHITE_)
+            shades.append(lit(colour, (1.0 if abs(s) % 2 else 0.88) * (0.95 + 0.1 * rnd(i, s))))
+        rings.append(ring)
+        tones.append(shades)
+    skin(part, rings, tones, closed=False, flip=True)
+    # The gunwales, the rail he walks on.
+    for side in (-1.0, 1.0):
+        path = []
+        for i in range(STEPS + 1):
+            t = -1.0 + 2.0 * i / STEPS
+            path.append(Vector((LONG * t, side * (max(half(t), 0.015) - 0.03), SHEER_Z + 0.1 * abs(t) ** 2.0 + 0.02)))
+        tube(part, path, [0.075] * len(path), [RAIL] * len(path), 5, squash=0.7)
+    # The transom, the floorboards, three thwarts and the rowlocks.
+    stern = [Vector((-LONG, -half(-1.0), 1.3)), Vector((-LONG, half(-1.0), 1.3)), Vector((-LONG, 0.3, 0.1)), Vector((-LONG, -0.3, 0.1))]
+    part['flat'][face(part, [put(part, p, WHITE_) for p in stern])] = WHITE_
+    for i in range(5):
+        y = -0.5 + i * 0.25
+        timber(part, (-2.3, y, -0.05), (2.1, y + 0.21, 0.02), lit(INSIDE, 0.9 + 0.2 * rnd(i, 1.0)), i * 1.0)
+    for x in (-1.9, 0.0, 1.6):
+        wide = half(x / LONG) - 0.08
+        timber(part, (x - 0.24, -wide, 0.7), (x + 0.24, wide, 0.8), BOARD, x)
+    for side in (-1.0, 1.0):
+        tube(part, [Vector((0.5, side * 1.06, 1.24)), Vector((0.5, side * 1.06, 1.46))], [0.03, 0.02], [tone('#6a6e72')] * 2, 5)
+    # The oars, shipped along the thwarts.
+    for side in (-1.0, 1.0):
+        tube(part, [Vector((-2.6, side * 0.62, 0.86)), Vector((1.4, side * 0.66, 0.86)), Vector((2.0, side * 0.66, 0.86))], [0.035, 0.04, 0.03], [BOARD] * 3, 6)
+        lump(part, Vector((2.3, side * 0.66, 0.86)), (0.4, 0.13, 0.02), 1, BOARD)
+    # The lantern's staff in the bow, and the lantern.
+    tube(part, [Vector((2.55, 0.0, 1.0)), Vector((2.55, 0.0, 1.9))], [0.03, 0.025], [BOARD] * 2, 5)
+    tube(part, [Vector((2.55, 0.0, 1.9)), Vector((2.75, 0.0, 1.98)), Vector((2.78, 0.0, 1.86))], [0.018, 0.018, 0.014], [tone('#3a3e44')] * 3, 4)
+    lump(part, Vector((2.78, 0.0, 1.73)), (0.1, 0.1, 0.13), 1, tone('#3a3e44'))
+    finish(part, 'roddbat', sharp=44.0, strength=0.5, reach=0.5, floor=-3.0, leaf=True)

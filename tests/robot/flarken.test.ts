@@ -529,7 +529,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       expect(lines.sjCar).toBe('Vi följer ån med bilen.');
       expect(flarken.coda).toBe('mamma');
       // Her lantern glows in the boat once she has come.
-      expect(flarken.storm!.glows!.some((g) => g.after === 'sjon:mamma' && g.at.x > breakGap.from && g.at.x < breakGap.to)).toBe(true);
+      expect(flarken.storm!.glows!.some((g) => g.after === 'sjon:boat' && g.at.x > breakGap.from && g.at.x < breakGap.to)).toBe(true);
     });
   });
 

@@ -1087,9 +1087,39 @@ const RIVER: Layer[] = [
       ridge(c, 146, 20, back([[0, 0.5], [0.2, 0.8], [0.42, 1], [0.6, 0.6], [0.8, 0.8], [1, 0.5]]), far, far, 3, 60, 61);
       const near: Ink = [52, 78, 72];
       ridge(c, 164, 16, back([[0, 0.8], [0.18, 0.5], [0.4, 0.7], [0.66, 1], [0.86, 0.6], [1, 0.8]]), near, near, 4, 40, 67);
-      // The hay meadows, pale, running down to the water.
-      band(c, 182, 196, [128, 136, 96], 1);
-      band(c, 196, 256, [150, 158, 112], 1);
+      // The hay meadows, pale, running down to the water, each strip mown on a day of its own.
+      band(c, 182, 196, [104, 116, 84], 1);
+      band(c, 196, 256, [116, 126, 90], 1);
+      for (let i = 0; i < 11; i++) {
+        const x = (i * 57) % 520 - 20;
+        const wide = 26 + (i * 31) % 44;
+        c.fillStyle = ink(i % 3 === 0 ? [134, 140, 96] : i % 3 === 1 ? [96, 110, 78] : [122, 128, 88], 0.75);
+        c.beginPath();
+        c.moveTo(x, 183);
+        c.lineTo(x + wide, 183);
+        c.lineTo(x + wide * 1.5 + 18, 256);
+        c.lineTo(x + 18, 256);
+        c.closePath();
+        c.fill();
+      }
+      // The dark alders and willows along the river's far bank.
+      c.fillStyle = ink([40, 54, 44]);
+      for (let x = 0; x < 512; x += 9) {
+        const high = 3 + (((x * 7) % 13) / 13) * 7;
+        c.beginPath();
+        c.ellipse(x, 242 - high / 2, 7, high, 0, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.fillRect(0, 241, 512, 15);
+      // Hay on its racks, the long low fences of the mown strips.
+      for (const [x, y, wide] of [[70, 200, 34], [190, 206, 42], [300, 198, 30], [392, 212, 46], [470, 203, 28]] as const) {
+        c.fillStyle = ink([74, 66, 48]);
+        c.fillRect(x, y, wide, 5);
+        c.fillStyle = ink([156, 150, 104]);
+        c.fillRect(x, y - 1.5, wide, 2);
+        c.fillStyle = ink([52, 44, 36]);
+        for (let post = 0; post <= wide; post += 10) c.fillRect(x + post, y, 1, 7);
+      }
       // Wooden poles and their wires across the sky.
       for (const x of [34, 150, 266, 382, 498]) {
         c.fillStyle = ink([58, 48, 40]);

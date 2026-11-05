@@ -170,6 +170,7 @@ export const stormgard: ChapterData = {
   // The barrel and the can are things on the lawn, whatever he walks on: the lawn goes on under them.
   landmarks: [
     { look: 'stairs', from: STEPS[0]!.x, to: STEPS[4]!.x, base: 0 },
+    { look: 'edging', from: BED.from, to: BED.to, base: 0 },
     { look: 'barrel', from: BARREL.from, to: BARREL.to, base: 0 },
     { look: 'can', from: CAN.from, to: CAN.to, base: 0 },
     { look: 'playhouse', from: PLAYHOUSE.from, to: PLAYHOUSE.to, base: 0 },
