@@ -21,7 +21,7 @@ import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
 import type {
-  ChapterData, Climb, GhostPerch, HelpState, Hook, Jump, Mode, Mover, PlayerState, Ride, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
+  ChapterData, Checkpoint, Climb, GhostPerch, HelpState, Hook, Jump, Mode, Mover, PlayerState, Ride, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
 } from './types';
 
 // 1 EL is the length unit. This scales Box2D's tolerances to a hero who is one unit tall (plan §6.4).
@@ -220,7 +220,7 @@ export class Sim {
   private readonly shape: Fixture;
   private readonly climbs: Climb[];
   private readonly hooks: Hook[];
-  private readonly checkpoints: Vec[];
+  private readonly checkpoints: Checkpoint[];
   private readonly jumps: Jump[];
   private readonly moverBodies: Body[];
   private readonly tussockBodies: Body[];
@@ -1628,9 +1628,11 @@ export class Sim {
       if (this.flags.has(`found:${sweet.kind}`) || (sweet.x - x) ** 2 + (sweet.y - y) ** 2 > CANDY_MAGNET ** 2) continue;
       this.flags.add(`found:${sweet.kind}`);
     }
-    // A big candy further on than the last one becomes the place he comes back to.
+    // A big candy further on than the last one becomes the place he comes back to. One the story has not laid
+    // down yet is not there, and neither is any after it.
     for (let i = this.checkpoint + 1; i < this.checkpoints.length; i++) {
       const c = this.checkpoints[i]!;
+      if (c.after !== undefined && !this.flags.has(c.after)) break;
       if ((c.x - x) ** 2 + (c.y + ELOF_HEIGHT / 2 - y) ** 2 <= CHECKPOINT_REACH ** 2) this.checkpoint = i;
     }
   }

@@ -107,10 +107,14 @@ committed. Anything comes out again if they or Elof's parents ask.
 2. **Godnatt.** At Pappa's shelf Elof says goodnight to his own little trägubbe and the old one.
 3. **Fönstret slår upp** (held scene). A gust bursts the window; the little one is swept out into the dark, and
    the old one leaps after it. Pappa sees only the open window and the empty places.
-4. **Klonk's star.** Klonk (frozen while Pappa looks, awake when he turns away) shows its last star. *Smaka på
-   stjärnan*: POFF, Elof is small.
+4. **Klonk's star** (held scene). Pappa shuts the burst window and Mamma looks out after the figures, their backs
+   to the room. With no grown-up looking, Klonk wakes on the shelf, hops down to Elof's feet and opens its carved
+   bag: the star rises out of it. Nothing lies waiting on the floor before this (5 November 2026: the star had lain
+   glowing by the shelf from the first picture). *Smaka på stjärnan*: Elof holds it, eats it, and the POFF comes
+   behind the grown-ups' backs. They turn at the sound, and Klonk is wood again while they look. Elof is small.
 5. **Vi letar tillsammans** (held scene): the family pull on raincoats and headlamps; each says what they will do.
-   A first candy lies on the sill: the old one's trail. Out through the veranda door. Title: *Stormnatten*.
+   Only now is the old one's trail there: a big candy under the window where he landed, then sweets one at a time
+   to the veranda door. Out through the veranda door. Title: *Stormnatten*.
 
 ### Kapitel 1: Stormgården (garden at night)
 

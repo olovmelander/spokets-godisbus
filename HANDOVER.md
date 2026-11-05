@@ -2,6 +2,34 @@
 
 ## State (5 November 2026)
 
+- **Stormkvällen's opening, restaged (5 November 2026, afternoon, cloud session, branch `ccr-77db4123-5s8xa3`).** Olov: the
+  beginning of Äventyr 2 showed what should come later, lying on the floor from the first picture. Klonk's star glowed by the
+  shelf all through the evening, the window and Pappa's look at the empty shelf. The trail's first big candy (a checkpoint at
+  x 6) stood in the room too, and Elof collected it before the old trägubbe had left anything. Code only, no new models.
+  - **The star comes out of Klonk's bag.** In `klonkstar` Pappa goes to shut the burst window and Mamma looks out after the
+    figures, their backs to the room. With no grown-up looking, Klonk peeks, hops down from the shelf to Elof's feet and opens
+    its bag. The cue `star:out` makes the star rise out of it, with a sparkle and a glow. Elof turns from the shelf to it.
+    `STAR` moved from x 8 to 6.4, a step from the goodnight spot, so that Elof, Klonk and the star share one picture.
+    `Spot.after` is the new general rule: what stands at a spot is drawn from that flag on, rising into place (`SPOT_RISE` in
+    `view.ts`).
+  - **The star is in his hand.** `SceneStage.star` puts the hand-held star of Äventyr 1's POFF (`elof-star`, `stage.ts`) in
+    Elof's hand for `krymper` too: he holds it, it goes to his lips, and he eats it. The prologue's `poff` uses the same
+    marker instead of its id. The POFF comes behind the grown-ups' backs. They turn at the sound, and Klonk gives one glad hop
+    before they have turned, then is still wood while they look.
+  - **Klonk was in the wrong place in two scenes.** A scene's ghost starts at (0, 0, 0) unless its first key says where
+    (`fresh()` in `stage.ts`). In `fonstret` and `krymper` it stood at the room's far left, off the shelf, and was missing from
+    the shrinking. Both now start from `KLONK_SHELF` and `KLONK`, and a test checks every Äventyr 2 scene that stages it.
+  - **The trail is laid when the story lays it.** `Checkpoint.after` keeps a big candy out of the picture, and out of
+    reach in the simulation, until its flag is set. All four of Stormkvällen's wait for `scene:tillsammans`. The first moved
+    from x 6 to 10.6, under the window where the old one landed and where Elof says "Ett godis på golvet! Ett spår!".
+  - **Validation:** typecheck, **189 test files / 2,027 tests** (four new: nothing on the floor before the story lays it,
+    the star out before it can be tasted, Klonk's place in every staged scene, the star in his hand), the build and size gate,
+    the privacy check. The Äventyr 2 browser suite passes on the build (42 checks), and every story check of
+    `opening-story.mjs` passes (see "Known bugs" for its console check in a cloud session). Stills of the whole opening were
+    checked at 844×390 with the stand-ins; no contact sheets, since this is not a checkpoint PR.
+  - **For Olov:** play `?course=stormkvall` from the start to the deck. Judge the hop from the shelf and the star's rise with
+    the real Klonk from the private pack: its bag may sit elsewhere than the stand-in's, at local (0.3, 0.5).
+
 - **Released, 5 November 2026: `RELEASED_CHAPTER` is `morgonen`.** Olov asked for everything built to go into `main` and be
   playable on GitHub Pages, and chose to open the whole game on the normal address. A new player starts in the prologue and goes
   through the story, Byn as a bonus, and all of Äventyr 2, without `?dev`. The test course is `?course=testbana`. Taking it back is
@@ -3636,6 +3664,9 @@
 
 ## Next
 
+**Stormkvällen's opening** (this session's branch, `ccr-77db4123-5s8xa3`): Olov reviews and merges its pull request, then plays
+`?course=stormkvall` with the real figures. Nothing in it needs his computer.
+
 **For Olov, first:** everything is merged and released. Open the normal address on each device Elof plays on at least 15 minutes after
 the deploy, so the service worker updates, and play: the jetty at the start of `stormoga`, the seesaw at the end of `billsta` and
 the eddies at `alven` are the parts only a person can judge. Olov goes on later with the game, visuals, conversations, story, design
@@ -4010,6 +4041,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Stormkvällen's opening (5 November, afternoon) | Olov's request: nothing lying visible before the story brings it | 1 cloud session | — / 0 so far | The star rises out of Klonk's bag behind the grown-ups' backs, the star is in Elof's hand at the POFF, Klonk is placed in every scene, and the trail's big candies come with the trail. Code only. |
 | The family rebuilt and everything released (5 November) | Olov's request: every human figure's design and motion, in one style | 1 session on Olov's computer, with Blender | 1 / 8 (faces, hair, caps, bodies, Mamma's hair, Mormor and Morfar) | One outline for all heads; seven people from short files; released to `morgonen` |
 | Äventyr 2's overhaul (4 to 5 November) | Olov's request: audit and overhaul of every world, puzzle, figure and animal | 1 session on Olov's computer, until 02:30 | — / 0 so far | 29 pull requests, #192 and #195 to #223, none played by Olov yet |
 | Äventyr 2: Stormnatten (4 November) | Olov's request: a second adventure of several worlds, about as long as the first | 1 cloud session, with four parallel world-building agents | — / 0 | Seven chapters (~940 EL), a lazily loaded pack with its own size gate, storm visuals in code, 1,773 tests and a 30-check browser suite. Voices, device review and Blender art remain. |
@@ -4027,6 +4059,12 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Browser tests in a cloud session (5 November):** the preinstalled Chromium is build 1243, and Playwright 1.56.1 looks for
+  `chromium_headless_shell-1194`, so `tests/browser/*.mjs` fail to launch as they are. A session can preload a small module
+  that patches `chromium.launch` with `executablePath: '/opt/pw-browsers/chromium'` (`node --import <patch> tests/browser/…`).
+  With that browser, the Vite-served suites (`opening-story.mjs`) fail only their "no console errors" check: Vite's live-reload
+  socket is refused (`ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS`, port 0). The suites run on the build (`aventyr2.mjs`) pass.
+  `scripts/install-ktx.sh` is not executable: run it with `bash`.
 - **Two more browser timeouts on GitHub** (4 November, part 4 of 8): "Controller moves through chapter choices" (#198) and
   "golden candy becomes reachable" (#201, twice). Elof was still running when the 20 seconds ran out, with more than twenty
   pull requests' runs queued; #202 runs the same code and the same test and is green.

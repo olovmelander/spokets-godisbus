@@ -55,6 +55,18 @@ describe('Äventyr 2: the pack', () => {
     expect(courseAvailable(new URLSearchParams(), 'stormskog', 'stormgard')).toBe(false);
   });
 
+  it('says where Klonk stands in each scene that stages it, from its first moment', () => {
+    // A scene's ghost starts from nowhere in particular (src/render/stage.ts): without a place, it is drawn at
+    // the room's far end, as it was in Stormkvällen, off the shelf and away from Elof's shrinking.
+    for (const chapter of AVENTYR2) {
+      for (const scene of chapter.scenes ?? []) {
+        const first = scene.stage?.actors?.ghost?.[0];
+        if (!first) continue;
+        expect([first.x, first.y, first.z].every((v) => v !== undefined), `${chapter.id}: ${scene.id}`).toBe(true);
+      }
+    }
+  });
+
   it('has a name, a card, a kicker and a picture for every chapter', () => {
     for (const chapter of AVENTYR2) {
       expect(sv.explore.chapters[chapter.id], chapter.id).toBeTruthy();

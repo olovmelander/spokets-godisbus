@@ -443,7 +443,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   }
   star.add(new Mesh(new SphereGeometry(.13, 8, 6), gold));
   drawnWhile(star, false);
-  if (scenes.some(scene => scene.id === 'poff')) group.add(star);
+  if (scenes.some(scene => scene.stage?.star)) group.add(star);
   let starOn = false;
   // The block of wood Pappa carves the ghost out of: it shrinks away as the shavings fly.
   const block = new Mesh(new CylinderGeometry(.43, .38, 1.08, 7), new MeshStandardMaterial({ color: '#d8bf8e', roughness: 0.85, flatShading: true }));
@@ -552,7 +552,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
     update(frame, flags, elof, clock, dt, calm) {
       const active = frame ? scenes.findIndex((scene) => scene.id === frame.id) : -1;
       const scene = active >= 0 ? scenes[active]! : null;
-      starOn = scene?.id === 'poff';
+      starOn = scene?.stage?.star === true;
       const t = frame?.seconds ?? 0;
       const ghostKeys = scene?.stage?.actors?.ghost;
       const workpiece = ghostKeys && ghostKeys[0]!.at <= t ? fresh() : null;

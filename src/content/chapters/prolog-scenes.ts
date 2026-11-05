@@ -248,6 +248,8 @@ export const PROLOG_SCENES: SceneDef[] = [
       { at: 9.0, who: 'elof', line: 'sameSize' },
     ],
     stage: {
+      // The star is in his hand, and at his lips (src/render/stage.ts).
+      star: true,
       shots: [
         { at: 0, x: 41.7, y: 1.1, height: 4.4, width: 4.4, move: 0.8 },
         { at: 3.7, x: 41.7, y: -0.15, height: 3.0, width: 3.6, eye: -0.1, move: 2.8 },

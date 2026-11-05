@@ -14,9 +14,12 @@ import { jump, round, row } from '../kit';
  *    first, home again on the shelf. *Säg godnatt.*
  * 4. **Fönstret** (a held scene): a gust bursts the window open; the little one is swept out into the dark,
  *    and the old one leaps after him. Pappa sees only two empty places on the shelf.
- * 5. **Klonks stjärna:** Klonk has kept one last star in its carved bag. *Smaka på stjärnan*: POFF.
+ * 5. **Klonks stjärna** (a held scene): Pappa shuts the window and Mamma looks out after them, so no grown-up sees
+ *    the shelf. Klonk wakes, hops down to Elof's feet and opens its carved bag: one star left, and it rises out of
+ *    the bag. It is nowhere to be seen before (`Spot.after`). *Smaka på stjärnan*: POFF.
  * 6. **Vi letar tillsammans:** the family pull on raincoats and take their lamps. A candy lies on the floor, then
- *    another: the old trägubbe's trail. Tiny, he crosses the giant room, the door sill and the veranda.
+ *    another: the old trägubbe's trail. Tiny, he crosses the giant room, the door sill and the veranda. The trail
+ *    is laid only now, its big candies too (`Checkpoint.after`): nothing lies on the floor before the gust.
  * 7. **Stormnatten:** at the deck's edge the stormy garden opens below him, and the adventure's title.
  *
  * The family are the same rehearsal figures as the first adventure's prologue (src/render/stage.ts).
@@ -28,9 +31,17 @@ const OLD = { x: SHELF.x - 3.6, y: SHELF.y + 0.08, z: -8.5 };
 const LITTLE = { x: SHELF.x - 2.9, y: SHELF.y + 0.08, z: -8.3 };
 /** The window by the shelf that the storm bursts open. */
 const WINDOW = { x: 9.4, y: 6, z: -8.9 };
-/** Where he says goodnight, under the shelf, and where Klonk holds out its star. */
+/** Klonk on the shelf beside them, still wood while the grown-ups look. */
+const KLONK_SHELF = { x: SHELF.x - 2.1, y: SHELF.y + 0.08, z: -8.4 };
+/** Where he says goodnight, under the shelf. */
 const GOODNIGHT = 4.2;
-const STAR = 8.0;
+/** Where he tastes the star, a step on from the shelf: it floats between him and Klonk, at Klonk's bag. */
+const STAR = 6.4;
+const STAR_Y = 0.35;
+/** Where Klonk lands from the shelf and stands with its bag, facing him. */
+const KLONK = { x: STAR + 0.9, y: 0, z: 0 };
+/** What the trail's big candies wait for: the old trägubbe lays it, and it is found once he is small. */
+const TRAIL = 'scene:tillsammans';
 
 const SCENES: SceneDef[] = [
   {
@@ -55,7 +66,7 @@ const SCENES: SceneDef[] = [
         pappa: [{ at: 0, x: 12.4, y: 0, z: -2.6, face: 0.3, move: 0.01, act: 'look', aim: { x: 9.4, y: 6, z: -8.9 } }, { at: 3.6, act: 'shrug' }],
         bertil: [{ at: 0, x: 10.6, y: 0, z: -3.4, face: 0.3, move: 0.01, act: 'look', aim: { x: 9.4, y: 6, z: -8.9 } }, { at: 5.6, act: 'point', aim: { x: 9.4, y: 6, z: -8.9 } }],
         moa: [{ at: 0, x: 13.8, y: 0, z: -1.2, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }],
-        ghost: [{ at: 0, x: SHELF.x - 2.1, y: SHELF.y + 0.08, z: -8.4, face: 0.25, move: 0.01, act: 'freeze' }],
+        ghost: [{ at: 0, ...KLONK_SHELF, face: 0.25, move: 0.01, act: 'freeze' }],
       },
       elof: [{ at: 0, act: 'watch', aim: WINDOW }, { at: 7.6, act: 'look', aim: { x: OLD.x, y: OLD.y + 0.6, z: OLD.z } }],
     },
@@ -92,28 +103,58 @@ const SCENES: SceneDef[] = [
         bertil: [{ at: 1.6, act: 'startle' }, { at: 3.0, act: 'look', aim: WINDOW }],
         mamma: [{ at: 1.6, act: 'gasp' }, { at: 10.2, act: 'nod' }],
         pappa: [{ at: 1.6, act: 'startle' }, { at: 7.6, x: 9.0, y: 0, z: -3.6, face: 0.6, move: 1.0, act: 'look', aim: { x: OLD.x, y: OLD.y + 0.4, z: OLD.z } }],
-        // Klonk stays wood while Pappa looks; it peeks at Elof the moment he turns away.
-        ghost: [{ at: 0, act: 'freeze' }, { at: 4.2, act: 'peek' }, { at: 7.6, act: 'freeze' }, { at: 11.0, act: 'tilt' }],
+        // Klonk stays wood on the shelf while Pappa looks; it peeks at Elof the moment he turns away. A scene's
+        // ghost starts from nowhere in particular, so its first key says where it is.
+        ghost: [{ at: 0, ...KLONK_SHELF, face: 0.25, move: 0.01, act: 'freeze' }, { at: 4.2, act: 'peek' }, { at: 7.6, act: 'freeze' }, { at: 11.0, act: 'tilt' }],
       },
       elof: [{ at: 1.4, act: 'startle' }, { at: 4.2, act: 'point', aim: WINDOW }, { at: 6.2, act: 'watch', aim: WINDOW }],
     },
   },
   {
-    // Klonk hops down from the shelf and opens its carved bag: one star left, saved for a night like this.
+    // The grown-ups go to the burst window, their backs to the room: Pappa shuts it, Mamma looks out after the
+    // figures. Nobody grown-up sees the shelf, so Klonk wakes, hops down to Elof's feet and opens its carved bag:
+    // one star left, saved for a night like this. The star rises out of the bag ('star:out'); it was not there.
     id: 'klonkstar',
     on: 'scene:fonstret',
     until: 'star',
-    seconds: 4.6,
+    seconds: 8.4,
     hold: true,
-    sounds: [{ at: 0.6, sound: 'blink' }],
+    cues: [{ at: 4.6, flag: 'star:out' }],
+    sounds: [{ at: 1.2, sound: 'blink' }, { at: 4.5, sound: 'blink' }],
     lines: [
-      { at: 1.2, who: 'spoket', line: 'skKlonk' },
-      { at: 3.0, who: 'elof', line: 'skOneStar' },
+      { at: 5.4, who: 'spoket', line: 'skKlonk' },
+      { at: 7.2, who: 'elof', line: 'skOneStar' },
     ],
     stage: {
-      shots: [{ at: 0, x: STAR, y: 1.6, height: 4.4, width: 6.4, move: 0.8 }],
-      fx: [{ at: 1.0, kind: 'glow', from: { x: STAR + 0.55, y: 0.5, z: 0.2 }, seconds: 3.6 }],
-      elof: [{ at: 0, act: 'watch', aim: { x: STAR + 0.6, y: 0.4, z: 0 } }],
+      shots: [
+        // The shelf, Elof under it and the window with the grown-ups' backs; then down to the floor with Klonk.
+        { at: 0, x: 6.4, y: 3.8, height: 7.6, width: 11, move: 0.8 },
+        { at: 3.0, x: STAR + 0.4, y: 1.5, height: 4.6, width: 6.6, move: 1.4 },
+      ],
+      fx: [
+        { at: 4.4, kind: 'sparkle', from: { x: KLONK.x - 0.3, y: 0.6, z: 0.2 }, seconds: 1.6 },
+        { at: 4.6, kind: 'glow', from: { x: STAR, y: STAR_Y + 0.55, z: 0.1 }, seconds: 3.8 },
+      ],
+      actors: {
+        pappa: [{ at: 0.2, x: WINDOW.x, y: 0, z: -7.2, face: 0.75, move: 1.2, act: 'reach', aim: WINDOW }],
+        mamma: [{ at: 0.5, x: WINDOW.x + 1.8, y: 0, z: -6.8, face: 0.75, move: 1.3, act: 'look', aim: { x: WINDOW.x + 0.6, y: WINDOW.y - 0.4, z: WINDOW.z - 1 } }],
+        bertil: [{ at: 0.6, act: 'look', aim: WINDOW }],
+        moa: [{ at: 0.8, act: 'look', aim: WINDOW }],
+        ghost: [
+          { at: 0, ...KLONK_SHELF, face: 0.25, move: 0.01, act: 'peek' },
+          // A look at Elof: the grown-ups have turned away.
+          { at: 1.2, act: 'tilt' },
+          { at: 1.8, ...KLONK, face: 0.5, move: 1.2, act: 'hop' },
+          { at: 3.0, act: 'stand' },
+          { at: 3.8, act: 'tilt' },
+        ],
+      },
+      // He came to the shelf from the right, so he faces the shelf first, then turns as Klonk lands.
+      elof: [
+        { at: 0, face: 0.75, act: 'watch', aim: { x: KLONK_SHELF.x, y: KLONK_SHELF.y + 0.6, z: KLONK_SHELF.z } },
+        { at: 2.2, face: 0.06, act: 'watch', aim: { x: KLONK.x, y: 0.6, z: KLONK.z } },
+        { at: 4.6, act: 'watch', aim: { x: STAR, y: STAR_Y + 0.6, z: 0 } },
+      ],
     },
   },
   {
@@ -130,17 +171,21 @@ const SCENES: SceneDef[] = [
       { at: 8.6, who: 'moa', line: 'skMoaSmall' },
     ],
     stage: {
+      // The star he took from Klonk is in his hand, and at his lips, as in the first adventure's POFF.
+      star: true,
       shots: [
         { at: 0, x: STAR, y: 1.4, height: 4.6, width: 5.2, move: 0.8 },
         { at: 3.4, x: STAR, y: 0.2, height: 3.2, width: 4.2, eye: -0.1, move: 2.6 },
         { at: 7.6, x: STAR + 1, y: 1.4, height: 6.4, width: 9, eye: -1.2, move: 1.2 },
       ],
       actors: {
-        mamma: [{ at: 3.8, act: 'gasp' }, { at: 5.0, x: STAR - 1.6, y: 0, z: -1.4, face: 0.15, move: 1.0 }, { at: 6.0, act: 'kneel', aim: { x: STAR, y: 0.3, z: 0 } }],
-        pappa: [{ at: 3.8, act: 'gasp' }, { at: 4.6, x: STAR + 2.2, y: 0, z: -1.2, face: 0.4, move: 1.0 }, { at: 5.6, act: 'kneel', aim: { x: STAR, y: 0.3, z: 0 } }],
-        moa: [{ at: 3.8, act: 'startle' }, { at: 5.2, x: STAR + 0.6, y: 0, z: -2.6, face: 0.3, move: 1.0 }, { at: 6.2, act: 'crouch', aim: { x: STAR, y: 0.3, z: 0 } }],
-        bertil: [{ at: 3.8, act: 'cheer' }, { at: 5.4, x: STAR + 3.4, y: 0, z: -2.8, face: 0.35, move: 1.0 }, { at: 6.4, act: 'crouch', aim: { x: STAR, y: 0.3, z: 0 } }],
-        ghost: [{ at: 0, act: 'stand' }, { at: 4.0, act: 'hop' }, { at: 6.0, act: 'tilt' }],
+        // The POFF turns them round from the window, and they come to kneel round him.
+        mamma: [{ at: 3.8, face: 0.3, act: 'gasp' }, { at: 4.4, x: STAR - 1.6, y: 0, z: -1.4, face: 0.15, move: 1.6 }, { at: 6.0, act: 'kneel', aim: { x: STAR, y: 0.3, z: 0 } }],
+        pappa: [{ at: 3.8, face: 0.35, act: 'gasp' }, { at: 4.3, x: STAR + 2.2, y: 0, z: -1.2, face: 0.4, move: 1.3 }, { at: 5.6, act: 'kneel', aim: { x: STAR, y: 0.3, z: 0 } }],
+        moa: [{ at: 3.8, act: 'startle' }, { at: 5.0, x: STAR + 0.6, y: 0, z: -2.6, face: 0.3, move: 1.2 }, { at: 6.2, act: 'crouch', aim: { x: STAR, y: 0.3, z: 0 } }],
+        bertil: [{ at: 3.8, act: 'cheer' }, { at: 5.2, x: STAR + 3.4, y: 0, z: -2.8, face: 0.35, move: 1.2 }, { at: 6.4, act: 'crouch', aim: { x: STAR, y: 0.3, z: 0 } }],
+        // One glad hop at the POFF, before they have turned; then still wood while the grown-ups look.
+        ghost: [{ at: 0, ...KLONK, face: 0.5, move: 0.01, act: 'stand' }, { at: 3.75, act: 'hop' }, { at: 4.27, act: 'freeze' }],
       },
       elof: [
         { at: 0, act: 'show', size: 3 },
@@ -266,20 +311,22 @@ export const stormkvall: ChapterData = {
   surfaces: [{ from: -19, to: 54, kind: 'wood' }],
   house: { from: -40, to: 38, windows: [WINDOW.x, 21, 34] },
   outdoors: 38,
-  checkpoints: [{ x: 6, y: 0 }, { x: 18, y: 0 }, { x: 36, y: 0 }, { x: 45.5, y: -0.8 }],
+  // The trail's big candies: the first where the old trägubbe landed, under the window.
+  checkpoints: [{ x: 10.6, y: 0, after: TRAIL }, { x: 18, y: 0, after: TRAIL }, { x: 36, y: 0, after: TRAIL }, { x: 45.5, y: -0.8, after: TRAIL }],
   spots: [
     // Pappa feels for the flashlight in the dark: Elof takes it from the table and gives it to him.
     { id: 'lamp:take', at: { x: 15, y: 0 }, verb: 'take', word: 'skTakeLamp', needs: 'scene:kvall' },
     { id: 'lamp:give', at: { x: 12.6, y: 0 }, verb: 'give', word: 'givePappa', needs: 'lamp:take' },
     { id: 'goodnight', at: { x: GOODNIGHT, y: 0 }, verb: 'give', word: 'skGoodnight', needs: 'beat:skLampThanks' },
-    { id: 'star', look: 'star', at: { x: STAR, y: 0 }, verb: 'take', word: 'tasteStar', needs: 'scene:klonkstar' },
+    // Klonk's last star: out of its bag in the scene, held up between them, and not there before.
+    { id: 'star', look: 'star', at: { x: STAR, y: STAR_Y }, verb: 'take', word: 'tasteStar', needs: 'scene:klonkstar', after: 'star:out' },
   ],
   jumps: [jump({ x: 29.8, y: 0 }, { x: 30.6, y: 0.5 })],
   ghost: [
     // On the shelf beside the figures, still wood while the grown-ups look.
-    { at: { x: SHELF.x - 2.1, y: SHELF.y + 0.08 }, z: -8.4, until: 'scene:fonstret', near: 99 },
-    // Down on the floor with its star.
-    { at: { x: STAR + 0.6, y: 0 }, until: 'scene:tillsammans', near: 99 },
+    { at: { x: KLONK_SHELF.x, y: KLONK_SHELF.y }, z: KLONK_SHELF.z, until: 'scene:fonstret', near: 99 },
+    // Down on the floor with its star, where the scene lands it.
+    { at: { x: KLONK.x, y: KLONK.y }, until: 'scene:tillsammans', near: 99 },
     // Then ahead of him: across the room, over the sill, out onto the deck and down into the garden.
     { at: { x: 16, y: 0 } },
     { at: { x: 23, y: 0 } },
@@ -307,11 +354,11 @@ export const stormkvall: ChapterData = {
   cameras: [{ from: -3, to: 10, zoom: 1.5, lift: 0.3 }, { from: 10, to: 38, zoom: 1.2, lift: 0.4 }, { from: 38, to: 60, zoom: 1.5, lift: 1.2 }],
   candy: [
     // The old trägubbe's trail: a sweet where it landed, then one at a time towards the veranda door.
-    ...row(10, 29, 0, 1.9, 'scene:tillsammans'),
-    { x: 30.6, y: 1.25, after: 'scene:tillsammans' },
-    ...row(32.4, 36.4, 0, 2, 'scene:tillsammans'),
-    { x: 38.6, y: -0.2, after: 'scene:tillsammans' },
-    ...row(40, 50, -0.8, 2, 'scene:tillsammans'),
+    ...row(10, 29, 0, 1.9, TRAIL),
+    { x: 30.6, y: 1.25, after: TRAIL },
+    ...row(32.4, 36.4, 0, 2, TRAIL),
+    { x: 38.6, y: -0.2, after: TRAIL },
+    ...row(40, 50, -0.8, 2, TRAIL),
   ].map((c) => ({ ...c, x: round(c.x, 1) })),
 };
 
