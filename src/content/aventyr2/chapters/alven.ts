@@ -165,8 +165,9 @@ const afloat = (x: number, water: number): GhostPerch => ({ at: { x, y: water },
 
 export const alven: ChapterData = {
   id: 'alven',
-  // The night forest along the river, with the water in its pits.
+  // The night forest along the river.
   place: 'forest',
+  river: true,
   spawn: { x: 1, y: 0.01 },
   // Where and when, as the chapter opens (src/content/chapters/cards.ts).
   scenes: [timeCard('alven', 1)],
@@ -234,8 +235,8 @@ export const alven: ChapterData = {
     { from: CREEK.to, to: ON.from, y: BROOK },
   ],
   surfaces: [
-    { from: GRAVEL.from, to: GRAVEL.to, kind: 'stone' },
-    ...[S1, S2, BIG, FLAT, OTTER, CREEK].map((s) => ({ from: s.from, to: s.to, kind: 'stone' as const })),
+    { from: GRAVEL.from, to: GRAVEL.to, kind: 'wetRock' },
+    ...[S1, S2, BIG, FLAT, OTTER, CREEK].map((s) => ({ from: s.from, to: s.to, kind: 'wetRock' as const })),
     // The stumps and the lodge are gnawed sticks and mud.
     { from: STUMP1.from, to: SLOPE_END, kind: 'earth' },
   ],

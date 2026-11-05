@@ -512,7 +512,7 @@ export function floorDrop(chapter: ChapterData, x: number, z: number): number | 
 /** The height of a pool's near shore at x, where the outline there is a pool's bed. */
 export function shoreAt(chapter: ChapterData, x: number): number | null {
   const pool = (chapter.water ?? []).find((w) => x >= w.from && x <= w.to && heightAt(chapter, x) < w.y);
-  return pool ? pool.y + SHORE_OVER : null;
+  return pool && !chapter.river ? pool.y + SHORE_OVER : null;
 }
 /** How far over its water a pool's near shore lies. */
 const SHORE_OVER = 0.06;
@@ -856,11 +856,11 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
   const shoreOf = (front: Front, pool: { from: number; to: number; y: number }) => (front.shore === 'ground'
     ? Math.max(pool.y + SHORE_OVER, Math.min(heightAt(chapter, pool.from - 0.6), heightAt(chapter, pool.to + 0.6)))
     : pool.y + SHORE_OVER);
-  const poolAt = (front: Front, x: number, y: number) => (front.shore === false ? undefined : (chapter.water ?? []).find((w) => x >= w.from && x <= w.to && y < w.y));
+  const poolAt = (front: Front, x: number, y: number) => (front.shore === false || chapter.river ? undefined : (chapter.water ?? []).find((w) => x >= w.from && x <= w.to && y < w.y));
   /** Round a puddle in the street: how wet the road is at x, 1 at the water and nothing a step and a half out. */
   const dampAt = (x: number) => Math.max(0, ...(chapter.water ?? []).map((w) => 1 - Math.max(w.from - x, x - w.to, 0) / DAMP_REACH));
   /** The level of the water a bog's island stands in at x, if it stands in any. */
-  const wetAt = (front: Front, x: number) => (front === ISLAND_FRONT ? (chapter.water ?? []).find((w) => x >= w.from && x <= w.to)?.y : undefined);
+  const wetAt = (front: Front, x: number) => (front !== ISLAND_FRONT ? undefined : (chapter.water ?? []).find((w) => x >= w.from && x <= w.to)?.y ?? (chapter.river ? chapter.water?.[0]?.y : undefined));
   const drains = drainsOf(chapter);
   /** The drain at x, if x is in one: its front is the road's, which closes it, and does not draw back. */
   const drainAt = (x: number) => drains.find((d) => x >= d.from - 1e-6 && x <= d.to + 1e-6);

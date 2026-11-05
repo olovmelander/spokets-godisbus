@@ -331,7 +331,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
   describe('the forest behind the house', () => {
     it('crosses the brook on three stones, a hop of water between each, every hop a marked jump', () => {
       const brook = billsta.water!.find((w) => w.from < billsta.checkpoints![CP.seesaw]!.x && w.to > billsta.checkpoints![CP.house]!.x)!;
-      const stones = billsta.surfaces!.filter((s) => s.kind === 'stone' && s.from > brook.from && s.to < brook.to);
+      const stones = billsta.surfaces!.filter((s) => s.kind === 'wetRock' && s.from > brook.from && s.to < brook.to);
       expect(stones.length).toBe(3);
       const edges = [brook.from, ...stones.flatMap((s) => [s.from, s.to]), brook.to];
       for (let i = 0; i < edges.length; i += 2) {

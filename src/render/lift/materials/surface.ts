@@ -4,7 +4,7 @@ import {
 import type { ChapterData, PlaceId } from '../../../sim/types';
 import type { ExtraContext, ExtraFrame } from '../../extensions';
 import { KIT } from '../../dressing/kit';
-import { waterKind } from '../../water';
+import { RIVER, waterKind } from '../../water';
 
 /**
  * Matte carved wood against wet, glossy moss (docs/visual-upgrade.md, "Ljus och luft"), and surfaces that are wet
@@ -273,7 +273,7 @@ export const PALED = 0.8;
 export function createSurfaces(context: ExtraContext) {
   const { chapter, sun, sky } = context;
   const pools = chapter.water ?? [];
-  const kind = waterKind(chapter.place);
+  const kind = chapter.river ? RIVER : waterKind(chapter.place);
   // Peat water lies behind the whole bog: its shore runs along every island's back, at the pools' height.
   const behind = kind.behind !== null && pools.length ? [{ from: -1e5, to: 1e5, y: pools[0]!.y, z: kind.behind + 0.5 }] : [];
   // Each pool, as far towards the camera as its water comes.

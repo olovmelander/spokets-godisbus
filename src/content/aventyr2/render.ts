@@ -464,7 +464,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   }
   // Boulders that are blocks of the ground (landmarks), where no kit of the place draws them: faceted granite in
   // place of the plain box that stands in for them. The forest's kit has its own stones and is left to them.
-  if (chapter.place !== 'forest') {
+  if (chapter.place !== 'forest' || chapter.river) {
     for (const holder of scene.getObjectsByProperty('name', 'landmark:stone')) {
       const box = holder.children.find((child): child is Mesh => child instanceof Mesh && child.geometry instanceof BoxGeometry);
       if (!box) continue;
@@ -472,7 +472,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       // Until the kit's has come: faceted granite. It takes one of the kit's boulders, filling the block.
       holder.userData.model = ['block-a', 'block-b', 'block-c'][Math.abs(Math.round(holder.position.x)) % 3]!;
       // Its back stands up behind the path, and its front goes down into the ground: he walks on the ground's own top.
-      holder.userData.block = { width: width * 1.2, height: height * 1.5, depth: Math.max(3.5, width * 0.8), x: box.position.x, y: height * 0.65, z: -2.4 };
+      holder.userData.block = chapter.river && holder.position.y < 0 ? { width: width * 1.34, height: 2.6, depth: Math.max(4, width * 0.8), x: box.position.x, y: height - 0.55, z: -1.5 } : { width: width * 1.2, height: height * 1.5, depth: Math.max(3.5, width * 0.8), x: box.position.x, y: height * 0.65, z: -2.4 };
       box.geometry.dispose();
       box.geometry = rock(Math.round(holder.position.x * 10), width / 2 * 1.08, height / 2 * 1.04, 1.8);
       box.material = solid('#8c9096', 0.95, { flatShading: true });

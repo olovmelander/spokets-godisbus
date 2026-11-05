@@ -484,6 +484,8 @@ export interface ChapterData {
    * stands over the block (src/render/forest-kit.ts), with its top where the outline has the block's.
    */
   landmarks?: Landmark[];
+  /** For the picture: its water is a river, open towards the camera and behind the path, with no near shore. */
+  river?: boolean;
   /** For the picture: a deck overhead, with the sun falling through between its boards. */
   roofs?: { from: number; to: number; y: number }[];
   /**

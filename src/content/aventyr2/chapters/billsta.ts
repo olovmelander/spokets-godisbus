@@ -218,6 +218,8 @@ function across(way: Stone[]): Candy[] {
 export const billsta: ChapterData = {
   id: 'billsta',
   place: 'garden',
+  // The ditch and the brook behind the house run on past the picture.
+  river: true,
   // Beside the family's car, on the road.
   spawn: { x: 1, y: 0.01 },
   // Where and when, as the chapter opens (src/content/chapters/cards.ts).
@@ -288,7 +290,7 @@ export const billsta: ChapterData = {
     { from: PLANKS.from, to: EAVES.to, kind: 'wood' },
     // The forest floor behind the house, the stones in the brook, and Billaberget's boulders.
     { from: EDGE.from, to: EDGE.to, kind: 'moss' },
-    ...STONES.map((s) => ({ from: s.from, to: s.to, kind: 'stone' as const })),
+    ...STONES.map((s) => ({ from: s.from, to: s.to, kind: 'wetRock' as const })),
     { from: BANK.from, to: BANK.to, kind: 'moss' },
     // Billaberget: moss and thin forest up to the boulders, and all the way over them to the brow.
     { from: TOP.from, to: B1.from, kind: 'moss' },
@@ -298,7 +300,7 @@ export const billsta: ChapterData = {
   // What the stones and the boulders are, for the picture only: granite of Billaberget's boulder field.
   landmarks: [
     { look: 'woodpile', from: STACK[0]!.x, to: STACK_TOP.to, base: 0 },
-    ...STONES.map((s) => ({ look: 'stone' as const, from: s.from, to: s.to, base: BROOK_WATER })),
+    ...STONES.map((s) => ({ look: 'stone' as const, from: s.from, to: s.to, base: BROOK_WATER - 1 })),
     { look: 'stone', from: B1.from, to: B1.to, base: TOP.y },
     { look: 'stone', from: B2.from, to: B2.to, base: SLOPE },
     { look: 'stone', from: B3.from, to: B3.to, base: SLOPE },
