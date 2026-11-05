@@ -1797,6 +1797,17 @@ const TIPPED = -0.16;
 
 function moverLooks(): Record<string, (mover: Mover) => Group | null> {
   return {
+    boulder: (mover) => {
+      // A round field stone, as wide and as high as the thing it is to the simulation, with moss on its shaded side.
+      const group = new Group();
+      const stone = new Mesh(rock(Math.round(mover.width * 37), mover.width / 2 * 1.06, mover.height / 2 * 1.04, mover.width * 0.46), solid('#7a7e80', 0.86, { flatShading: true }));
+      stone.position.y = mover.height / 2;
+      stone.castShadow = true;
+      const moss = new Mesh(rock(Math.round(mover.width * 41), mover.width * 0.3, mover.height * 0.2, mover.width * 0.3), solid('#55703e', 0.95, { flatShading: true }));
+      moss.position.set(-mover.width * 0.16, mover.height * 0.86, 0.04);
+      group.add(stone, moss);
+      return group;
+    },
     riverLog: (mover) => {
       // A wet trunk floating half under: dark bark, and pale sawn ends that catch what light there is.
       const group = new Group();

@@ -144,7 +144,7 @@ const HIGH_END = { x: 132.7, y: 1.1 };
 const HIGH_ARM = { x: 132.5, y: 1.55 };
 /** The stone under the spruce: a low boulder he jumps over, and pushes only from the far side. */
 const PIVOT: Mover = {
-  id: 'bi-pivot', look: 'stone', width: 1.2, height: 0.6, verb: 'push', needs: 'bi:klonk-on',
+  id: 'bi-pivot', look: 'boulder', width: 1.2, height: 0.6, verb: 'push', needs: 'bi:klonk-on',
   stops: [{ x: SEESAW.middle, y: 0 }, { x: SEESAW.short, y: 0 }],
 };
 const PIVOT_PLACED = `placed:${PIVOT.id}`;

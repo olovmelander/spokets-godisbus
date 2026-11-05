@@ -354,7 +354,7 @@ export interface SimStart {
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
-export type MoverLook = 'riverLog' | 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
+export type MoverLook = 'boulder' | 'riverLog' | 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy';
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder';
