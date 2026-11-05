@@ -985,12 +985,20 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
  */
 async function installModels(assets: Assets, scene: Object3D): Promise<boolean> {
   const wanted: Object3D[] = [];
-  scene.traverse((object) => { if (typeof object.userData.model === 'string') wanted.push(object); });
+  scene.traverse((object) => { if (typeof object.userData.model === 'string' || typeof object.userData.grandparent === 'string') wanted.push(object); });
   if (wanted.length === 0) return false;
   const manifest = await assets.manifest();
+  // Mormor and morfar, in the family's own hand, wherever they stand: each their own copy, with its own skeleton.
+  const figures: Object3D[] = [];
+  scene.traverse((object) => { if (typeof object.userData.grandparent === 'string') figures.push(object); });
+  for (const place of figures) {
+    const who = place.userData.grandparent as Grandparent;
+    if (manifest.packs.private?.files[`${who}.glb`]) (place.userData.dress as (model: Object3D) => void)(await assets.model('private', who));
+  }
   const files = new Map<string, Promise<Group>>();
   let arrived = false;
   for (const place of wanted) {
+    if (typeof place.userData.model !== 'string') continue;
     const name = place.userData.model as string;
     const [pack, file] = FILES[name] ?? [];
     if (!pack || !file || !manifest.packs[pack]?.files[`${file}.glb`]) continue;
@@ -1113,6 +1121,7 @@ function lantern(): { group: Group; light: Mesh } {
 function figure(spot: Spot, who: Grandparent, lit = who === 'mormor'): SpotProp {
   const carried = lit ? lantern() : null;
   const made = createGrandparent(who, carried?.group ?? null, spot.id.startsWith('decor:'));
+  made.group.userData.dress = (model: Object3D) => made.dress(model);
   made.group.position.set(spot.at.x, spot.at.y, -0.6);
   return {
     group: made.group,
