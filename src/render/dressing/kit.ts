@@ -3,8 +3,10 @@ import {
   MeshStandardMaterial, Object3D, RepeatWrapping, SRGBColorSpace, SphereGeometry, Vector2, type InstancedMesh, type Material,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import type { ChapterData, PlaceId, SurfaceKind } from '../../sim/types';
+import type { ChapterData, Landmark, LandmarkThing, PlaceId, SurfaceKind } from '../../sim/types';
+import type { FarId } from '../backdrop';
 import type { Grade } from '../grade';
+import type { Ground } from './ground';
 import { mossy } from '../lift/flora/light';
 import { sway } from '../wind';
 
@@ -26,6 +28,14 @@ export interface PlaceLook {
   /** Its water, and the soft tussocks that float in it. */
   water: { colour: string; opacity: number };
   tussock: string;
+  /** Another ground than the place's own, where its own is wrong for the chapter. */
+  ground?: Ground;
+  /** Another place's far pictures, where this one's are wrong for the chapter. */
+  far?: FarId;
+  /** No sun painted in the sky: the storm hides it, or the chapter has a moon of its own. */
+  noSun?: boolean;
+  /** Only the far pictures beyond this depth: nearer ones would lie over the place's buildings. */
+  farBeyond?: number;
 }
 
 // --- small tools ----------------------------------------------------------------------------------------
@@ -72,15 +82,28 @@ export function heightAt(chapter: ChapterData, x: number): number {
   return x < line[0]!.x ? line[0]!.y : line[line.length - 1]!.y;
 }
 
+/** Whether a landmark is a thing on the floor, with a model of its own, and not a part of the kit of a place. */
+export const isThing = (look: Landmark['look']): look is LandmarkThing => !['cone', 'log', 'anthill', 'stone'].includes(look);
+
 /** The land under the things he stands on. Their models keep the collision outline's raised tops. */
 export function landscape(chapter: ChapterData): ChapterData {
   if (!chapter.landmarks?.length) return chapter;
-  const ground = chapter.ground.map((point) => {
+  const ground = chapter.ground.map((point, i, line) => {
     const mark = chapter.landmarks!.find(({ from, to }) => point.x >= from && point.x <= to);
+    // Steps start from a floor: its edge stays where it is, and they go down from under it.
+    if (mark?.look === 'stairs' && point.x === mark.from && line[i - 1]?.x !== point.x) return point;
     return mark ? { x: point.x, y: Math.min(point.y, mark.base) } : point;
   }).filter((point, i, line) => i === 0 || point.x !== line[i - 1]!.x || point.y !== line[i - 1]!.y);
+  // A thing that stands on the floor has no deck under it: what it is walked on as is its own lid.
+  // What is marked as its top goes, and the ground beside it runs on under it.
+  const things = chapter.landmarks.filter(({ look }) => isThing(look));
+  let before: NonNullable<ChapterData['surfaces']>[number] | undefined;
+  const surfaces = chapter.surfaces?.slice().sort((a, b) => a.from - b.from).flatMap((s) => {
+    if (!things.some(({ from, to }) => s.from >= from && s.to <= to)) return [before = s];
+    return before?.to === s.from ? [before = { ...s, kind: before.kind }] : [];
+  });
   // Idempotent: the dressing and a later restock can both ask for the land. The simulation is untouched.
-  return { ...chapter, ground, landmarks: [] };
+  return { ...chapter, ground, landmarks: [], ...(surfaces ? { surfaces } : {}) };
 }
 
 /** Whether things can grow at x: fairly level ground, not the bottom of a pit, and not under water. */

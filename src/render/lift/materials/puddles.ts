@@ -16,7 +16,7 @@ import { STREET_DEPTH } from '../../village';
  */
 
 /** How much water a ground holds, by its kind: the rest drinks it. */
-export const HOLDS: Readonly<Partial<Record<string, number>>> = { asphalt: 1, paving: 1, stone: 0.85, iron: 0.8, wood: 0.5, granite: 0.5, earth: 0.45 };
+export const HOLDS: Readonly<Partial<Record<string, number>>> = { asphalt: 1, paving: 1, turf: 0.7, sand: 0.6, moss: 0.3, wetRock: 0.9, shoreRidge: 1, stone: 0.85, iron: 0.8, wood: 0.5, granite: 0.5, earth: 0.45 };
 
 /** What the wet gives back: the sky's glow, dimmed, as it lies low over the ground. */
 const SKY_SHARE = 0.5;

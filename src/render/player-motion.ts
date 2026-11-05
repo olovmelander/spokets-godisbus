@@ -1,7 +1,7 @@
 import { BoxGeometry, CapsuleGeometry, ConeGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3 } from 'three';
 import { CLIMB_SPEED, JUMP_SPEED, RUN_AFTER, RUN_SPEED } from '../sim/constants';
 import type { PlayerState } from '../sim/types';
-import { blendPose, createSway, STANDING, type Pose } from './rig';
+import { blendPose, createSway, plantFeet, STANDING, type Pose } from './rig';
 import { createArmContact } from './arm-contact';
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
@@ -22,7 +22,7 @@ export const IDLES = { look: 4.4, rock: 3.6, scratch: 2.8, leaf: 3.8, tap: 3.2, 
 export type IdleAct = keyof typeof IDLES;
 /** The first idle begins this long after he stops, and a stretch only after this long a wait. */
 const FIRST = 3.4, STRETCH = 18;
-const JOINTS = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'legL', 'legR', 'kneeL', 'kneeR', 'spread'] as const;
+const JOINTS = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'legL', 'legR', 'kneeL', 'kneeR', 'spread', 'twist', 'footL', 'footR'] as const;
 
 /**
  * The thigh and knee that lift a heel by tipping the boot `tip` (< 0) about its toe, which stays where it stood: the
@@ -146,6 +146,9 @@ export function playerPose(player: MotionState, phase: number, pace: number, lan
     out.armL = 0.65 + 0.5 * rise + 0.15 * fall; out.armR = 0.8 + 0.5 * rise + 0.25 * fall;
     out.elbowL = out.elbowR = 0.25 + 0.35 * rise;
     out.lean = 0.08 * rise - 0.04 * fall;
+    // Up off the toes with a turn of the shoulders, and the feet come up to meet the ground.
+    out.twist = 0.16 * rise - 0.06 * fall;
+    out.footL = -0.45 * rise + 0.25 * fall; out.footR = -0.55 * rise + 0.2 * fall;
   } else if (player.atEdge) {
     out.lean = -0.16; out.nod = 0.35; out.spread = 0.18;
     out.armL = 0.25; out.armR = 0.4; out.elbowL = out.elbowR = 0.3;
@@ -160,8 +163,13 @@ export function playerPose(player: MotionState, phase: number, pace: number, lan
     out.kneeL = Math.max(0, recovery) ** 2 * fold + 0.9 * landing;
     out.kneeR = Math.max(0, -recovery) ** 2 * fold + 0.9 * landing;
     out.armL = -swing * 0.9; out.armR = swing * 0.9;
-    out.elbowL = 0.08 + 0.6 * effort - swing * 0.12; out.elbowR = 0.08 + 0.6 * effort + swing * 0.12;
-    out.lean = 0.12 * pace + 0.2 * landing; out.nod = -0.05 * pace - 0.12 * landing;
+    // A run bends the arms and drives them, and each stride goes through the trunk: the shoulders turn against the hips.
+    const bent = 0.08 + (0.5 + 0.45 * run) * effort;
+    out.elbowL = bent - swing * 0.12; out.elbowR = bent + swing * 0.12;
+    out.lean = (0.1 + 0.08 * run) * pace + 0.2 * landing; out.nod = -0.05 * pace - 0.12 * landing;
+    out.twist = swing * (0.3 + 0.16 * run);
+    plantFeet(out, phase);
+    out.footL += 0.45 * landing; out.footR += 0.45 * landing;
   }
   return out;
 }

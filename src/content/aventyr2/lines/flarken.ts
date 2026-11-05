@@ -9,16 +9,10 @@ export const words: ChapterWords = {
   lines: {
     // 1. the parking and the playground
     sjArrive: 'Flärken! Badplatsen är alldeles tom.',
-    sjSwings: 'Gungorna! Jag kastar snöret dit.',
-    sjSlide: 'Uppför stegen och nerför rutschkanan!',
     // 2. the picnic table and the volleyball net
-    sjDry: 'Under bordet är det torrt.',
-    sjNet: 'Nätet gungar som en studsmatta!',
     // 3. the changing rooms
     sjDoor: 'Dörren smäller i vinden. Pang!',
     // 4. the beach stones, the reeds and the reed mats
-    sjStones: 'Blöta stenar. Jag hoppar som en groda!',
-    sjReeds: 'Vassen är stark. Jag klättrar upp!',
     sjMats: 'Gungfly! Det sjunker om jag står still.',
     sjKlonkWood: 'Lätt för dig, Klonk. Trä flyter ju!',
     sjFlash: 'Lillgubben! Han blåser ut över sjön!',
@@ -28,7 +22,7 @@ export const words: ChapterWords = {
     sjOldOne: 'Spring, gamla trägubben! Vi kommer!',
     // 6. Mamma's boat
     sjBroken: 'Bryggan är trasig! Det är för långt.',
-    sjMamma: 'Jag hittade en roddbåt. Ropa på mig!',
+    sjMamma: 'Elof! Jag har en roddbåt här!',
     sjBoatReady: 'Jag håller båten still. Gå på kanten.',
     sjSteady: 'Lugnt och fint. Jag släpper inte.',
     sjThanks: 'Tack, Mamma! Du är bäst.',
@@ -36,10 +30,12 @@ export const words: ChapterWords = {
     sjTower: 'Hopptornet! Där uppe ser man allt.',
     sjNear: 'Jag ror bredvid dig hela vägen.',
     sjLookout: 'Där är lillgubben! Där ån börjar!',
-    sjDive: 'Nu hoppar jag ner på bryggan!',
     // 8. the bark raft
     sjGap: 'Plankorna är borta. Vad gör jag nu?',
-    sjBarkIdea: 'Bark flyter, precis som Klonk!',
+    sjStoneIdea: 'En sten! Den kan ligga i luckan.',
+    sjPlop: 'Plopp! Stenen sjönk.',
+    sjPlopKlonk: 'Klonk!',
+    sjBarkIdea: 'Klonk flyter. Bark är ju trä!',
     sjRaft: 'En barkflotte! Nu kan jag hoppa.',
     sjKlonkRaft: 'Klonk-klonk!',
     // 9. the jetty's end: the outlet takes them
@@ -62,7 +58,8 @@ export const words: ChapterWords = {
     sjonOut: { purpose: 'Följ godiset ut till hopptornet.', recap: 'Mamma ror bredvid mig. Gamla trägubben lämnar godis hela vägen ut.' },
     sjonTower: { purpose: 'Klättra uppför hopptornets stege.', recap: 'Från hopptornet ser jag ut över hela sjön.' },
     sjonDive: { purpose: 'Spring och hoppa ner på bryggan.', recap: 'Blixten visade lillgubben långt ute, där ån börjar.' },
-    sjonBark: { purpose: 'Knuffa ut barken i vattnet.', recap: 'Plankorna är borta. Bark flyter, precis som Klonk.' },
+    sjonGap: { purpose: 'Hitta något som kan ligga i luckan.', recap: 'Plankorna är borta, och luckan är för bred att hoppa över.' },
+    sjonBark: { purpose: 'Stenen sjönk. Vad flyter?', recap: 'Plankorna är borta. Stenen sjönk i luckan.' },
     sjonRaft: { purpose: 'Hoppa över på barkflotten.', recap: 'Barken flyter i luckan. Den håller för mig.' },
     sjonEnd: { purpose: 'Gå ut till bryggans ände.', recap: 'Barkflotten bar mig. Snart är jag längst ut på bryggan.' },
     sjonRiver: { purpose: 'Följ ån! Familjen tar bilen.', recap: 'Ån bär lillgubben. Gamla trägubben följer efter på en stock.' },

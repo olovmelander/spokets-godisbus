@@ -13,7 +13,7 @@ export interface Climb {
   /** A flag that has to be set before he can use it: the hose the ladybird shows him. */
   needs?: string;
   /** Keep a reused climbing rule recognizable as the story's actual tool. */
-  look?: 'hose' | 'lace' | 'braid' | 'lichen' | 'root';
+  look?: 'hose' | 'lace' | 'braid' | 'lichen' | 'root' | 'ladder';
 }
 
 /** A hook for the lace, marked with a red ring (plan §4.2). */
@@ -99,8 +99,8 @@ export interface Mover {
   optional?: boolean;
   /** The word on the button where Knuffa or Dra is too plain: a key of `sv.verbs`, as "Sparka" for a football. */
   word?: string;
-  /** A repeating platform, between its two stops. Its phase is local, never saved as puzzle progress. */
-  cycle?: { seconds: number; phase?: number };
+  /** A repeating platform, between its two stops. Its phase is local, never saved as puzzle progress. `wait`: it is a hop away only for a moment, and he waits for that. */
+  cycle?: { seconds: number; phase?: number; wait?: boolean };
 }
 
 /** A trail candy: where it floats, and the flag that has to be set before it is there at all. */
@@ -116,6 +116,8 @@ export interface Candy extends Vec {
 export interface Spot {
   id: string;
   at: Vec;
+  /** For the picture: whoever of the family is shown here sits, in a boat, say. */
+  seated?: boolean;
   verb: 'turn' | 'take' | 'call' | 'give';
   /** A flag that has to be set before it can be used. A thing on a rail sets `placed:<its id>` once in place. */
   needs?: string;
@@ -250,6 +252,8 @@ export interface Roller {
  * always a little ahead: the chase can't be lost, and it can't be won before the story says so.
  */
 export interface GhostPerch {
+  /** It stays where it stands while it waits, near as he comes, and does not rise out of reach: it is on something. */
+  still?: boolean;
   at: Vec;
   /** Takeoff distance, default 4 EL. Only close meetings may use a smaller value. */
   near?: number;
@@ -352,11 +356,11 @@ export interface SimStart {
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
-export type MoverLook = 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
+export type MoverLook = 'boulder' | 'riverLog' | 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy';
-export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder';
-export type SpotLook = 'mormorHome' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
+export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder' | 'shelf';
+export type SpotLook = 'kit' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
   | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';
@@ -369,14 +373,17 @@ export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home'
 /** What a gust's shelters are drawn as, in a storm: see Storm.shelters. */
 export type Shelter = 'pots' | 'posts' | 'vents' | 'rocks';
 
-export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron';
+export type SurfaceKind = 'roof' | 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron' | 'turf' | 'sand' | 'moss' | 'wetRock';
 
 /**
  * A thing that a block of the ground is, for the picture only: the block runs from `from` to `to` along the
  * outline, and `base` is the height of the ground at its foot.
  */
+/** Things on the floor that he walks on, each a model of its own: the land goes on under them. */
+export type LandmarkThing = 'barrel' | 'can' | 'playhouse' | 'slide' | 'picnic' | 'fence' | 'stairs' | 'woodpile' | 'skerry' | 'edging';
+
 export interface Landmark {
-  look: 'cone' | 'log' | 'anthill' | 'stone';
+  look: 'cone' | 'log' | 'anthill' | 'stone' | LandmarkThing;
   from: number;
   to: number;
   base: number;
@@ -442,7 +449,7 @@ export interface ChapterData {
   /** An optional melody toy. Consecutive repeat bumps are allowed; other wrong notes restart it. */
   song?: { notes: string[]; flag: string };
   /** A weight puzzle: the trial is optional; the helper can guide a deliberate return to the heavy mover. */
-  counterweight?: { from: number; to: number; call: string; heavy: string; launch: string; trial: string };
+  counterweight?: { from: number; to: number; call: string; heavy: string; launch: string; trial?: string };
   /** Once he chooses to leave a gift, a nearby return route can guide him back to its picture clue. */
   returnClue?: { from: number; to: number; gift: string; away: string; clue: string; root: Climb; door: Vec };
   /** A picture left at a landmark, revealed by a saved discovery rather than by moving the chase ghost. */
@@ -479,6 +486,8 @@ export interface ChapterData {
    * stands over the block (src/render/forest-kit.ts), with its top where the outline has the block's.
    */
   landmarks?: Landmark[];
+  /** For the picture: its water is a river, open towards the camera and behind the path, with no near shore. */
+  river?: boolean;
   /** For the picture: a deck overhead, with the sun falling through between its boards. */
   roofs?: { from: number; to: number; y: number }[];
   /**
@@ -495,7 +504,7 @@ export interface ChapterData {
    * For the picture: things that stand about and are not used. One with `until` is gone when that flag is
    * set, and one with `after` is not there before its flag is.
    */
-  decor?: { look: SpotLook; at: Vec; word?: string; until?: string; after?: string; z?: number }[];
+  decor?: { look: SpotLook; at: Vec; word?: string; until?: string; after?: string; z?: number; scale?: number; turn?: number }[];
   /**
    * For the picture only: where the old pine stands, a little behind the path (plan §3.4). The wind has swept
    * it to the left; `flip` turns it round, swept to the right. The simulation knows nothing of it.
@@ -631,6 +640,8 @@ export interface ChapterData {
  * simulation never reads it. Drawn by the adventure's own pack.
  */
 export interface Storm {
+  /** A boat that is rowed in once `after` is set, from far out to its place, carrying whoever the spot `spot` shows. */
+  boat?: { spot: string; after: string; y: number; from: { x: number; z: number }; to: { x: number; z: number } };
   /** How hard it rains, from 0 to 1. Left out: no rain. */
   rain?: number;
   /** About how many seconds pass between two flashes of lightning. Left out: none. */
@@ -675,14 +686,20 @@ export interface Storm {
    */
   bouncers?: 'trampoline' | 'awning' | 'net';
   /**
+   * For the picture: where cream foam drifts on the water, and how fast, in EL a second.
+   */
+  foam?: { from: number; to: number; y: number; speed: number; dense?: number }[];
+  /**
    * Buildings and big things standing behind the play plane, built in code by the adventure's pack: picture only,
    * never ground. Sizes are in EL (one Elof length, 15 cm), so a real house towers over him. `lit`: its windows glow
    * once that flag is set (or from the start with an empty string).
    */
   buildings?: {
-    kind: 'villa' | 'barn' | 'playhouse' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
+    kind: 'jettyArm' | 'pole' | 'store' | 'trestleTable' | 'pitch' | 'chess' | 'sunboard' | 'villa' | 'barn' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
       | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce';
-    x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string;
+    x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string; marks?: { halfway: number; box?: { x: number; long: number }; front?: number }; model?: string; size?: number;
+    /** A hut's logs tarred black, with white trim. */
+    tar?: boolean;
     /** Turned about the upright, in quarter turns: a net or a table seen from its end. */
     turn?: number;
   }[];

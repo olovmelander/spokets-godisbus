@@ -1,12 +1,12 @@
 import { Color, Group, InstancedMesh, Object3D } from 'three';
 import type { ChapterData } from '../../sim/types';
-import { toneAt } from './ground';
+import { toneAt, type Ground } from './ground';
 import { KIT, TALL_BLADES, grows, heightAt, sequence, tallGrass } from './kit';
 
 // --- the bog ------------------------------------------------------------------------------------------------
 
 /** One stretch of the bog: rust-red and green moss, straw sedge, dwarf birch in autumn red, cloudberry leaves. */
-export function bog(chapter: ChapterData, from: number, to: number, seed: number): Group {
+export function bog(chapter: ChapterData, from: number, to: number, seed: number, moss: Ground = 'sphagnum'): Group {
   const group = new Group();
   const next = sequence(seed);
   const place = new Object3D();
@@ -28,7 +28,7 @@ export function bog(chapter: ChapterData, from: number, to: number, seed: number
     place.scale.set(size * (1 + next() * 0.5), size * low * (0.75 + next() * 0.45), size * (1 + next() * 0.5));
     place.updateMatrix();
     cushions.setMatrixAt(n, place.matrix);
-    cushions.setColorAt(n++, toneAt('sphagnum', x * 2.1, z * 2.1, tint).multiplyScalar(0.85 + next() * 0.4));
+    cushions.setColorAt(n++, toneAt(moss, x * 2.1, z * 2.1, tint).multiplyScalar(0.85 + next() * 0.4));
   }
   cushions.count = n;
 

@@ -1,5 +1,5 @@
 import {
-  AdditiveBlending, BoxGeometry, CanvasTexture, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, Mesh,
+  AdditiveBlending, BoxGeometry, BufferAttribute, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, Mesh,
   MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, SphereGeometry, SRGBColorSpace,
   Vector3,
 } from 'three';
@@ -179,9 +179,32 @@ export interface Directions {
   } | null;
 }
 
+/**
+ * A lit flashlight, pointing the way its holder faces (their +z), and its beam out into the dark. The beam is added to
+ * the night, so what is black in it is nothing: it fades away from the lamp and has no end to see.
+ */
+function litLamp(): Mesh {
+  const body = new Mesh(new CylinderGeometry(0.075, 0.075, 0.42, 10).rotateX(Math.PI / 2), new MeshStandardMaterial({ color: '#3c4048', roughness: 0.5 }));
+  const head = new Mesh(new CylinderGeometry(0.13, 0.085, 0.16, 12).rotateX(Math.PI / 2).translate(0, 0, 0.27), new MeshStandardMaterial({ color: '#50565e', roughness: 0.45 }));
+  const LONG = 16;
+  const cone = new ConeGeometry(1.7, LONG, 18, 5, true).rotateX(-Math.PI / 2).translate(0, 0, LONG / 2 + 0.3);
+  const at = cone.getAttribute('position');
+  const fade = new Float32Array(at.count * 3);
+  for (let i = 0; i < at.count; i++) fade.fill((1 - (at.getZ(i) - 0.3) / LONG) ** 1.6, i * 3, i * 3 + 3);
+  cone.setAttribute('color', new BufferAttribute(fade, 3));
+  const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.16, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, fog: false }));
+  body.add(head, beam);
+  return body;
+}
+
 /** A thing the family holds: built small and plain, in the colours of what it is. */
 function thing(kind: Thing, drawing: CanvasTexture): Mesh {
   switch (kind) {
+    case 'lamp-mamma':
+    case 'lamp-pappa':
+    case 'lamp-moa':
+    case 'lamp-bertil':
+      return litLamp();
     case 'knife': {
       const handle = new Mesh(new BoxGeometry(0.09, 0.32, 0.09), new MeshStandardMaterial({ color: '#963c30', roughness: 0.7 }));
       const blade = new Mesh(new BoxGeometry(0.03, 0.24, 0.07), new MeshStandardMaterial({ color: '#cfd6d9', roughness: 0.25, metalness: 0.6 }));
@@ -294,6 +317,8 @@ function moasDrawing(): CanvasTexture {
 /** A kitchen table and chairs: plain stand-ins, never the family's own furniture (that is Olov's to model). */
 function furniture(look: 'table' | 'chair' | 'stool'): Group {
   const group = new Group();
+  // Where the adventure's pack has it, the piece is a model (art/blender/a2-room.py), of the same size.
+  group.userData.model = look === 'table' ? 'bord' : look === 'chair' ? 'stol' : 'pall';
   const wood = new MeshStandardMaterial({ color: look === 'table' ? '#b58a58' : '#d9cdb8', roughness: 0.8 });
   const box = (w: number, h: number, d: number, x: number, y: number, z: number) => {
     const mesh = new Mesh(new BoxGeometry(w, h, d), wood);

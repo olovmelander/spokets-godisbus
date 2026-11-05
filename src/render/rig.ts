@@ -34,11 +34,16 @@ export interface Pose {
   floor?: number;
   /** A little hop of the whole body, in an adult's units. */
   bounce: number;
+  /** The shoulders turn to the body's own left (+), and the hips a little the other way: a stride goes through the trunk. */
+  twist: number;
+  /** Each foot tips up at the toes (+) or points them down (−), about the ankle. */
+  footL: number;
+  footR: number;
 }
 
 export const STANDING: Readonly<Pose> = {
   lean: 0, nod: 0, turn: 0, armL: 0.02, armR: 0.02, elbowL: 0.1, elbowR: 0.1, legL: 0, legR: 0, kneeL: 0, kneeR: 0,
-  spread: 0, seat: null, floor: 0, bounce: 0,
+  spread: 0, seat: null, floor: 0, bounce: 0, twist: 0, footL: 0, footR: 0,
 };
 
 // The rehearsal body's measures, in an adult's units (an adult stands about 5.2 tall).
@@ -70,6 +75,19 @@ export function groundedHips(p: Pose): number {
 }
 
 /** A share of the way from one pose to another. */
+/**
+ * The feet of a stride. A stiff ankle tips the foot with the shin; through the stance the ankle gives, so the sole stays near the
+ * ground from heel to toe, and lets go as the leg swings through. `phase` is the stride's: the left leg leads at a quarter turn.
+ */
+export function plantFeet(p: Pose, phase: number): void {
+  const stance = (side: number) => {
+    const t = Math.min(1, Math.max(0, 0.5 - side * Math.cos(phase) * 2));
+    return t * t * (3 - 2 * t);
+  };
+  p.footL = -(p.legL - p.kneeL) * 0.55 * stance(1);
+  p.footR = -(p.legR - p.kneeR) * 0.55 * stance(-1);
+}
+
 export function blendPose(a: Pose, b: Pose, t: number, out: Pose = { ...STANDING }, floor = false): Pose {
   if (t <= 0) return Object.assign(out, a, { floor: floor ? a.floor ?? 0 : 0 });
   if (t >= 1) return Object.assign(out, b, { floor: floor ? b.floor ?? 0 : 0 });
@@ -427,7 +445,8 @@ export function createModelRig(model: Object3D, height: number): Rig {
     return node ? { node, rest: node.quaternion.clone(), sign } : null;
   };
   const bones = {
-    spine: bone('spine_01', 1), head: bone('Head', 1) ?? bone('head', 1),
+    spine: bone('spine_01', 1), chest: bone('spine_02', 1), pelvis: bone('pelvis', 1), head: bone('Head', 1) ?? bone('head', 1),
+    footL: bone('foot_l', 1), footR: bone('foot_r', 1),
     armL: bone('upperarm_l', 1), armR: bone('upperarm_r', 1), elbowL: bone('lowerarm_l', 1), elbowR: bone('lowerarm_r', 1),
     legL: bone('thigh_l', 1), legR: bone('thigh_r', 1), kneeL: bone('calf_l', -1), kneeR: bone('calf_r', -1),
   };
@@ -442,6 +461,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
   const axis = (b: Bone | null, direction: Vector3) => b ? direction.clone().applyQuaternion(orientation)
     .applyQuaternion(b.node.getWorldQuaternion(new Quaternion()).invert()).normalize() : null;
   const headUp = axis(bones.head, Y), leftOut = axis(bones.armL, Z), rightOut = axis(bones.armR, Z);
+  const chestUp = axis(bones.chest, Y), pelvisUp = axis(bones.pelvis, Y);
   // Lip centre relative to the neck in the exported heads' authoring units; cache through the rest roll.
   const mouth = new Vector3(0, .055, .135);
   if (bones.head) mouth.applyQuaternion(orientation).applyQuaternion(bones.head.node.getWorldQuaternion(new Quaternion()).invert());
@@ -491,8 +511,13 @@ export function createModelRig(model: Object3D, height: number): Rig {
     },
     pose(p) {
       handBones.forEach((hand, i) => { if (hand) hand.quaternion.copy(handRest[i]!); });
-      bend(bones.spine, p.lean);
-      bend(bones.head, p.nod, headUp, p.turn);
+      // A model with a chest bends through two joints, and its stride turns the shoulders against the hips.
+      bend(bones.spine, bones.chest ? p.lean * 0.55 : p.lean);
+      bend(bones.chest, p.lean * 0.55, chestUp, p.twist);
+      bend(bones.pelvis, 0, pelvisUp, -p.twist * 0.45);
+      bend(bones.head, p.nod, headUp, p.turn - (bones.chest ? p.twist * 0.6 : 0));
+      bend(bones.footL, p.footL);
+      bend(bones.footR, p.footR);
       bend(bones.armL, p.armL, leftOut, p.spread);
       bend(bones.armR, p.armR, rightOut, -p.spread);
       bend(bones.elbowL, p.elbowL);

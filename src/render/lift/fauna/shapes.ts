@@ -159,8 +159,9 @@ export function squirrel(): BufferGeometry {
     ['e', EYE, [0.635, 0.45, 0], 0.024, NONE, head],
     ...both((s) => ['e', EYE, [0.5, 0.51, s * 0.11], 0.035, NONE, head]),
     ...both((s) => ['c', '#7e603c', [0.37, 0.66, s * 0.075], [0.045, 0.16, 0.035], [s * 0.25, 0, 0.12], head]),
-    ...both((s) => ['r', fur, [0.27, 0.14, s * 0.09], [0.035, 0.22, 0.035], [0, 0, -0.35]]),
-    ...both((s) => ['b', fur, [-0.17, 0.06, s * 0.11], [0.15, 0.05, 0.055]]),
+    // Its legs gallop by `act.w`: fore and hind reach and gather in turn. The head's aux is 0, so it stays out of that.
+    ...both((s) => ['r', fur, [0.27, 0.14, s * 0.09], [0.035, 0.22, 0.035], [0, 0, -0.35], [1, 0, 1, [0.27, 0.32, s * 0.09]]]),
+    ...both((s) => ['b', fur, [-0.17, 0.06, s * 0.11], [0.15, 0.05, 0.055], NONE, [1, 0, -1, [-0.17, 0.26, s * 0.11]]]),
     ...curl.map(([x, y, r], i): Part => ['b', i % 2 ? '#a27848' : '#9a7040', [x, y, 0], [r, r, r * 0.8], NONE, tail]),
   ]);
 }

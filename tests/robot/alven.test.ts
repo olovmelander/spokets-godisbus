@@ -7,7 +7,7 @@ import { nextAfter } from '../../src/content/chapters';
 import { storyContext } from '../../src/content/story-context';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
-import { FALL_LIMIT, JUMP_APEX, LEDGE_REACH, RUNNING_JUMP_REACH, STEP } from '../../src/sim/constants';
+import { FALL_LIMIT, FELL_IN, JUMP_APEX, LEDGE_REACH, RUNNING_JUMP_REACH, STEP } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
 import type { Ride, SimStart } from '../../src/sim/types';
 import { idle, leap, run, runPast, sideTaken, use, walkTo } from '../sim/drive';
@@ -26,10 +26,8 @@ vi.setConfig({ testTimeout: 90000 });
 
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
-  'al:arrive', 'al:klonk-floats', 'al:klonk', 'al:flash', 'al:raft-seen', 'al:current', 'al:old-one', 'al:leaf-seen',
-  'al:bob', 'al:eddy',
-  'al:bredbyn', 'al:rapids', 'al:pappa-here', 'al:scarf-down', 'al:take-hold', 'al:up', 'al:over', 'al:thanks', 'al:follow',
-  'al:stumps', 'al:lodge', 'al:otter',
+  'al:arrive', 'al:klonk-floats', 'al:klonk', 'al:flash', 'al:raft-seen', 'al:current', 'al:old-one', 'al:logs-wait',
+  'al:bredbyn', 'al:rapids', 'al:pappa-here', 'al:scarf-down', 'al:take-hold', 'al:up', 'al:over', 'al:thanks', 'al:follow', 'al:lodge', 'al:otter',
   'al:lake', 'al:owl-seen', 'al:owl-here', 'al:owl-fly', 'al:see-little', 'al:owl-thanks',
   'al:moalven', 'al:old-ahead',
   'al:last', 'al:gone', 'al:afraid', 'al:klonk-near', 'al:moa-never', 'al:bertil-pocket', 'al:moa-trail',
@@ -46,7 +44,8 @@ const waterAt = (x: number) => alven.water!.find((w) => x > w.from && x < w.to);
 /** The stretch of water a ride crosses, from the ground it leaves to the ground it lands on. */
 const waterUnder = (r: Ride) => alven.water!.filter((w) => w.from > r.from.x && w.to < r.to.x);
 /** The bobbing logs on the way, and the rolling ones out to the otter's stone. */
-const logs = alven.movers!.filter((m) => m.cycle && !m.extra);
+const logs = alven.movers!.filter((m) => m.cycle && !m.extra && !m.cycle.wait);
+const eddy = alven.movers!.filter((m) => m.cycle?.wait);
 const rollers = alven.movers!.filter((m) => m.cycle && m.extra);
 
 /** Plays it as the robot does, from a start, with the option to change its mind on a frame. */
@@ -120,7 +119,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
     expect(alven.checkpoints!.length).toBeGreaterThanOrEqual(8);
     expect(alven.checkpoints!.length).toBeLessThanOrEqual(10);
     expect(alven.coda).toBe('pappa');
-    expect(alven.storm).toMatchObject({ rain: 0.8, lightning: 9 });
+    expect(alven.storm).toMatchObject({ rain: 1, lightning: 7.5 });
     expect(alven.scenes!.map((scene) => scene.id)).toEqual(['card']);
     expect(sv.scene.alven).toBe('Älven · halv tolv');
   });
@@ -132,7 +131,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       expect(result.checkpoint).toBe(alven.checkpoints!.length - 1);
       // The raft and the leaf, Pappa called and his scarf taken, the owl called and ridden.
       expect(result.flags).toEqual(expect.arrayContaining([
-        'al:raft', 'al:leaf', 'al:pappa', 'al:scarf', 'al:lift', 'al:owl-call', 'al:owl-ready', 'al:owl', 'goal',
+        'al:raft', 'al:pappa', 'al:scarf', 'al:lift', 'al:owl-call', 'al:owl-ready', 'al:owl', 'goal',
       ]));
       expect(result.said).toEqual(SAID);
       // It never falls in: not off a log, not into the rapids.
@@ -170,7 +169,35 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
   });
 
   describe('Strömmen', () => {
-    it('carries him on a raft and then a birch leaf, low on the water, from bank to bank over water too wide to jump', () => {
+    it('turns three logs to and fro in the eddies: each is a hop from the next for a moment, and far too far the rest of the time', () => {
+      expect(eddy.length).toBe(3);
+      const sim = new Sim(alven);
+      const at = (i: number) => sim.movers.find((m) => m.def.id === eddy[i]!.id)!;
+      const gap = (i: number) => at(i + 1).x - at(i).x - eddy[i]!.width;
+      let close = 0;
+      let wide = 0;
+      for (let step = 0; step < 5.2 * 60; step++) {
+        sim.step({ x: 0, y: 0, hop: false, hopHeld: false, act: false });
+        if (gap(0) < 0.9) close++;
+        if (gap(0) > RUNNING_JUMP_REACH) wide++;
+      }
+      // A moment, and most of the round it is out of reach.
+      expect(close / (5.2 * 60)).toBeGreaterThan(0.15);
+      expect(close / (5.2 * 60)).toBeLessThan(0.4);
+      expect(wide).toBeGreaterThan(0);
+      expect(spot('al:leaf').needs).toBe(FELL_IN);
+    });
+
+    it('offers the birch leaf to one who has fallen in, and from the start on Lugnt, and never before', () => {
+      const leaf = ride('al:leaf');
+      const sim = new Sim(alven, {}, { checkpoint: 1 });
+      expect(sim.flags.has(FELL_IN)).toBe(false);
+      const gentle = new Sim(alven, simOptions(settingsFor('lugnt')));
+      expect(gentle.flags.has(FELL_IN)).toBe(true);
+      expect(leaf.look).toBe('leaf');
+    });
+
+    it('carries him on a raft and offers a birch leaf, low on the water, from bank to bank over water too wide to jump', () => {
       for (const [id, look] of [['al:raft', 'raft'], ['al:leaf', 'leaf']] as const) {
         const r = ride(id);
         expect(r.look).toBe(look);
@@ -364,7 +391,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       const lodge = alven.storm!.buildings!.find((b) => b.kind === 'lodge')!;
       expect(Math.abs(lodge.x - stick.x)).toBeLessThan(lodge.width! / 2);
       expect(lodge.z).toBeLessThan(-(lodge.width! / 3));
-      expect(alven.surfaces!.some((s) => s.kind === 'wood' && s.from < stick.x && s.to > stick.x)).toBe(true);
+      expect(alven.surfaces!.some((s) => s.kind === 'earth' && s.from < stick.x && s.to > stick.x)).toBe(true);
     });
 
     it('is climbed by walking: up the stumps, up the stick and over the top, and down to the lake', () => {
@@ -547,7 +574,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       if (seen[seen.length - 1] !== id) seen.push(id);
     }
     expect(seen).toEqual([
-      'alvenOutlet', 'alvenRaft', 'alvenCurrent', 'alvenLeaf', 'alvenCurrent', 'alvenStones',
+      'alvenOutlet', 'alvenRaft', 'alvenCurrent', 'alvenEddy', 'alvenStones',
       'alvenPappa/pappa', 'alvenScarf/pappa', 'alvenLifted/pappa', 'alvenLodge',
       'alvenLake', 'alvenBoard', 'alvenFly', 'alvenMoalven', 'alvenBillsta',
     ]);

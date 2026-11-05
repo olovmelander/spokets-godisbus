@@ -5,7 +5,8 @@ designed and well animated, "designade av en art designer och game developer som
 behind that work, what the real places look like, and the order of the work. `HANDOVER.md` records what is built.
 
 **About the pictures.** The research opened real photographs for the first time. They are other people's, mostly of
-unknown licence, and are references to look at. They are never committed, and never used as textures or plates.
+unknown licence, and are references to look at. They are never committed, and never used as textures or plates. On
+Olov's computer they are in `photos/landscape/aventyr2/`, which git ignores.
 Sources are listed at the end. The house in Billsta is drawn from Olov's picture alone. Nobody searches for it, and its
 address and number are never written, drawn or modelled.
 
@@ -18,7 +19,8 @@ address and number are never written, drawn or modelled.
 - Drips and gusts are the same timing in four chapters each, so the storm never gets harder to play.
 - The ball at Olympia and the bark at Flärken solve themselves: they block the path, with the verb on the button.
 - Best: Stormskogen (tiptoeing over frozen Klonk), Olympia (riding the free kick), Morgonen efter (naming Fjun).
-- Weakest: Älven (42 % on rails), Flärken (long, and no moment of its own), Byn (stations without an idea).
+- Weakest: Älven (42 % on rails), Flärken (long, and no moment of its own), Byn (stations without an idea). All three have
+  been mended since: the eddies, "Vad flyter?", and the bell cords that wake the street.
 - Players are told too much: "Just nu" gives the answer before the problem, and Elof captions the screen about 170 times.
 
 **Characters and animals.**
@@ -60,14 +62,15 @@ not a stadium (inferred).
   grey flashing runs across at wing height, over a dark recessed porch with a white post, a timber ramp with a tube
   rail, and a low concrete plinth on a gravel yard. Low wings at the sides, asymmetric. Frontage about 3.4 × height; the
   arch rises about 1:5.5 of its span and covers about 70 % of the frontage (inferred from the old photograph).
-- **Plain shapes stand in** for its script name, the two crests and the sponsor boards.
+- **Its name** stands over the windows in white letters in the game's own hand, as Olov asked. Plain walls stand in for
+  the two crests and the sponsor boards.
 - **The stand (seen):** seven or eight long tiers of warm tan timber on a low bank, under a thin dark roof on slender
   columns, with a curved beam at its end, three stairs and a ramp with white tube rails. It seats about 300, on the
   south long side (reported).
 - **Around it (seen):** a near-black wall of spruce and birch right behind the stand; a bare earth bank with long pale
   boards; blue bins; chain-link; a small goal beside the stand; a slim pole with one lamp head. Red store building with
   broad white trim and a red-and-white striped awning. A big pale gravel yard between hall and pitch.
-- **Not confirmed:** floodlights on the pitch. The game's four tall masts should wait for a picture, or for Olov.
+- **Floodlights:** Olov confirms the ground has them, so the masts stay, though no photograph shows them.
 - **The pitch** is 110 × 65 m (reported), so saturated flat turf with white lines. Mown stripes and worn goalmouths sell it.
 
 ### Flärkenbadet
@@ -82,8 +85,8 @@ A sheltered bay on a forested lake (seen). Volunteer-run (reported).
   flagpole; picnic tables; a white-and-salmon rowing boat; giant chess on gravel; a swing beam between two birches; a
   hand-painted board with a smiling wooden sun, which stands in here without lettering (seen).
 - **Across the water:** a dark forested ridge, a meadow strip at its foot, a treed point, red farms (seen).
-- **In October** the raft and jetties have probably come ashore (inferred; ask Olov). A raft that rocks and drags at its
-  moorings in the storm suits the chapter better than a fixed tower.
+- **The raft stays in the game (Olov's decision),** though it has probably come ashore by October in reality. A raft that
+  rocks and drags at its moorings in the storm suits the chapter better than a fixed tower.
 
 ### Älven
 
@@ -129,16 +132,42 @@ One pull request for each visible outcome.
 
 1. ~~Mormor and morfar.~~ Done.
 2. ~~The trail runs out: the night's low point.~~ Done.
-3. **Olympia:** the hall, the stand, the pitch, the forest wall, its own light and far picture.
-4. **Billsta:** the house, the barn, the road with its poles and ditch, a forest floor and dome for Billaberget.
-5. **Flärken:** the raft tower, the jetty, the sand and the red slide, the log hut, its own far shore.
-6. **Älven:** three rivers in one chapter, real water colours, the meadow mirror, the otter.
-7. **Own light and far picture for every chapter,** so that no two look alike; two moons mended.
-8. **Real puzzles:** "Vad flyter?" at Flärken, a real seesaw at Billsta, Olympia's and Flärken's answers given later, a
-   storm that gets harder, a river he plays.
-9. **The finale:** a family relay at the jetty, a real meeting, the old one moves, the cap goes back on.
-10. **Animals:** the fixes above, one owl, birds and life back in the calm and the morning.
-11. **Words:** the Swedish pass, fewer captions, the owl hint.
+3. **Olympia:** the hall, the stand, the pitch, its name, the forest behind it, its own light and the striped store are
+   built, and its ball is now a puzzle. Left: the gravel yard, the bank, and a truly dark forest wall (see `HANDOVER.md`).
+4. **Billsta:** the house and barn are built, in the private repository (see `HANDOVER.md`), with morfar's and mormor's
+   yard, spruces with hanging boughs and round logs, a forest floor behind it, poles along the road and a real car.
+   Left: the wires, which never reach the picture, the ditch's flowers, and a dome for Billaberget.
+5. **Flärken:** the raft tower, which now rocks, the sand, the rust-red slide, the log huts, the tarred hut, giant chess, the
+   painted sun and a lake's shore are built. It has its own far shore and the jetty's L.
+   Left: nothing large.
+6. **Älven:** its own far picture (ridges, hay meadows, poles, the log barn, the white column), black water and cream foam
+   wet logs in eddies he plays, white rapids, the forest torrent's first stretch and a lodge of sticks are built.
+7. ~~Own light and far picture for every chapter.~~ Done.
+8. **Real puzzles:** "Vad flyter?" at Flärken, the lever at Billsta, a storm that grows and a river he plays are built. All done:
+   Olympia's answer lies behind him.
+9. ~~The finale.~~ Done: the cap goes back on, one moon, he lights the family's lamps on the jetty unseen, and the two of them
+   live in the meeting.
+10. **Animals:** the otter is real, the fox's feet and the squirrel's no longer slide, birds land on a bough, the owl flies
+    off and in, and the old one leaps away. There is one owl now. Left: life back in the calm and the morning.
+11. **Words:** the worst lines are mended, and 28 idle captions are gone. Left: the owl hint.
+12. **The rooms:** the opening's door and Morgonen's aftermath are built. Left: the prologue's and the epilogue's rooms in
+    Äventyr 1, and grounding everywhere.
+
+## The second round: 5 November 2026
+
+Olov: "alla assets och djur och karaktärer och träd och stenar och kottar och grenar, ja allt som syns", and then the level
+design, the puzzles, the animations and the layout. Each chapter was drawn from its data as a side view, and walked in stills
+with the real figures.
+
+**What the walk found.** The levels were denser than the maps looked: the pace check, now run on Äventyr 2 too, found one
+stretch over five seconds. What let them down was what stood in them:
+- A thing he walks on was a block of ground in the wrong stuff: the rain barrel in black planks, the slide in stone, the
+  fence an olive box, the playhouse a green box, the steps with a V down their front. They are models now.
+- Water lay in pits with a lawn before it, so that Älven read as a tiled garden. A river is open water now.
+- The car, in four chapters, was a toy.
+
+**Left, in the order of what shows most:** Stormbyn's flat dark street; Pappa at the bridge, who stands on the bank and not on
+the bridge he lifts Elof from; the raft tower and Olympia's goals, which are still drawn in code.
 
 ## Sources
 

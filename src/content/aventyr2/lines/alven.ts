@@ -17,12 +17,11 @@ export const words: ChapterWords = {
     alRaftSeen: 'En liten flotte! Den kan bära mig.',
     alCurrent: 'Strömmen tar oss! Håll i dig, Klonk!',
     alOldOne: 'Där! Gamla trägubben på en stock!',
+    alLogsWait: 'Stockar i virveln! Jag väntar in dem.',
     alLeafSeen: 'Ett björklöv, som i rännstenen!',
     // 2. the stones, the bobbing logs and the eddy
-    alBob: 'Stocken guppar, men den håller!',
-    alEddy: 'Bakom stenen snurrar vattnet runt.',
     // 3. the bridge in Bredbyn, and Pappa's scarf
-    alBredbyn: 'Bredbyn! Här rinner två åar ihop.',
+    alBredbyn: 'Bredbyn igen! Där borta är Olympia.',
     alRapids: 'Forsen är alldeles för vild!',
     alPappaHere: 'Elof! Jag står här uppe på bron!',
     alScarfDown: 'Jag sänker ner min halsduk.',
@@ -32,7 +31,6 @@ export const words: ChapterWords = {
     alThanks: 'Tack, Pappa! Din halsduk är så varm.',
     alFollow: 'Vi kör efter dig längs ån.',
     // 4. the beaver's stumps and lodge, and an otter
-    alStumps: 'Gnagda stubbar! Här bor en bäver.',
     alLodge: 'En bäverhydda! Tyst, bävern sover.',
     alOtter: 'En utter! Den simmar ut mot stenen.',
     // 5. the lake, and the owl from the forest
@@ -66,6 +64,7 @@ export const words: ChapterWords = {
     alvenOutlet: { purpose: 'Följ ån efter lillgubben.', recap: 'Lillgubben föll i sjön, och ån tog honom. Gamla trägubben följde efter på en stock.' },
     alvenRaft: { purpose: 'Kliv på flotten vid stranden.', recap: 'Ån är för bred att hoppa över. En liten flotte ligger vid stranden.' },
     alvenCurrent: { purpose: 'Åk med strömmen nerför ån.', recap: 'Strömmen bär mig. Klonk flyter bredvid, för trä flyter.' },
+    alvenEddy: { purpose: 'Vänta in stockarna och hoppa.', recap: 'Vattnet snurrar stockarna fram och tillbaka i virveln.' },
     alvenLeaf: { purpose: 'Kliv på björklövet.', recap: 'Gamla trägubben flyter före på sin stock och lämnar godis åt mig.' },
     alvenStones: { purpose: 'Hoppa på stenarna och stockarna.', recap: 'Stockarna guppar i strömmen, men de håller mig.' },
     alvenPappa: { purpose: 'Ropa på Pappa vid bron.', recap: 'Forsen vid bron i Bredbyn är för vild. Pappa står uppe på bron.' },

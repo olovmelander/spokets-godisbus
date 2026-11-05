@@ -1,6 +1,6 @@
 import {
-  BoxGeometry, BufferGeometry, Color, ConeGeometry, CylinderGeometry, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial,
-  IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, SphereGeometry, Vector3,
+  BoxGeometry, BufferGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, ExtrudeGeometry, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial,
+  IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, TorusGeometry, Vector3,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Storm } from '../../sim/types';
@@ -8,7 +8,7 @@ import type { Storm } from '../../sim/types';
 /**
  * The big things of Äventyr 2's places, built in code (docs/aventyr-2.md): Billsta's white house with its two
  * gables and the red barn beside it, Olympia's goals, floodlight masts, stand and clubhouse, Flärken's diving tower
- * and changing huts, the garden's playhouse, birches and a car. Each is an interpretation in plain shapes, never a
+ * and changing huts, birches and a car. Each is an interpretation in plain shapes, never a
  * survey: no house number, no sign, no letter and no logotype anywhere. Sizes are in EL, one Elof length of 15 cm,
  * so a real house towers over him; the pictures stand behind the play plane and are never ground.
  *
@@ -21,7 +21,7 @@ export interface Building { group: Group; panes: MeshBasicMaterial | null; def: 
 
 const tint = new Color();
 /** A part in one colour, ready to merge. */
-function paint(geometry: BufferGeometry, colour: string): BufferGeometry {
+export function paint(geometry: BufferGeometry, colour: string): BufferGeometry {
   const part = geometry.index ? geometry.toNonIndexed() : geometry;
   tint.set(colour);
   const count = part.getAttribute('position').count;
@@ -102,18 +102,6 @@ function barn(def: BuildingDef) {
   return { parts, panes };
 }
 
-function playhouse(def: BuildingDef) {
-  // The garden's green playhouse, white-trimmed, with a red door: his own house's size to him.
-  const w = def.width ?? 12;
-  const h = def.height ?? 8;
-  const d = 9;
-  const parts: BufferGeometry[] = [box(w, h, d, 0, h / 2, 0, '#4f7a4a'), ...roof(w, h * 0.3, d, 0, h, 0, '#3a2c26', 0.6)];
-  parts.push(box(w * 0.22, h * 0.66, 0.3, -w * 0.18, h * 0.33, d / 2 + 0.2, '#b03a2e'));
-  const panes = [new PlaneGeometry(w * 0.2, w * 0.2).translate(w * 0.22, h * 0.6, d / 2 + 0.25)];
-  parts.push(box(w * 0.25, w * 0.25, 0.2, w * 0.22, h * 0.6, d / 2 + 0.15, '#f0ece2'));
-  return { parts, panes };
-}
-
 function goal(def: BuildingDef) {
   // A small goal for training, its mouth towards where he comes from: white posts, a crossbar going away into the
   // picture, and the net's frame behind. The net itself is drawn as fine lines of white.
@@ -134,10 +122,50 @@ function goal(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
+/**
+ * The pitch, from its near touchline back towards the stand: mown stripes across it and its white lines, flat on the
+ * ground in one shape. `width` is along the path. The lines stand a little over the stripes, and the goals are the
+ * chapter's own. `marks`, from the pitch's middle: where the halfway line and its circle lie, a goal's box, and how
+ * far it runs on towards the camera past the path, so that he runs on the pitch and not along its edge.
+ */
+function pitch(def: BuildingDef) {
+  const w = def.width ?? 130;
+  const deep = def.height ?? 70;
+  const halfway = def.marks?.halfway ?? 0;
+  const box6 = def.marks?.box ?? null;
+  const front = def.marks?.front ?? 0;
+  const flat = (wide: number, long: number, x: number, z: number, y: number, colour: string) => box(wide, 0.04, long, x, y, z, colour);
+  const parts: BufferGeometry[] = [];
+  const stripe = 9;
+  for (let i = 0; i * stripe < w; i++) parts.push(flat(stripe, deep + front, -w / 2 + (i + 0.5) * stripe, (front - deep) / 2, 0.02, i % 2 ? '#2a6630' : '#3f8c3e'));
+  const line = '#dfe8e0';
+  const y = 0.06;
+  parts.push(flat(w, 0.4, 0, front - 1.2, y, line), flat(w, 0.4, 0, -deep + 2, y, line));
+  parts.push(flat(0.4, deep - 3, halfway, -deep / 2 - 0.3, y, line));
+  // The centre circle: lying on the turf behind the flooded part of it.
+  const middle = -deep * 0.42;
+  const radius = 11;
+  const sides = 48;
+  for (let i = 0; i < sides; i++) {
+    const a = (i / sides) * Math.PI * 2;
+    parts.push(flat(0.4, (Math.PI * 2 * radius) / sides + 0.1, halfway + Math.cos(a) * radius, middle + Math.sin(a) * radius, y, line).rotateY(0));
+    const seg = parts.pop()!;
+    seg.translate(-(halfway + Math.cos(a) * radius), 0, -(middle + Math.sin(a) * radius));
+    seg.rotateY(-a);
+    seg.translate(halfway + Math.cos(a) * radius, 0, middle + Math.sin(a) * radius);
+    parts.push(seg);
+  }
+  if (box6) {
+    parts.push(flat(box6.long, 0.4, box6.x - box6.long / 2, -deep * 0.2, y, line), flat(box6.long, 0.4, box6.x - box6.long / 2, -deep * 0.62, y, line));
+    parts.push(flat(0.4, deep * 0.42, box6.x - box6.long, -deep * 0.41, y, line));
+  }
+  return { parts, panes: [] };
+}
+
 function floodlight(def: BuildingDef) {
   // A floodlight mast, dark in the storm: the power is out. A rack of lamps at its top, high over the stand.
   const h = def.height ?? 110;
-  const parts: BufferGeometry[] = [post(0.9, h, 0, 0, 0, '#8a9096', 10)];
+  const parts: BufferGeometry[] = [post(0.5, h, 0, 0, 0, '#8a9096', 10)];
   parts.push(box(10, 5, 1.4, 0, h + 1, 0.6, '#5a5e64'));
   for (let i = 0; i < 6; i++) parts.push(box(1.4, 1.4, 0.8, -3.75 + i * 1.5, h + 1.8 - (i % 2) * 2.2, 1.4, '#d8dce0'));
   return { parts, panes: [] };
@@ -174,29 +202,56 @@ function clubhouse(def: BuildingDef) {
 }
 
 function tower(def: BuildingDef) {
-  // A wooden diving tower in the lake: four legs, a ladder, a platform at its top with a rail.
+  // Flärkenbadet's tower stands on a raft moored in the bay: a dark steel lattice with a ladder and stepped platforms,
+  // and no diving board. The raft is square and flat on the water.
   const h = def.height ?? 20;
   const w = def.width ?? 8;
+  const steel = '#343a40';
+  const rail = '#8a9096';
   const parts: BufferGeometry[] = [];
-  for (const x of [-w / 2, w / 2]) for (const z of [-3, 3]) parts.push(post(0.4, h + 3, x, -3, z, '#6a5442'));
-  parts.push(box(w + 2, 0.8, 8, 0, h, 0, '#8a6a4c'));
-  parts.push(box(w + 2, 0.3, 0.3, 0, h + 3, -4, '#e6e2d8'));
-  for (const x of [-w / 2 - 1, w / 2 + 1]) parts.push(box(0.3, 3, 0.3, x, h + 1.5, -4, '#e6e2d8'));
-  // A diving board out over the water.
-  parts.push(box(10, 0.4, 2, w / 2 + 5, h + 0.6, 1, '#e8e2d2'));
-  for (let y = 1; y < h; y += 1.6) parts.push(box(2, 0.2, 0.25, -w / 2 - 1.4, y, 3.4, '#b8bcc0'));
-  for (const side of [-0.95, 0.95]) parts.push(box(0.25, h, 0.25, -w / 2 - 1.4 + side, h / 2, 3.4, '#b8bcc0'));
+  parts.push(box(w + 11, 1.1, 11, 0, -2.6, 0, '#4a4e50'), box(w + 11.4, 0.3, 11.4, 0, -2, 0, '#6a6e6c'));
+  for (const x of [-w / 2 - 0.6, w / 2 + 0.6]) for (const z of [-3.2, 3.2]) parts.push(post(0.22, h + 2, x, -2, z, steel));
+  // The lattice: crossed braces up each side, level by level.
+  const levels = Math.max(3, Math.round(h / 1.3));
+  const step = h / levels;
+  for (let i = 0; i < levels; i++) {
+    const y = -2 + i * step * 1.15 + step * 0.55;
+    for (const z of [-3.2, 3.2]) {
+      const long = Math.hypot(w + 1.2, step);
+      const angle = Math.atan2(step, w + 1.2);
+      parts.push(tilted(long, 0.14, 0.14, 0, angle, 0, y, z, steel), tilted(long, 0.14, 0.14, 0, -angle, 0, y, z, steel));
+    }
+    parts.push(box(w + 1.4, 0.12, 0.12, 0, y + step * 0.55, -3.2, steel), box(w + 1.4, 0.12, 0.12, 0, y + step * 0.55, 3.2, steel));
+  }
+  // The platforms, stepping up, and the white-grey rail round the top.
+  parts.push(box(w + 2.2, 0.35, 7.6, 0, h, 0, '#50565c'), box(w * 0.6, 0.3, 7.4, -w * 0.3, h * 0.55, 0, '#50565c'));
+  parts.push(box(w + 2.2, 0.16, 0.16, 0, h + 2.4, -3.8, rail));
+  for (const x of [-w / 2 - 1, 0, w / 2 + 1]) parts.push(box(0.16, 2.4, 0.16, x, h + 1.2, -3.8, rail));
+  // Its ladder.
+  for (let y = 0; y < h; y += 1.3) parts.push(box(2, 0.16, 0.2, -w / 2 - 1.4, y, 3.4, rail));
+  for (const side of [-0.95, 0.95]) parts.push(box(0.2, h + 2, 0.2, -w / 2 - 1.4 + side, h / 2 - 1, 3.4, rail));
   return { parts, panes: [] };
 }
 
 function hut(def: BuildingDef) {
-  // A changing hut by the beach: painted boards, a door ajar, a little roof.
+  // The changing hut: honey-brown round logs, each its own, under the deep eaves of a pale grey-blue metal roof.
   const w = def.width ?? 10;
   const h = def.height ?? 15;
   const d = 8;
-  const parts: BufferGeometry[] = [box(w, h, d, 0, h / 2, 0, '#6a8aa4'), ...roof(w, 3, d, 0, h, 0, '#3a3c40', 0.5)];
-  for (let x = -w / 2 + 0.8; x < w / 2; x += 1.6) parts.push(box(0.2, h, 0.25, x, h / 2, d / 2 + 0.1, '#58748c'));
-  parts.push(box(w * 0.4, h * 0.72, 0.4, 0, h * 0.36, d / 2 + 0.3, '#e6e2d8'));
+  const tar = def.tar === true;
+  const parts: BufferGeometry[] = [box(w - 0.6, h, d - 0.6, 0, h / 2, 0, tar ? '#1e1a18' : '#8a6232'), gable(w - 0.2, 3, d - 0.2, 0, h, 0, tar ? '#26211e' : '#a97a42'), ...roof(w, 3, d, 0, h, 0, '#7a8c9a', 0.9)];
+  const tones = tar ? ['#2a2522', '#231f1c', '#302a26'] : ['#b98a4e', '#a97a42', '#c49658'];
+  const logs = Math.max(6, Math.round(h / 0.62));
+  for (let i = 0; i < logs; i++) {
+    const y = (i + 0.5) * (h / logs);
+    const r = (h / logs) * 0.54;
+    parts.push(paint(new CylinderGeometry(r, r, w + 0.5, 12).rotateZ(Math.PI / 2).translate(0, y, d / 2 - 0.3), tones[i % 3]!));
+    parts.push(paint(new CylinderGeometry(r, r, d + 0.5, 12).rotateX(Math.PI / 2).translate(w / 2 - 0.3, y, 0), tones[(i + 1) % 3]!));
+    parts.push(paint(new CylinderGeometry(r, r, d + 0.5, 12).rotateX(Math.PI / 2).translate(-w / 2 + 0.3, y, 0), tones[(i + 2) % 3]!));
+  }
+  parts.push(box(w * 0.36, h * 0.7, 0.4, 0, h * 0.35, d / 2 + 0.4, '#5a3e22'));
+  // A tarred hut has white trim round its door and its corners.
+  if (tar) parts.push(box(w * 0.44, 0.5, 0.2, 0, h * 0.72, d / 2 + 0.62, '#e4e0d6'), box(0.5, h * 0.72, 0.2, -w * 0.2, h * 0.36, d / 2 + 0.62, '#e4e0d6'), box(0.5, h * 0.72, 0.2, w * 0.2, h * 0.36, d / 2 + 0.62, '#e4e0d6'));
   return { parts, panes: [] };
 }
 
@@ -260,22 +315,77 @@ function spruce(def: BuildingDef) {
   // A spruce of the forest by the road: a dark narrow cone in tiers, drooping, its trunk showing at the foot.
   const h = def.height ?? 60;
   const parts: BufferGeometry[] = [paint(new CylinderGeometry(0.5, 1.1, h * 0.3, 7).translate(0, h * 0.15, 0), '#4a3a2c')];
-  const tiers = 7;
+  // Many tiers, each hanging in points at its edge: a spruce's boughs, not a stack of cones.
+  const tiers = 11;
   for (let i = 0; i < tiers; i++) {
     const t = i / tiers;
-    const r = (h * 0.2) * (1 - t * 0.85);
-    const tall = h * 0.2;
-    parts.push(paint(new ConeGeometry(r, tall, 9).translate(0, h * 0.18 + t * h * 0.74 + tall / 2, 0), i % 2 ? '#1f3a2a' : '#24402e'));
+    const r = (h * 0.21) * (1 - t * 0.9);
+    const tall = h * 0.15;
+    const tier = new ConeGeometry(r, tall, 14, 1, true).toNonIndexed();
+    const at = tier.getAttribute('position');
+    for (let v = 0; v < at.count; v++) {
+      if (at.getY(v) > 0) continue;
+      const a = Math.atan2(at.getZ(v), at.getX(v));
+      const k = Math.round(((a + Math.PI) / (Math.PI * 2)) * 14) % 2;
+      at.setXYZ(v, at.getX(v) * (k ? 1.08 : 0.62), at.getY(v) - (k ? 0.14 : 0) * tall, at.getZ(v) * (k ? 1.08 : 0.62));
+    }
+    tier.computeVertexNormals();
+    parts.push(paint(tier.translate(0, h * 0.2 + t * h * 0.72 + tall / 2, 0), i % 3 === 0 ? '#1d3829' : i % 3 === 1 ? '#254531' : '#1a3226'));
   }
   return { parts, panes: [] };
 }
 
+/** How long the model of the car is, in the metres it is made in. */
+const CAR_LONG = 4.7;
+
 function car(def: BuildingDef) {
-  // The family's car: no badge, no plate, only its shape. Slate blue, because red is the candy's (art bible §2.2).
+  // The family's estate car: no badge, no plate, only its shape. Slate blue, because red is the candy's (art bible §2.2).
   const w = def.width ?? 29;
-  const parts: BufferGeometry[] = [box(w, 6, 11, 0, 5, 0, '#3b4f66'), box(w * 0.55, 5, 10, -w * 0.05, 10.5, 0, '#34465b')];
-  for (const x of [-w * 0.32, w * 0.32]) for (const z of [-5, 5]) parts.push(paint(new CylinderGeometry(2.6, 2.6, 1.6, 14).rotateX(Math.PI / 2).translate(x, 2.6, z), '#1c1c1e'));
-  const panes = [new PlaneGeometry(w * 0.45, 3.6).translate(-w * 0.05, 10.8, 5.05)];
+  const side = (x: number) => x * w;
+  // Its side, drawn once and pushed out to its width: low nose, raked windscreen, long roof, upright tail.
+  const shape = new Shape();
+  shape.moveTo(side(-0.5), 2.4);
+  shape.quadraticCurveTo(side(-0.505), 4.4, side(-0.495), 5.2);
+  shape.quadraticCurveTo(side(-0.49), 8.6, side(-0.44), 9.8);
+  shape.quadraticCurveTo(side(-0.4), 10.5, side(-0.3), 10.6);
+  shape.lineTo(side(0.06), 10.5);
+  shape.quadraticCurveTo(side(0.14), 10.3, side(0.19), 9.2);
+  shape.lineTo(side(0.28), 7.1);
+  shape.quadraticCurveTo(side(0.4), 6.6, side(0.48), 5.9);
+  shape.quadraticCurveTo(side(0.51), 5, side(0.5), 2.4);
+  shape.closePath();
+  const body = new ExtrudeGeometry(shape, { depth: 11, bevelEnabled: true, bevelSize: 0.45, bevelThickness: 0.5, bevelSegments: 2, curveSegments: 8 }).translate(0, 0, -5.5);
+  const parts: BufferGeometry[] = [paint(body.toNonIndexed(), '#3f5670')];
+  const NEAR = 6.03;
+  const dark = '#1a1d22';
+  // The dark sill, and the seams of its doors, on the side that shows.
+  parts.push(box(w * 0.94, 0.9, 0.08, 0, 2.5, NEAR, dark));
+  for (const x of [-0.15, 0.07]) parts.push(box(0.14, 6.6, 0.06, side(x), 6, NEAR, '#2a3a4c'));
+  for (const x of [-0.11, 0.11]) parts.push(box(1.4, 0.3, 0.1, side(x), 7.3, NEAR, '#8a929c'));
+  // Wheels in their arches: a dark arch, a tyre, a pale rim and its hub.
+  for (const x of [-0.31, 0.32]) {
+    parts.push(paint(new CircleGeometry(3.3, 20).translate(side(x), 2.9, NEAR + 0.01), dark));
+    for (const z of [-5.2, 5.2]) parts.push(paint(new CylinderGeometry(2.7, 2.7, 1.8, 20).rotateX(Math.PI / 2).translate(side(x), 2.7, z), '#14161a'));
+    parts.push(paint(new CylinderGeometry(1.5, 1.5, 0.3, 16).rotateX(Math.PI / 2).translate(side(x), 2.7, 6.2), '#9aa2ac'));
+    parts.push(paint(new CylinderGeometry(0.5, 0.5, 0.36, 10).rotateX(Math.PI / 2).translate(side(x), 2.7, 6.26), '#4a5058'));
+  }
+  // Roof rails, a lamp at the nose and one at the tail.
+  parts.push(box(w * 0.46, 0.3, 0.3, side(-0.14), 11.1, 4.4, '#2a2e34'), box(w * 0.46, 0.3, 0.3, side(-0.14), 11.1, -4.4, '#2a2e34'));
+  parts.push(box(1.6, 1, 0.1, side(0.46), 5.4, NEAR, '#d6d8cc'), box(0.9, 2.2, 0.1, side(-0.485), 6.6, NEAR, '#6e2a24'));
+  // Its side windows, where the model's are (art/blender/a2-props.py), in the car's own metres.
+  const metre = w / CAR_LONG;
+  const pane = (points: readonly (readonly [number, number])[]) => {
+    const glass = new Shape();
+    glass.moveTo(points[0]![0] * metre, points[0]![1] * metre);
+    for (const [x, y] of points.slice(1)) glass.lineTo(x * metre, y * metre);
+    glass.closePath();
+    return new ShapeGeometry(glass).translate(0, 0, NEAR + 0.02);
+  };
+  const panes = [
+    pane([[-2.02, 0.98], [-2.03, 1.37], [-1.3, 1.41], [-1.3, 0.97]]),
+    pane([[-1.22, 0.97], [-1.22, 1.41], [-0.36, 1.42], [-0.36, 0.96]]),
+    pane([[-0.28, 0.96], [-0.28, 1.42], [0.2, 1.42], [0.96, 1.01], [0.96, 0.95]]),
+  ];
   return { parts, panes };
 }
 
@@ -321,8 +431,19 @@ function woodshed(def: BuildingDef) {
   const d = 10;
   const parts: BufferGeometry[] = [box(w, h, 0.6, 0, h / 2, -d / 2, '#7a3428'), ...roof(w, 3, d, 0, h, 0, '#5a4a3c', 0.6)];
   for (const x of [-w / 2, w / 2]) parts.push(box(0.6, h, d, x, h / 2, 0, '#7a3428'));
-  for (let row = 0; row < 7; row++) for (let i = 0; i < Math.floor(w / 1.4) - 1; i++) {
-    parts.push(paint(new CylinderGeometry(0.62, 0.62, d * 0.8, 6).rotateX(Math.PI / 2).translate(-w / 2 + 1.4 + i * 1.4 + (row % 2) * 0.7, 0.7 + row * 1.25, 0), row % 3 ? '#c8a878' : '#b8986a'));
+  // Round logs, each a little its own: bark, and the pale sawn end with its darker ring.
+  let seed = 41;
+  const next = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let row = 0; row < 7; row++) {
+    for (let i = 0; i < Math.floor(w / 1.4) - 1; i++) {
+      const r = 0.52 + next() * 0.14;
+      const x = -w / 2 + 1.4 + i * 1.4 + (row % 2) * 0.7 + (next() - 0.5) * 0.12;
+      const y = 0.7 + row * 1.2 + (next() - 0.5) * 0.08;
+      const end = d * 0.4 + (next() - 0.5) * 0.3;
+      parts.push(paint(new CylinderGeometry(r, r, d * 0.8, 11).rotateX(Math.PI / 2).translate(x, y, 0), next() < 0.5 ? '#4e3a2c' : '#5e4636'));
+      parts.push(paint(new CircleGeometry(r * 0.97, 11).translate(x, y, end + 0.03), next() < 0.5 ? '#c9a978' : '#b99a6c'));
+      parts.push(paint(new CircleGeometry(r * 0.62, 9).translate(x, y, end + 0.05), '#a98a5e'));
+    }
   }
   return { parts, panes: [] };
 }
@@ -354,14 +475,54 @@ function swings(def: BuildingDef) {
 }
 
 function slide(def: BuildingDef) {
-  // A slide: a ladder up to a little platform and the chute down, shiny in the rain.
+  // The water slide: rust-red steel, its ladder up to a little platform, and the chute running down.
   const h = def.height ?? 10;
   const w = def.width ?? 16;
-  const parts: BufferGeometry[] = [box(3, 0.5, 3, -w / 2 + 1.5, h, 0, '#c84a3a')];
-  for (const z of [-1.4, 1.4]) parts.push(box(0.3, h, 0.3, -w / 2, h / 2, z, '#3a6a8a'));
-  for (let y = 1.2; y < h; y += 1.5) parts.push(box(0.2, 0.2, 2.8, -w / 2, y, 0, '#3a6a8a'));
+  const steel = '#7c4436';
+  const parts: BufferGeometry[] = [box(3, 0.4, 3, -w / 2 + 1.5, h, 0, steel)];
+  for (const z of [-1.4, 1.4]) parts.push(box(0.26, h, 0.26, -w / 2, h / 2, z, steel), box(0.26, h, 0.26, -w / 2 + 3, h / 2, z, steel));
+  for (let y = 1.2; y < h; y += 1.4) parts.push(box(0.2, 0.18, 2.8, -w / 2, y, 0, '#8a9096'));
   const run = Math.hypot(w - 3, h);
-  parts.push(tilted(run, 0.4, 2.6, 0, -Math.atan2(h, w - 3), 1.5, h / 2, 0, '#e8c048'));
+  const angle = -Math.atan2(h, w - 3);
+  parts.push(tilted(run, 0.3, 2.4, 0, angle, 1.5, h / 2, 0, '#945040'));
+  for (const z of [-1.2, 1.2]) parts.push(tilted(run, 0.7, 0.2, 0, angle, 1.5, h / 2 + 0.25, z, steel));
+  return { parts, panes: [] };
+}
+
+function chess(def: BuildingDef) {
+  // Giant chess on its gravel pad: black and white squares, and a few pieces standing as the game was left.
+  const size = def.width ?? 14;
+  const n = 8;
+  const cell = size / n;
+  const parts: BufferGeometry[] = [box(size + 1.6, 0.2, size + 1.6, 0, 0.1, 0, '#8a8478')];
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    parts.push(box(cell, 0.1, cell, -size / 2 + (i + 0.5) * cell, 0.24, -size / 2 + (j + 0.5) * cell, (i + j) % 2 ? '#e6e2d6' : '#26282c'));
+  }
+  const piece = (x: number, z: number, colour: string, tall: number) => {
+    parts.push(paint(new CylinderGeometry(cell * 0.26, cell * 0.36, tall, 12).translate(x, 0.3 + tall / 2, z), colour));
+    parts.push(paint(new SphereGeometry(cell * 0.24, 12, 8).translate(x, 0.3 + tall + cell * 0.1, z), colour));
+  };
+  for (const [i, j, tall] of [[1, 1, 2.2], [2, 5, 1.6], [4, 2, 2.8], [6, 6, 1.6], [5, 4, 2.2], [3, 6, 2.8]] as const) {
+    piece(-size / 2 + (i + 0.5) * cell, -size / 2 + (j + 0.5) * cell, (i + j) % 2 ? '#26282c' : '#e6e2d6', tall);
+  }
+  return { parts, panes: [] };
+}
+
+function sunboard(def: BuildingDef) {
+  // The bathing place's painted board: the lake, the ridge and a smiling wooden sun. No word on it.
+  const w = def.width ?? 12;
+  const h = def.height ?? 8;
+  const parts: BufferGeometry[] = [box(w + 0.8, h + 0.8, 0.5, 0, h / 2 + 5, -0.1, '#6a4a2c'), box(w, h * 0.45, 0.3, 0, 5 + h * 0.225, 0.2, '#3f6a8a')];
+  parts.push(box(w, h * 0.55, 0.3, 0, 5 + h * 0.725, 0.2, '#b8d0dc'), box(w, h * 0.16, 0.34, 0, 5 + h * 0.5, 0.2, '#3a5a40'));
+  for (const x of [-w / 2 + 0.6, w / 2 - 0.6]) parts.push(post(0.3, 5.4, x, 2.7, -0.3, '#5a3e22'));
+  const sun = { x: w * 0.22, y: 5 + h * 0.74, r: h * 0.17 };
+  parts.push(paint(new CircleGeometry(sun.r, 16).translate(sun.x, sun.y, 0.4), '#d9a84e'));
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    parts.push(box(sun.r * 0.5, sun.r * 0.14, 0.05, sun.x + Math.cos(a) * sun.r * 1.35, sun.y + Math.sin(a) * sun.r * 1.35, 0.4, '#d9a84e').rotateZ(0));
+  }
+  parts.push(box(sun.r * 0.16, sun.r * 0.16, 0.05, sun.x - sun.r * 0.34, sun.y + sun.r * 0.2, 0.46, '#3a2a1c'), box(sun.r * 0.16, sun.r * 0.16, 0.05, sun.x + sun.r * 0.34, sun.y + sun.r * 0.2, 0.46, '#3a2a1c'));
+  parts.push(paint(new TorusGeometry(sun.r * 0.46, sun.r * 0.06, 6, 12, Math.PI).rotateZ(Math.PI).translate(sun.x, sun.y - sun.r * 0.04, 0.46), '#3a2a1c'));
   return { parts, panes: [] };
 }
 
@@ -392,6 +553,19 @@ function lodge(def: BuildingDef) {
   const w = def.width ?? 24;
   const h = def.height ?? 9;
   const parts: BufferGeometry[] = [paint(new SphereGeometry(1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(w / 2, h, w / 3), '#5a4632')];
+  // Layer on layer of gnawed sticks over the dome, each lying its own way, their cut ends pale.
+  const STICKS = 90;
+  for (let i = 0; i < STICKS; i++) {
+    const a = 0.12 + (i * 2.4) % (Math.PI - 0.24);
+    const up = (i % 9) / 9;
+    const long = 4 + (i % 5) * 1.3;
+    const lean = ((i * 7) % 11) / 11 * 2.4 - 1.2;
+    const x = Math.cos(a) * (w / 2) * Math.cos(up * 1.2);
+    const y = h * Math.sin(up * 1.2) + 0.5;
+    const z = (w / 3) * Math.cos(up * 1.2) * Math.sin(a) + 0.2;
+    parts.push(paint(new CylinderGeometry(0.18, 0.26, long, 5).rotateZ(lean).translate(x, y, z), i % 3 === 0 ? '#7a6248' : '#4a3a2a'));
+    if (i % 3 === 0) parts.push(paint(new SphereGeometry(0.2, 5, 4).translate(x - Math.sin(lean) * long / 2, y + Math.cos(lean) * long / 2, z), '#c2a678'));
+  }
   for (let i = 0; i < 18; i++) {
     const a = (i / 18) * Math.PI;
     parts.push(paint(new CylinderGeometry(0.25, 0.3, w * 0.5, 5).rotateZ(Math.PI / 2 - a + 0.3 * Math.sin(i)).translate(Math.cos(a) * w * 0.3, Math.sin(a) * h * 0.8, (i % 3 - 1) * 2), '#8a6a48'));
@@ -435,8 +609,77 @@ function cliff(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
+function jettyArm(def: BuildingDef) {
+  // The other leg of Flärken's L: a pontoon jetty low on the water, running out behind the path, with a life ring on a post.
+  const long = def.width ?? 22;
+  const wide = 4;
+  const parts: BufferGeometry[] = [];
+  for (let z = 0, i = 0; z < long; z += 0.9, i++) parts.push(box(wide, 0.16, 0.8, 0, 0.1, -z - 0.45, i % 3 === 0 ? '#74746a' : i % 3 === 1 ? '#6a6a60' : '#7c7c70'));
+  for (const side of [-1, 1]) parts.push(box(0.24, 0.3, long, side * (wide / 2 - 0.3), -0.1, -long / 2, '#3e3e38'));
+  for (let z = 3; z < long; z += 6) parts.push(box(wide - 0.5, 0.8, 3.2, 0, -0.52, -z, '#2c3036'));
+  for (const z of [long * 0.45, long - 0.5]) for (const side of [-1, 1]) parts.push(paint(new CylinderGeometry(0.13, 0.15, 2.2, 8).translate(side * (wide / 2 - 0.1), 0.9, -z), '#54504a'));
+  // The life ring on the last post, white with dark bands.
+  parts.push(paint(new TorusGeometry(0.62, 0.17, 8, 18).translate(wide / 2 - 0.1, 1.3, -long + 0.32), '#e4e0d6'));
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) parts.push(box(0.26, 0.38, 0.38, wide / 2 - 0.1 + Math.cos(a) * 0.62, 1.3 + Math.sin(a) * 0.62, -long + 0.32, '#8a3a30'));
+  return { parts, panes: [] };
+}
+
+function pole(def: BuildingDef) {
+  // A country road's wooden power pole, with a lamp on an arm, and its wires on to the next one, sagging across the sky.
+  const h = def.height ?? 26;
+  const span = def.width ?? 40;
+  const wood = '#7a6048';
+  const parts: BufferGeometry[] = [paint(new CylinderGeometry(0.4, 0.62, h, 8).translate(0, h / 2, 0), wood), box(7.5, 0.5, 0.5, 0, h - 1.1, 0, wood)];
+  parts.push(box(4.4, 0.26, 0.26, 2.2, h - 4.4, 1, '#54585e'), box(1.8, 0.42, 0.8, 4.4, h - 4.6, 1, '#2a2c30'));
+  const LINKS = 14;
+  const sagged = (t: number) => h - 0.7 - 4 * t * (1 - t) * 2.4;
+  for (const z of [-3.4, 0, 3.4]) {
+    for (let i = 0; i < LINKS; i++) {
+      const [a, b] = [i / LINKS, (i + 1) / LINKS];
+      const [dx, dy] = [span * (b - a), sagged(b) - sagged(a)];
+      parts.push(tilted(Math.hypot(dx, dy) + 0.04, 0.09, 0.09, 0, Math.atan2(dy, dx), span * (a + b) / 2, (sagged(a) + sagged(b)) / 2, z, '#2a2e36'));
+    }
+  }
+  // Its lamp's glass, under the head.
+  const panes = [new PlaneGeometry(1.5, 0.7).rotateX(Math.PI / 2).translate(4.4, h - 4.83, 1)];
+  return { parts, panes };
+}
+
+function trestleTable(def: BuildingDef) {
+  // A plain table on two trestles, the club's for its kit: open underneath, so that he is seen as he runs under it.
+  const w = def.width ?? 4;
+  const h = def.height ?? 1.1;
+  const parts: BufferGeometry[] = [box(w, 0.14, 2.2, 0, h - 0.07, -0.2, '#8a7458')];
+  for (const x of [-w / 2 + 0.3, w / 2 - 0.3]) for (const z of [-1.2, 0.8]) parts.push(box(0.14, h, 0.14, x, h / 2, z, '#6a5640'));
+  return { parts, panes: [] };
+}
+
+function store(def: BuildingDef) {
+  // Olympia's little store: red boards under broad white trim, and a red-and-white striped awning over its counter.
+  const w = def.width ?? 20;
+  const h = def.height ?? 11;
+  const d = 9;
+  const parts: BufferGeometry[] = [box(w, h, d, 0, h / 2, 0, '#6e2622'), gable(w, 3.4, d, 0, h, 0, '#6e2622'), ...roof(w, 3.4, d, 0, h, 0, '#3a3e44')];
+  for (let x = -w / 2 + 0.9; x < w / 2; x += 1.8) parts.push(box(0.1, h - 0.4, 0.06, x, h / 2, d / 2 + 0.02, '#541c1a'));
+  // The white trim: under the eaves, at the corners, and round the counter's opening.
+  parts.push(box(w + 0.5, 0.8, 0.3, 0, h - 0.3, d / 2 + 0.1, '#e4e0d6'));
+  for (const x of [-w / 2, w / 2]) parts.push(box(0.7, h, 0.3, x, h / 2, d / 2 + 0.1, '#e4e0d6'));
+  const counter = { x: -w * 0.1, wide: w * 0.56, high: h * 0.36, at: h * 0.52 };
+  parts.push(box(counter.wide + 1, counter.high + 1, 0.2, counter.x, counter.at, d / 2 + 0.08, '#e4e0d6'));
+  parts.push(box(counter.wide + 1.4, 0.5, 2, counter.x, counter.at - counter.high / 2 - 0.7, d / 2 + 1, '#d8d2c4'));
+  // The door, and the awning: one sloping stripe after the other.
+  parts.push(box(w * 0.14, h * 0.72, 0.2, w * 0.33, h * 0.36, d / 2 + 0.08, '#e4e0d6'), box(w * 0.11, h * 0.66, 0.26, w * 0.33, h * 0.33, d / 2 + 0.1, '#3a3e44'));
+  const STRIPES = 10;
+  for (let i = 0; i < STRIPES; i++) {
+    const wide = (counter.wide + 2) / STRIPES;
+    parts.push(tilted(wide, 0.2, 3.6, 0.5, 0, counter.x - (counter.wide + 2) / 2 + (i + 0.5) * wide, counter.at + counter.high / 2 + 0.4, d / 2 + 1.7, i % 2 ? '#e8e2d6' : '#8a2a24'));
+  }
+  const panes = [new PlaneGeometry(counter.wide, counter.high).translate(counter.x, counter.at, d / 2 + 0.2)];
+  return { parts, panes };
+}
+
 const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGeometry[]; panes: BufferGeometry[] }> = {
-  villa, barn, playhouse, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
+  jettyArm, pole, store, trestleTable, pitch, chess, sunboard, villa, barn, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
   church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce,
 };
 
@@ -445,6 +688,7 @@ export function building(def: BuildingDef): Building {
   const { parts, panes } = BUILD[def.kind](def);
   const group = new Group();
   group.name = `building:${def.kind}`;
+  if (def.model) group.userData.model = def.model;
   group.add(new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.85 })));
   let paneMaterial: MeshBasicMaterial | null = null;
   if (panes.length) {
@@ -460,11 +704,36 @@ export function building(def: BuildingDef): Building {
     paneMaterial = glass();
     group.add(new Mesh(mergeGeometries(panes.map((p) => { p.deleteAttribute('uv'); return p; })), paneMaterial));
   }
+  // A tree of the nature kit, one of a few by where it stands, as tall as the chapter says: art/blender/a2-nature.py.
+  if (def.kind === 'spruce' || def.kind === 'birch') {
+    const pick = Math.abs(Math.round(def.x * 3.7 + def.z * 1.3));
+    group.userData.model = def.kind === 'spruce' ? ['gran-a', 'gran-b', 'gran-c'][pick % 3]! : ['bjork-a', 'bjork-b'][pick % 2]!;
+    group.userData.fit = def.kind === 'spruce' && pick % 3 === 2 ? (def.height ?? 60) / 42 : (def.height ?? 60) / 60;
+    group.userData.turn = pick * 1.3;
+  }
+  if (def.kind === 'bridge') group.userData.model = 'bro';
+  if (def.kind === 'picnic') {
+    group.userData.model = 'picknick';
+    group.userData.fit = 2;
+    group.userData.shift = -6;
+  }
+  // The car takes the model's place, and keeps its windows, so that they can light up.
+  if (def.kind === 'car') {
+    group.userData.model = 'bil';
+    group.userData.fit = (def.width ?? 29) / CAR_LONG;
+    group.children[1]!.userData.keep = -0.022 * (def.width ?? 29);
+  }
+  if (def.kind === 'cliff') {
+    const [wide, high] = [def.width ?? 16, def.height ?? 12];
+    group.userData.model = wide < 24 ? 'klippa-b' : 'klippa-a';
+    group.userData.block = { width: wide * 1.2, height: high * 1.08, depth: Math.max(6, wide * 0.22), x: 0, y: high * 0.54 };
+  }
   group.position.set(def.x, def.y ?? 0, def.z);
-  if (def.flip) group.scale.x = -1;
+  if (def.size) group.scale.setScalar(def.size);
+  if (def.flip) group.scale.x = -group.scale.x;
   if (def.turn) group.rotation.y = (def.turn * Math.PI) / 2;
   return { group, panes: paneMaterial, def };
 }
 
 /** The warm colour of a lit pane, and the dark of one with nobody home. */
-export const PANE = { lit: new Color('#ffc870'), dark: new Color('#141a24') };
+export const PANE = { lit: new Color('#ffc870'), cabin: new Color('#8a6a44'), dark: new Color('#141a24') };

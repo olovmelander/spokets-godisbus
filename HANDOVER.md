@@ -1,7 +1,153 @@
 # Handover
 
-## State (4 November 2026)
+## State (5 November 2026)
 
+- **Released, 5 November 2026: `RELEASED_CHAPTER` is `morgonen`.** Olov asked for everything built to go into `main` and be
+  playable on GitHub Pages, and chose to open the whole game on the normal address. A new player starts in the prologue and goes
+  through the story, Byn as a bonus, and all of Äventyr 2, without `?dev`. The test course is `?course=testbana`. Taking it back is
+  one line in `src/content/world.ts`. All open pull requests (#187, #192, #195–#224, private #2) went in through one roll-up.
+- **The family rebuilt, 5 November 2026 (Olov: "alla mänskliga karaktärer ... Mormor och morfar måste följa samma designstil").**
+  All seven are made one way now: `art/private/family/` (`defaults.py`, `shared.py`, `build.py`) and a short file for each person.
+  Headless, ten seconds each: `blender -b --factory-startup -t 6 --python family/build.py -- pappa`.
+  - **The head is one form,** drawn from an outline measured off the sheets (`OUTLINE` in `shared.py`: width, front and back by
+    height). Olov said the cheeks were too bubbly: they were balls of their own. Now they are the outline's curve with `CHEEK_K` of
+    fullness. `FACE_WIDE`, `JAW_WIDE`, `CHIN_WIDE`, `CHIN_OUT` make each face its person's. Eyes are smaller, as on the sheets.
+  - **Hair** is `tufts()`: broad tufts laid like shingles. Thin ones made a hedgehog, and Olov said so. Sharp ones must stay few.
+    A hair form that reaches too low shows through the eye openings: keep `HAIR_FORMS` high (it did on Mamma and Moa).
+    **Mamma's hair is lighter and blonder** on Olov's word, whatever the sheet shows.
+  - **Caps** have a curved peak (`visor()`), and the crown fits the head. **Legs** are one form each (`leg_form()`), **soles** are flat
+    slabs (`sole()`), **shoulders** slope from the neck: the rings' width at shoulder height must reach `SHOULDER.x`. Sleeves are slimmer.
+  - **Mormor and Morfar come from a photograph Olov gave** (in no repository): her short white side-swept hair, black glasses, pale
+    blue blouse with navy medallions and diamonds; his short thick white hair, glasses pushed up into it, navy jersey with a band
+    of pale diamonds. **Morfar never has a cap.** The band and the medallions are shapes laid on the cloth (`printed()`, `stamp()`,
+    `stitch()`). `lifted()` in `morfar.py` is one place to change if his glasses should sit on his nose. They load from the private
+    pack over the code figures (`dress()` in `grandparents.ts`), which stay as stand-ins.
+  - **Motion stays in the game's code,** not in Blender clips: the `Pose` has `twist`, `footL`, `footR`. `plantFeet()` keeps the sole
+    near the ground through the stance. Elof and the family use it; shoulders turn against the hips, and a run bends the arms.
+    Someone under a cap's peak looks down less, or the peak hides the face.
+- **The overhaul's second round (5 November 2026, morning): `aventyr2-konst`, on top of #223.** "Allt som syns" modelled
+  in Blender, with the art kits in `art/blender/a2-nature.py`, `a2-creatures.py` and `a2-props.py`, sent with
+  `scripts/bake/send-kit.mjs`. Blender 5.2 ran with its own scripts folder and factory settings, so nothing of Olov's
+  add-ons or profile was touched (see "Notes for sessions that drive Blender").
+  - **Nature:** spruces, weeping birches, Billaberget's rock face, lichen boulders, stumps, branches, reeds. Moss cushions
+    have a lobed edge and a dark foot (`forest-kit.py`, and Äventyr 1's forest gets them too). The falling cones are the kit's.
+  - **Things he walks on are models now,** not blocks of ground: `Landmark.look` has `LandmarkThing`s (barrel, watering
+    can, playhouse, slide, picnic table, fence, the deck's steps, firewood). `landscape()` runs the land and its surface on
+    under them, and the sim is untouched: its outline is still the chapter's ground. A climb can be `look: 'ladder'`, which
+    the model draws.
+  - **The family's playhouse** stands in Stormgård (private `garden/lekstuga.py`): the garden's real octagonal house
+    without its tall porch, behind a low porch whose gable is the chapter's outline, reached by his wooden blocks. The side
+    way's planks are sunflower leaves on stalks.
+  - **`river: true`** on a chapter: its water is open to the camera and behind the path, with no near shore, and its
+    stretches meet under what stands in them (`RIVER` in `src/render/water.ts`). Älven, Billsta's brook and Stormgård's
+    flood have it. Its stones are lichen boulders, and `wetRock` rounds over into the water. Olympia does not: its water is
+    puddles in a pitch, and a river's water showed in front of the turf.
+  - **Rides checked with the real figures:** the boot, the leaf, the raft, the umbrella and the free kick. On a ride the picture sinks with him, so over open water it went under the surface: Stormgård's boot stretch has `lift: 2`. Any new ride over a `river` needs the same look. Bertil's ball now flies under his feet.
+  - **Small lives** in the creatures' kit (`igelkott`, `snigel`, `groda`, `and`, `and-hona`), placed as `kit` decor: they breathe or lift on the water, and do nothing else.
+  - **The car** is a model (`bil`, and `bil-gra` going by in Stormbyn). No badge, no plate. Its windows are kept from the
+    stand-in (`userData.keep`) so that they can light.
+  - **Pappa's carvings:** nine figures in the way of his real ones (private `tragubbar/tragubbar.py`): flat knife cuts, thin
+    matt paint, wedge noses, small blue eyes, V-cut beards; his first trägubbe, Elof's little one, and on the shelf a
+    traveller in a red cap, a cone cap, a fly agaric, an old lady, a fisherman, a man in a coat, one with crossed arms and a
+    bear. Types only: no portrait, no name, no mark from any real carving, and no third party's pattern. The pictures Olov
+    sent are not in any repository. The two old figures left the public creatures' kit: models after his carving belong
+    with the family's, and the stand-ins stay wherever the private pack is not.
+  - **The pace check covers Äventyr 2,** and every chapter keeps inside five seconds of plain running. A felled pole mends
+    the one that did not (Stormskogen, x 36 to 55).
+  - **Lamps in their hands** in the finale: held `lamp-*` Things, with a beam that fades. Always check a scene with the real
+    figures: the rehearsal figures stand differently.
+  - **The rest of the morning:** the family's room is furnished (`art/blender/a2-room.py`: sofa, lamp, plant, table and
+    chairs, which `stage.ts` and `roomThings()` name, so a stand-in stays if the pack is missing). The meeting has its great
+    stone (`skerry`), in worn sheets of granite in open water. Billsta's long roof is tarred boards, a surface kind `roof`.
+    Stormgård's flower bed has a dry wall, a flashlight's beam fades, and Älven's far meadows lie in strips with hay on racks.
+  - **Mamma's boat:** she said she had a rowing boat, and a pale plank appeared while she stood on the jetty. Now a clinker
+    boat rows in (`Storm.boat`), and she sits at its thwart (`Spot.seated`, `sitting()`), with the spot's word still offered
+    on the jetty. He walks along the gunwale, which is a `shelf` ledge that is not drawn.
+  - **Mended on the walk:** a lake stone meant for figures far out also stood on Pappa's shelf in Stormkvällen; two signs with
+    nobody behind them are gone (the way home in Stormöga, and boarding the boot).
+  - **Kits:** `a2-props.py`, `a2-built.py` and `a2-room.py`, each with its own `.glb`: safe mode refuses a script of more than
+    20 000 AST nodes.
+  - **The size gate is 4 MB now** (Olov, 5 November 2026): see the build's own line for where it stands.
+- **The overhaul's long night (4 to 5 November 2026).** Stacked pull requests, one outcome each, none of them merged
+  yet. **Merge in number order:** #192, then #195 to #201 (their base is `main`, so rebase or retarget as they land), then
+  #202 to #223, each on top of the one before, and `spokets-godisbus-familj` PR #2 for the real house in Billsta. #187 is
+  old and raises `RELEASED_CHAPTER`: leave it. Everything since #201, in order:
+  - **#202, own light.** Olympia under a neutral sky so that the hall reads wine-red, Flärken pale slate, Älven olive and
+    tea, Billsta indigo. `PlaceLook.ground`: Flärken's ground is the new `shore`, because the bog's red sphagnum read as
+    blood.
+  - **#203, a real puzzle at Billsta.** Klonk is too light on the even seesaw. Elof goes round the stone and pushes it back
+    towards his own end, so that Klonk has the long arm. Hints come only if he stands thinking ("Pappa sitter nära
+    mitten när vi gungar."). `counterweight` hints now work from either side of a push, and `trial` is optional. A perch
+    can be `still`: the ghost does not rise out of reach, because it stands on something.
+  - **#204, Billsta's forest.** A surface kind `moss`: a chapter that is not a forest grows a forest there
+    (`woodland()` in `dressing/forest.ts`). No more lawn and dandelions behind the house or on Billaberget.
+  - **#205, Stormkvällen's door.** Past `outdoors` the storm's night takes the lights, and the far pictures darken through
+    the storm's `unlit` list (setting their colour directly is overwritten every frame).
+  - **#206, the finale's jetty.** The family stands in the dark and never sees him; only mormor knows. He lights their
+    lamps one by one (Pappa: "Ficklampan som Elof gav mig!", Moa: "Det är Elof. Jag vet att det är Elof."), and the
+    row of beams brings the owl, which now flies in (`owlLanding`).
+  - **#207, the meeting.** The old one rocks the little one and turns to him; the little one trembles until its cap is back,
+    straight on its head, then hops. `MOON.shafts` went from 2.4 to 1.1, because the moonlight was milk.
+  - **#208, a river he plays.** Three logs the eddies turn to and fro (`cycle.wait`) replace the leaf's ride. The leaf is
+    offered through `FELL_IN` (`fell-in`), set by a fall and from the start on Lugnt. Älven has a look `riverLog`.
+  - **#209, the morning.** `aftermath`: dripping raincoats, boots in a pool, leaves, mormor's lantern put out, a rag rug
+    and the sun on the floor. The camera sees the floor in front of him, so that is where it all lies.
+  - **#210, the animals.** The squirrel's legs gallop by the way it has come (`act.w`, rig 1). Small birds fly in bursts,
+    turn smoothly and land on a bough. This also shows in Äventyr 1.
+  - **#211, the storm grows.** Rain and lightning rise chapter by chapter, and Billsta's gusts blow longer. Flärken's waves
+    stay, because a test holds the posts to a margin. The raft rocks.
+  - **#212, fewer captions.** Twenty-eight lines that only said what the picture shows.
+  - **#213, the road.** The car has a real side (`ExtrudeGeometry`), Billsta has poles (`pole`), Olympia its store (`store`,
+    dark: the power is out), Flärken its tarred hut (`tar`).
+  - **#214, Olympia's answer lies behind him.** The big football lies on a table he runs under. At the puddle a small ball
+    bobs (`floatBall`), and he goes back, climbs up behind the big one and dribbles it in. `counterweight` carries this too.
+  - **#215, from a sweep of stills.** Byn is a real night, Stormgården no lighter than the evening before it, the lodge a
+    heap of gnawed sticks over mud, the village's car round.
+  - **#216, one owl, a far shore, a clear moon.** The story's owl is the forest's tawny owl, Flärken has a far picture of its
+    own (`lake`), the rapids break white (`whiteWater`, `foam.dense`), the stone in the narrow is `wetRock`. `MOON.shafts`
+    is 0.45: the shafts, not the haze, were the milk over the meeting.
+  - **#217, one room.** `roomThings()`: the evening and the morning share the rug, the sofa, the lamp, the plant and Moa's
+    drawings.
+  - **#223, the trail's end.** Olympia's chapter ends in moss and forest, not in a bare bank of earth.
+  - **#222, the torrent.** Älven's first stretch breaks white over dark boulders, and `docs/aventyr-2.md` says what was built.
+  - **#221, stones.** A mover look `boulder` for the seesaw's stone and Flärken's.
+  - **#220, the owl and the morning.** The owl that carries him was a blob with a box for a wing; it is now the tawny owl in
+    flight, its wings named `owl-wing` and beaten from `stormExtra`. A great tit hops on Morgonen's sill. The jetty and the
+    seesaw were played with real key presses in a browser, from start to finish, with no errors. Dialogue lines wait for
+    Nästa and release held keys: a script has to click `#sceneNext` and press its key again.
+  - **#219, Byn's idea.** The village is dark, the shops' roller blinds down (`blind`). He pulls a shop's bell cord (`bellCord`),
+    someone wakes, and the blind goes up on a lit window: three times along the street. It is what he does for his
+    own family at the end of the night.
+  - **#218, the jetty's L and Moa's answer.** `jettyArm` with its life ring; `shoreRidge` is now dark water in front of the
+    jetties, not a bank; and Moa says in the morning that she knew it was him with the lamps.
+- **Own far pictures (4 November 2026, late).** `backdrop.ts` has three new sets, `FarId` `wall` (Olympia's dark forest hill),
+  `river` (Älven's ridges, hay meadows, poles, log barn and white column) and `billaberget` (the dome over Billsta's
+  forest). Älven's water is near black with cream foam drifting on it (`storm.foam`), and its haze thin. So Olympia,
+  Billsta and Älven no longer look like the garden and the forest.
+- **Mormor and morfar's house in Billsta (4 November 2026, late).** Built in Blender 5.2 from Olov's picture
+  (`art/private/billsta/billsta-house.py`, **in the private repository**, so that it can be taken down): the pale grey
+  boards, three tall gables, the valley's downpipe, the dark roof and black chimney, the windows, the steel ladder, and
+  the rusty old barn. `spokets-godisbus-familj` PR #2 must be merged for the site to show it; without it the code
+  stand-ins stay. Its lit windows are their own object, warm and out of the haze. A building can now have a `size`.
+  Billsta uses the forest's far pictures. Spruces hang in points, and the woodshed's logs are round with sawn ends.
+- **Olympia is Olympia (4 November 2026, night).** The third step of the overhaul (`docs/aventyr-2-overhaul.md`, which
+  has the audit, what the real places look like, and the order of the work). **Start there.**
+  - **The hall and the stand are the first models made in Blender 5.2** (`art/blender/olympia.py`, run headless;
+    `art/baked/aventyr2/olympia.glb`, 41.6 KB as served): the wine-red hall under its barrel arch, white fascia, ribbon of
+    windows, porch and ramp; the long tan timber stand under its thin roof. Interpreted from photographs, which are
+    not in them. Each is one draw, with the shade of its creases baked into its corners.
+  - **The name:** white letters, "Olympia", in Playpen Sans, as Olov asked: the one exception to no lettering
+    (`CLAUDE.md`, in PR #192). It is an object of its own with an unlit material, so it stays white at night.
+  - **The pitch:** a new ground `turf` where nothing grows, and a `pitch` building: mown stripes and white lines, running on
+    past the path towards the camera so that he runs on it. The dandelions are gone.
+  - **How a model comes in:** `model` on a building names it; `PACK.models` swaps it in when the pack has loaded, and the
+    code stand-in stays where the file is missing.
+  - **Far pictures:** `PlaceLook.far` borrows another place's, and `farBeyond` keeps only those behind a depth. They are
+    see-through and drawn last, so a nearer card lies over a building like a ghost. This is why the hall stands at z −66.
+  - **Left at Olympia:** the gravel yard and the bank. The forest behind the hall is thin: the far card at −76 is mostly
+    sky. Goals and masts are still code.
+  - **Reference pictures** from the web are in `photos/landscape/aventyr2/`, and Olov's picture of the house in Billsta
+    is `photos/billsta-hus.jpg`. All of it is ignored by git. The house's address and number are never written.
 - **The trail runs out (4 November 2026, night).** Olov's decision, from the story audit: nothing went wrong all night,
   so the ending relieved nothing, and the story stood still from Byn to Älven.
   - **Set up in Stormkvällen:** Moa says the old one took a handful from the bowl, and Bertil asks if it will last.
@@ -60,7 +206,7 @@
     `lill-elof/`, perhaps a newer ghost) are on his old computer. **Until he brings them over, work that needs the
     pictures (characters, the ghost, the house) can't be done here.** Code work isn't affected. `art/private` here is a
     clone of the private repository's `main`. Installed here: `ktx` 4.4.2 and Playwright 1.56.1's Chromium. Blender
-    here is 5.2, not the 4.5 LTS that `CLAUDE.md` asks for; `exiftool` isn't installed.
+    here is 5.2.2 LTS, which Olov has chosen (`CLAUDE.md`); `exiftool` isn't installed.
 - **Äventyr 2's story and gameplay audit (4 November 2026, later still).** Olov asked for an audit of the story, all
   the conversations and all the gameplay, so that the adventure holds together, feels epic, has a red thread, and is
   fun and kind. [`docs/aventyr-2-audit.md`](docs/aventyr-2-audit.md) has the method (the robot played every chapter
@@ -3478,7 +3624,10 @@
   Brotli, and cached for 10 minutes (`max-age=600`). That includes `.wasm` and `.glb`: the transcoder is
   served as 245 KB of its 527 KB, and the big candy as 9.6 KB of its 18.7 KB. The size gate counts both
   gzipped since `size-gate-as-served`: the boot pack is about 0.7 MB of its 3 MB as served.
-- **Olov's computer** (checked 3 October): Windows 11, an RTX 3070, Node 24.14, git, and Blender 4.5.9 LTS with
+- **Olov's computer** (checked 4 November): Windows 11, an RTX 5080 laptop GPU, Node 24.20, `gh`, `uv`, Blender 5.2.2
+  LTS, Playwright 1.56.1's Chromium, and `ktx` 4.4.2 in `%LOCALAPPDATA%\Programs\KTX-Software\bin`. No `exiftool`. The
+  Blender add-on must be running for the MCP tools to work.
+- **His old computer** (checked 3 October; `photos/` and the unpushed private work are on it): Windows 11, an RTX 3070, Node 24.14, git, and Blender 4.5.9 LTS with
   the *MCP for Blender* add-on running on port 9876, with only Poly Haven ticked, `uv` 0.12, Playwright
   1.56.1's Chromium, and the `ktx` tool 4.4.2 in `%LOCALAPPDATA%\Programs\KTX-Software\bin` (the asset build
   finds it there). Not installed: `gh`, `exiftool`.
@@ -3486,6 +3635,16 @@
     KhronosGroup/KTX-Software releases and run it with `/S /D=%LOCALAPPDATA%\Programs\KTX-Software`.
 
 ## Next
+
+**For Olov, first:** everything is merged and released. Open the normal address on each device Elof plays on at least 15 minutes after
+the deploy, so the service worker updates, and play: the jetty at the start of `stormoga`, the seesaw at the end of `billsta` and
+the eddies at `alven` are the parts only a person can judge. Olov goes on later with the game, visuals, conversations, story, design
+and TTS. New TTS voices come when the story and conversations are done. The rest of the order of work is in
+`docs/aventyr-2-overhaul.md`. It needs Olov's computer only for new models and for `photos/`, which is on his old computer. The
+family's models need Blender on his computer: they are in `art/private`, on its `main`.
+
+**Left of the overhaul:** the owl's flight and the ride home at Stormöga were not checked with stills since their water changed;
+Stormbyn's flat dark street; Pappa at the bridge stands on the bank; the raft tower and the goals are still drawn in code.
 
 **The picture, from three stills of every chapter on High (4 November 2026), biggest gain first. One pull request
 each. The forest, the bog and the mountain are already strong, and are the standard for the rest:**
@@ -3792,6 +3951,13 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **The game is released to its last chapter** (`morgonen`, Olov, 5 November 2026). From now on `main` is what Elof plays.
+- **Morfar never has a cap, and has glasses; Mamma's hair is light blonde** (Olov, 5 November 2026).
+- **The family's triangle budget** is 16,600–21,900 each, over the plan's 15,000, for the faces and hair (`docs/art-bible.md`).
+- **Voices (Olov, 5 November 2026):** new TTS voices are recorded when the storytelling and the conversations are finished.
+  Until then `public/audio/voices`, `public/audio/test_candidates` and `src/audio/voice-player.ts` stay as they are, and a
+  404 for a line without a voice is expected. Olov chooses the service. This replaces plan §0 Q9's "no voices".
+- **The size gate (Olov, 5 November 2026):** 4 MB as served for the whole site, from 3 MB.
 | Question | Decision | Source |
 | --- | --- | --- |
 | Elof as a player | 7 years, plays games for 11+. Play style *Äventyr* by default (variable jump, a swing he pumps, the glitter bubble, exciting sequences, challenge routes); *Lugnt* for anyone who wants it. Help only when asked. | Olov, 3 Oct |
@@ -3844,6 +4010,8 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The family rebuilt and everything released (5 November) | Olov's request: every human figure's design and motion, in one style | 1 session on Olov's computer, with Blender | 1 / 8 (faces, hair, caps, bodies, Mamma's hair, Mormor and Morfar) | One outline for all heads; seven people from short files; released to `morgonen` |
+| Äventyr 2's overhaul (4 to 5 November) | Olov's request: audit and overhaul of every world, puzzle, figure and animal | 1 session on Olov's computer, until 02:30 | — / 0 so far | 29 pull requests, #192 and #195 to #223, none played by Olov yet |
 | Äventyr 2: Stormnatten (4 November) | Olov's request: a second adventure of several worlds, about as long as the first | 1 cloud session, with four parallel world-building agents | — / 0 | Seven chapters (~940 EL), a lazily loaded pack with its own size gate, storm visuals in code, 1,773 tests and a 30-check browser suite. Voices, device review and Blender art remain. |
 | Äventyr 2, version 2 (4 November) | Olov's request: more worlds and puzzles, Billsta, Flärken and Olympia, an audit, good Swedish | the same cloud session, with a research agent and four world-building agents | — / 0 | Ten chapters (~1,510 EL), 23 code-built building kinds, Moa's map of Äventyr 2, a visual sweep that found and fixed the drain-well wall over Olympia, 1,914 tests and a 42-check browser suite. Pictures of the places, voices, device review and Blender art remain. |
 | Home garden identity (10 October) | Rework Chapter 1 from three supplied building photographs | 1 cloud continuation | — / 0 | Dimensional red home/veranda/deck, green playhouse and timber fjällkåta authored in Blender 4.5.14 in the private repository; a generic public fallback and chapter framing preserve the route. The photos do not establish a surveyed garden layout. Device and family visual review remain. |
@@ -3859,6 +4027,11 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Two more browser timeouts on GitHub** (4 November, part 4 of 8): "Controller moves through chapter choices" (#198) and
+  "golden candy becomes reachable" (#201, twice). Elof was still running when the 20 seconds ran out, with more than twenty
+  pull requests' runs queued; #202 runs the same code and the same test and is green.
+- **`challenges` timed out once on GitHub** (PR #193, 4 November): "c2-prize-844-low: root returns". Nothing in that PR touches it,
+  and it passed locally and in #194's run of the same code, so it looks like software rendering's timing. Watch for it again.
 - **`settings`' touch check fails on Windows:** "portrait, left-handed: a held finger walks towards its position"
   wants `vx` at most 1.3 and gets about −3.4 on this computer, on `main` (eb13ed5) as well as with PR #189, which
   touches no input or simulation code. It passed on GitHub on PR #188. Not looked into further.
@@ -4012,6 +4185,8 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- Hands with shaped fingers, finer hair on Moa and Mamma, and the family's bodies closer to the sheets' clothes: pockets, seams, a belt.
+- Authored walk and run clips in Blender, if the poses in code are not enough.
 - Äventyr 2's own hidden candy kinds and stickers (its chapters have none, so the album's totals and the golden
   geléhallon of Äventyr 1 keep their meaning). (Moa's map of its places was built on 4 November.)
 - Äventyr 2 from real pictures: Olympia, Flärkenbadet and Billsta are built from the research text and, for
@@ -4022,7 +4197,11 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
+- Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
+- Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
+
 The first two are in plan §0, "Kvar att svara på". None of them blocks the work.
+
 
 1. **Do Elof's parents know about the game, or is it a surprise for them too?** The default: Olov judges the
    likeness himself, and Pappa reads the storyboard of the memories before the first one is built, late in
@@ -4073,7 +4252,8 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
     "Mormor" and "Morfar", plain stand-ins with no likeness, each with one thing of the story's (morfar's ladder,
     mormor's lantern), and their house is an interpretation in plain shapes of Olov's picture, by the road near the
     forest as Olov described it, with no address or house number. They are not on plan §2.6's consent list: is it all right with them, and with Elof's parents?
-    The default: as built, and anything comes out again if anyone asks.
+    The default: as built, and anything comes out again if anyone asks. **Answered (4 November):** the parents consent to
+    all of Olov's development of this game, and mormor and morfar may have grey hair.
 21. **Pictures for the places:** the research could not open any photograph, because the environment's network
     denies the image hosts. To let a session look, add `commons.wikimedia.org`, `upload.wikimedia.org`,
     `sv.wikipedia.org`, `ornskoldsvik.se` and `openstreetmap.org` under the environment's *Network access →

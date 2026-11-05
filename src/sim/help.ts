@@ -35,12 +35,14 @@ export function counterweightTarget(sim: Sim, chapter: ChapterData): Hint | null
     const launch = spot(puzzle.launch);
     return launch ? { at: launch.at, verb: launch.verb, word: launch.word ?? null } : null;
   }
-  const trial = spot(puzzle.trial);
+  const trial = puzzle.trial === undefined ? undefined : spot(puzzle.trial);
   if (trial && !sim.flags.has(trial.id) && trial.needs !== undefined && sim.flags.has(trial.needs)) {
     return { at: trial.at, verb: trial.verb, word: trial.word ?? null };
   }
-  const stance = heavy.x - heavy.def.width / 2 - ELOF_HALF_WIDTH - 0.12;
-  if (p.x > stance + 0.05 || Math.abs(p.y - heavy.y) > 0.3) return { at: { x: stance, y: heavy.y }, verb: null, word: null };
+  // He stands on the side it is pushed from, whichever way that is.
+  const way = Math.sign(heavy.def.stops[heavy.stop + 1]!.x - heavy.x) || 1;
+  const stance = heavy.x - way * (heavy.def.width / 2 + ELOF_HALF_WIDTH + 0.12);
+  if ((p.x - stance) * way > 0.05 || Math.abs(p.y - heavy.y) > 0.3) return { at: { x: stance, y: heavy.y }, verb: null, word: null };
   return { at: { x: heavy.x, y: heavy.y + heavy.def.height }, verb: heavy.def.verb, word: null };
 }
 

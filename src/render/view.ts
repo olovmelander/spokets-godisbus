@@ -45,7 +45,7 @@ import { songGlitter } from './song-glitter';
 import { createEpilogueStage } from './epilogue-stage';
 import { createPrologueStage } from './prologue-stage';
 import { createStage } from './stage';
-import { actPose } from './acting';
+import { actPose, sitting } from './acting';
 import { createModelRig, createRehearsalRig, galeOf, heightOf, STANDING, type Pose, type Rig, type Role } from './rig';
 import { createPlayerMotion, createPlayerStandIn } from './player-motion';
 import { createAurora } from './aurora';
@@ -313,6 +313,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   }));
   for (const d of decor) if (d.prop) {
     if (d.def.z !== undefined) d.prop.group.position.z = d.def.z;
+    if (d.def.scale !== undefined) d.prop.group.scale.setScalar(d.def.scale);
+    if (d.def.turn !== undefined) d.prop.group.rotation.y = d.def.turn;
     scene.add(d.prop.group);
   }
   // How big he is drawn: a boy among small things, or as small as the ghost (plan §5.2).
@@ -506,7 +508,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (atlas) wild.install(atlas);
     })
     .catch((error) => console.error('The life of the far scenery could not be loaded.', error)) : Promise.resolve();
-  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady];
+  // What an adventure's pack puts in the picture from its own models: Äventyr 2's buildings, made in Blender.
+  const packReady = Promise.all(PACK.models.map((load) => load(assets, scene)))
+    .then((arrived) => { if (arrived.includes(true)) modelInstallations++; })
+    .catch((error) => console.error('A building could not be loaded; its stand-in stays.', error));
+  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady, packReady];
   let arrived = 0;
   for (const part of parts) void part.then(() => { arrived++; }, () => {});
   const ready = Promise.all(parts).then(() => undefined);
@@ -591,13 +597,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // figures; a blank marker alone cannot explain who helped or connect these crossings to the opening.
   const family: Relative[] = [];
   const stands = chapter.prologue ? [] : [
-    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.at.x, glad: thing.spot.id as string | undefined })),
-    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after })),
+    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated })),
+    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false })),
   ].filter((stand) => stand.look === 'sign' && stand.prop !== null && personFor(stand.word) !== null);
   for (const stand of stands) {
     const who = personFor(stand.word)!, rig = createRehearsalRig(who);
     stand.prop!.group.clear(); stand.prop!.group.add(rig.group);
-    family.push({ rig, who, motion: createFamilyMotion(who, stand.at, stand.glad), at: stand.at, glad: stand.glad, was: false, joy: 0 });
+    family.push({ rig, who, motion: createFamilyMotion(who, stand.at, stand.glad), at: stand.at, glad: stand.glad, was: false, joy: 0, seated: stand.seated });
   }
   if (stage.actors.size > 0 && !standIns) {
     assets.manifest().then(async (manifest) => {
@@ -893,7 +899,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (thing.prop) thing.prop.group.rotation.z -= thing.reactionTurn;
       // The light counterweight tips the same board only during its safe bounce, then resets for another try.
       const trialTip = chapter.counterweight && thing.spot.id === chapter.counterweight.launch && riding
-        && x < chapter.counterweight.to && flags.has(chapter.counterweight.trial) && !flags.has(chapter.counterweight.launch);
+        && x < chapter.counterweight.to && flags.has(chapter.counterweight.trial ?? chapter.counterweight.launch) && !flags.has(chapter.counterweight.launch);
       thing.prop?.update(flags.has(thing.spot.id) || !!trialTip, clock, dt, noteStrikes.get(thing.spot.id));
       thing.reactionTurn = reaction?.kind === 'spot' && reaction.index === i ? response * 0.14 : 0;
       if (thing.prop) thing.prop.group.rotation.z += thing.reactionTurn;
@@ -1218,11 +1224,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (calmStory && dt > 0) one.rig.group.rotation.y = facing;
       else one.rig.group.rotation.y += Math.atan2(Math.sin(turn), Math.cos(turn)) * ease(4, dt);
       one.rig.group.position.set(0, 0, 0);
-      one.rig.pose(one.motion.update(dt, clock, one.joy, towards - one.rig.group.rotation.y, carrying ? x : null, calmStory, {
+      const posed = one.motion.update(dt, clock, one.joy, towards - one.rig.group.rotation.y, carrying ? x : null, calmStory, {
         ahead: Math.abs(x - one.at) * 5.2 / one.rig.height,
         up: (y + tall * .8 - one.rig.group.parent!.position.y) * 5.2 / one.rig.height,
       }, one.glad && ['moa', 'seesaw', 'cap:ready', 'mamma', 'braid', 'bog:return-bridge'].includes(one.glad)
-        ? { ready: now, near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined));
+        ? { ready: now, near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined);
+      one.rig.pose(one.seated ? sitting(posed) : posed);
       one.rig.breeze?.(gale * windAt(carrying ? x : one.at), dt, calmStory);
     }
     // The family in a scene, too: their hair and caps in the same wind, where each stands now.
@@ -1391,6 +1398,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
 
 /** One of the family at a help point; replacement keeps its greeting and movement state. */
 interface Relative {
+  /** They sit, in a boat, say. */
+  seated?: boolean | undefined;
   rig: Rig;
   neck?: Object3D;
   who: Role;
@@ -1930,10 +1939,12 @@ function buildClimbs(chapter: ChapterData) {
     lichen: new MeshStandardMaterial({ color: '#adb59b', roughness: 1 }),
     root: new MeshStandardMaterial({ color: '#65513d', roughness: 1 }),
   };
+  // A ladder is part of what it stands on, and is drawn with it.
   const ringGeometry = new TorusGeometry(.14, .022, 8, 16);
   const ringMaterial = new MeshStandardMaterial({ color: '#b94a3c', roughness: .7 });
-  const hoses = (chapter.climbs ?? []).map((climb) => {
+  const hoses = (chapter.climbs ?? []).flatMap((climb) => {
     const look = climb.look ?? 'hose';
+    if (look === 'ladder') return [];
     const length = climb.top - climb.bottom + 0.25;
     // It hangs from its top, so that one that is let down grows downwards.
     const radius = look === 'lace' ? .035 : look === 'braid' ? .1 : .06;
@@ -1945,7 +1956,7 @@ function buildClimbs(chapter: ChapterData) {
     group.add(hose);
     const ring = look === 'lace' ? new Mesh(ringGeometry, ringMaterial) : null;
     if (ring) { ring.position.set(climb.x, climb.top, -.12); group.add(ring); }
-    return { hose, ring, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 };
+    return [{ hose, ring, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 }];
   });
   /** A hose that waits for something is let down when that has happened: the lichen, the braid, the lace. */
   function update(flags: ReadonlySet<string>, dt: number): void {

@@ -62,8 +62,8 @@ export const stormskog: ChapterData = {
   scenes: [timeCard('stormskog', 1)],
   goalX: 205,
   coda: 'pappa',
-  storm: { frozen: 'ss:frozen', drips: 'cone', rain: 0.7,
-    lightning: 11,
+  storm: { frozen: 'ss:frozen', drips: 'cone', rain: 0.75,
+    lightning: 10,
     flybys: [
       // At the forest's edge: the little one, tumbling over the treetops ahead.
       { on: 'beat:ss:flash', from: { x: 4, y: 9 }, to: { x: 26, y: 7 }, seconds: 2.6, who: 'lillgubbe' },
@@ -79,6 +79,11 @@ export const stormskog: ChapterData = {
     { x: 10, y: 0.9 },
     { x: 12, y: 0 },
     // 2. the cone rain falls on level ground, 14 to 36
+    // A storm-felled pole across the path, between the cones and the ravine, to hop over.
+    { x: 39.4, y: 0 },
+    { x: 39.4, y: 0.8 },
+    { x: 41, y: 0.8 },
+    { x: 41, y: 0 },
     // 3. the ravine: down its near bank, and up its far side in two steps
     { x: 46, y: 0 },
     { x: 49, y: -2 },
@@ -129,6 +134,7 @@ export const stormskog: ChapterData = {
   ],
   // What two of the blocks above are, for the picture only: fallen spruces across the path.
   landmarks: [
+    { look: 'log', from: 39.4, to: 41, base: 0 },
     { look: 'log', from: 84, to: 88, base: 0 },
     { look: 'log', from: 145.5, to: 149.5, base: 0 },
   ],
@@ -214,6 +220,7 @@ export const stormskog: ChapterData = {
   later: [{ flag: 'ss:frozen', after: 'ss:beam', seconds: 1.4, hold: true, within: [126, 139] }],
   jumps: [
     // Up the ravine's far side, step by step.
+    jump({ x: 39.1, y: 0 }, { x: 40, y: 0.8 }),
     jump({ x: 55.9, y: -2 }, { x: 56.9, y: -1 }),
     jump({ x: 58.3, y: -1 }, { x: 59.3, y: 0 }),
     // Onto the trunk across the path, over the crack, and onto the trunk before the hollow.
@@ -230,6 +237,7 @@ export const stormskog: ChapterData = {
     { at: { x: 26.5, y: 0 } },
     { at: { x: 31.2, y: 0 } },
     { at: { x: 36, y: 0 } },
+    { at: { x: 40, y: 0.8 } },
     { at: { x: 42, y: 0 } },
     { at: { x: 52.5, y: -2 } },
     { at: { x: 60.5, y: 0 } },
@@ -264,9 +272,7 @@ export const stormskog: ChapterData = {
     { id: 'ss:flash', at: 8.5, who: 'elof', line: 'ssFlash' },
     // 2. the cone rain
     { id: 'ss:cones', at: 14.6, within: [14.6, 34], who: 'elof', line: 'ssCones', read: true },
-    { id: 'ss:cones-done', at: 35, who: 'elof', line: 'ssConesDone' },
     // 3. the boughs
-    { id: 'ss:boughs', at: 41, who: 'elof', line: 'ssBoughs' },
     // 4. the owl
     { id: 'ss:owl', at: 64.5, until: 'placed:owl-twig', who: 'elof', line: 'ssOwlStuck', read: true },
     { id: 'ss:owl-free', on: 'placed:owl-twig', who: 'elof', line: 'ssOwlFree' },
@@ -326,7 +332,9 @@ export const stormskog: ChapterData = {
     // 2. the cone rain: between the cones, never under one
     ...[16.6, 19.1, 21.3, 23.5, 26.6, 29.1, 31.2, 33.4].map((x) => ({ x, y: 0.45 })),
     // 3. to the ravine, down its bank, along its floor and up its far side
-    ...row(35.5, 45.5, 0),
+    ...row(35.5, 37.5, 0),
+    { x: 40.2, y: 1.25 },
+    ...row(41.5, 45.5, 0),
     ...slopeRow(46.8, 48.8, 46, 0, 49, -2),
     ...row(50.6, 54.6, -2),
     ...hopUp(56.2, -1),

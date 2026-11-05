@@ -27,12 +27,11 @@ vi.setConfig({ testTimeout: 90000 });
 
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
-  'sjon:arrive', 'sjon:swings', 'sjon:slide', 'sjon:dry', 'sjon:dry-klonk', 'sjon:net', 'sjon:door',
-  'sjon:stones', 'sjon:reeds', 'sjon:mats', 'sjon:wood', 'sjon:flash',
+  'sjon:arrive', 'sjon:dry-klonk', 'sjon:door', 'sjon:mats', 'sjon:wood', 'sjon:flash',
   'sjon:jetty', 'sjon:posts', 'sjon:old-one',
   'sjon:broken', 'sjon:family:mamma', 'sjon:boat-ready', 'sjon:steady', 'sjon:thanks',
-  'sjon:near', 'sjon:tower', 'sjon:lookout', 'sjon:dive',
-  'sjon:gap', 'sjon:bark-idea', 'sjon:raft', 'sjon:klonk-raft',
+  'sjon:near', 'sjon:tower', 'sjon:lookout',
+  'sjon:gap', 'sjon:stone-idea', 'sjon:plop', 'sjon:plop-klonk', 'sjon:bark-idea', 'sjon:raft', 'sjon:klonk-raft',
   'sjon:outlet', 'sjon:log', 'sjon:floated', 'sjon:car', 'sjon:klonk-cheer',
 ];
 /** The big candies by name: their places in flarken.checkpoints. */
@@ -61,10 +60,10 @@ const barkGap = pitUnder(bark.stops[bark.stops.length - 1]!.x);
 const breakGap = pitUnder(gunwale.x);
 const [ring1, ring2] = flarken.hooks!;
 const puddle = pitUnder(ring2!.x);
-const ladder = flarken.climbs!.find((climb) => climb.look === 'hose' && climb.bottom === 0)!;
+const ladder = flarken.climbs!.find((climb) => climb.look === 'ladder' && climb.bottom === 0)!;
 const towerLadder = flarken.climbs!.find((climb) => climb.look === 'hose' && climb.bottom === DECK)!;
 const platform = ledges.find((ledge) => ledge.look === 'plank' && Math.abs(ledge.y - towerLadder.top) < 1e-6)!;
-const table = ledges.find((ledge) => ledge.look === 'trestle' && ledge.y === 2)!;
+const table = ledges.find((ledge) => ledge.look === 'shelf' && ledge.y === 2)!;
 const roofs = ledges.filter((ledge) => ledge.look === 'plank' && ledge.y > 2.5 && ledge.y < 3 && !ledge.needs);
 const hutBench = ledges.find((ledge) => ledge.look === 'trestle' && ledge.y === 1)!;
 const net = flarken.bouncers![0]!;
@@ -231,10 +230,9 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       expect(sim.curr.y, where(sim)).toBeCloseTo(0, 2);
       expect(sim.bubbles).toBe(0);
       // The slide's picture: its ladder where his is, the chute down to where the slope ends.
-      const slide = buildings.find((d) => d.kind === 'slide')!;
-      expect(slide.x - slide.width! / 2).toBeCloseTo(ladder.x + 0.25, 5);
-      expect(slide.x + slide.width! / 2).toBeCloseTo(b.x, 5);
-      expect(slide.height).toBeCloseTo(top, 5);
+      const slide = flarken.landmarks!.find((mark) => mark.look === 'slide')!;
+      expect(slide.from).toBeCloseTo(ladder.x + 0.25, 5);
+      expect(slide.to).toBeCloseTo(b.x, 5);
     });
   });
 
@@ -253,10 +251,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       expect(table.y).toBeGreaterThan(1 + 0.5);
       for (let x = benches[0]!.to + 0.1; x < benches[1]!.from; x += 0.2) expect(heightAt(flarken, x)).toBe(0);
       expect(flarken.ghost!.some((perch) => perch.at.x > benches[0]!.to && perch.at.x < benches[1]!.from && perch.at.y === 0)).toBe(true);
-      const dry = flarken.beats!.find((beat) => beat.id === 'sjon:dry')!;
-      expect(dry.at!).toBeGreaterThan(benches[0]!.to);
-      expect(dry.at!).toBeLessThan(benches[1]!.from);
-      expect(buildings.some((d) => d.kind === 'picnic' && Math.abs(d.x - table.x) < 1e-6 && d.height === table.y)).toBe(true);
+      expect(flarken.landmarks!.some((mark) => mark.look === 'picnic' && mark.from === benches[0]!.from && mark.to === benches[1]!.to)).toBe(true);
     });
 
     it('has two side candies on the top: a held jump from the first bench', () => {
@@ -329,7 +324,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     });
 
     it('stands the huts behind their roofs, and the net where he bounces', () => {
-      const huts = buildings.filter((d) => d.kind === 'hut');
+      const huts = buildings.filter((d) => d.kind === 'hut' && !d.tar);
       expect(huts.length).toBe(2);
       for (const [i, hut] of huts.entries()) {
         expect(hut.x).toBeCloseTo(roofs[i]!.x, 5);
@@ -354,7 +349,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     });
 
     it('has three stone shelves over the first stones: a held jump to each, and a jump across, with six side candies', () => {
-      const shelves = ledges.filter((ledge) => ledge.look === 'stone');
+      const shelves = ledges.filter((ledge) => ledge.look === 'shelf' && ledge.y !== 2);
       const first = shelves[0]!.x - 4.5;
       const sim = new Sim(flarken, {}, { checkpoint: CP.beach });
       run(sim, 0.2);
@@ -534,7 +529,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       expect(lines.sjCar).toBe('Vi följer ån med bilen.');
       expect(flarken.coda).toBe('mamma');
       // Her lantern glows in the boat once she has come.
-      expect(flarken.storm!.glows!.some((g) => g.after === 'sjon:mamma' && g.at.x > breakGap.from && g.at.x < breakGap.to)).toBe(true);
+      expect(flarken.storm!.glows!.some((g) => g.after === 'sjon:boat' && g.at.x > breakGap.from && g.at.x < breakGap.to)).toBe(true);
     });
   });
 
@@ -602,9 +597,31 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     const atTheBark = () => {
       const sim = new Sim(flarken, {}, { checkpoint: CP.tower, flags: BOAT });
       run(sim, 0.2);
+      // The wrong idea comes first: he pushes the stone out, and it sinks.
+      const stone = flarken.movers!.find((mover) => mover.id === 'sjon-stone')!;
+      runOn(sim, stone.stops[0]!.x - stone.width / 2 - 1.5);
+      runInto(sim, 1);
+      expect(sim.curr.verb).toBe('push');
+      use(sim);
+      run(sim, 3);
+      expect(sim.flags.has('placed:sjon-stone')).toBe(true);
       runOn(sim, bark.stops[0]!.x - bark.width / 2 - 1.5);
       return sim;
     };
+
+    it('has the stone first: his own idea, which sinks, and only then can the bark be moved', () => {
+      const stone = flarken.movers!.find((mover) => mover.id === 'sjon-stone')!;
+      expect(stone.stops[0]!.x).toBeLessThan(bark.stops[0]!.x);
+      expect(bark.needs).toBe('placed:sjon-stone');
+      const last = stone.stops[stone.stops.length - 1]!;
+      // It goes down in the gap, under the water, where nothing can stand on it.
+      const water = flarken.water!.find((w) => w.from <= last.x && w.to >= last.x)!;
+      expect(last.y + stone.height).toBeLessThan(water.y - 1);
+      expect(flarken.beats!.find((b) => b.id === 'sjon:plop')!.on).toBe('placed:sjon-stone');
+      // The answer comes when he has seen the stone sink, and stands by the bark.
+      const idea = flarken.beats!.find((b) => b.id === 'sjon:bark-idea')!;
+      expect(idea.needs).toBe('placed:sjon-stone');
+    });
 
     it('is a gap too wide to jump, where the bark floats with its top at his feet, a hop from each side', () => {
       expect(barkGap.to - barkGap.from).toBeGreaterThan(RUNNING_JUMP_REACH + 1);
@@ -684,7 +701,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       const lines: Record<string, string> = sv.lines;
       expect(Object.values(words.lines)).not.toContain('Där! På stenen ute i sjön!');
       expect(lines.sjFloated).toMatch(/^Trä flyter!/);
-      expect(flarken.storm).toMatchObject({ rain: 0.8, lightning: 8, shelters: 'posts' });
+      expect(flarken.storm).toMatchObject({ rain: 0.95, lightning: 7, shelters: 'posts' });
     });
   });
 
@@ -719,7 +736,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     }
     expect(seen).toEqual([
       'sjonPark', 'sjonSwings', 'sjonSlide', 'sjonShore', 'sjonReeds', 'sjonShore', 'sjonMats', 'sjonJetty',
-      'sjonMamma/mamma', 'sjonBoat/mamma', 'sjonOut', 'sjonTower', 'sjonDive', 'sjonBark', 'sjonRaft', 'sjonEnd', 'sjonRiver',
+      'sjonMamma/mamma', 'sjonBoat/mamma', 'sjonOut', 'sjonTower', 'sjonDive', 'sjonGap', 'sjonBark', 'sjonRaft', 'sjonEnd', 'sjonRiver',
     ]);
   });
 
@@ -755,7 +772,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     expect(flarken.checkpoints!.length).toBeGreaterThanOrEqual(8);
     expect(flarken.checkpoints!.length).toBeLessThanOrEqual(10);
     expect(flarken.scenes!.map((scene) => scene.id)).toEqual(['card']);
-    for (const kind of ['tower', 'hut', 'swings', 'slide', 'picnic', 'birch'] as const) {
+    for (const kind of ['tower', 'hut', 'swings', 'picnic', 'birch'] as const) {
       expect(buildings.some((d) => d.kind === kind), kind).toBe(true);
     }
     // The swings are in reach of the lace from the ground beside them.

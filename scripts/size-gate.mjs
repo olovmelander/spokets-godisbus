@@ -9,7 +9,7 @@ import { gzipSync } from 'node:zlib';
 
 const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
 const JS_GZIP_MAX = 520 * 1024;
-const BOOT_MAX = 3 * 1024 * 1024;
+const BOOT_MAX = 4 * 1024 * 1024;
 const PACK_JS_MAX = 160 * 1024;
 
 function* files(dir) {

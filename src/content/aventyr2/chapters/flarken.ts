@@ -27,8 +27,9 @@ import { hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
  * 7. **Hopptornet:** the diving tower stands in the water between two stretches of jetty. Up its ladder to the top,
  *    the lookout: a flash shows the little one far out, where the river begins. A run off its far side lands him
  *    on the jetty beyond.
- * 8. **Barkflotten** (the puzzle): the last planks are gone, and the gap is too wide to jump. Bark floats, like
- *    Klonk: pushed three times, it slides into the gap and floats there, a stepping stone.
+ * 8. **Vad flyter?** (the puzzle): the last planks are gone, and the gap is too wide to jump. A stone lies first on the
+ *    planks, and Elof has an idea of his own: he pushes it out. Plopp: it sinks. Only then can he think what floats:
+ *    Klonk does, and bark is wood. Pushed three times, the bark slides into the gap and floats there, a stepping stone.
  * 9. **The jetty's end:** a flash, and the outlet takes the little one down the river; the old trägubbe leaps onto
  *    a log after him. "Trä flyter!" Mamma: "Vi följer ån med bilen."
  *
@@ -78,7 +79,7 @@ const chute = (x: number) => SLIDE.top - (SLIDE.top * (x - SLIDE.to)) / (SLIDE.f
  */
 const BENCH_A: Stone = { from: 36.2, to: 37.6, y: 1.2 };
 const BENCH_B: Stone = { from: 40.8, to: 42.2, y: 1.2 };
-const TABLE: Ledge = { x: 39.2, y: 2, width: 3.6, look: 'trestle' };
+const TABLE: Ledge = { x: 39.2, y: 2, width: 3.6, look: 'shelf' };
 /** The volleyball net, sagging with the rain on the sand court: down on it from a jump, it bounces him up to the roofs. */
 const NET = { x: 45, y: 0.5, lift: 3.2 };
 
@@ -132,9 +133,9 @@ const LANDING: Stone = { from: 110.2, to: 113, y: 0 };
  * tops out under all three.
  */
 const SHELVES: Ledge[] = [
-  { x: 68, y: 1.85, width: 1.4, look: 'stone' },
-  { x: 69.4, y: 2.75, width: 1.6, look: 'stone' },
-  { x: 72, y: 2.75, width: 1.8, look: 'stone' },
+  { x: 68, y: 1.85, width: 1.4, look: 'shelf' },
+  { x: 69.4, y: 2.75, width: 1.6, look: 'shelf' },
+  { x: 72, y: 2.75, width: 1.8, look: 'shelf' },
 ];
 
 /**
@@ -156,7 +157,7 @@ const POSTS = [118.6, 123.8, 129, 134.2];
 const OLD_ONE = { x: 138.7, y: DECK };
 /** Where it has broken off: Mamma's boat lies along the gap, and its gunwale is level with the planks. */
 const BREAK = { from: 144, to: 150 };
-const GUNWALE: Ledge = { x: (BREAK.from + BREAK.to) / 2, y: DECK, width: BREAK.to - BREAK.from + 0.2, look: 'plank', needs: 'sjon:boat' };
+const GUNWALE: Ledge = { x: (BREAK.from + BREAK.to) / 2, y: DECK, width: BREAK.to - BREAK.from + 0.2, look: 'shelf', needs: 'sjon:boat' };
 /** The jetty on beyond the boat, out to the diving tower's ladder. */
 const OUTER = { from: BREAK.to, to: 154 };
 /**
@@ -188,8 +189,13 @@ const END_POST = { x: 189.4, y: DECK };
  * jump climbs it, as on Granskogen's cone.
  */
 const BARK_HIGH = 1.5;
+/** The wrong idea, which is the puzzle's first half: a stone, pushed out along the planks, rolls in and sinks. */
+const STONE: Mover = {
+  id: 'sjon-stone', look: 'boulder', width: 1.4, height: BARK_HIGH, verb: 'push',
+  stops: [{ x: 167.5, y: 0 }, { x: (RAFT.from + RAFT.to) / 2, y: -3.6 }],
+};
 const BARK: Mover = {
-  id: 'sjon-bark', look: 'bark', width: RAFT.to - RAFT.from, height: BARK_HIGH, verb: 'push',
+  id: 'sjon-bark', look: 'bark', width: RAFT.to - RAFT.from, height: BARK_HIGH, verb: 'push', needs: `placed:${STONE.id}`,
   stops: [{ x: 169, y: 0 }, { x: 170.8, y: 0 }, { x: 172.4, y: 0 }, { x: (RAFT.from + RAFT.to) / 2, y: RAFT.y - BARK_HIGH }],
 };
 
@@ -310,13 +316,19 @@ export const flarken: ChapterData = {
     { from: LOW.to, to: FAR.from, y: WATER },
   ],
   tussocks: [...MATS_A, ...MATS_B].map(mat),
+  // The slide and the picnic table are things on the sand, whatever he goes over.
+  landmarks: [
+    { look: 'slide', from: SLIDE.from, to: SLIDE.foot, base: 0 },
+    { look: 'picnic', from: BENCH_A.from, to: BENCH_B.to, base: 0 },
+  ],
   surfaces: [
     // The parking's gravel and the playground's sand; the picnic table's benches; the court's sand and the beach.
-    { from: -3, to: BENCH_A.from, kind: 'earth' },
+    { from: -3, to: 10, kind: 'earth' },
+    { from: 10, to: BENCH_A.from, kind: 'sand' },
     { from: BENCH_A.from, to: BENCH_A.to, kind: 'wood' },
-    { from: BENCH_A.to, to: BENCH_B.from, kind: 'earth' },
+    { from: BENCH_A.to, to: BENCH_B.from, kind: 'sand' },
     { from: BENCH_B.from, to: BENCH_B.to, kind: 'wood' },
-    { from: BENCH_B.to, to: STONES[0]!.from, kind: 'earth' },
+    { from: BENCH_B.to, to: STONES[0]!.from, kind: 'sand' },
     { from: STONES[0]!.from, to: STONES[2]!.to, kind: 'stone' },
     { from: HIGH.from, to: STEP.to, kind: 'stone' },
     { from: ISLAND.from, to: ISLAND.to, kind: 'stone' },
@@ -343,7 +355,7 @@ export const flarken: ChapterData = {
   hooks: SWINGS,
   climbs: [
     // The slide's ladder: he climbs it and steps off onto the platform at the top of the chute.
-    { x: SLIDE.ladder, bottom: 0, top: SLIDE.top, exit: 1, look: 'hose' },
+    { x: SLIDE.ladder, bottom: 0, top: SLIDE.top, exit: 1, look: 'ladder' },
     // The reed at the foot of the high stone: he climbs it like a stem and steps off onto the top.
     { x: HIGH.from - 0.3, bottom: 0, top: HIGH.y, exit: 1, look: 'root' },
     BENT_REED,
@@ -354,9 +366,9 @@ export const flarken: ChapterData = {
   bouncers: [NET],
   spots: [
     // At the broken end: Mamma rows up with the boat when he calls.
-    { id: 'sjon:mamma', look: 'sign', at: { x: 142, y: DECK }, verb: 'call', word: 'callMamma' },
+    { id: 'sjon:mamma', look: 'sign', at: { x: 142, y: DECK }, verb: 'call', word: 'callMamma', seated: true },
   ],
-  movers: [DOOR, BARK],
+  movers: [DOOR, STONE, BARK],
   jumps: [
     // Up onto the picnic table's benches.
     jump({ x: round(BENCH_A.from - 0.2), y: 0 }, { x: round(BENCH_A.from + 0.7), y: BENCH_A.y }),
@@ -374,8 +386,8 @@ export const flarken: ChapterData = {
     shelters: 'posts',
     // The volleyball net, sagging with rain, is the bouncer here.
     bouncers: 'net',
-    rain: 0.8,
-    lightning: 8,
+    rain: 0.95,
+    lightning: 7,
     flybys: [
       // On the far side of the reed mats: the little one, blown out over the lake.
       { on: 'beat:sjon:flash', from: { x: 102, y: 9 }, to: { x: 140, y: 12 }, seconds: 2.6, who: 'lillgubbe' },
@@ -388,15 +400,15 @@ export const flarken: ChapterData = {
       { on: 'beat:sjon:log', from: { x: END_POST.x, y: END_POST.y + 0.8 }, to: { x: 206, y: 0 }, seconds: 2.4, who: 'tragubbe' },
     ],
     // Mamma's lantern in the boat, once she has rowed up.
-    glows: [{ at: { x: 147, y: 1.6 }, z: -1.2, size: 1, after: 'sjon:mamma' }],
+    // Mamma's boat, rowed in from out on the bay, and the lantern in its bow.
+    boat: { spot: 'sjon:mamma', after: 'sjon:mamma', y: -0.6, from: { x: 150, z: -13 }, to: { x: (BREAK.from + BREAK.to) / 2, z: -1.1 } },
+    glows: [{ at: { x: 149.8, y: 1.2 }, z: -1.1, size: 1, after: 'sjon:boat' }],
     buildings: [
       // The family's car at the parking, where they left it to search the shore, its inside light on.
       { kind: 'car', x: 1, z: -14, lit: '' },
       // The playground: the swing set, the rings under its seats; the slide, its ladder where his is.
       { kind: 'swings', x: SWING_SET.x, z: -0.8, width: SWING_SET.width, height: SWING_SET.height },
-      { kind: 'slide', x: SLIDE.from + (SLIDE.foot - SLIDE.from) / 2, z: -0.6, width: SLIDE.foot - SLIDE.from, height: SLIDE.top },
       // The picnic table he climbs, and another further back on the grass.
-      { kind: 'picnic', x: TABLE.x, z: 0, width: TABLE.width, height: TABLE.y },
       { kind: 'picnic', x: 30, z: -14 },
       // (The volleyball net is the bouncer itself, torn loose and sagging between its posts.)
       // The changing rooms: their fronts just behind the path, their eaves the roofs he walks.
@@ -404,6 +416,13 @@ export const flarken: ChapterData = {
       // The diving tower in the water, its ladder where his is, its platform where he stands.
       { kind: 'tower', x: TOWER.ladder + 2.9, y: DECK, z: -3.4, width: 3, height: TOWER.y - DECK },
       // Birches round the bay, the October leaves nearly gone.
+      // The giant chess on its gravel pad, and the painted board with the smiling sun.
+      { kind: 'chess', x: 56, z: -16, width: 16 },
+      // The L of the jetty: its other leg runs out behind the path, low on the water.
+      { kind: 'jettyArm', x: 126.4, z: -1.2, y: DECK - 0.3, width: 24 },
+      // The small tarred hut with its white trim, in among the birches.
+      { kind: 'hut', x: 26, z: -22, width: 9, height: 10, tar: true },
+      { kind: 'sunboard', x: 70, z: -30, width: 13, height: 8.5 },
       { kind: 'birch', x: 6, z: -22, height: 64 },
       { kind: 'birch', x: 40, z: -26, height: 72 },
       { kind: 'birch', x: 64, z: -18, height: 58 },
@@ -411,6 +430,11 @@ export const flarken: ChapterData = {
     ],
   },
   decor: [
+    // A pair of mallards, sheltering behind the reeds.
+    { look: 'kit', word: 'and', at: { x: 93.9, y: -0.6 }, z: -3.4, turn: 1.1, scale: 1.2 },
+    { look: 'kit', word: 'and-hona', at: { x: 95.8, y: -0.6 }, z: -4.2, turn: 0.9, scale: 1.2 },
+    // The rocks at the water, where he climbs.
+    ...[68, 69.4, 72].map((x, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x, y: i === 0 ? 1.85 : 2.75 }, z: -0.5, scale: 0.55 })),
     // Reeds along the shore, among the mats and at the foot of the jetty. Two of them are climbed.
     ...[58.6, 60.8, 73.6, HIGH.from - 0.3, 86.4, 89.4, 109.6, 112.2].map((x) => ({ look: 'reed' as const, at: { x, y: 0 } })),
     { look: 'reed', at: { x: BENT_REED.x, y: HIGH.y } },
@@ -460,17 +484,11 @@ export const flarken: ChapterData = {
   beats: [
     // 1. the parking and the playground
     { id: 'sjon:arrive', at: 2.5, who: 'elof', line: 'sjArrive' },
-    { id: 'sjon:swings', at: 5.4, who: 'elof', line: 'sjSwings' },
-    { id: 'sjon:slide', at: 24.8, who: 'elof', line: 'sjSlide' },
     // 2. the picnic table and the net
-    { id: 'sjon:dry', at: 38.2, who: 'elof', line: 'sjDry' },
     { id: 'sjon:dry-klonk', at: 38.8, who: 'spoket', line: 'sjKlonkRaft' },
-    { id: 'sjon:net', at: 42.8, who: 'elof', line: 'sjNet' },
     // 3. the changing rooms
     { id: 'sjon:door', at: 50.2, who: 'elof', line: 'sjDoor' },
     // 4. the stones, the reeds and the mats
-    { id: 'sjon:stones', at: 60.8, who: 'elof', line: 'sjStones' },
-    { id: 'sjon:reeds', at: 74.2, who: 'elof', line: 'sjReeds' },
     { id: 'sjon:mats', at: 87.6, who: 'elof', line: 'sjMats' },
     { id: 'sjon:wood', at: 98.6, who: 'elof', line: 'sjKlonkWood' },
     { id: 'sjon:flash', at: 110.8, who: 'elof', line: 'sjFlash' },
@@ -488,10 +506,12 @@ export const flarken: ChapterData = {
     // 7. the diving tower
     { id: 'sjon:tower', at: 152.6, who: 'elof', line: 'sjTower' },
     { id: 'sjon:lookout', at: 155.6, who: 'elof', line: 'sjLookout', read: true },
-    { id: 'sjon:dive', at: 157.4, who: 'elof', line: 'sjDive' },
     // 8. the bark raft
     { id: 'sjon:gap', at: 165.4, who: 'elof', line: 'sjGap' },
-    { id: 'sjon:bark-idea', at: 166.8, until: `placed:${BARK.id}`, who: 'elof', line: 'sjBarkIdea', read: true },
+    { id: 'sjon:stone-idea', at: 165.9, until: `placed:${STONE.id}`, who: 'elof', line: 'sjStoneIdea', read: true },
+    { id: 'sjon:plop', on: `placed:${STONE.id}`, who: 'elof', line: 'sjPlop', read: true },
+    { id: 'sjon:plop-klonk', on: 'beat:sjon:plop', who: 'spoket', line: 'sjPlopKlonk' },
+    { id: 'sjon:bark-idea', at: 167.6, needs: `placed:${STONE.id}`, until: `placed:${BARK.id}`, who: 'elof', line: 'sjBarkIdea', read: true },
     { id: 'sjon:raft', on: `placed:${BARK.id}`, who: 'elof', line: 'sjRaft' },
     { id: 'sjon:klonk-raft', on: `placed:${BARK.id}`, who: 'spoket', line: 'sjKlonkRaft' },
     // 9. the jetty's end: the outlet takes them both, and the family will follow the river by car
@@ -645,7 +665,8 @@ export const context: Chooser = (has, player) => {
   const at = player.x;
   if (has('beat:sjon:outlet')) return ['sjonRiver', 'sjonMamma', 'water'];
   if (has(`placed:${BARK.id}`)) return [at < FAR.from ? 'sjonRaft' : 'sjonEnd', 'sjonMamma', 'water'];
-  if (at >= TOWER.to) return ['sjonBark', 'sjonMamma', 'water'];
+  if (has(`placed:${STONE.id}`)) return at >= TOWER.to ? ['sjonBark', 'sjonMamma', 'water'] : ['sjonTower', 'sjonMamma'];
+  if (at >= TOWER.to) return ['sjonGap', 'sjonMamma', 'water'];
   if (at >= TOWER.ladder - 0.6) return has('beat:sjon:lookout') ? ['sjonDive', 'sjonMamma', 'water'] : ['sjonTower', 'sjonMamma'];
   if (has('sjon:boat')) return at < BREAK.to + 0.5 ? ['sjonBoat', 'sjonMamma', 'water', 'mamma'] : ['sjonOut', 'sjonMamma'];
   if (at >= 137.6) return ['sjonMamma', 'sjonFamily', 'water', 'mamma'];

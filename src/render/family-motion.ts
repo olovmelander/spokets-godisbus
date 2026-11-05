@@ -118,7 +118,9 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
         const target = Math.max(-.5, Math.min(.5, towards));
         gaze = gaze === null || calm ? target : gaze + (target - gaze) * -Math.expm1(-dt * 9);
         pose.turn = gaze;
-        const down = look ? Math.max(-.5, Math.min(.65, Math.atan2(4.65 - look.up, Math.max(1, look.ahead)))) : character.nod;
+        // Under a cap's peak the chin stays up, or the peak hides the face.
+        const lowest = who === 'pappa' || who === 'bertil' ? .24 : .65;
+        const down = look ? Math.max(-.5, Math.min(lowest, Math.atan2(4.65 - look.up, Math.max(1, look.ahead)))) : character.nod;
         pitch = pitch === null || calm ? down : pitch + (down - pitch) * -Math.expm1(-dt * 7);
         pose.nod += pitch - character.nod;
         pose.armL = .06; pose.armR = .04;

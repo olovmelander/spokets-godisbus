@@ -287,7 +287,8 @@ describe('the story from its first scene to its last', () => {
     const dev = new URLSearchParams('dev');
     expect(courseFor(dev).id).toBe('prolog');
     expect(courseFor(dev, 'myren').id).toBe('myren');
-    expect(courseFor(new URLSearchParams('')).id).toBe('testbana');
+    expect(courseFor(new URLSearchParams('')).id).toBe('prolog');
+    expect(courseFor(new URLSearchParams('course=testbana')).id).toBe('testbana');
     expect(courseFor(new URLSearchParams('dev&course=epilog')).id).toBe('epilog');
   });
 

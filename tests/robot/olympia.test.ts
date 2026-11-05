@@ -12,7 +12,7 @@ import {
 } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
 import type { SimStart } from '../../src/sim/types';
-import { idle, leap, run, sideTaken, use, walkTo } from '../sim/drive';
+import { idle, jump, leap, run, sideTaken, use, walkTo } from '../sim/drive';
 import { decide, heightAt, playThrough } from './robot';
 
 /**
@@ -27,17 +27,15 @@ vi.setConfig({ testTimeout: 90000 });
 
 /** What is said on the way, in the story's order. */
 const SAID = [
-  'ol:arrive', 'ol:klonk', 'ol:lights', 'ol:fence', 'ol:top', 'ol:little',
+  'ol:arrive', 'ol:klonk', 'ol:lights', 'ol:top', 'ol:little',
   'ol:wind', 'ol:jump', 'ol:klonk-balls', 'ol:phew',
-  'ol:puddle', 'ol:idea', 'ol:splash', 'ol:klonk-ball', 'ol:in-goal',
-  'ol:flag', 'ol:benches', 'ol:crowd',
-  'ol:circle', 'ol:old-one', 'ol:bertil-here', 'ol:kick-ready', 'ol:fly', 'ol:goal', 'ol:cheer', 'ol:thanks',
-  'ol:range', 'ol:all-white',
-  'ol:trail', 'ol:gust', 'ol:north', 'ol:follow', 'ol:car', 'ol:klonk-end',
+  'ol:puddle', 'ol:splash', 'ol:klonk-ball', 'ol:in-goal', 'ol:crowd', 'ol:old-one', 'ol:bertil-here', 'ol:kick-ready', 'ol:fly', 'ol:goal', 'ol:cheer', 'ol:thanks',
+  'ol:range', 'ol:all-white', 'ol:gust', 'ol:north', 'ol:follow', 'ol:car', 'ol:klonk-end',
 ];
 /** The ball floated, Bertil called, his ball ready and ridden, and the end. */
 const PUZZLES = ['placed:ol-ball', 'ol:bertil', 'ol:kick-ready', 'ol:kick', 'goal'];
 
+const where = (sim: Sim) => `he is at ${sim.curr.x.toFixed(2)}, ${sim.curr.y.toFixed(2)} (${sim.curr.mode})`;
 const ball = olympia.movers!.find((mover) => mover.id === 'ol-ball')!;
 const last = ball.stops[ball.stops.length - 1]!;
 const [fenceDown, fenceUp, net] = olympia.climbs!;
@@ -246,12 +244,40 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       expect(olympia.storm!.buildings!.some((b) => b.kind === 'goal' && b.x >= puddle.to && b.x - puddle.to < 3)).toBe(true);
     });
 
-    it('stops him when he runs at it, three kicks put it in the water, and he hops over on it into the goal', () => {
+    /** Up onto the table, behind the ball: from under it, with a jump straight up. */
+    const behindTheBall = (sim: Sim) => {
+      walkTo(sim, ball.stops[0]!.x - ball.width / 2 - 0.8);
+      jump(sim);
+      walkTo(sim, ball.stops[0]!.x - ball.width / 2 - 0.3);
+      expect(sim.curr.y, where(sim)).toBeCloseTo(ball.stops[0]!.y, 2);
+    };
+
+    it('lies up on a table he runs under: the puddle stops him, and the small ball floating there says what to do', () => {
       expect(ball.height).toBeGreaterThan(LEDGE_REACH);
       const sim = new Sim(olympia, {}, { checkpoint: checkpoint(64) });
       run(sim, 0.2);
+      expect(walkTo(sim, puddle.from - 0.6)).toBe(true);
+      expect(sim.curr.verb).toBeNull();
+      expect(sim.said).toContain('ol:puddle');
+      expect(sim.said).not.toContain('ol:idea');
+      run(sim, 13);
+      expect(sim.said).toContain('ol:idea');
+      expect(sim.said).not.toContain('ol:idea-more');
+      run(sim, 12);
+      expect(sim.said).toContain('ol:idea-more');
+      expect(olympia.decor!.some((d) => d.look === 'floatBall')).toBe(true);
+    });
+
+    it('is kicked from behind, up on the table: four kicks put it in the water, and he hops over on it into the goal', () => {
+      const sim = new Sim(olympia, {}, { checkpoint: checkpoint(64) });
+      run(sim, 0.2);
       const state = () => sim.movers.find((m) => m.def.id === ball.id)!;
-      for (let push = 1; push < ball.stops.length; push++) {
+      behindTheBall(sim);
+      expect(sim.curr.verb, where(sim)).toBe('push');
+      use(sim);
+      run(sim, 0.7);
+      expect(state().stop).toBe(1);
+      for (let push = 2; push < ball.stops.length; push++) {
         runInto(sim, 1);
         expect(sim.curr.y, `kick ${push}`).toBeCloseTo(heightAt(olympia, sim.curr.x), 2);
         expect(sim.curr.x, `kick ${push}`).toBeLessThan(state().x - ball.width / 2);
@@ -276,7 +302,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     it('goes home again when he leaves it half kicked, so nothing is ever stuck', () => {
       const sim = new Sim(olympia, {}, { checkpoint: checkpoint(64) });
       run(sim, 0.2);
-      runInto(sim, 1);
+      behindTheBall(sim);
       use(sim);
       run(sim, 0.7);
       const state = () => sim.movers.find((m) => m.def.id === ball.id)!;
@@ -444,7 +470,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       for (const f of flybys) expect(f.to.y - f.from.y).toBeGreaterThan(10);
       const lines: Record<string, string> = sv.lines;
       expect(lines.olNorth).toBe('Upp mot sjön vid Flärken!');
-      expect(olympia.storm).toMatchObject({ rain: 0.85, lightning: 9, rollers: 'football' });
+      expect(olympia.storm).toMatchObject({ rain: 0.9, lightning: 8, rollers: 'football' });
     });
   });
 
@@ -521,7 +547,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     for (const beat of olympia.beats!.filter((b) => b.who === 'spoket')) expect(all[beat.line]).toMatch(/^Klonk(, klonk)?!$/);
     // Bertil calls Elof lillebror, and his free kick is his own.
     expect(all.olBertilReady).toBe('Upp på bollen! Jag skjuter, du flyger!');
-    expect(all.olIdea).toBe('Bollar flyter! Bollen kan bära mig.');
+    expect(all.olIdea).toBe('Den lilla bollen flyter ju!');
   });
 
   it('is Kapitel 4: after Byn i stormen and before Flärken, Bertil\'s chapter, about as long as the plan says', () => {

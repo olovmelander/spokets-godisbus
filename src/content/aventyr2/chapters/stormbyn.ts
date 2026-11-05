@@ -140,13 +140,14 @@ export const stormbyn: ChapterData = {
   // Two lamp posts on the far pavement, dark tonight: one in the yard across the river, one at the far end of
   // the flooded crossing, out of the tall picture from the wall's top. Neither stands behind a big candy.
   lampPosts: [44.4, 114.4],
-  storm: { bouncers: 'awning', rain: 0.9,
-    lightning: 10,
-    // A candle in each near window, just in front of its glass.
+  storm: { bouncers: 'awning', rain: 0.85,
+    lightning: 9,
+    // The whole village is dark. A candle is lit in each near window when he pulls the shop's bell cord: someone is awake,
+    // and has heard. The same thing he does for his own family on the jetty, at the end of the night.
     glows: [
-      { at: { x: 20.5, y: PAVEMENT + 3.4 }, z: -6 },
-      { at: { x: 128.3, y: 3.4 }, z: -6 },
-      { at: { x: 147.4, y: 3.4 }, z: -6 },
+      { at: { x: 20.5, y: PAVEMENT + 3.4 }, z: -6, size: 5, after: 'sb:bell-yarn' },
+      { at: { x: 128.3, y: 3.4 }, z: -6, size: 5, after: 'sb:bell-shoes' },
+      { at: { x: 147.4, y: 3.4 }, z: -6, size: 5, after: 'sb:bell-bread' },
     ],
   },
   coda: 'moa',
@@ -252,7 +253,17 @@ export const stormbyn: ChapterData = {
     { at: { x: 158.45, y: 0 }, every: 1.5, first: 1.1 },
     { at: { x: 160.65, y: 0 }, every: 2.4, first: 0.9 },
   ],
+  decor: [
+    // The shops' blinds are down for the night, until someone wakes and raises one.
+    { look: 'blind', word: '7.6', at: { x: 20.5, y: PAVEMENT + 2.5 }, z: -6.1, until: 'sb:bell-yarn' },
+    { look: 'blind', word: '8.8', at: { x: 128.3, y: 2.5 }, z: -6.1, until: 'sb:bell-shoes' },
+    { look: 'blind', word: '5.8', at: { x: 147.4, y: 2.5 }, z: -6.1, until: 'sb:bell-bread' },
+  ],
   spots: [
+    // The shops' bell cords, down from their awnings and signs: each wakes someone behind a dark window.
+    { id: 'sb:bell-yarn', look: 'bellCord', at: { x: 26.5, y: PAVEMENT }, verb: 'call', word: 'sbRing' },
+    { id: 'sb:bell-shoes', look: 'bellCord', at: { x: 134, y: 0 }, verb: 'call', word: 'sbRing' },
+    { id: 'sb:bell-bread', look: 'bellCord', at: { x: 153.2, y: 0 }, verb: 'call', word: 'sbRing' },
     // The birch leaf at the river's shore: he steps on, and the current carries him.
     { id: 'leaf', at: LEAF.from, verb: 'take', word: 'board', ride: 'leaf' },
     // On the wall: he calls Moa, and she holds her umbrella out; then he takes hold of it at the edge.
@@ -292,20 +303,17 @@ export const stormbyn: ChapterData = {
     { id: 'sbDark', at: 1.6, who: 'elof', line: 'sbDark' },
     { id: 'sbKlonkHere', at: 4.6, who: 'spoket', line: 'sbKlonkHere' },
     { id: 'sbAwning', at: 14, who: 'elof', line: 'sbAwning' },
-    { id: 'sbCandle', at: 21, who: 'elof', line: 'sbCandle' },
+    { id: 'sbCandle', on: 'sb:bell-yarn', who: 'elof', line: 'sbCandle' },
+    { id: 'sbCandleTwo', on: 'sb:bell-shoes', who: 'elof', line: 'sbCandleTwo' },
+    { id: 'sbCandleThree', on: 'sb:bell-bread', who: 'elof', line: 'sbCandleThree' },
     { id: 'sbRiver', at: 34.4, who: 'elof', line: 'sbRiver' },
-    { id: 'sbGrate', at: 64.8, who: 'elof', line: 'sbGrate' },
-    { id: 'sbWall', at: 89.6, who: 'elof', line: 'sbWall' },
     { id: 'family:moa', at: 97.4, until: 'umbrella:ready', who: 'moa', line: 'sbMoaHere', read: true },
     { id: 'family:umbrella', on: 'family:umbrella-ready', until: 'umbrella', within: [95, 104], who: 'moa', line: 'sbMoaHold', read: true },
     { id: 'sbFloat', on: 'umbrella', within: [100, 120], who: 'elof', line: 'sbFloat' },
     { id: 'sbLanded', at: 120.6, needs: 'umbrella', who: 'moa', line: 'sbMoaLanded' },
-    { id: 'sbSign', at: 124.4, who: 'elof', line: 'sbSign' },
     { id: 'sbCap', on: 'cap', who: 'elof', line: 'sbCap' },
     { id: 'sbToLake', on: 'cap', who: 'elof', line: 'sbToLake', read: true },
     { id: 'sbKlonkCap', on: 'cap', who: 'spoket', line: 'sbKlonkCap' },
-    { id: 'sbDrops', at: 142.6, who: 'elof', line: 'sbDrops' },
-    { id: 'sbSteps', at: 163, who: 'elof', line: 'sbSteps' },
     { id: 'sbShore', at: 176, who: 'elof', line: 'sbShore' },
   ],
   cameras: [

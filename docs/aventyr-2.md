@@ -45,7 +45,8 @@ del"). The first adventure (prologue, Gården, Granskogen, Myren, Berget, the fi
 - Klonk is named and is Elof's friend. It has no mouth; it speaks in thought pictures and *klonk*. It freezes into
   plain wood when a grown-up looks (the Toy Story rule), which Stormskogen turns into a puzzle.
 - The family helps as kind giants, one at each big crossing, each with something of their own.
-- No surnames, no address, no house number, no school, no logotypes. Real places nearby may be named, but Äventyr
+- No surnames, no address, no house number, no school, no logotypes (the one exception is the name Olympia in white
+  letters on the red hall, which Olov asked for). Real places nearby may be named, but Äventyr
   2 names only "byn" and "sjön".
 - Nothing frightening chases Elof. The storm is wild, loud and beautiful, never a monster. The family is out in
   it with him, in raincoats, with lamps.
@@ -141,6 +142,8 @@ committed. Anything comes out again if they or Elof's parents ask.
 1. **The flapping awning** bounces him like a trampoline.
 2. **Rännstensforsen:** the gutter is a rushing river; a birch leaf rides it.
 3. **Gallret:** the drain grate's bars over the deep dark.
+   All along the street the blinds are down. He pulls a shop's bell cord, someone wakes, and a blind goes up on a lit
+   window: three times, the same thing he does for his own family at the end of the night.
 4. **Moas paraply:** "Ropa på Moa". From a high wall he floats down under her umbrella over the flooded crossing.
 5. **The swinging sign:** a moving platform.
 6. **Fjun's cap:** the little one's carved cap lies in the gutter. "Rännstenen rinner ner till sjön!"
@@ -154,7 +157,9 @@ the pitch. A football is one and a half Elofs high: the puzzles are football puz
 
 1. **The ball-stop net** and the fence: a long climb in the wind.
 2. **Rolling balls:** footballs bowled across the flooded pitch by the gusts (jump them, or shelter behind cones).
-3. **Bollen i målet:** push (Sparka) the ball into the flooded goalmouth, where it floats: a stepping stone.
+3. **Bollen i målet:** the goalmouth is flooded and too wide, and a small ball bobs in it. The answer is behind him: he
+   ran under a table with a big football on it. He goes back, climbs up behind it, and kicks it down and on into the
+   water, where it floats: a stepping stone.
 4. **The net and the crossbar:** climb the goal's net up to the crossbar and walk along it.
 5. **The corner flag** snapping in the gusts, and the benches' roofs dripping, with a dry way under them.
 6. **Bertil's free kick:** "Ropa på Bertil". He kicks the ball, and Elof rides it in a great arc into the far goal.
@@ -180,7 +185,8 @@ picnic places, a volleyball court and a playground. In late October it is empty 
 
 Norra Anundsjöån past Bredbyn and down Moälven: the long way home of the water.
 
-1. Riding the current on bark and logs between stones and eddies; logs that roll and bob.
+1. Riding the current on a raft through white water, then **the eddies**: three logs turned to and fro, each a hop from the
+   next only for a moment, so that he waits and goes. Anyone who falls in, or plays on Lugnt, is offered a birch leaf.
 2. The bridge in Bredbyn: Pappa on the bridge lowers a rope (his scarf) to lift Elof past the rapids.
 3. A beaver's lodge and its gnawed stumps; an otter slipping past.
 4. The wide lake of Anundsjösjön under the storm; the owl comes back for the widest stretch.
@@ -199,15 +205,20 @@ Själevadsfjärden.
 3. **Mormor and morfar's place:** the gravel drive, the lawn, birches, a woodshed and its stack of firewood, a
    rowing boat on trestles for the winter. **Mormor** lights the way with her lantern and opens the barn.
 4. **The red barn** with its rusty roof: up the planks, through the hay loft and along the roof in the gusts.
-5. **The forest behind the house:** a brook on stones, Klonk's seesaw over the deep brook up onto the bank, and
+5. **The forest behind the house:** a brook on stones, then **the lever**: Klonk jumps on the seesaw and it hardly stirs. Elof
+   goes round the stone and pushes it back towards his own end, as Pappa sits near the middle, so that Klonk has the
+   long arm and flings him over the deep brook. Then
    **Billaberget's boulders**, its granite face and October hazelnuts.
 6. From the brow of Billaberget, a flash: both trägubbar far below on a stone in the narrow. Mormor: "Kom, vi går
    ner till sundet."
 
 ### Finalen: Stormens öga (in the narrow at Billsta, Själevadsfjärden beyond)
 
-1. From a jetty below Billaberget (not mormor and morfar's: their house is up by the road) the owl comes back and
-   flies Elof out over the waves. Far down the lake, Själevad's white church stands in the flashes.
+1. On a jetty below Billaberget (not mormor and morfar's: their house is up by the road) the storm has put out the family's
+   lamps. They call for him over the water and never see him at their feet; only mormor knows. He lights their lamps
+   one by one, and each of them feels that he is near (Moa: "Det är Elof. Jag vet att det är Elof."). The row of light
+   goes out over the water, and the owl comes to it and flies Elof out over the waves. Far down the lake, Själevad's
+   white church stands in the flashes.
 2. **The storm's eye:** the wind drops, the clouds part, stars and the moon. On the stone the old trägubbe holds
    the little one. They are cold and still, and then they see him.
 3. **The golden sweet:** the old one gives Elof a geléhallon in gold paper it saved for him. *Smaka*: he grows,
@@ -243,7 +254,7 @@ Själevadsfjärden.
 | The playground's swings and slide; the volleyball net; the diving tower | hooks, climbs, bouncers, ledges |
 | Down the river on bark and logs; Pappa's scarf from the bridge | rides, cycle movers, a call and a climb |
 | Morfar's ladder across the ditch; mormor's lantern and the barn door | call spots, held beats, ledges and movers |
-| Klonk's seesaw over the forest brook: he jumps on the high end and flings Elof over | a *call* spot, a held beat, Klonk's perch on the high end, and a ride |
+| Klonk's seesaw over the forest brook: too light, until Elof moves the stone | a *call* spot, a held beat, Klonk's perch on the high end, a *push* mover from the far side, and a ride |
 | Moa's map of the whole journey | src/content/aventyr2/map.ts |
 
 The audit of 4 November (`docs/aventyr-2-audit.md`) tightened the story's thread and gameplay; what it changed is
@@ -265,8 +276,8 @@ The worlds were authored from this design and keep its beats, with these details
 - **Byn i stormen:** the awning's striped flap is an optional bounce to the trestle stands; a 27 EL leaf ride down
   the gutter; five grate bars; four stone steps up the wall to Moa's umbrella. It now ends on the road to Olympia.
 - **Olympia** (goal at 179 EL, 93 trail candies): down the steps from the street and over the high fence by the
-  ball-stop net; footballs bowled across the small pitch from behind; *Bollen i målet*, the big ball kicked three
-  times ("Sparka") into the flooded goalmouth, where it floats as a stepping stone ("Mål! Jag gjorde mål själv!");
+  ball-stop net; footballs bowled across the small pitch from behind; *Bollen i målet*, the big ball fetched from its table
+  and kicked four times ("Sparka") into the flooded goalmouth, where it floats as a stepping stone ("Mål! Jag gjorde mål själv!");
   a side way up the goal's net and along its white crossbar; the corner flag and the dripping benches; Bertil's
   free kick over the centre circle, which is a lake, into the far goal; five biathlon targets turned white with
   pine cones (optional); the dark floodlit trail, where the strongest gust takes the little one north.
@@ -288,8 +299,8 @@ The worlds were authored from this design and keep its beats, with these details
   trestles and the woodshed's stack; mormor with her lantern opens the red barn; through the dark hay loft, over a
   bale and a hatch, and along the barn's long roof in the gusts, sheltering behind its ventilation hoods; into the
   forest behind the house: a brook crossed on stones, and where it runs deep, **Klonk's seesaw**: a dry spruce lies
-  over a stone, Elof is too light, "Ropa på Klonk", Klonk jumps on the high end and flings him over the brook up onto
-  Billaberget's bank ("Tack, Klonk! Du är min bästa vän."); then its boulders, a crack, rock shelves with
+  over a stone, "Ropa på Klonk", it hardly stirs, Elof pushes the stone back towards his own end, and Klonk's long arm
+  flings him over the brook up onto Billaberget's bank ("Tack, Klonk! Du är min bästa vän."); then its boulders, a crack, rock shelves with
   hazelnuts against its granite face, and the slope in the gusts behind the boulders; at the brow a flash shows both
   figures far below on a stone in the narrow, the owl is heard, and mormor: "Kom, vi går ner till sundet."
 - **Stormens öga** now lies in the narrow at Billsta, below Billaberget's granite and spruces, with Själevad's

@@ -1,18 +1,21 @@
 import {
-  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage,
+  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage,
   Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry,
-  CatmullRomCurve3, Points, PointsMaterial, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
+  CatmullRomCurve3, Points, PointsMaterial, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
   type Material,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { forestKit } from '../../render/forest-kit';
+import type { Assets } from '../../render/assets';
 import { PLACES } from '../../render/dressing';
 import type { PlaceLook } from '../../render/dressing/kit';
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../render/extensions';
 import { glowTexture } from '../../render/glow';
 import { drawnWhile } from '../../render/idle';
 import type { SpotProp } from '../../render/props';
-import type { Mover, RideLook, Spot } from '../../sim/types';
-import { box, building, PANE, rock } from './buildings';
+import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
+import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
+import { box, building, paint, PANE, rock } from './buildings';
 import { createGrandparent, type Grandparent } from './grandparents';
 
 /**
@@ -117,20 +120,25 @@ const LOOKS: Record<string, PlaceLook> = {
   },
   stormbyn: {
     ...PLACES.village,
-    grade: grade(0.82, 0.9, [0.95, 0.96, 1.08]),
+    // The power is out: no street lamp, and the walls only as pale as a night lets them be.
+    grade: grade(0.72, 0.88, [0.92, 0.95, 1.1]),
     haze: { colour: '#2a3246', near: 7, far: 80 },
     sky: { top: '#0c1222', middle: '#2c3650', bottom: '#2a2c38', glow: '#b0a6c4' },
-    hemisphere: { sky: '#98a6cc', ground: '#3c3a3c', intensity: 1.05 },
-    sun: { colour: '#ffd8a4', intensity: 1.5, from: [-8, 3.4, -4] },
-    fill: { colour: '#b4c2ec', intensity: STORM_FILL },
+    hemisphere: { sky: '#8c9cc8', ground: '#34343a', intensity: 0.85 },
+    sun: { colour: '#c4d0f4', intensity: 1.1, from: [-8, 3.4, -4] },
+    fill: { colour: '#a8b8e8', intensity: STORM_FILL * 0.7 },
     water: { colour: '#283446', opacity: 0.88 },
     tussock: '#5a5a58',
   },
   flarken: {
     ...PLACES.bog,
-    grade: grade(0.88, 0.86, [0.86, 0.96, 1.12]),
-    haze: { colour: '#273a4c', near: 5, far: 64 },
-    sky: { top: '#0a1424', middle: '#283c56', bottom: '#1c2c3c', glow: '#98b0cc' },
+    // A lake's shore, not a bog: the same islands in the water, in worn grass and with none of the red moss.
+    ground: 'shore',
+    far: 'lake',
+    noSun: true,
+    grade: grade(0.92, 0.84, [0.9, 0.96, 1.08]),
+    haze: { colour: '#3c5068', near: 8, far: 90 },
+    sky: { top: '#101c30', middle: '#34496a', bottom: '#465e7c', glow: '#c0d2e6' },
     hemisphere: { sky: '#90a8d0', ground: '#3a3a2e', intensity: 1.05 },
     sun: { colour: '#c8d6ff', intensity: 1.6, from: [-8, 4, -4] },
     fill: { colour: '#a8bce4', intensity: STORM_FILL },
@@ -140,39 +148,51 @@ const LOOKS: Record<string, PlaceLook> = {
   // The new worlds' first light, until their own is set: the football pitch, the river and Billsta at night.
   olympia: {
     ...PLACES.garden,
-    grade: grade(0.82, 0.86, [0.88, 0.96, 1.1]),
-    haze: { colour: '#2a3650', near: 6, far: 70 },
-    sky: { top: '#0a1222', middle: '#2a3856', bottom: '#1e283a', glow: '#94a8cc' },
-    hemisphere: { sky: '#8ea2d2', ground: '#34402e', intensity: 1.05 },
-    sun: { colour: '#c4d2ff', intensity: 1.7, from: [-6, 6, -3] },
-    fill: { colour: '#a8bce8', intensity: STORM_FILL },
+    // A clearing cut out of a forested hill: the forest stands right behind the stand, and no garden.
+    far: 'wall',
+    farBeyond: -70,
+    grade: grade(0.9, 0.98, [0.98, 1.0, 0.98]),
+    // Thin haze: the hall and the stand are what this place is, and they stand well back.
+    haze: { colour: '#2a3a38', near: 22, far: 150 },
+    sky: { top: '#081416', middle: '#20383a', bottom: '#2a4444', glow: '#a4ccc0' },
+    hemisphere: { sky: '#c0bcb0', ground: '#3c4430', intensity: 1.15 },
+    sun: { colour: '#f0dcc8', intensity: 2, from: [-4, 5, 6] },
+    fill: { colour: '#d4c8bc', intensity: STORM_FILL },
     water: { colour: '#2b4260', opacity: 0.86 },
     tussock: '#55663f',
   },
   alven: {
     ...PLACES.forest,
-    grade: grade(0.88, 0.86, [0.88, 0.97, 1.1]),
-    haze: { colour: '#24343e', near: 5, far: 60 },
-    sky: { top: '#081218', middle: '#22343c', bottom: '#18262c', glow: '#90b0bc' },
-    hemisphere: { sky: '#88a6bc', ground: '#2e3a28', intensity: 1.05 },
-    sun: { colour: '#c4d6ff', intensity: 1.6, from: [-7, 5, -4] },
-    fill: { colour: '#a4c0e0', intensity: STORM_FILL },
-    water: { colour: '#264654', opacity: 0.88 },
+    // Ridges and hay meadows, and the river's own black water.
+    far: 'river',
+    farBeyond: -70,
+    grade: grade(0.9, 0.84, [1.0, 0.98, 0.9]),
+    haze: { colour: '#2a3226', near: 10, far: 120 },
+    sky: { top: '#0e120c', middle: '#2c3426', bottom: '#384230', glow: '#b4b890' },
+    hemisphere: { sky: '#a0a88c', ground: '#34382a', intensity: 1.05 },
+    sun: { colour: '#dcd4b0', intensity: 1.6, from: [-7, 5, -4] },
+    fill: { colour: '#c0c4a4', intensity: STORM_FILL },
+    water: { colour: '#16262a', opacity: 0.95 },
     tussock: '#56663c',
   },
   billsta: {
     ...PLACES.garden,
-    grade: grade(0.84, 0.88, [0.9, 0.97, 1.1]),
-    haze: { colour: '#283450', near: 6, far: 72 },
-    sky: { top: '#0a1224', middle: '#2a3a5a', bottom: '#1e2a40', glow: '#a0b4d8' },
-    hemisphere: { sky: '#90a4d4', ground: '#363f30', intensity: 1.08 },
-    sun: { colour: '#c8d4ff', intensity: 1.75, from: [-6, 6, -3] },
-    fill: { colour: '#aabce8', intensity: STORM_FILL },
+    // By the road near the forest: spruce behind the house, and no other garden's house far off.
+    far: 'billaberget',
+    farBeyond: -70,
+    grade: grade(0.88, 0.92, [0.96, 0.95, 1.08]),
+    haze: { colour: '#2a2e50', near: 16, far: 170 },
+    sky: { top: '#0c0e26', middle: '#2a2e58', bottom: '#38385e', glow: '#b4b0dc' },
+    hemisphere: { sky: '#a8acd0', ground: '#3c3e48', intensity: 1.08 },
+    sun: { colour: '#d4d6f4', intensity: 1.75, from: [-6, 6, -3] },
+    fill: { colour: '#bcc0e0', intensity: STORM_FILL },
     water: { colour: '#2a405e', opacity: 0.86 },
     tussock: '#56663f',
   },
   stormoga: {
     ...PLACES.bog,
+    ground: 'shore',
+    noSun: true,
     grade: grade(0.86, 0.9, [0.88, 0.96, 1.14]),
     haze: { colour: '#1e2c48', near: 6, far: 80 },
     sky: { top: '#060c1e', middle: '#1c2a4c', bottom: '#2a3454', glow: '#d8e2ff' },
@@ -192,8 +212,8 @@ const LOOKS: Record<string, PlaceLook> = {
 };
 /** The night's tint on what no lamp lights: the painted far scenery, the soft foreground. `calm`: the storm's eye. */
 const TINT: Record<string, readonly [number, number, number]> = {
-  stormkvall: [0.42, 0.46, 0.62], stormgard: [0.46, 0.5, 0.66], stormskog: [0.42, 0.48, 0.58], stormbyn: [0.5, 0.52, 0.64],
-  olympia: [0.46, 0.5, 0.66], flarken: [0.46, 0.51, 0.66], alven: [0.42, 0.48, 0.6], billsta: [0.48, 0.52, 0.68], stormoga: [0.42, 0.46, 0.64], calm: [0.58, 0.64, 0.88],
+  stormkvall: [0.42, 0.46, 0.62], stormgard: [0.3, 0.34, 0.48], stormskog: [0.42, 0.48, 0.58], stormbyn: [0.5, 0.52, 0.64],
+  olympia: [0.42, 0.56, 0.56], flarken: [0.54, 0.6, 0.74], alven: [0.5, 0.5, 0.42], billsta: [0.5, 0.48, 0.74], stormoga: [0.42, 0.46, 0.64], calm: [0.58, 0.64, 0.88],
 };
 /** How much of the painted far scenery shows through the storm's dark: the backdrop is dimmed to night. */
 const DIM: Record<string, number> = { stormkvall: 0.34, stormgard: 0.42, stormskog: 0.36, stormbyn: 0.46, olympia: 0.42, flarken: 0.4, alven: 0.38, billsta: 0.44, stormoga: 0.38 };
@@ -255,6 +275,9 @@ function bolt(seed: number): Mesh {
   return mesh;
 }
 
+/** The storm's night outside a lit house. */
+const OUT_OF_DOORS = { sky: new Color('#7488b8'), ground: new Color('#2c3830'), sun: new Color('#a8bce8'), far: new Color('#6a7088') };
+
 /**
  * The storm round the camera. Its flashes are soft and seldom (Harding's rule: never more than three a second);
  * with less motion the rain hangs still and there are none.
@@ -284,6 +307,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const bolts = [bolt(3), bolt(11)];
   for (const b of bolts) group.add(b);
   const base = { hemisphere: hemisphere.intensity, sun: sun.intensity };
+  // A home with a door out into the storm: the room's warm lamps stay behind him, and the night has the light.
+  const doorway = rain > 0 ? chapter.outdoors : undefined;
+  const room = { sky: hemisphere.color.clone(), ground: hemisphere.groundColor.clone(), sun: sun.color.clone() };
   let nextFlash = (storm?.lightning ?? 0) * 0.5;
   let flashAt = -99;
   let flashBolt = 0;
@@ -363,8 +389,20 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     return made;
   });
 
-  // The rain barrel under each tap: wooden staves and iron hoops, standing on the ground the tap's block stands on.
-  for (const spot of chapter.spots ?? []) if (spot.look === 'tap') group.add(barrel(chapter.ground, spot.at.x, spot.at.y));
+  // A bathing raft moored in the bay rocks and drags at its moorings: the tower stands on it.
+  // A boat that is rowed in: until its model has come, a plain hull. Whoever sits in it goes with it.
+  const boat = storm?.boat ? new Group() : null;
+  if (boat) {
+    boat.userData.model = 'roddbat';
+    boat.add(new Mesh(new BoxGeometry(6.2, 1.2, 2.2).translate(0, 0.6, 0), solid('#d8d4c8', 0.8)));
+    group.add(boat);
+  }
+  let rowed = 0;
+
+  const rocking = buildings.filter((_, i) => storm?.buildings?.[i]?.kind === 'tower').map((made) => ({ made, y: made.group.position.y }));
+
+  const drift = createFoam(storm?.foam, group);
+
 
   // Cones shaken from the spruces fall where the chapter's drips are: brown and scaled, no splash.
   const coneDrops = storm?.drips === 'cone' ? scene.getObjectByName('rain-drops') as InstancedMesh | undefined : undefined;
@@ -377,6 +415,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     }
     coneDrops.geometry = new LatheGeometry(scales, 9);
     coneDrops.material = solid('#6a4428', 0.9, { flatShading: true });
+    coneDrops.userData.cones = true;
   }
   // Footballs bowled along by the wind, where the chapter's rollers are: round, and patched.
   const balls = storm?.rollers === 'football' ? scene.getObjectByName('rollers') as InstancedMesh | undefined : undefined;
@@ -393,7 +432,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   }
 
   // A figure seen far out in the lake stands on a stone of its own, dark and wet, the waves round it.
-  for (const d of chapter.decor ?? []) {
+  for (const d of (chapter.water ?? []).length > 0 ? chapter.decor ?? [] : []) {
     if ((d.look !== 'tragubbe' && d.look !== 'lillgubbe') || (d.z ?? 0) > -6) continue;
     const rock = new Mesh(new SphereGeometry(1.4, 12, 8), solid('#3c4048', 0.9, { flatShading: true }));
     rock.scale.set(1.3, 0.55, 1);
@@ -409,13 +448,42 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     if (kind !== 'stones') for (const x of gust.shelters) group.add(kind === 'pots' ? flowerPot(x, gust.y) : kind === 'vents' ? roofVent(x, gust.y) : kind === 'rocks' ? boulder(x, gust.y) : jettyPost(x, gust.y));
   }
 
+  // The car that goes by behind the street, in the rain.
+  const passing = scene.getObjectByName('passing-car');
+  if (passing) {
+    passing.userData.model = 'bil-gra';
+    passing.userData.fit = 3.8;
+    passing.userData.lift = -0.45;
+  }
+  // The rain barrel and the watering can stand on the lawn, their tops where the outline has them.
+  for (const [look, model] of [['barrel', 'tunna'], ['can', 'kanna'], ['playhouse', 'lekstuga'], ['slide', 'rutschkana'], ['picnic', 'picknick'], ['fence', 'staket'], ['stairs', 'trappa'], ['woodpile', 'vedstapel'], ['skerry', 'holme'], ['edging', 'rabatt']] as const) {
+    for (const holder of scene.getObjectsByProperty('name', `landmark:${look}`)) {
+      holder.userData.model = model;
+      const mark = chapter.landmarks?.find((one) => one.look === look && one.from === holder.position.x);
+      // A barrel and a can stand round their middles; the others are measured from their near edge.
+      if (mark && (look === 'barrel' || look === 'can')) holder.userData.shift = (mark.to - mark.from) / 2;
+      // The stone is measured from the path's own height, whatever the lake's bed is.
+      if (mark && look === 'skerry') holder.userData.lift = -mark.base;
+      // Behind the porch, the house itself, as the family's garden has it.
+      if (look === 'playhouse') {
+        const house = new Group();
+        house.position.copy(holder.position);
+        house.userData.model = 'lekstuga-hus';
+        holder.parent?.add(house);
+      }
+    }
+  }
   // Boulders that are blocks of the ground (landmarks), where no kit of the place draws them: faceted granite in
   // place of the plain box that stands in for them. The forest's kit has its own stones and is left to them.
-  if (chapter.place !== 'forest') {
+  if (chapter.place !== 'forest' || chapter.river) {
     for (const holder of scene.getObjectsByProperty('name', 'landmark:stone')) {
       const box = holder.children.find((child): child is Mesh => child instanceof Mesh && child.geometry instanceof BoxGeometry);
       if (!box) continue;
       const { width, height } = (box.geometry as BoxGeometry).parameters;
+      // Until the kit's has come: faceted granite. It takes one of the kit's boulders, filling the block.
+      holder.userData.model = ['block-a', 'block-b', 'block-c'][Math.abs(Math.round(holder.position.x)) % 3]!;
+      // Its back stands up behind the path, and its front goes down into the ground: he walks on the ground's own top.
+      holder.userData.block = chapter.river && holder.position.y < 0 ? { width: width * 1.34, height: 2.6, depth: Math.max(4, width * 0.8), x: box.position.x, y: height - 0.55, z: -1.5 } : { width: width * 1.2, height: height * 1.5, depth: Math.max(3.5, width * 0.8), x: box.position.x, y: height * 0.65, z: -2.4 };
       box.geometry.dispose();
       box.geometry = rock(Math.round(holder.position.x * 10), width / 2 * 1.08, height / 2 * 1.04, 1.8);
       box.material = solid('#8c9096', 0.95, { flatShading: true });
@@ -460,16 +528,46 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     return { def, ride, mesh };
   });
 
+  const owlWings: Object3D[] = [];
   let first = true;
   return {
     update({ dt, clock, flags, x, y, camera, still, tier, riding }: ExtraFrame) {
       elof.x = x;
       elof.flags = flags;
+      drift?.(dt, still);
+      // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him.
+      const beat = still ? 0.2 : 0.2 + 0.46 * Math.sin(clock * 5.4);
+      for (const wing of owlWings) wing.rotation.x = beat * (wing.userData.side as number);
+      if (boat && storm?.boat) {
+        const { from, to, y, after, spot } = storm.boat;
+        if (elof.flags?.has(after)) rowed = Math.min(1, rowed + dt / 1.4);
+        const way = rowed * rowed * (3 - 2 * rowed);
+        const bob = still ? 0 : Math.sin(clock * 1.2) * (0.06 - 0.05 * way);
+        boat.position.set(from.x + (to.x - from.x) * way, y + bob, from.z + (to.z - from.z) * way);
+        boat.rotation.y = (1 - way) * 0.7;
+        // Whoever rows sits on the middle thwart with their back to the bow, looking the way he comes.
+        const rower = scene.getObjectByName(`spot:${spot}`);
+        rower?.position.set(boat.position.x, boat.position.y - 0.7, boat.position.z);
+        rower?.rotation.set(0, boat.rotation.y - Math.PI / 2, 0);
+      }
+      for (const [i, raft] of rocking.entries()) {
+        raft.made.group.position.y = raft.y + (still ? 0 : Math.sin(clock * 0.9 + i) * 0.09);
+        raft.made.group.rotation.z = still ? 0 : Math.sin(clock * 0.63 + i) * 0.018;
+      }
       if (first) {
+        scene.traverse((object) => { if (object.name === 'owl-wing') owlWings.push(object); });
         // A flyby whose moment has passed already (a game taken up later) is not played again.
         for (const f of flybys) if (flags.has(f.def.on)) f.seen = true;
         // The boulders the gusts' shelters stand in for are put away, where something else is drawn: one mesh a gust.
         for (const [i, stone] of scene.getObjectsByProperty('name', 'shelters').entries()) if (shelterOf(i) !== 'stones') stone.visible = false;
+        // The garden's far pictures are drawn by day: beyond the door they are the same garden in the storm's night.
+        if (doorway !== undefined) {
+          scene.traverse((object) => {
+            if (!object.name.startsWith('far-')) return;
+            const seen = unlit.find((u) => u.material === (object as Mesh).material);
+            seen?.base.multiply(OUT_OF_DOORS.far);
+          });
+        }
         first = false;
       }
       const calmFlag = storm?.calm;
@@ -516,8 +614,14 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       }
       const flash = still ? 0 : flashOf(clock - flashAt) * (1 - calm);
       bolts.forEach((b, i) => { (b.material as MeshBasicMaterial).opacity = i === flashBolt ? flash * 0.9 : 0; drawnWhile(b, i === flashBolt && flash > 0.01); });
-      const baseHemisphere = chapter.night ? hemisphere.intensity : base.hemisphere;
-      const baseSun = chapter.night ? sun.intensity : base.sun;
+      const out = doorway === undefined ? 0 : Math.min(1, Math.max(0, (camera.position.x - doorway + 2) / 8));
+      if (doorway !== undefined) {
+        hemisphere.color.lerpColors(room.sky, OUT_OF_DOORS.sky, out);
+        hemisphere.groundColor.lerpColors(room.ground, OUT_OF_DOORS.ground, out);
+        sun.color.lerpColors(room.sun, OUT_OF_DOORS.sun, out);
+      }
+      const baseHemisphere = (chapter.night ? hemisphere.intensity : base.hemisphere) * (1 - 0.3 * out);
+      const baseSun = (chapter.night ? sun.intensity : base.sun) * (1 - 0.5 * out);
       hemisphere.intensity = baseHemisphere * (1 + 1.1 * flash + 0.25 * calm);
       sun.intensity = baseSun * (1 + 0.8 * flash + 0.3 * calm);
       if (dim !== undefined) scene.backgroundIntensity = Math.min(1, dim + 0.14 * calm + 0.6 * flash);
@@ -568,7 +672,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       for (const b of buildings) {
         if (!b.panes) continue;
         const lit = b.def.lit !== undefined && (b.def.lit === '' || flags.has(b.def.lit));
-        b.panes.color.copy(lit ? PANE.lit : PANE.dark);
+        b.panes.color.copy(lit ? (b.def.kind === 'car' ? PANE.cabin : PANE.lit) : PANE.dark);
         if (lit && !still) b.panes.color.multiplyScalar(0.92 + 0.08 * Math.sin(clock * 2.1 + b.def.x));
       }
       for (const rope of ropes) {
@@ -594,42 +698,6 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   };
 }
 
-/**
- * A wooden rain barrel whose lid is the flat top of ground at `top` round `x`: as wide as that top, and down to the
- * lowest ground at its two sides.
- */
-function barrel(ground: readonly { x: number; y: number }[], x: number, top: number): Group {
-  const group = new Group();
-  let from = x;
-  let to = x;
-  let base = top;
-  for (let i = 0; i < ground.length - 1; i++) {
-    const a = ground[i]!;
-    const b = ground[i + 1]!;
-    if (Math.abs(a.y - top) < 0.05 && Math.abs(b.y - top) < 0.05 && x >= Math.min(a.x, b.x) - 0.6 && x <= Math.max(a.x, b.x) + 0.6) {
-      from = Math.min(a.x, b.x);
-      to = Math.max(a.x, b.x);
-      base = Math.min(ground[i - 1]?.y ?? top, ground[i + 2]?.y ?? top);
-    }
-  }
-  const radius = Math.max(0.6, (to - from) / 2);
-  const tall = Math.max(0.5, top - base);
-  const staves = new Mesh(new CylinderGeometry(radius * 1.02, radius * 0.96, tall, 22, 1, true), solid('#7a5634', 0.85, { side: DoubleSide }));
-  staves.position.set((from + to) / 2, base + tall / 2, -0.4);
-  group.add(staves);
-  for (const k of [0.12, 0.5, 0.88]) {
-    const hoop = new Mesh(new TorusGeometry(radius * 1.04, 0.05, 6, 28), solid('#3a3a3c', 0.5, { metalness: 0.5 }));
-    hoop.rotation.x = Math.PI / 2;
-    hoop.position.set((from + to) / 2, base + tall * k, -0.4);
-    group.add(hoop);
-  }
-  // Rain water to its brim, dark and moving.
-  const water = new Mesh(new CylinderGeometry(radius * 0.95, radius * 0.95, 0.04, 22), solid('#2a3e58', 0.15));
-  water.position.set((from + to) / 2, top - 0.06, -0.4);
-  group.add(water);
-  return group;
-}
-
 /** An upturned terracotta flower pot, a shelter from the wind as tall as two of him. */
 function flowerPot(x: number, y: number): Group {
   const group = new Group();
@@ -640,13 +708,20 @@ function flowerPot(x: number, y: number): Group {
   rim.position.y = 0.14;
   group.add(pot, rim);
   group.position.set(x, y, -1.3);
+  group.userData.model = 'kruka';
+  group.userData.turn = x * 1.7;
   return group;
 }
 
 /** A boulder of the hillside, granite grey and faceted, as big as the lumps it stands in for. */
-function boulder(x: number, y: number): Mesh {
-  const stone = new Mesh(rock(Math.round(x * 10), 1.0, 1.2, 0.85), solid('#8c9096', 0.95, { flatShading: true }));
+function boulder(x: number, y: number): Group {
+  const stone = new Group();
+  stone.add(new Mesh(rock(Math.round(x * 10), 1.0, 1.2, 0.85), solid('#8c9096', 0.95, { flatShading: true })));
   stone.position.set(x, y + 0.7, -1.3);
+  // The kit's, as soon as it has come: it stands on the ground, and the stand-in's middle is 0.7 over it.
+  stone.userData.model = 'block-b';
+  stone.userData.block = { width: 3, height: 2.7, depth: 2.6, x: 0, y: 0.65 };
+  stone.userData.turn = x;
   return stone;
 }
 
@@ -674,6 +749,7 @@ function jettyPost(x: number, y: number): Group {
   cap.position.y = 2.86;
   group.add(post, cap);
   group.position.set(x, y, -1.1);
+  group.userData.model = 'bryggstolpe';
   return group;
 }
 
@@ -757,6 +833,7 @@ function oldFigure(silhouette = false): Group {
   // The crowberry eyes: dark, a little shiny.
   for (const x of [-0.06, 0.06]) group.add(ball(0.026, solid('#1a1530', 0.3), x, 0.62, 0.148));
   group.name = 'old-trägubbe';
+  if (!silhouette) { group.userData.model = 'tragubbe'; group.userData.fit = 0.72; }
   return group;
 }
 
@@ -777,11 +854,12 @@ function littleFigure(silhouette = false): Group {
     group.add(cut);
   }
   group.name = 'little-trägubbe';
+  if (!silhouette) group.userData.model = 'lillgubbe';
   return group;
 }
 
 /** A thing that stands about: it shrinks away when its flag says it is gone, and may move a little while it is there. */
-function standing(spot: Spot, group: Group, alive?: (clock: number) => void): SpotProp {
+function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) => void, leaves: 'shrink' | 'leap' | 'fly' = 'shrink'): SpotProp {
   const root = new Group();
   root.position.set(spot.at.x, spot.at.y, -0.6);
   root.add(group);
@@ -790,12 +868,64 @@ function standing(spot: Spot, group: Group, alive?: (clock: number) => void): Sp
     group: root,
     update(used, clock, dt) {
       since = used ? since + dt : 0;
-      const size = Math.max(0, 1 - since / 0.4);
-      root.scale.setScalar(size);
-      drawnWhile(root, size > 0);
-      alive?.(clock);
+      alive?.(clock, dt);
+      if (leaves === 'shrink' || since === 0) {
+        const size = Math.max(0, 1 - since / 0.4);
+        root.scale.setScalar(size);
+        root.position.x = spot.at.x;
+        root.position.y = spot.at.y;
+        root.rotation.z = 0;
+        drawnWhile(root, size > 0);
+        return;
+      }
+      if (leaves === 'leap') {
+        // A crouch, and away in one long arc, spinning a little: he never waits.
+        const crouch = Math.min(1, since / 0.16);
+        const k = Math.max(0, (since - 0.16) / 0.62);
+        root.scale.set(1, k === 0 ? 1 - 0.2 * crouch : 1, 1);
+        root.position.x = spot.at.x + k * 5.5;
+        root.position.y = spot.at.y + Math.sin(Math.min(k, 1) * Math.PI) * 2.6 - Math.max(0, k - 1) * 8;
+        root.rotation.z = -k * 2.2;
+        drawnWhile(root, k < 1.2);
+        return;
+      }
+      // Up and away on its wings, faster and faster.
+      const k = since / 1.5;
+      root.position.x = spot.at.x + k * 8;
+      root.position.y = spot.at.y + k * k * 11;
+      root.rotation.z = 0.25;
+      const flap = Math.sin(clock * 26) * 0.7;
+      const near = group.getObjectByName('wingNear');
+      const far = group.getObjectByName('wingFar');
+      if (near) near.rotation.x = flap;
+      if (far) far.rotation.x = -flap;
+      drawnWhile(root, k < 1);
     },
   };
+}
+
+/** An otter sitting up on its stone, its head turning and its back bobbing a little: it is real, and it has seen him. */
+function otter(): { group: Group; head: Group } {
+  const group = new Group();
+  const fur = solid('#7a5c42', 0.55);
+  const pale = solid('#b8a488', 0.7);
+  const body = new Mesh(new SphereGeometry(0.36, 14, 10).scale(1, 1.5, 0.9), fur);
+  body.position.y = 0.5;
+  const belly = new Mesh(new SphereGeometry(0.24, 12, 8).scale(1, 1.5, 0.7), pale);
+  belly.position.set(0, 0.5, 0.2);
+  const tail = new Mesh(new ConeGeometry(0.16, 1.1, 10).rotateZ(Math.PI / 2), fur);
+  tail.position.set(-0.62, 0.12, -0.05);
+  const head = new Group();
+  head.position.y = 1.08;
+  head.add(new Mesh(new SphereGeometry(0.26, 14, 10).scale(1, 0.85, 0.95), fur), ball(0.14, pale, 0, -0.06, 0.2, [1, 0.7, 0.8]));
+  for (const x of [-0.11, 0.11]) head.add(ball(0.035, solid('#141010', 0.25), x, 0.05, 0.23), ball(0.07, fur, x * 1.9, 0.18, 0));
+  head.add(ball(0.04, solid('#141010', 0.3), 0, -0.02, 0.32));
+  group.add(body, belly, tail, head);
+  group.scale.setScalar(0.72);
+  // The kit's otter, standing up on its stone, in the group that bobs.
+  group.userData.model = 'utter';
+  group.userData.fit = 0.86;
+  return { group, head };
 }
 
 // --- the things of the story -----------------------------------------------------------------------------------
@@ -825,9 +955,156 @@ function football(radius: number): Mesh {
   return ball;
 }
 
+/** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
+const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
+  'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
+const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra'];
+const BUILT = ['rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel', 'rabatt', 'roddbat'];
+const ROOM = ['soffa', 'soffa-filt', 'golvlampa', 'krukvaxt', 'bord', 'stol', 'pall', 'holme'];
+const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
+/** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
+const CARVINGS = ['tragubbe', 'lillgubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];
+const FILES: Record<string, readonly [pack: string, file: string]> = {
+  ...Object.fromEntries(CREATURES.map((name) => [name, ['aventyr2', 'creatures'] as const])),
+  ...Object.fromEntries(CARVINGS.map((name) => [name, ['private', 'tragubbar'] as const])),
+  ...Object.fromEntries(PROPS.map((name) => [name, ['aventyr2', 'props'] as const])),
+  ...Object.fromEntries(BUILT.map((name) => [name, ['aventyr2', 'built'] as const])),
+  ...Object.fromEntries(ROOM.map((name) => [name, ['aventyr2', 'room'] as const])),
+  ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
+  'olympia-hall': ['aventyr2', 'olympia'],
+  'olympia-stand': ['aventyr2', 'olympia'],
+  'billsta-house': ['private', 'billsta-house'],
+  'billsta-barn': ['private', 'billsta-house'],
+  lekstuga: ['private', 'lekstuga'],
+  'lekstuga-hus': ['private', 'lekstuga'],
+};
+
+/**
+ * The buildings that are made in Blender: each takes the place of its stand-in once the pack has loaded, so that the
+ * picture is never empty. A stand-in stays where the file is missing.
+ */
+async function installModels(assets: Assets, scene: Object3D): Promise<boolean> {
+  const wanted: Object3D[] = [];
+  scene.traverse((object) => { if (typeof object.userData.model === 'string' || typeof object.userData.grandparent === 'string') wanted.push(object); });
+  if (wanted.length === 0) return false;
+  const manifest = await assets.manifest();
+  // Mormor and morfar, in the family's own hand, wherever they stand: each their own copy, with its own skeleton.
+  const figures: Object3D[] = [];
+  scene.traverse((object) => { if (typeof object.userData.grandparent === 'string') figures.push(object); });
+  for (const place of figures) {
+    const who = place.userData.grandparent as Grandparent;
+    if (manifest.packs.private?.files[`${who}.glb`]) (place.userData.dress as (model: Object3D) => void)(await assets.model('private', who));
+  }
+  const files = new Map<string, Promise<Group>>();
+  let arrived = false;
+  for (const place of wanted) {
+    if (typeof place.userData.model !== 'string') continue;
+    const name = place.userData.model as string;
+    const [pack, file] = FILES[name] ?? [];
+    if (!pack || !file || !manifest.packs[pack]?.files[`${file}.glb`]) continue;
+    if (!files.has(file)) files.set(file, assets.model(pack, file));
+    const model = await files.get(file)!;
+    const made = model.getObjectByName(name);
+    if (!made) continue;
+    arrived = true;
+    // A boulder fills the block of ground it stands for: its size and its middle, from the stand-in.
+    const block = place.userData.block as { width: number; height: number; depth: number; x: number; y: number; z?: number } | undefined;
+    // What the stand-in has that the model has not, such as a car's windows that light up, stays in front of it.
+    const kept = place.children.filter((child) => typeof child.userData.keep === 'number');
+    place.clear();
+    for (const child of kept) {
+      child.position.z += child.userData.keep as number;
+      place.add(child);
+    }
+    // One model may stand in many places. A packed model's own scale and offset are how it was compressed, so whatever
+    // places it goes on a group round it, never on the model.
+    const copy = new Group();
+    copy.add(made.clone());
+    const fit = place.userData.fit as number | undefined;
+    if (fit) copy.scale.setScalar(fit);
+    if (typeof place.userData.turn === 'number') copy.rotation.y = place.userData.turn as number;
+    if (typeof place.userData.lift === 'number') copy.position.y = place.userData.lift as number;
+    if (typeof place.userData.shift === 'number') copy.position.x = place.userData.shift as number;
+    if (typeof place.userData.back === 'number') copy.position.z = place.userData.back as number;
+    if (block) {
+      const size = new Box3().setFromObject(made).getSize(new Vector3());
+      copy.scale.set(block.width / size.x, block.height / size.y, block.depth / size.z);
+      copy.position.set(block.x, block.y - block.height / 2, block.z ?? 0);
+    }
+    place.add(copy);
+    // The two of them at the meeting keep a little warmth of their own.
+    if (place.userData.warm) warmed(copy);
+    // A name on a wall is kept white: it stands in the shade at night, and still has to be read.
+    const sign = model.getObjectByName(`${name}-name`) as Mesh | undefined;
+    if (sign) {
+      sign.material = new MeshBasicMaterial({ color: '#e8ecec' });
+      place.add(sign);
+    }
+    // Windows with the lamps on: warm and unlit, whatever the storm does.
+    const lit = model.getObjectByName(`${name}-glow`) as Mesh | undefined;
+    if (lit) {
+      lit.material = new MeshBasicMaterial({ color: '#ffc870', fog: false });
+      place.add(lit);
+    }
+  }
+  // The cones that fall are the forest's own, in place of the turned stand-in they begin as.
+  const drops = scene.getObjectByName('rain-drops') as InstancedMesh | undefined;
+  if (drops?.userData.cones && manifest.packs.boot?.files['forest-kit.glb']) {
+    const kit = forestKit(await assets.model('boot', 'forest-kit'));
+    const shape = kit.shape('kotte')?.clone();
+    if (shape) {
+      const size = new Box3().setFromBufferAttribute(shape.getAttribute('position') as Float32BufferAttribute).getSize(new Vector3());
+      if (size.x > size.y && size.x >= size.z) shape.rotateZ(Math.PI / 2);
+      else if (size.z > size.y) shape.rotateX(Math.PI / 2);
+      shape.center();
+      shape.scale(0.7 / Math.max(size.x, size.y, size.z), 0.7 / Math.max(size.x, size.y, size.z), 0.7 / Math.max(size.x, size.y, size.z));
+      drops.geometry = shape;
+      drops.material = kit.material;
+    }
+  }
+  return arrived;
+}
+
+/** Cream foam drifting on black water, as it does below a rapid: one mesh of flecks, carried by the current. */
+function createFoam(foam: NonNullable<ChapterData['storm']>['foam'], group: Group): ((dt: number, still: boolean) => void) | null {
+  if (!foam?.length) return null;
+  const flecks = foam.flatMap((run) => Array.from({ length: Math.round((run.to - run.from) * (run.dense ?? 3)) }, (_, i) => ({
+    run,
+    x: run.from + ((i * 0.618) % 1) * (run.to - run.from),
+    z: -0.3 - ((i * 0.381) % 1) * 7,
+    size: 0.05 + ((i * 0.733) % 1) * 0.16,
+  })));
+  const mesh = new InstancedMesh(new CircleGeometry(1, 8).rotateX(-Math.PI / 2), new MeshBasicMaterial({ color: '#dcd4c0', transparent: true, opacity: 0.42, depthWrite: false }), flecks.length);
+  mesh.name = 'river-foam';
+  mesh.frustumCulled = false;
+  group.add(mesh);
+  const place = new Object3D();
+  const write = () => {
+    for (const [i, fleck] of flecks.entries()) {
+      place.position.set(fleck.x, fleck.run.y + 0.03, fleck.z);
+      place.scale.set(fleck.size * 2.6, 1, fleck.size);
+      place.updateMatrix();
+      mesh.setMatrixAt(i, place.matrix);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  };
+  write();
+  return (dt, still) => {
+    if (still) return;
+    for (const fleck of flecks) {
+      fleck.x += fleck.run.speed * dt * (0.7 + fleck.size);
+      if (fleck.x > fleck.run.to) fleck.x = fleck.run.from;
+    }
+    write();
+  };
+}
+
 /** Mormor's lantern, whose light falls where he walks: it hangs from its top, and its glow goes with it. */
 function lantern(): { group: Group; light: Mesh } {
   const group = new Group();
+  const tin = new Group();
+  tin.userData.model = 'lykta';
+  group.add(tin);
   const body = new Mesh(new CylinderGeometry(0.2, 0.24, 0.52, 8), new MeshBasicMaterial({ color: '#ffd27a' }));
   body.position.y = -0.46;
   const roof = new Mesh(new CylinderGeometry(0.1, 0.3, 0.16, 8), solid('#2a2a2a', 0.5));
@@ -844,6 +1121,7 @@ function lantern(): { group: Group; light: Mesh } {
 function figure(spot: Spot, who: Grandparent, lit = who === 'mormor'): SpotProp {
   const carried = lit ? lantern() : null;
   const made = createGrandparent(who, carried?.group ?? null, spot.id.startsWith('decor:'));
+  made.group.userData.dress = (model: Object3D) => made.dress(model);
   made.group.position.set(spot.at.x, spot.at.y, -0.6);
   return {
     group: made.group,
@@ -873,11 +1151,13 @@ function pumpkin(): { group: Group; light: Mesh; face: MeshBasicMaterial } {
     at.setXYZ(i, x * k, at.getY(i), z * k);
   }
   skin.computeVertexNormals();
-  group.add(new Mesh(skin, solid('#d8701e', 0.55)));
+  const body = new Group();
+  body.userData.model = 'pumpa';
   const stem = new Mesh(new CylinderGeometry(0.09, 0.14, 0.4, 7), solid('#5a5a2a', 0.9));
   stem.position.y = 2.3;
   stem.rotation.z = 0.25;
-  group.add(stem);
+  body.add(new Mesh(skin, solid('#d8701e', 0.55)), stem);
+  group.add(body);
   // The face: two triangle eyes and a toothy grin, glowing.
   const face = new MeshBasicMaterial({ color: '#ffcf5a', fog: false });
   const triangle = (size: number) => {
@@ -907,36 +1187,67 @@ function pumpkin(): { group: Group; light: Mesh; face: MeshBasicMaterial } {
 /** The owl, tawny and round, with big dark eyes in a pale face. */
 function owl(flying = false): Group {
   const group = new Group();
-  const brown = solid('#7a5638', 0.9);
-  const pale = solid('#c8a67a', 0.9);
-  const dark = solid('#1a120c', 0.4);
+  group.userData.model = flying ? undefined : 'uggla';
   if (!flying) {
-    group.add(ball(0.9, brown, 0, 1.1, 0, [1, 1.25, 0.9]));
-    group.add(ball(0.62, brown, 0, 2.15, 0));
-    group.add(ball(0.5, pale, 0, 2.15, 0.28, [1, 0.95, 0.6]));
-    for (const x of [-0.22, 0.22]) group.add(ball(0.16, solid('#e0a040', 0.3), x, 2.22, 0.55), ball(0.1, dark, x, 2.22, 0.66));
-    const beak = new Mesh(new ConeGeometry(0.07, 0.2, 6), solid('#c8b080', 0.6));
-    beak.position.set(0, 2.0, 0.66);
-    beak.rotation.x = Math.PI;
-    group.add(beak);
-    for (const side of [-1, 1]) group.add(ball(0.5, solid('#6a4a30', 0.9), side * 0.72, 1.2, -0.05, [0.4, 1.1, 0.8]));
-    for (const x of [-0.25, 0.25]) group.add(ball(0.12, solid('#b8a070', 0.8), x, 0.12, 0.2, [1, 0.5, 1.2]));
+    // Until the kit's has come, the same tawny owl as sits in the forest's trees (../../render/lift/fauna/shapes.ts), only
+    // near and large, with its lids resting half down, set here once: the forest's own move them in its vertex stage.
+    const shape = tawnyOwl();
+    const rig = shape.getAttribute('rig');
+    const pivot = shape.getAttribute('pivot');
+    const at = shape.getAttribute('position');
+    for (let i = 0; i < at.count; i++) if (rig.getX(i) > 3.5) at.setY(i, pivot.getY(i) + (at.getY(i) - pivot.getY(i)) * 0.5);
+    const body = new Mesh(shape, new MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }));
+    body.rotation.y = -Math.PI / 2;
+    body.scale.setScalar(2.7);
+    group.add(body);
     group.name = 'owl';
     return group;
   }
-  // In flight, under him: the body level, the face forwards, the wings out to the sides.
-  group.add(ball(0.75, brown, 0, -0.7, 0, [1.4, 0.75, 0.9]));
-  group.add(ball(0.5, brown, 1.0, -0.55, 0));
-  group.add(ball(0.4, pale, 1.25, -0.55, 0, [0.6, 0.95, 0.95]));
-  for (const z of [-0.18, 0.18]) group.add(ball(0.12, solid('#e0a040', 0.3), 1.45, -0.48, z), ball(0.07, dark, 1.53, -0.48, z));
+  // In flight, under him: the same tawny owl, its body level and its round face turned a little to the camera, its broad
+  // wings out to the sides with their finger feathers spread. The storm's extra beats them (see `beat` in stormExtra).
+  // Night and the storm's light come from behind it: a little light of its own keeps its feathers from going black.
+  const lit = (colour: string) => solid(colour, 0.9, { side: DoubleSide, emissive: colour, emissiveIntensity: 0.22 });
+  const back = lit('#8a7458');
+  const belly = lit('#b8a486');
+  const face = lit('#dccdac');
+  group.add(ball(0.72, back, 0, -0.72, 0, [1.3, 0.72, 0.82]));
+  group.add(ball(0.56, belly, 0.14, -0.88, 0, [1.3, 0.62, 0.8]));
+  group.add(ball(0.52, back, 0.98, -0.52, 0.04, [1, 0.95, 1]));
+  const disc = ball(0.4, face, 1.26, -0.54, 0.16, [0.55, 0.96, 0.98]);
+  group.add(disc);
+  for (const z of [-0.02, 0.34]) group.add(ball(0.13, solid('#ebe2ca', 0.6), 1.42, -0.46, z, [0.5, 1, 1]), ball(0.085, solid('#1c1610', 0.35), 1.49, -0.46, z, [0.5, 1, 1]));
+  const beak = new Mesh(new ConeGeometry(0.06, 0.2, 6), solid('#a89878', 0.6));
+  beak.rotation.z = -Math.PI / 2 - 0.5;
+  beak.position.set(1.54, -0.6, 0.16);
+  group.add(beak);
+  // The tail: short, round and flat, as an owl's is.
+  group.add(ball(0.5, lit('#6e5c46'), -1, -0.66, 0, [1.1, 0.16, 0.62]));
+  // Its feet, tucked up under it.
+  for (const z of [-0.2, 0.2]) group.add(ball(0.14, solid('#8a7a5e', 0.8), 0.2, -1.28, z, [1.3, 0.7, 0.9]));
+  const outline = new Shape();
+  outline.moveTo(0.8, 0);
+  outline.quadraticCurveTo(1.05, 1.3, 0.62, 2.3);
+  for (const [x, y] of [[0.42, 2.72], [0.22, 2.3], [0.02, 2.62], [-0.16, 2.2], [-0.36, 2.42], [-0.5, 2], [-0.72, 2.08], [-0.72, 1.6]] as const) outline.lineTo(x, y);
+  outline.quadraticCurveTo(-1, 0.8, -0.82, 0);
+  outline.closePath();
   for (const side of [-1, 1]) {
-    const wing = new Mesh(new BoxGeometry(1.1, 0.06, 2.2), solid('#6a4a30', 0.9));
-    wing.geometry.translate(0, 0, 1.1);
-    wing.position.set(0, -0.55, side * 0.3);
-    wing.scale.z = side;
-    wing.name = side > 0 ? 'wingNear' : 'wingFar';
-    group.add(wing);
+    const hinge = new Group();
+    hinge.name = 'owl-wing';
+    hinge.userData.side = side;
+    hinge.position.set(0.05, -0.46, side * 0.42);
+    const feathers = new Mesh(new ShapeGeometry(outline, 8).rotateX(Math.PI / 2).scale(1, 1, side), lit('#7a6650'));
+    // The shorter feathers over the wing's root: the same wing, smaller and paler, lying on it.
+    const coverts = new Mesh(new ShapeGeometry(outline, 8).scale(0.74, 0.56, 1).rotateX(Math.PI / 2).scale(1, 1, side).translate(0, 0.03, 0), lit('#a08a6c'));
+    hinge.add(feathers, coverts);
+    hinge.userData.model = side > 0 ? 'uggla-vinge-n' : 'uggla-vinge-f';
+    group.add(hinge);
   }
+  // The kit's body, under its wings and under him. What is built above stands in until it has come.
+  const carried = new Group();
+  carried.position.y = -0.6;
+  carried.userData.model = 'uggla-flyger';
+  for (const part of group.children.filter((child) => child.name !== 'owl-wing')) carried.add(part);
+  group.add(carried);
   return group;
 }
 
@@ -959,6 +1270,7 @@ function boot(): Group {
   rim.position.set(-0.5, 0.55, 0);
   group.add(foot, toe, leg, keel, rim);
   group.position.y = -0.1;
+  group.userData.model = 'stovel';
   return group;
 }
 
@@ -979,15 +1291,93 @@ function umbrella(): Group {
   hook.position.set(0.14, 0.82, 0);
   hook.rotation.z = Math.PI;
   group.add(shaft, hook);
+  group.userData.model = 'paraply';
+  group.userData.lift = 0.72;
   return group;
 }
 
 function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
   return {
-    tragubbe: (spot) => standing(spot, oldFigure()),
+    // He leaps away, as he does all night, except where Elof lifts him up.
+    tragubbe: (spot) => {
+      const figure = oldFigure();
+      // On the stone in the storm's eye it rocks the little one a little, and turns to him when he has come.
+      const met = spot.word === 'lifted';
+      figure.userData.warm = met;
+      return standing(spot, figure, met ? (clock, dt) => {
+        figure.rotation.z = Math.sin(clock * 1.1) * 0.04;
+        const seen = elof.flags?.has('eye') && Math.abs(elof.x - spot.at.x) < 5;
+        figure.rotation.y += ((seen ? -0.9 : 0) - figure.rotation.y) * Math.min(1, dt * 1.6);
+      } : undefined, spot.id.startsWith('decor:') && !met ? 'leap' : 'shrink');
+    },
+    seesawLog: (spot) => {
+      // The dry spruce over its stone, measured from its low end, where he stands. Thick at the root, thin at the
+      // top, with the stubs of its boughs. It turns about the stone, wherever the stone is.
+      const LENGTH = 5;
+      const STONE_TOP = 0.6;
+      const EVEN = 2.5;
+      const SHORT = 1.2;
+      const group = new Group();
+      group.position.set(spot.at.x + 0.4, spot.at.y, -0.34);
+      const wood = solid('#94806a', 0.85);
+      const pale = solid('#b4a288', 0.9);
+      const log = new Group();
+      const body = new Group();
+      const trunk = new Mesh(new CylinderGeometry(0.08, 0.2, LENGTH, 10).rotateZ(-Math.PI / 2), wood);
+      trunk.castShadow = true;
+      body.add(trunk);
+      for (const [x, side] of [[-1.9, 1], [-1.3, -1], [-0.6, 1], [0.1, -1], [0.8, 1], [1.5, -1]] as const) {
+        const stub = new Mesh(new CylinderGeometry(0.02, 0.05, 0.52, 6), pale);
+        stub.position.set(x, 0.24 * side, 0.05);
+        stub.rotation.z = side > 0 ? -0.6 : Math.PI + 0.6;
+        body.add(stub);
+      }
+      const root = new Mesh(new CircleGeometry(0.2, 10).rotateY(-Math.PI / 2), pale);
+      root.position.x = -LENGTH / 2 - 0.001;
+      body.add(root);
+      log.add(body);
+      group.add(log);
+      let arm = EVEN;
+      let rocked = 0;
+      let since = 0;
+      let first = true;
+      return {
+        group,
+        update: (used, _clock, dt) => {
+          const moved = elof.flags?.has('placed:bi-pivot') ?? false;
+          const on = elof.flags?.has('bi:klonk-on') ?? false;
+          const wanted = moved ? SHORT : EVEN;
+          arm = first ? wanted : arm + (wanted - arm) * Math.min(1, dt * 6);
+          first = false;
+          rocked = on ? rocked + dt : 0;
+          since = used ? since + dt : 0;
+          const rest = Math.atan2(STONE_TOP - 0.1, arm);
+          // Klonk lands on the even arms, and it hardly stirs.
+          const stir = on && !moved ? -0.05 * Math.exp(-rocked * 2.2) * Math.cos(rocked * 8) : 0;
+          const fall = Math.min(1, since / 0.24);
+          log.position.set(arm, STONE_TOP, 0);
+          body.position.x = LENGTH / 2 - arm;
+          log.rotation.z = rest + stir + (TIPPED - rest - stir) * fall * fall;
+        },
+      };
+    },
+    otter: (spot) => {
+      const { group, head } = otter();
+      return standing(spot, group, (clock) => {
+        group.position.y = Math.sin(clock * 1.7) * 0.03;
+        head.rotation.y = Math.sin(clock * 0.8) * 0.7;
+        head.rotation.x = Math.sin(clock * 1.3 + 1) * 0.12;
+      });
+    },
     lillgubbe: (spot) => {
       const figure = littleFigure();
-      return standing(spot, figure, (clock) => { figure.rotation.z = Math.sin(clock * 5.3) * 0.03; });
+      figure.userData.warm = spot.word === 'lifted';
+      // It trembles until it has its cap back, and then it hops.
+      return standing(spot, figure, (clock) => {
+        const glad = elof.flags?.has('scene:motet') ?? false;
+        figure.rotation.z = glad ? Math.sin(clock * 1.7) * 0.06 : Math.sin(clock * 5.3) * 0.03;
+        figure.position.y = glad ? gladHop(clock) : 0;
+      });
     },
     pumpkin: (spot) => {
       const { group, light, face } = pumpkin();
@@ -999,7 +1389,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     owl: (spot) => {
       const bird = owl();
-      return standing(spot, bird, (clock) => { bird.rotation.y = Math.sin(clock * 0.7) * 0.25; });
+      // One that is ridden has its own picture; one that only sits there flies off.
+      return standing(spot, bird, (clock) => { bird.rotation.y = Math.sin(clock * 0.7) * 0.25; }, spot.id.startsWith('decor:') ? 'fly' : 'shrink');
     },
     tap: (spot) => {
       // The rain barrel's brass tap, and the water that pours from it once it is turned.
@@ -1052,9 +1443,14 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       const head = new Mesh(new CylinderGeometry(0.15, 0.1, 0.18, 12), solid('#2a2a2a', 0.4));
       head.rotation.z = Math.PI / 2;
       head.position.x = 0.38;
-      const beam = new Mesh(new ConeGeometry(1.2, 5, 18, 1, true), new MeshBasicMaterial({ color: '#fff2c8', transparent: true, opacity: 0.12, depthWrite: false, blending: AdditiveBlending, side: DoubleSide }));
-      beam.rotation.z = Math.PI / 2;
-      beam.position.x = 2.9;
+      // Its beam fades away from the lamp, and has no end to see.
+      const long = 7;
+      const cone = new ConeGeometry(1.5, long, 18, 5, true).rotateZ(Math.PI / 2).translate(long / 2 + 0.46, 0, 0);
+      const place = cone.getAttribute('position');
+      const fade = new Float32Array(place.count * 3);
+      for (let i = 0; i < place.count; i++) fade.fill((1 - (place.getX(i) - 0.46) / long) ** 1.6, i * 3, i * 3 + 3);
+      cone.setAttribute('color', new Float32BufferAttribute(fade, 3));
+      const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.2, depthWrite: false, side: DoubleSide, blending: AdditiveBlending }));
       const light = glow('#fff0c0', 1.2, 0.9);
       light.position.x = 0.48;
       group.add(body, head, beam, light);
@@ -1064,10 +1460,12 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // Fjun's cap, lost in the gutter: a little knitted red cone with a white bobble.
       const group = new Group();
       const cap = new Mesh(new ConeGeometry(0.16, 0.3, 10), solid('#c23a2e', 0.9));
-      cap.rotation.z = 1.2;
-      cap.position.y = 0.1;
-      group.add(cap, ball(0.06, solid('#f4efe4', 0.9), 0.17, 0.2, 0));
-      return standing(spot, group, (clock) => { group.position.y = 0.04 * Math.sin(clock * 3); });
+      // Back on its head it sits straight and goes with its hops; lost, it lies on its side and bobs.
+      const worn = spot.word === 'worn';
+      cap.rotation.z = worn ? 0 : 1.2;
+      cap.position.y = worn ? 0.15 : 0.1;
+      group.add(cap, ball(0.06, solid('#f4efe4', 0.9), worn ? 0 : 0.17, worn ? 0.32 : 0.2, 0));
+      return standing(spot, group, (clock) => { group.position.y = worn ? gladHop(clock) : 0.04 * Math.sin(clock * 3); });
     },
     latch: (spot) => {
       const group = new Group();
@@ -1079,6 +1477,88 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       return standing(spot, group);
     },
     football: (spot) => standing(spot, (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
+    whiteWater: (spot) => {
+      // The rapids: wet boulders the river breaks over, and standing waves of white water that heave and never go.
+      const group = new Group();
+      group.position.set(spot.at.x, spot.at.y, -0.2);
+      const random = scatter(37);
+      const parts: BufferGeometry[] = [];
+      for (const [x, z, wide, tall] of [[-6.2, -1, 1.5, 0.9], [-3.4, -2.8, 1.9, 1.3], [-0.8, -0.5, 1.1, 0.7], [2.2, -3.2, 2.1, 1.4], [4.4, -1.1, 1.3, 0.8], [6.6, -2.4, 1.6, 1]] as const) {
+        parts.push(rock(Math.round(x * 10), wide, tall, wide * 0.8).clone().translate(x, 0.1, z));
+      }
+      const stones = new Mesh(mergeGeometries(parts.map((part) => (part.index ? part.toNonIndexed() : part))), solid('#3a3e3c', 0.32, { flatShading: true }));
+      group.add(stones);
+      const waves = new InstancedMesh(new SphereGeometry(1, 10, 6).scale(1, 0.4, 0.7), solid('#d8d0ba', 0.5), 34);
+      waves.frustumCulled = false;
+      const humps = Array.from({ length: waves.count }, () => ({ x: (random() - 0.5) * 14.6, z: -0.4 - random() * 4.4, size: 0.3 + random() * 0.55, phase: random() * 6.28 }));
+      group.add(waves);
+      const place = new Object3D();
+      const heave = (clock: number) => {
+        for (const [i, hump] of humps.entries()) {
+          const swell = 0.75 + 0.35 * Math.sin(clock * 5 + hump.phase);
+          place.position.set(hump.x, 0.04 + 0.1 * Math.sin(clock * 4 + hump.phase), hump.z);
+          place.scale.set(hump.size * 1.5, hump.size * swell, hump.size);
+          place.updateMatrix();
+          waves.setMatrixAt(i, place.matrix);
+        }
+        waves.instanceMatrix.needsUpdate = true;
+      };
+      heave(0);
+      return { group, update: (_used, clock) => heave(clock) };
+    },
+    blind: (spot) => {
+      // A shop's roller blind, down for the night. Someone wakes, and it goes up on the lit window. Its width is its word.
+      const wide = Number(spot.word ?? 7);
+      const tall = 9.7;
+      const root = new Group();
+      root.position.set(spot.at.x, spot.at.y + tall, -6);
+      const cloth = new Mesh(new PlaneGeometry(wide + 0.3, tall + 0.2).translate(0, -tall / 2, 0), solid('#262c38', 0.9));
+      const slats: BufferGeometry[] = [];
+      for (let y = 0.5; y < tall; y += 0.6) slats.push(new PlaneGeometry(wide + 0.3, 0.05).translate(0, -y, 0.01));
+      const lines = new Mesh(mergeGeometries(slats), solid('#1c2028', 0.9));
+      const rail = new Mesh(new BoxGeometry(wide + 0.5, 0.26, 0.2), solid('#3a3e48', 0.7));
+      root.add(cloth, lines, rail);
+      let since = 0;
+      return {
+        group: root,
+        update(used, _clock, dt) {
+          since = used ? since + dt : 0;
+          const k = Math.min(1, since / 1.1);
+          const open = 1 - (1 - k) ** 2;
+          cloth.scale.y = lines.scale.y = 1 - open * 0.96;
+        },
+      };
+    },
+    bellCord: (spot) => {
+      // A shop's bell cord, down from its awning to where he reaches, with a wooden knob; it swings hard when pulled.
+      const group = new Group();
+      const cord = new Mesh(new CylinderGeometry(0.035, 0.035, 12, 6).translate(0, 6, 0), solid('#c8b888', 0.9));
+      const knob = new Mesh(new SphereGeometry(0.2, 10, 8).scale(1, 1.3, 1), solid('#a07040', 0.5));
+      group.add(cord, knob);
+      group.position.set(spot.at.x, spot.at.y + 1.15, -0.7);
+      let since = 9;
+      return {
+        group,
+        update(used, clock, dt) {
+          since = used ? since + dt : 0;
+          const pull = used ? Math.exp(-since * 1.8) : 0;
+          group.rotation.z = Math.sin(clock * 1.4 + spot.at.x) * 0.012 + Math.sin(since * 7) * 0.08 * pull;
+          group.position.y = spot.at.y + 1.15 - 0.3 * Math.exp(-since * 6) * (used ? 1 : 0);
+        },
+      };
+    },
+    floatBall: (spot) => {
+      // A small ball adrift in a puddle, turning slowly and bobbing on the rain's rings.
+      const group = new Group();
+      const small = football(0.36);
+      small.position.y = 0.26;
+      group.add(small);
+      return standing(spot, group, (clock) => {
+        group.position.y = Math.sin(clock * 1.6) * 0.05;
+        small.rotation.z = Math.sin(clock * 0.7) * 0.5;
+        small.rotation.y = clock * 0.3;
+      });
+    },
     target: (spot) => {
       // A biathlon target on its stand: a black disc on a white plate, white too once it is hit. It stays.
       const root = new Group();
@@ -1134,6 +1614,63 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       group.position.y = 0.45;
       return standing(spot, group, (clock) => { (light.material as MeshBasicMaterial).opacity = 0.6 + 0.1 * Math.sin(clock * 7); });
     },
+    deadLamp: (spot) => {
+      // A flashlight the storm has put out, set down on the boards: a dull body and a pale, dark glass.
+      const group = new Group();
+      const body = new Mesh(new CylinderGeometry(0.1, 0.1, 0.62, 10).rotateZ(Math.PI / 2), solid('#3c4048', 0.5));
+      const head = new Mesh(new CylinderGeometry(0.17, 0.11, 0.2, 12).rotateZ(-Math.PI / 2), solid('#50565e', 0.45));
+      head.position.x = 0.4;
+      const glass = new Mesh(new CircleGeometry(0.15, 12).rotateY(Math.PI / 2), solid('#aab4c0', 0.2));
+      glass.position.x = 0.505;
+      group.add(body, head, glass);
+      group.position.y = 0.17;
+      return standing(spot, group, () => {});
+    },
+    owlLanding: (spot) => {
+      // It has seen the light, and comes in from the lake: down out of the storm, onto the jetty's end.
+      const sitting = owl();
+      const flying = owl(true);
+      const root = new Group();
+      root.add(sitting, flying);
+      root.position.set(spot.at.x, spot.at.y, -0.6);
+      let since = 0;
+      return {
+        group: root,
+        update(used, clock, dt) {
+          const called = elof.flags?.has('owl:call') ?? false;
+          since = called ? since + dt : 0;
+          const k = Math.min(1, since / 1.3);
+          const left = (1 - k) ** 3;
+          root.position.x = spot.at.x + left * 26;
+          root.position.y = spot.at.y + left * 9;
+          sitting.rotation.y = Math.sin(clock * 0.7) * 0.25;
+          sitting.visible = k >= 1;
+          flying.visible = k < 1;
+          drawnWhile(root, called && !used);
+        },
+      };
+    },
+    kit: (spot) => {
+      // A thing of the nature kit, named by its word. Until it has come, a plain stone or nothing.
+      const group = new Group();
+      group.position.set(spot.at.x, spot.at.y, -0.6);
+      const model = new Group();
+      model.userData.model = spot.word;
+      if (spot.word?.startsWith('hylla')) model.add(new Mesh(rock(Math.round(spot.at.x * 10), 1.1, 0.5, 0.9), solid('#7a7e80', 0.9, { flatShading: true })));
+      group.add(model);
+      const phase = spot.at.x * 1.7;
+      // What is alive breathes, and what is afloat lifts on the water.
+      if (spot.word === 'and' || spot.word === 'and-hona') {
+        return { group, update: (_, clock) => { model.position.y = 0.05 * Math.sin(clock * 1.5 + phase); model.rotation.z = 0.04 * Math.sin(clock * 1.1 + phase); } };
+      }
+      if (spot.word === 'igelkott' || spot.word === 'groda') {
+        return { group, update: (_, clock) => { model.scale.y = 1 + 0.035 * Math.sin(clock * 2.1 + phase); } };
+      }
+      return { group, update: () => {} };
+    },
+    aftermath: () => aftermath(),
+    // The same room on the evening of the storm, before anything has happened to it.
+    homeEvening: () => ({ group: roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 14, blanket: false }), update: () => {} }),
     mormor: (spot) => figure(spot, 'mormor'),
     morfar: (spot) => figure(spot, 'morfar'),
     // At home in the morning her lantern has been put out.
@@ -1154,7 +1691,14 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
         stems.push(stem);
         group.add(stem);
       }
-      return standing(spot, group, (clock) => { for (const [i, stem] of stems.entries()) stem.rotation.z = -0.12 + 0.08 * Math.sin(clock * 1.6 + i); });
+      // The kit's bulrushes take their place, bending as one.
+      const model = new Group();
+      model.userData.model = Math.round(spot.at.x * 3) % 2 ? 'vass-a' : 'vass-b';
+      model.userData.fit = 0.62;
+      model.userData.turn = spot.at.x;
+      for (const stem of stems) model.add(stem);
+      group.add(model);
+      return standing(spot, group, (clock) => { group.rotation.z = -0.03 + 0.04 * Math.sin(clock * 1.4 + spot.at.x); });
     },
   };
 }
@@ -1163,7 +1707,7 @@ function rideLooks(): Record<string, (look: RideLook) => Object3D | null> {
   return {
     boot: () => boot(), umbrella: () => umbrella(), owl: () => owl(true),
     // The ball Bertil kicks, under his feet as it flies.
-    football: () => { const g = new Group(); const b = football(0.8); b.position.y = -1.55; g.add(b); return g; },
+    football: () => { const g = new Group(); const b = football(0.8); b.position.y = -0.84; g.add(b); return g; },
     raft: () => { const g = new Group(); g.add(raft(3.2, 0.5)); g.children[0]!.position.y = -0.5; return g; },
   };
 }
@@ -1183,11 +1727,237 @@ function raft(w: number, h: number): Group {
     rope.position.set(x, h / 2, 0);
     group.add(rope);
   }
+  group.userData.model = 'flotte';
+  group.userData.block = { width: w, height: h, depth: 2, x: 0, y: h * 1.5 };
   return group;
 }
 
+/** A little picture drawn in code, where there is anything to draw with. */
+function drawnPicture(width: number, height: number, draw: (c: CanvasRenderingContext2D) => void): CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const c = canvas.getContext('2d');
+  if (c) draw(c);
+  return new CanvasTexture(canvas);
+}
+
+/** A rag rug's stripes, seen from above: the same every time. */
+function ragRug(): CanvasTexture | null {
+  const random = scatter(23);
+  const STRIPES = ['#a8483a', '#e4d8bc', '#3f6a8a', '#d0a43a', '#62784e', '#e4d8bc'];
+  const texture = drawnPicture(256, 64, (c) => {
+    for (let x = 0; x < 256;) {
+      const wide = 5 + random() * 15;
+      c.fillStyle = STRIPES[Math.floor(random() * STRIPES.length)]!;
+      c.fillRect(x, 0, wide + 1, 64);
+      x += wide;
+    }
+  });
+  if (texture) texture.colorSpace = SRGBColorSpace;
+  return texture;
+}
+
+/** The light of a window lying on the floor: four soft panes on black, which added to the floor is nothing. */
+const paneLight = () => drawnPicture(128, 128, (c) => {
+  c.fillStyle = '#000';
+  c.fillRect(0, 0, 128, 128);
+  c.filter = 'blur(3px)';
+  c.fillStyle = '#fff';
+  for (const [x, y] of [[14, 14], [68, 14], [14, 68], [68, 68]] as const) c.fillRect(x, y, 46, 46);
+});
+
+/**
+ * The family's room, which the evening of the storm and Sunday morning share: a rag rug, a sofa, a floor lamp, a plant and
+ * Moa's drawings taped to the wall, each in its own place in that chapter's stretch of it.
+ */
+function roomThings(at: { sofa: number; lamp: number; plant: number; drawings: number; rug: number; blanket: boolean }): Group {
+  const group = new Group();
+  const WALL = -8.5;
+  const home: BufferGeometry[] = [];
+  /** A piece of the room as plain shapes, until its model has come (art/blender/a2-room.py). */
+  const piece = (name: string, parts: BufferGeometry[], x: number, z: number) => {
+    const held = new Group();
+    held.add(new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 })));
+    held.userData.model = name;
+    held.userData.shift = x;
+    held.userData.back = z;
+    group.add(held);
+  };
+  const SOFA = { x: at.sofa, z: -6.6 };
+  const couch = [box(11, 1.5, 3.6, SOFA.x, 1.15, SOFA.z, '#5c6c4c'), box(11, 3.4, 1, SOFA.x, 2.5, SOFA.z - 1.6, '#566644')];
+  for (const side of [-5.6, 5.6]) couch.push(box(1, 2.5, 3.8, SOFA.x + side, 1.55, SOFA.z, '#4e5c3e'));
+  for (const side of [-1, 1]) couch.push(box(0.3, 0.45, 3.2, SOFA.x + side * 4.8, 0.22, SOFA.z, '#3a2c20'));
+  // Bertil's blanket, pulled half off it the morning after, and a cushion.
+  if (at.blanket) couch.push(box(3.4, 0.28, 3.9, SOFA.x - 2.2, 2.02, SOFA.z + 0.1, '#b89a4a'), box(3.4, 1.6, 0.26, SOFA.x - 2.2, 1.2, SOFA.z + 2, '#b89a4a'));
+  couch.push(paint(new SphereGeometry(0.9, 10, 8).scale(1, 0.85, 0.4).rotateZ(0.3).translate(SOFA.x + 3.6, 2.7, SOFA.z - 0.8), '#a8604a'));
+  piece(at.blanket ? 'soffa-filt' : 'soffa', couch, SOFA.x, SOFA.z);
+  // The floor lamp, and the plant.
+  const lamp: BufferGeometry[] = [];
+  const plant: BufferGeometry[] = [];
+  lamp.push(paint(new CylinderGeometry(0.7, 0.8, 0.14, 12).translate(at.lamp, 0.07, -7.4), '#3a3e44'), paint(new CylinderGeometry(0.07, 0.07, 6, 8).translate(at.lamp, 3, -7.4), '#3a3e44'));
+  lamp.push(paint(new CylinderGeometry(0.75, 1.15, 1.2, 14, 1, true).translate(at.lamp, 6.4, -7.4), '#e4d8bc'));
+  piece('golvlampa', lamp, at.lamp, -7.4);
+  plant.push(paint(new CylinderGeometry(0.72, 0.56, 1.1, 12).translate(at.plant, 0.55, -7.8), '#a8704a'));
+  for (let i = 0; i < 9; i++) {
+    const turn = (i / 9) * Math.PI * 2;
+    const lean = 0.35 + (i % 3) * 0.22;
+    plant.push(paint(new ConeGeometry(0.28, 2.8, 5).scale(1, 1, 0.3).rotateZ(lean).rotateY(turn).translate(at.plant - Math.cos(turn) * lean * 1.2, 2.3, -7.8 + Math.sin(turn) * lean * 1.2), i % 2 ? '#4a7238' : '#3a5e30'));
+  }
+  piece('krukvaxt', plant, at.plant, -7.8);
+  // Moa's drawings: paper on the wall, each with a sun, a house or two figures in crayon, and no words.
+  const d = at.drawings;
+  for (const [x, y, wide] of [[33.6, 3.2, 1.9], [35.8, 3.5, 1.6], [37.6, 3, 1.5]] as const) {
+    home.push(box(wide, wide * 1.3, 0.04, x + d, y, WALL - 0.34, '#f4f0e4'), box(0.14, 0.14, 0.05, x + d, y + wide * 0.62, WALL - 0.31, '#d8c078'));
+  }
+  home.push(paint(new CircleGeometry(0.34, 12).translate(33.3 + d, 3.8, WALL - 0.3), '#d8a838'));
+  home.push(box(0.9, 0.7, 0.02, 33.8 + d, 2.6, WALL - 0.31, '#a84a3a'), paint(new ConeGeometry(0.72, 0.5, 4).rotateY(Math.PI / 4).scale(1, 1, 0.02).translate(33.8 + d, 3.2, WALL - 0.31), '#3f5a7a'));
+  home.push(box(0.3, 0.9, 0.02, 35.5 + d, 3.4, WALL - 0.31, '#3f6a8a'), box(0.24, 0.66, 0.02, 36.1 + d, 3.28, WALL - 0.31, '#b89a30'));
+  home.push(box(1.1, 0.5, 0.02, 37.6 + d, 2.6, WALL - 0.31, '#5c7a48'), paint(new CircleGeometry(0.3, 10).translate(37.5 + d, 3.3, WALL - 0.31), '#4a6a9a'));
+  group.add(new Mesh(mergeGeometries(home), new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 })));
+  // The rug under the table, running out under his feet.
+  group.add(new Mesh(new PlaneGeometry(13, 9).rotateX(-Math.PI / 2).translate(at.rug, 0.01, -0.8), new MeshStandardMaterial({ map: ragRug(), roughness: 0.95 })));
+  return group;
+}
+
+/**
+ * Sunday morning's room: what the night left. Wet raincoats on their hooks and boots in a pool, leaves blown in at the
+ * window, mormor's lantern put out on the table, and the sun lying on the floor. All of it stands in the room's own
+ * places, counted from the room's start. The coats go on dripping.
+ */
+function aftermath(): SpotProp {
+  const group = new Group();
+  const WALL = -8.5;
+  const SILL = 3.2;
+  const coats: BufferGeometry[] = [];
+  const COATS = [{ x: 15.9, tall: 2.7, colour: '#2e5a46' }, { x: 17, tall: 2.5, colour: '#c8a02c' }, { x: 18.1, tall: 1.9, colour: '#ad3f30' }, { x: 19, tall: 1.5, colour: '#2f6aa0' }];
+  coats.push(paint(new BoxGeometry(4.2, 0.16, 0.16).translate(17.45, 5.6, WALL - 0.24), '#6a4a2c'));
+  for (const coat of COATS) {
+    const mid = 5.45 - coat.tall / 2;
+    coats.push(paint(new CylinderGeometry(0.3, 0.56, coat.tall, 10).scale(1, 1, 0.36).translate(coat.x, mid, WALL), coat.colour));
+    coats.push(paint(new SphereGeometry(0.27, 10, 8).scale(1, 0.85, 0.6).translate(coat.x, 5.5, WALL), coat.colour));
+  }
+  const BOOTS = [{ x: 15.8, colour: '#2b2f36' }, { x: 16.9, colour: '#6e3226' }, { x: 18, colour: '#3f6a8a' }, { x: 19, colour: '#b89a30' }];
+  for (const boot of BOOTS) {
+    for (const side of [-0.2, 0.2]) {
+      coats.push(paint(new BoxGeometry(0.3, 0.74, 0.26).translate(boot.x + side, 0.37, WALL + 1), boot.colour));
+      coats.push(paint(new BoxGeometry(0.34, 0.16, 0.46).translate(boot.x + side, 0.08, WALL + 1.1), boot.colour));
+    }
+  }
+  group.add(new Mesh(mergeGeometries(coats), new MeshStandardMaterial({ vertexColors: true, roughness: 0.42 })));
+  group.add(roomThings({ sofa: 44.5, lamp: 36.4, plant: 55, drawings: 0, rug: 10, blanket: true }));
+  // The pool they stand in: flat, and giving back the room's light.
+  const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(17.4, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
+  group.add(pool);
+  // The sun on the floor, one window's worth from each, lying a little aslant.
+  const light = new PlaneGeometry(4.8, 10.5, 1, 1).rotateX(-Math.PI / 2);
+  const at = light.getAttribute('position');
+  for (let i = 0; i < at.count; i++) at.setX(i, at.getX(i) + at.getZ(i) * -0.42);
+  const panes = mergeGeometries([4, 13, 22, 40, 49].map((x) => light.clone().translate(x + 0.8, 0.02, 1)));
+  group.add(new Mesh(panes, new MeshBasicMaterial({ map: paneLight(), color: '#ffe6b0', transparent: true, opacity: 0.2, blending: AdditiveBlending, depthWrite: false, fog: false })));
+  // Birch leaves that came in at the window with the storm.
+  const random = scatter(61);
+  const leaves = new InstancedMesh(new SphereGeometry(0.2, 6, 4).scale(1, 0.05, 0.68), new MeshStandardMaterial({ roughness: 0.75 }), 30);
+  const place = new Object3D();
+  const tint = new Color();
+  for (let i = 0; i < leaves.count; i++) {
+    const near = i % 3 === 0 ? 22 : i % 3 === 1 ? 13 : 40;
+    place.position.set(near + (random() - 0.5) * 8, 0.03, 0.5 + random() * 5.5);
+    place.rotation.set(0, random() * 6.28, (random() - 0.5) * 0.14);
+    place.updateMatrix();
+    leaves.setMatrixAt(i, place.matrix);
+    leaves.setColorAt(i, tint.set(random() < 0.6 ? '#c9a23a' : '#a8703a').multiplyScalar(0.8 + random() * 0.3));
+  }
+  group.add(leaves);
+  // Mormor's lantern on the table, put out.
+  const out = lantern();
+  out.light.visible = false;
+  out.group.position.set(8, 2.68, -1.5);
+  group.add(out.group);
+  // A great tit on the sill of the window with the new latch: the storm is over, and it has come for what the night left.
+  const tit = new Mesh(smallBird(BIRDS.tit), new MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }));
+  tit.scale.setScalar(1);
+  tit.position.set(22, SILL, WALL + 0.12);
+  group.add(tit);
+  // Three slow drops from the coats' hems.
+  const fall = new SphereGeometry(0.05, 6, 4);
+  const wet = solid('#b8ccdc', 0.1);
+  const drops = COATS.slice(0, 3).map((coat, i) => {
+    const drop = new Mesh(fall, wet);
+    drop.position.set(coat.x, 0, WALL + 0.1);
+    group.add(drop);
+    return { drop, from: 5.45 - coat.tall, phase: i * 0.83 };
+  });
+  return {
+    group,
+    update(_used, clock) {
+      // A hop along the sill now and then, a peck, and it turns about.
+      const round = clock % 7.2;
+      const hop = Math.max(0, 1 - Math.abs(round - 2) / 0.22);
+      const back = Math.max(0, 1 - Math.abs(round - 5.4) / 0.22);
+      const along = Math.min(1, Math.max(0, (round - 1.8) / 0.4)) - Math.min(1, Math.max(0, (round - 5.2) / 0.4));
+      tit.position.x = 21.4 + along * 1.5;
+      tit.position.y = SILL + (hop + back) * 0.16;
+      tit.rotation.y = round > 2.2 && round < 5.2 ? Math.PI + 0.5 : 0.5;
+      tit.rotation.z = (round > 3 && round < 3.4) || (round > 6.2 && round < 6.6) ? -0.6 : 0;
+      for (const { drop, from, phase } of drops) {
+        const k = (clock * 0.45 + phase) % 1;
+        drop.position.y = from * (1 - k * k);
+      }
+    },
+  };
+}
+
+/** The two of them at the meeting: a little warmth of their own, so that they are the warmest thing on the cold stone. */
+function warmed(figure: Group): void {
+  figure.traverse((object) => {
+    const mesh = object as Mesh;
+    const material = mesh.material as MeshStandardMaterial | undefined;
+    if (!material?.isMeshStandardMaterial) return;
+    mesh.material = material.clone();
+    (mesh.material as MeshStandardMaterial).emissive.set('#5a3a1c');
+    (mesh.material as MeshStandardMaterial).emissiveIntensity = 0.7;
+  });
+}
+
+/** The little one's hops when it is glad: short, and well apart. Its cap goes with them. */
+const gladHop = (clock: number) => Math.abs(Math.sin(clock * 2.6)) ** 6 * 0.24;
+
+/** The fallen long arm of Klonk's seesaw comes to rest with its top on the ground. */
+const TIPPED = -0.16;
+
 function moverLooks(): Record<string, (mover: Mover) => Group | null> {
   return {
+    boulder: (mover) => {
+      // A round field stone, as wide and as high as the thing it is to the simulation, with moss on its shaded side.
+      const group = new Group();
+      const stone = new Mesh(rock(Math.round(mover.width * 37), mover.width / 2 * 1.06, mover.height / 2 * 1.04, mover.width * 0.46), solid('#7a7e80', 0.86, { flatShading: true }));
+      stone.position.y = mover.height / 2;
+      stone.castShadow = true;
+      const moss = new Mesh(rock(Math.round(mover.width * 41), mover.width * 0.3, mover.height * 0.2, mover.width * 0.3), solid('#55703e', 0.95, { flatShading: true }));
+      moss.position.set(-mover.width * 0.16, mover.height * 0.86, 0.04);
+      group.add(stone, moss);
+      return group;
+    },
+    riverLog: (mover) => {
+      // A wet trunk floating half under: dark bark, and pale sawn ends that catch what light there is. The kit's, once it
+      // has come: art/blender/a2-nature.py.
+      const group = new Group();
+      group.userData.model = 'stock-flod';
+      group.userData.block = { width: mover.width * 1.04, height: mover.height * 1.1, depth: mover.height * 1.1, x: 0, y: mover.height / 2 };
+      const r = mover.height / 2;
+      const bark = new Mesh(new CylinderGeometry(r, r * 1.05, mover.width, 14).rotateZ(Math.PI / 2), solid('#42342a', 0.62));
+      bark.position.y = r;
+      bark.castShadow = true;
+      const pale = solid('#c2a678', 0.8);
+      const near = new Mesh(new CircleGeometry(r * 0.98, 14).rotateY(Math.PI / 2), pale);
+      near.position.set(mover.width / 2 + 0.002, r, 0);
+      const far = new Mesh(new CircleGeometry(r * 0.98, 14).rotateY(-Math.PI / 2), pale);
+      far.position.set(-mover.width / 2 - 0.002, r, 0);
+      group.add(bark, near, far);
+      return group;
+    },
     lid: (mover) => {
       // The rain barrel's round wooden lid, floating: boards across it, and a handle.
       const group = new Group();
@@ -1274,6 +2044,7 @@ export function installPictures(): void {
   for (const [look, make] of Object.entries(rideLooks())) PACK.rides.set(look, make);
   for (const [look, make] of Object.entries(moverLooks())) PACK.movers.set(look, make);
   if (!PACK.extras.includes(stormExtra)) PACK.extras.push(stormExtra);
+  if (!PACK.models.includes(installModels)) PACK.models.push(installModels);
 }
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */

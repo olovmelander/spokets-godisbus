@@ -115,14 +115,14 @@ const SILLS: Ledge[] = [
  */
 const TRAMPOLINE = { x: 134, y: 0.5, lift: 3.4 };
 /**
- * The planks up the playhouse's wall. Each is a held jump over the last and out of reach from the steps and
- * the roof below it, and the last lies over the roof, higher than a jump from the ridge, with the hearts.
+ * The great leaves of the sunflowers by the playhouse. Each is a held jump over the last and out of reach from the
+ * steps and the roof below it, and the last lies at the roof's edge, higher than a jump from its eaves, with the hearts.
  */
 const PLANKS: Ledge[] = [
-  { x: 136.2, y: 3.3, width: 2.4, look: 'plank' },
-  { x: 138.4, y: 4.2, width: 1.4, look: 'plank' },
-  { x: 140.6, y: 5.1, width: 1.4, look: 'plank' },
-  { x: 143.4, y: 5.9, width: 2.4, look: 'plank' },
+  { x: 136.2, y: 3.3, width: 2.4, look: 'leaf' },
+  { x: 138.4, y: 4.2, width: 1.4, look: 'leaf' },
+  { x: 140.6, y: 5.1, width: 1.4, look: 'leaf' },
+  { x: 142, y: 5.9, width: 2.4, look: 'leaf' },
 ];
 const LOOKOUT = PLANKS[3]!;
 
@@ -136,14 +136,16 @@ const pit = (from: number, to: number, bottom: number, top = 0): Vec[] => [{ x: 
 
 export const stormgard: ChapterData = {
   id: 'stormgard',
+  // The ditch and the flood lie open across the lawn, with no bank before them.
+  river: true,
   place: 'garden',
   // The house's red wall behind the veranda, with two windows: in one, Moa and her lamp.
   house: { from: -40, to: 26, windows: [4, 16] },
   storm: { shelters: 'pots',
     // The bouncer on the lawn is the garden's trampoline, not a cranberry.
     bouncers: 'trampoline',
-    rain: 0.8,
-    lightning: 9,
+    rain: 0.7,
+    lightning: 10,
     flybys: [
       // A flash: the old trägubbe on the playhouse roof leaps away towards the hedge.
       { on: 'beat:sg:playhouse', from: { x: PLAYHOUSE.ridge.x, y: PLAYHOUSE.ridge.y + 0.6 }, to: { x: 172, y: 8 }, seconds: 2.5, who: 'tragubbe' },
@@ -152,7 +154,6 @@ export const stormgard: ChapterData = {
     ],
     // The playhouse the trail climbs, its green walls just behind the roof he walks on; birches by the hedge.
     buildings: [
-      { kind: 'playhouse', x: (PLAYHOUSE.from + PLAYHOUSE.to) / 2, z: -2.4, width: PLAYHOUSE.to - PLAYHOUSE.from, height: PLAYHOUSE.eaves, lit: '' },
       { kind: 'birch', x: 160, z: -16, height: 60 },
       { kind: 'birch', x: 184, z: -22, height: 72 },
       { kind: 'birch', x: 58, z: -26, height: 66 },
@@ -166,8 +167,16 @@ export const stormgard: ChapterData = {
     ],
   },
   coda: 'bertil',
+  // The barrel and the can are things on the lawn, whatever he walks on: the lawn goes on under them.
+  landmarks: [
+    { look: 'stairs', from: STEPS[0]!.x, to: STEPS[4]!.x, base: 0 },
+    { look: 'edging', from: BED.from, to: BED.to, base: 0 },
+    { look: 'barrel', from: BARREL.from, to: BARREL.to, base: 0 },
+    { look: 'can', from: CAN.from, to: CAN.to, base: 0 },
+    { look: 'playhouse', from: PLAYHOUSE.from, to: PLAYHOUSE.to, base: 0 },
+  ],
   surfaces: [
-    { from: -19, to: STEPS[4]!.x, kind: 'wood' },
+    { from: -19, to: STEPS[0]!.x, kind: 'wood' },
     { from: BED.from, to: BED.to, kind: 'stone' },
     { from: BARREL.from, to: BARREL.to, kind: 'wood' },
     // Zinc, pale grey (not 'iron': that is a street drain's grate, and the picture would dig a well round it).
@@ -176,6 +185,9 @@ export const stormgard: ChapterData = {
     { from: HEDGE.from, to: 196, kind: 'hedge' },
   ],
   decor: [
+    // Who else is out in it: a hedgehog in the lee of a pot, and a snail going up his blocks.
+    { look: 'kit', word: 'igelkott', at: { x: 51.4, y: 0 }, z: -2.3, turn: -0.7 },
+    { look: 'kit', word: 'snigel', at: { x: 141.6, y: 2.7 }, z: 0.9, turn: 0.4, scale: 0.8 },
     // The pumpkin lantern, a little behind the step's big candy.
     { look: 'pumpkin', at: { x: LANTERN.x, y: LANTERN.y }, z: LANTERN.z },
     // The old trägubbe, seen ahead on the playhouse roof until the flash that shows it leaping away.
@@ -258,7 +270,7 @@ export const stormgard: ChapterData = {
     { id: 'sg:tap', look: 'tap', at: { x: 81.2, y: BARREL.top }, verb: 'turn', word: 'sgTurnTap' },
     // The boot boat (Granskog's cap): calling prepares it, and Elof chooses when to step in.
     { id: 'sg:bertil', look: 'sign', at: BOOT.from, verb: 'call', word: 'callBertil' },
-    { id: 'sg:boot', look: 'sign', at: BOOT.from, verb: 'take', word: 'sgBoardBoot', needs: 'sg:boot-ready', ride: 'boot' },
+    { id: 'sg:boot', at: BOOT.from, verb: 'take', word: 'sgBoardBoot', needs: 'sg:boot-ready', ride: 'boot' },
     // On the playhouse ridge, where the old one stood: touching it shows its thought.
     { id: 'sg:thought', at: PLAYHOUSE.ridge, verb: 'take', touch: true },
     // On the plank over the roof, at the end of the trampoline's way: the whole garden in view.
@@ -327,7 +339,6 @@ export const stormgard: ChapterData = {
     { id: 'sg:gusts', at: 40.8, who: 'elof', line: 'sgPots' },
     { id: 'sg:pot-klonk', at: 45.2, who: 'spoket', line: 'sgKlonk' },
     { id: 'sg:pot', at: 46.2, who: 'elof', line: 'sgFlowerpot' },
-    { id: 'sg:calm', at: 72.8, who: 'elof', line: 'sgCalm' },
     // 4. Regntunnan: Klonk on the barrel shows the way up
     { id: 'sg:ditch', at: 77, who: 'elof', line: 'sgDitch' },
     { id: 'sg:barrel', at: 78.4, who: 'spoket', line: 'sgKlonkKlonk' },
@@ -357,7 +368,7 @@ export const stormgard: ChapterData = {
     { from: -3, to: 24, zoom: 1.4, lift: 0.35 },
     { from: 24, to: 36, zoom: 1.4, lift: 0.4 },
     { from: 42, to: 72, zoom: 1.35 },
-    { from: 100, to: 130, zoom: 1.3 },
+    { from: 100, to: 130, zoom: 1.3, lift: 2 },
     { from: 130, to: 152, zoom: 1.35, lift: 0.8 },
     // The hedge: the sky over it, where the little one flies.
     { from: 174, to: 196, zoom: 1.5, lift: 1.4 },

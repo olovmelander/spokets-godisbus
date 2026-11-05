@@ -5,7 +5,7 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { lessMotion } from '../../platform/motion';
 import { actPose } from '../../render/acting';
-import { STANDING, blendPose, createModelRig, type Pose, type Rig } from '../../render/rig';
+import { STANDING, blendPose, createModelRig, heightOf, type Pose, type Rig } from '../../render/rig';
 import { windAt } from '../../render/wind';
 
 /**
@@ -200,6 +200,8 @@ export interface Figure {
   group: Group;
   rig: Rig;
   ladder: Mesh | null;
+  /** Takes the model from Blender in place of the figure built in code: it is the family's own hand. */
+  dress(model: Object3D): void;
   /** `used`: he has called them. `elof`: where he is. `laid`: the ledge lies over the ditch now, and takes the ladder's place. */
   update(used: boolean, clock: number, dt: number, elof: number, laid?: boolean): void;
 }
@@ -210,9 +212,10 @@ export interface Figure {
  */
 export function createGrandparent(who: Grandparent, lantern: Object3D | null, decor = false): Figure {
   const { model, bones } = body(who);
-  const rig = createModelRig(model, HEIGHT[who]);
+  let rig = createModelRig(model, HEIGHT[who]);
   const group = new Group();
   group.name = `figure:${who}`;
+  group.userData.grandparent = who;
   rig.group.position.z = -1.9;
   group.add(rig.group);
   const carried = who === 'morfar' && !decor ? ladder() : null;
@@ -228,6 +231,7 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
     bones.handR!.add(hinge);
     hinge.position.y = 0.3;
   }
+  let hand: Object3D = bones.handR!;
 
   const pose: Pose = { ...STANDING }, down: Pose = { ...STANDING }, wanted: Pose = { ...STANDING };
   const context = { t: 0, aim: null, stride: 0, pace: 0, calm: true };
@@ -238,8 +242,26 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
 
   return {
     group,
-    rig,
+    get rig() { return rig; },
     ladder: carried,
+    dress(dressed) {
+      // Drawn as big as the family are, whom the models are measured with.
+      dressed.scale.setScalar(3);
+      group.remove(rig.group);
+      rig = createModelRig(dressed, heightOf('mamma'));
+      rig.group.position.z = -1.9;
+      group.add(rig.group);
+      hand = dressed.getObjectByName('hand_r') ?? hand;
+      if (lantern) {
+        hand.add(hinge);
+        group.updateWorldMatrix(true, true);
+        const size = hand.getWorldScale(new Vector3()).x;
+        hinge.scale.setScalar(1 / size);
+        hinge.position.y = 0.3 / size;
+      }
+      delete (bones as Partial<typeof bones>).eyeL;
+      delete (bones as Partial<typeof bones>).eyeR;
+    },
     update(used, clock, dt, elof, laid = false) {
       const still = lessMotion();
       since = used ? since + dt : 0;
@@ -291,7 +313,7 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
       // A slow blink now and then.
       const blink = !still && clock > nextBlink;
       const lids = blink ? 0.12 : 1;
-      bones.eyeL!.scale.y = bones.eyeR!.scale.y = lids;
+      if (bones.eyeL && bones.eyeR) bones.eyeL.scale.y = bones.eyeR.scale.y = lids;
       if (clock > nextBlink + 0.16) nextBlink = clock + 3 + ((clock * 7.3) % 3);
 
       if (carried) {
@@ -302,7 +324,7 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
 
       if (lantern) {
         // A pendulum on the hand: it lags behind what the hand does, and settles.
-        bones.handR!.getWorldPosition(now);
+        hand.getWorldPosition(now);
         const moved = first || dt <= 0 ? 0 : (now.x - was.x) / dt;
         was.copy(now);
         first = false;

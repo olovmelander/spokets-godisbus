@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
+import { alven } from '../../src/content/aventyr2/chapters/alven';
+import { billsta } from '../../src/content/aventyr2/chapters/billsta';
+import { flarken } from '../../src/content/aventyr2/chapters/flarken';
+import { olympia } from '../../src/content/aventyr2/chapters/olympia';
+import { stormbyn } from '../../src/content/aventyr2/chapters/stormbyn';
+import { stormgard } from '../../src/content/aventyr2/chapters/stormgard';
+import { stormskog } from '../../src/content/aventyr2/chapters/stormskog';
 import { byn } from '../../src/content/chapters/byn';
 import { berget } from '../../src/content/chapters/berget';
 import { garden } from '../../src/content/chapters/garden';
@@ -26,6 +33,14 @@ const CEILING: Record<string, { longest: number; over: number }> = {
   berget: { longest: 4, over: 0 },
   // The shop's floor between its two big candies.
   byn: { longest: 7, over: 7 },
+  // Äventyr 2 keeps inside the five seconds all through.
+  stormgard: { longest: 5, over: 0 },
+  stormskog: { longest: 5, over: 0 },
+  stormbyn: { longest: 5, over: 0 },
+  olympia: { longest: 5, over: 0 },
+  flarken: { longest: 5, over: 0 },
+  alven: { longest: 5, over: 0 },
+  billsta: { longest: 5, over: 0 },
 };
 /** The length of plain running that counts as too long, in seconds. */
 const TOO_LONG = 5;
@@ -45,7 +60,7 @@ function pace(chapter: ChapterData) {
     run = 0;
     from = to;
   };
-  for (let frames = 0; !game.sim.flags.has('goal') && frames < 60 * 150; frames++) {
+  for (let frames = 0; !game.sim.flags.has('goal') && frames < 60 * 300; frames++) {
     const d = decide(game, chapter);
     const hop = d.ahead && !wasAhead;
     const act = d.offered && !wasOffered;
@@ -63,7 +78,7 @@ function pace(chapter: ChapterData) {
 }
 
 describe('how long the trail asks for nothing but running', () => {
-  for (const chapter of [garden, granskog, myren, berget, byn]) {
+  for (const chapter of [garden, granskog, myren, berget, byn, stormgard, stormskog, stormbyn, olympia, flarken, alven, billsta]) {
     it(`${chapter.id}: no emptier than it was`, () => {
       const measured = pace(chapter);
       expect(measured.goal).toBe(true);

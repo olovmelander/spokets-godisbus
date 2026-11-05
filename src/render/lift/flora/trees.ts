@@ -1,6 +1,6 @@
 import { Color, InstancedMesh, Matrix4, Object3D, Vector3, type BufferGeometry, type Group, type Material } from 'three';
 import type { ChapterData, PlaceId } from '../../../sim/types';
-import { KIT, grows, heightAt, sequence } from '../../dressing/kit';
+import { KIT, grows, heightAt, sequence, surfaceAt } from '../../dressing/kit';
 import { gardenViewGap } from '../../garden-home';
 import { backRise } from '../../mountain-kit';
 import { STREET_DEPTH } from '../../village';
@@ -229,6 +229,7 @@ export function plant(chapter: ChapterData, dressing: Group | null | undefined):
   const built = (chapter.storm?.buildings ?? []).filter((b) => b.kind !== 'birch' && b.kind !== 'spruce' && b.kind !== 'mailbox');
   const free = (x: number, z: number, wide: number) => (place === 'village' || (grows(chapter, x) && grows(chapter, x - wide / 2) && grows(chapter, x + wide / 2)))
     && !built.some((b) => Math.abs(x - b.x) < (b.width ?? 10) / 2 + wide / 2 + 1.5 && z > b.z - 14)
+    && surfaceAt(chapter, x) !== 'turf'
     && !(chapter.id === 'garden' && gardenViewGap(x) && z > -29.5) && !(chapter.street ?? []).some((part) => part.kind === 'house' && x > part.from - 2 && x < part.to + 2);
   const tone = () => 0.85 + next() * 0.25;
   /** Its crown's foot just under the top of the picture at its depth, and some of it over the picture. */

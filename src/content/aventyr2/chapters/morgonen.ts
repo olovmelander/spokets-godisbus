@@ -83,6 +83,8 @@ export const morgonen: ChapterData = {
     { id: 'cocoa', look: 'candle', at: { x: 44, y: 0 }, verb: 'take', word: 'moCocoa', needs: 'beat:moName' },
   ],
   decor: [
+    // What the night left in the room: wet raincoats and boots, leaves on the floor, mormor's lantern put out.
+    { look: 'aftermath', at: { x: 0, y: 0 } },
     // The two back on the shelf, first in the row: placed by his own hands.
     { look: 'tragubbe', at: { x: FIRST.x, y: FIRST.y }, z: FIRST.z, after: 'shelf:old' },
     { look: 'lillgubbe', at: { x: FIRST.x + 0.7, y: FIRST.y }, z: FIRST.z + 0.2, after: 'shelf:small' },
@@ -109,6 +111,8 @@ export const morgonen: ChapterData = {
     { id: 'moNice', on: 'beat:moName', who: 'moa', line: 'moNiceLine', read: true },
     { id: 'moWelcome', on: 'beat:moNice', who: 'pappa', line: 'moWelcomeLine', read: true },
     { id: 'moCup', on: 'cocoa', who: 'mamma', line: 'moCupLine' },
+    // What she said on the jetty, in the dark, when her lamp lit by itself.
+    { id: 'moKnew', on: 'beat:moCup', who: 'moa', line: 'moKnewLine', read: true },
     { id: 'moAll', at: 50, needs: 'cocoa', who: 'elof', line: 'moAllLine', read: true },
   ],
   cameras: [{ from: -3, to: 62, zoom: 1.5, lift: 0.3 }],

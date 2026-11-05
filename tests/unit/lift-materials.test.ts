@@ -356,7 +356,7 @@ describe('the water that mirrors its banks', () => {
       expect(material.uniforms.banks!.value, chapter.id).toHaveLength(8);
       expect(material.fragmentShader).toContain('textureLod(refraction');
       // The bog's islands are mirrored on Mid from a row of their heights.
-      expect(material.uniforms.islandFrame!.value.y > 0, chapter.id).toBe(look.id === 'bog');
+      expect(material.uniforms.islandFrame!.value.y > 0, chapter.id).toBe(look.id === 'bog' || chapter.river === true);
     }
   });
 });

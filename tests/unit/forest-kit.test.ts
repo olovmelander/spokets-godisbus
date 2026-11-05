@@ -164,7 +164,7 @@ describe('the landmarks', () => {
     const down = new Vector3(0, -1, 0);
     const ray = new Raycaster();
     for (const mark of marks) {
-      const mesh = new Mesh(kit.shape(LANDMARKS[mark.look])!, new MeshBasicMaterial({ side: DoubleSide }));
+      const mesh = new Mesh(kit.shape(LANDMARKS[mark.look as keyof typeof LANDMARKS])!, new MeshBasicMaterial({ side: DoubleSide }));
       mesh.position.set(mark.from, mark.base, 0);
       mesh.updateMatrixWorld(true);
       for (let x = mark.from + 0.12; x <= mark.to - 0.12; x += 0.17) {
@@ -182,7 +182,7 @@ describe('the landmarks', () => {
 
   it('stand no higher in front of the path than the path itself, so that nothing covers his boots', () => {
     for (const mark of marks) {
-      const at = kit.shape(LANDMARKS[mark.look])!.getAttribute('position');
+      const at = kit.shape(LANDMARKS[mark.look as keyof typeof LANDMARKS])!.getAttribute('position');
       const top = heightAt(forest, (mark.from + mark.to) / 2) - mark.base;
       for (let i = 0; i < at.count; i++) if (at.getZ(i) > 0.3) expect(at.getY(i), `${mark.look}, a point ${at.getZ(i).toFixed(2)} in front`).toBeLessThan(top + 0.06);
     }
@@ -190,7 +190,7 @@ describe('the landmarks', () => {
 
   it('reach no further along the path than a hand past their blocks, where he walks', () => {
     for (const mark of marks) {
-      const at = kit.shape(LANDMARKS[mark.look])!.getAttribute('position');
+      const at = kit.shape(LANDMARKS[mark.look as keyof typeof LANDMARKS])!.getAttribute('position');
       for (let i = 0; i < at.count; i++) {
         // Behind the path a thing may spread: he passes in front of it.
         if (at.getZ(i) < -0.3 || at.getY(i) < 0.1) continue;

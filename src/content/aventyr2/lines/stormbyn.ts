@@ -7,27 +7,24 @@ export const words: ChapterWords = {
     sbDark: 'Hela byn är mörk. Strömmen är borta!',
     sbKlonkHere: 'Klonk!',
     sbAwning: 'Markisen studsar som en studsmatta!',
-    sbCandle: 'Någon har tänt ett ljus i fönstret.',
+    sbCandle: 'Någon är vaken! Ett ljus i fönstret.',
+    sbCandleTwo: 'Skomakaren tände också ett ljus!',
+    sbCandleThree: 'Hela gatan hjälper mig att se.',
     // Rännstensforsen, and the grate.
     sbRiver: 'Rännstenen har blivit en fors!',
-    sbGrate: 'Gallret! Jag hoppar från järn till järn.',
     // The high wall, and Moa's umbrella. She calls him lillebror.
-    sbWall: 'Uppför trappan, upp på muren!',
     sbMoaHere: 'Lillebror! Jag står här nere med lampan.',
     sbMoaHold: 'Håll i mitt paraply. Jag håller i dig!',
     sbFloat: 'Jag svävar som ett maskrosfrö!',
     sbMoaLanded: 'Snyggt landat, lillebror!',
     // The swinging sign, and the little one's cap in the gutter.
-    sbSign: 'Skylten gungar i blåsten!',
     sbCap: 'Lillgubbens mössa!',
     sbToLake: 'Vinden tar honom mot fotbollsplanen!',
     sbKlonkCap: 'Klonk, klonk!',
     // The awnings pour, and the steps go down to the shore.
-    sbDrops: 'Stora droppar! Jag tittar på skuggorna.',
-    sbSteps: 'Trappan ner mot Olympia!',
-    sbShore: 'Vänta på oss, lillgubben! Vi kommer!',
+    sbShore: 'Håll ut, lillgubben! Vi kommer!',
   },
-  verbs: { sbUmbrella: 'Håll i paraplyet' },
+  verbs: { sbUmbrella: 'Håll i paraplyet', sbRing: 'Dra i klocksnöret' },
   purposes: {
     sbStreet: { purpose: 'Följ godisspåret genom den mörka byn.', recap: 'Strömmen har gått i hela byn. Gamla trägubben lämnar godis åt mig.' },
     sbRiver: { purpose: 'Åk björklövet nerför rännstenen.', recap: 'Regnet har gjort rännstenen till en fors.' },

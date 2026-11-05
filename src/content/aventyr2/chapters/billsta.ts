@@ -22,8 +22,9 @@ import { alongAll, hopCandy, jump, round, row, slopeRow, timeCard } from '../kit
  *    and a soft drop takes him to the ground behind the house.
  * 5. **Skogen och Billaberget:** a forest brook behind the house, crossed on three stones. Further on the brook runs
  *    deep and wide below the hill's steep bank, and a dry spruce the storm has blown down lies over a stone on the
- *    near bank: a seesaw (the puzzle, and Klonk's own help). Elof stands on its low end, too light alone. "Ropa på
- *    Klonk": Klonk jumps onto the high end, and Elof is flung over the brook, up onto the bank. Then Billaberget's
+ *    near bank: a seesaw (the puzzle, and Klonk's own help). "Ropa på Klonk": Klonk jumps onto the high end, and it
+ *    hardly stirs: he weighs nothing. The way is the lever: he goes round the stone and pushes it back towards his
+ *    own end, so that Klonk has the long arm, and Elof is flung over the brook, up onto the bank. Then Billaberget's
  *    boulders, a crack, and rock shelves jutting from its granite face with October's hazelnuts on them (side
  *    candy); and the open slope in the gusts, the boulders the lee.
  * 6. **Krönet:** up on Billaberget's brow, a flash: far below in the narrow, on a stone, the old trägubbe holds the
@@ -127,17 +128,27 @@ const POOL_WATER = -0.6;
 const TOP = { from: POOL.to, to: 144.4, y: 3.2 };
 
 /**
- * Klonk's seesaw (the puzzle): a dry spruce the storm has blown down, lying over a stone on the near bank. Its
- * picture (the spot's look) runs from 0.9 before the spot to 3.5 after it, with its stone 1.3 after it and the low
- * end where he comes, so he stands on the low end when he calls. Klonk waits over the stone, jumps onto the high
- * end when called (a short held beat, while Elof stands still), and the seesaw flings Elof over the brook, up onto
- * the bank. The fling begins by itself once Klonk is on: he is already standing there.
+ * Klonk's seesaw (the puzzle): a dry spruce the storm has blown down, lying over a stone on the near bank, the stone
+ * under its middle. Klonk waits by the high end and jumps on when called (a short held beat), and nothing comes of it:
+ * with the arms even he is far too light. What moves it is the lever, as when a grown-up sits near the middle: Elof goes
+ * round the stone and pushes it back towards his own end. Now Klonk has the long arm, high in the air, and when
+ * Elof steps on the short one it falls and flings him over the brook, up onto the bank.
  */
-const SEESAW = { x: 129.3 };
-const KLONK_WAITS = { x: 130.8, y: 0 };
-/** The high end, where Klonk lands: it comes down to the ground under him, and Elof's end goes up. */
-const HIGH_END = { x: round(SEESAW.x + 3.5), y: 0 };
-const FLING = { from: { x: round(SEESAW.x - 0.95), y: 0 }, to: { x: 140.4, y: TOP.y }, rise: 4, time: 1.8, corridor: 0.4 };
+const SEESAW = { low: 127.9, middle: 130.4, short: 129.1 };
+/** Where its fling is touched: a little before the low end, so that the stone's top beside it is out of reach. */
+const TOUCHED = 127.5;
+const CALL_AT = round(SEESAW.low + 0.95);
+const KLONK_WAITS = { x: 132.2, y: 0 };
+/** Where the high end stands, with Klonk on it: first with the arms even, then on the long arm. */
+const HIGH_END = { x: 132.7, y: 1.1 };
+const HIGH_ARM = { x: 132.5, y: 1.55 };
+/** The stone under the spruce: a low boulder he jumps over, and pushes only from the far side. */
+const PIVOT: Mover = {
+  id: 'bi-pivot', look: 'boulder', width: 1.2, height: 0.6, verb: 'push', needs: 'bi:klonk-on',
+  stops: [{ x: SEESAW.middle, y: 0 }, { x: SEESAW.short, y: 0 }],
+};
+const PIVOT_PLACED = `placed:${PIVOT.id}`;
+const FLING = { from: { x: SEESAW.low, y: 0 }, to: { x: 140.4, y: TOP.y }, rise: 4, time: 1.8, corridor: 0.4 };
 
 /**
  * Billaberget's boulders (verified: a boulder field below its cliff, with hazel): one a held jump up, a crack
@@ -162,9 +173,9 @@ const rise = (x: number) => round(SLOPE + ((BROW.y - SLOPE) * (x - RISE.from)) /
  * held jump over the last. He walks off the third onto the big boulder. A hop along the trail tops out under all.
  */
 const SHELVES: Ledge[] = [
-  { x: 151.7, y: 5.4, width: 1.6, look: 'stone' },
-  { x: 154.3, y: 6.3, width: 1.6, look: 'stone' },
-  { x: 157.1, y: 7, width: 1.6, look: 'stone' },
+  { x: 151.7, y: 5.4, width: 1.6, look: 'shelf' },
+  { x: 154.3, y: 6.3, width: 1.6, look: 'shelf' },
+  { x: 157.1, y: 7, width: 1.6, look: 'shelf' },
 ];
 
 /**
@@ -207,6 +218,8 @@ function across(way: Stone[]): Candy[] {
 export const billsta: ChapterData = {
   id: 'billsta',
   place: 'garden',
+  // The ditch and the brook behind the house run on past the picture.
+  river: true,
   // Beside the family's car, on the road.
   spawn: { x: 1, y: 0.01 },
   // Where and when, as the chapter opens (src/content/chapters/cards.ts).
@@ -273,18 +286,22 @@ export const billsta: ChapterData = {
     // The road, and the gravel drive up to the yard.
     { from: -3, to: DITCH.from, kind: 'asphalt' },
     { from: DRIVE.from, to: DRIVE.to, kind: 'earth' },
-    { from: STACK[0]!.x, to: STACK_TOP.to, kind: 'wood' },
     // The planks, the loft's floor and the roof, all boards: the ground's 'iron' is a drain's grate, not a roof.
-    { from: PLANKS.from, to: EAVES.to, kind: 'wood' },
+    { from: PLANKS.from, to: ROOF.from, kind: 'wood' },
+    { from: ROOF.from, to: EAVES.to, kind: 'roof' },
     // The forest floor behind the house, the stones in the brook, and Billaberget's boulders.
-    { from: EDGE.from, to: EDGE.to, kind: 'earth' },
-    ...STONES.map((s) => ({ from: s.from, to: s.to, kind: 'stone' as const })),
-    { from: BANK.from, to: BANK.to, kind: 'earth' },
+    { from: EDGE.from, to: EDGE.to, kind: 'moss' },
+    ...STONES.map((s) => ({ from: s.from, to: s.to, kind: 'wetRock' as const })),
+    { from: BANK.from, to: BANK.to, kind: 'moss' },
+    // Billaberget: moss and thin forest up to the boulders, and all the way over them to the brow.
+    { from: TOP.from, to: B1.from, kind: 'moss' },
     { from: B1.from, to: B3.to, kind: 'stone' },
+    { from: B3.to, to: BROW.to, kind: 'moss' },
   ],
   // What the stones and the boulders are, for the picture only: granite of Billaberget's boulder field.
   landmarks: [
-    ...STONES.map((s) => ({ look: 'stone' as const, from: s.from, to: s.to, base: BROOK_WATER })),
+    { look: 'woodpile', from: STACK[0]!.x, to: STACK_TOP.to, base: 0 },
+    ...STONES.map((s) => ({ look: 'stone' as const, from: s.from, to: s.to, base: BROOK_WATER - 1 })),
     { look: 'stone', from: B1.from, to: B1.to, base: TOP.y },
     { look: 'stone', from: B2.from, to: B2.to, base: SLOPE },
     { look: 'stone', from: B3.from, to: B3.to, base: SLOPE },
@@ -303,8 +320,8 @@ export const billsta: ChapterData = {
   // The storm over the barn's roof and over the open slope: every four seconds a gust for a little more than one.
   // A dash from one lee to the next takes half the calm between, as on Berget.
   gusts: [
-    { from: ROOF_LEE[0]!, to: ROOF_LEE[ROOF_LEE.length - 1]!, y: ROOF.y, every: 4, length: 1.4, first: 0.5, shelters: ROOF_LEE },
-    { from: LEE[0]!, to: LEE[LEE.length - 1]!, y: SLOPE, every: 4, length: 1.4, first: 0.5, shelters: LEE },
+    { from: ROOF_LEE[0]!, to: ROOF_LEE[ROOF_LEE.length - 1]!, y: ROOF.y, every: 3.6, length: 1.7, first: 0.5, shelters: ROOF_LEE },
+    { from: LEE[0]!, to: LEE[LEE.length - 1]!, y: SLOPE, every: 3.6, length: 1.6, first: 0.5, shelters: LEE },
   ],
   ledges: [LADDER, ...BEAMS, ...SHELVES],
   spots: [
@@ -313,17 +330,21 @@ export const billsta: ChapterData = {
     // Mormor by the woodshed, with her lantern.
     { id: 'bi:mormor', look: 'mormor', at: MORMOR, verb: 'call', word: 'biCallMormor' },
     // Klonk at the seesaw: he is too light alone, and calls his friend.
-    { id: 'bi:call-klonk', at: { x: SEESAW.x, y: 0 }, verb: 'call', word: 'biCallKlonk' },
-    // The seesaw itself. Once Klonk is on its high end, it flings him over the brook.
-    { id: 'bi:fling', look: 'seesaw', at: { x: SEESAW.x, y: 0 }, verb: 'take', touch: true, needs: 'bi:klonk-on', ride: 'bi:fling' },
+    { id: 'bi:call-klonk', at: { x: CALL_AT, y: 0 }, verb: 'call', word: 'biCallKlonk' },
+    // The seesaw itself. Once the stone is near his end, Klonk's long arm flings him over the brook.
+    { id: 'bi:fling', look: 'seesawLog', at: { x: TOUCHED, y: 0 }, verb: 'take', touch: true, needs: PIVOT_PLACED, ride: 'bi:fling' },
   ],
   rides: [{ id: 'bi:fling', look: 'none', ...FLING }],
-  movers: [DOOR],
+  movers: [DOOR, PIVOT],
+  counterweight: { from: BANK.from, to: POOL.from, call: 'bi:call-klonk', heavy: PIVOT.id, launch: 'bi:fling' },
   // Morfar lays his ladder over the ditch: Elof stands and watches until it lies still.
   later: [
     { flag: 'bi:ladder', after: 'bi:morfar', seconds: 1.6, hold: true, within: [6, 20] },
     // Klonk jumps onto the seesaw's high end: Elof stands on the low end and watches until Klonk is on.
     { flag: 'bi:klonk-on', after: 'bi:call-klonk', seconds: 1.2, hold: true, within: [BANK.from, POOL.from] },
+    // If he stands and thinks, he remembers something, and a little later he looks at the stone.
+    { flag: 'bi:think', after: 'bi:klonk-on', seconds: 10, until: PIVOT_PLACED },
+    { flag: 'bi:think-more', after: 'bi:klonk-on', seconds: 22, until: PIVOT_PLACED },
     // The little one, tossed onto the stone by a wave, where the old one catches him.
     { flag: 'bi:landed', after: 'beat:bi:there', seconds: 1.6 },
   ],
@@ -335,14 +356,17 @@ export const billsta: ChapterData = {
     jump({ x: round(HATCH.from - 0.2), y: LOFT }, { x: round(HATCH.to + 0.9), y: LOFT }),
     ...HAY.map((s, i) => jump({ x: round(s.x - 0.2), y: i === 0 ? LOFT : HAY[i - 1]!.y }, { x: round(s.x + 0.45), y: s.y })),
     ...hops(BROOK_WAY),
+    // Over the stone under the spruce: past it, to its far side, and back again when it has been pushed.
+    { at: { x: 129.2, y: 0 }, dir: 1, land: { x: 131.6, y: 0 }, until: PIVOT_PLACED },
+    { at: { x: 130.2, y: 0 }, dir: -1, land: { x: 128.1, y: 0 }, needs: PIVOT.id },
     jump({ x: round(B1.from - 0.2), y: TOP.y }, { x: round(B1.from + 0.7), y: B1.y }),
     jump({ x: round(CRACK.from - 0.2), y: B1.y }, { x: round(CRACK.to + 0.9), y: B2.y }),
     jump({ x: round(B3.from - 0.2), y: SLOPE }, { x: round(B3.from + 0.7), y: B3.low }),
     jump({ x: round(B3.mid - 0.2), y: B3.low }, { x: round(B3.mid + 0.7), y: B3.high }),
   ],
   storm: {
-    rain: 0.85,
-    lightning: 8,
+    rain: 1,
+    lightning: 5.5,
     // On the barn's roof the lee is the ventilation hoods along the ridge; on Billaberget it is its boulders.
     shelters: ['vents', 'rocks'],
     // The narrow, far below the brow beyond the forest, where the two figures are.
@@ -357,15 +381,21 @@ export const billsta: ChapterData = {
     // house, up Billaberget.
     buildings: [
       // The family's car on the road, just stopped after the drive, its inside light on.
-      { kind: 'car', x: CAR.x, z: CAR.z, width: CAR.width, lit: '' },
+      { kind: 'car', x: CAR.x, z: CAR.z, width: CAR.width, lit: '', size: 0.62 },
       { kind: 'mailbox', x: 11.6, z: -2.4 },
+      // The road's wooden poles, with their wires across the sky, and a lamp on each.
+      { kind: 'pole', x: -30, z: -9, height: 19, width: 34, lit: '' },
+      { kind: 'pole', x: 4, z: -9, height: 19, width: 34, lit: '' },
+      { kind: 'pole', x: 38, z: -9, height: 19, width: 34, lit: '' },
       // Spruces across the road.
       { kind: 'spruce', x: -26, z: -30, y: -6, height: 62 },
       { kind: 'spruce', x: -12, z: -42, y: -7, height: 70 },
       { kind: 'spruce', x: -1, z: -34, y: -5, height: 54 },
       // The house behind the yard, in sight from the road, with the barn beside it: neither stands in the other.
-      { kind: 'villa', x: 33, z: -30, width: 44, lit: '' },
-      { kind: 'barn', x: 78, z: -16, lit: 'bi:mormor' },
+      { kind: 'villa', x: 18, z: -72, width: 44, lit: '', model: 'billsta-house', size: 0.72 },
+      // The great round birch that stands behind it.
+      { kind: 'birch', x: -6, z: -96, height: 84 },
+      { kind: 'barn', x: 94, z: -44, lit: 'bi:mormor', model: 'billsta-barn', size: 0.8 },
       { kind: 'woodshed', x: 42, z: -7 },
       { kind: 'rowboat', x: 24, z: -5, width: 16 },
       { kind: 'birch', x: 18, z: -10, height: 56 },
@@ -398,6 +428,20 @@ export const billsta: ChapterData = {
     ],
   },
   decor: [
+    // A frog on the middle stone of the brook, and another on its bank.
+    { look: 'kit', word: 'groda', at: { x: 115.6, y: 0.4 }, z: -1.4, turn: 0.6, scale: 0.8 },
+    { look: 'kit', word: 'groda', at: { x: 124.6, y: 0 }, z: -1.2, turn: -0.5, scale: 0.7 },
+    // The forest behind the house: fallen branches, a mossy log and a sawn stump.
+    { look: 'kit', word: 'gren-a', at: { x: 124.6, y: 0 }, z: -1.6, turn: 0.4 },
+    { look: 'kit', word: 'stubbe-sagad', at: { x: 125.8, y: 0 }, z: -2.6, turn: 1.1 },
+    { look: 'kit', word: 'lag-mossig', at: { x: 143.4, y: 3.2 }, z: -2.8, turn: 0.1 },
+    { look: 'kit', word: 'gren-b', at: { x: 166.8, y: 3.2 }, z: -1.4, turn: 2.4 },
+    { look: 'kit', word: 'gren-a', at: { x: 176.6, y: 3.2 }, z: -1.7, turn: 0.2 },
+    { look: 'kit', word: 'stubbe-sagad', at: { x: 181.2, y: 3.2 }, z: -2.4, turn: 0.5 },
+    { look: 'kit', word: 'gren-b', at: { x: 190.2, y: 6.4 }, z: -1.5, turn: 1.2 },
+    { look: 'kit', word: 'lag-mossig', at: { x: 199, y: 6.4 }, z: -2.6, turn: 2.9 },
+    // The hazel shelves on Billaberget's face.
+    ...SHELVES.map((l, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x: l.x, y: l.y }, z: -0.5, scale: l.width / (i === 1 ? 3.2 : 2.6) })),
     // Mormor's lantern, once she has opened the barn.
     { look: 'lantern', at: { x: 56.8, y: LOFT }, z: -0.9, after: 'bi:mormor' },
     // Far out in the narrow, on a stone: the old one, and the little one once the wave has tossed him there.
@@ -430,8 +474,9 @@ export const billsta: ChapterData = {
     { at: { x: 112, y: STONES[0]!.y } },
     { at: { x: 115.8, y: STONES[1]!.y } },
     { at: { x: 119.6, y: STONES[2]!.y } },
-    { at: KLONK_WAITS, until: 'bi:call-klonk' },
-    { at: HIGH_END, until: 'bi:fling' },
+    { at: KLONK_WAITS, until: 'bi:call-klonk', near: 8, still: true },
+    { at: HIGH_END, until: PIVOT_PLACED, near: 8, z: -0.34, still: true },
+    { at: HIGH_ARM, until: 'bi:fling', near: 8, z: -0.34, still: true },
     { at: { x: 143, y: TOP.y } },
     { at: { x: 146.3, y: B1.y } },
     { at: { x: 151.1, y: B2.y } },
@@ -464,22 +509,22 @@ export const billsta: ChapterData = {
     { id: 'bi:open', on: `placed:${DOOR.id}`, who: 'elof', line: 'biOpen' },
     // 4. the hay loft, the roof, and down behind the house
     { id: 'bi:loft', at: 57.8, needs: `placed:${DOOR.id}`, who: 'elof', line: 'biLoft' },
-    { id: 'bi:hatch', at: 61.8, who: 'elof', line: 'biHatch' },
     { id: 'bi:roof', at: 70.2, who: 'elof', line: 'biRoof' },
     { id: 'bi:roof-klonk', at: 73.4, who: 'spoket', line: 'biKlonk' },
-    { id: 'bi:forest', at: 101.4, who: 'elof', line: 'biForest' },
     // 5. the brook, Klonk's seesaw, and Billaberget
-    { id: 'bi:brook', at: 108.6, who: 'elof', line: 'biBrook' },
     { id: 'bi:seesaw', at: 126.4, until: 'bi:call-klonk', who: 'elof', line: 'biSeesaw', read: true },
     { id: 'bi:call', on: 'bi:call-klonk', who: 'elof', line: 'biJumpOn' },
     { id: 'bi:klonk-jump', on: 'beat:bi:call', who: 'spoket', line: 'biKlonk' },
+    { id: 'bi:too-light', on: 'bi:klonk-on', who: 'elof', line: 'biTooLight' },
+    { id: 'bi:klonk-sorry', on: 'beat:bi:too-light', who: 'spoket', line: 'biKlonk' },
+    { id: 'bi:middle', on: 'bi:think', until: PIVOT_PLACED, who: 'elof', line: 'biMiddle' },
+    { id: 'bi:the-stone', on: 'bi:think-more', until: PIVOT_PLACED, who: 'elof', line: 'biTheStone' },
+    { id: 'bi:near-middle', on: PIVOT_PLACED, who: 'elof', line: 'biNearMiddle' },
     { id: 'bi:fly', on: 'bi:fling', who: 'elof', line: 'biFly' },
     { id: 'bi:thanks-klonk', at: 141, needs: 'bi:fling', who: 'elof', line: 'biThanksKlonk' },
     { id: 'bi:klonk-glad', on: 'beat:bi:thanks-klonk', who: 'spoket', line: 'biKlonkKlonk' },
-    { id: 'bi:hill', at: 142.8, who: 'elof', line: 'biHill' },
     { id: 'bi:hazel', at: 150.2, who: 'elof', line: 'biHazel' },
     { id: 'bi:wind', at: 162.4, who: 'elof', line: 'biWind', read: true },
-    { id: 'bi:top', at: 187.6, who: 'elof', line: 'biTop' },
     // 6. the brow: a flash, both trägubbar on a stone in the narrow far below, and the owl far off
     { id: 'bi:there', at: 193.2, who: 'elof', line: 'biThere', read: true },
     { id: 'bi:holds', on: 'bi:landed', who: 'elof', line: 'biHolds' },
@@ -605,6 +650,8 @@ export const context: Chooser = (has, player) => {
   if (at >= LEE[0]! - 1.5) return ['billstaWind', 'billstaForest', 'mountain'];
   if (at >= TOP.from + 0.3 && player.y >= TOP.y - 0.3) return ['billstaBoulders', 'billstaForest', 'mountain'];
   if (has('bi:fling')) return ['billstaFly', 'billstaKlonk', 'water', 'spoket'];
+  if (has(PIVOT_PLACED)) return ['billstaShortEnd', 'billstaKlonk', 'water', 'spoket'];
+  if (has('bi:klonk-on')) return ['billstaLever', 'billstaKlonk', 'water', 'spoket'];
   if (has('bi:call-klonk')) return ['billstaKlonkOn', 'billstaKlonk', 'water', 'spoket'];
   if (at >= BANK.from - 0.5) return ['billstaSeesaw', 'billstaKlonk', 'water', 'spoket'];
   if (at >= EAVES.to && player.y < EAVES.y) return ['billstaBrook', 'billstaForest', 'water'];

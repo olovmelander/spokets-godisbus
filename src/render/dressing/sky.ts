@@ -48,7 +48,7 @@ let again: (() => void) | null = null;
 if (typeof window !== 'undefined') window.addEventListener('resize', () => again?.());
 
 export function backdrop(look: PlaceLook): CanvasTexture {
-  const sun = SUNS[look.id];
+  const sun = look.noSun ? undefined : SUNS[look.id];
   const paint = (c: CanvasRenderingContext2D) => {
     const down = c.createLinearGradient(0, 0, 0, TALL);
     down.addColorStop(0, look.sky.top);

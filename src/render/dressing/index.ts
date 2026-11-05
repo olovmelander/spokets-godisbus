@@ -145,7 +145,7 @@ export interface Dressing {
 const STRETCH = 18;
 
 /** Everything that stands and lies on the moss, in stretches along the chapter. */
-function scatter(chapter: ChapterData, from: number, to: number, place: PlaceId): Group {
+function scatter(chapter: ChapterData, from: number, to: number, place: PlaceId, own: Ground): Group {
   const group = new Group();
   // Indoors nothing grows. Out of doors at home it is the garden's lawn, below the deck: nothing grows on boards.
   if (place === 'home' && chapter.outdoors === undefined) return group;
@@ -153,7 +153,11 @@ function scatter(chapter: ChapterData, from: number, to: number, place: PlaceId)
   // At home the lawn begins a little past the boards, and no birch stands in the view from the deck.
   const start = place === 'home' ? Math.max(chapter.outdoors!, ...(chapter.surfaces ?? []).map((s) => s.to)) + 4 : from - 12;
   for (let a = start; a < to + 12; a += STRETCH) {
-    group.add(place === 'home' ? lawn(chapter, a, a + STRETCH, Math.round(a * 7 + 97), false) : build(chapter, a, a + STRETCH, Math.round(a * 7 + 97)));
+    const seed = Math.round(a * 7 + 97);
+    // A forest behind the house: where a chapter that is not a forest marks moss, it grows as a forest does.
+    if (place !== 'forest' && chapter.surfaces?.some((s) => s.kind === 'moss' && s.from < a + STRETCH && s.to > a)) group.add(stretch(chapter, a, a + STRETCH, seed));
+    if (place === 'bog') group.add(bog(chapter, a, a + STRETCH, seed, own));
+    else group.add(place === 'home' ? lawn(chapter, a, a + STRETCH, seed, false) : build(chapter, a, a + STRETCH, seed));
   }
   return group;
 }
@@ -180,11 +184,11 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   // A chapter at home that goes out of doors (the prologue's deck): past the house the garden's sky and far
   // scenery, and its lawn below the deck. What is built, the floors and the deck, says so with its surfaces.
   const out = look.id === 'home' && chapter.outdoors !== undefined;
-  const own = out ? 'lawn' : OWN[look.id].ground;
+  const own = out ? 'lawn' : look.ground ?? OWN[look.id].ground;
   const landChapter = landscape(chapter);
   makeKit();
   // What stands on the ground comes first: the bee is told where the dandelions are.
-  const standing = scatter(landChapter, from, to, look.id);
+  const standing = scatter(landChapter, from, to, look.id, own);
   const ground = bank(landChapter, own);
   if (look.id === 'forest') bakeForestShadows(ground, standing, look.sun.from);
   const air = effects(landChapter, from, to, look.id, standing);
@@ -197,7 +201,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   // however high he climbs: backdrop.ts.
   // What the far pictures count their sinking from: the land around the chapter's start.
   const land = heightAt(chapter, from) - (chapter.outlook ?? 0);
-  const far = scenery(out ? 'garden' : look.id, land, from, to);
+  const far = scenery(out ? 'garden' : look.far ?? look.id, land, from, to, look.farBeyond);
   // The house now has a roof and a veranda in the yard. The old nearest shrub card belongs
   // beyond those buildings, where it cannot paint a green strip across their windows.
   const gardenLeaves = chapter.id === 'garden' ? far.group.getObjectByName('far-garden-32') : undefined;
@@ -209,7 +213,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   if (sky) group.add(sky);
   // A moose in the mist, cranes, smoke from a far chimney: among the far pictures, and only there.
   // Bredbyn's smoke is anchored to the actual baked buildings' chimney caps.
-  const wild = createLife(chapter, look.id, land, houses?.group.getObjectByName('bredbyn-smoke'), asked);
+  const wild = createLife(chapter, look.far ? 'forest' : look.id, land, houses?.group.getObjectByName('bredbyn-smoke'), asked);
   if (wild) group.add(wild.mesh);
   group.add(
     far.group,

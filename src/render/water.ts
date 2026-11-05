@@ -98,6 +98,29 @@ const KINDS: Partial<Record<PlaceId, WaterKind>> = {
   },
 };
 
+/** A river: black, running, open towards the camera and on behind the path. Its stones and banks stand in it. */
+export const RIVER: WaterKind = {
+  front: 11, corner: 11, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
+  dim: 0.6, faceTop: '#2a3a3c', faceDeep: '#0c1618', ramp: 1.6, faceAlpha: 0.93, faceBelow: 1, murk: 0.5, through: '#b8cac4',
+  mirror: 0.55, tint: '#c4ccc0', ripple: 1.25, bedColour: '#000000', shoreColour: '#000000', stands: null,
+};
+
+/** How wide a thing can stand in a river with the water going on past it: more than that is a bank. */
+const STANDS_IN_IT = 10;
+
+/** A river is one water: its stretches meet half way between them, under what stands in it. */
+function joined(pools: readonly { from: number; to: number; y: number }[]) {
+  return pools.map((pool, i) => {
+    const before = pools[i - 1];
+    const after = pools[i + 1];
+    return {
+      ...pool,
+      from: before && pool.from - before.to < STANDS_IN_IT ? (before.to + pool.from) / 2 : pool.from,
+      to: after && after.from - pool.to < STANDS_IN_IT ? (pool.to + after.from) / 2 : pool.to,
+    };
+  });
+}
+
 /** A pool's banks as its water mirrors them: the top of the bank, and its cut face down to the water. */
 const BANKS: Partial<Record<PlaceId, [string, string]>> = { forest: ['#55752a', '#3a2d20'], garden: ['#4f7d2a', '#4a3826'], bog: ['#6f5a30', '#2a201a'] };
 /** What stands near the water, as its mirror shows it: a spruce's bark, a birch's, a dead pine's. */
@@ -325,8 +348,8 @@ function nothingFar(): DataTexture {
  */
 export function createWater(chapter: ChapterData, look: { colour: string; opacity: number } | null, sun: readonly [number, number, number] = [-7, 5, -4], setting: WaterSetting = {}) {
   const group = new Group();
-  const pools = chapter.water ?? [];
-  const kind = waterKind(setting.place ?? chapter.place, look !== null);
+  const pools = chapter.river ? joined(chapter.water ?? []) : chapter.water ?? [];
+  const kind = chapter.river ? RIVER : waterKind(setting.place ?? chapter.place, look !== null);
   const details = { value: 0 }, time = { value: 0 };
   // A puddle in the street mirrors what stands across it: as far to each side as the camera can see it in it.
   const puddle = pools[0];

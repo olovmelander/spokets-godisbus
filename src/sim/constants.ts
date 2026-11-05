@@ -188,5 +188,7 @@ export const CANDY_MAGNET = 0.6;
 
 export const ELOF_HALF_WIDTH = 0.18;
 export const ELOF_HEIGHT = 1;
+/** The flag that he has fallen in, set from the start on Lugnt: where the water is the puzzle, it offers a gentler way. */
+export const FELL_IN = 'fell-in';
 /** How far the camera looks ahead of Elof (plan §5.2: 2–3 EL). */
 export const CAMERA_LEAD = 2.5;

@@ -76,6 +76,8 @@ function stem(radius: number, z: number, dark: string, light: string): BufferGeo
 }
 
 const LOOKS: Record<LedgeLook, Look> = {
+  // A modelled shelf of rock: never drawn here, but a look like the rest for what asks.
+  shelf: { colour: '#8a8e90', roughness: 0.9, shape: () => new BoxGeometry(1, LEDGE_THICK, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2) },
   // A sawn board: the end of a deck plank, a sill, a shelf. A batten under its back edge holds it to the wall.
   plank: {
     colour: '#c9ae84', roughness: 0.75,
@@ -152,7 +154,7 @@ const LOOKS: Record<LedgeLook, Look> = {
   },
 };
 
-export const LEDGE_LOOKS = Object.keys(LOOKS) as LedgeLook[];
+export const LEDGE_LOOKS = (Object.keys(LOOKS) as LedgeLook[]).filter((look) => look !== 'shelf');
 /** How long a ledge that waits for a flag takes to come into being. */
 const GROW = 0.35;
 /** Ledges and rods further apart than this are in different places: no side way has a gap that wide. */
@@ -438,7 +440,8 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [],
 
   for (const [n, here] of ledgePlaces(ledges, rods).entries()) {
     // What is always there: one shape, one mesh, drawn while the place is in sight.
-    const always = here.ledges.filter((i) => ledges[i]!.needs === undefined);
+    // A shelf of rock is modelled, and a chapter sets it where its ledge is: only the ledge's top is the simulation's.
+    const always = here.ledges.filter((i) => ledges[i]!.needs === undefined && ledges[i]!.look !== 'shelf');
     if (always.length + here.rods.length > 0) {
       const mesh = new Mesh(shapeOf(always, here.rods), solid);
       mesh.name = `ledges:${n}`;

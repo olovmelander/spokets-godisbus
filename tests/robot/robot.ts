@@ -86,21 +86,51 @@ export function decide(game: Game, chapter: ChapterData): Decision {
       if (gust.blow > 0 || gust.until < (next - 0.5 - p.x) / RUN_SPEED + 0.4) return wait;
     }
   }
+  // Logs the water turns to and fro: it goes to the end of what it stands on, and waits until the next is a hop away.
+  // On Lugnt it takes the gentle way, which is offered there.
+  const turning = movers.filter((m) => m.def.cycle?.wait);
+  if (turning.length > 0 && p.grounded && !game.sim.options.gentle) {
+    const on = turning.find((m) => Math.abs(p.x - m.x) <= m.def.width / 2 + 0.2 && Math.abs(m.y + m.def.height - p.y) < 0.2);
+    const next = turning.filter((m) => m !== on && m.x - m.def.width / 2 > p.x).sort((a, b) => a.x - b.x)[0];
+    if (on || (next && next.x - next.def.width / 2 - p.x < 4)) {
+      let edge = on ? on.x + on.def.width / 2 : p.x;
+      if (!on) while (heightAt(chapter, edge + 0.1) > p.y - 1) edge += 0.1;
+      let far = next ? next.x - next.def.width / 2 : edge;
+      if (!next) while (heightAt(chapter, far) < p.y - 1) far += 0.1;
+      if (p.x < edge - 0.35) return { ...wait, x: 1 };
+      if (far - edge > 0.9) return wait;
+      return { ...wait, x: 1, ahead: true };
+    }
+  }
   // A thing on its way along its rail: wait for it.
   if (movers.some((m) => m.t < 1)) return wait;
   // Something to do where it stands: stand still and do it. It taps, as a player does: one thing done may
   // offer the next at once, and a held button would never press again.
   if (p.verb !== null && p.verb !== 'lace' && p.verb !== 'slide') return { ...wait, offered: Math.floor(game.sim.steps / 24) % 2 === 0 };
+  // At a thing in the way it jumps, unless the jump is marked and made for it (Lätta hopp).
+  const overing = (obstacle: MoverState, direction: number) => {
+    const near = direction < 0 ? p.x - obstacle.x - obstacle.def.width / 2 : obstacle.x - obstacle.def.width / 2 - p.x;
+    return !!direction && p.grounded && !game.sim.options.easyJumps && near > -0.1 && near < 1.05 && obstacle.y + obstacle.def.height > p.y + 0.3 && obstacle.y < p.y + 0.9;
+  };
   // A readable weight puzzle deliberately sends him back to a passed cone, onto its push side.
   // Its authored hint supplies the current target; the robot still reads/clears the actual obstacle.
   const weight = counterweightTarget(game.sim, chapter);
   if (weight && chapter.counterweight && game.sim.flags.has(chapter.counterweight.call)
     && !game.sim.flags.has(`placed:${chapter.counterweight.heavy}`) && weight.verb === null) {
     const obstacle = movers.find((m) => m.def.id === chapter.counterweight!.heavy)!;
-    const right = obstacle.x + obstacle.def.width / 2;
-    const wall = p.x - right > -0.1 && p.x - right < 1.05 && obstacle.y + obstacle.def.height > p.y + 0.3;
-    const direction = Math.abs(p.x - weight.at.x) < 0.08 ? 0 : Math.sign(weight.at.x - p.x);
-    return { ...wait, x: direction, ahead: direction < 0 && p.grounded && wall };
+    // Up onto what it lies on, from under it and a little back, or a jump would take hold of the thing itself.
+    const low = weight.at.y > p.y + 0.5;
+    const aim = low ? weight.at.x - 0.5 : weight.at.x;
+    const direction = Math.abs(p.x - aim) < 0.08 ? 0 : Math.sign(aim - p.x);
+    const up = low && direction === 0 && p.grounded && !game.sim.options.easyJumps;
+    return { ...wait, x: direction, ahead: up || overing(obstacle, direction) };
+  }
+  // A launch he only has to touch: back to it, over what he moved.
+  const launch = chapter.counterweight && chapter.spots?.find((s) => s.id === chapter.counterweight!.launch);
+  if (launch?.touch && !game.sim.flags.has(launch.id) && game.sim.flags.has(`placed:${chapter.counterweight!.heavy}`)) {
+    const obstacle = movers.find((m) => m.def.id === chapter.counterweight!.heavy)!;
+    const direction = Math.sign(launch.at.x - p.x);
+    return { ...wait, x: direction, ahead: overing(obstacle, direction) };
   }
   // A glint behind it: something there can be used now. It walks back to it, as a player would.
   const usable = (chapter.spots ?? []).find((s) =>

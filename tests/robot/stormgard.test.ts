@@ -20,7 +20,7 @@ import { decide, heightAt, playThrough } from './robot';
 
 /** What the robot does on the way, in the order the story has it. */
 const SAID = [
-  'sg:moa', 'sg:gutter', 'sg:pumpkin', 'sg:pumpkin-klonk', 'sg:gusts', 'sg:pot-klonk', 'sg:pot', 'sg:calm',
+  'sg:moa', 'sg:gutter', 'sg:pumpkin', 'sg:pumpkin-klonk', 'sg:gusts', 'sg:pot-klonk', 'sg:pot',
   'sg:ditch', 'sg:barrel', 'sg:lid', 'sg:bertil-here', 'sg:boot-ready', 'sg:heja', 'sg:thanks',
   'sg:playhouse', 'sg:lonely', 'sg:why', 'sg:flash', 'sg:forest', 'sg:end-klonk',
 ];

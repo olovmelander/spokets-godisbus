@@ -1,5 +1,5 @@
 import type { Act } from '../sim/scene';
-import { groundedHips, STANDING, type Pose, type Role } from './rig';
+import { groundedHips, plantFeet, STANDING, type Pose, type Role } from './rig';
 import { carvingAt } from './carving-motion';
 
 /**
@@ -122,7 +122,7 @@ function handAlong(p: Pose, from: { ahead: number; up: number }, ahead: number, 
 const CHEST = 3.55;
 
 /** The body sitting on a chair. */
-function sitting(p: Pose): Pose {
+export function sitting(p: Pose): Pose {
   p.legL = p.legR = 1.5;
   p.kneeL = p.kneeR = 1.45;
   p.seat = 1.5;
@@ -169,6 +169,8 @@ function walking(p: Pose, c: ActContext): Pose {
   p.elbowL = p.elbowR = 0.25;
   p.lean = 0.06 * c.pace;
   p.bounce = c.calm ? 0 : Math.abs(Math.cos(c.stride * Math.PI)) * 0.06 * c.pace;
+  p.twist = swing * 0.32;
+  plantFeet(p, c.stride * Math.PI);
   return p;
 }
 

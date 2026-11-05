@@ -94,6 +94,8 @@ export function courseAvailable(params: URLSearchParams, id: string, released: C
   const canonical = courseId(id);
   if (!Object.hasOwn(COURSES, canonical) && !isAdventure2(canonical) && !LOOK_IDS.includes(canonical)) return false;
   if (canonical === 'testbana' || params.has('dev')) return true;
+  // Byn is the unnumbered bonus after the epilogue; it opens with the completed story.
+  if (canonical === 'byn') return released !== null && CHAPTER_IDS.indexOf(released) >= CHAPTER_IDS.indexOf('epilog');
   const stable = RELEASE_IDS[canonical];
   return released !== null && stable !== undefined && CHAPTER_IDS.indexOf(stable) <= CHAPTER_IDS.indexOf(released);
 }
@@ -109,10 +111,10 @@ export function courseFor(params: URLSearchParams, saved: string | null = null, 
   return courseAvailable(params, 'prolog', released) ? prolog : testbana;
 }
 
-/** The end card's destination. Bonus and look-development courses have no public release ID; Byn leads on to Äventyr 2. */
+/** The end card's destination; Byn is the bonus after the released story, and leads on to Äventyr 2. */
 export function nextAvailable(id: string, params: URLSearchParams, released: ChapterId | null = RELEASED_CHAPTER): ChapterData | null {
   const here = courseId(id);
-  // Where Byn is not open (a public release), the story's last card leads straight on to Äventyr 2.
+  // Byn comes after the story and leads on to Äventyr 2; where Byn were closed, the story's last card would lead there itself.
   const ways = [nextAfter(here) ?? bonusAfter(here), here === STORY[STORY.length - 1]!.id ? ADVENTURE2[0] : undefined];
   return ways.find((way): way is ChapterData => !!way && courseAvailable(params, way.id, released)) ?? null;
 }

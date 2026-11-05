@@ -5,7 +5,7 @@ import type { Storm } from '../../src/sim/types';
 
 /** Äventyr 2's buildings (src/content/aventyr2/buildings.ts): each is built, stands on its foot, and costs two draws at most. */
 describe('Äventyr 2: the buildings', () => {
-  const kinds: NonNullable<Storm['buildings']>[number]['kind'][] = ['villa', 'barn', 'playhouse', 'goal', 'floodlight', 'stand', 'clubhouse', 'tower', 'hut', 'birch', 'car', 'kota', 'church', 'bridge', 'woodshed', 'rowboat', 'swings', 'slide', 'picnic', 'volleyball', 'lodge', 'mailbox', 'cliff', 'spruce'];
+  const kinds: NonNullable<Storm['buildings']>[number]['kind'][] = ['jettyArm', 'pole', 'store', 'trestleTable', 'pitch', 'chess', 'sunboard', 'villa', 'barn', 'goal', 'floodlight', 'stand', 'clubhouse', 'tower', 'hut', 'birch', 'car', 'kota', 'church', 'bridge', 'woodshed', 'rowboat', 'swings', 'slide', 'picnic', 'volleyball', 'lodge', 'mailbox', 'cliff', 'spruce'];
   for (const kind of kinds) {
     it(`builds the ${kind} in at most two meshes, standing where it is put`, () => {
       const made = building({ kind, x: 10, z: -8 });
@@ -19,6 +19,22 @@ describe('Äventyr 2: the buildings', () => {
       }
     });
   }
+
+  it('lays a pitch flat on the ground, on past the path towards the camera when it is told to', () => {
+    const made = building({ kind: 'pitch', x: 0, z: 0, width: 100, height: 22, marks: { halfway: 10, front: 7 } });
+    const geometry = (made.group.children[0] as Mesh).geometry;
+    geometry.computeBoundingBox();
+    expect(geometry.boundingBox!.max.y).toBeLessThan(0.2);
+    expect(geometry.boundingBox!.max.z).toBeGreaterThanOrEqual(7);
+    expect(geometry.boundingBox!.min.z).toBeLessThanOrEqual(-22);
+    expect(geometry.boundingBox!.max.x - geometry.boundingBox!.min.x).toBeGreaterThanOrEqual(100);
+  });
+
+  it('marks a building that a model takes the place of, and keeps a stand-in until then', () => {
+    const made = building({ kind: 'clubhouse', x: 50, z: -66, model: 'olympia-hall' });
+    expect(made.group.userData.model).toBe('olympia-hall');
+    expect(made.group.children.length).toBeGreaterThan(0);
+  });
 
   it('keeps the marks of a birch on its bark: nothing stands out of the stem below its crown', () => {
     const h = 70;

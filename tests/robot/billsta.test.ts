@@ -28,9 +28,7 @@ const SAID = [
   'bi:arrive', 'bi:klonk', 'bi:window', 'bi:window-klonk',
   'bi:new-trail', 'bi:ditch', 'bi:morfar-here', 'bi:ladder-lay', 'bi:ladder', 'bi:thanks', 'bi:to-mormor',
   'bi:yard', 'bi:mormor-here', 'bi:lantern', 'bi:open',
-  'bi:loft', 'bi:hatch', 'bi:roof', 'bi:roof-klonk', 'bi:forest',
-  'bi:brook', 'bi:seesaw', 'bi:call', 'bi:klonk-jump', 'bi:fly', 'bi:thanks-klonk', 'bi:klonk-glad',
-  'bi:hill', 'bi:hazel', 'bi:wind', 'bi:top',
+  'bi:loft', 'bi:roof', 'bi:roof-klonk', 'bi:seesaw', 'bi:call', 'bi:klonk-jump', 'bi:too-light', 'bi:klonk-sorry', 'bi:near-middle', 'bi:fly', 'bi:thanks-klonk', 'bi:klonk-glad', 'bi:hazel', 'bi:wind',
   'bi:there', 'bi:holds', 'bi:not-alone', 'bi:owl', 'bi:down', 'bi:cheer',
 ];
 /** The big candies by name: their places in billsta.checkpoints. */
@@ -38,11 +36,12 @@ const CP = { road: 0, drive: 1, lawn: 2, loft: 3, roof: 4, house: 5, seesaw: 6, 
 
 const ladder = billsta.ledges!.find((l) => l.needs === 'bi:ladder')!;
 const door = billsta.movers!.find((m) => m.id === 'bi-door')!;
+const pivot = billsta.movers!.find((m) => m.id === 'bi-pivot')!;
 const spot = (id: string) => billsta.spots!.find((s) => s.id === id)!;
 const call = spot('bi:call-klonk');
 const seesaw = spot('bi:fling');
 const fling = billsta.rides!.find((r) => r.id === 'bi:fling')!;
-const shelves = billsta.ledges!.filter((l) => l.look === 'stone');
+const shelves = billsta.ledges!.filter((l) => l.look === 'shelf');
 const beams = billsta.ledges!.filter((l) => l.look === 'plank' && !l.needs);
 const [roofGust, slopeGust] = billsta.gusts!;
 const lines: Record<string, string> = sv.lines;
@@ -274,7 +273,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
 
   describe('the red barn', () => {
     it('climbs the woodshed\'s stack a row at a time, and drops softly off its end', () => {
-      const stack = billsta.surfaces!.find((s) => s.kind === 'wood')!;
+      const stack = billsta.landmarks!.find((mark) => mark.look === 'woodpile')!;
       const top = Math.max(...[0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6].map((dx) => heightAt(billsta, stack.from + dx)));
       expect(top).toBeLessThan(4);
       // Every row is a marked jump for Lätta hopp.
@@ -288,8 +287,8 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(hatch.to - hatch.from).toBeLessThan(RUNNING_JUMP_REACH - 0.6);
       for (let x = roofGust!.from; x <= roofGust!.to; x += 0.2) expect(heightAt(billsta, x), `at ${x}`).toBeCloseTo(roofGust!.y, 6);
       for (let i = 1; i < roofGust!.shelters.length; i++) expect(roofGust!.shelters[i]! - roofGust!.shelters[i - 1]!).toBeCloseTo(5.2, 6);
-      // Boards all the way, from the planks to the eaves.
-      expect(billsta.surfaces!.find((s) => s.kind === 'wood' && s.from <= roofGust!.from && s.to >= roofGust!.to)).toBeDefined();
+      // Tarred boards all along the long roof.
+      expect(billsta.surfaces!.find((s) => s.kind === 'roof' && s.from <= roofGust!.from && s.to >= roofGust!.to)).toBeDefined();
       // On the roof the lee is the ventilation hoods; on Billaberget it is its boulders.
       expect(billsta.storm!.shelters).toEqual(['vents', 'rocks']);
     });
@@ -332,7 +331,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
   describe('the forest behind the house', () => {
     it('crosses the brook on three stones, a hop of water between each, every hop a marked jump', () => {
       const brook = billsta.water!.find((w) => w.from < billsta.checkpoints![CP.seesaw]!.x && w.to > billsta.checkpoints![CP.house]!.x)!;
-      const stones = billsta.surfaces!.filter((s) => s.kind === 'stone' && s.from > brook.from && s.to < brook.to);
+      const stones = billsta.surfaces!.filter((s) => s.kind === 'wetRock' && s.from > brook.from && s.to < brook.to);
       expect(stones.length).toBe(3);
       const edges = [brook.from, ...stones.flatMap((s) => [s.from, s.to]), brook.to];
       for (let i = 0; i < edges.length; i += 2) {
@@ -359,7 +358,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(heightAt(billsta, pool.to + 0.1) - heightAt(billsta, pool.from - 0.1)).toBeGreaterThan(JUMP_APEX + LEDGE_REACH);
       // Nothing marks a jump over it, and nothing is pushed into it: the way over is Klonk's seesaw.
       expect(billsta.jumps!.filter((j) => j.at.x > pool.from - 1 && j.at.x < pool.to)).toEqual([]);
-      expect(billsta.movers!.map((m) => m.id)).toEqual([door.id]);
+      expect(billsta.movers!.map((m) => m.id)).toEqual([door.id, pivot.id]);
       expect(billsta.climbs ?? []).toEqual([]);
       // A running jump off the bank ends in the glitter bubble, back on the near bank.
       const wet = new Sim(billsta, {}, { checkpoint: CP.seesaw });
@@ -370,8 +369,8 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
     });
 
     it('has a dry spruce over a stone as a seesaw: he is too light alone, and nothing flings him until Klonk is called', () => {
-      expect(seesaw.look).toBe('seesaw');
-      expect(seesaw.needs).toBe('bi:klonk-on');
+      expect(seesaw.look).toBe('seesawLog');
+      expect(seesaw.needs).toBe(`placed:${pivot.id}`);
       expect(seesaw.ride).toBe(fling.id);
       // Required: the story's way over, never a side way.
       expect(seesaw.extra).toBeUndefined();
@@ -379,7 +378,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(fling.from.x).toBeLessThan(pool.from);
       expect(fling.to.x).toBeGreaterThan(pool.to);
       expect(fling.to.y).toBe(heightAt(billsta, fling.to.x));
-      expect(lines.biSeesaw).toBe('En gungbräda! Men jag är för lätt.');
+      expect(lines.biSeesaw).toBe('En gungbräda! Vem tar andra änden?');
       const sim = new Sim(billsta, {}, saveAt(CP.seesaw).start);
       // Klonk waits over the stone until he calls.
       const waits = billsta.ghost!.findIndex((perch) => perch.until === 'bi:call-klonk');
@@ -394,7 +393,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(sim.said).toContain('bi:seesaw');
     });
 
-    it('called, Klonk jumps onto the high end while Elof stands still, and the seesaw flings him over the brook onto the bank', () => {
+    it('called, Klonk jumps on and it hardly stirs: he weighs nothing', () => {
       const sim = new Sim(billsta, {}, saveAt(CP.seesaw).start);
       walkTo(sim, fling.from.x);
       use(sim);
@@ -404,26 +403,71 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(sim.held).toBe(true);
       expect(Math.abs(sim.curr.x - fling.from.x)).toBeLessThan(0.1);
       expect(sim.flags.has('bi:klonk-on')).toBe(false);
-      // Klonk is on the seesaw's high end, on the ground it comes down to.
-      const high = billsta.ghost!.findIndex((perch) => perch.until === fling.id);
+      // Klonk is on the seesaw's high end, in the air where it stands.
+      const high = billsta.ghost!.findIndex((perch) => perch.until === `placed:${pivot.id}`);
       expect(sim.ghost!.perch).toBe(high);
       expect(sim.ghost!.x).toBeCloseTo(billsta.ghost![high]!.at.x, 1);
       expect(sim.ghost!.y).toBeCloseTo(billsta.ghost![high]!.at.y, 1);
       expect(billsta.ghost![high]!.at.x).toBeGreaterThan(seesaw.at.x + 3);
       expect(billsta.ghost![high]!.at.x).toBeLessThan(pool.from);
-      // Then the seesaw tips, by itself: he is already standing on it.
-      run(sim, 0.6);
+      run(sim, 3);
       expect(sim.flags.has('bi:klonk-on')).toBe(true);
-      expect(sim.curr.mode).toBe('ride');
+      expect(sim.curr.mode).toBe('free');
+      expect(sim.flags.has(fling.id)).toBe(false);
+      expect(sim.said).toContain('bi:too-light');
+      expect(lines.biTooLight).toBe('Du väger ju ingenting, Klonk!');
+      // Nothing offers itself: from his own side of the stone there is nothing to push.
+      expect(sim.curr.verb).toBeNull();
+    });
+
+    it('remembers Pappa near the middle if he stands thinking, and then looks at the stone', () => {
+      const sim = new Sim(billsta, {}, saveAt(CP.seesaw).start);
+      walkTo(sim, fling.from.x);
+      use(sim);
+      run(sim, 10);
+      expect(sim.said).not.toContain('bi:middle');
+      run(sim, 4);
+      expect(sim.said).toContain('bi:middle');
+      expect(sim.said).not.toContain('bi:the-stone');
+      run(sim, 12);
+      expect(sim.said).toContain('bi:the-stone');
+    });
+
+    it('goes round the stone and pushes it back: the short arm is his, the long is Klonk\'s, and it flings him onto the bank', () => {
+      const sim = new Sim(billsta, {}, saveAt(CP.seesaw).start);
+      walkTo(sim, fling.from.x);
+      use(sim);
+      run(sim, 2);
+      // The stone lies under the middle: the two arms are even.
+      const log = { low: fling.from.x, high: billsta.ghost!.find((perch) => perch.until === `placed:${pivot.id}`)!.at.x };
+      expect(Math.abs(pivot.stops[0]!.x - log.low - (log.high - pivot.stops[0]!.x))).toBeLessThan(0.6);
+      expect(pivot.stops[1]!.x).toBeLessThan(pivot.stops[0]!.x);
+      expect(log.high - pivot.stops[1]!.x).toBeGreaterThan(2.5 * (pivot.stops[1]!.x - log.low));
+      // Over it, to its far side.
+      leap(sim, 1, 129);
+      expect(sim.curr.x, where(sim)).toBeGreaterThan(pivot.stops[0]!.x + pivot.width / 2);
+      walkTo(sim, pivot.stops[0]!.x + pivot.width / 2 + 0.3);
+      run(sim, 0.2);
+      expect(sim.curr.verb, where(sim)).toBe('push');
+      use(sim);
+      run(sim, 1.2);
+      expect(sim.flags.has(`placed:${pivot.id}`)).toBe(true);
+      expect(sim.said).toContain('bi:near-middle');
+      expect(lines.biNearMiddle).toBe('Nu står jag nära mitten!');
+      expect(sim.flags.has(fling.id)).toBe(false);
+      // Back over it, onto the short end: it flings him by itself.
+      leap(sim, -1, sim.curr.x);
+      run(sim, 1.2, { x: -1 });
+      expect(sim.curr.mode, where(sim)).toBe('ride');
       run(sim, fling.time + 0.3);
       expect(sim.curr.mode, where(sim)).toBe('free');
       expect(sim.curr.x).toBeCloseTo(fling.to.x, 1);
       expect(sim.curr.y).toBeCloseTo(heightAt(billsta, fling.to.x), 1);
       // Klonk follows him over the brook.
-      expect(sim.ghost!.perch).toBeGreaterThan(high);
+      expect(sim.ghost!.perch).toBeGreaterThan(billsta.ghost!.findIndex((perch) => perch.until === fling.id));
       expect(runPast(sim, 142)).toBe(true);
       expect(sim.bubbles).toBe(0);
-      expect(sim.said).toEqual(['bi:seesaw', 'bi:call', 'bi:klonk-jump', 'bi:fly', 'bi:thanks-klonk', 'bi:klonk-glad']);
+      expect(sim.said).toEqual(['bi:seesaw', 'bi:call', 'bi:klonk-jump', 'bi:too-light', 'bi:klonk-sorry', 'bi:near-middle', 'bi:fly', 'bi:thanks-klonk', 'bi:klonk-glad']);
       expect(lines.biThanksKlonk).toBe('Tack, Klonk! Du är min bästa vän.');
     });
 
@@ -435,7 +479,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
         expect(words.helpers![helper]).toMatch(/Klonk/);
       }
       for (const beat of billsta.beats!.filter((b) => ['bi:klonk-jump', 'bi:klonk-glad'].includes(b.id))) expect(beat.who).toBe('spoket');
-      for (const perch of billsta.ghost!.filter((p) => p.until === call.id || p.until === fling.id)) {
+      for (const perch of billsta.ghost!.filter((p) => p.until === call.id)) {
         expect(heightAt(billsta, perch.at.x)).toBeCloseTo(perch.at.y, 3);
         expect(perch.catch).toBeUndefined();
       }
@@ -530,7 +574,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
     });
 
     it('is a stormy night near midnight, with the house\'s window warm from the start', () => {
-      expect(billsta.storm).toMatchObject({ rain: 0.85, lightning: 8 });
+      expect(billsta.storm).toMatchObject({ rain: 1, lightning: 5.5 });
       expect(billsta.storm!.calm).toBeUndefined();
       expect(billsta.coda).toBe('all');
       expect(billsta.place).toBe('garden');
@@ -571,12 +615,12 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
     }
     expect(seen).toEqual([
       'billstaRoad', 'billstaMorfar/morfar', 'billstaLadder/morfar', 'billstaYard', 'billstaMormor/mormor', 'billstaBarn/mormor',
-      'billstaLoft', 'billstaRoof', 'billstaBrook', 'billstaSeesaw/spoket', 'billstaKlonkOn/spoket', 'billstaFly/spoket',
+      'billstaLoft', 'billstaRoof', 'billstaBrook', 'billstaSeesaw/spoket', 'billstaKlonkOn/spoket', 'billstaLever/spoket', 'billstaShortEnd/spoket', 'billstaFly/spoket',
       'billstaBoulders', 'billstaWind', 'billstaBrow', 'billstaFound',
     ]);
     // Every purpose the chooser can give has its words.
     for (let x = -2; x <= 205; x += 2) {
-      for (const flags of [[], ['bi:ladder'], ['bi:ladder', 'bi:mormor'], ['bi:ladder', 'bi:mormor', call.id], ['bi:ladder', 'bi:mormor', call.id, 'bi:klonk-on', fling.id], ['beat:bi:there']]) {
+      for (const flags of [[], ['bi:ladder'], ['bi:ladder', 'bi:mormor'], ['bi:ladder', 'bi:mormor', call.id], ['bi:ladder', 'bi:mormor', call.id, 'bi:klonk-on'], ['bi:ladder', 'bi:mormor', call.id, 'bi:klonk-on', `placed:${pivot.id}`], ['bi:ladder', 'bi:mormor', call.id, 'bi:klonk-on', fling.id], ['beat:bi:there']]) {
         const [purpose, helper] = context((flag) => flags.includes(flag), { x, y: heightAt(billsta, x) });
         expect(words.purposes![purpose], purpose).toBeDefined();
         expect(words.helpers![helper], helper).toBeDefined();
@@ -586,7 +630,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
 
   it('keeps Klonk ahead on firm ground, waiting at the ditch, the door and the seesaw, and wordless: it only says klonk', () => {
     for (const perch of billsta.ghost!) expect(perch.catch).toBeUndefined();
-    expect(billsta.ghost!.filter((p) => p.until).map((p) => p.until)).toEqual(['bi:ladder', `placed:${door.id}`, call.id, fling.id]);
+    expect(billsta.ghost!.filter((p) => p.until).map((p) => p.until)).toEqual(['bi:ladder', `placed:${door.id}`, call.id, `placed:${pivot.id}`, fling.id]);
     for (const beat of billsta.beats!.filter((b) => b.who === 'spoket')) expect(lines[beat.line]).toMatch(/^(Klonk[-,!]? ?)+(klonk!?)?$/i);
   });
 

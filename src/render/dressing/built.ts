@@ -60,14 +60,16 @@ export function built(chapter: ChapterData, indoors = false): Group {
       const { x, y, filled } = chapter.shelf;
       const dim = evening ? 0.62 : 1;
       const wood = (hex: string) => new MeshStandardMaterial({ color: new Color(hex).multiplyScalar(dim), roughness: 0.85 });
-      const board = new Mesh(new BoxGeometry(8.6, 0.16, 0.9), wood('#8a6a44'));
-      board.position.set(x, y, -8.5);
+      const board = new Mesh(new BoxGeometry(9.8, 0.16, 0.9), wood('#8a6a44'));
+      board.position.set(x + 0.6, y, -8.5);
       group.add(board);
       const tones = ['#d9bd8b', '#c9a877', '#e2c898', '#b99262', '#d2b07e', '#c4a070', '#dcc08e'];
-      for (let i = 0; i < 7; i++) {
+      // The pieces stand in for his carvings, which take their place where their private pack exists.
+      const carved = ['tragubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];
+      for (let i = 0; i < carved.length; i++) {
         // Klonk comes back beside the old first figure after the carving lesson.
         if (chapter.epilogue && i === 1) continue;
-        const at = x - 3.6 + i * 1.2;
+        const at = x - 3.6 + (i < 2 ? i * 1.2 : 0.2 + i);
         if (i === 0 && !filled) {
           // The empty place: a paler patch on the wall where a figure once stood.
           const gap = new Mesh(new PlaneGeometry(0.9, 1.2), new MeshBasicMaterial({ color: evening ? '#b09a74' : '#fff6da', transparent: true, opacity: 0.75 }));
@@ -77,18 +79,24 @@ export function built(chapter: ChapterData, indoors = false): Group {
         }
         // The first one, home again, is old: grey, with moss on its shoulder.
         const old = i === 0;
-        const material = wood(old ? '#8f8c7e' : tones[i]!);
+        const material = wood(old ? '#8f8c7e' : tones[i % tones.length]!);
         const tall = old ? 0.62 : 0.7 + (i % 3) * 0.12;
+        const piece = new Group();
+        piece.position.set(at, y + 0.08, -8.5);
+        piece.userData.model = carved[i];
+        piece.userData.fit = 1;
+        piece.userData.turn = (i % 3 - 1) * 0.16;
         const body = new Mesh(new CylinderGeometry(0.17, 0.24, tall, 10), material);
-        body.position.set(at, y + 0.08 + tall / 2, -8.5);
+        body.position.y = tall / 2;
         const head = new Mesh(new SphereGeometry(0.19, 12, 9), material);
-        head.position.set(at, y + 0.08 + tall + 0.14, -8.5);
-        group.add(body, head);
+        head.position.y = tall + 0.14;
+        piece.add(body, head);
+        group.add(piece);
         // Every second one is a tomte, with a pointed cap carved from the same piece.
         if (i % 2 === 0 && !old) {
           const cap = new Mesh(new ConeGeometry(0.19, 0.42, 10), wood('#7d8ea0'));
-          cap.position.set(at, y + 0.08 + tall + 0.46, -8.5);
-          group.add(cap);
+          cap.position.y = tall + 0.46;
+          piece.add(cap);
         }
       }
     }
