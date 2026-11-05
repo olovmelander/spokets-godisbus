@@ -136,6 +136,8 @@ const pit = (from: number, to: number, bottom: number, top = 0): Vec[] => [{ x: 
 
 export const stormgard: ChapterData = {
   id: 'stormgard',
+  // The ditch and the flood lie open across the lawn, with no bank before them.
+  river: true,
   place: 'garden',
   // The house's red wall behind the veranda, with two windows: in one, Moa and her lamp.
   house: { from: -40, to: 26, windows: [4, 16] },
