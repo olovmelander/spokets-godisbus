@@ -115,14 +115,14 @@ const SILLS: Ledge[] = [
  */
 const TRAMPOLINE = { x: 134, y: 0.5, lift: 3.4 };
 /**
- * The planks up the playhouse's wall. Each is a held jump over the last and out of reach from the steps and
- * the roof below it, and the last lies over the roof, higher than a jump from the ridge, with the hearts.
+ * The great leaves of the sunflowers by the playhouse. Each is a held jump over the last and out of reach from the
+ * steps and the roof below it, and the last lies at the roof's edge, higher than a jump from its eaves, with the hearts.
  */
 const PLANKS: Ledge[] = [
-  { x: 136.2, y: 3.3, width: 2.4, look: 'plank' },
-  { x: 138.4, y: 4.2, width: 1.4, look: 'plank' },
-  { x: 140.6, y: 5.1, width: 1.4, look: 'plank' },
-  { x: 143.4, y: 5.9, width: 2.4, look: 'plank' },
+  { x: 136.2, y: 3.3, width: 2.4, look: 'leaf' },
+  { x: 138.4, y: 4.2, width: 1.4, look: 'leaf' },
+  { x: 140.6, y: 5.1, width: 1.4, look: 'leaf' },
+  { x: 142, y: 5.9, width: 2.4, look: 'leaf' },
 ];
 const LOOKOUT = PLANKS[3]!;
 
@@ -152,7 +152,6 @@ export const stormgard: ChapterData = {
     ],
     // The playhouse the trail climbs, its green walls just behind the roof he walks on; birches by the hedge.
     buildings: [
-      { kind: 'playhouse', x: (PLAYHOUSE.from + PLAYHOUSE.to) / 2, z: -2.4, width: PLAYHOUSE.to - PLAYHOUSE.from, height: PLAYHOUSE.eaves, lit: '' },
       { kind: 'birch', x: 160, z: -16, height: 60 },
       { kind: 'birch', x: 184, z: -22, height: 72 },
       { kind: 'birch', x: 58, z: -26, height: 66 },
@@ -170,6 +169,7 @@ export const stormgard: ChapterData = {
   landmarks: [
     { look: 'barrel', from: BARREL.from, to: BARREL.to, base: 0 },
     { look: 'can', from: CAN.from, to: CAN.to, base: 0 },
+    { look: 'playhouse', from: PLAYHOUSE.from, to: PLAYHOUSE.to, base: 0 },
   ],
   surfaces: [
     { from: -19, to: STEPS[4]!.x, kind: 'wood' },

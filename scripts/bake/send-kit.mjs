@@ -16,6 +16,7 @@ const flag = (name) => flags.find((f) => f.startsWith(`--${name}=`))?.split('=')
 const out = flag('out');
 const only = flag('only');
 const parts = [
+  `ROOT = r'${here('.').split(String.fromCharCode(92)).join('/')}'`,
   `BAKE = ${flags.includes('--fast') ? 'False' : 'True'}`,
   `ONLY = ${only ? `'${only}'` : 'None'}`,
   readFileSync(here('art/blender/kit-tools.py'), 'utf8'),

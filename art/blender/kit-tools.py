@@ -258,3 +258,17 @@ def finish(part, name, sharp=180.0, strength=0.6, reach=0.3, floor=None, recalc=
     made['reach'] = reach
     made['floor'] = -1000.0 if floor is None else floor
     return made
+
+
+def strip(part, points, wide, colour, out):
+    """A thin band on a surface, along a line of points: a seam, a stitched line, a stem. `out` is the way it faces."""
+    prev = None
+    for i in range(len(points)):
+        ahead = points[min(i + 1, len(points) - 1)] - points[max(i - 1, 0)]
+        side = ahead.cross(out)
+        side.normalize()
+        w = wide[i] if isinstance(wide, list) else wide
+        pair = (put(part, points[i] - side * w + out * 0.002, colour), put(part, points[i] + side * w + out * 0.002, colour))
+        if prev is not None:
+            face(part, (prev[0], prev[1], pair[1], pair[0]))
+        prev = pair

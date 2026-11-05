@@ -90,7 +90,7 @@ export function landscape(chapter: ChapterData): ChapterData {
     return mark ? { x: point.x, y: Math.min(point.y, mark.base) } : point;
   }).filter((point, i, line) => i === 0 || point.x !== line[i - 1]!.x || point.y !== line[i - 1]!.y);
   // A thing that stands on the floor has no deck under it: what it is walked on as is its own lid.
-  const things = chapter.landmarks.filter(({ look }) => look === 'barrel' || look === 'can');
+  const things = chapter.landmarks.filter(({ look }) => look === 'barrel' || look === 'can' || look === 'playhouse');
   const surfaces = chapter.surfaces?.filter((s) => !things.some(({ from, to }) => s.from >= from && s.to <= to));
   // Idempotent: the dressing and a later restock can both ask for the land. The simulation is untouched.
   return { ...chapter, ground, landmarks: [], ...(surfaces ? { surfaces } : {}) };

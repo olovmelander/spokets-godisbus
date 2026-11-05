@@ -439,11 +439,26 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     if (kind !== 'stones') for (const x of gust.shelters) group.add(kind === 'pots' ? flowerPot(x, gust.y) : kind === 'vents' ? roofVent(x, gust.y) : kind === 'rocks' ? boulder(x, gust.y) : jettyPost(x, gust.y));
   }
 
+  // The car that goes by behind the street, in the rain.
+  const passing = scene.getObjectByName('passing-car');
+  if (passing) {
+    passing.userData.model = 'bil-gra';
+    passing.userData.fit = 3.8;
+    passing.userData.lift = -0.45;
+  }
   // The rain barrel and the watering can stand on the lawn, their tops where the outline has them.
-  for (const [look, model] of [['barrel', 'tunna'], ['can', 'kanna']] as const) {
+  for (const [look, model] of [['barrel', 'tunna'], ['can', 'kanna'], ['playhouse', 'lekstuga']] as const) {
     for (const holder of scene.getObjectsByProperty('name', `landmark:${look}`)) {
       holder.userData.model = model;
-      holder.userData.shift = (chapter.landmarks?.find((mark) => mark.look === look && mark.from === holder.position.x)?.to ?? holder.position.x) / 2 - holder.position.x / 2;
+      const mark = chapter.landmarks?.find((one) => one.look === look && one.from === holder.position.x);
+      if (mark && look !== 'playhouse') holder.userData.shift = (mark.to - mark.from) / 2;
+      // Behind the porch, the house itself, as the family's garden has it.
+      if (look === 'playhouse') {
+        const house = new Group();
+        house.position.copy(holder.position);
+        house.userData.model = 'lekstuga-hus';
+        holder.parent?.add(house);
+      }
     }
   }
   // Boulders that are blocks of the ground (landmarks), where no kit of the place draws them: faceted granite in
@@ -633,7 +648,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       for (const b of buildings) {
         if (!b.panes) continue;
         const lit = b.def.lit !== undefined && (b.def.lit === '' || flags.has(b.def.lit));
-        b.panes.color.copy(lit ? PANE.lit : PANE.dark);
+        b.panes.color.copy(lit ? (b.def.kind === 'car' ? PANE.cabin : PANE.lit) : PANE.dark);
         if (lit && !still) b.panes.color.multiplyScalar(0.92 + 0.08 * Math.sin(clock * 2.1 + b.def.x));
       }
       for (const rope of ropes) {
@@ -919,7 +934,7 @@ function football(radius: number): Mesh {
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
 const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
   'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
-const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa'];
+const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra'];
 const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
 const CARVINGS = ['tragubbe', 'lillgubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];
@@ -932,6 +947,8 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
   'olympia-stand': ['aventyr2', 'olympia'],
   'billsta-house': ['private', 'billsta-house'],
   'billsta-barn': ['private', 'billsta-house'],
+  lekstuga: ['private', 'lekstuga'],
+  'lekstuga-hus': ['private', 'lekstuga'],
 };
 
 /**
@@ -956,7 +973,13 @@ async function installModels(assets: Assets, scene: Object3D): Promise<boolean> 
     arrived = true;
     // A boulder fills the block of ground it stands for: its size and its middle, from the stand-in.
     const block = place.userData.block as { width: number; height: number; depth: number; x: number; y: number; z?: number } | undefined;
+    // What the stand-in has that the model has not, such as a car's windows that light up, stays in front of it.
+    const kept = place.children.filter((child) => typeof child.userData.keep === 'number');
     place.clear();
+    for (const child of kept) {
+      child.position.z += child.userData.keep as number;
+      place.add(child);
+    }
     // One model may stand in many places. A packed model's own scale and offset are how it was compressed, so whatever
     // places it goes on a group round it, never on the model.
     const copy = new Group();

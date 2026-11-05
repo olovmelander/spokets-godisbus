@@ -378,8 +378,8 @@ export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'p
  * outline, and `base` is the height of the ground at its foot.
  */
 export interface Landmark {
-  /** A barrel or a can is a thing on the floor that he walks on: the land and its surface go on under it. */
-  look: 'cone' | 'log' | 'anthill' | 'stone' | 'barrel' | 'can';
+  /** A barrel, a can or the playhouse is a thing on the floor that he walks on: the land and its surface go on under it. */
+  look: 'cone' | 'log' | 'anthill' | 'stone' | 'barrel' | 'can' | 'playhouse';
   from: number;
   to: number;
   base: number;
@@ -687,7 +687,7 @@ export interface Storm {
    * once that flag is set (or from the start with an empty string).
    */
   buildings?: {
-    kind: 'jettyArm' | 'pole' | 'store' | 'trestleTable' | 'pitch' | 'chess' | 'sunboard' | 'villa' | 'barn' | 'playhouse' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
+    kind: 'jettyArm' | 'pole' | 'store' | 'trestleTable' | 'pitch' | 'chess' | 'sunboard' | 'villa' | 'barn' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
       | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce';
     x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string; marks?: { halfway: number; box?: { x: number; long: number }; front?: number }; model?: string; size?: number;
     /** A hut's logs tarred black, with white trim. */

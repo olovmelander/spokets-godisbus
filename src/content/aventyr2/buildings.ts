@@ -8,7 +8,7 @@ import type { Storm } from '../../sim/types';
 /**
  * The big things of Äventyr 2's places, built in code (docs/aventyr-2.md): Billsta's white house with its two
  * gables and the red barn beside it, Olympia's goals, floodlight masts, stand and clubhouse, Flärken's diving tower
- * and changing huts, the garden's playhouse, birches and a car. Each is an interpretation in plain shapes, never a
+ * and changing huts, birches and a car. Each is an interpretation in plain shapes, never a
  * survey: no house number, no sign, no letter and no logotype anywhere. Sizes are in EL, one Elof length of 15 cm,
  * so a real house towers over him; the pictures stand behind the play plane and are never ground.
  *
@@ -99,18 +99,6 @@ function barn(def: BuildingDef) {
     parts.push(box(5, 4.6, 0.4, wx, h * 0.62, d / 2 + 0.25, '#e6e2d8'));
     panes.push(new PlaneGeometry(4, 3.6).translate(wx, h * 0.62, d / 2 + 0.5));
   }
-  return { parts, panes };
-}
-
-function playhouse(def: BuildingDef) {
-  // The garden's green playhouse, white-trimmed, with a red door: his own house's size to him.
-  const w = def.width ?? 12;
-  const h = def.height ?? 8;
-  const d = 9;
-  const parts: BufferGeometry[] = [box(w, h, d, 0, h / 2, 0, '#4f7a4a'), ...roof(w, h * 0.3, d, 0, h, 0, '#3a2c26', 0.6)];
-  parts.push(box(w * 0.22, h * 0.66, 0.3, -w * 0.18, h * 0.33, d / 2 + 0.2, '#b03a2e'));
-  const panes = [new PlaneGeometry(w * 0.2, w * 0.2).translate(w * 0.22, h * 0.6, d / 2 + 0.25)];
-  parts.push(box(w * 0.25, w * 0.25, 0.2, w * 0.22, h * 0.6, d / 2 + 0.15, '#f0ece2'));
   return { parts, panes };
 }
 
@@ -347,6 +335,9 @@ function spruce(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
+/** How long the model of the car is, in the metres it is made in. */
+const CAR_LONG = 4.7;
+
 function car(def: BuildingDef) {
   // The family's estate car: no badge, no plate, only its shape. Slate blue, because red is the candy's (art bible §2.2).
   const w = def.width ?? 29;
@@ -381,17 +372,19 @@ function car(def: BuildingDef) {
   // Roof rails, a lamp at the nose and one at the tail.
   parts.push(box(w * 0.46, 0.3, 0.3, side(-0.14), 11.1, 4.4, '#2a2e34'), box(w * 0.46, 0.3, 0.3, side(-0.14), 11.1, -4.4, '#2a2e34'));
   parts.push(box(1.6, 1, 0.1, side(0.46), 5.4, NEAR, '#d6d8cc'), box(0.9, 2.2, 0.1, side(-0.485), 6.6, NEAR, '#6e2a24'));
-  // Its side windows, on either side of a pillar, following the roof.
+  // Its side windows, where the model's are (art/blender/a2-props.py), in the car's own metres.
+  const metre = w / CAR_LONG;
   const pane = (points: readonly (readonly [number, number])[]) => {
     const glass = new Shape();
-    glass.moveTo(side(points[0]![0]), points[0]![1]);
-    for (const [x, y] of points.slice(1)) glass.lineTo(side(x), y);
+    glass.moveTo(points[0]![0] * metre, points[0]![1] * metre);
+    for (const [x, y] of points.slice(1)) glass.lineTo(x * metre, y * metre);
     glass.closePath();
     return new ShapeGeometry(glass).translate(0, 0, NEAR + 0.02);
   };
   const panes = [
-    pane([[-0.44, 7.3], [-0.42, 9.7], [-0.3, 10], [-0.17, 10], [-0.17, 7.3]]),
-    pane([[-0.13, 7.3], [-0.13, 10], [0.05, 9.9], [0.13, 9.6], [0.21, 7.3]]),
+    pane([[-2.02, 0.98], [-2.03, 1.37], [-1.3, 1.41], [-1.3, 0.97]]),
+    pane([[-1.22, 0.97], [-1.22, 1.41], [-0.36, 1.42], [-0.36, 0.96]]),
+    pane([[-0.28, 0.96], [-0.28, 1.42], [0.2, 1.42], [0.96, 1.01], [0.96, 0.95]]),
   ];
   return { parts, panes };
 }
@@ -686,7 +679,7 @@ function store(def: BuildingDef) {
 }
 
 const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGeometry[]; panes: BufferGeometry[] }> = {
-  jettyArm, pole, store, trestleTable, pitch, chess, sunboard, villa, barn, playhouse, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
+  jettyArm, pole, store, trestleTable, pitch, chess, sunboard, villa, barn, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
   church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce,
 };
 
@@ -718,6 +711,12 @@ export function building(def: BuildingDef): Building {
     group.userData.fit = def.kind === 'spruce' && pick % 3 === 2 ? (def.height ?? 60) / 42 : (def.height ?? 60) / 60;
     group.userData.turn = pick * 1.3;
   }
+  // The car takes the model's place, and keeps its windows, so that they can light up.
+  if (def.kind === 'car') {
+    group.userData.model = 'bil';
+    group.userData.fit = (def.width ?? 29) / CAR_LONG;
+    group.children[1]!.userData.keep = -0.022 * (def.width ?? 29);
+  }
   if (def.kind === 'cliff') {
     const [wide, high] = [def.width ?? 16, def.height ?? 12];
     group.userData.model = wide < 24 ? 'klippa-b' : 'klippa-a';
@@ -731,4 +730,4 @@ export function building(def: BuildingDef): Building {
 }
 
 /** The warm colour of a lit pane, and the dark of one with nobody home. */
-export const PANE = { lit: new Color('#ffc870'), dark: new Color('#141a24') };
+export const PANE = { lit: new Color('#ffc870'), cabin: new Color('#8a6a44'), dark: new Color('#141a24') };
