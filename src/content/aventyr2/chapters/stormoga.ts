@@ -234,7 +234,7 @@ export const stormoga: ChapterData = {
     { id: 'eye', at: { x: EYE, y: 0.6 }, verb: 'take', touch: true },
     { id: 'gift', look: 'gold', at: { x: FIGURES - 1, y: 0.6 }, verb: 'take', word: 'soTakeGold', needs: 'scene:motet' },
     { id: 'taste', at: { x: FIGURES + 0.6, y: 0.6 }, verb: 'take', word: 'taste', needs: 'beat:soShare' },
-    { id: 'home', look: 'sign', at: { x: HOME.from.x, y: 0.6 }, verb: 'take', word: 'goHome', needs: 'scene:stor', ride: 'home' },
+    { id: 'home', at: { x: HOME.from.x, y: 0.6 }, verb: 'take', word: 'goHome', needs: 'scene:stor', ride: 'home' },
   ],
   later: [{ flag: 'owl:ready', after: 'owl:call', seconds: 1.4, hold: true }],
   rides: [

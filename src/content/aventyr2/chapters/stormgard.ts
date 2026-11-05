@@ -270,7 +270,7 @@ export const stormgard: ChapterData = {
     { id: 'sg:tap', look: 'tap', at: { x: 81.2, y: BARREL.top }, verb: 'turn', word: 'sgTurnTap' },
     // The boot boat (Granskog's cap): calling prepares it, and Elof chooses when to step in.
     { id: 'sg:bertil', look: 'sign', at: BOOT.from, verb: 'call', word: 'callBertil' },
-    { id: 'sg:boot', look: 'sign', at: BOOT.from, verb: 'take', word: 'sgBoardBoot', needs: 'sg:boot-ready', ride: 'boot' },
+    { id: 'sg:boot', at: BOOT.from, verb: 'take', word: 'sgBoardBoot', needs: 'sg:boot-ready', ride: 'boot' },
     // On the playhouse ridge, where the old one stood: touching it shows its thought.
     { id: 'sg:thought', at: PLAYHOUSE.ridge, verb: 'take', touch: true },
     // On the plank over the roof, at the end of the trampoline's way: the whole garden in view.

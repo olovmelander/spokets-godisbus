@@ -33,7 +33,18 @@
     the one that did not (Stormskogen, x 36 to 55).
   - **Lamps in their hands** in the finale: held `lamp-*` Things, with a beam that fades. Always check a scene with the real
     figures: the rehearsal figures stand differently.
-  - **The size gate is 4 MB now** (Olov, 5 November 2026): 3065 of 4096 KB as served.
+  - **The rest of the morning:** the family's room is furnished (`art/blender/a2-room.py`: sofa, lamp, plant, table and
+    chairs, which `stage.ts` and `roomThings()` name, so a stand-in stays if the pack is missing). The meeting has its great
+    stone (`skerry`), in worn sheets of granite in open water. Billsta's long roof is tarred boards, a surface kind `roof`.
+    Stormgård's flower bed has a dry wall, a flashlight's beam fades, and Älven's far meadows lie in strips with hay on racks.
+  - **Mamma's boat:** she said she had a rowing boat, and a pale plank appeared while she stood on the jetty. Now a clinker
+    boat rows in (`Storm.boat`), and she sits at its thwart (`Spot.seated`, `sitting()`), with the spot's word still offered
+    on the jetty. He walks along the gunwale, which is a `shelf` ledge that is not drawn.
+  - **Mended on the walk:** a lake stone meant for figures far out also stood on Pappa's shelf in Stormkvällen; two signs with
+    nobody behind them are gone (the way home in Stormöga, and boarding the boot).
+  - **Kits:** `a2-props.py`, `a2-built.py` and `a2-room.py`, each with its own `.glb`: safe mode refuses a script of more than
+    20 000 AST nodes.
+  - **The size gate is 4 MB now** (Olov, 5 November 2026): see the build's own line for where it stands.
 - **The overhaul's long night (4 to 5 November 2026).** Stacked pull requests, one outcome each, none of them merged
   yet. **Merge in number order:** #192, then #195 to #201 (their base is `main`, so rebase or retarget as they land), then
   #202 to #223, each on top of the one before, and `spokets-godisbus-familj` PR #2 for the real house in Billsta. #187 is

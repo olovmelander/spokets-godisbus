@@ -166,9 +166,8 @@ stretch over five seconds. What let them down was what stood in them:
 - Water lay in pits with a lawn before it, so that Älven read as a tiled garden. A river is open water now.
 - The car, in four chapters, was a toy.
 
-**Left, in the order of what shows most:** the barn's long roof,
-which still reads as a deck; Stormbyn's flat dark street; the stone edging of Stormgård's flower bed; Billaberget's shelves
-from below; the far pictures of Älven.
+**Left, in the order of what shows most:** Stormbyn's flat dark street; Pappa at the bridge, who stands on the bank and not on
+the bridge he lifts Elof from; the raft tower and Olympia's goals, which are still drawn in code.
 
 ## Sources
 
