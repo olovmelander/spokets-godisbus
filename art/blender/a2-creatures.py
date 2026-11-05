@@ -1,10 +1,9 @@
-"""Aventyr 2's creatures: the two trägubbar, the owl and the otter (docs/aventyr-2-overhaul.md).
+"""Aventyr 2's creatures: the owl and the otter (docs/aventyr-2-overhaul.md).
 
 Sent to Blender by scripts/bake/send-kit.mjs, after kit-tools.py. A name in ONLY builds that thing alone.
 
 Each stands on its origin, its front towards -Y. The owl in flight lies along +X, with its wings as things of their own,
-each with its origin on its hinge, so that the game can beat them. Nothing here comes from anyone else. The trägubbar
-are made from their description and have not been held up to Pappa's picture (art bible 1.3).
+each with its origin on its hinge, so that the game can beat them. Nothing here comes from anyone else.
 """
 
 for obj in list(bpy.data.objects):
@@ -36,118 +35,6 @@ def loft(part, rows, sides, colour):
 
 def ball(part, centre, size, detail, colour):
     return lump(part, Vector(centre), size, detail, colour)
-
-
-# --- the old trägubbe -------------------------------------------------------------------------------------------------
-# Pappa's first carving, grey with its years: a knife's flat cuts all over it, a hood drawn to a crooked point, a big nose,
-# a beard split down its middle, a crooked smile, and the crowberry eyes Elof gave it.
-
-OLD_WOOD = tone('#94907e')
-OLD_DARK = tone('#5c5a50')
-OLD_PALE = tone('#b8b4a0')
-OLD_BEARD = tone('#c4beaa')
-OLD_HOOD = tone('#7a7668')
-BERRY = tone('#14101e')
-MOUTH = tone('#2a2622')
-
-
-if wanted('tragubbe'):
-    part = new_part()
-    verts_paint = part['paint']
-    body = loft(part, [
-        (0.0, 0.0, 0.0, 0.2, 0.18), (0.0, 0.0, 0.04, 0.215, 0.195), (0.0, 0.0, 0.2, 0.2, 0.18), (0.01, 0.0, 0.34, 0.165, 0.155),
-        (0.015, 0.0, 0.42, 0.14, 0.135), (0.015, 0.0, 0.47, 0.15, 0.145),
-    ], 8, OLD_WOOD)
-    for ring in body:
-        for vert in ring:
-            at = vert.co
-            verts_paint[vert] = blend(OLD_DARK, OLD_WOOD, noise(at.x * 22.0, at.y * 22.0, at.z * 3.0) * 1.7)
-    # The head, cut in flats.
-    head = ball(part, (0.015, 0.0, 0.58), (0.155, 0.15, 0.15), 1, OLD_WOOD)
-    for vert in head:
-        verts_paint[vert] = blend(OLD_WOOD, OLD_PALE, noise(vert.co.x * 11.0, vert.co.y * 11.0, 4.0))
-    # The hood: down to its brow, and drawn up to a point that bends over to one side.
-    hood = loft(part, [
-        (0.015, 0.0, 0.6, 0.178, 0.172), (0.012, 0.012, 0.66, 0.165, 0.16), (0.0, 0.02, 0.74, 0.122, 0.118),
-        (-0.02, 0.025, 0.82, 0.08, 0.078), (-0.05, 0.03, 0.89, 0.044, 0.042), (-0.095, 0.03, 0.935, 0.012, 0.012),
-    ], 7, OLD_HOOD)
-    for ring in hood:
-        for vert in ring:
-            verts_paint[vert] = blend(lit(OLD_HOOD, 0.8), OLD_HOOD, noise(vert.co.x * 18.0, vert.co.y * 18.0, vert.co.z * 3.0) * 1.7)
-    # The nose: a wedge left standing by the knife.
-    nose = ball(part, (0.02, -0.158, 0.565), (0.045, 0.06, 0.056), 1, OLD_PALE)
-    # The beard: two flat locks down the front, each its own cut.
-    for side in (-1.0, 1.0):
-        lock = loft(part, [
-            (0.015 + side * 0.062, -0.13, 0.5, 0.066, 0.03), (0.015 + side * 0.058, -0.158, 0.42, 0.072, 0.036),
-            (0.015 + side * 0.05, -0.172, 0.33, 0.058, 0.034), (0.015 + side * 0.034, -0.17, 0.25, 0.03, 0.024),
-        ], 6, OLD_BEARD)
-        for ring in lock:
-            for vert in ring:
-                verts_paint[vert] = blend(OLD_BEARD, OLD_DARK, max(0.0, noise(vert.co.x * 26.0, 3.0, vert.co.z * 7.0) - 0.45) * 1.6)
-    # Arms folded up against the body: a ridge each side, and a pale hand.
-    for side in (-1.0, 1.0):
-        arm = loft(part, [
-            (side * 0.165, -0.04, 0.4, 0.04, 0.05), (side * 0.19, -0.05, 0.3, 0.044, 0.054), (side * 0.165, -0.1, 0.22, 0.04, 0.05),
-        ], 6, OLD_HOOD)
-        hand = ball(part, (side * 0.11, -0.15, 0.2), (0.05, 0.042, 0.044), 1, OLD_PALE)
-    # Crowberry eyes, set a little unevenly, with a tiny highlight.
-    for side, high in ((-1.0, 0.0), (1.0, 0.008)):
-        ball(part, (0.015 + side * 0.058, -0.133, 0.606 + high), (0.03, 0.022, 0.032), 2, BERRY)
-        ball(part, (0.008 + side * 0.058, -0.152, 0.617 + high), (0.008, 0.006, 0.008), 1, tone('#d8d8e8'))
-    # The crooked smile, cut into the wood: higher at one end.
-    rings = []
-    for k in range(7):
-        s = k / 6.0
-        x = 0.015 + (s - 0.5) * 0.15
-        z = 0.5 + 0.024 * s + 0.03 * (2.0 * s - 1.0) ** 2.0
-        rings.append([Vector((x, -0.15 + 0.02 * abs(2.0 * s - 1.0) ** 2.0, z + 0.008)), Vector((x, -0.152 + 0.02 * abs(2.0 * s - 1.0) ** 2.0, z - 0.008))])
-    skin(part, rings, [MOUTH] * 7, closed=False)
-    # A dab of lichen on its shoulder, as old wood has.
-    ball(part, (-0.15, -0.06, 0.4), (0.06, 0.04, 0.035), 1, tone('#6f8a45'))
-    finish(part, 'tragubbe', sharp=24.0, strength=0.55, reach=0.14, floor=0.0, leaf=True)
-
-
-# --- the little one ---------------------------------------------------------------------------------------------------------
-# Elof's own first carving: pale linden, round and small, with the knife's few crooked cuts, and the two eyes he painted.
-
-LINDEN = tone('#e6cfa2')
-LINDEN_CUT = tone('#c9b07e')
-LINDEN_WARM = tone('#efdcb8')
-PAINT = tone('#2c2420')
-
-if wanted('lillgubbe'):
-    part = new_part()
-    verts_paint = part['paint']
-    body = loft(part, [
-        (0.0, 0.0, 0.0, 0.14, 0.13), (0.0, 0.0, 0.03, 0.15, 0.14), (0.0, 0.0, 0.16, 0.135, 0.125), (0.0, 0.0, 0.26, 0.105, 0.1),
-    ], 7, LINDEN)
-    head = ball(part, (0.0, 0.0, 0.385), (0.135, 0.125, 0.13), 1, LINDEN)
-    for points in (body[0] + body[1] + body[2] + body[3], head):
-        for vert in points:
-            at = vert.co
-            verts_paint[vert] = blend(LINDEN_CUT, LINDEN_WARM, noise(at.x * 16.0, at.y * 16.0, at.z * 5.0) * 1.6)
-    # A crooked first try at arms, and two knife cuts across its front.
-    for side in (-1.0, 1.0):
-        ball(part, (side * 0.135, -0.03, 0.2), (0.05, 0.05, 0.075), 1, LINDEN_WARM)
-    for z, turn in ((0.08, 0.3), (0.17, -0.34)):
-        rings = []
-        for k in range(4):
-            s = k / 3.0
-            x = (s - 0.5) * 0.17
-            rings.append([Vector((x, -0.14 + abs(x) * 0.3, z + x * turn + 0.008)), Vector((x, -0.14 + abs(x) * 0.3, z + x * turn - 0.008))])
-        skin(part, rings, [LINDEN_CUT] * 4, closed=False)
-    # The eyes he painted, not quite level, and the small mouth.
-    ball(part, (-0.05, -0.116, 0.405), (0.019, 0.012, 0.022), 2, PAINT)
-    ball(part, (0.052, -0.116, 0.412), (0.019, 0.012, 0.022), 2, PAINT)
-    rings = []
-    for k in range(5):
-        s = k / 4.0
-        x = (s - 0.5) * 0.072
-        z = 0.347 - 0.012 * (1.0 - (2.0 * s - 1.0) ** 2.0)
-        rings.append([Vector((x, -0.125, z + 0.005)), Vector((x, -0.125, z - 0.005))])
-    skin(part, rings, [PAINT] * 5, closed=False)
-    finish(part, 'lillgubbe', sharp=26.0, strength=0.45, reach=0.1, floor=0.0, leaf=True)
 
 
 # --- the owl ------------------------------------------------------------------------------------------------------------------

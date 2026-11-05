@@ -823,7 +823,7 @@ function oldFigure(silhouette = false): Group {
   // The crowberry eyes: dark, a little shiny.
   for (const x of [-0.06, 0.06]) group.add(ball(0.026, solid('#1a1530', 0.3), x, 0.62, 0.148));
   group.name = 'old-trägubbe';
-  if (!silhouette) group.userData.model = 'tragubbe';
+  if (!silhouette) { group.userData.model = 'tragubbe'; group.userData.fit = 0.72; }
   return group;
 }
 
@@ -949,9 +949,12 @@ function football(radius: number): Mesh {
 const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
   'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
 const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta'];
-const CREATURES = ['tragubbe', 'lillgubbe', 'uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter'];
+const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter'];
+/** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
+const CARVINGS = ['tragubbe', 'lillgubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];
 const FILES: Record<string, readonly [pack: string, file: string]> = {
   ...Object.fromEntries(CREATURES.map((name) => [name, ['aventyr2', 'creatures'] as const])),
+  ...Object.fromEntries(CARVINGS.map((name) => [name, ['private', 'tragubbar'] as const])),
   ...Object.fromEntries(PROPS.map((name) => [name, ['aventyr2', 'props'] as const])),
   ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
   'olympia-hall': ['aventyr2', 'olympia'],
