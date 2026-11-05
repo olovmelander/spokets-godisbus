@@ -378,7 +378,8 @@ export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'p
  * outline, and `base` is the height of the ground at its foot.
  */
 export interface Landmark {
-  look: 'cone' | 'log' | 'anthill' | 'stone';
+  /** A barrel or a can is a thing on the floor that he walks on: the land and its surface go on under it. */
+  look: 'cone' | 'log' | 'anthill' | 'stone' | 'barrel' | 'can';
   from: number;
   to: number;
   base: number;

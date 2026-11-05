@@ -5,6 +5,7 @@ import {
   type Material,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { forestKit } from '../../render/forest-kit';
 import type { Assets } from '../../render/assets';
 import { PLACES } from '../../render/dressing';
 import type { PlaceLook } from '../../render/dressing/kit';
@@ -393,8 +394,6 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
 
   const drift = createFoam(storm?.foam, group);
 
-  // The rain barrel under each tap: wooden staves and iron hoops, standing on the ground the tap's block stands on.
-  for (const spot of chapter.spots ?? []) if (spot.look === 'tap') group.add(barrel(chapter.ground, spot.at.x, spot.at.y));
 
   // Cones shaken from the spruces fall where the chapter's drips are: brown and scaled, no splash.
   const coneDrops = storm?.drips === 'cone' ? scene.getObjectByName('rain-drops') as InstancedMesh | undefined : undefined;
@@ -407,6 +406,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     }
     coneDrops.geometry = new LatheGeometry(scales, 9);
     coneDrops.material = solid('#6a4428', 0.9, { flatShading: true });
+    coneDrops.userData.cones = true;
   }
   // Footballs bowled along by the wind, where the chapter's rollers are: round, and patched.
   const balls = storm?.rollers === 'football' ? scene.getObjectByName('rollers') as InstancedMesh | undefined : undefined;
@@ -439,6 +439,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     if (kind !== 'stones') for (const x of gust.shelters) group.add(kind === 'pots' ? flowerPot(x, gust.y) : kind === 'vents' ? roofVent(x, gust.y) : kind === 'rocks' ? boulder(x, gust.y) : jettyPost(x, gust.y));
   }
 
+  // The rain barrel and the watering can stand on the lawn, their tops where the outline has them.
+  for (const [look, model] of [['barrel', 'tunna'], ['can', 'kanna']] as const) {
+    for (const holder of scene.getObjectsByProperty('name', `landmark:${look}`)) {
+      holder.userData.model = model;
+      holder.userData.shift = (chapter.landmarks?.find((mark) => mark.look === look && mark.from === holder.position.x)?.to ?? holder.position.x) / 2 - holder.position.x / 2;
+    }
+  }
   // Boulders that are blocks of the ground (landmarks), where no kit of the place draws them: faceted granite in
   // place of the plain box that stands in for them. The forest's kit has its own stones and is left to them.
   if (chapter.place !== 'forest') {
@@ -650,42 +657,6 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       drawnWhile(moon, calm > 0);
     },
   };
-}
-
-/**
- * A wooden rain barrel whose lid is the flat top of ground at `top` round `x`: as wide as that top, and down to the
- * lowest ground at its two sides.
- */
-function barrel(ground: readonly { x: number; y: number }[], x: number, top: number): Group {
-  const group = new Group();
-  let from = x;
-  let to = x;
-  let base = top;
-  for (let i = 0; i < ground.length - 1; i++) {
-    const a = ground[i]!;
-    const b = ground[i + 1]!;
-    if (Math.abs(a.y - top) < 0.05 && Math.abs(b.y - top) < 0.05 && x >= Math.min(a.x, b.x) - 0.6 && x <= Math.max(a.x, b.x) + 0.6) {
-      from = Math.min(a.x, b.x);
-      to = Math.max(a.x, b.x);
-      base = Math.min(ground[i - 1]?.y ?? top, ground[i + 2]?.y ?? top);
-    }
-  }
-  const radius = Math.max(0.6, (to - from) / 2);
-  const tall = Math.max(0.5, top - base);
-  const staves = new Mesh(new CylinderGeometry(radius * 1.02, radius * 0.96, tall, 22, 1, true), solid('#7a5634', 0.85, { side: DoubleSide }));
-  staves.position.set((from + to) / 2, base + tall / 2, -0.4);
-  group.add(staves);
-  for (const k of [0.12, 0.5, 0.88]) {
-    const hoop = new Mesh(new TorusGeometry(radius * 1.04, 0.05, 6, 28), solid('#3a3a3c', 0.5, { metalness: 0.5 }));
-    hoop.rotation.x = Math.PI / 2;
-    hoop.position.set((from + to) / 2, base + tall * k, -0.4);
-    group.add(hoop);
-  }
-  // Rain water to its brim, dark and moving.
-  const water = new Mesh(new CylinderGeometry(radius * 0.95, radius * 0.95, 0.04, 22), solid('#2a3e58', 0.15));
-  water.position.set((from + to) / 2, top - 0.06, -0.4);
-  group.add(water);
-  return group;
 }
 
 /** An upturned terracotta flower pot, a shelter from the wind as tall as two of him. */
@@ -948,7 +919,7 @@ function football(radius: number): Mesh {
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
 const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
   'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
-const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta'];
+const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa'];
 const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
 const CARVINGS = ['tragubbe', 'lillgubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];
@@ -994,6 +965,7 @@ async function installModels(assets: Assets, scene: Object3D): Promise<boolean> 
     if (fit) copy.scale.setScalar(fit);
     if (typeof place.userData.turn === 'number') copy.rotation.y = place.userData.turn as number;
     if (typeof place.userData.lift === 'number') copy.position.y = place.userData.lift as number;
+    if (typeof place.userData.shift === 'number') copy.position.x = place.userData.shift as number;
     if (block) {
       const size = new Box3().setFromObject(made).getSize(new Vector3());
       copy.scale.set(block.width / size.x, block.height / size.y, block.depth / size.z);
@@ -1013,6 +985,21 @@ async function installModels(assets: Assets, scene: Object3D): Promise<boolean> 
     if (lit) {
       lit.material = new MeshBasicMaterial({ color: '#ffc870', fog: false });
       place.add(lit);
+    }
+  }
+  // The cones that fall are the forest's own, in place of the turned stand-in they begin as.
+  const drops = scene.getObjectByName('rain-drops') as InstancedMesh | undefined;
+  if (drops?.userData.cones && manifest.packs.boot?.files['forest-kit.glb']) {
+    const kit = forestKit(await assets.model('boot', 'forest-kit'));
+    const shape = kit.shape('kotte')?.clone();
+    if (shape) {
+      const size = new Box3().setFromBufferAttribute(shape.getAttribute('position') as Float32BufferAttribute).getSize(new Vector3());
+      if (size.x > size.y && size.x >= size.z) shape.rotateZ(Math.PI / 2);
+      else if (size.z > size.y) shape.rotateX(Math.PI / 2);
+      shape.center();
+      shape.scale(0.7 / Math.max(size.x, size.y, size.z), 0.7 / Math.max(size.x, size.y, size.z), 0.7 / Math.max(size.x, size.y, size.z));
+      drops.geometry = shape;
+      drops.material = kit.material;
     }
   }
   return arrived;
@@ -1103,11 +1090,13 @@ function pumpkin(): { group: Group; light: Mesh; face: MeshBasicMaterial } {
     at.setXYZ(i, x * k, at.getY(i), z * k);
   }
   skin.computeVertexNormals();
-  group.add(new Mesh(skin, solid('#d8701e', 0.55)));
+  const body = new Group();
+  body.userData.model = 'pumpa';
   const stem = new Mesh(new CylinderGeometry(0.09, 0.14, 0.4, 7), solid('#5a5a2a', 0.9));
   stem.position.y = 2.3;
   stem.rotation.z = 0.25;
-  group.add(stem);
+  body.add(new Mesh(skin, solid('#d8701e', 0.55)), stem);
+  group.add(body);
   // The face: two triangle eyes and a toothy grin, glowing.
   const face = new MeshBasicMaterial({ color: '#ffcf5a', fog: false });
   const triangle = (size: number) => {

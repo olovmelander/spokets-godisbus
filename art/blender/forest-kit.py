@@ -386,14 +386,17 @@ part = new_part()
 SIDES = 8
 rings = []
 tones = []
-for i, (wide, high, light) in enumerate(((1.0, -0.12, 0.62), (0.95, 0.1, 0.74), (0.78, 0.3, 0.87), (0.48, 0.44, 0.96))):
+for i, (wide, high, light) in enumerate(((1.0, -0.12, 0.36), (0.96, 0.08, 0.56), (0.74, 0.28, 0.8), (0.44, 0.43, 0.94))):
     ring = []
     shades = []
     for j in range(SIDES):
         angle = TAU * (j + 0.5 * (i % 2)) / SIDES
-        knob = 1.0 + (0.36 if i < 2 else 0.14) * (rnd(1.0 + (0.0 if i < 2 else i), j) - 0.5)
-        ring.append(Vector((wide * knob * math.cos(angle), wide * knob * math.sin(angle), high)))
-        k = light * (0.95 + 0.1 * rnd(j + 4.0, i))
+        # It grows in lobes, as a cushion of moss does where one clump has met the next, and never in a round.
+        lobes = 1.0 + 0.17 * math.cos(3.0 * angle + 0.7) + 0.11 * math.cos(5.0 * angle + 2.1)
+        knob = lobes * (1.0 + (0.3 if i < 2 else 0.16) * (rnd(1.0 + (0.0 if i < 2 else i), j) - 0.5))
+        bump = high + 0.13 * (rnd(j + 9.0, i) - 0.5) * (1.0 if i > 0 else 0.0)
+        ring.append(Vector((wide * knob * math.cos(angle), wide * knob * math.sin(angle), bump)))
+        k = light * (0.88 + 0.24 * rnd(j + 4.0, i))
         shades.append((k, k, k * 0.97))
     rings.append(ring)
     tones.append(shades)

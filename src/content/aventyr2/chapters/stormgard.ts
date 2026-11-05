@@ -166,6 +166,11 @@ export const stormgard: ChapterData = {
     ],
   },
   coda: 'bertil',
+  // The barrel and the can are things on the lawn, whatever he walks on: the lawn goes on under them.
+  landmarks: [
+    { look: 'barrel', from: BARREL.from, to: BARREL.to, base: 0 },
+    { look: 'can', from: CAN.from, to: CAN.to, base: 0 },
+  ],
   surfaces: [
     { from: -19, to: STEPS[4]!.x, kind: 'wood' },
     { from: BED.from, to: BED.to, kind: 'stone' },
