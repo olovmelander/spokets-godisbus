@@ -17,6 +17,32 @@ describe('Äventyr 2: Stormkvällen', () => {
     expect(result.bubbles).toBe(0);
   });
 
+  it('has nothing waiting on the floor before the story lays it there: no big candy, and no star', () => {
+    // The trail is the old trägubbe's, laid when he leaps; the star is in Klonk's bag until it opens it.
+    expect(stormkvall.checkpoints!.every((c) => c.after === 'scene:tillsammans')).toBe(true);
+    const star = stormkvall.spots!.find((spot) => spot.id === 'star')!;
+    expect(star.after).toBe('star:out');
+    expect(stormkvall.scenes!.find((scene) => scene.id === 'klonkstar')!.cues).toContainEqual(expect.objectContaining({ flag: 'star:out' }));
+    // He runs through the house before anything has happened, past where every big candy will be.
+    const game = new Game(stormkvall, {});
+    let furthest = 0;
+    for (let frame = 0; frame < 60 * 40; frame++) {
+      game.frame(1 / 60, { x: 1, hopHeld: true }, { hop: frame % 50 === 0, act: false, helper: false });
+      furthest = Math.max(furthest, game.sim.curr.x);
+    }
+    expect(furthest).toBeGreaterThan(Math.max(...stormkvall.checkpoints!.map((c) => c.x)) + 1);
+    expect(game.sim.checkpoint).toBe(-1);
+    expect(game.sim.flags.has('star:out')).toBe(false);
+    expect(game.sim.candyCount).toBe(0);
+  });
+
+  it('brings the star out in the scene after the window, before it can be tasted', () => {
+    const result = playThrough(60, stormkvall, {}, 300);
+    const flags = result.flags;
+    expect(flags.indexOf('scene:fonstret')).toBeLessThan(flags.indexOf('star:out'));
+    expect(flags.indexOf('star:out')).toBeLessThan(flags.indexOf('star'));
+  });
+
   it('resumes after the shrinking on the floor, small, and still has its trail', () => {
     const game = new Game(stormkvall, {}, { checkpoint: 1, flags: ['scene:kvall', 'lamp:take', 'lamp:give', 'beat:skLampThanks', 'goodnight', 'gust', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:tillsammans'] });
     expect(game.sim.curr.x).toBe(18);

@@ -1,6 +1,7 @@
 import { Matrix4, Vector3, type InstancedMesh } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prolog } from '../../src/content/chapters/ends';
+import { stormkvall } from '../../src/content/aventyr2/chapters/stormkvall';
 import { actPose, eatingAt } from '../../src/render/acting';
 import { createPlayerStandIn } from '../../src/render/player-motion';
 import { STANDING } from '../../src/render/rig';
@@ -41,6 +42,23 @@ describe('opening story performance', () => {
     expect(star.position.toArray()).toEqual(bite);
     stage.update(null, new Set(), { x: 40.5, y: -.8 }, 500, 0, calm);
     stage.updateElof(body, null, 3, calm);
+    expect(star.visible).toBe(false);
+  });
+
+  it('puts Klonk\'s star in his hand in Stormkvällen\'s shrinking too, and nowhere else in that chapter', () => {
+    const stage = createStage(stormkvall, () => 0), body = createPlayerStandIn();
+    const star = stage.group.getObjectByName('elof-star')!;
+    body.group.position.set(6.4, 0, 0); body.group.scale.setScalar(3);
+    const show = (id: string, seconds: number) => {
+      const direction = stage.update({ id, seconds }, new Set(), { x: 6.4, y: 0 }, seconds, 0, false).elof!;
+      body.pose(actPose(direction.act!, { t: direction.actT, calm: false, aim: null, stride: 0, pace: 0 }, { ...STANDING }));
+      stage.updateElof(body, direction, 3, false);
+    };
+    show('krymper', 1);
+    expect(star.visible).toBe(true);
+    expect(star.position.distanceTo(body.hand(1, new Vector3()))).toBeLessThan(1e-7);
+    // Before he has taken it, it is Klonk's: out of its bag, not in his hand.
+    show('klonkstar', 6);
     expect(star.visible).toBe(false);
   });
 

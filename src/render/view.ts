@@ -73,6 +73,9 @@ const GROUND_FROM_BOTTOM = 0.35;
 const SHOT_RELEASE = 1.1;
 /** How long the picture takes to breathe out at a chapter's end. */
 const CODA_EASE = 3.2;
+/** A thing a scene brings out (Spot.after) rises into its place over this long, in seconds, from this far below. */
+const SPOT_RISE = 0.9;
+const SPOT_RISE_FROM = 0.45;
 
 export interface ViewInfo {
   tier: Tier;
@@ -262,13 +265,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // and the one at the end.
   const endX = chapter.goalX + 0.6;
   const bigCandies = [
-    ...(chapter.checkpoints ?? []).map((at) => ({ x: at.x, y: at.y, z: -0.7 })),
-    { x: endX, y: heightOfGroundAt(chapter, endX), z: 0 },
+    ...(chapter.checkpoints ?? []).map((at) => ({ x: at.x, y: at.y, z: -0.7, after: at.after })),
+    { x: endX, y: heightOfGroundAt(chapter, endX), z: 0, after: undefined },
   ].map((at) => {
     const place = buildCandy();
     place.position.set(at.x, at.y, at.z);
     scene.add(place);
-    return { place, sweet: place.getObjectByName('candy')!, reached: false, pop: 0, spin: 0 };
+    // One that the story lays down (Checkpoint.after) waits out of the picture until then.
+    return { place, sweet: place.getObjectByName('candy')!, reached: false, pop: 0, spin: 0, after: at.after, laid: at.after === undefined };
   });
   // Where a scene ends the chapter (the prologue's title), the scene is the end: no candy marks it.
   const sceneEnds = endsInScene(chapter);
@@ -305,7 +309,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The scenes' actors, what they hold, the furniture and the scenes' glitter (./stage.ts).
   const stage = createStage(chapter, (x) => heightOfGroundAt(chapter, x));
   scene.add(stage.group);
-  const things = (chapter.spots ?? []).map((spot) => ({ spot, prop: spotProp(spot), reactionTurn: 0 }));
+  const things = (chapter.spots ?? []).map((spot) => ({ spot, prop: spotProp(spot), reactionTurn: 0, risen: 0 }));
   // What only stands about: drawn like a thing to use, and gone when its flag is set.
   const decor = (chapter.decor ?? []).map((def, i) => ({
     def,
@@ -903,6 +907,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       thing.prop?.update(flags.has(thing.spot.id) || !!trialTip, clock, dt, noteStrikes.get(thing.spot.id));
       thing.reactionTurn = reaction?.kind === 'spot' && reaction.index === i ? response * 0.14 : 0;
       if (thing.prop) thing.prop.group.rotation.z += thing.reactionTurn;
+      // Something a scene brings out (Spot.after) is not there before: from its moment it rises into its place
+      // and grows, and it shrinks away as before once used. A game taken up later finds it in place.
+      if (thing.prop && thing.spot.after !== undefined) {
+        const out = flags.has(thing.spot.after);
+        thing.risen = !out ? 0 : !hasFrame || lessMotion() ? 1 : Math.min(1, thing.risen + dt / SPOT_RISE);
+        const rise = thing.risen * thing.risen * (3 - 2 * thing.risen);
+        thing.prop.group.position.y = thing.spot.at.y - SPOT_RISE_FROM * (1 - rise);
+        if (!flags.has(thing.spot.id)) thing.prop.group.scale.setScalar(0.2 + 0.8 * rise);
+        drawnWhile(thing.prop.group, out && thing.prop.group.scale.x > 0);
+      }
       // Shy lights take turns appearing; unrevealed ones must not betray the hiding place.
       // One that has been taken has shrunk away, and stays out of the picture.
       if (thing.prop && thing.spot.look === 'wisp') thing.prop.group.visible = (thing.spot.needs === undefined || flags.has(thing.spot.needs)) && thing.prop.group.scale.x > 0;
@@ -1102,6 +1116,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
 
     // A big candy turns slowly until it is reached. Then it gives a little jump, and turns fast.
     for (const [i, big] of bigCandies.entries()) {
+      if (big.after !== undefined) {
+        const laid = flags.has(big.after);
+        // It comes with a little jump, as a reached one does; a game taken up later finds it there.
+        if (laid && !big.laid && hasFrame) big.pop = 1;
+        big.laid = laid;
+        drawnWhile(big.place, laid);
+      }
       const last = i === bigCandies.length - 1;
       const reached = last ? atGoal : i <= checkpoint;
       if (reached && !big.reached) big.pop = 1;

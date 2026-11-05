@@ -14,8 +14,10 @@ fi
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-curl --fail --silent --show-error --location --output "$WORK/$FILE" "$BASE/$FILE"
-curl --fail --silent --show-error --location --output "$WORK/$FILE.sha1" "$BASE/$FILE.sha1"
+# GitHub's release downloads sometimes answer 504 for a moment (CI, 5 November 2026): try again before failing.
+FETCH=(curl --fail --silent --show-error --location --retry 5 --retry-delay 3 --retry-all-errors)
+"${FETCH[@]}" --output "$WORK/$FILE" "$BASE/$FILE"
+"${FETCH[@]}" --output "$WORK/$FILE.sha1" "$BASE/$FILE.sha1"
 EXPECTED="$(awk '{print $1}' "$WORK/$FILE.sha1")"
 ACTUAL="$(sha1sum "$WORK/$FILE" | awk '{print $1}')"
 if [ "$EXPECTED" != "$ACTUAL" ]; then

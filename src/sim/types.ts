@@ -3,6 +3,15 @@ export interface Vec {
   y: number;
 }
 
+/** A big candy on the path: a checkpoint (plan §3.3, rule 4). */
+export interface Checkpoint extends Vec {
+  /**
+   * It is there only once this flag is set, and can't be reached before: a trail that the story lays down
+   * (the old trägubbe's, in Stormkvällen) has no big candy waiting before it is laid.
+   */
+  after?: string;
+}
+
 /** Something upright that Elof climbs: a hose, a stem, a root (plan §4.2). */
 export interface Climb {
   x: number;
@@ -131,6 +140,11 @@ export interface Spot {
   returnGift?: string;
   /** What stands there, for the picture. Left out: only the glint over it. */
   look?: SpotLook;
+  /**
+   * For the picture: what stands there is drawn only once this flag is set, and rises into its place. Something
+   * a scene brings out (Klonk's last star) must not lie there waiting before the story gets to it.
+   */
+  after?: string;
   /** The word on the button where the verb's own is too plain: a key of `sv.verbs`, as in "Ropa på Moa". */
   word?: string;
   /** Using it starts this ride. */
@@ -553,7 +567,7 @@ export interface ChapterData {
   /** The hooks he can throw the lace to. */
   hooks?: Hook[];
   /** The big candies on the path, in order. Each is a checkpoint: the game saves there (plan §3.3, rule 4). */
-  checkpoints?: Vec[];
+  checkpoints?: Checkpoint[];
   /** The jumps that *Lätta hopp* makes by itself. */
   jumps?: Jump[];
   /** The things on rails that he pushes and pulls. */
