@@ -45,7 +45,7 @@ From the production notes of artists who worked in this style (sources in §1.7)
 | **Mamma, Pappa, Moa, Bertil** | The same style, with an adult's or an older child's proportions | Plan §2.3, and every picture listed for them in plan §2 |
 | **Little Elof** | Elof's own model at a three-year-old's proportions | Plan §2.4 |
 | **The ghost** | **Carved wood, stylized:** fewer and bolder knife facets with clean ridges, a fuller draped sheet with sleeve folds and two fists as on the render and the poster, glossy black eyes, chunky shoes. Its wood is painted: grain that follows the form, darker cuts, lighter ridges. | It is unmistakably a wooden carving: rigid, faceted, pale lime wood, no mouth, the dotted bag, rainbow socks, red shoes with a plain ankle disc |
-| **The first trägubbe and the shelf figures** | Carved and painted like Pappa's own, as in his picture | Plan §3.2 |
+| **The first trägubbe and the shelf figures** | Carved and painted like Pappa's own: flat knife cuts, thin matt paint over the wood's tone, a wedge nose, small blue eyes, a beard in V-cuts, chunky shoes; gnomes with a head a third of the figure, men a quarter, tall, hands in their pockets. Types, never a portrait, a name or a mark | Plan §3.2 |
 | **Animals** | Simple and stylized, with the same matt, painted materials | They are real Norrland animals |
 
 The world around them stays photoreal (plan §5.1). The contrast is deliberate: Unravel's hero is a stylized

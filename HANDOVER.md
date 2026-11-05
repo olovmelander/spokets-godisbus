@@ -2,6 +2,37 @@
 
 ## State (5 November 2026)
 
+- **The overhaul's second round (5 November 2026, morning): `aventyr2-konst`, on top of #223.** "Allt som syns" modelled
+  in Blender, with the art kits in `art/blender/a2-nature.py`, `a2-creatures.py` and `a2-props.py`, sent with
+  `scripts/bake/send-kit.mjs`. Blender 5.2 ran with its own scripts folder and factory settings, so nothing of Olov's
+  add-ons or profile was touched (see "Notes for sessions that drive Blender").
+  - **Nature:** spruces, weeping birches, Billaberget's rock face, lichen boulders, stumps, branches, reeds. Moss cushions
+    have a lobed edge and a dark foot (`forest-kit.py`, and Äventyr 1's forest gets them too). The falling cones are the kit's.
+  - **Things he walks on are models now,** not blocks of ground: `Landmark.look` has `LandmarkThing`s (barrel, watering
+    can, playhouse, slide, picnic table, fence, the deck's steps, firewood). `landscape()` runs the land and its surface on
+    under them, and the sim is untouched: its outline is still the chapter's ground. A climb can be `look: 'ladder'`, which
+    the model draws.
+  - **The family's playhouse** stands in Stormgård (private `garden/lekstuga.py`): the garden's real octagonal house
+    without its tall porch, behind a low porch whose gable is the chapter's outline, reached by his wooden blocks. The side
+    way's planks are sunflower leaves on stalks.
+  - **`river: true`** on a chapter: its water is open to the camera and behind the path, with no near shore, and its
+    stretches meet under what stands in them (`RIVER` in `src/render/water.ts`). Älven, Billsta's brook and Stormgård's
+    flood have it. Its stones are lichen boulders, and `wetRock` rounds over into the water. Olympia does not: its water is
+    puddles in a pitch, and a river's water showed in front of the turf.
+  - **The car** is a model (`bil`, and `bil-gra` going by in Stormbyn). No badge, no plate. Its windows are kept from the
+    stand-in (`userData.keep`) so that they can light.
+  - **Pappa's carvings:** nine figures in the way of his real ones (private `tragubbar/tragubbar.py`): flat knife cuts, thin
+    matt paint, wedge noses, small blue eyes, V-cut beards; his first trägubbe, Elof's little one, and on the shelf a
+    traveller in a red cap, a cone cap, a fly agaric, an old lady, a fisherman, a man in a coat, one with crossed arms and a
+    bear. Types only: no portrait, no name, no mark from any real carving, and no third party's pattern. The pictures Olov
+    sent are not in any repository. The two old figures left the public creatures' kit: models after his carving belong
+    with the family's, and the stand-ins stay wherever the private pack is not.
+  - **The pace check covers Äventyr 2,** and every chapter keeps inside five seconds of plain running. A felled pole mends
+    the one that did not (Stormskogen, x 36 to 55).
+  - **Lamps in their hands** in the finale: held `lamp-*` Things, with a beam that fades. Always check a scene with the real
+    figures: the rehearsal figures stand differently.
+  - **The size gate is nearly full:** 3044 of 3072 KB as served. The carvings were halved to get there. More models need
+    room (see "Frågor till Olov").
 - **The overhaul's long night (4 to 5 November 2026).** Stacked pull requests, one outcome each, none of them merged
   yet. **Merge in number order:** #192, then #195 to #201 (their base is `main`, so rebase or retarget as they land), then
   #202 to #223, each on top of the one before, and `spokets-godisbus-familj` PR #2 for the real house in Billsta. #187 is
@@ -4114,6 +4145,11 @@ The older list, still true where it is not struck:
 ## Frågor till Olov
 
 The first two are in plan §0, "Kvar att svara på". None of them blocks the work.
+
+0. **Two from 5 November.** The size gate is 3 MB for everything on the site, and it is nearly full: may it grow, or should
+   the next models take their room from something else? And `public/audio/voices` and `public/audio/test_candidates` hold
+   mp3s, and `src/audio/voice-player.ts` looks for them, while the rules say the game has no voices: 404s in the console
+   come from lines that have none. Should they stay, or go? The default: nothing is changed until Olov says.
 
 1. **Do Elof's parents know about the game, or is it a surprise for them too?** The default: Olov judges the
    likeness himself, and Pappa reads the storyboard of the memories before the first one is built, late in

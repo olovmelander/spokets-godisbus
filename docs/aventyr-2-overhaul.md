@@ -153,6 +153,23 @@ One pull request for each visible outcome.
 12. **The rooms:** the opening's door and Morgonen's aftermath are built. Left: the prologue's and the epilogue's rooms in
     Äventyr 1, and grounding everywhere.
 
+## The second round: 5 November 2026
+
+Olov: "alla assets och djur och karaktärer och träd och stenar och kottar och grenar, ja allt som syns", and then the level
+design, the puzzles, the animations and the layout. Each chapter was drawn from its data as a side view, and walked in stills
+with the real figures.
+
+**What the walk found.** The levels were denser than the maps looked: the pace check, now run on Äventyr 2 too, found one
+stretch over five seconds. What let them down was what stood in them:
+- A thing he walks on was a block of ground in the wrong stuff: the rain barrel in black planks, the slide in stone, the
+  fence an olive box, the playhouse a green box, the steps with a V down their front. They are models now.
+- Water lay in pits with a lawn before it, so that Älven read as a tiled garden. A river is open water now.
+- The car, in four chapters, was a toy.
+
+**Left, in the order of what shows most:** animals in the storm (the size gate decides how many); the barn's long roof,
+which still reads as a deck; Stormbyn's flat dark street; the stone edging of Stormgård's flower bed; Billaberget's shelves
+from below; the far pictures of Älven.
+
 ## Sources
 
 Olympia: anundsjoif.se ("Om Olympia idrottsplats", "Uthyrning Olympia"), de.wikipedia.org "Olympia (Fußballplatz)",
