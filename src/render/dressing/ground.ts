@@ -706,7 +706,8 @@ const GROUNDS: Record<Ground, GroundLook> = {
   sphagnum: { colours: tones('#6e3226', '#8f4d2b', '#7d8a36', '#bca94c'), wall: new Color('#2e241c'), shade: new Color('#2a3438'), bump: 1, boards: false, sinks: true },
   // A lake's shore: as the bog's islands stand in water, but in worn grass and sedge, with none of its red.
   shore: { colours: tones('#3e4c2a', '#566234', '#74783e', '#a4985e'), wall: new Color('#2e2a1e'), shade: new Color('#26343a'), bump: 0.8, boards: false, sinks: true },
-  shoreRidge: { colours: tones('#3e4c2a', '#566234', '#74783e', '#a4985e'), wall: new Color('#2e2a1e'), shade: new Color('#26343a'), bump: 1, boards: false, sinks: true },
+  // In front of a lake's jetty lies its water: dark and still, where a bog's walk of planks has its ridge of peat.
+  shoreRidge: { colours: tones('#16222c', '#1a2832', '#1e2e3a', '#223442'), wall: new Color('#121c24'), shade: new Color('#101820'), bump: 0.05, boards: false, sinks: true },
   // The bog's peat under its walk of planks: the bog's own, a little browner and drier.
   ridge: { colours: tones('#5e3324', '#7a4a2c', '#76803a', '#a89a4a'), wall: new Color('#2e241c'), shade: new Color('#2a3438'), bump: 1, boards: false, sinks: true },
   granite: { colours: tones('#8f939d', '#a4a8b2', '#bcbfc6', '#d6d5d6'), wall: new Color('#8f929a'), shade: new Color('#46527e'), bump: 0.25, boards: false, rock: true },

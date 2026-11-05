@@ -17,6 +17,7 @@ export const words: ChapterWords = {
     moKlonkLine: 'Klonk, klonk!',
     moNiceLine: 'Fjun! Vilket fint namn.',
     moWelcomeLine: 'Välkommen hem, lilla Fjun.',
+    moKnewLine: 'Jag visste att det var du med lamporna.',
     moCupLine: 'Varm choklad efter stormen.',
     moAllLine: 'Alla är hemma. Det är bäst av allt.',
   },

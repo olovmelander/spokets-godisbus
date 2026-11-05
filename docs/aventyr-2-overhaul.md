@@ -132,21 +132,22 @@ One pull request for each visible outcome.
 1. ~~Mormor and morfar.~~ Done.
 2. ~~The trail runs out: the night's low point.~~ Done.
 3. **Olympia:** the hall, the stand, the pitch, its name, the forest behind it, its own light and the striped store are
-   built. Left: the gravel yard, the bank, and a truly dark forest wall (see `HANDOVER.md`).
+   built, and its ball is now a puzzle. Left: the gravel yard, the bank, and a truly dark forest wall (see `HANDOVER.md`).
 4. **Billsta:** the house and barn are built, in the private repository (see `HANDOVER.md`), with morfar's and mormor's
    yard, spruces with hanging boughs and round logs, a forest floor behind it, poles along the road and a real car.
    Left: the wires, which never reach the picture, the ditch's flowers, and a dome for Billaberget.
 5. **Flärken:** the raft tower, which now rocks, the sand, the rust-red slide, the log huts, the tarred hut, giant chess, the
-   painted sun and a lake's shore are built. Left: the jetty's L and its own far shore.
+   painted sun and a lake's shore are built. It has its own far shore and the jetty's L.
+   Left: nothing large.
 6. **Älven:** its own far picture (ridges, hay meadows, poles, the log barn, the white column), black water and cream foam
-   and wet logs in eddies he plays are built. Left: the forest torrent's first stretch and tea-brown rapids.
+   wet logs in eddies he plays, white rapids and a lodge of sticks are built. Left: the forest torrent's first stretch.
 7. ~~Own light and far picture for every chapter.~~ Done.
-8. **Real puzzles:** "Vad flyter?" at Flärken, the lever at Billsta, a storm that grows and a river he plays are built. Left:
-   Olympia's answer given later.
+8. **Real puzzles:** "Vad flyter?" at Flärken, the lever at Billsta, a storm that grows and a river he plays are built. All done:
+   Olympia's answer lies behind him.
 9. ~~The finale.~~ Done: the cap goes back on, one moon, he lights the family's lamps on the jetty unseen, and the two of them
    live in the meeting.
 10. **Animals:** the otter is real, the fox's feet and the squirrel's no longer slide, birds land on a bough, the owl flies
-    off and in, and the old one leaps away. Left: one owl model, and life back in the calm and the morning.
+    off and in, and the old one leaps away. There is one owl now. Left: life back in the calm and the morning.
 11. **Words:** the worst lines are mended, and 28 idle captions are gone. Left: the owl hint.
 12. **The rooms:** the opening's door and Morgonen's aftermath are built. Left: the prologue's and the epilogue's rooms in
     Äventyr 1, and grounding everywhere.

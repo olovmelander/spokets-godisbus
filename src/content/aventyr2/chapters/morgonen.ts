@@ -111,6 +111,8 @@ export const morgonen: ChapterData = {
     { id: 'moNice', on: 'beat:moName', who: 'moa', line: 'moNiceLine', read: true },
     { id: 'moWelcome', on: 'beat:moNice', who: 'pappa', line: 'moWelcomeLine', read: true },
     { id: 'moCup', on: 'cocoa', who: 'mamma', line: 'moCupLine' },
+    // What she said on the jetty, in the dark, when her lamp lit by itself.
+    { id: 'moKnew', on: 'beat:moCup', who: 'moa', line: 'moKnewLine', read: true },
     { id: 'moAll', at: 50, needs: 'cocoa', who: 'elof', line: 'moAllLine', read: true },
   ],
   cameras: [{ from: -3, to: 62, zoom: 1.5, lift: 0.3 }],

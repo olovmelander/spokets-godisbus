@@ -413,6 +413,8 @@ export const flarken: ChapterData = {
       // Birches round the bay, the October leaves nearly gone.
       // The giant chess on its gravel pad, and the painted board with the smiling sun.
       { kind: 'chess', x: 56, z: -16, width: 16 },
+      // The L of the jetty: its other leg runs out behind the path, low on the water.
+      { kind: 'jettyArm', x: 126.4, z: -1.2, y: DECK - 0.3, width: 24 },
       // The small tarred hut with its white trim, in among the birches.
       { kind: 'hut', x: 26, z: -22, width: 9, height: 10, tar: true },
       { kind: 'sunboard', x: 70, z: -30, width: 13, height: 8.5 },

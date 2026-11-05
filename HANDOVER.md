@@ -4,7 +4,7 @@
 
 - **The overhaul's long night (4 to 5 November 2026).** Stacked pull requests, one outcome each, none of them merged
   yet. **Merge in number order:** #192, then #195 to #201 (their base is `main`, so rebase or retarget as they land), then
-  #202 to #214, each on top of the one before, and `spokets-godisbus-familj` PR #2 for the real house in Billsta. #187 is
+  #202 to #218, each on top of the one before, and `spokets-godisbus-familj` PR #2 for the real house in Billsta. #187 is
   old and raises `RELEASED_CHAPTER`: leave it. Everything since #201, in order:
   - **#202, own light.** Olympia under a neutral sky so that the hall reads wine-red, Flärken pale slate, Älven olive and
     tea, Billsta indigo. `PlaceLook.ground`: Flärken's ground is the new `shore`, because the bog's red sphagnum read as
@@ -33,6 +33,17 @@
   - **#212, fewer captions.** Twenty-eight lines that only said what the picture shows.
   - **#213, the road.** The car has a real side (`ExtrudeGeometry`), Billsta has poles (`pole`), Olympia its store (`store`,
     dark: the power is out), Flärken its tarred hut (`tar`).
+  - **#214, Olympia's answer lies behind him.** The big football lies on a table he runs under. At the puddle a small ball
+    bobs (`floatBall`), and he goes back, climbs up behind the big one and dribbles it in. `counterweight` carries this too.
+  - **#215, from a sweep of stills.** Byn is a real night, Stormgården no lighter than the evening before it, the lodge a
+    heap of gnawed sticks over mud, the village's car round.
+  - **#216, one owl, a far shore, a clear moon.** The story's owl is the forest's tawny owl, Flärken has a far picture of its
+    own (`lake`), the rapids break white (`whiteWater`, `foam.dense`), the stone in the narrow is `wetRock`. `MOON.shafts`
+    is 0.45: the shafts, not the haze, were the milk over the meeting.
+  - **#217, one room.** `roomThings()`: the evening and the morning share the rug, the sofa, the lamp, the plant and Moa's
+    drawings.
+  - **#218, the jetty's L and Moa's answer.** `jettyArm` with its life ring; `shoreRidge` is now dark water in front of the
+    jetties, not a bank; and Moa says in the morning that she knew it was him with the lamps.
 - **Own far pictures (4 November 2026, late).** `backdrop.ts` has three new sets, `FarId` `wall` (Olympia's dark forest hill),
   `river` (Älven's ridges, hay meadows, poles, log barn and white column) and `billaberget` (the dome over Billsta's
   forest). Älven's water is near black with cream foam drifting on it (`storm.foam`), and its haze thin. So Olympia,
@@ -3908,7 +3919,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
-| Äventyr 2's overhaul (4 to 5 November) | Olov's request: audit and overhaul of every world, puzzle, figure and animal | 1 session on Olov's computer, until 02:30 | — / 0 so far | 20 pull requests, #192 and #195 to #214, none played by Olov yet |
+| Äventyr 2's overhaul (4 to 5 November) | Olov's request: audit and overhaul of every world, puzzle, figure and animal | 1 session on Olov's computer, until 02:30 | — / 0 so far | 24 pull requests, #192 and #195 to #218, none played by Olov yet |
 | Äventyr 2: Stormnatten (4 November) | Olov's request: a second adventure of several worlds, about as long as the first | 1 cloud session, with four parallel world-building agents | — / 0 | Seven chapters (~940 EL), a lazily loaded pack with its own size gate, storm visuals in code, 1,773 tests and a 30-check browser suite. Voices, device review and Blender art remain. |
 | Äventyr 2, version 2 (4 November) | Olov's request: more worlds and puzzles, Billsta, Flärken and Olympia, an audit, good Swedish | the same cloud session, with a research agent and four world-building agents | — / 0 | Ten chapters (~1,510 EL), 23 code-built building kinds, Moa's map of Äventyr 2, a visual sweep that found and fixed the drain-well wall over Olympia, 1,914 tests and a 42-check browser suite. Pictures of the places, voices, device review and Blender art remain. |
 | Home garden identity (10 October) | Rework Chapter 1 from three supplied building photographs | 1 cloud continuation | — / 0 | Dimensional red home/veranda/deck, green playhouse and timber fjällkåta authored in Blender 4.5.14 in the private repository; a generic public fallback and chapter framing preserve the route. The photos do not establish a surveyed garden layout. Device and family visual review remain. |
@@ -3925,7 +3936,8 @@ The older list, still true where it is not struck:
 ## Known bugs
 
 - **Two more browser timeouts on GitHub** (4 November, part 4 of 8): "Controller moves through chapter choices" (#198) and
-  "golden candy becomes reachable" (#201). Each passed on a rerun or on the PR above it, which holds the same code.
+  "golden candy becomes reachable" (#201, twice). Elof was still running when the 20 seconds ran out, with more than twenty
+  pull requests' runs queued; #202 runs the same code and the same test and is green.
 - **`challenges` timed out once on GitHub** (PR #193, 4 November): "c2-prize-844-low: root returns". Nothing in that PR touches it,
   and it passed locally and in #194's run of the same code, so it looks like software rendering's timing. Watch for it again.
 - **`settings`' touch check fails on Windows:** "portrait, left-handed: a held finger walks towards its position"

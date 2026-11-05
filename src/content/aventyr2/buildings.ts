@@ -616,6 +616,21 @@ function cliff(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
+function jettyArm(def: BuildingDef) {
+  // The other leg of Flärken's L: a pontoon jetty low on the water, running out behind the path, with a life ring on a post.
+  const long = def.width ?? 22;
+  const wide = 4;
+  const parts: BufferGeometry[] = [];
+  for (let z = 0, i = 0; z < long; z += 0.9, i++) parts.push(box(wide, 0.16, 0.8, 0, 0.1, -z - 0.45, i % 3 === 0 ? '#74746a' : i % 3 === 1 ? '#6a6a60' : '#7c7c70'));
+  for (const side of [-1, 1]) parts.push(box(0.24, 0.3, long, side * (wide / 2 - 0.3), -0.1, -long / 2, '#3e3e38'));
+  for (let z = 3; z < long; z += 6) parts.push(box(wide - 0.5, 0.8, 3.2, 0, -0.52, -z, '#2c3036'));
+  for (const z of [long * 0.45, long - 0.5]) for (const side of [-1, 1]) parts.push(paint(new CylinderGeometry(0.13, 0.15, 2.2, 8).translate(side * (wide / 2 - 0.1), 0.9, -z), '#54504a'));
+  // The life ring on the last post, white with dark bands.
+  parts.push(paint(new TorusGeometry(0.62, 0.17, 8, 18).translate(wide / 2 - 0.1, 1.3, -long + 0.32), '#e4e0d6'));
+  for (const a of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) parts.push(box(0.26, 0.38, 0.38, wide / 2 - 0.1 + Math.cos(a) * 0.62, 1.3 + Math.sin(a) * 0.62, -long + 0.32, '#8a3a30'));
+  return { parts, panes: [] };
+}
+
 function pole(def: BuildingDef) {
   // A country road's wooden power pole, with a lamp on an arm, and its wires on to the next one, sagging across the sky.
   const h = def.height ?? 26;
@@ -671,7 +686,7 @@ function store(def: BuildingDef) {
 }
 
 const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGeometry[]; panes: BufferGeometry[] }> = {
-  pole, store, trestleTable, pitch, chess, sunboard, villa, barn, playhouse, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
+  jettyArm, pole, store, trestleTable, pitch, chess, sunboard, villa, barn, playhouse, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
   church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce,
 };
 

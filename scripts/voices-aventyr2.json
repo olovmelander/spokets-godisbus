@@ -1813,6 +1813,13 @@
     "text": "Varm choklad efter stormen."
   },
   {
+    "key": "moKnewLine",
+    "speaker": "moa",
+    "situation": "Äventyr 2, morgonen",
+    "tag": "[warm big sister, lively]",
+    "text": "Jag visste att det var du med lamporna."
+  },
+  {
     "key": "moAllLine",
     "speaker": "elof",
     "situation": "Äventyr 2, morgonen",
