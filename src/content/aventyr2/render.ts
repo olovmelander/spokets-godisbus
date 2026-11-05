@@ -1,7 +1,7 @@
 import {
   AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage,
   Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry,
-  CatmullRomCurve3, Points, PointsMaterial, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
+  CatmullRomCurve3, Points, PointsMaterial, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
   type Material,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -490,17 +490,22 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     return { def, ride, mesh };
   });
 
+  const owlWings: Object3D[] = [];
   let first = true;
   return {
     update({ dt, clock, flags, x, y, camera, still, tier, riding }: ExtraFrame) {
       elof.x = x;
       elof.flags = flags;
       drift?.(dt, still);
+      // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him.
+      const beat = still ? 0.2 : 0.2 + 0.46 * Math.sin(clock * 5.4);
+      for (const wing of owlWings) wing.rotation.x = beat * (wing.userData.side as number);
       for (const [i, raft] of rocking.entries()) {
         raft.made.group.position.y = raft.y + (still ? 0 : Math.sin(clock * 0.9 + i) * 0.09);
         raft.made.group.rotation.z = still ? 0 : Math.sin(clock * 0.63 + i) * 0.018;
       }
       if (first) {
+        scene.traverse((object) => { if (object.name === 'owl-wing') owlWings.push(object); });
         // A flyby whose moment has passed already (a game taken up later) is not played again.
         for (const f of flybys) if (flags.has(f.def.on)) f.seen = true;
         // The boulders the gusts' shelters stand in for are put away, where something else is drawn: one mesh a gust.
@@ -1086,9 +1091,6 @@ function pumpkin(): { group: Group; light: Mesh; face: MeshBasicMaterial } {
 /** The owl, tawny and round, with big dark eyes in a pale face. */
 function owl(flying = false): Group {
   const group = new Group();
-  const brown = solid('#7a5638', 0.9);
-  const pale = solid('#c8a67a', 0.9);
-  const dark = solid('#1a120c', 0.4);
   if (!flying) {
     // The same tawny owl as sits in the forest's trees (../../render/lift/fauna/shapes.ts), only near and large, with
     // its lids resting half down, set here once: the forest's own move them in its vertex stage.
@@ -1104,18 +1106,43 @@ function owl(flying = false): Group {
     group.name = 'owl';
     return group;
   }
-  // In flight, under him: the body level, the face forwards, the wings out to the sides.
-  group.add(ball(0.75, brown, 0, -0.7, 0, [1.4, 0.75, 0.9]));
-  group.add(ball(0.5, brown, 1.0, -0.55, 0));
-  group.add(ball(0.4, pale, 1.25, -0.55, 0, [0.6, 0.95, 0.95]));
-  for (const z of [-0.18, 0.18]) group.add(ball(0.12, solid('#e0a040', 0.3), 1.45, -0.48, z), ball(0.07, dark, 1.53, -0.48, z));
+  // In flight, under him: the same tawny owl, its body level and its round face turned a little to the camera, its broad
+  // wings out to the sides with their finger feathers spread. The storm's extra beats them (see `beat` in stormExtra).
+  // Night and the storm's light come from behind it: a little light of its own keeps its feathers from going black.
+  const lit = (colour: string) => solid(colour, 0.9, { side: DoubleSide, emissive: colour, emissiveIntensity: 0.22 });
+  const back = lit('#8a7458');
+  const belly = lit('#b8a486');
+  const face = lit('#dccdac');
+  group.add(ball(0.72, back, 0, -0.72, 0, [1.3, 0.72, 0.82]));
+  group.add(ball(0.56, belly, 0.14, -0.88, 0, [1.3, 0.62, 0.8]));
+  group.add(ball(0.52, back, 0.98, -0.52, 0.04, [1, 0.95, 1]));
+  const disc = ball(0.4, face, 1.26, -0.54, 0.16, [0.55, 0.96, 0.98]);
+  group.add(disc);
+  for (const z of [-0.02, 0.34]) group.add(ball(0.13, solid('#ebe2ca', 0.6), 1.42, -0.46, z, [0.5, 1, 1]), ball(0.085, solid('#1c1610', 0.35), 1.49, -0.46, z, [0.5, 1, 1]));
+  const beak = new Mesh(new ConeGeometry(0.06, 0.2, 6), solid('#a89878', 0.6));
+  beak.rotation.z = -Math.PI / 2 - 0.5;
+  beak.position.set(1.54, -0.6, 0.16);
+  group.add(beak);
+  // The tail: short, round and flat, as an owl's is.
+  group.add(ball(0.5, lit('#6e5c46'), -1, -0.66, 0, [1.1, 0.16, 0.62]));
+  // Its feet, tucked up under it.
+  for (const z of [-0.2, 0.2]) group.add(ball(0.14, solid('#8a7a5e', 0.8), 0.2, -1.28, z, [1.3, 0.7, 0.9]));
+  const outline = new Shape();
+  outline.moveTo(0.8, 0);
+  outline.quadraticCurveTo(1.05, 1.3, 0.62, 2.3);
+  for (const [x, y] of [[0.42, 2.72], [0.22, 2.3], [0.02, 2.62], [-0.16, 2.2], [-0.36, 2.42], [-0.5, 2], [-0.72, 2.08], [-0.72, 1.6]] as const) outline.lineTo(x, y);
+  outline.quadraticCurveTo(-1, 0.8, -0.82, 0);
+  outline.closePath();
   for (const side of [-1, 1]) {
-    const wing = new Mesh(new BoxGeometry(1.1, 0.06, 2.2), solid('#6a4a30', 0.9));
-    wing.geometry.translate(0, 0, 1.1);
-    wing.position.set(0, -0.55, side * 0.3);
-    wing.scale.z = side;
-    wing.name = side > 0 ? 'wingNear' : 'wingFar';
-    group.add(wing);
+    const hinge = new Group();
+    hinge.name = 'owl-wing';
+    hinge.userData.side = side;
+    hinge.position.set(0.05, -0.46, side * 0.42);
+    const feathers = new Mesh(new ShapeGeometry(outline, 8).rotateX(Math.PI / 2).scale(1, 1, side), lit('#7a6650'));
+    // The shorter feathers over the wing's root: the same wing, smaller and paler, lying on it.
+    const coverts = new Mesh(new ShapeGeometry(outline, 8).scale(0.74, 0.56, 1).rotateX(Math.PI / 2).scale(1, 1, side).translate(0, 0.03, 0), lit('#a08a6c'));
+    hinge.add(feathers, coverts);
+    group.add(hinge);
   }
   return group;
 }
