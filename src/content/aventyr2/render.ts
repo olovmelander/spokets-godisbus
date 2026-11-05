@@ -1367,6 +1367,47 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       heave(0);
       return { group, update: (_used, clock) => heave(clock) };
     },
+    blind: (spot) => {
+      // A shop's roller blind, down for the night. Someone wakes, and it goes up on the lit window. Its width is its word.
+      const wide = Number(spot.word ?? 7);
+      const tall = 9.7;
+      const root = new Group();
+      root.position.set(spot.at.x, spot.at.y + tall, -6);
+      const cloth = new Mesh(new PlaneGeometry(wide + 0.3, tall + 0.2).translate(0, -tall / 2, 0), solid('#262c38', 0.9));
+      const slats: BufferGeometry[] = [];
+      for (let y = 0.5; y < tall; y += 0.6) slats.push(new PlaneGeometry(wide + 0.3, 0.05).translate(0, -y, 0.01));
+      const lines = new Mesh(mergeGeometries(slats), solid('#1c2028', 0.9));
+      const rail = new Mesh(new BoxGeometry(wide + 0.5, 0.26, 0.2), solid('#3a3e48', 0.7));
+      root.add(cloth, lines, rail);
+      let since = 0;
+      return {
+        group: root,
+        update(used, _clock, dt) {
+          since = used ? since + dt : 0;
+          const k = Math.min(1, since / 1.1);
+          const open = 1 - (1 - k) ** 2;
+          cloth.scale.y = lines.scale.y = 1 - open * 0.96;
+        },
+      };
+    },
+    bellCord: (spot) => {
+      // A shop's bell cord, down from its awning to where he reaches, with a wooden knob; it swings hard when pulled.
+      const group = new Group();
+      const cord = new Mesh(new CylinderGeometry(0.035, 0.035, 12, 6).translate(0, 6, 0), solid('#c8b888', 0.9));
+      const knob = new Mesh(new SphereGeometry(0.2, 10, 8).scale(1, 1.3, 1), solid('#a07040', 0.5));
+      group.add(cord, knob);
+      group.position.set(spot.at.x, spot.at.y + 1.15, -0.7);
+      let since = 9;
+      return {
+        group,
+        update(used, clock, dt) {
+          since = used ? since + dt : 0;
+          const pull = used ? Math.exp(-since * 1.8) : 0;
+          group.rotation.z = Math.sin(clock * 1.4 + spot.at.x) * 0.012 + Math.sin(since * 7) * 0.08 * pull;
+          group.position.y = spot.at.y + 1.15 - 0.3 * Math.exp(-since * 6) * (used ? 1 : 0);
+        },
+      };
+    },
     floatBall: (spot) => {
       // A small ball adrift in a puddle, turning slowly and bobbing on the rain's rings.
       const group = new Group();

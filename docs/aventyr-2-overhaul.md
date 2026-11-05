@@ -19,7 +19,8 @@ address and number are never written, drawn or modelled.
 - Drips and gusts are the same timing in four chapters each, so the storm never gets harder to play.
 - The ball at Olympia and the bark at Flärken solve themselves: they block the path, with the verb on the button.
 - Best: Stormskogen (tiptoeing over frozen Klonk), Olympia (riding the free kick), Morgonen efter (naming Fjun).
-- Weakest: Älven (42 % on rails), Flärken (long, and no moment of its own), Byn (stations without an idea).
+- Weakest: Älven (42 % on rails), Flärken (long, and no moment of its own), Byn (stations without an idea). All three have
+  been mended since: the eddies, "Vad flyter?", and the bell cords that wake the street.
 - Players are told too much: "Just nu" gives the answer before the problem, and Elof captions the screen about 170 times.
 
 **Characters and animals.**

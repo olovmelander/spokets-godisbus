@@ -7,7 +7,9 @@ export const words: ChapterWords = {
     sbDark: 'Hela byn är mörk. Strömmen är borta!',
     sbKlonkHere: 'Klonk!',
     sbAwning: 'Markisen studsar som en studsmatta!',
-    sbCandle: 'Någon har tänt ett ljus i fönstret.',
+    sbCandle: 'Någon är vaken! Ett ljus i fönstret.',
+    sbCandleTwo: 'Skomakaren tände också ett ljus!',
+    sbCandleThree: 'Hela gatan hjälper mig att se.',
     // Rännstensforsen, and the grate.
     sbRiver: 'Rännstenen har blivit en fors!',
     // The high wall, and Moa's umbrella. She calls him lillebror.
@@ -22,7 +24,7 @@ export const words: ChapterWords = {
     // The awnings pour, and the steps go down to the shore.
     sbShore: 'Håll ut, lillgubben! Vi kommer!',
   },
-  verbs: { sbUmbrella: 'Håll i paraplyet' },
+  verbs: { sbUmbrella: 'Håll i paraplyet', sbRing: 'Dra i klocksnöret' },
   purposes: {
     sbStreet: { purpose: 'Följ godisspåret genom den mörka byn.', recap: 'Strömmen har gått i hela byn. Gamla trägubben lämnar godis åt mig.' },
     sbRiver: { purpose: 'Åk björklövet nerför rännstenen.', recap: 'Regnet har gjort rännstenen till en fors.' },

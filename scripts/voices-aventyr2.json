@@ -550,7 +550,21 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormbyn",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Någon har tänt ett ljus i fönstret."
+    "text": "Någon är vaken! Ett ljus i fönstret."
+  },
+  {
+    "key": "sbCandleTwo",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormbyn",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Skomakaren tände också ett ljus!"
+  },
+  {
+    "key": "sbCandleThree",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormbyn",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Hela gatan hjälper mig att se."
   },
   {
     "key": "sbRiver",
