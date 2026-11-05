@@ -1936,10 +1936,12 @@ function buildClimbs(chapter: ChapterData) {
     lichen: new MeshStandardMaterial({ color: '#adb59b', roughness: 1 }),
     root: new MeshStandardMaterial({ color: '#65513d', roughness: 1 }),
   };
+  // A ladder is part of what it stands on, and is drawn with it.
   const ringGeometry = new TorusGeometry(.14, .022, 8, 16);
   const ringMaterial = new MeshStandardMaterial({ color: '#b94a3c', roughness: .7 });
-  const hoses = (chapter.climbs ?? []).map((climb) => {
+  const hoses = (chapter.climbs ?? []).flatMap((climb) => {
     const look = climb.look ?? 'hose';
+    if (look === 'ladder') return [];
     const length = climb.top - climb.bottom + 0.25;
     // It hangs from its top, so that one that is let down grows downwards.
     const radius = look === 'lace' ? .035 : look === 'braid' ? .1 : .06;
@@ -1951,7 +1953,7 @@ function buildClimbs(chapter: ChapterData) {
     group.add(hose);
     const ring = look === 'lace' ? new Mesh(ringGeometry, ringMaterial) : null;
     if (ring) { ring.position.set(climb.x, climb.top, -.12); group.add(ring); }
-    return { hose, ring, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 };
+    return [{ hose, ring, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 }];
   });
   /** A hose that waits for something is let down when that has happened: the lichen, the braid, the lace. */
   function update(flags: ReadonlySet<string>, dt: number): void {

@@ -79,7 +79,7 @@ const chute = (x: number) => SLIDE.top - (SLIDE.top * (x - SLIDE.to)) / (SLIDE.f
  */
 const BENCH_A: Stone = { from: 36.2, to: 37.6, y: 1.2 };
 const BENCH_B: Stone = { from: 40.8, to: 42.2, y: 1.2 };
-const TABLE: Ledge = { x: 39.2, y: 2, width: 3.6, look: 'trestle' };
+const TABLE: Ledge = { x: 39.2, y: 2, width: 3.6, look: 'shelf' };
 /** The volleyball net, sagging with the rain on the sand court: down on it from a jump, it bounces him up to the roofs. */
 const NET = { x: 45, y: 0.5, lift: 3.2 };
 
@@ -316,6 +316,11 @@ export const flarken: ChapterData = {
     { from: LOW.to, to: FAR.from, y: WATER },
   ],
   tussocks: [...MATS_A, ...MATS_B].map(mat),
+  // The slide and the picnic table are things on the sand, whatever he goes over.
+  landmarks: [
+    { look: 'slide', from: SLIDE.from, to: SLIDE.foot, base: 0 },
+    { look: 'picnic', from: BENCH_A.from, to: BENCH_B.to, base: 0 },
+  ],
   surfaces: [
     // The parking's gravel and the playground's sand; the picnic table's benches; the court's sand and the beach.
     { from: -3, to: 10, kind: 'earth' },
@@ -350,7 +355,7 @@ export const flarken: ChapterData = {
   hooks: SWINGS,
   climbs: [
     // The slide's ladder: he climbs it and steps off onto the platform at the top of the chute.
-    { x: SLIDE.ladder, bottom: 0, top: SLIDE.top, exit: 1, look: 'hose' },
+    { x: SLIDE.ladder, bottom: 0, top: SLIDE.top, exit: 1, look: 'ladder' },
     // The reed at the foot of the high stone: he climbs it like a stem and steps off onto the top.
     { x: HIGH.from - 0.3, bottom: 0, top: HIGH.y, exit: 1, look: 'root' },
     BENT_REED,
@@ -401,9 +406,7 @@ export const flarken: ChapterData = {
       { kind: 'car', x: 1, z: -14, lit: '' },
       // The playground: the swing set, the rings under its seats; the slide, its ladder where his is.
       { kind: 'swings', x: SWING_SET.x, z: -0.8, width: SWING_SET.width, height: SWING_SET.height },
-      { kind: 'slide', x: SLIDE.from + (SLIDE.foot - SLIDE.from) / 2, z: -0.6, width: SLIDE.foot - SLIDE.from, height: SLIDE.top },
       // The picnic table he climbs, and another further back on the grass.
-      { kind: 'picnic', x: TABLE.x, z: 0, width: TABLE.width, height: TABLE.y },
       { kind: 'picnic', x: 30, z: -14 },
       // (The volleyball net is the bouncer itself, torn loose and sagging between its posts.)
       // The changing rooms: their fronts just behind the path, their eaves the roofs he walks.

@@ -711,6 +711,12 @@ export function building(def: BuildingDef): Building {
     group.userData.fit = def.kind === 'spruce' && pick % 3 === 2 ? (def.height ?? 60) / 42 : (def.height ?? 60) / 60;
     group.userData.turn = pick * 1.3;
   }
+  if (def.kind === 'bridge') group.userData.model = 'bro';
+  if (def.kind === 'picnic') {
+    group.userData.model = 'picknick';
+    group.userData.fit = 2;
+    group.userData.shift = -6;
+  }
   // The car takes the model's place, and keeps its windows, so that they can light up.
   if (def.kind === 'car') {
     group.userData.model = 'bil';

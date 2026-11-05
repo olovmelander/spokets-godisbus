@@ -2,9 +2,9 @@ import {
   BoxGeometry, BufferGeometry, Euler, Float32BufferAttribute, Group, InstancedMesh, Matrix3, Matrix4, Mesh, MeshStandardMaterial, Quaternion, Vector3,
   type Material, type Object3D,
 } from 'three';
-import type { ChapterData, Landmark } from '../sim/types';
+import type { ChapterData, Landmark, LandmarkThing } from '../sim/types';
 import { restock } from './dressing/forest';
-import { heightAt } from './dressing/kit';
+import { heightAt, isThing } from './dressing/kit';
 
 /**
  * The things of the spruce forest, modelled in Blender (art/blender/forest-kit.py): one spruce cone in its
@@ -202,17 +202,17 @@ function climb(kit: ForestKit, look: string, long: number): BufferGeometry | und
 }
 
 /** The name of the kit's shape for each of the chapter's landmarks. */
-export const LANDMARKS: Record<Exclude<Landmark['look'], 'barrel' | 'can' | 'playhouse'>, string> = { cone: 'jattekotte', log: 'stock', anthill: 'myrstack', stone: 'virvelsten' };
+export const LANDMARKS: Record<Exclude<Landmark['look'], LandmarkThing>, string> = { cone: 'jattekotte', log: 'stock', anthill: 'myrstack', stone: 'virvelsten' };
 
 /** Separate things above the land, including when the kit is missing or only partly available. */
 export function forestLandmarks(chapter: ChapterData): Group {
   const group = new Group();
-  const colours = { cone: '#7a4f2c', log: '#604a35', anthill: '#5a4e40', stone: '#7c827d', barrel: '#7a5634', can: '#a4aeb4', playhouse: '#7f9680' };
+  const colours = { cone: '#7a4f2c', log: '#604a35', anthill: '#5a4e40', stone: '#7c827d', barrel: '#7a5634', can: '#a4aeb4', playhouse: '#7f9680', slide: '#7c4436', picnic: '#8a8478', fence: '#3e5a46' };
   for (const mark of chapter.landmarks ?? []) {
     const width = mark.to - mark.from;
     const high = heightAt(chapter, (mark.from + mark.to) / 2) - mark.base;
-    // A barrel, a can or the playhouse is no part of the forest's kit: the chapter's own pack puts it in.
-    const holder = mark.look === 'barrel' || mark.look === 'can' || mark.look === 'playhouse' ? new Group() : forestSocket(new Group(), { shape: LANDMARKS[mark.look] });
+    // A thing on the floor is no part of the forest's kit: the chapter's own pack puts it in.
+    const holder = isThing(mark.look) ? new Group() : forestSocket(new Group(), { shape: LANDMARKS[mark.look] });
     holder.name = `landmark:${mark.look}`;
     holder.position.set(mark.from, mark.base, 0);
     // A narrow solid support for the whole playable top; the anthill also holds the door's spruce behind it.

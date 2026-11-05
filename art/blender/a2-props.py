@@ -11,6 +11,7 @@ for item in list(bpy.data.meshes):
         bpy.data.meshes.remove(item)
 
 UP = Vector((0.0, 0.0, 1.0))
+FRONT_ = Vector((0.0, -1.0, 0.0))
 
 
 def wanted(name):
@@ -617,3 +618,196 @@ def build_car(name, COAT, seed):
 
 build_car('bil', tone('#46617e'), 1.0)
 build_car('bil-gra', tone('#a8a69a'), 2.0)
+
+
+def timber(part, low, high, colour, seed=0.0, grain=0.07):
+    """A sawn piece, each of its six faces its own tone, in EL."""
+    corners = [put(part, Vector((x, y, z)), colour) for x in (low[0], high[0]) for y in (low[1], high[1]) for z in (low[2], high[2])]
+    sides = ((0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3))
+    for i in range(6):
+        made = face(part, [corners[k] for k in sides[i]])
+        part['flat'][made] = lit(colour, 1.0 + grain * (rnd(seed, i) - 0.5) * 2.0 + (0.09 if i == 5 else 0.0))
+
+
+# --- the slide at Flärkenbadet --------------------------------------------------------------------------------
+# Rust-red steel, with its ladder, a platform and rails, and a chute worn to bright metal where children have gone down it.
+# Its origin is the platform's near corner on the ground: the platform is 3 long and 3.2 up, and the chute comes down 3.4 on.
+
+if wanted('rutschkana'):
+    part = new_part()
+    STEEL = tone('#7c4436')
+    RUST = tone('#5a3024')
+    WORN = tone('#b8b6ae')
+    GREY = tone('#8a9096')
+    WIDE = 1.05
+    # Four legs, cross-braced, and the platform's plate with its raised pattern.
+    for x in (0.1, 2.9):
+        for y in (-WIDE, WIDE):
+            tube(part, [Vector((x, y, 0.0)), Vector((x, y, 4.3))], [0.09, 0.08], [RUST, STEEL], 8)
+        tube(part, [Vector((x, -WIDE, 0.5)), Vector((x, WIDE, 2.9))], [0.04, 0.04], [STEEL, STEEL], 6)
+        tube(part, [Vector((x, WIDE, 0.5)), Vector((x, -WIDE, 2.9))], [0.04, 0.04], [STEEL, STEEL], 6)
+    timber(part, (0.0, -WIDE, 3.04), (3.0, WIDE, 3.2), lit(GREY, 0.8), 1.0)
+    for i in range(14):
+        for j in range(10):
+            x = 0.12 + i * 0.21
+            y = -0.95 + j * 0.21
+            strip(part, [Vector((x - 0.05, y + (0.03 if (i + j) % 2 else -0.03), 3.206)), Vector((x + 0.05, y - (0.03 if (i + j) % 2 else -0.03), 3.206))], 0.012, lit(GREY, 1.1), UP)
+    # Its rails, along the far side and the near one, with their posts.
+    for y in (-WIDE, WIDE):
+        tube(part, [Vector((0.1, y, 4.3)), Vector((2.9, y, 4.3))], [0.06, 0.06], [STEEL, STEEL], 8)
+        tube(part, [Vector((0.1, y, 3.78)), Vector((2.9, y, 3.78))], [0.04, 0.04], [STEEL, STEEL], 6)
+    tube(part, [Vector((2.9, -WIDE, 4.3)), Vector((3.3, -WIDE + 0.2, 3.85))], [0.05, 0.05], [STEEL, STEEL], 6)
+    tube(part, [Vector((2.9, WIDE, 4.3)), Vector((3.3, WIDE - 0.2, 3.85))], [0.05, 0.05], [STEEL, STEEL], 6)
+    # The ladder up its near end: two stiles, and flat rungs, worn in the middle.
+    for y in (-0.62, 0.62):
+        tube(part, [Vector((-0.25, y, 0.0)), Vector((-0.25, y, 4.2))], [0.06, 0.05], [RUST, STEEL], 6)
+    z = 0.42
+    while z < 3.3:
+        timber(part, (-0.31, -0.62, z - 0.05), (-0.18, 0.62, z + 0.05), blend(GREY, WORN, 0.4), z)
+        z += 0.46
+    # The chute: a shallow trough with rolled rims, from the platform to the sand, ending in a little run-out.
+    rows = []
+    tones = []
+    STEPS = 14
+    for i in range(STEPS + 1):
+        t = i / STEPS
+        x = 3.0 + 3.4 * t
+        top = 3.2 * (1.0 - t)
+        ring = []
+        shades = []
+        for k, (y, drop, colour) in enumerate(((-0.92, -0.4, STEEL), (-0.94, 0.0, lit(STEEL, 1.2)), (-0.84, 0.03, STEEL), (-0.76, -0.32, RUST), (-0.72, -0.36, blend(WORN, STEEL, 0.4)), (-0.3, -0.4, WORN), (0.3, -0.4, WORN), (0.72, -0.36, blend(WORN, STEEL, 0.4)), (0.76, -0.32, RUST), (0.84, 0.03, STEEL), (0.94, 0.0, lit(STEEL, 1.2)), (0.92, -0.4, STEEL))):
+            lift = 0.32
+            ring.append(Vector((x, y, top + drop + lift)))
+            streak = noise(x * 2.0, y * 5.0, 3.0)
+            shades.append(blend(colour, RUST, 0.45 * streak))
+        rows.append(ring)
+        tones.append(shades)
+    skin(part, rows, tones, closed=True, flip=True)
+    # Two legs under it, in sand.
+    for t, y in ((0.42, -0.8), (0.42, 0.8)):
+        x = 3.0 + 3.4 * t
+        tube(part, [Vector((x, y, 0.0)), Vector((x, y, 3.2 * (1.0 - t) - 0.1))], [0.07, 0.06], [RUST, STEEL], 6)
+    finish(part, 'rutschkana', sharp=40.0, strength=0.5, reach=0.4, floor=0.0, leaf=True)
+
+
+# --- the picnic table, seen from its end ------------------------------------------------------------------------
+# Silver-grey wood. Its origin is at the near bench's near edge on the ground: a bench 1.4 wide at each end of the 6 across,
+# their tops at 1.2, and the table top at 2 between them, 3.6 wide. Its length goes away into the picture, along Y.
+
+if wanted('picknick'):
+    part = new_part()
+    GREYED = tone('#9a948a')
+    DARKER = tone('#6e685e')
+    LONG = 2.7
+    for x0 in (0.0, 4.6):
+        for i in range(3):
+            timber(part, (x0 + 0.02 + i * 0.47, -LONG, 1.04), (x0 + 0.44 + i * 0.47, LONG, 1.2), lit(GREYED, 0.88 + 0.24 * rnd(i, x0)), i + x0)
+    for i in range(7):
+        timber(part, (1.21 + i * 0.515, -LONG, 1.86), (1.7 + i * 0.515, LONG, 2.0), lit(GREYED, 0.9 + 0.24 * rnd(i, 3.3)), i * 2.0)
+    # A frame at each end of it: the beam the benches lie on, a beam under the top, and the crossed legs.
+    for y in (-1.9, 1.9):
+        timber(part, (-0.1, y - 0.1, 0.88), (6.1, y + 0.1, 1.04), DARKER, y)
+        timber(part, (1.15, y - 0.1, 1.72), (4.85, y + 0.1, 1.86), DARKER, y + 1.0)
+        tube(part, [Vector((0.6, y, 0.0)), Vector((1.5, y, 0.9)), Vector((2.4, y, 1.8))], [0.1, 0.1, 0.1], [DARKER] * 3, 4)
+        tube(part, [Vector((5.4, y, 0.0)), Vector((4.5, y, 0.9)), Vector((3.6, y, 1.8))], [0.1, 0.1, 0.1], [DARKER] * 3, 4)
+    tube(part, [Vector((3.0, -1.9, 1.75)), Vector((3.0, 1.9, 1.75))], [0.07, 0.07], [DARKER] * 2, 4)
+    finish(part, 'picknick', sharp=30.0, strength=0.55, reach=0.5, floor=0.0, leaf=True)
+
+
+# --- the high fence at Olympia --------------------------------------------------------------------------------
+# Seen from its end, across the path: planks on posts, dark green, with a flat top rail he walks over, 0.8 wide and 5.2 up.
+# Far behind him the posts go on up, with the ball-stop net between them. Its origin is its near side's foot on the path.
+
+if wanted('staket'):
+    part = new_part()
+    GREEN = tone('#3e5a46')
+    GREEN_DARK = tone('#2a3f33')
+    CAP = tone('#8a9288')
+    NET = tone('#d8dcd8')
+    POST = tone('#6e7a78')
+    timber(part, (-0.04, -1.3, 5.04), (0.84, 9.0, 5.2), CAP, 1.0)
+    timber(part, (0.08, -1.2, 0.0), (0.72, 9.0, 5.04), GREEN_DARK, 2.0)
+    # The planks up both sides, each its own, and three rails showing at the end.
+    for side, x in ((-1.0, 0.07), (1.0, 0.73)):
+        y = -1.22
+        n = 0
+        while y < 9.0:
+            wide = 0.5 + 0.1 * rnd(n, 1.0)
+            shade = lit(GREEN, 0.84 + 0.3 * rnd(n, 2.0))
+            top = 5.03 - 0.02 * rnd(n, 3.0)
+            pts = [Vector((x, y, 0.02)), Vector((x, y + wide - 0.03, 0.02)), Vector((x, y + wide - 0.03, top)), Vector((x, y, top))]
+            part['flat'][face(part, [put(part, p, shade) for p in pts])] = shade
+            y += wide
+            n += 1
+    for z in (0.7, 2.5, 4.4):
+        timber(part, (0.02, -1.26, z), (0.78, -1.2, z + 0.26), GREEN, z)
+    for y in (-1.22, 3.0, 7.2):
+        tube(part, [Vector((0.4, y + 0.1, 5.2)), Vector((0.4, y + 0.1, 15.0 if y > 0.0 else 5.5))], [0.08, 0.07], [POST, POST], 8)
+    # The ball-stop net over it, from the second post back: only its thread, row on row.
+    for k in range(14):
+        z = 5.6 + k * 0.72
+        strip(part, [Vector((0.4, 3.1, z)), Vector((0.4, 7.3, z))], 0.012, NET, Vector((-1.0, 0.0, 0.0)))
+    for k in range(9):
+        y = 3.1 + k * 0.52
+        strip(part, [Vector((0.4, y, 5.3)), Vector((0.4, y, 14.8))], 0.012, NET, Vector((-1.0, 0.0, 0.0)))
+    finish(part, 'staket', sharp=30.0, strength=0.4, reach=0.5, floor=0.0, leaf=True)
+
+
+# --- the road bridge in Bredbyn ------------------------------------------------------------------------------------
+# Concrete, stained by years of rain, on two piers with rounded noses, with a steel railing. 24 long and 7.8 to the middle of
+# its deck. Its origin is on the river's bed under its middle, as the chapter sets it.
+
+if wanted('bro'):
+    part = new_part()
+    PALE = tone('#9a9c9a')
+    STAIN = tone('#5e625c')
+    DARK = tone('#3c3e42')
+    MOSS = tone('#55702c')
+    LENGTH = 24.0
+    HIGH = 7.8
+    DEEP = 5.0
+    # The deck: a thick slab, with an overhanging edge beam and dark runs below every drain.
+    rows = []
+    tones = []
+    AROUND = ((-DEEP - 0.4, -1.2, 0.9), (-DEEP - 0.4, 1.2, 1.06), (DEEP + 0.4, 1.2, 1.06), (DEEP + 0.4, -1.2, 0.9))
+    for i in range(25):
+        x = -LENGTH / 2.0 - 3.0 + (LENGTH + 6.0) * i / 24.0
+        rows.append([Vector((x, y, HIGH + z)) for y, z, k in AROUND])
+        run = noise(x * 0.8, 1.0, 3.0)
+        tones.append([blend(lit(PALE, k), STAIN, 0.55 * run * (1.0 if z < 0.0 else 0.3)) for y, z, k in AROUND])
+    skin(part, rows, tones, (Vector((-LENGTH / 2.0 - 3.0, 0.0, HIGH)), PALE), (Vector((LENGTH / 2.0 + 3.0, 0.0, HIGH)), PALE))
+    for k in range(9):
+        x = -LENGTH / 2.0 + k * 3.0
+        strip(part, [Vector((x + 0.5, -DEEP - 0.41, HIGH + 1.1)), Vector((x + 0.58 + 0.2 * rnd(k, 1.0), -DEEP - 0.41, HIGH - 1.2 - 1.2 * rnd(k, 2.0)))], [0.1, 0.03], STAIN, FRONT_)
+    # A joint in the slab, and the two piers on their footings, wet to the high-water mark.
+    for side in (-1.0, 1.0):
+        x = side * 6.0
+        profile = []
+        for k in range(20):
+            turn = TAU * k / 20.0
+            profile.append((turn, math.cos(turn), math.sin(turn)))
+        rows = []
+        tones = []
+        for z, grow in ((-0.2, 1.08), (0.9, 1.08), (1.0, 1.0), (3.0, 1.0), (5.4, 0.96), (6.5, 0.96)):
+            ring = []
+            shades = []
+            for turn, cx, cy in profile:
+                # A long round: 4 across, 8 along the stream, its noses to the current.
+                ring.append(Vector((x + grow * 1.9 * cx, grow * (2.1 * cy + (2.0 if cy > 0.0 else -2.0) * min(1.0, abs(cy) * 4.0)), z)))
+                wet = max(0.0, 1.0 - z / 3.6)
+                streak = noise(cx * 3.0 + side, cy * 3.0, z * 0.4)
+                shades.append(blend(blend(PALE, STAIN, 0.4 * streak), tone('#3c4238'), wet * 0.75))
+            rows.append(ring)
+            tones.append(shades)
+        skin(part, rows, tones, (Vector((x, 0.0, -0.2)), PALE), (Vector((x, 0.0, 6.6)), PALE))
+        # The bearing on its top, and moss at its foot.
+        timber(part, (x - 1.5, -3.8, 6.5), (x + 1.5, 3.8, 6.6), DARK, side)
+    # The railing along the near edge and the far one: posts, and two rails.
+    for y in (-DEEP - 0.1, DEEP + 0.1):
+        x = -LENGTH / 2.0 - 3.0
+        while x <= LENGTH / 2.0 + 3.0:
+            timber(part, (x - 0.07, y - 0.07, HIGH + 1.2), (x + 0.07, y + 0.07, HIGH + 3.2), DARK, x)
+            x += 2.4
+        timber(part, (-LENGTH / 2.0 - 3.0, y - 0.09, HIGH + 3.12), (LENGTH / 2.0 + 3.0, y + 0.09, HIGH + 3.3), tone('#54585e'), 2.0)
+        timber(part, (-LENGTH / 2.0 - 3.0, y - 0.05, HIGH + 2.2), (LENGTH / 2.0 + 3.0, y + 0.05, HIGH + 2.3), DARK, 3.0)
+    finish(part, 'bro', sharp=40.0, strength=0.45, reach=1.2, floor=-0.5, leaf=True)

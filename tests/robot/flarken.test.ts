@@ -60,10 +60,10 @@ const barkGap = pitUnder(bark.stops[bark.stops.length - 1]!.x);
 const breakGap = pitUnder(gunwale.x);
 const [ring1, ring2] = flarken.hooks!;
 const puddle = pitUnder(ring2!.x);
-const ladder = flarken.climbs!.find((climb) => climb.look === 'hose' && climb.bottom === 0)!;
+const ladder = flarken.climbs!.find((climb) => climb.look === 'ladder' && climb.bottom === 0)!;
 const towerLadder = flarken.climbs!.find((climb) => climb.look === 'hose' && climb.bottom === DECK)!;
 const platform = ledges.find((ledge) => ledge.look === 'plank' && Math.abs(ledge.y - towerLadder.top) < 1e-6)!;
-const table = ledges.find((ledge) => ledge.look === 'trestle' && ledge.y === 2)!;
+const table = ledges.find((ledge) => ledge.look === 'shelf' && ledge.y === 2)!;
 const roofs = ledges.filter((ledge) => ledge.look === 'plank' && ledge.y > 2.5 && ledge.y < 3 && !ledge.needs);
 const hutBench = ledges.find((ledge) => ledge.look === 'trestle' && ledge.y === 1)!;
 const net = flarken.bouncers![0]!;
@@ -230,10 +230,9 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       expect(sim.curr.y, where(sim)).toBeCloseTo(0, 2);
       expect(sim.bubbles).toBe(0);
       // The slide's picture: its ladder where his is, the chute down to where the slope ends.
-      const slide = buildings.find((d) => d.kind === 'slide')!;
-      expect(slide.x - slide.width! / 2).toBeCloseTo(ladder.x + 0.25, 5);
-      expect(slide.x + slide.width! / 2).toBeCloseTo(b.x, 5);
-      expect(slide.height).toBeCloseTo(top, 5);
+      const slide = flarken.landmarks!.find((mark) => mark.look === 'slide')!;
+      expect(slide.from).toBeCloseTo(ladder.x + 0.25, 5);
+      expect(slide.to).toBeCloseTo(b.x, 5);
     });
   });
 
@@ -252,7 +251,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       expect(table.y).toBeGreaterThan(1 + 0.5);
       for (let x = benches[0]!.to + 0.1; x < benches[1]!.from; x += 0.2) expect(heightAt(flarken, x)).toBe(0);
       expect(flarken.ghost!.some((perch) => perch.at.x > benches[0]!.to && perch.at.x < benches[1]!.from && perch.at.y === 0)).toBe(true);
-      expect(buildings.some((d) => d.kind === 'picnic' && Math.abs(d.x - table.x) < 1e-6 && d.height === table.y)).toBe(true);
+      expect(flarken.landmarks!.some((mark) => mark.look === 'picnic' && mark.from === benches[0]!.from && mark.to === benches[1]!.to)).toBe(true);
     });
 
     it('has two side candies on the top: a held jump from the first bench', () => {
@@ -350,7 +349,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     });
 
     it('has three stone shelves over the first stones: a held jump to each, and a jump across, with six side candies', () => {
-      const shelves = ledges.filter((ledge) => ledge.look === 'shelf');
+      const shelves = ledges.filter((ledge) => ledge.look === 'shelf' && ledge.y !== 2);
       const first = shelves[0]!.x - 4.5;
       const sim = new Sim(flarken, {}, { checkpoint: CP.beach });
       run(sim, 0.2);
@@ -773,7 +772,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     expect(flarken.checkpoints!.length).toBeGreaterThanOrEqual(8);
     expect(flarken.checkpoints!.length).toBeLessThanOrEqual(10);
     expect(flarken.scenes!.map((scene) => scene.id)).toEqual(['card']);
-    for (const kind of ['tower', 'hut', 'swings', 'slide', 'picnic', 'birch'] as const) {
+    for (const kind of ['tower', 'hut', 'swings', 'picnic', 'birch'] as const) {
       expect(buildings.some((d) => d.kind === kind), kind).toBe(true);
     }
     // The swings are in reach of the lace from the ground beside them.

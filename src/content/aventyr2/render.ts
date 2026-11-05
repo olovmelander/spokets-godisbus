@@ -447,11 +447,12 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     passing.userData.lift = -0.45;
   }
   // The rain barrel and the watering can stand on the lawn, their tops where the outline has them.
-  for (const [look, model] of [['barrel', 'tunna'], ['can', 'kanna'], ['playhouse', 'lekstuga']] as const) {
+  for (const [look, model] of [['barrel', 'tunna'], ['can', 'kanna'], ['playhouse', 'lekstuga'], ['slide', 'rutschkana'], ['picnic', 'picknick'], ['fence', 'staket']] as const) {
     for (const holder of scene.getObjectsByProperty('name', `landmark:${look}`)) {
       holder.userData.model = model;
       const mark = chapter.landmarks?.find((one) => one.look === look && one.from === holder.position.x);
-      if (mark && look !== 'playhouse') holder.userData.shift = (mark.to - mark.from) / 2;
+      // A barrel and a can stand round their middles; the others are measured from their near edge.
+      if (mark && (look === 'barrel' || look === 'can')) holder.userData.shift = (mark.to - mark.from) / 2;
       // Behind the porch, the house itself, as the family's garden has it.
       if (look === 'playhouse') {
         const house = new Group();
@@ -934,7 +935,7 @@ function football(radius: number): Mesh {
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
 const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
   'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
-const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra'];
+const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra', 'rutschkana', 'picknick', 'staket', 'bro'];
 const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
 const CARVINGS = ['tragubbe', 'lillgubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];

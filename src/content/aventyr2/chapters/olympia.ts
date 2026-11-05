@@ -187,6 +187,8 @@ export const olympia: ChapterData = {
     { from: PUDDLE.from, to: PUDDLE.to, y: PUDDLE.water },
     { from: CIRCLE.from, to: CIRCLE.to, y: CIRCLE.water },
   ],
+  // The high fence stands across the path, whatever he goes over.
+  landmarks: [{ look: 'fence', from: FENCE.from, to: FENCE.to, base: 0 }],
   surfaces: [
     { from: -3, to: STEPS[1]!.to, kind: 'stone' },
     { from: STEPS[1]!.to, to: FENCE.from, kind: 'earth' },

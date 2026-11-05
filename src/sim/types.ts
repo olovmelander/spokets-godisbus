@@ -13,7 +13,7 @@ export interface Climb {
   /** A flag that has to be set before he can use it: the hose the ladybird shows him. */
   needs?: string;
   /** Keep a reused climbing rule recognizable as the story's actual tool. */
-  look?: 'hose' | 'lace' | 'braid' | 'lichen' | 'root';
+  look?: 'hose' | 'lace' | 'braid' | 'lichen' | 'root' | 'ladder';
 }
 
 /** A hook for the lace, marked with a red ring (plan §4.2). */
@@ -377,9 +377,11 @@ export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'p
  * A thing that a block of the ground is, for the picture only: the block runs from `from` to `to` along the
  * outline, and `base` is the height of the ground at its foot.
  */
+/** Things on the floor that he walks on, each a model of its own: the land goes on under them. */
+export type LandmarkThing = 'barrel' | 'can' | 'playhouse' | 'slide' | 'picnic' | 'fence';
+
 export interface Landmark {
-  /** A barrel, a can or the playhouse is a thing on the floor that he walks on: the land and its surface go on under it. */
-  look: 'cone' | 'log' | 'anthill' | 'stone' | 'barrel' | 'can' | 'playhouse';
+  look: 'cone' | 'log' | 'anthill' | 'stone' | LandmarkThing;
   from: number;
   to: number;
   base: number;
