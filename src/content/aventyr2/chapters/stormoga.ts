@@ -253,7 +253,7 @@ export const stormoga: ChapterData = {
     ...LIT.map((who) => ({ look: 'lampBeam' as const, at: HELD[who], z: AT_Z[who] + 0.2, after: `so:${who}` })),
     // The two trägubbar on the stone, the old one holding the little one; he carries them once he is big.
     { look: 'tragubbe', at: { x: FIGURES, y: 0.6 }, z: -0.5, until: 'taste', word: 'lifted' },
-    { look: 'lillgubbe', at: { x: FIGURES + 0.32, y: 0.6 }, z: -0.3, until: 'taste' },
+    { look: 'lillgubbe', word: 'lifted', at: { x: FIGURES + 0.32, y: 0.6 }, z: -0.3, until: 'taste' },
     // The cap he found in the gutter in Byn, back on the little one's head.
     { look: 'tiny-cap', word: 'worn', at: { x: FIGURES + 0.32, y: 1.08 }, z: -0.3, after: 'scene:motet', until: 'taste' },
     // The family on the far shore with their lamps, once the storm has let go; mormor with her lantern, morfar.

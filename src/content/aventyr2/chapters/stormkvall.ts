@@ -227,6 +227,8 @@ export const stormkvall: ChapterData = {
     ],
   },
   decor: [
+    // The family's room, which Sunday morning has too.
+    { look: 'homeEvening', at: { x: 0, y: 0 } },
     // The two figures on the shelf, until the gust.
     { look: 'tragubbe', at: { x: OLD.x, y: OLD.y }, z: OLD.z, until: 'gust' },
     { look: 'lillgubbe', at: { x: LITTLE.x, y: LITTLE.y }, z: LITTLE.z, until: 'gust' },
