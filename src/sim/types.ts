@@ -358,7 +358,7 @@ export type MoverLook = 'riverLog' | 'plank' | 'block' | 'matchbox' | 'curl' | '
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy';
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder';
-export type SpotLook = 'mormorHome' | 'otter' | 'seesawLog' | 'floatBall' | 'deadLamp' | 'lampBeam' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
+export type SpotLook = 'mormorHome' | 'otter' | 'seesawLog' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'lampBeam' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
   | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';
@@ -371,7 +371,7 @@ export type PlaceId = 'forest' | 'garden' | 'bog' | 'mountain' | 'dusk' | 'home'
 /** What a gust's shelters are drawn as, in a storm: see Storm.shelters. */
 export type Shelter = 'pots' | 'posts' | 'vents' | 'rocks';
 
-export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron' | 'turf' | 'sand' | 'moss';
+export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'paving' | 'asphalt' | 'iron' | 'turf' | 'sand' | 'moss' | 'wetRock';
 
 /**
  * A thing that a block of the ground is, for the picture only: the block runs from `from` to `to` along the
@@ -679,7 +679,7 @@ export interface Storm {
   /**
    * For the picture: where cream foam drifts on the water, and how fast, in EL a second.
    */
-  foam?: { from: number; to: number; y: number; speed: number }[];
+  foam?: { from: number; to: number; y: number; speed: number; dense?: number }[];
   /**
    * Buildings and big things standing behind the play plane, built in code by the adventure's pack: picture only,
    * never ground. Sizes are in EL (one Elof length, 15 cm), so a real house towers over him. `lit`: its windows glow

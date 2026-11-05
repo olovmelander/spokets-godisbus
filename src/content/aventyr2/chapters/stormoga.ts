@@ -219,7 +219,7 @@ export const stormoga: ChapterData = {
     { from: 12, to: 38, y: -0.5 },
     { from: 58, to: 63, y: -0.5 },
   ],
-  surfaces: [{ from: -3, to: 12, kind: 'wood' }, { from: 38, to: 58, kind: 'stone' }],
+  surfaces: [{ from: -3, to: 12, kind: 'wood' }, { from: 38, to: 58, kind: 'wetRock' }],
   scenes: SCENES,
   checkpoints: [{ x: 4, y: 0 }, { x: 41, y: 0.6 }, { x: 50.4, y: 0.6 }],
   spots: [

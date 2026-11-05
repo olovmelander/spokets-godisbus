@@ -33,7 +33,7 @@ type Ink = readonly [number, number, number];
 
 /** A picture's size, and the margin that is drawn round it so that the blur joins where the picture repeats. */
 /** A set of far pictures: a place's own, or one of Äventyr 2's. */
-export type FarId = PlaceId | 'wall' | 'river' | 'billaberget';
+export type FarId = PlaceId | 'wall' | 'river' | 'billaberget' | 'lake';
 
 const W = 512;
 const H = 256;
@@ -1137,7 +1137,41 @@ const BILLABERGET: Layer[] = [
   },
 ];
 
-const LAYERS: Record<FarId, Layer[]> = { wall: WALL, river: RIVER, billaberget: BILLABERGET, forest: FOREST, garden: GARDEN, bog: BOG, mountain: MOUNTAIN, dusk: DUSK, home: [], village: VILLAGE };
+/** Flärken: over the bay a dark forested ridge, a strip of meadow at its foot, small red farms and a treed point. */
+const LAKE: Layer[] = [
+  { z: -90, hold: 0.08, sink: 0, every: 160, eye: 200, soft: 2, drift: 0.3, draw: (c) => clouds(c, 23, 200, 6, [214, 222, 232], [120, 136, 156], 0.7) },
+  {
+    z: -76, hold: 0.22, sink: 0.02, every: 240, eye: 190, soft: 1,
+    draw(c) {
+      const far: Ink = [62, 88, 102];
+      ridge(c, 112, 34, back([[0, 0.4], [0.2, 0.7], [0.38, 0.5], [0.6, 1], [0.8, 0.66], [1, 0.4]]), far, far, 3, 70, 43);
+      const wood: Ink = [38, 58, 66];
+      ridge(c, 142, 30, back([[0, 0.7], [0.16, 1], [0.34, 0.66], [0.52, 0.84], [0.72, 0.56], [0.88, 0.9], [1, 0.7]]), wood, wood, 4, 50, 47);
+      spruceRow(c, 29, 184, 44, 12, 30, [30, 48, 54]);
+      // The meadow at the ridge's foot, and the small red farms on it, with grey roofs and white corners.
+      band(c, 180, 190, [116, 128, 98], 1);
+      for (const [x, wide] of [[84, 24], [116, 13], [338, 30], [446, 16]] as const) {
+        c.fillStyle = ink([104, 56, 50]);
+        c.fillRect(x, 173, wide, 11);
+        c.fillStyle = ink([98, 104, 112]);
+        c.beginPath(); c.moveTo(x - 2, 174); c.lineTo(x + wide / 2, 167); c.lineTo(x + wide + 2, 174); c.closePath(); c.fill();
+        c.fillStyle = ink([226, 224, 216]);
+        c.fillRect(x, 173, 1, 11);
+        c.fillRect(x + wide - 1, 173, 1, 11);
+      }
+      // The treed point, running out into the bay from the left.
+      c.fillStyle = ink([30, 48, 54]);
+      c.beginPath(); c.moveTo(-40, 190); c.quadraticCurveTo(120, 188, 214, 197); c.lineTo(-40, 199); c.closePath(); c.fill();
+      spruceRow(c, 31, 192, 12, 8, 22, [26, 42, 48]);
+      // The bay: wide and grey, with paler streaks of wind on it.
+      band(c, 190, 256, [84, 104, 122], 1);
+      c.fillStyle = ink([128, 146, 162], 0.5);
+      for (const [x, y, wide] of [[60, 200, 120], [240, 208, 170], [420, 198, 90], [130, 216, 100], [380, 222, 150]] as const) c.fillRect(x, y, wide, 1.4);
+    },
+  },
+];
+
+const LAYERS: Record<FarId, Layer[]> = { lake: LAKE, wall: WALL, river: RIVER, billaberget: BILLABERGET, forest: FOREST, garden: GARDEN, bog: BOG, mountain: MOUNTAIN, dusk: DUSK, home: [], village: VILLAGE };
 
 /** Where a place's far layers hang and how they pass, from the farthest to the nearest. Each is one draw call. */
 export const farLayers = (place: PlaceId): { z: number; hold: number; sink: number; drift: number }[] =>

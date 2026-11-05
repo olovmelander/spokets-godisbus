@@ -13,6 +13,7 @@ import { glowTexture } from '../../render/glow';
 import { drawnWhile } from '../../render/idle';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
+import { owl as tawnyOwl } from '../../render/lift/fauna/shapes';
 import { box, building, paint, PANE, rock } from './buildings';
 import { createGrandparent, type Grandparent } from './grandparents';
 
@@ -132,6 +133,7 @@ const LOOKS: Record<string, PlaceLook> = {
     ...PLACES.bog,
     // A lake's shore, not a bog: the same islands in the water, in worn grass and with none of the red moss.
     ground: 'shore',
+    far: 'lake',
     noSun: true,
     grade: grade(0.92, 0.84, [0.9, 0.96, 1.08]),
     haze: { colour: '#3c5068', near: 8, far: 90 },
@@ -188,6 +190,7 @@ const LOOKS: Record<string, PlaceLook> = {
   },
   stormoga: {
     ...PLACES.bog,
+    ground: 'shore',
     noSun: true,
     grade: grade(0.86, 0.9, [0.88, 0.96, 1.14]),
     haze: { colour: '#1e2c48', near: 6, far: 80 },
@@ -970,7 +973,7 @@ async function installModels(assets: Assets, scene: Object3D): Promise<boolean> 
 /** Cream foam drifting on black water, as it does below a rapid: one mesh of flecks, carried by the current. */
 function createFoam(foam: NonNullable<ChapterData['storm']>['foam'], group: Group): ((dt: number, still: boolean) => void) | null {
   if (!foam?.length) return null;
-  const flecks = foam.flatMap((run) => Array.from({ length: Math.round((run.to - run.from) * 3) }, (_, i) => ({
+  const flecks = foam.flatMap((run) => Array.from({ length: Math.round((run.to - run.from) * (run.dense ?? 3)) }, (_, i) => ({
     run,
     x: run.from + ((i * 0.618) % 1) * (run.to - run.from),
     z: -0.3 - ((i * 0.381) % 1) * 7,
@@ -1087,16 +1090,17 @@ function owl(flying = false): Group {
   const pale = solid('#c8a67a', 0.9);
   const dark = solid('#1a120c', 0.4);
   if (!flying) {
-    group.add(ball(0.9, brown, 0, 1.1, 0, [1, 1.25, 0.9]));
-    group.add(ball(0.62, brown, 0, 2.15, 0));
-    group.add(ball(0.5, pale, 0, 2.15, 0.28, [1, 0.95, 0.6]));
-    for (const x of [-0.22, 0.22]) group.add(ball(0.16, solid('#e0a040', 0.3), x, 2.22, 0.55), ball(0.1, dark, x, 2.22, 0.66));
-    const beak = new Mesh(new ConeGeometry(0.07, 0.2, 6), solid('#c8b080', 0.6));
-    beak.position.set(0, 2.0, 0.66);
-    beak.rotation.x = Math.PI;
-    group.add(beak);
-    for (const side of [-1, 1]) group.add(ball(0.5, solid('#6a4a30', 0.9), side * 0.72, 1.2, -0.05, [0.4, 1.1, 0.8]));
-    for (const x of [-0.25, 0.25]) group.add(ball(0.12, solid('#b8a070', 0.8), x, 0.12, 0.2, [1, 0.5, 1.2]));
+    // The same tawny owl as sits in the forest's trees (../../render/lift/fauna/shapes.ts), only near and large, with
+    // its lids resting half down, set here once: the forest's own move them in its vertex stage.
+    const shape = tawnyOwl();
+    const rig = shape.getAttribute('rig');
+    const pivot = shape.getAttribute('pivot');
+    const at = shape.getAttribute('position');
+    for (let i = 0; i < at.count; i++) if (rig.getX(i) > 3.5) at.setY(i, pivot.getY(i) + (at.getY(i) - pivot.getY(i)) * 0.5);
+    const body = new Mesh(shape, new MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }));
+    body.rotation.y = -Math.PI / 2;
+    body.scale.setScalar(2.7);
+    group.add(body);
     group.name = 'owl';
     return group;
   }
@@ -1165,6 +1169,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       const figure = oldFigure();
       // On the stone in the storm's eye it rocks the little one a little, and turns to him when he has come.
       const met = spot.word === 'lifted';
+      if (met) warmed(figure);
       return standing(spot, figure, met ? (clock, dt) => {
         figure.rotation.z = Math.sin(clock * 1.1) * 0.04;
         const seen = elof.flags?.has('eye') && Math.abs(elof.x - spot.at.x) < 5;
@@ -1232,6 +1237,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     lillgubbe: (spot) => {
       const figure = littleFigure();
+      if (spot.at.y > 0.5) warmed(figure);
       // It trembles until it has its cap back, and then it hops.
       return standing(spot, figure, (clock) => {
         const glad = elof.flags?.has('scene:motet') ?? false;
@@ -1332,6 +1338,35 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       return standing(spot, group);
     },
     football: (spot) => standing(spot, (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
+    whiteWater: (spot) => {
+      // The rapids: wet boulders the river breaks over, and standing waves of white water that heave and never go.
+      const group = new Group();
+      group.position.set(spot.at.x, spot.at.y, -0.2);
+      const random = scatter(37);
+      const parts: BufferGeometry[] = [];
+      for (const [x, z, wide, tall] of [[-6.2, -1, 1.5, 0.9], [-3.4, -2.8, 1.9, 1.3], [-0.8, -0.5, 1.1, 0.7], [2.2, -3.2, 2.1, 1.4], [4.4, -1.1, 1.3, 0.8], [6.6, -2.4, 1.6, 1]] as const) {
+        parts.push(rock(Math.round(x * 10), wide, tall, wide * 0.8).clone().translate(x, 0.1, z));
+      }
+      const stones = new Mesh(mergeGeometries(parts.map((part) => (part.index ? part.toNonIndexed() : part))), solid('#3a3e3c', 0.32, { flatShading: true }));
+      group.add(stones);
+      const waves = new InstancedMesh(new SphereGeometry(1, 10, 6).scale(1, 0.4, 0.7), solid('#d8d0ba', 0.5), 34);
+      waves.frustumCulled = false;
+      const humps = Array.from({ length: waves.count }, () => ({ x: (random() - 0.5) * 14.6, z: -0.4 - random() * 4.4, size: 0.3 + random() * 0.55, phase: random() * 6.28 }));
+      group.add(waves);
+      const place = new Object3D();
+      const heave = (clock: number) => {
+        for (const [i, hump] of humps.entries()) {
+          const swell = 0.75 + 0.35 * Math.sin(clock * 5 + hump.phase);
+          place.position.set(hump.x, 0.04 + 0.1 * Math.sin(clock * 4 + hump.phase), hump.z);
+          place.scale.set(hump.size * 1.5, hump.size * swell, hump.size);
+          place.updateMatrix();
+          waves.setMatrixAt(i, place.matrix);
+        }
+        waves.instanceMatrix.needsUpdate = true;
+      };
+      heave(0);
+      return { group, update: (_used, clock) => heave(clock) };
+    },
     floatBall: (spot) => {
       // A small ball adrift in a puddle, turning slowly and bobbing on the rain's rings.
       const group = new Group();
@@ -1646,6 +1681,18 @@ function aftermath(): SpotProp {
       }
     },
   };
+}
+
+/** The two of them at the meeting: a little warmth of their own, so that they are the warmest thing on the cold stone. */
+function warmed(figure: Group): void {
+  figure.traverse((object) => {
+    const mesh = object as Mesh;
+    const material = mesh.material as MeshStandardMaterial | undefined;
+    if (!material?.isMeshStandardMaterial) return;
+    mesh.material = material.clone();
+    (mesh.material as MeshStandardMaterial).emissive.set('#5a3a1c');
+    (mesh.material as MeshStandardMaterial).emissiveIntensity = 0.7;
+  });
 }
 
 /** The little one's hops when it is glad: short, and well apart. Its cap goes with them. */

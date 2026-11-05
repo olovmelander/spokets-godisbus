@@ -674,14 +674,14 @@ const RIDGE_FRONT: Front = { rows: PROFILE_RIDGE, cuts: false, lip: 0, hang: 0, 
  */
 function frontFor(kind: Ground, own: Ground): Front {
   if (kind === 'moss') return FRONTS.forest;
-  if (kind === 'ridge') return RIDGE_FRONT;
+  if (kind === 'ridge' || kind === 'shoreRidge') return RIDGE_FRONT;
   if (GROUNDS[kind].boards) return FLOOR_FRONT;
   if (GROUNDS[kind].sinks) return ISLAND_FRONT;
   return frontOf(own);
 }
 
 /** What the ground is made of: a place's own, or what a chapter marks a stretch as. */
-export type Ground = 'moss' | 'lawn' | 'sphagnum' | 'shore' | 'granite' | 'ridge' | SurfaceKind;
+export type Ground = 'moss' | 'lawn' | 'sphagnum' | 'shore' | 'shoreRidge' | 'granite' | 'ridge' | SurfaceKind;
 interface GroundLook {
   /** Four tones, from deep to bright. */
   colours: Color[];
@@ -706,6 +706,7 @@ const GROUNDS: Record<Ground, GroundLook> = {
   sphagnum: { colours: tones('#6e3226', '#8f4d2b', '#7d8a36', '#bca94c'), wall: new Color('#2e241c'), shade: new Color('#2a3438'), bump: 1, boards: false, sinks: true },
   // A lake's shore: as the bog's islands stand in water, but in worn grass and sedge, with none of its red.
   shore: { colours: tones('#3e4c2a', '#566234', '#74783e', '#a4985e'), wall: new Color('#2e2a1e'), shade: new Color('#26343a'), bump: 0.8, boards: false, sinks: true },
+  shoreRidge: { colours: tones('#3e4c2a', '#566234', '#74783e', '#a4985e'), wall: new Color('#2e2a1e'), shade: new Color('#26343a'), bump: 1, boards: false, sinks: true },
   // The bog's peat under its walk of planks: the bog's own, a little browner and drier.
   ridge: { colours: tones('#5e3324', '#7a4a2c', '#76803a', '#a89a4a'), wall: new Color('#2e241c'), shade: new Color('#2a3438'), bump: 1, boards: false, sinks: true },
   granite: { colours: tones('#8f939d', '#a4a8b2', '#bcbfc6', '#d6d5d6'), wall: new Color('#8f929a'), shade: new Color('#46527e'), bump: 0.25, boards: false, rock: true },
@@ -717,6 +718,8 @@ const GROUNDS: Record<Ground, GroundLook> = {
   // The village street: pale slabs, dark asphalt with a little grit, and the grate's iron.
   paving: { colours: tones('#9c9a94', '#aeaca5', '#bdbbb3', '#cbc8be'), wall: new Color('#8e8c88'), shade: new Color('#3a3c44'), bump: 0, boards: false },
   asphalt: { colours: tones('#4c4f56', '#575a61', '#62656b', '#70727a'), wall: new Color('#45484e'), shade: new Color('#2a3038'), bump: 0.12, boards: false, grit: true },
+  // A stone in a lake, washed dark by the waves.
+  wetRock: { colours: tones('#343a42', '#3e464e', '#4a525a', '#586068'), wall: new Color('#2c3238'), shade: new Color('#1e2430'), bump: 0.3, boards: false, rock: true },
   // A bathing place's beach: broad tan sand, a little rolled by feet, and darker where it is wet.
   sand: { colours: tones('#d0b488', '#dcc298', '#e6d0a8', '#efdcb8'), wall: new Color('#a88a60'), shade: new Color('#4a3c2c'), bump: 0.22, boards: false },
   // Artificial turf: a pitch's flat, even green, with none of a lawn's roll, and nothing grows in it.
@@ -846,7 +849,7 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
   // Over a bog what is marked wood is a walk of planks (./spang.ts) on a ridge of the bog's own peat.
   const kindAt = (x: number): Ground => {
     const kind = surfaceAt(chapter, x) ?? own;
-    return GROUNDS[own].sinks && GROUNDS[kind].boards ? 'ridge' : kind;
+    return GROUNDS[own].sinks && GROUNDS[kind].boards ? (own === 'shore' ? 'shoreRidge' : 'ridge') : kind;
   };
   /** How high a pool's near shore lies in a front that has one. */
   const shoreOf = (front: Front, pool: { from: number; to: number; y: number }) => (front.shore === 'ground'

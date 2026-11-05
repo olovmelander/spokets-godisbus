@@ -48,7 +48,7 @@ export const PAINTED_SUN: Partial<Record<PlaceId, readonly [number, number]>> = 
   Object.entries(SUNS).map(([id, sun]) => [id, [sun!.x, sun!.y] as const]),
 );
 /** The moon in the storm's eye: cool rays from where it stands in the sky. */
-export const MOON = { shafts: 1.1, colour: '#d6e0ff', cut: [0.2, 0.6] as const };
+export const MOON = { shafts: 0.45, colour: '#d6e0ff', cut: [0.2, 0.6] as const };
 /** Low, Mid and High draw this share of every count (plan §6.5). */
 export const SHARE = { low: 0.3, mid: 0.6, high: 1 } as const;
 /** On Mid and High the cards stand under the god rays, and show less of their own. */
@@ -93,7 +93,9 @@ export function makeAir({ chapter, scene, sun, place, dressing }: ExtraContext):
       ask.at = moon && calm > 0 ? moon.getWorldPosition(moonAt) : null;
       const shape = chapter.place === 'home' ? garden.haze.map((v, i) => i < 2 ? v : v * outdoors) : own.haze;
       // In the storm the haze is the night's, and lighter.
-      ask.hazeShape.set(shape[0]!, shape[1]!, shape[2]! * (storm ? 0.6 : 1), shape[3]! * (storm ? 0.6 : 1));
+      // In the storm's eye the air has cleared: the moon's light should fall on what is there, not on mist.
+      const thin = storm ? 0.6 - 0.45 * calm : 1;
+      ask.hazeShape.set(shape[0]!, shape[1]!, shape[2]! * thin, shape[3]! * thin);
       ground += (heightAt(chapter, camera.position.x) - ground) * (still ? 1 : ease(1.5, dt));
       ask.ground = ground;
       if (mood) {

@@ -311,7 +311,7 @@ export const alven: ChapterData = {
     foam: [
       { from: OUTLET.to, to: GRAVEL.from, y: CURRENT, speed: 1.6 },
       { from: GRAVEL.to, to: BANK.from, y: CURRENT, speed: 1.6 },
-      { from: RAPIDS.from, to: RAPIDS.to, y: RAPID, speed: 2.6 },
+      { from: RAPIDS.from, to: RAPIDS.to, y: RAPID, speed: 6, dense: 12 },
     ],
     buildings: [
       { kind: 'birch', x: 8, z: -12 },
@@ -328,6 +328,8 @@ export const alven: ChapterData = {
   // Far across the lake a moose may come down to the water.
   life: [{ kind: 'moose', from: 128, to: 137 }],
   decor: [
+    // The rapids under the bridge: far too wild, and it should look it.
+    { look: 'whiteWater', at: { x: (RAPIDS.from + RAPIDS.to) / 2, y: RAPID } },
     // The otter on its stone.
     { look: 'otter', at: { x: (OTTER.from + OTTER.to) / 2, y: OTTER.y }, z: 0.1 },
     // Reeds along the banks, and in the shallows by them.
