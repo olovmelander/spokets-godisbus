@@ -431,8 +431,8 @@ export const alven: ChapterData = {
     { id: 'al:bertil-pocket', on: 'beat:al:moa-never', who: 'bertil', line: 'alBertilPocket', read: true },
     { id: 'al:moa-trail', on: 'beat:al:bertil-pocket', who: 'moa', line: 'alMoaTrail', read: true },
     { id: 'al:billsta', on: 'beat:al:moa-trail', who: 'pappa', line: 'alBillsta', read: true },
-    { id: 'al:car', on: 'beat:al:billsta', who: 'mamma', line: 'alCar' },
-    { id: 'al:window', on: 'beat:al:car', who: 'elof', line: 'alWindow' },
+    { id: 'al:car', on: 'beat:al:billsta', who: 'mamma', line: 'alCar', read: true },
+    { id: 'al:window', on: 'beat:al:car', who: 'elof', line: 'alWindow', read: true },
     { id: 'al:klonk-end', on: 'beat:al:window', who: 'spoket', line: 'alKlonkEnd' },
   ],
   cameras: [

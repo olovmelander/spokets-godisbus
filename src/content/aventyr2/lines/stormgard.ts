@@ -15,18 +15,18 @@ export const words: ChapterWords = {
     sgKlonkKlonk: 'Klonk, klonk!',
     // 3. Stormbyarna
     sgPots: 'Stormbyar! Vi gömmer oss bakom krukorna.',
-    sgFlowerpot: 'Klonk! Vinden tog dig ner i krukan!',
+    sgFlowerpot: 'Klonk! Där ska ju blommorna bo!',
     // 4. Regntunnan
     sgDitch: 'Diket är alldeles för brett!',
     sgLid: 'Locket flyter upp! Det blev en bro!',
     // 5. Bertils stövelbåt
     sgBertilHere: 'För djupt, lillebror! Ropa på mig.',
     sgBertilBoot: 'Min stövel blir din båt. Kliv i!',
-    sgBertilHeja: 'Heja! Stöveln seglar som en båt!',
-    sgThanks: 'Tack, Bertil! Bästa båten i stormen!',
+    sgBertilHeja: 'Första gången min stövel kör själv!',
+    sgThanks: 'Tack! Jag lämnar tillbaka den i hamn.',
     // 6. the playhouse
     sgPlayhouse: 'Gamla trägubben! Uppe på lekstugan!',
-    sgLonely: 'Han ser så ensam ut, gamla trägubben.',
+    sgLonely: 'En bild av gamla trägubben. Helt ensam.',
     sgWhy: 'Varför väntar han aldrig på oss?',
     sgLookout: 'Jag ser hela trädgården härifrån!',
     // 7. the hedge
@@ -47,7 +47,7 @@ export const words: ChapterWords = {
     sgBoard: { purpose: 'Kliv i Bertils stövelbåt.', recap: 'Bertil har lagt sin stövel på vattnet. Jag väljer när vi åker.' },
     sgBoot: { purpose: 'Åk över i Bertils stövel.', recap: 'Bertils stövel bär mig över den översvämmade gräsmattan.' },
     sgPlayhouse: { purpose: 'Klättra upp på lekstugans tak.', recap: 'Gamla trägubben stod på lekstugan. Godisspåret går upp dit.' },
-    sgLonely: { purpose: 'Följ spåret mot häcken.', recap: 'Gamla trägubben såg så ensam ut. Varför väntar han aldrig på oss?' },
+    sgLonely: { purpose: 'Följ spåret mot häcken.', recap: 'På taket fanns en tankebild av gamla trägubben, alldeles ensam. Varför väntar han aldrig på oss?' },
     sgHedge: { purpose: 'Följ lillgubben mot skogen.', recap: 'I blixtens sken såg jag lillgubben. Han flög över häcken mot skogen.' },
   },
   helpers: {

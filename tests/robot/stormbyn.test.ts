@@ -15,6 +15,7 @@ import { BERRY_HALF, CANDY_MAGNET, ELOF_HEIGHT, FALL_LIMIT, GHOST_CLEARANCE, JUM
 import { Sim } from '../../src/sim/sim';
 import type { PlayerState } from '../../src/sim/types';
 import { decide, heightAt, playThrough } from './robot';
+import { jump, run, runPast, walkTo } from '../sim/drive';
 
 /**
  * Kapitel 3, Byn i stormen (docs/aventyr-2.md): its puzzles and its family help, played by the robot, and the
@@ -183,17 +184,36 @@ describe('Kapitel 3, Byn i stormen', () => {
     expect(game.sim.flags.has('umbrella')).toBe(false);
   });
 
-  it("finds the little one's cap in the gutter by coming close, and then knows where the water goes", () => {
+  it("finds and keeps the little one's cap, and follows the candy towards Olympia", () => {
     const cap = stormbyn.spots!.find((s) => s.id === 'cap')!;
     expect(cap).toMatchObject({ look: 'tiny-cap', touch: true });
     expect(heightAt(stormbyn, cap.at.x)).toBe(cap.at.y);
     const lines = stormbyn.beats!.filter((beat) => beat.on === 'cap');
-    expect(lines.map((beat) => sv.lines[beat.line as keyof typeof sv.lines])).toEqual(['Lillgubbens mössa!', 'Vinden tar honom mot fotbollsplanen!', 'Klonk, klonk!']);
+    expect(lines.map((beat) => sv.lines[beat.line as keyof typeof sv.lines])).toEqual(['Lillgubbens mössa! Jag tar med den.', 'Godisspåret går mot fotbollsplanen!', 'Klonk, klonk!']);
     expect(lines[1]!.read).toBe(true);
     // Klonk thinks of the little one once the cap is found.
     const thought = stormbyn.ghost!.find((perch) => perch.thought)!;
     expect(thought.thought).toEqual({ picture: 'small-figure', after: 'cap' });
     expect(thought.at.x).toBeGreaterThan(cap.at.x + 4);
+  });
+
+  it('cannot leave without the cap, and can go back for it from a saved final checkpoint', () => {
+    // This is also an old save that passed the touch spot by jumping: the final candy is ahead of the cap.
+    const sim = new Sim(stormbyn, { gentle: true }, { checkpoint: 8, flags: ['umbrella'] });
+    expect(runPast(sim, stormbyn.goalX + 0.1)).toBe(true);
+    expect(sim.flags.has('cap')).toBe(false);
+    expect(sim.flags.has('goal')).toBe(false);
+    expect(storyContext('stormbyn', sim.flags, sim.curr)?.purpose).toBe(words.purposes!.sbFindCap!.purpose);
+    // The street remains reachable. Jump back up the three steps and walk to the cap.
+    for (let attempt = 0; attempt < 18 && sim.curr.x > 140; attempt++) {
+      run(sim, 0.35, { x: -1 });
+      jump(sim, -1);
+    }
+    expect(walkTo(sim, 139.4)).toBe(true);
+    expect(sim.flags.has('cap')).toBe(true);
+    expect(storyContext('stormbyn', sim.flags, sim.curr)?.purpose).toBe(words.purposes!.sbLake!.purpose);
+    expect(runPast(sim, stormbyn.goalX + 0.1)).toBe(true);
+    expect(sim.flags.has('goal')).toBe(true);
   });
 
   it('resumes after the umbrella and reaches the shore without the street over again', () => {
@@ -335,7 +355,7 @@ describe('Kapitel 3, Byn i stormen', () => {
     }
     const moa = stormbyn.beats!.filter((beat) => beat.who === 'moa').map((beat) => words.lines[beat.line]!);
     expect(moa.length).toBeGreaterThanOrEqual(2);
-    expect(moa.some((line) => line.includes('lillebror'))).toBe(true);
+    expect(moa.some((line) => /lillebror/i.test(line))).toBe(true);
     expect(stormbyn.beats!.some((beat) => beat.who === 'spoket')).toBe(true);
     for (const key of Object.keys(words.verbs ?? {})) expect(key).toMatch(/^sb/);
   });

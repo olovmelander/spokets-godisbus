@@ -32,7 +32,7 @@ const SAID = [
   'sjon:broken', 'sjon:family:mamma', 'sjon:boat-ready', 'sjon:steady', 'sjon:thanks',
   'sjon:near', 'sjon:tower', 'sjon:lookout',
   'sjon:gap', 'sjon:stone-idea', 'sjon:plop', 'sjon:plop-klonk', 'sjon:bark-idea', 'sjon:raft', 'sjon:klonk-raft',
-  'sjon:outlet', 'sjon:log', 'sjon:floated', 'sjon:car', 'sjon:klonk-cheer',
+  'sjon:outlet', 'sjon:log', 'sjon:floated', 'sjon:car', 'sjon:follow', 'sjon:klonk-cheer',
 ];
 /** The big candies by name: their places in flarken.checkpoints. */
 const CP = { swings: 1, court: 2, beach: 3, sand: 4, island: 5, jetty: 6, posts: 7, tower: 8, far: 9 };
@@ -526,7 +526,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       const hers = flarken.beats!.filter((b) => b.who === 'mamma').map((b) => b.line);
       expect(hers).toEqual(['sjMamma', 'sjBoatReady', 'sjSteady', 'sjNear', 'sjCar']);
       for (const line of hers) expect(lines[line]).toBeTruthy();
-      expect(lines.sjCar).toBe('Vi följer ån med bilen.');
+      expect(lines.sjCar).toBe('Vi tar bilen längs ån. Vi är nära dig.');
       expect(flarken.coda).toBe('mamma');
       // Her lantern glows in the boat once she has come.
       expect(flarken.storm!.glows!.some((g) => g.after === 'sjon:boat' && g.at.x > breakGap.from && g.at.x < breakGap.to)).toBe(true);

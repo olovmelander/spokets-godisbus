@@ -15,18 +15,18 @@ export const words: ChapterWords = {
     // 3. the boughs
     // 4. the owl
     ssOwlStuck: 'En uggla! En pinne stänger in den.',
-    ssOwlFree: 'Fri! Ugglan blinkar som tack.',
+    ssOwlFree: 'Så! Nu kommer du ut, lilla uggla.',
     // 5. the windthrow
     ssWindthrow: 'Stormen fällde granar som tändstickor!',
-    ssOwlWaits: 'Ugglan väntar! Den kan bära mig över.',
-    ssOwlFly: 'Hu-hu! Vi flyger över vindfällen!',
+    ssOwlWaits: 'Du väntar på oss! Får jag åka med?',
+    ssOwlFly: 'Hu-hu! Vilken fjädermjuk skjuts!',
     // 6. Pappa's flashlight
     ssPappaHere: 'Elof? Jag hör dig! Var är du?',
     ssTooWide: 'För brett att hoppa. Och så mörkt!',
-    ssBeam: 'Jag lyser med ficklampan …',
-    ssStiff: 'Klonk blev stel som en planka!',
+    ssBeam: 'Där är Klonk! Nu ser jag honom.',
+    ssStiff: 'Pappa ser dig! Då blir du ju stel!',
     ssTiptoe: 'Förlåt, Klonk! Jag går lätt, lätt.',
-    ssPappaAway: 'Nu lyser jag på stigen igen.',
+    ssPappaAway: 'Jag tittar bort mot stigen nu.',
     ssAwake: 'Klonk!',
     ssThanks: 'Tack, Klonk! Du är världens bästa bro.',
     // 7. the old one's memory
@@ -55,7 +55,7 @@ export const words: ChapterWords = {
     ssOwlBoard: { purpose: 'Flyg med ugglan över klyftan.', recap: 'Klyftan är för bred att hoppa över. Ugglan väntar på mig.' },
     ssOwlRide: { purpose: 'Flyg med ugglan.', recap: 'Ugglan bär mig högt över vindfällen.' },
     ssPappa: { purpose: 'Ropa på Pappa vid klyftan.', recap: 'Här är för brett att hoppa, och så mörkt. Pappa har ficklampan.' },
-    ssPlank: { purpose: 'Gå över bron. Det är Klonk!', recap: 'Pappa lyste på Klonk, och Klonk blev stel som en planka.' },
+    ssPlank: { purpose: 'Gå över bron. Det är Klonk!', recap: 'Pappa fick syn på Klonk i lampskenet. När en vuxen ser honom blir han alldeles stel.' },
     ssFollow: { purpose: 'Följ Klonk vidare in i skogen.', recap: 'Pappa tittade bort, och då vaknade Klonk igen.' },
     ssMemory: { purpose: 'Följ spåret efter gamla trägubben.', recap: 'Gamla trägubben vet hur det är att vara ensam i mörkret. Därför skyndar han efter lillgubben.' },
     ssJay: { purpose: 'Ge lavskrikan ett lingon.', recap: 'Lavskrikan från förra äventyret gömmer sig för stormen.' },

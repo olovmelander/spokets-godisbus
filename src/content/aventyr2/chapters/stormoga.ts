@@ -232,8 +232,8 @@ export const stormoga: ChapterData = {
     { id: 'owl', look: 'owlLanding', at: { x: OWL.from.x, y: 0 }, verb: 'take', word: 'soBoardOwl', needs: 'owl:ready', ride: 'owl' },
     // The storm's eye opens as he steps onto the stone.
     { id: 'eye', at: { x: EYE, y: 0.6 }, verb: 'take', touch: true },
-    { id: 'gift', look: 'gold', at: { x: FIGURES - 1, y: 0.6 }, verb: 'take', word: 'soTakeGold', needs: 'scene:motet' },
-    { id: 'taste', at: { x: FIGURES + 0.6, y: 0.6 }, verb: 'take', word: 'taste', needs: 'beat:soShare' },
+    { id: 'gift', look: 'gold', at: { x: FIGURES - 1, y: 0.6 }, verb: 'take', word: 'soTakeGold', needs: 'scene:motet', after: 'scene:motet' },
+    { id: 'taste', at: { x: FIGURES + 0.6, y: 0.6 }, verb: 'take', word: 'taste', needs: 'beat:soMagic' },
     { id: 'home', at: { x: HOME.from.x, y: 0.6 }, verb: 'take', word: 'goHome', needs: 'scene:stor', ride: 'home' },
   ],
   later: [{ flag: 'owl:ready', after: 'owl:call', seconds: 1.4, hold: true }],
@@ -273,6 +273,7 @@ export const stormoga: ChapterData = {
     { id: 'soGold', on: 'gift', who: 'elof', line: 'soGoldLine', read: true },
     { id: 'soLast', on: 'gift', who: 'elof', line: 'soLastOne', read: true },
     { id: 'soShare', on: 'gift', who: 'elof', line: 'soShareLine', read: true },
+    { id: 'soMagic', on: 'beat:soShare', until: 'taste', who: 'elof', line: 'soMagicLine', read: true },
   ],
   cameras: [
     // Wide enough for their faces, high over him.

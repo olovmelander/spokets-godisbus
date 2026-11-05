@@ -11,7 +11,7 @@ export const words: ChapterWords = {
     sjArrive: 'Flärken! Badplatsen är alldeles tom.',
     // 2. the picnic table and the volleyball net
     // 3. the changing rooms
-    sjDoor: 'Dörren smäller i vinden. Pang!',
+    sjDoor: 'Pang! Dörren vill visst också vara med.',
     // 4. the beach stones, the reeds and the reed mats
     sjMats: 'Gungfly! Det sjunker om jag står still.',
     sjKlonkWood: 'Lätt för dig, Klonk. Trä flyter ju!',
@@ -22,18 +22,18 @@ export const words: ChapterWords = {
     sjOldOne: 'Spring, gamla trägubben! Vi kommer!',
     // 6. Mamma's boat
     sjBroken: 'Bryggan är trasig! Det är för långt.',
-    sjMamma: 'Elof! Jag har en roddbåt här!',
+    sjMamma: 'Elof! Jag hittade en roddbåt!',
     sjBoatReady: 'Jag håller båten still. Gå på kanten.',
     sjSteady: 'Lugnt och fint. Jag släpper inte.',
-    sjThanks: 'Tack, Mamma! Du är bäst.',
+    sjThanks: 'Tack! Din båt blev ju en bro!',
     // 7. the diving tower
     sjTower: 'Hopptornet! Där uppe ser man allt.',
-    sjNear: 'Jag ror bredvid dig hela vägen.',
+    sjNear: 'Jag väntar här. Ropa om du behöver mig.',
     sjLookout: 'Där är lillgubben! Där ån börjar!',
     // 8. the bark raft
     sjGap: 'Plankorna är borta. Vad gör jag nu?',
     sjStoneIdea: 'En sten! Den kan ligga i luckan.',
-    sjPlop: 'Plopp! Stenen sjönk.',
+    sjPlop: 'Plopp. Bra sten. Dålig båt.',
     sjPlopKlonk: 'Klonk!',
     sjBarkIdea: 'Klonk flyter. Bark är ju trä!',
     sjRaft: 'En barkflotte! Nu kan jag hoppa.',
@@ -42,7 +42,8 @@ export const words: ChapterWords = {
     sjOutlet: 'Åh nej! Ån tar med sig lillgubben!',
     sjLog: 'Gamla trägubben hoppar på en stock!',
     sjFloated: 'Trä flyter! Ån bär dem båda.',
-    sjCar: 'Vi följer ån med bilen.',
+    sjCar: 'Vi tar bilen längs ån. Vi är nära dig.',
+    sjFollow: 'Klonk och jag följer godiset längs ån!',
     sjKlonkCheer: 'Klonk! Klonk! Klonk!',
   },
   purposes: {
@@ -55,17 +56,18 @@ export const words: ChapterWords = {
     sjonJetty: { purpose: 'Göm dig bakom stolparna när vågen kommer.', recap: 'Stormen slår vågor över bryggan. Bakom stolparna är det lä.' },
     sjonMamma: { purpose: 'Ropa på Mamma vid bryggan.', recap: 'Bryggan har gått av. Mamma har roddbåten alldeles nära.' },
     sjonBoat: { purpose: 'Gå på båtkanten över vattnet.', recap: 'Mamma håller båten tätt intill bryggan. Hon släpper inte.' },
-    sjonOut: { purpose: 'Följ godiset ut till hopptornet.', recap: 'Mamma ror bredvid mig. Gamla trägubben lämnar godis hela vägen ut.' },
-    sjonTower: { purpose: 'Klättra uppför hopptornets stege.', recap: 'Från hopptornet ser jag ut över hela sjön.' },
+    sjonOut: { purpose: 'Följ godiset ut till hopptornet.', recap: 'Mamma väntar vid bryggan. Gamla trägubben lämnar godis hela vägen ut.' },
+    sjonTower: { purpose: 'Klättra uppför hopptornets stege.', recap: 'Lillgubben blåste ut över sjön. Från tornet kan jag se vart han tog vägen.' },
     sjonDive: { purpose: 'Spring och hoppa ner på bryggan.', recap: 'Blixten visade lillgubben långt ute, där ån börjar.' },
     sjonGap: { purpose: 'Hitta något som kan ligga i luckan.', recap: 'Plankorna är borta, och luckan är för bred att hoppa över.' },
     sjonBark: { purpose: 'Stenen sjönk. Vad flyter?', recap: 'Plankorna är borta. Stenen sjönk i luckan.' },
     sjonRaft: { purpose: 'Hoppa över på barkflotten.', recap: 'Barken flyter i luckan. Den håller för mig.' },
     sjonEnd: { purpose: 'Gå ut till bryggans ände.', recap: 'Barkflotten bar mig. Snart är jag längst ut på bryggan.' },
-    sjonRiver: { purpose: 'Följ ån! Familjen tar bilen.', recap: 'Ån bär lillgubben. Gamla trägubben följer efter på en stock.' },
+    sjonRiver: { purpose: 'Följ godisspåret längs ån.', recap: 'Ån bär trägubbarna söderut. Familjen kör längs ån medan Klonk och jag följer spåret.' },
   },
   helpers: {
     sjonFamily: 'Familjen letar längs stranden med sina lampor.',
-    sjonMamma: 'Mamma ror bredvid mig och håller båten still.',
+    sjonMamma: 'Mamma väntar i roddbåten vid bryggan.',
+    sjonRoad: 'Familjen följer ån med bilen och håller sig nära.',
   },
 };

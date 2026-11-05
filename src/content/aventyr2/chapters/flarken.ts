@@ -519,7 +519,8 @@ export const flarken: ChapterData = {
     { id: 'sjon:log', on: 'beat:sjon:outlet', who: 'elof', line: 'sjLog' },
     { id: 'sjon:floated', on: 'beat:sjon:log', who: 'elof', line: 'sjFloated' },
     { id: 'sjon:car', on: 'beat:sjon:floated', who: 'mamma', line: 'sjCar' },
-    { id: 'sjon:klonk-cheer', on: 'beat:sjon:car', who: 'spoket', line: 'sjKlonkCheer' },
+    { id: 'sjon:follow', on: 'beat:sjon:car', who: 'elof', line: 'sjFollow', read: true },
+    { id: 'sjon:klonk-cheer', on: 'beat:sjon:follow', who: 'spoket', line: 'sjKlonkCheer' },
   ],
   later: [
     // Mamma rows up and lays the boat along the gap: he watches until it is still.
@@ -663,7 +664,7 @@ export const flarken: ChapterData = {
  */
 export const context: Chooser = (has, player) => {
   const at = player.x;
-  if (has('beat:sjon:outlet')) return ['sjonRiver', 'sjonMamma', 'water'];
+  if (has('beat:sjon:car')) return ['sjonRiver', 'sjonRoad', 'water'];
   if (has(`placed:${BARK.id}`)) return [at < FAR.from ? 'sjonRaft' : 'sjonEnd', 'sjonMamma', 'water'];
   if (has(`placed:${STONE.id}`)) return at >= TOWER.to ? ['sjonBark', 'sjonMamma', 'water'] : ['sjonTower', 'sjonMamma'];
   if (at >= TOWER.to) return ['sjonGap', 'sjonMamma', 'water'];

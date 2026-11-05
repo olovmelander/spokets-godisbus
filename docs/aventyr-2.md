@@ -47,10 +47,10 @@ del"). The first adventure (prologue, Gården, Granskogen, Myren, Berget, the fi
 - The family helps as kind giants, one at each big crossing, each with something of their own.
 - No surnames, no address, no house number, no school, no logotypes (the one exception is the name Olympia in white
   letters on the red hall, which Olov asked for). Real places nearby may be named, but Äventyr
-  2 names only "byn" and "sjön".
+  2 names its public places too: Olympia, Flärken and Billsta.
 - Nothing frightening chases Elof. The storm is wild, loud and beautiful, never a monster. The family is out in
   it with him, in raincoats, with lamps.
-- Every line is at most about 40 characters and is in `src/content/aventyr2/sv.ts`.
+- Every line is at most 42 characters and is authored in `src/content/aventyr2/lines/`, merged by `sv.ts`.
 
 ## Characters new to Äventyr 2
 
@@ -93,8 +93,8 @@ flash shows both figures far below on a stone in the narrow. Lightning shows the
 again.
 
 **Mormor and morfar.** Olov asked for them and for their home on 4 November. They are "Mormor" and "Morfar" only:
-no names, no likeness (plain stand-in figures), and their house is a loose interpretation in plain shapes of the
-picture Olov sent: a white house with two gables and a red barn beside it, a lawn and birches. No address, house
+no personal names. The public code has plain stand-in figures; the approved models and house come from the private
+pack described in `HANDOVER.md`. The house is white with two gables and a red barn beside it, a lawn and birches. No address, house
 number, sign or coordinates appear anywhere, the house is never placed on a map, and the picture is never
 committed. Anything comes out again if they or Elof's parents ask.
 
@@ -218,15 +218,17 @@ Själevadsfjärden.
 
 ### Finalen: Stormens öga (in the narrow at Billsta, Själevadsfjärden beyond)
 
-1. On a jetty below Billaberget (not mormor and morfar's: their house is up by the road) the storm has put out the family's
-   lamps. They call for him over the water and never see him at their feet; only mormor knows. He lights their lamps
+1. On a jetty below Billaberget (not mormor and morfar's: their house is up by the road) the wind has knocked down the family's
+   lamps and they have gone out. They call for him over the water and cannot hear his voice at their feet; mormor points out
+   the lamps. He lights them
    one by one, and each of them feels that he is near (Moa: "Det är Elof. Jag vet att det är Elof."). The row of light
    goes out over the water, and the owl comes to it and flies Elof out over the waves. Far down the lake, Själevad's
    white church stands in the flashes.
 2. **The storm's eye:** the wind drops, the clouds part, stars and the moon. On the stone the old trägubbe holds
    the little one. They are cold and still, and then they see him.
-3. **The golden sweet:** the old one gives Elof a geléhallon in gold paper it saved for him. *Smaka*: he grows,
-   standing in the shallows with both figures in his hands.
+3. **The golden sweet:** only after the meeting does the old one reveal the geléhallon in gold paper it saved for him.
+   Elof recognises the glitter and remembers that this magic makes him big. *Smaka*: he grows,
+   with both figures and the little one's returned cap carried in his hands through the walk home.
 4. The family's lamps, and mormor's lantern, on the shore. Morfar: "Vi följer med hem och äter frukost!" They all
    drive home, and mormor and morfar stay for the Sunday breakfast.
 

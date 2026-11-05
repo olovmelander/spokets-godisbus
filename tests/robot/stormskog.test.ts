@@ -225,14 +225,24 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
     });
 
     it('Pappa speaks in short lines: the beam, and Klonk stiff as a plank', () => {
-      expect(words.lines.ssBeam).toBe('Jag lyser med ficklampan …');
-      expect(words.lines.ssStiff).toBe('Klonk blev stel som en planka!');
+      expect(words.lines.ssBeam).toBe('Där är Klonk! Nu ser jag honom.');
+      expect(words.lines.ssStiff).toBe('Pappa ser dig! Då blir du ju stel!');
       const pappa = (stormskog.beats ?? []).filter((beat) => beat.who === 'pappa');
       expect(pappa.map((beat) => beat.line)).toEqual(['ssPappaHere', 'ssBeam', 'ssPappaAway']);
     });
   });
 
   describe('Gamla trägubbens minne', () => {
+    it('recovers the old figure\'s motive when a save beyond the hollow lacks its reading receipt', () => {
+      // The next big candy can be a return point even if the thought has not yet reached the reader.
+      const sim = new Sim(stormskog, {}, { checkpoint: CP.jay, flags: ['ss:frozen'] });
+      run(sim, 0.1);
+      expect(sim.flags.has('ss:hollow')).toBe(true);
+      expect(sim.said.filter((id) => ['ss:alone', 'ss:why'].includes(id))).toEqual([
+        'ss:alone', 'ss:why',
+      ]);
+    });
+
     it('at the dark hollow Klonk waits with the old one\'s thought, and the picture stays once he has seen it', () => {
       const perch = stormskog.ghost!.find((p) => p.until === 'ss:hollow')!;
       expect(perch.thought?.picture).toBe('pine-crack');

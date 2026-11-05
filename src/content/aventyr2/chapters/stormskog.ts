@@ -218,6 +218,9 @@ export const stormskog: ChapterData = {
   rides: [{ id: 'owl', look: 'owl', ...OWL }],
   // Pappa's beam: he stands and watches the light find Klonk, a moment only.
   later: [{ flag: 'ss:frozen', after: 'ss:beam', seconds: 1.4, hold: true, within: [126, 139] }],
+  // The memory also reaches a child who passes the hollow or resumes beyond it without its receipt:
+  // keep its picture and unlock the explanation, just as touching the hollow does on the walking route.
+  sets: [{ flag: 'ss:hollow', when: ['beat:ss:hollow'] }],
   jumps: [
     // Up the ravine's far side, step by step.
     jump({ x: 39.1, y: 0 }, { x: 40, y: 0.8 }),
@@ -291,7 +294,7 @@ export const stormskog: ChapterData = {
     { id: 'ss:thanks', at: 141.6, needs: 'ss:frozen', who: 'elof', line: 'ssThanks' },
     // 7. the old one's memory: the heart of the chapter, read slowly
     { id: 'ss:hollow-seen', at: 151, who: 'elof', line: 'ssHollowSeen' },
-    { id: 'ss:hollow', on: 'ss:hollow', who: 'spoket', line: 'ssHollowKlonk' },
+    { id: 'ss:hollow', at: 159, on: 'ss:hollow', who: 'spoket', line: 'ssHollowKlonk' },
     { id: 'ss:alone', on: 'ss:hollow', who: 'elof', line: 'ssAlone', read: true },
     { id: 'ss:why', on: 'ss:hollow', who: 'elof', line: 'ssWhy', read: true },
     { id: 'ss:both', at: 161.5, needs: 'ss:hollow', who: 'elof', line: 'ssBoth' },

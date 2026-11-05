@@ -117,13 +117,14 @@ const SCENES: SceneDef[] = [
     id: 'klonkstar',
     on: 'scene:fonstret',
     until: 'star',
-    seconds: 8.4,
+    seconds: 10.6,
     hold: true,
     cues: [{ at: 4.6, flag: 'star:out' }],
     sounds: [{ at: 1.2, sound: 'blink' }, { at: 4.5, sound: 'blink' }],
     lines: [
       { at: 5.4, who: 'spoket', line: 'skKlonk' },
       { at: 7.2, who: 'elof', line: 'skOneStar' },
+      { at: 9.2, who: 'elof', line: 'skStarPlan' },
     ],
     stage: {
       shots: [
@@ -339,13 +340,15 @@ export const stormkvall: ChapterData = {
   ],
   beats: [
     { id: 'skLampThanks', on: 'lamp:give', who: 'pappa', line: 'skLampThanks', read: true },
+    { id: 'skShelf', on: 'beat:skLampThanks', until: 'goodnight', who: 'pappa', line: 'skShelf', read: true },
+    { id: 'skMyCarving', on: 'beat:skShelf', until: 'goodnight', who: 'elof', line: 'skMyCarving', read: true },
     // The first candy on the floor, where the old one leapt: a trail.
     { id: 'skTrail', at: 10.6, needs: 'scene:tillsammans', who: 'elof', line: 'skTrail', read: true },
     // A handful is not for ever: this is what runs out at the end of Älven.
     { id: 'skHandful', on: 'beat:skTrail', who: 'moa', line: 'skHandful', read: true },
     { id: 'skEnough', on: 'beat:skHandful', who: 'bertil', line: 'skEnough', read: true },
-    { id: 'skSill', at: 27.6, who: 'spoket', line: 'skKlonkHop' },
-    { id: 'skRain', at: 39.4, who: 'elof', line: 'skRainLine' },
+    { id: 'skSill', at: 27.6, needs: 'scene:tillsammans', who: 'spoket', line: 'skKlonkHop' },
+    { id: 'skRain', at: 39.4, needs: 'scene:tillsammans', who: 'elof', line: 'skRainLine' },
     // On the deck, the family's promises, as he passes them.
     { id: 'skNear', at: 44, needs: 'scene:tillsammans', who: 'mamma', line: 'nearYou', read: true },
     { id: 'skFollow', at: 48, needs: 'scene:tillsammans', who: 'pappa', line: 'followTrail', read: true },

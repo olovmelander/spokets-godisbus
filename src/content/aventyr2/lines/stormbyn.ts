@@ -7,19 +7,19 @@ export const words: ChapterWords = {
     sbDark: 'Hela byn är mörk. Strömmen är borta!',
     sbKlonkHere: 'Klonk!',
     sbAwning: 'Markisen studsar som en studsmatta!',
-    sbCandle: 'Någon är vaken! Ett ljus i fönstret.',
-    sbCandleTwo: 'Skomakaren tände också ett ljus!',
-    sbCandleThree: 'Hela gatan hjälper mig att se.',
+    sbCandle: 'Någon hörde mig! Tack för ljuset.',
+    sbCandleTwo: 'Ett ljus hos skomakaren. Tack!',
+    sbCandleThree: 'Bageriet lyser. Nu ser jag trappan!',
     // Rännstensforsen, and the grate.
     sbRiver: 'Rännstenen har blivit en fors!',
     // The high wall, and Moa's umbrella. She calls him lillebror.
     sbMoaHere: 'Lillebror! Jag står här nere med lampan.',
-    sbMoaHold: 'Håll i mitt paraply. Jag håller i dig!',
+    sbMoaHold: 'Håll i paraplyet. Jag är här nere!',
     sbFloat: 'Jag svävar som ett maskrosfrö!',
-    sbMoaLanded: 'Snyggt landat, lillebror!',
+    sbMoaLanded: 'Där kom mitt minsta maskrosfrö!',
     // The swinging sign, and the little one's cap in the gutter.
-    sbCap: 'Lillgubbens mössa!',
-    sbToLake: 'Vinden tar honom mot fotbollsplanen!',
+    sbCap: 'Lillgubbens mössa! Jag tar med den.',
+    sbToLake: 'Godisspåret går mot fotbollsplanen!',
     sbKlonkCap: 'Klonk, klonk!',
     // The awnings pour, and the steps go down to the shore.
     sbShore: 'Håll ut, lillgubben! Vi kommer!',
@@ -32,7 +32,8 @@ export const words: ChapterWords = {
     sbCallMoa: { purpose: 'Gå upp på muren och ropa på Moa.', recap: 'Korsningen är översvämmad. Moa har sitt paraply med sig.' },
     sbBoard: { purpose: 'Håll i Moas paraply och sväva över.', recap: 'Moa håller ut sitt paraply åt mig över korsningen.' },
     sbGutter: { purpose: 'Följ godisspåret längs rännstenen.', recap: 'Moas paraply bar mig över den översvämmade korsningen.' },
-    sbLake: { purpose: 'Gå nerför trappan mot Olympia.', recap: 'Lillgubbens mössa låg i rännstenen. Vinden blåser honom mot fotbollsplanen.' },
+    sbFindCap: { purpose: 'Hämta mössan vid skomakaren.', recap: 'Lillgubbens mössa ligger vid rännstenen. Jag tar med den till honom.' },
+    sbLake: { purpose: 'Gå nerför trappan mot Olympia.', recap: 'Jag har lillgubbens mössa. Gamla trägubbens godisspår fortsätter mot fotbollsplanen.' },
   },
   helpers: {
     sbFamily: 'Familjen letar på gatan med sina lampor.',

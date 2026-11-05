@@ -70,8 +70,39 @@ try {
     return !hud.reading() && !hud.speaking() && document.getElementById('bubble').hidden;
   });
   assert.ok(cleared, 'checkpoint restart clears an interrupted reading');
+  // Story beats are queued together in one simulation step. A later reading line must not silently
+  // replace the clue or answer immediately before it, even though both appear in the robot's transcript.
+  const adventure = await page.evaluate(async () => {
+    const { AVENTYR2 } = await import('/src/content/aventyr2/aventyr2.ts');
+    const { sv } = await import('/src/content/sv.ts');
+    const { hud } = window.dialogue;
+    const exchanges = [
+      ['stormbyn', ['sbCap', 'sbToLake']],
+      ['billsta', ['bi:open', 'bi:lookout', 'bi:way', 'bi:onward']],
+      ['alven', ['al:billsta', 'al:car', 'al:window']],
+      ['stormoga', ['soGold', 'soLast', 'soShare', 'soMagic']],
+      ['morgonen', ['moCup', 'moKnew', 'moAnswer']],
+    ];
+    return exchanges.map(([id, ids]) => {
+      const chapter = AVENTYR2.find((chapter) => chapter.id === id);
+      const beats = ids.map((id) => chapter.beats.find((beat) => beat.id === id));
+      hud.clear();
+      for (const beat of beats) hud.say(beat.who, beat.line, false, !!beat.read);
+      hud.tick(0);
+      const shown = [];
+      for (let i = 0; i < beats.length + 1 && hud.reading(); i++) {
+        shown.push(document.getElementById('bubbleLine').textContent);
+        hud.tick(.3); hud.advance(); hud.tick(0);
+      }
+      return { id, shown, expected: beats.map((beat) => sv.lines[beat.line]), finished: !hud.speaking() };
+    });
+  });
+  for (const exchange of adventure) {
+    assert.deepEqual(exchange.shown, exchange.expected, `${exchange.id}: every line in the exchange reaches the reader in order`);
+    assert.ok(exchange.finished, `${exchange.id}: the exchange finishes after one press per line`);
+  }
   assert.deepEqual(errors, []);
-  console.log('Dialogue reading: queue, input guard, touch, interruption and five large-text layouts passed.');
+  console.log('Dialogue reading: queue, input guard, touch, interruption, five large-text layouts and five Adventure 2 exchanges passed.');
 } finally {
   await browser?.close();
   await server.close();

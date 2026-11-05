@@ -40,7 +40,7 @@ const SCENES: SceneDef[] = [
       shots: [{ at: 0, x: 8, y: 3.6, height: 7.6, width: 12, move: 0.01 }],
       actors: {
         mamma: [{ at: 0, x: 6.2, y: 0, z: -2.2, face: 0.3, move: 0.01, act: 'sip', holdsLeft: 'mug' }, { at: 1.4, act: 'wave' }],
-        bertil: [{ at: 0, x: 9.6, y: 0, z: -3.2, face: 0.3, move: 0.01, act: 'stand' }, { at: 3.6, act: 'point', aim: { x: WINDOW, y: 6, z: -9 } }],
+        bertil: [{ at: 0, x: 9.6, y: 0, z: -3.2, face: 0.3, move: 0.01, act: 'stand' }, { at: 3.6, act: 'shrug' }],
         moa: [{ at: 0, x: 11.4, y: 0, z: -1.4, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }, { at: 5.8, act: 'shrug' }],
         pappa: [{ at: 0, x: 13.6, y: 0, z: -2.6, face: 0.45, move: 0.01, act: 'sip', holdsLeft: 'mug' }, { at: 7.8, act: 'point', aim: { x: FIRST.x, y: FIRST.y, z: FIRST.z } }],
         ghost: [{ at: 0, x: 3.2, y: 0, z: 0, face: 0, move: 0.01, act: 'hop' }],
@@ -80,7 +80,7 @@ export const morgonen: ChapterData = {
     { id: 'shelf:old', at: { x: FIRST.x + 0.2, y: 0 }, verb: 'give', word: 'moPutOld', needs: 'scene:frukost' },
     { id: 'shelf:small', at: { x: FIRST.x + 1.4, y: 0 }, verb: 'give', word: 'moPutSmall', needs: 'shelf:old' },
     { id: 'latch', at: { x: WINDOW + 0.6, y: 0 }, verb: 'turn', word: 'moLatch', needs: 'shelf:small' },
-    { id: 'cocoa', look: 'candle', at: { x: 44, y: 0 }, verb: 'take', word: 'moCocoa', needs: 'beat:moName' },
+    { id: 'cocoa', look: 'candle', at: { x: 44, y: 0 }, verb: 'take', word: 'moCocoa', needs: 'beat:moWelcome' },
   ],
   decor: [
     // What the night left in the room: wet raincoats and boots, leaves on the floor, mormor's lantern put out.
@@ -88,6 +88,7 @@ export const morgonen: ChapterData = {
     // The two back on the shelf, first in the row: placed by his own hands.
     { look: 'tragubbe', at: { x: FIRST.x, y: FIRST.y }, z: FIRST.z, after: 'shelf:old' },
     { look: 'lillgubbe', at: { x: FIRST.x + 0.7, y: FIRST.y }, z: FIRST.z + 0.2, after: 'shelf:small' },
+    { look: 'tiny-cap', word: 'worn', at: { x: FIRST.x + 0.7, y: FIRST.y + 0.48 }, z: FIRST.z + 0.2, after: 'shelf:small' },
     // Mormor and morfar, who came home with them in the night for the Sunday breakfast.
     { look: 'mormorHome', at: { x: 4.6, y: 0 }, z: -1.2 },
     { look: 'morfar', at: { x: 16, y: 0 }, z: -0.8 },
@@ -110,10 +111,11 @@ export const morgonen: ChapterData = {
     { id: 'moKlonk', on: 'beat:moName', who: 'spoket', line: 'moKlonkLine' },
     { id: 'moNice', on: 'beat:moName', who: 'moa', line: 'moNiceLine', read: true },
     { id: 'moWelcome', on: 'beat:moNice', who: 'pappa', line: 'moWelcomeLine', read: true },
-    { id: 'moCup', on: 'cocoa', who: 'mamma', line: 'moCupLine' },
+    { id: 'moCup', on: 'cocoa', who: 'mamma', line: 'moCupLine', read: true },
     // What she said on the jetty, in the dark, when her lamp lit by itself.
     { id: 'moKnew', on: 'beat:moCup', who: 'moa', line: 'moKnewLine', read: true },
-    { id: 'moAll', at: 50, needs: 'cocoa', who: 'elof', line: 'moAllLine', read: true },
+    { id: 'moAnswer', on: 'beat:moKnew', who: 'elof', line: 'moAnswerLine', read: true },
+    { id: 'moAll', at: 50, needs: 'beat:moAnswer', who: 'elof', line: 'moAllLine', read: true },
   ],
   cameras: [{ from: -3, to: 62, zoom: 1.5, lift: 0.3 }],
   candy: [...row(3, 53, 0)],
