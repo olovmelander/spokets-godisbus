@@ -811,3 +811,72 @@ if wanted('bro'):
         timber(part, (-LENGTH / 2.0 - 3.0, y - 0.09, HIGH + 3.12), (LENGTH / 2.0 + 3.0, y + 0.09, HIGH + 3.3), tone('#54585e'), 2.0)
         timber(part, (-LENGTH / 2.0 - 3.0, y - 0.05, HIGH + 2.2), (LENGTH / 2.0 + 3.0, y + 0.05, HIGH + 2.3), DARK, 3.0)
     finish(part, 'bro', sharp=40.0, strength=0.45, reach=1.2, floor=-0.5, leaf=True)
+
+
+# --- the steps down from the deck ----------------------------------------------------------------------------------
+# Four treads of 2.4 and a rise of 1.2, in the deck's own boards, with a white stringer and a white cross-brace as the deck has.
+# Its origin is on the lawn under the deck's edge.
+
+if wanted('trappa'):
+    part = new_part()
+    BOARD = tone('#b49a78')
+    WHITE_ = tone('#dcd8cc')
+    DARK = tone('#2a2622')
+    for i in range(4):
+        x0 = 2.4 * i
+        top = 4.8 - 1.2 * i
+        for k in range(4):
+            y0 = -1.62 + k * 1.16
+            timber(part, (x0 - 0.02, y0, top - 0.14), (x0 + 2.42, y0 + 1.12, top), lit(BOARD, 0.86 + 0.26 * rnd(i, k)), i + k * 0.3)
+        # The riser under its nose, dark between its boards.
+        timber(part, (x0 + 2.3, -1.56, top - 1.22), (x0 + 2.42, 3.0, top - 0.14), lit(BOARD, 0.7), i * 2.0)
+    # The stringer down its side: one white board, stepped as the treads are.
+    for y in (-1.66, 3.06):
+        points = [Vector((0.0, y, 4.66))]
+        for i in range(4):
+            points.append(Vector((2.4 * (i + 1), y, 4.66 - 1.2 * i)))
+            points.append(Vector((2.4 * (i + 1), y, 3.46 - 1.2 * i)))
+        points.append(Vector((9.6, y, 0.0)))
+        points.append(Vector((8.4, y, 0.0)))
+        points.append(Vector((0.0, y, 3.6)))
+        part['flat'][face(part, [put(part, p, WHITE_) for p in points])] = WHITE_
+    # What holds it up: posts on the lawn, with a cross of boards between the two nearest.
+    for x in (0.5, 4.8):
+        timber(part, (x - 0.14, -1.56, 0.0), (x + 0.14, -1.3, 3.5 - x * 0.5), WHITE_, x)
+    tube(part, [Vector((0.6, -1.5, 0.3)), Vector((4.7, -1.5, 1.2))], [0.06, 0.06], [WHITE_] * 2, 4)
+    tube(part, [Vector((4.7, -1.5, 0.3)), Vector((0.6, -1.5, 3.2))], [0.06, 0.06], [WHITE_] * 2, 4)
+    finish(part, 'trappa', sharp=30.0, strength=0.55, reach=0.6, floor=0.0, leaf=True)
+
+
+# --- the stack of firewood -------------------------------------------------------------------------------------------
+# Split birch and spruce, end on, in three steps up of 1.2 and a long top: its origin is at the near foot of its first step.
+
+if wanted('vedstapel'):
+    part = new_part()
+    BARK = tone('#6a5040')
+    BIRCH = tone('#d8d0c0')
+    CUT = tone('#d8b880')
+    CUT_OLD = tone('#a88a60')
+    R = 0.3
+    columns = ((0.0, 1.6, 2), (1.6, 3.2, 4), (3.2, 6.4, 6))
+    n = 0
+    for x0, x1, rows in columns:
+        across = int((x1 - x0) / (R * 2.04))
+        for row in range(rows):
+            for k in range(across):
+                n += 1
+                x = x0 + (x1 - x0) * (k + 0.5) / across + 0.03 * (rnd(n, 1.0) - 0.5)
+                z = R + row * 0.6
+                r = R * (0.9 + 0.1 * rnd(n, 2.0))
+                y = -1.5 + 0.14 * rnd(n, 3.0)
+                bark = BIRCH if rnd(n, 4.0) > 0.6 else BARK
+                turn = rnd(n, 5.0)
+                near = circle(Vector((x, y, z)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), r, 7, turn)
+                far = circle(Vector((x, 1.1, z)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), r, 7, turn)
+                skin(part, [near, far], [bark, lit(bark, 0.7)], closed=True)
+                end = lit(blend(CUT, CUT_OLD, rnd(n, 6.0)), 0.9 + 0.2 * rnd(n, 7.0))
+                part['flat'][face(part, [put(part, p, end) for p in near])] = end
+                # The heart of the log, darker.
+                heart = [Vector((x + 0.45 * (p.x - x), y - 0.004, z + 0.45 * (p.z - z))) for p in near]
+                part['flat'][face(part, [put(part, p, lit(end, 0.8)) for p in heart])] = lit(end, 0.8)
+    finish(part, 'vedstapel', sharp=46.0, strength=0.5, reach=0.3, floor=0.0, leaf=True)

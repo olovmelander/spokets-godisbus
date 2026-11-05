@@ -284,7 +284,6 @@ export const billsta: ChapterData = {
     // The road, and the gravel drive up to the yard.
     { from: -3, to: DITCH.from, kind: 'asphalt' },
     { from: DRIVE.from, to: DRIVE.to, kind: 'earth' },
-    { from: STACK[0]!.x, to: STACK_TOP.to, kind: 'wood' },
     // The planks, the loft's floor and the roof, all boards: the ground's 'iron' is a drain's grate, not a roof.
     { from: PLANKS.from, to: EAVES.to, kind: 'wood' },
     // The forest floor behind the house, the stones in the brook, and Billaberget's boulders.
@@ -298,6 +297,7 @@ export const billsta: ChapterData = {
   ],
   // What the stones and the boulders are, for the picture only: granite of Billaberget's boulder field.
   landmarks: [
+    { look: 'woodpile', from: STACK[0]!.x, to: STACK_TOP.to, base: 0 },
     ...STONES.map((s) => ({ look: 'stone' as const, from: s.from, to: s.to, base: BROOK_WATER })),
     { look: 'stone', from: B1.from, to: B1.to, base: TOP.y },
     { look: 'stone', from: B2.from, to: B2.to, base: SLOPE },

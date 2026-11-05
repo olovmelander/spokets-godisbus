@@ -88,8 +88,10 @@ export const isThing = (look: Landmark['look']): look is LandmarkThing => !['con
 /** The land under the things he stands on. Their models keep the collision outline's raised tops. */
 export function landscape(chapter: ChapterData): ChapterData {
   if (!chapter.landmarks?.length) return chapter;
-  const ground = chapter.ground.map((point) => {
+  const ground = chapter.ground.map((point, i, line) => {
     const mark = chapter.landmarks!.find(({ from, to }) => point.x >= from && point.x <= to);
+    // Steps start from a floor: its edge stays where it is, and they go down from under it.
+    if (mark?.look === 'stairs' && point.x === mark.from && line[i - 1]?.x !== point.x) return point;
     return mark ? { x: point.x, y: Math.min(point.y, mark.base) } : point;
   }).filter((point, i, line) => i === 0 || point.x !== line[i - 1]!.x || point.y !== line[i - 1]!.y);
   // A thing that stands on the floor has no deck under it: what it is walked on as is its own lid.

@@ -207,7 +207,7 @@ export const LANDMARKS: Record<Exclude<Landmark['look'], LandmarkThing>, string>
 /** Separate things above the land, including when the kit is missing or only partly available. */
 export function forestLandmarks(chapter: ChapterData): Group {
   const group = new Group();
-  const colours = { cone: '#7a4f2c', log: '#604a35', anthill: '#5a4e40', stone: '#7c827d', barrel: '#7a5634', can: '#a4aeb4', playhouse: '#7f9680', slide: '#7c4436', picnic: '#8a8478', fence: '#3e5a46' };
+  const colours = { cone: '#7a4f2c', log: '#604a35', anthill: '#5a4e40', stone: '#7c827d', barrel: '#7a5634', can: '#a4aeb4', playhouse: '#7f9680', slide: '#7c4436', picnic: '#8a8478', fence: '#3e5a46', stairs: '#a48a69', woodpile: '#a88a60' };
   for (const mark of chapter.landmarks ?? []) {
     const width = mark.to - mark.from;
     const high = heightAt(chapter, (mark.from + mark.to) / 2) - mark.base;

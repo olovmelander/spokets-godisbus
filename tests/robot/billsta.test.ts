@@ -273,7 +273,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
 
   describe('the red barn', () => {
     it('climbs the woodshed\'s stack a row at a time, and drops softly off its end', () => {
-      const stack = billsta.surfaces!.find((s) => s.kind === 'wood')!;
+      const stack = billsta.landmarks!.find((mark) => mark.look === 'woodpile')!;
       const top = Math.max(...[0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6].map((dx) => heightAt(billsta, stack.from + dx)));
       expect(top).toBeLessThan(4);
       // Every row is a marked jump for Lätta hopp.
