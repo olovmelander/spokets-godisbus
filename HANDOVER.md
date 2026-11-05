@@ -2,13 +2,46 @@
 
 ## State (5 November 2026)
 
-- **Graphics overhaul, implementation and local review complete (5 November 2026, cloud session, branch `visual/adventure-1-overhaul`).**
+- **Pappa and Bertil's caps refined (5 November 2026, cloud session, branch `visual/family-caps`).**
+  Olov requested better-looking caps on both figures. The actual private exports were inspected from the front,
+  three-quarter, profile and rear, in head poses and in both adventures' native opening cameras.
+  - **Visible repairs:** Pappa's old peak had a real gap from its crown. Both caps had ragged rims; Bertil's
+    white front was lumpy and its red/white boundary crossed arbitrary triangles. The new caps have fitted fabric
+    panels, clean colour boundaries, attached rounded peaks, a thin lower band, subtle seams and a top button.
+    Pappa keeps charcoal fabric; Bertil keeps red/cream with the intended plain round badge. Three visual iterations
+    corrected hair penetration, peak-edge interference and an oversized rear overhang before accepting the final fit.
+  - **Private, reproducible source:** `family/refine_caps.py` in the private family repository replaces only the
+    old cap triangles from a hash-pinned baseline. Every original binary byte, non-cap triangle, face, body, eye mesh,
+    bone and bind matrix is preserved. New cap vertices are rigidly attached to `Head`. The repair checks crown/hair
+    clearance, embedded peak roots, normals and winding, and reproduces identical output hashes. The private README
+    explains how to recover the existing baseline from git history. `family/build.py` prevents its historical cap
+    generator from overwriting published Pappa/Bertil exports; eleven guard cases passed. No Blender source was opened:
+    the older `.blend` files remain historical snapshots, and updating those still needs Blender 5.2 on Olov's computer.
+  - **Verification:** the optional `node tests/browser/family-caps.mjs` passed **76 checks** on the final real exports,
+    including both profiles, head turns, nods of 0/.24/.8 radians, wind and return to rest. It is explicitly excluded
+    from public CI's suite list because CI has no private exports. Independent validation of raw and meshopt-decoded
+    exports found **zero errors**, with only the two existing skinned-child warnings. Native `?debug` play loaded both
+    models and moved Elof; Prolog/Stormkväll showed the revised caps without browser errors at **75/87 draws** (+2 each).
+    The production build with all private assets passed: **499.6 KiB boot JS / 520 KiB**, **3,612.2 KiB served boot / 4 MiB**,
+    and **64.4 KiB Adventure 2 chunk / 160 KiB**. Private images remain in ignored scratch, never in the public gallery.
+    Typecheck and all **195 test files / 2,062 tests** passed after registering the optional private fixture separately.
+    The local built-in privacy scan passed; this environment has neither exiftool nor a configured denylist.
+  - **Delivery:** models, source, licences and geometry report are in private
+    [PR #3](https://github.com/olovmelander/spokets-godisbus-familj/pull/3), merged as `2ad9224`. The public companion contains the optional
+    regression check, licence entry and handover; its merge/deployment status is recorded in the PR. The normal Pages
+    build fetches the private exports, so the same caps appear wherever either figure is used in either adventure.
+    No gameplay, voices, release boundary or save format changed. **Next:** judge the fitted caps on the family devices
+    after deployment. No new known bug, *Senare* item or question for Olov; this GLB-only repair needs no local Blender work.
+
+- **Graphics overhaul, delivered (5 November 2026, cloud session, PR #228).**
   The first adventure now shares the authored home and outdoor model library with Stormnatten. The implementation,
   findings, budget gates and remaining device checks are recorded in
   [`docs/graphics-overhaul-audit.md`](docs/graphics-overhaul-audit.md). The reviewed
   [public gallery](docs/shots/visual-overhaul/README.md), refreshed after the Byn correction below, contains
   56 individual images and six contact sheets.
-  The PR still needs green CI before merge; this entry does not claim a deployment.
+  PR #228 merged as `fc68ab9`. All nine CI jobs passed on the final head `66eecea`; Pages deployment
+  `42125429049` succeeded, and the live HTML and JavaScript were verified. The detailed local-review notes below
+  preserve the findings and limits recorded before that final CI run.
   - **One model path for both adventures:** `shared-models.ts` waits inside `view.ready`, loads only the current scene's
     files, records successful packs in `view.info().models`, preserves packed transforms and keeps the Adventure 2 story
     chunk lazy. Repeated signs/windows are cloned, retained children stay in place, and already installed holders are
@@ -3750,10 +3783,12 @@
 
 ## Next
 
-The graphics implementation and local review on `visual/adventure-1-overhaul` are complete; evidence and limits are in
-[`docs/graphics-overhaul-audit.md`](docs/graphics-overhaul-audit.md). Merge the PR when CI is green under Olov's existing
-instruction, then review the deployed picture on the family devices. The opening revision (PR #226) and story audit (PR #227) are already merged;
-the story-audit deployment succeeded. New voices still wait until the story and conversations are finished.
+The graphics overhaul (PR #228), opening revision (PR #226) and story audit (PR #227) are merged and deployed.
+Graphics evidence and limits are in [`docs/graphics-overhaul-audit.md`](docs/graphics-overhaul-audit.md).
+Review the deployed picture on the family devices. New voices still wait until the story and conversations are finished.
+The cap revision above includes the actual private models and local pose checks; also review Pappa's and Bertil's
+caps in both adventures after its companion PR deploys. Historical Blender sources are distinct from this reproducible
+GLB-only revision; see the private README before making a new full-character export.
 
 **For Olov, after the graphics deploy:** open the normal address on each device Elof plays on at least 15 minutes after
 the deploy, so the service worker updates. Review the room, garden stone, forest, mountain and Stormens öga with the
@@ -4132,6 +4167,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Pappa and Bertil's caps, 5 Nov | Inspect and improve both actual caps | One cloud continuation, three fit iterations | — / 0 so far | Attached peaks, fitted panels and bands, clean colour boundaries and subtle details. Private deterministic source preserves the rest of each model exactly; 76 pose/render checks and native views in both adventures passed. Device judgement remains. |
 | Graphics overhaul, 5 Nov | One complete visual pass across both adventures | One cloud session, with parallel implementation and review | — / 0 so far | Shares the authored scenery library, furnishes the first adventure's home, improves light, ground and outdoor silhouettes, and repairs garden/meeting-stone contact. Public five-size image evidence and executable budgets are recorded in the audit. Final private-model and physical-device judgement remains. |
 | Äventyr 2 story audit, 5 Nov | One complete narrative pass | One cloud session | 1 / 1 | All ten chapters audited and revised, clue/reading continuity repaired, visible finale carry restored, audit and voice script updated. Device/acting review and new recordings remain. |
 | Stormkvällen's opening (5 November, afternoon) | Olov's request: nothing lying visible before the story brings it | 1 cloud session | — / 0 so far | The star rises out of Klonk's bag behind the grown-ups' backs, the star is in Elof's hand at the POFF, Klonk is placed in every scene, and the trail's big candies come with the trail. Code only. |
