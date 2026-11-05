@@ -5,11 +5,10 @@ import {
   type Material,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { forestKit } from '../../render/forest-kit';
-import type { Assets } from '../../render/assets';
 import { PLACES } from '../../render/dressing';
-import type { PlaceLook } from '../../render/dressing/kit';
+import { heightAt, type PlaceLook } from '../../render/dressing/kit';
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../render/extensions';
+import { roomThings } from '../../render/home-room';
 import { glowTexture } from '../../render/glow';
 import { drawnWhile } from '../../render/idle';
 import type { SpotProp } from '../../render/props';
@@ -17,6 +16,7 @@ import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
 import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
 import { box, building, paint, PANE, rock } from './buildings';
 import { createGrandparent, type Grandparent } from './grandparents';
+import { moonstone } from './moonstone';
 
 /**
  * Äventyr 2's pictures (docs/aventyr-2.md), built in code like the first adventure's stand-ins: each is
@@ -458,12 +458,24 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   // The rain barrel and the watering can stand on the lawn, their tops where the outline has them.
   for (const [look, model] of [['barrel', 'tunna'], ['can', 'kanna'], ['playhouse', 'lekstuga'], ['slide', 'rutschkana'], ['picnic', 'picknick'], ['fence', 'staket'], ['stairs', 'trappa'], ['woodpile', 'vedstapel'], ['skerry', 'holme'], ['edging', 'rabatt']] as const) {
     for (const holder of scene.getObjectsByProperty('name', `landmark:${look}`)) {
-      holder.userData.model = model;
       const mark = chapter.landmarks?.find((one) => one.look === look && one.from === holder.position.x);
+      if (mark && look === 'skerry') {
+        // A continuous worn surface replaces the export's stacked shelves and overlapping crack strips.
+        // Keep the chapter's exact walking top; only the surrounding silhouette and water are pictures.
+        for (const child of holder.children) child.traverse((object) => {
+          if (!(object instanceof Mesh)) return;
+          object.geometry.dispose();
+          for (const material of Array.isArray(object.material) ? object.material : [object.material]) material.dispose();
+        });
+        holder.clear();
+        holder.position.y = 0;
+        const water = chapter.water?.find((pool) => pool.to === mark.from || pool.from === mark.to)?.y ?? -0.5;
+        holder.add(moonstone(mark.to - mark.from, heightAt(chapter, (mark.from + mark.to) / 2), water));
+        continue;
+      }
+      holder.userData.model = model;
       // A barrel and a can stand round their middles; the others are measured from their near edge.
       if (mark && (look === 'barrel' || look === 'can')) holder.userData.shift = (mark.to - mark.from) / 2;
-      // The stone is measured from the path's own height, whatever the lake's bed is.
-      if (mark && look === 'skerry') holder.userData.lift = -mark.base;
       // Behind the porch, the house itself, as the family's garden has it.
       if (look === 'playhouse') {
         const house = new Group();
@@ -953,116 +965,6 @@ function football(radius: number): Mesh {
   ball.scale.setScalar(radius);
   ball.position.y = radius;
   return ball;
-}
-
-/** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
-const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
-  'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
-const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra'];
-const BUILT = ['rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel', 'rabatt', 'roddbat'];
-const ROOM = ['soffa', 'soffa-filt', 'golvlampa', 'krukvaxt', 'bord', 'stol', 'pall', 'holme'];
-const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
-/** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
-const CARVINGS = ['tragubbe', 'lillgubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];
-const FILES: Record<string, readonly [pack: string, file: string]> = {
-  ...Object.fromEntries(CREATURES.map((name) => [name, ['aventyr2', 'creatures'] as const])),
-  ...Object.fromEntries(CARVINGS.map((name) => [name, ['private', 'tragubbar'] as const])),
-  ...Object.fromEntries(PROPS.map((name) => [name, ['aventyr2', 'props'] as const])),
-  ...Object.fromEntries(BUILT.map((name) => [name, ['aventyr2', 'built'] as const])),
-  ...Object.fromEntries(ROOM.map((name) => [name, ['aventyr2', 'room'] as const])),
-  ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
-  'olympia-hall': ['aventyr2', 'olympia'],
-  'olympia-stand': ['aventyr2', 'olympia'],
-  'billsta-house': ['private', 'billsta-house'],
-  'billsta-barn': ['private', 'billsta-house'],
-  lekstuga: ['private', 'lekstuga'],
-  'lekstuga-hus': ['private', 'lekstuga'],
-};
-
-/**
- * The buildings that are made in Blender: each takes the place of its stand-in once the pack has loaded, so that the
- * picture is never empty. A stand-in stays where the file is missing.
- */
-async function installModels(assets: Assets, scene: Object3D): Promise<boolean> {
-  const wanted: Object3D[] = [];
-  scene.traverse((object) => { if (typeof object.userData.model === 'string' || typeof object.userData.grandparent === 'string') wanted.push(object); });
-  if (wanted.length === 0) return false;
-  const manifest = await assets.manifest();
-  // Mormor and morfar, in the family's own hand, wherever they stand: each their own copy, with its own skeleton.
-  const figures: Object3D[] = [];
-  scene.traverse((object) => { if (typeof object.userData.grandparent === 'string') figures.push(object); });
-  for (const place of figures) {
-    const who = place.userData.grandparent as Grandparent;
-    if (manifest.packs.private?.files[`${who}.glb`]) (place.userData.dress as (model: Object3D) => void)(await assets.model('private', who));
-  }
-  const files = new Map<string, Promise<Group>>();
-  let arrived = false;
-  for (const place of wanted) {
-    if (typeof place.userData.model !== 'string') continue;
-    const name = place.userData.model as string;
-    const [pack, file] = FILES[name] ?? [];
-    if (!pack || !file || !manifest.packs[pack]?.files[`${file}.glb`]) continue;
-    if (!files.has(file)) files.set(file, assets.model(pack, file));
-    const model = await files.get(file)!;
-    const made = model.getObjectByName(name);
-    if (!made) continue;
-    arrived = true;
-    // A boulder fills the block of ground it stands for: its size and its middle, from the stand-in.
-    const block = place.userData.block as { width: number; height: number; depth: number; x: number; y: number; z?: number } | undefined;
-    // What the stand-in has that the model has not, such as a car's windows that light up, stays in front of it.
-    const kept = place.children.filter((child) => typeof child.userData.keep === 'number');
-    place.clear();
-    for (const child of kept) {
-      child.position.z += child.userData.keep as number;
-      place.add(child);
-    }
-    // One model may stand in many places. A packed model's own scale and offset are how it was compressed, so whatever
-    // places it goes on a group round it, never on the model.
-    const copy = new Group();
-    copy.add(made.clone());
-    const fit = place.userData.fit as number | undefined;
-    if (fit) copy.scale.setScalar(fit);
-    if (typeof place.userData.turn === 'number') copy.rotation.y = place.userData.turn as number;
-    if (typeof place.userData.lift === 'number') copy.position.y = place.userData.lift as number;
-    if (typeof place.userData.shift === 'number') copy.position.x = place.userData.shift as number;
-    if (typeof place.userData.back === 'number') copy.position.z = place.userData.back as number;
-    if (block) {
-      const size = new Box3().setFromObject(made).getSize(new Vector3());
-      copy.scale.set(block.width / size.x, block.height / size.y, block.depth / size.z);
-      copy.position.set(block.x, block.y - block.height / 2, block.z ?? 0);
-    }
-    place.add(copy);
-    // The two of them at the meeting keep a little warmth of their own.
-    if (place.userData.warm) warmed(copy);
-    // A name on a wall is kept white: it stands in the shade at night, and still has to be read.
-    const sign = model.getObjectByName(`${name}-name`) as Mesh | undefined;
-    if (sign) {
-      sign.material = new MeshBasicMaterial({ color: '#e8ecec' });
-      place.add(sign);
-    }
-    // Windows with the lamps on: warm and unlit, whatever the storm does.
-    const lit = model.getObjectByName(`${name}-glow`) as Mesh | undefined;
-    if (lit) {
-      lit.material = new MeshBasicMaterial({ color: '#ffc870', fog: false });
-      place.add(lit);
-    }
-  }
-  // The cones that fall are the forest's own, in place of the turned stand-in they begin as.
-  const drops = scene.getObjectByName('rain-drops') as InstancedMesh | undefined;
-  if (drops?.userData.cones && manifest.packs.boot?.files['forest-kit.glb']) {
-    const kit = forestKit(await assets.model('boot', 'forest-kit'));
-    const shape = kit.shape('kotte')?.clone();
-    if (shape) {
-      const size = new Box3().setFromBufferAttribute(shape.getAttribute('position') as Float32BufferAttribute).getSize(new Vector3());
-      if (size.x > size.y && size.x >= size.z) shape.rotateZ(Math.PI / 2);
-      else if (size.z > size.y) shape.rotateX(Math.PI / 2);
-      shape.center();
-      shape.scale(0.7 / Math.max(size.x, size.y, size.z), 0.7 / Math.max(size.x, size.y, size.z), 0.7 / Math.max(size.x, size.y, size.z));
-      drops.geometry = shape;
-      drops.material = kit.material;
-    }
-  }
-  return arrived;
 }
 
 /** Cream foam drifting on black water, as it does below a rapid: one mesh of flecks, carried by the current. */
@@ -1743,22 +1645,6 @@ function drawnPicture(width: number, height: number, draw: (c: CanvasRenderingCo
   return new CanvasTexture(canvas);
 }
 
-/** A rag rug's stripes, seen from above: the same every time. */
-function ragRug(): CanvasTexture | null {
-  const random = scatter(23);
-  const STRIPES = ['#a8483a', '#e4d8bc', '#3f6a8a', '#d0a43a', '#62784e', '#e4d8bc'];
-  const texture = drawnPicture(256, 64, (c) => {
-    for (let x = 0; x < 256;) {
-      const wide = 5 + random() * 15;
-      c.fillStyle = STRIPES[Math.floor(random() * STRIPES.length)]!;
-      c.fillRect(x, 0, wide + 1, 64);
-      x += wide;
-    }
-  });
-  if (texture) texture.colorSpace = SRGBColorSpace;
-  return texture;
-}
-
 /** The light of a window lying on the floor: four soft panes on black, which added to the floor is nothing. */
 const paneLight = () => drawnPicture(128, 128, (c) => {
   c.fillStyle = '#000';
@@ -1767,59 +1653,6 @@ const paneLight = () => drawnPicture(128, 128, (c) => {
   c.fillStyle = '#fff';
   for (const [x, y] of [[14, 14], [68, 14], [14, 68], [68, 68]] as const) c.fillRect(x, y, 46, 46);
 });
-
-/**
- * The family's room, which the evening of the storm and Sunday morning share: a rag rug, a sofa, a floor lamp, a plant and
- * Moa's drawings taped to the wall, each in its own place in that chapter's stretch of it.
- */
-function roomThings(at: { sofa: number; lamp: number; plant: number; drawings: number; rug: number; blanket: boolean }): Group {
-  const group = new Group();
-  const WALL = -8.5;
-  const home: BufferGeometry[] = [];
-  /** A piece of the room as plain shapes, until its model has come (art/blender/a2-room.py). */
-  const piece = (name: string, parts: BufferGeometry[], x: number, z: number) => {
-    const held = new Group();
-    held.add(new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 })));
-    held.userData.model = name;
-    held.userData.shift = x;
-    held.userData.back = z;
-    group.add(held);
-  };
-  const SOFA = { x: at.sofa, z: -6.6 };
-  const couch = [box(11, 1.5, 3.6, SOFA.x, 1.15, SOFA.z, '#5c6c4c'), box(11, 3.4, 1, SOFA.x, 2.5, SOFA.z - 1.6, '#566644')];
-  for (const side of [-5.6, 5.6]) couch.push(box(1, 2.5, 3.8, SOFA.x + side, 1.55, SOFA.z, '#4e5c3e'));
-  for (const side of [-1, 1]) couch.push(box(0.3, 0.45, 3.2, SOFA.x + side * 4.8, 0.22, SOFA.z, '#3a2c20'));
-  // Bertil's blanket, pulled half off it the morning after, and a cushion.
-  if (at.blanket) couch.push(box(3.4, 0.28, 3.9, SOFA.x - 2.2, 2.02, SOFA.z + 0.1, '#b89a4a'), box(3.4, 1.6, 0.26, SOFA.x - 2.2, 1.2, SOFA.z + 2, '#b89a4a'));
-  couch.push(paint(new SphereGeometry(0.9, 10, 8).scale(1, 0.85, 0.4).rotateZ(0.3).translate(SOFA.x + 3.6, 2.7, SOFA.z - 0.8), '#a8604a'));
-  piece(at.blanket ? 'soffa-filt' : 'soffa', couch, SOFA.x, SOFA.z);
-  // The floor lamp, and the plant.
-  const lamp: BufferGeometry[] = [];
-  const plant: BufferGeometry[] = [];
-  lamp.push(paint(new CylinderGeometry(0.7, 0.8, 0.14, 12).translate(at.lamp, 0.07, -7.4), '#3a3e44'), paint(new CylinderGeometry(0.07, 0.07, 6, 8).translate(at.lamp, 3, -7.4), '#3a3e44'));
-  lamp.push(paint(new CylinderGeometry(0.75, 1.15, 1.2, 14, 1, true).translate(at.lamp, 6.4, -7.4), '#e4d8bc'));
-  piece('golvlampa', lamp, at.lamp, -7.4);
-  plant.push(paint(new CylinderGeometry(0.72, 0.56, 1.1, 12).translate(at.plant, 0.55, -7.8), '#a8704a'));
-  for (let i = 0; i < 9; i++) {
-    const turn = (i / 9) * Math.PI * 2;
-    const lean = 0.35 + (i % 3) * 0.22;
-    plant.push(paint(new ConeGeometry(0.28, 2.8, 5).scale(1, 1, 0.3).rotateZ(lean).rotateY(turn).translate(at.plant - Math.cos(turn) * lean * 1.2, 2.3, -7.8 + Math.sin(turn) * lean * 1.2), i % 2 ? '#4a7238' : '#3a5e30'));
-  }
-  piece('krukvaxt', plant, at.plant, -7.8);
-  // Moa's drawings: paper on the wall, each with a sun, a house or two figures in crayon, and no words.
-  const d = at.drawings;
-  for (const [x, y, wide] of [[33.6, 3.2, 1.9], [35.8, 3.5, 1.6], [37.6, 3, 1.5]] as const) {
-    home.push(box(wide, wide * 1.3, 0.04, x + d, y, WALL - 0.34, '#f4f0e4'), box(0.14, 0.14, 0.05, x + d, y + wide * 0.62, WALL - 0.31, '#d8c078'));
-  }
-  home.push(paint(new CircleGeometry(0.34, 12).translate(33.3 + d, 3.8, WALL - 0.3), '#d8a838'));
-  home.push(box(0.9, 0.7, 0.02, 33.8 + d, 2.6, WALL - 0.31, '#a84a3a'), paint(new ConeGeometry(0.72, 0.5, 4).rotateY(Math.PI / 4).scale(1, 1, 0.02).translate(33.8 + d, 3.2, WALL - 0.31), '#3f5a7a'));
-  home.push(box(0.3, 0.9, 0.02, 35.5 + d, 3.4, WALL - 0.31, '#3f6a8a'), box(0.24, 0.66, 0.02, 36.1 + d, 3.28, WALL - 0.31, '#b89a30'));
-  home.push(box(1.1, 0.5, 0.02, 37.6 + d, 2.6, WALL - 0.31, '#5c7a48'), paint(new CircleGeometry(0.3, 10).translate(37.5 + d, 3.3, WALL - 0.31), '#4a6a9a'));
-  group.add(new Mesh(mergeGeometries(home), new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 })));
-  // The rug under the table, running out under his feet.
-  group.add(new Mesh(new PlaneGeometry(13, 9).rotateX(-Math.PI / 2).translate(at.rug, 0.01, -0.8), new MeshStandardMaterial({ map: ragRug(), roughness: 0.95 })));
-  return group;
-}
 
 /**
  * Sunday morning's room: what the night left. Wet raincoats on their hooks and boots in a pool, leaves blown in at the
@@ -1907,18 +1740,6 @@ function aftermath(): SpotProp {
       }
     },
   };
-}
-
-/** The two of them at the meeting: a little warmth of their own, so that they are the warmest thing on the cold stone. */
-function warmed(figure: Group): void {
-  figure.traverse((object) => {
-    const mesh = object as Mesh;
-    const material = mesh.material as MeshStandardMaterial | undefined;
-    if (!material?.isMeshStandardMaterial) return;
-    mesh.material = material.clone();
-    (mesh.material as MeshStandardMaterial).emissive.set('#5a3a1c');
-    (mesh.material as MeshStandardMaterial).emissiveIntensity = 0.7;
-  });
 }
 
 /** The little one's hops when it is glad: short, and well apart. Its cap goes with them. */
@@ -2044,7 +1865,6 @@ export function installPictures(): void {
   for (const [look, make] of Object.entries(rideLooks())) PACK.rides.set(look, make);
   for (const [look, make] of Object.entries(moverLooks())) PACK.movers.set(look, make);
   if (!PACK.extras.includes(stormExtra)) PACK.extras.push(stormExtra);
-  if (!PACK.models.includes(installModels)) PACK.models.push(installModels);
 }
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */

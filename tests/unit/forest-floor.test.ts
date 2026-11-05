@@ -87,7 +87,9 @@ describe("the forest's floor", () => {
       return front;
     };
     for (const course of ['granskog', 'garden']) expect(deepest(course), course).toBeCloseTo(5.3, 6);
-    for (const course of ['myren', 'berget']) expect(deepest(course), course).toBeLessThan(3);
+    expect(deepest('myren')).toBeLessThan(3);
+    // Granite now falls away in broader fractured planes, still shallower than the forest's sloping floor.
+    expect(deepest('berget')).toBeLessThan(deepest('granskog'));
   });
 });
 

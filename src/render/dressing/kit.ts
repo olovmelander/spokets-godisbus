@@ -96,7 +96,7 @@ export function landscape(chapter: ChapterData): ChapterData {
   }).filter((point, i, line) => i === 0 || point.x !== line[i - 1]!.x || point.y !== line[i - 1]!.y);
   // A thing that stands on the floor has no deck under it: what it is walked on as is its own lid.
   // What is marked as its top goes, and the ground beside it runs on under it.
-  const things = chapter.landmarks.filter(({ look }) => isThing(look));
+  const things = chapter.landmarks.filter(({ look }) => isThing(look) || look === 'stone');
   let before: NonNullable<ChapterData['surfaces']>[number] | undefined;
   const surfaces = chapter.surfaces?.slice().sort((a, b) => a.from - b.from).flatMap((s) => {
     if (!things.some(({ from, to }) => s.from >= from && s.to <= to)) return [before = s];

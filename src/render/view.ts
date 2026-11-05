@@ -9,6 +9,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
 import { installGardenHome } from './garden-home';
+import { installSharedModels } from './shared-models';
 import { windWisp } from './wind-wisp';
 import { createAfloat } from './afloat';
 import { createRain } from './rain';
@@ -514,11 +515,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (atlas) wild.install(atlas);
     })
     .catch((error) => console.error('The life of the far scenery could not be loaded.', error)) : Promise.resolve();
-  // What an adventure's pack puts in the picture from its own models: Äventyr 2's buildings, made in Blender.
-  const packReady = Promise.all(PACK.models.map((load) => load(assets, scene)))
+  // Both adventures share the authored home and landscape kits. Defer the scan until the whole scene,
+  // including the epilogue's final carving, has been assembled below; all of it arrives before warm-up.
+  const sharedReady = Promise.resolve().then(() => installSharedModels(assets, scene, standIns, model => {
+    if (!models.includes(model)) models.push(model);
+  }))
+    .then(arrived => { if (arrived) modelInstallations++; })
+    .catch(error => console.error('Shared scenery could not be loaded; its stand-ins stay.', error));
+  const packReady = Promise.resolve().then(() => Promise.all(PACK.models.map((load) => load(assets, scene))))
     .then((arrived) => { if (arrived.includes(true)) modelInstallations++; })
     .catch((error) => console.error('A building could not be loaded; its stand-in stays.', error));
-  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady, packReady];
+  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady, sharedReady, packReady];
   let arrived = 0;
   for (const part of parts) void part.then(() => { arrived++; }, () => {});
   const ready = Promise.all(parts).then(() => undefined);

@@ -2,6 +2,48 @@
 
 ## State (5 November 2026)
 
+- **Graphics overhaul, implementation and local review complete (5 November 2026, cloud session, branch `visual/adventure-1-overhaul`).**
+  The first adventure now shares the authored home and outdoor model library with Stormnatten. The implementation,
+  findings, budget gates and remaining device checks are recorded in
+  [`docs/graphics-overhaul-audit.md`](docs/graphics-overhaul-audit.md). The reviewed
+  [public gallery](docs/shots/visual-overhaul/README.md) contains 56 individual images and six contact sheets.
+  The PR still needs green CI before merge; this entry does not claim a deployment.
+  - **One model path for both adventures:** `shared-models.ts` waits inside `view.ready`, loads only the current scene's
+    files, records successful packs in `view.info().models`, preserves packed transforms and keeps the Adventure 2 story
+    chunk lazy. Repeated signs/windows are cloned, retained children stay in place, and already installed holders are
+    not installed twice. Private scenery and actors obey the public `standin` switch.
+  - **The first adventure's places:** shared room furniture behind the opening and epilogue's actors, solid window
+    joinery and more readable public shelf carvings; authored trees, stones, logs, reeds, garden objects and small animals
+    across the outdoor chapters. The garden's stone at x 101–105 joins the unchanged walking strip to a continuous
+    weathered surface around an inset authored boulder; image review rejected an earlier separate cap.
+    Animal breathing and bobbing stop in reduced motion. The indoor floor continues towards the camera, at a room level
+    independent of debug spawn. The epilogue's final carving uses the same model as Stormnatten, with its own painted-eye blink.
+  - **Ground and light:** the mountain's front falls away in irregular fracture faces, and rope supports in the wild have
+    attached branches. Walkable tops and collision walls remain fixed. Cooler fill and a more neutral grade reduce the
+    compounded yellow-green cast; a quieter mown lawn edge keeps feet and candy readable. Direct image review checked
+    the portrait room floor, forest/bog paths, mountain supports and final garden-stone contact. The gallery covers
+    all eight first-adventure chapters in five sizes, the sofa, all ten second-adventure chapters and a stone detail.
+  - **Stormens öga:** the review also found overlapping stone slabs, exposed dry lakebed and bog fauna under the broad
+    meeting stone. A continuous worn granite surface keeps the exact walking strip, with water beneath its full footprint;
+    the fauna planner excludes submerged perches. The reunion's physics and story triggers stay the same.
+  - **Resource ownership:** newly owned fallbacks opt into geometry/material disposal when replaced. The loader preserves
+    kept children and the source resources shared by loaded model instances. Loading-screen rendering can upload a
+    fallback before the real model arrives, so removing its scene node alone is insufficient.
+  - **Local validation:** typecheck and **195 test files / 2,062 tests** passed, followed by typecheck and three
+    focused garden-stone tests after its final shape adjustment. The final production build passed at
+    499.6 KiB boot JavaScript / 520 KiB, 3,588.9 KiB served boot assets / 4 MiB with this workspace's private assets,
+    and 64.4 KiB for the separate Adventure 2 chunk / 160 KiB. The source browser checks passed:
+    forest shadows **18 checks** (Low 62–75, Mid 74–87,
+    High 87–100 draws across two forest views), delayed model installation **30 checks** at all tiers, shared public
+    home **42 checks**, and the optional private carving's real eye blink **12 checks**. The built Prolog GPU-memory
+    pass passed **16 checks**, including tier/resize/pause cycles and context restoration: Low 15.96 MB, Mid 53.21 MB,
+    warmed High 100.14 MB total with 71.10 MB of targets; current and transient-peak budgets passed. The full
+    eight-chapter memory suite and built lazy-story boundary will run in CI. All 56 final High captures fit the
+    draw gate (45–104), completed warm-up, and recorded no page/console errors, missing responses or private assets.
+    The post-capture built-in privacy scan passed over 853 tracked files, 176 built files and 422 media files
+    (no configured denylist or exiftool locally). No new Blender assets, voice recordings, release boundary or
+    save-format change is part of this pass; private-model and physical-device judgement remains with Olov.
+
 - **Äventyr 2, full story and dialogue audit (5 November 2026, cloud session, branch `audit/adventure-2-story`).**
   Olov asked for the whole second adventure to have a clear, funny, coherent story and good conversations. All ten chapters'
   dialogue, scenes, clues, context and handoffs were read against their actual triggers. The chapter-by-chapter findings and
@@ -30,7 +72,8 @@
     Adventure 2 exchanges. Six old-save regressions and four carried-figure tests cover the final compatibility changes.
     The final public build is about 2.25 MiB as served and its Adventure 2 chunk about 65.7 KiB; private-model/device review
     remains a separate check. No new gameplay failures were found.
-  - **Next:** review the PR and play the revised story, especially the rescue and breakfast, on the family devices. Private
+  - **Delivered:** PR #227 was merged into `main` and the site deployment succeeded. **Next:** play the revised story,
+    especially the rescue and breakfast, on the family devices. Private
     model contact, acting and subjective reading pace still need Olov's review. No new decision, known gameplay bug, *Senare*
     item or question for Olov was introduced. This implementation needed no Blender work or access to Olov's computer.
 
@@ -3696,24 +3739,26 @@
 
 ## Next
 
-The latest story audit is complete on `audit/adventure-2-story`; review its PR and the revised ten-chapter route before
-recording new voices. The older art/device checkpoints below remain; the current release boundary is already `morgonen`.
+The graphics implementation and local review on `visual/adventure-1-overhaul` are complete; evidence and limits are in
+[`docs/graphics-overhaul-audit.md`](docs/graphics-overhaul-audit.md). Merge the PR when CI is green under Olov's existing
+instruction, then review the deployed picture on the family devices. The opening revision (PR #226) and story audit (PR #227) are already merged;
+the story-audit deployment succeeded. New voices still wait until the story and conversations are finished.
 
-**Stormkvällen's opening** (this session's branch, `ccr-77db4123-5s8xa3`): Olov reviews and merges its pull request, then plays
-`?course=stormkvall` with the real figures. Nothing in it needs his computer.
-
-**For Olov, first:** everything is merged and released. Open the normal address on each device Elof plays on at least 15 minutes after
-the deploy, so the service worker updates, and play: the jetty at the start of `stormoga`, the seesaw at the end of `billsta` and
+**For Olov, after the graphics deploy:** open the normal address on each device Elof plays on at least 15 minutes after
+the deploy, so the service worker updates. Review the room, garden stone, forest, mountain and Stormens öga with the
+private figures, including the epilogue's answering blink. Play the jetty at the start of `stormoga`, the seesaw at the end of `billsta` and
 the eddies at `alven` are the parts only a person can judge. Olov goes on later with the game, visuals, conversations, story, design
 and TTS. New TTS voices come when the story and conversations are done. The rest of the order of work is in
 `docs/aventyr-2-overhaul.md`. It needs Olov's computer only for new models and for `photos/`, which is on his old computer. The
-family's models need Blender on his computer: they are in `art/private`, on its `main`.
+family's models need Blender on his computer: they are in `art/private`, on its `main`. This graphics implementation
+needs no new Blender work. Device colour, readability and frame rate remain a physical-device check. It introduces
+no new *Senare* item or question for Olov; the existing lists below still apply.
 
 **Left of the overhaul:** the owl's flight and the ride home at Stormöga were not checked with stills since their water changed;
 Stormbyn's flat dark street; Pappa at the bridge stands on the bank; the raft tower and the goals are still drawn in code.
 
-**The picture, from three stills of every chapter on High (4 November 2026), biggest gain first. One pull request
-each. The forest, the bog and the mountain are already strong, and are the standard for the rest:**
+**Earlier picture worklist, from three stills of every chapter on High (4 November 2026).** The completed graphics
+work above supersedes its room, shared-model and ground findings; remaining art/device judgements still apply:
 
 1. **The storm's light** has its first pass (see "State"). Left of it: the lightning as a rim of light on near shapes,
    and judging it on a real phone and tablet (calm enough for Elof?). Olov's call: is it now dark enough to feel like
@@ -3726,7 +3771,7 @@ each. The forest, the bog and the mountain are already strong, and are the stand
 4. **Äventyr 2's stand-ins:** the spruces of stacked cones (`billsta`, `stormoga`) beside the forest's real ones, flat
    building faces, and the garden's backdrop behind places that are not the garden (see "Known bugs").
 
-**For the next session, in this order:**
+**Earlier continuation checklist (4 November; completed releases and model work above take precedence):**
 
 - **Play Äventyr 2 (`docs/aventyr-2.md`) from Stormkvällen to Morgonen efter** with `?dev&course=stormkvall`, or
   by finishing Byn; the new worlds open directly with `?dev&course=olympia`, `flarken`, `alven` and `billsta`.
@@ -4076,6 +4121,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Graphics overhaul, 5 Nov | One complete visual pass across both adventures | One cloud session, with parallel implementation and review | — / 0 so far | Shares the authored scenery library, furnishes the first adventure's home, improves light, ground and outdoor silhouettes, and repairs garden/meeting-stone contact. Public five-size image evidence and executable budgets are recorded in the audit. Final private-model and physical-device judgement remains. |
 | Äventyr 2 story audit, 5 Nov | One complete narrative pass | One cloud session | 1 / 1 | All ten chapters audited and revised, clue/reading continuity repaired, visible finale carry restored, audit and voice script updated. Device/acting review and new recordings remain. |
 | Stormkvällen's opening (5 November, afternoon) | Olov's request: nothing lying visible before the story brings it | 1 cloud session | — / 0 so far | The star rises out of Klonk's bag behind the grown-ups' backs, the star is in Elof's hand at the POFF, Klonk is placed in every scene, and the trail's big candies come with the trail. Code only. |
 | The family rebuilt and everything released (5 November) | Olov's request: every human figure's design and motion, in one style | 1 session on Olov's computer, with Blender | 1 / 8 (faces, hair, caps, bodies, Mamma's hair, Mormor and Morfar) | One outline for all heads; seven people from short files; released to `morgonen` |

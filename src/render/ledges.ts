@@ -430,7 +430,7 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [],
         const rock = ledges[i]!.look === 'stone' ? carved?.(i) : undefined;
         return rock === null ? [] : [rock ?? ledgeShape(ledges[i]!, site)];
       }),
-      ...lines.map((rod) => painted(rodShape(rod), ROD_COLOUR)),
+      ...lines.map((rod) => painted(rodShape(rod, site), ROD_COLOUR)),
     ];
     const shape = mergeGeometries(parts);
     for (const part of parts) part.dispose();

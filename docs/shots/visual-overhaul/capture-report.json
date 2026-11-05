@@ -1,0 +1,3448 @@
+[
+  {
+    "name": "home-390x844-high",
+    "chapter": "prolog",
+    "at": [
+      3,
+      0
+    ],
+    "flags": [],
+    "scene": {
+      "id": "morgon",
+      "seconds": 9.6
+    },
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 72,
+      "triangles": 19987,
+      "programs": 44,
+      "geometries": 134,
+      "textures": 28,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 390,
+      "height": 844,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 5,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 5
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "home-390x844-high.webp",
+    "sha256": "5b7dcf6557011a983fdf0abd07c30d7fdd00def8d02062e16b4f7730607e0b49",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "home-844x390-high",
+    "chapter": "prolog",
+    "at": [
+      3,
+      0
+    ],
+    "flags": [],
+    "scene": {
+      "id": "morgon",
+      "seconds": 9.6
+    },
+    "animationSeconds": 4.8,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 76,
+      "triangles": 22815,
+      "programs": 44,
+      "geometries": 134,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 2,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 5,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 5
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "home-844x390-high.webp",
+    "sha256": "c1fbf95e98e679794061054aa07e1bbd4c1582f05ad86a6de88381b6d8dc4a51",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "home-780x360-high",
+    "chapter": "prolog",
+    "at": [
+      3,
+      0
+    ],
+    "flags": [],
+    "scene": {
+      "id": "morgon",
+      "seconds": 9.6
+    },
+    "animationSeconds": 7.199999999999999,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 76,
+      "triangles": 22815,
+      "programs": 44,
+      "geometries": 134,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 3,
+      "width": 780,
+      "height": 360,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 5,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 5
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "home-780x360-high.webp",
+    "sha256": "6c84929d5955f6484d174d6cf6d99167257a1743dd4515ab1c680ccfc216e627",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "home-1180x820-high",
+    "chapter": "prolog",
+    "at": [
+      3,
+      0
+    ],
+    "flags": [],
+    "scene": {
+      "id": "morgon",
+      "seconds": 9.6
+    },
+    "animationSeconds": 9.6,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 73,
+      "triangles": 20595,
+      "programs": 44,
+      "geometries": 134,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 4,
+      "width": 1180,
+      "height": 820,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 5,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 5
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "home-1180x820-high.webp",
+    "sha256": "00ac3219d2f2072c80c11191a4c2ac82166d5356737880c8000c9a12c0f1efeb",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "home-1440x900-high",
+    "chapter": "prolog",
+    "at": [
+      3,
+      0
+    ],
+    "flags": [],
+    "scene": {
+      "id": "morgon",
+      "seconds": 9.6
+    },
+    "animationSeconds": 12,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 73,
+      "triangles": 20595,
+      "programs": 44,
+      "geometries": 134,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 5,
+      "width": 1440,
+      "height": 900,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 5,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 5
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "home-1440x900-high.webp",
+    "sha256": "2c08038748c3f35e6a6028c158bb2cb06d2b8ec83199ff123cc95aaa664248e3",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "home-sofa-390x844-high",
+    "chapter": "prolog",
+    "at": [
+      24,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 50,
+      "triangles": 23915,
+      "programs": 44,
+      "geometries": 134,
+      "textures": 28,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 390,
+      "height": 844,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 6,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 6
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "home-sofa-390x844-high.webp",
+    "sha256": "8626f2927f7d41c6dab381dc383d10c62c966947f52289e36f061d436f29f942",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "home-sofa-844x390-high",
+    "chapter": "prolog",
+    "at": [
+      24,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 4.8,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 59,
+      "triangles": 31491,
+      "programs": 44,
+      "geometries": 134,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 2,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 6,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 6
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "home-sofa-844x390-high.webp",
+    "sha256": "e27ed0c09e22fb186c66218f4b3876dc774d8737fece0819166f1541ca0d2f3d",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "home-sofa-780x360-high",
+    "chapter": "prolog",
+    "at": [
+      24,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 7.199999999999999,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 59,
+      "triangles": 31491,
+      "programs": 44,
+      "geometries": 134,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 3,
+      "width": 780,
+      "height": 360,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 6,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 6
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "home-sofa-780x360-high.webp",
+    "sha256": "4f3f99ee75a6fbb274bba38f880af342261714bc8939df6e197c5e27380734df",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "home-sofa-1180x820-high",
+    "chapter": "prolog",
+    "at": [
+      24,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 9.6,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 56,
+      "triangles": 24725,
+      "programs": 44,
+      "geometries": 134,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 4,
+      "width": 1180,
+      "height": 820,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 6,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 6
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "home-sofa-1180x820-high.webp",
+    "sha256": "a04afcf97e40eae00d68d82b98cad40273e46f5cf21d0d7647504f83b03e3b14",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "home-sofa-1440x900-high",
+    "chapter": "prolog",
+    "at": [
+      24,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 12,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 56,
+      "triangles": 24725,
+      "programs": 44,
+      "geometries": 134,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 5,
+      "width": 1440,
+      "height": 900,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 6,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 6
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "home-sofa-1440x900-high.webp",
+    "sha256": "5e43d6bcfb8c9ad0c99d2c452c86bde945ee8154a07f252f3aa92c2f7f8a38b1",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "garden-390x844-high",
+    "chapter": "garden",
+    "at": [
+      76,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 70,
+      "triangles": 128321,
+      "programs": 48,
+      "geometries": 211,
+      "textures": 30,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 390,
+      "height": 844,
+      "models": [
+        "boot/candy",
+        "boot/garden-fallback",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "garden-390x844-high.webp",
+    "sha256": "8123724dc4114904adddf629adf8736b4ab2e5aaea12d7618ce1c9bcfb0b4115",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "garden-844x390-high",
+    "chapter": "garden",
+    "at": [
+      76,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 4.8,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 76,
+      "triangles": 130609,
+      "programs": 48,
+      "geometries": 211,
+      "textures": 30,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 2,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/candy",
+        "boot/garden-fallback",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "garden-844x390-high.webp",
+    "sha256": "9a18047f60d6d08b9ed681cf29736bae76e4aa274da9469a3ffa3b822ab7e47b",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "garden-780x360-high",
+    "chapter": "garden",
+    "at": [
+      76,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 7.199999999999999,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 76,
+      "triangles": 130609,
+      "programs": 48,
+      "geometries": 211,
+      "textures": 30,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 3,
+      "width": 780,
+      "height": 360,
+      "models": [
+        "boot/candy",
+        "boot/garden-fallback",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "garden-780x360-high.webp",
+    "sha256": "2208faeaf1de9ac2f0e48a4ddd7cef44e745e11b9b2da5de4eed978cf807982e",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "garden-1180x820-high",
+    "chapter": "garden",
+    "at": [
+      76,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 9.6,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 72,
+      "triangles": 128533,
+      "programs": 48,
+      "geometries": 211,
+      "textures": 30,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 4,
+      "width": 1180,
+      "height": 820,
+      "models": [
+        "boot/candy",
+        "boot/garden-fallback",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "garden-1180x820-high.webp",
+    "sha256": "4135c76b857005d86873ba6f4723dde809b14bf697bbea380497dde302577dea",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "garden-1440x900-high",
+    "chapter": "garden",
+    "at": [
+      76,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 12,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 79,
+      "triangles": 131257,
+      "programs": 48,
+      "geometries": 211,
+      "textures": 30,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 5,
+      "width": 1440,
+      "height": 900,
+      "models": [
+        "boot/candy",
+        "boot/garden-fallback",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "garden-1440x900-high.webp",
+    "sha256": "aca76bf1827b7cd06ac1cdbf334ab5a95394896cec52f5baa6998a1fbf0fe465",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "forest-390x844-high",
+    "chapter": "granskog",
+    "at": [
+      30,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 81,
+      "triangles": 206555,
+      "programs": 48,
+      "geometries": 233,
+      "textures": 31,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 390,
+      "height": 844,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/forest-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "forest-390x844-high.webp",
+    "sha256": "ae69ee2d363c110973a06bdf1f65f3eca932d8f736f6dd0c7c9406d214d383f9",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "forest-844x390-high",
+    "chapter": "granskog",
+    "at": [
+      30,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 4.8,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 104,
+      "triangles": 245237,
+      "programs": 48,
+      "geometries": 233,
+      "textures": 30,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 2,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/forest-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "forest-844x390-high.webp",
+    "sha256": "a9f149d976fe40af661241e5f4044d77065dd42c24e1f371506a2d3689a32bdb",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "forest-780x360-high",
+    "chapter": "granskog",
+    "at": [
+      30,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 7.199999999999999,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 104,
+      "triangles": 245237,
+      "programs": 48,
+      "geometries": 233,
+      "textures": 30,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 3,
+      "width": 780,
+      "height": 360,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/forest-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "forest-780x360-high.webp",
+    "sha256": "ae4886f5416cfbba08852d7b082a30ad8216784f51f850af3f097af6df6dca04",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "forest-1180x820-high",
+    "chapter": "granskog",
+    "at": [
+      30,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 9.6,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 84,
+      "triangles": 223243,
+      "programs": 48,
+      "geometries": 233,
+      "textures": 30,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 4,
+      "width": 1180,
+      "height": 820,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/forest-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "forest-1180x820-high.webp",
+    "sha256": "e0c0e31ea9719d6e6609bf61b1b517c290e6be93ce5bbdea65d7ce8d7ecf4831",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "forest-1440x900-high",
+    "chapter": "granskog",
+    "at": [
+      30,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 12,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 99,
+      "triangles": 240777,
+      "programs": 48,
+      "geometries": 233,
+      "textures": 30,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 5,
+      "width": 1440,
+      "height": 900,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/forest-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "forest-1440x900-high.webp",
+    "sha256": "b84080f9a6fc66a9b82b684ccd93e787ecfc75237aa6e164b47ee539c6e869cd",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "bog-390x844-high",
+    "chapter": "myren",
+    "at": [
+      96,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 71,
+      "triangles": 99503,
+      "programs": 47,
+      "geometries": 202,
+      "textures": 33,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 390,
+      "height": 844,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/nature",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 3,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 3
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "bog-390x844-high.webp",
+    "sha256": "ee950fa91fe3a3c8c45c12aa521111eac1cdcfd927904c6d4da20d98918755ed",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "bog-844x390-high",
+    "chapter": "myren",
+    "at": [
+      96,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 4.8,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 79,
+      "triangles": 106291,
+      "programs": 47,
+      "geometries": 202,
+      "textures": 33,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 2,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/nature",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 3,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 3
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "bog-844x390-high.webp",
+    "sha256": "0a13a92dfda67779063e12359e70454d62303d32792b6b2d14d5c731eaa43ca1",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "bog-780x360-high",
+    "chapter": "myren",
+    "at": [
+      96,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 7.199999999999999,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 76,
+      "triangles": 101155,
+      "programs": 47,
+      "geometries": 202,
+      "textures": 33,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 3,
+      "width": 780,
+      "height": 360,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/nature",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 3,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 3
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "bog-780x360-high.webp",
+    "sha256": "c70f909aa334380f27b1de3a5b27ce199f71f6ec6018c849c6397f4836d57349",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "bog-1180x820-high",
+    "chapter": "myren",
+    "at": [
+      96,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 9.6,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 75,
+      "triangles": 101123,
+      "programs": 47,
+      "geometries": 202,
+      "textures": 33,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 4,
+      "width": 1180,
+      "height": 820,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/nature",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 3,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 3
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "bog-1180x820-high.webp",
+    "sha256": "9082fde698d9c7e404d12a8bf8c3da895e86d3420f81cbb0575b68b3355407c3",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "bog-1440x900-high",
+    "chapter": "myren",
+    "at": [
+      96,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 12,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 75,
+      "triangles": 101123,
+      "programs": 47,
+      "geometries": 202,
+      "textures": 33,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 5,
+      "width": 1440,
+      "height": 900,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/nature",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 3,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 3
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "bog-1440x900-high.webp",
+    "sha256": "bf3b6419a06e5fb67acdb8d95cc62656a72832016f752b3777dffa23e563210d",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "mountain-390x844-high",
+    "chapter": "berget",
+    "at": [
+      104,
+      26.4
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 69,
+      "triangles": 112666,
+      "programs": 42,
+      "geometries": 157,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 390,
+      "height": 844,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/mountain-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "mountain-390x844-high.webp",
+    "sha256": "7508455de0fe81e3d14df63cf2704f72552199d3e1a43541c4eb240e85f3d0a8",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "mountain-844x390-high",
+    "chapter": "berget",
+    "at": [
+      104,
+      26.4
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 4.8,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 80,
+      "triangles": 139515,
+      "programs": 42,
+      "geometries": 157,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 2,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/mountain-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "mountain-844x390-high.webp",
+    "sha256": "e1a79630cd1da2aaab0bac053070e23d68470a99d8bb18bbb2fde5cfb1ab6811",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "mountain-780x360-high",
+    "chapter": "berget",
+    "at": [
+      104,
+      26.4
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 7.199999999999999,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 80,
+      "triangles": 139515,
+      "programs": 42,
+      "geometries": 157,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 3,
+      "width": 780,
+      "height": 360,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/mountain-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "mountain-780x360-high.webp",
+    "sha256": "aeb1cad5f174a445f32d2c8ff65de7e5b5b2f2ccf508c39dd8e6a9c092707bd5",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "mountain-1180x820-high",
+    "chapter": "berget",
+    "at": [
+      104,
+      26.4
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 9.6,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 76,
+      "triangles": 126804,
+      "programs": 42,
+      "geometries": 157,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 4,
+      "width": 1180,
+      "height": 820,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/mountain-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "mountain-1180x820-high.webp",
+    "sha256": "0e7df7ffbf1a94258a72fafbfbecf350795eb20b7e0c5b563d367a625edb8c15",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "mountain-1440x900-high",
+    "chapter": "berget",
+    "at": [
+      104,
+      26.4
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 12,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 78,
+      "triangles": 130576,
+      "programs": 42,
+      "geometries": 157,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 5,
+      "width": 1440,
+      "height": 900,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/mountain-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "mountain-1440x900-high.webp",
+    "sha256": "4bc02cc1b8dd34cce57a55a5b6ad3d030253a781fd8940870dc13a18f377c3c1",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "finale-390x844-high",
+    "chapter": "norrsken",
+    "at": [
+      17.8,
+      0
+    ],
+    "flags": [
+      "placed:tragubbe",
+      "eyes"
+    ],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 80,
+      "triangles": 64997,
+      "programs": 46,
+      "geometries": 140,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 390,
+      "height": 844,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/mountain-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 3,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 3
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "finale-390x844-high.webp",
+    "sha256": "ae3ec5eaee297e5040a29de3e1560d9520fbc02d2eabb90e15588e0c6a4ad5de",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "finale-844x390-high",
+    "chapter": "norrsken",
+    "at": [
+      17.8,
+      0
+    ],
+    "flags": [
+      "placed:tragubbe",
+      "eyes"
+    ],
+    "scene": null,
+    "animationSeconds": 4.8,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 92,
+      "triangles": 92270,
+      "programs": 46,
+      "geometries": 140,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 2,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/mountain-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 3,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 3
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "finale-844x390-high.webp",
+    "sha256": "4e224e9da2c350e1c5359345c9b6a1e5fdda4adb35923cb594db3f80c27ecd24",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "finale-780x360-high",
+    "chapter": "norrsken",
+    "at": [
+      17.8,
+      0
+    ],
+    "flags": [
+      "placed:tragubbe",
+      "eyes"
+    ],
+    "scene": null,
+    "animationSeconds": 7.199999999999999,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 91,
+      "triangles": 90974,
+      "programs": 46,
+      "geometries": 140,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 3,
+      "width": 780,
+      "height": 360,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/mountain-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 3,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 3
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "finale-780x360-high.webp",
+    "sha256": "59f825a2e052fbec7913fb3c2ee9264ef1cbc7c5151dc4d189e733423f7f60a3",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "finale-1180x820-high",
+    "chapter": "norrsken",
+    "at": [
+      17.8,
+      0
+    ],
+    "flags": [
+      "placed:tragubbe",
+      "eyes"
+    ],
+    "scene": null,
+    "animationSeconds": 9.6,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 88,
+      "triangles": 87043,
+      "programs": 46,
+      "geometries": 140,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 4,
+      "width": 1180,
+      "height": 820,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/mountain-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 3,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 3
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "finale-1180x820-high.webp",
+    "sha256": "7185c5f0761d52ea57816d8ef0e8bfbb8bab4f7b85b790ed62005c92f1772e43",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "finale-1440x900-high",
+    "chapter": "norrsken",
+    "at": [
+      17.8,
+      0
+    ],
+    "flags": [
+      "placed:tragubbe",
+      "eyes"
+    ],
+    "scene": null,
+    "animationSeconds": 12,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 88,
+      "triangles": 87043,
+      "programs": 46,
+      "geometries": 140,
+      "textures": 26,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 5,
+      "width": 1440,
+      "height": 900,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/mountain-kit",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 3,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 3
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "finale-1440x900-high.webp",
+    "sha256": "1807c42016f2912f010a77e57328a1383062206b7ca17d8265e5c0df04fb4fd3",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "epilogue-390x844-high",
+    "chapter": "epilog",
+    "at": [
+      32,
+      0
+    ],
+    "flags": [
+      "partied",
+      "knife",
+      "cut1",
+      "cut2",
+      "cut3",
+      "dots"
+    ],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 59,
+      "triangles": 26565,
+      "programs": 39,
+      "geometries": 124,
+      "textures": 20,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 390,
+      "height": 844,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "epilogue-390x844-high.webp",
+    "sha256": "0e5f7dd0d6f9f05c7de01d2ddbab2fa36e8ef7fdae473bf73ed40f1aaba04821",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "epilogue-844x390-high",
+    "chapter": "epilog",
+    "at": [
+      32,
+      0
+    ],
+    "flags": [
+      "partied",
+      "knife",
+      "cut1",
+      "cut2",
+      "cut3",
+      "dots"
+    ],
+    "scene": null,
+    "animationSeconds": 4.8,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 67,
+      "triangles": 27421,
+      "programs": 39,
+      "geometries": 124,
+      "textures": 18,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 2,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 1,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 1
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "epilogue-844x390-high.webp",
+    "sha256": "e20b7db33a48508f35030463dc17ef7140ae9af51d012f383e9c55fbe29f5e6d",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "epilogue-780x360-high",
+    "chapter": "epilog",
+    "at": [
+      32,
+      0
+    ],
+    "flags": [
+      "partied",
+      "knife",
+      "cut1",
+      "cut2",
+      "cut3",
+      "dots"
+    ],
+    "scene": null,
+    "animationSeconds": 7.199999999999999,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 67,
+      "triangles": 27421,
+      "programs": 39,
+      "geometries": 124,
+      "textures": 18,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 3,
+      "width": 780,
+      "height": 360,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 1,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 1
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "epilogue-780x360-high.webp",
+    "sha256": "b8ef61972bab6a142fd5b42c2cd2553143ffe8a90f5bcea75deb75f53991d324",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "epilogue-1180x820-high",
+    "chapter": "epilog",
+    "at": [
+      32,
+      0
+    ],
+    "flags": [
+      "partied",
+      "knife",
+      "cut1",
+      "cut2",
+      "cut3",
+      "dots"
+    ],
+    "scene": null,
+    "animationSeconds": 9.6,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 67,
+      "triangles": 27421,
+      "programs": 39,
+      "geometries": 124,
+      "textures": 18,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 4,
+      "width": 1180,
+      "height": 820,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 1,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 1
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "epilogue-1180x820-high.webp",
+    "sha256": "2b3cd471b70c3570487e7ba945b47b2cef6af714584a936a3d37e84ec81ccaca",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "epilogue-1440x900-high",
+    "chapter": "epilog",
+    "at": [
+      32,
+      0
+    ],
+    "flags": [
+      "partied",
+      "knife",
+      "cut1",
+      "cut2",
+      "cut3",
+      "dots"
+    ],
+    "scene": null,
+    "animationSeconds": 12,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 67,
+      "triangles": 27421,
+      "programs": 39,
+      "geometries": 124,
+      "textures": 18,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 5,
+      "width": 1440,
+      "height": 900,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 1,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 1
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "epilogue-1440x900-high.webp",
+    "sha256": "de9268fcdf34e7e7586c31674ee6c4b3f95c2b362b9ae83c7ea8df16443c6930",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "village-390x844-high",
+    "chapter": "byn",
+    "at": [
+      65,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 68,
+      "triangles": 85584,
+      "programs": 45,
+      "geometries": 170,
+      "textures": 28,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 390,
+      "height": 844,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/village",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "boot/bredbyn",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "village-390x844-high.webp",
+    "sha256": "5b68896009f4746f46f4631b0c3dfe72fbc36dc1bd250eacadc023fd9fae556a",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "village-844x390-high",
+    "chapter": "byn",
+    "at": [
+      65,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 4.8,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 70,
+      "triangles": 96035,
+      "programs": 45,
+      "geometries": 170,
+      "textures": 28,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 2,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/village",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "boot/bredbyn",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "village-844x390-high.webp",
+    "sha256": "eb6c8cd4323108a65812a486bf9966c37b4c20782861bc3c061d81ed5ae0b1eb",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "village-780x360-high",
+    "chapter": "byn",
+    "at": [
+      65,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 7.199999999999999,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 64,
+      "triangles": 93775,
+      "programs": 45,
+      "geometries": 170,
+      "textures": 28,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 3,
+      "width": 780,
+      "height": 360,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/village",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "boot/bredbyn",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "village-780x360-high.webp",
+    "sha256": "d597844c42b978c66bbd5c038b79067be214dc616812654b02518d41da647454",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "village-1180x820-high",
+    "chapter": "byn",
+    "at": [
+      65,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 9.6,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 64,
+      "triangles": 93803,
+      "programs": 45,
+      "geometries": 170,
+      "textures": 28,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 4,
+      "width": 1180,
+      "height": 820,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/village",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "boot/bredbyn",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "village-1180x820-high.webp",
+    "sha256": "39c24236ce181e0169bd137e510c437604195c4a464da3018c245d07af398564",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "village-1440x900-high",
+    "chapter": "byn",
+    "at": [
+      65,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 12,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 66,
+      "triangles": 93855,
+      "programs": 45,
+      "geometries": 170,
+      "textures": 28,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 5,
+      "width": 1440,
+      "height": 900,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/village",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "boot/bredbyn",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "village-1440x900-high.webp",
+    "sha256": "94602a4ba6352422240ea7e7b5e1c50e678c103611ef845039e321cdd734218d",
+    "captureContextIndex": 0
+  },
+  {
+    "name": "storm-evening-844x390-high",
+    "chapter": "stormkvall",
+    "at": [
+      3,
+      0
+    ],
+    "flags": [],
+    "scene": {
+      "id": "kvall",
+      "seconds": 7.8
+    },
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 86,
+      "triangles": 23275,
+      "programs": 48,
+      "geometries": 147,
+      "textures": 30,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 5,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 5
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "storm-evening-844x390-high.webp",
+    "sha256": "f882e4e7069aed952760b7be80aac2ff08ed79d514df490ef8d665fd32aec8a6",
+    "captureContextIndex": 1
+  },
+  {
+    "name": "storm-garden-844x390-high",
+    "chapter": "stormgard",
+    "at": [
+      94,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 65,
+      "triangles": 114761,
+      "programs": 49,
+      "geometries": 160,
+      "textures": 37,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/built",
+        "aventyr2/props",
+        "aventyr2/creatures",
+        "aventyr2/nature",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 3,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 3
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "storm-garden-844x390-high.webp",
+    "sha256": "43c4644f3efe503b40471bedfd6fb3fe2b969e947f10bd4334bfd8e1c8f292a6",
+    "captureContextIndex": 1
+  },
+  {
+    "name": "storm-forest-844x390-high",
+    "chapter": "stormskog",
+    "at": [
+      30,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 78,
+      "triangles": 207857,
+      "programs": 44,
+      "geometries": 140,
+      "textures": 27,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/forest-kit",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "storm-forest-844x390-high.webp",
+    "sha256": "1da70bf8ffe0cd982058b90bb6356988435f37b8b8ef55f0f238b44b8973dcc5",
+    "captureContextIndex": 1
+  },
+  {
+    "name": "storm-village-844x390-high",
+    "chapter": "stormbyn",
+    "at": [
+      97.8,
+      5
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 66,
+      "triangles": 89253,
+      "programs": 41,
+      "geometries": 186,
+      "textures": 27,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/village",
+        "aventyr2/props",
+        "boot/bredbyn",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 3,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 3
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "storm-village-844x390-high.webp",
+    "sha256": "53e738f585c5ee3184bb64e2d96ac4dd9f9a58920029e87dd11366987d7e67bd",
+    "captureContextIndex": 1
+  },
+  {
+    "name": "olympia-844x390-high",
+    "chapter": "olympia",
+    "at": [
+      54,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 45,
+      "triangles": 70066,
+      "programs": 51,
+      "geometries": 170,
+      "textures": 31,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/built",
+        "aventyr2/nature",
+        "aventyr2/olympia",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "olympia-844x390-high.webp",
+    "sha256": "16919880354b444703763441b75b83d79ff57c9ace1233d092d35e9025045def",
+    "captureContextIndex": 1
+  },
+  {
+    "name": "flarken-844x390-high",
+    "chapter": "flarken",
+    "at": [
+      108,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 70,
+      "triangles": 89379,
+      "programs": 49,
+      "geometries": 192,
+      "textures": 31,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/built",
+        "aventyr2/creatures",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "flarken-844x390-high.webp",
+    "sha256": "04cfbbd2669236a3eb4b0395e8c4d5cad1568c0f7979e347d56c6d562f249e4c",
+    "captureContextIndex": 1
+  },
+  {
+    "name": "river-844x390-high",
+    "chapter": "alven",
+    "at": [
+      91.6,
+      0
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 75,
+      "triangles": 112990,
+      "programs": 52,
+      "geometries": 162,
+      "textures": 30,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "boot/forest-kit",
+        "aventyr2/nature",
+        "aventyr2/creatures",
+        "aventyr2/props",
+        "aventyr2/built",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "river-844x390-high.webp",
+    "sha256": "f6c2e99968a3db6f506375ad2a843b38a446ef2f18586d1b8797419f9527ecdd",
+    "captureContextIndex": 1
+  },
+  {
+    "name": "storm-eye-844x390-high",
+    "chapter": "stormoga",
+    "at": [
+      46,
+      0.6
+    ],
+    "flags": [
+      "eye",
+      "scene:motet"
+    ],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 91,
+      "triangles": 121865,
+      "programs": 52,
+      "geometries": 184,
+      "textures": 36,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "storm-eye-844x390-high.webp",
+    "sha256": "621acaffb67dd9c0b9b1a60d32a1b108014a85c814b15a51ecf39161cd9019e7",
+    "captureContextIndex": 1
+  },
+  {
+    "name": "next-morning-844x390-high",
+    "chapter": "morgonen",
+    "at": [
+      3,
+      0
+    ],
+    "flags": [],
+    "scene": {
+      "id": "frukost",
+      "seconds": 12.2
+    },
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 71,
+      "triangles": 50501,
+      "programs": 43,
+      "geometries": 130,
+      "textures": 25,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/room",
+        "aventyr2/props",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 1,
+        "released": 1,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 5,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 5
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "next-morning-844x390-high.webp",
+    "sha256": "4364240d55ee3a3dbc104985931b8a39941677afac4126a4feb6ddeed07528f6",
+    "captureContextIndex": 1
+  },
+  {
+    "name": "garden-boulder-middle-1440x900-high",
+    "chapter": "garden",
+    "at": [
+      103,
+      1.3
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 78,
+      "triangles": 146548,
+      "programs": 48,
+      "geometries": 211,
+      "textures": 30,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 1440,
+      "height": 900,
+      "models": [
+        "boot/candy",
+        "boot/garden-fallback",
+        "aventyr2/nature",
+        "aventyr2/props",
+        "aventyr2/creatures",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "garden-boulder-middle-1440x900-high.webp",
+    "sha256": "b9c4c74d674e593d9eff6b5aeb411680baf1f70c0fccf348905e26e6b2ac7648",
+    "captureContextIndex": 2
+  },
+  {
+    "name": "billsta-844x390-high",
+    "chapter": "billsta",
+    "at": [
+      43,
+      3.6
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 67,
+      "triangles": 140857,
+      "programs": 55,
+      "geometries": 200,
+      "textures": 36,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/built",
+        "aventyr2/nature",
+        "aventyr2/creatures",
+        "aventyr2/props",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "billsta-844x390-high.webp",
+    "sha256": "2c3aebb4a0e0138e1ff2735551717ad5d40c2196cfecc79cac780495dac001c1",
+    "captureContextIndex": 3
+  }
+]

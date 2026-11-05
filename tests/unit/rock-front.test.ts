@@ -42,18 +42,18 @@ describe("the mountain's rock", () => {
     expect(lowest).toBeGreaterThan(0.91);
   });
 
-  it('is in blocks: the first ledge lies at several heights along the chapter, each for some lengths', () => {
-    // The first ledge's inner corner stands at depth 1: its height under the path, along the open rock.
+  it('has a varied fracture shoulder that stays safely below the walking edge', () => {
+    // The first fractured face meets its sloping shoulder at depth 1.22, along the open rock.
     const heights = new Map<number, number>();
     for (const corner of corners('berget')) {
-      if (Math.abs(corner.z - 1) > 1e-6 || !open(corner.x)) continue;
+      if (Math.abs(corner.z - 1.22) > 1e-6 || !open(corner.x)) continue;
       const under = Math.round((heightAt(mountain, corner.x) - corner.y) * 100) / 100;
-      if (under > 0.5 && under < 1.2) heights.set(under, (heights.get(under) ?? 0) + 1);
+      heights.set(under, (heights.get(under) ?? 0) + 1);
     }
     expect(heights.size).toBeGreaterThan(6);
     for (const under of heights.keys()) {
-      expect(under).toBeGreaterThanOrEqual(0.62);
-      expect(under).toBeLessThanOrEqual(1.08);
+      expect(under).toBeGreaterThanOrEqual(0.55);
+      expect(under).toBeLessThanOrEqual(1.5);
     }
   });
 

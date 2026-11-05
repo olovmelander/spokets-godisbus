@@ -177,8 +177,51 @@ export function fitted(kit: MountainKit, rocks: readonly Outcrop[]): ({ name: st
 /** A rock of the kit where its outcrop stands: its top at the chapter's height, its front edge on the play plane. */
 export function rockAt(kit: MountainKit, rock: Outcrop, fit: { name: string; mirrored: boolean }): BufferGeometry {
   const made = build();
-  put(made, kit.get(fit.name)!, at(rock.x, rock.y, 0, fit.mirrored));
-  return shaped(made);
+  const source = kit.get(fit.name)!;
+  put(made, rock.kind === 'hylla' ? splitRockFaces(source) : source, at(rock.x, rock.y, 0, fit.mirrored), (colour, where, towards) => {
+    if (rock.kind !== 'hylla') return;
+    const x = where.x - rock.x;
+    const y = where.y - rock.y;
+    const distance = Math.min(Math.abs(y), rock.step > 0 ? Math.abs(y + rock.step) : Infinity);
+    // Every walkable top stays byte-for-byte where Blender put it. Below those lips, the flat-fronted
+    // support blocks break back along irregular fault planes instead of reading as courses of masonry.
+    const away = smooth(0.06, 0.3, distance);
+    const fracture = noise(x * 1.7 + rock.x * 0.13, y * 1.2 + where.z * 0.7);
+    // The support sits behind the path's props before its profile is tilted and weathered inwards.
+    where.z -= away * (0.85 + fracture * 0.25);
+    where.x -= x * away * (0.05 + fracture * 0.06);
+    where.y += away * Math.sin(x * 1.7 + y * 0.8 + rock.x * 0.2) * 0.14;
+    // Broad patches of pale crust lichen follow exposed faces; the base keeps the cool granite colour.
+    const patch = smooth(0.45, 0.76, noise(where.x * 1.15 + 8, where.y * 1.8 + where.z * 0.5));
+    colour.multiplyScalar(0.8 + 0.25 * noise(where.x * 6.8, where.y * 7.1 + where.z * 3));
+    colour.lerp(CRUST, patch * (0.26 + Math.max(0, towards.y) * 0.22));
+  });
+  const geometry = shaped(made);
+  if (rock.kind === 'hylla') geometry.computeVertexNormals();
+  return geometry;
+}
+
+/** One extra corner per edge lets broad rock faces carry mottling and shallow faults, without another draw. */
+function splitRockFaces(shape: Shape): Shape {
+  const position = Array.from(shape.position), normal = Array.from(shape.normal);
+  const colour = shape.colour.length ? Array.from(shape.colour) : Array<number>(position.length).fill(1);
+  const index: number[] = [];
+  const edges = new Map<string, number>();
+  const middle = (a: number, b: number): number => {
+    const key = a < b ? `${a}:${b}` : `${b}:${a}`;
+    const known = edges.get(key);
+    if (known !== undefined) return known;
+    const next = position.length / 3;
+    for (const values of [position, normal, colour]) for (let k = 0; k < 3; k++) values.push((values[a * 3 + k]! + values[b * 3 + k]!) / 2);
+    edges.set(key, next);
+    return next;
+  };
+  for (let i = 0; i < shape.index.length; i += 3) {
+    const a = shape.index[i]!, b = shape.index[i + 1]!, c = shape.index[i + 2]!;
+    const ab = middle(a, b), bc = middle(b, c), ca = middle(c, a);
+    index.push(a, ab, ca, ab, b, bc, ca, bc, c, ab, bc, ca);
+  }
+  return { position, normal, colour, index };
 }
 
 // --- stones --------------------------------------------------------------------------------------------------

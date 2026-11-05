@@ -1,11 +1,13 @@
 import {
-  AdditiveBlending, BoxGeometry, Color, ConeGeometry, CylinderGeometry, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial,
+  AdditiveBlending, BoxGeometry, Color, ConeGeometry, CylinderGeometry, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial,
   Object3D, PlaneGeometry, SphereGeometry,
 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData } from '../../sim/types';
 import { outlook, outlookPane } from '../backdrop';
 import { BOARD, boards } from './ground';
 import { drawn, heightAt } from './kit';
+import { roomThings } from '../home-room';
 
 // --- the house and the deck ---------------------------------------------------------------------------------
 
@@ -19,7 +21,11 @@ export function built(chapter: ChapterData, indoors = false): Group {
   if (house && indoors) {
     // Seen from inside: a pale panelled wall close behind him, and windows that let the sky in.
     const long = house.to - house.from;
-    const floor = Math.min(...chapter.ground.map((p) => p.y));
+    // The garden below the deck is not the room's floor: using its lowest point lowered the entire wall
+    // and exposed outdoor sky over it in portrait. The room stays on its own level.
+    const roomTo = chapter.outdoors ?? house.to;
+    const inside = chapter.ground.filter(point => point.x >= house.from && point.x < roomTo);
+    const floor = inside.length ? Math.min(...inside.map(point => point.y)) : heightAt(chapter, (house.from + roomTo) / 2);
     const panels = drawn(128, 64, (c) => {
       c.fillStyle = '#eadcc0';
       c.fillRect(0, 0, 128, 64);
@@ -40,20 +46,37 @@ export function built(chapter: ChapterData, indoors = false): Group {
     wall.position.set((house.from + house.to) / 2, floor + 11, -9);
     wall.renderOrder = -2;
     group.add(wall);
+    // A room has a continuous floor towards the viewer. The platformer's cutaway remains outdoors;
+    // indoors it used to leave a black pit beneath the family on a tall phone screen.
+    const roomWidth = roomTo - house.from;
+    const depth = 128;
+    const floorMap = boards();
+    floorMap.repeat.set(roomWidth / (BOARD * 2), depth / (BOARD * 2));
+    const roomFloor = new Mesh(new PlaneGeometry(roomWidth, depth).rotateX(-Math.PI / 2),
+      new MeshStandardMaterial({ color: '#b49a78', map: floorMap, roughness: 0.86 }));
+    roomFloor.name = 'home-continuous-floor';
+    roomFloor.position.set((house.from + roomTo) / 2, floor - 0.015, depth / 2 + 0.44);
+    group.add(roomFloor);
+    // The same recognisable furniture as Stormkvällen. It stands behind the actors and the walking plane;
+    // the epilogue leaves the final windowsill clear, so Fjun's first blink cannot disappear behind a sofa.
+    if (chapter.id === 'prolog') group.add(roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 5.5, blanket: false }));
+    if (chapter.id === 'epilog') group.add(roomThings({ sofa: 8.5, lamp: 16.4, plant: 24.5, drawings: -6, rug: 13, blanket: false }));
     // Where the chapter goes out of doors the house ends: its white corner board, and the garden beyond it.
     if (chapter.outdoors !== undefined) {
       const corner = new Mesh(new BoxGeometry(0.7, 26, 0.5), new MeshStandardMaterial({ color: '#efe8da', roughness: 0.8 }));
       corner.position.set(chapter.outdoors + 0.35, floor + 11, -8.9);
       group.add(corner);
     }
-    const frame = new MeshBasicMaterial({ color: evening ? '#a8977c' : '#f6efe2' });
+    const frame = new MeshStandardMaterial({ color: evening ? '#c3b498' : '#f6efe2', roughness: 0.82 });
     for (const x of house.windows) {
-      // The frame, and a hole of sky in it: whatever is outside shows through, at night the northern lights.
-      for (const [dx, dy, w, h] of [[0, 2.6, 5.4, 0.3], [0, -2.6, 5.4, 0.3], [-2.55, 0, 0.3, 5.5], [2.55, 0, 0.3, 5.5], [0, 0, 0.18, 5.2], [0, 0, 5.1, 0.18]] as const) {
-        const bar = new Mesh(new PlaneGeometry(w, h), frame);
-        bar.position.set(x + dx, heightAt(chapter, x) + 6 + dy, -8.9);
-        group.add(bar);
-      }
+      // Solid painted joinery catches the room's light. One merged draw includes the projecting sill;
+      // the glass keeps the same opening and the story's window positions stay exactly where they were.
+      const base = heightAt(chapter, x);
+      const bars = [[0, 2.6, 5.4, 0.3], [0, -2.6, 5.4, 0.3], [-2.55, 0, 0.3, 5.5], [2.55, 0, 0.3, 5.5], [0, 0, 0.18, 5.2], [0, 0, 5.1, 0.18]]
+        .map(([dx, dy, w, h]) => new BoxGeometry(w!, h!, 0.16).translate(x + dx!, base + 6 + dy!, -8.88));
+      bars.push(new BoxGeometry(5.8, 0.18, 1.15).translate(x, base + 3.27, -8.48));
+      group.add(new Mesh(mergeGeometries(bars), frame));
+      bars.forEach((part) => part.dispose());
     }
     // Pappa's shelf: his figures in a row, athletes and tomtar, and the first place in the row.
     if (chapter.shelf) {
@@ -84,13 +107,26 @@ export function built(chapter: ChapterData, indoors = false): Group {
         const piece = new Group();
         piece.position.set(at, y + 0.08, -8.5);
         piece.userData.model = carved[i];
+        piece.userData.disposeFallback = true;
         piece.userData.fit = 1;
         piece.userData.turn = (i % 3 - 1) * 0.16;
-        const body = new Mesh(new CylinderGeometry(0.17, 0.24, tall, 10), material);
+        // Broad knife-cut planes read as carved wood, including without the private collection pack.
+        const body = new Mesh(new CylinderGeometry(0.17, 0.24, tall, 6), material);
         body.position.y = tall / 2;
-        const head = new Mesh(new SphereGeometry(0.19, 12, 9), material);
+        body.rotation.y = 0.18 * (i % 3);
+        const head = new Mesh(new SphereGeometry(0.19, 7, 5), material);
         head.position.y = tall + 0.14;
         piece.add(body, head);
+        const nose = new Mesh(new ConeGeometry(0.055, 0.14, 4), wood('#d7ae7c'));
+        nose.rotation.x = Math.PI / 2;
+        nose.position.set(0, tall + 0.13, 0.21);
+        piece.add(nose);
+        const eyes = wood('#35485a');
+        for (const side of [-1, 1]) {
+          const eye = new Mesh(new SphereGeometry(0.018, 6, 4), eyes);
+          eye.position.set(side * 0.07, tall + 0.19, 0.17);
+          piece.add(eye);
+        }
         group.add(piece);
         // Every second one is a tomte, with a pointed cap carved from the same piece.
         if (i % 2 === 0 && !old) {
@@ -98,6 +134,24 @@ export function built(chapter: ChapterData, indoors = false): Group {
           cap.position.y = tall + 0.46;
           piece.add(cap);
         }
+        // A richer public fallback still costs one draw per carving, fewer than the old cylinder/head pair.
+        const parts = piece.children.map((child) => {
+          const mesh = child as Mesh;
+          mesh.updateMatrix();
+          const shape = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+          shape.applyMatrix4(mesh.matrix);
+          const colour = (mesh.material as MeshStandardMaterial).color;
+          const colours = new Float32Array(shape.getAttribute('position').count * 3);
+          for (let j = 0; j < colours.length; j += 3) colours.set([colour.r, colour.g, colour.b], j);
+          shape.setAttribute('color', new Float32BufferAttribute(colours, 3));
+          return shape;
+        });
+        const materials = new Set(piece.children.map((child) => (child as Mesh).material as MeshStandardMaterial));
+        for (const child of piece.children) (child as Mesh).geometry.dispose();
+        materials.forEach((material) => material.dispose());
+        piece.clear();
+        piece.add(new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.92, flatShading: true })));
+        parts.forEach((part) => part.dispose());
       }
     }
     // The wall is solid between the windows: it is cut by drawing the sky's own colour there, behind the frames.
