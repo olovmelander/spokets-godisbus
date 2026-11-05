@@ -1,4 +1,4 @@
-// Release boundaries and navigation through real title/end-card controls; no release constant is changed.
+// The normal address opens the released story, including Byn, without a development flag.
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -33,39 +33,52 @@ try {
   const context = await browser.newContext({ viewport: { width: 844, height: 390 }, serviceWorkers: 'block' });
   const errors = [];
   context.on('page', (page) => page.on('pageerror', (error) => errors.push(String(error))));
-  let page = await open(context, 'course=epilog&title');
-  check('debug and an unreleased explicit course still open the public test course', (await state(page)).course === 'testbana');
-  await page.click('#codeBtn');
-  await page.fill('#codeInput', 'GRAN KOTTE MOSSA');
-  await page.locator('#codeInput').press('Enter');
-  await page.waitForSelector('#codeWrong:not([hidden])');
-  check('an unreleased chapter code is rejected visibly without navigation', (await state(page)).course === 'testbana' && new URL(page.url()).searchParams.get('course') === 'epilog');
+  let page = await context.newPage();
+  await page.goto(origin);
+  await page.waitForFunction(() => document.getElementById('loading')?.classList.contains('done'), null, { timeout: 60000 });
+  check('the bare public address opens the playable title', await page.locator('#title').isVisible());
   await page.close();
 
-  page = await open(context, 'dev&course=garden&title&flags=dewsong');
+  page = await open(context, '');
+  check('the normal public route starts the prologue', (await state(page)).course === 'prolog');
+  await page.close();
+
+  page = await open(context, 'course=prolog&title');
   await page.click('#codeBtn');
   await page.fill('#codeInput', 'GRAN KOTTE MOSSA');
   await Promise.all([page.waitForURL((url) => url.searchParams.get('course') === 'granskog'), page.locator('#codeInput').press('Enter')]);
   await ready(page);
-  let url = new URL(page.url());
-  check('a development code replaces an explicit course', (await state(page)).course === 'granskog');
-  check('a code removes old inspection flags and starts at the new beginning', !url.searchParams.has('flags') && (await state(page)).x < 10);
+  check('a chapter code opens Granskogen without dev', (await state(page)).course === 'granskog' && !new URL(page.url()).searchParams.has('dev'));
   await page.close();
 
-  page = await open(context, 'dev&course=garden&at=208.5,0.01&flags=dewsong');
+  page = await open(context, 'course=byn');
+  check('the bonus Byn opens directly without dev', (await state(page)).course === 'byn');
+  await page.close();
+
+  page = await open(context, 'course=garden&at=208.5,0.01&flags=dewsong');
   await page.keyboard.down('ArrowRight');
   await page.waitForSelector('#endCard:not([hidden])', { timeout: 60000 });
   await page.keyboard.up('ArrowRight');
-  check('a development end card offers the next chapter', await page.locator('#endOnward').isVisible());
+  check('a public end card offers the next chapter', await page.locator('#endOnward').isVisible());
   await Promise.all([page.waitForURL((url) => url.searchParams.get('course') === 'granskog'), page.click('#endOnward')]);
   await ready(page);
-  url = new URL(page.url());
+  let url = new URL(page.url());
   check('onward replaces the explicit chapter rather than reloading its end card', (await state(page)).course === 'granskog');
-  check('onward clears the old start coordinates and flags', !url.searchParams.has('at') && !url.searchParams.has('flags') && (await state(page)).x < 10);
+  check('onward clears inspection seeds and stays public', !url.searchParams.has('at') && !url.searchParams.has('flags') && !url.searchParams.has('dev') && (await state(page)).x < 10);
   await page.close();
 
-  // Use a real store-created profile, then emulate a save from a later development session.
-  page = await open(context, 'dev&course=garden');
+  page = await open(context, 'course=epilog&flags=goal');
+  await page.waitForSelector('#photoAlbum:not([hidden]), #endCard:not([hidden])', { timeout: 60000 });
+  if (await page.locator('#photoAlbum').isVisible()) await page.keyboard.press('Escape');
+  await page.waitForSelector('#endCard:not([hidden])', { timeout: 60000 });
+  check('the public epilogue offers Byn as the bonus', await page.locator('#endOnward').isVisible());
+  await Promise.all([page.waitForURL((target) => target.searchParams.get('course') === 'byn'), page.click('#endOnward')]);
+  await ready(page);
+  check('the bonus transition stays on the normal route', (await state(page)).course === 'byn' && !new URL(page.url()).searchParams.has('dev'));
+  await page.close();
+
+  // Use a real store-created profile, then emulate progress saved before this release.
+  page = await open(context, 'course=garden');
   await page.keyboard.press('Escape');
   await page.evaluate(() => {
     const key = `godisbus.v1.player.${window.__godis.state().playerId}`;
@@ -83,10 +96,10 @@ try {
   });
   await page.goto(`${origin}?debug&standin&tier=low`);
   await ready(page);
-  check('an unreleased saved chapter opens the public fallback', (await state(page)).course === 'testbana');
+  check('a public save resumes its released chapter', (await state(page)).course === 'myren');
   await page.keyboard.press('Escape');
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem(`godisbus.v1.player.${window.__godis.state().playerId}`)));
-  check('public fallback autosave preserves the later chapter and checkpoint', saved.chapter === 'myren' && saved.checkpoint === 3);
+  check('public autosave preserves the chapter and checkpoint', saved.chapter === 'myren' && saved.checkpoint === 3);
   check('all routing checks run without page errors', errors.length === 0);
   await context.close();
   console.log(`${checked} release-routing browser checks passed.`);

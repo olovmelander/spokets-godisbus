@@ -269,7 +269,7 @@ try {
     const atParse = () => document.addEventListener('readystatechange', () => {
       if (document.readyState === 'interactive') window.__motionAtParse = document.documentElement.dataset.motion ?? null;
     });
-    const { page, finish } = await open('motion from the save', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }, '?debug&standin&tier=low', atParse);
+    const { page, finish } = await open('motion from the save', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }, '?debug&standin&tier=low&course=testbana', atParse);
     await page.tap('#pauseBtn');
     await settingsPage(page);
     await page.check('#setCalm');

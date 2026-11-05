@@ -2,6 +2,29 @@
 
 ## State (5 November 2026)
 
+- **Released, 5 November 2026: `RELEASED_CHAPTER` is `morgonen`.** Olov asked for everything built to go into `main` and be
+  playable on GitHub Pages, and chose to open the whole game on the normal address. A new player starts in the prologue and goes
+  through the story, Byn as a bonus, and all of Äventyr 2, without `?dev`. The test course is `?course=testbana`. Taking it back is
+  one line in `src/content/world.ts`. All open pull requests (#187, #192, #195–#224, private #2) went in through one roll-up.
+- **The family rebuilt, 5 November 2026 (Olov: "alla mänskliga karaktärer ... Mormor och morfar måste följa samma designstil").**
+  All seven are made one way now: `art/private/family/` (`defaults.py`, `shared.py`, `build.py`) and a short file for each person.
+  Headless, ten seconds each: `blender -b --factory-startup -t 6 --python family/build.py -- pappa`.
+  - **The head is one form,** drawn from an outline measured off the sheets (`OUTLINE` in `shared.py`: width, front and back by
+    height). Olov said the cheeks were too bubbly: they were balls of their own. Now they are the outline's curve with `CHEEK_K` of
+    fullness. `FACE_WIDE`, `JAW_WIDE`, `CHIN_WIDE`, `CHIN_OUT` make each face its person's. Eyes are smaller, as on the sheets.
+  - **Hair** is `tufts()`: broad tufts laid like shingles. Thin ones made a hedgehog, and Olov said so. Sharp ones must stay few.
+    A hair form that reaches too low shows through the eye openings: keep `HAIR_FORMS` high (it did on Mamma and Moa).
+    **Mamma's hair is lighter and blonder** on Olov's word, whatever the sheet shows.
+  - **Caps** have a curved peak (`visor()`), and the crown fits the head. **Legs** are one form each (`leg_form()`), **soles** are flat
+    slabs (`sole()`), **shoulders** slope from the neck: the rings' width at shoulder height must reach `SHOULDER.x`. Sleeves are slimmer.
+  - **Mormor and Morfar come from a photograph Olov gave** (in no repository): her short white side-swept hair, black glasses, pale
+    blue blouse with navy medallions and diamonds; his short thick white hair, glasses pushed up into it, navy jersey with a band
+    of pale diamonds. **Morfar never has a cap.** The band and the medallions are shapes laid on the cloth (`printed()`, `stamp()`,
+    `stitch()`). `lifted()` in `morfar.py` is one place to change if his glasses should sit on his nose. They load from the private
+    pack over the code figures (`dress()` in `grandparents.ts`), which stay as stand-ins.
+  - **Motion stays in the game's code,** not in Blender clips: the `Pose` has `twist`, `footL`, `footR`. `plantFeet()` keeps the sole
+    near the ground through the stance. Elof and the family use it; shoulders turn against the hips, and a run bends the arms.
+    Someone under a cap's peak looks down less, or the peak hides the face.
 - **The overhaul's second round (5 November 2026, morning): `aventyr2-konst`, on top of #223.** "Allt som syns" modelled
   in Blender, with the art kits in `art/blender/a2-nature.py`, `a2-creatures.py` and `a2-props.py`, sent with
   `scripts/bake/send-kit.mjs`. Blender 5.2 ran with its own scripts folder and factory settings, so nothing of Olov's
@@ -3613,10 +3636,15 @@
 
 ## Next
 
-**For Olov, first:** merge in the order under "State", and play the jetty at the start of `?dev&course=stormoga`, the seesaw
-at the end of `?dev&course=billsta` and the eddies at `?dev&course=alven`. Whether the night is dark enough, and whether the
-seesaw's thought is fair for Elof, only a person can judge. The rest of the order of work is in `docs/aventyr-2-overhaul.md`.
-None of it needs Olov's computer except new models and anything from `photos/`, which is on his old computer.
+**For Olov, first:** everything is merged and released. Open the normal address on each device Elof plays on at least 15 minutes after
+the deploy, so the service worker updates, and play: the jetty at the start of `stormoga`, the seesaw at the end of `billsta` and
+the eddies at `alven` are the parts only a person can judge. Olov goes on later with the game, visuals, conversations, story, design
+and TTS. New TTS voices come when the story and conversations are done. The rest of the order of work is in
+`docs/aventyr-2-overhaul.md`. It needs Olov's computer only for new models and for `photos/`, which is on his old computer. The
+family's models need Blender on his computer: they are in `art/private`, on its `main`.
+
+**Left of the overhaul:** the owl's flight and the ride home at Stormöga were not checked with stills since their water changed;
+Stormbyn's flat dark street; Pappa at the bridge stands on the bank; the raft tower and the goals are still drawn in code.
 
 **The picture, from three stills of every chapter on High (4 November 2026), biggest gain first. One pull request
 each. The forest, the bog and the mountain are already strong, and are the standard for the rest:**
@@ -3923,6 +3951,9 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **The game is released to its last chapter** (`morgonen`, Olov, 5 November 2026). From now on `main` is what Elof plays.
+- **Morfar never has a cap, and has glasses; Mamma's hair is light blonde** (Olov, 5 November 2026).
+- **The family's triangle budget** is 16,600–21,900 each, over the plan's 15,000, for the faces and hair (`docs/art-bible.md`).
 - **Voices (Olov, 5 November 2026):** new TTS voices are recorded when the storytelling and the conversations are finished.
   Until then `public/audio/voices`, `public/audio/test_candidates` and `src/audio/voice-player.ts` stay as they are, and a
   404 for a line without a voice is expected. Olov chooses the service. This replaces plan §0 Q9's "no voices".
@@ -3979,6 +4010,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The family rebuilt and everything released (5 November) | Olov's request: every human figure's design and motion, in one style | 1 session on Olov's computer, with Blender | 1 / 8 (faces, hair, caps, bodies, Mamma's hair, Mormor and Morfar) | One outline for all heads; seven people from short files; released to `morgonen` |
 | Äventyr 2's overhaul (4 to 5 November) | Olov's request: audit and overhaul of every world, puzzle, figure and animal | 1 session on Olov's computer, until 02:30 | — / 0 so far | 29 pull requests, #192 and #195 to #223, none played by Olov yet |
 | Äventyr 2: Stormnatten (4 November) | Olov's request: a second adventure of several worlds, about as long as the first | 1 cloud session, with four parallel world-building agents | — / 0 | Seven chapters (~940 EL), a lazily loaded pack with its own size gate, storm visuals in code, 1,773 tests and a 30-check browser suite. Voices, device review and Blender art remain. |
 | Äventyr 2, version 2 (4 November) | Olov's request: more worlds and puzzles, Billsta, Flärken and Olympia, an audit, good Swedish | the same cloud session, with a research agent and four world-building agents | — / 0 | Ten chapters (~1,510 EL), 23 code-built building kinds, Moa's map of Äventyr 2, a visual sweep that found and fixed the drain-well wall over Olympia, 1,914 tests and a 42-check browser suite. Pictures of the places, voices, device review and Blender art remain. |
@@ -4153,6 +4185,8 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- Hands with shaped fingers, finer hair on Moa and Mamma, and the family's bodies closer to the sheets' clothes: pockets, seams, a belt.
+- Authored walk and run clips in Blender, if the poses in code are not enough.
 - Äventyr 2's own hidden candy kinds and stickers (its chapters have none, so the album's totals and the golden
   geléhallon of Äventyr 1 keep their meaning). (Moa's map of its places was built on 4 November.)
 - Äventyr 2 from real pictures: Olympia, Flärkenbadet and Billsta are built from the research text and, for
@@ -4162,6 +4196,9 @@ The older list, still true where it is not struck:
   line now).
 
 ## Frågor till Olov
+
+- Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
+- Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
 
 The first two are in plan §0, "Kvar att svara på". None of them blocks the work.
 

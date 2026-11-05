@@ -40,9 +40,10 @@ describe('Äventyr 2: the pack', () => {
   it('opens where the first adventure ends, and keeps the release boundary', () => {
     const dev = new URLSearchParams('dev');
     expect(nextAvailable('byn', dev)?.id).toBe('stormkvall');
-    // Released, the epilogue leads straight on where Byn has no public release.
-    expect(nextAvailable('epilog', new URLSearchParams(), 'morgonen')?.id).toBe('stormkvall');
-    expect(nextAvailable('epilog', new URLSearchParams(), 'epilog')).toBeNull();
+    // Released, Byn lies between the two adventures.
+    expect(nextAvailable('epilog', new URLSearchParams(), 'morgonen')?.id).toBe('byn');
+    expect(nextAvailable('byn', new URLSearchParams(), 'morgonen')?.id).toBe('stormkvall');
+    expect(nextAvailable('byn', new URLSearchParams(), 'epilog')).toBeNull();
     for (const id of ADVENTURE2_IDS) {
       expect(courseAvailable(new URLSearchParams(), id, null), id).toBe(false);
       expect(courseAvailable(new URLSearchParams(), id, 'epilog'), id).toBe(false);

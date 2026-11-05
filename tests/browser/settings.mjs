@@ -59,7 +59,7 @@ async function ready(page) {
   await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
   await frames(page);
 }
-async function open(name, options = {}, query = '?debug&standin&tier=low', init) {
+async function open(name, options = {}, query = '?debug&standin&tier=low&course=testbana', init) {
   const context = await browser.newContext({ viewport: { width: 844, height: 390 }, ...options });
   if (init) await context.addInitScript(init);
   const page = await context.newPage();
@@ -117,7 +117,7 @@ try {
 
   console.log('settings: saved graphics, live tier changes and keyboard menus');
   {
-    const { page, state, info, finish } = await open('graphics', {}, '?debug&standin&tier=low');
+    const { page, state, info, finish } = await open('graphics', {}, '?debug&standin&tier=low&course=testbana');
     await until(info, (i) => i.models.includes('boot/big-candy'), 'checkpoint model loaded', 30000);
     await page.keyboard.down('ArrowRight');
     await until(state, (s) => s.x > 2.5 && s.candy > 0, 'collect candy before changing graphics');
@@ -229,7 +229,7 @@ try {
 
   console.log('settings: gamepad title, pause, reference and back');
   {
-    const { page, state, finish } = await open('gamepad', {}, '?debug&standin&title&tier=low', installPad);
+    const { page, state, finish } = await open('gamepad', {}, '?debug&standin&title&tier=low&course=testbana', installPad);
     // A first start's two play styles are its start buttons; Äventyr has the focus.
     check('the first start offers its play styles at once, with Äventyr focused', await page.locator('#startAventyr').isVisible() && await page.evaluate(() => document.activeElement?.id === 'startAventyr'));
     await padPress(page, 15); // D-pad right: Lugnt
@@ -352,7 +352,7 @@ try {
 
   console.log('settings: chapter-end menus freeze play and save once');
   {
-    const { page, state, finish } = await open('end', {}, '?debug&standin&tier=low', () => {
+    const { page, state, finish } = await open('end', {}, '?debug&standin&tier=low&course=testbana', () => {
       const key = 'godisbus.v1.player.elof';
       // Start at an authored checkpoint on the flat final stretch, through the real save loader.
       if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({

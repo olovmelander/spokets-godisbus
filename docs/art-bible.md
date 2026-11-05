@@ -82,7 +82,8 @@ No one here sculpts by hand. Two routes were looked at on 3 October, and neither
 6. **Texture.** One 1024² colour texture per character, baked in Blender from ambient occlusion, edge
    curvature and a top-to-bottom gradient over flat colours. No normal map (plan §6.6).
 7. **Rig and clips.** The base is already skinned to the library's skeleton, so the library's clips play on it.
-8. **Budget.** At most 15,000 triangles and one material per character in the game (plan §5.6).
+8. **Budget.** At most 15,000 triangles and one material per character in the game (plan §5.6). Since the family was rebuilt
+   on 5 November 2026 they are 16,600–21,900 each: Olov wanted the faces and the hair as on the sheets, and few are on screen together.
 
 ### 1.5 How the ghost is built
 
