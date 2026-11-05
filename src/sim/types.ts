@@ -378,7 +378,7 @@ export type SurfaceKind = 'wood' | 'earth' | 'stone' | 'shavings' | 'hedge' | 'p
  * outline, and `base` is the height of the ground at its foot.
  */
 /** Things on the floor that he walks on, each a model of its own: the land goes on under them. */
-export type LandmarkThing = 'barrel' | 'can' | 'playhouse' | 'slide' | 'picnic' | 'fence' | 'stairs' | 'woodpile';
+export type LandmarkThing = 'barrel' | 'can' | 'playhouse' | 'slide' | 'picnic' | 'fence' | 'stairs' | 'woodpile' | 'skerry';
 
 export interface Landmark {
   look: 'cone' | 'log' | 'anthill' | 'stone' | LandmarkThing;

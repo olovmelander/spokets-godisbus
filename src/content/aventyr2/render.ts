@@ -423,7 +423,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   }
 
   // A figure seen far out in the lake stands on a stone of its own, dark and wet, the waves round it.
-  for (const d of chapter.decor ?? []) {
+  for (const d of (chapter.water ?? []).length > 0 ? chapter.decor ?? [] : []) {
     if ((d.look !== 'tragubbe' && d.look !== 'lillgubbe') || (d.z ?? 0) > -6) continue;
     const rock = new Mesh(new SphereGeometry(1.4, 12, 8), solid('#3c4048', 0.9, { flatShading: true }));
     rock.scale.set(1.3, 0.55, 1);
@@ -447,12 +447,14 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     passing.userData.lift = -0.45;
   }
   // The rain barrel and the watering can stand on the lawn, their tops where the outline has them.
-  for (const [look, model] of [['barrel', 'tunna'], ['can', 'kanna'], ['playhouse', 'lekstuga'], ['slide', 'rutschkana'], ['picnic', 'picknick'], ['fence', 'staket'], ['stairs', 'trappa'], ['woodpile', 'vedstapel']] as const) {
+  for (const [look, model] of [['barrel', 'tunna'], ['can', 'kanna'], ['playhouse', 'lekstuga'], ['slide', 'rutschkana'], ['picnic', 'picknick'], ['fence', 'staket'], ['stairs', 'trappa'], ['woodpile', 'vedstapel'], ['skerry', 'holme']] as const) {
     for (const holder of scene.getObjectsByProperty('name', `landmark:${look}`)) {
       holder.userData.model = model;
       const mark = chapter.landmarks?.find((one) => one.look === look && one.from === holder.position.x);
       // A barrel and a can stand round their middles; the others are measured from their near edge.
       if (mark && (look === 'barrel' || look === 'can')) holder.userData.shift = (mark.to - mark.from) / 2;
+      // The stone is measured from the path's own height, whatever the lake's bed is.
+      if (mark && look === 'skerry') holder.userData.lift = -mark.base;
       // Behind the porch, the house itself, as the family's garden has it.
       if (look === 'playhouse') {
         const house = new Group();
@@ -935,7 +937,9 @@ function football(radius: number): Mesh {
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
 const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
   'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
-const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra', 'rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel'];
+const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra'];
+const BUILT = ['rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel'];
+const ROOM = ['soffa', 'soffa-filt', 'golvlampa', 'krukvaxt', 'bord', 'stol', 'pall', 'holme'];
 const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
 const CARVINGS = ['tragubbe', 'lillgubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];
@@ -943,6 +947,8 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
   ...Object.fromEntries(CREATURES.map((name) => [name, ['aventyr2', 'creatures'] as const])),
   ...Object.fromEntries(CARVINGS.map((name) => [name, ['private', 'tragubbar'] as const])),
   ...Object.fromEntries(PROPS.map((name) => [name, ['aventyr2', 'props'] as const])),
+  ...Object.fromEntries(BUILT.map((name) => [name, ['aventyr2', 'built'] as const])),
+  ...Object.fromEntries(ROOM.map((name) => [name, ['aventyr2', 'room'] as const])),
   ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
   'olympia-hall': ['aventyr2', 'olympia'],
   'olympia-stand': ['aventyr2', 'olympia'],
@@ -990,6 +996,7 @@ async function installModels(assets: Assets, scene: Object3D): Promise<boolean> 
     if (typeof place.userData.turn === 'number') copy.rotation.y = place.userData.turn as number;
     if (typeof place.userData.lift === 'number') copy.position.y = place.userData.lift as number;
     if (typeof place.userData.shift === 'number') copy.position.x = place.userData.shift as number;
+    if (typeof place.userData.back === 'number') copy.position.z = place.userData.back as number;
     if (block) {
       const size = new Box3().setFromObject(made).getSize(new Vector3());
       copy.scale.set(block.width / size.x, block.height / size.y, block.depth / size.z);
@@ -1734,22 +1741,36 @@ function roomThings(at: { sofa: number; lamp: number; plant: number; drawings: n
   const group = new Group();
   const WALL = -8.5;
   const home: BufferGeometry[] = [];
+  /** A piece of the room as plain shapes, until its model has come (art/blender/a2-room.py). */
+  const piece = (name: string, parts: BufferGeometry[], x: number, z: number) => {
+    const held = new Group();
+    held.add(new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 })));
+    held.userData.model = name;
+    held.userData.shift = x;
+    held.userData.back = z;
+    group.add(held);
+  };
   const SOFA = { x: at.sofa, z: -6.6 };
-  home.push(box(11, 1.5, 3.6, SOFA.x, 1.15, SOFA.z, '#5c6c4c'), box(11, 3.4, 1, SOFA.x, 2.5, SOFA.z - 1.6, '#566644'));
-  for (const side of [-5.6, 5.6]) home.push(box(1, 2.5, 3.8, SOFA.x + side, 1.55, SOFA.z, '#4e5c3e'));
-  for (const side of [-1, 1]) home.push(box(0.3, 0.45, 3.2, SOFA.x + side * 4.8, 0.22, SOFA.z, '#3a2c20'));
+  const couch = [box(11, 1.5, 3.6, SOFA.x, 1.15, SOFA.z, '#5c6c4c'), box(11, 3.4, 1, SOFA.x, 2.5, SOFA.z - 1.6, '#566644')];
+  for (const side of [-5.6, 5.6]) couch.push(box(1, 2.5, 3.8, SOFA.x + side, 1.55, SOFA.z, '#4e5c3e'));
+  for (const side of [-1, 1]) couch.push(box(0.3, 0.45, 3.2, SOFA.x + side * 4.8, 0.22, SOFA.z, '#3a2c20'));
   // Bertil's blanket, pulled half off it the morning after, and a cushion.
-  if (at.blanket) home.push(box(3.4, 0.28, 3.9, SOFA.x - 2.2, 2.02, SOFA.z + 0.1, '#b89a4a'), box(3.4, 1.6, 0.26, SOFA.x - 2.2, 1.2, SOFA.z + 2, '#b89a4a'));
-  home.push(paint(new SphereGeometry(0.9, 10, 8).scale(1, 0.85, 0.4).rotateZ(0.3).translate(SOFA.x + 3.6, 2.7, SOFA.z - 0.8), '#a8604a'));
+  if (at.blanket) couch.push(box(3.4, 0.28, 3.9, SOFA.x - 2.2, 2.02, SOFA.z + 0.1, '#b89a4a'), box(3.4, 1.6, 0.26, SOFA.x - 2.2, 1.2, SOFA.z + 2, '#b89a4a'));
+  couch.push(paint(new SphereGeometry(0.9, 10, 8).scale(1, 0.85, 0.4).rotateZ(0.3).translate(SOFA.x + 3.6, 2.7, SOFA.z - 0.8), '#a8604a'));
+  piece(at.blanket ? 'soffa-filt' : 'soffa', couch, SOFA.x, SOFA.z);
   // The floor lamp, and the plant.
-  home.push(paint(new CylinderGeometry(0.7, 0.8, 0.14, 12).translate(at.lamp, 0.07, -7.4), '#3a3e44'), paint(new CylinderGeometry(0.07, 0.07, 6, 8).translate(at.lamp, 3, -7.4), '#3a3e44'));
-  home.push(paint(new CylinderGeometry(0.75, 1.15, 1.2, 14, 1, true).translate(at.lamp, 6.4, -7.4), '#e4d8bc'));
-  home.push(paint(new CylinderGeometry(0.72, 0.56, 1.1, 12).translate(at.plant, 0.55, -7.8), '#a8704a'));
+  const lamp: BufferGeometry[] = [];
+  const plant: BufferGeometry[] = [];
+  lamp.push(paint(new CylinderGeometry(0.7, 0.8, 0.14, 12).translate(at.lamp, 0.07, -7.4), '#3a3e44'), paint(new CylinderGeometry(0.07, 0.07, 6, 8).translate(at.lamp, 3, -7.4), '#3a3e44'));
+  lamp.push(paint(new CylinderGeometry(0.75, 1.15, 1.2, 14, 1, true).translate(at.lamp, 6.4, -7.4), '#e4d8bc'));
+  piece('golvlampa', lamp, at.lamp, -7.4);
+  plant.push(paint(new CylinderGeometry(0.72, 0.56, 1.1, 12).translate(at.plant, 0.55, -7.8), '#a8704a'));
   for (let i = 0; i < 9; i++) {
     const turn = (i / 9) * Math.PI * 2;
     const lean = 0.35 + (i % 3) * 0.22;
-    home.push(paint(new ConeGeometry(0.28, 2.8, 5).scale(1, 1, 0.3).rotateZ(lean).rotateY(turn).translate(at.plant - Math.cos(turn) * lean * 1.2, 2.3, -7.8 + Math.sin(turn) * lean * 1.2), i % 2 ? '#4a7238' : '#3a5e30'));
+    plant.push(paint(new ConeGeometry(0.28, 2.8, 5).scale(1, 1, 0.3).rotateZ(lean).rotateY(turn).translate(at.plant - Math.cos(turn) * lean * 1.2, 2.3, -7.8 + Math.sin(turn) * lean * 1.2), i % 2 ? '#4a7238' : '#3a5e30'));
   }
+  piece('krukvaxt', plant, at.plant, -7.8);
   // Moa's drawings: paper on the wall, each with a sun, a house or two figures in crayon, and no words.
   const d = at.drawings;
   for (const [x, y, wide] of [[33.6, 3.2, 1.9], [35.8, 3.5, 1.6], [37.6, 3, 1.5]] as const) {

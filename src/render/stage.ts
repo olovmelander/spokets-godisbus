@@ -317,6 +317,8 @@ function moasDrawing(): CanvasTexture {
 /** A kitchen table and chairs: plain stand-ins, never the family's own furniture (that is Olov's to model). */
 function furniture(look: 'table' | 'chair' | 'stool'): Group {
   const group = new Group();
+  // Where the adventure's pack has it, the piece is a model (art/blender/a2-room.py), of the same size.
+  group.userData.model = look === 'table' ? 'bord' : look === 'chair' ? 'stol' : 'pall';
   const wood = new MeshStandardMaterial({ color: look === 'table' ? '#b58a58' : '#d9cdb8', roughness: 0.8 });
   const box = (w: number, h: number, d: number, x: number, y: number, z: number) => {
     const mesh = new Mesh(new BoxGeometry(w, h, d), wood);
