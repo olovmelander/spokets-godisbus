@@ -141,7 +141,7 @@ One pull request for each visible outcome.
    painted sun and a lake's shore are built. It has its own far shore and the jetty's L.
    Left: nothing large.
 6. **Älven:** its own far picture (ridges, hay meadows, poles, the log barn, the white column), black water and cream foam
-   wet logs in eddies he plays, white rapids and a lodge of sticks are built. Left: the forest torrent's first stretch.
+   wet logs in eddies he plays, white rapids, the forest torrent's first stretch and a lodge of sticks are built.
 7. ~~Own light and far picture for every chapter.~~ Done.
 8. **Real puzzles:** "Vad flyter?" at Flärken, the lever at Billsta, a storm that grows and a river he plays are built. All done:
    Olympia's answer lies behind him.

@@ -4,7 +4,7 @@
 
 - **The overhaul's long night (4 to 5 November 2026).** Stacked pull requests, one outcome each, none of them merged
   yet. **Merge in number order:** #192, then #195 to #201 (their base is `main`, so rebase or retarget as they land), then
-  #202 to #221, each on top of the one before, and `spokets-godisbus-familj` PR #2 for the real house in Billsta. #187 is
+  #202 to #222, each on top of the one before, and `spokets-godisbus-familj` PR #2 for the real house in Billsta. #187 is
   old and raises `RELEASED_CHAPTER`: leave it. Everything since #201, in order:
   - **#202, own light.** Olympia under a neutral sky so that the hall reads wine-red, Flärken pale slate, Älven olive and
     tea, Billsta indigo. `PlaceLook.ground`: Flärken's ground is the new `shore`, because the bog's red sphagnum read as
@@ -42,6 +42,7 @@
     is 0.45: the shafts, not the haze, were the milk over the meeting.
   - **#217, one room.** `roomThings()`: the evening and the morning share the rug, the sofa, the lamp, the plant and Moa's
     drawings.
+  - **#222, the torrent.** Älven's first stretch breaks white over dark boulders, and `docs/aventyr-2.md` says what was built.
   - **#221, stones.** A mover look `boulder` for the seesaw's stone and Flärken's.
   - **#220, the owl and the morning.** The owl that carries him was a blob with a box for a wing; it is now the tawny owl in
     flight, its wings named `owl-wing` and beaten from `stormExtra`. A great tit hops on Morgonen's sill. The jetty and the
@@ -3927,7 +3928,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
-| Äventyr 2's overhaul (4 to 5 November) | Olov's request: audit and overhaul of every world, puzzle, figure and animal | 1 session on Olov's computer, until 02:30 | — / 0 so far | 27 pull requests, #192 and #195 to #221, none played by Olov yet |
+| Äventyr 2's overhaul (4 to 5 November) | Olov's request: audit and overhaul of every world, puzzle, figure and animal | 1 session on Olov's computer, until 02:30 | — / 0 so far | 28 pull requests, #192 and #195 to #222, none played by Olov yet |
 | Äventyr 2: Stormnatten (4 November) | Olov's request: a second adventure of several worlds, about as long as the first | 1 cloud session, with four parallel world-building agents | — / 0 | Seven chapters (~940 EL), a lazily loaded pack with its own size gate, storm visuals in code, 1,773 tests and a 30-check browser suite. Voices, device review and Blender art remain. |
 | Äventyr 2, version 2 (4 November) | Olov's request: more worlds and puzzles, Billsta, Flärken and Olympia, an audit, good Swedish | the same cloud session, with a research agent and four world-building agents | — / 0 | Ten chapters (~1,510 EL), 23 code-built building kinds, Moa's map of Äventyr 2, a visual sweep that found and fixed the drain-well wall over Olympia, 1,914 tests and a 42-check browser suite. Pictures of the places, voices, device review and Blender art remain. |
 | Home garden identity (10 October) | Rework Chapter 1 from three supplied building photographs | 1 cloud continuation | — / 0 | Dimensional red home/veranda/deck, green playhouse and timber fjällkåta authored in Blender 4.5.14 in the private repository; a generic public fallback and chapter framing preserve the route. The photos do not establish a surveyed garden layout. Device and family visual review remain. |

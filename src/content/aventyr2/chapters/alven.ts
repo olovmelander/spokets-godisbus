@@ -309,7 +309,7 @@ export const alven: ChapterData = {
     ],
     // Cream foam on the black water: below the outlet and down through the rapids.
     foam: [
-      { from: OUTLET.to, to: GRAVEL.from, y: CURRENT, speed: 1.6 },
+      { from: OUTLET.to, to: GRAVEL.from, y: CURRENT, speed: 4, dense: 8 },
       { from: GRAVEL.to, to: BANK.from, y: CURRENT, speed: 1.6 },
       { from: RAPIDS.from, to: RAPIDS.to, y: RAPID, speed: 6, dense: 12 },
     ],
@@ -330,6 +330,8 @@ export const alven: ChapterData = {
   decor: [
     // The rapids under the bridge: far too wild, and it should look it.
     { look: 'whiteWater', at: { x: (RAPIDS.from + RAPIDS.to) / 2, y: RAPID } },
+    // And the forest torrent below the outlet, which the raft goes down.
+    { look: 'whiteWater', at: { x: 22, y: CURRENT } },
     // The otter on its stone.
     { look: 'otter', at: { x: (OTTER.from + OTTER.to) / 2, y: OTTER.y }, z: 0.1 },
     // Reeds along the banks, and in the shallows by them.
