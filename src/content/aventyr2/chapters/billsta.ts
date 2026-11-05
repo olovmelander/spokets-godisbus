@@ -392,7 +392,9 @@ export const billsta: ChapterData = {
       { kind: 'spruce', x: -12, z: -42, y: -7, height: 70 },
       { kind: 'spruce', x: -1, z: -34, y: -5, height: 54 },
       // The house behind the yard, in sight from the road, with the barn beside it: neither stands in the other.
-      { kind: 'villa', x: 34, z: -62, width: 44, lit: '', model: 'billsta-house', size: 0.72 },
+      { kind: 'villa', x: 18, z: -72, width: 44, lit: '', model: 'billsta-house', size: 0.72 },
+      // The great round birch that stands behind it.
+      { kind: 'birch', x: -6, z: -96, height: 84 },
       { kind: 'barn', x: 94, z: -44, lit: 'bi:mormor', model: 'billsta-barn', size: 0.8 },
       { kind: 'woodshed', x: 42, z: -7 },
       { kind: 'rowboat', x: 24, z: -5, width: 16 },
