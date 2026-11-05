@@ -195,7 +195,8 @@ export const olympia: ChapterData = {
     { from: FENCE.to, to: 152, kind: 'turf' },
     { from: 152, to: 157, kind: 'earth' },
     { from: 157, to: 166, kind: 'paving' },
-    { from: 166, to: 186, kind: 'earth' },
+    { from: 166, to: 174, kind: 'earth' },
+    { from: 174, to: 196, kind: 'moss' },
   ],
   checkpoints: [
     { x: 8, y: 0 },
