@@ -328,6 +328,15 @@ export const alven: ChapterData = {
   // Far across the lake a moose may come down to the water.
   life: [{ kind: 'moose', from: 128, to: 137 }],
   decor: [
+    // Gnawed stumps on the beaver's steps, and what he has felled and dropped along the banks.
+    { look: 'kit', word: 'stubbe-gnagd', at: { x: 117.1, y: 0.9 }, z: -0.9, turn: 0.4 },
+    { look: 'kit', word: 'stubbe-gnagd', at: { x: 118.9, y: 1.8 }, z: -1.1, turn: 1.9, scale: 1.2 },
+    { look: 'kit', word: 'stubbe-sagad', at: { x: 112.6, y: 0 }, z: -2.2, turn: 0.8 },
+    { look: 'kit', word: 'gren-a', at: { x: 110.4, y: 0 }, z: -1.4, turn: 0.3 },
+    { look: 'kit', word: 'gren-b', at: { x: 6.4, y: 0 }, z: -1.5, turn: 2.2 },
+    { look: 'kit', word: 'lag-mossig', at: { x: 171, y: 0.4 }, z: -2.6, turn: 0.2 },
+    { look: 'kit', word: 'gren-a', at: { x: 184, y: 0.4 }, z: -1.8, turn: 2.8 },
+    { look: 'kit', word: 'stubbe-gnagd', at: { x: 186.4, y: 0.4 }, z: -2, turn: 1 },
     // The rapids under the bridge: far too wild, and it should look it.
     { look: 'whiteWater', at: { x: (RAPIDS.from + RAPIDS.to) / 2, y: RAPID } },
     // And the forest torrent below the outlet, which the raft goes down.

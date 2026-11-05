@@ -133,9 +133,9 @@ const LANDING: Stone = { from: 110.2, to: 113, y: 0 };
  * tops out under all three.
  */
 const SHELVES: Ledge[] = [
-  { x: 68, y: 1.85, width: 1.4, look: 'stone' },
-  { x: 69.4, y: 2.75, width: 1.6, look: 'stone' },
-  { x: 72, y: 2.75, width: 1.8, look: 'stone' },
+  { x: 68, y: 1.85, width: 1.4, look: 'shelf' },
+  { x: 69.4, y: 2.75, width: 1.6, look: 'shelf' },
+  { x: 72, y: 2.75, width: 1.8, look: 'shelf' },
 ];
 
 /**
@@ -425,6 +425,8 @@ export const flarken: ChapterData = {
     ],
   },
   decor: [
+    // The rocks at the water, where he climbs.
+    ...[68, 69.4, 72].map((x, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x, y: i === 0 ? 1.85 : 2.75 }, z: -0.5, scale: 0.55 })),
     // Reeds along the shore, among the mats and at the foot of the jetty. Two of them are climbed.
     ...[58.6, 60.8, 73.6, HIGH.from - 0.3, 86.4, 89.4, 109.6, 112.2].map((x) => ({ look: 'reed' as const, at: { x, y: 0 } })),
     { look: 'reed', at: { x: BENT_REED.x, y: HIGH.y } },

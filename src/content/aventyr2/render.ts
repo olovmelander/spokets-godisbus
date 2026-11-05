@@ -179,12 +179,12 @@ const LOOKS: Record<string, PlaceLook> = {
     // By the road near the forest: spruce behind the house, and no other garden's house far off.
     far: 'billaberget',
     farBeyond: -70,
-    grade: grade(0.88, 0.9, [0.94, 0.92, 1.14]),
-    haze: { colour: '#2c2c56', near: 16, far: 170 },
-    sky: { top: '#0c0c26', middle: '#2c2c5c', bottom: '#3a3460', glow: '#b8ace4' },
-    hemisphere: { sky: '#a09cdc', ground: '#3a3a4c', intensity: 1.08 },
-    sun: { colour: '#d0c8ff', intensity: 1.75, from: [-6, 6, -3] },
-    fill: { colour: '#b8b4ec', intensity: STORM_FILL },
+    grade: grade(0.88, 0.92, [0.96, 0.95, 1.08]),
+    haze: { colour: '#2a2e50', near: 16, far: 170 },
+    sky: { top: '#0c0e26', middle: '#2a2e58', bottom: '#38385e', glow: '#b4b0dc' },
+    hemisphere: { sky: '#a8acd0', ground: '#3c3e48', intensity: 1.08 },
+    sun: { colour: '#d4d6f4', intensity: 1.75, from: [-6, 6, -3] },
+    fill: { colour: '#bcc0e0', intensity: STORM_FILL },
     water: { colour: '#2a405e', opacity: 0.86 },
     tussock: '#56663f',
   },
@@ -446,6 +446,10 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       const box = holder.children.find((child): child is Mesh => child instanceof Mesh && child.geometry instanceof BoxGeometry);
       if (!box) continue;
       const { width, height } = (box.geometry as BoxGeometry).parameters;
+      // Until the kit's has come: faceted granite. It takes one of the kit's boulders, filling the block.
+      holder.userData.model = ['block-a', 'block-b', 'block-c'][Math.abs(Math.round(holder.position.x)) % 3]!;
+      // Its back stands up behind the path, and its front goes down into the ground: he walks on the ground's own top.
+      holder.userData.block = { width: width * 1.2, height: height * 1.5, depth: Math.max(3.5, width * 0.8), x: box.position.x, y: height * 0.65, z: -2.4 };
       box.geometry.dispose();
       box.geometry = rock(Math.round(holder.position.x * 10), width / 2 * 1.08, height / 2 * 1.04, 1.8);
       box.material = solid('#8c9096', 0.95, { flatShading: true });
@@ -698,9 +702,14 @@ function flowerPot(x: number, y: number): Group {
 }
 
 /** A boulder of the hillside, granite grey and faceted, as big as the lumps it stands in for. */
-function boulder(x: number, y: number): Mesh {
-  const stone = new Mesh(rock(Math.round(x * 10), 1.0, 1.2, 0.85), solid('#8c9096', 0.95, { flatShading: true }));
+function boulder(x: number, y: number): Group {
+  const stone = new Group();
+  stone.add(new Mesh(rock(Math.round(x * 10), 1.0, 1.2, 0.85), solid('#8c9096', 0.95, { flatShading: true })));
   stone.position.set(x, y + 0.7, -1.3);
+  // The kit's, as soon as it has come: it stands on the ground, and the stand-in's middle is 0.7 over it.
+  stone.userData.model = 'block-b';
+  stone.userData.block = { width: 3, height: 2.7, depth: 2.6, x: 0, y: 0.65 };
+  stone.userData.turn = x;
   return stone;
 }
 
@@ -929,7 +938,10 @@ function football(radius: number): Mesh {
 }
 
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
+const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
+  'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
 const FILES: Record<string, readonly [pack: string, file: string]> = {
+  ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
   'olympia-hall': ['aventyr2', 'olympia'],
   'olympia-stand': ['aventyr2', 'olympia'],
   'billsta-house': ['private', 'billsta-house'],
@@ -956,9 +968,22 @@ async function installModels(assets: Assets, scene: Object3D): Promise<boolean> 
     const made = model.getObjectByName(name);
     if (!made) continue;
     arrived = true;
+    // A boulder fills the block of ground it stands for: its size and its middle, from the stand-in.
+    const block = place.userData.block as { width: number; height: number; depth: number; x: number; y: number; z?: number } | undefined;
     place.clear();
-    // Packed models keep their own scale and offset, so the placing stays on the group round it.
-    place.add(made);
+    // One model may stand in many places. A packed model's own scale and offset are how it was compressed, so whatever
+    // places it goes on a group round it, never on the model.
+    const copy = new Group();
+    copy.add(made.clone());
+    const fit = place.userData.fit as number | undefined;
+    if (fit) copy.scale.setScalar(fit);
+    if (typeof place.userData.turn === 'number') copy.rotation.y = place.userData.turn as number;
+    if (block) {
+      const size = new Box3().setFromObject(made).getSize(new Vector3());
+      copy.scale.set(block.width / size.x, block.height / size.y, block.depth / size.z);
+      copy.position.set(block.x, block.y - block.height / 2, block.z ?? 0);
+    }
+    place.add(copy);
     // A name on a wall is kept white: it stands in the shade at night, and still has to be read.
     const sign = model.getObjectByName(`${name}-name`) as Mesh | undefined;
     if (sign) {
@@ -1538,6 +1563,16 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
         },
       };
     },
+    kit: (spot) => {
+      // A thing of the nature kit, named by its word. Until it has come, a plain stone or nothing.
+      const group = new Group();
+      group.position.set(spot.at.x, spot.at.y, -0.6);
+      const model = new Group();
+      model.userData.model = spot.word;
+      if (spot.word?.startsWith('hylla')) model.add(new Mesh(rock(Math.round(spot.at.x * 10), 1.1, 0.5, 0.9), solid('#7a7e80', 0.9, { flatShading: true })));
+      group.add(model);
+      return { group, update: () => {} };
+    },
     aftermath: () => aftermath(),
     // The same room on the evening of the storm, before anything has happened to it.
     homeEvening: () => ({ group: roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 14, blanket: false }), update: () => {} }),
@@ -1561,7 +1596,14 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
         stems.push(stem);
         group.add(stem);
       }
-      return standing(spot, group, (clock) => { for (const [i, stem] of stems.entries()) stem.rotation.z = -0.12 + 0.08 * Math.sin(clock * 1.6 + i); });
+      // The kit's bulrushes take their place, bending as one.
+      const model = new Group();
+      model.userData.model = Math.round(spot.at.x * 3) % 2 ? 'vass-a' : 'vass-b';
+      model.userData.fit = 0.62;
+      model.userData.turn = spot.at.x;
+      for (const stem of stems) model.add(stem);
+      group.add(model);
+      return standing(spot, group, (clock) => { group.rotation.z = -0.03 + 0.04 * Math.sin(clock * 1.4 + spot.at.x); });
     },
   };
 }
@@ -1788,8 +1830,11 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       return group;
     },
     riverLog: (mover) => {
-      // A wet trunk floating half under: dark bark, and pale sawn ends that catch what light there is.
+      // A wet trunk floating half under: dark bark, and pale sawn ends that catch what light there is. The kit's, once it
+      // has come: art/blender/a2-nature.py.
       const group = new Group();
+      group.userData.model = 'stock-flod';
+      group.userData.block = { width: mover.width * 1.04, height: mover.height * 1.1, depth: mover.height * 1.1, x: 0, y: mover.height / 2 };
       const r = mover.height / 2;
       const bark = new Mesh(new CylinderGeometry(r, r * 1.05, mover.width, 14).rotateZ(Math.PI / 2), solid('#42342a', 0.62));
       bark.position.y = r;

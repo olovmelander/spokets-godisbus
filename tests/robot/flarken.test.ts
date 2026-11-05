@@ -350,7 +350,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     });
 
     it('has three stone shelves over the first stones: a held jump to each, and a jump across, with six side candies', () => {
-      const shelves = ledges.filter((ledge) => ledge.look === 'stone');
+      const shelves = ledges.filter((ledge) => ledge.look === 'shelf');
       const first = shelves[0]!.x - 4.5;
       const sim = new Sim(flarken, {}, { checkpoint: CP.beach });
       run(sim, 0.2);

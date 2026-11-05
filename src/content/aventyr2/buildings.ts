@@ -711,6 +711,18 @@ export function building(def: BuildingDef): Building {
     paneMaterial = glass();
     group.add(new Mesh(mergeGeometries(panes.map((p) => { p.deleteAttribute('uv'); return p; })), paneMaterial));
   }
+  // A tree of the nature kit, one of a few by where it stands, as tall as the chapter says: art/blender/a2-nature.py.
+  if (def.kind === 'spruce' || def.kind === 'birch') {
+    const pick = Math.abs(Math.round(def.x * 3.7 + def.z * 1.3));
+    group.userData.model = def.kind === 'spruce' ? ['gran-a', 'gran-b', 'gran-c'][pick % 3]! : ['bjork-a', 'bjork-b'][pick % 2]!;
+    group.userData.fit = def.kind === 'spruce' && pick % 3 === 2 ? (def.height ?? 60) / 42 : (def.height ?? 60) / 60;
+    group.userData.turn = pick * 1.3;
+  }
+  if (def.kind === 'cliff') {
+    const [wide, high] = [def.width ?? 16, def.height ?? 12];
+    group.userData.model = wide < 24 ? 'klippa-b' : 'klippa-a';
+    group.userData.block = { width: wide * 1.2, height: high * 1.08, depth: Math.max(6, wide * 0.22), x: 0, y: high * 0.54 };
+  }
   group.position.set(def.x, def.y ?? 0, def.z);
   if (def.size) group.scale.setScalar(def.size);
   if (def.flip) group.scale.x = -group.scale.x;

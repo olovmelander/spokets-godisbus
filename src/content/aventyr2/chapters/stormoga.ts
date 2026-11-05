@@ -239,6 +239,11 @@ export const stormoga: ChapterData = {
     { id: 'home', look: 'none', ...HOME },
   ],
   decor: [
+    // Driftwood on the far shore.
+    { look: 'kit', word: 'gren-a', at: { x: 66, y: 0 }, z: -1.6, turn: 0.3 },
+    { look: 'kit', word: 'lag-mossig', at: { x: 76, y: 0 }, z: -2.6, turn: 0.2 },
+    { look: 'kit', word: 'gren-b', at: { x: 84, y: 0 }, z: -1.5, turn: 2.1 },
+    { look: 'kit', word: 'stubbe-sagad', at: { x: 90, y: 0 }, z: -2.4, turn: 0.9 },
     // Mormor and morfar at the head of the jetty, her lantern the only light left; the family's dead lamps at their feet.
     { look: 'mormor', at: { x: -0.6, y: 0 }, z: -1.2, until: 'owl' },
     { look: 'morfar', at: { x: -2.2, y: 0 }, z: -1.6, until: 'owl' },

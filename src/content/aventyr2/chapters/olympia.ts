@@ -281,6 +281,9 @@ export const olympia: ChapterData = {
     ],
   },
   decor: [
+    // Where the trail goes into the forest.
+    { look: 'kit', word: 'gren-a', at: { x: 176.5, y: 2.4 }, z: -1.5, turn: 0.3 },
+    { look: 'kit', word: 'stubbe-sagad', at: { x: 171, y: 1 }, z: -2.4, turn: 1.2 },
     // A small ball from the torn bag, bobbing in the goalmouth's puddle: the clue.
     { look: 'floatBall', at: { x: PUDDLE.from + 1.2, y: PUDDLE.water }, z: -0.3, until: `placed:${BALL.id}` },
     // The ball bag at the foot of the fence, torn open by the wind: the balls roll out of it.

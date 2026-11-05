@@ -173,9 +173,9 @@ const rise = (x: number) => round(SLOPE + ((BROW.y - SLOPE) * (x - RISE.from)) /
  * held jump over the last. He walks off the third onto the big boulder. A hop along the trail tops out under all.
  */
 const SHELVES: Ledge[] = [
-  { x: 151.7, y: 5.4, width: 1.6, look: 'stone' },
-  { x: 154.3, y: 6.3, width: 1.6, look: 'stone' },
-  { x: 157.1, y: 7, width: 1.6, look: 'stone' },
+  { x: 151.7, y: 5.4, width: 1.6, look: 'shelf' },
+  { x: 154.3, y: 6.3, width: 1.6, look: 'shelf' },
+  { x: 157.1, y: 7, width: 1.6, look: 'shelf' },
 ];
 
 /**
@@ -423,6 +423,17 @@ export const billsta: ChapterData = {
     ],
   },
   decor: [
+    // The forest behind the house: fallen branches, a mossy log and a sawn stump.
+    { look: 'kit', word: 'gren-a', at: { x: 124.6, y: 0 }, z: -1.6, turn: 0.4 },
+    { look: 'kit', word: 'stubbe-sagad', at: { x: 125.8, y: 0 }, z: -2.6, turn: 1.1 },
+    { look: 'kit', word: 'lag-mossig', at: { x: 143.4, y: 3.2 }, z: -2.8, turn: 0.1 },
+    { look: 'kit', word: 'gren-b', at: { x: 166.8, y: 3.2 }, z: -1.4, turn: 2.4 },
+    { look: 'kit', word: 'gren-a', at: { x: 176.6, y: 3.2 }, z: -1.7, turn: 0.2 },
+    { look: 'kit', word: 'stubbe-sagad', at: { x: 181.2, y: 3.2 }, z: -2.4, turn: 0.5 },
+    { look: 'kit', word: 'gren-b', at: { x: 190.2, y: 6.4 }, z: -1.5, turn: 1.2 },
+    { look: 'kit', word: 'lag-mossig', at: { x: 199, y: 6.4 }, z: -2.6, turn: 2.9 },
+    // The hazel shelves on Billaberget's face.
+    ...SHELVES.map((l, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x: l.x, y: l.y }, z: -0.5, scale: l.width / (i === 1 ? 3.2 : 2.6) })),
     // Mormor's lantern, once she has opened the barn.
     { look: 'lantern', at: { x: 56.8, y: LOFT }, z: -0.9, after: 'bi:mormor' },
     // Far out in the narrow, on a stone: the old one, and the little one once the wave has tossed him there.

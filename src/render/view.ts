@@ -313,6 +313,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   }));
   for (const d of decor) if (d.prop) {
     if (d.def.z !== undefined) d.prop.group.position.z = d.def.z;
+    if (d.def.scale !== undefined) d.prop.group.scale.setScalar(d.def.scale);
+    if (d.def.turn !== undefined) d.prop.group.rotation.y = d.def.turn;
     scene.add(d.prop.group);
   }
   // How big he is drawn: a boy among small things, or as small as the ghost (plan §5.2).

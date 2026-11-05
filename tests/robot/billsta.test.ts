@@ -41,7 +41,7 @@ const spot = (id: string) => billsta.spots!.find((s) => s.id === id)!;
 const call = spot('bi:call-klonk');
 const seesaw = spot('bi:fling');
 const fling = billsta.rides!.find((r) => r.id === 'bi:fling')!;
-const shelves = billsta.ledges!.filter((l) => l.look === 'stone');
+const shelves = billsta.ledges!.filter((l) => l.look === 'shelf');
 const beams = billsta.ledges!.filter((l) => l.look === 'plank' && !l.needs);
 const [roofGust, slopeGust] = billsta.gusts!;
 const lines: Record<string, string> = sv.lines;
