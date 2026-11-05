@@ -820,6 +820,7 @@ function oldFigure(silhouette = false): Group {
   // The crowberry eyes: dark, a little shiny.
   for (const x of [-0.06, 0.06]) group.add(ball(0.026, solid('#1a1530', 0.3), x, 0.62, 0.148));
   group.name = 'old-trägubbe';
+  if (!silhouette) group.userData.model = 'tragubbe';
   return group;
 }
 
@@ -840,6 +841,7 @@ function littleFigure(silhouette = false): Group {
     group.add(cut);
   }
   group.name = 'little-trägubbe';
+  if (!silhouette) group.userData.model = 'lillgubbe';
   return group;
 }
 
@@ -907,6 +909,9 @@ function otter(): { group: Group; head: Group } {
   head.add(ball(0.04, solid('#141010', 0.3), 0, -0.02, 0.32));
   group.add(body, belly, tail, head);
   group.scale.setScalar(0.72);
+  // The kit's otter, standing up on its stone, in the group that bobs.
+  group.userData.model = 'utter';
+  group.userData.fit = 0.86;
   return { group, head };
 }
 
@@ -940,7 +945,9 @@ function football(radius: number): Mesh {
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
 const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
   'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
+const CREATURES = ['tragubbe', 'lillgubbe', 'uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter'];
 const FILES: Record<string, readonly [pack: string, file: string]> = {
+  ...Object.fromEntries(CREATURES.map((name) => [name, ['aventyr2', 'creatures'] as const])),
   ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
   'olympia-hall': ['aventyr2', 'olympia'],
   'olympia-stand': ['aventyr2', 'olympia'],
@@ -984,6 +991,8 @@ async function installModels(assets: Assets, scene: Object3D): Promise<boolean> 
       copy.position.set(block.x, block.y - block.height / 2, block.z ?? 0);
     }
     place.add(copy);
+    // The two of them at the meeting keep a little warmth of their own.
+    if (place.userData.warm) warmed(copy);
     // A name on a wall is kept white: it stands in the shade at night, and still has to be read.
     const sign = model.getObjectByName(`${name}-name`) as Mesh | undefined;
     if (sign) {
@@ -1116,9 +1125,10 @@ function pumpkin(): { group: Group; light: Mesh; face: MeshBasicMaterial } {
 /** The owl, tawny and round, with big dark eyes in a pale face. */
 function owl(flying = false): Group {
   const group = new Group();
+  group.userData.model = flying ? undefined : 'uggla';
   if (!flying) {
-    // The same tawny owl as sits in the forest's trees (../../render/lift/fauna/shapes.ts), only near and large, with
-    // its lids resting half down, set here once: the forest's own move them in its vertex stage.
+    // Until the kit's has come, the same tawny owl as sits in the forest's trees (../../render/lift/fauna/shapes.ts), only
+    // near and large, with its lids resting half down, set here once: the forest's own move them in its vertex stage.
     const shape = tawnyOwl();
     const rig = shape.getAttribute('rig');
     const pivot = shape.getAttribute('pivot');
@@ -1167,8 +1177,15 @@ function owl(flying = false): Group {
     // The shorter feathers over the wing's root: the same wing, smaller and paler, lying on it.
     const coverts = new Mesh(new ShapeGeometry(outline, 8).scale(0.74, 0.56, 1).rotateX(Math.PI / 2).scale(1, 1, side).translate(0, 0.03, 0), lit('#a08a6c'));
     hinge.add(feathers, coverts);
+    hinge.userData.model = side > 0 ? 'uggla-vinge-n' : 'uggla-vinge-f';
     group.add(hinge);
   }
+  // The kit's body, under its wings and under him. What is built above stands in until it has come.
+  const carried = new Group();
+  carried.position.y = -0.6;
+  carried.userData.model = 'uggla-flyger';
+  for (const part of group.children.filter((child) => child.name !== 'owl-wing')) carried.add(part);
+  group.add(carried);
   return group;
 }
 
@@ -1221,7 +1238,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       const figure = oldFigure();
       // On the stone in the storm's eye it rocks the little one a little, and turns to him when he has come.
       const met = spot.word === 'lifted';
-      if (met) warmed(figure);
+      figure.userData.warm = met;
       return standing(spot, figure, met ? (clock, dt) => {
         figure.rotation.z = Math.sin(clock * 1.1) * 0.04;
         const seen = elof.flags?.has('eye') && Math.abs(elof.x - spot.at.x) < 5;
@@ -1289,7 +1306,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     lillgubbe: (spot) => {
       const figure = littleFigure();
-      if (spot.word === 'lifted') warmed(figure);
+      figure.userData.warm = spot.word === 'lifted';
       // It trembles until it has its cap back, and then it hops.
       return standing(spot, figure, (clock) => {
         const glad = elof.flags?.has('scene:motet') ?? false;
