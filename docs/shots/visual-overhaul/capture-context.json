@@ -1,40 +1,8 @@
 [
   {
-    "revision": "3b1687007a1aa495f1d5af2487184484e27818ea",
+    "revision": "b6603d25baa928979c97ec92514519022deca390",
     "sourceChanges": [
-      "MM HANDOVER.md",
-      " M LICENSES.md",
-      "AM docs/graphics-overhaul-audit.md",
-      "AM src/content/aventyr2/moonstone.ts",
-      "M  src/content/aventyr2/render.ts",
-      "M  src/content/chapters/garden.ts",
-      "M  src/render/dressing/built.ts",
-      "MM src/render/dressing/ground.ts",
-      "M  src/render/dressing/index.ts",
-      "M  src/render/dressing/kit.ts",
-      "M  src/render/dressing/lawn.ts",
-      "M  src/render/epilogue-stage.ts",
-      "M  src/render/extensions.ts",
-      "A  src/render/home-room.ts",
-      "M  src/render/ledges.ts",
-      "M  src/render/lift/fauna/plan.ts",
-      "M  src/render/lines.ts",
-      "M  src/render/mountain-kit.ts",
-      "AM src/render/outdoor-models.ts",
-      "A  src/render/shared-models.ts",
-      "M  src/render/stage.ts",
-      "M  src/render/view.ts",
-      " M tests/browser/gpu-memory.mjs",
-      "A  tests/browser/shared-home.mjs",
-      "M  tests/browser/suites.mjs",
-      "AM tests/browser/visual-overhaul.mjs",
-      "AM tests/unit/aventyr2-moonstone.test.ts",
-      "M  tests/unit/forest-floor.test.ts",
-      "A  tests/unit/home-room.test.ts",
-      "M  tests/unit/lift-fauna.test.ts",
-      "AM tests/unit/outdoor-models.test.ts",
-      "M  tests/unit/rock-front.test.ts",
-      "A  tests/unit/shared-models.test.ts"
+      "M src/render/outdoor-models.ts"
     ],
     "publicStandins": true,
     "rendererOnly": true,
@@ -153,57 +121,27 @@
     ],
     "assetManifestSha256": "7c818573ffcc35763a1cc8a87d7f4f0e0946fe7dd55f601aa182eb7fbaf448a3",
     "source": {
-      "sha256": "063a9b361473f28e8aef56ae53220cc31157a657cd98cdba28ad8edfb95ffaf1",
+      "sha256": "fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b",
       "files": 216
     },
-    "captureScriptSha256": "821da76439b299a3306dfaad17aca10e2b1c2c32ccdf4ac4f0abe27d2262d6bf",
+    "captureScriptSha256": "e8474220195117d0c7fda2e1dfbd9b01ba1fd2e1dfb88f6d9f22988e60357a56",
     "framesPerViewport": 6,
     "frameDt": 0.39999999999999997,
     "deviceScaleFactor": 1,
     "reuseViewPerCase": true,
     "browser": "141.0.7390.37",
     "sourceAfter": {
-      "sha256": "063a9b361473f28e8aef56ae53220cc31157a657cd98cdba28ad8edfb95ffaf1",
+      "sha256": "fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b",
       "files": 216
     },
     "sourceChangedDuringCapture": false
   },
   {
-    "revision": "3b1687007a1aa495f1d5af2487184484e27818ea",
+    "revision": "b6603d25baa928979c97ec92514519022deca390",
     "sourceChanges": [
-      "MM HANDOVER.md",
-      " M LICENSES.md",
-      "AM docs/graphics-overhaul-audit.md",
-      "AM src/content/aventyr2/moonstone.ts",
-      "M  src/content/aventyr2/render.ts",
-      "M  src/content/chapters/garden.ts",
-      "M  src/render/dressing/built.ts",
-      "MM src/render/dressing/ground.ts",
-      "M  src/render/dressing/index.ts",
-      "M  src/render/dressing/kit.ts",
-      "M  src/render/dressing/lawn.ts",
-      "M  src/render/epilogue-stage.ts",
-      "M  src/render/extensions.ts",
-      "A  src/render/home-room.ts",
-      "M  src/render/ledges.ts",
-      "M  src/render/lift/fauna/plan.ts",
-      "M  src/render/lines.ts",
-      "M  src/render/mountain-kit.ts",
-      "AM src/render/outdoor-models.ts",
-      "A  src/render/shared-models.ts",
-      "M  src/render/stage.ts",
-      "M  src/render/view.ts",
-      " M tests/browser/gpu-memory.mjs",
-      "A  tests/browser/shared-home.mjs",
-      "M  tests/browser/suites.mjs",
-      "AM tests/browser/visual-overhaul.mjs",
-      "AM tests/unit/aventyr2-moonstone.test.ts",
-      "M  tests/unit/forest-floor.test.ts",
-      "A  tests/unit/home-room.test.ts",
-      "M  tests/unit/lift-fauna.test.ts",
-      "AM tests/unit/outdoor-models.test.ts",
-      "M  tests/unit/rock-front.test.ts",
-      "A  tests/unit/shared-models.test.ts"
+      "M HANDOVER.md",
+      " M docs/graphics-overhaul-audit.md",
+      " M src/render/outdoor-models.ts"
     ],
     "publicStandins": true,
     "rendererOnly": true,
@@ -280,7 +218,7 @@
         "chapter": "billsta",
         "at": [
           43,
-          0
+          3.6
         ]
       },
       {
@@ -310,57 +248,27 @@
     ],
     "assetManifestSha256": "7c818573ffcc35763a1cc8a87d7f4f0e0946fe7dd55f601aa182eb7fbaf448a3",
     "source": {
-      "sha256": "063a9b361473f28e8aef56ae53220cc31157a657cd98cdba28ad8edfb95ffaf1",
+      "sha256": "fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b",
       "files": 216
     },
-    "captureScriptSha256": "821da76439b299a3306dfaad17aca10e2b1c2c32ccdf4ac4f0abe27d2262d6bf",
+    "captureScriptSha256": "e8474220195117d0c7fda2e1dfbd9b01ba1fd2e1dfb88f6d9f22988e60357a56",
     "framesPerViewport": 6,
     "frameDt": 0.39999999999999997,
     "deviceScaleFactor": 1,
     "reuseViewPerCase": true,
     "browser": "141.0.7390.37",
     "sourceAfter": {
-      "sha256": "063a9b361473f28e8aef56ae53220cc31157a657cd98cdba28ad8edfb95ffaf1",
+      "sha256": "fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b",
       "files": 216
     },
     "sourceChangedDuringCapture": false
   },
   {
-    "revision": "3b1687007a1aa495f1d5af2487184484e27818ea",
+    "revision": "b6603d25baa928979c97ec92514519022deca390",
     "sourceChanges": [
-      "MM HANDOVER.md",
-      " M LICENSES.md",
-      "AM docs/graphics-overhaul-audit.md",
-      "AM src/content/aventyr2/moonstone.ts",
-      "M  src/content/aventyr2/render.ts",
-      "M  src/content/chapters/garden.ts",
-      "M  src/render/dressing/built.ts",
-      "MM src/render/dressing/ground.ts",
-      "M  src/render/dressing/index.ts",
-      "M  src/render/dressing/kit.ts",
-      "M  src/render/dressing/lawn.ts",
-      "M  src/render/epilogue-stage.ts",
-      "M  src/render/extensions.ts",
-      "A  src/render/home-room.ts",
-      "M  src/render/ledges.ts",
-      "M  src/render/lift/fauna/plan.ts",
-      "M  src/render/lines.ts",
-      "M  src/render/mountain-kit.ts",
-      "AM src/render/outdoor-models.ts",
-      "A  src/render/shared-models.ts",
-      "M  src/render/stage.ts",
-      "M  src/render/view.ts",
-      " M tests/browser/gpu-memory.mjs",
-      "A  tests/browser/shared-home.mjs",
-      "M  tests/browser/suites.mjs",
-      "AM tests/browser/visual-overhaul.mjs",
-      "AM tests/unit/aventyr2-moonstone.test.ts",
-      "M  tests/unit/forest-floor.test.ts",
-      "A  tests/unit/home-room.test.ts",
-      "M  tests/unit/lift-fauna.test.ts",
-      "AM tests/unit/outdoor-models.test.ts",
-      "M  tests/unit/rock-front.test.ts",
-      "A  tests/unit/shared-models.test.ts"
+      "M HANDOVER.md",
+      " M docs/graphics-overhaul-audit.md",
+      " M src/render/outdoor-models.ts"
     ],
     "publicStandins": true,
     "rendererOnly": true,
@@ -383,81 +291,7 @@
     ],
     "assetManifestSha256": "7c818573ffcc35763a1cc8a87d7f4f0e0946fe7dd55f601aa182eb7fbaf448a3",
     "source": {
-      "sha256": "063a9b361473f28e8aef56ae53220cc31157a657cd98cdba28ad8edfb95ffaf1",
-      "files": 216
-    },
-    "captureScriptSha256": "821da76439b299a3306dfaad17aca10e2b1c2c32ccdf4ac4f0abe27d2262d6bf",
-    "framesPerViewport": 6,
-    "frameDt": 0.39999999999999997,
-    "deviceScaleFactor": 1,
-    "reuseViewPerCase": true,
-    "browser": "141.0.7390.37",
-    "sourceAfter": {
-      "sha256": "063a9b361473f28e8aef56ae53220cc31157a657cd98cdba28ad8edfb95ffaf1",
-      "files": 216
-    },
-    "sourceChangedDuringCapture": false
-  },
-  {
-    "revision": "3b1687007a1aa495f1d5af2487184484e27818ea",
-    "sourceChanges": [
-      "MM HANDOVER.md",
-      "M  LICENSES.md",
-      "AM docs/graphics-overhaul-audit.md",
-      "A  src/content/aventyr2/moonstone.ts",
-      "M  src/content/aventyr2/render.ts",
-      "M  src/content/chapters/garden.ts",
-      "M  src/render/dressing/built.ts",
-      "M  src/render/dressing/ground.ts",
-      "M  src/render/dressing/index.ts",
-      "M  src/render/dressing/kit.ts",
-      "M  src/render/dressing/lawn.ts",
-      "M  src/render/epilogue-stage.ts",
-      "M  src/render/extensions.ts",
-      "A  src/render/home-room.ts",
-      "M  src/render/ledges.ts",
-      "M  src/render/lift/fauna/plan.ts",
-      "M  src/render/lines.ts",
-      "M  src/render/mountain-kit.ts",
-      "A  src/render/outdoor-models.ts",
-      "A  src/render/shared-models.ts",
-      "M  src/render/stage.ts",
-      "M  src/render/view.ts",
-      "M  tests/browser/gpu-memory.mjs",
-      "A  tests/browser/shared-home.mjs",
-      "M  tests/browser/suites.mjs",
-      "AM tests/browser/visual-overhaul.mjs",
-      "A  tests/unit/aventyr2-moonstone.test.ts",
-      "M  tests/unit/forest-floor.test.ts",
-      "A  tests/unit/home-room.test.ts",
-      "M  tests/unit/lift-fauna.test.ts",
-      "A  tests/unit/outdoor-models.test.ts",
-      "M  tests/unit/rock-front.test.ts",
-      "A  tests/unit/shared-models.test.ts",
-      "?? docs/shots/visual-overhaul/"
-    ],
-    "publicStandins": true,
-    "rendererOnly": true,
-    "tier": "high",
-    "sizes": [
-      [
-        844,
-        390
-      ]
-    ],
-    "cases": [
-      {
-        "name": "billsta",
-        "chapter": "billsta",
-        "at": [
-          43,
-          3.6
-        ]
-      }
-    ],
-    "assetManifestSha256": "7c818573ffcc35763a1cc8a87d7f4f0e0946fe7dd55f601aa182eb7fbaf448a3",
-    "source": {
-      "sha256": "063a9b361473f28e8aef56ae53220cc31157a657cd98cdba28ad8edfb95ffaf1",
+      "sha256": "fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b",
       "files": 216
     },
     "captureScriptSha256": "e8474220195117d0c7fda2e1dfbd9b01ba1fd2e1dfb88f6d9f22988e60357a56",
@@ -467,7 +301,7 @@
     "reuseViewPerCase": true,
     "browser": "141.0.7390.37",
     "sourceAfter": {
-      "sha256": "063a9b361473f28e8aef56ae53220cc31157a657cd98cdba28ad8edfb95ffaf1",
+      "sha256": "fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b",
       "files": 216
     },
     "sourceChangedDuringCapture": false

@@ -1386,7 +1386,7 @@
     "missing": [],
     "privateRequests": [],
     "file": "bog-780x360-high.webp",
-    "sha256": "c70f909aa334380f27b1de3a5b27ce199f71f6ec6018c849c6397f4836d57349",
+    "sha256": "fe48ae6755c283a7124cb41365ea2c8eb98c48da3cdaf81c1458aff788cadac6",
     "captureContextIndex": 0
   },
   {
@@ -1506,7 +1506,7 @@
     "missing": [],
     "privateRequests": [],
     "file": "bog-1440x900-high.webp",
-    "sha256": "bf3b6419a06e5fb67acdb8d95cc62656a72832016f752b3777dffa23e563210d",
+    "sha256": "e978c45b008d7a1a381e39a90f9eefcc5c4ada0cfaa68fa5b68a66ad0d55cf22",
     "captureContextIndex": 0
   },
   {
@@ -2469,10 +2469,10 @@
     "info": {
       "tier": "high",
       "hdrAvailable": true,
-      "drawCalls": 68,
-      "triangles": 85584,
+      "drawCalls": 66,
+      "triangles": 75958,
       "programs": 45,
-      "geometries": 170,
+      "geometries": 168,
       "textures": 28,
       "gpu": null,
       "pixelRatio": 1,
@@ -2485,7 +2485,6 @@
         "boot/jay",
         "boot/candy",
         "boot/village",
-        "aventyr2/nature",
         "aventyr2/props",
         "boot/bredbyn",
         "boot/big-candy"
@@ -2531,10 +2530,10 @@
     "info": {
       "tier": "high",
       "hdrAvailable": true,
-      "drawCalls": 70,
-      "triangles": 96035,
+      "drawCalls": 68,
+      "triangles": 86409,
       "programs": 45,
-      "geometries": 170,
+      "geometries": 168,
       "textures": 28,
       "gpu": null,
       "pixelRatio": 1,
@@ -2547,7 +2546,6 @@
         "boot/jay",
         "boot/candy",
         "boot/village",
-        "aventyr2/nature",
         "aventyr2/props",
         "boot/bredbyn",
         "boot/big-candy"
@@ -2575,7 +2573,7 @@
     "missing": [],
     "privateRequests": [],
     "file": "village-844x390-high.webp",
-    "sha256": "eb6c8cd4323108a65812a486bf9966c37b4c20782861bc3c061d81ed5ae0b1eb",
+    "sha256": "34f66f0c44f21161b0e831e557bd81c58a4b64fc2f4bc42270c5ec937664230c",
     "captureContextIndex": 0
   },
   {
@@ -2593,10 +2591,10 @@
     "info": {
       "tier": "high",
       "hdrAvailable": true,
-      "drawCalls": 64,
-      "triangles": 93775,
+      "drawCalls": 62,
+      "triangles": 84149,
       "programs": 45,
-      "geometries": 170,
+      "geometries": 168,
       "textures": 28,
       "gpu": null,
       "pixelRatio": 1,
@@ -2609,7 +2607,6 @@
         "boot/jay",
         "boot/candy",
         "boot/village",
-        "aventyr2/nature",
         "aventyr2/props",
         "boot/bredbyn",
         "boot/big-candy"
@@ -2637,7 +2634,7 @@
     "missing": [],
     "privateRequests": [],
     "file": "village-780x360-high.webp",
-    "sha256": "d597844c42b978c66bbd5c038b79067be214dc616812654b02518d41da647454",
+    "sha256": "4a6af48cd7e99ce1ad9f9d689c4f1f14da3933de0d3ca7ce32efaca31503dba2",
     "captureContextIndex": 0
   },
   {
@@ -2655,10 +2652,10 @@
     "info": {
       "tier": "high",
       "hdrAvailable": true,
-      "drawCalls": 64,
-      "triangles": 93803,
+      "drawCalls": 62,
+      "triangles": 84177,
       "programs": 45,
-      "geometries": 170,
+      "geometries": 168,
       "textures": 28,
       "gpu": null,
       "pixelRatio": 1,
@@ -2671,7 +2668,6 @@
         "boot/jay",
         "boot/candy",
         "boot/village",
-        "aventyr2/nature",
         "aventyr2/props",
         "boot/bredbyn",
         "boot/big-candy"
@@ -2717,10 +2713,10 @@
     "info": {
       "tier": "high",
       "hdrAvailable": true,
-      "drawCalls": 66,
-      "triangles": 93855,
+      "drawCalls": 64,
+      "triangles": 84229,
       "programs": 45,
-      "geometries": 170,
+      "geometries": 168,
       "textures": 28,
       "gpu": null,
       "pixelRatio": 1,
@@ -2733,7 +2729,6 @@
         "boot/jay",
         "boot/candy",
         "boot/village",
-        "aventyr2/nature",
         "aventyr2/props",
         "boot/bredbyn",
         "boot/big-candy"
@@ -2761,7 +2756,7 @@
     "missing": [],
     "privateRequests": [],
     "file": "village-1440x900-high.webp",
-    "sha256": "94602a4ba6352422240ea7e7b5e1c50e678c103611ef845039e321cdd734218d",
+    "sha256": "bdc54d5e6f4696c6c121ce88bd9faef6e6220858901f4318951ae1ff3b7e9bfa",
     "captureContextIndex": 0
   },
   {
@@ -3196,6 +3191,68 @@
     "captureContextIndex": 1
   },
   {
+    "name": "billsta-844x390-high",
+    "chapter": "billsta",
+    "at": [
+      43,
+      3.6
+    ],
+    "flags": [],
+    "scene": null,
+    "animationSeconds": 2.4,
+    "withinDrawBudget": true,
+    "captured": true,
+    "info": {
+      "tier": "high",
+      "hdrAvailable": true,
+      "drawCalls": 67,
+      "triangles": 140857,
+      "programs": 55,
+      "geometries": 200,
+      "textures": 36,
+      "gpu": null,
+      "pixelRatio": 1,
+      "maxPixelRatio": 1,
+      "resolutionSteps": 0,
+      "resizes": 1,
+      "width": 844,
+      "height": 390,
+      "models": [
+        "boot/jay",
+        "boot/candy",
+        "aventyr2/built",
+        "aventyr2/nature",
+        "aventyr2/creatures",
+        "aventyr2/props",
+        "boot/big-candy"
+      ],
+      "compressedTextures": 2,
+      "assetTextures": {
+        "managed": 2,
+        "released": 2,
+        "cpuBytes": 0,
+        "restores": 0
+      },
+      "roles": [
+        "checkpoint"
+      ],
+      "shadows": {
+        "characters": 2,
+        "contact": true,
+        "mapSize": 1024,
+        "casters": 2
+      },
+      "warming": false
+    },
+    "errors": [],
+    "consoleErrors": [],
+    "missing": [],
+    "privateRequests": [],
+    "file": "billsta-844x390-high.webp",
+    "sha256": "2c3aebb4a0e0138e1ff2735551717ad5d40c2196cfecc79cac780495dac001c1",
+    "captureContextIndex": 1
+  },
+  {
     "name": "storm-eye-844x390-high",
     "chapter": "stormoga",
     "at": [
@@ -3382,67 +3439,5 @@
     "file": "garden-boulder-middle-1440x900-high.webp",
     "sha256": "b9c4c74d674e593d9eff6b5aeb411680baf1f70c0fccf348905e26e6b2ac7648",
     "captureContextIndex": 2
-  },
-  {
-    "name": "billsta-844x390-high",
-    "chapter": "billsta",
-    "at": [
-      43,
-      3.6
-    ],
-    "flags": [],
-    "scene": null,
-    "animationSeconds": 2.4,
-    "withinDrawBudget": true,
-    "captured": true,
-    "info": {
-      "tier": "high",
-      "hdrAvailable": true,
-      "drawCalls": 67,
-      "triangles": 140857,
-      "programs": 55,
-      "geometries": 200,
-      "textures": 36,
-      "gpu": null,
-      "pixelRatio": 1,
-      "maxPixelRatio": 1,
-      "resolutionSteps": 0,
-      "resizes": 1,
-      "width": 844,
-      "height": 390,
-      "models": [
-        "boot/jay",
-        "boot/candy",
-        "aventyr2/built",
-        "aventyr2/nature",
-        "aventyr2/creatures",
-        "aventyr2/props",
-        "boot/big-candy"
-      ],
-      "compressedTextures": 2,
-      "assetTextures": {
-        "managed": 2,
-        "released": 2,
-        "cpuBytes": 0,
-        "restores": 0
-      },
-      "roles": [
-        "checkpoint"
-      ],
-      "shadows": {
-        "characters": 2,
-        "contact": true,
-        "mapSize": 1024,
-        "casters": 2
-      },
-      "warming": false
-    },
-    "errors": [],
-    "consoleErrors": [],
-    "missing": [],
-    "privateRequests": [],
-    "file": "billsta-844x390-high.webp",
-    "sha256": "2c3aebb4a0e0138e1ff2735551717ad5d40c2196cfecc79cac780495dac001c1",
-    "captureContextIndex": 3
   }
 ]

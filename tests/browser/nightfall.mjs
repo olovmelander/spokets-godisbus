@@ -111,9 +111,9 @@ try {
         movers: sim.movers, drips: sim.drips, flags: sim.flags, ghost: sim.ghost, rollers: sim.rollers,
         tussocks: sim.tussocks, gusts: sim.gusts, help: sim.help, berries: sim.berries,
       });
-      const until = performance.now() + 15000;
-      // The big candy, the jay, the candy kit and the mountain kit: each brings shaders of its own when it arrives.
-      while (view.info().models.length < 4 && performance.now() < until) await new Promise((r) => setTimeout(r, 25));
+      // Shared scenery adds model names too. The production loading barrier, not a count of arrivals,
+      // ensures every kit has arrived before the shader baseline is warmed and measured.
+      await view.ready;
       for (let i = 0; i < 4; i++) draw();
       const scene = fixture.renderedScene();
       const far = [];
@@ -129,7 +129,8 @@ try {
       window.probe = { fixture, sim, view, draw, scene, snapshot };
       return snapshot();
     }, { tier });
-    check(`${name}: real finale assets loaded`, early.models.length >= 4 && early.models.includes('boot/mountain-kit'));
+    check(`${name}: real finale assets loaded`, ['boot/big-candy', 'boot/jay', 'boot/candy', 'boot/mountain-kit', 'aventyr2/nature']
+      .every(model => early.models.includes(model)));
     check(`${name}: blue-hour sky and five far layers start at full brightness`, early.background === 1 && early.sky === 1 && early.far.length === 5 && early.far.every((v) => v === 1));
     check(`${name}: precompiled family stays hidden until the golden sweet`, early.familyShown === 0);
     await picture(page, join(shots, `${name}-early.png`));

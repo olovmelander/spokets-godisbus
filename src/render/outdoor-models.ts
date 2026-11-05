@@ -63,8 +63,7 @@ export const OUTDOOR_MODELS: Readonly<Record<string, readonly Planting[]>> = {
     at('lag-mossig', 51, -7.2, 0.58, 0.2), at('tall-a', 65, -26, 0.46, -0.5),
   ],
   byn: [
-    // The yard is on the far side of the street; the shop windows and bicycle remain unobstructed.
-    at('bjork-a', 44, -25, 0.72, 0.6, 1), at('bjork-b', 58, -29, 0.62, -0.7, 1),
+    // Keep the leaf ride's view to the village facades, church and belfry open between the existing yard trees.
     at('kruka', 7.5, -4.5, 0.82, 0.2, 2), at('kruka', 116, -4.9, 1.05, -0.3, 3.3),
   ],
 };

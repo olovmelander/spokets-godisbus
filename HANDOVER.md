@@ -6,7 +6,8 @@
   The first adventure now shares the authored home and outdoor model library with Stormnatten. The implementation,
   findings, budget gates and remaining device checks are recorded in
   [`docs/graphics-overhaul-audit.md`](docs/graphics-overhaul-audit.md). The reviewed
-  [public gallery](docs/shots/visual-overhaul/README.md) contains 56 individual images and six contact sheets.
+  [public gallery](docs/shots/visual-overhaul/README.md), refreshed after the Byn correction below, contains
+  56 individual images and six contact sheets.
   The PR still needs green CI before merge; this entry does not claim a deployment.
   - **One model path for both adventures:** `shared-models.ts` waits inside `view.ready`, loads only the current scene's
     files, records successful packs in `view.info().models`, preserves packed transforms and keeps the Adventure 2 story
@@ -26,11 +27,16 @@
   - **Stormens öga:** the review also found overlapping stone slabs, exposed dry lakebed and bog fauna under the broad
     meeting stone. A continuous worn granite surface keeps the exact walking strip, with water beneath its full footprint;
     the fauna planner excludes submerged perches. The reunion's physics and story triggers stay the same.
+  - **Byn's actual ride camera:** initial CI found that two newly placed birches obscured the street facade during
+    the leaf ride. Those two placements were removed; the new pots remain. All seven puddle configurations now pass
+    **58 checks**, including the previously failing 844×390 High view: the street facade is visible again, and church
+    and belfry visibility checks pass.
   - **Resource ownership:** newly owned fallbacks opt into geometry/material disposal when replaced. The loader preserves
     kept children and the source resources shared by loaded model instances. Loading-screen rendering can upload a
     fallback before the real model arrives, so removing its scene node alone is insufficient.
-  - **Local validation:** typecheck and **195 test files / 2,062 tests** passed, followed by typecheck and three
-    focused garden-stone tests after its final shape adjustment. The final production build passed at
+  - **Local validation:** **195 test files / 2,062 tests** passed locally and in initial CI before the final Byn
+    correction. The garden's final shape passed typecheck and three focused contact tests; after the Byn correction,
+    typecheck, all 58 puddle checks and the production build passed again. The final build remains at
     499.6 KiB boot JavaScript / 520 KiB, 3,588.9 KiB served boot assets / 4 MiB with this workspace's private assets,
     and 64.4 KiB for the separate Adventure 2 chunk / 160 KiB. The source browser checks passed:
     forest shadows **18 checks** (Low 62–75, Mid 74–87,
@@ -38,10 +44,15 @@
     home **42 checks**, and the optional private carving's real eye blink **12 checks**. The built Prolog GPU-memory
     pass passed **16 checks**, including tier/resize/pause cycles and context restoration: Low 15.96 MB, Mid 53.21 MB,
     warmed High 100.14 MB total with 71.10 MB of targets; current and transient-peak budgets passed. The full
-    eight-chapter memory suite and built lazy-story boundary will run in CI. All 56 final High captures fit the
+    eight-chapter memory suite passed **51 checks** in initial CI. Initial CI's Adventure 2 suite passed **42 checks**,
+    including the built lazy-story boundary. Initial CI found only the Byn occlusion and a premature loading barrier
+    in `nightfall.mjs`: counting model arrivals no longer meant all kits were ready. That fixture now awaits
+    `view.ready` and checks the required model names; all **52 nightfall checks** pass with the shader and state
+    assertions intact. Full CI on the corrected head remains pending. All 56 final High captures fit the
     draw gate (45–104), completed warm-up, and recorded no page/console errors, missing responses or private assets.
-    The post-capture built-in privacy scan passed over 853 tracked files, 176 built files and 422 media files
-    (no configured denylist or exiftool locally). No new Blender assets, voice recordings, release boundary or
+    The local built-in privacy scan passed again after the refreshed captures over 853 tracked files, 176 built files and 422 media files
+    (no configured denylist or exiftool locally). Initial CI privacy passed with exiftool and no configured denylist.
+    No full green CI result is claimed for the corrected head. No new Blender assets, voice recordings, release boundary or
     save-format change is part of this pass; private-model and physical-device judgement remains with Olov.
 
 - **Äventyr 2, full story and dialogue audit (5 November 2026, cloud session, branch `audit/adventure-2-story`).**

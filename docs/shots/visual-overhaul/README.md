@@ -63,16 +63,15 @@ surface with irregular shoulders, without a separate slab edge. This additional 
 All 56 expected images were captured at their named dimensions. Each stays within the High draw-call gate of 300:
 the recorded range is 45–104 draws and 19,987–245,237 triangles.
 The capture reports contain zero page errors, console errors, missing responses and private-pack requests.
-No installed model name begins with `private/`. Source fingerprints match before and after all four capture runs,
+No installed model name begins with `private/`. Source fingerprints match before and after all three capture runs,
 and all runs use the same source fingerprint and copied public asset manifest.
 
 | Provenance | Value |
 | --- | --- |
-| Git base revision | `3b1687007a1aa495f1d5af2487184484e27818ea` |
-| Source SHA-256 (216 files under `src/`) | `063a9b361473f28e8aef56ae53220cc31157a657cd98cdba28ad8edfb95ffaf1` |
+| Git base revision | `b6603d25baa928979c97ec92514519022deca390` |
+| Source SHA-256 (216 files under `src/`) | `fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b` |
 | Public asset manifest SHA-256 | `7c818573ffcc35763a1cc8a87d7f4f0e0946fe7dd55f601aa182eb7fbaf448a3` |
-| Main capture script SHA-256 | `821da76439b299a3306dfaad17aca10e2b1c2c32ccdf4ac4f0abe27d2262d6bf` |
-| Corrected Billsta capture script SHA-256 | `e8474220195117d0c7fda2e1dfbd9b01ba1fd2e1dfb88f6d9f22988e60357a56` |
+| Capture script SHA-256 | `e8474220195117d0c7fda2e1dfbd9b01ba1fd2e1dfb88f6d9f22988e60357a56` |
 | Browser | Chromium `141.0.7390.37` |
 | Settling per viewport | 6 render steps, 0.4 seconds each; shader warm-up complete |
 | WebP encoding | RGB, quality 88, method 6; contact sheets quality 86 |
@@ -82,10 +81,6 @@ used for these captures. It hashes sorted source paths and bytes, separated by n
 the simulation position, flags, scene time, draw/triangle counts, installed public models and a SHA-256 for each
 individual WebP; `captureContextIndex` links it to the corresponding context. The context records source changes,
 requested sizes, browser version and capture settings.
-
-Billsta was recaptured at `[43, 3.6]`, the log stack’s actual top, after the image review found that the fixture’s
-original `[43, 0]` position hid Elof inside it. This one fixture correction explains the two capture-script hashes.
-The earlier Billsta image is excluded from this gallery; renderer source and asset manifest hashes remain identical.
 
 - [Capture report and image hashes](capture-report.json)
 - [Capture contexts and matching source hashes](capture-context.json)
