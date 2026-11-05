@@ -1657,7 +1657,7 @@ function rideLooks(): Record<string, (look: RideLook) => Object3D | null> {
   return {
     boot: () => boot(), umbrella: () => umbrella(), owl: () => owl(true),
     // The ball Bertil kicks, under his feet as it flies.
-    football: () => { const g = new Group(); const b = football(0.8); b.position.y = -1.55; g.add(b); return g; },
+    football: () => { const g = new Group(); const b = football(0.8); b.position.y = -0.84; g.add(b); return g; },
     raft: () => { const g = new Group(); g.add(raft(3.2, 0.5)); g.children[0]!.position.y = -0.5; return g; },
   };
 }

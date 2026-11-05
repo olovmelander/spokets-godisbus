@@ -364,7 +364,7 @@ export const stormgard: ChapterData = {
     { from: -3, to: 24, zoom: 1.4, lift: 0.35 },
     { from: 24, to: 36, zoom: 1.4, lift: 0.4 },
     { from: 42, to: 72, zoom: 1.35 },
-    { from: 100, to: 130, zoom: 1.3 },
+    { from: 100, to: 130, zoom: 1.3, lift: 2 },
     { from: 130, to: 152, zoom: 1.35, lift: 0.8 },
     // The hedge: the sky over it, where the little one flies.
     { from: 174, to: 196, zoom: 1.5, lift: 1.4 },
