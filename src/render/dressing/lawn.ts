@@ -36,11 +36,13 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
     place.position.set(x, top(x, z), z);
     place.rotation.set((next() - 0.5) * 0.5, next() * 6.28, (next() - 0.5) * 0.5);
     // Mown openings let the garden buildings meet the lawn; taller grass stays between them.
-    const high = chapter.id === 'garden' && gardenViewGap(x) ? Math.min(tall, 1) : tall;
+    // A narrow mown margin keeps Elof and the sweets readable against the taller lawn behind him.
+    const edgeHeight = z > -1.25 && z < 0.5 ? Math.min(tall, 0.45) : tall;
+    const high = chapter.id === 'garden' && gardenViewGap(x) ? Math.min(edgeHeight, 1) : edgeHeight;
     place.scale.set(0.06 + next() * 0.07, high, 1);
     place.updateMatrix();
     grass.setMatrixAt(n, place.matrix);
-    grass.setColorAt(n++, next() < 0.14 ? tint.set('#c2c552').multiplyScalar(0.8 + next() * 0.3) : tint.set('#6fae34').multiplyScalar(0.7 + next() * 0.5));
+    grass.setColorAt(n++, next() < 0.14 ? tint.set('#a8ad67').multiplyScalar(0.8 + next() * 0.3) : tint.set('#6c914a').multiplyScalar(0.7 + next() * 0.5));
   }
   grass.count = n;
 
@@ -160,7 +162,7 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
       place.scale.set(0.06 + lean[4]! * 0.07, Math.min(want, at.room) * (0.7 + lean[5]! * 0.3), 1);
       place.updateMatrix();
       grass.setMatrixAt(grass.count, place.matrix);
-      grass.setColorAt(grass.count++, yellow ? tint.set('#c2c552').multiplyScalar(0.8 + lean[6]! * 0.3) : tint.set('#6fae34').multiplyScalar(0.62 + lean[6]! * 0.5));
+      grass.setColorAt(grass.count++, yellow ? tint.set('#a8ad67').multiplyScalar(0.8 + lean[6]! * 0.3) : tint.set('#5f8344').multiplyScalar(0.62 + lean[6]! * 0.5));
     }
   }
   for (let i = 0; i < sprigsInFront; i++) {
@@ -191,7 +193,7 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
   }
 
   // Tall grass in the back rows and where the lawn ends, but not in the openings kept for the buildings.
-  tallGrass(grass, chapter, from, to, seed, top, clumps, [2, 3.4], 0.12, ['#74a63c', '#8aa848', '#a8ac58'], (x) => !(chapter.id === 'garden' && gardenViewGap(x)));
+  tallGrass(grass, chapter, from, to, seed, top, clumps, [2, 3.4], 0.12, ['#6e8e48', '#879c5a', '#a7a970'], (x) => !(chapter.id === 'garden' && gardenViewGap(x)));
 
   for (const mesh of [grass, dew, stalks, heads, clover, fallen, trunks]) {
     mesh.instanceMatrix.needsUpdate = true;

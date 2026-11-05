@@ -6,8 +6,8 @@ import type { SpotProp } from './props';
 
 /**
  * Where a chapter pack adds to the picture (docs/aventyr-2.md). Äventyr 2 is a pack of its own, loaded only when
- * it is played: what it draws is registered here when it loads, and the boot code only asks. In Äventyr 1 every
- * one of these is empty, and nothing changes.
+ * it is played: its story-specific pictures are registered here when it loads. Shared home and landscape
+ * models load independently through shared-models.ts, so either adventure can use the same authored objects.
  */
 
 /** What a pack's addition to the picture is given once, as the view is built. */

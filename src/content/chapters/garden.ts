@@ -91,6 +91,8 @@ export const garden: ChapterData = {
     { x: 50.7, y: 3.3, kind: 'skumsvamp', after: 'ladybird', way: 'back up the hose, on the planks under the deck' },
   ],
   house: { from: -40, to: 72, windows: [4, 24, 40, 58] },
+  // The same collision top, now a lichen-covered boulder sitting on the lawn.
+  landmarks: [{ look: 'stone', from: 101, to: 105, base: 0 }],
   spawn: { x: 1, y: 6.01 },
   // Where and when, as the chapter opens (./cards.ts).
   scenes: [timeCard('garden', 1)],

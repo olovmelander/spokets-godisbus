@@ -13,6 +13,7 @@ import { stretch } from './forest';
 import { setWind, type Blow } from '../wind';
 import { bakeForestShadows } from '../forest-shadows';
 import { forestLandmarks } from '../forest-kit';
+import { fitOutdoorLandmarks, outdoorModels, updateOutdoorModels } from '../outdoor-models';
 import { bank, type Ground } from './ground';
 import { heightAt, landscape, makeKit, type PlaceLook } from './kit';
 import { lawn } from './lawn';
@@ -29,15 +30,17 @@ import { backdrop, stars } from './sky';
  */
 export type { PlaceLook };
 
+// The warm key gives each hour its colour; the cooler camera-side fill keeps faces and candy legible.
+// Leave the grade close to neutral so that light, green ground bounce and the LUT do not yellow the scene three times.
 /** Granskogen at noon: deep green and mossy gold, shafts of light, cool shade. */
 const FOREST: PlaceLook = {
   id: 'forest',
-  grade: { tint: [1.04, 1.01, 0.94], exposure: 1.08, contrast: 1.08, saturation: 1.12, vignette: 0.32, grain: 0.03 },
+  grade: { tint: [1.02, 1.0, 0.99], exposure: 1.08, contrast: 1.04, saturation: 1.03, vignette: 0.26, grain: 0.018 },
   haze: { colour: '#b4c79a', near: 4, far: 62 },
   sky: { top: '#2c4a44', middle: '#e6ebb0', bottom: '#587246', glow: '#fff8d2' },
-  hemisphere: { sky: '#cfe4ea', ground: '#5b6a34', intensity: 1.35 },
-  sun: { colour: '#ffd9a0', intensity: 3.6, from: [-7, 5, -4] },
-  fill: { colour: '#d6e6ff', intensity: 0.75 },
+  hemisphere: { sky: '#cfe4ea', ground: '#61705b', intensity: 1.35 },
+  sun: { colour: '#ffe4bc', intensity: 3.25, from: [-7, 5, -4] },
+  fill: { colour: '#d6e6ff', intensity: 1.15 },
   water: { colour: '#3f8f9c', opacity: 0.8 },
   tussock: '#9aa246',
 };
@@ -45,12 +48,12 @@ const FOREST: PlaceLook = {
 /** Gården at ten in the morning: dew, bright greens, the first yellow leaves, and the red house in the sun. */
 const GARDEN: PlaceLook = {
   id: 'garden',
-  grade: { tint: [1.04, 1.01, 0.95], exposure: 1.05, contrast: 1.07, saturation: 1.1, vignette: 0.28, grain: 0.025 },
+  grade: { tint: [1.02, 1.0, 0.99], exposure: 1.05, contrast: 1.04, saturation: 1.03, vignette: 0.24, grain: 0.016 },
   haze: { colour: '#cfe2ea', near: 6, far: 80 },
   sky: { top: '#6fa9d8', middle: '#d9ecf4', bottom: '#b4d28e', glow: '#fff4c8' },
-  hemisphere: { sky: '#dcecff', ground: '#7d8f48', intensity: 1.35 },
-  sun: { colour: '#ffe2ae', intensity: 3.6, from: [-7, 4.5, -3.5] },
-  fill: { colour: '#e8f0ff', intensity: 0.8 },
+  hemisphere: { sky: '#dcecff', ground: '#7b8969', intensity: 1.35 },
+  sun: { colour: '#ffe8c4', intensity: 3.3, from: [-7, 4.5, -3.5] },
+  fill: { colour: '#dce9ff', intensity: 1.15 },
   water: { colour: '#4f9fc4', opacity: 0.78 },
   tussock: '#a9c05a',
 };
@@ -58,12 +61,12 @@ const GARDEN: PlaceLook = {
 /** Myren in the late afternoon: a low gold sun over rust-red moss, dark pools, and silver mist. */
 const BOG: PlaceLook = {
   id: 'bog',
-  grade: { tint: [1.05, 1.0, 0.92], exposure: 1.05, contrast: 1.06, saturation: 1.06, vignette: 0.3, grain: 0.03 },
+  grade: { tint: [1.03, 1.0, 0.97], exposure: 1.05, contrast: 1.04, saturation: 1.03, vignette: 0.26, grain: 0.018 },
   haze: { colour: '#dccfb4', near: 5, far: 70 },
   sky: { top: '#93a9be', middle: '#f1dfb6', bottom: '#bfa878', glow: '#fff1c4' },
-  hemisphere: { sky: '#e8e2d2', ground: '#7d6a3c', intensity: 1.3 },
+  hemisphere: { sky: '#e1e5e7', ground: '#7d7156', intensity: 1.3 },
   sun: { colour: '#ffcf88', intensity: 3.5, from: [-8, 3.2, -4] },
-  fill: { colour: '#e6e6f4', intensity: 0.75 },
+  fill: { colour: '#dce5f6', intensity: 1.1 },
   water: { colour: '#34423f', opacity: 0.9 },
   tussock: '#a3ae8c',
 };
@@ -71,13 +74,13 @@ const BOG: PlaceLook = {
 /** Berget in the golden hour: grey granite and white lichen under a pink-orange sky, haze in the valley. */
 const MOUNTAIN: PlaceLook = {
   id: 'mountain',
-  grade: { tint: [1.06, 0.99, 0.95], exposure: 1.04, contrast: 1.07, saturation: 1.08, vignette: 0.3, grain: 0.03 },
+  grade: { tint: [1.04, 0.99, 0.98], exposure: 1.04, contrast: 1.04, saturation: 1.05, vignette: 0.26, grain: 0.018 },
   haze: { colour: '#e9b9a0', near: 9, far: 95 },
   sky: { top: '#6a78ae', middle: '#f7b78c', bottom: '#c98c74', glow: '#ffe2b4' },
   // A top face sees the zenith, not the horizon: the sky's light is cool, and only the sun is warm.
   hemisphere: { sky: '#c9d2f4', ground: '#8a6f78', intensity: 1.5 },
   sun: { colour: '#ffb884', intensity: 3.2, from: [-8, 2.6, -3] },
-  fill: { colour: '#cfd6ff', intensity: 0.9 },
+  fill: { colour: '#d8e0ff', intensity: 1.2 },
   water: { colour: '#4f7f9c', opacity: 0.8 },
   tussock: '#b9b08a',
 };
@@ -85,12 +88,12 @@ const MOUNTAIN: PlaceLook = {
 /** The final, at the blue hour: the same summit, in blue, with the first stars. Night falls on it later. */
 const DUSK: PlaceLook = {
   id: 'dusk',
-  grade: { tint: [0.95, 0.99, 1.08], exposure: 1.02, contrast: 1.06, saturation: 1.0, vignette: 0.34, grain: 0.035 },
+  grade: { tint: [0.97, 0.99, 1.06], exposure: 1.02, contrast: 1.035, saturation: 1.0, vignette: 0.3, grain: 0.02 },
   haze: { colour: '#38446e', near: 6, far: 85 },
   sky: { top: '#16224c', middle: '#3c4c80', bottom: '#5c5a84', glow: '#9a86a8' },
   hemisphere: { sky: '#93a6e0', ground: '#3c3c54', intensity: 1.1 },
   sun: { colour: '#b8c0ff', intensity: 1.5, from: [-7, 5, -4] },
-  fill: { colour: '#b0bcff', intensity: 0.65 },
+  fill: { colour: '#c2ceff', intensity: 0.85 },
   water: { colour: '#2c3c64', opacity: 0.85 },
   tussock: '#6a6f80',
 };
@@ -98,12 +101,12 @@ const DUSK: PlaceLook = {
 /** At home: the kitchen on a Saturday morning, and the veranda in the evening. Warm, and built of boards. */
 const HOME: PlaceLook = {
   id: 'home',
-  grade: { tint: [1.05, 1.0, 0.93], exposure: 1.04, contrast: 1.05, saturation: 1.05, vignette: 0.3, grain: 0.025 },
+  grade: { tint: [1.025, 1.0, 0.98], exposure: 1.04, contrast: 1.035, saturation: 1.02, vignette: 0.26, grain: 0.016 },
   haze: { colour: '#e8d8b8', near: 8, far: 90 },
   sky: { top: '#d9c8a6', middle: '#f0e2c4', bottom: '#b79f78', glow: '#fff4d2' },
   hemisphere: { sky: '#fff0d8', ground: '#8a7250', intensity: 1.3 },
   sun: { colour: '#ffe0aa', intensity: 3.0, from: [-7, 5, -3] },
-  fill: { colour: '#fff0e0', intensity: 0.8 },
+  fill: { colour: '#e2eaff', intensity: 1.1 },
   water: { colour: '#4f9fc4', opacity: 0.78 },
   tussock: '#b9a07e',
 };
@@ -111,12 +114,12 @@ const HOME: PlaceLook = {
 /** Byn on a Saturday morning in October: a clear cool sky, a low sun along the street, warm shop windows. */
 const VILLAGE: PlaceLook = {
   id: 'village',
-  grade: { tint: [1.03, 1.0, 0.97], exposure: 1.04, contrast: 1.06, saturation: 1.06, vignette: 0.3, grain: 0.03 },
+  grade: { tint: [1.02, 1.0, 0.99], exposure: 1.04, contrast: 1.04, saturation: 1.03, vignette: 0.26, grain: 0.018 },
   haze: { colour: '#d8dde6', near: 8, far: 95 },
   sky: { top: '#7fa6d6', middle: '#dfe8f2', bottom: '#b8b4ac', glow: '#fff0cc' },
   hemisphere: { sky: '#e6eefc', ground: '#6e6a66', intensity: 1.25 },
   sun: { colour: '#ffe2b0', intensity: 3.4, from: [-8, 3.4, -4] },
-  fill: { colour: '#e4ecff', intensity: 0.75 },
+  fill: { colour: '#dce8ff', intensity: 1.1 },
   water: { colour: '#4a5a6a', opacity: 0.85 },
   tussock: '#9a9a96',
 };
@@ -189,6 +192,10 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   makeKit();
   // What stands on the ground comes first: the bee is told where the dandelions are.
   const standing = scatter(landChapter, from, to, look.id, own);
+  const outdoor = outdoorModels(chapter);
+  standing.add(outdoor);
+  const landmarks = forestLandmarks(chapter);
+  fitOutdoorLandmarks(chapter, landmarks);
   const ground = bank(landChapter, own);
   if (look.id === 'forest') bakeForestShadows(ground, standing, look.sun.from);
   const air = effects(landChapter, from, to, look.id, standing);
@@ -219,7 +226,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
     far.group,
     ground,
     standing,
-    forestLandmarks(chapter),
+    landmarks,
     built(chapter, look.id === 'home'),
     houses?.group ?? new Group(),
     air.group,
@@ -234,6 +241,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
     ...(houses ? { install: houses.install } : {}),
     update(cameraX, groundY, clock, night = 0, wind, quiet) {
       const still = wind?.still ?? false;
+      updateOutdoorModels(outdoor, clock, still);
       // The wind first: what sways, what leans in front and what flies all go by it. Breaths of wind pass
       // through every place but the mountain, where the wind is the gusts'.
       setWind(clock, still, look.id !== 'mountain' && look.id !== 'dusk', wind?.gust ?? null);

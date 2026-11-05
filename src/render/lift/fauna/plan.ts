@@ -102,7 +102,9 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
   const from = chapter.ground[0]!.x;
   const to = chapter.ground[chapter.ground.length - 1]!.x;
   const ground = (x: number) => heightAt(chapter, x);
-  const trees = treesOf(dressing);
+  // A broad skerry's landscape is its submerged bed. Its incidental bog trunks are underwater, not perches.
+  const underSkerry = (x: number) => (source.landmarks ?? []).some((mark) => mark.look === 'skerry' && x >= mark.from - 2 && x <= mark.to + 2);
+  const trees = treesOf(dressing).filter((tree) => !underSkerry(tree.x));
   const props: Part[] = [];
 
   // Nothing rests by a candy: the trail, the side candy, the hidden ones and the big ones.
@@ -186,7 +188,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
         const x = from + 6 + next() * (source.goalX - from - 10);
         const z = -4.2 - next() * 1.6;
         // A stump stands on the ground, by the level where he plays; four EL back it is in nobody's way.
-        if (!far(x, z) || !level(x) || !grows(bare, x) || Math.abs(ground(x) - ground(from + 4)) > 4 || (source.pine && Math.abs(x - source.pine.x) < 5.5) || !clear(x, ground(x) + 2, z, 3)) continue;
+        if (!far(x, z) || underSkerry(x) || !level(x) || !grows(bare, x) || Math.abs(ground(x) - ground(from + 4)) > 4 || (source.pine && Math.abs(x - source.pine.x) < 5.5) || !clear(x, ground(x) + 2, z, 3)) continue;
         const tall = 1.4 + next() * 0.5;
         props.push(...placed(stump(tall, 0.32), x, ground(x) - 0.1, z, next() * 6));
         owls.push({ at: [x, ground(x) + tall - 0.12, z], yaw: -Math.PI / 2 + (next() - 0.5) * 0.4 });

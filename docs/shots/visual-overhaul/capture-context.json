@@ -1,0 +1,309 @@
+[
+  {
+    "revision": "b6603d25baa928979c97ec92514519022deca390",
+    "sourceChanges": [
+      "M src/render/outdoor-models.ts"
+    ],
+    "publicStandins": true,
+    "rendererOnly": true,
+    "tier": "high",
+    "sizes": [
+      [
+        390,
+        844
+      ],
+      [
+        844,
+        390
+      ],
+      [
+        780,
+        360
+      ],
+      [
+        1180,
+        820
+      ],
+      [
+        1440,
+        900
+      ]
+    ],
+    "cases": [
+      {
+        "name": "home",
+        "chapter": "prolog",
+        "at": [
+          3,
+          0
+        ],
+        "scene": {
+          "id": "morgon",
+          "seconds": 9.6
+        }
+      },
+      {
+        "name": "home-sofa",
+        "chapter": "prolog",
+        "at": [
+          24,
+          0
+        ]
+      },
+      {
+        "name": "garden",
+        "chapter": "garden",
+        "at": [
+          76,
+          0
+        ]
+      },
+      {
+        "name": "forest",
+        "chapter": "granskog",
+        "at": [
+          30,
+          0
+        ]
+      },
+      {
+        "name": "bog",
+        "chapter": "myren",
+        "at": [
+          96,
+          0
+        ]
+      },
+      {
+        "name": "mountain",
+        "chapter": "berget",
+        "at": [
+          104,
+          26.4
+        ]
+      },
+      {
+        "name": "finale",
+        "chapter": "norrsken",
+        "at": [
+          17.8,
+          0
+        ],
+        "flags": [
+          "placed:tragubbe",
+          "eyes"
+        ]
+      },
+      {
+        "name": "epilogue",
+        "chapter": "epilog",
+        "at": [
+          32,
+          0
+        ],
+        "flags": [
+          "partied",
+          "knife",
+          "cut1",
+          "cut2",
+          "cut3",
+          "dots"
+        ]
+      },
+      {
+        "name": "village",
+        "chapter": "byn",
+        "at": [
+          65,
+          0
+        ]
+      }
+    ],
+    "assetManifestSha256": "7c818573ffcc35763a1cc8a87d7f4f0e0946fe7dd55f601aa182eb7fbaf448a3",
+    "source": {
+      "sha256": "fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b",
+      "files": 216
+    },
+    "captureScriptSha256": "e8474220195117d0c7fda2e1dfbd9b01ba1fd2e1dfb88f6d9f22988e60357a56",
+    "framesPerViewport": 6,
+    "frameDt": 0.39999999999999997,
+    "deviceScaleFactor": 1,
+    "reuseViewPerCase": true,
+    "browser": "141.0.7390.37",
+    "sourceAfter": {
+      "sha256": "fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b",
+      "files": 216
+    },
+    "sourceChangedDuringCapture": false
+  },
+  {
+    "revision": "b6603d25baa928979c97ec92514519022deca390",
+    "sourceChanges": [
+      "M HANDOVER.md",
+      " M docs/graphics-overhaul-audit.md",
+      " M src/render/outdoor-models.ts"
+    ],
+    "publicStandins": true,
+    "rendererOnly": true,
+    "tier": "high",
+    "sizes": [
+      [
+        844,
+        390
+      ]
+    ],
+    "cases": [
+      {
+        "name": "storm-evening",
+        "chapter": "stormkvall",
+        "at": [
+          3,
+          0
+        ],
+        "scene": {
+          "id": "kvall",
+          "seconds": 7.8
+        }
+      },
+      {
+        "name": "storm-garden",
+        "chapter": "stormgard",
+        "at": [
+          94,
+          0
+        ]
+      },
+      {
+        "name": "storm-forest",
+        "chapter": "stormskog",
+        "at": [
+          30,
+          0
+        ]
+      },
+      {
+        "name": "storm-village",
+        "chapter": "stormbyn",
+        "at": [
+          97.8,
+          5
+        ]
+      },
+      {
+        "name": "olympia",
+        "chapter": "olympia",
+        "at": [
+          54,
+          0
+        ]
+      },
+      {
+        "name": "flarken",
+        "chapter": "flarken",
+        "at": [
+          108,
+          0
+        ]
+      },
+      {
+        "name": "river",
+        "chapter": "alven",
+        "at": [
+          91.6,
+          0
+        ]
+      },
+      {
+        "name": "billsta",
+        "chapter": "billsta",
+        "at": [
+          43,
+          3.6
+        ]
+      },
+      {
+        "name": "storm-eye",
+        "chapter": "stormoga",
+        "at": [
+          46,
+          0.6
+        ],
+        "flags": [
+          "eye",
+          "scene:motet"
+        ]
+      },
+      {
+        "name": "next-morning",
+        "chapter": "morgonen",
+        "at": [
+          3,
+          0
+        ],
+        "scene": {
+          "id": "frukost",
+          "seconds": 12.2
+        }
+      }
+    ],
+    "assetManifestSha256": "7c818573ffcc35763a1cc8a87d7f4f0e0946fe7dd55f601aa182eb7fbaf448a3",
+    "source": {
+      "sha256": "fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b",
+      "files": 216
+    },
+    "captureScriptSha256": "e8474220195117d0c7fda2e1dfbd9b01ba1fd2e1dfb88f6d9f22988e60357a56",
+    "framesPerViewport": 6,
+    "frameDt": 0.39999999999999997,
+    "deviceScaleFactor": 1,
+    "reuseViewPerCase": true,
+    "browser": "141.0.7390.37",
+    "sourceAfter": {
+      "sha256": "fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b",
+      "files": 216
+    },
+    "sourceChangedDuringCapture": false
+  },
+  {
+    "revision": "b6603d25baa928979c97ec92514519022deca390",
+    "sourceChanges": [
+      "M HANDOVER.md",
+      " M docs/graphics-overhaul-audit.md",
+      " M src/render/outdoor-models.ts"
+    ],
+    "publicStandins": true,
+    "rendererOnly": true,
+    "tier": "high",
+    "sizes": [
+      [
+        1440,
+        900
+      ]
+    ],
+    "cases": [
+      {
+        "name": "garden-boulder-middle",
+        "chapter": "garden",
+        "at": [
+          103,
+          1.3
+        ]
+      }
+    ],
+    "assetManifestSha256": "7c818573ffcc35763a1cc8a87d7f4f0e0946fe7dd55f601aa182eb7fbaf448a3",
+    "source": {
+      "sha256": "fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b",
+      "files": 216
+    },
+    "captureScriptSha256": "e8474220195117d0c7fda2e1dfbd9b01ba1fd2e1dfb88f6d9f22988e60357a56",
+    "framesPerViewport": 6,
+    "frameDt": 0.39999999999999997,
+    "deviceScaleFactor": 1,
+    "reuseViewPerCase": true,
+    "browser": "141.0.7390.37",
+    "sourceAfter": {
+      "sha256": "fd6dd68e0a156fb77b67f5b009261176d6dae38d23861570ee8d23a568fdde4b",
+      "files": 216
+    },
+    "sourceChangedDuringCapture": false
+  }
+]

@@ -1,5 +1,6 @@
 import { CylinderGeometry, Object3D, type BufferGeometry } from 'three';
-import type { ChapterData, Line, Vec } from '../sim/types';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import type { ChapterData, Line, PlaceId, Vec } from '../sim/types';
 
 /**
  * What holds a ring (docs/level-design.md). A ring off the main way hangs in the open air over the path, and
@@ -59,8 +60,36 @@ export function rods(chapter: Pick<ChapterData, 'hooks' | 'lines'>): Rod[] {
 
 const place = new Object3D();
 
-/** A rod as a shape where it lies: a thin six-sided stick from its start to its end, with no shared corners. */
-export function rodShape(rod: Rod): BufferGeometry {
+/** A rope's outdoor anchor: a weathered, tapering snag with broken twigs, tied at the original rope endpoint. */
+function snag(rod: Rod): BufferGeometry {
+  const height = rod.to.y - rod.from.y;
+  const trunk = new CylinderGeometry(0.055, 0.16, height, 7, 7).toNonIndexed();
+  const points = trunk.getAttribute('position');
+  const phase = rod.to.x * 1.7;
+  const bendAt = (t: number) => Math.sin(t * Math.PI) * (0.13 * Math.sin(phase) + 0.1 * Math.sin(t * 6));
+  for (let i = 0; i < points.count; i++) {
+    const t = (points.getY(i) + height / 2) / height;
+    const bend = bendAt(t);
+    points.setXYZ(i, points.getX(i) + bend, points.getY(i), points.getZ(i) - 0.2 * (1 - t));
+  }
+  trunk.translate(rod.to.x, (rod.from.y + rod.to.y) / 2, Z);
+  const parts = [trunk];
+  for (const [t, side] of [[0.82, -1], [0.94, 1]] as const) {
+    const long = 0.35 + 0.12 * (1 + Math.sin(phase + t));
+    const branch = new CylinderGeometry(0.012, 0.045, long, 5).toNonIndexed()
+      .translate(0, long / 2, 0).rotateZ(side * 0.9)
+      .translate(rod.to.x + bendAt(t), rod.from.y + height * t, Z - 0.2 * (1 - t));
+    parts.push(branch);
+  }
+  const shape = mergeGeometries(parts);
+  parts.forEach(part => part.dispose());
+  shape.computeVertexNormals();
+  return shape;
+}
+
+/** Rope stays fine and readable; in the wild its supports are dead stems, while garden clothesline posts stay planed. */
+export function rodShape(rod: Rod, site?: PlaceId): BufferGeometry {
+  if (rod.thick === POLE && (site === 'forest' || site === 'bog' || site === 'mountain' || site === 'dusk')) return snag(rod);
   const dx = rod.to.x - rod.from.x;
   const dy = rod.to.y - rod.from.y;
   place.position.set((rod.from.x + rod.to.x) / 2, (rod.from.y + rod.to.y) / 2, Z);

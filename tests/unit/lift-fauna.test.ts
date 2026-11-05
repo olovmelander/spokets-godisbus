@@ -114,6 +114,15 @@ describe('the near life', () => {
     }
   });
 
+  it('never gives the lakebed beneath the meeting stone a tree perch or a nesting stump', () => {
+    const plan = built.get('stormoga')!.plan!;
+    const onStone = (x: number) => x >= 36 && x <= 60;
+    expect(plan.trees.some((tree) => onStone(tree.x))).toBe(false);
+    expect(plan.owls.some((owl) => onStone(owl.at[0]))).toBe(false);
+    expect(plan.flocks.some((flock) => onStone(flock.x))).toBe(false);
+    expect(plan.fireflies).toBeGreaterThan(0);
+  });
+
   it("never sits an owl where Äventyr 2's own owl is", () => {
     for (const chapter of ADVENTURE2) {
       const plan = built.get(chapter.id)!.plan;

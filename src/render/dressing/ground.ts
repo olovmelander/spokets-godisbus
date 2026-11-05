@@ -32,7 +32,7 @@ function speckles(): CanvasTexture {
  * rings of crust lichen. It is nearly white on the whole, so that it is the rock's own tones that colour it:
  * the moss's speckles halved them, and grey rock came out as brown felt.
  */
-function granite(): CanvasTexture {
+export function granite(): CanvasTexture {
   const next = sequence(71);
   const size = 256;
   return drawn(size, size, (c) => {
@@ -235,8 +235,8 @@ function cutAt(x: number, z: number, under: number, out: Color): Color {
 }
 
 /**
- * Rock: level a little past the path, then a hard edge that catches the light, and down in two steps with a
- * ledge on each, as granite breaks. Nothing of it is rounded.
+ * Rock: the collision top remains flat, then fractured planes fall away towards the camera. The broad,
+ * uneven shelves are tilted faces of one outcrop, rather than horizontal courses in a retaining wall.
  */
 const PROFILE_ROCK: Row[] = [
   { z: -16, drop: -0.3, shade: 0.72, bump: 0.5 },
@@ -249,14 +249,14 @@ const PROFILE_ROCK: Row[] = [
   { z: 0.9, drop: 0, shade: 1, bump: 0 },
   // The edge he walks along, drawn by its own pale line.
   { z: 0.98, drop: 0.08, shade: 1, bump: 0, pale: 0.4 },
-  { z: 1.0, drop: 0.85, shade: 0.74, bump: 0, cut: 1, ledge: 1 },
-  { z: 1.35, drop: 0.87, shade: 0.96, bump: 0, pale: 0.12, ledge: 1 },
-  { z: 1.38, drop: 2.3, shade: 0.64, bump: 0, cut: 1, ledge: 2 },
-  { z: 1.7, drop: 2.32, shade: 0.9, bump: 0, ledge: 2 },
-  { z: 1.74, drop: 4.2, shade: 0.56, bump: 0, cut: 1 },
-  { z: 1.9, drop: 6.5, shade: 0.5, bump: 0, cut: 1 },
-  { z: 2.0, drop: 10, shade: 0.45, bump: 0, cut: 1 },
-  { z: 2.0, drop: 16, shade: 0.42, bump: 0, cut: 1 },
+  { z: 1.22, drop: 0.98, shade: 0.78, bump: 0, cut: 1, ledge: 1 },
+  { z: 1.75, drop: 1.34, shade: 0.9, bump: 0, pale: 0.06, ledge: 1 },
+  { z: 2.04, drop: 2.8, shade: 0.67, bump: 0, cut: 1, ledge: 2 },
+  { z: 2.86, drop: 3.24, shade: 0.82, bump: 0, ledge: 2 },
+  { z: 3.35, drop: 5.1, shade: 0.56, bump: 0, cut: 1 },
+  { z: 3.7, drop: 7.6, shade: 0.48, bump: 0, cut: 1 },
+  { z: 3.92, drop: 11, shade: 0.43, bump: 0, cut: 1 },
+  { z: 4.0, drop: 16, shade: 0.4, bump: 0, cut: 1 },
 ];
 const CAP = new Color('#d9d6c6');
 const ROCK_DEEP = new Color('#46527e');
@@ -449,13 +449,13 @@ interface Block {
 /** Half the width of a joint's dark line. */
 const SEAM = 0.03;
 
-/** The blocks along a chapter: a joint every 2.5 to 6 lengths, the same in every session. */
+/** Broad fracture masses, at irregular intervals: the same geology in every session. */
 function blocksOf(from: number, to: number): Block[] {
   const next = sequence(977);
   const blocks: Block[] = [];
   for (let x = from - 20 + next() * 4; x < to + 26; ) {
-    x += 2.5 + next() * 3.5;
-    blocks.push({ to: x, ledges: [(next() - 0.5) * 0.44, (next() - 0.5) * 0.6], tone: 0.93 + next() * 0.14 });
+    x += 3.8 + next() * 5.4;
+    blocks.push({ to: x, ledges: [(next() - 0.5) * 0.6, (next() - 0.5) * 1.3], tone: 0.97 + next() * 0.08 });
   }
   return blocks;
 }
@@ -702,7 +702,7 @@ interface GroundLook {
 const tones = (...hex: string[]) => hex.map((h) => new Color(h));
 const GROUNDS: Record<Ground, GroundLook> = {
   moss: { colours: MOSS, wall: SOIL, shade: SHADE, bump: 1, boards: false },
-  lawn: { colours: tones('#3f6a22', '#5c962b', '#7fb238', '#aecb52'), wall: new Color('#4a3826'), shade: new Color('#2a4a3a'), bump: 0.8, boards: false },
+  lawn: { colours: tones('#476b32', '#648f40', '#84a653', '#aabb74'), wall: new Color('#4a3826'), shade: new Color('#2a4a3a'), bump: 0.8, boards: false },
   sphagnum: { colours: tones('#6e3226', '#8f4d2b', '#7d8a36', '#bca94c'), wall: new Color('#2e241c'), shade: new Color('#2a3438'), bump: 1, boards: false, sinks: true },
   // A lake's shore: as the bog's islands stand in water, but in worn grass and sedge, with none of its red.
   shore: { colours: tones('#3e4c2a', '#566234', '#74783e', '#a4985e'), wall: new Color('#2e2a1e'), shade: new Color('#26343a'), bump: 0.8, boards: false, sinks: true },
@@ -986,6 +986,8 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
     const sink = p.drain !== undefined ? Math.max(0, p.drain - p.y) : 0;
     // How far up its wall the point is.
     const up = wall && wall.top > wall.foot ? Math.min(1, Math.max(0, (p.y - wall.foot) / (wall.top - wall.foot))) : 0;
+    let drawnDown = 0;
+    let drawnLast: readonly [number, number, number] | undefined;
     for (let j = 0; j < rows; j++) {
       const row = profile[j]!;
       const z = depthOf(row, forward);
@@ -1003,7 +1005,15 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
         y = shut ? upper : Math.min(upper, lower) + (upper - Math.min(upper, lower)) * up;
         under = upper - y;
       }
-      position.push(p.x, y, z);
+      // Deep fracture faces lean and taper. Their seams wander through the rock instead of forming an
+      // upright grid. Keep the walk plane, every collision wall and its retracted corner exactly in place.
+      const fracture = kind === 'granite' && !p.wall && !wall && row.z > EDGE
+        ? Math.min(1, Math.max(0, drop - 0.15) / 1.8) * forward : 0;
+      const shear = fracture * (0.42 * Math.sin(drop * 0.7 + p.x * 0.11) + 0.22 * Math.sin(drop * 1.7 + p.x * 0.3));
+      const fold = fracture * (noise(p.x * 0.42 + 8, row.z * 0.7) - 0.5) * 0.64;
+      position.push(p.x + shear, y + fold, z);
+      if (drawnLast) drawnDown += Math.hypot(p.x + shear - drawnLast[0], y + fold - drawnLast[1], z - drawnLast[2]);
+      drawnLast = [p.x + shear, y + fold, z];
       // Where the road goes on over a drain, it is the road's. In the well under the grate it is dark.
       const ironWork = p.drain !== undefined && !shut;
       toneAt(shut ? DRAIN_ROAD : kind, p.x, down[j]!, c);
@@ -1040,7 +1050,7 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       }
       if (block) c.multiplyScalar(block.tone);
       // A joint is a dark line down the faces, and a faint one across the ledges and the top.
-      if (seam) c.multiplyScalar(row.cut ? 0.5 : row.z > EDGE ? 0.8 : 0.93);
+      if (seam) c.multiplyScalar(row.cut ? 0.68 : row.z > EDGE ? 0.87 : 0.96);
       if (row.pale && !face) c.lerp(WHITE, row.pale);
       if (row.under) c.copy(UNDER);
       if (row.far) c.lerp(front.far, row.far);
@@ -1048,6 +1058,7 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       // The rim board lies along the path: across it the picture spans one board, between two gaps, and its
       // grain runs along.
       if (row.rim !== undefined && !face) uv.push(0.0125 + row.rim * 0.475, p.x * tile);
+      else if (!face && kind === 'granite') uv.push((p.along + shear) * tile, drawnDown * tile);
       else if (!face) uv.push((look.boards ? p.x : p.along) * tile, (down[j]! + (row.z > EDGE ? rise + sink : 0) + (row.z >= DRAIN_BACK ? sink : 0)) * tile);
       // A face lies in the depth and along the wall. A board there is a board on edge, its grain into the depth.
       else if (look.boards) uv.push((p.x * ux + y * uy) * tile, z * tile);

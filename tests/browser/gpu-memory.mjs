@@ -89,7 +89,16 @@ try {
   check('repeated quality changes retain no abandoned GPU resources', true);
   await page.locator('#graphicsHigh').click();
   await frames(page);
+  const warmedHigh = await info(page);
+  // Tier and context warmup draw every pass, including shafts disabled by the room's air.
+  // A resize releases those unused targets; compare ordinary frames after that first resize.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await frames(page);
+  gate('settling portrait resize', await info(page));
+  await page.setViewportSize({ width: 1180, height: 820 });
+  await frames(page);
   const high = await info(page);
+  gate('settled High tablet', high);
   for (let cycle = 0; cycle < 3; cycle++) {
     await page.setViewportSize({ width: 390, height: 844 });
     await frames(page);
@@ -125,7 +134,7 @@ try {
   await frames(page);
   const restored = await info(page);
   gate('restored High tablet', restored);
-  assert.deepEqual(footprint(restored), footprint(high), 'restored storage returns to the same baseline');
+  assert.deepEqual(footprint(restored), footprint(warmedHigh), 'restored storage returns to the warmed baseline');
   check('restoration accounts for the rebuilt renderer and assets', true);
   assert.deepEqual(errors, [], 'GPU observation must not cause page exceptions');
   await context.close();

@@ -52,11 +52,12 @@ export const SUITES = [
   ['myren-loop', 169],
   ['finale-stage', 147],
   ['model-installation', 25],
+  ['shared-home', 90],
   ['aventyr2', 330],
 ];
 
 /** The files in tests/browser that are not suites: what the suites share, and this list's own two files. */
-export const NOT_SUITES = ['budget', 'dialogue', 'pause', 'picture', 'run', 'suites'];
+export const NOT_SUITES = ['budget', 'dialogue', 'pause', 'picture', 'run', 'suites', 'visual-overhaul'];
 
 /**
  * The suites shared out over a number of parts, as evenly as their seconds allow: the heaviest suite goes to
