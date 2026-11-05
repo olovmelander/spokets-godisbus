@@ -33,8 +33,7 @@
     the one that did not (Stormskogen, x 36 to 55).
   - **Lamps in their hands** in the finale: held `lamp-*` Things, with a beam that fades. Always check a scene with the real
     figures: the rehearsal figures stand differently.
-  - **The size gate is full:** 3065 of 3072 KB as served. The carvings were halved to get there. More models need
-    room (see "Frågor till Olov").
+  - **The size gate is 4 MB now** (Olov, 5 November 2026): 3065 of 4096 KB as served.
 - **The overhaul's long night (4 to 5 November 2026).** Stacked pull requests, one outcome each, none of them merged
   yet. **Merge in number order:** #192, then #195 to #201 (their base is `main`, so rebase or retarget as they land), then
   #202 to #223, each on top of the one before, and `spokets-godisbus-familj` PR #2 for the real house in Billsta. #187 is
@@ -3910,6 +3909,10 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Voices (Olov, 5 November 2026):** new TTS voices are recorded when the storytelling and the conversations are finished.
+  Until then `public/audio/voices`, `public/audio/test_candidates` and `src/audio/voice-player.ts` stay as they are, and a
+  404 for a line without a voice is expected. Olov chooses the service. This replaces plan §0 Q9's "no voices".
+- **The size gate (Olov, 5 November 2026):** 4 MB as served for the whole site, from 3 MB.
 | Question | Decision | Source |
 | --- | --- | --- |
 | Elof as a player | 7 years, plays games for 11+. Play style *Äventyr* by default (variable jump, a swing he pumps, the glitter bubble, exciting sequences, challenge routes); *Lugnt* for anyone who wants it. Help only when asked. | Olov, 3 Oct |
@@ -4148,10 +4151,6 @@ The older list, still true where it is not struck:
 
 The first two are in plan §0, "Kvar att svara på". None of them blocks the work.
 
-0. **Two from 5 November.** The size gate is 3 MB for everything on the site, and it is nearly full: may it grow, or should
-   the next models take their room from something else? And `public/audio/voices` and `public/audio/test_candidates` hold
-   mp3s, and `src/audio/voice-player.ts` looks for them, while the rules say the game has no voices: 404s in the console
-   come from lines that have none. Should they stay, or go? The default: nothing is changed until Olov says.
 
 1. **Do Elof's parents know about the game, or is it a surprise for them too?** The default: Olov judges the
    likeness himself, and Pappa reads the storyboard of the memories before the first one is built, late in

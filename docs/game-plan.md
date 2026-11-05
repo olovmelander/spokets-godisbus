@@ -152,7 +152,7 @@ Appendix C lists exactly what carries over. What is new here:
 | 5. Överraskning och datum | Inga bestämda datum | Stegen görs i ordning, och varje utgåva släpps när dess kontrollpunkt är godkänd (§7.3). Förvalet står kvar: spelet är en överraskning för Elof, och ofärdiga delar syns bara med `?dev`. |
 | 7. Det riktiga spöket | De enda fotona är de två i `photos/`. Där finns också renderingen och affischen. | Spöket modelleras i Blender efter fotona. Renderingen och affischen visar det som fotona saknar: baksidan och formerna snett framifrån (§5.6). Skanningen stryks, för den kräver 60–80 foton. Höjden antas vara cirka 15 cm. Spöket får händer som på affischen och renderingen, fast den riktiga figuren saknar dem: det bestämde du den 3 oktober (§2.2). |
 | 8. Riktiga platser | Du kan inte fotografera eller spela in nu, men det finns referensfoton i `photos/landscape/` | Förvalen gäller: Storklocken är förebild för berget, bakgrunderna renderas i Blender, och ljuden syntetiseras eller är CC0. Landskapsfotona är förlagor, inte bilder i spelet: nästan alla har licensen CC BY-SA, som spelet inte får använda (§5.6). Bilder från Storklockens topp, forsen i byn och Näsbacken saknas, så de platserna byggs efter beskrivningar tills du kan ta egna foton. Lavskrikan och kyrkklockorna kl. 18 är kvar. |
-| 9. Röster | Inga röster | *Läs upp* och inspelningssidan stryks (§3.7, §6.8). Figurerna låter, men utan ord. |
+| 9. Röster | Inga röster, tills vidare | *Läs upp* och inspelningssidan stryks (§3.7, §6.8). Figurerna låter, men utan ord. **Ändrat 5 november 2026:** nya TTS-röster spelas in när berättandet och konversationerna är klara. Där det står "inga röster" i planen gäller det fram till dess. |
 | 10. Testbarn | Bara du testar | H2 och H3 blir dina egna tester. Elofs första spelning (H4) är första gången ett barn spelar (§7.3, §7.7). |
 | 11. Godis | De gillar alla sorters godis | Det gyllene godiset blir ett geléhallon i guldpapper, samma sort som lilla Elof delade med sin trägubbe (§3.4). På godiskalaset väljer Elof själv vad var och en får. |
 | 12. Namn | Hitta på ett bra namn | Spöket heter **Klonk**, efter ljudet av dess träfötter. Elof ger det namnet i epilogen, och fram till dess är det ”spöket” (§2.2, §3.4). |
@@ -1933,7 +1933,7 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
 
 - **Packs** (named by the stable chapter IDs, §4.9):
   - `boot`: engine, UI, font, the title scene and the table-top opening of the prologue (Elof, the ghost, the
-    bag, the table, Pappa's hands). At most **3 MB**.
+    bag, the table, Pappa's hands). At most **3 MB** (raised to 4 MB for the whole site on 5 November 2026, Olov).
   - `prolog`: the veranda and the deck chase, prefetched behind the title.
   - `garden`, `granskog`, `myr`, `berg` (with the final and the small epilogue), and in 1.1 `forsen`: at most
     **8 MB** each.

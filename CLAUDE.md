@@ -53,8 +53,9 @@ Both parents have said yes to everything in the plan's consent list, and every n
     one). They are references for the surroundings: look at them, and never use them as plates or textures.
   - The family's game models, textures and `.blend` files live in the private repository
     `spokets-godisbus-familj` (plan §6.11), so they can always be taken down.
-- **Voices.** The game has none: nothing is read aloud and nothing is recorded (plan §0 Q9). Characters make
-  short wordless sounds.
+- **Voices.** Characters make short wordless sounds for now. New TTS voices are recorded when the storytelling and
+  the conversations are finished (Olov, 5 November 2026; plan §0 Q9), and the voice files in `public/audio/` stay as they
+  are until then. The rule about paid AI tools still holds: Olov chooses the service.
 - **Consent.** Anything comes out again if a parent asks. Anything personal not on the consent list is asked
   about first (plan §2.6).
 
