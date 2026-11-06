@@ -71,10 +71,25 @@ import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
 import { photoCut } from './crop';
 
-/** Whether the page asked to leave the lens's effects out (`?nolens`). */
-function lensLeftOut(): boolean {
+/** Whether the page's address has `?name`. */
+function pageAsks(name: string): boolean {
   try {
-    return new URLSearchParams(globalThis.location?.search ?? '').has('nolens');
+    return new URLSearchParams(globalThis.location?.search ?? '').has(name);
+  } catch {
+    return false;
+  }
+}
+
+/** Whether the page asked to leave the lens's effects out (`?nolens`). */
+const lensLeftOut = (): boolean => pageAsks('nolens');
+
+/** Whether the browser draws in software, without a graphics card (SwiftShader, llvmpipe and their kind). */
+function softwareDrawn(renderer: WebGLRenderer): boolean {
+  try {
+    const gl = renderer.getContext();
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    return /swiftshader|llvmpipe|software|basic render/i.test(name);
   } catch {
     return false;
   }
@@ -258,6 +273,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   gradePass?.setCinema(CINEMA);
   // The close detail of ground, bark, granite and boards: Mid and High only (./ground-detail.ts).
   CLOSE_DETAIL.value = tier === 'low' ? 0 : 1;
+  // The edges' smoothing on Mid and High (./grade.ts), unless the browser draws without a GPU, where every pixel
+  // is the processor's work; `?edges` asks for it all the same.
+  const edgesHere = !softwareDrawn(renderer) || pageAsks('edges');
+  gradePass?.setSmoothEdges(tier !== 'low' && edgesHere);
   // Let the browser restore a lost context instead of leaving a dead canvas.
   canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
 
@@ -1415,6 +1434,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       resolutionSteps = 0;
       gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
       CLOSE_DETAIL.value = tier === 'low' ? 0 : 1;
+      gradePass?.setSmoothEdges(tier !== 'low' && edgesHere);
       resize();
       // The previous tier's storage has been released/resized; new allocations use this tier's budget.
       gpu?.resetPeaks();
