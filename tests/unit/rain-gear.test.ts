@@ -31,3 +31,13 @@ describe('the rain gear', () => {
     expect(rainGearFor(chapter('stormskog'), 'bertil', new Set(['sg:bertil']))!.bootOff).toBeNull();
   });
 });
+
+describe('getting ready in Stormkvällen', () => {
+  it('each puts their gear on as the scene comes to them', () => {
+    const at = (seconds: number) => ({ id: 'tillsammans', seconds });
+    expect(rainGearFor(chapter('stormkvall'), 'mamma', new Set(), at(0.5))).toBeNull();
+    expect(rainGearFor(chapter('stormkvall'), 'mamma', new Set(), at(1.2))).not.toBeNull();
+    expect(rainGearFor(chapter('stormkvall'), 'moa', new Set(), at(5))).toBeNull();
+    expect(rainGearFor(chapter('stormkvall'), 'moa', new Set(), at(7.5))).not.toBeNull();
+  });
+});

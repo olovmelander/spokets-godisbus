@@ -834,9 +834,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const bootAt = new Vector3();
   /** The rain gear each body wears now, by its key, so that it is changed only when it changes. */
   const dressed = new WeakMap<Rig, string>();
-  const dressFor = (rig: Rig, who: string, flags: ReadonlySet<string>) => {
+  const dressFor = (rig: Rig, who: string, flags: ReadonlySet<string>, scene: SceneFrame | null) => {
     if (!rig.dress) return;
-    const gear = rainGearFor(chapter, who, flags);
+    const gear = rainGearFor(chapter, who, flags, scene);
     const key = gear ? `${gear.coat}${gear.boots}${gear.bootOff}` : '';
     if (dressed.get(rig) === key) return;
     dressed.set(rig, key);
@@ -1396,8 +1396,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     // Rain gear in the storm, as the story has them put it on (./rain-gear.ts): the family at the help points and in
     // the scenes. Only when it changes: a model that has just taken a figure's place is dressed afresh.
-    for (const [who, actor] of stage.actors) dressFor(actor.rig, who, flags);
-    for (const one of family) dressFor(one.rig, one.who, flags);
+    for (const [who, actor] of stage.actors) dressFor(actor.rig, who, flags, sceneFrame ?? null);
+    for (const one of family) dressFor(one.rig, one.who, flags, sceneFrame ?? null);
     if (chapter.id === 'norrsken') {
       const carving = scene.getObjectByName('mover:tragubbe');
       if (carving && flags.has('taste') && ghostState && !homeJourney) carving.position.set(ghostState.x - .5, ghostState.y, 0);

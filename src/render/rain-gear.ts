@@ -34,10 +34,17 @@ const LOOK: Record<GearRole, { coat: string; boots: string }> = {
 export const SOCK = '#d9d2c2';
 
 /** What one of the family wears now, in this chapter, with these flags: null is their own clothes. */
-export function rainGearFor(chapter: Pick<ChapterData, 'id' | 'storm'>, who: string, flags: ReadonlySet<string>): RainGear | null {
+/**
+ * When each puts their gear on in Stormkvällen's scene `tillsammans`, in seconds: as each speaks of getting ready,
+ * Bertil as he stamps into his boots.
+ */
+const GETS_READY: Record<GearRole, number> = { mamma: 1.0, pappa: 3.0, bertil: 4.8, moa: 7.0 };
+
+export function rainGearFor(chapter: Pick<ChapterData, 'id' | 'storm'>, who: string, flags: ReadonlySet<string>, scene?: { id: string; seconds: number } | null): RainGear | null {
   if (!(who in LOOK) || !chapter.storm || (chapter.storm.rain ?? 0) <= 0) return null;
-  // Indoors in Stormkvällen they are in their own clothes until they get ready to go out together.
-  if (chapter.id === 'stormkvall' && !flags.has('scene:tillsammans')) return null;
+  // Indoors in Stormkvällen they are in their own clothes until they get ready to go out together, one by one.
+  if (chapter.id === 'stormkvall' && !flags.has('scene:tillsammans')
+    && !(scene?.id === 'tillsammans' && scene.seconds >= GETS_READY[who as GearRole])) return null;
   const look = LOOK[who as GearRole];
   // Bertil's right boot is on the water once he has been called to it.
   const bootOff = who === 'bertil' && chapter.id === 'stormgard' && flags.has('sg:bertil') ? 1 : null;
