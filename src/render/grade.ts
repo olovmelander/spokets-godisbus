@@ -4,6 +4,7 @@ import {
   type Fog, type FogExp2, type Material, type Object3D, type Texture,
   type WebGLRenderTarget, type WebGLRenderer,
 } from 'three';
+import { DOF_DEEP, DOF_SIZE } from './depth-blur';
 
 /**
  * A place's colour grade (plan §5.4). The numbers act on linear light, before tone mapping.
@@ -136,7 +137,7 @@ const FRAGMENT = /* glsl */ `
   uniform float lutOffset;
   uniform sampler2D tBlur;
   uniform sampler2D tDepth;
-  uniform float blurEnabled;
+  uniform float blurEnabled, dofDeep;
   uniform vec3 depthCamera;
   uniform float vignette;
   uniform float grain;
@@ -149,6 +150,8 @@ const FRAGMENT = /* glsl */ `
   uniform vec4 airShape, airEye;
   varying vec2 vUv;
 
+  ${DOF_SIZE}
+
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
   }
@@ -156,11 +159,12 @@ const FRAGMENT = /* glsl */ `
   void main() {
     vec3 scene = texture2D(tDiffuse, vUv).rgb;
     if (blurEnabled > 0.5) {
+      // High's depth of field (./depth-blur.ts): where the picture is sharp is judged here, at full resolution,
+      // so the play plane keeps every pixel; where a near blur spills over it, that is taken as it is.
       float d = texture2D(tDepth, vUv).r;
-      float z = depthCamera.z + depthCamera.x * depthCamera.y / ((depthCamera.y - depthCamera.x) * d - depthCamera.y);
-      float mask = smoothstep(1.8, 4.5, -z) * (1.0 - smoothstep(16.0, 24.0, -z));
+      float size = abs(dofSize(dofDistance(d, depthCamera), depthCamera.z, dofDeep)) * float(textureSize(tDepth, 0).y);
       vec4 soft = texture2D(tBlur, vUv);
-      scene = mix(scene, soft.rgb, mask * soft.a);
+      scene = mix(scene, soft.rgb, max(smoothstep(0.75, 2.5, size), smoothstep(0.0, 0.1, soft.a)));
     }
     // High's threshold light is gathered once at half resolution; keep it HDR until output.
     if (glow > 0.0) scene += texture2D(tBloom, vUv).rgb * glow;
@@ -197,7 +201,8 @@ export interface GradePass extends Effect {
   /** How strongly light spills round what is brightest: 0 is off, as on Mid. */
   setGlow(strength: number): void;
   setBloom(texture: Texture | null): void;
-  setDepthBlur(texture: Texture | null, depth: Texture | null, near: number, far: number, cameraZ: number): void;
+  /** `deep`: how far behind the play plane is sharp, in EL (./depth-blur.ts). */
+  setDepthBlur(texture: Texture | null, depth: Texture | null, near: number, far: number, cameraZ: number, deep?: number): void;
   /** The air of ./light-shafts.ts, which reads the depth that setDepthBlur gives. Null: none. */
   setAir(air: GradeAir | null): void;
 }
@@ -232,7 +237,7 @@ export function createGradePass(grade: Grade): GradePass {
       exposure: { value: grade.exposure },
       tLut: { value: createGradeLut(grade) },
       lutOffset: { value: 0.18 * (1 - grade.contrast) },
-      tBlur: { value: null }, tDepth: { value: null }, blurEnabled: { value: 0 },
+      tBlur: { value: null }, tDepth: { value: null }, blurEnabled: { value: 0 }, dofDeep: { value: DOF_DEEP },
       depthCamera: { value: new Vector3(0.1, 140, 10) },
       vignette: { value: grade.vignette },
       grain: { value: grade.grain },
@@ -262,7 +267,8 @@ export function createGradePass(grade: Grade): GradePass {
     // Only the effect targets depend on size; LUT/vignette/grain use normalized coordinates.
     setSize() {},
     setBloom(texture) { material.uniforms.tBloom!.value = texture; },
-    setDepthBlur(texture, depth, near, far, cameraZ) {
+    setDepthBlur(texture, depth, near, far, cameraZ, deep = DOF_DEEP) {
+      material.uniforms.dofDeep!.value = deep;
       material.uniforms.tBlur!.value = texture;
       material.uniforms.tDepth!.value = depth;
       material.uniforms.blurEnabled!.value = texture ? 1 : 0;

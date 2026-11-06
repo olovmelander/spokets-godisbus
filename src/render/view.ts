@@ -36,7 +36,7 @@ import type { LifeAsk } from './life';
 import { evening, nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
-import { createDepthBlur } from './depth-blur';
+import { DOF_DEEP, DOF_DEEPER, createDepthBlur } from './depth-blur';
 import { createBloom } from './bloom';
 import { createLightShafts } from './light-shafts';
 import { createWater, waterKind } from './water';
@@ -778,6 +778,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** The last scene shot, and how much of it the camera takes now: 1 in the scene, easing to 0 after it. */
   let lastShot: { x: number; y: number; height: number; width: number; eye: number } | null = null;
   let shotWeight = 0;
+  /** How far behind the play plane the lens keeps sharp (./depth-blur.ts): deeper while a shot is on the family. */
+  let sharpDeep = DOF_DEEP;
   const playAim = new Vector3();
   let warm = 2;
   let warmedFor = 0;
@@ -837,8 +839,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         bloom?.render(renderer, hdr.scene);
         gradePass.setBloom(bloom?.texture ?? null);
         // The final macro shot focuses on the window figure, outside the usual z=0 play plane.
-        if (!inEndingShot) depthBlur?.render(renderer, hdr.scene, camera);
-        gradePass.setDepthBlur(inEndingShot ? null : depthBlur?.texture ?? null, hdr.scene.depthTexture, camera.near, camera.far, camera.position.z);
+        if (!inEndingShot) depthBlur?.render(renderer, hdr.scene, camera, sharpDeep);
+        gradePass.setDepthBlur(inEndingShot ? null : depthBlur?.texture ?? null, hdr.scene.depthTexture, camera.near, camera.far, camera.position.z, sharpDeep);
         lightShafts?.render(renderer, hdr.scene, camera, scene, gradePass, warm > 0);
         gradePass.render(renderer, hdr.grade, hdr.scene);
         outputPass.render(renderer, hdr.grade, hdr.grade, 0, false);
@@ -1043,6 +1045,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       camera.position.set(lerp(camera.position.x, s.x, w), lerp(camera.position.y, s.y + s.eye, w), lerp(camera.position.z, away, w));
       camera.lookAt(lerp(playAim.x, s.x, w), lerp(playAim.y, s.y, w), 0);
     }
+    // The lens pulls its focus back to the family, who stand behind the plane he plays in, while a shot is on them.
+    const onFamily = Math.max(shotWeight, nearbyFamily && !chapter.epilogue ? 1 : 0);
+    sharpDeep += (DOF_DEEP + DOF_DEEPER * onFamily - sharpDeep) * (calmStory ? 1 : ease(3, dt));
     if (chapter.epilogue && ending !== null && ending !== undefined) {
       const window = chapter.epilogue.window;
       const shotHeight = Math.max(2.6, 2.8 / camera.aspect);
