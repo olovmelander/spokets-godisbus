@@ -843,6 +843,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let shotWeight = 0;
   /** Where Bertil's hands are at his boot while he pulls it off. */
   const bootAt = new Vector3();
+  /** The root hole in the garden that the ghost crept into, where Moa reaches. */
+  const ROOT_HOLE = { x: 163.4, y: 0 };
+  const rootReach = new Vector3();
   /** Seconds since the ball he rides in Olympia was kicked; -1 when he is not on it. */
   let kickSince = -1;
   const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3();
@@ -1478,7 +1481,20 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         posed.armR = Math.max(posed.armR, 0.5 * (1 - back));
         one.rig.group.rotation.y = 1.2 * (1 - back) + one.rig.group.rotation.y * back;
       }
+      // In the garden, until he calls her, Moa crouches and reaches into the root hole the ghost crept into ("Där
+      // kröp spöket in. Jag får inte plats!"); her fingers will not go in.
+      const reachesIn = one.who === 'moa' && chapter.id === 'garden' && !flags.has('moa') && Math.abs(one.at - ROOT_HOLE.x) < 4;
+      if (reachesIn) {
+        posed.lean = Math.max(posed.lean, 0.85);
+        posed.kneeL = Math.max(posed.kneeL, 1.5); posed.kneeR = Math.max(posed.kneeR, 1.3);
+        posed.legL = Math.max(posed.legL, 0.9); posed.legR = Math.max(posed.legR, 0.7);
+        one.rig.group.rotation.y = -0.5;
+      }
       one.rig.pose(one.seated ? sitting(posed) : one.paddle ? one.paddle.stance(posed) : posed);
+      if (reachesIn) {
+        const poke = calmStory ? 0 : Math.sin(clock * 2.3) * 0.12;
+        one.rig.reach(1, rootReach.set(ROOT_HOLE.x + 0.2 + poke, ROOT_HOLE.y + 0.3, -0.2), 0.9);
+      }
       one.paddle?.update(one.rig, clock, calmStory);
       if (pulling) {
         one.rig.group.updateWorldMatrix(true, false);
