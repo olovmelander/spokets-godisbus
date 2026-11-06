@@ -22,7 +22,7 @@ export interface RainGear {
   bootOff: 0 | 1 | null;
 }
 
-export type GearRole = 'mamma' | 'pappa' | 'moa' | 'bertil';
+export type GearRole = 'mamma' | 'pappa' | 'moa' | 'bertil' | 'elof';
 
 /** Each one's raincoat and boots. Bertil's boots are the green of the boot Elof rides (../content/aventyr2/render.ts). */
 const LOOK: Record<GearRole, { coat: string; boots: string }> = {
@@ -30,6 +30,9 @@ const LOOK: Record<GearRole, { coat: string; boots: string }> = {
   pappa: { coat: '#2e4a66', boots: '#1f2124' },
   moa: { coat: '#e2b23a', boots: '#c8423a' },
   bertil: { coat: '#e0782e', boots: '#2f6b3a' },
+  // Elof's own: a bright yellow raincoat over his blue, and red boots, so that he is the brightest thing in the
+  // storm's dark.
+  elof: { coat: '#f2c230', boots: '#cf3f34' },
 };
 export const SOCK = '#d9d2c2';
 
@@ -38,7 +41,7 @@ export const SOCK = '#d9d2c2';
  * When each puts their gear on in Stormkvällen's scene `tillsammans`, in seconds: as each speaks of getting ready,
  * Bertil as he stamps into his boots.
  */
-const GETS_READY: Record<GearRole, number> = { mamma: 1.0, pappa: 3.0, bertil: 4.8, moa: 7.0 };
+const GETS_READY: Record<GearRole, number> = { mamma: 1.0, pappa: 3.0, bertil: 4.8, moa: 7.0, elof: 8.6 };
 
 export function rainGearFor(chapter: Pick<ChapterData, 'id' | 'storm'>, who: string, flags: ReadonlySet<string>, scene?: { id: string; seconds: number } | null): RainGear | null {
   if (!(who in LOOK) || !chapter.storm || (chapter.storm.rain ?? 0) <= 0) return null;

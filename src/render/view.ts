@@ -636,7 +636,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Elof, modelled in Blender after his sheets and photos. He too is only here where the private pack is;
   // everywhere else the stand-in built in code plays his part.
   const elof = createPlayerStandIn();
-  let playerBody: Pick<Rig, 'pose' | 'hand' | 'mouth' | 'reach' | 'breeze'> = elof;
+  let playerBody: Pick<Rig, 'pose' | 'hand' | 'mouth' | 'reach' | 'breeze' | 'dress'> = elof;
   let playerHips = ['left', 'right'].map(side => elof.group.getObjectByName(`player-hip-${side}`));
   let playerFeet = ['left', 'right'].map(side => elof.group.getObjectByName(`player-boot-${side}`));
   const shoulderPose: Pose = { ...STANDING }, seat = new Vector3(), boot = new Vector3(), palm = new Vector3();
@@ -833,8 +833,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** Where Bertil's hands are at his boot while he pulls it off. */
   const bootAt = new Vector3();
   /** The rain gear each body wears now, by its key, so that it is changed only when it changes. */
-  const dressed = new WeakMap<Rig, string>();
-  const dressFor = (rig: Rig, who: string, flags: ReadonlySet<string>, scene: SceneFrame | null) => {
+  const dressed = new WeakMap<object, string>();
+  const dressFor = (rig: Pick<Rig, 'dress'>, who: string, flags: ReadonlySet<string>, scene: SceneFrame | null) => {
     if (!rig.dress) return;
     const gear = rainGearFor(chapter, who, flags, scene);
     const key = gear ? `${gear.coat}${gear.boots}${gear.bootOff}` : '';
@@ -1398,6 +1398,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // the scenes. Only when it changes: a model that has just taken a figure's place is dressed afresh.
     for (const [who, actor] of stage.actors) dressFor(actor.rig, who, flags, sceneFrame ?? null);
     for (const one of family) dressFor(one.rig, one.who, flags, sceneFrame ?? null);
+    if (playerBody) dressFor(playerBody, 'elof', flags, sceneFrame ?? null);
     if (chapter.id === 'norrsken') {
       const carving = scene.getObjectByName('mover:tragubbe');
       if (carving && flags.has('taste') && ghostState && !homeJourney) carving.position.set(ghostState.x - .5, ghostState.y, 0);
