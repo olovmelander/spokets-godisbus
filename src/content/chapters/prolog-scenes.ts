@@ -436,7 +436,8 @@ export const PROLOG_SCENES: SceneDef[] = [
         ],
         moa: [
           { at: 0, x: 47.6, y: -0.8, z: -2.1, face: 0.3, move: 1.5, act: 'stand' },
-          { at: 1.5, act: 'crouch', aim: { x: 47.6, y: -0.3, z: 0 } },
+          // "Jag ritar en karta åt dig!": her crayon in her hand.
+          { at: 1.5, act: 'crouch', aim: { x: 47.6, y: -0.3, z: 0 }, holds: 'crayon' },
         ],
         bertil: [
           { at: 0, x: 49.4, y: -0.8, z: -1.7, face: 0.3, move: 1.5, act: 'stand' },
