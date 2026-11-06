@@ -2,6 +2,7 @@ import {
   AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, ExtrudeGeometry, Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Matrix3, Mesh,
   MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, Shape as Outline, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
+import { CLOSE_DETAIL } from './ground-detail';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData, StreetGoods, StreetPart, Vec } from '../sim/types';
 import { sweetSocket } from './candy';
@@ -682,14 +683,50 @@ function panes(chapter: ChapterData, part: StreetPart): BufferGeometry | null {
  */
 function wallMaterial(): MeshStandardMaterial {
   const material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
-  material.customProgramCacheKey = () => 'village-wall-v1';
+  material.customProgramCacheKey = () => 'village-wall-v2';
   material.onBeforeCompile = (shader) => {
-    shader.vertexShader = `varying float villageGlow;\n${shader.vertexShader.replace('#include <color_vertex>', '#include <color_vertex>\n  villageGlow = uv.x;')}`;
-    shader.fragmentShader = `varying float villageGlow;\n${shader.fragmentShader.replace('#include <emissivemap_fragment>',
-      `#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * villageGlow * ${GLOW.toFixed(2)};`)}`;
+    shader.uniforms.closeDetail = CLOSE_DETAIL;
+    shader.vertexShader = `varying float villageGlow;\nvarying vec3 villageAt;\n${shader.vertexShader
+      .replace('#include <color_vertex>', '#include <color_vertex>\n  villageGlow = uv.x;')
+      .replace('#include <project_vertex>', 'villageAt = (modelMatrix * vec4(transformed, 1.0)).xyz;\n#include <project_vertex>')}`;
+    shader.fragmentShader = `varying float villageGlow;\nvarying vec3 villageAt;\nuniform float closeDetail;\n${PAINTED_WOOD}\n${shader.fragmentShader
+      .replace('#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * villageGlow * ${GLOW.toFixed(2)};`)
+      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n  if (closeDetail > 0.5) diffuseColor.rgb = paintedWood(diffuseColor.rgb, villageAt, normalize(normal * mat3(viewMatrix)));')}`;
   };
   return material;
 }
+
+/**
+ * Painted wood seen close (the graphics pass of 6 November 2026; Olov: "husen ... mycket snyggare"): on what faces
+ * the street, upright boards' grain under the paint, the paint a little uneven and worn paler on the edges of the
+ * grain, and the foot of the wall darker where the rain splashes up. Mid and High only (`CLOSE_DETAIL`).
+ */
+const PAINTED_WOOD = /* glsl */ `
+  float woodHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float woodNoise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(woodHash(i), woodHash(i + vec2(1.0, 0.0)), u.x), mix(woodHash(i + vec2(0.0, 1.0)), woodHash(i + vec2(1.0, 1.0)), u.x), u.y);
+  }
+  vec3 paintedWood(vec3 colour, vec3 at, vec3 up) {
+    float facing = smoothstep(0.6, 0.9, abs(up.z));
+    if (facing <= 0.0) return colour;
+    float pixel = length(fwidth(at.xy));
+    float near = 1.0 - smoothstep(0.02, 0.08, pixel);
+    vec3 painted = colour;
+    // The grain under the paint, running up the boards, and the paint's own unevenness.
+    float grain = woodNoise(vec2(at.x * 38.0, at.y * 1.4));
+    painted *= 1.0 + (grain - 0.5) * 0.14 * near;
+    painted *= 0.94 + 0.12 * woodNoise(at.xy * vec2(1.3, 0.6) + 3.0);
+    // Worn paler where the grain stands up, here and there.
+    float worn = smoothstep(0.72, 0.9, grain) * smoothstep(0.55, 0.8, woodNoise(at.xy * 0.8 + 9.0)) * near;
+    painted = mix(painted, painted * 1.18 + 0.02, 0.5 * worn);
+    // The foot of the wall darker, where rain splashes up.
+    painted *= 1.0 - 0.18 * (1.0 - smoothstep(0.0, 1.6, at.y - floor(at.y / 200.0) * 200.0)) * (0.7 + 0.3 * woodNoise(at.xz * 3.0));
+    return mix(colour, painted, facing);
+  }
+`;
 
 /**
  * The street's pits that are open to the back: the puddle, from its first edge to its last. A pit behind
