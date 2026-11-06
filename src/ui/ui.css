@@ -140,6 +140,9 @@ body {
   inset: 0;
   margin: 0;
   overflow: hidden;
+  /* Unlike hidden, clip also prevents focus/scrollIntoView from panning the whole game. Menus scroll inside
+     their own panels; a hidden root scroller would shift both the picture and its touch coordinates. */
+  overflow: clip;
   overscroll-behavior: none;
 }
 

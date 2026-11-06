@@ -163,12 +163,25 @@ try {
     await settingsPage(page);
     await page.check('#setFollowFinger');
     if (viewport.width === 390) await page.check('#setLefty');
+    // A browser brings a distant focused setting into view. Only the menu may scroll: overflow:hidden on
+    // the game root otherwise lets this pan the entire canvas (125 px on the upright phone).
+    await page.locator('#setFollowFinger').evaluate(input => input.scrollIntoView({ block: 'center', inline: 'center' }));
+    const surface = () => page.locator('#game').evaluate(canvas => ({
+      left: canvas.getBoundingClientRect().left, top: canvas.getBoundingClientRect().top,
+      width: canvas.getBoundingClientRect().width, height: canvas.getBoundingClientRect().height,
+      bodyLeft: document.body.scrollLeft, bodyTop: document.body.scrollTop,
+    }));
+    const whileReading = await surface();
     await page.tap('#pauseClose');
+    const afterClosing = await surface();
+    check(`${name}: scrolling settings never shifts the game surface`, [whileReading, afterClosing].every(box =>
+      box.left === 0 && box.top === 0 && box.width === viewport.width && box.height === viewport.height
+      && box.bodyLeft === 0 && box.bodyTop === 0));
     const cdp = await context.newCDPSession(page);
     const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
     // Where the game offers the hand's action: over the hand, clear of Elof himself (Sim.actionAt).
     const hand = await screen(page, 40.9, 0.7);
-    assert.ok(hand, `${name}: the hand is framed`);
+    assert.ok(hand && hand.x >= 0 && hand.x < viewport.width && hand.y >= 0 && hand.y < viewport.height, `${name}: the hand is framed`);
     const finger = { ...hand, id: 1 };
     await touch('touchStart', [finger]);
     await touch('touchMove', [{ ...finger, x: finger.x + 24 }]);
@@ -181,6 +194,7 @@ try {
     await frames(page, 3);
     check(`${name}: a cancelled finger never acts`, !(await state()).flags.includes('hand'));
     const at = await screen(page, 40.9, 0.7);
+    assert.ok(at && at.x >= 0 && at.x < viewport.width && at.y >= 0 && at.y < viewport.height, `${name}: the hand remains in view`);
     await page.touchscreen.tap(at.x, at.y);
     await until(state, s => s.flags.includes('hand'), `${name}: near hand touch`);
     check(`${name}: a quick near-target tap uses the offered action`, (await state()).pointing.last === 'use' && (await state()).flags.includes('hand'));

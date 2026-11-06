@@ -15,16 +15,19 @@
     Olympia or Billsta. The final home-ride candy is now before Stormens öga's goal at all tested frame rates.
     Pointer ownership fixes two-finger jump cancellation; gentle gamepad movement clears on disconnect; simultaneous
     menu direction/confirm uses the newly selected item. Destructive holds cancel when focus or visibility is lost.
-    Larger-text pause controls fit narrow phones. Voices stop when muted, hidden or dismissed; stale autoplay
+    Larger-text pause controls fit narrow phones, and focusing a menu control can no longer scroll
+    the game root sideways and leave touch targets offscreen (reproduced with an overflowing debug HUD). Voices stop when muted, hidden or dismissed; stale autoplay
     rejections cannot revive an old line. A compile-time inventory of actual MP3 files keeps unrecorded dialogue
     silent without failed network requests. The finale's sharing line now respects either first-adventure candy choice.
   - **Rendering:** a missing optional family actor no longer blocks later actors/scenery. Replacing warmed fallbacks
     releases their owned GPU resources without disposing geometry still shared by other figures. All three quality
     tiers, late paused arrivals, shading and actual GPU-geometry reduction are checked.
   - **Validation:** all **197 files / 2,097 tests** and typecheck passed, up from the baseline 195 files / 2,062 tests.
-    Focused browser checks passed: real IndexedDB 35, model installation 47, profiles 19, pointing 43, initial settings 64 and production
+    Focused browser checks passed: real IndexedDB 35, model installation 47, profiles 19, pointing 45, settings 66 and production
     lifecycle/recovery 44. The final adaptive pause columns also passed a four-width DOM preview (320/390/780/1180 px).
-    Final smoke and full CI are pending at this documentation checkpoint; combined validation and delivery are recorded in
+    The chapter-code fixture seeds before page boot, and the epilogue test approaches the knife at normal speed
+    under its unchanged deadline, verifies the stopped offer and takes it. Focused carving (9 checks) and a deliberately stalled party (7 checks) pass; the full solo story run and
+    replacement CI are pending at this documentation checkpoint; combined validation and delivery are recorded in
     the PR before merge. Production budget: **500.6 KiB boot JS / 520 KiB**, **3,613.3 KiB served boot / 4 MiB**
     including local private exports, **64.4 KiB Adventure 2 chunk / 160 KiB**. Independent source review found and
     verified the invalid-link save protection; no remaining blocker was found.

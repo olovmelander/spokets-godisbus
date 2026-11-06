@@ -27,6 +27,7 @@ review checked the combined changes, including resource ownership and a second p
 | The final home-ride candy at x 87.8 lay after Stormens öga's goal at x 86. | Move the goal to x 89 without renumbering saved candy. | The ending robot collects it at 30, 60 and 144 Hz before completion. |
 | The final golden sweet was described as the same kind Elof shared, although the first adventure offers two different choices. | Use the choice-independent line “Förut delade jag. Nu delar du med mig.” and update the narrative record and voice-script text. | Dialogue/continuity checks and voice-script consistency tests. Existing audio files remain unchanged. |
 | Larger text pushed pause-menu controls and Close off a portrait phone's right edge. | Use columns that adapt to the available width and place each tile's icon above its label. | Reviewed portrait/landscape images and `settings.mjs` bounds checks at phone and tablet widths. |
+| In the debug/test view, focusing a menu control could scroll the fixed game root horizontally, leaving the canvas and touch targets displaced after Pause closed. | Clip overflow at the page root while retaining scrollable menu panels. | The overflowing debug HUD made the root 527 px wide in a 390 px viewport. The portrait regression reproduces BODY scrollLeft 125 before the fix, checks zero canvas/root offset during and after Pause, verifies viewport bounds, and retains real drag/cancel/hand-action checks. |
 
 ## Coverage and validation
 
@@ -57,7 +58,17 @@ the first page load; the earlier fixture mistakenly let pagehide overwrite its o
 combined validation and delivery result are recorded in `HANDOVER.md` and the pull request. At this documentation
 checkpoint, the final smoke run and full CI are pending. The initial built settings suite passed 64 checks;
 after the final adaptive-column refinement, a DOM preview verified all four widths (320, 390, 780 and 1180 px).
-The unchanged pointing suite also passed all 43 checks; the previously intermittent portrait tap failure did not reproduce.
+The initial unchanged pointing suite passed 43 checks locally. Full CI later reproduced its portrait failure;
+the root-scroll defect above was then reproduced deterministically and repaired. The strengthened suite checks
+the fixed root and actual tap positions as well as the original interactions: all 45 checks now pass, and
+all 66 settings checks pass with the fixed root.
+
+CI also exposed a timing flaw in the epilogue test: its long approach to the knife used the slow Shift walk.
+At about three rendered frames per second, the fixed-step cap advanced only 8.4 simulated seconds during its
+40-second deadline. The fixture now uses normal movement, keeps the same deadline, checks that the offered
+action remains after stopping, and actually takes the knife. The identical frame-stall reproduction passes;
+no gameplay speed, knife prerequisite or story timing changed. Focused carving passes 9 checks and the stalled
+party passes 7; the final solo full-story run and replacement CI remain pending at this documentation checkpoint.
 
 The production build still keeps Adventure 2 lazy and enforces the existing size limits. There is no new save
 format, chapter release, likeness asset or recording. Privacy checks apply to public source and generated assets;
