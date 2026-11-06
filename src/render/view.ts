@@ -97,6 +97,8 @@ function softwareDrawn(renderer: WebGLRenderer): boolean {
 
 /** How much of the film's look the grade gives (Olov, 6 November 2026: "mer likt ... Unravel"). */
 const CINEMA = 0.8;
+/** How many EL the eye rises over a brook or a pool, looking down onto it. */
+const POOL_EYE = 1.6;
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
 /** The ground sits about 35% up from the bottom, so thumbs never cover Elof (plan §5.2). */
@@ -823,6 +825,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** The last scene shot, and how much of it the camera takes now: 1 in the scene, easing to 0 after it. */
   let lastShot: { x: number; y: number; height: number; width: number; eye: number } | null = null;
   let shotWeight = 0;
+  /** How far the eye has risen over water, 0 to 1. */
+  let overWater = 0;
+  /** The pools and brooks of the chapter, where the eye rises: still water, not the river or the street's puddles. */
+  const pools = chapter.river || chapter.place === 'village' ? [] : chapter.water ?? [];
   /** How far behind the play plane the lens keeps sharp (./depth-blur.ts): deeper while a shot is on the family. */
   let sharpDeep = DOF_DEEP;
   const playAim = new Vector3();
@@ -1057,7 +1063,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     look.x += (want.x - look.x) * ease(3, dt);
     look.y += (want.y - look.y) * ease(2.5, dt);
     const centreY = look.y + viewHeight * look.zoom * (0.5 - GROUND_FROM_BOTTOM);
-    camera.position.set(look.x, centreY, distance * look.zoom);
+    // Over a brook or a pool the eye rises a little and looks down onto the water, so that its surface reads as
+    // water and not as a thin band at his feet (Olov: "har vi fixat vattnet och bäckarna?"). Where he stands in
+    // the picture does not change: the camera still aims at the same point. Eased in and out.
+    const wantOverWater = !calmStory && pools.some((w) => look.x > w.from - 3 && look.x < w.to + 3 && Math.abs(look.y - w.y) < 4) ? 1 : 0;
+    overWater += (wantOverWater - overWater) * ease(1.2, dt);
+    if (calmStory) overWater = 0;
+    camera.position.set(look.x, centreY + POOL_EYE * overWater * look.zoom, distance * look.zoom);
     camera.lookAt(look.x, centreY, 0);
     const nearbyFamily = stands.find((stand) => stand.prop!.group.visible && Math.abs(stand.at - x) < 3.4 &&
       Math.abs(stand.prop!.group.position.y - y) < 2 && curr.mode !== 'ride' && curr.mode !== 'fly');
