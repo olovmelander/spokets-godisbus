@@ -38,6 +38,9 @@
       on the mountain's rocks, the forest's boulders, the fell's stones and the forest kit's stones (the eddy
       stone); grain on the planks he pushes and on plank ledges.
     - **Moss** (`lift/flora/light.ts`, `moss-v2`): a carpet of little shoot tips.
+    - **Weather on the kit's outdoor things** (`src/render/weathered.ts`): the bridge, stairs, fence, slide,
+      rowboat, stones, stumps and Olympia's hall and stand get mottling, a fine grain and darker feet, from all
+      three sides. Steep banks of moss and soil show earth, stones and roots.
     - **Painted wood** (`src/render/painted-wood.ts`): the village's houses and Äventyr 2's villa, barn, store,
       clubhouse, stand, church, woodshed and lodge: grain under the paint, uneven paint, the foot of the wall darker.
   - **Places and things:**
@@ -49,11 +52,11 @@
   - **Life and motion:** the ladybird and the ants (`src/render/critters.ts`); dor beetles that walk the forest
     floor and hurry out of his way (`src/render/lift/beetles.ts`, tested); Mamma's braid (`src/render/braid.ts`);
     the puzzles' things lean, rock and squash (`src/render/mover-motion.ts`, tested).
-  - **Budgets:** High's render targets 73–79 MB of 80 (the `gpu-memory` suite); JavaScript 514 of 520 KB gzipped,
-    so the next addition of code must find room; draws a few more on Mid and High, far under the budget. Olov
-    asked to widen the budget "rejält": the next step would be High's pixel cap from 2.6 to about 3.5 MP (sharper on
-    the iPad), which needs High's target limit raised from 80 to about 110 MB in `gpu-memory.ts`, the browser suite
-    and `scripts/asset-gpu-estimate.mjs`. Not done tonight: it slows the software-rendered memory suite on CI.
+  - **Budgets, widened at Olov's word ("utöka grafikbudgeten rejält"):** High draws up to 3.5 MP (was 2.6), its
+    offscreen targets may take 110 MB (was 80) and the whole picture 260 MB (was 220): `quality.ts`,
+    `gpu-memory.ts`, `scripts/asset-gpu-estimate.mjs`, the gpu-memory suite and its unit tests. The prologue on a
+    tablet on High measured 93 MB of targets and 130 MB in all. JavaScript is 514 of 520 KB gzipped, so the next
+    addition of code must find room. Draws: a few more on Mid and High, far under the budget.
   - **CI and software rendering:** the browser suites draw without a GPU and their walks are timed. The close
     detail is off on Low, the lens gathers from few points and the edges are not smoothed there, so High in
     software rendering is as fast as before (measured alternating with `?nolens`).
@@ -4609,7 +4612,9 @@ The older list, still true where it is not struck:
   match the pitch, the bathing place and the narrow more closely.
 - Blender models for what is still built in code near the play plane: the dead pine Mamma pulls on Myren, the
   stones on rails before the mountain kit arrives, and Billsta's, Olympia's and the church's buildings.
-- Real-time shadows from the sun (dappled light under the spruces), which Unravel has and the game fakes.
+- Real-time shadows from the sun, which Unravel has; the dappled light on the forest floor is a shader stand-in.
+- Myren: two green, striped bowl shapes low in the foreground by the water (seen at x 83) look odd; find what
+  they are and give them a shape that reads.
 - The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
   line now).
 
