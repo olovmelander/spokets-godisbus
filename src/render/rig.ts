@@ -143,6 +143,8 @@ export interface Rig {
   readonly height: number;
   /** Rain gear on, or off with null (./rain-gear.ts). */
   dress?(gear: RainGear | null): void;
+  /** The cap off his head, lent away (Bertil's in Granskogen, "Min keps blir din båt"), or back on. */
+  bareHead?(bare: boolean): void;
 }
 
 /**
@@ -365,6 +367,12 @@ export function createRehearsalRig(who: Role): Rig {
       }
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     },
+    bareHead(bare) {
+      // The rehearsal figure's cap is the box over its head: bare, it is the colour of hair.
+      if (!role.cap) return;
+      mesh.setColorAt(4, colour.set(bare ? hair : '#3e4445'));
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    },
     hand(side, out) {
       group.updateWorldMatrix(true, false);
       return out.copy(hands[side]).applyMatrix4(group.matrixWorld);
@@ -534,6 +542,13 @@ export function createModelRig(model: Object3D, height: number): Rig {
         shells = body ? buildShells(body, height) : null;
       }
       if (shells) wearShells(shells, gear);
+    },
+    bareHead(bare) {
+      // A model's cap is its own part, painted with its own material ("... cap").
+      model.traverse((node) => {
+        const mesh = node as Mesh;
+        if (mesh.isMesh && !Array.isArray(mesh.material) && /\bcap$/.test(mesh.material.name)) mesh.visible = !bare;
+      });
     },
     breeze(wind, dt, still, ruffle = 0) { if (dt > 0) soft(sway.step(wind, dt, still), still ? 0 : ruffle); },
     mouth(out) { return bones.head ? bones.head.node.localToWorld(out.copy(mouth)) : group.localToWorld(out.set(0, height * .89, height * .075)); },

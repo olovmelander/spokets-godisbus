@@ -197,11 +197,12 @@ export const epilog: ChapterData = {
     { id: 'dots', at: { x: 32, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'cut3', story: 'paint' },
     { id: 'teeth', at: { x: 44, y: 0 }, verb: 'take', word: 'brush', needs: 'dots', ride: 'bed' },
   ],
-  // What he found under the deck came with him: each thing lies by the one it belongs to.
+  // What he found under the deck came with him: each thing lies by the one it belongs to, until it is given back
+  // ("Mitt hårspänne! Tack, lillebror!"); the coin Pappa lets him keep goes into his pocket.
   decor: [
-    { look: 'coin', at: { x: 12.4, y: 0 }, after: 'lost:coin' },
-    { look: 'clip', at: { x: 16.4, y: 0 }, after: 'lost:clip' },
-    { look: 'marble', at: { x: 20.2, y: 0 }, after: 'lost:marble' },
+    { look: 'coin', at: { x: 12.4, y: 0 }, after: 'lost:coin', until: 'back:coin' },
+    { look: 'clip', at: { x: 16.4, y: 0 }, after: 'lost:clip', until: 'back:clip' },
+    { look: 'marble', at: { x: 20.2, y: 0 }, after: 'lost:marble', until: 'back:marble' },
     { look: 'brick', at: { x: 21, y: 0 }, after: 'lost:brick' },
   ],
   sets: [

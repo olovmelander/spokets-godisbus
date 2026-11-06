@@ -877,6 +877,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     dressed.set(rig, key);
     rig.dress(gear);
   };
+  // "Min keps blir din båt, lillebror.": Bertil's cap is off his head once he has lent it, in Granskogen.
+  const bared = new WeakMap<object, boolean>();
+  const bareFor = (rig: Pick<Rig, 'bareHead'>, who: string, flags: ReadonlySet<string>) => {
+    const bare = who === 'bertil' && chapter.id === 'granskog' && flags.has('cap:ready');
+    if (!rig.bareHead || (bared.get(rig) ?? false) === bare) return;
+    bared.set(rig, bare);
+    rig.bareHead(bare);
+  };
   /** How far the eye has risen over water, 0 to 1. */
   let overWater = 0;
   /**
@@ -1510,7 +1518,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Rain gear in the storm, as the story has them put it on (./rain-gear.ts): the family at the help points and in
     // the scenes. Only when it changes: a model that has just taken a figure's place is dressed afresh.
     for (const [who, actor] of stage.actors) dressFor(actor.rig, who, flags, sceneFrame ?? null);
-    for (const one of family) dressFor(one.rig, one.who, flags, sceneFrame ?? null);
+    for (const one of family) {
+      dressFor(one.rig, one.who, flags, sceneFrame ?? null);
+      bareFor(one.rig, one.who, flags);
+    }
     if (playerBody) dressFor(playerBody, 'elof', flags, sceneFrame ?? null);
     if (chapter.id === 'norrsken') {
       const carving = scene.getObjectByName('mover:tragubbe');
