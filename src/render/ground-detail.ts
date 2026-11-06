@@ -4,7 +4,7 @@ import type { MeshStandardMaterial } from 'three';
 const BOARD = 0.8;
 
 /** What the ground is, for the detail it is given: moss and soil, rock, a road, or a floor of boards. */
-export type GroundDetail = 'soft' | 'rock' | 'road' | 'wood';
+export type GroundDetail = 'soft' | 'rock' | 'road' | 'wood' | 'turf';
 
 const patched = new WeakSet<MeshStandardMaterial>();
 
@@ -19,7 +19,9 @@ const patched = new WeakSet<MeshStandardMaterial>();
  * - a road: the stones in the asphalt, tar patches and worn lighter tracks;
  * - boards (Unravel's porch floor, after Olov's pictures): each board its own tone and its own fine grain, a
  *   knot here and there, the joints where one board ends and the next begins, dirt in the gaps and the middle
- *   of the floor worn paler where feet go.
+ *   of the floor worn paler where feet go;
+ * - artificial turf (Olympia's pitch): its two greens in broad bands across the pitch, the stitched rows of its
+ *   fibres, black rubber crumbs between them, and paler flattened patches where it is played on most.
  * Far off it fades, so that nothing shimmers; on a steep face it fades too, for the faces have their own joints.
  */
 export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail): void {
@@ -27,7 +29,7 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
   patched.add(material);
   const before = material.onBeforeCompile;
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:ground-detail-v2-${kind}`;
+  material.customProgramCacheKey = () => `${key()}:ground-detail-v3-${kind}`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.vertexShader = 'varying vec3 groundDetailAt;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `
@@ -105,6 +107,20 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
         // Worn: where he walks, the boards are paler and greyer, the paint of years gone.
         float worn = (1.0 - smoothstep(0.6, 2.4, abs(at.y))) * (0.6 + 0.4 * big);
         groundColour = mix(groundColour, vec3(dot(groundColour, vec3(0.3, 0.45, 0.25))) * 1.12, 0.22 * worn);
+        ` : kind === 'turf' ? /* glsl */ `
+        // Broad bands across the pitch in its two greens, five metres each, soft at their edges.
+        float band = smoothstep(0.35, 0.65, abs(fract(at.x / 66.0) * 2.0 - 1.0));
+        groundColour *= 0.93 + 0.12 * band;
+        // The stitched rows of fibres, running along the pitch, and their tips catching the light.
+        float rows = smoothstep(0.55, 1.0, abs(sin(at.y * 62.0)));
+        groundColour *= 1.0 - 0.12 * rows * groundNear;
+        groundColour *= 1.0 + (fine - 0.5) * 0.25 * groundNear;
+        // Black rubber crumbs between the fibres.
+        float crumb = smoothstep(0.84, 0.94, groundNoise(at * 23.0 + 9.0)) * groundNear;
+        groundColour = mix(groundColour, vec3(0.012, 0.013, 0.012), 0.6 * crumb);
+        // Flattened and paler where it is played on most.
+        float flat = smoothstep(0.58, 0.8, big) * groundMid;
+        groundColour = mix(groundColour, vec3(dot(groundColour, vec3(0.3, 0.5, 0.2))) * vec3(1.05, 1.25, 0.95), 0.25 * flat);
         ` : /* glsl */ `
         // The stones in the asphalt, tar patches and the lighter tracks worn into it.
         groundColour *= 1.0 + (big - 0.5) * 0.18;
