@@ -1,6 +1,6 @@
 import {
-  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DataTexture, DoubleSide, DynamicDrawUsage,
-  Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry,
+  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DataTexture, InstancedBufferAttribute, DoubleSide, DynamicDrawUsage,
+  Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RingGeometry,
   CatmullRomCurve3, Points, PointsMaterial, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
   type Material,
 } from 'three';
@@ -404,6 +404,20 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   drops.renderOrder = 4;
   const seeds = Array.from({ length: RAIN_MAX }, () => ({ x: random() * BOX.x, y: random() * BOX.y, z: BOX.back + random() * (BOX.front - BOX.back), speed: 13 + random() * 6, long: 0.55 + random() * 0.7 }));
   if (rain > 0) group.add(drops);
+  // Where the rain lands round him: small rings that open and fade on the ground and the water, a few at a time
+  // (the graphics pass of 6 November 2026). Added light, one draw; on Low none.
+  const LANDINGS = 36;
+  const landings = new InstancedMesh(new RingGeometry(0.05, 0.075, 16).rotateX(-Math.PI / 2),
+    new MeshBasicMaterial({ color: '#ffffff', transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false }), LANDINGS);
+  landings.instanceMatrix.setUsage(DynamicDrawUsage);
+  landings.instanceColor = new InstancedBufferAttribute(new Float32Array(LANDINGS * 3), 3);
+  landings.instanceColor.setUsage(DynamicDrawUsage);
+  landings.frustumCulled = false;
+  landings.renderOrder = 4;
+  landings.userData.rich = true;
+  const landingSeeds = Array.from({ length: LANDINGS }, () => ({ x: random() * 16 - 8, z: -1.6 + random() * 2.4, phase: random(), every: 0.5 + random() * 0.6 }));
+  if (rain > 0) group.add(landings);
+  const landingTint = new Color();
   const place = new Object3D();
   const SLANT = 0.32;
   place.rotation.z = -SLANT * 0.6;
@@ -715,6 +729,30 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         }
         drops.instanceMatrix.needsUpdate = true;
         (drops.material as MeshBasicMaterial).opacity = 0.42 * (1 - calm) * (0.6 + 0.4 * rain);
+      }
+      // The landings: each opens over a short while, fades, and lands again somewhere else near him.
+      const landing = rain > 0 && count > 0 && tier !== 'low';
+      drawnWhile(landings, landing);
+      if (landing) {
+        const t = still ? 0 : clock;
+        for (let i = 0; i < LANDINGS; i++) {
+          const s = landingSeeds[i]!;
+          const round = (t / s.every + s.phase);
+          const k = round - Math.floor(round);
+          const where = Math.floor(round) * 7.31 + i * 3.7;
+          const x = cx + s.x + Math.sin(where) * 2.5;
+          const out = chapter.outdoors !== undefined && x < chapter.outdoors;
+          place.position.set(x, heightAt(chapter, x) + 0.02, s.z + Math.cos(where) * 0.4);
+          place.rotation.set(0, 0, 0);
+          place.scale.setScalar(out ? 0 : 0.8 + k * 3.2);
+          place.updateMatrix();
+          landings.setMatrixAt(i, place.matrix);
+          const light = (1 - k) * (1 - k) * 0.9 * (1 - calm) * rain;
+          landings.setColorAt(i, landingTint.setRGB(light * 0.85, light * 0.9, light));
+        }
+        place.rotation.set(0, 0, -SLANT * 0.6);
+        landings.instanceMatrix.needsUpdate = true;
+        landings.instanceColor!.needsUpdate = true;
       }
 
       // Lightning, now and then; and one at every flyby's moment.
