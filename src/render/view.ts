@@ -677,6 +677,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The same family is visible at each practical help point. Approved models replace shared rehearsal
   // figures; a blank marker alone cannot explain who helped or connect these crossings to the opening.
   const family: Relative[] = [];
+  /**
+   * The rain gear and Bertil's own hair, made in Blender over each of the family's approved models (the private
+   * repository's family/wardrobe.py): put on the model when it has come, if the private pack has it.
+   */
+  const wardrobeFor = (rig: Pick<Rig, 'wear'>, who: string, manifest: { packs: Record<string, { files: Record<string, unknown> } | undefined> }) => {
+    if (!rig.wear || !manifest.packs.private?.files[`${who}-wardrobe.glb`]) return;
+    assets.model('private', `${who}-wardrobe`)
+      .then((made) => { rig.wear!(made); modelInstallations++; })
+      .catch((error) => console.warn(`The private/${who}-wardrobe could not be loaded; the rain gear is drawn from the body.`, error));
+  };
   const stands = chapter.prologue ? [] : [
     ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt })),
     ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined })),
@@ -700,6 +710,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         });
         if (!model) continue;
         const placed = stage.replace(who, model);
+        wardrobeFor(stage.actors.get(who)!.rig, who, manifest);
         const height = stage.actors.get(who)!.rig.height;
         if (placed) characterShadows.add({ object: placed, height, radius: .45 * height / 5.2,
           active: () => placed.parent !== null && placed.visible });
@@ -730,6 +741,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           rig.group.quaternion.copy(one.rig.group.quaternion);
           one.rig.dispose?.();
           one.rig = rig;
+          wardrobeFor(rig, who, manifest);
           one.neck = model.getObjectByName('Head') ?? model.getObjectByName('head');
           stand.prop!.group.clear();
           stand.prop!.group.add(rig.group);

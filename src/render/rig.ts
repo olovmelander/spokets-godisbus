@@ -1,7 +1,7 @@
 import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
 import type { ChapterData } from '../sim/types';
 import { createArmContact, createHandGrip } from './arm-contact';
-import { SOCK, bodyOf, buildShells, wearShells, type RainGear } from './rain-gear';
+import { SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
 
 /**
  * A body's pose, as a scene's acting asks for it (src/render/acting.ts). Angles are in radians. The body faces
@@ -145,6 +145,8 @@ export interface Rig {
   dress?(gear: RainGear | null): void;
   /** The cap off his head, lent away (Bertil's in Granskogen, "Min keps blir din båt"), or back on. */
   bareHead?(bare: boolean): void;
+  /** Puts on a wardrobe made in Blender (./rain-gear.ts, fitWardrobe): its pieces are worn from then on. */
+  wear?(made: Object3D): void;
 }
 
 /**
@@ -530,12 +532,19 @@ export function createModelRig(model: Object3D, height: number): Rig {
     return hand && lower && contacts[i] ? createHandGrip(lower.node, hand, contacts[i]!) : null;
   });
   const sway = createSway(), soft = softParts(model);
-  // The rain gear's shells, made the first time it is worn (./rain-gear.ts).
+  // The rain gear's shells, made the first time it is worn (./rain-gear.ts), and the wardrobe made in Blender.
   let shells: ReturnType<typeof buildShells> | undefined;
+  let wardrobe: Wardrobe | null = null, worn: RainGear | null = null, headBare = false;
   return {
     group,
     height,
     dress(gear) {
+      worn = gear;
+      // The wardrobe made in Blender, once it has come; until then (or without one) shells of the body itself.
+      if (wardrobe) {
+        wearWardrobe(wardrobe, gear);
+        return;
+      }
       if (shells === undefined) {
         if (!gear) return;
         const body = bodyOf(model);
@@ -544,11 +553,23 @@ export function createModelRig(model: Object3D, height: number): Rig {
       if (shells) wearShells(shells, gear);
     },
     bareHead(bare) {
-      // A model's cap is its own part, painted with its own material ("... cap").
+      headBare = bare;
+      // A model's cap is its own part, painted with its own material ("... cap"); under it, the wardrobe's own hair.
       model.traverse((node) => {
         const mesh = node as Mesh;
         if (mesh.isMesh && !Array.isArray(mesh.material) && /\bcap$/.test(mesh.material.name)) mesh.visible = !bare;
       });
+      if (wardrobe?.hair) wardrobe.hair.visible = bare;
+    },
+    wear(made) {
+      if (wardrobe) return;
+      wardrobe = fitWardrobe(model, made);
+      if (!wardrobe) return;
+      // The shells made before it came go, and what was worn is put on again from the wardrobe.
+      if (shells) for (const shell of [shells.coat, ...shells.boots, ...shells.socks]) { shell.removeFromParent(); shell.geometry.dispose(); }
+      shells = null;
+      wearWardrobe(wardrobe, worn);
+      if (wardrobe.hair) wardrobe.hair.visible = headBare;
     },
     breeze(wind, dt, still, ruffle = 0) { if (dt > 0) soft(sway.step(wind, dt, still), still ? 0 : ruffle); },
     mouth(out) { return bones.head ? bones.head.node.localToWorld(out.copy(mouth)) : group.localToWorld(out.set(0, height * .89, height * .075)); },

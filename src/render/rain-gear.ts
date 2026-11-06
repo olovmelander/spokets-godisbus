@@ -1,5 +1,5 @@
 import {
-  BufferGeometry, Float32BufferAttribute, MeshStandardMaterial, SkinnedMesh, Uint16BufferAttribute, type Object3D,
+  BufferGeometry, Float32BufferAttribute, MeshStandardMaterial, Skeleton, SkinnedMesh, Uint16BufferAttribute, type Bone, type Object3D,
 } from 'three';
 import type { ChapterData } from '../sim/types';
 
@@ -166,4 +166,61 @@ export function bodyOf(model: Object3D): SkinnedMesh | null {
     if (!best || mesh.geometry.getAttribute('position').count > best.geometry.getAttribute('position').count) best = mesh;
   });
   return best;
+}
+
+/**
+ * A wardrobe made in Blender for one of the family (the private repository's family/wardrobe.py, exported as
+ * `<who>-wardrobe.glb`): a raincoat with its hood, collar, zip, pocket flaps and cuffs; rubber boots to below the knee,
+ * each its own piece; the socks under them; and, for Bertil, his own hair for when he has lent his cap. Every piece is
+ * skinned to the same skeleton as the approved model, so it is bound here to the model's own bones, by name, and worn
+ * over it. Each takes a copy of the body's own material (its gloss changed), so that no new shader is made for it.
+ */
+export interface Wardrobe {
+  coat: SkinnedMesh | null;
+  boots: [SkinnedMesh | null, SkinnedMesh | null];
+  socks: [SkinnedMesh | null, SkinnedMesh | null];
+  hair: SkinnedMesh | null;
+}
+
+const GLOSS: [RegExp, number][] = [[/raincoat$/, 0.4], [/boot_[lr]$/, 0.28], [/sock_[lr]$/, 0.95]];
+
+export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
+  const body = bodyOf(model);
+  if (!body) return null;
+  const bones = new Map(body.skeleton.bones.map((bone) => [bone.name, bone]));
+  const pieces: SkinnedMesh[] = [];
+  made.traverse((node) => { if ((node as SkinnedMesh).isSkinnedMesh) pieces.push(node as SkinnedMesh); });
+  const out: Wardrobe = { coat: null, boots: [null, null], socks: [null, null], hair: null };
+  for (const piece of pieces) {
+    const own = piece.skeleton.bones.map((bone) => bones.get(bone.name));
+    if (own.some((bone) => !bone)) continue;
+    const material = (body.material as MeshStandardMaterial).clone();
+    material.roughness = GLOSS.find(([name]) => name.test(piece.name))?.[1] ?? material.roughness;
+    const mesh = new SkinnedMesh(piece.geometry, material);
+    mesh.name = 'rain-gear';
+    mesh.userData.wardrobe = piece.name;
+    mesh.bind(new Skeleton(own as Bone[], piece.skeleton.boneInverses), body.bindMatrix);
+    mesh.position.copy(body.position);
+    mesh.quaternion.copy(body.quaternion);
+    mesh.scale.copy(body.scale);
+    mesh.frustumCulled = false;
+    mesh.visible = false;
+    body.parent?.add(mesh);
+    const side = piece.name.endsWith('_l') ? 0 : 1;
+    if (/raincoat$/.test(piece.name)) out.coat = mesh;
+    else if (/boot_[lr]$/.test(piece.name)) out.boots[side] = mesh;
+    else if (/sock_[lr]$/.test(piece.name)) out.socks[side] = mesh;
+    else if (/hair$/.test(piece.name)) out.hair = mesh;
+  }
+  return out;
+}
+
+/** Shows the wardrobe's rain gear as `gear` says (or takes it off, with null). */
+export function wearWardrobe(wardrobe: Wardrobe, gear: RainGear | null): void {
+  if (wardrobe.coat) wardrobe.coat.visible = gear !== null;
+  for (const side of [0, 1] as const) {
+    const off = gear?.bootOff === side;
+    if (wardrobe.boots[side]) wardrobe.boots[side]!.visible = gear !== null && !off;
+    if (wardrobe.socks[side]) wardrobe.socks[side]!.visible = gear !== null && off;
+  }
 }
