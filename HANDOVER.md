@@ -121,7 +121,8 @@
       village street's puddle is a dark blue mirror; rain lands in rings on the water; Älven's gnawed stumps were
       rebuilt in Blender 5.2 with tooth marks, and the tall pine's crown (behind the mountain path, the garden and
       Äventyr 2's places) is clouds of tufts instead of nine flat plates (the nature kit's other models are
-      unchanged); Flärken's log huts have the wood's grain.
+      unchanged); Flärken's log huts have the wood's grain; Olympia's goal net is a mesh of squares, not a row of
+      strings.
   - **Budgets, widened at Olov's word ("utöka grafikbudgeten rejält"):** High draws up to 3.5 MP (was 2.6), its
     offscreen targets may take 110 MB (was 80) and the whole picture 260 MB (was 220): `quality.ts`,
     `gpu-memory.ts`, `scripts/asset-gpu-estimate.mjs`, the gpu-memory suite and its unit tests. The prologue on a
