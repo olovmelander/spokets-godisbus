@@ -98,7 +98,8 @@
         Mamma says "Jag tänder ljusen" (the scene's cue `candles`).
       - Olympia: Bertil kicks the ball Elof rides; the thrown cone flies to the target, which turns white as it
         hits.
-      - Morgonen: the cup of cocoa is a white mug with a red heart and steam, not a candle.
+      - Morgonen: the cup of cocoa is a white mug with a red heart and steam, not a candle; the wet raincoats and
+        boots in the room are the ones they wore in the storm, Elof's smallest.
       - Elof carries the little one's cap, tucked in at his back, from Stormbyn's gutter until he gives it back in
         the storm's eye; there the old one holds out the golden sweet on its crinkled gold paper ("Ett geléhallon i
         guldpapper!").
