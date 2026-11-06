@@ -96,9 +96,11 @@ proportions do not override the render. Local image-to-3D followed by Blender cl
    the model for review.
 2. Model in planes: every surface is a knife cut. Ridges are clean and slightly chamfered.
 3. Bake colour textures: pale lime wood, grain along the form, darker inside the cuts, lighter on the ridges.
-   The detailed reference-derived ghost uses a 2048² body atlas and a shared 1024² shoe atlas, within the
-   character triangle and packed boot budgets. No normal map. Keep the bag's dots, striped socks and shoe
-   paint from the reference; the separate glossy eyes support the prologue's painting and runtime blinking.
+   Since 6 November 2026 the ghost is built by `ghost/ghost.py` in the private repository: every part is a
+   block cut down with flat knife cuts, and the wood (growth rings, facet tones, shade in the cuts) and the
+   paint are baked into a 1024² body texture and a 512² texture shared by both feet. About 5,900 triangles in
+   five meshes and three materials. No normal map. Keep the bag's dots, striped socks and shoe paint; the
+   separate glossy eyes support the prologue's painting and runtime blinking.
 4. Keep named rigid body, feet and eye parts. The eyes must disappear individually during the prologue's
    painting and blink independently of the body; the shoes pivot at their ankles. The carved bag and arms
    may remain part of the rigid body until authored hand gestures require separate pivots.

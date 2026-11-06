@@ -2,6 +2,31 @@
 
 ## State (6 November 2026)
 
+- **Klonk carved again (6 November 2026, cloud session; private repository PR #4).** Olov sent the poster and a
+  photograph of the real carving and asked to improve Klonk's design, then to merge the new Klonk into main.
+  - **What changed:** the triangle-noise study is replaced by a new build in Blender 5.2. Every part is a
+    block cut down with flat knife cuts, so the ridges are clean and straight. The figure has:
+    - a tombstone body with a full dome, folds hanging in points at the hem, and an arch at the front where
+      the legs come out;
+    - sleeves that come round from the shoulders, and two fists gripping the bag's top corners;
+    - a paper bag with its rim rolled over and the dot cluster;
+    - thin rainbow stripes on one carved sock column;
+    - red high-tops with a white toe cap, sole and laces, and a plain ankle disc;
+    - smaller glossy eyes, set higher.
+
+    The wood is warm and pale, and the wood and paint are baked into textures. 5,868 triangles in five
+    meshes with three materials (before: 1,958 triangles in 25 meshes with 14 materials). Art bible §1.5.
+  - **How:** `ghost/ghost.py` in `spokets-godisbus-familj` builds and exports `baked/private/ghost.glb` by
+    itself, in a minute. It runs in Blender or with the `bpy` 5.2 module, which a cloud session can install
+    on Python 3.13 (`pip install bpy==5.2.*`), so cloud sessions can do Blender work after all. The game's
+    contract is unchanged: `body`, `eye.L`/`eye.R` (painted and blinked), `foot.L`/`foot.R` pivoting at the
+    ankles, 1 EL tall.
+  - **Checked:** the game's `eyeNodes`, `blinkEyes` and `createGhostMotion` on the export; packed by
+    `build-assets` and loaded in the prologue, Stormkvällen and the garden; four-view renders beside the two
+    pictures Olov sent (kept in the session only). Deployed with PR #232's merge.
+  - **For Olov:** look at him in the game's close-ups, beside all of `photos/` (`GHOST_REFS` stands a folder of
+    pictures beside him in Blender). Only the two pictures he sent were available in the cloud.
+
 - **The family move as people do (6 November 2026, cloud session, branch `ccr-77db4123-5s8xa3`).** Olov: "Kan vi nu
   jobba med karaktärernas animationer och hur de rör sig så att de rör sig naturligt och smooth. Elof är redan bra
   men alla andra karaktärer." Mamma, Pappa, Moa and Bertil, in scenes and following Elof, were measured frame by
@@ -4282,6 +4307,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Klonk carved again (6 Nov) | Olov's request: improve Klonk's design after the carving and the poster | Part of one cloud session, Blender 5.2 as a Python module | — / 0 so far | A new build from knife-cut blocks with baked wood and paint; private repository PR #4. |
 | The family's motion (6 Nov) | Olov's request: natural, smooth motion for everyone but Elof | Part of one cloud session | — / 0 so far | Measured frame by frame through every chapter; steps that fit the ground, no snapping, followers that keep up and settle; a few dashes given time. |
 | The whole game's dialogue (6 Nov) | Olov's request: a red thread and good Swedish in every conversation | Part of one cloud session | — / 0 so far | ~430 lines read in play order; 20 of Stormnatten's rewritten, Äventyr 1 kept for its recordings, a test that keeps recordings and text together. |
 | The storm blows the window open (6 Nov) | Olov's request: an animation of the window bursting open | Part of one cloud session | — / 0 so far | A real opening in the wall, two halves that fly outward and bang, Pappa shutting them; code only. |
