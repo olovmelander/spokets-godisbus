@@ -111,7 +111,7 @@
         a rig's `bareHead`: on his model the cap is its own part).
       - Myren: in the mist Elof holds the lysklubba up in his hand like a lantern, instead of it floating over him.
       - The garden: Moa crouches and reaches into the root hole the ghost crept into ("Jag får inte plats!").
-      - The epilogue: the party has its table; the clip, the marble and the coin leave the floor as they are given
+      - The epilogue: the party has its table, with a cloth; the clip, the marble and the coin leave the floor as they are given
         back.
       - The prologue: Moa holds her crayon as she promises him a map.
     - **Also tonight:** the forest's brooks raise the eye 3 EL (the bog's still water 1.6), so the water, its
