@@ -12,6 +12,8 @@ import { forestSocket, standingCone } from './forest-kit';
 import type { MountainSocket } from './mountain-kit';
 import { saturdayBag } from './saturday-bag';
 import { antTrail, ladybird } from './critters';
+import { craneFlying, craneKneeling } from './crane';
+import { wingbeat } from './wingbeat';
 import { MODEL_TURN } from './ghost-model';
 import { matchboxShape } from './matchbox';
 import { PACK } from './extensions';
@@ -469,20 +471,24 @@ export function spotProp(spot: Spot): SpotProp | null {
       return { group, update: (used, clock, dt) => { vanish(used, dt); group.rotation.z = Math.sin(clock * 1.2) * 0.04; } };
     }
     case 'crane': {
-      // A crane, kneeling for him to climb on: grey, long-necked, with its red crown.
-      const grey = solid('#9aa0a6', 0.9);
-      const neck = rod(0.06, 1.1, grey);
-      neck.position.set(0.75, 1, 0);
-      neck.rotation.z = -0.35;
-      const beak = new Mesh(new ConeGeometry(0.045, 0.34, 8), solid('#6a6048', 0.6));
-      beak.rotation.z = -Math.PI / 2;
-      beak.position.set(1.2, 1.52, 0);
-      group.add(
-        ball(1, grey, 0, 0.55, 0, [0.95, 0.45, 0.42]), neck, ball(0.13, grey, 0.96, 1.5, 0), beak,
-        ball(0.06, solid('#b8332a', 0.5), 0.94, 1.62, 0, [1, 0.5, 1]), ball(1, solid('#5c6066', 0.9), -0.85, 0.55, 0, [0.5, 0.22, 0.3]),
-      );
-      group.position.z = -0.8;
-      return { group, update: (used, clock, dt) => { vanish(used, dt); neck.rotation.z = -0.35 + Math.sin(clock * 0.9) * 0.05; } };
+      // A crane, kneeling for him to climb on (crane.ts). It breathes, its neck sways, and now and then it turns its
+      // head to look out at him.
+      const crane = craneKneeling();
+      group.add(crane);
+      const torso = crane.getObjectByName('crane-torso')!, neck = crane.getObjectByName('crane-neck')!, head = crane.getObjectByName('crane-head')!;
+      group.position.z = crane.position.z;
+      crane.position.z = 0;
+      return {
+        group,
+        update: (used, clock, dt) => {
+          vanish(used, dt);
+          torso.scale.y = 1 + Math.sin(clock * 1.3) * 0.012;
+          neck.rotation.z = Math.sin(clock * 0.9) * 0.04;
+          const look = Math.max(0, Math.sin(clock * 0.55 + 1)) ** 6;
+          head.rotation.y = -0.9 * look;
+          head.rotation.x = 0.12 * Math.sin(clock * 2.1) * look;
+        },
+      };
     }
     case 'dew': {
       // A drop of dew at the tip of a bent blade of grass, as big as his head. Rung, it shivers and shines.
@@ -809,7 +815,10 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     // or obstacle. A purely horizontal retreat would leave the narrow portrait view.
     const targetX = ghost ? x + ahead : last.x - 0.1;
     const targetY = ghost ? Math.max(y + ahead, demoFloor(chapter, targetX) + 0.6) : last.y + BIRD_PERCH;
-    const to = here ? { x: targetX + knock, y: targetY + (still ? 0 : ghost ? Math.sin(Math.PI * shown) * 0.35 : Math.sin(clock * 5) * 0.04), z: 0.45 } : { x: flyer.position.x, y: flyer.position.y + dt * 4, z: 0.45 };
+    // The jay beats in bursts, rising a little with each downstroke, and between them holds its wings out and sinks.
+    const wings = wingbeat(clock, 3.5, { every: 1.7, glide: 0.4, held: 0.1 });
+    const bob = (wings.pitch / 0.03) * 0.04 - wings.glide * 0.05;
+    const to = here ? { x: targetX + knock, y: targetY + (still ? 0 : ghost ? Math.sin(Math.PI * shown) * 0.35 : bob), z: 0.45 } : { x: flyer.position.x, y: flyer.position.y + dt * 4, z: 0.45 };
     const k = still ? 1 : 1 - Math.exp(-5 * dt);
     flyer.position.set(flyer.position.x + (to.x - flyer.position.x) * k, flyer.position.y + (to.y - flyer.position.y) * k, to.z);
     // Clamp after smoothing too: running, jumping, a checkpoint restore or its exit must never let Elof
@@ -833,7 +842,7 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
       drawnWhile(thought, thought.material.opacity > 0);
       thought.position.set(flyer.position.x + 0.15, flyer.position.y + 1.5, 0.65);
     }
-    const beat = still ? 0 : Math.sin(clock * 22) * 0.9;
+    const beat = still ? 0 : wings.lift * 0.9;
     const near = flyer.getObjectByName('wingNear'), far = flyer.getObjectByName('wingFar');
     if (near) near.rotation.x = -beat;
     if (far) far.rotation.x = beat;
@@ -904,29 +913,9 @@ export function rideProp(look: RideLook): Object3D | null {
       group.position.y = 0.02;
       break;
     }
-    case 'crane': {
-      const grey = solid('#9aa0a6', 0.9);
-      const neck = rod(0.06, 1.2, grey);
-      neck.rotation.z = -Math.PI / 2 + 0.25;
-      neck.position.set(1.2, -0.05, 0);
-      const beak = new Mesh(new ConeGeometry(0.045, 0.34, 8), solid('#6a6048', 0.6));
-      beak.rotation.z = -Math.PI / 2;
-      beak.position.set(2.05, 0.1, 0);
-      group.add(ball(1, grey, 0, -0.35, 0, [1, 0.36, 0.42]), neck, ball(0.13, grey, 1.82, 0.1, 0), beak, ball(0.06, solid('#b8332a', 0.5), 1.8, 0.21, 0, [1, 0.5, 1]));
-      for (const side of [-1, 1]) {
-        const wing = new Mesh(new BoxGeometry(0.9, 0.05, 1.9), solid('#7d8288', 0.9));
-        wing.geometry.translate(0, 0, 0.95);
-        wing.position.set(0, -0.2, side * 0.3);
-        wing.scale.z = side;
-        wing.name = side > 0 ? 'wingNear' : 'wingFar';
-        group.add(wing);
-      }
-      const legs = rod(0.03, 1.1, solid('#4a4a4a'));
-      legs.rotation.z = Math.PI / 2;
-      legs.position.set(-1.3, -0.42, 0);
-      group.add(legs);
+    case 'crane':
+      group.add(craneFlying());
       break;
-    }
     case 'ants': {
       const dark = solid('#2a1e18', 0.5);
       for (let i = 0; i < 5; i++) group.add(ball(0.07, dark, -0.5 + i * 0.25 - 0.11, -0.06, i % 2 ? 0.1 : -0.1), ball(0.06, dark, -0.5 + i * 0.25 + 0.03, -0.05, i % 2 ? 0.1 : -0.1));

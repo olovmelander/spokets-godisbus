@@ -73,6 +73,8 @@ import { BERRY_HALF, BERRY_HEIGHT, GHOST_CLEARANCE, JUMP_SPEED } from '../sim/co
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
 import { photoCut } from './crop';
+import { wingbeat } from './wingbeat';
+import { craneChick, stepChick, type Gait } from './crane';
 
 /** Whether the page's address has `?name`. */
 function pageAsks(name: string): boolean {
@@ -1064,12 +1066,22 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       drawnWhile(c.prop, propSize > 0);
       c.prop.position.set(waiting ? c.ride.from.x : x, (waiting ? c.ride.from.y : y) - 0.05, 0);
       // A boat lies level on the water; a bird points the way it flies, and beats its wings.
-      c.prop.rotation.z = c.ride.look === 'cap' || waiting ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : heading * 0.6;
-      const beat = Math.sin(clock * 7) * 0.5;
+      // A bird beats with a strong downstroke and a quicker upstroke, glides between bursts, and nods with each beat;
+      // its wing tips follow a little behind.
+      const wings = wingbeat(clock, 1.1, { every: 6.5, glide: 1.8, held: -0.2 });
+      const flying = c.ride.look !== 'cap' && !waiting;
+      c.prop.rotation.z = !flying ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : heading * 0.6 + wings.pitch;
+      const beat = wings.lift * 0.75;
+      const lag = wingbeat(clock - 0.12, 1.1, { every: 6.5, glide: 1.8, held: -0.2 }).lift * 0.75;
       const near = c.prop.getObjectByName('wingNear');
       const far = c.prop.getObjectByName('wingFar');
-      if (near) near.rotation.x = -beat;
+      // The near wing, between him and the lens, rises only to about level, so it never hides him.
+      if (near) near.rotation.x = -(beat > 0 ? beat * 0.12 : beat);
       if (far) far.rotation.x = beat;
+      for (const name of ['wingTipNear', 'wingTipFar']) {
+        const tip = c.prop.getObjectByName(name);
+        if (tip) tip.rotation.x = -(lag - beat) * 0.9 - 0.08;
+      }
     }
     for (const [i, thing] of things.entries()) {
       if (thing.prop) thing.prop.group.rotation.z -= thing.reactionTurn;
@@ -2040,26 +2052,11 @@ function buildFollower(chapter: ChapterData) {
   const group = new Group();
   const def = chapter.follower;
   if (!def) return { group, update: () => {} };
-  const down = new MeshStandardMaterial({ color: '#b9aa94', roughness: 1 });
-  const chick = new Group();
-  const body = new Mesh(new SphereGeometry(0.22, 14, 10), down);
-  body.position.y = 0.42;
-  body.scale.set(1.25, 1, 0.9);
-  const neck = new Mesh(new CylinderGeometry(0.05, 0.06, 0.36, 8), down);
-  neck.position.set(0.17, 0.68, 0);
-  const head = new Mesh(new SphereGeometry(0.1, 12, 8), down);
-  head.position.set(0.19, 0.9, 0);
-  const beak = new Mesh(new ConeGeometry(0.035, 0.18, 8), new MeshStandardMaterial({ color: '#8a6a3a', roughness: 0.7 }));
-  beak.rotation.z = -Math.PI / 2;
-  beak.position.set(0.35, 0.89, 0);
-  chick.add(body, neck, head, beak);
-  for (const side of [-0.07, 0.07]) {
-    const leg = new Mesh(new CylinderGeometry(0.018, 0.018, 0.26, 6), new MeshStandardMaterial({ color: '#5e5548', roughness: 0.8 }));
-    leg.position.set(0, 0.13, side);
-    chick.add(leg);
-  }
-  chick.position.set(def.at.x, def.at.y, 0);
-  group.add(chick);
+  // The crane chick (crane.ts): it walks on its long legs, turns through facing the camera, and bobs its head.
+  const chick = craneChick();
+  const gait: Gait = { phase: 0, speed: 0, facing: 0 };
+  chick.group.position.set(def.at.x, def.at.y, 0);
+  group.add(chick.group);
   const rings = [0, 1, 2].map(() => {
     const ring = new Mesh(new TorusGeometry(0.5, 0.025, 8, 36), new MeshBasicMaterial({ color: '#fff3d6', transparent: true, opacity: 0 }));
     ring.rotation.x = Math.PI / 2;
@@ -2069,12 +2066,10 @@ function buildFollower(chapter: ChapterData) {
   function update(flags: ReadonlySet<string>, elof: PlayerState, clock: number, dt: number): void {
     const following = flags.has(def!.after) && !flags.has(def!.until);
     const to = flags.has(def!.until) ? def!.home : following ? { x: elof.x - elof.facing * 1.2, y: elof.standY } : def!.at;
-    chick.position.x += (to.x - chick.position.x) * ease(following ? 4 : 2.5, dt);
-    chick.position.y += (to.y - chick.position.y) * ease(6, dt);
-    // It looks the way it goes, and bobs as it walks.
-    const way = to.x - chick.position.x;
-    if (Math.abs(way) > 0.05) chick.rotation.y = way > 0 ? 0 : Math.PI;
-    body.position.y = 0.42 + (Math.abs(way) > 0.05 ? Math.abs(Math.sin(clock * 11)) * 0.05 : 0);
+    const from = chick.group.position.x;
+    chick.group.position.x += (to.x - from) * ease(following ? 4 : 2.5, dt);
+    chick.group.position.y += (to.y - chick.group.position.y) * ease(6, dt);
+    stepChick(chick, gait, chick.group.position.x - from, dt, clock);
     for (const [i, ring] of rings.entries()) {
       const k = (clock * 0.45 + i / rings.length) % 1;
       ring.position.set(def!.home.x, def!.home.y + 0.6 + k * 3.2, 0);

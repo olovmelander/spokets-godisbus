@@ -10,6 +10,7 @@ import { heightAt, type PlaceLook } from '../../render/dressing/kit';
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../render/extensions';
 import { roomThings } from '../../render/home-room';
 import { glowTexture } from '../../render/glow';
+import { wingbeat } from '../../render/wingbeat';
 import { drawnWhile } from '../../render/idle';
 import { litLamp } from '../../render/stage';
 import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
@@ -683,8 +684,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       elof.flags = flags;
       elof.still = still;
       drift?.(dt, still);
-      // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him.
-      const beat = still ? 0.2 : 0.2 + 0.46 * Math.sin(clock * 5.4);
+      // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him. Its downstroke is
+      // the slower, and between bursts it glides on wings held near level (a positive turn lowers its wings).
+      const beat = still ? 0.2 : 0.2 - 0.5 * wingbeat(clock, 0.86, { every: 7, glide: 1.8, held: 0.3 }).lift;
       for (const wing of owlWings) wing.rotation.x = beat * (wing.userData.side as number);
       if (boat && storm?.boat) {
         const { from, to, y, after, spot } = storm.boat;
