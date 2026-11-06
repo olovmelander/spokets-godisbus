@@ -3,7 +3,7 @@ import {
   Object3D, OctahedronGeometry, SphereGeometry, Vector2, Vector3, type BufferGeometry,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { BARK_ALONG, BARK_UP, barkDetail, barky, notBark } from './bark-detail';
+import { BARK_ALONG, BARK_UP, PLANK, barkDetail, barky, notBark } from './bark-detail';
 import { LEDGE_THICK } from '../sim/constants';
 import type { Ledge, LedgeLook, PlaceId } from '../sim/types';
 import { drawnWhile } from './idle';
@@ -83,8 +83,8 @@ const LOOKS: Record<LedgeLook, Look> = {
   plank: {
     colour: '#c9ae84', roughness: 0.75,
     shape: () => together(
-      new BoxGeometry(1, LEDGE_THICK, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2),
-      new BoxGeometry(0.86, 0.3, 0.12).translate(0, -LEDGE_THICK - 0.15, -DEPTH + 0.1),
+      barky(new BoxGeometry(1, LEDGE_THICK, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2), PLANK),
+      barky(new BoxGeometry(0.86, 0.3, 0.12).translate(0, -LEDGE_THICK - 0.15, -DEPTH + 0.1), PLANK),
     ),
   },
   // A ladder laid flat over a gap: two rails along it and the rungs between them, which he walks on.
@@ -100,7 +100,7 @@ const LOOKS: Record<LedgeLook, Look> = {
   trestle: {
     colour: '#c9ae84', roughness: 0.75,
     shape: () => together(
-      new BoxGeometry(1, LEDGE_THICK, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2),
+      barky(new BoxGeometry(1, LEDGE_THICK, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2), PLANK),
       new BoxGeometry(0.9, 0.12, 0.05).translate(0, -LEDGE_THICK - 0.06, -0.3),
       ...[-0.43, 0.43].flatMap((x) => [-0.3, -DEPTH + 0.1].map((z) => new BoxGeometry(0.06, DOWN, 0.08).translate(x, -LEDGE_THICK - DOWN / 2, z))),
     ),

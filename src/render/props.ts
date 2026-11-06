@@ -2,6 +2,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
+import { PLANK, barkDetail, barky } from './bark-detail';
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
 import { GHOST_CLEARANCE } from '../sim/constants';
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
@@ -43,7 +44,9 @@ export function moverProp(mover: Mover): Group | null {
     case 'plank':
     case 'block': {
       const wood = solid(mover.look === 'plank' ? '#c9ae84' : '#d7a65e', 0.75);
-      const body = new Mesh(new BoxGeometry(w, h, mover.look === 'plank' ? 1.6 : 1.1), wood);
+      // Its grain, knots and growth rings, which go with it as it moves (./bark-detail.ts).
+      barkDetail(wood);
+      const body = new Mesh(barky(new BoxGeometry(w, h, mover.look === 'plank' ? 1.6 : 1.1), PLANK), wood);
       body.position.y = h / 2;
       // A darker band at each end: sawn ends.
       for (const side of [-1, 1]) {

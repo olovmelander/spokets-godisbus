@@ -18,6 +18,11 @@ export const BARK_ALONG = 2;
  * rings on it, laid on from all three sides so that no face is stretched.
  */
 export const STONE = 3;
+/**
+ * A sawn board that moves (the planks he pushes and pulls): its grain is laid on from its own shape, not from
+ * where it is, so that it goes with it. Fine lines along it, the arcs of the growth rings, now and then a knot.
+ */
+export const PLANK = 4;
 
 /** Marks a shape's corners as bark that runs one way: up a stem or along a bough. */
 export function barky(shape: BufferGeometry, run: number): BufferGeometry {
@@ -37,11 +42,12 @@ export function barkDetail(material: MeshStandardMaterial): void {
   patched.add(material);
   const before = material.onBeforeCompile;
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:bark-detail-v5`;
+  material.customProgramCacheKey = () => `${key()}:bark-detail-v6`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
-    shader.vertexShader = 'attribute float barky;\nvarying float vBarky;\nvarying vec3 vBarkAt;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `
+    shader.vertexShader = 'attribute float barky;\nvarying float vBarky;\nvarying vec3 vBarkAt;\nvarying vec3 vBarkOwn;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `
       vBarky = barky;
+      vBarkOwn = transformed;
       vec4 barkWorld = vec4(transformed, 1.0);
       #ifdef USE_INSTANCING
         barkWorld = instanceMatrix * barkWorld;
@@ -50,6 +56,7 @@ export function barkDetail(material: MeshStandardMaterial): void {
       #include <project_vertex>`);
     shader.fragmentShader = /* glsl */ `varying float vBarky;
       varying vec3 vBarkAt;
+      varying vec3 vBarkOwn;
       float barkHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float barkNoise(vec2 p) {
         vec2 i = floor(p), f = fract(p);
@@ -58,7 +65,24 @@ export function barkDetail(material: MeshStandardMaterial): void {
       }
       ` + shader.fragmentShader.replace('#include <normal_fragment_maps>', /* glsl */ `
       #include <normal_fragment_maps>
-      if (vBarky > 2.5) {
+      if (vBarky > 3.5) {
+        // Along the board, and across it on whichever face is seen.
+        vec2 grainAt = vec2(vBarkOwn.x, vBarkOwn.y + vBarkOwn.z);
+        float grainPixel = length(fwidth(grainAt));
+        float grainNear = 1.0 - smoothstep(0.006, 0.025, grainPixel);
+        float grainMid = 1.0 - smoothstep(0.02, 0.08, grainPixel);
+        vec3 board = diffuseColor.rgb;
+        float lines = barkNoise(vec2(grainAt.x * 0.9, grainAt.y * 46.0));
+        board *= 1.0 + (lines - 0.5) * 0.3 * grainNear;
+        float rings = sin((grainAt.y + 0.18 * barkNoise(vec2(grainAt.x * 0.6, 3.0))) * 70.0);
+        board *= 1.0 - 0.1 * smoothstep(0.6, 1.0, rings) * grainMid;
+        board *= 0.92 + 0.16 * barkNoise(grainAt * vec2(0.5, 3.0) + 8.0);
+        vec2 knotCell = vec2(floor(grainAt.x / 2.2), 0.0);
+        vec2 knot = (grainAt - vec2((knotCell.x + 0.3 + 0.4 * barkHash(knotCell)) * 2.2, 0.35 * (barkHash(knotCell + 3.0) - 0.5))) * vec2(0.6, 1.0);
+        float knotted = step(0.45, barkHash(knotCell + 7.0)) * (1.0 - smoothstep(0.03, 0.06, length(knot))) * grainMid;
+        board *= 1.0 - 0.5 * knotted;
+        diffuseColor.rgb = board;
+      } else if (vBarky > 2.5) {
         vec3 stoneUp = normalize(normal * mat3(viewMatrix));
         vec3 side = pow(abs(stoneUp), vec3(4.0));
         side /= side.x + side.y + side.z;
