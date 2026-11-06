@@ -34,6 +34,31 @@ const ball = (radius: number, material: MeshStandardMaterial, x = 0, y = 0, z = 
   return mesh;
 };
 const rod = (radius: number, length: number, material: MeshStandardMaterial): Mesh => new Mesh(new CylinderGeometry(radius, radius, length, 8), material);
+const smoothstep = (k: number) => { const t = Math.min(1, Math.max(0, k)); return t * t * (3 - 2 * t); };
+const hashed = (n: number) => { const v = Math.sin(n * 12.9898 + 4.1) * 43758.5453; return (v - Math.floor(v)) * 2 - 1; };
+/** A bird's look about, from -1 to 1: held, then a quick snap to the next way, at uneven times. */
+const glance = (t: number, seed: number) => {
+  const w = t * 0.8 + 0.4 * Math.sin(t * 0.7 + seed) + seed;
+  const n = Math.floor(w);
+  return hashed(n - 1) + (hashed(n) - hashed(n - 1)) * smoothstep((w - n) / 0.07);
+};
+/**
+ * The neck of the Blender jay (art/blender/jay.py): its head, beak and eyes are parts of their own, gathered once
+ * under a pivot at the nape so that they turn together. Null for the stand-in.
+ */
+function headOf(bird: Object3D): Object3D | null {
+  const rigged = bird.getObjectByName('jay-neck');
+  if (rigged) return rigged;
+  const head = bird.getObjectByName('head'), beak = bird.getObjectByName('beak'), eyes = bird.getObjectByName('eyes');
+  if (!head || !beak || !eyes || !head.parent) return null;
+  const neck = new Object3D();
+  neck.name = 'jay-neck';
+  neck.position.copy(head.position).add(new Vector3(-0.05, -0.07, 0));
+  head.parent.add(neck);
+  neck.updateMatrixWorld(true);
+  for (const part of [head, beak, eyes]) neck.attach(part);
+  return neck;
+}
 
 // --- things on rails -----------------------------------------------------------------------------------------
 
@@ -418,9 +443,23 @@ export function spotProp(spot: Spot): SpotProp | null {
         group,
         update(used, clock, dt) {
           since = used ? since + dt : 0;
-          const hop = used && since < 1.4 ? Math.abs(Math.sin(since * 9)) * 0.3 : 0;
-          bird.position.y = hop + Math.max(0, Math.sin(clock * 2.3)) * 0.02;
-          bird.rotation.y = used ? 0 : Math.sin(clock * 1.1) * 0.5;
+          // Given its berry it hops: three hops, each from a crouch, and lands with a give.
+          let hop = 0, squat = 0;
+          if (used && since < 1.5) {
+            const k = (since % 0.5) / 0.5;
+            squat = k < 0.2 ? Math.sin((k / 0.2) * Math.PI) : 0;
+            hop = k >= 0.2 ? Math.sin(((k - 0.2) / 0.8) * Math.PI) * 0.26 : 0;
+          }
+          bird.position.y = hop - squat * 0.03;
+          bird.scale.set(1, 1 - squat * 0.12 + Math.sin(clock * 2.2) * 0.008, 1);
+          // The Blender jay turns only its head, in quick snaps with holds, mostly towards him; the stand-in, which
+          // has no neck, turns its body a little.
+          const neck = headOf(bird);
+          const look = used ? -0.5 : 0.55 * glance(clock, 2.3) - 0.25;
+          if (neck) {
+            bird.rotation.y = 0;
+            neck.rotation.set(0.12 * glance(clock * 0.7, 5.1), look, 0.15 * glance(clock * 0.9, 8.7));
+          } else bird.rotation.y = look * 0.6;
         },
       };
     }

@@ -243,7 +243,7 @@ export function bird(p: Plumage): BufferGeometry {
     ...(p.speckled ? [0.21, 0.26, 0.31, 0.36].flatMap((y, row) => [0.05, 0.11, 0.17, 0.22]
       .map((x) => ({ x: x + row * 0.012, out: 1 - ((x + row * 0.012 - 0.06) / 0.25) ** 2 - ((y - 0.3) / 0.17) ** 2 }))
       .filter(({ out }) => out > 0.08)
-      .flatMap(({ x, out }) => both((s): Part => ['e', (row + Math.round(x * 20)) % 2 ? '#4a3a2a' : '#5e4834', [x, y, s * (0.165 * Math.sqrt(out) - 0.004)], [0.026, 0.028, 0.01]]))) : []),
+      .flatMap(({ x, out }) => both((s): Part => ['e', (row + Math.round(x * 20)) % 2 ? '#4a3c2e' : '#584a3a', [x, y, s * (0.165 * Math.sqrt(out) - 0.004)], [0.026, 0.028, 0.01]]))) : []),
     ['b', p.head, [0.25, 0.5, 0], [0.14, 0.13, 0.13], NONE, head],
     ...both((s) => ['b', p.cheek, [0.285, 0.475, s * 0.075], [0.075, 0.055, 0.05], NONE, head]),
     ['c', p.beak, [0.42, 0.49, 0], [0.026, 0.1, 0.026], [0, 0, -Math.PI / 2], head],

@@ -1047,10 +1047,14 @@ function littleFigure(silhouette = false): Group {
 }
 
 /** A thing that stands about: it shrinks away when its flag says it is gone, and may move a little while it is there. */
-function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) => void, leaves: 'shrink' | 'leap' | 'fly' | 'blown' = 'shrink'): SpotProp {
+function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) => void, leaves: 'shrink' | 'leap' | 'fly' | 'blown' = 'shrink', flyer?: Group): SpotProp {
   const root = new Group();
   root.position.set(spot.at.x, spot.at.y, -0.6);
   root.add(group);
+  // What flies off may fly as another shape, with wings that open: hidden until it goes.
+  if (flyer) { root.add(flyer); drawnWhile(flyer, false); }
+  const flyerWings: Object3D[] = [];
+  flyer?.traverse((node) => { if (typeof node.userData.side === 'number') flyerWings.push(node); });
   let since = 0;
   return {
     group: root,
@@ -1064,6 +1068,7 @@ function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) 
         root.position.y = spot.at.y;
         root.rotation.z = 0;
         drawnWhile(root, size > 0);
+        if (flyer) { drawnWhile(group, true); drawnWhile(flyer, false); group.scale.set(1, 1, 1); }
         return;
       }
       if (leaves === 'leap') {
@@ -1084,6 +1089,21 @@ function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) 
         root.position.y = spot.at.y + Math.sin(Math.min(k, 1) * Math.PI * 0.7) * 2.2 + k * 0.4;
         root.rotation.z = -k * 7;
         drawnWhile(root, k < 1.05);
+        return;
+      }
+      if (flyer) {
+        // A crouch, then off the bough: its wings open, it drops forward a little and climbs away, beating hard.
+        const crouch = smooth(since / 0.22);
+        const k = Math.max(0, (since - 0.22) / 1.6);
+        group.scale.set(1, 1 - 0.12 * crouch * (k > 0 ? 0 : 1), 1);
+        drawnWhile(group, k === 0);
+        drawnWhile(flyer, k > 0 && k < 1);
+        root.position.x = spot.at.x + k * k * 3 + k * 5;
+        root.position.y = spot.at.y - Math.sin(Math.min(1, k * 4) * Math.PI) * 0.35 + k * k * 9;
+        root.rotation.z = Math.min(0.35, k * 1.5);
+        const lift = wingbeat(since, 2.2, { every: 0 }).lift;
+        for (const wing of flyerWings) wing.rotation.x = (0.15 - 0.6 * lift) * (wing.userData.side as number);
+        drawnWhile(root, k < 1);
         return;
       }
       // Up and away on its wings, faster and faster.
@@ -1478,7 +1498,26 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     owl: (spot) => {
       const bird = owl();
       // One that is ridden has its own picture; one that only sits there flies off.
-      return standing(spot, bird, (clock) => { bird.rotation.y = Math.sin(clock * 0.7) * 0.25; }, spot.id.startsWith('decor:') ? 'fly' : 'shrink');
+      // It sits still, as an owl does, and now and then turns slowly to look another way, and holds it.
+      const turn = (clock: number) => {
+        const w = clock * 0.22 + 0.3 * Math.sin(clock * 0.31 + spot.at.x);
+        const n = Math.floor(w);
+        const way = (m: number) => { const v = Math.sin(m * 12.9898 + spot.at.x) * 43758.5453; return (v - Math.floor(v)) * 0.7 - 0.35; };
+        return way(n - 1) + (way(n) - way(n - 1)) * smooth((w - n) / 0.16);
+      };
+      const decor = spot.id.startsWith('decor:');
+      // One that flies off does so as the flying owl, with its wings, at the sitting one's size; its wings have names of
+      // their own, so the ridden owl's beat does not drive them.
+      const flyer = decor ? owl(true) : undefined;
+      if (flyer) {
+        flyer.scale.setScalar(0.6);
+        flyer.position.y = 1.4;
+        flyer.traverse((node) => { if (node.name === 'owl-wing') node.name = 'owl-wing-away'; });
+      }
+      return standing(spot, bird, (clock) => {
+        bird.rotation.y = turn(clock);
+        bird.scale.y = 1 + Math.sin(clock * 1.4) * 0.008;
+      }, decor ? 'fly' : 'shrink', flyer);
     },
     tap: (spot) => {
       // The rain barrel's brass tap, and the water that pours from it once it is turned.
