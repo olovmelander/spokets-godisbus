@@ -649,6 +649,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const shoulderPose: Pose = { ...STANDING }, seat = new Vector3(), boot = new Vector3(), palm = new Vector3();
   const carryAhead = new Vector3(), carryUp = new Vector3(0, 1, 0);
   const laceHand = new Vector3(), laceAlong = new Vector3();
+  /** Myren's lysklubba, held up in his right hand in the mist: where that hand is, from the frame before. */
+  const lanternHand = new Vector3(), lanternLift = new Vector3();
+  let lanternHeld = false;
   const playerMotion = createPlayerMotion();
   assets
     .manifest()
@@ -1013,7 +1016,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const spring = Math.sin(b.squash * Math.PI * 3) * 0.12 * b.squash;
       berryMeshes[i]?.scale.set(1 + 0.3 * flat - spring * 0.5, 1 - 0.5 * flat + spring, 1 + 0.3 * flat - spring * 0.5);
     }
-    mist.update(flags, x, y, curr.facing, camera.position.z, dt);
+    mist.update(flags, x, y, curr.facing, camera.position.z, dt, lanternHeld ? lanternHand : null);
     const gust = wind.update(gusts, clock);
     climbs.update(flags, dt, clock, lessMotion());
     follower.update(flags, curr, clock, dt);
@@ -1280,6 +1283,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       playerBody.hand(1, laceHand);
     }
     lace.update(curr.hook, laceHand);
+    // In the mist he holds the lysklubba up before him, as a lantern (./view.ts buildMist).
+    lanternHeld = !!chapter.mist && flags.has(chapter.mist.after) && !curr.hook && !!playerBody;
+    if (lanternHeld && playerBody) {
+      elof.group.updateWorldMatrix(true, false);
+      lanternLift.set(0.3, 0.98, 0.12).applyMatrix4(elof.group.matrixWorld);
+      playerBody.reach(1, lanternLift, 0.9);
+      playerBody.hand(1, lanternHand);
+    }
     const hasCap = (chapter.id === 'stormbyn' && flags.has('cap')) || ['olympia', 'flarken', 'alven', 'billsta'].includes(chapter.id)
       || (chapter.id === 'stormoga' && !flags.has('scene:motet'));
     carriedCap.visible = hasCap && elof.group.visible;
@@ -1963,7 +1974,7 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
   const clearDay = { sun: sun.intensity, sky: hemisphere.intensity, air: fog.color.clone() };
   const grey = new Color('#c4c6bd');
   let k = 0;
-  function update(flags: ReadonlySet<string>, x: number, y: number, facing: number, cameraZ: number, dt: number): void {
+  function update(flags: ReadonlySet<string>, x: number, y: number, facing: number, cameraZ: number, dt: number, hand: Vector3 | null = null): void {
     k = Math.min(1, Math.max(0, k + (flags.has(after) ? dt : -dt) / 3));
     // The mist begins just behind the plane he walks in: he, the candy and what is near him stay clear, what is
     // further back goes pale, and 16 behind it is all mist. Before it comes, the air is the place's own.
@@ -1975,9 +1986,11 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
     fog.color.copy(clearDay.air).lerp(grey, 0.5 * k);
     light.intensity = 7 * k;
     light.position.set(x + facing * 0.3, y + 1.4, 1);
-    glow.position.set(x + facing * 0.32, y + 1.42, 0.25);
+    // Held up in his hand like a lantern, its stick in his fist ("Följ mitt ljus hem till din familj.").
+    if (hand) glow.position.set(hand.x, hand.y + 0.26, hand.z + 0.04);
+    else glow.position.set(x + facing * 0.32, y + 1.42, 0.25);
     glow.scale.setScalar(k);
-    halo.position.set(x + facing * 0.32, y + 1.42, 0.3);
+    halo.position.set(glow.position.x, glow.position.y, glow.position.z + 0.05);
     (halo.material as MeshBasicMaterial).opacity = 0.85 * k;
     wall.position.set(x, level, -20);
     (wall.material as MeshBasicMaterial).color.copy(fog.color);
