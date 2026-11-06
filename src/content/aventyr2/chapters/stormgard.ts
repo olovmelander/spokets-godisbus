@@ -165,6 +165,8 @@ export const stormgard: ChapterData = {
       // The pumpkin lantern on the steps.
       { at: { x: LANTERN.x, y: LANTERN.y + 0.5 }, z: LANTERN.z, size: 1.2 },
     ],
+    // Moa's lamp from the window, on him as he goes down off the deck ("Jag lyser för dig från fönstret!").
+    beams: [{ at: { x: 16, y: DECK + 14.6 }, z: -20.2, within: [-3, 34] }],
   },
   coda: 'bertil',
   // The barrel and the can are things on the lawn, whatever he walks on: the lawn goes on under them.

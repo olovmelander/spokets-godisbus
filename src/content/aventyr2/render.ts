@@ -11,6 +11,7 @@ import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../
 import { roomThings } from '../../render/home-room';
 import { glowTexture } from '../../render/glow';
 import { drawnWhile } from '../../render/idle';
+import { litLamp } from '../../render/stage';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
 import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
@@ -458,6 +459,18 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     return { def, light, phase: i * 1.7 };
   });
 
+  // A lamp shining on him from somewhere: Moa's from the window ("Jag lyser för dig från fönstret!").
+  const beams = (storm?.beams ?? []).map((def) => {
+    const lamp = litLamp();
+    lamp.scale.setScalar(1.8);
+    lamp.position.set(def.at.x, def.at.y, def.z);
+    lamp.visible = false;
+    group.add(lamp);
+    return { def, lamp };
+  });
+  const beamAt = new Vector3();
+  const BEAM_POINTS = new Vector3(0, 0, 1);
+
   // When the storm's eye opens: stars, and the moon over the water.
   const starGeometry = new BufferGeometry();
   const stars: number[] = [];
@@ -802,6 +815,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const lift = floating ? 0.12 * Math.sin(clock * 3) : Math.sin(Math.PI * k) * 2.2;
         f.figure.position.set(f.def.from.x + (f.def.to.x - f.def.from.x) * e, f.def.from.y + (f.def.to.y - f.def.from.y) * e + lift, -4);
         f.figure.rotation.z = still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * 0.25 : -k * 9;
+      }
+      for (const b of beams) {
+        b.lamp.visible = x >= b.def.within[0] && x <= b.def.within[1];
+        if (!b.lamp.visible) continue;
+        beamAt.set(x, y + 0.4, 0).sub(b.lamp.position).normalize();
+        b.lamp.quaternion.setFromUnitVectors(BEAM_POINTS, beamAt);
+        b.lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
       }
       for (const g of glows) {
         const lit = g.def.after === undefined || flags.has(g.def.after);

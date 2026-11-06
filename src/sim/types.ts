@@ -733,6 +733,8 @@ export interface Storm {
   }[];
   /** Warm windows of lit candles and lanterns, which glow through the rain. */
   glows?: { at: Vec; z?: number; size?: number; after?: string }[];
+  /** A lamp shining on him from somewhere (Moa from a window), while he is between `within`'s two x. */
+  beams?: { at: Vec; z: number; within: [number, number] }[];
 }
 
 /** A stage for the far scenery's life: what comes, and where the camera is when it does. */
