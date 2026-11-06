@@ -10,6 +10,7 @@ import { sweetSocket } from './candy';
 import { forestSocket, standingCone } from './forest-kit';
 import type { MountainSocket } from './mountain-kit';
 import { saturdayBag } from './saturday-bag';
+import { antTrail, ladybird } from './critters';
 import { MODEL_TURN } from './ghost-model';
 import { matchboxShape } from './matchbox';
 import { PACK } from './extensions';
@@ -323,36 +324,16 @@ export function spotProp(spot: Spot): SpotProp | null {
       } };
     }
     case 'ladybird': {
-      // On its back, legs in the air, until he turns it over. Then it flies to the hose.
-      const body = new Group();
-      const shell = new Mesh(new SphereGeometry(0.36, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), solid('#d2281e', 0.25));
-      const black = solid('#1c1a1a', 0.4);
-      body.add(shell, ball(0.15, black, 0.3, 0.05, 0), new Mesh(new CylinderGeometry(0.36, 0.36, 0.03, 18), black));
-      for (const [x, z] of [[-0.1, 0.16], [0.08, -0.14], [-0.16, -0.1], [0.14, 0.12], [0, 0]] as const) body.add(ball(0.06, black, x, Math.sqrt(Math.max(0, 0.36 ** 2 - x * x - z * z)) - 0.02, z, [1, 0.4, 1]));
-      // Six legs under it: in the air, and kicking, while it lies on its back.
-      const legs = [-0.2, 0, 0.2].flatMap((x) => [-1, 1].map((side) => {
-        const leg = rod(0.018, 0.24, black);
-        leg.position.set(x, -0.08, side * 0.2);
-        leg.rotation.x = side * 0.7;
-        body.add(leg);
-        return leg;
-      }));
-      body.position.y = 0.36;
-      group.add(body);
-      return {
-        group,
-        update(used, clock, dt) {
-          since = used ? since + dt : 0;
-          for (const [i, leg] of legs.entries()) leg.rotation.z = used ? 0 : Math.sin(clock * 11 + i * 1.3) * 0.5;
-          const turned = Math.min(1, since / 0.4);
-          body.rotation.x = Math.PI * (1 - turned) + (used ? 0 : Math.sin(clock * 7) * 0.12);
-          // Up and away, to the right, where the hose hangs.
-          const flown = Math.max(0, since - 0.6);
-          body.position.set(flown * 3.2, 0.36 * turned + (1 - turned) * 0.36 + flown * flown * 2.2, 0);
-          group.scale.setScalar(flown > 1.6 ? 0 : 1);
-          drawnWhile(group, flown <= 1.6);
-        },
-      };
+      // On its back, legs pedalling, until he turns it over; then it opens its wing cases and flies to the hose
+      // (./critters.ts).
+      const bug = ladybird();
+      group.add(bug.group);
+      return { group, update(used, clock, dt) {
+        bug.update(used, clock, dt);
+        // Flown away, the whole thing is out of the picture.
+        group.scale.copy(bug.group.scale);
+        drawnWhile(group, bug.group.scale.x > 0);
+      } };
     }
     case 'berry':
     case 'crowberry': {
@@ -423,20 +404,13 @@ export function spotProp(spot: Spot): SpotProp | null {
       };
     }
     case 'ants': {
-      const dark = solid('#2a1e18', 0.5);
-      for (let i = 0; i < 6; i++) {
-        const ant = new Group();
-        ant.add(ball(0.07, dark, -0.11, 0.09, 0), ball(0.05, dark, 0, 0.1, 0), ball(0.06, dark, 0.1, 0.11, 0));
-        ant.position.set(-0.9 + i * 0.36, 0, i % 2 ? 0.12 : -0.12);
-        group.add(ant);
-      }
-      return {
-        group,
-        update(used, clock, dt) {
-          vanish(used, dt);
-          for (const [i, ant] of group.children.entries()) ant.position.y = Math.abs(Math.sin(clock * 8 + i)) * 0.03;
-        },
-      };
+      // A line of ants running their loop on six legs, some with a needle; used, they hurry away (./critters.ts).
+      const ants = antTrail();
+      group.add(ants.group);
+      return { group, update(used, clock, dt) {
+        ants.update(used, clock, dt);
+        vanish(used, dt, 0.8);
+      } };
     }
     case 'sign': {
       // Where someone can be called: a round sign on a stick, in that person's colour.
