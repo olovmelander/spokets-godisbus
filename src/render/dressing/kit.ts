@@ -2,7 +2,7 @@ import {
   BoxGeometry, BufferGeometry, CanvasTexture, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, LatheGeometry,
   MeshStandardMaterial, Object3D, RepeatWrapping, SRGBColorSpace, SphereGeometry, Vector2, type InstancedMesh, type Material,
 } from 'three';
-import { STONE, barkDetail, barky } from '../bark-detail';
+import { BARK_UP, STONE, barkDetail, barky } from '../bark-detail';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData, Landmark, LandmarkThing, PlaceId, SurfaceKind } from '../../sim/types';
 import type { FarId } from '../backdrop';
@@ -209,7 +209,8 @@ function kit() {
     blade: blade(),
     cone: new LatheGeometry(profile.map(([r, y]) => new Vector2(r!, y!)), 9),
     needle: new BoxGeometry(1, 0.012, 0.014),
-    trunk: trunk(),
+    // Scaly bark seen close, running up the trunk (../bark-detail.ts).
+    trunk: barky(trunk(), BARK_UP),
     snag: snag(),
     // Granite seen close (../bark-detail.ts), with the moss on its top left as moss.
     boulder: barky(boulder(), STONE),
@@ -253,6 +254,7 @@ export let KIT: ReturnType<typeof kit>;
 export function makeKit(): void {
   KIT = kit();
   barkDetail(KIT.stone);
+  barkDetail(KIT.bark);
   // What grows moves in the wind (../wind.ts): a blade's top by a share of its length, a dandelion's stalk
   // and the head on it by the same few hundredths of an EL, and the lichen only while a gust blows.
   for (const blades of [KIT.grass, KIT.lawn, KIT.straw]) sway(blades, 0.07);
