@@ -138,6 +138,8 @@ const FRAGMENT = /* glsl */ `
   uniform sampler2D tBlur;
   uniform sampler2D tDepth;
   uniform float blurEnabled, dofDeep;
+  uniform sampler2D tShade;
+  uniform float shadeOn;
   uniform vec3 depthCamera;
   uniform float vignette;
   uniform float cinema;
@@ -159,6 +161,8 @@ const FRAGMENT = /* glsl */ `
 
   void main() {
     vec3 scene = texture2D(tDiffuse, vUv).rgb;
+    // The shade where things meet (./contact-shade.ts): darker where a point sees less of the sky.
+    if (shadeOn > 0.0) scene *= 1.0 - shadeOn * (1.0 - texture2D(tShade, vUv).r);
     if (blurEnabled > 0.5) {
       // High's depth of field (./depth-blur.ts): where the picture is sharp is judged here, at full resolution,
       // so the play plane keeps every pixel; where a near blur spills over it, that is taken as it is.
@@ -212,6 +216,8 @@ export interface GradePass extends Effect {
   setBloom(texture: Texture | null): void;
   /** `deep`: how far behind the play plane is sharp, in EL (./depth-blur.ts). */
   setDepthBlur(texture: Texture | null, depth: Texture | null, near: number, far: number, cameraZ: number, deep?: number): void;
+  /** The shade where things meet (./contact-shade.ts) and how strong it is; null: none. */
+  setShade(texture: Texture | null, strength: number): void;
   /** How much of the film's look: warm light, cool shadows, darker corners. 0 is none, as in the colour tests. */
   setCinema(strength: number): void;
   /** The air of ./light-shafts.ts, which reads the depth that setDepthBlur gives. Null: none. */
@@ -249,6 +255,7 @@ export function createGradePass(grade: Grade): GradePass {
       tLut: { value: createGradeLut(grade) },
       lutOffset: { value: 0.18 * (1 - grade.contrast) },
       tBlur: { value: null }, tDepth: { value: null }, blurEnabled: { value: 0 }, dofDeep: { value: DOF_DEEP },
+      tShade: { value: null }, shadeOn: { value: 0 },
       depthCamera: { value: new Vector3(0.1, 140, 10) },
       vignette: { value: grade.vignette },
       cinema: { value: 0 },
@@ -285,6 +292,10 @@ export function createGradePass(grade: Grade): GradePass {
       material.uniforms.tDepth!.value = depth;
       material.uniforms.blurEnabled!.value = texture ? 1 : 0;
       (material.uniforms.depthCamera!.value as Vector3).set(near, far, cameraZ);
+    },
+    setShade(texture, strength) {
+      material.uniforms.tShade!.value = texture;
+      material.uniforms.shadeOn!.value = texture ? Math.max(0, Math.min(1, strength)) : 0;
     },
     setCinema(strength) {
       material.uniforms.cinema!.value = Math.max(0, Math.min(1, strength));

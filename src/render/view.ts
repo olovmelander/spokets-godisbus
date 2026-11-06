@@ -37,6 +37,7 @@ import { evening, nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
 import { DOF_DEEP, DOF_DEEPER, createDepthBlur } from './depth-blur';
+import { SHADE_STRENGTH, createContactShade } from './contact-shade';
 import { createBloom } from './bloom';
 import { createLightShafts } from './light-shafts';
 import { createWater, waterKind } from './water';
@@ -230,6 +231,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const grade = place?.grade ?? GARDEN_MORNING;
   const gradePass = hdrAvailable ? createGradePass(grade) : null;
   const depthBlur = hdrAvailable ? createDepthBlur() : null;
+  // Mid and High: the shade where things meet, from the depth of the picture (./contact-shade.ts).
+  const contactShade = hdrAvailable ? createContactShade() : null;
   const bloom = hdrAvailable ? createBloom() : null;
   // Mid and High: shafts of light at a quarter of the width and height, which the grade adds (./light-shafts.ts).
   const lightShafts = hdrAvailable ? createLightShafts() : null;
@@ -765,6 +768,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     // The lens's depth of field on Mid and High; Mid gathers from fewer points (./depth-blur.ts).
     depthBlur?.setSize(canvas.width, canvas.height, tier !== 'low', tier === 'high');
+    contactShade?.setSize(canvas.width, canvas.height, tier !== 'low', tier === 'high');
     bloom?.setSize(canvas.width, canvas.height, tier === 'high');
     lightShafts?.setSize(canvas.width, canvas.height, tier !== 'low');
     water.setSize(canvas.width, canvas.height, tier);
@@ -844,7 +848,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         bloom?.render(renderer, hdr.scene);
         gradePass.setBloom(bloom?.texture ?? null);
         // The final macro shot focuses on the window figure, outside the usual z=0 play plane.
-        if (!inEndingShot) depthBlur?.render(renderer, hdr.scene, camera, sharpDeep);
+        if (hdr.scene.depthTexture) contactShade?.render(renderer, hdr.scene.depthTexture, camera);
+        const shade = contactShade?.texture ?? null;
+        gradePass.setShade(shade, SHADE_STRENGTH);
+        if (!inEndingShot) depthBlur?.render(renderer, hdr.scene, camera, sharpDeep, { texture: shade, strength: SHADE_STRENGTH });
         gradePass.setDepthBlur(inEndingShot ? null : depthBlur?.texture ?? null, hdr.scene.depthTexture, camera.near, camera.far, camera.position.z, sharpDeep);
         lightShafts?.render(renderer, hdr.scene, camera, scene, gradePass, warm > 0);
         gradePass.render(renderer, hdr.grade, hdr.scene);

@@ -1,6 +1,6 @@
 import {
   BufferGeometry, Float32BufferAttribute, HalfFloatType, Mesh, NearestFilter, OrthographicCamera, ShaderMaterial,
-  Vector2, Vector3, WebGLRenderTarget, type PerspectiveCamera, type WebGLRenderer,
+  Vector2, Vector3, WebGLRenderTarget, type PerspectiveCamera, type Texture, type WebGLRenderer,
 } from 'three';
 
 /**
@@ -50,10 +50,14 @@ const PREPARE = /* glsl */ `
   uniform vec2 texel;
   uniform vec3 depthCamera;
   uniform float height, deep;
+  uniform sampler2D tShade;
+  uniform float shade;
   varying vec2 vUv;
   ${DOF_SIZE}
   void main() {
     vec3 colour = texture2D(tDiffuse, vUv).rgb;
+    // The shade where things meet (./contact-shade.ts), so that what is blurred has it too.
+    if (shade > 0.0) colour *= 1.0 - shade * (1.0 - texture2D(tShade, vUv).r);
     // The nearest of the four it covers, so that a near edge is never taken for what is behind it.
     float d = min(min(texture2D(tDepth, vUv + texel * vec2(-0.5, -0.5)).r, texture2D(tDepth, vUv + texel * vec2(0.5, -0.5)).r),
       min(texture2D(tDepth, vUv + texel * vec2(-0.5, 0.5)).r, texture2D(tDepth, vUv + texel * vec2(0.5, 0.5)).r));
@@ -131,6 +135,7 @@ export function createDepthBlur() {
   const prepare = screenPass(PREPARE, {
     tDiffuse: { value: null }, tDepth: { value: null }, texel: { value: new Vector2(1, 1) },
     depthCamera: { value: new Vector3(0.1, 140, 10) }, height: { value: 1 }, deep: { value: DOF_DEEP },
+    tShade: { value: null }, shade: { value: 0 },
   });
   const gather = screenPass(GATHER, { tCoc: { value: null }, texel: { value: new Vector2(1, 1) }, nearMost: { value: 1 }, taps: { value: new Vector2(24, 16) } });
   const screen = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -161,12 +166,15 @@ export function createDepthBlur() {
       (gather.material.uniforms.taps!.value as Vector2).set(full ? 24 : 12, full ? 16 : 8);
     },
     /** `deep`: how far behind the play plane is sharp, in EL (DOF_DEEP in play). */
-    render(renderer: WebGLRenderer, read: WebGLRenderTarget, camera: PerspectiveCamera, deep = DOF_DEEP) {
+    /** `shade`: the shade where things meet and how strong it is (./contact-shade.ts), if there is one. */
+    render(renderer: WebGLRenderer, read: WebGLRenderTarget, camera: PerspectiveCamera, deep = DOF_DEEP, shade: { texture: Texture | null; strength: number } | null = null) {
       if (!target || !coc || !read.depthTexture) return;
       prepare.material.uniforms.tDiffuse!.value = read.texture;
       prepare.material.uniforms.tDepth!.value = read.depthTexture;
       (prepare.material.uniforms.depthCamera!.value as Vector3).set(camera.near, camera.far, camera.position.z);
       prepare.material.uniforms.deep!.value = deep;
+      prepare.material.uniforms.tShade!.value = shade?.texture ?? null;
+      prepare.material.uniforms.shade!.value = shade?.texture ? shade.strength : 0;
       renderer.setRenderTarget(coc);
       renderer.render(prepare.triangle, screen);
       gather.material.uniforms.tCoc!.value = coc.texture;
