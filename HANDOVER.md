@@ -49,7 +49,16 @@
   - **Places and things:**
     - **Home** (`src/render/dressing/house-door.ts`): out through a glazed veranda and its open door, after Olov's
       photograph (not stored); the red house front fades in over the cut-away rooms. Prologue and Stormkvällen.
-    - **Brooks** (`water.ts`): Norrland's tea-brown humic water instead of tropical teal.
+    - **Brooks** (`water.ts`): Norrland's tea-brown humic water instead of tropical teal. Later, after Olov asked
+      whether the water and brooks were fixed: the forest's own water colour was olive (`dressing/index.ts`), now
+      dark tea; the water is murky (0.42 per EL), so a brook seen from the side is amber near the top and dark
+      below, with slow beams of light and drifting specks; it mirrors darker and warmer. And over still water
+      the eye rises 1.6 EL and looks down (`POOL_EYE` in `view.ts`), so the surface reads as water and not as a
+      thin band at his feet; he stays where he was in the picture.
+    - **The Saturday bag** (`art/blender/candy.py`, rebuilt into `art/baked/boot/candy.glb` with Blender 5.2, and
+      the stand-in in `saturday-bag.ts`): as the ghost holds it in Pappa's carving and on Olov's poster, pale paper
+      with a bunch of painted dots (a big red one, green, orange and red round it), on all four sides, since the
+      ghost turns the bag. It was striped blue.
     - **Flärken's huts** (`aventyr2/buildings.ts`): plank doors with a Z brace, hinges and a ring handle, a small
       window, sawn log ends.
   - **Life and motion:** the ladybird and the ants (`src/render/critters.ts`); dor beetles that walk the forest
@@ -4615,11 +4624,9 @@ The older list, still true where it is not struck:
   match the pitch, the bathing place and the narrow more closely.
 - Blender models for what is still built in code near the play plane: the dead pine Mamma pulls on Myren, the
   stones on rails before the mountain kit arrives, and Billsta's, Olympia's and the church's buildings.
-- The forest's brooks read weakly as water: the camera looks nearly level, so the surface is a thin band at his
-  feet. Unravel shows water from a little above, or with its cut face in view. A slightly higher camera over
-  pools, or a lower near shore, is the next step (Olov asked on 6 November whether the water and brooks were
-  fixed: the colour is, this is not). The dark underwater frames in the light pass's measurements cannot happen
-  in play: the glitter bubble catches him at the surface.
+- The forest's brooks: the surface now shows (the eye rises over still water), but the mirrored far scenery ends in
+  straight edges across it, where the mirror's strip ends. The dark underwater frames in the light pass's
+  measurements cannot happen in play: the glitter bubble catches him at the surface.
 - Real-time shadows from the sun, which Unravel has; the dappled light on the forest floor is a shader stand-in.
 - Myren: low in the foreground by the water, in Mamma's helper shot at x 83, two green bowl shapes with dark
   horizontal stripes look odd. Ruled out on 6 November: the soft tussocks' colours, the water's ripples and the
