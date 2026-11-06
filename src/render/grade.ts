@@ -194,6 +194,10 @@ const FRAGMENT = /* glsl */ `
       float size = abs(dofSize(dofDistance(d, depthCamera), depthCamera.z, dofDeep)) * float(textureSize(tDepth, 0).y);
       vec4 soft = texture2D(tBlur, vUv);
       scene = mix(scene, soft.rgb, max(smoothstep(0.75, 2.5, size), smoothstep(0.0, 0.1, soft.a)));
+      // What stands between him and the lens lies in its own shade, as Unravel's foreground does: darker and a
+      // little cooler the nearer it is, so the picture is framed and the eye goes to the play.
+      float nearer = smoothstep(0.95, 0.62, dofDistance(d, depthCamera) / depthCamera.z) * cinema;
+      scene *= mix(vec3(1.0), vec3(0.48, 0.53, 0.6), nearer);
     }
     // High's threshold light is gathered once at half resolution; keep it HDR until output.
     if (glow > 0.0) scene += texture2D(tBloom, vUv).rgb * glow;
