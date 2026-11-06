@@ -2,6 +2,39 @@
 
 ## State (6 November 2026)
 
+- **Lighter nights, with the mood kept (6 November 2026, cloud session, branch `ccr-77db4123-5s8xa3`).** Olov:
+  "Spelet kan vara lite för mörkt när det är som mörkast också i scenerna. Vi måste justera och fixa atmosfären och
+  ljuset lite."
+  - **Measured:** 52 frames of the game at the night chapters' checkpoints (Äventyr 2's ten, the finale after the
+    taste, the epilogue) and the garden for comparison, before and after. The measures were the median lightness
+    of the play picture (L*) and how much of it is nearly black.
+    - Daytime's median is about 47.
+    - The nights' medians were 2–30.
+    - In Byn i stormen up to three quarters of the play picture was nearly black.
+    - Under water, in the glitter bubble after a fall, everything but the bubble was black.
+  - **What changed:** the light that falls on the play plane, not the sky.
+    - **Äventyr 2's night looks** (`src/content/aventyr2/render.ts`):
+      - more light from the camera's side (`STORM_FILL` 1.8 → 2.8) and from the night sky (`NIGHT_SKY`, at least
+        1.45);
+      - a little more exposure (+0.04 to +0.18, most in Byn i stormen);
+      - lighter corners (vignette 0.4 → 0.3);
+      - a warmer, brighter lamplit room in Stormkvällen;
+      - more moonlight off the lake at Stormens öga.
+    - **The water:** night water is a little lighter. A new `water.face` brightens the water's cut face at night,
+      which is what he sees from the side and from under it; its kinds' colours were made for daylight.
+    - **Äventyr 1's night** (the finale after the taste, the epilogue): the sky and moon light keep more of their
+      strength (`view.ts`, hemisphere 0.75 → 1.05, sun 0.7 → 0.9).
+    - **Unchanged:** the skies, the painted far scenery and the night tints, so it still looks like night and storm.
+  - **Result:** on 16 representative frames the play picture's median rose by 1–11 L*, by 5–8 in most of
+    Stormnatten. Byn i stormen went from about 10 to 21, and Flärken's shore from 22 to 33. The finale and the
+    epilogue rose least (1–4), since they were never the darkest. Under water the median rose from 2 to 7. Night
+    skies are unchanged. Olympia was never dark and keeps its fill.
+  - **Guard:** `tests/unit/night-light.test.ts`. Every night lights its play plane at least 60 % as well as the
+    dimmest day, keeps a dark sky, and has a vignette of at most 0.32.
+  - **Checked:** typecheck; all 2,112 tests; build with size gates; privacy check; before-and-after frames with the
+    stand-ins (kept in the session). **For Olov:** play a stretch of Stormnatten on the family devices; the dimmest
+    phone screens decide whether it is light enough.
+
 - **Klonk carved again (6 November 2026, cloud session; private repository PR #4).** Olov sent the poster and a
   photograph of the real carving and asked to improve Klonk's design, then to merge the new Klonk into main.
   - **What changed:** the triangle-noise study is replaced by a new build in Blender 5.2. Every part is a
@@ -4307,6 +4340,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Lighter nights (6 Nov) | Olov's request: not so dark at the darkest, scenes too, mood kept | Part of one cloud session | — / 0 so far | 52 frames measured before and after; more light on the play plane at night, lighter night water, skies unchanged. |
 | Klonk carved again (6 Nov) | Olov's request: improve Klonk's design after the carving and the poster | Part of one cloud session, Blender 5.2 as a Python module | — / 0 so far | A new build from knife-cut blocks with baked wood and paint; private repository PR #4. |
 | The family's motion (6 Nov) | Olov's request: natural, smooth motion for everyone but Elof | Part of one cloud session | — / 0 so far | Measured frame by frame through every chapter; steps that fit the ground, no snapping, followers that keep up and settle; a few dashes given time. |
 | The whole game's dialogue (6 Nov) | Olov's request: a red thread and good Swedish in every conversation | Part of one cloud session | — / 0 so far | ~430 lines read in play order; 20 of Stormnatten's rewritten, Äventyr 1 kept for its recordings, a test that keeps recordings and text together. |

@@ -1513,8 +1513,10 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
     k = Math.min(1, Math.max(0, k + (after === null || flags.has(after) ? dt : -dt) / 3));
     if (!still) drift += dt;
     sky.copy(day).lerp(dark, k);
-    hemisphere.intensity = lerp(lights.hemisphere, 0.75, k);
-    sun.intensity = lerp(lights.sun, 0.7, k);
+    // The night sky and the moon still light what faces up and out: the ground and the faces stay readable (the
+    // light pass of 6 November 2026; at 0.75 and 0.7 the finale's summit and the epilogue's room went murky).
+    hemisphere.intensity = lerp(lights.hemisphere, 1.05, k);
+    sun.intensity = lerp(lights.sun, 0.9, k);
     if (aurora) {
       aurora.update(k, drift, most);
       hemisphere.color.copy(lights.above).lerp(green, 0.25 * k * (0.85 + 0.15 * Math.sin(drift * 0.9)));

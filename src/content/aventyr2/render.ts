@@ -74,60 +74,67 @@ function glow(colour: string, size: number, opacity = 1): Mesh {
 
 /**
  * A night's grade. Its contrast stays near 1: it pivots on middle grey, so in a picture this dark more of it turns
- * the near shapes to pure black, where Elof is lost.
+ * the near shapes to pure black, where Elof is lost. Its vignette is light (the light pass of 6 November 2026): at
+ * night darker corners swallowed the ground in front of him and the edges of the scenes.
  */
-const grade = (exposure: number, saturation: number, tint: readonly [number, number, number]) => ({ tint: [...tint] as [number, number, number], exposure, contrast: 1.02, saturation, vignette: 0.4, grain: 0.04 });
+const grade = (exposure: number, saturation: number, tint: readonly [number, number, number]) => ({ tint: [...tint] as [number, number, number], exposure, contrast: 1.02, saturation, vignette: 0.3, grain: 0.04 });
 
 /**
  * The light from the camera's side, out of doors in the storm. The sun stands behind the scene, so this is what
  * falls on what faces him: strong enough that near shapes read, while the sky, which it doesn't light, stays dark.
+ * Raised in the light pass of 6 November 2026, with the sky light: at the darkest the ground in front of him and
+ * the figures in the scenes sank into black (half of the play picture under L* 10 in places).
  */
-const STORM_FILL = 1.8;
+const STORM_FILL = 2.8;
+/** The light from the night sky on everything out of doors, at least: it keeps the ground from going black. */
+const NIGHT_SKY = 1.45;
 
 /** Each chapter's light, in place of its place's (its `id` stays the place's, for the place's kits). */
 const LOOKS: Record<string, PlaceLook> = {
   // At home on the storm evening: candlelight inside, and the dark storm beyond the deck.
   stormkvall: {
     ...PLACES.home,
-    grade: { ...PLACES.home.grade, tint: [1.05, 0.98, 0.95], exposure: 0.86, vignette: 0.42 },
+    // Lamplight in the room: warm and low, but the room and the deck outside still read.
+    grade: { ...PLACES.home.grade, tint: [1.05, 0.98, 0.95], exposure: 1.0, vignette: 0.32 },
     haze: { colour: '#262e42', near: 8, far: 76 },
     sky: { top: '#0b1220', middle: '#25304a', bottom: '#1c2232', glow: '#8fa0c4' },
-    hemisphere: { sky: '#ffd7a4', ground: '#5a4230', intensity: 1.15 },
+    hemisphere: { sky: '#ffd7a4', ground: '#5a4230', intensity: 1.35 },
     sun: { colour: '#ffc488', intensity: 2.3, from: [-7, 5, -3] },
-    fill: { colour: '#c8c4e8', intensity: 0.6 },
+    fill: { colour: '#c8c4e8', intensity: 1.15 },
   },
   stormgard: {
     ...PLACES.garden,
-    grade: grade(0.8, 0.86, [0.86, 0.95, 1.12]),
+    grade: grade(0.92, 0.86, [0.86, 0.95, 1.12]),
     haze: { colour: '#2c3a54', near: 5, far: 58 },
     sky: { top: '#0b1324', middle: '#2b3a58', bottom: '#1e2a3e', glow: '#91a6cc' },
-    hemisphere: { sky: '#8ea2d2', ground: '#34402e', intensity: 1.05 },
+    hemisphere: { sky: '#8ea2d2', ground: '#34402e', intensity: NIGHT_SKY },
     sun: { colour: '#c4d2ff', intensity: 1.7, from: [-6, 6, -3] },
     fill: { colour: '#a8bce8', intensity: STORM_FILL },
-    water: { colour: '#2b4260', opacity: 0.86 },
+    water: { colour: '#34506e', opacity: 0.86, face: 1.8 },
     tussock: '#55663f',
   },
   stormskog: {
     ...PLACES.forest,
-    grade: grade(0.88, 0.84, [0.86, 0.97, 1.1]),
+    grade: grade(0.98, 0.84, [0.86, 0.97, 1.1]),
     haze: { colour: '#22333a', near: 4, far: 50 },
     sky: { top: '#081218', middle: '#203238', bottom: '#18262a', glow: '#8fb2b8' },
-    hemisphere: { sky: '#86a6b8', ground: '#2c3a24', intensity: 1.05 },
+    hemisphere: { sky: '#86a6b8', ground: '#2c3a24', intensity: NIGHT_SKY },
     sun: { colour: '#c0d6ff', intensity: 1.6, from: [-7, 5, -4] },
     fill: { colour: '#a4c0e0', intensity: STORM_FILL },
-    water: { colour: '#2a4a52', opacity: 0.86 },
+    water: { colour: '#33565e', opacity: 0.86, face: 1.8 },
     tussock: '#56663c',
   },
   stormbyn: {
     ...PLACES.village,
-    // The power is out: no street lamp, and the walls only as pale as a night lets them be.
-    grade: grade(0.72, 0.88, [0.92, 0.95, 1.1]),
+    // The power is out: no street lamp, and the walls only as pale as a night lets them be. It was the darkest
+    // place of all (half its play picture near black): the street and the figures now read as the others' do.
+    grade: grade(0.9, 0.88, [0.92, 0.95, 1.1]),
     haze: { colour: '#2a3246', near: 7, far: 80 },
     sky: { top: '#0c1222', middle: '#2c3650', bottom: '#2a2c38', glow: '#b0a6c4' },
-    hemisphere: { sky: '#8c9cc8', ground: '#34343a', intensity: 0.85 },
+    hemisphere: { sky: '#8c9cc8', ground: '#34343a', intensity: NIGHT_SKY },
     sun: { colour: '#c4d0f4', intensity: 1.1, from: [-8, 3.4, -4] },
-    fill: { colour: '#a8b8e8', intensity: STORM_FILL * 0.7 },
-    water: { colour: '#283446', opacity: 0.88 },
+    fill: { colour: '#a8b8e8', intensity: STORM_FILL * 0.85 },
+    water: { colour: '#34425a', opacity: 0.88, face: 1.6 },
     tussock: '#5a5a58',
   },
   flarken: {
@@ -136,13 +143,14 @@ const LOOKS: Record<string, PlaceLook> = {
     ground: 'shore',
     far: 'lake',
     noSun: true,
-    grade: grade(0.92, 0.84, [0.9, 0.96, 1.08]),
+    grade: grade(1.0, 0.84, [0.9, 0.96, 1.08]),
     haze: { colour: '#3c5068', near: 8, far: 90 },
     sky: { top: '#101c30', middle: '#34496a', bottom: '#465e7c', glow: '#c0d2e6' },
-    hemisphere: { sky: '#90a8d0', ground: '#3a3a2e', intensity: 1.05 },
+    hemisphere: { sky: '#90a8d0', ground: '#3a3a2e', intensity: NIGHT_SKY },
     sun: { colour: '#c8d6ff', intensity: 1.6, from: [-8, 4, -4] },
     fill: { colour: '#a8bce4', intensity: STORM_FILL },
-    water: { colour: '#24384e', opacity: 0.9 },
+    // Dark lake water, but not ink: under it, in his bubble, he still sees the bed and the stones.
+    water: { colour: '#2c4560', opacity: 0.84, face: 2.2 },
     tussock: '#6a6c4c',
   },
   // The new worlds' first light, until their own is set: the football pitch, the river and Billsta at night.
@@ -151,14 +159,15 @@ const LOOKS: Record<string, PlaceLook> = {
     // A clearing cut out of a forested hill: the forest stands right behind the stand, and no garden.
     far: 'wall',
     farBeyond: -70,
-    grade: grade(0.9, 0.98, [0.98, 1.0, 0.98]),
+    grade: grade(0.94, 0.98, [0.98, 1.0, 0.98]),
     // Thin haze: the hall and the stand are what this place is, and they stand well back.
     haze: { colour: '#2a3a38', near: 22, far: 150 },
     sky: { top: '#081416', middle: '#20383a', bottom: '#2a4444', glow: '#a4ccc0' },
     hemisphere: { sky: '#c0bcb0', ground: '#3c4430', intensity: 1.15 },
     sun: { colour: '#f0dcc8', intensity: 2, from: [-4, 5, 6] },
-    fill: { colour: '#d4c8bc', intensity: STORM_FILL },
-    water: { colour: '#2b4260', opacity: 0.86 },
+    // The pitch was never dark (its low moon stands in front): it keeps the storm's first fill.
+    fill: { colour: '#d4c8bc', intensity: 1.8 },
+    water: { colour: '#34506e', opacity: 0.86, face: 1.8 },
     tussock: '#55663f',
   },
   alven: {
@@ -166,13 +175,14 @@ const LOOKS: Record<string, PlaceLook> = {
     // Ridges and hay meadows, and the river's own black water.
     far: 'river',
     farBeyond: -70,
-    grade: grade(0.9, 0.84, [1.0, 0.98, 0.9]),
+    grade: grade(1.0, 0.84, [1.0, 0.98, 0.9]),
     haze: { colour: '#2a3226', near: 10, far: 120 },
     sky: { top: '#0e120c', middle: '#2c3426', bottom: '#384230', glow: '#b4b890' },
-    hemisphere: { sky: '#a0a88c', ground: '#34382a', intensity: 1.05 },
+    hemisphere: { sky: '#a0a88c', ground: '#34382a', intensity: NIGHT_SKY },
     sun: { colour: '#dcd4b0', intensity: 1.6, from: [-7, 5, -4] },
     fill: { colour: '#c0c4a4', intensity: STORM_FILL },
-    water: { colour: '#16262a', opacity: 0.95 },
+    // The river's black water, dark brown-green rather than ink, so that under it the bed still shows.
+    water: { colour: '#22363a', opacity: 0.86, face: 2.2 },
     tussock: '#56663c',
   },
   billsta: {
@@ -180,27 +190,27 @@ const LOOKS: Record<string, PlaceLook> = {
     // By the road near the forest: spruce behind the house, and no other garden's house far off.
     far: 'billaberget',
     farBeyond: -70,
-    grade: grade(0.88, 0.92, [0.96, 0.95, 1.08]),
+    grade: grade(0.98, 0.92, [0.96, 0.95, 1.08]),
     haze: { colour: '#2a2e50', near: 16, far: 170 },
     sky: { top: '#0c0e26', middle: '#2a2e58', bottom: '#38385e', glow: '#b4b0dc' },
-    hemisphere: { sky: '#a8acd0', ground: '#3c3e48', intensity: 1.08 },
+    hemisphere: { sky: '#a8acd0', ground: '#3c3e48', intensity: NIGHT_SKY },
     sun: { colour: '#d4d6f4', intensity: 1.75, from: [-6, 6, -3] },
     fill: { colour: '#bcc0e0', intensity: STORM_FILL },
-    water: { colour: '#2a405e', opacity: 0.86 },
+    water: { colour: '#344c6c', opacity: 0.86, face: 1.8 },
     tussock: '#56663f',
   },
   stormoga: {
     ...PLACES.bog,
     ground: 'shore',
     noSun: true,
-    grade: grade(0.86, 0.9, [0.88, 0.96, 1.14]),
+    grade: grade(0.98, 0.9, [0.88, 0.96, 1.14]),
     haze: { colour: '#1e2c48', near: 6, far: 80 },
     sky: { top: '#060c1e', middle: '#1c2a4c', bottom: '#2a3454', glow: '#d8e2ff' },
-    hemisphere: { sky: '#9cb0e6', ground: '#3a3c48', intensity: 1.1 },
-    // The moon, low over the lake, behind the stone.
+    hemisphere: { sky: '#9cb0e6', ground: '#3a3c48', intensity: NIGHT_SKY },
+    // The moon, low over the lake, behind the stone; its light off the calm water lifts what faces him.
     sun: { colour: '#dfe6ff', intensity: 1.9, from: [-6, 4, -6] },
-    fill: { colour: '#b4c4f0', intensity: 0.75 },
-    water: { colour: '#1e3050', opacity: 0.9 },
+    fill: { colour: '#b4c4f0', intensity: 1.6 },
+    water: { colour: '#26385c', opacity: 0.86, face: 2.0 },
     tussock: '#5c6050',
   },
   morgonen: {
