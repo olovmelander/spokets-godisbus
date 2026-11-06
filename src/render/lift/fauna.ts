@@ -46,6 +46,14 @@ interface Now {
 /** Whether something at x, z (and `pad` around it) is in the picture. */
 const seen = (now: Now, x: number, z: number, pad = 2) => Math.abs(x - now.cx) < (now.cz - z) * now.slope + pad;
 const smooth = (k: number) => { const t = Math.min(1, Math.max(0, k)); return t * t * (3 - 2 * t); };
+/** A number from -1 to 1 for each whole `n`, the same each time. */
+const hashed = (n: number) => { const v = Math.sin(n * 12.9898 + 4.1) * 43758.5453; return (v - Math.floor(v)) * 2 - 1; };
+/** A small bird's look about: held, then a quick snap to the next way, at uneven times. */
+const glance = (t: number, seed: number) => {
+  const w = t * 0.85 + 0.4 * Math.sin(t * 0.7 + seed) + seed;
+  const n = Math.floor(w);
+  return hashed(n - 1) + (hashed(n) - hashed(n - 1)) * smooth((w - n) / 0.08);
+};
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
 const M = new Matrix4();
 const R = new Matrix4();
@@ -321,7 +329,7 @@ function birds(plan: Plan, add: Add): Kind {
       used.set(f.species, i + 1);
       return {
         crowd: meshes.get(f.species)!, i, rest: [...b.at] as [number, number, number], yaw: b.yaw, home: b.at,
-        doing: 0, k: 0, long: 0, wait: next() * 2, look: 0, hop: 0,
+        doing: 0, k: 0, long: 0, wait: next() * 2, look: 0, look2: 0, hop: 0, from: 0,
         // Where it has come down in a tree, while he goes by.
         perch: null as V3 | null,
         fly: null as null | { a: V3; b: V3; c: V3; k: number; long: number; out: boolean },
@@ -380,14 +388,16 @@ function birds(plan: Plan, add: Add): Kind {
         if (b.gone && b.perch) {
           // On its bough, looking about, until he has gone by.
           crowd.put(i, b.perch[0], b.perch[1], b.perch[2], b.yaw, s);
-          crowd.pose(i, 0, 0, Math.sin(now.t * 0.9 + i) * 0.7, 0);
+          crowd.pose(i, 0, 0, glance(now.t, i * 1.9) * 0.7, 0);
           continue;
         }
         if (b.fly) {
           const fl = b.fly;
           fl.k += now.dt / fl.long;
           if (fl.k < 0) {
-            crowd.put(i, b.rest[0], b.rest[1], b.rest[2], b.yaw, s);
+            // Crouching for the spring, the moment before it goes.
+            const crouch = fl.out ? smooth((fl.k * fl.long + 0.14) / 0.1) : 0;
+            crowd.put(i, b.rest[0], b.rest[1] - crouch * 0.02, b.rest[2], b.yaw, s, -crouch * 0.15, 0, s * (1 - crouch * 0.12));
             crowd.pose(i, 0, 0, 0, 0);
             continue;
           }
@@ -412,7 +422,9 @@ function birds(plan: Plan, add: Add): Kind {
             const coming = (!fl.out || !!b.perch) && fl.k > 0.72;
             const beating = coming || Math.sin(now.t * 7 + i * 2.1) > -0.35;
             const dip = coming ? 0 : Math.sin(now.t * 7 + i * 2.1 - 1) * 0.09 * Math.min(1, fl.k * 5);
-            crowd.put(i, at[0]!, at[1]! + dip, at[2]!, b.yaw, s, Math.atan2(d[1]!, Math.hypot(d[0]!, d[2]!)) * 0.6);
+            // Landing, it flares: body up, wings wide, to brake.
+            const flare = coming && !fl.out ? smooth((fl.k - 0.8) / 0.16) : 0;
+            crowd.put(i, at[0]!, at[1]! + dip, at[2]!, b.yaw, s, Math.atan2(d[1]!, Math.hypot(d[0]!, d[2]!)) * 0.6 * (1 - flare) + flare * 0.75);
             const spread = Math.min(1, fl.k * 6, coming ? 1 : (1 - fl.k) * 9);
             crowd.pose(i, (beating ? 0.95 : 0.12) * Math.sin(now.t * (coming ? 30 : 46 + (i % 4) * 3) + i * 1.7), spread * (beating ? 1 : 0.25), 0, 0);
             continue;
@@ -422,31 +434,47 @@ function birds(plan: Plan, add: Add): Kind {
         if (b.doing === 0 && (b.wait -= now.dt) <= 0) {
           const r = next();
           b.doing = f.shelter || f.perch ? 3 : r < 0.45 ? 1 : r < 0.75 ? 2 : 3;
-          b.long = b.doing === 1 ? 0.55 : b.doing === 2 ? 0.26 : 1.3;
+          b.long = b.doing === 1 ? 0.55 : b.doing === 2 ? 0.34 : 1.3;
           b.look = (next() - 0.5) * 1.4;
+          b.look2 = (next() - 0.5) * 1.4;
           b.hop = 0.1 + next() * 0.14;
           b.k = 0;
         }
-        let peck = 0, turn = 0, up = 0;
+        let peck = 0, turn = 0, up = 0, squat = 0;
         if (b.doing) {
           b.k += now.dt / b.long;
           const k = Math.min(1, b.k);
           if (b.doing === 1) peck = Math.abs(Math.sin(k * Math.PI * 2)) * 0.95;
-          else if (b.doing === 3) turn = b.look * Math.sin(k * Math.PI);
-          else {
-            // A hop: along the way it faces, a little up, and now and then it turns round as it lands.
-            up = Math.sin(k * Math.PI) * 0.08;
-            const step = (b.hop * now.dt) / b.long;
+          else if (b.doing === 3) {
+            // A look round, in quick snaps of the head, each held: one way, another, and back.
+            const snap = (at: number) => smooth((k - at) / 0.05);
+            turn = b.look * (snap(0.06) - snap(0.5)) + b.look2 * (snap(0.5) - snap(0.9));
+          } else if (b.doing === 4) {
+            // Turning round: a little hop, and round in the air.
+            up = Math.sin(k * Math.PI) * 0.04;
+            b.yaw = b.from + Math.PI * smooth(k);
+          } else {
+            // A hop: a crouch, then along the way it faces and a little up, and it lands with a give.
+            squat = k < 0.24 ? Math.sin((k / 0.24) * Math.PI) : 0;
+            const air = Math.max(0, (k - 0.24) / 0.76);
+            up = Math.sin(air * Math.PI) * 0.09 - squat * 0.015;
+            const step = k > 0.24 ? (b.hop * now.dt) / (b.long * 0.76) : 0;
             const z = b.rest[2] - Math.sin(b.yaw) * step;
             b.rest[0] += Math.cos(b.yaw) * step;
             // It keeps near where it came down: a hop on either side, and no nearer the path.
             if (z < -1.25 && Math.abs(z - b.home[2]) < 0.5) b.rest[2] = z;
-            if (k >= 1 && (next() < 0.35 || Math.abs(b.rest[0] - b.home[0]) > 0.3)) b.yaw += Math.PI;
           }
-          if (b.k >= 1) { b.doing = 0; b.wait = f.shelter ? 3 + next() * 5 : 0.3 + next() * 1.6; }
+          if (b.k >= 1) {
+            // Now and then, and when it has gone far enough, it turns round, never in one frame.
+            if (b.doing === 2 && (next() < 0.35 || Math.abs(b.rest[0] - b.home[0]) > 0.3)) {
+              b.doing = 4; b.k = 0; b.long = 0.22; b.from = b.yaw;
+            } else {
+              b.doing = 0; b.wait = f.shelter ? 3 + next() * 5 : 0.3 + next() * 1.6;
+            }
+          }
         }
         const fluff = f.shelter ? 1.12 : 1;
-        crowd.put(i, b.rest[0], (f.perch ? b.rest[1] : plan.ground(b.rest[0])) + up, b.rest[2], b.yaw, s * fluff, 0, 0, s * (f.shelter ? 1.08 : 1));
+        crowd.put(i, b.rest[0], (f.perch ? b.rest[1] : plan.ground(b.rest[0])) + up, b.rest[2], b.yaw, s * fluff, -squat * 0.12, 0, s * (f.shelter ? 1.08 : 1) * (1 - squat * 0.12));
         crowd.pose(i, 0, 0, turn, peck);
       }
     }

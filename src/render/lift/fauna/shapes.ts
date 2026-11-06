@@ -238,7 +238,12 @@ export function bird(p: Plumage): BufferGeometry {
     ['b', p.back, [0, 0.36, 0], [0.3, 0.2, 0.19]],
     ['b', p.belly, [0.06, 0.3, 0], [0.25, 0.17, 0.165]],
     ...(p.bib ? [['b', p.bib, [0.19, 0.31, 0], [0.13, 0.14, 0.065]] as Part] : []),
-    ...(p.speckled ? [0.24, 0.3, 0.36].flatMap((y, i) => both((s): Part => ['e', '#4e4030', [0.27 - i * 0.03, y, s * (0.04 + i * 0.025)], 0.022])) : []),
+    // The thrush's spotted breast and flanks: dark drops in rows, big enough to read from the path, which sees the
+    // bird from its side.
+    ...(p.speckled ? [0.21, 0.26, 0.31, 0.36].flatMap((y, row) => [0.05, 0.11, 0.17, 0.22]
+      .map((x) => ({ x: x + row * 0.012, out: 1 - ((x + row * 0.012 - 0.06) / 0.25) ** 2 - ((y - 0.3) / 0.17) ** 2 }))
+      .filter(({ out }) => out > 0.08)
+      .flatMap(({ x, out }) => both((s): Part => ['e', (row + Math.round(x * 20)) % 2 ? '#4a3a2a' : '#5e4834', [x, y, s * (0.165 * Math.sqrt(out) - 0.004)], [0.026, 0.028, 0.01]]))) : []),
     ['b', p.head, [0.25, 0.5, 0], [0.14, 0.13, 0.13], NONE, head],
     ...both((s) => ['b', p.cheek, [0.285, 0.475, s * 0.075], [0.075, 0.055, 0.05], NONE, head]),
     ['c', p.beak, [0.42, 0.49, 0], [0.026, 0.1, 0.026], [0, 0, -Math.PI / 2], head],
