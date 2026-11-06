@@ -4112,7 +4112,9 @@ and merge.** On the family devices, on High:
 - the brooks in Granskogen (the eye rises over them) and Myren's hummocks;
 - run `?bench` and `?bench&nolens` once on the slowest device.
 It needs no work on Olov's computer; the two Blender rebuilds (the stumps and the tall pine) were made in the cloud
-session with Blender 5.2's `bpy`, and their sources are in `art/blender/a2-nature.py`.
+session with Blender 5.2's `bpy`, and their sources are in `art/blender/a2-nature.py`. **Merge the private repository's
+PR #5 (`rain-gear`, the family's rain gear and Bertil's hair) together with #235**, so that the deploy carries the
+wardrobes; without it the game falls back to the older rain gear drawn from the bodies.
 
 The full game audit above repairs reproduced gameplay, persistence, control, audio and rendering defects across
 both adventures; its full validation/delivery record belongs to the PR. Review the deployed result on the family
