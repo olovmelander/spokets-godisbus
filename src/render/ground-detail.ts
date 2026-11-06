@@ -35,7 +35,7 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
   patched.add(material);
   const before = material.onBeforeCompile;
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:ground-detail-v3-${kind}`;
+  material.customProgramCacheKey = () => `${key()}:ground-detail-v4-${kind}`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.closeDetail = CLOSE_DETAIL;
@@ -56,7 +56,9 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
         vec3 groundUp = normalize(normal * mat3(viewMatrix));
         // On what lies more or less level, or slopes towards the camera; not on the steep faces.
         float groundFlat = smoothstep(0.25, 0.6, groundUp.y + 0.35 * max(groundUp.z, 0.0));
-        vec2 at = groundDetailAt.xz;
+        // Laid on from above on what lies level, and from the front on what faces the camera, so that nothing is
+        // drawn long down a slope.
+        vec2 at = abs(groundUp.z) > abs(groundUp.y) ? groundDetailAt.xy : groundDetailAt.xz;
         // How big a length is on screen here: the detail fades where it would be finer than a few pixels.
         float groundPixel = length(fwidth(at));
         float groundNear = 1.0 - smoothstep(0.05, 0.16, groundPixel);
@@ -84,8 +86,10 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
         float lichenAt = groundNoise(at * 3.4 + 11.0);
         float lichen = smoothstep(0.66, 0.74, lichenAt) * (1.0 - smoothstep(0.78, 0.86, lichenAt)) * groundMid;
         float lichenFill = smoothstep(0.72, 0.82, lichenAt) * groundMid;
-        groundColour = mix(groundColour, vec3(0.62, 0.66, 0.52) * dot(groundColour, vec3(0.33)) * 2.2, 0.35 * lichenFill + 0.5 * lichen);
-        float crack = 1.0 - smoothstep(0.0, 0.035, abs(groundNoise(at * vec2(1.6, 4.2) + 5.0) - 0.5));
+        groundColour = mix(groundColour, vec3(0.62, 0.66, 0.52) * dot(groundColour, vec3(0.33)) * 2.2, 0.25 * lichenFill + 0.22 * lichen);
+        // Short broken cracks, not long lines: only where a second pattern lets them through.
+        float crack = (1.0 - smoothstep(0.0, 0.03, abs(groundNoise(at * vec2(2.2, 4.6) + 5.0) - 0.5)))
+          * smoothstep(0.55, 0.75, groundNoise(at * 1.3 + 17.0));
         groundColour *= 1.0 - 0.45 * crack * groundNear;
         groundColour *= 1.0 + (fine - 0.5) * 0.22 * groundNear;
         ` : kind === 'wood' ? /* glsl */ `

@@ -19,8 +19,8 @@ export function installNearMotes(): void {
   PACK.lifts.push(createNearMotes);
 }
 
-/** Where the specks float: the places with sun and air. */
-const PLACES = new Set(['forest', 'garden', 'bog', 'mountain', 'village', 'home']);
+/** Where the specks float: the places with sun and air. Not the village street, where they read as dust on the lens. */
+const PLACES = new Set(['forest', 'garden', 'bog', 'mountain', 'home']);
 const COUNT = 12;
 /** How far in front of the path they float, in EL: between the lens and the play. */
 const NEAR = [3.2, 6.2] as const;
