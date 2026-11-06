@@ -546,6 +546,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       rig.group.name = `stage-${who}`;
       rig.group.userData.familyRole = role;
       group.remove(old.group);
+      old.dispose?.();
       group.add(rig.group);
       rigs.set(role, rig);
       return rig.group;

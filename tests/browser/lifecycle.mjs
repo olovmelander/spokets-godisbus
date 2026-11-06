@@ -14,8 +14,12 @@ let failures = 0;
 let modelRequests = [];
 let decoderFailures = 0;
 let decoderRequests = [];
+let adventureUnavailable = false;
 const server = createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url, 'http://test').pathname);
+  if (adventureUnavailable && /\/assets\/aventyr2-[^/]+\.js$/.test(path)) {
+    res.writeHead(503, { 'cache-control': 'no-store' }).end(); return;
+  }
   if (path.includes('/assets/basis_transcoder-') && path.endsWith('.wasm')) {
     decoderRequests.push(req.url);
     if (decoderFailures-- > 0) { res.writeHead(503, { 'cache-control': 'no-store' }).end(); return; }
@@ -41,7 +45,7 @@ async function until(read, accepts, name, timeout = 15000) {
   assert.fail(`${name}: ${JSON.stringify(value)}`);
 }
 const progress = ({ x, y, steps, candy, flags, checkpoint }) => ({ x, y, steps, candy, flags, checkpoint });
-async function open(setup = async () => {}, query = '?debug&standin&tier=low&course=testbana') {
+async function open(setup = async () => {}, query = '?debug&standin&tier=low&course=testbana', runtime = true) {
   // Keep the pack-failure assertions independent of a previously cached worker response.
   const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 844, height: 390 } });
   await context.addInitScript(() => {
@@ -55,11 +59,69 @@ async function open(setup = async () => {}, query = '?debug&standin&tier=low&cou
   page.on('pageerror', (error) => errors.push(String(error)));
   await setup(page);
   await page.goto(`${origin}${BASE}${query}`);
-  await page.waitForFunction(() => window.__godis);
+  if (runtime) await page.waitForFunction(() => window.__godis);
   return { page, context, errors, state: () => page.evaluate(() => window.__godis.state()), info: () => page.evaluate(() => window.__godis.info()) };
 }
 try {
   browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  const savedAdventure = JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: {}, chapter: 'stormgard',
+    checkpoint: 1, checkpoints: { stormgard: 1 }, candy: { stormgard: [0, 1] }, side: {}, placed: {},
+    flags: { stormgard: ['scene:card'] }, playMs: 1000 });
+  for (const suffix of ['', '&course=unknown', '&course=']) {
+    adventureUnavailable = true;
+    const pack = await open(async page => page.addInitScript(save => {
+      if (localStorage.getItem('godisbus.v1.player.elof')) return;
+      localStorage.setItem('godisbus.v1.index', JSON.stringify({ v: 1, current: 'elof', players: [{ id: 'elof', name: 'Elof' }] }));
+      localStorage.setItem('godisbus.v1.player.elof', save);
+    }, savedAdventure), `?debug&standin&tier=low&title${suffix}`, false);
+    await pack.page.waitForFunction(() => window.__godis || document.querySelector('#message:not([hidden])'));
+    // Closing a failed load must never autosave the fallback chapter over this adventure's resume position.
+    await pack.page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    check('a failed required adventure pack preserves the saved chapter and checkpoint',
+      await pack.page.evaluate(() => localStorage.getItem('godisbus.v1.player.elof')) === savedAdventure);
+    check('a failed required adventure pack shows retry instead of a different adventure',
+      !await pack.page.evaluate(() => !!window.__godis) && await pack.page.getByRole('alertdialog').isVisible());
+    await pack.page.keyboard.press('Tab');
+    check('an early pack failure traps focus on its retry button',
+      await pack.page.locator('#messageButton').evaluate(element => element === document.activeElement));
+    if (!suffix) {
+      adventureUnavailable = false;
+      await pack.page.keyboard.press('Enter');
+      await pack.page.waitForFunction(() => window.__godis?.state().bootReady, null, { timeout: 60000 });
+      check('retry restores the requested adventure and checkpoint', (await pack.state()).course === 'stormgard'
+        && (await pack.state()).checkpoint === 1);
+    }
+    assert.deepEqual(pack.errors, []);
+    await pack.context.close();
+  }
+  adventureUnavailable = false;
+
+  const noStorage = await open(async page => page.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('Denied', 'SecurityError'); } });
+  }));
+  await until(noStorage.state, state => state.bootReady && state.steps > 0, 'play with denied browser storage', 60000);
+  check('a denied storage getter leaves the game playable', (await noStorage.state()).bootReady);
+  assert.deepEqual(noStorage.errors, []);
+  await noStorage.context.close();
+
+  const quota = await open();
+  await until(quota.state, state => state.bootReady && state.steps > 0, 'play before storage fills', 60000);
+  await quota.page.evaluate(() => {
+    const set = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key.startsWith('godisbus.v1.')) throw new DOMException('Full', 'QuotaExceededError');
+      return set.call(this, key, value);
+    };
+  });
+  await quota.page.keyboard.press('Escape');
+  await until(quota.state, state => state.paused, 'pause attempts to save');
+  check('a failed save is visibly reported even when storage remains readable',
+    (await quota.page.locator('#notice').textContent()).includes('Spelet kan inte sparas'));
+  await quota.page.keyboard.press('Escape');
+  await until(quota.state, state => !state.paused, 'play continues after refused save');
+  assert.deepEqual(quota.errors, []);
+  await quota.context.close();
+
   failures = 2;
   modelRequests = [];
   const recovered = await open();

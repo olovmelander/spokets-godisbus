@@ -8,6 +8,8 @@ let currentAudio: HTMLAudioElement | null = null;
 let currentKey: string | null = null;
 let currentVolume = 1;
 let soundEnabled = true;
+// Standalone UI previews may omit the build inventory; their optional voices stay silent.
+const recordedVoices = new Set(typeof __VOICE_KEYS__ === 'undefined' ? [] : __VOICE_KEYS__);
 
 let userUnlocked = false;
 let pendingKey: string | null = null;
@@ -27,11 +29,21 @@ if (typeof window !== 'undefined') {
   for (const event of ['pointerdown', 'keydown', 'touchstart']) {
     window.addEventListener(event, unlock, { capture: true });
   }
+  window.addEventListener('pagehide', stopVoice);
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopVoice();
+  });
 }
 
 export function setVoiceSettings(enabled: boolean, volume: number): void {
   soundEnabled = enabled;
   currentVolume = Math.max(0, Math.min(1, volume));
+  if (!soundEnabled || currentVolume <= 0) {
+    stopVoice();
+    return;
+  }
   if (currentAudio) {
     try {
       currentAudio.volume = currentVolume;
@@ -47,6 +59,7 @@ export function playVoice(key: string): void {
 
   // Stop any currently playing voice line
   stopVoice();
+  if (!recordedVoices.has(key)) return;
 
   try {
     const base = import.meta.env.BASE_URL || '/';
@@ -72,33 +85,37 @@ export function playVoice(key: string): void {
     const promise = audio.play();
     if (promise !== undefined) {
       promise.catch((err) => {
+        // A dismissed or replaced line no longer owns the autoplay retry.
+        if (currentAudio !== audio) return;
+        currentAudio = null;
+        currentKey = null;
         // Autoplay restriction: queue line to play on player's first interaction
         if (!userUnlocked && (err?.name === 'NotAllowedError' || String(err).includes('NotAllowed'))) {
           pendingKey = key;
           pendingAt = Date.now();
         }
-        if (currentAudio === audio) {
-          currentAudio = null;
-          currentKey = null;
-        }
       });
     }
   } catch {
     // Audio constructor or environment error
+    stopVoice();
   }
 }
 
 /** Stops any currently playing voice line. */
 export function stopVoice(): void {
+  pendingKey = null;
+  pendingAt = 0;
   if (currentAudio) {
+    const stopped = currentAudio;
+    currentAudio = null;
+    currentKey = null;
     try {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
+      stopped.pause();
+      stopped.currentTime = 0;
     } catch {
       // ignore
     }
-    currentAudio = null;
-    currentKey = null;
   }
 }
 

@@ -50,11 +50,11 @@ async function until(read, accepts, name, timeout = 12000) {
   assert.fail(`${name}: timed out; last value ${JSON.stringify(value)}`);
 }
 /**
- * Walks him right until Använd offers `word`. The page looks at every frame itself: from here, a slow computer could
- * carry him past it between two looks, as a run crosses its reach in about a third of a second.
+ * Runs him right until Använd offers `word`. Watching in the page's own RAF catches the first offered frame,
+ * with room to release the key and stop. Holding Shift for the whole trip instead made long walks time out on
+ * software-rendered CI: the fixed loop caps simulation steps per frame, so wall time is not walking time.
  */
 async function reach(page, word, name) {
-  await page.keyboard.down('Shift');
   await page.keyboard.down('ArrowRight');
   try {
     await page.waitForFunction((want) => window.__godis.state().word === want, word, { polling: 'raf', timeout: 40000 });
@@ -62,8 +62,9 @@ async function reach(page, word, name) {
     assert.fail(`${name}: timed out; last value ${JSON.stringify(await page.evaluate(() => window.__godis.state()))}`);
   } finally {
     await page.keyboard.up('ArrowRight');
-    await page.keyboard.up('Shift');
   }
+  await frames(page);
+  assert.equal(await page.evaluate(() => window.__godis.state().word), word, `${name}: still offered after stopping`);
 }
 async function frames(page, count = 3) {
   await page.evaluate((left) => new Promise((resolve) => {
@@ -317,7 +318,9 @@ try {
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check('the family candy choices persist', ['party-gift:bertil:karamell', 'party-gift:mamma:gelehallon', 'party-gift:moa:skumbanan', 'party-gift:spoket:karamell', 'party-gift:pappa:gelehallon'].every((flag) => saved.flags.epilog.includes(flag)));
     await reach(page, 'takeKnife', 'Pappa offers the knife after the naming');
-    check('the party continues into Pappa’s carving lesson', (await state()).flags.includes('partied'));
+    await page.keyboard.press('e');
+    await until(state, (s) => s.flags.includes('knife'), 'take the knife after the naming');
+    check('the party continues into Pappa’s carving lesson', (await state()).flags.includes('knife'));
     await finish();
   }
   console.log(`Story browser tests: ${checked} checks passed.`);

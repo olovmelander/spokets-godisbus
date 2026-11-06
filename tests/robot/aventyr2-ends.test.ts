@@ -56,6 +56,13 @@ describe('Äventyr 2: Stormkvällen', () => {
 });
 
 describe('Äventyr 2: Stormens öga', () => {
+  it.each([30, 60, 144])('can collect the whole trail before the homecoming ends at %i Hz', (fps) => {
+    const result = playThrough(fps, stormoga, {}, 300);
+    expect(result.goal).toBe(true);
+    expect(result.flags).toContain('home');
+    expect(result.missed).toEqual([]);
+  });
+
   it('flies out with the owl, opens the storm\'s eye, takes the gold sweet, grows and goes home', () => {
     const result = playThrough(60, stormoga, {}, 300);
     expect(result.goal).toBe(true);

@@ -24,4 +24,22 @@ describe("the keys' hint", () => {
     expect(keysLearned(broken)).toBe(false);
     expect(() => learnKeys(broken)).not.toThrow();
   });
+
+  it('still starts and learns controls when access to localStorage itself is denied', () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get() { throw new DOMException('Storage is denied', 'SecurityError'); },
+    });
+    try {
+      expect(keysLearned()).toBe(false);
+      expect(() => learnKeys()).not.toThrow();
+      // An explicitly unavailable store stays unavailable instead of consulting the browser again.
+      expect(keysLearned(null)).toBe(false);
+      expect(() => learnKeys(null)).not.toThrow();
+    } finally {
+      if (original) Object.defineProperty(globalThis, 'localStorage', original);
+      else Reflect.deleteProperty(globalThis, 'localStorage');
+    }
+  });
 });

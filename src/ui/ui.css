@@ -140,6 +140,9 @@ body {
   inset: 0;
   margin: 0;
   overflow: hidden;
+  /* Unlike hidden, clip also prevents focus/scrollIntoView from panning the whole game. Menus scroll inside
+     their own panels; a hidden root scroller would shift both the picture and its touch coordinates. */
+  overflow: clip;
   overscroll-behavior: none;
 }
 
@@ -877,7 +880,7 @@ body.lefty .key-prompt {
 
 .tiles {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.2em), 1fr));
   gap: 12px;
 }
 
@@ -889,20 +892,21 @@ body.lefty .key-prompt {
 .tile {
   min-height: 64px;
   display: grid;
-  grid-template-columns: auto 1fr;
+  /* Pictures above the labels leave room for large text in narrow phone columns. */
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
   align-items: center;
-  column-gap: 10px;
+  gap: 4px;
   padding: 8px 12px;
   border: 0;
   border-radius: 13px 15px 14px 16px;
   background-color: var(--linden);
-  text-align: left;
+  text-align: center;
   font-weight: 700;
   line-height: 1.15;
 }
 
 .tile svg {
-  grid-row: span 2;
   width: 34px;
   height: 34px;
   font-size: 28px;

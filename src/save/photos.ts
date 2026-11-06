@@ -83,6 +83,9 @@ export function createPhotoStore(factory: IDBFactory | null, resets: ResetStorag
     return run('readwrite', false, (store, result) => {
       const request = store.index('player').openCursor(player);
       request.onsuccess = () => {
+        // Another reset may finish while this database is opening. Its frames belong to the
+        // newer adventure, so a superseded cleanup must leave that generation alone.
+        if (generation !== undefined && resetFor(player)?.generation !== generation) { result(true); return; }
         const cursor = request.result;
         if (cursor) {
           // Retrying a tombstone only removes older frames; new-generation captures survive.
@@ -125,8 +128,9 @@ export function createPhotoStore(factory: IDBFactory | null, resets: ResetStorag
         const read = store.get([photo.player, photo.moment]);
         read.onsuccess = () => {
           if (!current(photo.player)) return;
-          // Retain the first frame in this generation, but permit a fresh adventure after a reset.
-          if (read.result && ((read.result as StoredPhoto).generation ?? null) === reset.generation) return;
+          // Retain the first usable frame in this generation. A corrupt record hidden by list()
+          // must not prevent that moment from ever being captured again.
+          if (valid(read.result) && ((read.result as StoredPhoto).generation ?? null) === reset.generation) return;
           try {
             const request = store.put({ ...photo, ...(reset.generation ? { generation: reset.generation } : {}) });
             request.onsuccess = () => result(true);
@@ -136,9 +140,10 @@ export function createPhotoStore(factory: IDBFactory | null, resets: ResetStorag
     },
     async clear(player) {
       let marked = false;
+      let generation: string | undefined;
       if (resets) {
         try {
-          const generation = globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+          generation = globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
           resets.setItem(resetKey(player), JSON.stringify({ generation, pending: true }));
           bound.set(player, generation);
           marked = true;
@@ -148,11 +153,11 @@ export function createPhotoStore(factory: IDBFactory | null, resets: ResetStorag
           return false;
         }
       }
-      const removed = await removeFrames(player);
+      const removed = await removeFrames(player, generation);
       if (removed && marked) {
         try {
-          const reset = current(player);
-          if (reset) resets!.setItem(resetKey(player), JSON.stringify({ ...reset, pending: false }));
+          const reset = resetFor(player);
+          if (reset?.generation === generation) resets!.setItem(resetKey(player), JSON.stringify({ ...reset, pending: false }));
         } catch { /* A harmless pending marker will retry next time. */ }
       }
       return marked || removed;

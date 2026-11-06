@@ -7,17 +7,22 @@ export const HOLD_MS = 1500;
  * switch's, confirms at once: it comes as a click of its own.
  */
 export function holdToConfirm(button: HTMLButtonElement, confirm: () => void): void {
-  const win = button.ownerDocument.defaultView!;
+  const doc = button.ownerDocument;
+  const win = doc.defaultView!;
   let timer = 0;
   let held = false;
+  const available = () => !button.disabled && !doc.hidden && button.isConnected
+    && !button.closest('[hidden]') && button.getClientRects().length > 0;
   const start = () => {
-    if (button.disabled || timer) return;
+    if (!available() || timer) return;
     held = false;
     button.classList.add('holding');
     timer = win.setTimeout(() => {
       timer = 0;
-      held = true;
       button.classList.remove('holding');
+      // The question may have closed or the page may have lost focus during the hold.
+      if (!available()) return;
+      held = true;
       confirm();
     }, HOLD_MS);
   };
@@ -28,6 +33,8 @@ export function holdToConfirm(button: HTMLButtonElement, confirm: () => void): v
   };
   button.addEventListener('pointerdown', (event) => { if (event.button === 0) start(); });
   for (const type of ['pointerup', 'pointercancel', 'pointerleave', 'blur']) button.addEventListener(type, stop);
+  win.addEventListener('blur', stop);
+  doc.addEventListener('visibilitychange', () => { if (doc.hidden) stop(); });
   button.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();

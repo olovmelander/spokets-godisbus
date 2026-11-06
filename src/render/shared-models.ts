@@ -68,7 +68,12 @@ export async function installSharedModels(assets: Assets, scene: Object3D, stand
     const who = place.userData.grandparent as string | undefined;
     if (who && !standIns && manifest.packs.private?.files[`${who}.glb`]) {
       // Each actor needs its own skeleton; do not share the cached scene between grandparents.
-      const model = await assets.model('private', who);
+      const model = await assets.model('private', who).catch(error => {
+        console.warn(`The private/${who} model could not be loaded; its stand-in stays.`, error);
+        return null;
+      });
+      // A failed optional actor must not prevent the rest of the room or family from arriving.
+      if (!model) continue;
       (place.userData.dress as (model: Object3D) => void)(model);
       installed.add(place);
       record('private', who);
@@ -142,6 +147,10 @@ export async function installSharedModels(assets: Assets, scene: Object3D, stand
       shape.center();
       const scale = 0.7 / Math.max(size.x, size.y, size.z);
       shape.scale(scale, scale, scale);
+      if (drops!.userData.disposeFallback) {
+        drops!.geometry.dispose();
+        for (const material of Array.isArray(drops!.material) ? drops!.material : [drops!.material]) material.dispose();
+      }
       drops!.geometry = shape;
       drops!.material = kit!.material;
       installed.add(drops!);

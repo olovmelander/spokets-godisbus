@@ -5,10 +5,16 @@
  */
 const KEY = 'godisbus.v1.keys-learned';
 
-export function keysLearned(storage: Pick<Storage, 'getItem'> | null = globalThis.localStorage ?? null): boolean {
-  try { return storage?.getItem(KEY) === '1'; } catch { return false; }
+export function keysLearned(storage?: Pick<Storage, 'getItem'> | null): boolean {
+  try {
+    const kept = storage === undefined ? globalThis.localStorage : storage;
+    return kept?.getItem(KEY) === '1';
+  } catch { return false; }
 }
 
-export function learnKeys(storage: Pick<Storage, 'setItem'> | null = globalThis.localStorage ?? null): void {
-  try { storage?.setItem(KEY, '1'); } catch { /* Kept nowhere: shown again next time. */ }
+export function learnKeys(storage?: Pick<Storage, 'setItem'> | null): void {
+  try {
+    const kept = storage === undefined ? globalThis.localStorage : storage;
+    kept?.setItem(KEY, '1');
+  } catch { /* Kept nowhere: shown again next time. */ }
 }

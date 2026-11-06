@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
 import { STORY } from '../../src/content/chapters';
+import { billsta } from '../../src/content/aventyr2/chapters/billsta';
+import { olympia } from '../../src/content/aventyr2/chapters/olympia';
 import { garden } from '../../src/content/chapters/garden';
 import { granskog } from '../../src/content/chapters/granskog';
 import { readSettings, settingsFor, simOptions } from '../../src/save/settings';
@@ -49,6 +51,24 @@ describe('what the helper shows', () => {
     expect(hintFor(hook, garden)).toMatchObject({ at: { x: 54, y: 3.4 }, verb: 'lace' });
     const past = at(garden, 58.5, 0.01, { flags: ['ladybird'] });
     expect(hintFor(past, garden)).toMatchObject({ at: { x: 63.5, y: 3.3 }, verb: 'lace' });
+  });
+
+  it.each([billsta, olympia])('can be asked during the final counterweight push in $id', (chapter) => {
+    const game = new Game(chapter);
+    const heavy = game.sim.movers.find((m) => m.def.id === chapter.counterweight!.heavy)!;
+    let wasAhead = false, wasOffered = false, checked = 0;
+    for (let frame = 0; frame < 60 * 300 && !game.sim.flags.has(`placed:${heavy.def.id}`); frame++) {
+      const { x, y, ahead, offered } = decide(game, chapter);
+      const finalPush = heavy.stop === heavy.def.stops.length - 1 && heavy.t < 1;
+      game.frame(1 / 60, { x, y, hopHeld: true }, { hop: ahead && !wasAhead, act: offered && !wasOffered, helper: finalPush });
+      wasAhead = ahead; wasOffered = offered;
+      if (finalPush && heavy.t < 1) {
+        expect(game.sim.help).toMatchObject({ at: heavy.def.stops[heavy.stop], verb: null, word: null });
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+    expect(game.sim.flags.has(`placed:${heavy.def.id}`)).toBe(true);
   });
 
   it('agrees with the button all through the story: where Använd offers something, the helper shows that', () => {
