@@ -9,6 +9,12 @@ export type GroundDetail = 'soft' | 'rock' | 'road' | 'wood' | 'turf';
 const patched = new WeakSet<MeshStandardMaterial>();
 
 /**
+ * Whether the close detail is drawn: on Mid and High, not on Low, which is what an older phone gets (the view sets
+ * it by the tier). A uniform shared by every patched material, so that a change of tier compiles nothing.
+ */
+export const CLOSE_DETAIL = { value: 1 };
+
+/**
  * The ground seen close (the graphics pass of 6 November 2026). Its picture is a fine grain that tiles, and its
  * colours are set at the corners of a coarse mesh, so the ground in front of the camera, which fills the lower
  * third of every picture, was one smooth smear: "it looks stretched". Unravel's ground near the camera is full of
@@ -32,10 +38,12 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
   material.customProgramCacheKey = () => `${key()}:ground-detail-v3-${kind}`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
+    shader.uniforms.closeDetail = CLOSE_DETAIL;
     shader.vertexShader = 'varying vec3 groundDetailAt;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `
       groundDetailAt = (modelMatrix * vec4(transformed, 1.0)).xyz;
       #include <project_vertex>`);
     shader.fragmentShader = /* glsl */ `varying vec3 groundDetailAt;
+      uniform float closeDetail;
       float groundHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float groundNoise(vec2 p) {
         vec2 i = floor(p), f = fract(p);
@@ -44,7 +52,7 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
       }
       ` + shader.fragmentShader.replace('#include <normal_fragment_maps>', /* glsl */ `
       #include <normal_fragment_maps>
-      {
+      if (closeDetail > 0.5) {
         vec3 groundUp = normalize(normal * mat3(viewMatrix));
         // On what lies more or less level, or slopes towards the camera; not on the steep faces.
         float groundFlat = smoothstep(0.25, 0.6, groundUp.y + 0.35 * max(groundUp.z, 0.0));

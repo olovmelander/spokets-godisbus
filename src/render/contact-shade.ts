@@ -1,5 +1,5 @@
 import {
-  BufferGeometry, Float32BufferAttribute, HalfFloatType, LinearFilter, Mesh, NearestFilter, OrthographicCamera, RGFormat, ShaderMaterial,
+  BufferGeometry, Float32BufferAttribute, LinearFilter, Mesh, NearestFilter, OrthographicCamera, RedFormat, ShaderMaterial, UnsignedByteType,
   Vector2, Vector3, WebGLRenderTarget, type PerspectiveCamera, type Texture, type WebGLRenderer,
 } from 'three';
 
@@ -23,7 +23,7 @@ export const SHADE_STRENGTH = 0.7;
 const VERTEX = /* glsl */ `varying vec2 vUv;
   void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 
-/** Half resolution: how open each point is (1 is open sky), and how far it is, for the blur. */
+/** Half resolution: how open each point is (1 is open sky), in one byte. */
 const SHADE = /* glsl */ `
   uniform sampler2D tDepth;
   uniform vec2 texel;
@@ -41,8 +41,7 @@ const SHADE = /* glsl */ `
   }
   void main() {
     float d = texture2D(tDepth, vUv).r;
-    float here = distanceAt(vUv);
-    if (d >= 0.99999) { gl_FragColor = vec4(1.0, here, 0.0, 1.0); return; }
+    if (d >= 0.99999) { gl_FragColor = vec4(1.0); return; }
     vec3 p = pointAt(vUv);
     // The surface's facing, from its neighbours: whichever side is the nearer surface on each axis.
     vec3 px = pointAt(vUv + vec2(texel.x, 0.0)) - p, nx = p - pointAt(vUv - vec2(texel.x, 0.0));
@@ -68,25 +67,33 @@ const SHADE = /* glsl */ `
       // something far in front is not what shades it.
       shut += smoothstep(0.01, 0.06, behind) * (1.0 - smoothstep(reach, reach * 2.5, behind));
     }
-    gl_FragColor = vec4(1.0 - shut / taps, here, 0.0, 1.0);
+    gl_FragColor = vec4(vec3(1.0 - shut / taps), 1.0);
   }
 `;
 
-/** A blur over a few pixels that keeps to one surface: points at another distance are left out. */
+/**
+ * A blur over a few pixels that keeps to one surface: points at another distance, read from the picture's depth,
+ * are left out.
+ */
 const SOFTEN = /* glsl */ `
-  uniform sampler2D tShade;
+  uniform sampler2D tShade, tDepth;
   uniform vec2 texel;
+  uniform vec3 depthCamera;
   varying vec2 vUv;
+  float distanceAt(vec2 uv) {
+    float d = texture2D(tDepth, uv).r;
+    return depthCamera.x * depthCamera.y / (depthCamera.y - (depthCamera.y - depthCamera.x) * d);
+  }
   void main() {
-    vec2 centre = texture2D(tShade, vUv).rg;
+    float here = distanceAt(vUv);
     float sum = 0.0, total = 0.0;
     for (int y = -2; y <= 2; y++) for (int x = -2; x <= 2; x++) {
-      vec2 s = texture2D(tShade, vUv + vec2(float(x), float(y)) * texel).rg;
-      float w = 1.0 - smoothstep(0.02, 0.08, abs(s.g - centre.g) / centre.g);
-      sum += s.r * w;
+      vec2 at = vUv + vec2(float(x), float(y)) * texel;
+      float w = 1.0 - smoothstep(0.02, 0.08, abs(distanceAt(at) - here) / here);
+      sum += texture2D(tShade, at).r * w;
       total += w;
     }
-    gl_FragColor = vec4(sum / max(total, 1e-4), centre.g, 0.0, 1.0);
+    gl_FragColor = vec4(vec3(sum / max(total, 1e-4)), 1.0);
   }
 `;
 
@@ -107,11 +114,14 @@ export function createContactShade() {
     tDepth: { value: null }, texel: { value: new Vector2(1, 1) }, depthCamera: { value: new Vector3(0.1, 140, 10) },
     lens: { value: new Vector2(1, 1) }, reach: { value: SHADE_REACH }, taps: { value: 12 },
   });
-  const soften = screenPass(SOFTEN, { tShade: { value: null }, texel: { value: new Vector2(1, 1) } });
+  const soften = screenPass(SOFTEN, {
+    tShade: { value: null }, tDepth: { value: null }, texel: { value: new Vector2(1, 1) }, depthCamera: { value: new Vector3(0.1, 140, 10) },
+  });
   const screen = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
   // The raw shade is read pixel by pixel; the softened one between its pixels, by the grade.
   const half = (filter: typeof NearestFilter | typeof LinearFilter) => {
-    const target = new WebGLRenderTarget(1, 1, { type: HalfFloatType, format: RGFormat, depthBuffer: false, stencilBuffer: false });
+    // One byte a pixel: within the High tier's 80 MB of targets (src/render/gpu-memory.ts).
+    const target = new WebGLRenderTarget(1, 1, { type: UnsignedByteType, format: RedFormat, depthBuffer: false, stencilBuffer: false });
     target.texture.minFilter = target.texture.magFilter = filter;
     return target;
   };
@@ -147,6 +157,8 @@ export function createContactShade() {
       renderer.setRenderTarget(raw);
       renderer.render(shade.triangle, screen);
       soften.material.uniforms.tShade!.value = raw.texture;
+      soften.material.uniforms.tDepth!.value = depth;
+      (soften.material.uniforms.depthCamera!.value as Vector3).copy(u.depthCamera!.value as Vector3);
       renderer.setRenderTarget(soft);
       renderer.render(soften.triangle, screen);
     },

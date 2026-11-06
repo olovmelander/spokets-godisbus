@@ -37,6 +37,7 @@ import { evening, nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
 import { DOF_DEEP, DOF_DEEPER, createDepthBlur } from './depth-blur';
+import { CLOSE_DETAIL } from './ground-detail';
 import { SHADE_STRENGTH, createContactShade } from './contact-shade';
 import { createBloom } from './bloom';
 import { createLightShafts } from './light-shafts';
@@ -255,6 +256,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
   // The film's look on Mid and High, where the grade is a pass of its own (./grade.ts).
   gradePass?.setCinema(CINEMA);
+  // The close detail of ground, bark, granite and boards: Mid and High only (./ground-detail.ts).
+  CLOSE_DETAIL.value = tier === 'low' ? 0 : 1;
   // Let the browser restore a lost context instead of leaving a dead canvas.
   canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
 
@@ -1411,8 +1414,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       materialGrade.setEnabled(tier === 'low');
       resolutionSteps = 0;
       gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
-  // The film's look on Mid and High, where the grade is a pass of its own (./grade.ts).
-  gradePass?.setCinema(CINEMA);
+      CLOSE_DETAIL.value = tier === 'low' ? 0 : 1;
       resize();
       // The previous tier's storage has been released/resized; new allocations use this tier's budget.
       gpu?.resetPeaks();

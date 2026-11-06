@@ -16,6 +16,9 @@ import {
  * half as many points as High: a little grainier in the widest blur, at half the cost.
  */
 
+/** The most pixels each of the lens's two targets has. */
+const MOST_PIXELS = 0.36e6;
+
 /** How deep behind the play plane stays sharp in play, in EL, and how much deeper during a scene's shot. */
 export const DOF_DEEP = 1.4;
 export const DOF_DEEPER = 3.8;
@@ -149,8 +152,11 @@ export function createDepthBlur() {
         target = null; coc = null;
         return;
       }
-      const w = Math.max(1, Math.ceil(width / 2));
-      const h = Math.max(1, Math.ceil(height / 2));
+      // Half resolution, and on a big screen a little less: the blur is soft anyway, where it is sharp is judged at
+      // full resolution, and the High tier's targets must stay within 80 MB (src/render/gpu-memory.ts).
+      const share = Math.min(0.5, Math.sqrt(MOST_PIXELS / Math.max(1, width * height)));
+      const w = Math.max(1, Math.ceil(width * share));
+      const h = Math.max(1, Math.ceil(height * share));
       target ??= half();
       coc ??= half();
       target.texture.name = 'depth-of-field';

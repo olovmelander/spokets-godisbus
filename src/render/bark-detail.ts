@@ -1,4 +1,5 @@
 import { Float32BufferAttribute, type BufferGeometry, type MeshStandardMaterial } from 'three';
+import { CLOSE_DETAIL } from './ground-detail';
 
 /**
  * Bark seen close (the graphics pass of 6 November 2026; Olov: "träd ... kan vi göra snyggare", and Unravel's trees
@@ -45,6 +46,8 @@ export function barkDetail(material: MeshStandardMaterial): void {
   material.customProgramCacheKey = () => `${key()}:bark-detail-v6`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
+    // Drawn on Mid and High only, as the ground's detail is (./ground-detail.ts).
+    shader.uniforms.closeDetail = CLOSE_DETAIL;
     shader.vertexShader = 'attribute float barky;\nvarying float vBarky;\nvarying vec3 vBarkAt;\nvarying vec3 vBarkOwn;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `
       vBarky = barky;
       vBarkOwn = transformed;
@@ -54,7 +57,8 @@ export function barkDetail(material: MeshStandardMaterial): void {
       #endif
       vBarkAt = (modelMatrix * barkWorld).xyz;
       #include <project_vertex>`);
-    shader.fragmentShader = /* glsl */ `varying float vBarky;
+    shader.fragmentShader = /* glsl */ `uniform float closeDetail;
+      varying float vBarky;
       varying vec3 vBarkAt;
       varying vec3 vBarkOwn;
       float barkHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -65,7 +69,8 @@ export function barkDetail(material: MeshStandardMaterial): void {
       }
       ` + shader.fragmentShader.replace('#include <normal_fragment_maps>', /* glsl */ `
       #include <normal_fragment_maps>
-      if (vBarky > 3.5) {
+      if (closeDetail < 0.5) {
+      } else if (vBarky > 3.5) {
         // Along the board, and across it on whichever face is seen.
         vec2 grainAt = vec2(vBarkOwn.x, vBarkOwn.y + vBarkOwn.z);
         float grainPixel = length(fwidth(grainAt));
