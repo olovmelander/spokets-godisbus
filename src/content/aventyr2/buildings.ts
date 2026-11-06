@@ -249,10 +249,60 @@ function hut(def: BuildingDef) {
     parts.push(paint(new CylinderGeometry(r, r, d + 0.5, 12).rotateX(Math.PI / 2).translate(w / 2 - 0.3, y, 0), tones[(i + 1) % 3]!));
     parts.push(paint(new CylinderGeometry(r, r, d + 0.5, 12).rotateX(Math.PI / 2).translate(-w / 2 + 0.3, y, 0), tones[(i + 2) % 3]!));
   }
-  parts.push(box(w * 0.36, h * 0.7, 0.4, 0, h * 0.35, d / 2 + 0.4, '#5a3e22'));
-  // A tarred hut has white trim round its door and its corners.
-  if (tar) parts.push(box(w * 0.44, 0.5, 0.2, 0, h * 0.72, d / 2 + 0.62, '#e4e0d6'), box(0.5, h * 0.72, 0.2, -w * 0.2, h * 0.36, d / 2 + 0.62, '#e4e0d6'), box(0.5, h * 0.72, 0.2, w * 0.2, h * 0.36, d / 2 + 0.62, '#e4e0d6'));
-  return { parts, panes: [] };
+  // The logs' sawn ends at the front corners: pale end grain with a darker heart, as fresh-cut timber has.
+  for (let i = 0; i < logs; i++) {
+    const y = (i + 0.5) * (h / logs);
+    const r = (h / logs) * 0.54;
+    for (const side of [-1, 1]) {
+      const x = side * (w / 2 - 0.3);
+      parts.push(paint(new CircleGeometry(r * 0.9, 12).translate(x, y, d / 2 + 0.26), tar ? '#4a3e34' : ['#d9b57e', '#cfa86e', '#e0bf8a'][(i + side + 2) % 3]!));
+      parts.push(paint(new CircleGeometry(r * 0.38, 10).translate(x, y, d / 2 + 0.27), tar ? '#3a3029' : '#bf955c'));
+    }
+  }
+  parts.push(...hutDoor(w, h, d, tar));
+  // A small window beside the door, high up, in a white frame with a cross of glazing bars.
+  const panes: BufferGeometry[] = [];
+  const front = d / 2 - 0.3 + (h / logs) * 0.54;
+  const wx = w * 0.32;
+  const wy = h * 0.6;
+  parts.push(box(0.98, 0.84, 0.12, wx, wy, front + 0.04, '#e9e5da'));
+  parts.push(box(0.06, 0.6, 0.06, wx, wy, front + 0.16, '#e9e5da'), box(0.74, 0.06, 0.06, wx, wy, front + 0.16, '#e9e5da'));
+  parts.push(box(1.12, 0.1, 0.22, wx, wy - 0.45, front + 0.1, '#d6d1c4'));
+  panes.push(new PlaneGeometry(0.74, 0.6).translate(wx, wy, front + 0.11));
+  return { parts, panes };
+}
+
+/**
+ * A changing hut's door (the graphics pass of 6 November 2026; Olov: "finare byggnader"): upright planks with dark
+ * gaps between them, held by a Z of braces, black strap hinges on the left, an iron handle on the right, in a
+ * white casing, over a worn sill board. It stands no further out than the flat door it replaced.
+ */
+function hutDoor(w: number, h: number, d: number, tar: boolean): BufferGeometry[] {
+  const dw = w * 0.36;
+  const dh = h * 0.7;
+  const z = d / 2 + 0.3;
+  const parts: BufferGeometry[] = [box(dw, dh, 0.1, 0, dh / 2, z - 0.05, '#20160d')];
+  const planks = Math.max(4, Math.round(dw / 0.42));
+  const tones = tar ? ['#4a3a2c', '#41332a', '#524233'] : ['#7a5532', '#6c4a2a', '#835c37', '#71502d'];
+  for (let i = 0; i < planks; i++) {
+    const x = -dw / 2 + (i + 0.5) * (dw / planks);
+    parts.push(box(dw / planks - 0.05, dh - 0.04, 0.14, x, dh / 2, z + 0.07, tones[i % tones.length]!));
+  }
+  const brace = tar ? '#5a4836' : '#8c6640';
+  for (const y of [dh * 0.17, dh * 0.83]) parts.push(box(dw - 0.14, 0.22, 0.08, 0, y, z + 0.18, brace));
+  const run = dw - 0.34;
+  const rise = dh * 0.66;
+  parts.push(tilted(Math.hypot(run, rise), 0.2, 0.08, 0, Math.atan2(rise, run), 0, dh / 2, z + 0.18, brace));
+  // Strap hinges from the hinge side along each brace, and a ring handle on the latch side.
+  for (const y of [dh * 0.17, dh * 0.83]) parts.push(box(dw * 0.42, 0.08, 0.04, -dw / 2 + dw * 0.21, y, z + 0.24, '#1d1d1f'));
+  parts.push(box(0.14, 0.3, 0.04, dw / 2 - 0.26, dh * 0.5, z + 0.24, '#1d1d1f'));
+  parts.push(paint(new TorusGeometry(0.1, 0.025, 6, 12).translate(dw / 2 - 0.26, dh * 0.5 - 0.1, z + 0.26), '#1d1d1f'));
+  // The casing, and the sill board worn pale.
+  const trim = '#e9e5da';
+  parts.push(box(0.2, dh + 0.2, 0.16, -dw / 2 - 0.1, (dh + 0.2) / 2, z + 0.04, trim), box(0.2, dh + 0.2, 0.16, dw / 2 + 0.1, (dh + 0.2) / 2, z + 0.04, trim));
+  parts.push(box(dw + 0.6, 0.22, 0.2, 0, dh + 0.1, z + 0.06, trim));
+  parts.push(box(dw + 0.5, 0.12, 0.42, 0, 0.06, z + 0.06, tar ? '#5b5650' : '#a58a66'));
+  return parts;
 }
 
 /** How wide a birch's stem is at a height: 1.6 at its foot, 0.9 at its top. */
