@@ -4615,6 +4615,11 @@ The older list, still true where it is not struck:
   match the pitch, the bathing place and the narrow more closely.
 - Blender models for what is still built in code near the play plane: the dead pine Mamma pulls on Myren, the
   stones on rails before the mountain kit arrives, and Billsta's, Olympia's and the church's buildings.
+- The forest's brooks read weakly as water: the camera looks nearly level, so the surface is a thin band at his
+  feet. Unravel shows water from a little above, or with its cut face in view. A slightly higher camera over
+  pools, or a lower near shore, is the next step (Olov asked on 6 November whether the water and brooks were
+  fixed: the colour is, this is not). The dark underwater frames in the light pass's measurements cannot happen
+  in play: the glitter bubble catches him at the surface.
 - Real-time shadows from the sun, which Unravel has; the dappled light on the forest floor is a shader stand-in.
 - Myren: low in the foreground by the water, in Mamma's helper shot at x 83, two green bowl shapes with dark
   horizontal stripes look odd. Ruled out on 6 November: the soft tussocks' colours, the water's ripples and the
