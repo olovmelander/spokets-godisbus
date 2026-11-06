@@ -26,7 +26,11 @@ export interface PlaceLook {
   /** A faint cool light from the camera's side: it lifts the faces that the sun leaves in shade. */
   fill: { colour: string; intensity: number };
   /** Its water, and the soft tussocks that float in it. */
-  water: { colour: string; opacity: number };
+  /**
+   * `face` brightens the water's cut face, what he sees of it from the side and from under it in the glitter
+   * bubble: its kind's colours are for daylight, and at night they were black (the light pass of 6 November 2026).
+   */
+  water: { colour: string; opacity: number; face?: number };
   tussock: string;
   /** Another ground than the place's own, where its own is wrong for the chapter. */
   ground?: Ground;

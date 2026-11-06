@@ -346,7 +346,7 @@ function nothingFar(): DataTexture {
  * bank. High also shows what lies just under the surface, from a half-size copy of the picture behind it, and
  * mirrors what stands on its banks from that same copy, in screen space (Olov's exception, 4 November 2026).
  */
-export function createWater(chapter: ChapterData, look: { colour: string; opacity: number } | null, sun: readonly [number, number, number] = [-7, 5, -4], setting: WaterSetting = {}) {
+export function createWater(chapter: ChapterData, look: { colour: string; opacity: number; face?: number } | null, sun: readonly [number, number, number] = [-7, 5, -4], setting: WaterSetting = {}) {
   const group = new Group();
   const pools = chapter.river ? joined(chapter.water ?? []) : chapter.water ?? [];
   const kind = chapter.river ? RIVER : waterKind(setting.place ?? chapter.place, look !== null);
@@ -388,7 +388,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     // Where the islands' row begins and how wide it is (none: 0), where their fronts go under the water, and the height it counts from.
     islandFrame: { value: islands?.frame ?? new Vector4(0, 0, 0, 0) },
     mirrorTint: { value: new Color(kind.tint) },
-    faceTop: { value: new Color(kind.faceTop) }, faceDeep: { value: new Color(kind.faceDeep) },
+    faceTop: { value: new Color(kind.faceTop).multiplyScalar(look?.face ?? 1) }, faceDeep: { value: new Color(kind.faceDeep).multiplyScalar(look?.face ?? 1) },
     through: { value: new Color(kind.through) },
     bedColour: { value: new Color(kind.bedColour) }, shoreColour: { value: new Color(kind.shoreColour) },
     // Its murk per EL, the face's ramp, how much shows through the face at the waterline, and the bed's depth.
