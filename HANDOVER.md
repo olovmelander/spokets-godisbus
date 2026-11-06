@@ -130,7 +130,8 @@
     gate went from 520 to 540 KB at the same word, when tonight's additions reached it (plan §6.12). Draws: a few more on Mid and High, far under the budget.
   - **CI and software rendering:** the browser suites draw without a GPU and their walks are timed. The close
     detail is off on Low, the lens gathers from few points and the edges are not smoothed there, so High in
-    software rendering is as fast as before (measured alternating with `?nolens`).
+    software rendering is as fast as before (measured alternating with `?nolens`). The adaptive-rendering and
+    smoke suites still held High to 2.6 MP; they now check the caps in force (Low 1.0, Mid 1.6, High 3.5 MP).
   - **Not done:** new Blender models. The trees, cones, stones and the eddy stone are already Blender kits, so
     tonight's work went into how everything is drawn; the code-built buildings behind the play plane are now
     softened by the lens. The redrawn bark texture of the forest's far trunks made no visible difference and was
