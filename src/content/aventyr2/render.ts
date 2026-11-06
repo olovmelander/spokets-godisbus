@@ -1024,7 +1024,7 @@ function littleFigure(silhouette = false): Group {
 }
 
 /** A thing that stands about: it shrinks away when its flag says it is gone, and may move a little while it is there. */
-function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) => void, leaves: 'shrink' | 'leap' | 'fly' = 'shrink'): SpotProp {
+function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) => void, leaves: 'shrink' | 'leap' | 'fly' | 'blown' = 'shrink'): SpotProp {
   const root = new Group();
   root.position.set(spot.at.x, spot.at.y, -0.6);
   root.add(group);
@@ -1052,6 +1052,15 @@ function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) 
         root.position.y = spot.at.y + Math.sin(Math.min(k, 1) * Math.PI) * 2.6 - Math.max(0, k - 1) * 8;
         root.rotation.z = -k * 2.2;
         drawnWhile(root, k < 1.2);
+        return;
+      }
+      if (leaves === 'blown') {
+        // Lifted off its feet by the gust and tumbled away with it, up and out through the window.
+        const k = since / 0.9;
+        root.position.x = spot.at.x + k * 6.6;
+        root.position.y = spot.at.y + Math.sin(Math.min(k, 1) * Math.PI * 0.7) * 2.2 + k * 0.4;
+        root.rotation.z = -k * 7;
+        drawnWhile(root, k < 1.05);
         return;
       }
       // Up and away on its wings, faster and faster.
@@ -1427,12 +1436,13 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     lillgubbe: (spot) => {
       const figure = littleFigure();
       figure.userData.warm = spot.word === 'lifted';
-      // It trembles until it has its cap back, and then it hops.
+      // It trembles until it has its cap back, and then it hops. On the shelf in Stormkvällen the gust takes it
+      // ("Lillgubben! Vinden tog honom!"), out through the window after the old one.
       return standing(spot, figure, (clock) => {
         const glad = elof.flags?.has('scene:motet') ?? false;
         figure.rotation.z = glad ? Math.sin(clock * 1.7) * 0.06 : Math.sin(clock * 5.3) * 0.03;
         figure.position.y = glad ? gladHop(clock) : 0;
-      });
+      }, spot.id.startsWith('decor:') && spot.word !== 'lifted' ? 'blown' : 'shrink');
     },
     pumpkin: (spot) => {
       const { group, light, face } = pumpkin();
