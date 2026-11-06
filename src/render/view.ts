@@ -4,11 +4,12 @@ import { createPaddle, type Paddle } from './paddle';
 import { rainGearFor } from './rain-gear';
 import { createMoverMotion } from './mover-motion';
 import {
-  AdditiveBlending, BoxGeometry, CapsuleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
+  AdditiveBlending, BoxGeometry, BufferGeometry, CapsuleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
   Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, Quaternion, PlaneGeometry, PointLight,
   Scene, Shape, SphereGeometry, TorusGeometry, UnsignedIntType, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
@@ -1838,6 +1839,40 @@ function buildBerries(chapter: ChapterData): Group[] {
  * The soft tussocks (plan §4.7, E3), in greybox: paler than the firm ground, so that they can be told
  * apart before he lands on one. Each is moved by the simulation.
  */
+/** The sedge on a hummock's shoulders, for buildTussocks: thin blades leaning out, as a merged shape. */
+function sedge(width: number, seed: number): BufferGeometry {
+  const positions: number[] = [], normals: number[] = [], colours: number[] = [], uvs: number[] = [], index: number[] = [];
+  const blades = Math.round(10 + width * 9);
+  const base = [0.55, 0.6, 0.28], tip = [0.86, 0.82, 0.48];
+  for (let i = 0; i < blades; i++) {
+    const h = Math.sin(i * 12.9898 + seed * 78.233) * 43758.5453, rnd = h - Math.floor(h);
+    const angle = i * 2.39996 + seed;
+    const r = 0.6 + 0.38 * rnd;
+    const height = 0.22 + 0.4 * ((rnd * 7.3) % 1);
+    const out = [Math.cos(angle), Math.sin(angle)];
+    const x = r * out[0]! * (width / 2), z = r * out[1]! * 1.5 - 0.6;
+    const y = -Math.max(0, r - 0.5) * 0.38;
+    const lean = 0.35 + 0.3 * rnd;
+    const across = [-out[1]! * 0.035, out[0]! * 0.035];
+    const top = [x + out[0]! * lean * height, y + height, z + out[1]! * lean * height * 0.6];
+    const n = Math.hypot(out[0]! * 0.4, 1, out[1]! * 0.4);
+    const at = positions.length / 3;
+    positions.push(x - across[0]!, y, z - across[1]!, x + across[0]!, y, z + across[1]!, top[0]!, top[1]!, top[2]!);
+    for (let k = 0; k < 3; k++) normals.push((out[0]! * 0.4) / n, 1 / n, (out[1]! * 0.4) / n);
+    const shade = 0.8 + 0.3 * ((rnd * 3.1) % 1);
+    colours.push(base[0]! * shade, base[1]! * shade, base[2]! * shade, base[0]! * shade, base[1]! * shade, base[2]! * shade, tip[0]!, tip[1]!, tip[2]!);
+    uvs.push(0, 0, 1, 0, 0.5, 1);
+    index.push(at, at + 1, at + 2, at, at + 2, at + 1);
+  }
+  const made = new BufferGeometry();
+  made.setAttribute('position', new Float32BufferAttribute(positions, 3));
+  made.setAttribute('normal', new Float32BufferAttribute(normals, 3));
+  made.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
+  made.setAttribute('color', new Float32BufferAttribute(colours, 3));
+  made.setIndex(index);
+  return made;
+}
+
 function buildTussocks(chapter: ChapterData, colour: string | null): Mesh[] {
   const moss = new MeshStandardMaterial({ color: colour ?? '#c9c377', roughness: 1, vertexColors: colour !== null });
   return (chapter.tussocks ?? []).map((t) => {
@@ -1860,7 +1895,10 @@ function buildTussocks(chapter: ChapterData, colour: string | null): Mesh[] {
       }
       geometry.setAttribute('color', new Float32BufferAttribute(tones, 3));
     }
-    const mesh = new Mesh(geometry, moss);
+    // Sedge round its shoulders, leaning out, yellow-green with paler tips, in the same shape (no extra draw): a
+    // tussock of the bog, not a bowl. Seen from both sides, so each blade is twice, once each way round.
+    const shape = colour ? mergeGeometries([geometry, sedge(t.width, t.x)]) : geometry;
+    const mesh = new Mesh(shape ?? geometry, moss);
     mesh.position.set(t.x, t.y, 0);
     return mesh;
   });
