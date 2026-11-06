@@ -89,6 +89,15 @@ function showMessage(text: string, button: string | null = sv.retry, action: () 
   element.disabled = button === null;
   element.onclick = action;
   const message = byId('message');
+  const ghost = byId('messageGhost');
+  if (!ghost.hasChildNodes()) {
+    const loadingGhost = document.querySelector('#loading svg');
+    if (loadingGhost) ghost.append(loadingGhost.cloneNode(true));
+  }
+  // This also works for pack failures before the input controller is created.
+  message.onkeydown = (event) => {
+    if (event.key === 'Tab') { event.preventDefault(); (button === null ? message : element).focus(); }
+  };
   message.classList.toggle('waiting', waiting);
   message.hidden = false;
   byId('loading').classList.add('done');
@@ -121,9 +130,20 @@ async function start(): Promise<void> {
   const devtools = debugOn ? await import('./ui/devtools') : null;
   // Äventyr 2 is a pack of its own (docs/aventyr-2.md): fetched when this page plays it, leads on to it, or the
   // first adventure is done, so that its chapters are there to choose. Without it the first adventure plays on.
-  const wanted = courseId(params.get('course') ?? (loaded.kind === 'save' ? loaded.save.chapter : ''));
+  const asked = params.get('course');
+  // Invalid links follow the saved chapter, just as courseFor does after the pack has loaded.
+  const wanted = courseId(asked && courseAvailable(params, asked) ? asked : (loaded.kind === 'save' ? loaded.save.chapter : ''));
   if (isAdventure2(wanted) || wanted === 'byn' || (loaded.kind === 'save' && storyFinished(loaded.save.flags))) {
-    await loadAdventure2().catch(() => undefined);
+    try { await loadAdventure2(); }
+    catch {
+      // An optional next adventure may wait, but a requested one must never be replaced by the prologue.
+      // No simulation or autosave is installed until its chapter data is available.
+      if (isAdventure2(wanted) && courseAvailable(params, wanted)) {
+        mountShell(document.body);
+        showMessage(sv.loadFailed);
+        return;
+      }
+    }
   }
   if (LOOK_IDS.includes(wanted)) await loadLookCourses().catch(() => undefined);
   // The profile store supplies its stable ID; older single-player saves use the original Elof ID.
@@ -373,6 +393,7 @@ async function start(): Promise<void> {
   let begun = loaded.kind === 'save';
   let titleSettings = false;
   let profileMutationPending = false;
+  let saveWarningShown = !store.available;
   let playedFrom = performance.now();
   /** Writes the game as it stands: at every big candy, on pause, and when the page is hidden. */
   function writeSave(): void {
@@ -392,10 +413,13 @@ async function start(): Promise<void> {
       playMs: save.playMs + (now - playedFrom),
     };
     playedFrom = now;
-    if (!at && !again && loaded.kind !== 'unreadable') store.write(save);
+    if (!at && !again && loaded.kind !== 'unreadable' && !store.write(save) && !saveWarningShown && !benchOn) {
+      saveWarningShown = true;
+      hud.notice(sv.saveOff, 7);
+    }
   }
   // Through the HUD, like every other tag: it never lies over what is being said (in-play.md row 18).
-  if (!store.available && !benchOn) hud.notice(sv.saveOff, 7);
+  if (saveWarningShown && !benchOn) hud.notice(sv.saveOff, 7);
 
   // The on-screen controls follow the device in use, not the kind of computer (plan §4.1).
   let device: Device = window.matchMedia('(pointer: coarse)').matches ? 'touch' : 'keys';
@@ -692,7 +716,8 @@ async function start(): Promise<void> {
       // The chapter's start, with whatever this device has kept of the others. The code holds no candy.
       const others = <T>(all: Record<string, T>) => Object.fromEntries(Object.entries(all).filter(([key]) => key !== id)) as Record<string, T>;
       keepSavedPosition = false;
-      save = { ...save, updated: Date.now(), settings, chapter: id, checkpoint: -1, checkpoints: others(save.checkpoints ?? {}), candy: others(save.candy), placed: others(save.placed), flags: others(save.flags) };
+      save = { ...save, updated: Date.now(), settings, chapter: id, checkpoint: -1, checkpoints: others(save.checkpoints ?? {}),
+        candy: others(save.candy), side: others(save.side ?? {}), placed: others(save.placed), flags: others(save.flags) };
       store.write(save);
       again = true;
       markOnward(id, undefined, cardOf(id));
@@ -916,6 +941,7 @@ async function start(): Promise<void> {
   });
   canvas.addEventListener('webglcontextlost', (event) => {
     event.preventDefault();
+    stopVoice();
     if (!recovering) {
       pausedBeforeLoss = paused;
       focusBeforeLoss = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -956,10 +982,6 @@ async function start(): Promise<void> {
   canvas.addEventListener('webglcontextrestored', () => {
     contextLost = false;
     void restorePicture();
-  });
-  // This one-button recovery dialog also works before the input controller has any game to control.
-  byId('message').addEventListener('keydown', (event) => {
-    if (event.key === 'Tab') { event.preventDefault(); byId('messageButton').focus(); }
   });
   byId('pauseAlbum').addEventListener('click', (event) => {
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-memory]') : null;

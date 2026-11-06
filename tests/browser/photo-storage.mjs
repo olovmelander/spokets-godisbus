@@ -15,7 +15,7 @@ try {
   page.on('pageerror', (error) => errors.push(String(error)));
   await page.goto(`${origin}/photo-storage-test`);
   const checks = await page.evaluate(async () => {
-    const { createPhotoStore } = await import('/src/save/photos.ts');
+    const { createPhotoStore, PHOTO_MAX_BYTES } = await import('/src/save/photos.ts');
     const checks = [];
     const check = (name, result) => { if (!result) throw new Error(name); checks.push(name); };
     const frame = (player, moment, text = 'frame') => ({ player, moment, blob: new Blob([text], { type: 'image/webp' }) });
@@ -72,6 +72,69 @@ try {
     check('failed reset leaves the current album intact', (await reopened.list('elof')).length === 1);
     check('an entirely unavailable IndexedDB still supports a durable reset', await createPhotoStore(null, localStorage).clear('elof'));
     check('recovery after unavailable IndexedDB still cannot resurrect the album', (await createPhotoStore(indexedDB, localStorage).list('elof')).length === 0);
+
+    // A malformed record must not permanently reserve an otherwise empty album moment.
+    const brokenBlobs = ['not a Blob', new Blob([], { type: 'image/webp' }),
+      new Blob([new Uint8Array(PHOTO_MAX_BYTES + 1)], { type: 'image/webp' }), new Blob(['wrong type'], { type: 'image/png' })];
+    for (const [i, blob] of brokenBlobs.entries()) {
+      const player = `repair-${i}`;
+      await new Promise((resolve, reject) => {
+        const request = indexedDB.open('godisbus.v1.photos', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result, tx = db.transaction('frames', 'readwrite');
+          tx.objectStore('frames').put({ player, moment: 'crane', blob });
+          tx.oncomplete = () => { db.close(); resolve(); };
+          tx.onerror = tx.onabort = () => { db.close(); reject(tx.error); };
+        };
+      });
+      check(`corrupt frame ${i} is hidden`, (await store.list(player)).length === 0);
+      check(`corrupt frame ${i} can be recaptured`, await store.put(frame(player, 'crane', 'recovered frame')));
+      check(`the first valid replacement ${i} stays protected`, !await store.put(frame(player, 'crane', 'later frame'))
+        && (await (await store.list(player))[0].blob.text()) === 'recovered frame');
+    }
+
+    // A tab can finish opening its database after another tab has already reset and played again.
+    // Delay only the open success event; the transactions and storage generations are real.
+    function holdDatabaseOpen() {
+      let release, opened;
+      const held = new Promise(resolve => { opened = resolve; });
+      const factory = {
+        open(name, version) {
+          const request = indexedDB.open(name, version);
+          const delayed = { get result() { return request.result; } };
+          request.onsuccess = event => { release = () => delayed.onsuccess(event); opened(); };
+          for (const event of ['onerror', 'onblocked', 'onupgradeneeded']) request[event] = value => delayed[event]?.(value);
+          return delayed;
+        },
+      };
+      return { factory, held, release: () => release() };
+    }
+    const delayedReset = holdDatabaseOpen();
+    await store.put(frame('reset-race', 'cap', 'old adventure'));
+    const lateReset = createPhotoStore(delayedReset.factory, localStorage).clear('reset-race');
+    await delayedReset.held;
+    const newerTab = createPhotoStore(indexedDB, localStorage);
+    check('a newer tab can finish its reset while another open is delayed', await newerTab.clear('reset-race'));
+    check('the newer adventure can capture a fresh moment', await newerTab.put(frame('reset-race', 'crane', 'new adventure')));
+    delayedReset.release();
+    check('the superseded reset finishes safely', await lateReset);
+    const latest = await newerTab.list('reset-race');
+    check('a delayed old reset never deletes the newer adventure photo', latest.length === 1
+      && latest[0].moment === 'crane' && await latest[0].blob.text() === 'new adventure');
+
+    await store.put(frame('cleanup-race', 'cap', 'old adventure'));
+    await createPhotoStore(null, localStorage).clear('cleanup-race');
+    const delayedCleanup = holdDatabaseOpen();
+    const lateList = createPhotoStore(delayedCleanup.factory, localStorage).list('cleanup-race');
+    await delayedCleanup.held;
+    await newerTab.clear('cleanup-race');
+    check('a new adventure can capture while an old pending cleanup is delayed', await newerTab.put(frame('cleanup-race', 'swing', 'fresh frame')));
+    delayedCleanup.release();
+    check('the superseded album reader stays empty', (await lateList).length === 0);
+    const cleaned = await newerTab.list('cleanup-race');
+    check('a delayed pending cleanup never deletes the newer adventure photo', cleaned.length === 1
+      && cleaned[0].moment === 'swing' && await cleaned[0].blob.text() === 'fresh frame');
     return checks;
   });
   assert.deepEqual(errors, [], 'No browser errors');

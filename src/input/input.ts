@@ -97,6 +97,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   const edges: Edges = { hop: false, act: false, helper: false };
   const stick = { id: null as number | null, ox: 0, oy: 0, x: 0, y: 0 };
   const captures = new Map<number, HTMLElement>();
+  const releaseButtons: (() => void)[] = [];
   let device: Device | null = null;
   let pointerHopHeld = false;
   let enabled = true;
@@ -256,17 +257,21 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
 
   // --- the buttons -------------------------------------------------------------------------------
   const press = (btn: HTMLElement, down: () => void, up?: () => void) => {
+    let pointer: number | null = null;
     const disabled = () => (btn as HTMLButtonElement).disabled === true;
     on(btn, 'pointerdown', (ev) => {
       const e = ev as PointerEvent;
-      if (!enabled || disabled()) return;
+      if (!enabled || disabled() || pointer !== null || (e.button !== undefined && e.button !== 0)) return;
       e.preventDefault();
+      pointer = e.pointerId;
       btn.classList.add('down');
       capture(btn, e.pointerId);
       down();
     });
     const release = (ev?: Event) => {
+      if (ev && (ev as PointerEvent).pointerId !== pointer) return;
       if (ev) captures.delete((ev as PointerEvent).pointerId);
+      pointer = null;
       if (!btn.classList.contains('down')) return;
       btn.classList.remove('down');
       up?.();
@@ -274,9 +279,10 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     on(btn, 'pointerup', release);
     on(btn, 'pointercancel', release);
     on(btn, 'lostpointercapture', release);
+    releaseButtons.push(() => release());
     // A focused button pressed from the keyboard or by assistive technology arrives as a click.
     on(btn, 'click', (ev) => {
-      if ((ev as MouseEvent).detail === 0 && enabled && !disabled()) {
+      if ((ev as MouseEvent).detail === 0 && enabled && !disabled() && pointer === null) {
         down();
         up?.();
       }
@@ -389,7 +395,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     if (down(PAD.right)) x = 1;
     if (down(PAD.up)) y = 1;
     if (down(PAD.down)) y = -1;
-    if (gp.buttons.some((_, i) => pressed(i)) || Math.abs(x) > 0.5 || Math.abs(y) > 0.5) {
+    if (gp.buttons.some((_, i) => pressed(i)) || x !== 0 || y !== 0) {
       setDevice('pad');
       pad.active = true;
     }
@@ -410,7 +416,9 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
         pad.navDir = dir;
       }
       if (pressed(PAD.a)) {
-        if (focused && scope.contains(focused)) focused.click();
+        // Navigation above may have moved focus during this same poll.
+        const selected = env.doc.activeElement as HTMLElement | null;
+        if (selected && scope.contains(selected)) selected.click();
         else moveFocus(scope, 1);
       }
       if (pressed(PAD.b)) opts.onBack?.();
@@ -442,7 +450,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     edges.hop = edges.act = edges.helper = false;
     ui.stickBase.classList.remove('on', 'run');
     moveKnob();
-    for (const btn of [ui.hopBtn, ui.actBtn]) btn.classList.remove('down');
+    for (const release of releaseButtons) release();
     const held = [...captures];
     captures.clear();
     for (const [id, target] of held) {

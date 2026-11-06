@@ -22,15 +22,18 @@ const server = await createServer({
     },
     load(id) {
       if (id === assetsId) return `import { Group, Mesh, BoxGeometry, MeshLambertMaterial } from 'three';
-        const pending = []; let installed = 0;
+        const pending = []; let installed = 0, privateFiles = ['mamma'];
         const model = (name) => { const group = new Group();
           const mesh = new Mesh(new BoxGeometry(.4,1,.4), new MeshLambertMaterial());
           mesh.name = name; group.add(mesh); return group; };
         export const waiting = () => pending.length;
-        export const release = () => pending.shift()?.(model('installed-mamma-' + (++installed)));
+        export const privateModels = (names) => { privateFiles = names; };
+        export const release = () => { const next = pending.shift();
+          next?.resolve(model('installed-' + next.name + '-' + (++installed))); };
+        export const fail = () => pending.shift()?.reject(new Error('deliberately unavailable actor'));
         export function createAssets() { return {
-          manifest: async () => ({ packs: { boot: { files: {} }, private: { files: { 'mamma.glb': 1 } } } }),
-          model: async (pack) => pack === 'private' ? new Promise((resolve) => pending.push(resolve)) : model('candy'),
+          manifest: async () => ({ packs: { boot: { files: {} }, private: { files: Object.fromEntries(privateFiles.map(name => [name + '.glb', 1])) } } }),
+          model: async (pack, name) => pack === 'private' ? new Promise((resolve, reject) => pending.push({ name, resolve, reject })) : model('candy'),
           restoreTextures: async () => {}, textureInfo: () => ({}),
         }; }
       `;
@@ -38,7 +41,9 @@ const server = await createServer({
         export { createView } from ${JSON.stringify(join(root, 'src/render/view.ts'))};
         export { Sim } from ${JSON.stringify(join(root, 'src/sim/sim.ts'))};
         export { myren } from ${JSON.stringify(join(root, 'src/content/chapters/myren.ts'))};
-        export { waiting, release } from '/model-installation-assets.js';
+        export { prolog } from ${JSON.stringify(join(root, 'src/content/chapters/ends.ts'))};
+        export { garden } from ${JSON.stringify(join(root, 'src/content/chapters/garden.ts'))};
+        export { waiting, release, fail, privateModels } from '/model-installation-assets.js';
         let scene; const before = Scene.prototype.onBeforeRender;
         Scene.prototype.onBeforeRender = function(...args) {
           if (this.getObjectByName('chase-ghost')) scene = this;
@@ -46,11 +51,30 @@ const server = await createServer({
         };
         export const installedModels = () => {
           const models = []; scene.traverse((node) => {
-            if (!node.name.startsWith('installed-mamma-')) return;
+            if (!node.name.startsWith('installed-')) return;
             models.push({ name: node.name, graded: node.material.customProgramCacheKey().includes('place-grade-v2'),
               rim: node.material.customProgramCacheKey().includes('place-rim-v1'),
               receiveShadow: node.receiveShadow, x: node.getWorldPosition(new Vector3()).x });
           }); return models;
+        };
+        export const watchRehearsals = () => {
+          const disposed = { instances: 0, materials: 0, geometry: 0 };
+          scene.traverse(node => {
+            if (!node.name.startsWith('family-rehearsal-body:')) return;
+            node.addEventListener('dispose', () => disposed.instances++);
+            node.material.addEventListener('dispose', () => disposed.materials++);
+            node.geometry.addEventListener('dispose', () => disposed.geometry++);
+          }); return () => ({ ...disposed });
+        };
+        export const watchBodies = () => {
+          const resources = new Set(), disposed = new Set();
+          for (const root of [scene.getObjectByName('elof'), scene.getObjectByName('chase-ghost').children[0],
+            scene.getObjectByName('helper-actor').children[0]]) root.traverse(node => {
+              if (!node.isMesh) return;
+              resources.add(node.geometry); resources.add(node.material);
+            });
+          for (const resource of resources) resource.addEventListener('dispose', () => disposed.add(resource));
+          return () => ({ total: resources.size, disposed: disposed.size });
         };
       `;
     },
@@ -80,8 +104,9 @@ try {
         flags: sim.flags, ghost: sim.ghost, rollers: sim.rollers, tussocks: sim.tussocks,
         gusts: sim.gusts, help: sim.help, berries: sim.berries });
       draw(); draw();
+      const disposed = fixture.watchRehearsals();
       window.installationProbe = { fixture, sim, view, draw,
-        state: () => ({ models: fixture.installedModels(), info: view.info(), player: { ...sim.curr }, flags: [...sim.flags] }) };
+        state: () => ({ models: fixture.installedModels(), info: view.info(), player: { ...sim.curr }, flags: [...sim.flags], disposed: disposed() }) };
     }, tier);
     for (const i of [1, 2, 3]) {
       await page.waitForFunction(() => window.installationProbe.fixture.waiting() === 1);
@@ -104,9 +129,72 @@ try {
       check(`${tier}: Mamma ${i} stays warmed during pause redraws`, result.paused.info.programs === result.loaded.info.programs &&
         result.paused.info.geometries === result.loaded.info.geometries && result.paused.info.textures === result.loaded.info.textures &&
         withinDraws(result.paused.info.drawCalls, result.paused.info.tier));
+      check(`${tier}: replaced Mamma ${i} releases instance buffers and material while retaining the shared box`,
+        result.loaded.disposed.instances === i && result.loaded.disposed.materials === i && result.loaded.disposed.geometry === 0);
       if (i === 3) check(`${tier}: the third installation belongs to the cooperative bog bridge`, Math.abs(result.current.x - 169.2) < .01);
     }
     assert.deepEqual(errors, [], `${tier}: browser or shader errors`);
+    await page.close();
+  }
+  for (const chapter of ['myren', 'prolog', 'garden']) {
+    const page = await browser.newPage({ viewport: { width: 844, height: 390 } });
+    const errors = [];
+    page.on('pageerror', error => errors.push(String(error)));
+    page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+    await page.route('**/model-installation-probe', route => route.fulfill({ contentType: 'text/html',
+      body: '<body style="margin:0"><canvas id="game" style="width:100vw;height:100vh;display:block"></canvas></body>' }));
+    await page.goto(`${origin}/spokets-godisbus/model-installation-probe`);
+    await page.evaluate(async chapter => {
+      const fixture = await import('/spokets-godisbus/model-installation-fixture.js');
+      fixture.privateModels(chapter === 'garden' ? ['elof', 'ghost'] : chapter === 'myren' ? ['mamma'] : ['mamma', 'moa']);
+      const data = fixture[chapter], sim = new fixture.Sim(data);
+      const view = fixture.createView(document.getElementById('game'), data, 'low', false);
+      await view.ready;
+      const draw = () => view.render({ prev: sim.prev, curr: sim.curr, alpha: 1, dt: 0, atGoal: false,
+        collected: sim.collected, checkpoint: sim.checkpoint, movers: sim.movers, drips: sim.drips,
+        flags: sim.flags, ghost: sim.ghost, rollers: sim.rollers, tussocks: sim.tussocks,
+        gusts: sim.gusts, help: sim.help, berries: sim.berries });
+      draw(); draw();
+      window.installationProbe = { fixture, view, draw, disposed: chapter === 'garden' ? fixture.watchBodies() : fixture.watchRehearsals() };
+    }, chapter);
+    if (chapter === 'garden') {
+      await page.waitForFunction(() => window.installationProbe.fixture.waiting() === 2);
+      const result = await page.evaluate(async () => {
+        const p = window.installationProbe, before = p.view.info();
+        p.fixture.release(); p.fixture.release();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        p.draw(); p.draw();
+        return { before, after: p.view.info(), disposed: p.disposed(), models: p.fixture.installedModels() };
+      });
+      check('garden: Elof and both ghost stand-ins release all their owned fallback resources',
+        result.disposed.total > 30 && result.disposed.disposed === result.disposed.total);
+      check('garden: replacing warmed bodies releases GPU geometries without losing the installed actors',
+        result.after.geometries < result.before.geometries - 10 && result.models.length === 3 &&
+        result.models.every(model => model.graded && model.rim && model.receiveShadow));
+      assert.deepEqual(errors, [], 'garden: browser errors after fallback disposal');
+      await page.close();
+      continue;
+    }
+    await page.waitForFunction(() => window.installationProbe.fixture.waiting() === 1);
+    await page.evaluate(async () => {
+      window.installationProbe.fixture.fail();
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    check(`${chapter}: one unavailable family model does not block the next actor`,
+      await page.evaluate(() => window.installationProbe.fixture.waiting() === 1));
+    const result = await page.evaluate(async () => {
+      const p = window.installationProbe;
+      p.fixture.release();
+      await new Promise(resolve => setTimeout(resolve, 0));
+      p.draw(); p.draw();
+      return { models: p.fixture.installedModels(), info: p.view.info(), disposed: p.disposed() };
+    });
+    check(`${chapter}: the healthy actor arriving after a failure still receives the warmed rendering setup`,
+      result.models.length === 1 && result.models[0].graded && result.models[0].rim && result.models[0].receiveShadow &&
+      result.info.models.filter(model => model.startsWith('private/')).length === 1);
+    check(`${chapter}: only the successful replacement releases its rehearsal actor`,
+      result.disposed.instances === 1 && result.disposed.materials === 1 && result.disposed.geometry === 0);
+    assert.deepEqual(errors, [], `${chapter}: browser errors after optional actor failure`);
     await page.close();
   }
   console.log(`Model installation: ${checks} browser checks passed.`);

@@ -413,9 +413,11 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       const t = i / 10;
       scales.push(new Vector2(Math.sin(Math.PI * t) * 0.17 * (1 - 0.35 * t) + 0.01, -0.34 + t * 0.7));
     }
+    coneDrops.geometry.dispose();
     coneDrops.geometry = new LatheGeometry(scales, 9);
     coneDrops.material = solid('#6a4428', 0.9, { flatShading: true });
     coneDrops.userData.cones = true;
+    coneDrops.userData.disposeFallback = true;
   }
   // Footballs bowled along by the wind, where the chapter's rollers are: round, and patched.
   const balls = storm?.rollers === 'football' ? scene.getObjectByName('rollers') as InstancedMesh | undefined : undefined;

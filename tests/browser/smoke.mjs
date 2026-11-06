@@ -289,6 +289,14 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
 {
   console.log('chapter codes, 1180×820');
   const { page, state, finish } = await open('codes-1180x820', { viewport: { width: 1180, height: 820 } }, '?dev&debug&title');
+  await page.evaluate(() => {
+    localStorage.setItem('godisbus.v1.index', JSON.stringify({ v: 1, current: 'elof', players: [{ id: 'elof', name: 'Elof' }] }));
+    localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: {},
+      chapter: 'prolog', checkpoint: -1, checkpoints: { granskog: 2 }, candy: { granskog: [0] },
+      side: { garden: [0], granskog: [0] }, placed: { granskog: ['cone'] }, flags: {}, playMs: 0 }));
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.__godis?.state().bootReady);
   await page.click('#codeBtn');
   await page.fill('#codeInput', 'gran kotte');
   // Three fields, a word each: a code typed into the first spreads over them (docs/ux-audit/first-minutes.md row 15).
@@ -300,6 +308,9 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   await page.waitForFunction(() => window.__godis?.state().course === 'granskog' && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
   const opened = await state();
   check('the right three words open their chapter at its start', opened.course === 'granskog' && opened.checkpoint === -1 && opened.candy === 0, opened.course);
+  const codeSave = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
+  check('a chapter code resets its side candy and preserves other chapters', !codeSave.side.granskog?.length
+    && JSON.stringify(codeSave.side.garden) === '[0]');
   await finish();
 }
 {

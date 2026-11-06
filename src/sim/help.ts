@@ -35,6 +35,9 @@ export function counterweightTarget(sim: Sim, chapter: ChapterData): Hint | null
     const launch = spot(puzzle.launch);
     return launch ? { at: launch.at, verb: launch.verb, word: launch.word ?? null } : null;
   }
+  // The stop is the destination as soon as a push begins, including its final stop. Wait for the
+  // weight to settle before offering another push or the launch it will unlock.
+  if (heavy.t < 1) return { at: heavy.def.stops[heavy.stop]!, verb: null, word: null };
   const trial = puzzle.trial === undefined ? undefined : spot(puzzle.trial);
   if (trial && !sim.flags.has(trial.id) && trial.needs !== undefined && sim.flags.has(trial.needs)) {
     return { at: trial.at, verb: trial.verb, word: trial.word ?? null };

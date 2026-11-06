@@ -141,6 +141,15 @@ try {
   await page.locator('#playerConfirmYes').click();
   await frames(page, 3);
   check('a quick press on Ja does not start over', await page.locator('#titleConfirm').isVisible() && !!(await read())['godisbus.v1.player.elof']);
+  const beforeInterruptedHold = (await read())['godisbus.v1.player.elof'];
+  const confirmation = await page.locator('#playerConfirmYes').boundingBox();
+  await page.mouse.move(confirmation.x + confirmation.width / 2, confirmation.y + confirmation.height / 2);
+  await page.mouse.down();
+  await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+  await sleep(1700);
+  await page.mouse.up();
+  check('switching away cancels a destructive hold without changing progress',
+    await page.locator('#titleConfirm').isVisible() && (await read())['godisbus.v1.player.elof'] === beforeInterruptedHold);
   await page.keyboard.press('Escape');
   check('Escape cancels reset without deleting progress', await page.locator('#titlePlayers').isVisible() && !!(await read())['godisbus.v1.player.elof']);
   await page.locator('#startOverBtn').click();

@@ -29,6 +29,7 @@ class FakeElement extends EventTarget {
   querySelectorAll() { return this.children; }
   closest() { return this.hidden || this.inControls ? this : null; }
   focus() { doc.activeElement = this as unknown as Element; }
+  click() { fire(this, 'click', { detail: 0 }); }
   role = '';
   tabIndex = 0;
   getAttribute(name: string) { return name === 'role' ? this.role : null; }
@@ -295,6 +296,54 @@ describe('the buttons', () => {
     expect(input.consume().act).toBe(false);
   });
 
+  it('keeps a jump held until its own finger leaves, ignoring other fingers', () => {
+    fire(ui.hopBtn, 'pointerdown', { pointerId: 5 });
+    expect(input.consume().hop).toBe(true);
+    fire(ui.hopBtn, 'pointerdown', { pointerId: 6 });
+    expect(input.consume().hop).toBe(false);
+    fire(ui.hopBtn, 'pointerup', { pointerId: 6 });
+    expect(input.state().hopHeld).toBe(true);
+    fire(ui.hopBtn, 'pointercancel', { pointerId: 5 });
+    expect(input.state().hopHeld).toBe(false);
+  });
+
+  it.each(['pointercancel', 'lostpointercapture'])('does not release a jump on another finger\'s %s', (type) => {
+    fire(ui.hopBtn, 'pointerdown', { pointerId: 5 });
+    fire(ui.hopBtn, type, { pointerId: 8 });
+    expect(input.state().hopHeld).toBe(true);
+    fire(ui.hopBtn, type, { pointerId: 5 });
+    expect(input.state().hopHeld).toBe(false);
+  });
+
+  it('accepts a fresh finger after pause releases a held button', () => {
+    fire(ui.hopBtn, 'pointerdown', { pointerId: 5 });
+    input.release();
+    expect(input.consume().hop).toBe(false);
+    expect(input.state().hopHeld).toBe(false);
+    fire(ui.hopBtn, 'pointerdown', { pointerId: 6 });
+    expect(input.consume().hop).toBe(true);
+    expect(input.state().hopHeld).toBe(true);
+  });
+
+  it('does not jump or act on a secondary mouse button', () => {
+    fire(ui.hopBtn, 'pointerdown', { pointerId: 5, button: 2 });
+    fire(ui.actBtn, 'pointerdown', { pointerId: 6, button: 1 });
+    expect(input.consume()).toEqual({ hop: false, act: false, helper: false });
+    expect(input.state().hopHeld).toBe(false);
+  });
+
+  it('keeps an assistive click from releasing a finger that already holds Hoppa', () => {
+    fire(ui.hopBtn, 'pointerdown', { pointerId: 5 });
+    input.consume();
+    ui.hopBtn.click();
+    expect(input.consume().hop).toBe(false);
+    expect(input.state().hopHeld).toBe(true);
+    fire(ui.hopBtn, 'pointerup', { pointerId: 5 });
+    ui.hopBtn.click();
+    expect(input.consume().hop).toBe(true);
+    expect(input.state().hopHeld).toBe(false);
+  });
+
   it('reports touch as the device in use', () => {
     fire(win, 'pointerdown', { pointerType: 'touch' });
     expect(devices).toEqual(['touch']);
@@ -523,6 +572,15 @@ describe('the gamepad', () => {
     expect(input.state().x).toBe(0);
   });
 
+  it('recognises gentle walking as gamepad input and stops when that controller disconnects', () => {
+    pads = [gamepad([.4, 0], [])];
+    expect(input.state().x).toBeGreaterThan(0);
+    expect(input.state().x).toBeLessThan(.5);
+    pads = [];
+    expect(input.state()).toEqual({ x: 0, y: 0, hopHeld: false });
+    expect(devices).toEqual(['pad']);
+  });
+
   it('hands left and right to a choice or a level in a menu, and leaves it up and down', () => {
     focusScope = new FakeElement();
     const before = new FakeElement();
@@ -564,5 +622,19 @@ describe('the gamepad', () => {
     input.state();
     expect(doc.activeElement).toBe(chosen);
     expect(heard).toEqual(['ArrowRight', 'ArrowLeft']);
+  });
+
+  it('activates the newly focused control when navigation and A arrive together', () => {
+    focusScope = new FakeElement();
+    const first = new FakeElement(), second = new FakeElement();
+    focusScope.children = [first, second];
+    const activated: string[] = [];
+    first.addEventListener('click', () => activated.push('first'));
+    second.addEventListener('click', () => activated.push('second'));
+    first.focus();
+    pads = [gamepad([0, 0], [PAD.right, PAD.a])];
+    input.poll();
+    expect(doc.activeElement).toBe(second);
+    expect(activated).toEqual(['second']);
   });
 });

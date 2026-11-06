@@ -347,6 +347,21 @@ try {
     check('the browser\'s offer becomes Installera spelet in Pause', await page.locator('#installBtn').isVisible() && await page.evaluate(() => window.__installKept));
     await page.tap('#installBtn');
     check('Installera spelet asks the browser once, then goes', await page.evaluate(() => window.__installPrompted === true) && await page.locator('#installBtn').isHidden());
+    await page.check('#setBigText');
+    await page.tap('#pauseBack');
+    for (const viewport of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { width: 780, height: 360 }, { width: 1180, height: 820 }]) {
+      await page.setViewportSize(viewport);
+      await page.evaluate(() => Promise.all(document.getElementById('pause').getAnimations({ subtree: true })
+        .filter((animation) => animation.effect?.getTiming().iterations !== Infinity).map((animation) => animation.finished.catch(() => {}))));
+      const fits = await page.locator('#pause .panel').evaluate((panel) => {
+        const buttons = [...panel.querySelectorAll('button')].filter(button => button.getClientRects().length && !button.closest('[hidden]'));
+        return panel.scrollWidth <= panel.clientWidth + 1 && buttons.every(button => {
+          const box = button.getBoundingClientRect();
+          return box.left >= 0 && box.right <= innerWidth && button.scrollWidth <= button.clientWidth + 1;
+        });
+      });
+      check(`Pause and its controls fit ${viewport.width}px with larger text`, fits);
+    }
     await finish();
   }
 

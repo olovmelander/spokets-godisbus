@@ -340,8 +340,20 @@ export function createPlayerStandIn() {
     legs[i]!.knee.children[1]!.name = `player-boot-${side}`;
     arms[i]!.shoulder.name = `player-shoulder-${side}`; arms[i]!.elbow.name = `player-elbow-${side}`;
   }
+  let disposed = false;
   return {
     group,
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      const materials = new Set<MeshStandardMaterial>();
+      figure.traverse(object => {
+        if (!(object instanceof Mesh)) return;
+        object.geometry.dispose();
+        materials.add(object.material as MeshStandardMaterial);
+      });
+      materials.forEach(material => material.dispose());
+    },
     hand(side: 0 | 1, out: Vector3) { return arms[side]!.elbow.localToWorld(out.copy(handTip)); },
     mouth(out: Vector3) { return neck.localToWorld(out.set(.17, .1, 0)); },
     /** The wind in his hair (`windAt` where he stands), and a hand in it: secondary motion, never the simulation. */
