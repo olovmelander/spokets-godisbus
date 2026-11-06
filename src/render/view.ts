@@ -1,5 +1,6 @@
 import { lessMotion } from '../platform/motion';
 import { buildBraid } from './braid';
+import { createMoverMotion } from './mover-motion';
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
@@ -343,6 +344,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     return { ride, prop };
   });
   const moverMeshes = buildMovers(chapter);
+  // Each has weight as it moves: it leans, rocks to rest and squashes landing (./mover-motion.ts).
+  const moverMotion = createMoverMotion(chapter.movers ?? [], moverMeshes);
   const sharedSweets = chapter.id === 'norrsken' ? createSharedSweets() : null;
   if (sharedSweets) scene.add(sharedSweets.group);
   const rain = createRain(chapter);
@@ -856,7 +859,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     inEndingShot = !!chapter.epilogue && ending !== null && ending !== undefined;
     rain.update(drips, dt);
     epilogueStage.update(flags, ending, lessMotion());
-    for (const [i, mover] of movers.entries()) moverMeshes[i]?.position.set(mover.x, mover.y, 0);
+    moverMotion.update(movers, dt, lessMotion());
     if (chapter.id === 'norrsken') {
       const eyes = scene.getObjectByName('first-carving-eyes');
       if (eyes) eyes.visible = flags.has('eyes');
