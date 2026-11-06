@@ -26,15 +26,21 @@
     Focused browser checks passed: real IndexedDB 35, model installation 47, profiles 19, pointing 45, settings 66 and production
     lifecycle/recovery 44. The final adaptive pause columns also passed a four-width DOM preview (320/390/780/1180 px).
     The chapter-code fixture seeds before page boot, and the epilogue test approaches the knife at normal speed
-    under its unchanged deadline, verifies the stopped offer and takes it. Focused carving (9 checks) and a deliberately stalled party (7 checks) pass; the full solo story run and
-    replacement CI are pending at this documentation checkpoint; combined validation and delivery are recorded in
-    the PR before merge. Production budget: **500.6 KiB boot JS / 520 KiB**, **3,613.3 KiB served boot / 4 MiB**
+    under its unchanged deadline, verifies the stopped offer and takes it. Focused carving (9 checks) and a deliberately stalled party (7 checks) pass.
+    **Full CI on the final code passed** (commit `44218d2`, Actions run 42141895068, 6 November): all nine jobs, so
+    typecheck, tests, build with size gates, privacy check and **all 50 browser suites**, `story` (34 checks) and
+    `smoke` among them. A later cloud session re-ran `npm ci`, typecheck and the tests on that commit before the
+    merge (see "Delivery" below). Production budget: **500.6 KiB boot JS / 520 KiB**, **3,613.3 KiB served boot / 4 MiB**
     including local private exports, **64.4 KiB Adventure 2 chunk / 160 KiB**. Independent source review found and
     verified the invalid-link save protection; no remaining blocker was found.
   - **Decisions and next:** no new save format, release boundary, private asset, recording, *Senare* wish or question.
     This audit needs no local Blender work. Physical-device touch, colour, sound and frame rate still need the
     existing family-device review; automated routes do not establish every reading pause or historical save shape.
-    Commit/PR/merge follows Olov's standing instruction once the complete checks pass.
+  - **Delivery:** [PR #230](https://github.com/olovmelander/spokets-godisbus/pull/230). Olov asked on 6 November to
+    finalize it. A cloud session confirmed the full CI above from each job's log, and re-ran on `44218d2`: `npm ci`,
+    typecheck, the tests (197 files / 2,097 tests), the build (500.6 KB boot JS / 520 KB, Adventure 2 64.4 KB /
+    160 KB; served boot 2,316 KB there, without the private exports) and the privacy check. It corrected these
+    "pending" lines, here and in `docs/full-game-audit.md`, and merges the PR once CI passes on that commit.
 
 - **Pappa and Bertil's caps refined (5 November 2026, cloud session, branch `visual/family-caps`).**
   Olov requested better-looking caps on both figures. The actual private exports were inspected from the front,

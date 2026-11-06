@@ -54,9 +54,10 @@ Completed focused checks include 35 real IndexedDB checks, 47 model-installation
 browser checks, 44 production lifecycle/recovery checks, 69 input/hold unit tests, 62 render unit tests and
 22 voice/audio-lifecycle tests. The unchanged dialogue-reading suite and all 52 memory-presentation checks
 also passed after the recording inventory change. The chapter-code regression passes with its save seeded before
-the first page load; the earlier fixture mistakenly let pagehide overwrite its own seed. The complete
-combined validation and delivery result are recorded in `HANDOVER.md` and the pull request. At this documentation
-checkpoint, the final smoke run and full CI are pending. The initial built settings suite passed 64 checks;
+the first page load; the earlier fixture mistakenly let pagehide overwrite its own seed. Full CI on the final
+code (commit `44218d2`, Actions run 42141895068) passed all nine jobs: typecheck, the tests, the production build
+with its size gates, the privacy check and all 50 browser suites, `smoke` and `story` among them. Delivery is
+recorded in `HANDOVER.md` and pull request #230. The initial built settings suite passed 64 checks;
 after the final adaptive-column refinement, a DOM preview verified all four widths (320, 390, 780 and 1180 px).
 The initial unchanged pointing suite passed 43 checks locally. Full CI later reproduced its portrait failure;
 the root-scroll defect above was then reproduced deterministically and repaired. The strengthened suite checks
@@ -68,7 +69,7 @@ At about three rendered frames per second, the fixed-step cap advanced only 8.4 
 40-second deadline. The fixture now uses normal movement, keeps the same deadline, checks that the offered
 action remains after stopping, and actually takes the knife. The identical frame-stall reproduction passes;
 no gameplay speed, knife prerequisite or story timing changed. Focused carving passes 9 checks and the stalled
-party passes 7; the final solo full-story run and replacement CI remain pending at this documentation checkpoint.
+party passes 7. The full story suite then passed all 34 checks in that CI run, and the `epilogue` suite all 20.
 
 The production build still keeps Adventure 2 lazy and enforces the existing size limits. There is no new save
 format, chapter release, likeness asset or recording. Privacy checks apply to public source and generated assets;
