@@ -1,6 +1,6 @@
 import {
   Color, CylinderGeometry, DoubleSide, DynamicDrawUsage, Float32BufferAttribute, Group, InstancedMesh, Matrix4, Mesh,
-  MeshStandardMaterial, Object3D, PlaneGeometry, SphereGeometry, type BufferGeometry,
+  MeshStandardMaterial, Object3D, PlaneGeometry, SphereGeometry, Vector3, type BufferGeometry,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { drawnWhile } from './idle';
@@ -87,7 +87,7 @@ export function ladybird(): Critter {
     return { wing, side };
   });
   // Six legs, each a thigh and a shin, as twelve instances of one rod.
-  const legs = new InstancedMesh(new CylinderGeometry(0.016, 0.012, 1, 5).translate(0, -0.5, 0), new MeshStandardMaterial({ color: black, roughness: 0.5 }), 12);
+  const legs = new InstancedMesh(new CylinderGeometry(0.024, 0.016, 1, 6).translate(0, -0.5, 0), new MeshStandardMaterial({ color: black, roughness: 0.5 }), 12);
   legs.instanceMatrix.setUsage(DynamicDrawUsage);
   body.add(legs);
   const at = new Object3D();
@@ -97,13 +97,13 @@ export function ladybird(): Critter {
     const x = hips[i]!;
     at.position.set(x, -0.04, side * 0.17);
     at.rotation.set(side * (1.0 - lift), swing, 0, 'YXZ');
-    at.scale.set(1, 0.16, 1);
+    at.scale.set(1, 0.18, 1);
     at.updateMatrix();
     legs.setMatrixAt((i * 2 + (side > 0 ? 0 : 1)) * 2, at.matrix);
     // The shin hangs from the knee.
-    at.translateY(-0.16);
+    at.translateY(-0.18);
     at.rotation.set(side * (0.15 - lift * 0.4 + bend), swing * 0.6, 0, 'YXZ');
-    at.scale.set(1, 0.17, 1);
+    at.scale.set(1, 0.19, 1);
     at.updateMatrix();
     legs.setMatrixAt((i * 2 + (side > 0 ? 0 : 1)) * 2 + 1, at.matrix);
   };
@@ -116,13 +116,21 @@ export function ladybird(): Critter {
       wasUsed = used;
       since = used ? since + dt : 0;
       if (!used) {
-        // On its back: legs pedalling in a wave from front to back, and every few seconds a rock to one side.
-        const rock = Math.sin(Math.PI * smooth(((clock % 3.4) - 2.6) / 0.8)) * 0.35 * Math.sign(Math.sin(clock * 0.37) + 0.01);
-        body.rotation.set(Math.PI + rock + Math.sin(clock * 6) * 0.04, 0, 0);
+        // On its back, tipped a little towards the lens so its underside and legs read. The legs pedal in a wave from
+        // front to back, fast and uneven with short pauses, and about every four seconds it heaves itself almost
+        // over to one side, and falls back with a wobble.
+        const cycle = clock % 4.2, way = Math.floor(clock / 4.2) % 2 ? 1 : -1;
+        const heave = cycle < 3 ? Math.sin(clock * 1.7) * 0.06
+          : cycle < 3.55 ? smooth((cycle - 3) / 0.55) * 0.75 + Math.sin(clock * 1.7) * 0.06 * (1 - smooth((cycle - 3) / 0.55))
+            : 0.75 * Math.exp(-(cycle - 3.55) * 5) * Math.cos((cycle - 3.55) * 13);
+        body.rotation.set(Math.PI + 0.5 + heave * way + Math.sin(clock * 6) * 0.03, 0, 0);
         body.position.set(0, 0.36, 0);
+        const pedal = clock * 19 + Math.sin(clock * 1.3) * 4 + Math.sin(clock * 2.9) * 2;
+        const pause = 0.35 + 0.65 * smooth((Math.sin(clock * 0.9) + Math.sin(clock * 2.3) * 0.5 + 0.6) / 0.8);
+        const strain = cycle > 3 && cycle < 3.7 ? 1.4 : 1;
         for (let i = 0; i < 3; i++) for (const side of [1, -1]) {
-          const phase = clock * 10 - i * 0.9 + (side > 0 ? 0 : Math.PI);
-          leg(i, side, Math.sin(phase) * 0.5, 0.6 + 0.25 * Math.cos(phase), 0.6);
+          const phase = pedal - i * 0.9 + (side > 0 ? 0 : Math.PI);
+          leg(i, side, Math.sin(phase) * 0.5 * pause * strain, 0.55 + 0.3 * Math.cos(phase) * pause, 1.05);
         }
         for (const { hinge } of halves) hinge.rotation.set(0, 0, 0);
         for (const { wing } of wings) drawnWhile(wing, false);
@@ -239,6 +247,61 @@ export function antTrail(count = 7): Critter {
       }
       bodies.instanceMatrix.needsUpdate = legs.instanceMatrix.needsUpdate = needles.instanceMatrix.needsUpdate = true;
       drawnWhile(group, away < 1);
+    },
+  };
+}
+
+/**
+ * The living column under a needle mat in Granskogen (plan §4.3, C2): ants holding on to each other, heads up, three
+ * abreast, each with its six legs splayed to grip the ones beside it. They never sit still: each shifts its grip,
+ * works its feelers, and the column gives a little under the mat as it rises and falls. One instanced mesh.
+ */
+export function antColumn(width: number, rows = 10): { group: Group; tick: (clock: number) => void } {
+  const group = new Group();
+  const dark = '#2e1d14';
+  const parts = [
+    painted(new SphereGeometry(0.075, 10, 6).scale(1.35, 0.85, 0.9).translate(-0.12, 0, 0), dark),
+    painted(new SphereGeometry(0.04, 8, 5).scale(1.4, 0.8, 0.8).translate(0, 0.005, 0), dark),
+    painted(new SphereGeometry(0.05, 8, 6).translate(0.09, 0.015, 0), '#3a2519'),
+    painted(new CylinderGeometry(0.006, 0.006, 0.12, 4).rotateZ(-1.0).rotateX(0.5).translate(0.15, 0.06, 0.03), dark),
+    painted(new CylinderGeometry(0.006, 0.006, 0.12, 4).rotateZ(-1.0).rotateX(-0.5).translate(0.15, 0.06, -0.03), dark),
+  ];
+  // Legs splayed out to both sides, bent at the knee, gripping.
+  for (const side of [-1, 1]) for (const [x, turn] of [[0.03, 0.6], [0, 0], [-0.03, -0.6]] as const) {
+    const thigh = new CylinderGeometry(0.009, 0.007, 0.1, 4).translate(0, 0.05, 0).rotateX(side * 1.2).rotateY(turn).translate(x, 0, side * 0.02);
+    const knee = new Vector3(0, 0.1, 0).applyAxisAngle(new Vector3(1, 0, 0), side * 1.2).applyAxisAngle(new Vector3(0, 1, 0), turn);
+    const shin = new CylinderGeometry(0.007, 0.005, 0.1, 4).translate(0, 0.05, 0).rotateX(side * 2.3).rotateY(turn).translate(x + knee.x, knee.y, side * 0.02 + knee.z);
+    parts.push(painted(thigh, dark), painted(shin, dark));
+  }
+  const count = rows * 3;
+  const ants = new InstancedMesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.4 }), count);
+  ants.instanceMatrix.setUsage(DynamicDrawUsage);
+  parts.forEach((part) => part.dispose());
+  group.add(ants);
+  const at = new Object3D();
+  const seat = Array.from({ length: count }, (_, i) => {
+    const row = Math.floor(i / 3), col = i % 3;
+    return {
+      x: Math.sin(row * 1.6) * 0.12 + (col - 1) * width * 0.09 + Math.sin(i * 7.3) * 0.03,
+      y: -0.06 - row * 0.2 + Math.sin(i * 3.1) * 0.03,
+      z: 0.12 + (col === 1 ? 0.05 : -0.02) + Math.sin(i * 5.7) * 0.03,
+      lean: Math.sin(i * 2.9) * 0.35,
+      seed: i * 1.37,
+    };
+  });
+  return {
+    group,
+    tick(clock) {
+      for (const [i, s] of seat.entries()) {
+        // Every so often one shifts its grip: a small quick twist, held, then back.
+        const shift = Math.max(0, Math.sin(clock * 0.9 + s.seed * 3)) ** 12;
+        at.position.set(s.x + Math.sin(clock * 3.1 + s.seed) * 0.008, s.y + Math.sin(clock * 2.2 + s.seed) * 0.006, s.z);
+        // Turned on its long axis so its legs reach out across the picture, to the ants beside it.
+        at.rotation.set(Math.PI / 2 + Math.sin(clock * 4.3 + s.seed) * 0.08 + shift * 0.4, 0, Math.PI / 2 + s.lean + Math.sin(clock * 1.7 + s.seed) * 0.06, 'ZYX');
+        at.updateMatrix();
+        ants.setMatrixAt(i, at.matrix);
+      }
+      ants.instanceMatrix.needsUpdate = true;
     },
   };
 }

@@ -1011,6 +1011,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const calmStory = lessMotion();
     shoulderLift = calmStory ? wantShoulders : shoulderLift + Math.sign(wantShoulders - shoulderLift) * Math.min(Math.abs(wantShoulders - shoulderLift), dt * 8.5);
     clock += dt;
+    // What lives on a mover moves of itself: the ants under Granskogen's needle mats.
+    for (const mesh of moverMeshes) (mesh.children[0]?.userData.tick as ((at: number) => void) | undefined)?.(clock);
     // The scene playing now, if any: where the family and the ghost are, what they do, and the shot (./stage.ts).
     const directions = stage.update(sceneFrame ?? null, flags, { x, y }, clock, dt, calmStory);
     responseFor = Math.max(0, responseFor - dt);

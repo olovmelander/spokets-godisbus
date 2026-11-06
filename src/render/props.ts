@@ -11,7 +11,7 @@ import { sweetSocket } from './candy';
 import { forestSocket, standingCone } from './forest-kit';
 import type { MountainSocket } from './mountain-kit';
 import { saturdayBag } from './saturday-bag';
-import { antTrail, ladybird } from './critters';
+import { antColumn, antTrail, ladybird } from './critters';
 import { craneFlying, craneKneeling } from './crane';
 import { wingbeat } from './wingbeat';
 import { MODEL_TURN } from './ghost-model';
@@ -136,20 +136,34 @@ export function moverProp(mover: Mover): Group | null {
       break;
     }
     case 'ants': {
-      // Two draw calls for the whole living column: dark linked bodies beneath a broad needle mat.
-      // The animals remain code stand-ins until their Blender round.
-      const ants = new InstancedMesh(new SphereGeometry(0.09, 8, 6), solid('#3a281c'), 30);
-      const at = new Object3D();
-      for (let i = 0; i < 30; i++) {
-        const row = Math.floor(i / 3);
-        at.position.set(Math.sin(row * 1.6) * 0.14 + (i % 3 - 1) * 0.11, h - 0.25 - row * 0.2, 0.13);
-        at.scale.set(i % 3 === 0 ? 1.3 : 1, 0.75, 1);
-        at.updateMatrix();
-        ants.setMatrixAt(i, at.matrix);
+      // The living column: real ants holding on to each other, heads up, never quite still (./critters.ts), under a
+      // mat of fallen needles.
+      const column = antColumn(w);
+      column.group.position.y = h - 0.12;
+      // The mat: a thatch of fallen needles, pale and brown, laid every way over a darker felt of older ones.
+      const needles: BufferGeometry[] = [];
+      const tint = (shape: BufferGeometry, hex: string) => {
+        const plain = shape.index ? shape.toNonIndexed() : shape;
+        const c = new Color(hex), n = plain.getAttribute('position').count;
+        plain.setAttribute('color', new Float32BufferAttribute(Array.from({ length: n * 3 }, (_, k) => [c.r, c.g, c.b][k % 3]!), 3));
+        return plain;
+      };
+      needles.push(tint(new BoxGeometry(w * 0.86, h * 0.5, 0.56).translate(0, h * 0.4, 0), '#4a3a21'));
+      const shades = ['#b88f4c', '#8f6b37', '#cfa862', '#7b5f33', '#a47c40', '#6a5130'];
+      for (let i = 0; i < 120; i++) {
+        const k = (i * 0.618) % 1;
+        const long = 0.4 + 0.4 * Math.abs(Math.sin(i * 4.1));
+        // Most lie along the mat, the rest every which way; the lower layers are the older, darker ones.
+        const yaw = i % 3 ? Math.sin(i * 2.7) * 0.5 : Math.sin(i * 2.7) * 1.6;
+        const x = Math.sin(i * 1.93) * (w / 2 - long * 0.35), z = Math.sin(i * 3.37) * 0.42;
+        const needle = new CylinderGeometry(0.021, 0.016, long, 4).rotateZ(Math.PI / 2).rotateY(yaw).rotateZ(Math.sin(i * 5.3) * 0.15)
+          .translate(x, h * (0.12 + 0.86 * k), z);
+        needles.push(tint(needle, shades[k < 0.4 ? 3 + (i % 3) : i % 3]!));
       }
-      const mat = new Mesh(new BoxGeometry(w, h, 0.9), solid('#a08b45'));
-      mat.position.y = h / 2;
-      group.add(ants, mat);
+      const mat = new Mesh(mergeGeometries(needles), solid('#ffffff', 0.9, { vertexColors: true }));
+      needles.forEach((needle) => needle.dispose());
+      group.add(column.group, mat);
+      group.userData.tick = column.tick;
       break;
     }
     case 'twig': {
