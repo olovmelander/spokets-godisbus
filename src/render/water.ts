@@ -75,11 +75,15 @@ export interface WaterKind {
   stands: number | null;
 }
 
-/** A clear pool, as the forest's brook has: the test course's too, and any place without a kind of its own. */
+/**
+ * A clear pool, as the forest's brook has: the test course's too, and any place without a kind of its own. It is a
+ * Norrland brook (the graphics pass of 6 November 2026, after the reference brief): humic, the colour of tea, amber
+ * where the light goes into it over stones, near black where it is deep. It was a tropical teal.
+ */
 const POOL: WaterKind = {
   front: 0.65, corner: 0.65, back: -34, thins: -18, behind: null, feather: 3, depth: 6, bed: 0, shore: 0,
-  dim: 0.72, faceTop: '#2c7278', faceDeep: '#0c2c30', ramp: 2.2, faceAlpha: 0.8, faceBelow: 0.94, murk: 0.07, through: '#9fd8cf',
-  mirror: 0.65, tint: '#e6ecd8', ripple: 1.15, bedColour: '#000000', shoreColour: '#000000', stands: null,
+  dim: 0.72, faceTop: '#4a3f26', faceDeep: '#15120b', ramp: 2.2, faceAlpha: 0.85, faceBelow: 0.95, murk: 0.11, through: '#e0c48c',
+  mirror: 0.6, tint: '#e9e6d6', ripple: 1.15, bedColour: '#000000', shoreColour: '#000000', stands: null,
 };
 
 const KINDS: Partial<Record<PlaceId, WaterKind>> = {
@@ -578,7 +582,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           solid = faceSolid = 1.0;
         }
         // The line is soft, so that High's depth blur, which sees the pit behind the water, does not break it.
-        face = mix(face, skyMiddle * mirrorTint, 0.2 * (1.0 - smoothstep(0.0, 0.07, under)));
+        face = mix(face, skyMiddle * mirrorTint, 0.1 * (1.0 - smoothstep(0.0, 0.07, under)));
         if (body.w > 0.0) {
           // Shallow water: under its bed the street is cut through, dark and cool as the ground's own front.
           float ground = smoothstep(body.w - 0.02, body.w + 0.03, under);
