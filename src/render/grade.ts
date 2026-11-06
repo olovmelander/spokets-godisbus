@@ -140,6 +140,7 @@ const FRAGMENT = /* glsl */ `
   uniform float blurEnabled, dofDeep;
   uniform vec3 depthCamera;
   uniform float vignette;
+  uniform float cinema;
   uniform float grain;
   uniform float seed;
   uniform float glow;
@@ -184,7 +185,15 @@ const FRAGMENT = /* glsl */ `
     float scale = max(1.0, max(scene.r, max(scene.g, scene.b)) / LUT_RANGE);
     vec3 uvw = vec3(0.5 / LUT_SIZE) + max(scene, 0.0) / (scale * LUT_RANGE) * (1.0 - 1.0 / LUT_SIZE);
     vec3 colour = (texture(tLut, uvw).rgb - lutOffset) * scale + lutOffset;
-    colour *= 1.0 - vignette * smoothstep(0.3, 0.95, length(vUv - 0.5) * 1.35);
+    // The film's look (setCinema): warm in the light, cool and a little teal in the shadows, as Unravel's
+    // pictures are, and the corners a little darker still, as a lens's are.
+    if (cinema > 0.0) {
+      float lit = dot(colour, vec3(0.2126, 0.7152, 0.0722));
+      float shadow = 1.0 - smoothstep(0.02, 0.22, lit);
+      float high = smoothstep(0.25, 1.0, lit);
+      colour *= mix(vec3(1.0), vec3(0.93, 0.99, 1.07), shadow * cinema) * mix(vec3(1.0), vec3(1.07, 1.01, 0.9), high * cinema);
+    }
+    colour *= 1.0 - (vignette + 0.12 * cinema) * smoothstep(0.3, 0.95, length(vUv - 0.5) * 1.35);
     colour += (hash(vUv * 937.0 + seed) - 0.5) * grain * (0.2 + light);
     gl_FragColor = vec4(max(colour, 0.0), 1.0);
   }
@@ -203,6 +212,8 @@ export interface GradePass extends Effect {
   setBloom(texture: Texture | null): void;
   /** `deep`: how far behind the play plane is sharp, in EL (./depth-blur.ts). */
   setDepthBlur(texture: Texture | null, depth: Texture | null, near: number, far: number, cameraZ: number, deep?: number): void;
+  /** How much of the film's look: warm light, cool shadows, darker corners. 0 is none, as in the colour tests. */
+  setCinema(strength: number): void;
   /** The air of ./light-shafts.ts, which reads the depth that setDepthBlur gives. Null: none. */
   setAir(air: GradeAir | null): void;
 }
@@ -240,6 +251,7 @@ export function createGradePass(grade: Grade): GradePass {
       tBlur: { value: null }, tDepth: { value: null }, blurEnabled: { value: 0 }, dofDeep: { value: DOF_DEEP },
       depthCamera: { value: new Vector3(0.1, 140, 10) },
       vignette: { value: grade.vignette },
+      cinema: { value: 0 },
       grain: { value: grade.grain },
       seed: { value: 0 },
     },
@@ -273,6 +285,9 @@ export function createGradePass(grade: Grade): GradePass {
       material.uniforms.tDepth!.value = depth;
       material.uniforms.blurEnabled!.value = texture ? 1 : 0;
       (material.uniforms.depthCamera!.value as Vector3).set(near, far, cameraZ);
+    },
+    setCinema(strength) {
+      material.uniforms.cinema!.value = Math.max(0, Math.min(1, strength));
     },
     setGlow(strength) {
       material.uniforms.glow!.value = Math.max(0, strength);

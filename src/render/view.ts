@@ -69,6 +69,8 @@ import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
 import { photoCut } from './crop';
 
+/** How much of the film's look the grade gives (Olov, 6 November 2026: "mer likt ... Unravel"). */
+const CINEMA = 0.8;
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
 /** The ground sits about 35% up from the bottom, so thumbs never cover Elof (plan §5.2). */
@@ -236,6 +238,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let hdr: { scene: WebGLRenderTarget; grade: WebGLRenderTarget } | null = null;
   // High glows; Mid does not.
   gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
+  // The film's look on Mid and High, where the grade is a pass of its own (./grade.ts).
+  gradePass?.setCinema(CINEMA);
   // Let the browser restore a lost context instead of leaving a dead canvas.
   canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
 
@@ -1387,6 +1391,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       materialGrade.setEnabled(tier === 'low');
       resolutionSteps = 0;
       gradePass?.setGlow(tier === 'high' ? GLOW_ON_HIGH : 0);
+  // The film's look on Mid and High, where the grade is a pass of its own (./grade.ts).
+  gradePass?.setCinema(CINEMA);
       resize();
       // The previous tier's storage has been released/resized; new allocations use this tier's budget.
       gpu?.resetPeaks();
