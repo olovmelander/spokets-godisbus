@@ -5,7 +5,7 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Storm } from '../../sim/types';
 import { paintedWood } from '../../render/painted-wood';
-import { STONE, barkDetail, barky } from '../../render/bark-detail';
+import { PLANK, STONE, barkDetail, barky, notBark } from '../../render/bark-detail';
 
 /**
  * The big things of Äventyr 2's places, built in code (docs/aventyr-2.md): Billsta's white house with its two
@@ -241,7 +241,8 @@ function hut(def: BuildingDef) {
   const h = def.height ?? 15;
   const d = 8;
   const tar = def.tar === true;
-  const parts: BufferGeometry[] = [box(w - 0.6, h, d - 0.6, 0, h / 2, 0, tar ? '#1e1a18' : '#8a6232'), gable(w - 0.2, 3, d - 0.2, 0, h, 0, tar ? '#26211e' : '#a97a42'), ...roof(w, 3, d, 0, h, 0, '#7a8c9a', 0.9)];
+  const metal = roof(w, 3, d, 0, h, 0, '#7a8c9a', 0.9);
+  const parts: BufferGeometry[] = [box(w - 0.6, h, d - 0.6, 0, h / 2, 0, tar ? '#1e1a18' : '#8a6232'), gable(w - 0.2, 3, d - 0.2, 0, h, 0, tar ? '#26211e' : '#a97a42'), ...metal];
   const tones = tar ? ['#2a2522', '#231f1c', '#302a26'] : ['#b98a4e', '#a97a42', '#c49658'];
   const logs = Math.max(6, Math.round(h / 0.62));
   for (let i = 0; i < logs; i++) {
@@ -261,6 +262,9 @@ function hut(def: BuildingDef) {
       parts.push(paint(new CircleGeometry(r * 0.38, 10).translate(x, y, d / 2 + 0.27), tar ? '#3a3029' : '#bf955c'));
     }
   }
+  // The logs, their ends and the gable have the wood's grain seen close (../../render/bark-detail.ts); not the metal
+  // roof, nor the door's upright planks and the window, which are added after.
+  for (const part of parts) if (!metal.includes(part)) barky(part, PLANK);
   parts.push(...hutDoor(w, h, d, tar));
   // A small window beside the door, high up, in a white frame with a cross of glazing bars.
   const panes: BufferGeometry[] = [];
@@ -749,9 +753,11 @@ export function building(def: BuildingDef): Building {
   const material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.85 });
   // Houses, barns and halls of painted boards have their grain and weather seen close (../../render/painted-wood.ts).
   if (PAINTED.has(def.kind)) paintedWood(material);
-  // What is built of stone has the granite's grain, rain streaks and lichen (../../render/bark-detail.ts).
-  if (STONY.has(def.kind)) barkDetail(material);
-  group.add(new Mesh(mergeGeometries(STONY.has(def.kind) ? parts.map((part) => barky(part, STONE)) : parts), material));
+  // What is built of stone has the granite's grain, rain streaks and lichen, and a builder may mark its own parts as
+  // wood with a grain (../../render/bark-detail.ts).
+  const grained = parts.some((part) => part.hasAttribute('barky'));
+  if (STONY.has(def.kind) || grained) barkDetail(material);
+  group.add(new Mesh(mergeGeometries(STONY.has(def.kind) ? parts.map((part) => barky(part, STONE)) : grained ? parts.map(notBark) : parts), material));
   let paneMaterial: MeshBasicMaterial | null = null;
   if (panes.length) {
     // Where its windows are, for what their light falls on (../../render/lift/materials/puddles.ts), which has
