@@ -2,6 +2,48 @@
 
 ## State (6 November 2026)
 
+- **The voice cast is chosen; nothing is recorded yet (6 November 2026, cloud session, branch
+  `ccr-bcf8fd48-65wpxs`).** Olov: "Jag vill förbättra rösterna för Elofs godisbus … gör på samma sätt som vi gjorde
+  på sköldhästen spelet." As for Sköldhästen, he listened on a private page and chose a voice for every role:
+  [Godisäventyrets röster](https://claude.ai/artifact/4SNdSABZbxjHJVA7d7zUc7).
+  - **The page:** 73 samples for the nine roles that speak.
+    - Each role's samples read the same lines. A is the game's own recordings of them, so the comparison is with
+      today's voice.
+    - Every sample plays at one loudness.
+    - Besides today's voice, a role had Swedish library voices and voices designed from a description, all through
+      the ElevenLabs API: Voice Design v3 for the designs, Eleven v4 for the readings.
+    - ElevenLabs blocks designs of children's voices. Most of Elof's, Moa's and Bertil's designed voices are
+      therefore a young woman doing a boy's or a girl's cartoon voice.
+    - Every sample was checked with speech-to-text. The page's `cast.json` holds every option's voice id.
+  - **Olov's choices** ("Mina röstval: Elof G, Pappa B, Mamma B, Moa B, Bertil D, Mormor E, Morfar B, Spöket F,
+    Berättaren A"):
+
+    | Role | Choice | Voice in Olov's ElevenLabs account | Voice id |
+    | --- | --- | --- | --- |
+    | Elof | G, designed, "lite hes och busig" | Godisäventyret – Elof | `pKEH83CenvGnvS9JlN8f` |
+    | Pappa | B, library | Ola Paulakoski | `7UMEOkIJdI4hjmR2SWNq` |
+    | Mamma | B, library | Elin Nilsson | `4Ct5uMEndw4cJ7q0Jx0l` |
+    | Moa | B, library | Emma | `pPdl9cQBQq4p6mRkZy2Z` |
+    | Bertil | D, designed, "sportig och kaxig" | Godisäventyret – Bertil | `JsPUTLdHju8qRnxHL4lo` |
+    | Mormor | E, designed, "pigg och glad" | Godisäventyret – Mormor | `TI58dCdnaz4gmYn5EbvK` |
+    | Morfar | B, library, a Norrland accent | Brage | `nEJYXtiAMFuP7hh9yoi4` |
+    | Spöket | F, designed, "mjukt med eko"; says only "Klonk" | Godisäventyret – Spöket | `1ZTWuhdVSCOr9OfdV5pO` |
+    | Berättaren | A, unchanged | olov-voice, Olov's own | `oVRBQOcE5xQoswjGIb1u` |
+
+    The four designed voices are saved in his account under those names. Brage was added from the library and keeps
+    its own name. The account uses 15 of its 30 voice slots.
+  - **Not recorded, on Olov's word ("Vänta med att spela in").** `scripts/voices-config.json`, `public/audio/voices`
+    and the game are unchanged, so the game still plays today's voices.
+  - **When he says go** (see "Next"):
+    - Set `scripts/voices-config.json` to the ids above, and add `mormor` and `morfar`.
+    - Record again Äventyr 1's 76 lines of the roles that change. The narrator's 25 clips stay.
+    - Record Äventyr 2's 280 lines (`scripts/voices-aventyr2.json`) for the first time.
+    - That is about 26,000 characters with Eleven v4 and the same per-line tags.
+    - Listen first to Bertil's "Kliv i": in his sample, speech-to-text heard "klev".
+  - **Credits:** the casting used about 5,600 ElevenLabs credits. 48,216 were left until the reset on 11 November.
+  - **Checked:** only `HANDOVER.md` changed; see the PR. The ElevenLabs key is readable in cloud sessions now
+    ("Frågor till Olov", 19). Nothing needs Olov's computer.
+
 - **Lighter nights, with the mood kept (6 November 2026, cloud session, branch `ccr-77db4123-5s8xa3`).** Olov:
   "Spelet kan vara lite för mörkt när det är som mörkast också i scenerna. Vi måste justera och fixa atmosfären och
   ljuset lite."
@@ -3959,6 +4001,7 @@ This implementation needs no work on Olov's computer. Existing art/device judgem
 The graphics overhaul (PR #228), opening revision (PR #226) and story audit (PR #227) are merged and deployed.
 Graphics evidence and limits are in [`docs/graphics-overhaul-audit.md`](docs/graphics-overhaul-audit.md).
 Review the deployed picture on the family devices. New voices still wait until the story and conversations are finished.
+The voice cast is chosen (see "State"); recording with it waits for Olov's word, and then follows the steps listed there.
 The cap revision above includes the actual private models and local pose checks; also review Pappa's and Bertil's
 caps in both adventures; its companion PR #229 is deployed. Historical Blender sources are distinct from this reproducible
 GLB-only revision; see the private README before making a new full-character export.
@@ -4287,6 +4330,9 @@ The older list, still true where it is not struck:
 - **Voices (Olov, 5 November 2026):** new TTS voices are recorded when the storytelling and the conversations are finished.
   Until then `public/audio/voices`, `public/audio/test_candidates` and `src/audio/voice-player.ts` stay as they are, and a
   404 for a line without a voice is expected. Olov chooses the service. This replaces plan §0 Q9's "no voices".
+- **The voice cast (Olov, 6 November 2026):** ElevenLabs, with the voices in the table under "State": four designed
+  voices (Elof, Bertil, Mormor, Spöket), four library voices (Pappa, Mamma, Moa, Morfar) and his own voice for the
+  narrator. Nothing is recorded with them until he says so.
 - **The size gate (Olov, 5 November 2026):** 4 MB as served for the whole site, from 3 MB.
 | Question | Decision | Source |
 | --- | --- | --- |
@@ -4340,6 +4386,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The voice cast (6 Nov) | Olov's request: designed voices to choose from for every character, as for Sköldhästen | Part of one cloud session | 1 / 1 | 73 samples on a private page; Olov chose all nine roles, and the voices are saved in his ElevenLabs account. Recording waits for his word. |
 | Lighter nights (6 Nov) | Olov's request: not so dark at the darkest, scenes too, mood kept | Part of one cloud session | — / 0 so far | 52 frames measured before and after; more light on the play plane at night, lighter night water, skies unchanged. |
 | Klonk carved again (6 Nov) | Olov's request: improve Klonk's design after the carving and the poster | Part of one cloud session, Blender 5.2 as a Python module | — / 0 so far | A new build from knife-cut blocks with baked wood and paint; private repository PR #4. |
 | The family's motion (6 Nov) | Olov's request: natural, smooth motion for everyone but Elof | Part of one cloud session | — / 0 so far | Measured frame by frame through every chapter; steps that fit the ground, no snapping, followers that keep up and settle; a few dashes given time. |
@@ -4595,9 +4642,9 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
 18. **Äventyr 2 (4 November):** is **Fjun** the right name for Elof's little carving (it flew like fluff in the
     storm; Kvist and Flisa were the other two)? Is the storm's lightning calm enough, and should Halloween's pumpkin
     stay in the garden? The defaults: as built.
-19. **ElevenLabs for Äventyr 2's voices:** the session could not read a key. Add it in the environment's settings
-    as an environment variable named `ELEVENLABS_API_KEY` (never in the chat), and a new session generates the
-    lines listed in `scripts/voices-aventyr2.json`.
+19. **ElevenLabs for Äventyr 2's voices:** *(Answered on 6 November: the key is readable in cloud sessions as
+    `ELEVENLABS_API_KEY`, and the voice cast is chosen; see "State".)* The lines in `scripts/voices-aventyr2.json`
+    are recorded when Olov says so.
 20. **Mormor and morfar in Äventyr 2 (4 November):** Olov asked for them and their home in Billsta. They are only
     "Mormor" and "Morfar", plain stand-ins with no likeness, each with one thing of the story's (morfar's ladder,
     mormor's lantern), and their house is an interpretation in plain shapes of Olov's picture, by the road near the
