@@ -111,7 +111,6 @@
         a rig's `bareHead`: on his model the cap is its own part).
       - Myren: in the mist Elof holds the lysklubba up in his hand like a lantern, instead of it floating over him.
       - The garden: Moa crouches and reaches into the root hole the ghost crept into ("Jag får inte plats!").
-      - Norrsken: on Pappa's shoulders Elof holds the old trägubbe himself on the way home.
       - The epilogue: the party has its table; the clip, the marble and the coin leave the floor as they are given
         back.
       - The prologue: Moa holds her crayon as she promises him a map.
@@ -4705,6 +4704,8 @@ The older list, still true where it is not struck:
     cliff on Berget ("Lyft"), Mamma lifting the log on Myren, Pappa holding the seesaw board in Granskogen, the
     candy the ghost leaves at the vittra door, the toothbrush in the epilogue, Klonk hopping across the party table,
     Pappa beside Elof as they carve, and what Elof picks up (the lingon, Moa's leaf drawing) shown in his hands.
+    Tried and taken back: Elof holding the old trägubbe on Pappa's shoulders in Norrsken. The carving is nearly as
+    tall as he is, so in his hand it rose over his face, and the finale suite keeps both carvings below it.
 - The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
   line now).
 
