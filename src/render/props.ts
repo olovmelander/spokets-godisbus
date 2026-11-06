@@ -185,8 +185,10 @@ export function moverProp(mover: Mover): Group | null {
     case 'log': {
       // A dead pine, grey and bare: it lies level, with its top where he walks.
       const grey = solid('#a9a69e', 1);
-      const trunk = new Mesh(new CylinderGeometry(h * 0.55, h * 0.7, w, 12), grey);
-      trunk.rotation.z = Math.PI / 2;
+      // Weathered silver wood with its grain along it (./bark-detail.ts): laid along x in its own shape, so the
+      // grain goes with it as Mamma pulls it.
+      barkDetail(grey);
+      const trunk = new Mesh(barky(new CylinderGeometry(h * 0.55, h * 0.7, w, 16).rotateZ(Math.PI / 2), PLANK), grey);
       trunk.position.y = h * 0.42;
       group.add(trunk);
       for (const x of [-0.3, 0.15, 0.38]) {
