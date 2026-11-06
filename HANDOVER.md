@@ -107,10 +107,12 @@
         hinges.
     - **Also tonight:** the forest's brooks raise the eye 3 EL (the bog's still water 1.6), so the water, its
       mirror and its far bank read; Myren's two "striped bowls" were the soft tussocks, now widening down into the
-      water as hummocks, and the stripes were the water's mirror stepping, now dithered into fine grain; the
+      water as hummocks with sedge round their shoulders, and the stripes were the water's mirror stepping, now
+      dithered into fine grain; the
       village street's puddle is a dark blue mirror; rain lands in rings on the water; Älven's gnawed stumps were
-      rebuilt in Blender 5.2 with tooth marks (the nature kit's other models are unchanged); Flärken's log huts
-      have the wood's grain.
+      rebuilt in Blender 5.2 with tooth marks, and the tall pine's crown (behind the mountain path, the garden and
+      Äventyr 2's places) is clouds of tufts instead of nine flat plates (the nature kit's other models are
+      unchanged); Flärken's log huts have the wood's grain.
   - **Budgets, widened at Olov's word ("utöka grafikbudgeten rejält"):** High draws up to 3.5 MP (was 2.6), its
     offscreen targets may take 110 MB (was 80) and the whole picture 260 MB (was 220): `quality.ts`,
     `gpu-memory.ts`, `scripts/asset-gpu-estimate.mjs`, the gpu-memory suite and its unit tests. The prologue on a
