@@ -19,24 +19,25 @@ function boxes(rows: Box[]): InstancedMesh {
 export const SATURDAY_BAG_TALL = 0.6;
 
 /**
- * A striped paper bag of the sweet shop's, as Elof's Saturday bag is. The bag modelled in Blender
- * (art/blender/candy.py: striped paper, pinked at its top, with sweets looking out) takes the place of the
- * one built here from boxes, once the candy kit has arrived.
+ * Elof's Saturday bag, as the ghost holds it in Pappa's carving and on Olov's poster (Olov, 6 November 2026): pale
+ * paper, and on its front a bunch of painted dots, a big red one with green, orange and red round it. The bag
+ * modelled in Blender (art/blender/candy.py) takes the place of the one built here from boxes, once the candy kit
+ * has arrived.
  */
 export function paperBag(): Group {
   const parts: Box[] = [
-    [0, .28, 0, .42, .56, .3, '#efdfbd'],
-    [0, .59, 0, .45, .08, .32, '#bd986e'],
+    [0, .28, 0, .42, .56, .3, '#eedfc8'],
+    [0, .59, 0, .45, .08, .32, '#a98e6c'],
   ];
-  for (const z of [-.155, .155]) for (const y of [.14, .29, .44]) {
-    parts.push([0, y, z, .425, .055, .016, '#5379a3']);
-  }
+  for (const [x, y, size, colour] of [
+    [0, .3, .09, '#d3302a'], [-.062, .335, .05, '#2f9a4a'], [.052, .352, .045, '#e8582c'], [-.072, .262, .045, '#e8582c'],
+    [.068, .272, .056, '#c62a24'], [.024, .228, .05, '#2f9a4a'], [-.046, .212, .036, '#d3302a'],
+  ] as const) parts.push([x, y, .155, size, size, .012, colour]);
   return sweetSocket(new Group().add(boxes(parts)), { shape: 'lordagspase', paper: true });
 }
 
 /**
- * Elof's striped Saturday bag, visibly distinct from the ghost's small carved pocket. Its tear is a part of
- * its own, shown when the story says so.
+ * Elof's Saturday bag with its painted dots. Its tear is a part of its own, shown when the story says so.
  */
 export function saturdayBag(): Group {
   const group = new Group();
