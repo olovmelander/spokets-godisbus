@@ -1729,7 +1729,9 @@ function buildTussocks(chapter: ChapterData, colour: string | null): Mesh[] {
   return (chapter.tussocks ?? []).map((t) => {
     // In greybox a box. In a place a mound of moss: level on top, where he stands, and round at its shoulders.
     const geometry = colour
-      ? new LatheGeometry([[0, 0], [0.5, 0], [0.78, -0.06], [0.94, -0.2], [1, -0.42], [0.96, -0.75], [0.8, -1.2], [0.5, -1.6]].map(([r, y]) => new Vector2(r, y)), 22).scale(t.width / 2, 1, 1.5)
+      // A hummock: level where he stands, round at its shoulders, and wider and wider down into the water, as a
+      // tussock of the bog is. It narrowed towards its foot, and from above (Mamma's shot) read as a bowl (6 November).
+      ? new LatheGeometry([[0, 0], [0.5, 0], [0.8, -0.05], [0.98, -0.18], [1.1, -0.42], [1.22, -0.8], [1.34, -1.3], [1.42, -1.8]].map(([r, y]) => new Vector2(r, y)), 26).scale(t.width / 2, 1, 1.5)
       : new BoxGeometry(t.width, 1.6, 2.6);
     geometry.translate(0, colour ? 0 : -0.8, -0.6);
     if (colour) {
@@ -1737,8 +1739,9 @@ function buildTussocks(chapter: ChapterData, colour: string | null): Mesh[] {
       const at = geometry.getAttribute('position');
       const tones: number[] = [];
       for (let i = 0; i < at.count; i++) {
-        const patch = 0.78 + 0.3 * Math.abs(Math.sin(at.getX(i) * 3.1 + t.x) * Math.cos(at.getZ(i) * 2.7 + t.x * 1.7));
-        const deep = at.getY(i) < -0.25 ? 0.6 : 1;
+        const patch = 0.84 + 0.2 * Math.sin(at.getX(i) * 1.7 + t.x) * Math.cos(at.getZ(i) * 1.4 + t.x * 1.7);
+        // Its sides darken gently down to the water: peat and wet moss, no hard band.
+        const deep = 1 - 0.5 * Math.min(1, Math.max(0, (-at.getY(i) - 0.1) / 1.2));
         tones.push(patch * deep, patch * deep * (0.94 + 0.06 * Math.sin(at.getX(i) * 5 + t.x)), patch * deep * 0.9);
       }
       geometry.setAttribute('color', new Float32BufferAttribute(tones, 3));

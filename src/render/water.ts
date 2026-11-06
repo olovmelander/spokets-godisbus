@@ -518,14 +518,16 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           if (refractOn > 0.5 && waterDepth < 45.0) {
             // The picture so far, mirrored: the mirrored ray in growing steps against the picture's own depth.
             vec3 r = reflect(d, vec3(0.0, 1.0, 0.0));
-            float s = 0.25, last = 0.0;
+            // Each pixel starts its steps a little differently, so that where they skip over the near side of
+            // something they leave fine grain and not stripes (the bog's tussocks, 6 November 2026).
+            float s = 0.25 * (0.55 + 0.9 * fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))))), last = 0.0;
             for (int i = 0; i < 8; i++) {
               vec4 clip = viewProjection * vec4(waterWorld + r * s, 1.0);
               vec2 uv = clip.xy / clip.w * 0.5 + 0.5;
               if (uv.y > 1.0 || uv.x < 0.0 || uv.x > 1.0) break;
               float gap = clip.w - textureLod(refraction, uv, 0.0).a * cameraFar;
               if (gap > 0.0 && gap < 0.5 + s * 0.35) {
-                for (int j = 0; j < 3; j++) {
+                for (int j = 0; j < 5; j++) {
                   float m = (last + s) * 0.5;
                   vec4 mc = viewProjection * vec4(waterWorld + r * m, 1.0);
                   vec2 mu = mc.xy / mc.w * 0.5 + 0.5;
