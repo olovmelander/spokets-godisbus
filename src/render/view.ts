@@ -99,8 +99,12 @@ function softwareDrawn(renderer: WebGLRenderer): boolean {
 
 /** How much of the film's look the grade gives (Olov, 6 November 2026: "mer likt ... Unravel"). */
 const CINEMA = 0.8;
-/** How many EL the eye rises over a brook or a pool, looking down onto it. */
+/**
+ * How many EL the eye rises over a brook or a pool, looking down onto it: most over the forest's brooks, which lie
+ * in their dips and otherwise read as a thin band (Olov, 6 November 2026), less over the bog, which is all water.
+ */
 const POOL_EYE = 1.6;
+const BROOK_EYE = 3.0;
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
 /** The ground sits about 35% up from the bottom, so thumbs never cover Elof (plan §5.2). */
@@ -1089,7 +1093,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const wantOverWater = !calmStory && pools.some((w) => look.x > w.from - 3 && look.x < w.to + 3 && Math.abs(look.y - w.y) < 4) ? 1 : 0;
     overWater += (wantOverWater - overWater) * ease(1.2, dt);
     if (calmStory) overWater = 0;
-    camera.position.set(look.x, centreY + POOL_EYE * overWater * look.zoom, distance * look.zoom);
+    camera.position.set(look.x, centreY + (chapter.place === 'forest' ? BROOK_EYE : POOL_EYE) * overWater * look.zoom, distance * look.zoom);
     camera.lookAt(look.x, centreY, 0);
     const nearbyFamily = stands.find((stand) => stand.prop!.group.visible && Math.abs(stand.at - x) < 3.4 &&
       Math.abs(stand.prop!.group.position.y - y) < 2 && curr.mode !== 'ride' && curr.mode !== 'fly');
