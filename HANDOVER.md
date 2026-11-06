@@ -12,12 +12,18 @@
     - **Depth of field** (`src/render/depth-blur.ts`): the play plane stays sharp; behind it the world softens more
       the further it is; the near ground and leaves between him and the camera blur most and spill soft over what
       is behind them; bright points open into discs. The focus pulls back to the family while a scene's shot is
-      on them. Two draws at about half resolution (each target at most 0.36 MP); Mid gathers from half as many
-      points. The grade decides at full resolution where the picture is sharp, so his outline never softens.
-      Strength: `DOF_FAR` 0.016 and `DOF_NEAR` 0.026 of the picture's height.
+      on them. Two draws at about half resolution (each target at most 0.36 MP); High gathers from 16 and 12
+      points, Mid from 10 and 6. The grade decides at full resolution where the picture is sharp, so his outline
+      never softens. Strength: `DOF_FAR` 0.016 and `DOF_NEAR` 0.026 of the picture's height. What stands far back
+      keeps its shape: the blur thins from 6 EL behind the play plane to a quarter by 18 EL (Olov: "kyrktornet och
+      kyrkan" were too blurred).
     - **The shade where things meet** (`src/render/contact-shade.ts`): ambient occlusion from the depth alone, half
       resolution, one byte a pixel, a blur that keeps to one surface. `SHADE_REACH` 0.6 EL, `SHADE_STRENGTH` 0.7.
-    - **The film's look** (`grade.ts`, `setCinema`, 0.8): warm light, cool teal shadows, corners a little darker.
+    - **The film's look** (`grade.ts`, `setCinema`, 0.8): warm light, cool teal shadows, corners a little darker, a
+      little more contrast and saturation.
+    - **Smoothed edges** (FXAA in `grade.ts`, `setSmoothEdges`): Mid and High, no extra memory. Not where the
+      browser draws without a GPU (SwiftShader on CI, where it would slow the timed suites); it is compiled there all
+      the same, and `?edges` turns it on.
     - **Pollen in front of the lens** (`src/render/lift/near-motes.ts`): a dozen out-of-focus discs drifting by day.
     - `?nolens` leaves the depth of field and the shade out, to bench their cost with `?bench`.
   - **Close materials (Mid and High; Low keeps its old cost through the `CLOSE_DETAIL` uniform):**
@@ -29,6 +35,8 @@
       on the mountain's rocks, the forest's boulders, the fell's stones and the forest kit's stones (the eddy
       stone); grain on the planks he pushes and on plank ledges.
     - **Moss** (`lift/flora/light.ts`, `moss-v2`): a carpet of little shoot tips.
+    - **Painted wood** (`src/render/painted-wood.ts`): the village's houses and Äventyr 2's villa, barn, store,
+      clubhouse, stand, church, woodshed and lodge: grain under the paint, uneven paint, the foot of the wall darker.
   - **Places and things:**
     - **Home** (`src/render/dressing/house-door.ts`): out through a glazed veranda and its open door, after Olov's
       photograph (not stored); the red house front fades in over the cut-away rooms. Prologue and Stormkvällen.
@@ -39,7 +47,13 @@
     floor and hurry out of his way (`src/render/lift/beetles.ts`, tested); Mamma's braid (`src/render/braid.ts`);
     the puzzles' things lean, rock and squash (`src/render/mover-motion.ts`, tested).
   - **Budgets:** High's render targets 73–79 MB of 80 (the `gpu-memory` suite); JavaScript 514 of 520 KB gzipped,
-    so the next addition of code must find room; draws a few more on Mid and High, far under the budget.
+    so the next addition of code must find room; draws a few more on Mid and High, far under the budget. Olov
+    asked to widen the budget "rejält": the next step would be High's pixel cap from 2.6 to about 3.5 MP (sharper on
+    the iPad), which needs High's target limit raised from 80 to about 110 MB in `gpu-memory.ts`, the browser suite
+    and `scripts/asset-gpu-estimate.mjs`. Not done tonight: it slows the software-rendered memory suite on CI.
+  - **CI and software rendering:** the browser suites draw without a GPU and their walks are timed. The close
+    detail is off on Low, the lens gathers from few points and the edges are not smoothed there, so High in
+    software rendering is as fast as before (measured alternating with `?nolens`).
   - **Not done:** new Blender models. The trees, cones, stones and the eddy stone are already Blender kits, so
     tonight's work went into how everything is drawn; the code-built buildings behind the play plane are now
     softened by the lens. The redrawn bark texture of the forest's far trunks made no visible difference and was
