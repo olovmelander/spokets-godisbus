@@ -83,7 +83,9 @@ export interface WaterKind {
 const POOL: WaterKind = {
   front: 0.65, corner: 0.65, back: -34, thins: -18, behind: null, feather: 3, depth: 6, bed: 0, shore: 0,
   dim: 0.72, faceTop: '#4a3f26', faceDeep: '#15120b', ramp: 2.2, faceAlpha: 0.85, faceBelow: 0.95, murk: 0.11, through: '#e0c48c',
-  mirror: 0.6, tint: '#e9e6d6', ripple: 1.15, bedColour: '#000000', shoreColour: '#000000', stands: null,
+  // Dark water mirrors darker and warmer: at 0.6 and near white it gave back the bright, hazy forest so well that
+  // the brook read as mist (Olov: "har vi fixat vattnet och bäckarna så att det ser bra ut?").
+  mirror: 0.42, tint: '#b8ad8c', ripple: 1.15, bedColour: '#000000', shoreColour: '#000000', stands: null,
 };
 
 const KINDS: Partial<Record<PlaceId, WaterKind>> = {
