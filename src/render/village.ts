@@ -1123,8 +1123,7 @@ function shopInterior(chapter: ChapterData): Group {
 
 /**
  * The bag to share, in the chapter's last picture (docs/visual-audit/byn.md row 20): one of the shop's
- * striped paper bags, as his Saturday bag is, taller than he is, open, with sweets looking out over its
- * pinked top. It stands a little turned, clear of the big candy. No sign, price or brand. Measured from the
+ * paper bags with painted dots, as his Saturday bag is, taller than he is, with its pinked top. It stands a little turned, clear of the big candy. No sign, price or brand. Measured from the
  * big candy's place, on the floor.
  */
 export const SHOP_BAG = { tall: 3.4, past: 2.8, z: -2.4, turn: -0.42 } as const;
