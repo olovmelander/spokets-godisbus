@@ -4090,6 +4090,15 @@
 
 ## Next
 
+**PR #235 (the graphics pass, the Unravel look, the SUP, the rain gear and the story's details), for Olov to judge
+and merge.** On the family devices, on High:
+- the lens: is the blur right (the far world soft, the near ground very soft, him and the path sharp)?
+- the storm: the rain gear on everyone, Bertil's boot, the family's lamps, Mamma on her SUP;
+- the brooks in Granskogen (the eye rises over them) and Myren's hummocks;
+- run `?bench` and `?bench&nolens` once on the slowest device.
+It needs no work on Olov's computer; the two Blender rebuilds (the stumps and the tall pine) were made in the cloud
+session with Blender 5.2's `bpy`, and their sources are in `art/blender/a2-nature.py`.
+
 The full game audit above repairs reproduced gameplay, persistence, control, audio and rendering defects across
 both adventures; its full validation/delivery record belongs to the PR. Review the deployed result on the family
 devices, especially larger-text Pause, touch/gamepad controls, chapter continuation and the final home ride.
@@ -4113,7 +4122,7 @@ needs no new Blender work. Device colour, readability and frame rate remain a ph
 no new *Senare* item or question for Olov; the existing lists below still apply.
 
 **Left of the overhaul:** the owl's flight and the ride home at Stormöga were not checked with stills since their water changed;
-Stormbyn's flat dark street; Pappa at the bridge stands on the bank; the raft tower and the goals are still drawn in code.
+Stormbyn's flat dark street; the raft tower and the goals are still drawn in code.
 
 **Earlier picture worklist, from three stills of every chapter on High (4 November 2026).** The completed graphics
 work above supersedes its room, shared-model and ground findings; remaining art/device judgements still apply:
