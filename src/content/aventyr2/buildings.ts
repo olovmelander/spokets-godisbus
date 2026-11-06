@@ -121,6 +121,13 @@ function goal(def: BuildingDef) {
     parts.push(box(0.08, h * 0.9, 0.08, depth * (k / 10), h * 0.45, -span / 2, '#e6e6e2'));
     parts.push(box(0.08, 0.08, span, depth * (k / 10), h * (1 - 0.25 * (k / 10)), 0, '#e6e6e2'));
   }
+  // The net is a mesh, not a row of strings: strands across the sides too, and the back net behind, in squares.
+  for (let k = 1; k < 9; k++) {
+    const y = h * 0.75 * (k / 9);
+    for (const z of [-span / 2, span / 2]) parts.push(box(depth, 0.06, 0.06, depth / 2, y, z, '#e6e6e2'));
+    parts.push(box(0.06, 0.06, span, depth, y, 0, '#e6e6e2'));
+  }
+  for (let k = 1; k < 12; k++) parts.push(box(0.06, h * 0.75, 0.06, depth, h * 0.375, -span / 2 + span * (k / 12), '#e6e6e2'));
   return { parts, panes: [] };
 }
 
