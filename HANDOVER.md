@@ -106,6 +106,15 @@
       - Stormgården: Moa's lamp shines on him from the window (`storm.beams`).
       - Left for later (see "Senare"): Moa and Bertil running ahead in Billsta, and Flärken's door banging on its
         hinges.
+    - **The same search through Äventyr 1** (12 found; the cheap and visible ones done):
+      - Granskogen: Bertil stands bareheaded once he has lent his cap as Elof's boat ("Min keps blir din båt";
+        a rig's `bareHead`: on his model the cap is its own part).
+      - Myren: in the mist Elof holds the lysklubba up in his hand like a lantern, instead of it floating over him.
+      - The garden: Moa crouches and reaches into the root hole the ghost crept into ("Jag får inte plats!").
+      - Norrsken: on Pappa's shoulders Elof holds the old trägubbe himself on the way home.
+      - The epilogue: the party has its table; the clip, the marble and the coin leave the floor as they are given
+        back.
+      - The prologue: Moa holds her crayon as she promises him a map.
     - **Also tonight:** the forest's brooks raise the eye 3 EL (the bog's still water 1.6), so the water, its
       mirror and its far bank read; Myren's two "striped bowls" were the soft tussocks, now widening down into the
       water as hummocks with sedge round their shoulders, and the stripes were the water's mirror stepping, now
@@ -4682,6 +4691,10 @@ The older list, still true where it is not struck:
 - The story's details still not drawn (found on 6 November by reading Äventyr 2's lines against the picture):
   - Moa and Bertil running ahead in Billsta ("Följ vårt godis! Vi springer före."), who are only heard;
   - Flärken's door banging on its hinges ("Pang! Dörren…"), which is a sliding plank.
+  - In Äventyr 1: the golden geléhallon going to his mouth in Norrsken ("Smaka …"), Elof lifting the ghost up the
+    cliff on Berget ("Lyft"), Mamma lifting the log on Myren, Pappa holding the seesaw board in Granskogen, the
+    candy the ghost leaves at the vittra door, the toothbrush in the epilogue, Klonk hopping across the party table,
+    Pappa beside Elof as they carve, and what Elof picks up (the lingon, Moa's leaf drawing) shown in his hands.
 - The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
   line now).
 
