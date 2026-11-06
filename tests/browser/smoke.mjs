@@ -207,7 +207,8 @@ for (const tier of ['low', 'high']) {
   check(`?tier=${tier} is honoured`, drawn.tier === tier, drawn.tier);
   check(`${tier}: the scene and the model are drawn`, drawn.drawCalls > 0 && drawn.models.includes('boot/big-candy'), `${drawn.drawCalls} draw calls`);
   const pixels = drawn.width * drawn.height;
-  const cap = tier === 'low' ? 1.0e6 : 2.6e6;
+  // The caps of src/render/quality.ts's PIXEL_CAP: High's was widened from 2.6 to 3.5 MP on 6 November, at Olov's word.
+  const cap = tier === 'low' ? 1.0e6 : tier === 'mid' ? 1.6e6 : 3.5e6;
   check(`${tier}: the canvas stays inside its pixel cap`, pixels <= cap * 1.01, `${drawn.width}×${drawn.height}`);
   await finish();
 }
