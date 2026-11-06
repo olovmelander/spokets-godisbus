@@ -138,12 +138,15 @@ try {
       actor.visible === change.midway.family[i].visible && JSON.stringify(actor.at) === JSON.stringify(change.midway.family[i].at)));
     check(`${name}: Elof becomes one third as tall while the same family remains beside him`,
       Math.abs(change.after.scale - 1) < .01 && change.after.family.every((actor) => actor.visible) && !change.after.star);
-    // Pappa deliberately steps closer before kneeling; the other three keep their following positions.
+    // Pappa deliberately steps closer before kneeling; after the POFF the other three come over to him at a walk
+    // (the motion pass of 6 November 2026), so they are on their way to their places by now.
     const pappa = change.after.family[1];
-    check(`${name}: Pappa reaches his supportive mark while the other relatives stay nearby`,
+    const marks = [[38.8, -1.4], null, [40.3, -2.5], [43.1, -2.8]];
+    const toMark = (actor, i) => Math.hypot(actor.at[0] - marks[i][0], actor.at[2] - marks[i][1]);
+    check(`${name}: Pappa reaches his supportive mark while the other relatives come over to him`,
       pappa.at.every((value, i) => Math.abs(value - [39.6, -.8, -1.4][i]) < 1e-6) &&
       pappa.at[0] > before.family[1].at[0] &&
-      change.after.family.every((actor, i) => i === 1 || JSON.stringify(actor.at) === JSON.stringify(before.family[i].at)));
+      change.after.family.every((actor, i) => i === 1 || toMark(actor, i) <= toMark(before.family[i], i) + 1e-6));
     check(`${name}: story staging stays inside the draw budget with warmed shaders`, withinDraws(change.after.drawCalls, change.after.tier) && change.after.programs === before.programs);
     const kneeling = await page.evaluate(() => {
       const p = window.probe;
