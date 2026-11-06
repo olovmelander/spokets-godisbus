@@ -1,5 +1,5 @@
 import {
-  BufferGeometry, Float32BufferAttribute, MeshStandardMaterial, Skeleton, SkinnedMesh, Uint16BufferAttribute, type Bone, type Object3D,
+  Box3, BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Skeleton, SkinnedMesh, Uint16BufferAttribute, Vector3, type Bone, type Object3D,
 } from 'three';
 import type { ChapterData } from '../sim/types';
 
@@ -180,6 +180,95 @@ export interface Wardrobe {
   boots: [SkinnedMesh | null, SkinnedMesh | null];
   socks: [SkinnedMesh | null, SkinnedMesh | null];
   hair: SkinnedMesh | null;
+  /** What of the body is under the coat and each boot is not drawn while they are worn: x coat, y left boot, z right. */
+  cover: { value: Vector3 } | null;
+}
+
+const COVERED_BY_COAT = new Set(['pelvis', 'spine_01', 'spine_02', 'upperarm_l', 'upperarm_r', 'lowerarm_l', 'lowerarm_r', 'thigh_l', 'thigh_r']);
+
+/**
+ * Marks each corner of the body by what covers it, from where it lies at rest and which bone moves it most, and has
+ * the body's material leave out what is covered while it is worn. A shirt under a raincoat moves a little otherwise
+ * than the coat (its sleeve is one with its side, the coat's is set in), and would show through it as an arm goes
+ * up; what is not drawn cannot. Where a boot is off its side is drawn again, and the sock goes over the shoe.
+ */
+function hideUnder(body: SkinnedMesh, coat: SkinnedMesh | null, boots: [SkinnedMesh | null, SkinnedMesh | null]): { value: Vector3 } | null {
+  const g = body.geometry;
+  const position = g.getAttribute('position'), skinIndex = g.getAttribute('skinIndex'), skinWeight = g.getAttribute('skinWeight');
+  if (!position || !skinIndex || !skinWeight) return null;
+  const names = body.skeleton.bones.map((bone) => bone.name);
+  // The packer quantizes each mesh in a box of its own and moves that into the skin's inverse bind matrices, so the
+  // body's and each piece's positions are in different units. The pelvis's frame at rest is shared and in metres.
+  const atRest = (mesh: SkinnedMesh) => {
+    const k = Math.max(0, mesh.skeleton.bones.findIndex((bone) => bone.name === 'pelvis'));
+    return new Matrix4().multiplyMatrices(mesh.skeleton.boneInverses[k], mesh.bindMatrix);
+  };
+  const v = new Vector3();
+  const rested = (mesh: SkinnedMesh) => {
+    const p = mesh.geometry.getAttribute('position'), m = atRest(mesh), out = new Float32Array(p.count * 3);
+    for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(m); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; }
+    return out;
+  };
+  const box = (mesh: SkinnedMesh | null) => {
+    if (!mesh) return null;
+    const p = rested(mesh), b = new Box3();
+    for (let i = 0; i < p.length; i += 3) b.expandByPoint(v.set(p[i], p[i + 1], p[i + 2]));
+    return b;
+  };
+  const coatBox = box(coat), bootBoxes = boots.map(box);
+  // The coat's cross-section at each height, without its sleeves: what of the trunk lies inside it is under it, and
+  // what lies outside (Mamma's braid over her front) is not.
+  const BAND = 0.01;
+  const bands: { x0: number; x1: number; z0: number; z1: number }[] = [];
+  if (coat && coatBox) {
+    const p = rested(coat), si = coat.geometry.getAttribute('skinIndex'), sw = coat.geometry.getAttribute('skinWeight');
+    const own = coat.skeleton.bones.map((bone) => bone.name);
+    for (let i = 0; i < p.length / 3; i++) {
+      let best = 0, which = 0;
+      for (let k = 0; k < 4; k++) { const w = sw.getComponent(i, k); if (w > best) { best = w; which = si.getComponent(i, k); } }
+      if (/arm/.test(own[which] ?? '')) continue;
+      const x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2];
+      const band = (bands[Math.floor((y - coatBox.min.y) / BAND)] ??= { x0: Infinity, x1: -Infinity, z0: Infinity, z1: -Infinity });
+      band.x0 = Math.min(band.x0, x); band.x1 = Math.max(band.x1, x);
+      band.z0 = Math.min(band.z0, z); band.z1 = Math.max(band.z1, z);
+    }
+  }
+  const insideCoat = (x: number, y: number, z: number) => {
+    const band = coatBox ? bands[Math.floor((y - coatBox.min.y) / BAND)] : undefined;
+    if (!band || !Number.isFinite(band.x0)) return false;
+    const rx = (band.x1 - band.x0) / 2 * 0.97, rz = (band.z1 - band.z0) / 2 * 0.97;
+    const dx = (x - (band.x0 + band.x1) / 2) / rx, dz = (z - (band.z0 + band.z1) / 2) / rz;
+    return dx * dx + dz * dz < 1;
+  };
+  const rest = rested(body);
+  const cover = new Float32Array(position.count * 3);
+  for (let i = 0; i < position.count; i++) {
+    let best = 0, which = 0;
+    for (let k = 0; k < 4; k++) { const w = skinWeight.getComponent(i, k); if (w > best) { best = w; which = skinIndex.getComponent(i, k); } }
+    const bone = names[which] ?? '', x = rest[i * 3], y = rest[i * 3 + 1], z = rest[i * 3 + 2];
+    // Under the coat: between its hem and a little under the top of its collar, on the trunk, the arms to the wrist
+    // and the thighs; under a boot: the foot and the calf, below the boot's top.
+    if (coatBox && COVERED_BY_COAT.has(bone) && y > coatBox.min.y + 0.004 && y < coatBox.max.y - 0.02
+      && (/arm/.test(bone) || insideCoat(x, y, z))) cover[i * 3] = 1;
+    for (const side of [0, 1] as const) {
+      const tag = side === 0 ? '_l' : '_r', b = bootBoxes[side];
+      if (b && (bone === 'foot' + tag || bone === 'calf' + tag) && y < b.max.y - 0.012) cover[i * 3 + 1 + side] = 1;
+    }
+  }
+  g.setAttribute('wardrobeCover', new Float32BufferAttribute(cover, 3));
+  const uniform = { value: new Vector3() };
+  const material = body.material as MeshStandardMaterial;
+  const before = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, renderer) => {
+    before.call(material, shader, renderer);
+    shader.uniforms.wardrobeWorn = uniform;
+    shader.vertexShader = 'attribute vec3 wardrobeCover;\nvarying vec3 vWardrobeCover;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vWardrobeCover = wardrobeCover;');
+    shader.fragmentShader = 'uniform vec3 wardrobeWorn;\nvarying vec3 vWardrobeCover;\n' + shader.fragmentShader.replace('void main() {', 'void main() {\n  if (dot(vWardrobeCover, wardrobeWorn) > 0.5) discard;');
+  };
+  const key = material.customProgramCacheKey.bind(material);
+  material.customProgramCacheKey = () => `${key()}:wardrobe-cover`;
+  material.needsUpdate = true;
+  return uniform;
 }
 
 const GLOSS: [RegExp, number][] = [[/raincoat$/, 0.4], [/boot_[lr]$/, 0.28], [/sock_[lr]$/, 0.95]];
@@ -190,7 +279,7 @@ export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
   const bones = new Map(body.skeleton.bones.map((bone) => [bone.name, bone]));
   const pieces: SkinnedMesh[] = [];
   made.traverse((node) => { if ((node as SkinnedMesh).isSkinnedMesh) pieces.push(node as SkinnedMesh); });
-  const out: Wardrobe = { coat: null, boots: [null, null], socks: [null, null], hair: null };
+  const out: Wardrobe = { coat: null, boots: [null, null], socks: [null, null], hair: null, cover: null };
   for (const piece of pieces) {
     const own = piece.skeleton.bones.map((bone) => bones.get(bone.name));
     if (own.some((bone) => !bone)) continue;
@@ -212,6 +301,7 @@ export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
     else if (/sock_[lr]$/.test(piece.name)) out.socks[side] = mesh;
     else if (/hair$/.test(piece.name)) out.hair = mesh;
   }
+  out.cover = hideUnder(body, out.coat, out.boots);
   return out;
 }
 
@@ -223,4 +313,5 @@ export function wearWardrobe(wardrobe: Wardrobe, gear: RainGear | null): void {
     if (wardrobe.boots[side]) wardrobe.boots[side]!.visible = gear !== null && !off;
     if (wardrobe.socks[side]) wardrobe.socks[side]!.visible = gear !== null && off;
   }
+  wardrobe.cover?.value.set(gear && wardrobe.coat ? 1 : 0, gear && wardrobe.boots[0] && gear.bootOff !== 0 ? 1 : 0, gear && wardrobe.boots[1] && gear.bootOff !== 1 ? 1 : 0);
 }
