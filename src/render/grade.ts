@@ -144,6 +144,7 @@ const FRAGMENT = /* glsl */ `
   uniform float vignette;
   uniform float cinema;
   uniform float smoothEdges;
+  uniform float foreShade;
   uniform vec2 sceneTexel;
 
   // The edges' smoothing (FXAA, after Timothy Lottes): where the light changes sharply from pixel to pixel, the
@@ -196,7 +197,7 @@ const FRAGMENT = /* glsl */ `
       scene = mix(scene, soft.rgb, max(smoothstep(0.75, 2.5, size), smoothstep(0.0, 0.1, soft.a)));
       // What stands between him and the lens lies in its own shade, as Unravel's foreground does: darker and a
       // little cooler the nearer it is, so the picture is framed and the eye goes to the play.
-      float nearer = smoothstep(0.95, 0.62, dofDistance(d, depthCamera) / depthCamera.z) * cinema;
+      float nearer = smoothstep(0.95, 0.62, dofDistance(d, depthCamera) / depthCamera.z) * foreShade;
       scene *= mix(vec3(1.0), vec3(0.48, 0.53, 0.6), nearer);
     }
     // High's threshold light is gathered once at half resolution; keep it HDR until output.
@@ -248,6 +249,8 @@ export interface GradePass extends Effect {
   setBloom(texture: Texture | null): void;
   /** `deep`: how far behind the play plane is sharp, in EL (./depth-blur.ts). */
   setDepthBlur(texture: Texture | null, depth: Texture | null, near: number, far: number, cameraZ: number, deep?: number): void;
+  /** How deep the shade on the foreground between him and the lens is: 0 is none, as in the colour tests. */
+  setForeShade(strength: number): void;
   /** Whether the edges are smoothed (FXAA). Off in the colour tests and where the browser draws without a GPU. */
   setSmoothEdges(on: boolean): void;
   /** The shade where things meet (./contact-shade.ts) and how strong it is; null: none. */
@@ -293,7 +296,7 @@ export function createGradePass(grade: Grade): GradePass {
       depthCamera: { value: new Vector3(0.1, 140, 10) },
       vignette: { value: grade.vignette },
       cinema: { value: 0 },
-      smoothEdges: { value: 0 }, sceneTexel: { value: new Vector2(1, 1) },
+      smoothEdges: { value: 0 }, sceneTexel: { value: new Vector2(1, 1) }, foreShade: { value: 0 },
       grain: { value: grade.grain },
       seed: { value: 0 },
     },
@@ -328,6 +331,9 @@ export function createGradePass(grade: Grade): GradePass {
       material.uniforms.tDepth!.value = depth;
       material.uniforms.blurEnabled!.value = texture ? 1 : 0;
       (material.uniforms.depthCamera!.value as Vector3).set(near, far, cameraZ);
+    },
+    setForeShade(strength) {
+      material.uniforms.foreShade!.value = Math.max(0, Math.min(1, strength));
     },
     setSmoothEdges(on) {
       material.uniforms.smoothEdges!.value = on ? 1 : 0;

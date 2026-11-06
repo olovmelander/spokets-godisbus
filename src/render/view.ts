@@ -1103,6 +1103,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       camera.lookAt(window.x, window.y + 0.65, window.z);
     }
     const darkness = night.update(flags, dt, tier === 'low' ? 0.5 : 0.85, calmStory);
+    // The foreground's own shade, by day; little of it at night and in the storm, which are dark enough (./grade.ts).
+    gradePass?.setForeShade(CINEMA * (chapter.storm ? 0.35 : 1) * (1 - 0.7 * darkness));
     // Sunlight through the leaves on the forest floor and the lawn, by day, out of the storm (./ground-detail.ts).
     DAPPLE.value = dappled && tier !== 'low' ? 1 - darkness : 0;
     if (!calmStory) DAPPLE_CLOCK.value = clock;
