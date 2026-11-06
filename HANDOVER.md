@@ -24,7 +24,10 @@
     - **Smoothed edges** (FXAA in `grade.ts`, `setSmoothEdges`): Mid and High, no extra memory. Not where the
       browser draws without a GPU (SwiftShader on CI, where it would slow the timed suites); it is compiled there all
       the same, and `?edges` turns it on.
-    - **Pollen in front of the lens** (`src/render/lift/near-motes.ts`): a dozen out-of-focus discs drifting by day.
+    - **Pollen in front of the lens** (`src/render/lift/near-motes.ts`): a dozen out-of-focus discs drifting in the
+      sun of the forest, the garden and the home.
+    - **Sunlight through the leaves** (`DAPPLE` in `ground-detail.ts`): soft warm patches drifting on the forest
+      floor and the lawn, by day and out of the storm.
     - `?nolens` leaves the depth of field and the shade out, to bench their cost with `?bench`.
   - **Close materials (Mid and High; Low keeps its old cost through the `CLOSE_DETAIL` uniform):**
     - **The ground** (`src/render/ground-detail.ts`): detail at three sizes instead of one stretched smear: moss
