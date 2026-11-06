@@ -77,8 +77,9 @@ async function topOfJump(state, timeout = 15000) {
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 mkdirSync(SHOTS, { recursive: true });
 
-async function open(name, options, query = '?debug&course=testbana') {
+async function open(name, options, query = '?debug&course=testbana', setup = async () => {}) {
   const context = await browser.newContext(options);
+  await setup(context);
   const page = await context.newPage();
   const requests = [];
   const errors = [];
@@ -288,15 +289,19 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
 // --- chapter codes (plan §6.9) ------------------------------------------------------------------------
 {
   console.log('chapter codes, 1180×820');
-  const { page, state, finish } = await open('codes-1180x820', { viewport: { width: 1180, height: 820 } }, '?dev&debug&title');
-  await page.evaluate(() => {
-    localStorage.setItem('godisbus.v1.index', JSON.stringify({ v: 1, current: 'elof', players: [{ id: 'elof', name: 'Elof' }] }));
-    localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: {},
-      chapter: 'prolog', checkpoint: -1, checkpoints: { granskog: 2 }, candy: { granskog: [0] },
-      side: { garden: [0], granskog: [0] }, placed: { granskog: ['cone'] }, flags: {}, playMs: 0 }));
-  });
-  await page.reload();
-  await page.waitForFunction(() => window.__godis?.state().bootReady);
+  const { page, state, finish } = await open('codes-1180x820', { viewport: { width: 1180, height: 820 } }, '?dev&debug&title',
+    context => context.addInitScript(() => {
+      // Seed before the first game starts, so a previous page's pagehide cannot overwrite the fixture.
+      if (localStorage.getItem('godisbus.v1.player.elof')) return;
+      localStorage.setItem('godisbus.v1.index', JSON.stringify({ v: 1, current: 'elof', players: [{ id: 'elof', name: 'Elof' }] }));
+      localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: {},
+        chapter: 'prolog', checkpoint: -1, checkpoints: { granskog: 2 }, candy: { granskog: [0] },
+        side: { garden: [0], granskog: [0] }, placed: { granskog: ['cone'] }, flags: {}, playMs: 0 }));
+    }));
+  check('the chapter-code fixture starts with both side collections', await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem('godisbus.v1.player.elof'));
+    return JSON.stringify(saved.side.garden) === '[0]' && JSON.stringify(saved.side.granskog) === '[0]';
+  }));
   await page.click('#codeBtn');
   await page.fill('#codeInput', 'gran kotte');
   // Three fields, a word each: a code typed into the first spreads over them (docs/ux-audit/first-minutes.md row 15).
