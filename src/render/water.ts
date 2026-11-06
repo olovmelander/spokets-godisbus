@@ -104,7 +104,7 @@ const KINDS: Partial<Record<PlaceId, WaterKind>> = {
     dim: 0.7, faceTop: '#3d4954', faceDeep: '#2a323b', ramp: 0.6, faceAlpha: 1, faceBelow: 1, murk: 0.08, through: '#ffffff',
     // A puddle on a street gives back the sky darker and bluer than it is, over dark asphalt (Olov asked how the
     // street's water looks: the pale sky made it a flat near-white sheet). Was a grey-white tint over a lighter bed.
-    mirror: 0.8, tint: '#8296b4', ripple: 0.5, bedColour: '#121418', shoreColour: '#26282c', stands: -20,
+    mirror: 0.8, tint: '#8296b4', ripple: 0.85, bedColour: '#121418', shoreColour: '#26282c', stands: -20,
   },
 };
 
@@ -457,7 +457,11 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         vec3 view = -normalize(ray);
         vec2 flow = texture2D(flowMap, waterWorld.xz * 0.045).rg * 2.0 - 1.0;
         vec3 wave = ripples(waterWorld.xz - flow * time * 0.2, time, fwidth(waterWorld.z) + fwidth(waterWorld.x) * 0.3);
-        vec2 slope = wave.xy * surface.y * 0.03;
+        // Cat's paws: the wind roughens the water in patches that drift slowly over it, between them it lies almost
+        // still and mirrors cleanly, so that it looks alive and never like glass (Olov: "lite vågor och rörelse").
+        float gust = 0.45 + 0.55 * smoothstep(-0.3, 0.9, sin(waterWorld.x * 0.23 - time * 0.55 + 1.6 * sin(waterWorld.z * 0.31 + time * 0.17))
+          * sin(waterWorld.z * 0.47 + waterWorld.x * 0.11 + time * 0.23));
+        vec2 slope = wave.xy * surface.y * 0.03 * gust;
 
         // The mirror. The camera looks level, so what the water shows at a point is what stands as high over
         // the water, as far behind it, as the eye is in front of it: the far card upside down, hinged where
@@ -557,13 +561,22 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         // Little of what is behind it shows through its surface: a third of what the place's opacity leaves.
         vec3 own = waterColour * surface.z;
         float solid = 1.0 - (1.0 - opacity) * 0.3;
+        float wetOnly = 0.0;
         if (body.w > 0.0) {
           float grit = fract(sin(dot(floor(waterWorld.xz * 9.0), vec2(12.9898, 78.233))) * 43758.5453);
-          float water = 1.0 - exp(-body.x * body.w * waterPart.z / max(facing, 0.08));
-          own = mix(bedColour * (0.88 + 0.24 * grit), own, water);
+          // A puddle's shore is never straight (Olov: "pölen ser väldigt rak ut på sina kanter"): where the water
+          // thins towards its ends and its far side it ends along a wandering line, and beyond it the asphalt is only
+          // wet, dark and with a dull sheen; a darker line where the water's edge lies on it.
+          float wander = 0.5 + 0.22 * sin(waterWorld.x * 0.9 + 2.0 * sin(waterWorld.z * 0.55)) + 0.18 * sin(waterWorld.z * 1.4 + waterWorld.x * 0.37)
+            + 0.1 * sin(waterWorld.x * 3.1 - waterWorld.z * 2.3);
+          float depth = clamp((waterPart.z - 0.55 * wander) / max(1.0 - 0.55 * wander, 0.05), 0.0, 1.0);
+          float wetEdge = smoothstep(0.0, 0.05, depth);
+          wetOnly = 1.0 - wetEdge;
+          float water = (1.0 - exp(-body.x * body.w * depth / max(facing, 0.08))) * wetEdge;
+          own = mix(bedColour * (0.88 + 0.24 * grit) * (1.0 - 0.35 * smoothstep(0.0, 0.03, depth) * (1.0 - smoothstep(0.03, 0.12, depth))), own, water);
           solid = 1.0;
         }
-        vec3 top = mix(own, mirrored, mirrors) * (1.0 - 0.3 * banked);
+        vec3 top = mix(own, mirrored, mirrors * (1.0 - 0.8 * wetOnly)) * (1.0 - 0.3 * banked);
         if (details > 0.5) {
           // The low sun's glitter: where two crests meet, under the sky's glow.
           vec3 normal = normalize(vec3(-slope.x, 1.0, -slope.y));
