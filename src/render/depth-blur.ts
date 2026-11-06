@@ -156,7 +156,7 @@ export function createDepthBlur() {
         return;
       }
       // Half resolution, and on a big screen a little less: the blur is soft anyway, where it is sharp is judged at
-      // full resolution, and the High tier's targets must stay within 80 MB (src/render/gpu-memory.ts).
+      // full resolution, and the High tier's targets must stay within 110 MB (src/render/gpu-memory.ts).
       const share = Math.min(0.5, Math.sqrt(MOST_PIXELS / Math.max(1, width * height)));
       const w = Math.max(1, Math.ceil(width * share));
       const h = Math.max(1, Math.ceil(height * share));

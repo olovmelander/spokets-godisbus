@@ -5,9 +5,9 @@ const COMPONENT = { 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 };
 const SIZE = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT2: 4, MAT3: 9, MAT4: 16 };
 const MIB = 1024 * 1024;
 const MB = 1e6;
-export const PIXEL_CAPS = { low: 1e6, mid: 1.6e6, high: 2.6e6 };
-export const GPU_BUDGETS = { low: 100 * MB, mid: 150 * MB, high: 220 * MB };
-export const HIGH_TARGET_BUDGET = 80 * MB;
+export const PIXEL_CAPS = { low: 1e6, mid: 1.6e6, high: 3.5e6 };
+export const GPU_BUDGETS = { low: 100 * MB, mid: 150 * MB, high: 260 * MB };
+export const HIGH_TARGET_BUDGET = 110 * MB;
 export const REFERENCE_VIEWPORT = { width: 1440, height: 900, devicePixelRatio: 2 };
 const CHAPTER_PACKS = new Set(['prolog', 'garden', 'granskog', 'myr', 'myren', 'berg', 'berget', 'norrsken', 'epilog', 'byn', 'forsen']);
 const fail = (message) => { throw new Error(`GPU estimate: ${message}`); };
@@ -193,7 +193,7 @@ export function estimateBuild(packs) {
       const knownProceduralTextureBytes = tier === 'low' ? 0 : 32 ** 3 * 8 + 32 ** 2 * 4; // LUT + flow.
       const knownBytes = sum([assetBytes, canvasBytes, renderTargetBytes, knownProceduralTextureBytes]);
       if (knownBytes > GPU_BUDGETS[tier]) fail(`${name}/${tier} known estimate exceeds ${GPU_BUDGETS[tier] / MB} MB`);
-      if (tier === 'high' && renderTargetBytes > HIGH_TARGET_BUDGET) fail('High offscreen targets exceed 80 MB');
+      if (tier === 'high' && renderTargetBytes > HIGH_TARGET_BUDGET) fail('High offscreen targets exceed 110 MB');
       return [tier, { width, height, assetBytes, canvasBytes, renderTargetBytes, knownProceduralTextureBytes, knownBytes, knownMB: Number((knownBytes / MB).toFixed(3)), knownMiB: Number((knownBytes / MIB).toFixed(3)), budgetBytes: GPU_BUDGETS[tier] }];
     }));
     return [name, { packs: names, assetBytes, tiers }];

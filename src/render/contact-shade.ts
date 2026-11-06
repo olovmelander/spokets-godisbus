@@ -120,7 +120,7 @@ export function createContactShade() {
   const screen = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
   // The raw shade is read pixel by pixel; the softened one between its pixels, by the grade.
   const half = (filter: typeof NearestFilter | typeof LinearFilter) => {
-    // One byte a pixel: within the High tier's 80 MB of targets (src/render/gpu-memory.ts).
+    // One byte a pixel: within the High tier's 110 MB of targets (src/render/gpu-memory.ts).
     const target = new WebGLRenderTarget(1, 1, { type: UnsignedByteType, format: RedFormat, depthBuffer: false, stencilBuffer: false });
     target.texture.minFilter = target.texture.magFilter = filter;
     return target;
