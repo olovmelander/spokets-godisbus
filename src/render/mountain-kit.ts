@@ -2,6 +2,7 @@ import {
   BufferGeometry, Color, Euler, Float32BufferAttribute, Group, Matrix3, Matrix4, Mesh, MeshStandardMaterial, Quaternion, SphereGeometry, Vector3,
   type InstancedMesh, type Object3D,
 } from 'three';
+import { STONE, barkDetail, barky } from './bark-detail';
 import type { ChapterData } from '../sim/types';
 import { grows, heightAt, noise, sequence } from './dressing/kit';
 
@@ -380,6 +381,7 @@ export function createMountain(chapter: ChapterData, ledges: { install(carved: (
   const group = new Group();
   group.name = 'mountain-kit';
   const rock = new MeshStandardMaterial({ vertexColors: true, roughness: 0.92 });
+  barkDetail(rock);
 
   /** The kit takes the place of the stand-ins, wherever in `scene` they are. False where it has nothing for this chapter. */
   function install(model: Object3D, scene: Object3D): boolean {
@@ -406,7 +408,7 @@ export function createMountain(chapter: ChapterData, ledges: { install(carved: (
     }
     ledges.install((ledge) => carved.get(ledge));
     if (cairn.index.length > 0) {
-      const mesh = new Mesh(shaped(cairn), rock);
+      const mesh = new Mesh(barky(shaped(cairn), STONE), rock);
       mesh.name = 'cairn';
       group.add(mesh);
     }
@@ -487,5 +489,6 @@ function withUv(geometry: BufferGeometry): BufferGeometry {
   const plain = geometry.toNonIndexed();
   geometry.dispose();
   plain.setAttribute('uv', new Float32BufferAttribute(new Float32Array(plain.getAttribute('position').count * 2), 2));
-  return plain;
+  // Granite seen close (../bark-detail.ts), drawn by the ledges' material.
+  return barky(plain, STONE);
 }

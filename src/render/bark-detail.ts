@@ -12,6 +12,12 @@ import { Float32BufferAttribute, type BufferGeometry, type MeshStandardMaterial 
  */
 export const BARK_UP = 1;
 export const BARK_ALONG = 2;
+/**
+ * Not bark but the mountain's granite (Olov: "stenar ... kan vi göra snyggare"): its grain of dark and pale
+ * crystals, darker streaks where rain runs down its sides, and yellow-green map lichen and pale crust lichen in
+ * rings on it, laid on from all three sides so that no face is stretched.
+ */
+export const STONE = 3;
 
 /** Marks a shape's corners as bark that runs one way: up a stem or along a bough. */
 export function barky(shape: BufferGeometry, run: number): BufferGeometry {
@@ -31,7 +37,7 @@ export function barkDetail(material: MeshStandardMaterial): void {
   patched.add(material);
   const before = material.onBeforeCompile;
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:bark-detail-v2`;
+  material.customProgramCacheKey = () => `${key()}:bark-detail-v4`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.vertexShader = 'attribute float barky;\nvarying float vBarky;\nvarying vec3 vBarkAt;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `
@@ -50,9 +56,33 @@ export function barkDetail(material: MeshStandardMaterial): void {
         vec2 u = f * f * (3.0 - 2.0 * f);
         return mix(mix(barkHash(i), barkHash(i + vec2(1.0, 0.0)), u.x), mix(barkHash(i + vec2(0.0, 1.0)), barkHash(i + vec2(1.0, 1.0)), u.x), u.y);
       }
-      ` + shader.fragmentShader.replace('#include <color_fragment>', /* glsl */ `
-      #include <color_fragment>
-      if (vBarky > 0.5) {
+      ` + shader.fragmentShader.replace('#include <normal_fragment_maps>', /* glsl */ `
+      #include <normal_fragment_maps>
+      if (vBarky > 2.5) {
+        vec3 stoneUp = normalize(normal * mat3(viewMatrix));
+        vec3 side = pow(abs(stoneUp), vec3(4.0));
+        side /= side.x + side.y + side.z;
+        vec3 p = vBarkAt;
+        float stonePixel = length(fwidth(p));
+        float stoneNear = 1.0 - smoothstep(0.015, 0.05, stonePixel);
+        float stoneMid = 1.0 - smoothstep(0.05, 0.16, stonePixel);
+        #define STONE_TRI(f, k) (barkNoise(p.yz * (k) + f) * side.x + barkNoise(p.xz * (k) + f) * side.y + barkNoise(p.xy * (k) + f) * side.z)
+        vec3 stone = diffuseColor.rgb;
+        // Mottled at a hand's breadth, and the grain of the granite: dark and pale crystals.
+        stone *= 0.86 + 0.28 * STONE_TRI(2.0, 1.6);
+        float grain = STONE_TRI(9.0, 38.0);
+        stone *= 1.0 + (smoothstep(0.62, 0.8, grain) * 0.3 - (1.0 - smoothstep(0.2, 0.36, grain)) * 0.35) * stoneNear;
+        // Where rain runs down the sides: darker streaks, long and narrow.
+        float streak = barkNoise(vec2((p.x + p.z) * 7.0, p.y * 0.7)) * (1.0 - side.y);
+        stone *= 1.0 - 0.22 * smoothstep(0.55, 0.85, streak) * stoneMid;
+        // Lichen: map lichen in yellow-green islands, crust lichen in pale rings, more on the tops.
+        float map = smoothstep(0.7, 0.78, STONE_TRI(31.0, 2.6)) * stoneMid * (0.5 + 0.5 * side.y);
+        stone = mix(stone, vec3(0.5, 0.55, 0.16) * (0.8 + 0.4 * STONE_TRI(5.0, 24.0)), 0.6 * map);
+        float crust = STONE_TRI(47.0, 5.5) * 0.75 + STONE_TRI(13.0, 21.0) * 0.25;
+        float ring = smoothstep(0.66, 0.7, crust) * (1.0 - smoothstep(0.72, 0.76, crust)) * stoneNear;
+        stone = mix(stone, vec3(0.72, 0.73, 0.68) * dot(stone, vec3(0.33)) * 2.4, 0.22 * ring + 0.18 * smoothstep(0.7, 0.8, crust) * stoneMid);
+        diffuseColor.rgb = stone;
+      } else if (vBarky > 0.5) {
         // Round the tree and along it: up a stem, or along a bough that lies along the path.
         vec2 bark = vBarky < 1.5 ? vec2(vBarkAt.x + vBarkAt.z, vBarkAt.y) : vec2(vBarkAt.y + vBarkAt.z, vBarkAt.x);
         float barkPixel = length(fwidth(bark));
