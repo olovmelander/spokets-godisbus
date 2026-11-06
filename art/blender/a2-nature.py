@@ -352,14 +352,25 @@ def pine(name, high, seed):
         long = high * (0.2 - 0.13 * (t - 0.62) / 0.38) * (0.8 + 0.4 * rnd(seed, i))
         points = [path[k], path[k] + out * (long * 0.5) + UP * (long * 0.1), path[k] + out * long + UP * (long * 0.04)]
         tube(part, points, [radii[k] * 0.45, radii[k] * 0.3, 0.08], [PINE_LOW, PINE_HIGH, PINE_LOW], 5)
-        size = (long * 0.62, long * 0.56, long * 0.17)
-        verts = lump(part, points[2], size, 2, PINE_DARK)
-        for vert in verts:
-            at = vert.co - points[2]
-            flat_top = max(0.0, at.z / size[2])
-            bump = noise(at.x * 0.5 + seed, at.y * 0.5, i * 1.7)
-            vert.co = points[2] + Vector((at.x * (0.8 + 0.5 * bump), at.y * (0.8 + 0.5 * bump), at.z * (0.7 + 0.8 * bump)))
-            part['paint'][vert] = blend(PINE_DARK, PINE_LIGHT, flat_top * 0.9 + bump * 0.4 - 0.2)
+        # A pine's crown is not a plate but a cloud of tufts on the bough's end: a main one and four smaller ones
+        # round it, each lumpy, dark beneath and catching the light on top, so that sky shows between them.
+        tufts = [(Vector((0.0, 0.0, 0.0)), 1.0)]
+        for n in range(4):
+            a = turn + n * 1.7 + rnd(seed + i, n) * 0.8
+            reach = long * (0.26 + 0.12 * rnd(i, n + seed))
+            tufts.append((Vector((math.cos(a) * reach, math.sin(a) * reach * 0.9, long * (rnd(n, i) - 0.45) * 0.08)), 0.5 + 0.25 * rnd(seed, i + n)))
+        for n, (shift, k) in enumerate(tufts):
+            centre = points[2] + shift
+            size = (long * 0.42 * k, long * 0.38 * k, long * 0.15 * (0.7 + 0.5 * k))
+            verts = lump(part, centre, size, 2, PINE_DARK)
+            for vert in verts:
+                at = vert.co - centre
+                flat_top = max(0.0, at.z / size[2])
+                bump = noise(at.x * 0.9 + seed + n, at.y * 0.9, i * 1.7 + n)
+                tuft = 0.75 + 0.6 * bump
+                vert.co = centre + Vector((at.x * tuft, at.y * tuft, at.z * (0.6 + 0.9 * bump)))
+                under = max(0.0, -at.z / size[2])
+                part['paint'][vert] = lit(blend(PINE_DARK, PINE_LIGHT, flat_top * 0.95 + bump * 0.45 - 0.25), 1.0 - 0.35 * under)
     return finish(part, name, strength=0.0, leaf=True)
 
 
