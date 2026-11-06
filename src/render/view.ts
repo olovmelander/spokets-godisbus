@@ -830,6 +830,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** The last scene shot, and how much of it the camera takes now: 1 in the scene, easing to 0 after it. */
   let lastShot: { x: number; y: number; height: number; width: number; eye: number } | null = null;
   let shotWeight = 0;
+  /** Where Bertil's hands are at his boot while he pulls it off. */
+  const bootAt = new Vector3();
   /** The rain gear each body wears now, by its key, so that it is changed only when it changes. */
   const dressed = new WeakMap<Rig, string>();
   const dressFor = (rig: Rig, who: string, flags: ReadonlySet<string>) => {
@@ -1370,8 +1372,22 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         up: (y + tall * .8 - one.rig.group.parent!.position.y) * 5.2 / one.rig.height,
       }, one.glad && ['moa', 'seesaw', 'cap:ready', 'mamma', 'braid', 'bog:return-bridge'].includes(one.glad)
         ? { ready: now, near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined);
+      // Bertil pulls off his right boot for Elof (Olov: "på riktigt"): in the moment between being called and the
+      // boot lying on the water, he leans down, lifts that foot and tugs at the boot with both hands.
+      const pulling = one.who === 'bertil' && chapter.id === 'stormgard' && flags.has('sg:bertil') && !flags.has('sg:boot-ready');
+      if (pulling) {
+        const tug = calmStory ? 0 : Math.sin(clock * 9) * 0.08;
+        posed.lean = 0.55 + tug; posed.legR = 0.95; posed.kneeR = 1.35 + tug; posed.kneeL = Math.max(posed.kneeL, 0.25);
+      }
       one.rig.pose(one.seated ? sitting(posed) : one.paddle ? one.paddle.stance(posed) : posed);
       one.paddle?.update(one.rig, clock, calmStory);
+      if (pulling) {
+        one.rig.group.updateWorldMatrix(true, false);
+        const u = one.rig.height / 5.2;
+        bootAt.set(-0.33 * u, 1.05 * u, 0.55 * u).applyMatrix4(one.rig.group.matrixWorld);
+        one.rig.reach(0, bootAt, 1);
+        one.rig.reach(1, bootAt, 1);
+      }
       one.rig.breeze?.(gale * windAt(carrying ? x : one.at), dt, calmStory);
     }
     // The family in a scene, too: their hair and caps in the same wind, where each stands now.
