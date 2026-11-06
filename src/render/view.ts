@@ -827,7 +827,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let shotWeight = 0;
   /** How far the eye has risen over water, 0 to 1. */
   let overWater = 0;
-  /** The pools and brooks of the chapter, where the eye rises: still water, not the river or the street's puddles. */
+  /**
+   * The pools and brooks of the chapter, where the eye rises: still water, not the river, and not the street's
+   * puddle, whose shot keeps the church and its belfry framed under the top edge (tests/browser/bredbyn.mjs).
+   */
   const pools = chapter.river || chapter.place === 'village' ? [] : chapter.water ?? [];
   /** How far behind the play plane the lens keeps sharp (./depth-blur.ts): deeper while a shot is on the family. */
   let sharpDeep = DOF_DEEP;

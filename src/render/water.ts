@@ -102,7 +102,9 @@ const KINDS: Partial<Record<PlaceId, WaterKind>> = {
   village: {
     front: 0.65, corner: 0.65, back: -9, thins: -9, behind: null, feather: 0, depth: 6, bed: 0.5, shore: -13.4,
     dim: 0.7, faceTop: '#3d4954', faceDeep: '#2a323b', ramp: 0.6, faceAlpha: 1, faceBelow: 1, murk: 0.08, through: '#ffffff',
-    mirror: 0.75, tint: '#d9dde4', ripple: 0.6, bedColour: '#23262b', shoreColour: '#3a3a3c', stands: -20,
+    // A puddle on a street gives back the sky darker and bluer than it is, over dark asphalt (Olov asked how the
+    // street's water looks: the pale sky made it a flat near-white sheet). Was a grey-white tint over a lighter bed.
+    mirror: 0.8, tint: '#8296b4', ripple: 0.5, bedColour: '#121418', shoreColour: '#26282c', stands: -20,
   },
 };
 
