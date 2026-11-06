@@ -4,7 +4,7 @@ import type { ChapterWords } from './words';
 export const words: ChapterWords = {
   lines: {
     // The street, dark: the power is out in the whole village.
-    sbDark: 'Hela byn är mörk. Strömmen är borta!',
+    sbDark: 'Strömmen har gått här också!',
     sbKlonkHere: 'Klonk!',
     sbAwning: 'Markisen studsar som en studsmatta!',
     sbCandle: 'Någon hörde mig! Tack för ljuset.',
@@ -14,7 +14,7 @@ export const words: ChapterWords = {
     sbRiver: 'Rännstenen har blivit en fors!',
     // The high wall, and Moa's umbrella. She calls him lillebror.
     sbMoaHere: 'Lillebror! Jag står här nere med lampan.',
-    sbMoaHold: 'Håll i paraplyet. Jag är här nere!',
+    sbMoaHold: 'Håll i paraplyet, så svävar du!',
     sbFloat: 'Jag svävar som ett maskrosfrö!',
     sbMoaLanded: 'Där kom mitt minsta maskrosfrö!',
     // The swinging sign, and the little one's cap in the gutter.
@@ -22,7 +22,7 @@ export const words: ChapterWords = {
     sbToLake: 'Godisspåret går mot fotbollsplanen!',
     sbKlonkCap: 'Klonk, klonk!',
     // The awnings pour, and the steps go down to the shore.
-    sbShore: 'Håll ut, lillgubben! Vi kommer!',
+    sbShore: 'Vi är på väg, lillgubben!',
   },
   verbs: { sbUmbrella: 'Håll i paraplyet', sbRing: 'Dra i klocksnöret' },
   purposes: {
@@ -32,7 +32,7 @@ export const words: ChapterWords = {
     sbCallMoa: { purpose: 'Gå upp på muren och ropa på Moa.', recap: 'Korsningen är översvämmad. Moa har sitt paraply med sig.' },
     sbBoard: { purpose: 'Håll i Moas paraply och sväva över.', recap: 'Moa håller ut sitt paraply åt mig över korsningen.' },
     sbGutter: { purpose: 'Följ godisspåret längs rännstenen.', recap: 'Moas paraply bar mig över den översvämmade korsningen.' },
-    sbFindCap: { purpose: 'Hämta mössan vid skomakaren.', recap: 'Lillgubbens mössa ligger vid rännstenen. Jag tar med den till honom.' },
+    sbFindCap: { purpose: 'Hämta mössan vid skomakaren.', recap: 'Lillgubbens mössa ligger vid skomakaren. Jag tar med den till honom.' },
     sbLake: { purpose: 'Gå nerför trappan mot Olympia.', recap: 'Jag har lillgubbens mössa. Gamla trägubbens godisspår fortsätter mot fotbollsplanen.' },
   },
   helpers: {

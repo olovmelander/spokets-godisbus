@@ -122,7 +122,7 @@ committed. Anything comes out again if they or Elof's parents ask.
 ### Kapitel 1: Stormgården (garden at night)
 
 1. **The veranda** in the rain: drops from the overflowing gutter (read their shadows, E1-style).
-2. **The pumpkin lantern** on the steps: warm light, the first big candy. "Gamla trägubben lämnar godis åt oss!"
+2. **The pumpkin lantern** on the steps: warm light, the first big candy. "Spåret fortsätter ut i trädgården!"
 3. **Stormbyarna**, the exciting sequence: gusts across the open lawn; shelter behind upturned pots.
 4. **Regntunnan** (puzzle): the ditch is too wide. Up the rain barrel's hose, *Vrid på kranen*: the water fills
    the ditch and the floating lid rises to become a bridge.

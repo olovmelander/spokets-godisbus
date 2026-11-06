@@ -46,7 +46,7 @@ export const words: ChapterWords = {
     biThere: 'Där nere! På en sten i sundet!',
     biHolds: 'Gamla trägubben håller i lillgubben!',
     biNotAlone: 'De är tillsammans! Vi kommer!',
-    biOwl: 'Uhu … Hör du? Det är ugglan!',
+    biOwl: 'Hu-hu … Hör du? Det är ugglan!',
     biToNarrow: 'Kom, vi går ner till sundet.',
     biKlonkCheer: 'Klonk! Klonk! Klonk!',
   },

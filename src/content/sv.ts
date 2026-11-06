@@ -329,7 +329,7 @@ export const sv = {
     vittraBerry: 'Ett lingon till er också.',
     forestVittraClue: 'En liten bild från vittrorna.',
     forestTrial: 'Oj! Nästan. Den större väger mer.',
-    heja: 'Heja lillebror!',
+    heja: 'Heja, lillebror!',
     thanked: 'Spöket tackade mig!',
     spangen: 'På myren går vi på spången.',
     bogChickLight: 'Följ mitt ljus hem till din familj.',

@@ -302,7 +302,7 @@ try {
     // Each promise stops the player and waits. A fresh move after reading resumes the walk.
     for (const [id, words] of [
       ['nearYou', 'Vi är nära dig hela tiden.'], ['mapForYou', 'Jag ritar en karta åt dig!'],
-      ['heja', 'Heja lillebror!'], ['followTrail', 'Följ godisspåret, Elof.'],
+      ['heja', 'Heja, lillebror!'], ['followTrail', 'Följ godisspåret, Elof.'],
     ]) {
       await walk(page, state, s => s.storyReading && s.said.includes(id), `${id}: the family's promise`);
       await readStop(page, state, id, words);
