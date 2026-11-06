@@ -39,7 +39,8 @@ describe('authored changes of stance', () => {
     expect(pose().legL).toBeLessThan(.1);
     expect(pose().kneeR).toBeLessThan(.1);
     expect(rig.mouth(new Vector3()).y).toBeGreaterThan(seated.y + .8);
-    show(stage, 'vaknar', 2);
+    // At the window, his two side steps done.
+    show(stage, 'vaknar', 2.4);
     expect(pose().seat).toBeNull();
     expect(pose().legL).toBe(0);
   });

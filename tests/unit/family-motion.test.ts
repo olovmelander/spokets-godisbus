@@ -136,8 +136,9 @@ describe('family help-point movement', () => {
     }
     const calm = createFamilyMotion('pappa', 27);
     calm.update(.1, 0, 0, 0, 0, true);
+    // A step of 0.26 at his own step length (acting.ts stepLength), so the planted boot does not slide.
     const stride = calm.update(.1, .1, 0, 0, .26, true);
-    expect(Math.abs(stride.legL)).toBeGreaterThan(.1); expect(stride.bounce).toBe(0);
+    expect(Math.abs(stride.legL)).toBeGreaterThan(.05); expect(stride.bounce).toBe(0);
   });
 
   it('lowers the supporting arms after carrying without marching, and skips that transition in reduced motion', () => {
