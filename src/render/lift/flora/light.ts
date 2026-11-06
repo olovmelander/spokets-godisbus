@@ -53,10 +53,12 @@ export function leafy<T extends MeshStandardMaterial>(material: T): T {
 
 /**
  * Moss: soft and damp. Its edges catch the light like velvet, it is darker where it turns under, and a slow
- * ripple of light and shade runs through its pile. No hard highlight anywhere.
+ * ripple of light and shade runs through its pile. No hard highlight anywhere. Seen close it is a carpet of little
+ * stars, as haircap and feather moss are (the graphics pass of 6 November 2026, after the reference brief): pale
+ * yellow-green shoot tips and dark gaps between them, at two sizes, fading where they would be finer than a pixel.
  */
 export function mossy<T extends Material>(material: T): T {
-  patch(material, 'moss-v1', (shader) => {
+  patch(material, 'moss-v2', (shader) => {
     shader.vertexShader = 'varying vec3 vMossAt;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `#include <project_vertex>
       vec4 mossAt = vec4(transformed, 1.0);
       #ifdef USE_INSTANCING
@@ -71,6 +73,17 @@ export function mossy<T extends Material>(material: T): T {
       float rim = 1.0 - saturate(dot(normal, normalize(vViewPosition)));
       outgoingLight *= 0.8 + 0.28 * smoothstep(-0.5, 0.9, mossUp.y) + 0.07 * pile;
       outgoingLight += diffuseColor.rgb * mossSheen * rim * rim * (0.75 + 0.25 * pile);
+      // The stars: a shoot tip in each little cell, and the dark between them.
+      vec2 mossQ = vMossAt.xz * 26.0 + vec2(vMossAt.y * 7.0, -vMossAt.y * 5.0);
+      vec2 mossCell = floor(mossQ), mossIn = fract(mossQ) - 0.5;
+      vec2 mossJitter = vec2(fract(sin(dot(mossCell, vec2(127.1, 311.7))) * 43758.5), fract(sin(dot(mossCell, vec2(269.5, 183.3))) * 43758.5)) - 0.5;
+      float mossTip = 1.0 - smoothstep(0.08, 0.26, length(mossIn - mossJitter * 0.5));
+      vec2 mossQ2 = mossQ * 2.3 + 17.0;
+      vec2 mossIn2 = fract(mossQ2) - 0.5;
+      float mossGap = smoothstep(0.32, 0.48, max(abs(mossIn2.x), abs(mossIn2.y)));
+      float mossNear = 1.0 - smoothstep(0.35, 0.9, length(fwidth(mossQ)));
+      outgoingLight *= 1.0 - 0.22 * mossGap * mossNear;
+      outgoingLight += diffuseColor.rgb * vec3(0.32, 0.36, 0.08) * mossTip * mossNear * (0.6 + 0.4 * smoothstep(-0.2, 0.8, mossUp.y));
     }`);
   });
   return material;
