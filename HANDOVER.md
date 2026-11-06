@@ -21,6 +21,9 @@
       resolution, one byte a pixel, a blur that keeps to one surface. `SHADE_REACH` 0.6 EL, `SHADE_STRENGTH` 0.7.
     - **The film's look** (`grade.ts`, `setCinema`, 0.8): warm light, cool teal shadows, corners a little darker, a
       little more contrast and saturation.
+    - **The foreground's own shade** (`grade.ts`, `setForeShade`): what stands between him and the lens is darker
+      and cooler the nearer it is, framing the picture as Unravel's foregrounds do; full by day, a third at the
+      darkest of the night and in Äventyr 2's storm, so the nights stay as light as Olov asked.
     - **Smoothed edges** (FXAA in `grade.ts`, `setSmoothEdges`): Mid and High, no extra memory. Not where the
       browser draws without a GPU (SwiftShader on CI, where it would slow the timed suites); it is compiled there all
       the same, and `?edges` turns it on.
@@ -34,7 +37,7 @@
       and soil, rock, road, board floors (each board its own tone, grain, knots, joints, worn middle), and
       Olympia's artificial turf.
     - **Bark, granite and grain** (`src/render/bark-detail.ts`, marked on a shape's corners by a `barky`
-      attribute): scaly bark on the stems and boughs by the ledges; granite with crystals, rain streaks and lichen
+      attribute): scaly bark on the stems and boughs by the ledges and the spruce trunks; granite with crystals, rain streaks and lichen
       on the mountain's rocks, the forest's boulders, the fell's stones and the forest kit's stones (the eddy
       stone); grain on the planks he pushes and on plank ledges.
     - **Moss** (`lift/flora/light.ts`, `moss-v2`): a carpet of little shoot tips.
