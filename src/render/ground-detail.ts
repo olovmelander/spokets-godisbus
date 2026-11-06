@@ -15,6 +15,13 @@ const patched = new WeakSet<MeshStandardMaterial>();
 export const CLOSE_DETAIL = { value: 1 };
 
 /**
+ * Sunlight through the leaves on the forest floor and the lawn (Unravel's dappled light): how strong (the view sets
+ * it by the place, the day and the storm; 0 is none) and the clock it drifts by, as the crowns move in the wind.
+ */
+export const DAPPLE = { value: 0 };
+export const DAPPLE_CLOCK = { value: 0 };
+
+/**
  * The ground seen close (the graphics pass of 6 November 2026). Its picture is a fine grain that tiles, and its
  * colours are set at the corners of a coarse mesh, so the ground in front of the camera, which fills the lower
  * third of every picture, was one smooth smear: "it looks stretched". Unravel's ground near the camera is full of
@@ -35,15 +42,17 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
   patched.add(material);
   const before = material.onBeforeCompile;
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:ground-detail-v4-${kind}`;
+  material.customProgramCacheKey = () => `${key()}:ground-detail-v5-${kind}`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.closeDetail = CLOSE_DETAIL;
+    shader.uniforms.dapple = DAPPLE;
+    shader.uniforms.dappleClock = DAPPLE_CLOCK;
     shader.vertexShader = 'varying vec3 groundDetailAt;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `
       groundDetailAt = (modelMatrix * vec4(transformed, 1.0)).xyz;
       #include <project_vertex>`);
     shader.fragmentShader = /* glsl */ `varying vec3 groundDetailAt;
-      uniform float closeDetail;
+      uniform float closeDetail, dapple, dappleClock;
       float groundHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float groundNoise(vec2 p) {
         vec2 i = floor(p), f = fract(p);
@@ -80,6 +89,13 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
         groundColour = mix(groundColour, groundColour * vec3(0.55, 0.42, 0.3), 0.55 * needle);
         float speck = smoothstep(0.8, 0.92, fine) * groundNear;
         groundColour = mix(groundColour, groundColour * 1.25 + vec3(0.02, 0.02, 0.0), 0.5 * speck);
+        // Sunlight through the leaves: soft warm patches that drift slowly as the crowns sway.
+        if (dapple > 0.0) {
+          vec2 drift = vec2(dappleClock * 0.05, dappleClock * 0.02);
+          float leaves = groundNoise(at * 0.45 + drift) * 0.6 + groundNoise(at * 1.3 - drift * 1.7 + 4.0) * 0.4;
+          float sun = smoothstep(0.58, 0.72, leaves);
+          groundColour *= 1.0 + dapple * sun * vec3(0.42, 0.36, 0.2);
+        }
         ` : kind === 'rock' ? /* glsl */ `
         // Weathered patches, crust lichen in pale rings, and hairline cracks.
         groundColour *= 1.0 + (big - 0.5) * 0.24 + (mid - 0.5) * 0.14 * groundMid;

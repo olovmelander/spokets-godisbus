@@ -37,7 +37,7 @@ import { evening, nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
 import { DOF_DEEP, DOF_DEEPER, createDepthBlur } from './depth-blur';
-import { CLOSE_DETAIL } from './ground-detail';
+import { CLOSE_DETAIL, DAPPLE, DAPPLE_CLOCK } from './ground-detail';
 import { SHADE_STRENGTH, createContactShade } from './contact-shade';
 import { createBloom } from './bloom';
 import { createLightShafts } from './light-shafts';
@@ -253,6 +253,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // release them and draw Low straight to the canvas, keeping this renderer, its assets and the scene.
   // Mid and High keep the same linear HDR → grade → Neutral/sRGB stages as r186's native setEffects path.
   const place = chapter.place ? (PACK.looks.get(chapter.id) ?? PLACES[chapter.place]) : null;
+  /** Whether the sun comes through leaves here: the forest and the garden, by day, out of the storm. */
+  const dappled = (chapter.place === 'forest' || chapter.place === 'garden') && !chapter.storm;
   const grade = place?.grade ?? GARDEN_MORNING;
   const gradePass = hdrAvailable ? createGradePass(grade) : null;
   // `?nolens` leaves out the lens's depth of field and the shade where things meet, to compare their cost on a
@@ -1101,6 +1103,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       camera.lookAt(window.x, window.y + 0.65, window.z);
     }
     const darkness = night.update(flags, dt, tier === 'low' ? 0.5 : 0.85, calmStory);
+    // Sunlight through the leaves on the forest floor and the lawn, by day, out of the storm (./ground-detail.ts).
+    DAPPLE.value = dappled && tier !== 'low' ? 1 - darkness : 0;
+    if (!calmStory) DAPPLE_CLOCK.value = clock;
     for (const extra of extras) extra.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride' });
     if (dressing && place) {
       // What lives far off begins nothing while he is busy, and needs the lens to know what is in the picture.
