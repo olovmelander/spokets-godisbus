@@ -844,6 +844,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3();
   const lampTurn = new Quaternion();
   const LAMP_POINTS = new Vector3(0, 0, 1);
+  // The little one's knitted cap ("Lillgubbens mössa! Jag tar med den."): from the gutter in Stormbyn Elof carries
+  // it, tucked in at his back, through every chapter until he gives it back in the storm's eye (scene "motet").
+  const carriedCap = new Group();
+  carriedCap.name = 'carried-cap';
+  carriedCap.add(new Mesh(new ConeGeometry(0.16, 0.3, 10).translate(0, 0.15, 0), new MeshStandardMaterial({ color: '#c23a2e', roughness: 0.9 })));
+  const bobble = new Mesh(new SphereGeometry(0.06, 10, 8), new MeshStandardMaterial({ color: '#f4efe4', roughness: 0.9 }));
+  bobble.position.y = 0.31;
+  carriedCap.add(bobble);
+  carriedCap.visible = false;
+  scene.add(carriedCap);
+  const capTilt = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI * 0.8);
   /** Stormkvällen's flashlight: Elof carries it from the table, and Pappa has it from then on. */
   let carriedLamp: Mesh | null = null, pappasLamp: Mesh | null = null;
   const holdLamp = (lamp: Mesh, rig: Pick<Rig, 'hand'>, side: 0 | 1, facing: number, size: number) => {
@@ -1260,6 +1271,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       playerBody.hand(1, laceHand);
     }
     lace.update(curr.hook, laceHand);
+    const hasCap = (chapter.id === 'stormbyn' && flags.has('cap')) || ['olympia', 'flarken', 'alven', 'billsta'].includes(chapter.id)
+      || (chapter.id === 'stormoga' && !flags.has('scene:motet'));
+    carriedCap.visible = hasCap && elof.group.visible;
+    if (carriedCap.visible) {
+      elof.group.updateWorldMatrix(true, false);
+      carriedCap.position.set(-0.17, 0.5, 0.05).applyMatrix4(elof.group.matrixWorld);
+      elof.group.getWorldQuaternion(carriedCap.quaternion).multiply(capTilt);
+      carriedCap.scale.setScalar(0.8 * tall);
+    }
     // "Var är ficklampan? Jag ser ingenting!": Elof carries the lit flashlight from the table to Pappa in his right
     // hand, lighting the floor ahead; once given, Pappa has it in his left (Stormkvällen).
     const carries = chapter.id === 'stormkvall' && flags.has('lamp:take') && !flags.has('lamp:give') && !curr.hook && !!playerBody;
