@@ -299,7 +299,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(glints.group, plane);
   // The things that stand at spots, and what carries him on each ride, where the chapter says what they are.
   const ghostHelps = chapter.helper?.kind === 'ghost';
-  const helper = helperProp(chapter, ghostHelps ? buildGhost() : undefined);
+  const helperGhost = ghostHelps ? buildGhost() : undefined;
+  const helper = helperProp(chapter, helperGhost);
   scene.add(helper.group);
   const hiddenSweets = buildHidden(chapter);
   scene.add(hiddenSweets.group);
@@ -535,7 +536,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // A chapter without a ghost in its data has none in the picture.
   const ghostPlace = new Group();
   ghostPlace.name = 'chase-ghost';
-  let ghost: Group = buildGhost();
+  const ghostStandIn = buildGhost();
+  let ghost: Group = ghostStandIn;
   let paintedEyes = eyeNodes(ghost);
   const stolenBag = saturdayBag();
   stolenBag.name = 'stolen-saturday-bag';
@@ -564,11 +566,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     .then((manifest) => (!standIns && manifest.packs.private?.files['ghost.glb'] ? assets.model('private', 'ghost') : null))
     .then((model) => {
       if (!model) return;
+      ghostStandIn.dispose();
       ghostPlace.clear();
       ghostPlace.add(model, stolenBag);
       ghost = model;
       paintedEyes = eyeNodes(model);
-      if (ghostHelps) helper.replaceGhost(model.clone());
+      if (ghostHelps) {
+        helperGhost!.dispose();
+        helper.replaceGhost(model.clone());
+      }
       ghostFaces = MODEL_TURN;
       ghostMotion = createGhostMotion(model);
       models.push('private/ghost');
@@ -593,6 +599,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (!model) return;
       // Exported from Blender he faces +z, and the stand-in faces +x. A quarter turn makes them agree.
       model.rotation.y = Math.PI / 2;
+      elof.dispose();
       elof.group.clear();
       const rig = createModelRig(model, 1);
       elof.group.add(rig.group);
@@ -622,7 +629,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     assets.manifest().then(async (manifest) => {
       for (const who of stage.actors.keys()) {
         if (!manifest.packs.private?.files[`${who}.glb`]) continue;
-        const model = await assets.model('private', who);
+        const model = await assets.model('private', who).catch(error => {
+          console.warn(`The private/${who} model could not be loaded; its rehearsal figure stays.`, error);
+          return null;
+        });
+        if (!model) continue;
         const placed = stage.replace(who, model);
         const height = stage.actors.get(who)!.rig.height;
         if (placed) characterShadows.add({ object: placed, height, radius: .45 * height / 5.2,
@@ -640,7 +651,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         for (const stand of stands) {
           const who = personFor(stand.word)!;
           if (!manifest.packs.private?.files[`${who}.glb`]) continue;
-          const model = await assets.model('private', who);
+          const model = await assets.model('private', who).catch(error => {
+            console.warn(`The private/${who} model could not be loaded; its rehearsal figure stays.`, error);
+            return null;
+          });
+          if (!model) continue;
           // Modelled with Elof's height as the unit, and drawn as big as he is drawn when he is a boy.
           model.scale.setScalar(3);
           const one = family.find((one) => one.rig.group.parent === stand.prop!.group)!;
@@ -648,6 +663,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           rig.group.userData.familyRole = who;
           rig.group.position.copy(one.rig.group.position);
           rig.group.quaternion.copy(one.rig.group.quaternion);
+          one.rig.dispose?.();
           one.rig = rig;
           one.neck = model.getObjectByName('Head') ?? model.getObjectByName('head');
           stand.prop!.group.clear();
@@ -2109,7 +2125,7 @@ function heightOfGroundAt(chapter: ChapterData, x: number): number {
  * A stand-in for the ghost: a pale wooden shape with two dark eyes, the bag in front of it and red shoes.
  * It faces +x. The carved ghost modelled in Blender is in the private pack, and takes its place there.
  */
-function buildGhost(): Group {
+function buildGhost(): Group & { dispose(): void } {
   const group = new Group();
   const wood = new MeshStandardMaterial({ color: '#e3cfa4', roughness: 0.75 });
   const dark = new MeshStandardMaterial({ color: '#1c1a18', roughness: 0.3 });
@@ -2130,5 +2146,11 @@ function buildGhost(): Group {
   const bag = new Mesh(new BoxGeometry(0.16, 0.3, 0.26), paper);
   bag.position.set(0.3, 0.5, 0);
   group.add(bag);
-  return group;
+  let disposed = false;
+  return Object.assign(group, { dispose() {
+    if (disposed) return;
+    disposed = true;
+    group.traverse(object => { if (object instanceof Mesh) object.geometry.dispose(); });
+    for (const material of [wood, dark, red, paper]) material.dispose();
+  } });
 }

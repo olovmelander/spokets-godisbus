@@ -22,7 +22,7 @@ export const words: ChapterWords = {
     soCapBack: 'Här är din mössa, lillgubben.',
     soGoldLine: 'Ett geléhallon i guldpapper!',
     soLastOne: 'Ditt allra sista. Det sparade du åt mig.',
-    soShareLine: 'Samma sort som jag delade med dig.',
+    soShareLine: 'Förut delade jag. Nu delar du med mig.',
     soMagicLine: 'Det glittrar! Sånt gör mig stor igen.',
     soMamma: 'Elof! Där är du ju!',
     soPappa: 'Och du har båda trägubbarna!',

@@ -126,6 +126,26 @@ describe('Pappas two counterweights on the actual forest ground', () => {
     });
   }
 
+  it('the helper stays safe and points to the landing while the heavy cone is moving', () => {
+    const game = new Game(granskog, {}, progress);
+    callPappa(game);
+    const heavy = game.sim.movers.find((m) => m.def.id === 'cone')!;
+    for (let stop = 1; stop < heavy.def.stops.length; stop++) {
+      walkTo(game, heavy.x - 1);
+      expect(game.sim.curr.verb).toBe('push');
+      step(game, { act: true });
+      expect(heavy.stop).toBe(stop);
+      expect(heavy.t).toBeLessThan(1);
+      expect(() => step(game, { help: true })).not.toThrow();
+      expect(game.sim.help).toMatchObject({ at: heavy.def.stops[stop], verb: null, word: null });
+      run(game, MOVE_TIME + 0.2);
+    }
+    expect(game.sim.flags.has('placed:cone')).toBe(true);
+    expect(hintFor(game.sim, granskog)).toMatchObject({ at: { x: 113.2, y: -8 }, word: 'standOn' });
+    finishLaunch(game);
+    expect(game.sim.bubbles).toBe(0);
+  });
+
   it('the optional small placement survives loading a checkpoint before the trial', () => {
     const game = new Game(granskog, {}, progress);
     callPappa(game);

@@ -27,7 +27,12 @@ export default defineConfig(({ mode }) => {
     .map((file) => `${file}:${hash(readFileSync(file))}`).join('\n')).slice(0, 24);
   return {
     base,
-    define: { __BUILD_VERSION__: JSON.stringify(version), __ASSET_VERSION__: JSON.stringify(assetVersion) },
+    define: {
+      __BUILD_VERSION__: JSON.stringify(version), __ASSET_VERSION__: JSON.stringify(assetVersion),
+      // Unrecorded dialogue remains silent, without fetching a known-missing MP3 on every new line.
+      __VOICE_KEYS__: JSON.stringify(readdirSync('public/audio/voices', { withFileTypes: true })
+        .filter(file => file.isFile() && file.name.endsWith('.mp3')).map(file => file.name.slice(0, -4)).sort()),
+    },
     plugins: [
       ...(mode === 'lan' ? [basicSsl()] : []),
       // The script's size gate (scripts/size-gate.mjs) leaves room for graphics when shaders carry no padding.

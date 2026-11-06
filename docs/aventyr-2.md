@@ -33,7 +33,7 @@ del"). The first adventure (prologue, Gården, Granskogen, Myren, Berget, the fi
 - **Frågan som drar framåt:** "Varför väntar gamla trägubben aldrig på oss?" Svaret kommer i bilder: han låg
   ensam i en mörk spricka i flera år. Han vet hur lång en enda natt ensam i mörkret känns.
 - **Slutet vänder på Äventyr 1.** Där delade Elof med sin trägubbe. Nu är det trägubbens tur: hans allra sista bit,
-  ett geléhallon i guldpapper, sparade han åt Elof. Det är samma sort som lilla Elof delade med honom. Elof växer, står i det grunda vattnet
+  ett geléhallon i guldpapper, sparade han åt Elof. Förr delade Elof; nu delar trägubben tillbaka. Elof växer, står i det grunda vattnet
   med båda trägubbarna i händerna, och familjens lampor och mormors lykta lyser från stranden.
 - **Morgonen efter** ställer Elof tillbaka dem på hyllan, lagar fönsterhaken med Pappa och ger sin lilla trägubbe
   ett namn: **Fjun** – för att han flög som ett fjun i stormen. Mormor och morfar är med på frukosten.

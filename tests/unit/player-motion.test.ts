@@ -1,5 +1,5 @@
-import { Bone, Group, Mesh, Quaternion, Vector3 } from 'three';
-import { describe, expect, it } from 'vitest';
+import { Bone, Group, Material, Mesh, Quaternion, Vector3 } from 'three';
+import { describe, expect, it, vi } from 'vitest';
 import { CLIMB_SPEED, JUMP_SPEED, RUN_SPEED, WALK_SPEED } from '../../src/sim/constants';
 import type { PlayerState } from '../../src/sim/types';
 import { Sim } from '../../src/sim/sim';
@@ -11,6 +11,21 @@ const player = (more: Partial<PlayerState> = {}): PlayerState => ({ x: 0, y: 0, 
 const target = (state: PlayerState, phase = 0, pace = 0, landing = 0) => playerPose(state, phase, pace, landing, { ...STANDING });
 
 describe('the player’s shared motion', () => {
+  it('releases every owned stand-in resource once when the model takes its place', () => {
+    const elof = createPlayerStandIn(), geometries = new Set<Mesh['geometry']>(), materials = new Set<Material>();
+    elof.group.traverse(object => {
+      if (!(object instanceof Mesh)) return;
+      geometries.add(object.geometry);
+      for (const material of Array.isArray(object.material) ? object.material : [object.material]) materials.add(material);
+    });
+    const dispose = [...geometries, ...materials].map(resource => vi.spyOn(resource, 'dispose'));
+    elof.dispose();
+    elof.dispose();
+    expect(geometries.size).toBeGreaterThan(10);
+    expect(materials.size).toBe(6);
+    for (const owned of dispose) expect(owned).toHaveBeenCalledTimes(1);
+  });
+
   it('uses actual distance, freezes while paused, and never runs against a wall or on a ride', () => {
     const motion = createPlayerMotion(), state = player({ vx: RUN_SPEED });
     for (let i = 0; i < 90; i++) motion.update(state, 0, 1 / 60, null);

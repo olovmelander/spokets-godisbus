@@ -20,6 +20,47 @@
     open outward and bang, Pappa shuts them, less motion and a restored game); stills of `fonstret` and
     `klonkstar` at 844×390 with the stand-ins. **For Olov:** play `?course=stormkvall` to the goodnight and judge
     the burst on the family devices. No new known bug, *Senare* wish or question. Nothing needs his computer.
+- **Full game audit (6 November 2026, cloud session, branch `audit/full-game-polish`).**
+  Olov requested another broad audit and repairs throughout the game. Findings and reproducible checks are in
+  [`docs/full-game-audit.md`](docs/full-game-audit.md). All 18 playable chapters were reviewed, and a simulation
+  sweep restored 130 actual checkpoint snapshots and reached each chapter's goal.
+  - **Save integrity:** required Adventure 2 load failures now show Retry before a simulation/autosave can replace
+    the saved chapter with Prolog; this includes invalid/empty chapter links. Denied localStorage getters no longer
+    crash keyboard-help startup, and readable-but-unwritable storage gives the existing save notice. Chapter codes
+    reset their chapter's side candy while keeping other chapters. Corrupt album records can be recaptured, and
+    delayed older resets/cleanup cannot erase a newer generation's photos.
+  - **Play and controls:** asking for help during the final counterweight push no longer crashes in Granskogen,
+    Olympia or Billsta. The final home-ride candy is now before Stormens öga's goal at all tested frame rates.
+    Pointer ownership fixes two-finger jump cancellation; gentle gamepad movement clears on disconnect; simultaneous
+    menu direction/confirm uses the newly selected item. Destructive holds cancel when focus or visibility is lost.
+    Larger-text pause controls fit narrow phones, and focusing a menu control can no longer scroll
+    the game root sideways and leave touch targets offscreen (reproduced with an overflowing debug HUD). Voices stop when muted, hidden or dismissed; stale autoplay
+    rejections cannot revive an old line. A compile-time inventory of actual MP3 files keeps unrecorded dialogue
+    silent without failed network requests. The finale's sharing line now respects either first-adventure candy choice.
+  - **Rendering:** a missing optional family actor no longer blocks later actors/scenery. Replacing warmed fallbacks
+    releases their owned GPU resources without disposing geometry still shared by other figures. All three quality
+    tiers, late paused arrivals, shading and actual GPU-geometry reduction are checked.
+  - **Validation:** all **197 files / 2,097 tests** and typecheck passed, up from the baseline 195 files / 2,062 tests.
+    Focused browser checks passed: real IndexedDB 35, model installation 47, profiles 19, pointing 45, settings 66 and production
+    lifecycle/recovery 44. The final adaptive pause columns also passed a four-width DOM preview (320/390/780/1180 px).
+    The chapter-code fixture seeds before page boot, and the epilogue test approaches the knife at normal speed
+    under its unchanged deadline, verifies the stopped offer and takes it. Focused carving (9 checks) and a deliberately stalled party (7 checks) pass.
+    **Full CI on the final code passed** (commit `44218d2`, Actions run 42141895068, 6 November): all nine jobs, so
+    typecheck, tests, build with size gates, privacy check and **all 50 browser suites**, `story` (34 checks) and
+    `smoke` among them. A later cloud session re-ran `npm ci`, typecheck and the tests on that commit before the
+    merge (see "Delivery" below). Production budget: **500.6 KiB boot JS / 520 KiB**, **3,613.3 KiB served boot / 4 MiB**
+    including local private exports, **64.4 KiB Adventure 2 chunk / 160 KiB**. Independent source review found and
+    verified the invalid-link save protection; no remaining blocker was found.
+  - **Decisions and next:** no new save format, release boundary, private asset, recording, *Senare* wish or question.
+    This audit needs no local Blender work. Physical-device touch, colour, sound and frame rate still need the
+    existing family-device review; automated routes do not establish every reading pause or historical save shape.
+  - **Delivery:** [PR #230](https://github.com/olovmelander/spokets-godisbus/pull/230). Olov asked on 6 November to
+    finalize it. A cloud session confirmed the full CI above from each job's log, and re-ran on `44218d2`: `npm ci`,
+    typecheck, the tests (197 files / 2,097 tests), the build (500.6 KB boot JS / 520 KB, Adventure 2 64.4 KB /
+    160 KB; served boot 2,316 KB there, without the private exports) and the privacy check. It corrected these
+    "pending" lines, here and in `docs/full-game-audit.md`. CI on that documentation commit passed eight of its nine
+    jobs; browser job 5 hung in `npx playwright install` for over an hour, before any of its tests ran. The game code
+    was identical to `44218d2`, where all nine passed, so on Olov's word the PR was merged as `f555b41`.
 
 - **Pappa and Bertil's caps refined (5 November 2026, cloud session, branch `visual/family-caps`).**
   Olov requested better-looking caps on both figures. The actual private exports were inspected from the front,
@@ -47,7 +88,9 @@
     The local built-in privacy scan passed; this environment has neither exiftool nor a configured denylist.
   - **Delivery:** models, source, licences and geometry report are in private
     [PR #3](https://github.com/olovmelander/spokets-godisbus-familj/pull/3), merged as `2ad9224`. The public companion contains the optional
-    regression check, licence entry and handover; its merge/deployment status is recorded in the PR. The normal Pages
+    regression check, licence entry and handover: [PR #229](https://github.com/olovmelander/spokets-godisbus/pull/229)
+    merged as `03933d6`, all nine CI jobs passed, and Pages run `42133582027` succeeded. The deployed JavaScript and
+    both packed cap-model hashes were verified. The normal Pages
     build fetches the private exports, so the same caps appear wherever either figure is used in either adventure.
     No gameplay, voices, release boundary or save format changed. **Next:** judge the fitted caps on the family devices
     after deployment. No new known bug, *Senare* item or question for Olov; this GLB-only repair needs no local Blender work.
@@ -3802,11 +3845,16 @@
 
 ## Next
 
+The full game audit above repairs reproduced gameplay, persistence, control, audio and rendering defects across
+both adventures; its full validation/delivery record belongs to the PR. Review the deployed result on the family
+devices, especially larger-text Pause, touch/gamepad controls, chapter continuation and the final home ride.
+This implementation needs no work on Olov's computer. Existing art/device judgements below remain relevant.
+
 The graphics overhaul (PR #228), opening revision (PR #226) and story audit (PR #227) are merged and deployed.
 Graphics evidence and limits are in [`docs/graphics-overhaul-audit.md`](docs/graphics-overhaul-audit.md).
 Review the deployed picture on the family devices. New voices still wait until the story and conversations are finished.
 The cap revision above includes the actual private models and local pose checks; also review Pappa's and Bertil's
-caps in both adventures after its companion PR deploys. Historical Blender sources are distinct from this reproducible
+caps in both adventures; its companion PR #229 is deployed. Historical Blender sources are distinct from this reproducible
 GLB-only revision; see the private README before making a new full-character export.
 
 **For Olov, after the graphics deploy:** open the normal address on each device Elof plays on at least 15 minutes after
@@ -4187,6 +4235,7 @@ The older list, still true where it is not struck:
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
 | The storm blows the window open (6 Nov) | Olov's request: an animation of the window bursting open | Part of one cloud session | — / 0 so far | A real opening in the wall, two halves that fly outward and bang, Pappa shutting them; code only. |
+| Full game audit, 6 Nov | Review and improve the whole game | One cloud continuation with parallel audits and independent review | — / 0 so far | All 18 chapters and 130 restored checkpoints reviewed; reproduced save, album, helper, control, voice, model-loading/resource and narrow-menu defects repaired. Evidence and limits in the audit. Physical-device review remains. |
 | Pappa and Bertil's caps, 5 Nov | Inspect and improve both actual caps | One cloud continuation, three fit iterations | — / 0 so far | Attached peaks, fitted panels and bands, clean colour boundaries and subtle details. Private deterministic source preserves the rest of each model exactly; 76 pose/render checks and native views in both adventures passed. Device judgement remains. |
 | Graphics overhaul, 5 Nov | One complete visual pass across both adventures | One cloud session, with parallel implementation and review | — / 0 so far | Shares the authored scenery library, furnishes the first adventure's home, improves light, ground and outdoor silhouettes, and repairs garden/meeting-stone contact. Public five-size image evidence and executable budgets are recorded in the audit. Final private-model and physical-device judgement remains. |
 | Äventyr 2 story audit, 5 Nov | One complete narrative pass | One cloud session | 1 / 1 | All ten chapters audited and revised, clue/reading continuity repaired, visible finale carry restored, audit and voice script updated. Device/acting review and new recordings remain. |
@@ -4208,6 +4257,10 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Full game audit, 6 November:** the reproduced issues in `docs/full-game-audit.md` are repaired and covered by
+  regressions. No new unresolved gameplay defect was confirmed by this pass. Existing art/device limitations below
+  remain. This environment now has Playwright's Chromium 1194 installed; the following browser-path workaround is
+  historical and is only needed in environments that still lack it.
 - **Browser tests in a cloud session (5 November):** the preinstalled Chromium is build 1243, and Playwright 1.56.1 looks for
   `chromium_headless_shell-1194`, so `tests/browser/*.mjs` fail to launch as they are. A session can preload a small module
   that patches `chromium.launch` with `executablePath: '/opt/pw-browsers/chromium'` (`node --import <patch> tests/browser/…`).

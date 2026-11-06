@@ -190,7 +190,8 @@ export const stormoga: ChapterData = {
     ],
   },
   spawn: { x: 1, y: 0.01 },
-  goalX: 86,
+  // Let the walk home pass its last candy before the end card opens.
+  goalX: 89,
   coda: 'all',
   ground: [
     { x: -3, y: 10 },

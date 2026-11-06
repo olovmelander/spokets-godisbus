@@ -180,7 +180,36 @@ describe('models shared by both adventures', () => {
     expect(assets.model).toHaveBeenCalledTimes(1);
   });
 
-  it('can replace falling cones without any other model sockets and reports the arrival for warm-up', async () => {
+  it('keeps a failed grandparent retryable without blocking healthy actors or scenery', async () => {
+    const assets = assetsFor({ 'private/morfar': kit('morfar'), 'private/mormor': kit('mormor'), 'aventyr2/room': kit('stol') });
+    const read = assets.model.getMockImplementation()!;
+    let missing = true;
+    assets.model.mockImplementation(async (pack, name) => {
+      if (name === 'morfar' && missing) throw new Error('temporary missing grandparent export');
+      return read(pack, name);
+    });
+    const scene = new Group(), grandpa = new Group(), grandma = new Group(), chair = socket('stol');
+    grandpa.userData = { grandparent: 'morfar', dress: vi.fn() };
+    grandma.userData = { grandparent: 'mormor', dress: vi.fn() };
+    scene.add(grandpa, chair, grandma);
+    const loaded = vi.fn(), warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(await installSharedModels(assets, scene, false, loaded)).toBe(true);
+      expect(grandpa.userData.dress).not.toHaveBeenCalled();
+      expect(chair.getObjectByName('stol')).toBeDefined();
+      expect(grandma.userData.dress).toHaveBeenCalledTimes(1);
+      expect(loaded.mock.calls).toEqual([['aventyr2/room'], ['private/mormor']]);
+      missing = false;
+      expect(await installSharedModels(assets, scene, false, loaded)).toBe(true);
+      expect(grandpa.userData.dress).toHaveBeenCalledTimes(1);
+      expect(grandma.userData.dress).toHaveBeenCalledTimes(1);
+      expect(assets.model.mock.calls).toEqual([
+        ['aventyr2', 'room'], ['private', 'morfar'], ['private', 'mormor'], ['private', 'morfar'],
+      ]);
+    } finally { warning.mockRestore(); }
+  });
+
+  it.each([false, true])('replaces falling cones and only disposes owned fallback resources (%s)', async owned => {
     const source = kit('kotte'), cone = source.getObjectByName('kotte') as Mesh;
     const geometry = cone.geometry;
     geometry.setAttribute('color', new Float32BufferAttribute(new Float32Array(geometry.getAttribute('position').count * 3).fill(1), 3));
@@ -188,15 +217,22 @@ describe('models shared by both adventures', () => {
     const old = new BoxGeometry(1, 1, 1), drops = new InstancedMesh(old, new MeshStandardMaterial(), 3);
     drops.name = 'rain-drops';
     drops.userData.cones = true;
+    drops.userData.disposeFallback = owned;
+    const material = drops.material;
+    const geometryDisposed = vi.spyOn(old, 'dispose'), materialDisposed = vi.spyOn(material, 'dispose');
     const scene = new Group();
     scene.add(drops);
     expect(await installSharedModels(assets, scene)).toBe(true);
     expect(drops.geometry).not.toBe(old);
     expect(drops.geometry).not.toBe(geometry);
+    expect(geometryDisposed).toHaveBeenCalledTimes(owned ? 1 : 0);
+    expect(materialDisposed).toHaveBeenCalledTimes(owned ? 1 : 0);
     drops.geometry.computeBoundingBox();
     const size = drops.geometry.boundingBox!.getSize(new Vector3());
     expect(size.y).toBeCloseTo(0.7);
     expect(await installSharedModels(assets, scene)).toBe(false);
+    expect(geometryDisposed).toHaveBeenCalledTimes(owned ? 1 : 0);
+    expect(materialDisposed).toHaveBeenCalledTimes(owned ? 1 : 0);
     expect(assets.model).toHaveBeenCalledTimes(1);
   });
 });

@@ -121,6 +121,8 @@ export const heightOf = (who: Role) => ADULT * ROLES[who].scale;
 export interface Rig {
   /** The group a scene places and turns. Its feet are at its origin, and it faces its own +z. */
   readonly group: Group;
+  /** Release resources owned by a procedural stand-in when its model takes over. */
+  dispose?(): void;
   /** Holds a pose. */
   pose(pose: Pose): void;
   /** Where a hand is in the world after the last pose: the body's left is 0. */
@@ -337,8 +339,16 @@ export function createRehearsalRig(who: Role): Rig {
     writeParts();
   }
   pose(STANDING);
+  let disposed = false;
   return {
     group,
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      mesh.dispose();
+      // The box geometry is shared by every rehearsal actor, including ones still on stage.
+      mesh.material.dispose();
+    },
     height: ADULT * s,
     pose,
     hand(side, out) {

@@ -1,4 +1,4 @@
-import { Box3, InstancedMesh, Mesh, Vector3 } from 'three';
+import { Box3, Group, InstancedMesh, Material, Mesh, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prolog } from '../../src/content/chapters/ends';
 import { drawingAt, sippingAt } from '../../src/render/acting';
@@ -36,6 +36,22 @@ function snapshot(stage: Stage) {
     }),
   };
 }
+
+it('releases a replaced rehearsal actor without disposing geometry shared by the rest of the family', () => {
+  const stage = stageFor(), before = actor(stage, 'mamma');
+  const body = before.group.children[0] as InstancedMesh;
+  const sister = actor(stage, 'moa').group.children[0] as InstancedMesh;
+  const instances = vi.spyOn(body, 'dispose');
+  const material = vi.spyOn(body.material as Material, 'dispose');
+  const geometry = vi.spyOn(body.geometry, 'dispose');
+  expect(body.geometry).toBe(sister.geometry);
+  stage.replace('mamma', new Group());
+  expect(before.group.parent).toBeNull();
+  expect(instances).toHaveBeenCalledTimes(1);
+  expect(material).toHaveBeenCalledTimes(1);
+  expect(geometry).not.toHaveBeenCalled();
+  geometry.mockRestore();
+});
 
 describe.each(['title', 'morgon'])('%s paper and mug contacts', id => {
   it('keeps the drawing fully on the table with Moa seated at its end', () => {
