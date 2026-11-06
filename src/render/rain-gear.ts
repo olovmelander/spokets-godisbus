@@ -25,7 +25,7 @@ export interface RainGear {
 export type GearRole = 'mamma' | 'pappa' | 'moa' | 'bertil' | 'elof';
 
 /** Each one's raincoat and boots. Bertil's boots are the green of the boot Elof rides (../content/aventyr2/render.ts). */
-const LOOK: Record<GearRole, { coat: string; boots: string }> = {
+export const LOOK: Record<GearRole, { coat: string; boots: string }> = {
   mamma: { coat: '#b8423a', boots: '#2c3a2c' },
   pappa: { coat: '#2e4a66', boots: '#1f2124' },
   moa: { coat: '#e2b23a', boots: '#c8423a' },
