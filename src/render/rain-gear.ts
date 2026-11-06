@@ -131,7 +131,8 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
     mesh.quaternion.copy(body.quaternion);
     mesh.scale.copy(body.scale);
     mesh.frustumCulled = false;
-    mesh.castShadow = true;
+    // The body's shadow is its capsule's (./character-shadows.ts), and so is the gear's.
+    mesh.castShadow = false;
     mesh.visible = false;
     mesh.name = 'rain-gear';
     body.parent?.add(mesh);

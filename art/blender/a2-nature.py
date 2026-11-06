@@ -478,7 +478,9 @@ shelf('hylla-b', 5.6, 2.0, 2.0, 5.8)
 WOOD = tone('#c9a878')
 WOOD_PALE = tone('#e2cfa4')
 WOOD_HEART = tone('#a07850')
-GNAW = tone('#d8b888')
+# Fresh wood a beaver has cut: warm, a little orange, darker in the bottom of each tooth mark.
+GNAW = tone('#cfa468')
+GNAW_GROOVE = tone('#8a6236')
 
 
 def bark_row(sides, z, seed, wet=1.0):
@@ -495,36 +497,64 @@ def stump(name, radius, high, seed, gnawed):
     if not wanted(name):
         return
     part = new_part()
-    sides = 14
+    # A gnawed stump is a step he stands on in Älven, seen close: rounder, with its tooth marks in it.
+    sides = 22 if gnawed else 14
     rings = []
     tones = []
-    rows = 9
+    rows = 15 if gnawed else 9
     for i in range(rows):
         t = i / (rows - 1.0)
         z = -0.2 + (high + 0.2) * t
         ripple = []
         for j in range(sides):
-            rib = 0.5 + 0.5 * math.cos(j * TAU / 7.0 * 2.0 + seed)
+            angle = j * TAU / sides
+            rib = 0.5 + 0.5 * math.cos(angle * 4.0 + seed)
             flare = max(0.0, 1.0 - t * 2.4) ** 1.6
-            ripple.append(1.0 + flare * (0.35 + 1.1 * rib * rib) + 0.1 * noise(j, z * 2.0, seed))
+            ripple.append(1.0 + flare * (0.35 + 1.1 * rib * rib) + 0.1 * noise(j * 14.0 / sides, z * 2.0, seed))
         wide = radius
         row = bark_row(sides, z, seed)
         if gnawed:
-            # The waist the teeth cut, pale wood where the bark has gone, and a point on top.
+            # The waist the teeth cut, fresh wood where the bark has gone, and a point on top. The wood is cut in
+            # short scoops, one beside the next, a beaver's tooth marks: each a little hollow, its far edge darker.
             waist = abs(t - 0.62) / 0.62
             wide = radius * (0.34 + 0.66 * min(1.0, waist * 1.5))
             if 0.42 < t:
-                row = [blend(GNAW, WOOD_HEART, noise(j * 3.0, i * 2.0, seed)) for j in range(sides)]
+                ripple = [r * (1.0 - 0.07 * (0.5 + 0.5 * math.sin(j * TAU / sides * 11.0 + i * 1.7 + seed))) for j, r in enumerate(ripple)]
+                row = []
+                for j in range(sides):
+                    scoop = 0.5 + 0.5 * math.sin(j * TAU / sides * 11.0 + i * 1.7 + seed)
+                    fresh = blend(GNAW, WOOD_HEART, 0.35 * noise(j * 3.0, i * 2.0, seed))
+                    row.append(blend(fresh, GNAW_GROOVE, scoop ** 3 * 0.8))
+                # The ragged rim where the bark ends: torn, darker, a few strands of bast.
+                if i == next(k for k in range(rows) if k / (rows - 1.0) > 0.42):
+                    row = [blend(BARK_PALE, GNAW_GROOVE, noise(j * 2.0, 5.0, seed)) for j in range(sides)]
         rings.append(circle(Vector((0.0, 0.0, z)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 1.0, 0.0)), wide, sides, turn=0.5 * (i % 2), ripple=ripple))
         tones.append(row)
     top = Vector((0.15, 0.1, high + (radius * 0.7 if gnawed else 0.0)))
     made = skin(part, rings, tones, None, None)
-    tip = put(part, top, WOOD_HEART if gnawed else WOOD_PALE)
     ring_top = made[-1]
     if gnawed:
+        # The cone the teeth left on top, in three rings of scoops to its point, darker towards the point.
+        rims = [ring_top]
+        for band in range(1, 4):
+            k = 1.0 - band * 0.25
+            rim = []
+            for j in range(sides):
+                scoop = 0.5 + 0.5 * math.sin(j * TAU / sides * 9.0 + band * 2.3 + seed)
+                at = ring_top[j].co
+                inward = k * (1.0 - 0.08 * scoop)
+                rim.append(put(part, Vector((top.x + (at.x - top.x) * inward, top.y + (at.y - top.y) * inward, top.z + (at.z - top.z) * k)),
+                               blend(blend(GNAW, WOOD_HEART, band * 0.22), GNAW_GROOVE, scoop ** 3 * 0.7)))
+            rims.append(rim)
+        for band in range(3):
+            for j in range(sides):
+                n = (j + 1) % sides
+                face(part, (rims[band][j], rims[band][n], rims[band + 1][n], rims[band + 1][j]))
+        tip = put(part, top, WOOD_HEART)
         for j in range(sides):
-            face(part, (ring_top[j], ring_top[(j + 1) % sides], tip))
+            face(part, (rims[3][j], rims[3][(j + 1) % sides], tip))
     else:
+        tip = put(part, top, WOOD_PALE)
         # The sawn face: rings of a tree's years, pale to dark, each its own band.
         rims = [ring_top]
         for band in range(1, 4):
