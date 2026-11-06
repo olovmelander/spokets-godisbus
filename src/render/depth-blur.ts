@@ -4,7 +4,7 @@ import {
 } from 'three';
 
 /**
- * High's depth of field: the picture as a macro lens takes it (plan §5.2; Olov, 6 November 2026: "ännu mer likt
+ * The depth of field of Mid and High: the picture as a macro lens takes it (plan §5.2; Olov, 6 November 2026: "ännu mer likt
  * ... Unravel"). The play plane, where he is, stays sharp. Behind it the world softens more the further it is, up
  * to a wide blur for what is far, and what stands between him and the camera, the near ground and the leaves
  * in front, is blurred most of all and spills soft over what is behind it. Bright points in the blur open into
@@ -12,7 +12,8 @@ import {
  *
  * Two draws at half resolution: one gathers each pixel's colour and how wide its blur is (signed: in front of
  * the play plane is negative); one gathers the blur from a disc of those. The grade then mixes it in, judging
- * at full resolution where the picture is sharp, so his outline and the candy never soften.
+ * at full resolution where the picture is sharp, so his outline and the candy never soften. Mid gathers from
+ * half as many points as High: a little grainier in the widest blur, at half the cost.
  */
 
 /** How deep behind the play plane stays sharp in play, in EL, and how much deeper during a scene's shot. */
@@ -68,6 +69,8 @@ const GATHER = /* glsl */ `
   uniform sampler2D tCoc;
   uniform vec2 texel;
   uniform float nearMost;
+  /** How many points it gathers from: for its own blur, and for the near blur. */
+  uniform vec2 taps;
   varying vec2 vUv;
   const float GOLDEN = 2.39996323;
   // A bright point counts for more: in the blur it opens into a disc of light.
@@ -79,7 +82,8 @@ const GATHER = /* glsl */ `
     float total = bright(centre.rgb);
     if (size > 0.5) {
       for (int i = 0; i < 24; i++) {
-        float r = size * sqrt((float(i) + 0.5) / 24.0);
+        if (float(i) >= taps.x) break;
+        float r = size * sqrt((float(i) + 0.5) / taps.x);
         float a = float(i) * GOLDEN;
         vec4 s = texture2D(tCoc, vUv + vec2(cos(a), sin(a)) * r * texel);
         float reach = abs(s.a);
@@ -94,7 +98,8 @@ const GATHER = /* glsl */ `
     vec3 near = vec3(0.0);
     float nearTotal = 0.0, widest = 0.0;
     for (int i = 0; i < 16; i++) {
-      float r = nearMost * sqrt((float(i) + 0.5) / 16.0);
+      if (float(i) >= taps.y) break;
+      float r = nearMost * sqrt((float(i) + 0.5) / taps.y);
       float a = float(i) * GOLDEN + 0.6;
       vec4 s = texture2D(tCoc, vUv + vec2(cos(a), sin(a)) * r * texel);
       if (s.a < -0.5 && s.a < centre.a - 0.5) {
@@ -105,7 +110,7 @@ const GATHER = /* glsl */ `
       }
     }
     // How much of it the near blur covers: the share of the taps that could reach that do.
-    float cover = nearTotal > 0.0 ? clamp(nearTotal / max(1.0, 16.0 * pow(widest / nearMost, 2.0)) * 1.2, 0.0, 1.0) : 0.0;
+    float cover = nearTotal > 0.0 ? clamp(nearTotal / max(1.0, taps.y * pow(widest / nearMost, 2.0)) * 1.2, 0.0, 1.0) : 0.0;
     gl_FragColor = vec4(mix(own, near / max(nearTotal, 1e-4), cover), cover);
   }
 `;
@@ -127,12 +132,13 @@ export function createDepthBlur() {
     tDiffuse: { value: null }, tDepth: { value: null }, texel: { value: new Vector2(1, 1) },
     depthCamera: { value: new Vector3(0.1, 140, 10) }, height: { value: 1 }, deep: { value: DOF_DEEP },
   });
-  const gather = screenPass(GATHER, { tCoc: { value: null }, texel: { value: new Vector2(1, 1) }, nearMost: { value: 1 } });
+  const gather = screenPass(GATHER, { tCoc: { value: null }, texel: { value: new Vector2(1, 1) }, nearMost: { value: 1 }, taps: { value: new Vector2(24, 16) } });
   const screen = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const half = () => new WebGLRenderTarget(1, 1, { type: HalfFloatType, depthBuffer: false, stencilBuffer: false });
   return {
     get texture() { return target?.texture ?? null; },
-    setSize(width: number, height: number, enabled: boolean) {
+    /** `full`: High's count of points to gather from; Mid's is half. */
+    setSize(width: number, height: number, enabled: boolean, full = true) {
       if (!enabled) {
         target?.dispose(); coc?.dispose();
         target = null; coc = null;
@@ -152,6 +158,7 @@ export function createDepthBlur() {
       prepare.material.uniforms.height!.value = h;
       (gather.material.uniforms.texel!.value as Vector2).set(1 / w, 1 / h);
       gather.material.uniforms.nearMost!.value = Math.max(1, DOF_NEAR * h);
+      (gather.material.uniforms.taps!.value as Vector2).set(full ? 24 : 12, full ? 16 : 8);
     },
     /** `deep`: how far behind the play plane is sharp, in EL (DOF_DEEP in play). */
     render(renderer: WebGLRenderer, read: WebGLRenderTarget, camera: PerspectiveCamera, deep = DOF_DEEP) {

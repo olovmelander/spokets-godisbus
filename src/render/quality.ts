@@ -3,7 +3,7 @@
  * elsewhere.
  *  - Low renders straight to the canvas, with tone mapping in the materials and no post-processing.
  *  - Mid and High render to HDR buffers and run one grading pass, with glow on High.
- * High's depth blur and the grade inside the materials for Low still wait for the golden frames.
+ * Mid and High have the lens's depth of field (./depth-blur.ts), Mid with half of High's gathering.
  */
 export type Tier = 'low' | 'mid' | 'high';
 

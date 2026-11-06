@@ -95,7 +95,7 @@ export function buildVerbMarks(chapter: ChapterData, doc: Document = document) {
   texture.minFilter = LinearFilter;
   texture.magFilter = LinearFilter;
   // A little under full white, so that the paper never reaches the glow (GLOW_FROM in ./grade.ts) and bleeds. It
-  // writes its depth, so High's soft background (./depth-blur.ts) leaves it sharp, as the thing it stands over.
+  // writes its depth, so the lens's soft background (./depth-blur.ts) leaves it sharp, as the thing it stands over.
   const material = new MeshBasicMaterial({ map: texture, color: 0xdedede, transparent: true, alphaTest: 0.05, fog: false });
   const meshes = spots.map((spot) => {
     const geometry = new PlaneGeometry(SIZE, SIZE);

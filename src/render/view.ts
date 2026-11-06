@@ -763,7 +763,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       hdr.grade.setSize(canvas.width, canvas.height);
       gradePass?.setSize(canvas.width, canvas.height);
     }
-    depthBlur?.setSize(canvas.width, canvas.height, tier === 'high');
+    // The lens's depth of field on Mid and High; Mid gathers from fewer points (./depth-blur.ts).
+    depthBlur?.setSize(canvas.width, canvas.height, tier !== 'low', tier === 'high');
     bloom?.setSize(canvas.width, canvas.height, tier === 'high');
     lightShafts?.setSize(canvas.width, canvas.height, tier !== 'low');
     water.setSize(canvas.width, canvas.height, tier);
