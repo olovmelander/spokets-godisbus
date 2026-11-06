@@ -40,7 +40,10 @@ export const DOF_SIZE = /* glsl */ `
   float dofSize(float away, float focus, float deep) {
     float behind = 1.0 - focus / max(away - deep, 1e-3);
     float before = focus / (away + 0.8) - 1.0;
-    return behind > 0.0 ? ${DOF_FAR.toFixed(4)} * smoothstep(0.0, 0.65, behind) : -${DOF_NEAR.toFixed(4)} * smoothstep(0.0, 0.5, before);
+    // What stands far back, the village's church and the far hills, keeps its shape: the blur thins from 6 EL
+    // behind the play plane to a quarter of itself by 18 EL (Olov: "kyrktornet och kyrkan" were too blurred).
+    float farOff = 1.0 - 0.75 * smoothstep(6.0, 18.0, away - focus);
+    return behind > 0.0 ? ${DOF_FAR.toFixed(4)} * smoothstep(0.0, 0.65, behind) * farOff : -${DOF_NEAR.toFixed(4)} * smoothstep(0.0, 0.5, before);
   }
 `;
 
