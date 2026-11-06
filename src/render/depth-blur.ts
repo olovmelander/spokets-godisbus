@@ -34,9 +34,9 @@ export const DOF_SIZE = /* glsl */ `
   float dofDistance(float d, vec3 depthCamera) {
     return depthCamera.x * depthCamera.y / (depthCamera.y - (depthCamera.y - depthCamera.x) * d);
   }
-  float dofSize(float distance, float focus, float deep) {
-    float behind = 1.0 - focus / max(distance - deep, 1e-3);
-    float before = focus / (distance + 0.8) - 1.0;
+  float dofSize(float away, float focus, float deep) {
+    float behind = 1.0 - focus / max(away - deep, 1e-3);
+    float before = focus / (away + 0.8) - 1.0;
     return behind > 0.0 ? ${DOF_FAR.toFixed(4)} * smoothstep(0.0, 0.65, behind) : -${DOF_NEAR.toFixed(4)} * smoothstep(0.0, 0.5, before);
   }
 `;

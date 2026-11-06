@@ -119,8 +119,8 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
         float crumb = smoothstep(0.84, 0.94, groundNoise(at * 23.0 + 9.0)) * groundNear;
         groundColour = mix(groundColour, vec3(0.012, 0.013, 0.012), 0.6 * crumb);
         // Flattened and paler where it is played on most.
-        float flat = smoothstep(0.58, 0.8, big) * groundMid;
-        groundColour = mix(groundColour, vec3(dot(groundColour, vec3(0.3, 0.5, 0.2))) * vec3(1.05, 1.25, 0.95), 0.25 * flat);
+        float trodden = smoothstep(0.58, 0.8, big) * groundMid;
+        groundColour = mix(groundColour, vec3(dot(groundColour, vec3(0.3, 0.5, 0.2))) * vec3(1.05, 1.25, 0.95), 0.25 * trodden);
         ` : /* glsl */ `
         // The stones in the asphalt, tar patches and the lighter tracks worn into it.
         groundColour *= 1.0 + (big - 0.5) * 0.18;
