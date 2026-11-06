@@ -1,6 +1,6 @@
 import {
-  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage,
-  Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry,
+  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DataTexture, DoubleSide, DynamicDrawUsage,
+  Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry,
   CatmullRomCurve3, Points, PointsMaterial, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
   type Material,
 } from 'three';
@@ -388,11 +388,21 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
 
   // Rain: thin pale streaks, slanting with the wind from the left.
   const rain = storm?.rain ?? 0;
-  const drops = new InstancedMesh(new PlaneGeometry(0.03, 0.85), new MeshBasicMaterial({ color: '#cfdcff', transparent: true, opacity: 0.3, depthWrite: false, fog: false }), RAIN_MAX);
+  // Each streak is brightest at its head and fades along its tail, as a falling drop is seen (the graphics pass of
+  // 6 November 2026: they were flat bars of one brightness), and each falls at its own length.
+  const streak = new Uint8Array(4 * 32);
+  for (let k = 0; k < 32; k++) {
+    const along = k / 31;
+    streak.set([255, 255, 255, Math.round(255 * Math.pow(along, 1.6) * (1 - Math.pow(along, 14)))], k * 4);
+  }
+  const streakMap = new DataTexture(streak, 1, 32);
+  streakMap.magFilter = streakMap.minFilter = LinearFilter;
+  streakMap.needsUpdate = true;
+  const drops = new InstancedMesh(new PlaneGeometry(0.024, 0.95), new MeshBasicMaterial({ color: '#d8e3ff', map: streakMap, transparent: true, opacity: 0.3, depthWrite: false, fog: false }), RAIN_MAX);
   drops.instanceMatrix.setUsage(DynamicDrawUsage);
   drops.frustumCulled = false;
   drops.renderOrder = 4;
-  const seeds = Array.from({ length: RAIN_MAX }, () => ({ x: random() * BOX.x, y: random() * BOX.y, z: BOX.back + random() * (BOX.front - BOX.back), speed: 13 + random() * 6 }));
+  const seeds = Array.from({ length: RAIN_MAX }, () => ({ x: random() * BOX.x, y: random() * BOX.y, z: BOX.back + random() * (BOX.front - BOX.back), speed: 13 + random() * 6, long: 0.55 + random() * 0.7 }));
   if (rain > 0) group.add(drops);
   const place = new Object3D();
   const SLANT = 0.32;
@@ -698,12 +708,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const x = ((s.x + fall * SLANT - cx) % BOX.x + BOX.x) % BOX.x;
           place.position.set(cx - BOX.x / 2 + x, cy + BOX.y / 2 - fall, s.z);
           // No rain falls indoors: only out of doors, beyond the house's corner.
-          place.scale.setScalar(chapter.outdoors !== undefined && place.position.x < chapter.outdoors ? 0 : 1);
+          const out = chapter.outdoors !== undefined && place.position.x < chapter.outdoors ? 0 : 1;
+          place.scale.set(out, out * s.long, out);
           place.updateMatrix();
           drops.setMatrixAt(i, place.matrix);
         }
         drops.instanceMatrix.needsUpdate = true;
-        (drops.material as MeshBasicMaterial).opacity = 0.32 * (1 - calm) * (0.6 + 0.4 * rain);
+        (drops.material as MeshBasicMaterial).opacity = 0.42 * (1 - calm) * (0.6 + 0.4 * rain);
       }
 
       // Lightning, now and then; and one at every flyby's moment.
