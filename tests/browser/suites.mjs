@@ -57,7 +57,8 @@ export const SUITES = [
 ];
 
 /** The files in tests/browser that are not suites: what the suites share, and this list's own two files. */
-export const NOT_SUITES = ['budget', 'dialogue', 'pause', 'picture', 'run', 'suites', 'visual-overhaul'];
+// family-caps is an opt-in local check: public CI has no private family exports.
+export const NOT_SUITES = ['budget', 'dialogue', 'family-caps', 'pause', 'picture', 'run', 'suites', 'visual-overhaul'];
 
 /**
  * The suites shared out over a number of parts, as evenly as their seconds allow: the heaviest suite goes to
