@@ -2,6 +2,7 @@ import {
   BoxGeometry, BufferGeometry, CanvasTexture, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, LatheGeometry,
   MeshStandardMaterial, Object3D, RepeatWrapping, SRGBColorSpace, SphereGeometry, Vector2, type InstancedMesh, type Material,
 } from 'three';
+import { STONE, barkDetail, barky } from '../bark-detail';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData, Landmark, LandmarkThing, PlaceId, SurfaceKind } from '../../sim/types';
 import type { FarId } from '../backdrop';
@@ -210,7 +211,8 @@ function kit() {
     needle: new BoxGeometry(1, 0.012, 0.014),
     trunk: trunk(),
     snag: snag(),
-    boulder: boulder(),
+    // Granite seen close (../bark-detail.ts), with the moss on its top left as moss.
+    boulder: barky(boulder(), STONE),
     moss: new MeshStandardMaterial({ roughness: 1 }),
     // The sun stands behind the grass and shines through: a little light of its own stands in for that.
     grass: new MeshStandardMaterial({ roughness: 0.7, side: DoubleSide, emissive: '#5d7a1e', emissiveIntensity: 0.55 }),
@@ -231,7 +233,7 @@ function kit() {
     birch: new MeshStandardMaterial({ map: birchBark(), roughness: 0.8 }),
     // The bog's and the mountain's. The mountain's stones, its cobbles and its cushions of reindeer lichen are
     // modelled in Blender (../mountain-kit.ts): these three are their stand-ins, plain and of few corners.
-    bare: boulder(false, 10, 7, '#a4a8b2'),
+    bare: barky(boulder(false, 10, 7, '#a4a8b2'), STONE),
     cobble: tinted(new SphereGeometry(1, 8, 6).scale(1, 0.6, 0.78), '#d8d6cf'),
     lav: tinted(new SphereGeometry(0.5, 6, 3, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.75, 1), '#f4f3e4'),
     straw: new MeshStandardMaterial({ roughness: 0.75, side: DoubleSide, emissive: '#8a7430', emissiveIntensity: 0.45 }),
@@ -250,6 +252,7 @@ export let KIT: ReturnType<typeof kit>;
 /** Makes the kit anew, for the chapter that is being dressed: only this module can set what it exports. */
 export function makeKit(): void {
   KIT = kit();
+  barkDetail(KIT.stone);
   // What grows moves in the wind (../wind.ts): a blade's top by a share of its length, a dandelion's stalk
   // and the head on it by the same few hundredths of an EL, and the lichen only while a gust blows.
   for (const blades of [KIT.grass, KIT.lawn, KIT.straw]) sway(blades, 0.07);

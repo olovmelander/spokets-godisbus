@@ -37,7 +37,7 @@ export function barkDetail(material: MeshStandardMaterial): void {
   patched.add(material);
   const before = material.onBeforeCompile;
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:bark-detail-v4`;
+  material.customProgramCacheKey = () => `${key()}:bark-detail-v5`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.vertexShader = 'attribute float barky;\nvarying float vBarky;\nvarying vec3 vBarkAt;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `
@@ -68,6 +68,8 @@ export function barkDetail(material: MeshStandardMaterial): void {
         float stoneMid = 1.0 - smoothstep(0.05, 0.16, stonePixel);
         #define STONE_TRI(f, k) (barkNoise(p.yz * (k) + f) * side.x + barkNoise(p.xz * (k) + f) * side.y + barkNoise(p.xy * (k) + f) * side.z)
         vec3 stone = diffuseColor.rgb;
+        // Where moss grows on it (its corners are green), the moss stays moss.
+        float stoneBare = 1.0 - smoothstep(0.004, 0.03, diffuseColor.g - max(diffuseColor.r, diffuseColor.b));
         // Mottled at a hand's breadth, and the grain of the granite: dark and pale crystals.
         stone *= 0.86 + 0.28 * STONE_TRI(2.0, 1.6);
         float grain = STONE_TRI(9.0, 38.0);
@@ -81,7 +83,7 @@ export function barkDetail(material: MeshStandardMaterial): void {
         float crust = STONE_TRI(47.0, 5.5) * 0.75 + STONE_TRI(13.0, 21.0) * 0.25;
         float ring = smoothstep(0.66, 0.7, crust) * (1.0 - smoothstep(0.72, 0.76, crust)) * stoneNear;
         stone = mix(stone, vec3(0.72, 0.73, 0.68) * dot(stone, vec3(0.33)) * 2.4, 0.22 * ring + 0.18 * smoothstep(0.7, 0.8, crust) * stoneMid);
-        diffuseColor.rgb = stone;
+        diffuseColor.rgb = mix(diffuseColor.rgb, stone, stoneBare);
       } else if (vBarky > 0.5) {
         // Round the tree and along it: up a stem, or along a bough that lies along the path.
         vec2 bark = vBarky < 1.5 ? vec2(vBarkAt.x + vBarkAt.z, vBarkAt.y) : vec2(vBarkAt.y + vBarkAt.z, vBarkAt.x);

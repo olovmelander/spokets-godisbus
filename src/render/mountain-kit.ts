@@ -436,7 +436,7 @@ export function createMountain(chapter: ChapterData, ledges: { install(carved: (
         }
       } else if ('stones' in socket) {
         mesh.geometry.dispose();
-        mesh.geometry = stones(socket.stones, loose);
+        mesh.geometry = barky(stones(socket.stones, loose), STONE);
       } else if (socket.standIn === 'shelters' ? sheltered : socket.standIn === 'step' ? stepped.has(node.userData.mover as string) : cairn.index.length > 0) {
         gone.push(node);
       } else return;
