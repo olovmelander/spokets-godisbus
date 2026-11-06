@@ -1,4 +1,5 @@
 import { lessMotion } from '../platform/motion';
+import { buildBraid } from './braid';
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
@@ -892,7 +893,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     mist.update(flags, x, y, curr.facing, camera.position.z, dt);
     const gust = wind.update(gusts, clock);
-    climbs.update(flags, dt);
+    climbs.update(flags, dt, clock, lessMotion());
     follower.update(flags, curr, clock, dt);
     // On a ride he sits on Moa's paper plane, which points the way it flies.
     const riding = curr.mode === 'ride';
@@ -1985,19 +1986,24 @@ function buildClimbs(chapter: ChapterData) {
   const materials = {
     hose: new MeshStandardMaterial({ color: '#3f8f4f', roughness: .55 }),
     lace: new MeshStandardMaterial({ color: '#d4b783', roughness: .9 }),
-    braid: new MeshStandardMaterial({ color: '#6a4634', roughness: .9 }),
     lichen: new MeshStandardMaterial({ color: '#adb59b', roughness: 1 }),
     root: new MeshStandardMaterial({ color: '#65513d', roughness: 1 }),
   };
   // A ladder is part of what it stands on, and is drawn with it.
   const ringGeometry = new TorusGeometry(.14, .022, 8, 16);
   const ringMaterial = new MeshStandardMaterial({ color: '#b94a3c', roughness: .7 });
+  // Mamma's braid is a braid, plaited, from her raised hand (./braid.ts).
+  const braids = (chapter.climbs ?? []).filter((climb) => climb.look === 'braid').map((climb) => {
+    const braid = buildBraid(climb.x, climb.bottom, climb.top);
+    group.add(braid.group);
+    return { braid, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 };
+  });
   const hoses = (chapter.climbs ?? []).flatMap((climb) => {
     const look = climb.look ?? 'hose';
-    if (look === 'ladder') return [];
+    if (look === 'ladder' || look === 'braid') return [];
     const length = climb.top - climb.bottom + 0.25;
     // It hangs from its top, so that one that is let down grows downwards.
-    const radius = look === 'lace' ? .035 : look === 'braid' ? .1 : .06;
+    const radius = look === 'lace' ? .035 : .06;
     const geometry = new CylinderGeometry(radius, radius, length, 10);
     geometry.translate(0, -length / 2, 0);
     const hose = new Mesh(geometry, materials[look]);
@@ -2009,7 +2015,11 @@ function buildClimbs(chapter: ChapterData) {
     return [{ hose, ring, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 }];
   });
   /** A hose that waits for something is let down when that has happened: the lichen, the braid, the lace. */
-  function update(flags: ReadonlySet<string>, dt: number): void {
+  function update(flags: ReadonlySet<string>, dt: number, clock = 0, still = false): void {
+    for (const b of braids) {
+      if (b.needs !== undefined) b.down = Math.min(1, Math.max(0, b.down + (flags.has(b.needs) ? dt : -dt) / 0.7));
+      b.braid.update(b.down, clock, dt, still);
+    }
     for (const h of hoses) {
       if (h.needs !== undefined) h.down = Math.min(1, Math.max(0, h.down + (flags.has(h.needs) ? dt : -dt) / 0.5));
       h.hose.scale.y = Math.max(0.001, h.down);
