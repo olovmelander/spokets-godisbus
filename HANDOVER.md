@@ -4616,8 +4616,9 @@ The older list, still true where it is not struck:
 - Blender models for what is still built in code near the play plane: the dead pine Mamma pulls on Myren, the
   stones on rails before the mountain kit arrives, and Billsta's, Olympia's and the church's buildings.
 - Real-time shadows from the sun, which Unravel has; the dappled light on the forest floor is a shader stand-in.
-- Myren: two green, striped bowl shapes low in the foreground by the water (seen at x 83) look odd; find what
-  they are and give them a shape that reads.
+- Myren: the soft tussocks by the camera, with their mirror image in the water, read as green bowls with dark
+  ripple stripes (seen at x 83 in Mamma's helper shot). The stripes are in the water's mirror of them; a calmer
+  mirror close to the lens would read better.
 - The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
   line now).
 
