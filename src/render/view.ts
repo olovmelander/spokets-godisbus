@@ -51,7 +51,7 @@ import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
 import { createEpilogueStage } from './epilogue-stage';
 import { createPrologueStage } from './prologue-stage';
-import { createStage } from './stage';
+import { createStage, litLamp } from './stage';
 import { actPose, sitting } from './acting';
 import { createModelRig, createRehearsalRig, galeOf, heightOf, STANDING, type Pose, type Rig, type Role } from './rig';
 import { createPlayerMotion, createPlayerStandIn } from './player-motion';
@@ -104,6 +104,8 @@ const CINEMA = 0.8;
  * in their dips and otherwise read as a thin band (Olov, 6 November 2026), less over the bog, which is all water.
  */
 const POOL_EYE = 1.6;
+/** The rides that lie ready where he boards them, in the storm. */
+const WAITS_READY = new Set(['boot', 'umbrella', 'raft', 'leaf']);
 const BROOK_EYE = 3.0;
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
@@ -836,6 +838,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let shotWeight = 0;
   /** Where Bertil's hands are at his boot while he pulls it off. */
   const bootAt = new Vector3();
+  const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3();
+  const LAMP_POINTS = new Vector3(0, 0, 1);
+  // The ledge that is Klonk frozen in Pappa's beam (Stormskogen), which his lamp is held on.
+  const frozenLedge = chapter.storm?.frozen ? chapter.ledges?.find((ledge) => ledge.needs === chapter.storm!.frozen) : undefined;
   /** The rain gear each body wears now, by its key, so that it is changed only when it changes. */
   const dressed = new WeakMap<object, string>();
   const dressFor = (rig: Pick<Rig, 'dress'>, who: string, flags: ReadonlySet<string>, scene: SceneFrame | null) => {
@@ -995,13 +1001,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     plane.rotation.z = waitingPlane ? 0 : heading;
     for (const c of carriers) {
       if (!c.prop) continue;
-      const waitingCap = chapter.id === 'granskog' && c.ride.id === 'cap' && flags.has('cap:ready') && !flags.has('cap');
-      const propSize = waitingCap ? 1 : c === carrier ? size : 0;
+      // What he is told to step onto lies ready where he boards it, from when it is ready until he does: Moa's cap in
+      // Granskogen, and in the storm Bertil's boot on the flooded lawn ("Min stövel blir din båt. Kliv i!"), Moa's
+      // umbrella on the wall, the raft and the birch leaves on the water.
+      const boarding = chapter.storm && WAITS_READY.has(c.ride.look ?? '') ? chapter.spots?.find((spot) => spot.ride === c.ride.id && spot.look === undefined) : undefined;
+      const waiting = (chapter.id === 'granskog' && c.ride.id === 'cap' && flags.has('cap:ready') && !flags.has('cap'))
+        || (!!boarding && c !== carrier && !flags.has(boarding.id) && (boarding.needs === undefined || flags.has(boarding.needs)));
+      const propSize = waiting ? 1 : c === carrier ? size : 0;
       c.prop.scale.setScalar(propSize);
       drawnWhile(c.prop, propSize > 0);
-      c.prop.position.set(waitingCap ? c.ride.from.x : x, (waitingCap ? c.ride.from.y : y) - 0.05, 0);
+      c.prop.position.set(waiting ? c.ride.from.x : x, (waiting ? c.ride.from.y : y) - 0.05, 0);
       // A boat lies level on the water; a bird points the way it flies, and beats its wings.
-      c.prop.rotation.z = c.ride.look === 'cap' ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : heading * 0.6;
+      c.prop.rotation.z = c.ride.look === 'cap' || waiting ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : heading * 0.6;
       const beat = Math.sin(clock * 7) * 0.5;
       const near = c.prop.getObjectByName('wingNear');
       const far = c.prop.getObjectByName('wingFar');
@@ -1392,6 +1403,39 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         one.rig.reach(0, bootAt, 1);
         one.rig.reach(1, bootAt, 1);
       }
+      // Out in the storm the family search with their lamps ("Regnrockar på! Vi går ut med lampor."): each holds a
+      // lit flashlight in the left hand, the arm a little out, and lights the way to him. In Stormkvällen Pappa has
+      // the one Elof brought him; in Stormskogen he holds Klonk in its beam until Elof is over.
+      let shown = true;
+      for (let node: Object3D | null = one.rig.group; node; node = node.parent) if (!node.visible) shown = false;
+      const lit = shown && !one.paddle && !one.seated && !pulling && !carrying
+        && (rainGearFor(chapter, one.who, flags) !== null || (chapter.id === 'stormkvall' && one.who === 'pappa' && flags.has('lamp:give')));
+      if (lit && !one.lamp) { one.lamp = litLamp(); one.lamp.name = 'family-lamp'; scene.add(one.lamp); }
+      if (one.lamp) {
+        one.lamp.visible = lit;
+        if (lit) {
+          const u = one.rig.height / 5.2;
+          one.rig.group.updateWorldMatrix(true, false);
+          one.rig.group.getWorldPosition(lampFrom);
+          lampFrom.y += 3.1 * u;
+          const holdsKlonk = frozenLedge && one.who === 'pappa' && chapter.storm?.frozen && flags.has(chapter.storm.frozen)
+            && x < frozenLedge.x + frozenLedge.width / 2 + 3;
+          if (holdsKlonk) lampTo.set(frozenLedge.x, frozenLedge.y, 0);
+          else lampTo.set(x, y + tall * 0.4, 0);
+          lampAim.subVectors(lampTo, lampFrom);
+          // Never into the lens: held level or down, along the path.
+          lampAim.z = Math.min(lampAim.z, Math.hypot(lampAim.x, lampAim.y) * 0.3);
+          lampAim.normalize();
+          lampHand.copy(lampFrom).addScaledVector(lampAim, 1.5 * u);
+          lampHand.y -= 0.5 * u;
+          one.rig.reach(0, lampHand, 0.85);
+          one.rig.hand(0, lampHand);
+          one.lamp.position.copy(lampHand);
+          one.lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampAim);
+          one.lamp.scale.setScalar(Math.max(0.7, u));
+          one.lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
+        }
+      }
       one.rig.breeze?.(gale * windAt(carrying ? x : one.at), dt, calmStory);
     }
     // The family in a scene, too: their hair and caps in the same wind, where each stands now.
@@ -1571,6 +1615,8 @@ interface Relative {
   seated?: boolean | undefined;
   /** They stand on a paddle board and paddle: the paddle they hold. */
   paddle?: Paddle | undefined;
+  /** Out in the storm: the flashlight they search with, made when first wanted. */
+  lamp?: Mesh | undefined;
   rig: Rig;
   neck?: Object3D;
   who: Role;

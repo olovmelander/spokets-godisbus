@@ -1487,6 +1487,36 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       group.add(wax, flame, light);
       return standing(spot, group, (clock) => { flame.scale.y = 1.4 + 0.2 * Math.sin(clock * 13); });
     },
+    cocoa: (spot) => {
+      // Sunday's cup of hot chocolate ("Varm choklad efter stormen"): a white mug with a red heart, brown to the
+      // brim, and its steam curling up.
+      const group = new Group();
+      const mug = new Mesh(new CylinderGeometry(0.17, 0.15, 0.32, 14), solid('#f4f1ea', 0.5));
+      mug.position.y = 0.16;
+      const cocoa = new Mesh(new CylinderGeometry(0.15, 0.15, 0.01, 14), solid('#5a3420', 0.3));
+      cocoa.position.y = 0.3;
+      const handle = new Mesh(new TorusGeometry(0.08, 0.022, 6, 12, Math.PI), solid('#f4f1ea', 0.5));
+      handle.rotation.z = -Math.PI / 2;
+      handle.position.set(0.17, 0.17, 0);
+      const heart = new Mesh(new BoxGeometry(0.08, 0.08, 0.02), solid('#b8463c', 0.6));
+      heart.rotation.z = Math.PI / 4;
+      heart.position.set(0, 0.17, 0.16);
+      group.add(mug, cocoa, handle, heart);
+      const steam = new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.22, depthWrite: false });
+      const puffs = [0, 1, 2].map(() => {
+        const puff = new Mesh(new SphereGeometry(0.06, 8, 6), steam);
+        group.add(puff);
+        return puff;
+      });
+      return standing(spot, group, (clock) => {
+        for (const [i, puff] of puffs.entries()) {
+          const k = (clock * 0.45 + i / 3) % 1;
+          puff.position.set(Math.sin(clock * 1.7 + i * 2.1) * 0.05 * (1 + k), 0.34 + k * 0.5, 0);
+          puff.scale.setScalar(0.6 + k * 1.4);
+        }
+        steam.opacity = 0.2;
+      });
+    },
     flashlight: (spot) => {
       const group = new Group();
       const body = new Mesh(new CylinderGeometry(0.09, 0.09, 0.6, 10), solid('#c8372a', 0.5));

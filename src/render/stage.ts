@@ -230,7 +230,7 @@ export interface Directions {
  * A lit flashlight, pointing the way its holder faces (their +z), and its beam out into the dark. The beam is added to
  * the night, so what is black in it is nothing: it fades away from the lamp and has no end to see.
  */
-function litLamp(): Mesh {
+export function litLamp(): Mesh {
   const body = new Mesh(new CylinderGeometry(0.075, 0.075, 0.42, 10).rotateX(Math.PI / 2), new MeshStandardMaterial({ color: '#3c4048', roughness: 0.5 }));
   const head = new Mesh(new CylinderGeometry(0.13, 0.085, 0.16, 12).rotateX(Math.PI / 2).translate(0, 0, 0.27), new MeshStandardMaterial({ color: '#50565e', roughness: 0.45 }));
   const LONG = 16;
@@ -240,6 +240,7 @@ function litLamp(): Mesh {
   for (let i = 0; i < at.count; i++) fade.fill((1 - (at.getZ(i) - 0.3) / LONG) ** 1.6, i * 3, i * 3 + 3);
   cone.setAttribute('color', new BufferAttribute(fade, 3));
   const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.16, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, fog: false }));
+  beam.name = 'lamp-beam';
   body.add(head, beam);
   return body;
 }

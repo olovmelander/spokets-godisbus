@@ -80,7 +80,7 @@ export const morgonen: ChapterData = {
     { id: 'shelf:old', at: { x: FIRST.x + 0.2, y: 0 }, verb: 'give', word: 'moPutOld', needs: 'scene:frukost' },
     { id: 'shelf:small', at: { x: FIRST.x + 1.4, y: 0 }, verb: 'give', word: 'moPutSmall', needs: 'shelf:old' },
     { id: 'latch', at: { x: WINDOW + 0.6, y: 0 }, verb: 'turn', word: 'moLatch', needs: 'shelf:small' },
-    { id: 'cocoa', look: 'candle', at: { x: 44, y: 0 }, verb: 'take', word: 'moCocoa', needs: 'beat:moWelcome' },
+    { id: 'cocoa', look: 'cocoa', at: { x: 44, y: 0 }, verb: 'take', word: 'moCocoa', needs: 'beat:moWelcome' },
   ],
   decor: [
     // What the night left in the room: wet raincoats and boots, leaves on the floor, mormor's lantern put out.
