@@ -942,14 +942,14 @@
     "speaker": "mamma",
     "situation": "Äventyr 2, flarken",
     "tag": "[warm, calm mother]",
-    "text": "Elof! Jag hittade en roddbåt!"
+    "text": "Elof! Jag paddlar dit på SUP:en!"
   },
   {
     "key": "sjBoatReady",
     "speaker": "mamma",
     "situation": "Äventyr 2, flarken",
     "tag": "[warm, calm mother]",
-    "text": "Jag håller båten still. Gå på kanten."
+    "text": "Jag håller brädan still. Gå på den."
   },
   {
     "key": "sjSteady",
@@ -963,7 +963,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, flarken",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Tack! Din båt blev ju en bro!"
+    "text": "Tack! Din SUP blev ju en bro!"
   },
   {
     "key": "sjNear",

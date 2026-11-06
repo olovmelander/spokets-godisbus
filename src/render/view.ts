@@ -1,5 +1,6 @@
 import { lessMotion } from '../platform/motion';
 import { buildBraid } from './braid';
+import { createPaddle, type Paddle } from './paddle';
 import { createMoverMotion } from './mover-motion';
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
@@ -666,13 +667,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // figures; a blank marker alone cannot explain who helped or connect these crossings to the opening.
   const family: Relative[] = [];
   const stands = chapter.prologue ? [] : [
-    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated })),
-    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false })),
+    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles })),
+    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false })),
   ].filter((stand) => stand.look === 'sign' && stand.prop !== null && personFor(stand.word) !== null);
   for (const stand of stands) {
     const who = personFor(stand.word)!, rig = createRehearsalRig(who);
     stand.prop!.group.clear(); stand.prop!.group.add(rig.group);
-    family.push({ rig, who, motion: createFamilyMotion(who, stand.at, stand.glad), at: stand.at, glad: stand.glad, was: false, joy: 0, seated: stand.seated });
+    // Whoever stands on a paddle board holds a paddle (./paddle.ts), in the world, gripped each frame.
+    const paddle = stand.paddles ? createPaddle(rig.height) : undefined;
+    if (paddle) scene.add(paddle.mesh);
+    family.push({ rig, who, motion: createFamilyMotion(who, stand.at, stand.glad), at: stand.at, glad: stand.glad, was: false, joy: 0, seated: stand.seated, paddle });
   }
   if (stage.actors.size > 0 && !standIns) {
     assets.manifest().then(async (manifest) => {
@@ -1344,7 +1348,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       }
       const towards = clamp((x - one.at) * 0.22, -0.75, 0.75);
       const carrying = onShoulders && one.who === 'pappa';
-      const facing = carrying ? Math.PI / 2 - .35 : towards;
+      // A paddler faces the board's nose, turning only a little towards him.
+      const facing = carrying ? Math.PI / 2 - .35 : one.paddle ? towards * 0.25 : towards;
       const turn = facing - one.rig.group.rotation.y;
       if (calmStory && dt > 0) one.rig.group.rotation.y = facing;
       else one.rig.group.rotation.y += Math.atan2(Math.sin(turn), Math.cos(turn)) * ease(4, dt);
@@ -1354,7 +1359,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         up: (y + tall * .8 - one.rig.group.parent!.position.y) * 5.2 / one.rig.height,
       }, one.glad && ['moa', 'seesaw', 'cap:ready', 'mamma', 'braid', 'bog:return-bridge'].includes(one.glad)
         ? { ready: now, near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined);
-      one.rig.pose(one.seated ? sitting(posed) : posed);
+      one.rig.pose(one.seated ? sitting(posed) : one.paddle ? one.paddle.stance(posed) : posed);
+      one.paddle?.update(one.rig, clock, calmStory);
       one.rig.breeze?.(gale * windAt(carrying ? x : one.at), dt, calmStory);
     }
     // The family in a scene, too: their hair and caps in the same wind, where each stands now.
@@ -1527,6 +1533,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
 interface Relative {
   /** They sit, in a boat, say. */
   seated?: boolean | undefined;
+  /** They stand on a paddle board and paddle: the paddle they hold. */
+  paddle?: Paddle | undefined;
   rig: Rig;
   neck?: Object3D;
   who: Role;

@@ -1,6 +1,6 @@
 import {
-  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DataTexture, InstancedBufferAttribute, DoubleSide, DynamicDrawUsage,
-  Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RingGeometry,
+  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DataTexture, ExtrudeGeometry, InstancedBufferAttribute, DoubleSide, DynamicDrawUsage,
+  Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, RingGeometry,
   CatmullRomCurve3, Points, PointsMaterial, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
   type Material,
 } from 'three';
@@ -509,14 +509,12 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   });
 
   // A bathing raft moored in the bay rocks and drags at its moorings: the tower stands on it.
-  // A boat that is rowed in: until its model has come, a plain hull. Whoever sits in it goes with it.
-  const boat = storm?.boat ? new Group() : null;
-  if (boat) {
-    boat.userData.model = 'roddbat';
-    boat.add(new Mesh(new BoxGeometry(6.2, 1.2, 2.2).translate(0, 0.6, 0), solid('#d8d4c8', 0.8)));
-    group.add(boat);
-  }
+  // The family's stand-up paddle board, paddled in (Olov, 6 November 2026: in place of a rowboat). Whoever paddles
+  // stands on it and goes with it.
+  const boat = storm?.boat ? paddleBoard() : null;
+  if (boat) group.add(boat);
   let rowed = 0;
+  const standAt = new Vector3();
 
   const rocking = buildings.filter((_, i) => storm?.buildings?.[i]?.kind === 'tower').map((made) => ({ made, y: made.group.position.y }));
 
@@ -679,10 +677,14 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const bob = still ? 0 : Math.sin(clock * 1.2) * (0.06 - 0.05 * way);
         boat.position.set(from.x + (to.x - from.x) * way, y + bob, from.z + (to.z - from.z) * way);
         boat.rotation.y = (1 - way) * 0.7;
-        // Whoever rows sits on the middle thwart with their back to the bow, looking the way he comes.
+        // Whoever paddles stands on its back half, behind the line he walks, facing its nose, the paddle on the far side.
         const rower = scene.getObjectByName(`spot:${spot}`);
-        rower?.position.set(boat.position.x, boat.position.y - 0.7, boat.position.z);
-        rower?.rotation.set(0, boat.rotation.y - Math.PI / 2, 0);
+        standAt.set(1.5, BOARD.top, -0.6).applyAxisAngle(UP, boat.rotation.y).add(boat.position);
+        rower?.position.copy(standAt);
+        rower?.rotation.set(0, boat.rotation.y + Math.PI / 2, 0);
+        // The board tips a hair under her weight and with the swell.
+        boat.rotation.z = still ? 0 : Math.sin(clock * 1.1) * 0.012 * (1 - 0.6 * way);
+        boat.rotation.x = still ? 0 : Math.sin(clock * 0.8 + 1) * 0.01 + 0.012;
       }
       for (const [i, raft] of rocking.entries()) {
         raft.made.group.position.y = raft.y + (still ? 0 : Math.sin(clock * 0.9 + i) * 0.09);
@@ -2017,3 +2019,72 @@ export function installPictures(): void {
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */
 export const NIGHT = { looks: LOOKS, dim: DIM, colourOf: (hex: string) => new Color(hex) };
+
+/** The paddle board's size, in EL: Mamma is 5.2 tall, a family board about twice that; its deck stands at `top` over the water. */
+const BOARD = { long: 7.4, wide: 2.4, thick: 0.42, top: 1.2 };
+
+/**
+ * A stand-up paddle board, as the family has (Olov, 6 November 2026): a long flat board with a rounded nose and a
+ * squarer tail, white rails and a coloured deck, a dark grooved traction pad where one stands, a carry handle in
+ * the middle and a coiled leash at the tail. No print, name or mark. It lies along x, its middle at the origin,
+ * which is the water's level; its deck is `BOARD.top` over it, level with the jetty he walks off.
+ */
+function paddleBoard(): Group {
+  const group = new Group();
+  group.name = 'paddle-board';
+  const { long, wide, thick, top } = BOARD;
+  const half = long / 2, side = wide / 2;
+  const outline = (inset: number) => {
+    const s = new Shape();
+    const l = half - inset, w = side - inset;
+    // The tail: square with rounded corners; the nose: a long curve to a rounded point.
+    s.moveTo(-l + 0.5, -w);
+    s.lineTo(l * 0.35, -w);
+    s.bezierCurveTo(l * 0.8, -w, l, -w * 0.45, l, 0);
+    s.bezierCurveTo(l, w * 0.45, l * 0.8, w, l * 0.35, w);
+    s.lineTo(-l + 0.5, w);
+    s.quadraticCurveTo(-l, w, -l, w - 0.5);
+    s.lineTo(-l, -w + 0.5);
+    s.quadraticCurveTo(-l, -w, -l + 0.5, -w);
+    return s;
+  };
+  const bevel = 0.09;
+  const body = new ExtrudeGeometry(outline(0), { depth: thick - bevel * 2, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3, curveSegments: 20 })
+    .rotateX(-Math.PI / 2).translate(0, top - thick + bevel, 0);
+  // The deck in a clear sea colour, the rails and the underside white.
+  group.add(new Mesh(body, [solid('#2a9db0', 0.5), solid('#eef1ef', 0.45)]));
+  // The traction pad: dark, grooved in diamonds, over the back two thirds of the deck.
+  const pad = drawnPad();
+  const padGeometry = new BoxGeometry(long * 0.5, 0.03, wide - 0.5).translate(-long * 0.12, top + 0.015, 0);
+  const padUv = padGeometry.getAttribute('uv');
+  for (let i = 0; i < padUv.count; i++) padUv.setXY(i, padUv.getX(i) * 6, padUv.getY(i) * 3);
+  group.add(new Mesh(padGeometry, new MeshStandardMaterial({ color: '#4a4f55', map: pad, roughness: 0.95 })));
+  // The carry handle, sunk in the middle of the deck, and the leash coiled at the tail.
+  group.add(new Mesh(new BoxGeometry(0.7, 0.05, 0.28).translate(0.55, top + 0.025, 0), solid('#1f2226', 0.7)));
+  const leash = new Mesh(new TorusGeometry(0.28, 0.035, 6, 20).rotateX(Math.PI / 2).translate(-half + 0.6, top + 0.04, 0.4), solid('#e0462f', 0.6));
+  group.add(leash);
+  // The fin under the tail, mostly in the water.
+  group.add(new Mesh(new BoxGeometry(0.5, 0.45, 0.05).translate(-half + 0.8, top - thick - 0.2, 0), solid('#2b2e33', 0.6)));
+  for (const mesh of group.children) mesh.castShadow = true;
+  return group;
+}
+
+/** The traction pad's diamond grooves, drawn once. */
+function drawnPad(): CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 64;
+  const c = canvas.getContext('2d')!;
+  c.fillStyle = '#ffffff';
+  c.fillRect(0, 0, 64, 64);
+  c.strokeStyle = 'rgba(0,0,0,0.45)';
+  c.lineWidth = 3;
+  for (let k = -64; k < 128; k += 16) {
+    c.beginPath(); c.moveTo(k, 0); c.lineTo(k + 64, 64); c.stroke();
+    c.beginPath(); c.moveTo(k + 64, 0); c.lineTo(k, 64); c.stroke();
+  }
+  const texture = new CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = RepeatWrapping;
+  texture.colorSpace = SRGBColorSpace;
+  return texture;
+}

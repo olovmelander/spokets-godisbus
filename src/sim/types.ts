@@ -127,6 +127,8 @@ export interface Spot {
   at: Vec;
   /** For the picture: whoever of the family is shown here sits, in a boat, say. */
   seated?: boolean;
+  /** For the picture: whoever of the family is shown here stands on a paddle board and paddles. */
+  paddles?: boolean;
   verb: 'turn' | 'take' | 'call' | 'give';
   /** A flag that has to be set before it can be used. A thing on a rail sets `placed:<its id>` once in place. */
   needs?: string;

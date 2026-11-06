@@ -22,8 +22,9 @@ import { hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
  *    them. On the far side a flash shows the little one blown out over the lake.
  * 5. **Bryggan:** the jetty, where the waves wash over the planks in gusts; behind each post is a lee. The old
  *    trägubbe stands far out on the planks and leaps away into the dark.
- * 6. **Mammas båt:** the jetty has broken off. "Ropa på Mamma": she rows up and holds the boat against both broken
- *    ends, and its gunwale is the way on.
+ * 6. **Mammas SUP:** the jetty has broken off. "Ropa på Mamma": she paddles up standing on the family's stand-up
+ *    paddle board (Olov, 6 November 2026: the family has them, in place of a rowboat) and holds it against both
+ *    broken ends, and its deck is the way on.
  * 7. **Hopptornet:** the diving tower stands in the water between two stretches of jetty. Up its ladder to the top,
  *    the lookout: a flash shows the little one far out, where the river begins. A run off its far side lands him
  *    on the jetty beyond.
@@ -366,7 +367,7 @@ export const flarken: ChapterData = {
   bouncers: [NET],
   spots: [
     // At the broken end: Mamma rows up with the boat when he calls.
-    { id: 'sjon:mamma', look: 'sign', at: { x: 142, y: DECK }, verb: 'call', word: 'callMamma', seated: true },
+    { id: 'sjon:mamma', look: 'sign', at: { x: 142, y: DECK }, verb: 'call', word: 'callMamma', paddles: true },
   ],
   movers: [DOOR, STONE, BARK],
   jumps: [
