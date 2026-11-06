@@ -650,9 +650,33 @@ export function spotProp(spot: Spot): SpotProp | null {
       for (let i = 0; i < 9; i++) sweet.add(ball(0.07, gold, Math.cos(i * 2.4) * 0.09 * (1 - i / 14), 0.05 + i * 0.022, Math.sin(i * 2.4) * 0.09 * (1 - i / 14)));
       sweetSocket(sweet, { shape: 'guldhallon', scale: 0.8, y: 0.12, glow: 0.65 });
       sweet.position.y = 0.5;
+      // The kit's model takes the sweet's place (./candy.ts), so the paper is beside it, not in it.
+      let paper: Mesh | null = null;
+      if (spot.id === 'gift') {
+        // Äventyr 2's last gift ("Ett geléhallon i guldpapper!", "Ditt allra sista."): held out by the old one, half
+        // a step nearer him than where it is taken, on its crinkled gold paper, folded open.
+        const foil = new PlaneGeometry(0.46, 0.46, 6, 6).rotateX(-Math.PI / 2);
+        const at = foil.getAttribute('position');
+        for (let i = 0; i < at.count; i++) {
+          const x = at.getX(i), z = at.getZ(i);
+          at.setY(i, (Math.abs(x) + Math.abs(z)) ** 2 * 0.9 + Math.sin(x * 61 + z * 37) * 0.012);
+        }
+        foil.computeVertexNormals();
+        paper = new Mesh(foil, solid('#e6b52e', 0.28, { metalness: 0.75, emissive: '#7a5400', emissiveIntensity: 0.35, side: DoubleSide }));
+        group.add(paper);
+        sweet.position.x = 0.55;
+      }
       group.add(sweet);
       group.position.z = 0;
-      return { group, update: (used, clock, dt) => { vanish(used, dt); sweet.rotation.y = clock * 1.4; sweet.position.y = 0.5 + Math.sin(clock * 2) * 0.06; } };
+      return {
+        group,
+        update: (used, clock, dt) => {
+          vanish(used, dt);
+          sweet.rotation.y = clock * 1.4;
+          sweet.position.y = 0.5 + Math.sin(clock * 2) * 0.06;
+          if (paper) { paper.position.set(sweet.position.x, sweet.position.y + 0.01, 0); paper.rotation.y = sweet.rotation.y; }
+        },
+      };
     }
     default:
       return PACK.spots.get(spot.look ?? '')?.(spot) ?? null;
