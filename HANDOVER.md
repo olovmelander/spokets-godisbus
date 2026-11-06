@@ -76,11 +76,26 @@
       blev ju en bro!"); `scripts/voices-aventyr2.json` is regenerated (Äventyr 2 is not recorded yet).
     - **Rain gear through the storm** (`src/render/rain-gear.ts`, `Rig.dress`, tested in
       `tests/unit/rain-gear.test.ts`): from Stormkvällen's getting-ready scene, one by one as each speaks (Mamma,
-      Pappa as he shows his lamp, Bertil as he stamps into his boots, Moa, then Elof), and in every chapter of the
-      storm after it, each wears a raincoat of their own colour and rubber boots to below the knee: Mamma red, Pappa
-      navy, Moa yellow, Bertil orange with green boots, Elof bright yellow with red boots. On the models from
-      Blender the coat and boots are shells of the body's own skinned triangles, a little outside the skin, so they
-      follow every movement; on the rehearsal figures the parts take the colours.
+      Pappa as he shows his lamp, Bertil as he stamps into his boots, then Moa), and in every chapter of the storm
+      after it, each wears a raincoat of their own colour and rubber boots to below the knee: Mamma red, Pappa navy,
+      Moa yellow, Bertil orange with green boots. Not Elof: the star has made him small (`krymper`) before they get
+      ready (`tillsammans`), so he goes out in his own clothes (Olov: "hinner han ta på regnkläderna innan han blir
+      liten, det gör han inte va?").
+    - **The rain gear is made in Blender** (Olov, later that night: it looked jagged, and "måste göras på bästa
+      möjliga sätt i Blender för alla karaktärer"). The private repository's `family/wardrobe.py`, run after
+      `family/shared.py` by `family/build_wardrobe.py` with the `bpy` 5.2 module (branch `rain-gear` there, for
+      Olov to merge with this PR), builds in the same hand, over each approved model and skinned to the same
+      skeleton: a raincoat (rings round all that is worn, an A-line, a high collar, a hood lying on the back, a zip
+      with its pull, pocket flaps with snaps, elastic cuffs, a turned hem, the children's reflective band, sleeves
+      set in at the shoulder that bend as the sleeves under them), rubber boots one piece each (shaped over the
+      shoe, a rolled rim, a pull tab, tread), the socks under them, and Bertil's own hair. Only these pieces are
+      exported (`<who>-wardrobe.glb`), so faces, bodies and caps stay as approved. The game binds each piece to the
+      model's bones by name with a copy of the body's material (`fitWardrobe`, `Rig.wear`); where no wardrobe has
+      come (stand-ins, CI) the old shells of the body stand in. It was looked at in Blender renders from four sides
+      and in the game with the lamps held up.
+    - **Bertil's hair** (Olov: "Bertil ska inte vara flintis, han ska ha hår som Elof"): under his cap his model is
+      a smooth dome; when he has lent the cap in Granskogen he now has a full head of tousled hair, made with
+      Elof's own tufts in Bertil's brown (the wardrobe's `bertil_hair`).
     - **Bertil's boot, for real** (Stormgården): called, he leans down, lifts his right foot and tugs the boot off
       with both hands; from then on he stands in one boot and a sock, and the boot lies ready on the flooded lawn
       ("Min stövel blir din båt. Kliv i!") until Elof steps in.
