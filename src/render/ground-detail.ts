@@ -1,7 +1,10 @@
 import type { MeshStandardMaterial } from 'three';
 
-/** What the ground is, for the detail it is given: moss and soil, rock, or a road. Boards have their own picture. */
-export type GroundDetail = 'soft' | 'rock' | 'road';
+/** How wide a deck board is (./dressing/ground.ts keeps the same number). */
+const BOARD = 0.8;
+
+/** What the ground is, for the detail it is given: moss and soil, rock, a road, or a floor of boards. */
+export type GroundDetail = 'soft' | 'rock' | 'road' | 'wood';
 
 const patched = new WeakSet<MeshStandardMaterial>();
 
@@ -13,7 +16,10 @@ const patched = new WeakSet<MeshStandardMaterial>();
  * sizes, so that nothing repeats and nothing is stretched:
  * - moss and soil: darker damp hollows, sunlit tufts, and needles and bits of leaf lying about;
  * - rock: crust lichen in pale rings, darker weathered patches and hairline cracks;
- * - a road: the stones in the asphalt, tar patches and worn lighter tracks.
+ * - a road: the stones in the asphalt, tar patches and worn lighter tracks;
+ * - boards (Unravel's porch floor, after Olov's pictures): each board its own tone and its own fine grain, a
+ *   knot here and there, the joints where one board ends and the next begins, dirt in the gaps and the middle
+ *   of the floor worn paler where feet go.
  * Far off it fades, so that nothing shimmers; on a steep face it fades too, for the faces have their own joints.
  */
 export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail): void {
@@ -21,7 +27,7 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
   patched.add(material);
   const before = material.onBeforeCompile;
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:ground-detail-v1-${kind}`;
+  material.customProgramCacheKey = () => `${key()}:ground-detail-v2-${kind}`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.vertexShader = 'varying vec3 groundDetailAt;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `
@@ -72,6 +78,33 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
         float crack = 1.0 - smoothstep(0.0, 0.035, abs(groundNoise(at * vec2(1.6, 4.2) + 5.0) - 0.5));
         groundColour *= 1.0 - 0.45 * crack * groundNear;
         groundColour *= 1.0 + (fine - 0.5) * 0.22 * groundNear;
+        ` : kind === 'wood' ? /* glsl */ `
+        // Boards run front to back, ${BOARD.toFixed(2)} wide (./dressing/ground.ts): which one, and where across it.
+        float board = floor(at.x / ${BOARD.toFixed(2)});
+        float across = fract(at.x / ${BOARD.toFixed(2)});
+        float boardTone = groundHash(vec2(board, 4.1));
+        groundColour *= 0.9 + 0.2 * boardTone;
+        // Its grain: fine lines along it, and the long waves of the growth rings.
+        float grainAt = groundNoise(vec2(across * 34.0 + board * 13.7, at.y * 0.7 + board * 5.3));
+        float rings = sin((across + 0.12 * groundNoise(vec2(board * 3.1, at.y * 0.35))) * 46.0 + board * 2.0);
+        groundColour *= 1.0 + ((grainAt - 0.5) * 0.24 + rings * 0.05) * groundMid;
+        // Where one board ends and the next begins, a different length along each.
+        float run = 5.0 + 4.0 * groundHash(vec2(board, 9.2));
+        float joint = fract((at.y + groundHash(vec2(board, 1.7)) * run) / run) * run;
+        groundColour *= 1.0 - 0.5 * (1.0 - smoothstep(0.0, 0.05, min(joint, run - joint))) * groundNear;
+        // A knot now and then: a dark eye with the grain swirled pale round it.
+        vec2 knotCell = vec2(board, floor(at.y / 2.6));
+        vec2 knotAt = vec2((0.25 + 0.5 * groundHash(knotCell + 0.3)) * ${BOARD.toFixed(2)}, (0.2 + 0.6 * groundHash(knotCell + 7.1)) * 2.6);
+        vec2 fromKnot = (vec2(across * ${BOARD.toFixed(2)}, at.y - knotCell.y * 2.6) - knotAt) * vec2(1.0, 0.55);
+        float knotFar = length(fromKnot) / 0.075;
+        float knot = step(0.72, groundHash(knotCell + 2.9)) * groundNear;
+        groundColour *= 1.0 - knot * (0.55 * (1.0 - smoothstep(0.6, 1.0, knotFar)) - 0.1 * smoothstep(1.0, 1.4, knotFar) * (1.0 - smoothstep(1.4, 2.4, knotFar)));
+        // Dirt in the gaps, and the edges rounded darker into them.
+        float edge = min(across, 1.0 - across);
+        groundColour *= 1.0 - 0.28 * (1.0 - smoothstep(0.0, 0.07, edge)) * groundMid;
+        // Worn: where he walks, the boards are paler and greyer, the paint of years gone.
+        float worn = (1.0 - smoothstep(0.6, 2.4, abs(at.y))) * (0.6 + 0.4 * big);
+        groundColour = mix(groundColour, vec3(dot(groundColour, vec3(0.3, 0.45, 0.25))) * 1.12, 0.22 * worn);
         ` : /* glsl */ `
         // The stones in the asphalt, tar patches and the lighter tracks worn into it.
         groundColour *= 1.0 + (big - 0.5) * 0.18;

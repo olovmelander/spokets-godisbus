@@ -841,7 +841,7 @@ export function groundMaterial(chapter: ChapterData, kind: Ground, map: CanvasTe
   // Granite's cliffs break into blocks along their joints.
   if (kind === 'granite') cliffJoints(material);
   // Seen close, it is full of small things, at no one size (../ground-detail.ts).
-  if (!look.boards) groundDetail(material, road(kind) ? 'road' : look.rock || look.grit ? 'rock' : 'soft');
+  groundDetail(material, look.boards ? 'wood' : road(kind) ? 'road' : look.rock || look.grit ? 'rock' : 'soft');
   return material;
 }
 
