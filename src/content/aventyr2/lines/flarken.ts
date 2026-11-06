@@ -29,7 +29,7 @@ export const words: ChapterWords = {
     // 7. the diving tower
     sjTower: 'Hopptornet! Där uppe ser man allt.',
     sjNear: 'Jag väntar här. Ropa om du behöver mig.',
-    sjLookout: 'Där är lillgubben! Där ån börjar!',
+    sjLookout: 'Där är lillgubben, där ån börjar!',
     // 8. the bark raft
     sjGap: 'Plankorna är borta. Vad gör jag nu?',
     sjStoneIdea: 'En sten! Den kan ligga i luckan.',
@@ -37,7 +37,7 @@ export const words: ChapterWords = {
     sjPlopKlonk: 'Klonk!',
     sjBarkIdea: 'Klonk flyter. Bark är ju trä!',
     sjRaft: 'En barkflotte! Nu kan jag hoppa.',
-    sjKlonkRaft: 'Klonk-klonk!',
+    sjKlonkRaft: 'Klonk, klonk!',
     // 9. the jetty's end: the outlet takes them
     sjOutlet: 'Åh nej! Ån tar med sig lillgubben!',
     sjLog: 'Gamla trägubben hoppar på en stock!',

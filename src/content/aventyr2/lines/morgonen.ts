@@ -10,7 +10,7 @@ export const words: ChapterWords = {
     moMormor: 'Chokladen är klar. Vem vill ha?',
     moMorfar: 'Elof! Så stor du har blivit!',
     moOldHome: 'Först i raden. Där hör du hemma.',
-    moSmallHome: 'Och du bredvid. Nu är ni två.',
+    moSmallHome: 'Och du bredvid. Nu har ni varandra.',
     moLatchLine: 'En ny hake. Nu blåser ingen bort.',
     moFluffLine: 'Du flög som ett fjun i stormen.',
     moNameLine: 'Du ska heta Fjun!',

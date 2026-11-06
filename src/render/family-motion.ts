@@ -1,6 +1,6 @@
-import { actPose } from './acting';
+import { actPose, stepLength } from './acting';
 import { seeded } from './player-motion';
-import { STANDING, type Pose, type Role } from './rig';
+import { heightOf, STANDING, type Pose, type Role } from './rig';
 
 const smooth = (t: number) => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
 const UPPER = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'spread'] as const;
@@ -61,7 +61,8 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
   const task = purpose === 'moa' || gift ? 'offer' : purpose === 'cap' || purpose === 'cap:ready' ? 'reach' : purpose === 'seesaw' ? 'point'
     : purpose === 'mamma' || purpose === 'bog:return-bridge' ? 'lift' : null;
   const offset = ['pappa', 'mamma', 'moa', 'bertil'].indexOf(who) * 1.7 + at * 0.13;
-  let lastX: number | null = null, walked = 0, pace = 0, lastJoy = 0, ready = false;
+  let lastX: number | null = null, walked = 0, pace = 0, lastJoy = 0, ready = false, carrying = 0;
+  const tall = heightOf(who);
   let gaze: number | null = null, pitch: number | null = null, settling = 0, presence = 0;
   let lastHelp: boolean | undefined, blendLegs = false;
   let from: Pose | null = null;
@@ -93,8 +94,11 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
         const travel = distance < dt * 12 + .05;
         const want = travel ? Math.min(1, distance / dt / 2.6) : 0;
         pace = travel ? pace + (want - pace) * -Math.expm1(-dt * 12) : 0;
-        if (want > 0) walked += distance;
-        actPose('walk', { t: clock, aim: null, stride: walked / 1.25, pace: pace * 0.65, calm }, pose);
+        // Steps of his own length at the pace he carries Elof (acting.ts): the planted boot stays put. Stopping, his
+        // steps keep their length while the pace dies away.
+        if (want > 0) carrying = distance / dt / tall;
+        if (want > 0) walked += distance / stepLength(Math.max(carrying, 0.3), tall);
+        actPose('walk', { t: clock, aim: null, stride: walked, gait: carrying, pace: pace * 0.65, calm }, pose);
         // Keep the supporting forearms raised while the chest eases into a step.
         pose.armL = pose.armR = 1.85 + pose.lean;
         pose.elbowL = pose.elbowR = 0.55;

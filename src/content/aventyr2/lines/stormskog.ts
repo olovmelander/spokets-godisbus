@@ -14,7 +14,7 @@ export const words: ChapterWords = {
     ssCones: 'Kottar faller! Titta på skuggorna.',
     // 3. the boughs
     // 4. the owl
-    ssOwlStuck: 'En uggla! En pinne stänger in den.',
+    ssOwlStuck: 'En uggla! En pinne har stängt in den.',
     ssOwlFree: 'Så! Nu kommer du ut, lilla uggla.',
     // 5. the windthrow
     ssWindthrow: 'Stormen fällde granar som tändstickor!',
@@ -26,7 +26,7 @@ export const words: ChapterWords = {
     ssBeam: 'Där är Klonk! Nu ser jag honom.',
     ssStiff: 'Pappa ser dig! Då blir du ju stel!',
     ssTiptoe: 'Förlåt, Klonk! Jag går lätt, lätt.',
-    ssPappaAway: 'Jag tittar bort mot stigen nu.',
+    ssPappaAway: 'Jag lyser på stigen framför dig.',
     ssAwake: 'Klonk!',
     ssThanks: 'Tack, Klonk! Du är världens bästa bro.',
     // 7. the old one's memory

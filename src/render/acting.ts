@@ -17,6 +17,13 @@ export interface ActContext {
   stride: number;
   /** How fast it walks now, from 0 to 1. */
   pace: number;
+  /**
+   * How fast it goes, in its own heights a second: the length of each step and whether it walks or jogs. Left out:
+   * an easy walk. The stride must count steps of `stepLength` at the same gait, or the planted foot slides.
+   */
+  gait?: number;
+  /** The length of each step, in the body's own heights, where a walk sets it (a whole number of steps): its swing fits it. */
+  step?: number;
   /** Still: reduced motion. Each act holds its readable pose, without loops, bounces or shakes. */
   calm: boolean;
   /** Family timing and weight; story contacts retain their authored arrival times. */
@@ -158,19 +165,62 @@ function crouching(p: Pose): Pose {
 }
 
 /** A walk: the legs swing with the distance covered, the arms against them. */
+/** An easy walk, in the body's own heights a second, where a scene or a follower says nothing faster. */
+export const EASY_GAIT = 0.6;
+/** A leg, hip to sole, as a share of the body's height (rig.ts: thigh 1.25 and shin 1.3 of an adult's 5.2). */
+const LEG = 2.55 / 5.2;
+/** A step at a gait, in the body's own heights: a quarter of it and more as it goes faster, and short as it slows to a stop. */
+const stepOf = (gait: number) => { const g = Math.max(gait, 0); return Math.min(0.26 + 0.17 * Math.min(g, 1.8), 2.4 * g); };
+/** The thigh's swing either way for a step (in heights): the angle whose step it is, with the knee near straight. */
+const thighSwing = (step: number) => Math.asin(Math.min(0.62, step / (2 * LEG)));
+/** The thigh's swing either way at a gait. */
+const swingFor = (gait: number) => thighSwing(stepOf(gait));
+
+/**
+ * How far one step goes at a gait, for a body `height` tall: longer as it goes faster, as people's steps are, from a
+ * quarter of its height in a slow walk to over half in a jog. Each step swings the thigh by `swingFor` either way, so
+ * a stride counted in these steps keeps the planted foot where it was put down.
+ */
+export function stepLength(gait: number, height: number): number {
+  return 2 * LEG * Math.sin(swingFor(gait)) * height;
+}
+
+/**
+ * A thigh's angle at its stride's `phase`, for a swing of `reach` either way. Through the swing (the cosine is
+ * positive) it goes forward in a smooth arc. Through the stance it goes back so that the planted foot moves under the
+ * hip in a straight line, as fast as the body goes forward: the foot stays where it was put down.
+ */
+function thigh(phase: number, reach: number): number {
+  if (Math.cos(phase) >= 0) return reach * Math.sin(phase);
+  const u = ((((phase - Math.PI / 2) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) / Math.PI;
+  return Math.asin(Math.sin(reach) * (1 - 2 * Math.min(1, u)));
+}
+
+/**
+ * A stride, as Elof's is (./player-motion.ts): the swing grows with the gait, above about a height a second it becomes
+ * a jog with bent, driving arms and a forward lean, the knee that swings through folds softly (squared, so contact
+ * never snaps it straight), and each step goes through the trunk.
+ */
 function walking(p: Pose, c: ActContext): Pose {
-  const swing = Math.sin(c.stride * Math.PI) * 0.5 * c.pace;
-  p.legL = swing;
-  p.legR = -swing;
-  p.kneeL = Math.max(0, Math.cos(c.stride * Math.PI)) * 0.7 * c.pace;
-  p.kneeR = Math.max(0, -Math.cos(c.stride * Math.PI)) * 0.7 * c.pace;
-  p.armL = -swing * 0.7;
-  p.armR = swing * 0.7;
-  p.elbowL = p.elbowR = 0.25;
-  p.lean = 0.06 * c.pace;
-  p.bounce = c.calm ? 0 : Math.abs(Math.cos(c.stride * Math.PI)) * 0.06 * c.pace;
-  p.twist = swing * 0.32;
-  plantFeet(p, c.stride * Math.PI);
+  const gait = c.gait ?? EASY_GAIT, phase = c.stride * Math.PI, effort = c.pace;
+  const run = smooth((gait - 1.05) / 0.55);
+  const reach = c.step !== undefined ? thighSwing(c.step) : swingFor(gait), swing = Math.sin(phase) * reach * effort, recovery = Math.cos(phase);
+  const fold = effort * (0.55 + 0.75 * run);
+  p.legL = thigh(phase, reach) * effort;
+  p.legR = thigh(phase + Math.PI, reach) * effort;
+  p.kneeL = Math.max(0, recovery) ** 2 * fold + 0.05 * effort;
+  p.kneeR = Math.max(0, -recovery) ** 2 * fold + 0.05 * effort;
+  const arms = 0.8 + 0.25 * run;
+  p.armL = -swing * arms;
+  p.armR = swing * arms;
+  const bent = 0.22 + 0.6 * run * effort;
+  p.elbowL = bent - swing * 0.14;
+  p.elbowR = bent + swing * 0.14;
+  p.lean = (0.05 + 0.09 * run) * effort;
+  p.nod = -0.03 * effort;
+  p.bounce = c.calm ? 0 : Math.abs(recovery) * (0.045 + 0.05 * run) * effort;
+  p.twist = swing * (0.3 + 0.12 * run);
+  plantFeet(p, phase);
   return p;
 }
 

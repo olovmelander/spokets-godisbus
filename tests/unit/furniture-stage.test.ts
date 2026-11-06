@@ -93,14 +93,15 @@ it.each([false, true])('Pappa keeps his body and legs beside the chair before tu
   const stage = createStage(prolog, () => 0), rig = stage.actors.get('pappa')!.rig;
   const told = new Set(scenes.slice(0, scenes.findIndex(scene => scene.id === 'vaknar')).map(scene => scene.by?.done ?? `scene:${scene.id}`));
   let previous: Vector3 | null = null;
-  for (let frame = 0; frame <= 60; frame++) {
+  // His two side steps take until 2.2 (the motion pass of 6 November 2026): the second, behind the chair, from 1.4.
+  for (let frame = 0; frame <= 96; frame++) {
     const seconds = .6 + frame / 60;
     stage.update({ id: 'vaknar', seconds }, told, { x: 2.6, y: 0 }, seconds, 1 / 60, calm);
     const hits = overlaps(stage, 'pappa', true);
     // The rehearsal figure has wider swinging arms than the imported body; the trunk and legs
     // must never cross the back, and the entire figure must clear it before walking behind it.
     expect(hits.filter(part => part === 0 || part >= 11), `chair back at ${seconds}`).toEqual([]);
-    if (seconds >= 1.1) expect(hits).toEqual([]);
+    if (seconds >= 1.4) expect(hits).toEqual([]);
     if (previous) expect(rig.group.position.distanceTo(previous)).toBeLessThan(.07);
     previous = rig.group.position.clone();
   }

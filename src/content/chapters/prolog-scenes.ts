@@ -141,10 +141,11 @@ export const PROLOG_SCENES: SceneDef[] = [
           { at: 0.7, x: 9.0, z: -3.7, move: 0.8, face: 0.74, act: 'look', aim: WINDOW },
         ],
         pappa: [
-          { at: 0.2, x: 6, move: 0.4, act: 'stand', holds: null },
-          // Leave beside the chair before turning behind its back towards the window.
-          { at: 0.6, x: 7, move: 0.5, face: 0, act: 'look', aim: WINDOW },
-          { at: 1.1, x: 7.2, z: -4.3, move: 0.5, face: 0.7 },
+          { at: 0.2, x: 6, move: 0.5, act: 'stand', holds: null },
+          // Leave beside the chair before turning behind its back towards the window: two unhurried side steps,
+          // there before Mamma names the bird.
+          { at: 0.7, x: 7, move: 0.7, face: 0, act: 'look', aim: WINDOW },
+          { at: 1.4, x: 7.2, z: -4.3, move: 0.8, face: 0.7 },
         ],
         bertil: [{ at: 0.3, x: 8.4, z: -4.7, move: 0.9, face: 0.76, act: 'look', aim: WINDOW }],
         moa: [
@@ -256,16 +257,26 @@ export const PROLOG_SCENES: SceneDef[] = [
         { at: 8.0, x: 42.2, y: 0.1, height: 3.5, width: 5.4, move: 0.9 },
       ],
       actors: {
-        mamma: [{ at: 4.1, act: 'gasp' }],
+        // After the POFF the others come over to him at a walk, so that the next scene only has their last step.
+        mamma: [
+          { at: 4.1, act: 'gasp', follow: null },
+          { at: 5.2, x: 38.8, y: -0.8, z: -1.4, face: 0.1, move: 2.6, act: 'look', aim: { x: STAR, y: -0.4, z: 0 } },
+        ],
         pappa: [
           // A familiar grown-up remains in the picture as the world grows around Elof. His boots
           // establish scale first; he kneels only after seeing the magic change his son.
-          { at: 0, x: 39.6, y: -0.8, z: -1.4, face: 0.05, move: 1.2, act: 'look', follow: null, aim: { x: STAR, y: 1.2, z: 0 } },
+          { at: 0, x: 39.6, y: -0.8, z: -1.4, face: 0.05, move: 2.0, act: 'look', follow: null, aim: { x: STAR, y: 1.2, z: 0 } },
           { at: 4.1, act: 'gasp' },
           { at: 4.8, act: 'kneel', aim: { x: STAR, y: -0.4, z: 0 } },
         ],
-        moa: [{ at: 4.1, act: 'startle', follow: null }, { at: 5.0, act: 'look', aim: { x: STAR, y: -0.4, z: 0 } }],
-        bertil: [{ at: 4.1, act: 'startle', follow: null }, { at: 5.0, act: 'look', aim: { x: STAR, y: -0.4, z: 0 } }],
+        moa: [
+          { at: 4.1, act: 'startle', follow: null },
+          { at: 5.0, x: 40.3, y: -0.8, z: -2.5, face: 0.25, move: 2.6, act: 'look', aim: { x: STAR, y: -0.4, z: 0 } },
+        ],
+        bertil: [
+          { at: 4.1, act: 'startle', follow: null },
+          { at: 5.2, x: 43.1, y: -0.8, z: -2.8, face: 0.35, move: 2.8, act: 'look', aim: { x: STAR, y: -0.4, z: 0 } },
+        ],
         ghost: [
           { at: 0, x: 44.4, y: -0.8, z: 0, face: 0, move: 0.01, act: 'stand' },
           { at: 4.4, face: 0.5, act: 'look', aim: { x: STAR, y: -0.3, z: 0 } },
@@ -399,9 +410,10 @@ export const PROLOG_SCENES: SceneDef[] = [
           { at: 0, act: 'look', aim: { x: 44.4, y: -0.4, z: 0 }, face: 0.15 },
           { at: 0.4, act: 'reach', aim: { x: 44.4, y: -0.2, z: 0 } },
           // He gets up with it and takes it to the railing behind them, at his waist.
-          { at: 0.8, act: 'stand' },
-          { at: 0.95, x: 45.6, z: RAIL.z + 1.0, move: 0.45, act: 'lift', aim: { x: 46.6, y: 2.1, z: RAIL.z }, face: 0.88 },
-          { at: 1.55, act: 'kneel', face: 0.4, aim: { x: STAR, y: -0.4, z: 0 } },
+          { at: 0.7, act: 'stand' },
+          // A few long strides, not a dash: the ghost has his back for that long.
+          { at: 0.8, x: 45.6, z: RAIL.z + 1.0, move: 0.85, act: 'lift', aim: { x: 46.6, y: 2.1, z: RAIL.z }, face: 0.88 },
+          { at: 1.7, act: 'kneel', face: 0.4, aim: { x: STAR, y: -0.4, z: 0 } },
           { at: 2.6, act: 'shrug', face: 0.3 },
         ],
         moa: [{ at: 1.9, act: 'look', aim: { x: 50, y: -0.3, z: 0 } }],

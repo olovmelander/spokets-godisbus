@@ -2,6 +2,54 @@
 
 ## State (6 November 2026)
 
+- **The family move as people do (6 November 2026, cloud session, branch `ccr-77db4123-5s8xa3`).** Olov: "Kan vi nu
+  jobba med karaktärernas animationer och hur de rör sig så att de rör sig naturligt och smooth. Elof är redan bra
+  men alla andra karaktärer." Mamma, Pappa, Moa and Bertil, in scenes and following Elof, were measured frame by
+  frame through every chapter with the robot, before and after.
+  - **What was wrong:** a limb or a whole body could jump in one frame (up to 1,800–3,400 EL/s on camera) at a new
+    act, a glance, the start of a scene or a restored game; bodies turned about in a single frame; the planted boot
+    slid about as far as the body went (the steps did not match the ground covered); walks stopped mid-stride;
+    followers snapped back to their resting places during scenes that did not stage them; and getting up off the
+    knees into a walk took a few frames.
+  - **What they do now** (`src/render/acting.ts`, `src/render/stage.ts`):
+    - **Steps fit the ground.** The step length grows with speed and the planted boot stays put: it slides less
+      than 15 % of the body's travel, against about 100 % before. Every walk is a whole number of steps, so it
+      ends with the feet together. A walk taken over from one already striding carries on its phase and gait.
+    - **Nothing snaps.** Every joint turns towards its new pose at most 20 rad/s, a body turns at most 1.15 turns
+      a second, and a step up or down takes a moment. A cut the scene makes on purpose still cuts, and a paused
+      or scrubbed scene holds or replays exactly.
+    - **Followers keep up and settle.** They catch up with a running Elof without jumping, glide to a stop when a
+      scene starts, stay where they are through a scene that does not stage them, and walk the rest of the way
+      when a scene ends early.
+    - **Getting up and going down** off the knees, a crouch or a chair into a walk takes 0.4 s.
+    - **Content:** a few walks that were dashes got their time: Pappa to the railing in `prologue:pappa` (0.45 → 0.85
+      s), his two side steps in `vaknar` (now done by 2.2 s, before Mamma's line), the family's walk down in `poff`,
+      and the walks in Stormkvällen's `krymper`.
+  - **Result:** the fastest limb on camera is now about 27 EL/s, in scenes written as a run (`lofte`), and no body
+    turns faster than 7.2 rad/s. The grandparents (eased standing figures) and Klonk were already smooth and are
+    unchanged. The same poses drive the imported family models, so this applies to them too.
+  - **Checked:** typecheck; all 2,110 tests, with the new `tests/unit/family-gait.test.ts` (planted boot, feet
+    together, step length, turning, getting up off the knees, a follower keeping up and staying put); build with
+    size gates; privacy check; filmstrips of `vaknar`, `poff`, `familj` and free play with the stand-ins.
+    **For Olov:** play the prologue and `?course=stormkvall` and judge the family's walking on the family devices,
+    with the real models. No new known bug, *Senare* wish or question. Nothing needs his computer.
+
+- **The whole game's dialogue, read as one story (6 November 2026, cloud session, branch `ccr-77db4123-5s8xa3`).**
+  Olov: "Nu måste vi fortsätta och se till att alla konversationerna passar in och följer en röd tråd och är skrivna
+  på bra svenska." All of the roughly 430 lines in the eighteen chapters were read in the order they are said, with
+  the cards, "Just nu" and the handoffs. The findings and every change, in Swedish, are in
+  [`docs/dialogue-audit.md`](docs/dialogue-audit.md).
+  - **The red thread holds** from the stolen bag to Klonk's name, through Byn, and on through Stormnatten to Fjun's.
+    The fixes are in the lines themselves: twenty of Stormnatten's for repetition ("planen" four times in a row,
+    lines that echoed the chapter before), stiff phrasing, and small slips of logic. Elof talked of following a trail
+    nobody had found yet, and Pappa seemed to know that Klonk stiffens when he looks.
+  - **Äventyr 1's words are unchanged:** all its lines are recorded, and the recordings stay until the conversations
+    are finished (Olov, 5 November). Only "Heja, lillebror!" gained its comma. The one line that could be clearer,
+    Mamma's "Ungen är hemma. Vill du ha en spång?", waits for new recordings.
+  - **New guard:** `tests/unit/voice-recordings.test.ts` fails if a recorded line, card, memory or ending no longer
+    has the words of its recording (punctuation aside). `scripts/voices-aventyr2.json` is regenerated.
+  - **Checked:** see the PR. No new known bug, *Senare* wish or question. Nothing needs Olov's computer.
+
 - **The storm blows the window open (6 November 2026, cloud session, branch `ccr-77db4123-5s8xa3`).** Olov asked for
   an animation of the window bursting open when the storm comes in Stormkvällen. Before, the window never moved: a
   stream of wind and a sparkle only implied it.
@@ -4234,6 +4282,8 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The family's motion (6 Nov) | Olov's request: natural, smooth motion for everyone but Elof | Part of one cloud session | — / 0 so far | Measured frame by frame through every chapter; steps that fit the ground, no snapping, followers that keep up and settle; a few dashes given time. |
+| The whole game's dialogue (6 Nov) | Olov's request: a red thread and good Swedish in every conversation | Part of one cloud session | — / 0 so far | ~430 lines read in play order; 20 of Stormnatten's rewritten, Äventyr 1 kept for its recordings, a test that keeps recordings and text together. |
 | The storm blows the window open (6 Nov) | Olov's request: an animation of the window bursting open | Part of one cloud session | — / 0 so far | A real opening in the wall, two halves that fly outward and bang, Pappa shutting them; code only. |
 | Full game audit, 6 Nov | Review and improve the whole game | One cloud continuation with parallel audits and independent review | — / 0 so far | All 18 chapters and 130 restored checkpoints reviewed; reproduced save, album, helper, control, voice, model-loading/resource and narrow-menu defects repaired. Evidence and limits in the audit. Physical-device review remains. |
 | Pappa and Bertil's caps, 5 Nov | Inspect and improve both actual caps | One cloud continuation, three fit iterations | — / 0 so far | Attached peaks, fitted panels and bands, clean colour boundaries and subtle details. Private deterministic source preserves the rest of each model exactly; 76 pose/render checks and native views in both adventures passed. Device judgement remains. |

@@ -13,9 +13,9 @@ export const words: ChapterWords = {
     olKlonkKlonk: 'Klonk, klonk!',
     olLights: 'Inte ens strålkastarna lyser!',
     olTop: 'Blixten! Nu ser jag hela planen!',
-    olLittle: 'Lillgubben! Han flyger över planen!',
+    olLittle: 'Lillgubben! Där flyger han!',
     // 2. the balls the wind rolls across the pitch
-    olWind: 'Vinden rullar bollar över planen!',
+    olWind: 'Vinden rullar bollar efter oss!',
     olJump: 'De kommer bakifrån. Hoppa över!',
     olPhew: 'Puh! Nu är jag förbi bollarna.',
     // 3. Bollen i målet
@@ -32,12 +32,12 @@ export const words: ChapterWords = {
     olOldOne: 'Gamla trägubben seglar över vattnet!',
     olBertilHere: 'Lillebror! Behöver du en frispark?',
     olBertilReady: 'Upp på bollen! Jag skjuter, du flyger!',
-    olFly: 'Jag flyger över hela planen!',
+    olFly: 'Jag flyger med bollen!',
     olGoal: 'Mål! Rakt in i nätet!',
     olBertilCheer: 'Snyggt, lillebror! Vi gjorde mål ihop!',
     olThanks: 'Tack! Du sköt. Jag stod för flyget!',
     // 7. the biathlon range
-    olRange: 'Fem tavlor. Hinner jag pricka en?',
+    olRange: 'Fem tavlor! Kan jag pricka alla?',
     olAllWhite: 'Alla fem är vita! Fullträff!',
     // 8. the floodlit trail, and the strongest gust
     olGust: 'Där! Vinden tar lillgubben norrut!',

@@ -183,10 +183,11 @@ const SCENES: SceneDef[] = [
         { at: 7.6, x: STAR + 1, y: 1.4, height: 6.4, width: 9, eye: -1.2, move: 1.2 },
       ],
       actors: {
-        // The POFF turns them round from the window, and they come to kneel round him.
-        mamma: [{ at: 3.8, face: 0.3, act: 'gasp' }, { at: 4.4, x: STAR - 1.6, y: 0, z: -1.4, face: 0.15, move: 1.6 }, { at: 6.0, act: 'kneel', aim: { x: STAR, y: 0.3, z: 0 } }],
-        pappa: [{ at: 3.8, face: 0.35, act: 'gasp' }, { at: 4.3, x: STAR + 2.2, y: 0, z: -1.2, face: 0.4, move: 1.3 }, { at: 5.6, act: 'kneel', aim: { x: STAR, y: 0.3, z: 0 } }],
-        moa: [{ at: 3.8, act: 'startle' }, { at: 5.0, x: STAR + 0.6, y: 0, z: -2.6, face: 0.3, move: 1.2 }, { at: 6.2, act: 'crouch', aim: { x: STAR, y: 0.3, z: 0 } }],
+        // The POFF turns them round from the window, and they come to kneel round him, at a walk: each kneels as
+        // they arrive.
+        mamma: [{ at: 3.8, face: 0.3, act: 'gasp' }, { at: 4.0, x: STAR - 1.6, y: 0, z: -1.4, face: 0.15, move: 2.2 }, { at: 6.2, act: 'kneel', aim: { x: STAR, y: 0.3, z: 0 } }],
+        pappa: [{ at: 3.8, face: 0.35, act: 'gasp' }, { at: 4.0, x: STAR + 2.2, y: 0, z: -1.2, face: 0.4, move: 1.8 }, { at: 5.8, act: 'kneel', aim: { x: STAR, y: 0.3, z: 0 } }],
+        moa: [{ at: 3.8, act: 'startle' }, { at: 4.4, x: STAR + 0.6, y: 0, z: -2.6, face: 0.3, move: 2.0 }, { at: 6.4, act: 'crouch', aim: { x: STAR, y: 0.3, z: 0 } }],
         bertil: [{ at: 3.8, act: 'cheer' }, { at: 5.2, x: STAR + 3.4, y: 0, z: -2.8, face: 0.35, move: 1.2 }, { at: 6.4, act: 'crouch', aim: { x: STAR, y: 0.3, z: 0 } }],
         // One glad hop at the POFF, before they have turned; then still wood while the grown-ups look.
         ghost: [{ at: 0, ...KLONK, face: 0.5, move: 0.01, act: 'stand' }, { at: 3.75, act: 'hop' }, { at: 4.27, act: 'freeze' }],

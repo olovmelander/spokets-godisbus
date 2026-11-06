@@ -10,7 +10,7 @@ export const words: ChapterWords = {
     sgMoaLight: 'Jag lyser för dig från fönstret!',
     sgGutter: 'Takrännan svämmar över! Se på skuggorna.',
     // 2. the pumpkin lantern on the steps
-    sgPumpkin: 'Gamla trägubben lämnar godis åt oss!',
+    sgPumpkin: 'Spåret fortsätter ut i trädgården!',
     sgKlonk: 'Klonk!',
     sgKlonkKlonk: 'Klonk, klonk!',
     // 3. Stormbyarna
