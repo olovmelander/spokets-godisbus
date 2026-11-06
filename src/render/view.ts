@@ -6,7 +6,7 @@ import { createMoverMotion } from './mover-motion';
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
-  Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, PlaneGeometry, PointLight,
+  Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, Quaternion, PlaneGeometry, PointLight,
   Scene, Shape, SphereGeometry, TorusGeometry, UnsignedIntType, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
 } from 'three';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
@@ -842,7 +842,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** Seconds since the ball he rides in Olympia was kicked; -1 when he is not on it. */
   let kickSince = -1;
   const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3();
+  const lampTurn = new Quaternion();
   const LAMP_POINTS = new Vector3(0, 0, 1);
+  /** Stormkvällen's flashlight: Elof carries it from the table, and Pappa has it from then on. */
+  let carriedLamp: Mesh | null = null, pappasLamp: Mesh | null = null;
+  const holdLamp = (lamp: Mesh, rig: Pick<Rig, 'hand'>, side: 0 | 1, facing: number, size: number) => {
+    rig.hand(side, lampHand);
+    lamp.position.copy(lampHand);
+    lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampAim.set(Math.sin(facing), -0.3, Math.cos(facing)).normalize());
+    lamp.scale.setScalar(size);
+    lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
+  };
   // The ledge that is Klonk frozen in Pappa's beam (Stormskogen), which his lamp is held on.
   const frozenLedge = chapter.storm?.frozen ? chapter.ledges?.find((ledge) => ledge.needs === chapter.storm!.frozen) : undefined;
   /** The rain gear each body wears now, by its key, so that it is changed only when it changes. */
@@ -1250,6 +1260,25 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       playerBody.hand(1, laceHand);
     }
     lace.update(curr.hook, laceHand);
+    // "Var är ficklampan? Jag ser ingenting!": Elof carries the lit flashlight from the table to Pappa in his right
+    // hand, lighting the floor ahead; once given, Pappa has it in his left (Stormkvällen).
+    const carries = chapter.id === 'stormkvall' && flags.has('lamp:take') && !flags.has('lamp:give') && !curr.hook && !!playerBody;
+    if (carries && !carriedLamp) { carriedLamp = litLamp(); scene.add(carriedLamp); }
+    if (carriedLamp) {
+      carriedLamp.visible = carries;
+      if (carries && playerBody) holdLamp(carriedLamp, playerBody, 1, turn, 1.6 * tall / 5.2);
+    }
+    const pappa = chapter.id === 'stormkvall' ? stage.actors.get('pappa') : undefined;
+    const pappaHas = !!pappa && flags.has('lamp:give') && pappa.visible();
+    if (pappaHas && !pappasLamp) { pappasLamp = litLamp(); scene.add(pappasLamp); }
+    if (pappasLamp) {
+      pappasLamp.visible = pappaHas;
+      if (pappaHas && pappa) {
+        pappa.rig.group.updateWorldMatrix(true, false);
+        pappa.rig.group.getWorldQuaternion(lampTurn);
+        holdLamp(pappasLamp, pappa.rig, 0, 2 * Math.atan2(lampTurn.y, lampTurn.w), Math.max(0.7, pappa.rig.height / 5.2));
+      }
+    }
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
 
     playerGroundY = curr.groundY;
