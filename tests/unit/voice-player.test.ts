@@ -36,8 +36,18 @@ beforeEach(async () => {
 afterEach(() => { player.stopVoice(); vi.unstubAllGlobals(); });
 
 describe('spoken-line lifecycle', () => {
+  it('leaves unrecorded dialogue silent and stops the previous recorded line', () => {
+    player.playVoice('tiny');
+    expect(player.playingVoice()).toBe('tiny');
+    player.playVoice('skPower');
+    player.playVoice('scene_stormkvall');
+    expect(Voice.made).toHaveLength(1);
+    expect(Voice.made[0]!.pause).toHaveBeenCalledOnce();
+    expect(player.playingVoice()).toBeNull();
+  });
+
   it('stops the current line when sound is muted and never resumes it on unmute', () => {
-    player.playVoice('first');
+    player.playVoice('stolenBag');
     player.setVoiceSettings(false, .7);
     expect(Voice.made[0]!.pause).toHaveBeenCalledOnce();
     expect(player.playingVoice()).toBeNull();
@@ -47,7 +57,7 @@ describe('spoken-line lifecycle', () => {
   });
 
   it('does not resurrect a dismissed line when the next gesture unlocks audio', async () => {
-    player.playVoice('dismissed');
+    player.playVoice('thanked');
     Voice.made[0]!.reject(blocked()); await flush();
     player.stopVoice();
     gestures.dispatchEvent(new Event('keydown'));
@@ -56,17 +66,17 @@ describe('spoken-line lifecycle', () => {
   });
 
   it('ignores a late autoplay rejection belonging to an older line', async () => {
-    player.playVoice('old');
-    player.playVoice('current');
+    player.playVoice('fallenStar');
+    player.playVoice('tiny');
     Voice.made[0]!.reject(blocked()); await flush();
     gestures.dispatchEvent(new Event('pointerdown'));
     expect(Voice.made).toHaveLength(2);
-    expect(player.playingVoice()).toBe('current');
+    expect(player.playingVoice()).toBe('tiny');
     expect(Voice.made[1]!.pause).not.toHaveBeenCalled();
   });
 
   it('clears a blocked line when volume is muted before the next gesture', async () => {
-    player.playVoice('blocked');
+    player.playVoice('forestTrial');
     Voice.made[0]!.reject(blocked()); await flush();
     player.setVoiceSettings(true, 0);
     player.setVoiceSettings(true, 1);
@@ -75,24 +85,24 @@ describe('spoken-line lifecycle', () => {
   });
 
   it('still retries the current blocked line once on a genuine gesture', async () => {
-    player.playVoice('current');
+    player.playVoice('tiny');
     Voice.made[0]!.reject(blocked()); await flush();
     gestures.dispatchEvent(new Event('pointerdown'));
     gestures.dispatchEvent(new Event('keydown'));
     expect(Voice.made).toHaveLength(2);
-    expect(Voice.made[1]!.url).toContain('/audio/voices/current.mp3');
-    expect(player.playingVoice()).toBe('current');
+    expect(Voice.made[1]!.url).toContain('/audio/voices/tiny.mp3');
+    expect(player.playingVoice()).toBe('tiny');
   });
 
   it('stops an audible line when the page is hidden', () => {
-    player.playVoice('current');
+    player.playVoice('tiny');
     page.hidden = true; page.dispatchEvent(new Event('visibilitychange'));
     expect(Voice.made[0]!.pause).toHaveBeenCalledOnce();
     expect(player.playingVoice()).toBeNull();
   });
 
   it('cancels a queued line on page exit, including a back-forward-cache entry', async () => {
-    player.playVoice('current');
+    player.playVoice('tiny');
     Voice.made[0]!.reject(blocked()); await flush();
     gestures.dispatchEvent(new Event('pagehide'));
     gestures.dispatchEvent(new Event('pointerdown'));
@@ -101,7 +111,7 @@ describe('spoken-line lifecycle', () => {
 
   it('does not report a playing line when play() throws synchronously', () => {
     Voice.throws = true;
-    expect(() => player.playVoice('unavailable')).not.toThrow();
+    expect(() => player.playVoice('newGhost')).not.toThrow();
     expect(player.playingVoice()).toBeNull();
   });
 });

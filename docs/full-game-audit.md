@@ -20,7 +20,7 @@ review checked the combined changes, including resource ownership and a second p
 | A second finger releasing an action button cancelled the first finger's held jump; secondary mouse buttons also triggered actions. | Track the owning pointer and accept the primary button only. | Focused multi-pointer, cancellation and mouse-button input tests. |
 | Gentle gamepad movement did not mark the pad active, so unplugging it could leave movement stuck. | Any movement outside the existing deadzone activates pad ownership and disconnect cleanup. | `input.test.ts` verifies gentle movement followed by disconnection. |
 | Direction and confirm in one gamepad poll activated the previously focused menu item. | Read the selected element after navigation. | A simultaneous navigation/confirm regression in `input.test.ts`. |
-| Muting, hiding the page or dismissing a blocked voice could leave it playing or revive it on the next gesture. An old rejected playback promise could also interrupt a newer line. | Stop HTMLAudio on mute, hidden/pagehide and context loss; clear pending retries on stop and ignore rejected requests that no longer own playback. | `voice-player.test.ts` tests mute, dismissal, visibility/pagehide, delayed rejection and a positive current-line autoplay retry. No recordings changed. |
+| Muting, hiding the page or dismissing a blocked voice could leave it playing or revive it on the next gesture. An old rejected playback promise could also interrupt a newer line, and unrecorded dialogue fetched nonexistent MP3s. | Build a key inventory from the actual MP3 files so unrecorded lines stay silent; stop HTMLAudio on mute, hidden/pagehide and context loss; clear pending retries on stop and ignore rejected requests that no longer own playback. | `voice-player.test.ts` tests mute, dismissal, visibility/pagehide, delayed rejection, unrecorded dialogue and a positive current-line autoplay retry. No recordings changed. |
 | One missing optional family model stopped later actors or scenery from installing. | Recover per actor while preserving its fallback, then continue the stage, help-point or grandparent loop. | Unit and source browser fixtures fail one actor and verify the remaining models, warm-up and shading. |
 | Replaced fallback figures and falling cones retained graphics resources uploaded during loading. | Dispose each fallback's owned resources when its model takes over; retain shared rehearsal geometry and loaded model resources. | Ownership tests and `model-installation.mjs` measure actual GPU geometry reduction, retained shared geometry and stable paused rendering on all three tiers. |
 | Asking for help during the final counterweight push accessed a nonexistent next stop and crashed. | While it moves, guide to the destination without offering another push. | Simulation and actual Game-input regressions cover the forest cone, Olympia football and Billsta seesaw stone. |
@@ -47,11 +47,13 @@ A simulation sweep restored **130 actual checkpoint snapshots** and reached each
 | | | Stormens öga | 3 |
 | | | Morgonen | 3 |
 
-The baseline passed 195 files / 2,062 tests; the combined changes pass **197 files / 2,096 tests** and typecheck.
+The baseline passed 195 files / 2,062 tests; the combined changes pass **197 files / 2,097 tests** and typecheck.
 Targeted regressions reproduced the failures before their repairs.
 Completed focused checks include 35 real IndexedDB checks, 47 model-installation browser checks, 19 profile
 browser checks, 44 production lifecycle/recovery checks, 69 input/hold unit tests, 62 render unit tests and
-21 voice/audio-lifecycle tests. The complete
+22 voice/audio-lifecycle tests. The unchanged dialogue-reading suite and all 52 memory-presentation checks
+also passed after the recording inventory change. The chapter-code regression passes with its save seeded before
+the first page load; the earlier fixture mistakenly let pagehide overwrite its own seed. The complete
 combined validation and delivery result are recorded in `HANDOVER.md` and the pull request. At this documentation
 checkpoint, the final smoke run and full CI are pending. The initial built settings suite passed 64 checks;
 after the final adaptive-column refinement, a DOM preview verified all four widths (320, 390, 780 and 1180 px).

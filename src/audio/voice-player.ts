@@ -8,6 +8,8 @@ let currentAudio: HTMLAudioElement | null = null;
 let currentKey: string | null = null;
 let currentVolume = 1;
 let soundEnabled = true;
+// Standalone UI previews may omit the build inventory; their optional voices stay silent.
+const recordedVoices = new Set(typeof __VOICE_KEYS__ === 'undefined' ? [] : __VOICE_KEYS__);
 
 let userUnlocked = false;
 let pendingKey: string | null = null;
@@ -57,6 +59,7 @@ export function playVoice(key: string): void {
 
   // Stop any currently playing voice line
   stopVoice();
+  if (!recordedVoices.has(key)) return;
 
   try {
     const base = import.meta.env.BASE_URL || '/';
