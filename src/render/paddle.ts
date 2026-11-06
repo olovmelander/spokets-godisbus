@@ -36,9 +36,9 @@ export function createPaddle(height: number): Paddle {
   const long = 6.0 * u;
   // Its middle at the origin, along y: the T-grip at the top, the shaft, the blade at the bottom.
   const shape = mergeGeometries([
-    painted(new CylinderGeometry(0.05 * u, 0.05 * u, long * 0.8, 8).translate(0, long * 0.08, 0), '#26292e'),
-    painted(new CylinderGeometry(0.06 * u, 0.06 * u, 0.42 * u, 8).rotateZ(Math.PI / 2).translate(0, long * 0.48, 0), '#26292e'),
-    painted(new CylinderGeometry(0.22 * u, 0.26 * u, long * 0.24, 4, 1).scale(1, 1, 0.12).rotateY(Math.PI / 4).translate(0, -long * 0.38, 0), '#2a9db0'),
+    painted(new CylinderGeometry(0.075 * u, 0.075 * u, long * 0.8, 8).translate(0, long * 0.08, 0), '#dfe4e6'),
+    painted(new CylinderGeometry(0.085 * u, 0.085 * u, 0.5 * u, 8).rotateZ(Math.PI / 2).translate(0, long * 0.48, 0), '#2b2e33'),
+    painted(new CylinderGeometry(0.26 * u, 0.3 * u, long * 0.24, 4, 1).scale(1, 1, 0.14).rotateY(Math.PI / 4).translate(0, -long * 0.38, 0), '#f08a2c'),
   ]);
   const mesh = new Mesh(shape, new MeshStandardMaterial({ vertexColors: true, roughness: 0.45 }));
   mesh.name = 'sup-paddle';
@@ -75,7 +75,7 @@ export function createPaddle(height: number): Paddle {
         lift = Math.sin(k * Math.PI) * 0.75;
       }
       // The blade a little under the water, beside the board; the grip high, over the shoulder on that side.
-      blade.copy(feet).addScaledVector(forward, reach * u).addScaledVector(left, 0.95 * u).addScaledVector(UP, (-1.55 + lift) * u);
+      blade.copy(feet).addScaledVector(forward, reach * u).addScaledVector(left, 0.8 * u).addScaledVector(UP, (-1.55 + lift) * u);
       top.copy(feet).addScaledVector(forward, (reach * 0.3 + 0.7) * u).addScaledVector(left, 0.15 * u).addScaledVector(UP, 4.1 * u);
       along.subVectors(top, blade).normalize();
       top.copy(blade).addScaledVector(along, long * 0.86);

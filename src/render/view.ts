@@ -1,6 +1,7 @@
 import { lessMotion } from '../platform/motion';
 import { buildBraid } from './braid';
 import { createPaddle, type Paddle } from './paddle';
+import { rainGearFor } from './rain-gear';
 import { createMoverMotion } from './mover-motion';
 import {
   AdditiveBlending, BoxGeometry, CapsuleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
@@ -829,6 +830,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** The last scene shot, and how much of it the camera takes now: 1 in the scene, easing to 0 after it. */
   let lastShot: { x: number; y: number; height: number; width: number; eye: number } | null = null;
   let shotWeight = 0;
+  /** The rain gear each body wears now, by its key, so that it is changed only when it changes. */
+  const dressed = new WeakMap<Rig, string>();
+  const dressFor = (rig: Rig, who: string, flags: ReadonlySet<string>) => {
+    if (!rig.dress) return;
+    const gear = rainGearFor(chapter, who, flags);
+    const key = gear ? `${gear.coat}${gear.boots}${gear.bootOff}` : '';
+    if (dressed.get(rig) === key) return;
+    dressed.set(rig, key);
+    rig.dress(gear);
+  };
   /** How far the eye has risen over water, 0 to 1. */
   let overWater = 0;
   /**
@@ -1367,6 +1378,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     for (const actor of stage.actors.values()) {
       if (actor.visible()) actor.rig.breeze?.(gale * windAt(actor.rig.group.matrixWorld.elements[12]!), dt, calmStory);
     }
+    // Rain gear in the storm, as the story has them put it on (./rain-gear.ts): the family at the help points and in
+    // the scenes. Only when it changes: a model that has just taken a figure's place is dressed afresh.
+    for (const [who, actor] of stage.actors) dressFor(actor.rig, who, flags);
+    for (const one of family) dressFor(one.rig, one.who, flags);
     if (chapter.id === 'norrsken') {
       const carving = scene.getObjectByName('mover:tragubbe');
       if (carving && flags.has('taste') && ghostState && !homeJourney) carving.position.set(ghostState.x - .5, ghostState.y, 0);

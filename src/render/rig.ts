@@ -1,6 +1,7 @@
 import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
 import type { ChapterData } from '../sim/types';
 import { createArmContact, createHandGrip } from './arm-contact';
+import { SOCK, bodyOf, buildShells, wearShells, type RainGear } from './rain-gear';
 
 /**
  * A body's pose, as a scene's acting asks for it (src/render/acting.ts). Angles are in radians. The body faces
@@ -140,6 +141,8 @@ export interface Rig {
   breeze?(wind: number, dt: number, still: boolean, ruffle?: number): void;
   /** How tall the body stands, in EL. */
   readonly height: number;
+  /** Rain gear on, or off with null (./rain-gear.ts). */
+  dress?(gear: RainGear | null): void;
 }
 
 /**
@@ -351,6 +354,17 @@ export function createRehearsalRig(who: Role): Rig {
     },
     height: ADULT * s,
     pose,
+    dress(gear) {
+      // The coat over the body and arms; boots over the shins and shoes; a sock where a boot is off.
+      const set = (i: number, hex: string) => mesh.setColorAt(i, colour.set(hex));
+      for (const i of [0, 5, 6, 8, 9]) set(i, gear ? gear.coat : role.top);
+      for (const [side, shin, foot] of [[0, 12, 13], [1, 15, 16]] as const) {
+        const off = gear?.bootOff === side;
+        set(shin, gear && !off ? gear.boots : trousers);
+        set(foot, gear ? (off ? SOCK : gear.boots) : shoe);
+      }
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    },
     hand(side, out) {
       group.updateWorldMatrix(true, false);
       return out.copy(hands[side]).applyMatrix4(group.matrixWorld);
@@ -508,9 +522,19 @@ export function createModelRig(model: Object3D, height: number): Rig {
     return hand && lower && contacts[i] ? createHandGrip(lower.node, hand, contacts[i]!) : null;
   });
   const sway = createSway(), soft = softParts(model);
+  // The rain gear's shells, made the first time it is worn (./rain-gear.ts).
+  let shells: ReturnType<typeof buildShells> | undefined;
   return {
     group,
     height,
+    dress(gear) {
+      if (shells === undefined) {
+        if (!gear) return;
+        const body = bodyOf(model);
+        shells = body ? buildShells(body, height) : null;
+      }
+      if (shells) wearShells(shells, gear);
+    },
     breeze(wind, dt, still, ruffle = 0) { if (dt > 0) soft(sway.step(wind, dt, still), still ? 0 : ruffle); },
     mouth(out) { return bones.head ? bones.head.node.localToWorld(out.copy(mouth)) : group.localToWorld(out.set(0, height * .89, height * .075)); },
     reach(side, target, weight = 1) { contacts[side]?.(target, weight); },
