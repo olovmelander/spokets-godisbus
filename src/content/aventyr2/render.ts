@@ -1665,11 +1665,35 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       plate.position.y = 2.6;
       const disc = new Mesh(new CylinderGeometry(0.38, 0.38, 0.06, 20), solid('#141414', 0.6));
       disc.rotation.x = Math.PI / 2;
-      disc.position.set(0, 2.6, 0.06);
-      root.add(stand, plate, disc);
+      disc.position.set(0, 0, 0.06);
+      plate.add(disc);
+      // The cone he throws ("Kasta kotte"): from his hand up in an arc to the disc, which turns white as it hits and
+      // shakes the plate; the cone drops away.
+      const cone = new Mesh(new ConeGeometry(0.14, 0.42, 8), solid('#7a5232', 0.8));
+      cone.visible = false;
+      root.add(stand, plate, cone);
       const black = new Color('#141414');
       const white = new Color('#f2f2ee');
-      return { group: root, update(used) { (disc.material as MeshStandardMaterial).color.copy(used ? white : black); } };
+      const FLIGHT = 0.45;
+      // Already hit when first drawn (a saved game): no throw is shown.
+      let since = -1, first = true;
+      return {
+        group: root,
+        update(used, _clock, dt) {
+          since = !used ? -1 : since >= 0 ? since + dt : first ? 9 : 0;
+          first = false;
+          const k = since < 0 ? 0 : Math.min(1, since / FLIGHT);
+          (disc.material as MeshStandardMaterial).color.copy(used && k >= 1 ? white : black);
+          const after = Math.max(0, since - FLIGHT);
+          cone.visible = since >= 0 && after < 0.6;
+          if (cone.visible) {
+            const fall = after * after * 14;
+            cone.position.set(-0.5 * (1 - k), 1.0 + (2.6 - 1.0) * k + Math.sin(k * Math.PI) * 0.9 - fall, 1.2 * (1 - k) + 0.12);
+            cone.rotation.set(since * 9, 0, since * 7);
+          }
+          plate.rotation.z = after > 0 ? Math.sin(after * 40) * 0.08 * Math.exp(-after * 6) : 0;
+        },
+      };
     },
     lifebuoy: (spot) => {
       // A life ring on its post: red and white, its rope coiled.
