@@ -1569,7 +1569,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostPlace.visible = true; ghostPlace.position.copy(seat); ghostPlace.position.x -= .8; ghostPlace.scale.setScalar(1);
         ghostMotion.update({ dt, clock, hop: null, calm: calmStory, awake: true, staged: true });
         ghostGroundY = playerGroundY;
-        if (carving) { carving.position.copy(seat); carving.position.x += .8; }
+        if (carving) {
+          // "Vi tar hem båda trägubbarna till hyllan.": up on Pappa's shoulders he holds the old one himself, before
+          // his chest; Klonk, a ghost, rides along beside them.
+          if (weight > .5) {
+            elof.group.updateWorldMatrix(true, false);
+            boot.set(.3, .5, .1).applyMatrix4(elof.group.matrixWorld);
+            playerBody.reach(1, boot, weight);
+            playerBody.hand(1, palm);
+            carving.position.copy(palm);
+            carving.position.y -= .06 * tall;
+          } else { carving.position.copy(seat); carving.position.x += .8; }
+        }
       }
       sharedSweets?.update(flags, ghostPlace.position, carving?.position);
     }
