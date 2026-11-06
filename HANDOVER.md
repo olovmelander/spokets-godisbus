@@ -99,9 +99,12 @@
       - Olympia: Bertil kicks the ball Elof rides; the thrown cone flies to the target, which turns white as it
         hits.
       - Morgonen: the cup of cocoa is a white mug with a red heart and steam, not a candle.
-      - Left for later (see "Senare"): the cap carried from Stormbyn to the storm's eye, the old one holding out
-        the gift (and its gold paper), Moa in Stormgården's window, Moa and Bertil running ahead in Billsta, and
-        Flärken's door banging on its hinges.
+      - Elof carries the little one's cap, tucked in at his back, from Stormbyn's gutter until he gives it back in
+        the storm's eye; there the old one holds out the golden sweet on its crinkled gold paper ("Ett geléhallon i
+        guldpapper!").
+      - Stormgården: Moa's lamp shines on him from the window (`storm.beams`).
+      - Left for later (see "Senare"): Moa and Bertil running ahead in Billsta, and Flärken's door banging on its
+        hinges.
     - **Also tonight:** the forest's brooks raise the eye 3 EL (the bog's still water 1.6), so the water, its
       mirror and its far bank read; Myren's two "striped bowls" were the soft tussocks, now widening down into the
       water as hummocks, and the stripes were the water's mirror stepping, now dithered into fine grain; the
@@ -4463,7 +4466,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
-| The graphics pass and the Unravel look (6 Nov) | Olov's request: every visual in both adventures, step by step until 23:00, then "mer likt Unravel" with a larger budget; later the SUP, the rain gear and the story's details, until 02:00 | One cloud session's evening and night | — / 0 so far | A lens (depth of field, contact shade, film look, near pollen), close materials (ground, boards, turf, bark, granite, grain, moss), the home's doorway, brooks, huts, beetles, braid, puzzle weight; Mamma's SUP, rain gear through the storm, Bertil's boot, the family's lamps, nine more story details. |
+| The graphics pass and the Unravel look (6 Nov) | Olov's request: every visual in both adventures, step by step until 23:00, then "mer likt Unravel" with a larger budget; later the SUP, the rain gear and the story's details, until 02:00 | One cloud session's evening and night | — / 0 so far | A lens (depth of field, contact shade, film look, near pollen), close materials (ground, boards, turf, bark, granite, grain, moss), the home's doorway, brooks, huts, beetles, braid, puzzle weight; Mamma's SUP, rain gear through the storm, Bertil's boot, the family's lamps, twelve more story details. |
 | Lighter nights (6 Nov) | Olov's request: not so dark at the darkest, scenes too, mood kept | Part of one cloud session | — / 0 so far | 52 frames measured before and after; more light on the play plane at night, lighter night water, skies unchanged. |
 | Klonk carved again (6 Nov) | Olov's request: improve Klonk's design after the carving and the poster | Part of one cloud session, Blender 5.2 as a Python module | — / 0 so far | A new build from knife-cut blocks with baked wood and paint; private repository PR #4. |
 | The family's motion (6 Nov) | Olov's request: natural, smooth motion for everyone but Elof | Part of one cloud session | — / 0 so far | Measured frame by frame through every chapter; steps that fit the ground, no snapping, followers that keep up and settle; a few dashes given time. |
@@ -4674,9 +4677,6 @@ The older list, still true where it is not struck:
   measurements cannot happen in play: the glitter bubble catches him at the surface.
 - Real-time shadows from the sun, which Unravel has; the dappled light on the forest floor is a shader stand-in.
 - The story's details still not drawn (found on 6 November by reading Äventyr 2's lines against the picture):
-  - the little one's cap, carried by Elof from Stormbyn's gutter to the storm's eye ("Jag tar med den.");
-  - the old one holding out the golden sweet ("Ditt allra sista."), in gold paper as the line says;
-  - Moa in Stormgården's lit window ("Jag lyser för dig från fönstret!");
   - Moa and Bertil running ahead in Billsta ("Följ vårt godis! Vi springer före."), who are only heard;
   - Flärken's door banging on its hinges ("Pang! Dörren…"), which is a sliding plank.
 - The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
