@@ -82,7 +82,9 @@ export interface WaterKind {
  */
 const POOL: WaterKind = {
   front: 0.65, corner: 0.65, back: -34, thins: -18, behind: null, feather: 3, depth: 6, bed: 0, shore: 0,
-  dim: 0.72, faceTop: '#4a3f26', faceDeep: '#15120b', ramp: 2.2, faceAlpha: 0.85, faceBelow: 0.95, murk: 0.11, through: '#e0c48c',
+  // Humic water is murky: what lies a hand's breadth in shows amber, a length in hardly. At 0.11 the green bank
+  // behind it showed through all of its depth, and a brook seen from the side was a tank of olive water.
+  dim: 0.72, faceTop: '#5a4a2a', faceDeep: '#15120b', ramp: 2.6, faceAlpha: 0.9, faceBelow: 0.97, murk: 0.42, through: '#d8b47a',
   // Dark water mirrors darker and warmer: at 0.6 and near white it gave back the bright, hazy forest so well that
   // the brook read as mist (Olov: "har vi fixat vattnet och bäckarna så att det ser bra ut?").
   mirror: 0.42, tint: '#b8ad8c', ripple: 1.15, bedColour: '#000000', shoreColour: '#000000', stands: null,
@@ -582,6 +584,16 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           // Less light reaches what lies deep: a tussock's foot shows at the waterline, a sunken plank hardly.
           face = mix(face, seen, see * exp(-under * body.x * 2.0) * 0.8);
           solid = faceSolid = 1.0;
+        }
+        if (details > 0.5) {
+          // Looked into from the side: the light comes down into it in slow, slanting beams that fade with depth,
+          // and specks drift in it, catching that light (the graphics pass of 6 November 2026).
+          float beamA = smoothstep(0.55, 1.0, sin(waterWorld.x * 0.8 + waterWorld.y * 0.32 + time * 0.12) * 0.5 + 0.5);
+          float beamB = smoothstep(0.6, 1.0, sin(waterWorld.x * 2.1 - waterWorld.y * 0.18 + time * 0.07 + 1.7) * 0.5 + 0.5);
+          face += faceTop * 1.3 * beamA * (0.4 + 0.6 * beamB) * exp(-under * 0.5) * (1.0 - smoothstep(0.0, 0.05, -under));
+          vec2 speckAt = vec2(waterWorld.x * 11.0, (waterWorld.y + time * 0.04) * 11.0 + sin(waterWorld.x * 3.0 + time * 0.3));
+          float speck = step(0.982, fract(sin(dot(floor(speckAt), vec2(12.9898, 78.233))) * 43758.5453));
+          face += through * 0.22 * speck * exp(-under * 0.35);
         }
         // The line is soft, so that High's depth blur, which sees the pit behind the water, does not break it.
         face = mix(face, skyMiddle * mirrorTint, 0.1 * (1.0 - smoothstep(0.0, 0.07, under)));

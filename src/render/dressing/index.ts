@@ -43,7 +43,7 @@ const FOREST: PlaceLook = {
   sun: { colour: '#ffe4bc', intensity: 3.25, from: [-7, 5, -4] },
   fill: { colour: '#d6e6ff', intensity: 1.15 },
   // A forest brook is humic: dark tea-brown, mirroring the forest (the reference brief, 6 November 2026).
-  water: { colour: '#4f5a3c', opacity: 0.82 },
+  water: { colour: '#2c2618', opacity: 0.86 },
   tussock: '#9aa246',
 };
 
