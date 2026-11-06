@@ -839,6 +839,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let shotWeight = 0;
   /** Where Bertil's hands are at his boot while he pulls it off. */
   const bootAt = new Vector3();
+  /** Seconds since the ball he rides in Olympia was kicked; -1 when he is not on it. */
+  let kickSince = -1;
   const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3();
   const LAMP_POINTS = new Vector3(0, 0, 1);
   // The ledge that is Klonk frozen in Pappa's beam (Stormskogen), which his lamp is held on.
@@ -989,6 +991,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const riding = curr.mode === 'ride';
     // Which ride he is on is read from where he is: no two rides share a stretch.
     const carrier = riding ? carriers.find((c) => x >= c.ride.from.x - 0.5 && x <= c.ride.to.x + 0.5) : undefined;
+    kickSince = carrier?.ride.id === 'kick' ? (kickSince < 0 ? 0 : kickSince + dt) : -1;
     const prepared = carrier?.ride.id === 'plane' && flags.has('moa') || carrier?.ride.id === 'cap' && flags.has('cap:ready');
     const size = riding ? Math.min(1, prepared ? 1 : curr.t / 0.05, (1 - curr.t) / 0.05) : 0;
     const heading = riding ? Math.atan2(curr.y - prev.y, Math.max(1e-4, curr.x - prev.x)) : 0;
@@ -1394,6 +1397,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (pulling) {
         const tug = calmStory ? 0 : Math.sin(clock * 9) * 0.08;
         posed.lean = 0.55 + tug; posed.legR = 0.95; posed.kneeR = 1.35 + tug; posed.kneeL = Math.max(posed.kneeL, 0.25);
+      }
+      // Bertil kicks the ball Elof rides ("Upp på bollen! Jag skjuter, du flyger!"): turned to it, a wind-up, the
+      // swing through, arms out, and back to standing.
+      if (one.who === 'bertil' && kickSince >= 0 && kickSince < 0.9) {
+        const ready = Math.min(1, kickSince / 0.15), swing = clamp((kickSince - 0.15) / 0.2, 0, 1), back = clamp((kickSince - 0.45) / 0.45, 0, 1);
+        posed.legR = (-0.5 * ready + 1.7 * swing) * (1 - back);
+        posed.kneeR = (1.2 * ready * (1 - swing) + 0.15) * (1 - back);
+        posed.lean = -0.18 * swing * (1 - back);
+        posed.armL = Math.max(posed.armL, 0.9 * (1 - back));
+        posed.armR = Math.max(posed.armR, 0.5 * (1 - back));
+        one.rig.group.rotation.y = 1.2 * (1 - back) + one.rig.group.rotation.y * back;
       }
       one.rig.pose(one.seated ? sitting(posed) : one.paddle ? one.paddle.stance(posed) : posed);
       one.paddle?.update(one.rig, clock, calmStory);
