@@ -2,6 +2,24 @@
 
 ## State (6 November 2026)
 
+- **The storm blows the window open (6 November 2026, cloud session, branch `ccr-77db4123-5s8xa3`).** Olov asked for
+  an animation of the window bursting open when the storm comes in Stormkvällen. Before, the window never moved: a
+  stream of wind and a sparkle only implied it.
+  - **What happens:** the window by the shelf rattles now and then on its hook during the evening. At the gust in
+    `fonstret` its two halves fly outward, overshoot, and bang to and fro in the wind, with the brass hook hanging
+    loose and the stormy night beyond. In `klonkstar` Pappa reaches it and pulls it to (`window:shut`, at 2.0 s,
+    while the picture is still wide). The morning after is unchanged: he and Elof mend the hook there.
+  - **How:** `house.opens` names the window that opens. `built.ts` then cuts a real opening through the room's
+    wall there, with jambs, and puts the night further back (`window-outside`, z −12.5). The fixed cross is left out
+    of that window. The Äventyr 2 pack's `casement` look draws the two halves, hinged at the jambs and opening
+    outward, as Swedish windows do. That is also the only way that works here: the shelf runs across the front of
+    the window, so halves opening into the room would cut through it. Its glass is named `window-glass`, so it takes
+    the storm's pane and the lightning flashes with the room's other windows. With less motion the halves only
+    stand open: no banging, no rattle. A game taken up later finds the window as the story left it.
+  - **Checked:** typecheck; `tests/unit/storm-window.test.ts` (the wall is open only at that window, the halves
+    open outward and bang, Pappa shuts them, less motion and a restored game); stills of `fonstret` and
+    `klonkstar` at 844×390 with the stand-ins. **For Olov:** play `?course=stormkvall` to the goodnight and judge
+    the burst on the family devices. No new known bug, *Senare* wish or question. Nothing needs his computer.
 - **Full game audit (6 November 2026, cloud session, branch `audit/full-game-polish`).**
   Olov requested another broad audit and repairs throughout the game. Findings and reproducible checks are in
   [`docs/full-game-audit.md`](docs/full-game-audit.md). All 18 playable chapters were reviewed, and a simulation
@@ -40,7 +58,9 @@
     finalize it. A cloud session confirmed the full CI above from each job's log, and re-ran on `44218d2`: `npm ci`,
     typecheck, the tests (197 files / 2,097 tests), the build (500.6 KB boot JS / 520 KB, Adventure 2 64.4 KB /
     160 KB; served boot 2,316 KB there, without the private exports) and the privacy check. It corrected these
-    "pending" lines, here and in `docs/full-game-audit.md`, and merges the PR once CI passes on that commit.
+    "pending" lines, here and in `docs/full-game-audit.md`. CI on that documentation commit passed eight of its nine
+    jobs; browser job 5 hung in `npx playwright install` for over an hour, before any of its tests ran. The game code
+    was identical to `44218d2`, where all nine passed, so on Olov's word the PR was merged as `f555b41`.
 
 - **Pappa and Bertil's caps refined (5 November 2026, cloud session, branch `visual/family-caps`).**
   Olov requested better-looking caps on both figures. The actual private exports were inspected from the front,
@@ -4214,6 +4234,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The storm blows the window open (6 Nov) | Olov's request: an animation of the window bursting open | Part of one cloud session | — / 0 so far | A real opening in the wall, two halves that fly outward and bang, Pappa shutting them; code only. |
 | Full game audit, 6 Nov | Review and improve the whole game | One cloud continuation with parallel audits and independent review | — / 0 so far | All 18 chapters and 130 restored checkpoints reviewed; reproduced save, album, helper, control, voice, model-loading/resource and narrow-menu defects repaired. Evidence and limits in the audit. Physical-device review remains. |
 | Pappa and Bertil's caps, 5 Nov | Inspect and improve both actual caps | One cloud continuation, three fit iterations | — / 0 so far | Attached peaks, fitted panels and bands, clean colour boundaries and subtle details. Private deterministic source preserves the rest of each model exactly; 76 pose/render checks and native views in both adventures passed. Device judgement remains. |
 | Graphics overhaul, 5 Nov | One complete visual pass across both adventures | One cloud session, with parallel implementation and review | — / 0 so far | Shares the authored scenery library, furnishes the first adventure's home, improves light, ground and outdoor silhouettes, and repairs garden/meeting-stone contact. Public five-size image evidence and executable budgets are recorded in the audit. Final private-model and physical-device judgement remains. |

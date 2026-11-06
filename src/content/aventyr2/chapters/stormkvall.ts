@@ -12,8 +12,9 @@ import { jump, round, row } from '../kit';
  * 2. **Ficklampan:** Elof takes it from the table and gives it to Pappa: *Ta ficklampan*, *Ge Pappa*.
  * 3. **Godnatt:** at Pappa's shelf Elof says goodnight to his own little trägubbe and to the old one, the
  *    first, home again on the shelf. *Säg godnatt.*
- * 4. **Fönstret** (a held scene): a gust bursts the window open; the little one is swept out into the dark,
- *    and the old one leaps after him. Pappa sees only two empty places on the shelf.
+ * 4. **Fönstret** (a held scene): the window by the shelf has rattled all evening. A gust bursts it open: its
+ *    halves fly outward and bang in the wind (`house.opens`, the `casement` look), the little one is swept out into
+ *    the dark, and the old one leaps after him. Pappa sees only two empty places on the shelf.
  * 5. **Klonks stjärna** (a held scene): Pappa shuts the window and Mamma looks out after them, so no grown-up sees
  *    the shelf. Klonk wakes, hops down to Elof's feet and opens its carved bag: one star left, and it rises out of
  *    the bag. It is nowhere to be seen before (`Spot.after`). *Smaka på stjärnan*: POFF.
@@ -72,7 +73,8 @@ const SCENES: SceneDef[] = [
     },
   },
   {
-    // 3. The window bursts open: a stream of wind from the shelf out into the dark. Both figures are gone.
+    // 3. The window bursts open: its two halves fly out and bang in the wind (the `casement` look, at 'gust'), and a
+    // stream of wind goes from the shelf out into the dark. Both figures are gone.
     id: 'fonstret',
     on: 'goodnight',
     until: 'star',
@@ -119,7 +121,8 @@ const SCENES: SceneDef[] = [
     until: 'star',
     seconds: 10.6,
     hold: true,
-    cues: [{ at: 4.6, flag: 'star:out' }],
+    // Pappa pulls the banging window to as he reaches it ('window:shut'), while the picture is still wide.
+    cues: [{ at: 2.0, flag: 'window:shut' }, { at: 4.6, flag: 'star:out' }],
     sounds: [{ at: 1.2, sound: 'blink' }, { at: 4.5, sound: 'blink' }],
     lines: [
       { at: 5.4, who: 'spoket', line: 'skKlonk' },
@@ -275,6 +278,8 @@ export const stormkvall: ChapterData = {
   decor: [
     // The family's room, which Sunday morning has too.
     { look: 'homeEvening', at: { x: 0, y: 0 } },
+    // The window by the shelf: rattling, burst open by the gust, banging, and pulled to by Pappa.
+    { look: 'casement', at: { x: WINDOW.x, y: WINDOW.y }, until: 'window:shut' },
     // The two figures on the shelf, until the gust.
     { look: 'tragubbe', at: { x: OLD.x, y: OLD.y }, z: OLD.z, until: 'gust' },
     { look: 'lillgubbe', at: { x: LITTLE.x, y: LITTLE.y }, z: LITTLE.z, until: 'gust' },
@@ -310,7 +315,8 @@ export const stormkvall: ChapterData = {
     { x: 96, y: 10 },
   ],
   surfaces: [{ from: -19, to: 54, kind: 'wood' }],
-  house: { from: -40, to: 38, windows: [WINDOW.x, 21, 34] },
+  // The window by the shelf is the one the storm blows open: the wall has a real opening there.
+  house: { from: -40, to: 38, windows: [WINDOW.x, 21, 34], opens: WINDOW.x },
   outdoors: 38,
   // The trail's big candies: the first where the old trägubbe landed, under the window.
   checkpoints: [{ x: 10.6, y: 0, after: TRAIL }, { x: 18, y: 0, after: TRAIL }, { x: 36, y: 0, after: TRAIL }, { x: 45.5, y: -0.8, after: TRAIL }],
