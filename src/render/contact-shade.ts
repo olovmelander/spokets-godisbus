@@ -10,8 +10,7 @@ import {
  * so things stood on the ground as if pasted on it. This finds, from the depth of the picture alone, how much of
  * the sky each point sees within a hand's breadth (ambient occlusion), and the grade darkens it by that.
  *
- * Two draws at half resolution on Mid and High: the shade from a dozen points round each pixel (half as many on
- * Mid), turned by a pattern so that what is left is fine noise, and a blur that keeps to one surface, so that his
+ * Two draws at half resolution on Mid and High: the shade from eight points round each pixel (six on Mid), turned by a pattern so that what is left is fine noise, and a blur that keeps to one surface, so that his
  * outline never gets a dark rim from what is behind him.
  */
 
@@ -51,7 +50,7 @@ const SHADE = /* glsl */ `
     // A turn for each pixel, so that a dozen points cover the half-sphere between them.
     float turn = 6.2831853 * fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
     float shut = 0.0;
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 8; i++) {
       if (float(i) >= taps) break;
       float k = (float(i) + 0.5) / taps;
       float a = float(i) * 2.39996323 + turn;
@@ -87,8 +86,9 @@ const SOFTEN = /* glsl */ `
   void main() {
     float here = distanceAt(vUv);
     float sum = 0.0, total = 0.0;
-    for (int y = -2; y <= 2; y++) for (int x = -2; x <= 2; x++) {
-      vec2 at = vUv + vec2(float(x), float(y)) * texel;
+    // Three by three, two pixels apart: the turn pattern repeats within that.
+    for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+      vec2 at = vUv + vec2(float(x), float(y)) * texel * 2.0;
       float w = 1.0 - smoothstep(0.02, 0.08, abs(distanceAt(at) - here) / here);
       sum += texture2D(tShade, at).r * w;
       total += w;
@@ -128,7 +128,7 @@ export function createContactShade() {
   return {
     /** The shade, softened: in red how open each point is. Null where it is off. */
     get texture(): Texture | null { return soft?.texture ?? null; },
-    /** `full`: High's dozen points; Mid's six. */
+    /** `full`: High's eight points; Mid's six. */
     setSize(width: number, height: number, enabled: boolean, full = true) {
       if (!enabled) {
         raw?.dispose(); soft?.dispose();
@@ -144,7 +144,7 @@ export function createContactShade() {
       raw.setSize(w, h);
       soft.setSize(w, h);
       (shade.material.uniforms.texel!.value as Vector2).set(1 / width, 1 / height);
-      shade.material.uniforms.taps!.value = full ? 12 : 6;
+      shade.material.uniforms.taps!.value = full ? 8 : 6;
       (soften.material.uniforms.texel!.value as Vector2).set(1 / w, 1 / h);
     },
     render(renderer: WebGLRenderer, depth: Texture, camera: PerspectiveCamera) {

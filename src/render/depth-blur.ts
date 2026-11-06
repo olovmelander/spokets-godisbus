@@ -12,8 +12,8 @@ import {
  *
  * Two draws at half resolution: one gathers each pixel's colour and how wide its blur is (signed: in front of
  * the play plane is negative); one gathers the blur from a disc of those. The grade then mixes it in, judging
- * at full resolution where the picture is sharp, so his outline and the candy never soften. Mid gathers from
- * half as many points as High: a little grainier in the widest blur, at half the cost.
+ * at full resolution where the picture is sharp, so his outline and the candy never soften. High gathers from 16
+ * and 12 points, Mid from 10 and 6: a little grainier in the widest blur, at less cost.
  */
 
 /** The most pixels each of the lens's two targets has. */
@@ -88,7 +88,7 @@ const GATHER = /* glsl */ `
     vec3 sum = centre.rgb * bright(centre.rgb);
     float total = bright(centre.rgb);
     if (size > 0.5) {
-      for (int i = 0; i < 24; i++) {
+      for (int i = 0; i < 16; i++) {
         if (float(i) >= taps.x) break;
         float r = size * sqrt((float(i) + 0.5) / taps.x);
         float a = float(i) * GOLDEN;
@@ -104,7 +104,7 @@ const GATHER = /* glsl */ `
     vec3 own = sum / total;
     vec3 near = vec3(0.0);
     float nearTotal = 0.0, widest = 0.0;
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < 12; i++) {
       if (float(i) >= taps.y) break;
       float r = nearMost * sqrt((float(i) + 0.5) / taps.y);
       float a = float(i) * GOLDEN + 0.6;
@@ -140,7 +140,7 @@ export function createDepthBlur() {
     depthCamera: { value: new Vector3(0.1, 140, 10) }, height: { value: 1 }, deep: { value: DOF_DEEP },
     tShade: { value: null }, shade: { value: 0 },
   });
-  const gather = screenPass(GATHER, { tCoc: { value: null }, texel: { value: new Vector2(1, 1) }, nearMost: { value: 1 }, taps: { value: new Vector2(24, 16) } });
+  const gather = screenPass(GATHER, { tCoc: { value: null }, texel: { value: new Vector2(1, 1) }, nearMost: { value: 1 }, taps: { value: new Vector2(16, 12) } });
   const screen = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const half = () => new WebGLRenderTarget(1, 1, { type: HalfFloatType, depthBuffer: false, stencilBuffer: false });
   return {
@@ -169,7 +169,7 @@ export function createDepthBlur() {
       prepare.material.uniforms.height!.value = h;
       (gather.material.uniforms.texel!.value as Vector2).set(1 / w, 1 / h);
       gather.material.uniforms.nearMost!.value = Math.max(1, DOF_NEAR * h);
-      (gather.material.uniforms.taps!.value as Vector2).set(full ? 24 : 12, full ? 16 : 8);
+      (gather.material.uniforms.taps!.value as Vector2).set(full ? 16 : 10, full ? 12 : 6);
     },
     /** `deep`: how far behind the play plane is sharp, in EL (DOF_DEEP in play). */
     /** `shade`: the shade where things meet and how strong it is (./contact-shade.ts), if there is one. */
