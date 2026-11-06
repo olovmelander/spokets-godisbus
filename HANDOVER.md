@@ -2,6 +2,53 @@
 
 ## State (6 November 2026)
 
+- **The graphics pass, and the Unravel look (6 November 2026, cloud session, branch `ccr-77db4123-5s8xa3`, PR
+  #235).** Olov asked for a pass over everything visual in both adventures until 23:00, step by step: the ground near
+  the camera ("ser utdragen ut"), the brooks, the animals and insects, trees, stones, cones, the mountain, the
+  puzzles, Mamma's braid, finer buildings, and the home scenes' way out ("ser ut som att hela huset är öppet"). The
+  main characters and the trägubbar were left alone. During the evening he added: "ännu mer likt ... Unravel. Vi kan
+  utöka grafikbudgeten", and sent screenshots of Unravel as the measure (looked at, never stored).
+  - **The lens (Mid and High), which is most of the Unravel look:**
+    - **Depth of field** (`src/render/depth-blur.ts`): the play plane stays sharp; behind it the world softens more
+      the further it is; the near ground and leaves between him and the camera blur most and spill soft over what
+      is behind them; bright points open into discs. The focus pulls back to the family while a scene's shot is
+      on them. Two draws at about half resolution (each target at most 0.36 MP); Mid gathers from half as many
+      points. The grade decides at full resolution where the picture is sharp, so his outline never softens.
+      Strength: `DOF_FAR` 0.016 and `DOF_NEAR` 0.026 of the picture's height.
+    - **The shade where things meet** (`src/render/contact-shade.ts`): ambient occlusion from the depth alone, half
+      resolution, one byte a pixel, a blur that keeps to one surface. `SHADE_REACH` 0.6 EL, `SHADE_STRENGTH` 0.7.
+    - **The film's look** (`grade.ts`, `setCinema`, 0.8): warm light, cool teal shadows, corners a little darker.
+    - **Pollen in front of the lens** (`src/render/lift/near-motes.ts`): a dozen out-of-focus discs drifting by day.
+    - `?nolens` leaves the depth of field and the shade out, to bench their cost with `?bench`.
+  - **Close materials (Mid and High; Low keeps its old cost through the `CLOSE_DETAIL` uniform):**
+    - **The ground** (`src/render/ground-detail.ts`): detail at three sizes instead of one stretched smear: moss
+      and soil, rock, road, board floors (each board its own tone, grain, knots, joints, worn middle), and
+      Olympia's artificial turf.
+    - **Bark, granite and grain** (`src/render/bark-detail.ts`, marked on a shape's corners by a `barky`
+      attribute): scaly bark on the stems and boughs by the ledges; granite with crystals, rain streaks and lichen
+      on the mountain's rocks, the forest's boulders, the fell's stones and the forest kit's stones (the eddy
+      stone); grain on the planks he pushes and on plank ledges.
+    - **Moss** (`lift/flora/light.ts`, `moss-v2`): a carpet of little shoot tips.
+  - **Places and things:**
+    - **Home** (`src/render/dressing/house-door.ts`): out through a glazed veranda and its open door, after Olov's
+      photograph (not stored); the red house front fades in over the cut-away rooms. Prologue and Stormkvällen.
+    - **Brooks** (`water.ts`): Norrland's tea-brown humic water instead of tropical teal.
+    - **Flärken's huts** (`aventyr2/buildings.ts`): plank doors with a Z brace, hinges and a ring handle, a small
+      window, sawn log ends.
+  - **Life and motion:** the ladybird and the ants (`src/render/critters.ts`); dor beetles that walk the forest
+    floor and hurry out of his way (`src/render/lift/beetles.ts`, tested); Mamma's braid (`src/render/braid.ts`);
+    the puzzles' things lean, rock and squash (`src/render/mover-motion.ts`, tested).
+  - **Budgets:** High's render targets 73–79 MB of 80 (the `gpu-memory` suite); JavaScript 514 of 520 KB gzipped,
+    so the next addition of code must find room; draws a few more on Mid and High, far under the budget.
+  - **Not done:** new Blender models. The trees, cones, stones and the eddy stone are already Blender kits, so
+    tonight's work went into how everything is drawn; the code-built buildings behind the play plane are now
+    softened by the lens. The redrawn bark texture of the forest's far trunks made no visible difference and was
+    dropped. When he is far under a brook's surface the near bank can still hide him (rare; the glitter bubble
+    catches him first).
+  - **For Olov:** play a stretch of each adventure on the family devices on High, and run `?bench` and
+    `?bench&nolens` once on the slowest of them: Auto measures the CPU, and the lens is GPU work it cannot see. If
+    the blur is too strong or too weak, it is the two numbers above.
+
 - **Lighter nights, with the mood kept (6 November 2026, cloud session, branch `ccr-77db4123-5s8xa3`).** Olov:
   "Spelet kan vara lite för mörkt när det är som mörkast också i scenerna. Vi måste justera och fixa atmosfären och
   ljuset lite."
@@ -4340,6 +4387,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The graphics pass and the Unravel look (6 Nov) | Olov's request: every visual in both adventures, step by step until 23:00, then "mer likt Unravel" with a larger budget | One cloud session's evening | — / 0 so far | A lens (depth of field, contact shade, film look, near pollen), close materials (ground, boards, turf, bark, granite, grain, moss), the home's doorway, brooks, huts, beetles, braid, puzzle weight. |
 | Lighter nights (6 Nov) | Olov's request: not so dark at the darkest, scenes too, mood kept | Part of one cloud session | — / 0 so far | 52 frames measured before and after; more light on the play plane at night, lighter night water, skies unchanged. |
 | Klonk carved again (6 Nov) | Olov's request: improve Klonk's design after the carving and the poster | Part of one cloud session, Blender 5.2 as a Python module | — / 0 so far | A new build from knife-cut blocks with baked wood and paint; private repository PR #4. |
 | The family's motion (6 Nov) | Olov's request: natural, smooth motion for everyone but Elof | Part of one cloud session | — / 0 so far | Measured frame by frame through every chapter; steps that fit the ground, no snapping, followers that keep up and settle; a few dashes given time. |
@@ -4542,6 +4590,9 @@ The older list, still true where it is not struck:
 - Äventyr 2 from real pictures: Olympia, Flärkenbadet and Billsta are built from the research text and, for
   mormor and morfar's house, one picture; a session that can open photographs (see "Frågor till Olov", 21) could
   match the pitch, the bathing place and the narrow more closely.
+- Blender models for what is still built in code near the play plane: the dead pine Mamma pulls on Myren, the
+  stones on rails before the mountain kit arrives, and Billsta's, Olympia's and the church's buildings.
+- Real-time shadows from the sun (dappled light under the spruces), which Unravel has and the game fakes.
 - The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
   line now).
 
@@ -4621,6 +4672,13 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
       High carries the whole upgrade. In software rendering, Granskogen on High went from 4.5 to 2.5 fps, while
       Low and Mid are as fast as before. `?nolift=flora` (or `fauna`, `atmosphere`, `materials`) shows what each
       area costs.
+    - The defaults: as built.
+24. **The Unravel look (6 November):**
+    - Is the lens's blur right: the far world soft, the near ground very soft, him and the path sharp? It is two
+      numbers in `src/render/depth-blur.ts`.
+    - Should the pollen drifting in front of the lens and the beetles on the forest floor stay?
+    - Run `?bench` and `?bench&nolens` on the slowest family device: if the lens costs too much there, Mid can
+      keep it and High can drop the shade, or the other way round.
     - The defaults: as built.
 
 Choices the session made, for Olov to overrule if he wants:
