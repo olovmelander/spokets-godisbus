@@ -16,6 +16,7 @@ import { forestLandmarks } from '../forest-kit';
 import { fitOutdoorLandmarks, outdoorModels, updateOutdoorModels } from '../outdoor-models';
 import { bank, type Ground } from './ground';
 import { heightAt, landscape, makeKit, type PlaceLook } from './kit';
+import { houseDoor } from './house-door';
 import { lawn } from './lawn';
 import { spang } from './spang';
 import { backdrop, stars } from './sky';
@@ -216,6 +217,9 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   // The village has its houses and its yard behind the street.
   const houses = look.id === 'village' ? fronts(chapter, from, to) : null;
   if (life) group.add(life.group);
+  // At home, the way out of doors is a glazed veranda and a door, and the house is a house from outside.
+  const door = out ? houseDoor(chapter, heightAt(chapter, chapter.outdoors! - 1)) : null;
+  if (door) group.add(door.group);
   const sky = look.id === 'dusk' ? stars() : null;
   if (sky) group.add(sky);
   // A moose in the mist, cranes, smoke from a far chimney: among the far pictures, and only there.
@@ -242,6 +246,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
     update(cameraX, groundY, clock, night = 0, wind, quiet) {
       const still = wind?.still ?? false;
       updateOutdoorModels(outdoor, clock, still);
+      door?.update(cameraX);
       // The wind first: what sways, what leans in front and what flies all go by it. Breaths of wind pass
       // through every place but the mountain, where the wind is the gusts'.
       setWind(clock, still, look.id !== 'mountain' && look.id !== 'dusk', wind?.gust ?? null);
