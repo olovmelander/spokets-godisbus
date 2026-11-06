@@ -70,6 +70,15 @@ import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
 import { photoCut } from './crop';
 
+/** Whether the page asked to leave the lens's effects out (`?nolens`). */
+function lensLeftOut(): boolean {
+  try {
+    return new URLSearchParams(globalThis.location?.search ?? '').has('nolens');
+  } catch {
+    return false;
+  }
+}
+
 /** How much of the film's look the grade gives (Olov, 6 November 2026: "mer likt ... Unravel"). */
 const CINEMA = 0.8;
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
@@ -230,9 +239,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const place = chapter.place ? (PACK.looks.get(chapter.id) ?? PLACES[chapter.place]) : null;
   const grade = place?.grade ?? GARDEN_MORNING;
   const gradePass = hdrAvailable ? createGradePass(grade) : null;
-  const depthBlur = hdrAvailable ? createDepthBlur() : null;
+  // `?nolens` leaves out the lens's depth of field and the shade where things meet, to compare their cost on a
+  // device with `?bench` (the graphics pass of 6 November 2026).
+  const lens = !lensLeftOut();
+  const depthBlur = hdrAvailable && lens ? createDepthBlur() : null;
   // Mid and High: the shade where things meet, from the depth of the picture (./contact-shade.ts).
-  const contactShade = hdrAvailable ? createContactShade() : null;
+  const contactShade = hdrAvailable && lens ? createContactShade() : null;
   const bloom = hdrAvailable ? createBloom() : null;
   // Mid and High: shafts of light at a quarter of the width and height, which the grade adds (./light-shafts.ts).
   const lightShafts = hdrAvailable ? createLightShafts() : null;
