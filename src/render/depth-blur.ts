@@ -78,7 +78,7 @@ const GATHER = /* glsl */ `
   varying vec2 vUv;
   const float GOLDEN = 2.39996323;
   // A bright point counts for more: in the blur it opens into a disc of light.
-  float bright(vec3 c) { return 1.0 + min(3.0 * max(dot(c, vec3(0.2126, 0.7152, 0.0722)) - 1.2, 0.0), 12.0); }
+  float bright(vec3 c) { return 1.0 + min(5.0 * max(dot(c, vec3(0.2126, 0.7152, 0.0722)) - 0.8, 0.0), 16.0); }
   void main() {
     vec4 centre = texture2D(tCoc, vUv);
     float size = abs(centre.a);
