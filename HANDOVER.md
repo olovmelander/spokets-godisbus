@@ -53,8 +53,9 @@
       whether the water and brooks were fixed: the forest's own water colour was olive (`dressing/index.ts`), now
       dark tea; the water is murky (0.42 per EL), so a brook seen from the side is amber near the top and dark
       below, with slow beams of light and drifting specks; it mirrors darker and warmer. And over still water
-      the eye rises 1.6 EL and looks down (`POOL_EYE` in `view.ts`), so the surface reads as water and not as a
-      thin band at his feet; he stays where he was in the picture.
+      the eye rises and looks down (`POOL_EYE` 1.6 EL, and `BROOK_EYE` 3 EL over the forest's brooks, in
+      `view.ts`), so the surface reads as water and not as a thin band at his feet; he stays where he was in the
+      picture.
     - **The Saturday bag** (`art/blender/candy.py`, rebuilt into `art/baked/boot/candy.glb` with Blender 5.2, and
       the stand-in in `saturday-bag.ts`): as the ghost holds it in Pappa's carving and on Olov's poster, pale paper
       with a bunch of painted dots (a big red one, green, orange and red round it), on all four sides, since the
@@ -64,11 +65,54 @@
   - **Life and motion:** the ladybird and the ants (`src/render/critters.ts`); dor beetles that walk the forest
     floor and hurry out of his way (`src/render/lift/beetles.ts`, tested); Mamma's braid (`src/render/braid.ts`);
     the puzzles' things lean, rock and squash (`src/render/mover-motion.ts`, tested).
+  - **Later the same evening, at Olov's word: the SUP, the rain gear, and the story's details.** Olov: "istället för
+    båt ... en stand up paddle board (SUP), familjen äger såna"; "alla karaktärer ska ta på sig regnjacka, stövlar och
+    grejer ... så att det följer storien, och att Bertil tar av sin stövel på riktigt och ger till Elof"; "Sådana
+    detaljer måste vi hitta och fixa och implementera i spelet."
+    - **Mamma's SUP on Flärken** (`paddleBoard()` in `aventyr2/render.ts`, `src/render/paddle.ts`, the spot
+      `sjon:mamma` with `paddles: true`): instead of the rowboat, a teal board with white rails, a grooved deck pad,
+      a handle, a leash and a fin; Mamma stands on it, knees a little bent, and paddles with an orange-bladed paddle
+      held in both hands, the stroke beside the board. Her lines say SUP ("Jag paddlar dit på SUP:en!", "Din SUP
+      blev ju en bro!"); `scripts/voices-aventyr2.json` is regenerated (Äventyr 2 is not recorded yet).
+    - **Rain gear through the storm** (`src/render/rain-gear.ts`, `Rig.dress`, tested in
+      `tests/unit/rain-gear.test.ts`): from Stormkvällen's getting-ready scene, one by one as each speaks (Mamma,
+      Pappa as he shows his lamp, Bertil as he stamps into his boots, Moa, then Elof), and in every chapter of the
+      storm after it, each wears a raincoat of their own colour and rubber boots to below the knee: Mamma red, Pappa
+      navy, Moa yellow, Bertil orange with green boots, Elof bright yellow with red boots. On the models from
+      Blender the coat and boots are shells of the body's own skinned triangles, a little outside the skin, so they
+      follow every movement; on the rehearsal figures the parts take the colours.
+    - **Bertil's boot, for real** (Stormgården): called, he leans down, lifts his right foot and tugs the boot off
+      with both hands; from then on he stands in one boot and a sock, and the boot lies ready on the flooded lawn
+      ("Min stövel blir din båt. Kliv i!") until Elof steps in.
+    - **The story's details, found by reading every line of Äventyr 2 against what is drawn** (14 found; the
+      cheap and visible ones done):
+      - The family's lamps ("Regnrockar på! Vi går ut med lampor."): out in the storm each at a help point holds a
+        lit flashlight, its beam on Elof. In Stormskogen Pappa holds Klonk in his beam until Elof is over. In
+        Stormkvällen Elof carries the flashlight from the table to Pappa, lit, and Pappa has it from then on. On
+        Low the beams are left out.
+      - What he is told to step onto lies ready where he boards it: Bertil's boot, Moa's umbrella on the wall,
+        Älven's raft and the birch leaves.
+      - Älven: Pappa stands up on the bridge ("Jag står här uppe på bron!"; `Spot.standsAt`, picture only), and
+        his scarf hangs down to Elof once lowered.
+      - Stormkvällen: the gust tumbles the little one out of the window after the old one; the candle is lit as
+        Mamma says "Jag tänder ljusen" (the scene's cue `candles`).
+      - Olympia: Bertil kicks the ball Elof rides; the thrown cone flies to the target, which turns white as it
+        hits.
+      - Morgonen: the cup of cocoa is a white mug with a red heart and steam, not a candle.
+      - Left for later (see "Senare"): the cap carried from Stormbyn to the storm's eye, the old one holding out
+        the gift (and its gold paper), Moa in Stormgården's window, Moa and Bertil running ahead in Billsta, and
+        Flärken's door banging on its hinges.
+    - **Also tonight:** the forest's brooks raise the eye 3 EL (the bog's still water 1.6), so the water, its
+      mirror and its far bank read; Myren's two "striped bowls" were the soft tussocks, now widening down into the
+      water as hummocks, and the stripes were the water's mirror stepping, now dithered into fine grain; the
+      village street's puddle is a dark blue mirror; rain lands in rings on the water; Älven's gnawed stumps were
+      rebuilt in Blender 5.2 with tooth marks (the nature kit's other models are unchanged); Flärken's log huts
+      have the wood's grain.
   - **Budgets, widened at Olov's word ("utöka grafikbudgeten rejält"):** High draws up to 3.5 MP (was 2.6), its
     offscreen targets may take 110 MB (was 80) and the whole picture 260 MB (was 220): `quality.ts`,
     `gpu-memory.ts`, `scripts/asset-gpu-estimate.mjs`, the gpu-memory suite and its unit tests. The prologue on a
-    tablet on High measured 93 MB of targets and 130 MB in all. JavaScript is 514 of 520 KB gzipped, so the next
-    addition of code must find room. Draws: a few more on Mid and High, far under the budget.
+    tablet on High measured 93 MB of targets and 130 MB in all. Boot JavaScript is 520 of 540 KB gzipped: the
+    gate went from 520 to 540 KB at the same word, when tonight's additions reached it (plan §6.12). Draws: a few more on Mid and High, far under the budget.
   - **CI and software rendering:** the browser suites draw without a GPU and their walks are timed. The close
     detail is off on Low, the lens gathers from few points and the edges are not smoothed there, so High in
     software rendering is as fast as before (measured alternating with `?nolens`).
@@ -4419,7 +4463,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
-| The graphics pass and the Unravel look (6 Nov) | Olov's request: every visual in both adventures, step by step until 23:00, then "mer likt Unravel" with a larger budget | One cloud session's evening | — / 0 so far | A lens (depth of field, contact shade, film look, near pollen), close materials (ground, boards, turf, bark, granite, grain, moss), the home's doorway, brooks, huts, beetles, braid, puzzle weight. |
+| The graphics pass and the Unravel look (6 Nov) | Olov's request: every visual in both adventures, step by step until 23:00, then "mer likt Unravel" with a larger budget; later the SUP, the rain gear and the story's details, until 02:00 | One cloud session's evening and night | — / 0 so far | A lens (depth of field, contact shade, film look, near pollen), close materials (ground, boards, turf, bark, granite, grain, moss), the home's doorway, brooks, huts, beetles, braid, puzzle weight; Mamma's SUP, rain gear through the storm, Bertil's boot, the family's lamps, nine more story details. |
 | Lighter nights (6 Nov) | Olov's request: not so dark at the darkest, scenes too, mood kept | Part of one cloud session | — / 0 so far | 52 frames measured before and after; more light on the play plane at night, lighter night water, skies unchanged. |
 | Klonk carved again (6 Nov) | Olov's request: improve Klonk's design after the carving and the poster | Part of one cloud session, Blender 5.2 as a Python module | — / 0 so far | A new build from knife-cut blocks with baked wood and paint; private repository PR #4. |
 | The family's motion (6 Nov) | Olov's request: natural, smooth motion for everyone but Elof | Part of one cloud session | — / 0 so far | Measured frame by frame through every chapter; steps that fit the ground, no snapping, followers that keep up and settle; a few dashes given time. |
@@ -4624,14 +4668,17 @@ The older list, still true where it is not struck:
   match the pitch, the bathing place and the narrow more closely.
 - Blender models for what is still built in code near the play plane: the dead pine Mamma pulls on Myren, the
   stones on rails before the mountain kit arrives, and Billsta's, Olympia's and the church's buildings.
-- The forest's brooks: the surface now shows (the eye rises over still water), but the mirrored far scenery ends in
-  straight edges across it, where the mirror's strip ends. The dark underwater frames in the light pass's
+- The forest's brooks: the surface now shows (the eye rises 3 EL over them), but the mirrored far scenery ends in
+  straight edges across it, where the mirror's strip ends. Seen from above, the forest's haze still greys the
+  water a little. The dark underwater frames in the light pass's
   measurements cannot happen in play: the glitter bubble catches him at the surface.
 - Real-time shadows from the sun, which Unravel has; the dappled light on the forest floor is a shader stand-in.
-- Myren: low in the foreground by the water, in Mamma's helper shot at x 83, two green bowl shapes with dark
-  horizontal stripes look odd. Ruled out on 6 November: the soft tussocks' colours, the water's ripples and the
-  tussock movers. Find which mesh they are (bog.ts's dressing is the next place to look) and give them a shape
-  that reads.
+- The story's details still not drawn (found on 6 November by reading Äventyr 2's lines against the picture):
+  - the little one's cap, carried by Elof from Stormbyn's gutter to the storm's eye ("Jag tar med den.");
+  - the old one holding out the golden sweet ("Ditt allra sista."), in gold paper as the line says;
+  - Moa in Stormgården's lit window ("Jag lyser för dig från fönstret!");
+  - Moa and Bertil running ahead in Billsta ("Följ vårt godis! Vi springer före."), who are only heard;
+  - Flärken's door banging on its hinges ("Pang! Dörren…"), which is a sliding plank.
 - The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
   line now).
 
@@ -4718,6 +4765,10 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
     - Should the pollen drifting in front of the lens and the beetles on the forest floor stay?
     - Run `?bench` and `?bench&nolens` on the slowest family device: if the lens costs too much there, Mid can
       keep it and High can drop the shade, or the other way round.
+    - The rain gear's colours (Mamma red, Pappa navy, Moa yellow, Bertil orange with green boots, Elof yellow
+      with red boots): are they the family's own, or should they be? It is one table in `src/render/rain-gear.ts`.
+    - Mamma's SUP is teal with white rails and an orange paddle: the family's own boards' colours can go in
+      `paddleBoard()` (`aventyr2/render.ts`) and `src/render/paddle.ts`.
     - The defaults: as built.
 
 Choices the session made, for Olov to overrule if he wants:
