@@ -653,10 +653,12 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   // A rope or Pappa's scarf from above down to his hands, while he rides on it.
   const ropes = (storm?.ropes ?? []).map((def) => {
     const ride = chapter.rides?.find((r) => r.id === def.ride);
+    // Whoever holds it lowers it first ("Jag sänker ner min halsduk."): it hangs down to where he takes hold.
+    const boarding = chapter.spots?.find((spot) => spot.ride === def.ride);
     const mesh = new Mesh(new CylinderGeometry(0.09, 0.09, 1, 6).translate(0, 0.5, 0), solid(def.colour ?? '#c8372a', 0.9));
     mesh.visible = false;
     group.add(mesh);
-    return { def, ride, mesh };
+    return { def, ride, boarding, mesh };
   });
 
   const owlWings: Object3D[] = [];
@@ -838,10 +840,12 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       }
       for (const rope of ropes) {
         const on = riding && !!rope.ride && x >= Math.min(rope.ride.from.x, rope.ride.to.x) - 0.3 && x <= Math.max(rope.ride.from.x, rope.ride.to.x) + 0.3;
-        rope.mesh.visible = on;
-        if (!on) continue;
-        // From where it is held to his raised hands.
-        const hx = x, hy = y + 1.05, hz = 0.1, fz = rope.def.z ?? -1;
+        const hangs = !on && !!rope.ride && !!rope.boarding && !flags.has(rope.boarding.id) && (rope.boarding.needs === undefined || flags.has(rope.boarding.needs));
+        rope.mesh.visible = on || hangs;
+        if (!on && !hangs) continue;
+        // From where it is held to his raised hands; lowered and waiting, to just over where he takes hold, swaying.
+        const sway = hangs && !still ? Math.sin(clock * 1.6) * 0.25 : 0;
+        const hx = hangs ? rope.ride!.from.x + 0.3 + sway : x, hy = hangs ? rope.ride!.from.y + 1.4 : y + 1.05, hz = 0.1, fz = rope.def.z ?? -1;
         const dx = rope.def.from.x - hx, dy = rope.def.from.y - hy, dz = fz - hz;
         const length = Math.hypot(dx, dy, dz);
         rope.mesh.position.set(hx, hy, hz);

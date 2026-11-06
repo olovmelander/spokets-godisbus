@@ -674,12 +674,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // figures; a blank marker alone cannot explain who helped or connect these crossings to the opening.
   const family: Relative[] = [];
   const stands = chapter.prologue ? [] : [
-    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles })),
-    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false })),
+    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt })),
+    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined })),
   ].filter((stand) => stand.look === 'sign' && stand.prop !== null && personFor(stand.word) !== null);
   for (const stand of stands) {
     const who = personFor(stand.word)!, rig = createRehearsalRig(who);
     stand.prop!.group.clear(); stand.prop!.group.add(rig.group);
+    if (stand.standsAt) stand.prop!.group.position.set(stand.standsAt.x, stand.standsAt.y, stand.standsAt.z);
     // Whoever stands on a paddle board holds a paddle (./paddle.ts), in the world, gripped each frame.
     const paddle = stand.paddles ? createPaddle(rig.height) : undefined;
     if (paddle) scene.add(paddle.mesh);

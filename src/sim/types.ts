@@ -129,6 +129,11 @@ export interface Spot {
   seated?: boolean;
   /** For the picture: whoever of the family is shown here stands on a paddle board and paddles. */
   paddles?: boolean;
+  /**
+   * For the picture: where whoever of the family is shown here stands, when it is not by the spot itself (Pappa up
+   * on the bridge, called from the bank below). `z` is behind the play plane.
+   */
+  standsAt?: { x: number; y: number; z: number };
   verb: 'turn' | 'take' | 'call' | 'give';
   /** A flag that has to be set before it can be used. A thing on a rail sets `placed:<its id>` once in place. */
   needs?: string;
