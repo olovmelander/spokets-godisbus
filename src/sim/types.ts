@@ -647,7 +647,7 @@ export interface ChapterData {
    * For the picture only: things that stand about in a room, behind the play plane: a table, a chair. Where
    * an actor of a scene sits or stands at them is the scene's business.
    */
-  furniture?: { look: 'table' | 'chair' | 'stool'; at: Vec; z: number; face?: number }[];
+  furniture?: { look: 'table' | 'chair' | 'stool'; at: Vec; z: number; face?: number; cloth?: string }[];
   /**
    * For the picture only: from this x the chapter is out of doors: the house's wall gives way to the
    * garden's far scenery. Indoors before it.

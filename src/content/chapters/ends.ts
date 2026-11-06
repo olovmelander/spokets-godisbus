@@ -168,7 +168,7 @@ export const epilog: ChapterData = {
   // The first trägubbe has its place again, first in the row.
   shelf: { x: 34, y: 5.4, filled: true },
   // The party's table, behind the family where they stand to be given their candy.
-  furniture: [{ look: 'table', at: { x: 13.4, y: 0 }, z: -3.1 }],
+  furniture: [{ look: 'table', at: { x: 13.4, y: 0 }, z: -3.1, cloth: '#f1ead8' }],
   epilogue: { window: { x: 40, y: 3.43, z: -8.3 } },
   spawn: { x: 1, y: 0.01 },
   // Where and when, as the evening opens (./cards.ts).

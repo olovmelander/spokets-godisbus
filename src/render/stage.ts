@@ -467,6 +467,14 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
     made.position.set(piece.at.x, piece.at.y, piece.z);
     made.rotation.y = yaw(piece.face ?? 0.25);
     made.name = `furniture:${piece.look}`;
+    // A party's cloth over a table: over its top and hanging a little down its sides.
+    if (piece.cloth && piece.look === 'table') {
+      const cloth = new Mesh(new BoxGeometry(5.3, 0.5, 2.5), new MeshStandardMaterial({ color: piece.cloth, roughness: 0.9 }));
+      // Beside the table, not in it: the room kit's model takes the table's own place (its children).
+      cloth.position.set(piece.at.x, piece.at.y + 1.43, piece.z);
+      cloth.rotation.y = made.rotation.y;
+      group.add(cloth);
+    }
     group.add(made);
   }
 
