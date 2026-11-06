@@ -54,8 +54,8 @@ function scatter(seed: number): () => number {
   };
 }
 
-/** Where Elof is, for those who look at him, and how far the story has come. */
-const elof: { x: number; flags: ReadonlySet<string> | null } = { x: 0, flags: null };
+/** Where Elof is, for those who look at him, how far the story has come, and whether the picture keeps still. */
+const elof: { x: number; flags: ReadonlySet<string> | null; still: boolean } = { x: 0, flags: null, still: false };
 /** The flag that puts the ladder's ledge over the ditch at Billsta. */
 const LADDER_LAID = 'bi:ladder';
 
@@ -224,6 +224,91 @@ const RAIN_MAX = 420;
 const RAIN_FOR = { low: 150, mid: 290, high: RAIN_MAX } as const;
 /** The box of rain round the camera: how wide, how tall, and from how far behind the play plane to how near. */
 const BOX = { x: 34, y: 22, back: -8, front: 4 };
+
+/** The flag at which the storm blows the window open: the gust in Stormkvällen's `fonstret`. */
+const WINDOW_BURST = 'gust';
+/** How far, in radians, its halves stand open in the wind, and how far they bang to and fro. */
+const WINDOW_OPEN = 1.1;
+const WINDOW_FLAP = 0.24;
+
+/**
+ * The window the storm blows open (`house.opens`): its two halves, hinged at the jambs, open outward as Swedish
+ * windows do, through the opening in the wall (src/render/dressing/built.ts). While the hook holds they rattle now
+ * and then. At the gust they fly open, overshoot and bang to and fro in the wind, and the hook hangs loose; when
+ * the decor's `until` flag is set (Pappa shuts it) they swing to, and the hook is on again. With less motion they
+ * only stand open. A game taken up later finds them as the story left them. `story` is where it reads the flags and
+ * whether the picture keeps still: the storm's own, set every frame.
+ */
+export function casement(spot: Spot, story: { readonly flags: ReadonlySet<string> | null; readonly still: boolean } = elof): SpotProp {
+  const root = new Group();
+  root.position.set(spot.at.x, spot.at.y, -9.05);
+  const wide = 2.55, tall = 5.2;
+  const paint = solid('#c3b498', 0.82);
+  // The storm's own pane, put on it with the room's other windows' glass by name, and lit by the same flashes.
+  const glass = new MeshBasicMaterial({ name: 'window-glass', fog: false });
+  const brass = solid('#c8a040', 0.35, { metalness: 0.6 });
+  const halves = [-1, 1].map((side) => {
+    // The left half hangs at the left jamb and reaches right, and the other way round.
+    const hinge = new Group();
+    hinge.position.x = side * wide;
+    const reach = -side;
+    const parts = [
+      new BoxGeometry(0.16, tall, 0.1).translate(reach * 0.08, 0, 0),
+      new BoxGeometry(0.16, tall, 0.1).translate(reach * (wide - 0.08), 0, 0),
+      new BoxGeometry(wide, 0.16, 0.1).translate(reach * wide / 2, tall / 2 - 0.08, 0),
+      new BoxGeometry(wide, 0.16, 0.1).translate(reach * wide / 2, -tall / 2 + 0.08, 0),
+      new BoxGeometry(wide, 0.08, 0.06).translate(reach * wide / 2, 0, 0),
+    ];
+    hinge.add(new Mesh(mergeGeometries(parts), paint));
+    parts.forEach((part) => part.dispose());
+    const pane = new PlaneGeometry(wide - 0.2, tall - 0.2).translate(reach * wide / 2, 0, -0.01);
+    // Each half shows its half of the first window's part of the storm, as the room's other panes do.
+    const uv = pane.getAttribute('uv');
+    for (let i = 0; i < uv.count; i++) uv.setX(i, (uv.getX(i) + (side > 0 ? 1 : 0)) / 6);
+    hinge.add(new Mesh(pane, glass));
+    root.add(hinge);
+    return { hinge, side, angle: 0, speed: 0, phase: side > 0 ? 1.7 : 0 };
+  });
+  // The window hook, on the left half's meeting edge: across onto the right half while it holds.
+  const hook = new Group();
+  hook.position.set(-0.04, 0.35, 0.09);
+  const bar = new Mesh(new BoxGeometry(0.5, 0.05, 0.05).translate(0.25, 0, 0), brass);
+  hook.add(bar);
+  halves[0]!.hinge.add(hook);
+  hook.position.x += wide;
+  let known = false;
+  return {
+    group: root,
+    update(used, clock, dt) {
+      const flags = story.flags;
+      if (!flags) return;
+      const burst = flags.has(WINDOW_BURST);
+      const open = burst && !used;
+      const still = story.still;
+      for (const half of halves) {
+        const want = open ? WINDOW_OPEN + (still ? 0 : WINDOW_FLAP * Math.sin(clock * 2.3 + half.phase) + 0.08 * Math.sin(clock * 5.3 + half.phase)) : 0;
+        if (!known || still) {
+          half.angle = want;
+          half.speed = 0;
+        } else {
+          // A spring that overshoots as it flies open, and settles without a bounce as it is pulled to.
+          const stiff = open ? 60 : 30, damping = open ? 4.5 : 2 * Math.sqrt(30);
+          for (let left = Math.min(dt, 0.1); left > 0; left -= 0.02) {
+            const step = Math.min(0.02, left);
+            half.speed += ((want - half.angle) * stiff - half.speed * damping) * step;
+            half.angle += half.speed * step;
+          }
+          if (!open && half.angle < 0) { half.angle = 0; half.speed = 0; }
+        }
+        // While the hook holds, a shudder now and then in the strongest gusts.
+        const rattle = burst || still ? 0 : 0.015 * Math.abs(Math.sin(clock * 19 + half.phase)) * Math.max(0, Math.sin(clock * 0.9)) ** 8;
+        half.hinge.rotation.y = -half.side * (half.angle + rattle);
+      }
+      hook.rotation.z = open ? -1.35 + (still ? 0 : 0.18 * Math.sin(clock * 3.1)) : 0;
+      known = true;
+    },
+  };
+}
 
 /** The night sky in a window during the storm: dark cloud, and rain running down the glass. */
 function stormPane(): CanvasTexture {
@@ -546,6 +631,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     update({ dt, clock, flags, x, y, camera, still, tier, riding }: ExtraFrame) {
       elof.x = x;
       elof.flags = flags;
+      elof.still = still;
       drift?.(dt, still);
       // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him.
       const beat = still ? 0.2 : 0.2 + 0.46 * Math.sin(clock * 5.4);
@@ -1369,6 +1455,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       group.add(cap, ball(0.06, solid('#f4efe4', 0.9), worn ? 0 : 0.17, worn ? 0.32 : 0.2, 0));
       return standing(spot, group, (clock) => { group.position.y = worn ? gladHop(clock) : 0.04 * Math.sin(clock * 3); });
     },
+    casement: (spot) => casement(spot),
     latch: (spot) => {
       const group = new Group();
       const brass = solid('#c8a040', 0.35, { metalness: 0.6 });

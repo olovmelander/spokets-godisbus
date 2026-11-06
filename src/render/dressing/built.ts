@@ -1,6 +1,6 @@
 import {
   AdditiveBlending, BoxGeometry, Color, ConeGeometry, CylinderGeometry, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial,
-  Object3D, PlaneGeometry, SphereGeometry,
+  Object3D, Path, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, type BufferGeometry,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData } from '../../sim/types';
@@ -8,6 +8,34 @@ import { outlook, outlookPane } from '../backdrop';
 import { BOARD, boards } from './ground';
 import { drawn, heightAt } from './kit';
 import { roomThings } from '../home-room';
+
+/** Half the opening that a window which opens cuts through the wall: a little more than its glass, under its frame. */
+export const OPENING = { x: 2.6, y: 2.65 } as const;
+
+/**
+ * The room's wall, as a plane `wide` by `tall`, with an opening for a window that opens (its middle relative to
+ * the wall's), or none. Its texture lies as on a plane, 0 to 1 across.
+ */
+function wallWithOpening(wide: number, tall: number, opening: { x: number; y: number } | null): BufferGeometry {
+  if (!opening) return new PlaneGeometry(wide, tall);
+  const outline = new Shape();
+  outline.moveTo(-wide / 2, -tall / 2);
+  outline.lineTo(wide / 2, -tall / 2);
+  outline.lineTo(wide / 2, tall / 2);
+  outline.lineTo(-wide / 2, tall / 2);
+  outline.closePath();
+  const hole = new Path();
+  hole.moveTo(opening.x - OPENING.x, opening.y - OPENING.y);
+  hole.lineTo(opening.x - OPENING.x, opening.y + OPENING.y);
+  hole.lineTo(opening.x + OPENING.x, opening.y + OPENING.y);
+  hole.lineTo(opening.x + OPENING.x, opening.y - OPENING.y);
+  hole.closePath();
+  outline.holes.push(hole);
+  const geometry = new ShapeGeometry(outline);
+  const position = geometry.getAttribute('position'), uv = geometry.getAttribute('uv');
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, position.getX(i) / wide + 0.5, position.getY(i) / tall + 0.5);
+  return geometry;
+}
 
 // --- the house and the deck ---------------------------------------------------------------------------------
 
@@ -42,7 +70,9 @@ export function built(chapter: ChapterData, indoors = false): Group {
     panels.repeat.set(long / 12, 1);
     // In the evening the room is lit by candles: the wall is dim and warm, and the windows are dark.
     const evening = chapter.night !== undefined;
-    const wall = new Mesh(new PlaneGeometry(long, 26), new MeshBasicMaterial({ map: panels, color: evening ? '#8c7252' : '#ffffff' }));
+    const wall = new Mesh(wallWithOpening(long, 26, house.opens === undefined ? null : {
+      x: house.opens - (house.from + house.to) / 2, y: heightAt(chapter, house.opens) + 6 - (floor + 11),
+    }), new MeshBasicMaterial({ map: panels, color: evening ? '#8c7252' : '#ffffff' }));
     wall.position.set((house.from + house.to) / 2, floor + 11, -9);
     wall.renderOrder = -2;
     group.add(wall);
@@ -72,9 +102,17 @@ export function built(chapter: ChapterData, indoors = false): Group {
       // Solid painted joinery catches the room's light. One merged draw includes the projecting sill;
       // the glass keeps the same opening and the story's window positions stay exactly where they were.
       const base = heightAt(chapter, x);
-      const bars = [[0, 2.6, 5.4, 0.3], [0, -2.6, 5.4, 0.3], [-2.55, 0, 0.3, 5.5], [2.55, 0, 0.3, 5.5], [0, 0, 0.18, 5.2], [0, 0, 5.1, 0.18]]
+      // The window that opens has no fixed cross: its two halves carry their own (the chapter's `casement`).
+      const opens = x === house.opens;
+      const bars = [[0, 2.6, 5.4, 0.3], [0, -2.6, 5.4, 0.3], [-2.55, 0, 0.3, 5.5], [2.55, 0, 0.3, 5.5], ...(opens ? [] : [[0, 0, 0.18, 5.2], [0, 0, 5.1, 0.18]])]
         .map(([dx, dy, w, h]) => new BoxGeometry(w!, h!, 0.16).translate(x + dx!, base + 6 + dy!, -8.88));
       bars.push(new BoxGeometry(5.8, 0.18, 1.15).translate(x, base + 3.27, -8.48));
+      // Its opening goes through the wall: the jambs and the head show their depth when the halves stand open.
+      if (opens) {
+        for (const [dx, dy, w, h] of [[-OPENING.x - 0.06, 0, 0.12, OPENING.y * 2], [OPENING.x + 0.06, 0, 0.12, OPENING.y * 2], [0, OPENING.y + 0.06, OPENING.x * 2 + 0.24, 0.12], [0, -OPENING.y - 0.06, OPENING.x * 2 + 0.24, 0.12]] as const) {
+          bars.push(new BoxGeometry(w, h, 0.5).translate(x + dx, base + 6 + dy, -9.25));
+        }
+      }
       group.add(new Mesh(mergeGeometries(bars), frame));
       bars.forEach((part) => part.dispose());
     }
@@ -178,11 +216,14 @@ export function built(chapter: ChapterData, indoors = false): Group {
     // own part of the sky.
     const glass = new MeshBasicMaterial({ map: sky ?? outlook(), fog: false, name: 'window-glass' });
     for (const [i, x] of house.windows.entries()) {
-      const shape = sky ? new PlaneGeometry(5.1, 5.2) : outlookPane(5.1, 5.2, i);
+      // Through the window that opens, the night is further off and wide enough to fill the opening from any side.
+      const opens = x === house.opens;
+      const shape = sky ? new PlaneGeometry(opens ? 14 : 5.1, opens ? 12 : 5.2) : outlookPane(opens ? 14 : 5.1, opens ? 12 : 5.2, i);
       const uv = shape.getAttribute('uv');
       if (sky) for (let j = 0; j < uv.count; j++) uv.setX(j, (i + uv.getX(j)) / house.windows.length);
       const pane = new Mesh(shape, glass);
-      pane.position.set(x, heightAt(chapter, x) + 6, -8.95);
+      pane.position.set(x, heightAt(chapter, x) + 6, opens ? -12.5 : -8.95);
+      if (opens) pane.name = 'window-outside';
       group.add(pane);
     }
   } else if (house) {

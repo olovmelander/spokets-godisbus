@@ -105,8 +105,11 @@ committed. Anything comes out again if they or Elof's parents ask.
 1. **Lördagskväll.** The time card. Elof is a boy among small things. Rain lashes the windows; the lights go out.
    Mamma lights candles, Pappa finds the flashlight.
 2. **Godnatt.** At Pappa's shelf Elof says goodnight to his own little trägubbe and the old one.
-3. **Fönstret slår upp** (held scene). A gust bursts the window; the little one is swept out into the dark, and
-   the old one leaps after it. Pappa sees only the open window and the empty places.
+3. **Fönstret slår upp** (held scene). The window by the shelf rattles on its hook all evening. A gust bursts it:
+   its two halves fly outward, as Swedish windows open, and bang in the wind, the hook hanging loose (6 November
+   2026; before, the window never moved). The little one is swept out into the dark, and the old one leaps after
+   it. Pappa sees only the open window and the empty places, and in the next scene he pulls it to. The morning
+   after, he and Elof mend its hook.
 4. **Klonk's star** (held scene). Pappa shuts the burst window and Mamma looks out after the figures, their backs
    to the room. With no grown-up looking, Klonk wakes on the shelf, hops down to Elof's feet and opens its carved
    bag: the star rises out of it. Nothing lies waiting on the floor before this (5 November 2026: the star had lain
