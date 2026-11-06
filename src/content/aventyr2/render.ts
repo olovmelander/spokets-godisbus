@@ -1903,16 +1903,16 @@ function aftermath(): SpotProp {
   const WALL = -8.5;
   const SILL = 3.2;
   const coats: BufferGeometry[] = [];
-  // The very coats and boots they wore through the storm (../../render/rain-gear.ts), Elof's smallest, at the end.
-  const WHO = ['pappa', 'mamma', 'moa', 'bertil', 'elof'] as const;
-  const COATS = WHO.map((who, i) => ({ x: [15.9, 17, 18.1, 19, 19.85][i]!, tall: [2.7, 2.5, 1.9, 1.5, 1.2][i]!, colour: RAIN_GEAR[who].coat }));
-  coats.push(paint(new BoxGeometry(5.1, 0.16, 0.16).translate(17.9, 5.6, WALL - 0.24), '#6a4a2c'));
+  // The very coats and boots they wore through the storm (../../render/rain-gear.ts). Elof, small, went in his own.
+  const WHO = ['pappa', 'mamma', 'moa', 'bertil'] as const;
+  const COATS = WHO.map((who, i) => ({ x: [15.9, 17, 18.1, 19][i]!, tall: [2.7, 2.5, 1.9, 1.5][i]!, colour: RAIN_GEAR[who].coat }));
+  coats.push(paint(new BoxGeometry(4.2, 0.16, 0.16).translate(17.45, 5.6, WALL - 0.24), '#6a4a2c'));
   for (const coat of COATS) {
     const mid = 5.45 - coat.tall / 2;
     coats.push(paint(new CylinderGeometry(0.3, 0.56, coat.tall, 10).scale(1, 1, 0.36).translate(coat.x, mid, WALL), coat.colour));
     coats.push(paint(new SphereGeometry(0.27, 10, 8).scale(1, 0.85, 0.6).translate(coat.x, 5.5, WALL), coat.colour));
   }
-  const BOOTS = WHO.map((who, i) => ({ x: [15.8, 16.9, 18, 19, 19.9][i]!, colour: RAIN_GEAR[who].boots }));
+  const BOOTS = WHO.map((who, i) => ({ x: [15.8, 16.9, 18, 19][i]!, colour: RAIN_GEAR[who].boots }));
   for (const boot of BOOTS) {
     for (const side of [-0.2, 0.2]) {
       coats.push(paint(new BoxGeometry(0.3, 0.74, 0.26).translate(boot.x + side, 0.37, WALL + 1), boot.colour));
@@ -1922,7 +1922,7 @@ function aftermath(): SpotProp {
   group.add(new Mesh(mergeGeometries(coats), new MeshStandardMaterial({ vertexColors: true, roughness: 0.42 })));
   group.add(roomThings({ sofa: 44.5, lamp: 36.4, plant: 55, drawings: 0, rug: 10, blanket: true }));
   // The pool they stand in: flat, and giving back the room's light.
-  const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(3.3, 1, 1.1).translate(17.8, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
+  const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(17.4, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
   group.add(pool);
   // The sun on the floor, one window's worth from each, lying a little aslant.
   const light = new PlaneGeometry(4.8, 10.5, 1, 1).rotateX(-Math.PI / 2);

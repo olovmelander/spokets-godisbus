@@ -1549,7 +1549,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       dressFor(one.rig, one.who, flags, sceneFrame ?? null);
       bareFor(one.rig, one.who, flags);
     }
-    if (playerBody) dressFor(playerBody, 'elof', flags, sceneFrame ?? null);
     if (chapter.id === 'norrsken') {
       const carving = scene.getObjectByName('mover:tragubbe');
       if (carving && flags.has('taste') && ghostState && !homeJourney) carving.position.set(ghostState.x - .5, ghostState.y, 0);
