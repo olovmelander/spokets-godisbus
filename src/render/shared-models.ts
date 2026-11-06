@@ -1,6 +1,7 @@
 import { Box3, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Vector3 } from 'three';
 import type { Assets } from './assets';
 import { forestKit } from './forest-kit';
+import { weathered } from './weathered';
 
 /** Authored models shared by both adventures. Only files actually used in this scene are fetched. */
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
@@ -26,6 +27,9 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
   lekstuga: ['private', 'lekstuga'],
   'lekstuga-hus': ['private', 'lekstuga'],
 };
+
+/** What stands outdoors and is shown weathered: the built things, the nature kit, and Olympia's hall and stand. */
+const WEATHERED = new Set([...BUILT, ...NATURE, 'olympia-hall', 'olympia-stand']);
 
 const installed = new WeakSet<Object3D>();
 
@@ -122,6 +126,8 @@ export async function installSharedModels(assets: Assets, scene: Object3D, stand
       copy.position.set(block.x, block.y - block.height / 2, block.z ?? 0);
     }
     place.add(copy);
+    // The kit's outdoor things have a little weather on them seen close (./weathered.ts).
+    if (WEATHERED.has(name)) weathered(copy);
     if (place.userData.warm) warmed(copy);
     // Clone these too: repeated houses must not steal each other's sign or lit windows.
     for (const [suffix, colour] of [['name', '#e8ecec'], ['glow', '#ffc870']] as const) {

@@ -42,7 +42,7 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
   patched.add(material);
   const before = material.onBeforeCompile;
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:ground-detail-v5-${kind}`;
+  material.customProgramCacheKey = () => `${key()}:ground-detail-v6-${kind}`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.closeDetail = CLOSE_DETAIL;
@@ -159,6 +159,25 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
         groundColour *= 1.0 - 0.18 * smoothstep(0.75, 0.9, groundNoise(mat2(0.8, -0.6, 0.6, 0.8) * at * 11.0)) * groundNear;
         `}
         diffuseColor.rgb = mix(diffuseColor.rgb, groundColour, groundFlat);
+        ${kind === 'soft' ? /* glsl */ `
+        // A steep bank of moss and soil, seen from the side or the front: the earth shows through the moss in
+        // patches, small stones sit in it, roots run down it, and its foot is darker and damp.
+        float groundSteep = 1.0 - groundFlat;
+        if (groundSteep > 0.01) {
+          vec2 bank = vec2(abs(groundUp.x) > abs(groundUp.z) ? groundDetailAt.z : groundDetailAt.x, groundDetailAt.y);
+          float bankPixel = length(fwidth(bank));
+          float bankNear = 1.0 - smoothstep(0.03, 0.12, bankPixel);
+          vec3 bankColour = diffuseColor.rgb * (0.82 + 0.3 * groundNoise(bank * vec2(0.8, 1.6) + 2.0));
+          float soil = smoothstep(0.5, 0.66, groundNoise(bank * vec2(1.1, 2.4) + 13.0));
+          bankColour = mix(bankColour, vec3(0.16, 0.11, 0.07) * (0.8 + 0.4 * groundNoise(bank * 9.0)), 0.75 * soil);
+          float stone = smoothstep(0.78, 0.86, groundNoise(bank * vec2(4.2, 5.0) + 31.0)) * bankNear;
+          bankColour = mix(bankColour, bankColour * 1.35 + vec3(0.02), 0.5 * stone);
+          float root = (1.0 - smoothstep(0.0, 0.04, abs(groundNoise(vec2(bank.x * 3.0, bank.y * 0.6) + 7.0) - 0.5)))
+            * smoothstep(0.45, 0.7, groundNoise(bank * 0.9 + 21.0)) * bankNear;
+          bankColour = mix(bankColour, vec3(0.2, 0.14, 0.09), 0.7 * root);
+          bankColour *= 1.0 + (fine - 0.5) * 0.25 * bankNear;
+          diffuseColor.rgb = mix(diffuseColor.rgb, bankColour, groundSteep);
+        }` : ''}
       }`);
   };
   material.needsUpdate = true;

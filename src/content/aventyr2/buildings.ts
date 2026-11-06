@@ -5,6 +5,7 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Storm } from '../../sim/types';
 import { paintedWood } from '../../render/painted-wood';
+import { STONE, barkDetail, barky } from '../../render/bark-detail';
 
 /**
  * The big things of Äventyr 2's places, built in code (docs/aventyr-2.md): Billsta's white house with its two
@@ -734,6 +735,8 @@ const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGe
   church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce,
 };
 
+/** What is built of stone: the bridge's piers and deck. */
+const STONY = new Set<BuildingDef['kind']>(['bridge']);
 /** What is built of painted boards. */
 const PAINTED = new Set<BuildingDef['kind']>(['villa', 'barn', 'store', 'clubhouse', 'church', 'woodshed', 'lodge', 'stand']);
 
@@ -746,7 +749,9 @@ export function building(def: BuildingDef): Building {
   const material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.85 });
   // Houses, barns and halls of painted boards have their grain and weather seen close (../../render/painted-wood.ts).
   if (PAINTED.has(def.kind)) paintedWood(material);
-  group.add(new Mesh(mergeGeometries(parts), material));
+  // What is built of stone has the granite's grain, rain streaks and lichen (../../render/bark-detail.ts).
+  if (STONY.has(def.kind)) barkDetail(material);
+  group.add(new Mesh(mergeGeometries(STONY.has(def.kind) ? parts.map((part) => barky(part, STONE)) : parts), material));
   let paneMaterial: MeshBasicMaterial | null = null;
   if (panes.length) {
     // Where its windows are, for what their light falls on (../../render/lift/materials/puddles.ts), which has
