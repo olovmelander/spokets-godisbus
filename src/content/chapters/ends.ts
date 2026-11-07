@@ -145,6 +145,9 @@ const GUESTS = [
   { id: 'bertil', x: 19, word: 'giveBertil' },
 ] as const;
 
+/** The party table's top (`furniture`, below, and the room's table in ../../render/stage.ts): its two ends and middle. */
+const TABLE_HOP = { left: 11.4, middle: 13.4, right: 15.4, top: 1.68, z: -3.1 };
+
 /**
  * Epilog: Godiskalaset, on the glazed veranda at nine in the evening.
  * 1. **Elof hands out candy** (P18): he chooses a candy and then Mamma, Pappa, Moa, Bertil or the ghost.
@@ -171,8 +174,20 @@ export const epilog: ChapterData = {
   furniture: [{ look: 'table', at: { x: 13.4, y: 0 }, z: -3.1, cloth: '#f1ead8' }],
   epilogue: { window: { x: 40, y: 3.43, z: -8.3 } },
   spawn: { x: 1, y: 0.01 },
-  // Where and when, as the evening opens (./cards.ts).
-  scenes: [timeCard('epilog', 1)],
+  scenes: [
+    // Where and when, as the evening opens (./cards.ts).
+    timeCard('epilog', 1),
+    // The naming: given its candy, the ghost hops up onto the party table and across it, klonk, klonk, and down again
+    // to where it waits for the carving. He is free all the while.
+    { id: 'klonk-table', on: 'partied', until: 'knife', seconds: 5.6, stage: { actors: { ghost: [
+      { at: 0, x: 23.4, y: 0, z: 0, move: 0.01, act: 'hop' },
+      { at: 0.05, x: TABLE_HOP.right, y: TABLE_HOP.top, z: TABLE_HOP.z, move: 1.1 },
+      { at: 1.2, x: TABLE_HOP.middle, move: 1 },
+      { at: 2.2, x: TABLE_HOP.left, move: 1 },
+      { at: 3.4, x: 26.6, y: 0, z: 0, move: 2 },
+      { at: 5.4, act: 'tilt' },
+    ] } } },
+  ],
   goalX: 53,
   ground: [
     { x: -3, y: 9 },
