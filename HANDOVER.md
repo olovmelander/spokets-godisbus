@@ -1,5 +1,38 @@
 # Handover
 
+## State (7 November 2026, afternoon)
+
+- **"How can we make the water feel more alive with small movement and waves, and more big forest animals walking
+  as silhouettes" (Olov, 7 November 2026; the same cloud session, PR #235).**
+  - **Living water** (`src/render/water.ts`):
+    - **Rings:** rings spread where things touch the water: his steps in a puddle, a landing, the wake behind what rides
+      or floats, and now and then a fish rising (up to eight at a time).
+    - **Drift and swell:** needles and birch leaves drift slowly on still pools, and a slow swell moves over the lake
+      and the river. Each water kind sets its own `drift` and `swell`.
+    - **Less motion:** with it on, the water stays still.
+    - **Check:** `tests/browser/water-light.mjs` checks the rings against a twin water.
+  - **Big animals in the far scenery** (`art/blender/life.py`, rendered in Blender to `art/baked/boot/life.glb`; the
+    atlas is now 1024×1024; `src/content/life.ts` `WALKERS`; `src/render/life-plan.ts`):
+    - **The animals:** walk cycles for a moose cow with her calf at her heels, a roe deer that walks and stops to look,
+      and a bear, beside the bull moose. Each has its own gait, speed and size.
+    - **Where they walk:**
+      - Granskogen: the cow and calf at x 46, the deer at 95, the bear at 178 and the bull at 194.6.
+      - Gården: a roe deer on the neighbours' meadow at 6.5.
+    - **Forcing one:** `?debug&life=pair|deer|bear|moose`.
+  - **Not finished: in Granskogen the animals do not read in the picture yet.** On Myren the bull shows clearly. In
+    Granskogen, captures showed nothing, not even the old forest moose:
+    - **The cause:** the forest's slot (z -54) lay behind two far pictures' bands of mist, and its ink was mixed 30 %
+      toward the bright forest haze, so the animals were the colour of the gaps they crossed.
+    - **The last change:** the slot moves to z -40, between the -46 and -32 pictures, with 12 % haze and darker inks
+      (like the bog's bull).
+    - **Status:** this passes the tests but was not confirmed in a picture before the session ended (a phone-sized
+      capture at x 47 showed no animal in its three frames).
+    - **First check tomorrow:** Granskogen at x 47 with `?debug&life=pair`, at 95 with `life=deer` and at 178 with
+      `life=bear`, and Gården's deer at x 8.
+  - **Size:** JS 539.8 of 540 KB, boot 4540 of 4608 KB. The next feature in the main bundle needs the JS gate raised
+    (plan §6.12) or code moved to a lazily loaded chunk.
+  - **The next step needs:** nothing from Olov's computer.
+
 ## State (7 November 2026, midday)
 
 - **"Continue with everything you mention and recommend improving" (Olov, 7 November 2026; the same cloud session,
@@ -4311,6 +4344,10 @@
 
 ## Next
 
+**First: make Granskogen's big animals read in the picture** (see the afternoon's state above). Capture them in the
+game, with `?dev&debug&tier=high&course=granskog&at=47,4.1&life=pair`, and tune the forest slot (`src/content/life.ts`):
+its depth, haze, inks and sizes, against the bog's bull, which reads well. Then check Gården's deer the same way.
+
 **PR #235 (the graphics pass, the Unravel look, the SUP, the rain gear and the story's details), for Olov to judge
 and merge.** On the family devices, on High:
 - the lens: is the blur right (the far world soft, the near ground very soft, him and the path sharp)?
@@ -4735,6 +4772,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Living water and big animals (7 Nov, afternoon) | Olov's request: water that moves, with small waves; more big forest animals walking as silhouettes | The same cloud session's afternoon | — / 0 so far | Rings, drifting needles and leaves, a swell on lakes and rivers; a moose cow and calf, a roe deer and a bear rendered in Blender for the far scenery. The forest animals don't read in the picture yet (first in Next). |
 | The graphics pass and the Unravel look (6 Nov) | Olov's request: every visual in both adventures, step by step until 23:00, then "mer likt Unravel" with a larger budget; later the SUP, the rain gear and the story's details, until 02:00 | One cloud session's evening and night | — / 0 so far | A lens (depth of field, contact shade, film look, near pollen), close materials (ground, boards, turf, bark, granite, grain, moss), the home's doorway, brooks, huts, beetles, braid, puzzle weight; Mamma's SUP, rain gear through the storm, Bertil's boot, the family's lamps, twelve more story details. |
 | Olov's morning list (7 Nov) | Olov's request: the arms through the coats, Bertil's hair, the bat-wing sweaters, then the Senare list | The same cloud session's morning | — / 0 so far | Lamps held out in front; Bertil's hair under the brim; every approved model's sleeves repaired without a rebuild (private PR #5); Billsta's runners, Flärken's sliding door, Klonk on the table, Pappa at his seesaw, the vittra's sweet; sun shadows for landmarks tried and taken back. |
 | The night to 07:00 (6–7 Nov) | Olov's request: the rain gear made properly in Blender, Bertil's hair, the puddle and the water, every animal and every character's motion, "hela natten till 07:00" without questions | The rest of the same cloud session's night | — / 0 so far | The family's rain gear and Bertil's hair in Blender (private PR #5), the body hidden under it; the crane in Blender and heads of their own for four of the kit's creatures; every animal's motion; Elof's feet, and no one-frame snaps for anyone; the brook's far bank, wet rock, the garden's boulder, Myren's pine; splashes in the storm; five more story details. CI green between pushes; three checks that flake under software rendering given longer waits. |
