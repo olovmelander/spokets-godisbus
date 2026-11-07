@@ -116,9 +116,14 @@ const KINDS: Partial<Record<PlaceId, WaterKind>> = {
   },
 };
 
-/** A river: black, running, open towards the camera and on behind the path. Its stones and banks stand in it. */
+/**
+ * A river: black, running, open towards the camera and on behind the path. Its stones and banks stand in it. Its
+ * surface runs on past the camera, so that its cut is never in the picture: on a phone held upright the camera
+ * stands about 24 EL out and sees the water to about 13 EL in front of the path, past where it used to end (11),
+ * which then showed as the edge of a block (Olov, 7 November 2026). 48 is past the camera in every shot.
+ */
 export const RIVER: WaterKind = {
-  front: 11, corner: 11, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
+  front: 48, corner: 48, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
   dim: 0.6, faceTop: '#2a3a3c', faceDeep: '#0c1618', ramp: 1.6, faceAlpha: 0.93, faceBelow: 1, murk: 0.5, through: '#b8cac4',
   mirror: 0.55, tint: '#c4ccc0', ripple: 1.25, bedColour: '#000000', shoreColour: '#000000', stands: null,
   drift: 0.5, swell: 1,
