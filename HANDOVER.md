@@ -144,6 +144,9 @@
     own material discards it while that piece is worn. The packer quantizes every mesh in its own box, so the body
     and the pieces are compared in the pelvis's rest frame, in metres (a first try in raw positions hid Pappa's
     shorts and knees).
+  - **Granskogen's brook ends against a far bank** (`src/render/dressing/forest.ts`): the forest's pools ran straight
+    back into the haze and ended in a ruler-straight line; each now ends a few EL behind the path against an uneven
+    bank of moss hummocks, the kit's stones and ferns.
   - **The animals, reviewed one by one** (Olov: "Se även över alla djur hur de är designade och rör sig"; a review
     of every creature's code and pictures, then the fixes):
     - **The crane** (`src/render/crane.ts`; Myren's kneeling crane and Berget's flight): no longer a grey blimp
@@ -4771,8 +4774,9 @@ The older list, still true where it is not struck:
   match the pitch, the bathing place and the narrow more closely.
 - Blender models for what is still built in code near the play plane: the dead pine Mamma pulls on Myren, the
   stones on rails before the mountain kit arrives, and Billsta's, Olympia's and the church's buildings.
-- The forest's brooks: the surface now shows (the eye rises 3 EL over them), but the mirrored far scenery ends in
-  straight edges across it, where the mirror's strip ends. Seen from above, the forest's haze still greys the
+- The forest's brooks: the surface now shows (the eye rises 3 EL over them) and the water ends against an uneven far
+  bank of moss, stones and ferns (7 November); the mirrored far scenery can still end in a straight edge where the
+  mirror's strip ends. Seen from above, the forest's haze still greys the
   water a little. The dark underwater frames in the light pass's
   measurements cannot happen in play: the glitter bubble catches him at the surface.
 - Real-time shadows from the sun, which Unravel has; the dappled light on the forest floor is a shader stand-in.
