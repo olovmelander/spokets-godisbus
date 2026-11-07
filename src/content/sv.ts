@@ -188,7 +188,7 @@ export const sv = {
       bag: { purpose: 'Ta tillbaka min godispåse.', recap: 'Trägubben har nya ögon. Spöket räcker tillbaka påsen.' },
       share: { purpose: 'Dela godiset med mina vänner.', recap: 'Påsen är tillbaka. Nu väljer jag vem som får vad.' },
       welcome: { purpose: 'Dela godiset – ett välkommen-hem-kalas!', recap: 'Spöket tog godiset för att välkomna min gamla trägubbe hem!' },
-      gold: { purpose: 'Smaka mitt gyllene geléhallon.', recap: 'Vi har delat godiset. Geléhallonet glittrar som stjärnan.' },
+      gold: { purpose: 'Smaka på guldgodiset.', recap: 'Vi har delat godiset. Guldgodiset glittrar som stjärnan.' },
       reunion: { purpose: 'Gå hem med familjen under norrskenet.', recap: 'Godiset gjorde mig stor igen. Påsen är tillbaka.' },
       home: { purpose: 'Följ familjen hem.', recap: 'Vi tar hem trägubben och spöket till Pappas hylla.' },
       party: { purpose: 'Dela lördagsgodiset med familjen.', recap: 'Vi är hemma igen. Alla får vara med på godiskalaset.' },

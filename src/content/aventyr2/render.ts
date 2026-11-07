@@ -1638,7 +1638,9 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       const cone = new ConeGeometry(1.5, long, 18, 5, true).rotateZ(Math.PI / 2).translate(long / 2 + 0.46, 0, 0);
       const place = cone.getAttribute('position');
       const fade = new Float32Array(place.count * 3);
-      for (let i = 0; i < place.count; i++) fade.fill((1 - (place.getX(i) - 0.46) / long) ** 1.6, i * 3, i * 3 + 3);
+      // Clamped: at the cone's far ring a float32 rounds a hair past the end, and a negative base to 1.6 is NaN, which the
+      // lens smears into a black blob in the room.
+      for (let i = 0; i < place.count; i++) fade.fill(Math.max(0, 1 - (place.getX(i) - 0.46) / long) ** 1.6, i * 3, i * 3 + 3);
       cone.setAttribute('color', new Float32BufferAttribute(fade, 3));
       const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.2, depthWrite: false, side: DoubleSide, blending: AdditiveBlending }));
       const light = glow('#fff0c0', 1.2, 0.9);
