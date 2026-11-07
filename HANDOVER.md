@@ -56,6 +56,23 @@
       lingonberry and drawing, and Mamma's mug.
     - **Still not drawn:** the epilogue's carving is a drawing panel, so no 3D hand holds the knife there. Pappa
       beside Elof as they carve stays on the Senare list.
+  - **And then (Olov's last words this morning):**
+    - **Who drives to Billsta:** "Fixa det vad som blir bäst enligt dig".
+      - Mamma drove ("Hoppa in, Elof! Vi kör dit med bilen." at Älven's end).
+      - In Billsta she stands by the headlight and lights the road ahead of Elof. Pappa, by the front door, lights the
+        way up to the house.
+      - She watches Moa and Bertil run off, and both stay by the car (the coda's "family by the car"). Billsta draws
+        82 of 120 on Low.
+      - A lamp held in a scene now shines where its holder's act aims (Stormens öga too).
+    - **The family's car is their silver hatchback** (Olov: a silver Nissan Leaf), with no badge or plate.
+      - It is made in Blender (`build_leaf` in `art/blender/a2-props.py`): 4.5 m long, with a raked windscreen, a
+        sloping tailgate, a black rear pillar, a closed nose with a bright V, swept-back lamps and ten-spoke wheels.
+      - The code stand-in and its lit windows match it.
+    - **Anundsjö IF's crest on Bertil's cap,** Olov's exception to the rule of no crests (recorded in CLAUDE.md and
+      plan §0, Q13).
+      - It replaces the cap's plain badge (private repository, `family/cap_crest.py`): gold wings, a shield with AIF
+        and 1921, laid over the crown's seam as part of the cap.
+      - Only the badge's triangles changed. The caps check passes 76 of 76.
   - **Sun shadows, tried and taken back:** High already has a sun shadow map (the trunks, and a capsule for each
     figure). Letting the landmarks (the cone, the log) and the movers cast too made no visible difference in these
     lights, so it was not kept.
@@ -4266,6 +4283,7 @@ and merge.** On the family devices, on High:
   - Klonk on the party table;
   - Pappa kneeling at his seesaw;
   - Bertil's short hair, and the bent arms that hold the lamps and the brush;
+  - Mamma and Pappa by the silver car in Billsta, and the crest on Bertil's cap;
 - the animals (the night of 7 November): the crane kneeling on Myren and flying on Berget, its chick walking after
   him, the ladybird on its back, the ant columns, the small birds, the jay's head, the owls and the otter turning
   their heads, the hedgehog and the frog;
@@ -4275,7 +4293,7 @@ and merge.** On the family devices, on High:
 It needs no work on Olov's computer; the Blender work (the stumps, the tall pine, the crane, the creatures' heads, and
 the family's rain gear in the private repository) was made in the cloud session with Blender 5.2's `bpy` module, and
 the scripts are the sources (`art/blender/a2-nature.py`, `crane.py`, `a2-creatures.py`; `family/wardrobe.py` there). **Merge the private repository's
-PR #5 (`rain-gear`, the family's rain gear, Bertil's short hair and everyone's sleeves) together with #235**, so that the deploy carries the
+PR #5 (`rain-gear`, the family's rain gear, Bertil's short hair, everyone's sleeves and Bertil's crest) together with #235**, so that the deploy carries the
 wardrobes; without it the game falls back to the older rain gear drawn from the bodies.
 
 The full game audit above repairs reproduced gameplay, persistence, control, audio and rendering defects across
