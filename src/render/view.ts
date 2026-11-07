@@ -4,7 +4,7 @@ import { createPaddle, type Paddle } from './paddle';
 import { rainGearFor } from './rain-gear';
 import { createMoverMotion } from './mover-motion';
 import {
-  AdditiveBlending, BoxGeometry, BufferGeometry, CapsuleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
+  AdditiveBlending, BoxGeometry, BufferGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
   Float32BufferAttribute, MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, NeutralToneMapping, Object3D, OctahedronGeometry, PerspectiveCamera, Quaternion, PlaneGeometry, PointLight,
   Scene, Shape, SphereGeometry, TorusGeometry, UnsignedIntType, Vector2, Vector3, WebGLRenderer, WebGLRenderTarget,
@@ -918,6 +918,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     scene.add(carriedBerry);
   }
   const berryHand = new Vector3();
+  // Moa's leaf drawing, found under the shaving bridge: a sheet of paper with a green leaf drawn on it in crayon.
+  const carriedDrawing = new Group();
+  carriedDrawing.name = 'carried-drawing';
+  {
+    const paper = new Mesh(new PlaneGeometry(0.26, 0.2), new MeshStandardMaterial({ color: '#f4efe2', roughness: 0.95, side: DoubleSide }));
+    const leaf = new Mesh(new CircleGeometry(0.06, 12).scale(1.5, 0.75, 1).rotateZ(0.5), new MeshStandardMaterial({ color: '#5f9a34', roughness: 0.9, side: DoubleSide }));
+    leaf.position.z = 0.002;
+    const stem = new Mesh(new PlaneGeometry(0.06, 0.008).rotateZ(0.5), new MeshStandardMaterial({ color: '#4a6e26', roughness: 0.9, side: DoubleSide }));
+    stem.position.set(-0.075, -0.045, 0.003);
+    carriedDrawing.add(paper, leaf, stem);
+    carriedDrawing.visible = false;
+    scene.add(carriedDrawing);
+  }
   const carriedCap = new Group();
   carriedCap.name = 'carried-cap';
   carriedCap.add(new Mesh(new ConeGeometry(0.16, 0.3, 10).translate(0, 0.15, 0), new MeshStandardMaterial({ color: '#c23a2e', roughness: 0.9 })));
@@ -1416,6 +1429,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       playerBody.hand(0, carriedBerry.position);
       carriedBerry.position.y += 0.06 * tall;
       carriedBerry.scale.setScalar(tall);
+    }
+    // Moa's leaf drawing, from where he finds it under the bridge until he shows it to her.
+    const hasDrawing = chapter.id === 'garden' && flags.has('garden:paper') && !flags.has('garden:shared-paper') && !curr.hook && !!playerBody && elof.group.visible;
+    carriedDrawing.visible = hasDrawing;
+    if (hasDrawing && playerBody) {
+      elof.group.updateWorldMatrix(true, false);
+      berryHand.set(0.3, 0.6, 0.18).applyMatrix4(elof.group.matrixWorld);
+      playerBody.reach(0, berryHand, 0.6);
+      playerBody.hand(0, carriedDrawing.position);
+      carriedDrawing.position.y += 0.08 * tall;
+      carriedDrawing.position.z += 0.04;
+      carriedDrawing.rotation.set(-0.2, 0, Math.sin(clock * 1.7) * 0.06);
+      carriedDrawing.scale.setScalar(tall);
     }
     // "Var är ficklampan? Jag ser ingenting!": Elof carries the lit flashlight from the table to Pappa in his right
     // hand, lighting the floor ahead; once given, Pappa has it in his left (Stormkvällen).
