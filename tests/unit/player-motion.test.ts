@@ -302,6 +302,11 @@ describe('the player’s shared motion', () => {
     for (let i = 0; i < 8; i++) bent = Math.max(bent, motion.update(player(), 0, 1 / 60, null).kneeL);
     expect(bent).toBeGreaterThan(before.kneeL + 0.2);
     const scripted = { ...STANDING, armR: 2.2, kneeL: 1.1, seat: 1.5, bounce: 0.2 };
+    // A scene's pose takes over from whatever he was doing within a third of a second, not in one frame; then it is
+    // held exactly, whatever he was doing.
+    const first = { ...motion.update(player({ vx: RUN_SPEED }), 2, 1 / 60, scripted, 1) };
+    expect(first.armR).toBeGreaterThan(0); expect(first.armR).toBeLessThan(1);
+    for (let i = 0; i < 20; i++) motion.update(player({ vx: RUN_SPEED }), 2, 1 / 60, scripted, 1);
     expect(motion.update(player({ vx: RUN_SPEED }), 2, 1 / 60, scripted, 1)).toEqual(scripted);
     expect(motion.update(player(), 2, 0, null)).toEqual(scripted);
     for (let i = 0; i < 90; i++) motion.update(player(), 2, 1 / 60, null);

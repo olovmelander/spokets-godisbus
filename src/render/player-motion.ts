@@ -193,12 +193,17 @@ export function playerPose(player: MotionState, phase: number, pace: number, lan
   return out;
 }
 
+/** How long he takes to move into a scene's pose, or from one act's to the next, in seconds. */
+const SCRIPT_BLEND = 0.3;
+
 /** Only actual travel advances a stride: blocked movement, rides and a paused view never march. */
 export function createPlayerMotion() {
   const target = { ...STANDING }, pose = { ...STANDING };
   let lastX: number | null = null, lastY = 0, lastMode: PlayerState['mode'] = 'free';
   let grounded = true, free = false, phase = 0, landing = 0, impact = 0, idle = 0;
   let speed = 0, lead = 1;
+  let wasScripted = false, blendT = 0;
+  const blendFrom = { ...STANDING }, lastScripted = { ...STANDING };
   // The idles: a shuffled bag, so that no two rounds go the same way, and a quiet gap of its own before each.
   const random = seeded(7), bag: IdleAct[] = [];
   let act: IdleAct | null = null, actAt = 0, nextAt = FIRST, stretchedAt = -Infinity, last: IdleAct | null = null;
@@ -230,8 +235,18 @@ export function createPlayerMotion() {
       lastX = x; lastY = player.y; lastMode = player.mode;
       if (scripted) {
         grounded = player.grounded; free = false; landing = 0; impact = 0; idle = 0; speed = 0;
-        return Object.assign(pose, scripted);
+        // Into a scene, and from one act to the next, he moves over a moment instead of in one frame; once there he
+        // holds the scene's pose exactly.
+        if (!wasScripted || JOINTS.some((joint) => Math.abs(scripted[joint] - lastScripted[joint]) > 0.25)) {
+          Object.assign(blendFrom, pose);
+          blendT = 0;
+        }
+        wasScripted = true;
+        Object.assign(lastScripted, scripted);
+        blendT += Math.max(0, dt);
+        return blendT >= SCRIPT_BLEND || calm ? Object.assign(pose, scripted) : blendPose(blendFrom, scripted, smooth(blendT / SCRIPT_BLEND), pose, true);
       }
+      wasScripted = false;
       if (dt <= 0) return pose;
       const walking = player.mode === 'free' && player.grounded;
       const continuous = distance <= Math.max(RUN_SPEED * 2, Math.abs(player.vx) * 1.5) * dt + 0.05;

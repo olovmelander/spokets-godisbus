@@ -53,7 +53,7 @@ import { songGlitter } from './song-glitter';
 import { createEpilogueStage } from './epilogue-stage';
 import { createPrologueStage } from './prologue-stage';
 import { createStage, litLamp } from './stage';
-import { actPose, sitting } from './acting';
+import { actPose, sitting, stanceOf, type Stance } from './acting';
 import { createModelRig, createRehearsalRig, galeOf, heightOf, STANDING, type Pose, type Rig, type Role } from './rig';
 import { createPlayerMotion, createPlayerStandIn } from './player-motion';
 import { createAurora } from './aurora';
@@ -619,6 +619,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let ghostLook = 0;
   let clock = 0;
   let starDropTime = 0;
+  let elofStance: Stance = 'stand';
+  let hangLast = 0, hangWeight = 0;
   let shoulderLift = 0;
   let homeJourney = false;
   assets
@@ -1147,7 +1149,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     glance.update(flags, ghostState, clock, dt);
     glitter.update(curr.bubble, x, y, clock);
     // He hangs by his hands, his body along the lace.
-    const hang = curr.hook ? Math.atan2(curr.hook.x - x, curr.hook.y - (y + 0.5)) : 0;
+    // Hooking on and letting go, he swings into the lace's line and out of it over a moment, not in one frame.
+    if (curr.hook) hangLast = Math.atan2(curr.hook.x - x, curr.hook.y - (y + 0.5));
+    hangWeight = calmStory ? (curr.hook ? 1 : 0) : hangWeight + ((curr.hook ? 1 : 0) - hangWeight) * ease(curr.hook ? 18 : 9, dt);
+    const hang = hangLast * hangWeight;
 
     // The simulation says where to look; the view only smooths it.
     const want = { ...cameraIntent(curr, chapter.cameras) };
@@ -1262,8 +1267,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (scripted?.act && curr.grounded) {
       const unit = 5.2 / Math.max(0.5, tall);
       const facing = Math.cos(facingAngle) >= 0 ? 1 : -1;
-      scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null, stride: 0, pace: 0, calm: calmStory }, elofPose);
-    }
+      // An act of the hands after a kneel keeps him on his knees, as the family stay on theirs.
+      elofStance = stanceOf(scripted.act, elofStance);
+      scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null, stride: 0, pace: 0, calm: calmStory }, elofPose, elofStance);
+    } else elofStance = 'stand';
     const waving = reaction?.kind === 'player' && curr.grounded;
     // The one wind (./wind.ts) as it reaches each of them where they stand: none indoors, and more in the storm.
     const gale = galeOf(chapter, flags);
