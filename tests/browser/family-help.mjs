@@ -42,7 +42,8 @@ const check = (name, value) => { assert.ok(value, name); checks++; console.log(`
 try {
   for (const [course, x, y, who, flags] of [
     ['garden', 165, 0, 'moa', ['moa']],
-    ['granskog', 108.2, -8, 'pappa', ['seesaw']],
+    // Called, Pappa walks to his seesaw's high end and holds it: Elof stands on its low end.
+    ['granskog', 113.2, -8, 'pappa', ['seesaw']],
     ['granskog', 154.6, -8, 'bertil', []],
     ['myren', 84.8, 0, 'mamma', ['mamma']],
     ['norrsken', 26.6, 0, 'bertil', ['placed:tragubbe', 'eyes', 'bag', 'shared', 'taste']],

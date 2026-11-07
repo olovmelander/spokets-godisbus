@@ -53,7 +53,7 @@ import { songGlitter } from './song-glitter';
 import { createEpilogueStage } from './epilogue-stage';
 import { createPrologueStage } from './prologue-stage';
 import { createStage, litLamp } from './stage';
-import { actPose, sitting, stanceOf, type Stance } from './acting';
+import { actPose, sitting, stanceOf, stepLength, type Stance } from './acting';
 import { createModelRig, createRehearsalRig, galeOf, heightOf, STANDING, type Pose, type Rig, type Role } from './rig';
 import { createPlayerMotion, createPlayerStandIn } from './player-motion';
 import { createAurora } from './aurora';
@@ -725,8 +725,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       .catch((error) => console.warn(`The private/${who}-wardrobe could not be loaded; the rain gear is drawn from the body.`, error));
   };
   const stands = chapter.prologue ? [] : [
-    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt })),
-    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined })),
+    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt, goesTo: thing.spot.goesTo })),
+    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined, goesTo: undefined })),
   ].filter((stand) => stand.look === 'sign' && stand.prop !== null && personFor(stand.word) !== null);
   for (const stand of stands) {
     const who = personFor(stand.word)!, rig = createRehearsalRig(who);
@@ -735,7 +735,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Whoever stands on a paddle board holds a paddle (./paddle.ts), in the world, gripped each frame.
     const paddle = stand.paddles ? createPaddle(rig.height) : undefined;
     if (paddle) scene.add(paddle.mesh);
-    family.push({ rig, who, motion: createFamilyMotion(who, stand.at, stand.glad), at: stand.at, glad: stand.glad, was: false, joy: 0, seated: stand.seated, paddle });
+    family.push({ rig, who, motion: createFamilyMotion(who, stand.at, stand.glad), at: stand.at, glad: stand.glad, was: false, joy: 0, seated: stand.seated, paddle,
+      walk: stand.goesTo ? { to: stand.goesTo, place: stand.prop!.group, home: stand.prop!.group.position.clone(), stride: 0, pace: 0, gait: 0, seen: false } : undefined });
   }
   if (stage.actors.size > 0 && !standIns) {
     assets.manifest().then(async (manifest) => {
@@ -887,6 +888,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let ghostSize = 1;
   /** Elof's pose when a scene asks him to act. */
   const elofPose: Pose = { ...STANDING };
+  /** A relative's legs and arms walking over to where they help from (Spot.goesTo). */
+  const walkPose: Pose = { ...STANDING };
   /** The last scene shot, and how much of it the camera takes now: 1 in the scene, easing to 0 after it. */
   let lastShot: { x: number; y: number; height: number; width: number; eye: number } | null = null;
   let shotWeight = 0;
@@ -1617,6 +1620,24 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // The same jointed body greets him at help points and in the story; its outer root remains the place's.
     for (const one of family) {
       const now = one.glad !== undefined && flags.has(one.glad);
+      // Called, they walk over to where they help from (Spot.goesTo): an easy walk, slowing as they come. On the first
+      // frame (a game taken up) and without motion they are simply there.
+      let heading: number | null = null;
+      if (one.walk) {
+        const w = one.walk, place = w.place.position, to = now ? w.to : w.home;
+        const dx = to.x - place.x, dz = to.z - place.z, far = Math.hypot(dx, dz);
+        if (!w.seen || calmStory) { place.set(to.x, to.y, to.z); w.pace = 0; }
+        else if (dt > 0 && far > 1e-3) {
+          const speed = Math.min(1.1 * one.rig.height, far * 3), step = Math.min(far, speed * dt);
+          place.x += dx / far * step; place.z += dz / far * step; place.y = to.y;
+          w.gait = speed / one.rig.height;
+          w.stride += step / stepLength(Math.max(w.gait, 0.3), one.rig.height);
+          w.pace += (1 - w.pace) * ease(8, dt);
+          heading = Math.atan2(dx, dz);
+        } else if (dt > 0) w.pace += (0 - w.pace) * ease(8, dt);
+        w.seen = true;
+        one.at = place.x;
+      }
       if (dt > 0) {
         if (now && !one.was) one.joy = 1.8;
         one.was = now;
@@ -1635,6 +1656,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         up: (y + tall * .8 - one.rig.group.parent!.position.y) * 5.2 / one.rig.height,
       }, one.glad && ['moa', 'seesaw', 'cap:ready', 'mamma', 'braid', 'bog:return-bridge'].includes(one.glad)
         ? { ready: now, near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined);
+      if (one.walk && one.walk.pace > 0.001) {
+        // Walking over: the legs go by the ground they cover, and the body turns the way it goes.
+        const w = one.walk, p = w.pace;
+        actPose('walk', { t: clock, aim: null, stride: w.stride, gait: w.gait, pace: p, calm: calmStory }, walkPose);
+        for (const key of ['lean', 'legL', 'legR', 'kneeL', 'kneeR', 'armL', 'armR', 'elbowL', 'elbowR', 'footL', 'footR'] as const) {
+          posed[key] = posed[key] * (1 - p) + walkPose[key] * p;
+        }
+        if (heading !== null) one.rig.group.rotation.y += Math.atan2(Math.sin(heading - one.rig.group.rotation.y), Math.cos(heading - one.rig.group.rotation.y)) * p;
+      }
       // Bertil pulls off his right boot for Elof (Olov: "på riktigt"): in the moment between being called and the
       // boot lying on the water, he leans down, lifts that foot and tugs at the boot with both hands.
       // Each such gesture comes and goes over a moment (`gestureOf`), never in one frame.
@@ -1667,7 +1697,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // climbs on, and lets go as he flies (the ride `launch`).
       if (seesawPlank === undefined) seesawPlank = chapter.id === 'granskog' ? scene.getObjectByName('seesaw-plank') ?? null : null;
       const board = one.who === 'pappa' ? seesawPlank : null;
-      const holding = !!board && flags.has('seesaw') && !flags.has('launch');
+      const arrived = !one.walk || Math.hypot(one.walk.to.x - one.walk.place.position.x, one.walk.to.z - one.walk.place.position.z) < 0.05;
+      const holding = !!board && arrived && flags.has('seesaw') && !flags.has('launch');
       if (lifting) gesture.liftFor = 0.6; else gesture.liftFor = Math.max(0, gesture.liftFor - dt);
       // Without motion the bend is there at once, and gone at once.
       gesture.lift = calmStory ? (gesture.liftFor > 0 ? 1 : 0) : gesture.lift + ((gesture.liftFor > 0 ? 1 : 0) - gesture.lift) * ease(6, dt);
@@ -1680,11 +1711,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       gesture.hold = calmStory ? (holding ? 1 : 0) : gesture.hold + ((holding ? 1 : 0) - gesture.hold) * ease(4, dt);
       if (gesture.hold > 0.001) {
         // Down on his right knee, the left foot forward, leaning to the board, turned towards it.
-        const w = gesture.hold;
-        posed.lean += (0.85 - posed.lean) * w;
-        posed.legL += (1.35 - posed.legL) * w; posed.kneeL += (1.55 - posed.kneeL) * w;
-        posed.legR += (0.1 - posed.legR) * w; posed.kneeR += (1.65 - posed.kneeR) * w;
-        one.rig.group.rotation.y += (-0.95 - one.rig.group.rotation.y) * w;
+        // Mixed so that at full weight each is exactly its value, frame after frame (a paused picture never drifts).
+        const w = gesture.hold, mixTo = (from: number, to: number) => from * (1 - w) + to * w;
+        posed.lean = mixTo(posed.lean, 0.85);
+        posed.legL = mixTo(posed.legL, 1.35); posed.kneeL = mixTo(posed.kneeL, 1.55);
+        posed.legR = mixTo(posed.legR, 0.1); posed.kneeR = mixTo(posed.kneeR, 1.65);
+        one.rig.group.rotation.y = mixTo(one.rig.group.rotation.y, -0.95);
       }
       // In the garden, until he calls her, Moa crouches and reaches into the root hole the ghost crept into ("Där
       // kröp spöket in. Jag får inte plats!"); her fingers will not go in.
@@ -1955,6 +1987,11 @@ interface Relative {
   was: boolean;
   /** Seconds of delight left. */
   joy: number;
+  /**
+   * Where they walk once called (Spot.goesTo), the place they are drawn at (moved as they walk), where it stood at
+   * first, how far they have walked in strides, how briskly, and whether a frame has placed them yet.
+   */
+  walk?: { to: { x: number; y: number; z: number }; place: Object3D; home: Vector3; stride: number; pace: number; gait: number; seen: boolean } | undefined;
 }
 
 function startState(chapter: ChapterData): PlayerState {
