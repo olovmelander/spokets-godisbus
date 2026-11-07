@@ -231,7 +231,9 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   // SwiftShader can draw these slowly enough to reach the boundary just after 15 seconds: High's forest effects
   // first, and every place since the in-play UI costs more to draw in software (HANDOVER.md, "Known bugs").
   // Keep the exact traversal and performance predicates; only this software-rendered wait gets longer.
-  const traversalTimeout = 30000;
+  // On 7 November High's forest took 33–36 s from the spawn to x 16 in SwiftShader, at 1–3 frames a second,
+  // on the commit CI passed and on the one after alike: the 30 s wait sat on the edge (it failed at x 16.0).
+  const traversalTimeout = 60000;
   const ran = await until(state, (s) => s.x > far, traversalTimeout);
   await page.keyboard.up('ArrowRight');
   check(`${tier}: he runs through it`, ran.x > far, `x ${ran.x.toFixed(1)}`);
