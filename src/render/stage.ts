@@ -22,6 +22,8 @@ const FAMILY: readonly Role[] = ['pappa', 'mamma', 'moa', 'bertil'];
 const SEATED: readonly Act[] = ['sit', 'carve', 'draw'];
 /** Acts whose aim the whole body turns to. */
 const TURNS_TO: readonly Act[] = ['reach', 'lift', 'offer', 'point'];
+/** The way a lamp shines in its own space (litLamp). */
+const LAMP_AXIS = new Vector3(0, 0, 1);
 /** How much of the arm's length a hand held out to give something uses: the elbow stays a little bent. */
 const OFFER_REACH = 0.82;
 
@@ -555,7 +557,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   }
 
   const place = new Object3D();
-  const hand = new Vector3();
+  const hand = new Vector3(), lampAim = new Vector3();
   const pose: Pose = { ...STANDING };
   const before: Pose = { ...STANDING };
   const walking: Pose = { ...STANDING };
@@ -960,6 +962,11 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             mesh.position.copy(hand);
             if (held === 'knife' && state.act === 'carve' && workpiece?.act === 'carved') mesh.quaternion.setFromUnitVectors(up, knifeDirection);
             else if (held === 'crayon' && state.act === 'draw' && drawingContact) mesh.quaternion.setFromUnitVectors(up, toolAxis);
+            else if (held.startsWith('lamp-') && state.aim) {
+              // A lamp shines where its holder looks for something: the road ahead of him, the way up to a house.
+              lampAim.set(state.aim.x, state.aim.y, state.aim.z ?? 0).sub(hand).normalize();
+              mesh.quaternion.setFromUnitVectors(LAMP_AXIS, lampAim);
+            }
             else mesh.rotation.set(0, yaw(face), held === 'knife' || held === 'brush' || held === 'crayon' ? -0.6 : 0);
           }
         }

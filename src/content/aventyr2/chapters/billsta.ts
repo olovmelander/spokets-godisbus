@@ -47,6 +47,10 @@ const CAR = { x: -8, z: -17, width: 29 };
 const CARD = timeCard('billsta', 1);
 /** Where Moa and Bertil stand by the car, and the lit window up at the house. */
 const KIDS = { moa: { x: 6.4, z: -7.6 }, bertil: { x: 8.6, z: -6.4 } };
+/** Mamma by the car's headlight, Pappa by its front door, a little out from its near side; what their lamps light. */
+const PARENTS = { mamma: { x: 2.8, z: -10.8 }, pappa: { x: -1.6, z: -11.2 } };
+const ROAD = { x: 11, y: 0.4, z: 0 };
+const UP_TO_HOUSE = { x: 16, y: 2, z: -40 };
 const WINDOW = { x: 14, y: 7.5, z: -66 };
 /**
  * Their run ahead of him to the house, which stands about x 2 to 34 and z -84 to -61 (`buildings`, below): to its left
@@ -235,10 +239,14 @@ export const billsta: ChapterData = {
   spawn: { x: 1, y: 0.01 },
   scenes: [
     // Where and when, as the chapter opens (src/content/chapters/cards.ts). Moa and Bertil have jumped out of the
-    // car and stand by its front, Moa looking up at mormor and morfar's lit window, Bertil at Elof.
+    // car and stand by its front, Moa looking up at mormor and morfar's lit window, Bertil at Elof. Mamma, who drove
+    // ("Hoppa in, Elof! Vi kör dit med bilen." at Älven's end), stands by the headlight and lights the road for him;
+    // Pappa beside the front door lights the way up to the house. They stay by the car (the coda's "family by the car").
     { ...CARD, stage: { ...CARD.stage, actors: {
       moa: [{ at: 0, ...KIDS.moa, y: 0, face: 0.3, move: 0.01, act: 'look', aim: WINDOW }],
       bertil: [{ at: 0, ...KIDS.bertil, y: 0, face: 0.35, move: 0.01, act: 'look', aim: { x: 1, y: 0.5, z: 0 } }],
+      mamma: [{ at: 0, ...PARENTS.mamma, y: 0, face: 0.2, move: 0.01, act: 'shine', aim: ROAD, holds: 'lamp-mamma' }],
+      pappa: [{ at: 0, ...PARENTS.pappa, y: 0, face: 0.12, move: 0.01, act: 'shine', aim: UP_TO_HOUSE, holds: 'lamp-pappa' }],
     } } },
     // "Titta! Det lyser hos mormor och morfar."
     { id: 'bi:kids-window', on: 'beat:bi:window', until: 'beat:bi:new-trail', seconds: 2.6, stage: { actors: {
@@ -248,6 +256,8 @@ export const billsta: ChapterData = {
     // "Följ vårt godis! Vi springer före.": the trail is theirs now (docs/aventyr-2.md). Moa waves to him, and they
     // run off ahead of him up to mormor and morfar's house, round its left end, and in by its door at the back.
     { id: 'bi:kids-run', on: 'beat:bi:new-trail', until: 'bi:morfar', seconds: RUN.seconds + 3.6, stage: { actors: {
+      // Mamma watches them go, and lights his road again.
+      mamma: [{ at: 0.6, act: 'look', aim: RUN.corner }, { at: RUN.seconds + 1.6, act: 'shine', aim: ROAD }],
       moa: [
         { at: 0, act: 'wave', aim: { x: 7.4, y: 0.6, z: 0 } },
         { at: 1.1, ...RUN.corner, y: 0, move: RUN.seconds, act: 'look', aim: RUN.corner },
