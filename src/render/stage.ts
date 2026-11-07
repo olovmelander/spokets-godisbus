@@ -574,6 +574,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   let lastScene: string | null = null;
   const starts = new Map<string, State>();
 
+  let stagedTilt = 0;
   return {
     group,
     updateElof(rig, direction, height, calm) {
@@ -1116,7 +1117,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             bounce = calm ? 0 : Math.abs(Math.sin(since * 6)) * 0.3;
             break;
           case 'peek':
-            tilt = 0.2 + (calm ? 0 : 0.08 * Math.sin(since * 3));
+            tilt = (0.2 + (calm ? 0 : 0.08 * Math.sin(since * 3))) * (calm ? 1 : smooth(since / 0.3));
             break;
           case 'freeze':
             blink = 1;
@@ -1124,7 +1125,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           default:
             break;
         }
-        ghost = { x: state.x, y: state.y, z: state.z, face: state.face, tilt, bounce, blink, rough: state.rough, look: state.act === 'look' ? state.aim : null, act: state.act, actT: since };
+        // From one act to the next its lean changes over a moment, never in one frame.
+        stagedTilt = calm ? tilt : stagedTilt + Math.max(-2 * dt, Math.min(2 * dt, tilt - stagedTilt));
+        ghost = { x: state.x, y: state.y, z: state.z, face: state.face, tilt: stagedTilt, bounce, blink, rough: state.rough, look: state.act === 'look' ? state.aim : null, act: state.act, actT: since };
       }
       // The block of wood round the ghost, while there is any left.
       const rough = ghost?.rough ?? 0;

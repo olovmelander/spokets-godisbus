@@ -883,7 +883,11 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     flyer.scale.setScalar(shown * 0.9);
     drawnWhile(flyer, shown > 0);
     flyer.rotation.z = ghost ? -knock * 0.8 : 0;
-    if (ghost) flyer.rotation.y = last.x < flyer.position.x ? Math.PI : 0;
+    if (ghost) {
+      // It turns to face where it shows him, through facing the lens, never in one frame.
+      const want = last.x < flyer.position.x ? -Math.PI : 0;
+      flyer.rotation.y = still || shown === 0 ? want : flyer.rotation.y + (want - flyer.rotation.y) * (1 - Math.exp(-8 * dt));
+    }
     if (focus) {
       focus.position.set(last.x, last.y, DEMO_Z);
       focus.scale.setScalar(1 + knock);

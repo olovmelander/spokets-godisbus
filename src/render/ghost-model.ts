@@ -122,6 +122,7 @@ export function createGhostMotion(model: Object3D, facesX = false): { update(fra
     }
     foot.node.position.copy(foot.position).addScaledVector(foot.up, foot.lift);
   }
+  let cock = 1;
   return {
     update({ dt, clock, hop, calm, awake, staged, performance, elof, wind = 0 }) {
       idle.bob = idle.look = idle.pitch = idle.roll = 0;
@@ -164,7 +165,10 @@ export function createGhostMotion(model: Object3D, facesX = false): { update(fra
       idle.look = glance * quiet * (1 - near);
       idle.pitch = .07 * near;
       // Turned to face him, a roll the way he stands from it brings its top over towards him too.
-      idle.roll = near * (.12 + .04 * Math.sin(clock * 1.1)) * (elof !== undefined && elof < 0 ? -1 : 1);
+      // As he passes it, its head comes over to his side, not in one frame.
+      const towards = elof !== undefined && elof < 0 ? -1 : 1;
+      cock = calm ? towards : cock + (towards - cock) * (1 - Math.exp(-7 * dt));
+      idle.roll = near * (.12 + .04 * Math.sin(clock * 1.1)) * cock;
       for (let i = 0; i < feet.length; i++) {
         if (phase === null && bounce !== null) pose(i, hopAngle(bounce, i) * .35 * quiet, false);
         else if (phase === null) pose(i, i === cycle % Math.max(1, feet.length) ? tap : 0, true);
