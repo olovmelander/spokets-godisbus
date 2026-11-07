@@ -172,6 +172,29 @@
       the hedgehog snuffles, the frog hops on the spot now and then, the snail creeps a little way and back.
     - **Left for Olov's computer** (one mesh each from Blender, so their parts cannot move): a head of their own for
       the kit's otter, owl, hedgehog and frog. A crane in Blender would be better still than the code-built one.
+  - **Every character's motion, reviewed for snaps** (Olov: "Kolla så ... alla rörelser ser naturliga och smootha
+    ut för alla karaktärer genom hela spelet"; a review of the code of Elof, the family, the ghost and the
+    trägubbar, then the fixes):
+    - **Elof's feet hold the ground** (`strideRate`, `strideReach` in `src/render/player-motion.ts`, tested): the
+      stride was a fixed amount per EL, so walking the planted foot skated forward at about two thirds of his speed,
+      and at three times his size he ran as on a treadmill. It is now paced by the ground the swinging leg covers,
+      and by his size; a walk swings a little wider (three to four steps a second); the swinging foot is held up
+      nearly level, so the toe no longer catches the ground.
+    - **Into scenes and between acts** his pose blends over 0.3 s instead of jumping (the unit test says so now);
+      an act of the hands after a kneel keeps him kneeling; hooking the lace on and letting go he swings into its
+      line over a moment, not 65° in one frame; on fast rides he keeps his riding pose; a ride's first step carries
+      him instead of jumping; the takeoff stretch and getting up after a fall are soft.
+    - **The family:** Bertil's boot pull and kick and Moa's reach into the root hole ease in and out; the kick's
+      turn is a quick turn, not 58° in a frame; up onto Pappa's shoulders starts and stops softly; their breathing
+      and a standing act's shifts have a slower second rhythm under them.
+    - **The ghost:** in the prologue it turns to sneak off over a third of a second (it turned 134° in one frame);
+      the helping ghost turns through facing the lens instead of flipping, and comes from where the ghost was; its
+      lean between story acts and its idle head-cock change over a moment; its standing rock is no longer one sine.
+    - **Lillgubben's** glad hops start from the ground when it has its cap back, each a little different.
+    - **The camera's near shots** (beside one of the family, the taste in Norrsken, on Pappa's shoulders) glide in
+      and out over about half a second instead of cutting.
+    - Checked: the unit tests, and the browser suites finale-stage, story, family-story, family-help, helper,
+      ghost-thoughts and myren-loop, run locally.
   - **Budgets, widened at Olov's word ("utöka grafikbudgeten rejält"):** High draws up to 3.5 MP (was 2.6), its
     offscreen targets may take 110 MB (was 80) and the whole picture 260 MB (was 220): `quality.ts`,
     `gpu-memory.ts`, `scripts/asset-gpu-estimate.mjs`, the gpu-memory suite and its unit tests. The prologue on a
