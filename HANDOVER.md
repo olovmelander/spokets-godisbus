@@ -12,6 +12,9 @@
     - The owl's button is "Hoppa upp på ugglan" everywhere.
     - The crane gets "Flyg på tranans rygg …" instead of "skjuts uppåt" and "Tranan ger mig skjuts". It also has a
       button of its own, "Hoppa upp på tranan" (`boardCrane`; it used Pappa's hand's "Kliv upp").
+    - On Myren, as the chick comes home and the crane is ready, Mamma now says "Tranungen är hemma! Nu får du flyga."
+      (was "Ungen är hemma. Vill du ha en spång?"). When the boardwalk back is laid she says "Spången är klar! Gå över
+      när du vill." (was "Över dimman, och tillbaka igen.").
   - **Also:**
     - "Ett snitt med kniven" and "Snitt 1 av 3" replace "Ett tag med kniven" and "Tag 1 av 3".
     - "Ett öga klart!" replaces "Ett öga till liv!".
@@ -21,7 +24,8 @@
     - "Jag bestämmer när vi åker".
     - "längst ut på bryggan" replaces "bryggans ände".
     - "Haka fast fönsterhaken" replaces "Vrid fönsterhaken".
-  - **Recorded lines that changed:** `familyMoaPlan`, `familySeesawReady` and `end_window`.
+  - **Recorded lines that changed:** `familyMoaPlan`, `familySeesawReady`, `end_window`, `bogFamilyHome` and
+    `bogBridgeReady`.
     - Their recordings stay in `public/audio/voices`, but the build leaves them out of the voices it plays
       (`src/audio/recorded.ts`, read by `vite.config.ts`). They are shown silent until the new voices are made.
     - `scripts/generate-voices.mjs` and `scripts/voices-aventyr2.json` have the new words.
