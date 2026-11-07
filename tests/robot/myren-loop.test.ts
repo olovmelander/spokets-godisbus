@@ -101,7 +101,7 @@ describe('Myren: light, reunion and the optional return spång', () => {
     for (let frame = 0; frame < 60 * 20 && !game.sim.flags.has('goal'); frame++) {
       const decision = decide(game, myren);
       // Ignore side interactions and the robot's optional backtracking.
-      const offered = game.sim.curr.word === 'climbOn' && decision.offered;
+      const offered = game.sim.curr.word === 'boardCrane' && decision.offered;
       game.frame(1 / 60, { x: 1, y: decision.y, hopHeld: false }, { ...noPress, act: offered && !pressed });
       pressed = offered;
     }

@@ -36,10 +36,10 @@ export const words: ChapterWords = {
     // 5. the lake, and the owl from the forest
     alLake: 'Sjön! Den är alldeles för bred.',
     alOwlSeen: 'Ugglan från skogen! Den har följt oss!',
-    alOwlHere: 'Vill du bära mig över sjön, uggla?',
+    alOwlHere: 'Lilla uggla, kan du ta mig över sjön?',
     alOwlFly: 'Hu-hu! Vi flyger över sjön!',
-    alSeeLittle: 'Lillgubben! Långt fram på älven!',
-    alOwlThanks: 'Tack, uggla! Du är en riktig vän.',
+    alSeeLittle: 'Lillgubben! Långt fram på ån!',
+    alOwlThanks: 'Tack, lilla uggla! Du är en riktig vän.',
     // 6. Moälven, and the family's car to Billsta
     alMoalven: 'Nu heter ån Moälven. Så stor den är!',
     alOldAhead: 'Gamla trägubben! Han flyter före oss.',
@@ -58,7 +58,7 @@ export const words: ChapterWords = {
   verbs: {
     alScarf: 'Ta tag i halsduken',
     alCallOwl: 'Ropa på ugglan',
-    alBoardOwl: 'Kliv upp på ugglan',
+    alBoardOwl: 'Hoppa upp på ugglan',
   },
   purposes: {
     alvenOutlet: { purpose: 'Följ ån efter lillgubben.', recap: 'Lillgubben föll i sjön, och ån tog honom. Gamla trägubben följde efter på en stock.' },
@@ -72,8 +72,8 @@ export const words: ChapterWords = {
     alvenLifted: { purpose: 'Håll i halsduken. Pappa lyfter dig!', recap: 'Jag hänger i Pappas halsduk, högt över forsen.' },
     alvenLodge: { purpose: 'Klättra över bäverhyddan.', recap: 'Pappa lyfte mig över forsen. Här bor en bäver.' },
     alvenLake: { purpose: 'Ropa på ugglan vid sjön.', recap: 'Sjön är för bred. Ugglan från skogen har följt efter oss.' },
-    alvenBoard: { purpose: 'Kliv upp på ugglan.', recap: 'Ugglan har landat bredvid mig. Den vill bära mig över sjön.' },
-    alvenFly: { purpose: 'Flyg med ugglan över sjön.', recap: 'Ugglan bär mig högt över den stora sjön.' },
+    alvenBoard: { purpose: 'Kliv upp på ugglan.', recap: 'Ugglan har landat bredvid mig. Den kan ta mig över sjön.' },
+    alvenFly: { purpose: 'Flyg på ugglan över sjön.', recap: 'Ugglan bär mig högt över den stora sjön.' },
     alvenMoalven: { purpose: 'Följ trägubbarna nerför älven.', recap: 'Nu heter ån Moälven. Lillgubben och gamla trägubben flyter före.' },
     alvenLost: { purpose: 'Spåret är slut. Vad gör vi nu?', recap: 'Här slutar godisspåret. Jag har tappat trägubbarna ur sikte.' },
     alvenBillsta: { purpose: 'Åk med familjen till Billsta.', recap: 'Godisspåret tog slut. Vi kör tre mil till Billsta och letar vidare med mormor och morfar.' },

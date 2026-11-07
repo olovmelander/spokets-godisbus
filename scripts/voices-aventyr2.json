@@ -291,7 +291,7 @@
     "speaker": "bertil",
     "situation": "Äventyr 2, stormgard",
     "tag": "[cheerful older brother, excited]",
-    "text": "Första gången min stövel kör själv!"
+    "text": "Första gången min stövel seglar själv!"
   },
   {
     "key": "sgThanks",
@@ -410,7 +410,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Hu-hu! Vilken fjädermjuk skjuts!"
+    "text": "Hu-hu! Vad mjukt det är att flyga!"
   },
   {
     "key": "ssPappaHere",
@@ -515,14 +515,14 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Ett lingon åt dig. Visa vägen, vän!"
+    "text": "Ett lingon åt dig. Visa vägen, kompis!"
   },
   {
     "key": "ssSeeOld",
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Där! Gamla trägubben, nerför backen!"
+    "text": "Där springer gamla trägubben ner!"
   },
   {
     "key": "ssVillage",
@@ -816,7 +816,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, olympia",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Tack! Du sköt. Jag stod för flyget!"
+    "text": "Tack! Du sköt, och jag flög!"
   },
   {
     "key": "olRange",
@@ -949,7 +949,7 @@
     "speaker": "mamma",
     "situation": "Äventyr 2, flarken",
     "tag": "[warm, calm mother]",
-    "text": "Jag håller brädan still. Gå på den."
+    "text": "Jag håller brädan stilla. Kliv på!"
   },
   {
     "key": "sjSteady",
@@ -998,7 +998,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, flarken",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "En sten! Den kan ligga i luckan."
+    "text": "En sten! Den kan fylla luckan."
   },
   {
     "key": "sjPlop",
@@ -1054,7 +1054,7 @@
     "speaker": "mamma",
     "situation": "Äventyr 2, flarken",
     "tag": "[warm, calm mother]",
-    "text": "Vi tar bilen längs ån. Vi är nära dig."
+    "text": "Vi kör längs ån. Vi är nära dig."
   },
   {
     "key": "sjFollow",
@@ -1236,7 +1236,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Vill du bära mig över sjön, uggla?"
+    "text": "Lilla uggla, kan du ta mig över sjön?"
   },
   {
     "key": "alOwlFly",
@@ -1250,14 +1250,14 @@
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Lillgubben! Långt fram på älven!"
+    "text": "Lillgubben! Långt fram på ån!"
   },
   {
     "key": "alOwlThanks",
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Tack, uggla! Du är en riktig vän."
+    "text": "Tack, lilla uggla! Du är en riktig vän."
   },
   {
     "key": "alMoalven",
@@ -1530,7 +1530,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Stenen är mitten. Kan den flyttas?"
+    "text": "Stenen ligger i mitten. Kan den flyttas?"
   },
   {
     "key": "biNearMiddle",
@@ -1558,7 +1558,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Här växer hassel, full av nötter!"
+    "text": "En hasselbuske full av nötter!"
   },
   {
     "key": "biWind",
@@ -1922,7 +1922,7 @@
     "speaker": "moa",
     "situation": "Äventyr 2, morgonen",
     "tag": "[warm big sister, lively]",
-    "text": "Jag är trött som en uggla på dagen."
+    "text": "Jag är sömnig som en uggla på dagen."
   },
   {
     "key": "moShelf",

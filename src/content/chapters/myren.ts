@@ -385,7 +385,7 @@ export const myren: ChapterData = {
     { id: 'bog:lantern-return', at: { x: 142, y: 0 }, verb: 'take', touch: true, needs: 'placed:bog-boardwalk', extra: true },
     // Memory 3, where the ghost waits: the boardwalk, and the figure held up to see the way.
     { id: 'memory', look: 'memory', at: { x: 170.6, y: 0 }, verb: 'take', touch: true },
-    { id: 'crane', look: 'crane', at: { x: 182, y: 0 }, verb: 'take', word: 'climbOn', needs: 'home', ride: 'crane' },
+    { id: 'crane', look: 'crane', at: { x: 182, y: 0 }, verb: 'take', word: 'boardCrane', needs: 'home', ride: 'crane' },
     // The toss: what glints under the first soft tussock after the island. He comes within its reach only
     // by sinking towards it, standing, and that throws him.
     { id: 'bog:toss', at: GLINT, verb: 'take', touch: true, extra: true, ride: 'toss' },
@@ -446,7 +446,7 @@ export const myren: ChapterData = {
     { id: 'family:braid-ready', on: 'family:braid-ready', until: 'light', within: [98, 107], who: 'mamma', line: 'familyBraidReady', read: true },
     { id: 'spangen', at: 105.4, who: 'mamma', line: 'spangen' },
     { id: 'bog:chick-light', on: 'chick', who: 'elof', line: 'bogChickLight' },
-    { id: 'bog:family-home', on: 'home', who: 'mamma', line: 'bogFamilyHome' },
+    { id: 'bog:family-home', on: 'home', who: 'elof', line: 'bogFamilyHome' },
     { id: 'bog:bridge-ready', on: 'placed:bog-boardwalk', who: 'mamma', line: 'bogBridgeReady' },
     { id: 'bog:light-return', on: 'bog:lantern-return', who: 'elof', line: 'bogLightReturn' },
   ],

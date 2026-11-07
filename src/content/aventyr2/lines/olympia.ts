@@ -35,7 +35,7 @@ export const words: ChapterWords = {
     olFly: 'Jag flyger med bollen!',
     olGoal: 'Mål! Rakt in i nätet!',
     olBertilCheer: 'Snyggt, lillebror! Vi gjorde mål ihop!',
-    olThanks: 'Tack! Du sköt. Jag stod för flyget!',
+    olThanks: 'Tack! Du sköt, och jag flög!',
     // 7. the biathlon range
     olRange: 'Fem tavlor! Kan jag pricka alla?',
     olAllWhite: 'Alla fem är vita! Fullträff!',

@@ -205,7 +205,11 @@ export const garden: ChapterData = {
     { id: 'plane:board', look: 'sign', at: { x: 167.2, y: 0 }, verb: 'take', word: 'gardenBoard', needs: 'moa', ride: 'plane' },
   ],
   sets: [{ flag: 'garden:pocket-open', when: ['placed:bridge', 'moa'] }],
-  decor: [{ look: 'keepsake', at: { x: 167.2, y: 1.7 }, after: 'garden:shared-paper' }],
+  decor: [
+    { look: 'keepsake', at: { x: 167.2, y: 1.7 }, after: 'garden:shared-paper' },
+    // The hole between the birch's roots, which the ghost creeps into: to the picture, the way it went.
+    { look: 'rootHole', at: { x: 163.4, y: 0 }, z: -0.3 },
+  ],
   song: { flag: 'dewsong', notes: ['note:dew1', 'note:dew2', 'note:dew3', 'note:dew4'] },
   hooks: [
     // The first swing is over flat ground: a miss costs nothing.
@@ -370,8 +374,8 @@ export const garden: ChapterData = {
     { at: { x: 145, y: 3.3 } },
     // on the birch root, juggling a candy
     { at: { x: 158.4, y: 0 }, near: 2.2 },
-    // the root hole Moa's fingers can't enter: there it is gone
-    { at: { x: 163.4, y: 0 }, near: 2.2 },
+    // the root hole Moa's fingers can't enter: it creeps in, under the roots and the hedge, towards the forest
+    { at: { x: 163.4, y: 0 }, near: 2.2, into: { x: 163.4, y: -0.2, z: -0.55 } },
   ],
   beats: [
     // The chapter opens on its time card, without words: the family's promises were said on the deck.
@@ -380,14 +384,19 @@ export const garden: ChapterData = {
     { id: 'stomp', at: 155.6, who: 'elof', line: 'stomp' },
     // Moa saw him made small on the deck: here she sees why it is good to be small.
     { id: 'moa1', at: 161.5, until: 'moa', who: 'moa', line: 'rootFingers', read: true },
+    { id: 'moa2', at: 162.4, until: 'moa', who: 'moa', line: 'rootHedge', read: true },
     { id: 'family:moa', at: 163.3, until: 'moa', who: 'moa', line: 'familyMoa', read: true },
     { id: 'family:plane', on: 'family:plane-ready', until: 'plane:board', within: [159, 171], who: 'moa', line: 'familyMoaPlan', read: true },
     { id: 'garden:ready', on: 'family:plane-ready', until: 'plane:board', within: [159, 171], who: 'moa', line: 'gardenReady', read: true },
-    { id: 'garden:pocket', on: 'family:plane-ready', until: 'plane:board', within: [159, 171], who: 'moa', line: 'gardenPocket' },
+    // A gust takes Moa's leaf drawing out of her hand and back under the shaving bridge: the picture shows it go.
+    { id: 'garden:pocket', on: 'garden:drawing-blown', until: 'plane:board', within: [159, 171], who: 'moa', line: 'gardenPocket' },
     { id: 'garden:found', on: 'garden:paper', who: 'elof', line: 'gardenFound' },
     { id: 'garden:thanks', on: 'garden:shared-paper', who: 'moa', line: 'gardenThanks' },
   ],
-  later: [{ flag: 'family:plane-ready', after: 'moa', until: 'plane:board', within: [159, 171], seconds: 1.2, hold: true }],
+  later: [
+    { flag: 'family:plane-ready', after: 'moa', until: 'plane:board', within: [159, 171], seconds: 1.2, hold: true },
+    { flag: 'garden:drawing-blown', after: 'family:plane-ready', until: 'plane:board', within: [159, 171], seconds: 2.5 },
+  ],
   cameras: [
     // Up on the window sills the picture is wider and looks down a little: the deck he can drop to stays in it.
     { from: 22, to: 36, above: 8.2, zoom: 1.3, lift: -1.2 },

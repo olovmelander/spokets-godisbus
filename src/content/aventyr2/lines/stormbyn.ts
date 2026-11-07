@@ -27,7 +27,7 @@ export const words: ChapterWords = {
   verbs: { sbUmbrella: 'Håll i paraplyet', sbRing: 'Dra i klocksnöret' },
   purposes: {
     sbStreet: { purpose: 'Följ godisspåret genom den mörka byn.', recap: 'Strömmen har gått i hela byn. Gamla trägubben lämnar godis åt mig.' },
-    sbRiver: { purpose: 'Åk björklövet nerför rännstenen.', recap: 'Regnet har gjort rännstenen till en fors.' },
+    sbRiver: { purpose: 'Åk på björklövet nerför rännstenen.', recap: 'Regnet har gjort rännstenen till en fors.' },
     sbGrate: { purpose: 'Hoppa över gallret till muren.', recap: 'Björklövet bar mig nerför forsen. Klonk hoppar före.' },
     sbCallMoa: { purpose: 'Gå upp på muren och ropa på Moa.', recap: 'Korsningen är översvämmad. Moa har sitt paraply med sig.' },
     sbBoard: { purpose: 'Håll i Moas paraply och sväva över.', recap: 'Moa håller ut sitt paraply åt mig över korsningen.' },

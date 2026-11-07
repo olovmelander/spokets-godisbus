@@ -903,6 +903,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** The root hole in the garden that the ghost crept into, where Moa reaches. */
   const ROOT_HOLE = { x: 163.4, y: 0 };
   const rootReach = new Vector3();
+  const creepTo = new Vector3();
+  /**
+   * Moa's leaf drawing, blown out of her hand and back under the shaving bridge as the plane is ready (garden.ts,
+   * `garden:drawing-blown`), so that it is seen to go where she says it went. A restored save does not replay it.
+   */
+  const blown = chapter.id === 'garden' ? spotProp({ id: 'blown', at: { x: 165.4, y: 2.6 }, verb: 'take', look: 'keepsake' }) : null;
+  if (blown) { blown.group.visible = false; blown.group.scale.setScalar(1.6); scene.add(blown.group); }
+  let blownAt = -1, blownSeen = false;
   /** Seconds since the ball he rides in Olympia was kicked; -1 when he is not on it. */
   let kickSince = -1;
   /** How far into each of the family's own gestures they are, 0 to 1: Bertil's boot pull, Moa's reach into the root. */
@@ -1247,6 +1255,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         if (tear) tear.visible = true;
       }
     }
+    if (blown) {
+      if (flags.has('garden:drawing-blown') && !blownSeen) { blownSeen = true; if (hasFrame) blownAt = clock; }
+      const k = blownAt < 0 ? 1 : (clock - blownAt) / 4.6;
+      blown.group.visible = k < 1;
+      if (k < 1) {
+        // Out of her hand and up on the gust, fluttering by her where it is seen, then away back over the lawn to where
+        // it lies under the shaving bridge (garden.ts, `garden:paper`).
+        const lift = Math.min(1, k / 0.3), glide = Math.max(0, (k - 0.3) / 0.7);
+        blown.group.position.set(165.5 - 1.2 * lift - 23.2 * glide, 1.8 + 1.8 * lift - 5.4 * glide ** 1.5 + Math.sin(clock * 6) * 0.15 * (1 - glide), 0.3 * (1 - k));
+        blown.group.rotation.set(Math.sin(clock * 3.1) * 0.7, Math.sin(clock * 2.3) * 0.5, clock * 4);
+      }
+    }
     rescuedFigures?.restore();
     for (const d of decor) {
       d.prop?.update(d.def.until !== undefined && flags.has(d.def.until), clock, dt);
@@ -1564,12 +1584,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (ghostState) {
       const hopping = ghostState.t < 1;
       const away = ghostState.gone ? 0 : 1;
-      ghostSize += (away - ghostSize) * ease(8, dt);
       // On a table's edge it stands behind the play plane: its perch says how far (picture only).
       const perch = chapter.ghost?.[ghostState.perch];
+      // Gone into a hole (the garden's roots), it creeps in head first and is seen to go, slower than a vanishing.
+      const creeps = ghostState.gone ? perch?.into : undefined;
+      ghostSize += (away - ghostSize) * ease(creeps ? 1 : 8, dt);
+      const creep = creeps ? 1 - ghostSize : 0;
       const before = chapter.ghost?.[Math.max(0, ghostState.perch - 1)];
       const depth = hopping ? lerp(before?.z ?? 0, perch?.z ?? 0, ghostState.t) : perch?.z ?? 0;
       ghostPlace.position.set(ghostState.x, ghostState.y, depth);
+      if (creeps) ghostPlace.position.lerp(creepTo.set(creeps.x, creeps.y, creeps.z), Math.min(1, creep * 1.4));
       ghostPlace.scale.setScalar(ghostSize);
       // Its shadow lies where it stands. In a hop it is off the ground, and the shadow waits where it will land.
       if (!hopping) ghostGroundY = ghostState.y;
@@ -1580,7 +1604,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const awake = !chapter.prologue || flags.has('blink');
       // It tips forward in a hop and rocks a little standing, about its own side: the stand-in's z, and the model's x,
       // which faces its own +z and is turned a quarter (./ghost-model.ts). The yaw goes first, so each is its own.
-      const tip = !awake ? 0 : hopping ? 0.25 * Math.sin(Math.PI * ghostState.t) : calmStory ? 0 : Math.sin(clock * 1.7) * 0.026 + Math.sin(clock * 0.63 + 1.3) * 0.014;
+      const tip = (!awake ? 0 : hopping ? 0.25 * Math.sin(Math.PI * ghostState.t) : calmStory ? 0 : Math.sin(clock * 1.7) * 0.026 + Math.sin(clock * 0.63 + 1.3) * 0.014) + Math.min(1, creep * 2) * 0.9;
       ghost.rotation.set(ghostFaces ? tip : 0, ghostFaces + ghostTurn, ghostFaces ? 0 : -tip, 'YXZ');
       if (chapter.prologue && prologue) {
         const pose = prologuePose(chapter.prologue, prologue);
@@ -1761,13 +1785,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       }
       // In the garden, until he calls her, Moa crouches and reaches into the root hole the ghost crept into ("Där
       // kröp spöket in. Jag får inte plats!"); her fingers will not go in.
-      const reachesIn = one.who === 'moa' && chapter.id === 'garden' && !flags.has('moa') && Math.abs(one.at - ROOT_HOLE.x) < 4;
+      // She reaches in once the ghost has crept in: first she watches it go.
+      const reachesIn = one.who === 'moa' && chapter.id === 'garden' && !flags.has('moa') && Math.abs(one.at - ROOT_HOLE.x) < 4 && (ghostState?.gone ?? true);
       gesture.reach = calmStory ? (reachesIn ? 1 : 0) : gesture.reach + ((reachesIn ? 1 : 0) - gesture.reach) * ease(5, dt);
       if (gesture.reach > 0.001) {
         const w = gesture.reach;
+        // Down on one knee, as Pappa kneels by his seesaw, so that her hand reaches the hole at the roots' foot.
         posed.lean += (Math.max(posed.lean, 0.85) - posed.lean) * w;
-        posed.kneeL += (Math.max(posed.kneeL, 1.5) - posed.kneeL) * w; posed.kneeR += (Math.max(posed.kneeR, 1.3) - posed.kneeR) * w;
-        posed.legL += (Math.max(posed.legL, 0.9) - posed.legL) * w; posed.legR += (Math.max(posed.legR, 0.7) - posed.legR) * w;
+        posed.legL += (1.35 - posed.legL) * w; posed.kneeL += (1.55 - posed.kneeL) * w;
+        posed.legR += (0.1 - posed.legR) * w; posed.kneeR += (1.65 - posed.kneeR) * w;
         one.rig.group.rotation.y += (-0.5 - one.rig.group.rotation.y) * w;
       }
       one.rig.pose(one.seated ? sitting(posed) : one.paddle ? one.paddle.stance(posed) : posed);

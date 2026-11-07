@@ -105,11 +105,12 @@ export const VOICE_LINES = [
   // ==========================================
   { key: 'clipBack', speaker: 'moa', situation: 'Getting lost hair clip back', tag: '[delighted, hugging brother]', text: 'Mitt hårspänne! Tack, lillebror!' },
   { key: 'tiny', speaker: 'moa', situation: 'Sees brother shrank', tag: '[startled, gasping in shock]', text: 'Lillebror?! Du är ju pytteliten!' },
-  { key: 'rootFingers', speaker: 'moa', situation: 'Ghost goes under tree root', tag: '[worried, trying to reach]', text: 'Där kröp spöket in. Jag får inte plats!' },
-  { key: 'gardenReady', speaker: 'moa', situation: 'Paper airplane is folded and ready', tag: '[encouraging, gentle]', text: 'Planet väntar. Vi lyfter när du vill.' },
-  { key: 'familyMoa', speaker: 'moa', situation: 'Supporting Elof', tag: '[warm, caring big sister]', text: 'Jag hjälper dig vidare, lillebror.' },
-  { key: 'familyMoaPlan', speaker: 'moa', situation: 'Explaining flight path', tag: '[confident, enthusiastic]', text: 'Mitt pappersplan når skogskanten.' },
-  { key: 'gardenPocket', speaker: 'moa', situation: 'Dropped drawing under bridge', tag: '[sad, worried sigh]', text: 'Min lövteckning föll under spånbron!' },
+  { key: 'rootFingers', speaker: 'moa', situation: 'Ghost creeps into the hole under the birch root', tag: '[surprised, pointing]', text: 'Spöket kröp ner under roten!' },
+  { key: 'rootHedge', speaker: 'moa', situation: 'Kneeling at the root hole, reaching in', tag: '[thinking aloud, trying to reach]', text: 'Hålet går under häcken, till skogen.' },
+  { key: 'gardenReady', speaker: 'moa', situation: 'Paper airplane is folded and ready', tag: '[encouraging, gentle]', text: 'Kliv på när du vill, så kastar jag.' },
+  { key: 'familyMoa', speaker: 'moa', situation: 'Her hand will not go in; she has an idea', tag: '[warm big sister, a bright idea]', text: 'Jag får inte plats. Men jag har en idé!' },
+  { key: 'familyMoaPlan', speaker: 'moa', situation: 'The paper plane will fly him over the hedge', tag: '[confident, enthusiastic]', text: 'Mitt flygplan tar dig över häcken!' },
+  { key: 'gardenPocket', speaker: 'moa', situation: 'A gust blows her drawing back under the bridge', tag: '[startled, a little sad]', text: 'Oj! Min teckning blåste in under bron!' },
   { key: 'gardenThanks', speaker: 'moa', situation: 'Elof rescued her drawing', tag: '[relieved, loving and proud]', text: 'Du hittade den! Vi hjälps åt, lillebror.' },
   { key: 'bagGlitters', speaker: 'moa', situation: 'Noticing glowing magic', tag: '[whispering in awe]', text: 'Två godisar lyser i påsen!' },
   { key: 'sawGlitter', speaker: 'moa', situation: 'Explaining the magic transfer', tag: '[explaining, gentle wonder]', text: 'Spökets magi hamnade i godispåsen.' },
@@ -133,8 +134,8 @@ export const VOICE_LINES = [
   { key: 'familyBraid', speaker: 'mamma', situation: 'Offering hair braid to climb', tag: '[warm, playful and gentle]', text: 'Min fläta blir en stege upp till mig.' },
   { key: 'familyBraidReady', speaker: 'mamma', situation: 'Holding braid steady', tag: '[supportive, encouraging]', text: 'Ta tag i flätan och klättra upp.' },
   { key: 'spangen', speaker: 'mamma', situation: 'Reminder about boardwalk on bog', tag: '[gentle motherly reminder]', text: 'På myren går vi på spången.' },
-  { key: 'bogFamilyHome', speaker: 'mamma', situation: 'Crane chick united, offers help', tag: '[pleased, kind]', text: 'Ungen är hemma. Vill du ha en spång?' },
-  { key: 'bogBridgeReady', speaker: 'mamma', situation: 'Spång finished over mist', tag: '[warm, satisfied]', text: 'Över dimman, och tillbaka igen.' },
+  { key: 'bogFamilyHome', speaker: 'elof', situation: 'Crane chick home; Elof asks the mother crane for a ride', tag: '[cute little boy, hopeful and excited]', text: 'Tranungen är hemma! Får jag åka med dig?' },
+  { key: 'bogBridgeReady', speaker: 'mamma', situation: 'Spång finished over mist', tag: '[warm, satisfied]', text: 'Spången är klar! Gå över när du vill.' },
   { key: 'notYet', speaker: 'mamma', situation: 'Catching Bertil sneaking candy', tag: '[loving reprimand, gentle smile]', text: 'Bertil! Godiset öppnar vi ikväll.' },
   { key: 'jayWindow', speaker: 'mamma', situation: 'Bird lands on window sill', tag: '[delighted whisper, looking out]', text: 'Titta! En lavskrika!' },
   { key: 'safeHere', speaker: 'mamma', situation: 'Kneeling by tiny Elof', tag: '[soothing, protective mother]', text: 'Jag är här. Du är inte ensam.' },
@@ -151,7 +152,7 @@ export const VOICE_LINES = [
   { key: 'cobbles3', speaker: 'pappa', situation: 'Explaining round stones', tag: '[gentle, educational]', text: 'Vågorna gjorde dem runda.' },
   { key: 'familyPappa', speaker: 'pappa', situation: 'Ravine too wide to jump', tag: '[calm, caring father]', text: 'Här är för långt att hoppa, Elof.' },
   { key: 'familySeesaw', speaker: 'pappa', situation: 'Building seesaw bridge', tag: '[steady, guiding craftsman]', text: 'Jag håller brädan. Rulla hit en kotte.' },
-  { key: 'familySeesawReady', speaker: 'pappa', situation: 'Seesaw ready to launch', tag: '[encouraging, cheerful]', text: 'Bra! Ställ dig på den låga änden.' },
+  { key: 'familySeesawReady', speaker: 'pappa', situation: 'Seesaw ready to launch', tag: '[encouraging, cheerful]', text: 'Bra! Ställ dig på änden som är nere.' },
   { key: 'first1', speaker: 'pappa', situation: 'Summit confession about lost carving', tag: '[nostalgic, emotional, soft]', text: 'Min allra första trägubbe …' },
   { key: 'first2', speaker: 'pappa', situation: 'Remembering carving it for Elof', tag: '[deeply loving, tender]', text: 'Den täljde jag till dig' },
   { key: 'first3', speaker: 'pappa', situation: 'When Elof was little', tag: '[tender fatherly memory]', text: 'när du var liten, Elof.' },
@@ -201,7 +202,7 @@ export const VOICE_LINES = [
 
   // Story endings
   { key: 'end_epilog', speaker: 'storyteller', situation: 'Story closing card', tag: '[tender, emotionally resonant fairytale conclusion]', text: 'Klonk kunde inte säga det med ord. Men Elof förstod.' },
-  { key: 'end_window', speaker: 'storyteller', situation: 'Final moonlight card', tag: '[gentle, magical bedtime ending]', text: 'Elofs lilla trägubbe står i månljuset. Dess målade ögon blinkar.' },
+  { key: 'end_window', speaker: 'storyteller', situation: 'Final moonlight card', tag: '[gentle, magical bedtime ending]', text: 'Elofs lilla trägubbe står i månljuset. Hans målade ögon blinkar.' },
   { key: 'end_byn', speaker: 'storyteller', situation: 'Bonus chapter closing', tag: '[cheerful, contented stroll home]', text: 'Lördagsgodiset är köpt. Nu går vi hem.' },
 ];
 
