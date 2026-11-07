@@ -182,6 +182,8 @@ export interface Wardrobe {
   hair: SkinnedMesh | null;
   /** What of the body is under the coat and each boot is not drawn while they are worn: x coat, y left boot, z right. */
   cover: { value: Vector3 } | null;
+  /** 1 while the cap is on: then the hair is drawn only below its brim, at the sides, the back and the nape. */
+  capped: { value: number } | null;
 }
 
 const COVERED_BY_COAT = new Set(['pelvis', 'spine_01', 'spine_02', 'upperarm_l', 'upperarm_r', 'lowerarm_l', 'lowerarm_r', 'thigh_l', 'thigh_r']);
@@ -271,6 +273,62 @@ function hideUnder(body: SkinnedMesh, coat: SkinnedMesh | null, boots: [SkinnedM
   return uniform;
 }
 
+/** The model's cap, where it has one: its own part, painted with its own material ("... cap"). */
+function capOf(model: Object3D): SkinnedMesh | null {
+  let cap: SkinnedMesh | null = null;
+  model.traverse((node) => {
+    const mesh = node as SkinnedMesh;
+    if (mesh.isSkinnedMesh && !Array.isArray(mesh.material) && /\bcap$/.test((mesh.material as MeshStandardMaterial).name)) cap = mesh;
+  });
+  return cap;
+}
+
+/** A skinned mesh's corners where they lie at rest, in the pelvis's frame and in metres (see `hideUnder`). */
+function restOf(mesh: SkinnedMesh): Float32Array {
+  const k = Math.max(0, mesh.skeleton.bones.findIndex((bone) => bone.name === 'pelvis'));
+  const m = new Matrix4().multiplyMatrices(mesh.skeleton.boneInverses[k], mesh.bindMatrix);
+  const p = mesh.geometry.getAttribute('position'), out = new Float32Array(p.count * 3), v = new Vector3();
+  for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(m); out[i * 3] = v.x; out[i * 3 + 1] = v.y; out[i * 3 + 2] = v.z; }
+  return out;
+}
+
+/**
+ * Bertil's own hair under his cap (Olov: "Bertil har hår på huvudet under kepsen nu va?"): the hair is drawn while the
+ * cap is on too, but only below the cap's brim all round, so that it shows at the sides, the back and the nape and
+ * nothing of it comes through the cap. The brim is found sector by sector round the head, at rest.
+ */
+function hairUnderCap(hair: SkinnedMesh, cap: SkinnedMesh): { value: number } {
+  const c = restOf(cap), h = restOf(hair);
+  let cx = 0, cz = 0;
+  for (let i = 0; i < c.length; i += 3) { cx += c[i]!; cz += c[i + 2]!; }
+  cx /= c.length / 3; cz /= c.length / 3;
+  const SECTORS = 24;
+  const brim = new Array<number>(SECTORS).fill(Infinity);
+  const sector = (x: number, z: number) => ((Math.floor(((Math.atan2(z - cz, x - cx) / (Math.PI * 2)) + 1) * SECTORS)) % SECTORS);
+  for (let i = 0; i < c.length; i += 3) { const k = sector(c[i]!, c[i + 2]!); brim[k] = Math.min(brim[k]!, c[i + 1]!); }
+  // A sector the cap does not reach takes its neighbours' brim.
+  for (let k = 0; k < SECTORS; k++) if (!Number.isFinite(brim[k])) brim[k] = Math.min(brim[(k + 1) % SECTORS]!, brim[(k + SECTORS - 1) % SECTORS]!);
+  const under = new Float32Array(h.length / 3);
+  for (let i = 0; i < under.length; i++) {
+    const y = h[i * 3 + 1]!, at = brim[sector(h[i * 3]!, h[i * 3 + 2]!)]!;
+    under[i] = y > at - 0.004 ? 1 : 0;
+  }
+  hair.geometry.setAttribute('underCap', new Float32BufferAttribute(under, 1));
+  const uniform = { value: 1 };
+  const material = hair.material as MeshStandardMaterial;
+  const before = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, renderer) => {
+    before.call(material, shader, renderer);
+    shader.uniforms.hairCapped = uniform;
+    shader.vertexShader = 'attribute float underCap;\nvarying float vUnderCap;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vUnderCap = underCap;');
+    shader.fragmentShader = 'uniform float hairCapped;\nvarying float vUnderCap;\n' + shader.fragmentShader.replace('void main() {', 'void main() {\n  if (hairCapped > 0.5 && vUnderCap > 0.5) discard;');
+  };
+  const key = material.customProgramCacheKey.bind(material);
+  material.customProgramCacheKey = () => `${key()}:hair-under-cap`;
+  material.needsUpdate = true;
+  return uniform;
+}
+
 const GLOSS: [RegExp, number][] = [[/raincoat$/, 0.4], [/boot_[lr]$/, 0.28], [/sock_[lr]$/, 0.95]];
 
 export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
@@ -279,7 +337,7 @@ export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
   const bones = new Map(body.skeleton.bones.map((bone) => [bone.name, bone]));
   const pieces: SkinnedMesh[] = [];
   made.traverse((node) => { if ((node as SkinnedMesh).isSkinnedMesh) pieces.push(node as SkinnedMesh); });
-  const out: Wardrobe = { coat: null, boots: [null, null], socks: [null, null], hair: null, cover: null };
+  const out: Wardrobe = { coat: null, boots: [null, null], socks: [null, null], hair: null, cover: null, capped: null };
   for (const piece of pieces) {
     const own = piece.skeleton.bones.map((bone) => bones.get(bone.name));
     if (own.some((bone) => !bone)) continue;
@@ -302,6 +360,8 @@ export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
     else if (/hair$/.test(piece.name)) out.hair = mesh;
   }
   out.cover = hideUnder(body, out.coat, out.boots);
+  const cap = capOf(model);
+  out.capped = out.hair && cap ? hairUnderCap(out.hair, cap) : null;
   return out;
 }
 

@@ -561,7 +561,9 @@ export function createModelRig(model: Object3D, height: number): Rig {
         const mesh = node as Mesh;
         if (mesh.isMesh && !Array.isArray(mesh.material) && /\bcap$/.test(mesh.material.name)) mesh.visible = !bare;
       });
-      if (wardrobe?.hair) wardrobe.hair.visible = bare;
+      // His own hair is there under the cap too; while it is on, only what is below its brim is drawn.
+      if (wardrobe?.hair) wardrobe.hair.visible = true;
+      if (wardrobe?.capped) wardrobe.capped.value = bare ? 0 : 1;
     },
     wear(made) {
       if (wardrobe) return;
@@ -571,7 +573,8 @@ export function createModelRig(model: Object3D, height: number): Rig {
       if (shells) for (const shell of [shells.coat, ...shells.boots, ...shells.socks]) { shell.removeFromParent(); shell.geometry.dispose(); }
       shells = null;
       wearWardrobe(wardrobe, worn);
-      if (wardrobe.hair) wardrobe.hair.visible = headBare;
+      if (wardrobe.hair) wardrobe.hair.visible = true;
+      if (wardrobe.capped) wardrobe.capped.value = headBare ? 0 : 1;
     },
     breeze(wind, dt, still, ruffle = 0) { if (dt > 0) soft(sway.step(wind, dt, still), still ? 0 : ruffle); },
     mouth(out) { return bones.head ? bones.head.node.localToWorld(out.copy(mouth)) : group.localToWorld(out.set(0, height * .89, height * .075)); },

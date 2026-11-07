@@ -900,7 +900,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** How far into each of the family's own gestures they are, 0 to 1: Bertil's boot pull, Moa's reach into the root. */
   const gestures = new Map<string, { pull: number; reach: number; lift: number; liftFor: number }>();
   const gestureOf = (who: string) => { let g = gestures.get(who); if (!g) gestures.set(who, g = { pull: 0, reach: 0, lift: 0, liftFor: 0 }); return g; };
-  const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3();
+  const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3(), lampLocal = new Vector3();
   const lampTurn = new Quaternion();
   const LAMP_POINTS = new Vector3(0, 0, 1);
   // The little one's knitted cap ("Lillgubbens mössa! Jag tar med den."): from the gutter in Stormbyn Elof carries
@@ -1720,10 +1720,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           // Never into the lens: held level or down, along the path.
           lampAim.z = Math.min(lampAim.z, Math.hypot(lampAim.x, lampAim.y) * 0.3);
           lampAim.normalize();
-          lampHand.copy(lampFrom).addScaledVector(lampAim, 1.5 * u);
-          lampHand.y -= 0.5 * u;
-          one.rig.reach(0, lampHand, 0.85);
-          one.rig.hand(0, lampHand);
+          // Held in the hand on his side, out in front of the body and of a raincoat over it, so that the arm never
+          // crosses the chest through the coat; the lamp itself turns to him (Olov: the arms went through the coats).
+          lampLocal.copy(lampTo);
+          one.rig.group.worldToLocal(lampLocal);
+          const side: 0 | 1 = lampLocal.x >= 0 ? 0 : 1;
+          lampHand.set((side === 0 ? 1 : -1) * 0.75 * u, 2.75 * u, 1.35 * u);
+          one.rig.group.localToWorld(lampHand);
+          one.rig.reach(side, lampHand, 0.9);
+          one.rig.hand(side, lampHand);
           one.lamp.position.copy(lampHand);
           one.lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampAim);
           one.lamp.scale.setScalar(Math.max(0.7, u));
