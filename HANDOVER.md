@@ -26,7 +26,8 @@
       (`src/audio/recorded.ts`, read by `vite.config.ts`). They are shown silent until the new voices are made.
     - `scripts/generate-voices.mjs` and `scripts/voices-aventyr2.json` have the new words.
   - **Checked:** typecheck, `npm test` (2,133), the build with its gates (JS 539.8 of 540 KB), the privacy check, and
-    the browser suites story-context and myren-loop.
+    the browser suite story-context (89). myren-loop could not run here: this sandbox blocks Vite's WebSocket, and the
+    suite counts those messages as errors. CI runs it.
   - **The next step needs:** nothing from Olov's computer. The new voices, when he says so, record the changed lines.
 
 ## State (7 November 2026, evening)

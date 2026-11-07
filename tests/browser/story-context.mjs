@@ -116,9 +116,9 @@ try {
     ['drawing-return', 'garden', 'moa,placed:bridge,garden:pocket-open,garden:paper', 164.1, 0, 'gardenReturnDrawing', 'Jag kan visa Moa lövteckningen.'],
     ['skip-drawing', 'garden', 'moa,placed:bridge,garden:pocket-open,garden:paper,plane:board', 172, 4, 'plane', 'Flyg på Moas pappersflygplan.'],
     ['lantern-loop', 'myren', 'home,bog:return-bridge,placed:bog-boardwalk', 160, 0.3, 'bogLantern', 'Jag kan gå tillbaka till gläntan.'],
-    ['lantern-return', 'myren', 'home,bog:return-bridge,placed:bog-boardwalk,bog:lantern-return', 155, 0.3, 'bogReturn', 'Gå tillbaka till tranan när jag vill.'],
-    ['main-crane-route', 'myren', 'home,bog:return-bridge,placed:bog-boardwalk,bog:lantern-return,crane', 176, 8, 'crane', 'Flyg med tranan till berget.'],
-    ['high-cairn-return', 'berget', 'lift,found:chokladpralin', 150, 40.9, 'mountainReturn', 'Välj snöret eller hyllorna ner.'],
+    ['lantern-return', 'myren', 'home,bog:return-bridge,placed:bog-boardwalk,bog:lantern-return', 155, 0.3, 'bogReturn', 'Gå tillbaka till tranan när du vill.'],
+    ['main-crane-route', 'myren', 'home,bog:return-bridge,placed:bog-boardwalk,bog:lantern-return,crane', 176, 8, 'crane', 'Flyg på tranans rygg upp till berget.'],
+    ['high-cairn-return', 'berget', 'lift,found:chokladpralin', 150, 40.9, 'mountainReturn', 'Gå ner längs snöret eller klipphyllorna.'],
     ['cairn-plot-resumes', 'berget', 'lift,found:chokladpralin,memory', 150, 31.4, 'figure', 'Hämta hem min första trägubbe.'],
   ]) {
     const { page } = loops;
