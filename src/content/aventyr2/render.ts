@@ -2163,6 +2163,38 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       g.add(float, band);
       return g;
     },
+    'hut-door': (mover) => {
+      // Flärken's second hut's old door, sliding on its rail (buildings.ts, hutDoorway): upright planks with dark gaps,
+      // a Z of braces, a ring handle to pull it by on its left, and two hangers whose wheels run on the rail over it.
+      // The mover is its top, where he stands; the door hangs from there to just over the sill when it is shut.
+      const w = mover.width, top = mover.height, tall = mover.stops[0]!.y + top - 0.04;
+      const wood: BufferGeometry[] = [];
+      const planks = Math.max(4, Math.round(w / 0.42));
+      const tones = ['#7a5532', '#6c4a2a', '#835c37', '#71502d'];
+      for (let i = 0; i < planks; i++) {
+        wood.push(box(w / planks - 0.05, tall - 0.04, 0.12, -w / 2 + (i + 0.5) * (w / planks), top - tall / 2, 0, tones[i % tones.length]!));
+      }
+      const brace = '#8c6640';
+      for (const y of [0.17, 0.83]) wood.push(box(w - 0.14, 0.22, 0.08, 0, top - tall + tall * y, 0.1, brace));
+      const run = w - 0.34, rise = tall * 0.66;
+      const diagonal = box(Math.hypot(run, rise), 0.2, 0.08, 0, 0, 0, brace);
+      diagonal.rotateZ(-Math.atan2(rise, run)).translate(0, top - tall / 2, 0.1);
+      wood.push(diagonal);
+      // A worn board along its top, which he stands on.
+      wood.push(box(w + 0.04, 0.1, 0.24, 0, top - 0.05, 0, '#8e6a44'));
+      const door = new Mesh(mergeGeometries(wood), solid('#ffffff', 0.85, { vertexColors: true }));
+      const iron: BufferGeometry[] = [];
+      for (const x of [-w * 0.32, w * 0.32]) {
+        iron.push(box(0.12, 0.34, 0.04, x, top + 0.05, -0.06, '#1d1d1f'));
+        iron.push(new CylinderGeometry(0.09, 0.09, 0.06, 12).rotateX(Math.PI / 2).translate(x, top + 0.22, -0.1));
+      }
+      iron.push(box(0.14, 0.3, 0.04, -w / 2 + 0.26, top - tall * 0.5, 0.16, '#1d1d1f'));
+      iron.push(new TorusGeometry(0.1, 0.025, 6, 12).translate(-w / 2 + 0.26, top - tall * 0.5 - 0.1, 0.18));
+      const metal = new Mesh(mergeGeometries(iron.map((g) => (g.index ? g.toNonIndexed() : g)).map((g) => { g.deleteAttribute('uv'); g.deleteAttribute('color'); return g; })), solid('#1d1d1f', 0.5, { metalness: 0.4 }));
+      const group = new Group();
+      group.add(door, metal);
+      return group;
+    },
     'jetty-plank': (mover) => {
       const group = new Group();
       const plank = new Mesh(new BoxGeometry(mover.width, mover.height, 1.4), solid('#8c7a62', 0.9));

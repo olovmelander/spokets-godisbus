@@ -108,8 +108,12 @@ export interface Mover {
   optional?: boolean;
   /** The word on the button where Knuffa or Dra is too plain: a key of `sv.verbs`, as "Sparka" for a football. */
   word?: string;
-  /** A repeating platform, between its two stops. Its phase is local, never saved as puzzle progress. `wait`: it is a hop away only for a moment, and he waits for that. */
-  cycle?: { seconds: number; phase?: number; wait?: boolean };
+  /**
+   * A repeating platform, between its two stops. Its phase is local, never saved as puzzle progress. `wait`: it is a
+   * hop away only for a moment, and he waits for that. `slam`: it rests at each stop a moment, then gathers speed
+   * and bangs into the other, as a door does in the wind; otherwise it eases in and out.
+   */
+  cycle?: { seconds: number; phase?: number; wait?: boolean; slam?: boolean };
 }
 
 /** A trail candy: where it floats, and the flag that has to be set before it is there at all. */
@@ -379,7 +383,7 @@ export interface SimStart {
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
 export type MoverLook = 'boulder' | 'riverLog' | 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
-  | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy';
+  | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy' | 'hut-door';
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder' | 'shelf';
 export type SpotLook = 'kit' | 'casement' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
@@ -728,6 +732,11 @@ export interface Storm {
     x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string; marks?: { halfway: number; box?: { x: number; long: number }; front?: number }; model?: string; size?: number;
     /** A hut's logs tarred black, with white trim. */
     tar?: boolean;
+    /**
+     * A hut's door slides on a rail along its front, out to the right, the rail rising this far over the door's width:
+     * the door is a mover (look 'hut-door'), and the hut has its doorway, the rail, and its window on the left.
+     */
+    slider?: { top: number; rise: number };
     /** Turned about the upright, in quarter turns: a net or a table seen from its end. */
     turn?: number;
   }[];

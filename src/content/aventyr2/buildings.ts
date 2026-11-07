@@ -272,11 +272,12 @@ function hut(def: BuildingDef) {
   // The logs, their ends and the gable have the wood's grain seen close (../../render/bark-detail.ts); not the metal
   // roof, nor the door's upright planks and the window, which are added after.
   for (const part of parts) if (!metal.includes(part)) barky(part, PLANK);
-  parts.push(...hutDoor(w, h, d, tar));
-  // A small window beside the door, high up, in a white frame with a cross of glazing bars.
+  parts.push(...(def.slider ? hutDoorway(w, h, d, tar, def.slider) : hutDoor(w, h, d, tar)));
+  // A small window beside the door, high up, in a white frame with a cross of glazing bars: on the left where the
+  // door slides open to the right over the wall.
   const panes: BufferGeometry[] = [];
   const front = d / 2 - 0.3 + (h / logs) * 0.54;
-  const wx = w * 0.32;
+  const wx = w * (def.slider ? -0.32 : 0.32);
   const wy = h * 0.6;
   parts.push(box(0.98, 0.84, 0.12, wx, wy, front + 0.04, '#e9e5da'));
   parts.push(box(0.06, 0.6, 0.06, wx, wy, front + 0.16, '#e9e5da'), box(0.74, 0.06, 0.06, wx, wy, front + 0.16, '#e9e5da'));
@@ -315,6 +316,35 @@ function hutDoor(w: number, h: number, d: number, tar: boolean): BufferGeometry[
   parts.push(box(0.2, dh + 0.2, 0.16, -dw / 2 - 0.1, (dh + 0.2) / 2, z + 0.04, trim), box(0.2, dh + 0.2, 0.16, dw / 2 + 0.1, (dh + 0.2) / 2, z + 0.04, trim));
   parts.push(box(dw + 0.6, 0.22, 0.2, 0, dh + 0.1, z + 0.06, trim));
   parts.push(box(dw + 0.5, 0.12, 0.42, 0, 0.06, z + 0.06, tar ? '#5b5650' : '#a58a66'));
+  return parts;
+}
+
+/**
+ * A changing hut's doorway whose door slides (Flärken's second hut, whose door bangs in the wind): the dark inside, the
+ * white casing and the worn sill as `hutDoor` has them, and an iron rail along the front over the door, from beside
+ * the doorway to past the hut's corner. The door's top is at `top` shut, and the rail rises `rise` over its width, as
+ * the door does on it (the mover 'hut-door'). The door hangs in front of the casing, at the play plane.
+ */
+function hutDoorway(w: number, h: number, d: number, tar: boolean, slider: { top: number; rise: number }): BufferGeometry[] {
+  const dw = w * 0.36;
+  const dh = h * 0.7;
+  const z = d / 2 + 0.3;
+  const parts: BufferGeometry[] = [box(dw, dh, 0.1, 0, dh / 2, z - 0.05, '#120c07')];
+  // The inside, dimly: a bench along the back wall and a hook board.
+  parts.push(box(dw * 0.9, 0.12, 0.3, 0, dh * 0.24, z - 0.2, tar ? '#2c2520' : '#3a2a1a'));
+  parts.push(box(dw * 0.7, 0.1, 0.06, 0, dh * 0.72, z - 0.12, tar ? '#2c2520' : '#3a2a1a'));
+  const trim = '#e9e5da';
+  parts.push(box(0.2, dh + 0.2, 0.16, -dw / 2 - 0.1, (dh + 0.2) / 2, z + 0.04, trim), box(0.2, dh + 0.2, 0.16, dw / 2 + 0.1, (dh + 0.2) / 2, z + 0.04, trim));
+  parts.push(box(dw + 0.6, 0.22, 0.2, 0, dh + 0.1, z + 0.06, trim));
+  parts.push(box(dw + 0.5, 0.12, 0.42, 0, 0.06, z + 0.06, tar ? '#5b5650' : '#a58a66'));
+  // The rail, on brackets into the logs: from the doorway's left to a stop past the hut's right corner.
+  const from = -dw / 2 - 0.2, to = Math.min(w / 2 + 0.35, dw * 1.5 + 0.25);
+  const railAt = (x: number) => slider.top + 0.16 + (slider.rise * x) / dw;
+  const run = to - from, lift = railAt(to) - railAt(from);
+  parts.push(tilted(Math.hypot(run, lift), 0.09, 0.09, 0, Math.atan2(lift, run), (from + to) / 2, (railAt(from) + railAt(to)) / 2, z + 0.12, '#2a2a2c'));
+  for (const x of [from + 0.1, (from + to) / 2, to - 0.1]) parts.push(box(0.1, 0.22, 0.3, x, railAt(x) + 0.02, z - 0.02, '#232325'));
+  // A rubber stop at each end, where it bangs.
+  for (const x of [from + 0.02, to - 0.02]) parts.push(box(0.12, 0.2, 0.16, x, railAt(x), z + 0.12, '#151515'));
   return parts;
 }
 
