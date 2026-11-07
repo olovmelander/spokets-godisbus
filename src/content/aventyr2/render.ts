@@ -715,6 +715,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         boat.rotation.z = still ? 0 : Math.sin(clock * 1.1) * 0.012 * (1 - 0.6 * way);
         boat.rotation.x = still ? 0 : Math.sin(clock * 0.8 + 1) * 0.01 + 0.012;
       }
+      // A loose corner of the tarp over the rowing boat lifts in the gusts and flaps, and falls back between them.
+      for (const [i, made] of buildings.entries()) {
+        const flap = made.group.userData.flap as Object3D | undefined;
+        if (!flap) continue;
+        const gust = Math.max(0, Math.sin(clock * 0.47 + i * 2.1)) ** 3;
+        flap.rotation.x = still ? -0.08 : -(0.08 + 0.05 * Math.sin(clock * 1.9 + i) + gust * (0.55 + 0.2 * Math.sin(clock * 11 + i)));
+      }
       for (const [i, raft] of rocking.entries()) {
         raft.made.group.position.y = raft.y + (still ? 0 : Math.sin(clock * 0.9 + i) * 0.09);
         raft.made.group.rotation.z = still ? 0 : Math.sin(clock * 0.63 + i) * 0.018;

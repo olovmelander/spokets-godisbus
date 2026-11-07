@@ -425,8 +425,8 @@ export const billsta: ChapterData = {
     ],
     // Mormor and morfar's place by the road near the forest: the white house with its lit window behind the yard,
     // the red barn beside it, whose windows glow once mormor has taken her lantern in; the woodshed, the rowing boat
-    // on its trestles, the mailbox by the road, birches, and the forest's spruces across the road and behind the
-    // house, up Billaberget.
+    // on its trestles under a tarp, the garden furniture under another, the mailbox by the road, birches, and the
+    // forest's spruces across the road and behind the house, up Billaberget.
     buildings: [
       // The family's car on the road, just stopped after the drive, its inside light on.
       { kind: 'car', x: CAR.x, z: CAR.z, width: CAR.width, lit: '', size: 0.62 },
@@ -446,6 +446,8 @@ export const billsta: ChapterData = {
       { kind: 'barn', x: 94, z: -44, lit: 'bi:mormor', model: 'billsta-barn', size: 0.8 },
       { kind: 'woodshed', x: 42, z: -7 },
       { kind: 'rowboat', x: 24, z: -5, width: 16 },
+      // Morfar's garden table and chairs, put away under a tarp for the winter, on the lawn towards the house.
+      { kind: 'gardenset', x: 34, z: -30, width: 9.2 },
       { kind: 'birch', x: 18, z: -10, height: 56 },
       { kind: 'birch', x: 104, z: -22, height: 60 },
       // The forest behind the house, and up Billaberget. Each spruce stands a little sunk, so that its lowest

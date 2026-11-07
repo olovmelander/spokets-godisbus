@@ -733,7 +733,8 @@ export interface Storm {
    */
   buildings?: {
     kind: 'jettyArm' | 'pole' | 'store' | 'trestleTable' | 'pitch' | 'chess' | 'sunboard' | 'villa' | 'barn' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
-      | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce';
+      | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce'
+      | 'gardenset';
     x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string; marks?: { halfway: number; box?: { x: number; long: number }; front?: number }; model?: string; size?: number;
     /** A hut's logs tarred black, with white trim. */
     tar?: boolean;

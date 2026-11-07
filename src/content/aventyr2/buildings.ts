@@ -1,6 +1,6 @@
 import {
   BoxGeometry, BufferGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, ExtrudeGeometry, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial,
-  IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, TorusGeometry, Vector3,
+  IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, TorusGeometry, Vector3, type Object3D,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Storm } from '../../sim/types';
@@ -666,6 +666,14 @@ function lodge(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
+function gardenset(def: BuildingDef) {
+  // The garden table and its chairs under a green tarp for the winter, its legs showing under the hem.
+  const w = def.width ?? 9.2;
+  const parts: BufferGeometry[] = [box(w, 1.8, 5, 0, 2.3, 0, '#4c6650'), box(w * 0.9, 1.2, 4.4, 0, 3.6, 0, '#4c6650')];
+  for (const x of [-w * 0.37, w * 0.37]) for (const z of [-1.6, 1.6]) parts.push(box(0.44, 1.4, 0.44, x, 0.7, z, '#8a6a4a'));
+  return { parts, panes: [] };
+}
+
 function mailbox(def: BuildingDef) {
   // A plain mailbox on its post by the road: no name, no number.
   const h = def.height ?? 8;
@@ -773,7 +781,19 @@ function store(def: BuildingDef) {
 
 const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGeometry[]; panes: BufferGeometry[] }> = {
   jettyArm, pole, store, trestleTable, pitch, chess, sunboard, villa, barn, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
-  church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce,
+  church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce, gardenset,
+};
+
+/**
+ * What is made in Blender now (art/blender/a2-yard.py), and how big it was made there: the yard's things at Billsta and the
+ * swings at Flärkenbadet. Each takes its stand-in's place at the size the chapter gives it, across or up.
+ */
+const YARD: Partial<Record<BuildingDef['kind'], { model: string; size: number; by: 'width' | 'height' }>> = {
+  woodshed: { model: 'vedbod', size: 18, by: 'width' },
+  rowboat: { model: 'roddbat-vinter', size: 16, by: 'width' },
+  mailbox: { model: 'brevlada', size: 8, by: 'height' },
+  swings: { model: 'gungor', size: 19, by: 'width' },
+  gardenset: { model: 'utemobler', size: 9.2, by: 'width' },
 };
 
 /** What is built of stone: the bridge's piers and deck. */
@@ -827,6 +847,13 @@ export function building(def: BuildingDef): Building {
     group.userData.model = 'bil';
     group.userData.fit = (def.width ?? 29) / CAR_LONG;
     group.children[1]!.userData.keep = -0.022 * (def.width ?? 29);
+  }
+  const yard = YARD[def.kind];
+  if (yard) {
+    group.userData.model = yard.model;
+    group.userData.fit = (def[yard.by] ?? yard.size) / yard.size;
+    // The rowing boat's tarp has a loose corner, for the wind to lift (./render.ts).
+    if (def.kind === 'rowboat') group.userData.onModelInstalled = (model: Object3D) => { group.userData.flap = model.getObjectByName('roddbat-vinter-flik') ?? undefined; };
   }
   if (def.kind === 'cliff') {
     const [wide, high] = [def.width ?? 16, def.height ?? 12];
