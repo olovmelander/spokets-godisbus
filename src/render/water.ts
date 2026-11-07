@@ -73,6 +73,12 @@ export interface WaterKind {
   shoreColour: string;
   /** What it mirrors, where the far scenery is hidden: what the street has standing at this z, painted by it. */
   stands: number | null;
+  /**
+   * What lives on it (Mid and High): how many pine needles and bits of leaf drift on it with the flow, and how much of
+   * a long slow swell runs under its ripples. Left out: none.
+   */
+  drift?: number;
+  swell?: number;
 }
 
 /**
@@ -88,6 +94,7 @@ const POOL: WaterKind = {
   // Dark water mirrors darker and warmer: at 0.6 and near white it gave back the bright, hazy forest so well that
   // the brook read as mist (Olov: "har vi fixat vattnet och bäckarna så att det ser bra ut?").
   mirror: 0.42, tint: '#b8ad8c', ripple: 1.15, bedColour: '#000000', shoreColour: '#000000', stands: null,
+  drift: 1, swell: 0.35,
 };
 
 const KINDS: Partial<Record<PlaceId, WaterKind>> = {
@@ -97,6 +104,7 @@ const KINDS: Partial<Record<PlaceId, WaterKind>> = {
     front: 2.4, corner: 1.5, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
     dim: 0.6, faceTop: '#34423f', faceDeep: '#0e1a18', ramp: 1.6, faceAlpha: 0.93, faceBelow: 1, murk: 0.5, through: '#c9d2c0',
     mirror: 0.5, tint: '#c8bd9e', ripple: 0.8, bedColour: '#000000', shoreColour: '#000000', stands: null,
+    drift: 0.6,
   },
   /** Rain water in a dip of the street: a hand deep, asphalt under it, and a wet shore towards the houses. */
   village: {
@@ -113,6 +121,7 @@ export const RIVER: WaterKind = {
   front: 11, corner: 11, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
   dim: 0.6, faceTop: '#2a3a3c', faceDeep: '#0c1618', ramp: 1.6, faceAlpha: 0.93, faceBelow: 1, murk: 0.5, through: '#b8cac4',
   mirror: 0.55, tint: '#c4ccc0', ripple: 1.25, bedColour: '#000000', shoreColour: '#000000', stands: null,
+  drift: 0.5, swell: 1,
 };
 
 /** How wide a thing can stand in a river with the water going on past it: more than that is a bank. */
@@ -270,6 +279,14 @@ export const MIRROR_REACH = 3.5;
 export const MIRRORED_NEAR = 5;
 /** How much of the place's haze the water's surface takes, against the ground's. */
 const WATER_HAZE = 0.6;
+/**
+ * Rings on the water at once (Mid and High): where something touches it, his steps and landings, a wake behind what he
+ * rides, a fish rising. The newest takes the oldest's place.
+ */
+const RINGS = 8;
+/** How fast a ring spreads, in EL a second, and how long it lasts. */
+const RING_SPEED = 0.85;
+const RING_LIFE = 3;
 /** How far from a pool the camera may look and the pool still mirror what is near it, in EL. */
 const NEAR_REACH = 16;
 /** Where the camera stands, for the strip's sake: this far in front of the path, and this far under the far pictures' eye row. */
@@ -422,6 +439,10 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     nearMirror: { value: nothingNear as Texture }, nearMatrix: { value: new Matrix4() }, nearOn: { value: 0 }, nearLevel: { value: 0 },
     // How much of the haze its surface takes, against the ground's (all of it in the mist).
     haze: { value: WATER_HAZE },
+    // Its rings: where each began (x, z), when (on its own clock) and how strong it is.
+    rings: { value: Array.from({ length: RINGS }, () => new Vector4(0, 0, -100, 0)) },
+    // What drifts on it, and its swell.
+    life: { value: new Vector2(kind.drift ?? 0, kind.swell ?? 0) },
   };
   const material = new ShaderMaterial({
     // It writes no depth: a shaft of light or a sheet of mist that dips under the surface goes on into the
@@ -445,6 +466,8 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
       uniform sampler2D flowMap, refraction, mirrorMap, islands;
       uniform vec3 waterColour, sunDirection, skyTop, skyMiddle, skyGlow, mirrorTint, faceTop, faceDeep, through, bedColour, shoreColour;
       uniform float time, details, opacity, refractOn, cameraFar, mirrorReach, nearOn, nearLevel, haze;
+      uniform vec4 rings[${RINGS}];
+      uniform vec2 life;
       uniform sampler2D nearMirror;
       uniform mat4 nearMatrix;
       uniform vec4 mirrorFrame, islandFrame, body, surface, banks[${MIRRORED.banks}], columns[${MIRRORED.trunks}];
@@ -481,6 +504,28 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         float gust = 0.45 + 0.55 * smoothstep(-0.3, 0.9, sin(waterWorld.x * 0.23 - time * 0.55 + 1.6 * sin(waterWorld.z * 0.31 + time * 0.17))
           * sin(waterWorld.z * 0.47 + waterWorld.x * 0.11 + time * 0.23));
         vec2 slope = wave.xy * surface.y * 0.03 * gust;
+        // Open water's long slow swell under the ripples: broad bands that the mirror leans into as they pass.
+        if (details > 0.5 && life.y > 0.0) {
+          slope += vec2(cos(waterWorld.x * 0.33 - time * 0.85 + 0.6 * sin(waterWorld.z * 0.21)), 0.6 * cos(waterWorld.z * 0.47 + waterWorld.x * 0.09 + time * 0.55))
+            * 0.035 * life.y;
+        }
+        // Rings where something touched it: a few crests that spread and die away, tipping the mirror as they pass.
+        float ringCrest = 0.0, ringTrough = 0.0;
+        if (details > 0.5 && isTop > 0.5) {
+          for (int i = 0; i < ${RINGS}; i++) {
+            vec4 ring = rings[i];
+            float age = time - ring.z;
+            if (age < 0.0 || age > ${RING_LIFE.toFixed(1)}) continue;
+            vec2 from = waterWorld.xz - ring.xy;
+            float dist = length(from);
+            float off = dist - age * ${RING_SPEED.toFixed(2)};
+            float strength = exp(-off * off * 14.0) * exp(-age * 1.1) * ring.w * smoothstep(0.0, 0.1, age) * smoothstep(0.0, 0.3, dist + 0.05);
+            float crest = sin(off * 24.0) * strength;
+            slope += from / max(dist, 1e-3) * crest * 0.12;
+            ringCrest += max(crest, 0.0);
+            ringTrough += max(-crest, 0.0);
+          }
+        }
 
         // The mirror. The camera looks level, so what the water shows at a point is what stands as high over
         // the water, as far behind it, as the eye is in front of it: the far card upside down, hinged where
@@ -606,6 +651,26 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           solid = 1.0;
         }
         vec3 top = mix(own, mirrored, mirrors * (1.0 - 0.8 * wetOnly)) * (1.0 - 0.3 * banked);
+        // A ring's crests catch the light and its troughs are darker, whatever the light: by day and by night.
+        top *= 1.0 + (0.55 * min(ringCrest, 1.0) - 0.3 * min(ringTrough, 1.0)) * (1.0 - wetOnly);
+        top += mix(skyMiddle, skyGlow, 0.5) * mirrorTint * min(ringCrest, 1.0) * 0.08 * (1.0 - wetOnly);
+        // Pine needles and bits of birch leaf afloat, drifting with the flow and turning in its eddies: a needle in one
+        // patch of water in six, a leaf in one in twenty. They fade where they would be smaller than the pixels.
+        if (details > 0.5 && isTop > 0.5 && life.x > 0.0) {
+          vec2 afloat = (waterWorld.xz * vec2(1.0, 1.7) - flow * time * 0.1 - vec2(time * 0.045, 0.0)) * 1.4;
+          vec2 piece = floor(afloat);
+          float which = fract(sin(dot(piece, vec2(127.1, 311.7))) * 43758.5453);
+          if (which > 1.0 - 0.17 * life.x) {
+            float turn = which * 40.0 + time * 0.15 * (fract(which * 7.3) - 0.5);
+            vec2 at = mat2(cos(turn), -sin(turn), sin(turn), cos(turn)) * (fract(afloat) - (vec2(fract(which * 13.7), fract(which * 71.3)) * 0.5 + 0.25));
+            float leafy = step(1.0 - 0.05 * life.x, which);
+            float needle = smoothstep(0.03, 0.012, abs(at.y)) * smoothstep(0.24, 0.16, abs(at.x));
+            float leaf = smoothstep(0.11, 0.07, length(at * vec2(1.0, 1.7)));
+            float seen = (1.0 - smoothstep(0.08, 0.22, length(fwidth(afloat)))) * (1.0 - wetOnly);
+            // Dry needles are a rusty brown, paler than the water; birch leaves are yellow.
+            top = mix(top, leafy > 0.5 ? vec3(0.6, 0.47, 0.16) : vec3(0.36, 0.22, 0.1), mix(needle, leaf, leafy) * seen * 0.9);
+          }
+        }
         if (details > 0.5) {
           // The low sun's glitter: where two crests meet, under the sky's glow.
           vec3 normal = normalize(vec3(-slope.x, 1.0, -slope.y));
@@ -766,6 +831,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   const causticPools = pools.slice(0, 8).map((w) => new Vector4(w.from, w.to, w.y, 0));
   while (causticPools.length < 8) causticPools.push(new Vector4(0, 0, -1e6, 0));
   let before = 0;
+  // The rings: which comes next, and when the next fish rises. A street's puddle has no fish.
+  let ringNext = 0, untilRise = 3;
+  const lively = kind.bed <= 0;
   // What is near, mirrored as it is (Mid and High): a camera mirrored in the water's surface takes, at a third of the size,
   // only what is on the near layer, and the water reads it back where each of its points is. As three.js's Reflector
   // does it, with its near plane laid along the surface, so that nothing under the water is in the picture.
@@ -857,10 +925,31 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     /** How high the water stands now against its pools' own height: it rises and falls a little. */
     get level() { return body.position.y; },
     /** `still`: with reduced motion the water all but stands. */
-    update(clock: number, still = false) {
-      time.value += (clock - before) * (still ? 0.12 : 1);
+    update(clock: number, still = false, focusX?: number) {
+      const step = (clock - before) * (still ? 0.12 : 1);
+      time.value += step;
       before = clock;
       body.position.y = Math.sin(time.value * 1.3) * 0.03;
+      // Now and then a fish rises, or a fly lands, somewhere on the water near him: a ring and nothing else. Not on a
+      // puddle in the street, and not with reduced motion.
+      if (focusX === undefined || still || !lively || step <= 0) return;
+      untilRise -= step;
+      if (untilRise > 0) return;
+      untilRise = 2 + 4 * Math.random();
+      const x = focusX + (Math.random() - 0.5) * 22;
+      const pool = pools.find((w) => x > w.from + 0.4 && x < w.to - 0.4);
+      if (pool) this.ripple(x, -0.6 - Math.random() * Math.min(10, Math.abs(kind.thins) * 0.5), 0.45 + Math.random() * 0.5);
+    },
+    /** The water's surface at `x`, where there is water: its height now. */
+    surfaceAt(x: number): number | null {
+      const pool = pools.find((w) => x >= w.from && x <= w.to);
+      return pool ? pool.y + body.position.y : null;
+    },
+    /** Something touches the water at x, z: a ring spreads from there (Mid and High). `strength` 1 is a landing. */
+    ripple(x: number, z: number, strength: number): void {
+      if (!pools.some((w) => x >= w.from - 0.3 && x <= w.to + 0.3)) return;
+      uniforms.rings.value[ringNext]!.set(x, z, time.value, strength);
+      ringNext = (ringNext + 1) % RINGS;
     },
     setSize(width: number, height: number, tier: Tier) {
       details.value = tier === 'low' ? 0 : 1;

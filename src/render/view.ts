@@ -797,6 +797,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   }
 
   const characterShadows = createCharacterShadows(renderer, scene, sun, { canopy: dappled });
+  /** How far he has waded since his last ring on the water, and how long since his ride's wake left one. */
+  let rippleWalked = 0, rippleWake = 0;
   let playerGroundY = chapter.spawn.y;
   let ghostGroundY = chapter.ghost?.[0]?.at.y ?? 0;
   let ghostStaged = false;
@@ -1123,7 +1125,26 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     lawnSong.update(flags, clock);
     for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
     cones.update(rollers, clock);
-    water.update(clock, lessMotion());
+    water.update(clock, lessMotion(), x);
+    // Rings where he touches the water (./water.ts): his steps as he wades, a bigger one as he lands in it or falls
+    // in, and a wake behind what he rides on it.
+    const surface = water.surfaceAt(x);
+    if (surface !== null && dt > 0 && !calmStory) {
+      const feet = curr.standY ?? y;
+      const wading = curr.mode === 'free' && curr.grounded && feet > surface - 0.7 && feet < surface + 0.3;
+      if (wading) {
+        rippleWalked += Math.abs(curr.x - prev.x);
+        if (rippleWalked > 0.55) { rippleWalked = 0; water.ripple(x, 0.05, 0.5); }
+        if (!prev.grounded) water.ripple(x, 0.05, 1.1);
+      } else rippleWalked = 0;
+      if (curr.mode === 'bubble' && prev.mode !== 'bubble' && y < surface + 0.6) water.ripple(x, 0.05, 1.4);
+      const afloatHere = curr.mode === 'ride' && Math.abs(y - surface) < 0.8 && Math.abs(curr.x - prev.x) > 1e-4;
+      rippleWake = afloatHere ? rippleWake + dt : 0.3;
+      if (rippleWake >= 0.3) {
+        rippleWake = 0;
+        if (afloatHere) water.ripple(x - 0.45 * Math.sign(curr.x - prev.x), 0.05, 0.65);
+      }
+    }
     afloat.update(clock, water.level, lessMotion());
     for (const [i, t] of tussocks.entries()) tussockMeshes[i]?.position.set(t.x, t.y, 0);
     // A cranberry goes flat under him and springs back, a little past its shape.

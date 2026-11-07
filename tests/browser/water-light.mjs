@@ -96,6 +96,20 @@ try {
     const nearMid = drawNear('mid'), nearHigh = drawNear('high'), nearLow = drawNear('low');
     const nearOff = !water.mirroringNear;
     scene.remove(box);
+    // A ring spreads where something touches the water (Mid and High), and is gone a few seconds later: against a
+    // twin of the same water at the same moments, without the ring.
+    const twin = f.createWater({ water: [{ from: -3, to: 3, y: 0 }] }, { colour: '#4f9fc4', opacity: 0.78 });
+    const twinScene = new T.Scene(); twinScene.add(twin.group);
+    const frameOf = (w, ws, t) => {
+      w.setSize(192, 192, 'mid'); w.update(t);
+      renderer.autoClear = true; renderer.setRenderTarget(hdr); renderer.render(scene, camera);
+      renderer.autoClear = false; renderer.render(ws, camera);
+      renderer.autoClear = true; pass.render(renderer, graded, hdr); output.render(renderer, graded, graded, 0, false);
+      return read();
+    };
+    frameOf(water, waterScene, 20); frameOf(twin, twinScene, 20);
+    water.ripple(0, 0.2, 1.2);
+    const rings = { spread: difference(frameOf(water, waterScene, 20.6), frameOf(twin, twinScene, 20.6)), gone: difference(frameOf(water, waterScene, 26), frameOf(twin, twinScene, 26)) };
     // An HDR light patch blooms into dark neighbouring pixels, not across the whole frame.
     scene.clear(); camera.position.set(0, 0, 8); camera.lookAt(0, 0, 0);
     scene.add(new T.Mesh(new T.PlaneGeometry(0.22, 0.22), new T.MeshBasicMaterial({ color: new T.Color(4, 3, 2) })));
@@ -109,7 +123,7 @@ try {
     bloom.setSize(192, 192, false);
     return {
       flow: difference(high, changed), midDetail: difference(low, mid), refract: difference(mid, high),
-      paused: difference(high, pause), caustics: difference(plainFloor, causticFloor), refractionOff, nearOff,
+      paused: difference(high, pause), caustics: difference(plainFloor, causticFloor), refractionOff, nearOff, rings,
       nearMid: reddened(unmirrored, nearMid), nearHigh: reddened(unmirroredHigh, nearHigh), nearLow: reddened(unmirroredLow, nearLow),
       bloomNear: glow[near] > dark[near], bloomFar: glow[far] === dark[far], bloomSize, bloomOff: bloom.texture === null,
     };
@@ -119,6 +133,7 @@ try {
   check('High refracts the existing scene behind the water', numerical.refract > 1000);
   check('water flows with picture time and freezes exactly when paused', numerical.flow > 1000 && numerical.paused === 0);
   check('High bloom spreads only near HDR highlights at half resolution', numerical.bloomNear && numerical.bloomFar && String(numerical.bloomSize) === '96,96');
+  check('a ring spreads where something touches the water, and is gone again', numerical.rings.spread > 1000 && numerical.rings.gone === 0);
   check('Mid and High mirror what is near the water as it is; Low does not', numerical.nearMid > 40 && numerical.nearHigh > 40 && numerical.nearLow === 0);
   check('unused water and bloom targets are released on lower tiers', numerical.refractionOff && numerical.bloomOff && numerical.nearOff);
   await probe.close();
