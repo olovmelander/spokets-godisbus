@@ -336,7 +336,8 @@ export const flarken: ChapterData = {
     { from: BENCH_B.to, to: STONES[0]!.from, kind: 'sand' },
     { from: STONES[0]!.from, to: STONES[2]!.to, kind: 'stone' },
     { from: HIGH.from, to: STEP.to, kind: 'stone' },
-    { from: ISLAND.from, to: ISLAND.to, kind: 'stone' },
+    // The firm stone between the mats: a wet boulder rounding into the lake, not a slab.
+    { from: ISLAND.from, to: ISLAND.to, kind: 'wetRock' },
     { from: JETTY.from, to: JETTY.to, kind: 'wood' },
     { from: OUTER.from, to: OUTER.to, kind: 'wood' },
     { from: BEYOND.from, to: LOW.to, kind: 'wood' },

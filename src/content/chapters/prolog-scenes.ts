@@ -33,7 +33,8 @@ export const TITLE_TABLEAU: SceneDef = {
   seconds: 0,
   by: { done: 'scene:morgon' },
   stage: {
-    shots: [{ at: 0, x: 5.85, y: 2.3, height: 2.5, width: 3.8, eye: 0.15, move: 0.01 }],
+    // High enough for Pappa's face under his cap, over the carving in his hands.
+    shots: [{ at: 0, x: 5.85, y: 2.75, height: 3.3, width: 4.6, eye: -0.55, move: 0.01 }],
     actors: {
       pappa: [{ at: 0, x: 5.8, y: 0, z: -3.15, face: 0.25, move: 0.01, act: 'carve', holds: 'knife' }],
       // As far carved as the morning has it when the title gives way to it.
@@ -67,7 +68,7 @@ export const PROLOG_SCENES: SceneDef[] = [
       fade: [{ at: 0, to: 1, move: 0.01 }, { at: 0.1, to: 0, move: 1.8 }],
       words: [{ at: 0.9, seconds: 3.6, kind: 'caption', text: 'morning' }],
       shots: [
-        { at: 0, x: 5.85, y: 2.3, height: 2.5, width: 3.8, eye: 0.15, move: 0.01 },
+        { at: 0, x: 5.85, y: 2.75, height: 3.3, width: 4.6, eye: -0.55, move: 0.01 },
         { at: 3.4, x: 6.1, y: 2.9, height: 5.8, width: 9.5, move: 3.4 },
         { at: 7.4, x: 5.0, y: 3.4, height: 8.2, width: 15, move: 2.2 },
       ],
