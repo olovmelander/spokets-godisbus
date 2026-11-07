@@ -545,6 +545,8 @@ export function spotProp(spot: Spot): SpotProp | null {
     case 'seesaw': {
       // Pappa's seesaw: a stick across a stone. He stands on the low end.
       const plank = forestSocket(new Group().add(new Mesh(new BoxGeometry(4.4, 0.12, 0.7), solid('#c9ae84', 0.75))), { shape: 'gungbrada' });
+      // Named for Pappa's hand, which holds its high end (+x) steady once he is called (view.ts).
+      plank.name = 'seesaw-plank';
       plank.position.set(1.3, 0.34, 0.6);
       plank.rotation.z = 0.14;
       group.add(plank, forestSocket(new Group().add(ball(0.3, solid('#8d8f8a', 0.95), 1.3, 0.12, 0.6, [1.2, 0.8, 1])), { shape: 'gungsten', at: [1.3, -0.2, 0.6] }));

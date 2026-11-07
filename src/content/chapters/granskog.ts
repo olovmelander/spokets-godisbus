@@ -237,7 +237,9 @@ export const granskog: ChapterData = {
     { id: 'vittra:gift', look: 'vittra-door', at: { x: 64.4, y: 10 }, verb: 'give', word: 'leaveBerry', needs: 'vittra:berry', returnGift: 'keepsake:vittra', extra: true },
     // The loose cone at the top of the slope: touching it sets the avalanche off.
     { id: 'avalanche', at: { x: 70.4, y: 0 }, verb: 'take', touch: true },
-    { id: 'seesaw', look: 'sign', at: { x: 108.2, y: -8 }, verb: 'call', word: 'callPappa' },
+    // Called from up the path; he stands by his seesaw's high end, at the ravine's edge, and once called he holds it
+    // steady for Elof until he flies.
+    { id: 'seesaw', look: 'sign', at: { x: 108.2, y: -8 }, standsAt: { x: 117.4, y: -8, z: -0.6 }, verb: 'call', word: 'callPappa' },
     // The low end of the seesaw. Pappa drops the cone on the high end, and Elof flies.
     { id: 'launch', look: 'seesaw', at: { x: 113.2, y: -8 }, verb: 'take', word: 'standOn', needs: 'placed:cone', ride: 'launch' },
     // Memory 2, after the log: the autumn walk, and the Saturday sweets he shared.

@@ -898,8 +898,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** Seconds since the ball he rides in Olympia was kicked; -1 when he is not on it. */
   let kickSince = -1;
   /** How far into each of the family's own gestures they are, 0 to 1: Bertil's boot pull, Moa's reach into the root. */
-  const gestures = new Map<string, { pull: number; reach: number; lift: number; liftFor: number }>();
-  const gestureOf = (who: string) => { let g = gestures.get(who); if (!g) gestures.set(who, g = { pull: 0, reach: 0, lift: 0, liftFor: 0 }); return g; };
+  const gestures = new Map<string, { pull: number; reach: number; lift: number; liftFor: number; hold: number }>();
+  /** Granskogen's seesaw board, which Pappa holds (props.ts); found the first time it is wanted. */
+  let seesawPlank: Object3D | null | undefined;
+  const gestureOf = (who: string) => { let g = gestures.get(who); if (!g) gestures.set(who, g = { pull: 0, reach: 0, lift: 0, liftFor: 0, hold: 0 }); return g; };
   const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3(), lampLocal = new Vector3();
   const lampTurn = new Quaternion();
   const LAMP_POINTS = new Vector3(0, 0, 1);
@@ -1661,13 +1663,28 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // rises, and lets go once it lies across (the mover `pine`, which goes up by itself as her hands lift it).
       const pine = one.who === 'mamma' && chapter.id === 'myren' ? scene.getObjectByName('mover:pine') : undefined;
       const lifting = !!pine && flags.has('mamma') && pine.position.y < -0.42;
+      // In Granskogen, called, Pappa bends to his seesaw and holds its high end steady while Elof fetches the cone and
+      // climbs on, and lets go as he flies (the ride `launch`).
+      if (seesawPlank === undefined) seesawPlank = chapter.id === 'granskog' ? scene.getObjectByName('seesaw-plank') ?? null : null;
+      const board = one.who === 'pappa' ? seesawPlank : null;
+      const holding = !!board && flags.has('seesaw') && !flags.has('launch');
       if (lifting) gesture.liftFor = 0.6; else gesture.liftFor = Math.max(0, gesture.liftFor - dt);
-      gesture.lift = calmStory ? 0 : gesture.lift + ((gesture.liftFor > 0 ? 1 : 0) - gesture.lift) * ease(6, dt);
+      // Without motion the bend is there at once, and gone at once.
+      gesture.lift = calmStory ? (gesture.liftFor > 0 ? 1 : 0) : gesture.lift + ((gesture.liftFor > 0 ? 1 : 0) - gesture.lift) * ease(6, dt);
       if (gesture.lift > 0.001) {
         const w = gesture.lift;
         posed.lean += (0.8 - posed.lean) * w;
         posed.kneeL += (1.35 - posed.kneeL) * w; posed.kneeR += (1.1 - posed.kneeR) * w;
         posed.legL += (0.85 - posed.legL) * w; posed.legR += (0.6 - posed.legR) * w;
+      }
+      gesture.hold = calmStory ? (holding ? 1 : 0) : gesture.hold + ((holding ? 1 : 0) - gesture.hold) * ease(4, dt);
+      if (gesture.hold > 0.001) {
+        // Down on his right knee, the left foot forward, leaning to the board, turned towards it.
+        const w = gesture.hold;
+        posed.lean += (0.85 - posed.lean) * w;
+        posed.legL += (1.35 - posed.legL) * w; posed.kneeL += (1.55 - posed.kneeL) * w;
+        posed.legR += (0.1 - posed.legR) * w; posed.kneeR += (1.65 - posed.kneeR) * w;
+        one.rig.group.rotation.y += (-0.95 - one.rig.group.rotation.y) * w;
       }
       // In the garden, until he calls her, Moa crouches and reaches into the root hole the ghost crept into ("Där
       // kröp spöket in. Jag får inte plats!"); her fingers will not go in.
@@ -1686,6 +1703,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         const end = pine.position.x - 4.3 + 0.25, at = pine.position.y + 0.2;
         one.rig.reach(0, rootReach.set(end - 0.15, at, 0.25), gesture.lift);
         one.rig.reach(1, rootReach.set(end + 0.15, at, -0.25), gesture.lift);
+      }
+      if (gesture.hold > 0.001 && board) {
+        // A hand on the board's high end, over it, with the hand on that side; the other on his knee.
+        board.localToWorld(rootReach.set(2.05, 0.1, 0));
+        lampLocal.copy(rootReach);
+        one.rig.group.worldToLocal(lampLocal);
+        one.rig.reach(lampLocal.x >= 0 ? 0 : 1, rootReach, gesture.hold);
       }
       if (gesture.reach > 0.001) {
         const poke = calmStory ? 0 : Math.sin(clock * 2.3) * 0.12;
