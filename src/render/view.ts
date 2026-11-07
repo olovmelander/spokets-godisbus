@@ -623,6 +623,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let elofStance: Stance = 'stand';
   let hangLast = 0, hangWeight = 0;
   let shoulderLift = 0, shoulderT = 0, airStretch = 1;
+  let drawnMode: string | null = null, drawnX = 0, drawnY = 0;
+  const rideFrom = new Vector3();
   type NearShot = { w: number; pos: Vector3; at: Vector3 };
   const nearShot = (): NearShot => ({ w: 0, pos: new Vector3(), at: new Vector3() });
   const nearShots = { family: nearShot(), taste: nearShot(), shoulders: nearShot() };
@@ -1316,7 +1318,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const lying = curr.mode === 'down' ? smooth(Math.min(1, curr.t / 0.15, (1 - curr.t) / 0.25)) * 1.4 * curr.facing : 0;
     // The tilt turns about his middle, where the lace's pull goes through.
     const lift = scripted?.lift;
-    elof.group.position.set(x - Math.sin(hang) * 0.5 + (lift?.x ?? 0), y + 0.5 - Math.cos(hang) * 0.5 + shoulderLift + (lift?.y ?? 0), lift?.z ?? 0);
+    // A ride starts where the ride starts, which can be a step from where he pressed: he is drawn from where he was and
+    // carried over that step in a moment, instead of jumping.
+    if (curr.mode === 'ride' && drawnMode !== 'ride' && drawnMode !== null && !calmStory && Math.hypot(drawnX - x, drawnY - y) < 2) rideFrom.set(drawnX - x, drawnY - y, 0);
+    rideFrom.multiplyScalar(curr.mode === 'ride' ? Math.exp(-10 * dt) : 0);
+    drawnMode = curr.mode; drawnX = x; drawnY = y;
+    elof.group.position.set(x - Math.sin(hang) * 0.5 + (lift?.x ?? 0) + rideFrom.x, y + 0.5 - Math.cos(hang) * 0.5 + shoulderLift + (lift?.y ?? 0) + rideFrom.y, lift?.z ?? 0);
     // On a mark in the place itself, such as Pappa's palm: wherever the run left him.
     if (scripted && scripted.ontoWeight > 0) {
       const on = scripted.ontoWeight;
