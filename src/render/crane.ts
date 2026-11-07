@@ -1,7 +1,8 @@
 import {
-  BufferGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, LatheGeometry, Mesh, MeshStandardMaterial,
-  PlaneGeometry, SphereGeometry, Vector2, Vector3, CatmullRomCurve3, TubeGeometry,
+  BufferGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, LatheGeometry, Matrix4, Mesh, MeshStandardMaterial,
+  Object3D, PlaneGeometry, SphereGeometry, Vector2, Vector3, CatmullRomCurve3, TubeGeometry,
 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 /**
  * The common crane of Myren and Berget, and the crane chick that follows Elof (plan §3.4), built in code: a long
@@ -34,6 +35,41 @@ function colourBy(geometry: BufferGeometry, pick: (p: Vector3, i: number) => Col
 
 const mix = (a: string, b: string, k: number) => new Color(a).lerp(new Color(b), Math.min(1, Math.max(0, k)));
 const smooth = (v: number) => { const k = Math.min(1, Math.max(0, v)); return k * k * (3 - 2 * k); };
+
+/**
+ * Merges every mesh under `root` into one, its colours on its corners, in `root`'s own space, except what lies under
+ * a part that moves of its own (`keep`): one draw call for each part that moves. Built as parts first, for clarity.
+ */
+function consolidate(root: Object3D, keep: Object3D[] = [], more: Partial<ConstructorParameters<typeof MeshStandardMaterial>[0]> = {}): Mesh {
+  root.updateMatrixWorld(true);
+  const into = new Matrix4().copy(root.matrixWorld).invert();
+  const parts: BufferGeometry[] = [];
+  const merged: Mesh[] = [];
+  const visit = (node: Object3D) => {
+    if (node !== root && keep.includes(node)) return;
+    const mesh = node as Mesh;
+    if (mesh.isMesh) {
+      const g = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+      for (const name of Object.keys(g.attributes)) if (name !== 'position' && name !== 'normal' && name !== 'color') g.deleteAttribute(name);
+      g.applyMatrix4(new Matrix4().multiplyMatrices(into, mesh.matrixWorld));
+      if (!g.getAttribute('color')) {
+        const c = (mesh.material as MeshStandardMaterial).color;
+        const n = g.getAttribute('position').count;
+        g.setAttribute('color', new Float32BufferAttribute(Array.from({ length: n * 3 }, (_, k) => [c.r, c.g, c.b][k % 3]!), 3));
+      }
+      parts.push(g);
+      merged.push(mesh);
+    }
+    for (const child of [...node.children]) visit(child);
+  };
+  visit(root);
+  for (const mesh of merged) { mesh.removeFromParent(); mesh.geometry.dispose(); }
+  // Groups that held only meshes are left empty; they cost nothing.
+  const one = new Mesh(mergeGeometries(parts), painted(0.8, more));
+  parts.forEach((part) => part.dispose());
+  root.add(one);
+  return one;
+}
 
 /** A body of revolution along +x, from `profile` as [x, radius] from the tail to the chest. */
 function body(profile: [number, number][], depth: number): BufferGeometry {
@@ -154,6 +190,7 @@ export function craneKneeling(): Group {
   wings.position.set(-0.16, 0.13, 0);
   wings.rotation.z = -0.1;
   torso.add(trunk, wings, bustle(new Vector3(-0.6, 0.2, 0), 1.0, 0.5));
+  consolidate(torso);
   group.add(torso);
   // The neck rises from the chest in an S, and the head turns to look about.
   const neckGroup = new Group();
@@ -165,9 +202,14 @@ export function craneKneeling(): Group {
   h.position.set(0.24, 0.88, 0);
   h.rotation.z = -0.12;
   neckGroup.add(h);
+  consolidate(h);
+  consolidate(neckGroup, [h]);
   group.add(neckGroup);
   // Kneeling, it rests on its shins: they lie forward along the ground under it.
-  for (const side of [-1, 1]) group.add(leg(new Vector3(-0.2, 0.1, side * 0.17), new Vector3(0.62, 0.05, side * 0.19), 0.032, 0.14));
+  const legs = new Group();
+  for (const side of [-1, 1]) legs.add(leg(new Vector3(-0.2, 0.1, side * 0.17), new Vector3(0.62, 0.05, side * 0.19), 0.032, 0.14));
+  consolidate(legs);
+  group.add(legs);
   group.position.z = -0.8;
   return group;
 }
@@ -223,6 +265,8 @@ function wing(side: 1 | -1): Group {
     tip.add(f);
   }
   inner.add(tip);
+  consolidate(tip, [], { side: DoubleSide, emissive: '#25282c' });
+  consolidate(inner, [tip], { side: DoubleSide, emissive: '#25282c' });
   inner.scale.z = side;
   return inner;
 }
@@ -248,11 +292,15 @@ export function craneFlying(): Group {
   neckGroup.add(h);
   group.add(neckGroup);
   for (const side of [-1, 1]) group.add(leg(new Vector3(-0.7, -0.52, side * 0.07), new Vector3(-2.05, -0.5, side * 0.09), 0.024, 0.1));
+  // Body, tail, neck, head and legs move together in flight: one draw; each wing and its tip, one each.
+  const wings: Group[] = [];
   for (const side of [-1, 1] as const) {
     const w = wing(side);
     w.position.set(0.22, -0.2, side * 0.28);
     group.add(w);
+    wings.push(w);
   }
+  consolidate(group, wings);
   return group;
 }
 
@@ -306,6 +354,9 @@ export function craneChick(): Chick {
     turn.add(hip);
     return hip;
   }) as [Group, Group];
+  consolidate(torso);
+  consolidate(neck);
+  for (const hip of legs) consolidate(hip);
   return { group, turn, torso, neck, legs };
 }
 
