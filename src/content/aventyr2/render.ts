@@ -1483,13 +1483,15 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       const { group, head } = otter();
       return standing(spot, group, (clock) => {
         group.position.y = Math.sin(clock * 1.7) * 0.03;
-        // It looks about, holding each look, mostly out towards him. The stand-in turns its head; the kit's otter is
-        // one mesh, so it turns a little from its waist, more slowly.
+        // It looks about, holding each look, mostly out towards him, turning its head (the stand-in's, or the kit's on
+        // its neck); a kit without a head of its own turns a little from its waist, more slowly.
         const look = held(clock, spot.at.x, 0.45, 0.12);
-        if (head.parent === group) {
-          group.rotation.y = 0;
-          head.rotation.y = look * 0.6 + 0.1;
-          head.rotation.x = held(clock * 0.8, spot.at.x + 3, 0.5, 0.1) * 0.12;
+        const kitHead = group.getObjectByName('kit-head');
+        if (head.parent === group || kitHead) {
+          const turning = kitHead ?? head;
+          group.rotation.y = kitHead ? held(clock, spot.at.x, 0.2, 0.3) * 0.12 + 0.1 : 0;
+          turning.rotation.y = look * 0.6 + 0.1;
+          turning.rotation.x = held(clock * 0.8, spot.at.x + 3, 0.5, 0.1) * 0.12;
         } else group.rotation.y = held(clock, spot.at.x, 0.25, 0.3) * 0.35 + 0.1;
       });
     },
@@ -1533,7 +1535,13 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
         flyer.traverse((node) => { if (node.name === 'owl-wing') node.name = 'owl-wing-away'; });
       }
       return standing(spot, bird, (clock) => {
-        bird.rotation.y = turn(clock);
+        // The kit's owl turns its head, far, as owls do, and its body hardly; the stand-in turns as one.
+        const head = bird.getObjectByName('kit-head');
+        if (head) {
+          bird.rotation.y = turn(clock) * 0.15;
+          head.rotation.y = turn(clock) * 2.6;
+          head.rotation.z = held(clock * 0.7, spot.at.x + 5, 0.3, 0.2) * 0.12;
+        } else bird.rotation.y = turn(clock);
         bird.scale.y = 1 + Math.sin(clock * 1.4) * 0.008;
       }, decor ? 'fly' : 'shrink', flyer);
     },

@@ -177,8 +177,10 @@
       **squirrels** look about in snaps; **beetles** speed up and slow down instead of jumping to a run.
     - **The kit's hedgehog, frog and snail** (`src/render/kit-life.ts`) no longer squash up and down, face and all:
       the hedgehog snuffles, the frog hops on the spot now and then, the snail creeps a little way and back.
-    - **Left for Olov's computer** (one mesh each from Blender, so their parts cannot move): a head of their own for
-      the kit's otter, owl, hedgehog and frog. A crane in Blender would be better still than the code-built one.
+    - **The kit's owl and otter have heads of their own** (`uggla-huvud`, `utter-huvud` in
+      `art/blender/a2-creatures.py`, rebuilt and baked with the `bpy` 5.2 module here): the game puts each on a pivot
+      at the neck (`NECKS` in `src/render/shared-models.ts`), and the owl turns its head far, as owls do, its body
+      hardly; the otter looks about from its neck. The hedgehog and frog are still one mesh each. A crane in Blender would be better still than the code-built one.
   - **Every character's motion, reviewed for snaps** (Olov: "Kolla så ... alla rörelser ser naturliga och smootha
     ut för alla karaktärer genom hela spelet"; a review of the code of Elof, the family, the ghost and the
     trägubbar, then the fixes):
@@ -4795,8 +4797,8 @@ The older list, still true where it is not struck:
     tall as he is, so in his hand it rose over his face, and the finale suite keeps both carvings below it.
 - The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
   line now).
-- The animals' parts (7 November): the kit's otter, owl, hedgehog and frog are one mesh each, so only the whole
-  animal turns; a head of their own in `a2-creatures.py` (Blender, Olov's computer) would let them look and blink.
+- The animals' parts (7 November): the kit's hedgehog and frog are one mesh each, so only the whole animal moves; a
+  head of their own in `a2-creatures.py`, as the owl's and the otter's now have, would let them look about.
 
 ## Frågor till Olov
 
