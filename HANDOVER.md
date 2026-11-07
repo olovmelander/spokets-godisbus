@@ -1,13 +1,15 @@
 # Handover
 
-## State (6 November 2026)
+## State (7 November 2026, morning)
 
 - **The graphics pass, and the Unravel look (6 November 2026, cloud session, branch `ccr-77db4123-5s8xa3`, PR
   #235).** Olov asked for a pass over everything visual in both adventures until 23:00, step by step: the ground near
   the camera ("ser utdragen ut"), the brooks, the animals and insects, trees, stones, cones, the mountain, the
   puzzles, Mamma's braid, finer buildings, and the home scenes' way out ("ser ut som att hela huset är öppet"). The
   main characters and the trägubbar were left alone. During the evening he added: "ännu mer likt ... Unravel. Vi kan
-  utöka grafikbudgeten", and sent screenshots of Unravel as the measure (looked at, never stored).
+  utöka grafikbudgeten", and sent screenshots of Unravel as the measure (looked at, never stored). Later he moved the
+  end to 02:00 and then to 07:00 ("hela natten ... ställ aldrig några frågor och stanna inte"), adding the SUP, the
+  rain gear made in Blender, Bertil's hair, the puddle and the water, every animal and every character's motion.
   - **The lens (Mid and High), which is most of the Unravel look:**
     - **Depth of field** (`src/render/depth-blur.ts`): the play plane stays sharp; behind it the world softens more
       the further it is; the near ground and leaves between him and the camera blur most and spill soft over what
@@ -4187,10 +4189,16 @@
 and merge.** On the family devices, on High:
 - the lens: is the blur right (the far world soft, the near ground very soft, him and the path sharp)?
 - the storm: the rain gear on everyone, Bertil's boot, the family's lamps, Mamma on her SUP;
-- the brooks in Granskogen (the eye rises over them) and Myren's hummocks;
+- the brooks in Granskogen (the eye rises over them, a far bank of moss ends them) and Myren's hummocks;
+- the animals (the night of 7 November): the crane kneeling on Myren and flying on Berget, its chick walking after
+  him, the ladybird on its back, the ant columns, the small birds, the jay's head, the owls and the otter turning
+  their heads, the hedgehog and the frog;
+- every character's motion: Elof's feet should hold the ground as he walks and runs (also at three times his size,
+  at home), and nothing should snap in one frame: into scenes, onto the lace, the family's gestures, the ghost;
 - run `?bench` and `?bench&nolens` once on the slowest device.
-It needs no work on Olov's computer; the two Blender rebuilds (the stumps and the tall pine) were made in the cloud
-session with Blender 5.2's `bpy`, and their sources are in `art/blender/a2-nature.py`. **Merge the private repository's
+It needs no work on Olov's computer; the Blender work (the stumps, the tall pine, the crane, the creatures' heads, and
+the family's rain gear in the private repository) was made in the cloud session with Blender 5.2's `bpy` module, and
+the scripts are the sources (`art/blender/a2-nature.py`, `crane.py`, `a2-creatures.py`; `family/wardrobe.py` there). **Merge the private repository's
 PR #5 (`rain-gear`, the family's rain gear and Bertil's hair) together with #235**, so that the deploy carries the
 wardrobes; without it the game falls back to the older rain gear drawn from the bodies.
 
@@ -4589,6 +4597,7 @@ The older list, still true where it is not struck:
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
 | The graphics pass and the Unravel look (6 Nov) | Olov's request: every visual in both adventures, step by step until 23:00, then "mer likt Unravel" with a larger budget; later the SUP, the rain gear and the story's details, until 02:00 | One cloud session's evening and night | — / 0 so far | A lens (depth of field, contact shade, film look, near pollen), close materials (ground, boards, turf, bark, granite, grain, moss), the home's doorway, brooks, huts, beetles, braid, puzzle weight; Mamma's SUP, rain gear through the storm, Bertil's boot, the family's lamps, twelve more story details. |
+| The night to 07:00 (6–7 Nov) | Olov's request: the rain gear made properly in Blender, Bertil's hair, the puddle and the water, every animal and every character's motion, "hela natten till 07:00" without questions | The rest of the same cloud session's night | — / 0 so far | The family's rain gear and Bertil's hair in Blender (private PR #5), the body hidden under it; the crane in Blender and heads of their own for four of the kit's creatures; every animal's motion; Elof's feet, and no one-frame snaps for anyone; the brook's far bank, wet rock, the garden's boulder, Myren's pine; splashes in the storm; five more story details. CI green between pushes; three checks that flake under software rendering given longer waits. |
 | Lighter nights (6 Nov) | Olov's request: not so dark at the darkest, scenes too, mood kept | Part of one cloud session | — / 0 so far | 52 frames measured before and after; more light on the play plane at night, lighter night water, skies unchanged. |
 | Klonk carved again (6 Nov) | Olov's request: improve Klonk's design after the carving and the poster | Part of one cloud session, Blender 5.2 as a Python module | — / 0 so far | A new build from knife-cut blocks with baked wood and paint; private repository PR #4. |
 | The family's motion (6 Nov) | Olov's request: natural, smooth motion for everyone but Elof | Part of one cloud session | — / 0 so far | Measured frame by frame through every chapter; steps that fit the ground, no snapping, followers that keep up and settle; a few dashes given time. |
@@ -4900,8 +4909,12 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
     - Should the pollen drifting in front of the lens and the beetles on the forest floor stay?
     - Run `?bench` and `?bench&nolens` on the slowest family device: if the lens costs too much there, Mid can
       keep it and High can drop the shade, or the other way round.
-    - The rain gear's colours (Mamma red, Pappa navy, Moa yellow, Bertil orange with green boots, Elof yellow
-      with red boots): are they the family's own, or should they be? It is one table in `src/render/rain-gear.ts`.
+    - The rain gear's colours (Mamma red, Pappa navy, Moa yellow, Bertil orange with green boots; Elof wears none,
+      for he is small before they get ready): are they the family's own, or should they be? It is one table in
+      `src/render/rain-gear.ts`, and the same colours in the private `family/wardrobe.py`.
+    - The night of 7 November, for the devices: does Elof's stride look right now that his feet hold the ground
+      (a walk is three to four steps a second)? Is the crane from Blender the crane Elof should ride? Are the
+      splashes at his feet in the storm too many, or too few?
     - Mamma's SUP is teal with white rails and an orange paddle: the family's own boards' colours can go in
       `paddleBoard()` (`aventyr2/render.ts`) and `src/render/paddle.ts`.
     - The defaults: as built.
