@@ -47,6 +47,16 @@ const ball = (radius: number, material: Material, x = 0, y = 0, z = 0, squash: r
 const UP = new Vector3(0, 1, 0);
 const tmp = new Vector3();
 const smooth = (t: number) => { const k = Math.min(1, Math.max(0, t)); return k * k * (3 - 2 * k); };
+/**
+ * A creature's look about, from -1 to 1: it holds one way, then turns to the next over `ease` of a hold, at uneven
+ * times, `rate` turns a second or so. The same for the same `seed`.
+ */
+const held = (clock: number, seed: number, rate: number, ease: number) => {
+  const w = clock * rate + 0.3 * Math.sin(clock * rate * 1.4 + seed) + seed;
+  const n = Math.floor(w);
+  const way = (m: number) => { const v = Math.sin(m * 12.9898 + seed) * 43758.5453; return (v - Math.floor(v)) * 2 - 1; };
+  return way(n - 1) + (way(n) - way(n - 1)) * smooth((w - n) / ease);
+};
 /** A fixed scatter: the same in every session and every screenshot. */
 function scatter(seed: number): () => number {
   let s = seed | 0;
@@ -1473,8 +1483,14 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       const { group, head } = otter();
       return standing(spot, group, (clock) => {
         group.position.y = Math.sin(clock * 1.7) * 0.03;
-        head.rotation.y = Math.sin(clock * 0.8) * 0.7;
-        head.rotation.x = Math.sin(clock * 1.3 + 1) * 0.12;
+        // It looks about, holding each look, mostly out towards him. The stand-in turns its head; the kit's otter is
+        // one mesh, so it turns a little from its waist, more slowly.
+        const look = held(clock, spot.at.x, 0.45, 0.12);
+        if (head.parent === group) {
+          group.rotation.y = 0;
+          head.rotation.y = look * 0.6 + 0.1;
+          head.rotation.x = held(clock * 0.8, spot.at.x + 3, 0.5, 0.1) * 0.12;
+        } else group.rotation.y = held(clock, spot.at.x, 0.25, 0.3) * 0.35 + 0.1;
       });
     },
     lillgubbe: (spot) => {
@@ -1500,12 +1516,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       const bird = owl();
       // One that is ridden has its own picture; one that only sits there flies off.
       // It sits still, as an owl does, and now and then turns slowly to look another way, and holds it.
-      const turn = (clock: number) => {
-        const w = clock * 0.22 + 0.3 * Math.sin(clock * 0.31 + spot.at.x);
-        const n = Math.floor(w);
-        const way = (m: number) => { const v = Math.sin(m * 12.9898 + spot.at.x) * 43758.5453; return (v - Math.floor(v)) * 0.7 - 0.35; };
-        return way(n - 1) + (way(n) - way(n - 1)) * smooth((w - n) / 0.16);
-      };
+      const turn = (clock: number) => held(clock, spot.at.x, 0.22, 0.16) * 0.35;
       const decor = spot.id.startsWith('decor:');
       // One that flies off does so as the flying owl, with its wings, at the sitting one's size; its wings have names of
       // their own, so the ridden owl's beat does not drive them.
