@@ -129,7 +129,8 @@ try {
     await page.evaluate(() => window.motionProbe.step({mode:'free',hook:null,grounded:true,vy:0,y:0},30));
     const story = await page.evaluate(() => {
       const p=window.motionProbe;p.story({id:'motion-pose',seconds:.8});
-      const first=p.step({vx:3.5},1),later=p.step({vx:3.5},12);p.story(null);
+      // Elof moves into a scene's pose over 0.3 s; once there, walking under it must not change it.
+      const first=p.step({vx:3.5},24),later=p.step({vx:3.5},12);p.story(null);
       return {first,later};
     });
     assert.deepEqual(story.later.parts,story.first.parts,`${name}: authored cheer ignores locomotion phase`);

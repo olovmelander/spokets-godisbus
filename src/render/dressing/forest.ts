@@ -70,7 +70,10 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
   const cushionsBehind = hummock ? Math.round(length * HUMMOCKS) : ballsBehind;
   // With room for the moss on the stones' tops, which is put in last.
   const capping = Math.max(1, Math.round(length * 0.2));
-  const cushions = new InstancedMesh(hummock ?? KIT.ball, hummock ? softMoss(kit!.material) : KIT.moss, cushionsBehind + Math.round(length * (hummock ? HUMMOCKS_IN_FRONT : FRONT.cushions)) + capping);
+  // With room for the far shores of the pools in the stretch (below).
+  const shoreWaters = chapter.river ? [] : (chapter.water ?? []).filter((w) => w.to + 0.6 > from && w.from - 0.6 < to);
+  const shoreRoom = shoreWaters.reduce((sum, w) => sum + Math.ceil((Math.min(to, w.to + 0.6) - Math.max(from, w.from - 0.6)) / SHORE_STEP) + 1, 0);
+  const cushions = new InstancedMesh(hummock ?? KIT.ball, hummock ? softMoss(kit!.material) : KIT.moss, cushionsBehind + Math.round(length * (hummock ? HUMMOCKS_IN_FRONT : FRONT.cushions)) + capping + shoreRoom);
   let n = 0;
   // The balls' numbers are drawn with the kit too, so that everything after them stands where it stood.
   for (let i = 0; i < ballsBehind; i++) {
@@ -397,6 +400,27 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
   // Tall grass where the floor ends at a wall or a pool, and in the clearings far behind.
   tallGrass(grass, chapter, from, to, seed, top, clumps, [1.5, 2.8], 0.13, ['#6f9434', '#7f9a3c', '#b4ac58']);
 
+  // A pool's far shore (Olov: "Bäcken i Granskogen"): the water does not run off straight into the haze, but ends a
+  // few EL behind the path against an uneven bank of moss hummocks, stones and ferns that leans in and out.
+  if (kit && hummock) {
+    const shore = sequence(seed * 41 + 13);
+    for (const w of shoreWaters) {
+      const a = Math.max(from, w.from - 0.6), b = Math.min(to, w.to + 0.6);
+      for (let x = a; x < b && cushions.count < cushions.instanceMatrix.count; x += SHORE_STEP) {
+        const z = -6.2 - 1.8 * (0.5 + 0.5 * Math.sin(x * 0.7 + seed)) - shore() * 1.1;
+        const wide = 0.45 + shore() * 0.4, high = wide * (0.4 + shore() * 0.25);
+        place.position.set(x + (shore() - 0.5) * 0.3, w.y - high * 0.35, z);
+        place.rotation.set(0, shore() * 6.28, 0);
+        place.scale.set(wide * 1.4, high * 2, wide);
+        place.updateMatrix();
+        cushions.setMatrixAt(cushions.count, place.matrix);
+        cushions.setColorAt(cushions.count++, mossAt(x * 2.1 + 9, z * 2.1, tint).multiplyScalar(0.75 + shore() * 0.25));
+        if (shore() < 0.3) put(STONES[Math.floor(shore() * 3)]!, x + (shore() - 0.5) * 0.4, w.y - 0.08, z + 0.45 + shore() * 0.3, shore() * 6.28, 0.35 + shore() * 0.35, 0.85 + shore() * 0.3);
+        if (shore() < 0.4) put('ormbunke', x + (shore() - 0.5) * 0.5, w.y + 0.05, z - 0.35, shore() * 6.28, 0.8 + shore() * 0.5, 0.9 + shore() * 0.2);
+      }
+    }
+  }
+
   const kinds: (InstancedMesh | Mesh)[] = [cushions, grass, leaves, berries, needles, trunks];
   if (kit) {
     undergrowth(chapter, from, to, seed, put, top, lie);
@@ -418,6 +442,8 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
 }
 
 const STONES = ['sten-a', 'sten-b', 'sten-c'];
+/** How far apart the hummocks of a pool's far shore stand, in EL. */
+const SHORE_STEP = 0.55;
 /** Clumps of tall grass to the length of a stretch (`tallGrass`). */
 const TALL_CLUMPS = 0.45;
 /** How many of the kit's cushions lie behind the path and in front of it, to the length: the balls that stand in for them are 22 and 5. */

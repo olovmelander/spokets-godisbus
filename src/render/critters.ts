@@ -259,18 +259,19 @@ export function antTrail(count = 7): Critter {
 export function antColumn(width: number, rows = 10): { group: Group; tick: (clock: number) => void } {
   const group = new Group();
   const dark = '#2e1d14';
+  // Few corners each: thirty of them stand in every column, and six columns in the picture at once.
   const parts = [
-    painted(new SphereGeometry(0.075, 10, 6).scale(1.35, 0.85, 0.9).translate(-0.12, 0, 0), dark),
-    painted(new SphereGeometry(0.04, 8, 5).scale(1.4, 0.8, 0.8).translate(0, 0.005, 0), dark),
-    painted(new SphereGeometry(0.05, 8, 6).translate(0.09, 0.015, 0), '#3a2519'),
-    painted(new CylinderGeometry(0.006, 0.006, 0.12, 4).rotateZ(-1.0).rotateX(0.5).translate(0.15, 0.06, 0.03), dark),
-    painted(new CylinderGeometry(0.006, 0.006, 0.12, 4).rotateZ(-1.0).rotateX(-0.5).translate(0.15, 0.06, -0.03), dark),
+    painted(new SphereGeometry(0.075, 7, 4).scale(1.35, 0.85, 0.9).translate(-0.12, 0, 0), dark),
+    painted(new SphereGeometry(0.04, 6, 3).scale(1.4, 0.8, 0.8).translate(0, 0.005, 0), dark),
+    painted(new SphereGeometry(0.05, 6, 4).translate(0.09, 0.015, 0), '#3a2519'),
+    painted(new CylinderGeometry(0.006, 0.006, 0.12, 3, 1, true).rotateZ(-1.0).rotateX(0.5).translate(0.15, 0.06, 0.03), dark),
+    painted(new CylinderGeometry(0.006, 0.006, 0.12, 3, 1, true).rotateZ(-1.0).rotateX(-0.5).translate(0.15, 0.06, -0.03), dark),
   ];
   // Legs splayed out to both sides, bent at the knee, gripping.
   for (const side of [-1, 1]) for (const [x, turn] of [[0.03, 0.6], [0, 0], [-0.03, -0.6]] as const) {
-    const thigh = new CylinderGeometry(0.009, 0.007, 0.1, 4).translate(0, 0.05, 0).rotateX(side * 1.2).rotateY(turn).translate(x, 0, side * 0.02);
+    const thigh = new CylinderGeometry(0.009, 0.007, 0.1, 3, 1, true).translate(0, 0.05, 0).rotateX(side * 1.2).rotateY(turn).translate(x, 0, side * 0.02);
     const knee = new Vector3(0, 0.1, 0).applyAxisAngle(new Vector3(1, 0, 0), side * 1.2).applyAxisAngle(new Vector3(0, 1, 0), turn);
-    const shin = new CylinderGeometry(0.007, 0.005, 0.1, 4).translate(0, 0.05, 0).rotateX(side * 2.3).rotateY(turn).translate(x + knee.x, knee.y, side * 0.02 + knee.z);
+    const shin = new CylinderGeometry(0.007, 0.005, 0.1, 3, 1, true).translate(0, 0.05, 0).rotateX(side * 2.3).rotateY(turn).translate(x + knee.x, knee.y, side * 0.02 + knee.z);
     parts.push(painted(thigh, dark), painted(shin, dark));
   }
   const count = rows * 3;
