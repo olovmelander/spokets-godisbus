@@ -4803,7 +4803,8 @@ The older list, still true where it is not struck:
   - Moa and Bertil running ahead in Billsta ("Följ vårt godis! Vi springer före."), who are only heard;
   - Flärken's door banging on its hinges ("Pang! Dörren…"), which is a sliding plank.
   - In Äventyr 1: the golden geléhallon going to his mouth in Norrsken ("Smaka …"), Elof lifting the ghost up the
-    cliff on Berget ("Lyft"), Pappa holding the seesaw board in Granskogen, the
+    cliff on Berget ("Lyft"), Pappa holding the seesaw board in Granskogen (he stands 8 EL from its high end, out of
+    reach; moving him is a staging change), the
     candy the ghost leaves at the vittra door, the toothbrush in the epilogue, Klonk hopping across the party table,
     Pappa beside Elof as they carve, and what Elof picks up (the lingon, Moa's leaf drawing) shown in his hands.
     Tried and taken back: Elof holding the old trägubbe on Pappa's shoulders in Norrsken. The carving is nearly as
