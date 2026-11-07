@@ -1,5 +1,34 @@
 # Handover
 
+## State (7 November 2026, late evening)
+
+- **The dialogue in good Swedish (Olov: "Finns det några dialoger som inte är på korrekt svenska? Typ när Elof ska åka på
+  fågeln…", then "Du behöver bara skriva om och rätta replikerna, vi ska skapa nya röster vid ett senare tillfälle").**
+  Every line, button, objective and recap of both adventures was read for Swedish that a native would notice. About
+  60 were rewritten.
+  - **The birds:**
+    - On the owl in Stormskogen, Elof now says "Hu-hu! Vad mjukt det är att flyga!" (was "Vilken fjädermjuk skjuts!").
+    - In Älven he asks "Lilla uggla, kan du ta mig över sjön?" (was "Vill du bära mig över sjön, uggla?").
+    - The owl's button is "Hoppa upp på ugglan" everywhere.
+    - The crane gets "Flyg på tranans rygg …" instead of "skjuts uppåt" and "Tranan ger mig skjuts". It also has a
+      button of its own, "Hoppa upp på tranan" (`boardCrane`; it used Pappa's hand's "Kliv upp").
+  - **Also:**
+    - "Ett snitt med kniven" and "Snitt 1 av 3" replace "Ett tag med kniven" and "Tag 1 av 3".
+    - "Ett öga klart!" replaces "Ett öga till liv!".
+    - "pappersflygplan" everywhere.
+    - "Trägubben fick en karamell!" (the sweet now comes with its article: `sv.sharing.a`).
+    - "Hans målade ögon" replaces "Dess målade ögon".
+    - "Jag bestämmer när vi åker".
+    - "längst ut på bryggan" replaces "bryggans ände".
+    - "Haka fast fönsterhaken" replaces "Vrid fönsterhaken".
+  - **Recorded lines that changed:** `familyMoaPlan`, `familySeesawReady` and `end_window`.
+    - Their recordings stay in `public/audio/voices`, but the build leaves them out of the voices it plays
+      (`src/audio/recorded.ts`, read by `vite.config.ts`). They are shown silent until the new voices are made.
+    - `scripts/generate-voices.mjs` and `scripts/voices-aventyr2.json` have the new words.
+  - **Checked:** typecheck, `npm test` (2,133), the build with its gates (JS 539.8 of 540 KB), the privacy check, and
+    the browser suites story-context and myren-loop.
+  - **The next step needs:** nothing from Olov's computer. The new voices, when he says so, record the changed lines.
+
 ## State (7 November 2026, evening)
 
 - **Water that showed as a block on a phone held upright (Olov, 7 November 2026, two photos from Stormgården).**
@@ -4843,6 +4872,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The dialogue in good Swedish (7 Nov, late evening) | Olov's request: find and fix dialogue that isn't correct Swedish, the bird ride first | Part of the same cloud session, with two reading agents | — / 0 so far | About 60 lines rewritten in both adventures; the crane has its own button; three recorded lines silent until the new voices. |
 | Water as a block on an upright phone (7 Nov, evening) | Olov's photos: the water looked like a block you could see into | Part of the same cloud session | — / 0 so far | Stormgården and Billsta draw their water as garden pools with a near shore; Älven's and Stormens öga's river runs on past the camera. |
 | Living water and big animals (7 Nov, afternoon) | Olov's request: water that moves, with small waves; more big forest animals walking as silhouettes | The same cloud session's afternoon | — / 0 so far | Rings, drifting needles and leaves, a swell on lakes and rivers; a moose cow and calf, a roe deer and a bear rendered in Blender for the far scenery. The forest animals don't read in the picture yet (first in Next). |
 | The graphics pass and the Unravel look (6 Nov) | Olov's request: every visual in both adventures, step by step until 23:00, then "mer likt Unravel" with a larger budget; later the SUP, the rain gear and the story's details, until 02:00 | One cloud session's evening and night | — / 0 so far | A lens (depth of field, contact shade, film look, near pollen), close materials (ground, boards, turf, bark, granite, grain, moss), the home's doorway, brooks, huts, beetles, braid, puzzle weight; Mamma's SUP, rain gear through the storm, Bertil's boot, the family's lamps, twelve more story details. |

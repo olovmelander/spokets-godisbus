@@ -36,11 +36,11 @@ export const words: ChapterWords = {
     biJumpOn: 'Klonk, hoppa på andra änden!',
     biTooLight: 'Du är lite för lätt. Vi får klura!',
     biMiddle: 'Pappa sitter nära mitten när vi gungar.',
-    biTheStone: 'Stenen är mitten. Kan den flyttas?',
+    biTheStone: 'Stenen ligger i mitten. Kan den flyttas?',
     biNearMiddle: 'Så! Nu har Klonk den långa änden.',
     biFly: 'Jag flyger över bäcken!',
     biThanksKlonk: 'Tack, Klonk! Du är min bästa vän.',
-    biHazel: 'Här växer hassel, full av nötter!',
+    biHazel: 'En hasselbuske full av nötter!',
     biWind: 'Blåsten! Jag gömmer mig bakom stenarna.',
     // 6. the brow: the flash, and the owl far off
     biThere: 'Där nere! På en sten i sundet!',
@@ -56,7 +56,7 @@ export const words: ChapterWords = {
     biCallKlonk: 'Ropa på Klonk',
   },
   purposes: {
-    billstaRoad: { purpose: 'Gå längs vägen mot det tända fönstret.', recap: 'Vi åkte till Billsta för att leta vidare. Moa och Bertil lägger nu godis som visar mig deras väg.' },
+    billstaRoad: { purpose: 'Gå längs vägen mot det tända fönstret.', recap: 'Vi åkte till Billsta för att leta vidare. Nu lägger Moa och Bertil ett godisspår åt mig.' },
     billstaMorfar: { purpose: 'Ropa på morfar vid diket.', recap: 'Diket är fullt av vatten. Morfar står där med sin långa stege.' },
     billstaLadder: { purpose: 'Gå över diket på morfars stege.', recap: 'Morfar har lagt sin stege över diket åt mig.' },
     billstaYard: { purpose: 'Följ Moas och Bertils spår över gården.', recap: 'Morfar hjälpte mig över diket. Mormor väntar vid ladan.' },
@@ -74,7 +74,7 @@ export const words: ChapterWords = {
     billstaWind: { purpose: 'Göm dig bakom stenarna när det blåser.', recap: 'Stormen blåser över backen. Bakom stenarna är det lä.' },
     billstaBrow: { purpose: 'Gå upp på toppen av Billaberget.', recap: 'Härifrån ser man långt, ända ner till sundet.' },
     billstaLook: { purpose: 'Titta ner mot stenen i sundet.', recap: 'Blixten lyser upp vattnet nedanför berget.' },
-    billstaFound: { purpose: 'Följ mormor ner till sundet.', recap: 'Gamla trägubben har fångat lillgubben på stenen. Nu vet vi var de är!' },
+    billstaFound: { purpose: 'Följ mormor ner till sundet.', recap: 'Gamla trägubben har fått tag i lillgubben på stenen. Nu vet vi var de är!' },
   },
   helpers: {
     billstaFamily: 'Familjen letar med sina lampor.',

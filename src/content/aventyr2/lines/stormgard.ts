@@ -22,7 +22,7 @@ export const words: ChapterWords = {
     // 5. Bertils stövelbåt
     sgBertilHere: 'För djupt, lillebror! Ropa på mig.',
     sgBertilBoot: 'Min stövel blir din båt. Kliv i!',
-    sgBertilHeja: 'Första gången min stövel kör själv!',
+    sgBertilHeja: 'Första gången min stövel seglar själv!',
     sgThanks: 'Tack! Jag lämnar tillbaka den i hamn.',
     // 6. the playhouse
     sgPlayhouse: 'Gamla trägubben! Uppe på lekstugan!',
@@ -44,7 +44,7 @@ export const words: ChapterWords = {
     sgTap: { purpose: 'Vrid på kranen på regntunnan.', recap: 'Diket är för brett att hoppa över. Regntunnan är full av vatten.' },
     sgLid: { purpose: 'Gå över locket i diket.', recap: 'Vattnet från tunnan lyfte locket. Nu är det en bro.' },
     sgBertilCall: { purpose: 'Ropa på Bertil vid vattnet.', recap: 'Regnet har gjort gräsmattan till en sjö.' },
-    sgBoard: { purpose: 'Kliv i Bertils stövelbåt.', recap: 'Bertil har lagt sin stövel på vattnet. Jag väljer när vi åker.' },
+    sgBoard: { purpose: 'Kliv i Bertils stövelbåt.', recap: 'Bertil har lagt sin stövel på vattnet. Jag bestämmer när vi åker.' },
     sgBoot: { purpose: 'Åk över i Bertils stövel.', recap: 'Bertils stövel bär mig över den översvämmade gräsmattan.' },
     sgPlayhouse: { purpose: 'Klättra upp på lekstugans tak.', recap: 'Gamla trägubben stod på lekstugan. Godisspåret går upp dit.' },
     sgLonely: { purpose: 'Följ spåret mot häcken.', recap: 'På taket fanns en tankebild av gamla trägubben, alldeles ensam. Varför väntar han aldrig på oss?' },

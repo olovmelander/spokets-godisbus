@@ -8,6 +8,7 @@ import { noZstd } from './scripts/no-zstd.mjs';
 import { squeezeShaders } from './scripts/squeeze-glsl.mjs';
 import { staticPresentation } from './scripts/static-presentation.mjs';
 import { sv } from './src/content/sv';
+import { stillSaid } from './src/audio/recorded';
 import { spriteHtml } from './src/ui/sprite';
 import { MEMORIES } from './src/ui/memory-art';
 import { shellHtml } from './src/ui/shell-html';
@@ -29,9 +30,11 @@ export default defineConfig(({ mode }) => {
     base,
     define: {
       __BUILD_VERSION__: JSON.stringify(version), __ASSET_VERSION__: JSON.stringify(assetVersion),
-      // Unrecorded dialogue remains silent, without fetching a known-missing MP3 on every new line.
-      __VOICE_KEYS__: JSON.stringify(readdirSync('public/audio/voices', { withFileTypes: true })
-        .filter(file => file.isFile() && file.name.endsWith('.mp3')).map(file => file.name.slice(0, -4)).sort()),
+      // Unrecorded dialogue remains silent, without fetching a known-missing MP3 on every new line. So does a line
+      // rewritten since it was recorded, until it is recorded again (src/audio/recorded.ts).
+      __VOICE_KEYS__: JSON.stringify(stillSaid(readdirSync('public/audio/voices', { withFileTypes: true })
+        .filter(file => file.isFile() && file.name.endsWith('.mp3')).map(file => file.name.slice(0, -4)).sort(),
+      JSON.parse(readFileSync('public/audio/voices/manifest.json', 'utf8')))),
     },
     plugins: [
       ...(mode === 'lan' ? [basicSsl()] : []),

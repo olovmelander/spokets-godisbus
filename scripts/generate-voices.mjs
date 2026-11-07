@@ -108,7 +108,7 @@ export const VOICE_LINES = [
   { key: 'rootFingers', speaker: 'moa', situation: 'Ghost goes under tree root', tag: '[worried, trying to reach]', text: 'Där kröp spöket in. Jag får inte plats!' },
   { key: 'gardenReady', speaker: 'moa', situation: 'Paper airplane is folded and ready', tag: '[encouraging, gentle]', text: 'Planet väntar. Vi lyfter när du vill.' },
   { key: 'familyMoa', speaker: 'moa', situation: 'Supporting Elof', tag: '[warm, caring big sister]', text: 'Jag hjälper dig vidare, lillebror.' },
-  { key: 'familyMoaPlan', speaker: 'moa', situation: 'Explaining flight path', tag: '[confident, enthusiastic]', text: 'Mitt pappersplan når skogskanten.' },
+  { key: 'familyMoaPlan', speaker: 'moa', situation: 'Explaining flight path', tag: '[confident, enthusiastic]', text: 'Mitt pappersflygplan når skogskanten.' },
   { key: 'gardenPocket', speaker: 'moa', situation: 'Dropped drawing under bridge', tag: '[sad, worried sigh]', text: 'Min lövteckning föll under spånbron!' },
   { key: 'gardenThanks', speaker: 'moa', situation: 'Elof rescued her drawing', tag: '[relieved, loving and proud]', text: 'Du hittade den! Vi hjälps åt, lillebror.' },
   { key: 'bagGlitters', speaker: 'moa', situation: 'Noticing glowing magic', tag: '[whispering in awe]', text: 'Två godisar lyser i påsen!' },
@@ -151,7 +151,7 @@ export const VOICE_LINES = [
   { key: 'cobbles3', speaker: 'pappa', situation: 'Explaining round stones', tag: '[gentle, educational]', text: 'Vågorna gjorde dem runda.' },
   { key: 'familyPappa', speaker: 'pappa', situation: 'Ravine too wide to jump', tag: '[calm, caring father]', text: 'Här är för långt att hoppa, Elof.' },
   { key: 'familySeesaw', speaker: 'pappa', situation: 'Building seesaw bridge', tag: '[steady, guiding craftsman]', text: 'Jag håller brädan. Rulla hit en kotte.' },
-  { key: 'familySeesawReady', speaker: 'pappa', situation: 'Seesaw ready to launch', tag: '[encouraging, cheerful]', text: 'Bra! Ställ dig på den låga änden.' },
+  { key: 'familySeesawReady', speaker: 'pappa', situation: 'Seesaw ready to launch', tag: '[encouraging, cheerful]', text: 'Bra! Ställ dig på änden som är nere.' },
   { key: 'first1', speaker: 'pappa', situation: 'Summit confession about lost carving', tag: '[nostalgic, emotional, soft]', text: 'Min allra första trägubbe …' },
   { key: 'first2', speaker: 'pappa', situation: 'Remembering carving it for Elof', tag: '[deeply loving, tender]', text: 'Den täljde jag till dig' },
   { key: 'first3', speaker: 'pappa', situation: 'When Elof was little', tag: '[tender fatherly memory]', text: 'när du var liten, Elof.' },
@@ -201,7 +201,7 @@ export const VOICE_LINES = [
 
   // Story endings
   { key: 'end_epilog', speaker: 'storyteller', situation: 'Story closing card', tag: '[tender, emotionally resonant fairytale conclusion]', text: 'Klonk kunde inte säga det med ord. Men Elof förstod.' },
-  { key: 'end_window', speaker: 'storyteller', situation: 'Final moonlight card', tag: '[gentle, magical bedtime ending]', text: 'Elofs lilla trägubbe står i månljuset. Dess målade ögon blinkar.' },
+  { key: 'end_window', speaker: 'storyteller', situation: 'Final moonlight card', tag: '[gentle, magical bedtime ending]', text: 'Elofs lilla trägubbe står i månljuset. Hans målade ögon blinkar.' },
   { key: 'end_byn', speaker: 'storyteller', situation: 'Bonus chapter closing', tag: '[cheerful, contented stroll home]', text: 'Lördagsgodiset är köpt. Nu går vi hem.' },
 ];
 

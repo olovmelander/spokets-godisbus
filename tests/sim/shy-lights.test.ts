@@ -173,7 +173,7 @@ describe('C3, the shy lights above the mist trail', () => {
     // The same supported assisted hops can be enabled after any challenge, without moving the player.
     sim.options.easyJumps = true;
     for (let step = 0; step < 20 / STEP && !sim.flags.has('goal'); step++) {
-      sim.step({ ...idle, x: 1, act: sim.curr.verb === 'take' && sim.curr.word === 'climbOn' });
+      sim.step({ ...idle, x: 1, act: sim.curr.verb === 'take' && sim.curr.word === 'boardCrane' });
     }
     expect([...sim.flags]).toEqual(expect.arrayContaining(['chick', 'home', 'crane', 'goal', found]));
     expect(sim.bubbles).toBe(0);

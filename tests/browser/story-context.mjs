@@ -110,11 +110,11 @@ try {
   // The same production reminder and pause recap at the loops' authored local positions.
   const loops = await open({ width: 390, height: 844 });
   for (const [name, chapter, flags, x, y, expected, wording] of [
-    ['called-plane', 'garden', 'moa', 166, 0, 'planeBoard', 'Kliv på Moas pappersplan.'],
+    ['called-plane', 'garden', 'moa', 166, 0, 'planeBoard', 'Kliv på Moas pappersflygplan.'],
     ['optional-drawing', 'garden', 'moa,placed:bridge,garden:pocket-open', 141.8, 3.3, 'gardenPocket', 'Jag kan hämta Moas lövteckning.'],
     ['drawing-climb', 'garden', 'moa,placed:bridge,garden:pocket-open,garden:paper', 141.1, -2, 'gardenClimb', 'Klättra upp längs slangen.'],
     ['drawing-return', 'garden', 'moa,placed:bridge,garden:pocket-open,garden:paper', 164.1, 0, 'gardenReturnDrawing', 'Jag kan visa Moa lövteckningen.'],
-    ['skip-drawing', 'garden', 'moa,placed:bridge,garden:pocket-open,garden:paper,plane:board', 172, 4, 'plane', 'Flyg med Moas pappersplan.'],
+    ['skip-drawing', 'garden', 'moa,placed:bridge,garden:pocket-open,garden:paper,plane:board', 172, 4, 'plane', 'Flyg på Moas pappersflygplan.'],
     ['lantern-loop', 'myren', 'home,bog:return-bridge,placed:bog-boardwalk', 160, 0.3, 'bogLantern', 'Jag kan gå tillbaka till gläntan.'],
     ['lantern-return', 'myren', 'home,bog:return-bridge,placed:bog-boardwalk,bog:lantern-return', 155, 0.3, 'bogReturn', 'Gå tillbaka till tranan när jag vill.'],
     ['main-crane-route', 'myren', 'home,bog:return-bridge,placed:bog-boardwalk,bog:lantern-return,crane', 176, 8, 'crane', 'Flyg med tranan till berget.'],

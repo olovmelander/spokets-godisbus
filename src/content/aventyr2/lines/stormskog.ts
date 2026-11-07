@@ -19,7 +19,7 @@ export const words: ChapterWords = {
     // 5. the windthrow
     ssWindthrow: 'Stormen fällde granar som tändstickor!',
     ssOwlWaits: 'Du väntar på oss! Får jag åka med?',
-    ssOwlFly: 'Hu-hu! Vilken fjädermjuk skjuts!',
+    ssOwlFly: 'Hu-hu! Vad mjukt det är att flyga!',
     // 6. Pappa's flashlight
     ssPappaHere: 'Elof? Jag hör dig! Var är du?',
     ssTooWide: 'För brett att hoppa. Och så mörkt!',
@@ -37,29 +37,29 @@ export const words: ChapterWords = {
     ssBoth: 'Kom, Klonk. Vi ska hitta dem båda!',
     // 8. the jay
     ssJaySeen: 'Lavskrikan! Den gömmer sig för regnet.',
-    ssJayGlad: 'Ett lingon åt dig. Visa vägen, vän!',
+    ssJayGlad: 'Ett lingon åt dig. Visa vägen, kompis!',
     // 9. the hill
-    ssSeeOld: 'Där! Gamla trägubben, nerför backen!',
+    ssSeeOld: 'Där springer gamla trägubben ner!',
     ssVillage: 'Byn är alldeles mörk. Inte ett ljus.',
     ssOnward: 'Klonk, klonk!',
   },
   verbs: {
-    ssFlyOwl: 'Flyg med ugglan',
+    ssFlyOwl: 'Hoppa upp på ugglan',
   },
   purposes: {
     ssForest: { purpose: 'Följ godisspåret in i skogen.', recap: 'Lillgubben blåste in i skogen. Gamla trägubben lämnar godis åt mig.' },
     ssCones: { purpose: 'Titta på skuggorna. Kottarna faller!', recap: 'Stormen skakar granarna, och kottarna ramlar ner.' },
     ssBoughs: { purpose: 'Följ spåret genom ravinen.', recap: 'Grenarna gungar i vinden. Där uppe kan jag hoppa, om jag vågar.' },
-    ssOwl: { purpose: 'Dra bort pinnen från ugglans hål.', recap: 'Stormen har blåst en pinne framför ugglans hål. Den kommer inte ut.' },
+    ssOwl: { purpose: 'Dra bort pinnen från ugglans hål.', recap: 'Stormen har blåst en pinne framför ugglans hål. Ugglan kommer inte ut.' },
     ssWindthrow: { purpose: 'Följ spåret över vindfällen.', recap: 'Ugglan är fri. Den flög före mig in bland de fallna granarna.' },
-    ssOwlBoard: { purpose: 'Flyg med ugglan över klyftan.', recap: 'Klyftan är för bred att hoppa över. Ugglan väntar på mig.' },
-    ssOwlRide: { purpose: 'Flyg med ugglan.', recap: 'Ugglan bär mig högt över vindfällen.' },
+    ssOwlBoard: { purpose: 'Flyg på ugglan över de fallna granarna.', recap: 'Här är det för brett att hoppa. Ugglan väntar på mig.' },
+    ssOwlRide: { purpose: 'Flyg på ugglan.', recap: 'Ugglan bär mig högt över vindfällen.' },
     ssPappa: { purpose: 'Ropa på Pappa vid klyftan.', recap: 'Här är för brett att hoppa, och så mörkt. Pappa har ficklampan.' },
     ssPlank: { purpose: 'Gå över bron. Det är Klonk!', recap: 'Pappa fick syn på Klonk i lampskenet. När en vuxen ser honom blir han alldeles stel.' },
     ssFollow: { purpose: 'Följ Klonk vidare in i skogen.', recap: 'Pappa tittade bort, och då vaknade Klonk igen.' },
     ssMemory: { purpose: 'Följ spåret efter gamla trägubben.', recap: 'Gamla trägubben vet hur det är att vara ensam i mörkret. Därför skyndar han efter lillgubben.' },
     ssJay: { purpose: 'Ge lavskrikan ett lingon.', recap: 'Lavskrikan från förra äventyret gömmer sig för stormen.' },
-    ssLichen: { purpose: 'Klättra upp längs laven.', recap: 'Lavskrikan fick ett lingon. Den visade mig laven upp på roten.' },
+    ssLichen: { purpose: 'Klättra upp längs laven.', recap: 'Lavskrikan fick ett lingon. Den visade mig vägen upp längs laven.' },
     ssDown: { purpose: 'Följ spåret ner mot byn.', recap: 'Gamla trägubben skyndar mot byn. Där är alla fönster mörka.' },
   },
   helpers: {

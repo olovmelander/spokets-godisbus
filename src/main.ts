@@ -302,7 +302,7 @@ async function start(): Promise<void> {
       else if (answer.kind === 'carve') hud.notice(sv.carving.carved);
       else hud.notice((answer.kind === 'party' ? sv.party.thanks : sv.sharing.thanks)
         .replace('{friend}', answer.friend === 'spoket' && isKlonk() ? sv.ghostName : answer.kind === 'party' ? sv.party.friends[answer.friend] : sv.sharing.friends[answer.friend])
-        .replace('{sweet}', sv.sharing.sweets[answer.sweet].toLocaleLowerCase('sv')));
+        .replace('{sweet}', sv.sharing.a[answer.sweet]));
       writeSave();
       // The next step at the same place follows in the same panel.
       if (game.sim.story) return true;
