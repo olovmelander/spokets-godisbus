@@ -2,6 +2,7 @@ import { Box3, BufferGeometry, Color, ConeGeometry, CylinderGeometry, Float32Buf
 import type { ChapterData } from '../sim/types';
 import { heightAt, landscape } from './dressing/kit';
 import { granite } from './dressing/ground';
+import { kitLife } from './kit-life';
 
 /** Authored scenery, shared with Stormnatten's model library. None of these objects is a platform or a clue. */
 interface Planting {
@@ -138,17 +139,18 @@ export function outdoorModels(chapter: ChapterData): Group {
     holder.position.set(item.x, item.y ?? heightAt(land, item.x), item.z);
     holder.rotation.y = item.turn ?? 0;
     holder.scale.setScalar(item.size);
-    if (/^(snigel|igelkott|groda|and|and-hona)$/.test(item.model)) holder.userData.outdoorLife = { y: holder.position.y, size: item.size, phase: item.x * 1.7, water: item.model.startsWith('and') };
+    if (/^(snigel|igelkott|groda|and|and-hona)$/.test(item.model)) holder.userData.outdoorLife = { kind: item.model, x: item.x, y: holder.position.y, turn: item.turn ?? 0, size: item.size, phase: item.x * 1.7, water: item.model.startsWith('and') };
     group.add(holder);
   }
   return group;
 }
 
-/** Small breaths and ripples, with no wandering across the trail; reduced motion always restores the resting pose. */
+/** Small breaths and ripples, with no wandering across the trail (./kit-life.ts); reduced motion always restores the resting pose. */
 export function updateOutdoorModels(group: Group, clock: number, still: boolean): void {
   for (const holder of group.children) {
-    const life = holder.userData.outdoorLife as { y: number; size: number; phase: number; water: boolean } | undefined;
+    const life = holder.userData.outdoorLife as { kind: string; x: number; y: number; turn: number; size: number; phase: number; water: boolean } | undefined;
     if (!life) continue;
+    if (kitLife(life.kind, holder, life, clock, life.phase, still)) continue;
     const breath = still ? 0 : Math.sin(clock * (life.water ? 1.5 : 1.8) + life.phase);
     holder.position.y = life.y + (life.water ? breath * 0.035 : 0);
     holder.scale.y = life.size * (1 + (life.water ? 0 : breath * 0.025));

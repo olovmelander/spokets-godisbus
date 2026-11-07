@@ -215,11 +215,11 @@ function squirrels(plan: Plan, add: Add): Kind {
       const out = girth(tree, q.h) + 0.03 + (dash ? 0.05 * Math.abs(Math.sin(stride)) : 0);
       M.makeBasis(F, U, W).setPosition(tree.x + U.x * out, tree.y + q.h, tree.z + U.z * out);
       crowd.matrix(i, M);
-      // A pause has a flick of the tail now and then, and a look round; a dash streams it out behind.
+      // A pause has a flick of the tail now and then, and a look round in quick snaps; a dash streams it out behind.
       if (!dash && !now.still) q.flick -= now.dt;
       if (q.flick < -0.8) q.flick = 1 + next() * 2.5;
       const flick = q.flick < 0 ? Math.sin(-q.flick * 20) * Math.exp(q.flick * 4) * 0.6 : 0;
-      crowd.pose(i, 0, dash ? 0.3 + 0.12 * Math.sin(stride + 1) : flick, dash ? 0 : 0.35 * Math.sin(now.t * 0.8 + i * 2), dash ? 0.8 * Math.sin(stride) : 0);
+      crowd.pose(i, 0, dash ? 0.3 + 0.12 * Math.sin(stride + 1) : flick, dash ? 0 : 0.35 * glance(now.t * 1.4, i * 2.7), dash ? 0.8 * Math.sin(stride) : 0);
     }
   };
 }
@@ -507,18 +507,24 @@ function butterflies(plan: Plan, add: Add): Kind {
         b.sit = Math.min(1, b.sit + now.dt / 1.6);
         if (b.sit >= 1 && (b.stay -= now.dt) <= 0) b.wait = 8 + next() * 9;
       }
-      // Its own soft loops round its home, and a flutter up and down in them.
-      const fx = b.home[0] + 1.5 * Math.sin(t * 0.31 + b.p) + 0.6 * Math.sin(t * 0.73 + 2 * b.p);
-      const fy = b.home[1] + 0.45 * Math.sin(t * 0.47 + b.p) + 0.07 * Math.sin(t * 9);
+      // Its own soft loops round its home, with the small sudden swerves of a butterfly's way, and a lift with each
+      // downstroke of its wings.
+      const beat = t * 38;
+      const fx = b.home[0] + 1.5 * Math.sin(t * 0.31 + b.p) + 0.6 * Math.sin(t * 0.73 + 2 * b.p) + 0.16 * Math.sin(t * 2.9 + b.p) * Math.sin(t * 1.3);
+      const fy = b.home[1] + 0.45 * Math.sin(t * 0.47 + b.p) + 0.12 * Math.sin(t * 2.3 + 2 * b.p) * Math.sin(t * 1.1) + 0.035 * Math.sin(beat + 1.2);
       const fz = Math.min(-1.2, b.home[2] - 0.6 * Math.sin(t * 0.27 + 1.3 * b.p));
       const k = smooth(b.sit);
       const x = lerp(fx, b.flower[0], k), y = lerp(fy, b.flower[1], k), z = lerp(fz, b.flower[2], k);
-      if (!now.still && Math.hypot(x - b.x, z - b.z) > 1e-4) b.yaw = Math.atan2(-(z - b.z), x - b.x);
+      // It turns into its way quickly, but never in one frame.
+      if (!now.still && Math.hypot(x - b.x, z - b.z) > 1e-4) {
+        const wanted = Math.atan2(-(z - b.z), x - b.x);
+        b.yaw += Math.atan2(Math.sin(wanted - b.yaw), Math.cos(wanted - b.yaw)) * Math.min(1, now.dt * 10);
+      }
       b.x = x; b.y = y; b.z = z;
       crowd.put(i, x, y, z, b.yaw, 1.4, 0, 0);
-      // Flying, its wings beat about three times a second, held up in a V; sitting, they stand closed over its back
+      // Flying, its wings beat about six times a second, held up in a V; sitting, they stand closed over its back
       // and open slowly.
-      crowd.pose(i, k > 0.95 ? -1.35 + 0.3 * (0.5 + 0.5 * Math.sin(t * 1.4)) : lerp(-0.45 + 0.9 * Math.sin(t * 17), -1.2, k), 1);
+      crowd.pose(i, k > 0.95 ? -1.35 + 0.3 * (0.5 + 0.5 * Math.sin(t * 1.4)) : lerp(-0.45 + 0.9 * Math.sin(beat), -1.2, k), 1);
     }
   };
 }
@@ -605,7 +611,7 @@ function lights(plan: Plan, add: Add, shine: Crowd, glow: { value: number }): Ki
   });
   const darts = plan.dragonflies.map((home, d) => {
     for (const w of [0, 1]) { fly.setXYZW(d * 2 + w, 0, 0, 0, 0.45); shine.mesh.setColorAt(d * 2 + w, SHEEN); }
-    return { home, from: [...home], to: [...home], k: 1, wait: next() * 2, yaw: 0, long: 0.3 };
+    return { home, from: [...home], to: [...home], k: 1, wait: next() * 2, yaw: 0, face: 0, long: 0.3 };
   });
   return (now, calm) => {
     // Fireflies glow up as the dusk deepens or the storm's eye opens, and fade with the day.
@@ -636,13 +642,16 @@ function lights(plan: Plan, add: Add, shine: Crowd, glow: { value: number }): Ki
         f.wait = 0.8 + next() * 2.2;
         f.yaw = Math.atan2(-(f.to[2]! - f.from[2]!), f.to[0]! - f.from[0]!);
       }
-      const e = smooth(f.k);
+      // It turns to its new way first, quick but not in one frame, then darts, nose down, and hovers level.
+      f.face += Math.atan2(Math.sin(f.yaw - f.face), Math.cos(f.yaw - f.face)) * Math.min(1, now.dt * 28);
+      const e = smooth(Math.max(0, (f.k - 0.15) / 0.85));
       const x = lerp(f.from[0]!, f.to[0]!, e);
       const y = lerp(f.from[1]!, f.to[1]!, e) + 0.03 * Math.sin(now.t * 9 + d);
       const z = lerp(f.from[2]!, f.to[2]!, e);
-      bodies.put(d, x, y, z, f.yaw, 1.25);
-      // Its wings, over its back: a faint shine on each pair.
-      for (const w of [0, 1]) shine.matrix(d * 2 + w, M.makeScale(w ? 0.34 : 0.42, w ? 0.1 : 0.13, 1).setPosition(x + Math.cos(f.yaw) * (w ? -0.03 : 0.06), y + 0.045, z + 0.01));
+      bodies.put(d, x, y, z, f.face, 1.25, -0.3 * Math.sin(Math.PI * e));
+      // Its wings, over its back: a faint shine on each pair, flickering as they beat.
+      const flicker = 0.85 + 0.15 * Math.sin(now.t * 47 + d * 2.1);
+      for (const w of [0, 1]) shine.matrix(d * 2 + w, M.makeScale((w ? 0.34 : 0.42) * flicker, (w ? 0.1 : 0.13) * flicker, 1).setPosition(x + Math.cos(f.face) * (w ? -0.03 : 0.06), y + 0.045, z + 0.01));
     }
   };
 }

@@ -11,6 +11,7 @@ import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../
 import { roomThings } from '../../render/home-room';
 import { glowTexture } from '../../render/glow';
 import { wingbeat } from '../../render/wingbeat';
+import { kitLife } from '../../render/kit-life';
 import { drawnWhile } from '../../render/idle';
 import { litLamp } from '../../render/stage';
 import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
@@ -1845,8 +1846,10 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       if (spot.word === 'and' || spot.word === 'and-hona') {
         return { group, update: (_, clock) => { model.position.y = 0.05 * Math.sin(clock * 1.5 + phase); model.rotation.z = 0.04 * Math.sin(clock * 1.1 + phase); } };
       }
-      if (spot.word === 'igelkott' || spot.word === 'groda') {
-        return { group, update: (_, clock) => { model.scale.y = 1 + 0.035 * Math.sin(clock * 2.1 + phase); } };
+      // The hedgehog snuffles, the frog hops on the spot, the snail creeps (../../render/kit-life.ts).
+      if (spot.word === 'igelkott' || spot.word === 'groda' || spot.word === 'snigel') {
+        const rest = { x: 0, y: 0, turn: 0, size: 1 };
+        return { group, update: (_, clock) => { kitLife(spot.word!, model, rest, clock, phase, elof.still); } };
       }
       return { group, update: () => {} };
     },

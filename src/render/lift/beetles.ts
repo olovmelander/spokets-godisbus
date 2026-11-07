@@ -55,6 +55,8 @@ interface Beetle {
   z: number;
   x: number;
   heading: number;
+  /** How fast it goes now: it speeds up and slows down, never at once. */
+  speed: number;
   stride: number;
   seed: number;
 }
@@ -70,7 +72,7 @@ function homes(chapter: ChapterData): Beetle[] {
     const level = Math.abs(heightAt(chapter, x - ROAM) - heightAt(chapter, x)) < 0.05 && Math.abs(heightAt(chapter, x + ROAM) - heightAt(chapter, x)) < 0.05;
     const wet = (chapter.water ?? []).some((w) => x > w.from - 3 && x < w.to + 3);
     if (!level || wet) continue;
-    out.push({ home: x, z: -0.45 - 0.35 * next(), x, heading: next() < 0.5 ? 0 : Math.PI, stride: 0, seed: next() * 100 });
+    out.push({ home: x, z: -0.45 - 0.35 * next(), x, heading: next() < 0.5 ? 0 : Math.PI, speed: 0, stride: 0, seed: next() * 100 });
   }
   return out;
 }
@@ -85,7 +87,7 @@ export function createBeetles({ chapter, scene }: ExtraContext): ViewExtra | nul
   const count = beetles.length;
   // A sheen on the wing cases: smooth, a little metal.
   const bodies = new InstancedMesh(beetleShape(), new MeshStandardMaterial({ vertexColors: true, roughness: 0.22, metalness: 0.25 }), count);
-  const legs = new InstancedMesh(new CylinderGeometry(0.009, 0.006, 1, 4).translate(0, -0.5, 0), new MeshStandardMaterial({ color: '#0d0f1c', roughness: 0.5 }), count * 6);
+  const legs = new InstancedMesh(new CylinderGeometry(0.014, 0.009, 1, 4).translate(0, -0.5, 0), new MeshStandardMaterial({ color: '#0d0f1c', roughness: 0.5 }), count * 6);
   const feelers = new InstancedMesh(new CylinderGeometry(0.004, 0.006, 1, 4).translate(0, 0.5, 0), new MeshStandardMaterial({ color: '#0d0f1c', roughness: 0.5 }), count * 2);
   for (const mesh of [bodies, legs, feelers]) {
     mesh.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -127,10 +129,12 @@ export function createBeetles({ chapter, scene }: ExtraContext): ViewExtra | nul
         let turn = Math.atan2(Math.sin(want - b.heading), Math.cos(want - b.heading));
         turn = Math.max(-3 * dt, Math.min(3 * dt, turn));
         b.heading += turn;
-        const along = Math.cos(b.heading) * speed * dt;
+        // It gets going in a few strides, and slows to a stop.
+        b.speed += (speed - b.speed) * Math.min(1, dt * (speed > b.speed ? 7 : 4));
+        const along = Math.cos(b.heading) * b.speed * dt;
         b.x += along;
-        b.z = Math.max(-1.1, Math.min(-0.35, b.z + Math.sin(b.heading) * speed * dt * 0.3));
-        b.stride += (speed + Math.abs(turn) * 0.3) * dt * 34;
+        b.z = Math.max(-1.1, Math.min(-0.35, b.z + Math.sin(b.heading) * b.speed * dt * 0.3));
+        b.stride += (b.speed + Math.abs(turn) * 0.3) * dt * 34;
         // It stands on its legs, a little up off the ground, and bobs with its steps.
         at.position.set(b.x, heightAt(chapter, b.x) + 0.035 + 0.004 * Math.abs(Math.sin(b.stride)), b.z);
         at.rotation.set(0, -b.heading, Math.sin(b.stride * 0.5) * 0.02);
@@ -143,7 +147,7 @@ export function createBeetles({ chapter, scene }: ExtraContext): ViewExtra | nul
           const phase = b.stride + ((pair + (side > 0 ? 0 : 1)) % 2 ? Math.PI : 0);
           // Splayed forward, out and back, so that each is seen from the side; lifted as it swings forward.
           part.position.set(0.07 - pair * 0.06, 0.07, side * 0.05);
-          part.rotation.set(side * (0.75 + Math.max(0, Math.sin(phase)) * 0.25), (1 - pair) * 0.9 * side + Math.cos(phase) * 0.35 * (speed > 0.02 ? 1 : 0), 0, 'YXZ');
+          part.rotation.set(side * (0.75 + Math.max(0, Math.sin(phase)) * 0.25), (1 - pair) * 0.9 * side + Math.cos(phase) * 0.35 * Math.min(1, b.speed / 0.05), 0, 'YXZ');
           part.scale.set(1, 0.16, 1);
           part.updateMatrix();
           legs.setMatrixAt(i * 6 + k, placed.multiplyMatrices(at.matrix, part.matrix));
