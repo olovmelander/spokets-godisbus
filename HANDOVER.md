@@ -138,6 +138,40 @@
       Äventyr 2's places) is clouds of tufts instead of nine flat plates (the nature kit's other models are
       unchanged); Flärken's log huts have the wood's grain; Olympia's goal net is a mesh of squares, not a row of
       strings.
+  - **Under the rain gear** (`hideUnder` in `src/render/rain-gear.ts`): with an arm raised, Bertil's white shirt
+    showed as a strip through his raincoat. Each corner of the body is marked by what covers it (the coat's
+    cross-section band by band, so Mamma's braid over her front still shows; a boot below its top), and the body's
+    own material discards it while that piece is worn. The packer quantizes every mesh in its own box, so the body
+    and the pieces are compared in the pelvis's rest frame, in metres (a first try in raw positions hid Pappa's
+    shorts and knees).
+  - **The animals, reviewed one by one** (Olov: "Se även över alla djur hur de är designade och rör sig"; a review
+    of every creature's code and pictures, then the fixes):
+    - **The crane** (`src/render/crane.ts`; Myren's kneeling crane and Berget's flight): no longer a grey blimp
+      with box wings. A long body, an S-neck black in front with the white stripe behind, the red crown, the
+      drooping bustle over the tail; in flight a round leading edge, black secondaries and black wing-tip fingers,
+      the neck straight out and the legs trailing. Kneeling, it breathes and turns its head to look now and then.
+    - **Wingbeats** (`src/render/wingbeat.ts`, tested): a downstroke of 60% of the beat, tips that follow behind,
+      a nod of the body, and glides between bursts, for the crane, the owl Elof rides and the helping jay (which
+      beats in bursts). The crane's near wing only rises to level, so it never hides Elof.
+    - **The crane chick** that follows him walks: legs that swing by the distance it has come, a bob twice a
+      stride, a head held and thrust on, a turn through facing the lens; rusty down, a paler breast and eyes.
+    - **The ladybird on its back** tips towards the lens so its underside, head and curled legs read; it pedals
+      unevenly with pauses and heaves itself almost over now and then.
+    - **Granskogen's living columns** are thirty real ants each, legs splayed to grip, shifting their grip, under a
+      thatch of fallen needles (`antColumn` in `src/render/critters.ts`).
+    - **Small birds** snap their heads and hold each look, crouch to hop, turn round in a hop instead of in one
+      frame, crouch to take off and flare to land; the thrush's spots read.
+    - **The jay** (the Blender model) turns only its head (head, beak and eyes under a pivot at its nape), and
+      hops three times from a crouch for its berry.
+    - **Owls** sit still and turn rarely, holding each look; the one that leaves flies off as the flying owl with
+      its wings beating, instead of sliding away rigid. **The otter** looks about in held turns, the kit's otter
+      a little from the waist.
+    - **Butterflies** beat about six times a second and swerve; **dragonflies** turn before they dart, nose down;
+      **squirrels** look about in snaps; **beetles** speed up and slow down instead of jumping to a run.
+    - **The kit's hedgehog, frog and snail** (`src/render/kit-life.ts`) no longer squash up and down, face and all:
+      the hedgehog snuffles, the frog hops on the spot now and then, the snail creeps a little way and back.
+    - **Left for Olov's computer** (one mesh each from Blender, so their parts cannot move): a head of their own for
+      the kit's otter, owl, hedgehog and frog. A crane in Blender would be better still than the code-built one.
   - **Budgets, widened at Olov's word ("utöka grafikbudgeten rejält"):** High draws up to 3.5 MP (was 2.6), its
     offscreen targets may take 110 MB (was 80) and the whole picture 260 MB (was 220): `quality.ts`,
     `gpu-memory.ts`, `scripts/asset-gpu-estimate.mjs`, the gpu-memory suite and its unit tests. The prologue on a
