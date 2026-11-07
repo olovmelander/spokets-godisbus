@@ -431,7 +431,18 @@ export function spotProp(spot: Spot): SpotProp | null {
       root.position.set(-0.12, 0.86, -0.02);
       root.rotation.z = 1.2;
       const gift = ball(0.08, solid('#c4202a', 0.25), 0.37, 0.12, 0.2);
-      group.add(forestSocket(new Group().add(frame, door, root, ball(0.025, solid('#dfc372', 0.5), 0.16, 0.33, 0.17)), { shape: 'vittradorr', size: 0.85 }), gift);
+      // The sweet the ghost leaves on the doorstep for the neighbours ("Spöket ger bort mitt godis!?"): a wrapped
+      // caramel, the kit's once it has come. The view shows it from the moment he sees it given (`vittra-candy`).
+      const candy = sweetSocket(new Group().add(
+        ball(0.09, solid('#d9862a', 0.3), 0, 0, 0, [1.4, 1, 1]),
+        ball(0.06, solid('#f3e3c0', 0.6), -0.16, 0, 0, [0.6, 1, 1]),
+        ball(0.06, solid('#f3e3c0', 0.6), 0.16, 0, 0, [0.6, 1, 1]),
+      ), { shape: 'karamell', scale: 0.55 });
+      candy.name = 'vittra-candy';
+      candy.position.set(-0.42, 0.09, 0.24);
+      candy.rotation.set(0, 0.5, 0.15);
+      candy.visible = false;
+      group.add(forestSocket(new Group().add(frame, door, root, ball(0.025, solid('#dfc372', 0.5), 0.16, 0.33, 0.17)), { shape: 'vittradorr', size: 0.85 }), gift, candy);
       return { group, update(used) { gift.scale.setScalar(used ? 1 : 0); drawnWhile(gift, used); } };
     }
     case 'keepsake': {

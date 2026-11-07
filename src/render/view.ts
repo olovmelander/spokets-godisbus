@@ -1172,6 +1172,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const trialTip = chapter.counterweight && thing.spot.id === chapter.counterweight.launch && riding
         && x < chapter.counterweight.to && flags.has(chapter.counterweight.trial ?? chapter.counterweight.launch) && !flags.has(chapter.counterweight.launch);
       thing.prop?.update(flags.has(thing.spot.id) || !!trialTip, clock, dt, noteStrikes.get(thing.spot.id));
+      // The ghost's sweet on the vittra's doorstep, from when he sees it given away.
+      if (thing.spot.look === 'vittra-door') { const sweet = thing.prop?.group.getObjectByName('vittra-candy'); if (sweet) sweet.visible = flags.has('beat:vittra'); }
       thing.reactionTurn = reaction?.kind === 'spot' && reaction.index === i ? response * 0.14 : 0;
       if (thing.prop) thing.prop.group.rotation.z += thing.reactionTurn;
       // Something a scene brings out (Spot.after) is not there before: from its moment it rises into its place
