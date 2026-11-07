@@ -898,8 +898,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** Seconds since the ball he rides in Olympia was kicked; -1 when he is not on it. */
   let kickSince = -1;
   /** How far into each of the family's own gestures they are, 0 to 1: Bertil's boot pull, Moa's reach into the root. */
-  const gestures = new Map<string, { pull: number; reach: number }>();
-  const gestureOf = (who: string) => { let g = gestures.get(who); if (!g) gestures.set(who, g = { pull: 0, reach: 0 }); return g; };
+  const gestures = new Map<string, { pull: number; reach: number; lift: number; liftFor: number }>();
+  const gestureOf = (who: string) => { let g = gestures.get(who); if (!g) gestures.set(who, g = { pull: 0, reach: 0, lift: 0, liftFor: 0 }); return g; };
   const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3();
   const lampTurn = new Quaternion();
   const LAMP_POINTS = new Vector3(0, 0, 1);
@@ -1577,6 +1577,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         posed.armR = Math.max(posed.armR, 0.5 * on);
         one.rig.group.rotation.y += (1.2 - one.rig.group.rotation.y) * on * ease(16, dt);
       }
+      // On Myren, called, Mamma's hands lift the dead pine across the pool: she bends to its end and holds it while it
+      // rises, and lets go once it lies across (the mover `pine`, which goes up by itself as her hands lift it).
+      const pine = one.who === 'mamma' && chapter.id === 'myren' ? scene.getObjectByName('mover:pine') : undefined;
+      const lifting = !!pine && flags.has('mamma') && pine.position.y < -0.42;
+      if (lifting) gesture.liftFor = 0.6; else gesture.liftFor = Math.max(0, gesture.liftFor - dt);
+      gesture.lift = calmStory ? 0 : gesture.lift + ((gesture.liftFor > 0 ? 1 : 0) - gesture.lift) * ease(6, dt);
+      if (gesture.lift > 0.001) {
+        const w = gesture.lift;
+        posed.lean += (0.8 - posed.lean) * w;
+        posed.kneeL += (1.35 - posed.kneeL) * w; posed.kneeR += (1.1 - posed.kneeR) * w;
+        posed.legL += (0.85 - posed.legL) * w; posed.legR += (0.6 - posed.legR) * w;
+      }
       // In the garden, until he calls her, Moa crouches and reaches into the root hole the ghost crept into ("Där
       // kröp spöket in. Jag får inte plats!"); her fingers will not go in.
       const reachesIn = one.who === 'moa' && chapter.id === 'garden' && !flags.has('moa') && Math.abs(one.at - ROOT_HOLE.x) < 4;
@@ -1589,6 +1601,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         one.rig.group.rotation.y += (-0.5 - one.rig.group.rotation.y) * w;
       }
       one.rig.pose(one.seated ? sitting(posed) : one.paddle ? one.paddle.stance(posed) : posed);
+      if (gesture.lift > 0.001 && pine) {
+        // Both hands under the pine's end, a hand's width apart.
+        const end = pine.position.x - 4.3 + 0.25, at = pine.position.y + 0.2;
+        one.rig.reach(0, rootReach.set(end - 0.15, at, 0.25), gesture.lift);
+        one.rig.reach(1, rootReach.set(end + 0.15, at, -0.25), gesture.lift);
+      }
       if (gesture.reach > 0.001) {
         const poke = calmStory ? 0 : Math.sin(clock * 2.3) * 0.12;
         one.rig.reach(1, rootReach.set(ROOT_HOLE.x + 0.2 + poke, ROOT_HOLE.y + 0.3, -0.2), 0.9 * gesture.reach);

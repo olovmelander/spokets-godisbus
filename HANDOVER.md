@@ -152,6 +152,8 @@
     cracked and knotted, with bough stubs leaning away from the path (the `log` mover in `src/render/props.ts`); the
     storm's eye's skerry has lichen, loose stones and sedge in its cracks (`src/content/aventyr2/moonstone.ts`); out
     in the storm, drops splash up at Elof's feet as he runs and lands (`src/render/foot-splash.ts`).
+  - **Mamma lifts the pine** on Myren: called, she bends to the dead pine's end and holds it with both hands while it
+    rises across the pool, and straightens once it lies across (a gesture beside Bertil's and Moa's in `view.ts`).
   - **The animals, reviewed one by one** (Olov: "Se även över alla djur hur de är designade och rör sig"; a review
     of every creature's code and pictures, then the fixes):
     - **The crane, modelled in Blender** (`art/blender/crane.py`, `boot/crane.glb`; the code-built one in
@@ -4801,7 +4803,7 @@ The older list, still true where it is not struck:
   - Moa and Bertil running ahead in Billsta ("Följ vårt godis! Vi springer före."), who are only heard;
   - Flärken's door banging on its hinges ("Pang! Dörren…"), which is a sliding plank.
   - In Äventyr 1: the golden geléhallon going to his mouth in Norrsken ("Smaka …"), Elof lifting the ghost up the
-    cliff on Berget ("Lyft"), Mamma lifting the log on Myren, Pappa holding the seesaw board in Granskogen, the
+    cliff on Berget ("Lyft"), Pappa holding the seesaw board in Granskogen, the
     candy the ghost leaves at the vittra door, the toothbrush in the epilogue, Klonk hopping across the party table,
     Pappa beside Elof as they carve, and what Elof picks up (the lingon, Moa's leaf drawing) shown in his hands.
     Tried and taken back: Elof holding the old trägubbe on Pappa's shoulders in Norrsken. The carving is nearly as
