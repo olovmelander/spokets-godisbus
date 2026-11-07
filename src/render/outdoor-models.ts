@@ -167,30 +167,39 @@ function walkingStone(width: number, high: number): Mesh {
   const tint = new Color();
   const stone = new Color('#969b95');
   const lichen = new Color('#a2a76b');
+  const paleLichen = new Color('#c4c8b0'), goldLichen = new Color('#c9a85a'), moss = new Color('#6f8a3a'), damp = new Color('#5c615a');
   // Only the narrow central walking line is level. Beyond it the same mesh rolls down both faces,
   // with uneven shoulders instead of a separate horizontal rim or a dark joint above the core.
-  const rows = [
+  const outline = [
     [-3.3, -0.12], [-3.1, 0.3], [-2.5, 0.9], [-1.7, 1.23], [-0.95, 1.4],
     [-0.44, 1.34], [-0.2, 1.3], [0.2, 1.3], [0.57, 1.23], [1.05, 0.87],
     [1.18, 0.37], [0.82, -0.12],
   ];
+  // Each span of the outline is cut in three, so that its moss and lichen have corners enough to show (6 and 7, the
+  // walking line, stay as they are).
+  const rows: [number, number, boolean, boolean][] = [];
+  for (let i = 0; i < outline.length; i++) {
+    rows.push([outline[i]![0]!, outline[i]![1]!, i === 6 || i === 7, i === 0 || i === outline.length - 1]);
+    if (i < outline.length - 1 && i !== 6) for (const k of [1 / 3, 2 / 3]) {
+      const a = outline[i]!, b = outline[i + 1]!;
+      rows.push([a[0]! + (b[0]! - a[0]!) * k, a[1]! + (b[1]! - a[1]!) * k, false, false]);
+    }
+  }
   // The ends bulge at mid-height, then curl in at the ground instead of flaring like a ramp.
   const columns = [[-0.3, 0], [-0.67, 0.48], [-0.43, 0.84],
-    ...Array.from({ length: 17 }, (_, i) => [width * i / 16, 1]),
+    ...Array.from({ length: 41 }, (_, i) => [width * i / 40, 1]),
     [width + 0.4, 0.82], [width + 0.65, 0.48], [width + 0.26, 0]];
   const distance = columns.map(() => 0);
   for (let r = 0; r < rows.length; r++) {
-    const [depth, elevation] = rows[r]!;
-    const walking = r === 6 || r === 7;
-    const buried = r === 0 || r === rows.length - 1;
+    const [depth, elevation, walking, buried] = rows[r]!;
     for (let c = 0; c < columns.length; c++) {
       const [x, flank] = columns[c]!;
       const end = flank === 0;
-      const worn = Math.sin(x! * 1.85 + r * 0.53) * 0.095 + Math.sin(x! * 3.8 - r * 0.6) * 0.045;
-      const y = buried || end ? -0.12 : (elevation! / 1.3 * high - (walking ? 0 : worn)) * flank!;
+      const worn = Math.sin(x! * 1.85 + depth * 1.4) * 0.095 + Math.sin(x! * 3.8 - depth * 1.7) * 0.045;
+      const y = buried || end ? -0.12 : (elevation / 1.3 * high - (walking ? 0 : worn)) * flank!;
       const bulge = Math.sin(Math.max(0, Math.min(1, x! / width)) * Math.PI) * 0.38;
-      const z = depth! + (walking ? 0 : Math.sin(x! * 1.65 + r * 0.31) * 0.24 + Math.sin(x! * 3.3 + r) * 0.08 + (r > 7 ? bulge : -bulge * 0.25));
-      const px = x! + (flank! < 1 ? Math.sin(r * 0.7 + c) * 0.12 : 0);
+      const z = depth + (walking ? 0 : Math.sin(x! * 1.65 + depth * 0.9) * 0.24 + Math.sin(x! * 3.3 + depth * 2) * 0.08 + (depth > 0.2 ? bulge : -bulge * 0.25));
+      const px = x! + (flank! < 1 ? Math.sin(depth * 2.1 + c) * 0.12 : 0);
       if (r > 0) {
         const previous = ((r - 1) * columns.length + c) * 3;
         distance[c]! += Math.hypot(y - points[previous + 1]!, z - points[previous + 2]!);
@@ -198,8 +207,22 @@ function walkingStone(width: number, high: number): Mesh {
       points.push(px, y, z);
       // Unwrap by distance over the curved face, so the same mineral grain continues over each shoulder.
       uv.push(px * 0.65, distance[c]! * 0.65);
+      // Granite as it lies in a lawn: grey in two sizes of mottle, pale and gold lichen in rosettes on its faces, moss
+      // on its back behind the line he walks, and darker, damp, where it goes into the grass.
+      const mottle = 0.5 + 0.25 * Math.sin(x! * 2.3 + z * 1.7) * Math.sin(x! * 0.7 - z * 1.3) + 0.25 * Math.sin(x! * 6.1 + z * 4.3);
+      tint.copy(stone).multiplyScalar(0.84 + mottle * 0.24);
       const patch = Math.max(0, Math.sin(x! * 2.8 + z * 1.2) * Math.sin(x! * 0.9 - z * 2.1));
-      tint.copy(stone).lerp(lichen, patch * (y > high * 0.65 ? 0.27 : 0.1));
+      tint.lerp(lichen, patch * (y > high * 0.65 ? 0.27 : 0.1));
+      // Rosettes: round in the face's own two ways, along the stone and up it.
+      const up = y + z * 0.6;
+      const rosette = Math.max(0, Math.sin(x! * 4.7 + up * 3.9) * Math.sin(x! * 3.3 - up * 5.2) - 0.6) * 2.2;
+      tint.lerp(paleLichen, Math.min(0.6, rosette));
+      const gold = Math.max(0, Math.sin(x! * 5.9 - up * 4.6 + 1) * Math.sin(x! * 4.1 + up * 6.4) - 0.78) * 2.5;
+      tint.lerp(goldLichen, Math.min(0.4, gold));
+      const back = depth < -0.5 && !buried ? Math.min(1, (elevation - 0.85) / 0.4) : 0;
+      const tuft = 0.5 + 0.5 * Math.sin(x! * 1.9 + z * 2.7) * Math.sin(x! * 0.8 + 2);
+      if (back > 0) tint.lerp(moss, Math.min(0.85, back * tuft * 1.3));
+      if (!walking) tint.lerp(damp, Math.max(0, 1 - y / Math.max(0.2, high * 0.3)) * 0.45);
       tint.multiplyScalar(0.94 + (worn + 0.08) * 0.6);
       colours.push(tint.r, tint.g, tint.b);
       if (r < rows.length - 1 && c < columns.length - 1) {
@@ -214,7 +237,7 @@ function walkingStone(width: number, high: number): Mesh {
   shape.setAttribute('uv', new Float32BufferAttribute(uv, 2));
   shape.setIndex(indices);
   shape.computeVertexNormals();
-  const shelf = new Mesh(shape, new MeshStandardMaterial({ map: granite(), vertexColors: true, roughness: 1, flatShading: true }));
+  const shelf = new Mesh(shape, new MeshStandardMaterial({ map: granite(), vertexColors: true, roughness: 1 }));
   shelf.name = 'garden-stone-skin';
   // The shared installer retains this owned surface when it replaces the inset stone core.
   shelf.userData.keep = 0;
