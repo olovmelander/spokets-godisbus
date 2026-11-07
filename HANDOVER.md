@@ -40,6 +40,22 @@
       - New: a spot may say where its helper walks once used (`goesTo`). In a game taken up afterwards, or without
         motion, they are simply there.
       - The family-help suite's Granskogen case now stands Elof on the low end, where that scene is.
+  - **Later the same morning, two more of Olov's wishes:**
+    - **Bertil's hair is short:** a boy's cut, with the fringe above his brows, his ears free and a close nape
+      (private repository, `family/wardrobe.py`). The tufts are half as long and overlap, so no ring stands out as a
+      ledge.
+    - **What is held looks held:** three grips locked the arm straight, because the hand aimed further off than the
+      arm reaches. Now:
+      - the family's flashlights through the storm are held at the waist, in front of the coat, with the elbow
+        bent;
+      - in Stormens öga the lit lamps are held out over the water with a new act, `shine`, bent at the elbow, not
+        `point`'s straight arm;
+      - what is held out to be taken (Pappa's brush in the prologue) uses at most 0.82 of the arm's length. The arm
+        solver now takes how much of its length a reach may use.
+    - **Looked at and left as they were:** Bertil's and Moa's lamps, Mormor's lantern, Elof's flashlight,
+      lingonberry and drawing, and Mamma's mug.
+    - **Still not drawn:** the epilogue's carving is a drawing panel, so no 3D hand holds the knife there. Pappa
+      beside Elof as they carve stays on the Senare list.
   - **Sun shadows, tried and taken back:** High already has a sun shadow map (the trunks, and a capsule for each
     figure). Letting the landmarks (the cone, the log) and the movers cast too made no visible difference in these
     lights, so it was not kept.
@@ -4249,6 +4265,7 @@ and merge.** On the family devices, on High:
   - Flärken's sliding door;
   - Klonk on the party table;
   - Pappa kneeling at his seesaw;
+  - Bertil's short hair, and the bent arms that hold the lamps and the brush;
 - the animals (the night of 7 November): the crane kneeling on Myren and flying on Berget, its chick walking after
   him, the ladybird on its back, the ant columns, the small birds, the jay's head, the owls and the otter turning
   their heads, the hedgehog and the frog;
@@ -4258,7 +4275,7 @@ and merge.** On the family devices, on High:
 It needs no work on Olov's computer; the Blender work (the stumps, the tall pine, the crane, the creatures' heads, and
 the family's rain gear in the private repository) was made in the cloud session with Blender 5.2's `bpy` module, and
 the scripts are the sources (`art/blender/a2-nature.py`, `crane.py`, `a2-creatures.py`; `family/wardrobe.py` there). **Merge the private repository's
-PR #5 (`rain-gear`, the family's rain gear, Bertil's hair and everyone's sleeves) together with #235**, so that the deploy carries the
+PR #5 (`rain-gear`, the family's rain gear, Bertil's short hair and everyone's sleeves) together with #235**, so that the deploy carries the
 wardrobes; without it the game falls back to the older rain gear drawn from the bodies.
 
 The full game audit above repairs reproduced gameplay, persistence, control, audio and rendering defects across
