@@ -156,7 +156,8 @@
     rises across the pool, and straightens once it lies across (a gesture beside Bertil's and Moa's in `view.ts`).
   - **What he picks up, in his hand:** in Granskogen Elof holds the lingonberry in front of him in his left hand until
     he gives it to the jay; in the garden he holds Moa's leaf drawing (a sheet with a green crayon leaf) from under
-    the bridge until he shows it to her.
+    the bridge until he shows it to her; in Norrsken, as he tastes the golden geléhallon ("Smaka …"), his hand raises
+    it to his mouth and it is gone as he grows.
   - **The animals, reviewed one by one** (Olov: "Se även över alla djur hur de är designade och rör sig"; a review
     of every creature's code and pictures, then the fixes):
     - **The crane, modelled in Blender** (`art/blender/crane.py`, `boot/crane.glb`; the code-built one in
@@ -4805,7 +4806,7 @@ The older list, still true where it is not struck:
 - The story's details still not drawn (found on 6 November by reading Äventyr 2's lines against the picture):
   - Moa and Bertil running ahead in Billsta ("Följ vårt godis! Vi springer före."), who are only heard;
   - Flärken's door banging on its hinges ("Pang! Dörren…"), which is a sliding plank.
-  - In Äventyr 1: the golden geléhallon going to his mouth in Norrsken ("Smaka …"), Elof lifting the ghost up the
+  - In Äventyr 1: Elof lifting the ghost up the
     cliff on Berget ("Lyft"), Pappa holding the seesaw board in Granskogen (he stands 8 EL from its high end, out of
     reach; moving him is a staging change), the
     candy the ghost leaves at the vittra door, the toothbrush in the epilogue, Klonk hopping across the party table,

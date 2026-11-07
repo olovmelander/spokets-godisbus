@@ -917,7 +917,21 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     carriedBerry.visible = false;
     scene.add(carriedBerry);
   }
-  const berryHand = new Vector3();
+  const berryHand = new Vector3(), goldMouth = new Vector3();
+  // The golden geléhallon of Norrsken, as he tastes it: a raspberry of golden beads (as props.ts 'gold').
+  const carriedGold = new Group();
+  carriedGold.name = 'carried-gold';
+  {
+    const gold = new MeshStandardMaterial({ color: '#ffcf3a', roughness: 0.25, emissive: '#d99a00', emissiveIntensity: 0.7 });
+    const bead = new SphereGeometry(0.035, 8, 6);
+    for (let i = 0; i < 9; i++) {
+      const b = new Mesh(bead, gold);
+      b.position.set(Math.cos(i * 2.4) * 0.045 * (1 - i / 14), i * 0.011, Math.sin(i * 2.4) * 0.045 * (1 - i / 14));
+      carriedGold.add(b);
+    }
+    carriedGold.visible = false;
+    scene.add(carriedGold);
+  }
   // Moa's leaf drawing, found under the shaving bridge: a sheet of paper with a green leaf drawn on it in crayon.
   const carriedDrawing = new Group();
   carriedDrawing.name = 'carried-drawing';
@@ -1442,6 +1456,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       carriedDrawing.position.z += 0.04;
       carriedDrawing.rotation.set(-0.2, 0, Math.sin(clock * 1.7) * 0.06);
       carriedDrawing.scale.setScalar(tall);
+    }
+    // "Smaka …": in Norrsken, as he tastes the golden sweet, his hand raises it to his mouth, and it is gone as he grows.
+    const tasting = chapter.id === 'norrsken' && !!sized && flags.has('taste') && tall < sized.scale && !!playerBody && elof.group.visible;
+    const bite = tasting && sized ? Math.min(1, Math.max(0, (tall - 1) / (sized.scale - 1))) : 1;
+    carriedGold.visible = tasting && bite < 0.45 && !calmStory;
+    if (carriedGold.visible && playerBody) {
+      elof.group.updateWorldMatrix(true, false);
+      playerBody.mouth(goldMouth);
+      berryHand.set(0.3, 0.62, 0.18).applyMatrix4(elof.group.matrixWorld).lerp(goldMouth, smooth(bite / 0.3));
+      playerBody.reach(0, berryHand, 1);
+      playerBody.hand(0, carriedGold.position);
+      carriedGold.scale.setScalar(tall * (1 - smooth((bite - 0.32) / 0.12)));
     }
     // "Var är ficklampan? Jag ser ingenting!": Elof carries the lit flashlight from the table to Pappa in his right
     // hand, lighting the floor ahead; once given, Pappa has it in his left (Stormkvällen).
