@@ -85,8 +85,10 @@ export function plantFeet(p: Pose, phase: number): void {
     const t = Math.min(1, Math.max(0, 0.5 - side * Math.cos(phase) * 2));
     return t * t * (3 - 2 * t);
   };
-  p.footL = -(p.legL - p.kneeL) * 0.55 * stance(1);
-  p.footR = -(p.legR - p.kneeR) * 0.55 * stance(-1);
+  // Swinging through, the foot is held up off the toe, nearly level, so the toe never catches the ground.
+  const sL = stance(1), sR = stance(-1);
+  p.footL = -(p.legL - p.kneeL) * (0.55 * sL + 0.9 * (1 - sL));
+  p.footR = -(p.legR - p.kneeR) * (0.55 * sR + 0.9 * (1 - sR));
 }
 
 export function blendPose(a: Pose, b: Pose, t: number, out: Pose = { ...STANDING }, floor = false): Pose {

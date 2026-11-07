@@ -1268,7 +1268,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // The one wind (./wind.ts) as it reaches each of them where they stand: none indoors, and more in the storm.
     const gale = galeOf(chapter, flags);
     const breeze = gale * windAt(x);
-    const playerPose = playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze);
+    const playerPose = playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall);
     playerBody.pose(playerPose);
     playerBody.breeze?.(breeze, dt, calmStory, playerMotion.ruffle);
     const elastic = curr.mode === 'free' && !scriptedPose && !calmStory;

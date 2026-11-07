@@ -106,6 +106,25 @@ function idlePose(act: IdleAct, u: number, near: 1 | -1, out: Pose): number {
   }
 }
 
+/**
+ * How far each leg swings from the hip at `pace`: about 0.42 at a walk, 0.74 at a run. A walk's step is long enough
+ * that its cadence stays a small boy's, and the stride is paced by it (`strideRate`), so the planted foot holds still.
+ */
+export function strideReach(pace: number): number {
+  return 0.74 * Math.pow(clamp(pace), 0.52);
+}
+
+/** Leg length (thigh and shin, ./rig.ts) in EL at size 1, as far as a swing carries the foot with the knee's give. */
+const STEP_LEG = 0.8;
+
+/**
+ * How far round the stride goes for `distance` EL travelled at `pace`, at size `tall`: half a turn (one step) for
+ * each step's length, the ground the planted foot covers as the leg swings through. A bigger Elof steps longer.
+ */
+export function strideRate(distance: number, pace: number, tall = 1): number {
+  return (distance / Math.max(0.2, tall)) * Math.PI / Math.max(0.12, STEP_LEG * Math.sin(strideReach(pace)));
+}
+
 /** One pose language for the rounded public figure and the approved model's named bones. */
 export function playerPose(player: MotionState, phase: number, pace: number, landing: number, out: Pose): Pose {
   Object.assign(out, STANDING);
@@ -155,7 +174,7 @@ export function playerPose(player: MotionState, phase: number, pace: number, lan
     out.legL = 0.1; out.legR = -0.12; out.kneeL = 0.1; out.kneeR = 0.18;
   } else {
     const effort = Math.sqrt(clamp(pace)), run = smooth((pace - 0.35) / 0.65);
-    const reach = effort * (0.44 + 0.3 * run), swing = Math.sin(phase) * reach;
+    const reach = strideReach(pace), swing = Math.sin(phase) * reach;
     const recovery = Math.cos(phase), fold = effort * (0.45 + 0.65 * run);
     out.legL = swing + 0.45 * landing; out.legR = -swing + 0.45 * landing;
     // The recovering foot folds behind the knee; the supporting leg extends on its way back.
@@ -202,7 +221,7 @@ export function createPlayerMotion() {
      * `wind` is the shared wind where he stands (`windAt`, ./wind.ts): standing in a strong one, he leans into it with
      * an arm up. It never moves the simulation, and with `calm` (reduced motion) he stands quite still.
      */
-    update(player: PlayerState, x: number, dt: number, scripted: Pose | null, wave = 0, calm = false, wind = 0): Pose {
+    update(player: PlayerState, x: number, dt: number, scripted: Pose | null, wave = 0, calm = false, wind = 0, tall = 1): Pose {
       const travel = lastX === null ? 0 : x - lastX, distance = Math.abs(travel), previousMode = lastMode;
       const climb = lastMode === 'climb' && player.mode === 'climb' ? player.y - lastY : 0;
       // Assisted arcs move a kinematic body: its reported velocity stays zero.
@@ -223,7 +242,7 @@ export function createPlayerMotion() {
       const acceleration = walking && free && continuous && !player.atEdge
         ? Math.max(-1, Math.min(1, (speed - before) * RUN_AFTER / (dt * RUN_SPEED))) : 0;
       const braking = Math.abs(speed) < Math.abs(before) ? Math.abs(acceleration) : 0;
-      if (pace > 0) phase += distance * 5.5;
+      if (pace > 0) phase += strideRate(distance, pace, tall);
       if (Math.abs(climb) <= CLIMB_SPEED * dt * 3 + 0.05) phase += climb * 7;
       if (!continuous) { phase = 0; landing = 0; impact = 0; speed = 0; Object.assign(pose, STANDING); }
       // A running jump leads with the foot already ahead. Keep that choice through the whole flight.
