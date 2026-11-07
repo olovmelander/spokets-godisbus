@@ -1433,8 +1433,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       elof.group.getWorldQuaternion(carriedCap.quaternion).multiply(capTilt);
       carriedCap.scale.setScalar(0.8 * tall);
     }
-    // The lingonberry he picks in Granskogen for the jay, held up in front of him in his left hand until he gives it.
-    const hasBerry = chapter.id === 'granskog' && flags.has('berry') && !flags.has('jay') && !curr.hook && !!playerBody && elof.group.visible;
+    // The lingonberries he picks in Granskogen, for the jay and for the vittra's door, held up in front of him in his
+    // left hand until he gives each.
+    const berryHeld = (flags.has('berry') && !flags.has('jay')) || (flags.has('vittra:berry') && !flags.has('vittra:gift'));
+    const hasBerry = chapter.id === 'granskog' && berryHeld && !curr.hook && !!playerBody && elof.group.visible;
     carriedBerry.visible = hasBerry;
     if (hasBerry && playerBody) {
       elof.group.updateWorldMatrix(true, false);
