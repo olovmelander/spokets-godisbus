@@ -428,19 +428,20 @@ function spruce(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
-/** How long the model of the car is, in the metres it is made in. */
-const CAR_LONG = 4.7;
+/** How long the model of the car is, in the metres it is made in (art/blender/a2-props.py, build_leaf). */
+const CAR_LONG = 4.5;
 
 function car(def: BuildingDef) {
-  // The family's estate car: no badge, no plate, only its shape. Slate blue, because red is the candy's (art bible §2.2).
+  // The family's car, a silver electric hatchback as theirs is (Olov, 7 November 2026): no badge, no plate, only its
+  // shape. This stands in until the model from Blender (art/blender/a2-props.py, build_leaf) has come.
   const w = def.width ?? 29;
   const side = (x: number) => x * w;
-  // Its side, drawn once and pushed out to its width: low nose, raked windscreen, long roof, upright tail.
+  // Its side, drawn once and pushed out to its width: low nose, raked windscreen, a roof that slopes to the tailgate.
   const shape = new Shape();
   shape.moveTo(side(-0.5), 2.4);
-  shape.quadraticCurveTo(side(-0.505), 4.4, side(-0.495), 5.2);
-  shape.quadraticCurveTo(side(-0.49), 8.6, side(-0.44), 9.8);
-  shape.quadraticCurveTo(side(-0.4), 10.5, side(-0.3), 10.6);
+  shape.quadraticCurveTo(side(-0.505), 4.4, side(-0.495), 5.6);
+  shape.quadraticCurveTo(side(-0.48), 7.6, side(-0.42), 8.8);
+  shape.quadraticCurveTo(side(-0.34), 10.2, side(-0.22), 10.6);
   shape.lineTo(side(0.06), 10.5);
   shape.quadraticCurveTo(side(0.14), 10.3, side(0.19), 9.2);
   shape.lineTo(side(0.28), 7.1);
@@ -448,12 +449,12 @@ function car(def: BuildingDef) {
   shape.quadraticCurveTo(side(0.51), 5, side(0.5), 2.4);
   shape.closePath();
   const body = new ExtrudeGeometry(shape, { depth: 11, bevelEnabled: true, bevelSize: 0.45, bevelThickness: 0.5, bevelSegments: 2, curveSegments: 8 }).translate(0, 0, -5.5);
-  const parts: BufferGeometry[] = [paint(body.toNonIndexed(), '#3f5670')];
+  const parts: BufferGeometry[] = [paint(body.toNonIndexed(), '#b0b5ba')];
   const NEAR = 6.03;
   const dark = '#1a1d22';
   // The dark sill, and the seams of its doors, on the side that shows.
   parts.push(box(w * 0.94, 0.9, 0.08, 0, 2.5, NEAR, dark));
-  for (const x of [-0.15, 0.07]) parts.push(box(0.14, 6.6, 0.06, side(x), 6, NEAR, '#2a3a4c'));
+  for (const x of [-0.15, 0.07]) parts.push(box(0.14, 6.6, 0.06, side(x), 6, NEAR, '#7d838a'));
   for (const x of [-0.11, 0.11]) parts.push(box(1.4, 0.3, 0.1, side(x), 7.3, NEAR, '#8a929c'));
   // Wheels in their arches: a dark arch, a tyre, a pale rim and its hub.
   for (const x of [-0.31, 0.32]) {
@@ -462,8 +463,7 @@ function car(def: BuildingDef) {
     parts.push(paint(new CylinderGeometry(1.5, 1.5, 0.3, 16).rotateX(Math.PI / 2).translate(side(x), 2.7, 6.2), '#9aa2ac'));
     parts.push(paint(new CylinderGeometry(0.5, 0.5, 0.36, 10).rotateX(Math.PI / 2).translate(side(x), 2.7, 6.26), '#4a5058'));
   }
-  // Roof rails, a lamp at the nose and one at the tail.
-  parts.push(box(w * 0.46, 0.3, 0.3, side(-0.14), 11.1, 4.4, '#2a2e34'), box(w * 0.46, 0.3, 0.3, side(-0.14), 11.1, -4.4, '#2a2e34'));
+  // A lamp at the nose and one at the tail.
   parts.push(box(1.6, 1, 0.1, side(0.46), 5.4, NEAR, '#d6d8cc'), box(0.9, 2.2, 0.1, side(-0.485), 6.6, NEAR, '#6e2a24'));
   // Its side windows, where the model's are (art/blender/a2-props.py), in the car's own metres.
   const metre = w / CAR_LONG;
@@ -474,10 +474,10 @@ function car(def: BuildingDef) {
     glass.closePath();
     return new ShapeGeometry(glass).translate(0, 0, NEAR + 0.02);
   };
+  // The two doors' windows (the pillar behind them is dark, not glass).
   const panes = [
-    pane([[-2.02, 0.98], [-2.03, 1.37], [-1.3, 1.41], [-1.3, 0.97]]),
-    pane([[-1.22, 0.97], [-1.22, 1.41], [-0.36, 1.42], [-0.36, 0.96]]),
-    pane([[-0.28, 0.96], [-0.28, 1.42], [0.2, 1.42], [0.96, 1.01], [0.96, 0.95]]),
+    pane([[-1.3, 1.05], [-1.3, 1.4], [-0.38, 1.42], [-0.38, 0.96]]),
+    pane([[-0.3, 0.96], [-0.3, 1.42], [0.3, 1.43], [0.99, 1.02], [0.99, 0.95]]),
   ];
   return { parts, panes };
 }
