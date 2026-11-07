@@ -180,7 +180,8 @@
     - **The kit's owl and otter have heads of their own** (`uggla-huvud`, `utter-huvud` in
       `art/blender/a2-creatures.py`, rebuilt and baked with the `bpy` 5.2 module here): the game puts each on a pivot
       at the neck (`NECKS` in `src/render/shared-models.ts`), and the owl turns its head far, as owls do, its body
-      hardly; the otter looks about from its neck. The hedgehog and frog are still one mesh each. A crane in Blender would be better still than the code-built one.
+      hardly; the otter looks about from its neck; the hedgehog (`igelkott-huvud`) lifts and turns its snout as it
+      snuffles. The frog is still one mesh. A crane in Blender would be better still than the code-built one.
   - **Every character's motion, reviewed for snaps** (Olov: "Kolla så ... alla rörelser ser naturliga och smootha
     ut för alla karaktärer genom hela spelet"; a review of the code of Elof, the family, the ghost and the
     trägubbar, then the fixes):
@@ -4797,8 +4798,8 @@ The older list, still true where it is not struck:
     tall as he is, so in his hand it rose over his face, and the finale suite keeps both carvings below it.
 - The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
   line now).
-- The animals' parts (7 November): the kit's hedgehog and frog are one mesh each, so only the whole animal moves; a
-  head of their own in `a2-creatures.py`, as the owl's and the otter's now have, would let them look about.
+- The animals' parts (7 November): the kit's frog is one mesh, so only the whole of it moves; a head of its own in
+  `a2-creatures.py`, as the owl's, the otter's and the hedgehog's now have, would let it look about.
 
 ## Frågor till Olov
 

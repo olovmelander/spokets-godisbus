@@ -297,12 +297,16 @@ if wanted('igelkott'):
         d = put(part, tip, TIP)
         face(part, (a, c, d))
         face(part, (c, b, d))
-    # The face: a soft wedge, a shining nose, two small dark eyes, round ears.
-    ball(part, Vector((0.0, -0.8, 0.28)), (0.3, 0.42, 0.24), 2, FUR)
-    ball(part, Vector((0.0, -1.2, 0.27)), (0.07, 0.07, 0.065), 1, tone('#14100e'))
+    # The face: a soft wedge, a shining nose, two small dark eyes, round ears. A thing of its own, 'igelkott-huvud', so
+    # that the game can lift and turn its snout as it snuffles: it turns about (0, -0.55, 0.3).
+    top = new_part()
+    ball(top, Vector((0.0, -0.8, 0.28)), (0.3, 0.42, 0.24), 2, FUR)
+    ball(top, Vector((0.0, -1.2, 0.27)), (0.07, 0.07, 0.065), 1, tone('#14100e'))
     for side in (-1.0, 1.0):
-        ball(part, Vector((side * 0.16, -0.94, 0.4)), (0.05, 0.03, 0.055), 1, tone('#14100e'))
-        ball(part, Vector((side * 0.3, -0.56, 0.52)), (0.09, 0.05, 0.1), 1, tone('#6a5038'))
+        ball(top, Vector((side * 0.16, -0.94, 0.4)), (0.05, 0.03, 0.055), 1, tone('#14100e'))
+        ball(top, Vector((side * 0.3, -0.56, 0.52)), (0.09, 0.05, 0.1), 1, tone('#6a5038'))
+    finish(top, 'igelkott-huvud', sharp=60.0, strength=0.4, reach=0.3, floor=None, leaf=True)
+    for side in (-1.0, 1.0):
         ball(part, Vector((side * 0.34, -0.62, 0.06)), (0.13, 0.17, 0.06), 1, FUR)
     finish(part, 'igelkott', sharp=60.0, strength=0.4, reach=0.3, floor=0.0, leaf=True)
 

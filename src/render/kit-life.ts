@@ -19,8 +19,15 @@ export function kitLife(kind: string, thing: Object3D, base: Rest, clock: number
   if (still) return true;
   if (kind === 'igelkott') {
     thing.scale.y = base.size * (1 + 0.012 * Math.sin(t * 2.1));
-    // A snuffle every few seconds: quick little nods of its snout, and a small turn to where it smells.
+    // A snuffle every few seconds: quick little nods of its snout, and a small turn to where it smells. With a head of
+    // its own (the kit's 'kit-head') only the snout nods and turns; else the whole of it, a little.
     const sniff = Math.max(0, Math.sin(t * 0.9)) ** 10;
+    const head = thing.getObjectByName('kit-head');
+    if (head) {
+      head.rotation.x = -0.18 * sniff * (0.5 + 0.5 * Math.sin(t * 18)) + 0.06 * Math.sin(t * 0.5);
+      head.rotation.y = 0.35 * Math.sin(t * 0.37) * smooth(Math.sin(t * 0.9) + 0.4);
+      return true;
+    }
     thing.rotation.z = sniff * 0.05 * Math.sin(t * 18);
     thing.rotation.y = base.turn + 0.25 * Math.sin(t * 0.37) * smooth(Math.sin(t * 0.9) + 0.4);
   } else if (kind === 'groda') {
