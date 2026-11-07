@@ -225,19 +225,46 @@ export function moverProp(mover: Mover): Group | null {
     }
     case 'log': {
       // A dead pine, grey and bare: it lies level, with its top where he walks.
-      const grey = solid('#a9a69e', 1);
+      const grey = solid('#ffffff', 1, { vertexColors: true });
       // Weathered silver wood with its grain along it (./bark-detail.ts): laid along x in its own shape, so the
-      // grain goes with it as Mamma pulls it.
+      // grain goes with it as Mamma pulls it. A dead pine's: twisted, cracked along its grain, with dark knots where
+      // its boughs were, a splintered top, and the stubs of its boughs. One mesh, its colours on its corners.
       barkDetail(grey);
-      const trunk = new Mesh(barky(new CylinderGeometry(h * 0.55, h * 0.7, w, 16).rotateZ(Math.PI / 2), PLANK), grey);
+      const shape = new CylinderGeometry(h * 0.55, h * 0.7, w, 18, 24).rotateZ(Math.PI / 2);
+      const at = shape.getAttribute('position');
+      const colours: number[] = [];
+      const silver = new Color('#aaa69c'), dark = new Color('#5f5a50'), pale = new Color('#c9c3b4'), c = new Color();
+      for (let i = 0; i < at.count; i++) {
+        const x = at.getX(i), y = at.getY(i), z = at.getZ(i);
+        const around = Math.atan2(z, y) + x * 0.35;
+        // Its grain twists round it; cracks run along the grain, dark; knots are dark eyes.
+        const crack = Math.max(0, Math.sin(around * 7 + Math.sin(x * 1.3) * 0.6)) ** 24;
+        const knot = Math.max(0, 1 - Math.hypot((((x + w) * 1.7) % 1.9) - 0.95, (around % 1.6) - 0.8) / 0.12);
+        c.copy(silver).lerp(pale, 0.35 + 0.35 * Math.sin(around * 3 + x * 0.8)).lerp(dark, Math.min(1, crack * 0.8 + knot));
+        // The top end splinters: its last span thins unevenly.
+        const end = Math.max(0, (x - w * 0.42) / (w * 0.08));
+        if (end > 0) at.setY(i, y * (1 - 0.35 * end * (0.5 + 0.5 * Math.sin(around * 5))));
+        colours.push(c.r, c.g, c.b);
+      }
+      shape.setAttribute('color', new Float32BufferAttribute(colours, 3));
+      shape.computeVertexNormals();
+      const parts: BufferGeometry[] = [barky(shape, PLANK)];
+      // All lean away from the lens or down into the water, never over the line he walks.
+      for (const [x, turn, lean] of [[-0.34, -0.9, 0.2], [-0.12, -1.35, -0.3], [0.08, -1.1, 0.1], [0.22, -2.3, 0.25], [0.37, -0.8, -0.2]] as const) {
+        const long = 0.5 + Math.abs(turn) * 0.4;
+        const stub = new CylinderGeometry(0.035, 0.075, long, 7).translate(0, long / 2, 0).rotateX(turn).rotateZ(lean).translate(x * w, 0, 0);
+        const n = stub.getAttribute('position').count;
+        stub.setAttribute('color', new Float32BufferAttribute(Array.from({ length: n * 3 }, (_, k) => [silver.r, silver.g, silver.b][k % 3]! * 0.9), 3));
+        parts.push(barky(stub.index ? stub.toNonIndexed() : stub, PLANK));
+      }
+      const merged = mergeGeometries(parts.map((part) => (part.index ? part.toNonIndexed() : part)).map((part) => {
+        for (const name of Object.keys(part.attributes)) if (!['position', 'normal', 'color', 'uv', 'barky'].includes(name)) part.deleteAttribute(name);
+        if (!part.getAttribute('uv')) part.setAttribute('uv', new Float32BufferAttribute(new Float32Array(part.getAttribute('position').count * 2), 2));
+        return part;
+      }));
+      const trunk = new Mesh(merged, grey);
       trunk.position.y = h * 0.42;
       group.add(trunk);
-      for (const x of [-0.3, 0.15, 0.38]) {
-        const stub = rod(0.07, 0.9, grey);
-        stub.position.set(x * w, h * 0.8, -0.45);
-        stub.rotation.x = -0.9;
-        group.add(stub);
-      }
       break;
     }
     case 'figure': {
