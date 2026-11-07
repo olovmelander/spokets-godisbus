@@ -528,18 +528,18 @@ export function spotProp(spot: Spot): SpotProp | null {
       // head to look out at him.
       const crane = craneKneeling();
       group.add(crane);
-      const torso = crane.getObjectByName('crane-torso')!, neck = crane.getObjectByName('crane-neck')!, head = crane.getObjectByName('crane-head')!;
       group.position.z = crane.position.z;
       crane.position.z = 0;
+      // The Blender crane (art/blender/crane.py) may take the stand-in's parts' places: they are found by name.
       return {
         group,
         update: (used, clock, dt) => {
           vanish(used, dt);
-          torso.scale.y = 1 + Math.sin(clock * 1.3) * 0.012;
-          neck.rotation.z = Math.sin(clock * 0.9) * 0.04;
+          const torso = crane.getObjectByName('crane-torso'), neck = crane.getObjectByName('crane-neck'), head = crane.getObjectByName('crane-head');
+          if (torso) torso.scale.y = 1 + Math.sin(clock * 1.3) * 0.012;
+          if (neck) neck.rotation.z = Math.sin(clock * 0.9) * 0.04;
           const look = Math.max(0, Math.sin(clock * 0.55 + 1)) ** 6;
-          head.rotation.y = -0.9 * look;
-          head.rotation.x = 0.12 * Math.sin(clock * 2.1) * look;
+          if (head) { head.rotation.y = -0.9 * look; head.rotation.x = 0.12 * Math.sin(clock * 2.1) * look; }
         },
       };
     }

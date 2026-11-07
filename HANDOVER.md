@@ -149,7 +149,11 @@
     bank of moss hummocks, the kit's stones and ferns.
   - **The animals, reviewed one by one** (Olov: "Se även över alla djur hur de är designade och rör sig"; a review
     of every creature's code and pictures, then the fixes):
-    - **The crane** (`src/render/crane.ts`; Myren's kneeling crane and Berget's flight): no longer a grey blimp
+    - **The crane, modelled in Blender** (`art/blender/crane.py`, `boot/crane.glb`; the code-built one in
+      `src/render/crane.ts` stands in until it has come): built and checked with the `bpy` 5.2 module in this cloud
+      session (no `.blend` file is kept: the script is the source). Its bustle's feathers hang on edge, so that they
+      show from the side as the game sees it.
+    - **The crane** (Myren's kneeling crane and Berget's flight): no longer a grey blimp
       with box wings. A long body, an S-neck black in front with the white stripe behind, the red crown, the
       drooping bustle over the tail; in flight a round leading edge, black secondaries and black wing-tip fingers,
       the neck straight out and the legs trailing. Kneeling, it breathes and turns its head to look now and then.
@@ -4793,7 +4797,6 @@ The older list, still true where it is not struck:
   line now).
 - The animals' parts (7 November): the kit's otter, owl, hedgehog and frog are one mesh each, so only the whole
   animal turns; a head of their own in `a2-creatures.py` (Blender, Olov's computer) would let them look and blink.
-  The crane is built in code (`src/render/crane.ts`); a Blender crane with feathers would be finer still.
 
 ## Frågor till Olov
 

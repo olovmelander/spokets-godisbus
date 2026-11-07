@@ -491,6 +491,27 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       models.push('boot/jay');
       modelInstallations++;
     }) : Promise.resolve();
+  // The crane, modelled in Blender (art/blender/crane.py), takes the place of the one built in code (./crane.ts):
+  // kneeling on Myren, and flying on Myren and Berget. Its parts have the stand-in's names, so they move as before.
+  const cranes = [
+    ...things.map((thing) => (thing.spot.look === 'crane' ? thing.prop?.group.getObjectByName('crane') : undefined)),
+    ...carriers.map((carrier) => carrier.prop?.getObjectByName('crane-flying')),
+  ].filter((crane): crane is Object3D => crane !== undefined);
+  const craneReady = cranes.length > 0 ? assets
+    .manifest()
+    .then((manifest) => (manifest.packs.boot?.files['crane.glb'] ? assets.model('boot', 'crane') : null))
+    .then((model) => {
+      if (!model) return;
+      const shapes = { crane: model.getObjectByName('crane-kneeling'), 'crane-flying': model.getObjectByName('crane-flying') };
+      for (const crane of cranes) {
+        const shape = shapes[crane.name as keyof typeof shapes];
+        if (!shape) continue;
+        crane.clear();
+        for (const part of shape.children) crane.add(part.clone(true));
+      }
+      models.push('boot/crane');
+      modelInstallations++;
+    }) : Promise.resolve();
   // The small sweets, modelled in Blender (art/blender/candy.py), take the place of the ones built in code: the
   // trail, the hidden kinds and the magic candy. A build without the file keeps the stand-ins.
   const sweetsReady = assets
@@ -587,7 +608,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const packReady = Promise.resolve().then(() => Promise.all(PACK.models.map((load) => load(assets, scene))))
     .then((arrived) => { if (arrived.includes(true)) modelInstallations++; })
     .catch((error) => console.error('A building could not be loaded; its stand-in stays.', error));
-  const parts = [candyReady, jayReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady, sharedReady, packReady];
+  const parts = [candyReady, jayReady, craneReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady, sharedReady, packReady];
   let arrived = 0;
   for (const part of parts) void part.then(() => { arrived++; }, () => {});
   const ready = Promise.all(parts).then(() => undefined);
