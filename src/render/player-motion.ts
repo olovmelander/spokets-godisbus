@@ -276,6 +276,14 @@ export function createPlayerMotion() {
         [target.armL, target.armR] = [target.armR, target.armL];
         [target.elbowL, target.elbowR] = [target.elbowR, target.elbowL];
       }
+      if (player.mode === 'swing' && previousMode === 'swing') {
+        // On the lace he pumps as a child on a swing does: legs out ahead going forward, tucked back with bent knees
+        // on the way back, the body leaning against them.
+        const v = (travel / dt) * player.facing / 4, going = clamp(v) - clamp(-v);
+        target.legL += 0.4 * going; target.legR += 0.4 * going;
+        target.kneeL += 0.45 * Math.max(0, -going); target.kneeR += 0.45 * Math.max(0, -going);
+        target.lean -= 0.08 * going;
+      }
       if (walking && !player.atEdge) {
         // Lean into a start or a change of direction; plant and soften both knees while stopping.
         const weight = calm ? 0.45 : 1, drive = acceleration * player.facing;
