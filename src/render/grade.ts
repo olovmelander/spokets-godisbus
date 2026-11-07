@@ -1,9 +1,10 @@
 import {
   BufferGeometry, Data3DTexture, DataUtils, Float32BufferAttribute, HalfFloatType, LinearFilter, Mesh, OrthographicCamera, RGBAFormat, ShaderChunk, ShaderMaterial, Vector3,
-  Color, Vector4,
+  Color, Vector2, Vector4,
   type Fog, type FogExp2, type Material, type Object3D, type Texture,
   type WebGLRenderTarget, type WebGLRenderer,
 } from 'three';
+import { DOF_DEEP, DOF_SIZE } from './depth-blur';
 
 /**
  * A place's colour grade (plan §5.4). The numbers act on linear light, before tone mapping.
@@ -136,9 +137,37 @@ const FRAGMENT = /* glsl */ `
   uniform float lutOffset;
   uniform sampler2D tBlur;
   uniform sampler2D tDepth;
-  uniform float blurEnabled;
+  uniform float blurEnabled, dofDeep;
+  uniform sampler2D tShade;
+  uniform float shadeOn;
   uniform vec3 depthCamera;
   uniform float vignette;
+  uniform float cinema;
+  uniform float smoothEdges;
+  uniform float foreShade;
+  uniform vec2 sceneTexel;
+
+  // The edges' smoothing (FXAA, after Timothy Lottes): where the light changes sharply from pixel to pixel, the
+  // picture is read along the edge and blended, so his outline, the candy and the logs have no stair steps.
+  float edgeLight(vec3 c) { return dot(c / (1.0 + c), vec3(0.299, 0.587, 0.114)); }
+  vec3 smoothed(vec2 uv) {
+    vec3 m = texture2D(tDiffuse, uv).rgb;
+    vec3 nw = texture2D(tDiffuse, uv + vec2(-0.5, -0.5) * sceneTexel).rgb;
+    vec3 ne = texture2D(tDiffuse, uv + vec2(0.5, -0.5) * sceneTexel).rgb;
+    vec3 sw = texture2D(tDiffuse, uv + vec2(-0.5, 0.5) * sceneTexel).rgb;
+    vec3 se = texture2D(tDiffuse, uv + vec2(0.5, 0.5) * sceneTexel).rgb;
+    float lm = edgeLight(m), lnw = edgeLight(nw), lne = edgeLight(ne), lsw = edgeLight(sw), lse = edgeLight(se);
+    float least = min(lm, min(min(lnw, lne), min(lsw, lse)));
+    float most = max(lm, max(max(lnw, lne), max(lsw, lse)));
+    if (most - least < max(0.04, most * 0.12)) return m;
+    vec2 way = vec2(-((lnw + lne) - (lsw + lse)), (lnw + lsw) - (lne + lse));
+    float reduce = max((lnw + lne + lsw + lse) * 0.03125, 1.0 / 128.0);
+    way = clamp(way / (min(abs(way.x), abs(way.y)) + reduce), vec2(-8.0), vec2(8.0)) * sceneTexel;
+    vec3 a = 0.5 * (texture2D(tDiffuse, uv + way * (1.0 / 3.0 - 0.5)).rgb + texture2D(tDiffuse, uv + way * (2.0 / 3.0 - 0.5)).rgb);
+    vec3 b = a * 0.5 + 0.25 * (texture2D(tDiffuse, uv - way * 0.5).rgb + texture2D(tDiffuse, uv + way * 0.5).rgb);
+    float lb = edgeLight(b);
+    return (lb < least || lb > most) ? a : b;
+  }
   uniform float grain;
   uniform float seed;
   uniform float glow;
@@ -149,18 +178,27 @@ const FRAGMENT = /* glsl */ `
   uniform vec4 airShape, airEye;
   varying vec2 vUv;
 
+  ${DOF_SIZE}
+
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
   }
 
   void main() {
-    vec3 scene = texture2D(tDiffuse, vUv).rgb;
+    vec3 scene = smoothEdges > 0.5 ? smoothed(vUv) : texture2D(tDiffuse, vUv).rgb;
+    // The shade where things meet (./contact-shade.ts): darker where a point sees less of the sky.
+    if (shadeOn > 0.0) scene *= 1.0 - shadeOn * (1.0 - texture2D(tShade, vUv).r);
     if (blurEnabled > 0.5) {
+      // High's depth of field (./depth-blur.ts): where the picture is sharp is judged here, at full resolution,
+      // so the play plane keeps every pixel; where a near blur spills over it, that is taken as it is.
       float d = texture2D(tDepth, vUv).r;
-      float z = depthCamera.z + depthCamera.x * depthCamera.y / ((depthCamera.y - depthCamera.x) * d - depthCamera.y);
-      float mask = smoothstep(1.8, 4.5, -z) * (1.0 - smoothstep(16.0, 24.0, -z));
+      float size = abs(dofSize(dofDistance(d, depthCamera), depthCamera.z, dofDeep)) * float(textureSize(tDepth, 0).y);
       vec4 soft = texture2D(tBlur, vUv);
-      scene = mix(scene, soft.rgb, mask * soft.a);
+      scene = mix(scene, soft.rgb, max(smoothstep(0.75, 2.5, size), smoothstep(0.0, 0.1, soft.a)));
+      // What stands between him and the lens lies in its own shade, as Unravel's foreground does: darker and a
+      // little cooler the nearer it is, so the picture is framed and the eye goes to the play.
+      float nearer = smoothstep(0.95, 0.62, dofDistance(d, depthCamera) / depthCamera.z) * foreShade;
+      scene *= mix(vec3(1.0), vec3(0.48, 0.53, 0.6), nearer);
     }
     // High's threshold light is gathered once at half resolution; keep it HDR until output.
     if (glow > 0.0) scene += texture2D(tBloom, vUv).rgb * glow;
@@ -180,7 +218,19 @@ const FRAGMENT = /* glsl */ `
     float scale = max(1.0, max(scene.r, max(scene.g, scene.b)) / LUT_RANGE);
     vec3 uvw = vec3(0.5 / LUT_SIZE) + max(scene, 0.0) / (scale * LUT_RANGE) * (1.0 - 1.0 / LUT_SIZE);
     vec3 colour = (texture(tLut, uvw).rgb - lutOffset) * scale + lutOffset;
-    colour *= 1.0 - vignette * smoothstep(0.3, 0.95, length(vUv - 0.5) * 1.35);
+    // The film's look (setCinema): warm in the light, cool and a little teal in the shadows, as Unravel's
+    // pictures are, and the corners a little darker still, as a lens's are.
+    if (cinema > 0.0) {
+      float lit = dot(colour, vec3(0.2126, 0.7152, 0.0722));
+      float shadow = 1.0 - smoothstep(0.02, 0.22, lit);
+      float high = smoothstep(0.25, 1.0, lit);
+      colour *= mix(vec3(1.0), vec3(0.93, 0.99, 1.07), shadow * cinema) * mix(vec3(1.0), vec3(1.07, 1.01, 0.9), high * cinema);
+      // A little more depth to the colours and the dark, as a film's: contrast about middle grey, and saturation.
+      colour = 0.18 * pow(max(colour, 0.0) / 0.18, vec3(1.0 + 0.1 * cinema));
+      float grey = dot(colour, vec3(0.2126, 0.7152, 0.0722));
+      colour = max(mix(vec3(grey), colour, 1.0 + 0.12 * cinema), 0.0);
+    }
+    colour *= 1.0 - (vignette + 0.12 * cinema) * smoothstep(0.3, 0.95, length(vUv - 0.5) * 1.35);
     colour += (hash(vUv * 937.0 + seed) - 0.5) * grain * (0.2 + light);
     gl_FragColor = vec4(max(colour, 0.0), 1.0);
   }
@@ -197,7 +247,16 @@ export interface GradePass extends Effect {
   /** How strongly light spills round what is brightest: 0 is off, as on Mid. */
   setGlow(strength: number): void;
   setBloom(texture: Texture | null): void;
-  setDepthBlur(texture: Texture | null, depth: Texture | null, near: number, far: number, cameraZ: number): void;
+  /** `deep`: how far behind the play plane is sharp, in EL (./depth-blur.ts). */
+  setDepthBlur(texture: Texture | null, depth: Texture | null, near: number, far: number, cameraZ: number, deep?: number): void;
+  /** How deep the shade on the foreground between him and the lens is: 0 is none, as in the colour tests. */
+  setForeShade(strength: number): void;
+  /** Whether the edges are smoothed (FXAA). Off in the colour tests and where the browser draws without a GPU. */
+  setSmoothEdges(on: boolean): void;
+  /** The shade where things meet (./contact-shade.ts) and how strong it is; null: none. */
+  setShade(texture: Texture | null, strength: number): void;
+  /** How much of the film's look: warm light, cool shadows, darker corners. 0 is none, as in the colour tests. */
+  setCinema(strength: number): void;
   /** The air of ./light-shafts.ts, which reads the depth that setDepthBlur gives. Null: none. */
   setAir(air: GradeAir | null): void;
 }
@@ -232,9 +291,12 @@ export function createGradePass(grade: Grade): GradePass {
       exposure: { value: grade.exposure },
       tLut: { value: createGradeLut(grade) },
       lutOffset: { value: 0.18 * (1 - grade.contrast) },
-      tBlur: { value: null }, tDepth: { value: null }, blurEnabled: { value: 0 },
+      tBlur: { value: null }, tDepth: { value: null }, blurEnabled: { value: 0 }, dofDeep: { value: DOF_DEEP },
+      tShade: { value: null }, shadeOn: { value: 0 },
       depthCamera: { value: new Vector3(0.1, 140, 10) },
       vignette: { value: grade.vignette },
+      cinema: { value: 0 },
+      smoothEdges: { value: 0 }, sceneTexel: { value: new Vector2(1, 1) }, foreShade: { value: 0 },
       grain: { value: grade.grain },
       seed: { value: 0 },
     },
@@ -254,6 +316,7 @@ export function createGradePass(grade: Grade): GradePass {
   return {
     render(renderer, writeBuffer, readBuffer) {
       material.uniforms.tDiffuse!.value = readBuffer.texture;
+      (material.uniforms.sceneTexel!.value as Vector2).set(1 / Math.max(1, readBuffer.width), 1 / Math.max(1, readBuffer.height));
       // The grain moves a little each frame, like film. It is far too faint to flicker.
       material.uniforms.seed!.value = (material.uniforms.seed!.value + 0.371) % 97;
       renderer.setRenderTarget(writeBuffer);
@@ -262,11 +325,25 @@ export function createGradePass(grade: Grade): GradePass {
     // Only the effect targets depend on size; LUT/vignette/grain use normalized coordinates.
     setSize() {},
     setBloom(texture) { material.uniforms.tBloom!.value = texture; },
-    setDepthBlur(texture, depth, near, far, cameraZ) {
+    setDepthBlur(texture, depth, near, far, cameraZ, deep = DOF_DEEP) {
+      material.uniforms.dofDeep!.value = deep;
       material.uniforms.tBlur!.value = texture;
       material.uniforms.tDepth!.value = depth;
       material.uniforms.blurEnabled!.value = texture ? 1 : 0;
       (material.uniforms.depthCamera!.value as Vector3).set(near, far, cameraZ);
+    },
+    setForeShade(strength) {
+      material.uniforms.foreShade!.value = Math.max(0, Math.min(1, strength));
+    },
+    setSmoothEdges(on) {
+      material.uniforms.smoothEdges!.value = on ? 1 : 0;
+    },
+    setShade(texture, strength) {
+      material.uniforms.tShade!.value = texture;
+      material.uniforms.shadeOn!.value = texture ? Math.max(0, Math.min(1, strength)) : 0;
+    },
+    setCinema(strength) {
+      material.uniforms.cinema!.value = Math.max(0, Math.min(1, strength));
     },
     setGlow(strength) {
       material.uniforms.glow!.value = Math.max(0, strength);

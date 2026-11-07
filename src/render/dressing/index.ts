@@ -15,7 +15,9 @@ import { bakeForestShadows } from '../forest-shadows';
 import { forestLandmarks } from '../forest-kit';
 import { fitOutdoorLandmarks, outdoorModels, updateOutdoorModels } from '../outdoor-models';
 import { bank, type Ground } from './ground';
+import { rockLife } from './rocky';
 import { heightAt, landscape, makeKit, type PlaceLook } from './kit';
+import { houseDoor } from './house-door';
 import { lawn } from './lawn';
 import { spang } from './spang';
 import { backdrop, stars } from './sky';
@@ -41,7 +43,8 @@ const FOREST: PlaceLook = {
   hemisphere: { sky: '#cfe4ea', ground: '#61705b', intensity: 1.35 },
   sun: { colour: '#ffe4bc', intensity: 3.25, from: [-7, 5, -4] },
   fill: { colour: '#d6e6ff', intensity: 1.15 },
-  water: { colour: '#3f8f9c', opacity: 0.8 },
+  // A forest brook is humic: dark tea-brown, mirroring the forest (the reference brief, 6 November 2026).
+  water: { colour: '#2c2618', opacity: 0.86 },
   tussock: '#9aa246',
 };
 
@@ -204,6 +207,8 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   const walk = look.id === 'bog' ? spang(landChapter) : null;
   // In the village's road, a drain's grate lies in its cast frame.
   const grate = look.id === 'village' ? drainFrame(landChapter) : null;
+  // Lichen, loose stones and sedge on wet rock (./rocky.ts).
+  const rocks = rockLife(landChapter, from, to);
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
   // What the far pictures count their sinking from: the land around the chapter's start.
@@ -216,6 +221,9 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   // The village has its houses and its yard behind the street.
   const houses = look.id === 'village' ? fronts(chapter, from, to) : null;
   if (life) group.add(life.group);
+  // At home, the way out of doors is a glazed veranda and a door, and the house is a house from outside.
+  const door = out ? houseDoor(chapter, heightAt(chapter, chapter.outdoors! - 1)) : null;
+  if (door) group.add(door.group);
   const sky = look.id === 'dusk' ? stars() : null;
   if (sky) group.add(sky);
   // A moose in the mist, cranes, smoke from a far chimney: among the far pictures, and only there.
@@ -233,6 +241,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
     front.group,
     walk ?? new Group(),
     grate ?? new Group(),
+    rocks ?? new Group(),
   );
   return {
     group,
@@ -242,6 +251,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
     update(cameraX, groundY, clock, night = 0, wind, quiet) {
       const still = wind?.still ?? false;
       updateOutdoorModels(outdoor, clock, still);
+      door?.update(cameraX);
       // The wind first: what sways, what leans in front and what flies all go by it. Breaths of wind pass
       // through every place but the mountain, where the wind is the gusts'.
       setWind(clock, still, look.id !== 'mountain' && look.id !== 'dusk', wind?.gust ?? null);

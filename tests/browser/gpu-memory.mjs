@@ -28,7 +28,7 @@ const frames = (page, count = 2) => page.evaluate((count) => new Promise((resolv
 }), count);
 const ready = (page) => page.waitForFunction(() => window.__godis?.state().bootReady
   && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
-const limits = { low: 100e6, mid: 150e6, high: 220e6 };
+const limits = { low: 100e6, mid: 150e6, high: 260e6 };
 function gate(label, data) {
   const gpu = data.gpu;
   assert.ok(gpu && gpu.glBytes > 0, `${label}: allocations observed`);
@@ -38,7 +38,7 @@ function gate(label, data) {
   assert.ok(gpu.maxTextureSize <= 2048, `${label}: largest asset texture ${gpu.maxTextureSize}`);
   assert.ok(gpu.totalBytes <= limits[data.tier], `${label}: ${gpu.totalBytes} > ${limits[data.tier]}`);
   assert.ok(gpu.peakBytes <= limits[data.tier], `${label}: transient peak ${gpu.peakBytes} > ${limits[data.tier]}`);
-  if (data.tier === 'high') assert.ok(gpu.targetPeakBytes <= 80e6, `${label}: High target peak ${gpu.targetPeakBytes} > 80 MB`);
+  if (data.tier === 'high') assert.ok(gpu.targetPeakBytes <= 110e6, `${label}: High target peak ${gpu.targetPeakBytes} > 110 MB`);
   check(`${label}: ${(gpu.totalBytes / 1e6).toFixed(2)} MB total, ${(gpu.targetBytes / 1e6).toFixed(2)} MB targets`, true);
 }
 const footprint = ({ gpu, geometries, textures }) => ({ bytes: gpu.glBytes, buffers: gpu.buffers,

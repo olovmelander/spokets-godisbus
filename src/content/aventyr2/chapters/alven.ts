@@ -266,7 +266,8 @@ export const alven: ChapterData = {
     // The gentle way: offered to anyone who has fallen in, or plays on Lugnt.
     { id: 'al:leaf', at: LEAF.from, verb: 'take', word: 'board', needs: FELL_IN, ride: 'al:leaf' },
     // On the bank before the rapids: he calls Pappa, who lowers his scarf from the bridge; then he takes hold.
-    { id: 'al:pappa', look: 'sign', at: { x: CALL_PAPPA, y: 0 }, verb: 'call', word: 'callPappa' },
+    // Pappa himself is up on the bridge, at its railing over the rapids ("Jag står här uppe på bron!").
+    { id: 'al:pappa', look: 'sign', at: { x: CALL_PAPPA, y: 0 }, standsAt: { x: BRIDGE.x - 0.6, y: BRIDGE.height + RAPID, z: -3.2 }, verb: 'call', word: 'callPappa' },
     { id: 'al:lift', at: LIFT.from, verb: 'take', word: 'alScarf', needs: 'al:scarf', ride: 'al:lift' },
     // On the lake's shore: the owl from the forest. Called, it settles beside him; then he climbs up.
     { id: 'al:owl-call', look: 'owl', at: { x: CALL_OWL, y: 0 }, verb: 'call', word: 'alCallOwl' },

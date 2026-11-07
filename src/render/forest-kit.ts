@@ -2,6 +2,7 @@ import {
   BoxGeometry, BufferGeometry, Euler, Float32BufferAttribute, Group, InstancedMesh, Matrix3, Matrix4, Mesh, MeshStandardMaterial, Quaternion, Vector3,
   type Material, type Object3D,
 } from 'three';
+import { STONE, barkDetail, barky } from './bark-detail';
 import type { ChapterData, Landmark, LandmarkThing } from '../sim/types';
 import { restock } from './dressing/forest';
 import { heightAt, isThing } from './dressing/kit';
@@ -54,6 +55,9 @@ export function forestSocket<T extends Object3D>(holder: T, ...sockets: ForestSo
 /** The kit's material: matt, in the colours painted on the corners. */
 export const forestMaterial = (): MeshStandardMaterial => new MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
 
+/** The kit's shapes that are granite. */
+const GRANITE = new Set(['virvelsten', 'sten-a', 'sten-b', 'sten-c', 'gungsten']);
+
 /**
  * Reads the kit from its loaded model. The pack step stores a model's corners as small whole numbers with the
  * scale on its node, and an instance has no node: each shape is taken out as it stands in the kit's space.
@@ -88,9 +92,13 @@ export function forestKit(model: Object3D): ForestKit {
     made.setIndex(from.index ? Array.from(from.index.array) : Array.from({ length: count }, (_, i) => i));
     made.computeBoundingSphere();
     made.computeBoundingBox();
+    // The kit's stones are granite seen close too (./bark-detail.ts): their painted corners are far apart.
+    if (GRANITE.has(mesh.name)) barky(made, STONE);
     shapes.set(mesh.name, made);
   });
-  return { shape: (name) => shapes.get(name), material: forestMaterial() };
+  const material = forestMaterial();
+  barkDetail(material);
+  return { shape: (name) => shapes.get(name), material };
 }
 
 /** One of the kit's shapes, placed: for putting several together as one mesh. */

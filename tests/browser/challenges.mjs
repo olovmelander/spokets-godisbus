@@ -117,7 +117,9 @@ try {
           await until(state, s => s.verb === 'slide', `${name}: root offered`);
           await page.keyboard.up('ArrowRight');
           await page.keyboard.press('e');
-          await until(state, s => s.mode === 'free' && s.y < 10.2, `${name}: root returns`);
+          // The slide is a second of the game, but in software rendering it takes 4-7 s of wall time locally and more on
+          // a busy runner: wait for the game's own time, not a phone's.
+          await until(state, s => s.mode === 'free' && s.y < 10.2, `${name}: root returns`, 40000);
           check(`${name}: safe return with reward`, (await state()).flags.includes('found:chokladkola') && (await state()).bubbles === 0);
         }
         check(`${name}: shaders stay warm`, (await info()).programs === drawn.programs);

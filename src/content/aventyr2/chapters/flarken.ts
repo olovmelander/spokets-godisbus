@@ -22,8 +22,9 @@ import { hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
  *    them. On the far side a flash shows the little one blown out over the lake.
  * 5. **Bryggan:** the jetty, where the waves wash over the planks in gusts; behind each post is a lee. The old
  *    trägubbe stands far out on the planks and leaps away into the dark.
- * 6. **Mammas båt:** the jetty has broken off. "Ropa på Mamma": she rows up and holds the boat against both broken
- *    ends, and its gunwale is the way on.
+ * 6. **Mammas SUP:** the jetty has broken off. "Ropa på Mamma": she paddles up standing on the family's stand-up
+ *    paddle board (Olov, 6 November 2026: the family has them, in place of a rowboat) and holds it against both
+ *    broken ends, and its deck is the way on.
  * 7. **Hopptornet:** the diving tower stands in the water between two stretches of jetty. Up its ladder to the top,
  *    the lookout: a flash shows the little one far out, where the river begins. A run off its far side lands him
  *    on the jetty beyond.
@@ -93,12 +94,16 @@ const ROOFS: Ledge[] = [
 /** The bench in front of the second hut, a jump high. */
 const HUT_BENCH: Ledge = { x: 53.2, y: 1, width: 1.4, look: 'trestle' };
 /**
- * The second hut's door, banging open and shut in the wind: its top swings out over the path, above his head,
- * low enough near the bench to jump onto, and from it the roof is a jump. A toy: nothing needs it.
+ * The second hut's old door, sliding on a rail along the hut's front and banging open and shut in the wind ("Pang!
+ * Dörren vill visst också vara med."). It is as wide as the doorway (the hut's builder makes a door 0.36 of its
+ * width), shut over it and open to the right, on a rail that rises as the hut has sagged. Its top is over his head on
+ * the path, low enough when shut to jump onto from the bench, and from it open the roof is a jump. A toy: nothing
+ * needs it.
  */
+const DOOR_WIDE = round((ROOFS[1]!.width - 0.4) * 0.36);
 const DOOR: Mover = {
-  id: 'sjon-door', look: 'plank', width: 1.6, height: 0.25, verb: 'push', extra: true,
-  cycle: { seconds: 3.6 }, stops: [{ x: 55, y: 1.6 }, { x: 56.8, y: 2 }],
+  id: 'sjon-door', look: 'hut-door', width: DOOR_WIDE, height: 0.25, verb: 'push', extra: true,
+  cycle: { seconds: 3.6, slam: true }, stops: [{ x: ROOFS[1]!.x, y: 1.6 }, { x: round(ROOFS[1]!.x + DOOR_WIDE), y: 2 }],
 };
 
 // --- 4. the beach stones, the reeds and the mats -------------------------------------------------------------
@@ -366,7 +371,7 @@ export const flarken: ChapterData = {
   bouncers: [NET],
   spots: [
     // At the broken end: Mamma rows up with the boat when he calls.
-    { id: 'sjon:mamma', look: 'sign', at: { x: 142, y: DECK }, verb: 'call', word: 'callMamma', seated: true },
+    { id: 'sjon:mamma', look: 'sign', at: { x: 142, y: DECK }, verb: 'call', word: 'callMamma', paddles: true },
   ],
   movers: [DOOR, STONE, BARK],
   jumps: [
@@ -412,7 +417,8 @@ export const flarken: ChapterData = {
       { kind: 'picnic', x: 30, z: -14 },
       // (The volleyball net is the bouncer itself, torn loose and sagging between its posts.)
       // The changing rooms: their fronts just behind the path, their eaves the roofs he walks.
-      ...ROOFS.map((roof) => ({ kind: 'hut' as const, x: roof.x, z: -4.5, width: roof.width - 0.4, height: roof.y })),
+      ...ROOFS.map((roof, i) => ({ kind: 'hut' as const, x: roof.x, z: -4.5, width: roof.width - 0.4, height: roof.y,
+        slider: i === 1 ? { top: DOOR.stops[0]!.y + DOOR.height, rise: DOOR.stops[1]!.y - DOOR.stops[0]!.y } : undefined })),
       // The diving tower in the water, its ladder where his is, its platform where he stands.
       { kind: 'tower', x: TOWER.ladder + 2.9, y: DECK, z: -3.4, width: 3, height: TOWER.y - DECK },
       // Birches round the bay, the October leaves nearly gone.

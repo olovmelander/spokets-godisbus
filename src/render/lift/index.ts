@@ -6,15 +6,19 @@
  *   depth haze;
  * - `fauna.ts`: the near forest's life (squirrels, a fox, owls, small birds that lift as he comes, fireflies,
  *   dragonflies, butterflies) and the little forest beings and carved figures that peek out;
+ * - `near-motes.ts`: pollen and dust drifting just in front of the lens, out of focus, soft discs of light;
+ * - `beetles.ts`: dor beetles walking on the forest floor just behind the path, which hurry out of his way;
  * - `flora.ts`: birch crowns, pines, moss, ferns, tall grass, glowing mushrooms, and plants that bend as he passes;
  * - `materials.ts`: wet and dry surfaces, dew, brooks that mirror the bank.
  *
  * Imported once by the view, so that a chapter built before any system registers still gets them all.
  */
 import { installAtmosphere } from './atmosphere';
+import { installBeetles } from './beetles';
 import { installFauna } from './fauna';
 import { installFlora } from './flora';
 import { installMaterials } from './materials';
+import { installNearMotes } from './near-motes';
 
 let installed = false;
 
@@ -36,7 +40,9 @@ export function installLift(): void {
   installed = true;
   const out = left();
   if (!out.has('atmosphere')) installAtmosphere();
+  if (!out.has('atmosphere') && !out.has('near')) installNearMotes();
   if (!out.has('fauna')) installFauna();
+  if (!out.has('beetles')) installBeetles();
   if (!out.has('flora')) installFlora();
   if (!out.has('materials')) installMaterials(out);
 }

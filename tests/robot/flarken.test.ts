@@ -296,7 +296,8 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
 
     it('has a door that bangs above his head on the path: from the bench he rides it, and jumps up onto the roof', () => {
       expect(door.extra).toBe(true);
-      expect(door.look).toBe('plank');
+      expect(door.look).toBe('hut-door');
+      expect(door.cycle!.slam).toBe(true);
       // Above his head on the path, out of reach of a jump from it, and in reach from the bench as it swings low.
       const low = Math.min(...door.stops.map((s) => s.y));
       expect(low).toBeGreaterThan(1.2);

@@ -72,10 +72,10 @@ describe('GPU allocation bytes', () => {
     expect(gpuFailures(tracker.snapshot(), 'low')).toEqual([]);
     const rb = {};
     bind(gl.RENDERBUFFER_BINDING, rb);
-    gl.renderbufferStorage(0, gl.RGBA8, 5000, 5000);
+    gl.renderbufferStorage(0, gl.RGBA8, 6000, 5000);
     gl.deleteRenderbuffer(rb);
     expect(tracker.snapshot().targetBytes).toBe(0);
-    expect(gpuFailures(tracker.snapshot(), 'high')).toEqual(['High target peak 100000000 > 80000000']);
+    expect(gpuFailures(tracker.snapshot(), 'high')).toEqual(['High target peak 120000000 > 110000000']);
   });
 
   it('counts all six cube faces and immutable mip levels once', () => {
@@ -204,11 +204,11 @@ describe('GPU allocation bytes', () => {
     gl.texStorage2D(gl.TEXTURE_2D, 1, 12345, 4096, 1);
     expect(gpuFailures(tracker.snapshot(), 'low')).toEqual(['Asset texture 4096 > 2048', 'Uncounted GL formats: 12345']);
     const info = tracker.snapshot();
-    for (const [tier, limit] of [['low', 100e6], ['mid', 150e6], ['high', 220e6]] as const) {
+    for (const [tier, limit] of [['low', 100e6], ['mid', 150e6], ['high', 260e6]] as const) {
       expect(gpuFailures({ ...info, maxTextureSize: 1, unknownFormats: [], totalBytes: limit }, tier)).toEqual([]);
       expect(gpuFailures({ ...info, maxTextureSize: 1, unknownFormats: [], totalBytes: limit + 1 }, tier)).toHaveLength(1);
     }
-    expect(gpuFailures({ ...info, maxTextureSize: 1, unknownFormats: [], targetBytes: 80e6 + 1 }, 'high')).toHaveLength(1);
+    expect(gpuFailures({ ...info, maxTextureSize: 1, unknownFormats: [], targetBytes: 110e6 + 1 }, 'high')).toHaveLength(1);
     expect(gpuFailures({ ...info, maxTextureSize: 1, unknownFormats: [], totalBytes: Number.NaN }, 'high')).toEqual(['GPU byte count is not finite']);
     expect(gpuFailures({ ...info, maxTextureSize: 1, unknownFormats: [], peakBytes: Number.NaN }, 'high')).toEqual(['GPU byte count is not finite']);
   });

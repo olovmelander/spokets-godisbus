@@ -20,12 +20,12 @@ export const words: ChapterWords = {
     sjJetty: 'Bryggan! Vågorna sköljer över den.',
     sjPosts: 'Jag gömmer mig bakom stolparna.',
     sjOldOne: 'Spring, gamla trägubben! Vi kommer!',
-    // 6. Mamma's boat
+    // 6. Mamma's paddle board
     sjBroken: 'Bryggan är trasig! Det är för långt.',
-    sjMamma: 'Elof! Jag hittade en roddbåt!',
-    sjBoatReady: 'Jag håller båten still. Gå på kanten.',
+    sjMamma: 'Elof! Jag paddlar dit på SUP:en!',
+    sjBoatReady: 'Jag håller brädan still. Gå på den.',
     sjSteady: 'Lugnt och fint. Jag släpper inte.',
-    sjThanks: 'Tack! Din båt blev ju en bro!',
+    sjThanks: 'Tack! Din SUP blev ju en bro!',
     // 7. the diving tower
     sjTower: 'Hopptornet! Där uppe ser man allt.',
     sjNear: 'Jag väntar här. Ropa om du behöver mig.',
@@ -54,8 +54,8 @@ export const words: ChapterWords = {
     sjonReeds: { purpose: 'Klättra uppför vassen.', recap: 'Stenen är för hög att hoppa upp på. Vassen håller mig.' },
     sjonMats: { purpose: 'Spring över gungflyet.', recap: 'Vassmattorna sjunker om jag står still. Klonk visar vägen.' },
     sjonJetty: { purpose: 'Göm dig bakom stolparna när vågen kommer.', recap: 'Stormen slår vågor över bryggan. Bakom stolparna är det lä.' },
-    sjonMamma: { purpose: 'Ropa på Mamma vid bryggan.', recap: 'Bryggan har gått av. Mamma har roddbåten alldeles nära.' },
-    sjonBoat: { purpose: 'Gå på båtkanten över vattnet.', recap: 'Mamma håller båten tätt intill bryggan. Hon släpper inte.' },
+    sjonMamma: { purpose: 'Ropa på Mamma vid bryggan.', recap: 'Bryggan har gått av. Mamma paddlar på SUP:en alldeles nära.' },
+    sjonBoat: { purpose: 'Gå på SUP-brädan över vattnet.', recap: 'Mamma håller brädan tätt intill bryggan. Hon släpper inte.' },
     sjonOut: { purpose: 'Följ godiset ut till hopptornet.', recap: 'Mamma väntar vid bryggan. Gamla trägubben lämnar godis hela vägen ut.' },
     sjonTower: { purpose: 'Klättra uppför hopptornets stege.', recap: 'Lillgubben blåste ut över sjön. Från tornet kan jag se vart han tog vägen.' },
     sjonDive: { purpose: 'Spring och hoppa ner på bryggan.', recap: 'Blixten visade lillgubben långt ute, där ån börjar.' },
@@ -67,7 +67,7 @@ export const words: ChapterWords = {
   },
   helpers: {
     sjonFamily: 'Familjen letar längs stranden med sina lampor.',
-    sjonMamma: 'Mamma väntar i roddbåten vid bryggan.',
+    sjonMamma: 'Mamma väntar på SUP:en vid bryggan.',
     sjonRoad: 'Familjen följer ån med bilen och håller sig nära.',
   },
 };

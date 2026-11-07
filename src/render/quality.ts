@@ -3,14 +3,16 @@
  * elsewhere.
  *  - Low renders straight to the canvas, with tone mapping in the materials and no post-processing.
  *  - Mid and High render to HDR buffers and run one grading pass, with glow on High.
- * High's depth blur and the grade inside the materials for Low still wait for the golden frames.
+ * Mid and High have the lens's depth of field (./depth-blur.ts), Mid with half of High's gathering.
  */
 export type Tier = 'low' | 'mid' | 'high';
 
 export const TIERS: readonly Tier[] = ['low', 'mid', 'high'];
 
 /** How many pixels a frame may have, per tier. */
-export const PIXEL_CAP: Readonly<Record<Tier, number>> = { low: 1.0e6, mid: 1.6e6, high: 2.6e6 };
+// High was 2.6 MP until 6 November 2026, when Olov asked to widen the graphics budget "rejält" for the Unravel
+// look: 3.5 MP draws an iPad's screen nearly at its own sharpness.
+export const PIXEL_CAP: Readonly<Record<Tier, number>> = { low: 1.0e6, mid: 1.6e6, high: 3.5e6 };
 
 /** The canvas's pixel ratio: never above the screen's own or 2, and never more pixels than the tier allows. */
 export function pixelRatioFor(tier: Tier, cssWidth: number, cssHeight: number, devicePixelRatio: number, reduction = 0): number {

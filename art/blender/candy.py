@@ -615,7 +615,7 @@ reach(part, every(quads) + first + last, tone('#fff4b8'), tone('#ffd75a'), 0.0, 
 finish(part, 'stjarna', sharp=50.0, strength=0.4)
 
 
-# --- the Saturday bag: striped paper, pinked at its top, open, with sweets looking out ---------------------
+# --- the Saturday bag: pale paper, pinked at its top, with a bunch of painted dots on its front ----------------
 
 def outline(wide, deep, height, count, lift=None):
     """A ring with a rounded-rectangle outline, lying flat at a height, its points evenly spaced along it."""
@@ -654,17 +654,50 @@ rings = [
     outline(0.36, 0.17, 0.47, SIDES),
 ]
 quads, first, last = skin(part, rings, Vector((0.0, 0.0, 0.0)), Vector((0.0, 0.0, 0.45)))
-paper = fixed(tone('#efdfbd'))
-striped(part, quads[:5], [], 2, 4, fixed(tone('#5379a3')), paper)
-flat(part, first, paper)
-flat(part, every(quads[5:]) + last, fixed(tone('#8f7350')))
-# What he chose on Saturday looks out over the edge.
-PEEKING = (
-    (-0.11, 0.0, 0.57, 0.055, '#e8483f'), (0.0, 0.01, 0.6, 0.06, '#f6c445'), (0.105, -0.01, 0.575, 0.052, '#58b368'),
-    (-0.05, -0.03, 0.545, 0.045, '#ef7fb0'), (0.06, 0.03, 0.55, 0.045, '#4a90d9'),
+# As the bag the ghost holds in Pappa's carving and on Olov's poster (Olov, 6 November 2026): pale paper, the
+# colour of the carving's wood, and on its front a bunch of painted dots, a big red one in the middle and green,
+# orange and red ones round it. It was striped blue.
+paper = fixed(tone('#eedfc8'))
+flat(part, every(quads[:5]) + first, paper)
+flat(part, every(quads[5:]) + last, fixed(tone('#a98e6c')))
+
+
+def front_at(height):
+    """How far in front of the middle the bag's front lies at a height: its rings' depths, halved."""
+    if height <= 0.24:
+        deep = 0.27 + (0.30 - 0.27) * (height - 0.08) / 0.16
+    else:
+        deep = 0.30 + (0.28 - 0.30) * (height - 0.24) / 0.16
+    return deep / 2.0
+
+
+DOTS = (
+    (0.0, 0.30, 0.046, '#d3302a'), (-0.062, 0.335, 0.026, '#2f9a4a'), (0.052, 0.352, 0.023, '#e8582c'),
+    (-0.072, 0.262, 0.023, '#e8582c'), (0.068, 0.272, 0.029, '#c62a24'), (-0.022, 0.37, 0.019, '#2f9a4a'),
+    (0.024, 0.228, 0.025, '#2f9a4a'), (-0.046, 0.212, 0.018, '#d3302a'), (0.092, 0.322, 0.016, '#2f9a4a'),
+    (-0.096, 0.302, 0.016, '#d3302a'), (0.04, 0.4, 0.014, '#e8582c'),
 )
-for x, y, z, size, colour in PEEKING:
-    flat(part, ball(part, (x, y, z), (size, size * 0.8, size), 8, 5), fixed(tone(colour)))
+
+
+def side_at(height):
+    """How far to the side of the middle the bag's side lies at a height: its rings' widths, halved."""
+    if height <= 0.24:
+        wide = 0.40 + (0.43 - 0.40) * (height - 0.08) / 0.16
+    else:
+        wide = 0.43 + (0.42 - 0.43) * (height - 0.24) / 0.16
+    return wide / 2.0
+
+
+# The ghost turns the bag as it goes, so the dots are painted all round: the bunch on the front and the back,
+# and a smaller bunch on each narrow side.
+for x, z, size, colour in DOTS:
+    # A dab of paint: a flat round lying on the paper, standing out from it a hair.
+    for facing in (-1.0, 1.0):
+        flat(part, ball(part, (x * facing, facing * (front_at(z) + 0.002), z), (size, size * 0.22, size), 10, 5), fixed(tone(colour)))
+    if abs(x) < 0.08:
+        for facing in (-1.0, 1.0):
+            flat(part, ball(part, (facing * (side_at(z) + 0.002), x * 0.75, z), (size * 0.22, size * 0.75, size * 0.75), 10, 5),
+                 fixed(tone(colour)))
 finish(part, 'lordagspase', sharp=50.0, strength=0.55)
 
 # Reva: the tear at the bag's hinge, a jagged rip that is dark inside. It lies in the bag's front.

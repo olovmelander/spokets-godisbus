@@ -8,9 +8,9 @@ const byn = COURSES['byn']!;
 const floor = byn.shop!.floor;
 
 describe("the shop's bag in the last picture", () => {
-  it("is one of the shop's striped paper bags, as his Saturday bag is, taller than he is, on the floor", () => {
+  it("is one of the shop's paper bags with painted dots, as his Saturday bag is, taller than he is, on the floor", () => {
     const bag = shopBag(byn, floor);
-    // The candy kit puts its striped, pinked bag here (./candy.ts), in place of the boxes that stand in.
+    // The candy kit puts its dotted, pinked bag here (./candy.ts), in place of the boxes that stand in.
     expect(bag.userData.sweet).toEqual({ shape: 'lordagspase', paper: true });
     expect(bag.scale.x * SATURDAY_BAG_TALL).toBeCloseTo(SHOP_BAG.tall, 5);
     expect(SHOP_BAG.tall).toBeGreaterThan(2.5);

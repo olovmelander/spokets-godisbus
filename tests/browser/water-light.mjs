@@ -78,6 +78,24 @@ try {
     const changed = draw('high', 1.5);
     const plainFloor = draw('low', 0, false), causticFloor = draw('mid', 0, false);
     const refractionOff = !water.refracting;
+    // What is near the water, mirrored as it is (Mid and High): a red box over the water, just above the top of the
+    // picture, shows red in it. High's mirror of the picture itself cannot see it there; only the camera under the water can.
+    const box = new T.Mesh(new T.BoxGeometry(0.8, 0.8, 0.8), new T.MeshBasicMaterial({ color: 0xff2020 }));
+    box.position.set(0, 2.8, -6); scene.add(box);
+    const drawNear = (tier) => {
+      water.setSize(192, 192, tier); water.update(0);
+      water.reflect(renderer, scene, camera, 0);
+      renderer.autoClear = true; renderer.setRenderTarget(hdr); renderer.render(scene, camera);
+      renderer.autoClear = false; renderer.render(waterScene, camera);
+      renderer.autoClear = true; pass.render(renderer, graded, hdr); output.render(renderer, graded, graded, 0, false);
+      return read();
+    };
+    const reddened = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if ((b[i] - b[i + 1]) - (a[i] - a[i + 1]) > 20) n++; return n; };
+    const unmirrored = drawNear('mid'), unmirroredHigh = drawNear('high'), unmirroredLow = drawNear('low');
+    water.mirrorNear(scene, [box]);
+    const nearMid = drawNear('mid'), nearHigh = drawNear('high'), nearLow = drawNear('low');
+    const nearOff = !water.mirroringNear;
+    scene.remove(box);
     // An HDR light patch blooms into dark neighbouring pixels, not across the whole frame.
     scene.clear(); camera.position.set(0, 0, 8); camera.lookAt(0, 0, 0);
     scene.add(new T.Mesh(new T.PlaneGeometry(0.22, 0.22), new T.MeshBasicMaterial({ color: new T.Color(4, 3, 2) })));
@@ -91,7 +109,8 @@ try {
     bloom.setSize(192, 192, false);
     return {
       flow: difference(high, changed), midDetail: difference(low, mid), refract: difference(mid, high),
-      paused: difference(high, pause), caustics: difference(plainFloor, causticFloor), refractionOff,
+      paused: difference(high, pause), caustics: difference(plainFloor, causticFloor), refractionOff, nearOff,
+      nearMid: reddened(unmirrored, nearMid), nearHigh: reddened(unmirroredHigh, nearHigh), nearLow: reddened(unmirroredLow, nearLow),
       bloomNear: glow[near] > dark[near], bloomFar: glow[far] === dark[far], bloomSize, bloomOff: bloom.texture === null,
     };
   });
@@ -100,7 +119,8 @@ try {
   check('High refracts the existing scene behind the water', numerical.refract > 1000);
   check('water flows with picture time and freezes exactly when paused', numerical.flow > 1000 && numerical.paused === 0);
   check('High bloom spreads only near HDR highlights at half resolution', numerical.bloomNear && numerical.bloomFar && String(numerical.bloomSize) === '96,96');
-  check('unused water and bloom targets are released on lower tiers', numerical.refractionOff && numerical.bloomOff);
+  check('Mid and High mirror what is near the water as it is; Low does not', numerical.nearMid > 40 && numerical.nearHigh > 40 && numerical.nearLow === 0);
+  check('unused water and bloom targets are released on lower tiers', numerical.refractionOff && numerical.bloomOff && numerical.nearOff);
   await probe.close();
   for (const course of ['granskog', 'myren']) for (const [width, height] of [[844, 390], [390, 844]]) {
     const page = await pageFor(width, height);

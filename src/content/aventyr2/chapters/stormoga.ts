@@ -42,7 +42,7 @@ const OUT = { x: 40, y: 2, z: -2 };
 const AT_Z = { mamma: -1.3, pappa: -1.7, moa: -1.2, bertil: -1.6 } as const;
 const standing = (who: Lit) => [{ at: 0, x: FAMILY[who], y: 0, z: AT_Z[who], face: 0, move: 0.01, act: 'look' as const, aim: OUT }];
 
-/** He lights a lamp: its owner starts, holds it up, and feels that he is near. */
+/** He lights a lamp: its owner starts, holds it out over the water (bent at the elbow, as a light is held), and feels that he is near. */
 const lit = (who: Lit, line: string, seconds: number): SceneDef => ({
   id: `lampa:${who}`,
   on: `so:${who}`,
@@ -50,7 +50,7 @@ const lit = (who: Lit, line: string, seconds: number): SceneDef => ({
   hold: true,
   sounds: [{ at: 0.1, sound: 'blink' }],
   lines: [{ at: 0.5, who, line }],
-  stage: { actors: { [who]: [{ at: 0, act: 'gasp' }, { at: 0.4, act: 'point', aim: { x: 40, y: 6, z: -2 }, holds: `lamp-${who}` as const }] } },
+  stage: { actors: { [who]: [{ at: 0, act: 'gasp' }, { at: 0.4, act: 'shine', aim: { x: 40, y: 6, z: -2 }, holds: `lamp-${who}` as const }] } },
 });
 
 const SCENES: SceneDef[] = [

@@ -52,6 +52,8 @@ const SCENES: SceneDef[] = [
     until: 'goodnight',
     seconds: 9.6,
     hold: true,
+    // Mamma lights the candle as she says so.
+    cues: [{ at: 1.8, flag: 'candles' }],
     lines: [
       { at: 1.8, who: 'mamma', line: 'skPower' },
       { at: 3.8, who: 'pappa', line: 'skLamp' },
@@ -284,7 +286,8 @@ export const stormkvall: ChapterData = {
     // The two figures on the shelf, until the gust.
     { look: 'tragubbe', at: { x: OLD.x, y: OLD.y }, z: OLD.z, until: 'gust' },
     { look: 'lillgubbe', at: { x: LITTLE.x, y: LITTLE.y }, z: LITTLE.z, until: 'gust' },
-    { look: 'candle', at: { x: 13.6, y: 1.65 }, z: -1.6 },
+    // The candle Mamma lights when the power goes ("Strömmen gick! Jag tänder ljusen.").
+    { look: 'candle', at: { x: 13.6, y: 1.65 }, z: -1.6, after: 'candles' },
     // The flashlight on the table, until Elof has taken it to Pappa.
     { look: 'flashlight', at: { x: 15, y: 1.65 }, z: -1.3, until: 'lamp:take' },
   ],

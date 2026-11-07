@@ -116,6 +116,21 @@ describe('the story\'s scenes', () => {
     expect(after.frame).toBeNull();
   });
 
+  it('lets a scene staged at a place go once he is past it (Lyft on Berget, a game taken up on the cliff)', () => {
+    const lift: SceneDef = { id: 'lift', on: 'lift', before: 146.5, seconds: 2, hold: true };
+    // Taken up on top of the cliff, with the lift done: seen, never played there.
+    const resumed = new Set<string>(['lift']);
+    const there = new SceneDirector([lift], { x: 149, y: 31.4 }, resumed);
+    run(there, 0.5, standing(149), resumed, []);
+    expect(there.frame).toBeNull();
+    expect(resumed.has('scene:lift')).toBe(true);
+    // In play, where it is staged: it plays.
+    const flags = new Set<string>(['lift']);
+    const here = new SceneDirector([lift], { x: 138, y: 26.4 }, flags);
+    run(here, 0.1, standing(143.8), flags, []);
+    expect(here.frame?.id).toBe('lift');
+  });
+
   it('counts a scene staged at a place he starts beyond as seen', () => {
     const edge: SceneDef = { id: 'edge', at: 20, seconds: 1 };
     const flags = new Set<string>();

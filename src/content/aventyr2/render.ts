@@ -1,6 +1,6 @@
 import {
-  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage,
-  Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry,
+  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DataTexture, ExtrudeGeometry, InstancedBufferAttribute, DoubleSide, DynamicDrawUsage,
+  Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, RingGeometry,
   CatmullRomCurve3, Points, PointsMaterial, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
   type Material,
 } from 'three';
@@ -10,7 +10,11 @@ import { heightAt, type PlaceLook } from '../../render/dressing/kit';
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../render/extensions';
 import { roomThings } from '../../render/home-room';
 import { glowTexture } from '../../render/glow';
+import { wingbeat } from '../../render/wingbeat';
+import { kitLife } from '../../render/kit-life';
 import { drawnWhile } from '../../render/idle';
+import { litLamp } from '../../render/stage';
+import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
 import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
@@ -43,6 +47,16 @@ const ball = (radius: number, material: Material, x = 0, y = 0, z = 0, squash: r
 const UP = new Vector3(0, 1, 0);
 const tmp = new Vector3();
 const smooth = (t: number) => { const k = Math.min(1, Math.max(0, t)); return k * k * (3 - 2 * k); };
+/**
+ * A creature's look about, from -1 to 1: it holds one way, then turns to the next over `ease` of a hold, at uneven
+ * times, `rate` turns a second or so. The same for the same `seed`.
+ */
+const held = (clock: number, seed: number, rate: number, ease: number) => {
+  const w = clock * rate + 0.3 * Math.sin(clock * rate * 1.4 + seed) + seed;
+  const n = Math.floor(w);
+  const way = (m: number) => { const v = Math.sin(m * 12.9898 + seed) * 43758.5453; return (v - Math.floor(v)) * 2 - 1; };
+  return way(n - 1) + (way(n) - way(n - 1)) * smooth((w - n) / ease);
+};
 /** A fixed scatter: the same in every session and every screenshot. */
 function scatter(seed: number): () => number {
   let s = seed | 0;
@@ -388,12 +402,36 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
 
   // Rain: thin pale streaks, slanting with the wind from the left.
   const rain = storm?.rain ?? 0;
-  const drops = new InstancedMesh(new PlaneGeometry(0.03, 0.85), new MeshBasicMaterial({ color: '#cfdcff', transparent: true, opacity: 0.3, depthWrite: false, fog: false }), RAIN_MAX);
+  // Each streak is brightest at its head and fades along its tail, as a falling drop is seen (the graphics pass of
+  // 6 November 2026: they were flat bars of one brightness), and each falls at its own length.
+  const streak = new Uint8Array(4 * 32);
+  for (let k = 0; k < 32; k++) {
+    const along = k / 31;
+    streak.set([255, 255, 255, Math.round(255 * Math.pow(along, 1.6) * (1 - Math.pow(along, 14)))], k * 4);
+  }
+  const streakMap = new DataTexture(streak, 1, 32);
+  streakMap.magFilter = streakMap.minFilter = LinearFilter;
+  streakMap.needsUpdate = true;
+  const drops = new InstancedMesh(new PlaneGeometry(0.024, 0.95), new MeshBasicMaterial({ color: '#d8e3ff', map: streakMap, transparent: true, opacity: 0.3, depthWrite: false, fog: false }), RAIN_MAX);
   drops.instanceMatrix.setUsage(DynamicDrawUsage);
   drops.frustumCulled = false;
   drops.renderOrder = 4;
-  const seeds = Array.from({ length: RAIN_MAX }, () => ({ x: random() * BOX.x, y: random() * BOX.y, z: BOX.back + random() * (BOX.front - BOX.back), speed: 13 + random() * 6 }));
+  const seeds = Array.from({ length: RAIN_MAX }, () => ({ x: random() * BOX.x, y: random() * BOX.y, z: BOX.back + random() * (BOX.front - BOX.back), speed: 13 + random() * 6, long: 0.55 + random() * 0.7 }));
   if (rain > 0) group.add(drops);
+  // Where the rain lands round him: small rings that open and fade on the ground and the water, a few at a time
+  // (the graphics pass of 6 November 2026). Added light, one draw; on Low none.
+  const LANDINGS = 36;
+  const landings = new InstancedMesh(new RingGeometry(0.05, 0.075, 16).rotateX(-Math.PI / 2),
+    new MeshBasicMaterial({ color: '#ffffff', transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false }), LANDINGS);
+  landings.instanceMatrix.setUsage(DynamicDrawUsage);
+  landings.instanceColor = new InstancedBufferAttribute(new Float32Array(LANDINGS * 3), 3);
+  landings.instanceColor.setUsage(DynamicDrawUsage);
+  landings.frustumCulled = false;
+  landings.renderOrder = 4;
+  landings.userData.rich = true;
+  const landingSeeds = Array.from({ length: LANDINGS }, () => ({ x: random() * 16 - 8, z: -1.6 + random() * 2.4, phase: random(), every: 0.5 + random() * 0.6 }));
+  if (rain > 0) group.add(landings);
+  const landingTint = new Color();
   const place = new Object3D();
   const SLANT = 0.32;
   place.rotation.z = -SLANT * 0.6;
@@ -433,6 +471,18 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     group.add(light);
     return { def, light, phase: i * 1.7 };
   });
+
+  // A lamp shining on him from somewhere: Moa's from the window ("Jag lyser för dig från fönstret!").
+  const beams = (storm?.beams ?? []).map((def) => {
+    const lamp = litLamp();
+    lamp.scale.setScalar(1.8);
+    lamp.position.set(def.at.x, def.at.y, def.z);
+    lamp.visible = false;
+    group.add(lamp);
+    return { def, lamp };
+  });
+  const beamAt = new Vector3();
+  const BEAM_POINTS = new Vector3(0, 0, 1);
 
   // When the storm's eye opens: stars, and the moon over the water.
   const starGeometry = new BufferGeometry();
@@ -485,14 +535,12 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   });
 
   // A bathing raft moored in the bay rocks and drags at its moorings: the tower stands on it.
-  // A boat that is rowed in: until its model has come, a plain hull. Whoever sits in it goes with it.
-  const boat = storm?.boat ? new Group() : null;
-  if (boat) {
-    boat.userData.model = 'roddbat';
-    boat.add(new Mesh(new BoxGeometry(6.2, 1.2, 2.2).translate(0, 0.6, 0), solid('#d8d4c8', 0.8)));
-    group.add(boat);
-  }
+  // The family's stand-up paddle board, paddled in (Olov, 6 November 2026: in place of a rowboat). Whoever paddles
+  // stands on it and goes with it.
+  const boat = storm?.boat ? paddleBoard() : null;
+  if (boat) group.add(boat);
   let rowed = 0;
+  const standAt = new Vector3();
 
   const rocking = buildings.filter((_, i) => storm?.buildings?.[i]?.kind === 'tower').map((made) => ({ made, y: made.group.position.y }));
 
@@ -631,10 +679,12 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   // A rope or Pappa's scarf from above down to his hands, while he rides on it.
   const ropes = (storm?.ropes ?? []).map((def) => {
     const ride = chapter.rides?.find((r) => r.id === def.ride);
+    // Whoever holds it lowers it first ("Jag sänker ner min halsduk."): it hangs down to where he takes hold.
+    const boarding = chapter.spots?.find((spot) => spot.ride === def.ride);
     const mesh = new Mesh(new CylinderGeometry(0.09, 0.09, 1, 6).translate(0, 0.5, 0), solid(def.colour ?? '#c8372a', 0.9));
     mesh.visible = false;
     group.add(mesh);
-    return { def, ride, mesh };
+    return { def, ride, boarding, mesh };
   });
 
   const owlWings: Object3D[] = [];
@@ -645,8 +695,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       elof.flags = flags;
       elof.still = still;
       drift?.(dt, still);
-      // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him.
-      const beat = still ? 0.2 : 0.2 + 0.46 * Math.sin(clock * 5.4);
+      // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him. Its downstroke is
+      // the slower, and between bursts it glides on wings held near level (a positive turn lowers its wings).
+      const beat = still ? 0.2 : 0.2 - 0.5 * wingbeat(clock, 0.86, { every: 7, glide: 1.8, held: 0.3 }).lift;
       for (const wing of owlWings) wing.rotation.x = beat * (wing.userData.side as number);
       if (boat && storm?.boat) {
         const { from, to, y, after, spot } = storm.boat;
@@ -655,10 +706,21 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const bob = still ? 0 : Math.sin(clock * 1.2) * (0.06 - 0.05 * way);
         boat.position.set(from.x + (to.x - from.x) * way, y + bob, from.z + (to.z - from.z) * way);
         boat.rotation.y = (1 - way) * 0.7;
-        // Whoever rows sits on the middle thwart with their back to the bow, looking the way he comes.
+        // Whoever paddles stands on its back half, behind the line he walks, facing its nose, the paddle on the far side.
         const rower = scene.getObjectByName(`spot:${spot}`);
-        rower?.position.set(boat.position.x, boat.position.y - 0.7, boat.position.z);
-        rower?.rotation.set(0, boat.rotation.y - Math.PI / 2, 0);
+        standAt.set(1.5, BOARD.top, -0.6).applyAxisAngle(UP, boat.rotation.y).add(boat.position);
+        rower?.position.copy(standAt);
+        rower?.rotation.set(0, boat.rotation.y + Math.PI / 2, 0);
+        // The board tips a hair under her weight and with the swell.
+        boat.rotation.z = still ? 0 : Math.sin(clock * 1.1) * 0.012 * (1 - 0.6 * way);
+        boat.rotation.x = still ? 0 : Math.sin(clock * 0.8 + 1) * 0.01 + 0.012;
+      }
+      // A loose corner of the tarp over the rowing boat lifts in the gusts and flaps, and falls back between them.
+      for (const [i, made] of buildings.entries()) {
+        const flap = made.group.userData.flap as Object3D | undefined;
+        if (!flap) continue;
+        const gust = Math.max(0, Math.sin(clock * 0.47 + i * 2.1)) ** 3;
+        flap.rotation.x = still ? -0.08 : -(0.08 + 0.05 * Math.sin(clock * 1.9 + i) + gust * (0.55 + 0.2 * Math.sin(clock * 11 + i)));
       }
       for (const [i, raft] of rocking.entries()) {
         raft.made.group.position.y = raft.y + (still ? 0 : Math.sin(clock * 0.9 + i) * 0.09);
@@ -698,12 +760,37 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const x = ((s.x + fall * SLANT - cx) % BOX.x + BOX.x) % BOX.x;
           place.position.set(cx - BOX.x / 2 + x, cy + BOX.y / 2 - fall, s.z);
           // No rain falls indoors: only out of doors, beyond the house's corner.
-          place.scale.setScalar(chapter.outdoors !== undefined && place.position.x < chapter.outdoors ? 0 : 1);
+          const out = chapter.outdoors !== undefined && place.position.x < chapter.outdoors ? 0 : 1;
+          place.scale.set(out, out * s.long, out);
           place.updateMatrix();
           drops.setMatrixAt(i, place.matrix);
         }
         drops.instanceMatrix.needsUpdate = true;
-        (drops.material as MeshBasicMaterial).opacity = 0.32 * (1 - calm) * (0.6 + 0.4 * rain);
+        (drops.material as MeshBasicMaterial).opacity = 0.42 * (1 - calm) * (0.6 + 0.4 * rain);
+      }
+      // The landings: each opens over a short while, fades, and lands again somewhere else near him.
+      const landing = rain > 0 && count > 0 && tier !== 'low';
+      drawnWhile(landings, landing);
+      if (landing) {
+        const t = still ? 0 : clock;
+        for (let i = 0; i < LANDINGS; i++) {
+          const s = landingSeeds[i]!;
+          const round = (t / s.every + s.phase);
+          const k = round - Math.floor(round);
+          const where = Math.floor(round) * 7.31 + i * 3.7;
+          const x = cx + s.x + Math.sin(where) * 2.5;
+          const out = chapter.outdoors !== undefined && x < chapter.outdoors;
+          place.position.set(x, heightAt(chapter, x) + 0.02, s.z + Math.cos(where) * 0.4);
+          place.rotation.set(0, 0, 0);
+          place.scale.setScalar(out ? 0 : 0.8 + k * 3.2);
+          place.updateMatrix();
+          landings.setMatrixAt(i, place.matrix);
+          const light = (1 - k) * (1 - k) * 0.9 * (1 - calm) * rain;
+          landings.setColorAt(i, landingTint.setRGB(light * 0.85, light * 0.9, light));
+        }
+        place.rotation.set(0, 0, -SLANT * 0.6);
+        landings.instanceMatrix.needsUpdate = true;
+        landings.instanceColor!.needsUpdate = true;
       }
 
       // Lightning, now and then; and one at every flyby's moment.
@@ -750,6 +837,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         f.figure.position.set(f.def.from.x + (f.def.to.x - f.def.from.x) * e, f.def.from.y + (f.def.to.y - f.def.from.y) * e + lift, -4);
         f.figure.rotation.z = still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * 0.25 : -k * 9;
       }
+      for (const b of beams) {
+        b.lamp.visible = x >= b.def.within[0] && x <= b.def.within[1];
+        if (!b.lamp.visible) continue;
+        beamAt.set(x, y + 0.4, 0).sub(b.lamp.position).normalize();
+        b.lamp.quaternion.setFromUnitVectors(BEAM_POINTS, beamAt);
+        b.lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
+      }
       for (const g of glows) {
         const lit = g.def.after === undefined || flags.has(g.def.after);
         g.light.visible = lit;
@@ -787,10 +881,12 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       }
       for (const rope of ropes) {
         const on = riding && !!rope.ride && x >= Math.min(rope.ride.from.x, rope.ride.to.x) - 0.3 && x <= Math.max(rope.ride.from.x, rope.ride.to.x) + 0.3;
-        rope.mesh.visible = on;
-        if (!on) continue;
-        // From where it is held to his raised hands.
-        const hx = x, hy = y + 1.05, hz = 0.1, fz = rope.def.z ?? -1;
+        const hangs = !on && !!rope.ride && !!rope.boarding && !flags.has(rope.boarding.id) && (rope.boarding.needs === undefined || flags.has(rope.boarding.needs));
+        rope.mesh.visible = on || hangs;
+        if (!on && !hangs) continue;
+        // From where it is held to his raised hands; lowered and waiting, to just over where he takes hold, swaying.
+        const sway = hangs && !still ? Math.sin(clock * 1.6) * 0.25 : 0;
+        const hx = hangs ? rope.ride!.from.x + 0.3 + sway : x, hy = hangs ? rope.ride!.from.y + 1.4 : y + 1.05, hz = 0.1, fz = rope.def.z ?? -1;
         const dx = rope.def.from.x - hx, dy = rope.def.from.y - hy, dz = fz - hz;
         const length = Math.hypot(dx, dy, dz);
         rope.mesh.position.set(hx, hy, hz);
@@ -969,10 +1065,14 @@ function littleFigure(silhouette = false): Group {
 }
 
 /** A thing that stands about: it shrinks away when its flag says it is gone, and may move a little while it is there. */
-function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) => void, leaves: 'shrink' | 'leap' | 'fly' = 'shrink'): SpotProp {
+function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) => void, leaves: 'shrink' | 'leap' | 'fly' | 'blown' = 'shrink', flyer?: Group): SpotProp {
   const root = new Group();
   root.position.set(spot.at.x, spot.at.y, -0.6);
   root.add(group);
+  // What flies off may fly as another shape, with wings that open: hidden until it goes.
+  if (flyer) { root.add(flyer); drawnWhile(flyer, false); }
+  const flyerWings: Object3D[] = [];
+  flyer?.traverse((node) => { if (typeof node.userData.side === 'number') flyerWings.push(node); });
   let since = 0;
   return {
     group: root,
@@ -986,6 +1086,7 @@ function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) 
         root.position.y = spot.at.y;
         root.rotation.z = 0;
         drawnWhile(root, size > 0);
+        if (flyer) { drawnWhile(group, true); drawnWhile(flyer, false); group.scale.set(1, 1, 1); }
         return;
       }
       if (leaves === 'leap') {
@@ -997,6 +1098,30 @@ function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) 
         root.position.y = spot.at.y + Math.sin(Math.min(k, 1) * Math.PI) * 2.6 - Math.max(0, k - 1) * 8;
         root.rotation.z = -k * 2.2;
         drawnWhile(root, k < 1.2);
+        return;
+      }
+      if (leaves === 'blown') {
+        // Lifted off its feet by the gust and tumbled away with it, up and out through the window.
+        const k = since / 0.9;
+        root.position.x = spot.at.x + k * 6.6;
+        root.position.y = spot.at.y + Math.sin(Math.min(k, 1) * Math.PI * 0.7) * 2.2 + k * 0.4;
+        root.rotation.z = -k * 7;
+        drawnWhile(root, k < 1.05);
+        return;
+      }
+      if (flyer) {
+        // A crouch, then off the bough: its wings open, it drops forward a little and climbs away, beating hard.
+        const crouch = smooth(since / 0.22);
+        const k = Math.max(0, (since - 0.22) / 1.6);
+        group.scale.set(1, 1 - 0.12 * crouch * (k > 0 ? 0 : 1), 1);
+        drawnWhile(group, k === 0);
+        drawnWhile(flyer, k > 0 && k < 1);
+        root.position.x = spot.at.x + k * k * 3 + k * 5;
+        root.position.y = spot.at.y - Math.sin(Math.min(1, k * 4) * Math.PI) * 0.35 + k * k * 9;
+        root.rotation.z = Math.min(0.35, k * 1.5);
+        const lift = wingbeat(since, 2.2, { every: 0 }).lift;
+        for (const wing of flyerWings) wing.rotation.x = (0.15 - 0.6 * lift) * (wing.userData.side as number);
+        drawnWhile(root, k < 1);
         return;
       }
       // Up and away on its wings, faster and faster.
@@ -1365,19 +1490,34 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       const { group, head } = otter();
       return standing(spot, group, (clock) => {
         group.position.y = Math.sin(clock * 1.7) * 0.03;
-        head.rotation.y = Math.sin(clock * 0.8) * 0.7;
-        head.rotation.x = Math.sin(clock * 1.3 + 1) * 0.12;
+        // It looks about, holding each look, mostly out towards him, turning its head (the stand-in's, or the kit's on
+        // its neck); a kit without a head of its own turns a little from its waist, more slowly.
+        const look = held(clock, spot.at.x, 0.45, 0.12);
+        const kitHead = group.getObjectByName('kit-head');
+        if (head.parent === group || kitHead) {
+          const turning = kitHead ?? head;
+          group.rotation.y = kitHead ? held(clock, spot.at.x, 0.2, 0.3) * 0.12 + 0.1 : 0;
+          turning.rotation.y = look * 0.6 + 0.1;
+          turning.rotation.x = held(clock * 0.8, spot.at.x + 3, 0.5, 0.1) * 0.12;
+        } else group.rotation.y = held(clock, spot.at.x, 0.25, 0.3) * 0.35 + 0.1;
       });
     },
     lillgubbe: (spot) => {
       const figure = littleFigure();
       figure.userData.warm = spot.word === 'lifted';
-      // It trembles until it has its cap back, and then it hops.
-      return standing(spot, figure, (clock) => {
+      // It trembles until it has its cap back, and then it hops. On the shelf in Stormkvällen the gust takes it
+      // ("Lillgubben! Vinden tog honom!"), out through the window after the old one.
+      // Its gladness starts when it has its cap back, from the ground, and grows in over a moment: no hop is caught
+      // halfway up, and the trembling fades into the sway.
+      let gladFor = 0;
+      return standing(spot, figure, (clock, dt) => {
         const glad = elof.flags?.has('scene:motet') ?? false;
-        figure.rotation.z = glad ? Math.sin(clock * 1.7) * 0.06 : Math.sin(clock * 5.3) * 0.03;
-        figure.position.y = glad ? gladHop(clock) : 0;
-      });
+        gladFor = glad ? gladFor + dt : 0;
+        const k = smooth(gladFor / 0.4);
+        const tremble = Math.sin(clock * 5.3) * 0.03 + Math.sin(clock * 8.1 + 1) * 0.012;
+        figure.rotation.z = tremble * (1 - k) + Math.sin(gladFor * 1.7) * 0.06 * k;
+        figure.position.y = glad ? gladHop(gladFor) * k : 0;
+      }, spot.id.startsWith('decor:') && spot.word !== 'lifted' ? 'blown' : 'shrink');
     },
     pumpkin: (spot) => {
       const { group, light, face } = pumpkin();
@@ -1390,7 +1530,27 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     owl: (spot) => {
       const bird = owl();
       // One that is ridden has its own picture; one that only sits there flies off.
-      return standing(spot, bird, (clock) => { bird.rotation.y = Math.sin(clock * 0.7) * 0.25; }, spot.id.startsWith('decor:') ? 'fly' : 'shrink');
+      // It sits still, as an owl does, and now and then turns slowly to look another way, and holds it.
+      const turn = (clock: number) => held(clock, spot.at.x, 0.22, 0.16) * 0.35;
+      const decor = spot.id.startsWith('decor:');
+      // One that flies off does so as the flying owl, with its wings, at the sitting one's size; its wings have names of
+      // their own, so the ridden owl's beat does not drive them.
+      const flyer = decor ? owl(true) : undefined;
+      if (flyer) {
+        flyer.scale.setScalar(0.6);
+        flyer.position.y = 1.4;
+        flyer.traverse((node) => { if (node.name === 'owl-wing') node.name = 'owl-wing-away'; });
+      }
+      return standing(spot, bird, (clock) => {
+        // The kit's owl turns its head, far, as owls do, and its body hardly; the stand-in turns as one.
+        const head = bird.getObjectByName('kit-head');
+        if (head) {
+          bird.rotation.y = turn(clock) * 0.15;
+          head.rotation.y = turn(clock) * 2.6;
+          head.rotation.z = held(clock * 0.7, spot.at.x + 5, 0.3, 0.2) * 0.12;
+        } else bird.rotation.y = turn(clock);
+        bird.scale.y = 1 + Math.sin(clock * 1.4) * 0.008;
+      }, decor ? 'fly' : 'shrink', flyer);
     },
     tap: (spot) => {
       // The rain barrel's brass tap, and the water that pours from it once it is turned.
@@ -1435,6 +1595,36 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       light.position.y = 0.5;
       group.add(wax, flame, light);
       return standing(spot, group, (clock) => { flame.scale.y = 1.4 + 0.2 * Math.sin(clock * 13); });
+    },
+    cocoa: (spot) => {
+      // Sunday's cup of hot chocolate ("Varm choklad efter stormen"): a white mug with a red heart, brown to the
+      // brim, and its steam curling up.
+      const group = new Group();
+      const mug = new Mesh(new CylinderGeometry(0.17, 0.15, 0.32, 14), solid('#f4f1ea', 0.5));
+      mug.position.y = 0.16;
+      const cocoa = new Mesh(new CylinderGeometry(0.15, 0.15, 0.01, 14), solid('#5a3420', 0.3));
+      cocoa.position.y = 0.3;
+      const handle = new Mesh(new TorusGeometry(0.08, 0.022, 6, 12, Math.PI), solid('#f4f1ea', 0.5));
+      handle.rotation.z = -Math.PI / 2;
+      handle.position.set(0.17, 0.17, 0);
+      const heart = new Mesh(new BoxGeometry(0.08, 0.08, 0.02), solid('#b8463c', 0.6));
+      heart.rotation.z = Math.PI / 4;
+      heart.position.set(0, 0.17, 0.16);
+      group.add(mug, cocoa, handle, heart);
+      const steam = new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.22, depthWrite: false });
+      const puffs = [0, 1, 2].map(() => {
+        const puff = new Mesh(new SphereGeometry(0.06, 8, 6), steam);
+        group.add(puff);
+        return puff;
+      });
+      return standing(spot, group, (clock) => {
+        for (const [i, puff] of puffs.entries()) {
+          const k = (clock * 0.45 + i / 3) % 1;
+          puff.position.set(Math.sin(clock * 1.7 + i * 2.1) * 0.05 * (1 + k), 0.34 + k * 0.5, 0);
+          puff.scale.setScalar(0.6 + k * 1.4);
+        }
+        steam.opacity = 0.2;
+      });
     },
     flashlight: (spot) => {
       const group = new Group();
@@ -1570,11 +1760,35 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       plate.position.y = 2.6;
       const disc = new Mesh(new CylinderGeometry(0.38, 0.38, 0.06, 20), solid('#141414', 0.6));
       disc.rotation.x = Math.PI / 2;
-      disc.position.set(0, 2.6, 0.06);
-      root.add(stand, plate, disc);
+      disc.position.set(0, 0, 0.06);
+      plate.add(disc);
+      // The cone he throws ("Kasta kotte"): from his hand up in an arc to the disc, which turns white as it hits and
+      // shakes the plate; the cone drops away.
+      const cone = new Mesh(new ConeGeometry(0.14, 0.42, 8), solid('#7a5232', 0.8));
+      cone.visible = false;
+      root.add(stand, plate, cone);
       const black = new Color('#141414');
       const white = new Color('#f2f2ee');
-      return { group: root, update(used) { (disc.material as MeshStandardMaterial).color.copy(used ? white : black); } };
+      const FLIGHT = 0.45;
+      // Already hit when first drawn (a saved game): no throw is shown.
+      let since = -1, first = true;
+      return {
+        group: root,
+        update(used, _clock, dt) {
+          since = !used ? -1 : since >= 0 ? since + dt : first ? 9 : 0;
+          first = false;
+          const k = since < 0 ? 0 : Math.min(1, since / FLIGHT);
+          (disc.material as MeshStandardMaterial).color.copy(used && k >= 1 ? white : black);
+          const after = Math.max(0, since - FLIGHT);
+          cone.visible = since >= 0 && after < 0.6;
+          if (cone.visible) {
+            const fall = after * after * 14;
+            cone.position.set(-0.5 * (1 - k), 1.0 + (2.6 - 1.0) * k + Math.sin(k * Math.PI) * 0.9 - fall, 1.2 * (1 - k) + 0.12);
+            cone.rotation.set(since * 9, 0, since * 7);
+          }
+          plate.rotation.z = after > 0 ? Math.sin(after * 40) * 0.08 * Math.exp(-after * 6) : 0;
+        },
+      };
     },
     lifebuoy: (spot) => {
       // A life ring on its post: red and white, its rope coiled.
@@ -1664,8 +1878,10 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       if (spot.word === 'and' || spot.word === 'and-hona') {
         return { group, update: (_, clock) => { model.position.y = 0.05 * Math.sin(clock * 1.5 + phase); model.rotation.z = 0.04 * Math.sin(clock * 1.1 + phase); } };
       }
-      if (spot.word === 'igelkott' || spot.word === 'groda') {
-        return { group, update: (_, clock) => { model.scale.y = 1 + 0.035 * Math.sin(clock * 2.1 + phase); } };
+      // The hedgehog snuffles, the frog hops on the spot, the snail creeps (../../render/kit-life.ts).
+      if (spot.word === 'igelkott' || spot.word === 'groda' || spot.word === 'snigel') {
+        const rest = { x: 0, y: 0, turn: 0, size: 1 };
+        return { group, update: (_, clock) => { kitLife(spot.word!, model, rest, clock, phase, elof.still); } };
       }
       return { group, update: () => {} };
     },
@@ -1763,14 +1979,16 @@ function aftermath(): SpotProp {
   const WALL = -8.5;
   const SILL = 3.2;
   const coats: BufferGeometry[] = [];
-  const COATS = [{ x: 15.9, tall: 2.7, colour: '#2e5a46' }, { x: 17, tall: 2.5, colour: '#c8a02c' }, { x: 18.1, tall: 1.9, colour: '#ad3f30' }, { x: 19, tall: 1.5, colour: '#2f6aa0' }];
+  // The very coats and boots they wore through the storm (../../render/rain-gear.ts). Elof, small, went in his own.
+  const WHO = ['pappa', 'mamma', 'moa', 'bertil'] as const;
+  const COATS = WHO.map((who, i) => ({ x: [15.9, 17, 18.1, 19][i]!, tall: [2.7, 2.5, 1.9, 1.5][i]!, colour: RAIN_GEAR[who].coat }));
   coats.push(paint(new BoxGeometry(4.2, 0.16, 0.16).translate(17.45, 5.6, WALL - 0.24), '#6a4a2c'));
   for (const coat of COATS) {
     const mid = 5.45 - coat.tall / 2;
     coats.push(paint(new CylinderGeometry(0.3, 0.56, coat.tall, 10).scale(1, 1, 0.36).translate(coat.x, mid, WALL), coat.colour));
     coats.push(paint(new SphereGeometry(0.27, 10, 8).scale(1, 0.85, 0.6).translate(coat.x, 5.5, WALL), coat.colour));
   }
-  const BOOTS = [{ x: 15.8, colour: '#2b2f36' }, { x: 16.9, colour: '#6e3226' }, { x: 18, colour: '#3f6a8a' }, { x: 19, colour: '#b89a30' }];
+  const BOOTS = WHO.map((who, i) => ({ x: [15.8, 16.9, 18, 19][i]!, colour: RAIN_GEAR[who].boots }));
   for (const boot of BOOTS) {
     for (const side of [-0.2, 0.2]) {
       coats.push(paint(new BoxGeometry(0.3, 0.74, 0.26).translate(boot.x + side, 0.37, WALL + 1), boot.colour));
@@ -1842,7 +2060,12 @@ function aftermath(): SpotProp {
 }
 
 /** The little one's hops when it is glad: short, and well apart. Its cap goes with them. */
-const gladHop = (clock: number) => Math.abs(Math.sin(clock * 2.6)) ** 6 * 0.24;
+/** A glad hop, from the ground at `t` = 0, each a little higher or lower than the last. */
+const gladHop = (t: number) => {
+  const beat = t * 2.6 / Math.PI, n = Math.floor(beat);
+  const height = 0.24 * (0.8 + 0.4 * (Math.sin(n * 7.13) * 0.5 + 0.5));
+  return Math.sin((beat - n) * Math.PI) ** 6 * height;
+};
 
 /** The fallen long arm of Klonk's seesaw comes to rest with its top on the ground. */
 const TIPPED = -0.16;
@@ -1947,6 +2170,38 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       g.add(float, band);
       return g;
     },
+    'hut-door': (mover) => {
+      // Flärken's second hut's old door, sliding on its rail (buildings.ts, hutDoorway): upright planks with dark gaps,
+      // a Z of braces, a ring handle to pull it by on its left, and two hangers whose wheels run on the rail over it.
+      // The mover is its top, where he stands; the door hangs from there to just over the sill when it is shut.
+      const w = mover.width, top = mover.height, tall = mover.stops[0]!.y + top - 0.04;
+      const wood: BufferGeometry[] = [];
+      const planks = Math.max(4, Math.round(w / 0.42));
+      const tones = ['#7a5532', '#6c4a2a', '#835c37', '#71502d'];
+      for (let i = 0; i < planks; i++) {
+        wood.push(box(w / planks - 0.05, tall - 0.04, 0.12, -w / 2 + (i + 0.5) * (w / planks), top - tall / 2, 0, tones[i % tones.length]!));
+      }
+      const brace = '#8c6640';
+      for (const y of [0.17, 0.83]) wood.push(box(w - 0.14, 0.22, 0.08, 0, top - tall + tall * y, 0.1, brace));
+      const run = w - 0.34, rise = tall * 0.66;
+      const diagonal = box(Math.hypot(run, rise), 0.2, 0.08, 0, 0, 0, brace);
+      diagonal.rotateZ(-Math.atan2(rise, run)).translate(0, top - tall / 2, 0.1);
+      wood.push(diagonal);
+      // A worn board along its top, which he stands on.
+      wood.push(box(w + 0.04, 0.1, 0.24, 0, top - 0.05, 0, '#8e6a44'));
+      const door = new Mesh(mergeGeometries(wood), solid('#ffffff', 0.85, { vertexColors: true }));
+      const iron: BufferGeometry[] = [];
+      for (const x of [-w * 0.32, w * 0.32]) {
+        iron.push(box(0.12, 0.34, 0.04, x, top + 0.05, -0.06, '#1d1d1f'));
+        iron.push(new CylinderGeometry(0.09, 0.09, 0.06, 12).rotateX(Math.PI / 2).translate(x, top + 0.22, -0.1));
+      }
+      iron.push(box(0.14, 0.3, 0.04, -w / 2 + 0.26, top - tall * 0.5, 0.16, '#1d1d1f'));
+      iron.push(new TorusGeometry(0.1, 0.025, 6, 12).translate(-w / 2 + 0.26, top - tall * 0.5 - 0.1, 0.18));
+      const metal = new Mesh(mergeGeometries(iron.map((g) => (g.index ? g.toNonIndexed() : g)).map((g) => { g.deleteAttribute('uv'); g.deleteAttribute('color'); return g; })), solid('#1d1d1f', 0.5, { metalness: 0.4 }));
+      const group = new Group();
+      group.add(door, metal);
+      return group;
+    },
     'jetty-plank': (mover) => {
       const group = new Group();
       const plank = new Mesh(new BoxGeometry(mover.width, mover.height, 1.4), solid('#8c7a62', 0.9));
@@ -1968,3 +2223,72 @@ export function installPictures(): void {
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */
 export const NIGHT = { looks: LOOKS, dim: DIM, colourOf: (hex: string) => new Color(hex) };
+
+/** The paddle board's size, in EL: Mamma is 5.2 tall, a family board about twice that; its deck stands at `top` over the water. */
+const BOARD = { long: 7.4, wide: 2.4, thick: 0.42, top: 1.2 };
+
+/**
+ * A stand-up paddle board, as the family has (Olov, 6 November 2026): a long flat board with a rounded nose and a
+ * squarer tail, white rails and a coloured deck, a dark grooved traction pad where one stands, a carry handle in
+ * the middle and a coiled leash at the tail. No print, name or mark. It lies along x, its middle at the origin,
+ * which is the water's level; its deck is `BOARD.top` over it, level with the jetty he walks off.
+ */
+function paddleBoard(): Group {
+  const group = new Group();
+  group.name = 'paddle-board';
+  const { long, wide, thick, top } = BOARD;
+  const half = long / 2, side = wide / 2;
+  const outline = (inset: number) => {
+    const s = new Shape();
+    const l = half - inset, w = side - inset;
+    // The tail: square with rounded corners; the nose: a long curve to a rounded point.
+    s.moveTo(-l + 0.5, -w);
+    s.lineTo(l * 0.35, -w);
+    s.bezierCurveTo(l * 0.8, -w, l, -w * 0.45, l, 0);
+    s.bezierCurveTo(l, w * 0.45, l * 0.8, w, l * 0.35, w);
+    s.lineTo(-l + 0.5, w);
+    s.quadraticCurveTo(-l, w, -l, w - 0.5);
+    s.lineTo(-l, -w + 0.5);
+    s.quadraticCurveTo(-l, -w, -l + 0.5, -w);
+    return s;
+  };
+  const bevel = 0.09;
+  const body = new ExtrudeGeometry(outline(0), { depth: thick - bevel * 2, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 3, curveSegments: 20 })
+    .rotateX(-Math.PI / 2).translate(0, top - thick + bevel, 0);
+  // The deck in a clear sea colour, the rails and the underside white.
+  group.add(new Mesh(body, [solid('#2a9db0', 0.5), solid('#eef1ef', 0.45)]));
+  // The traction pad: dark, grooved in diamonds, over the back two thirds of the deck.
+  const pad = drawnPad();
+  const padGeometry = new BoxGeometry(long * 0.5, 0.03, wide - 0.5).translate(-long * 0.12, top + 0.015, 0);
+  const padUv = padGeometry.getAttribute('uv');
+  for (let i = 0; i < padUv.count; i++) padUv.setXY(i, padUv.getX(i) * 6, padUv.getY(i) * 3);
+  group.add(new Mesh(padGeometry, new MeshStandardMaterial({ color: '#4a4f55', map: pad, roughness: 0.95 })));
+  // The carry handle, sunk in the middle of the deck, and the leash coiled at the tail.
+  group.add(new Mesh(new BoxGeometry(0.7, 0.05, 0.28).translate(0.55, top + 0.025, 0), solid('#1f2226', 0.7)));
+  const leash = new Mesh(new TorusGeometry(0.28, 0.035, 6, 20).rotateX(Math.PI / 2).translate(-half + 0.6, top + 0.04, 0.4), solid('#e0462f', 0.6));
+  group.add(leash);
+  // The fin under the tail, mostly in the water.
+  group.add(new Mesh(new BoxGeometry(0.5, 0.45, 0.05).translate(-half + 0.8, top - thick - 0.2, 0), solid('#2b2e33', 0.6)));
+  for (const mesh of group.children) mesh.castShadow = true;
+  return group;
+}
+
+/** The traction pad's diamond grooves, drawn once. */
+function drawnPad(): CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 64;
+  const c = canvas.getContext('2d')!;
+  c.fillStyle = '#ffffff';
+  c.fillRect(0, 0, 64, 64);
+  c.strokeStyle = 'rgba(0,0,0,0.45)';
+  c.lineWidth = 3;
+  for (let k = -64; k < 128; k += 16) {
+    c.beginPath(); c.moveTo(k, 0); c.lineTo(k + 64, 64); c.stroke();
+    c.beginPath(); c.moveTo(k + 64, 0); c.lineTo(k, 64); c.stroke();
+  }
+  const texture = new CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = RepeatWrapping;
+  texture.colorSpace = SRGBColorSpace;
+  return texture;
+}

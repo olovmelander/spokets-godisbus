@@ -95,14 +95,15 @@ export function prologuePose(layout: PrologueLayout, frame: PrologueFrame) {
       x: mix(mix(frame.ghost.x, layout.railing.x, lift), layout.edge.x, sneak),
       y: mix(mix(frame.ghost.y, layout.railing.y, lift), layout.edge.y, sneak) + hop,
       z: mix(mix(PLAY_Z, rail, lift), PLAY_Z, sneak),
-      tilt: sneak > 0 && sneak < 1 ? -0.12 : 0, turn: sneak > 0 ? 0.4 : Math.PI - 0.4, scale: 1,
+      // It turns round to go as it sets off, over a third of a second, and leans into its scurry and out of it.
+      tilt: -0.12 * Math.sin(Math.PI * sneak), turn: mix(Math.PI - 0.4, 0.4, between(t, 1.6, 1.95)), scale: 1,
     };
   }
   return {
     x: mix(frame.ghost.x, layout.railing.x, lift) + sneak * 2.7,
     y: mix(frame.ghost.y, layout.railing.y, lift),
     z: PLAY_Z,
-    tilt: sneak > 0 && sneak < 1 ? -0.1 : 0, turn: sneak > 0 ? 0.4 : Math.PI - 0.4,
+    tilt: -0.1 * Math.sin(Math.PI * sneak), turn: mix(Math.PI - 0.4, 0.4, between(t, 1.6, 1.95)),
     scale: 1 - between(t, 2.6, 2.95),
   };
 }

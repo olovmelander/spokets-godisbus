@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { CLIMB_SPEED, JUMP_SPEED, RUN_SPEED, WALK_SPEED } from '../../src/sim/constants';
 import type { PlayerState } from '../../src/sim/types';
 import { Sim } from '../../src/sim/sim';
-import { createPlayerMotion, createPlayerStandIn, playerPose } from '../../src/render/player-motion';
+import { createPlayerMotion, createPlayerStandIn, playerPose, strideRate, strideReach } from '../../src/render/player-motion';
 import { createModelRig, STANDING, type Pose } from '../../src/render/rig';
 
 const player = (more: Partial<PlayerState> = {}): PlayerState => ({ x: 0, y: 0, vx: 0, vy: 0, facing: 1, grounded: true,
@@ -53,6 +53,20 @@ describe('the player’s shared motion', () => {
     expect(runReach.legL).toBeGreaterThan(walkReach.legL + 0.3);
     expect(runReach.armL).toBeLessThan(0); expect(runReach.armR).toBeGreaterThan(0);
     expect(runReach.elbowR).toBeGreaterThan(runReach.elbowL);
+  });
+
+  it('paces the stride by how far the legs swing and by his size, so the planted foot holds still', () => {
+    for (const pace of [WALK_SPEED / RUN_SPEED, 0.7, 1]) {
+      // One step, half a turn of the stride, is as long as the ground the swinging leg covers.
+      const step = 0.8 * Math.sin(strideReach(pace));
+      expect(strideRate(step, pace)).toBeCloseTo(Math.PI, 6);
+      // At three times his size he takes a third as many steps for the same ground.
+      expect(strideRate(1, pace, 3)).toBeCloseTo(strideRate(1, pace) / 3, 6);
+    }
+    // A walk's cadence stays a small boy's: between two and five steps a second.
+    const walkSteps = strideRate(WALK_SPEED, WALK_SPEED / RUN_SPEED) / Math.PI;
+    expect(walkSteps).toBeGreaterThan(2);
+    expect(walkSteps).toBeLessThan(5);
   });
 
   it('leans into acceleration, plants to stop, then settles without marching in place', () => {
@@ -288,6 +302,11 @@ describe('the player’s shared motion', () => {
     for (let i = 0; i < 8; i++) bent = Math.max(bent, motion.update(player(), 0, 1 / 60, null).kneeL);
     expect(bent).toBeGreaterThan(before.kneeL + 0.2);
     const scripted = { ...STANDING, armR: 2.2, kneeL: 1.1, seat: 1.5, bounce: 0.2 };
+    // A scene's pose takes over from whatever he was doing within a third of a second, not in one frame; then it is
+    // held exactly, whatever he was doing.
+    const first = { ...motion.update(player({ vx: RUN_SPEED }), 2, 1 / 60, scripted, 1) };
+    expect(first.armR).toBeGreaterThan(0); expect(first.armR).toBeLessThan(1);
+    for (let i = 0; i < 20; i++) motion.update(player({ vx: RUN_SPEED }), 2, 1 / 60, scripted, 1);
     expect(motion.update(player({ vx: RUN_SPEED }), 2, 1 / 60, scripted, 1)).toEqual(scripted);
     expect(motion.update(player(), 2, 0, null)).toEqual(scripted);
     for (let i = 0; i < 90; i++) motion.update(player(), 2, 1 / 60, null);

@@ -141,6 +141,19 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
  * a hook and swings, collects the trail candy, and is carried back by the glitter bubble when he falls too
  * far.
  */
+/**
+ * Where a slamming platform is in its cycle, from its first stop (0) to its second (1): a rest at the first, a run
+ * gathering speed that bangs into the second, a rest there, and back the same way (Mover.cycle.slam).
+ */
+export function slamAt(t: number): number {
+  const u = t - Math.floor(t);
+  const REST = 0.12, RUN = 0.5 - REST;
+  if (u < REST) return 0;
+  if (u < 0.5) return ((u - REST) / RUN) ** 2;
+  if (u < 0.5 + REST) return 1;
+  return 1 - ((u - 0.5 - REST) / RUN) ** 2;
+}
+
 export class Sim {
   readonly prologue: PrologueSequence | null;
   /** The chapter's authored scenes (./scene.ts), or null in a chapter without any. */
@@ -851,7 +864,7 @@ export class Sim {
         const a = mover.def.stops[0]!;
         const b = mover.def.stops[1]!;
         const t = ((this.steps + 1) * STEP + (cycle.phase ?? 0)) / cycle.seconds;
-        const k = (1 - Math.cos(t * Math.PI * 2)) / 2;
+        const k = cycle.slam ? slamAt(t) : (1 - Math.cos(t * Math.PI * 2)) / 2;
         const x = mix(a.x, b.x, k);
         const y = mix(a.y, b.y, k);
         // The shallow tops carry feet, including on the downward half of their cycle. A jump has

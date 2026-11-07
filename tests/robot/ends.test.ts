@@ -212,8 +212,9 @@ describe('Epilog, Godiskalaset, in greybox', () => {
     it(`the robot plays it from the party to bed at ${fps} Hz`, () => {
       const result = playThrough(fps, epilog, {}, 200);
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
-      // The story's steps; the time card it opens on is no step of it.
-      const steps = did(result.flags).filter((flag) => flag !== 'scene:card');
+      // The story's steps; the time card it opens on, and the ghost's hop across the table, are no steps of it.
+      const steps = did(result.flags).filter((flag) => !flag.startsWith('scene:'));
+      expect(result.flags).toContain('scene:klonk-table');
       expect(steps.slice(0, 5).sort()).toEqual(['party:bertil', 'party:mamma', 'party:moa', 'party:pappa', 'party:spoket']);
       expect(steps.slice(5)).toEqual(['partied', 'knife', 'cut1', 'cut2', 'cut3', 'dots', 'teeth', 'goal']);
       // The ghost's feet, its name, Pappa's rule, and Elof's pride.

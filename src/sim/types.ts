@@ -108,8 +108,12 @@ export interface Mover {
   optional?: boolean;
   /** The word on the button where Knuffa or Dra is too plain: a key of `sv.verbs`, as "Sparka" for a football. */
   word?: string;
-  /** A repeating platform, between its two stops. Its phase is local, never saved as puzzle progress. `wait`: it is a hop away only for a moment, and he waits for that. */
-  cycle?: { seconds: number; phase?: number; wait?: boolean };
+  /**
+   * A repeating platform, between its two stops. Its phase is local, never saved as puzzle progress. `wait`: it is a
+   * hop away only for a moment, and he waits for that. `slam`: it rests at each stop a moment, then gathers speed
+   * and bangs into the other, as a door does in the wind; otherwise it eases in and out.
+   */
+  cycle?: { seconds: number; phase?: number; wait?: boolean; slam?: boolean };
 }
 
 /** A trail candy: where it floats, and the flag that has to be set before it is there at all. */
@@ -127,6 +131,23 @@ export interface Spot {
   at: Vec;
   /** For the picture: whoever of the family is shown here sits, in a boat, say. */
   seated?: boolean;
+  /** For the picture: whoever of the family is shown here stands on a paddle board and paddles. */
+  paddles?: boolean;
+  /**
+   * For the picture: where whoever of the family is shown here stands, when it is not by the spot itself (Pappa up
+   * on the bridge, called from the bank below). `z` is behind the play plane.
+   */
+  standsAt?: { x: number; y: number; z: number };
+  /**
+   * For the picture: once the spot is used (Pappa called), whoever of the family is shown here walks over and stands
+   * here instead (Pappa to his seesaw's high end). Without motion, or in a game taken up after it, they are there.
+   */
+  goesTo?: { x: number; y: number; z: number };
+  /**
+   * The flag that sends them there, when it is not the spot's own: Pappa, given his candy at the party, comes over to
+   * the carving once Elof has taken the knife.
+   */
+  goesWhen?: string;
   verb: 'turn' | 'take' | 'call' | 'give';
   /** A flag that has to be set before it can be used. A thing on a rail sets `placed:<its id>` once in place. */
   needs?: string;
@@ -372,11 +393,11 @@ export interface SimStart {
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
 export type MoverLook = 'boulder' | 'riverLog' | 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
-  | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy';
+  | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy' | 'hut-door';
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder' | 'shelf';
-export type SpotLook = 'kit' | 'casement' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
+export type SpotLook = 'toothbrushes' | 'kit' | 'casement' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
-  | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
+  | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'cocoa' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
   | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';
 export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none' | 'boot' | 'umbrella' | 'owl' | 'football' | 'raft';
 
@@ -640,7 +661,7 @@ export interface ChapterData {
    * For the picture only: things that stand about in a room, behind the play plane: a table, a chair. Where
    * an actor of a scene sits or stands at them is the scene's business.
    */
-  furniture?: { look: 'table' | 'chair' | 'stool'; at: Vec; z: number; face?: number }[];
+  furniture?: { look: 'table' | 'chair' | 'stool'; at: Vec; z: number; face?: number; cloth?: string }[];
   /**
    * For the picture only: from this x the chapter is out of doors: the house's wall gives way to the
    * garden's far scenery. Indoors before it.
@@ -717,15 +738,23 @@ export interface Storm {
    */
   buildings?: {
     kind: 'jettyArm' | 'pole' | 'store' | 'trestleTable' | 'pitch' | 'chess' | 'sunboard' | 'villa' | 'barn' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
-      | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce';
+      | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce'
+      | 'gardenset';
     x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string; marks?: { halfway: number; box?: { x: number; long: number }; front?: number }; model?: string; size?: number;
     /** A hut's logs tarred black, with white trim. */
     tar?: boolean;
+    /**
+     * A hut's door slides on a rail along its front, out to the right, the rail rising this far over the door's width:
+     * the door is a mover (look 'hut-door'), and the hut has its doorway, the rail, and its window on the left.
+     */
+    slider?: { top: number; rise: number };
     /** Turned about the upright, in quarter turns: a net or a table seen from its end. */
     turn?: number;
   }[];
   /** Warm windows of lit candles and lanterns, which glow through the rain. */
   glows?: { at: Vec; z?: number; size?: number; after?: string }[];
+  /** A lamp shining on him from somewhere (Moa from a window), while he is between `within`'s two x. */
+  beams?: { at: Vec; z: number; within: [number, number] }[];
 }
 
 /** A stage for the far scenery's life: what comes, and where the camera is when it does. */

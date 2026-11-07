@@ -1,6 +1,7 @@
 import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
 import type { ChapterData } from '../sim/types';
 import { createArmContact, createHandGrip } from './arm-contact';
+import { SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
 
 /**
  * A body's pose, as a scene's acting asks for it (src/render/acting.ts). Angles are in radians. The body faces
@@ -84,8 +85,10 @@ export function plantFeet(p: Pose, phase: number): void {
     const t = Math.min(1, Math.max(0, 0.5 - side * Math.cos(phase) * 2));
     return t * t * (3 - 2 * t);
   };
-  p.footL = -(p.legL - p.kneeL) * 0.55 * stance(1);
-  p.footR = -(p.legR - p.kneeR) * 0.55 * stance(-1);
+  // Swinging through, the foot is held up off the toe, nearly level, so the toe never catches the ground.
+  const sL = stance(1), sR = stance(-1);
+  p.footL = -(p.legL - p.kneeL) * (0.55 * sL + 0.9 * (1 - sL));
+  p.footR = -(p.legR - p.kneeR) * (0.55 * sR + 0.9 * (1 - sR));
 }
 
 export function blendPose(a: Pose, b: Pose, t: number, out: Pose = { ...STANDING }, floor = false): Pose {
@@ -129,8 +132,11 @@ export interface Rig {
   hand(side: 0 | 1, out: Vector3): Vector3;
   /** The lips in world space, following the head's nod and turn. */
   mouth(out: Vector3): Vector3;
-  /** Place a hand on a world-space contact after posing, without stretching the arm. */
-  reach(side: 0 | 1, target: Vector3, weight?: number): void;
+  /**
+   * Place a hand on a world-space contact after posing, without stretching the arm. `most`: how much of the arm's
+   * length it may use (1, all of it, as pointing does; less keeps the elbow bent, as holding something out does).
+   */
+  reach(side: 0 | 1, target: Vector3, weight?: number, most?: number): void;
   /** Place and aim the palm around a held thing; returns its actual centre after clamping the reach. */
   grip(side: 0 | 1, target: Vector3, fingerDirection: Vector3, out: Vector3, weight?: number): Vector3;
   /**
@@ -140,6 +146,12 @@ export interface Rig {
   breeze?(wind: number, dt: number, still: boolean, ruffle?: number): void;
   /** How tall the body stands, in EL. */
   readonly height: number;
+  /** Rain gear on, or off with null (./rain-gear.ts). */
+  dress?(gear: RainGear | null): void;
+  /** The cap off his head, lent away (Bertil's in Granskogen, "Min keps blir din båt"), or back on. */
+  bareHead?(bare: boolean): void;
+  /** Puts on a wardrobe made in Blender (./rain-gear.ts, fitWardrobe): its pieces are worn from then on. */
+  wear?(made: Object3D): void;
 }
 
 /**
@@ -351,6 +363,23 @@ export function createRehearsalRig(who: Role): Rig {
     },
     height: ADULT * s,
     pose,
+    dress(gear) {
+      // The coat over the body and arms; boots over the shins and shoes; a sock where a boot is off.
+      const set = (i: number, hex: string) => mesh.setColorAt(i, colour.set(hex));
+      for (const i of [0, 5, 6, 8, 9]) set(i, gear ? gear.coat : role.top);
+      for (const [side, shin, foot] of [[0, 12, 13], [1, 15, 16]] as const) {
+        const off = gear?.bootOff === side;
+        set(shin, gear && !off ? gear.boots : trousers);
+        set(foot, gear ? (off ? SOCK : gear.boots) : shoe);
+      }
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    },
+    bareHead(bare) {
+      // The rehearsal figure's cap is the box over its head: bare, it is the colour of hair.
+      if (!role.cap) return;
+      mesh.setColorAt(4, colour.set(bare ? hair : '#3e4445'));
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    },
     hand(side, out) {
       group.updateWorldMatrix(true, false);
       return out.copy(hands[side]).applyMatrix4(group.matrixWorld);
@@ -371,8 +400,8 @@ export function createRehearsalRig(who: Role): Rig {
       writePart(4);
       mesh.instanceMatrix.needsUpdate = true;
     },
-    reach(side, target, weight = 1) {
-      contacts[side].solve(target, weight);
+    reach(side, target, weight = 1, most = 1) {
+      contacts[side].solve(target, weight, most);
       contactParts(side);
     },
     grip(side, target, direction, out, weight = 1) {
@@ -508,12 +537,51 @@ export function createModelRig(model: Object3D, height: number): Rig {
     return hand && lower && contacts[i] ? createHandGrip(lower.node, hand, contacts[i]!) : null;
   });
   const sway = createSway(), soft = softParts(model);
+  // The rain gear's shells, made the first time it is worn (./rain-gear.ts), and the wardrobe made in Blender.
+  let shells: ReturnType<typeof buildShells> | undefined;
+  let wardrobe: Wardrobe | null = null, worn: RainGear | null = null, headBare = false;
   return {
     group,
     height,
+    dress(gear) {
+      worn = gear;
+      // The wardrobe made in Blender, once it has come; until then (or without one) shells of the body itself.
+      if (wardrobe) {
+        wearWardrobe(wardrobe, gear);
+        return;
+      }
+      if (shells === undefined) {
+        if (!gear) return;
+        const body = bodyOf(model);
+        shells = body ? buildShells(body, height) : null;
+      }
+      if (shells) wearShells(shells, gear);
+    },
+    bareHead(bare) {
+      headBare = bare;
+      // A model's cap is its own part, painted with its own material ("... cap"); under it, the wardrobe's own hair.
+      model.traverse((node) => {
+        const mesh = node as Mesh;
+        if (mesh.isMesh && !Array.isArray(mesh.material) && /\bcap$/.test(mesh.material.name)) mesh.visible = !bare;
+      });
+      // His own hair is there under the cap too; while it is on, only what is below its brim is drawn.
+      if (wardrobe?.hair) wardrobe.hair.visible = true;
+      if (wardrobe?.capped) wardrobe.capped.value = bare ? 0 : 1;
+    },
+    wear(made) {
+      if (wardrobe) return;
+      wardrobe = fitWardrobe(model, made);
+      if (!wardrobe) return;
+      // The shells made before it came go, and what was worn is put on again from the wardrobe.
+      if (shells) for (const shell of [shells.coat, ...shells.boots, ...shells.socks]) { shell.removeFromParent(); shell.geometry.dispose(); }
+      shells = null;
+      wearWardrobe(wardrobe, worn);
+      if (wardrobe.hair) wardrobe.hair.visible = true;
+      if (wardrobe.capped) wardrobe.capped.value = headBare ? 0 : 1;
+    },
     breeze(wind, dt, still, ruffle = 0) { if (dt > 0) soft(sway.step(wind, dt, still), still ? 0 : ruffle); },
     mouth(out) { return bones.head ? bones.head.node.localToWorld(out.copy(mouth)) : group.localToWorld(out.set(0, height * .89, height * .075)); },
-    reach(side, target, weight = 1) { contacts[side]?.(target, weight); },
+    reach(side, target, weight = 1, most = 1) { contacts[side]?.(target, weight, most); },
     grip(side, target, direction, out, weight = 1) {
       if (grips[side]) return grips[side]!(target, direction, out, weight);
       this.reach(side, target, weight);
