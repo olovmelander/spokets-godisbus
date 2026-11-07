@@ -622,7 +622,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let starDropTime = 0;
   let elofStance: Stance = 'stand';
   let hangLast = 0, hangWeight = 0;
-  let shoulderLift = 0, shoulderT = 0;
+  let shoulderLift = 0, shoulderT = 0, airStretch = 1;
   type NearShot = { w: number; pos: Vector3; at: Vector3 };
   const nearShot = (): NearShot => ({ w: 0, pos: new Vector3(), at: new Vector3() });
   const nearShots = { family: nearShot(), taste: nearShot(), shoulders: nearShot() };
@@ -1309,9 +1309,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       squash += (1 - squash) * ease(12, dt);
     }
     // Only a real jump/fall stretches the body: climbing, rides and story lifts keep their proportions.
-    const stretch = !elastic ? 1 : curr.grounded ? squash : 1 + clamp(curr.vy * 0.012, -0.05, 0.1);
-    // Knocked over by a drop he goes down on his back, lies a moment, and gets up.
-    const lying = curr.mode === 'down' ? Math.min(1, curr.t / 0.15, (1 - curr.t) / 0.25) * 1.4 * curr.facing : 0;
+    // Off the ground the stretch comes over a few frames, not all in the first.
+    airStretch = !elastic || curr.grounded ? squash : airStretch + (1 + clamp(curr.vy * 0.012, -0.05, 0.1) - airStretch) * ease(30, dt);
+    const stretch = !elastic ? 1 : curr.grounded ? squash : airStretch;
+    // Knocked over by a drop he goes down on his back, lies a moment, and gets up: softly at both ends.
+    const lying = curr.mode === 'down' ? smooth(Math.min(1, curr.t / 0.15, (1 - curr.t) / 0.25)) * 1.4 * curr.facing : 0;
     // The tilt turns about his middle, where the lace's pull goes through.
     const lift = scripted?.lift;
     elof.group.position.set(x - Math.sin(hang) * 0.5 + (lift?.x ?? 0), y + 0.5 - Math.cos(hang) * 0.5 + shoulderLift + (lift?.y ?? 0), lift?.z ?? 0);
@@ -1422,7 +1424,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const awake = !chapter.prologue || flags.has('blink');
       // It tips forward in a hop and rocks a little standing, about its own side: the stand-in's z, and the model's x,
       // which faces its own +z and is turned a quarter (./ghost-model.ts). The yaw goes first, so each is its own.
-      const tip = !awake ? 0 : hopping ? 0.25 * Math.sin(Math.PI * ghostState.t) : calmStory ? 0 : Math.sin(clock * 1.7) * 0.035;
+      const tip = !awake ? 0 : hopping ? 0.25 * Math.sin(Math.PI * ghostState.t) : calmStory ? 0 : Math.sin(clock * 1.7) * 0.026 + Math.sin(clock * 0.63 + 1.3) * 0.014;
       ghost.rotation.set(ghostFaces ? tip : 0, ghostFaces + ghostTurn, ghostFaces ? 0 : -tip, 'YXZ');
       if (chapter.prologue && prologue) {
         const pose = prologuePose(chapter.prologue, prologue);

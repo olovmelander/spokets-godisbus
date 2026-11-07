@@ -252,9 +252,9 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       under();
       if (stance === 'stand') {
         // Someone standing breathes and shifts a little.
-        out.lean = 0.015 * Math.sin(r * 1.3) * loop * energy;
-        out.armL = 0.04 + 0.025 * Math.sin(r * 1.1) * loop * energy;
-        out.armR = 0.04 + 0.025 * Math.sin(r * 1.1 + 1) * loop * energy;
+        out.lean = 0.015 * Math.sin(r * 1.3 + 0.6 * Math.sin(r * 0.21)) * loop * energy;
+        out.armL = 0.04 + (0.018 * Math.sin(r * 1.1) + 0.008 * Math.sin(r * 0.43 + 2)) * loop * energy;
+        out.armR = 0.04 + (0.018 * Math.sin(r * 1.1 + 1) + 0.008 * Math.sin(r * 0.51)) * loop * energy;
       }
       look(out, c);
       return out;
