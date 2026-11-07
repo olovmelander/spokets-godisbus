@@ -2,6 +2,58 @@
 
 ## State (7 November 2026, morning)
 
+- **Olov's morning feedback, and the Senare list (7 November 2026, morning, the same cloud session, PR #235 and the
+  private repository's PR #5).** Olov asked about Bertil's hair under the cap, sent a picture of arms through the
+  raincoats, then one of Morfar's sweater "som en fladdermus", and asked to go on with the Senare list.
+  - **Arms through the raincoats** (`src/render/view.ts`): each lamp is held out in front, on the side it lights,
+    so no arm crosses the chest through the coat.
+  - **Bertil's hair under his cap** (`src/render/rain-gear.ts`, `hairUnderCap`): his own hair shows below the brim
+    while the cap is on, and all of it once he has lent the cap.
+  - **Sleeves of their own** (private repository, `family/separate_sleeves.py`):
+    - **The fault:** every top's sleeves were sculpted as one surface with its trunk. An arm raised out from the
+      body dragged the side out with it, like a bat's wing (Morfar at the ladder, Moa's jacket).
+    - **The repair, as `refine_caps.py` did the caps:** build each person as approved and with `SLEEVES_APART` (each
+      sleeve or bare arm a tube of its own, set in at the shoulder like the raincoats'). Then find the approved
+      garment in the export, vertex for vertex, and put the new one in its place.
+    - **Checked:** everything else is bit-identical.
+    - **Who:** Mamma, Pappa, Moa, Bertil, Morfar, Mormor and Elof.
+    - **Records:** the input and output hashes are in `baked/private/sleeves-verification.json`. Pappa's and Bertil's
+      inputs are `refine_caps.py`'s outputs, so the chain is baseline → caps → sleeves.
+    - **Not possible:** a full rebuild would no longer be the approved likeness. The head's sculpting is not
+      exactly repeatable today.
+  - **The Senare list's story details, done:**
+    - **Granskogen:** the ghost's sweet lies on the vittra's doorstep once it has been there.
+    - **Billsta:** Moa and Bertil stand by the car's front from the start. Moa points at the lit window. At "Följ
+      vårt godis! Vi springer före." Moa waves, and they run up to the house, round its left end and in by the
+      door at its back, where the house hides them (Olov: the real door is at the back).
+      - New in the scene system: an actor key may say `away`, and from then on they are not drawn.
+    - **Flärken:** the second hut's own door is now the toy he rides: an old plank door hung on an iron rail. It
+      slides shut over the doorway and open to the right, and bangs at each end. The window has moved to the left.
+      - New: a cycle may `slam` (rest, gather speed, bang).
+      - The stops are a doorway apart, as low and as high as before, so the robot still rides it from the bench
+        up to the roof.
+    - **The epilogue:** given its candy, Klonk hops up onto the party table, across it, and down again as it is
+      named.
+    - **Granskogen's seesaw:** Pappa stands where Elof calls him, so he is in the picture on an upright phone too.
+      Once called, he walks over to his seesaw's high end by the ravine and goes down on one knee, turned to the
+      board, with a hand on its end until Elof flies ("Jag håller brädan").
+      - New: a spot may say where its helper walks once used (`goesTo`). In a game taken up afterwards, or without
+        motion, they are simply there.
+      - The family-help suite's Granskogen case now stands Elof on the low end, where that scene is.
+  - **Sun shadows, tried and taken back:** High already has a sun shadow map (the trunks, and a capsule for each
+    figure). Letting the landmarks (the cone, the log) and the movers cast too made no visible difference in these
+    lights, so it was not kept.
+    - **The next real step:** dappled light through the canopy (a light pattern on the sun, or leaves as casters).
+    - **The figures' own silhouettes** instead of capsules would change a deliberate choice: the shadow pass never
+      touches the private models.
+  - **Checks:**
+    - Typecheck; `npm test` (207 files, 2,130 tests); the build with its size gates (JS 534 of 540 KB, the site
+      4,334 of 4,608 KB with the family's models); the privacy check.
+    - Browser suites: Äventyr 2 (42), family help (55), story (34), optional paths (132), and the private caps
+      check (76 of 76 on the repaired models).
+    - **Locally, Playwright 1.56.1 wanted Chromium build 1194, but the container has 1243.** The suites ran with
+      `PLAYWRIGHT_BROWSERS_PATH` pointing at links to 1243. CI has its own browser.
+
 - **The graphics pass, and the Unravel look (6 November 2026, cloud session, branch `ccr-77db4123-5s8xa3`, PR
   #235).** Olov asked for a pass over everything visual in both adventures until 23:00, step by step: the ground near
   the camera ("ser utdragen ut"), the brooks, the animals and insects, trees, stones, cones, the mountain, the
@@ -4190,6 +4242,13 @@ and merge.** On the family devices, on High:
 - the lens: is the blur right (the far world soft, the near ground very soft, him and the path sharp)?
 - the storm: the rain gear on everyone, Bertil's boot, the family's lamps, Mamma on her SUP;
 - the brooks in Granskogen (the eye rises over them, a far bank of moss ends them) and Myren's hummocks;
+- the morning's fixes (7 November):
+  - the arms outside the raincoats, and Bertil's hair under his cap;
+  - everyone's sleeves when an arm goes out (Morfar at Billsta's ladder);
+  - Moa and Bertil running to the house in Billsta;
+  - Flärken's sliding door;
+  - Klonk on the party table;
+  - Pappa kneeling at his seesaw;
 - the animals (the night of 7 November): the crane kneeling on Myren and flying on Berget, its chick walking after
   him, the ladybird on its back, the ant columns, the small birds, the jay's head, the owls and the otter turning
   their heads, the hedgehog and the frog;
@@ -4199,7 +4258,7 @@ and merge.** On the family devices, on High:
 It needs no work on Olov's computer; the Blender work (the stumps, the tall pine, the crane, the creatures' heads, and
 the family's rain gear in the private repository) was made in the cloud session with Blender 5.2's `bpy` module, and
 the scripts are the sources (`art/blender/a2-nature.py`, `crane.py`, `a2-creatures.py`; `family/wardrobe.py` there). **Merge the private repository's
-PR #5 (`rain-gear`, the family's rain gear and Bertil's hair) together with #235**, so that the deploy carries the
+PR #5 (`rain-gear`, the family's rain gear, Bertil's hair and everyone's sleeves) together with #235**, so that the deploy carries the
 wardrobes; without it the game falls back to the older rain gear drawn from the bodies.
 
 The full game audit above repairs reproduced gameplay, persistence, control, audio and rendering defects across
@@ -4597,6 +4656,7 @@ The older list, still true where it is not struck:
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
 | The graphics pass and the Unravel look (6 Nov) | Olov's request: every visual in both adventures, step by step until 23:00, then "mer likt Unravel" with a larger budget; later the SUP, the rain gear and the story's details, until 02:00 | One cloud session's evening and night | — / 0 so far | A lens (depth of field, contact shade, film look, near pollen), close materials (ground, boards, turf, bark, granite, grain, moss), the home's doorway, brooks, huts, beetles, braid, puzzle weight; Mamma's SUP, rain gear through the storm, Bertil's boot, the family's lamps, twelve more story details. |
+| Olov's morning list (7 Nov) | Olov's request: the arms through the coats, Bertil's hair, the bat-wing sweaters, then the Senare list | The same cloud session's morning | — / 0 so far | Lamps held out in front; Bertil's hair under the brim; every approved model's sleeves repaired without a rebuild (private PR #5); Billsta's runners, Flärken's sliding door, Klonk on the table, Pappa at his seesaw, the vittra's sweet; sun shadows for landmarks tried and taken back. |
 | The night to 07:00 (6–7 Nov) | Olov's request: the rain gear made properly in Blender, Bertil's hair, the puddle and the water, every animal and every character's motion, "hela natten till 07:00" without questions | The rest of the same cloud session's night | — / 0 so far | The family's rain gear and Bertil's hair in Blender (private PR #5), the body hidden under it; the crane in Blender and heads of their own for four of the kit's creatures; every animal's motion; Elof's feet, and no one-frame snaps for anyone; the brook's far bank, wet rock, the garden's boulder, Myren's pine; splashes in the storm; five more story details. CI green between pushes; three checks that flake under software rendering given longer waits. |
 | Lighter nights (6 Nov) | Olov's request: not so dark at the darkest, scenes too, mood kept | Part of one cloud session | — / 0 so far | 52 frames measured before and after; more light on the play plane at night, lighter night water, skies unchanged. |
 | Klonk carved again (6 Nov) | Olov's request: improve Klonk's design after the carving and the poster | Part of one cloud session, Blender 5.2 as a Python module | — / 0 so far | A new build from knife-cut blocks with baked wood and paint; private repository PR #4. |
@@ -4812,15 +4872,15 @@ The older list, still true where it is not struck:
   mirror's strip ends. Seen from above, the forest's haze still greys the
   water a little. The dark underwater frames in the light pass's
   measurements cannot happen in play: the glitter bubble catches him at the surface.
-- Real-time shadows from the sun, which Unravel has; the dappled light on the forest floor is a shader stand-in.
-- The story's details still not drawn (found on 6 November by reading Äventyr 2's lines against the picture):
-  - Moa and Bertil running ahead in Billsta ("Följ vårt godis! Vi springer före."), who are only heard;
-  - Flärken's door banging on its hinges ("Pang! Dörren…"), which is a sliding plank.
-  - In Äventyr 1: Elof lifting the ghost up the
-    cliff on Berget ("Lyft"), Pappa holding the seesaw board in Granskogen (he stands 8 EL from its high end, out of
-    reach; moving him is a staging change), the
-    candy the ghost leaves at the vittra door, the toothbrush in the epilogue, Klonk hopping across the party table,
-    and Pappa beside Elof as they carve.
+- Sun light through leaves, which Unravel has. High has a sun shadow map: the trunks cast, and each figure as a
+  capsule. The dappled light on the forest floor is a shader stand-in.
+  - Landmarks and movers casting too made no visible difference (7 November) and was taken back.
+  - Next: a light pattern of leaves on the sun, or the canopy as casters.
+- The story's details still not drawn:
+  - In Äventyr 1: Elof lifting the ghost up the cliff on Berget ("Lyft"), the toothbrush in the epilogue, and Pappa
+    beside Elof as they carve.
+  - Done on 7 November: Moa and Bertil running ahead in Billsta, Flärken's door, Pappa holding the seesaw, the
+    ghost's sweet at the vittra door, and Klonk hopping across the party table.
     Tried and taken back: Elof holding the old trägubbe on Pappa's shoulders in Norrsken. The carving is nearly as
     tall as he is, so in his hand it rose over his face, and the finale suite keeps both carvings below it.
 - The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
