@@ -852,14 +852,18 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
   let demonstration: DemoPose[] = [];
   let demoKey = '';
   let elapsed = 0;
-  function update(help: HelpState, x: number, y: number, standY: number, clock: number, dt: number, still: boolean): void {
+  function update(help: HelpState, x: number, y: number, standY: number, clock: number, dt: number, still: boolean, from?: { x: number; y: number }): void {
     const { step, at } = help;
     const here = step > 0 && at !== null;
     if (at) last = at;
     // The ghost helps from above the trail: calling it must not bypass the chase's distance.
     // The jay still flies up from beside Elof, and both leave upwards.
     const ahead = GHOST_CLEARANCE * 0.75;
-    if (here && shown === 0) flyer.position.set(x + (ghost ? ahead : -0.6), y + (ghost ? ahead : 1.4), 0.4);
+    // The ghost comes to help from where he saw it last, so it is the same friend, not a second one appearing.
+    if (here && shown === 0) {
+      if (ghost && from) flyer.position.set(from.x, from.y, 0.4);
+      else flyer.position.set(x + (ghost ? ahead : -0.6), y + (ghost ? ahead : 1.4), 0.4);
+    }
     shown = still ? (here ? 1 : 0) : Math.min(1, Math.max(0, shown + (here ? dt : -dt) / 0.4));
     const cycle = clock % 3;
     const doubleKnock = Math.max(0, 1 - Math.abs(cycle - 0.9) / 0.12) + Math.max(0, 1 - Math.abs(cycle - 1.2) / 0.12);

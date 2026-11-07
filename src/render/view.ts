@@ -1155,7 +1155,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       poff = tall !== want;
       tall = directions.elof?.size != null ? want : tall + Math.sign(want - tall) * Math.min(Math.abs(want - tall), ((sized.scale - 1) * dt) / 1.2);
     }
-    helper.update(help, x, y, curr.standY, clock, dt, lessMotion());
+    helper.update(help, x, y, curr.standY, clock, dt, lessMotion(), ghostPlace.visible ? ghostPlace.position : undefined);
     // The helper is the same friend, not a second ghost alongside the one he is following.
     ghostPlace.visible = chapter.ghost !== undefined && !(ghostHelps && helper.active);
     hiddenSweets.update(flags, clock, dt, reaction?.kind === 'hidden' ? reaction.index : undefined, response);
