@@ -32,6 +32,13 @@ export function kitLife(kind: string, thing: Object3D, base: Rest, clock: number
     thing.rotation.y = base.turn + 0.25 * Math.sin(t * 0.37) * smooth(Math.sin(t * 0.9) + 0.4);
   } else if (kind === 'groda') {
     thing.scale.y = base.size * (1 + 0.01 * Math.sin(t * 2.6));
+    // Its head, where it has one of its own, tilts now and then to look up, and its throat swells and falls.
+    const head = thing.getObjectByName('kit-head');
+    if (head) {
+      head.rotation.x = -0.18 * Math.max(0, Math.sin(t * 0.43)) ** 4;
+      head.rotation.z = 0.12 * Math.sin(t * 0.29);
+      head.scale.y = 1 + 0.04 * Math.max(0, Math.sin(t * 5.2)) * Math.max(0, Math.sin(t * 0.7));
+    }
     // About every seven seconds a hop on the spot: a crouch, up, and down with a give.
     const k = ((t % 7) + 7) % 7;
     if (k < 0.14) thing.scale.y = base.size * (1 - 0.1 * Math.sin((k / 0.14) * Math.PI));

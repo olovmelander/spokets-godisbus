@@ -342,12 +342,16 @@ if wanted('groda'):
     DARK = tone('#3a3c20')
     BELLY = tone('#c8c090')
     ball(part, Vector((0.0, 0.1, 0.32)), (0.38, 0.52, 0.3), 2, SKIN_)
-    ball(part, Vector((0.0, -0.36, 0.42)), (0.33, 0.3, 0.2), 2, SKIN_)
     ball(part, Vector((0.0, -0.32, 0.26)), (0.27, 0.27, 0.12), 1, BELLY)
+    # Its head and its eyes, a thing of their own ('groda-huvud') that the game tilts about (0, -0.12, 0.36).
+    top = new_part()
+    ball(top, Vector((0.0, -0.36, 0.42)), (0.33, 0.3, 0.2), 2, SKIN_)
     for side in (-1.0, 1.0):
-        ball(part, Vector((side * 0.2, -0.4, 0.58)), (0.1, 0.1, 0.1), 1, SKIN_)
-        ball(part, Vector((side * 0.235, -0.44, 0.6)), (0.07, 0.07, 0.07), 1, tone('#c89a30'))
-        ball(part, Vector((side * 0.26, -0.49, 0.6)), (0.038, 0.03, 0.044), 1, tone('#100e0a'))
+        ball(top, Vector((side * 0.2, -0.4, 0.58)), (0.1, 0.1, 0.1), 1, SKIN_)
+        ball(top, Vector((side * 0.235, -0.44, 0.6)), (0.07, 0.07, 0.07), 1, tone('#c89a30'))
+        ball(top, Vector((side * 0.26, -0.49, 0.6)), (0.038, 0.03, 0.044), 1, tone('#100e0a'))
+    finish(top, 'groda-huvud', sharp=60.0, strength=0.4, reach=0.2, floor=None, leaf=True)
+    for side in (-1.0, 1.0):
         ball(part, Vector((side * 0.42, 0.34, 0.2)), (0.17, 0.42, 0.17), 2, SKIN_)
         ball(part, Vector((side * 0.56, 0.0, 0.05)), (0.17, 0.3, 0.05), 1, DARK)
         ball(part, Vector((side * 0.3, -0.52, 0.09)), (0.07, 0.2, 0.08), 1, SKIN_)

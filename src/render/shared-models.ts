@@ -32,7 +32,7 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
  * The creatures whose head is a thing of its own in the kit (art/blender/a2-creatures.py, `<name>-huvud`), and where
  * their neck is in the model's own space (glTF's: y up, the front towards +z): the pivot the head turns about.
  */
-const NECKS: Record<string, readonly [number, number, number]> = { uggla: [0, 1.42, 0], utter: [0, 1.3, 0.04], igelkott: [0, 0.3, 0.55] };
+const NECKS: Record<string, readonly [number, number, number]> = { uggla: [0, 1.42, 0], utter: [0, 1.3, 0.04], igelkott: [0, 0.3, 0.55], groda: [0, 0.36, 0.12] };
 
 /** What stands outdoors and is shown weathered: the built things, the nature kit, and Olympia's hall and stand. */
 const WEATHERED = new Set([...BUILT, ...NATURE, 'olympia-hall', 'olympia-stand']);
