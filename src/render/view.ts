@@ -622,7 +622,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let starDropTime = 0;
   let elofStance: Stance = 'stand';
   let hangLast = 0, hangWeight = 0;
-  let shoulderLift = 0;
+  let shoulderLift = 0, shoulderT = 0;
   let homeJourney = false;
   assets
     .manifest()
@@ -1015,7 +1015,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (onShoulders) homeJourney = true;
     const wantShoulders = onShoulders ? 4.25 : 0;
     const calmStory = lessMotion();
-    shoulderLift = calmStory ? wantShoulders : shoulderLift + Math.sign(wantShoulders - shoulderLift) * Math.min(Math.abs(wantShoulders - shoulderLift), dt * 8.5);
+    // Up onto Pappa's shoulders and down again in half a second, starting and stopping softly.
+    const shoulderWant = wantShoulders > 0 ? 1 : 0;
+    shoulderT = calmStory ? shoulderWant : shoulderT + Math.sign(shoulderWant - shoulderT) * Math.min(Math.abs(shoulderWant - shoulderT), dt / 0.5);
+    shoulderLift = 4.25 * smooth(shoulderT);
     clock += dt;
     // What lives on a mover moves of itself: the ants under Granskogen's needle mats.
     for (const mesh of moverMeshes) (mesh.children[0]?.userData.tick as ((at: number) => void) | undefined)?.(clock);

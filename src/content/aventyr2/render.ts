@@ -1498,10 +1498,16 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       figure.userData.warm = spot.word === 'lifted';
       // It trembles until it has its cap back, and then it hops. On the shelf in Stormkvällen the gust takes it
       // ("Lillgubben! Vinden tog honom!"), out through the window after the old one.
-      return standing(spot, figure, (clock) => {
+      // Its gladness starts when it has its cap back, from the ground, and grows in over a moment: no hop is caught
+      // halfway up, and the trembling fades into the sway.
+      let gladFor = 0;
+      return standing(spot, figure, (clock, dt) => {
         const glad = elof.flags?.has('scene:motet') ?? false;
-        figure.rotation.z = glad ? Math.sin(clock * 1.7) * 0.06 : Math.sin(clock * 5.3) * 0.03;
-        figure.position.y = glad ? gladHop(clock) : 0;
+        gladFor = glad ? gladFor + dt : 0;
+        const k = smooth(gladFor / 0.4);
+        const tremble = Math.sin(clock * 5.3) * 0.03 + Math.sin(clock * 8.1 + 1) * 0.012;
+        figure.rotation.z = tremble * (1 - k) + Math.sin(gladFor * 1.7) * 0.06 * k;
+        figure.position.y = glad ? gladHop(gladFor) * k : 0;
       }, spot.id.startsWith('decor:') && spot.word !== 'lifted' ? 'blown' : 'shrink');
     },
     pumpkin: (spot) => {
@@ -2039,7 +2045,12 @@ function aftermath(): SpotProp {
 }
 
 /** The little one's hops when it is glad: short, and well apart. Its cap goes with them. */
-const gladHop = (clock: number) => Math.abs(Math.sin(clock * 2.6)) ** 6 * 0.24;
+/** A glad hop, from the ground at `t` = 0, each a little higher or lower than the last. */
+const gladHop = (t: number) => {
+  const beat = t * 2.6 / Math.PI, n = Math.floor(beat);
+  const height = 0.24 * (0.8 + 0.4 * (Math.sin(n * 7.13) * 0.5 + 0.5));
+  return Math.sin((beat - n) * Math.PI) ** 6 * height;
+};
 
 /** The fallen long arm of Klonk's seesaw comes to rest with its top on the ground. */
 const TIPPED = -0.16;
