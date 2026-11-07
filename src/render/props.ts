@@ -445,6 +445,23 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.add(forestSocket(new Group().add(frame, door, root, ball(0.025, solid('#dfc372', 0.5), 0.16, 0.33, 0.17)), { shape: 'vittradorr', size: 0.85 }), gift, candy);
       return { group, update(used) { gift.scale.setScalar(used ? 1 : 0); drawnWhile(gift, used); } };
     }
+    case 'rootHole': {
+      // The hole between the birch's roots that the ghost creeps into in the garden (chapter 1): a dark mouth in a
+      // low mound of earth, under two roots that arch out of the ground over it, so that it reads as a way in.
+      const root = solid('#8f7f6b', 0.95);
+      const arch = (radius: number, tube: number, x: number, z: number, turn: number) => {
+        const piece = new Mesh(new TorusGeometry(radius, tube, 6, 16, Math.PI), root);
+        piece.position.set(x, -0.04, z);
+        piece.rotation.y = turn;
+        return piece;
+      };
+      group.add(
+        ball(0.55, solid('#4a3826', 1), 0, -0.06, -0.05, [1.35, 0.28, 0.7]),
+        ball(0.34, solid('#0b0704', 1), 0, 0.1, 0.12, [1.15, 0.8, 0.12]),
+        arch(0.46, 0.08, 0, 0.16, 0.15), arch(0.36, 0.065, 0.32, -0.2, -0.4),
+      );
+      return { group, update() {} };
+    }
     case 'keepsake': {
       const paper = ball(0.2, solid('#f2df9a'), 0, 0, 0, [1, 1, 0.1]);
       const leaf = ball(0.1, solid('#5f923f'), 0, 0, 0.04, [0.7, 1.3, 0.15]);

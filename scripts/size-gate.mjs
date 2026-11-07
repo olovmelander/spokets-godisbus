@@ -1,6 +1,7 @@
-// Gate 2 (plan §6.12): the first playable in at most 3 MB as served, with at most 540 KB of gzipped JS (450 KB until
+// Gate 2 (plan §6.12): the first playable in at most 3 MB as served, with at most 550 KB of gzipped JS (450 KB until
 // 4 November 2026, when Olov widened the budget for the visual upgrade; three r187 alone took the last of the 450;
-// 520 KB until 6 November, when he widened the graphics budget again, "rejält", for the Unravel look).
+// 520 KB until 6 November, when he widened the graphics budget again, "rejält", for the Unravel look; 540 KB until
+// 7 November, when the water, the far animals and the garden's root hole took the last of it, at the same word).
 // Runs after `vite build`. Everything in dist/ is the boot pack, except a chapter pack's own JavaScript: Äventyr 2
 // (docs/aventyr-2.md) is a chunk that is fetched only when it is played, and has a gate of its own.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -9,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
-const JS_GZIP_MAX = 540 * 1024;
+const JS_GZIP_MAX = 550 * 1024;
 // 4.5 MB as served for the whole site (from 4 MB on 7 November 2026, at Olov's "höj grafikbudgeten rejält om det
 // behövs"): the family's rain gear and Äventyr 2's rebuilt nature, with the family's own models in the deploy.
 const BOOT_MAX = 4.5 * 1024 * 1024;

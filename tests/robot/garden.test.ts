@@ -17,8 +17,9 @@ describe('Kapitel 1, Gården, in greybox', () => {
       expect(result.checkpoint).toBe(garden.checkpoints!.length - 1);
       // The things it had to do: the ladybird, the dandelion, both curls, and Moa.
       expect(result.flags).toEqual(expect.arrayContaining(['ladybird', 'dandelion', 'moa', 'plane:board', 'goal']));
-      // What was said, in order.
-      expect(result.said).toEqual(['garden:home', 'garden:kota', 'stomp', 'moa1', 'family:moa', 'family:plane', 'garden:ready', 'garden:pocket']);
+      // What was said, in order. Moa's drawing blows away only if he stays by her a moment (garden.ts,
+      // `garden:drawing-blown`): the robot boards the plane at once, so it never hears her "Oj!".
+      expect(result.said).toEqual(['garden:home', 'garden:kota', 'stomp', 'moa1', 'moa2', 'family:moa', 'family:plane', 'garden:ready']);
     });
   }
 

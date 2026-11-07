@@ -1,5 +1,36 @@
 # Handover
 
+## State (7 November 2026, night)
+
+- **Chapter 1: the ghost, the roots and Moa's drawing, made clear (Olov: "där fattar man inte riktigt vad som händer
+  när spöket åker in bland rötterna, och moa har tappat något … fixa replikerna och det visuella så det blir
+  tydligare").**
+  - **The root hole** (`rootHole`, `src/render/props.ts`; decor in `garden.ts` at x 163.4):
+    - There was none: the ghost only shrank away on the lawn. Now a dark hole in a mound of earth, under two birch
+      roots that arch over it, is where it goes.
+    - **The ghost creeps in:** it stands at the hole juggling a sweet, and when Elof comes near it tips forward and
+      slides down into it as it shrinks, over about two seconds. This is the perch's new picture-only `into`.
+    - **Moa:** she watches it go, then goes down on one knee, as Pappa kneels by his seesaw, and reaches into the hole.
+  - **The lines, in order:**
+    - Moa: "Spöket kröp ner under roten!" and "Hålet går under häcken, till skogen." (new, `rootHedge`), then "Jag får
+      inte plats. Men jag har en idé!".
+    - Called, she says "Mitt flygplan tar dig över häcken!" and "Kliv på när du vill, så kastar jag.".
+  - **Moa's drawing:**
+    - **The gust:** 2.5 seconds after the plane is ready, if Elof is still by her, it blows out of her hand
+      (`garden:drawing-blown`, without holding him). It flutters up by her and sails away left towards the shaving
+      bridge, where it lies.
+    - **Her line:** she says "Oj! Min teckning blåste in under bron!".
+    - **If he boards at once:** he never sees it, and the side path stays optional.
+    - **The objectives:** they now say the wind took it there.
+  - **JS gate:** 550 KB, from 540 (plan §6.12, at Olov's "utöka grafikbudgeten rejält"). The build is at 540.3 KB.
+  - **Recordings:** `rootFingers`, `familyMoa`, `familyMoaPlan`, `gardenReady` and `gardenPocket` changed, so they are
+    silent until the new voices are made, like the evening's.
+  - **Checked:**
+    - pictures at 844×390 and 390×844 of the hole, Moa kneeling, the ghost before and after it creeps in, the lines and
+      the drawing in flight;
+    - typecheck, `npm test` (2,133), the build and the privacy check.
+  - **The next step needs:** nothing from Olov's computer.
+
 ## State (7 November 2026, late evening)
 
 - **The dialogue in good Swedish (Olov: "Finns det några dialoger som inte är på korrekt svenska? Typ när Elof ska åka på
@@ -4878,6 +4909,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The roots and Moa's drawing (7 Nov, night) | Olov's request: make clear what happens when the ghost goes into the roots and what Moa dropped | Part of the same cloud session | — / 0 so far | A root hole the ghost creeps into, Moa kneeling at it, clearer lines, and her drawing seen to blow away; JS gate to 550 KB. |
 | The dialogue in good Swedish (7 Nov, late evening) | Olov's request: find and fix dialogue that isn't correct Swedish, the bird ride first | Part of the same cloud session, with two reading agents | — / 0 so far | About 60 lines rewritten in both adventures; the crane has its own button; three recorded lines silent until the new voices. |
 | Water as a block on an upright phone (7 Nov, evening) | Olov's photos: the water looked like a block you could see into | Part of the same cloud session | — / 0 so far | Stormgården and Billsta draw their water as garden pools with a near shore; Älven's and Stormens öga's river runs on past the camera. |
 | Living water and big animals (7 Nov, afternoon) | Olov's request: water that moves, with small waves; more big forest animals walking as silhouettes | The same cloud session's afternoon | — / 0 so far | Rings, drifting needles and leaves, a swell on lakes and rivers; a moose cow and calf, a roe deer and a bear rendered in Blender for the far scenery. The forest animals don't read in the picture yet (first in Next). |
