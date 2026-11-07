@@ -1,7 +1,8 @@
 import type { PlaceId } from '../sim/types';
 
 /**
- * The life in the far scenery: a moose in the mist across the bog, cranes in a V, smoke from a far chimney,
+ * The life in the far scenery: a moose in the mist across the bog, a cow and her calf, a roe deer and a bear in the
+ * forest, a deer on the neighbours' meadow, cranes in a V, smoke from a far chimney,
  * the valley's windows lighting one by one at dusk. It is scenery and nothing else: it answers no button, it
  * is made of the far pictures' own pale stuff, and something always passes in front of it.
  *
@@ -15,7 +16,7 @@ import type { PlaceId } from '../sim/types';
 export type Ink = readonly [number, number, number];
 
 /** The atlas's size in pixels. */
-export const ATLAS = [1024, 512] as const;
+export const ATLAS = [1024, 1024] as const;
 
 /** A strip of cells in the atlas: its left and top, one cell's width and height, how many cells, how many in a row. */
 export type Strip = readonly [x: number, y: number, wide: number, tall: number, cells: number, row: number];
@@ -35,6 +36,13 @@ export const STRIPS = {
   dot: [960, 64, 32, 32, 1, 1],
   /** A shooting star, falling to the left: bright at its head, nothing at its tail. */
   streak: [0, 256, 128, 64, 1, 1],
+  /** A moose cow walking, her calf at her heels taking two steps to her one: twelve cells, a whole cycle. */
+  pair: [0, 512, 204, 96, 12, 5],
+  /** A brown bear's walk, rolling, its head swinging. */
+  bear: [408, 704, 96, 64, 12, 6],
+  /** A roe deer's walk, and her standing: as she stopped, her head coming up and turning this way, an ear flicked. */
+  deer: [0, 832, 96, 72, 12, 10],
+  deerStand: [192, 904, 96, 72, 6, 6],
 } satisfies Record<string, Strip>;
 
 /**
@@ -72,8 +80,31 @@ export const WALK = {
   stand: 4.4,
 } as const;
 
+/** How a walker walks, as `WALK` says the moose does, with its own cells: its walk, and its standing if it stops. */
+export interface Walker extends Omit<typeof WALK, 'fps' | 'stride' | 'cell' | 'foot' | 'tall' | 'shade' | 'mist' | 'hoof' | 'halt' | 'stand'> {
+  fps: number; stride: number; cell: number; foot: number; tall: number; shade: number; mist: number; hoof: number; halt: number;
+  /** How long it stands, when it stops. */
+  stand: number;
+  walk: Strip;
+  looks?: Strip;
+}
+
+/**
+ * The walkers, as art/blender/life.py builds them (life.json has their numbers): the bull moose; a moose cow with her
+ * calf; a roe deer, who stops and looks up as the moose does; and a brown bear. Each cycle is twelve cells.
+ */
+export type WalkerName = 'moose' | 'pair' | 'deer' | 'bear';
+export const WALKERS: Record<WalkerName, Walker> = {
+  moose: { ...WALK, walk: STRIPS.walk, looks: STRIPS.stand },
+  pair: { fps: 10, stride: 1.269, cell: 5.6, foot: 0.22, tall: 2.05, shade: 0.1283, mist: 0.35, hoof: 0.35, halt: 5, stand: 0, walk: STRIPS.pair },
+  deer: { fps: 12, stride: 0.62, cell: 2, foot: 0.12, tall: 1.14, shade: 0.1302, mist: 0.3, hoof: 0.4, halt: 5, stand: 3.6, walk: STRIPS.deer, looks: STRIPS.deerStand },
+  bear: { fps: 9, stride: 0.78, cell: 2.7, foot: 0.16, tall: 1.24, shade: 0.137, mist: 0.3, hoof: 0.4, halt: 5, stand: 0, walk: STRIPS.bear },
+};
+
 /** Something that happens on a stage a chapter names: an animal that walks across, a flock that flies over. */
 export interface Role {
+  /** A walker: which animal it is. Left out: the bull moose. */
+  walker?: WalkerName;
   act: 'walk' | 'flock';
   slot: number;
   /** One colour, before the place's haze is mixed in, and how solid it is. */
@@ -151,11 +182,17 @@ export const LIFE: Partial<Record<PlaceId, PlaceLife>> = {
   },
   forest: {
     haze: FOREST_MIST,
-    // Two depths of trunks pass in front of it.
-    slots: [{ z: -54, hold: 0.58, sink: 0.17, haze: 0.3 }],
+    // Behind the nearest picture's trunks and its mist, in front of the rest: so a shape that crosses a gap between
+    // the trunks reads as a beast's, darker than the haze it walks through, as the bog's bull is against its mist.
+    slots: [{ z: -40, hold: 0.83, sink: 0.25, haze: 0.12 }],
     roles: {
-      // Nearer and so bigger, 2.6 EL at the shoulder, and no more than a shape of the forest's own green haze.
-      moose: { act: 'walk', slot: 0, ink: [56, 90, 84], alpha: 0.8, size: 1.3, y: -0.6, odds: 1 / 3, calm: true, known: true },
+      // A shape in the forest's own green-grey, dark against the light between the trunks.
+      moose: { act: 'walk', slot: 0, ink: [42, 58, 54], alpha: 0.85, size: 1.15, y: -0.6, odds: 1 / 3, calm: true, known: true },
+      // A moose cow with her calf at her heels, in one visit of two; a roe deer, who stops and looks this way; and, in
+      // one visit of three, a bear rolling along in the dark between the trunks. Each as big as the bull is, to scale.
+      pair: { act: 'walk', walker: 'pair', slot: 0, ink: [42, 58, 54], alpha: 0.85, size: 1.1, y: -0.6, odds: 1 / 2, calm: true, known: true },
+      deer: { act: 'walk', walker: 'deer', slot: 0, ink: [62, 66, 56], alpha: 0.85, size: 1.2, stops: true, y: -0.55, calm: true, known: true },
+      bear: { act: 'walk', walker: 'bear', slot: 0, ink: [30, 38, 36], alpha: 0.88, size: 1.15, y: -0.6, odds: 1 / 3, calm: true, known: true },
     },
   },
   garden: {
@@ -163,7 +200,11 @@ export const LIFE: Partial<Record<PlaceId, PlaceLife>> = {
     // On the picture with the neighbours' houses, behind the birches and the hedge: as good as at its depth, so
     // that the smoke stays over its roof out to the picture's edges.
     slots: [{ z: -61.9, hold: 0.44, sink: 0.04, haze: 0.3 }],
-    roles: { geese: GEESE },
+    // A roe deer comes out on the neighbours' meadow in the morning, stops, looks this way and walks on.
+    roles: {
+      geese: GEESE,
+      deer: { act: 'walk', walker: 'deer', slot: 0, ink: [96, 104, 98], alpha: 0.75, size: 1.3, stops: true, y: -0.45, calm: true, known: true },
+    },
     // The two bigger houses of the picture at z -62 (backdrop.ts, GARDEN): 96 and 318 of its 512 across 140 EL.
     smoke: { at: [[27.8, 8.2], [88.1, 6.6]], every: 140, puffs: 6, ink: SMOKE_INK, alpha: 0.6 },
   },

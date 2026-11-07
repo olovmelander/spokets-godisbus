@@ -39,10 +39,11 @@ export function solveArm(shoulder: Vector3, elbow: Vector3, hand: Vector3, targe
 
 /**
  * Reach after applying the authored pose. Uses the actual joints and preserves their lengths and rest roll.
- * A Vector3 hand is a tip in the lower joint's local space. Weight blends from the currently posed hand.
+ * A Vector3 hand is a tip in the lower joint's local space. Weight blends from the currently posed hand. `most` is how
+ * much of the arm's full length a reach may use: a hand held out to give something keeps a bend at the elbow.
  * The solve takes place above the shoulder, so transforms/scales around the rig do not distort its anatomy.
  */
-export function createArmContact(upper: Object3D, lower: Object3D, hand: Object3D | Vector3): (worldTarget: Vector3, weight?: number) => void {
+export function createArmContact(upper: Object3D, lower: Object3D, hand: Object3D | Vector3): (worldTarget: Vector3, weight?: number, most?: number) => void {
   const shoulder = new Vector3(), elbow = new Vector3(), wrist = new Vector3(), target = new Vector3();
   const wantedElbow = new Vector3(), wantedHand = new Vector3(), from = new Vector3(), to = new Vector3();
   const pole = new Vector3(), candidate = new Vector3();
@@ -50,7 +51,7 @@ export function createArmContact(upper: Object3D, lower: Object3D, hand: Object3
   const handNode = hand instanceof Object3D ? hand : null;
   const tip = handNode ? null : (hand as Vector3).clone();
   const handPosition = (out: Vector3) => handNode ? handNode.getWorldPosition(out) : lower.localToWorld(out.copy(tip!));
-  return (worldTarget, weight = 1) => {
+  return (worldTarget, weight = 1, most = 1) => {
     weight = Math.max(0, Math.min(1, weight));
     if (weight === 0) return;
     upper.updateWorldMatrix(true, true);
@@ -61,7 +62,8 @@ export function createArmContact(upper: Object3D, lower: Object3D, hand: Object3
     handPosition(wrist).applyMatrix4(local);
     const upperLength = shoulder.distanceTo(elbow), lowerLength = elbow.distanceTo(wrist);
     target.copy(worldTarget).applyMatrix4(local).sub(shoulder)
-      .clampLength(Math.abs(upperLength - lowerLength), upperLength + lowerLength).add(shoulder).lerp(wrist, 1 - weight);
+      .clampLength(Math.abs(upperLength - lowerLength), Math.max(Math.abs(upperLength - lowerLength), (upperLength + lowerLength) * most))
+      .add(shoulder).lerp(wrist, 1 - weight);
     // Keep the authored elbow side, in body space, including when the whole actor turns.
     from.copy(wrist).sub(shoulder).normalize();
     candidate.copy(elbow).sub(shoulder);

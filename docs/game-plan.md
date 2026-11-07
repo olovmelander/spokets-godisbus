@@ -157,7 +157,7 @@ Appendix C lists exactly what carries over. What is new here:
 | 10. Testbarn | Bara du testar | H2 och H3 blir dina egna tester. Elofs första spelning (H4) är första gången ett barn spelar (§7.3, §7.7). |
 | 11. Godis | De gillar alla sorters godis | Det gyllene godiset blir ett geléhallon i guldpapper, samma sort som lilla Elof delade med sin trägubbe (§3.4). På godiskalaset väljer Elof själv vad var och en får. |
 | 12. Namn | Hitta på ett bra namn | Spöket heter **Klonk**, efter ljudet av dess träfötter. Elof ger det namnet i epilogen, och fram till dess är det ”spöket” (§2.2, §3.4). |
-| 13. Märken | Allt görs utan logotyper | Inga märken någonstans. Stjärnan på det riktiga spökets skor blir en slät rund lapp (§2.2). |
+| 13. Märken | Allt görs utan logotyper | Inga märken någonstans. Stjärnan på det riktiga spökets skor blir en slät rund lapp (§2.2). Två undantag, Olovs beslut: namnet Olympia på den röda hallen (4 november 2026) och Anundsjö IF:s klubbmärke på Bertils keps (7 november 2026). |
 | 14. Fler spelare | Det som rekommenderas | ”Ny spelare” finns alltid, och varje spelare väljer *Äventyr* eller *Lugnt* själv (§6.9). |
 | 15. Betalt 3D-verktyg | Du har Blender MCP med Poly Haven. Ska alla figurer formges? | Inget verktyg köps. Ja, alla figurer formges i Blender, men i tur och ordning och olika mycket (§5.6): först Elof och spöket, sedan familjen, lilla Elof, trägubbarna och djuren. Poly Haven ger material, naturmodeller och himlar, men inga figurer. |
 | 16. Din dator | Windows med ett RTX 3070 | Blender renderar och bakar på grafikkortet. Utan Mac felsöks iPad och iPhone med `?debug` och `?bench` på skärmen (§6.14). |
@@ -1938,7 +1938,8 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
 
 - **Packs** (named by the stable chapter IDs, §4.9):
   - `boot`: engine, UI, font, the title scene and the table-top opening of the prologue (Elof, the ghost, the
-    bag, the table, Pappa's hands). At most **3 MB** (raised to 4 MB for the whole site on 5 November 2026, Olov).
+    bag, the table, Pappa's hands). At most **3 MB** (raised to 4 MB for the whole site on 5 November 2026, Olov, and to 4.5 MB on 7 November
+    2026 at his word to raise the graphics budget well where needed).
   - `prolog`: the veranda and the deck chase, prefetched behind the title.
   - `garden`, `granskog`, `myr`, `berg` (with the final and the small epilogue), and in 1.1 `forsen`: at most
     **8 MB** each.
@@ -2167,9 +2168,11 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
 1. **No third-party requests,** ever, and no analytics. A browser test checks this, and every page carries
    `noindex`.
 2. **First playable:** the `boot` pack (the title and the table-top opening) in at most 3 MB *as served*, with at
-   most 520 KB of gzipped JS. (It was 450 KB until 4 November 2026, when Olov widened the graphics budget for the
+   most 540 KB of gzipped JS. (It was 450 KB until 4 November 2026, when Olov widened the graphics budget for the
    visual upgrade: "utöka budgeten för grafiken". three r187 alone took the last of the 450 KB; 70 KB more is about
-   60 ms on the 10 Mbps profile.)
+   60 ms on the 10 Mbps profile. It was 520 KB until 6 November, when he widened it again for the Unravel look:
+   "utöka grafikbudgeten rejält"; the lens, the close materials, the rain gear and the storm's lamps took the last
+   of the 520.)
    - The libraries alone are about 240 KB gzipped (three about 192 KB, planck about 45 KB), so game code gets about
      200 KB. Chapter code loads with its pack.
    - CI gates the bytes. The 5-second time on a throttled 10 Mbps / 100 ms profile is measured on the family's

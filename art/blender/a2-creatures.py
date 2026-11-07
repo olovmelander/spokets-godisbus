@@ -70,22 +70,27 @@ if wanted('uggla'):
         (0.0, 0.0, 1.22, 0.62, 0.56), (0.0, 0.02, 1.42, 0.52, 0.5),
     ], 14, OWL_BACK)
     owl_paint(paint, [vert for ring in body for vert in ring], 1.3, 0.15)
-    head = ball(part, (0.0, 0.0, 1.78), (0.72, 0.66, 0.6), 3, OWL_BACK)
-    owl_paint(paint, head, 2.7, 3.0)
+    # The head is a thing of its own, 'uggla-huvud', so that the game can turn it as an owl turns its head: it sits on
+    # the body at the neck, (0, 0, 1.42), the pivot the game turns it about.
+    top = new_part()
+    tpaint = top['paint']
+    head = ball(top, (0.0, 0.0, 1.78), (0.72, 0.66, 0.6), 3, OWL_BACK)
+    owl_paint(tpaint, head, 2.7, 3.0)
     # The facial disc: two round pale fans that meet at the beak, with a dark rim.
     for side in (-1.0, 1.0):
-        rim = ball(part, (side * 0.27, -0.5, 1.84), (0.33, 0.13, 0.34), 2, OWL_RIM)
-        fan = ball(part, (side * 0.26, -0.58, 1.83), (0.29, 0.1, 0.3), 2, OWL_FACE)
+        rim = ball(top, (side * 0.27, -0.5, 1.84), (0.33, 0.13, 0.34), 2, OWL_RIM)
+        fan = ball(top, (side * 0.26, -0.58, 1.83), (0.29, 0.1, 0.3), 2, OWL_FACE)
         for vert in fan:
             at = vert.co
             spoke = noise(math.atan2(at.z - 1.83, at.x - side * 0.26) * 3.0, 2.0, side)
-            paint[vert] = blend(OWL_FACE, OWL_RIM, max(0.0, spoke - 0.5) * 1.2)
-        ball(part, (side * 0.25, -0.66, 1.87), (0.145, 0.05, 0.15), 2, OWL_EYE)
-        ball(part, (side * 0.22 - 0.03, -0.706, 1.92), (0.034, 0.012, 0.034), 1, tone('#c8ccd8'))
+            tpaint[vert] = blend(OWL_FACE, OWL_RIM, max(0.0, spoke - 0.5) * 1.2)
+        ball(top, (side * 0.25, -0.66, 1.87), (0.145, 0.05, 0.15), 2, OWL_EYE)
+        ball(top, (side * 0.22 - 0.03, -0.706, 1.92), (0.034, 0.012, 0.034), 1, tone('#c8ccd8'))
     # The white brows over them, and the beak between.
     for side in (-1.0, 1.0):
-        ball(part, (side * 0.15, -0.66, 2.1), (0.2, 0.05, 0.05), 1, OWL_FACE)
-    beak = loft(part, [(0.0, -0.66, 1.76, 0.07, 0.06), (0.0, -0.73, 1.68, 0.05, 0.04), (0.0, -0.74, 1.6, 0.01, 0.01)], 6, OWL_BEAK)
+        ball(top, (side * 0.15, -0.66, 2.1), (0.2, 0.05, 0.05), 1, OWL_FACE)
+    beak = loft(top, [(0.0, -0.66, 1.76, 0.07, 0.06), (0.0, -0.73, 1.68, 0.05, 0.04), (0.0, -0.74, 1.6, 0.01, 0.01)], 6, OWL_BEAK)
+    finish(top, 'uggla-huvud', sharp=180.0, strength=0.5, reach=0.5, floor=None)
     # Folded wings along its sides, each barred, and its tail.
     for side in (-1.0, 1.0):
         wing = loft(part, [
@@ -222,27 +227,32 @@ if wanted('utter'):
             front = -(at.y - 0.05)
             sleek = noise(at.x * 4.0, at.y * 4.0, at.z * 2.0)
             paint[vert] = blend(blend(OTTER_DARK, OTTER_FUR, sleek * 1.7), OTTER_PALE, (front - 0.14) * 4.0 * (1.2 - at.z * 0.4))
-    head = ball(part, (0.0, -0.08, 1.46), (0.25, 0.28, 0.2), 2, OTTER_FUR)
+    # The head is a thing of its own, 'utter-huvud', turned by the game about the neck at (0, -0.04, 1.3).
+    top = new_part()
+    tpaint = top['paint']
+    head = ball(top, (0.0, -0.08, 1.46), (0.25, 0.28, 0.2), 2, OTTER_FUR)
     for vert in head:
         at = vert.co
-        paint[vert] = blend(blend(OTTER_DARK, OTTER_FUR, noise(at.x * 5.0, at.y * 5.0, 3.0) * 1.7), OTTER_PALE, (1.42 - at.z) * 5.0)
-    muzzle = ball(part, (0.0, -0.32, 1.41), (0.13, 0.12, 0.085), 2, OTTER_PALE)
-    ball(part, (0.0, -0.43, 1.45), (0.045, 0.028, 0.03), 1, OTTER_NOSE)
+        tpaint[vert] = blend(blend(OTTER_DARK, OTTER_FUR, noise(at.x * 5.0, at.y * 5.0, 3.0) * 1.7), OTTER_PALE, (1.42 - at.z) * 5.0)
+    muzzle = ball(top, (0.0, -0.32, 1.41), (0.13, 0.12, 0.085), 2, OTTER_PALE)
+    ball(top, (0.0, -0.43, 1.45), (0.045, 0.028, 0.03), 1, OTTER_NOSE)
     for side in (-1.0, 1.0):
-        ball(part, (side * 0.13, -0.28, 1.52), (0.038, 0.03, 0.04), 2, OTTER_NOSE)
-        ball(part, (side * 0.125, -0.307, 1.532), (0.012, 0.008, 0.012), 1, tone('#c8ccd8'))
-        ball(part, (side * 0.22, -0.02, 1.6), (0.058, 0.03, 0.058), 1, OTTER_DARK)
-        # Its arms held to its chest, and its broad webbed feet.
-        loft(part, [(side * 0.27, -0.12, 0.92, 0.07, 0.08), (side * 0.25, -0.26, 0.74, 0.06, 0.07), (side * 0.13, -0.34, 0.72, 0.05, 0.05)], 6, OTTER_DARK)
-        ball(part, (side * 0.2, -0.3, 0.04), (0.14, 0.24, 0.05), 1, OTTER_DARK)
+        ball(top, (side * 0.13, -0.28, 1.52), (0.038, 0.03, 0.04), 2, OTTER_NOSE)
+        ball(top, (side * 0.125, -0.307, 1.532), (0.012, 0.008, 0.012), 1, tone('#c8ccd8'))
+        ball(top, (side * 0.22, -0.02, 1.6), (0.058, 0.03, 0.058), 1, OTTER_DARK)
         # Whiskers.
         for w in range(3):
             root = Vector((side * 0.1, -0.36, 1.42 + w * 0.012))
             tip = Vector((side * (0.34 + 0.03 * w), -0.3, 1.38 + w * 0.05))
-            a = put(part, root, OTTER_PALE)
-            b = put(part, root + UP * 0.012, OTTER_PALE)
-            c = put(part, tip, OTTER_PALE)
-            face(part, (a, b, c))
+            a = put(top, root, OTTER_PALE)
+            b = put(top, root + UP * 0.012, OTTER_PALE)
+            c = put(top, tip, OTTER_PALE)
+            face(top, (a, b, c))
+    finish(top, 'utter-huvud', sharp=180.0, strength=0.5, reach=0.3, floor=None, leaf=True)
+    for side in (-1.0, 1.0):
+        # Its arms held to its chest, and its broad webbed feet.
+        loft(part, [(side * 0.27, -0.12, 0.92, 0.07, 0.08), (side * 0.25, -0.26, 0.74, 0.06, 0.07), (side * 0.13, -0.34, 0.72, 0.05, 0.05)], 6, OTTER_DARK)
+        ball(part, (side * 0.2, -0.3, 0.04), (0.14, 0.24, 0.05), 1, OTTER_DARK)
     # The tail, thick at its root, lying out on the stone behind it.
     tail = loft(part, [
         (0.0, 0.2, 0.26, 0.2, 0.2), (0.0, 0.48, 0.12, 0.15, 0.13), (0.1, 0.82, 0.06, 0.1, 0.08), (0.24, 1.1, 0.03, 0.05, 0.04), (0.34, 1.26, 0.02, 0.012, 0.012),
@@ -287,12 +297,16 @@ if wanted('igelkott'):
         d = put(part, tip, TIP)
         face(part, (a, c, d))
         face(part, (c, b, d))
-    # The face: a soft wedge, a shining nose, two small dark eyes, round ears.
-    ball(part, Vector((0.0, -0.8, 0.28)), (0.3, 0.42, 0.24), 2, FUR)
-    ball(part, Vector((0.0, -1.2, 0.27)), (0.07, 0.07, 0.065), 1, tone('#14100e'))
+    # The face: a soft wedge, a shining nose, two small dark eyes, round ears. A thing of its own, 'igelkott-huvud', so
+    # that the game can lift and turn its snout as it snuffles: it turns about (0, -0.55, 0.3).
+    top = new_part()
+    ball(top, Vector((0.0, -0.8, 0.28)), (0.3, 0.42, 0.24), 2, FUR)
+    ball(top, Vector((0.0, -1.2, 0.27)), (0.07, 0.07, 0.065), 1, tone('#14100e'))
     for side in (-1.0, 1.0):
-        ball(part, Vector((side * 0.16, -0.94, 0.4)), (0.05, 0.03, 0.055), 1, tone('#14100e'))
-        ball(part, Vector((side * 0.3, -0.56, 0.52)), (0.09, 0.05, 0.1), 1, tone('#6a5038'))
+        ball(top, Vector((side * 0.16, -0.94, 0.4)), (0.05, 0.03, 0.055), 1, tone('#14100e'))
+        ball(top, Vector((side * 0.3, -0.56, 0.52)), (0.09, 0.05, 0.1), 1, tone('#6a5038'))
+    finish(top, 'igelkott-huvud', sharp=60.0, strength=0.4, reach=0.3, floor=None, leaf=True)
+    for side in (-1.0, 1.0):
         ball(part, Vector((side * 0.34, -0.62, 0.06)), (0.13, 0.17, 0.06), 1, FUR)
     finish(part, 'igelkott', sharp=60.0, strength=0.4, reach=0.3, floor=0.0, leaf=True)
 
@@ -328,12 +342,16 @@ if wanted('groda'):
     DARK = tone('#3a3c20')
     BELLY = tone('#c8c090')
     ball(part, Vector((0.0, 0.1, 0.32)), (0.38, 0.52, 0.3), 2, SKIN_)
-    ball(part, Vector((0.0, -0.36, 0.42)), (0.33, 0.3, 0.2), 2, SKIN_)
     ball(part, Vector((0.0, -0.32, 0.26)), (0.27, 0.27, 0.12), 1, BELLY)
+    # Its head and its eyes, a thing of their own ('groda-huvud') that the game tilts about (0, -0.12, 0.36).
+    top = new_part()
+    ball(top, Vector((0.0, -0.36, 0.42)), (0.33, 0.3, 0.2), 2, SKIN_)
     for side in (-1.0, 1.0):
-        ball(part, Vector((side * 0.2, -0.4, 0.58)), (0.1, 0.1, 0.1), 1, SKIN_)
-        ball(part, Vector((side * 0.235, -0.44, 0.6)), (0.07, 0.07, 0.07), 1, tone('#c89a30'))
-        ball(part, Vector((side * 0.26, -0.49, 0.6)), (0.038, 0.03, 0.044), 1, tone('#100e0a'))
+        ball(top, Vector((side * 0.2, -0.4, 0.58)), (0.1, 0.1, 0.1), 1, SKIN_)
+        ball(top, Vector((side * 0.235, -0.44, 0.6)), (0.07, 0.07, 0.07), 1, tone('#c89a30'))
+        ball(top, Vector((side * 0.26, -0.49, 0.6)), (0.038, 0.03, 0.044), 1, tone('#100e0a'))
+    finish(top, 'groda-huvud', sharp=60.0, strength=0.4, reach=0.2, floor=None, leaf=True)
+    for side in (-1.0, 1.0):
         ball(part, Vector((side * 0.42, 0.34, 0.2)), (0.17, 0.42, 0.17), 2, SKIN_)
         ball(part, Vector((side * 0.56, 0.0, 0.05)), (0.17, 0.3, 0.05), 1, DARK)
         ball(part, Vector((side * 0.3, -0.52, 0.09)), (0.07, 0.2, 0.08), 1, SKIN_)

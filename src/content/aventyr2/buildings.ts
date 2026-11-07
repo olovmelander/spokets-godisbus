@@ -1,9 +1,11 @@
 import {
   BoxGeometry, BufferGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, ExtrudeGeometry, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial,
-  IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, TorusGeometry, Vector3,
+  IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, TorusGeometry, Vector3, type Object3D,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Storm } from '../../sim/types';
+import { paintedWood } from '../../render/painted-wood';
+import { PLANK, STONE, barkDetail, barky, notBark } from '../../render/bark-detail';
 
 /**
  * The big things of Äventyr 2's places, built in code (docs/aventyr-2.md): Billsta's white house with its two
@@ -119,6 +121,13 @@ function goal(def: BuildingDef) {
     parts.push(box(0.08, h * 0.9, 0.08, depth * (k / 10), h * 0.45, -span / 2, '#e6e6e2'));
     parts.push(box(0.08, 0.08, span, depth * (k / 10), h * (1 - 0.25 * (k / 10)), 0, '#e6e6e2'));
   }
+  // The net is a mesh, not a row of strings: strands across the sides too, and the back net behind, in squares.
+  for (let k = 1; k < 9; k++) {
+    const y = h * 0.75 * (k / 9);
+    for (const z of [-span / 2, span / 2]) parts.push(box(depth, 0.06, 0.06, depth / 2, y, z, '#e6e6e2'));
+    parts.push(box(0.06, 0.06, span, depth, y, 0, '#e6e6e2'));
+  }
+  for (let k = 1; k < 12; k++) parts.push(box(0.06, h * 0.75, 0.06, depth, h * 0.375, -span / 2 + span * (k / 12), '#e6e6e2'));
   return { parts, panes: [] };
 }
 
@@ -239,7 +248,8 @@ function hut(def: BuildingDef) {
   const h = def.height ?? 15;
   const d = 8;
   const tar = def.tar === true;
-  const parts: BufferGeometry[] = [box(w - 0.6, h, d - 0.6, 0, h / 2, 0, tar ? '#1e1a18' : '#8a6232'), gable(w - 0.2, 3, d - 0.2, 0, h, 0, tar ? '#26211e' : '#a97a42'), ...roof(w, 3, d, 0, h, 0, '#7a8c9a', 0.9)];
+  const metal = roof(w, 3, d, 0, h, 0, '#7a8c9a', 0.9);
+  const parts: BufferGeometry[] = [box(w - 0.6, h, d - 0.6, 0, h / 2, 0, tar ? '#1e1a18' : '#8a6232'), gable(w - 0.2, 3, d - 0.2, 0, h, 0, tar ? '#26211e' : '#a97a42'), ...metal];
   const tones = tar ? ['#2a2522', '#231f1c', '#302a26'] : ['#b98a4e', '#a97a42', '#c49658'];
   const logs = Math.max(6, Math.round(h / 0.62));
   for (let i = 0; i < logs; i++) {
@@ -249,10 +259,93 @@ function hut(def: BuildingDef) {
     parts.push(paint(new CylinderGeometry(r, r, d + 0.5, 12).rotateX(Math.PI / 2).translate(w / 2 - 0.3, y, 0), tones[(i + 1) % 3]!));
     parts.push(paint(new CylinderGeometry(r, r, d + 0.5, 12).rotateX(Math.PI / 2).translate(-w / 2 + 0.3, y, 0), tones[(i + 2) % 3]!));
   }
-  parts.push(box(w * 0.36, h * 0.7, 0.4, 0, h * 0.35, d / 2 + 0.4, '#5a3e22'));
-  // A tarred hut has white trim round its door and its corners.
-  if (tar) parts.push(box(w * 0.44, 0.5, 0.2, 0, h * 0.72, d / 2 + 0.62, '#e4e0d6'), box(0.5, h * 0.72, 0.2, -w * 0.2, h * 0.36, d / 2 + 0.62, '#e4e0d6'), box(0.5, h * 0.72, 0.2, w * 0.2, h * 0.36, d / 2 + 0.62, '#e4e0d6'));
-  return { parts, panes: [] };
+  // The logs' sawn ends at the front corners: pale end grain with a darker heart, as fresh-cut timber has.
+  for (let i = 0; i < logs; i++) {
+    const y = (i + 0.5) * (h / logs);
+    const r = (h / logs) * 0.54;
+    for (const side of [-1, 1]) {
+      const x = side * (w / 2 - 0.3);
+      parts.push(paint(new CircleGeometry(r * 0.9, 12).translate(x, y, d / 2 + 0.26), tar ? '#4a3e34' : ['#d9b57e', '#cfa86e', '#e0bf8a'][(i + side + 2) % 3]!));
+      parts.push(paint(new CircleGeometry(r * 0.38, 10).translate(x, y, d / 2 + 0.27), tar ? '#3a3029' : '#bf955c'));
+    }
+  }
+  // The logs, their ends and the gable have the wood's grain seen close (../../render/bark-detail.ts); not the metal
+  // roof, nor the door's upright planks and the window, which are added after.
+  for (const part of parts) if (!metal.includes(part)) barky(part, PLANK);
+  parts.push(...(def.slider ? hutDoorway(w, h, d, tar, def.slider) : hutDoor(w, h, d, tar)));
+  // A small window beside the door, high up, in a white frame with a cross of glazing bars: on the left where the
+  // door slides open to the right over the wall.
+  const panes: BufferGeometry[] = [];
+  const front = d / 2 - 0.3 + (h / logs) * 0.54;
+  const wx = w * (def.slider ? -0.32 : 0.32);
+  const wy = h * 0.6;
+  parts.push(box(0.98, 0.84, 0.12, wx, wy, front + 0.04, '#e9e5da'));
+  parts.push(box(0.06, 0.6, 0.06, wx, wy, front + 0.16, '#e9e5da'), box(0.74, 0.06, 0.06, wx, wy, front + 0.16, '#e9e5da'));
+  parts.push(box(1.12, 0.1, 0.22, wx, wy - 0.45, front + 0.1, '#d6d1c4'));
+  panes.push(new PlaneGeometry(0.74, 0.6).translate(wx, wy, front + 0.11));
+  return { parts, panes };
+}
+
+/**
+ * A changing hut's door (the graphics pass of 6 November 2026; Olov: "finare byggnader"): upright planks with dark
+ * gaps between them, held by a Z of braces, black strap hinges on the left, an iron handle on the right, in a
+ * white casing, over a worn sill board. It stands no further out than the flat door it replaced.
+ */
+function hutDoor(w: number, h: number, d: number, tar: boolean): BufferGeometry[] {
+  const dw = w * 0.36;
+  const dh = h * 0.7;
+  const z = d / 2 + 0.3;
+  const parts: BufferGeometry[] = [box(dw, dh, 0.1, 0, dh / 2, z - 0.05, '#20160d')];
+  const planks = Math.max(4, Math.round(dw / 0.42));
+  const tones = tar ? ['#4a3a2c', '#41332a', '#524233'] : ['#7a5532', '#6c4a2a', '#835c37', '#71502d'];
+  for (let i = 0; i < planks; i++) {
+    const x = -dw / 2 + (i + 0.5) * (dw / planks);
+    parts.push(box(dw / planks - 0.05, dh - 0.04, 0.14, x, dh / 2, z + 0.07, tones[i % tones.length]!));
+  }
+  const brace = tar ? '#5a4836' : '#8c6640';
+  for (const y of [dh * 0.17, dh * 0.83]) parts.push(box(dw - 0.14, 0.22, 0.08, 0, y, z + 0.18, brace));
+  const run = dw - 0.34;
+  const rise = dh * 0.66;
+  parts.push(tilted(Math.hypot(run, rise), 0.2, 0.08, 0, Math.atan2(rise, run), 0, dh / 2, z + 0.18, brace));
+  // Strap hinges from the hinge side along each brace, and a ring handle on the latch side.
+  for (const y of [dh * 0.17, dh * 0.83]) parts.push(box(dw * 0.42, 0.08, 0.04, -dw / 2 + dw * 0.21, y, z + 0.24, '#1d1d1f'));
+  parts.push(box(0.14, 0.3, 0.04, dw / 2 - 0.26, dh * 0.5, z + 0.24, '#1d1d1f'));
+  parts.push(paint(new TorusGeometry(0.1, 0.025, 6, 12).translate(dw / 2 - 0.26, dh * 0.5 - 0.1, z + 0.26), '#1d1d1f'));
+  // The casing, and the sill board worn pale.
+  const trim = '#e9e5da';
+  parts.push(box(0.2, dh + 0.2, 0.16, -dw / 2 - 0.1, (dh + 0.2) / 2, z + 0.04, trim), box(0.2, dh + 0.2, 0.16, dw / 2 + 0.1, (dh + 0.2) / 2, z + 0.04, trim));
+  parts.push(box(dw + 0.6, 0.22, 0.2, 0, dh + 0.1, z + 0.06, trim));
+  parts.push(box(dw + 0.5, 0.12, 0.42, 0, 0.06, z + 0.06, tar ? '#5b5650' : '#a58a66'));
+  return parts;
+}
+
+/**
+ * A changing hut's doorway whose door slides (Flärken's second hut, whose door bangs in the wind): the dark inside, the
+ * white casing and the worn sill as `hutDoor` has them, and an iron rail along the front over the door, from beside
+ * the doorway to past the hut's corner. The door's top is at `top` shut, and the rail rises `rise` over its width, as
+ * the door does on it (the mover 'hut-door'). The door hangs in front of the casing, at the play plane.
+ */
+function hutDoorway(w: number, h: number, d: number, tar: boolean, slider: { top: number; rise: number }): BufferGeometry[] {
+  const dw = w * 0.36;
+  const dh = h * 0.7;
+  const z = d / 2 + 0.3;
+  const parts: BufferGeometry[] = [box(dw, dh, 0.1, 0, dh / 2, z - 0.05, '#120c07')];
+  // The inside, dimly: a bench along the back wall and a hook board.
+  parts.push(box(dw * 0.9, 0.12, 0.3, 0, dh * 0.24, z - 0.2, tar ? '#2c2520' : '#3a2a1a'));
+  parts.push(box(dw * 0.7, 0.1, 0.06, 0, dh * 0.72, z - 0.12, tar ? '#2c2520' : '#3a2a1a'));
+  const trim = '#e9e5da';
+  parts.push(box(0.2, dh + 0.2, 0.16, -dw / 2 - 0.1, (dh + 0.2) / 2, z + 0.04, trim), box(0.2, dh + 0.2, 0.16, dw / 2 + 0.1, (dh + 0.2) / 2, z + 0.04, trim));
+  parts.push(box(dw + 0.6, 0.22, 0.2, 0, dh + 0.1, z + 0.06, trim));
+  parts.push(box(dw + 0.5, 0.12, 0.42, 0, 0.06, z + 0.06, tar ? '#5b5650' : '#a58a66'));
+  // The rail, on brackets into the logs: from the doorway's left to a stop past the hut's right corner.
+  const from = -dw / 2 - 0.2, to = Math.min(w / 2 + 0.35, dw * 1.5 + 0.25);
+  const railAt = (x: number) => slider.top + 0.16 + (slider.rise * x) / dw;
+  const run = to - from, lift = railAt(to) - railAt(from);
+  parts.push(tilted(Math.hypot(run, lift), 0.09, 0.09, 0, Math.atan2(lift, run), (from + to) / 2, (railAt(from) + railAt(to)) / 2, z + 0.12, '#2a2a2c'));
+  for (const x of [from + 0.1, (from + to) / 2, to - 0.1]) parts.push(box(0.1, 0.22, 0.3, x, railAt(x) + 0.02, z - 0.02, '#232325'));
+  // A rubber stop at each end, where it bangs.
+  for (const x of [from + 0.02, to - 0.02]) parts.push(box(0.12, 0.2, 0.16, x, railAt(x), z + 0.12, '#151515'));
+  return parts;
 }
 
 /** How wide a birch's stem is at a height: 1.6 at its foot, 0.9 at its top. */
@@ -335,19 +428,20 @@ function spruce(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
-/** How long the model of the car is, in the metres it is made in. */
-const CAR_LONG = 4.7;
+/** How long the model of the car is, in the metres it is made in (art/blender/a2-props.py, build_leaf). */
+const CAR_LONG = 4.5;
 
 function car(def: BuildingDef) {
-  // The family's estate car: no badge, no plate, only its shape. Slate blue, because red is the candy's (art bible §2.2).
+  // The family's car, a silver electric hatchback as theirs is (Olov, 7 November 2026): no badge, no plate, only its
+  // shape. This stands in until the model from Blender (art/blender/a2-props.py, build_leaf) has come.
   const w = def.width ?? 29;
   const side = (x: number) => x * w;
-  // Its side, drawn once and pushed out to its width: low nose, raked windscreen, long roof, upright tail.
+  // Its side, drawn once and pushed out to its width: low nose, raked windscreen, a roof that slopes to the tailgate.
   const shape = new Shape();
   shape.moveTo(side(-0.5), 2.4);
-  shape.quadraticCurveTo(side(-0.505), 4.4, side(-0.495), 5.2);
-  shape.quadraticCurveTo(side(-0.49), 8.6, side(-0.44), 9.8);
-  shape.quadraticCurveTo(side(-0.4), 10.5, side(-0.3), 10.6);
+  shape.quadraticCurveTo(side(-0.505), 4.4, side(-0.495), 5.6);
+  shape.quadraticCurveTo(side(-0.48), 7.6, side(-0.42), 8.8);
+  shape.quadraticCurveTo(side(-0.34), 10.2, side(-0.22), 10.6);
   shape.lineTo(side(0.06), 10.5);
   shape.quadraticCurveTo(side(0.14), 10.3, side(0.19), 9.2);
   shape.lineTo(side(0.28), 7.1);
@@ -355,12 +449,12 @@ function car(def: BuildingDef) {
   shape.quadraticCurveTo(side(0.51), 5, side(0.5), 2.4);
   shape.closePath();
   const body = new ExtrudeGeometry(shape, { depth: 11, bevelEnabled: true, bevelSize: 0.45, bevelThickness: 0.5, bevelSegments: 2, curveSegments: 8 }).translate(0, 0, -5.5);
-  const parts: BufferGeometry[] = [paint(body.toNonIndexed(), '#3f5670')];
+  const parts: BufferGeometry[] = [paint(body.toNonIndexed(), '#b0b5ba')];
   const NEAR = 6.03;
   const dark = '#1a1d22';
   // The dark sill, and the seams of its doors, on the side that shows.
   parts.push(box(w * 0.94, 0.9, 0.08, 0, 2.5, NEAR, dark));
-  for (const x of [-0.15, 0.07]) parts.push(box(0.14, 6.6, 0.06, side(x), 6, NEAR, '#2a3a4c'));
+  for (const x of [-0.15, 0.07]) parts.push(box(0.14, 6.6, 0.06, side(x), 6, NEAR, '#7d838a'));
   for (const x of [-0.11, 0.11]) parts.push(box(1.4, 0.3, 0.1, side(x), 7.3, NEAR, '#8a929c'));
   // Wheels in their arches: a dark arch, a tyre, a pale rim and its hub.
   for (const x of [-0.31, 0.32]) {
@@ -369,8 +463,7 @@ function car(def: BuildingDef) {
     parts.push(paint(new CylinderGeometry(1.5, 1.5, 0.3, 16).rotateX(Math.PI / 2).translate(side(x), 2.7, 6.2), '#9aa2ac'));
     parts.push(paint(new CylinderGeometry(0.5, 0.5, 0.36, 10).rotateX(Math.PI / 2).translate(side(x), 2.7, 6.26), '#4a5058'));
   }
-  // Roof rails, a lamp at the nose and one at the tail.
-  parts.push(box(w * 0.46, 0.3, 0.3, side(-0.14), 11.1, 4.4, '#2a2e34'), box(w * 0.46, 0.3, 0.3, side(-0.14), 11.1, -4.4, '#2a2e34'));
+  // A lamp at the nose and one at the tail.
   parts.push(box(1.6, 1, 0.1, side(0.46), 5.4, NEAR, '#d6d8cc'), box(0.9, 2.2, 0.1, side(-0.485), 6.6, NEAR, '#6e2a24'));
   // Its side windows, where the model's are (art/blender/a2-props.py), in the car's own metres.
   const metre = w / CAR_LONG;
@@ -381,10 +474,10 @@ function car(def: BuildingDef) {
     glass.closePath();
     return new ShapeGeometry(glass).translate(0, 0, NEAR + 0.02);
   };
+  // The two doors' windows (the pillar behind them is dark, not glass).
   const panes = [
-    pane([[-2.02, 0.98], [-2.03, 1.37], [-1.3, 1.41], [-1.3, 0.97]]),
-    pane([[-1.22, 0.97], [-1.22, 1.41], [-0.36, 1.42], [-0.36, 0.96]]),
-    pane([[-0.28, 0.96], [-0.28, 1.42], [0.2, 1.42], [0.96, 1.01], [0.96, 0.95]]),
+    pane([[-1.3, 1.05], [-1.3, 1.4], [-0.38, 1.42], [-0.38, 0.96]]),
+    pane([[-0.3, 0.96], [-0.3, 1.42], [0.3, 1.43], [0.99, 1.02], [0.99, 0.95]]),
   ];
   return { parts, panes };
 }
@@ -573,6 +666,14 @@ function lodge(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
+function gardenset(def: BuildingDef) {
+  // The garden table and its chairs under a green tarp for the winter, its legs showing under the hem.
+  const w = def.width ?? 9.2;
+  const parts: BufferGeometry[] = [box(w, 1.8, 5, 0, 2.3, 0, '#4c6650'), box(w * 0.9, 1.2, 4.4, 0, 3.6, 0, '#4c6650')];
+  for (const x of [-w * 0.37, w * 0.37]) for (const z of [-1.6, 1.6]) parts.push(box(0.44, 1.4, 0.44, x, 0.7, z, '#8a6a4a'));
+  return { parts, panes: [] };
+}
+
 function mailbox(def: BuildingDef) {
   // A plain mailbox on its post by the road: no name, no number.
   const h = def.height ?? 8;
@@ -680,8 +781,26 @@ function store(def: BuildingDef) {
 
 const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGeometry[]; panes: BufferGeometry[] }> = {
   jettyArm, pole, store, trestleTable, pitch, chess, sunboard, villa, barn, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
-  church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce,
+  church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce, gardenset,
 };
+
+/**
+ * What is made in Blender now (art/blender/a2-yard.py), and how big it was made there: the yard's things at Billsta, the
+ * swings at Flärkenbadet and Olympia's kit table. Each takes its stand-in's place at the size the chapter gives it, across or up.
+ */
+const YARD: Partial<Record<BuildingDef['kind'], { model: string; size: number; by: 'width' | 'height' }>> = {
+  woodshed: { model: 'vedbod', size: 18, by: 'width' },
+  rowboat: { model: 'roddbat-vinter', size: 16, by: 'width' },
+  mailbox: { model: 'brevlada', size: 8, by: 'height' },
+  swings: { model: 'gungor', size: 19, by: 'width' },
+  gardenset: { model: 'utemobler', size: 9.2, by: 'width' },
+  trestleTable: { model: 'kitbord', size: 3.8, by: 'width' },
+};
+
+/** What is built of stone: the bridge's piers and deck. */
+const STONY = new Set<BuildingDef['kind']>(['bridge']);
+/** What is built of painted boards. */
+const PAINTED = new Set<BuildingDef['kind']>(['villa', 'barn', 'store', 'clubhouse', 'church', 'woodshed', 'lodge', 'stand']);
 
 /** One building, placed: its foot at (x, y), `z` behind the play plane, mirrored with `flip`. */
 export function building(def: BuildingDef): Building {
@@ -689,7 +808,14 @@ export function building(def: BuildingDef): Building {
   const group = new Group();
   group.name = `building:${def.kind}`;
   if (def.model) group.userData.model = def.model;
-  group.add(new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.85 })));
+  const material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.85 });
+  // Houses, barns and halls of painted boards have their grain and weather seen close (../../render/painted-wood.ts).
+  if (PAINTED.has(def.kind)) paintedWood(material);
+  // What is built of stone has the granite's grain, rain streaks and lichen, and a builder may mark its own parts as
+  // wood with a grain (../../render/bark-detail.ts).
+  const grained = parts.some((part) => part.hasAttribute('barky'));
+  if (STONY.has(def.kind) || grained) barkDetail(material);
+  group.add(new Mesh(mergeGeometries(STONY.has(def.kind) ? parts.map((part) => barky(part, STONE)) : grained ? parts.map(notBark) : parts), material));
   let paneMaterial: MeshBasicMaterial | null = null;
   if (panes.length) {
     // Where its windows are, for what their light falls on (../../render/lift/materials/puddles.ts), which has
@@ -722,6 +848,19 @@ export function building(def: BuildingDef): Building {
     group.userData.model = 'bil';
     group.userData.fit = (def.width ?? 29) / CAR_LONG;
     group.children[1]!.userData.keep = -0.022 * (def.width ?? 29);
+  }
+  // Olympia's goals: the training goal, and the big one at the far end.
+  if (def.kind === 'goal') {
+    const big = (def.height ?? 8) > 12;
+    group.userData.model = big ? 'fotbollsmal-stort' : 'fotbollsmal';
+    group.userData.fit = (def.height ?? 8) / (big ? 16 : 8);
+  }
+  const yard = YARD[def.kind];
+  if (yard) {
+    group.userData.model = yard.model;
+    group.userData.fit = (def[yard.by] ?? yard.size) / yard.size;
+    // The rowing boat's tarp has a loose corner, for the wind to lift (./render.ts).
+    if (def.kind === 'rowboat') group.userData.onModelInstalled = (model: Object3D) => { group.userData.flap = model.getObjectByName('roddbat-vinter-flik') ?? undefined; };
   }
   if (def.kind === 'cliff') {
     const [wide, high] = [def.width ?? 16, def.height ?? 12];

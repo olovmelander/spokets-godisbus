@@ -3,6 +3,7 @@ import {
   Object3D, OctahedronGeometry, SphereGeometry, Vector2, Vector3, type BufferGeometry,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { BARK_ALONG, BARK_UP, PLANK, barkDetail, barky, notBark } from './bark-detail';
 import { LEDGE_THICK } from '../sim/constants';
 import type { Ledge, LedgeLook, PlaceId } from '../sim/types';
 import { drawnWhile } from './idle';
@@ -28,7 +29,7 @@ const DEPTH = 0.9;
 const DOWN = 14;
 
 /** A shape one EL wide, its top at 0 and its front edge at the play plane; the ledge and what holds it. */
-const together = (...parts: BufferGeometry[]): BufferGeometry => mergeGeometries(parts.map((part) => (part.index ? part.toNonIndexed() : part)));
+const together = (...parts: BufferGeometry[]): BufferGeometry => mergeGeometries(parts.map((part) => notBark(part.index ? part.toNonIndexed() : part)));
 /** An upright round thing from `DOWN` below the ledge to `rise` above it, behind the ledge's middle. */
 const upright = (top: number, bottom: number, sides: number, rise: number, z: number): BufferGeometry =>
   new CylinderGeometry(top, bottom, DOWN + rise, sides).translate(0, (rise - DOWN) / 2 - LEDGE_THICK * 0.6, z);
@@ -54,7 +55,7 @@ interface Look {
  * plane he moves in.
  */
 function stem(radius: number, z: number, dark: string, light: string): BufferGeometry {
-  const trunk = upright(radius * 0.8, radius, 9, 16, z);
+  const trunk = barky(upright(radius * 0.8, radius, 9, 16, z), BARK_UP);
   const from = new Color(dark);
   const at = trunk.getAttribute('position');
   const colours = new Float32Array(at.count * 3);
@@ -82,8 +83,8 @@ const LOOKS: Record<LedgeLook, Look> = {
   plank: {
     colour: '#c9ae84', roughness: 0.75,
     shape: () => together(
-      new BoxGeometry(1, LEDGE_THICK, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2),
-      new BoxGeometry(0.86, 0.3, 0.12).translate(0, -LEDGE_THICK - 0.15, -DEPTH + 0.1),
+      barky(new BoxGeometry(1, LEDGE_THICK, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2), PLANK),
+      barky(new BoxGeometry(0.86, 0.3, 0.12).translate(0, -LEDGE_THICK - 0.15, -DEPTH + 0.1), PLANK),
     ),
   },
   // A ladder laid flat over a gap: two rails along it and the rungs between them, which he walks on.
@@ -99,7 +100,7 @@ const LOOKS: Record<LedgeLook, Look> = {
   trestle: {
     colour: '#c9ae84', roughness: 0.75,
     shape: () => together(
-      new BoxGeometry(1, LEDGE_THICK, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2),
+      barky(new BoxGeometry(1, LEDGE_THICK, DEPTH).translate(0, -LEDGE_THICK / 2, -DEPTH / 2), PLANK),
       new BoxGeometry(0.9, 0.12, 0.05).translate(0, -LEDGE_THICK - 0.06, -0.3),
       ...[-0.43, 0.43].flatMap((x) => [-0.3, -DEPTH + 0.1].map((z) => new BoxGeometry(0.06, DOWN, 0.08).translate(x, -LEDGE_THICK - DOWN / 2, z))),
     ),
@@ -116,8 +117,8 @@ const LOOKS: Record<LedgeLook, Look> = {
   branch: {
     colour: '#6e5238', roughness: 0.95, colours: { bog: '#a9a69e' },
     shape: () => together(
-      new CylinderGeometry(0.05, 0.1, 0.5, 9).rotateZ(Math.PI / 2).translate(-0.25, -0.08, -0.32),
-      new CylinderGeometry(0.05, 0.1, 0.5, 9).rotateZ(-Math.PI / 2).translate(0.25, -0.08, -0.32),
+      barky(new CylinderGeometry(0.05, 0.1, 0.5, 9).rotateZ(Math.PI / 2).translate(-0.25, -0.08, -0.32), BARK_ALONG),
+      barky(new CylinderGeometry(0.05, 0.1, 0.5, 9).rotateZ(-Math.PI / 2).translate(0.25, -0.08, -0.32), BARK_ALONG),
     ),
     holder: (width, place) => {
       const bog = place === 'bog';
@@ -421,6 +422,8 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [],
   const there: number[] = ledges.map((ledge) => (ledge.needs === undefined ? 1 : 0));
   /** One material for every place: the colours are on the corners. */
   const solid = new MeshStandardMaterial({ vertexColors: true, roughness: 0.88 });
+  // The stems and boughs among them are bark seen close (./bark-detail.ts).
+  barkDetail(solid);
   const waiting: { mesh: InstancedMesh; at: number[] }[] = [];
   const solids: { mesh: Mesh; always: number[]; rods: Rod[] }[] = [];
   /** A place's one shape: its ledges that are always there, each as the kit has it or as its look, and its rods. */
@@ -432,7 +435,7 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [],
       }),
       ...lines.map((rod) => painted(rodShape(rod, site), ROD_COLOUR)),
     ];
-    const shape = mergeGeometries(parts);
+    const shape = mergeGeometries(parts.map(notBark));
     for (const part of parts) part.dispose();
     shape.computeBoundingSphere();
     return shape;
@@ -456,7 +459,9 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [],
       if (at.length === 0) continue;
       const how = LOOKS[look];
       // Their colours are on their corners too: what holds the ledge has its own.
-      const mesh = new InstancedMesh(lookShape(look, 1, site), new MeshStandardMaterial({ vertexColors: true, roughness: how.roughness, flatShading: how.flat === true }), at.length);
+      const grows = new MeshStandardMaterial({ vertexColors: true, roughness: how.roughness, flatShading: how.flat === true });
+      barkDetail(grows);
+      const mesh = new InstancedMesh(lookShape(look, 1, site), grows, at.length);
       mesh.name = `ledges:${n}:${look}`;
       mesh.instanceMatrix.setUsage(DynamicDrawUsage);
       mesh.userData.ledges = at;

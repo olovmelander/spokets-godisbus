@@ -106,7 +106,8 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
       } else {
         pace = 0;
         const t = calm ? 0 : clock + offset;
-        const breathe = calm ? 0 : Math.sin(t * 1.3);
+        // A breath, slower and deeper now and then, as a person's is: not a metronome.
+        const breathe = calm ? 0 : Math.sin(t * 1.3 + 0.6 * Math.sin(t * 0.21)) * (0.8 + 0.2 * Math.sin(t * 0.37 + 1));
         const elapsed = Math.max(0, 1.8 - joy);
         const active = joy > 0 || !!help?.ready && presence > .001;
         const greeting = active && !task && purpose !== 'braid';

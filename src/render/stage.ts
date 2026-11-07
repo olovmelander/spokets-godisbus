@@ -22,6 +22,10 @@ const FAMILY: readonly Role[] = ['pappa', 'mamma', 'moa', 'bertil'];
 const SEATED: readonly Act[] = ['sit', 'carve', 'draw'];
 /** Acts whose aim the whole body turns to. */
 const TURNS_TO: readonly Act[] = ['reach', 'lift', 'offer', 'point'];
+/** The way a lamp shines in its own space (litLamp). */
+const LAMP_AXIS = new Vector3(0, 0, 1);
+/** How much of the arm's length a hand held out to give something uses: the elbow stays a little bent. */
+const OFFER_REACH = 0.82;
 
 /** Where an actor is and what it does, at one moment of the story. */
 interface State {
@@ -39,6 +43,8 @@ interface State {
   holds: Thing | null;
   holdsLeft: Thing | null;
   rough: number;
+  /** Gone in, out of the picture: not drawn. */
+  away: boolean;
   /** The walk under way, when a key moves the actor: from where, how far it has come, and how long it takes. */
   walk: { fromX: number; fromY: number; fromZ: number; toX: number; toY: number; toZ: number; at: number; seconds: number } | null;
   /**
@@ -50,7 +56,7 @@ interface State {
 
 const fresh = (): State => ({
   x: 0, y: 0, z: 0, face: 0.25, act: 'stand', actAt: -99, before: null, stance: 'stand', aim: null, glance: null, follow: null,
-  holds: null, holdsLeft: null, rough: 0, walk: null,
+  holds: null, holdsLeft: null, rough: 0, away: false, walk: null,
 });
 const smooth = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -148,6 +154,7 @@ function apply(state: State, key: ActorKey, since: number): void {
   if (key.holds !== undefined) state.holds = key.holds;
   if (key.holdsLeft !== undefined) state.holdsLeft = key.holdsLeft;
   if (key.rough !== undefined) state.rough = mix(state.rough, key.rough, p);
+  if (key.away !== undefined) state.away = key.away;
 }
 
 /** Folds an actor's keys of one scene up to `t` onto a state: the state at that moment. */
@@ -230,7 +237,7 @@ export interface Directions {
  * A lit flashlight, pointing the way its holder faces (their +z), and its beam out into the dark. The beam is added to
  * the night, so what is black in it is nothing: it fades away from the lamp and has no end to see.
  */
-function litLamp(): Mesh {
+export function litLamp(): Mesh {
   const body = new Mesh(new CylinderGeometry(0.075, 0.075, 0.42, 10).rotateX(Math.PI / 2), new MeshStandardMaterial({ color: '#3c4048', roughness: 0.5 }));
   const head = new Mesh(new CylinderGeometry(0.13, 0.085, 0.16, 12).rotateX(Math.PI / 2).translate(0, 0, 0.27), new MeshStandardMaterial({ color: '#50565e', roughness: 0.45 }));
   const LONG = 16;
@@ -240,6 +247,7 @@ function litLamp(): Mesh {
   for (let i = 0; i < at.count; i++) fade.fill((1 - (at.getZ(i) - 0.3) / LONG) ** 1.6, i * 3, i * 3 + 3);
   cone.setAttribute('color', new BufferAttribute(fade, 3));
   const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.16, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, fog: false }));
+  beam.name = 'lamp-beam';
   body.add(head, beam);
   return body;
 }
@@ -466,6 +474,14 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
     made.position.set(piece.at.x, piece.at.y, piece.z);
     made.rotation.y = yaw(piece.face ?? 0.25);
     made.name = `furniture:${piece.look}`;
+    // A party's cloth over a table: over its top and hanging a little down its sides.
+    if (piece.cloth && piece.look === 'table') {
+      const cloth = new Mesh(new BoxGeometry(5.3, 0.5, 2.5), new MeshStandardMaterial({ color: piece.cloth, roughness: 0.9 }));
+      // Beside the table, not in it: the room kit's model takes the table's own place (its children).
+      cloth.position.set(piece.at.x, piece.at.y + 1.43, piece.z);
+      cloth.rotation.y = made.rotation.y;
+      group.add(cloth);
+    }
     group.add(made);
   }
 
@@ -541,7 +557,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   }
 
   const place = new Object3D();
-  const hand = new Vector3();
+  const hand = new Vector3(), lampAim = new Vector3();
   const pose: Pose = { ...STANDING };
   const before: Pose = { ...STANDING };
   const walking: Pose = { ...STANDING };
@@ -565,6 +581,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   let lastScene: string | null = null;
   const starts = new Map<string, State>();
 
+  let stagedTilt = 0;
   return {
     group,
     updateElof(rig, direction, height, calm) {
@@ -647,8 +664,12 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           state = { ...(starts.get(who) ?? state ?? fresh()) };
           play(state, keys, t);
         }
-        drawnWhile(rig.group, state !== undefined);
-        if (!state) continue;
+        drawnWhile(rig.group, state !== undefined && !state.away);
+        if (!state || state.away) {
+          // Gone in: coming back is a cut, not a walk from where they went.
+          live.delete(who);
+          continue;
+        }
         const was = live.get(who);
         let x = state.x, y = state.y, z = state.z, face = state.face, pace = 0, velocity = 0, walked = was?.walked ?? 0;
         // The legs go by steps of the body's own length at its gait (acting.ts), so a planted foot stays put.
@@ -845,7 +866,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           }
         };
         reach(state.act, elapsed, state.aim, state.before, 1);
-        if (rightWeight > 0) rig.reach(1, hand.divideScalar(rightWeight), rightWeight);
+        // Pointing uses the whole arm; something held out to be taken keeps a bend at the elbow, however far off he is.
+        if (rightWeight > 0) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, state.act === 'offer' ? OFFER_REACH : 1);
         if (leftWeight > 0) rig.reach(0, otherHand.divideScalar(leftWeight), leftWeight);
         // The working hands follow the wood, using each body's real arm lengths and the blade's tip.
         const leavesCarving = state.before?.act === 'carve' && elapsed < .45;
@@ -940,6 +962,11 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             mesh.position.copy(hand);
             if (held === 'knife' && state.act === 'carve' && workpiece?.act === 'carved') mesh.quaternion.setFromUnitVectors(up, knifeDirection);
             else if (held === 'crayon' && state.act === 'draw' && drawingContact) mesh.quaternion.setFromUnitVectors(up, toolAxis);
+            else if (held.startsWith('lamp-') && state.aim) {
+              // A lamp shines where its holder looks for something: the road ahead of him, the way up to a house.
+              lampAim.set(state.aim.x, state.aim.y, state.aim.z ?? 0).sub(hand).normalize();
+              mesh.quaternion.setFromUnitVectors(LAMP_AXIS, lampAim);
+            }
             else mesh.rotation.set(0, yaw(face), held === 'knife' || held === 'brush' || held === 'crayon' ? -0.6 : 0);
           }
         }
@@ -1107,7 +1134,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             bounce = calm ? 0 : Math.abs(Math.sin(since * 6)) * 0.3;
             break;
           case 'peek':
-            tilt = 0.2 + (calm ? 0 : 0.08 * Math.sin(since * 3));
+            tilt = (0.2 + (calm ? 0 : 0.08 * Math.sin(since * 3))) * (calm ? 1 : smooth(since / 0.3));
             break;
           case 'freeze':
             blink = 1;
@@ -1115,7 +1142,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           default:
             break;
         }
-        ghost = { x: state.x, y: state.y, z: state.z, face: state.face, tilt, bounce, blink, rough: state.rough, look: state.act === 'look' ? state.aim : null, act: state.act, actT: since };
+        // From one act to the next its lean changes over a moment, never in one frame.
+        stagedTilt = calm ? tilt : stagedTilt + Math.max(-2 * dt, Math.min(2 * dt, tilt - stagedTilt));
+        ghost = { x: state.x, y: state.y, z: state.z, face: state.face, tilt: stagedTilt, bounce, blink, rough: state.rough, look: state.act === 'look' ? state.aim : null, act: state.act, actT: since };
       }
       // The block of wood round the ghost, while there is any left.
       const rough = ghost?.rough ?? 0;

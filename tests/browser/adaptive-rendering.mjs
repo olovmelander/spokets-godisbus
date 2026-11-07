@@ -107,7 +107,8 @@ try {
   await page.setViewportSize({ width: 1180, height: 820 });
   await frames(page, 3);
   const resized = await info(page);
-  check('viewport resize respects the High cap and resizes the drawing buffer once', resized.width * resized.height <= 2.6e6 && resized.resizes === high.resizes + 1);
+  // High's cap (src/render/quality.ts's PIXEL_CAP), widened from 2.6 to 3.5 MP on 6 November at Olov's word.
+  check('viewport resize respects the High cap and resizes the drawing buffer once', resized.width * resized.height <= 3.5e6 && resized.resizes === high.resizes + 1);
   check('HDR storage is rebuilt on resize without compiling shaders', (await page.evaluate(() => window.__renderTest.allocations)) > allocationsBeforeResize && resized.programs === high.programs);
   const allocationsAfterResize = await page.evaluate(() => window.__renderTest.allocations);
   await frames(page, 5);

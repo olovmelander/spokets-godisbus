@@ -1,4 +1,5 @@
 import { Color, Group, InstancedMesh, Mesh, Object3D } from 'three';
+import { STONE, barky } from '../bark-detail';
 import type { ChapterData } from '../../sim/types';
 import { backRise, shapeOf, stones, type MountainSocket, type StonePlace } from '../mountain-kit';
 import { forwardAt } from './ground';
@@ -57,7 +58,7 @@ export function fell(chapter: ChapterData, from: number, to: number, seed: numbe
     if (grows(chapter, x) && grows(chapter, x - 2) && grows(chapter, x + 2) && !taken(x, z, 1.8)) lying.push({ x, y: top(x, z) + 0.7, z, size: 1.8, turn, shape: 0, tone: 1, foot: top(x, z) });
   }
   if (lying.length > 0) {
-    const mesh = new Mesh(stones(lying, [shapeOf(KIT.bare)]), KIT.stone);
+    const mesh = new Mesh(barky(stones(lying, [shapeOf(KIT.bare)]), STONE), KIT.stone);
     mesh.userData.mountain = { stones: lying } satisfies MountainSocket;
     group.add(mesh);
   }

@@ -252,9 +252,9 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       under();
       if (stance === 'stand') {
         // Someone standing breathes and shifts a little.
-        out.lean = 0.015 * Math.sin(r * 1.3) * loop * energy;
-        out.armL = 0.04 + 0.025 * Math.sin(r * 1.1) * loop * energy;
-        out.armR = 0.04 + 0.025 * Math.sin(r * 1.1 + 1) * loop * energy;
+        out.lean = 0.015 * Math.sin(r * 1.3 + 0.6 * Math.sin(r * 0.21)) * loop * energy;
+        out.armL = 0.04 + (0.018 * Math.sin(r * 1.1) + 0.008 * Math.sin(r * 0.43 + 2)) * loop * energy;
+        out.armR = 0.04 + (0.018 * Math.sin(r * 1.1 + 1) + 0.008 * Math.sin(r * 0.51)) * loop * energy;
       }
       look(out, c);
       return out;
@@ -354,6 +354,21 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       out.armL = (2.75 - 1.9 * settle) * rise(r - .08, .3);
       out.elbowL = .25 + .55 * settle; out.elbowR = .25 + .4 * settle;
       out.bounce = loop * Math.sin(r * 7.5) ** 2 * .2 * energy * rise(r, .16) * smooth((1.6 - r) / .35);
+      return out;
+    }
+    case 'shine': {
+      // A lamp held out before them towards what they look for: the elbow bent and the hand a little under the
+      // shoulder, as one holds a light up to see by, not a straight arm pointing.
+      under();
+      const target = c.aim ?? { ahead: 6, up: CHEST };
+      const hips = hipsOf(out);
+      const k = rise(t, 0.35);
+      out.lean += 0.04 * k;
+      const shoulderAhead = Math.sin(out.lean) * SHOULDER, shoulderUp = hips + Math.cos(out.lean) * SHOULDER;
+      const dx = target.ahead - shoulderAhead, dy = target.up - shoulderUp;
+      const far = Math.hypot(dx, dy) || 1;
+      handTo(out, shoulderAhead + dx / far * 1.15, shoulderUp - 0.2 + dy / far * 0.5, 1, k);
+      look(out, c, rise(t, .16));
       return out;
     }
     case 'offer':

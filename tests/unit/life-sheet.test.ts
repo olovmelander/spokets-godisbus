@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { ATLAS, LIFE, STRIPS, WALK, type Strip } from '../../src/content/life';
+import { ATLAS, LIFE, STRIPS, WALK, WALKERS, type Strip } from '../../src/content/life';
 
 /**
  * The atlas of the far scenery's life, as its generator measured it (art/blender/life.py writes life.json
@@ -18,6 +18,7 @@ interface Sheet {
     hooves: Record<string, [number, number][]>;
     small: { walk: string[]; stand: string[] };
   };
+  wild: Record<string, { cell: number; foot: number; stride: number; tall: number; shade: number; halt?: number }>;
 }
 const sheet = JSON.parse(readFileSync('art/baked/boot/life.json', 'utf8')) as Sheet;
 const strips = STRIPS as Record<string, Strip>;
@@ -44,13 +45,30 @@ describe('the atlas of the far life', () => {
     for (const [place, cast] of Object.entries(LIFE)) {
       for (const [kind, role] of Object.entries(cast.roles)) {
         if (role.act === 'flock') expect(drawn.has(role.strip!), `${place} ${kind}`).toBe(true);
-        else expect([sheet.cells.walk!.length, sheet.cells.stand!.length], `${place} ${kind}`).toEqual([12, 6]);
+        else {
+          const gait = WALKERS[role.walker ?? 'moose'];
+          expect(drawn.has(gait.walk) && gait.walk[4], `${place} ${kind}`).toBe(12);
+          // Only a walker that has cells for standing stops.
+          if (role.stops) expect(gait.looks?.[4], `${place} ${kind}`).toBe(6);
+        }
       }
     }
   });
 
-  it('keeps its strips inside the picture and off each other', () => {
-    const boxes = Object.entries(strips).map(([name, [x, y, wide, tall, cells, row]]) => ({ name, x, y, x1: x + wide * Math.min(cells, row), y1: y + tall * Math.ceil(cells / row) }));
+  it('walks the forest\'s bigger life by the generator\'s numbers', () => {
+    for (const name of ['pair', 'deer', 'bear'] as const) {
+      const made = sheet.wild[name]!, gait = WALKERS[name];
+      expect([gait.cell, gait.foot, gait.stride, gait.tall, gait.shade], name).toEqual([made.cell, made.foot, made.stride, made.tall, made.shade]);
+      if (made.halt !== undefined) expect(gait.halt, name).toBe(made.halt);
+    }
+  });
+
+  it('keeps its cells inside the picture and off each other', () => {
+    // Cell by cell: a strip may end part of the way along a row, and the next begin beside it on that row.
+    const boxes = Object.entries(strips).flatMap(([name, [x, y, wide, tall, cells, row]]) => Array.from({ length: cells }, (_, i) => {
+      const left = x + (i % row) * wide, top = y + Math.floor(i / row) * tall;
+      return { name: `${name} ${i}`, x: left, y: top, x1: left + wide, y1: top + tall };
+    }));
     for (const a of boxes) {
       expect(a.x1, a.name).toBeLessThanOrEqual(ATLAS[0]);
       expect(a.y1, a.name).toBeLessThanOrEqual(ATLAS[1]);

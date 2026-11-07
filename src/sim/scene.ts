@@ -27,6 +27,11 @@ export interface SceneDef {
    */
   from?: number;
   /**
+   * And for Elof to be short of this x: a scene staged at a place he has already gone past (a game taken up beyond
+   * it, at the next checkpoint) has been seen, and is never played there.
+   */
+  before?: number;
+  /**
    * A safe mark for replaying this unfinished scene after recovery. A checkpoint must not put Elof
    * away from its camera and the hands he needs next once he has chosen to begin this moment.
    */
@@ -76,7 +81,7 @@ export type StorySound = 'bird' | 'blink' | 'paper' | 'taste' | 'swell' | 'poff'
  */
 export type Act =
   // the family, and Elof where it suits him
-  | 'stand' | 'walk' | 'sit' | 'carve' | 'draw' | 'sip' | 'sneak' | 'kneel' | 'crouch' | 'gasp' | 'point'
+  | 'stand' | 'walk' | 'sit' | 'carve' | 'draw' | 'sip' | 'sneak' | 'kneel' | 'crouch' | 'gasp' | 'point' | 'shine'
   | 'wave' | 'cheer' | 'offer' | 'reach' | 'lift' | 'show' | 'blow' | 'shrug' | 'hug' | 'nod' | 'look'
   | 'startle' | 'stomp' | 'hands' | 'watch' | 'paint' | 'eat'
   // the ghost: a wooden toy that has come alive, and never bends
@@ -118,6 +123,11 @@ export interface ActorKey {
   holdsLeft?: Thing | null;
   /** The ghost only: how much of the block of wood is still round it as Pappa carves, from 1 to 0. */
   rough?: number;
+  /**
+   * Picture only: true, they have gone in out of the picture (through a door behind a house, say) and are not drawn
+   * from this key on, nor after the scene; false, they are back. Left out: as before.
+   */
+  away?: boolean;
 }
 
 /** Things the family hold in a scene. */
@@ -243,6 +253,7 @@ export class SceneDirector {
   constructor(private readonly scenes: readonly SceneDef[], spawn: Vec, flags: Set<string>) {
     // A scene that waits for a place he starts beyond has been seen: the game was taken up after it.
     for (const scene of scenes) if (scene.at !== undefined && scene.on === undefined && scene.at < spawn.x - 0.5) flags.add(sceneDone(scene.id));
+    for (const scene of scenes) if (scene.before !== undefined && spawn.x > scene.before) flags.add(sceneDone(scene.id));
     // An older save can remember the later action without the scene added around it. Its until flag
     // already means the story has passed this scene; retain that completion for presentation too.
     for (const scene of scenes) if (scene.until && flags.has(scene.until)) flags.add(sceneDone(scene.id));
@@ -306,6 +317,11 @@ export class SceneDirector {
       if (!due) continue;
       // Due, but staged where he is not yet: it waits for him, and the scenes after it wait with it.
       if (scene.from !== undefined && player.x < scene.from) return;
+      // Staged where he has already gone past: it has been seen.
+      if (scene.before !== undefined && player.x > scene.before) {
+        flags.add(sceneDone(scene.id));
+        continue;
+      }
       // A held scene waits for him to stand, and the scenes after it wait with it: the story keeps its order.
       if (scene.hold && !(player.mode === 'free' && player.grounded)) return;
       // One that waits for quiet lets what is being said finish first. He stands and listens meanwhile.

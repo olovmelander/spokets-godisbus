@@ -1,6 +1,399 @@
 # Handover
 
-## State (6 November 2026)
+## State (7 November 2026, afternoon)
+
+- **"How can we make the water feel more alive with small movement and waves, and more big forest animals walking
+  as silhouettes" (Olov, 7 November 2026; the same cloud session, PR #235).**
+  - **Living water** (`src/render/water.ts`):
+    - **Rings:** rings spread where things touch the water: his steps in a puddle, a landing, the wake behind what rides
+      or floats, and now and then a fish rising (up to eight at a time).
+    - **Drift and swell:** needles and birch leaves drift slowly on still pools, and a slow swell moves over the lake
+      and the river. Each water kind sets its own `drift` and `swell`.
+    - **Less motion:** with it on, the water stays still.
+    - **Check:** `tests/browser/water-light.mjs` checks the rings against a twin water.
+  - **Big animals in the far scenery** (`art/blender/life.py`, rendered in Blender to `art/baked/boot/life.glb`; the
+    atlas is now 1024×1024; `src/content/life.ts` `WALKERS`; `src/render/life-plan.ts`):
+    - **The animals:** walk cycles for a moose cow with her calf at her heels, a roe deer that walks and stops to look,
+      and a bear, beside the bull moose. Each has its own gait, speed and size.
+    - **Where they walk:**
+      - Granskogen: the cow and calf at x 46, the deer at 95, the bear at 178 and the bull at 194.6.
+      - Gården: a roe deer on the neighbours' meadow at 6.5.
+    - **Forcing one:** `?debug&life=pair|deer|bear|moose`.
+  - **Not finished: in Granskogen the animals do not read in the picture yet.** On Myren the bull shows clearly. In
+    Granskogen, captures showed nothing, not even the old forest moose:
+    - **The cause:** the forest's slot (z -54) lay behind two far pictures' bands of mist, and its ink was mixed 30 %
+      toward the bright forest haze, so the animals were the colour of the gaps they crossed.
+    - **The last change:** the slot moves to z -40, between the -46 and -32 pictures, with 12 % haze and darker inks
+      (like the bog's bull).
+    - **Status:** this passes the tests but was not confirmed in a picture before the session ended (a phone-sized
+      capture at x 47 showed no animal in its three frames).
+    - **First check tomorrow:** Granskogen at x 47 with `?debug&life=pair`, at 95 with `life=deer` and at 178 with
+      `life=bear`, and Gården's deer at x 8.
+  - **Size:** JS 539.8 of 540 KB, boot 4540 of 4608 KB. The next feature in the main bundle needs the JS gate raised
+    (plan §6.12) or code moved to a lazily loaded chunk.
+  - **The next step needs:** nothing from Olov's computer.
+
+## State (7 November 2026, midday)
+
+- **"Continue with everything you mention and recommend improving" (Olov, 7 November 2026; the same cloud session,
+  PR #235).** The list of what was left in the graphics, worked through in order:
+  - **Sunlight through the leaves on High** (`src/render/canopy.ts`, `src/render/ground-detail.ts`): in the forest and
+    the garden by day, a layer of crowns hangs high over the ground, seen only by the sun's shadow map. Its shade
+    falls on Elof, the family, stones and trunks, with round flecks of sun between that drift as the crowns sway and
+    stay put as the camera follows or he climbs.
+    - **The ground also paints them:** the forest floor takes most of its light from the sky, so the shadow alone was
+      faint. The ground's shader reads the same leaf sheet at the same places, so its flecks lie exactly where the cast
+      shade has its gaps, as far as the eye sees. Mid keeps its painted dapple.
+    - **Cost:** one layer, culled by the picture's camera (it only writes into the sun's map). The first version, with
+      two layers drawn in the picture too, slowed CI's software-drawn run through the forest past its mark.
+  - **Reflections of what is near** (`src/render/water.ts`, `reflect`): on Mid and High a camera mirrored in the surface
+    of the nearest pool takes a third-size picture of Elof, what he rides and carries, the ghost, the family, the
+    candy and what moves over the water, and the water reads it back, rippled.
+    - **Where it shows:** best where water lies in front of the path (Älven, Flärken, the bog). With the camera level, a
+      true mirror puts the reflection of something at the front edge of a puddle below the puddle, so Byn's puddle
+      looks as before.
+    - **Memory:** the target is a third of the picture so Myren's High tablet peak stays under 110 MB.
+  - **The brooks:** the water's surface takes 60 % of the haze the ground takes (all of it in Myren's mist), so a brook
+    seen from above stays water. No straight mirror edge was found in Granskogen's brook any more.
+  - **Blender models for what was built in code** (`art/blender/a2-yard.py`, `art/baked/aventyr2/yard.glb`):
+    - Billsta: the woodshed, the rowing boat turned over on its sawhorses under a blue tarp whose loose corner flaps
+      in the gusts, the mailbox, and Morfar's garden furniture under a green tarp (a new building kind, `gardenset`).
+    - Flärkenbadet's swings; Olympia's two goals with real nets, and its kit table.
+    - **Still built in code:** Flärken's tower, huts, chess board and sun board; the church in Stormens öga; the lodge in
+      Älven; Olympia's store, floodlights and poles; Myren's dead pine (already a detailed shape).
+  - **The story's moments:**
+    - **Berget:** *Lyft* is a short held scene: Elof pushes the ghost up the cliff and it scrambles over. New
+      scene bound: `before`.
+    - **The epilogue:** Pappa comes over from the party once the knife is taken, and kneels beside the carving until
+      the eyes are painted. New spot field: `goesWhen`.
+    - **Bedtime:** a glass of the family's toothbrushes and Elof's own little one, gone once he takes it.
+  - **Not done yet:** the family's hands, hair and clothes (#46, private repository, for Olov's eye), and smoother walk
+    and run (#47).
+  - **CI:** smoke's forest run on High failed once after the crowns came and was fixed. On the Olympia commit,
+    gpu-memory timed out clicking Low after High in Granskogen, and settings' portrait Follow-finger speed check
+    failed. Both pass here; they were not seen again before this note.
+  - **The next step needs:** nothing from Olov's computer, apart from #46's review of the family.
+
+## State (7 November 2026, morning)
+
+- **Olov's morning feedback, and the Senare list (7 November 2026, morning, the same cloud session, PR #235 and the
+  private repository's PR #5).** Olov asked about Bertil's hair under the cap, sent a picture of arms through the
+  raincoats, then one of Morfar's sweater "som en fladdermus", and asked to go on with the Senare list.
+  - **Arms through the raincoats** (`src/render/view.ts`): each lamp is held out in front, on the side it lights,
+    so no arm crosses the chest through the coat.
+  - **Bertil's hair under his cap** (`src/render/rain-gear.ts`, `hairUnderCap`): his own hair shows below the brim
+    while the cap is on, and all of it once he has lent the cap.
+  - **Sleeves of their own** (private repository, `family/separate_sleeves.py`):
+    - **The fault:** every top's sleeves were sculpted as one surface with its trunk. An arm raised out from the
+      body dragged the side out with it, like a bat's wing (Morfar at the ladder, Moa's jacket).
+    - **The repair, as `refine_caps.py` did the caps:** build each person as approved and with `SLEEVES_APART` (each
+      sleeve or bare arm a tube of its own, set in at the shoulder like the raincoats'). Then find the approved
+      garment in the export, vertex for vertex, and put the new one in its place.
+    - **Checked:** everything else is bit-identical.
+    - **Who:** Mamma, Pappa, Moa, Bertil, Morfar, Mormor and Elof.
+    - **Records:** the input and output hashes are in `baked/private/sleeves-verification.json`. Pappa's and Bertil's
+      inputs are `refine_caps.py`'s outputs, so the chain is baseline → caps → sleeves.
+    - **Not possible:** a full rebuild would no longer be the approved likeness. The head's sculpting is not
+      exactly repeatable today.
+  - **The Senare list's story details, done:**
+    - **Granskogen:** the ghost's sweet lies on the vittra's doorstep once it has been there.
+    - **Billsta:** Moa and Bertil stand by the car's front from the start. Moa points at the lit window. At "Följ
+      vårt godis! Vi springer före." Moa waves, and they run up to the house, round its left end and in by the
+      door at its back, where the house hides them (Olov: the real door is at the back).
+      - New in the scene system: an actor key may say `away`, and from then on they are not drawn.
+    - **Flärken:** the second hut's own door is now the toy he rides: an old plank door hung on an iron rail. It
+      slides shut over the doorway and open to the right, and bangs at each end. The window has moved to the left.
+      - New: a cycle may `slam` (rest, gather speed, bang).
+      - The stops are a doorway apart, as low and as high as before, so the robot still rides it from the bench
+        up to the roof.
+    - **The epilogue:** given its candy, Klonk hops up onto the party table, across it, and down again as it is
+      named.
+    - **Granskogen's seesaw:** Pappa stands where Elof calls him, so he is in the picture on an upright phone too.
+      Once called, he walks over to his seesaw's high end by the ravine and goes down on one knee, turned to the
+      board, with a hand on its end until Elof flies ("Jag håller brädan").
+      - New: a spot may say where its helper walks once used (`goesTo`). In a game taken up afterwards, or without
+        motion, they are simply there.
+      - The family-help suite's Granskogen case now stands Elof on the low end, where that scene is.
+  - **Later the same morning, two more of Olov's wishes:**
+    - **Bertil's hair is short:** a boy's cut, with the fringe above his brows, his ears free and a close nape
+      (private repository, `family/wardrobe.py`). The tufts are half as long and overlap, so no ring stands out as a
+      ledge.
+    - **What is held looks held:** three grips locked the arm straight, because the hand aimed further off than the
+      arm reaches. Now:
+      - the family's flashlights through the storm are held at the waist, in front of the coat, with the elbow
+        bent;
+      - in Stormens öga the lit lamps are held out over the water with a new act, `shine`, bent at the elbow, not
+        `point`'s straight arm;
+      - what is held out to be taken (Pappa's brush in the prologue) uses at most 0.82 of the arm's length. The arm
+        solver now takes how much of its length a reach may use.
+    - **Looked at and left as they were:** Bertil's and Moa's lamps, Mormor's lantern, Elof's flashlight,
+      lingonberry and drawing, and Mamma's mug.
+    - **Still not drawn:** the epilogue's carving is a drawing panel, so no 3D hand holds the knife there. Pappa
+      beside Elof as they carve stays on the Senare list.
+  - **And then (Olov's last words this morning):**
+    - **Who drives to Billsta:** "Fixa det vad som blir bäst enligt dig".
+      - Mamma drove ("Hoppa in, Elof! Vi kör dit med bilen." at Älven's end).
+      - In Billsta she stands by the headlight and lights the road ahead of Elof. Pappa, by the front door, lights the
+        way up to the house.
+      - She watches Moa and Bertil run off, and both stay by the car (the coda's "family by the car"). Billsta draws
+        82 of 120 on Low.
+      - A lamp held in a scene now shines where its holder's act aims (Stormens öga too).
+    - **The family's car is their silver hatchback** (Olov: a silver Nissan Leaf), with no badge or plate.
+      - It is made in Blender (`build_leaf` in `art/blender/a2-props.py`): 4.5 m long, with a raked windscreen, a
+        sloping tailgate, a black rear pillar, a closed nose with a bright V, swept-back lamps and ten-spoke wheels.
+      - The code stand-in and its lit windows match it.
+    - **Anundsjö IF's crest on Bertil's cap,** Olov's exception to the rule of no crests (recorded in CLAUDE.md and
+      plan §0, Q13).
+      - It replaces the cap's plain badge (private repository, `family/cap_crest.py`): gold wings, a shield with AIF
+        and 1921, laid over the crown's seam as part of the cap.
+      - Only the badge's triangles changed. The caps check passes 76 of 76.
+  - **Sun shadows, tried and taken back:** High already has a sun shadow map (the trunks, and a capsule for each
+    figure). Letting the landmarks (the cone, the log) and the movers cast too made no visible difference in these
+    lights, so it was not kept.
+    - **The next real step:** dappled light through the canopy (a light pattern on the sun, or leaves as casters).
+    - **The figures' own silhouettes** instead of capsules would change a deliberate choice: the shadow pass never
+      touches the private models.
+  - **Checks:**
+    - Typecheck; `npm test` (207 files, 2,130 tests); the build with its size gates (JS 534 of 540 KB, the site
+      4,334 of 4,608 KB with the family's models); the privacy check.
+    - Browser suites: Äventyr 2 (42), family help (55), story (34), optional paths (132), and the private caps
+      check (76 of 76 on the repaired models).
+    - **Locally, Playwright 1.56.1 wanted Chromium build 1194, but the container has 1243.** The suites ran with
+      `PLAYWRIGHT_BROWSERS_PATH` pointing at links to 1243. CI has its own browser.
+
+- **The graphics pass, and the Unravel look (6 November 2026, cloud session, branch `ccr-77db4123-5s8xa3`, PR
+  #235).** Olov asked for a pass over everything visual in both adventures until 23:00, step by step: the ground near
+  the camera ("ser utdragen ut"), the brooks, the animals and insects, trees, stones, cones, the mountain, the
+  puzzles, Mamma's braid, finer buildings, and the home scenes' way out ("ser ut som att hela huset är öppet"). The
+  main characters and the trägubbar were left alone. During the evening he added: "ännu mer likt ... Unravel. Vi kan
+  utöka grafikbudgeten", and sent screenshots of Unravel as the measure (looked at, never stored). Later he moved the
+  end to 02:00 and then to 07:00 ("hela natten ... ställ aldrig några frågor och stanna inte"), adding the SUP, the
+  rain gear made in Blender, Bertil's hair, the puddle and the water, every animal and every character's motion.
+  - **The lens (Mid and High), which is most of the Unravel look:**
+    - **Depth of field** (`src/render/depth-blur.ts`): the play plane stays sharp; behind it the world softens more
+      the further it is; the near ground and leaves between him and the camera blur most and spill soft over what
+      is behind them; bright points open into discs. The focus pulls back to the family while a scene's shot is
+      on them. Two draws at about half resolution (each target at most 0.36 MP); High gathers from 16 and 12
+      points, Mid from 10 and 6. The grade decides at full resolution where the picture is sharp, so his outline
+      never softens. Strength: `DOF_FAR` 0.016 and `DOF_NEAR` 0.026 of the picture's height. What stands far back
+      keeps its shape: the blur thins from 6 EL behind the play plane to a quarter by 18 EL (Olov: "kyrktornet och
+      kyrkan" were too blurred).
+    - **The shade where things meet** (`src/render/contact-shade.ts`): ambient occlusion from the depth alone, half
+      resolution, one byte a pixel, a blur that keeps to one surface. `SHADE_REACH` 0.6 EL, `SHADE_STRENGTH` 0.7.
+    - **The film's look** (`grade.ts`, `setCinema`, 0.8): warm light, cool teal shadows, corners a little darker, a
+      little more contrast and saturation.
+    - **The foreground's own shade** (`grade.ts`, `setForeShade`): what stands between him and the lens is darker
+      and cooler the nearer it is, framing the picture as Unravel's foregrounds do; full by day, a third at the
+      darkest of the night and in Äventyr 2's storm, so the nights stay as light as Olov asked.
+    - **Smoothed edges** (FXAA in `grade.ts`, `setSmoothEdges`): Mid and High, no extra memory. Not where the
+      browser draws without a GPU (SwiftShader on CI, where it would slow the timed suites); it is compiled there all
+      the same, and `?edges` turns it on.
+    - **Pollen in front of the lens** (`src/render/lift/near-motes.ts`): a dozen out-of-focus discs drifting in the
+      sun of the forest, the garden and the home.
+    - **Sunlight through the leaves** (`DAPPLE` in `ground-detail.ts`): soft warm patches drifting on the forest
+      floor and the lawn, by day and out of the storm.
+    - `?nolens` leaves the depth of field and the shade out, to bench their cost with `?bench`.
+  - **Close materials (Mid and High; Low keeps its old cost through the `CLOSE_DETAIL` uniform):**
+    - **The ground** (`src/render/ground-detail.ts`): detail at three sizes instead of one stretched smear: moss
+      and soil, rock, road, board floors (each board its own tone, grain, knots, joints, worn middle), and
+      Olympia's artificial turf.
+    - **Bark, granite and grain** (`src/render/bark-detail.ts`, marked on a shape's corners by a `barky`
+      attribute): scaly bark on the stems and boughs by the ledges and the spruce trunks; granite with crystals, rain streaks and lichen
+      on the mountain's rocks, the forest's boulders, the fell's stones and the forest kit's stones (the eddy
+      stone); grain on the planks he pushes and on plank ledges.
+    - **Moss** (`lift/flora/light.ts`, `moss-v2`): a carpet of little shoot tips.
+    - **Weather on the kit's outdoor things** (`src/render/weathered.ts`): the bridge, stairs, fence, slide,
+      rowboat, stones, stumps and Olympia's hall and stand get mottling, a fine grain and darker feet, from all
+      three sides. Steep banks of moss and soil show earth, stones and roots.
+    - **Painted wood** (`src/render/painted-wood.ts`): the village's houses and Äventyr 2's villa, barn, store,
+      clubhouse, stand, church, woodshed and lodge: grain under the paint, uneven paint, the foot of the wall darker.
+  - **Places and things:**
+    - **Home** (`src/render/dressing/house-door.ts`): out through a glazed veranda and its open door, after Olov's
+      photograph (not stored); the red house front fades in over the cut-away rooms. Prologue and Stormkvällen.
+    - **Brooks** (`water.ts`): Norrland's tea-brown humic water instead of tropical teal. Later, after Olov asked
+      whether the water and brooks were fixed: the forest's own water colour was olive (`dressing/index.ts`), now
+      dark tea; the water is murky (0.42 per EL), so a brook seen from the side is amber near the top and dark
+      below, with slow beams of light and drifting specks; it mirrors darker and warmer. And over still water
+      the eye rises and looks down (`POOL_EYE` 1.6 EL, and `BROOK_EYE` 3 EL over the forest's brooks, in
+      `view.ts`), so the surface reads as water and not as a thin band at his feet; he stays where he was in the
+      picture.
+    - **The Saturday bag** (`art/blender/candy.py`, rebuilt into `art/baked/boot/candy.glb` with Blender 5.2, and
+      the stand-in in `saturday-bag.ts`): as the ghost holds it in Pappa's carving and on Olov's poster, pale paper
+      with a bunch of painted dots (a big red one, green, orange and red round it), on all four sides, since the
+      ghost turns the bag. It was striped blue.
+    - **Flärken's huts** (`aventyr2/buildings.ts`): plank doors with a Z brace, hinges and a ring handle, a small
+      window, sawn log ends.
+  - **Life and motion:** the ladybird and the ants (`src/render/critters.ts`); dor beetles that walk the forest
+    floor and hurry out of his way (`src/render/lift/beetles.ts`, tested); Mamma's braid (`src/render/braid.ts`);
+    the puzzles' things lean, rock and squash (`src/render/mover-motion.ts`, tested).
+  - **Later the same evening, at Olov's word: the SUP, the rain gear, and the story's details.** Olov: "istället för
+    båt ... en stand up paddle board (SUP), familjen äger såna"; "alla karaktärer ska ta på sig regnjacka, stövlar och
+    grejer ... så att det följer storien, och att Bertil tar av sin stövel på riktigt och ger till Elof"; "Sådana
+    detaljer måste vi hitta och fixa och implementera i spelet."
+    - **Mamma's SUP on Flärken** (`paddleBoard()` in `aventyr2/render.ts`, `src/render/paddle.ts`, the spot
+      `sjon:mamma` with `paddles: true`): instead of the rowboat, a teal board with white rails, a grooved deck pad,
+      a handle, a leash and a fin; Mamma stands on it, knees a little bent, and paddles with an orange-bladed paddle
+      held in both hands, the stroke beside the board. Her lines say SUP ("Jag paddlar dit på SUP:en!", "Din SUP
+      blev ju en bro!"); `scripts/voices-aventyr2.json` is regenerated (Äventyr 2 is not recorded yet).
+    - **Rain gear through the storm** (`src/render/rain-gear.ts`, `Rig.dress`, tested in
+      `tests/unit/rain-gear.test.ts`): from Stormkvällen's getting-ready scene, one by one as each speaks (Mamma,
+      Pappa as he shows his lamp, Bertil as he stamps into his boots, then Moa), and in every chapter of the storm
+      after it, each wears a raincoat of their own colour and rubber boots to below the knee: Mamma red, Pappa navy,
+      Moa yellow, Bertil orange with green boots. Not Elof: the star has made him small (`krymper`) before they get
+      ready (`tillsammans`), so he goes out in his own clothes (Olov: "hinner han ta på regnkläderna innan han blir
+      liten, det gör han inte va?").
+    - **The rain gear is made in Blender** (Olov, later that night: it looked jagged, and "måste göras på bästa
+      möjliga sätt i Blender för alla karaktärer"). The private repository's `family/wardrobe.py`, run after
+      `family/shared.py` by `family/build_wardrobe.py` with the `bpy` 5.2 module (branch `rain-gear` there, for
+      Olov to merge with this PR), builds in the same hand, over each approved model and skinned to the same
+      skeleton: a raincoat (rings round all that is worn, an A-line, a high collar, a hood lying on the back, a zip
+      with its pull, pocket flaps with snaps, elastic cuffs, a turned hem, the children's reflective band, sleeves
+      set in at the shoulder that bend as the sleeves under them), rubber boots one piece each (shaped over the
+      shoe, a rolled rim, a pull tab, tread), the sock under the boot Bertil takes off, and Bertil's own hair. Only these pieces are
+      exported (`<who>-wardrobe.glb`), so faces, bodies and caps stay as approved. The game binds each piece to the
+      model's bones by name with a copy of the body's material (`fitWardrobe`, `Rig.wear`); where no wardrobe has
+      come (stand-ins, CI) the old shells of the body stand in. It was looked at in Blender renders from four sides
+      and in the game with the lamps held up.
+    - **Bertil's hair** (Olov: "Bertil ska inte vara flintis, han ska ha hår som Elof"): under his cap his model is
+      a smooth dome; when he has lent the cap in Granskogen he now has a full head of tousled hair, made with
+      Elof's own tufts in Bertil's brown (the wardrobe's `bertil_hair`).
+    - **Bertil's boot, for real** (Stormgården): called, he leans down, lifts his right foot and tugs the boot off
+      with both hands; from then on he stands in one boot and a sock, and the boot lies ready on the flooded lawn
+      ("Min stövel blir din båt. Kliv i!") until Elof steps in.
+    - **The story's details, found by reading every line of Äventyr 2 against what is drawn** (14 found; the
+      cheap and visible ones done):
+      - The family's lamps ("Regnrockar på! Vi går ut med lampor."): out in the storm each at a help point holds a
+        lit flashlight, its beam on Elof. In Stormskogen Pappa holds Klonk in his beam until Elof is over. In
+        Stormkvällen Elof carries the flashlight from the table to Pappa, lit, and Pappa has it from then on. On
+        Low the beams are left out.
+      - What he is told to step onto lies ready where he boards it: Bertil's boot, Moa's umbrella on the wall,
+        Älven's raft and the birch leaves.
+      - Älven: Pappa stands up on the bridge ("Jag står här uppe på bron!"; `Spot.standsAt`, picture only), and
+        his scarf hangs down to Elof once lowered.
+      - Stormkvällen: the gust tumbles the little one out of the window after the old one; the candle is lit as
+        Mamma says "Jag tänder ljusen" (the scene's cue `candles`).
+      - Olympia: Bertil kicks the ball Elof rides; the thrown cone flies to the target, which turns white as it
+        hits.
+      - Morgonen: the cup of cocoa is a white mug with a red heart and steam, not a candle; the wet raincoats and
+        boots in the room are the ones they wore in the storm, Elof's smallest.
+      - Elof carries the little one's cap, tucked in at his back, from Stormbyn's gutter until he gives it back in
+        the storm's eye; there the old one holds out the golden sweet on its crinkled gold paper ("Ett geléhallon i
+        guldpapper!").
+      - Stormgården: Moa's lamp shines on him from the window (`storm.beams`).
+      - Left for later (see "Senare"): Moa and Bertil running ahead in Billsta, and Flärken's door banging on its
+        hinges.
+    - **The same search through Äventyr 1** (12 found; the cheap and visible ones done):
+      - Granskogen: Bertil stands bareheaded once he has lent his cap as Elof's boat ("Min keps blir din båt";
+        a rig's `bareHead`: on his model the cap is its own part).
+      - Myren: in the mist Elof holds the lysklubba up in his hand like a lantern, instead of it floating over him.
+      - The garden: Moa crouches and reaches into the root hole the ghost crept into ("Jag får inte plats!").
+      - The epilogue: the party has its table, with a cloth; the clip, the marble and the coin leave the floor as they are given
+        back.
+      - The prologue: Moa holds her crayon as she promises him a map.
+    - **Also tonight:** the forest's brooks raise the eye 3 EL (the bog's still water 1.6), so the water, its
+      mirror and its far bank read; Myren's two "striped bowls" were the soft tussocks, now widening down into the
+      water as hummocks with sedge round their shoulders, and the stripes were the water's mirror stepping, now
+      dithered into fine grain; the
+      village street's puddle is a dark blue mirror; rain lands in rings on the water; Älven's gnawed stumps were
+      rebuilt in Blender 5.2 with tooth marks, and the tall pine's crown (behind the mountain path, the garden and
+      Äventyr 2's places) is clouds of tufts instead of nine flat plates (the nature kit's other models are
+      unchanged); Flärken's log huts have the wood's grain; Olympia's goal net is a mesh of squares, not a row of
+      strings.
+  - **Under the rain gear** (`hideUnder` in `src/render/rain-gear.ts`): with an arm raised, Bertil's white shirt
+    showed as a strip through his raincoat. Each corner of the body is marked by what covers it (the coat's
+    cross-section band by band, so Mamma's braid over her front still shows; a boot below its top), and the body's
+    own material discards it while that piece is worn. The packer quantizes every mesh in its own box, so the body
+    and the pieces are compared in the pelvis's rest frame, in metres (a first try in raw positions hid Pappa's
+    shorts and knees).
+  - **Granskogen's brook ends against a far bank** (`src/render/dressing/forest.ts`): the forest's pools ran straight
+    back into the haze and ended in a ruler-straight line; each now ends a few EL behind the path against an uneven
+    bank of moss hummocks, the kit's stones and ferns.
+  - **More close things, made finer:** the garden's big boulder is a rounded stone with lichen rosettes, moss on its
+    back and a damp foot (`walkingStone` in `src/render/outdoor-models.ts`); Mamma's dead pine on Myren is twisted,
+    cracked and knotted, with bough stubs leaning away from the path (the `log` mover in `src/render/props.ts`); the
+    storm's eye's skerry has lichen, loose stones and sedge in its cracks (`src/content/aventyr2/moonstone.ts`); out
+    in the storm, drops splash up at Elof's feet as he runs and lands (`src/render/foot-splash.ts`).
+  - **Mamma lifts the pine** on Myren: called, she bends to the dead pine's end and holds it with both hands while it
+    rises across the pool, and straightens once it lies across (a gesture beside Bertil's and Moa's in `view.ts`).
+  - **What he picks up, in his hand:** in Granskogen Elof holds the lingonberry in front of him in his left hand until
+    he gives it to the jay; in the garden he holds Moa's leaf drawing (a sheet with a green crayon leaf) from under
+    the bridge until he shows it to her; in Norrsken, as he tastes the golden geléhallon ("Smaka …"), his hand raises
+    it to his mouth and it is gone as he grows.
+  - **The animals, reviewed one by one** (Olov: "Se även över alla djur hur de är designade och rör sig"; a review
+    of every creature's code and pictures, then the fixes):
+    - **The crane, modelled in Blender** (`art/blender/crane.py`, `boot/crane.glb`; the code-built one in
+      `src/render/crane.ts` stands in until it has come): built and checked with the `bpy` 5.2 module in this cloud
+      session (no `.blend` file is kept: the script is the source). Its bustle's feathers hang on edge, so that they
+      show from the side as the game sees it.
+    - **The crane** (Myren's kneeling crane and Berget's flight): no longer a grey blimp
+      with box wings. A long body, an S-neck black in front with the white stripe behind, the red crown, the
+      drooping bustle over the tail; in flight a round leading edge, black secondaries and black wing-tip fingers,
+      the neck straight out and the legs trailing. Kneeling, it breathes and turns its head to look now and then.
+    - **Wingbeats** (`src/render/wingbeat.ts`, tested): a downstroke of 60% of the beat, tips that follow behind,
+      a nod of the body, and glides between bursts, for the crane, the owl Elof rides and the helping jay (which
+      beats in bursts). The crane's near wing only rises to level, so it never hides Elof.
+    - **The crane chick** that follows him walks: legs that swing by the distance it has come, a bob twice a
+      stride, a head held and thrust on, a turn through facing the lens; rusty down, a paler breast and eyes.
+    - **The ladybird on its back** tips towards the lens so its underside, head and curled legs read; it pedals
+      unevenly with pauses and heaves itself almost over now and then.
+    - **Granskogen's living columns** are thirty real ants each, legs splayed to grip, shifting their grip, under a
+      thatch of fallen needles (`antColumn` in `src/render/critters.ts`).
+    - **Small birds** snap their heads and hold each look, crouch to hop, turn round in a hop instead of in one
+      frame, crouch to take off and flare to land; the thrush's spots read.
+    - **The jay** (the Blender model) turns only its head (head, beak and eyes under a pivot at its nape), and
+      hops three times from a crouch for its berry.
+    - **Owls** sit still and turn rarely, holding each look; the one that leaves flies off as the flying owl with
+      its wings beating, instead of sliding away rigid. **The otter** looks about in held turns, the kit's otter
+      a little from the waist.
+    - **Butterflies** beat about six times a second and swerve; **dragonflies** turn before they dart, nose down;
+      **squirrels** look about in snaps; **beetles** speed up and slow down instead of jumping to a run.
+    - **The kit's hedgehog, frog and snail** (`src/render/kit-life.ts`) no longer squash up and down, face and all:
+      the hedgehog snuffles, the frog hops on the spot now and then, the snail creeps a little way and back.
+    - **The kit's owl and otter have heads of their own** (`uggla-huvud`, `utter-huvud` in
+      `art/blender/a2-creatures.py`, rebuilt and baked with the `bpy` 5.2 module here): the game puts each on a pivot
+      at the neck (`NECKS` in `src/render/shared-models.ts`), and the owl turns its head far, as owls do, its body
+      hardly; the otter looks about from its neck; the hedgehog (`igelkott-huvud`) lifts and turns its snout as it
+      snuffles; the frog (`groda-huvud`) tilts its head to look up now and then, and its throat swells. A crane in Blender would be better still than the code-built one.
+  - **Every character's motion, reviewed for snaps** (Olov: "Kolla så ... alla rörelser ser naturliga och smootha
+    ut för alla karaktärer genom hela spelet"; a review of the code of Elof, the family, the ghost and the
+    trägubbar, then the fixes):
+    - **Elof's feet hold the ground** (`strideRate`, `strideReach` in `src/render/player-motion.ts`, tested): the
+      stride was a fixed amount per EL, so walking the planted foot skated forward at about two thirds of his speed,
+      and at three times his size he ran as on a treadmill. It is now paced by the ground the swinging leg covers,
+      and by his size; a walk swings a little wider (three to four steps a second); the swinging foot is held up
+      nearly level, so the toe no longer catches the ground.
+    - **Into scenes and between acts** his pose blends over 0.3 s instead of jumping (the unit test says so now);
+      an act of the hands after a kneel keeps him kneeling; hooking the lace on and letting go he swings into its
+      line over a moment, not 65° in one frame; on fast rides he keeps his riding pose; a ride's first step carries
+      him instead of jumping; the takeoff stretch and getting up after a fall are soft.
+    - **The family:** Bertil's boot pull and kick and Moa's reach into the root hole ease in and out; the kick's
+      turn is a quick turn, not 58° in a frame; up onto Pappa's shoulders starts and stops softly; their breathing
+      and a standing act's shifts have a slower second rhythm under them.
+    - **The ghost:** in the prologue it turns to sneak off over a third of a second (it turned 134° in one frame);
+      the helping ghost turns through facing the lens instead of flipping, and comes from where the ghost was; its
+      lean between story acts and its idle head-cock change over a moment; its standing rock is no longer one sine.
+    - **Lillgubben's** glad hops start from the ground when it has its cap back, each a little different.
+    - **The camera's near shots** (beside one of the family, the taste in Norrsken, on Pappa's shoulders) glide in
+      and out over about half a second instead of cutting.
+    - Checked: the unit tests, and the browser suites finale-stage, story, family-story, family-help, helper,
+      ghost-thoughts and myren-loop, run locally.
+  - **Budgets, widened at Olov's word ("utöka grafikbudgeten rejält"):** High draws up to 3.5 MP (was 2.6), its
+    offscreen targets may take 110 MB (was 80) and the whole picture 260 MB (was 220): `quality.ts`,
+    `gpu-memory.ts`, `scripts/asset-gpu-estimate.mjs`, the gpu-memory suite and its unit tests. The prologue on a
+    tablet on High measured 93 MB of targets and 130 MB in all. Boot JavaScript is 520 of 540 KB gzipped: the
+    gate went from 520 to 540 KB at the same word, when tonight's additions reached it (plan §6.12). Draws: a few more on Mid and High, far under the budget.
+  - **CI and software rendering:** the browser suites draw without a GPU and their walks are timed. The close
+    detail is off on Low, the lens gathers from few points and the edges are not smoothed there, so High in
+    software rendering is as fast as before (measured alternating with `?nolens`). The adaptive-rendering and
+    smoke suites still held High to 2.6 MP; they now check the caps in force (Low 1.0, Mid 1.6, High 3.5 MP).
+  - **Not done:** new Blender models. The trees, cones, stones and the eddy stone are already Blender kits, so
+    tonight's work went into how everything is drawn; the code-built buildings behind the play plane are now
+    softened by the lens. The redrawn bark texture of the forest's far trunks made no visible difference and was
+    dropped. When he is far under a brook's surface the near bank can still hide him (rare; the glitter bubble
+    catches him first).
+  - **For Olov:** play a stretch of each adventure on the family devices on High, and run `?bench` and
+    `?bench&nolens` once on the slowest of them: Auto measures the CPU, and the lens is GPU work it cannot see. If
+    the blur is too strong or too weak, it is the two numbers above.
 
 - **The voice cast is chosen; nothing is recorded yet (6 November 2026, cloud session, branch
   `ccr-bcf8fd48-65wpxs`).** Olov: "Jag vill förbättra rösterna för Elofs godisbus … gör på samma sätt som vi gjorde
@@ -424,7 +817,7 @@
     nobody behind them are gone (the way home in Stormöga, and boarding the boot).
   - **Kits:** `a2-props.py`, `a2-built.py` and `a2-room.py`, each with its own `.glb`: safe mode refuses a script of more than
     20 000 AST nodes.
-  - **The size gate is 4 MB now** (Olov, 5 November 2026): see the build's own line for where it stands.
+  - **The size gate is 4.5 MB now** (from 4 MB, 7 November 2026): see the build's own line for where it stands.
 - **The overhaul's long night (4 to 5 November 2026).** Stacked pull requests, one outcome each, none of them merged
   yet. **Merge in number order:** #192, then #195 to #201 (their base is `main`, so rebase or retarget as they land), then
   #202 to #223, each on top of the one before, and `spokets-godisbus-familj` PR #2 for the real house in Billsta. #187 is
@@ -3993,6 +4386,40 @@
 
 ## Next
 
+**First: make Granskogen's big animals read in the picture** (see the afternoon's state above). Capture them in the
+game, with `?dev&debug&tier=high&course=granskog&at=47,4.1&life=pair`, and tune the forest slot (`src/content/life.ts`):
+its depth, haze, inks and sizes, against the bog's bull, which reads well. Then check Gården's deer the same way.
+
+**PR #235 (the graphics pass, the Unravel look, the SUP, the rain gear and the story's details), for Olov to judge
+and merge.** On the family devices, on High:
+- the lens: is the blur right (the far world soft, the near ground very soft, him and the path sharp)?
+- the storm: the rain gear on everyone, Bertil's boot, the family's lamps, Mamma on her SUP;
+- the brooks in Granskogen (the eye rises over them, a far bank of moss ends them) and Myren's hummocks;
+- the morning's fixes (7 November):
+  - the arms outside the raincoats, and Bertil's hair under his cap;
+  - everyone's sleeves when an arm goes out (Morfar at Billsta's ladder);
+  - Moa and Bertil running to the house in Billsta;
+  - Flärken's sliding door;
+  - Klonk on the party table;
+  - Pappa kneeling at his seesaw;
+  - Bertil's short hair, and the bent arms that hold the lamps and the brush;
+  - Mamma and Pappa by the silver car in Billsta, and the crest on Bertil's cap;
+- the midday's graphics (7 November): the flecks of sun under the forest's crowns on High; Elof, the ghost and the candy
+  mirrored in Älven and on Flärken; Billsta's woodshed, upturned boat with its flapping tarp, mailbox and garden
+  furniture; Flärken's swings; Olympia's goals and kit table; Lyft on Berget, Pappa kneeling by the carving, and the
+  toothbrushes at bedtime;
+- the animals (the night of 7 November): the crane kneeling on Myren and flying on Berget, its chick walking after
+  him, the ladybird on its back, the ant columns, the small birds, the jay's head, the owls and the otter turning
+  their heads, the hedgehog and the frog;
+- every character's motion: Elof's feet should hold the ground as he walks and runs (also at three times his size,
+  at home), and nothing should snap in one frame: into scenes, onto the lace, the family's gestures, the ghost;
+- run `?bench` and `?bench&nolens` once on the slowest device.
+It needs no work on Olov's computer; the Blender work (the stumps, the tall pine, the crane, the creatures' heads, and
+the family's rain gear in the private repository) was made in the cloud session with Blender 5.2's `bpy` module, and
+the scripts are the sources (`art/blender/a2-nature.py`, `crane.py`, `a2-creatures.py`; `family/wardrobe.py` there). **Merge the private repository's
+PR #5 (`rain-gear`, the family's rain gear, Bertil's short hair, everyone's sleeves and Bertil's crest) together with #235**, so that the deploy carries the
+wardrobes; without it the game falls back to the older rain gear drawn from the bodies.
+
 The full game audit above repairs reproduced gameplay, persistence, control, audio and rendering defects across
 both adventures; its full validation/delivery record belongs to the PR. Review the deployed result on the family
 devices, especially larger-text Pause, touch/gamepad controls, chapter continuation and the final home ride.
@@ -4017,7 +4444,7 @@ needs no new Blender work. Device colour, readability and frame rate remain a ph
 no new *Senare* item or question for Olov; the existing lists below still apply.
 
 **Left of the overhaul:** the owl's flight and the ride home at Stormöga were not checked with stills since their water changed;
-Stormbyn's flat dark street; Pappa at the bridge stands on the bank; the raft tower and the goals are still drawn in code.
+Stormbyn's flat dark street; the raft tower and the goals are still drawn in code.
 
 **Earlier picture worklist, from three stills of every chapter on High (4 November 2026).** The completed graphics
 work above supersedes its room, shared-model and ground findings; remaining art/device judgements still apply:
@@ -4334,6 +4761,11 @@ The older list, still true where it is not struck:
   voices (Elof, Bertil, Mormor, Spöket), four library voices (Pappa, Mamma, Moa, Morfar) and his own voice for the
   narrator. Nothing is recorded with them until he says so.
 - **The size gate (Olov, 5 November 2026):** 4 MB as served for the whole site, from 3 MB.
+- **The size gate, again (7 November 2026, at Olov's "höj grafikbudgeten rejält om det behövs"):** 4.5 MB as served for
+  the whole site, from 4 MB. With the family's models in the deploy the site measured 4282 KB: the four rain-gear
+  wardrobes (348 KB, after trimming the socks nobody sees and the boots' faces) and Äventyr 2's rebuilt nature took
+  it over. CI builds without the family's models, so only the deploy would have failed. With the Blender crane and the
+  creatures' heads later that night it is 4330 KB.
 | Question | Decision | Source |
 | --- | --- | --- |
 | Elof as a player | 7 years, plays games for 11+. Play style *Äventyr* by default (variable jump, a swing he pumps, the glitter bubble, exciting sequences, challenge routes); *Lugnt* for anyone who wants it. Help only when asked. | Olov, 3 Oct |
@@ -4379,13 +4811,17 @@ The older list, still true where it is not struck:
 | Äventyr 2, version 2 | Ten chapters: Olympia, Flärken (Flärkenbadet, the former Sjön), Älven and Billsta between Byn i stormen and Stormens öga, which lies in the narrow at Billsta. Mormor and morfar are "Mormor" and "Morfar" only, as plain stand-ins; their house is an interpretation of Olov's picture without its address or number, and the picture is never committed. | Olov, 4 Nov: "ännu fler miljöer … Billsta, Själevad där mormor och morfar bor … badplatsen Flärken … Olympia i Bredbyn … pussel med en fotboll" |
 | The visual upgrade | `docs/visual-upgrade.md`: same art style, more life, light, air and plants in every chapter; Low keeps 120 draws and gets almost none of it; red, pink and gold stay the candy's; nothing scary; everything still with reduced motion; nothing compiled in play. Screen-space light shafts, near life that notices Elof, procedural hair/cap sway and a cheap water mirror on High are allowed now. | Olov, 4 Nov: "en total visuell och grafisk uppgradering … behålla vår befintliga artstyle" |
 | The `iron` surface | Only for a street drain's grate in the village: elsewhere the ground's picture digs a well round it (a test checks Äventyr 2). | Session, 4 Nov, after the visual sweep |
-| Chapter packs and the size gate | The plan's 450 KB is the first playable's JavaScript. A chunk fetched only later (`import()`), such as Äventyr 2's pack or the debug tools, is counted on its own and has its own 160 KB gate (`scripts/size-gate.mjs`). The boot JS gate is **520 KB** since 4 November (it was 450 KB; three r187 alone took the last 0.4 KB), widened at Olov's request for the visual upgrade. | Session, 4 Nov, for Äventyr 2; Olov, 4 Nov: "utöka budgeten för grafiken" |
+| Chapter packs and the size gate | The plan's 450 KB is the first playable's JavaScript. A chunk fetched only later (`import()`), such as Äventyr 2's pack or the debug tools, is counted on its own and has its own 160 KB gate (`scripts/size-gate.mjs`). The boot JS gate is **540 KB** since 6 November (520 KB from 4 November, 450 KB before; three r187 alone took the last 0.4 KB of the 450, and the Unravel look, the rain gear and the storm's lamps the last of the 520), widened at Olov's requests for the graphics. | Session, 4 Nov, for Äventyr 2; Olov, 4 Nov: "utöka budgeten för grafiken"; 6 Nov: "utöka grafikbudgeten rejält" |
 | Reference pictures | In `photos/`, ignored by git. **Every picture in its root is used** for the characters, the ghost and the house: the table in plan §2 says what each one decides. `photos/landscape/` is for the surroundings. | Olov, 3 Oct |
 
 ## Planned against actual
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Living water and big animals (7 Nov, afternoon) | Olov's request: water that moves, with small waves; more big forest animals walking as silhouettes | The same cloud session's afternoon | — / 0 so far | Rings, drifting needles and leaves, a swell on lakes and rivers; a moose cow and calf, a roe deer and a bear rendered in Blender for the far scenery. The forest animals don't read in the picture yet (first in Next). |
+| The graphics pass and the Unravel look (6 Nov) | Olov's request: every visual in both adventures, step by step until 23:00, then "mer likt Unravel" with a larger budget; later the SUP, the rain gear and the story's details, until 02:00 | One cloud session's evening and night | — / 0 so far | A lens (depth of field, contact shade, film look, near pollen), close materials (ground, boards, turf, bark, granite, grain, moss), the home's doorway, brooks, huts, beetles, braid, puzzle weight; Mamma's SUP, rain gear through the storm, Bertil's boot, the family's lamps, twelve more story details. |
+| Olov's morning list (7 Nov) | Olov's request: the arms through the coats, Bertil's hair, the bat-wing sweaters, then the Senare list | The same cloud session's morning | — / 0 so far | Lamps held out in front; Bertil's hair under the brim; every approved model's sleeves repaired without a rebuild (private PR #5); Billsta's runners, Flärken's sliding door, Klonk on the table, Pappa at his seesaw, the vittra's sweet; sun shadows for landmarks tried and taken back. |
+| The night to 07:00 (6–7 Nov) | Olov's request: the rain gear made properly in Blender, Bertil's hair, the puddle and the water, every animal and every character's motion, "hela natten till 07:00" without questions | The rest of the same cloud session's night | — / 0 so far | The family's rain gear and Bertil's hair in Blender (private PR #5), the body hidden under it; the crane in Blender and heads of their own for four of the kit's creatures; every animal's motion; Elof's feet, and no one-frame snaps for anyone; the brook's far bank, wet rock, the garden's boulder, Myren's pine; splashes in the storm; five more story details. CI green between pushes; three checks that flake under software rendering given longer waits. |
 | The voice cast (6 Nov) | Olov's request: designed voices to choose from for every character, as for Sköldhästen | Part of one cloud session | 1 / 1 | 73 samples on a private page; Olov chose all nine roles, and the voices are saved in his ElevenLabs account. Recording waits for his word. |
 | Lighter nights (6 Nov) | Olov's request: not so dark at the darkest, scenes too, mood kept | Part of one cloud session | — / 0 so far | 52 frames measured before and after; more light on the play plane at night, lighter night water, skies unchanged. |
 | Klonk carved again (6 Nov) | Olov's request: improve Klonk's design after the carving and the poster | Part of one cloud session, Blender 5.2 as a Python module | — / 0 so far | A new build from knife-cut blocks with baked wood and paint; private repository PR #4. |
@@ -4407,12 +4843,17 @@ The older list, still true where it is not struck:
 | Opening emotion and family help (10 October, continuation) | Continue auditing and improving the chapter | 1 cloud continuation | — / 0 | Bird/awakening/theft staging, deliberate star tasting and gradual shrinking, family reassurance, wordless sound, contextual reading UI and practical family help. Save compatibility repaired; 1,577 tests and the production size gate pass. Physical-device and private-model review remain. |
 | Planning | 1 | 3 recorded | — / 2 | Original plan versions 1–4; `main` and the placeholder page; the reference pictures gathered. Version 5 on 4 October adds the researched story/level overhaul and its acceptance criteria; no new session or review count is inferred. |
 | 0a Foundation | 1–2 | 1 | 1 / 0 so far | In the same session as plan version 4. Part 1: the scaffold, the simulation, the input port, the test course, the tests and both workflows. Part 2: the asset chain from Blender, `?bench` and `dev/menus.html`. Olov's device check is left. |
-| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. On 6 October, cloud graphics stage 1 unifies linear haze and the graded sky across tiers, with no new assets or passes. Cloud stage 2 adds forest trunk shadows on High and soft ground shade on Low/Mid; stage 3 adds camera-correct rim lighting; stage 4 reveals the forest landmark silhouettes; stage 5 keeps deck boards planar beside steps; stage 6 gives the village kerb/shop riser masonry and planar street edges; stage 7 adds a fascia to the visible deck edge; stage 8 gives the shop’s visible front granite courses; stage 9 adds layered road sections, with matching comparisons for each visual checkpoint. Stage 12 gives the finale curtains of northern lights with rays and twinkling stars; stages 13 to 16 stand the bog's tussocks in the water, put the shy ones on sedge pedestals, make the dead pines snags and let the mist hide what is far; stage 17 grows the boughs from their stems with each place's own foliage and makes the bark plates bracket fungi. Stage 18 puts the colaflaska in a nest and gives the young stems bark and dead twigs. Stage 19 lays a spång over the bog and makes its shy lights and Mamma's lamp soft glows in the mist. Stage 20 makes the mountain's gusts wisps of air and gives the mountain a foreground; stage 21 marks the finale's crack and lets the shared gifts glow warm. Stage 22 hangs two striped awnings on Byn's bakery, with drops that hang from their scallops, fall and splash. Stage 23 makes Byn's drain a cast-iron grate in the road. Stage 24 breaks the mountain's cliffs into granite blocks along their joints. Stage 25 makes the shop's jars glass and hangs lamps over its rings. On 7 October, stage 26 stands a matchbox on the shop's step; stage 27 lets the puddle mirror the yard, with leaves afloat and the road wet round it; stage 28 puts the shop's bag in the last picture; stage 29 folds the street's birch leaves and drifts them against the walls; stage 30 makes it dark under a wooden floor's rim board; stage 31 lets birch leaves fall in the village; stage 32 stands two cast-iron lamp posts on its far pavement. Final visual and physical-device review remains. |
+| 0b Look-dev | 2–3 | begun | 2 / 0 so far | In the same session: the tiers and the grading pass; then the look of a place, both golden frames, every chapter dressed as its place, and the art bible's §2. Blender plates and scanned materials, and H1a are left. On 4 October: Auto goes up to High by itself, High glows, and every place has far scenery in layers with parallax. Cloud follow-up: the finale's sky, scenery and haze darken together; stars remain round at every aspect ratio. The overhaul fixes family material/grader ownership, repeated private-model warmup and carried terrain shadows; public five-size WebP rehearsal captures are recorded. On 4 October, on Olov's computer: the candy modelled in Blender (a kit of 25 sweets and a new big candy), in every chapter. On 5 October, on Olov's computer, one long session with builders in worktrees: an audit of everything on screen (167 findings) and nineteen pull requests of it (#128 to #146): the ground's fronts for every kind of ground, the water, the far scenery repainted, the village's houses, the mountain's and the forest's kits from Blender, the foreground and the wind, the far life with the moose, and a draw-call budget for each tier. Olov has seen pictures of the first eight steps, and none of it on a device. On 6 October, cloud graphics stage 1 unifies linear haze and the graded sky across tiers, with no new assets or passes. Cloud stage 2 adds forest trunk shadows on High and soft ground shade on Low/Mid; stage 3 adds camera-correct rim lighting; stage 4 reveals the forest landmark silhouettes; stage 5 keeps deck boards planar beside steps; stage 6 gives the village kerb/shop riser masonry and planar street edges; stage 7 adds a fascia to the visible deck edge; stage 8 gives the shop’s visible front granite courses; stage 9 adds layered road sections, with matching comparisons for each visual checkpoint. Stage 12 gives the finale curtains of northern lights with rays and twinkling stars; stages 13 to 16 stand the bog's tussocks in the water, put the shy ones on sedge pedestals, make the dead pines snags and let the mist hide what is far; stage 17 grows the boughs from their stems with each place's own foliage and makes the bark plates bracket fungi. Stage 18 puts the colaflaska in a nest and gives the young stems bark and dead twigs. Stage 19 lays a spång over the bog and makes its shy lights and Mamma's lamp soft glows in the mist. Stage 20 makes the mountain's gusts wisps of air and gives the mountain a foreground; stage 21 marks the finale's crack and lets the shared gifts glow warm. Stage 22 hangs two striped awnings on Byn's bakery, with drops that hang from their scallops, fall and splash. Stage 23 makes Byn's drain a cast-iron grate in the road. Stage 24 breaks the mountain's cliffs into granite blocks along their joints. Stage 25 makes the shop's jars glass and hangs lamps over its rings. On 7 October, stage 26 stands a matchbox on the shop's step; stage 27 lets the puddle mirror the yard, with leaves afloat and the road wet round it; stage 28 puts the shop's bag in the last picture; stage 29 folds the street's birch leaves and drifts them against the walls; stage 30 makes it dark under a wooden floor's rim board; stage 31 lets birch leaves fall in the village; stage 32 stands two cast-iron lamp posts on its far pavement. On 7 November, in the cloud: sun flecks under the forest's crowns on High, Elof and what is near him mirrored in water on Mid and High, less haze on the brooks, and a yard kit from Blender (Billsta's yard, Flärken's swings, Olympia's goals and kit table). Final visual and physical-device review remains. |
 | 1 Feel | 2–3 | begun | 2 / 0 so far | In the same session: part 1, the candy trail and the bag; part 2, the glitter bubble; part 3, kerbs, slopes, ledges and hoses; part 4, the lace and the swing; part 5, the play styles, the pause panel, saving and the big candies; part 6, a puzzle with things on rails; part 7, an exciting sequence and the camera's zones. All of Stage 1's list is built; H2 is left. Started before 0b and 0c are finished, on Olov's word. |
 | 2 Utgåva 1 | 7–10, plus 1 | begun | 4–6 / 0 so far | The whole development story and Byn are playable. The merged baseline includes C1–C4, controls/settings, separate players, album photos/replay, offline updates, replayable toys, choices/gestures, exploration, golden album reward, moonlit ending, memory presentation and ghost thought pictures. The new overhaul branch adds the causal opening/shared family shrinking, durable story context, all-chapter family rehearsals, staged finale/shared sweets/shoulder ride, and connected optional loops in Gården, Granskogen, Myren and Berget. The candy motive survives a missed mountain memory; purpose/recap identity stays memory-guarded. Main save identities remain intact. On 4 and 5 October: level design version 6; its first pass, the layers, over Gården, Granskogen, Myren, Berget and Byn; and one optional puzzle each in Gården, Granskogen and Myren. The second pass, on the main trails and their own puzzles, remains, and so does a puzzle for Berget. On 5 October, in a cloud session: a narrative audit (166 findings, fourteen steps), story scenes, the prologue rebuilt as scenes with an outdoor deck, every chapter's ending (a coda, a storybook page, and a time card at the next one's start), and a UX, UI and presentation audit (137 findings, eleven steps) with chapters that open on their card instead of the title. On 6 October, in a cloud session, its steps 1 to 11 and every row after them: the type, the controls, the speakers, a clear screen for the story, a short Pause with settings a child can read, a title over the living morning with one tap to play, the materials (paper, wood and candy, and every picture drawn), the UI's sound, the chapter's page as a storybook page, the collections, and a picture for every verb, on the button and over the thing; a HUD that keeps to itself, small things for every device, the page's map and tally, a ring round the held finger, help that carries on, one switch for less motion, what they feel on the bubbles, the painting and the carving close, the credits as the book's last pages, a picture for every player, Moa's words in wax, and the game installable on Android. Broader spatial work, Byn's return loop and the rest of its own story, final likeness/contact/acting/memory art, the story's further steps (sound next), listening and device checkpoints remain; no release is declared. |
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. On 7 October, a local Blender pass revises all six main models against the sheets, bakes the ghost's carved wood, refines locomotion and family greetings, and grounds imported boots from their actual geometry. All six private models pass Low/High browser checks; this remains a local revision, with faces, hair and clothes still simpler than the sheets. A second local motion pass adds start/stop/reversal weight, leading-foot jumps, hand paths and carried-arm layering, eased family following and story-driven ghost shoes; 1,414 tests pass. A focused opening-carving pass then adds planted support, a palm-centred knife grip, visible surface cuts, lifted returns and cut-timed shavings. A further family pass gives Sofie, Moa and Bertil distinct timing, precise mug and drawing contacts, purposeful gestures at every later help point, and smoother reunion/carry transitions. A subsequent audit fixes retained seated stances, interrupted-action snaps, abrupt glances, assisted-jump poses, fast-swing resets and history-dependent elbows; swing hands now follow the rope clear of the face. Sitting/standing blends use each rig's actual sole support, removing penetration and endpoint drops. A further contact audit adds accurate 3D pointing and reach/release blending, a visible supported palm lift held through Elof's cue, and chair exit paths for Moa and Emil. All 1,512 tests pass. A residual .432 EL low-reach gap, approximate palm surface support, brief chair contacts at Emil's exit, rig seams, review on a device, H1b and authored clips remain. Local Direct3D/Pixal trials now run offline on the RTX3070 laptop. Pixal60-step and estimated-camera tests give no clear likeness gain; the trained1024 portrait fits8GB and adds detail but also surface noise. The cleaner512 face remains the retained base; the seed17 alternate improves the jaw but not overall likeness, and the precision comparison is recorded above. A complete Blender candidate now combines the FP32-storage portrait/body, reference atlas and game rig. The saved14,782-triangle candidate still needs neck/hair/hand and topology repairs; H1b remains and no game replacement was made. Resume details are at the top of this handover. |
 
 ## Known bugs
+
+- **Flaky on CI (7 November):** the journey suite's "Controller moves through chapter choices" failed once and
+  passed three times in a row locally; Äventyr 2's chapters join the selector when its pack arrives, which can move
+  the focus under the pad's press. Not touched tonight. Granskogen's root slide in the challenges suite ran past its
+  12 s wait under software rendering three times; it now waits 40 s (the slide is 4-7 s of wall time locally).
 
 - **Full game audit, 6 November:** the reproduced issues in `docs/full-game-audit.md` are repaired and covered by
   regressions. No new unresolved gameplay defect was confirmed by this pass. Existing art/device limitations below
@@ -4589,8 +5030,14 @@ The older list, still true where it is not struck:
 - Äventyr 2 from real pictures: Olympia, Flärkenbadet and Billsta are built from the research text and, for
   mormor and morfar's house, one picture; a session that can open photographs (see "Frågor till Olov", 21) could
   match the pitch, the bathing place and the narrow more closely.
-- The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
-  line now).
+- Blender models for what is still built in code near the play plane: Flärken's tower, huts, chess and sun boards,
+  Stormens öga's church, Älven's lodge, Olympia's store, floodlights and poles. (Billsta's yard, Flärken's swings and
+  Olympia's goals and table were made on 7 November; Myren's dead pine is a detailed shape already.)
+- The dark underwater frames in the light pass's measurements cannot happen in play: the glitter bubble catches him at
+  the surface.
+- Tried and taken back: Elof holding the old trägubbe on Pappa's shoulders in Norrsken. The carving is nearly as tall
+  as he is, so in his hand it rose over his face, and the finale suite keeps both carvings below it.
+- A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
 
@@ -4668,6 +5115,21 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
       High carries the whole upgrade. In software rendering, Granskogen on High went from 4.5 to 2.5 fps, while
       Low and Mid are as fast as before. `?nolift=flora` (or `fauna`, `atmosphere`, `materials`) shows what each
       area costs.
+    - The defaults: as built.
+24. **The Unravel look (6 November):**
+    - Is the lens's blur right: the far world soft, the near ground very soft, him and the path sharp? It is two
+      numbers in `src/render/depth-blur.ts`.
+    - Should the pollen drifting in front of the lens and the beetles on the forest floor stay?
+    - Run `?bench` and `?bench&nolens` on the slowest family device: if the lens costs too much there, Mid can
+      keep it and High can drop the shade, or the other way round.
+    - The rain gear's colours (Mamma red, Pappa navy, Moa yellow, Bertil orange with green boots; Elof wears none,
+      for he is small before they get ready): are they the family's own, or should they be? It is one table in
+      `src/render/rain-gear.ts`, and the same colours in the private `family/wardrobe.py`.
+    - The night of 7 November, for the devices: does Elof's stride look right now that his feet hold the ground
+      (a walk is three to four steps a second)? Is the crane from Blender the crane Elof should ride? Are the
+      splashes at his feet in the storm too many, or too few?
+    - Mamma's SUP is teal with white rails and an orange paddle: the family's own boards' colours can go in
+      `paddleBoard()` (`aventyr2/render.ts`) and `src/render/paddle.ts`.
     - The defaults: as built.
 
 Choices the session made, for Olov to overrule if he wants:

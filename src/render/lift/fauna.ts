@@ -46,6 +46,14 @@ interface Now {
 /** Whether something at x, z (and `pad` around it) is in the picture. */
 const seen = (now: Now, x: number, z: number, pad = 2) => Math.abs(x - now.cx) < (now.cz - z) * now.slope + pad;
 const smooth = (k: number) => { const t = Math.min(1, Math.max(0, k)); return t * t * (3 - 2 * t); };
+/** A number from -1 to 1 for each whole `n`, the same each time. */
+const hashed = (n: number) => { const v = Math.sin(n * 12.9898 + 4.1) * 43758.5453; return (v - Math.floor(v)) * 2 - 1; };
+/** A small bird's look about: held, then a quick snap to the next way, at uneven times. */
+const glance = (t: number, seed: number) => {
+  const w = t * 0.85 + 0.4 * Math.sin(t * 0.7 + seed) + seed;
+  const n = Math.floor(w);
+  return hashed(n - 1) + (hashed(n) - hashed(n - 1)) * smooth((w - n) / 0.08);
+};
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
 const M = new Matrix4();
 const R = new Matrix4();
@@ -207,11 +215,11 @@ function squirrels(plan: Plan, add: Add): Kind {
       const out = girth(tree, q.h) + 0.03 + (dash ? 0.05 * Math.abs(Math.sin(stride)) : 0);
       M.makeBasis(F, U, W).setPosition(tree.x + U.x * out, tree.y + q.h, tree.z + U.z * out);
       crowd.matrix(i, M);
-      // A pause has a flick of the tail now and then, and a look round; a dash streams it out behind.
+      // A pause has a flick of the tail now and then, and a look round in quick snaps; a dash streams it out behind.
       if (!dash && !now.still) q.flick -= now.dt;
       if (q.flick < -0.8) q.flick = 1 + next() * 2.5;
       const flick = q.flick < 0 ? Math.sin(-q.flick * 20) * Math.exp(q.flick * 4) * 0.6 : 0;
-      crowd.pose(i, 0, dash ? 0.3 + 0.12 * Math.sin(stride + 1) : flick, dash ? 0 : 0.35 * Math.sin(now.t * 0.8 + i * 2), dash ? 0.8 * Math.sin(stride) : 0);
+      crowd.pose(i, 0, dash ? 0.3 + 0.12 * Math.sin(stride + 1) : flick, dash ? 0 : 0.35 * glance(now.t * 1.4, i * 2.7), dash ? 0.8 * Math.sin(stride) : 0);
     }
   };
 }
@@ -321,7 +329,7 @@ function birds(plan: Plan, add: Add): Kind {
       used.set(f.species, i + 1);
       return {
         crowd: meshes.get(f.species)!, i, rest: [...b.at] as [number, number, number], yaw: b.yaw, home: b.at,
-        doing: 0, k: 0, long: 0, wait: next() * 2, look: 0, hop: 0,
+        doing: 0, k: 0, long: 0, wait: next() * 2, look: 0, look2: 0, hop: 0, from: 0,
         // Where it has come down in a tree, while he goes by.
         perch: null as V3 | null,
         fly: null as null | { a: V3; b: V3; c: V3; k: number; long: number; out: boolean },
@@ -380,14 +388,16 @@ function birds(plan: Plan, add: Add): Kind {
         if (b.gone && b.perch) {
           // On its bough, looking about, until he has gone by.
           crowd.put(i, b.perch[0], b.perch[1], b.perch[2], b.yaw, s);
-          crowd.pose(i, 0, 0, Math.sin(now.t * 0.9 + i) * 0.7, 0);
+          crowd.pose(i, 0, 0, glance(now.t, i * 1.9) * 0.7, 0);
           continue;
         }
         if (b.fly) {
           const fl = b.fly;
           fl.k += now.dt / fl.long;
           if (fl.k < 0) {
-            crowd.put(i, b.rest[0], b.rest[1], b.rest[2], b.yaw, s);
+            // Crouching for the spring, the moment before it goes.
+            const crouch = fl.out ? smooth((fl.k * fl.long + 0.14) / 0.1) : 0;
+            crowd.put(i, b.rest[0], b.rest[1] - crouch * 0.02, b.rest[2], b.yaw, s, -crouch * 0.15, 0, s * (1 - crouch * 0.12));
             crowd.pose(i, 0, 0, 0, 0);
             continue;
           }
@@ -412,7 +422,9 @@ function birds(plan: Plan, add: Add): Kind {
             const coming = (!fl.out || !!b.perch) && fl.k > 0.72;
             const beating = coming || Math.sin(now.t * 7 + i * 2.1) > -0.35;
             const dip = coming ? 0 : Math.sin(now.t * 7 + i * 2.1 - 1) * 0.09 * Math.min(1, fl.k * 5);
-            crowd.put(i, at[0]!, at[1]! + dip, at[2]!, b.yaw, s, Math.atan2(d[1]!, Math.hypot(d[0]!, d[2]!)) * 0.6);
+            // Landing, it flares: body up, wings wide, to brake.
+            const flare = coming && !fl.out ? smooth((fl.k - 0.8) / 0.16) : 0;
+            crowd.put(i, at[0]!, at[1]! + dip, at[2]!, b.yaw, s, Math.atan2(d[1]!, Math.hypot(d[0]!, d[2]!)) * 0.6 * (1 - flare) + flare * 0.75);
             const spread = Math.min(1, fl.k * 6, coming ? 1 : (1 - fl.k) * 9);
             crowd.pose(i, (beating ? 0.95 : 0.12) * Math.sin(now.t * (coming ? 30 : 46 + (i % 4) * 3) + i * 1.7), spread * (beating ? 1 : 0.25), 0, 0);
             continue;
@@ -422,31 +434,47 @@ function birds(plan: Plan, add: Add): Kind {
         if (b.doing === 0 && (b.wait -= now.dt) <= 0) {
           const r = next();
           b.doing = f.shelter || f.perch ? 3 : r < 0.45 ? 1 : r < 0.75 ? 2 : 3;
-          b.long = b.doing === 1 ? 0.55 : b.doing === 2 ? 0.26 : 1.3;
+          b.long = b.doing === 1 ? 0.55 : b.doing === 2 ? 0.34 : 1.3;
           b.look = (next() - 0.5) * 1.4;
+          b.look2 = (next() - 0.5) * 1.4;
           b.hop = 0.1 + next() * 0.14;
           b.k = 0;
         }
-        let peck = 0, turn = 0, up = 0;
+        let peck = 0, turn = 0, up = 0, squat = 0;
         if (b.doing) {
           b.k += now.dt / b.long;
           const k = Math.min(1, b.k);
           if (b.doing === 1) peck = Math.abs(Math.sin(k * Math.PI * 2)) * 0.95;
-          else if (b.doing === 3) turn = b.look * Math.sin(k * Math.PI);
-          else {
-            // A hop: along the way it faces, a little up, and now and then it turns round as it lands.
-            up = Math.sin(k * Math.PI) * 0.08;
-            const step = (b.hop * now.dt) / b.long;
+          else if (b.doing === 3) {
+            // A look round, in quick snaps of the head, each held: one way, another, and back.
+            const snap = (at: number) => smooth((k - at) / 0.05);
+            turn = b.look * (snap(0.06) - snap(0.5)) + b.look2 * (snap(0.5) - snap(0.9));
+          } else if (b.doing === 4) {
+            // Turning round: a little hop, and round in the air.
+            up = Math.sin(k * Math.PI) * 0.04;
+            b.yaw = b.from + Math.PI * smooth(k);
+          } else {
+            // A hop: a crouch, then along the way it faces and a little up, and it lands with a give.
+            squat = k < 0.24 ? Math.sin((k / 0.24) * Math.PI) : 0;
+            const air = Math.max(0, (k - 0.24) / 0.76);
+            up = Math.sin(air * Math.PI) * 0.09 - squat * 0.015;
+            const step = k > 0.24 ? (b.hop * now.dt) / (b.long * 0.76) : 0;
             const z = b.rest[2] - Math.sin(b.yaw) * step;
             b.rest[0] += Math.cos(b.yaw) * step;
             // It keeps near where it came down: a hop on either side, and no nearer the path.
             if (z < -1.25 && Math.abs(z - b.home[2]) < 0.5) b.rest[2] = z;
-            if (k >= 1 && (next() < 0.35 || Math.abs(b.rest[0] - b.home[0]) > 0.3)) b.yaw += Math.PI;
           }
-          if (b.k >= 1) { b.doing = 0; b.wait = f.shelter ? 3 + next() * 5 : 0.3 + next() * 1.6; }
+          if (b.k >= 1) {
+            // Now and then, and when it has gone far enough, it turns round, never in one frame.
+            if (b.doing === 2 && (next() < 0.35 || Math.abs(b.rest[0] - b.home[0]) > 0.3)) {
+              b.doing = 4; b.k = 0; b.long = 0.22; b.from = b.yaw;
+            } else {
+              b.doing = 0; b.wait = f.shelter ? 3 + next() * 5 : 0.3 + next() * 1.6;
+            }
+          }
         }
         const fluff = f.shelter ? 1.12 : 1;
-        crowd.put(i, b.rest[0], (f.perch ? b.rest[1] : plan.ground(b.rest[0])) + up, b.rest[2], b.yaw, s * fluff, 0, 0, s * (f.shelter ? 1.08 : 1));
+        crowd.put(i, b.rest[0], (f.perch ? b.rest[1] : plan.ground(b.rest[0])) + up, b.rest[2], b.yaw, s * fluff, -squat * 0.12, 0, s * (f.shelter ? 1.08 : 1) * (1 - squat * 0.12));
         crowd.pose(i, 0, 0, turn, peck);
       }
     }
@@ -479,18 +507,24 @@ function butterflies(plan: Plan, add: Add): Kind {
         b.sit = Math.min(1, b.sit + now.dt / 1.6);
         if (b.sit >= 1 && (b.stay -= now.dt) <= 0) b.wait = 8 + next() * 9;
       }
-      // Its own soft loops round its home, and a flutter up and down in them.
-      const fx = b.home[0] + 1.5 * Math.sin(t * 0.31 + b.p) + 0.6 * Math.sin(t * 0.73 + 2 * b.p);
-      const fy = b.home[1] + 0.45 * Math.sin(t * 0.47 + b.p) + 0.07 * Math.sin(t * 9);
+      // Its own soft loops round its home, with the small sudden swerves of a butterfly's way, and a lift with each
+      // downstroke of its wings.
+      const beat = t * 38;
+      const fx = b.home[0] + 1.5 * Math.sin(t * 0.31 + b.p) + 0.6 * Math.sin(t * 0.73 + 2 * b.p) + 0.16 * Math.sin(t * 2.9 + b.p) * Math.sin(t * 1.3);
+      const fy = b.home[1] + 0.45 * Math.sin(t * 0.47 + b.p) + 0.12 * Math.sin(t * 2.3 + 2 * b.p) * Math.sin(t * 1.1) + 0.035 * Math.sin(beat + 1.2);
       const fz = Math.min(-1.2, b.home[2] - 0.6 * Math.sin(t * 0.27 + 1.3 * b.p));
       const k = smooth(b.sit);
       const x = lerp(fx, b.flower[0], k), y = lerp(fy, b.flower[1], k), z = lerp(fz, b.flower[2], k);
-      if (!now.still && Math.hypot(x - b.x, z - b.z) > 1e-4) b.yaw = Math.atan2(-(z - b.z), x - b.x);
+      // It turns into its way quickly, but never in one frame.
+      if (!now.still && Math.hypot(x - b.x, z - b.z) > 1e-4) {
+        const wanted = Math.atan2(-(z - b.z), x - b.x);
+        b.yaw += Math.atan2(Math.sin(wanted - b.yaw), Math.cos(wanted - b.yaw)) * Math.min(1, now.dt * 10);
+      }
       b.x = x; b.y = y; b.z = z;
       crowd.put(i, x, y, z, b.yaw, 1.4, 0, 0);
-      // Flying, its wings beat about three times a second, held up in a V; sitting, they stand closed over its back
+      // Flying, its wings beat about six times a second, held up in a V; sitting, they stand closed over its back
       // and open slowly.
-      crowd.pose(i, k > 0.95 ? -1.35 + 0.3 * (0.5 + 0.5 * Math.sin(t * 1.4)) : lerp(-0.45 + 0.9 * Math.sin(t * 17), -1.2, k), 1);
+      crowd.pose(i, k > 0.95 ? -1.35 + 0.3 * (0.5 + 0.5 * Math.sin(t * 1.4)) : lerp(-0.45 + 0.9 * Math.sin(beat), -1.2, k), 1);
     }
   };
 }
@@ -577,7 +611,7 @@ function lights(plan: Plan, add: Add, shine: Crowd, glow: { value: number }): Ki
   });
   const darts = plan.dragonflies.map((home, d) => {
     for (const w of [0, 1]) { fly.setXYZW(d * 2 + w, 0, 0, 0, 0.45); shine.mesh.setColorAt(d * 2 + w, SHEEN); }
-    return { home, from: [...home], to: [...home], k: 1, wait: next() * 2, yaw: 0, long: 0.3 };
+    return { home, from: [...home], to: [...home], k: 1, wait: next() * 2, yaw: 0, face: 0, long: 0.3 };
   });
   return (now, calm) => {
     // Fireflies glow up as the dusk deepens or the storm's eye opens, and fade with the day.
@@ -608,13 +642,16 @@ function lights(plan: Plan, add: Add, shine: Crowd, glow: { value: number }): Ki
         f.wait = 0.8 + next() * 2.2;
         f.yaw = Math.atan2(-(f.to[2]! - f.from[2]!), f.to[0]! - f.from[0]!);
       }
-      const e = smooth(f.k);
+      // It turns to its new way first, quick but not in one frame, then darts, nose down, and hovers level.
+      f.face += Math.atan2(Math.sin(f.yaw - f.face), Math.cos(f.yaw - f.face)) * Math.min(1, now.dt * 28);
+      const e = smooth(Math.max(0, (f.k - 0.15) / 0.85));
       const x = lerp(f.from[0]!, f.to[0]!, e);
       const y = lerp(f.from[1]!, f.to[1]!, e) + 0.03 * Math.sin(now.t * 9 + d);
       const z = lerp(f.from[2]!, f.to[2]!, e);
-      bodies.put(d, x, y, z, f.yaw, 1.25);
-      // Its wings, over its back: a faint shine on each pair.
-      for (const w of [0, 1]) shine.matrix(d * 2 + w, M.makeScale(w ? 0.34 : 0.42, w ? 0.1 : 0.13, 1).setPosition(x + Math.cos(f.yaw) * (w ? -0.03 : 0.06), y + 0.045, z + 0.01));
+      bodies.put(d, x, y, z, f.face, 1.25, -0.3 * Math.sin(Math.PI * e));
+      // Its wings, over its back: a faint shine on each pair, flickering as they beat.
+      const flicker = 0.85 + 0.15 * Math.sin(now.t * 47 + d * 2.1);
+      for (const w of [0, 1]) shine.matrix(d * 2 + w, M.makeScale((w ? 0.34 : 0.42) * flicker, (w ? 0.1 : 0.13) * flicker, 1).setPosition(x + Math.cos(f.face) * (w ? -0.03 : 0.06), y + 0.045, z + 0.01));
     }
   };
 }

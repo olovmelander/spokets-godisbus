@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
-import { LIFE, WALK, type Ink } from '../../src/content/life';
+import { LIFE, WALK, WALKERS, type Ink } from '../../src/content/life';
 import { personFor } from '../../src/content/people';
 import { farLayers } from '../../src/render/backdrop';
 import { FIRST, GAP, QUADS, STRIDE, lifePlan, type LifePlan, type Watch } from '../../src/render/life-plan';
@@ -92,7 +92,7 @@ describe('what it is made of', () => {
     const known = roles.filter(({ role }) => role.known);
     expect(known.length).toBeGreaterThan(0);
     for (const { place, kind, role } of known) {
-      const tall = WALK.tall * role.size * PHONE.px(LIFE[place]!.slots[role.slot]!.z);
+      const tall = WALKERS[role.walker ?? 'moose'].tall * role.size * PHONE.px(LIFE[place]!.slots[role.slot]!.z);
       expect(tall, `${place} ${kind}`).toBeGreaterThanOrEqual(12);
     }
   });
@@ -205,13 +205,15 @@ describe('the plan', () => {
       const xs: number[] = [];
       // It is on stage at once, and walks for some seconds before it stops.
       run(plan, 6, () => ({ x: 0 }), ({ clock, count }) => {
-        if (clock > 2.5 && clock < 5 && count > 0) xs.push(plan.quads[0]!);
+        // The walker's two quads are the last: a place's smoke and windows come first.
+        if (clock > 2.5 && clock < 5 && count > 0) xs.push(plan.quads[(count - 2) * STRIDE]!);
       });
-      const cycle = 12 / WALK.fps;
+      const gait = WALKERS[role.walker ?? 'moose'];
+      const cycle = 12 / gait.fps;
       const frames = Math.round(cycle * 60);
       const went = xs[0]! - xs[frames]!;
       expect(went, `${place} ${kind} goes left`).toBeGreaterThan(0);
-      expect(Math.abs(went - WALK.stride * role.size) / (WALK.stride * role.size), `${place} ${kind}`).toBeLessThan(0.01);
+      expect(Math.abs(went - gait.stride * role.size) / (gait.stride * role.size), `${place} ${kind}`).toBeLessThan(0.01);
     }
   });
 

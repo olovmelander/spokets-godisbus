@@ -1,6 +1,7 @@
-import { Box3, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Vector3 } from 'three';
+import { Box3, Float32BufferAttribute, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Vector3 } from 'three';
 import type { Assets } from './assets';
 import { forestKit } from './forest-kit';
+import { weathered } from './weathered';
 
 /** Authored models shared by both adventures. Only files actually used in this scene are fetched. */
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
@@ -8,6 +9,7 @@ const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'b
   'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
 const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra'];
 const BUILT = ['rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel', 'rabatt', 'roddbat'];
+const YARD = ['vedbod', 'roddbat-vinter', 'brevlada', 'gungor', 'utemobler', 'fotbollsmal', 'fotbollsmal-stort', 'kitbord'];
 const ROOM = ['soffa', 'soffa-filt', 'golvlampa', 'krukvaxt', 'bord', 'stol', 'pall', 'holme'];
 const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
@@ -17,6 +19,7 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
   ...Object.fromEntries(CARVINGS.map((name) => [name, ['private', 'tragubbar'] as const])),
   ...Object.fromEntries(PROPS.map((name) => [name, ['aventyr2', 'props'] as const])),
   ...Object.fromEntries(BUILT.map((name) => [name, ['aventyr2', 'built'] as const])),
+  ...Object.fromEntries(YARD.map((name) => [name, ['aventyr2', 'yard'] as const])),
   ...Object.fromEntries(ROOM.map((name) => [name, ['aventyr2', 'room'] as const])),
   ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
   'olympia-hall': ['aventyr2', 'olympia'],
@@ -26,6 +29,15 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
   lekstuga: ['private', 'lekstuga'],
   'lekstuga-hus': ['private', 'lekstuga'],
 };
+
+/**
+ * The creatures whose head is a thing of its own in the kit (art/blender/a2-creatures.py, `<name>-huvud`), and where
+ * their neck is in the model's own space (glTF's: y up, the front towards +z): the pivot the head turns about.
+ */
+const NECKS: Record<string, readonly [number, number, number]> = { uggla: [0, 1.42, 0], utter: [0, 1.3, 0.04], igelkott: [0, 0.3, 0.55], groda: [0, 0.36, 0.12] };
+
+/** What stands outdoors and is shown weathered: the built things, the nature kit, and Olympia's hall and stand. */
+const WEATHERED = new Set([...BUILT, ...YARD, ...NATURE, 'olympia-hall', 'olympia-stand']);
 
 const installed = new WeakSet<Object3D>();
 
@@ -122,6 +134,8 @@ export async function installSharedModels(assets: Assets, scene: Object3D, stand
       copy.position.set(block.x, block.y - block.height / 2, block.z ?? 0);
     }
     place.add(copy);
+    // The kit's outdoor things have a little weather on them seen close (./weathered.ts).
+    if (WEATHERED.has(name)) weathered(copy);
     if (place.userData.warm) warmed(copy);
     // Clone these too: repeated houses must not steal each other's sign or lit windows.
     for (const [suffix, colour] of [['name', '#e8ecec'], ['glow', '#ffc870']] as const) {
@@ -130,6 +144,17 @@ export async function installSharedModels(assets: Assets, scene: Object3D, stand
       const detail = source.clone();
       detail.material = new MeshBasicMaterial({ color: colour, fog: suffix !== 'glow' });
       copy.add(detail);
+    }
+    // A head of its own goes on a pivot at the neck, named 'kit-head', for whatever moves the creature to turn.
+    const head = model!.getObjectByName(`${name}-huvud`), neck = NECKS[name];
+    if (head && neck) {
+      const pivot = new Group();
+      pivot.name = 'kit-head';
+      pivot.position.set(neck[0], neck[1], neck[2]);
+      const part = head.clone();
+      part.applyMatrix4(new Matrix4().makeTranslation(-neck[0], -neck[1], -neck[2]));
+      pivot.add(part);
+      copy.add(pivot);
     }
     (place.userData.onModelInstalled as ((model: Group) => void) | undefined)?.(copy);
     installed.add(place);

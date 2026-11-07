@@ -97,9 +97,11 @@ export const garden: ChapterData = {
   // Where and when, as the chapter opens (./cards.ts).
   scenes: [timeCard('garden', 1)],
   goalX: 210,
-  // For the picture only (content/life.ts): geese cross the sky in a V where the lawn opens after the house's
-  // wall, and again from the top of the heap of shavings.
+  // For the picture only (content/life.ts): on the morning's first stretch a roe deer comes out on the neighbours'
+  // meadow beyond the hedge, stops and looks this way; geese cross the sky in a V where the lawn opens after the
+  // house's wall, and again from the top of the heap of shavings.
   life: [
+    { kind: 'deer', from: 6.5, to: 11 },
     { kind: 'geese', from: 72, to: 75 },
     { kind: 'geese', from: 145, to: 152 },
   ],

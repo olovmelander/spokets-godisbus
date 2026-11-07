@@ -145,6 +145,9 @@ const GUESTS = [
   { id: 'bertil', x: 19, word: 'giveBertil' },
 ] as const;
 
+/** The party table's top (`furniture`, below, and the room's table in ../../render/stage.ts): its two ends and middle. */
+const TABLE_HOP = { left: 11.4, middle: 13.4, right: 15.4, top: 1.68, z: -3.1 };
+
 /**
  * Epilog: Godiskalaset, on the glazed veranda at nine in the evening.
  * 1. **Elof hands out candy** (P18): he chooses a candy and then Mamma, Pappa, Moa, Bertil or the ghost.
@@ -167,10 +170,24 @@ export const epilog: ChapterData = {
   size: { scale: 3 },
   // The first trägubbe has its place again, first in the row.
   shelf: { x: 34, y: 5.4, filled: true },
+  // The party's table, behind the family where they stand to be given their candy.
+  furniture: [{ look: 'table', at: { x: 13.4, y: 0 }, z: -3.1, cloth: '#f1ead8' }],
   epilogue: { window: { x: 40, y: 3.43, z: -8.3 } },
   spawn: { x: 1, y: 0.01 },
-  // Where and when, as the evening opens (./cards.ts).
-  scenes: [timeCard('epilog', 1)],
+  scenes: [
+    // Where and when, as the evening opens (./cards.ts).
+    timeCard('epilog', 1),
+    // The naming: given its candy, the ghost hops up onto the party table and across it, klonk, klonk, and down again
+    // to where it waits for the carving. He is free all the while.
+    { id: 'klonk-table', on: 'partied', until: 'knife', seconds: 5.6, stage: { actors: { ghost: [
+      { at: 0, x: 23.4, y: 0, z: 0, move: 0.01, act: 'hop' },
+      { at: 0.05, x: TABLE_HOP.right, y: TABLE_HOP.top, z: TABLE_HOP.z, move: 1.1 },
+      { at: 1.2, x: TABLE_HOP.middle, move: 1 },
+      { at: 2.2, x: TABLE_HOP.left, move: 1 },
+      { at: 3.4, x: 26.6, y: 0, z: 0, move: 2 },
+      { at: 5.4, act: 'tilt' },
+    ] } } },
+  ],
   goalX: 53,
   ground: [
     { x: -3, y: 9 },
@@ -186,7 +203,9 @@ export const epilog: ChapterData = {
   night: { after: null },
   checkpoints: [{ x: 2.6, y: 0 }, { x: 25, y: 0 }, { x: 38, y: 0 }],
   spots: [
-    ...GUESTS.map((g) => ({ id: `party:${g.id}`, look: 'sign' as const, at: { x: g.x, y: 0 }, verb: 'give' as const, word: g.word, story: 'party' as const })),
+    ...GUESTS.map((g) => ({ id: `party:${g.id}`, look: 'sign' as const, at: { x: g.x, y: 0 }, verb: 'give' as const, word: g.word, story: 'party' as const,
+      // Pappa comes over to the carving once Elof has the knife, and kneels at his side, behind the line he walks.
+      ...(g.id === 'pappa' ? { goesTo: { x: 35.4, y: 0, z: -2.2 }, goesWhen: 'knife' } : {}) })),
     { id: 'party:spoket', at: { x: 22.4, y: 0 }, verb: 'give', word: 'giveGhost', story: 'party' },
     // Pappa kneels beside him with a piece of linden and a knife: it waits until the ghost has its name.
     { id: 'knife', look: 'sign', at: { x: 29, y: 0 }, verb: 'take', word: 'takeKnife', needs: 'beat:named' },
@@ -195,13 +214,15 @@ export const epilog: ChapterData = {
     { id: 'cut2', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut1', story: 'carve' },
     { id: 'cut3', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut2', story: 'carve' },
     { id: 'dots', at: { x: 32, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'cut3', story: 'paint' },
-    { id: 'teeth', at: { x: 44, y: 0 }, verb: 'take', word: 'brush', needs: 'dots', ride: 'bed' },
+    // Bedtime: the family's toothbrushes in their glass, and his own little one; he takes it, and goes up to bed.
+    { id: 'teeth', look: 'toothbrushes', at: { x: 44, y: 0 }, verb: 'take', word: 'brush', needs: 'dots', ride: 'bed' },
   ],
-  // What he found under the deck came with him: each thing lies by the one it belongs to.
+  // What he found under the deck came with him: each thing lies by the one it belongs to, until it is given back
+  // ("Mitt hårspänne! Tack, lillebror!"); the coin Pappa lets him keep goes into his pocket.
   decor: [
-    { look: 'coin', at: { x: 12.4, y: 0 }, after: 'lost:coin' },
-    { look: 'clip', at: { x: 16.4, y: 0 }, after: 'lost:clip' },
-    { look: 'marble', at: { x: 20.2, y: 0 }, after: 'lost:marble' },
+    { look: 'coin', at: { x: 12.4, y: 0 }, after: 'lost:coin', until: 'back:coin' },
+    { look: 'clip', at: { x: 16.4, y: 0 }, after: 'lost:clip', until: 'back:clip' },
+    { look: 'marble', at: { x: 20.2, y: 0 }, after: 'lost:marble', until: 'back:marble' },
     { look: 'brick', at: { x: 21, y: 0 }, after: 'lost:brick' },
   ],
   sets: [

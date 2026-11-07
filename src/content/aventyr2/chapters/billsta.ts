@@ -43,6 +43,21 @@ import { alongAll, hopCandy, jump, round, row, slopeRow, timeCard } from '../kit
  */
 const CAR = { x: -8, z: -17, width: 29 };
 
+/** The chapter's time card, which Moa and Bertil stand in by the car's front. */
+const CARD = timeCard('billsta', 1);
+/** Where Moa and Bertil stand by the car, and the lit window up at the house. */
+const KIDS = { moa: { x: 6.4, z: -7.6 }, bertil: { x: 8.6, z: -6.4 } };
+/** Mamma by the car's headlight, Pappa by its front door, a little out from its near side; what their lamps light. */
+const PARENTS = { mamma: { x: 2.8, z: -10.8 }, pappa: { x: -1.6, z: -11.2 } };
+const ROAD = { x: 11, y: 0.4, z: 0 };
+const UP_TO_HOUSE = { x: 16, y: 2, z: -40 };
+const WINDOW = { x: 14, y: 7.5, z: -66 };
+/**
+ * Their run ahead of him to the house, which stands about x 2 to 34 and z -84 to -61 (`buildings`, below): to its left
+ * end, and round it to the door at its back, where the house hides them from the road. In seconds, to the corner.
+ */
+const RUN = { corner: { x: -0.6, y: 0, z: -62 }, door: { x: 6, y: 0, z: -89 }, seconds: 6.2 };
+
 /** The road's ditch, full of rushing rain: twice a running jump. Morfar's ladder lies over it, rim to rim. */
 const DITCH = { from: 14.6, to: 19.2, bottom: -5 };
 const DITCH_WATER = -0.3;
@@ -222,8 +237,41 @@ export const billsta: ChapterData = {
   river: true,
   // Beside the family's car, on the road.
   spawn: { x: 1, y: 0.01 },
-  // Where and when, as the chapter opens (src/content/chapters/cards.ts).
-  scenes: [timeCard('billsta', 1)],
+  scenes: [
+    // Where and when, as the chapter opens (src/content/chapters/cards.ts). Moa and Bertil have jumped out of the
+    // car and stand by its front, Moa looking up at mormor and morfar's lit window, Bertil at Elof. Mamma, who drove
+    // ("Hoppa in, Elof! Vi kör dit med bilen." at Älven's end), stands by the headlight and lights the road for him;
+    // Pappa beside the front door lights the way up to the house. They stay by the car (the coda's "family by the car").
+    { ...CARD, stage: { ...CARD.stage, actors: {
+      moa: [{ at: 0, ...KIDS.moa, y: 0, face: 0.3, move: 0.01, act: 'look', aim: WINDOW }],
+      bertil: [{ at: 0, ...KIDS.bertil, y: 0, face: 0.35, move: 0.01, act: 'look', aim: { x: 1, y: 0.5, z: 0 } }],
+      mamma: [{ at: 0, ...PARENTS.mamma, y: 0, face: 0.2, move: 0.01, act: 'shine', aim: ROAD, holds: 'lamp-mamma' }],
+      pappa: [{ at: 0, ...PARENTS.pappa, y: 0, face: 0.12, move: 0.01, act: 'shine', aim: UP_TO_HOUSE, holds: 'lamp-pappa' }],
+    } } },
+    // "Titta! Det lyser hos mormor och morfar."
+    { id: 'bi:kids-window', on: 'beat:bi:window', until: 'beat:bi:new-trail', seconds: 2.6, stage: { actors: {
+      moa: [{ at: 0, act: 'point', aim: WINDOW }, { at: 2.2, act: 'look', aim: WINDOW }],
+      bertil: [{ at: 0.4, act: 'look', aim: WINDOW }],
+    } } },
+    // "Följ vårt godis! Vi springer före.": the trail is theirs now (docs/aventyr-2.md). Moa waves to him, and they
+    // run off ahead of him up to mormor and morfar's house, round its left end, and in by its door at the back.
+    { id: 'bi:kids-run', on: 'beat:bi:new-trail', until: 'bi:morfar', seconds: RUN.seconds + 3.6, stage: { actors: {
+      // Mamma watches them go, and lights his road again.
+      mamma: [{ at: 0.6, act: 'look', aim: RUN.corner }, { at: RUN.seconds + 1.6, act: 'shine', aim: ROAD }],
+      moa: [
+        { at: 0, act: 'wave', aim: { x: 7.4, y: 0.6, z: 0 } },
+        { at: 1.1, ...RUN.corner, y: 0, move: RUN.seconds, act: 'look', aim: RUN.corner },
+        { at: RUN.seconds + 0.6, ...RUN.door, y: 0, move: 2.6, act: 'look', aim: RUN.door },
+        { at: RUN.seconds + 3.4, away: true },
+      ],
+      bertil: [
+        { at: 0.3, act: 'cheer' },
+        { at: 0.8, x: RUN.corner.x + 1.4, y: 0, z: RUN.corner.z + 2.2, move: RUN.seconds, act: 'look', aim: RUN.corner },
+        { at: RUN.seconds + 0.4, x: RUN.door.x + 1.2, y: 0, z: RUN.door.z + 0.6, move: 2.6, act: 'look', aim: RUN.door },
+        { at: RUN.seconds + 3.2, away: true },
+      ],
+    } } },
+  ],
   goalX: 194.6,
   // The chapter's card waits until the flash's last word is said: the little one safe on the stone, the owl.
   goalNeeds: 'beat:bi:cheer',
@@ -377,8 +425,8 @@ export const billsta: ChapterData = {
     ],
     // Mormor and morfar's place by the road near the forest: the white house with its lit window behind the yard,
     // the red barn beside it, whose windows glow once mormor has taken her lantern in; the woodshed, the rowing boat
-    // on its trestles, the mailbox by the road, birches, and the forest's spruces across the road and behind the
-    // house, up Billaberget.
+    // on its trestles under a tarp, the garden furniture under another, the mailbox by the road, birches, and the
+    // forest's spruces across the road and behind the house, up Billaberget.
     buildings: [
       // The family's car on the road, just stopped after the drive, its inside light on.
       { kind: 'car', x: CAR.x, z: CAR.z, width: CAR.width, lit: '', size: 0.62 },
@@ -398,6 +446,8 @@ export const billsta: ChapterData = {
       { kind: 'barn', x: 94, z: -44, lit: 'bi:mormor', model: 'billsta-barn', size: 0.8 },
       { kind: 'woodshed', x: 42, z: -7 },
       { kind: 'rowboat', x: 24, z: -5, width: 16 },
+      // Morfar's garden table and chairs, put away under a tarp for the winter, on the lawn towards the house.
+      { kind: 'gardenset', x: 34, z: -30, width: 9.2 },
       { kind: 'birch', x: 18, z: -10, height: 56 },
       { kind: 'birch', x: 104, z: -22, height: 60 },
       // The forest behind the house, and up Billaberget. Each spruce stands a little sunk, so that its lowest

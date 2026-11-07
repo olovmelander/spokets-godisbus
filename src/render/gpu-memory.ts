@@ -1,8 +1,10 @@
 import type { Tier } from './quality';
 
 // Plan §6.5/6.12 uses MB. Decimal bytes make the gate slightly stricter than a MiB interpretation.
-export const GPU_LIMIT: Readonly<Record<Tier, number>> = { low: 100e6, mid: 150e6, high: 220e6 };
-export const HIGH_TARGET_LIMIT = 80e6;
+// High's was 220 MB until 6 November 2026, raised with its pixel cap for the Unravel look (Olov: "rejält").
+export const GPU_LIMIT: Readonly<Record<Tier, number>> = { low: 100e6, mid: 150e6, high: 260e6 };
+/** High's offscreen targets: 80 MB until 6 November 2026, raised with High's pixel cap (./quality.ts). */
+export const HIGH_TARGET_LIMIT = 110e6;
 export const TEXTURE_LIMIT = 2048;
 export interface Format { bytes: number; blockWidth?: number; blockHeight?: number; minWidth?: number; minHeight?: number }
 export function levelBytes(format: Format, width: number, height: number, depth = 1): number {

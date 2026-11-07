@@ -1,6 +1,7 @@
 import { BufferGeometry, Color, Float32BufferAttribute, Group, Mesh, MeshStandardMaterial, type CanvasTexture } from 'three';
 import type { ChapterData, SurfaceKind } from '../../sim/types';
 import { cliffJoints } from '../cliff-joints';
+import { groundDetail } from '../ground-detail';
 import { stoneCourses } from '../stone-courses';
 import { waterKind } from '../water';
 import { MOSS, drawn, hash, heightAt, landscape, noise, sequence, surfaceAt } from './kit';
@@ -839,6 +840,8 @@ export function groundMaterial(chapter: ChapterData, kind: Ground, map: CanvasTe
   if (chapter.place === 'village' && kind === 'stone') stoneCourses(material);
   // Granite's cliffs break into blocks along their joints.
   if (kind === 'granite') cliffJoints(material);
+  // Seen close, it is full of small things, at no one size (../ground-detail.ts).
+  groundDetail(material, look.boards ? 'wood' : kind === 'turf' ? 'turf' : road(kind) ? 'road' : look.rock || look.grit ? 'rock' : 'soft');
   return material;
 }
 

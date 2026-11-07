@@ -2,6 +2,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
+import { PLANK, barkDetail, barky } from './bark-detail';
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
 import { GHOST_CLEARANCE } from '../sim/constants';
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
@@ -10,6 +11,9 @@ import { sweetSocket } from './candy';
 import { forestSocket, standingCone } from './forest-kit';
 import type { MountainSocket } from './mountain-kit';
 import { saturdayBag } from './saturday-bag';
+import { antColumn, antTrail, ladybird } from './critters';
+import { craneFlying, craneKneeling } from './crane';
+import { wingbeat } from './wingbeat';
 import { MODEL_TURN } from './ghost-model';
 import { matchboxShape } from './matchbox';
 import { PACK } from './extensions';
@@ -30,6 +34,31 @@ const ball = (radius: number, material: MeshStandardMaterial, x = 0, y = 0, z = 
   return mesh;
 };
 const rod = (radius: number, length: number, material: MeshStandardMaterial): Mesh => new Mesh(new CylinderGeometry(radius, radius, length, 8), material);
+const smoothstep = (k: number) => { const t = Math.min(1, Math.max(0, k)); return t * t * (3 - 2 * t); };
+const hashed = (n: number) => { const v = Math.sin(n * 12.9898 + 4.1) * 43758.5453; return (v - Math.floor(v)) * 2 - 1; };
+/** A bird's look about, from -1 to 1: held, then a quick snap to the next way, at uneven times. */
+const glance = (t: number, seed: number) => {
+  const w = t * 0.8 + 0.4 * Math.sin(t * 0.7 + seed) + seed;
+  const n = Math.floor(w);
+  return hashed(n - 1) + (hashed(n) - hashed(n - 1)) * smoothstep((w - n) / 0.07);
+};
+/**
+ * The neck of the Blender jay (art/blender/jay.py): its head, beak and eyes are parts of their own, gathered once
+ * under a pivot at the nape so that they turn together. Null for the stand-in.
+ */
+function headOf(bird: Object3D): Object3D | null {
+  const rigged = bird.getObjectByName('jay-neck');
+  if (rigged) return rigged;
+  const head = bird.getObjectByName('head'), beak = bird.getObjectByName('beak'), eyes = bird.getObjectByName('eyes');
+  if (!head || !beak || !eyes || !head.parent) return null;
+  const neck = new Object3D();
+  neck.name = 'jay-neck';
+  neck.position.copy(head.position).add(new Vector3(-0.05, -0.07, 0));
+  head.parent.add(neck);
+  neck.updateMatrixWorld(true);
+  for (const part of [head, beak, eyes]) neck.attach(part);
+  return neck;
+}
 
 // --- things on rails -----------------------------------------------------------------------------------------
 
@@ -42,7 +71,9 @@ export function moverProp(mover: Mover): Group | null {
     case 'plank':
     case 'block': {
       const wood = solid(mover.look === 'plank' ? '#c9ae84' : '#d7a65e', 0.75);
-      const body = new Mesh(new BoxGeometry(w, h, mover.look === 'plank' ? 1.6 : 1.1), wood);
+      // Its grain, knots and growth rings, which go with it as it moves (./bark-detail.ts).
+      barkDetail(wood);
+      const body = new Mesh(barky(new BoxGeometry(w, h, mover.look === 'plank' ? 1.6 : 1.1), PLANK), wood);
       body.position.y = h / 2;
       // A darker band at each end: sawn ends.
       for (const side of [-1, 1]) {
@@ -130,20 +161,34 @@ export function moverProp(mover: Mover): Group | null {
       break;
     }
     case 'ants': {
-      // Two draw calls for the whole living column: dark linked bodies beneath a broad needle mat.
-      // The animals remain code stand-ins until their Blender round.
-      const ants = new InstancedMesh(new SphereGeometry(0.09, 8, 6), solid('#3a281c'), 30);
-      const at = new Object3D();
-      for (let i = 0; i < 30; i++) {
-        const row = Math.floor(i / 3);
-        at.position.set(Math.sin(row * 1.6) * 0.14 + (i % 3 - 1) * 0.11, h - 0.25 - row * 0.2, 0.13);
-        at.scale.set(i % 3 === 0 ? 1.3 : 1, 0.75, 1);
-        at.updateMatrix();
-        ants.setMatrixAt(i, at.matrix);
+      // The living column: real ants holding on to each other, heads up, never quite still (./critters.ts), under a
+      // mat of fallen needles.
+      const column = antColumn(w);
+      column.group.position.y = h - 0.12;
+      // The mat: a thatch of fallen needles, pale and brown, laid every way over a darker felt of older ones.
+      const needles: BufferGeometry[] = [];
+      const tint = (shape: BufferGeometry, hex: string) => {
+        const plain = shape.index ? shape.toNonIndexed() : shape;
+        const c = new Color(hex), n = plain.getAttribute('position').count;
+        plain.setAttribute('color', new Float32BufferAttribute(Array.from({ length: n * 3 }, (_, k) => [c.r, c.g, c.b][k % 3]!), 3));
+        return plain;
+      };
+      needles.push(tint(new BoxGeometry(w * 0.86, h * 0.5, 0.56).translate(0, h * 0.4, 0), '#4a3a21'));
+      const shades = ['#b88f4c', '#8f6b37', '#cfa862', '#7b5f33', '#a47c40', '#6a5130'];
+      for (let i = 0; i < 120; i++) {
+        const k = (i * 0.618) % 1;
+        const long = 0.4 + 0.4 * Math.abs(Math.sin(i * 4.1));
+        // Most lie along the mat, the rest every which way; the lower layers are the older, darker ones.
+        const yaw = i % 3 ? Math.sin(i * 2.7) * 0.5 : Math.sin(i * 2.7) * 1.6;
+        const x = Math.sin(i * 1.93) * (w / 2 - long * 0.35), z = Math.sin(i * 3.37) * 0.42;
+        const needle = new CylinderGeometry(0.021, 0.016, long, 4).rotateZ(Math.PI / 2).rotateY(yaw).rotateZ(Math.sin(i * 5.3) * 0.15)
+          .translate(x, h * (0.12 + 0.86 * k), z);
+        needles.push(tint(needle, shades[k < 0.4 ? 3 + (i % 3) : i % 3]!));
       }
-      const mat = new Mesh(new BoxGeometry(w, h, 0.9), solid('#a08b45'));
-      mat.position.y = h / 2;
-      group.add(ants, mat);
+      const mat = new Mesh(mergeGeometries(needles), solid('#ffffff', 0.9, { vertexColors: true }));
+      needles.forEach((needle) => needle.dispose());
+      group.add(column.group, mat);
+      group.userData.tick = column.tick;
       break;
     }
     case 'twig': {
@@ -180,17 +225,46 @@ export function moverProp(mover: Mover): Group | null {
     }
     case 'log': {
       // A dead pine, grey and bare: it lies level, with its top where he walks.
-      const grey = solid('#a9a69e', 1);
-      const trunk = new Mesh(new CylinderGeometry(h * 0.55, h * 0.7, w, 12), grey);
-      trunk.rotation.z = Math.PI / 2;
+      const grey = solid('#ffffff', 1, { vertexColors: true });
+      // Weathered silver wood with its grain along it (./bark-detail.ts): laid along x in its own shape, so the
+      // grain goes with it as Mamma pulls it. A dead pine's: twisted, cracked along its grain, with dark knots where
+      // its boughs were, a splintered top, and the stubs of its boughs. One mesh, its colours on its corners.
+      barkDetail(grey);
+      const shape = new CylinderGeometry(h * 0.55, h * 0.7, w, 18, 24).rotateZ(Math.PI / 2);
+      const at = shape.getAttribute('position');
+      const colours: number[] = [];
+      const silver = new Color('#aaa69c'), dark = new Color('#5f5a50'), pale = new Color('#c9c3b4'), c = new Color();
+      for (let i = 0; i < at.count; i++) {
+        const x = at.getX(i), y = at.getY(i), z = at.getZ(i);
+        const around = Math.atan2(z, y) + x * 0.35;
+        // Its grain twists round it; cracks run along the grain, dark; knots are dark eyes.
+        const crack = Math.max(0, Math.sin(around * 7 + Math.sin(x * 1.3) * 0.6)) ** 24;
+        const knot = Math.max(0, 1 - Math.hypot((((x + w) * 1.7) % 1.9) - 0.95, (around % 1.6) - 0.8) / 0.12);
+        c.copy(silver).lerp(pale, 0.35 + 0.35 * Math.sin(around * 3 + x * 0.8)).lerp(dark, Math.min(1, crack * 0.8 + knot));
+        // The top end splinters: its last span thins unevenly.
+        const end = Math.max(0, (x - w * 0.42) / (w * 0.08));
+        if (end > 0) at.setY(i, y * (1 - 0.35 * end * (0.5 + 0.5 * Math.sin(around * 5))));
+        colours.push(c.r, c.g, c.b);
+      }
+      shape.setAttribute('color', new Float32BufferAttribute(colours, 3));
+      shape.computeVertexNormals();
+      const parts: BufferGeometry[] = [barky(shape, PLANK)];
+      // All lean away from the lens or down into the water, never over the line he walks.
+      for (const [x, turn, lean] of [[-0.34, -0.9, 0.2], [-0.12, -1.35, -0.3], [0.08, -1.1, 0.1], [0.22, -2.3, 0.25], [0.37, -0.8, -0.2]] as const) {
+        const long = 0.5 + Math.abs(turn) * 0.4;
+        const stub = new CylinderGeometry(0.035, 0.075, long, 7).translate(0, long / 2, 0).rotateX(turn).rotateZ(lean).translate(x * w, 0, 0);
+        const n = stub.getAttribute('position').count;
+        stub.setAttribute('color', new Float32BufferAttribute(Array.from({ length: n * 3 }, (_, k) => [silver.r, silver.g, silver.b][k % 3]! * 0.9), 3));
+        parts.push(barky(stub.index ? stub.toNonIndexed() : stub, PLANK));
+      }
+      const merged = mergeGeometries(parts.map((part) => (part.index ? part.toNonIndexed() : part)).map((part) => {
+        for (const name of Object.keys(part.attributes)) if (!['position', 'normal', 'color', 'uv', 'barky'].includes(name)) part.deleteAttribute(name);
+        if (!part.getAttribute('uv')) part.setAttribute('uv', new Float32BufferAttribute(new Float32Array(part.getAttribute('position').count * 2), 2));
+        return part;
+      }));
+      const trunk = new Mesh(merged, grey);
       trunk.position.y = h * 0.42;
       group.add(trunk);
-      for (const x of [-0.3, 0.15, 0.38]) {
-        const stub = rod(0.07, 0.9, grey);
-        stub.position.set(x * w, h * 0.8, -0.45);
-        stub.rotation.x = -0.9;
-        group.add(stub);
-      }
       break;
     }
     case 'figure': {
@@ -323,36 +397,16 @@ export function spotProp(spot: Spot): SpotProp | null {
       } };
     }
     case 'ladybird': {
-      // On its back, legs in the air, until he turns it over. Then it flies to the hose.
-      const body = new Group();
-      const shell = new Mesh(new SphereGeometry(0.36, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), solid('#d2281e', 0.25));
-      const black = solid('#1c1a1a', 0.4);
-      body.add(shell, ball(0.15, black, 0.3, 0.05, 0), new Mesh(new CylinderGeometry(0.36, 0.36, 0.03, 18), black));
-      for (const [x, z] of [[-0.1, 0.16], [0.08, -0.14], [-0.16, -0.1], [0.14, 0.12], [0, 0]] as const) body.add(ball(0.06, black, x, Math.sqrt(Math.max(0, 0.36 ** 2 - x * x - z * z)) - 0.02, z, [1, 0.4, 1]));
-      // Six legs under it: in the air, and kicking, while it lies on its back.
-      const legs = [-0.2, 0, 0.2].flatMap((x) => [-1, 1].map((side) => {
-        const leg = rod(0.018, 0.24, black);
-        leg.position.set(x, -0.08, side * 0.2);
-        leg.rotation.x = side * 0.7;
-        body.add(leg);
-        return leg;
-      }));
-      body.position.y = 0.36;
-      group.add(body);
-      return {
-        group,
-        update(used, clock, dt) {
-          since = used ? since + dt : 0;
-          for (const [i, leg] of legs.entries()) leg.rotation.z = used ? 0 : Math.sin(clock * 11 + i * 1.3) * 0.5;
-          const turned = Math.min(1, since / 0.4);
-          body.rotation.x = Math.PI * (1 - turned) + (used ? 0 : Math.sin(clock * 7) * 0.12);
-          // Up and away, to the right, where the hose hangs.
-          const flown = Math.max(0, since - 0.6);
-          body.position.set(flown * 3.2, 0.36 * turned + (1 - turned) * 0.36 + flown * flown * 2.2, 0);
-          group.scale.setScalar(flown > 1.6 ? 0 : 1);
-          drawnWhile(group, flown <= 1.6);
-        },
-      };
+      // On its back, legs pedalling, until he turns it over; then it opens its wing cases and flies to the hose
+      // (./critters.ts).
+      const bug = ladybird();
+      group.add(bug.group);
+      return { group, update(used, clock, dt) {
+        bug.update(used, clock, dt);
+        // Flown away, the whole thing is out of the picture.
+        group.scale.copy(bug.group.scale);
+        drawnWhile(group, bug.group.scale.x > 0);
+      } };
     }
     case 'berry':
     case 'crowberry': {
@@ -377,7 +431,18 @@ export function spotProp(spot: Spot): SpotProp | null {
       root.position.set(-0.12, 0.86, -0.02);
       root.rotation.z = 1.2;
       const gift = ball(0.08, solid('#c4202a', 0.25), 0.37, 0.12, 0.2);
-      group.add(forestSocket(new Group().add(frame, door, root, ball(0.025, solid('#dfc372', 0.5), 0.16, 0.33, 0.17)), { shape: 'vittradorr', size: 0.85 }), gift);
+      // The sweet the ghost leaves on the doorstep for the neighbours ("Spöket ger bort mitt godis!?"): a wrapped
+      // caramel, the kit's once it has come. The view shows it from the moment he sees it given (`vittra-candy`).
+      const candy = sweetSocket(new Group().add(
+        ball(0.09, solid('#d9862a', 0.3), 0, 0, 0, [1.4, 1, 1]),
+        ball(0.06, solid('#f3e3c0', 0.6), -0.16, 0, 0, [0.6, 1, 1]),
+        ball(0.06, solid('#f3e3c0', 0.6), 0.16, 0, 0, [0.6, 1, 1]),
+      ), { shape: 'karamell', scale: 0.55 });
+      candy.name = 'vittra-candy';
+      candy.position.set(-0.42, 0.09, 0.24);
+      candy.rotation.set(0, 0.5, 0.15);
+      candy.visible = false;
+      group.add(forestSocket(new Group().add(frame, door, root, ball(0.025, solid('#dfc372', 0.5), 0.16, 0.33, 0.17)), { shape: 'vittradorr', size: 0.85 }), gift, candy);
       return { group, update(used) { gift.scale.setScalar(used ? 1 : 0); drawnWhile(gift, used); } };
     }
     case 'keepsake': {
@@ -416,27 +481,34 @@ export function spotProp(spot: Spot): SpotProp | null {
         group,
         update(used, clock, dt) {
           since = used ? since + dt : 0;
-          const hop = used && since < 1.4 ? Math.abs(Math.sin(since * 9)) * 0.3 : 0;
-          bird.position.y = hop + Math.max(0, Math.sin(clock * 2.3)) * 0.02;
-          bird.rotation.y = used ? 0 : Math.sin(clock * 1.1) * 0.5;
+          // Given its berry it hops: three hops, each from a crouch, and lands with a give.
+          let hop = 0, squat = 0;
+          if (used && since < 1.5) {
+            const k = (since % 0.5) / 0.5;
+            squat = k < 0.2 ? Math.sin((k / 0.2) * Math.PI) : 0;
+            hop = k >= 0.2 ? Math.sin(((k - 0.2) / 0.8) * Math.PI) * 0.26 : 0;
+          }
+          bird.position.y = hop - squat * 0.03;
+          bird.scale.set(1, 1 - squat * 0.12 + Math.sin(clock * 2.2) * 0.008, 1);
+          // The Blender jay turns only its head, in quick snaps with holds, mostly towards him; the stand-in, which
+          // has no neck, turns its body a little.
+          const neck = headOf(bird);
+          const look = used ? -0.5 : 0.55 * glance(clock, 2.3) - 0.25;
+          if (neck) {
+            bird.rotation.y = 0;
+            neck.rotation.set(0.12 * glance(clock * 0.7, 5.1), look, 0.15 * glance(clock * 0.9, 8.7));
+          } else bird.rotation.y = look * 0.6;
         },
       };
     }
     case 'ants': {
-      const dark = solid('#2a1e18', 0.5);
-      for (let i = 0; i < 6; i++) {
-        const ant = new Group();
-        ant.add(ball(0.07, dark, -0.11, 0.09, 0), ball(0.05, dark, 0, 0.1, 0), ball(0.06, dark, 0.1, 0.11, 0));
-        ant.position.set(-0.9 + i * 0.36, 0, i % 2 ? 0.12 : -0.12);
-        group.add(ant);
-      }
-      return {
-        group,
-        update(used, clock, dt) {
-          vanish(used, dt);
-          for (const [i, ant] of group.children.entries()) ant.position.y = Math.abs(Math.sin(clock * 8 + i)) * 0.03;
-        },
-      };
+      // A line of ants running their loop on six legs, some with a needle; used, they hurry away (./critters.ts).
+      const ants = antTrail();
+      group.add(ants.group);
+      return { group, update(used, clock, dt) {
+        ants.update(used, clock, dt);
+        vanish(used, dt, 0.8);
+      } };
     }
     case 'sign': {
       // Where someone can be called: a round sign on a stick, in that person's colour.
@@ -473,6 +545,8 @@ export function spotProp(spot: Spot): SpotProp | null {
     case 'seesaw': {
       // Pappa's seesaw: a stick across a stone. He stands on the low end.
       const plank = forestSocket(new Group().add(new Mesh(new BoxGeometry(4.4, 0.12, 0.7), solid('#c9ae84', 0.75))), { shape: 'gungbrada' });
+      // Named for Pappa's hand, which holds its high end (+x) steady once he is called (view.ts).
+      plank.name = 'seesaw-plank';
       plank.position.set(1.3, 0.34, 0.6);
       plank.rotation.z = 0.14;
       group.add(plank, forestSocket(new Group().add(ball(0.3, solid('#8d8f8a', 0.95), 1.3, 0.12, 0.6, [1.2, 0.8, 1])), { shape: 'gungsten', at: [1.3, -0.2, 0.6] }));
@@ -490,20 +564,24 @@ export function spotProp(spot: Spot): SpotProp | null {
       return { group, update: (used, clock, dt) => { vanish(used, dt); group.rotation.z = Math.sin(clock * 1.2) * 0.04; } };
     }
     case 'crane': {
-      // A crane, kneeling for him to climb on: grey, long-necked, with its red crown.
-      const grey = solid('#9aa0a6', 0.9);
-      const neck = rod(0.06, 1.1, grey);
-      neck.position.set(0.75, 1, 0);
-      neck.rotation.z = -0.35;
-      const beak = new Mesh(new ConeGeometry(0.045, 0.34, 8), solid('#6a6048', 0.6));
-      beak.rotation.z = -Math.PI / 2;
-      beak.position.set(1.2, 1.52, 0);
-      group.add(
-        ball(1, grey, 0, 0.55, 0, [0.95, 0.45, 0.42]), neck, ball(0.13, grey, 0.96, 1.5, 0), beak,
-        ball(0.06, solid('#b8332a', 0.5), 0.94, 1.62, 0, [1, 0.5, 1]), ball(1, solid('#5c6066', 0.9), -0.85, 0.55, 0, [0.5, 0.22, 0.3]),
-      );
-      group.position.z = -0.8;
-      return { group, update: (used, clock, dt) => { vanish(used, dt); neck.rotation.z = -0.35 + Math.sin(clock * 0.9) * 0.05; } };
+      // A crane, kneeling for him to climb on (crane.ts). It breathes, its neck sways, and now and then it turns its
+      // head to look out at him.
+      const crane = craneKneeling();
+      group.add(crane);
+      group.position.z = crane.position.z;
+      crane.position.z = 0;
+      // The Blender crane (art/blender/crane.py) may take the stand-in's parts' places: they are found by name.
+      return {
+        group,
+        update: (used, clock, dt) => {
+          vanish(used, dt);
+          const torso = crane.getObjectByName('crane-torso'), neck = crane.getObjectByName('crane-neck'), head = crane.getObjectByName('crane-head');
+          if (torso) torso.scale.y = 1 + Math.sin(clock * 1.3) * 0.012;
+          if (neck) neck.rotation.z = Math.sin(clock * 0.9) * 0.04;
+          const look = Math.max(0, Math.sin(clock * 0.55 + 1)) ** 6;
+          if (head) { head.rotation.y = -0.9 * look; head.rotation.x = 0.12 * Math.sin(clock * 2.1) * look; }
+        },
+      };
     }
     case 'dew': {
       // A drop of dew at the tip of a bent blade of grass, as big as his head. Rung, it shivers and shines.
@@ -604,6 +682,40 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.position.z = 0;
       return { group, update: (used, clock, dt) => { vanish(used, dt); star.rotation.y = Math.sin(clock * 1.6) * 0.7; star.position.y = 0.55 + Math.sin(clock * 2.2) * 0.07; } };
     }
+    case 'toothbrushes': {
+      // Bedtime: the family's toothbrushes in their glass on the veranda floor, each its own colour, and leaning on the
+      // glass a little one his size. It is gone once he has taken it to brush his teeth.
+      const glass = new Mesh(new CylinderGeometry(0.34, 0.3, 0.72, 18, 1, true), solid('#d6ecf0', 0.1, { side: DoubleSide }));
+      glass.position.y = 0.36;
+      const bottom = new Mesh(new CylinderGeometry(0.3, 0.3, 0.05, 18), solid('#c4dde2', 0.2));
+      bottom.position.y = 0.025;
+      group.add(glass, bottom);
+      for (const [i, colour] of ['#3a8ad8', '#e8583a', '#f2c230', '#5aa858'].entries()) {
+        const brush = new Group();
+        const handle = new Mesh(new CylinderGeometry(0.035, 0.045, 1.25, 8), solid(colour, 0.35));
+        handle.position.y = 0.62;
+        const head = new Mesh(new BoxGeometry(0.06, 0.2, 0.09), solid(colour, 0.35));
+        head.position.set(0, 1.3, 0.01);
+        const bristles = new Mesh(new BoxGeometry(0.08, 0.16, 0.1), solid('#f4f4f0', 0.8));
+        bristles.position.set(0, 1.3, 0.08);
+        brush.add(handle, head, bristles);
+        brush.position.set(Math.cos(i * 1.6) * 0.12, 0.04, Math.sin(i * 1.6) * 0.12);
+        brush.rotation.set(Math.sin(i * 1.6) * 0.18, i * 1.3, -Math.cos(i * 1.6) * 0.18);
+        group.add(brush);
+      }
+      // His own, a quarter as long, leaning on the glass towards the lens.
+      const his = new Group();
+      const handle = new Mesh(new CylinderGeometry(0.018, 0.022, 0.34, 8), solid('#e86a9a', 0.35));
+      handle.position.y = 0.17;
+      const bristles = new Mesh(new BoxGeometry(0.04, 0.07, 0.05), solid('#f4f4f0', 0.8));
+      bristles.position.set(0, 0.36, 0.03);
+      his.add(handle, bristles);
+      his.position.set(0.18, 0, 0.36);
+      his.rotation.set(-0.35, 0, -0.25);
+      group.add(his);
+      group.position.z = -0.9;
+      return { group, update: (used) => { his.visible = !used; } };
+    }
     case 'marble':
     case 'clip':
     case 'brick':
@@ -671,9 +783,33 @@ export function spotProp(spot: Spot): SpotProp | null {
       for (let i = 0; i < 9; i++) sweet.add(ball(0.07, gold, Math.cos(i * 2.4) * 0.09 * (1 - i / 14), 0.05 + i * 0.022, Math.sin(i * 2.4) * 0.09 * (1 - i / 14)));
       sweetSocket(sweet, { shape: 'guldhallon', scale: 0.8, y: 0.12, glow: 0.65 });
       sweet.position.y = 0.5;
+      // The kit's model takes the sweet's place (./candy.ts), so the paper is beside it, not in it.
+      let paper: Mesh | null = null;
+      if (spot.id === 'gift') {
+        // Äventyr 2's last gift ("Ett geléhallon i guldpapper!", "Ditt allra sista."): held out by the old one, half
+        // a step nearer him than where it is taken, on its crinkled gold paper, folded open.
+        const foil = new PlaneGeometry(0.46, 0.46, 6, 6).rotateX(-Math.PI / 2);
+        const at = foil.getAttribute('position');
+        for (let i = 0; i < at.count; i++) {
+          const x = at.getX(i), z = at.getZ(i);
+          at.setY(i, (Math.abs(x) + Math.abs(z)) ** 2 * 0.9 + Math.sin(x * 61 + z * 37) * 0.012);
+        }
+        foil.computeVertexNormals();
+        paper = new Mesh(foil, solid('#e6b52e', 0.28, { metalness: 0.75, emissive: '#7a5400', emissiveIntensity: 0.35, side: DoubleSide }));
+        group.add(paper);
+        sweet.position.x = 0.55;
+      }
       group.add(sweet);
       group.position.z = 0;
-      return { group, update: (used, clock, dt) => { vanish(used, dt); sweet.rotation.y = clock * 1.4; sweet.position.y = 0.5 + Math.sin(clock * 2) * 0.06; } };
+      return {
+        group,
+        update: (used, clock, dt) => {
+          vanish(used, dt);
+          sweet.rotation.y = clock * 1.4;
+          sweet.position.y = 0.5 + Math.sin(clock * 2) * 0.06;
+          if (paper) { paper.position.set(sweet.position.x, sweet.position.y + 0.01, 0); paper.rotation.y = sweet.rotation.y; }
+        },
+      };
     }
     default:
       return PACK.spots.get(spot.look ?? '')?.(spot) ?? null;
@@ -790,14 +926,18 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
   let demonstration: DemoPose[] = [];
   let demoKey = '';
   let elapsed = 0;
-  function update(help: HelpState, x: number, y: number, standY: number, clock: number, dt: number, still: boolean): void {
+  function update(help: HelpState, x: number, y: number, standY: number, clock: number, dt: number, still: boolean, from?: { x: number; y: number }): void {
     const { step, at } = help;
     const here = step > 0 && at !== null;
     if (at) last = at;
     // The ghost helps from above the trail: calling it must not bypass the chase's distance.
     // The jay still flies up from beside Elof, and both leave upwards.
     const ahead = GHOST_CLEARANCE * 0.75;
-    if (here && shown === 0) flyer.position.set(x + (ghost ? ahead : -0.6), y + (ghost ? ahead : 1.4), 0.4);
+    // The ghost comes to help from where he saw it last, so it is the same friend, not a second one appearing.
+    if (here && shown === 0) {
+      if (ghost && from) flyer.position.set(from.x, from.y, 0.4);
+      else flyer.position.set(x + (ghost ? ahead : -0.6), y + (ghost ? ahead : 1.4), 0.4);
+    }
     shown = still ? (here ? 1 : 0) : Math.min(1, Math.max(0, shown + (here ? dt : -dt) / 0.4));
     const cycle = clock % 3;
     const doubleKnock = Math.max(0, 1 - Math.abs(cycle - 0.9) / 0.12) + Math.max(0, 1 - Math.abs(cycle - 1.2) / 0.12);
@@ -806,7 +946,10 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     // or obstacle. A purely horizontal retreat would leave the narrow portrait view.
     const targetX = ghost ? x + ahead : last.x - 0.1;
     const targetY = ghost ? Math.max(y + ahead, demoFloor(chapter, targetX) + 0.6) : last.y + BIRD_PERCH;
-    const to = here ? { x: targetX + knock, y: targetY + (still ? 0 : ghost ? Math.sin(Math.PI * shown) * 0.35 : Math.sin(clock * 5) * 0.04), z: 0.45 } : { x: flyer.position.x, y: flyer.position.y + dt * 4, z: 0.45 };
+    // The jay beats in bursts, rising a little with each downstroke, and between them holds its wings out and sinks.
+    const wings = wingbeat(clock, 3.5, { every: 1.7, glide: 0.4, held: 0.1 });
+    const bob = (wings.pitch / 0.03) * 0.04 - wings.glide * 0.05;
+    const to = here ? { x: targetX + knock, y: targetY + (still ? 0 : ghost ? Math.sin(Math.PI * shown) * 0.35 : bob), z: 0.45 } : { x: flyer.position.x, y: flyer.position.y + dt * 4, z: 0.45 };
     const k = still ? 1 : 1 - Math.exp(-5 * dt);
     flyer.position.set(flyer.position.x + (to.x - flyer.position.x) * k, flyer.position.y + (to.y - flyer.position.y) * k, to.z);
     // Clamp after smoothing too: running, jumping, a checkpoint restore or its exit must never let Elof
@@ -818,7 +961,11 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     flyer.scale.setScalar(shown * 0.9);
     drawnWhile(flyer, shown > 0);
     flyer.rotation.z = ghost ? -knock * 0.8 : 0;
-    if (ghost) flyer.rotation.y = last.x < flyer.position.x ? Math.PI : 0;
+    if (ghost) {
+      // It turns to face where it shows him, through facing the lens, never in one frame.
+      const want = last.x < flyer.position.x ? -Math.PI : 0;
+      flyer.rotation.y = still || shown === 0 ? want : flyer.rotation.y + (want - flyer.rotation.y) * (1 - Math.exp(-8 * dt));
+    }
     if (focus) {
       focus.position.set(last.x, last.y, DEMO_Z);
       focus.scale.setScalar(1 + knock);
@@ -830,7 +977,7 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
       drawnWhile(thought, thought.material.opacity > 0);
       thought.position.set(flyer.position.x + 0.15, flyer.position.y + 1.5, 0.65);
     }
-    const beat = still ? 0 : Math.sin(clock * 22) * 0.9;
+    const beat = still ? 0 : wings.lift * 0.9;
     const near = flyer.getObjectByName('wingNear'), far = flyer.getObjectByName('wingFar');
     if (near) near.rotation.x = -beat;
     if (far) far.rotation.x = beat;
@@ -901,29 +1048,9 @@ export function rideProp(look: RideLook): Object3D | null {
       group.position.y = 0.02;
       break;
     }
-    case 'crane': {
-      const grey = solid('#9aa0a6', 0.9);
-      const neck = rod(0.06, 1.2, grey);
-      neck.rotation.z = -Math.PI / 2 + 0.25;
-      neck.position.set(1.2, -0.05, 0);
-      const beak = new Mesh(new ConeGeometry(0.045, 0.34, 8), solid('#6a6048', 0.6));
-      beak.rotation.z = -Math.PI / 2;
-      beak.position.set(2.05, 0.1, 0);
-      group.add(ball(1, grey, 0, -0.35, 0, [1, 0.36, 0.42]), neck, ball(0.13, grey, 1.82, 0.1, 0), beak, ball(0.06, solid('#b8332a', 0.5), 1.8, 0.21, 0, [1, 0.5, 1]));
-      for (const side of [-1, 1]) {
-        const wing = new Mesh(new BoxGeometry(0.9, 0.05, 1.9), solid('#7d8288', 0.9));
-        wing.geometry.translate(0, 0, 0.95);
-        wing.position.set(0, -0.2, side * 0.3);
-        wing.scale.z = side;
-        wing.name = side > 0 ? 'wingNear' : 'wingFar';
-        group.add(wing);
-      }
-      const legs = rod(0.03, 1.1, solid('#4a4a4a'));
-      legs.rotation.z = Math.PI / 2;
-      legs.position.set(-1.3, -0.42, 0);
-      group.add(legs);
+    case 'crane':
+      group.add(craneFlying());
       break;
-    }
     case 'ants': {
       const dark = solid('#2a1e18', 0.5);
       for (let i = 0; i < 5; i++) group.add(ball(0.07, dark, -0.5 + i * 0.25 - 0.11, -0.06, i % 2 ? 0.1 : -0.1), ball(0.06, dark, -0.5 + i * 0.25 + 0.03, -0.05, i % 2 ? 0.1 : -0.1));

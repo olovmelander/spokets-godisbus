@@ -2,6 +2,8 @@ import {
   AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, ExtrudeGeometry, Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Matrix3, Mesh,
   MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, Shape as Outline, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
+import { CLOSE_DETAIL } from './ground-detail';
+import { PAINTED_WOOD } from './painted-wood';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData, StreetGoods, StreetPart, Vec } from '../sim/types';
 import { sweetSocket } from './candy';
@@ -682,14 +684,20 @@ function panes(chapter: ChapterData, part: StreetPart): BufferGeometry | null {
  */
 function wallMaterial(): MeshStandardMaterial {
   const material = new MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
-  material.customProgramCacheKey = () => 'village-wall-v1';
+  material.customProgramCacheKey = () => 'village-wall-v2';
   material.onBeforeCompile = (shader) => {
-    shader.vertexShader = `varying float villageGlow;\n${shader.vertexShader.replace('#include <color_vertex>', '#include <color_vertex>\n  villageGlow = uv.x;')}`;
-    shader.fragmentShader = `varying float villageGlow;\n${shader.fragmentShader.replace('#include <emissivemap_fragment>',
-      `#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * villageGlow * ${GLOW.toFixed(2)};`)}`;
+    shader.uniforms.closeDetail = CLOSE_DETAIL;
+    shader.vertexShader = `varying float villageGlow;\nvarying vec3 villageAt;\n${shader.vertexShader
+      .replace('#include <color_vertex>', '#include <color_vertex>\n  villageGlow = uv.x;')
+      .replace('#include <project_vertex>', 'villageAt = (modelMatrix * vec4(transformed, 1.0)).xyz;\n#include <project_vertex>')}`;
+    shader.fragmentShader = `varying float villageGlow;\nvarying vec3 villageAt;\nuniform float closeDetail;\n${PAINTED_WOOD}\n${shader.fragmentShader
+      .replace('#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>\n  totalEmissiveRadiance += diffuseColor.rgb * villageGlow * ${GLOW.toFixed(2)};`)
+      .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n  if (closeDetail > 0.5) diffuseColor.rgb = paintedWood(diffuseColor.rgb, villageAt, normalize(normal * mat3(viewMatrix)));')}`;
   };
   return material;
 }
+
 
 /**
  * The street's pits that are open to the back: the puddle, from its first edge to its last. A pit behind
@@ -1115,8 +1123,7 @@ function shopInterior(chapter: ChapterData): Group {
 
 /**
  * The bag to share, in the chapter's last picture (docs/visual-audit/byn.md row 20): one of the shop's
- * striped paper bags, as his Saturday bag is, taller than he is, open, with sweets looking out over its
- * pinked top. It stands a little turned, clear of the big candy. No sign, price or brand. Measured from the
+ * paper bags with painted dots, as his Saturday bag is, taller than he is, with its pinked top. It stands a little turned, clear of the big candy. No sign, price or brand. Measured from the
  * big candy's place, on the floor.
  */
 export const SHOP_BAG = { tall: 3.4, past: 2.8, z: -2.4, turn: -0.42 } as const;

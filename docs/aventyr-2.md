@@ -23,7 +23,7 @@ del"). The first adventure (prologue, Gården, Granskogen, Myren, Berget, the fi
 - **Världarna:** Stormgården (blåst, regntunna och Bertils stövelbåt), Stormskogen (gungande grenar, ugglan och
   Pappas ficklampa som får Klonk att stelna till en bro), Byn i stormen (rännstensforsen, gallret och Moas
   paraply), Olympia (fotbollsplanen i Bredbyn: bollen som flyter, nätet upp till ribban och Bertils frispark),
-  Flärken (badplatsen: lekplatsen, hopptornet, bryggan och Mammas båt), Älven (strömmen ner förbi Bredbyn och
+  Flärken (badplatsen: lekplatsen, hopptornet, bryggan och Mammas SUP), Älven (strömmen ner förbi Bredbyn och
   Moälven) och Billsta (mormor och morfars hus vid vägen intill skogen, ladan och Billaberget).
 - **Vägen:** stormen blåser lillgubben norrut till Flärken. Där faller han i vattnet, och trä flyter: ån bär honom
   söderut förbi Bredbyn och nerför Moälven, som rinner ända till Billstasundet. Billsta ligger tre mil bort, så
@@ -183,7 +183,7 @@ picnic places, a volleyball court and a playground. In late October it is empty 
 2. **The volleyball net** as a bouncy way up; picnic tables to shelter under and climb.
 3. **The changing rooms:** a door banging in the wind (a moving platform); their roof.
 4. **The beach and the reeds**, floating reed mats; **the jetty** with waves washing over in gusts.
-5. **Mammas båt:** she holds the rowing boat against the broken jetty.
+5. **Mammas SUP:** standing on the family's stand-up paddle board, she paddles up and holds it against the broken jetty (Olov, 6 November 2026: in place of the rowing boat).
 6. **The diving tower:** up its ladder to the top, the lookout; a flash shows the little one far out.
 7. **The bark raft** across the last gap; the lake's outlet takes the little one and the old one, who follows on a
    log, down the river: "Trä flyter!"

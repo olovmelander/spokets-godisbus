@@ -1,4 +1,4 @@
-import { ATLAS, LIFE, STRIPS, WALK, type Ink, type Role, type Smoke, type Strip } from '../content/life';
+import { ATLAS, LIFE, STRIPS, WALKERS, type Ink, type Role, type Smoke, type Strip, type Walker } from '../content/life';
 import type { LifeStage, PlaceId } from '../sim/types';
 
 /**
@@ -62,6 +62,8 @@ const clamp = (v: number) => Math.min(1, Math.max(0, v));
 const ease = (v: number) => clamp(v) ** 2 * (3 - 2 * clamp(v));
 const fract = (v: number) => v - Math.floor(v);
 /** A colour with the place's haze in it, as light: the far pictures are painted the same way. */
+/** How a walker walks: the bull moose unless the role says which animal it is. */
+const walkerOf = (role: Role): Walker => WALKERS[role.walker ?? 'moose'];
 const light = (ink: Ink, haze: Ink, much: number): Ink => [0, 1, 2].map((i) => ((ink[i]! + (haze[i]! - ink[i]!) * much) / 255) ** 2.2) as unknown as Ink;
 
 /**
@@ -117,18 +119,19 @@ export function lifePlan(place: PlaceId, stages: readonly LifeStage[] = [], seed
     const reach = (w.eye - here.z) * w.slope;
     const centre = w.x * here.hold;
     const walks = role.act === 'walk';
+    const gait = walkerOf(role);
     // A hoof that stands goes back under the body as fast as the body goes on: the stride over the cycle.
-    const speed = role.speed ?? (WALK.stride * role.size * WALK.fps) / 12;
+    const speed = role.speed ?? (gait.stride * role.size * gait.fps) / 12;
     // A walker comes out of the mist ahead of him and goes off the other way. A flock crosses the whole sky.
     const far = walks ? Math.min(reach * 1.05, 27) : reach * 2 + role.size * (2 + arm(role) * 1.6);
     on = {
       kind, role, speed, far, t: 0,
       // A walker's cells are shaded: lit along the back, dark under the belly. On the whole they are its ink.
-      ink: light(role.ink, cast!.haze, here.haze).map((c) => (walks ? c / WALK.shade : c)) as unknown as Ink,
+      ink: light(role.ink, cast!.haze, here.haze).map((c) => (walks ? c / gait.shade : c)) as unknown as Ink,
       from: centre + (walks ? Math.min(reach * 0.62, 17) : reach + role.size),
       // It stops when it has shown the cell where its hooves are down, a third of the way: ahead of him still, and
       // to one side of the middle of the picture, where he and the things he uses are.
-      halt: role.stops ? (Math.round(((far * 0.36) / speed - 0.6) / 1.2) * 12 + WALK.halt + 1) / WALK.fps : Infinity,
+      halt: role.stops && gait.looks ? (Math.round(((far * 0.36) / speed - 0.6) / (12 / gait.fps)) * 12 + gait.halt + 1) / gait.fps : Infinity,
     };
   }
 
@@ -206,24 +209,25 @@ export function lifePlan(place: PlaceId, stages: readonly LifeStage[] = [], seed
     const { role, ink, speed } = on;
     const t = (on.t += dt);
     if (role.act === 'walk') {
-      const walked = t < on.halt ? t : Math.max(on.halt, t - WALK.stand);
+      const gait = walkerOf(role);
+      const walked = t < on.halt ? t : Math.max(on.halt, t - gait.stand);
       const gone = walked * speed;
       const s = t - on.halt;
-      const stands = s >= 0 && s < WALK.stand;
+      const stands = s >= 0 && s < gait.stand;
       // Standing: as it stopped; the head comes up and turns this way through three cells; it looks, with one
       // flick of an ear; and the head goes down again the same way.
-      const rise = Math.min(s - 0.5, WALK.stand - 0.42 - s) / 0.16;
-      const cell = !stands ? Math.floor(walked * WALK.fps) % 12 : rise < 0 ? 0 : rise < 3 ? 1 + Math.floor(rise) : s > 2.3 && s < 2.5 ? 5 : 4;
-      const wide = WALK.cell * role.size;
-      const tall = wide * 0.8;
+      const rise = Math.min(s - 0.5, gait.stand - 0.42 - s) / 0.16;
+      const cell = !stands ? Math.floor(walked * gait.fps) % 12 : rise < 0 ? 0 : rise < 3 ? 1 + Math.floor(rise) : s > 2.3 && s < 2.5 ? 5 : 4;
+      const wide = gait.cell * role.size;
+      const tall = wide * gait.walk[3] / gait.walk[2];
       const x = on.from - gone - centre - wide / 2;
-      const y = role.y - WALK.foot * role.size;
+      const y = role.y - gait.foot * role.size;
       // It comes out of the haze and goes back into it.
       const solid = role.alpha * ease(Math.min(gone, on.far - gone) / 2.5);
-      const strip = stands ? STRIPS.stand : STRIPS.walk;
+      const strip = stands && gait.looks ? gait.looks : gait.walk;
       // Two quads: the legs fade towards the hooves, so they go into the mist and no hoof has to meet any ground.
-      const knee = (WALK.foot + WALK.tall * WALK.mist) / (WALK.cell * 0.8);
-      put(strip, cell, x, y, wide, tall, ink, solid, solid * WALK.hoof, 0, knee, true);
+      const knee = (gait.foot + gait.tall * gait.mist) / (gait.cell * gait.walk[3] / gait.walk[2]);
+      put(strip, cell, x, y, wide, tall, ink, solid, solid * gait.hoof, 0, knee, true);
       put(strip, cell, x, y, wide, tall, ink, solid, solid, knee, 1, true);
       if (gone >= on.far) on = null;
     } else {

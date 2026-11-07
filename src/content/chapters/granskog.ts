@@ -91,9 +91,16 @@ export const granskog: ChapterData = {
   // Where and when, as the chapter opens (./cards.ts).
   scenes: [timeCard('granskog', 1)],
   goalX: 204,
-  // For the picture only (content/life.ts): in one visit of three a moose crosses a bright gap far in among the
-  // trunks, after the last big candy, where nothing is left to do but walk out of the forest.
-  life: [{ kind: 'moose', from: 194.6, to: 200 }],
+  // For the picture only (content/life.ts): far in among the trunks, where the trail is calm after a big candy. A moose
+  // cow walks by with her calf at her heels (one visit in two); a roe deer stops and looks this way; in one visit of
+  // three a bear rolls by in the dark of the forest; and in one of three a bull crosses a bright gap after the last big
+  // candy, where nothing is left to do but walk out of the forest.
+  life: [
+    { kind: 'pair', from: 46, to: 50.5 },
+    { kind: 'deer', from: 95, to: 99.5 },
+    { kind: 'bear', from: 178, to: 186 },
+    { kind: 'moose', from: 194.6, to: 200 },
+  ],
   ground: [
     { x: -3, y: 12 },
     { x: -3, y: 0 },
@@ -237,7 +244,8 @@ export const granskog: ChapterData = {
     { id: 'vittra:gift', look: 'vittra-door', at: { x: 64.4, y: 10 }, verb: 'give', word: 'leaveBerry', needs: 'vittra:berry', returnGift: 'keepsake:vittra', extra: true },
     // The loose cone at the top of the slope: touching it sets the avalanche off.
     { id: 'avalanche', at: { x: 70.4, y: 0 }, verb: 'take', touch: true },
-    { id: 'seesaw', look: 'sign', at: { x: 108.2, y: -8 }, verb: 'call', word: 'callPappa' },
+    // Called, he walks over to his seesaw's high end, at the ravine's edge, and holds it steady for Elof until he flies.
+    { id: 'seesaw', look: 'sign', at: { x: 108.2, y: -8 }, goesTo: { x: 117.4, y: -8, z: -0.6 }, verb: 'call', word: 'callPappa' },
     // The low end of the seesaw. Pappa drops the cone on the high end, and Elof flies.
     { id: 'launch', look: 'seesaw', at: { x: 113.2, y: -8 }, verb: 'take', word: 'standOn', needs: 'placed:cone', ride: 'launch' },
     // Memory 2, after the log: the autumn walk, and the Saturday sweets he shared.
