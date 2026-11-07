@@ -233,8 +233,6 @@ function across(way: Stone[]): Candy[] {
 export const billsta: ChapterData = {
   id: 'billsta',
   place: 'garden',
-  // The ditch and the brook behind the house run on past the picture.
-  river: true,
   // Beside the family's car, on the road.
   spawn: { x: 1, y: 0.01 },
   scenes: [

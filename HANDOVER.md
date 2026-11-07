@@ -1,5 +1,30 @@
 # Handover
 
+## State (7 November 2026, evening)
+
+- **Water that showed as a block on a phone held upright (Olov, 7 November 2026, two photos from Stormgården).**
+  - **What he saw:** the wheel rut and the ditch ended in a square block face toward the camera, with nothing under or
+    beside it.
+  - **Why:** a river chapter's water ran 11 EL toward the camera and stayed level. A phone held upright puts the camera
+    about 24 EL out (about 9 held sideways), and from there it sees the water to about 13 EL in front of the path:
+    past where the water ended. On a lawn or forest floor the ground also falls away toward the camera, so the level
+    water stood above it as a slab.
+  - **Stormgården and Billsta are no longer drawn as rivers** (`river` removed from both chapters; the simulation never
+    read it).
+    - **What changes:** their ditches, the flooded lawn, the wheel rut, the brook with its stepping stones and the pool
+      are garden pools. Each is closed toward the camera by a near shore just in front of the path, with the lawn going
+      on in front of it, as Granskogen's brook is.
+    - **The eye:** it rises 1.6 EL over them, as over every garden pool.
+  - **Älven and Stormens öga keep their open river,** whose surface now runs on past the camera (`RIVER.front` 48,
+    was 11), so its cut is never in the picture.
+  - **Checked:**
+    - in pictures at 390×844 and 844×390: Stormgården's rut, ditch and flood; Billsta's ditch, brook and pool; Älven at
+      40 and under the bridge at 91.6; Stormens öga at 25;
+    - typecheck, `npm test` (2,132), the build with its gates, and the browser suites aventyr2 (42) and visual-overhaul.
+  - **What remains:** the dark band at the very bottom of an upright phone's picture in the garden and the forest is the
+    ground's own cut face (earth, then rock), as in every such chapter. It is not water.
+  - **The next step needs:** nothing from Olov's computer.
+
 ## State (7 November 2026, afternoon)
 
 - **"How can we make the water feel more alive with small movement and waves, and more big forest animals walking
@@ -4818,6 +4843,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Water as a block on an upright phone (7 Nov, evening) | Olov's photos: the water looked like a block you could see into | Part of the same cloud session | — / 0 so far | Stormgården and Billsta draw their water as garden pools with a near shore; Älven's and Stormens öga's river runs on past the camera. |
 | Living water and big animals (7 Nov, afternoon) | Olov's request: water that moves, with small waves; more big forest animals walking as silhouettes | The same cloud session's afternoon | — / 0 so far | Rings, drifting needles and leaves, a swell on lakes and rivers; a moose cow and calf, a roe deer and a bear rendered in Blender for the far scenery. The forest animals don't read in the picture yet (first in Next). |
 | The graphics pass and the Unravel look (6 Nov) | Olov's request: every visual in both adventures, step by step until 23:00, then "mer likt Unravel" with a larger budget; later the SUP, the rain gear and the story's details, until 02:00 | One cloud session's evening and night | — / 0 so far | A lens (depth of field, contact shade, film look, near pollen), close materials (ground, boards, turf, bark, granite, grain, moss), the home's doorway, brooks, huts, beetles, braid, puzzle weight; Mamma's SUP, rain gear through the storm, Bertil's boot, the family's lamps, twelve more story details. |
 | Olov's morning list (7 Nov) | Olov's request: the arms through the coats, Bertil's hair, the bat-wing sweaters, then the Senare list | The same cloud session's morning | — / 0 so far | Lamps held out in front; Bertil's hair under the brim; every approved model's sleeves repaired without a rebuild (private PR #5); Billsta's runners, Flärken's sliding door, Klonk on the table, Pappa at his seesaw, the vittra's sweet; sun shadows for landmarks tried and taken back. |
