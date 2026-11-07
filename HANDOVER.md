@@ -4764,6 +4764,9 @@ The older list, still true where it is not struck:
     tall as he is, so in his hand it rose over his face, and the finale suite keeps both carvings below it.
 - The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
   line now).
+- The animals' parts (7 November): the kit's otter, owl, hedgehog and frog are one mesh each, so only the whole
+  animal turns; a head of their own in `a2-creatures.py` (Blender, Olov's computer) would let them look and blink.
+  The crane is built in code (`src/render/crane.ts`); a Blender crane with feathers would be finer still.
 
 ## Frågor till Olov
 
