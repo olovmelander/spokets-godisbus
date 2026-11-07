@@ -4534,7 +4534,8 @@ The older list, still true where it is not struck:
 - **The size gate, again (7 November 2026, at Olov's "höj grafikbudgeten rejält om det behövs"):** 4.5 MB as served for
   the whole site, from 4 MB. With the family's models in the deploy the site measured 4282 KB: the four rain-gear
   wardrobes (348 KB, after trimming the socks nobody sees and the boots' faces) and Äventyr 2's rebuilt nature took
-  it over. CI builds without the family's models, so only the deploy would have failed.
+  it over. CI builds without the family's models, so only the deploy would have failed. With the Blender crane and the
+  creatures' heads later that night it is 4330 KB.
 | Question | Decision | Source |
 | --- | --- | --- |
 | Elof as a player | 7 years, plays games for 11+. Play style *Äventyr* by default (variable jump, a swing he pumps, the glitter bubble, exciting sequences, challenge routes); *Lugnt* for anyone who wants it. Help only when asked. | Olov, 3 Oct |
