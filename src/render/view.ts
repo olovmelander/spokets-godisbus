@@ -905,6 +905,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const LAMP_POINTS = new Vector3(0, 0, 1);
   // The little one's knitted cap ("Lillgubbens mössa! Jag tar med den."): from the gutter in Stormbyn Elof carries
   // it, tucked in at his back, through every chapter until he gives it back in the storm's eye (scene "motet").
+  const carriedBerry = new Group();
+  carriedBerry.name = 'carried-berry';
+  {
+    const red = new MeshStandardMaterial({ color: '#c0182a', roughness: 0.25 });
+    const berry = new Mesh(new SphereGeometry(0.075, 12, 8), red);
+    // Its little dry crown, and a glint.
+    const crown = new Mesh(new SphereGeometry(0.022, 6, 4), new MeshStandardMaterial({ color: '#4a2a1a', roughness: 0.9 }));
+    crown.position.set(0.05, 0.045, 0);
+    carriedBerry.add(berry, crown);
+    carriedBerry.visible = false;
+    scene.add(carriedBerry);
+  }
+  const berryHand = new Vector3();
   const carriedCap = new Group();
   carriedCap.name = 'carried-cap';
   carriedCap.add(new Mesh(new ConeGeometry(0.16, 0.3, 10).translate(0, 0.15, 0), new MeshStandardMaterial({ color: '#c23a2e', roughness: 0.9 })));
@@ -1392,6 +1405,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       carriedCap.position.set(-0.17, 0.5, 0.05).applyMatrix4(elof.group.matrixWorld);
       elof.group.getWorldQuaternion(carriedCap.quaternion).multiply(capTilt);
       carriedCap.scale.setScalar(0.8 * tall);
+    }
+    // The lingonberry he picks in Granskogen for the jay, held up in front of him in his left hand until he gives it.
+    const hasBerry = chapter.id === 'granskog' && flags.has('berry') && !flags.has('jay') && !curr.hook && !!playerBody && elof.group.visible;
+    carriedBerry.visible = hasBerry;
+    if (hasBerry && playerBody) {
+      elof.group.updateWorldMatrix(true, false);
+      berryHand.set(0.32, 0.62, 0.16).applyMatrix4(elof.group.matrixWorld);
+      playerBody.reach(0, berryHand, calmStory ? 0.7 : 0.6 + 0.05 * Math.sin(clock * 2.1));
+      playerBody.hand(0, carriedBerry.position);
+      carriedBerry.position.y += 0.06 * tall;
+      carriedBerry.scale.setScalar(tall);
     }
     // "Var är ficklampan? Jag ser ingenting!": Elof carries the lit flashlight from the table to Pappa in his right
     // hand, lighting the floor ahead; once given, Pappa has it in his left (Stormkvällen).

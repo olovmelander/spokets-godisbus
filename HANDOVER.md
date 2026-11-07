@@ -154,6 +154,8 @@
     in the storm, drops splash up at Elof's feet as he runs and lands (`src/render/foot-splash.ts`).
   - **Mamma lifts the pine** on Myren: called, she bends to the dead pine's end and holds it with both hands while it
     rises across the pool, and straightens once it lies across (a gesture beside Bertil's and Moa's in `view.ts`).
+  - **The lingonberry in his hand:** in Granskogen Elof holds the berry he picked up in front of him in his left hand
+    until he gives it to the jay.
   - **The animals, reviewed one by one** (Olov: "Se även över alla djur hur de är designade och rör sig"; a review
     of every creature's code and pictures, then the fixes):
     - **The crane, modelled in Blender** (`art/blender/crane.py`, `boot/crane.glb`; the code-built one in
@@ -4806,7 +4808,7 @@ The older list, still true where it is not struck:
     cliff on Berget ("Lyft"), Pappa holding the seesaw board in Granskogen (he stands 8 EL from its high end, out of
     reach; moving him is a staging change), the
     candy the ghost leaves at the vittra door, the toothbrush in the epilogue, Klonk hopping across the party table,
-    Pappa beside Elof as they carve, and what Elof picks up (the lingon, Moa's leaf drawing) shown in his hands.
+    Pappa beside Elof as they carve, and Moa's leaf drawing shown in his hands (the lingon is, since 7 November).
     Tried and taken back: Elof holding the old trägubbe on Pappa's shoulders in Norrsken. The carving is nearly as
     tall as he is, so in his hand it rose over his face, and the finale suite keeps both carvings below it.
 - The flapping tarp and the garden furniture under a tarp at Billsta, and a hoot sound for the owl (it is an Elof
