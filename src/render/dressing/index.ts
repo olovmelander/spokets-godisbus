@@ -15,6 +15,7 @@ import { bakeForestShadows } from '../forest-shadows';
 import { forestLandmarks } from '../forest-kit';
 import { fitOutdoorLandmarks, outdoorModels, updateOutdoorModels } from '../outdoor-models';
 import { bank, type Ground } from './ground';
+import { rockLife } from './rocky';
 import { heightAt, landscape, makeKit, type PlaceLook } from './kit';
 import { houseDoor } from './house-door';
 import { lawn } from './lawn';
@@ -206,6 +207,8 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   const walk = look.id === 'bog' ? spang(landChapter) : null;
   // In the village's road, a drain's grate lies in its cast frame.
   const grate = look.id === 'village' ? drainFrame(landChapter) : null;
+  // Lichen, loose stones and sedge on wet rock (./rocky.ts).
+  const rocks = rockLife(landChapter, from, to);
   // The far scenery hangs in layers that pass at their own speeds, and stays at the height of his eyes
   // however high he climbs: backdrop.ts.
   // What the far pictures count their sinking from: the land around the chapter's start.
@@ -238,6 +241,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
     front.group,
     walk ?? new Group(),
     grate ?? new Group(),
+    rocks ?? new Group(),
   );
   return {
     group,
