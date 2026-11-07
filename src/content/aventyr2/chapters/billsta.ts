@@ -363,11 +363,11 @@ export const billsta: ChapterData = {
     { x: 142.4, y: TOP.y },
     { x: 161.8, y: SLOPE },
   ],
-  // The storm over the barn's roof and over the open slope: every four seconds a gust for a little more than one.
-  // A dash from one lee to the next takes half the calm between, as on Berget.
+  // The storm over the barn's roof and over the open slope: Berget's rhythm, a gust every four seconds for a little
+  // under one and a half. A dash from one lee to the next (1.5 s) leaves a good second of the calm between to spare.
   gusts: [
-    { from: ROOF_LEE[0]!, to: ROOF_LEE[ROOF_LEE.length - 1]!, y: ROOF.y, every: 3.6, length: 1.7, first: 0.5, shelters: ROOF_LEE },
-    { from: LEE[0]!, to: LEE[LEE.length - 1]!, y: SLOPE, every: 3.6, length: 1.6, first: 0.5, shelters: LEE },
+    { from: ROOF_LEE[0]!, to: ROOF_LEE[ROOF_LEE.length - 1]!, y: ROOF.y, every: 4, length: 1.4, first: 0.5, shelters: ROOF_LEE },
+    { from: LEE[0]!, to: LEE[LEE.length - 1]!, y: SLOPE, every: 4, length: 1.4, first: 0.5, shelters: LEE },
   ],
   ledges: [LADDER, ...BEAMS, ...SHELVES],
   spots: [

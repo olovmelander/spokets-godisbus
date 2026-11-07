@@ -12,16 +12,17 @@ export function createStoryContext(doc: Document) {
   const handoff = byId('endStory');
   let shown: string | null = null;
   return {
-    show(context: StoryContext | null, playing: boolean) {
+    show(context: StoryContext | null, playing: boolean, named = false) {
       purpose.hidden = !context || !playing;
       recap.hidden = title.hidden = context === null;
-      const key = context ? `${context.id}:${context.reveal}:${context.recap}:${context.family}:${context.guide}` : null;
+      const key = context ? `${context.id}:${context.reveal}:${context.recap}:${context.family}:${context.guide}:${named}` : null;
       if (key === shown) return;
       shown = key;
       if (!context) return;
       purpose.dataset.purpose = context.id;
       purpose.dataset.guide = context.guide ?? '';
-      purpose.querySelector('small')!.textContent = context.guide ? `${sv.who[context.guide]} · ${sv.storyContext.family}` : sv.storyContext.now;
+      const who = context.guide === 'spoket' && named ? sv.ghostName : context.guide ? sv.who[context.guide] : '';
+      purpose.querySelector('small')!.textContent = context.guide ? `${who} · ${sv.storyContext.family}` : sv.storyContext.now;
       byId('storyPurposeIcon').innerHTML = context.guide ? faceSvg(context.guide) : use(context.icon);
       byId('storyPurposeText').textContent = context.purpose;
       byId('storyPurposeReveal').hidden = context.reveal === null;

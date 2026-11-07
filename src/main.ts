@@ -1016,7 +1016,7 @@ async function start(): Promise<void> {
     const dt = Math.min(timer.getDelta(), 0.25);
     const blocked = platformBlocked();
     memories.suspend(blocked);
-    storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !blocked && !menuOpen());
+    storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !blocked && !menuOpen(), isKlonk());
     // Under a menu the world is still and the tune goes on, muffled; on a chapter's last page the place's air goes on,
     // and the tune's last note rings out (docs/ux-audit/style-and-sound.md rows 20 and 21).
     audio.sleep(blocked);
@@ -1151,7 +1151,7 @@ async function start(): Promise<void> {
     document.body.classList.toggle('before-chase', chapter.id === 'prolog' && !game.sim.flags.has('bag:torn'));
     document.body.classList.toggle('no-candy', chapter.id === 'prolog' && game.sim.candyCount === 0);
     const context = storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags);
-    storyReminder.show(context, !menuOpen());
+    storyReminder.show(context, !menuOpen(), isKlonk());
     // "Gården, klockan tio. Följ spöket. Hitta min påse." for a screen reader, as the picture changes.
     const said = [cardOf(chapter.id)?.replace(' · ', ', '), context?.purpose].filter(Boolean).join('. ') || sv.title;
     if (said !== pictureSaid) {

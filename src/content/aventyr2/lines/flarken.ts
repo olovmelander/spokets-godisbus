@@ -55,7 +55,7 @@ export const words: ChapterWords = {
     sjonMats: { purpose: 'Spring över gungflyet.', recap: 'Vassmattorna sjunker om jag står still. Klonk visar vägen.' },
     sjonJetty: { purpose: 'Göm dig bakom stolparna när vågen kommer.', recap: 'Stormen slår vågor över bryggan. Bakom stolparna är det lä.' },
     sjonMamma: { purpose: 'Ropa på Mamma vid bryggan.', recap: 'Bryggan har gått av. Mamma paddlar på SUP:en alldeles nära.' },
-    sjonBoat: { purpose: 'Kliv på SUP-brädan och åk över.', recap: 'Mamma håller brädan tätt intill bryggan. Hon släpper inte.' },
+    sjonBoat: { purpose: 'Gå över på Mammas SUP-bräda.', recap: 'Mamma håller brädan tätt intill bryggan. Hon släpper inte.' },
     sjonOut: { purpose: 'Följ godiset ut till hopptornet.', recap: 'Mamma väntar vid bryggan. Gamla trägubben lämnar godis hela vägen ut.' },
     sjonTower: { purpose: 'Klättra uppför hopptornets stege.', recap: 'Lillgubben blåste ut över sjön. Från tornet kan jag se vart han tog vägen.' },
     sjonDive: { purpose: 'Spring och hoppa ner på bryggan.', recap: 'Blixten visade lillgubben långt ute, där ån börjar.' },

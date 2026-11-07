@@ -31,8 +31,9 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
   const context = (id: StoryPurpose, helper: Helper, icon: PurposeIcon = 'trail', addition?: string): StoryContext => {
     const copy = sv.storyContext.purposes[id];
     const story = addition ? `${copy.recap} ${addition}` : copy.recap;
-    const recap = homeParty && id !== 'welcome' && (chapter === 'norrsken' || chapter === 'epilog')
-      ? `${story} ${knownFigure ? sv.storyContext.welcomeMemory : sv.storyContext.welcomeFigure}` : story;
+    // Once he has named it, the diary calls the ghost Klonk too.
+    const motive = (knownFigure ? sv.storyContext.welcomeMemory : sv.storyContext.welcomeFigure).replace('Spöket', has('beat:named') ? 'Klonk' : 'Spöket');
+    const recap = homeParty && id !== 'welcome' && (chapter === 'norrsken' || chapter === 'epilog') ? `${story} ${motive}` : story;
     const reveal = chapter === 'norrsken' && homeParty
       ? knownFigure ? sv.storyContext.purposes.welcome.recap : sv.storyContext.welcomeFigure : null;
     const guide = helper === 'moa' || helper === 'pappa' || helper === 'bertil' ? helper
@@ -63,13 +64,15 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
           return context('gardenPocket', 'moa');
         }
         if (at >= 159) return context('planeBoard', 'moa');
+        // Back from Moa, short of the pocket: the drawing to fetch, or the plane that waits.
+        if (at >= 146) return context(has('garden:drawing-blown') && !has('garden:paper') ? 'gardenPocket' : 'planeBoard', 'moa');
         return context(has('memory') ? 'gardenMemory' : 'garden', 'trail');
       }
       if (at >= 159) return context('moa', 'moa');
       return context(has('memory') ? 'gardenMemory' : 'garden', 'trail');
     case 'granskog':
       if (has('placed:rescue')) return context('waiting', 'forest', 'trail');
-      if (at >= 179) return context('eddy', 'bertil', 'heart');
+      if (at >= 179) return context('eddy', 'forest', 'heart');
       if (has('cap')) return context('capRide', 'bertil', 'water');
       if (has('cap:ready') && at >= 150) return context('capBoard', 'bertil', 'water');
       if (at >= 150) return context('cap', 'bertil', 'water');
@@ -78,6 +81,7 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       if (has('placed:cone-small') && !has('launch')) return context('coneTrial', 'pappa');
       if (has('seesaw') && !has('launch')) return context('cone', 'pappa');
       if (at >= 103 && !has('seesaw')) return context('seesaw', 'pappa');
+      if (has('launch')) return context('overRavine', 'forest');
       if (at >= 31 && at < 46 && !has('jay')) return context('jay', 'forest', 'heart');
       return context(has('keepsake:vittra') ? 'vittraClue' : has('beat:vittra') ? 'forestDoor' : 'forest', 'forest');
     case 'myren':
@@ -97,6 +101,7 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       if (at >= 133) return context('light', 'bog', 'sparkle');
       if (has('braid') && at >= 98 && at < 106 && player.y < 4.1) return context('braidClimb', 'bog');
       if (at >= 98 && !has('braid')) return context('braid', 'bog');
+      if (has('braid') && at >= 98 && at < 133) return context('boardwalk', 'bog');
       if (has('mamma') && at >= 80 && at < 98) return context('bridgeCross', 'bog', 'water');
       if (at >= 80 && !has('mamma')) return context('mamma', 'bog', 'water');
       return context('bog', 'bog');
