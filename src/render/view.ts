@@ -1783,7 +1783,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           lampLocal.copy(lampTo);
           one.rig.group.worldToLocal(lampLocal);
           const side: 0 | 1 = lampLocal.x >= 0 ? 0 : 1;
-          lampHand.set((side === 0 ? 1 : -1) * 0.75 * u, 2.75 * u, 1.35 * u);
+          // At the waist, out in front of the coat, the elbow bent: a light held to see by, not an arm held straight.
+          lampHand.set((side === 0 ? 1 : -1) * 0.62 * u, 2.95 * u, 0.85 * u);
           one.rig.group.localToWorld(lampHand);
           one.rig.reach(side, lampHand, 0.9);
           one.rig.hand(side, lampHand);

@@ -22,6 +22,8 @@ const FAMILY: readonly Role[] = ['pappa', 'mamma', 'moa', 'bertil'];
 const SEATED: readonly Act[] = ['sit', 'carve', 'draw'];
 /** Acts whose aim the whole body turns to. */
 const TURNS_TO: readonly Act[] = ['reach', 'lift', 'offer', 'point'];
+/** How much of the arm's length a hand held out to give something uses: the elbow stays a little bent. */
+const OFFER_REACH = 0.82;
 
 /** Where an actor is and what it does, at one moment of the story. */
 interface State {
@@ -862,7 +864,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           }
         };
         reach(state.act, elapsed, state.aim, state.before, 1);
-        if (rightWeight > 0) rig.reach(1, hand.divideScalar(rightWeight), rightWeight);
+        // Pointing uses the whole arm; something held out to be taken keeps a bend at the elbow, however far off he is.
+        if (rightWeight > 0) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, state.act === 'offer' ? OFFER_REACH : 1);
         if (leftWeight > 0) rig.reach(0, otherHand.divideScalar(leftWeight), leftWeight);
         // The working hands follow the wood, using each body's real arm lengths and the blade's tip.
         const leavesCarving = state.before?.act === 'carve' && elapsed < .45;

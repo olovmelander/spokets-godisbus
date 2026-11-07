@@ -76,7 +76,7 @@ export type StorySound = 'bird' | 'blink' | 'paper' | 'taste' | 'swell' | 'poff'
  */
 export type Act =
   // the family, and Elof where it suits him
-  | 'stand' | 'walk' | 'sit' | 'carve' | 'draw' | 'sip' | 'sneak' | 'kneel' | 'crouch' | 'gasp' | 'point'
+  | 'stand' | 'walk' | 'sit' | 'carve' | 'draw' | 'sip' | 'sneak' | 'kneel' | 'crouch' | 'gasp' | 'point' | 'shine'
   | 'wave' | 'cheer' | 'offer' | 'reach' | 'lift' | 'show' | 'blow' | 'shrug' | 'hug' | 'nod' | 'look'
   | 'startle' | 'stomp' | 'hands' | 'watch' | 'paint' | 'eat'
   // the ghost: a wooden toy that has come alive, and never bends

@@ -132,8 +132,11 @@ export interface Rig {
   hand(side: 0 | 1, out: Vector3): Vector3;
   /** The lips in world space, following the head's nod and turn. */
   mouth(out: Vector3): Vector3;
-  /** Place a hand on a world-space contact after posing, without stretching the arm. */
-  reach(side: 0 | 1, target: Vector3, weight?: number): void;
+  /**
+   * Place a hand on a world-space contact after posing, without stretching the arm. `most`: how much of the arm's
+   * length it may use (1, all of it, as pointing does; less keeps the elbow bent, as holding something out does).
+   */
+  reach(side: 0 | 1, target: Vector3, weight?: number, most?: number): void;
   /** Place and aim the palm around a held thing; returns its actual centre after clamping the reach. */
   grip(side: 0 | 1, target: Vector3, fingerDirection: Vector3, out: Vector3, weight?: number): Vector3;
   /**
@@ -397,8 +400,8 @@ export function createRehearsalRig(who: Role): Rig {
       writePart(4);
       mesh.instanceMatrix.needsUpdate = true;
     },
-    reach(side, target, weight = 1) {
-      contacts[side].solve(target, weight);
+    reach(side, target, weight = 1, most = 1) {
+      contacts[side].solve(target, weight, most);
       contactParts(side);
     },
     grip(side, target, direction, out, weight = 1) {
@@ -578,7 +581,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
     },
     breeze(wind, dt, still, ruffle = 0) { if (dt > 0) soft(sway.step(wind, dt, still), still ? 0 : ruffle); },
     mouth(out) { return bones.head ? bones.head.node.localToWorld(out.copy(mouth)) : group.localToWorld(out.set(0, height * .89, height * .075)); },
-    reach(side, target, weight = 1) { contacts[side]?.(target, weight); },
+    reach(side, target, weight = 1, most = 1) { contacts[side]?.(target, weight, most); },
     grip(side, target, direction, out, weight = 1) {
       if (grips[side]) return grips[side]!(target, direction, out, weight);
       this.reach(side, target, weight);

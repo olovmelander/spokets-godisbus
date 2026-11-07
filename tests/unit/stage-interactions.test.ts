@@ -83,13 +83,15 @@ describe('3D story interactions', () => {
     expect(rigFor(stage).hand(1, new Vector3()).distanceTo(new Vector3(target.x, target.y, target.z))).toBeLessThan(1e-6);
   });
 
-  it('offers toward an unreachable recipient without extending the arm beyond its real length', () => {
+  it('offers toward an unreachable recipient with the elbow still bent, never the arm held straight', () => {
     const stage = createStage(prolog, () => 0);
     show(stage, 'morgon', 9.6);
     const { shoulder, elbow, hand } = arm(rigFor(stage));
     const target = new Vector3(2.3, 2.3, 0);
+    const full = .84 + Math.hypot(.92, .05);
+    // Straight towards him, but held out as a thing to be taken is: most of the arm's length, not all of it.
     expect(hand.clone().sub(shoulder).angleTo(target.clone().sub(shoulder))).toBeLessThan(1e-5);
-    expect(shoulder.distanceTo(hand)).toBeCloseTo(.84 + Math.hypot(.92, .05), 6);
+    expect(shoulder.distanceTo(hand)).toBeCloseTo(.82 * full, 6);
     expect(elbow.distanceTo(hand)).toBeCloseTo(Math.hypot(.92, .05), 6);
     expect(hand.distanceTo(target)).toBeGreaterThan(1);
   });
