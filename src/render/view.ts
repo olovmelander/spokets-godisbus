@@ -403,6 +403,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     return { ride, prop };
   });
   const moverMeshes = buildMovers(chapter);
+  /** The movers that go over the water: rafts, logs and boards, which it mirrors (./water.ts). */
+  const moversOnWater = moverMeshes.filter((_, i) => (chapter.movers?.[i]?.stops ?? []).some((stop) => (chapter.water ?? []).some((pool) => stop.x > pool.from - 1 && stop.x < pool.to + 1)));
   // Each has weight as it moves: it leans, rocks to rest and squashes landing (./mover-motion.ts).
   const moverMotion = createMoverMotion(chapter.movers ?? [], moverMeshes);
   const sharedSweets = chapter.id === 'norrsken' ? createSharedSweets() : null;
@@ -1030,6 +1032,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       for (const lift of lifts) lift.patch?.(scene);
       // What only Mid and High draw (./rich.ts) is laid here, so that a model which arrived late is laid too.
       layRich(scene);
+      // What the water mirrors as it is (./water.ts): him, what he rides and carries, the ghost, the family, the candy
+      // and what goes over the water; tagged here, so that a model which arrived late is tagged too.
+      water.mirrorNear(scene, [
+        elof.group, ghostPlace, trail.group, stage.group, helper.group, afloat.group, carriedBerry, carriedGold, carriedDrawing, carriedCap,
+        ...carriers.map((carrier) => carrier.prop), ...family.flatMap((one) => [one.rig.group, one.paddle?.mesh]), ...moversOnWater,
+      ]);
       scene.traverse((object) => {
         // What is out of the picture for having nothing to draw (./idle.ts) is drawn in these frames all the
         // same, as it is: at no size, or unseen. Its shader, its shape and its picture are made here, not in play.
@@ -1052,6 +1060,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // A normal (non-XR) render target uses linear output without material tone mapping. The water is in
       // this pass: on High it copies the picture so far just before it is drawn, and only while it is in
       // sight (water.ts). No second scene render and no read/write feedback.
+      // On Mid and High, what is near the water first, from under it, for the water to mirror (./water.ts).
+      if (hdr) water.reflect(renderer, scene, camera, camera.position.x);
       renderer.render(scene, camera);
       if (hdr && gradePass && outputPass) {
         bloom?.render(renderer, hdr.scene);
@@ -1123,6 +1133,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       berryMeshes[i]?.scale.set(1 + 0.3 * flat - spring * 0.5, 1 - 0.5 * flat + spring, 1 + 0.3 * flat - spring * 0.5);
     }
     mist.update(flags, x, y, curr.facing, camera.position.z, dt, lanternHeld ? lanternHand : null);
+    // The water takes less of the haze than the ground does, so that a brook seen from above stays water; in the mist,
+    // all of it, so that the bog's water is lost in it as everything else is (./water.ts).
+    water.setHaze(mist.thick());
     const gust = wind.update(gusts, clock);
     climbs.update(flags, dt, clock, lessMotion());
     follower.update(flags, curr, clock, dt);
@@ -2215,7 +2228,7 @@ function buildTussocks(chapter: ChapterData, colour: string | null): Mesh[] {
 function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: number } | null, sun: DirectionalLight, hemisphere: HemisphereLight) {
   const group = new Group();
   const greybox = { near: fog.near, far: fog.far };
-  if (!chapter.mist) return { group, update: () => {} };
+  if (!chapter.mist) return { group, update: () => {}, thick: () => 0 };
   const after = chapter.mist.after;
   const light = new PointLight('#ffcf8a', 0, 9, 1.6);
   // The lollipop, held up like a lantern: it glows through the mist.
@@ -2282,7 +2295,8 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
     // taking a light out compiles every shader anew.
     for (const one of [glow, halo, wall, lamp, flame]) drawnWhile(one, k > 0);
   }
-  return { group, update };
+  /** How far the mist has come in: 0 clear, 1 thick. */
+  return { group, update, thick: () => k };
 }
 
 /**

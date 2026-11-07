@@ -1,8 +1,8 @@
 import {
   BufferGeometry, CanvasTexture, ClampToEdgeWrapping, Color, DataTexture, DoubleSide, Float32BufferAttribute, Group,
-  HalfFloatType, LinearFilter, Matrix4, Mesh, RedFormat, MeshBasicMaterial, OrthographicCamera, RepeatWrapping, SRGBColorSpace, ShaderMaterial,
-  Vector2, Vector3, Vector4, WebGLRenderTarget, type Camera, type InstancedMesh, type Material, type Object3D, type PerspectiveCamera,
-  type Texture, type WebGLRenderer,
+  HalfFloatType, LinearFilter, Matrix4, Mesh, RedFormat, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera, Plane, RepeatWrapping,
+  SRGBColorSpace, ShaderMaterial, Vector2, Vector3, Vector4, WebGLRenderTarget, type Camera, type InstancedMesh, type Material,
+  type Object3D, type Texture, type WebGLRenderer,
 } from 'three';
 import type { ChapterData, PlaceId } from '../sim/types';
 import { KIT } from './dressing/kit';
@@ -263,6 +263,15 @@ function farCard(object: Object3D): FarCard | null {
 const STRIP = { wide: 512, high: 128, above: 24, below: 4 };
 /** How much higher a street's puddle shows what stands behind it than a mirror would. */
 export const MIRROR_REACH = 3.5;
+/**
+ * The layer of what the water mirrors as it is, seen from under it (Mid and High): him, what he rides and carries, the
+ * ghost, the family, the candy and what floats. Everything else stays on the common layer only.
+ */
+export const MIRRORED_NEAR = 5;
+/** How much of the place's haze the water's surface takes, against the ground's. */
+const WATER_HAZE = 0.6;
+/** How far from a pool the camera may look and the pool still mirror what is near it, in EL. */
+const NEAR_REACH = 16;
 /** Where the camera stands, for the strip's sake: this far in front of the path, and this far under the far pictures' eye row. */
 const SEEN_FROM = { z: 10.5, under: 0.55 };
 
@@ -405,6 +414,11 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     body: { value: new Vector4(kind.murk, kind.ramp, kind.faceAlpha, kind.bed) },
     // How much it mirrors, how big its ripples are, how dark its own colour is, and how solid its face is further down.
     surface: { value: new Vector4(kind.mirror, kind.ripple, kind.dim, kind.faceBelow) },
+    // What is near, mirrored as it is (Mid and High): the picture from under the water, how a point of the water
+    // finds itself in it, whether there is one, and the height of the water it was taken at.
+    nearMirror: { value: null as Texture | null }, nearMatrix: { value: new Matrix4() }, nearOn: { value: 0 }, nearLevel: { value: 0 },
+    // How much of the haze its surface takes, against the ground's (all of it in the mist).
+    haze: { value: WATER_HAZE },
   };
   const material = new ShaderMaterial({
     // It writes no depth: a shaft of light or a sheet of mist that dips under the surface goes on into the
@@ -427,7 +441,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     fragmentShader: /* glsl */ `
       uniform sampler2D flowMap, refraction, mirrorMap, islands;
       uniform vec3 waterColour, sunDirection, skyTop, skyMiddle, skyGlow, mirrorTint, faceTop, faceDeep, through, bedColour, shoreColour;
-      uniform float time, details, opacity, refractOn, cameraFar, mirrorReach;
+      uniform float time, details, opacity, refractOn, cameraFar, mirrorReach, nearOn, nearLevel, haze;
+      uniform sampler2D nearMirror;
+      uniform mat4 nearMatrix;
       uniform vec4 mirrorFrame, islandFrame, body, surface, banks[${MIRRORED.banks}], columns[${MIRRORED.trunks}];
       uniform vec3 mirrorSlide, columnTint[${MIRRORED.trunks}], bankTop, bankFace;
       uniform mat4 viewProjection;
@@ -550,6 +566,16 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           }
           mirrored = mix(mirrored, standing * mirrorTint, stands);
         }
+        // Him, what he rides, the ghost, the family and the candy, as they are, from under the water: the picture a
+        // camera mirrored in the water's surface takes, rippled as the surface is (Mid and High).
+        if (nearOn > 0.5 && isTop > 0.5 && abs(waterPart.w - nearLevel) < 0.12) {
+          vec4 nearAt = nearMatrix * vec4(waterWorld.x + slope.x * 4.0, nearLevel, waterWorld.z + slope.y * 2.0, 1.0);
+          vec2 nearUv = nearAt.xy / nearAt.w;
+          if (nearAt.w > 0.0 && all(greaterThan(nearUv, vec2(0.0))) && all(lessThan(nearUv, vec2(1.0)))) {
+            vec4 seenNear = texture2D(nearMirror, nearUv);
+            mirrored = mix(mirrored, seenNear.rgb * mirrorTint, clamp(seenNear.a, 0.0, 1.0));
+          }
+        }
         // Dark things are darker in water than in the air, and the sky keeps its light.
         mirrored *= 0.55 + 0.75 * dot(mirrored, vec3(0.3, 0.6, 0.1));
         // Water mirrors most where it is looked along, and a ripple's near side is looked into.
@@ -628,7 +654,16 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         gl_FragColor = vec4(colour, there * waterPart.y);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
-        #include <fog_fragment>
+        // The haze, as three.js lays it (fog_fragment), but less of it on the surface: the forest's haze is pale,
+        // and dark water under it, seen from above, read as grey mist. Its cut face and shore take all of it.
+        #ifdef USE_FOG
+          #ifdef FOG_EXP2
+            float fogFactor = 1.0 - exp(-fogDensity * fogDensity * vFogDepth * vFogDepth);
+          #else
+            float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+          #endif
+          gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor * (waterPart.x < 0.5 ? haze : 1.0));
+        #endif
       }`,
   });
   const first = chapter.ground?.[0];
@@ -728,9 +763,94 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   const causticPools = pools.slice(0, 8).map((w) => new Vector4(w.from, w.to, w.y, 0));
   while (causticPools.length < 8) causticPools.push(new Vector4(0, 0, -1e6, 0));
   let before = 0;
+  // What is near, mirrored as it is (Mid and High): a camera mirrored in the water's surface takes, at half size,
+  // only what is on the near layer, and the water reads it back where each of its points is. As three.js's Reflector
+  // does it, with its near plane laid along the surface, so that nothing under the water is in the picture.
+  let nearTarget: WebGLRenderTarget | null = null;
+  const nearCamera = new PerspectiveCamera();
+  nearCamera.layers.set(MIRRORED_NEAR);
+  const surfaceUp = new Vector3(0, 1, 0), onSurface = new Vector3(), eye = new Vector3(), aim = new Vector3();
+  const turn = new Matrix4(), cut = new Plane(), clip = new Vector4(), q = new Vector4();
+  const toSheet = new Matrix4().set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
+  const near: Object3D[] = [];
+  const clearColour = new Color();
+  /** The pool round `x` that mirrors what is near, and its height now; none when no pool is in reach. */
+  const poolNear = (x: number) => {
+    let best: (typeof pools)[number] | null = null, distance = NEAR_REACH;
+    for (const w of pools) {
+      const d = Math.max(w.from - x, x - w.to, 0);
+      if (d < distance) { distance = d; best = w; }
+    }
+    return best;
+  };
   return {
     group,
+    /** Things the water mirrors as they are, and the lights they are lit by in its picture (call in a warm frame). */
+    mirrorNear(scene: Object3D, things: readonly (Object3D | null | undefined)[]): void {
+      if (!pools.length) return;
+      for (const thing of things) {
+        if (!thing) continue;
+        if (!near.includes(thing)) near.push(thing);
+        thing.traverse((object) => object.layers.enable(MIRRORED_NEAR));
+      }
+      // The same lights in both pictures, so that both use the same shaders (none is compiled in play).
+      scene.traverse((object) => { if ((object as { isLight?: boolean }).isLight) object.layers.enable(MIRRORED_NEAR); });
+    },
+    /**
+     * Before the scene's own picture, on Mid and High while a pool is near `x`: what is near, from under the water.
+     * Only what is on the near layer is drawn, its matrices brought up to date first; the sun's map is not drawn again.
+     */
+    reflect(renderer: WebGLRenderer, scene: Object3D & { background?: unknown; matrixWorldAutoUpdate: boolean }, camera: PerspectiveCamera, x: number): void {
+      uniforms.nearOn.value = 0;
+      const pool = nearTarget && near.length ? poolNear(x) : null;
+      if (!pool || !nearTarget) return;
+      const level = pool.y + body.position.y;
+      camera.updateMatrixWorld();
+      eye.setFromMatrixPosition(camera.matrixWorld);
+      if (eye.y < level + 0.05) return;
+      onSurface.set(eye.x, level, eye.z);
+      // The eye, and where it looks, mirrored in the surface; up stays up as the mirror turns it.
+      turn.extractRotation(camera.matrixWorld);
+      aim.set(0, 0, -1).applyMatrix4(turn).add(eye);
+      nearCamera.position.set(eye.x, 2 * level - eye.y, eye.z);
+      nearCamera.up.set(0, 1, 0).applyMatrix4(turn).reflect(surfaceUp);
+      nearCamera.lookAt(aim.x, 2 * level - aim.y, aim.z);
+      nearCamera.near = camera.near; nearCamera.far = camera.far;
+      nearCamera.updateMatrixWorld();
+      nearCamera.projectionMatrix.copy(camera.projectionMatrix);
+      uniforms.nearMatrix.value.copy(toSheet).multiply(nearCamera.projectionMatrix).multiply(nearCamera.matrixWorldInverse);
+      // The near plane along the surface (an oblique frustum): what is under the water is not in this picture.
+      cut.setFromNormalAndCoplanarPoint(surfaceUp, onSurface).applyMatrix4(nearCamera.matrixWorldInverse);
+      clip.set(cut.normal.x, cut.normal.y, cut.normal.z, cut.constant);
+      const p = nearCamera.projectionMatrix.elements;
+      q.set((Math.sign(clip.x) + p[8]!) / p[0]!, (Math.sign(clip.y) + p[9]!) / p[5]!, -1, (1 + p[10]!) / p[14]!);
+      clip.multiplyScalar(2 / clip.dot(q));
+      p[2] = clip.x; p[6] = clip.y; p[10] = clip.z + 1; p[14] = clip.w;
+      nearCamera.projectionMatrixInverse.copy(nearCamera.projectionMatrix).invert();
+      for (const thing of near) thing.updateWorldMatrix(true, true);
+      const target = renderer.getRenderTarget(), alpha = renderer.getClearAlpha(), maps = renderer.shadowMap.autoUpdate;
+      const background = scene.background, update = scene.matrixWorldAutoUpdate;
+      renderer.getClearColor(clearColour);
+      renderer.shadowMap.autoUpdate = false;
+      scene.background = null;
+      scene.matrixWorldAutoUpdate = false;
+      renderer.setRenderTarget(nearTarget);
+      renderer.setClearColor(0x000000, 0);
+      renderer.clear();
+      renderer.render(scene as never, nearCamera);
+      renderer.setClearColor(clearColour, alpha);
+      renderer.setRenderTarget(target);
+      renderer.shadowMap.autoUpdate = maps;
+      scene.background = background;
+      scene.matrixWorldAutoUpdate = update;
+      uniforms.nearLevel.value = level;
+      uniforms.nearOn.value = 1;
+    },
     get refracting() { return target !== null; },
+    /** How thick the mist is (0 none, 1 thick): the more mist, the more of it the surface takes, up to all of it. */
+    setHaze(mist: number): void { uniforms.haze.value = WATER_HAZE + (1 - WATER_HAZE) * Math.min(1, Math.max(0, mist)); },
+    /** Whether it has a picture of what is near it, from under it (Mid and High). */
+    get mirroringNear() { return nearTarget !== null; },
     /** How high the water stands now against its pools' own height: it rises and falls a little. */
     get level() { return body.position.y; },
     /** `still`: with reduced motion the water all but stands. */
@@ -742,6 +862,16 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     setSize(width: number, height: number, tier: Tier) {
       details.value = tier === 'low' ? 0 : 1;
       uniforms.resolution.value.set(width, height);
+      // What is near, mirrored as it is: Mid and High, which draw in a linear picture of their own as this does.
+      if (tier === 'low' || !pools.length) {
+        nearTarget?.dispose(); nearTarget = null; uniforms.nearOn.value = 0; uniforms.nearMirror.value = null;
+      } else {
+        const nw = Math.max(1, Math.ceil(width / 2)), nh = Math.max(1, Math.ceil(height / 2));
+        nearTarget ??= new WebGLRenderTarget(nw, nh, { type: HalfFloatType, stencilBuffer: false });
+        nearTarget.texture.name = 'water-near';
+        nearTarget.setSize(nw, nh);
+        uniforms.nearMirror.value = nearTarget.texture;
+      }
       // Shallow water shows its own bed, not what is behind it: it needs no copy.
       if (tier !== 'high' || !pools.length || kind.bed > 0) { target?.dispose(); target = null; uniforms.refractOn.value = 0; uniforms.refraction.value = null; return; }
       const w = Math.max(1, Math.ceil(width / 2)), h = Math.max(1, Math.ceil(height / 2));
