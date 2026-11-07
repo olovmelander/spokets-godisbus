@@ -1,4 +1,5 @@
 import type { MeshStandardMaterial } from 'three';
+import { CANOPY } from './canopy';
 
 /** How wide a deck board is (./dressing/ground.ts keeps the same number). */
 const BOARD = 0.8;
@@ -42,17 +43,25 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
   patched.add(material);
   const before = material.onBeforeCompile;
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:ground-detail-v6-${kind}`;
+  material.customProgramCacheKey = () => `${key()}:ground-detail-v7-${kind}`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.closeDetail = CLOSE_DETAIL;
     shader.uniforms.dapple = DAPPLE;
     shader.uniforms.dappleClock = DAPPLE_CLOCK;
+    shader.uniforms.canopyOn = CANOPY.on;
+    shader.uniforms.canopySheet = CANOPY.sheet;
+    shader.uniforms.canopyLayers = CANOPY.layers;
+    shader.uniforms.canopyHigh = CANOPY.high;
+    shader.uniforms.canopyBeam = CANOPY.beam;
     shader.vertexShader = 'varying vec3 groundDetailAt;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `
       groundDetailAt = (modelMatrix * vec4(transformed, 1.0)).xyz;
       #include <project_vertex>`);
     shader.fragmentShader = /* glsl */ `varying vec3 groundDetailAt;
-      uniform float closeDetail, dapple, dappleClock;
+      uniform float closeDetail, dapple, dappleClock, canopyOn;
+      uniform sampler2D canopySheet;
+      uniform mat3 canopyLayers[2];
+      uniform vec2 canopyHigh, canopyBeam;
       float groundHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float groundNoise(vec2 p) {
         vec2 i = floor(p), f = fract(p);
@@ -95,6 +104,17 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
           float leaves = groundNoise(at * 0.45 + drift) * 0.6 + groundNoise(at * 1.3 - drift * 1.7 + 4.0) * 0.4;
           float sun = smoothstep(0.58, 0.72, leaves);
           groundColour *= 1.0 + dapple * sun * vec3(0.42, 0.36, 0.2);
+        }
+        // On High, the crowns' own flecks (./canopy.ts): where the sun comes through both layers of leaves, as the
+        // sun's shadow map has them, and as far off as the ground is seen. Softened as the shadow map softens them.
+        if (canopyOn > 0.0) {
+          float through = 1.0;
+          for (int layer = 0; layer < 2; layer++) {
+            vec2 crown = groundDetailAt.xz + canopyBeam * (canopyHigh[layer] - groundDetailAt.y);
+            vec2 sheetAt = (canopyLayers[layer] * vec3(crown, 1.0)).xy;
+            through *= 1.0 - smoothstep(0.3, 0.7, texture2D(canopySheet, sheetAt, 1.5).a);
+          }
+          groundColour *= mix(vec3(1.0), vec3(mix(0.76, 1.0, through)) + through * vec3(0.6, 0.5, 0.28), canopyOn);
         }
         ` : kind === 'rock' ? /* glsl */ `
         // Weathered patches, crust lichen in pale rings, and hairline cracks.

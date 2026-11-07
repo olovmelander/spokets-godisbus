@@ -41,6 +41,7 @@ import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
 import { DOF_DEEP, DOF_DEEPER, createDepthBlur } from './depth-blur';
 import { CLOSE_DETAIL, DAPPLE, DAPPLE_CLOCK } from './ground-detail';
+import { CANOPY } from './canopy';
 import { SHADE_STRENGTH, createContactShade } from './contact-shade';
 import { createBloom } from './bloom';
 import { createLightShafts } from './light-shafts';
@@ -793,7 +794,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       .catch((error) => console.error('Someone in the family could not be loaded; rehearsal shapes stay.', error));
   }
 
-  const characterShadows = createCharacterShadows(renderer, scene, sun);
+  const characterShadows = createCharacterShadows(renderer, scene, sun, { canopy: dappled });
   let playerGroundY = chapter.spawn.y;
   let ghostGroundY = chapter.ghost?.[0]?.at.y ?? 0;
   let ghostStaged = false;
@@ -1321,7 +1322,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // The foreground's own shade, by day; little of it at night and in the storm, which are dark enough (./grade.ts).
     gradePass?.setForeShade(CINEMA * (chapter.storm ? 0.35 : 1) * (1 - 0.7 * darkness));
     // Sunlight through the leaves on the forest floor and the lawn, by day, out of the storm (./ground-detail.ts).
-    DAPPLE.value = dappled && tier !== 'low' ? 1 - darkness : 0;
+    // On High the crowns cast the dappled light for real (./canopy.ts); on Mid the ground paints it.
+    DAPPLE.value = dappled && tier === 'mid' ? 1 - darkness : 0;
+    CANOPY.on.value = dappled && tier === 'high' ? 1 - darkness : 0;
     if (!calmStory) DAPPLE_CLOCK.value = clock;
     for (const extra of extras) extra.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride' });
     if (dressing && place) {
@@ -1846,7 +1849,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       }
       sharedSweets?.update(flags, ghostPlace.position, carving?.position);
     }
-    characterShadows.update(look.x, centreY, viewHeight * look.zoom * Math.max(1, camera.aspect) * .65);
+    characterShadows.update(look.x, centreY, viewHeight * look.zoom * Math.max(1, camera.aspect) * .65, clock, calmStory ? 0 : gale * windAt(look.x));
     // Gate 6 (plan §6.12): no shader is compiled during play. The first frames, and the first after a model
     // has arrived, draw the whole chapter, in view or not, so that every material's shader exists from then on.
     if (modelInstallations !== warmedFor) {

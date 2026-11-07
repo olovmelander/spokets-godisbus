@@ -5,6 +5,7 @@ import {
 } from 'three';
 import type { Tier } from './quality';
 import { setBakedShade } from './forest-shadows';
+import { createCanopy } from './canopy';
 
 export const CHARACTER_SHADOW_SIZE = 1024;
 const CAPACITY = 64;
@@ -20,7 +21,7 @@ export interface ShadowCharacter {
 }
 
 /** Bounded character shadows, with explicitly marked world casters sharing High's existing map. */
-export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, sun: DirectionalLight) {
+export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, sun: DirectionalLight, options: { canopy?: boolean } = {}) {
   const characters: ShadowCharacter[] = [];
   const place = new Object3D();
   const at = new Vector3(), scale = new Vector3();
@@ -28,7 +29,9 @@ export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, su
   scene.traverse((object) => { if (object instanceof Mesh && object.userData.casts === true) worldCasters = true; });
   // The backmost spruces cast across the path from over 50 EL towards the sun. Move the light back,
   // not its map bounds: otherwise the near plane clips the trees whose shade reaches the foreground.
-  const direction = sun.position.clone().sub(sun.target.position).normalize().multiplyScalar(worldCasters ? 80 : 50);
+  // The crowns (./canopy.ts) hang higher still, over the far side of the map: further back again.
+  const back = options.canopy ? 100 : worldCasters ? 80 : 50;
+  const direction = sun.position.clone().sub(sun.target.position).normalize().multiplyScalar(back);
   let tier: Tier = 'low';
   const fade = new InstancedBufferAttribute(new Float32Array(CAPACITY * 2), 2).setUsage(DynamicDrawUsage);
   const ground = new PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
@@ -62,6 +65,9 @@ export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, su
   casters.count = 0;
   casters.visible = false;
   scene.add(blobs, casters, sun.target);
+  // On High, where the sun comes down through crowns (the forest and the garden by day), they dapple it (./canopy.ts).
+  const canopy = options.canopy ? createCanopy(sun) : null;
+  if (canopy) scene.add(canopy.mesh);
   renderer.shadowMap.type = PCFShadowMap;
   sun.shadow.mapSize.set(CHARACTER_SHADOW_SIZE, CHARACTER_SHADOW_SIZE);
   sun.shadow.bias = -.0004;
@@ -69,7 +75,7 @@ export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, su
   sun.shadow.radius = 2;
   sun.shadow.intensity = .55;
   sun.shadow.camera.near = .1;
-  sun.shadow.camera.far = worldCasters ? 150 : 110;
+  sun.shadow.camera.far = options.canopy ? 170 : worldCasters ? 150 : 110;
 
   function releaseMap(): void {
     sun.shadow.map?.depthTexture?.dispose();
@@ -82,6 +88,7 @@ export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, su
     tier = next;
     material.uniforms.contact!.value = tier === 'low' ? 0 : 1;
     renderer.shadowMap.enabled = sun.castShadow = casters.visible = tier === 'high';
+    canopy?.setOn(tier === 'high');
     scene.traverse((object) => setBakedShade(object, tier !== 'high'));
     if (tier !== 'high') releaseMap();
     else sun.shadow.needsUpdate = true;
@@ -108,7 +115,7 @@ export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, su
         object.castShadow = object.userData.casts === true;
       });
     },
-    update(focusX: number, focusY: number, span: number): void {
+    update(focusX: number, focusY: number, span: number, clock = 0, wind = 0): void {
       // Move source and target together: the place's sun direction never changes as the camera follows.
       // Texel-sized steps prevent a stationary character's shadow crawling as the camera eases.
       const extent = Math.max(10, Math.min(40, span));
@@ -150,14 +157,17 @@ export function createCharacterShadows(renderer: WebGLRenderer, scene: Scene, su
         count++;
       }
       blobs.count = casters.count = count;
+      canopy?.update(focusX, focusY, clock, wind);
       blobs.instanceMatrix.needsUpdate = casters.instanceMatrix.needsUpdate = true;
       fade.needsUpdate = true;
     },
-    info: () => ({ characters: blobs.count, contact: tier !== 'low', mapSize: sun.shadow.map ? sun.shadow.map.width : 0, casters: tier === 'high' ? casters.count : 0 }),
+    info: () => ({ characters: blobs.count, contact: tier !== 'low', mapSize: sun.shadow.map ? sun.shadow.map.width : 0, casters: tier === 'high' ? casters.count : 0,
+      canopy: canopy?.mesh.visible ? canopy.mesh.count : 0 }),
     dispose(): void {
       setTier('low');
       blobs.geometry.dispose(); material.dispose(); casters.geometry.dispose(); casters.material.dispose();
       scene.remove(blobs, casters);
+      if (canopy) { scene.remove(canopy.mesh); canopy.dispose(); }
     },
   };
 }
