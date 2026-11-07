@@ -1,4 +1,4 @@
-import { BufferGeometry, Color, Float32BufferAttribute, Group, Mesh, MeshStandardMaterial, PlaneGeometry } from 'three';
+import { BufferGeometry, Color, ConeGeometry, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D, PlaneGeometry, SphereGeometry } from 'three';
 import { granite } from '../../render/dressing/ground';
 
 /** The meeting's wave-worn granite: one continuous skin, with a level strip for the exact walking surface. */
@@ -42,6 +42,65 @@ export function moonstone(width: number, top: number, water: number): Group {
   stone.name = 'moonstone-surface';
   stone.receiveShadow = true;
   group.add(stone);
+
+  // What lives on the rock, off the walking strip: grey-green lichen in rosettes, loose stones, and straw sedge in
+  // its cracks, so that it reads as old rock and not as a smooth hill. Three draws.
+  const heightAtRock = (x: number, z: number) => {
+    let k = 0;
+    while (k < profile.length - 2 && profile[k + 1]![0] < z) k++;
+    const [z0, d0] = profile[k]!, [z1, d1] = profile[k + 1]!;
+    const dy = d0 + (d1 - d0) * Math.min(1, Math.max(0, (z - z0) / (z1 - z0)));
+    const end = Math.max(0, -x, x - width) / 2;
+    const offPath = Math.min(1, Math.max(0, Math.abs(z) - 1));
+    const ripple = Math.sin(x * 0.47 + z * 0.36) * Math.sin(x * 0.19 - z * 0.54);
+    return top + dy - 2.8 * end * end + (Math.sin(x * 0.53 + z * 0.25) * 0.36 + Math.sin(x * 0.21 - z * 0.4) * 0.22 + ripple * 0.14) * offPath;
+  };
+  let seed = 7;
+  const next = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const spot = (front: number) => {
+    const x = 0.6 + next() * (width - 1.2);
+    const z = next() < front ? 1.4 + next() * 2.2 : -1.3 - next() ** 1.2 * 4.8;
+    return { x, z, y: heightAtRock(x, z) };
+  };
+  const place = new Object3D(), tint = new Color();
+  const lichens = new InstancedMesh(new SphereGeometry(1, 8, 3), new MeshStandardMaterial({ roughness: 1 }), Math.round(width * 7));
+  const LICHEN = ['#8d9a7c', '#a9ad90', '#76846c', '#bdb89c', '#c9a85a'];
+  for (let i = 0; i < lichens.count; i++) {
+    const at = spot(0.3), wide = 0.08 + next() ** 1.8 * 0.3;
+    if (at.y < water + 0.15) { place.scale.setScalar(0); place.updateMatrix(); lichens.setMatrixAt(i, place.matrix); continue; }
+    place.position.set(at.x, at.y + 0.004, at.z);
+    place.rotation.set(0, next() * 6.28, 0);
+    place.scale.set(wide * (0.8 + next() * 0.5), 0.014, wide * (0.8 + next() * 0.5));
+    place.updateMatrix();
+    lichens.setMatrixAt(i, place.matrix);
+    lichens.setColorAt(i, tint.set(LICHEN[Math.floor(next() * LICHEN.length)]!).multiplyScalar(0.75 + next() * 0.35));
+  }
+  const loose = new InstancedMesh(new SphereGeometry(1, 7, 5), new MeshStandardMaterial({ roughness: 0.85, map: granite() }), Math.round(width * 1.4));
+  for (let i = 0; i < loose.count; i++) {
+    const at = spot(0.15), size = 0.07 + next() ** 2 * 0.22;
+    place.position.set(at.x, at.y - size * 0.3, at.z);
+    place.rotation.set(next() * 0.5, next() * 6.28, next() * 0.5);
+    place.scale.set(size * (1 + next() * 0.6), size * (0.55 + next() * 0.3), size * (1 + next() * 0.4));
+    place.updateMatrix();
+    loose.setMatrixAt(i, place.matrix);
+    loose.setColorAt(i, tint.set('#8e979f').multiplyScalar(0.75 + next() * 0.35));
+  }
+  const blades = new InstancedMesh(new ConeGeometry(0.5, 1, 3).translate(0, 0.5, 0), new MeshStandardMaterial({ roughness: 0.9 }), Math.round(width * 8));
+  let b = 0;
+  while (b < blades.count) {
+    const at = spot(0.1);
+    if (at.y < water + 0.2) continue;
+    const tall = 0.25 + next() * 0.45;
+    for (let k = 0; k < 3 + Math.floor(next() * 4) && b < blades.count; k++, b++) {
+      place.position.set(at.x + (next() - 0.5) * 0.16, at.y - 0.02, at.z + (next() - 0.5) * 0.14);
+      place.rotation.set((next() - 0.5) * 0.8, next() * 6.28, (next() - 0.5) * 0.8);
+      place.scale.set(0.03 + next() * 0.02, tall * (0.7 + next() * 0.5), 0.03);
+      place.updateMatrix();
+      blades.setMatrixAt(b, place.matrix);
+      blades.setColorAt(b, tint.set(next() < 0.3 ? '#7f8a48' : '#c9b268').multiplyScalar(0.7 + next() * 0.35));
+    }
+  }
+  for (const mesh of [lichens, loose, blades]) { mesh.computeBoundingSphere(); group.add(mesh); }
 
   // The river renderer joins narrow rocks only. This broad skerry also needs water in front of its footprint:
   // otherwise a tall phone looks underneath it at the dry lakebed and the bog's submerged vegetation.
