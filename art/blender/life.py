@@ -1,4 +1,4 @@
-"""Builds the pictures of the far scenery's life (src/content/life.ts): one atlas of 1024 by 512, carried as the
+"""Builds the pictures of the far scenery's life (src/content/life.ts): one atlas of 1024 by 1024, carried as the
 texture of a plane called "life", for art/baked/boot/life.glb.
 
 Run it inside Blender, after two first lines that set where things go:
@@ -18,6 +18,8 @@ two together, through life.json).
   mixed with the place's haze. The legs of its far side are rendered half clear, so that they are paler than
   the near ones. Twelve cells are a cycle of its walk, and six are it standing: stopped, its head coming up and
   turning to the camera, looking, and with one ear laid back.
+- The forest's bigger life, the same way: a moose cow with her calf at her heels, a roe deer (who stops and looks up
+  as the moose does) and a brown bear, each with a body, legs and a gait of its own.
 - The birds, the smoke, the far window and the shooting star are drawn here, in white, from plain shapes.
 
 Nothing in it comes from anyone else: no model, no picture, no photograph. It empties the scene first.
@@ -45,7 +47,7 @@ for item in list(bpy.data.images):
         bpy.data.images.remove(item)
 
 WIDE = 1024
-TALL = 512
+TALL = 1024
 # name: left, top, a cell's width and height, how many cells, how many in a row
 STRIPS = {
     'walk': (0, 0, 160, 128, 12, 6),
@@ -55,6 +57,12 @@ STRIPS = {
     'puff': (960, 0, 64, 64, 1, 1),
     'dot': (960, 64, 32, 32, 1, 1),
     'streak': (0, 256, 128, 64, 1, 1),
+    # The forest's bigger life (the lower half): a moose cow with her calf at her heels, a bear, and a roe deer,
+    # which stops, looks up and walks on.
+    'pair': (0, 512, 204, 96, 12, 5),
+    'bear': (408, 704, 96, 64, 12, 6),
+    'deer': (0, 832, 96, 72, 12, 10),
+    'deerStand': (192, 904, 96, 72, 6, 6),
 }
 
 # The picture, as Blender keeps one: four numbers a pixel, rows from the bottom. White and clear to begin with,
@@ -333,14 +341,19 @@ def between(a, b, t, across, thick):
     return (mix(a[0], b[0], t), mix(a[1], b[1], t), across, thick)
 
 
-def build(phase, planted, lift, look, flick):
-    """The whole animal at a moment of its walk. `lift` raises its head, `look` turns it to the camera, and
-    `flick` lays its near ear back: each from 0 to 1."""
+def clear_parts():
     for part in PARTS:
         mesh = part.data
         bpy.data.objects.remove(part, do_unlink=True)
         bpy.data.meshes.remove(mesh)
     PARTS.clear()
+
+
+def build(phase, planted, lift, look, flick, antlers=True, bell=True, clear=True):
+    """The whole animal at a moment of its walk. `lift` raises its head, `look` turns it to the camera, and
+    `flick` lays its near ear back: each from 0 to 1. A cow has no antlers, and a calf no bell either."""
+    if clear:
+        clear_parts()
     still = Matrix.Identity(4)
     # The body rises and falls a little twice a cycle, and the hump rolls as the shoulders take the weight.
     bob = 0.02 * math.cos(4.0 * math.pi * phase)
@@ -394,7 +407,8 @@ def build(phase, planted, lift, look, flick):
     ], HIDE, head)
     # The bell hangs straight down from the throat, whatever the head does.
     throat = head @ Vector((0.22, 0.0, -0.11))
-    stick('bell', (throat.x, throat.y, throat.z), (throat.x + 0.02, throat.y, throat.z - 0.26), 0.075, 0.03, HIDE, still)
+    if bell:
+        stick('bell', (throat.x, throat.y, throat.z), (throat.x + 0.02, throat.y, throat.z - (0.26 if antlers else 0.14)), 0.075, 0.03, HIDE, still)
 
     for side in (1.0, -1.0):
         # An ear: up and out, laid back by a flick, and pricked when it looks.
@@ -404,6 +418,8 @@ def build(phase, planted, lift, look, flick):
         way = Vector(lean).normalized()
         root = Vector((-0.07, side * 0.11, 0.09))
         ball('ear', root + way * 0.14, way, (1.0, 0.0, 0.0), (0.15, 0.06, 0.02), HIDE, head)
+        if not antlers:
+            continue
         # An antler: a beam out to the side, a broad palm that stands up and back like an open hand, short thick
         # tines along its upper edge and its end, and two brow tines forward.
         stick('beam', (0.04, side * 0.08, 0.12), (-0.12, side * 0.30, 0.24), 0.055, 0.05, HORN, head)
@@ -416,6 +432,157 @@ def build(phase, planted, lift, look, flick):
             stick('tine', middle + back * along * 0.8 + out * 0.12, middle + back * along + out * far, 0.055, 0.022, HORN, head)
         stick('brow', (-0.02, side * 0.20, 0.20), (0.22, side * 0.26, 0.27), 0.045, 0.018, HORN, head)
         stick('brow', (-0.04, side * 0.26, 0.23), (0.17, side * 0.40, 0.35), 0.045, 0.018, HORN, head)
+
+
+# --- the bigger life of the forest: a moose cow and her calf, a roe deer, a bear -------------------------------
+#
+# The cow is the bull without its antlers, a little smaller; her calf is the same animal at six tenths of her size,
+# without a bell, at her heels, taking two steps to her one. The deer and the bear have bodies, legs and gaits of
+# their own, built as the moose is: tubes through stations, two bones a leg, a hoof or a paw that stands while the
+# body goes on.
+
+
+def pair_part(phase, at, size, antlers, bell, stride):
+    """The moose builder at `at` along X and `size` times as big, with a stride of its own."""
+    global STRIDE
+    keep = STRIDE
+    STRIDE = stride
+    before = len(PARTS)
+    build(phase, False, 0.0, 0.0, 0.0, antlers=antlers, bell=bell, clear=False)
+    STRIDE = keep
+    move = Matrix.Translation((at, 0.0, 0.0)) @ Matrix.Scale(size, 4)
+    for part in PARTS[before:]:
+        part.matrix_world = move @ part.matrix_world
+
+
+PAIR = {'cow': (0.95, 0.94), 'calf': (-1.55, 0.6)}
+# What the cow's body goes on in one cycle: her calf takes two steps of its own in it.
+PAIR_STRIDE = STRIDE * PAIR['cow'][1]
+
+
+def build_pair(phase):
+    clear_parts()
+    pair_part(phase, PAIR['cow'][0], PAIR['cow'][1], False, True, STRIDE)
+    pair_part((2.0 * phase + 0.3) % 1.0, PAIR['calf'][0], PAIR['calf'][1], False, False, PAIR_STRIDE / (2.0 * PAIR['calf'][1]))
+
+
+def g_hoof(g, phase, planted):
+    half = g['stride'] * g['duty'] / 2.0
+    if phase < g['duty']:
+        return half - g['stride'] * phase, 0.0
+    t = (phase - g['duty']) / (1.0 - g['duty'])
+    if planted:
+        return (half if t > 0.5 else -half), 0.0
+    ease = t * t * (3.0 - 2.0 * t)
+    return half * (2.0 * ease - 1.0), g['lift'] * math.sin(math.pi * t) ** 1.2
+
+
+def g_leg(g, which, side, phase, bob, planted):
+    """As `leg`, for an animal of its own: its top joint, its middle joint and its ankle."""
+    tx = g['top'][which][0]
+    along, up = g_hoof(g, (phase + OFFSET[which + side]) % 1.0, planted)
+    dx = g['rest'][which] + along
+    a, b = g['bones'][which]
+    foot = g['foot']
+    straight = math.sqrt(max(0.0, ((a + b) * 0.985) ** 2 - dx * dx)) + foot
+    tz = max(g['top'][which][1] + g['ride'][which][0], min(g['top'][which][1] + g['ride'][which][1], straight)) + bob
+    dz = up + foot - tz
+    reach = min(a + b - 0.002, math.hypot(dx, dz))
+    aim = math.atan2(dz, dx)
+    bend = math.acos(max(-1.0, min(1.0, (a * a + reach * reach - b * b) / (2.0 * a * reach))))
+    knee = aim + BEND[which] * bend
+    return (tx, tz), (tx + a * math.cos(knee), tz + a * math.sin(knee)), (tx + reach * math.cos(aim), tz + reach * math.sin(aim))
+
+
+# A roe deer, a doe, 0.72 EL at the shoulder: slender, a short back, long thin legs, a long neck held up, a small
+# head with big ears, and a pale patch on her rump. Light on her feet.
+DEER = {
+    'stride': 0.62, 'duty': 0.6, 'lift': 0.1, 'foot': 0.03,
+    'top': {'F': (0.34, 0.62), 'H': (-0.36, 0.66)}, 'bones': {'F': (0.31, 0.30), 'H': (0.35, 0.33)},
+    'ride': {'F': (-0.02, 0.03), 'H': (-0.01, 0.01)}, 'rest': {'F': 0.02, 'H': -0.06}, 'side': 0.085,
+}
+DEER_HALT = 5
+RUMP = paint('deer-rump', 0.8, 1.0)
+
+
+def build_deer(phase, planted, lift, look, flick):
+    clear_parts()
+    still = Matrix.Identity(4)
+    bob = 0.012 * math.cos(4.0 * math.pi * phase)
+    profile = [
+        (-0.52, 0.74, 0.58, 0.05), (-0.47, 0.80, 0.50, 0.11), (-0.32, 0.82, 0.47, 0.15), (-0.10, 0.80, 0.46, 0.155),
+        (0.12, 0.81, 0.45, 0.15), (0.30, 0.85, 0.47, 0.14), (0.42, 0.81, 0.53, 0.11), (0.50, 0.73, 0.61, 0.07),
+    ]
+    tube('body', [(x, (top + under) / 2.0 + bob, wide, (top - under) / 2.0) for x, top, under, wide in profile], HIDE, still)
+    ball('rump', (-0.5, 0.0, 0.7 + bob), (0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.09, 0.1, 0.06), RUMP, still)
+    for side in ('L', 'R'):
+        hide = FAR if side == 'L' else HIDE
+        across = Matrix.Translation((0.0, DEER['side'] * (1.0 if side == 'L' else -1.0), 0.0))
+        top, knee, ankle = g_leg(DEER, 'F', side, phase, bob, planted)
+        tube('fore' + side, [
+            (top[0] + 0.02, top[1] + 0.14, 0.05, 0.09), (top[0], top[1], 0.045, 0.07), between(top, knee, 0.55, 0.03, 0.045),
+            (knee[0], knee[1], 0.026, 0.034), between(knee, ankle, 0.5, 0.02, 0.026), (ankle[0] + 0.015, ankle[1] - 0.02, 0.022, 0.03),
+        ], hide, across)
+        top, hock, ankle = g_leg(DEER, 'H', side, phase, bob, planted)
+        tube('hind' + side, [
+            (top[0] + 0.05, top[1] + 0.12, 0.065, 0.12), (top[0], top[1], 0.055, 0.1), between(top, hock, 0.5, 0.036, 0.055),
+            (hock[0], hock[1], 0.026, 0.035), between(hock, ankle, 0.5, 0.02, 0.026), (ankle[0] + 0.015, ankle[1] - 0.02, 0.022, 0.03),
+        ], hide, across)
+    up = lift * lift * (3.0 - 2.0 * lift)
+    nod = 0.0 if planted else 0.012 * math.sin(4.0 * math.pi * phase + 0.6)
+    base = (0.40, 0.74 + bob)
+    joint = (mix(0.60, 0.53, up), mix(1.02, 1.16, up) + bob + nod)
+    neck = [(mix(base[0], joint[0], t), mix(base[1], joint[1], t) + 0.03 * math.sin(math.pi * t), mix(0.075, 0.045, t), mix(0.11, 0.05, t)) for t in (0.0, 0.35, 0.7, 1.0)]
+    tube('neck', neck, HIDE, still)
+    head = Matrix.Translation((joint[0], 0.0, joint[1])) @ Matrix.Rotation(math.radians(-45.0) * look, 4, 'Z') @ Matrix.Rotation(math.radians(mix(48.0, 22.0, up)), 4, 'Y')
+    tube('head', [(-0.03, 0.01, 0.045, 0.055), (0.06, 0.01, 0.05, 0.06), (0.15, -0.01, 0.035, 0.045), (0.22, -0.03, 0.025, 0.032)], HIDE, head)
+    for side in (1.0, -1.0):
+        lean = (mix(-0.3, -0.05, up), side * 0.5, 0.85)
+        if side < 0.0:
+            lean = (mix(lean[0], -0.8, flick), mix(lean[1], -0.3, flick), mix(lean[2], 0.4, flick))
+        way = Vector(lean).normalized()
+        root = Vector((-0.02, side * 0.035, 0.04))
+        ball('ear', root + way * 0.075, way, (1.0, 0.0, 0.0), (0.08, 0.035, 0.012), HIDE, head)
+
+
+# A brown bear, 1.05 EL at the shoulder: a heavy body with a hump over its shoulders, short thick legs, broad paws,
+# a big round head carried low, and small round ears. It rolls as it walks, and its head swings.
+BEAR = {
+    'stride': 0.78, 'duty': 0.64, 'lift': 0.09, 'foot': 0.07,
+    'top': {'F': (0.52, 0.66), 'H': (-0.62, 0.66)}, 'bones': {'F': (0.33, 0.30), 'H': (0.34, 0.31)},
+    'ride': {'F': (-0.03, 0.04), 'H': (-0.02, 0.02)}, 'rest': {'F': 0.03, 'H': -0.05}, 'side': 0.2,
+}
+
+
+def build_bear(phase):
+    clear_parts()
+    still = Matrix.Identity(4)
+    bob = 0.018 * math.cos(4.0 * math.pi * phase)
+    roll = 0.02 * math.sin(2.0 * math.pi * phase)
+    profile = [
+        (-0.98, 0.84, 0.52, 0.12), (-0.88, 0.96, 0.42, 0.27), (-0.62, 1.01, 0.36, 0.35), (-0.28, 0.98, 0.34, 0.37),
+        (0.08, 1.03, 0.35, 0.37), (0.36, 1.13 + roll, 0.38, 0.35), (0.58, 1.08 + roll, 0.44, 0.3), (0.76, 0.96, 0.52, 0.21),
+    ]
+    tube('body', [(x, (top + under) / 2.0 + bob, wide, (top - under) / 2.0) for x, top, under, wide in profile], HIDE, still)
+    stick('tail', (-0.97, 0.0, 0.78 + bob), (-1.02, 0.0, 0.72 + bob), 0.04, 0.02, HIDE, still)
+    for side in ('L', 'R'):
+        hide = FAR if side == 'L' else HIDE
+        across = Matrix.Translation((0.0, BEAR['side'] * (1.0 if side == 'L' else -1.0), 0.0))
+        for which in ('F', 'H'):
+            top, knee, ankle = g_leg(BEAR, which, side, phase, bob, False)
+            thick = 0.13 if which == 'F' else 0.15
+            tube(('fore' if which == 'F' else 'hind') + side, [
+                (top[0] + 0.03, top[1] + 0.2, thick * 0.9, thick * 1.5), (top[0], top[1], thick * 0.85, thick * 1.2), between(top, knee, 0.5, thick * 0.7, thick * 0.95),
+                (knee[0], knee[1], thick * 0.6, thick * 0.75), between(knee, ankle, 0.5, thick * 0.55, thick * 0.65), (ankle[0], ankle[1] - 0.02, thick * 0.55, thick * 0.6),
+            ], hide, across)
+            ball('paw', (ankle[0] + 0.05, 0.0, 0.045), (1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.12, 0.08, 0.045), hide, across)
+    swing = 0.05 * math.sin(2.0 * math.pi * phase + 0.4)
+    joint = (0.98, 0.84 + bob + 0.02 * math.sin(4.0 * math.pi * phase))
+    tube('neck', [(0.62, 0.82 + bob, 0.24, 0.3), (0.82, 0.83 + bob, 0.2, 0.24), (joint[0], joint[1], 0.17, 0.2)], HIDE, still)
+    head = Matrix.Translation((joint[0], swing, joint[1])) @ Matrix.Rotation(math.radians(14.0), 4, 'Y')
+    tube('head', [(-0.08, 0.02, 0.15, 0.16), (0.06, 0.02, 0.165, 0.165), (0.2, -0.01, 0.12, 0.115), (0.31, -0.04, 0.075, 0.07), (0.37, -0.05, 0.055, 0.055)], HIDE, head)
+    for side in (1.0, -1.0):
+        ball('ear', (-0.02, side * 0.11, 0.17), (0.0, side, 1.0), (1.0, 0.0, 0.0), (0.055, 0.05, 0.025), HIDE, head)
 
 
 # The picture: from the side, without perspective, clear behind it, the light from above, in front and a little behind.
@@ -502,6 +669,58 @@ for name, cell, phase, planted, lift, look, flick in CELLS:
             marks += '0123456789abcdef'[min(15, int(covered / 64.0 * 16.0))]
     small[name].append(marks)
 
+# The forest's bigger life: each in cells of its own size, as many pixels to its EL as fit, the ground as far over
+# the cell's bottom as the moose's.
+WILD = {
+    # strip: EL across a cell, the ground over its bottom edge, where the camera looks along X, and its height in EL
+    'pair': (5.6, 0.22, 0.12, 2.05),
+    'deer': (2.0, 0.12, 0.05, 1.14),
+    'deerStand': (2.0, 0.12, 0.05, 1.14),
+    'bear': (2.7, 0.16, 0.12, 1.24),
+}
+
+
+def shoot(name, cell):
+    """Renders the animal as it is built now into a cell of the atlas, and gives its mean grey, as light."""
+    wide, tall = STRIPS[name][2], STRIPS[name][3]
+    across, ground, middle, _ = WILD[name]
+    scene.render.resolution_x = wide
+    scene.render.resolution_y = tall
+    camera.data.ortho_scale = across
+    camera.location = (middle, -20.0, across * tall / wide / 2.0 - ground)
+    scene.render.filepath = WORK + '/wild-%s-%02d.png' % (name, cell)  # noqa: F821
+    bpy.ops.render.render(write_still=True)
+    frame = bpy.data.images.load(scene.render.filepath)
+    pixels = list(frame.pixels)
+    bpy.data.images.remove(frame)
+    left, top = cell_origin(name, cell)
+    total = 0.0
+    weight = 0.0
+    for at in range(0, len(pixels), 4):
+        total += pixels[at] * pixels[at + 3]
+        weight += pixels[at + 3]
+    mean = total / max(1e-6, weight)
+    for row in range(tall):
+        for x in range(wide):
+            at = (row * wide + x) * 4
+            alpha = pixels[at + 3]
+            dab(left + x, top + tall - 1 - row, alpha, pixels[at] if alpha > 0.1 else mean)
+    return mean ** 2.2
+
+
+wild_shades = {'pair': [], 'deer': [], 'bear': []}
+for i in range(12):
+    build_pair((i + 0.5) / 12.0)
+    wild_shades['pair'].append(shoot('pair', i))
+    build_deer((i + 0.5) / 12.0, False, 0.0, 0.0, 0.0)
+    wild_shades['deer'].append(shoot('deer', i))
+    build_bear((i + 0.5) / 12.0)
+    wild_shades['bear'].append(shoot('bear', i))
+DEER_REST = (DEER_HALT + 0.5) / 12.0
+for i, (lift, look, flick) in enumerate(((0.0, 0.0, 0.0), (0.35, 0.05, 0.0), (0.68, 0.35, 0.0), (0.92, 0.75, 0.0), (1.0, 1.0, 0.0), (1.0, 1.0, 1.0))):
+    build_deer(DEER_REST, True, lift, look, flick)
+    wild_shades['deer'].append(shoot('deerStand', i))
+
 for part in PARTS:
     mesh = part.data
     bpy.data.objects.remove(part, do_unlink=True)
@@ -547,6 +766,13 @@ for which in ('F', 'H'):
 report['moose'] = {
     'cell': SCALE, 'foot': GROUND, 'stride': STRIDE, 'duty': DUTY, 'halt': HALT, 'pixels': CELL[0] / SCALE,
     'shade': round(sum(shades) / len(shades), 4), 'hooves': hooves, 'small': small,
+}
+# The forest's bigger life, as the game needs it: a cell's EL across, the ground over its bottom, what the body goes on
+# in a cycle, the cell it stops after, its height, and its mean grey.
+report['wild'] = {
+    'pair': {'cell': WILD['pair'][0], 'foot': WILD['pair'][1], 'stride': round(PAIR_STRIDE, 4), 'tall': WILD['pair'][3], 'shade': round(sum(wild_shades['pair']) / 12.0, 4)},
+    'deer': {'cell': WILD['deer'][0], 'foot': WILD['deer'][1], 'stride': DEER['stride'], 'halt': DEER_HALT, 'tall': WILD['deer'][3], 'shade': round(sum(wild_shades['deer']) / 18.0, 4)},
+    'bear': {'cell': WILD['bear'][0], 'foot': WILD['bear'][1], 'stride': BEAR['stride'], 'tall': WILD['bear'][3], 'shade': round(sum(wild_shades['bear']) / 12.0, 4)},
 }
 
 # --- the plane that carries the picture --------------------------------------------------------------------

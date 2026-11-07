@@ -91,9 +91,16 @@ export const granskog: ChapterData = {
   // Where and when, as the chapter opens (./cards.ts).
   scenes: [timeCard('granskog', 1)],
   goalX: 204,
-  // For the picture only (content/life.ts): in one visit of three a moose crosses a bright gap far in among the
-  // trunks, after the last big candy, where nothing is left to do but walk out of the forest.
-  life: [{ kind: 'moose', from: 194.6, to: 200 }],
+  // For the picture only (content/life.ts): far in among the trunks, where the trail is calm after a big candy. A moose
+  // cow walks by with her calf at her heels (one visit in two); a roe deer stops and looks this way; in one visit of
+  // three a bear rolls by in the dark of the forest; and in one of three a bull crosses a bright gap after the last big
+  // candy, where nothing is left to do but walk out of the forest.
+  life: [
+    { kind: 'pair', from: 46, to: 50.5 },
+    { kind: 'deer', from: 95, to: 99.5 },
+    { kind: 'bear', from: 178, to: 186 },
+    { kind: 'moose', from: 194.6, to: 200 },
+  ],
   ground: [
     { x: -3, y: 12 },
     { x: -3, y: 0 },
