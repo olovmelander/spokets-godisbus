@@ -10,7 +10,9 @@ import { gzipSync } from 'node:zlib';
 
 const DIST = fileURLToPath(new URL('../dist/', import.meta.url));
 const JS_GZIP_MAX = 540 * 1024;
-const BOOT_MAX = 4 * 1024 * 1024;
+// 4.5 MB as served for the whole site (from 4 MB on 7 November 2026, at Olov's "höj grafikbudgeten rejält om det
+// behövs"): the family's rain gear and Äventyr 2's rebuilt nature, with the family's own models in the deploy.
+const BOOT_MAX = 4.5 * 1024 * 1024;
 const PACK_JS_MAX = 160 * 1024;
 
 function* files(dir) {

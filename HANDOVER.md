@@ -88,7 +88,7 @@
       skeleton: a raincoat (rings round all that is worn, an A-line, a high collar, a hood lying on the back, a zip
       with its pull, pocket flaps with snaps, elastic cuffs, a turned hem, the children's reflective band, sleeves
       set in at the shoulder that bend as the sleeves under them), rubber boots one piece each (shaped over the
-      shoe, a rolled rim, a pull tab, tread), the socks under them, and Bertil's own hair. Only these pieces are
+      shoe, a rolled rim, a pull tab, tread), the sock under the boot Bertil takes off, and Bertil's own hair. Only these pieces are
       exported (`<who>-wardrobe.glb`), so faces, bodies and caps stay as approved. The game binds each piece to the
       model's bones by name with a copy of the body's material (`fitWardrobe`, `Rig.wear`); where no wardrobe has
       come (stand-ins, CI) the old shells of the body stand in. It was looked at in Blender renders from four sides
@@ -536,7 +536,7 @@
     nobody behind them are gone (the way home in Stormöga, and boarding the boot).
   - **Kits:** `a2-props.py`, `a2-built.py` and `a2-room.py`, each with its own `.glb`: safe mode refuses a script of more than
     20 000 AST nodes.
-  - **The size gate is 4 MB now** (Olov, 5 November 2026): see the build's own line for where it stands.
+  - **The size gate is 4.5 MB now** (from 4 MB, 7 November 2026): see the build's own line for where it stands.
 - **The overhaul's long night (4 to 5 November 2026).** Stacked pull requests, one outcome each, none of them merged
   yet. **Merge in number order:** #192, then #195 to #201 (their base is `main`, so rebase or retarget as they land), then
   #202 to #223, each on top of the one before, and `spokets-godisbus-familj` PR #2 for the real house in Billsta. #187 is
@@ -4453,6 +4453,10 @@ The older list, still true where it is not struck:
   Until then `public/audio/voices`, `public/audio/test_candidates` and `src/audio/voice-player.ts` stay as they are, and a
   404 for a line without a voice is expected. Olov chooses the service. This replaces plan §0 Q9's "no voices".
 - **The size gate (Olov, 5 November 2026):** 4 MB as served for the whole site, from 3 MB.
+- **The size gate, again (7 November 2026, at Olov's "höj grafikbudgeten rejält om det behövs"):** 4.5 MB as served for
+  the whole site, from 4 MB. With the family's models in the deploy the site measured 4282 KB: the four rain-gear
+  wardrobes (348 KB, after trimming the socks nobody sees and the boots' faces) and Äventyr 2's rebuilt nature took
+  it over. CI builds without the family's models, so only the deploy would have failed.
 | Question | Decision | Source |
 | --- | --- | --- |
 | Elof as a player | 7 years, plays games for 11+. Play style *Äventyr* by default (variable jump, a swing he pumps, the glitter bubble, exciting sequences, challenge routes); *Lugnt* for anyone who wants it. Help only when asked. | Olov, 3 Oct |

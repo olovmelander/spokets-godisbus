@@ -1938,7 +1938,8 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
 
 - **Packs** (named by the stable chapter IDs, §4.9):
   - `boot`: engine, UI, font, the title scene and the table-top opening of the prologue (Elof, the ghost, the
-    bag, the table, Pappa's hands). At most **3 MB** (raised to 4 MB for the whole site on 5 November 2026, Olov).
+    bag, the table, Pappa's hands). At most **3 MB** (raised to 4 MB for the whole site on 5 November 2026, Olov, and to 4.5 MB on 7 November
+    2026 at his word to raise the graphics budget well where needed).
   - `prolog`: the veranda and the deck chase, prefetched behind the title.
   - `garden`, `granskog`, `myr`, `berg` (with the final and the small epilogue), and in 1.1 `forsen`: at most
     **8 MB** each.
