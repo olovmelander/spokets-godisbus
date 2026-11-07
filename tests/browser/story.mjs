@@ -194,7 +194,8 @@ try {
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check('food choices are saved with the player', saved.flags.norrsken.includes('gift:tragubbe:karamell') && saved.flags.norrsken.includes('gift:jay:lingon') && saved.flags.norrsken.includes('gift:spoket:skumbanan'));
     await page.keyboard.down('ArrowRight');
-    await until(state, (s) => s.word === 'taste', 'golden candy becomes reachable');
+    // A walk of a few EL: in software rendering on a busy runner it has run past 12 s twice tonight (7 November).
+    await until(state, (s) => s.word === 'taste', 'golden candy becomes reachable', 30000);
     await page.keyboard.up('ArrowRight');
     await page.keyboard.press('e');
     await until(state, (s) => s.flags.includes('taste'), 'the finale continues after the choice');
