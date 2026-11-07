@@ -1,6 +1,6 @@
 """Aventyr 2's yard things, which were built in code until now (docs/aventyr-2-overhaul.md): Billsta's woodshed, the
 rowing boat turned over on its trestles for the winter under a tarp, the mailbox by the road and the garden furniture
-under its tarp; and the swings at Flärkenbadet.
+under its tarp; the swings at Flärkenbadet; and Olympia's two goals and its kit table.
 
 Sent to Blender by scripts/bake/send-kit.mjs, after kit-tools.py. A name in ONLY builds that thing alone. Each stands on
 its origin, at the size the chapter gives it in EL, with its front towards -Y. No letters, numbers or marks on anything.
@@ -425,3 +425,99 @@ if wanted('gungor'):
             tones_.append(lit(SEAT, 0.95 + 0.1 * rnd(i, x)))
         skin(part, seat, tones_, first=(Vector((x - 1.42, 0.0, 4.32)), SEAT), last=(Vector((x + 1.42, 0.0, 4.32)), SEAT))
     finish(part, 'gungor', sharp=40.0, strength=0.5, reach=0.5, floor=0.0, leaf=True)
+
+
+# --- the goals at Olympia ------------------------------------------------------------------------------------------------------------
+# White round posts and a crossbar, the mouth towards -X where he comes from, the frame going back along +X, and the net: white cord
+# in squares, hanging a little between its frame, slack at the bottom. 12 across (Y), as the stand-in was, so that the near post
+# stays behind the path. `fotbollsmal` is the training goal, 7 deep and 8 high; `fotbollsmal-stort` the big one, 10 deep, 16 high.
+
+
+def goal(name, depth, high, span=12.0):
+    part = new_part()
+    WHITE__ = tone('#f2f2ee')
+    NET = tone('#e2e2de')
+    R = 0.35
+    for y in (-span / 2.0, span / 2.0):
+        tube(part, [Vector((0.0, y, 0.0)), Vector((0.0, y, high))], [R, R], [WHITE__] * 2, 12)
+        # The back frame: a stanchion down from the bar's end, and a ground bar back to the rear post.
+        tube(part, [Vector((0.0, y, high * 0.98)), Vector((depth * 0.45, y, high * 0.8)), Vector((depth, y, high * 0.62)), Vector((depth, y, 0.0)), Vector((0.0, y, 0.0))],
+             [0.12] * 5, [lit(WHITE__, 0.9)] * 5, 6)
+    tube(part, [Vector((0.0, -span / 2.0 - R, high)), Vector((0.0, span / 2.0 + R, high))], [R, R], [WHITE__] * 2, 12)
+    tube(part, [Vector((depth, -span / 2.0, high * 0.62)), Vector((depth, span / 2.0, high * 0.62))], [0.1, 0.1], [lit(WHITE__, 0.9)] * 2, 6)
+    tube(part, [Vector((depth, -span / 2.0, 0.05)), Vector((depth, span / 2.0, 0.05))], [0.1, 0.1], [lit(WHITE__, 0.9)] * 2, 6)
+
+    def roof_z(x):
+        """The net's top, from the crossbar back to the back bar, sagging between."""
+        k = x / depth
+        return high * (1.0 - 0.38 * k) - 0.35 * math.sin(math.pi * k)
+
+    CELL = 0.9 if high < 10 else 1.3
+    cord = 0.035 if high < 10 else 0.05
+    # The sides' net: squares between the posts' line and the back, from the ground to the roof's line, bellying out a hair.
+    for y in (-span / 2.0, span / 2.0):
+        out = 1.0 if y > 0.0 else -1.0
+        steps_x = max(2, int(depth / CELL))
+        steps_z = max(2, int(high / CELL))
+        for i in range(1, steps_x):
+            x = depth * i / steps_x
+            path = [Vector((x, y + out * 0.15 * math.sin(math.pi * j / 6), roof_z(x) * j / 6)) for j in range(7)]
+            tube(part, path, [cord] * 7, [NET] * 7, 4, closed_ends=False)
+        for j in range(1, steps_z):
+            z = high * j / steps_z
+            path = []
+            for i in range(9):
+                x = depth * i / 8
+                if z <= roof_z(x) + 0.01:
+                    path.append(Vector((x, y + out * 0.15 * math.sin(math.pi * z / max(roof_z(x), 0.1)), z)))
+            if len(path) > 1:
+                tube(part, path, [cord] * len(path), [NET] * len(path), 4, closed_ends=False)
+    # The roof's net and the back's, across the goal.
+    steps_y = max(2, int(span / CELL))
+    for k in range(1, steps_y):
+        y = -span / 2.0 + span * k / steps_y
+        path = [Vector((depth * i / 8, y, roof_z(depth * i / 8) - 0.12 * math.sin(math.pi * k / steps_y))) for i in range(9)]
+        path += [Vector((depth + 0.2 * math.sin(math.pi * j / 6), y, high * 0.62 * (1.0 - j / 6))) for j in range(1, 7)]
+        tube(part, path, [cord] * len(path), [NET] * len(path), 4, closed_ends=False)
+    for i in range(1, max(2, int(depth / CELL))):
+        x = depth * i / max(2, int(depth / CELL))
+        path = [Vector((x, -span / 2.0 + span * k / 10, roof_z(x) - 0.12 * math.sin(math.pi * k / 10))) for k in range(11)]
+        tube(part, path, [cord] * len(path), [NET] * len(path), 4, closed_ends=False)
+    for j in range(1, max(2, int(high * 0.62 / CELL))):
+        z = high * 0.62 * j / max(2, int(high * 0.62 / CELL))
+        path = [Vector((depth + 0.2 * math.sin(math.pi * (1.0 - z / (high * 0.62))), -span / 2.0 + span * k / 10, z)) for k in range(11)]
+        tube(part, path, [cord] * len(path), [NET] * len(path), 4, closed_ends=False)
+    finish(part, name, sharp=50.0, strength=0.3, reach=0.5, floor=0.0, leaf=True)
+
+
+if wanted('fotbollsmal'):
+    goal('fotbollsmal', 7.0, 8.0)
+if wanted('fotbollsmal-stort'):
+    goal('fotbollsmal-stort', 10.0, 16.0)
+
+
+# --- the club's kit table ---------------------------------------------------------------------------------------------------------
+# A table of planks on two folding trestles, open underneath so that he is seen as he runs under it: 3.8 long, its top 1.1 up,
+# where he walks; the club's things on its back edge (a stack of training bibs, a net bag of balls), clear of where he walks.
+
+if wanted('kitbord'):
+    part = new_part()
+    PLANK = tone('#9a8060')
+    LEG = tone('#6a5640')
+    W = 1.9
+    TOP = 1.1
+    for i in range(5):
+        y = -1.3 + i * 0.44
+        timber(part, (-W, y, TOP - 0.12), (W, y + 0.42, TOP), lit(PLANK, 0.92 + 0.14 * rnd(i, 3.0)), i, grain=0.12)
+    for x in (-W + 0.35, W - 0.35):
+        timber(part, (x - 0.08, -1.2, TOP - 0.24), (x + 0.08, 0.8, TOP - 0.12), LEG, x)
+        for y in (-1.15, 0.75):
+            for lean in (-1.0, 1.0):
+                tube(part, [Vector((x + lean * 0.06, y, TOP - 0.2)), Vector((x + lean * 0.32, y, 0.0))], [0.05, 0.05], [LEG, lit(LEG, 0.8)], 5)
+        timber(part, (x - 0.04, -1.15, 0.38), (x + 0.04, 0.75, 0.46), lit(LEG, 0.9), x + 1.0)
+    # On its back edge: folded bibs in a pile, and a net bag of balls against the wall of it.
+    for k in range(4):
+        timber(part, (0.6 - 0.02 * k, 0.55, TOP + 0.03 * k * 2), (1.3 + 0.02 * k, 0.86, TOP + 0.06 + 0.06 * k), lit(tone('#e0a020' if k % 2 else '#d84a20'), 0.95), k)
+    for k in range(3):
+        lump(part, Vector((-1.25 + 0.3 * k, 0.72, TOP + 0.16 + 0.05 * (k % 2))), (0.15, 0.15, 0.15), 2, tone('#f0f0ec') if k != 1 else tone('#2a2a2a'))
+    finish(part, 'kitbord', sharp=40.0, strength=0.5, reach=0.4, floor=0.0, leaf=True)

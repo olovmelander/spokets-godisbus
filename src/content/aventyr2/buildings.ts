@@ -785,8 +785,8 @@ const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGe
 };
 
 /**
- * What is made in Blender now (art/blender/a2-yard.py), and how big it was made there: the yard's things at Billsta and the
- * swings at Flärkenbadet. Each takes its stand-in's place at the size the chapter gives it, across or up.
+ * What is made in Blender now (art/blender/a2-yard.py), and how big it was made there: the yard's things at Billsta, the
+ * swings at Flärkenbadet and Olympia's kit table. Each takes its stand-in's place at the size the chapter gives it, across or up.
  */
 const YARD: Partial<Record<BuildingDef['kind'], { model: string; size: number; by: 'width' | 'height' }>> = {
   woodshed: { model: 'vedbod', size: 18, by: 'width' },
@@ -794,6 +794,7 @@ const YARD: Partial<Record<BuildingDef['kind'], { model: string; size: number; b
   mailbox: { model: 'brevlada', size: 8, by: 'height' },
   swings: { model: 'gungor', size: 19, by: 'width' },
   gardenset: { model: 'utemobler', size: 9.2, by: 'width' },
+  trestleTable: { model: 'kitbord', size: 3.8, by: 'width' },
 };
 
 /** What is built of stone: the bridge's piers and deck. */
@@ -847,6 +848,12 @@ export function building(def: BuildingDef): Building {
     group.userData.model = 'bil';
     group.userData.fit = (def.width ?? 29) / CAR_LONG;
     group.children[1]!.userData.keep = -0.022 * (def.width ?? 29);
+  }
+  // Olympia's goals: the training goal, and the big one at the far end.
+  if (def.kind === 'goal') {
+    const big = (def.height ?? 8) > 12;
+    group.userData.model = big ? 'fotbollsmal-stort' : 'fotbollsmal';
+    group.userData.fit = (def.height ?? 8) / (big ? 16 : 8);
   }
   const yard = YARD[def.kind];
   if (yard) {
