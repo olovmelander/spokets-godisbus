@@ -232,6 +232,7 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 /** How much of the way to go this frame, for a smoothing that doesn't depend on the frame rate. */
 const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
+const smooth = (k: number) => { const t = Math.min(1, Math.max(0, k)); return t * t * (3 - 2 * t); };
 
 /**
  * Stage 0a's greybox scene: the test course, a stand-in Elof in his colours, and the big candy.
@@ -864,6 +865,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const rootReach = new Vector3();
   /** Seconds since the ball he rides in Olympia was kicked; -1 when he is not on it. */
   let kickSince = -1;
+  /** How far into each of the family's own gestures they are, 0 to 1: Bertil's boot pull, Moa's reach into the root. */
+  const gestures = new Map<string, { pull: number; reach: number }>();
+  const gestureOf = (who: string) => { let g = gestures.get(who); if (!g) gestures.set(who, g = { pull: 0, reach: 0 }); return g; };
   const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3();
   const lampTurn = new Quaternion();
   const LAMP_POINTS = new Vector3(0, 0, 1);
@@ -1498,50 +1502,58 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ? { ready: now, near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined);
       // Bertil pulls off his right boot for Elof (Olov: "på riktigt"): in the moment between being called and the
       // boot lying on the water, he leans down, lifts that foot and tugs at the boot with both hands.
+      // Each such gesture comes and goes over a moment (`gestureOf`), never in one frame.
+      const gesture = gestureOf(one.who);
       const pulling = one.who === 'bertil' && chapter.id === 'stormgard' && flags.has('sg:bertil') && !flags.has('sg:boot-ready');
-      if (pulling) {
-        const tug = calmStory ? 0 : Math.sin(clock * 9) * 0.08;
-        posed.lean = 0.55 + tug; posed.legR = 0.95; posed.kneeR = 1.35 + tug; posed.kneeL = Math.max(posed.kneeL, 0.25);
+      gesture.pull = calmStory ? (pulling ? 1 : 0) : gesture.pull + ((pulling ? 1 : 0) - gesture.pull) * ease(7, dt);
+      if (gesture.pull > 0.001) {
+        const w = gesture.pull, tug = calmStory ? 0 : Math.sin(clock * 9) * 0.08;
+        const toward = (joint: 'lean' | 'legR' | 'kneeR' | 'kneeL', v: number) => { posed[joint] += (v - posed[joint]) * w; };
+        toward('lean', 0.55 + tug); toward('legR', 0.95); toward('kneeR', 1.35 + tug); toward('kneeL', Math.max(posed.kneeL, 0.25));
       }
       // Bertil kicks the ball Elof rides ("Upp på bollen! Jag skjuter, du flyger!"): turned to it, a wind-up, the
       // swing through, arms out, and back to standing.
       if (one.who === 'bertil' && kickSince >= 0 && kickSince < 0.9) {
-        const ready = Math.min(1, kickSince / 0.15), swing = clamp((kickSince - 0.15) / 0.2, 0, 1), back = clamp((kickSince - 0.45) / 0.45, 0, 1);
-        posed.legR = (-0.5 * ready + 1.7 * swing) * (1 - back);
-        posed.kneeR = (1.2 * ready * (1 - swing) + 0.15) * (1 - back);
-        posed.lean = -0.18 * swing * (1 - back);
-        posed.armL = Math.max(posed.armL, 0.9 * (1 - back));
-        posed.armR = Math.max(posed.armR, 0.5 * (1 - back));
-        one.rig.group.rotation.y = 1.2 * (1 - back) + one.rig.group.rotation.y * back;
+        // Eased at both ends, and the turn to the ball is a quick turn, not a jump.
+        const ready = smooth(kickSince / 0.15), swing = smooth((kickSince - 0.15) / 0.2), back = smooth((kickSince - 0.45) / 0.45);
+        const on = (1 - back) * ready;
+        posed.legR += ((-0.5 * ready + 1.7 * swing) * (1 - back) - posed.legR) * on;
+        posed.kneeR += ((1.2 * ready * (1 - swing) + 0.15) * (1 - back) - posed.kneeR) * on;
+        posed.lean += (-0.18 * swing - posed.lean) * on;
+        posed.armL = Math.max(posed.armL, 0.9 * on);
+        posed.armR = Math.max(posed.armR, 0.5 * on);
+        one.rig.group.rotation.y += (1.2 - one.rig.group.rotation.y) * on * ease(16, dt);
       }
       // In the garden, until he calls her, Moa crouches and reaches into the root hole the ghost crept into ("Där
       // kröp spöket in. Jag får inte plats!"); her fingers will not go in.
       const reachesIn = one.who === 'moa' && chapter.id === 'garden' && !flags.has('moa') && Math.abs(one.at - ROOT_HOLE.x) < 4;
-      if (reachesIn) {
-        posed.lean = Math.max(posed.lean, 0.85);
-        posed.kneeL = Math.max(posed.kneeL, 1.5); posed.kneeR = Math.max(posed.kneeR, 1.3);
-        posed.legL = Math.max(posed.legL, 0.9); posed.legR = Math.max(posed.legR, 0.7);
-        one.rig.group.rotation.y = -0.5;
+      gesture.reach = calmStory ? (reachesIn ? 1 : 0) : gesture.reach + ((reachesIn ? 1 : 0) - gesture.reach) * ease(5, dt);
+      if (gesture.reach > 0.001) {
+        const w = gesture.reach;
+        posed.lean += (Math.max(posed.lean, 0.85) - posed.lean) * w;
+        posed.kneeL += (Math.max(posed.kneeL, 1.5) - posed.kneeL) * w; posed.kneeR += (Math.max(posed.kneeR, 1.3) - posed.kneeR) * w;
+        posed.legL += (Math.max(posed.legL, 0.9) - posed.legL) * w; posed.legR += (Math.max(posed.legR, 0.7) - posed.legR) * w;
+        one.rig.group.rotation.y += (-0.5 - one.rig.group.rotation.y) * w;
       }
       one.rig.pose(one.seated ? sitting(posed) : one.paddle ? one.paddle.stance(posed) : posed);
-      if (reachesIn) {
+      if (gesture.reach > 0.001) {
         const poke = calmStory ? 0 : Math.sin(clock * 2.3) * 0.12;
-        one.rig.reach(1, rootReach.set(ROOT_HOLE.x + 0.2 + poke, ROOT_HOLE.y + 0.3, -0.2), 0.9);
+        one.rig.reach(1, rootReach.set(ROOT_HOLE.x + 0.2 + poke, ROOT_HOLE.y + 0.3, -0.2), 0.9 * gesture.reach);
       }
       one.paddle?.update(one.rig, clock, calmStory);
-      if (pulling) {
+      if (gesture.pull > 0.001) {
         one.rig.group.updateWorldMatrix(true, false);
         const u = one.rig.height / 5.2;
         bootAt.set(-0.33 * u, 1.05 * u, 0.55 * u).applyMatrix4(one.rig.group.matrixWorld);
-        one.rig.reach(0, bootAt, 1);
-        one.rig.reach(1, bootAt, 1);
+        one.rig.reach(0, bootAt, gesture.pull);
+        one.rig.reach(1, bootAt, gesture.pull);
       }
       // Out in the storm the family search with their lamps ("Regnrockar på! Vi går ut med lampor."): each holds a
       // lit flashlight in the left hand, the arm a little out, and lights the way to him. In Stormkvällen Pappa has
       // the one Elof brought him; in Stormskogen he holds Klonk in its beam until Elof is over.
       let shown = true;
       for (let node: Object3D | null = one.rig.group; node; node = node.parent) if (!node.visible) shown = false;
-      const lit = shown && !one.paddle && !one.seated && !pulling && !carrying
+      const lit = shown && !one.paddle && !one.seated && gesture.pull < 0.5 && !carrying
         && (rainGearFor(chapter, one.who, flags) !== null || (chapter.id === 'stormkvall' && one.who === 'pappa' && flags.has('lamp:give')));
       if (lit && !one.lamp) { one.lamp = litLamp(); one.lamp.name = 'family-lamp'; scene.add(one.lamp); }
       if (one.lamp) {

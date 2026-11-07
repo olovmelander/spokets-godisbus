@@ -249,7 +249,9 @@ export function createPlayerMotion() {
       wasScripted = false;
       if (dt <= 0) return pose;
       const walking = player.mode === 'free' && player.grounded;
-      const continuous = distance <= Math.max(RUN_SPEED * 2, Math.abs(player.vx) * 1.5) * dt + 0.05;
+      // Carried (a ride, an assisted arc, the glitter bubble) he goes as fast as what carries him: that is no teleport.
+      const carried = player.mode === 'ride' || player.mode === 'fly' || player.mode === 'bubble';
+      const continuous = carried || distance <= Math.max(RUN_SPEED * 2, Math.abs(player.vx) * 1.5) * dt + 0.05;
       const pace = walking && free && continuous ? clamp(distance / (dt * RUN_SPEED)) : 0;
       // Filter measured travel before taking acceleration, so interpolation does not shake the torso.
       const before = speed;
