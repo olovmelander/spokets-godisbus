@@ -74,6 +74,7 @@ import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
 import { photoCut } from './crop';
 import { wingbeat } from './wingbeat';
+import { createFootSplash } from './foot-splash';
 import { craneChick, stepChick, type Gait } from './crane';
 
 /** Whether the page's address has `?name`. */
@@ -408,6 +409,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const rain = createRain(chapter);
   const cones = buildCones(chapter.rollers?.length ?? 0);
   scene.add(...moverMeshes, rain.group, cones.mesh);
+  // Drops thrown up at his feet as he runs and lands on wet ground, out in the storm (./foot-splash.ts).
+  const footSplash = createFootSplash();
+  const wetOutside = (chapter.storm?.rain ?? 0) > 0 && chapter.place !== 'home';
+  if (wetOutside) scene.add(footSplash.mesh);
   const climbs = buildClimbs(chapter);
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
@@ -1182,6 +1187,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     hiddenSweets.update(flags, clock, dt, reaction?.kind === 'hidden' ? reaction.index : undefined, response);
     glance.update(flags, ghostState, clock, dt);
     glitter.update(curr.bubble, x, y, clock);
+    if (wetOutside) footSplash.update(true, x, curr.standY ?? y, curr.grounded, curr.mode === 'free' && curr.grounded, curr.vy, curr.facing, tall, dt, lessMotion());
     // He hangs by his hands, his body along the lace.
     // Hooking on and letting go, he swings into the lace's line and out of it over a moment, not in one frame.
     if (curr.hook) hangLast = Math.atan2(curr.hook.x - x, curr.hook.y - (y + 0.5));
