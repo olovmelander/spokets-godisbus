@@ -135,7 +135,21 @@ export const berget: ChapterData = {
   }],
   spawn: { x: 1, y: 0.01 },
   // Where and when, as the chapter opens (./cards.ts).
-  scenes: [timeCard('berget', 1)],
+  scenes: [
+    timeCard('berget', 1),
+    // Lyft: he puts both hands under the ghost and pushes it up the cliff's face; it scrambles over the edge and goes
+    // on to wait by the old pine, where its path has it next. Short, so that he is soon free to climb the lace. A game
+    // taken up on top of the cliff has seen it.
+    { id: 'berget:lift', on: 'lift', before: 146.5, seconds: 2.4, hold: true, stage: {
+      elof: [{ at: 0, act: 'lift', aim: { x: 145, y: 28, z: 0 } }, { at: 1.3, act: null }],
+      actors: { ghost: [
+        { at: 0, x: 145, y: 26.4, z: 0, move: 0.01 },
+        { at: 0.3, y: 27.8, move: 0.6 },
+        { at: 0.95, x: 146.3, y: 31.4, move: 0.45, act: 'hop' },
+        { at: 1.45, x: 151, move: 0.9 },
+      ] },
+    } },
+  ],
   goalX: 157,
   ground: [
     { x: -3, y: 12 },

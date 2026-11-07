@@ -728,8 +728,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       .catch((error) => console.warn(`The private/${who}-wardrobe could not be loaded; the rain gear is drawn from the body.`, error));
   };
   const stands = chapter.prologue ? [] : [
-    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt, goesTo: thing.spot.goesTo })),
-    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined, goesTo: undefined })),
+    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt, goesTo: thing.spot.goesTo, goesWhen: thing.spot.goesWhen })),
+    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined, goesTo: undefined, goesWhen: undefined })),
   ].filter((stand) => stand.look === 'sign' && stand.prop !== null && personFor(stand.word) !== null);
   for (const stand of stands) {
     const who = personFor(stand.word)!, rig = createRehearsalRig(who);
@@ -739,7 +739,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const paddle = stand.paddles ? createPaddle(rig.height) : undefined;
     if (paddle) scene.add(paddle.mesh);
     family.push({ rig, who, motion: createFamilyMotion(who, stand.at, stand.glad), at: stand.at, glad: stand.glad, was: false, joy: 0, seated: stand.seated, paddle,
-      walk: stand.goesTo ? { to: stand.goesTo, place: stand.prop!.group, home: stand.prop!.group.position.clone(), stride: 0, pace: 0, gait: 0, seen: false } : undefined });
+      walk: stand.goesTo ? { to: stand.goesTo, when: stand.goesWhen, place: stand.prop!.group, home: stand.prop!.group.position.clone(), stride: 0, pace: 0, gait: 0, seen: false } : undefined });
   }
   if (stage.actors.size > 0 && !standIns) {
     assets.manifest().then(async (manifest) => {
@@ -1640,7 +1640,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // frame (a game taken up) and without motion they are simply there.
       let heading: number | null = null;
       if (one.walk) {
-        const w = one.walk, place = w.place.position, to = now ? w.to : w.home;
+        const w = one.walk, place = w.place.position, to = (w.when !== undefined ? flags.has(w.when) : now) ? w.to : w.home;
         const dx = to.x - place.x, dz = to.z - place.z, far = Math.hypot(dx, dz);
         if (!w.seen || calmStory) { place.set(to.x, to.y, to.z); w.pace = 0; }
         else if (dt > 0 && far > 1e-3) {
@@ -1715,6 +1715,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const board = one.who === 'pappa' ? seesawPlank : null;
       const arrived = !one.walk || Math.hypot(one.walk.to.x - one.walk.place.position.x, one.walk.to.z - one.walk.place.position.z) < 0.05;
       const holding = !!board && arrived && flags.has('seesaw') && !flags.has('launch');
+      // In the epilogue Pappa comes over with the linden and the knife, and kneels beside Elof while he carves and
+      // paints, turned to his hands: the knife always cuts away from the body, with Pappa beside him (plan §2.6).
+      const beside = one.who === 'pappa' && !!chapter.epilogue && !!one.walk && arrived && flags.has('knife') && !flags.has('dots');
       if (lifting) gesture.liftFor = 0.6; else gesture.liftFor = Math.max(0, gesture.liftFor - dt);
       // Without motion the bend is there at once, and gone at once.
       gesture.lift = calmStory ? (gesture.liftFor > 0 ? 1 : 0) : gesture.lift + ((gesture.liftFor > 0 ? 1 : 0) - gesture.lift) * ease(6, dt);
@@ -1724,7 +1727,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         posed.kneeL += (1.35 - posed.kneeL) * w; posed.kneeR += (1.1 - posed.kneeR) * w;
         posed.legL += (0.85 - posed.legL) * w; posed.legR += (0.6 - posed.legR) * w;
       }
-      gesture.hold = calmStory ? (holding ? 1 : 0) : gesture.hold + ((holding ? 1 : 0) - gesture.hold) * ease(4, dt);
+      const kneels = holding || beside;
+      gesture.hold = calmStory ? (kneels ? 1 : 0) : gesture.hold + ((kneels ? 1 : 0) - gesture.hold) * ease(4, dt);
       if (gesture.hold > 0.001) {
         // Down on his right knee, the left foot forward, leaning to the board, turned towards it.
         // Mixed so that at full weight each is exactly its value, frame after frame (a paused picture never drifts).
@@ -1732,7 +1736,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         posed.lean = mixTo(posed.lean, 0.85);
         posed.legL = mixTo(posed.legL, 1.35); posed.kneeL = mixTo(posed.kneeL, 1.55);
         posed.legR = mixTo(posed.legR, 0.1); posed.kneeR = mixTo(posed.kneeR, 1.65);
-        one.rig.group.rotation.y = mixTo(one.rig.group.rotation.y, -0.95);
+        one.rig.group.rotation.y = mixTo(one.rig.group.rotation.y, board ? -0.95 : -1.15);
       }
       // In the garden, until he calls her, Moa crouches and reaches into the root hole the ghost crept into ("Där
       // kröp spöket in. Jag får inte plats!"); her fingers will not go in.
@@ -2008,7 +2012,7 @@ interface Relative {
    * Where they walk once called (Spot.goesTo), the place they are drawn at (moved as they walk), where it stood at
    * first, how far they have walked in strides, how briskly, and whether a frame has placed them yet.
    */
-  walk?: { to: { x: number; y: number; z: number }; place: Object3D; home: Vector3; stride: number; pace: number; gait: number; seen: boolean } | undefined;
+  walk?: { to: { x: number; y: number; z: number }; when?: string | undefined; place: Object3D; home: Vector3; stride: number; pace: number; gait: number; seen: boolean } | undefined;
 }
 
 function startState(chapter: ChapterData): PlayerState {

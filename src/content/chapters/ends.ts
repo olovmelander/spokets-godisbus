@@ -203,7 +203,9 @@ export const epilog: ChapterData = {
   night: { after: null },
   checkpoints: [{ x: 2.6, y: 0 }, { x: 25, y: 0 }, { x: 38, y: 0 }],
   spots: [
-    ...GUESTS.map((g) => ({ id: `party:${g.id}`, look: 'sign' as const, at: { x: g.x, y: 0 }, verb: 'give' as const, word: g.word, story: 'party' as const })),
+    ...GUESTS.map((g) => ({ id: `party:${g.id}`, look: 'sign' as const, at: { x: g.x, y: 0 }, verb: 'give' as const, word: g.word, story: 'party' as const,
+      // Pappa comes over to the carving once Elof has the knife, and kneels at his side, behind the line he walks.
+      ...(g.id === 'pappa' ? { goesTo: { x: 35.4, y: 0, z: -2.2 }, goesWhen: 'knife' } : {}) })),
     { id: 'party:spoket', at: { x: 22.4, y: 0 }, verb: 'give', word: 'giveGhost', story: 'party' },
     // Pappa kneels beside him with a piece of linden and a knife: it waits until the ghost has its name.
     { id: 'knife', look: 'sign', at: { x: 29, y: 0 }, verb: 'take', word: 'takeKnife', needs: 'beat:named' },
@@ -212,7 +214,8 @@ export const epilog: ChapterData = {
     { id: 'cut2', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut1', story: 'carve' },
     { id: 'cut3', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut2', story: 'carve' },
     { id: 'dots', at: { x: 32, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'cut3', story: 'paint' },
-    { id: 'teeth', at: { x: 44, y: 0 }, verb: 'take', word: 'brush', needs: 'dots', ride: 'bed' },
+    // Bedtime: the family's toothbrushes in their glass, and his own little one; he takes it, and goes up to bed.
+    { id: 'teeth', look: 'toothbrushes', at: { x: 44, y: 0 }, verb: 'take', word: 'brush', needs: 'dots', ride: 'bed' },
   ],
   // What he found under the deck came with him: each thing lies by the one it belongs to, until it is given back
   // ("Mitt hårspänne! Tack, lillebror!"); the coin Pappa lets him keep goes into his pocket.

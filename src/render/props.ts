@@ -682,6 +682,40 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.position.z = 0;
       return { group, update: (used, clock, dt) => { vanish(used, dt); star.rotation.y = Math.sin(clock * 1.6) * 0.7; star.position.y = 0.55 + Math.sin(clock * 2.2) * 0.07; } };
     }
+    case 'toothbrushes': {
+      // Bedtime: the family's toothbrushes in their glass on the veranda floor, each its own colour, and leaning on the
+      // glass a little one his size. It is gone once he has taken it to brush his teeth.
+      const glass = new Mesh(new CylinderGeometry(0.34, 0.3, 0.72, 18, 1, true), solid('#d6ecf0', 0.1, { side: DoubleSide }));
+      glass.position.y = 0.36;
+      const bottom = new Mesh(new CylinderGeometry(0.3, 0.3, 0.05, 18), solid('#c4dde2', 0.2));
+      bottom.position.y = 0.025;
+      group.add(glass, bottom);
+      for (const [i, colour] of ['#3a8ad8', '#e8583a', '#f2c230', '#5aa858'].entries()) {
+        const brush = new Group();
+        const handle = new Mesh(new CylinderGeometry(0.035, 0.045, 1.25, 8), solid(colour, 0.35));
+        handle.position.y = 0.62;
+        const head = new Mesh(new BoxGeometry(0.06, 0.2, 0.09), solid(colour, 0.35));
+        head.position.set(0, 1.3, 0.01);
+        const bristles = new Mesh(new BoxGeometry(0.08, 0.16, 0.1), solid('#f4f4f0', 0.8));
+        bristles.position.set(0, 1.3, 0.08);
+        brush.add(handle, head, bristles);
+        brush.position.set(Math.cos(i * 1.6) * 0.12, 0.04, Math.sin(i * 1.6) * 0.12);
+        brush.rotation.set(Math.sin(i * 1.6) * 0.18, i * 1.3, -Math.cos(i * 1.6) * 0.18);
+        group.add(brush);
+      }
+      // His own, a quarter as long, leaning on the glass towards the lens.
+      const his = new Group();
+      const handle = new Mesh(new CylinderGeometry(0.018, 0.022, 0.34, 8), solid('#e86a9a', 0.35));
+      handle.position.y = 0.17;
+      const bristles = new Mesh(new BoxGeometry(0.04, 0.07, 0.05), solid('#f4f4f0', 0.8));
+      bristles.position.set(0, 0.36, 0.03);
+      his.add(handle, bristles);
+      his.position.set(0.18, 0, 0.36);
+      his.rotation.set(-0.35, 0, -0.25);
+      group.add(his);
+      group.position.z = -0.9;
+      return { group, update: (used) => { his.visible = !used; } };
+    }
     case 'marble':
     case 'clip':
     case 'brick':
