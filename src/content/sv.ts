@@ -336,7 +336,7 @@ export const sv = {
     thanked: 'Spöket tackade mig!',
     spangen: 'På myren går vi på spången.',
     bogChickLight: 'Följ mitt ljus hem till din familj.',
-    bogFamilyHome: 'Tranungen är hemma! Nu får du flyga.',
+    bogFamilyHome: 'Tranungen är hemma! Får jag åka med dig?',
     bogBridgeReady: 'Spången är klar! Gå över när du vill.',
     bogLightReturn: 'Nu går spången åt båda hållen!',
     fetch: 'Spöket vill hämta hem min trägubbe!',

@@ -446,7 +446,7 @@ export const myren: ChapterData = {
     { id: 'family:braid-ready', on: 'family:braid-ready', until: 'light', within: [98, 107], who: 'mamma', line: 'familyBraidReady', read: true },
     { id: 'spangen', at: 105.4, who: 'mamma', line: 'spangen' },
     { id: 'bog:chick-light', on: 'chick', who: 'elof', line: 'bogChickLight' },
-    { id: 'bog:family-home', on: 'home', who: 'mamma', line: 'bogFamilyHome' },
+    { id: 'bog:family-home', on: 'home', who: 'elof', line: 'bogFamilyHome' },
     { id: 'bog:bridge-ready', on: 'placed:bog-boardwalk', who: 'mamma', line: 'bogBridgeReady' },
     { id: 'bog:light-return', on: 'bog:lantern-return', who: 'elof', line: 'bogLightReturn' },
   ],

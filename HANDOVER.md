@@ -12,8 +12,9 @@
     - The owl's button is "Hoppa upp på ugglan" everywhere.
     - The crane gets "Flyg på tranans rygg …" instead of "skjuts uppåt" and "Tranan ger mig skjuts". It also has a
       button of its own, "Hoppa upp på tranan" (`boardCrane`; it used Pappa's hand's "Kliv upp").
-    - On Myren, as the chick comes home and the crane is ready, Mamma now says "Tranungen är hemma! Nu får du flyga."
-      (was "Ungen är hemma. Vill du ha en spång?"). When the boardwalk back is laid she says "Spången är klar! Gå över
+    - On Myren, as the chick comes home and the crane is ready, Elof now asks the mother crane "Tranungen är hemma! Får
+      jag åka med dig?". It was Mamma's "Ungen är hemma. Vill du ha en spång?", said from far back by her sign, so that
+      it read as the bird's (Olov: "Det är fågelmammans replik som låter konstig"). When the boardwalk back is laid she says "Spången är klar! Gå över
       när du vill." (was "Över dimman, och tillbaka igen.").
   - **Also:**
     - "Ett snitt med kniven" and "Snitt 1 av 3" replace "Ett tag med kniven" and "Tag 1 av 3".

@@ -133,7 +133,7 @@ export const VOICE_LINES = [
   { key: 'familyBraid', speaker: 'mamma', situation: 'Offering hair braid to climb', tag: '[warm, playful and gentle]', text: 'Min fläta blir en stege upp till mig.' },
   { key: 'familyBraidReady', speaker: 'mamma', situation: 'Holding braid steady', tag: '[supportive, encouraging]', text: 'Ta tag i flätan och klättra upp.' },
   { key: 'spangen', speaker: 'mamma', situation: 'Reminder about boardwalk on bog', tag: '[gentle motherly reminder]', text: 'På myren går vi på spången.' },
-  { key: 'bogFamilyHome', speaker: 'mamma', situation: 'Crane chick home, the crane will fly Elof', tag: '[pleased, kind]', text: 'Tranungen är hemma! Nu får du flyga.' },
+  { key: 'bogFamilyHome', speaker: 'elof', situation: 'Crane chick home; Elof asks the mother crane for a ride', tag: '[cute little boy, hopeful and excited]', text: 'Tranungen är hemma! Får jag åka med dig?' },
   { key: 'bogBridgeReady', speaker: 'mamma', situation: 'Spång finished over mist', tag: '[warm, satisfied]', text: 'Spången är klar! Gå över när du vill.' },
   { key: 'notYet', speaker: 'mamma', situation: 'Catching Bertil sneaking candy', tag: '[loving reprimand, gentle smile]', text: 'Bertil! Godiset öppnar vi ikväll.' },
   { key: 'jayWindow', speaker: 'mamma', situation: 'Bird lands on window sill', tag: '[delighted whisper, looking out]', text: 'Titta! En lavskrika!' },
