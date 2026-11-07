@@ -588,7 +588,19 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(billsta.storm!.calm).toBeUndefined();
       expect(billsta.coda).toBe('all');
       expect(billsta.place).toBe('garden');
-      expect(billsta.scenes!.map((s) => s.id)).toEqual(['card']);
+      // The card, and Moa and Bertil by the car: Moa points at the window, and they run ahead of him round the house
+      // to its back door. None of it stops him.
+      expect(billsta.scenes!.map((s) => s.id)).toEqual(['card', 'bi:kids-window', 'bi:kids-run']);
+      expect(billsta.scenes!.every((s) => !s.hold)).toBe(true);
+      const run = billsta.scenes!.find((s) => s.id === 'bi:kids-run')!;
+      const house = billsta.storm!.buildings!.find((b) => b.kind === 'villa')!;
+      for (const who of ['moa', 'bertil'] as const) {
+        const keys = run.stage!.actors![who]!;
+        const last = keys.filter((k) => k.z !== undefined).at(-1)!;
+        // In at the back: behind the house's middle, and gone from the picture there.
+        expect(last.z!).toBeLessThan(house.z!);
+        expect(keys.at(-1)!.away).toBe(true);
+      }
       const kinds = new Set(billsta.storm!.buildings!.map((b) => b.kind));
       for (const kind of ['car', 'villa', 'barn', 'woodshed', 'rowboat', 'mailbox', 'birch', 'spruce', 'cliff'] as const) expect(kinds.has(kind), kind).toBe(true);
     });

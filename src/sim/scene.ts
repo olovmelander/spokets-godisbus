@@ -118,6 +118,11 @@ export interface ActorKey {
   holdsLeft?: Thing | null;
   /** The ghost only: how much of the block of wood is still round it as Pappa carves, from 1 to 0. */
   rough?: number;
+  /**
+   * Picture only: true, they have gone in out of the picture (through a door behind a house, say) and are not drawn
+   * from this key on, nor after the scene; false, they are back. Left out: as before.
+   */
+  away?: boolean;
 }
 
 /** Things the family hold in a scene. */

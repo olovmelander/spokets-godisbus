@@ -39,6 +39,8 @@ interface State {
   holds: Thing | null;
   holdsLeft: Thing | null;
   rough: number;
+  /** Gone in, out of the picture: not drawn. */
+  away: boolean;
   /** The walk under way, when a key moves the actor: from where, how far it has come, and how long it takes. */
   walk: { fromX: number; fromY: number; fromZ: number; toX: number; toY: number; toZ: number; at: number; seconds: number } | null;
   /**
@@ -50,7 +52,7 @@ interface State {
 
 const fresh = (): State => ({
   x: 0, y: 0, z: 0, face: 0.25, act: 'stand', actAt: -99, before: null, stance: 'stand', aim: null, glance: null, follow: null,
-  holds: null, holdsLeft: null, rough: 0, walk: null,
+  holds: null, holdsLeft: null, rough: 0, away: false, walk: null,
 });
 const smooth = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -148,6 +150,7 @@ function apply(state: State, key: ActorKey, since: number): void {
   if (key.holds !== undefined) state.holds = key.holds;
   if (key.holdsLeft !== undefined) state.holdsLeft = key.holdsLeft;
   if (key.rough !== undefined) state.rough = mix(state.rough, key.rough, p);
+  if (key.away !== undefined) state.away = key.away;
 }
 
 /** Folds an actor's keys of one scene up to `t` onto a state: the state at that moment. */
@@ -657,8 +660,12 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           state = { ...(starts.get(who) ?? state ?? fresh()) };
           play(state, keys, t);
         }
-        drawnWhile(rig.group, state !== undefined);
-        if (!state) continue;
+        drawnWhile(rig.group, state !== undefined && !state.away);
+        if (!state || state.away) {
+          // Gone in: coming back is a cut, not a walk from where they went.
+          live.delete(who);
+          continue;
+        }
         const was = live.get(who);
         let x = state.x, y = state.y, z = state.z, face = state.face, pace = 0, velocity = 0, walked = was?.walked ?? 0;
         // The legs go by steps of the body's own length at its gait (acting.ts), so a planted foot stays put.
