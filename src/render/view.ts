@@ -623,6 +623,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let elofStance: Stance = 'stand';
   let hangLast = 0, hangWeight = 0;
   let shoulderLift = 0, shoulderT = 0;
+  type NearShot = { w: number; pos: Vector3; at: Vector3 };
+  const nearShot = (): NearShot => ({ w: 0, pos: new Vector3(), at: new Vector3() });
+  const nearShots = { family: nearShot(), taste: nearShot(), shoulders: nearShot() };
+  const camAt = new Vector3();
   let homeJourney = false;
   assets
     .manifest()
@@ -1186,23 +1190,33 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     camera.lookAt(look.x, centreY, 0);
     const nearbyFamily = stands.find((stand) => stand.prop!.group.visible && Math.abs(stand.at - x) < 3.4 &&
       Math.abs(stand.prop!.group.position.y - y) < 2 && curr.mode !== 'ride' && curr.mode !== 'fly');
-    if (nearbyFamily && !chapter.epilogue) {
-      const centreX = (nearbyFamily.at + x) / 2;
-      const familyY = nearbyFamily.prop!.group.position.y;
+    // The near shots (beside one of the family, the taste in Norrsken, on Pappa's shoulders) glide in and out over
+    // half a second or so instead of cutting, each from wherever the camera was.
+    camAt.set(look.x, centreY, 0);
+    const shotIn = (shot: NearShot, wanted: boolean, px: number, py: number, pz: number, ax: number, ay: number) => {
+      if (wanted) { shot.pos.set(px, py, pz); shot.at.set(ax, ay, 0); }
+      shot.w = calmStory ? (wanted ? 1 : 0) : shot.w + ((wanted ? 1 : 0) - shot.w) * ease(5, dt);
+      if (shot.w < 0.001) return;
+      const k = smooth(shot.w);
+      camera.position.lerp(shot.pos, k);
+      camAt.lerp(shot.at, k);
+    };
+    {
+      const centreX = nearbyFamily ? (nearbyFamily.at + x) / 2 : 0;
+      const familyY = nearbyFamily ? nearbyFamily.prop!.group.position.y : 0;
       const shotHeight = Math.max(viewHeight * look.zoom, 7.8, 8.8 / camera.aspect);
-      camera.position.set(centreX, familyY + 2.2, shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
-      camera.lookAt(centreX, familyY + 2.2, 0);
+      shotIn(nearShots.family, !!nearbyFamily && !chapter.epilogue, centreX, familyY + 2.2, shotHeight / 2 / Math.tan(FOV * Math.PI / 360), centreX, familyY + 2.2);
     }
-    if (chapter.id === 'norrsken' && flags.has('taste') && x >= 26 && x <= 33 && !flags.has('home')) {
+    {
       const shotHeight = Math.max(8.4, 10.2 / camera.aspect);
-      camera.position.set(29.7, 2.1, shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
-      camera.lookAt(29.7, 2.1, 0);
+      shotIn(nearShots.taste, chapter.id === 'norrsken' && flags.has('taste') && x >= 26 && x <= 33 && !flags.has('home'),
+        29.7, 2.1, shotHeight / 2 / Math.tan(FOV * Math.PI / 360), 29.7, 2.1);
     }
-    if (onShoulders || shoulderLift > 0) {
+    {
       const shotHeight = Math.max(10.2, 8.8 / camera.aspect);
-      camera.position.set(x, y + 3.1, shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
-      camera.lookAt(x, y + 3.1, 0);
+      shotIn(nearShots.shoulders, onShoulders || shoulderLift > 0, x, y + 3.1, shotHeight / 2 / Math.tan(FOV * Math.PI / 360), x, y + 3.1);
     }
+    camera.lookAt(camAt);
     // A scene's shot takes over from the play camera, and gives it back, smoothly (./stage.ts).
     if (directions.shot) {
       const s = directions.shot;
