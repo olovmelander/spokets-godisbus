@@ -378,6 +378,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   const mirror = pools.length && !standing ? mirrorStrip(setting.far ?? []) : null;
   const sky = setting.sky ?? { top: '#8fb6d8', middle: '#dfeaf0', glow: '#fff6dc' };
   const islands = look ? islandRow(chapter, kind, setting.street) : null;
+  // Nothing near mirrored yet: a clear pixel, so that the shader never reads an empty sampler (its stand-in would
+  // come and go with the tier, and the GPU's count of textures with it).
+  const nothingNear = nothingFar();
   const uniforms = {
     flowMap: { value: flowField() }, time, details,
     sunDirection: { value: new Vector3(...sun).normalize() },
@@ -416,7 +419,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     surface: { value: new Vector4(kind.mirror, kind.ripple, kind.dim, kind.faceBelow) },
     // What is near, mirrored as it is (Mid and High): the picture from under the water, how a point of the water
     // finds itself in it, whether there is one, and the height of the water it was taken at.
-    nearMirror: { value: null as Texture | null }, nearMatrix: { value: new Matrix4() }, nearOn: { value: 0 }, nearLevel: { value: 0 },
+    nearMirror: { value: nothingNear as Texture }, nearMatrix: { value: new Matrix4() }, nearOn: { value: 0 }, nearLevel: { value: 0 },
     // How much of the haze its surface takes, against the ground's (all of it in the mist).
     haze: { value: WATER_HAZE },
   };
@@ -763,7 +766,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   const causticPools = pools.slice(0, 8).map((w) => new Vector4(w.from, w.to, w.y, 0));
   while (causticPools.length < 8) causticPools.push(new Vector4(0, 0, -1e6, 0));
   let before = 0;
-  // What is near, mirrored as it is (Mid and High): a camera mirrored in the water's surface takes, at half size,
+  // What is near, mirrored as it is (Mid and High): a camera mirrored in the water's surface takes, at a third of the size,
   // only what is on the near layer, and the water reads it back where each of its points is. As three.js's Reflector
   // does it, with its near plane laid along the surface, so that nothing under the water is in the picture.
   let nearTarget: WebGLRenderTarget | null = null;
@@ -862,15 +865,18 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     setSize(width: number, height: number, tier: Tier) {
       details.value = tier === 'low' ? 0 : 1;
       uniforms.resolution.value.set(width, height);
-      // What is near, mirrored as it is: Mid and High, which draw in a linear picture of their own as this does.
+      // What is near, mirrored as it is: Mid and High, which draw in a linear picture of their own as this does. A
+      // third of the picture's size: the ripples soften it anyway, and a tablet's High stays within its memory.
       if (tier === 'low' || !pools.length) {
-        nearTarget?.dispose(); nearTarget = null; uniforms.nearOn.value = 0; uniforms.nearMirror.value = null;
+        nearTarget?.dispose(); nearTarget = null; uniforms.nearOn.value = 0; uniforms.nearMirror.value = nothingNear;
       } else {
-        const nw = Math.max(1, Math.ceil(width / 2)), nh = Math.max(1, Math.ceil(height / 2));
+        const nw = Math.max(1, Math.ceil(width / 3)), nh = Math.max(1, Math.ceil(height / 3));
         nearTarget ??= new WebGLRenderTarget(nw, nh, { type: HalfFloatType, stencilBuffer: false });
         nearTarget.texture.name = 'water-near';
         nearTarget.setSize(nw, nh);
         uniforms.nearMirror.value = nearTarget.texture;
+        // Its stand-in is not drawn with now: let it go, as if it had never been drawn with.
+        nothingNear.dispose();
       }
       // Shallow water shows its own bed, not what is behind it: it needs no copy.
       if (tier !== 'high' || !pools.length || kind.bed > 0) { target?.dispose(); target = null; uniforms.refractOn.value = 0; uniforms.refraction.value = null; return; }

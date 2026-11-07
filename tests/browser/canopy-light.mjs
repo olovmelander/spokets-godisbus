@@ -69,7 +69,7 @@ try {
         // The plane's own sheet coordinates are its local x and y, plus whole tiles.
         for (const off of [sheet.x - x, sheet.y - y]) worst = Math.max(worst, Math.abs(off - Math.round(off)));
       }
-      heights = Math.max(heights, Math.abs(f.CANOPY.high.value.getComponent(n) - new T.Vector3().setFromMatrixPosition(layer).y));
+      heights = Math.max(heights, Math.abs(f.CANOPY.high.value[n] - new T.Vector3().setFromMatrixPosition(layer).y));
     }
     const ground = { on: f.CANOPY.on.value, sheet: f.CANOPY.sheet.value === canopy.material.map, worst, heights };
     shadows.setTier('mid');

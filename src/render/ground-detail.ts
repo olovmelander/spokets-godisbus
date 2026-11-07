@@ -1,5 +1,5 @@
 import type { MeshStandardMaterial } from 'three';
-import { CANOPY } from './canopy';
+import { CANOPY, CANOPY_LAYERS } from './canopy';
 
 /** How wide a deck board is (./dressing/ground.ts keeps the same number). */
 const BOARD = 0.8;
@@ -43,7 +43,7 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
   patched.add(material);
   const before = material.onBeforeCompile;
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:ground-detail-v7-${kind}`;
+  material.customProgramCacheKey = () => `${key()}:ground-detail-v8-${kind}`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.closeDetail = CLOSE_DETAIL;
@@ -60,8 +60,9 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
     shader.fragmentShader = /* glsl */ `varying vec3 groundDetailAt;
       uniform float closeDetail, dapple, dappleClock, canopyOn;
       uniform sampler2D canopySheet;
-      uniform mat3 canopyLayers[2];
-      uniform vec2 canopyHigh, canopyBeam;
+      uniform mat3 canopyLayers[${CANOPY_LAYERS}];
+      uniform float canopyHigh[${CANOPY_LAYERS}];
+      uniform vec2 canopyBeam;
       float groundHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float groundNoise(vec2 p) {
         vec2 i = floor(p), f = fract(p);
@@ -105,14 +106,14 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
           float sun = smoothstep(0.58, 0.72, leaves);
           groundColour *= 1.0 + dapple * sun * vec3(0.42, 0.36, 0.2);
         }
-        // On High, the crowns' own flecks (./canopy.ts): where the sun comes through both layers of leaves, as the
-        // sun's shadow map has them, and as far off as the ground is seen. Softened as the shadow map softens them.
+        // On High, the crowns' own flecks (./canopy.ts): where the sun comes through the leaves, as the sun's shadow
+        // map has them, and as far off as the ground is seen. Softened as the shadow map softens them.
         if (canopyOn > 0.0) {
           float through = 1.0;
-          for (int layer = 0; layer < 2; layer++) {
+          for (int layer = 0; layer < ${CANOPY_LAYERS}; layer++) {
             vec2 crown = groundDetailAt.xz + canopyBeam * (canopyHigh[layer] - groundDetailAt.y);
             vec2 sheetAt = (canopyLayers[layer] * vec3(crown, 1.0)).xy;
-            through *= 1.0 - smoothstep(0.3, 0.7, texture2D(canopySheet, sheetAt, 1.5).a);
+            through *= 1.0 - smoothstep(0.3, 0.7, textureLod(canopySheet, sheetAt, 2.0).a);
           }
           groundColour *= mix(vec3(1.0), vec3(mix(0.76, 1.0, through)) + through * vec3(0.6, 0.5, 0.28), canopyOn);
         }

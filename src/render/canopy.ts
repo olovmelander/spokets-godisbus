@@ -1,25 +1,28 @@
 import {
-  CanvasTexture, DoubleSide, DynamicDrawUsage, InstancedMesh, Matrix3, MeshBasicMaterial, Object3D, PlaneGeometry,
-  RepeatWrapping, Vector2, Vector3, type DirectionalLight, type Texture,
+  CanvasTexture, DataTexture, DoubleSide, DynamicDrawUsage, InstancedMesh, Matrix3, MeshBasicMaterial, Object3D,
+  PlaneGeometry, RepeatWrapping, Sphere, Vector2, Vector3, type DirectionalLight, type Texture,
 } from 'three';
 
 /** How high the crowns hang over the ground he walks on, in EL: up among the spruces' tops. */
 const HIGH = 26;
 /** Where the ground in the picture lies, behind the play plane: the crowns cover it, round this depth. */
 const MIDDLE = -8;
-/** How many of the leaves' tiles each layer is across: enough to cover the sun's shadow map round him. */
+/** How many of the leaves' tiles the crowns are across: enough to cover the sun's shadow map round him. */
 const TILES = 16;
 /**
- * Two layers of crowns, one over the other. Each is the same sheet of leaves with sky through it, at its own size
- * and turned its own way, so that the sun comes through only where both let it: in flecks of every shape, which
- * shimmer as the two sway against each other. `size` is one tile's width in EL; `lift` is how much higher it hangs.
+ * The crowns: a sheet of leaves with sky through it, `size` EL to a tile, swaying at its own `pace`. One layer, so that
+ * the sun's map and the ground each read it once: on a phone, and in the software drawing CI tests with, a second
+ * layer cost more than it gave (the flecks drift with the crowns as they sway, as they do under real trees).
  */
-const LAYERS = [
-  { size: 9, turn: 0, lift: 0, shift: 0, pace: 0.55 },
-  { size: 6.5, turn: Math.PI / 2, lift: 3, shift: 0.37, pace: 0.8 },
-] as const;
-/** How much of each layer is sky: about a quarter of the ground gets the sun through both. */
-const OPEN = 0.5;
+const LAYERS = [{ size: 9, turn: 0, lift: 0, shift: 0, pace: 0.55 }] as const;
+/** How many layers the ground's shader reads (./ground-detail.ts). */
+export const CANOPY_LAYERS = LAYERS.length;
+/** How much of the sheet is sky: about a third of the ground under the crowns gets the sun. */
+const OPEN = 0.32;
+
+/** No crowns: a clear pixel, so that the ground's shader never reads an empty sampler, whose stand-in comes and goes. */
+const NO_SHEET = new DataTexture(new Uint8Array(4), 1, 1);
+NO_SHEET.needsUpdate = true;
 
 /**
  * The crowns as the ground's shader sees them (./ground-detail.ts), shared by every patched material so that nothing
@@ -32,9 +35,9 @@ const OPEN = 0.5;
  */
 export const CANOPY = {
   on: { value: 0 },
-  sheet: { value: null as Texture | null },
+  sheet: { value: NO_SHEET as Texture },
   layers: { value: LAYERS.map(() => new Matrix3()) },
-  high: { value: new Vector2() },
+  high: { value: LAYERS.map(() => 0) },
   beam: { value: new Vector2() },
 };
 
@@ -98,7 +101,11 @@ export function createCanopy(sun: DirectionalLight) {
   const mesh = new InstancedMesh(geometry, material, LAYERS.length);
   mesh.name = 'canopy';
   mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-  mesh.frustumCulled = false;
+  // Only the sun's camera needs it. Its bounds are a small sphere where the crowns hang, high over him towards the
+  // sun: always in the sun's view, along whose line it lies, and above the picture's, which so leaves it out, instead
+  // of running the leaves' shader over the upper half of the picture for nothing (it writes nothing there).
+  mesh.boundingSphere = new Sphere(new Vector3(), 2);
+  mesh.frustumCulled = true;
   mesh.castShadow = true;
   mesh.receiveShadow = false;
   // A marked caster (./character-shadows.ts). In the picture it writes no colour and no depth: only the sun's shadow
@@ -117,7 +124,7 @@ export function createCanopy(sun: DirectionalLight) {
       if (!mesh.visible) return;
       beam.copy(sun.position).sub(sun.target.position).normalize();
       const rise = Math.max(0.25, beam.y);
-      CANOPY.sheet.value = material.map;
+      CANOPY.sheet.value = material.map ?? NO_SHEET;
       CANOPY.beam.value.set(beam.x / rise, beam.z / rise);
       LAYERS.forEach((layer, n) => {
         const reach = 0.12 + 0.3 * wind;
@@ -148,13 +155,21 @@ export function createCanopy(sun: DirectionalLight) {
           -s, -c, -(-s * px - c * pz),
           0, 0, 1,
         );
-        CANOPY.high.value.setComponent(n, place.position.y);
+        CANOPY.high.value[n] = place.position.y;
       });
+      // Where the sun's line through the middle of its map meets the crowns: in its view whatever its map's size.
+      const over = focusY + HIGH;
+      mesh.boundingSphere!.center.set(sun.target.position.x + beam.x / rise * (over - sun.target.position.y), over, sun.target.position.z + beam.z / rise * (over - sun.target.position.y));
       mesh.instanceMatrix.needsUpdate = true;
     },
-    setOn(on: boolean): void { mesh.visible = on; },
+    setOn(on: boolean): void {
+      mesh.visible = on;
+      // The ground reads the crowns' sheet while they are on, and the clear pixel, which is then let go, while not.
+      CANOPY.sheet.value = on ? material.map ?? NO_SHEET : NO_SHEET;
+      if (on) NO_SHEET.dispose();
+    },
     dispose(): void {
-      if (CANOPY.sheet.value === material.map) CANOPY.sheet.value = null;
+      if (CANOPY.sheet.value === material.map) CANOPY.sheet.value = NO_SHEET;
       geometry.dispose(); material.map?.dispose(); material.dispose();
     },
   };
