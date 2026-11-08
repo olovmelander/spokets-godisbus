@@ -255,6 +255,8 @@ try {
     const { page, state, finish } = await open('carving', { hasTouch: true }, '?dev&debug&standin&tier=low&course=epilog', () => {
       localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 1, candy: {}, placed: {}, flags: { epilog: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket', 'partied', 'knife'] }, playMs: 0 }));
     });
+    // Pappa comes over to the carving first, and tells him how to hold the knife (`knife:pappa`, ends.ts).
+    await until(state, (s) => s.flags.includes('knife:pappa'), 'Pappa comes over to the carving');
     await reach(page, 'carve', 'the wood becomes reachable');
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
     const outward = Array.from({ length: 13 }, (_, i) => ({ x: 100 + 144 * i / 12, y: 150 - 80 * i / 12 }));
