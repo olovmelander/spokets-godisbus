@@ -1,5 +1,62 @@
 # Handover
 
+## State (8 November 2026, late morning)
+
+- **What is said against what is seen, in every chapter (Olov: "Are there more things like this … where the
+  conversations and the story does not align with the environment and the visuals … obvious visual bugs thats need
+  fixing?"), on Olov's computer.** Branch `berattelse-i-bild`, on top of #241's `familjen-och-hemvagen`.
+  - **How it was found:** four auditors went through all 18 chapters, line by line, objective by objective and scene
+    by scene, with about 460 screenshots, and reported some 40 places where the picture contradicts the story. Their
+    brief is in the session scratchpad; the findings that were not fixed are listed below.
+  - **The family as empty raincoats on High** (Stormens öga's shore, Mamma on Flärken's SUP, Moa in Stormbyn, Bertil
+    and Mamma when Granskogen and Myren are loaded near them): the skinned bodies culled on stale bounds. Fixed by
+    #240 (`rig.ts`), merged into this branch. Its deploy failed twice on GitHub's download of the KTX tool, down
+    off and on for an hour, and went through on a re-run at 10:51; #241 makes CI wait up to ten minutes for it
+    (`scripts/install-ktx.sh`).
+  - **The ghost** (Äventyr 1 keeps it out of his reach, `GHOST_CLEARANCE`, and so it rose into the air):
+    - A ghost that waits on something (`GhostPerch.still`) is drawn there, while the simulation still keeps it out of
+      reach (`view.ts`): under Berget's cliff, where he lifts it (it hung 3 EL up the face), and stuck in Granskogen's
+      eddy (it hovered over it). The chase's distance test is unchanged.
+    - At the end of Berget and Byn it stays with him to the goal (`until: 'goal', still: true`); it vanished there.
+    - At Pappa's seesaw it stood inside him (perch moved to x 115.6).
+  - **People in the wrong places:**
+    - Prologue: after the freeze joke Mamma, Moa, Bertil and Pappa walked through the kitchen table to follow him.
+    - Prologue: the shot as he points at the ghost and the bag is lowered (they were under the letterbox).
+    - Stormkvällen: Bertil's place moved (Mamma and Pappa walked through him to kneel at the POFF; this morning's).
+    - Morgonen: Pappa's pointing arm stayed in Morfar's face; the breakfast shot is wide enough for Mormor and Morfar.
+    - Billsta: Mormor's spot moved left of the woodpile's chopping block (it hid both of them); Mormor herself stands at
+      the brow, where only her lantern's glow said "Kom, vi går ner till sundet."
+    - Stormens öga: the storm's eye opens 2.2 EL nearer the figures and the meeting's shot holds him and them (he spoke
+      to them from out of the picture); `stor`'s shot is earlier and wider and the family face him; Mormor and Morfar
+      stand on the bank, not on the water.
+  - **Walked, not floated** (`Ride.walks`): the walk home in Stormens öga (he sat in the air over the shallows; he
+    wades now) and going up to bed in the epilogue are drawn on his own feet, up the step as stairs.
+  - **The crane** sets him down with its body over the ground and flies on (it sank into the rock and vanished).
+  - **Norrsken's crack:** the camera no longer sinks into the rock as he stands over the crack (`camera-intent.ts`:
+    standing where he last stood, the ground under his middle is not what the picture follows).
+  - **Objectives and lines:** Norrsken's ride says "Åk hem på Pappas axlar." (Mamma, Moa and Bertil stay on the summit);
+    Stormens öga says to go to the figures once the owl has set him down; its helper no longer says the owl is there.
+  - **The epilogue:** "Klonk, klonk!" and the naming are framed with the table; Pappa says "Alltid bort från kroppen."
+    when he has come over (`knife:pappa`), and the carving begins then.
+  - **Byn:** the leaf lies ready on the puddle before "Kliv på" (the rule was for the storm's chapters only).
+  - **Granskogen:** the jay at x 37, clear of the trail's sweet that covered it (the candy layout is saved by index).
+  - **The trägubbar's flights** in Stormskogen, Stormgården, Olympia, Flärken and Älven are brought into the picture as
+    the lines say "Där!", one trägubbe at a time, and Pappa's beam is on Klonk in Stormskogen (a helper agent's part).
+  - **Left for later** (the auditors' findings not fixed today, most obvious first):
+    - Norrsken, the ride home: Klonk and the trägubbe float beside Pappa's head; and the family appears all at once
+      after the golden sweet, with no arrival.
+    - Morgonen: Pappa, Mamma and Moa say their lines at the window, the sofa and the cocoa from the table (x 4–16).
+    - Stormkvällen: Mamma's and Pappa's promises on the deck with nobody there; no umbrella and only one lamp when
+      they get ready; the bowl Moa speaks of is not in the room.
+    - Stormbyn: Moa's umbrella hangs in the air 3 EL from her.
+    - Myren: Mamma's braid hangs from the boardwalk while she stands below it.
+    - Granskogen: the ant lift goes behind the anthill's face, and Elof is not seen for the ride.
+    - Norrsken and the epilogue: "Gå hem" and "Ta kniven" are drawn as bare green signs.
+    - Olympia: Bertil's last lines are said from 50 EL away.
+    - Älven: the otter of "En utter! Den simmar ut" stands still 20 EL off; the car's lines come from an empty car.
+  - **Checked:** typecheck, `npm test` (2,143), stills of each fix.
+  - **The next step needs:** nothing from Olov's computer.
+
 ## State (8 November 2026, morning)
 
 - **The two things left from the night (Olov: "Now continue with this!"), on Olov's computer.** Branch `djur-och-bron`.
@@ -5046,6 +5103,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| What is said against what is seen (8 Nov, late morning) | Olov's question: more places where the story and the picture disagree, and obvious visual bugs | The same session, with four auditing agents and one fixing agent | — / 0 so far | About 40 findings over 18 chapters; the ghost, the family's places, walked rides, the crane, the crack's camera, the flights in view, objectives and lines fixed; the rest listed in the state above |
 | Six things from the site (8 Nov, morning) | Olov's request: the family's places in Stormkvällen, Pappa walking in the air, the old trägubbe, the raincoats, Olympia's puddle, two owls | 1 session on Olov's computer, with one helper agent | — / 0 so far | Stormkvällen's and Morgonen's family out of the table and chairs; a trail for the walk home; the new trägubbe in the crack, eyes when painted; one owl that waits and carries him; the puddle uncovered; the raincoats were a browser's old copy |
 | The night's playthrough (8 Nov, 00:00–03:30) | Olov's request: play both adventures through and fix what needs fixing | 1 session on Olov's computer, with three reading agents | — / 0 so far | Diary and objectives in both adventures, the helper, Billsta's gusts, Älven's vanishing Elof, Stormkvällen's black blob, the owl, Mormor's lantern, the title, Pause on a phone |
 | The roots and Moa's drawing (7 Nov, night) | Olov's request: make clear what happens when the ghost goes into the roots and what Moa dropped | Part of the same cloud session | — / 0 so far | A root hole the ghost creeps into, Moa kneeling at it, clearer lines, and her drawing seen to blow away; JS gate to 550 KB. |
