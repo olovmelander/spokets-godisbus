@@ -53,7 +53,8 @@
   - **Content:** Moa steps a little further from the kitchen table in `prologue:mamma` (z 0.45, was 0.3), so that her
     swinging hand clears its edge.
   - **Checked:** typecheck, `npm test` (2,143; tests changed only where standing now shifts its weight, and the planted
-    boot test is stricter), `npm run build` (JS 548.8 of 550 KB, see "Frågor till Olov"), the privacy check, the browser
+    boot test is stricter), `npm run build` (JS 548.8 KB; Olov then set the gates at 1000 KB of JS and 10 MB for the
+    site, see "Decisions in effect"), the privacy check, the browser
     suites prologue (81), family-help (55), aventyr2 (42), finale-stage (89), model-installation (47), family-caps (76, on
     the real models), family-story (8) and player-motion (its motion checks; the suite stops at this sandbox's known Vite
     WebSocket error, CI runs it), and filmstrips of every motion on the real models (kept in the session only).
@@ -5042,6 +5043,11 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **The size gates (Olov, 8 November 2026: "Höj, grafiken till 10 Mbit och js-budgeten till 1000kb"):** at most 1000 KB
+  of gzipped JS (from 550) and 10 MB as served for the whole site (from 4.5). "10 Mbit" is read as megabytes, as a
+  raise: ten megabits would have been 1.25 MB, under what the site already is. `scripts/size-gate.mjs`, plan §6.6 and
+  §6.12. On the plan's 10 Mbps profile a first start of a full 10 MB site takes about 8 seconds; later starts come from
+  the device's own copy.
 - **Motion is keyed in Blender and played by the game's own code** (8 November 2026, at Olov's "använd blender"):
   `art/blender/motion.py` keys each person's gaits, stands and clips as curves in the pose's own language and writes
   `src/render/motion-data.ts`; the game places the feet with IK on each body's measured legs and layers looks, reaches
@@ -5361,8 +5367,6 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-- JavaScript-budgeten är nästan full: 548,8 av 550 KB efter rörelserna. Vill du höja den, som du gjorde för grafiken (till
-  exempel till 560 KB)? Inget blockeras nu, men nästa större kodändring får inte plats.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.

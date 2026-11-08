@@ -1938,8 +1938,8 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
 
 - **Packs** (named by the stable chapter IDs, §4.9):
   - `boot`: engine, UI, font, the title scene and the table-top opening of the prologue (Elof, the ghost, the
-    bag, the table, Pappa's hands). At most **3 MB** (raised to 4 MB for the whole site on 5 November 2026, Olov, and to 4.5 MB on 7 November
-    2026 at his word to raise the graphics budget well where needed).
+    bag, the table, Pappa's hands). At most **3 MB** (raised to 4 MB for the whole site on 5 November 2026, Olov, to 4.5 MB on 7 November
+    2026 at his word to raise the graphics budget well where needed, and to 10 MB on 8 November 2026, at his word).
   - `prolog`: the veranda and the deck chase, prefetched behind the title.
   - `garden`, `granskog`, `myr`, `berg` (with the final and the small epilogue), and in 1.1 `forsen`: at most
     **8 MB** each.
@@ -2168,7 +2168,11 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
 1. **No third-party requests,** ever, and no analytics. A browser test checks this, and every page carries
    `noindex`.
 2. **First playable:** the `boot` pack (the title and the table-top opening) in at most 3 MB *as served*, with at
-   most 550 KB of gzipped JS. (It was 450 KB until 4 November 2026, when Olov widened the graphics budget for the
+   most 1000 KB of gzipped JS, and the whole site in at most 10 MB as served (Olov, 8 November 2026: "Höj, grafiken till
+   10 Mbit och js-budgeten till 1000kb", meaning megabytes for the site; on the 10 Mbps profile a first start of the
+   whole site is then up to about 8 seconds, and later starts come from the device's own copy). (The JS was 550 KB
+   until 8 November, when the family's motion took all but a kilobyte of it. It was 450 KB until 4 November 2026, when
+   Olov widened the graphics budget for the
    visual upgrade: "utöka budgeten för grafiken". three r187 alone took the last of the 450 KB; 70 KB more is about
    60 ms on the 10 Mbps profile. It was 520 KB until 6 November, when he widened it again for the Unravel look:
    "utöka grafikbudgeten rejält"; the lens, the close materials, the rain gear and the storm's lamps took the last
