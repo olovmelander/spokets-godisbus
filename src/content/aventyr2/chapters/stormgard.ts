@@ -147,8 +147,9 @@ export const stormgard: ChapterData = {
     flybys: [
       // A flash: the old trägubbe on the playhouse roof leaps away towards the hedge.
       { on: 'beat:sg:playhouse', from: { x: PLAYHOUSE.ridge.x, y: PLAYHOUSE.ridge.y + 0.6 }, to: { x: 172, y: 8 }, seconds: 2.5, who: 'tragubbe' },
-      // And at the hedge: the little one, tumbling over it towards the forest.
-      { on: 'beat:sg:flash', from: { x: 176, y: 5 }, to: { x: 200, y: 10 }, seconds: 2.5, who: 'lillgubbe' },
+      // And at the hedge: the little one, tumbling over it towards the forest, under the top of the picture he sees
+      // as he says so (the auditors, 8 November 2026: it was only a speck at its top).
+      { on: 'beat:sg:flash', from: { x: 178.5, y: 2.2 }, to: { x: 196, y: 5 }, seconds: 4.5, who: 'lillgubbe' },
     ],
     // The playhouse the trail climbs, its green walls just behind the roof he walks on; birches by the hedge.
     buildings: [
@@ -349,7 +350,8 @@ export const stormgard: ChapterData = {
     { id: 'sg:heja', at: 116, who: 'bertil', line: 'sgBertilHeja' },
     { id: 'sg:thanks', at: 128.4, who: 'elof', line: 'sgThanks' },
     // 6. the playhouse: the old one seen, and its thought
-    { id: 'sg:playhouse', at: 131.6, who: 'elof', line: 'sgPlayhouse' },
+    // Said where the playhouse's ridge, and the old one on it, are in the picture (the camera before the playhouse).
+    { id: 'sg:playhouse', at: 135.6, who: 'elof', line: 'sgPlayhouse' },
     { id: 'sg:lonely', on: 'sg:thought', who: 'elof', line: 'sgLonely', read: true },
     { id: 'sg:why', at: 147.6, needs: 'sg:thought', who: 'elof', line: 'sgWhy', read: true },
     { id: 'sg:lookout', on: 'sg:lookout', who: 'elof', line: 'sgLookout' },
@@ -369,7 +371,9 @@ export const stormgard: ChapterData = {
     { from: 24, to: 36, zoom: 1.4, lift: 0.4 },
     { from: 42, to: 72, zoom: 1.35 },
     { from: 100, to: 130, zoom: 1.3, lift: 2 },
-    { from: 130, to: 152, zoom: 1.35, lift: 0.8 },
+    // Before the playhouse: its roof ahead, and the old one standing on its ridge until the flash.
+    { from: 130, to: 139, zoom: 1.7, lift: 1.6, lead: 3.4 },
+    { from: 139, to: 152, zoom: 1.35, lift: 0.8 },
     // The hedge: the sky over it, where the little one flies.
     { from: 174, to: 196, zoom: 1.5, lift: 1.4 },
   ],

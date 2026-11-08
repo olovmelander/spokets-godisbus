@@ -157,8 +157,9 @@ try {
   }
   if (!process.env.HELPER_CASE) {
     // With keys, the on-screen controls are hidden: what E will do shows as a prompt, and the knock rings it too.
+    // At x 35 the jay (x 37) is out of reach.
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    await page.goto(`${origin}/spokets-godisbus/?dev&debug&standin&tier=low&course=granskog&at=36,0.01&flags=berry`);
+    await page.goto(`${origin}/spokets-godisbus/?dev&debug&standin&tier=low&course=granskog&at=35,0.01&flags=berry`);
     await page.waitForFunction(() => window.__godis?.info().models.includes('boot/jay'));
     // A key is a moment, used by the next step: wait until the game is stepping before pressing one.
     await page.waitForFunction(() => window.__godis.state().steps >= 60, null, { timeout: 60000 });

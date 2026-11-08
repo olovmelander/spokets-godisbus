@@ -149,6 +149,11 @@ export interface Spot {
    * the carving once Elof has taken the knife.
    */
   goesWhen?: string;
+  /**
+   * For the picture: whoever of the family is shown here holds this ride's carrier out to him while it waits ready,
+   * a hand on it (Moa her umbrella, at the wall's edge in Stormbyn).
+   */
+  holds?: string;
   verb: 'turn' | 'take' | 'call' | 'give';
   /** A flag that has to be set before it can be used. A thing on a rail sets `placed:<its id>` once in place. */
   needs?: string;
@@ -219,6 +224,11 @@ export interface Ride {
   corridor?: number;
   /** What he rides on, for the picture. Left out: Moa's paper plane. */
   look?: RideLook;
+  /**
+   * For the picture: he walks it on his own feet, along the ground and up its steps, wading where it is water, instead
+   * of sitting on what carries him (home along the shore, up to bed). With `look: 'none'` and no `rise`.
+   */
+  walks?: boolean;
 }
 
 /**

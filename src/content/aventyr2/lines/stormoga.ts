@@ -52,7 +52,7 @@ export const words: ChapterWords = {
   helpers: {
     soFamilyDark: 'Mormors lykta är det enda ljuset på bryggan.',
     soFamilyLamps: 'Familjen lyser med sina lampor från bryggan.',
-    soFriends: 'Klonk och ugglan är här. Familjens lampor lyser från bryggan.',
+    soFriends: 'Klonk är här med mig. Familjens lampor lyser från bryggan.',
     soFamilyShore: 'Familjen, mormor och morfar väntar på stranden.',
   },
   moments: { oga: 'Stormens öga', motet: 'Där är ni!', stor: 'Guldgodiset' },

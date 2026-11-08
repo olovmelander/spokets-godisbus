@@ -177,7 +177,9 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       expect(sim.curr.x).toBeCloseTo(fenceDown.x, 1);
       expect(sim.curr.y).toBeCloseTo(0, 2);
       expect(sim.bubbles).toBe(0);
-      expect(olympia.storm!.flybys!.find((f) => f.on === 'beat:ol:top')?.who).toBe('lillgubbe');
+      // The little one flies as Elof says so, after the top's own line.
+      expect(sim.flags.has('beat:ol:little')).toBe(true);
+      expect(olympia.storm!.flybys!.find((f) => f.on === 'beat:ol:little')?.who).toBe('lillgubbe');
     });
   });
 

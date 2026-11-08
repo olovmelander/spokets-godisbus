@@ -233,7 +233,7 @@ it('releases the discarded mug hand through the scene end and finishes lowering 
   show(stage, 'prologue:mamma', 2.6);
   const halfway = palm(rig, 0), flags = new Set(['scene:morgon', 'scene:vaknar', 'mamma:passed']);
   // Keep the follower at its existing place so this measures only the hand's release.
-  const elof = { x: rig.group.position.x + 5.2, y: 0 };
+  const elof = { x: rig.group.position.x + 2, y: 0 };
   stage.update(null, flags, elof, 40, 0, false);
   expect(palm(rig, 0).distanceTo(halfway)).toBeLessThan(1e-8);
   let previous = halfway;

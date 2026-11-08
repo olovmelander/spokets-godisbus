@@ -27,10 +27,11 @@ import { alongAll, row, timeCard } from '../kit';
 
 /** The owl's flight from the jetty's end to the stone, and the walk home along the shore once he is big. */
 const OWL = { from: { x: 10.6, y: 0 }, to: { x: 40.4, y: 0.6 }, rise: 4.2, time: 5.2, corridor: 0.5 };
-const HOME = { from: { x: 54, y: 0.6 }, to: { x: 90, y: 0 }, rise: 1, time: 10, corridor: 0.3 };
+const HOME = { from: { x: 54, y: 0.6 }, to: { x: 90, y: 0 }, rise: 0, time: 10, corridor: 0.3 };
 /** Where the two trägubbar sit on the stone, and where the storm's eye opens. */
 const FIGURES = 47.2;
-const EYE = 42.2;
+/** Where the storm's eye opens: near enough the figures that he meets them in one picture (at 42.2 he was 6 EL off). */
+const EYE = 44.4;
 
 /** Where the family stands on the jetty in the dark, and where each one's dead lamp lies. */
 const FAMILY = { mamma: 4, pappa: 5.8, moa: 7.4, bertil: 8.8 } as const;
@@ -118,7 +119,8 @@ const SCENES: SceneDef[] = [
       { at: 10.4, who: 'elof', line: 'soCapBack' },
     ],
     stage: {
-      shots: [{ at: 0, x: FIGURES - 1.2, y: 1.3, height: 3.4, width: 5.6, move: 1.0 }],
+      // Him and the two of them in one picture: he spoke to them from out of it.
+      shots: [{ at: 0, x: FIGURES - 2, y: 1.3, height: 3.6, width: 6.6, move: 1.0 }],
       elof: [{ at: 0, act: 'watch', aim: { x: FIGURES, y: 1.0, z: -0.4 } }, { at: 4.8, act: 'kneel', aim: { x: FIGURES, y: 0.9, z: -0.4 } }, { at: 9.6, act: 'hands' }],
     },
   },
@@ -143,13 +145,14 @@ const SCENES: SceneDef[] = [
       shots: [
         { at: 0, x: 48.4, y: 1.4, height: 3.6, width: 5, move: 0.6 },
         { at: 1.8, x: 52, y: 3.4, height: 9, width: 15, move: 2.4 },
-        { at: 4.0, x: 58, y: 3.4, height: 10, width: 22, move: 1.6 },
+        // Out to the shore while Mamma calls, wide enough for him on the stone and Bertil at the far end of them.
+        { at: 3.0, x: 59.6, y: 3.4, height: 11, width: 26, move: 1.4 },
       ],
       actors: {
-        mamma: [{ at: 0, x: 65.2, y: 0, z: -1.4, face: 0.6, move: 0.01, act: 'stand' }, { at: 4.0, act: 'wave' }],
-        pappa: [{ at: 0, x: 67.4, y: 0, z: -2.2, face: 0.6, move: 0.01, act: 'stand' }, { at: 5.8, act: 'gasp' }, { at: 6.8, act: 'cheer' }],
-        moa: [{ at: 0, x: 69.2, y: 0, z: -1.2, face: 0.6, move: 0.01, act: 'stand' }, { at: 7.6, act: 'cheer' }],
-        bertil: [{ at: 0, x: 70.8, y: 0, z: -2.4, face: 0.6, move: 0.01, act: 'stand' }, { at: 9.2, act: 'stomp' }],
+        mamma: [{ at: 0, x: 65.2, y: 0, z: -1.4, face: 0.45, move: 0.01, act: 'stand' }, { at: 4.0, act: 'wave' }],
+        pappa: [{ at: 0, x: 67.4, y: 0, z: -2.2, face: 0.45, move: 0.01, act: 'stand' }, { at: 5.8, act: 'gasp' }, { at: 6.8, act: 'cheer' }],
+        moa: [{ at: 0, x: 69.2, y: 0, z: -1.2, face: 0.45, move: 0.01, act: 'stand' }, { at: 7.6, act: 'cheer' }],
+        bertil: [{ at: 0, x: 70.8, y: 0, z: -2.4, face: 0.45, move: 0.01, act: 'stand' }, { at: 9.2, act: 'stomp' }],
       },
       elof: [
         { at: 0, act: 'eat', size: 1 },
@@ -240,7 +243,8 @@ export const stormoga: ChapterData = {
   later: [{ flag: 'owl:ready', after: 'owl:call', seconds: 1.4, hold: true }],
   rides: [
     { id: 'owl', look: 'owl', ...OWL },
-    { id: 'home', look: 'none', ...HOME },
+    // Walked, on his own feet and through the shallows (he sat in the air over them).
+    { id: 'home', look: 'none', walks: true, ...HOME },
   ],
   decor: [
     // Driftwood on the far shore.
@@ -258,8 +262,9 @@ export const stormoga: ChapterData = {
     // The cap he found in the gutter in Byn, back on the little one's head.
     { look: 'tiny-cap', word: 'worn', at: { x: FIGURES + 0.32, y: 1.08 }, z: -0.3, after: 'scene:motet', until: 'taste' },
     // The family on the far shore with their lamps, once the storm has let go; mormor with her lantern, morfar.
-    { look: 'mormor', at: { x: 61.6, y: 0 }, z: -1, after: 'taste' },
-    { look: 'morfar', at: { x: 63.4, y: 0 }, z: -1.4, after: 'taste' },
+    // On the bank, past the shallows' water (x 58 to 63): mormor stood on the water.
+    { look: 'mormor', at: { x: 63.9, y: 0 }, z: -0.9, after: 'taste' },
+    { look: 'morfar', at: { x: 64.6, y: 0 }, z: -2.6, after: 'taste' },
   ],
   ghost: [
     // Klonk is beside him now: on the jetty, then across with the owl, then by the figures.
@@ -293,13 +298,15 @@ export const stormoga: ChapterData = {
 };
 
 /** What "Just nu" says here. */
-export const context: Chooser = (has) => {
+export const context: Chooser = (has, at) => {
   if (has('scene:stor')) return ['soGoHome', 'soFamilyShore', 'house'];
   if (has('taste')) return ['soGrow', 'soFamilyShore', 'sparkle'];
   if (has('gift')) return ['soTaste', 'soFriends', 'sparkle'];
   if (has('scene:motet')) return ['soGift', 'soFriends', 'sparkle'];
   if (has('eye')) return ['soMeet', 'soFriends', 'heart'];
   if (has('owl:ready') && !has('owl')) return ['soBoard', 'soFamilyLamps', 'sparkle'];
+  // Set down on the stone, the flight is over: he goes on to the figures (it still said to fly there).
+  if (has('owl') && at.x >= OWL.to.x - 0.5) return ['soMeet', 'soFriends', 'heart'];
   if (has('owl:call')) return ['soRide', 'soFamilyLamps', 'water'];
   if (has('scene:lampa:bertil')) return ['soReach', 'soFamilyLamps', 'water'];
   return ['soLamps', 'soFamilyDark', 'water'];

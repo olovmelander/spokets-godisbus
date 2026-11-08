@@ -395,12 +395,13 @@ export const flarken: ChapterData = {
     rain: 0.95,
     lightning: 7,
     flybys: [
-      // On the far side of the reed mats: the little one, blown out over the lake.
-      { on: 'beat:sjon:flash', from: { x: 102, y: 9 }, to: { x: 140, y: 12 }, seconds: 2.6, who: 'lillgubbe' },
+      // On the far side of the reed mats: the little one, blown out over the lake. Each sighting sets off in the picture
+      // he sees as he says so, under its top (the auditors, 8 November 2026: they flew above it, or beyond its edge).
+      { on: 'beat:sjon:flash', from: { x: 111.5, y: 1 }, to: { x: 134, y: 4 }, seconds: 5, who: 'lillgubbe' },
       // The old one, far out on the planks, leaps on into the dark when he comes.
       { on: 'beat:sjon:old-one', from: { x: OLD_ONE.x, y: 1.4 }, to: { x: 170, y: 6 }, seconds: 2.2, who: 'tragubbe' },
-      // From the top of the diving tower: the little one, far out where the lake runs out into the river.
-      { on: 'beat:sjon:lookout', from: { x: 166, y: 7 }, to: { x: 200, y: 2 }, seconds: 3, who: 'lillgubbe' },
+      // From the top of the diving tower: the little one, blown on out to where the lake runs out into the river.
+      { on: 'beat:sjon:lookout', from: { x: 158.5, y: 6.4 }, to: { x: 190, y: 2.6 }, seconds: 7, who: 'lillgubbe' },
       // At the end: the outlet takes the little one, and the old one leaps after him onto a log.
       { on: 'beat:sjon:outlet', from: { x: 186.4, y: 2.4 }, to: { x: 206, y: 0 }, seconds: 2.6, who: 'lillgubbe' },
       { on: 'beat:sjon:log', from: { x: END_POST.x, y: END_POST.y + 0.8 }, to: { x: 206, y: 0 }, seconds: 2.4, who: 'tragubbe' },

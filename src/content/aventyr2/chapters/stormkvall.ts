@@ -53,8 +53,11 @@ const CANDLE = { x: 13, y: 1.65, z: -2.1 };
 const PAPPA = { x: 10.6, z: -1.6 };
 /** Moa on the chair at the table's end, drawing, as she does in the first adventure's prologue. */
 const MOA = { x: 16.95, z: -1.5 };
-/** Bertil by the wall between the shelf and the window he watches. */
-const BERTIL = { x: 8.4, z: -4.4 };
+/**
+ * Bertil by the wall between the shelf and the window he watches, out of the grown-ups' way when they come from the
+ * window to kneel round Elof at the POFF (at x 8.4, z -4.4 they walked through him).
+ */
+const BERTIL = { x: 7.2, z: -5.2 };
 
 const SCENES: SceneDef[] = [
   {

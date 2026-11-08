@@ -217,11 +217,13 @@ export const berget: ChapterData = {
     { at: { x: 120.4, y: 26.4 } },
     { at: { x: 130.8, y: 26.4 } },
     { at: { x: 140, y: 26.4 } },
-    // stuck below the cliff, with the bag too heavy: it doesn't run
-    { at: { x: 145, y: 26.4 }, until: 'lift', thought: { picture: 'lonely-figure', until: 'lift' } },
+    // stuck below the cliff, with the bag too heavy: it doesn't run, and stays on the ground where he lifts it
+    // ("Spöket kommer inte upp"; it rose out of reach up the cliff's face, and he lifted empty air)
+    { at: { x: 145, y: 26.4 }, until: 'lift', still: true, thought: { picture: 'lonely-figure', until: 'lift' } },
     // up, it waits by the pine
     { at: { x: 151, y: 31.4 } },
-    { at: { x: 159, y: 31.4 } },
+    // and stays with him to the end: "Nu hämtar spöket och jag hem den." (it vanished at x 155)
+    { at: { x: 159, y: 31.4 }, until: 'goal', still: true },
   ],
   // He understands when he has seen it.
   beats: [
