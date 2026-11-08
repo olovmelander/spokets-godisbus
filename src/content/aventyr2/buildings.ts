@@ -398,13 +398,16 @@ function hut(def: BuildingDef) {
 }
 
 /**
- * Flärkenbadet's diving tower and changing huts as made in Blender (art/blender/flarken.py), and how much bigger the
- * chapter has them than they were made there: at Flärken not at all, so that the tower's platform and ladder and a
- * hut's roof are exactly where his ledges and his climb are. The second hut's door is the game's own part, which slides
- * on the model's rail (./render.ts, 'hut-door').
+ * Flärkenbadet's diving tower, changing huts, giant chess, painted sun board and the jetty's other leg as made in
+ * Blender (art/blender/flarken.py), and how much bigger the chapter has them than they were made there: at Flärken not
+ * at all, so that the tower's platform and ladder and a hut's roof are exactly where his ledges and his climb are. The
+ * second hut's door is the game's own part, which slides on the model's rail (./render.ts, 'hut-door').
  */
 function flarkenModel(def: BuildingDef): { model: string; fit: number } | null {
   if (def.kind === 'tower') return { model: 'hopptorn', fit: (def.height ?? 2.7) / 2.7 };
+  if (def.kind === 'chess') return { model: 'schack', fit: (def.width ?? 14) / 16 };
+  if (def.kind === 'sunboard') return { model: 'solskylt', fit: (def.width ?? 12) / 13 };
+  if (def.kind === 'jettyArm') return { model: 'bryggarm', fit: (def.width ?? 22) / 24 };
   if (def.kind !== 'hut') return null;
   if (def.tar) return { model: 'hydda-tjarad', fit: (def.width ?? 9) / 9 };
   return { model: def.slider ? 'hydda-skjutdorr' : 'hydda', fit: (def.height ?? 2.9) / 2.9 };

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { BufferGeometry, DoubleSide, Float32BufferAttribute, Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three';
+import { Box3, BufferGeometry, DoubleSide, Float32BufferAttribute, Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { flarken } from '../../src/content/aventyr2/chapters/flarken';
 import { building } from '../../src/content/aventyr2/buildings';
@@ -60,11 +60,23 @@ const buildings = flarken.storm!.buildings!;
 const ledges = flarken.ledges!;
 
 describe('Flärkenbadet, made in Blender', () => {
-  it('has the tower and the three huts, and puts each in its stand-in\'s place at the chapter\'s size', () => {
-    for (const name of ['hopptorn', 'hydda', 'hydda-skjutdorr', 'hydda-tjarad']) expect(kit.has(name), name).toBe(true);
-    const models = buildings.filter((def) => def.kind === 'tower' || def.kind === 'hut').map((def) => building(def).group.userData);
-    expect(models.map((data) => data.model)).toEqual(['hydda', 'hydda-skjutdorr', 'hopptorn', 'hydda-tjarad']);
+  it('has the tower, the three huts, the chess, the sun board and the jetty\'s other leg, each in its stand-in\'s place at the chapter\'s size', () => {
+    const names = ['hopptorn', 'hydda', 'hydda-skjutdorr', 'hydda-tjarad', 'schack', 'solskylt', 'bryggarm'];
+    for (const name of names) expect(kit.has(name), name).toBe(true);
+    const own = ['tower', 'hut', 'chess', 'sunboard', 'jettyArm'];
+    const models = buildings.filter((def) => own.includes(def.kind)).map((def) => building(def).group.userData);
+    expect(models.map((data) => data.model)).toEqual(['hydda', 'hydda-skjutdorr', 'hopptorn', 'schack', 'bryggarm', 'hydda-tjarad', 'solskylt']);
     for (const data of models) expect(data.fit).toBeCloseTo(1, 5);
+  });
+
+  it('lays the jetty\'s other leg level with the jetty, a little lower, from just behind the planks he walks on', () => {
+    const arm = buildings.find((def) => def.kind === 'jettyArm')!;
+    const deck = hit('bryggarm', new Vector3(0, 20, -2), down());
+    expect(deck).not.toBeNull();
+    expect(deck!.y + arm.y!).toBeGreaterThan(0.3);
+    expect(deck!.y + arm.y!).toBeLessThan(0.6);
+    // Nothing of it reaches the play plane, where he walks past it.
+    expect(new Box3().setFromObject(kit.get('bryggarm')!).max.z + arm.z).toBeLessThan(-1.15);
   });
 
   it('stands its platform\'s planks exactly where he stands on the tower, and its ladder where he climbs it', () => {

@@ -76,6 +76,40 @@ def prism(part, outline, depth, colour):
         face(part, (near[k], near[j], far[j], far[k]), lit(colour, 0.85))
 
 
+def grid_slab(part, x0, x1, y0, y1, n, m, top, bottom, points, faces_, side):
+    """A closed slab from `bottom` to `top` whose top is a grid of n by m faces: `points` gives the colour of each of its
+    top corners ([i][j], or None), `faces_` the colour of each of its top faces ([i][j], or None), `side` its sides'."""
+    grid = [[put(part, Vector((x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * j / m, top)), points[i][j] if points else side) for j in range(m + 1)] for i in range(n + 1)]
+    for i in range(n):
+        for j in range(m):
+            made = face(part, (grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]))
+            if faces_:
+                part['flat'][made] = faces_[i][j]
+    rim = [grid[i][0] for i in range(n + 1)] + [grid[n][j] for j in range(1, m + 1)] + [grid[i][m] for i in range(n - 1, -1, -1)] + [grid[0][j] for j in range(m - 1, 0, -1)]
+    low = [put(part, Vector((v.co.x, v.co.y, bottom)), lit(side, 0.8)) for v in rim]
+    for k in range(len(rim)):
+        q = (k + 1) % len(rim)
+        made = face(part, (rim[q], rim[k], low[k], low[q]))
+        part['flat'][made] = side
+    face(part, low, lit(side, 0.6))
+
+
+def plate(part, outline, y0, y1, colour):
+    """A flat shape standing in the picture's plane, from `y0` in front to `y1` behind: `outline` is its corners (x, z),
+    round it anticlockwise as the camera sees it."""
+    near = [put(part, Vector((x, y0, z)), colour) for (x, z) in outline]
+    far = [put(part, Vector((x, y1, z)), colour) for (x, z) in outline]
+    made = face(part, near)
+    part['flat'][made] = colour
+    made = face(part, list(reversed(far)))
+    part['flat'][made] = lit(colour, 0.8)
+    count = len(outline)
+    for j in range(count):
+        k = (j + 1) % count
+        made = face(part, (near[k], near[j], far[j], far[k]))
+        part['flat'][made] = lit(colour, 0.85)
+
+
 # --- the diving tower on its raft -------------------------------------------------------------------------------------
 # A dark steel lattice on a square raft moored in the bay: four legs, crossed braces in two bays on every face, a deck
 # of planks on top with a rail round its back and sides, cantilevered out over the water in front on knee braces, and a
@@ -250,7 +284,8 @@ def log(part, a, b, radius, colour, n, sides=8, every=1.1, ends=(None, None)):
     ahead = b - a
     length = ahead.length
     ahead.normalize()
-    side = ahead.cross(Vector((0.0, 0.0, 1.0)))
+    # Round a log lying down, its sides from up; round a post standing up, from the camera's way.
+    side = ahead.cross(Vector((0.0, 0.0, 1.0)) if abs(ahead.z) < 0.9 else Vector((0.0, -1.0, 0.0)))
     side.normalize()
     over = side.cross(ahead)
     pieces = max(1, int(round(length / every)))
@@ -469,3 +504,228 @@ if wanted('hydda-skjutdorr'):
 # its door and window as big for it as the others' are for them.
 if wanted('hydda-tjarad'):
     log_hut('hydda-tjarad', 8.4, 7.0, 10.0, -3.85, -4.9, 5.0, 28.0, True, 'door', (3.24, 7.0), (2.88, 6.0, 1.8), 0.3, 0.55, 6, every=3.0)
+
+
+# --- the giant chess -----------------------------------------------------------------------------------------------------
+# On its gravel pad behind the huts: a board of black and white squares, worn paler where feet have stood, and a few big
+# pieces standing as the game was left, one pawn blown over by the storm onto the gravel. Plain turned shapes, each
+# piece the colour against its square; the king has a plain knob, not a cross. 16 wide, as the chapter has it.
+
+PIECE_LIGHT = tone('#e6e2d6')
+PIECE_DARK = tone('#26282c')
+# Turned profiles, (radius, height) from the foot up, for each kind of piece.
+PAWN = ((0.0, 0.0), (0.56, 0.0), (0.56, 0.12), (0.46, 0.2), (0.34, 0.34), (0.24, 0.62), (0.2, 0.9), (0.36, 0.98), (0.36, 1.06),
+        (0.2, 1.1), (0.27, 1.18), (0.32, 1.32), (0.27, 1.48), (0.14, 1.58), (0.0, 1.62))
+ROOK = ((0.0, 0.0), (0.64, 0.0), (0.64, 0.14), (0.52, 0.24), (0.44, 0.4), (0.38, 1.2), (0.42, 1.6), (0.5, 1.72), (0.5, 1.95),
+        (0.36, 1.95), (0.36, 1.85), (0.0, 1.85))
+BISHOP = ((0.0, 0.0), (0.6, 0.0), (0.6, 0.13), (0.48, 0.24), (0.36, 0.42), (0.24, 1.3), (0.4, 1.4), (0.4, 1.48), (0.22, 1.54),
+          (0.3, 1.72), (0.34, 1.98), (0.26, 2.22), (0.12, 2.36), (0.12, 2.42), (0.15, 2.5), (0.0, 2.62))
+QUEEN = ((0.0, 0.0), (0.66, 0.0), (0.66, 0.14), (0.52, 0.26), (0.38, 0.46), (0.26, 1.6), (0.44, 1.72), (0.44, 1.8), (0.28, 1.86),
+         (0.34, 2.2), (0.48, 2.5), (0.44, 2.56), (0.26, 2.6), (0.2, 2.68), (0.0, 2.72))
+KING = ((0.0, 0.0), (0.68, 0.0), (0.68, 0.14), (0.54, 0.26), (0.4, 0.46), (0.28, 1.7), (0.46, 1.82), (0.46, 1.9), (0.3, 1.96),
+        (0.36, 2.3), (0.5, 2.58), (0.36, 2.66), (0.2, 2.72), (0.24, 2.84), (0.2, 2.98), (0.0, 3.04))
+KNIGHT_FOOT = ((0.0, 0.0), (0.62, 0.0), (0.62, 0.14), (0.5, 0.24), (0.4, 0.42), (0.36, 0.7), (0.0, 0.72))
+
+
+def piece(part, shape, x, y, z, colour, turn=None):
+    """A big chess piece turned from its profile, standing at (x, y) on a board whose top is at z, or lying as `turn` lays it."""
+    matrix = Matrix.Translation(Vector((x, y, z)))
+    if turn is not None:
+        matrix = matrix @ turn
+    tones_ = [lit(colour, 0.94 + 0.08 * (h / 3.0)) for (_, h) in shape]
+    lathe(part, shape, 16, matrix, tones_)
+
+
+def square_at(i, j, size, cell):
+    """The middle of a square of the board, counted from its left and from its far side as the stand-in counted them."""
+    return (-size * 0.5 + (i + 0.5) * cell, size * 0.5 - (j + 0.5) * cell)
+
+
+if wanted('schack'):
+    part = new_part()
+    GRAVEL = tone('#8a8478')
+    SIZE = 16.0
+    CELL = SIZE / 8.0
+    PAD = SIZE * 0.5 + 0.8
+    TOP = 0.26
+    # The gravel pad: a slab whose top is a grid, so that its tone can wander and the pieces' shade fall on it.
+    N = 12
+    gravel = [[lit(GRAVEL, 0.86 + 0.24 * noise(i * 1.3, j * 1.3, 3.0)) for j in range(N + 1)] for i in range(N + 1)]
+    grid_slab(part, -PAD, PAD, -PAD, PAD, N, N, 0.16, -0.05, gravel, None, lit(GRAVEL, 0.8))
+    # The board: its squares, each in its own tone, the dark ones worn paler in the middle where feet have stood.
+    squares = []
+    for i in range(8):
+        row = []
+        for j in range(8):
+            worn = max(0.0, 1.0 - math.hypot(i - 3.5, j - 3.5) / 4.0)
+            if (i + (7 - j)) % 2 == 1:
+                row.append(lit(blend(PIECE_LIGHT, tone('#c8c2b4'), 0.3 + 0.4 * rnd(j, i)), 0.95 + 0.05 * rnd(i + 3.0, j)))
+            else:
+                row.append(lit(blend(PIECE_DARK, tone('#3a3c40'), worn * 0.8), 0.92 + 0.1 * rnd(i, j)))
+        squares.append(row)
+    grid_slab(part, -SIZE * 0.5, SIZE * 0.5, -SIZE * 0.5, SIZE * 0.5, 8, 8, TOP, 0.1, None, squares, lit(PIECE_DARK, 0.8))
+    # The pieces where the chapter's stand-in had them, each against its square, and a bishop and a pawn more.
+    placed = ((1, 1, ROOK), (2, 5, PAWN), (4, 2, QUEEN), (6, 6, PAWN), (3, 6, KING), (6, 2, BISHOP), (1, 6, PAWN))
+    for (i, j, shape) in placed:
+        x, y = square_at(i, j, SIZE, CELL)
+        colour = PIECE_DARK if (i + j) % 2 else PIECE_LIGHT
+        piece(part, shape, x, y, TOP, colour)
+        if shape is ROOK:
+            for k in range(4):
+                a = TAU * (k + 0.5) / 4.0
+                cx = x + 0.4 * math.cos(a)
+                cy = y + 0.4 * math.sin(a)
+                block(part, (cx - 0.14, cy - 0.14, TOP + 1.85), (cx + 0.14, cy + 0.14, TOP + 2.2), colour, k, grain=0.03)
+        if shape is QUEEN:
+            for k in range(7):
+                a = TAU * k / 7.0
+                lump(part, Vector((x + 0.42 * math.cos(a), y + 0.42 * math.sin(a), TOP + 2.6)), (0.09, 0.09, 0.09), 1, colour)
+    # The knight: a turned foot, and a horse's head of blocks, its neck leaning, its muzzle down towards the board.
+    x, y = square_at(5, 4, SIZE, CELL)
+    colour = PIECE_DARK if (5 + 4) % 2 else PIECE_LIGHT
+    piece(part, KNIGHT_FOOT, x, y, TOP, colour)
+    beam(part, Vector((x + 0.12, y, TOP + 0.6)), Vector((x - 0.05, y, TOP + 1.9)), 0.5, 0.66, colour, up=Vector((0.0, -1.0, 0.0)))
+    beam(part, Vector((x - 0.05, y, TOP + 1.72)), Vector((x - 0.72, y, TOP + 1.38)), 0.38, 0.44, colour, up=Vector((0.0, -1.0, 0.0)))
+    beam(part, Vector((x + 0.2, y, TOP + 1.4)), Vector((x + 0.32, y, TOP + 0.75)), 0.24, 0.5, lit(colour, 0.92), up=Vector((0.0, -1.0, 0.0)))
+    for side in (-0.14, 0.14):
+        beam(part, Vector((x + 0.02, y + side, TOP + 1.86)), Vector((x + 0.08, y + side, TOP + 2.18)), 0.1, 0.08, colour)
+    # A white pawn blown over onto the gravel in front of the board.
+    piece(part, PAWN, 3.6, -SIZE * 0.5 - 0.45, 0.16 + 0.5, PIECE_LIGHT, turn=Matrix.Rotation(math.radians(96.0), 4, 'Y') @ Matrix.Rotation(0.4, 4, 'X'))
+    finish(part, 'schack', sharp=60.0, strength=0.55, reach=0.8, floor=0.0, leaf=True)
+
+
+# --- the painted board with the smiling sun -----------------------------------------------------------------------------------
+# The bathing place's board, hand-painted: a pale sky, the dark ridge across the lake, the lake with its ripples painted
+# in, and a smiling sun of wood fixed on it, its rays cut out round it. No word, letter or mark on it. A frame of rough
+# boards, two peeled posts behind it and a little roof of boards over it. 13 wide and 8.5 high, its foot 5 up.
+
+if wanted('solskylt'):
+    part = new_part()
+    W = 6.5
+    LOW = 5.0
+    HIGH = 13.5
+    FRAME_WOOD = tone('#6a4a2c')
+    POST = tone('#7a6450')
+    SKY = tone('#b8d0dc')
+    SKY_LOW = tone('#d6e2e2')
+    RIDGE = tone('#3a5a40')
+    LAKE = tone('#3f6a8a')
+    LAKE_PALE = tone('#6f94ac')
+    SUN = tone('#d9a84e')
+    FACE_ = tone('#3a2a1c')
+    FRONT = -0.2
+    # Its two posts behind it, peeled and grey, and the boards of its back.
+    for x in (-W + 0.6, W - 0.6):
+        log(part, Vector((x, 0.32, -0.2)), Vector((x, 0.32, HIGH + 0.9)), 0.3, POST, x, sides=8, every=3.0, ends=(None, lit(POST, 1.1)))
+    block(part, (-W - 0.1, -0.08, LOW - 0.1), (W + 0.1, 0.0, HIGH + 0.1), lit(FRAME_WOOD, 0.85), 1.0, grain=0.05)
+    # The painting, a little in front of the boards: the sky down to the ridge, the ridge's wavy top, the lake below it.
+    HORIZON = LOW + 8.5 * 0.42
+    COLUMNS = 20
+    ridge_top = []
+    for c in range(COLUMNS + 1):
+        x = -W + 2.0 * W * c / COLUMNS
+        ridge_top.append(HORIZON + 0.55 + 0.75 * (0.5 + 0.5 * math.sin(x * 0.55 + 1.2)) * (0.6 + 0.4 * math.sin(x * 1.7)) + 0.2 * noise(x, 1.0, 2.0))
+    # The sky in three bands of paint, palest at the horizon, and the ridge's wavy top standing in front of it.
+    for (z0, z1, colour) in ((HORIZON + 0.3, HORIZON + 1.9, SKY_LOW), (HORIZON + 1.9, HORIZON + 3.4, blend(SKY_LOW, SKY, 0.5)), (HORIZON + 3.4, HIGH, SKY)):
+        plate(part, [(-W, z0), (W, z0), (W, z1), (-W, z1)], FRONT, FRONT + 0.05, colour)
+    for c in range(COLUMNS):
+        x0 = -W + 2.0 * W * c / COLUMNS
+        x1 = -W + 2.0 * W * (c + 1) / COLUMNS
+        plate(part, [(x0, HORIZON), (x1, HORIZON), (x1, ridge_top[c + 1]), (x0, ridge_top[c])], FRONT - 0.03, FRONT - 0.005, lit(RIDGE, 0.9 + 0.1 * rnd(c, 7.0)))
+    # The lake, its ripples painted as paler strokes.
+    block(part, (-W, FRONT - 0.03, LOW), (W, FRONT + 0.05, HORIZON), LAKE, 3.0, grain=0.0, top=0.0)
+    for k in range(9):
+        z = LOW + 0.5 + 0.38 * k
+        x = -W + 1.0 + (2.0 * W - 3.0) * rnd(k, 3.0)
+        long_ = 0.8 + 1.6 * rnd(k, 4.0)
+        block(part, (x, FRONT - 0.06, z), (min(W - 0.3, x + long_), FRONT - 0.03, z + 0.08), LAKE_PALE, k, grain=0.0, top=0.0)
+    # The sun's glitter on the lake, under it.
+    sun_x = 2.0 * W * 0.22
+    sun_z = LOW + 8.5 * 0.74
+    for k in range(4):
+        z = HORIZON - 0.5 - 0.6 * k
+        half = 0.9 - 0.18 * k
+        block(part, (sun_x - half, FRONT - 0.06, z), (sun_x + half, FRONT - 0.03, z + 0.1), lit(SUN, 0.9), k, grain=0.0, top=0.0)
+    # The wooden sun, cut out and fixed on: a thick disc, its rays round it, and its smiling face.
+    R = 8.5 * 0.17
+    disc = Matrix.Translation(Vector((sun_x, FRONT - 0.03, sun_z))) @ Matrix.Rotation(math.radians(90.0), 4, 'X')
+    lathe(part, ((0.0, 0.0), (R, 0.0), (R, 0.16), (R * 0.95, 0.2), (0.0, 0.22)), 20, disc, [SUN, SUN, lit(SUN, 1.05), lit(SUN, 1.08), lit(SUN, 1.1)])
+    for k in range(10):
+        a = TAU * k / 10.0
+        tip = (sun_x + math.cos(a) * R * 1.75, sun_z + math.sin(a) * R * 1.75)
+        left = (sun_x + math.cos(a - 0.17) * R * 1.12, sun_z + math.sin(a - 0.17) * R * 1.12)
+        right = (sun_x + math.cos(a + 0.17) * R * 1.12, sun_z + math.sin(a + 0.17) * R * 1.12)
+        near =[put(part, Vector((p[0], FRONT - 0.12, p[1])), lit(SUN, 1.0)) for p in (left, right, tip)]
+        far = [put(part, Vector((p[0], FRONT - 0.03, p[1])), lit(SUN, 0.8)) for p in (left, right, tip)]
+        face(part, near)
+        face(part, list(reversed(far)))
+        for m in range(3):
+            q = (m + 1) % 3
+            face(part, (near[q], near[m], far[m], far[q]), lit(SUN, 0.85))
+    for side in (-1.0, 1.0):
+        eye = Matrix.Translation(Vector((sun_x + side * R * 0.34, FRONT - 0.24, sun_z + R * 0.2))) @ Matrix.Rotation(math.radians(90.0), 4, 'X')
+        lathe(part, ((0.0, 0.0), (R * 0.1, 0.0), (R * 0.08, 0.04), (0.0, 0.05)), 8, eye, [FACE_] * 4)
+    smile = [Vector((sun_x + math.cos(math.radians(200.0 + 14.0 * k)) * R * 0.46, FRONT - 0.26, sun_z - R * 0.04 + math.sin(math.radians(200.0 + 14.0 * k)) * R * 0.46)) for k in range(11)]
+    bend(part, smile, R * 0.05, FACE_, 6)
+    # The frame of rough boards round the painting, standing out from it.
+    for (x0, z0, x1, z1) in ((-W - 0.4, HIGH, W + 0.4, HIGH + 0.4), (-W - 0.4, LOW - 0.4, W + 0.4, LOW), (-W - 0.4, LOW, -W, HIGH), (W, LOW, W + 0.4, HIGH)):
+        block(part, (x0, FRONT - 0.16, z0), (x1, 0.02, z1), lit(FRAME_WOOD, 0.92 + 0.1 * rnd(x0, z0)), x0 + z0, grain=0.08)
+    # Its little roof of boards, overhanging the front and the back: two boards meeting over a ridge board.
+    for side in (-1.0, 1.0):
+        beam(part, Vector((-W - 0.8, side * 0.55, HIGH + 0.4 + 0.25)), Vector((W + 0.8, side * 0.55, HIGH + 0.4 + 0.25)), 1.2, 0.08,
+             lit(FRAME_WOOD, 0.8), up=Vector((0.0, side * 0.45, 1.0)))
+    block(part, (-W - 0.85, -0.08, HIGH + 0.82), (W + 0.85, 0.08, HIGH + 0.98), lit(FRAME_WOOD, 0.7), 5.0, grain=0.0)
+    finish(part, 'solskylt', sharp=40.0, strength=0.5, reach=0.6, floor=0.0, leaf=True)
+
+
+# --- the jetty's other leg ---------------------------------------------------------------------------------------------------
+# The L of Flarken's jetty: a pontoon jetty low on the water, running out behind the path from the planks he walks on.
+# Grey planks across it, each its own, on stringers over black floats, a rubbing board along each side, two pairs of posts
+# with a rope between them, mooring cleats, and on the last post a life ring, white with four red bands. 24 long. Its
+# origin is 0.3 over the chapter's 0, and the lake lies 0.9 under it.
+
+if wanted('bryggarm'):
+    part = new_part()
+    LONG = 24.0
+    HALF = 2.0
+    TOP = 0.18
+    WATER = -0.9
+    GREY = (tone('#74746a'), tone('#6a6a60'), tone('#7c7c70'))
+    DARK_WOOD = tone('#3e3e38')
+    FLOAT = tone('#1e1f22')
+    ROPE = tone('#b4aa8c')
+    y = 0.05
+    n = 0
+    while y < LONG - 0.1:
+        n += 1
+        plank = lit(GREY[n % 3], 0.9 + 0.18 * rnd(n, 2.0))
+        lean = 0.03 * (rnd(n, 3.0) - 0.5)
+        block(part, (-HALF, y, TOP - 0.16 + lean), (HALF, y + 0.8, TOP + lean), plank, n, grain=0.08)
+        y += 0.9
+    for x in (-HALF + 0.3, HALF - 0.3):
+        block(part, (x - 0.12, 0.0, TOP - 0.46), (x + 0.12, LONG, TOP - 0.16), DARK_WOOD, x, grain=0.06)
+    for x in (-HALF - 0.08, HALF - 0.04):
+        block(part, (x, 0.0, TOP - 0.42), (x + 0.12, LONG, TOP - 0.1), lit(DARK_WOOD, 1.1), x + 1.0, grain=0.06)
+    for k in range(4):
+        y = 3.0 + 6.0 * k
+        block(part, (-HALF + 0.25, y - 1.6, WATER - 0.35), (HALF - 0.25, y + 1.6, TOP - 0.46), lit(FLOAT, 0.9 + 0.2 * rnd(k, 5.0)), k)
+    # Its posts, standing in the lake, a rope from each to the next along both sides.
+    posts = (LONG * 0.45, LONG - 0.5)
+    for py in posts:
+        for x in (-HALF - 0.1, HALF + 0.1):
+            log(part, Vector((x, py, WATER - 1.5)), Vector((x, py, 2.0)), 0.14, tone('#54504a'), x + py, sides=8, every=1.2,
+                ends=(None, lit(tone('#54504a'), 1.15)))
+    for x in (-HALF - 0.1, HALF + 0.1):
+        sag = [Vector((x, posts[0] + (posts[1] - posts[0]) * k / 8.0, 1.6 - 0.35 * math.sin(math.pi * k / 8.0))) for k in range(9)]
+        bend(part, sag, 0.04, ROPE, 5)
+    # Mooring cleats on its planks.
+    for (cx, cy) in ((-HALF + 0.35, 6.0), (HALF - 0.35, 14.0), (-HALF + 0.35, 20.0)):
+        block(part, (cx - 0.06, cy - 0.3, TOP), (cx + 0.06, cy + 0.3, TOP + 0.08), tone('#2a2a2c'), cy, grain=0.0)
+        block(part, (cx - 0.05, cy - 0.06, TOP + 0.08), (cx + 0.05, cy + 0.06, TOP + 0.2), tone('#2a2a2c'), cy + 1.0, grain=0.0)
+    # The life ring on the last post, white with four red bands, facing the camera.
+    centre = Vector((HALF + 0.1, LONG - 0.82, 1.3))
+    ring_ = [centre + Vector((0.62 * math.cos(TAU * j / 24.0), 0.0, 0.62 * math.sin(TAU * j / 24.0))) for j in range(25)]
+    bands = [tone('#c43a30') if (j % 6) in (0, 5) else tone('#e4e0d6') for j in range(25)]
+    tube(part, ring_, [0.17] * 25, bands, 8, twist=0.0)
+    beam(part, Vector((HALF + 0.1, LONG - 0.62, 1.95)), Vector((HALF + 0.1, LONG - 0.82, 1.95)), 0.06, 0.06, tone('#2a2a2c'))
+    finish(part, 'bryggarm', sharp=40.0, strength=0.5, reach=0.6, leaf=True)
