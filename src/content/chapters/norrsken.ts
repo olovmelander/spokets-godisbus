@@ -25,7 +25,11 @@ function row(from: number, to: number, ground: number, every = 2): Candy[] {
   return out;
 }
 
-const HOME = { from: { x: 33, y: 0 }, to: { x: 74, y: -10 }, rise: 0.6, time: 11, corridor: 0.3 };
+/**
+ * The walk home on Pappa's shoulders. Its arc is also the trail he walks, a little behind the play plane
+ * (src/render/home-trail.ts): its rise keeps it level with the summit until the summit's edge.
+ */
+const HOME = { from: { x: 33, y: 0 }, to: { x: 74, y: -10 }, rise: 1, time: 11, corridor: 0.3 };
 /** A point on the way home, as the simulation walks it. */
 function along(t: number): Candy {
   const k = t * t * (3 - 2 * t);
