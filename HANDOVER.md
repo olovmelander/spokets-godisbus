@@ -42,19 +42,26 @@
   - **Granskogen:** the jay at x 37, clear of the trail's sweet that covered it (the candy layout is saved by index).
   - **The trägubbar's flights** in Stormskogen, Stormgården, Olympia, Flärken and Älven are brought into the picture as
     the lines say "Där!", one trägubbe at a time, and Pappa's beam is on Klonk in Stormskogen (a helper agent's part).
+  - **Then three Olov asked for ("fix these"):**
+    - Norrsken's ride home: Klonk walks the trail just ahead of Pappa on its own wooden feet, the old trägubbe in its
+      arms (they floated beside Pappa's head).
+    - Morgonen: two short scenes walk the family along (`mo:folj`, `mo:kakao`): Pappa to the window he fitted the latch
+      on, Moa to the naming, Mamma with her cup to the sofa and the cocoa, round the table and behind Elof, then Moa and
+      Pappa to the sofa too. They spoke from the table (x 4–16) while he was at the window and the sofa.
+    - Stormbyn: called, Moa walks to the wall's edge and holds her umbrella out with a hand on it (`Spot.holds`), her
+      lamp in her other hand; it stood there by itself, 3 EL from her.
   - **Left for later** (the auditors' findings not fixed today, most obvious first):
-    - Norrsken, the ride home: Klonk and the trägubbe float beside Pappa's head; and the family appears all at once
-      after the golden sweet, with no arrival.
-    - Morgonen: Pappa, Mamma and Moa say their lines at the window, the sofa and the cocoa from the table (x 4–16).
+    - Norrsken: the family appears all at once after the golden sweet, with no arrival.
     - Stormkvällen: Mamma's and Pappa's promises on the deck with nobody there; no umbrella and only one lamp when
       they get ready; the bowl Moa speaks of is not in the room.
-    - Stormbyn: Moa's umbrella hangs in the air 3 EL from her.
     - Myren: Mamma's braid hangs from the boardwalk while she stands below it.
     - Granskogen: the ant lift goes behind the anthill's face, and Elof is not seen for the ride.
     - Norrsken and the epilogue: "Gå hem" and "Ta kniven" are drawn as bare green signs.
     - Olympia: Bertil's last lines are said from 50 EL away.
     - Älven: the otter of "En utter! Den simmar ut" stands still 20 EL off; the car's lines come from an empty car.
-  - **Checked:** typecheck, `npm test` (2,143), stills of each fix.
+  - **Checked:** typecheck, `npm test` (2,143), `npm run build` (size gate ok), the privacy check, ten browser
+    suites (the finale, the epilogue, Berget, Granskogen, the prologue, Byn, Äventyr 2, Myren, family help and the
+    objectives), and stills of each fix.
   - **The next step needs:** nothing from Olov's computer.
 
 ## State (8 November 2026, morning)

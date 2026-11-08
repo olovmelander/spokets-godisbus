@@ -56,6 +56,40 @@ const SCENES: SceneDef[] = [
       elof: [{ at: 0, act: 'watch', aim: { x: 9, y: 2.6, z: -2.4 } }, { at: 8.6, act: 'nod' }],
     },
   },
+  {
+    // Once both figures are on the shelf, the family come along (they spoke from the table, x 4 to 16, while he was at
+    // the window and the sofa): Pappa to the window he fitted the latch on, Moa to hear the little one named, and Mamma
+    // with her cup to the sofa, where the cocoa is, round the table and Morfar and behind where Elof is. He is free.
+    id: 'mo:folj',
+    on: 'shelf:small',
+    seconds: 14,
+    stage: {
+      actors: {
+        pappa: [{ at: 0.5, x: 20.4, y: 0, z: -4.4, move: 3.4 }, { at: 4.2, face: 0.2, act: 'stand' }],
+        moa: [{ at: 0.6, act: 'stand', holds: null }, { at: 1.0, x: 25.4, y: 0, z: -1.6, move: 3.8 }, { at: 5.0, face: 0.35, act: 'stand' }],
+        mamma: [
+          { at: 0.6, act: 'stand' },
+          { at: 1.0, x: 6.9, y: 0, z: 0.2, move: 1.0 },
+          { at: 2.0, x: 17, y: 0, z: 0.4, move: 2.8 },
+          { at: 4.8, x: 18.6, y: 0, z: -3, move: 0.8 },
+          { at: 5.6, x: 45.6, y: 0, z: -3.2, move: 8 },
+          { at: 13.7, face: 0.3, act: 'sip' },
+        ],
+      },
+    },
+  },
+  {
+    // The little one named and welcomed, Moa and Pappa go to the sofa too, for the cocoa.
+    id: 'mo:kakao',
+    on: 'beat:moWelcome',
+    seconds: 7.4,
+    stage: {
+      actors: {
+        moa: [{ at: 0.2, x: 42, y: 0, z: -2.8, move: 5 }, { at: 5.4, face: 0.3, act: 'stand' }],
+        pappa: [{ at: 0.6, x: 37.6, y: 0, z: -3.4, move: 6.4 }, { at: 7.1, face: 0.35, act: 'sip' }],
+      },
+    },
+  },
 ];
 
 export const morgonen: ChapterData = {

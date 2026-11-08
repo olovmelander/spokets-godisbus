@@ -113,6 +113,8 @@ const POOL_EYE = 1.6;
 /** The rides that lie ready where he boards them, in the storm. */
 /** How far a flying crane's body and dangling legs reach under his feet (./crane.ts). */
 const CRANE_BELLY = 1.3;
+/** How far ahead of Pappa Klonk walks home down Norrsken's trail. */
+const KLONK_AHEAD = 0.5;
 const WAITS_READY = new Set(['boot', 'umbrella', 'raft', 'leaf']);
 const BROOK_EYE = 3.0;
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
@@ -404,7 +406,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       scene.add(prop);
     }
     // A crane that carried him: whether it is carrying him, and when and where it set him down, to fly on from there.
-    return { ride, prop, carrying: false, leftAt: -1, setDown: new Vector3() };
+    return { ride, prop, carrying: false, leftAt: -1, setDown: new Vector3(), waiting: false };
   });
   const moverMeshes = buildMovers(chapter);
   /** The movers that go over the water: rafts, logs and boards, which it mirrors (./water.ts). */
@@ -417,6 +419,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const homeTrail = chapter.id === 'norrsken' ? createHomeTrail(chapter) : null;
   if (homeTrail) scene.add(homeTrail.mesh);
   const pappaFeet = { y: 0, z: 0 };
+  /** Where Klonk walks on the way home, a little ahead of Pappa's feet, with the old trägubbe. */
+  const klonkFeet = { y: 0, z: 0 };
   const rain = createRain(chapter);
   const cones = buildCones(chapter.rollers?.length ?? 0);
   scene.add(...moverMeshes, rain.group, cones.mesh);
@@ -741,8 +745,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       .catch((error) => console.warn(`The private/${who}-wardrobe could not be loaded; the rain gear is drawn from the body.`, error));
   };
   const stands = chapter.prologue ? [] : [
-    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt, goesTo: thing.spot.goesTo, goesWhen: thing.spot.goesWhen })),
-    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined, goesTo: undefined, goesWhen: undefined })),
+    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt, goesTo: thing.spot.goesTo, goesWhen: thing.spot.goesWhen, holds: thing.spot.holds })),
+    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined, goesTo: undefined, goesWhen: undefined, holds: undefined })),
   ].filter((stand) => stand.look === 'sign' && stand.prop !== null && personFor(stand.word) !== null);
   for (const stand of stands) {
     const who = personFor(stand.word)!, rig = createRehearsalRig(who);
@@ -751,7 +755,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Whoever stands on a paddle board holds a paddle (./paddle.ts), in the world, gripped each frame.
     const paddle = stand.paddles ? createPaddle(rig.height) : undefined;
     if (paddle) scene.add(paddle.mesh);
-    family.push({ rig, who, motion: createFamilyMotion(who, stand.at, stand.glad), at: stand.at, glad: stand.glad, was: false, joy: 0, seated: stand.seated, paddle,
+    family.push({ rig, who, motion: createFamilyMotion(who, stand.at, stand.glad), at: stand.at, glad: stand.glad, was: false, joy: 0, seated: stand.seated, paddle, holds: stand.holds,
       walk: stand.goesTo ? { to: stand.goesTo, when: stand.goesWhen, place: stand.prop!.group, home: stand.prop!.group.position.clone(), stride: 0, pace: 0, gait: 0, seen: false } : undefined });
   }
   if (stage.actors.size > 0 && !standIns) {
@@ -1214,6 +1218,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (flies && c === carrier) c.carrying = true;
       else if (flies && c.carrying) { c.carrying = false; c.leftAt = clock; c.setDown.copy(c.prop.position); }
       const away = flies && c !== carrier && c.leftAt >= 0 && !calmStory ? (clock - c.leftAt) / 1.8 : -1;
+      c.waiting = waiting;
       const propSize = waiting ? 1 : c === carrier ? (flies ? Math.min(1, curr.t / 0.05) : size) : away >= 0 && away < 1 ? 1 : 0;
       c.prop.scale.setScalar(propSize);
       drawnWhile(c.prop, propSize > 0);
@@ -1860,6 +1865,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         one.rig.reach(1, rootReach.set(ROOT_HOLE.x + 0.2 + poke, ROOT_HOLE.y + 0.3, -0.2), 0.9 * gesture.reach);
       }
       one.paddle?.update(one.rig, clock, calmStory);
+      // Out on the wall she holds her umbrella out to him, a hand on its top, until he takes it (Stormbyn): it stood
+      // there by itself, three EL from her.
+      const held = one.holds ? carriers.find((c) => c.ride.id === one.holds && c.waiting && c.prop) : undefined;
+      let holdSide: 0 | 1 | null = null;
+      if (held) {
+        held.prop!.updateWorldMatrix(true, false);
+        held.prop!.localToWorld(rootReach.set(-0.95, 2.5, 0));
+        lampLocal.copy(rootReach);
+        one.rig.group.worldToLocal(lampLocal);
+        holdSide = lampLocal.x >= 0 ? 0 : 1;
+        one.rig.reach(holdSide, rootReach, 1);
+      }
       if (gesture.pull > 0.001) {
         one.rig.group.updateWorldMatrix(true, false);
         const u = one.rig.height / 5.2;
@@ -1897,7 +1914,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           // crosses the chest through the coat; the lamp itself turns to him (Olov: the arms went through the coats).
           lampLocal.copy(lampTo);
           one.rig.group.worldToLocal(lampLocal);
-          const side: 0 | 1 = lampLocal.x >= 0 ? 0 : 1;
+          // A hand that holds something out to him (Spot.holds) keeps it; the lamp is in the other.
+          const side: 0 | 1 = holdSide !== null ? (holdSide === 0 ? 1 : 0) : lampLocal.x >= 0 ? 0 : 1;
           // At the waist, out in front of the coat, the elbow bent: a light held to see by, not an arm held straight.
           lampHand.set((side === 0 ? 1 : -1) * 0.62 * u, 2.95 * u, 0.85 * u);
           one.rig.group.localToWorld(lampHand);
@@ -1963,12 +1981,21 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
             }
           }
         }
-        seat.copy(elof.group.position); seat.y -= .16 * tall; seat.z += .1 * tall;
-        seat.lerp(boot.set(x, y + shoulderLift, .12), 1 - weight);
-        ghostPlace.visible = true; ghostPlace.position.copy(seat); ghostPlace.position.x -= .8; ghostPlace.scale.setScalar(1);
-        ghostMotion.update({ dt, clock, hop: null, calm: calmStory, awake: true, staged: true });
-        ghostGroundY = playerGroundY;
-        if (carving) { carving.position.copy(seat); carving.position.x += .8; }
+        // Klonk walks home on its own wooden feet just ahead of Pappa, on the trail, with the old trägubbe in its arms:
+        // the two of them floated beside Pappa's head (Olov, 8 November 2026).
+        const walkingHome = onShoulders || shoulderLift > 0;
+        const klonkX = x + KLONK_AHEAD;
+        const fromZ = pappa?.rig.group.parent?.position.z ?? -0.6;
+        if (homeTrail) homeTrail.feet(klonkX, klonkFeet, fromZ);
+        else { klonkFeet.y = playerGroundY; klonkFeet.z = fromZ; }
+        const bounce = walkingHome && !calmStory ? Math.abs(Math.sin(klonkX * 2.6)) * 0.12 : 0;
+        ghostPlace.visible = true;
+        ghostPlace.position.set(klonkX, klonkFeet.y + bounce, klonkFeet.z + 0.4);
+        ghostPlace.scale.setScalar(1);
+        ghostMotion.update({ dt, clock, hop: null, calm: calmStory, awake: true, staged: true,
+          ...(walkingHome ? { performance: { act: 'waddle' as const, actT: clock } } : {}) });
+        ghostGroundY = klonkFeet.y;
+        if (carving) carving.position.set(klonkX + 0.22, klonkFeet.y + bounce + 0.15, klonkFeet.z + 0.42);
       }
       sharedSweets?.update(flags, ghostPlace.position, carving?.position);
     }
@@ -2101,6 +2128,8 @@ interface Relative {
   seated?: boolean | undefined;
   /** They stand on a paddle board and paddle: the paddle they hold. */
   paddle?: Paddle | undefined;
+  /** The ride whose carrier they hold out to him while it waits (Spot.holds). */
+  holds?: string | undefined;
   /** Out in the storm: the flashlight they search with, made when first wanted. */
   lamp?: Mesh | undefined;
   rig: Rig;

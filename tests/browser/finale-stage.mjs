@@ -113,8 +113,8 @@ try {
     check(`${name}: waiting relatives keep their shadows on the summit floor`, ride.beforeHome.relatives.every(({at})=>
       ride.beforeHome.shadows.some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-.018)<.01)));
     check(`${name}: Go home starts the actual simulation ride`, ride.flags.includes('home') && ride.mode==='ride');
-    check(`${name}: Pappa carries grown Elof with both carvings beside him`, Math.abs(ride.pappa[0]-ride.player[0])<.01 && Math.abs(ride.pappa[1]-ride.player[1])<.01 && ride.elof[1]-ride.pappa[1]>4 && Math.abs(ride.ghost[0]-ride.elof[0])<1.1 && Math.abs(ride.carving[0]-ride.elof[0])<1.1);
-    check(`${name}: both palms support Elof's ankles and the carvings stay below his face near his hands`, ride.support &&
+    check(`${name}: Pappa carries grown Elof, and Klonk walks beside them with the old trägubbe`, Math.abs(ride.pappa[0]-ride.player[0])<.01 && Math.abs(ride.pappa[1]-ride.player[1])<.01 && ride.elof[1]-ride.pappa[1]>4 && Math.abs(ride.ghost[0]-ride.elof[0])<1.1 && Math.abs(ride.carving[0]-ride.elof[0])<1.1);
+    check(`${name}: both palms support Elof's ankles, and Klonk and the trägubbe stay below his face, beside him`, ride.support &&
       ride.support.gaps.every(gap=>gap<.15) && ride.support.tops.every(top=>top<ride.support.headY-.1) &&
       [ride.ghost,ride.carving].every(toy=>Math.abs(toy[2]-ride.elof[2])<.6));
     check(`${name}: the whole shoulder composition fits the screen`, ride.corners.every(points=>points.every(([x,y])=>Math.abs(x)<1 && Math.abs(y)<1)));
@@ -127,9 +127,12 @@ try {
     check(`${name}: supporting palms stay at his ankles while Pappa walks`, after.support && after.support.gaps.every(gap=>gap<.15));
     const late=await page.evaluate(()=>{const p=window.probe;p.advance(4.4);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});
     // To the simulation the summit ends in a drop; Pappa walks the trail behind it (src/render/home-trail.ts).
-    check(`${name}: eight seconds into home, Pappa walks the trail and his and the ghost's shadows are on it`, late.mode==='ride' && late.player[0]>60 && late.player[1]<-6 &&
+    // Klonk walks the trail a little ahead of him, carrying the old trägubbe: its shadow is on the trail under its feet.
+    check(`${name}: eight seconds into home, Pappa and Klonk walk the trail with their shadows on it`, late.mode==='ride' && late.player[0]>60 && late.player[1]<-6 &&
       late.pappa[1]>late.groundY+1 && late.pappa[2]<-2 &&
-      [late.ghost,late.pappa].every(at=>late.shadows.some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-(late.pappa[1]+.018))<.01)));
+      late.shadows.some(([x,y,z])=>Math.abs(x-late.pappa[0])<.01 && Math.abs(z-late.pappa[2])<.01 && Math.abs(y-(late.pappa[1]+.018))<.01) &&
+      late.shadows.some(([x,y,z])=>Math.abs(x-late.ghost[0])<.01 && Math.abs(z-late.ghost[2])<.01 && y>late.groundY+1 && y<=late.ghost[1]+.02) &&
+      late.ghost[1]<late.elof[1]-3 && Math.abs(late.carving[0]-late.ghost[0])<.5);
     const landed=await page.evaluate(()=>{const p=window.probe;p.advance(3.5);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});
     check(`${name}: after Elof dismounts Pappa settles both empty hands below his shoulders`, landed.mode!=='ride' && landed.support &&
       landed.support.hands.every((hand,i)=>hand[1]<landed.support.shoulders[i]-.55));
@@ -160,13 +163,13 @@ try {
     // On the way home the ground is the trail under Pappa's feet, well over the simulation's drop.
     const shadowAt=at=>f.shadows().find(([x,,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01);
     const carried=shadowAt(f.at(pappa)),beside=shadowAt(f.at(scene.getObjectByName('chase-ghost')));
-    return{hidden,revealWarmed,waiting,pappa:!!carried && carried[1]>sim.curr.groundY+1,ghost:!!carried && !!beside && Math.abs(beside[1]-carried[1])<.01,
+    return{hidden,revealWarmed,waiting,pappa:!!carried && carried[1]>sim.curr.groundY+1,ghost:!!beside && beside[1]>sim.curr.groundY+1,
       x:sim.curr.x,y:sim.curr.y,mode:sim.curr.mode,models:view.info().models};
   });
   check('Private Pappa: hidden replacement reveals without compiling its distinct material variant',privateSupport.hidden && privateSupport.revealWarmed);
   check('Private Pappa: waiting shadow rests on the summit floor',privateSupport.waiting);
   check('Private Pappa: late home, his shadow is on the trail he walks',privateSupport.mode==='ride' && privateSupport.x>60 && privateSupport.y<-6 && privateSupport.pappa);
-  check('Private Pappa: the carried ghost shares the same trail',privateSupport.ghost && privateSupport.models.includes('private/pappa'));
+  check('Private Pappa: Klonk walks the same trail',privateSupport.ghost && privateSupport.models.includes('private/pappa'));
   await privatePage.close();
   // A discovery yields the same speech area without silently consuming a queued causal line.
   const page=await browser.newPage({viewport:{width:390,height:844}});

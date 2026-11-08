@@ -268,8 +268,9 @@ export const stormbyn: ChapterData = {
     { id: 'sb:bell-bread', look: 'bellCord', at: { x: 153.2, y: 0 }, verb: 'call', word: 'sbRing', extra: true },
     // The birch leaf at the river's shore: he steps on, and the current carries him.
     { id: 'leaf', at: LEAF.from, verb: 'take', word: 'board', ride: 'leaf' },
-    // On the wall: he calls Moa, and she holds her umbrella out; then he takes hold of it at the edge.
-    { id: 'umbrella:ready', look: 'sign', at: { x: 99.6, y: WALL }, verb: 'call', word: 'callMoa' },
+    // On the wall: he calls Moa, and she comes to the edge and holds her umbrella out, a hand on it (`holds`); then he
+    // takes hold of it there. It stood by itself three EL from her. She stands clear of its canopy (x 101.2 to 104.2).
+    { id: 'umbrella:ready', look: 'sign', at: { x: 99.6, y: WALL }, goesTo: { x: 100.6, y: WALL, z: -0.8 }, holds: 'umbrella', verb: 'call', word: 'callMoa' },
     { id: 'umbrella', at: { x: 102.6, y: WALL }, verb: 'take', word: 'sbUmbrella', needs: 'family:umbrella-ready', ride: 'umbrella' },
     // The little one's carved cap, in the gutter: he finds it by coming close.
     { id: 'cap', look: 'tiny-cap', at: { x: 139.4, y: 0 }, verb: 'take', touch: true },
