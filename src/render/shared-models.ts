@@ -1,5 +1,7 @@
 import { Box3, Float32BufferAttribute, Group, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, Vector3 } from 'three';
 import type { Assets } from './assets';
+import { concrete } from './concrete';
+import { firewood } from './firewood';
 import { forestKit } from './forest-kit';
 import { weathered } from './weathered';
 
@@ -135,6 +137,9 @@ export async function installSharedModels(assets: Assets, scene: Object3D, stand
     }
     place.add(copy);
     // The kit's outdoor things have a little weather on them seen close (./weathered.ts).
+    // The kit's firewood and concrete have more of their own seen close, their own weather with it (./firewood.ts,
+    // ./concrete.ts); the rest of its outdoor things have a little weather on them (./weathered.ts).
+    builtDetail(copy, name);
     if (WEATHERED.has(name)) weathered(copy);
     if (place.userData.warm) warmed(copy);
     // Clone these too: repeated houses must not steal each other's sign or lit windows.
@@ -184,6 +189,22 @@ export async function installSharedModels(assets: Assets, scene: Object3D, stand
     }
   }
   return arrived;
+}
+
+
+/**
+ * The kit's own stuffs, by their material's name in Blender (art/blender/kit-tools.py, `STUFF`): firewood, wet
+ * where it is stacked out in the rain at Billsta and dry in the woodshed, and concrete.
+ */
+function builtDetail(model: Object3D, name: string): void {
+  model.traverse((object) => {
+    const material = (object as Mesh).material as MeshStandardMaterial | undefined;
+    if (!material?.isMeshStandardMaterial) return;
+    if (material.name === 'kit-wood') firewood(material, name === 'vedstapel' ? 1 : 0);
+    else if (material.name === 'kit-concrete') concrete(material);
+    else return;
+    material.userData.ownWeather = true;
+  });
 }
 
 

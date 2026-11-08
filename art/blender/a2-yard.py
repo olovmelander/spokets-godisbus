@@ -26,21 +26,7 @@ def timber(part, low, high, colour, seed=0.0, grain=0.07):
         part['flat'][made] = lit(colour, 1.0 + grain * (rnd(seed, i) - 0.5) * 2.0 + (0.09 if i == 5 else 0.0))
 
 
-def log_end(part, x, y, z, r, back, n, bark_tone, cut, cut_old):
-    """A round log lying along Y, its sawn end towards -Y at `y`: bark, the pale end, and its darker heart."""
-    turn = rnd(n, 5.0)
-    near = circle(Vector((x, y, z)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), r, 7, turn)
-    far = circle(Vector((x, back, z)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), r, 7, turn)
-    skin(part, [near, far], [bark_tone, lit(bark_tone, 0.7)], closed=True)
-    end = lit(blend(cut, cut_old, rnd(n, 6.0)), 0.9 + 0.2 * rnd(n, 7.0))
-    part['flat'][face(part, [put(part, p, end) for p in near])] = end
-    heart = [Vector((x + 0.45 * (p.x - x), y - 0.004, z + 0.45 * (p.z - z))) for p in near]
-    part['flat'][face(part, [put(part, p, lit(end, 0.8)) for p in heart])] = lit(end, 0.8)
-
-
 BARK = tone('#6a5040')
-BIRCH_BARK = tone('#d8d0c0')
-CUT = tone('#d8b880')
 CUT_OLD = tone('#a88a60')
 FALU = tone('#8a2f22')
 FALU_DARK = tone('#5e1f17')
@@ -112,24 +98,24 @@ if wanted('vedbod'):
     # The ridge cap.
     tube(part, [Vector((-W - OVER, 0.0, H + RISE + 0.28)), Vector((W + OVER, 0.0, H + RISE + 0.28))], [0.28, 0.28], [lit(TIN, 0.75)] * 2, 6, squash=0.5,
          lean=Vector((0.0, 0.0, 1.0)))
-    # The winter's wood, from wall to wall and up to the beam, the rows not quite level.
-    R = 0.55
-    across = int((2.0 * W - 1.6) / (R * 2.04))
-    rows = int((H - 1.6) / (R * 1.86))
-    for row in range(rows):
-        for k in range(across - (row % 2)):
-            n += 1
-            xx = -W + 0.8 + R + (k + 0.5 * (row % 2)) * (2.0 * W - 1.6 - 2.0 * R) / (across - 1) + 0.05 * (rnd(n, 1.0) - 0.5)
-            zz = R + 0.45 + row * R * 1.84 + 0.12 * math.sin(xx * 0.5 + row) * (row > 0)
-            r = R * (0.86 + 0.16 * rnd(n, 2.0))
-            front = -D + 1.4 + 0.22 * rnd(n, 3.0)
-            log_end(part, xx, front, zz, r, D - 0.5, n, BIRCH_BARK if rnd(n, 4.0) > 0.7 else BARK, CUT, CUT_OLD)
-    # The chopping block in front of it, and the pieces split on it.
+    # The winter's wood, from wall to wall and up to the beam, the rows not quite level: split spruce and birch, with
+    # here and there a whole log, their sawn ends out (kit-tools.py, `stack_row`).
+    HIGH = 1.02
+    for row in range(int((H - 1.6) / HIGH)):
+        n = stack_row(part, -W + 0.8, W - 0.8, 0.45 + row * HIGH, HIGH, -D + 1.4, D - 0.5, n + 11, 0.3, wave=0.05 if row else 0.0)
+    # Behind the stack, the dark between the pieces, where the light does not reach.
+    DEPTH = tone('#16110d')
+    face(part, [put(part, Vector((x_, D - 0.62, z_)), DEPTH) for x_, z_ in ((-W + 0.6, 0.45), (W - 0.6, 0.45), (W - 0.6, H - 1.1), (-W + 0.6, H - 1.1))], DEPTH)
+    # The chopping block in front of it, its top a sawn end with its rings and cracks, and pieces split on it lying about.
     BLOCK = tone('#8a6a48')
-    lathe(part, [(0.0, 0.0), (1.25, 0.0), (1.3, 0.2), (1.2, 1.9), (0.0, 1.95)], 12, Matrix.Translation((5.6, -D - 4.2, 0.0)),
-          [BLOCK, BARK, BARK, lit(CUT, 0.9), lit(CUT, 0.95)])
-    for i, (px, py, turn) in enumerate(((3.2, -D - 3.4, 0.4), (4.0, -D - 5.6, 1.9), (7.4, -D - 3.0, 2.8))):
-        lump(part, Vector((px, py, 0.32)), (1.0, 0.36, 0.3), 1, lit(CUT, 0.85 + 0.1 * i))
+    rings = lathe(part, [(0.0, 0.0), (1.25, 0.0), (1.3, 0.2), (1.2, 1.9)], 16, Matrix.Translation((5.6, -D - 4.2, 0.0)),
+                  [BLOCK, BARK, BARK, lit(BARK, 0.9)])
+    top = face(part, rings[-1], lit(CUT_OLD, 0.95))
+    # A spruce's sawn end (1) of radius 1.2 (0.6 is half of it), across X and up Y (kit-tools.py, `firewood`).
+    part['wood'][top] = (1.6, Vector((5.6, -D - 4.2, 1.9)), 1.2, ACROSS, Vector((0.0, 1.0, 0.0)))
+    part['stuff'][top] = 'kit-wood'
+    for i, (px, py, turn) in enumerate(((3.0, -D - 3.4, 0.4), (3.9, -D - 5.8, 1.9), (7.6, -D - 3.0, 0.1))):
+        firewood(part, (px, 0.0), 0.62, py - 0.9, py + 0.9, 300 + i, i % 2, turn=turn, wedge=math.pi / 2.0 if i < 2 else math.pi)
     finish(part, 'vedbod', sharp=40.0, strength=0.55, reach=0.6, floor=0.0, leaf=True)
 
 
