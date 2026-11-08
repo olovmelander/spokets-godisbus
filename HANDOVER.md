@@ -72,9 +72,10 @@
     the feet while the weight was shifted. A model without a pelvis does not shift.
   - **Content:** Moa steps a little further from the kitchen table in `prologue:mamma` (z 0.45, was 0.3), so that her
     swinging hand clears its edge.
-  - **Checked:** typecheck, `npm test` (2,143; tests changed only where standing now shifts its weight, and the planted
-    boot test is stricter), `npm run build` (JS 548.8 KB; Olov then set the gates at 1000 KB of JS and 10 MB for the
-    site, see "Decisions in effect"), the privacy check, the browser
+  - **Checked:** typecheck, `npm test` (2,151 after the chair; tests changed only where standing now shifts its weight,
+    where a seated body now sits on its own chair's height, and the planted boot test is stricter), `npm run build`
+    (JS 550.4 KB; Olov set the gates at 1000 KB of JS and 10 MB for the site, see "Decisions in effect"), the privacy
+    check, the browser
     suites prologue (81), family-help (55), aventyr2 (42), finale-stage (89), model-installation (47), family-caps (76, on
     the real models), family-story (8) and player-motion (its motion checks; the suite stops at this sandbox's known Vite
     WebSocket error, CI runs it), and filmstrips of every motion on the real models (kept in the session only).
