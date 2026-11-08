@@ -4,8 +4,9 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { lessMotion } from '../../platform/motion';
-import { actPose } from '../../render/acting';
-import { STANDING, blendPose, createModelRig, heightOf, type Pose, type Rig } from '../../render/rig';
+import { play, stand } from '../../render/gait';
+import { CLIPS, STANDS } from '../../render/motion-data';
+import { JOINTS, STANDING, createModelRig, heightOf, type Pose, type Rig } from '../../render/rig';
 import { windAt } from '../../render/wind';
 
 /**
@@ -233,10 +234,10 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
   }
   let hand: Object3D = bones.handR!;
 
-  const pose: Pose = { ...STANDING }, down: Pose = { ...STANDING }, wanted: Pose = { ...STANDING };
-  const context = { t: 0, aim: null, stride: 0, pace: 0, calm: true };
-  actPose('kneel', context, down, 'kneel');
+  const pose: Pose = { ...STANDING }, wanted: Pose = { ...STANDING }, kneeling: Pose = { ...STANDING };
   const phase = who === 'mormor' ? 0.7 : 2.1;
+  /** Going down on a knee, keyed in Blender (art/blender/motion.py): how far through it they are, 0 standing to 1 down. */
+  const clip = CLIPS.kneelElder;
   const was = new Vector3(), now = new Vector3(), rail = new Vector3(), up = new Quaternion(), tilt = new Quaternion(), Z = new Vector3(0, 0, 1);
   let since = 0, kneel = 0, facing = 0, gaze = 0, nextBlink = 2 + phase, swing = 0, swingSpeed = 0, first = true;
 
@@ -268,13 +269,11 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
       group.getWorldPosition(now);
       const off = elof - now.x;
       const close = !decor && !used && Math.abs(off) < 5.5;
-      const rate = Math.min(1, dt * 2.6);
-      kneel += ((close ? 1 : 0) - kneel) * rate;
+      // Down at their own pace, and up again the same way back; without motion they are simply there.
+      kneel = still ? (close ? 1 : 0) : Math.min(1, Math.max(0, kneel + (close ? 1 : -1) * dt / clip.seconds));
 
-      Object.assign(wanted, STANDING);
-      const breath = still ? 0 : Math.sin(clock * 1.25 + phase);
-      wanted.lean = 0.07 + 0.012 * breath;
-      wanted.nod = 0.1 + 0.015 * breath;
+      // Standing, as they stand (./motion-data.ts STANDS): a little stooped, slow and steady, breathing.
+      stand(wanted, clock + phase * 3, STANDS[who], rig.legs, still);
       if (who === 'mormor') {
         // She holds her lantern out low, and lifts it to her shoulder when she's called, to light his way: higher, and
         // facing us as she does, it hid her face.
@@ -290,7 +289,14 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
         wanted.armR = 1.2 * lets + 0.02 * shows;
         wanted.elbowR = 0.3 * lets + 0.1 * shows;
       }
-      blendPose(wanted, down, smooth(kneel), pose);
+      // Kneeling: the clip from where they stand, taking over as they start down.
+      Object.assign(pose, wanted);
+      if (kneel > 0) {
+        play(clip, kneel * clip.seconds, Object.assign(kneeling, wanted));
+        const k = smooth(kneel / 0.2);
+        for (const joint of JOINTS) pose[joint] = wanted[joint] + (kneeling[joint] - wanted[joint]) * k;
+        pose.bounce = 0;
+      }
       if (who === 'mormor' && used) pose.armR = wanted.armR;
 
       // Head first, and the body after it: slowly, and only so far.

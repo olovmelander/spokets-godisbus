@@ -1,8 +1,8 @@
 import type { Act } from '../sim/scene';
 import { groundedHips, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
 import { carvingAt } from './carving-motion';
-import { stepOf, stride, type Footing } from './gait';
-import { GAITS } from './motion-data';
+import { play, stand, stepOf, stride, type Footing } from './gait';
+import { CLIPS, GAITS, STANDS } from './motion-data';
 
 /**
  * Acting: what each of a scene's acts does to a body, as a pose that moves with time (docs/narrative-audit.md).
@@ -34,6 +34,8 @@ export interface ActContext {
   legs?: Legs;
   /** Where the body walks in the world, with its footing (./gait.ts): each planted foot stays where it came down. */
   feet?: { footing: Footing; x: number; z: number; yaw: number; height: number; dt: number };
+  /** A clock that runs on through acts, for the loop of how someone stands (./gait.ts stand). Left out: `t`. */
+  clock?: number;
 }
 
 /** The body's stance under an act that only uses its arms and head. */
@@ -217,13 +219,9 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
     case 'stand':
     case 'watch':
     case 'look': {
-      under();
-      if (stance === 'stand') {
-        // Someone standing breathes and shifts a little.
-        out.lean = 0.015 * Math.sin(r * 1.3 + 0.6 * Math.sin(r * 0.21)) * loop * energy;
-        out.armL = 0.04 + (0.018 * Math.sin(r * 1.1) + 0.008 * Math.sin(r * 0.43 + 2)) * loop * energy;
-        out.armR = 0.04 + (0.018 * Math.sin(r * 1.1 + 1) + 0.008 * Math.sin(r * 0.51)) * loop * energy;
-      }
+      // Someone standing breathes, shifts their weight from one leg to the other and looks about, as they do (./gait.ts).
+      if (stance === 'stand') stand(out, c.clock ?? c.t, STANDS[c.role ?? 'pappa'], c.legs, c.calm);
+      else under();
       look(out, c);
       return out;
     }
@@ -271,11 +269,16 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       look(out, c);
       return out;
     }
-    case 'kneel':
+    case 'kneel': {
+      // Down on a knee the way people go down (art/blender/motion.py CLIPS.kneel): the weight over, a foot forward, and
+      // down onto the other knee. Reduced motion: kneeling.
       kneeling(out);
+      const clip = CLIPS.kneel;
+      if (!c.calm && t < clip.seconds) play(clip, t, out);
       out.nod = 0.35 * rise(t, 0.6);
       look(out, c, rise(t, 0.6));
       return out;
+    }
     case 'crouch':
       crouching(out);
       look(out, c);

@@ -28,7 +28,9 @@ describe('authored changes of stance', () => {
     const { stage, pose } = watch('moa');
     show(stage, 'prologue:mamma', 2.1, calm);
     expect(pose().seat).toBeNull();
-    for (const joint of ['legL', 'legR', 'kneeL', 'kneeR'] as const) expect(pose()[joint]).toBe(0);
+    // Standing, as anyone stands: the weight on one leg, the other knee easy (the motion pass of 8 November 2026).
+    for (const joint of ['legL', 'legR'] as const) expect(Math.abs(pose()[joint])).toBeLessThan(.15);
+    for (const joint of ['kneeL', 'kneeR'] as const) expect(pose()[joint]).toBeLessThan(.4);
   });
 
   it('raises Pappa out of his chair during his stand key before he turns to the window', () => {
@@ -36,13 +38,13 @@ describe('authored changes of stance', () => {
     show(stage, 'vaknar', .2);
     const seated = rig.mouth(new Vector3());
     show(stage, 'vaknar', .59);
-    expect(pose().legL).toBeLessThan(.1);
-    expect(pose().kneeR).toBeLessThan(.1);
+    expect(pose().legL).toBeLessThan(.15);
+    expect(pose().kneeR).toBeLessThan(.3);
     expect(rig.mouth(new Vector3()).y).toBeGreaterThan(seated.y + .8);
-    // At the window, his two side steps done.
+    // At the window, his two side steps done: standing, as anyone stands.
     show(stage, 'vaknar', 2.4);
     expect(pose().seat).toBeNull();
-    expect(pose().legL).toBe(0);
+    expect(Math.abs(pose().legL)).toBeLessThan(.15);
   });
 
   it.each([['prologue:mamma', .3, 'moa'], ['vaknar', .2, 'pappa']] as const)('clears the floor throughout %s’s rise and replays it backwards', (id, at, who) => {

@@ -23,7 +23,8 @@ How the keys are read:
 - The arm is the left arm, over the whole stride; the right arm goes half a stride later.
 - The foot's pitch is over its own cycle, from its heel strike (toes up +): it comes down on its heel, rolls flat, lifts
   its heel about its ball, pushes off on its toes and swings through.
-- Lengths are shares of the body's height, angles radians, a stand's keys are seconds.
+- Lengths are shares of the body's height, angles radians. A stand's keys are shares of its loop; a clip's (going down on
+  a knee) are shares of its seconds, in the game's own pose.
 
 Nothing here comes from anyone else: no clip, no capture, no library. Keep this file in plain ASCII: it is sent to
 Blender as text.
@@ -126,6 +127,86 @@ GAITS = {
     },
 }
 
+# --- how they stand ------------------------------------------------------------------------------------------------------
+# A loop of `period` seconds, keyed at shares of it. Nobody stands still: the weight goes onto one leg (that hip comes up, the
+# other knee gives, the shoulders tip the other way, the head stays level or tilts), rests there, and goes over to the other;
+# the head looks about; the arms hang from relaxed elbows and swing a little with the body. Breathing comes on top: `breath`
+# breaths a second, `deep` of lean. Lengths are shares of the height, angles radians.
+
+ADULT_STAND = {
+    'period': 10.0, 'breath': 0.24, 'deep': 0.012, 'width': 0.05,
+    # Onto the left foot, resting there, over to the right, resting there.
+    'sway': ('full', [(0.0, 0.0), (0.09, 0.008), (0.16, 0.011), (0.42, 0.01), (0.5, 0.0), (0.59, -0.009), (0.66, -0.011),
+                      (0.92, -0.01)]),
+    'roll': ('full', [(0.0, 0.0), (0.1, 0.03), (0.17, 0.04), (0.42, 0.036), (0.5, 0.0), (0.6, -0.03), (0.67, -0.04),
+                      (0.92, -0.036)]),
+    'side': ('full', [(0.0, 0.0), (0.17, -0.012), (0.42, -0.01), (0.5, 0.0), (0.67, 0.012), (0.92, 0.01)]),
+    'tilt': ('full', [(0.0, 0.0), (0.2, 0.02), (0.45, 0.01), (0.55, -0.005), (0.7, -0.018), (0.95, -0.01)]),
+    'lean': ('full', [(0.0, 0.012), (0.5, 0.008)]),
+    'nod': ('full', [(0.0, 0.02), (0.3, 0.035), (0.6, 0.01), (0.85, 0.03)]),
+    # Looking about: over there, back, the other way.
+    'turn': ('full', [(0.0, 0.0), (0.12, 0.12), (0.3, 0.1), (0.4, 0.0), (0.62, -0.08), (0.78, -0.1), (0.9, 0.0)]),
+    'arm': ('full', [(0.0, 0.05), (0.2, 0.08), (0.5, 0.04), (0.7, 0.07)]),
+    'elbow': ('full', [(0.0, 0.2), (0.25, 0.26), (0.55, 0.18), (0.8, 0.24)]),
+    'wrist': ('full', [(0.0, 0.1), (0.3, 0.14), (0.65, 0.08)]),
+}
+
+# Pappa stands easy and solid, looking about. Mamma rests on a hip, her head tilted. Moa fidgets, quicker. Bertil can
+# hardly stand still. Mormor and Morfar stand a little stooped, slow and steady, and breathe slower.
+STANDS = {
+    'pappa': person(ADULT_STAND, period=11.0, width=0.055, turn=('scale', 1.2)),
+    'mamma': person(ADULT_STAND, period=9.0, width=0.045, sway=('scale', 1.35), roll=('scale', 1.4), side=('scale', 1.4),
+                    tilt=('scale', 1.6), elbow=('scale', 1.25)),
+    'moa': person(ADULT_STAND, period=6.5, breath=0.3, sway=('scale', 1.2), tilt=('scale', 1.8), turn=('scale', 1.4),
+                  arm=('scale', 1.4)),
+    'bertil': person(ADULT_STAND, period=4.6, breath=0.34, deep=0.014, width=0.06, sway=('scale', 1.5), roll=('scale', 1.2),
+                     tilt=('scale', 1.5), turn=('scale', 1.6), arm=('scale', 1.8), wrist=('scale', 1.3)),
+    'mormor': person(ADULT_STAND, period=13.0, breath=0.22, deep=0.014, sway=('scale', 0.7), roll=('scale', 0.6),
+                     lean=('full', [(0.0, 0.075), (0.5, 0.07)]), nod=('full', [(0.0, 0.06), (0.4, 0.08), (0.75, 0.05)]),
+                     elbow=('scale', 1.6), turn=('scale', 0.8)),
+    'morfar': person(ADULT_STAND, period=12.0, breath=0.21, deep=0.014, sway=('scale', 0.8), roll=('scale', 0.7),
+                     lean=('full', [(0.0, 0.07), (0.5, 0.065)]), nod=('full', [(0.0, 0.05), (0.35, 0.07), (0.7, 0.04)]),
+                     elbow=('scale', 1.4)),
+}
+# --- going down on a knee ------------------------------------------------------------------------------------------------
+# Keyed in the game's own pose (src/render/rig.ts Pose), at shares of `seconds`, from standing to kneeling on the left knee
+# with the right foot forward (src/render/acting.ts kneeling). The weight goes onto the left leg, the right foot comes up
+# and is put down ahead, and the body goes down over it onto the left knee, a hand going to the right knee, and settles.
+# Getting up is the same way back. Mormor and Morfar take longer, lean further over, and lean on that knee.
+
+KNEEL = {
+    'seconds': 1.0,
+    'lean': [(0.0, 0.0), (0.2, 0.06), (0.45, 0.16), (0.75, 0.27), (0.9, 0.23), (1.0, 0.2)],
+    'sway': [(0.0, 0.0), (0.18, 0.06), (0.45, 0.03), (0.8, 0.0), (1.0, 0.0)],
+    'hipRoll': [(0.0, 0.0), (0.18, 0.03), (0.45, 0.0), (1.0, 0.0)],
+    'legR': [(0.0, 0.0), (0.18, 0.38), (0.42, 0.95), (0.75, 1.22), (1.0, 1.32)],
+    'kneeR': [(0.0, 0.0), (0.18, 0.6), (0.42, 0.78), (0.75, 1.15), (1.0, 1.32)],
+    'footR': [(0.0, 0.0), (0.18, 0.08), (0.42, -0.17), (0.75, -0.07), (1.0, 0.0)],
+    'legL': [(0.0, 0.0), (0.18, 0.0), (0.42, 0.08), (0.75, 0.0), (1.0, -0.08)],
+    'kneeL': [(0.0, 0.0), (0.18, 0.05), (0.42, 0.45), (0.75, 1.15), (0.92, 1.66), (1.0, 1.62)],
+    'armR': [(0.0, 0.02), (0.45, 0.25), (0.75, 0.5), (1.0, 0.45)],
+    'elbowR': [(0.0, 0.1), (0.45, 0.35), (0.75, 0.62), (1.0, 0.6)],
+    'armL': [(0.0, 0.02), (0.3, 0.25), (0.6, 0.35), (1.0, 0.2)],
+    'elbowL': [(0.0, 0.1), (0.3, 0.4), (0.6, 0.45), (1.0, 0.35)],
+    'nod': [(0.0, 0.0), (0.4, 0.15), (0.8, 0.32), (1.0, 0.35)],
+}
+KNEEL_ELDER = dict(KNEEL)
+KNEEL_ELDER.update({
+    'seconds': 1.5,
+    'lean': [(0.0, 0.07), (0.2, 0.14), (0.45, 0.28), (0.75, 0.4), (0.9, 0.32), (1.0, 0.28)],
+    'armR': [(0.0, 0.02), (0.4, 0.35), (0.7, 0.62), (1.0, 0.55)],
+    'elbowR': [(0.0, 0.2), (0.4, 0.6), (0.7, 0.95), (1.0, 0.85)],
+    'kneeL': [(0.0, 0.0), (0.18, 0.05), (0.42, 0.42), (0.78, 1.12), (0.94, 1.64), (1.0, 1.62)],
+    # An old foot is slid forward, hardly lifted.
+    'legR': [(0.0, 0.0), (0.2, 0.3), (0.45, 0.9), (0.78, 1.22), (1.0, 1.32)],
+    'kneeR': [(0.0, 0.0), (0.2, 0.42), (0.45, 0.72), (0.78, 1.15), (1.0, 1.32)],
+    'footR': [(0.0, 0.0), (0.2, 0.06), (0.45, -0.18), (0.78, -0.07), (1.0, 0.0)],
+})
+CLIPS = {'kneel': KNEEL, 'kneelElder': KNEEL_ELDER}
+
+STAND_CHANNELS = ['sway', 'roll', 'side', 'tilt', 'lean', 'nod', 'turn', 'arm', 'elbow', 'wrist']
+STAND_SCALARS = ['period', 'breath', 'deep', 'width']
+
 CHANNELS = ['bob', 'give', 'sway', 'roll', 'twist', 'lean', 'side', 'nod', 'tilt', 'arm', 'elbow', 'wrist', 'pitch']
 SCALARS = ['stance', 'ahead', 'width', 'lift', 'peak', 'crouch', 'spread']
 
@@ -158,13 +239,13 @@ def curves_of(obj):
     return {curve.data_path[2:-2]: curve for curve in bag.fcurves}
 
 
-def keyed(name, table):
+def keyed(name, table, channels=None, scalars=None):
     """An Empty with each curve of `table` keyed as a custom property, and its scalars as plain properties."""
     obj = bpy.data.objects.new(name, None)
     holder.objects.link(obj)
-    for scalar in SCALARS:
+    for scalar in scalars or SCALARS:
         obj[scalar] = float(table[scalar])
-    for channel in CHANNELS:
+    for channel in channels or CHANNELS:
         kind, keys = table[channel]
         obj[channel] = 0.0
         for at, value in keys_over_stride(kind, keys):
@@ -221,16 +302,70 @@ for who, gaits in GAITS.items():
         parts.append('    %s: { %s },' % (gait, ', '.join(fields)))
     lines.append('  %s: {\n%s\n  },' % (who, '\n'.join(parts)))
 
+def clip_keys(name, clip):
+    """An Empty with each channel of `clip` keyed over its seconds, as Blender keys it; its keys and their slopes, as the game
+    reads them (cubic between keys, the slope at each key from its handles)."""
+    obj = bpy.data.objects.new(name, None)
+    holder.objects.link(obj)
+    fps = scene.render.fps
+    for channel, keys in clip.items():
+        if channel == 'seconds':
+            continue
+        obj[channel] = 0.0
+        for at, value in keys:
+            obj[channel] = float(value)
+            obj.keyframe_insert('["%s"]' % channel, frame=at * clip['seconds'] * fps)
+    out = {}
+    for channel, curve in curves_of(obj).items():
+        for point in curve.keyframe_points:
+            point.interpolation = 'BEZIER'
+            point.handle_left_type = point.handle_right_type = 'AUTO_CLAMPED'
+        curve.update()
+        flat = []
+        for point in curve.keyframe_points:
+            dx = point.handle_right[0] - point.co[0]
+            slope = (point.handle_right[1] - point.co[1]) / dx * fps if abs(dx) > 1e-9 else 0.0
+            flat += [point.co[0] / fps, point.co[1], slope]
+        out[channel] = flat
+    return out
+
+
+clips = []
+for name, clip in CLIPS.items():
+    keyed_clip = clip_keys('clip.%s' % name, clip)
+    fields = ['seconds: %s' % number(clip['seconds'])]
+    for channel, flat in keyed_clip.items():
+        fields.append('%s: [%s]' % (channel, ', '.join(number(v) for v in flat)))
+    clips.append('  %s: { %s },' % (name, ', '.join(fields)))
+
+stands = []
+for who, table in STANDS.items():
+    obj = keyed('%s.stand' % who, table, STAND_CHANNELS, STAND_SCALARS)
+    curves = curves_of(obj)
+    fields = ['%s: %s' % (scalar, number(table[scalar])) for scalar in STAND_SCALARS]
+    for channel in STAND_CHANNELS:
+        fields.append('%s: [%s]' % (channel, ', '.join(number(v) for v in series(curves[channel], HARMONICS, 0.0))))
+    stands.append('  %s: { %s },' % (who, ', '.join(fields)))
+
 text = '\n'.join([
-    "import type { Strider } from './gait';",
+    "import type { Clip, Stander, Strider } from './gait';",
     '',
     '/**',
-    ' * Written by art/blender/motion.py: each person\'s walk and run, keyed in Blender and sampled as Fourier series. Change',
-    ' * the keys there and run it again, rather than these numbers.',
+    ' * Written by art/blender/motion.py: each person\'s walk and run, and how they stand, keyed in Blender and sampled as',
+    ' * Fourier series. Change the keys there and run it again, rather than these numbers.',
     ' */',
     'export const GAITS = {',
     '\n'.join(lines),
     '} as const satisfies Record<string, Strider>;',
+    '',
+    'export const STANDS = {',
+    '\n'.join(stands),
+    '} as const satisfies Record<string, Stander>;',
+    '',
+    '/** Clips keyed in the pose itself: each channel\'s keys as [seconds, value, slope, ...]. */',
+    'export const CLIPS = {',
+    '\n'.join(clips),
+    '} as const satisfies Record<string, Clip>;',
     '',
 ])
 

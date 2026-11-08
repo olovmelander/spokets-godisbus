@@ -7,7 +7,8 @@ import type { ChapterData } from '../sim/types';
 import { sceneWaits, type Act, type ActorKey, type ElofKey, type Point, type SceneDef, type SceneFrame, type ShotKey, type Thing } from '../sim/scene';
 import { actPose, drawingAt, EASY_GAIT, eatingAt, sippingAt, stanceOf, stepLength, type Stance } from './acting';
 import { carvingAt, CARVING_SHAVING_LIFETIME, type CarvingMotion, type CarvingPoint } from './carving-motion';
-import { createFooting, type Footing } from './gait';
+import { createFooting, play as playClip, type Footing } from './gait';
+import { CLIPS } from './motion-data';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
 
@@ -101,6 +102,14 @@ const TURN_RATE = 1.15;
  */
 const JOINT_RATE = 20;
 const LIMBS = JOINTS;
+/**
+ * The weight going over a foot, the trunk bending to the side and the head tilting are slow by nature: a new act or a new
+ * scene eases them over, at most this fast (a second's worth of the hips' whole shift, in an adult's units or radians).
+ */
+const SLOW = ['sway', 'hipRoll', 'bendSide', 'tilt'] as const;
+const SLOW_RATE = 1.5;
+/** Where each of the family's standing loops starts, in seconds: nobody shifts their weight in step with anyone else. */
+const LOOP: Record<Role, number> = { pappa: 0, mamma: 2.7, moa: 5.1, bertil: 1.3 };
 /** What a stride gives the legs and hips, whatever the hands are doing, and what it gives the trunk, head and spread arms. */
 const STRIDING = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'bounce', 'sway', 'hipRoll'] as const;
 const CARRIED = ['lean', 'twist', 'bendSide', 'tilt', 'spread'] as const;
@@ -578,6 +587,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   const pose: Pose = { ...STANDING };
   const before: Pose = { ...STANDING };
   const walking: Pose = { ...STANDING };
+  const gettingUp: Pose = { ...STANDING };
   /** The state each actor is in at rest: what the scenes told so far leave them doing. */
   function rest(flags: ReadonlySet<string>, upTo: number): Map<string, State> {
     const states = new Map<string, State>();
@@ -818,7 +828,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           : prior + (state.act === 'sip' && sippingAt(prior, false, who).raise === 0 ? 0 : Math.max(0, dt));
         live.set(who, { x, y, z, face, walked, stride, gait, pace, velocity, act: state.act, elapsed });
         const since = (at: number) => (scene && keys ? Math.max(0, t - at) : elapsed);
-        const context = { t: since(state.actAt), aim, stride, gait, step, pace, calm, role: who, legs: rig.legs };
+        // How each stands runs on its own clock, so that the family never shift their weight together.
+        const context = { t: since(state.actAt), aim, stride, gait, step, pace, calm, role: who, legs: rig.legs, clock: time + LOOP[who] };
         actPose(state.act, context, pose, state.stance);
         if (state.glance) {
           // Blend the head angles, avoiding a whip through targets passing close behind the body.
@@ -826,9 +837,20 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           pose.nod = mix(before.nod, pose.nod, state.glance.weight);
           pose.turn = mix(before.turn, pose.turn, state.glance.weight);
         }
+        // Getting up off a knee: the way down (art/blender/motion.py CLIPS.kneel) the other way, handing over to what they
+        // do next as they come up. An act that comes before they are up starts from where they are.
+        const getUp = (out: Pose, stance: Stance, from: State['before'], age: number): void => {
+          if (from?.stance !== 'kneel' || stance !== 'stand' || calm || age >= CLIPS.kneel.seconds) return;
+          const u = age / CLIPS.kneel.seconds;
+          playClip(CLIPS.kneel, CLIPS.kneel.seconds * (1 - u), Object.assign(gettingUp, out));
+          const k = smooth(u);
+          for (const joint of LIMBS) out[joint] = gettingUp[joint] + (out[joint] - gettingUp[joint]) * k;
+        };
+        getUp(pose, state.stance, state.before, elapsed);
         if (state.before && elapsed < 0.45) {
           const previous = (old: NonNullable<State['before']>, out: Pose): Pose => {
-            actPose(old.act, { t: old.t, aim: aimFor(old.aim), stride: 0, pace: 0, calm, role: who, legs: rig.legs }, out, old.stance);
+            actPose(old.act, { t: old.t, aim: aimFor(old.aim), stride: 0, pace: 0, calm, role: who, legs: rig.legs, clock: time + LOOP[who] }, out, old.stance);
+            getUp(out, old.stance, old.previous, old.t);
             if (old.previous) blendPose(previous(old.previous, { ...STANDING }), out, smooth(old.t / .45), out, true);
             return out;
           };
@@ -878,8 +900,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // never snaps a limb. Paused, the body holds what was drawn.
         const shown = drawn.get(who);
         if (flowing && !cut && shown) {
-          const most = JOINT_RATE * dt;
-          for (const joint of LIMBS) pose[joint] = shown[joint] + Math.max(-most, Math.min(most, pose[joint] - shown[joint]));
+          for (const joint of LIMBS) {
+            const most = (SLOW.includes(joint as typeof SLOW[number]) ? SLOW_RATE : JOINT_RATE) * dt;
+            pose[joint] = shown[joint] + Math.max(-most, Math.min(most, pose[joint] - shown[joint]));
+          }
         } else if (paused && shown) Object.assign(pose, shown);
         drawn.set(who, { ...pose });
         rig.pose(pose);

@@ -381,7 +381,9 @@ export function createRehearsalRig(who: Role): Rig {
       joints[arm.shoulder].decompose(arm.upper.position, arm.upper.quaternion, arm.upper.scale);
       local.copy(joints[arm.shoulder]).invert().multiply(joints[arm.elbow]);
       local.decompose(arm.lower.position, arm.lower.quaternion, arm.lower.scale);
-      arm.wrist.quaternion.identity();
+      // The wrist as posed: a contact made later starts from the hand where it is.
+      local.copy(joints[arm.elbow]).invert().multiply(joints[arm.hand]);
+      local.decompose(arm.wrist.position, arm.wrist.quaternion, arm.wrist.scale);
     }
     writeParts();
   }

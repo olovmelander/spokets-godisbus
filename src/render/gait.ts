@@ -1,4 +1,4 @@
-import { REHEARSAL_LEGS, STANDING, type Legs, type Pose } from './rig';
+import { JOINTS, REHEARSAL_LEGS, STANDING, type Legs, type Pose } from './rig';
 
 /**
  * The stride (plan §5.6 point 3): how a body walks and runs, in the pose language of ./rig.ts. Pure: no three, no clock.
@@ -337,3 +337,87 @@ export function createFooting() {
   };
 }
 export type Footing = ReturnType<typeof createFooting>;
+
+/** How one person stands (art/blender/motion.py): a loop of `period` seconds, over which each curve is a Fourier series. */
+export interface Stander {
+  period: number;
+  /** Breaths a second, and how far each leans the body. */
+  breath: number;
+  deep: number;
+  /** How far out from the middle each foot stands, a share of the height. */
+  width: number;
+  /** The hips over one foot (a share of the height) and tipped, the trunk bent and the head tilted against it, the body's
+   * lean, the head's nod and its turn about, and the arms hanging from relaxed elbows and wrists. */
+  sway: Series;
+  roll: Series;
+  side: Series;
+  tilt: Series;
+  lean: Series;
+  nod: Series;
+  turn: Series;
+  arm: Series;
+  elbow: Series;
+  wrist: Series;
+}
+
+const planted: Foot = { x: 0, y: 0, pitch: 0, on: 1, flat: 0, c: 0 };
+/**
+ * Someone standing, `t` seconds into their own loop (./motion-data.ts STANDS): the feet stay where they are, the weight
+ * goes from one leg to the other and the other knee gives, the head looks about, and they breathe. `weight` is how much of
+ * it there is (0: plain standing). `calm`: reduced motion, standing quite still. Writes the whole pose.
+ */
+export function stand(pose: Pose, t: number, stander: Stander, legs: Legs = REHEARSAL_LEGS, calm = false, weight = 1): Pose {
+  Object.assign(pose, STANDING);
+  // Reduced motion: their own posture, held.
+  const w = calm ? 0 : clamp(weight, 0, 1), x = calm ? 0 : TAU * t / stander.period;
+  const breath = calm ? 0 : Math.sin(TAU * stander.breath * t + 0.6 * Math.sin(TAU * stander.breath * 0.23 * t)) * w;
+  const roll = wave(stander.roll, x) * w, lift = legs.width * Math.sin(roll);
+  pose.sway = wave(stander.sway, x) * 5.2 * w;
+  pose.hipRoll = roll;
+  pose.bendSide = wave(stander.side, x) * w;
+  pose.tilt = wave(stander.tilt, x) * w;
+  // The lean and the nod belong to the person even standing still; a breath leans them a little and the head stays level.
+  pose.lean = wave(stander.lean, x) + stander.deep * breath;
+  pose.nod = wave(stander.nod, x) - stander.deep * 0.7 * breath;
+  pose.turn = wave(stander.turn, x) * w;
+  pose.armL = wave(stander.arm, x) + 0.02 * breath;
+  pose.armR = wave(stander.arm, x + Math.PI * 0.8) + 0.02 * breath;
+  pose.elbowL = wave(stander.elbow, x);
+  pose.elbowR = wave(stander.elbow, x + Math.PI * 0.8);
+  pose.wristL = wave(stander.wrist, x);
+  pose.wristR = wave(stander.wrist, x + Math.PI * 0.8);
+  pose.spread = 0.01 * breath;
+  // The feet stand flat where they are; the legs reach them from hips that come down as far as the lower hip needs.
+  const most = (legs.thigh + legs.shin) * (1 - 0.002 * w);
+  const hips = Math.min(legs.hip, legs.ankle + most - Math.abs(lift));
+  const out = (stander.width - legs.width) * w;
+  rolled(0, 0, legs, planted);
+  reachWith(0, hips + lift - planted.y, out, 0, legs, pose, 0);
+  reachWith(0, hips - lift - planted.y, out, 0, legs, pose, 1);
+  // Barely shifting, the legs are those of standing: a nearly straight knee's angle is too touchy to settle by itself.
+  const settled = smooth(w / 0.04);
+  if (settled < 1) for (const joint of LEGS) pose[joint] *= settled;
+  return pose;
+}
+
+/** A clip keyed in the pose itself (art/blender/motion.py CLIPS): each channel's keys as [seconds, value, slope, …]. */
+export type Clip = { readonly seconds: number } & { readonly [joint in keyof Pose]?: readonly number[] };
+
+/**
+ * A clip at `t` seconds, over `out`: each keyed channel as Blender plays it between its keys (cubic, with each key's own
+ * slope), held at its first and last values outside them. Channels it does not key are left as they are.
+ */
+export function play(clip: Clip, t: number, out: Pose): Pose {
+  for (const joint of JOINTS) {
+    const keys = clip[joint];
+    if (!keys || keys.length < 3) continue;
+    if (t <= keys[0]!) { out[joint] = keys[1]!; continue; }
+    let i = 0;
+    while (i + 3 < keys.length && t > keys[i + 3]!) i += 3;
+    if (i + 3 >= keys.length) { out[joint] = keys[i + 1]!; continue; }
+    const t0 = keys[i]!, v0 = keys[i + 1]!, s0 = keys[i + 2]!, t1 = keys[i + 3]!, v1 = keys[i + 4]!, s1 = keys[i + 5]!;
+    const h = t1 - t0, u = (t - t0) / h, u2 = u * u, u3 = u2 * u;
+    out[joint] = (2 * u3 - 3 * u2 + 1) * v0 + (u3 - 2 * u2 + u) * h * s0 + (-2 * u3 + 3 * u2) * v1 + (u3 - u2) * h * s1;
+  }
+  return out;
+}

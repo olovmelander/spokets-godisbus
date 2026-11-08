@@ -1,10 +1,14 @@
 import { actPose, stepLength } from './acting';
+import { stand } from './gait';
+import { STANDS } from './motion-data';
 import { seeded } from './player-motion';
 import { heightOf, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
 
 const smooth = (t: number) => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
-const UPPER = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'spread'] as const;
-const JOINTS = [...UPPER, 'legL', 'legR', 'kneeL', 'kneeR'] as const;
+const UPPER = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'spread', 'bendSide', 'tilt', 'wristL', 'wristR'] as const;
+/** What standing gives the body under its greetings and gestures: the legs, the hips over them and the trunk's tilt. */
+const STOOD = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'sway', 'hipRoll', 'bendSide', 'tilt'] as const;
+const JOINTS = [...UPPER, 'legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'sway', 'hipRoll'] as const;
 const pulse = (t: number, at: number, up: number, hold: number, down: number) => smooth((t - at) / up) * (1 - smooth((t - at - up - hold) / down));
 
 /** What they do while they wait for him, in seconds: shift their weight, glance about, fold their arms, look at the sky. */
@@ -55,7 +59,7 @@ const CHARACTER = {
 
 /** Helpers stay on their feet: a personal greeting, a quiet look, or Pappa supporting his passenger. */
 export function createFamilyMotion(who: Role, at: number, purpose = '') {
-  const pose: Pose = { ...STANDING }, helping: Pose = { ...STANDING };
+  const pose: Pose = { ...STANDING }, helping: Pose = { ...STANDING }, standing: Pose = { ...STANDING };
   const character = CHARACTER[who];
   const gift = purpose.startsWith('party:');
   const task = purpose === 'moa' || gift ? 'offer' : purpose === 'cap' || purpose === 'cap:ready' ? 'reach' : purpose === 'seesaw' ? 'point'
@@ -136,12 +140,17 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
         pose.elbowL += (character.elbowL - pose.elbowL) * left;
         pose.elbowR += (character.elbowR - pose.elbowR) * right + wave;
         pose.spread = character.spread * right;
+        // Under it all they stand as people stand (./gait.ts): the weight on one leg and then the other, the head level.
+        // Greeting him, they stand square to him.
+        stand(standing, t, STANDS[who], legs, calm, 1 - Math.max(right, left) * 0.7);
+        for (const joint of STOOD) pose[joint] = standing[joint];
+        pose.wristL += standing.wristL * (1 - left); pose.wristR += standing.wristR * (1 - right);
         const weight = Math.max(help?.ready ? presence : 0, joy > 0 ? calm ? 1 : smooth(elapsed / .5) * smooth(joy / .5) : 0);
         if (active && task) {
           // The same flag that moves the help object gives its helper a purposeful, weighted gesture.
           actPose(task, { t: calm ? 3 : elapsed, aim: gift && look ? look : { ahead: task === 'point' ? 4 : 1.4,
             up: purpose === 'cap' || purpose === 'cap:ready' ? 1.0 : task === 'lift' ? 3.15 : gift ? 1.6 : 3.5 }, stride: 0, pace: 0, calm, role: who }, helping);
-          for (const joint of [...UPPER, 'legL', 'legR', 'kneeL', 'kneeR'] as const) {
+          for (const joint of JOINTS) {
             if (joint !== 'turn' && joint !== 'nod') pose[joint] += (helping[joint] - pose[joint]) * weight;
           }
         } else if (active && purpose === 'braid') {
@@ -178,7 +187,7 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
         // Boarding, alighting and interrupted reactions retain the previous hands, then settle.
         const k = smooth((settling += dt) / .32);
         for (const joint of UPPER) pose[joint] = from[joint] + (pose[joint] - from[joint]) * k;
-        if (blendLegs) for (const joint of ['legL', 'legR', 'kneeL', 'kneeR'] as const) pose[joint] = from[joint] + (pose[joint] - from[joint]) * k;
+        if (blendLegs) for (const joint of ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'sway', 'hipRoll'] as const) pose[joint] = from[joint] + (pose[joint] - from[joint]) * k;
         if (k === 1) from = null;
       } else from = null;
       lastX = carryX;
