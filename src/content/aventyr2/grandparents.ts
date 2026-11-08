@@ -276,10 +276,11 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
       wanted.lean = 0.07 + 0.012 * breath;
       wanted.nod = 0.1 + 0.015 * breath;
       if (who === 'mormor') {
-        // She holds her lantern out low, and lifts it high when she's called, to light his way.
+        // She holds her lantern out low, and lifts it to her shoulder when she's called, to light his way: higher, and
+        // facing us as she does, it hid her face.
         const raised = smooth(since / 0.8);
-        wanted.armR = 0.55 + raised * 2.05;
-        wanted.elbowR = 0.9 - raised * 0.7;
+        wanted.armR = 0.55 + raised * 0.8;
+        wanted.elbowR = 0.9 - raised * 0.2;
       } else if (used) {
         // He lets the ladder down with both hands, and then shows him the way over.
         const shows = smooth((since - LADDER_DOWN - 0.3) / 0.5);
