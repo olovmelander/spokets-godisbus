@@ -429,7 +429,8 @@ function birds(plan: Plan, add: Add): Kind {
       }
       if (!f.shelter && !now.still && show) {
         const near = (visit ? apart(now.x - f.x, f.birds[0]!.rest[2]) < shy(f.species) : Math.abs(now.x - f.x) < 2.9 + f.birds.length * 0.3) && Math.abs(now.y - f.y) < 3.5;
-        if (!f.away && near) {
+        // A visitor on its way down lands first, and lifts again from where it came down.
+        if (!f.away && near && !(visit && f.birds[0]!.fly)) {
           lift(f, now.x);
           if (visit) visit.wait = 6 + chance() * 10;
         }
