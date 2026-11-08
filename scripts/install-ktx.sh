@@ -14,8 +14,9 @@ fi
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-# GitHub's release downloads sometimes answer 504 for a moment (CI, 5 November 2026): try again before failing.
-FETCH=(curl --fail --silent --show-error --location --retry 5 --retry-delay 3 --retry-all-errors)
+# GitHub's release downloads sometimes answer 504 for a moment (CI, 5 November 2026), and on 8 November for the best
+# part of an hour, off and on, which failed a deploy: try again for up to ten minutes before failing.
+FETCH=(curl --fail --silent --show-error --location --retry 30 --retry-delay 20 --retry-max-time 600 --retry-all-errors)
 "${FETCH[@]}" --output "$WORK/$FILE" "$BASE/$FILE"
 "${FETCH[@]}" --output "$WORK/$FILE.sha1" "$BASE/$FILE.sha1"
 EXPECTED="$(awk '{print $1}' "$WORK/$FILE.sha1")"
