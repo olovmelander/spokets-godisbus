@@ -29,15 +29,32 @@
     old size), behind the nearest far picture where its land hides the church's foot: past the family's lamps from the
     jetty, ahead of the owl in its flight, and over the stone in the storm's flashes and the eye's moonlight. On a phone
     held upright the picture is too narrow for it there; it shows during the flight.
+  - **Soft shade baked in.** Bredbyn's church, belfry and far street fronts have the shade of their eaves, the porch's
+    roof, the belfry's panels and the windows' recesses, baked with Cycles by a new `art/blender/bredbyn-shade.py`,
+    which `scripts/bake-bredbyn.mjs` runs as its second step (Blender 5.2: set `BLENDER` or `BPY_PYTHON`; the same file
+    to the byte when run again). `bredbyn.glb` is 205 KB as served, was 55 (about 90 KB of that is Blender's export
+    itself). Byn's houses have the shade between the parts the game puts together, worked out once as each house is
+    assembled (`src/render/village.ts`): beside the window and door casings and the corner boards, behind each
+    downpipe and over the drip board, with no cost per frame and no new shader (`tests/unit/street-shade.test.ts`,
+    `tests/unit/bredbyn-shade.test.ts`).
   - **CI:** each share of a split suite has its own seconds (`SUITES` in `tests/browser/suites.mjs`): gpu-memory's two
     shares took 156 s and 828 s, counted as halves, and the part with the heavy one ran 21 minutes against 12. The
     longest part is now about 14 minutes. The other weights are the mean of #241, #243 and #244.
   - **Numbers:** Flärken's kit 23,632 triangles, 266 KB (142 KB served); the buildings kit 302 KB (187 KB served), the
     church 8,837 triangles and the lodge 11,871; draws unchanged within two in every picture measured; Flärken 63
     programs (one more, the logs' ends), Billsta 78 (two more, compiled in the warm-up).
+  - **Checked:** typecheck, `npm test` (214 files, 2,173 tests), `npm run build` (JS 565.1 KB of 1,000, boot 5,134.8 KB
+    of 10,240), the privacy check, every changed place on High with the private models (kept in the session), and the
+    browser suites Äventyr 2 (42) and model-installation (47); bredbyn (70) and village (64) pass here only with a
+    Chromium flag for this sandbox's local-network check, and run unmodified on GitHub.
   - **Known:** if Flärken's pack failed to load, the code's huts would show without a plank on their roofs; at the
     tower's foot the jetty's sides show as a small dark shape under the water; the sun's top rays reach a little over
     its board's frame; the new buildings don't take the weather's stains (`weathered`), which blotched the church.
+  - **Left of the shade:** in Byn the ground along each house's foot (the largest gap on Low, which has no shade drawn
+    on the screen), the kringla and boot signs, the yard's wall, fence and hedge, and the shop's room; the forest's and
+    the mountain's kit parts, each baked alone, where the game sets them side by side.
+  - **The next step needs:** Olov's computer for proposals 1 and 2 (faces, clothes and fingered hands, against
+    `photos/`); what is left of the shade can be done in the cloud.
 
 ## State (8 November 2026, evening)
 
@@ -4814,7 +4831,10 @@ Olympia's hall; the birds that come by themselves, the ravens and crows, Norrske
 **Proposals 3 and 4 (8 November, late evening), for Olov to judge on the family devices, on High:** Flärkenbadet's
 tower, huts (he walks on their roofs now), chess, sun board and jetty, and the water under its jetties; Själevad's church
 far down the lake from Stormens öga's jetty, in a flash and in the eye's moonlight; Älven's beaver lodge, Olympia's store
-and masts, Billsta's poles.
+and masts, Billsta's poles; the soft shade under Bredbyn church's eaves and between the parts of Byn's houses.
+
+**Left in the cloud:** the shade along the foot of Byn's houses, its signs, wall, fence and hedge, and the forest's and
+the mountain's kit parts where they stand side by side (see "State").
 
 **On Olov's computer (proposals 1 and 2):** sharper textures where the family and Elof show most, faces and clothes, and
 hands with fingers that hold Pappa's knife, Moa's crayon and the mug, made in Blender against `photos/`.
@@ -5273,7 +5293,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
-| Blender models and baked shade (8 Nov, late evening) | Olov's proposals 3 and 4: Blender models for what is still built in code near the play plane, and soft shade baked into the scenery models | Part of the same cloud session, with three building agents in worktrees | — / 0 so far | Flärkenbadet's tower, huts, chess, sun board and jetty arm; Själevad's church, moved to where it is seen; Älven's beaver lodge, Olympia's store and masts, Billsta's poles; water under the jetties; Bredbyn's landmarks with baked shade; CI's split suites weighed by share. |
+| Blender models and baked shade (8 Nov, late evening) | Olov's proposals 3 and 4: Blender models for what is still built in code near the play plane, and soft shade baked into the scenery models | Part of the same cloud session, with three building agents in worktrees | — / 0 so far | Flärkenbadet's tower, huts, chess, sun board and jetty arm; Själevad's church, moved to where it is seen; Älven's beaver lodge, Olympia's store and masts, Billsta's poles; water under the jetties; Bredbyn's landmarks with baked shade and the shade between the parts of Byn's houses; CI's split suites weighed by share. |
 | The Unravel pass (8 Nov, evening) | Olov's request: carry out the proposals for a prettier game, with Unravel as the reference | Part of the same cloud session, with five building agents in worktrees | — / 0 so far | Rock and peat fronts with relief and light; rock, turf, gravel and wet ground seen close; water with rain rings, lights, Fresnel, a shore and a current; moss cushions and worn boulders; Billsta's firewood, Älven's concrete bridge and Olympia's hall in Blender; birds that come and go, ravens, crows, bats and the storm's leaves. |
 | Everyone's motion in Blender (8 Nov, afternoon) | Olov's request: smooth, natural, AAA motion for the whole family and the grandparents, made with Blender, on their real bodies; then the chair and the wave | 1 cloud session, Blender 5.2 as a Python module | — / 0 so far | Gaits, stands and kneeling keyed in Blender; a stride with IK on each body's measured legs, planted feet and a closing step; new hip, trunk, head, wrist and thigh joints; Elof's hips and hands; the wave beside the head; getting up from and sitting down on a chair over planted feet, the chair pushed back; everyone seated on the seat with their feet on the floor. |
 | Six things from the site (8 Nov, morning) | Olov's request: the family's places in Stormkvällen, Pappa walking in the air, the old trägubbe, the raincoats, Olympia's puddle, two owls | 1 session on Olov's computer, with one helper agent | — / 0 so far | Stormkvällen's and Morgonen's family out of the table and chairs; a trail for the walk home; the new trägubbe in the crack, eyes when painted; one owl that waits and carries him; the puddle uncovered; the raincoats were a browser's old copy |
