@@ -1,5 +1,5 @@
-/** Every browser suite's name and its weight in seconds, in the order they run, and how many runs a long one is split into. */
-export const SUITES: [name: string, seconds: number, shares?: number][];
+/** Every browser suite's name and its weight in seconds, in the order they run; a long one split into runs has each run's seconds. */
+export const SUITES: [name: string, seconds: number | number[]][];
 /** The files in tests/browser that are not suites. */
 export const NOT_SUITES: string[];
 /** What runs: each suite, or each share of a split one, with its file, the SHARD it passes and its part of the seconds. */
