@@ -312,10 +312,12 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
     case 'wave': {
       under();
       const k = rise(r, .34), settle = c.calm ? 0 : rise(r - 1.45, .8);
-      out.armR += (2.45 * energy - out.armR) * k;
+      out.armR += (2.2 * energy - out.armR) * k;
       out.armR += (.48 - out.armR) * settle;
+      // The arm up and out beside the head (its own outward turn), the forearm up, waving to and fro from the elbow.
+      out.outR = .8 * k * (1 - settle);
       const waving = loop * k * (1 - rise(r - 1.2, .7));
-      out.elbowR = .6 + .45 * settle + .26 * Math.sin(r * 9) * waving;
+      out.elbowR = .55 + .5 * settle + .32 * Math.sin(r * 9) * waving;
       // The hand follows the forearm a moment late, and the head tips, friendly; the body leans a little off the raised arm.
       out.wristR = .3 * Math.sin(r * 9 - 1) * waving || 0;
       out.tilt = .09 * k * (1 - settle); out.bendSide = .04 * k * (1 - settle);

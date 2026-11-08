@@ -57,17 +57,23 @@ export interface Pose {
   /** Each thigh swings out to its own side (+), from hanging plumb. */
   splayL: number;
   splayR: number;
+  /**
+   * Each arm swings out to its own side (+), in its own plane after its swing forward: a raised arm goes out beside the head
+   * (a wave), where `spread`, turned about the body's forward axis, would bring it in over the face.
+   */
+  outL: number;
+  outR: number;
 }
 
 export const STANDING: Readonly<Pose> = {
   lean: 0, nod: 0, turn: 0, armL: 0.02, armR: 0.02, elbowL: 0.1, elbowR: 0.1, legL: 0, legR: 0, kneeL: 0, kneeR: 0,
   spread: 0, seat: null, floor: 0, bounce: 0, twist: 0, footL: 0, footR: 0,
-  sway: 0, hipRoll: 0, bendSide: 0, tilt: 0, wristL: 0, wristR: 0, splayL: 0, splayR: 0,
+  sway: 0, hipRoll: 0, bendSide: 0, tilt: 0, wristL: 0, wristR: 0, splayL: 0, splayR: 0, outL: 0, outR: 0,
 };
 
 /** Every joint of a pose that turns (all but where the hips are): what blends, eases and is held. */
 export const JOINTS = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'legL', 'legR', 'kneeL', 'kneeR', 'spread',
-  'twist', 'footL', 'footR', 'sway', 'hipRoll', 'bendSide', 'tilt', 'wristL', 'wristR', 'splayL', 'splayR'] as const;
+  'twist', 'footL', 'footR', 'sway', 'hipRoll', 'bendSide', 'tilt', 'wristL', 'wristR', 'splayL', 'splayR', 'outL', 'outR'] as const;
 
 /**
  * A body's legs, each measure a share of its height: the hip joints over the soles standing, the thigh (hip to knee), the
@@ -395,9 +401,11 @@ export function createRehearsalRig(who: Role): Rig {
     set('spine', 'root', 0, 0, 0, -p.lean, -p.hipRoll - p.bendSide, p.twist);
     set('neck', 'spine', 0, NECK, 0, -p.nod, -p.tilt, p.turn - p.twist * 0.6);
     set('shoulderL', 'spine', SHOULDER_X, SHOULDER_Y, 0, p.armL, p.spread);
+    if (p.outL) joints.shoulderL.multiply(local.makeRotationAxis(Z, p.outL));
     set('elbowL', 'shoulderL', 0, -UPPER, 0, p.elbowL);
     set('handL', 'elbowL', 0, -FORE, 0, p.wristL);
     set('shoulderR', 'spine', -SHOULDER_X, SHOULDER_Y, 0, p.armR, -p.spread);
+    if (p.outR) joints.shoulderR.multiply(local.makeRotationAxis(Z, -p.outR));
     set('elbowR', 'shoulderR', 0, -UPPER, 0, p.elbowR);
     set('handR', 'elbowR', 0, -FORE, 0, p.wristR);
     // The legs hang plumb from a tipped pelvis, and lean in under shifted hips so that the feet stay where they stood.
@@ -731,6 +739,9 @@ export function createModelRig(model: Object3D, height: number): Rig {
       bend(bones.footR, p.footR, null, 0, ahead.footR, p.splayR + lean);
       bend(bones.armL, p.armL, leftOut, p.spread);
       bend(bones.armR, p.armR, rightOut, -p.spread);
+      // Out to its own side, in its own plane after the swing: a raised arm goes out beside the head.
+      if (p.outL && bones.armL && leftOut) bones.armL.node.quaternion.multiply(turn.setFromAxisAngle(leftOut, p.outL));
+      if (p.outR && bones.armR && rightOut) bones.armR.node.quaternion.multiply(turn.setFromAxisAngle(rightOut, -p.outR));
       bend(bones.elbowL, p.elbowL);
       bend(bones.elbowR, p.elbowR);
       // The legs hang plumb from a tipped pelvis, and lean in under shifted hips so that the feet stay where they stood.
