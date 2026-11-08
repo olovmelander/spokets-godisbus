@@ -1092,8 +1092,9 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
     along += length;
   }
   points.push({ x: last.x + 16, y: last.y, wall: false, face: false, along, forward: 1, kind: own });
-  // A front's relief eases out towards a wall's corners, the same for every stretch that meets there.
-  const corners = points.filter((p) => p.wall).map((p) => p.x);
+  // A front's relief eases out towards a wall's corners, and where one kind of front meets another, the same for every
+  // stretch that meets there: the two stretches' last and first columns are the same.
+  const corners = points.filter((p, i) => p.wall || (i > 0 && frontFor(p.kind, own) !== frontFor(points[i - 1]!.kind, own))).map((p) => p.x);
   for (const p of points) p.rough = smooth(0, ROUGH_REACH, Math.min(Infinity, ...corners.map((x) => Math.abs(p.x - x))));
 
   const blocks = blocksOf(first.x, last.x);
