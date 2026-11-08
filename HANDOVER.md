@@ -2,9 +2,9 @@
 
 ## State (8 November 2026, morning)
 
-- **Five things Olov saw on the site (Olov: "the family is standing very strangely together in the first scene", "his
+- **Six things Olov saw on the site (Olov: "the family is standing very strangely together in the first scene", "his
   dad walk down from the mountain in the air", "the wodden figure stuck in the mountain … the new better design",
-  "they now dont get the raincoats on", "on olympia, we cannot se the water pud"), on Olov's computer.** Branch
+  "they now dont get the raincoats on", "on olympia, we cannot se the water pud", and the owl below), on Olov's computer.** Branch
   `familjen-och-hemvagen`, in a worktree of its own, beside another session's `djur-och-bron`.
   - **Stormkvällen's opening** (`stormkvall.ts`, scene `kvall`): Mamma and Pappa stood on one spot (x 12.4) and Moa
     sat in the middle of the table (the table is x 11.5 to 16.5, z -2.6 to -0.4). Now Pappa stands left of the
@@ -27,6 +27,13 @@
     in Äventyr 2. That model has Elof's crowberries for eyes, so they are split off when it arrives (the only
     near-black bluish triangles of its head, and their glints: 50 of 1,288) and shown when he has painted them. The
     red pull-ring goes once it is out of the crack: it covered the face he paints.
+  - **Äventyr 2's owls** (Olov: "the static owl dissapeared and we fly away, it looks like there is two owls";
+    `src/content/aventyr2/render.ts`): the owl that waited and the owl that carried him were two. In Stormskogen the
+    waiting owl flew off by itself as he was carried away; in Älven it shrank away when called, and a new one grew
+    under him at an empty shore; in Stormens öga the landed owl blinked out. Now the waiting owl goes the moment he
+    climbs on, and the ride's owl lifts him from where it stood, growing from a sitting owl's size as its wings open;
+    set down, it flies on instead of shrinking away under him. Älven's owl, called, glides from its stone to where he
+    climbs on (`Spot.goesTo`, as the family's walk-over uses it).
   - **Olympia's puddle** (`buildings.ts`, `pitch`): the pitch's turf lay over both of Olympia's flooded pits and hid
     their water, since the pitch came on 4 November. The turf is cut away over each, with a bank of dark earth; the
     goalmouth's puddle and the near half of the centre circle show, the little ball afloat.
@@ -5025,7 +5032,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
-| Five things from the site (8 Nov, morning) | Olov's request: the family's places in Stormkvällen, Pappa walking in the air, the old trägubbe, the raincoats, Olympia's puddle | 1 session on Olov's computer, with one helper agent | — / 0 so far | Stormkvällen's and Morgonen's family out of the table and chairs; a trail for the walk home; the new trägubbe in the crack, eyes when painted; the puddle uncovered; the raincoats were a browser's old copy |
+| Six things from the site (8 Nov, morning) | Olov's request: the family's places in Stormkvällen, Pappa walking in the air, the old trägubbe, the raincoats, Olympia's puddle, two owls | 1 session on Olov's computer, with one helper agent | — / 0 so far | Stormkvällen's and Morgonen's family out of the table and chairs; a trail for the walk home; the new trägubbe in the crack, eyes when painted; one owl that waits and carries him; the puddle uncovered; the raincoats were a browser's old copy |
 | The night's playthrough (8 Nov, 00:00–03:30) | Olov's request: play both adventures through and fix what needs fixing | 1 session on Olov's computer, with three reading agents | — / 0 so far | Diary and objectives in both adventures, the helper, Billsta's gusts, Älven's vanishing Elof, Stormkvällen's black blob, the owl, Mormor's lantern, the title, Pause on a phone |
 | The roots and Moa's drawing (7 Nov, night) | Olov's request: make clear what happens when the ghost goes into the roots and what Moa dropped | Part of the same cloud session | — / 0 so far | A root hole the ghost creeps into, Moa kneeling at it, clearer lines, and her drawing seen to blow away; JS gate to 550 KB. |
 | The dialogue in good Swedish (7 Nov, late evening) | Olov's request: find and fix dialogue that isn't correct Swedish, the bird ride first | Part of the same cloud session, with two reading agents | — / 0 so far | About 60 lines rewritten in both adventures; the crane has its own button; three recorded lines silent until the new voices. |
