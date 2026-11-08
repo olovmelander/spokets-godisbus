@@ -398,6 +398,22 @@ function hut(def: BuildingDef) {
 }
 
 /**
+ * Flärkenbadet's diving tower, changing huts, giant chess, painted sun board and the jetty's other leg as made in
+ * Blender (art/blender/flarken.py), and how much bigger the chapter has them than they were made there: at Flärken not
+ * at all, so that the tower's platform and ladder and a hut's roof are exactly where his ledges and his climb are. The
+ * second hut's door is the game's own part, which slides on the model's rail (./render.ts, 'hut-door').
+ */
+function flarkenModel(def: BuildingDef): { model: string; fit: number } | null {
+  if (def.kind === 'tower') return { model: 'hopptorn', fit: (def.height ?? 2.7) / 2.7 };
+  if (def.kind === 'chess') return { model: 'schack', fit: (def.width ?? 14) / 16 };
+  if (def.kind === 'sunboard') return { model: 'solskylt', fit: (def.width ?? 12) / 13 };
+  if (def.kind === 'jettyArm') return { model: 'bryggarm', fit: (def.width ?? 22) / 24 };
+  if (def.kind !== 'hut') return null;
+  if (def.tar) return { model: 'hydda-tjarad', fit: (def.width ?? 9) / 9 };
+  return { model: def.slider ? 'hydda-skjutdorr' : 'hydda', fit: (def.height ?? 2.9) / 2.9 };
+}
+
+/**
  * A changing hut's door (the graphics pass of 6 November 2026; Olov: "finare byggnader"): upright planks with dark
  * gaps between them, held by a Z of braces, black strap hinges on the left, an iron handle on the right, in a
  * white casing, over a worn sill board. It stands no further out than the flat door it replaced.
@@ -599,21 +615,51 @@ function kota(def: BuildingDef) {
   return { parts: [paint(new ConeGeometry((def.width ?? 22) / 2, h, 12).translate(0, h / 2, 0), '#7a5a3c')], panes: [] };
 }
 
+/**
+ * Själevad's church as art/blender/a2-buildings.py makes it (`kyrka`; the numbers marked SHARED there): 26 across its
+ * corners, the walls' apothem, a window's width, sill and spring (the one over the door sits higher), and the lantern's.
+ */
+const CHURCH = {
+  across: 26, apothem: 13 * Math.cos(Math.PI / 8), wide: 3, sill: 5.2, spring: 11.5, frontSill: 9.6,
+  lantern: { apothem: 4, wide: 1.4, sill: 28.5, spring: 30.6 },
+} as const;
+
+/** A round-arched pane standing on its sill, facing +z. */
+function arched(wide: number, sill: number, spring: number): BufferGeometry {
+  const shape = new Shape();
+  shape.moveTo(-wide / 2, sill);
+  shape.lineTo(wide / 2, sill);
+  shape.lineTo(wide / 2, spring);
+  shape.absarc(0, spring, wide / 2, 0, Math.PI, false);
+  shape.lineTo(-wide / 2, sill);
+  return new ShapeGeometry(shape, 6);
+}
+
 function church(def: BuildingDef) {
-  // Själevad's church far down the lake, as the flashes show it: white, eight-sided, a tent roof, a lantern storey
-  // and a small turret with a spire. A silhouette in plain shapes, seen from kilometres off.
-  const r = (def.width ?? 40) / 2;
-  const h = def.height ?? 26;
-  const parts: BufferGeometry[] = [paint(new CylinderGeometry(r, r, h, 8).translate(0, h / 2, 0), '#ecebe4')];
-  parts.push(paint(new ConeGeometry(r * 1.08, h * 0.55, 8).translate(0, h + h * 0.275, 0), '#3e4248'));
-  parts.push(paint(new CylinderGeometry(r * 0.32, r * 0.32, h * 0.32, 8).translate(0, h * 1.55 + h * 0.16, 0), '#ecebe4'));
-  parts.push(paint(new ConeGeometry(r * 0.36, h * 0.22, 8).translate(0, h * 1.87 + h * 0.11, 0), '#3e4248'));
-  parts.push(paint(new ConeGeometry(r * 0.06, h * 0.5, 6).translate(0, h * 2.09 + h * 0.25, 0), '#3e4248'));
+  // Själevad's church far down the lake, as the flashes show it: white, eight-sided with a wall towards the camera, a
+  // tent roof, a lantern storey and a small turret with a spire. Until its model has come (art/blender/a2-buildings.py),
+  // the same in plain shapes; its windows are the game's own, on the model's walls, in each wall and the lantern's sides.
+  const s = (def.width ?? CHURCH.across) / CHURCH.across;
+  const r = 13;
+  const flat = (geometry: BufferGeometry) => geometry.rotateY(Math.PI / 8);
+  const parts: BufferGeometry[] = [paint(flat(new CylinderGeometry(r, r, 18, 8)).translate(0, 9, 0), '#ecebe4')];
+  parts.push(paint(flat(new CylinderGeometry(4.6, (CHURCH.apothem + 1.35) / Math.cos(Math.PI / 8), 8.8, 8, 1, true)).translate(0, 22.4, 0), '#2e3238'));
+  parts.push(paint(flat(new CylinderGeometry(4.33, 4.33, 6, 8)).translate(0, 29.5, 0), '#ecebe4'));
+  parts.push(paint(flat(new ConeGeometry(5.1, 2.3, 8)).translate(0, 33.85, 0), '#2e3238'));
+  parts.push(paint(flat(new CylinderGeometry(1.9, 1.9, 2.6, 8)).translate(0, 36.3, 0), '#ecebe4'));
+  parts.push(paint(flat(new ConeGeometry(2, 9, 8)).translate(0, 42.1, 0), '#2e3238'));
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
-    parts.push(box(1.2, h * 0.9, 1.2, Math.sin(a) * r * 0.99, h * 0.45, Math.cos(a) * r * 0.99, '#ffffff'));
+    parts.push(box(1.2, 15, 1.2, Math.sin(a) * r, 9.1, Math.cos(a) * r, '#ffffff'));
   }
-  const panes = [-0.45, 0, 0.45].map((x) => new PlaneGeometry(r * 0.16, h * 0.36).translate(x * r, h * 0.5, r * 0.93));
+  const panes: BufferGeometry[] = [];
+  for (let k = 0; k < 8; k++) {
+    const turn = (k * Math.PI) / 4;
+    panes.push(arched(CHURCH.wide, k === 0 ? CHURCH.frontSill : CHURCH.sill, CHURCH.spring).translate(0, 0, CHURCH.apothem + 0.025).rotateY(turn));
+    const lantern = CHURCH.lantern;
+    panes.push(arched(lantern.wide, lantern.sill, lantern.spring).translate(0, 0, lantern.apothem + 0.025).rotateY(turn));
+  }
+  for (const part of [...parts, ...panes]) part.scale(s, s, s);
   return { parts, panes };
 }
 
@@ -852,8 +898,8 @@ function pole(def: BuildingDef) {
       parts.push(tilted(Math.hypot(dx, dy) + 0.04, 0.09, 0.09, 0, Math.atan2(dy, dx), span * (a + b) / 2, (sagged(a) + sagged(b)) / 2, z, '#2a2e36'));
     }
   }
-  // Its lamp's glass, under the head.
-  const panes = [new PlaneGeometry(1.5, 0.7).rotateX(Math.PI / 2).translate(4.4, h - 4.83, 1)];
+  // Its lamp's glass, under the head, where the model's lamp is (art/blender/a2-buildings.py, `POLE`): made 19 high.
+  const panes = [new PlaneGeometry(1.5, 0.7).rotateX(Math.PI / 2).translate(4.4, 19 - 4.83, 1).scale(h / 19, h / 19, h / 19)];
   return { parts, panes };
 }
 
@@ -866,27 +912,41 @@ function trestleTable(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
+/**
+ * Olympia's store as art/blender/a2-buildings.py makes it (`kiosk`; the numbers marked SHARED there): its width, depth and
+ * walls' height, and its serving hatch's middle, width, sill and head.
+ */
+const STORE = { wide: 22, deep: 9, high: 11, hatch: { x: -2.4, wide: 11.6, sill: 4, head: 7.8 } } as const;
+
 function store(def: BuildingDef) {
-  // Olympia's little store: red boards under broad white trim, and a red-and-white striped awning over its counter.
-  const w = def.width ?? 20;
-  const h = def.height ?? 11;
-  const d = 9;
+  // Olympia's little store: red boards under broad white trim, and a red-and-white striped awning over its counter. Until
+  // its model has come (art/blender/a2-buildings.py), the same in plain shapes; the hatch's glass is the game's own.
+  const s = (def.width ?? STORE.wide) / STORE.wide;
+  const w = STORE.wide;
+  const h = STORE.high;
+  const d = STORE.deep;
   const parts: BufferGeometry[] = [box(w, h, d, 0, h / 2, 0, '#6e2622'), gable(w, 3.4, d, 0, h, 0, '#6e2622'), ...roof(w, 3.4, d, 0, h, 0, '#3a3e44')];
-  for (let x = -w / 2 + 0.9; x < w / 2; x += 1.8) parts.push(box(0.1, h - 0.4, 0.06, x, h / 2, d / 2 + 0.02, '#541c1a'));
-  // The white trim: under the eaves, at the corners, and round the counter's opening.
-  parts.push(box(w + 0.5, 0.8, 0.3, 0, h - 0.3, d / 2 + 0.1, '#e4e0d6'));
-  for (const x of [-w / 2, w / 2]) parts.push(box(0.7, h, 0.3, x, h / 2, d / 2 + 0.1, '#e4e0d6'));
-  const counter = { x: -w * 0.1, wide: w * 0.56, high: h * 0.36, at: h * 0.52 };
-  parts.push(box(counter.wide + 1, counter.high + 1, 0.2, counter.x, counter.at, d / 2 + 0.08, '#e4e0d6'));
-  parts.push(box(counter.wide + 1.4, 0.5, 2, counter.x, counter.at - counter.high / 2 - 0.7, d / 2 + 1, '#d8d2c4'));
-  // The door, and the awning: one sloping stripe after the other.
-  parts.push(box(w * 0.14, h * 0.72, 0.2, w * 0.33, h * 0.36, d / 2 + 0.08, '#e4e0d6'), box(w * 0.11, h * 0.66, 0.26, w * 0.33, h * 0.33, d / 2 + 0.1, '#3a3e44'));
-  const STRIPES = 10;
-  for (let i = 0; i < STRIPES; i++) {
-    const wide = (counter.wide + 2) / STRIPES;
-    parts.push(tilted(wide, 0.2, 3.6, 0.5, 0, counter.x - (counter.wide + 2) / 2 + (i + 0.5) * wide, counter.at + counter.high / 2 + 0.4, d / 2 + 1.7, i % 2 ? '#e8e2d6' : '#8a2a24'));
+  const { x: hx, wide, sill, head } = STORE.hatch;
+  const door = { x: 7.3, wide: 2.6, high: 8 };
+  for (let x = -w / 2 + 0.9; x < w / 2; x += 1.2) {
+    if (Math.abs(x - hx) < wide / 2 + 0.6 || Math.abs(x - door.x) < door.wide / 2 + 0.5) continue;
+    parts.push(box(0.2, h - 0.4, 0.08, x, h / 2, d / 2 + 0.04, '#541c1a'));
   }
-  const panes = [new PlaneGeometry(counter.wide, counter.high).translate(counter.x, counter.at, d / 2 + 0.2)];
+  // The white trim: under the eaves, at the corners, and the casing round the hatch, its glass in the wall.
+  parts.push(box(w + 0.3, 0.9, 0.16, 0, h - 0.45, d / 2 + 0.08, '#e4e0d6'));
+  for (const x of [-w / 2 + 0.24, w / 2 - 0.24]) parts.push(box(0.72, h, 0.28, x, h / 2, d / 2 + 0.1, '#e4e0d6'));
+  for (const x of [hx - wide / 2 - 0.21, hx + wide / 2 + 0.21]) parts.push(box(0.42, head - sill + 0.5, 0.16, x, (sill + head) / 2 + 0.16, d / 2 + 0.08, '#e4e0d6'));
+  parts.push(box(wide, 0.42, 0.16, hx, head + 0.21, d / 2 + 0.08, '#e4e0d6'));
+  parts.push(box(wide + 1.4, 0.32, 1.3, hx, sill - 0.16, d / 2 + 0.65, '#d8d2c4'));
+  // The door, and the awning: one sloping stripe after the other.
+  parts.push(box(door.wide + 0.76, door.high + 0.38, 0.16, door.x, (door.high + 0.38) / 2, d / 2 + 0.08, '#e4e0d6'), box(door.wide, door.high - 0.8, 0.2, door.x, (door.high + 0.8) / 2, d / 2 + 0.1, '#3c4844'));
+  const STRIPES = 12;
+  for (let i = 0; i < STRIPES; i++) {
+    const stripe = (wide + 1.4) / STRIPES;
+    parts.push(tilted(stripe, 0.12, 2.8, 0.45, 0, hx - (wide + 1.4) / 2 + (i + 0.5) * stripe, head + 0.5, d / 2 + 1.3, i % 2 ? '#ebe5d8' : '#a3302b'));
+  }
+  const panes = [new PlaneGeometry(wide, head - sill).translate(hx, (sill + head) / 2, d / 2 + 0.025)];
+  for (const part of [...parts, ...panes]) part.scale(s, s, s);
   return { parts, panes };
 }
 
@@ -906,6 +966,19 @@ const YARD: Partial<Record<BuildingDef['kind'], { model: string; size: number; b
   swings: { model: 'gungor', size: 19, by: 'width' },
   gardenset: { model: 'utemobler', size: 9.2, by: 'width' },
   trestleTable: { model: 'kitbord', size: 3.8, by: 'width' },
+};
+
+/**
+ * The buildings made in Blender (art/blender/a2-buildings.py), each with its own shade baked in, and how big each was
+ * made there. Each takes its stand-in's place at the size the chapter gives it; where it has glass, the game's own panes
+ * stay on its walls, so that they still light up.
+ */
+const BUILDINGS: Partial<Record<BuildingDef['kind'], { model: string; size: number; by: 'width' | 'height' }>> = {
+  church: { model: 'kyrka', size: CHURCH.across, by: 'width' },
+  lodge: { model: 'baverhydda', size: 18, by: 'width' },
+  store: { model: 'kiosk', size: STORE.wide, by: 'width' },
+  floodlight: { model: 'belysningsmast', size: 90, by: 'height' },
+  pole: { model: 'elstolpe', size: 19, by: 'height' },
 };
 
 /** What is built of stone: the bridge's piers and deck. */
@@ -974,6 +1047,17 @@ export function building(def: BuildingDef): Building {
     group.userData.fit = (def[yard.by] ?? yard.size) / yard.size;
     // The rowing boat's tarp has a loose corner, for the wind to lift (./render.ts).
     if (def.kind === 'rowboat') group.userData.onModelInstalled = (model: Object3D) => { group.userData.flap = model.getObjectByName('roddbat-vinter-flik') ?? undefined; };
+  }
+  const made = BUILDINGS[def.kind];
+  if (made && !def.model) {
+    group.userData.model = made.model;
+    group.userData.fit = (def[made.by] ?? made.size) / made.size;
+    if (group.children[1]) group.children[1].userData.keep = 0;
+  }
+  const flarken = flarkenModel(def);
+  if (flarken) {
+    group.userData.model = flarken.model;
+    group.userData.fit = flarken.fit;
   }
   if (def.kind === 'cliff') {
     const [wide, high] = [def.width ?? 16, def.height ?? 12];

@@ -29,8 +29,10 @@ describe('the browser suites', () => {
   });
 
   it('split a long suite into shares that each run their own cases and together run all of them, the last share once', () => {
-    for (const [name, , shares] of SUITES) {
-      if (!shares) continue;
+    for (const [name, seconds] of SUITES) {
+      if (!Array.isArray(seconds)) continue;
+      const shares = seconds.length;
+      expect(shares).toBeGreaterThan(1);
       // The suite takes its share of its cases from SHARD, as the runner passes it.
       expect(readFileSync(new URL(`../browser/${name}.mjs`, import.meta.url), 'utf8')).toContain('shareOf(');
       expect(units().filter((unit) => unit.file === name).map((unit) => unit.shard)).toEqual(Array.from({ length: shares }, (_, i) => `${i + 1}/${shares}`));
@@ -46,7 +48,7 @@ describe('the browser suites', () => {
   });
 
   it('are shared out evenly: the heaviest part is little more than its share', () => {
-    const all = SUITES.reduce((sum, [, seconds]) => sum + seconds, 0);
+    const all = units().reduce((sum, unit) => sum + unit.seconds, 0);
     const heaviest = Math.max(...units().map((unit) => unit.seconds));
     for (const count of [4, 6, 8, 12]) {
       const most = Math.max(...parts(count).map((part) => part.seconds));

@@ -1,61 +1,62 @@
-// The browser suites, in the order they run, each with how many seconds it took on GitHub: the mean of the two runs of
-// 8 November 2026 (pull requests #241 and #243, 151 minutes in all, where the game is drawn in software). The seconds are
-// only weights: they say how to share the suites out when they run side by side. When one part runs much longer than
-// the others, take new seconds from the "Browser suites:" line at the end of each job's log. A third number splits a
-// long suite into that many runs, each with its share of the suite's own cases (shareOf, below). A new suite goes in
-// this list, or the unit test tests/unit/browser-suites.test.ts fails.
+// The browser suites, in the order they run, each with how many seconds it took on GitHub: the mean of three runs on
+// 8 November 2026 (pull requests #241, #243 and #244, where the game is drawn in software). The seconds are only
+// weights: they say how to share the suites out when they run side by side. When one part runs much longer than the
+// others, take new seconds from the "Browser suites:" line at the end of each job's log. A list of seconds splits a long
+// suite into that many runs, each with its share of the suite's own cases (shareOf, below) and its own seconds, as its
+// shares last on GitHub. A new suite goes in this list, or the unit test tests/unit/browser-suites.test.ts fails.
 export const SUITES = [
-  ['smoke', 401],
-  ['settings', 73],
-  ['profiles', 59],
-  ['photos', 59],
+  ['smoke', 397],
+  ['settings', 82],
+  ['profiles', 58],
+  ['photos', 62],
   ['photo-storage', 1],
-  ['offline', 166],
-  ['challenges', 483],
-  ['adaptive-rendering', 96],
-  ['audio-levels', 31],
+  ['offline', 175],
+  ['challenges', 507],
+  ['adaptive-rendering', 93],
+  ['audio-levels', 28],
   ['lifecycle', 33],
-  ['texture-ownership', 31],
-  ['story', 270],
+  ['texture-ownership', 30],
+  ['story', 260],
   ['journey', 30],
-  ['album', 54],
-  ['helper', 138],
-  ['toys', 57],
-  ['pointing', 195],
-  ['release-routing', 63],
-  ['prologue', 713],
-  ['device', 16],
+  ['album', 58],
+  ['helper', 133],
+  ['toys', 54],
+  ['pointing', 176],
+  ['release-routing', 57],
+  ['prologue', 687],
+  ['device', 20],
   ['photo-focus', 1],
-  ['colour-pipeline', 83],
-  ['nightfall', 79],
-  ['village', 272],
-  ['bredbyn', 75],
-  ['gpu-memory', 884, 2],
-  ['water-light', 104],
-  ['epilogue', 39],
-  ['character-shadows', 501],
-  ['forest-shadows', 40],
+  ['colour-pipeline', 74],
+  ['nightfall', 88],
+  ['village', 286],
+  ['bredbyn', 78],
+  // Its last share also cycles quality, size, Pause and the context at High: most of its time.
+  ['gpu-memory', [156, 828]],
+  ['water-light', 111],
+  ['epilogue', 36],
+  ['character-shadows', 435],
+  ['forest-shadows', 44],
   ['canopy-light', 2],
   ['rim-light', 2],
   ['stone-courses', 2],
   ['memory-presentation', 20],
   ['dialogue-reading', 2],
-  ['ghost-thoughts', 339],
-  ['story-context', 248],
-  ['opening-story', 309],
-  ['endings', 195],
-  ['forest-puzzles', 276],
-  ['garden-loop', 1075, 2],
-  ['garden-home', 126],
-  ['mountain-loop', 301],
-  ['player-motion', 349],
-  ['family-help', 270],
-  ['family-story', 54],
-  ['myren-loop', 170],
-  ['finale-stage', 186],
-  ['model-installation', 43],
-  ['shared-home', 46],
-  ['aventyr2', 95],
+  ['ghost-thoughts', 337],
+  ['story-context', 260],
+  ['opening-story', 323],
+  ['endings', 208],
+  ['forest-puzzles', 263],
+  ['garden-loop', [427, 517]],
+  ['garden-home', 122],
+  ['mountain-loop', 298],
+  ['player-motion', 306],
+  ['family-help', 240],
+  ['family-story', 53],
+  ['myren-loop', 155],
+  ['finale-stage', 196],
+  ['model-installation', 39],
+  ['shared-home', 43],
+  ['aventyr2', 91],
 ];
 
 /** The files in tests/browser that are not suites: what the suites share, and this list's own two files. */
@@ -67,10 +68,14 @@ export const NOT_SUITES = ['budget', 'dialogue', 'family-caps', 'pause', 'pictur
  * passes as SHARD, and its part of the seconds.
  */
 export function units() {
-  return SUITES.flatMap(([name, seconds, shares = 1]) => Array.from({ length: shares }, (_, i) => ({
-    name: shares > 1 ? `${name} ${i + 1}/${shares}` : name, file: name, shard: shares > 1 ? `${i + 1}/${shares}` : undefined,
-    seconds: seconds / shares,
-  })));
+  return SUITES.flatMap(([name, seconds]) => {
+    const each = Array.isArray(seconds) ? seconds : [seconds];
+    const shares = each.length;
+    return each.map((own, i) => ({
+      name: shares > 1 ? `${name} ${i + 1}/${shares}` : name, file: name, shard: shares > 1 ? `${i + 1}/${shares}` : undefined,
+      seconds: own,
+    }));
+  });
 }
 
 /**

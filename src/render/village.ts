@@ -279,28 +279,141 @@ interface Paint {
   wall: Color;
   door: Color;
 }
-/** How a part is set on a wall: stretched along it, mirrored, moved up, a tone lighter or darker. */
+/**
+ * How a part is set on a wall: stretched along it, mirrored, moved up, a tone lighter or darker, and the shade
+ * the wall's other parts give it, as a factor for a point on its face (`shade`, below), along the wall and up from
+ * its foot.
+ */
 interface Placing {
   wide?: number;
   tall?: number;
   mirror?: boolean;
   up?: number;
   tone?: number;
+  shade?: (along: number, up: number) => number;
 }
 const PLAIN = new Color('#ffffff');
-// Köpmangatan mixes painted timber with smooth rendered shop fronts.
-const PLASTER_PANEL = flat([[0, 4, 1.95, TOP, 0, '#ffffff', 0.5]]);
+
+/**
+ * A part cut through where `axis` (0 along the wall, 1 up it) reaches each of `cuts`, so that it has corners where
+ * the shade on it changes. A corner made on an edge is shared by the faces on both sides of it.
+ */
+function sliced(shape: Shape, axis: 0 | 1, cuts: readonly number[]): Shape {
+  const position = Array.from(shape.position), normal = Array.from(shape.normal), colour = Array.from(shape.colour);
+  const whose = Array.from(shape.whose), glow = Array.from(shape.glow);
+  let index = Array.from(shape.index);
+  for (const at of cuts) {
+    const made = new Map<number, number>();
+    const between = (a: number, b: number): number => {
+      const key = Math.min(a, b) * 1e6 + Math.max(a, b);
+      const found = made.get(key);
+      if (found !== undefined) return found;
+      const t = (at - position[a * 3 + axis]!) / (position[b * 3 + axis]! - position[a * 3 + axis]!);
+      for (const list of [position, normal, colour]) for (let k = 0; k < 3; k++) list.push(list[a * 3 + k]! + (list[b * 3 + k]! - list[a * 3 + k]!) * t);
+      const n = normal.length - 3, long = Math.hypot(normal[n]!, normal[n + 1]!, normal[n + 2]!) || 1;
+      for (let k = 0; k < 3; k++) normal[n + k]! /= long;
+      whose.push(t < 0.5 ? whose[a]! : whose[b]!);
+      glow.push(glow[a]! + (glow[b]! - glow[a]!) * t);
+      made.set(key, whose.length - 1);
+      return whose.length - 1;
+    };
+    const out: number[] = [];
+    for (let i = 0; i < index.length; i += 3) {
+      const corners = [index[i]!, index[i + 1]!, index[i + 2]!];
+      const sides = corners.map((v) => { const d = position[v * 3 + axis]! - at; return Math.abs(d) < 1e-5 ? 0 : Math.sign(d); });
+      if (!sides.includes(1) || !sides.includes(-1)) { out.push(...corners); continue; }
+      const on = sides.indexOf(0);
+      // One corner on the cut: two faces. Otherwise the one corner alone on its side, and three.
+      const first = on >= 0 ? on : sides[0] === sides[1] ? 2 : sides[0] === sides[2] ? 1 : 0;
+      const a = corners[first]!, b = corners[(first + 1) % 3]!, c = corners[(first + 2) % 3]!;
+      if (on >= 0) {
+        const m = between(b, c);
+        out.push(a, b, m, a, m, c);
+      } else {
+        const ab = between(a, b), ac = between(a, c);
+        out.push(a, ab, ac, ab, b, c, ab, c, ac);
+      }
+    }
+    index = out;
+  }
+  return {
+    position: new Float32Array(position), normal: new Float32Array(normal), colour: new Float32Array(colour),
+    whose: new Float32Array(whose), glow: new Float32Array(glow), index,
+  };
+}
+
+/**
+ * Where the boards of a wall need more corners than the kit gives them, for the shade of the parts that stand out of
+ * the wall beside them and of the drip board under them (`shading`): rows over the drip board, and places along a
+ * board where a casing's shade fades. Cut once for each kit.
+ */
+const CUTS: Partial<Record<keyof typeof TILES, { along: number[]; up: number[] }>> = {
+  panel: { along: [0.85], up: [2.3, 2.8] },
+  // A run of boards ends at a casing or a corner board: its tiles have more corners towards their ends.
+  liggande: { along: [0.4, 1.2, 2.8, 3.6], up: [2.3] },
+};
+const FINER = new WeakMap<Shape, Shape>();
+function finer(shape: Shape | undefined, name: keyof typeof TILES): Shape | undefined {
+  const cuts = CUTS[name];
+  if (!shape || !cuts) return shape;
+  let cut = FINER.get(shape);
+  if (!cut) FINER.set(shape, (cut = sliced(sliced(shape, 0, cuts.along), 1, cuts.up)));
+  return cut;
+}
+
+// Köpmangatan mixes painted timber with smooth rendered shop fronts. A plastered wall is flat: a grid, so that the
+// shade on it has corners to lie on, closer together low down and towards the ends of each piece.
+const PLASTER_PANEL = sliced(sliced(flat([[0, 4, 1.95, TOP, 0, '#ffffff', 0.5]]), 0, [0.4, 1.2, 2.8, 3.6]), 1, [2.3, 2.8, 3.3, 5.5, 8.5]);
+
+/**
+ * The shade on a wall's boards from what stands out of the wall beside them: the sky a point loses to a long edge
+ * standing `proud` out of the wall, `d` from it, is half at the edge's foot and fades as 1 - d / √(d² + proud²). The
+ * edges are a casing's, a door's and a corner board's; a downpipe is round, and stands off the wall; the drip board
+ * lies under them all. A wall in Byn stands in the shade of the sky, so a point that
+ * loses `lost` of its sky takes 1 - 0.8 · lost of its colour: a little more than the kit's own creases
+ * (art/blender/village.py) give within a part, for the larger parts between them.
+ */
+const CAST = {
+  /** How far out each upright stands where it meets the boards, as the kit has them. */
+  proud: { casing: 0.3, door: 0.3, corner: 0.2, post: 0.2 },
+  /** The drip board's outer edge, over which the boards begin: how far out, and how high over the foot. */
+  drip: { out: 0.45, up: 1.72 },
+  /** A downpipe: its radius, how far its middle stands out, and how high over the foot it turns away from the wall. */
+  pipe: { radius: 0.3, out: 0.66, from: 2.4 },
+  strength: 0.8,
+} as const;
+interface Edge { from: number; to: number; proud: number }
+
+function shading(edges: readonly Edge[], pipes: readonly number[] = []): (along: number, up: number) => number {
+  const edge = (d: number, proud: number) => 0.5 * (1 - Math.max(0, d) / Math.hypot(Math.max(0, d), proud));
+  // A long round pipe seen from a point on the wall `d` along from it: the sky between its two sides.
+  const round = (d: number) => {
+    const { radius, out } = CAST.pipe;
+    const middle = Math.atan2(Math.abs(d), out), half = Math.asin(Math.min(1, radius / Math.hypot(d, out)));
+    return (Math.sin(Math.min(Math.PI / 2, middle + half)) - Math.sin(Math.max(-Math.PI / 2, middle - half))) / 2;
+  };
+  return (along, up) => {
+    let open = 1 - edge(up - CAST.drip.up, CAST.drip.out);
+    for (const e of edges) open *= 1 - edge(along < e.from ? e.from - along : along > e.to ? along - e.to : 0, e.proud);
+    // The pipe leaves the wall at its foot, where it turns out over the street.
+    const onWall = Math.min(1, Math.max(0, (up - CAST.pipe.from) / 0.4));
+    for (const x of pipes) open *= 1 - round(along - x) * onWall;
+    return 1 - CAST.strength * (1 - open);
+  };
+}
 
 /** Sets a part of the kit on a wall, `at` along it, in the house's colours. A part the kit lacks is left out. */
 function put(build: Build, shape: Shape | undefined, wall: Wall, at: number, paint: Paint, placing: Placing = {}): void {
   if (!shape) return;
-  const { wide = 1, tall = 1, mirror = false, up = 0, tone = 1 } = placing;
+  const { wide = 1, tall = 1, mirror = false, up = 0, tone = 1, shade } = placing;
   const stretch = mirror ? -wide : wide;
   const first = build.position.length / 3;
   for (let i = 0; i < shape.whose.length; i++) {
     const x = shape.position[i * 3]! * stretch + at;
     const y = shape.position[i * 3 + 1]!;
     const z = shape.position[i * 3 + 2]!;
+    // The shade of the wall's other parts lies on its face, and on what stands no further out than a cover strip.
+    const shaded = shade && z < 0.2 ? shade(x, up + y * tall) : 1;
     build.position.push(wall.x + wall.along[0] * x + wall.out[0] * z, wall.y + up + y * tall, wall.z + wall.along[1] * x + wall.out[1] * z);
     // A stretched part's faces turn: their normals are divided by the stretch, and made one long again.
     const nx = shape.normal[i * 3]! / stretch;
@@ -310,7 +423,7 @@ function put(build: Build, shape: Shape | undefined, wall: Wall, at: number, pai
     build.normal.push((wall.along[0] * nx + wall.out[0] * nz) / long, ny / long, (wall.along[1] * nx + wall.out[1] * nz) / long);
     const whose = shape.whose[i]!;
     const tint = whose > 0.75 ? paint.door : whose > 0.25 ? paint.wall : PLAIN;
-    const k = tint === paint.wall ? tone : 1;
+    const k = (tint === paint.wall ? tone : 1) * shaded;
     build.colour.push(shape.colour[i * 3]! * tint.r * k, shape.colour[i * 3 + 1]! * tint.g * k, shape.colour[i * 3 + 2]! * tint.b * k);
     build.glow.push(shape.glow[i]!, 0);
   }
@@ -327,7 +440,8 @@ function run(build: Build, kit: VillageKit, name: keyof typeof TILES, wall: Wall
   const count = Math.max(1, Math.round((to - from) / pitch));
   const wide = (to - from) / (pitch * count);
   // Each board is its own tone, as boards painted in different years are.
-  for (let i = 0; i < count; i++) put(build, name === 'puts' ? PLASTER_PANEL : kit.get(name), wall, from + i * pitch * wide, paint, { ...placing, wide, tone: name === 'puts' ? 1 : 0.965 + 0.07 * hash(from * 3.1 + i) });
+  const shape = name === 'puts' ? PLASTER_PANEL : placing.shade ? finer(kit.get(name), name) : kit.get(name);
+  for (let i = 0; i < count; i++) put(build, shape, wall, from + i * pitch * wide, paint, { ...placing, wide, tone: name === 'puts' ? 1 : 0.965 + 0.07 * hash(from * 3.1 + i) });
 }
 
 /** How high a part's foot stands: where the chapter says, or on the highest ground under it. */
@@ -348,16 +462,19 @@ function side(build: Build, kit: VillageKit, wall: Wall, long: number, corner: '
   // The front's corner board goes round the corner and covers the wall's first bit.
   const wood: [number, number] = corner === 'first' ? [CORNER, long] : [0, long - CORNER];
   const stone: [number, number] = corner === 'first' ? [-PROUD, long] : [0, long + PROUD];
+  // The boards are shaded by the corner board, and by the passage's posts.
+  const edges: Edge[] = [corner === 'first' ? { from: -1, to: CORNER, proud: CAST.proud.corner } : { from: long - CORNER, to: long + 1, proud: CAST.proud.corner }];
   if (!passage) {
-    run(build, kit, boards, wall, wood[0], wood[1], paint);
+    run(build, kit, boards, wall, wood[0], wood[1], paint, { shade: shading(edges) });
     run(build, kit, 'sockel', wall, stone[0], stone[1], paint);
     return;
   }
   const from = passage.at - PASSAGE.post;
   const to = passage.at + PASSAGE.wide + PASSAGE.post;
+  const shade = shading([...edges, { from, to, proud: CAST.proud.post }]);
   put(build, kit.get('port'), wall, passage.at, paint, { up: passage.up });
-  run(build, kit, boards, wall, wood[0], from, paint);
-  run(build, kit, boards, wall, to, wood[1], paint);
+  run(build, kit, boards, wall, wood[0], from, paint, { shade });
+  run(build, kit, boards, wall, to, wood[1], paint, { shade });
   run(build, kit, 'sockel', wall, stone[0], from, paint);
   run(build, kit, 'sockel', wall, to, stone[1], paint);
 }
@@ -515,16 +632,22 @@ function house(build: Build, kit: VillageKit, chapter: ChapterData, parts: reado
     ...(part.windows ?? []).map((w) => ({ from: w.from - CASING, to: w.to + CASING, door: false })),
     ...(part.door ? [{ from: part.door.from - CASING, to: part.door.to + CASING, door: true }] : []),
   ].sort((a, b) => a.from - b.from);
+  // The shade on the boards: from the casings and the door's, the corner boards, the downpipes and the drip board.
+  const shade = shading([
+    ...openings.map(({ from: a, to: b, door }) => ({ from: a, to: b, proud: door ? CAST.proud.door : CAST.proud.casing })),
+    ...(end.left !== 'none' ? [{ from: from - 1, to: from + CORNER, proud: CAST.proud.corner }] : []),
+    ...(end.right !== 'none' ? [{ from: to - CORNER, to: to + 1, proud: CAST.proud.corner }] : []),
+  ], part.pipes);
   let wood = from + (end.left === 'none' ? 0 : CORNER);
   let stone = from - (end.left === 'side' ? PROUD : 0);
   for (const opening of openings) {
-    run(build, kit, boards, front, wood, opening.from, paint);
+    run(build, kit, boards, front, wood, opening.from, paint, { shade });
     wood = opening.to;
     if (!opening.door) continue;
     run(build, kit, 'sockel', front, stone, opening.from, paint);
     stone = opening.to;
   }
-  run(build, kit, boards, front, wood, to - (end.right === 'none' ? 0 : CORNER), paint);
+  run(build, kit, boards, front, wood, to - (end.right === 'none' ? 0 : CORNER), paint, { shade });
   run(build, kit, 'sockel', front, stone, to + (end.right === 'side' ? PROUD : 0), paint);
   if (end.left !== 'none') put(build, kit.get('knut'), front, from, paint);
   if (end.right !== 'none') put(build, kit.get('knut'), front, to, paint, { mirror: true });

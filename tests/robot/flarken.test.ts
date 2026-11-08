@@ -61,10 +61,10 @@ const breakGap = pitUnder(gunwale.x);
 const [ring1, ring2] = flarken.hooks!;
 const puddle = pitUnder(ring2!.x);
 const ladder = flarken.climbs!.find((climb) => climb.look === 'ladder' && climb.bottom === 0)!;
-const towerLadder = flarken.climbs!.find((climb) => climb.look === 'hose' && climb.bottom === DECK)!;
-const platform = ledges.find((ledge) => ledge.look === 'plank' && Math.abs(ledge.y - towerLadder.top) < 1e-6)!;
+const towerLadder = flarken.climbs!.find((climb) => climb.bottom === DECK)!;
+const platform = ledges.find((ledge) => !ledge.needs && Math.abs(ledge.y - towerLadder.top) < 1e-6)!;
 const table = ledges.find((ledge) => ledge.look === 'shelf' && ledge.y === 2)!;
-const roofs = ledges.filter((ledge) => ledge.look === 'plank' && ledge.y > 2.5 && ledge.y < 3 && !ledge.needs);
+const roofs = ledges.filter((ledge) => ledge.width > 5 && ledge.y > 2.5 && ledge.y < 3 && !ledge.needs);
 const hutBench = ledges.find((ledge) => ledge.look === 'trestle' && ledge.y === 1)!;
 const net = flarken.bouncers![0]!;
 const where = (sim: Sim) => `he is at ${sim.curr.x.toFixed(2)}, ${sim.curr.y.toFixed(2)} (${sim.curr.mode})`;
@@ -350,7 +350,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     });
 
     it('has three stone shelves over the first stones: a held jump to each, and a jump across, with six side candies', () => {
-      const shelves = ledges.filter((ledge) => ledge.look === 'shelf' && ledge.y !== 2);
+      const shelves = ledges.filter((ledge) => ledge.look === 'shelf' && ledge.y !== 2 && !roofs.includes(ledge) && ledge !== platform);
       const first = shelves[0]!.x - 4.5;
       const sim = new Sim(flarken, {}, { checkpoint: CP.beach });
       run(sim, 0.2);

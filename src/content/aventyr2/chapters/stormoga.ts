@@ -182,7 +182,10 @@ export const stormoga: ChapterData = {
       { kind: 'spruce', x: 6, z: -54, height: 58 },
       { kind: 'birch', x: -4, z: -40, height: 70 },
       { kind: 'birch', x: 92, z: -36, height: 64 },
-      { kind: 'church', x: 128, z: -74, y: -2, width: 26, height: 18 },
+      // Själevad's church on the far shore, small and pale, where the bog's nearest far picture is open (x 25 to 59): seen
+      // past the jetty's lamps, ahead of the owl's flight and over the stone where the eye opens. Just behind that picture,
+      // whose land hides its foot and whose mist lies over it; any further back the haze would take it.
+      { kind: 'church', x: 31, z: -38, y: 1.8, width: 26, height: 18, size: 0.1 },
     ],
     glows: [
       // A warm place on the cold stone, where the two of them are.

@@ -815,10 +815,29 @@ const PROFILE_RIDGE: Row[] = [
   ...PROFILE.slice(9),
 ];
 
-/** A wooden floor's front, a bog's island's, and the ridge under a walk of planks over the bog. */
+/**
+ * Under a lake's jetty (Flärken's, Stormens öga's): only its side, the dark of its frame under the planks and their
+ * sleepers, down into the lake a little and in under the planks, with the lake in front of it and behind it
+ * (`jettiesOf`; ../water.ts draws the water under it). It was the bog's ridge painted as dark water, a slab coming
+ * forward under the planks with a face falling away from it, and beside the real water it read as a solid block.
+ */
+const PROFILE_JETTY: Row[] = [
+  { z: -1.5, drop: 1.4, shade: 0.4, bump: 0 },
+  { z: -1.45, drop: 0.9, shade: 0.55, bump: 0 },
+  { z: -1.3, drop: 0.45, shade: 0.7, bump: 0 },
+  { z: -0.3, drop: 0.45, shade: 0.75, bump: 0 },
+  { z: EDGE, drop: 0.45, shade: 0.75, bump: 0 },
+  { z: 1.25, drop: 0.45, shade: 0.8, bump: 0 },
+  { z: 1.4, drop: 0.9, shade: 0.62, bump: 0 },
+  { z: 1.45, drop: 1.4, shade: 0.45, bump: 0 },
+  { z: 1.2, drop: 1.45, shade: 0.35, bump: 0 },
+];
+
+/** A wooden floor's front, a bog's island's, the ridge under a walk of planks over the bog, and a lake's jetty. */
 const FLOOR_FRONT: Front = { rows: PROFILE_FLOOR, cuts: true, lip: 0, hang: 0, course: 0.9, over: BUILT, jointed: false, far: FAR, shore: 'ground' };
 const ISLAND_FRONT: Front = { rows: closer(PROFILE_ISLAND, 0.95, 3, 0.3), cuts: false, lip: 0, hang: 0, course: Infinity, over: SOFT, jointed: false, far: FAR, shore: false, relief: 'peat' };
 const RIDGE_FRONT: Front = { rows: PROFILE_RIDGE, cuts: false, lip: 0, hang: 0, course: Infinity, over: SOFT, jointed: false, far: FAR, shore: false };
+const JETTY_FRONT: Front = { rows: PROFILE_JETTY, cuts: false, lip: 0, hang: 0, course: Infinity, over: SOFT, jointed: false, far: FAR, shore: false };
 
 /**
  * The front of a kind of ground in a place: boards are a floor; under a walk of planks over a bog the ground
@@ -826,7 +845,8 @@ const RIDGE_FRONT: Front = { rows: PROFILE_RIDGE, cuts: false, lip: 0, hang: 0, 
  */
 function frontFor(kind: Ground, own: Ground): Front {
   if (kind === 'moss') return FRONTS.forest;
-  if (kind === 'ridge' || kind === 'shoreRidge') return RIDGE_FRONT;
+  if (kind === 'shoreRidge') return JETTY_FRONT;
+  if (kind === 'ridge') return RIDGE_FRONT;
   if (GROUNDS[kind].boards) return FLOOR_FRONT;
   if (GROUNDS[kind].sinks) return ISLAND_FRONT;
   return frontOf(own);
@@ -858,8 +878,8 @@ const GROUNDS: Record<Ground, GroundLook> = {
   sphagnum: { colours: tones('#6e3226', '#8f4d2b', '#7d8a36', '#bca94c'), wall: new Color('#2e241c'), shade: new Color('#2a3438'), bump: 1, boards: false, sinks: true },
   // A lake's shore: as the bog's islands stand in water, but in worn grass and sedge, with none of its red.
   shore: { colours: tones('#3e4c2a', '#566234', '#74783e', '#a4985e'), wall: new Color('#2e2a1e'), shade: new Color('#26343a'), bump: 0.8, boards: false, sinks: true },
-  // In front of a lake's jetty lies its water: dark and still, where a bog's walk of planks has its ridge of peat.
-  shoreRidge: { colours: tones('#16222c', '#1a2832', '#1e2e3a', '#223442'), wall: new Color('#121c24'), shade: new Color('#101820'), bump: 0.05, boards: false, sinks: true },
+  // Under a lake's jetty: the side of its frame, old wood dark with wet, in the planks' shade over the water.
+  shoreRidge: { colours: tones('#2a2723', '#312d28', '#38332d', '#3f3932'), wall: new Color('#25221e'), shade: new Color('#15171b'), bump: 0, boards: false, sinks: true },
   // The bog's peat under its walk of planks: the bog's own, a little browner and drier.
   ridge: { colours: tones('#5e3324', '#7a4a2c', '#76803a', '#a89a4a'), wall: new Color('#2e241c'), shade: new Color('#2a3438'), bump: 1, boards: false, sinks: true },
   granite: { colours: tones('#8f939d', '#a4a8b2', '#bcbfc6', '#d6d5d6'), wall: new Color('#8f929a'), shade: new Color('#46527e'), bump: 0.25, boards: false, rock: true },
@@ -1000,6 +1020,15 @@ export function groundMaterial(chapter: ChapterData, kind: Ground, map: CanvasTe
   return material;
 }
 
+/**
+ * Where a lake's jetty stands, which the simulation has as ground: what is marked wood where the place's own ground is
+ * a lake's shore. The water is drawn under it (../water.ts, `under`), and its ground is only its side (`PROFILE_JETTY`).
+ */
+export function jettiesOf(chapter: ChapterData, own: Ground): { from: number; to: number }[] {
+  if (own !== 'shore') return [];
+  return (landscape(chapter).surfaces ?? []).filter((s) => GROUNDS[s.kind].boards).map(({ from, to }) => ({ from, to }));
+}
+
 /** The shapes of a chapter's ground, a stretch of one kind at a time. No picture is drawn for them here. */
 export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; shape: BufferGeometry }[] {
   chapter = landscape(chapter);
@@ -1010,6 +1039,8 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
   // Over a bog what is marked wood is a walk of planks (./spang.ts) on a ridge of the bog's own peat.
   const kindAt = (x: number): Ground => {
     const kind = surfaceAt(chapter, x) ?? own;
+    // The walls that close a lake's course at its two ends are its shore, not the jetty that runs up to them.
+    if (own === 'shore' && (x <= first.x + 1e-6 || x >= last.x - 1e-6)) return own;
     return GROUNDS[own].sinks && GROUNDS[kind].boards ? (own === 'shore' ? 'shoreRidge' : 'ridge') : kind;
   };
   /** How high a pool's near shore lies in a front that has one. */
