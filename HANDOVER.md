@@ -51,6 +51,7 @@
     - **Mormor's lantern** came up in front of her face when called; it comes to her chest.
     - **The title's tableau** is framed higher and from a little below: Pappa's head was cut off at the top.
     - **Flärken's** firm stone between the reed mats is a wet boulder, not a pale slab.
+    - **Älven:** called, Pappa is seen up on the bridge for a moment (scene `bron`); he stood out of the picture.
   - **UI:** Pause on a phone held sideways (under 500 px tall): the map a little lower and the diary tighter, so the
     objective and the whole diary show without scrolling (they were cut off under the map).
   - **Spoken lines:** none of Äventyr 1's recorded lines changed. Äventyr 2 has no recordings yet, and five of its lines
@@ -4538,10 +4539,10 @@
 ## Next
 
 **From the night's playthrough (8 November), not done:**
-- **Älven: Pappa on the bridge is not in the picture when Elof calls him** (x 86–90), on a phone or a tablet: he stands
-  in the bridge's middle (x 99.4, 7.3 up), for the pendulum swing over the rapids. A wider camera left Elof at the
-  frame's foot. A short held shot when he is called (a scene with `on: 'al:pappa'` and one stage shot up to him) is
-  the likely way; mind the read beats `al:scarf-down` and `al:take-hold` that wait for Fortsätt in the same moment.
+- **Älven: Pappa on the bridge** stands in its middle (x 99.4, 7.3 up), for the pendulum swing, out of the rapids'
+  camera when Elof calls from x 88.6. Tonight a held shot of 1.5 s (scene `bron`, as long as the scarf takes to come
+  down) looks up to him: he is seen, small and dark behind the railing with his lamp. A longer look, or Pappa leaning
+  over the railing, is for Olov's eye on a device.
 - **Granskogen's big animals (below) are drawn, but hidden:** a bright red test ink showed nothing at x 47, 95 and
   178; lifted 2.2 EL the pair showed a sliver behind the ferns. The near forest floor's ferns and moss stand higher
   than the far pictures' horizon, where walkers hang (`EYE` 1.4 over his ground in `src/render/life.ts`). Moving the
