@@ -547,10 +547,14 @@ async function start(): Promise<void> {
     onStuck() {
       highLanding.reset();
       game.sim.toCheckpoint();
+      const rearmed = unreadBeats.length > 0;
       for (const id of unreadBeats) game.sim.flags.delete(`beat:${id}`);
       unreadBeats.length = 0;
       hud.clear();
       resume();
+      // Stuck on a puzzle, and not only in a corner: the helper comes along too, and looks at the next thing to do;
+      // unless words are waiting to be read again, which come first.
+      if (!rearmed) askedForHelp = true;
     },
   });
   const hdrAvailable = view.info().hdrAvailable;

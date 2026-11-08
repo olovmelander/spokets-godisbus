@@ -126,6 +126,10 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
     if (hook.extra || (hook.land?.x ?? hook.x + hook.length) <= p.x + 0.5) continue;
     things.push({ at: { x: hook.x, y: hook.y }, verb: 'lace', word: null });
   }
+  // What lies far behind him was optional, or he could not have come so far: he is not sent back for it, unless the
+  // chapter cannot end without it (Stormbyn's cap). Granskogen's jay sent him back 87 EL from the brook.
+  const needed = chapter.spots?.find((spot) => spot.id === chapter.goalNeeds)?.at;
+  for (let i = things.length - 1; i >= 0; i--) if (things[i]!.at.x < p.x - HINT_REACH && things[i]!.at !== needed) things.splice(i, 1);
   // What he stands at comes first: where several things may be done in any order, it is the one in reach.
   const beside = things.filter((thing) => Math.abs(thing.at.x - p.x) <= 1.3).sort((a, b) => Math.abs(a.at.x - p.x) - Math.abs(b.at.x - p.x))[0];
   if (beside) return beside;
