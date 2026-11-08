@@ -83,6 +83,17 @@
     has them walk.
   - **CI:** story-context's fast route to the ending has a wall-time guard against a route that crawls; a CI runner a
     third slower than the next took it past 60 s (it takes 18.6 s here, the same on main), so the guard is two minutes.
+  - **CI faster and lighter** (Olov: "why does it take over 30 minutes to run this? It should be possible to have these
+    pipes faster and lighter"). A pull request's checks took 25 to 40 minutes: the browser suites (about two and a half
+    hours of software drawing) ran in eight jobs shared out by October's timings, 23 to 25 minutes each, and each job
+    fetched the KTX tool from GitHub's release server, 4 to 16 minutes a job that morning. Now:
+    - twelve jobs, shared out by the mean of 8 November's two runs, the two longest suites (garden-loop, gpu-memory)
+      each split in two with their own cases (`SHARD`, `shareOf` in `tests/browser/suites.mjs`): about 13 minutes a job;
+    - the KTX download kept between runs (`actions/cache@v6`, `KTX_CACHE` in `scripts/install-ktx.sh`), in CI and the
+      deploy, its checksum still checked;
+    - a pull request of only Markdown or `docs/` skips the browser suites (the `scope` job in `ci.yml`); the typecheck,
+      unit tests, build and privacy check always run.
+    When a part runs much longer than the others, take new seconds from the jobs' "Browser suites:" lines.
   - **Known:** at Morgonen's breakfast Bertil, now sitting on his chair's seat, has his thighs up in the underside of the
     table: its top is 1.65 EL over a 1.31 seat, where a kitchen table stands about 1.7 times its chair's height. It is out
     of sight under the table top from the game's camera; before, he sat half a body down inside the chair. Higher tables
