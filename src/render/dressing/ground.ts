@@ -126,6 +126,8 @@ interface Row {
   pale?: number;
   /** Which ledge it belongs to, where the rock is jointed: a block's ledges lie a little higher or lower. */
   ledge?: 1 | 2;
+  /** A sample down a face between a ledge's row and the next: how much of each of a block's two ledges it takes. */
+  lift?: readonly [number, number];
   /** On a deck's rim board: 0 at its upper edge, 1 at its lower. The board lies along the path. */
   rim?: number;
   /** Under a floor's rim board: the dark under the boards, which no light reaches. */
@@ -248,8 +250,9 @@ const PROFILE_ROCK: Row[] = [
   { z: -0.3, drop: 0, shade: 1, bump: 0 },
   { z: EDGE, drop: 0, shade: 1, bump: 0 },
   { z: 0.9, drop: 0, shade: 1, bump: 0 },
-  // The edge he walks along, drawn by its own pale line.
+  // The edge he walks along, drawn by its own pale line, and the lip of rock under it: half a length straight down.
   { z: 0.98, drop: 0.08, shade: 1, bump: 0, pale: 0.4 },
+  { z: 0.99, drop: 0.5, shade: 0.86, bump: 0, cut: 1 },
   { z: 1.22, drop: 0.98, shade: 0.78, bump: 0, cut: 1, ledge: 1 },
   { z: 1.75, drop: 1.34, shade: 0.9, bump: 0, pale: 0.06, ledge: 1 },
   { z: 2.04, drop: 2.8, shade: 0.67, bump: 0, cut: 1, ledge: 2 },
@@ -270,6 +273,138 @@ function rockCutAt(kind: Ground, x: number, z: number, under: number, out: Color
   toneAt(kind, x * 1.3 + 4, under * 1.1 + z, out).multiplyScalar(0.9);
   if (under < 0.15) out.lerp(CAP, (1 - under / 0.15) * (0.3 + noise(x * 2.3, z * 2.1) * 0.5));
   return out.lerp(ROCK_DEEP, Math.min(1, Math.max(0, (under - 1.5) / 10)) * 0.7);
+}
+
+const smooth = (from: number, to: number, v: number) => {
+  const t = Math.min(1, Math.max(0, (v - from) / (to - from)));
+  return t * t * (3 - 2 * t);
+};
+
+/**
+ * A front sampled closer down its faces, from its row at depth `from` on, while it is less than `until` under the
+ * path: rows `step` apart at most, so that a face can bulge, break back and overhang between them (`rockRelief`,
+ * `peatRelief`). The samples lie on the line between two rows, and take each one's ledge as far as they are near it.
+ */
+function closer(rows: Row[], from: number, until: number, step: number): Row[] {
+  const lift = (row: Row): readonly [number, number] => row.lift ?? (row.ledge === 1 ? [1, 0] : row.ledge === 2 ? [0, 1] : [0, 0]);
+  return rows.flatMap((row, i): Row[] => {
+    const before = rows[i - 1];
+    if (!before || before.z < from || before.drop >= until) return [row];
+    const n = Math.ceil((row.drop - before.drop) / step);
+    const [a, b] = [lift(before), lift(row)];
+    const samples = Array.from({ length: Math.max(0, n - 1) }, (_, k): Row => {
+      const t = (k + 1) / n;
+      const mix = (p = 0, q = 0) => p + (q - p) * t;
+      return { z: mix(before.z, row.z), drop: mix(before.drop, row.drop), shade: mix(before.shade, row.shade), bump: mix(before.bump, row.bump),
+        cut: mix(before.cut, row.cut), pale: mix(before.pale, row.pale), lift: [mix(a[0], b[0]), mix(a[1], b[1])] };
+    });
+    return [...samples, row];
+  });
+}
+
+/**
+ * Rock's front seen close, as Unravel's outcrops are: how far it stands out towards the camera at a point of a
+ * face, or is broken back. Rounded masses a few lengths across with smaller knobs on them, and the sheets that
+ * granite splits into, each about a length thick and standing out or set back a little of its own, so that a
+ * sheet's top is a shelf and its foot an overhang. By where the point is in the world, so that two stretches that
+ * meet have the same rock where they meet.
+ */
+function rockRelief(x: number, y: number): number {
+  const masses = (noise(x * 0.29 + 4.1, y * 0.4 + 1.7) - 0.5) * 0.66 + (noise(x * 0.8 + 9.3, y * 0.95 + 3.1) - 0.5) * 0.26;
+  const sheet = y * 1.05 + (noise(x * 0.21 + 2.3, 5.5) - 0.5) * 1.2;
+  const layer = Math.floor(sheet);
+  const stands = (at: number) => (hash(at, 13.7) - 0.5) * 0.3;
+  return masses + stands(layer) + (stands(layer + 1) - stands(layer)) * smooth(0.76, 1, sheet - layer);
+}
+
+/** How much of the rock's relief a face shows, by how far under the path: none at the edge he walks along. */
+const rockShare = (drop: number) => smooth(0.1, 1, drop) * (1 - smooth(4.5, 8, drop));
+
+/** Where the relief eases out towards a wall's corner, where the front stands on the wall as it is. */
+const ROUGH_REACH = 1.6;
+/** How far in front the lip of rock under the edge may stand out, half a length down: a hand past the edge. */
+const LIP_OUT = 1.1;
+
+const LICHEN_MAP = new Color('#b8bd66');
+const LICHEN_CRUST = new Color('#dcdcd0');
+const ROCK_MOSS = new Color('#55672a');
+const STREAK = new Color('#363c4a');
+const SUNLIT = new Color('#ffd9a8');
+
+/**
+ * Rock's front where it is seen close. The sun stands low behind the play plane and the sky over it, so that a
+ * face towards the camera shows its shape by little else than this: it is lighter where it faces up or towards the
+ * sun's side, darker where it faces down under an overhang, and darkest in its hollows. Crust lichen grows in pale
+ * patches where it stands out, map lichen in yellow-green ones, moss on its shelves and in its hollows where a little
+ * soil and water lie, and rain leaves dark streaks down it. `share` is how much of the relief is there; `deep` how
+ * much of the face's own shape it has.
+ */
+function rockFace(x: number, y: number, under: number, share: number, deep: number, out: Color): Color {
+  const here = rockRelief(x, y);
+  const around = (rockRelief(x - 0.6, y) + rockRelief(x + 0.6, y) + rockRelief(x, y - 0.45) + rockRelief(x, y + 0.45)) / 4;
+  const stands = here - around;
+  // Going up the face, it comes forward (it faces down) or goes back (it faces up); going along it, it comes forward
+  // towards the right (it faces left, where the sun is) or away.
+  const down = (rockRelief(x, y + 0.15) - rockRelief(x, y - 0.15)) / 0.3;
+  const sunward = (rockRelief(x + 0.2, y) - rockRelief(x - 0.2, y)) / 0.4;
+  const over = Math.max(0, rockRelief(x, y + 0.3) - here);
+  const crust = noise(x * 0.9 + 1.3, y * 1.2 + 2.1);
+  out.lerp(LICHEN_CRUST, smooth(0.45, 0.72, crust + stands * 1.2) * 0.5 * share);
+  const map = noise(x * 1.3 + 5.2, y * 1.5 + 0.4);
+  out.lerp(LICHEN_MAP, smooth(0.6, 0.78, map + stands * 0.6) * 0.6 * share);
+  const mossy = Math.max(smooth(0.1, 0.6, -down), smooth(0.04, 0.16, -stands) * 0.7);
+  out.lerp(ROCK_MOSS, mossy * (0.4 + 0.5 * noise(x * 1.3 + 8, y * 2.1)) * share);
+  const streak = smooth(0.58, 0.8, noise(x * 0.9 + 7.7, y * 0.12 + 3.3)) * smooth(0.2, 0.9, under);
+  out.lerp(STREAK, streak * 0.4 * share);
+  if (sunward > 0) out.lerp(SUNLIT, Math.min(0.3, sunward * 0.45) * deep);
+  const light = 1 + stands * 2.4 * deep - down * 0.6 * deep + sunward * 0.4 * deep - over * 3 * deep;
+  return out.multiplyScalar(Math.min(1.4, Math.max(0.34, light)));
+}
+
+/**
+ * Where a bank of peat in the bog has its cushion of moss over the peat, by how far under the top: here and there
+ * the moss hangs further down in a tongue.
+ */
+function peatLip(x: number): number {
+  return 0.55 + noise(x * 0.7 + 3.3, 1.9) * 0.4 + Math.max(0, noise(x * 2.6 + 1.1, 4.2) - 0.55) * 1.3;
+}
+
+/**
+ * A bank of peat in the bog, seen close: tussocks bulge out of it, the cushion of moss on its top swells out over
+ * its edge, and under that the peat is eaten back, so that the moss overhangs it.
+ */
+function peatRelief(x: number, y: number, under: number): number {
+  const lip = peatLip(x);
+  const tussocks = (noise(x * 0.55 + 6.1, y * 0.7 + 2.3) - 0.5) * 0.36 + (noise(x * 1.6 + 2.2, y * 1.9 + 8.4) - 0.5) * 0.12;
+  const cushion = 0.16 * smooth(lip - 0.6, lip - 0.15, under) * (1 - smooth(lip - 0.05, lip + 0.15, under));
+  const undercut = -0.14 * smooth(lip, lip + 0.25, under) * (1 - smooth(lip + 0.4, lip + 1.1, under));
+  return tussocks + cushion + undercut;
+}
+
+/** How much of the peat's relief a bank shows, by how far under its top: none where he walks, none deep down. */
+const peatShare = (drop: number) => smooth(0.05, 0.5, drop) * (1 - smooth(2.2, 3.2, drop));
+
+const PEAT = new Color('#3d2a1a');
+const PEAT_FIBRE = new Color('#5e4329');
+const PEAT_ROOT = new Color('#93765a');
+const PEAT_WET = new Color('#140e09');
+
+/** A face of the bog's peat seen from its side: its layers lie level, a darker and a paler brown, with pale roots. */
+function peatSide(along: number, y: number, out: Color): Color {
+  out.copy(PEAT).lerp(PEAT_FIBRE, smooth(0.45, 0.85, noise(along * 0.6 + 2, y * 4.2 + 1)) * 0.6);
+  const root = noise(along * 1.9 + 5, y * 1.2);
+  return root > 0.72 ? out.lerp(PEAT_ROOT, Math.min(1, (root - 0.72) * 2.5)) : out;
+}
+
+/**
+ * Peat where the bank shows it under its moss: layers of half-rotted moss and sedge lying along it, pale roots, and
+ * wetter and darker further down towards the water.
+ */
+function peatAt(x: number, under: number, lip: number, out: Color): Color {
+  out.copy(PEAT).lerp(PEAT_FIBRE, smooth(0.45, 0.85, noise(x * 0.5 + 2, under * 4.2 + 1)) * 0.6);
+  const root = noise(x * 1.9 + 5, under * 1.2 + x * 0.3);
+  if (root > 0.7) out.lerp(PEAT_ROOT, Math.min(1, (root - 0.7) * 2.5));
+  return out.lerp(PEAT_WET, smooth(0.3, 2.2, under - lip) * 0.75);
 }
 
 /** How deep a bar of the drain's grate is: cast iron that deep, and under it the dark of the well. */
@@ -435,6 +570,8 @@ interface Front {
    * water, as a forest pool's does, or level with the ground beside the pool, as a street does round a puddle.
    */
   shore: false | 'water' | 'ground';
+  /** What its front is like seen close, where it has a relief of its own: rock's outcrop or a bank of peat. */
+  relief?: 'rock' | 'peat';
 }
 
 /**
@@ -445,6 +582,10 @@ interface Block {
   to: number;
   ledges: [number, number];
   tone: number;
+  /** How far its faces stand out towards the camera, or are set back, beside its neighbours'. */
+  out: number;
+  /** How much lighter or darker its faces are than its neighbours': each block weathers in its own tone. */
+  weather: number;
 }
 
 /** Half the width of a joint's dark line. */
@@ -456,7 +597,8 @@ function blocksOf(from: number, to: number): Block[] {
   const blocks: Block[] = [];
   for (let x = from - 20 + next() * 4; x < to + 26; ) {
     x += 3.8 + next() * 5.4;
-    blocks.push({ to: x, ledges: [(next() - 0.5) * 0.6, (next() - 0.5) * 1.3], tone: 0.97 + next() * 0.08 });
+    blocks.push({ to: x, ledges: [(next() - 0.5) * 0.6, (next() - 0.5) * 1.3], tone: 0.97 + next() * 0.08, out: (hash(x * 0.37, 41.3) - 0.5) * 0.44,
+      weather: 0.84 + hash(x * 0.53, 7.9) * 0.3 });
   }
   return blocks;
 }
@@ -473,7 +615,7 @@ const FRONTS: Record<'plain' | 'forest' | 'lawn' | 'rock' | 'street', Front> = {
   forest: { rows: PROFILE_FOREST, cuts: true, lip: LIP - 0.5, hang: 0.7, course: 0.9, over: SOFT, jointed: false, far: FAR, shore: 'water' },
   // The lawn has the forest's floor: grass grows down it towards the camera. Its turf hangs less far.
   lawn: { rows: PROFILE_FOREST, cuts: true, lip: LIP - 0.5, hang: 0.45, course: 0.9, over: SOFT, jointed: false, far: new Color('#b3cfa6'), shore: 'water' },
-  rock: { rows: PROFILE_ROCK, cuts: true, lip: 0, hang: 0, course: 0.6, over: SOFT, jointed: true, far: FAR, shore: false },
+  rock: { rows: closer(PROFILE_ROCK, 0.98, 3.2, 0.3), cuts: true, lip: 0, hang: 0, course: 0.6, over: SOFT, jointed: true, far: FAR, shore: false, relief: 'rock' },
   // A street is a tilted plane in what it is built of. A puddle lies in it: its near shore is the street.
   street: { rows: PROFILE_STREET, cuts: true, lip: 0, hang: 0, course: 0.9, over: BUILT, jointed: false, far: FAR, shore: 'ground' },
 };
@@ -620,6 +762,15 @@ function dropOf(profile: Row[], row: Row, forward: number): number {
   return row.drop - dropAt(profile, row.z) + dropAt(profile, depthOf(row, forward));
 }
 
+/**
+ * Where a bank of the bog's own ground rounds over its edge in front, at x: what grows on it hangs over from there
+ * (./bog.ts). An island in the water has its front drawn in, as the bank itself has (`IN_WATER`).
+ */
+export function bankLip(chapter: ChapterData, x: number, row = 1.3): { y: number; z: number } {
+  const wet = !!chapter.river || (chapter.water ?? []).some((w) => x >= w.from && x <= w.to);
+  return { y: heightAt(chapter, x) - dropAt(PROFILE_ISLAND, row), z: EDGE + (row - EDGE) * (wet ? IN_WATER : 1) };
+}
+
 /** The bog's ground: as the bank in front, and sinking under the water behind the path. */
 const PROFILE_ISLAND = PROFILE.map((row, i) => (i < 3 ? { ...row, drop: [3.2, 1.7, 0.3][i]!, bump: row.bump * 0.6 } : row));
 /**
@@ -666,7 +817,7 @@ const PROFILE_RIDGE: Row[] = [
 
 /** A wooden floor's front, a bog's island's, and the ridge under a walk of planks over the bog. */
 const FLOOR_FRONT: Front = { rows: PROFILE_FLOOR, cuts: true, lip: 0, hang: 0, course: 0.9, over: BUILT, jointed: false, far: FAR, shore: 'ground' };
-const ISLAND_FRONT: Front = { rows: PROFILE_ISLAND, cuts: false, lip: 0, hang: 0, course: Infinity, over: SOFT, jointed: false, far: FAR, shore: false };
+const ISLAND_FRONT: Front = { rows: closer(PROFILE_ISLAND, 0.95, 3, 0.3), cuts: false, lip: 0, hang: 0, course: Infinity, over: SOFT, jointed: false, far: FAR, shore: false, relief: 'peat' };
 const RIDGE_FRONT: Front = { rows: PROFILE_RIDGE, cuts: false, lip: 0, hang: 0, course: Infinity, over: SOFT, jointed: false, far: FAR, shore: false };
 
 /**
@@ -787,6 +938,10 @@ interface BankPoint {
   wet?: number;
   /** In a drain: the height of its bars. In front of its grate and behind it, the road goes on at that height. */
   drain?: number;
+  /** How much of its front's relief it has: none at a wall's corner, all of it a length and a half away. */
+  rough?: number;
+  /** Where along the path its front's relief is read, where not at its own x: beside a joint, at the joint. */
+  reliefAt?: number;
   kind: Ground;
 }
 
@@ -937,6 +1092,9 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
     along += length;
   }
   points.push({ x: last.x + 16, y: last.y, wall: false, face: false, along, forward: 1, kind: own });
+  // A front's relief eases out towards a wall's corners, the same for every stretch that meets there.
+  const corners = points.filter((p) => p.wall).map((p) => p.x);
+  for (const p of points) p.rough = smooth(0, ROUGH_REACH, Math.min(Infinity, ...corners.map((x) => Math.abs(p.x - x))));
 
   const blocks = blocksOf(first.x, last.x);
   const shapes: { kind: Ground; shape: BufferGeometry }[] = [];
@@ -973,6 +1131,8 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
   const c = new Color();
   const wetted = new Color();
   const tile = tileOf(kind);
+  /** The block of jointed rock at x, for how far its face stands out where no block is given. */
+  const blockAt = (x: number) => blocks.find((b) => b.to > x);
 
   /**
    * The column at a point: of the top, or of the wall's face that runs along (ux, uy), and then of that wall
@@ -995,7 +1155,8 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       const row = profile[j]!;
       const z = depthOf(row, forward);
       const swell = p.wall ? 0 : row.bump * look.bump * (noise(p.x * 1.15, row.z * 1.4 + 7) - 0.5) * 2;
-      const drop = dropOf(profile, row, forward) + (block && row.ledge ? block.ledges[row.ledge - 1]! : 0);
+      const lift = row.lift ?? (row.ledge === 1 ? [1, 0] : row.ledge === 2 ? [0, 1] : null);
+      const drop = dropOf(profile, row, forward) + (block && lift ? block.ledges[0] * lift[0] + block.ledges[1] * lift[1] : 0);
       // A drain is only as deep, front to back, as its grate: in front of it and behind it the road is shut.
       const shut = p.drain !== undefined && (row.z > EDGE || row.z < DRAIN_BACK);
       let y = (p.shore !== undefined && row.z > EDGE ? p.shore : shut ? p.drain! : p.y) - drop + swell;
@@ -1014,9 +1175,18 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
         ? Math.min(1, Math.max(0, drop - 0.15) / 1.8) * forward : 0;
       const shear = fracture * (0.42 * Math.sin(drop * 0.7 + p.x * 0.11) + 0.22 * Math.sin(drop * 1.7 + p.x * 0.3));
       const fold = fracture * (noise(p.x * 0.42 + 8, row.z * 0.7) - 0.5) * 0.64;
-      position.push(p.x + shear, y + fold, z);
-      if (drawnLast) drawnDown += Math.hypot(p.x + shear - drawnLast[0], y + fold - drawnLast[1], z - drawnLast[2]);
-      drawnLast = [p.x + shear, y + fold, z];
+      // Seen close, rock bulges, breaks back in its sheets and overhangs, and peat swells in tussocks under its lip
+      // of moss (`rockRelief`, `peatRelief`): towards the camera, and not at all where he walks or at a wall.
+      // The cheek between two blocks has each block's relief, as the faces beside it do.
+      const share = front.relief && !p.wall && !wall && row.z > EDGE ? (front.relief === 'rock' ? rockShare(drop) : peatShare(drop)) * forward : 0;
+      const close = share * (p.rough ?? 1);
+      const rx = p.reliefAt ?? p.x;
+      const bulge = close > 0 ? close * (front.relief === 'rock' ? rockRelief(rx, y) + ((block ?? blockAt(rx))?.out ?? 0) : peatRelief(rx, y, under)) : 0;
+      // It never goes back past the edge of the top, and rock's lip under the edge stands out a hand at the most.
+      const out = bulge === 0 ? 0 : Math.min(front.relief === 'rock' && drop - fold < 0.56 ? LIP_OUT - z : Infinity, Math.max(EDGE + 0.48 - z, bulge));
+      position.push(p.x + shear, y + fold, z + out);
+      if (drawnLast) drawnDown += Math.hypot(p.x + shear - drawnLast[0], y + fold - drawnLast[1], z + out - drawnLast[2]);
+      drawnLast = [p.x + shear, y + fold, z + out];
       // Where the road goes on over a drain, it is the road's. In the well under the grate it is dark.
       const ironWork = p.drain !== undefined && !shut;
       toneAt(shut ? DRAIN_ROAD : kind, p.x, down[j]!, c);
@@ -1039,7 +1209,24 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
         }
         // A bar's top edges are worn bright by feet.
         if (ironWork && kind === 'iron' && p.wall && !face && p.y > p.drain! - 0.01) c.lerp(WORN, 0.3);
-      } else if (face) c.lerp(look.wall, p.wet === undefined ? 0.82 : 0.82 * Math.min(1, Math.max(0, (p.wet + 0.45 - y) / 0.3)));
+      } else if (face) {
+        // A wall of the bog's own ground is its peat, in layers; another's is its own face.
+        const side = kind === 'sphagnum' || kind === 'ridge' ? peatSide(z + p.x * 0.3, y, scratch) : look.wall;
+        c.lerp(side, p.wet === undefined ? 0.82 : 0.82 * Math.min(1, Math.max(0, (p.wet + 0.45 - y) / 0.3)));
+      }
+      // Rock's front seen close: its hollows, its lichen, its moss and its streaks. A bank of peat shows its peat
+      // under the cushion of moss that hangs over its edge, and is wetter further down.
+      if (share > 0 && front.relief === 'rock') rockFace(rx, y, under, share, close / share, c);
+      if (front.relief === 'peat' && !face && row.z > EDGE) {
+        const lip = peatLip(p.x);
+        if (under > lip - 0.1) c.lerp(peatAt(p.x, under, lip, scratch), smooth(lip - 0.1, lip + 0.08, under));
+        // As on rock, the bank shows its shape by the light it gets from where it leans: the cushion's top and the
+        // tussocks' are lit by the sky, and under the cushion it is dark.
+        if (close > 0) {
+          const down = (peatRelief(rx, y + 0.12, under - 0.12) - peatRelief(rx, y - 0.12, under + 0.12)) / 0.24;
+          c.multiplyScalar(Math.min(1.3, Math.max(0.45, 1 - down * 0.6 * (close / share))));
+        }
+      }
       // At the waterline an island is dark and wet, along its sides and its front; over the water its lip is moss.
       if (p.wet !== undefined) c.lerp(WET, 0.85 * Math.max(0, 1 - Math.abs(y - p.wet) / WET_REACH));
       // A rim board is one long board, not a board to each board of the deck: one tone, drifting along it.
@@ -1051,7 +1238,7 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
         const depth = face ? under : drop - dropAt(profile, z);
         if (depth > 0) roadCutAt(kind === 'iron' ? DRAIN_ROAD : kind, p.x, z, depth, c);
       }
-      if (block) c.multiplyScalar(block.tone);
+      if (block) c.multiplyScalar(block.tone * (share > 0 ? 1 + (block.weather - 1) * share : 1));
       // A joint is a dark line down the faces, and a faint one across the ledges and the top.
       if (seam) c.multiplyScalar(row.cut ? 0.68 : row.z > EDGE ? 0.87 : 0.96);
       if (row.pale && !face) c.lerp(WHITE, row.pale);
@@ -1061,11 +1248,11 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       // The rim board lies along the path: across it the picture spans one board, between two gaps, and its
       // grain runs along.
       if (row.rim !== undefined && !face) uv.push(0.0125 + row.rim * 0.475, p.x * tile);
-      else if (!face && kind === 'granite') uv.push((p.along + shear) * tile, drawnDown * tile);
+      else if (!face && (kind === 'granite' || front.relief)) uv.push((p.along + shear) * tile, drawnDown * tile);
       else if (!face) uv.push((look.boards ? p.x : p.along) * tile, (down[j]! + (row.z > EDGE ? rise + sink : 0) + (row.z >= DRAIN_BACK ? sink : 0)) * tile);
       // A face lies in the depth and along the wall. A board there is a board on edge, its grain into the depth.
       else if (look.boards) uv.push((p.x * ux + y * uy) * tile, z * tile);
-      else uv.push(z * tile, (p.x * ux + y * uy) * tile);
+      else uv.push((z + out) * tile, (p.x * ux + (y + fold) * uy) * tile);
     }
     return first;
   };
@@ -1096,9 +1283,10 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
     if (block && block.to < b.x - SEAM * 1.5 && block.to > a.x + SEAM * 1.5 && at < blocks.length - 1) {
       // A joint: the two blocks each have a column there, and between them stands the cheek of the step.
       const t = (block.to - a.x) / (b.x - a.x);
-      const joint: BankPoint = { ...a, x: block.to, y: a.y + (b.y - a.y) * t, along: a.along + (b.along - a.along) * t };
+      const joint: BankPoint = { ...a, x: block.to, y: a.y + (b.y - a.y) * t, along: a.along + (b.along - a.along) * t,
+        rough: (a.rough ?? 1) + ((b.rough ?? 1) - (a.rough ?? 1)) * t };
       // The line of the joint is a finger wide: a column beside it on each side keeps the dark to that.
-      const beside = (side: number): BankPoint => ({ ...joint, x: joint.x + side * SEAM, along: joint.along + side * SEAM });
+      const beside = (side: number): BankPoint => ({ ...joint, x: joint.x + side * SEAM, along: joint.along + side * SEAM, reliefAt: joint.x });
       const near = column(beside(-1), 0, 0, undefined, block);
       strip(left, near);
       strip(near, column(joint, 0, 0, undefined, block, true));

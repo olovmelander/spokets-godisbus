@@ -1,6 +1,6 @@
 import { Color, Group, InstancedMesh, Object3D } from 'three';
 import type { ChapterData } from '../../sim/types';
-import { toneAt, type Ground } from './ground';
+import { bankLip, toneAt, type Ground } from './ground';
 import { KIT, TALL_BLADES, grows, heightAt, sequence, tallGrass } from './kit';
 
 // --- the bog ------------------------------------------------------------------------------------------------
@@ -34,7 +34,9 @@ export function bog(chapter: ChapterData, from: number, to: number, seed: number
 
   // Sedge: straw-coloured in late September, in tufts.
   const clumps = Math.round(length * 0.4);
-  const sedge = new InstancedMesh(KIT.blade, KIT.straw, Math.round(length * 8) + clumps * TALL_BLADES);
+  // Over the bank's edge in front, sedge and strands of moss hang down its face of peat.
+  const hanging = Math.round(length * 3);
+  const sedge = new InstancedMesh(KIT.blade, KIT.straw, Math.round(length * 8) + hanging + clumps * TALL_BLADES);
   const sedges = Math.round(length * 8);
   n = 0;
   for (let tuft = 0; n < sedges && tuft < sedges; tuft++) {
@@ -50,6 +52,24 @@ export function bog(chapter: ChapterData, from: number, to: number, seed: number
       place.updateMatrix();
       sedge.setMatrixAt(n, place.matrix);
       sedge.setColorAt(n++, next() < 0.2 ? tint.set('#8f9a48') : tint.set('#d2b968').multiplyScalar(0.75 + next() * 0.4));
+    }
+  }
+  // They grow on the edge where the bank rounds over (./ground.ts, bankLip), lean out over it and droop down it. Their
+  // own sequence keeps the rest of the bog where it was.
+  const hang = sequence(seed * 17 + 5);
+  for (let tuft = 0, made = 0; made < hanging && tuft < hanging; tuft++) {
+    const x = from + hang() * length;
+    if (!grows(chapter, x)) continue;
+    const lip = bankLip(chapter, x, 1.05 + hang() * 0.45);
+    for (let k = 0; k < 2 + Math.floor(hang() * 4) && made < hanging; k++, made++) {
+      const bx = x + (hang() - 0.5) * 0.35;
+      place.position.set(bx, lip.y + 0.03, lip.z - 0.05 + hang() * 0.1);
+      place.rotation.set(1.6 + hang() * 1.1, (hang() - 0.5) * 0.9, (hang() - 0.5) * 0.7);
+      place.scale.set(0.022 + hang() * 0.03, 0.22 + hang() ** 1.5 * 0.75, 1);
+      place.updateMatrix();
+      sedge.setMatrixAt(n, place.matrix);
+      const ink = hang();
+      sedge.setColorAt(n++, (ink < 0.45 ? tint.set('#b9a35a') : ink < 0.8 ? tint.set('#7d8a40') : tint.set('#8a4630')).multiplyScalar(0.6 + hang() * 0.4));
     }
   }
   sedge.count = n;
