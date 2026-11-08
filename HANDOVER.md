@@ -57,7 +57,7 @@
     - **Älven:** called, Pappa is seen up on the bridge for a moment (scene `bron`); he stood out of the picture.
   - **UI:** Pause on a phone held sideways (under 500 px tall): the map a little lower and the diary tighter, so the
     objective and the whole diary show without scrolling (they were cut off under the map).
-  - **Spoken lines:** none of Äventyr 1's recorded lines changed. Äventyr 2 has no recordings yet, and five of its lines
+  - **Spoken lines:** none of Äventyr 1's recorded lines changed. Äventyr 2 has no recordings yet, and six of its lines
     changed (`sbMoaHere`, `olIdeaMore`, `olCar`, `sjMamma`, `sjNear`, `sjCar`); `scripts/voices-aventyr2.json` has the
     new words.
   - **Checked:** typecheck, `npm test` (2,134), `npm run build` (boot 4,540.8 of 4,608 KB), the privacy check, and

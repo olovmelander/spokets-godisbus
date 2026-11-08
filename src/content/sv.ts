@@ -146,6 +146,7 @@ export const sv = {
       gardenMemory: { purpose: 'Följ spöket mot Moa.', recap: 'Ett minne visade Pappa, mig som liten och en trägubbe.' },
       moa: { purpose: 'Ropa på Moa vid roten.', recap: 'Spöket kröp in under roten, under häcken mot skogen. Moas hand får inte plats.' },
       planeBoard: { purpose: 'Kliv på Moas pappersflygplan.', recap: 'Moas flygplan tar mig över häcken till skogen. Jag bestämmer när vi lyfter.' },
+      gardenEdge: { purpose: 'Gå in i skogen.', recap: 'Moas flygplan bar mig över häcken. Här börjar skogen.' },
       plane: { purpose: 'Flyg på Moas pappersflygplan.', recap: 'Moas flygplan bär mig över häcken till skogskanten. Godisspåret fortsätter där.' },
       gardenPocket: { purpose: 'Jag kan hämta Moas lövteckning.', recap: 'Vinden blåste Moas teckning under spånbron. Slangen går ner dit, och planet väntar.' },
       gardenDrawing: { purpose: 'Hitta lövteckningen under bron.', recap: 'Vinden blåste Moas teckning hit. Slangen tar mig tillbaka upp.' },

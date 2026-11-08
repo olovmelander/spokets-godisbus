@@ -52,7 +52,7 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       if (has('paint')) return context('awakening', 'home', 'sparkle');
       return context(has('eye') ? 'paintSecond' : 'paint', 'home', 'brush');
     case 'garden':
-      if (has('plane:board')) return context('plane', 'moa');
+      if (has('plane:board')) return at >= 205.5 ? context('gardenEdge', 'trail') : context('plane', 'moa');
       if (has('moa')) {
         if (has('garden:pocket-open') && at >= 138 && at <= 146 && player.y < 3.1) {
           return context(has('garden:paper') ? 'gardenClimb' : 'gardenDrawing', 'moa');
@@ -74,7 +74,7 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       return context(has('memory') ? 'gardenMemory' : 'garden', 'trail');
     case 'granskog':
       if (has('placed:rescue')) return context('waiting', 'forest', 'trail');
-      if (at >= 179) return context('eddy', 'forest', 'heart');
+      if (at >= 177.4) return context('eddy', 'forest', 'heart');
       if (has('cap')) return context('capRide', 'bertil', 'water');
       if (has('cap:ready') && at >= 150) return context('capBoard', 'bertil', 'water');
       if (at >= 150) return context('cap', 'bertil', 'water');

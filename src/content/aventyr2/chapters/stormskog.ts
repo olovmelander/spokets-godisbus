@@ -420,7 +420,7 @@ export const context: Chooser = (has, at) => {
   if (at.x >= 162) return ['ssJay', 'ssJay', 'heart'];
   if (has('ss:hollow')) return ['ssMemory', 'ssLamps', 'mountain'];
   if (has('ss:frozen')) return at.x < 138.5 ? ['ssPlank', 'ssPappa', 'heart', 'pappa'] : ['ssFollow', 'ssLamps'];
-  if (at.x >= 124) return ['ssPappa', 'ssPappa', 'trail', 'pappa'];
+  if (at.x >= 123) return ['ssPappa', 'ssPappa', 'trail', 'pappa'];
   if (has('owl')) return ['ssOwlRide', 'ssOwl', 'sparkle'];
   if (has('placed:owl-twig')) return at.x >= 104.6 ? ['ssOwlBoard', 'ssOwl', 'sparkle'] : ['ssWindthrow', 'ssOwl'];
   if (at.x >= 62) return ['ssOwl', 'ssLamps', 'heart'];
