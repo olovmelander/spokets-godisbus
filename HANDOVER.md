@@ -36,20 +36,27 @@
     stands exactly on its lowest boot corner.
   - **Gestures:** the wave's hand follows the forearm a moment late and the head tips; a shrug turns the palms up; a
     cheer dips into the knees before the first hop; a startle opens the hands; a nod tilts the head.
-  - **Elof:** his legs as before (Olov, 6 November: "Elof är redan bra"); his hips, trunk, head and hands now go with his
-    stride as the family's do.
+  - **Elof** (Olov, during the session: "Förbättra elofs rörelser också om de kan förbättras"): his style, step and
+    cadence as before. His planted leg now goes back under him in a straight line (an arc skated the foot forward at each
+    end of the step and back in the middle), and on his own model, whose legs are shorter than the stride's measure, the
+    legs swing as far as the step needs, to a limit at a sprint: on his real boots' soles the slip at a walk falls from
+    about 42 % of the way he goes to 25 %. Planting it fully would take more, shorter steps than a small boy's (the game
+    lets him walk three leg lengths a second). His hips, trunk, head and hands go with his stride as the family's do, and
+    waiting he shifts his weight from one leg to the other under his own little idles.
   - **Measured:** in a scene walk the planted boot slides less than 8 % of the way the body goes (the old limit was 15 %;
     the test now measures the boot's actual heel and toe), about 2 % at a steady pace.
-  - **To look at it:** `npm run dev`, then `dev/motion.html?scene=walk` (or `acts`, `gestures`, `follow`, `grand`), with
-    `&who=pappa`, `&track&zoom=6` and `&view=three`. It plays the stage's own keys on the real models where the private
-    pack is there.
+  - **To look at it:** `npm run dev`, then `dev/motion.html?scene=walk` (or `acts`, `gestures`, `follow`, `grand`,
+    `elof`), with `&who=pappa`, `&track&zoom=6` and `&view=three`. It plays the stage's own keys (and Elof's own motion) on
+    the real models where the private pack is there.
+  - **The hips shift by the pelvis bone,** not by moving the model: the finale's private-model check found a shadow off
+    the feet while the weight was shifted. A model without a pelvis does not shift.
   - **Content:** Moa steps a little further from the kitchen table in `prologue:mamma` (z 0.45, was 0.3), so that her
     swinging hand clears its edge.
   - **Checked:** typecheck, `npm test` (2,143; tests changed only where standing now shifts its weight, and the planted
-    boot test is stricter), `npm run build` (JS 548.6 of 550 KB, see "Frågor till Olov"), the privacy check, the browser
-    suites prologue (81), family-help (55), aventyr2 (42) and player-motion (its motion checks; the suite stops at this
-    sandbox's known Vite WebSocket error, CI runs it), and filmstrips of every motion on the real models (kept in the
-    session only).
+    boot test is stricter), `npm run build` (JS 548.8 of 550 KB, see "Frågor till Olov"), the privacy check, the browser
+    suites prologue (81), family-help (55), aventyr2 (42), finale-stage (89), model-installation (47), family-caps (76, on
+    the real models), family-story (8) and player-motion (its motion checks; the suite stops at this sandbox's known Vite
+    WebSocket error, CI runs it), and filmstrips of every motion on the real models (kept in the session only).
   - **Not done:** sitting down, standing up from a chair and crouching still blend between poses as before; a wave can't
     hold the hand out beside the head, because the rig's `spread` turns an arm about the body's forward axis (a raised
     arm goes in); Mormor and Morfar have no walk, as the story never has them walk.
@@ -5354,7 +5361,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-- JavaScript-budgeten är nästan full: 548,6 av 550 KB efter rörelserna. Vill du höja den, som du gjorde för grafiken (till
+- JavaScript-budgeten är nästan full: 548,8 av 550 KB efter rörelserna. Vill du höja den, som du gjorde för grafiken (till
   exempel till 560 KB)? Inget blockeras nu, men nästa större kodändring får inte plats.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
