@@ -1,5 +1,64 @@
 # Handover
 
+## State (8 November 2026, evening)
+
+- **The game prettier, with Unravel as the measure (Olov: "Implementera förslagen för att göra spelet snyggare. Unravel
+  är referensen på hur snyggt jag vill ha det!!!"), cloud session, branch `ccr-8d5cd827-ertmai`.** Every chapter was
+  photographed on High at 1440×900 with the private models (kept in the session only) and held against Unravel's close,
+  wet, lived-in ground. Five parts were built side by side, each in its own worktree, and put together:
+  - **The ground's fronts** (`src/render/dressing/ground.ts`). Below the path the camera looks straight at the ground's
+    front, and on Berget, Norrsken and Myren that was a flat face with cracks painted on. Rock now stands out and breaks
+    back by its own relief (rounded masses, granite sheets with a shelf on top and an overhang at the foot, jointed
+    blocks), lit by its shape, with lichen, moss on its shelves and dark rain streaks. Myren's banks have a moss cushion
+    swelling over the edge and hanging down in tongues, the peat eaten back under it in layers with pale roots, tussocks
+    bulging out of it, and sedge hanging over (in the sedge's own draw). The relief eases out at a wall and never stands
+    over the path. Triangles: Berget's ground 22.6k → 35.6k, Norrsken's 13.2k → 20.8k, Myren's 22.8k → 34.7k; no new
+    draw or program.
+  - **The ground seen close** (`ground-detail.ts`, Mid and High): a rock face towards the camera has rain streaks that
+    wander and end, broken sheet joints and a fine grain in its light (it had the top's network of cracks); Olympia's
+    pitch has turf at Elof's size, blades, rubber crumbs, stitched rows and flattened patches (it was flat green); the
+    road's gravel is a soft grit. Out in the storm, rock, turf and road are wet and mirror the sky where they are looked
+    along (`GROUND_WET`, `GROUND_SKY` in `view.ts`). One program key, uniforms only.
+  - **Water** (`src/render/water.ts`, in its one shader, with no new pass or draw): in the storm, rain rings and beads
+    where the drops land (none in the eye); small ripples in two layers that drift across each other; Fresnel by the
+    rippled surface, and at night a cool mirror that gives back more; the sky and far scenery mirrored as bright as they
+    are drawn, so lightning shows in the water; on Mid and High, streaks from the four nearest lights (candles,
+    lanterns, headlights, windows, the moon in the eye); on High, water that thins and foams where it meets the shore;
+    a river that runs at 2.2 EL a second and a brook at 0.45, carrying their ripples and needles. A street's puddle
+    keeps its ripples gentle unless it rains.
+  - **The forest floor** (`art/blender/forest-kit.py`, moss-v3 in `src/render/lift/flora/light.ts`). The moss cushion is
+    four tufts grown into one hummock, its creases' shade baked in with Cycles (120 triangles), and its moss a pile of
+    shoots with pale tips that glow against the low sun, dark creases, each cushion drier or damper, a fallen spruce
+    needle here and there (Low draws less of it). The floor's boulders are granite worn round by the ice, with broad
+    patches of tone, a crack and moss caps, and the floor's merged mesh now gives them bark-detail's crystals and
+    lichen. About 28,000 more triangles in a forest picture, no new draw.
+  - **Äventyr 2's built things, in Blender** (`art/blender/a2-built.py`, `a2-yard.py`, `kit-tools.py`, `olympia.py`):
+    Billsta's firewood split and round, every log, half and quarter its own, with growth rings, a darker heart, drying
+    cracks, and birch or spruce bark (`src/render/firewood.ts`); Älven's road bridge in board-formed concrete, with edge
+    beams, drains, caps and bearings on the piers, algae up to a high-water line, a galvanised railing, tie holes, rust
+    runs and lime (`src/render/concrete.ts`); Olympia's hall in boards and battens, its windows set in with frames, bars
+    and sills, a gutter, downpipes and glazed doors. The white name is the same mesh, point for point, and there is no
+    other mark. `scripts/bake/export.py` writes a mesh's own attributes named with an underscore. One more draw each
+    for the woodshed and the bridge. Packs: built 124 → 177 KB, yard 239 → 298 KB, olympia 89 → 137 KB.
+  - **More life** (`src/render/lift/fauna.ts`, `fauna/plan.ts`, `fauna/shapes.ts`). Birds come by themselves now and
+    then (a magpie, wagtails, tits, a thrush, a jackdaw), land behind the path or on a dead bough, peck, hop and fly
+    off, sooner if he comes near; a raven pair circles over Berget and Myren, hooded crows over Gården, and bats jink
+    over the path at dusk in Norrsken, all as silhouettes well back. Mid and High only, by day, never in the storm, and
+    still with less motion. `?debug&soar` brings the ravens, crows or bats over the view. In the storm the wind sways
+    everything 30 % harder and tears two and a half times as many leaves and needles across (`setStorm` in `wind.ts`).
+  - **Checked:** typecheck, `npm test` (210 files, 2,159 tests), `npm run build` (JS 563.6 KB of 1,000, boot
+    4,654.6 KB of 10,240), the privacy check, and all twelve places on High with the private models before and after
+    (draws 45 to 98 of High's 300). Two browser checks, garden-loop and myren-loop, held High to Low's 120 draws (they
+    called `withinDraws` without the tier); they pass the tier now.
+  - **Olov's list of proposals, in his order:** 1, sharper textures where the family and Elof show most, faces and
+    clothes, and 2, hands with fingers that hold the knife, the crayon and the mug, need his computer and `photos/`;
+    3, Blender models for Flärken's tower, the huts and Stormens öga's church, and 4, soft shade baked into the rest of
+    the scenery models (the village's, the mountain's), are the next cloud round; 5, more life, is in this one.
+  - **Known:** Flärken's jetty stands over a dark navy block (its shore ridge is ground painted as water); Stormbyn's
+    street is still a flat slab; Olympia's goal puddle looked flat blue; the lights' streaks on the water were not seen
+    in a still.
+  - **The next step needs:** nothing from Olov's computer for 3 and 4; 1 and 2 need it.
+
 ## State (8 November 2026, afternoon)
 
 - **Everyone's motion, made in Blender and fitted to the family's own bodies (Olov: "Nu måste du verkligen se till att
@@ -4708,6 +4767,18 @@
 
 ## Next
 
+**The Unravel pass (8 November, evening), for Olov to judge on the family devices, on High:** the ground's front under
+the path on Berget, Norrsken and Myren; the moss cushions and boulders in Granskogen and Stormskogen; the water in the
+storm (rain rings, the lights' streaks, the shore) and Älven's current; Billsta's firewood, Älven's concrete bridge and
+Olympia's hall; the birds that come by themselves, the ravens and crows, Norrsken's bats, and the storm's torn leaves.
+
+**Next in the cloud (Olov's proposals 3 and 4):** Blender models for Flärken's tower, the huts and Stormens öga's church,
+made as the hall and the bridge were; soft shade baked into the village's and the mountain's scenery models, as the
+forest kit's cushion has it; and Flärken's jetty's shore made to read as water.
+
+**On Olov's computer (proposals 1 and 2):** sharper textures where the family and Elof show most, faces and clothes, and
+hands with fingers that hold Pappa's knife, Moa's crayon and the mug, made in Blender against `photos/`.
+
 **The motion pass (8 November, afternoon), for Olov to judge on the family devices:** the family walking along behind
 Elof and in the prologue's scenes (feet that hold the ground, setting off and stopping), how they stand when nothing
 happens, Pappa kneeling in the prologue and getting up, Pappa and Moa getting up from the kitchen table (the chairs go
@@ -5162,6 +5233,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The Unravel pass (8 Nov, evening) | Olov's request: carry out the proposals for a prettier game, with Unravel as the reference | Part of the same cloud session, with five building agents in worktrees | — / 0 so far | Rock and peat fronts with relief and light; rock, turf, gravel and wet ground seen close; water with rain rings, lights, Fresnel, a shore and a current; moss cushions and worn boulders; Billsta's firewood, Älven's concrete bridge and Olympia's hall in Blender; birds that come and go, ravens, crows, bats and the storm's leaves. |
 | Everyone's motion in Blender (8 Nov, afternoon) | Olov's request: smooth, natural, AAA motion for the whole family and the grandparents, made with Blender, on their real bodies; then the chair and the wave | 1 cloud session, Blender 5.2 as a Python module | — / 0 so far | Gaits, stands and kneeling keyed in Blender; a stride with IK on each body's measured legs, planted feet and a closing step; new hip, trunk, head, wrist and thigh joints; Elof's hips and hands; the wave beside the head; getting up from and sitting down on a chair over planted feet, the chair pushed back; everyone seated on the seat with their feet on the floor. |
 | Six things from the site (8 Nov, morning) | Olov's request: the family's places in Stormkvällen, Pappa walking in the air, the old trägubbe, the raincoats, Olympia's puddle, two owls | 1 session on Olov's computer, with one helper agent | — / 0 so far | Stormkvällen's and Morgonen's family out of the table and chairs; a trail for the walk home; the new trägubbe in the crack, eyes when painted; one owl that waits and carries him; the puddle uncovered; the raincoats were a browser's old copy |
 | The night's playthrough (8 Nov, 00:00–03:30) | Olov's request: play both adventures through and fix what needs fixing | 1 session on Olov's computer, with three reading agents | — / 0 so far | Diary and objectives in both adventures, the helper, Billsta's gusts, Älven's vanishing Elof, Stormkvällen's black blob, the owl, Mormor's lantern, the title, Pause on a phone |
@@ -5200,6 +5272,8 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Flärken's jetty over a navy block (8 November):** the ridge of shore under the jetty is ground painted as water, so
+  with the new water beside it it reads as a dark block. It wants the water's level, or the ridge drawn as water.
 - **Norrsken's trail looks walkable before the taste (8 November):** it starts at the summit's edge, a little behind
   him. Walking he still stops at the edge; running off it he falls in front of the trail and the glitter bubble brings
   him back, as before. If Elof tries it, the trail could start lower, behind a boulder.
@@ -5396,7 +5470,8 @@ The older list, still true where it is not struck:
   match the pitch, the bathing place and the narrow more closely.
 - Blender models for what is still built in code near the play plane: Flärken's tower, huts, chess and sun boards,
   Stormens öga's church, Älven's lodge, Olympia's store, floodlights and poles. (Billsta's yard, Flärken's swings and
-  Olympia's goals and table were made on 7 November; Myren's dead pine is a detailed shape already.)
+  Olympia's goals and table were made on 7 November; Billsta's firewood, Älven's bridge and Olympia's hall on 8
+  November; Myren's dead pine is a detailed shape already. Flärken's tower, the huts and the church are next, see Next.)
 - The dark underwater frames in the light pass's measurements cannot happen in play: the glitter bubble catches him at
   the surface.
 - Tried and taken back: Elof holding the old trägubbe on Pappa's shoulders in Norrsken. The carving is nearly as tall

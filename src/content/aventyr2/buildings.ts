@@ -5,6 +5,7 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Storm } from '../../sim/types';
 import { paintedWood } from '../../render/painted-wood';
+import { groundDetail } from '../../render/ground-detail';
 import { PLANK, STONE, barkDetail, barky, notBark } from '../../render/bark-detail';
 
 /**
@@ -925,6 +926,8 @@ export function building(def: BuildingDef): Building {
   // wood with a grain (../../render/bark-detail.ts).
   const grained = parts.some((part) => part.hasAttribute('barky'));
   if (STONY.has(def.kind) || grained) barkDetail(material);
+  // A pitch's turf has its fibres, its crumbs and its wet sheen seen close, as the ground's own turf does.
+  if (def.kind === 'pitch') groundDetail(material, 'turf');
   group.add(new Mesh(mergeGeometries(STONY.has(def.kind) ? parts.map((part) => barky(part, STONE)) : grained ? parts.map(notBark) : parts), material));
   let paneMaterial: MeshBasicMaterial | null = null;
   if (panes.length) {

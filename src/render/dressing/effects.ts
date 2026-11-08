@@ -24,6 +24,15 @@ export const AIR_COUNTS: Record<PlaceId, { falling: number; motes: number; sheet
 };
 
 /**
+ * How many more leaves and needles are in the air while Äventyr 2's storm rages: torn off and blown across the picture,
+ * low over the ground and high, faster in its gusts. In its calm eye they fall softly again, as many as by day.
+ */
+export const STORM_LEAVES = 2.5;
+/** How many leaves and needles a chapter has in the air on High. */
+export const fallingCount = (chapter: Pick<ChapterData, 'storm'>, where: PlaceId) =>
+  Math.round(AIR_COUNTS[where].falling * (chapter.storm && where !== 'home' ? STORM_LEAVES : 1));
+
+/**
  * What the atmosphere (../lift/atmosphere.ts) tells the effects each frame, which the dressing's own update does not
  * know: the share of each count the tier draws; how much daylight there is (none at night, nor while a storm rages:
  * in its eye the moon's); how much of it the shafts' cards show (less under the rays of Mid and High); how hard a
@@ -169,7 +178,7 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
   // speck beside a sweet would be taken for its glitter. The village's leaves fall out of doors only.
   const heads = garden ? standing(built, KIT.petal).map((head) => head.at).filter((head) => head.z > -3.6) : [];
   const FLYING = garden ? 7 : 0;
-  const L = counts.falling;
+  const L = fallingCount(chapter, where);
   // Where the midges dance: over the water, every dozen EL of it. Three clouds of twenty are in the air.
   const swarms: { x: number; y: number }[] = [];
   for (const w of chapter.water ?? []) for (let x = w.from + 6; x < w.to; x += 12) swarms.push({ x, y: w.y });
@@ -180,7 +189,7 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
     const birch = (forest && i >= 5) || garden || village;
     const kind = forest || fell ? (birch ? 'birch' : i % 2 === 0 ? 'leaf' : 'needle') : bog ? 'dwarf' : 'birch';
     const [long, wide] = village ? [FALLING_BIRCH.long, FALLING_BIRCH.wide] : kind === 'birch' ? [0.16, 0.12] : kind === 'dwarf' ? [0.08, 0.07] : [kind === 'leaf' ? 0.07 : 0.065, 0.06];
-    return { x: next(), z: -0.9 - next() * 3.2, every: 6 + next() * 4, phase: next(), kind, long, wide, drift: 0, height: next(), speed: 5 + next() * 3 };
+    return { x: next(), z: -0.9 - next() * 3.2, every: 6 + next() * 4, phase: next(), kind, long, wide, drift: 0, height: next(), speed: 5 + next() * 3, run: 0, spin: 4 + next() * 6 };
   });
   const tints = { needle: new Color(LIFE.needle), leaf: new Color(LIFE.leaf), birch: new Color(LIFE.birch), dwarf: new Color(LIFE.dwarf), wing: new Color(LIFE.wing), gauze: new Color(LIFE.gauze), midge: new Color(LIFE.midge) };
   // The garden's first card is the bee and a midge is a dot; every other is a leaf, a needle or a wing.
@@ -336,9 +345,15 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
       );
     }
 
-    // In the storm fewer leaves, blown fast across the picture against the way he goes; else they fall and tumble.
+    // In the storm the leaves are torn off and blown across the picture against the way he goes, more of them and
+    // faster in each breath and gust of its wind, some high and swooping, some skittering low over the ground; else
+    // they fall and tumble.
     const blown = raging > 0.5;
-    const shownLeaves = Math.round(L * share * (blown ? 0.5 : 1));
+    const shownLeaves = Math.round((blown ? L : counts.falling) * share);
+    // The storm's night: what is blown is a little dim, as the lit leaves on the ground are; and a leaf that flips over
+    // and over in the wind shows more of itself.
+    const dim = chapter.storm ? 0.8 : 1;
+    const flips = blown ? 1.3 : 1;
     for (const [i, one] of falling.entries()) {
       const at = FLYING + i;
       if (i >= Math.max(L ? 1 : 0, shownLeaves)) { off(life, at); continue; }
@@ -347,10 +362,16 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
       one.drift += windAt(cameraX + one.x * 26 - 13) * (blown ? 0.1 : 0.22) * dt;
       let x: number, y: number, alpha: number, turn: number;
       if (blown) {
-        const across = wrap(time * one.speed + one.phase * 34, 34);
+        // Each goes at its own pace, and all of them faster while the wind blows hard where they are.
+        one.run += dt * one.speed * (0.65 + 0.2 * Math.min(3, Math.abs(windAt(cameraX + 17 - wrap(one.run + one.phase * 34, 34)))));
+        const across = wrap(one.run + one.phase * 34, 34);
         x = cameraX + 17 - across;
-        y = groundY + 0.4 + one.height * 4 + Math.sin(time * 2.2 + i) * 0.35;
-        turn = time * 7 + i;
+        // A quarter of them skitter and hop over the ground; the rest swoop up and down on the wind.
+        const low = i % 4 === 0;
+        y = low
+          ? heightAt(chapter, x) + 0.08 + Math.abs(Math.sin(across * 0.9 + i)) * 0.45
+          : groundY + 0.4 + one.height * 4.6 + Math.sin(time * 2.2 + i) * 0.35 + 0.7 * Math.sin(across * 0.31 + i * 1.7);
+        turn = time * one.spin + i;
         alpha = Math.min(0.8, across / 2, (34 - across) / 2) * (raging - 0.5) * 2;
       } else {
         // From five EL up to the ground, over and over, each in its own time; it comes and goes softly.
@@ -359,16 +380,17 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
         y = groundY + 5 - fall * 5.2;
         turn = time * (one.kind === 'needle' ? 0.6 : 1.9) + i;
         // The last of them come out only while the wind blows hard.
-        const extra = L > 3 && i >= Math.round(L * share * 0.67) ? gust : 1;
+        const extra = counts.falling > 3 && i >= Math.round(counts.falling * share * 0.67) ? gust : 1;
         alpha = Math.min(0.8, fall * 8, (1 - fall) * 12) * extra * (chapter.storm ? Math.max(0, 1 - raging * 2) : 1);
       }
       // A leaf tumbles, so it is seen now flat and now on edge; a needle is thin and only turns. A birch
       // leaf is as big as those that lie on the street.
-      const wide = one.kind === 'needle' ? 0.008 : one.wide / 6 + one.wide * Math.abs(Math.cos(time * 2.3 + i));
-      life.put(at, x, y, one.z, Math.cos(turn) * one.long, Math.sin(turn) * one.long, -Math.sin(turn) * wide, Math.cos(turn) * wide);
+      const wide = (one.kind === 'needle' ? 0.008 : one.wide / 6 + one.wide * Math.abs(Math.cos(time * 2.3 + i))) * flips;
+      const long = one.long * flips;
+      life.put(at, x, y, one.z, Math.cos(turn) * long, Math.sin(turn) * long, -Math.sin(turn) * wide, Math.cos(turn) * wide);
       // None falls indoors, in the shop.
       const out = !chapter.shop || x < chapter.shop.door - 1;
-      life.tint(at, tint.r, tint.g, tint.b, still || !out ? 0 : alpha);
+      life.tint(at, tint.r * dim, tint.g * dim, tint.b * dim, still || !out ? 0 : alpha);
     }
 
     if (FLYING) {

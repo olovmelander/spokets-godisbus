@@ -22,6 +22,7 @@ bpy.ops.export_scene.gltf(
     export_yup=True,            # Blender's Z-up becomes glTF's Y-up
     export_apply=True,          # modifiers are applied
     export_extras=True,         # custom properties become "extras", and userData in three
+    export_attributes=True,     # a mesh's own attributes named with an underscore (firewood's _LOG) go with it
     export_cameras=False,
     export_lights=False,
     export_animations=True,

@@ -5,6 +5,7 @@ import {
 } from 'three';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
+import { STONE } from '../../src/render/bark-detail';
 import { FLOOR_SHAPES, restock, stretch } from '../../src/render/dressing/forest';
 import { shoreAt } from '../../src/render/dressing/ground';
 import { heightAt, landscape, makeKit } from '../../src/render/dressing/kit';
@@ -123,7 +124,8 @@ describe('the forest kit from Blender', () => {
   });
 
   it('has a cushion of few points: four hundred lie in a picture', () => {
-    expect(kit.shape('tuva')!.index!.count / 3).toBeLessThan(64);
+    // Four tufts grown together, six points round and three rings up each (the moss pass of 8 November 2026).
+    expect(kit.shape('tuva')!.index!.count / 3).toBeLessThanOrEqual(120);
   });
 
   it('reads its shapes from a loaded model, each in the kit\'s own space', () => {
@@ -325,6 +327,24 @@ describe('the things he uses, from the kit', () => {
     expect(made.boundingBox!.max.x).toBeCloseTo(5.2);
     expect(made.getAttribute('color').getX(made.getAttribute('color').count - 1)).toBeCloseTo(0.5);
   });
+
+  it('keeps granite saying so on its corners when it is put together with other things, and the rest 0', () => {
+    const plain = boxes('a').shape('a')!;
+    const made = together([{ shape: plain, matrix: new Matrix4() }, { shape: kit.shape('sten-a')!, matrix: placing([3, 0, 0]) }]);
+    const barky = made.getAttribute('barky');
+    const own = plain.getAttribute('position').count;
+    expect(barky.count).toBe(made.getAttribute('position').count);
+    for (let i = 0; i < barky.count; i++) expect(barky.getX(i)).toBe(i < own ? 0 : STONE);
+    // Shapes that are none of it stay as they were.
+    expect(together([{ shape: plain, matrix: new Matrix4() }]).hasAttribute('barky')).toBe(false);
+    // So the floor's stones in the forest's stretches are drawn as granite seen close.
+    let granite = 0;
+    for (let a = forest.ground[0]!.x - 12; a < forest.ground.at(-1)!.x + 12; a += 18) {
+      const still = stretch(forest, a, a + 18, Math.round(a * 7 + 97), kit).children.at(-1) as Mesh;
+      granite += Array.from(still.geometry.getAttribute('barky')?.array ?? []).filter((run) => run === STONE).length;
+    }
+    expect(granite).toBeGreaterThan(0);
+  });
 });
 
 describe('the forest\'s floor with the kit', () => {
@@ -340,7 +360,10 @@ describe('the forest\'s floor with the kit', () => {
     return matrix.elements.slice(12, 15).map((n) => Math.round(n * 1000) / 1000);
   });
 
-  it('is one mesh fewer in every stretch, and a third fewer triangles', () => {
+  // The kit's cushions were a third lighter than the balls they stand for. Since the moss pass of 8 November 2026
+  // each is four tufts with an overhang, and the floor costs a little less than its stand-ins (a forest picture
+  // about 30,000 triangles more than with the plain cushions, at the same draw calls).
+  it('is one mesh fewer in every stretch, and no more triangles than its stand-ins', () => {
     let standIn = 0;
     let fromKit = 0;
     for (const [from, to, seed] of stretches()) {
@@ -354,7 +377,7 @@ describe('the forest\'s floor with the kit', () => {
       expect((group.children[0] as InstancedMesh).geometry).toBe(kit.shape('tuva'));
       fromKit += triangles(group);
     }
-    expect(fromKit).toBeLessThan(standIn * 0.67);
+    expect(fromKit).toBeLessThan(standIn * 0.92);
   });
 
   it('keeps its stand-ins where the kit lacks a shape', () => {

@@ -104,11 +104,20 @@ LEAF = MATERIAL.copy()
 LEAF.name = 'kit-leaf'
 LEAF.use_backface_culling = False
 
+# What the game draws more on, seen close, each by its name: firewood's end grain, bark and split faces
+# (src/render/firewood.ts), and cast concrete (src/render/concrete.ts). Faces are given one in `part['stuff']`.
+STUFF = {}
+for stuff_name in ('kit-wood', 'kit-concrete'):
+    STUFF[stuff_name] = LEAF.copy()
+    STUFF[stuff_name].name = stuff_name
+
 
 def new_part():
-    """One thing while it is being built: its mesh, the colour of each of its points, and the faces that
-    have one colour of their own (a crisp border, where a point's colour would run)."""
-    return {'bm': bmesh.new(), 'paint': {}, 'flat': {}}
+    """One thing while it is being built: its mesh, the colour of each of its points, the faces that
+    have one colour of their own (a crisp border, where a point's colour would run), the faces of another
+    stuff than paint (`stuff`), where on a piece of firewood each of its faces is (`wood`), and for each point of
+    concrete how open it is to the rain, how far along its face and how far below the face's top it is (`con`)."""
+    return {'bm': bmesh.new(), 'paint': {}, 'flat': {}, 'stuff': {}, 'wood': {}, 'con': {}}
 
 
 def put(part, at, colour):
@@ -246,12 +255,41 @@ def finish(part, name, sharp=180.0, strength=0.6, reach=0.3, floor=None, recalc=
         for loop in made.loops:
             colour = own if own is not None else paint.get(loop.vert, (1.0, 0.0, 1.0))
             loop[layer] = (colour[0], colour[1], colour[2], 1.0)
+    # Firewood's corners: what face of the piece they are on, with the log's radius, and where they are from its pith
+    # in the log's radius, across and up (_LOG; the exporter writes it, src/render/firewood.ts reads it).
+    wood = part['wood']
+    if wood:
+        log = bm.loops.layers.float_vector.new('_LOG')
+        for made in bm.faces:
+            own = wood.get(made)
+            if own is None:
+                continue
+            code, pith, big, across, up = own
+            for loop in made.loops:
+                d = loop.vert.co - pith
+                loop[log] = (code, d.dot(across) / big, d.dot(up) / big)
+    # Concrete's corners: how open to the rain, how far along its face, how far below its top (_CON;
+    # src/render/concrete.ts).
+    con = part['con']
+    if con:
+        cast = bm.loops.layers.float_vector.new('_CON')
+        for made, stuff_name in part['stuff'].items():
+            if stuff_name != 'kit-concrete':
+                continue
+            for loop in made.loops:
+                loop[cast] = con.get(loop.vert, (0.0, 0.0, 0.0))
+    slots = [LEAF if leaf else MATERIAL]
+    for stuff_name in sorted(set(part['stuff'].values())):
+        slots.append(STUFF[stuff_name])
+    for made, stuff_name in part['stuff'].items():
+        made.material_index = slots.index(STUFF[stuff_name])
     mesh = bpy.data.meshes.new(name)
     bm.to_mesh(mesh)
     bm.free()
     if sharp < 180.0:
         mesh.set_sharp_from_angle(angle=math.radians(sharp))
-    mesh.materials.append(LEAF if leaf else MATERIAL)
+    for slot in slots:
+        mesh.materials.append(slot)
     made = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(made)
     made['shade'] = strength
@@ -272,3 +310,100 @@ def strip(part, points, wide, colour, out):
         if prev is not None:
             face(part, (prev[0], prev[1], pair[1], pair[0]))
         prev = pair
+
+
+# --- firewood --------------------------------------------------------------------------------------------------------
+# Spruce (index 0) and birch (1): a sawn end fresh and gone grey, the split wood, and the bark, pale and dark.
+END_FRESH = (tone('#d8b884'), tone('#e0cca8'))
+END_OLD = (tone('#9c8e78'), tone('#a89e8c'))
+SPLIT_FRESH = (tone('#dcc290'), tone('#e6d4b2'))
+BARK_PALE = (tone('#76604e'), tone('#e2ddd2'))
+BARK_DARK = (tone('#4c3e34'), tone('#b4ada2'))
+ACROSS = Vector((1.0, 0.0, 0.0))
+UPWARD = Vector((0.0, 0.0, 1.0))
+
+
+def firewood(part, pith, big, front, back, n, birch, turn=0.0, wedge=TAU, sides=16):
+    """A piece of firewood lying along Y, its sawn end towards -Y at `front`: a whole log of radius `big` about its
+    pith (x, z), or a piece split from one, its bark from `turn` round to `turn + wedge` and its split faces back
+    to the pith. Each its own size and tone, a little out of round, and its end sawn a little out of square. Every
+    face says where on the log it is (`part['wood']`), for the game to draw the rings, the cracks and the bark."""
+    whole = wedge > TAU - 0.01
+    count = sides if whole else max(3, int(round(sides * wedge / TAU))) + 1
+    outline = []
+    for j in range(count):
+        a = turn + wedge * j / (count if whole else count - 1)
+        wide = big * (1.0 + 0.06 * (noise(math.cos(a) * 1.6 + n, math.sin(a) * 1.6, n * 0.37) - 0.5))
+        outline.append((wide * math.cos(a), wide * math.sin(a), True))
+    if not whole:
+        # The split, back to the pith and out again, a little torn on its way.
+        last = outline[-1]
+        first = outline[0]
+        tear = (0.06 * (rnd(n, 11.0) - 0.5), 0.06 * (rnd(n, 13.0) - 0.5))
+        outline += [(last[0] * 0.5 - last[1] * tear[0], last[1] * 0.5 + last[0] * tear[0], False), (0.0, 0.0, False),
+                    (first[0] * 0.5 - first[1] * tear[1], first[1] * 0.5 + first[0] * tear[1], False)]
+    tilt = (0.16 * (rnd(n, 12.0) - 0.5), 0.16 * (rnd(n, 13.0) - 0.5))
+    age = rnd(n, 6.0)
+    bark = lit(blend(BARK_PALE[birch], BARK_DARK[birch], rnd(n, 7.0) * (0.6 if birch else 1.0)), 0.9 + 0.2 * rnd(n, 10.0))
+    near = []
+    far = []
+    for ox, oz, _ in outline:
+        near.append(put(part, Vector((pith[0] + ox, front + tilt[0] * ox + tilt[1] * oz, pith[1] + oz)), bark))
+        far.append(put(part, Vector((pith[0] + ox, back, pith[1] + oz)), lit(bark, 0.7)))
+    centre = Vector((pith[0], front, pith[1]))
+    code = big * 0.5 + birch + 1.0
+    total = len(outline)
+    split = lit(blend(SPLIT_FRESH[birch], END_OLD[birch], age * 0.35), 0.94 + 0.12 * rnd(n, 14.0))
+    for j in range(total):
+        k = (j + 1) % total
+        side = face(part, (near[j], near[k], far[k], far[j]))
+        on_bark = outline[j][2] and outline[k][2]
+        part['wood'][side] = (code + (2.0 if on_bark else 4.0), centre, big, ACROSS, UPWARD)
+        part['stuff'][side] = 'kit-wood'
+        if not on_bark:
+            part['flat'][side] = split
+    end = lit(blend(END_FRESH[birch], END_OLD[birch], age * age), 0.88 + 0.2 * rnd(n, 9.0))
+    cap = face(part, near, end)
+    part['wood'][cap] = (code, centre, big, ACROSS, UPWARD)
+    part['stuff'][cap] = 'kit-wood'
+    return cap
+
+
+def stack_row(part, x0, x1, z0, high, front, back, n, birch_share, top=False, wave=0.0):
+    """One row of a stack of firewood from x0 to x1 over z0, `high` tall: whole logs, halves and quarters, each its
+    own size and laid as it came, the sawn ends out at `front` give or take a hand. A top row lies flat: halves and
+    quarters with their split faces up, to be walked on. Gives the number of the last piece."""
+    x = x0 + 0.02
+    while x < x1 - 0.3 * high:
+        n += 1
+        birch = 1 if rnd(n, 4.0) < birch_share else 0
+        pick = rnd(n, 8.0)
+        near = front + 0.18 * rnd(n, 3.0)
+        lean = 0.3 * (rnd(n, 15.0) - 0.5)
+        sink = wave * math.sin(x * 0.5 + z0)
+        room = x1 - x
+        if (top and pick < 0.5) or (not top and 0.35 <= pick < 0.72):
+            # A half, its split face down or up.
+            big = min(high * (0.8 + 0.12 * rnd(n, 1.0)), room / 2.0)
+            face_up = top or pick >= 0.55
+            pith = (x + big, z0 + sink + (high - 0.03 if face_up else 0.03))
+            firewood(part, pith, big, near, back, n, birch, turn=(math.pi if face_up else 0.0) + lean * 0.8, wedge=math.pi)
+            x += 2.0 * big
+        elif pick >= 0.72 or (top and pick >= 0.8):
+            # A quarter, its corner where its pith was; on top, a corner up.
+            big = min(high * (0.86 + 0.1 * rnd(n, 1.0)), room)
+            corner = int(rnd(n, 16.0) * 4.0) % 4
+            if top:
+                corner = 2 + corner % 2
+            left = corner in (1, 2)
+            low = corner in (0, 1)
+            pith = (x + (big if left else 0.0), z0 + sink + (0.03 if low else high - 0.03))
+            firewood(part, pith, big, near, back, n, birch, turn=corner * math.pi / 2.0 + lean * 0.7, wedge=math.pi / 2.0)
+            x += big
+        else:
+            # A whole log, smaller.
+            big = min(high * (0.42 + 0.07 * rnd(n, 1.0)), room / 2.0)
+            firewood(part, (x + big, z0 + sink + high * 0.5 + 0.04 * (rnd(n, 2.0) - 0.5)), big, near, back, n, birch, turn=TAU * rnd(n, 5.0))
+            x += 2.0 * big
+        x += 0.02 + 0.05 * rnd(n, 17.0)
+    return n

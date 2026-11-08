@@ -40,7 +40,7 @@ import { evening, nightBrightness } from './backdrop';
 import { helperProp, moverProp, rideProp, spotProp } from './props';
 import { GARDEN_MORNING, GLOW_ON_HIGH, createGradePass, createMaterialGrade } from './grade';
 import { DOF_DEEP, DOF_DEEPER, createDepthBlur } from './depth-blur';
-import { CLOSE_DETAIL, DAPPLE, DAPPLE_CLOCK } from './ground-detail';
+import { CLOSE_DETAIL, DAPPLE, DAPPLE_CLOCK, GROUND_SKY, GROUND_WET } from './ground-detail';
 import { CANOPY } from './canopy';
 import { SHADE_STRENGTH, createContactShade } from './contact-shade';
 import { createBloom } from './bloom';
@@ -1141,7 +1141,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     lawnSong.update(flags, clock);
     for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
     cones.update(rollers, clock);
-    water.update(clock, lessMotion(), x);
+    water.update(clock, lessMotion(), x, flags);
     // Rings where he touches the water (./water.ts): his steps as he wades, a bigger one as he lands in it or falls
     // in, and a wake behind what he rides on it.
     const surface = water.surfaceAt(x);
@@ -1388,6 +1388,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     DAPPLE.value = dappled && tier === 'mid' ? 1 - darkness : 0;
     CANOPY.on.value = dappled && tier === 'high' ? 1 - darkness : 0;
     if (!calmStory) DAPPLE_CLOCK.value = clock;
+    // Out in the storm the ground is wet, and where it is looked along it gives back the sky (./ground-detail.ts).
+    GROUND_WET.value = wetOutside ? 1 : 0;
+    GROUND_SKY.value.copy(hemisphere.color).multiplyScalar(hemisphere.intensity);
     for (const extra of extras) extra.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride' });
     if (dressing && place) {
       // What lives far off begins nothing while he is busy, and needs the lens to know what is in the picture.

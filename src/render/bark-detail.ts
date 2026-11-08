@@ -43,7 +43,7 @@ export function barkDetail(material: MeshStandardMaterial): void {
   patched.add(material);
   const before = material.onBeforeCompile;
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:bark-detail-v6`;
+  material.customProgramCacheKey = () => `${key()}:bark-detail-v7`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     // Drawn on Mid and High only, as the ground's detail is (./ground-detail.ts).
@@ -112,7 +112,15 @@ export function barkDetail(material: MeshStandardMaterial): void {
         float crust = STONE_TRI(47.0, 5.5) * 0.75 + STONE_TRI(13.0, 21.0) * 0.25;
         float ring = smoothstep(0.66, 0.7, crust) * (1.0 - smoothstep(0.72, 0.76, crust)) * stoneNear;
         stone = mix(stone, vec3(0.72, 0.73, 0.68) * dot(stone, vec3(0.33)) * 2.4, 0.22 * ring + 0.18 * smoothstep(0.7, 0.8, crust) * stoneMid);
-        diffuseColor.rgb = mix(diffuseColor.rgb, stone, stoneBare);
+        // The moss on it is a carpet of shoot tips with the dark between them, as the cushions' is
+        // (./lift/flora/light.ts): a tip in each little cell, where the stone's face cuts through it.
+        vec3 mossQ = p * 34.0;
+        vec3 mossCell = floor(mossQ);
+        vec3 mossOff = vec3(barkHash(mossCell.xy + mossCell.z * 7.31), barkHash(mossCell.yz + 3.1), barkHash(mossCell.zx + 5.7)) - 0.5;
+        float mossTip = 1.0 - smoothstep(0.1, 0.4, length(fract(mossQ) - 0.5 - mossOff * 0.3));
+        float mossNear = 1.0 - smoothstep(0.5, 1.2, stonePixel * 34.0);
+        vec3 moss = diffuseColor.rgb * (0.8 + 0.25 * STONE_TRI(23.0, 7.0)) * mix(0.82, 0.62 + 0.62 * mossTip, mossNear);
+        diffuseColor.rgb = mix(moss, stone, stoneBare);
       } else if (vBarky > 0.5) {
         // Round the tree and along it: up a stem, or along a bough that lies along the path.
         vec2 bark = vBarky < 1.5 ? vec2(vBarkAt.x + vBarkAt.z, vBarkAt.y) : vec2(vBarkAt.y + vBarkAt.z, vBarkAt.x);

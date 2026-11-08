@@ -175,62 +175,105 @@ if wanted('staket'):
 
 
 # --- the road bridge in Bredbyn ------------------------------------------------------------------------------------
-# Concrete, stained by years of rain, on two piers with rounded noses, with a steel railing. 24 long and 7.8 to the middle of
-# its deck. Its origin is on the river's bed under its middle, as the chapter sets it.
+# Concrete cast against boards and stained by years of rain, on two piers with rounded noses, with a steel railing. 24 long
+# and 7.8 to the middle of its deck. Its origin is on the river's bed under its middle, as the chapter sets it, with the water
+# at about 0. An edge beam runs along each side of the deck, standing a little over it, darker where the rain drips off it, with
+# drains through the deck inside it; each pier stands on a footing, green with algae and moss up to a pale high-water line,
+# and carries a cap with the bearings under the deck. The game draws the boards, the holes, the runs and the wet on the
+# concrete's corners (`part['con']`, src/render/concrete.ts).
 
 if wanted('bro'):
     part = new_part()
-    PALE = tone('#9a9c9a')
-    STAIN = tone('#5e625c')
+    PALE = tone('#a6a7a1')
+    DRY = tone('#b8b8b1')
+    STAIN = tone('#62665e')
+    ALGAE = tone('#2a321e')
+    MOSS = tone('#4c6626')
+    LIME = tone('#cacac2')
     DARK = tone('#3c3e42')
-    MOSS = tone('#55702c')
+    STEEL = tone('#80868c')
     LENGTH = 24.0
     HIGH = 7.8
     DEEP = 5.0
-    # The deck: a thick slab, with an overhanging edge beam and dark runs below every drain.
+    ENDS = LENGTH / 2.0 + 3.0
+    TOP = HIGH + 1.65
+    start = len(part['bm'].faces)
+    # The deck as one section drawn along X: (y, z over HIGH, how open to the rain, colour). The outer faces of the edge
+    # beams first, then their tops, the deck between them, and the underside out of the rain.
+    SECTION = (
+        (-DEEP - 0.5, -1.4, 0.9, STAIN), (-DEEP - 0.5, -0.7, 1.0, blend(STAIN, PALE, 0.6)), (-DEEP - 0.5, 0.8, 1.0, PALE),
+        (-DEEP - 0.5, 1.55, 1.0, PALE), (-DEEP - 0.32, 1.65, 1.0, PALE), (-DEEP + 0.5, 1.65, 1.0, PALE), (-DEEP + 0.5, 1.2, 1.0, STAIN),
+        (DEEP - 0.5, 1.2, 1.0, STAIN), (DEEP - 0.5, 1.65, 1.0, PALE), (DEEP + 0.32, 1.65, 1.0, PALE), (DEEP + 0.5, 1.55, 1.0, PALE),
+        (DEEP + 0.5, 0.8, 1.0, PALE), (DEEP + 0.5, -0.7, 1.0, blend(STAIN, PALE, 0.6)), (DEEP + 0.5, -1.4, 0.9, STAIN),
+        (DEEP - 0.5, -1.4, 0.1, PALE), (DEEP - 0.5, -0.9, 0.0, DRY), (-DEEP + 0.5, -0.9, 0.0, DRY), (-DEEP + 0.5, -1.4, 0.1, PALE))
     rows = []
     tones = []
-    AROUND = ((-DEEP - 0.4, -1.2, 0.9), (-DEEP - 0.4, 1.2, 1.06), (DEEP + 0.4, 1.2, 1.06), (DEEP + 0.4, -1.2, 0.9))
-    for i in range(25):
-        x = -LENGTH / 2.0 - 3.0 + (LENGTH + 6.0) * i / 24.0
-        rows.append([Vector((x, y, HIGH + z)) for y, z, k in AROUND])
-        run = noise(x * 0.8, 1.0, 3.0)
-        tones.append([blend(lit(PALE, k), STAIN, 0.55 * run * (1.0 if z < 0.0 else 0.3)) for y, z, k in AROUND])
-    skin(part, rows, tones, (Vector((-LENGTH / 2.0 - 3.0, 0.0, HIGH)), PALE), (Vector((LENGTH / 2.0 + 3.0, 0.0, HIGH)), PALE))
-    for k in range(9):
-        x = -LENGTH / 2.0 + k * 3.0
-        strip(part, [Vector((x + 0.5, -DEEP - 0.41, HIGH + 1.1)), Vector((x + 0.58 + 0.2 * rnd(k, 1.0), -DEEP - 0.41, HIGH - 1.2 - 1.2 * rnd(k, 2.0)))], [0.1, 0.03], STAIN, FRONT_)
-    # A joint in the slab, and the two piers on their footings, wet to the high-water mark.
+    STEPS = 50
+    for i in range(STEPS + 1):
+        x = -ENDS + 2.0 * ENDS * i / STEPS
+        rows.append([Vector((x, y, HIGH + z)) for y, z, open_, colour in SECTION])
+        # Paler and darker in long patches, and a dark run under each railing post.
+        post = math.exp(-(((x + ENDS + 1.2) % 2.4) - 1.2) ** 2 / 0.1)
+        tones.append([lit(blend(colour, STAIN, (0.3 * noise(x * 0.35, y, 1.0) + 0.35 * post) * (1.0 if z > 0.0 and open_ > 0.5 else 0.4)),
+                          0.94 + 0.12 * noise(x * 0.8, y * 0.2, 2.0)) for y, z, open_, colour in SECTION])
+    made = skin(part, rows, tones, (Vector((-ENDS, 0.0, HIGH)), PALE), (Vector((ENDS, 0.0, HIGH)), PALE))
+    for i in range(STEPS + 1):
+        for j in range(len(SECTION)):
+            vert = made[i][j]
+            part['con'][vert] = (SECTION[j][2], vert.co.x, TOP - vert.co.z)
+    # The two piers on their footings, green with algae to the high water and paler and drier up under the deck.
+    AROUND = 32
+    LEVELS = ((-0.2, 1.1, ALGAE), (0.55, 1.1, ALGAE), (0.9, 1.1, MOSS), (0.98, 1.0, ALGAE), (1.4, 1.0, blend(ALGAE, STAIN, 0.5)),
+              (1.85, 1.0, STAIN), (2.0, 1.0, LIME), (2.15, 1.0, PALE), (3.4, 0.99, PALE), (4.8, 0.98, PALE), (6.0, 0.97, DRY))
     for side in (-1.0, 1.0):
         x = side * 6.0
-        profile = []
-        for k in range(20):
-            turn = TAU * k / 20.0
-            profile.append((turn, math.cos(turn), math.sin(turn)))
         rows = []
         tones = []
-        for z, grow in ((-0.2, 1.08), (0.9, 1.08), (1.0, 1.0), (3.0, 1.0), (5.4, 0.96), (6.5, 0.96)):
+        for z, grow, colour in LEVELS:
             ring = []
             shades = []
-            for turn, cx, cy in profile:
-                # A long round: 4 across, 8 along the stream, its noses to the current.
+            for k in range(AROUND):
+                # Round from its back, so that the seam is out of sight: a long round, 3.8 across and 8.2 along the stream.
+                turn = TAU * k / AROUND + math.pi / 2.0
+                cx = math.cos(turn)
+                cy = math.sin(turn)
                 ring.append(Vector((x + grow * 1.9 * cx, grow * (2.1 * cy + (2.0 if cy > 0.0 else -2.0) * min(1.0, abs(cy) * 4.0)), z)))
-                wet = max(0.0, 1.0 - z / 3.6)
                 streak = noise(cx * 3.0 + side, cy * 3.0, z * 0.4)
-                shades.append(blend(blend(PALE, STAIN, 0.4 * streak), tone('#3c4238'), wet * 0.75))
+                shades.append(lit(blend(colour, STAIN, (0.35 * streak if z > 2.1 else 0.1 * streak)), 0.95 + 0.1 * noise(k * 0.7, z, side)))
             rows.append(ring)
             tones.append(shades)
-        skin(part, rows, tones, (Vector((x, 0.0, -0.2)), PALE), (Vector((x, 0.0, 6.6)), PALE))
-        # The bearing on its top, and moss at its foot.
-        timber(part, (x - 1.5, -3.8, 6.5), (x + 1.5, 3.8, 6.6), DARK, side)
-    # The railing along the near edge and the far one: posts, and two rails.
+        made = skin(part, rows, tones, (Vector((x, 0.0, -0.2)), ALGAE), (Vector((x, 0.0, 6.0)), DRY))
+        for ring in made:
+            along = 0.0
+            for k in range(AROUND):
+                vert = ring[k]
+                if k:
+                    along += (vert.co - ring[k - 1].co).length
+                part['con'][vert] = (1.0 if vert.co.z < 2.0 else 0.25, along, 6.0 - vert.co.z)
+        # Its cap, under the deck, a little wider than the pier.
+        cap = len(part['bm'].verts)
+        timber(part, (x - 2.25, -4.6, 6.0), (x + 2.25, 4.6, 6.6), DRY, side, grain=0.04)
+        part['bm'].verts.ensure_lookup_table()
+        for vert in part['bm'].verts[cap:]:
+            part['con'][vert] = (0.1, vert.co.x, 6.6 - vert.co.z)
+    part['bm'].faces.ensure_lookup_table()
+    for made_face in part['bm'].faces[start:]:
+        part['stuff'][made_face] = 'kit-concrete'
+    # The bearings between the caps and the deck, and the drains through the deck inside its edge beams.
+    for side in (-1.0, 1.0):
+        for y in (-3.0, 0.0, 3.0):
+            timber(part, (side * 6.0 - 0.7, y - 0.6, 6.6), (side * 6.0 + 0.7, y + 0.6, HIGH - 0.9), DARK, y + side)
+    for y in (-DEEP + 0.85, DEEP - 0.85):
+        for x in (-9.0, -3.0, 3.0, 9.0):
+            tube(part, [Vector((x, y, HIGH - 0.85)), Vector((x, y, HIGH - 1.9))], [0.12, 0.11], [DARK, lit(DARK, 0.8)], 8)
+    # The railing along the near edge and the far one: galvanised posts, and two rails.
     for y in (-DEEP - 0.1, DEEP + 0.1):
-        x = -LENGTH / 2.0 - 3.0
-        while x <= LENGTH / 2.0 + 3.0:
-            timber(part, (x - 0.07, y - 0.07, HIGH + 1.2), (x + 0.07, y + 0.07, HIGH + 3.2), DARK, x)
+        x = -ENDS
+        while x <= ENDS:
+            timber(part, (x - 0.07, y - 0.07, HIGH + 1.2), (x + 0.07, y + 0.07, HIGH + 3.2), STEEL, x)
             x += 2.4
-        timber(part, (-LENGTH / 2.0 - 3.0, y - 0.09, HIGH + 3.12), (LENGTH / 2.0 + 3.0, y + 0.09, HIGH + 3.3), tone('#54585e'), 2.0)
-        timber(part, (-LENGTH / 2.0 - 3.0, y - 0.05, HIGH + 2.2), (LENGTH / 2.0 + 3.0, y + 0.05, HIGH + 2.3), DARK, 3.0)
+        timber(part, (-ENDS, y - 0.09, HIGH + 3.12), (ENDS, y + 0.09, HIGH + 3.3), lit(STEEL, 1.08), 2.0)
+        timber(part, (-ENDS, y - 0.05, HIGH + 2.2), (ENDS, y + 0.05, HIGH + 2.3), STEEL, 3.0)
     finish(part, 'bro', sharp=40.0, strength=0.45, reach=1.2, floor=-0.5, leaf=True)
 
 
@@ -271,35 +314,16 @@ if wanted('trappa'):
 
 # --- the stack of firewood -------------------------------------------------------------------------------------------
 # Split birch and spruce, end on, in three steps up of 1.2 and a long top: its origin is at the near foot of its first step.
+# Rows of 0.6: whole logs, halves and quarters as they came from the chopping block, their sawn ends out, the top of each
+# step laid flat with split faces up (kit-tools.py, `stack_row`).
 
 if wanted('vedstapel'):
     part = new_part()
-    BARK = tone('#6a5040')
-    BIRCH = tone('#d8d0c0')
-    CUT = tone('#d8b880')
-    CUT_OLD = tone('#a88a60')
-    R = 0.3
     columns = ((0.0, 1.6, 2), (1.6, 3.2, 4), (3.2, 6.4, 6))
     n = 0
     for x0, x1, rows in columns:
-        across = int((x1 - x0) / (R * 2.04))
         for row in range(rows):
-            for k in range(across):
-                n += 1
-                x = x0 + (x1 - x0) * (k + 0.5) / across + 0.03 * (rnd(n, 1.0) - 0.5)
-                z = R + row * 0.6
-                r = R * (0.9 + 0.1 * rnd(n, 2.0))
-                y = -1.5 + 0.14 * rnd(n, 3.0)
-                bark = BIRCH if rnd(n, 4.0) > 0.6 else BARK
-                turn = rnd(n, 5.0)
-                near = circle(Vector((x, y, z)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), r, 7, turn)
-                far = circle(Vector((x, 1.1, z)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), r, 7, turn)
-                skin(part, [near, far], [bark, lit(bark, 0.7)], closed=True)
-                end = lit(blend(CUT, CUT_OLD, rnd(n, 6.0)), 0.9 + 0.2 * rnd(n, 7.0))
-                part['flat'][face(part, [put(part, p, end) for p in near])] = end
-                # The heart of the log, darker.
-                heart = [Vector((x + 0.45 * (p.x - x), y - 0.004, z + 0.45 * (p.z - z))) for p in near]
-                part['flat'][face(part, [put(part, p, lit(end, 0.8)) for p in heart])] = lit(end, 0.8)
+            n = stack_row(part, x0, x1, row * 0.6, 0.6, -1.55, 1.1, n + 7, 0.4, top=row == rows - 1)
     finish(part, 'vedstapel', sharp=46.0, strength=0.5, reach=0.3, floor=0.0, leaf=True)
 
 

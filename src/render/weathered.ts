@@ -16,7 +16,8 @@ export function weathered(root: Object3D): void {
     if (!mesh.isMesh || !mesh.material) return;
     for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
       const standard = material as MeshStandardMaterial;
-      if (!standard.isMeshStandardMaterial || patched.has(standard) || standard.transparent) continue;
+      // What has a weather of its own (the kit's firewood and concrete, ./shared-models.ts) is left to it.
+      if (!standard.isMeshStandardMaterial || patched.has(standard) || standard.transparent || standard.userData.ownWeather) continue;
       patched.add(standard);
       const before = standard.onBeforeCompile;
       const key = standard.customProgramCacheKey.bind(standard);

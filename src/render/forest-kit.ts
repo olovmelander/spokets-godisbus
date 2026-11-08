@@ -19,7 +19,7 @@ import { heightAt, isThing } from './dressing/kit';
  * | --- | --- |
  * | `kotte` | stands on its stalk, 1 long, up |
  * | `kotte-liten` | lies along x, its middle at the origin, 1 long |
- * | `tuva` | a hummock 1 in radius and 0.5 high, to be given its own green |
+ * | `tuva` | a hummock of four tufts, 1 in radius and 0.5 high, to be given its own green; dark on its corners where it is dead and brown |
  * | `sten-a` to `sten-c`, `gungsten`, `gran`, `ormbunke`, `kantarell`, `karljohan`, `renlav` | stand on the origin, at their own size |
  * | `lov` | lies flat, its middle at the origin |
  * | `keps` | the middle of its opening, which is up; its peak towards +x |
@@ -109,7 +109,11 @@ export interface Placed {
   tone?: number;
 }
 
-/** Several shapes as one, each where its matrix puts it: one mesh and one draw call for the lot. */
+/**
+ * Several shapes as one, each where its matrix puts it: one mesh and one draw call for the lot. What is granite
+ * or bark keeps saying so on its corners (`barky`, ./bark-detail.ts), and the rest says 0, so that the floor's
+ * stones are granite seen close in the one mesh too.
+ */
 export function together(parts: readonly Placed[]): BufferGeometry {
   let corners = 0;
   let indices = 0;
@@ -120,6 +124,7 @@ export function together(parts: readonly Placed[]): BufferGeometry {
   const positions = new Float32Array(corners * 3);
   const normals = new Float32Array(corners * 3);
   const colours = new Float32Array(corners * 3);
+  const bark = parts.some(({ shape }) => shape.hasAttribute('barky')) ? new Float32Array(corners) : null;
   const index = new Uint32Array(indices);
   const point = new Vector3();
   const turn = new Matrix3();
@@ -129,6 +134,7 @@ export function together(parts: readonly Placed[]): BufferGeometry {
     const position = shape.getAttribute('position');
     const normal = shape.getAttribute('normal');
     const colour = shape.getAttribute('color');
+    const barky = shape.hasAttribute('barky') ? shape.getAttribute('barky') : null;
     turn.getNormalMatrix(matrix);
     for (let i = 0; i < position.count; i++) {
       point.fromBufferAttribute(position, i).applyMatrix4(matrix).toArray(positions, (at + i) * 3);
@@ -136,6 +142,7 @@ export function together(parts: readonly Placed[]): BufferGeometry {
       colours[(at + i) * 3] = colour.getX(i) * tone;
       colours[(at + i) * 3 + 1] = colour.getY(i) * tone;
       colours[(at + i) * 3 + 2] = colour.getZ(i) * tone;
+      if (bark && barky) bark[at + i] = barky.getX(i);
     }
     const from = shape.index!;
     for (let i = 0; i < from.count; i++) index[next++] = from.getX(i) + at;
@@ -145,6 +152,7 @@ export function together(parts: readonly Placed[]): BufferGeometry {
   made.setAttribute('position', new Float32BufferAttribute(positions, 3));
   made.setAttribute('normal', new Float32BufferAttribute(normals, 3));
   made.setAttribute('color', new Float32BufferAttribute(colours, 3));
+  if (bark) made.setAttribute('barky', new Float32BufferAttribute(bark, 1));
   made.setIndex(Array.from(index));
   made.computeBoundingSphere();
   return made;
