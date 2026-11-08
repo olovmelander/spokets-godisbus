@@ -646,7 +646,8 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           vec2 a = (carried + flow * 0.6) * vec2(0.62 / stream.z, 0.95) + vec2(0.021, 0.034) * time;
           vec2 b = mat2(0.6, 0.8, -0.8, 0.6) * carried * vec2(1.3 / stream.z, 1.7) - vec2(0.037, -0.016) * time;
           vec4 small = texture2D(rippleMap, a) + texture2D(rippleMap, b) - 1.0;
-          slope += small.xy * 0.035 * rough * (0.6 + 0.4 * gust);
+          // A street's puddle, a hand deep, lies all but still unless it rains: its mirror of the yard sways enough.
+          slope += small.xy * 0.035 * rough * (0.6 + 0.4 * gust) * (body.w > 0.0 ? 0.35 + 0.65 * weather.x : 1.0);
           smallCrest = small.z;
         }
         // Rain on it: rings that spread and fade, each drop's own (Mid and High).
