@@ -123,7 +123,8 @@ describe('the forest kit from Blender', () => {
   });
 
   it('has a cushion of few points: four hundred lie in a picture', () => {
-    expect(kit.shape('tuva')!.index!.count / 3).toBeLessThan(64);
+    // Four tufts grown together, six points round and three rings up each (the moss pass of 8 November 2026).
+    expect(kit.shape('tuva')!.index!.count / 3).toBeLessThanOrEqual(120);
   });
 
   it('reads its shapes from a loaded model, each in the kit\'s own space', () => {
@@ -340,7 +341,10 @@ describe('the forest\'s floor with the kit', () => {
     return matrix.elements.slice(12, 15).map((n) => Math.round(n * 1000) / 1000);
   });
 
-  it('is one mesh fewer in every stretch, and a third fewer triangles', () => {
+  // The kit's cushions were a third lighter than the balls they stand for. Since the moss pass of 8 November 2026
+  // each is four tufts with an overhang, and the floor costs a little less than its stand-ins (a forest picture
+  // about 30,000 triangles more than with the plain cushions, at the same draw calls).
+  it('is one mesh fewer in every stretch, and no more triangles than its stand-ins', () => {
     let standIn = 0;
     let fromKit = 0;
     for (const [from, to, seed] of stretches()) {
@@ -354,7 +358,7 @@ describe('the forest\'s floor with the kit', () => {
       expect((group.children[0] as InstancedMesh).geometry).toBe(kit.shape('tuva'));
       fromKit += triangles(group);
     }
-    expect(fromKit).toBeLessThan(standIn * 0.67);
+    expect(fromKit).toBeLessThan(standIn * 0.92);
   });
 
   it('keeps its stand-ins where the kit lacks a shape', () => {

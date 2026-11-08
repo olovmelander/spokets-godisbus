@@ -252,17 +252,25 @@ def finish(part, name, sharp=180.0, strength=0.6, reach=0.3, floor=None, recalc=
     layer = bm.loops.layers.float_color.new('Color')
     paint = part['paint']
     crisp = part['flat']
+    # A face may be lighter or darker than its points' colours, all over, and flat: a stone's broken face.
+    tints = part.get('tint', {})
+    faceted = part.get('faceted', set())
+    bm.faces.index_update()
+    flat = [made.index for made in bm.faces if made in faceted]
     for made in bm.faces:
         made.smooth = True
         own = crisp.get(made)
+        k = tints.get(made, 1.0)
         for loop in made.loops:
             colour = own if own is not None else paint.get(loop.vert, (1.0, 0.0, 1.0))
-            loop[layer] = (colour[0], colour[1], colour[2], 1.0)
+            loop[layer] = (colour[0] * k, colour[1] * k, colour[2] * k, 1.0)
     mesh = bpy.data.meshes.new(name)
     bm.to_mesh(mesh)
     bm.free()
     if sharp < 180.0:
         mesh.set_sharp_from_angle(angle=math.radians(sharp))
+    for index in flat:
+        mesh.polygons[index].use_smooth = False
     mesh.materials.append(MATERIAL)
     made = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(made)
@@ -379,29 +387,39 @@ finish(part, 'kotte-liten', sharp=50.0, strength=0.6, reach=0.1, recalc=False)
 
 
 # --- the moss cushion ----------------------------------------------------------------------------------------
-# A low hummock with a knobbly outline, painted from white at its crown to dark at its foot: the game gives
-# each one its own green. About four hundred lie in a picture, so it is a few points only.
+# A hummock of moss as he sees it, a hand from his nose: tufts of different sizes that have grown into one
+# cushion, each a dome whose side swells out over a foot tucked into the carpet, with a crease where one meets
+# the next. Painted from white at each crown to dark at its foot, with the shade of the creases and the
+# overhangs baked in: the game gives each cushion its own green, and turns what is dark brown, as the dead
+# shoots under the living tips are. About four hundred lie in a picture, so each tuft is a few points only.
+
+# Each tuft: where it stands (x, y), how far out its side swells, how high it is, and how light its crown.
+TUFTS = (((0.0, 0.08), 0.66, 0.5, 1.0), ((0.5, 0.36), 0.46, 0.4, 0.95), ((-0.44, -0.26), 0.52, 0.44, 0.97), ((0.3, -0.48), 0.4, 0.32, 0.92))
+# A tuft from its foot to its crown: how far out each ring is, as a share of its swell, how high, as a share of
+# its height, and how light it is painted, as a share of its crown's. The foot is tucked in under the carpet,
+# and the side swells out over it.
+TUFT = ((0.82, -0.16, 0.3), (1.0, 0.3, 0.62), (0.74, 0.72, 0.88))
+ROUND = 6
 
 part = new_part()
-SIDES = 8
-rings = []
-tones = []
-for i, (wide, high, light) in enumerate(((1.0, -0.12, 0.36), (0.96, 0.08, 0.56), (0.74, 0.28, 0.8), (0.44, 0.43, 0.94))):
-    ring = []
-    shades = []
-    for j in range(SIDES):
-        angle = TAU * (j + 0.5 * (i % 2)) / SIDES
-        # It grows in lobes, as a cushion of moss does where one clump has met the next, and never in a round.
-        lobes = 1.0 + 0.17 * math.cos(3.0 * angle + 0.7) + 0.11 * math.cos(5.0 * angle + 2.1)
-        knob = lobes * (1.0 + (0.3 if i < 2 else 0.16) * (rnd(1.0 + (0.0 if i < 2 else i), j) - 0.5))
-        bump = high + 0.13 * (rnd(j + 9.0, i) - 0.5) * (1.0 if i > 0 else 0.0)
-        ring.append(Vector((wide * knob * math.cos(angle), wide * knob * math.sin(angle), bump)))
-        k = light * (0.88 + 0.24 * rnd(j + 4.0, i))
-        shades.append((k, k, k * 0.97))
-    rings.append(ring)
-    tones.append(shades)
-skin(part, rings, tones, None, (Vector((0.03, -0.02, 0.5)), (1.0, 1.0, 0.97)))
-finish(part, 'tuva', strength=0.0)
+for t, ((cx, cy), swell, high, crown) in enumerate(TUFTS):
+    rings = []
+    tones = []
+    for i, (out, up, light) in enumerate(TUFT):
+        ring = []
+        shades = []
+        for j in range(ROUND):
+            angle = TAU * (j + 0.37 * t) / ROUND
+            # No tuft is round: it bulges here and is pinched there, and its side is uneven.
+            wide = swell * out * (1.0 + 0.16 * math.cos(2.0 * angle + t) + 0.12 * (rnd(j + 3.0 * t, i) - 0.5))
+            lift = high * up + (0.04 * (rnd(j + 9.0, i + 5.0 * t) - 0.5) if i > 0 else 0.0)
+            ring.append(Vector((cx + wide * math.cos(angle), cy + wide * math.sin(angle), lift)))
+            k = crown * light * (0.9 + 0.2 * rnd(j + 4.0, i + t))
+            shades.append((k, k, k * 0.97))
+        rings.append(ring)
+        tones.append(shades)
+    skin(part, rings, tones, None, (Vector((cx + 0.03, cy - 0.02, high)), (crown, crown, crown * 0.97)))
+finish(part, 'tuva', strength=0.6, reach=0.3, floor=0.06)
 
 
 # --- stones --------------------------------------------------------------------------------------------------
@@ -415,15 +433,9 @@ LICHEN_PALE = tone('#c9cdbf')
 LICHEN_GOLD = tone('#b5a23c')
 CRACK = tone('#3a3f3f')
 
-# For each stone: its size, how fine it is, the planes that cut it (a direction and how far out), and its crack.
-STONES = {
-    'sten-a': ((1.0, 0.8, 0.62), 3, 11.0, (((0.3, -0.5, 0.8), 0.74), ((-0.8, -0.4, 0.3), 0.8), ((0.7, -0.6, 0.1), 0.78), ((0.1, 0.7, 0.6), 0.8), ((-0.2, -0.9, -0.1), 0.72)), ((0.5, 0.2, 0.4), 0.12)),
-    'sten-b': ((1.0, 0.72, 0.8), 3, 23.0, (((0.0, -0.3, 0.95), 0.66), ((0.8, -0.5, 0.2), 0.72), ((-0.6, -0.7, 0.3), 0.76), ((-0.7, 0.5, 0.4), 0.8)), ((-0.4, 0.5, 0.3), -0.05)),
-    'sten-c': ((1.0, 0.9, 0.46), 2, 37.0, (((0.2, -0.2, 0.96), 0.7), ((0.9, -0.3, 0.2), 0.84), ((-0.5, -0.8, 0.2), 0.8)), ((0.3, 0.6, 0.2), 0.3)),
-}
-
-
 def stone(name, size, detail, seed, planes, crack, mossy=1.0):
+    """A small stone, rounded, and cut by a few planes: the seesaw's. Its size, how fine it is, the planes that cut
+    it (a direction and how far out), and its crack."""
     part = new_part()
     verts = lump(part, (0.0, 0.0, 0.0), (1.0, 1.0, 1.0), detail, GRANITE)
     split = Vector(crack[0])
@@ -461,8 +473,93 @@ def stone(name, size, detail, seed, planes, crack, mossy=1.0):
     return finish(part, name, sharp=38.0, strength=0.6, reach=0.5, floor=0.0)
 
 
+# The floor's boulders, as he sees them from a hand away: frost has broken each along a few planes into flat
+# faces with crisp edges, and what is left of its old weathered round is knobbly. A crack runs across it. Its
+# faces are not all one grey: what faces up is paler and green with moss, what turns under is dark, and the
+# lichen sits in patches. For each: its size, its seed, its planes (a direction, and how far out), its crack
+# (a direction, and how far from the middle), and how far down its sides the moss reaches.
+BOULDERS = {
+    'sten-a': ((1.0, 0.8, 0.66), 11.0, (((0.3, -0.5, 0.8), 0.6), ((-0.8, -0.4, 0.3), 0.68), ((0.75, -0.6, 0.05), 0.66), ((0.1, 0.7, 0.6), 0.66), ((-0.2, -0.95, -0.1), 0.64), ((0.85, 0.4, 0.3), 0.7), ((-0.55, 0.35, 0.8), 0.62)), ((0.5, 0.2, 0.4), 0.1), 0.55),
+    'sten-b': ((1.0, 0.74, 0.82), 23.0, (((0.0, -0.3, 0.95), 0.6), ((0.8, -0.5, 0.2), 0.64), ((-0.6, -0.7, 0.3), 0.66), ((-0.7, 0.5, 0.4), 0.68), ((0.45, 0.75, 0.5), 0.66), ((0.1, -0.95, -0.2), 0.7)), ((-0.4, 0.5, 0.3), -0.05), 0.6),
+    'sten-c': ((1.0, 0.9, 0.48), 37.0, (((0.2, -0.2, 0.96), 0.62), ((0.9, -0.3, 0.2), 0.7), ((-0.5, -0.8, 0.2), 0.66), ((-0.85, 0.3, 0.35), 0.68), ((0.3, 0.9, 0.25), 0.7)), ((0.3, 0.6, 0.2), 0.25), 0.5),
+}
+
+
+def granite(at, facing, seed, moss):
+    """A boulder's colour at a point, facing a way: grey grain, paler towards the sky, lichen, moss on top."""
+    grain = noise(at.x * 5.0 + seed, at.y * 5.0, at.z * 5.0)
+    colour = blend(GRANITE_DARK, GRANITE_PALE, grain * 1.3 - 0.1)
+    colour = lit(colour, 0.78 + 0.3 * max(-0.6, min(1.0, facing.z)))
+    patch = noise(at.x * 2.6 + seed * 2.0, at.y * 2.6 + 4.0, at.z * 2.6)
+    if patch > 0.56:
+        colour = blend(colour, LICHEN_PALE, (patch - 0.56) * 6.0)
+    gold = noise(at.x * 3.4 + 9.0, at.y * 3.4 + seed, at.z * 3.4)
+    if gold > 0.68:
+        colour = blend(colour, LICHEN_GOLD, (gold - 0.68) * 5.0)
+    # Moss on what faces up, in from an edge that wanders.
+    green = (facing.z - moss + (noise(at.x * 2.2 + seed, at.y * 2.2, 3.0) - 0.5) * 0.8) * 3.0
+    if green > 0.0:
+        colour = blend(colour, blend(MOSS_DEEP, MOSS, noise(at.x * 3.0, at.y * 3.0, seed) * 1.4), green)
+    return colour
+
+
+def boulder(name, size, seed, planes, crack, moss):
+    part = new_part()
+    bm = part['bm']
+    lump(part, (0.0, 0.0, 0.0), (1.0, 1.0, 1.0), 3, GRANITE)
+    # Its old weathered round, knobbly.
+    for vert in bm.verts:
+        at = vert.co.copy()
+        vert.co = at * (0.86 + 0.24 * noise(at.x * 1.3 + seed, at.y * 1.3, at.z * 1.3) + 0.1 * noise(at.x * 3.4, at.y * 3.4 + seed, at.z * 3.4))
+    # Broken along its planes: each takes off a slice and leaves a flat face.
+    for way, out in planes:
+        normal = Vector(way)
+        normal.normalize()
+        bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=normal * out, plane_no=normal, clear_outer=True)
+        bmesh.ops.holes_fill(bm, edges=[edge for edge in bm.edges if edge.is_boundary], sides=0)
+    # The crack: a line of points where a plane through the stone meets its faces, pressed in.
+    split = Vector(crack[0])
+    split.normalize()
+    cut = bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=split * crack[1], plane_no=split)
+    groove = set(item for item in cut['geom_cut'] if hasattr(item, 'co'))
+    # A broken face is laid out from a point in its middle, so that its colours run from there and not in streaks.
+    bmesh.ops.poke(bm, faces=[side for side in bm.faces if len(side.verts) > 4])
+    bmesh.ops.triangulate(bm, faces=bm.faces[:])
+    # Each broken face is flat, and paler than the old weathered round, and no two alike: the sun is behind the
+    # stones, so their faces would otherwise all be one grey.
+    bm.normal_update()
+    part['tint'] = {}
+    part['faceted'] = set()
+    for side in bm.faces:
+        middle = side.calc_center_median()
+        part['tint'][side] = 0.9
+        for n, (way, out) in enumerate(planes):
+            normal = Vector(way)
+            normal.normalize()
+            if abs(side.normal.dot(normal)) > 0.999 and abs(middle.dot(normal) - out) < 0.003:
+                part['tint'][side] = 1.0 + 0.24 * rnd(seed, n)
+                part['faceted'].add(side)
+    part['paint'] = {}
+    for vert in bm.verts:
+        at = vert.co.copy()
+        colour = granite(at, at.normalized(), seed, moss)
+        if vert in groove:
+            at = at * 0.93
+            colour = blend(colour, CRACK, 0.85)
+        part['paint'][vert] = colour
+        vert.co = Vector((at.x * size[0], at.y * size[1], at.z * size[2] + size[2] * 0.72))
+    # A broken face is one colour all over, the stone's where the face is; younger than the round, it has less moss.
+    for side in part['faceted']:
+        for n, (way, out) in enumerate(planes):
+            normal = Vector(way)
+            normal.normalize()
+            if abs(side.normal.dot(normal)) > 0.999:
+                part['flat'][side] = granite(normal * out, normal, seed + n, moss + 0.2)
+    return finish(part, name, sharp=34.0, strength=0.65, reach=0.5, floor=0.0)
+
+
 for name in ('sten-a', 'sten-b', 'sten-c'):
-    stone(name, STONES[name][0], STONES[name][1], STONES[name][2], STONES[name][3], STONES[name][4])
+    boulder(name, *BOULDERS[name])
 
 # --- what grows on the floor -----------------------------------------------------------------------------------
 

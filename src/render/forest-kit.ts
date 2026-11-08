@@ -19,7 +19,7 @@ import { heightAt, isThing } from './dressing/kit';
  * | --- | --- |
  * | `kotte` | stands on its stalk, 1 long, up |
  * | `kotte-liten` | lies along x, its middle at the origin, 1 long |
- * | `tuva` | a hummock 1 in radius and 0.5 high, to be given its own green |
+ * | `tuva` | a hummock of four tufts, 1 in radius and 0.5 high, to be given its own green; dark on its corners where it is dead and brown |
  * | `sten-a` to `sten-c`, `gungsten`, `gran`, `ormbunke`, `kantarell`, `karljohan`, `renlav` | stand on the origin, at their own size |
  * | `lov` | lies flat, its middle at the origin |
  * | `keps` | the middle of its opening, which is up; its peak towards +x |

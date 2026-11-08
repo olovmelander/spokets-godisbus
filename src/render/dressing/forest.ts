@@ -63,8 +63,9 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
   /** A depth behind the play plane or just in front of it, never where he walks. */
   const depth = (back: number, front = 0.25) => (next() < front ? 0.5 + next() * 0.45 : -0.45 - next() ** 1.6 * back);
 
-  // Moss cushions: what makes the carpet a carpet. The kit's is a low hummock of a few points, larger and
-  // fewer than the balls that stand in for it; each takes its green from where it lies.
+  // Moss cushions: what makes the carpet a carpet. The kit's is four tufts grown into one hummock, larger and
+  // fewer than the balls that stand in for it, in a deep moss of shoots (`softMoss`); each takes its green from
+  // where it lies, and is drier or damper than the next.
   const hummock = kit?.shape('tuva');
   const ballsBehind = Math.round(length * 22);
   const cushionsBehind = hummock ? Math.round(length * HUMMOCKS) : ballsBehind;

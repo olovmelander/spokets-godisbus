@@ -8,7 +8,7 @@ import type { ChapterData, Landmark, LandmarkThing, PlaceId, SurfaceKind } from 
 import type { FarId } from '../backdrop';
 import type { Grade } from '../grade';
 import type { Ground } from './ground';
-import { mossy } from '../lift/flora/light';
+import { mossy, tufted } from '../lift/flora/light';
 import { sway } from '../wind';
 
 // What every part of the dressing uses: the type of a place's look, the small tools, the moss's colours, and
@@ -266,10 +266,13 @@ export function makeKit(): void {
 }
 
 const soft = new WeakMap<Material, Material>();
-/** The forest kit's cushions in a soft moss of their own: the kit's material is the stones' and the cones' too. */
+/**
+ * The forest kit's cushions in a moss of their own, a deep carpet of shoots seen from close by (`tufted`): the kit's
+ * material is the stones' and the cones' too.
+ */
 export function softMoss(material: MeshStandardMaterial): Material {
   let moss = soft.get(material);
-  if (!moss) soft.set(material, (moss = mossy(material.clone())));
+  if (!moss) soft.set(material, (moss = tufted(material.clone())));
   return moss;
 }
 

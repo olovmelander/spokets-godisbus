@@ -1,5 +1,6 @@
 import { BufferGeometry, Color, Float32BufferAttribute, MeshStandardMaterial, Vector3, type CanvasTexture, type Material } from 'three';
 import { drawn, sequence } from '../../dressing/kit';
+import { CLOSE_DETAIL } from '../../ground-detail';
 
 /**
  * The light in what grows (docs/visual-upgrade.md, flora): one set of numbers for every leaf, moss and mushroom
@@ -84,6 +85,104 @@ export function mossy<T extends Material>(material: T): T {
       float mossNear = 1.0 - smoothstep(0.35, 0.9, length(fwidth(mossQ)));
       outgoingLight *= 1.0 - 0.22 * mossGap * mossNear;
       outgoingLight += diffuseColor.rgb * vec3(0.32, 0.36, 0.08) * mossTip * mossNear * (0.6 + 0.4 * smoothstep(-0.2, 0.8, mossUp.y));
+    }`);
+  });
+  return material;
+}
+
+/**
+ * The forest kit's cushions, seen from a hand away (Olov: as beautiful as Unravel; the moss pass of 8 November
+ * 2026): a deep carpet of countless shoots, not a smooth green pillow.
+ * - Shoot tips in their thousands, at two sizes, pale where they face the sky and glowing where the low sun is
+ *   behind them, and dark between them, where the light does not reach down into the pile.
+ * - Tufts of shoots, each a little lighter or darker, with dark creases where one tuft meets the next.
+ * - Brown where the cushion is dark on its corners (its foot, its creases, under its overhang: the kit bakes that
+ *   shade in, art/blender/forest-kit.py), as the dead shoots under the living tips are.
+ * - Each cushion its own: some drier, paler and browner on top, some damp, deeper and darker.
+ * - Spruce needles fallen into it, here and there.
+ * The velvet edge and the slow ripple of light are moss-v2's. What would be finer than a pixel fades to its
+ * average. Low draws one size of shoot and no creases or needles (`CLOSE_DETAIL`).
+ */
+export function tufted<T extends Material>(material: T): T {
+  patch(material, 'moss-v3', (shader) => {
+    shader.uniforms.closeDetail = CLOSE_DETAIL;
+    shader.vertexShader = 'varying vec3 vMossAt;\nvarying float vMossOwn, vMossKind;\n' + shader.vertexShader.replace('#include <project_vertex>', /* glsl */ `#include <project_vertex>
+      vec4 mossAt = vec4(transformed, 1.0);
+      vMossKind = 0.5;
+      #ifdef USE_INSTANCING
+      mossAt = instanceMatrix * mossAt;
+      vMossKind = fract(sin(dot(instanceMatrix[3].xz, vec2(12.9898, 78.233))) * 43758.5453);
+      #endif
+      vMossAt = (modelMatrix * mossAt).xyz;
+      vMossOwn = 1.0;
+      #ifdef USE_COLOR
+      vMossOwn = color.g;
+      #endif`);
+    beforeOpaque(shader, /* glsl */ `uniform vec3 mossSheen, leafSun, leafLight;
+      uniform float closeDetail;
+      varying vec3 vMossAt;
+      varying float vMossOwn, vMossKind;
+      float mossHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+      float mossNoise(vec3 x) {
+        vec3 i = floor(x), f = fract(x);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(mix(mossHash(i), mossHash(i + vec3(1, 0, 0)), f.x), mix(mossHash(i + vec3(0, 1, 0)), mossHash(i + vec3(1, 1, 0)), f.x), f.y),
+          mix(mix(mossHash(i + vec3(0, 0, 1)), mossHash(i + vec3(1, 0, 1)), f.x), mix(mossHash(i + vec3(0, 1, 1)), mossHash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+      }
+      `, /* glsl */ `
+    {
+      vec3 mossUp = (vec4(normal, 0.0) * viewMatrix).xyz;
+      vec3 mossEye = normalize(vViewPosition);
+      vec3 p = vMossAt * 9.0;
+      float pile = sin(p.x + sin(p.z * 1.3)) * sin(p.y * 1.7 + sin(p.x * 1.1 + p.z));
+      float rim = 1.0 - saturate(dot(normal, mossEye));
+      float sky = smoothstep(-0.5, 0.9, mossUp.y);
+      // Each cushion its own: some drier and paler, some damp and deeper.
+      float dry = smoothstep(0.6, 1.0, vMossKind);
+      float damp = 1.0 - smoothstep(0.0, 0.3, vMossKind);
+      float pixel = length(fwidth(vMossAt));
+      // The shoots: how high in the pile a point is, from the dark down between them to their tips, at two sizes.
+      // Seen from further off, their average.
+      float near1 = 1.0 - smoothstep(0.4, 0.9, pixel * 30.0);
+      float near2 = 1.0 - smoothstep(0.4, 0.9, pixel * 72.0);
+      float height = mix(0.5, mossNoise(vMossAt * 30.0), near1);
+      float tuft = 0.5, crease = 0.0, needle = 0.0;
+      if (closeDetail > 0.5) {
+        height = height * 0.62 + mix(0.5, mossNoise(vMossAt * 72.0 + 3.3), near2) * 0.38;
+        // Tufts a few fingers across, each its own tone, and the creases between them.
+        float nearT = 1.0 - smoothstep(0.1, 0.3, pixel * 7.0);
+        float tufts = mossNoise(vMossAt * 6.0 + 11.0);
+        tuft = mix(0.5, tufts, nearT);
+        crease = (1.0 - smoothstep(0.0, 0.07, abs(tufts - 0.5))) * nearT;
+        // A spruce needle here and there, fallen on its top: a thin brown line in a cell of its own.
+        vec3 cell = vec3(floor(vMossAt.xz * 8.0), 0.0);
+        float a = mossHash(cell + 3.1) * 6.2832;
+        vec2 along = vec2(cos(a), sin(a));
+        vec2 rel = vMossAt.xz - (cell.xy + 0.25 + 0.5 * vec2(mossHash(cell + 1.7), mossHash(cell + 5.9))) / 8.0;
+        float wide = 0.004 + pixel * 0.6;
+        float off = length(rel - along * clamp(dot(rel, along), -0.055, 0.055));
+        needle = (1.0 - smoothstep(wide * 0.5, wide, off)) * step(0.7, mossHash(cell + 9.9)) * smoothstep(0.3, 0.8, mossUp.y) * nearT;
+      }
+      // Sharp tips and deep gaps, not a soft blur; a tuft stands a little higher than the crease beside it.
+      height = 0.5 + (height - 0.5) * 1.8 + 0.16 * (tuft - 0.5) - 0.25 * crease;
+      float tip = smoothstep(0.56, 0.76, height);
+      float deep = 1.0 - smoothstep(0.26, 0.48, height);
+      // The light in the pile: dark down between the shoots and in the creases, a tuft lighter or darker.
+      outgoingLight *= (0.8 + 0.28 * sky + 0.07 * pile) * (1.0 - 0.45 * deep) * (1.0 - 0.35 * crease) * (0.9 + 0.2 * tuft);
+      // Brown where the cushion is dark at its foot, in its creases and under its overhang; and on a dry one's top.
+      float dead = (1.0 - smoothstep(0.38, 0.75, vMossOwn)) * (0.7 + 0.5 * dry) + dry * 0.4 * smoothstep(0.55, 0.8, tuft);
+      float grey = dot(outgoingLight, vec3(0.3, 0.59, 0.11));
+      outgoingLight = mix(outgoingLight, grey * vec3(1.3, 0.98, 0.56), saturate(dead) * 0.85);
+      outgoingLight *= (1.0 - 0.22 * damp) * (1.0 + 0.12 * dry);
+      // The tips: pale where they face the sky, and glowing where the low sun is behind them.
+      vec3 sunL = normalize((viewMatrix * vec4(leafSun, 0.0)).xyz);
+      float through = smoothstep(-0.2, 0.9, dot(-mossEye, sunL));
+      vec3 tipLight = vec3(0.3, 0.36, 0.1) * (0.5 + 0.5 * sky) + leafLight * vec3(0.6, 0.62, 0.22) * through * (0.4 + 0.6 * rim);
+      outgoingLight += diffuseColor.rgb * tipLight * tip * (1.0 - 0.6 * saturate(dead)) * (1.0 - 0.5 * damp);
+      // The velvet edge, a little wetter on a damp one.
+      outgoingLight += diffuseColor.rgb * mossSheen * rim * rim * (0.75 + 0.25 * pile) * (1.0 + 0.6 * damp);
+      // The needle is rust-brown, in the light it lies in.
+      outgoingLight = mix(outgoingLight, dot(outgoingLight, vec3(0.3, 0.59, 0.11)) * vec3(1.55, 0.9, 0.42), needle * 0.85);
     }`);
   });
   return material;
