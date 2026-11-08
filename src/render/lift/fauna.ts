@@ -557,8 +557,8 @@ function birds(plan: Plan, add: Add): Kind {
  * time it beats them rather than gliding.
  */
 const SOAR: Record<Soarer, { size: number; up: readonly [number, number]; z: readonly [number, number]; r: readonly [number, number]; turn: number; beat: number; flaps: number }> = {
-  raven: { size: 1.9, up: [6.5, 9], z: [-15, -24], r: [3.5, 5.5], turn: 0.3, beat: 6, flaps: -0.2 },
-  crow: { size: 1.5, up: [5.5, 8], z: [-13, -22], r: [3, 4.5], turn: 0.36, beat: 8, flaps: 0.2 },
+  raven: { size: 1.6, up: [6.5, 9], z: [-17, -27], r: [3.5, 5.5], turn: 0.3, beat: 6, flaps: -0.2 },
+  crow: { size: 1.3, up: [5.5, 8], z: [-14, -24], r: [3, 4.5], turn: 0.36, beat: 8, flaps: 0.2 },
   bat: { size: 0.75, up: [3.8, 5.4], z: [-5, -9], r: [2.2, 3], turn: 1, beat: 70, flaps: 2 },
 };
 /** The window of the world, round the camera, where each keeps its place: it is put anew only when it wraps, out of sight. */
