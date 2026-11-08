@@ -398,6 +398,19 @@ function hut(def: BuildingDef) {
 }
 
 /**
+ * Flärkenbadet's diving tower and changing huts as made in Blender (art/blender/flarken.py), and how much bigger the
+ * chapter has them than they were made there: at Flärken not at all, so that the tower's platform and ladder and a
+ * hut's roof are exactly where his ledges and his climb are. The second hut's door is the game's own part, which slides
+ * on the model's rail (./render.ts, 'hut-door').
+ */
+function flarkenModel(def: BuildingDef): { model: string; fit: number } | null {
+  if (def.kind === 'tower') return { model: 'hopptorn', fit: (def.height ?? 2.7) / 2.7 };
+  if (def.kind !== 'hut') return null;
+  if (def.tar) return { model: 'hydda-tjarad', fit: (def.width ?? 9) / 9 };
+  return { model: def.slider ? 'hydda-skjutdorr' : 'hydda', fit: (def.height ?? 2.9) / 2.9 };
+}
+
+/**
  * A changing hut's door (the graphics pass of 6 November 2026; Olov: "finare byggnader"): upright planks with dark
  * gaps between them, held by a Z of braces, black strap hinges on the left, an iron handle on the right, in a
  * white casing, over a worn sill board. It stands no further out than the flat door it replaced.
@@ -1037,6 +1050,11 @@ export function building(def: BuildingDef): Building {
     group.userData.model = made.model;
     group.userData.fit = (def[made.by] ?? made.size) / made.size;
     if (group.children[1]) group.children[1].userData.keep = 0;
+  }
+  const flarken = flarkenModel(def);
+  if (flarken) {
+    group.userData.model = flarken.model;
+    group.userData.fit = flarken.fit;
   }
   if (def.kind === 'cliff') {
     const [wide, high] = [def.width ?? 16, def.height ?? 12];

@@ -86,10 +86,13 @@ const NET = { x: 45, y: 0.5, lift: 3.2 };
 
 // --- 3. the changing rooms --------------------------------------------------------------------------------
 
-/** The two huts' roofs, over the path: the high way, a hop apart. Each is a fall he lands softly from. */
+/**
+ * The two huts' roofs, over the path: the high way, a hop apart. Each is a fall he lands softly from. The huts' model
+ * (art/blender/flarken.py) is what is seen: its roof's front slope crosses the play plane exactly here.
+ */
 const ROOFS: Ledge[] = [
-  { x: 48.7, y: 2.9, width: 6.2, look: 'plank' },
-  { x: 55.7, y: 2.9, width: 6.2, look: 'plank' },
+  { x: 48.7, y: 2.9, width: 6.2, look: 'shelf' },
+  { x: 55.7, y: 2.9, width: 6.2, look: 'shelf' },
 ];
 /** The bench in front of the second hut, a jump high. */
 const HUT_BENCH: Ledge = { x: 53.2, y: 1, width: 1.4, look: 'trestle' };
@@ -171,7 +174,8 @@ const OUTER = { from: BREAK.to, to: 154 };
  * run off it clears the water; walking, he stops at the edge.
  */
 const TOWER = { ladder: 153.75, from: 154, to: 159, y: 3.3 };
-const PLATFORM: Ledge = { x: (TOWER.from + TOWER.to) / 2, y: TOWER.y, width: TOWER.to - TOWER.from, look: 'plank' };
+/** The tower's model (art/blender/flarken.py) has its platform's planks and its ladder exactly here. */
+const PLATFORM: Ledge = { x: (TOWER.from + TOWER.to) / 2, y: TOWER.y, width: TOWER.to - TOWER.from, look: 'shelf' };
 /** The jetty beyond the tower, its far end pushed down into the water by the waves, and the bark lying on it. */
 const BEYOND = { from: 159.6, to: 163.4 };
 const SAG = { from: BEYOND.to, to: 166.4 };
@@ -365,8 +369,8 @@ export const flarken: ChapterData = {
     // The reed at the foot of the high stone: he climbs it like a stem and steps off onto the top.
     { x: HIGH.from - 0.3, bottom: 0, top: HIGH.y, exit: 1, look: 'root' },
     BENT_REED,
-    // The diving tower's ladder, from the jetty's end up to its platform.
-    { x: TOWER.ladder, bottom: DECK, top: TOWER.y, exit: 1, look: 'hose' },
+    // The diving tower's ladder, from the jetty's end up to its platform: the tower's own.
+    { x: TOWER.ladder, bottom: DECK, top: TOWER.y, exit: 1, look: 'ladder' },
   ],
   ledges: [TABLE, ...ROOFS, HUT_BENCH, ...SHELVES, REED_LEAF, GUNWALE, PLATFORM],
   bouncers: [NET],

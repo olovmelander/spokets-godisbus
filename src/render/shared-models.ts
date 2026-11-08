@@ -14,6 +14,7 @@ const BUILT = ['rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel',
 const YARD = ['vedbod', 'roddbat-vinter', 'brevlada', 'gungor', 'utemobler', 'fotbollsmal', 'fotbollsmal-stort', 'kitbord'];
 /** Äventyr 2's buildings: Själevad's church, the beaver's lodge, Olympia's store and floodlight masts, Billsta's poles. */
 const BUILDINGS = ['kyrka', 'baverhydda', 'kiosk', 'belysningsmast', 'elstolpe'];
+const FLARKEN = ['hopptorn', 'hydda', 'hydda-skjutdorr', 'hydda-tjarad'];
 const ROOM = ['soffa', 'soffa-filt', 'golvlampa', 'krukvaxt', 'bord', 'stol', 'pall', 'holme'];
 const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
@@ -25,6 +26,7 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
   ...Object.fromEntries(BUILT.map((name) => [name, ['aventyr2', 'built'] as const])),
   ...Object.fromEntries(YARD.map((name) => [name, ['aventyr2', 'yard'] as const])),
   ...Object.fromEntries(BUILDINGS.map((name) => [name, ['aventyr2', 'buildings'] as const])),
+  ...Object.fromEntries(FLARKEN.map((name) => [name, ['aventyr2', 'flarken'] as const])),
   ...Object.fromEntries(ROOM.map((name) => [name, ['aventyr2', 'room'] as const])),
   ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
   'olympia-hall': ['aventyr2', 'olympia'],
@@ -41,8 +43,8 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
  */
 const NECKS: Record<string, readonly [number, number, number]> = { uggla: [0, 1.42, 0], utter: [0, 1.3, 0.04], igelkott: [0, 0.3, 0.55], groda: [0, 0.36, 0.12] };
 
-/** What stands outdoors and is shown weathered: the built things, the nature kit, and Olympia's hall and stand. */
-const WEATHERED = new Set([...BUILT, ...YARD, ...NATURE, 'olympia-hall', 'olympia-stand']);
+/** What stands outdoors and is shown weathered: the built things, the nature kit, Flärkenbadet's, and Olympia's hall and stand. */
+const WEATHERED = new Set([...BUILT, ...YARD, ...FLARKEN, ...NATURE, 'olympia-hall', 'olympia-stand']);
 
 const installed = new WeakSet<Object3D>();
 
