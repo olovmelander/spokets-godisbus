@@ -140,7 +140,8 @@ export interface Spot {
   standsAt?: { x: number; y: number; z: number };
   /**
    * For the picture: once the spot is used (Pappa called), whoever of the family is shown here walks over and stands
-   * here instead (Pappa to his seesaw's high end). Without motion, or in a game taken up after it, they are there.
+   * here instead (Pappa to his seesaw's high end), and an owl flies over (Älven's, to where he climbs onto it). Without
+   * motion, or in a game taken up after it, they are there.
    */
   goesTo?: { x: number; y: number; z: number };
   /**
