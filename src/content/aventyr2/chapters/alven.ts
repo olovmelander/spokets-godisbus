@@ -279,8 +279,9 @@ export const alven: ChapterData = {
     // Pappa himself is up on the bridge, at its railing over the rapids ("Jag står här uppe på bron!").
     { id: 'al:pappa', look: 'sign', at: { x: CALL_PAPPA, y: 0 }, standsAt: { x: BRIDGE.x - 0.6, y: DECK, z: -2.4 }, verb: 'call', word: 'callPappa' },
     { id: 'al:lift', at: LIFT.from, verb: 'take', word: 'alScarf', needs: 'al:scarf', ride: 'al:lift' },
-    // On the lake's shore: the owl from the forest. Called, it settles beside him; then he climbs up.
-    { id: 'al:owl-call', look: 'owl', at: { x: CALL_OWL, y: 0 }, verb: 'call', word: 'alCallOwl' },
+    // On the lake's shore: the owl from the forest. Called, it glides over and settles where he climbs up (`goesTo`), and
+    // that owl is the one that carries him.
+    { id: 'al:owl-call', look: 'owl', at: { x: CALL_OWL, y: 0 }, goesTo: { x: OWL.from.x + 0.6, y: 0, z: -0.6 }, verb: 'call', word: 'alCallOwl' },
     { id: 'al:owl', at: OWL.from, verb: 'take', word: 'alBoardOwl', needs: 'al:owl-ready', ride: 'al:owl' },
   ],
   rides: [

@@ -21,6 +21,49 @@
     of the forest's pair and the bridge.
   - **Not done:** Gården's roe deer on the neighbours' meadow did not show at x 8 even in red in 20 seconds; it may
     walk behind the house, or not come there. The next step needs nothing from Olov's computer.
+- **Six things Olov saw on the site (Olov: "the family is standing very strangely together in the first scene", "his
+  dad walk down from the mountain in the air", "the wodden figure stuck in the mountain … the new better design",
+  "they now dont get the raincoats on", "on olympia, we cannot se the water pud", and the owl below), on Olov's computer.** Branch
+  `familjen-och-hemvagen`, in a worktree of its own, beside another session's `djur-och-bron`.
+  - **Stormkvällen's opening** (`stormkvall.ts`, scene `kvall`): Mamma and Pappa stood on one spot (x 12.4) and Moa
+    sat in the middle of the table (the table is x 11.5 to 16.5, z -2.6 to -0.4). Now Pappa stands left of the
+    table, Mamma behind it by her candle (moved within her reach, and her arm comes down after), Moa draws on the
+    chair at its end, as in Äventyr 1's prologue, and Bertil stands by the wall and turns back to the room. The shot
+    is wider, so Pappa and Mamma are in it as they speak; Elof hands Pappa the lamp at x 11.6; Moa comes round the
+    front of the table at the POFF.
+  - **Morgonen's breakfast** had the same faults: Moa in the table, Bertil standing in the back chair, Pappa in the
+    end chair. Bertil now sits on the back chair, Moa on the end one, Pappa stands behind her with his cup.
+  - A test (`tests/unit/scene-places.test.ts`) keeps every scene's people out of tables, and standing people out of
+    chairs, in every chapter with furniture.
+  - **Norrsken's way home** (`src/render/home-trail.ts`): Pappa walked from the summit along the ride's arc with
+    nothing under him, since to the simulation the summit ends in a 10 EL drop (so that Elof can't walk down alone).
+    Now a granite shoulder runs down the mountainside along that arc, 2 to 4 EL behind the play plane. Pappa steps
+    back onto it at the summit, walks down it with his feet on the rock, and comes forward off its widened foot in
+    the valley; his, Elof's and the ghost's shadows are on it. The ride's rise is 1 (was 0.6), so that the arc stays
+    level with the summit until its edge. The simulation is unchanged: the drop still stops him.
+    `tests/unit/home-trail.test.ts` runs the real ride and checks his feet against it all the way down.
+  - **Norrsken's first trägubbe** was the old cone-and-ball figure. It is the private pack's `tragubbe` now, as big as
+    in Äventyr 2. That model has Elof's crowberries for eyes, so they are split off when it arrives (the only
+    near-black bluish triangles of its head, and their glints: 50 of 1,288) and shown when he has painted them. The
+    red pull-ring goes once it is out of the crack: it covered the face he paints.
+  - **Äventyr 2's owls** (Olov: "the static owl dissapeared and we fly away, it looks like there is two owls";
+    `src/content/aventyr2/render.ts`): the owl that waited and the owl that carried him were two. In Stormskogen the
+    waiting owl flew off by itself as he was carried away; in Älven it shrank away when called, and a new one grew
+    under him at an empty shore; in Stormens öga the landed owl blinked out. Now the waiting owl goes the moment he
+    climbs on, and the ride's owl lifts him from where it stood, growing from a sitting owl's size as its wings open;
+    set down, it flies on instead of shrinking away under him. Älven's owl, called, glides from its stone to where he
+    climbs on (`Spot.goesTo`, as the family's walk-over uses it).
+  - **Olympia's puddle** (`buildings.ts`, `pitch`): the pitch's turf lay over both of Olympia's flooded pits and hid
+    their water, since the pitch came on 4 November. The turf is cut away over each, with a bank of dark earth; the
+    goalmouth's puddle and the near half of the centre circle show, the little ball afloat.
+  - **The raincoats are not missing in the code:** the live site, opened fresh, shows them at High and Low, with the
+    flags set and with the scene played. The site serves #239's code (checked on its files). Olov's browser most
+    likely runs an older copy: the game updates only on the title screen, and a link straight to a chapter
+    (`?course=olympia`) never shows it. Ctrl+Shift+R, or the bare address and a few seconds on the title, brings the
+    new one. A question about this is in "Frågor till Olov".
+  - **Checked:** typecheck, `npm test` (2,143), `npm run build` (boot 4,542.5 of 4,608 KB, JS 542.5 of 550 KB), the
+    privacy check, the finale and Äventyr 2 browser suites, and stills of each fix at 1280×800.
+  - **The next step needs:** nothing from Olov's computer.
 
 ## State (8 November 2026, night)
 
@@ -5003,6 +5046,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Six things from the site (8 Nov, morning) | Olov's request: the family's places in Stormkvällen, Pappa walking in the air, the old trägubbe, the raincoats, Olympia's puddle, two owls | 1 session on Olov's computer, with one helper agent | — / 0 so far | Stormkvällen's and Morgonen's family out of the table and chairs; a trail for the walk home; the new trägubbe in the crack, eyes when painted; one owl that waits and carries him; the puddle uncovered; the raincoats were a browser's old copy |
 | The night's playthrough (8 Nov, 00:00–03:30) | Olov's request: play both adventures through and fix what needs fixing | 1 session on Olov's computer, with three reading agents | — / 0 so far | Diary and objectives in both adventures, the helper, Billsta's gusts, Älven's vanishing Elof, Stormkvällen's black blob, the owl, Mormor's lantern, the title, Pause on a phone |
 | The roots and Moa's drawing (7 Nov, night) | Olov's request: make clear what happens when the ghost goes into the roots and what Moa dropped | Part of the same cloud session | — / 0 so far | A root hole the ghost creeps into, Moa kneeling at it, clearer lines, and her drawing seen to blow away; JS gate to 550 KB. |
 | The dialogue in good Swedish (7 Nov, late evening) | Olov's request: find and fix dialogue that isn't correct Swedish, the bird ride first | Part of the same cloud session, with two reading agents | — / 0 so far | About 60 lines rewritten in both adventures; the crane has its own button; three recorded lines silent until the new voices. |
@@ -5039,6 +5083,11 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Norrsken's trail looks walkable before the taste (8 November):** it starts at the summit's edge, a little behind
+  him. Walking he still stops at the edge; running off it he falls in front of the trail and the glitter bubble brings
+  him back, as before. If Elof tries it, the trail could start lower, behind a boulder.
+- **A chapter link never updates the game (8 November):** an update is installed only while the title shows
+  (`src/platform/offline.ts`), so `?course=…` keeps an old copy until the bare address is opened.
 
 - **Flaky on CI (7 November):** the journey suite's "Controller moves through chapter choices" failed once and
   passed three times in a row locally; Äventyr 2's chapters join the selector when its pack arrives, which can move
@@ -5234,6 +5283,9 @@ The older list, still true where it is not struck:
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
+- Spelet uppdaterar sig bara när titelskärmen visas, så en länk direkt till ett kapitel (`?course=olympia`) behåller den
+  gamla versionen. Vill du att den också hämtar den nya, med en knapp "Ny version – ladda om" som inte avbryter när Elof
+  spelar?
 
 The first two are in plan §0, "Kvar att svara på". None of them blocks the work.
 

@@ -61,6 +61,7 @@ import { createAurora } from './aurora';
 import { createFamilyMotion } from './family-motion';
 import { createSharedSweets } from './shared-sweets';
 import { createRescuedFigures } from './rescued-figures';
+import { createHomeTrail } from './home-trail';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
@@ -409,6 +410,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const moverMotion = createMoverMotion(chapter.movers ?? [], moverMeshes);
   const sharedSweets = chapter.id === 'norrsken' ? createSharedSweets() : null;
   if (sharedSweets) scene.add(sharedSweets.group);
+  // Norrsken's way home: the trail Pappa carries Elof down, and where his feet are on it (./home-trail.ts).
+  const homeTrail = chapter.id === 'norrsken' ? createHomeTrail(chapter) : null;
+  if (homeTrail) scene.add(homeTrail.mesh);
+  const pappaFeet = { y: 0, z: 0 };
   const rain = createRain(chapter);
   const cones = buildCones(chapter.rollers?.length ?? 0);
   scene.add(...moverMeshes, rain.group, cones.mesh);
@@ -1879,13 +1884,24 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     if (chapter.id === 'norrsken') {
       const carving = scene.getObjectByName('mover:tragubbe');
+      // Out of the crack for good, the lace is off it: its ring no longer hides the face he paints.
+      const ring = carving?.getObjectByName('pull-ring');
+      if (ring) ring.visible = !flags.has('placed:tragubbe');
       if (carving && flags.has('taste') && ghostState && !homeJourney) carving.position.set(ghostState.x - .5, ghostState.y, 0);
       if (homeJourney && flags.has('home')) {
         // The home ride is visibly Pappa carrying Elof, with both returned carvings alongside him.
         const k = clamp(shoulderLift / 4.25, 0, 1), weight = k * k * (3 - 2 * k);
         const pappa = family.find(one => one.who === 'pappa'), model = pappa?.rig.group;
         if (model && pappa) {
-          model.position.set(x - pappa.at, y - model.parent!.position.y, 0);
+          // Carrying him, Pappa walks the trail down the mountainside, his feet on it (./home-trail.ts); set down,
+          // they stand on the valley floor where Elof is.
+          const from = model.parent!.position;
+          const carrying = onShoulders || shoulderLift > 0;
+          if (homeTrail) homeTrail.feet(x, pappaFeet, from.z);
+          else pappaFeet.z = from.z;
+          if (!homeTrail || !carrying) pappaFeet.y = y;
+          model.position.set(x - pappa.at, pappaFeet.y - from.y, pappaFeet.z - from.z);
+          if (carrying) playerGroundY = pappaFeet.y;
           if (shoulderLift > 0) {
             carryAhead.set(Math.sin(model.rotation.y), 0, Math.cos(model.rotation.y));
             if (pappa.neck) pappa.neck.getWorldPosition(seat);
@@ -2573,6 +2589,7 @@ function buildMovers(chapter: ChapterData): Group[] {
     if (mover.verb === 'pull' && mover.on === undefined && !mover.cycle && mover.stops.length > 1) {
       const at = mover.ring ?? { x: 0, y: mover.height };
       const ring = new Mesh(new TorusGeometry(0.17, 0.04, 10, 28), red);
+      ring.name = 'pull-ring';
       ring.position.set(at.x, at.y, 0.2);
       group.add(ring);
     }

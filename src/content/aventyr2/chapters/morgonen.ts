@@ -38,11 +38,13 @@ const SCENES: SceneDef[] = [
       fade: [{ at: 0, to: 1, move: 0.01 }, { at: 0.1, to: 0, move: 1.4 }],
       words: [{ at: 0.4, seconds: 3.2, kind: 'caption', text: 'morgonen' }],
       shots: [{ at: 0, x: 8, y: 3.6, height: 7.6, width: 12, move: 0.01 }],
+      // Each at the table where a body can be (it is 5 long and 2.2 deep, x 7.5 to 12.5, z -2.6 to -0.4): Bertil on
+      // the chair behind it, Moa drawing on the one at its end, and Pappa standing behind her with his cup.
       actors: {
         mamma: [{ at: 0, x: 6.2, y: 0, z: -2.2, face: 0.3, move: 0.01, act: 'sip', holdsLeft: 'mug' }, { at: 1.4, act: 'wave' }],
-        bertil: [{ at: 0, x: 9.6, y: 0, z: -3.2, face: 0.3, move: 0.01, act: 'stand' }, { at: 3.6, act: 'shrug' }],
-        moa: [{ at: 0, x: 11.4, y: 0, z: -1.4, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }, { at: 5.8, act: 'shrug' }],
-        pappa: [{ at: 0, x: 13.6, y: 0, z: -2.6, face: 0.45, move: 0.01, act: 'sip', holdsLeft: 'mug' }, { at: 7.8, act: 'point', aim: { x: FIRST.x, y: FIRST.y, z: FIRST.z } }],
+        bertil: [{ at: 0, x: 10, y: 0, z: -3.15, face: 0.25, move: 0.01, act: 'sit' }, { at: 3.6, act: 'shrug' }],
+        moa: [{ at: 0, x: 13.15, y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }, { at: 5.8, act: 'shrug' }],
+        pappa: [{ at: 0, x: 14.4, y: 0, z: -3, face: 0.4, move: 0.01, act: 'sip', holdsLeft: 'mug' }, { at: 7.8, act: 'point', aim: { x: FIRST.x, y: FIRST.y, z: FIRST.z } }],
         ghost: [{ at: 0, x: 3.2, y: 0, z: 0, face: 0, move: 0.01, act: 'hop' }],
       },
       elof: [{ at: 0, act: 'watch', aim: { x: 9, y: 2.6, z: -2.4 } }, { at: 8.6, act: 'nod' }],

@@ -70,6 +70,25 @@ function scatter(seed: number): () => number {
 
 /** Where Elof is, for those who look at him, how far the story has come, and whether the picture keeps still. */
 const elof: { x: number; flags: ReadonlySet<string> | null; still: boolean } = { x: 0, flags: null, still: false };
+
+/**
+ * The owls that carry him, one to a chapter (Olov, 8 November 2026: the owl he climbed onto vanished, or flew off by
+ * itself, while another carried him). For each owl ride: the flag that boards it, where it sets off and lands, and where
+ * the owl waiting for him stands now. The owl he climbs onto is the one that carries him: once he has, the waiting
+ * owl is not drawn, and the ride's own owl lifts him from where it stood (`stormExtra`).
+ */
+const owlRides: { flag: string; from: { x: number; y: number }; to: { x: number; y: number }; waits: Vector3 | null }[] = [];
+/** How far from where an owl ride sets off the owl that waits for it may stand. */
+const OWL_WAITS = 2.5;
+
+/** An owl standing at `root` is drawn while it waits, and noted as the one he will climb onto; once he has, it is not. */
+function waitingOwl(root: Object3D): boolean {
+  const ride = owlRides.find((r) => Math.abs(r.from.x - root.position.x) < OWL_WAITS);
+  if (!ride) return true;
+  if (elof.flags?.has(ride.flag)) return false;
+  (ride.waits ??= new Vector3()).copy(root.position);
+  return true;
+}
 /** The flag that puts the ladder's ledge over the ditch at Billsta. */
 const LADDER_LAID = 'bi:ladder';
 
@@ -392,6 +411,12 @@ const OUT_OF_DOORS = { sky: new Color('#7488b8'), ground: new Color('#2c3830'), 
  * with less motion the rain hangs still and there are none.
  */
 function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtra | null {
+  // The owl rides of this chapter, and the flag that boards each: the spot that starts it.
+  owlRides.length = 0;
+  for (const ride of chapter.rides ?? []) {
+    const boarding = ride.look === 'owl' ? chapter.spots?.find((spot) => spot.ride === ride.id) : undefined;
+    if (boarding) owlRides.push({ flag: boarding.id, from: ride.from, to: ride.to, waits: null });
+  }
   const storm = chapter.storm;
   const dim = DIM[chapter.id];
   if (!storm && dim === undefined) return null;
@@ -689,6 +714,11 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
 
   const owlWings: Object3D[] = [];
   let first = true;
+  /** The owl that carries him; the ride it is carrying him on, when it took him and set him down, and where. */
+  let ridden: Object3D | null = null;
+  let carrying: (typeof owlRides)[number] | null = null;
+  let boardedAt = 0, landedAt = -1;
+  const setDown = new Vector3(), owlStart = new Vector3();
   return {
     update({ dt, clock, flags, x, y, camera, still, tier, riding }: ExtraFrame) {
       elof.x = x;
@@ -740,7 +770,33 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
             seen?.base.multiply(OUT_OF_DOORS.far);
           });
         }
+        ridden = scene.getObjectByName('owl-ridden') ?? null;
         first = false;
+      }
+      // The owl he climbs onto carries him. The view draws the ride's owl under him (../../render/view.ts); here it lifts
+      // him from where it waited, its wings opening as it grows from a sitting owl's size to its own, and when it has set
+      // him down it flies on and away, instead of coming out of nothing and shrinking away again under him.
+      if (ridden && owlRides.length > 0) {
+        const ride = riding ? owlRides.find((r) => x >= r.from.x - 0.5 && x <= r.to.x + 0.5) : undefined;
+        if (ride && ride !== carrying) { carrying = ride; boardedAt = clock; landedAt = -1; }
+        if (!ride && carrying && landedAt < 0) { landedAt = clock; setDown.copy(ridden.position); }
+        if (ride) {
+          const k = still ? 1 : smooth((clock - boardedAt) / 0.45);
+          ridden.scale.setScalar(SITTING_SIZE + (1 - SITTING_SIZE) * k);
+          if (ride.waits && k < 1) {
+            owlStart.set(ride.waits.x, ride.waits.y + SITTING_LIFT - 0.5 * SITTING_SIZE, ride.waits.z);
+            ridden.position.lerp(owlStart, 1 - k);
+          }
+          drawnWhile(ridden, true);
+        } else if (carrying && landedAt >= 0) {
+          const k = still ? 1 : (clock - landedAt) / 1.8;
+          if (k < 1) {
+            ridden.position.set(setDown.x + k * 6 + k * k * 4, setDown.y + k * 1.2 + k * k * 8, setDown.z);
+            ridden.rotation.z = 0.3 * smooth(k * 3);
+            ridden.scale.setScalar(1);
+          }
+          drawnWhile(ridden, k < 1);
+        }
       }
       const calmFlag = storm?.calm;
       calm = Math.min(1, Math.max(0, calm + ((calmFlag && flags.has(calmFlag)) ? dt : -dt) / 3));
@@ -1376,6 +1432,64 @@ function owl(flying = false): Group {
   return group;
 }
 
+/** How much smaller than the owl that carries him a sitting owl is, and how high its flying shape's middle sits then. */
+const SITTING_SIZE = 0.6;
+const SITTING_LIFT = 1.4;
+
+/**
+ * The flying owl at a sitting owl's size, for one that takes off by itself. Its wings have names of their own, so the
+ * ridden owl's beat does not drive them.
+ */
+function sittingSizeFlyer(): Group {
+  const flyer = owl(true);
+  flyer.scale.setScalar(SITTING_SIZE);
+  flyer.position.y = SITTING_LIFT;
+  flyer.traverse((node) => { if (node.name === 'owl-wing') node.name = 'owl-wing-away'; });
+  return flyer;
+}
+
+/**
+ * An owl that comes when called (`Spot.goesTo`; Älven: "Called, it settles beside him"): off its stone on open wings,
+ * a short glide, and down where he climbs onto it. Once he has, it is the owl that carries him, and is not drawn here.
+ */
+function calledOwl(spot: Spot, sitting: Group, alive: (clock: number) => void): SpotProp {
+  const to = spot.goesTo!;
+  const flyer = sittingSizeFlyer();
+  const wings: Object3D[] = [];
+  flyer.traverse((node) => { if (typeof node.userData.side === 'number') wings.push(node); });
+  const root = new Group();
+  root.add(sitting, flyer);
+  root.position.set(spot.at.x, spot.at.y, -0.6);
+  drawnWhile(flyer, false);
+  const GLIDE = 1.3;
+  let since = -1;
+  return {
+    group: root,
+    update(used, clock, dt) {
+      // A game taken up after it was called finds it there already.
+      since = !used ? -1 : since < 0 && clock < 0.5 ? GLIDE : Math.max(0, since) + dt;
+      const k = used ? smooth(Math.min(1, since / GLIDE)) : 0;
+      root.position.set(
+        spot.at.x + (to.x - spot.at.x) * k,
+        spot.at.y + (to.y - spot.at.y) * k + Math.sin(k * Math.PI) * 1.1,
+        -0.6 + (to.z + 0.6) * k,
+      );
+      const gliding = used && since < GLIDE;
+      drawnWhile(sitting, !gliding);
+      drawnWhile(flyer, gliding);
+      if (gliding) {
+        const lift = wingbeat(since, 2.2, { every: 0 }).lift;
+        for (const wing of wings) wing.rotation.x = (0.15 - 0.6 * lift) * (wing.userData.side as number);
+        root.rotation.z = 0.12 * Math.sin(k * Math.PI);
+      } else {
+        root.rotation.z = 0;
+        alive(clock);
+      }
+      drawnWhile(root, waitingOwl(root));
+    },
+  };
+}
+
 /** Bertil's rubber boot, lying on the water as a boat: its toe the bow, its open leg where Elof sits. */
 function boot(): Group {
   const group = new Group();
@@ -1529,19 +1643,9 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     owl: (spot) => {
       const bird = owl();
-      // One that is ridden has its own picture; one that only sits there flies off.
       // It sits still, as an owl does, and now and then turns slowly to look another way, and holds it.
       const turn = (clock: number) => held(clock, spot.at.x, 0.22, 0.16) * 0.35;
-      const decor = spot.id.startsWith('decor:');
-      // One that flies off does so as the flying owl, with its wings, at the sitting one's size; its wings have names of
-      // their own, so the ridden owl's beat does not drive them.
-      const flyer = decor ? owl(true) : undefined;
-      if (flyer) {
-        flyer.scale.setScalar(0.6);
-        flyer.position.y = 1.4;
-        flyer.traverse((node) => { if (node.name === 'owl-wing') node.name = 'owl-wing-away'; });
-      }
-      return standing(spot, bird, (clock) => {
+      const alive = (clock: number) => {
         // The kit's owl turns its head, far, as owls do, and its body hardly; the stand-in turns as one.
         const head = bird.getObjectByName('kit-head');
         if (head) {
@@ -1550,7 +1654,24 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
           head.rotation.z = held(clock * 0.7, spot.at.x + 5, 0.3, 0.2) * 0.12;
         } else bird.rotation.y = turn(clock);
         bird.scale.y = 1 + Math.sin(clock * 1.4) * 0.008;
-      }, decor ? 'fly' : 'shrink', flyer);
+      };
+      // Called, it comes over to where he climbs onto it.
+      if (spot.goesTo) return calledOwl(spot, bird, alive);
+      const decor = spot.id.startsWith('decor:');
+      // One that flies off does so as the flying owl, with its wings, at the sitting one's size; its wings have names of
+      // their own, so the ridden owl's beat does not drive them. One that he climbs onto does not fly off: it carries him.
+      const flyer = decor ? sittingSizeFlyer() : undefined;
+      const prop = standing(spot, bird, alive, decor ? 'fly' : 'shrink', flyer);
+      return {
+        group: prop.group,
+        update(used, clock, dt) {
+          // At no size, as the view hides a thing that stands about once it is gone (`decor.after`).
+          const waits = waitingOwl(prop.group);
+          prop.group.scale.setScalar(waits ? 1 : 0);
+          if (waits) prop.update(used, clock, dt);
+          else drawnWhile(prop.group, false);
+        },
+      };
     },
     tap: (spot) => {
       // The rain barrel's brass tap, and the water that pours from it once it is turned.
@@ -1863,7 +1984,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
           sitting.rotation.y = Math.sin(clock * 0.7) * 0.25;
           sitting.visible = k >= 1;
           flying.visible = k < 1;
-          drawnWhile(root, called && !used);
+          // Climbed onto, it is the owl that carries him (`stormExtra`).
+          drawnWhile(root, called && !used && waitingOwl(root));
         },
       };
     },
@@ -1926,7 +2048,8 @@ function rideLooks(): Record<string, (look: RideLook) => Object3D | null> {
   return {
     boot: () => boot(), umbrella: () => umbrella(),
     // Ridden, its back comes up under his seat: the flying owl hangs from his feet, and he sat in the air above it.
-    owl: () => { const g = new Group(); const bird = owl(true); bird.position.y = 0.5; g.add(bird); return g; },
+    // It is the owl he climbed onto, and it flies on when it has set him down (`stormExtra`).
+    owl: () => { const g = new Group(); g.name = 'owl-ridden'; const bird = owl(true); bird.position.y = 0.5; g.add(bird); return g; },
     // The ball Bertil kicks, under his feet as it flies.
     football: () => { const g = new Group(); const b = football(0.8); b.position.y = -0.84; g.add(b); return g; },
     raft: () => { const g = new Group(); g.add(raft(3.2, 0.5)); g.children[0]!.position.y = -0.5; return g; },

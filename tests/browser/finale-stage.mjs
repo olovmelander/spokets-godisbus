@@ -126,8 +126,10 @@ try {
     check(`${name}: Pappa faces home and strides with actual ride travel`, after.pappaYaw>1 && after.pappaYaw<1.4 && JSON.stringify(after.pappaPose.slice(11*16))!==JSON.stringify(ride.pappaPose.slice(11*16)));
     check(`${name}: supporting palms stay at his ankles while Pappa walks`, after.support && after.support.gaps.every(gap=>gap<.15));
     const late=await page.evaluate(()=>{const p=window.probe;p.advance(4.4);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});
-    check(`${name}: eight seconds into home, ghost and Pappa shadows follow terrain support`, late.mode==='ride' && late.player[0]>60 && late.player[1]<-6 &&
-      [late.ghost,late.pappa].every(at=>late.shadows.some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-(late.groundY+.018))<.01)));
+    // To the simulation the summit ends in a drop; Pappa walks the trail behind it (src/render/home-trail.ts).
+    check(`${name}: eight seconds into home, Pappa walks the trail and his and the ghost's shadows are on it`, late.mode==='ride' && late.player[0]>60 && late.player[1]<-6 &&
+      late.pappa[1]>late.groundY+1 && late.pappa[2]<-2 &&
+      [late.ghost,late.pappa].every(at=>late.shadows.some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-(late.pappa[1]+.018))<.01)));
     const landed=await page.evaluate(()=>{const p=window.probe;p.advance(3.5);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});
     check(`${name}: after Elof dismounts Pappa settles both empty hands below his shoulders`, landed.mode!=='ride' && landed.support &&
       landed.support.hands.every((hand,i)=>hand[1]<landed.support.shoulders[i]-.55));
@@ -155,13 +157,16 @@ try {
     const revealWarmed=beforeReveal===view.info().programs;
     const supported=at=>f.shadows().some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-(sim.curr.groundY+.018))<.01);
     const waiting=supported(f.at(pappa));sim.step({...idle,act:true});advance(8);for(let i=0;i<12;i++)draw();
-    return{hidden,revealWarmed,waiting,pappa:supported(f.at(pappa)),ghost:supported(f.at(scene.getObjectByName('chase-ghost'))),
+    // On the way home the ground is the trail under Pappa's feet, well over the simulation's drop.
+    const shadowAt=at=>f.shadows().find(([x,,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01);
+    const carried=shadowAt(f.at(pappa)),beside=shadowAt(f.at(scene.getObjectByName('chase-ghost')));
+    return{hidden,revealWarmed,waiting,pappa:!!carried && carried[1]>sim.curr.groundY+1,ghost:!!carried && !!beside && Math.abs(beside[1]-carried[1])<.01,
       x:sim.curr.x,y:sim.curr.y,mode:sim.curr.mode,models:view.info().models};
   });
   check('Private Pappa: hidden replacement reveals without compiling its distinct material variant',privateSupport.hidden && privateSupport.revealWarmed);
   check('Private Pappa: waiting shadow rests on the summit floor',privateSupport.waiting);
-  check('Private Pappa: late home shadow follows the descending terrain',privateSupport.mode==='ride' && privateSupport.x>60 && privateSupport.y<-6 && privateSupport.pappa);
-  check('Private Pappa: the carried ghost shares the same terrain support',privateSupport.ghost && privateSupport.models.includes('private/pappa'));
+  check('Private Pappa: late home, his shadow is on the trail he walks',privateSupport.mode==='ride' && privateSupport.x>60 && privateSupport.y<-6 && privateSupport.pappa);
+  check('Private Pappa: the carried ghost shares the same trail',privateSupport.ghost && privateSupport.models.includes('private/pappa'));
   await privatePage.close();
   // A discovery yields the same speech area without silently consuming a queued causal line.
   const page=await browser.newPage({viewport:{width:390,height:844}});
