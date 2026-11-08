@@ -558,7 +558,7 @@ function birds(plan: Plan, add: Add): Kind {
  * time it beats them rather than gliding.
  */
 const SOAR: Record<Soarer, { size: number; up: readonly [number, number]; z: readonly [number, number]; r: readonly [number, number]; turn: number; beat: number; flaps: number }> = {
-  raven: { size: 1.6, up: [6.5, 9], z: [-17, -27], r: [3.5, 5.5], turn: 0.3, beat: 6, flaps: -0.2 },
+  raven: { size: 1.6, up: [6.5, 9], z: [-17, -27], r: [3.5, 5.5], turn: 0.3, beat: 6, flaps: -0.45 },
   crow: { size: 1.3, up: [5.5, 8], z: [-14, -24], r: [3, 4.5], turn: 0.36, beat: 8, flaps: 0.2 },
   bat: { size: 0.75, up: [3.8, 5.4], z: [-5, -9], r: [2.2, 3], turn: 1, beat: 70, flaps: 2 },
 };
@@ -633,9 +633,11 @@ function soarers(plan: Plan, add: Add): Kind {
         // Ravens and crows bank into their circle; a bat rolls as it jinks.
         const bank = kind === 'bat' ? 0.5 * Math.sin(t * 3.3 + 2 * one.phase) : -one.way * 0.32;
         crowd.put(i, x, y, z, one.yaw, own.size, climb * 0.5, bank);
-        // Beats in bursts, and between them a glide on wings held a little up; a bat never glides.
+        // Beats in bursts, and between them a glide on wings held a little up; a bat never glides. A raven's or a
+        // crow's beat is shallow and mostly down: a deep upstroke, seen from the side, stood up over its back like a fin.
         const beating = kind === 'bat' || Math.sin(t * 0.45 + one.phase * 3) < own.flaps;
-        crowd.pose(i, beating ? 0.85 * Math.sin(t * own.beat + one.phase * 5) : -0.12, 1, 0, 0);
+        const beat = Math.sin(t * own.beat + one.phase * 5);
+        crowd.pose(i, !beating ? -0.12 : kind === 'bat' ? 0.85 * beat : 0.15 + 0.5 * beat, 1, 0, 0);
       }
     }
     asked = false;
