@@ -5,7 +5,9 @@ import {
 import { garden } from '../src/content/chapters/garden';
 import { createGrandparent, type Figure, type Grandparent } from '../src/content/aventyr2/grandparents';
 import { createAssets } from '../src/render/assets';
-import type { Role } from '../src/render/rig';
+import { createPlayerMotion } from '../src/render/player-motion';
+import { createModelRig, type Rig, type Role } from '../src/render/rig';
+import type { PlayerState } from '../src/sim/types';
 import { createStage } from '../src/render/stage';
 import type { ActorKey } from '../src/sim/scene';
 
@@ -18,7 +20,7 @@ const query = new URLSearchParams(location.search);
 const sceneName = query.get('scene') ?? 'walk';
 const FAMILY: Role[] = ['pappa', 'mamma', 'moa', 'bertil'];
 const wanted = (query.get('who') ?? '').split(',').filter(Boolean);
-const cast = FAMILY.filter((who) => sceneName === 'grand' ? wanted.includes(who) : wanted.length === 0 || wanted.includes(who));
+const cast = FAMILY.filter((who) => sceneName === 'grand' || sceneName === 'elof' ? wanted.includes(who) : wanted.length === 0 || wanted.includes(who));
 const elders = (['mormor', 'morfar'] as Grandparent[]).filter((who) => sceneName === 'grand' && (wanted.length === 0 || wanted.includes(who)));
 const LANE = 9;
 
@@ -90,6 +92,11 @@ const figures: { who: Grandparent; figure: Figure; group: Group }[] = elders.map
   return { who, figure, group: figure.group };
 });
 
+// ?scene=elof: Elof on his own model, as the game moves him (src/render/player-motion.ts): a walk, a run, and a stop.
+let boy: { rig: Rig; motion: ReturnType<typeof createPlayerMotion>; x: number } | null = null;
+const elofSpeed = (t: number) => t < 1 ? 0 : t < 5 ? 1.2 : t < 9 ? 3.5 : t < 9.6 ? 3.5 * (9.6 - t) / 0.6 : 0;
+/** Where the camera looks, close on him: he is one EL tall. */
+
 const camera = new PerspectiveCamera(28, 1, 0.5, 400);
 /** ?track: the camera keeps the first of them in the middle, at `?zoom` EL across (a close look at one body). */
 const track = query.has('track'), zoom = Number(query.get('zoom') ?? 9);
@@ -98,13 +105,14 @@ function frame(): void {
   renderer.setSize(width, height, false);
   camera.aspect = width / height;
   const count = Math.max(1, cast.length + figures.length);
-  const followed = track ? cast[0] ? stage.actors.get(cast[0])?.rig.group : figures[0]?.figure.rig.group : undefined;
+  const followed = track ? boy ? boy.rig.group : cast[0] ? stage.actors.get(cast[0])?.rig.group : figures[0]?.figure.rig.group : undefined;
   const span = followed ? zoom : (count - 1) * LANE + (sceneName === 'walk' ? 16 : 4);
   const middle = followed ? followed.getWorldPosition(new Vector3()).x
     : (sceneName === 'walk' ? 8 : sceneName === 'grand' ? 6 : 0) + (count - 1) * LANE / 2;
   const view = query.get('view') === 'three';
   const distance = Math.max(followed ? 4 : 14, span * 0.5 / Math.tan(camera.fov * Math.PI / 360) / Math.max(0.6, camera.aspect) * 1.05);
-  const high = followed ? 2.3 : 2.4;
+  // Halfway up whoever is followed (Elof is one EL tall, the grown-ups five).
+  const high = followed ? (boy ? 0.5 : 2.3) : 2.4;
   camera.position.set(middle + (view ? distance * 0.55 : 0), high + 0.8, view ? distance * 0.84 : distance);
   camera.lookAt(middle, high, 0);
   camera.updateProjectionMatrix();
@@ -125,6 +133,14 @@ function step(dt: number): void {
   // Elof comes up to each of them (they go down on a knee), calls them (the lantern, the ladder), and goes on.
   const near = Math.min(1, Math.max(0, (clock - 1) / 3)) - Math.min(1, Math.max(0, (clock - 10) / 3));
   for (const { figure, group } of figures) figure.update(clock > 6.5, clock, dt, group.position.x + 9 - 7 * near);
+  if (boy) {
+    const speed = elofSpeed(clock);
+    boy.x += speed * dt;
+    const player = { mode: 'free', grounded: true, vx: speed, vy: 0, x: boy.x, y: 0, facing: 1, atEdge: false, t: 0 } as unknown as PlayerState;
+    const legs = boy.rig.legs;
+    boy.rig.group.position.x = boy.x;
+    boy.rig.pose(boy.motion.update(player, boy.x, dt, null, 0, false, 0, 1, query.has('oldlegs') ? undefined : legs));
+  }
 }
 /** From the start to `to` seconds, at the game's own frame rate, so that a still is that moment as it is in play. */
 function replay(to: number): void {
@@ -149,6 +165,14 @@ const load = async () => {
     figure.dress(await assets.model('private', who));
     loaded.push(who);
   }
+  if (sceneName === 'elof' && files['elof.glb']) {
+    const model = await assets.model('private', 'elof');
+    model.rotation.y = Math.PI / 2;
+    const rig = createModelRig(model, 1);
+    scene.add(rig.group);
+    boy = { rig, motion: createPlayerMotion(), x: 0 };
+    loaded.push('elof');
+  }
   return loaded.length ? `models: ${loaded.join(', ')}` : 'stand-ins (no private pack)';
 };
 const ready = load().then((what) => {
@@ -171,6 +195,29 @@ window.__motion = {
   /** Plays on from where it is by `seconds`, at 60 frames a second, and draws. */
   play(seconds: number) { const to = clock + seconds; while (clock + 1 / 120 < to) step(1 / 60); draw(); return clock; },
   replay,
+  /** Elof's ankles, and the lowest point of each boot with its vertex (skinned as drawn): for a script to measure his feet. */
+  feet() {
+    if (!boy) return null;
+    const at = (name: string) => boy!.rig.group.getObjectByName(name)?.getWorldPosition(new Vector3()).toArray();
+    boy.rig.group.updateMatrixWorld(true);
+    const soles: [number, number, number][] = [];
+    boy.rig.group.traverse((node) => {
+      const mesh = node as Mesh & { isSkinnedMesh?: boolean; skeleton?: { bones: { name: string }[] }; getVertexPosition(i: number, v: Vector3): Vector3 };
+      if (!mesh.isSkinnedMesh || !mesh.skeleton) return;
+      const index = mesh.geometry.getAttribute('skinIndex'), weight = mesh.geometry.getAttribute('skinWeight');
+      for (const [side, name] of [[0, 'foot_l'], [1, 'foot_r']] as const) {
+        const bone = mesh.skeleton.bones.findIndex((b) => b.name === name);
+        let best: [number, number, number] = [Infinity, Infinity, -1];
+        for (let i = 0; i < index.count; i++) {
+          if (index.getX(i) !== bone || weight.getX(i) < 0.99) continue;
+          const v = mesh.getVertexPosition(i, new Vector3()).applyMatrix4(mesh.matrixWorld);
+          if (v.y < best[1]) best = [v.x, v.y, i];
+        }
+        soles[side] = best;
+      }
+    });
+    return { ankles: [at('foot_l'), at('foot_r')], soles, x: boy.x };
+  },
   /** Where each of the family's hands, mouth and group are: for a script to measure. */
   probe() {
     return Object.fromEntries([...[...stage.actors].map(([who, { rig }]) => [who, rig] as const), ...figures.map(({ who, figure }) => [who, figure.rig] as const)]

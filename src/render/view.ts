@@ -1437,7 +1437,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // The one wind (./wind.ts) as it reaches each of them where they stand: none indoors, and more in the storm.
     const gale = galeOf(chapter, flags);
     const breeze = gale * windAt(x);
-    const playerPose = playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall);
+    // His model's own legs (Rig.legs), where it has come: its feet hold the ground as he walks.
+    const ownLegs = (playerBody as Partial<Pick<Rig, 'legs'>>).legs;
+    const playerPose = playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
     playerBody.pose(playerPose);
     playerBody.breeze?.(breeze, dt, calmStory, playerMotion.ruffle);
     const elastic = curr.mode === 'free' && !scriptedPose && !calmStory;
