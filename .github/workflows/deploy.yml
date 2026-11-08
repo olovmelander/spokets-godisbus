@@ -46,7 +46,11 @@ jobs:
       - name: Install exiftool
         continue-on-error: true
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libimage-exiftool-perl
-      # The asset build turns textures into KTX2 with this tool (plan §5.6).
+      # The asset build turns textures into KTX2 with this tool (plan §5.6), its download kept between runs.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ktx
+          key: ktx-${{ runner.os }}-${{ hashFiles('scripts/install-ktx.sh') }}
       - run: bash ./scripts/install-ktx.sh
       - run: npm ci
       - run: npm run typecheck

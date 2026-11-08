@@ -1,7 +1,14 @@
 import { BoxGeometry, CapsuleGeometry, ConeGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3 } from 'three';
 import { CLIMB_SPEED, JUMP_SPEED, RUN_AFTER, RUN_SPEED } from '../sim/constants';
 import type { PlayerState } from '../sim/types';
-import { blendPose, createSway, plantFeet, STANDING, type Pose } from './rig';
+import { blendPose, createSway, JOINTS, plantFeet, STANDING, type Legs, type Pose } from './rig';
+import { stand, wave as series, type Gait, type Series } from './gait';
+import { GAITS, STANDS } from './motion-data';
+
+/** A small boy's stride, as Bertil's is keyed: Elof's hips, trunk and hands go with it. */
+const BOY = GAITS.bertil;
+/** What standing gives him while he waits: the legs on the ground, the hips over them, the trunk and head. */
+const STOOD = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'sway', 'hipRoll', 'bendSide', 'tilt'] as const;
 import { createArmContact } from './arm-contact';
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
@@ -22,7 +29,6 @@ export const IDLES = { look: 4.4, rock: 3.6, scratch: 2.8, leaf: 3.8, tap: 3.2, 
 export type IdleAct = keyof typeof IDLES;
 /** The first idle begins this long after he stops, and a stretch only after this long a wait. */
 const FIRST = 3.4, STRETCH = 18;
-const JOINTS = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'legL', 'legR', 'kneeL', 'kneeR', 'spread', 'twist', 'footL', 'footR'] as const;
 
 /**
  * The thigh and knee that lift a heel by tipping the boot `tip` (< 0) about its toe, which stays where it stood: the
@@ -125,8 +131,22 @@ export function strideRate(distance: number, pace: number, tall = 1): number {
   return (distance / Math.max(0.2, tall)) * Math.PI / Math.max(0.12, STEP_LEG * Math.sin(strideReach(pace)));
 }
 
-/** One pose language for the rounded public figure and the approved model's named bones. */
-export function playerPose(player: MotionState, phase: number, pace: number, landing: number, out: Pose): Pose {
+/**
+ * A thigh's angle at its stride's `phase`, for a swing of `reach` either way: forward in a smooth arc through the swing
+ * (the cosine is positive), and back through the stance so that the planted foot moves under the hip in a straight line.
+ */
+function thigh(phase: number, reach: number): number {
+  if (Math.cos(phase) >= 0) return reach * Math.sin(phase);
+  const u = ((((phase - Math.PI / 2) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) / Math.PI;
+  return Math.asin(Math.sin(reach) * (1 - 2 * Math.min(1, u)));
+}
+
+/**
+ * One pose language for the rounded public figure and the approved model's named bones. `leg`: how far his planted foot
+ * goes back under him for a swing's sine, in EL at size 1 (twice the leg, hip to ankle): his model's own legs are shorter
+ * than the stride's measure, and swing further for the same step, so that the foot holds the ground.
+ */
+export function playerPose(player: MotionState, phase: number, pace: number, landing: number, out: Pose, leg = STEP_LEG): Pose {
   Object.assign(out, STANDING);
   if (player.mode === 'climb') {
     const step = Math.sin(phase);
@@ -176,7 +196,10 @@ export function playerPose(player: MotionState, phase: number, pace: number, lan
     const effort = Math.sqrt(clamp(pace)), run = smooth((pace - 0.35) / 0.65);
     const reach = strideReach(pace), swing = Math.sin(phase) * reach;
     const recovery = Math.cos(phase), fold = effort * (0.45 + 0.65 * run);
-    out.legL = swing + 0.45 * landing; out.legR = -swing + 0.45 * landing;
+    // The leg on the ground goes back under him in a straight line, as fast as he goes on, so that its foot stays where it
+    // came down (a swung arc would skate it forward at each end of the step and back in the middle); the other swings.
+    const legs = leg === STEP_LEG ? reach : Math.asin(Math.min(Math.sin(1), STEP_LEG * Math.sin(reach) / leg));
+    out.legL = thigh(phase, legs) + 0.45 * landing; out.legR = thigh(phase + Math.PI, legs) + 0.45 * landing;
     // The recovering foot folds behind the knee; the supporting leg extends on its way back.
     // Squaring the lift makes both ends of contact smooth instead of snapping the knee straight.
     out.kneeL = Math.max(0, recovery) ** 2 * fold + 0.9 * landing;
@@ -208,7 +231,7 @@ export function createPlayerMotion() {
   const random = seeded(7), bag: IdleAct[] = [];
   let act: IdleAct | null = null, actAt = 0, nextAt = FIRST, stretchedAt = -Infinity, last: IdleAct | null = null;
   let ruffle = 0, blown = 0;
-  const acted = { ...STANDING };
+  const acted = { ...STANDING }, standing = { ...STANDING };
   const draw = (): IdleAct => {
     if (bag.length === 0) {
       bag.push('look', 'rock', 'scratch', 'leaf', 'tap');
@@ -226,7 +249,8 @@ export function createPlayerMotion() {
      * `wind` is the shared wind where he stands (`windAt`, ./wind.ts): standing in a strong one, he leans into it with
      * an arm up. It never moves the simulation, and with `calm` (reduced motion) he stands quite still.
      */
-    update(player: PlayerState, x: number, dt: number, scripted: Pose | null, wave = 0, calm = false, wind = 0, tall = 1): Pose {
+    update(player: PlayerState, x: number, dt: number, scripted: Pose | null, wave = 0, calm = false, wind = 0, tall = 1, legs?: Legs): Pose {
+      const leg = legs ? 2 * (legs.thigh + legs.shin) : STEP_LEG;
       const travel = lastX === null ? 0 : x - lastX, distance = Math.abs(travel), previousMode = lastMode;
       const climb = lastMode === 'climb' && player.mode === 'climb' ? player.y - lastY : 0;
       // Assisted arcs move a kinematic body: its reported velocity stays zero.
@@ -269,7 +293,7 @@ export function createPlayerMotion() {
       else landing *= Math.exp(-12 * dt);
       impact = airborne && !player.grounded ? Math.max(impact, -vy) : 0;
       grounded = player.grounded; free = walking;
-      playerPose(player.mode === 'fly' ? { ...player, vy } : player, phase, pace, landing, target);
+      playerPose(player.mode === 'fly' ? { ...player, vy } : player, phase, pace, landing, target, leg);
       if (airborne && !player.grounded && lead < 0) {
         [target.legL, target.legR] = [target.legR, target.legL];
         [target.kneeL, target.kneeR] = [target.kneeR, target.kneeL];
@@ -284,6 +308,19 @@ export function createPlayerMotion() {
         target.kneeL += 0.45 * Math.max(0, -going); target.kneeR += 0.45 * Math.max(0, -going);
         target.lean -= 0.08 * going;
       }
+      if (walking && !player.atEdge && pace > 0 && !calm) {
+        // The hips, trunk, head and hands go with his stride as the family's do (./gait.ts, keyed in Blender for a small
+        // boy): over the standing foot and tipped away from the swinging one, the head level against it, the hands trailing.
+        // His left heel comes down a quarter turn on from the family's.
+        const run = smooth((pace - 0.35) / 0.65), at = phase - Math.PI / 2, k = Math.min(1, pace * 1.6);
+        const curve = (pick: (g: Gait) => Series, x: number) => series(pick(BOY.walk), x) * (1 - run) + series(pick(BOY.run), x) * run;
+        target.sway += curve((g) => g.sway, at) * 5.2 * k;
+        target.hipRoll += curve((g) => g.roll, at) * k;
+        target.bendSide += curve((g) => g.side, at) * k;
+        target.tilt += curve((g) => g.tilt, at) * k;
+        target.wristL += curve((g) => g.wrist, at) * k;
+        target.wristR += curve((g) => g.wrist, at + Math.PI) * k;
+      }
       if (walking && !player.atEdge) {
         // Lean into a start or a change of direction; plant and soften both knees while stopping.
         const weight = calm ? 0.45 : 1, drive = acceleration * player.facing;
@@ -296,6 +333,12 @@ export function createPlayerMotion() {
       ruffle = 0;
       if (idle === 0) { act = null; nextAt = FIRST + random() * 1.2; stretchedAt = -Infinity; }
       blown = calm ? 0 : blown + (wind - blown) * -Math.expm1(-dt / .35);
+      if (!calm && idle > 0.4 && legs) {
+        // Waiting, he stands as a small boy stands (./gait.ts): the weight onto one leg and the other, the other knee easy.
+        // A little idle of his own lifts it while it plays.
+        stand(standing, idle, STANDS.bertil, legs, false, smooth((idle - 1.2) / 1.5) * (act ? 0.35 : 1));
+        for (const joint of STOOD) target[joint] += standing[joint] - STANDING[joint];
+      }
       if (!calm && idle > 0.4) {
         const breath = Math.sin(idle * 1.8) * smooth((idle - 0.4) / 0.8);
         target.lean += breath * 0.015; target.nod += breath * 0.025;

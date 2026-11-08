@@ -202,8 +202,9 @@ export const PROLOG_SCENES: SceneDef[] = [
         ],
         moa: [
           { at: 0.3, act: 'stand', face: 0.3 },
-          // Rise first, then step beside the chair into the clear aisle before following Elof.
-          { at: 0.8, z: 0.3, move: 1.1 },
+          // Rise first, then step beside the chair into the clear aisle before following Elof: far enough from the table
+          // that her swinging hand clears its edge.
+          { at: 0.8, z: 0.45, move: 1.1 },
           { at: 2.4, act: 'stand', follow: 3.7 },
         ],
         bertil: [

@@ -53,6 +53,9 @@ const FAST_ROUTE = 14.135 + 3.2;
 async function fastEnd(page, fromSteps) {
   // Game caps simulation steps per rendered frame. Slow software rendering can make this short
   // logical route take more than 20 wall seconds; it must still advance and finish within its Sim budget.
+  // The wall-time guard only stops a route that crawls on: CI's software rendering takes it about 50 s,
+  // and one runner can be a third slower than the next (8 November 2026: 18.6 s on a desktop, past 60 s
+  // on a slow runner, the same on main), so it allows two minutes.
   const started = Date.now();
   let advanced = started, previous = fromSteps;
   for (;;) {
@@ -71,7 +74,7 @@ async function fastEnd(page, fromSteps) {
       !current.messageShown && current.dialogs.length === 0, `fast route is blocked: ${diagnostic}`);
     if (current.steps > previous) { previous = current.steps; advanced = Date.now(); }
     assert.ok(Date.now() - advanced < 5000, `fast route stopped advancing: ${diagnostic}`);
-    assert.ok(Date.now() - started < 60000, `fast route exceeded its wall-time safety deadline: ${diagnostic}`);
+    assert.ok(Date.now() - started < 120000, `fast route exceeded its wall-time safety deadline: ${diagnostic}`);
     await page.waitForTimeout(100);
   }
 }
@@ -322,7 +325,9 @@ try {
   await ready(fast.page);
   await fast.page.evaluate(() => { document.getElementById('debug').hidden = true; });
   await fast.page.keyboard.down('ArrowRight');
-  await fast.page.waitForFunction(() => window.__godis.state().word === 'taste', null, { timeout: 15000 });
+  // Walking there takes the game a few seconds; drawn in software on a slow CI runner, the game runs a third of its speed
+  // or less, so the walks here wait as long as the suite's other waits (8 November 2026: 15 s ran out on CI).
+  await fast.page.waitForFunction(() => window.__godis.state().word === 'taste', null, { timeout: 60000 });
   await fast.page.keyboard.up('ArrowRight');
   const beforeTaste = await state(fast.page);
   check('the old-save finale resumes shared sweets without taste or optional mountain-memory identity',
@@ -335,7 +340,7 @@ try {
     await continueDialogue(fast.page);
   }
   await fast.page.keyboard.down('ArrowRight');
-  await fast.page.waitForFunction(() => window.__godis.state().word === 'goHome', null, { timeout: 15000 });
+  await fast.page.waitForFunction(() => window.__godis.state().word === 'goHome', null, { timeout: 60000 });
   await fast.page.keyboard.up('ArrowRight');
   await fast.page.keyboard.press('e');
   await fast.page.waitForFunction(() => window.__godis.state().flags.includes('home'));

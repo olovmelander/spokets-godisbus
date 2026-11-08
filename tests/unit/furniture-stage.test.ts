@@ -65,8 +65,9 @@ describe('Moa leaves the kitchen chair', () => {
     show(stage, .3);
     const seated = actor(stage).mouth(new Vector3()), position = actor(stage).group.position.clone();
     show(stage, .75);
+    // Up over her feet, standing where she sat (she sits on the seat, so she rises less than its full height).
     expect(actor(stage).group.position.distanceTo(position)).toBe(0);
-    expect(actor(stage).mouth(new Vector3()).y).toBeGreaterThan(seated.y + .5);
+    expect(actor(stage).mouth(new Vector3()).y).toBeGreaterThan(seated.y + .4);
     for (let frame = 0; frame <= 114; frame++) {
       show(stage, .75 + frame / 60);
       const now = actor(stage).group.position;

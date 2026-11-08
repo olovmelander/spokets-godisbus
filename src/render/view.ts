@@ -55,7 +55,7 @@ import { createEpilogueStage } from './epilogue-stage';
 import { createPrologueStage } from './prologue-stage';
 import { createStage, litLamp } from './stage';
 import { actPose, sitting, stanceOf, stepLength, type Stance } from './acting';
-import { createModelRig, createRehearsalRig, galeOf, heightOf, STANDING, type Pose, type Rig, type Role } from './rig';
+import { createModelRig, createRehearsalRig, galeOf, heightOf, JOINTS, STANDING, type Pose, type Rig, type Role } from './rig';
 import { createPlayerMotion, createPlayerStandIn } from './player-motion';
 import { createAurora } from './aurora';
 import { createFamilyMotion } from './family-motion';
@@ -1437,7 +1437,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // The one wind (./wind.ts) as it reaches each of them where they stand: none indoors, and more in the storm.
     const gale = galeOf(chapter, flags);
     const breeze = gale * windAt(x);
-    const playerPose = playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall);
+    // His model's own legs (Rig.legs), where it has come: its feet hold the ground as he walks.
+    const ownLegs = (playerBody as Partial<Pick<Rig, 'legs'>>).legs;
+    const playerPose = playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
     playerBody.pose(playerPose);
     playerBody.breeze?.(breeze, dt, calmStory, playerMotion.ruffle);
     const elastic = curr.mode === 'free' && !scriptedPose && !calmStory;
@@ -1700,7 +1702,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           const speed = Math.min(1.1 * one.rig.height, far * 3), step = Math.min(far, speed * dt);
           place.x += dx / far * step; place.z += dz / far * step; place.y = to.y;
           w.gait = speed / one.rig.height;
-          w.stride += step / stepLength(Math.max(w.gait, 0.3), one.rig.height);
+          w.stride += step / stepLength(Math.max(w.gait, 0.3), one.rig.height, one.rig.legs);
           w.pace += (1 - w.pace) * ease(8, dt);
           heading = Math.atan2(dx, dz);
         } else if (dt > 0) w.pace += (0 - w.pace) * ease(8, dt);
@@ -1724,14 +1726,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ahead: Math.abs(x - one.at) * 5.2 / one.rig.height,
         up: (y + tall * .8 - one.rig.group.parent!.position.y) * 5.2 / one.rig.height,
       }, one.glad && ['moa', 'seesaw', 'cap:ready', 'mamma', 'braid', 'bog:return-bridge'].includes(one.glad)
-        ? { ready: now, near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined);
+        ? { ready: now, near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined, one.rig.legs);
       if (one.walk && one.walk.pace > 0.001) {
         // Walking over: the legs go by the ground they cover, and the body turns the way it goes.
         const w = one.walk, p = w.pace;
-        actPose('walk', { t: clock, aim: null, stride: w.stride, gait: w.gait, pace: p, calm: calmStory }, walkPose);
-        for (const key of ['lean', 'legL', 'legR', 'kneeL', 'kneeR', 'armL', 'armR', 'elbowL', 'elbowR', 'footL', 'footR'] as const) {
-          posed[key] = posed[key] * (1 - p) + walkPose[key] * p;
-        }
+        actPose('walk', { t: clock, aim: null, stride: w.stride, gait: w.gait, pace: p, calm: calmStory, role: one.who, legs: one.rig.legs }, walkPose);
+        for (const key of JOINTS) if (key !== 'turn') posed[key] = posed[key] * (1 - p) + walkPose[key] * p;
+        posed.bounce = posed.bounce * (1 - p) + walkPose.bounce * p;
         if (heading !== null) one.rig.group.rotation.y += Math.atan2(Math.sin(heading - one.rig.group.rotation.y), Math.cos(heading - one.rig.group.rotation.y)) * p;
       }
       // Bertil pulls off his right boot for Elof (Olov: "på riktigt"): in the moment between being called and the
@@ -1804,7 +1805,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         posed.legR += (0.1 - posed.legR) * w; posed.kneeR += (1.65 - posed.kneeR) * w;
         one.rig.group.rotation.y += (-0.5 - one.rig.group.rotation.y) * w;
       }
-      one.rig.pose(one.seated ? sitting(posed) : one.paddle ? one.paddle.stance(posed) : posed);
+      one.rig.pose(one.seated ? sitting(posed, one.rig.legs) : one.paddle ? one.paddle.stance(posed) : posed);
       if (gesture.lift > 0.001 && pine) {
         // Both hands under the pine's end, a hand's width apart.
         const end = pine.position.x - 4.3 + 0.25, at = pine.position.y + 0.2;

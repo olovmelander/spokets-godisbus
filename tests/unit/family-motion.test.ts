@@ -149,7 +149,8 @@ describe('family help-point movement', () => {
     expect(motion.update(0, 30, 0, 0, null, false)).toEqual(lowering);
     for (let frame = 0; frame < 30; frame++) {
       lowering = { ...motion.update(1 / 60, 0, 0, 0, null, false) };
-      expect(lowering.legL).toBe(0); expect(lowering.legR).toBe(0); expect(lowering.bounce).toBe(0);
+      // Not marching: standing as he stands, his weight on one leg (the motion pass of 8 November 2026).
+      expect(Math.abs(lowering.legL)).toBeLessThan(.2); expect(Math.abs(lowering.legR)).toBeLessThan(.2); expect(lowering.bounce).toBe(0);
     }
     expect(lowering).toEqual(createFamilyMotion('pappa', 27).update(.1, 0, 0, 0, null, false));
     motion.update(.1, 0, 0, 0, 0, true);

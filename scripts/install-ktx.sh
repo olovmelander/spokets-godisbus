@@ -12,18 +12,25 @@ if command -v ktx >/dev/null 2>&1 && ktx --version | grep -q "v${VERSION}"; then
   exit 0
 fi
 
-WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
+# The download is kept in KTX_CACHE, which CI saves between runs (ci.yml, deploy.yml): most runs never fetch it.
+CACHE="${KTX_CACHE:-$HOME/.cache/ktx}"
+mkdir -p "$CACHE"
 # GitHub's release downloads sometimes answer 504 for a moment (CI, 5 November 2026), and on 8 November for the best
 # part of an hour, off and on, which failed a deploy: try again for up to ten minutes before failing.
 FETCH=(curl --fail --silent --show-error --location --retry 30 --retry-delay 20 --retry-max-time 600 --retry-all-errors)
-"${FETCH[@]}" --output "$WORK/$FILE" "$BASE/$FILE"
-"${FETCH[@]}" --output "$WORK/$FILE.sha1" "$BASE/$FILE.sha1"
-EXPECTED="$(awk '{print $1}' "$WORK/$FILE.sha1")"
-ACTUAL="$(sha1sum "$WORK/$FILE" | awk '{print $1}')"
+for NAME in "$FILE" "$FILE.sha1"; do
+  if [ ! -s "$CACHE/$NAME" ]; then
+    "${FETCH[@]}" --output "$CACHE/$NAME.part" "$BASE/$NAME"
+    mv "$CACHE/$NAME.part" "$CACHE/$NAME"
+  fi
+done
+EXPECTED="$(awk '{print $1}' "$CACHE/$FILE.sha1")"
+ACTUAL="$(sha1sum "$CACHE/$FILE" | awk '{print $1}')"
 if [ "$EXPECTED" != "$ACTUAL" ]; then
+  # A bad copy is not kept: the next run fetches it again.
+  rm -f "$CACHE/$FILE" "$CACHE/$FILE.sha1"
   echo "install-ktx: the checksum of $FILE does not match" >&2
   exit 1
 fi
-sudo dpkg -i "$WORK/$FILE"
+sudo dpkg -i "$CACHE/$FILE"
 ktx --version
