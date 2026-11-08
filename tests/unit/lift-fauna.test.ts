@@ -7,7 +7,7 @@ import { PLACES, dress } from '../../src/render/dressing';
 import type { ExtraFrame, ViewExtra } from '../../src/render/extensions';
 import { createFauna } from '../../src/render/lift/fauna';
 import { faunaPlan, type Plan } from '../../src/render/lift/fauna/plan';
-import { squirrel } from '../../src/render/lift/fauna/shapes';
+import { BIRDS, squirrel } from '../../src/render/lift/fauna/shapes';
 import type { ChapterData } from '../../src/sim/types';
 
 /** The near life (src/render/lift/fauna.ts): squirrels, a fox, owls, small birds, fireflies, dragonflies, butterflies, beings, carvings. */
@@ -126,6 +126,10 @@ describe('the near life', () => {
         for (const l of v.landings) {
           expect(l.at[2], `${chapter.id} ${v.species} behind`).toBeLessThan(-1.5);
           for (const c of sweets) expect(Math.hypot(c.x - l.at[0], c.y - l.at[1], l.at[2]), `${chapter.id} ${v.species} at ${l.at[0].toFixed(1)}`).toBeGreaterThanOrEqual(1.8);
+          // Seen from the front it is never behind a big lollipop, where it would seem to sit on it, nor beside one.
+          for (const c of (chapter.checkpoints ?? []).filter((c) => c.y >= l.at[1] - 1 && c.y <= l.at[1] + 3.5)) {
+            expect(Math.abs(c.x - l.at[0]), `${chapter.id} ${v.species} behind a big candy at ${c.x.toFixed(1)}`).toBeGreaterThanOrEqual(1.2 + BIRDS[v.species].size * 0.6);
+          }
           for (const f of plan.flocks) for (const b of f.birds) expect(Math.hypot(b.at[0] - l.at[0], b.at[2] - l.at[2]), `${chapter.id} ${v.species} on a flock`).toBeGreaterThan(1.5);
         }
       }

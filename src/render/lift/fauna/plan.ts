@@ -2,7 +2,7 @@ import { InstancedMesh, Matrix4, Quaternion, Vector3, type Object3D } from 'thre
 import type { ChapterData, PlaceId } from '../../../sim/types';
 import { standing } from '../../dressing/foreground';
 import { KIT, grows, heightAt, landscape, sequence, surfaceAt } from '../../dressing/kit';
-import { branch, stone, stump, type Carving, type Part, type Species, type V3 } from './shapes';
+import { BIRDS, branch, stone, stump, type Carving, type Part, type Species, type V3 } from './shapes';
 
 /**
  * Where the near life lives in a chapter (docs/visual-upgrade.md): read from the chapter's own data and from the
@@ -286,8 +286,11 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
         if (clear(at[0], at[1], at[2], 1.8) && apart(at[0], at[2])) boughs.push({ at, yaw: (next() < 0.5 ? 0 : Math.PI) + (next() - 0.5) * 0.6, bough: true });
       }
     }
+    // Seen from the front, a bird well behind the path stands as high in the picture as a big lollipop's top: none
+    // comes down behind one, where it would seem to sit on it, nor beside one, by the bird's own size.
+    const aside = (l: Landing, species: Species) => (source.checkpoints ?? []).every((c) => c.y < l.at[1] - 1 || c.y > l.at[1] + 3.5 || Math.abs(c.x - l.at[0]) >= 1.2 + BIRDS[species].size * 0.6);
     for (const species of kinds_) {
-      const landings = GROUNDED.has(species) ? ground_ : [...boughs, ...ground_.filter((_, k) => k % 2 === 0)];
+      const landings = (GROUNDED.has(species) ? ground_ : [...boughs, ...ground_.filter((_, k) => k % 2 === 0)]).filter((l) => aside(l, species));
       if (landings.length) visitors.push({ species, landings });
     }
   }
