@@ -673,7 +673,8 @@ export const context: Chooser = (has, player) => {
   const at = player.x;
   if (has('beat:sjon:car')) return ['sjonRiver', 'sjonRoad', 'water'];
   if (has(`placed:${BARK.id}`)) return [at < FAR.from ? 'sjonRaft' : 'sjonEnd', 'sjonMamma', 'water'];
-  if (has(`placed:${STONE.id}`)) return at >= TOWER.to ? ['sjonBark', 'sjonMamma', 'water'] : ['sjonTower', 'sjonMamma'];
+  // Back on the tower once the stone has sunk, the tower's own lines say what to do there.
+  if (has(`placed:${STONE.id}`) && at >= TOWER.to) return ['sjonBark', 'sjonMamma', 'water'];
   if (at >= TOWER.to) return ['sjonGap', 'sjonMamma', 'water'];
   if (at >= TOWER.ladder - 0.6) return has('beat:sjon:lookout') ? ['sjonDive', 'sjonMamma', 'water'] : ['sjonTower', 'sjonMamma'];
   if (has('sjon:boat')) return at < BREAK.to + 0.5 ? ['sjonBoat', 'sjonMamma', 'water', 'mamma'] : ['sjonOut', 'sjonMamma'];

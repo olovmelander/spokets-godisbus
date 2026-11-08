@@ -42,6 +42,8 @@
     - **Progress is what he does:** a line said, a timer run out or a scene played no longer sends away help he asked
       for, nor starts the wait for a reminder again (`assist()` in `sim.ts`; a test in `tests/sim/help.test.ts`). In
       Billsta the help vanished when Moa and Bertil ran to the house, and on Påminn mig the first reminder came at 62 s.
+  - **After a ride lands** (Moa's plane, Bertil's cap, Stormskogen's owl) the objective moves on, and back on Flärken's
+    tower after the stone it says to dive.
   - **Puzzles:** Billsta's roof and slope have Berget's gust rhythm (every 4 s for 1.4 s; it was 3.6 s for 1.7 s,
     and the robot stood five minutes on the roof; the chapter now takes it 88 s).
   - **Pictures:**
@@ -5020,8 +5022,6 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
-- **Flärken, after the stone is placed:** back on the diving tower the objective says "Klättra uppför hopptornets
-  stege", not the dive. An edge case: he has no reason to go back.
 
 - **Flaky on CI (7 November):** the journey suite's "Controller moves through chapter choices" failed once and
   passed three times in a row locally; Äventyr 2's chapters join the selector when its pack arrives, which can move
