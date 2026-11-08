@@ -12,6 +12,8 @@ const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'b
 const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra'];
 const BUILT = ['rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel', 'rabatt', 'roddbat'];
 const YARD = ['vedbod', 'roddbat-vinter', 'brevlada', 'gungor', 'utemobler', 'fotbollsmal', 'fotbollsmal-stort', 'kitbord'];
+/** Äventyr 2's buildings: Själevad's church, the beaver's lodge, Olympia's store and floodlight masts, Billsta's poles. */
+const BUILDINGS = ['kyrka', 'baverhydda', 'kiosk', 'belysningsmast', 'elstolpe'];
 const ROOM = ['soffa', 'soffa-filt', 'golvlampa', 'krukvaxt', 'bord', 'stol', 'pall', 'holme'];
 const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
@@ -22,6 +24,7 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
   ...Object.fromEntries(PROPS.map((name) => [name, ['aventyr2', 'props'] as const])),
   ...Object.fromEntries(BUILT.map((name) => [name, ['aventyr2', 'built'] as const])),
   ...Object.fromEntries(YARD.map((name) => [name, ['aventyr2', 'yard'] as const])),
+  ...Object.fromEntries(BUILDINGS.map((name) => [name, ['aventyr2', 'buildings'] as const])),
   ...Object.fromEntries(ROOM.map((name) => [name, ['aventyr2', 'room'] as const])),
   ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
   'olympia-hall': ['aventyr2', 'olympia'],
