@@ -252,25 +252,17 @@ def finish(part, name, sharp=180.0, strength=0.6, reach=0.3, floor=None, recalc=
     layer = bm.loops.layers.float_color.new('Color')
     paint = part['paint']
     crisp = part['flat']
-    # A face may be lighter or darker than its points' colours, all over, and flat: a stone's broken face.
-    tints = part.get('tint', {})
-    faceted = part.get('faceted', set())
-    bm.faces.index_update()
-    flat = [made.index for made in bm.faces if made in faceted]
     for made in bm.faces:
         made.smooth = True
         own = crisp.get(made)
-        k = tints.get(made, 1.0)
         for loop in made.loops:
             colour = own if own is not None else paint.get(loop.vert, (1.0, 0.0, 1.0))
-            loop[layer] = (colour[0] * k, colour[1] * k, colour[2] * k, 1.0)
+            loop[layer] = (colour[0], colour[1], colour[2], 1.0)
     mesh = bpy.data.meshes.new(name)
     bm.to_mesh(mesh)
     bm.free()
     if sharp < 180.0:
         mesh.set_sharp_from_angle(angle=math.radians(sharp))
-    for index in flat:
-        mesh.polygons[index].use_smooth = False
     mesh.materials.append(MATERIAL)
     made = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(made)
@@ -473,11 +465,12 @@ def stone(name, size, detail, seed, planes, crack, mossy=1.0):
     return finish(part, name, sharp=38.0, strength=0.6, reach=0.5, floor=0.0)
 
 
-# The floor's boulders, as he sees them from a hand away: frost has broken each along a few planes into flat
-# faces with crisp edges, and what is left of its old weathered round is knobbly. A crack runs across it. Its
-# faces are not all one grey: what faces up is paler and green with moss, what turns under is dark, and the
-# lichen sits in patches. For each: its size, its seed, its planes (a direction, and how far out), its crack
-# (a direction, and how far from the middle), and how far down its sides the moss reaches.
+# The floor's boulders, as he sees them from a hand away: granite the ice has carried and worn round. Each once
+# broke along a few planes, and the ice wore every edge of them soft, so it is a lumpy round with a few broad,
+# gently flattened faces. A crack runs across it. It is not all one grey: what faces up is paler and green with
+# moss, what turns under is dark, the stone is lighter and darker in broad patches, and the lichen sits in
+# patches. For each: its size, its seed, its planes (a direction, and how far out), its crack (a direction, and
+# how far from the middle), and how far down its sides the moss reaches.
 BOULDERS = {
     'sten-a': ((1.0, 0.8, 0.66), 11.0, (((0.3, -0.5, 0.8), 0.6), ((-0.8, -0.4, 0.3), 0.68), ((0.75, -0.6, 0.05), 0.66), ((0.1, 0.7, 0.6), 0.66), ((-0.2, -0.95, -0.1), 0.64), ((0.85, 0.4, 0.3), 0.7), ((-0.55, 0.35, 0.8), 0.62)), ((0.5, 0.2, 0.4), 0.1), 0.55),
     'sten-b': ((1.0, 0.74, 0.82), 23.0, (((0.0, -0.3, 0.95), 0.6), ((0.8, -0.5, 0.2), 0.64), ((-0.6, -0.7, 0.3), 0.66), ((-0.7, 0.5, 0.4), 0.68), ((0.45, 0.75, 0.5), 0.66), ((0.1, -0.95, -0.2), 0.7)), ((-0.4, 0.5, 0.3), -0.05), 0.6),
@@ -486,10 +479,11 @@ BOULDERS = {
 
 
 def granite(at, facing, seed, moss):
-    """A boulder's colour at a point, facing a way: grey grain, paler towards the sky, lichen, moss on top."""
+    """A boulder's colour at a point, facing a way: grey grain, lighter and darker in broad patches, paler
+    towards the sky, lichen, moss on top."""
     grain = noise(at.x * 5.0 + seed, at.y * 5.0, at.z * 5.0)
     colour = blend(GRANITE_DARK, GRANITE_PALE, grain * 1.3 - 0.1)
-    colour = lit(colour, 0.78 + 0.3 * max(-0.6, min(1.0, facing.z)))
+    colour = lit(colour, (0.78 + 0.3 * max(-0.6, min(1.0, facing.z))) * (0.88 + 0.24 * noise(at.x * 1.6 + seed, at.y * 1.6, at.z * 1.6 + 7.0)))
     patch = noise(at.x * 2.6 + seed * 2.0, at.y * 2.6 + 4.0, at.z * 2.6)
     if patch > 0.56:
         colour = blend(colour, LICHEN_PALE, (patch - 0.56) * 6.0)
@@ -503,59 +497,53 @@ def granite(at, facing, seed, moss):
     return colour
 
 
+# How far round the ice has worn a boulder's edges: where two of its faces, or a face and its round, come
+# within this of each other, the one runs into the other in a broad curve.
+WORN = 0.28
+
+
+def worn(a, b):
+    """The nearer of two reaches out from a boulder's middle, rounded off where they are close (WORN)."""
+    h = max(WORN - abs(a - b), 0.0) / WORN
+    return min(a, b) - h * h * WORN * 0.25
+
+
 def boulder(name, size, seed, planes, crack, moss):
     part = new_part()
     bm = part['bm']
     lump(part, (0.0, 0.0, 0.0), (1.0, 1.0, 1.0), 3, GRANITE)
-    # Its old weathered round, knobbly.
     for vert in bm.verts:
-        at = vert.co.copy()
-        vert.co = at * (0.86 + 0.24 * noise(at.x * 1.3 + seed, at.y * 1.3, at.z * 1.3) + 0.1 * noise(at.x * 3.4, at.y * 3.4 + seed, at.z * 3.4))
-    # Broken along its planes: each takes off a slice and leaves a flat face.
-    for way, out in planes:
-        normal = Vector(way)
-        normal.normalize()
-        bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=normal * out, plane_no=normal, clear_outer=True)
-        bmesh.ops.holes_fill(bm, edges=[edge for edge in bm.edges if edge.is_boundary], sides=0)
-    # The crack: a line of points where a plane through the stone meets its faces, pressed in.
+        way = vert.co.normalized()
+        # Its round, lumpy; then its old faces, each a plane that it reaches no further than, worn round at the
+        # edges; and the whole of it a little uneven, so that no face is quite flat.
+        reach = 0.86 + 0.24 * noise(way.x * 1.3 + seed, way.y * 1.3, way.z * 1.3) + 0.1 * noise(way.x * 3.4, way.y * 3.4 + seed, way.z * 3.4)
+        for side, out in planes:
+            normal = Vector(side)
+            normal.normalize()
+            facing = way.dot(normal)
+            if facing > 0.05:
+                reach = worn(reach, out / facing)
+        vert.co = way * (reach + 0.05 * (noise(way.x * 2.6 + 3.0, way.y * 2.6, way.z * 2.6 + seed) - 0.5))
+    # The crack: the points nearest a plane through the stone are drawn onto it, and pressed in.
     split = Vector(crack[0])
     split.normalize()
-    cut = bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=split * crack[1], plane_no=split)
-    groove = set(item for item in cut['geom_cut'] if hasattr(item, 'co'))
-    # A broken face is laid out from a point in its middle, so that its colours run from there and not in streaks.
-    bmesh.ops.poke(bm, faces=[side for side in bm.faces if len(side.verts) > 4])
-    bmesh.ops.triangulate(bm, faces=bm.faces[:])
-    # Each broken face is flat, and paler than the old weathered round, and no two alike: the sun is behind the
-    # stones, so their faces would otherwise all be one grey.
-    bm.normal_update()
-    part['tint'] = {}
-    part['faceted'] = set()
-    for side in bm.faces:
-        middle = side.calc_center_median()
-        part['tint'][side] = 0.9
-        for n, (way, out) in enumerate(planes):
-            normal = Vector(way)
-            normal.normalize()
-            if abs(side.normal.dot(normal)) > 0.999 and abs(middle.dot(normal) - out) < 0.003:
-                part['tint'][side] = 1.0 + 0.24 * rnd(seed, n)
-                part['faceted'].add(side)
-    part['paint'] = {}
+    groove = set()
+    for edge in bm.edges:
+        near = [vert.co.dot(split) - crack[1] for vert in edge.verts]
+        if near[0] * near[1] < 0.0:
+            groove.add(edge.verts[0] if abs(near[0]) < abs(near[1]) else edge.verts[1])
+    for vert in groove:
+        vert.co = (vert.co - split * (vert.co.dot(split) - crack[1])) * 0.94
+    own = {}
     for vert in bm.verts:
-        at = vert.co.copy()
-        colour = granite(at, at.normalized(), seed, moss)
-        if vert in groove:
-            at = at * 0.93
-            colour = blend(colour, CRACK, 0.85)
-        part['paint'][vert] = colour
-        vert.co = Vector((at.x * size[0], at.y * size[1], at.z * size[2] + size[2] * 0.72))
-    # A broken face is one colour all over, the stone's where the face is; younger than the round, it has less moss.
-    for side in part['faceted']:
-        for n, (way, out) in enumerate(planes):
-            normal = Vector(way)
-            normal.normalize()
-            if abs(side.normal.dot(normal)) > 0.999:
-                part['flat'][side] = granite(normal * out, normal, seed + n, moss + 0.2)
-    return finish(part, name, sharp=34.0, strength=0.65, reach=0.5, floor=0.0)
+        own[vert] = vert.co.copy()
+        vert.co = Vector((vert.co.x * size[0], vert.co.y * size[1], vert.co.z * size[2] + size[2] * 0.72))
+    # Painted from where each point is on the stone, and which way it faces once the stone has its size.
+    bm.normal_update()
+    for vert in bm.verts:
+        colour = granite(own[vert], vert.normal, seed, moss)
+        part['paint'][vert] = blend(colour, CRACK, 0.8) if vert in groove else colour
+    return finish(part, name, strength=0.65, reach=0.5, floor=0.0)
 
 
 for name in ('sten-a', 'sten-b', 'sten-c'):
