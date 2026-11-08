@@ -1924,7 +1924,9 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
 
 function rideLooks(): Record<string, (look: RideLook) => Object3D | null> {
   return {
-    boot: () => boot(), umbrella: () => umbrella(), owl: () => owl(true),
+    boot: () => boot(), umbrella: () => umbrella(),
+    // Ridden, its back comes up under his seat: the flying owl hangs from his feet, and he sat in the air above it.
+    owl: () => { const g = new Group(); const bird = owl(true); bird.position.y = 0.5; g.add(bird); return g; },
     // The ball Bertil kicks, under his feet as it flies.
     football: () => { const g = new Group(); const b = football(0.8); b.position.y = -0.84; g.add(b); return g; },
     raft: () => { const g = new Group(); g.add(raft(3.2, 0.5)); g.children[0]!.position.y = -0.5; return g; },

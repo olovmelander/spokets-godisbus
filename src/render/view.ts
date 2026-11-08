@@ -700,6 +700,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (!model) return;
       // Exported from Blender he faces +z, and the stand-in faces +x. A quarter turn makes them agree.
       model.rotation.y = Math.PI / 2;
+      // Never culled: a skinned body's bounds are taken once, in one pose, and the camera that frames him always has him
+      // in sight. Culled on those stale bounds, his body went from the picture over Älven's lake and left his cap.
+      model.traverse((part) => { part.frustumCulled = false; });
       elof.dispose();
       elof.group.clear();
       const rig = createModelRig(model, 1);
