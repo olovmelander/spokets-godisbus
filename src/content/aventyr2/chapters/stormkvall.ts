@@ -44,6 +44,18 @@ const KLONK = { x: STAR + 0.9, y: 0, z: 0 };
 /** What the trail's big candies wait for: the old trägubbe lays it, and it is found once he is small. */
 const TRAIL = 'scene:tillsammans';
 
+// Where each of the family is as the evening opens, clear of each other, the table and its chairs. The table is 5 long
+// and 2.2 deep (x 11.5 to 16.5, z -2.6 to -0.4), with a chair behind it and one at its right end (`furniture`).
+/** Mamma behind the table, and the candle she lights, near its back edge where she reaches it. */
+const MAMMA = { x: 12.4, z: -3.3 };
+const CANDLE = { x: 13, y: 1.65, z: -2.1 };
+/** Pappa left of the table, feeling about in the dark: Elof gives him the flashlight here. */
+const PAPPA = { x: 10.6, z: -1.6 };
+/** Moa on the chair at the table's end, drawing, as she does in the first adventure's prologue. */
+const MOA = { x: 16.95, z: -1.5 };
+/** Bertil by the wall between the shelf and the window he watches. */
+const BERTIL = { x: 8.4, z: -4.4 };
+
 const SCENES: SceneDef[] = [
   {
     // 1. The storm evening, from black: rain on the panes, the lights flicker out, candles.
@@ -63,12 +75,23 @@ const SCENES: SceneDef[] = [
     stage: {
       fade: [{ at: 0, to: 1, move: 0.01 }, { at: 0.1, to: 0, move: 1.6 }],
       words: [{ at: 0.4, seconds: 3.2, kind: 'caption', text: 'stormkvall' }],
-      shots: [{ at: 0, x: 6.2, y: 3.4, height: 7.2, width: 11, move: 0.01 }],
+      // Wide enough for Pappa, Mamma and her candle, as each of them speaks.
+      shots: [{ at: 0, x: 7.8, y: 3.6, height: 7.6, width: 14, move: 0.01 }],
       actors: {
-        mamma: [{ at: 0, x: 12.4, y: 0, z: -2.4, face: 0.4, move: 0.01, act: 'stand' }, { at: 1.6, act: 'lift', aim: { x: 13.6, y: 2.0, z: -1.6 } }],
-        pappa: [{ at: 0, x: 12.4, y: 0, z: -2.6, face: 0.3, move: 0.01, act: 'look', aim: { x: 9.4, y: 6, z: -8.9 } }, { at: 3.6, act: 'shrug' }],
-        bertil: [{ at: 0, x: 10.6, y: 0, z: -3.4, face: 0.3, move: 0.01, act: 'look', aim: { x: 9.4, y: 6, z: -8.9 } }, { at: 5.6, act: 'point', aim: { x: 9.4, y: 6, z: -8.9 } }],
-        moa: [{ at: 0, x: 13.8, y: 0, z: -1.2, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }],
+        // She lights the candle, and lets her arm down again.
+        mamma: [
+          { at: 0, ...MAMMA, y: 0, face: 0.25, move: 0.01, act: 'stand' },
+          { at: 1.6, act: 'lift', aim: { x: CANDLE.x, y: CANDLE.y + 0.35, z: CANDLE.z } },
+          { at: 3.4, act: 'stand' },
+        ],
+        pappa: [{ at: 0, ...PAPPA, y: 0, face: 0.3, move: 0.01, act: 'look', aim: WINDOW }, { at: 3.6, act: 'shrug' }],
+        // He points at the window that creaks, then turns back to the room as Elof answers him.
+        bertil: [
+          { at: 0, ...BERTIL, y: 0, face: 0.3, move: 0.01, act: 'look', aim: WINDOW },
+          { at: 5.6, act: 'point', aim: WINDOW },
+          { at: 7.6, face: 0.4, act: 'look', aim: { x: 2.6, y: 2.6, z: 0 } },
+        ],
+        moa: [{ at: 0, ...MOA, y: 0, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }],
         ghost: [{ at: 0, ...KLONK_SHELF, face: 0.25, move: 0.01, act: 'freeze' }],
       },
       elof: [{ at: 0, act: 'watch', aim: WINDOW }, { at: 7.6, act: 'look', aim: { x: OLD.x, y: OLD.y + 0.6, z: OLD.z } }],
@@ -106,7 +129,7 @@ const SCENES: SceneDef[] = [
         moa: [{ at: 2.4, act: 'point', aim: WINDOW }],
         bertil: [{ at: 1.6, act: 'startle' }, { at: 3.0, act: 'look', aim: WINDOW }],
         mamma: [{ at: 1.6, act: 'gasp' }, { at: 10.2, act: 'nod' }],
-        pappa: [{ at: 1.6, act: 'startle' }, { at: 7.6, x: 9.0, y: 0, z: -3.6, face: 0.6, move: 1.0, act: 'look', aim: { x: OLD.x, y: OLD.y + 0.4, z: OLD.z } }],
+        pappa: [{ at: 1.6, act: 'startle' }, { at: 7.6, x: 10, y: 0, z: -3.4, face: 0.6, move: 1.0, act: 'look', aim: { x: OLD.x, y: OLD.y + 0.4, z: OLD.z } }],
         // Klonk stays wood on the shelf while Pappa looks; it peeks at Elof the moment he turns away. A scene's
         // ghost starts from nowhere in particular, so its first key says where it is.
         ghost: [{ at: 0, ...KLONK_SHELF, face: 0.25, move: 0.01, act: 'freeze' }, { at: 4.2, act: 'peek' }, { at: 7.6, act: 'freeze' }, { at: 11.0, act: 'tilt' }],
@@ -189,7 +212,14 @@ const SCENES: SceneDef[] = [
         // they arrive.
         mamma: [{ at: 3.8, face: 0.3, act: 'gasp' }, { at: 4.0, x: STAR - 1.6, y: 0, z: -1.4, face: 0.15, move: 2.2 }, { at: 6.2, act: 'kneel', aim: { x: STAR, y: 0.3, z: 0 } }],
         pappa: [{ at: 3.8, face: 0.35, act: 'gasp' }, { at: 4.0, x: STAR + 2.2, y: 0, z: -1.2, face: 0.4, move: 1.8 }, { at: 5.8, act: 'kneel', aim: { x: STAR, y: 0.3, z: 0 } }],
-        moa: [{ at: 3.8, act: 'startle' }, { at: 4.4, x: STAR + 0.6, y: 0, z: -2.6, face: 0.3, move: 2.0 }, { at: 6.4, act: 'crouch', aim: { x: STAR, y: 0.3, z: 0 } }],
+        // Moa comes from her chair at the table's end, round the front of the table, not through it.
+        moa: [
+          { at: 3.8, act: 'startle' },
+          { at: 3.9, x: MOA.x - 0.5, y: 0, z: 0.3, move: 0.4 },
+          { at: 4.3, x: 11, y: 0, z: 0.3, move: 1.4 },
+          { at: 5.7, x: STAR + 0.6, y: 0, z: -2.6, face: 0.3, move: 1.1 },
+          { at: 6.8, act: 'crouch', aim: { x: STAR, y: 0.3, z: 0 } },
+        ],
         bertil: [{ at: 3.8, act: 'cheer' }, { at: 5.2, x: STAR + 3.4, y: 0, z: -2.8, face: 0.35, move: 1.2 }, { at: 6.4, act: 'crouch', aim: { x: STAR, y: 0.3, z: 0 } }],
         // One glad hop at the POFF, before they have turned; then still wood while the grown-ups look.
         ghost: [{ at: 0, ...KLONK, face: 0.5, move: 0.01, act: 'stand' }, { at: 3.75, act: 'hop' }, { at: 4.27, act: 'freeze' }],
@@ -273,7 +303,7 @@ export const stormkvall: ChapterData = {
     lightning: 7,
     // Candles on the table and the windowsill once Mamma has lit them.
     glows: [
-      { at: { x: 13.6, y: 2.05 }, z: -1.6, size: 0.9, after: 'beat:kvall:0' },
+      { at: { x: CANDLE.x, y: CANDLE.y + 0.4 }, z: CANDLE.z, size: 0.9, after: 'beat:kvall:0' },
       { at: { x: 21, y: 3.3 }, z: -8.6, size: 0.8, after: 'beat:kvall:0' },
       { at: { x: 34, y: 3.3 }, z: -8.6, size: 0.8, after: 'beat:kvall:0' },
     ],
@@ -287,7 +317,7 @@ export const stormkvall: ChapterData = {
     { look: 'tragubbe', at: { x: OLD.x, y: OLD.y }, z: OLD.z, until: 'gust' },
     { look: 'lillgubbe', at: { x: LITTLE.x, y: LITTLE.y }, z: LITTLE.z, until: 'gust' },
     // The candle Mamma lights when the power goes ("Strömmen gick! Jag tänder ljusen.").
-    { look: 'candle', at: { x: 13.6, y: 1.65 }, z: -1.6, after: 'candles' },
+    { look: 'candle', at: { x: CANDLE.x, y: CANDLE.y }, z: CANDLE.z, after: 'candles' },
     // The flashlight on the table, until Elof has taken it to Pappa.
     { look: 'flashlight', at: { x: 15, y: 1.65 }, z: -1.3, until: 'lamp:take' },
   ],
@@ -327,7 +357,7 @@ export const stormkvall: ChapterData = {
   spots: [
     // Pappa feels for the flashlight in the dark: Elof takes it from the table and gives it to him.
     { id: 'lamp:take', at: { x: 15, y: 0 }, verb: 'take', word: 'skTakeLamp', needs: 'scene:kvall' },
-    { id: 'lamp:give', at: { x: 12.6, y: 0 }, verb: 'give', word: 'givePappa', needs: 'lamp:take' },
+    { id: 'lamp:give', at: { x: PAPPA.x + 1, y: 0 }, verb: 'give', word: 'givePappa', needs: 'lamp:take' },
     { id: 'goodnight', at: { x: GOODNIGHT, y: 0 }, verb: 'give', word: 'skGoodnight', needs: 'beat:skLampThanks' },
     // Klonk's last star: out of its bag in the scene, held up between them, and not there before.
     { id: 'star', look: 'star', at: { x: STAR, y: STAR_Y }, verb: 'take', word: 'tasteStar', needs: 'scene:klonkstar', after: 'star:out' },
