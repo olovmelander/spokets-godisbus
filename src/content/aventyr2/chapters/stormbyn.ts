@@ -263,9 +263,9 @@ export const stormbyn: ChapterData = {
   ],
   spots: [
     // The shops' bell cords, down from their awnings and signs: each wakes someone behind a dark window.
-    { id: 'sb:bell-yarn', look: 'bellCord', at: { x: 26.5, y: PAVEMENT }, verb: 'call', word: 'sbRing' },
-    { id: 'sb:bell-shoes', look: 'bellCord', at: { x: 134, y: 0 }, verb: 'call', word: 'sbRing' },
-    { id: 'sb:bell-bread', look: 'bellCord', at: { x: 153.2, y: 0 }, verb: 'call', word: 'sbRing' },
+    { id: 'sb:bell-yarn', look: 'bellCord', at: { x: 26.5, y: PAVEMENT }, verb: 'call', word: 'sbRing', extra: true },
+    { id: 'sb:bell-shoes', look: 'bellCord', at: { x: 134, y: 0 }, verb: 'call', word: 'sbRing', extra: true },
+    { id: 'sb:bell-bread', look: 'bellCord', at: { x: 153.2, y: 0 }, verb: 'call', word: 'sbRing', extra: true },
     // The birch leaf at the river's shore: he steps on, and the current carries him.
     { id: 'leaf', at: LEAF.from, verb: 'take', word: 'board', ride: 'leaf' },
     // On the wall: he calls Moa, and she holds her umbrella out; then he takes hold of it at the edge.

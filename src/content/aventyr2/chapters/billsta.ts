@@ -704,6 +704,7 @@ export const context: Chooser = (has, player) => {
   if (at >= TOP.from + 0.3 && player.y >= TOP.y - 0.3) return ['billstaBoulders', 'billstaForest', 'mountain'];
   if (has('bi:fling')) return ['billstaFly', 'billstaKlonk', 'water', 'spoket'];
   if (has(PIVOT_PLACED)) return ['billstaShortEnd', 'billstaKlonk', 'water', 'spoket'];
+  if (has('bi:think-more')) return ['billstaPush', 'billstaKlonk', 'water', 'spoket'];
   if (has('bi:klonk-on')) return ['billstaLever', 'billstaKlonk', 'water', 'spoket'];
   if (has('bi:call-klonk')) return ['billstaKlonkOn', 'billstaKlonk', 'water', 'spoket'];
   if (at >= BANK.from - 0.5) return ['billstaSeesaw', 'billstaKlonk', 'water', 'spoket'];

@@ -297,7 +297,9 @@ export const context: Chooser = (has) => {
   if (has('scene:stor')) return ['soGoHome', 'soFamilyShore', 'house'];
   if (has('taste')) return ['soGrow', 'soFamilyShore', 'sparkle'];
   if (has('gift')) return ['soTaste', 'soFriends', 'sparkle'];
+  if (has('scene:motet')) return ['soGift', 'soFriends', 'sparkle'];
   if (has('eye')) return ['soMeet', 'soFriends', 'heart'];
+  if (has('owl:ready') && !has('owl')) return ['soBoard', 'soFamilyLamps', 'sparkle'];
   if (has('owl:call')) return ['soRide', 'soFamilyLamps', 'water'];
   if (has('scene:lampa:bertil')) return ['soReach', 'soFamilyLamps', 'water'];
   return ['soLamps', 'soFamilyDark', 'water'];

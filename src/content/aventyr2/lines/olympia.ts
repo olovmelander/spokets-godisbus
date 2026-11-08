@@ -21,7 +21,7 @@ export const words: ChapterWords = {
     // 3. Bollen i målet
     olPuddle: 'Målet står mitt i en stor pöl!',
     olIdea: 'Den lilla bollen flyter ju!',
-    olIdeaMore: 'En större boll skulle kunna bära mig.',
+    olIdeaMore: 'Den stora bollen på bordet kan bära mig!',
     olSplash: 'Plask! Bollen flyter. Nu hoppar jag!',
     olInGoal: 'Mål! Fast det var jag som gick in!',
     // 4. up the net to the crossbar
@@ -43,7 +43,7 @@ export const words: ChapterWords = {
     olGust: 'Där! Vinden tar lillgubben norrut!',
     olNorth: 'Upp mot sjön vid Flärken!',
     olFollow: 'Gamla trägubben följer efter honom!',
-    olCar: 'Hoppa in i bilen! Vi åker till Flärken.',
+    olCar: 'Kom! Vi åker bil till Flärken.',
   },
   verbs: {
     olKick: 'Sparka',
@@ -62,7 +62,7 @@ export const words: ChapterWords = {
     olympiaBoard: { purpose: 'Hoppa upp på bollen.', recap: 'Bertil har lagt bollen till rätta. Han skjuter, och jag flyger.' },
     olympiaFly: { purpose: 'Flyg över mittcirkeln på bollen.', recap: 'Bertil sköt en frispark, och jag åker med bollen.' },
     olympiaStadium: { purpose: 'Följ godisspåret till skidstadion.', recap: 'Mål! Bertils frispark bar mig över mittcirkeln.' },
-    olympiaNorth: { purpose: 'Spring till bilen. Vi åker till Flärken!', recap: 'Den starkaste stormbyn tog lillgubben norrut. Gamla trägubben följer efter, och vi tar bilen.' },
+    olympiaNorth: { purpose: 'Följ elljusspåret. Sedan åker vi bil till Flärken!', recap: 'Den starkaste stormbyn tog lillgubben norrut. Gamla trägubben följer efter, och vi åker bil.' },
   },
   helpers: {
     olympiaFamily: 'Familjen letar runt planen med sina lampor.',

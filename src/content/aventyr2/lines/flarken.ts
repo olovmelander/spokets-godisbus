@@ -22,13 +22,13 @@ export const words: ChapterWords = {
     sjOldOne: 'Spring, gamla trägubben! Vi kommer!',
     // 6. Mamma's paddle board
     sjBroken: 'Bryggan är trasig! Det är för långt.',
-    sjMamma: 'Elof! Jag paddlar dit på SUP:en!',
+    sjMamma: 'Elof! Ropa på mig, så paddlar jag dit!',
     sjBoatReady: 'Jag håller brädan stilla. Kliv på!',
     sjSteady: 'Lugnt och fint. Jag släpper inte.',
     sjThanks: 'Tack! Din SUP blev ju en bro!',
     // 7. the diving tower
     sjTower: 'Hopptornet! Där uppe ser man allt.',
-    sjNear: 'Jag väntar här. Ropa om du behöver mig.',
+    sjNear: 'Jag väntar här. Du klarar det, Elof!',
     sjLookout: 'Där är lillgubben, där ån börjar!',
     // 8. the bark raft
     sjGap: 'Plankorna är borta. Vad gör jag nu?',

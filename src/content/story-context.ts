@@ -45,7 +45,7 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       if (has('pappa:done')) return context('handoff', 'trail');
       if (has('star') && has('scene:familj') && !has('hand') && !has('pappa:noticed')) return context('hand', 'home', 'heart');
       if (has('star') && !has('scene:poff') && !has('scene:familj') && !has('hand') && !has('pappa:noticed')) return context('starWonder', 'home', 'sparkle');
-      if (has('star')) return context(has('pappa:noticed') ? 'handoff' : 'tiny', 'trail', 'sparkle');
+      if (has('star')) return context(has('pappa:noticed') || has('hand') ? 'handoff' : 'tiny', 'trail', 'sparkle');
       if (has('scene:stjarnan')) return context('starTaste', 'home', 'sparkle');
       if (has('bag:torn')) return context('starTrail', 'home', 'sparkle');
       if (has('blink')) return context('chase', 'home');
@@ -69,6 +69,8 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
         return context(has('memory') ? 'gardenMemory' : 'garden', 'trail');
       }
       if (at >= 159) return context('moa', 'moa');
+      if (!has('ladybird') && at >= 36 && at < 47) return context('ladybird', 'trail', 'heart');
+      if (!has('placed:bridge') && at >= 128 && at < 143) return context('shavings', 'trail');
       return context(has('memory') ? 'gardenMemory' : 'garden', 'trail');
     case 'granskog':
       if (has('placed:rescue')) return context('waiting', 'forest', 'trail');
@@ -82,6 +84,7 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       if (has('seesaw') && !has('launch')) return context('cone', 'pappa');
       if (at >= 103 && !has('seesaw')) return context('seesaw', 'pappa');
       if (has('launch')) return context('overRavine', 'forest');
+      if (!has('placed:twig') && at >= 46 && at < 60 && player.y < 5) return context('ants', 'forest');
       if (at >= 31 && at < 46 && !has('jay')) return context('jay', 'forest', 'heart');
       return context(has('keepsake:vittra') ? 'vittraClue' : has('beat:vittra') ? 'forestDoor' : 'forest', 'forest');
     case 'myren':
@@ -109,6 +112,7 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       if (has('found:chokladpralin') && at >= 145 && at <= 154 && player.y >= 32.9) return context('mountainReturn', 'mountain');
       if (knownFigure) return context('figure', 'mountain', 'heart');
       if (has('lift')) return context('tall', 'mountain');
+      if (at >= 108 && at < 138) return context('gusts', 'mountain', 'mountain');
       if (at >= 139) return context('lift', 'mountain', 'heart');
       return context('mountain', 'mountain', 'mountain');
     case 'norrsken':

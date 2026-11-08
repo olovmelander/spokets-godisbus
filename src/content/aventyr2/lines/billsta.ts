@@ -67,6 +67,7 @@ export const words: ChapterWords = {
     billstaBrook: { purpose: 'Hoppa över bäcken på stenarna.', recap: 'Bakom huset börjar skogen. Där rinner en bäck.' },
     billstaSeesaw: { purpose: 'Ropa på Klonk vid gungbrädan.', recap: 'Bäcken är för bred. En torr gran ligger som en gungbräda.' },
     billstaKlonkOn: { purpose: 'Stå kvar. Klonk hoppar på!', recap: 'Jag står på den låga änden. Klonk hoppar på den höga.' },
+    billstaPush: { purpose: 'Knuffa stenen från andra sidan.', recap: 'Klonk är för lätt. Om stenen kommer närmare min ände, lyfter Klonk mig.' },
     billstaLever: { purpose: 'Klonk är för lätt. Hur lyfter han mig?', recap: 'Klonk hoppade på, men gungbrädan rörde sig knappt. Kanske går stenen under den att flytta?' },
     billstaShortEnd: { purpose: 'Ställ dig på den korta änden!', recap: 'Jag flyttade stenen. Nu har Klonk den långa änden.' },
     billstaFly: { purpose: 'Flyg över bäcken!', recap: 'Klonk hoppade på gungbrädan, och jag flög över bäcken.' },

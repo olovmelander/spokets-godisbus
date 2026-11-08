@@ -33,7 +33,8 @@ export function counterweightTarget(sim: Sim, chapter: ChapterData): Hint | null
   if (!heavy) return null;
   if (sim.flags.has(`placed:${puzzle.heavy}`)) {
     const launch = spot(puzzle.launch);
-    return launch ? { at: launch.at, verb: launch.verb, word: launch.word ?? null } : null;
+    // A seesaw he walks onto has no word on the button: he only walks there.
+    return launch ? { at: launch.at, verb: launch.touch ? null : launch.verb, word: launch.touch ? null : launch.word ?? null } : null;
   }
   // The stop is the destination as soon as a push begins, including its final stop. Wait for the
   // weight to settle before offering another push or the launch it will unlock.
@@ -46,7 +47,7 @@ export function counterweightTarget(sim: Sim, chapter: ChapterData): Hint | null
   const way = Math.sign(heavy.def.stops[heavy.stop + 1]!.x - heavy.x) || 1;
   const stance = heavy.x - way * (heavy.def.width / 2 + ELOF_HALF_WIDTH + 0.12);
   if ((p.x - stance) * way > 0.05 || Math.abs(p.y - heavy.y) > 0.3) return { at: { x: stance, y: heavy.y }, verb: null, word: null };
-  return { at: { x: heavy.x, y: heavy.y + heavy.def.height }, verb: heavy.def.verb, word: null };
+  return { at: { x: heavy.x, y: heavy.y + heavy.def.height }, verb: heavy.def.verb, word: heavy.def.word ?? null };
 }
 
 export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
@@ -109,7 +110,8 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   const things: Hint[] = [];
   // Things to use, once what they wait for has happened. One he only has to touch is on the trail anyway.
   for (const spot of chapter.spots ?? []) {
-    if (spot.extra || spot.touch || sim.flags.has(spot.id) || !has(spot.needs)) continue;
+    // One he only has to touch is skipped, unless the chapter cannot end without it (Stormbyn's cap).
+    if (spot.extra || (spot.touch && spot.id !== chapter.goalNeeds) || sim.flags.has(spot.id) || !has(spot.needs)) continue;
     things.push({ at: spot.at, verb: spot.verb, word: spot.word ?? null });
   }
   // Things on rails that are not yet where they belong, and that he moves himself.
@@ -117,7 +119,7 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
     const def = mover.def;
     if (def.extra || def.optional || def.cycle || def.on !== undefined || mover.stop >= def.stops.length - 1 || !has(def.needs)) continue;
     const ring = def.verb === 'pull' ? (def.ring ?? { x: 0, y: def.height }) : { x: 0, y: def.height };
-    things.push({ at: { x: mover.x + ring.x, y: mover.y + ring.y }, verb: def.verb, word: null });
+    things.push({ at: { x: mover.x + ring.x, y: mover.y + ring.y }, verb: def.verb, word: def.word ?? null });
   }
   // Hooks he has not swung past.
   for (const hook of chapter.hooks ?? []) {
