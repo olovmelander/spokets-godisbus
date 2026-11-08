@@ -1,4 +1,4 @@
-import type { MeshStandardMaterial } from 'three';
+import { Color, type MeshStandardMaterial } from 'three';
 import { CANOPY, CANOPY_LAYERS } from './canopy';
 
 /** How wide a deck board is (./dressing/ground.ts keeps the same number). */
@@ -23,6 +23,13 @@ export const DAPPLE = { value: 0 };
 export const DAPPLE_CLOCK = { value: 0 };
 
 /**
+ * How wet the ground is out of doors (the view sets it by the place and the storm: 1 in rain, 0 dry), and the sky
+ * that wet ground gives back where it is looked along. Wet, rock and the pitch's turf shine (Unravel's rain).
+ */
+export const GROUND_WET = { value: 0 };
+export const GROUND_SKY = { value: new Color(0, 0, 0) };
+
+/**
  * The ground seen close (the graphics pass of 6 November 2026). Its picture is a fine grain that tiles, and its
  * colours are set at the corners of a coarse mesh, so the ground in front of the camera, which fills the lower
  * third of every picture, was one smooth smear: "it looks stretched". Unravel's ground near the camera is full of
@@ -43,12 +50,14 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
   patched.add(material);
   const before = material.onBeforeCompile;
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:ground-detail-v8-${kind}`;
+  material.customProgramCacheKey = () => `${key()}:ground-detail-v9-${kind}`;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.closeDetail = CLOSE_DETAIL;
     shader.uniforms.dapple = DAPPLE;
     shader.uniforms.dappleClock = DAPPLE_CLOCK;
+    shader.uniforms.groundWet = GROUND_WET;
+    shader.uniforms.groundSky = GROUND_SKY;
     shader.uniforms.canopyOn = CANOPY.on;
     shader.uniforms.canopySheet = CANOPY.sheet;
     shader.uniforms.canopyLayers = CANOPY.layers;
@@ -58,7 +67,8 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
       groundDetailAt = (modelMatrix * vec4(transformed, 1.0)).xyz;
       #include <project_vertex>`);
     shader.fragmentShader = /* glsl */ `varying vec3 groundDetailAt;
-      uniform float closeDetail, dapple, dappleClock, canopyOn;
+      uniform float closeDetail, dapple, dappleClock, canopyOn, groundWet;
+      uniform vec3 groundSky;
       uniform sampler2D canopySheet;
       uniform mat3 canopyLayers[${CANOPY_LAYERS}];
       uniform float canopyHigh[${CANOPY_LAYERS}];
@@ -118,17 +128,49 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
           groundColour *= mix(vec3(1.0), vec3(mix(0.76, 1.0, through)) + through * vec3(0.6, 0.5, 0.28), canopyOn);
         }
         ` : kind === 'rock' ? /* glsl */ `
-        // Weathered patches, crust lichen in pale rings, and hairline cracks.
+        // Weathered patches, crust lichen in pale rings, and hairline cracks on what lies level.
         groundColour *= 1.0 + (big - 0.5) * 0.24 + (mid - 0.5) * 0.14 * groundMid;
         float lichenAt = groundNoise(at * 3.4 + 11.0);
         float lichen = smoothstep(0.66, 0.74, lichenAt) * (1.0 - smoothstep(0.78, 0.86, lichenAt)) * groundMid;
         float lichenFill = smoothstep(0.72, 0.82, lichenAt) * groundMid;
         groundColour = mix(groundColour, vec3(0.62, 0.66, 0.52) * dot(groundColour, vec3(0.33)) * 2.2, 0.25 * lichenFill + 0.22 * lichen);
-        // Short broken cracks, not long lines: only where a second pattern lets them through.
+        // A face of the rock towards the camera has no network of cracks drawn on it (its relief is its own shape:
+        // ./dressing/ground.ts, rockRelief). Short broken cracks lie on what is level, where a second pattern lets them.
+        float rockFace = 1.0 - smoothstep(0.45, 0.8, groundUp.y);
         float crack = (1.0 - smoothstep(0.0, 0.03, abs(groundNoise(at * vec2(2.2, 4.6) + 5.0) - 0.5)))
-          * smoothstep(0.55, 0.75, groundNoise(at * 1.3 + 17.0));
+          * smoothstep(0.55, 0.75, groundNoise(at * 1.3 + 17.0)) * (1.0 - rockFace);
         groundColour *= 1.0 - 0.45 * crack * groundNear;
+        // On a face the granite's speckled picture is half as strong: seen from where he stands, its grain is fine and
+        // its lichen, its stains and its streaks are what show.
+        #ifdef USE_COLOR
+          groundColour = mix(groundColour, vColor.rgb * diffuse * 0.84 * (1.0 + (big - 0.5) * 0.24), 0.45 * rockFace);
+        #endif
+        // Down a face, rain runs off in dark streaks, as it does down Nordic granite: long, narrow and nearly black
+        // where water runs most, and a few broader grey ones.
+        vec2 faceAt = vec2(abs(groundUp.x) > abs(groundUp.z) ? groundDetailAt.z : groundDetailAt.x, groundDetailAt.y);
+        float runs = smoothstep(0.3, 0.62, groundNoise(faceAt * vec2(0.55, 0.32) + 8.0));
+        float streak = smoothstep(0.58, 0.84, groundNoise(faceAt * vec2(3.4, 0.24) + 3.0)) * runs;
+        float broad = smoothstep(0.6, 0.8, groundNoise(faceAt * vec2(1.1, 0.16) + 21.0)) * (1.0 - runs * 0.5);
+        groundColour = mix(groundColour, groundColour * vec3(0.3, 0.32, 0.37), 0.75 * streak * rockFace * groundMid);
+        groundColour = mix(groundColour, groundColour * vec3(0.66, 0.68, 0.74), 0.5 * broad * rockFace);
+        // The sheets granite splits into: a dark, level, wavering joint every length or so, broken here and there.
+        float sheetAt = faceAt.y * 0.92 + 0.55 * groundNoise(vec2(faceAt.x * 0.3, 3.0)) + 0.12 * groundNoise(faceAt * vec2(1.4, 0.7));
+        float sheetEdge = abs(fract(sheetAt) - 0.5) * 2.0;
+        float sheetLine = smoothstep(0.88 - fwidth(sheetAt) * 2.0, 0.97, sheetEdge) * smoothstep(0.35, 0.55, groundNoise(faceAt * vec2(0.45, 0.6) + 13.0));
+        groundColour = mix(groundColour, groundColour * vec3(0.22, 0.23, 0.27), 0.85 * sheetLine * rockFace * groundMid);
+        // Rust where iron in the rock weathers out, in a few soft stains.
+        float rust = smoothstep(0.66, 0.86, groundNoise(faceAt * vec2(0.9, 0.5) + 31.0));
+        groundColour = mix(groundColour, groundColour * vec3(1.25, 0.95, 0.7), 0.4 * rust * rockFace);
         groundColour *= 1.0 + (fine - 0.5) * 0.22 * groundNear;
+        // The grain of the rock in its light: a roughness of a few millimetres that the low sun rakes across.
+        float rockHeight = (mid * 0.045 + fine * 0.016) * groundMid;
+        vec3 grainX = dFdx(-vViewPosition), grainY = dFdy(-vViewPosition);
+        vec3 grainR1 = cross(grainY, normal), grainR2 = cross(normal, grainX);
+        float grainDet = dot(grainX, grainR1);
+        normal = normalize(abs(grainDet) * normal - sign(grainDet) * (dFdx(rockHeight) * grainR1 + dFdy(rockHeight) * grainR2));
+        // Wet, it shines a little and gives back the sky where it is looked along.
+        roughnessFactor = mix(roughnessFactor, 0.4 + 0.3 * fine, groundWet);
+        totalEmissiveRadiance += groundSky * groundWet * pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 4.0) * 0.2;
         ` : kind === 'wood' ? /* glsl */ `
         // Boards run front to back, ${BOARD.toFixed(2)} wide (./dressing/ground.ts): which one, and where across it.
         float board = floor(at.x / ${BOARD.toFixed(2)});
@@ -157,19 +199,26 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
         float worn = (1.0 - smoothstep(0.6, 2.4, abs(at.y))) * (0.6 + 0.4 * big);
         groundColour = mix(groundColour, vec3(dot(groundColour, vec3(0.3, 0.45, 0.25))) * 1.12, 0.22 * worn);
         ` : kind === 'turf' ? /* glsl */ `
-        // Broad bands across the pitch in its two greens, five metres each, soft at their edges.
-        float band = smoothstep(0.35, 0.65, abs(fract(at.x / 66.0) * 2.0 - 1.0));
-        groundColour *= 0.93 + 0.12 * band;
-        // The stitched rows of fibres, running along the pitch, and their tips catching the light.
-        float rows = smoothstep(0.55, 1.0, abs(sin(at.y * 62.0)));
-        groundColour *= 1.0 - 0.12 * rows * groundNear;
-        groundColour *= 1.0 + (fine - 0.5) * 0.25 * groundNear;
-        // Black rubber crumbs between the fibres.
-        float crumb = smoothstep(0.84, 0.94, groundNoise(at * 23.0 + 9.0)) * groundNear;
-        groundColour = mix(groundColour, vec3(0.012, 0.013, 0.012), 0.6 * crumb);
-        // Flattened and paler where it is played on most.
+        // Artificial turf seen close: at his size its fibres are a sward of flat blades as tall as his knee, in rows
+        // stitched along the pitch. Each tuft is a little its own green; seen from the front, the blades stand as
+        // short strokes towards the camera, pale at their tips and dark at their feet among black rubber crumbs; and
+        // here and there a patch is flattened by play. Its painted lines are painted on the blades.
+        // (Laid on the ground, a blade is long towards the camera and thin along the pitch: so it stands on screen.)
+        float tuftTone = groundNoise(at * vec2(7.0, 1.2) + 4.0);
+        groundColour *= 0.84 + 0.3 * tuftTone * groundMid;
+        float blades = groundNoise(at * vec2(30.0, 1.8) + vec2(1.6 * groundNoise(at * vec2(3.0, 0.8)), 0.0));
+        groundColour *= mix(1.0, 0.55 + 0.75 * smoothstep(0.2, 0.85, blades), groundNear);
+        // The stitched rows show only where they are wider than a pixel: further off they would shimmer.
+        float stitch = smoothstep(0.36, 0.5, abs(fract(at.y * 8.0) - 0.5)) * (1.0 - smoothstep(0.15, 0.4, fwidth(at.y) * 8.0));
+        groundColour *= 1.0 - 0.32 * stitch * groundNear;
+        float crumb = smoothstep(0.8, 0.92, groundNoise(at * 29.0 + 9.0)) * groundNear * (1.0 - blades * 0.6);
+        groundColour = mix(groundColour, vec3(0.012, 0.013, 0.012), 0.7 * crumb);
         float trodden = smoothstep(0.58, 0.8, big) * groundMid;
         groundColour = mix(groundColour, vec3(dot(groundColour, vec3(0.3, 0.5, 0.2))) * vec3(1.05, 1.25, 0.95), 0.25 * trodden);
+        // Wet, its blades shine: smooth plastic in a film of water, the sky given back where it is looked along.
+        roughnessFactor = mix(roughnessFactor, 0.3 + 0.25 * blades, groundWet * groundFlat);
+        float turfAlong = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
+        totalEmissiveRadiance += groundSky * groundWet * groundFlat * turfAlong * (0.35 + 0.65 * blades) * 0.5;
         ` : /* glsl */ `
         // The stones in the asphalt, tar patches and the lighter tracks worn into it.
         groundColour *= 1.0 + (big - 0.5) * 0.18;
@@ -178,6 +227,21 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
         float stone = smoothstep(0.7, 0.86, fine) * groundNear;
         groundColour = mix(groundColour, groundColour * 1.6 + vec3(0.015), 0.45 * stone);
         groundColour *= 1.0 - 0.18 * smoothstep(0.75, 0.9, groundNoise(mat2(0.8, -0.6, 0.6, 0.8) * at * 11.0)) * groundNear;
+        // At his size the asphalt's gravel is pebbles, each its own grey or rust, standing a little out of the tar
+        // between them, so that the low light picks them out.
+        float pebbleAt = groundNoise(at * 15.0 + 3.7);
+        float pebble = smoothstep(0.56, 0.7, pebbleAt) * groundNear;
+        float pebbleTone = groundHash(floor(at * 15.0 + 3.7));
+        groundColour = mix(groundColour, vec3(0.42, 0.4, 0.38) * (0.7 + 0.6 * pebbleTone) * vec3(1.0, 0.97 - 0.1 * pebbleTone, 0.94 - 0.16 * pebbleTone), 0.5 * pebble);
+        float roadHeight = pebble * 0.012 + fine * 0.006 * groundNear;
+        vec3 gritX = dFdx(-vViewPosition), gritY = dFdy(-vViewPosition);
+        vec3 gritR1 = cross(gritY, normal), gritR2 = cross(normal, gritX);
+        float gritDet = dot(gritX, gritR1);
+        normal = normalize(abs(gritDet) * normal - sign(gritDet) * (dFdx(roadHeight) * gritR1 + dFdy(roadHeight) * gritR2));
+        // Wet, the tar shines between them and gives back the sky where it is looked along.
+        roughnessFactor = mix(roughnessFactor, 0.35 + 0.35 * pebble, groundWet * groundFlat);
+        float roadAlong = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
+        totalEmissiveRadiance += groundSky * groundWet * groundFlat * roadAlong * (1.0 - pebble) * 0.3;
         `}
         diffuseColor.rgb = mix(diffuseColor.rgb, groundColour, groundFlat);
         ${kind === 'soft' ? /* glsl */ `
