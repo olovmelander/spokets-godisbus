@@ -111,6 +111,8 @@ const CINEMA = 0.8;
  */
 const POOL_EYE = 1.6;
 /** The rides that lie ready where he boards them, in the storm. */
+/** How far a flying crane's body and dangling legs reach under his feet (./crane.ts). */
+const CRANE_BELLY = 1.3;
 const WAITS_READY = new Set(['boot', 'umbrella', 'raft', 'leaf']);
 const BROOK_EYE = 3.0;
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
@@ -401,7 +403,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       drawnWhile(prop, false);
       scene.add(prop);
     }
-    return { ride, prop };
+    // A crane that carried him: whether it is carrying him, and when and where it set him down, to fly on from there.
+    return { ride, prop, carrying: false, leftAt: -1, setDown: new Vector3() };
   });
   const moverMeshes = buildMovers(chapter);
   /** The movers that go over the water: rafts, logs and boards, which it mirrors (./water.ts). */
@@ -657,6 +660,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let elofStance: Stance = 'stand';
   let hangLast = 0, hangWeight = 0;
   let shoulderLift = 0, shoulderT = 0, airStretch = 1;
+  /** How far a crane that carries him is drawn up, it and he, to keep its body out of the ground under them. */
+  let craneLift = 0;
   let drawnMode: string | null = null, drawnX = 0, drawnY = 0;
   const rideFrom = new Vector3();
   type NearShot = { w: number; pos: Vector3; at: Vector3 };
@@ -991,6 +996,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   };
   // The ledge that is Klonk frozen in Pappa's beam (Stormskogen), which his lamp is held on.
   const frozenLedge = chapter.storm?.frozen ? chapter.ledges?.find((ledge) => ledge.needs === chapter.storm!.frozen) : undefined;
+  // What turns his lamp on Klonk ("Där är Klonk! Nu ser jag honom."): the call that sets the freeze going, a moment
+  // before Klonk is still enough to stand on.
+  const beamOn = chapter.storm?.frozen ? chapter.later?.find((later) => later.flag === chapter.storm!.frozen)?.after : undefined;
   /** The rain gear each body wears now, by its key, so that it is changed only when it changes. */
   const dressed = new WeakMap<object, string>();
   const dressFor = (rig: Pick<Rig, 'dress'>, who: string, flags: ReadonlySet<string>, scene: SceneFrame | null) => {
@@ -1192,24 +1200,39 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const planeStart = waitingPlane ? chapter.rides?.find(ride => ride.id === 'plane')?.from : undefined;
     plane.position.set(planeStart?.x ?? x, (planeStart?.y ?? y) - 0.05, 0);
     plane.rotation.z = waitingPlane ? 0 : heading;
+    craneLift = 0;
     for (const c of carriers) {
       if (!c.prop) continue;
       // What he is told to step onto lies ready where he boards it, from when it is ready until he does: Moa's cap in
       // Granskogen, and in the storm Bertil's boot on the flooded lawn ("Min stövel blir din båt. Kliv i!"), Moa's
       // umbrella on the wall, the raft and the birch leaves on the water.
-      const boarding = chapter.storm && WAITS_READY.has(c.ride.look ?? '') ? chapter.spots?.find((spot) => spot.ride === c.ride.id && spot.look === undefined) : undefined;
+      const boarding = WAITS_READY.has(c.ride.look ?? '') ? chapter.spots?.find((spot) => spot.ride === c.ride.id && spot.look === undefined) : undefined;
       const waiting = (chapter.id === 'granskog' && c.ride.id === 'cap' && flags.has('cap:ready') && !flags.has('cap'))
         || (!!boarding && c !== carrier && !flags.has(boarding.id) && (boarding.needs === undefined || flags.has(boarding.needs)));
-      const propSize = waiting ? 1 : c === carrier ? size : 0;
+      // A crane sets him down and flies on, up and away: it shrank into the ground under him and was gone.
+      const flies = c.ride.look === 'crane';
+      if (flies && c === carrier) c.carrying = true;
+      else if (flies && c.carrying) { c.carrying = false; c.leftAt = clock; c.setDown.copy(c.prop.position); }
+      const away = flies && c !== carrier && c.leftAt >= 0 && !calmStory ? (clock - c.leftAt) / 1.8 : -1;
+      const propSize = waiting ? 1 : c === carrier ? (flies ? Math.min(1, curr.t / 0.05) : size) : away >= 0 && away < 1 ? 1 : 0;
       c.prop.scale.setScalar(propSize);
       drawnWhile(c.prop, propSize > 0);
-      c.prop.position.set(waiting ? c.ride.from.x : x, (waiting ? c.ride.from.y : y) - 0.05, 0);
+      if (away >= 0 && away < 1) c.prop.position.set(c.setDown.x + away * 6 + away * away * 4, c.setDown.y + away * 1.2 + away * away * 7, 0);
+      else {
+        c.prop.position.set(waiting ? c.ride.from.x : x, (waiting ? c.ride.from.y : y) - 0.05, 0);
+        // Its body hangs under his feet: where the ride comes down to the ground, it and he are drawn over it (it went
+        // into the rock as it landed), and he steps down off its back once it has.
+        if (flies && c === carrier) {
+          craneLift = Math.max(0, heightOfGroundAt(chapter, x) + CRANE_BELLY - c.prop.position.y);
+          c.prop.position.y += craneLift;
+        }
+      }
       // A boat lies level on the water; a bird points the way it flies, and beats its wings.
       // A bird beats with a strong downstroke and a quicker upstroke, glides between bursts, and nods with each beat;
       // its wing tips follow a little behind.
       const wings = wingbeat(clock, 1.1, { every: 6.5, glide: 1.8, held: -0.2 });
       const flying = c.ride.look !== 'cap' && !waiting;
-      c.prop.rotation.z = !flying ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : heading * 0.6 + wings.pitch;
+      c.prop.rotation.z = !flying ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : (away >= 0 && away < 1 ? 0.35 * smooth(away * 3) : heading * 0.6) + wings.pitch;
       const beat = wings.lift * 0.75;
       const lag = wingbeat(clock - 0.12, 1.1, { every: 6.5, glide: 1.8, held: -0.2 }).lift * 0.75;
       const near = c.prop.getObjectByName('wingNear');
@@ -1437,7 +1460,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // The one wind (./wind.ts) as it reaches each of them where they stand: none indoors, and more in the storm.
     const gale = galeOf(chapter, flags);
     const breeze = gale * windAt(x);
-    const playerPose = playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall);
+    // A ride he walks (`Ride.walks`: home along the shore, up to bed) is drawn on his own feet, along the ground, up
+    // its steps and wading where it is water: he sat in the air over them.
+    const walkRide = curr.mode === 'ride' && carrier?.ride.walks ? carrier.ride : null;
+    const walkY = walkRide ? walkedGround(chapter, x) : y;
+    const playerPose = playerMotion.update(walkRide ? { ...curr, mode: 'free', grounded: true, atEdge: false } : curr, x, dt, scriptedPose,
+      waving ? responseFor : 0, calmResponse || calmStory, breeze, tall);
     playerBody.pose(playerPose);
     playerBody.breeze?.(breeze, dt, calmStory, playerMotion.ruffle);
     const elastic = curr.mode === 'free' && !scriptedPose && !calmStory;
@@ -1459,10 +1487,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const lift = scripted?.lift;
     // A ride starts where the ride starts, which can be a step from where he pressed: he is drawn from where he was and
     // carried over that step in a moment, instead of jumping.
-    if (curr.mode === 'ride' && drawnMode !== 'ride' && drawnMode !== null && !calmStory && Math.hypot(drawnX - x, drawnY - y) < 2) rideFrom.set(drawnX - x, drawnY - y, 0);
-    rideFrom.multiplyScalar(curr.mode === 'ride' ? Math.exp(-10 * dt) : 0);
-    drawnMode = curr.mode; drawnX = x; drawnY = y;
-    elof.group.position.set(x - Math.sin(hang) * 0.5 + (lift?.x ?? 0) + rideFrom.x, y + 0.5 - Math.cos(hang) * 0.5 + shoulderLift + (lift?.y ?? 0) + rideFrom.y, lift?.z ?? 0);
+    const ridY = y + craneLift;
+    if (curr.mode === 'ride' && drawnMode !== 'ride' && drawnMode !== null && !calmStory && Math.hypot(drawnX - x, drawnY - ridY) < 2) rideFrom.set(drawnX - x, drawnY - ridY, 0);
+    // Off a crane's back, he steps down from where it held him in a moment, too.
+    else if (curr.mode !== 'ride' && drawnMode === 'ride' && !calmStory && Math.hypot(drawnX - x, drawnY - y) < 2) rideFrom.set(drawnX - x, drawnY - y, 0);
+    rideFrom.multiplyScalar(Math.exp(-10 * dt));
+    drawnMode = curr.mode; drawnX = x; drawnY = ridY;
+    elof.group.position.set(x - Math.sin(hang) * 0.5 + (lift?.x ?? 0) + rideFrom.x, walkY + craneLift + 0.5 - Math.cos(hang) * 0.5 + shoulderLift + (lift?.y ?? 0) + rideFrom.y, lift?.z ?? 0);
     // On a mark in the place itself, such as Pappa's palm: wherever the run left him.
     if (scripted && scripted.ontoWeight > 0) {
       const on = scripted.ontoWeight;
@@ -1564,7 +1595,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
 
-    playerGroundY = curr.groundY;
+    playerGroundY = walkRide ? walkY : curr.groundY;
 
     // A big candy turns slowly until it is reached. Then it gives a little jump, and turns fast.
     for (const [i, big] of bigCandies.entries()) {
@@ -1600,11 +1631,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const creep = creeps ? 1 - ghostSize : 0;
       const before = chapter.ghost?.[Math.max(0, ghostState.perch - 1)];
       const depth = hopping ? lerp(before?.z ?? 0, perch?.z ?? 0, ghostState.t) : perch?.z ?? 0;
-      ghostPlace.position.set(ghostState.x, ghostState.y, depth);
+      // One waiting on something (`still`: stuck in the eddy, under the cliff it can't climb, by the bag at the end) is
+      // drawn where it is, though the simulation keeps it out of his reach above: it floated up Berget's cliff face as
+      // he came to lift it, and over Granskogen's eddy.
+      const sitsStill = !hopping && !ghostState.gone && !!perch?.still && perch.until !== undefined && !flags.has(perch.until);
+      const ghostY = sitsStill ? perch!.at.y : ghostState.y;
+      ghostPlace.position.set(ghostState.x, ghostY, depth);
       if (creeps) ghostPlace.position.lerp(creepTo.set(creeps.x, creeps.y, creeps.z), Math.min(1, creep * 1.4));
       ghostPlace.scale.setScalar(ghostSize);
       // Its shadow lies where it stands. In a hop it is off the ground, and the shadow waits where it will land.
-      if (!hopping) ghostGroundY = ghostState.y;
+      if (!hopping) ghostGroundY = ghostY;
       // 0 faces along the course; a half turn faces back at him.
       const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : (hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4) + ghostLook;
       const ghostDelta = wanted - ghostTurn;
@@ -1637,8 +1673,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostStaged = true;
       }
       // Elof is interpolated between simulation steps. Keep that intermediate picture outside the
-      // same chase clearance, without advancing the ghost past a puzzle's waiting perch.
-      if (!chapter.ghostMeet) {
+      // same chase clearance, without advancing the ghost past a puzzle's waiting perch. One drawn where it waits on
+      // something stays there.
+      if (!chapter.ghostMeet && !(sitsStill && !staged)) {
         const dx = ghostPlace.position.x - x, dy = ghostPlace.position.y - y;
         if (Math.hypot(dx, dy) < GHOST_CLEARANCE) {
           ghostPlace.position.y = y + (dy < 0 ? -1 : 1) * Math.sqrt(GHOST_CLEARANCE ** 2 - dx ** 2);
@@ -1845,9 +1882,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           one.rig.group.updateWorldMatrix(true, false);
           one.rig.group.getWorldPosition(lampFrom);
           lampFrom.y += 3.1 * u;
-          const holdsKlonk = frozenLedge && one.who === 'pappa' && chapter.storm?.frozen && flags.has(chapter.storm.frozen)
+          const frozen = !!chapter.storm?.frozen && flags.has(chapter.storm.frozen);
+          const holdsKlonk = frozenLedge && one.who === 'pappa' && (frozen || (!!beamOn && flags.has(beamOn)))
             && x < frozenLedge.x + frozenLedge.width / 2 + 3;
-          if (holdsKlonk) lampTo.set(frozenLedge.x, frozenLedge.y, 0);
+          // On Klonk where it waits at the gap's edge, and on the bridge it has become once it is still.
+          if (holdsKlonk && frozen) lampTo.set(frozenLedge.x, frozenLedge.y, 0);
+          else if (holdsKlonk) lampTo.set(ghostPlace.position.x, ghostPlace.position.y + 0.4, 0);
           else lampTo.set(x, y + tall * 0.4, 0);
           lampAim.subVectors(lampTo, lampFrom);
           // Never into the lens: held level or down, along the path.
@@ -2089,6 +2129,20 @@ function startState(chapter: ChapterData): PlayerState {
 }
 
 /** The ground line, closed below and to the sides, as one extruded slab around the play plane (z = 0). */
+/**
+ * The ground under him on a ride he walks (`Ride.walks`), at x: its steps taken as stairs over a stride either side,
+ * and where it is water, the bottom no deeper than his knees under its surface, so that he wades.
+ */
+function walkedGround(chapter: ChapterData, x: number): number {
+  let sum = 0;
+  for (const dx of [-0.9, -0.45, 0, 0.45, 0.9]) {
+    const at = x + dx;
+    const pool = (chapter.water ?? []).find((w) => at >= w.from && at <= w.to);
+    sum += Math.max(heightOfGroundAt(chapter, at), pool ? pool.y - 0.8 : -Infinity);
+  }
+  return sum / 5;
+}
+
 function buildGround(chapter: ChapterData): Mesh {
   const line = chapter.ground;
   const first = line[0]!;

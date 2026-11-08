@@ -304,8 +304,9 @@ export const alven: ChapterData = {
     // Pappa's scarf, held down from the bridge's railing to Elof's hands all the way over the rapids.
     ropes: [{ ride: 'al:lift', from: { x: BRIDGE.x, y: BRIDGE.height + 2.4 }, z: -2, colour: '#3a6a9a' }],
     flybys: [
-      // From the outlet's bank: the little one, bobbing away down the current.
-      { on: 'beat:al:flash', from: { x: 22, y: 0 }, to: { x: 46, y: 0.2 }, seconds: 2.8, who: 'lillgubbe' },
+      // From the outlet's bank: the little one, bobbing away down the current, from just off the bank, in the picture he
+      // sees as he says so (the auditors, 8 November 2026: it set off beyond its edge).
+      { on: 'beat:al:flash', from: { x: 14.3, y: -0.05 }, to: { x: 24, y: 0.1 }, seconds: 7, who: 'lillgubbe' },
       // From the gravel bank: the old one on his log, following.
       { on: 'beat:al:old-one', from: { x: 40, y: 0.3 }, to: { x: 66, y: 0.6 }, seconds: 3.2, who: 'tragubbe' },
       // From the owl's back, high over the lake: the little one, far down the river.

@@ -251,8 +251,10 @@ export const olympia: ChapterData = {
     // What rolls in the wind is balls, not cones.
     rollers: 'football',
     flybys: [
-      // From the fence's top: the little one, tumbling over the whole pitch.
-      { on: 'beat:ol:top', from: { x: 22, y: 12 }, to: { x: 64, y: 8 }, seconds: 2.8, who: 'lillgubbe' },
+      // From the fence's top: the little one, tumbling out over the pitch in the flash. Slow, and through the picture he
+      // sees from there, so that it is still there as he says "Lillgubben! Där flyger han!" after the flash's own line
+      // (the auditors, 8 November 2026: it flew above its top).
+      { on: 'beat:ol:little', from: { x: 13, y: 6.8 }, to: { x: 30, y: 7.6 }, seconds: 9, who: 'lillgubbe' },
       // At the centre circle: the old one, blown over the water ahead of him.
       { on: 'beat:ol:old-one', from: { x: 124.4, y: 0.6 }, to: { x: 152, y: 7 }, seconds: 2.4, who: 'tragubbe' },
       // At the trail: the strongest gust takes the little one north over the treetops, and the old one follows.

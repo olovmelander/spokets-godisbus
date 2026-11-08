@@ -237,7 +237,8 @@ export const granskog: ChapterData = {
   ],
   spots: [
     { id: 'berry', look: 'berry', at: { x: 33, y: 0 }, verb: 'take', word: 'pick' },
-    { id: 'jay', look: 'jay', at: { x: 38, y: 0 }, verb: 'give', needs: 'berry' },
+    // Between two of the trail's sweets: at x 38 one of them covered the bird (the candy layout is saved by index).
+    { id: 'jay', look: 'jay', at: { x: 37, y: 0 }, verb: 'give', needs: 'berry' },
     { id: 'antlift', look: 'ants', at: { x: 58.6, y: 4 }, verb: 'take', word: 'rideAnts', needs: 'placed:twig', ride: 'antlift' },
     // O3 is separate from the ghost's vittra story beat. This berry is for the neighbours, not the jay.
     { id: 'vittra:berry', look: 'berry', at: { x: 61, y: 10 }, verb: 'take', word: 'pick', needs: 'beat:vittra', extra: true },
@@ -332,7 +333,8 @@ export const granskog: ChapterData = {
     { at: { x: 92, y: slope(92) } },
     { at: { x: 100, y: slope(100) } },
     { at: { x: 107, y: -8 } },
-    { at: { x: 116.6, y: -8 } },
+    // Clear of Pappa at his seesaw's high end (`goesTo`, x 117.4): it stood inside him there.
+    { at: { x: 115.6, y: -8 } },
     // Across the ravine; the log makes it spill sweets while hopping away.
     { at: { x: 127.6, y: -8 } },
     { at: { x: 134.5, y: -7.2 }, catch: 'log' },
@@ -341,7 +343,8 @@ export const granskog: ChapterData = {
     { at: { x: 153, y: -8 }, near: 3 },
     // over the pool on a leaf, and into the eddy, where it stays until he pulls it out
     { at: { x: 180.5, y: -8 } },
-    { at: { x: 186.8, y: -9 }, until: 'placed:rescue' },
+    // Stuck in the water: it does not rise out of reach as he comes (it hovered 3 EL over the eddy).
+    { at: { x: 186.8, y: -9 }, until: 'placed:rescue', still: true },
     // It waits to show the way, still several Elof lengths ahead.
     { at: { x: 197, y: -8 }, thought: { picture: 'mountain', after: 'placed:rescue' } },
     { at: { x: 205.5, y: -8 }, thought: { picture: 'mountain', after: 'placed:rescue' } },

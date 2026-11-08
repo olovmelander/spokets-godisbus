@@ -65,10 +65,12 @@ export const stormskog: ChapterData = {
   storm: { frozen: 'ss:frozen', drips: 'cone', rain: 0.75,
     lightning: 10,
     flybys: [
-      // At the forest's edge: the little one, tumbling over the treetops ahead.
-      { on: 'beat:ss:flash', from: { x: 4, y: 9 }, to: { x: 26, y: 7 }, seconds: 2.6, who: 'lillgubbe' },
-      // From the high root: the old one, far down the hill, hurrying on towards the village.
-      { on: 'beat:ss:see-old', from: { x: 192, y: 2.6 }, to: { x: 216, y: 0.6 }, seconds: 3.4, who: 'tragubbe' },
+      // At the forest's edge: the little one, tumbling past just ahead of him, over the undergrowth and on. Each flight
+      // sets off in the picture he sees as he says so, a few EL ahead and under its top, and is slow enough to be there
+      // still when a line waiting before his has been said (the auditors, 8 November 2026: they flew above the picture).
+      { on: 'beat:ss:flash', from: { x: 10.4, y: 1.1 }, to: { x: 21, y: 1.6 }, seconds: 5.5, who: 'lillgubbe' },
+      // From the high root: the old one, down the hill below him, hurrying on towards the village.
+      { on: 'beat:ss:see-old', from: { x: 185.2, y: 4.8 }, to: { x: 196, y: 1.8 }, seconds: 5.5, who: 'tragubbe' },
     ],
   },
   ground: [
@@ -197,8 +199,10 @@ export const stormskog: ChapterData = {
     { id: 'ss:hollow', at: { x: 155.5, y: -1.2 }, verb: 'take', touch: true },
     // The owl, once free, waits at the widest gap: Använd and it carries him over.
     { id: 'owl', at: OWL.from, verb: 'take', word: 'ssFlyOwl', needs: 'placed:owl-twig', ride: 'owl' },
-    // Pappa's flashlight: calling him is the whole puzzle. His beam finds Klonk at the edge.
-    { id: 'ss:beam', look: 'sign', at: { x: 131, y: 0 }, verb: 'call', word: 'callPappa' },
+    // Pappa's flashlight: calling him is the whole puzzle. His beam finds Klonk at the edge. Called from here, Elof is
+    // 3 EL or more from Klonk wherever he can call (the ghost keeps that far from him), so Klonk stands on the edge in
+    // the beam rather than up in the air beside it.
+    { id: 'ss:beam', look: 'sign', at: { x: 129.6, y: 0 }, verb: 'call', word: 'callPappa' },
     // The jay from Äventyr 1, as in Granskogen: a lingonberry first, then the gift.
     { id: 'berry', look: 'berry', at: { x: 167.5, y: 0 }, verb: 'take', word: 'pick' },
     { id: 'jay', look: 'jay', at: { x: 172.5, y: 0 }, verb: 'give', word: 'giveJay', needs: 'berry' },
@@ -253,8 +257,9 @@ export const stormskog: ChapterData = {
     // over the widest gap ahead of the owl: a ghost hops where a boy has to fly
     { at: { x: 124.5, y: 0 } },
     { at: { x: 128.5, y: 0 } },
-    // At the edge of Pappa's gap it waits for the beam, which turns it into the bridge.
-    { at: { x: 133.6, y: 0 }, until: 'ss:frozen' },
+    // At the edge of Pappa's gap it waits for the beam, which turns it into the bridge. It stands there, in the beam
+    // ("Där är Klonk! Nu ser jag honom."), not up out of reach.
+    { at: { x: 133.6, y: 0 }, until: 'ss:frozen', still: true },
     { at: { x: 141.5, y: 0 } },
     { at: { x: 147.5, y: 0.8 } },
     // In the dark hollow it waits, showing the old one's thought, until he has come to see.
@@ -285,7 +290,7 @@ export const stormskog: ChapterData = {
     { id: 'ss:owl-fly', on: 'owl', who: 'elof', line: 'ssOwlFly' },
     // 6. Pappa's flashlight
     { id: 'ss:pappa', at: 126.5, until: 'ss:beam', who: 'pappa', line: 'ssPappaHere', read: true },
-    { id: 'ss:wide', at: 129.6, until: 'ss:beam', who: 'elof', line: 'ssTooWide' },
+    { id: 'ss:wide', at: 128.2, until: 'ss:beam', who: 'elof', line: 'ssTooWide' },
     { id: 'ss:beam', on: 'ss:beam', who: 'pappa', line: 'ssBeam', read: true },
     { id: 'ss:stiff', on: 'ss:frozen', who: 'elof', line: 'ssStiff', read: true },
     { id: 'ss:tiptoe', at: 135.2, needs: 'ss:frozen', who: 'elof', line: 'ssTiptoe' },

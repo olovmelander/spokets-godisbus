@@ -219,6 +219,11 @@ export interface Ride {
   corridor?: number;
   /** What he rides on, for the picture. Left out: Moa's paper plane. */
   look?: RideLook;
+  /**
+   * For the picture: he walks it on his own feet, along the ground and up its steps, wading where it is water, instead
+   * of sitting on what carries him (home along the shore, up to bed). With `look: 'none'` and no `rise`.
+   */
+  walks?: boolean;
 }
 
 /**

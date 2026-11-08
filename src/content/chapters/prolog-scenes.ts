@@ -194,11 +194,13 @@ export const PROLOG_SCENES: SceneDef[] = [
           { at: 0, face: 0.05, act: 'look', aim: { x: 10.9, y: 0.6, z: 0 } },
           { at: 0.5, x: 10.4, z: -1.9, move: 0.9, face: 0.08, act: 'look', aim: { x: 10.9, y: 0.4, z: 0 } },
           { at: 1.5, act: 'shrug' },
-          { at: 2.4, act: 'stand', follow: 5.2, holdsLeft: null },
+          // They follow him clear of the kitchen table (x 3 to 8, z -2.6 to -0.4), as he runs on to the right: Mamma
+          // closest, right of it, Moa and Bertil along the aisle in front of it, Pappa behind it. They walked through it.
+          { at: 2.4, act: 'stand', follow: 2, holdsLeft: null },
         ],
         pappa: [
           { at: 0.2, face: 0.32, act: 'look', aim: { x: 6, y: 1.5, z: 0 } },
-          { at: 2.4, act: 'stand', follow: 2.7, z: -2.5 },
+          { at: 2.4, act: 'stand', follow: 2.7, z: -3.2 },
         ],
         moa: [
           { at: 0.3, act: 'stand', face: 0.3 },
@@ -208,7 +210,7 @@ export const PROLOG_SCENES: SceneDef[] = [
         ],
         bertil: [
           { at: 0.25, act: 'startle', face: 0.3 },
-          { at: 2.4, act: 'stand', follow: 4.5, z: -0.9 },
+          { at: 2.4, act: 'stand', follow: 4.5, z: -0.1 },
         ],
       },
       elof: [{ at: 0.2, act: 'watch', aim: { x: 10.9, y: 0.6, z: 0 } }],
@@ -368,7 +370,8 @@ export const PROLOG_SCENES: SceneDef[] = [
         { at: 0, x: 41.6, y: 0.9, height: 4.2, width: 6.5, move: 0.7 },
         { at: 0.8, x: 41.7, y: 2.3, height: 5.0, width: 7.2, move: 1.5 },
         { at: 2.4, x: 41.3, y: 2.4, height: 5.8, width: 8.2, move: 0.8 },
-        { at: 8.2, x: 43.0, y: 1.3, height: 5.4, width: 9.5, move: 0.9 },
+        // Down to the ghost and the bag on the planks as he points at them, him still in the picture on the hand.
+        { at: 8.2, x: 43.4, y: 0.8, height: 6.2, width: 9.5, move: 0.9 },
       ],
       actors: {
         pappa: [

@@ -110,7 +110,11 @@ const BEAMS: Ledge[] = [
 
 /** Where morfar and mormor stand, and he calls them. */
 const MORFAR = { x: 13.2, y: 0 };
-const MORMOR = { x: 47.4, y: 0 };
+/**
+ * Mormor just past the woodpile's foot, left of its chopping block: the woodpile's model (`vedstapel`) reaches past the
+ * stack to x 47.5, and at 47.4 the block hid him wherever he could call her, and her to the chest.
+ */
+const MORMOR = { x: 45.2, y: 0 };
 
 // --- 5. the forest behind the house, and Billaberget ---------------------------------------------------------------
 
@@ -492,6 +496,9 @@ export const billsta: ChapterData = {
     ...SHELVES.map((l, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x: l.x, y: l.y }, z: -0.5, scale: l.width / (i === 1 ? 3.2 : 2.6) })),
     // Mormor's lantern, once she has opened the barn.
     { look: 'lantern', at: { x: 56.8, y: LOFT }, z: -0.9, after: 'bi:mormor' },
+    // Mormor herself, come up the path behind him with her lantern as the owl hoots: "Kom, vi går ner till sundet."
+    // Only her lantern's glow was there.
+    { look: 'mormor', at: { x: 189, y: rise(189) }, z: -1.6, after: 'beat:bi:owl' },
     // Far out in the narrow, on a stone: the old one, and the little one once the wave has tossed him there.
     { look: 'tragubbe', at: { x: STONE_OUT.x, y: STONE_OUT.y }, z: STONE_OUT.z, after: 'beat:bi:there' },
     { look: 'lillgubbe', at: { x: STONE_OUT.x + 0.6, y: STONE_OUT.y }, z: STONE_OUT.z, after: 'bi:landed' },

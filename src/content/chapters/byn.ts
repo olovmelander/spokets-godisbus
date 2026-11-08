@@ -235,7 +235,8 @@ export const byn: ChapterData = {
     { at: { x: 119.6, y: 3.3 }, near: 2.2 },
     { at: { x: 130, y: 3.3 } },
     { at: { x: 141, y: 3.3 } },
-    { at: { x: 156, y: 3.3 }, near: 2.2 },
+    // At the bag they share, it stays with him to the end ("Vi handlar tillsammans"; it vanished at x 153.8).
+    { at: { x: 156, y: 3.3 }, near: 2.2, until: 'goal', still: true },
   ],
   beats: [
     { id: 'again', at: 1.4, who: 'elof', line: 'again' },

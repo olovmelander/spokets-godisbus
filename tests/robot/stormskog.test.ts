@@ -201,16 +201,18 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
       run(sim, 0.2);
       // Klonk waits at the edge of the gap.
       const edge = stormskog.ghost!.findIndex((perch) => perch.until === 'ss:frozen');
-      walkTo(sim, 131);
+      walkTo(sim, 129.6);
       expect(sim.ghost!.perch).toBe(edge);
       expect(sim.curr.verb).toBe('call');
       expect(sim.curr.word).toBe('callPappa');
       use(sim);
       expect(sim.flags.has('ss:beam')).toBe(true);
-      // A short held beat while the beam finds him: the stick does nothing.
+      // A short held beat while the beam finds him: the stick does nothing. Klonk stands on the edge in the beam, not
+      // up in the air beside it: he is far enough from it there.
       run(sim, 0.6, { x: 1 });
       expect(sim.held).toBe(true);
-      expect(Math.abs(sim.curr.x - 131)).toBeLessThan(0.1);
+      expect(Math.abs(sim.curr.x - 129.6)).toBeLessThan(0.1);
+      expect(sim.ghost!.y).toBeCloseTo(stormskog.ghost![edge]!.at.y, 1);
       run(sim, 1, { x: 1 });
       expect(sim.flags.has('ss:frozen')).toBe(true);
       // Then Klonk is the bridge: the place where it waited at the edge is left behind.

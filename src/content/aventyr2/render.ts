@@ -89,6 +89,30 @@ function waitingOwl(root: Object3D): boolean {
   (ride.waits ??= new Vector3()).copy(root.position);
   return true;
 }
+
+/**
+ * Where the figures blown across the sky set off, and the flag that sets each off (`storm.flybys`). A trägubbe standing
+ * there is the one that leaps or is blown away: once its flight has begun it is not drawn where it stood, so that it is
+ * never seen twice, standing and flying (the auditors, 8 November 2026: Olympia's centre circle, Stormgården's roof).
+ */
+const flybyStarts: { on: string; x: number; y: number }[] = [];
+/** How far behind the play plane the figures are blown across the sky. */
+const FLYBY_Z = -4;
+/** A figure standing at `root` has been blown away: its flight from there has begun. */
+const blownAway = (root: Object3D) => flybyStarts.some((f) => elof.flags?.has(f.on)
+  && Math.abs(f.x - root.position.x) < 1.5 && Math.abs(f.y - root.position.y) < 2.5);
+/** A standing trägubbe, gone at once where its own flight begins (see `blownAway`). */
+function standingFigure(prop: SpotProp): SpotProp {
+  return {
+    group: prop.group,
+    update(used, clock, dt) {
+      if (!blownAway(prop.group)) { prop.update(used, clock, dt); return; }
+      // At no size, as the view hides a thing that stands about once it is gone (`decor.after`).
+      prop.group.scale.setScalar(0);
+      drawnWhile(prop.group, false);
+    },
+  };
+}
 /** The flag that puts the ladder's ledge over the ditch at Billsta. */
 const LADDER_LAID = 'bi:ladder';
 
@@ -417,6 +441,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     const boarding = ride.look === 'owl' ? chapter.spots?.find((spot) => spot.ride === ride.id) : undefined;
     if (boarding) owlRides.push({ flag: boarding.id, from: ride.from, to: ride.to, waits: null });
   }
+  // Where this chapter's figures set off across the sky, and what sets each off.
+  flybyStarts.length = 0;
+  for (const f of chapter.storm?.flybys ?? []) flybyStarts.push({ on: f.on, x: f.from.x, y: f.from.y });
   const storm = chapter.storm;
   const dim = DIM[chapter.id];
   if (!storm && dim === undefined) return null;
@@ -486,7 +513,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     }
     figure.visible = false;
     group.add(figure);
-    return { def, figure, start: -1, seen: false };
+    // One that leaps from where it stood sets off at that figure's own depth, and goes back to the storm's as it flies.
+    const stood = chapter.decor?.find((d) => (d.look === 'tragubbe' || d.look === 'lillgubbe') && d.until === def.on);
+    return { def, figure, start: -1, seen: false, z: stood ? stood.z ?? -0.6 : FLYBY_Z };
   });
 
   // Candles and lamps in windows: warm, a little alive.
@@ -890,7 +919,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         // On the water a figure floats, bobbing along; in the air it tumbles across the sky.
         const floating = Math.max(f.def.from.y, f.def.to.y) < 1.5;
         const lift = floating ? 0.12 * Math.sin(clock * 3) : Math.sin(Math.PI * k) * 2.2;
-        f.figure.position.set(f.def.from.x + (f.def.to.x - f.def.from.x) * e, f.def.from.y + (f.def.to.y - f.def.from.y) * e + lift, -4);
+        f.figure.position.set(f.def.from.x + (f.def.to.x - f.def.from.x) * e, f.def.from.y + (f.def.to.y - f.def.from.y) * e + lift, f.z + (FLYBY_Z - f.z) * e);
         f.figure.rotation.z = still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * 0.25 : -k * 9;
       }
       for (const b of beams) {
@@ -1543,11 +1572,11 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // On the stone in the storm's eye it rocks the little one a little, and turns to him when he has come.
       const met = spot.word === 'lifted';
       figure.userData.warm = met;
-      return standing(spot, figure, met ? (clock, dt) => {
+      return standingFigure(standing(spot, figure, met ? (clock, dt) => {
         figure.rotation.z = Math.sin(clock * 1.1) * 0.04;
         const seen = elof.flags?.has('eye') && Math.abs(elof.x - spot.at.x) < 5;
         figure.rotation.y += ((seen ? -0.9 : 0) - figure.rotation.y) * Math.min(1, dt * 1.6);
-      } : undefined, spot.id.startsWith('decor:') && !met ? 'leap' : 'shrink');
+      } : undefined, spot.id.startsWith('decor:') && !met ? 'leap' : 'shrink'));
     },
     seesawLog: (spot) => {
       // The dry spruce over its stone, measured from its low end, where he stands. Thick at the root, thin at the
@@ -1624,14 +1653,14 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // Its gladness starts when it has its cap back, from the ground, and grows in over a moment: no hop is caught
       // halfway up, and the trembling fades into the sway.
       let gladFor = 0;
-      return standing(spot, figure, (clock, dt) => {
+      return standingFigure(standing(spot, figure, (clock, dt) => {
         const glad = elof.flags?.has('scene:motet') ?? false;
         gladFor = glad ? gladFor + dt : 0;
         const k = smooth(gladFor / 0.4);
         const tremble = Math.sin(clock * 5.3) * 0.03 + Math.sin(clock * 8.1 + 1) * 0.012;
         figure.rotation.z = tremble * (1 - k) + Math.sin(gladFor * 1.7) * 0.06 * k;
         figure.position.y = glad ? gladHop(gladFor) * k : 0;
-      }, spot.id.startsWith('decor:') && spot.word !== 'lifted' ? 'blown' : 'shrink');
+      }, spot.id.startsWith('decor:') && spot.word !== 'lifted' ? 'blown' : 'shrink'));
     },
     pumpkin: (spot) => {
       const { group, light, face } = pumpkin();

@@ -178,15 +178,19 @@ export const epilog: ChapterData = {
     // Where and when, as the evening opens (./cards.ts).
     timeCard('epilog', 1),
     // The naming: given its candy, the ghost hops up onto the party table and across it, klonk, klonk, and down again
-    // to where it waits for the carving. He is free all the while.
-    { id: 'klonk-table', on: 'partied', until: 'knife', seconds: 5.6, stage: { actors: { ghost: [
-      { at: 0, x: 23.4, y: 0, z: 0, move: 0.01, act: 'hop' },
-      { at: 0.05, x: TABLE_HOP.right, y: TABLE_HOP.top, z: TABLE_HOP.z, move: 1.1 },
-      { at: 1.2, x: TABLE_HOP.middle, move: 1 },
-      { at: 2.2, x: TABLE_HOP.left, move: 1 },
-      { at: 3.4, x: 26.6, y: 0, z: 0, move: 2 },
-      { at: 5.4, act: 'tilt' },
-    ] } } },
+    // to where it waits for the carving. He is free all the while. The picture takes in the table and him, so that
+    // "Klonk, klonk!" and the naming are seen (the ghost was out of the picture for them).
+    { id: 'klonk-table', on: 'partied', until: 'knife', seconds: 5.6, stage: {
+      shots: [{ at: 0, x: 18.4, y: 2.4, height: 6.4, width: 15, move: 0.8 }],
+      actors: { ghost: [
+        { at: 0, x: 23.4, y: 0, z: 0, move: 0.01, act: 'hop' },
+        { at: 0.05, x: TABLE_HOP.right, y: TABLE_HOP.top, z: TABLE_HOP.z, move: 1.1 },
+        { at: 1.2, x: TABLE_HOP.middle, move: 1 },
+        { at: 2.2, x: TABLE_HOP.left, move: 1 },
+        { at: 3.4, x: 26.6, y: 0, z: 0, move: 2 },
+        { at: 5.4, act: 'tilt' },
+      ] },
+    } },
   ],
   goalX: 53,
   ground: [
@@ -210,7 +214,8 @@ export const epilog: ChapterData = {
     // Pappa kneels beside him with a piece of linden and a knife: it waits until the ghost has its name.
     { id: 'knife', look: 'sign', at: { x: 29, y: 0 }, verb: 'take', word: 'takeKnife', needs: 'beat:named' },
     // Three strokes, each away from his body, and two dots of paint.
-    { id: 'cut1', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'knife', story: 'carve' },
+    // He carves once Pappa is beside him (`knife:pappa`), as Pappa tells him how to hold the knife.
+    { id: 'cut1', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'knife:pappa', story: 'carve' },
     { id: 'cut2', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut1', story: 'carve' },
     { id: 'cut3', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut2', story: 'carve' },
     { id: 'dots', at: { x: 32, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'cut3', story: 'paint' },
@@ -234,7 +239,11 @@ export const epilog: ChapterData = {
     { flag: 'back:clip', when: ['party:moa', 'lost:clip'] },
     { flag: 'back:marble', when: ['party:bertil', 'lost:marble'] },
   ],
-  rides: [{ id: 'bed', look: 'none', from: { x: 44, y: 0 }, to: { x: 54, y: 3 }, rise: 1, time: 4, corridor: 0 }],
+  // Pappa, given his candy, walks over to the carving once Elof has the knife (`goesTo`): his word about the knife
+  // waits until he is there (it was said from across the room).
+  later: [{ flag: 'knife:pappa', after: 'knife', seconds: 2.8 }],
+  // Up to bed on his own feet, up the stairs (he glided up sitting in the air).
+  rides: [{ id: 'bed', look: 'none', walks: true, from: { x: 44, y: 0 }, to: { x: 54, y: 3 }, rise: 0, time: 4, corridor: 0 }],
   ghost: [
     { at: { x: 23.4, y: 0 }, until: 'partied' },
     { at: { x: 26.6, y: 0 }, until: 'knife' },
@@ -250,7 +259,7 @@ export const epilog: ChapterData = {
     { id: 'marbleBack', on: 'back:marble', who: 'bertil', line: 'marbleBack' },
     { id: 'klonk', on: 'partied', who: 'spoket', line: 'klonk' },
     { id: 'named', on: 'partied', who: 'elof', line: 'named' },
-    { id: 'away', on: 'knife', who: 'pappa', line: 'away' },
+    { id: 'away', on: 'knife:pappa', who: 'pappa', line: 'away' },
     { id: 'carved', on: 'cut3', who: 'elof', line: 'carved' },
   ],
   cameras: [{ from: -3, to: 62, zoom: 1.5, lift: 0.3 }],
