@@ -527,7 +527,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       const hers = flarken.beats!.filter((b) => b.who === 'mamma').map((b) => b.line);
       expect(hers).toEqual(['sjMamma', 'sjBoatReady', 'sjSteady', 'sjNear', 'sjCar']);
       for (const line of hers) expect(lines[line]).toBeTruthy();
-      expect(lines.sjCar).toBe('Vi kör längs ån. Vi är nära dig.');
+      expect(lines.sjCar).toBe('Jag paddlar i land. Vi kör längs ån!');
       expect(flarken.coda).toBe('mamma');
       // Her lantern glows in the boat once she has come.
       expect(flarken.storm!.glows!.some((g) => g.after === 'sjon:boat' && g.at.x > breakGap.from && g.at.x < breakGap.to)).toBe(true);

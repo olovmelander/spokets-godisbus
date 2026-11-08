@@ -42,7 +42,7 @@ export const words: ChapterWords = {
     sjOutlet: 'Åh nej! Ån tar med sig lillgubben!',
     sjLog: 'Gamla trägubben hoppar på en stock!',
     sjFloated: 'Trä flyter! Ån bär dem båda.',
-    sjCar: 'Vi kör längs ån. Vi är nära dig.',
+    sjCar: 'Jag paddlar i land. Vi kör längs ån!',
     sjFollow: 'Klonk och jag följer godiset längs ån!',
     sjKlonkCheer: 'Klonk! Klonk! Klonk!',
   },
