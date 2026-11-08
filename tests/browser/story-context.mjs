@@ -119,7 +119,7 @@ try {
     ['lantern-return', 'myren', 'home,bog:return-bridge,placed:bog-boardwalk,bog:lantern-return', 155, 0.3, 'bogReturn', 'Gå tillbaka till tranan när du vill.'],
     ['main-crane-route', 'myren', 'home,bog:return-bridge,placed:bog-boardwalk,bog:lantern-return,crane', 176, 8, 'crane', 'Flyg på tranans rygg upp till berget.'],
     ['high-cairn-return', 'berget', 'lift,found:chokladpralin', 150, 40.9, 'mountainReturn', 'Gå ner längs snöret eller klipphyllorna.'],
-    ['cairn-plot-resumes', 'berget', 'lift,found:chokladpralin,memory', 150, 31.4, 'figure', 'Hämta hem min första trägubbe.'],
+    ['cairn-plot-resumes', 'berget', 'lift,found:chokladpralin,memory', 150, 31.4, 'figure', 'Hämta hem min gamla trägubbe.'],
   ]) {
     const { page } = loops;
     await page.goto(`${base}dev/menus.html?show=touch,purpose&chapter=${chapter}&flags=${flags}&x=${x}&y=${y}`);
