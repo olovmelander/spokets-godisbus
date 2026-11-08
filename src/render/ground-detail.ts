@@ -234,23 +234,16 @@ export function groundDetail(material: MeshStandardMaterial, kind: GroundDetail)
             faceColour = mix(faceColour, vColor.rgb * diffuse * 0.84 * (1.0 + (big - 0.5) * 0.24), 0.45);
           #endif
           // Rain runs off in dark streaks, as it does down Nordic granite: long, narrow and nearly black where water
-          // runs most, and a few broader grey ones.
-          // A streak wanders a little as it runs down, and each runs as far as its water reaches before it ends.
+          // runs most. A streak wanders a little as it runs down, and ends where its water does.
           vec2 runAt = faceAt + vec2(0.22 * groundNoise(vec2(faceAt.y * 0.7, faceAt.x * 0.4) + 5.0), 0.0);
           float runs = smoothstep(0.3, 0.62, groundNoise(faceAt * vec2(0.55, 0.32) + 8.0));
-          float streak = smoothstep(0.6, 0.86, groundNoise(runAt * vec2(4.2, 0.24) + 3.0)) * runs
-            * smoothstep(0.3, 0.6, groundNoise(vec2(runAt.x * 4.2, faceAt.y * 0.45) + 17.0));
-          float broad = smoothstep(0.6, 0.8, groundNoise(runAt * vec2(1.1, 0.16) + 21.0)) * (1.0 - runs * 0.5);
+          float streak = smoothstep(0.6, 0.86, groundNoise(runAt * vec2(4.2, 0.24) + 3.0)) * runs * smoothstep(0.25, 0.55, mid);
           faceColour = mix(faceColour, faceColour * vec3(0.32, 0.34, 0.39), 0.68 * streak * groundMid);
-          faceColour = mix(faceColour, faceColour * vec3(0.66, 0.68, 0.74), 0.5 * broad);
           // The sheets granite splits into: a dark, level, wavering joint every length or so, broken here and there.
-          float sheetAt = faceAt.y * 0.92 + 0.55 * groundNoise(vec2(faceAt.x * 0.3, 3.0)) + 0.12 * groundNoise(faceAt * vec2(1.4, 0.7));
+          float sheetAt = faceAt.y * 0.92 + 0.6 * groundNoise(vec2(faceAt.x * 0.3, 3.0));
           float sheetEdge = abs(fract(sheetAt) - 0.5) * 2.0;
-          float sheetLine = smoothstep(0.92 - fwidth(sheetAt) * 2.0, 0.985, sheetEdge) * smoothstep(0.45, 0.62, groundNoise(faceAt * vec2(0.6, 0.6) + 13.0));
+          float sheetLine = smoothstep(0.92 - fwidth(sheetAt) * 2.0, 0.985, sheetEdge) * smoothstep(0.42, 0.6, big);
           faceColour = mix(faceColour, faceColour * vec3(0.22, 0.23, 0.27), 0.85 * sheetLine * groundMid);
-          // Rust where iron in the rock weathers out, in a few soft stains.
-          float rust = smoothstep(0.66, 0.86, groundNoise(faceAt * vec2(0.9, 0.5) + 31.0));
-          faceColour = mix(faceColour, faceColour * vec3(1.25, 0.95, 0.7), 0.4 * rust);
           diffuseColor.rgb = mix(diffuseColor.rgb, faceColour, rockSteep);
         }` : ''}
         ${kind === 'soft' ? /* glsl */ `
