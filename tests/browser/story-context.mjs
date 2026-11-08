@@ -325,7 +325,9 @@ try {
   await ready(fast.page);
   await fast.page.evaluate(() => { document.getElementById('debug').hidden = true; });
   await fast.page.keyboard.down('ArrowRight');
-  await fast.page.waitForFunction(() => window.__godis.state().word === 'taste', null, { timeout: 15000 });
+  // Walking there takes the game a few seconds; drawn in software on a slow CI runner, the game runs a third of its speed
+  // or less, so the walks here wait as long as the suite's other waits (8 November 2026: 15 s ran out on CI).
+  await fast.page.waitForFunction(() => window.__godis.state().word === 'taste', null, { timeout: 60000 });
   await fast.page.keyboard.up('ArrowRight');
   const beforeTaste = await state(fast.page);
   check('the old-save finale resumes shared sweets without taste or optional mountain-memory identity',
@@ -338,7 +340,7 @@ try {
     await continueDialogue(fast.page);
   }
   await fast.page.keyboard.down('ArrowRight');
-  await fast.page.waitForFunction(() => window.__godis.state().word === 'goHome', null, { timeout: 15000 });
+  await fast.page.waitForFunction(() => window.__godis.state().word === 'goHome', null, { timeout: 60000 });
   await fast.page.keyboard.up('ArrowRight');
   await fast.page.keyboard.press('e');
   await fast.page.waitForFunction(() => window.__godis.state().flags.includes('home'));
