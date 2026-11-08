@@ -623,8 +623,15 @@ export function createModelRig(model: Object3D, height: number): Rig {
   };
   const at = new Vector3();
   const rest = model.position.y;
-  // Where the model stands in its group, and its own left there: shifted hips move it that way.
-  const restX = model.position.x, restZ = model.position.z, left = new Vector3(1, 0, 0).applyQuaternion(model.quaternion);
+  // The model's own left in its group: shifted hips go that way.
+  // The hips shift by the pelvis bone, in its parent's own terms: the model itself stays where it stands in its group.
+  const pelvisRest = bones.pelvis?.node.position.clone() ?? null;
+  const shift = new Vector3(), toPelvis = new Matrix4();
+  if (bones.pelvis?.node.parent) {
+    group.updateWorldMatrix(true, true);
+    toPelvis.copy(bones.pelvis.node.parent.matrixWorld).invert().multiply(group.matrixWorld).setPosition(0, 0, 0);
+  }
+  const left = new Vector3(1, 0, 0).applyQuaternion(model.quaternion);
   const unit = height / ADULT;
   group.updateWorldMatrix(true, true);
   const supports = feet.map((foot) => ({ foot, points: bootContacts(model, foot) }));
@@ -731,8 +738,8 @@ export function createModelRig(model: Object3D, height: number): Rig {
       bend(bones.legR, p.legR, null, 0, ahead.legR, -p.hipRoll - p.splayR - lean);
       bend(bones.kneeL, p.kneeL);
       bend(bones.kneeR, p.kneeR);
-      model.position.x = restX + left.x * p.sway * unit;
-      model.position.z = restZ + left.z * p.sway * unit;
+      // (A model without a pelvis has no legs to lean in under it either: it stays as it is.)
+      if (pelvisRest) bones.pelvis!.node.position.copy(pelvisRest).add(shift.copy(left).multiplyScalar(p.sway * unit).applyMatrix4(toPelvis));
       model.position.y = rest;
       const seated = p.seat === null ? -Infinity : rest + (p.seat + p.bounce) * unit - restHip;
       if (p.seat !== null && !p.floor) {
