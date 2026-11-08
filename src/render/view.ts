@@ -1141,7 +1141,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     lawnSong.update(flags, clock);
     for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
     cones.update(rollers, clock);
-    water.update(clock, lessMotion(), x);
+    water.update(clock, lessMotion(), x, flags);
     // Rings where he touches the water (./water.ts): his steps as he wades, a bigger one as he lands in it or falls
     // in, and a wake behind what he rides on it.
     const surface = water.surfaceAt(x);

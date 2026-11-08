@@ -1,11 +1,11 @@
 import {
-  BufferGeometry, CanvasTexture, ClampToEdgeWrapping, Color, DataTexture, DoubleSide, Float32BufferAttribute, Group,
-  HalfFloatType, LinearFilter, Matrix4, Mesh, RedFormat, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera, Plane, RepeatWrapping,
-  SRGBColorSpace, ShaderMaterial, Vector2, Vector3, Vector4, WebGLRenderTarget, type Camera, type InstancedMesh, type Material,
-  type Object3D, type Texture, type WebGLRenderer,
+  Box3, BufferGeometry, CanvasTexture, ClampToEdgeWrapping, Color, DataTexture, DoubleSide, Float32BufferAttribute, Group,
+  HalfFloatType, LinearFilter, LinearMipmapLinearFilter, Matrix4, Mesh, RedFormat, MeshBasicMaterial, OrthographicCamera, PerspectiveCamera, Plane,
+  RepeatWrapping, SRGBColorSpace, ShaderMaterial, Vector2, Vector3, Vector4, WebGLRenderTarget, type Camera, type HemisphereLight,
+  type InstancedMesh, type Material, type Object3D, type Texture, type WebGLRenderer,
 } from 'three';
 import type { ChapterData, PlaceId } from '../sim/types';
-import { KIT } from './dressing/kit';
+import { KIT, sequence } from './dressing/kit';
 import type { Tier } from './quality';
 
 /** A tiny generated flow field: mostly downstream, with gentle eddies. No downloaded texture. */
@@ -22,6 +22,65 @@ function flowField() {
   texture.needsUpdate = true;
   return texture;
 }
+
+/**
+ * Small ripples, as one picture that meets itself across its edges: the slopes of a few dozen little waves of every
+ * size and heading, the smallest a few millimetres to him. The surface scrolls two layers of it across each other.
+ * Generated here, no downloaded texture; its smaller copies keep far water calm instead of shimmering.
+ */
+function rippleField() {
+  const size = 64;
+  const next = sequence(1709);
+  const waves: { kx: number; ky: number; a: number; phase: number }[] = [];
+  while (waves.length < 30) {
+    // Whole waves across the picture, so that it tiles.
+    const kx = Math.round(next() * 14 - 7), ky = Math.round(next() * 14 - 7);
+    const k = Math.hypot(kx, ky);
+    if (k < 1.5) continue;
+    waves.push({ kx, ky, a: 1 / Math.pow(k, 1.5), phase: next() * Math.PI * 2 });
+  }
+  const slopes = new Float32Array(size * size * 3);
+  let most = 1e-6;
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    let sx = 0, sy = 0, h = 0;
+    for (const w of waves) {
+      const angle = (2 * Math.PI * (w.kx * x + w.ky * y)) / size + w.phase;
+      sx += w.a * w.kx * Math.cos(angle);
+      sy += w.a * w.ky * Math.cos(angle);
+      h += w.a * Math.sin(angle);
+    }
+    slopes.set([sx, sy, h], (y * size + x) * 3);
+    most = Math.max(most, Math.abs(sx), Math.abs(sy));
+  }
+  let tallest = 1e-6;
+  for (let i = 2; i < slopes.length; i += 3) tallest = Math.max(tallest, Math.abs(slopes[i]!));
+  const data = new Uint8Array(size * size * 4);
+  for (let i = 0; i < size * size; i++) {
+    data.set([
+      Math.round(127.5 + 127.5 * slopes[i * 3]! / most), Math.round(127.5 + 127.5 * slopes[i * 3 + 1]! / most),
+      Math.round(127.5 + 127.5 * slopes[i * 3 + 2]! / tallest), 255,
+    ], i * 4);
+  }
+  const texture = new DataTexture(data, size, size);
+  texture.name = 'water-ripples';
+  texture.wrapS = texture.wrapT = RepeatWrapping;
+  texture.magFilter = LinearFilter;
+  texture.minFilter = LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/**
+ * Lights the water mirrors at once (Mid and High): a lamp's long, trembling streak on the water towards the eye, broken
+ * by the ripples, with a soft glow round it. The nearest that are lit.
+ */
+const LAMPS = 4;
+/** How far from him a light is still worth one of the places, in EL. */
+const LAMP_REACH = 40;
+/** A candle's or a lantern's warmth, and a lit window's. */
+const CANDLE = new Color('#ffc66e');
+const WINDOW = new Color(1, 0.55, 0.24);
 
 const CAUSTIC = /* glsl */ `
   float causticPattern(vec2 p, float time) {
@@ -79,6 +138,11 @@ export interface WaterKind {
    */
   drift?: number;
   swell?: number;
+  /**
+   * How fast it runs, in EL a second, downstream along the path: its ripples, what floats on it and the streaks its
+   * current draws go with it. Left out: still water, which only the wind moves.
+   */
+  current?: number;
 }
 
 /**
@@ -94,7 +158,8 @@ const POOL: WaterKind = {
   // Dark water mirrors darker and warmer: at 0.6 and near white it gave back the bright, hazy forest so well that
   // the brook read as mist (Olov: "har vi fixat vattnet och bäckarna så att det ser bra ut?").
   mirror: 0.42, tint: '#b8ad8c', ripple: 1.15, bedColour: '#000000', shoreColour: '#000000', stands: null,
-  drift: 1, swell: 0.35,
+  // A brook runs, slowly where it pools.
+  drift: 1, swell: 0.35, current: 0.45,
 };
 
 const KINDS: Partial<Record<PlaceId, WaterKind>> = {
@@ -126,7 +191,8 @@ export const RIVER: WaterKind = {
   front: 48, corner: 48, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
   dim: 0.6, faceTop: '#2a3a3c', faceDeep: '#0c1618', ramp: 1.6, faceAlpha: 0.93, faceBelow: 1, murk: 0.5, through: '#b8cac4',
   mirror: 0.55, tint: '#c4ccc0', ripple: 1.25, bedColour: '#000000', shoreColour: '#000000', stands: null,
-  drift: 0.5, swell: 1,
+  // As fast as the foam it carries between the rapids (Älven's `storm.foam`).
+  drift: 0.5, swell: 1, current: 2.2,
 };
 
 /** How wide a thing can stand in a river with the water going on past it: more than that is a bank. */
@@ -403,6 +469,11 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   // Nothing near mirrored yet: a clear pixel, so that the shader never reads an empty sampler (its stand-in would
   // come and go with the tier, and the GPU's count of textures with it).
   const nothingNear = nothingFar();
+  // A night's water (Äventyr 2's storm, the dusk): what it mirrors is the cool sky and a few lights, not the warm day,
+  // so its mirror is less warm and gives back more, and dark things in it are not darkened again.
+  const middle = new Color(sky.middle);
+  const night = 1 - Math.min(1, Math.max(0, (0.2126 * middle.r + 0.7152 * middle.g + 0.0722 * middle.b - 0.12) / 0.3));
+  const tint = new Color(kind.tint).lerp(new Color('#c9d0d8'), night);
   const uniforms = {
     flowMap: { value: flowField() }, time, details,
     sunDirection: { value: new Vector3(...sun).normalize() },
@@ -431,7 +502,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     islands: { value: (islands?.map ?? nothingFar()) as Texture },
     // Where the islands' row begins and how wide it is (none: 0), where their fronts go under the water, and the height it counts from.
     islandFrame: { value: islands?.frame ?? new Vector4(0, 0, 0, 0) },
-    mirrorTint: { value: new Color(kind.tint) },
+    mirrorTint: { value: tint },
     faceTop: { value: new Color(kind.faceTop).multiplyScalar(look?.face ?? 1) }, faceDeep: { value: new Color(kind.faceDeep).multiplyScalar(look?.face ?? 1) },
     through: { value: new Color(kind.through) },
     bedColour: { value: new Color(kind.bedColour) }, shoreColour: { value: new Color(kind.shoreColour) },
@@ -448,6 +519,17 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     rings: { value: Array.from({ length: RINGS }, () => new Vector4(0, 0, -100, 0)) },
     // What drifts on it, and its swell.
     life: { value: new Vector2(kind.drift ?? 0, kind.swell ?? 0) },
+    // Its small ripples, and its current: EL a second along x and z, and how long its streaks are drawn out along it.
+    rippleMap: { value: rippleField() },
+    stream: { value: new Vector3(kind.current ?? 0, 0, kind.current ? Math.min(2.6, 1 + kind.current * 0.75) : 1) },
+    // How hard it rains on it now, how bright the sky is now (lightning brightens it), how much light falls on it now
+    // against its first, and how much of a night it is.
+    weather: { value: new Vector4(0, 1, 1, night) },
+    // The far scenery's tint now, as its cards have it (Äventyr 2's night tints them, and its flashes brighten them).
+    farTint: { value: new Color(1, 1, 1) },
+    // The lights it mirrors: where each stands (x, y, z) and how bright it is, and its colour.
+    lamps: { value: Array.from({ length: LAMPS }, () => new Vector4(0, 0, 0, 0)) },
+    lampTint: { value: Array.from({ length: LAMPS }, () => new Color()) },
   };
   const material = new ShaderMaterial({
     // It writes no depth: a shaft of light or a sheet of mist that dips under the surface goes on into the
@@ -479,8 +561,49 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
       uniform vec3 mirrorSlide, columnTint[${MIRRORED.trunks}], bankTop, bankFace;
       uniform mat4 viewProjection;
       uniform vec2 resolution;
+      uniform sampler2D rippleMap;
+      uniform vec3 stream, farTint, lampTint[${LAMPS}];
+      uniform vec4 weather, lamps[${LAMPS}];
       varying vec3 waterWorld; varying float waterDepth; varying vec4 waterPart;
       #include <fog_pars_fragment>
+
+      float waterHash(vec2 p) {
+        vec3 q = fract(vec3(p.xyx) * 0.1031);
+        q += dot(q, q.yzx + 33.33);
+        return fract((q.x + q.y) * q.z);
+      }
+
+      // Rain on the water (Äventyr 2's storm): in each patch of the surface a drop lands now and then, and its ring
+      // spreads a hand's breadth and dies away. Two grids of patches, one turned against the other, so that no row
+      // shows. A ring finer than the picture's pixels where it lies is softened and fades. Gives the slope, how much
+      // of a ring's crest is here, and the splash where a drop has just landed.
+      vec4 rainOn(vec2 p, float t, float rain, float pixel) {
+        vec4 sum = vec4(0.0);
+        for (int layer = 0; layer < 2; layer++) {
+          float cell = layer == 0 ? 0.62 : 0.45;
+          vec2 q = (layer == 0 ? p : mat2(0.8, -0.6, 0.6, 0.8) * p + vec2(17.3, 5.1)) / cell;
+          vec2 id = floor(q) + float(layer) * 41.0;
+          float seed = waterHash(id);
+          float turn = t / (0.6 + 0.55 * seed) + seed * 9.0;
+          float age = fract(turn);
+          float which = floor(turn);
+          // Not every patch has a drop each round: as many as the rain is hard.
+          float drop = step(waterHash(id + which * 0.917), rain * 0.8);
+          vec2 at = vec2(waterHash(id + 3.7 + which), waterHash(id + 8.3 + which)) - 0.5;
+          vec2 d = (fract(q) - 0.5 - at * 0.26) * cell;
+          float r = length(d);
+          // A big drop's ring spreads wider than a small one's.
+          float off = r - age * cell * (0.22 + 0.16 * waterHash(id + which * 1.31));
+          float width = max(0.022, pixel * 0.8);
+          float shape = exp(-off * off / (width * width)) * drop * (1.0 - age) * (1.0 - age) * (0.022 / width);
+          vec2 outward = d / max(r, 1e-3);
+          sum.xy += outward * (-off / width) * shape * 0.5;
+          // Its far side leans towards the eye and gives back the sky; its near side hardly shows.
+          sum.z += shape * (0.55 - 0.45 * outward.y);
+          sum.w += drop * exp(-r * r * 900.0) * (1.0 - smoothstep(0.0, 0.1, age)) * (0.022 / width);
+        }
+        return sum;
+      }
 
       // Three trains of small waves that cross each other, so that no two rows are alike. A train finer than
       // the picture's pixels where it lies is left out: far water is still. Gives the slope, and where two
@@ -503,12 +626,35 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         vec3 ray = waterWorld - cameraPosition;
         vec3 view = -normalize(ray);
         vec2 flow = texture2D(flowMap, waterWorld.xz * 0.045).rg * 2.0 - 1.0;
-        vec3 wave = ripples(waterWorld.xz - flow * time * 0.2, time, fwidth(waterWorld.z) + fwidth(waterWorld.x) * 0.3);
+        // What runs carries its ripples along with it, and still water lies still but for the wind. Carried, not pulled
+        // by the eddies: a pattern dragged by a flow that differs from place to place is torn finer and finer as the
+        // minutes go, until it shimmers.
+        vec2 carried = waterWorld.xz - stream.xy * time;
+        // How much of the water one pixel covers, towards the eye and across: taken here, outside any branch.
+        float pixelZ = fwidth(waterWorld.z);
+        vec3 wave = ripples(carried + flow * 0.8, time, pixelZ + fwidth(waterWorld.x) * 0.3);
         // Cat's paws: the wind roughens the water in patches that drift slowly over it, between them it lies almost
         // still and mirrors cleanly, so that it looks alive and never like glass (Olov: "lite vågor och rörelse").
         float gust = 0.45 + 0.55 * smoothstep(-0.3, 0.9, sin(waterWorld.x * 0.23 - time * 0.55 + 1.6 * sin(waterWorld.z * 0.31 + time * 0.17))
           * sin(waterWorld.z * 0.47 + waterWorld.x * 0.11 + time * 0.23));
         vec2 slope = wave.xy * surface.y * 0.03 * gust;
+        // Small ripples over the waves (Mid and High): two layers of them, scrolling across each other and carried by
+        // the current, drawn out along it where it runs. Rougher in a storm's wind and rain.
+        float rough = surface.y * (1.0 + 0.9 * weather.x);
+        float smallCrest = 0.0;
+        if (details > 0.5) {
+          vec2 a = (carried + flow * 0.6) * vec2(0.62 / stream.z, 0.95) + vec2(0.021, 0.034) * time;
+          vec2 b = mat2(0.6, 0.8, -0.8, 0.6) * carried * vec2(1.3 / stream.z, 1.7) - vec2(0.037, -0.016) * time;
+          vec4 small = texture2D(rippleMap, a) + texture2D(rippleMap, b) - 1.0;
+          slope += small.xy * 0.035 * rough * (0.6 + 0.4 * gust);
+          smallCrest = small.z;
+        }
+        // Rain on it: rings that spread and fade, each drop's own (Mid and High).
+        vec4 rain = vec4(0.0);
+        if (details > 0.5 && isTop > 0.5 && weather.x > 0.01) {
+          rain = rainOn(carried, time, weather.x, pixelZ);
+          slope += rain.xy;
+        }
         // Open water's long slow swell under the ripples: broad bands that the mirror leans into as they pass.
         if (details > 0.5 && life.y > 0.0) {
           slope += vec2(cos(waterWorld.x * 0.33 - time * 0.85 + 0.6 * sin(waterWorld.z * 0.21)), 0.6 * cos(waterWorld.z * 0.47 + waterWorld.x * 0.09 + time * 0.55))
@@ -545,7 +691,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         vec3 sky = mix(skyMiddle, skyTop, clamp((high - 0.08) / 0.42, 0.0, 1.0));
         float glow = clamp(1.0 - length(vec2(screen.x + slope.x * 2.0 - 0.273, high - 0.129)) / 0.664, 0.0, 1.0);
         sky = mix(sky, skyGlow, glow);
-        vec3 mirrored = (sky * (1.0 - far.a) + far.rgb) * mirrorTint;
+        // As bright as the sky stands now, and the far scenery as tinted as its cards are now: a flash of lightning
+        // brightens both in the water as it does above it.
+        vec3 mirrored = (sky * weather.y * (1.0 - far.a) + far.rgb * farTint) * mirrorTint;
         // What stands on its banks, mirrored about its surface (Olov's exception of 4 November 2026): the view ray
         // goes on under the surface into the mirrored world. Mid and High: a pool's end banks and the trunks near
         // it, from what is known of them; High: the picture so far itself, in a few steps in screen space.
@@ -629,16 +777,20 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
             mirrored = mix(mirrored, seenNear.rgb * mirrorTint, clamp(seenNear.a, 0.0, 1.0));
           }
         }
-        // Dark things are darker in water than in the air, and the sky keeps its light.
-        mirrored *= 0.55 + 0.75 * dot(mirrored, vec3(0.3, 0.6, 0.1));
-        // Water mirrors most where it is looked along, and a ripple's near side is looked into.
-        float facing = clamp(view.y - dot(view.xz, wave.xy) * surface.y * 0.035, 0.0, 1.0);
+        // Dark things are darker in water than in the air, and the sky keeps its light. Not at night, where all of it
+        // is dark: there the water would go out.
+        mirrored *= mix(0.55 + 0.75 * dot(mirrored, vec3(0.3, 0.6, 0.1)), 1.0, weather.w);
+        // Water mirrors most where it is looked along, little where it is looked down into (Fresnel), and a ripple's
+        // near side is looked into. At night it gives back more: the sky and a few lights are all there is to see.
+        vec3 surfaceNormal = normalize(vec3(-slope.x, 1.0, -slope.y));
+        float facing = clamp(dot(surfaceNormal, view), 0.0, 1.0);
         float glance = pow(1.0 - facing, 3.0);
-        float mirrors = surface.x * (0.15 + 0.85 * glance);
+        float mirrors = min(1.0, surface.x * (1.0 + 0.7 * weather.w)) * (0.15 + 0.85 * glance);
 
-        // Its own colour: dark where it is deep, and its bed where it is shallow.
+        // Its own colour: dark where it is deep, and its bed where it is shallow. It is lit as everything is: a flash of
+        // lightning shows it.
         // Little of what is behind it shows through its surface: a third of what the place's opacity leaves.
-        vec3 own = waterColour * surface.z;
+        vec3 own = waterColour * surface.z * weather.z;
         float solid = 1.0 - (1.0 - opacity) * 0.3;
         float wetOnly = 0.0;
         if (body.w > 0.0) {
@@ -662,7 +814,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         // Pine needles and bits of birch leaf afloat, drifting with the flow and turning in its eddies: a needle in one
         // patch of water in six, a leaf in one in twenty. They fade where they would be smaller than the pixels.
         if (details > 0.5 && isTop > 0.5 && life.x > 0.0) {
-          vec2 afloat = (waterWorld.xz * vec2(1.0, 1.7) - flow * time * 0.1 - vec2(time * 0.045, 0.0)) * 1.4;
+          vec2 afloat = (carried * vec2(1.0, 1.7) + flow * 0.5 - vec2(time * 0.045, 0.0)) * 1.4;
           vec2 piece = floor(afloat);
           float which = fract(sin(dot(piece, vec2(127.1, 311.7))) * 43758.5453);
           if (which > 1.0 - 0.17 * life.x) {
@@ -682,6 +834,31 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           float glint = pow(max(dot(normal, normalize(view + sunDirection)), 0.0), 64.0) + pow(max(wave.z, 0.0), 10.0) * glow * glow * glow;
           top += skyGlow * mirrorTint * glint * 0.4;
         }
+        // What catches the light on it, over all else (Mid and High): the rain's rings and splashes, and the lights it
+        // mirrors.
+        vec3 sparkle = vec3(0.0);
+        if (details > 0.5 && isTop > 0.5) {
+          // A ring's crest catches the sky's light, and a drop that has just landed throws up a bead that catches more.
+          vec3 skyLight = mix(skyMiddle, skyGlow, 0.6) * weather.y * mirrorTint;
+          sparkle += skyLight * (min(rain.z, 1.5) * 1.6 + rain.w * 4.0) * (1.0 - wetOnly);
+          // The lights it mirrors. How far the surface would have to tip to give a light back is little across the
+          // picture and more towards the eye, so a lamp lays a long streak on the water towards the eye, broken where
+          // the ripples tip it away, with a soft glow round it.
+          for (int i = 0; i < ${LAMPS}; i++) {
+            vec4 lamp = lamps[i];
+            if (lamp.w <= 0.0) continue;
+            vec3 h = normalize(normalize(lamp.xyz - waterWorld) + view);
+            float up = max(dot(h, surfaceNormal), 0.05);
+            vec2 tip = (h.xz - surfaceNormal.xz * up) / up;
+            float streak = exp(-tip.x * tip.x * 2500.0 - tip.y * tip.y * 18.0);
+            float halo = exp(-tip.x * tip.x * 60.0 - tip.y * tip.y * 3.0);
+            sparkle += lampTint[i] * lamp.w * (streak + halo * 0.06) * (0.25 + 0.75 * glance) * (1.0 - wetOnly);
+          }
+        }
+        // Where it meets a bank, a little foam: the brook's is cream, as humic water's is. On High from how deep the
+        // water is over what is behind it, below; on Mid along a pool's end banks.
+        float foam = details > 0.5 && refractOn < 0.5 ? smoothstep(0.78, 1.0, banked) * (0.5 + 0.5 * smallCrest) : 0.0;
+        float shoreFade = 1.0;
 
         // The cut face: the water's own body, darker with depth, and a pale line where the surface meets it.
         float under = max(waterPart.w - waterWorld.y, 0.0);
@@ -700,7 +877,22 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           // Less light reaches what lies deep: a tussock's foot shows at the waterline, a sunken plank hardly.
           face = mix(face, seen, see * exp(-under * body.x * 2.0) * 0.8);
           solid = faceSolid = 1.0;
+          if (isTop > 0.5) {
+            // The shore: how deep the water is over what is behind it, straight down. It thins to nothing where it meets
+            // the ground or a stone, with no hard line, it is darker where it is shallow, and its foam laps along it.
+            float behindNow = texture2D(refraction, screen).a * cameraFar;
+            float thick = behindNow < waterDepth - 0.03 ? 1e3 : max(behindNow - waterDepth, 0.0);
+            float deep = thick * max(-ray.y, 0.0) / max(length(ray.xz), 0.1);
+            float lap = deep + 0.01 * sin(time * 1.5 + waterWorld.x * 1.9 + waterWorld.z * 0.7);
+            float froth = textureLod(rippleMap, carried * 0.45 + vec2(time * 0.012, 0.0), 1.5).b;
+            foam = smoothstep(0.003, 0.012, lap) * (1.0 - smoothstep(0.02, 0.05 + 0.08 * froth, lap)) * (0.35 + 0.65 * froth);
+            shoreFade = smoothstep(0.0, 0.01, deep);
+            top *= 1.0 - 0.3 * (1.0 - smoothstep(0.02, 0.3, deep));
+          }
         }
+        top = mix(top, mix(through, vec3(1.0), 0.4) * (mix(skyMiddle, skyGlow, 0.5) * weather.y * 0.55 + 0.03), foam * 0.75 * (1.0 - wetOnly));
+        top += sparkle;
+        solid *= shoreFade;
         if (details > 0.5) {
           // Looked into from the side: the light comes down into it in slow, slanting beams that fade with depth,
           // and specks drift in it, catching that light (the graphics pass of 6 November 2026).
@@ -820,6 +1012,20 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   };
   body.onBeforeRender = (renderer: WebGLRenderer, scene, camera: Camera) => {
     trunks ??= findTrunks(scene);
+    if (!lights) {
+      lights = findLights(scene);
+      // A place's painted sky only: a greybox's is the haze's flat colour.
+      const painted = (scene.getObjectByName('place-sky') as Mesh | undefined)?.material as MeshBasicMaterial | undefined;
+      backdrop = painted?.map ? painted : null;
+      scene.traverse((object) => { if (!skyLight && (object as HemisphereLight).isHemisphereLight) skyLight = object as HemisphereLight; });
+      firstLight = skyLight?.intensity ?? 0;
+    }
+    // As bright as the sky is drawn now, the light that falls on it against its first, and the far cards' tint now.
+    const weather = uniforms.weather.value;
+    weather.y = backdrop ? backdrop.color.r : 1;
+    weather.z = skyLight && firstLight > 0 ? skyLight.intensity / firstLight : 1;
+    const farColour = (mirror?.anchor.card.material as MeshBasicMaterial | undefined)?.color;
+    if (farColour) uniforms.farTint.value.copy(farColour);
     nearest(camera.position.x);
     uniforms.viewProjection.value.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     if (standing) uniforms.mirrorSlide.value.copy(standing.slide);
@@ -839,6 +1045,47 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   // The rings: which comes next, and when the next fish rises. A street's puddle has no fish.
   let ringNext = 0, untilRise = 3;
   const lively = kind.bed <= 0;
+  // The storm on it (Äventyr 2): how hard it rains, until the storm's eye stills it, as the storm's own picture does.
+  const storm = chapter.storm;
+  let calm = 0;
+  /** A light the water mirrors: where it stands, how bright, its colour, and the flag it comes on with ('' at once). */
+  type Light = { at: Vector3; strength: number; colour: Color; on: string };
+  // Found in the scene the first time it is drawn, as are the backdrop and the sky's light it is lit by.
+  let lights: Light[] | null = null;
+  let moon: Object3D | null = null;
+  let backdrop: MeshBasicMaterial | null = null;
+  let skyLight: HemisphereLight | null = null;
+  let firstLight = 0;
+  const findLights = (scene: Object3D): Light[] => {
+    // Candles and lanterns in windows and boats, and the car's lamps.
+    const found: Light[] = (storm?.glows ?? []).map((g) => ({ at: new Vector3(g.at.x, g.at.y, g.z ?? -6), strength: 0.4 * (g.size ?? 1.2), colour: CANDLE, on: g.after ?? '' }));
+    // Lit windows: where the buildings say they have them, at a little under half their height.
+    const box = new Box3();
+    scene.traverse((object) => {
+      const lamps = object.userData.lamps as { x: number; z: number; on: string }[] | undefined;
+      if (!lamps?.length) return;
+      box.setFromObject(object);
+      const y = box.isEmpty() ? 4 : box.min.y + (box.max.y - box.min.y) * 0.4;
+      for (const lamp of lamps) found.push({ at: new Vector3(lamp.x, y, lamp.z), strength: 0.35, colour: WINDOW, on: lamp.on });
+    });
+    // The moon, when the storm's eye opens.
+    moon = storm?.calm ? scene.getObjectByName('moon') ?? null : null;
+    return found;
+  };
+  const moonAt = new Vector3();
+  const MOON = new Color('#dfe6ff');
+  /** The lights nearest him that are lit now, for this picture; a light at the edge of its reach comes on gently. */
+  const lightUp = (x: number, flags: ReadonlySet<string>) => {
+    const lit = (lights ?? []).filter((light) => Math.abs(light.at.x - x) < LAMP_REACH && (light.on === '' || flags.has(light.on)))
+      .sort((a, b) => Math.abs(a.at.x - x) - Math.abs(b.at.x - x))
+      .map((light) => ({ ...light, strength: light.strength * Math.min(1, (LAMP_REACH - Math.abs(light.at.x - x)) / 8) }));
+    if (moon && calm > 0) lit.unshift({ at: moon.getWorldPosition(moonAt), strength: 1.4 * calm, colour: MOON, on: '' });
+    uniforms.lamps.value.forEach((v, i) => {
+      const light = lit[i];
+      v.set(light?.at.x ?? 0, light?.at.y ?? 0, light?.at.z ?? 0, light?.strength ?? 0);
+      if (light) uniforms.lampTint.value[i]!.copy(light.colour);
+    });
+  };
   // What is near, mirrored as it is (Mid and High): a camera mirrored in the water's surface takes, at a third of the size,
   // only what is on the near layer, and the water reads it back where each of its points is. As three.js's Reflector
   // does it, with its near plane laid along the surface, so that nothing under the water is in the picture.
@@ -929,12 +1176,20 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     get mirroringNear() { return nearTarget !== null; },
     /** How high the water stands now against its pools' own height: it rises and falls a little. */
     get level() { return body.position.y; },
-    /** `still`: with reduced motion the water all but stands. */
-    update(clock: number, still = false, focusX?: number) {
+    /** `still`: with reduced motion the water all but stands. `flags`: the story so far, which lights its lamps and stills its storm. */
+    update(clock: number, still = false, focusX?: number, flags?: ReadonlySet<string>) {
+      const passed = Math.max(0, clock - before);
       const step = (clock - before) * (still ? 0.12 : 1);
       time.value += step;
       before = clock;
       body.position.y = Math.sin(time.value * 1.3) * 0.03;
+      if (flags) {
+        // The storm's eye opens over three seconds, at once with reduced motion; it rains less as it does.
+        const eye = !!storm?.calm && flags.has(storm.calm);
+        calm = still && eye ? 1 : Math.min(1, Math.max(0, calm + (eye ? passed : -passed) / 3));
+        uniforms.weather.value.x = (storm?.rain ?? 0) * (1 - calm);
+        if (focusX !== undefined) lightUp(focusX, flags);
+      }
       // Now and then a fish rises, or a fly lands, somewhere on the water near him: a ring and nothing else. Not on a
       // puddle in the street, and not with reduced motion.
       if (focusX === undefined || still || !lively || step <= 0) return;
