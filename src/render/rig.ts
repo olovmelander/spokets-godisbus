@@ -40,12 +40,41 @@ export interface Pose {
   /** Each foot tips up at the toes (+) or points them down (−), about the ankle. */
   footL: number;
   footR: number;
+  /**
+   * The hips shifted to the body's own left (+), in an adult's units: the weight goes over one foot. The feet stay where
+   * they stand: each leg leans in under the hips by as much.
+   */
+  sway: number;
+  /** The pelvis tips, its left side up (+): the other hip drops. The legs still hang plumb, and the trunk stands up from it. */
+  hipRoll: number;
+  /** The trunk bends to its own left (+), from upright, whatever the pelvis does. */
+  bendSide: number;
+  /** The head tilts towards its own left shoulder (+). */
+  tilt: number;
+  /** Each hand bends forward (+) or back at the wrist. */
+  wristL: number;
+  wristR: number;
+  /** Each thigh swings out to its own side (+), from hanging plumb. */
+  splayL: number;
+  splayR: number;
 }
 
 export const STANDING: Readonly<Pose> = {
   lean: 0, nod: 0, turn: 0, armL: 0.02, armR: 0.02, elbowL: 0.1, elbowR: 0.1, legL: 0, legR: 0, kneeL: 0, kneeR: 0,
   spread: 0, seat: null, floor: 0, bounce: 0, twist: 0, footL: 0, footR: 0,
+  sway: 0, hipRoll: 0, bendSide: 0, tilt: 0, wristL: 0, wristR: 0, splayL: 0, splayR: 0,
 };
+
+/** Every joint of a pose that turns (all but where the hips are): what blends, eases and is held. */
+export const JOINTS = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'legL', 'legR', 'kneeL', 'kneeR', 'spread',
+  'twist', 'footL', 'footR', 'sway', 'hipRoll', 'bendSide', 'tilt', 'wristL', 'wristR', 'splayL', 'splayR'] as const;
+
+/**
+ * A body's legs, each measure a share of its height: the hip joints over the soles standing, the thigh (hip to knee), the
+ * shin (knee to ankle), the ankle over the sole, the heel and the toe of the boot behind and ahead of the ankle, and each
+ * hip joint out from the middle. The stride (./gait.ts) puts the feet with them, so that a planted foot stays put on any body.
+ */
+export interface Legs { hip: number; thigh: number; shin: number; ankle: number; heel: number; toe: number; width: number }
 
 // The rehearsal body's measures, in an adult's units (an adult stands about 5.2 tall).
 const ADULT = 5.2;
@@ -59,20 +88,32 @@ const FORE = 0.8;
 const NECK = 1.8;
 /** How thick a knee is: kneeling, the hips are this much higher than the thigh is long. */
 const KNEE = 0.28;
+/** The ankle, over the sole, and the hip joints, out from the middle. */
+const ANKLE = 0.13;
+const HIP_X = 0.38;
+/** The rehearsal figure's legs, as shares of its height (rig.ts's own measures; its boot is 0.95 long, 0.12 forward). */
+export const REHEARSAL_LEGS: Readonly<Legs> = {
+  hip: HIP / ADULT, thigh: THIGH / ADULT, shin: (SHIN - ANKLE) / ADULT, ankle: ANKLE / ADULT,
+  heel: 0.355 / ADULT, toe: 0.595 / ADULT, width: HIP_X / ADULT,
+};
 
-/** The lowest point of a leg below its hip, the knee or the sole, for its two angles. */
-function legLow(hip: number, knee: number): number {
-  const kneeY = -Math.cos(hip) * THIGH;
-  const angle = hip - knee;
-  // The boot turns with the shin: its toe and heel matter as much as its ankle.
-  const footY = kneeY + (-SHIN + 0.13) * Math.cos(angle) + 0.12 * Math.sin(angle)
-    - 0.13 * Math.abs(Math.cos(angle)) - 0.475 * Math.abs(Math.sin(angle));
+/** The lowest point of a leg below its hip, the knee or the sole, for its angles: the boot turns about the ankle. */
+function legLow(hip: number, knee: number, foot = 0, side = 0): number {
+  const kneeY = -Math.cos(hip) * THIGH * Math.cos(side);
+  const angle = hip - knee, turned = angle + foot;
+  // The boot's toe and heel matter as much as its ankle.
+  const footY = kneeY + (-SHIN + ANKLE) * Math.cos(angle) * Math.cos(side) + 0.12 * Math.sin(turned)
+    - 0.13 * Math.abs(Math.cos(turned)) - 0.475 * Math.abs(Math.sin(turned));
   return Math.min(kneeY - KNEE, footY);
 }
 
+/** How far each leg leans in under hips shifted by `sway` (adult units), so that its foot stays where it stood. */
+const swayLean = (sway: number) => Math.atan2(sway, HIP);
+
 /** Where the hips are when the body stands on its lowest foot or knee. */
 export function groundedHips(p: Pose): number {
-  return -Math.min(legLow(p.legL, p.kneeL), legLow(p.legR, p.kneeR));
+  const lift = HIP_X * Math.sin(p.hipRoll ?? 0), lean = swayLean(p.sway ?? 0);
+  return -Math.min(legLow(p.legL, p.kneeL, p.footL, (p.splayL ?? 0) - lean) + lift, legLow(p.legR, p.kneeR, p.footR, (p.splayR ?? 0) + lean) - lift);
 }
 
 /** A share of the way from one pose to another. */
@@ -146,6 +187,8 @@ export interface Rig {
   breeze?(wind: number, dt: number, still: boolean, ruffle?: number): void;
   /** How tall the body stands, in EL. */
   readonly height: number;
+  /** Its legs' measures, as shares of its height: the stride is fitted to them (./gait.ts). */
+  readonly legs: Legs;
   /** Rain gear on, or off with null (./rain-gear.ts). */
   dress?(gear: RainGear | null): void;
   /** The cap off his head, lent away (Bertil's in Granskogen, "Min keps blir din båt"), or back on. */
@@ -218,7 +261,8 @@ export function softParts(root: Object3D, only: (node: Object3D) => boolean = (n
   };
 }
 
-type JointName = 'root' | 'spine' | 'neck' | 'shoulderL' | 'elbowL' | 'handL' | 'shoulderR' | 'elbowR' | 'handR' | 'hipL' | 'kneeL' | 'hipR' | 'kneeR';
+type JointName = 'root' | 'spine' | 'neck' | 'shoulderL' | 'elbowL' | 'handL' | 'shoulderR' | 'elbowR' | 'handR' | 'hipL' | 'kneeL' | 'footL'
+  | 'hipR' | 'kneeR' | 'footR';
 type Box = [x: number, y: number, z: number, width: number, height: number, depth: number, colour: string];
 
 const geometry = new BoxGeometry(1, 1, 1);
@@ -252,10 +296,10 @@ export function createRehearsalRig(who: Role): Rig {
     { joint: 'handR', box: [0, -0.1, 0.02, 0.25, 0.28, 0.36, skin] },
     { joint: 'hipL', box: [0, -THIGH / 2, 0, 0.48, THIGH, 0.58, trousers] },
     { joint: 'kneeL', box: [0, -SHIN / 2 + 0.1, 0, 0.44, SHIN - 0.2, 0.52, trousers] },
-    { joint: 'kneeL', box: [0, -SHIN + 0.13, 0.12, 0.58, 0.26, 0.95, shoe] },
+    { joint: 'footL', box: [0, 0, 0.12, 0.58, 0.26, 0.95, shoe] },
     { joint: 'hipR', box: [0, -THIGH / 2, 0, 0.48, THIGH, 0.58, trousers] },
     { joint: 'kneeR', box: [0, -SHIN / 2 + 0.1, 0, 0.44, SHIN - 0.2, 0.52, trousers] },
-    { joint: 'kneeR', box: [0, -SHIN + 0.13, 0.12, 0.58, 0.26, 0.95, shoe] },
+    { joint: 'footR', box: [0, 0, 0.12, 0.58, 0.26, 0.95, shoe] },
   ];
   const mesh = new InstancedMesh(geometry, new MeshLambertMaterial(), parts.length);
   mesh.name = `family-rehearsal-body:${who}`;
@@ -268,7 +312,7 @@ export function createRehearsalRig(who: Role): Rig {
   group.add(mesh);
 
   const joints = {} as Record<JointName, Matrix4>;
-  for (const name of ['root', 'spine', 'neck', 'shoulderL', 'elbowL', 'handL', 'shoulderR', 'elbowR', 'handR', 'hipL', 'kneeL', 'hipR', 'kneeR'] as const) joints[name] = new Matrix4();
+  for (const name of ['root', 'spine', 'neck', 'shoulderL', 'elbowL', 'handL', 'shoulderR', 'elbowR', 'handR', 'hipL', 'kneeL', 'footL', 'hipR', 'kneeR', 'footR'] as const) joints[name] = new Matrix4();
   const local = new Matrix4(), turn = new Quaternion(), more = new Quaternion();
   const place = new Vector3(), size = new Vector3(), one = new Vector3(1, 1, 1);
   const part = new Matrix4(), box = new Matrix4(), scaleAll = new Matrix4().makeScale(s, s, s), still = new Quaternion();
@@ -316,24 +360,23 @@ export function createRehearsalRig(who: Role): Rig {
     hands[0].set(0, -0.12, 0.05).applyMatrix4(joints.handL).multiplyScalar(s);
     hands[1].set(0, -0.12, 0.05).applyMatrix4(joints.handR).multiplyScalar(s);
   }
+  /** The lowest of the boots' corners and the knees, with the hips at 0: what the body stands on. */
+  const corner = new Vector3();
+  function lowest(): number {
+    let low = Infinity;
+    for (const [knee, foot] of [['kneeL', 'footL'], ['kneeR', 'footR']] as const) {
+      low = Math.min(low, joints[knee].elements[13]! - KNEE);
+      for (const x of [-0.29, 0.29]) for (const y of [-0.13, 0.13]) for (const z of [0.12 - 0.475, 0.12 + 0.475]) {
+        low = Math.min(low, corner.set(x, y, z).applyMatrix4(joints[foot]).y);
+      }
+    }
+    return low;
+  }
   function pose(p: Pose): void {
-    const floor = groundedHips(p);
+    let floor = 0;
+    if (p.seat === null || p.floor) { posed(p, 0); floor = -lowest(); }
     const hips = (p.seat === null ? floor : p.floor ? Math.max(floor, p.seat + p.floor * floor) : p.seat) + p.bounce;
-    set('root', null, 0, hips, 0, 0);
-    // The spine and the head stand up from their joints: a forward lean and a nod down turn them the other way
-    // round x from a limb that hangs down.
-    set('spine', 'root', 0, 0, 0, -p.lean);
-    set('neck', 'spine', 0, NECK, 0, -p.nod, 0, p.turn);
-    set('shoulderL', 'spine', SHOULDER_X, SHOULDER_Y, 0, p.armL, p.spread);
-    set('elbowL', 'shoulderL', 0, -UPPER, 0, p.elbowL);
-    set('handL', 'elbowL', 0, -FORE, 0, 0);
-    set('shoulderR', 'spine', -SHOULDER_X, SHOULDER_Y, 0, p.armR, -p.spread);
-    set('elbowR', 'shoulderR', 0, -UPPER, 0, p.elbowR);
-    set('handR', 'elbowR', 0, -FORE, 0, 0);
-    set('hipL', 'root', 0.38, 0, 0, p.legL);
-    set('kneeL', 'hipL', 0, -THIGH, 0, -p.kneeL);
-    set('hipR', 'root', -0.38, 0, 0, p.legR);
-    set('kneeR', 'hipR', 0, -THIGH, 0, -p.kneeR);
+    posed(p, hips);
     for (const arm of contacts) {
       joints[arm.shoulder].decompose(arm.upper.position, arm.upper.quaternion, arm.upper.scale);
       local.copy(joints[arm.shoulder]).invert().multiply(joints[arm.elbow]);
@@ -341,6 +384,29 @@ export function createRehearsalRig(who: Role): Rig {
       arm.wrist.quaternion.identity();
     }
     writeParts();
+  }
+  function posed(p: Pose, hips: number): void {
+    // The pelvis: shifted over a foot and tipped, turned a little against the shoulders.
+    set('root', null, p.sway, hips, 0, 0, p.hipRoll, -p.twist * 0.45);
+    // The spine and the head stand up from their joints: a forward lean and a nod down turn them the other way
+    // round x from a limb that hangs down. The trunk stands up from a tipped pelvis, and bends from there.
+    set('spine', 'root', 0, 0, 0, -p.lean, -p.hipRoll - p.bendSide, p.twist);
+    set('neck', 'spine', 0, NECK, 0, -p.nod, -p.tilt, p.turn - p.twist * 0.6);
+    set('shoulderL', 'spine', SHOULDER_X, SHOULDER_Y, 0, p.armL, p.spread);
+    set('elbowL', 'shoulderL', 0, -UPPER, 0, p.elbowL);
+    set('handL', 'elbowL', 0, -FORE, 0, p.wristL);
+    set('shoulderR', 'spine', -SHOULDER_X, SHOULDER_Y, 0, p.armR, -p.spread);
+    set('elbowR', 'shoulderR', 0, -UPPER, 0, p.elbowR);
+    set('handR', 'elbowR', 0, -FORE, 0, p.wristR);
+    // The legs hang plumb from a tipped pelvis, and lean in under shifted hips so that the feet stay where they stood.
+    const lean = swayLean(p.sway);
+    set('hipL', 'root', HIP_X, 0, 0, p.legL, -p.hipRoll + p.splayL - lean);
+    set('kneeL', 'hipL', 0, -THIGH, 0, -p.kneeL);
+    // The foot stays level across, whatever the leg's lean: the ankle gives.
+    set('footL', 'kneeL', 0, -SHIN + ANKLE, 0, p.footL, -(p.splayL - lean));
+    set('hipR', 'root', -HIP_X, 0, 0, p.legR, -p.hipRoll - p.splayR - lean);
+    set('kneeR', 'hipR', 0, -THIGH, 0, -p.kneeR);
+    set('footR', 'kneeR', 0, -SHIN + ANKLE, 0, p.footR, p.splayR + lean);
   }
   function contactParts(side: 0 | 1): void {
     const arm = contacts[side];
@@ -362,6 +428,7 @@ export function createRehearsalRig(who: Role): Rig {
       mesh.material.dispose();
     },
     height: ADULT * s,
+    legs: REHEARSAL_LEGS,
     pose,
     dress(gear) {
       // The coat over the body and arms; boots over the shins and shoes; a sock where a boot is off.
@@ -468,6 +535,32 @@ function bootContacts(model: Object3D, foot: Object3D): Vector3[] {
 }
 
 /**
+ * A model's legs as shares of its `height`, measured as it stands in its group: from its bones, and its boots' own soles.
+ * Where a bone or a boot is missing, the rehearsal figure's measures stand in.
+ */
+function measureLegs(group: Group, orientation: Quaternion, thigh: Object3D | undefined, calf: Object3D | undefined,
+  foot: Object3D | undefined, soles: Vector3[] | undefined, other: Object3D | undefined, height: number): Legs {
+  if (!thigh || !calf || !foot || !soles?.length || height <= 0) return REHEARSAL_LEGS;
+  const body = orientation.clone().invert();
+  // Positions in the body's own frame: x its left, y up, z ahead.
+  const own = (node: Object3D) => group.worldToLocal(node.getWorldPosition(new Vector3())).applyQuaternion(body);
+  const hip = own(thigh), knee = own(calf), ankle = own(foot);
+  const toGroup = new Matrix4().copy(group.matrixWorld).invert().multiply(foot.matrixWorld);
+  let low = Infinity, back = Infinity, front = -Infinity;
+  for (const point of soles) {
+    const at = point.clone().applyMatrix4(toGroup).applyQuaternion(body);
+    low = Math.min(low, at.y); back = Math.min(back, at.z - ankle.z); front = Math.max(front, at.z - ankle.z);
+  }
+  const width = other ? Math.abs(hip.x - own(other).x) / 2 : REHEARSAL_LEGS.width * height;
+  const share = (n: number) => n / height;
+  return {
+    hip: share(hip.y - low), thigh: share(hip.distanceTo(knee)), shin: share(knee.distanceTo(ankle)), ankle: share(Math.max(0, ankle.y - low)),
+    // A boot is stiff: it comes down on its heel and rolls over its toe.
+    heel: share(Math.max(0, -back)), toe: share(Math.max(0, front)), width: share(width),
+  };
+}
+
+/**
  * A model from Blender, posed on its bones. They carry the animation library's joint names (plan §5.6) and bend
  * round their own x. Exported limbs hang half a turn round z from the body, so their +y runs down the limb and
  * their +z still faces forward: a positive turn brings an arm or a thigh forward, bends an elbow, leans the spine
@@ -511,17 +604,25 @@ export function createModelRig(model: Object3D, height: number): Rig {
     .applyQuaternion(b.node.getWorldQuaternion(new Quaternion()).invert()).normalize() : null;
   const headUp = axis(bones.head, Y), leftOut = axis(bones.armL, Z), rightOut = axis(bones.armR, Z);
   const chestUp = axis(bones.chest, Y), pelvisUp = axis(bones.pelvis, Y);
+  // The body's forward axis in each bone's own terms: the pelvis tips, the trunk and head lean sideways, a thigh swings out.
+  const ahead = {
+    pelvis: axis(bones.pelvis, Z), spine: axis(bones.spine, Z), chest: axis(bones.chest, Z), head: axis(bones.head, Z),
+    legL: axis(bones.legL, Z), legR: axis(bones.legR, Z), footL: axis(bones.footL, Z), footR: axis(bones.footR, Z),
+  };
   // Lip centre relative to the neck in the exported heads' authoring units; cache through the rest roll.
   const mouth = new Vector3(0, .055, .135);
   if (bones.head) mouth.applyQuaternion(orientation).applyQuaternion(bones.head.node.getWorldQuaternion(new Quaternion()).invert());
-  const bend = (b: Bone | null, angle: number, around: Vector3 | null = null, extra = 0) => {
+  const bend = (b: Bone | null, angle: number, around: Vector3 | null = null, extra = 0, side: Vector3 | null = null, sideways = 0) => {
     if (!b) return;
     b.node.quaternion.copy(b.rest);
     if (around && extra !== 0) b.node.quaternion.multiply(turn.setFromAxisAngle(around, extra));
+    if (side && sideways !== 0) b.node.quaternion.multiply(turn.setFromAxisAngle(side, sideways));
     b.node.quaternion.multiply(turn.setFromAxisAngle(X, angle * b.sign));
   };
   const at = new Vector3();
   const rest = model.position.y;
+  // Where the model stands in its group, and its own left there: shifted hips move it that way.
+  const restX = model.position.x, restZ = model.position.z, left = new Vector3(1, 0, 0).applyQuaternion(model.quaternion);
   const unit = height / ADULT;
   group.updateWorldMatrix(true, true);
   const supports = feet.map((foot) => ({ foot, points: bootContacts(model, foot) }));
@@ -532,6 +633,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
   const restHip = hips.length > 0
     ? hips.reduce((sum, b) => sum + group.worldToLocal(b.node.getWorldPosition(at)).y, 0) / hips.length
     : HIP * unit;
+  const legs = measureLegs(group, orientation, bones.legL?.node, bones.kneeL?.node, feet[0], supports[0]?.points, bones.legR?.node, height);
   // Without a hand bone, approximate the forearm by the upper arm, measured in the lower bone's own units.
   // Keeping a world-space length here would shorten the reach if a scene later enlarged the whole figure.
   const fore = [bones.armL, bones.armR].map((upper, i) => {
@@ -547,12 +649,15 @@ export function createModelRig(model: Object3D, height: number): Rig {
     return hand && lower && contacts[i] ? createHandGrip(lower.node, hand, contacts[i]!) : null;
   });
   const sway = createSway(), soft = softParts(model);
+  // How high the hip joints stand over the soles: how far a leg leans in under shifted hips.
+  const hipFloor = Math.max(1e-3, legs === REHEARSAL_LEGS ? restHip : legs.hip * height);
   // The rain gear's shells, made the first time it is worn (./rain-gear.ts), and the wardrobe made in Blender.
   let shells: ReturnType<typeof buildShells> | undefined;
   let wardrobe: Wardrobe | null = null, worn: RainGear | null = null, headBare = false;
   return {
     group,
     height,
+    legs,
     dress(gear) {
       worn = gear;
       // The wardrobe made in Blender, once it has come; until then (or without one) shells of the body itself.
@@ -598,22 +703,34 @@ export function createModelRig(model: Object3D, height: number): Rig {
       return this.hand(side, out);
     },
     pose(p) {
-      handBones.forEach((hand, i) => { if (hand) hand.quaternion.copy(handRest[i]!); });
-      // A model with a chest bends through two joints, and its stride turns the shoulders against the hips.
-      bend(bones.spine, bones.chest ? p.lean * 0.55 : p.lean);
-      bend(bones.chest, p.lean * 0.55, chestUp, p.twist);
-      bend(bones.pelvis, 0, pelvisUp, -p.twist * 0.45);
-      bend(bones.head, p.nod, headUp, p.turn - (bones.chest ? p.twist * 0.6 : 0));
-      bend(bones.footL, p.footL);
-      bend(bones.footR, p.footR);
+      handBones.forEach((hand, i) => {
+        if (!hand) return;
+        hand.quaternion.copy(handRest[i]!);
+        const wrist = i === 0 ? p.wristL : p.wristR;
+        if (wrist !== 0) hand.quaternion.multiply(turn.setFromAxisAngle(X, wrist));
+      });
+      // A model with a chest bends through two joints, and its stride turns the shoulders against the hips. The pelvis
+      // tips; the trunk stands up from it, and bends to the side from upright.
+      const side = bones.chest ? 0.5 : 1;
+      bend(bones.pelvis, 0, pelvisUp, -p.twist * 0.45, ahead.pelvis, p.hipRoll);
+      bend(bones.spine, bones.chest ? p.lean * 0.55 : p.lean, null, 0, ahead.spine, -p.hipRoll - p.bendSide * side);
+      bend(bones.chest, p.lean * 0.55, chestUp, p.twist, ahead.chest, -p.bendSide * 0.5);
+      bend(bones.head, p.nod, headUp, p.turn - (bones.chest ? p.twist * 0.6 : 0), ahead.head, -p.tilt);
+      // The legs lean in under shifted hips (below); each foot stays level across, whatever its leg's lean: the ankle gives.
+      const lean = Math.atan2(p.sway * unit, hipFloor);
+      bend(bones.footL, p.footL, null, 0, ahead.footL, -(p.splayL - lean));
+      bend(bones.footR, p.footR, null, 0, ahead.footR, p.splayR + lean);
       bend(bones.armL, p.armL, leftOut, p.spread);
       bend(bones.armR, p.armR, rightOut, -p.spread);
       bend(bones.elbowL, p.elbowL);
       bend(bones.elbowR, p.elbowR);
-      bend(bones.legL, p.legL);
-      bend(bones.legR, p.legR);
+      // The legs hang plumb from a tipped pelvis, and lean in under shifted hips so that the feet stay where they stood.
+      bend(bones.legL, p.legL, null, 0, ahead.legL, -p.hipRoll + p.splayL - lean);
+      bend(bones.legR, p.legR, null, 0, ahead.legR, -p.hipRoll - p.splayR - lean);
       bend(bones.kneeL, p.kneeL);
       bend(bones.kneeR, p.kneeR);
+      model.position.x = restX + left.x * p.sway * unit;
+      model.position.z = restZ + left.z * p.sway * unit;
       model.position.y = rest;
       const seated = p.seat === null ? -Infinity : rest + (p.seat + p.bounce) * unit - restHip;
       if (p.seat !== null && !p.floor) {

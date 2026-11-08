@@ -26,28 +26,46 @@ function shoes(stage: Stage): [Vector3, Vector3] {
   stage.group.updateMatrixWorld(true);
   return [SHOE.left, SHOE.right].map((i) => { mesh.getMatrixAt(i, m); return new Vector3().setFromMatrixPosition(m.premultiply(mesh.matrixWorld)); }) as [Vector3, Vector3];
 }
+/**
+ * What a boot stands on: its sole's heel edge, toe edge, or both (flat). A planted boot rolls over its heel and its toe,
+ * and these are what must not slide.
+ */
+function soles(stage: Stage): { heel: Vector3; toe: Vector3 }[] {
+  const rig = body(stage), mesh = rig.group.children[0] as InstancedMesh, m = new Matrix4();
+  stage.group.updateMatrixWorld(true);
+  return [SHOE.left, SHOE.right].map((i) => {
+    mesh.getMatrixAt(i, m); m.premultiply(mesh.matrixWorld);
+    return { heel: new Vector3(0, -.5, -.5).applyMatrix4(m), toe: new Vector3(0, -.5, .5).applyMatrix4(m) };
+  });
+}
 
 describe('the family walk', () => {
   it.each([[6, 4], [6, 2], [10, 2]])('keeps the planted boot where it was put down: %s across in %s seconds', (way, seconds) => {
     const stage = stageFor([{ at: 0, x: 0, y: 0, face: 0, move: .01, act: 'stand' }, { at: 1, x: way, move: seconds }]);
-    let last: [Vector3, Vector3] | null = null, lastX = 0, slipped = 0, travelled = 0;
+    type Contact = { side: number; on: 'heel' | 'toe' | 'flat'; x: number };
+    let last: Contact | null = null, lastX = 0, slipped = 0, travelled = 0;
     for (let f = 0; f <= (1 + seconds + .5) * 60; f++) {
       stage.update({ id: 'motion', seconds: f / 60 }, new Set(), { x: 0, y: 0 }, f / 60, 1 / 60, false);
-      const now = shoes(stage), x = body(stage).group.position.x;
-      if (last) {
-        // The lower boot is the one on the ground; it should not move while the body does.
-        const down = now[0].y <= now[1].y ? 0 : 1;
-        if (Math.abs(now[down].y - Math.min(now[0].y, now[1].y)) < 1e-6 && Math.abs(last[down].y - now[down].y) < .01) {
-          slipped += Math.abs(now[down].x - last[down].x);
-          travelled += Math.abs(x - lastX);
-        }
+      const now = soles(stage), x = body(stage).group.position.x;
+      // The boot on the ground, and what of it: its heel, its toe or the whole sole (then its middle).
+      const low = Math.min(...now.flatMap((one) => [one.heel.y, one.toe.y]));
+      let contact: Contact | null = null;
+      for (const [side, one] of now.entries()) {
+        const heel = one.heel.y - low < .01, toe = one.toe.y - low < .01;
+        if (heel && toe) contact = { side, on: 'flat', x: (one.heel.x + one.toe.x) / 2 };
+        else if (heel || toe) contact ??= { side, on: heel ? 'heel' : 'toe', x: heel ? one.heel.x : one.toe.x };
       }
-      last = now; lastX = x;
+      // Off the ground in a run's flight, nothing is planted.
+      if (last && contact && contact.side === last.side && contact.on === last.on && low < .01) {
+        slipped += Math.abs(contact.x - last.x);
+        travelled += Math.abs(x - lastX);
+      }
+      last = contact; lastX = x;
     }
     expect(travelled).toBeGreaterThan(way * .2);
-    // Before this pass the planted boot slid about as far as the body went (a ratio near 1); a little remains from
-    // the stance knee's give and the boot's tilt.
-    expect(slipped / travelled).toBeLessThan(.15);
+    // Before the motion pass of 6 November the planted boot slid about as far as the body went (a ratio near 1). The
+    // feet are fitted to the ground now (src/render/gait.ts): what remains is from steps that change length.
+    expect(slipped / travelled).toBeLessThan(.08);
   });
 
   it('ends a walk with the feet together, and its steps get longer as it goes faster', () => {

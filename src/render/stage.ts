@@ -7,7 +7,8 @@ import type { ChapterData } from '../sim/types';
 import { sceneWaits, type Act, type ActorKey, type ElofKey, type Point, type SceneDef, type SceneFrame, type ShotKey, type Thing } from '../sim/scene';
 import { actPose, drawingAt, EASY_GAIT, eatingAt, sippingAt, stanceOf, stepLength, type Stance } from './acting';
 import { carvingAt, CARVING_SHAVING_LIFETIME, type CarvingMotion, type CarvingPoint } from './carving-motion';
-import { blendPose, createModelRig, createRehearsalRig, heightOf, STANDING, type Pose, type Rig, type Role } from './rig';
+import { createFooting, type Footing } from './gait';
+import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
 
 /**
@@ -67,16 +68,25 @@ const mixTurn = (a: number, b: number, t: number) => {
 };
 /**
  * How many steps an eased walk of `way` over `seconds` has taken at `u` of the way through its time, for a body
- * `height` tall: its distance counted in steps of the length each moment's speed gives (acting.ts stepLength).
+ * `height` tall on `legs`: its distance counted in steps of the length each moment's speed gives (acting.ts stepLength).
  */
-function stepsOf(way: number, seconds: number, height: number, u: number): number {
+function stepsOf(way: number, seconds: number, height: number, u: number, legs: Legs): number {
   const n = 24;
   let steps = 0;
   for (let i = 0; i < n; i++) {
     const s = (i + 0.5) / n * u, speed = way / seconds * 6 * s * (1 - s);
-    steps += speed * seconds * (u / n) / stepLength(speed / height, height);
+    steps += speed * seconds * (u / n) / stepLength(speed / height, height, legs);
   }
   return steps;
+}
+/** How far through an eased walk (0 to 1 of its time) its stride has counted `n` steps (`stepsOf`, made whole by `fit`). */
+function strideAt(way: number, seconds: number, height: number, legs: Legs, fit: number, n: number): number {
+  let low = 0, high = 1;
+  for (let i = 0; i < 16; i++) {
+    const mid = (low + high) / 2;
+    if (stepsOf(way, seconds, height, mid, legs) / fit < n) low = mid; else high = mid;
+  }
+  return (low + high) / 2;
 }
 /** The facing `from` turned towards `to` by at most `most` turns, the shortest way round. */
 const turnBy = (from: number, to: number, most: number) => {
@@ -90,7 +100,10 @@ const TURN_RATE = 1.15;
  * play exactly as authored, but a new act or a glance that would jump a limb in one frame is spread over a few.
  */
 const JOINT_RATE = 20;
-const LIMBS = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'legL', 'legR', 'kneeL', 'kneeR', 'spread', 'twist', 'footL', 'footR'] as const;
+const LIMBS = JOINTS;
+/** What a stride gives the legs and hips, whatever the hands are doing, and what it gives the trunk, head and spread arms. */
+const STRIDING = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'bounce', 'sway', 'hipRoll'] as const;
+const CARRIED = ['lean', 'twist', 'bendSide', 'tilt', 'spread'] as const;
 /** A move this far in one frame is a cut, which the scene makes on purpose: nothing eases across it. */
 const CUT = 1.2;
 /** How fast a body goes up or down a step, in its own heights a second. */
@@ -99,7 +112,7 @@ const STEP_RATE = 0.9;
  * How long, in seconds, a body takes to get up off its knees, a crouch or a chair into its stride, or to go down
  * into one from it: the legs hand over this gradually, not in the few frames a stride takes from standing.
  */
-const RISE = 0.4;
+const RISE = 0.5;
 const LOW: readonly Stance[] = ['kneel', 'crouch', 'sit'];
 /** How long, in seconds, someone walking when a scene begins takes to slow to a stop (an exponential's time). */
 const GLIDE = 0.15;
@@ -445,10 +458,14 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   const live = new Map<Role, { x: number; y: number; z: number; face: number; walked: number; stride: number; gait: number; pace: number; velocity: number; act: Act; elapsed: number }>();
   /** Each body's pose as last drawn: the next frame's joints turn from it at most at JOINT_RATE. */
   const drawn = new Map<Role, Pose>();
+  /** Where each body's planted feet stand (./gait.ts). */
+  const footings = new Map<Role, Footing>();
   /** How much of each body's legs the walk has, 0 to 1. */
   const striding = new Map<Role, number>();
   /** A walk that began while the legs were mid-stride (a follower, say): it carries on from their phase. */
   const handed = new Map<Role, { walk: string; offset: number; gait: number }>();
+  /** The walk each body is on, as it was last drawn: a new one may take over legs already striding. */
+  const begun = new Map<Role, string>();
   let lastT = 0, lastElof: number | null = null;
   const holders = new Group();
   holders.name = 'stage-things';
@@ -702,7 +719,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             pace = was.pace + (Math.min(1, gait / 0.3) - was.pace) * -Math.expm1(-10 * dt);
             face = mixTurn(was.face, pace > 0.04 ? (step > 0 ? 0 : 0.5) : state.face, -Math.expm1(-7 * dt));
             walked += Math.hypot(step, deeper);
-            stride += Math.hypot(step, deeper) / stepLength(Math.max(gait, 0.3), rig.height);
+            stride += Math.hypot(step, deeper) / stepLength(Math.max(gait, 0.3), rig.height, rig.legs);
           }
         } else if (!(scene && keys) && was && paused) {
           ({ x, y, z, face } = was);
@@ -716,7 +733,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           pace = was.pace + (Math.min(1, gait / 0.3) - was.pace) * -Math.expm1(-10 * dt);
           face = mixTurn(was.face, 0.25 - Math.atan2(dx, dz) / (Math.PI * 2), Math.min(1, pace * 1.5));
           walked = was.walked + step;
-          stride = was.stride + step / stepLength(Math.max(gait, 0.3), rig.height);
+          stride = was.stride + step / stepLength(Math.max(gait, 0.3), rig.height, rig.legs);
         } else if (state.walk) {
           const w = state.walk;
           const p = smooth((t - w.at) / w.seconds);
@@ -728,7 +745,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           // number so that the walk ends with the feet together, and each step's swing fits its length.
           const u = Math.min(1, Math.max(0, (t - w.at) / w.seconds));
           gait = way / w.seconds * 6 * u * (1 - u) / rig.height;
-          const steps = stepsOf(way, w.seconds, rig.height, u), all = stepsOf(way, w.seconds, rig.height, 1);
+          const steps = stepsOf(way, w.seconds, rig.height, u, rig.legs), all = stepsOf(way, w.seconds, rig.height, 1, rig.legs);
           const whole = Math.max(1, Math.round(all)), fit = all / whole;
           stride = steps / fit;
           // Taken over from legs already striding, it starts where they were and comes round to the feet together.
@@ -738,7 +755,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           // Only the phase matters, which comes round every two steps (one step on, the other leg leads): the
           // nearest way round.
           const behind = was ? was.stride - stride - 2 * Math.round((was.stride - stride) / 2) : 0;
-          if (!carry && flowing && was && was.pace > 0.3 && u < 0.2) {
+          // Only a walk that begins with the body already striding takes it over: not its own setting off.
+          const begins = begun.get(who) !== which;
+          begun.set(who, which);
+          if (!carry && begins && flowing && was && was.pace > 0.3 && u < 0.2) {
             carry = { walk: which, offset: behind, gait: was.gait };
             handed.set(who, carry);
           }
@@ -748,7 +768,14 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             // off again.
             gait = Math.max(gait, carry.gait * (1 - smooth(u * 4)));
           }
-          step = Math.max(0.02, stepLength(gait, rig.height) / rig.height * fit);
+          // Each step is as long as the way from one heel strike to the next (a whole number of steps of the counted
+          // stride): it keeps its length while it is taken, so the foot that comes down at its end lands where it is put.
+          if (carry) step = Math.max(0.02, stepLength(gait, rig.height, rig.legs) / rig.height * fit);
+          else {
+            const k = Math.min(whole - 1, Math.floor(stride));
+            const at = (n: number) => n <= 0 ? 0 : n >= whole ? 1 : strideAt(way, w.seconds, rig.height, rig.legs, fit, n);
+            step = Math.max(0.02, way * (smooth(at(k + 1)) - smooth(at(k))) / rig.height);
+          }
           const travel = Math.atan2(w.toX - w.fromX, w.toZ - w.fromZ) / (Math.PI * 2);
           face = mixTurn(face, 0.25 - travel, Math.min(1, pace * 1.5));
           // Walking on the ground, a body keeps to it, up and down a step where it is, not sinking through a floor.
@@ -763,7 +790,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           pace = Math.max(pace, Math.min(1, gliding / 0.3));
           if (!state.walk) {
             gait = gliding;
-            stride = state.glide.stride + Math.abs(state.glide.speed * GLIDE - behind) / stepLength(Math.max(gait, 0.3), rig.height);
+            stride = state.glide.stride + Math.abs(state.glide.speed * GLIDE - behind) / stepLength(Math.max(gait, 0.3), rig.height, rig.legs);
           }
         }
         // A cut is the scene's own; otherwise nobody whips round: a body turns at most at TURN_RATE.
@@ -791,7 +818,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           : prior + (state.act === 'sip' && sippingAt(prior, false, who).raise === 0 ? 0 : Math.max(0, dt));
         live.set(who, { x, y, z, face, walked, stride, gait, pace, velocity, act: state.act, elapsed });
         const since = (at: number) => (scene && keys ? Math.max(0, t - at) : elapsed);
-        const context = { t: since(state.actAt), aim, stride, gait, step, pace, calm, role: who };
+        const context = { t: since(state.actAt), aim, stride, gait, step, pace, calm, role: who, legs: rig.legs };
         actPose(state.act, context, pose, state.stance);
         if (state.glance) {
           // Blend the head angles, avoiding a whip through targets passing close behind the body.
@@ -801,7 +828,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         }
         if (state.before && elapsed < 0.45) {
           const previous = (old: NonNullable<State['before']>, out: Pose): Pose => {
-            actPose(old.act, { t: old.t, aim: aimFor(old.aim), stride: 0, pace: 0, calm, role: who }, out, old.stance);
+            actPose(old.act, { t: old.t, aim: aimFor(old.aim), stride: 0, pace: 0, calm, role: who, legs: rig.legs }, out, old.stance);
             if (old.previous) blendPose(previous(old.previous, { ...STANDING }), out, smooth(old.t / .45), out, true);
             return out;
           };
@@ -810,31 +837,42 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // Walking supplies the legs, whole: their steps already shorten to nothing as the body slows, so the
         // planted boot stays put. Getting up off the knees or out of a chair into a walk, or going down into one
         // from it, takes RISE.
-        const wanted = pace > 0.01 ? Math.min(1, pace * 4) : 0;
+        // The stride grows from standing and dies away to it by itself (its pace): it has the legs all the while it walks.
+        // The stride's own pace grows and dies away with the walk's.
+        const stridePace = Math.min(1, pace * 1.5);
+        const wanted = stridePace > 0.01 || footings.get(who)?.settling ? 1 : 0;
         const rising = (old: State['before']): boolean => !!old && (LOW.includes(old.stance) || rising(old.previous));
         const low = LOW.includes(state.stance) || (elapsed < 0.45 && rising(state.before));
         const had = striding.get(who);
         const legs = low && flowing && !cut && had !== undefined
           ? had + Math.max(-dt / RISE, Math.min(dt / RISE, wanted - had)) : wanted;
         striding.set(who, legs);
-        if (pace > 0.01 || legs > 0.01) {
-          actPose('walk', { t: time, aim: null, stride, gait, step, pace: 1, calm, role: who }, walking);
-          const weight = Math.min(1, pace);
+        // Each foot stays where it came down until it lifts; a cut or a seek forgets where they stood. Stopping, the stride
+        // is drawn on until its last step has brought the feet together.
+        const footing = footings.get(who) ?? footings.set(who, createFooting()).get(who)!;
+        if ((!flowing && !paused) || cut || !(stridePace > 0.01 || legs > 0.01 || footing.settling)) footing.reset();
+        if (stridePace > 0.01 || legs > 0.01 || footing.settling) {
+          // Setting off and stopping, the stride itself grows and dies away with the pace: a planted foot stays planted.
+          actPose('walk', { t: time, aim: null, stride, gait, step, pace: stridePace, calm, role: who, legs: rig.legs,
+            feet: { footing, x, z, yaw: yaw(face), height: rig.height, dt } }, walking);
+          const weight = Math.min(1, stridePace);
           const acting = !['stand', 'watch', 'look', 'walk'].includes(state.act);
-          // An offer, a drawing or a mug keeps its hands and torso in the act.
-          for (const joint of ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'bounce'] as const) pose[joint] += (walking[joint] - pose[joint]) * legs;
+          // An offer, a drawing or a mug keeps its hands and torso in the act; the hips go with the legs whatever the hands do.
+          for (const joint of STRIDING) pose[joint] += (walking[joint] - pose[joint]) * legs;
           if (!acting) {
-            pose.lean += (walking.lean - pose.lean) * weight;
+            for (const joint of CARRIED) pose[joint] += (walking[joint] - pose[joint]) * weight;
             if (!state.holdsLeft && state.holds !== 'drawing') {
               pose.armL += (walking.armL - pose.armL) * weight;
               pose.elbowL += (walking.elbowL - pose.elbowL) * weight;
+              pose.wristL += (walking.wristL - pose.wristL) * weight;
             }
             if (!state.holds && state.holdsLeft !== 'drawing') {
               pose.armR += (walking.armR - pose.armR) * weight;
               pose.elbowR += (walking.elbowR - pose.elbowR) * weight;
+              pose.wristR += (walking.wristR - pose.wristR) * weight;
             }
           }
-          if (pace > 0.01) pose.seat = null;
+          if (stridePace > 0.01) pose.seat = null;
         }
         // What is asked for, turned towards from what was drawn: a new act, a glance, setting off or stopping
         // never snaps a limb. Paused, the body holds what was drawn.

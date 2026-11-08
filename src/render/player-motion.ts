@@ -1,7 +1,7 @@
 import { BoxGeometry, CapsuleGeometry, ConeGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3 } from 'three';
 import { CLIMB_SPEED, JUMP_SPEED, RUN_AFTER, RUN_SPEED } from '../sim/constants';
 import type { PlayerState } from '../sim/types';
-import { blendPose, createSway, plantFeet, STANDING, type Pose } from './rig';
+import { blendPose, createSway, JOINTS, plantFeet, STANDING, type Pose } from './rig';
 import { createArmContact } from './arm-contact';
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
@@ -22,7 +22,6 @@ export const IDLES = { look: 4.4, rock: 3.6, scratch: 2.8, leaf: 3.8, tap: 3.2, 
 export type IdleAct = keyof typeof IDLES;
 /** The first idle begins this long after he stops, and a stretch only after this long a wait. */
 const FIRST = 3.4, STRETCH = 18;
-const JOINTS = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'legL', 'legR', 'kneeL', 'kneeR', 'spread', 'twist', 'footL', 'footR'] as const;
 
 /**
  * The thigh and knee that lift a heel by tipping the boot `tip` (< 0) about its toe, which stays where it stood: the

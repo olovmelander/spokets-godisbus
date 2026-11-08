@@ -1,6 +1,6 @@
 import { actPose, stepLength } from './acting';
 import { seeded } from './player-motion';
-import { heightOf, STANDING, type Pose, type Role } from './rig';
+import { heightOf, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
 
 const smooth = (t: number) => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
 const UPPER = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR', 'spread'] as const;
@@ -74,7 +74,7 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
     /** What they do while they wait, if anything. */
     get waiting(): Waiting | null { return act; },
     update(dt: number, clock: number, joy: number, towards: number, carryX: number | null, calm: boolean,
-      look?: { ahead: number; up: number }, help?: { ready: boolean; near: boolean }): Pose {
+      look?: { ahead: number; up: number }, help?: { ready: boolean; near: boolean }, legs: Legs = REHEARSAL_LEGS): Pose {
       if (dt <= 0) return pose;
       const close = help?.near ? 1 : 0;
       presence = calm ? close : presence + (close - presence) * -Math.expm1(-dt * 5);
@@ -97,8 +97,8 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
         // Steps of his own length at the pace he carries Elof (acting.ts): the planted boot stays put. Stopping, his
         // steps keep their length while the pace dies away.
         if (want > 0) carrying = distance / dt / tall;
-        if (want > 0) walked += distance / stepLength(Math.max(carrying, 0.3), tall);
-        actPose('walk', { t: clock, aim: null, stride: walked, gait: carrying, pace: pace * 0.65, calm }, pose);
+        if (want > 0) walked += distance / stepLength(Math.max(carrying, 0.3), tall, legs);
+        actPose('walk', { t: clock, aim: null, stride: walked, gait: carrying, pace: pace * 0.65, calm, role: who, legs }, pose);
         // Keep the supporting forearms raised while the chest eases into a step.
         pose.armL = pose.armR = 1.85 + pose.lean;
         pose.elbowL = pose.elbowR = 0.55;
