@@ -563,6 +563,14 @@ const SOAR: Record<Soarer, { size: number; up: readonly [number, number]; z: rea
 };
 /** The window of the world, round the camera, where each keeps its place: it is put anew only when it wraps, out of sight. */
 const SKY_SPAN = { raven: 60, crow: 56, bat: 34 } as const;
+/** `?soar` brings them over the middle of the picture as the view starts, to look at them (as `?life=` does the far life). */
+function soarHere(): boolean {
+  try {
+    return new URLSearchParams(globalThis.location?.search ?? '').has('soar');
+  } catch {
+    return false;
+  }
+}
 
 function soarers(plan: Plan, add: Add): Kind {
   if (!plan.soarers.length) return null;
@@ -583,10 +591,12 @@ function soarers(plan: Plan, add: Add): Kind {
     return { kind, crowd, own, all, ground: NaN };
   });
   const wrap = (v: number, span: number) => ((v % span) + span) % span;
+  let asked = soarHere();
   return (now) => {
     for (const f of flights) {
       const { kind, crowd, own } = f;
       const span = SKY_SPAN[kind];
+      if (asked) for (const [i, one] of f.all.entries()) one.k = now.cx + span / 2 - one.drift * now.t + (kind === 'bat' ? (i - 1) * 4 : 0);
       // The ground under the camera, slowly followed: they keep to the sky over the place, not over each step he takes.
       const under = plan.ground(now.cx);
       f.ground = Number.isNaN(f.ground) || now.still ? under : f.ground + (under - f.ground) * Math.min(1, now.dt * 0.5);
@@ -627,6 +637,7 @@ function soarers(plan: Plan, add: Add): Kind {
         crowd.pose(i, beating ? 0.85 * Math.sin(t * own.beat + one.phase * 5) : -0.12, 1, 0, 0);
       }
     }
+    asked = false;
   };
 }
 

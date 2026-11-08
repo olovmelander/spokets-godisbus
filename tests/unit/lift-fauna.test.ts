@@ -172,6 +172,22 @@ describe('the near life', () => {
     }
   });
 
+  it('brings its ravens over the middle of the picture with ?soar, to look at them', () => {
+    vi.stubGlobal('location', { search: '?debug&soar' });
+    try {
+      const chapter = COURSES.berget!;
+      const scene = new Scene();
+      const dressing = dress(chapter, PLACES.mountain);
+      scene.add(dressing.group);
+      const extra = createFauna({ chapter, scene, sky: new Color(), hemisphere: new HemisphereLight(), sun: new DirectionalLight(), place: PLACES.mountain, dressing: dressing.group })!;
+      extra.update(frame(chapter, 110, 3));
+      const ravens = scene.getObjectByName('fauna')!.children.find((c) => c.name === 'fauna-soarers:raven') as InstancedMesh;
+      expect(ravens.visible).toBe(true);
+    } finally {
+      vi.stubGlobal('location', undefined);
+    }
+  });
+
   it('hides in the storm: only birds sheltering on branches, and the owls', () => {
     for (const chapter of ADVENTURE2.filter((c) => c.storm?.rain)) {
       const plan = built.get(chapter.id)!.plan;
