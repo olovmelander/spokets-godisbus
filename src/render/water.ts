@@ -318,6 +318,29 @@ export interface WaterSetting {
   street?: (x: number) => number;
   /** A street's puddle mirrors its far side: the street paints it (village.ts `paintStreetMirror`), at its x and y. */
   stands?: (c: CanvasRenderingContext2D, column: (x: number) => number, row: (y: number) => number) => void;
+  /**
+   * Where the simulation has ground that stands in the water: a lake's jetty (./dressing/ground.ts, `jettiesOf`). The
+   * lake is drawn under it, as one with the pools it meets, at their level; the simulation's water is not touched.
+   */
+  under?: readonly { from: number; to: number }[];
+}
+
+/** The pools as drawn: the simulation's, and the water under a jetty as one with the pools it meets, at their level. */
+export function drawnPools(pools: readonly { from: number; to: number; y: number }[], under: readonly { from: number; to: number }[] = []) {
+  const out = pools.map((pool) => ({ ...pool }));
+  for (const stretch of under) {
+    const meets = pools.find((pool) => Math.abs(pool.to - stretch.from) < 0.5 || Math.abs(pool.from - stretch.to) < 0.5);
+    if (meets) out.push({ from: stretch.from, to: stretch.to, y: meets.y });
+  }
+  if (out.length === pools.length) return out;
+  out.sort((a, b) => a.from - b.from);
+  const merged: { from: number; to: number; y: number }[] = [];
+  for (const pool of out) {
+    const last = merged[merged.length - 1];
+    if (last && last.y === pool.y && pool.from <= last.to + 0.5) last.to = Math.max(last.to, pool.to);
+    else merged.push({ ...pool });
+  }
+  return merged;
 }
 
 interface FarCard { card: Mesh; map: Texture; z: number; every: number; tall: number; eye: number }
@@ -455,7 +478,7 @@ function nothingFar(): DataTexture {
  */
 export function createWater(chapter: ChapterData, look: { colour: string; opacity: number; face?: number } | null, sun: readonly [number, number, number] = [-7, 5, -4], setting: WaterSetting = {}) {
   const group = new Group();
-  const pools = chapter.river ? joined(chapter.water ?? []) : chapter.water ?? [];
+  const pools = drawnPools(chapter.river ? joined(chapter.water ?? []) : chapter.water ?? [], setting.under);
   const kind = chapter.river ? RIVER : waterKind(setting.place ?? chapter.place, look !== null);
   const details = { value: 0 }, time = { value: 0 };
   // A puddle in the street mirrors what stands across it: as far to each side as the camera can see it in it.

@@ -3,6 +3,8 @@ import { BufferGeometry, DoubleSide, Float32BufferAttribute, Mesh, MeshBasicMate
 import { describe, expect, it } from 'vitest';
 import { flarken } from '../../src/content/aventyr2/chapters/flarken';
 import { building } from '../../src/content/aventyr2/buildings';
+import { bankShapes, jettiesOf } from '../../src/render/dressing/ground';
+import { drawnPools } from '../../src/render/water';
 
 /**
  * Flärkenbadet's tower and huts as Blender baked them (art/blender/flarken.py, art/baked/aventyr2/flarken.glb): where
@@ -117,5 +119,42 @@ describe('Flärkenbadet, made in Blender', () => {
       expect(-hut.z - rail!.z).toBeGreaterThan(0);
       expect(-hut.z - rail!.z).toBeLessThan(0.2);
     }
+  });
+});
+
+describe('Flärken\'s jetty, standing in the lake', () => {
+  const jetties = jettiesOf(flarken, 'shore');
+  const lake = flarken.water!.find((w) => w.from === 144)!;
+
+  it('draws the lake under the jetty, as one with the water it meets, and leaves the simulation\'s water as it is', () => {
+    expect(jetties.map((j) => [j.from, j.to])).toEqual([[113, 144], [150, 154], [159.6, 173.4], [178, 191]]);
+    const drawn = drawnPools(flarken.water!, jetties);
+    // The puddle and the first pools as they were; the lake from the jetty's foot to its end, one water.
+    expect(drawn[0]).toEqual(flarken.water![0]);
+    expect(drawn.find((w) => w.from === 113)).toEqual({ from: 113, to: 191, y: lake.y });
+    expect(drawnPools(flarken.water!)).toEqual(flarken.water);
+    // A chapter with no jetty draws the pools it has.
+    expect(jettiesOf(flarken, 'sphagnum')).toEqual([]);
+  });
+
+  it('has only the jetty\'s side above the water: in front of the planks and behind them is the lake, and no block under it', () => {
+    const jetty = bankShapes(flarken, 'shore').filter(({ kind }) => kind === 'shoreRidge');
+    expect(jetty.length).toBe(jetties.length);
+    let seen = 0;
+    for (const { shape } of jetty) {
+      const at = shape.getAttribute('position');
+      for (let i = 0; i < at.count; i++) {
+        const [x, y, z] = [at.getX(i), at.getY(i), at.getZ(i)];
+        if (!jetties.some((j) => x > j.from + 0.5 && x < j.to - 0.5)) continue;
+        seen++;
+        // Nothing of it stands out of the water past the planks' sleepers, in front or behind.
+        if (Math.abs(z) > 1.47) expect(y, `x ${x}, z ${z}`).toBeLessThan(lake.y);
+        // And it goes down into the water no further than its planks stand over it, where the waves have pushed them
+        // down: no face falls away into the dark under the jetty.
+        expect(y, `x ${x}, z ${z}`).toBeGreaterThan(lake.y - 1);
+        expect(Math.abs(z)).toBeLessThan(1.6);
+      }
+    }
+    expect(seen).toBeGreaterThan(100);
   });
 });

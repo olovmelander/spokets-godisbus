@@ -33,6 +33,7 @@ import { observeGpu, type GpuMemory } from './gpu-memory';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
+import { jettiesOf } from './dressing/ground';
 import { drawn } from './dressing/kit';
 import { createSky } from './dressing/sky';
 import type { LifeAsk } from './life';
@@ -431,6 +432,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const water = createWater(chapter, place?.water ?? null, place?.sun.from,
     place && dressing ? {
       place: place.id, sky: place.sky, far: farCards, street: (x) => heightOfGroundAt(chapter, x),
+      // The lake under a jetty, where the simulation has ground: the jetty stands in it.
+      ...(place.ground ? { under: jettiesOf(chapter, place.ground) } : {}),
       ...(chapter.street ? { stands: (c: CanvasRenderingContext2D, column: (x: number) => number, row: (y: number) => number) => paintStreetMirror(chapter, c, column, row) } : {}),
     } : undefined);
   // It is drawn in the scene's own pass, after what stands in it and the far layers, and before what
