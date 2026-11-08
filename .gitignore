@@ -30,8 +30,9 @@ scratch/
 # Written by scripts/build-assets.mjs from art/baked/
 /public/packs/
 
-# Rebuilt from art/blender/big-candy.py. A .blend stores the full path it was saved to.
+# Rebuilt from art/blender/big-candy.py and art/blender/motion.py. A .blend stores the full path it was saved to.
 /art/blender/big-candy.blend
+/art/blender/motion.blend
 
 # Local iteration renders; only approved contact sheets are committed
 /docs/shots/_work/

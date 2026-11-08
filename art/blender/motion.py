@@ -8,13 +8,12 @@ the body follows these curves.
 
 Run it inside Blender, after a first line that sets where the game's table goes:
     OUT = r'C:/.../src/render/motion-data.ts'
-and, to see the curves on the family's own bodies, where the private repository is checked out (art/private):
-    MODELS = r'C:/.../art/private/baked/private'
 Headless, in a cloud session or on Olov's computer:
     blender -b --factory-startup --python-expr "OUT=r'src/render/motion-data.ts'; exec(open('art/blender/motion.py').read())"
 or, with the bpy 5.2 module:  python -c "OUT='src/render/motion-data.ts'; exec(open('art/blender/motion.py').read())"
-Saved as art/blender/motion.blend (which git ignores), the keys can be opened, looked at in the Graph Editor and moved;
-running this script again keys them afresh from the tables below, so a change that should last goes into the tables.
+With SAVE = r'C:/.../art/blender/motion.blend' set too (git ignores it), the keys are saved there, to be opened, looked at
+in the Graph Editor and moved; running this script again keys them afresh from the tables below, so a change that should
+last goes into the tables. The game's own page for looking at the motion is dev/motion.html (`npm run dev`).
 
 How the keys are read:
 - A stride is two steps, and its keys are at a share of it, 0 to 1: the left heel comes down at 0, the right at 0.5.
@@ -35,8 +34,8 @@ import bpy
 
 FRAMES = 48         # keyed frames in a stride: Blender's timeline for one cycle
 SAMPLES = 96        # samples of each curve for its series
-HARMONICS = 4       # terms of a body curve's series
-FOOT_HARMONICS = 9  # the foot's pitch has sharp corners: more terms
+HARMONICS = 3       # terms of a body curve's series
+FOOT_HARMONICS = 8  # the foot's pitch has sharp corners: more terms
 
 # --- the walks and runs ------------------------------------------------------------------------------------------------
 # Scalars, then curves. A curve is (symmetry, keys): keys are (share, value). Lengths are shares of the height.
@@ -268,7 +267,8 @@ def keyed(name, table, channels=None, scalars=None):
 
 
 def series(curve, terms, offset):
-    """The Fourier series of a keyed cycle, as the game reads it: in radians of its phase, starting at `offset`."""
+    """The Fourier series of a keyed cycle, as the game reads it: in radians of its phase, starting at `offset`. Terms too
+    small to see (under a thousandth) are left off its end."""
     values = [curve.evaluate(i * FRAMES / SAMPLES) for i in range(SAMPLES)]
     out = [sum(values) / SAMPLES]
     for k in range(1, terms + 1):
@@ -278,11 +278,13 @@ def series(curve, terms, offset):
             a += value * math.cos(k * x)
             b += value * math.sin(k * x)
         out += [2 * a / SAMPLES, 2 * b / SAMPLES]
+    while len(out) > 1 and abs(out[-1]) < 0.0005:
+        out.pop()
     return out
 
 
 def number(value):
-    text = '%.4f' % value
+    text = '%.3f' % value
     text = text.rstrip('0').rstrip('.') if '.' in text else text
     text = text.replace('0.', '.', 1) if text.startswith('0.') else text.replace('-0.', '-.', 1)
     return '0' if text in ('', '-0', '.', '-.') else text
@@ -297,7 +299,7 @@ for who, gaits in GAITS.items():
         fields = ['%s: %s' % (scalar, number(table[scalar])) for scalar in SCALARS]
         for channel in CHANNELS:
             # The stride's phase is 0 at the left heel strike (src/render/gait.ts), as is a foot's own cycle.
-            terms, offset = (FOOT_HARMONICS, 0.0) if channel in ('pitch', 'give') else (HARMONICS, 0.0)
+            terms, offset = (FOOT_HARMONICS if channel == 'pitch' else 5, 0.0) if channel in ('pitch', 'give') else (HARMONICS, 0.0)
             fields.append('%s: [%s]' % (channel, ', '.join(number(v) for v in series(curves[channel], terms, offset))))
         parts.append('    %s: { %s },' % (gait, ', '.join(fields)))
     lines.append('  %s: {\n%s\n  },' % (who, '\n'.join(parts)))
@@ -376,3 +378,8 @@ out.write(text)
 with bpy.context.temp_override(edit_text=out):
     bpy.ops.text.save_as(filepath=OUT, check_existing=False)  # noqa: F821 (set by the caller, see above)
 print('motion: wrote', OUT)  # noqa: F821
+
+# The keys, to look at in the Graph Editor: SAVE = r'C:/.../art/blender/motion.blend' (git ignores it) keeps them.
+if 'SAVE' in globals():
+    bpy.ops.wm.save_as_mainfile(filepath=SAVE)  # noqa: F821 (set by the caller, see above)
+    print('motion: saved', SAVE)  # noqa: F821

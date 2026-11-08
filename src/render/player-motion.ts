@@ -2,6 +2,11 @@ import { BoxGeometry, CapsuleGeometry, ConeGeometry, Group, Mesh, MeshStandardMa
 import { CLIMB_SPEED, JUMP_SPEED, RUN_AFTER, RUN_SPEED } from '../sim/constants';
 import type { PlayerState } from '../sim/types';
 import { blendPose, createSway, JOINTS, plantFeet, STANDING, type Pose } from './rig';
+import { wave as series, type Gait, type Series } from './gait';
+import { GAITS } from './motion-data';
+
+/** A small boy's stride, as Bertil's is keyed: Elof's hips, trunk and hands go with it. */
+const BOY = GAITS.bertil;
 import { createArmContact } from './arm-contact';
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
@@ -282,6 +287,19 @@ export function createPlayerMotion() {
         target.legL += 0.4 * going; target.legR += 0.4 * going;
         target.kneeL += 0.45 * Math.max(0, -going); target.kneeR += 0.45 * Math.max(0, -going);
         target.lean -= 0.08 * going;
+      }
+      if (walking && !player.atEdge && pace > 0 && !calm) {
+        // The hips, trunk, head and hands go with his stride as the family's do (./gait.ts, keyed in Blender for a small
+        // boy): over the standing foot and tipped away from the swinging one, the head level against it, the hands trailing.
+        // His left heel comes down a quarter turn on from the family's.
+        const run = smooth((pace - 0.35) / 0.65), at = phase - Math.PI / 2, k = Math.min(1, pace * 1.6);
+        const curve = (pick: (g: Gait) => Series, x: number) => series(pick(BOY.walk), x) * (1 - run) + series(pick(BOY.run), x) * run;
+        target.sway += curve((g) => g.sway, at) * 5.2 * k;
+        target.hipRoll += curve((g) => g.roll, at) * k;
+        target.bendSide += curve((g) => g.side, at) * k;
+        target.tilt += curve((g) => g.tilt, at) * k;
+        target.wristL += curve((g) => g.wrist, at) * k;
+        target.wristR += curve((g) => g.wrist, at + Math.PI) * k;
       }
       if (walking && !player.atEdge) {
         // Lean into a start or a change of direction; plant and soften both knees while stopping.

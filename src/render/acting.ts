@@ -314,7 +314,11 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       const k = rise(r, .34), settle = c.calm ? 0 : rise(r - 1.45, .8);
       out.armR += (2.45 * energy - out.armR) * k;
       out.armR += (.48 - out.armR) * settle;
-      out.elbowR = .6 + .45 * settle + .26 * Math.sin(r * 9) * loop * k * (1 - rise(r - 1.2, .7));
+      const waving = loop * k * (1 - rise(r - 1.2, .7));
+      out.elbowR = .6 + .45 * settle + .26 * Math.sin(r * 9) * waving;
+      // The hand follows the forearm a moment late, and the head tips, friendly; the body leans a little off the raised arm.
+      out.wristR = .3 * Math.sin(r * 9 - 1) * waving || 0;
+      out.tilt = .09 * k * (1 - settle); out.bendSide = .04 * k * (1 - settle);
       look(out, c);
       return out;
     }
@@ -325,6 +329,10 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       out.armL = (2.75 - 1.9 * settle) * rise(r - .08, .3);
       out.elbowL = .25 + .55 * settle; out.elbowR = .25 + .4 * settle;
       out.bounce = loop * Math.sin(r * 7.5) ** 2 * .2 * energy * rise(r, .16) * smooth((1.6 - r) / .35);
+      // Down into the knees before the first hop, and the hands open up high.
+      const dip = loop * pulse(r, 0, .08, 0, .14);
+      out.kneeL = out.kneeR = .35 * dip; out.legL = out.legR = .17 * dip;
+      out.wristL = out.wristR = -.3 * k * (1 - settle) || 0;
       return out;
     }
     case 'shine': {
@@ -414,6 +422,9 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       out.spread = 0.35 * k;
       out.bounce = 0;
       out.nod = -0.1 * k;
+      // The palms turn up and the head tips: who knows?
+      out.wristL = out.wristR = -.45 * k || 0;
+      out.tilt = .12 * k;
       return out;
     }
     case 'hug': {
@@ -431,6 +442,7 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       under();
       look(out, c);
       out.nod += c.calm ? .18 : energy * (.22 * pulse(r, .05, .18, .04, .28) + .09 * pulse(r, .57, .15, 0, .24));
+      out.tilt = c.calm ? .05 : .07 * pulse(r, .02, .25, .3, .4);
       return out;
     }
     case 'startle': {
@@ -442,6 +454,8 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       out.elbowL = (1.1 - .55 * settle) * k;
       out.lean -= .16 * k * (1 - settle);
       out.bounce = loop * .17 * energy * Math.sin(Math.min(1, r / .35) * Math.PI) ** 2;
+      // The hands fly open.
+      out.wristL = out.wristR = -.5 * k * (1 - settle) || 0;
       look(out, c);
       return out;
     }
