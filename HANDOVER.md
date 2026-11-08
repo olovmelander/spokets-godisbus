@@ -1,5 +1,60 @@
 # Handover
 
+## State (8 November 2026, afternoon)
+
+- **Everyone's motion, made in Blender and fitted to the family's own bodies (Olov: "Nu måste du verkligen se till att
+  alla karaktärer rörelser, animationer är smooth och naturliga … som i ett AAA spel. Så använd blender", and then "Ni
+  måste kolla och använda familjens riktiga mer detaljerade kroppar"), cloud session, branch `ccr-8d5cd827-ertmai`.**
+  - **On the real bodies.** The private repository was cloned into the session (linked as `art/private`, never
+    committed), and every check was made on the real Pappa, Mamma, Moa, Bertil, Mormor, Morfar and Elof. Their legs are
+    0.30 to 0.38 of their height, where the stride was counted for the stand-in's 0.49: their boots slid about a quarter
+    of every step, and the steps were too long for their legs. Every rig now measures its own legs (`Rig.legs`).
+  - **Blender** (`art/blender/motion.py`, run with the `bpy` 5.2.3 module, the same LTS as Olov's): each person's walk
+    and run, how each of them stands, and going down on a knee are keyed there as Blender Bezier curves, one Empty per
+    person and gait, from written pose lists, and sampled into `src/render/motion-data.ts`. With `SAVE` set, the keys
+    are saved to `art/blender/motion.blend` (ignored by git) for the Graph Editor.
+  - **The stride** (`src/render/gait.ts`). The feet are placed and the legs reach them (two-bone IK on each body's own
+    measures): the heel strikes, the foot rolls flat, the heel lifts about the toe, the toe pushes off and the foot swings
+    through clear of the ground. The hips are lowest as the weight comes on and the knee gives; they go over the standing
+    foot and tip away from the swinging one; the trunk turns against them, the head stays level, the arms swing with the
+    elbow following and the hand trailing. A run has its flight. Pappa walks easy and loose, Mamma lighter with more hip,
+    Moa springy, Bertil bouncy on a wide base.
+  - **Planted feet** (the footing in `gait.ts`). A foot that has come down stays where it is in the world until it lifts,
+    whatever the steps do; one too far behind rolls up onto its toe rather than being dragged. Setting off, the first step
+    is taken from where the feet stand; stopping, a last lifted step brings them together. An authored scene walk gives
+    each step its own fixed length, from heel strike to heel strike.
+  - **Standing** (`stand` in `gait.ts`). Everyone breathes, puts the weight on one leg and then the other (the other knee
+    easy, the shoulders against, the head level) and looks about, each in a rhythm of their own: Pappa slow and easy,
+    Mamma on a hip with her head tilted, Moa fidgety, Bertil restless, Mormor and Morfar stooped and slow. In scenes, at
+    the help points and for the grandparents. The weight and the trunk's side-bend ease over at most 1.5 a second, so a
+    new act or scene never jerks the hips.
+  - **Kneeling** (`CLIPS.kneel`). The weight over, a foot forward, down onto the other knee with a hand to it, and
+    settling; getting up is the same way back, handing over to the next act. Mormor and Morfar kneel to Elof the same way,
+    slower and more stooped (`CLIPS.kneelElder`).
+  - **The rig** has new joints in the pose: the hips' sway and roll, the trunk's side-bend, the head's tilt, the wrists
+    and the thighs' splay. A boot stays level across whatever its leg does. The stand-in's boots turn at the ankle, and it
+    stands exactly on its lowest boot corner.
+  - **Gestures:** the wave's hand follows the forearm a moment late and the head tips; a shrug turns the palms up; a
+    cheer dips into the knees before the first hop; a startle opens the hands; a nod tilts the head.
+  - **Elof:** his legs as before (Olov, 6 November: "Elof är redan bra"); his hips, trunk, head and hands now go with his
+    stride as the family's do.
+  - **Measured:** in a scene walk the planted boot slides less than 8 % of the way the body goes (the old limit was 15 %;
+    the test now measures the boot's actual heel and toe), about 2 % at a steady pace.
+  - **To look at it:** `npm run dev`, then `dev/motion.html?scene=walk` (or `acts`, `gestures`, `follow`, `grand`), with
+    `&who=pappa`, `&track&zoom=6` and `&view=three`. It plays the stage's own keys on the real models where the private
+    pack is there.
+  - **Content:** Moa steps a little further from the kitchen table in `prologue:mamma` (z 0.45, was 0.3), so that her
+    swinging hand clears its edge.
+  - **Checked:** typecheck, `npm test` (2,143; tests changed only where standing now shifts its weight, and the planted
+    boot test is stricter), `npm run build` (JS 548.6 of 550 KB, see "Frågor till Olov"), the privacy check, the browser
+    suites prologue (81), family-help (55), aventyr2 (42) and player-motion (its motion checks; the suite stops at this
+    sandbox's known Vite WebSocket error, CI runs it), and filmstrips of every motion on the real models (kept in the
+    session only).
+  - **Not done:** sitting down, standing up from a chair and crouching still blend between poses as before; a wave can't
+    hold the hand out beside the head, because the rig's `spread` turns an arm about the body's forward axis (a raised
+    arm goes in); Mormor and Morfar have no walk, as the story never has them walk.
+  - **The next step needs:** nothing from Olov's computer. Olov should judge the motion on the family devices.
+
 ## State (8 November 2026, morning)
 
 - **The two things left from the night (Olov: "Now continue with this!"), on Olov's computer.** Branch `djur-och-bron`.
@@ -4608,6 +4663,11 @@
 
 ## Next
 
+**The motion pass (8 November, afternoon), for Olov to judge on the family devices:** the family walking along behind
+Elof and in the prologue's scenes (feet that hold the ground, setting off and stopping), how they stand when nothing
+happens, Pappa kneeling in the prologue and getting up, Mormor and Morfar kneeling to Elof in Billsta and Stormens öga,
+and Elof's hips and hands as he runs. `dev/motion.html` shows each of them close up.
+
 **From the night's playthrough (8 November):** the bridge and Granskogen's animals are done (see the morning's state). Left:
 Gården's roe deer, which did not show at x 8 even in a red test ink.
 
@@ -4975,6 +5035,11 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Motion is keyed in Blender and played by the game's own code** (8 November 2026, at Olov's "använd blender"):
+  `art/blender/motion.py` keys each person's gaits, stands and clips as curves in the pose's own language and writes
+  `src/render/motion-data.ts`; the game places the feet with IK on each body's measured legs and layers looks, reaches
+  and grips on top. No glTF animation clips: they would be many times the size, and could not fit the feet to six
+  different bodies. This replaces 5 November's "Motion stays in the game's code, not in Blender clips".
 - **Moa's crayon map may draw mormor and morfar's house in Billsta** (Olov, 8 November 2026: "det är okej"). It has no
   coordinates; `docs/aventyr-2.md` no longer counts against it.
 - **"Spökets påse" stays** in Moa's and Elof's lines (Olov, 8 November 2026: "spökets påse låter bra"): the bag the
@@ -5046,6 +5111,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Everyone's motion in Blender (8 Nov, afternoon) | Olov's request: smooth, natural, AAA motion for the whole family and the grandparents, made with Blender, on their real bodies | 1 cloud session, Blender 5.2 as a Python module | — / 0 so far | Gaits, stands and kneeling keyed in Blender; a stride with IK on each body's measured legs, planted feet and a closing step; new hip, trunk, head, wrist and thigh joints; Elof's hips and hands. |
 | Six things from the site (8 Nov, morning) | Olov's request: the family's places in Stormkvällen, Pappa walking in the air, the old trägubbe, the raincoats, Olympia's puddle, two owls | 1 session on Olov's computer, with one helper agent | — / 0 so far | Stormkvällen's and Morgonen's family out of the table and chairs; a trail for the walk home; the new trägubbe in the crack, eyes when painted; one owl that waits and carries him; the puddle uncovered; the raincoats were a browser's old copy |
 | The night's playthrough (8 Nov, 00:00–03:30) | Olov's request: play both adventures through and fix what needs fixing | 1 session on Olov's computer, with three reading agents | — / 0 so far | Diary and objectives in both adventures, the helper, Billsta's gusts, Älven's vanishing Elof, Stormkvällen's black blob, the owl, Mormor's lantern, the title, Pause on a phone |
 | The roots and Moa's drawing (7 Nov, night) | Olov's request: make clear what happens when the ghost goes into the roots and what Moa dropped | Part of the same cloud session | — / 0 so far | A root hole the ghost creeps into, Moa kneeling at it, clearer lines, and her drawing seen to blow away; JS gate to 550 KB. |
@@ -5231,6 +5297,13 @@ The older list, still true where it is not struck:
 
 ## Notes for sessions that drive Blender
 
+- **Blender 5.2 in a cloud session** (8 November 2026): `python3 -m venv …; pip install "bpy==5.2.*"` works on the
+  sandbox's Python 3.13 (about 400 MB), and runs a script headless with
+  `python -I -c "OUT='…'; exec(open('art/blender/motion.py').read())"`. Don't name a scratch script after a standard
+  module (`inspect.py`): `bpy` imports it instead, and aborts with "InitGoogleLogging() twice". The browser suites need
+  Playwright 1.56.1's headless shell, which the sandbox lacks; a link from
+  `/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell` to the preinstalled
+  `chromium_headless_shell-1243` binary lets them run.
 - **Telemetry.** The add-on that was installed in Olov's Blender had its own consent setting switched on, as its
   default. On 3 October a session switched it off (`telemetry_consent = False` in the add-on's preferences) and
   saved Blender's preferences. Nothing was uploaded by these sessions in any case: with `DISABLE_TELEMETRY=true`
@@ -5263,7 +5336,8 @@ The older list, still true where it is not struck:
 ## Senare (wishes for a later release)
 
 - Hands with shaped fingers, finer hair on Moa and Mamma, and the family's bodies closer to the sheets' clothes: pockets, seams, a belt.
-- Authored walk and run clips in Blender, if the poses in code are not enough.
+- Sitting down and standing up from a chair, and crouching, keyed in Blender as the kneel is (`CLIPS` in
+  `art/blender/motion.py`); a wave with the hand out beside the head, which needs an arm's own outward turn in the rig.
 - Äventyr 2's own hidden candy kinds and stickers (its chapters have none, so the album's totals and the golden
   geléhallon of Äventyr 1 keep their meaning). (Moa's map of its places was built on 4 November.)
 - Äventyr 2 from real pictures: Olympia, Flärkenbadet and Billsta are built from the research text and, for
@@ -5280,6 +5354,8 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
+- JavaScript-budgeten är nästan full: 548,6 av 550 KB efter rörelserna. Vill du höja den, som du gjorde för grafiken (till
+  exempel till 560 KB)? Inget blockeras nu, men nästa större kodändring får inte plats.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
