@@ -1,7 +1,7 @@
 import type { Act } from '../sim/scene';
 import { groundedHips, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
 import { carvingAt } from './carving-motion';
-import { play, stand, stepOf, stride, type Footing } from './gait';
+import { play, seated, stand, stepOf, stride, type Footing } from './gait';
 import { CLIPS, GAITS, STANDS } from './motion-data';
 
 /**
@@ -36,6 +36,8 @@ export interface ActContext {
   feet?: { footing: Footing; x: number; z: number; yaw: number; height: number; dt: number };
   /** A clock that runs on through acts, for the loop of how someone stands (./gait.ts stand). Left out: `t`. */
   clock?: number;
+  /** Seated, how high the hips are, in the body's heights: on its own chair (./gait.ts seated). Left out: an adult's. */
+  seat?: number;
 }
 
 /** The body's stance under an act that only uses its arms and head. */
@@ -136,11 +138,9 @@ function handAlong(p: Pose, from: { ahead: number; up: number }, ahead: number, 
 /** Where a standing adult's chest is, from the feet: the hands come here to hold something before them. */
 const CHEST = 3.55;
 
-/** The body sitting on a chair. */
-export function sitting(p: Pose): Pose {
-  p.legL = p.legR = 1.5;
-  p.kneeL = p.kneeR = 1.45;
-  p.seat = 1.5;
+/** The body sitting on a chair, its feet flat on the floor in front of it whatever the length of its legs. */
+export function sitting(p: Pose, legs?: Legs, seat?: number): Pose {
+  seated(p, legs, seat);
   p.lean = 0.12;
   handTo(p, 1.0, 2.15, 0);
   handTo(p, 1.0, 2.15, 1);
@@ -214,7 +214,7 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
   // A reduced-motion act holds its completed, readable pose; authored keys still decide when acts change.
   const t = c.calm ? 3 : Math.max(0, c.t);
   const r = t * timing(c.role), energy = weight(c.role);
-  const under = () => (stance === 'sit' ? sitting(out) : stance === 'kneel' ? kneeling(out) : stance === 'crouch' ? crouching(out) : out);
+  const under = () => (stance === 'sit' ? sitting(out, c.legs, c.seat) : stance === 'kneel' ? kneeling(out) : stance === 'crouch' ? crouching(out) : out);
   switch (act) {
     case 'stand':
     case 'watch':
@@ -228,11 +228,11 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
     case 'walk':
       return walking(out, c);
     case 'sit':
-      sitting(out);
+      sitting(out, c.legs, c.seat);
       look(out, c);
       return out;
     case 'carve': {
-      sitting(out);
+      sitting(out, c.legs, c.seat);
       const carving = carvingAt(c.t, c.calm);
       out.nod = carving.nod;
       out.lean = carving.lean;
@@ -241,7 +241,7 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       return out;
     }
     case 'draw': {
-      sitting(out);
+      sitting(out, c.legs, c.seat);
       const pen = drawingAt(c.t, c.calm, c.role);
       out.nod = .55 - .18 * pen.inspect;
       out.lean = .3 - .055 * pen.inspect;

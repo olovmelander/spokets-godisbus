@@ -36,6 +36,25 @@
     stands exactly on its lowest boot corner.
   - **Gestures:** the wave's hand follows the forearm a moment late and the head tips; a shrug turns the palms up; a
     cheer dips into the knees before the first hop; a startle opens the hands; a nod tilts the head.
+  - **The wave and the chair** (Olov, later the same afternoon: "Fortsätt med stolen och vinkningen, och gör en PR,
+    mergea sedan allt till main!"):
+    - **The wave** holds the hand up beside the head: each arm has its own outward turn in the rig (`outL`, `outR`),
+      applied in the arm's own frame after its swing, where `spread` turned a raised arm in towards the head.
+    - **Getting up from a chair** (`CLIPS.standUp`, half a second, keyed in Blender): the chair is pushed back from the
+      table with the body on it, the feet drawn in under the seat onto their balls; the body leans well over them and
+      comes forward and up over feet that stay where they were put, the heels coming down, and stands where it sat with
+      the chair behind it. It used to rise straight up with the feet sliding back under it, and stood inside the chair.
+      **Sitting down** (`CLIPS.sitDown`, 0.8 s) is the way back: down over the feet onto the seat behind, then in to the
+      table with the chair. The clips key the hips' way (`tuck`, `heel`, `over`, `rise`) and where the body stands
+      (`planted`); the legs reach the floor from there by IK on each body's own legs (`seated`, `chairPose` in
+      `gait.ts`). Each chair goes with whoever a scene seats nearest it, and stays pushed back once they are up. In
+      reduced motion the chair slides back over the old blend, without the clip.
+    - **Seated**, the feet are flat on the floor, the shins upright, for every body (they hung a little above it), and
+      each sits on their own chair's height: Moa and Bertil sat 0.3 and 0.5 EL down in the seat, because the hips'
+      height was scaled with their size. Bertil's stand-in's feet hang, as a small boy's do on a grown-up's chair.
+    - Checked on the real models, close up in the lab and in the prologue's kitchen (`vaknar`, `prologue:mamma`):
+      Pappa pushes up off the table edge, Moa pushes off its end. `tests/unit/chair-stage.test.ts` holds the feet,
+      the chair and the seat.
   - **Elof** (Olov, during the session: "Förbättra elofs rörelser också om de kan förbättras"): his style, step and
     cadence as before. His planted leg now goes back under him in a straight line (an arc skated the foot forward at each
     end of the step and back in the middle), and on his own model, whose legs are shorter than the stride's measure, the
@@ -45,9 +64,10 @@
     waiting he shifts his weight from one leg to the other under his own little idles.
   - **Measured:** in a scene walk the planted boot slides less than 8 % of the way the body goes (the old limit was 15 %;
     the test now measures the boot's actual heel and toe), about 2 % at a steady pace.
-  - **To look at it:** `npm run dev`, then `dev/motion.html?scene=walk` (or `acts`, `gestures`, `follow`, `grand`,
-    `elof`), with `&who=pappa`, `&track&zoom=6` and `&view=three`. It plays the stage's own keys (and Elof's own motion) on
-    the real models where the private pack is there.
+  - **To look at it:** `npm run dev`, then `dev/motion.html?scene=walk` (or `acts`, `chair`, `gestures`, `follow`,
+    `grand`, `elof`), with `&who=pappa`, `&track&zoom=6` and `&view=three`. It plays the stage's own keys (and Elof's own
+    motion) on the real models where the private pack is there. `?story=vaknar` (any prologue scene's id) plays that
+    scene in its kitchen, with only those in `&who=` shown.
   - **The hips shift by the pelvis bone,** not by moving the model: the finale's private-model check found a shadow off
     the feet while the weight was shifted. A model without a pelvis does not shift.
   - **Content:** Moa steps a little further from the kitchen table in `prologue:mamma` (z 0.45, was 0.3), so that her
@@ -58,9 +78,8 @@
     suites prologue (81), family-help (55), aventyr2 (42), finale-stage (89), model-installation (47), family-caps (76, on
     the real models), family-story (8) and player-motion (its motion checks; the suite stops at this sandbox's known Vite
     WebSocket error, CI runs it), and filmstrips of every motion on the real models (kept in the session only).
-  - **Not done:** sitting down, standing up from a chair and crouching still blend between poses as before; a wave can't
-    hold the hand out beside the head, because the rig's `spread` turns an arm about the body's forward axis (a raised
-    arm goes in); Mormor and Morfar have no walk, as the story never has them walk.
+  - **Not done:** crouching down and up still blends between poses; Mormor and Morfar have no walk, as the story never
+    has them walk.
   - **The next step needs:** nothing from Olov's computer. Olov should judge the motion on the family devices.
 
 ## State (8 November 2026, morning)
@@ -4673,8 +4692,9 @@
 
 **The motion pass (8 November, afternoon), for Olov to judge on the family devices:** the family walking along behind
 Elof and in the prologue's scenes (feet that hold the ground, setting off and stopping), how they stand when nothing
-happens, Pappa kneeling in the prologue and getting up, Mormor and Morfar kneeling to Elof in Billsta and Stormens öga,
-and Elof's hips and hands as he runs. `dev/motion.html` shows each of them close up.
+happens, Pappa kneeling in the prologue and getting up, Pappa and Moa getting up from the kitchen table (the chairs go
+back), the waves, Mormor and Morfar kneeling to Elof in Billsta and Stormens öga, Bertil sitting at Morgonen's table
+(now on the seat, not in it), and Elof's hips and hands as he runs. `dev/motion.html` shows each of them close up.
 
 **From the night's playthrough (8 November):** the bridge and Granskogen's animals are done (see the morning's state). Left:
 Gården's roe deer, which did not show at x 8 even in a red test ink.
@@ -5124,7 +5144,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
-| Everyone's motion in Blender (8 Nov, afternoon) | Olov's request: smooth, natural, AAA motion for the whole family and the grandparents, made with Blender, on their real bodies | 1 cloud session, Blender 5.2 as a Python module | — / 0 so far | Gaits, stands and kneeling keyed in Blender; a stride with IK on each body's measured legs, planted feet and a closing step; new hip, trunk, head, wrist and thigh joints; Elof's hips and hands. |
+| Everyone's motion in Blender (8 Nov, afternoon) | Olov's request: smooth, natural, AAA motion for the whole family and the grandparents, made with Blender, on their real bodies; then the chair and the wave | 1 cloud session, Blender 5.2 as a Python module | — / 0 so far | Gaits, stands and kneeling keyed in Blender; a stride with IK on each body's measured legs, planted feet and a closing step; new hip, trunk, head, wrist and thigh joints; Elof's hips and hands; the wave beside the head; getting up from and sitting down on a chair over planted feet, the chair pushed back; everyone seated on the seat with their feet on the floor. |
 | Six things from the site (8 Nov, morning) | Olov's request: the family's places in Stormkvällen, Pappa walking in the air, the old trägubbe, the raincoats, Olympia's puddle, two owls | 1 session on Olov's computer, with one helper agent | — / 0 so far | Stormkvällen's and Morgonen's family out of the table and chairs; a trail for the walk home; the new trägubbe in the crack, eyes when painted; one owl that waits and carries him; the puddle uncovered; the raincoats were a browser's old copy |
 | The night's playthrough (8 Nov, 00:00–03:30) | Olov's request: play both adventures through and fix what needs fixing | 1 session on Olov's computer, with three reading agents | — / 0 so far | Diary and objectives in both adventures, the helper, Billsta's gusts, Älven's vanishing Elof, Stormkvällen's black blob, the owl, Mormor's lantern, the title, Pause on a phone |
 | The roots and Moa's drawing (7 Nov, night) | Olov's request: make clear what happens when the ghost goes into the roots and what Moa dropped | Part of the same cloud session | — / 0 so far | A root hole the ghost creeps into, Moa kneeling at it, clearer lines, and her drawing seen to blow away; JS gate to 550 KB. |
@@ -5349,8 +5369,8 @@ The older list, still true where it is not struck:
 ## Senare (wishes for a later release)
 
 - Hands with shaped fingers, finer hair on Moa and Mamma, and the family's bodies closer to the sheets' clothes: pockets, seams, a belt.
-- Sitting down and standing up from a chair, and crouching, keyed in Blender as the kneel is (`CLIPS` in
-  `art/blender/motion.py`); a wave with the hand out beside the head, which needs an arm's own outward turn in the rig.
+- Crouching down and getting up from a crouch, keyed in Blender as the kneel and the chair are (`CLIPS` in
+  `art/blender/motion.py`). (The chair and the wave were done on 8 November.)
 - Äventyr 2's own hidden candy kinds and stickers (its chapters have none, so the album's totals and the golden
   geléhallon of Äventyr 1 keep their meaning). (Moa's map of its places was built on 4 November.)
 - Äventyr 2 from real pictures: Olympia, Flärkenbadet and Billsta are built from the research text and, for

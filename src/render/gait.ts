@@ -400,24 +400,84 @@ export function stand(pose: Pose, t: number, stander: Stander, legs: Legs = REHE
   return pose;
 }
 
-/** A clip keyed in the pose itself (art/blender/motion.py CLIPS): each channel's keys as [seconds, value, slope, …]. */
-export type Clip = { readonly seconds: number } & { readonly [joint in keyof Pose]?: readonly number[] };
-
 /**
- * A clip at `t` seconds, over `out`: each keyed channel as Blender plays it between its keys (cubic, with each key's own
- * slope), held at its first and last values outside them. Channels it does not key are left as they are.
+ * A clip keyed in the pose itself (art/blender/motion.py CLIPS): each channel's keys as [seconds, value, slope, …].
+ * Getting up from a chair and sitting down on one keys the legs as shares (seated, below), and where the body stands:
+ * `planted`, 0 with its hips at its place, 1 with its feet there.
  */
+export type Clip = { readonly seconds: number }
+  & { readonly [channel in keyof Pose | 'planted' | 'tuck' | 'heel' | 'over' | 'rise']?: readonly number[] };
+
+/** One channel's keys at `t` seconds, as Blender plays them: cubic between keys, held at the first and last outside them. */
+export function sample(keys: readonly number[], t: number): number {
+  let i = 0;
+  while (i + 3 < keys.length && t > keys[i + 3]!) i += 3;
+  if (t <= keys[0]! || i + 3 >= keys.length) return keys[t <= keys[0]! ? 1 : i + 1]!;
+  const t0 = keys[i]!, v0 = keys[i + 1]!, s0 = keys[i + 2]!, t1 = keys[i + 3]!, v1 = keys[i + 4]!, s1 = keys[i + 5]!;
+  const h = t1 - t0, u = (t - t0) / h, u2 = u * u, u3 = u2 * u;
+  return (2 * u3 - 3 * u2 + 1) * v0 + (u3 - 2 * u2 + u) * h * s0 + (-2 * u3 + 3 * u2) * v1 + (u3 - u2) * h * s1;
+}
+
+/** A clip at `t` seconds, over `out`: each keyed channel as Blender plays it. Channels it does not key are left as they are. */
 export function play(clip: Clip, t: number, out: Pose): Pose {
-  for (const joint of JOINTS) {
+  for (const joint of [...JOINTS, 'seat', 'floor'] as const) {
     const keys = clip[joint];
-    if (!keys || keys.length < 3) continue;
-    if (t <= keys[0]!) { out[joint] = keys[1]!; continue; }
-    let i = 0;
-    while (i + 3 < keys.length && t > keys[i + 3]!) i += 3;
-    if (i + 3 >= keys.length) { out[joint] = keys[i + 1]!; continue; }
-    const t0 = keys[i]!, v0 = keys[i + 1]!, s0 = keys[i + 2]!, t1 = keys[i + 3]!, v1 = keys[i + 4]!, s1 = keys[i + 5]!;
-    const h = t1 - t0, u = (t - t0) / h, u2 = u * u, u3 = u2 * u;
-    out[joint] = (2 * u3 - 3 * u2 + 1) * v0 + (u3 - 2 * u2 + u) * h * s0 + (-2 * u3 + 3 * u2) * v1 + (u3 - u2) * h * s1;
+    if (keys && keys.length >= 3) out[joint] = sample(keys, t);
   }
   return out;
+}
+
+/** The hips' height on a kitchen chair, in an adult's heights: 1.5 of their 5.2. */
+export const SEAT = 1.5 / 5.2;
+/** How far the hips are over what they sit on, in heights: an adult's on a kitchen chair (src/render/stage.ts furniture). */
+export const SITTING_ON = SEAT - 1.31 / 5.2;
+/** How far the feet are drawn in under the seat to get up, from where they rest, in heights. */
+const TUCK = 0.09;
+/** How far a drawn-in heel comes up, the foot on its ball, in radians. */
+const HEEL_UP = 0.35;
+const seatFoot = { x: 0, y: 0 };
+
+/**
+ * The legs of a body on a chair, getting up from it or sitting down on it: the feet drawn `tuck` of the way in under the
+ * seat with the heels `heel` of the way up, the hips come `over` the feet and `rise` of the way up off the seat to
+ * standing. The legs reach the floor from there whatever their length, the shins upright at rest; a child whose feet do
+ * not reach it lets them hang. `seat` is the hips' height on the chair, in the body's heights; `width`, how far apart
+ * they stand (Stander.width): drawn in, the feet go to it. Writes the legs and the hips' height (`seat`, in an adult's
+ * units); returns how far ahead of the hips the feet are, in heights.
+ */
+export function seated(pose: Pose, legs: Legs = REHEARSAL_LEGS, seat = SEAT, tuck = 0, over = 0, rise = 0, heel = 0,
+  width = legs.width): number {
+  const thigh = legs.thigh, reach = legs.thigh + legs.shin;
+  // At rest the shins hang upright to the floor, the thighs no steeper than the seat lets them.
+  const rest = thigh * Math.sin(Math.acos(clamp((seat - legs.ankle - legs.shin) / thigh, -0.5, 0.36))) + 0.01;
+  const ahead = (rest - TUCK * tuck) * (1 - over), pitch = -HEEL_UP * heel;
+  rolled(ahead, pitch, legs, seatFoot);
+  // Up off the seat no higher than the legs reach the floor from, nearly straight.
+  const most = reach * 0.998;
+  const top = Math.sqrt(Math.max(0, most * most - seatFoot.x * seatFoot.x)) + seatFoot.y;
+  const hips = seat + Math.max(0, top - seat) * rise;
+  const out = (width - legs.width) * tuck;
+  reachWith(seatFoot.x, hips - seatFoot.y, out, pitch, legs, pose, 0);
+  reachWith(seatFoot.x, hips - seatFoot.y, out, pitch, legs, pose, 1);
+  // Feet that do not reach the floor hang from knees at the seat's edge, the toes down.
+  const hang = smooth((Math.hypot(seatFoot.x, hips - seatFoot.y) / reach - 1) / 0.05);
+  if (hang > 0) {
+    for (const [leg, knee, foot] of [['legL', 'kneeL', 'footL'], ['legR', 'kneeR', 'footR']] as const) {
+      pose[leg] += (1.42 - pose[leg]) * hang;
+      pose[knee] += (1.32 - pose[knee]) * hang;
+      pose[foot] += (-0.3 - pose[foot]) * hang;
+    }
+  }
+  pose.seat = hips * 5.2;
+  return ahead;
+}
+
+/**
+ * A chair clip at `t` seconds over `out` (play, and the legs seated as it keys them), for a body whose hips sit `seat`
+ * high and who stands `width` apart: how far ahead of the hips its feet are, in heights.
+ */
+export function chairPose(clip: Clip, t: number, legs: Legs, out: Pose, seat = SEAT, width = legs.width): number {
+  play(clip, t, out);
+  const at = (keys?: readonly number[]) => (keys ? sample(keys, t) : 0);
+  return seated(out, legs, seat, at(clip.tuck), at(clip.over), at(clip.rise), at(clip.heel), width);
 }

@@ -201,7 +201,43 @@ KNEEL_ELDER.update({
     'kneeR': [(0.0, 0.0), (0.2, 0.42), (0.45, 0.72), (0.78, 1.15), (1.0, 1.32)],
     'footR': [(0.0, 0.0), (0.2, 0.06), (0.45, -0.18), (0.78, -0.07), (1.0, 0.0)],
 })
-CLIPS = {'kneel': KNEEL, 'kneelElder': KNEEL_ELDER}
+# Getting up off a kitchen chair: the chair pushed back from the table with the body on it and the feet drawn in under
+# the seat onto their balls; then the body leans well forward over them, comes forward and up off the seat over feet
+# that stay where they were put, the heels coming down and the arms swinging forward to help. Sitting down is the same
+# the other way about: down over the feet onto the seat behind, and in to the table with the chair.
+# Keyed as shares, the legs reaching the floor from where they put the hips, whatever their length (src/render/gait.ts
+# seated): `tuck`, how far the feet are drawn in; `heel`, how far the heels are up; `over`, how far the hips have come
+# over the feet; `rise`, how far up off the seat they are. `planted` is where the body stands: 0 with the hips at its place
+# (where a scene seats it), 1 with the feet there (src/render/stage.ts). The chair goes with the hips while they are on it.
+STAND_UP = {
+    'seconds': 0.5,
+    'tuck': [(0.0, 0.0), (0.3, 1.0)],
+    'heel': [(0.0, 0.0), (0.3, 1.0), (0.5, 0.9), (0.75, 0.0)],
+    'planted': [(0.0, 0.0), (0.42, 1.0)],
+    'over': [(0.0, 0.0), (0.42, 0.0), (0.62, 0.65), (0.85, 1.0)],
+    'rise': [(0.0, 0.0), (0.42, 0.0), (0.56, 0.25), (0.76, 0.8), (0.92, 1.0)],
+    'lean': [(0.0, 0.12), (0.25, 0.28), (0.45, 0.6), (0.6, 0.5), (0.85, 0.1), (1.0, 0.0)],
+    'nod': [(0.0, 0.0), (0.45, -0.22), (0.8, -0.05), (1.0, 0.0)],
+    'armL': [(0.0, 0.0), (0.42, 0.3), (0.6, 0.38), (0.85, 0.08), (1.0, 0.02)],
+    'armR': [(0.0, 0.0), (0.42, 0.3), (0.6, 0.38), (0.85, 0.08), (1.0, 0.02)],
+    'elbowL': [(0.0, 1.63), (0.42, 1.25), (0.6, 0.7), (0.85, 0.22), (1.0, 0.1)],
+    'elbowR': [(0.0, 1.63), (0.42, 1.25), (0.6, 0.7), (0.85, 0.22), (1.0, 0.1)],
+}
+SIT_DOWN = {
+    'seconds': 0.8,
+    'tuck': [(0.0, 1.0), (0.6, 1.0), (1.0, 0.0)],
+    'heel': [(0.0, 0.0), (0.4, 0.25), (0.58, 0.4), (0.9, 0.0)],
+    'planted': [(0.0, 1.0), (0.6, 1.0), (1.0, 0.0)],
+    'over': [(0.0, 1.0), (0.14, 0.85), (0.34, 0.35), (0.48, 0.06), (0.58, 0.0)],
+    'rise': [(0.0, 1.0), (0.12, 0.94), (0.34, 0.35), (0.5, 0.05), (0.58, 0.0)],
+    'lean': [(0.0, 0.0), (0.22, 0.3), (0.42, 0.5), (0.6, 0.36), (0.85, 0.12), (1.0, 0.12)],
+    'nod': [(0.0, 0.0), (0.4, -0.18), (0.8, 0.0)],
+    'armL': [(0.0, 0.02), (0.27, 0.3), (0.5, 0.3), (0.7, 0.08), (0.85, 0.0)],
+    'armR': [(0.0, 0.02), (0.27, 0.3), (0.5, 0.3), (0.7, 0.08), (0.85, 0.0)],
+    'elbowL': [(0.0, 0.1), (0.27, 0.45), (0.5, 1.05), (0.7, 1.5), (0.85, 1.63)],
+    'elbowR': [(0.0, 0.1), (0.27, 0.45), (0.5, 1.05), (0.7, 1.5), (0.85, 1.63)],
+}
+CLIPS = {'kneel': KNEEL, 'kneelElder': KNEEL_ELDER, 'standUp': STAND_UP, 'sitDown': SIT_DOWN}
 
 STAND_CHANNELS = ['sway', 'roll', 'side', 'tilt', 'lean', 'nod', 'turn', 'arm', 'elbow', 'wrist']
 STAND_SCALARS = ['period', 'breath', 'deep', 'width']

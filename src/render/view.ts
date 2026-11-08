@@ -1805,7 +1805,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         posed.legR += (0.1 - posed.legR) * w; posed.kneeR += (1.65 - posed.kneeR) * w;
         one.rig.group.rotation.y += (-0.5 - one.rig.group.rotation.y) * w;
       }
-      one.rig.pose(one.seated ? sitting(posed) : one.paddle ? one.paddle.stance(posed) : posed);
+      one.rig.pose(one.seated ? sitting(posed, one.rig.legs) : one.paddle ? one.paddle.stance(posed) : posed);
       if (gesture.lift > 0.001 && pine) {
         // Both hands under the pine's end, a hand's width apart.
         const end = pine.position.x - 4.3 + 0.25, at = pine.position.y + 0.2;

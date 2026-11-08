@@ -2,6 +2,7 @@ import {
   AmbientLight, CanvasTexture, Color, DirectionalLight, Group, HemisphereLight, Mesh, MeshLambertMaterial, PerspectiveCamera,
   PlaneGeometry, RepeatWrapping, Scene, SRGBColorSpace, Vector3, WebGLRenderer,
 } from 'three';
+import { prolog } from '../src/content/chapters/ends';
 import { garden } from '../src/content/chapters/garden';
 import { createGrandparent, type Figure, type Grandparent } from '../src/content/aventyr2/grandparents';
 import { createAssets } from '../src/render/assets';
@@ -40,6 +41,16 @@ const SCRIPTS: Record<string, (x: number) => ActorKey[]> = {
     { at: 1, act: 'kneel' }, { at: 3.6, act: 'stand' },
     { at: 5, act: 'crouch' }, { at: 7.2, act: 'stand' },
     { at: 8.6, act: 'sit' }, { at: 11.4, act: 'stand' },
+  ],
+  // At a kitchen chair, sideways on to the camera: up, a few steps away and back, round, and down again.
+  chair: (x) => [
+    { at: 0, x, y: 0, z: 0, face: 0, move: 0.01, act: 'sit' },
+    { at: 1.5, act: 'stand' },
+    { at: 2.4, x: x + 2, move: 1.4 },
+    { at: 4.4, x, move: 1.6 },
+    { at: 6.2, face: 0 },
+    { at: 7.2, act: 'sit' },
+    { at: 9.5, act: 'stand' },
   ],
   gestures: (x) => [
     { at: 0, x, y: 0, z: 0, face: 0.2, move: 0.01, act: 'stand' },
@@ -81,9 +92,16 @@ scene.add(floor);
 
 const actors: Partial<Record<Role, ActorKey[]>> = {};
 cast.forEach((who, i) => { actors[who] = (SCRIPTS[sceneName] ?? SCRIPTS.walk!)(i * LANE); });
-const chapter = { ...garden, furniture: [], scenes: [{ id: 'lab', seconds: 600, stage: { actors } }] };
+// The chair stands behind where they sit, as the kitchen's do in the prologue (src/content/chapters/ends.ts).
+const furniture = sceneName === 'chair' ? cast.map((_, i) => ({ look: 'chair' as const, at: { x: i * LANE - 0.3, y: 0 }, z: 0, face: 0 })) : [];
+// ?story=vaknar: one of the prologue's own scenes, in its kitchen, with the scenes before it told.
+const story = query.get('story');
+const told = story ? prolog.scenes!.slice(0, prolog.scenes!.findIndex((one) => one.id === story)).map((one) => one.by?.done ?? `scene:${one.id}`) : [];
+const chapter = story ? prolog : { ...garden, furniture, scenes: [{ id: 'lab', seconds: 600, stage: { actors } }] };
 const stage = createStage(chapter, () => 0);
 scene.add(stage.group);
+// In a told scene only those asked for are seen: the others keep their places, out of the way of the look.
+if (story) for (const [who, one] of stage.actors) if (wanted.length > 0 && !wanted.includes(who)) one.rig.group.scale.setScalar(1e-4);
 
 const figures: { who: Grandparent; figure: Figure; group: Group }[] = elders.map((who, i) => {
   const figure = createGrandparent(who, null);
@@ -121,7 +139,7 @@ addEventListener('resize', frame);
 frame();
 const draw = () => { if (track) frame(); renderer.render(scene, camera); };
 
-const flags = new Set<string>();
+const flags = new Set<string>(told);
 let clock = 0;
 function step(dt: number): void {
   clock += dt;
@@ -129,7 +147,7 @@ function step(dt: number): void {
   // Followers: the scene places them once, and from then on they walk along behind him.
   const following = sceneName === 'follow' && clock > 0.05;
   if (following) flags.add('scene:lab');
-  stage.update(following ? null : { id: 'lab', seconds: clock }, flags, elof, clock, dt, false);
+  stage.update(following ? null : { id: story ?? 'lab', seconds: clock }, flags, story ? { x: 10.9, y: 0 } : elof, clock, dt, false);
   // Elof comes up to each of them (they go down on a knee), calls them (the lantern, the ladder), and goes on.
   const near = Math.min(1, Math.max(0, (clock - 1) / 3)) - Math.min(1, Math.max(0, (clock - 10) / 3));
   for (const { figure, group } of figures) figure.update(clock > 6.5, clock, dt, group.position.x + 9 - 7 * near);

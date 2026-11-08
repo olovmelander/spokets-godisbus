@@ -1,8 +1,10 @@
 import { InstancedMesh, Matrix4, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prolog } from '../../src/content/chapters/ends';
+import { sitting } from '../../src/render/acting';
+import { SITTING_ON } from '../../src/render/gait';
+import { heightOf, STANDING, type Pose, type Role } from '../../src/render/rig';
 import { createStage, type Stage } from '../../src/render/stage';
-import type { Pose, Role } from '../../src/render/rig';
 
 beforeEach(() => {
   const context = Object.fromEntries(['fillRect', 'beginPath', 'lineTo', 'moveTo', 'closePath', 'fill', 'stroke', 'arc', 'ellipse'].map(name => [name, () => {}]));
@@ -17,6 +19,8 @@ function watch(who: Role) {
   rig.pose = next => { pose = { ...next }; original(next); };
   return { stage, rig, pose: () => pose };
 }
+/** Seated as the stage seats them: on a kitchen chair's height (1.31 EL), their feet flat on the floor. */
+const seatedOn = (who: Role, rig: { legs: Parameters<typeof sitting>[1] }) => sitting({ ...STANDING }, rig.legs, 1.31 / heightOf(who) + SITTING_ON);
 function show(stage: Stage, id: string, seconds: number, calm = false, dt = 1 / 60, clock = seconds) {
   const scenes = prolog.scenes!, before = scenes.findIndex(scene => scene.id === id);
   const flags = new Set(scenes.slice(0, before).map(scene => scene.by?.done ?? `scene:${scene.id}`));
@@ -37,7 +41,9 @@ describe('authored changes of stance', () => {
     const { stage, rig, pose } = watch('pappa');
     show(stage, 'vaknar', .2);
     const seated = rig.mouth(new Vector3());
-    show(stage, 'vaknar', .59);
+    // Up off the chair over his feet, the chair pushed back (art/blender/motion.py STAND_UP, half a second), just before
+    // the look that turns him.
+    show(stage, 'vaknar', .69);
     expect(pose().legL).toBeLessThan(.15);
     expect(pose().kneeR).toBeLessThan(.3);
     expect(rig.mouth(new Vector3()).y).toBeGreaterThan(seated.y + .8);
@@ -87,8 +93,9 @@ describe('authored changes of stance', () => {
   it('retains sitting and kneeling underneath looking and reaching', () => {
     const moa = watch('moa');
     show(moa.stage, 'vaknar', 4);
-    expect(moa.pose().seat).toBe(1.5);
-    expect(moa.pose().legL).toBe(1.5);
+    const seated = seatedOn('moa', moa.rig);
+    expect(moa.pose().seat).toBeCloseTo(seated.seat!, 9);
+    expect(moa.pose().legL).toBeCloseTo(seated.legL, 9);
     for (const who of ['mamma', 'pappa'] as const) {
       const { stage, pose } = watch(who);
       show(stage, 'familj', 5.5);
@@ -129,7 +136,7 @@ describe('authored changes of stance', () => {
   });
 
   it('turns Moa’s head smoothly between the jay and the bag without restarting her seated action', () => {
-    const { stage, rig, pose } = watch('moa');
+    const { stage, rig, pose } = watch('moa'), seat = seatedOn('moa', rig).seat!;
     for (const at of [14, 15.8]) {
       show(stage, 'vaknar', at - 1e-6);
       let previous = rig.mouth(new Vector3());
@@ -141,7 +148,7 @@ describe('authored changes of stance', () => {
         const now = rig.mouth(new Vector3());
         expect(now.distanceTo(previous)).toBeLessThan(.1);
         previous.copy(now);
-        expect(pose().seat).toBe(1.5);
+        expect(pose().seat).toBeCloseTo(seat, 9);
       }
       expect(previous.distanceTo(initial)).toBeGreaterThan(.25);
     }
