@@ -67,7 +67,7 @@
   - **To look at it:** `npm run dev`, then `dev/motion.html?scene=walk` (or `acts`, `chair`, `gestures`, `follow`,
     `grand`, `elof`), with `&who=pappa`, `&track&zoom=6` and `&view=three`. It plays the stage's own keys (and Elof's own
     motion) on the real models where the private pack is there. `?story=vaknar` (any prologue scene's id) plays that
-    scene in its kitchen, with only those in `&who=` shown.
+    scene in its kitchen, with only those in `&who=` shown; `?story=frukost&chapter=morgonen`, Morgonen's breakfast.
   - **The hips shift by the pelvis bone,** not by moving the model: the finale's private-model check found a shadow off
     the feet while the weight was shifted. A model without a pelvis does not shift.
   - **Content:** Moa steps a little further from the kitchen table in `prologue:mamma` (z 0.45, was 0.3), so that her
@@ -81,6 +81,10 @@
     WebSocket error, CI runs it), and filmstrips of every motion on the real models (kept in the session only).
   - **Not done:** crouching down and up still blends between poses; Mormor and Morfar have no walk, as the story never
     has them walk.
+  - **Known:** at Morgonen's breakfast Bertil, now sitting on his chair's seat, has his thighs up in the underside of the
+    table: its top is 1.65 EL over a 1.31 seat, where a kitchen table stands about 1.7 times its chair's height. It is out
+    of sight under the table top from the game's camera; before, he sat half a body down inside the chair. Higher tables
+    (the stage's and the room kit's `bord`) would free him, but move Moa's drawing and Pappa's carving with them.
   - **The next step needs:** nothing from Olov's computer. Olov should judge the motion on the family devices.
 
 ## State (8 November 2026, morning)

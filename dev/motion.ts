@@ -2,6 +2,7 @@ import {
   AmbientLight, CanvasTexture, Color, DirectionalLight, Group, HemisphereLight, Mesh, MeshLambertMaterial, PerspectiveCamera,
   PlaneGeometry, RepeatWrapping, Scene, SRGBColorSpace, Vector3, WebGLRenderer,
 } from 'three';
+import { morgonen } from '../src/content/aventyr2/chapters/morgonen';
 import { prolog } from '../src/content/chapters/ends';
 import { garden } from '../src/content/chapters/garden';
 import { createGrandparent, type Figure, type Grandparent } from '../src/content/aventyr2/grandparents';
@@ -94,10 +95,12 @@ const actors: Partial<Record<Role, ActorKey[]>> = {};
 cast.forEach((who, i) => { actors[who] = (SCRIPTS[sceneName] ?? SCRIPTS.walk!)(i * LANE); });
 // The chair stands behind where they sit, as the kitchen's do in the prologue (src/content/chapters/ends.ts).
 const furniture = sceneName === 'chair' ? cast.map((_, i) => ({ look: 'chair' as const, at: { x: i * LANE - 0.3, y: 0 }, z: 0, face: 0 })) : [];
-// ?story=vaknar: one of the prologue's own scenes, in its kitchen, with the scenes before it told.
+// ?story=vaknar: one of the prologue's own scenes (or Morgonen's, &chapter=morgonen), in its kitchen, with the scenes
+// before it told.
 const story = query.get('story');
-const told = story ? prolog.scenes!.slice(0, prolog.scenes!.findIndex((one) => one.id === story)).map((one) => one.by?.done ?? `scene:${one.id}`) : [];
-const chapter = story ? prolog : { ...garden, furniture, scenes: [{ id: 'lab', seconds: 600, stage: { actors } }] };
+const told = (book: typeof prolog) => book.scenes!.slice(0, book.scenes!.findIndex((one) => one.id === story)).map((one) => one.by?.done ?? `scene:${one.id}`);
+const book = query.get('chapter') === 'morgonen' ? morgonen : prolog;
+const chapter = story ? book : { ...garden, furniture, scenes: [{ id: 'lab', seconds: 600, stage: { actors } }] };
 const stage = createStage(chapter, () => 0);
 scene.add(stage.group);
 // In a told scene only those asked for are seen: the others keep their places, out of the way of the look.
@@ -139,7 +142,7 @@ addEventListener('resize', frame);
 frame();
 const draw = () => { if (track) frame(); renderer.render(scene, camera); };
 
-const flags = new Set<string>(told);
+const flags = new Set<string>(story ? told(book) : []);
 let clock = 0;
 function step(dt: number): void {
   clock += dt;
