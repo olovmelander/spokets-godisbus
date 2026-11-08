@@ -6,7 +6,7 @@ import { CLEAR, INK, PALE, ceilingAt, tufts, walkLine, type Growth } from '../..
 import { heightAt } from '../../src/render/dressing/kit';
 import { createMaterialGrade, GARDEN_MORNING } from '../../src/render/grade';
 import { quadBatch } from '../../src/render/quads';
-import { BREATH, setWind, sway, windAt } from '../../src/render/wind';
+import { BREATH, setStorm, setWind, sway, windAt } from '../../src/render/wind';
 import { cameraIntent } from '../../src/sim/camera-intent';
 import type { ChapterData, PlayerState } from '../../src/sim/types';
 
@@ -180,6 +180,31 @@ describe('the wind', () => {
     const later = (comes(BREATH.speed) - comes(0) + BREATH.every) % BREATH.every;
     expect(later).toBeGreaterThan(0.7);
     expect(later).toBeLessThan(1.3);
+  });
+
+  it('blows harder while a storm rages, and not at all with reduced motion', () => {
+    const peak = (raging: number, breaths = true) => {
+      setStorm(raging);
+      let most = 0;
+      for (let clock = 0; clock < BREATH.every * 2; clock += 0.05) {
+        setWind(clock, false, breaths, null);
+        most = Math.max(most, Math.abs(windAt(12)));
+      }
+      return most;
+    };
+    try {
+      const calm = peak(0), storm = peak(1);
+      expect(storm).toBeGreaterThan(calm * 1.4);
+      // Bounded: no more than a gust lays the grass over in still air.
+      expect(storm).toBeLessThan(7);
+      // Its constant sway is stronger too, between the breaths.
+      expect(peak(1, false)).toBeGreaterThan(peak(0, false) * 1.2);
+      setStorm(1);
+      setWind(4, true, true, null);
+      expect(Math.abs(windAt(12))).toBe(0);
+    } finally {
+      setStorm(0);
+    }
   });
 
   it('lays the grass over to the left in a gust, where the gust blows and nowhere else', () => {

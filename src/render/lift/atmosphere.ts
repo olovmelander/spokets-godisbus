@@ -5,6 +5,7 @@ import { heightAt } from '../dressing/kit';
 import { SUNS } from '../dressing/sky';
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../extensions';
 import { AIR_KEY, type AirAsk } from '../light-shafts';
+import { setStorm } from '../wind';
 
 /**
  * The visual upgrade's air (docs/visual-upgrade.md): light shafts and god rays, the dust in them, leaves falling,
@@ -82,6 +83,8 @@ export function makeAir({ chapter, scene, sun, place, dressing }: ExtraContext):
       const open = !!storm?.calm && flags.has(storm.calm);
       calm = still ? (open ? 1 : 0) : Math.min(1, Math.max(0, calm + (open ? dt : -dt) / 3));
       const raging = storm ? 1 - calm : 0;
+      // The wind blows harder while the storm rages, by how hard it rains (./wind.ts): read by the next frame's sway.
+      setStorm(raging * (storm?.rain ?? 0));
       const dark = Math.min(1, Math.max(0, frame.darkness ?? 0));
       // At home the room has no sky to cut into shafts: only out of doors, past the house's corner.
       const outdoors = chapter.place !== 'home' ? 1 : chapter.outdoors === undefined ? 0 : Math.min(1, Math.max(0, (camera.position.x - chapter.outdoors + 2) / 8));

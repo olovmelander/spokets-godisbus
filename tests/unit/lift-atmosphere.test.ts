@@ -2,7 +2,7 @@ import { BufferAttribute, Color, DirectionalLight, Fog, Group, HemisphereLight, 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ADVENTURE2, BONUS, STORY, loadAdventure2 } from '../../src/content/chapters';
 import { PLACES } from '../../src/render/dressing';
-import { AIR_COUNTS, GLOW, LIFE, effects, type AirMood } from '../../src/render/dressing/effects';
+import { AIR_COUNTS, GLOW, LIFE, effects, fallingCount, type AirMood } from '../../src/render/dressing/effects';
 import { heightAt, landscape, makeKit } from '../../src/render/dressing/kit';
 import { PACK, type ExtraFrame } from '../../src/render/extensions';
 import { AIR, MOON, makeAir } from '../../src/render/lift/atmosphere';
@@ -146,21 +146,24 @@ describe('the air of every chapter (src/render/lift/atmosphere.ts, src/render/dr
       expect(quads(air.group), chapter.id).toEqual(first);
       // ...and no leaf falls, nor any butterfly flies: what is left is the bee on its flower and the midges, which hang.
       const life = quads(air.group).filter((q) => q.order === -0.5);
-      const hanging = life.length - AIR_COUNTS[chapter.place!].falling - (chapter.place === 'garden' ? 4 : 0);
+      const hanging = life.length - fallingCount(chapter, chapter.place!) - (chapter.place === 'garden' ? 4 : 0);
       expect(life.filter((q) => q.alpha > 0 && q.size > 0).length, chapter.id).toBeLessThanOrEqual(hanging);
     }
   });
 
-  it('blows fewer leaves across the picture in a storm, and puts the sun\'s shafts out', () => {
+  it('blows more leaves across the picture in a storm, and puts the sun\'s shafts out', () => {
     const skog = ADVENTURE2.find((chapter) => chapter.id === 'stormskog')!;
     const { air, system, frame, land } = build(skog);
     system.update(frame());
     air.update(60, heightAt(land, 60), 3);
     const lit = quads(air.group).filter((q) => q.order === 3 && q.size > 0 && q.alpha > 0);
     expect(lit.length).toBe(0);
+    // Torn off by the storm's wind (Olov's request for more life, 8 November 2026): more than fall on a still day.
     const leaves = quads(air.group).filter((q) => q.order === -0.5 && q.size > 0);
-    expect(leaves.length).toBeGreaterThan(0);
-    expect(leaves.length).toBeLessThanOrEqual(AIR_COUNTS.forest.falling / 2);
+    expect(leaves.length).toBeGreaterThan(AIR_COUNTS.forest.falling);
+    expect(leaves.length).toBeLessThanOrEqual(fallingCount(skog, 'forest'));
+    // Behind the path, and some of them low over the ground.
+    for (const leaf of leaves) expect(leaf.z).toBeLessThan(-0.8);
   });
 
   it('lights with pale colours only: nothing red, pink or gold, which are the candy\'s', () => {

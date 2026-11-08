@@ -35,6 +35,20 @@ export interface Blow {
 }
 
 let carried = 0;
+/** How hard Äventyr 2's storm rages now, 0 to 1 (../lift/atmosphere.ts sets it, a frame late): it blows harder. */
+let storm = 0;
+
+/**
+ * How much harder everything sways in a storm at its height, and how much stronger its breaths are: the grass, the
+ * ferns and the crowns whip, and the soft cards in front with them (`windAt`). The characters' own sway is held to a
+ * bound (rig.ts, createSway), so they only lean a little further.
+ */
+export const STORM_WIND = { sway: 0.3, breaths: 0.3 } as const;
+
+/** Tells the wind how hard the storm rages: 0 out of it, or in its calm eye. */
+export function setStorm(raging: number): void {
+  storm = Math.min(1, Math.max(0, raging));
+}
 
 /**
  * Sets where he is, each frame, from the lift's flora (./lift/flora.ts): what grows round him leans away from
@@ -67,7 +81,7 @@ export function bendAt(x: number, y?: number, z = 0, tall = 1): number {
 /** Sets the wind for this frame. */
 export function setWind(clock: number, still: boolean, breaths: boolean, gust: Blow | null): void {
   air.windTime.value = clock;
-  air.windAir.value.set(still ? 0 : 1, breaths ? 1 : 0);
+  air.windAir.value.set(still ? 0 : 1 + STORM_WIND.sway * storm, breaths ? 1 + STORM_WIND.breaths * storm : 0);
   air.windGust.value.set(gust?.from ?? 0, gust?.to ?? 0, gust ? -1.6 * gust.blow : 0);
 }
 
