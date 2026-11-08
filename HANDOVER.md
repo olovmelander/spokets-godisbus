@@ -2,6 +2,25 @@
 
 ## State (8 November 2026, morning)
 
+- **The two things left from the night (Olov: "Now continue with this!"), on Olov's computer.** Branch `djur-och-bron`.
+  - **Granskogen's big animals now show.** Filmed with a bright red test ink every two seconds as one crossed, they
+    were never hidden: they were a few pixels big. The forest's camera is close, and its far floor is seen between near
+    trunks, so at the bog's size they vanished. All four are drawn about twice as big (moose 2.2, the cow and calf 2.1,
+    the deer 2.3, the bear 2.2), darker, with less haze in their colour (`src/content/life.ts`). Bigger is quicker
+    across, and twice is as big as they can be while each still takes eight seconds to cross a tablet's picture (a
+    test holds that, and that the deer walks before she stops). They are as pale as the far trees around them, for the
+    lens and the air of their depth: a gift to notice, as the plan has it.
+  - **Pappa on Älven's bridge stood 1.2 EL down in its deck** (the deck's slab is centred on the bridge's height),
+    behind the railing. He stands on the deck now (`DECK` in `alven.ts`), and the held shot when he is called looks
+    up to him alone.
+  - **His head was culled away** up there, on a skinned mesh's stale bounds: the same fault that took Elof's body
+    over Älven's lake. Every skinned mesh now has its bounds from the pose it is bound in, widened for every pose
+    (`createModelRig` in `rig.ts`): Elof, the family, mormor and morfar and the scenes' actors are culled rightly.
+  - **Olov's answers:** Moa's map may draw mormor and morfar's house; "spökets påse" stays (see Decisions).
+  - **Checked:** typecheck, `npm test` (2,134), the build (boot 4,541.0 of 4,608 KB), the privacy check, and films
+    of the forest's pair and the bridge.
+  - **Not done:** Gården's roe deer on the neighbours' meadow did not show at x 8 even in red in 20 seconds; it may
+    walk behind the house, or not come there. The next step needs nothing from Olov's computer.
 - **Six things Olov saw on the site (Olov: "the family is standing very strangely together in the first scene", "his
   dad walk down from the mountain in the air", "the wodden figure stuck in the mountain … the new better design",
   "they now dont get the raincoats on", "on olympia, we cannot se the water pud", and the owl below), on Olov's computer.** Branch
@@ -4589,20 +4608,11 @@
 
 ## Next
 
-**From the night's playthrough (8 November), not done:**
-- **Älven: Pappa on the bridge** stands in its middle (x 99.4, 7.3 up), for the pendulum swing, out of the rapids'
-  camera when Elof calls from x 88.6. Tonight a held shot of 1.5 s (scene `bron`, as long as the scarf takes to come
-  down) looks up to him: he is seen, small and dark behind the railing with his lamp. A longer look, or Pappa leaning
-  over the railing, is for Olov's eye on a device.
-- **Granskogen's big animals (below) are drawn, but hidden:** a bright red test ink showed nothing at x 47, 95 and
-  178; lifted 2.2 EL the pair showed a sliver behind the ferns. The near forest floor's ferns and moss stand higher
-  than the far pictures' horizon, where walkers hang (`EYE` 1.4 over his ground in `src/render/life.ts`). Moving the
-  slot to z -20 did not help. They need a place where the floor is open, or their own horizon.
+**From the night's playthrough (8 November):** the bridge and Granskogen's animals are done (see the morning's state). Left:
+Gården's roe deer, which did not show at x 8 even in a red test ink.
 
-
-**First: make Granskogen's big animals read in the picture** (see the afternoon's state above). Capture them in the
-game, with `?dev&debug&tier=high&course=granskog&at=47,4.1&life=pair`, and tune the forest slot (`src/content/life.ts`):
-its depth, haze, inks and sizes, against the bog's bull, which reads well. Then check Gården's deer the same way.
+**Granskogen's big animals read in the picture** (done 8 November, morning; see that state). To look at them:
+`?dev&debug&tier=high&course=granskog&at=96,0.01&life=pair`, a still every two seconds for twenty. Gården's deer is left.
 
 **PR #235 (the graphics pass, the Unravel look, the SUP, the rain gear and the story's details), for Olov to judge
 and merge.** On the family devices, on High:
@@ -4965,6 +4975,10 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Moa's crayon map may draw mormor and morfar's house in Billsta** (Olov, 8 November 2026: "det är okej"). It has no
+  coordinates; `docs/aventyr-2.md` no longer counts against it.
+- **"Spökets påse" stays** in Moa's and Elof's lines (Olov, 8 November 2026: "spökets påse låter bra"): the bag the
+  ghost carries is the ghost's bag in what they say, though the diary calls it Elof's.
 - **The game is released to its last chapter** (`morgonen`, Olov, 5 November 2026). From now on `main` is what Elof plays.
 - **Morfar never has a cap, and has glasses; Mamma's hair is light blonde** (Olov, 5 November 2026).
 - **The family's triangle budget** is 16,600–21,900 each, over the plan's 15,000, for the faces and hair (`docs/art-bible.md`).
@@ -5266,10 +5280,6 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-- Moas karta i Äventyr 2 ritar mormor och morfars vita hus i Billsta. `docs/aventyr-2.md` säger att huset aldrig sätts på
-  en karta. Den har inga koordinater, så den bryter inte mot reglerna, men vill du ha den kvar?
-- I Äventyr 1 säger Moa "Stjärnan trillade ur spökets påse" och Elof "Det ligger kvar i spökets påse!", fast det är
-  Elofs påse som spöket bär. De är inspelade, så de fick vara kvar; vill du att de ändras till de nya rösterna?
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.

@@ -102,6 +102,8 @@ const LIFT = { from: { x: 91.6, y: 0 }, to: { x: 108.4, y: 0 }, rise: 4.4, time:
 const CALL_PAPPA = 88.6;
 /** The road bridge over the rapids, just behind the play plane: its deck high over him, its piers in the water. */
 const BRIDGE = { x: 100, width: 24, height: 7.8 };
+/** The bridge's deck, where Pappa stands: the deck's slab is centred on its height, and is 2.4 thick. */
+const DECK = BRIDGE.height + 1.2 + RAPID;
 
 // 4. The beaver's place: two gnawed stumps, a step each, and the lodge, too steep to jump: a gnawed stick up it.
 const FAR_BANK: Stone = { from: 107.4, to: 116.4, y: 0 };
@@ -176,7 +178,7 @@ export const alven: ChapterData = {
     // The rapids' camera keeps Elof in the picture and him out of it, so for a moment the picture looks up to him.
     {
       id: 'bron', on: 'al:pappa', until: 'al:lift', before: 92, seconds: 1.5, hold: true,
-      stage: { shots: [{ at: 0, x: 95.5, y: 6.6, height: 13, width: 22, move: 0.4 }] },
+      stage: { shots: [{ at: 0, x: 97.6, y: DECK + 3.4, height: 10, width: 16, move: 0.35 }] },
     },
   ],
   goalX: 186,
@@ -275,7 +277,7 @@ export const alven: ChapterData = {
     { id: 'al:leaf', at: LEAF.from, verb: 'take', word: 'board', needs: FELL_IN, ride: 'al:leaf' },
     // On the bank before the rapids: he calls Pappa, who lowers his scarf from the bridge; then he takes hold.
     // Pappa himself is up on the bridge, at its railing over the rapids ("Jag står här uppe på bron!").
-    { id: 'al:pappa', look: 'sign', at: { x: CALL_PAPPA, y: 0 }, standsAt: { x: BRIDGE.x - 0.6, y: BRIDGE.height + RAPID, z: -3.2 }, verb: 'call', word: 'callPappa' },
+    { id: 'al:pappa', look: 'sign', at: { x: CALL_PAPPA, y: 0 }, standsAt: { x: BRIDGE.x - 0.6, y: DECK, z: -2.4 }, verb: 'call', word: 'callPappa' },
     { id: 'al:lift', at: LIFT.from, verb: 'take', word: 'alScarf', needs: 'al:scarf', ride: 'al:lift' },
     // On the lake's shore: the owl from the forest. Called, it glides over and settles where he climbs up (`goesTo`), and
     // that owl is the one that carries him.
