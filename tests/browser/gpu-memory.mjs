@@ -6,6 +6,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { settingsPage } from './pause.mjs';
+import { shareOf } from './suites.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -54,7 +55,9 @@ try {
     if (message.type() === 'error' && /WebGL|shader|GL_INVALID/.test(message.text())) errors.push(message.text());
   });
   // Stand-ins are the public build. Family assets need the same ?bench gate on Olov's devices.
-  for (const course of ['prolog', 'garden', 'granskog', 'myren', 'berget', 'norrsken', 'epilog', 'byn']) {
+  // Split over two CI runs (tests/browser/suites.mjs): each takes its share of the courses, and the last the cycles below.
+  const share = shareOf(['prolog', 'garden', 'granskog', 'myren', 'berget', 'norrsken', 'epilog', 'byn']);
+  for (const course of share.cases) {
     if (process.env.GPU_COURSE && course !== process.env.GPU_COURSE) continue;
     await page.goto(`${origin}${BASE}?dev&debug&standin&course=${course}&tier=low`);
     await ready(page);
@@ -76,66 +79,68 @@ try {
     gate(`${course} Low after HDR`, lowAgain);
   }
 
-  // Exercise repeated allocation/deletion at maximum High pixels, then context loss and recreation.
-  // The first HDR frame also uploads its reusable full-screen geometry: compare warmed baselines.
-  const warmedLow = await info(page);
-  for (let cycle = 0; cycle < 3; cycle++) {
+  if (share.last) {
+    // Exercise repeated allocation/deletion at maximum High pixels, then context loss and recreation.
+    // The first HDR frame also uploads its reusable full-screen geometry: compare warmed baselines.
+    const warmedLow = await info(page);
+    for (let cycle = 0; cycle < 3; cycle++) {
+      await page.locator('#graphicsHigh').click();
+      await frames(page);
+      await page.locator('#graphicsLow').click();
+      await frames(page);
+      assert.deepEqual(footprint(await info(page)), footprint(warmedLow), `quality cycle ${cycle + 1}: warmed Low storage returns to baseline`);
+    }
+    check('repeated quality changes retain no abandoned GPU resources', true);
     await page.locator('#graphicsHigh').click();
     await frames(page);
-    await page.locator('#graphicsLow').click();
-    await frames(page);
-    assert.deepEqual(footprint(await info(page)), footprint(warmedLow), `quality cycle ${cycle + 1}: warmed Low storage returns to baseline`);
-  }
-  check('repeated quality changes retain no abandoned GPU resources', true);
-  await page.locator('#graphicsHigh').click();
-  await frames(page);
-  const warmedHigh = await info(page);
-  // Tier and context warmup draw every pass, including shafts disabled by the room's air.
-  // A resize releases those unused targets; compare ordinary frames after that first resize.
-  await page.setViewportSize({ width: 390, height: 844 });
-  await frames(page);
-  gate('settling portrait resize', await info(page));
-  await page.setViewportSize({ width: 1180, height: 820 });
-  await frames(page);
-  const high = await info(page);
-  gate('settled High tablet', high);
-  for (let cycle = 0; cycle < 3; cycle++) {
+    const warmedHigh = await info(page);
+    // Tier and context warmup draw every pass, including shafts disabled by the room's air.
+    // A resize releases those unused targets; compare ordinary frames after that first resize.
     await page.setViewportSize({ width: 390, height: 844 });
     await frames(page);
-    gate(`portrait resize ${cycle + 1}`, await info(page));
+    gate('settling portrait resize', await info(page));
     await page.setViewportSize({ width: 1180, height: 820 });
     await frames(page);
-    assert.deepEqual(footprint(await info(page)), footprint(high), `resize ${cycle + 1}: tablet storage returns to baseline`);
-  }
-  check('repeated viewport changes retain no abandoned render targets', true);
-  // Back to Pause's first page, where Escape closes the panel.
-  await page.locator('#pauseBack').click();
-  for (let cycle = 0; cycle < 10; cycle++) {
+    const high = await info(page);
+    gate('settled High tablet', high);
+    for (let cycle = 0; cycle < 3; cycle++) {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await frames(page);
+      gate(`portrait resize ${cycle + 1}`, await info(page));
+      await page.setViewportSize({ width: 1180, height: 820 });
+      await frames(page);
+      assert.deepEqual(footprint(await info(page)), footprint(high), `resize ${cycle + 1}: tablet storage returns to baseline`);
+    }
+    check('repeated viewport changes retain no abandoned render targets', true);
+    // Back to Pause's first page, where Escape closes the panel.
+    await page.locator('#pauseBack').click();
+    for (let cycle = 0; cycle < 10; cycle++) {
+      await page.keyboard.press('Escape');
+      await frames(page, 2);
+      await page.keyboard.press('Escape');
+      await frames(page, 2);
+    }
+    assert.deepEqual(footprint(await info(page)), footprint(high), 'ten pause/resume cycles return to baseline');
+    check('ten pause/resume cycles keep geometry, texture and GL byte counts stable', true);
+    await page.evaluate(() => {
+      const gl = document.getElementById('game').getContext('webgl2');
+      window.__loss = gl.getExtension('WEBGL_lose_context');
+      if (!window.__loss) throw Error('Context-loss extension missing');
+      window.__loss.loseContext();
+    });
+    await page.waitForFunction(() => window.__godis.info().gpu.lost);
+    check('context loss drops all accounted GPU allocations', (await info(page)).gpu.totalBytes === 0);
+    await page.evaluate(() => window.__loss.restoreContext());
+    await page.waitForFunction(() => !window.__godis.state().contextLost, null, { timeout: 30000 });
+    await page.locator('#messageButton').click();
+    await frames(page);
     await page.keyboard.press('Escape');
-    await frames(page, 2);
-    await page.keyboard.press('Escape');
-    await frames(page, 2);
+    await frames(page);
+    const restored = await info(page);
+    gate('restored High tablet', restored);
+    assert.deepEqual(footprint(restored), footprint(warmedHigh), 'restored storage returns to the warmed baseline');
+    check('restoration accounts for the rebuilt renderer and assets', true);
   }
-  assert.deepEqual(footprint(await info(page)), footprint(high), 'ten pause/resume cycles return to baseline');
-  check('ten pause/resume cycles keep geometry, texture and GL byte counts stable', true);
-  await page.evaluate(() => {
-    const gl = document.getElementById('game').getContext('webgl2');
-    window.__loss = gl.getExtension('WEBGL_lose_context');
-    if (!window.__loss) throw Error('Context-loss extension missing');
-    window.__loss.loseContext();
-  });
-  await page.waitForFunction(() => window.__godis.info().gpu.lost);
-  check('context loss drops all accounted GPU allocations', (await info(page)).gpu.totalBytes === 0);
-  await page.evaluate(() => window.__loss.restoreContext());
-  await page.waitForFunction(() => !window.__godis.state().contextLost, null, { timeout: 30000 });
-  await page.locator('#messageButton').click();
-  await frames(page);
-  await page.keyboard.press('Escape');
-  await frames(page);
-  const restored = await info(page);
-  gate('restored High tablet', restored);
-  assert.deepEqual(footprint(restored), footprint(warmedHigh), 'restored storage returns to the warmed baseline');
-  check('restoration accounts for the rebuilt renderer and assets', true);
   assert.deepEqual(errors, [], 'GPU observation must not cause page exceptions');
   await context.close();
   console.log(`GPU memory browser checks: ${checks} passed.`);

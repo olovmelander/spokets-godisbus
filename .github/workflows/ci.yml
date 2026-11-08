@@ -7,12 +7,37 @@ on:
 
 permissions:
   contents: read
+  # To read which files a pull request changes (the scope job).
+  pull-requests: read
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # What the pull request changes. Only words (Markdown files, docs/) need no browser suites; anything else, or a list
+  # that can't be read, runs them all. The checks below run either way.
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.files.outputs.code }}
+    steps:
+      - id: files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          changed="$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" --jq '.[].filename' || true)"
+          code=false
+          if [ -z "$changed" ]; then code=true; fi
+          while IFS= read -r file; do
+            case "$file" in
+              *.md|docs/*) ;;
+              *) code=true ;;
+            esac
+          done <<< "$changed"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Browser suites needed: $code"
+
   check:
     runs-on: ubuntu-latest
     env:
@@ -27,7 +52,12 @@ jobs:
       - name: Install exiftool
         continue-on-error: true
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libimage-exiftool-perl
-      # The asset build turns textures into KTX2 with this tool (plan §5.6).
+      # The asset build turns textures into KTX2 with this tool (plan §5.6). Its download is kept between runs: GitHub's
+      # release server took up to 16 minutes a job on 8 November.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ktx
+          key: ktx-${{ runner.os }}-${{ hashFiles('scripts/install-ktx.sh') }}
       - run: bash ./scripts/install-ktx.sh
       - run: npm ci
       - run: npm run typecheck
@@ -36,25 +66,32 @@ jobs:
       - run: npm run privacy-check
 
   # The browser suites play the built game in a headless browser. GitHub has no graphics card, so the game is
-  # drawn in software there, and in one job the suites would take nearly two hours. They are shared out over
-  # eight jobs that run side by side, by the seconds each took (tests/browser/suites.mjs says how), and each
-  # job runs all its suites, also after one has failed. `npm run test:browser` still runs every suite in a row.
+  # drawn in software there, and in one job the suites would take two and a half hours. They are shared out over
+  # twelve jobs that run side by side, about thirteen minutes each, by the seconds each took (tests/browser/suites.mjs
+  # says how, and splits the two longest), and each job runs all its suites, also after one has failed.
+  # `npm run test:browser` still runs every suite in a row. A pull request of words alone skips them (scope, above).
   browser:
+    needs: scope
+    if: needs.scope.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        part: [1, 2, 3, 4, 5, 6, 7, 8]
+        part: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-      # The asset build turns textures into KTX2 with this tool (plan §5.6).
+      # The asset build turns textures into KTX2 with this tool (plan §5.6), its download kept between runs.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ktx
+          key: ktx-${{ runner.os }}-${{ hashFiles('scripts/install-ktx.sh') }}
       - run: bash ./scripts/install-ktx.sh
       - run: npm ci
       - run: npm run build
       # Playwright is pinned to 1.56.1, the version whose browser cloud sessions have (CLAUDE.md).
       - run: npx playwright install --with-deps chromium
-      - run: node tests/browser/run.mjs --part ${{ matrix.part }}/8
+      - run: node tests/browser/run.mjs --part ${{ matrix.part }}/12

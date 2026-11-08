@@ -9,6 +9,7 @@ import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
 import { withinDraws } from './budget.mjs';
 import { continueDialogue } from './dialogue.mjs';
+import { shareOf } from './suites.mjs';
 
 const base = '/spokets-godisbus/';
 const dist = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -116,7 +117,9 @@ try {
     { viewport: { width: 390, height: 844 }, tier: 'low', touch: true },
     { viewport: { width: 844, height: 390 }, tier: 'high', touch: true },
   ];
-  for (const { viewport, tier, touch } of cases.filter(c => !process.env.GARDEN_LOOP_CASE || `${c.tier}-${c.touch ? 'touch' : 'keyboard'}` === process.env.GARDEN_LOOP_CASE)) {
+  // Split over two CI runs (tests/browser/suites.mjs): each takes its share of the cases, and the last the old saves.
+  const share = shareOf(cases);
+  for (const { viewport, tier, touch } of share.cases.filter(c => !process.env.GARDEN_LOOP_CASE || `${c.tier}-${c.touch ? 'touch' : 'keyboard'}` === process.env.GARDEN_LOOP_CASE)) {
     const name = `${viewport.width}-${tier}-${touch ? 'touch' : 'keyboard'}`;
     console.log(`garden return: ${name}`);
     const run = await open(name, viewport, tier, touch);
@@ -155,18 +158,20 @@ try {
     check(`${name}: real ${touch ? 'touch' : 'keyboard'} input was used`, (await state()).device === (touch ? 'touch' : 'keys'));
     await run.finish();
   }
-  const legacy = await open('legacy-moa', { width: 844, height: 390 }, 'low', false, true);
-  await legacy.move(1, s => s.word === 'gardenBoard', 'old called-Moa save boards directly');
-  await picture(legacy.page, join(shots, 'legacy-moa-board.png'));
-  await legacy.act();
-  await legacy.until(s => s.mode === 'ride', 'legacy flight');
-  check('older Moa saves still board without finding the drawing', !(await legacy.state()).flags.includes('garden:paper') && (await legacy.state()).flags.includes('plane:board'));
-  await legacy.page.locator('#pauseBtn').click();
-  await legacy.page.reload(); await legacy.ready();
-  await legacy.move(1, s => s.word === 'gardenBoard', 'interrupted flight can board again');
-  await legacy.act();
-  await legacy.until(s => s.mode === 'ride', 'restarted saved flight');
-  check('saving in mid-flight retains Moa but safely restarts the boarding choice', (await legacy.state()).flags.includes('moa') && !(await legacy.state()).flags.includes('garden:paper'));
-  await legacy.finish();
+  if (share.last) {
+    const legacy = await open('legacy-moa', { width: 844, height: 390 }, 'low', false, true);
+    await legacy.move(1, s => s.word === 'gardenBoard', 'old called-Moa save boards directly');
+    await picture(legacy.page, join(shots, 'legacy-moa-board.png'));
+    await legacy.act();
+    await legacy.until(s => s.mode === 'ride', 'legacy flight');
+    check('older Moa saves still board without finding the drawing', !(await legacy.state()).flags.includes('garden:paper') && (await legacy.state()).flags.includes('plane:board'));
+    await legacy.page.locator('#pauseBtn').click();
+    await legacy.page.reload(); await legacy.ready();
+    await legacy.move(1, s => s.word === 'gardenBoard', 'interrupted flight can board again');
+    await legacy.act();
+    await legacy.until(s => s.mode === 'ride', 'restarted saved flight');
+    check('saving in mid-flight retains Moa but safely restarts the boarding choice', (await legacy.state()).flags.includes('moa') && !(await legacy.state()).flags.includes('garden:paper'));
+    await legacy.finish();
+  }
   console.log(`Garden departure/return browser checks: ${checked} passed.`);
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }

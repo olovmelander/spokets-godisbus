@@ -1,11 +1,11 @@
 // Runs the browser suites against a build (`npm run build` first).
 //   node tests/browser/run.mjs              every suite, one after another; stops at the first that fails
-//   node tests/browser/run.mjs --part 2/8   the second of eight parts: GitHub runs the parts side by side
-//   node tests/browser/run.mjs --parts 8    says which suite is in which part, and runs nothing
+//   node tests/browser/run.mjs --part 2/12  the second of twelve parts: GitHub runs the parts side by side
+//   node tests/browser/run.mjs --parts 12   says which suite is in which part, and runs nothing
 // A part runs all its suites, also after one has failed, so that one run shows everything that is wrong.
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { SUITES, parts } from './suites.mjs';
+import { parts, units } from './suites.mjs';
 
 const args = process.argv.slice(2);
 const value = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
@@ -17,7 +17,8 @@ if (value('--parts')) {
   process.exit(0);
 }
 
-let names = SUITES.map(([name]) => name);
+const runs = new Map(units().map((unit) => [unit.name, unit]));
+let names = [...runs.keys()];
 let bail = true;
 const part = value('--part');
 if (part) {
@@ -35,7 +36,10 @@ const failed = [];
 const took = [];
 for (const name of names) {
   const began = Date.now();
-  const result = spawnSync(process.execPath, [fileURLToPath(new URL(`./${name}.mjs`, import.meta.url))], { stdio: 'inherit' });
+  // A share of a split suite runs its file with SHARD set: it takes its own share of the cases (suites.mjs shareOf).
+  const { file, shard } = runs.get(name);
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL(`./${file}.mjs`, import.meta.url))],
+    { stdio: 'inherit', env: shard ? { ...process.env, SHARD: shard } : process.env });
   took.push(`${name} ${Math.round((Date.now() - began) / 1000)} s`);
   if (result.status !== 0) {
     failed.push(name);
