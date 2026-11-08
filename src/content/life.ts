@@ -184,15 +184,18 @@ export const LIFE: Partial<Record<PlaceId, PlaceLife>> = {
     haze: FOREST_MIST,
     // Behind the nearest picture's trunks and its mist, in front of the rest: so a shape that crosses a gap between
     // the trunks reads as a beast's, darker than the haze it walks through, as the bog's bull is against its mist.
-    slots: [{ z: -40, hold: 0.83, sink: 0.25, haze: 0.12 }],
+    slots: [{ z: -40, hold: 0.83, sink: 0.25, haze: 0.04 }],
     roles: {
       // A shape in the forest's own green-grey, dark against the light between the trunks.
-      moose: { act: 'walk', slot: 0, ink: [42, 58, 54], alpha: 0.85, size: 1.15, y: -0.6, odds: 1 / 3, calm: true, known: true },
+      moose: { act: 'walk', slot: 0, ink: [14, 20, 19], alpha: 0.9, size: 2.2, y: -0.6, odds: 1 / 3, calm: true, known: true },
       // A moose cow with her calf at her heels, in one visit of two; a roe deer, who stops and looks this way; and, in
       // one visit of three, a bear rolling along in the dark between the trunks. Each as big as the bull is, to scale.
-      pair: { act: 'walk', walker: 'pair', slot: 0, ink: [42, 58, 54], alpha: 0.85, size: 1.1, y: -0.6, odds: 1 / 2, calm: true, known: true },
-      deer: { act: 'walk', walker: 'deer', slot: 0, ink: [62, 66, 56], alpha: 0.85, size: 1.2, stops: true, y: -0.55, calm: true, known: true },
-      bear: { act: 'walk', walker: 'bear', slot: 0, ink: [30, 38, 36], alpha: 0.88, size: 1.15, y: -0.6, odds: 1 / 3, calm: true, known: true },
+      // The forest's camera is close and its far floor is seen between near trunks: at the bog's size they were a few
+      // pixels there (8 November 2026), so all four are drawn about twice as big, and darker: as big as they can be and still take eight
+      // seconds to cross a tablet's picture, for bigger is quicker across.
+      pair: { act: 'walk', walker: 'pair', slot: 0, ink: [14, 20, 19], alpha: 0.9, size: 2.1, y: -0.6, odds: 1 / 2, calm: true, known: true },
+      deer: { act: 'walk', walker: 'deer', slot: 0, ink: [30, 28, 22], alpha: 0.9, size: 2.3, stops: true, y: -0.55, calm: true, known: true },
+      bear: { act: 'walk', walker: 'bear', slot: 0, ink: [12, 14, 14], alpha: 0.9, size: 2.2, y: -0.6, odds: 1 / 3, calm: true, known: true },
     },
   },
   garden: {

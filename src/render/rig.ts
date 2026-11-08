@@ -479,6 +479,16 @@ export function createModelRig(model: Object3D, height: number): Rig {
   const group = new Group();
   group.add(model);
   group.updateWorldMatrix(true, true);
+  // A skinned mesh takes its bounds once, in whatever pose it is in then, and is culled on them for ever after: Pappa up
+  // on Älven's bridge lost his head, and Elof his body over its lake. Its bounds are taken in the pose it is bound in,
+  // and widened for every pose it takes.
+  model.traverse((part) => {
+    const skinned = part as SkinnedMesh;
+    if (!skinned.isSkinnedMesh) return;
+    skinned.geometry.computeBoundingSphere();
+    skinned.boundingSphere = skinned.geometry.boundingSphere!.clone();
+    skinned.boundingSphere.radius *= 1.6;
+  });
   const bone = (name: string, sign: 1 | -1): Bone | null => {
     const node = model.getObjectByName(name);
     return node ? { node, rest: node.quaternion.clone(), sign } : null;

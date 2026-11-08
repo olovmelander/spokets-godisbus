@@ -95,8 +95,8 @@ again.
 **Mormor and morfar.** Olov asked for them and for their home on 4 November. They are "Mormor" and "Morfar" only:
 no personal names. The public code has plain stand-in figures; the approved models and house come from the private
 pack described in `HANDOVER.md`. The house is white with two gables and a red barn beside it, a lawn and birches. No address, house
-number, sign or coordinates appear anywhere, the house is never placed on a map, and the picture is never
-committed. Anything comes out again if they or Elof's parents ask.
+number, sign or coordinates appear anywhere, no real map shows it (Moa's crayon map may draw it: Olov, 8 November
+2026), and the picture is never committed. Anything comes out again if they or Elof's parents ask.
 
 ## The worlds, beat by beat
 
