@@ -81,6 +81,8 @@
     WebSocket error, CI runs it), and filmstrips of every motion on the real models (kept in the session only).
   - **Not done:** crouching down and up still blends between poses; Mormor and Morfar have no walk, as the story never
     has them walk.
+  - **CI:** story-context's fast route to the ending has a wall-time guard against a route that crawls; a CI runner a
+    third slower than the next took it past 60 s (it takes 18.6 s here, the same on main), so the guard is two minutes.
   - **Known:** at Morgonen's breakfast Bertil, now sitting on his chair's seat, has his thighs up in the underside of the
     table: its top is 1.65 EL over a 1.31 seat, where a kitchen table stands about 1.7 times its chair's height. It is out
     of sight under the table top from the game's camera; before, he sat half a body down inside the chair. Higher tables

@@ -53,6 +53,9 @@ const FAST_ROUTE = 14.135 + 3.2;
 async function fastEnd(page, fromSteps) {
   // Game caps simulation steps per rendered frame. Slow software rendering can make this short
   // logical route take more than 20 wall seconds; it must still advance and finish within its Sim budget.
+  // The wall-time guard only stops a route that crawls on: CI's software rendering takes it about 50 s,
+  // and one runner can be a third slower than the next (8 November 2026: 18.6 s on a desktop, past 60 s
+  // on a slow runner, the same on main), so it allows two minutes.
   const started = Date.now();
   let advanced = started, previous = fromSteps;
   for (;;) {
@@ -71,7 +74,7 @@ async function fastEnd(page, fromSteps) {
       !current.messageShown && current.dialogs.length === 0, `fast route is blocked: ${diagnostic}`);
     if (current.steps > previous) { previous = current.steps; advanced = Date.now(); }
     assert.ok(Date.now() - advanced < 5000, `fast route stopped advancing: ${diagnostic}`);
-    assert.ok(Date.now() - started < 60000, `fast route exceeded its wall-time safety deadline: ${diagnostic}`);
+    assert.ok(Date.now() - started < 120000, `fast route exceeded its wall-time safety deadline: ${diagnostic}`);
     await page.waitForTimeout(100);
   }
 }
