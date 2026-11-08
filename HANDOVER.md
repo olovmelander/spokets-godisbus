@@ -39,6 +39,9 @@
     - It shows Stormbyn's cap, which the chapter cannot end without.
     - The button says Sparka for the football, and nothing on Billsta's walk-on seesaw.
     - **Jag har fastnat** brings the helper along after taking him back, unless a line waits to be read again.
+    - **Progress is what he does:** a line said, a timer run out or a scene played no longer sends away help he asked
+      for, nor starts the wait for a reminder again (`assist()` in `sim.ts`; a test in `tests/sim/help.test.ts`). In
+      Billsta the help vanished when Moa and Bertil ran to the house, and on Påminn mig the first reminder came at 62 s.
   - **Puzzles:** Billsta's roof and slope have Berget's gust rhythm (every 4 s for 1.4 s; it was 3.6 s for 1.7 s,
     and the robot stood five minutes on the roof; the chapter now takes it 88 s).
   - **Pictures:**
@@ -57,7 +60,7 @@
   - **Spoken lines:** none of Äventyr 1's recorded lines changed. Äventyr 2 has no recordings yet, and five of its lines
     changed (`sbMoaHere`, `olIdeaMore`, `olCar`, `sjMamma`, `sjNear`, `sjCar`); `scripts/voices-aventyr2.json` has the
     new words.
-  - **Checked:** typecheck, `npm test` (2,133), `npm run build` (boot 4,540.8 of 4,608 KB), the privacy check, and
+  - **Checked:** typecheck, `npm test` (2,134), `npm run build` (boot 4,540.8 of 4,608 KB), the privacy check, and
     stills of each fix. The browser suites run on CI.
   - **The next step needs:** nothing from Olov's computer.
 
@@ -5017,9 +5020,6 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
-- **The sim counts every `beat:` and `later` flag as progress** (`sim.ts`, `assist()`): a timed line dismisses help
-  he asked for, and on Påminn mig the first reminder after Billsta's Klonk comes at about 62 s, not 40. Not changed
-  tonight: it touches every chapter.
 - **Flärken, after the stone is placed:** back on the diving tower the objective says "Klättra uppför hopptornets
   stege", not the dive. An edge case: he has no reason to go back.
 
