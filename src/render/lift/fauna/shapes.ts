@@ -316,7 +316,8 @@ export function soarer(p: Soaring): BufferGeometry {
   return build([
     ['b', p.body, [0, 0, 0], [0.38, 0.12, 0.13]],
     ['e', p.head, [0.38, 0.035, 0], [0.12, 0.1, 0.095]],
-    ['c', p.beak, [0.54, 0.025, 0], [0.032, 0.14, 0.032], [0, 0, -Math.PI / 2]],
+    // A heavy beak, short and deep: a long thin one reads as a stick from far off.
+    ['c', p.beak, [0.52, 0.02, 0], [0.045, 0.1, 0.035], [0, 0, -Math.PI / 2]],
     // A raven's wedge of a tail, a crow's rounded one.
     ['e', p.tail, [-0.5, 0.01, 0], p.wedge ? [0.24, 0.02, 0.13] : [0.2, 0.02, 0.1]],
     ...(p.wedge ? [['c', p.tail, [-0.7, 0.01, 0], [0.02, 0.16, 0.12], [0, 0, Math.PI / 2]] as Part] : []),
