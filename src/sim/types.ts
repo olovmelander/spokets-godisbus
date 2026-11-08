@@ -745,7 +745,12 @@ export interface Storm {
     kind: 'jettyArm' | 'pole' | 'store' | 'trestleTable' | 'pitch' | 'chess' | 'sunboard' | 'villa' | 'barn' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
       | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce'
       | 'gardenset';
-    x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string; marks?: { halfway: number; box?: { x: number; long: number }; front?: number }; model?: string; size?: number;
+    x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string; model?: string; size?: number;
+    /**
+     * A pitch's lines (../content/aventyr2/buildings.ts): its halfway line and circle, a goal's box, how far it runs on
+     * towards the camera, and its flooded places (`wet`, in the chapter's x and z), where its turf is cut away.
+     */
+    marks?: { halfway: number; box?: { x: number; long: number }; front?: number; wet?: { from: number; to: number; back: number }[] };
     /** A hut's logs tarred black, with white trim. */
     tar?: boolean;
     /**

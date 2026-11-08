@@ -136,6 +136,12 @@ function goal(def: BuildingDef) {
  * ground in one shape. `width` is along the path. The lines stand a little over the stripes, and the goals are the
  * chapter's own. `marks`, from the pitch's middle: where the halfway line and its circle lie, a goal's box, and how
  * far it runs on towards the camera past the path, so that he runs on the pitch and not along its edge.
+ *
+ * `marks.wet`, in the chapter's own x and z: the flooded places. The pitch lies over the ground's pits, so over each
+ * the turf and its lines are cut away and a bank of dark earth goes down from the cut, and the water in the pit
+ * shows (Olov, 8 November 2026: Olympia's puddle could not be seen). A hole is the pit's whole width where he walks,
+ * from where a pool's water is cut towards the camera (../../render/water.ts) back past the path, and rounds off
+ * behind that to `back` at its middle.
  */
 function pitch(def: BuildingDef) {
   const w = def.width ?? 130;
@@ -143,32 +149,136 @@ function pitch(def: BuildingDef) {
   const halfway = def.marks?.halfway ?? 0;
   const box6 = def.marks?.box ?? null;
   const front = def.marks?.front ?? 0;
+  const wets = (def.marks?.wet ?? []).map((wet) => ({ x0: wet.from - def.x, x1: wet.to - def.x, near: WET_NEAR - def.z, path: WET_PATH - def.z, back: wet.back - def.z }));
+  // Each hole's whole box, for the turf; and in narrow slices, each as deep as the hole goes in it, for the lines.
+  const boxes = wets.map((wet) => ({ x0: wet.x0, x1: wet.x1, z0: wet.back, z1: wet.near }));
+  const slices = wets.flatMap((wet) => {
+    const count = Math.ceil((wet.x1 - wet.x0) / 0.2);
+    return Array.from({ length: count }, (_, i) => {
+      const [x0, x1] = [wet.x0 + ((wet.x1 - wet.x0) * i) / count, wet.x0 + ((wet.x1 - wet.x0) * (i + 1)) / count];
+      return { x0, x1, z0: Math.min(wetEdge(wet, x0), wetEdge(wet, x1)), z1: wet.near };
+    });
+  });
   const flat = (wide: number, long: number, x: number, z: number, y: number, colour: string) => box(wide, 0.04, long, x, y, z, colour);
+  /** A flat rectangle (`x0` to `x1`, `z0` to `z1`), with what lies over the holes (`cut`) cut out of it. */
+  const dry = (x0: number, x1: number, z0: number, z1: number, y: number, colour: string, cut = slices) => {
+    for (const piece of cut.reduce((left, hole) => left.flatMap((r) => outside(r, hole)), [{ x0, x1, z0, z1 }])) {
+      parts.push(flat(piece.x1 - piece.x0, piece.z1 - piece.z0, (piece.x0 + piece.x1) / 2, (piece.z0 + piece.z1) / 2, y, colour));
+    }
+  };
   const parts: BufferGeometry[] = [];
   const stripe = 9;
-  for (let i = 0; i * stripe < w; i++) parts.push(flat(stripe, deep + front, -w / 2 + (i + 0.5) * stripe, (front - deep) / 2, 0.02, i % 2 ? '#2a6630' : '#3f8c3e'));
+  for (let i = 0; i * stripe < w; i++) {
+    const [x0, x1, colour] = [-w / 2 + i * stripe, -w / 2 + (i + 1) * stripe, i % 2 ? '#2a6630' : '#3f8c3e'];
+    dry(x0, x1, -deep, front, 0.02, colour, boxes);
+    // Behind each hole, the turf comes forward again to its rounded edge.
+    for (const wet of wets) {
+      const [a, b] = [Math.max(x0, wet.x0), Math.min(x1, wet.x1)];
+      if (b > a) parts.push(turfTo(wet, a, b, 0.04, colour));
+    }
+  }
   const line = '#dfe8e0';
   const y = 0.06;
-  parts.push(flat(w, 0.4, 0, front - 1.2, y, line), flat(w, 0.4, 0, -deep + 2, y, line));
-  parts.push(flat(0.4, deep - 3, halfway, -deep / 2 - 0.3, y, line));
+  dry(-w / 2, w / 2, front - 1.4, front - 1, y, line);
+  dry(-w / 2, w / 2, -deep + 1.8, -deep + 2.2, y, line);
+  dry(halfway - 0.2, halfway + 0.2, -deep + 1.2, -1.8, y, line);
   // The centre circle: lying on the turf behind the flooded part of it.
   const middle = -deep * 0.42;
   const radius = 11;
   const sides = 48;
   for (let i = 0; i < sides; i++) {
     const a = (i / sides) * Math.PI * 2;
-    parts.push(flat(0.4, (Math.PI * 2 * radius) / sides + 0.1, halfway + Math.cos(a) * radius, middle + Math.sin(a) * radius, y, line).rotateY(0));
-    const seg = parts.pop()!;
-    seg.translate(-(halfway + Math.cos(a) * radius), 0, -(middle + Math.sin(a) * radius));
+    const [cx, cz] = [halfway + Math.cos(a) * radius, middle + Math.sin(a) * radius];
+    if (wets.some((wet) => cx > wet.x0 - 0.3 && cx < wet.x1 + 0.3 && cz < wet.near
+      && cz > wetEdge(wet, Math.min(wet.x1, Math.max(wet.x0, cx))) - 0.8)) continue;
+    const seg = flat(0.4, (Math.PI * 2 * radius) / sides + 0.1, 0, 0, y, line);
     seg.rotateY(-a);
-    seg.translate(halfway + Math.cos(a) * radius, 0, middle + Math.sin(a) * radius);
+    seg.translate(cx, 0, cz);
     parts.push(seg);
   }
   if (box6) {
-    parts.push(flat(box6.long, 0.4, box6.x - box6.long / 2, -deep * 0.2, y, line), flat(box6.long, 0.4, box6.x - box6.long / 2, -deep * 0.62, y, line));
-    parts.push(flat(0.4, deep * 0.42, box6.x - box6.long, -deep * 0.41, y, line));
+    dry(box6.x - box6.long, box6.x, -deep * 0.2 - 0.2, -deep * 0.2 + 0.2, y, line);
+    dry(box6.x - box6.long, box6.x, -deep * 0.62 - 0.2, -deep * 0.62 + 0.2, y, line);
+    dry(box6.x - box6.long - 0.2, box6.x - box6.long + 0.2, -deep * 0.62, -deep * 0.2, y, line);
   }
+  // The cut turf's banks: dark earth from the turf down past the water, round each hole's sides and its rounded back.
+  // Its near edge needs none: the water's own cut face is there, and the turf in front hides it.
+  for (const wet of wets) parts.push(bankOf(wet));
   return { parts, panes: [] };
+}
+
+/** How far down a hole's bank goes: past the water and into its murk. */
+const BANK_DOWN = 2.6;
+/** Where a hole in the pitch begins towards the camera: where a pool's water is cut (../../render/water.ts, POOL). */
+const WET_NEAR = 0.65;
+/** How far behind the path a hole is its pit's whole width before it rounds off. */
+const WET_PATH = -1.2;
+/** A hole in the pitch, in the pitch's own x and z. */
+interface Wet { x0: number; x1: number; near: number; path: number; back: number }
+
+/** Where a hole's back edge is at `x`: at the path at its two ends, rounding back to `back` at its middle. */
+function wetEdge(wet: Wet, x: number): number {
+  const t = ((x - wet.x0) / (wet.x1 - wet.x0)) * 2 - 1;
+  return wet.path + (wet.back - wet.path) * Math.sqrt(Math.max(0, 1 - t * t));
+}
+
+/** Points along a hole's back edge from `a` to `b`, about every 0.15 EL. */
+function edgeAlong(wet: Wet, a: number, b: number): [number, number][] {
+  const count = Math.max(1, Math.ceil((b - a) / 0.15));
+  return Array.from({ length: count + 1 }, (_, i) => {
+    const x = a + ((b - a) * i) / count;
+    return [x, wetEdge(wet, x)];
+  });
+}
+
+/** A flat mesh in one colour from its triangles' corners, each triangle given as it is to face. */
+function flatMesh(corners: number[], normals: number[], colour: string): BufferGeometry {
+  const made = new BufferGeometry();
+  made.setAttribute('position', new Float32BufferAttribute(corners, 3));
+  made.setAttribute('normal', new Float32BufferAttribute(normals, 3));
+  return paint(made, colour);
+}
+
+/** The turf behind a hole, from its box's back forward to the hole's rounded edge, between `a` and `b`. */
+function turfTo(wet: Wet, a: number, b: number, y: number, colour: string): BufferGeometry {
+  const corners: number[] = [], normals: number[] = [];
+  const edge = edgeAlong(wet, a, b);
+  for (let i = 0; i < edge.length - 1; i++) {
+    const [[x0, z0], [x1, z1]] = [edge[i]!, edge[i + 1]!];
+    // Wound to face up.
+    corners.push(x0, y, wet.back, x0, y, z0, x1, y, wet.back, x1, y, wet.back, x0, y, z0, x1, y, z1);
+    for (let k = 0; k < 6; k++) normals.push(0, 1, 0);
+  }
+  return flatMesh(corners, normals, colour);
+}
+
+/** A hole's bank: down its two sides from the front and round its back, seen from inside the hole. */
+function bankOf(wet: Wet): BufferGeometry {
+  const outline: [number, number][] = [[wet.x0, wet.near], ...edgeAlong(wet, wet.x0, wet.x1), [wet.x1, wet.near]];
+  const corners: number[] = [], normals: number[] = [];
+  const [top, bottom] = [0.04, 0.04 - BANK_DOWN];
+  for (let i = 0; i < outline.length - 1; i++) {
+    const [[x0, z0], [x1, z1]] = [outline[i]!, outline[i + 1]!];
+    const long = Math.hypot(x1 - x0, z1 - z0);
+    if (long < 1e-6) continue;
+    // Down its near-left side, along its back and up its right side: the hole is to the left of the way the outline goes.
+    const [nx, nz] = [-(z1 - z0) / long, (x1 - x0) / long];
+    corners.push(x0, top, z0, x0, bottom, z0, x1, top, z1, x1, top, z1, x0, bottom, z0, x1, bottom, z1);
+    for (let k = 0; k < 6; k++) normals.push(nx, 0, nz);
+  }
+  return flatMesh(corners, normals, '#3a2f24');
+}
+
+/** What is left of a rectangle outside another: up to four rectangles. */
+function outside(r: { x0: number; x1: number; z0: number; z1: number }, hole: { x0: number; x1: number; z0: number; z1: number }) {
+  if (hole.x1 <= r.x0 || hole.x0 >= r.x1 || hole.z1 <= r.z0 || hole.z0 >= r.z1) return [r];
+  const out: { x0: number; x1: number; z0: number; z1: number }[] = [];
+  if (hole.x0 > r.x0) out.push({ ...r, x1: hole.x0 });
+  if (hole.x1 < r.x1) out.push({ ...r, x0: hole.x1 });
+  const [x0, x1] = [Math.max(r.x0, hole.x0), Math.min(r.x1, hole.x1)];
+  if (hole.z0 > r.z0) out.push({ x0, x1, z0: r.z0, z1: hole.z0 });
+  if (hole.z1 < r.z1) out.push({ x0, x1, z0: hole.z1, z1: r.z1 });
+  return out;
 }
 
 function floodlight(def: BuildingDef) {
