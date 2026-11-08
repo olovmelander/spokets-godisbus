@@ -5,6 +5,7 @@ import {
 } from 'three';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
+import { STONE } from '../../src/render/bark-detail';
 import { FLOOR_SHAPES, restock, stretch } from '../../src/render/dressing/forest';
 import { shoreAt } from '../../src/render/dressing/ground';
 import { heightAt, landscape, makeKit } from '../../src/render/dressing/kit';
@@ -325,6 +326,24 @@ describe('the things he uses, from the kit', () => {
     expect(made.boundingBox!.min.x).toBeCloseTo(-0.1);
     expect(made.boundingBox!.max.x).toBeCloseTo(5.2);
     expect(made.getAttribute('color').getX(made.getAttribute('color').count - 1)).toBeCloseTo(0.5);
+  });
+
+  it('keeps granite saying so on its corners when it is put together with other things, and the rest 0', () => {
+    const plain = boxes('a').shape('a')!;
+    const made = together([{ shape: plain, matrix: new Matrix4() }, { shape: kit.shape('sten-a')!, matrix: placing([3, 0, 0]) }]);
+    const barky = made.getAttribute('barky');
+    const own = plain.getAttribute('position').count;
+    expect(barky.count).toBe(made.getAttribute('position').count);
+    for (let i = 0; i < barky.count; i++) expect(barky.getX(i)).toBe(i < own ? 0 : STONE);
+    // Shapes that are none of it stay as they were.
+    expect(together([{ shape: plain, matrix: new Matrix4() }]).hasAttribute('barky')).toBe(false);
+    // So the floor's stones in the forest's stretches are drawn as granite seen close.
+    let granite = 0;
+    for (let a = forest.ground[0]!.x - 12; a < forest.ground.at(-1)!.x + 12; a += 18) {
+      const still = stretch(forest, a, a + 18, Math.round(a * 7 + 97), kit).children.at(-1) as Mesh;
+      granite += Array.from(still.geometry.getAttribute('barky')?.array ?? []).filter((run) => run === STONE).length;
+    }
+    expect(granite).toBeGreaterThan(0);
   });
 });
 
