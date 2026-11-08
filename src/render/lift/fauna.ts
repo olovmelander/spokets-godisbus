@@ -5,9 +5,9 @@ import {
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../extensions';
 import { sequence } from '../dressing/kit';
 import { drawnWhile } from '../idle';
-import { faunaPlan, girth, type Plan } from './fauna/plan';
+import { faunaPlan, girth, type Landing, type Plan, type Soarer } from './fauna/plan';
 import {
-  BIRDS, CARVINGS, being, bird, butterfly, creatureMaterial, dragonfly, fox, glintMaterial, glints, herd, owl, plain, squirrel,
+  BIRDS, CARVINGS, SOARING, bat, being, bird, butterfly, creatureMaterial, dragonfly, fox, glintMaterial, glints, herd, owl, plain, soarer, squirrel,
   type Species, type V3,
 } from './fauna/shapes';
 
@@ -23,6 +23,9 @@ import {
 export function installFauna(): void {
   PACK.lifts.push(createFauna);
 }
+
+/** A visitor's coming and going: where it may come down, how long until it comes, and how long it stays. */
+interface Visit { landings: readonly Landing[]; wait: number; stay: number }
 
 /** What every kind is told each frame. */
 interface Now {
@@ -129,6 +132,7 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
     foxes(plan, add),
     owls(plan, add),
     birds(plan, add),
+    soarers(plan, add),
     butterflies(plan, add),
     beings(plan, add),
     carvings(plan, add),
@@ -313,62 +317,124 @@ function owls(plan: Plan, add: Add): Kind {
 }
 
 // --- small birds: hop and peck behind the path; they lift as he comes, and come back once he has gone by ---------
+// Visitors (one bird each) come by themselves: in from out of the picture, down where they like, a while there, and
+// off again, so that the birds come and go whether he is near or not.
 
 function birds(plan: Plan, add: Add): Kind {
-  if (!plan.flocks.length) return null;
+  if (!plan.flocks.length && !plan.visitors.length) return null;
   const next = sequence(41);
+  // The visitors' own chances, so that the flocks do what they always did.
+  const chance = sequence(43);
   const meshes = new Map<Species, Crowd>();
   const counts = new Map<Species, number>();
   for (const f of plan.flocks) counts.set(f.species, (counts.get(f.species) ?? 0) + f.birds.length);
+  for (const v of plan.visitors) counts.set(v.species, (counts.get(v.species) ?? 0) + 1);
   for (const [species, count] of counts) meshes.set(species, add(bird(BIRDS[species]), count, undefined, `birds:${species}`));
   const used = new Map<Species, number>();
-  const flocks = plan.flocks.map((f) => ({
-    ...f, away: false, since: 0, side: 1,
-    birds: f.birds.map((b) => {
-      const i = used.get(f.species) ?? 0;
-      used.set(f.species, i + 1);
-      return {
-        crowd: meshes.get(f.species)!, i, rest: [...b.at] as [number, number, number], yaw: b.yaw, home: b.at,
-        doing: 0, k: 0, long: 0, wait: next() * 2, look: 0, look2: 0, hop: 0, from: 0,
-        // Where it has come down in a tree, while he goes by.
-        perch: null as V3 | null,
-        fly: null as null | { a: V3; b: V3; c: V3; k: number; long: number; out: boolean },
-        gone: false,
-      };
+  const member = (species: Species, at: V3, yaw: number) => {
+    const i = used.get(species) ?? 0;
+    used.set(species, i + 1);
+    return {
+      crowd: meshes.get(species)!, i, rest: [...at] as [number, number, number], yaw, home: at,
+      doing: 0, k: 0, long: 0, wait: next() * 2, look: 0, look2: 0, hop: 0, from: 0,
+      // Where it has come down in a tree, while he goes by.
+      perch: null as V3 | null,
+      fly: null as null | { a: V3; b: V3; c: V3; k: number; long: number; out: boolean },
+      gone: false,
+    };
+  };
+  const flocks = [
+    ...plan.flocks.map((f) => ({ ...f, away: false, since: 0, side: 1, visit: null as Visit | null, birds: f.birds.map((b) => member(f.species, b.at, b.yaw)) })),
+    // A visitor waits out of the picture first: away, and gone.
+    ...plan.visitors.map((v) => {
+      const one = member(v.species, [NaN, 0, -2], 0);
+      one.gone = true;
+      return { x: NaN, y: 0, species: v.species, perch: false, shelter: false, away: true, since: 0, side: 1, visit: { landings: v.landings, wait: 2 + chance() * 8, stay: 0 } as Visit | null, birds: [one] };
     }),
-  }));
+  ];
+  type Flying = (typeof flocks)[number];
   const size = (s: Species) => BIRDS[s].size;
+  /**
+   * How near he may come before a visitor lifts, a big one sooner; and how far he is from it, along the path and back
+   * from it: one that came down well behind the path lets him go by closer.
+   */
+  const shy = (s: Species) => 2.6 + size(s) * 0.4;
+  const apart = (along: number, back: number) => Math.hypot(along, back * 0.8);
   /** A flight from a, over b, to c. */
   const flight = (a: V3, b: V3, c: V3, long: number, out: boolean, delay: number) => ({ a, b, c, k: -delay / long, long, out });
+  /** They lift, one after the other, away from x and up into the trees or out of the picture. A visitor goes out of it. */
+  const lift = (f: Flying, x: number) => {
+    f.away = true;
+    f.since = 0;
+    f.side = Math.sign(f.x - x) || 1;
+    const tree = f.visit ? undefined : plan.trees.find((t) => Math.sign(t.x - f.x) === f.side && Math.abs(t.x - f.x) > 3 && Math.abs(t.x - f.x) < 11 && t.z < -3 && t.z > -12);
+    for (const b of f.birds) {
+      const r = b.rest;
+      // Onto a bough of that tree, in the picture; with no tree near, up and away out of it.
+      const c: V3 = tree
+        ? [tree.x + (next() < 0.5 ? -1 : 1) * (1.1 + next()), tree.y + 5 + next() * 2.6, tree.z + 0.3]
+        : [r[0] + f.side * (8 + next() * 3), r[1] + 8 + next() * 2, r[2] - 3 - next() * 4];
+      b.perch = tree ? c : null;
+      b.fly = flight([...r], [r[0] + f.side * 1.2, r[1] + 2.2, r[2] - 0.5], c, 1.3 + next() * 0.6, true, next() * 0.35);
+      b.doing = 0;
+    }
+  };
   return (now) => {
     for (const f of flocks) {
       const show = seen(now, f.x, -2, 4) && (f.shelter || now.day > 0.4);
+      const visit = f.visit;
       if (now.still) {
-        // With less motion every bird is where it sits.
-        f.away = false;
-        for (const b of f.birds) { b.fly = null; b.gone = false; b.perch = null; b.doing = 0; b.rest = [...b.home]; }
+        // With less motion every bird is where it sits; a visitor on its way is there, or gone.
+        if (visit) {
+          const b = f.birds[0]!;
+          if (b.fly?.out) { b.gone = true; f.away = true; } else if (b.fly) b.rest = [...b.home];
+          b.fly = null;
+          b.doing = 0;
+        } else {
+          f.away = false;
+          for (const b of f.birds) { b.fly = null; b.gone = false; b.perch = null; b.doing = 0; b.rest = [...b.home]; }
+        }
+      }
+      if (visit && !now.still) {
+        const b = f.birds[0]!;
+        if ((!f.away || b.fly) && !seen(now, f.x, -2, 6)) {
+          // Left behind out of the picture, sitting or on its way: it goes, unseen.
+          f.away = b.gone = true;
+          b.fly = b.perch = null;
+          visit.wait = 2 + chance() * 6;
+        }
+        if (f.away) {
+          if (b.gone && !b.fly && now.day > 0.4 && (visit.wait -= now.dt) <= 0) {
+            // Somewhere in the picture, not so near him that it would lift again at once, and not where another
+            // visitor sits.
+            const others = flocks.filter((o) => o !== f && o.visit && !o.away).map((o) => o.x);
+            const free = visit.landings.filter((l) => seen(now, l.at[0], l.at[2], -0.8) && apart(now.x - l.at[0], l.at[2]) > shy(f.species) + 0.7 && others.every((o) => Math.abs(o - l.at[0]) > 2.5));
+            const land = free[Math.floor(chance() * free.length)];
+            if (!land) visit.wait = 1 + chance() * 2;
+            else {
+              // In from the side away from him, out of the picture and over it, and down in a long curve.
+              const side = Math.sign(land.at[0] - now.x) || 1;
+              const half = (now.cz - land.at[2]) * now.slope;
+              const from: V3 = [now.cx + side * (half + 2.5), land.at[1] + 4 + chance() * 3, land.at[2] - 1.5 - chance() * 2.5];
+              Object.assign(f, { x: land.at[0], y: land.at[1], perch: land.bough, away: false, since: 0 });
+              Object.assign(b, { home: land.at, rest: [...land.at], yaw: side > 0 ? Math.PI : 0, gone: false, perch: null, doing: 0, wait: 0.4 + chance() });
+              b.fly = flight(from, [land.at[0] + side * 2.4, land.at[1] + 1.6, land.at[2] - 0.3], land.at, 1.9 + chance() * 0.7, false, 0);
+              visit.stay = 6 + chance() * 9;
+            }
+          }
+        } else if (!b.fly && (visit.stay -= now.dt) <= 0) {
+          lift(f, now.x);
+          visit.wait = 6 + chance() * 10;
+        }
       }
       if (!f.shelter && !now.still && show) {
-        const near = Math.abs(now.x - f.x) < 2.9 + f.birds.length * 0.3 && Math.abs(now.y - f.y) < 3.5;
+        const near = (visit ? apart(now.x - f.x, f.birds[0]!.rest[2]) < shy(f.species) : Math.abs(now.x - f.x) < 2.9 + f.birds.length * 0.3) && Math.abs(now.y - f.y) < 3.5;
         if (!f.away && near) {
-          // They lift, one after the other, away from him and up into the trees or out of the picture.
-          f.away = true;
-          f.since = 0;
-          f.side = Math.sign(f.x - now.x) || 1;
-          const tree = plan.trees.find((t) => Math.sign(t.x - f.x) === f.side && Math.abs(t.x - f.x) > 3 && Math.abs(t.x - f.x) < 11 && t.z < -3 && t.z > -12);
-          for (const b of f.birds) {
-            const r = b.rest;
-            // Onto a bough of that tree, in the picture; with no tree near, up and away out of it.
-            const c: V3 = tree
-              ? [tree.x + (next() < 0.5 ? -1 : 1) * (1.1 + next()), tree.y + 5 + next() * 2.6, tree.z + 0.3]
-              : [r[0] + f.side * (8 + next() * 3), r[1] + 8 + next() * 2, r[2] - 3 - next() * 4];
-            b.perch = tree ? c : null;
-            b.fly = flight([...r], [r[0] + f.side * 1.2, r[1] + 2.2, r[2] - 0.5], c, 1.3 + next() * 0.6, true, next() * 0.35);
-            b.doing = 0;
-          }
+          lift(f, now.x);
+          if (visit) visit.wait = 6 + chance() * 10;
         }
         f.since += now.dt;
-        if (f.away && f.since > 6 && Math.abs(now.x - f.x) > 6.5 && f.birds.every((b) => b.gone)) {
+        if (!visit && f.away && f.since > 6 && Math.abs(now.x - f.x) > 6.5 && f.birds.every((b) => b.gone)) {
           // They come back from the side away from him, behind him now, and land where they were.
           const side = Math.sign(f.x - now.x) || 1;
           for (const b of f.birds) {
@@ -385,6 +451,8 @@ function birds(plan: Plan, add: Add): Kind {
         const { crowd, i } = b;
         if (!show || (b.gone && !b.perch) || (k > 1 && now.share < 1)) { crowd.hide(i); continue; }
         const s = size(f.species);
+        // A visitor bigger than a tit hops and dips by its size, and beats its wings slower.
+        const big = f.visit ? Math.max(1, s) : 1;
         if (b.gone && b.perch) {
           // On its bough, looking about, until he has gone by.
           crowd.put(i, b.perch[0], b.perch[1], b.perch[2], b.yaw, s);
@@ -421,12 +489,12 @@ function birds(plan: Plan, add: Add): Kind {
             // Coming down it brakes, with its wings wide and its beats slower.
             const coming = (!fl.out || !!b.perch) && fl.k > 0.72;
             const beating = coming || Math.sin(now.t * 7 + i * 2.1) > -0.35;
-            const dip = coming ? 0 : Math.sin(now.t * 7 + i * 2.1 - 1) * 0.09 * Math.min(1, fl.k * 5);
+            const dip = coming ? 0 : Math.sin(now.t * 7 + i * 2.1 - 1) * 0.09 * big * Math.min(1, fl.k * 5);
             // Landing, it flares: body up, wings wide, to brake.
             const flare = coming && !fl.out ? smooth((fl.k - 0.8) / 0.16) : 0;
             crowd.put(i, at[0]!, at[1]! + dip, at[2]!, b.yaw, s, Math.atan2(d[1]!, Math.hypot(d[0]!, d[2]!)) * 0.6 * (1 - flare) + flare * 0.75);
             const spread = Math.min(1, fl.k * 6, coming ? 1 : (1 - fl.k) * 9);
-            crowd.pose(i, (beating ? 0.95 : 0.12) * Math.sin(now.t * (coming ? 30 : 46 + (i % 4) * 3) + i * 1.7), spread * (beating ? 1 : 0.25), 0, 0);
+            crowd.pose(i, (beating ? 0.95 : 0.12) * Math.sin((now.t * (coming ? 30 : 46 + (i % 4) * 3)) / Math.sqrt(big) + i * 1.7), spread * (beating ? 1 : 0.25), 0, 0);
             continue;
           }
         }
@@ -437,7 +505,7 @@ function birds(plan: Plan, add: Add): Kind {
           b.long = b.doing === 1 ? 0.55 : b.doing === 2 ? 0.34 : 1.3;
           b.look = (next() - 0.5) * 1.4;
           b.look2 = (next() - 0.5) * 1.4;
-          b.hop = 0.1 + next() * 0.14;
+          b.hop = (0.1 + next() * 0.14) * big;
           b.k = 0;
         }
         let peck = 0, turn = 0, up = 0, squat = 0;
@@ -451,13 +519,13 @@ function birds(plan: Plan, add: Add): Kind {
             turn = b.look * (snap(0.06) - snap(0.5)) + b.look2 * (snap(0.5) - snap(0.9));
           } else if (b.doing === 4) {
             // Turning round: a little hop, and round in the air.
-            up = Math.sin(k * Math.PI) * 0.04;
+            up = Math.sin(k * Math.PI) * 0.04 * big;
             b.yaw = b.from + Math.PI * smooth(k);
           } else {
             // A hop: a crouch, then along the way it faces and a little up, and it lands with a give.
             squat = k < 0.24 ? Math.sin((k / 0.24) * Math.PI) : 0;
             const air = Math.max(0, (k - 0.24) / 0.76);
-            up = Math.sin(air * Math.PI) * 0.09 - squat * 0.015;
+            up = (Math.sin(air * Math.PI) * 0.09 - squat * 0.015) * big;
             const step = k > 0.24 ? (b.hop * now.dt) / (b.long * 0.76) : 0;
             const z = b.rest[2] - Math.sin(b.yaw) * step;
             b.rest[0] += Math.cos(b.yaw) * step;
@@ -466,7 +534,7 @@ function birds(plan: Plan, add: Add): Kind {
           }
           if (b.k >= 1) {
             // Now and then, and when it has gone far enough, it turns round, never in one frame.
-            if (b.doing === 2 && (next() < 0.35 || Math.abs(b.rest[0] - b.home[0]) > 0.3)) {
+            if (b.doing === 2 && (next() < 0.35 || Math.abs(b.rest[0] - b.home[0]) > 0.3 * big)) {
               b.doing = 4; b.k = 0; b.long = 0.22; b.from = b.yaw;
             } else {
               b.doing = 0; b.wait = f.shelter ? 3 + next() * 5 : 0.3 + next() * 1.6;
@@ -476,6 +544,87 @@ function birds(plan: Plan, add: Add): Kind {
         const fluff = f.shelter ? 1.12 : 1;
         crowd.put(i, b.rest[0], (f.perch ? b.rest[1] : plan.ground(b.rest[0])) + up, b.rest[2], b.yaw, s * fluff, -squat * 0.12, 0, s * (f.shelter ? 1.08 : 1) * (1 - squat * 0.12));
         crowd.pose(i, 0, 0, turn, peck);
+      }
+    }
+  };
+}
+
+// --- high over the place: ravens and crows circling by day, bats flitting at dusk --------------------------------
+
+/**
+ * How each flies: its size; how high over the ground under the camera and how far back; the circle it rides (ravens
+ * and crows) or the patch it hunts over (bats); how fast it goes round; how fast its wings beat; and how much of the
+ * time it beats them rather than gliding.
+ */
+const SOAR: Record<Soarer, { size: number; up: readonly [number, number]; z: readonly [number, number]; r: readonly [number, number]; turn: number; beat: number; flaps: number }> = {
+  raven: { size: 1.9, up: [6.5, 9], z: [-15, -24], r: [3.5, 5.5], turn: 0.3, beat: 6, flaps: -0.2 },
+  crow: { size: 1.5, up: [5.5, 8], z: [-13, -22], r: [3, 4.5], turn: 0.36, beat: 8, flaps: 0.2 },
+  bat: { size: 0.75, up: [3.8, 5.4], z: [-5, -9], r: [2.2, 3], turn: 1, beat: 70, flaps: 2 },
+};
+/** The window of the world, round the camera, where each keeps its place: it is put anew only when it wraps, out of sight. */
+const SKY_SPAN = { raven: 60, crow: 56, bat: 34 } as const;
+
+function soarers(plan: Plan, add: Add): Kind {
+  if (!plan.soarers.length) return null;
+  const next = sequence(97);
+  const flights = plan.soarers.map(({ kind, count }) => {
+    const crowd = add(kind === 'bat' ? bat() : soarer(SOARING[kind]), count, undefined, `soarers:${kind}`);
+    const own = SOAR[kind];
+    // Ravens and crows in twos, one a little behind the other on the same circle; bats each on its own.
+    const all = Array.from({ length: count }, (_, i) => {
+      const pair = kind !== 'bat' && i % 2 === 1;
+      return {
+        k: pair ? NaN : next() * SKY_SPAN[kind], phase: next() * 6.28, lag: pair ? 0.5 + next() * 0.3 : 0,
+        up: own.up[0] + next() * (own.up[1] - own.up[0]), z: own.z[0] + next() * (own.z[1] - own.z[0]), r: own.r[0] + next() * (own.r[1] - own.r[0]),
+        drift: (next() < 0.5 ? -1 : 1) * (0.25 + next() * 0.35), way: next() < 0.5 ? -1 : 1, yaw: 0, climb: 0, x: NaN, y: 0, zz: 0,
+      };
+    });
+    for (const [i, one] of all.entries()) if (Number.isNaN(one.k)) Object.assign(one, { k: all[i - 1]!.k, z: all[i - 1]!.z, drift: all[i - 1]!.drift, way: all[i - 1]!.way, phase: all[i - 1]!.phase, up: all[i - 1]!.up + 0.6 });
+    return { kind, crowd, own, all, ground: NaN };
+  });
+  const wrap = (v: number, span: number) => ((v % span) + span) % span;
+  return (now) => {
+    for (const f of flights) {
+      const { kind, crowd, own } = f;
+      const span = SKY_SPAN[kind];
+      // The ground under the camera, slowly followed: they keep to the sky over the place, not over each step he takes.
+      const under = plan.ground(now.cx);
+      f.ground = Number.isNaN(f.ground) || now.still ? under : f.ground + (under - f.ground) * Math.min(1, now.dt * 0.5);
+      const out = kind === 'bat' ? now.day > 0.5 : now.day < 0.5;
+      for (const [i, one] of f.all.entries()) {
+        if (out || i >= quota(f.all.length, now)) { crowd.hide(i); continue; }
+        const t = now.t;
+        const middle = now.cx - span / 2 + wrap(one.k + one.drift * t - now.cx, span);
+        let x: number, y: number, z: number;
+        if (kind === 'bat') {
+          // A bat's way is all sudden turns: quick loops over its patch, up and down, never still.
+          x = middle + one.r * Math.sin(t * 1.1 + one.phase) + 0.9 * Math.sin(t * 3.3 + 2 * one.phase);
+          y = f.ground + one.up + 0.7 * Math.sin(t * 1.7 + one.phase) + 0.25 * Math.sin(t * 4.9 + one.phase);
+          z = one.z + 1.2 * Math.sin(t * 0.8 + one.phase * 1.3);
+        } else {
+          // Round and round on a wide circle, the far side of it further back, and slowly along the sky.
+          const a = one.phase + one.way * own.turn * t - one.lag;
+          x = middle + one.r * Math.cos(a);
+          y = f.ground + one.up + 0.5 * Math.sin(a * 0.5 + one.phase);
+          z = one.z - 0.45 * one.r * Math.sin(a);
+        }
+        if (!seen(now, x, z, own.size * 1.5)) { crowd.hide(i); one.x = NaN; continue; }
+        // It faces its way, turned smoothly, and noses up as it climbs: from where it was the frame before. Held
+        // still, it keeps how it was turned.
+        const went = Number.isNaN(one.x) ? 0 : Math.hypot(x - one.x, z - one.zz);
+        if (went > 1e-5) {
+          const wanted = Math.atan2(-(z - one.zz), x - one.x);
+          one.yaw += Math.atan2(Math.sin(wanted - one.yaw), Math.cos(wanted - one.yaw)) * Math.min(1, now.dt * 6);
+          one.climb = Math.atan2(y - one.y, went);
+        }
+        const climb = one.climb;
+        one.x = x; one.y = y; one.zz = z;
+        // Ravens and crows bank into their circle; a bat rolls as it jinks.
+        const bank = kind === 'bat' ? 0.5 * Math.sin(t * 3.3 + 2 * one.phase) : -one.way * 0.32;
+        crowd.put(i, x, y, z, one.yaw, own.size, climb * 0.5, bank);
+        // Beats in bursts, and between them a glide on wings held a little up; a bat never glides.
+        const beating = kind === 'bat' || Math.sin(t * 0.45 + one.phase * 3) < own.flaps;
+        crowd.pose(i, beating ? 0.85 * Math.sin(t * own.beat + one.phase * 5) : -0.12, 1, 0, 0);
       }
     }
   };

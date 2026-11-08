@@ -99,6 +99,79 @@ describe('the near life', () => {
     expect(plan('stormoga').fireflies).toBeGreaterThan(0);
   });
 
+  it('has birds that come by themselves, birds high over the place by day, and bats at dusk', () => {
+    const plan = (id: string) => built.get(id)!.plan!;
+    const visiting = (id: string) => plan(id).visitors.map((v) => v.species);
+    expect(visiting('garden')).toEqual(expect.arrayContaining(['magpie', 'wagtail']));
+    expect(visiting('granskog').length).toBeGreaterThan(0);
+    expect(visiting('myren')).toContain('wagtail');
+    expect(visiting('byn')).toContain('jackdaw');
+    for (const id of ['garden', 'granskog', 'myren', 'byn']) for (const v of plan(id).visitors) expect(v.landings.length, `${id} ${v.species}`).toBeGreaterThan(3);
+    expect(plan('berget').soarers).toEqual([{ kind: 'raven', count: 2 }]);
+    expect(plan('garden').soarers.map((s) => s.kind)).toEqual(['crow']);
+    expect(plan('norrsken').soarers.map((s) => s.kind)).toEqual(['bat']);
+    // None in the storm.
+    for (const chapter of ADVENTURE2.filter((c) => c.storm?.rain)) {
+      expect(built.get(chapter.id)!.plan?.visitors ?? [], chapter.id).toEqual([]);
+      expect(built.get(chapter.id)!.plan?.soarers ?? [], chapter.id).toEqual([]);
+    }
+  });
+
+  it('lets a visitor come down only behind the path, clear of the candy and of the flocks', () => {
+    for (const chapter of chapters) {
+      const plan = built.get(chapter.id)!.plan;
+      if (!plan) continue;
+      const sweets = [...chapter.candy, ...(chapter.side ?? []), ...(chapter.hidden ?? []), ...(chapter.checkpoints ?? [])];
+      for (const v of plan.visitors) {
+        for (const l of v.landings) {
+          expect(l.at[2], `${chapter.id} ${v.species} behind`).toBeLessThan(-1.5);
+          for (const c of sweets) expect(Math.hypot(c.x - l.at[0], c.y - l.at[1], l.at[2]), `${chapter.id} ${v.species} at ${l.at[0].toFixed(1)}`).toBeGreaterThanOrEqual(1.8);
+          for (const f of plan.flocks) for (const b of f.birds) expect(Math.hypot(b.at[0] - l.at[0], b.at[2] - l.at[2]), `${chapter.id} ${v.species} on a flock`).toBeGreaterThan(1.5);
+        }
+      }
+    }
+  });
+
+  it('brings its visitors in by themselves, now and then, and they fly off again', () => {
+    const chapter = COURSES.garden!;
+    const { extra, group } = built.get('garden')!;
+    const magpies = group.children.find((c) => c.name === 'fauna-birds:magpie') as InstancedMesh;
+    const m = new Matrix4();
+    let clock = 900, came = 0, went = 0, was = false;
+    // He dawdles over the lawn, a third of an EL a second, for three minutes, and the camera with him.
+    for (let k = 0; k < 180 * 30; k++) {
+      extra!.update(frame(chapter, 75 + k / 90, (clock += 1 / 30)));
+      magpies.getMatrixAt(0, m);
+      const there = magpies.visible && m.determinant() !== 0;
+      if (there && !was) came++;
+      if (!there && was) went++;
+      was = there;
+    }
+    expect(came).toBeGreaterThan(1);
+    expect(went).toBeGreaterThan(0);
+  });
+
+  it('flies its ravens, crows and bats high over the path and far behind it', () => {
+    const m = new Matrix4();
+    for (const id of ['berget', 'garden', 'myren', 'norrsken']) {
+      const chapter = [...STORY, ...BONUS].find((c) => c.id === id)!;
+      const { extra, group } = built.get(id)!;
+      const mesh = group.children.find((c) => c.name.startsWith('fauna-soarers')) as InstancedMesh;
+      let seen = 0;
+      walk(chapter, extra!, () => {
+        if (!mesh.visible) return;
+        for (let i = 0; i < mesh.count; i++) {
+          mesh.getMatrixAt(i, m);
+          if (m.determinant() === 0) continue;
+          at.setFromMatrixPosition(m);
+          seen++;
+          expect(at.z, id).toBeLessThan(mesh.name.endsWith('bat') ? -3.5 : -10);
+        }
+      }, id === 'norrsken' ? { darkness: 0.6 } : {});
+      expect(seen, id).toBeGreaterThan(0);
+    }
+  });
+
   it('hides in the storm: only birds sheltering on branches, and the owls', () => {
     for (const chapter of ADVENTURE2.filter((c) => c.storm?.rain)) {
       const plan = built.get(chapter.id)!.plan;

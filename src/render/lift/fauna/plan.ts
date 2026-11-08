@@ -20,6 +20,12 @@ export interface Flock { x: number; y: number; species: Species; birds: Rest[]; 
 /** A stone or a stump to peek from behind: its foot, how high its top is, how deep and wide it is, and the side to peek out on. */
 export interface Peek { at: V3; top: number; deep: number; wide: number; side: number; lichen: boolean }
 export interface Carved extends Rest { shape: Carving }
+/** Where a visiting bird may come down: on the ground behind the path, or on a bough. */
+export interface Landing extends Rest { bough: boolean }
+/** A bird that comes by itself now and then, lands where it likes in the picture, stays a while and flies off again. */
+export interface Visitor { species: Species; landings: Landing[] }
+/** What circles high over a place by day, or flits over it at dusk. */
+export type Soarer = 'raven' | 'crow' | 'bat';
 
 export interface Plan {
   place: PlaceId;
@@ -28,6 +34,8 @@ export interface Plan {
   fox: boolean;
   owls: Rest[];
   flocks: Flock[];
+  visitors: Visitor[];
+  soarers: { kind: Soarer; count: number }[];
   butterflies: { home: V3; flowers: V3[] }[];
   dragonflies: V3[];
   fireflies: number;
@@ -39,14 +47,24 @@ export interface Plan {
   ground: (x: number) => number;
 }
 
-/** Who lives in a place by day. The storm sends all of it into hiding but the birds on their branches and the owl. */
-const CAST: Partial<Record<PlaceId, { squirrels?: number; fox?: boolean; birds?: Species[]; butterflies?: number; beings?: number; dragonflies?: boolean }>> = {
-  forest: { squirrels: 3, fox: true, birds: ['tit', 'thrush'], beings: 2, dragonflies: true },
-  garden: { squirrels: 2, birds: ['blue', 'tit'], butterflies: 5 },
-  bog: { birds: ['sparrow', 'tit'], butterflies: 4, beings: 2, dragonflies: true },
-  mountain: { beings: 2 },
-  village: { birds: ['sparrow'] },
+/**
+ * Who lives in a place by day. The storm sends all of it into hiding but the birds on their branches and the owl.
+ * `visitors` come by themselves, one bird of each kind, now and then; `soarers` circle high over the place.
+ */
+const CAST: Partial<Record<PlaceId, {
+  squirrels?: number; fox?: boolean; birds?: Species[]; butterflies?: number; beings?: number; dragonflies?: boolean;
+  visitors?: Species[]; soarers?: { kind: Soarer; count: number }[];
+}>> = {
+  forest: { squirrels: 3, fox: true, birds: ['tit', 'thrush'], beings: 2, dragonflies: true, visitors: ['tit', 'thrush'] },
+  garden: { squirrels: 2, birds: ['blue', 'tit'], butterflies: 5, visitors: ['magpie', 'wagtail', 'blue'], soarers: [{ kind: 'crow', count: 2 }] },
+  bog: { birds: ['sparrow', 'tit'], butterflies: 4, beings: 2, dragonflies: true, visitors: ['wagtail'], soarers: [{ kind: 'raven', count: 2 }] },
+  mountain: { beings: 2, soarers: [{ kind: 'raven', count: 2 }] },
+  village: { birds: ['sparrow'], visitors: ['jackdaw', 'wagtail'] },
 };
+/** What is out at dusk: bats over the path, against the last of the light. */
+const DUSK: { kind: Soarer; count: number }[] = [{ kind: 'bat', count: 3 }];
+/** The birds that come down on the ground only: the rest also come down on a bough. */
+const GROUNDED = new Set<Species>(['thrush', 'sparrow', 'wagtail', 'magpie', 'jackdaw']);
 /** Where the carvings are, a quiet secret in a few chapters of both adventures: how many. */
 const CARVED: Record<string, number> = { garden: 1, granskog: 2, myren: 1, berget: 1, stormskog: 1, alven: 1, billsta: 1, flarken: 1, 'look-forest': 1 };
 /** What shelters in the storm, by place. */
@@ -161,8 +179,8 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
    * A dead branch out of a tree at height h, towards the camera on one side, and never as far as the path: where
    * along it things can sit. Null where the trunk stands too close in front for one.
    */
-  const perchOn = (tree: Tree, h: number, side: number, want: number): ((k: number) => V3) | null => {
-    const a = side * (0.55 + next() * 0.4);
+  const perchOn = (tree: Tree, h: number, side: number, want: number, rand = next): ((k: number) => V3) | null => {
+    const a = side * (0.55 + rand() * 0.4);
     const r = girth(tree, h) * 0.92;
     const root: V3 = [tree.x + Math.sin(a) * r, tree.y + h, tree.z + Math.cos(a) * r];
     const long = Math.min(want, (-1.4 - root[2]) / Math.cos(a));
@@ -233,6 +251,48 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
     });
   }
 
+  // Visitors: places on the ground behind the path every few EL, and a few dead boughs on the near trunks, where a bird
+  // that comes by itself may come down. Clear of the candy (a hop either way included), of the story's things, and of
+  // where the flocks sit, so that none lands on another.
+  const visitors: Visitor[] = [];
+  const kinds_ = cast.visitors ?? [];
+  if (kinds_.length) {
+    // A sequence of their own, so that what was placed before them stays where it was.
+    const next = sequence(seedOf(source.id) ^ 0x2f6b9d3);
+    const sitting = flocks.flatMap((f) => f.birds.map((b) => b.at));
+    const apart = (x: number, z: number) => sitting.every((at) => Math.hypot(at[0] - x, at[2] - z) > 1.6);
+    // A bird stands on a gentle slope as well as on the level, and walks over it.
+    const gentle = (x: number) => Math.abs(ground(x - 0.6) - ground(x)) < 0.3 && Math.abs(ground(x + 0.6) - ground(x)) < 0.3;
+    // Under the open sky: not under the deck's roof, nor by the house, which it would fly through to come down.
+    const open = (x: number) => (source.roofs ?? []).every((r) => x < r.from - 1.5 || x > r.to + 1.5) && (!source.house || x < source.house.from - 1 || x > source.house.to + 1);
+    const stand = (x: number) => free(x) && open(x) && gentle(x) && ((grows(bare, x) && grows(bare, x - 0.6) && grows(bare, x + 0.6)) || (place === 'village' && paved(x)));
+    const ground_: Landing[] = [];
+    for (let x = from + 4 + next() * 3; x < to - 4; x += 2.5 + next() * 2) {
+      const z = -2 + (back + 2) * next();
+      const c = nearest(x, 1.5, (c) => stand(c) && clear(c, ground(c), z, 2.6) && apart(c, z));
+      if (c === null) continue;
+      ground_.push({ at: [c, ground(c), z], yaw: (next() < 0.5 ? 0 : Math.PI) + (next() - 0.5) * 1, bough: false });
+      x = Math.max(x, c);
+    }
+    const boughs: Landing[] = [];
+    if (kinds_.some((k) => !GROUNDED.has(k))) {
+      let last = -Infinity;
+      for (const tree of trees) {
+        if (tree.z > -3 || tree.z < -7.5 || !free(tree.x) || tree.x - last < 6 || next() < 0.2) continue;
+        const sit = perchOn(tree, 1.6 + next() * 1.2, next() < 0.5 ? -1 : 1, 1.6, next);
+        if (!sit) continue;
+        last = tree.x;
+        const at = sit(0.58);
+        if (clear(at[0], at[1], at[2], 1.8) && apart(at[0], at[2])) boughs.push({ at, yaw: (next() < 0.5 ? 0 : Math.PI) + (next() - 0.5) * 0.6, bough: true });
+      }
+    }
+    for (const species of kinds_) {
+      const landings = GROUNDED.has(species) ? ground_ : [...boughs, ...ground_.filter((_, k) => k % 2 === 0)];
+      if (landings.length) visitors.push({ species, landings });
+    }
+  }
+  const soarers = (place === 'dusk' && !storm ? DUSK : cast.soarers ?? []).filter((s) => s.count > 0);
+
   // Butterflies by day: over the garden's lawn, settling on its dandelions; over the bog's meadow, on its moss.
   const butterflies: Plan['butterflies'] = [];
   if (cast.butterflies) {
@@ -301,7 +361,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
 
   // Fireflies at dusk, and in the storm's eye once it is calm.
   const fireflies = place === 'dusk' || (storm && source.storm?.calm) ? 36 : 0;
-  const plan: Plan = { place, trees, squirrels, fox: !!cast.fox, owls, flocks, butterflies, dragonflies, fireflies, beings, carvings, props, ground };
-  const any = squirrels.length + owls.length + flocks.length + butterflies.length + dragonflies.length + fireflies + beings.length + carvings.length;
+  const plan: Plan = { place, trees, squirrels, fox: !!cast.fox, owls, flocks, visitors, soarers, butterflies, dragonflies, fireflies, beings, carvings, props, ground };
+  const any = squirrels.length + owls.length + flocks.length + visitors.length + soarers.length + butterflies.length + dragonflies.length + fireflies + beings.length + carvings.length;
   return any > 0 || plan.fox ? plan : null;
 }

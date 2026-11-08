@@ -220,20 +220,39 @@ export function owl(): BufferGeometry {
   ]);
 }
 
-/** A small bird's colours: back, belly, head, cheek, wing, tail, beak, and a bib or eye stripe where it has one. */
-export interface Plumage { back: string; belly: string; head: string; cheek: string; wing: string; tail: string; beak: string; bib?: string; speckled?: boolean }
+/**
+ * A small bird's colours: back, belly, head, cheek, wing, tail, beak, and a bib or eye stripe where it has one. A
+ * long-tailed bird (`long`, its tail's length against a tit's) cocks its tail as it pecks, by `pump`; `patch` is a pale
+ * patch on its folded wing, `cap` a dark crown, and `eye` an iris that is not dark.
+ */
+export interface Plumage {
+  back: string; belly: string; head: string; cheek: string; wing: string; tail: string; beak: string; bib?: string; speckled?: boolean;
+  long?: number; pump?: number; patch?: string; cap?: string; eye?: string;
+}
 
-/** The small birds, each 1 long before its size: a great tit, a blue tit, a house sparrow and a song thrush. */
+/**
+ * The small birds, each 1 long before its size: a great tit, a blue tit, a house sparrow and a song thrush; and
+ * those that come by themselves now and then (../fauna.ts, visitors): a white wagtail, a magpie and a jackdaw, as
+ * big against him as they are against a child's hand. Black, white and grey: none has the candy's colours.
+ */
 export const BIRDS = {
   tit: { size: 0.95, back: '#7f8f5a', belly: '#c8b863', head: '#29292c', cheek: '#ecebe4', wing: '#6b7988', tail: '#5d6a78', beak: '#2a2622', bib: '#29292c' },
   blue: { size: 0.82, back: '#8a9a5c', belly: '#cfc474', head: '#5f86b4', cheek: '#efeee8', wing: '#6a8cb4', tail: '#5f7ea6', beak: '#2a2622' },
   sparrow: { size: 0.98, back: '#866a4a', belly: '#c4beb2', head: '#8a8c8e', cheek: '#d8d4cc', wing: '#7a6042', tail: '#5e4c3a', beak: '#3a3430', bib: '#3a3430' },
   thrush: { size: 1.45, back: '#7a654a', belly: '#ddd2b6', head: '#7a654a', cheek: '#d2c6a8', wing: '#6e5a42', tail: '#6a5842', beak: '#4e4236', speckled: true },
+  wagtail: { size: 1.0, back: '#8e9296', belly: '#ecebe6', head: '#eeeeea', cheek: '#f2f2ee', wing: '#3c3d40', tail: '#2c2d30', beak: '#26241f', bib: '#232326', cap: '#232326', long: 1.7, pump: 1.1 },
+  magpie: { size: 2.0, back: '#1d2124', belly: '#ecebe6', head: '#1b1e21', cheek: '#1f2326', wing: '#1f2a30', tail: '#1c272c', beak: '#16171a', patch: '#e8e7e2', long: 2.4, pump: 0.7 },
+  jackdaw: { size: 1.9, back: '#3b3e43', belly: '#464a4f', head: '#25272b', cheek: '#8e9398', wing: '#2c2f34', tail: '#2a2d31', beak: '#1a1b1e', cap: '#1d1e21', eye: '#d6dbdc', long: 1.2, pump: 0.4 },
 } satisfies Record<string, Plumage & { size: number }>;
 export type Species = keyof typeof BIRDS;
 
 export function bird(p: Plumage): BufferGeometry {
   const head: Rig = [2, 1, -1, [0.17, 0.42, 0]];
+  // A long tail is cocked about its root as the head pecks (`act.w`, the head's nod), and lifts a little in a hop.
+  const long = p.long ?? 0;
+  const tail: Part = long
+    ? ['b', p.tail, [-0.2 - 0.17 * long, 0.42 + 0.02 * long, 0], [0.17 * long, 0.024, 0.06 + 0.008 * long], [0, 0, 0.16], [1, 0, -(p.pump ?? 0.6), [-0.22, 0.41, 0]]]
+    : ['b', p.tail, [-0.36, 0.41, 0], [0.2, 0.025, 0.07], [0, 0, 0.3]];
   return build([
     ['b', p.back, [0, 0.36, 0], [0.3, 0.2, 0.19]],
     ['b', p.belly, [0.06, 0.3, 0], [0.25, 0.17, 0.165]],
@@ -247,10 +266,14 @@ export function bird(p: Plumage): BufferGeometry {
     ['b', p.head, [0.25, 0.5, 0], [0.14, 0.13, 0.13], NONE, head],
     ...both((s) => ['b', p.cheek, [0.285, 0.475, s * 0.075], [0.075, 0.055, 0.05], NONE, head]),
     ['c', p.beak, [0.42, 0.49, 0], [0.026, 0.1, 0.026], [0, 0, -Math.PI / 2], head],
+    ...(p.cap ? [['b', p.cap, [0.24, 0.56, 0], [0.12, 0.08, 0.12], NONE, head] as Part] : []),
+    // A pale iris round the dark middle (the jackdaw's), drawn under it.
+    ...(p.eye ? both((s): Part => ['e', p.eye!, [0.325, 0.52, s * 0.084], 0.03, NONE, head]) : []),
     ...both((s) => ['e', '#141210', [0.33, 0.52, s * 0.088], 0.02, NONE, head]),
     ...both((s) => ['b', p.wing, [-0.06, 0.41, s * 0.13], [0.22, 0.1, 0.05], [0, 0, -0.15]]),
+    ...(p.patch ? both((s): Part => ['b', p.patch!, [0.0, 0.44, s * 0.15], [0.13, 0.055, 0.04], [0, 0, -0.15]]) : []),
     ...both((s) => ['b', p.wing, [0, 0.42, s * 0.3], [0.12, 0.012, 0.22], NONE, [3, s, 0, [0, 0.42, s * 0.08]]]),
-    ['b', p.tail, [-0.36, 0.41, 0], [0.2, 0.025, 0.07], [0, 0, 0.3]],
+    tail,
     ...both((s) => ['r', '#4e443a', [0.04, 0.1, s * 0.045], [0.013, 0.2, 0.013]]),
     ...both((s) => ['b', '#4e443a', [0.08, 0.012, s * 0.045], [0.06, 0.012, 0.016]]),
   ]);
@@ -273,6 +296,50 @@ export function dragonfly(): BufferGeometry {
     ...[-0.08, -0.16, -0.24].map((x): Part => ['e', '#2f6b6e', [x, 0, 0], [0.012, 0.019, 0.019]]),
     ['b', '#356f74', [0.05, 0, 0], [0.05, 0.04, 0.038]],
     ['b', '#2f5f70', [0.1, 0.005, 0], [0.035, 0.032, 0.046]],
+  ]);
+}
+
+/**
+ * A big bird high in the air, as seen from below and the side: a raven or a crow, its body 1 long, its wings 2.2 across
+ * when spread, with fingered tips; a raven's tail is a wedge. Its wings beat by `act.x` and spread by `act.y`, as a
+ * small bird's do; it flies along +x with its middle at the origin.
+ */
+export interface Soaring { body: string; head: string; wing: string; tail: string; beak: string; wedge?: boolean }
+export const SOARING = {
+  raven: { body: '#1c1e23', head: '#191b1f', wing: '#1e2127', tail: '#1b1d22', beak: '#141518', wedge: true },
+  crow: { body: '#8d9094', head: '#202226', wing: '#23262b', tail: '#222428', beak: '#18191c' },
+} satisfies Record<string, Soaring>;
+
+export function soarer(p: Soaring): BufferGeometry {
+  // Far off, so its parts are the coarse beads and facets: a few hundred triangles a bird.
+  const wing = (s: number, at: V3, size: V3, shape: 'e' | 'f' = 'e'): Part => [shape, p.wing, [at[0], at[1], s * at[2]], size, NONE, [3, s, 0, [0, 0.03, s * 0.09]]];
+  return build([
+    ['b', p.body, [0, 0, 0], [0.38, 0.12, 0.13]],
+    ['e', p.head, [0.38, 0.035, 0], [0.12, 0.1, 0.095]],
+    ['c', p.beak, [0.54, 0.025, 0], [0.032, 0.14, 0.032], [0, 0, -Math.PI / 2]],
+    // A raven's wedge of a tail, a crow's rounded one.
+    ['e', p.tail, [-0.5, 0.01, 0], p.wedge ? [0.24, 0.02, 0.13] : [0.2, 0.02, 0.1]],
+    ...(p.wedge ? [['c', p.tail, [-0.7, 0.01, 0], [0.02, 0.16, 0.12], [0, 0, Math.PI / 2]] as Part] : []),
+    ...both((s) => wing(s, [0.02, 0.03, 0.42], [0.2, 0.018, 0.36])),
+    ...both((s) => wing(s, [0.06, 0.03, 0.18], [0.24, 0.022, 0.14])),
+    // The fingers at the tip: four long feathers splayed.
+    ...[0, 1, 2, 3].flatMap((k) => both((s) => wing(s, [-0.06 + k * 0.055, 0.03, 0.82 + (k === 1 || k === 2 ? 0.04 : 0)], [0.035, 0.008, 0.11], 'f'))),
+  ]);
+}
+
+/** A bat at dusk, 1 across with its wings spread: a small dark furry body, two ears, and thin wings that beat fast. */
+export function bat(): BufferGeometry {
+  const fur = '#3b332d';
+  const skin = '#2e2824';
+  const wing = (s: number, at: V3, size: V3): Part => ['e', skin, [at[0], at[1], s * at[2]], size, NONE, [3, s, 0, [0, 0, s * 0.04]]];
+  return build([
+    ['e', fur, [0, 0, 0], [0.11, 0.06, 0.065]],
+    ['e', fur, [0.1, 0.01, 0], [0.05, 0.045, 0.045]],
+    ...both((s) => ['c', fur, [0.11, 0.06, s * 0.025], [0.018, 0.05, 0.012], [s * 0.3, 0, -0.2]]),
+    ...both((s) => wing(s, [0.0, 0, 0.22], [0.1, 0.008, 0.2])),
+    // The scalloped trailing edge: the fingers' lobes.
+    ...both((s) => wing(s, [-0.06, 0, 0.3], [0.07, 0.006, 0.1])),
+    ...both((s) => wing(s, [0.03, 0, 0.42], [0.05, 0.006, 0.08])),
   ]);
 }
 
