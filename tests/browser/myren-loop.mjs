@@ -96,11 +96,12 @@ try {
       let maxDraws = p.view.info().drawCalls;
       const inspect = (x) => { const reached = p.walk(x); maxDraws = Math.max(maxDraws, p.view.info().drawCalls); return reached; };
       const east = inspect(158) && inspect(180), twice = inspect(142) && inspect(158) && inspect(180);
-      return { west, returned, lit, east, twice, maxDraws, flights: p.flights(), at: { x: p.sim.curr.x, y: p.sim.curr.y, mode: p.sim.curr.mode }, bubbles: p.sim.bubbles,
+      // Measured on the tier the draws above left it on (High): held to that tier's budget, not to Low's.
+      return { west, returned, lit, east, twice, maxDraws, tier: p.view.info().tier, flights: p.flights(), at: { x: p.sim.curr.x, y: p.sim.curr.y, mode: p.sim.curr.mode }, bubbles: p.sim.bubbles,
         once: p.sim.said.filter((id) => id === 'bog:light-return').length === 1,
         noDeparture: !p.sim.flags.has('crane') && !p.sim.flags.has('goal') };
     });
-    check(`${name}: the lantern return is real, readable and reusable without jumping`, loop.west && loop.returned && loop.lit && loop.east && loop.twice && loop.flights === 0 && loop.bubbles === 0 && loop.once && loop.noDeparture && withinDraws(loop.maxDraws), loop);
+    check(`${name}: the lantern return is real, readable and reusable without jumping`, loop.west && loop.returned && loop.lit && loop.east && loop.twice && loop.flights === 0 && loop.bubbles === 0 && loop.once && loop.noDeparture && withinDraws(loop.maxDraws, loop.tier), loop);
     const restored = await page.evaluate(() => {
       const p = window.probe;
       const game = new p.f.Game(p.f.myren, p.f.simOptions(p.f.settingsFor('lugnt')), { checkpoint: 8, flags: [...p.sim.flags], collected: p.sim.collected.flatMap((value, i) => value ? [i] : []), placed: p.sim.placed });
