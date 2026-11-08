@@ -950,7 +950,7 @@ export function jarShape(): BufferGeometry {
   for (let i = 0; i < at.count; i++) {
     const facing = Math.abs(turned.getZ(i));
     const base = at.getY(i) < 0.3 ? 0.18 : 0;
-    colour.push(glass.r, glass.g, glass.b, Math.min(0.75, 0.08 + 0.52 * (1 - facing) ** 1.5 + base));
+    colour.push(glass.r, glass.g, glass.b, Math.min(0.75, 0.08 + 0.52 * Math.max(0, 1 - facing) ** 1.5 + base));
   }
   const index: number[] = Array.from(lathe.getIndex()!.array as ArrayLike<number>);
   // Each streak: a strip just outside the body, from near its foot to under its shoulder.

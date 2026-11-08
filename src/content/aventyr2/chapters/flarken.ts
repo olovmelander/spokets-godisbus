@@ -336,7 +336,8 @@ export const flarken: ChapterData = {
     { from: BENCH_B.to, to: STONES[0]!.from, kind: 'sand' },
     { from: STONES[0]!.from, to: STONES[2]!.to, kind: 'stone' },
     { from: HIGH.from, to: STEP.to, kind: 'stone' },
-    { from: ISLAND.from, to: ISLAND.to, kind: 'stone' },
+    // The firm stone between the mats: a wet boulder rounding into the lake, not a slab.
+    { from: ISLAND.from, to: ISLAND.to, kind: 'wetRock' },
     { from: JETTY.from, to: JETTY.to, kind: 'wood' },
     { from: OUTER.from, to: OUTER.to, kind: 'wood' },
     { from: BEYOND.from, to: LOW.to, kind: 'wood' },
@@ -672,7 +673,8 @@ export const context: Chooser = (has, player) => {
   const at = player.x;
   if (has('beat:sjon:car')) return ['sjonRiver', 'sjonRoad', 'water'];
   if (has(`placed:${BARK.id}`)) return [at < FAR.from ? 'sjonRaft' : 'sjonEnd', 'sjonMamma', 'water'];
-  if (has(`placed:${STONE.id}`)) return at >= TOWER.to ? ['sjonBark', 'sjonMamma', 'water'] : ['sjonTower', 'sjonMamma'];
+  // Back on the tower once the stone has sunk, the tower's own lines say what to do there.
+  if (has(`placed:${STONE.id}`) && at >= TOWER.to) return ['sjonBark', 'sjonMamma', 'water'];
   if (at >= TOWER.to) return ['sjonGap', 'sjonMamma', 'water'];
   if (at >= TOWER.ladder - 0.6) return has('beat:sjon:lookout') ? ['sjonDive', 'sjonMamma', 'water'] : ['sjonTower', 'sjonMamma'];
   if (has('sjon:boat')) return at < BREAK.to + 0.5 ? ['sjonBoat', 'sjonMamma', 'water', 'mamma'] : ['sjonOut', 'sjonMamma'];

@@ -560,9 +560,14 @@ export class Sim {
    * he has done the thing or after a while. On *Påminn mig* it comes once by itself when nothing has
    * happened for a long time; on *Guida mig* it then knocks as well.
    */
+  private timed: ReadonlySet<string> | undefined;
   private assist(asked: boolean): void {
-    // Something happened: a flag, a candy, a big candy, or new ground under his feet.
-    const now = this.flags.size * 4096 + this.candyCount * 8 + this.checkpoint;
+    // Something happened: a flag, a candy, a big candy, or new ground under his feet. A line said, a timer run out or a
+    // scene played is not something he did: it neither sends away help he asked for nor starts the wait for a reminder.
+    this.timed ??= new Set((this.chapter.later ?? []).map((later) => later.flag));
+    let made = 0;
+    for (const flag of this.flags) if (!flag.startsWith('beat:') && !flag.startsWith('scene:') && !this.timed.has(flag)) made++;
+    const now = made * 4096 + this.candyCount * 8 + this.checkpoint;
     const further = this.curr.x > this.furthest + 1;
     if (further) this.furthest = this.curr.x;
     if (now !== this.progress || further) {

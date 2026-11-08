@@ -72,7 +72,7 @@ export const words: ChapterWords = {
     alvenLifted: { purpose: 'Håll i halsduken. Pappa lyfter dig!', recap: 'Jag hänger i Pappas halsduk, högt över forsen.' },
     alvenLodge: { purpose: 'Klättra över bäverhyddan.', recap: 'Pappa lyfte mig över forsen. Här bor en bäver.' },
     alvenLake: { purpose: 'Ropa på ugglan vid sjön.', recap: 'Sjön är för bred. Ugglan från skogen har följt efter oss.' },
-    alvenBoard: { purpose: 'Kliv upp på ugglan.', recap: 'Ugglan har landat bredvid mig. Den kan ta mig över sjön.' },
+    alvenBoard: { purpose: 'Hoppa upp på ugglan.', recap: 'Ugglan har landat bredvid mig. Den kan ta mig över sjön.' },
     alvenFly: { purpose: 'Flyg på ugglan över sjön.', recap: 'Ugglan bär mig högt över den stora sjön.' },
     alvenMoalven: { purpose: 'Följ trägubbarna nerför älven.', recap: 'Nu heter ån Moälven. Lillgubben och gamla trägubben flyter före.' },
     alvenLost: { purpose: 'Spåret är slut. Vad gör vi nu?', recap: 'Här slutar godisspåret. Jag har tappat trägubbarna ur sikte.' },

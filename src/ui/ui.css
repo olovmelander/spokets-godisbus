@@ -1460,6 +1460,14 @@ body.lefty .key-prompt {
   max-height: 180px;
 }
 
+/* A phone held sideways: the map stays first, but low enough that the diary under it is seen without scrolling. */
+@media (max-height: 500px) and (min-width: 700px) {
+  .pause-story .moas-karta { max-height: 116px; }
+  .pause-story .story-recap { margin: 0; padding: 8px 12px; }
+  .pause-story .story-recap h3 { margin-bottom: 2px; }
+  .pause-story .story-recap p { margin-top: 2px; }
+}
+
 /* Moa's writing, large enough to read on a phone (menus.md row 15). */
 .moas-karta text {
   font-family: var(--font-hand);

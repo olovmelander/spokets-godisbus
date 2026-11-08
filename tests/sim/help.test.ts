@@ -283,3 +283,17 @@ describe('the help level in the settings', () => {
     expect(readSettings({ style: 'aventyr' }).help).toBe('ask');
   });
 });
+
+describe('what counts as something he did', () => {
+  it('help he asked for stays when a line is said or a timer runs out', () => {
+    // Billsta's seesaw: a scene ends, the 10 s timer `bi:think` runs out and Elof says a line, while the help shows.
+    const sim = at(billsta, 126.5, 0, { flags: ['bi:call-klonk', 'bi:klonk-on'] });
+    run(sim, 8);
+    expect(sim.flags.has('bi:think')).toBe(false);
+    ask(sim);
+    expect(sim.help.step).toBeGreaterThan(0);
+    run(sim, 3);
+    expect(sim.flags.has('bi:think')).toBe(true);
+    expect(sim.help.step).toBeGreaterThan(0);
+  });
+});

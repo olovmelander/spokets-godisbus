@@ -21,7 +21,7 @@ export const words: ChapterWords = {
     // 3. Bollen i målet
     olPuddle: 'Målet står mitt i en stor pöl!',
     olIdea: 'Den lilla bollen flyter ju!',
-    olIdeaMore: 'En större boll skulle kunna bära mig.',
+    olIdeaMore: 'Den stora bollen på bordet kan bära mig!',
     olSplash: 'Plask! Bollen flyter. Nu hoppar jag!',
     olInGoal: 'Mål! Fast det var jag som gick in!',
     // 4. up the net to the crossbar
@@ -43,7 +43,7 @@ export const words: ChapterWords = {
     olGust: 'Där! Vinden tar lillgubben norrut!',
     olNorth: 'Upp mot sjön vid Flärken!',
     olFollow: 'Gamla trägubben följer efter honom!',
-    olCar: 'Hoppa in i bilen! Vi åker till Flärken.',
+    olCar: 'Kom! Vi åker bil till Flärken.',
   },
   verbs: {
     olKick: 'Sparka',
@@ -55,14 +55,14 @@ export const words: ChapterWords = {
     olympiaFence: { purpose: 'Klättra över staketet.', recap: 'Staketet runt planen är högt, men nätet går att klättra på.' },
     olympiaTrail: { purpose: 'Följ godisspåret över planen.', recap: 'Gamla trägubben lämnar godis åt mig, en bit i taget.' },
     olympiaBalls: { purpose: 'Hoppa över bollarna som rullar.', recap: 'Vinden rullar bollar över planen. De kommer bakifrån.' },
-    olympiaKick: { purpose: 'Hur tar jag mig över pölen?', recap: 'Målet står mitt i en stor pöl. Den är för bred.' },
+    olympiaKick: { purpose: 'Hur tar jag mig över pölen?', recap: 'Målet står mitt i en stor pöl. Jag sprang under ett bord med en stor boll på.' },
     olympiaHop: { purpose: 'Hoppa över på bollen.', recap: 'Bollen flyter i pölen framför målet. Den bär mig.' },
     olympiaBenches: { purpose: 'Spring förbi bänkarna mellan dropparna.', recap: 'Det droppar från bänkarnas tak. Skuggorna visar var dropparna landar.' },
     olympiaCallBertil: { purpose: 'Ropa på Bertil vid mittcirkeln.', recap: 'Mittcirkeln är en hel sjö. Bertil kan skjuta mig över på sin boll.' },
     olympiaBoard: { purpose: 'Hoppa upp på bollen.', recap: 'Bertil har lagt bollen till rätta. Han skjuter, och jag flyger.' },
     olympiaFly: { purpose: 'Flyg över mittcirkeln på bollen.', recap: 'Bertil sköt en frispark, och jag åker med bollen.' },
     olympiaStadium: { purpose: 'Följ godisspåret till skidstadion.', recap: 'Mål! Bertils frispark bar mig över mittcirkeln.' },
-    olympiaNorth: { purpose: 'Åk bil upp till Flärken.', recap: 'Den starkaste stormbyn tog lillgubben norrut. Gamla trägubben följer efter, och vi tar bilen.' },
+    olympiaNorth: { purpose: 'Följ elljusspåret. Sedan åker vi bil till Flärken!', recap: 'Den starkaste stormbyn tog lillgubben norrut. Gamla trägubben följer efter, och vi åker bil.' },
   },
   helpers: {
     olympiaFamily: 'Familjen letar runt planen med sina lampor.',

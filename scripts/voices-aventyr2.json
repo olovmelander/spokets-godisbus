@@ -599,7 +599,7 @@
     "speaker": "moa",
     "situation": "Äventyr 2, stormbyn",
     "tag": "[warm big sister, lively]",
-    "text": "Lillebror! Jag står här nere med lampan."
+    "text": "Lillebror! Ropa, så får du mitt paraply!"
   },
   {
     "key": "sbMoaHold",
@@ -739,7 +739,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, olympia",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "En större boll skulle kunna bära mig."
+    "text": "Den stora bollen på bordet kan bära mig!"
   },
   {
     "key": "olSplash",
@@ -858,7 +858,7 @@
     "speaker": "bertil",
     "situation": "Äventyr 2, olympia",
     "tag": "[cheerful older brother, excited]",
-    "text": "Hoppa in i bilen! Vi åker till Flärken."
+    "text": "Kom! Vi åker bil till Flärken."
   },
   {
     "key": "scene_olympia",
@@ -942,7 +942,7 @@
     "speaker": "mamma",
     "situation": "Äventyr 2, flarken",
     "tag": "[warm, calm mother]",
-    "text": "Elof! Jag paddlar dit på SUP:en!"
+    "text": "Elof! Ropa på mig, så paddlar jag dit!"
   },
   {
     "key": "sjBoatReady",
@@ -970,7 +970,7 @@
     "speaker": "mamma",
     "situation": "Äventyr 2, flarken",
     "tag": "[warm, calm mother]",
-    "text": "Jag väntar här. Ropa om du behöver mig."
+    "text": "Jag väntar här. Du klarar det, Elof!"
   },
   {
     "key": "sjTower",
@@ -1054,7 +1054,7 @@
     "speaker": "mamma",
     "situation": "Äventyr 2, flarken",
     "tag": "[warm, calm mother]",
-    "text": "Vi kör längs ån. Vi är nära dig."
+    "text": "Jag paddlar i land. Vi kör längs ån!"
   },
   {
     "key": "sjFollow",

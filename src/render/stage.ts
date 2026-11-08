@@ -244,7 +244,7 @@ export function litLamp(): Mesh {
   const cone = new ConeGeometry(1.7, LONG, 18, 5, true).rotateX(-Math.PI / 2).translate(0, 0, LONG / 2 + 0.3);
   const at = cone.getAttribute('position');
   const fade = new Float32Array(at.count * 3);
-  for (let i = 0; i < at.count; i++) fade.fill((1 - (at.getZ(i) - 0.3) / LONG) ** 1.6, i * 3, i * 3 + 3);
+  for (let i = 0; i < at.count; i++) fade.fill(Math.max(0, 1 - (at.getZ(i) - 0.3) / LONG) ** 1.6, i * 3, i * 3 + 3);
   cone.setAttribute('color', new BufferAttribute(fade, 3));
   const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.16, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, fog: false }));
   beam.name = 'lamp-beam';

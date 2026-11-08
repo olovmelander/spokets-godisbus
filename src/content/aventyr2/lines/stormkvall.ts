@@ -36,9 +36,10 @@ export const words: ChapterWords = {
   purposes: {
     skEvening: { purpose: 'Lyssna på stormen.', recap: 'Det är lördagskväll, och stormen viner runt huset.' },
     skFetchLamp: { purpose: 'Hämta ficklampan åt Pappa.', recap: 'Strömmen gick. Pappa letar efter ficklampan i mörkret.' },
-    skGiveLamp: { purpose: 'Ge ficklampan till Pappa.', recap: 'Ficklampan låg på bordet. Pappa står vid fönstret.' },
+    skGiveLamp: { purpose: 'Ge ficklampan till Pappa.', recap: 'Ficklampan låg på bordet. Pappa står bredvid och letar i mörkret.' },
     skGoodnightPurpose: { purpose: 'Säg godnatt till trägubbarna på hyllan.', recap: 'Min egen nya trägubbe står bredvid Pappas allra första. Ficklampan är hos Pappa.' },
-    skStar: { purpose: 'Smaka på Klonks stjärna.', recap: 'Stormen tog lillgubben ut genom fönstret, och gamla trägubben hoppade efter.' },
+    skWindow: { purpose: 'Titta – stormen tar trägubbarna!', recap: 'Stormen tog lillgubben ut genom fönstret, och gamla trägubben hoppade efter.' },
+    skStar: { purpose: 'Smaka på Klonks stjärna.', recap: 'Klonk har en stjärna kvar. Den kan göra mig lika liten som trägubbarna.' },
     skShrinking: { purpose: 'Stjärnan gör mig liten.', recap: 'Klonk gav mig sin sista stjärna. Små kan hitta små.' },
     skFollowTrail: { purpose: 'Följ godisspåret ut i stormen.', recap: 'Gamla trägubben lämnar godis åt mig. Han följer efter lillgubben.' },
   },

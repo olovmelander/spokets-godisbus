@@ -379,7 +379,8 @@ export const stormkvall: ChapterData = {
 export const context: Chooser = (has) => {
   if (has('scene:tillsammans')) return ['skFollowTrail', 'skFamilyLamps', 'trail'];
   if (has('star')) return ['skShrinking', 'skFamilyHome', 'sparkle'];
-  if (has('gust')) return ['skStar', 'skFamilyHome', 'sparkle'];
+  if (has('star:out')) return ['skStar', 'skFamilyHome', 'sparkle'];
+  if (has('gust')) return ['skWindow', 'skFamilyHome', 'sparkle'];
   if (has('lamp:give')) return ['skGoodnightPurpose', 'skFamilyHome', 'heart'];
   if (has('lamp:take')) return ['skGiveLamp', 'skFamilyHome', 'heart', 'pappa'];
   if (has('scene:kvall')) return ['skFetchLamp', 'skFamilyHome', 'house', 'pappa'];

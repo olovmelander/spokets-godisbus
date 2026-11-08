@@ -13,7 +13,7 @@ export const words: ChapterWords = {
     // Rännstensforsen, and the grate.
     sbRiver: 'Rännstenen har blivit en fors!',
     // The high wall, and Moa's umbrella. She calls him lillebror.
-    sbMoaHere: 'Lillebror! Jag står här nere med lampan.',
+    sbMoaHere: 'Lillebror! Ropa, så får du mitt paraply!',
     sbMoaHold: 'Håll i paraplyet, så svävar du!',
     sbFloat: 'Jag svävar som ett maskrosfrö!',
     sbMoaLanded: 'Där kom mitt minsta maskrosfrö!',

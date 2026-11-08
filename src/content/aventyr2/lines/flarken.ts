@@ -22,13 +22,13 @@ export const words: ChapterWords = {
     sjOldOne: 'Spring, gamla trägubben! Vi kommer!',
     // 6. Mamma's paddle board
     sjBroken: 'Bryggan är trasig! Det är för långt.',
-    sjMamma: 'Elof! Jag paddlar dit på SUP:en!',
+    sjMamma: 'Elof! Ropa på mig, så paddlar jag dit!',
     sjBoatReady: 'Jag håller brädan stilla. Kliv på!',
     sjSteady: 'Lugnt och fint. Jag släpper inte.',
     sjThanks: 'Tack! Din SUP blev ju en bro!',
     // 7. the diving tower
     sjTower: 'Hopptornet! Där uppe ser man allt.',
-    sjNear: 'Jag väntar här. Ropa om du behöver mig.',
+    sjNear: 'Jag väntar här. Du klarar det, Elof!',
     sjLookout: 'Där är lillgubben, där ån börjar!',
     // 8. the bark raft
     sjGap: 'Plankorna är borta. Vad gör jag nu?',
@@ -42,7 +42,7 @@ export const words: ChapterWords = {
     sjOutlet: 'Åh nej! Ån tar med sig lillgubben!',
     sjLog: 'Gamla trägubben hoppar på en stock!',
     sjFloated: 'Trä flyter! Ån bär dem båda.',
-    sjCar: 'Vi kör längs ån. Vi är nära dig.',
+    sjCar: 'Jag paddlar i land. Vi kör längs ån!',
     sjFollow: 'Klonk och jag följer godiset längs ån!',
     sjKlonkCheer: 'Klonk! Klonk! Klonk!',
   },
@@ -55,7 +55,7 @@ export const words: ChapterWords = {
     sjonMats: { purpose: 'Spring över gungflyet.', recap: 'Vassmattorna sjunker om jag står still. Klonk visar vägen.' },
     sjonJetty: { purpose: 'Göm dig bakom stolparna när vågen kommer.', recap: 'Stormen slår vågor över bryggan. Bakom stolparna är det lä.' },
     sjonMamma: { purpose: 'Ropa på Mamma vid bryggan.', recap: 'Bryggan har gått av. Mamma paddlar på SUP:en alldeles nära.' },
-    sjonBoat: { purpose: 'Kliv på SUP-brädan och åk över.', recap: 'Mamma håller brädan tätt intill bryggan. Hon släpper inte.' },
+    sjonBoat: { purpose: 'Gå över på Mammas SUP-bräda.', recap: 'Mamma håller brädan tätt intill bryggan. Hon släpper inte.' },
     sjonOut: { purpose: 'Följ godiset ut till hopptornet.', recap: 'Mamma väntar vid bryggan. Gamla trägubben lämnar godis hela vägen ut.' },
     sjonTower: { purpose: 'Klättra uppför hopptornets stege.', recap: 'Lillgubben blåste ut över sjön. Från tornet kan jag se vart han tog vägen.' },
     sjonDive: { purpose: 'Spring och hoppa ner på bryggan.', recap: 'Blixten visade lillgubben långt ute, där ån börjar.' },

@@ -170,7 +170,15 @@ export const alven: ChapterData = {
   river: true,
   spawn: { x: 1, y: 0.01 },
   // Where and when, as the chapter opens (src/content/chapters/cards.ts).
-  scenes: [timeCard('alven', 1)],
+  scenes: [
+    timeCard('alven', 1),
+    // Called, Pappa is seen where he stands: up on the bridge's middle, over the rapids, from where he lowers his scarf.
+    // The rapids' camera keeps Elof in the picture and him out of it, so for a moment the picture looks up to him.
+    {
+      id: 'bron', on: 'al:pappa', until: 'al:lift', before: 92, seconds: 1.5, hold: true,
+      stage: { shots: [{ at: 0, x: 95.5, y: 6.6, height: 13, width: 22, move: 0.4 }] },
+    },
+  ],
   goalX: 186,
   trailEnds: true,
   // Pappa answers in the coda: he follows by car along the river.

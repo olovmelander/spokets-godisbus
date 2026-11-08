@@ -58,7 +58,7 @@ export const words: ChapterWords = {
     ssPlank: { purpose: 'Gå över bron. Det är Klonk!', recap: 'Pappa fick syn på Klonk i lampskenet. När en vuxen ser honom blir han alldeles stel.' },
     ssFollow: { purpose: 'Följ Klonk vidare in i skogen.', recap: 'Pappa tittade bort, och då vaknade Klonk igen.' },
     ssMemory: { purpose: 'Följ spåret efter gamla trägubben.', recap: 'Gamla trägubben vet hur det är att vara ensam i mörkret. Därför skyndar han efter lillgubben.' },
-    ssJay: { purpose: 'Ge lavskrikan ett lingon.', recap: 'Lavskrikan från förra äventyret gömmer sig för stormen.' },
+    ssJay: { purpose: 'Plocka ett lingon och ge det till lavskrikan.', recap: 'Lavskrikan från förra äventyret gömmer sig för stormen.' },
     ssLichen: { purpose: 'Klättra upp längs laven.', recap: 'Lavskrikan fick ett lingon. Den visade mig vägen upp längs laven.' },
     ssDown: { purpose: 'Följ spåret ner mot byn.', recap: 'Gamla trägubben skyndar mot byn. Där är alla fönster mörka.' },
   },

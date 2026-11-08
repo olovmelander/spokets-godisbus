@@ -1,5 +1,71 @@
 # Handover
 
+## State (8 November 2026, night)
+
+- **A night's playthrough of both adventures (Olov: "play through the game, both adventure 1 and adventure 2 and solve
+  all the things you see that needs to be solved for … conversations, design errors, puzzles, story, the diary, ux and
+  ui"), on Olov's computer, 00:00–03:30.** Branch `natt-genomspelning`; #238 was merged into `main` first.
+  - **How it was played:**
+    - The robot played all 18 chapters in the simulation, and a session tool wrote what was said, the objective
+      ("Just nu") and the diary ("Vårt äventyr") as they changed, and where the robot stood still. Both styles finish
+      every chapter; Lugnt too.
+    - Three stills of every chapter with the interface showing at 844×390, the menus, the title in three sizes, and the
+      owl's three flights.
+    - Three reading agents, for Äventyr 1's story, Äventyr 2's story, and the help a stuck child gets.
+  - **The diary and the objectives** (`story-context.ts`, `sv.ts`, the pack's choosers and `lines/*.ts`):
+    - **Order:** the star tasted, then "Titta – något händer!" (it said look at a star already eaten); Stormkvällen's
+      window bursts before Klonk's star is to be tasted.
+    - **Stale entries:** over the ravine (`overRavine`), along Myren's boardwalk (`boardwalk`), the mist before it
+      comes, the garden's playhouse and tent before they are seen.
+    - **Objectives that named the wrong thing:**
+      - Berget: Lyft, not the lace.
+      - The epilogue: take the knife.
+      - Myren: the crane.
+      - The crowberry, and the jay's berry.
+      - Olympia: there is no car; follow the floodlit trail.
+      - Flärken: walk over the SUP.
+      - Billsta: call mormor at the barn, not at the woodshed.
+      - Älven: Hoppa upp på ugglan.
+      - Stormöga: walk home.
+    - **New objectives for puzzles that had only the helper:** the ladybird, the shavings, the ants' twig, Berget's gusts
+      (`ladybird`, `shavings`, `ants`, `gusts`); Billsta's second clue (`billstaPush`); Stormöga's gift and owl
+      (`soGift`, `soBoard`).
+    - **Klonk by name:** after the naming the diary says Klonk, and the objective's label says Klonk in Billsta (it
+      said "Spöket · Vi hjälps åt").
+    - The golden sweet is guldgodiset in both adventures' objectives.
+  - **The helper** (`src/sim/help.ts`):
+    - It never sends him more than its reach back for something optional. It sent him 87 EL back from Granskogen's
+      brook to the jay's berry, and in Stormbyn back over the river to a bell cord for the rest of the chapter.
+    - It shows Stormbyn's cap, which the chapter cannot end without.
+    - The button says Sparka for the football, and nothing on Billsta's walk-on seesaw.
+    - **Jag har fastnat** brings the helper along after taking him back, unless a line waits to be read again.
+    - **Progress is what he does:** a line said, a timer run out or a scene played no longer sends away help he asked
+      for, nor starts the wait for a reminder again (`assist()` in `sim.ts`; a test in `tests/sim/help.test.ts`). In
+      Billsta the help vanished when Moa and Bertil ran to the house, and on Påminn mig the first reminder came at 62 s.
+  - **After a ride lands** (Moa's plane, Bertil's cap, Stormskogen's owl) the objective moves on, and back on Flärken's
+    tower after the stone it says to dive.
+  - **Puzzles:** Billsta's roof and slope have Berget's gust rhythm (every 4 s for 1.4 s; it was 3.6 s for 1.7 s,
+    and the robot stood five minutes on the roof; the chapter now takes it 88 s).
+  - **Pictures:**
+    - **A black blob in Stormkvällen's room,** the size of Elof, until he took the flashlight. The beam's fade was
+      `(1 - t) ** 1.6`; at the cone's far ring float32 rounds t a hair past 1, a negative base to a fractional power
+      is NaN, and the lens smeared it. Clamped there, in the carried lamp and in Byn's window glass.
+    - **Elof vanished in Älven** over the lake, at the owl and on its flight, leaving Fjun's cap in the air: his
+      skinned body was culled on stale bounds. He is never culled now (he is always in frame).
+    - **The ridden owl** hung below him and he sat in the air; it is raised half an EL (Stormskogen, Älven, Stormöga).
+    - **Mormor's lantern** came up in front of her face when called; it comes to her chest.
+    - **The title's tableau** is framed higher and from a little below: Pappa's head was cut off at the top.
+    - **Flärken's** firm stone between the reed mats is a wet boulder, not a pale slab.
+    - **Älven:** called, Pappa is seen up on the bridge for a moment (scene `bron`); he stood out of the picture.
+  - **UI:** Pause on a phone held sideways (under 500 px tall): the map a little lower and the diary tighter, so the
+    objective and the whole diary show without scrolling (they were cut off under the map).
+  - **Spoken lines:** none of Äventyr 1's recorded lines changed. Äventyr 2 has no recordings yet, and six of its lines
+    changed (`sbMoaHere`, `olIdeaMore`, `olCar`, `sjMamma`, `sjNear`, `sjCar`); `scripts/voices-aventyr2.json` has the
+    new words.
+  - **Checked:** typecheck, `npm test` (2,134), `npm run build` (boot 4,540.8 of 4,608 KB), the privacy check, and
+    stills of each fix. The browser suites run on CI.
+  - **The next step needs:** nothing from Olov's computer.
+
 ## State (7 November 2026, night)
 
 - **Chapter 1: the ghost, the roots and Moa's drawing, made clear (Olov: "där fattar man inte riktigt vad som händer
@@ -4477,6 +4543,17 @@
 
 ## Next
 
+**From the night's playthrough (8 November), not done:**
+- **Älven: Pappa on the bridge** stands in its middle (x 99.4, 7.3 up), for the pendulum swing, out of the rapids'
+  camera when Elof calls from x 88.6. Tonight a held shot of 1.5 s (scene `bron`, as long as the scarf takes to come
+  down) looks up to him: he is seen, small and dark behind the railing with his lamp. A longer look, or Pappa leaning
+  over the railing, is for Olov's eye on a device.
+- **Granskogen's big animals (below) are drawn, but hidden:** a bright red test ink showed nothing at x 47, 95 and
+  178; lifted 2.2 EL the pair showed a sliver behind the ferns. The near forest floor's ferns and moss stand higher
+  than the far pictures' horizon, where walkers hang (`EYE` 1.4 over his ground in `src/render/life.ts`). Moving the
+  slot to z -20 did not help. They need a place where the floor is open, or their own horizon.
+
+
 **First: make Granskogen's big animals read in the picture** (see the afternoon's state above). Capture them in the
 game, with `?dev&debug&tier=high&course=granskog&at=47,4.1&life=pair`, and tune the forest slot (`src/content/life.ts`):
 its depth, haze, inks and sizes, against the bog's bull, which reads well. Then check Gården's deer the same way.
@@ -4909,6 +4986,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The night's playthrough (8 Nov, 00:00–03:30) | Olov's request: play both adventures through and fix what needs fixing | 1 session on Olov's computer, with three reading agents | — / 0 so far | Diary and objectives in both adventures, the helper, Billsta's gusts, Älven's vanishing Elof, Stormkvällen's black blob, the owl, Mormor's lantern, the title, Pause on a phone |
 | The roots and Moa's drawing (7 Nov, night) | Olov's request: make clear what happens when the ghost goes into the roots and what Moa dropped | Part of the same cloud session | — / 0 so far | A root hole the ghost creeps into, Moa kneeling at it, clearer lines, and her drawing seen to blow away; JS gate to 550 KB. |
 | The dialogue in good Swedish (7 Nov, late evening) | Olov's request: find and fix dialogue that isn't correct Swedish, the bird ride first | Part of the same cloud session, with two reading agents | — / 0 so far | About 60 lines rewritten in both adventures; the crane has its own button; three recorded lines silent until the new voices. |
 | Water as a block on an upright phone (7 Nov, evening) | Olov's photos: the water looked like a block you could see into | Part of the same cloud session | — / 0 so far | Stormgården and Billsta draw their water as garden pools with a near shore; Älven's and Stormens öga's river runs on past the camera. |
@@ -4943,6 +5021,7 @@ The older list, still true where it is not struck:
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. On 7 October, a local Blender pass revises all six main models against the sheets, bakes the ghost's carved wood, refines locomotion and family greetings, and grounds imported boots from their actual geometry. All six private models pass Low/High browser checks; this remains a local revision, with faces, hair and clothes still simpler than the sheets. A second local motion pass adds start/stop/reversal weight, leading-foot jumps, hand paths and carried-arm layering, eased family following and story-driven ghost shoes; 1,414 tests pass. A focused opening-carving pass then adds planted support, a palm-centred knife grip, visible surface cuts, lifted returns and cut-timed shavings. A further family pass gives Sofie, Moa and Bertil distinct timing, precise mug and drawing contacts, purposeful gestures at every later help point, and smoother reunion/carry transitions. A subsequent audit fixes retained seated stances, interrupted-action snaps, abrupt glances, assisted-jump poses, fast-swing resets and history-dependent elbows; swing hands now follow the rope clear of the face. Sitting/standing blends use each rig's actual sole support, removing penetration and endpoint drops. A further contact audit adds accurate 3D pointing and reach/release blending, a visible supported palm lift held through Elof's cue, and chair exit paths for Moa and Emil. All 1,512 tests pass. A residual .432 EL low-reach gap, approximate palm surface support, brief chair contacts at Emil's exit, rig seams, review on a device, H1b and authored clips remain. Local Direct3D/Pixal trials now run offline on the RTX3070 laptop. Pixal60-step and estimated-camera tests give no clear likeness gain; the trained1024 portrait fits8GB and adds detail but also surface noise. The cleaner512 face remains the retained base; the seed17 alternate improves the jaw but not overall likeness, and the precision comparison is recorded above. A complete Blender candidate now combines the FP32-storage portrait/body, reference atlas and game rig. The saved14,782-triangle candidate still needs neck/hair/hand and topology repairs; H1b remains and no game replacement was made. Resume details are at the top of this handover. |
 
 ## Known bugs
+
 
 - **Flaky on CI (7 November):** the journey suite's "Controller moves through chapter choices" failed once and
   passed three times in a row locally; Äventyr 2's chapters join the selector when its pack arrives, which can move
@@ -5134,6 +5213,11 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+- Moas karta i Äventyr 2 ritar mormor och morfars vita hus i Billsta. `docs/aventyr-2.md` säger att huset aldrig sätts på
+  en karta. Den har inga koordinater, så den bryter inte mot reglerna, men vill du ha den kvar?
+- I Äventyr 1 säger Moa "Stjärnan trillade ur spökets påse" och Elof "Det ligger kvar i spökets påse!", fast det är
+  Elofs påse som spöket bär. De är inspelade, så de fick vara kvar; vill du att de ändras till de nya rösterna?
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.

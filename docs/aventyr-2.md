@@ -286,14 +286,14 @@ The worlds were authored from this design and keep its beats, with these details
   the gutter; five grate bars; four stone steps up the wall to Moa's umbrella. It now ends on the road to Olympia.
 - **Olympia** (goal at 179 EL, 93 trail candies): down the steps from the street and over the high fence by the
   ball-stop net; footballs bowled across the small pitch from behind; *Bollen i målet*, the big ball fetched from its table
-  and kicked four times ("Sparka") into the flooded goalmouth, where it floats as a stepping stone ("Mål! Jag gjorde mål själv!");
+  and kicked four times ("Sparka") into the flooded goalmouth, where it floats as a stepping stone ("Mål! Fast det var jag som gick in!");
   a side way up the goal's net and along its white crossbar; the corner flag and the dripping benches; Bertil's
   free kick over the centre circle, which is a lake, into the far goal; five biathlon targets turned white with
   pine cones (optional); the dark floodlit trail, where the strongest gust takes the little one north.
 - **Flärken** (reworked from "Sjön" into Flärkenbadet; goal at 188 EL, 111 trail candies): the playground's swings
   as lace rings and the slide; the picnic table, dry under its top; the torn volleyball net as a bounce up to the
   changing rooms' roofs, and a banging door; wet stones in the shallows with a reed up the high one; seven floating
-  reed mats; six jetty posts against the waves; Mamma's rowing boat against the broken jetty; up the diving tower to
+  reed mats; six jetty posts against the waves; Mamma's SUP held against the broken jetty; up the diving tower to
   the lookout; the bark pushed three times into the last gap ("Bark flyter, precis som Klonk!"). The outlet takes
   both figures down the river: "Trä flyter!"
 - **Älven** (goal at 186 EL, 92 candies): a little raft and a birch leaf down the current; stones and bobbing logs; the rapids
@@ -303,7 +303,7 @@ The worlds were authored from this design and keep its beats, with these details
   drive the three mil to Billsta.
 - **Billsta** (rebuilt after Olov's correction: the house is by the road near the forest, three mil from Bredbyn by
   car; goal at 194.6 EL, 113 trail candies, 12 side candies, 9 checkpoints): out of the family's car on the road
-  ("Tre mil med bilen! Nu är vi i Billsta."), the lit window ahead and the spruces across the road; morfar lays his
+  ("Framme i Billsta, hos mormor och morfar!"), the lit window ahead and the spruces across the road; morfar lays his
   long ladder across the flooded ditch ("Gå på stegen, lilla vän"); the gravel drive, the rowing boat on its
   trestles and the woodshed's stack; mormor with her lantern opens the red barn; through the dark hay loft, over a
   bale and a hatch, and along the barn's long roof in the gusts, sheltering behind its ventilation hoods; into the

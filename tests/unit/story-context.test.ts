@@ -73,7 +73,8 @@ describe('the current purpose follows Elof’s actual story progress', () => {
     expect(bridge.id).toBe('bridgeCross'); expect(bridge.guide).toBe('mamma');
     const braid = context('myren', ['mamma', 'braid'], { x: 103.7, y: 2 });
     expect(braid.id).toBe('braidClimb'); expect(braid.guide).toBe('mamma');
-    expect(context('myren', ['mamma', 'braid'], { x: 108, y: 4.5 }).id).toBe('bog');
+    expect(context('myren', ['mamma', 'braid'], { x: 108, y: 4.5 }).id).toBe('boardwalk');
+    expect(context('myren', ['mamma', 'braid'], { x: 108, y: 4.5 }).guide).toBeUndefined();
     expect(context('garden', ['moa'], { x: 165, y: 0 }).guide).toBe('moa');
     expect(context('granskog', ['seesaw'], { x: 109, y: -8 }).guide).toBe('pappa');
   });
