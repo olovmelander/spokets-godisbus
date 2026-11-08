@@ -55,6 +55,25 @@ STEEL = linear('#7a8088')
 RAIL = linear('#dfe2de')
 ROOF_DARK = linear('#2a2d32')
 BIN = linear('#2a5a9a')
+GUTTER = linear('#6e7276')
+GUTTER_DARK = linear('#4a4e52')
+DOOR = linear('#2a3038')
+SKY = linear('#56626e')
+STEP = linear('#6e6f6a')
+
+
+def rnd(a, b=0.0):
+    """A fixed number from 0 to 1 for a pair of numbers: the same hall every time it is built."""
+    v = math.sin(a * 12.9898 + b * 78.233) * 43758.5453
+    return v - math.floor(v)
+
+
+def shade(colour, k):
+    return (colour[0] * k, colour[1] * k, colour[2] * k, 1.0)
+
+
+def mix(a, b, t):
+    return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, 1.0)
 
 
 class Part:
@@ -66,6 +85,7 @@ class Part:
         self.colours = []
 
     def face(self, points, colour):
+        """A face in one colour, or with a colour for each of its corners (a list of them)."""
         first = len(self.verts)
         self.verts.extend(points)
         self.faces.append(list(range(first, first + len(points))))
@@ -80,6 +100,38 @@ class Part:
         self.face([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], colour)  # top
         if bottom:
             self.face([(x0, y1, z0), (x1, y1, z0), (x1, y0, z0), (x0, y0, z0)], colour)
+
+    def board(self, lo, hi, foot, top):
+        """A box whose front goes from one colour at its foot to another at its top: a painted board, weathered."""
+        (x0, y0, z0), (x1, y1, z1) = lo, hi
+        middle = mix(foot, top, 0.5)
+        self.face([(x0, y0, z0), (x1, y0, z0), (x1, y0, z1), (x0, y0, z1)], [foot, foot, top, top])
+        self.face([(x0, y1, z0), (x0, y0, z0), (x0, y0, z1), (x0, y1, z1)], [shade(foot, 0.9), shade(foot, 0.9), shade(top, 0.9), shade(top, 0.9)])
+        self.face([(x1, y0, z0), (x1, y1, z0), (x1, y1, z1), (x1, y0, z1)], [shade(foot, 0.9), shade(foot, 0.9), shade(top, 0.9), shade(top, 0.9)])
+        self.face([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], shade(middle, 1.08))
+
+    def window(self, x0, x1, z0, z1, wall, panes, sill=True):
+        """A window set into a wall whose face is at y `wall`: a white frame standing out from it, bars between its
+        panes, the glass set back, pale with the sky at its top and dark below, and a sloping sill under it."""
+        rim = 0.28
+        out = wall - 0.3
+        self.box((x0, out, z1 - rim), (x1, wall, z1), WHITE)
+        self.box((x0, out, z0), (x1, wall, z0 + rim), WHITE)
+        self.box((x0, out, z0 + rim), (x0 + rim, wall, z1 - rim), WHITE)
+        self.box((x1 - rim, out, z0 + rim), (x1, wall, z1 - rim), WHITE)
+        inner = x1 - x0 - 2 * rim
+        for k in range(1, panes):
+            x = x0 + rim + inner * k / panes
+            self.box((x - 0.1, out + 0.06, z0 + rim), (x + 0.1, wall, z1 - rim), WHITE)
+        glass = wall - 0.05
+        low, high = mix(PANE, SKY, 0.15), mix(PANE, SKY, 0.85)
+        self.face([(x0 + rim, glass, z0 + rim), (x1 - rim, glass, z0 + rim), (x1 - rim, glass, z1 - rim), (x0 + rim, glass, z1 - rim)],
+                  [low, low, high, mix(high, SKY, 0.3)])
+        if sill:
+            # The sill: sheet metal sloping out and down, with a lip that the rain drips from.
+            self.face([(x0 - 0.15, wall - 0.55, z0 - 0.02), (x1 + 0.15, wall - 0.55, z0 - 0.02), (x1 + 0.15, out, z0 + 0.12), (x0 - 0.15, out, z0 + 0.12)], FLASH)
+            self.face([(x0 - 0.15, wall - 0.55, z0 - 0.22), (x1 + 0.15, wall - 0.55, z0 - 0.22), (x1 + 0.15, wall - 0.55, z0 - 0.02), (x0 - 0.15, wall - 0.55, z0 - 0.02)],
+                      shade(FLASH, 0.8))
 
     def tube(self, a, b, radius, colour, sides=6):
         """A round bar from a to b."""
@@ -110,8 +162,8 @@ class Part:
         mesh.update()
         colour = mesh.color_attributes.new('Color', 'FLOAT_COLOR', 'CORNER')
         for poly, value in zip(mesh.polygons, self.colours):
-            for loop in poly.loop_indices:
-                colour.data[loop].color = value
+            for k, loop in enumerate(poly.loop_indices):
+                colour.data[loop].color = value[k] if isinstance(value, list) else value
         mesh.materials.append(material)
         thing = bpy.data.objects.new(name, mesh)
         bpy.context.collection.objects.link(thing)
@@ -151,53 +203,83 @@ def hall():
     # The roof's eaves: it comes down over both sides.
     p.face([(-HALF - 0.7, -0.9, SPRING - 0.1), (-HALF, -0.9, SPRING + 0.12), (-HALF, DEEP + 0.5, SPRING + 0.12), (-HALF - 0.7, DEEP + 0.5, SPRING - 0.1)], ROOF)
     p.face([(HALF, -0.9, SPRING + 0.12), (HALF + 0.7, -0.9, SPRING - 0.1), (HALF + 0.7, DEEP + 0.5, SPRING - 0.1), (HALF, DEEP + 0.5, SPRING + 0.12)], ROOF)
-    # The upright boards of the gable, each its own, cut by the arch.
-    x = -HALF + 0.5
+    # The upright boards of the gable, each its own, cut by the arch: each board its own tone, paler where the sun has
+    # faded it at its top, and a batten over each joint standing out from them, with its own thin shadow.
+    x = -HALF + 0.3
     n = 0
     while x < HALF - 0.4:
-        top = arch(x + 0.25) - 1.25
-        if top > LOW + 0.5 and n % 2 == 0:
-            p.box((x, -0.1, LOW), (x + 0.42, 0.0, top), RED_DARK)
-        x += 0.62
         n += 1
+        top = arch(x + 0.31) - 1.25
+        if top > LOW + 0.5:
+            tint = 0.88 + 0.22 * rnd(n, 1.0)
+            p.board((x + 0.02, -0.06, LOW), (x + 0.6, 0.0, top), shade(RED, tint * 0.94), shade(mix(RED, WHITE, 0.08), tint))
+            p.board((x - 0.09, -0.11, LOW), (x + 0.09, -0.06, top - 0.05), shade(RED_DARK, 1.05), shade(RED, 1.02))
+        x += 0.62
     # The white fascia, following the curve: broad, and standing out from the gable.
     for i in range(steps):
         a, b = xs[i], xs[i + 1]
         p.face([(a, -1.0, arch(a) + 0.1), (a, -1.0, arch(a) - 1.15), (b, -1.0, arch(b) - 1.15), (b, -1.0, arch(b) + 0.1)][::-1], WHITE)
         p.face([(a, -1.0, arch(a) - 1.15), (a, -0.1, arch(a) - 1.15), (b, -0.1, arch(b) - 1.15), (b, -1.0, arch(b) - 1.15)][::-1], WHITE)
-    # The ribbon of paired white windows, high under the arch.
+    # The ribbon of paired white windows, high under the arch: their frames and the bars between them standing out, the
+    # glass set back, and a sill under it.
     pairs = 5
     wide = 5.1
     bottom, top = 12.4, 15.0
     left = -(pairs * wide) / 2
-    p.box((left - 0.35, -0.3, bottom - 0.35), (left + pairs * wide + 0.35, 0.0, top + 0.35), WHITE)
-    for i in range(pairs):
-        for j in (0, 1):
-            x0 = left + i * wide + 0.42 + j * 2.25
-            p.box((x0, -0.34, bottom), (x0 + 1.95, -0.3, top), PANE)
-    # The low block across the front: its boards, the flashing over it, and its plinth.
+    p.window(left - 0.35, left + pairs * wide + 0.35, bottom - 0.35, top + 0.35, -0.06, pairs * 2)
+    # The low block across the front, in boards and battens of wine-red paint. Each board is its own tone, darker at its
+    # foot where the rain splashes up and paler at its top, and under each window's sill dark where the rain runs off it;
+    # the battens over the joints stand out and throw thin shadows. The flashing over it, its gutter and downpipes, and
+    # the plinth, darker at its foot.
     p.box((-34.0, LOW_OUT, 0.0), (29.0, 0.1, LOW), RED)
-    x = -33.7
+    WINDOWS = ((-16.0, -8.0, 3.5, 8.3, 2), (12.0, 28.2, 5.7, 8.9, 4))
+    x = -33.95
     n = 0
-    while x < 28.7:
-        if n % 2 == 0:
-            p.box((x, LOW_OUT - 0.1, 1.2), (x + 0.42, LOW_OUT, LOW - 0.5), RED_DARK)
-        x += 0.62
+    while x < 28.9:
         n += 1
+        wide = min(0.62, 29.0 - x)
+        middle = x + wide / 2
+        if not 1.8 < middle < 8.8:
+            spans = [(1.2, LOW - 0.5, False)]
+            for x0, x1, z0, z1, _ in WINDOWS:
+                if x0 - 0.2 < middle < x1 + 0.2:
+                    spans = [(1.2, z0 - 0.24, True), (z1, LOW - 0.5, False)]
+            tint = 0.86 + 0.22 * rnd(n, 2.0)
+            run = 0.45 + 0.4 * rnd(n, 3.0)
+            for low, high, under in spans:
+                foot = shade(RED, tint * (0.72 if low < 1.5 else 0.92))
+                top = shade(RED_DARK, tint * run) if under else shade(mix(RED, WHITE, 0.07), tint)
+                p.board((x + 0.02, LOW_OUT - 0.05, low), (x + wide - 0.02, LOW_OUT, high), foot, top)
+                p.board((x - 0.09, LOW_OUT - 0.13, low), (x + 0.09, LOW_OUT - 0.05, high), shade(foot, 0.95), shade(top, 0.98))
+        x += wide
     p.box((-34.5, LOW_OUT - 0.5, LOW - 0.35), (29.5, 0.2, LOW + 0.5), FLASH)
-    p.box((-34.2, LOW_OUT - 0.25, 0.0), (29.2, LOW_OUT + 0.4, 1.2), CONCRETE)
-    # The dark recessed porch, its white post and thin roof.
+    p.board((-34.2, LOW_OUT - 0.25, 0.0), (29.2, LOW_OUT + 0.4, 1.2), shade(CONCRETE, 0.62), CONCRETE)
+    # The gutter along the flashing's edge, and the downpipes from it down the wall to the ground, held by brackets.
+    gy = LOW_OUT - 0.78
+    p.tube((-34.4, gy, LOW + 0.2), (29.4, gy, LOW + 0.2), 0.26, GUTTER, 8)
+    for x in (-33.2, -17.6, 10.8, 28.5):
+        p.tube((x, gy, LOW + 0.1), (x, gy + 0.32, LOW - 0.7), 0.15, GUTTER, 8)
+        p.tube((x, gy + 0.32, LOW - 0.7), (x, gy + 0.32, 1.0), 0.15, GUTTER, 8)
+        p.tube((x, gy + 0.32, 1.0), (x, gy - 0.2, 0.35), 0.15, GUTTER, 8)
+        for z in (2.6, 5.2, 7.8):
+            p.box((x - 0.18, gy + 0.32, z), (x + 0.18, LOW_OUT - 0.05, z + 0.12), GUTTER_DARK)
+    # The dark recessed porch, its white post and thin roof; at its back the double doors in their white frame, a glass
+    # panel in each, and their handles.
     p.box((2.0, LOW_OUT - 0.14, 1.2), (8.6, LOW_OUT - 0.02, LOW - 0.4), DARK)
     p.box((8.3, LOW_OUT - 0.9, 0.0), (8.9, LOW_OUT - 0.1, LOW), WHITE)
     p.box((1.4, LOW_OUT - 1.6, LOW + 0.1), (9.6, LOW_OUT, LOW + 0.7), FLASH)
-    # White-framed windows in the block: a pair to the left, a band to the right.
-    p.box((-16.0, LOW_OUT - 0.22, 3.5), (-8.0, LOW_OUT, 8.3), WHITE)
-    for x0 in (-15.4, -11.9):
-        p.box((x0, LOW_OUT - 0.26, 4.0), (x0 + 3.0, LOW_OUT - 0.22, 7.8), PANE)
-    p.box((12.0, LOW_OUT - 0.22, 5.7), (28.2, LOW_OUT, 8.9), WHITE)
-    for k in range(4):
-        x0 = 12.5 + k * 3.95
-        p.box((x0, LOW_OUT - 0.26, 6.2), (x0 + 3.3, LOW_OUT - 0.22, 8.4), PANE)
+    p.box((2.9, LOW_OUT - 0.3, 1.7), (3.2, LOW_OUT - 0.14, 7.9), WHITE)
+    p.box((7.2, LOW_OUT - 0.3, 1.7), (7.5, LOW_OUT - 0.14, 7.9), WHITE)
+    p.box((2.9, LOW_OUT - 0.3, 7.6), (7.5, LOW_OUT - 0.14, 7.9), WHITE)
+    for x0 in (3.2, 5.37):
+        p.box((x0 + 0.02, LOW_OUT - 0.2, 1.7), (x0 + 2.11, LOW_OUT - 0.14, 7.6), DOOR)
+        p.face([(x0 + 0.42, LOW_OUT - 0.21, 4.2), (x0 + 1.71, LOW_OUT - 0.21, 4.2), (x0 + 1.71, LOW_OUT - 0.21, 7.1), (x0 + 0.42, LOW_OUT - 0.21, 7.1)],
+               [mix(PANE, SKY, 0.1), mix(PANE, SKY, 0.1), mix(PANE, SKY, 0.6), mix(PANE, SKY, 0.6)])
+        hand = x0 + (1.85 if x0 < 5.0 else 0.28)
+        p.box((hand - 0.06, LOW_OUT - 0.34, 3.6), (hand + 0.06, LOW_OUT - 0.2, 4.6), STEEL)
+    # White-framed windows set into the block: a pair to the left, a band of four to the right.
+    for x0, x1, z0, z1, panes in WINDOWS:
+        p.window(x0, x1, z0, z1, LOW_OUT - 0.05, panes)
     # The timber ramp along the front, with its tube rail.
     y0, y1 = LOW_OUT - 5.2, LOW_OUT - 2.2
     ramp = 14
