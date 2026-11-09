@@ -1,5 +1,42 @@
 # Handover
 
+## State (9 November 2026, evening)
+
+- **The five things left of the whole body, done** (Olov: "Fix this!" to: turning on the spot slides the feet; the trunk
+  stays stiff while holding some poses; the weight doesn't shift before a step; Elof's jumps and landings unmeasured;
+  Billsta's children run too fast for their steps), the same cloud session, two building agents.
+  - **Turning on the spot steps round** (new `src/render/footwork.ts`; legs turn at the hip, `yawL`/`yawR` in both rigs):
+    planted feet stay while the hips turn, a foot pivots on its toe, the foot on the side it turns towards opens first and
+    the other follows; a half turn takes three steps, a small turn only pivots, and the weight goes over before each lift.
+    A standing body turns at most half a turn a second. The planted sole's slide per radian turned halved in the lab
+    (0.052 to 0.079 of the height, now 0.025 to 0.034, with 9 or 10 steps where there were none); Bertil in Stormkvällen
+    0.081 to 0.032. Walking off after a turn, the feet come in to the stride as it lifts them.
+  - **The trunk under a held act** (`acting.ts`): pointing, showing, a lamp, offering, reaching, lifting, the gestures, a
+    kneel and a crouch go on breathing and shifting the weight, the trunk bending a little against the hips with a small
+    counter-twist; free arms hang as in standing; a sip stays still for the mug; walking under an act carries the
+    stride's trunk motion (its twist went from none to about 0.13 to 0.15 rad).
+  - **The weight before a step:** setting off, the hips are 0.38 to 0.47 of the way over the standing foot as the other
+    lifts (0.02 to 0.04 before); a closing step takes the weight over and back to the middle; in the stride the trunk's
+    side bend follows the hips' sway 0.08 to 0.10 s late and the head 0.12 to 0.15 s (keys moved in `motion.py`).
+  - **Elof's jumps, landings and turns** (`createFollower` and `createTurning` in `player-motion.ts`, one line in
+    `view.ts`; a lab course `dev/motion.html?scene=elofplay`, `dev/elof-course.ts`, that drives the game's own simulation):
+    when his state changes (take-off, landing, the hose, a ledge, a skid, out of a scene) each joint carries on at its
+    speed and settles like a spring, the legs first, then the arms, the trunk, the head last; a dip and push before a
+    jump, a tuck in the air, a landing that gives. Frames over 1,000 rad/s² on the course went from 24 to 0 (the hose
+    grab 3,322 to 504, the clamber 3,059 to 595, a turn about 1,829 to 272); the sole's slide on landing 0.089 to 0.017
+    EL; no stiff parts left in a jump. Out of a scene he goes on from its pose without a snap.
+  - **Billsta's children** run to the house at a child's sprint (Moa 11 s and 5.4 s, Bertil 11.6 s and 6 s, where it was
+    6.2 s and 2.6 s; the lines unchanged and nothing staged after it): their planted boots slip 25 % and 30 % of the way
+    (32 % and 44 %), the worst step 0.10 and 0.07 of the height (0.13 and 0.20).
+  - **Checked:** typecheck, `npm test` (222 files, 2,236 tests, the robot included), `npm run build` (JS 595.2 KB of
+    1,000, boot 5,434.6 KB of 10,240), the privacy check, and by the builders family-help, family-story, prologue,
+    finale-stage, aventyr2, family-caps, challenges and player-motion's motion checks.
+  - **Left:** walking under an act now slips as a walk does (Stormkvällen: Pappa 74 to 82 %, Mamma 73 to 84 % of the way);
+    a facing that swings back as a walk ends still slides 0.08 to 0.13 of the height; free arms do not swing in a walk
+    under an act; Elof's running landings slide a little more (1.08 to 1.34 EL in the half second after), his dip
+    before a jump is short (the game takes off at once), and his walking toe drags early in the swing; the children's
+    steady run still slips about a quarter (most at the corner).
+
 ## State (9 November 2026, late afternoon)
 
 - **The whole body bending and moving smoothly** (Olov: "can we fix the joints and movement of the arms, head, legs,
@@ -5001,10 +5038,10 @@
 
 ## Next
 
-**The whole body (9 November, late afternoon), left in the cloud:** turning on the spot with steps, the trunk under a
-held act, the weight shifting before a step and the trunk following the hips, Elof's jumps and landings, and Billsta's
-children's run (see "State"). For Olov on the devices: the running in the prologue and Billsta, shoulders and necks in
-the gestures, the hips in a stride and a kneel.
+**The whole body (9 November, evening), left in the cloud:** a walk under an act slips as a walk does, the free arms
+there do not swing, Elof's running landings and his walking toe, and the children's steady run (see "State"). For Olov
+on the devices: turns on the spot, the running in the prologue and Billsta, Elof's jumps and landings, shoulders and
+necks in the gestures, the hips in a stride and a kneel.
 
 **The family's movements and Elof's raincoat (9 November), for Olov:** on the devices, judge the coats going on in
 Stormkvällen, the doll and Elof's coat through the storm, the kneeling, the cheer and the hug, and the sleeves when they
@@ -5481,6 +5518,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The rest of the whole body (9 Nov, evening) | Olov's request: "Fix this!" to the five things left | Part of the same cloud session, with two building agents | — / 0 so far | Turning on the spot in steps; the trunk alive under a held act; the weight over before a step and the trunk following the hips; Elof's jumps, landings and turns without snaps; Billsta's children at a child's sprint. |
 | The whole body moving smoothly (9 Nov, late afternoon) | Olov's request: the joints and movement of the whole body, made in Blender, smooth | Part of the same cloud session, with two building agents | — / 0 so far | A fuller skeleton in Blender (collarbones, neck, three spine bones, twist bones, hip correctives; private PR #8) driven by the game; no snaps in the upper body; running legs at their source; the head leading a turn. |
 | Hands with separate fingers (9 Nov, afternoon) | Olov's request: new hands with separate fingers in Blender | Part of the same cloud session, with one building agent | — / 0 so far | New hands on all seven (private PR #7) and grips that use them: a pointing finger, a pinch, fingers through the mug's handle. |
 | Hands that grip and the rest of the movements (9 Nov, midday) | Olov's request: continue what is recommended, and hands and fingers that look good when they grab things | Part of the same cloud session, with four building agents | — / 0 so far | Fingers that curl round what is held, things held in the hand rather than at the wrist; clean coat fronts and Pappa's lamp from hand to hand; crouching, point, gasp and show keyed in Blender; shade at the foot of Byn's houses and between kit parts. |
