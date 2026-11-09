@@ -81,8 +81,9 @@ describe('story interaction acting', () => {
     const settled = actPose('cheer', context(1.6), { ...STANDING });
     expect(Math.abs(last.bounce - settled.bounce)).toBeLessThan(1e-6);
     expect(settled.bounce).toBe(0);
-    for (let frame = 0; frame <= 60; frame++) expect(actPose('shrug', context(frame / 60), { ...STANDING }).bounce).toBe(0);
-    expect(actPose('shrug', context(.9), { ...STANDING })).toEqual(actPose('shrug', context(2), { ...STANDING }));
+    for (let frame = 0; frame <= 150; frame++) expect(actPose('shrug', context(frame / 60), { ...STANDING }).bounce).toBe(0);
+    // Over in a second, and then (since 9 November 2026) standing again as they stand, not held.
+    expect(actPose('shrug', context(2), { ...STANDING })).toEqual(actPose('stand', context(2), { ...STANDING }));
   });
 
   it('finishes reactions rather than repeating a stomp or holding a startled body forever', () => {
@@ -92,7 +93,9 @@ describe('story interaction acting', () => {
       expect(at('stomp', 2).legR).toBe(0);
       expect(at('startle', .2).armR).toBeGreaterThan(at('startle', 2).armR + .6);
       expect(at('wave', .6).armR).toBeGreaterThan(at('wave', 3).armR + 1);
-      for (const act of ['wave', 'startle', 'stomp', 'nod', 'hug'] as const) expect(at(act, 3), `${role} ${act}`).toEqual(at(act, 30));
+      for (const act of ['stomp', 'hug'] as const) expect(at(act, 3), `${role} ${act}`).toEqual(at(act, 30));
+      // A wave, a start or a nod is over, and they stand again as they stand (the motion pass of 9 November 2026).
+      for (const act of ['wave', 'startle', 'nod'] as const) expect(at(act, 30), `${role} ${act}`).toEqual(at('stand', 30));
     }
   });
 
