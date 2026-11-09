@@ -2,6 +2,7 @@ import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLam
 import type { ChapterData } from '../sim/types';
 import { createArmContact, createHandGrip } from './arm-contact';
 import { SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
+import { sleevesWithArms } from './sleeves';
 
 /**
  * A body's pose, as a scene's acting asks for it (src/render/acting.ts). Angles are in radians. The body faces
@@ -588,6 +589,8 @@ export function createModelRig(model: Object3D, height: number): Rig {
   model.traverse((part) => {
     const skinned = part as SkinnedMesh;
     if (!skinned.isSkinnedMesh) return;
+    // Each sleeve goes with its arm, not partly with the chest (./sleeves.ts).
+    sleevesWithArms(skinned);
     skinned.geometry.computeBoundingSphere();
     skinned.boundingSphere = skinned.geometry.boundingSphere!.clone();
     skinned.boundingSphere.radius *= 1.6;

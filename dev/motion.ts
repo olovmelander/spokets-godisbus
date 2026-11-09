@@ -8,6 +8,7 @@ import { garden } from '../src/content/chapters/garden';
 import { createGrandparent, type Figure, type Grandparent } from '../src/content/aventyr2/grandparents';
 import { createAssets } from '../src/render/assets';
 import { createPlayerMotion } from '../src/render/player-motion';
+import { LOOK, type GearRole } from '../src/render/rain-gear';
 import { createModelRig, type Rig, type Role } from '../src/render/rig';
 import type { PlayerState } from '../src/sim/types';
 import { createStage } from '../src/render/stage';
@@ -132,9 +133,12 @@ function frame(): void {
     : (sceneName === 'walk' ? 8 : sceneName === 'grand' ? 6 : 0) + (count - 1) * LANE / 2;
   const view = query.get('view') === 'three';
   const distance = Math.max(followed ? 4 : 14, span * 0.5 / Math.tan(camera.fov * Math.PI / 360) / Math.max(0.6, camera.aspect) * 1.05);
-  // Halfway up whoever is followed (Elof is one EL tall, the grown-ups five).
-  const high = followed ? (boy ? 0.5 : 2.3) : 2.4;
-  camera.position.set(middle + (view ? distance * 0.55 : 0), high + 0.8, view ? distance * 0.84 : distance);
+  // Halfway up whoever is followed (Elof is one EL tall, the grown-ups five), or at `?at` EL.
+  const high = query.has('at') ? Number(query.get('at')) : followed ? (boy ? 0.5 : 2.3) : 2.4;
+  // `?yaw`: the camera's angle round them in degrees, 0 from the front, 90 from their left, 180 from behind.
+  const yaw = query.has('yaw') ? Number(query.get('yaw')) * Math.PI / 180 : view ? Math.atan2(0.55, 0.84) : 0;
+  const reach = view && !query.has('yaw') ? Math.hypot(0.55, 0.84) * distance : distance;
+  camera.position.set(middle + Math.sin(yaw) * reach, high + 0.8, Math.cos(yaw) * reach);
   camera.lookAt(middle, high, 0);
   camera.updateProjectionMatrix();
 }
@@ -180,6 +184,11 @@ const load = async () => {
     if (!files[`${who}.glb`]) continue;
     stage.replace(who, await assets.model('private', who));
     loaded.push(who);
+    // ?coat: the storm's raincoat and boots on, made in Blender where the pack has them (?shells: built from the body).
+    const rig = stage.actors.get(who)?.rig;
+    if (!query.has('coat') || !rig?.dress || !(who in LOOK)) continue;
+    if (!query.has('shells') && rig.wear && files[`${who}-wardrobe.glb`]) rig.wear(await assets.model('private', `${who}-wardrobe`));
+    rig.dress({ ...LOOK[who as GearRole], bootOff: null });
   }
   for (const { who, figure } of figures) {
     if (!files[`${who}.glb`]) continue;
@@ -238,6 +247,15 @@ window.__motion = {
       }
     });
     return { ankles: [at('foot_l'), at('foot_r')], soles, x: boy.x };
+  },
+  /** Each skinned mesh in the lab, and how many of its corners ../src/render/sleeves.ts gave to the arms. */
+  skins() {
+    const out: { name: string; corners: number; sleeves: unknown }[] = [];
+    scene.traverse((node) => {
+      const mesh = node as Mesh & { isSkinnedMesh?: boolean };
+      if (mesh.isSkinnedMesh) out.push({ name: mesh.name, corners: mesh.geometry.getAttribute('position').count, sleeves: mesh.geometry.userData.sleevesWithArms });
+    });
+    return out;
   },
   /** Where each of the family's hands, mouth and group are: for a script to measure. */
   probe() {

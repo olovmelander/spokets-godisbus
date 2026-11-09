@@ -2,6 +2,7 @@ import {
   Box3, BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Skeleton, SkinnedMesh, Uint16BufferAttribute, Vector3, type Bone, type Object3D,
 } from 'three';
 import type { ChapterData } from '../sim/types';
+import { sleevesWithArms } from './sleeves';
 
 /**
  * Rain gear in Stormnatten (Olov, 6 November 2026: "alla karaktärer ska ta på sig regnjacka, stövlar och grejer, så
@@ -347,6 +348,8 @@ export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
     mesh.name = 'rain-gear';
     mesh.userData.wardrobe = piece.name;
     mesh.bind(new Skeleton(own as Bone[], piece.skeleton.boneInverses), body.bindMatrix);
+    // The coat's sleeves go with the arms, as the body's own do (./sleeves.ts).
+    sleevesWithArms(mesh);
     mesh.position.copy(body.position);
     mesh.quaternion.copy(body.quaternion);
     mesh.scale.copy(body.scale);
