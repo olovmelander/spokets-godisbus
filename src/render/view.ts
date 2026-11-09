@@ -1509,6 +1509,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (scriptedPose && scripted?.act === 'point' && scripted.aim) {
       const k = calmStory ? 1 : clamp(scripted.actT / .3, 0, 1);
       playerBody.reach(1, boot.set(scripted.aim.x, scripted.aim.y, scripted.aim.z ?? 0), k * k * (3 - 2 * k));
+      // With his first finger, where his hand has fingers of its own (./fingers.ts).
+      playerBody.hold?.(1, { kind: 'point' }, k * k * (3 - 2 * k));
     }
     stage.updateElof(playerBody, scripted, tall, calmStory);
     // The doll's raincoat on him, part by part as he puts it on, and in his hands between the doll and his back.

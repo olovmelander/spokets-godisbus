@@ -854,7 +854,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
     },
     pose(p) {
       // An empty hand rests a little curled; what it holds closes it again after the pose.
-      for (const hand of fingered) hand?.set(REST);
+      for (const hand of fingered) hand?.set(hand.rest);
       handBones.forEach((hand, i) => {
         if (!hand) return;
         hand.quaternion.copy(handRest[i]!);

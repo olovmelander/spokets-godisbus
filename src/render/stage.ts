@@ -30,18 +30,21 @@ const LAMP_AXIS = new Vector3(0, 0, 1);
 /** How much of the arm's length a hand held out to give something uses: the elbow stays a little bent. */
 const OFFER_REACH = 0.82;
 /**
- * How each thing is held (./fingers.ts): the hand closes round the knife's haft, a lamp's body, the mug's handle and the
- * brush's stick; Moa holds her crayon in her fist, its tip out under her little finger, as a child does; the drawing is
- * pinched at its edges. The size is the radius, in EL, of what the fingers close round.
+ * How each thing is held (./fingers.ts): the hand closes round the knife's haft, a lamp's body and the brush's stick, the
+ * thumb over the fist; two fingers go through the mug's handle, the thumb on it; Moa pinches her crayon between her thumb
+ * and her first finger near its tip, and the drawing at its edges. The size is the radius, in EL, of what the fingers
+ * close round.
  */
 export const GRIPS: Record<Thing, Grip> = {
-  knife: { kind: 'power', size: 0.05 }, brush: { kind: 'power', size: 0.025 }, mug: { kind: 'power', size: 0.024 },
-  crayon: { kind: 'power', size: 0.035 }, drawing: { kind: 'pinch', size: 0.006 },
+  knife: { kind: 'power', size: 0.05 }, brush: { kind: 'power', size: 0.025 }, mug: { kind: 'loop', size: 0.024 },
+  crayon: { kind: 'pinch', size: 0.035 }, drawing: { kind: 'pinch', size: 0.006 },
   'lamp-mamma': { kind: 'power', size: 0.075 }, 'lamp-pappa': { kind: 'power', size: 0.075 },
   'lamp-moa': { kind: 'power', size: 0.075 }, 'lamp-bertil': { kind: 'power', size: 0.075 },
 };
-/** A hand laid on something: the wood it steadies, the paper. */
-const FLAT: Grip = { kind: 'flat' };
+/** A hand laid on something: the wood it steadies, the paper; and one that points. */
+const FLAT: Grip = { kind: 'flat' }, POINTING: Grip = { kind: 'point' };
+/** How far from its tip a crayon is pinched, and its middle from its tip. */
+const PINCHED = 0.09, CRAYON_MIDDLE = 0.15;
 /** The mug's handle, from its middle: a loop on its side, held by its upright. */
 const MUG_HANDLE = new Vector3(0.235, -0.01, 0);
 
@@ -614,6 +617,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   group.add(supportMark, contactMark, gripMark);
   const knifeDirection = new Vector3(), wristTarget = new Vector3(), up = new Vector3(0, 1, 0);
   const knifeHeld = new Vector3(), crayonHeld = new Vector3(), heldAxis = new Vector3(), aimed = new Vector3();
+  /** The crayon's middle, as held: its back end is the way of `crayonHeld`. */
+  const crayonCentre = new Vector3();
   const fingerDirection = new Vector3();
   const across = new Vector3(), forward = new Vector3(), surfaceDirection = new Vector3();
   const mark = (name: string) => { const node = new Object3D(); node.name = name; group.add(node); return node; };
@@ -1060,6 +1065,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         reach(state.act, elapsed, state.aim, state.before, 1);
         // Pointing uses the whole arm; something held out to be taken keeps a bend at the elbow, however far off he is.
         if (rightWeight > 0) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, state.act === 'offer' ? OFFER_REACH : 1);
+        // And the hand points with its first finger as the arm comes up, and lets it go as the arm comes down (./fingers.ts).
+        const points = state.act === 'point' ? smooth((calm ? 3 : elapsed) / .3)
+          : state.before?.act === 'point' ? 1 - smooth(elapsed / .45) : 0;
+        if (points > 1e-3) rig.hold?.(1, POINTING, points);
         if (leftWeight > 0) rig.reach(0, otherHand.divideScalar(leftWeight), leftWeight);
         // Kneeling, the right hand rests on the right knee, and crouching both hands on the knees, with the real arms: as they
         // go down, while they look about down there, and as they push up off them getting up.
@@ -1130,9 +1139,16 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             rig.hold?.(0, FLAT, weight);
             toolAxis.copy(up).addScaledVector(forward, -.45).normalize();
             heldPoint.copy(paperContact.position).addScaledVector(toolAxis, .15);
-            // In her fist, its tip out under her little finger to the paper.
-            if (rig.grasp) rig.grasp(1, GRIPS.crayon, heldPoint, toolAxis, crayonGrip.position, weight, crayonHeld);
-            else { rig.grip(1, heldPoint, fingerDirection, crayonGrip.position, weight); crayonHeld.copy(toolAxis); }
+            // Pinched near its tip, the tip out past her fingers to the paper; without fingers, the palm round its middle.
+            if (rig.grasp) {
+              heldPoint.copy(paperContact.position).addScaledVector(toolAxis, PINCHED);
+              rig.grasp(1, GRIPS.crayon, heldPoint, aimed.copy(toolAxis).negate(), crayonGrip.position, weight, crayonHeld);
+              crayonHeld.negate();
+              crayonCentre.copy(crayonGrip.position).addScaledVector(crayonHeld, CRAYON_MIDDLE - PINCHED);
+            } else {
+              rig.grip(1, heldPoint, fingerDirection, crayonGrip.position, weight);
+              crayonHeld.copy(toolAxis); crayonCentre.copy(crayonGrip.position);
+            }
           }
         }
         const showsDrawing = state.holds === 'drawing' || state.holdsLeft === 'drawing';
@@ -1195,11 +1211,12 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             const carved = held === 'knife' && state.act === 'carve' && workpiece?.act === 'carved';
             const drawn = held === 'crayon' && state.act === 'draw' && drawingContact;
             if (carved) hand.copy(gripMark.position);
-            else if (drawn) hand.copy(crayonGrip.position);
+            else if (drawn) hand.copy(crayonCentre);
             else if (rig.socket) {
-              // Held where the hand is, in its grip, the fingers closed round it.
+              // Held where the hand is, in its grip, the fingers closed round it; a pinched thing's tip out past them.
               rig.hold?.(side, GRIPS[held], closing);
               rig.socket(side, GRIPS[held], hand, heldAxis);
+              if (GRIPS[held].kind === 'pinch') hand.addScaledVector(heldAxis.negate(), CRAYON_MIDDLE - PINCHED);
             }
             mesh.position.copy(hand);
             if (carved) mesh.quaternion.setFromUnitVectors(up, knifeHeld);

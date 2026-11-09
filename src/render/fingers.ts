@@ -15,14 +15,21 @@ import { halfOf, weightsOf, writeWeights } from './sleeves';
  * block, the little one a little further; the thumb swings across the palm and closes. Their corners are weighed to them
  * here, from where each corner lies; the rest of the model is left as it is.
  *
+ * A model whose hands were made with fingers of their own (the private repository's family/finger_hands.py: four
+ * fingers and a thumb, each of three parts joined at round knuckles, and three bones in each, `thumb_01_l` ...
+ * `pinky_03_r`) is used as it is: its bones are found by name and measured as they rest, and nothing is weighed again.
+ * Its fingers move apart: the first finger points, and pinches against the thumb.
+ *
  * A hand rests a little curled; it closes round a handle (`power`: the knife's haft, a lamp, a rung) until each finger
- * touches it, hooks (`hook`: a lantern's bail), pinches with the thumb against the first finger (`pinch`: a crayon, a
- * brush, a sheet's edge), lies flat on something (`flat`), or opens (`open`). Each grip has a socket: where the held thing's
- * middle is, and its axis, in the hand's own frame (./arm-contact.ts createHandHold puts it in the world).
+ * touches it, the thumb over the fist; hooks (`hook`: a lantern's bail); pinches with the thumb (`pinch`: a crayon, a
+ * sheet's edge), tip to tip where the fingers are their own and against the first finger's side where they are one block;
+ * puts two fingers through a handle and the thumb on it (`loop`: the mug); points with the first finger (`point`); lies
+ * flat on something (`flat`), or opens (`open`). Each grip has a socket: where the held thing's middle is, and its axis, in
+ * the hand's own frame (./arm-contact.ts createHandHold puts it in the world).
  */
 
 /** How a hand is shaped. */
-export type GripKind = 'rest' | 'open' | 'flat' | 'power' | 'hook' | 'pinch';
+export type GripKind = 'rest' | 'open' | 'flat' | 'power' | 'hook' | 'pinch' | 'point' | 'loop';
 /** A grip, and the held thing's radius in the world's units (a handle's, a crayon's, a bail's). */
 export interface Grip { kind: GripKind; size?: number }
 
@@ -53,6 +60,10 @@ export interface Layout {
   along: Vector3; thumbward: Vector3; palmward: Vector3;
   size: number;
   palm: (y: number) => number;
+  /** Each digit's joints' axes as they rest, in the hand's frame, where the bones say (a model's own fingers). */
+  turns?: Vector3[][];
+  /** The fingers are each their own, not one block: they may move apart. */
+  separate?: boolean;
 }
 
 /**
@@ -280,8 +291,11 @@ export function posedDigits(layout: Layout, axes: Axes, shape: Shape): Vector3[]
   });
 }
 
-/** The axes the digits turn about, in the hand's frame: the fingers' curl, the thumb's swing across and its own curl. */
-export interface Axes { curl: Vector3; across: Vector3; thumb: Vector3 }
+/**
+ * The axes the digits turn about, in the hand's frame: the fingers' curl, the thumb's swing across and its own curl, and
+ * each digit's three joints' own (the curl's or the thumb's, or a model's bones' own).
+ */
+export interface Axes { curl: Vector3; across: Vector3; thumb: Vector3; joints: Vector3[][] }
 
 export function axesOf(layout: Layout): Axes {
   const { along, palmward, thumbward } = layout;
@@ -294,23 +308,25 @@ export function axesOf(layout: Layout): Axes {
   const way = mid.clone().sub(root).normalize();
   const towards = palmward.clone().addScaledVector(thumbward, -0.7);
   towards.addScaledVector(way, -towards.dot(way)).normalize();
-  return { curl, across: swing, thumb: new Vector3().crossVectors(way, towards).normalize() };
+  const thumb = new Vector3().crossVectors(way, towards).normalize();
+  const joints = layout.turns ?? layout.digits.map((_, d) => [0, 1, 2].map(() => (d === 0 ? thumb : curl).clone()));
+  return { curl, across: swing, thumb, joints };
 }
 
 /** Each joint's turn of a digit, as its bone's own: the thumb's root swings across and curls, the rest curl. */
-const swung = new Quaternion();
+const swung = new Quaternion(), X = new Vector3(1, 0, 0);
 function digitTurns(axes: Axes, d: number, shape: Shape, out: [Quaternion, Quaternion, Quaternion]): [Quaternion, Quaternion, Quaternion] {
-  const q = swung;
+  const q = swung, [a0, a1, a2] = axes.joints[d]!;
   if (d === 0) {
     const [root, mid, end] = shape.thumb.joints;
-    turnAbout(axes.across, shape.thumb.across, out[0]).multiply(turnAbout(axes.thumb, root, q));
-    turnAbout(axes.thumb, mid, out[1]);
-    turnAbout(axes.thumb, end, out[2]);
+    turnAbout(axes.across, shape.thumb.across, out[0]).multiply(turnAbout(a0!, root, q));
+    turnAbout(a1!, mid, out[1]);
+    turnAbout(a2!, end, out[2]);
   } else {
     const [root, mid, end] = shape.fingers[d - 1]!;
-    turnAbout(axes.curl, root, out[0]);
-    turnAbout(axes.curl, mid, out[1]);
-    turnAbout(axes.curl, end, out[2]);
+    turnAbout(a0!, root, out[0]);
+    turnAbout(a1!, mid, out[1]);
+    turnAbout(a2!, end, out[2]);
   }
   return out;
 }
@@ -319,10 +335,14 @@ const shape = (fingers: [number, number, number][], across: number, thumb: [numb
   ({ fingers, thumb: { across, joints: thumb } });
 /** A hand at rest: a little curled, the little finger most, the thumb a little in. */
 export const REST = shape([[0.14, 0.22, 0.12], [0.17, 0.26, 0.14], [0.2, 0.29, 0.16], [0.25, 0.33, 0.18]], 0.12, [0.06, 0.12, 0.1]);
+/** At rest, fingers of their own: they were made a little curled already, so they curl a little further only. */
+export const REST_OWN = shape([[0.05, 0.08, 0.04], [0.07, 0.1, 0.05], [0.09, 0.12, 0.06], [0.12, 0.15, 0.07]], 0.08, [0.04, 0.08, 0.06]);
 /** Open, as in a wave: the fingers out, the thumb out to its side. */
 export const OPEN = shape([[0.02, 0.05, 0.03], [0.02, 0.05, 0.03], [0.03, 0.06, 0.04], [0.05, 0.08, 0.05]], -0.05, [0, 0.04, 0.04]);
 /** Flat on something: nearly straight, the fingertips just touching it. */
 export const FLAT = shape([[0.04, 0.06, 0.03], [0.04, 0.06, 0.03], [0.05, 0.07, 0.04], [0.06, 0.08, 0.04]], 0.06, [0.02, 0.05, 0.04]);
+/** Pointing: the first finger out, the others curled in under the thumb (fingers of their own only). */
+export const POINT = shape([[0.02, 0.04, 0.02], [1.25, 1.55, 0.95], [1.3, 1.6, 0.95], [1.35, 1.6, 0.95]], 0.6, [0.25, 0.4, 0.3]);
 /** A hook: the fingers bent at their middle knuckles, the thumb resting beside them. */
 export const HOOK = shape([[0.3, 1.45, 0.8], [0.32, 1.5, 0.85], [0.35, 1.5, 0.85], [0.4, 1.5, 0.85]], 0.3, [0.12, 0.25, 0.2]);
 
@@ -382,7 +402,7 @@ function thumbTo(layout: Layout, axes: Axes, made: Shape, cost: (pad: Vector3, l
  * and the thumb comes round its far side over the first finger. Returns the shape and the handle's socket: its axis runs
  * across the palm, towards the thumb's side.
  */
-export function powerGrip(layout: Layout, axes: Axes, r: number): { shape: Shape; socket: Socket } {
+export function powerGrip(layout: Layout, axes: Axes, r: number, through = false): { shape: Shape; socket: Socket } {
   const { digits, along, palmward, thumbward, size } = layout;
   const fingers = digits.slice(1);
   const root = fingers.reduce((sum, f) => sum.add(f.joints[0]), new Vector3()).divideScalar(fingers.length);
@@ -398,6 +418,8 @@ export function powerGrip(layout: Layout, axes: Axes, r: number): { shape: Shape
   const u = (p: Vector3) => p.dot(along), v = (p: Vector3) => p.dot(palmward);
   const cu = u(at), cv = v(at);
   fingers.forEach((finger, f) => {
+    // Through a handle, the first two fingers go round it; the others are tucked in under them.
+    if (through && f > 1) { made.fingers[f] = [1.35, 1.6, 1.0]; return; }
     const rho = r + 0.9 * finger.radius;
     const j = finger.joints;
     let pu = u(j[0]), pv = v(j[0]), heading = 0, restHeading = 0;
@@ -426,9 +448,16 @@ export function powerGrip(layout: Layout, axes: Axes, r: number): { shape: Shape
   });
   // The thumb comes over the fist onto the handle's far side, beside the first finger: as near there as it reaches, its
   // last bone kept out of the handle where the fingers hold it (past the first finger the handle ends, or is a blade).
+  // Fingers of their own close round far enough for the thumb to come over them: onto the first finger's middle bone.
   const thumb = digits[0]!, index = digits[1]!, touch = r + 0.9 * thumb.radius;
   const middle = at.dot(thumbward), end = index.joints[0].dot(thumbward) + index.radius;
-  const target = at.clone().addScaledVector(palmward, touch).addScaledVector(thumbward, end - middle);
+  let target = at.clone().addScaledVector(palmward, touch).addScaledVector(thumbward, end - middle);
+  if (layout.separate && !through) {
+    const posed = posedDigits(layout, axes, made)[1]!;
+    const bone = posed[1]!.clone().lerp(posed[2]!, 0.5), out = bone.clone().sub(at);
+    out.addScaledVector(axis, -out.dot(axis)).normalize();
+    target = bone.addScaledVector(out, index.radius + 0.85 * thumb.radius).addScaledVector(thumbward, 0.4 * index.radius);
+  } else if (layout.separate) target.addScaledVector(palmward, 0.2 * thumb.radius);
   const point = new Vector3();
   thumbTo(layout, axes, made, (pad, line) => {
     let inside = 0;
@@ -463,6 +492,7 @@ function hookSocket(layout: Layout, axes: Axes, r: number): Socket {
  * their pads, as a crayon or a brush is held.
  */
 export function pinchGrip(layout: Layout, axes: Axes, r: number): { shape: Shape; socket: Socket } {
+  if (layout.separate) return tipPinch(layout, axes, r);
   const made = shape([[0.85, 1.05, 0.55], [0.95, 1.2, 0.65], [1.05, 1.3, 0.75], [1.15, 1.35, 0.8]], REST.thumb.across, [...REST.thumb.joints]);
   const { digits, thumbward } = layout;
   const thumb = digits[0]!, index = digits[1]!;
@@ -482,6 +512,48 @@ export function pinchGrip(layout: Layout, axes: Axes, r: number): { shape: Shape
   return { shape: made, socket: { at, axis } };
 }
 
+/**
+ * A pinch, tip to tip, for fingers of their own: the first finger a little curled and the thumb's pad brought to its pad,
+ * the held thing between them; the other fingers curled in under. The socket's axis runs from the web between the thumb
+ * and the first finger out between their pads, as a crayon is held.
+ */
+function tipPinch(layout: Layout, axes: Axes, r: number): { shape: Shape; socket: Socket } {
+  const made = shape([[0.7, 1.0, 0.6], [0.95, 1.25, 0.75], [1.15, 1.4, 0.85], [1.25, 1.45, 0.85]], 0.6, [0.2, 0.3, 0.25]);
+  const { digits, thumbward } = layout;
+  const thumb = digits[0]!, index = digits[1]!;
+  const posed = posedDigits(layout, axes, made)[1]!;
+  const [root, pip, dip, end] = posed;
+  const bone = end!.clone().sub(dip!).normalize();
+  const palmSide = pip!.clone().sub(root!);
+  palmSide.addScaledVector(bone, -palmSide.dot(bone)).negate().normalize();
+  // The first finger's pad, and the way to the thumb's from it: towards the palm, and a little towards the thumb.
+  const pad = dip!.clone().lerp(end!, 0.5).addScaledVector(palmSide, index.radius * 0.8);
+  const towards = palmSide.clone().addScaledVector(thumbward, 0.5);
+  towards.addScaledVector(bone, -towards.dot(bone)).normalize();
+  const target = pad.clone().addScaledVector(towards, 2 * r + 0.85 * thumb.radius);
+  thumbTo(layout, axes, made, (thumbPad) => thumbPad.distanceTo(target));
+  const after = posedDigits(layout, axes, made);
+  const thumbPad = after[0]![2]!.clone().lerp(after[0]![3]!, 0.45);
+  const at = pad.clone().lerp(thumbPad, 0.5);
+  const web = after[0]![1]!.clone().lerp(after[1]![0]!, 0.5);
+  const axis = at.clone().sub(web);
+  const across = thumbPad.clone().sub(pad).normalize();
+  axis.addScaledVector(across, -axis.dot(across)).normalize();
+  return { shape: made, socket: { at, axis } };
+}
+
+/** Pointing, the thumb over the curled fingers' middle bones; where the fingers are one block, the hand rests. */
+function pointing(layout: Layout, axes: Axes): { shape: Shape; socket: Socket } {
+  const made = copyShape(layout.separate ? POINT : REST);
+  if (layout.separate) {
+    const posed = posedDigits(layout, axes, made)[2]!;
+    const target = posed[1]!.clone().lerp(posed[2]!, 0.4).addScaledVector(layout.palmward, layout.digits[2]!.radius + 0.8 * layout.digits[0]!.radius);
+    thumbTo(layout, axes, made, (pad) => pad.distanceTo(target));
+  }
+  const tip = posedDigits(layout, axes, made)[1]!;
+  return { shape: made, socket: { at: tip[3]!.clone(), axis: tip[3]!.clone().sub(tip[2]!).normalize() } };
+}
+
 /** A shape and a socket for each grip and size, made once. */
 export interface Hand {
   readonly layout: Layout;
@@ -494,9 +566,11 @@ export interface Hand {
   set(shape: Shape): void;
   /** The shape they are in now. */
   readonly shape: Shape;
+  /** The shape they rest in. */
+  readonly rest: Shape;
 }
 
-function makeHand(layout: Layout, bones: Bone[][]): Hand {
+function makeHand(layout: Layout, bones: Bone[][], rests?: Quaternion[][]): Hand {
   const axes = axesOf(layout);
   const made = new Map<string, { shape: Shape; socket: Socket }>();
   const now = copyShape(REST);
@@ -509,13 +583,15 @@ function makeHand(layout: Layout, bones: Bone[][]): Hand {
   return {
     layout, axes, bones,
     get shape() { return now; },
+    rest: layout.separate ? REST_OWN : REST,
     grip(kind, r = 0) {
       // Sizes within a hundredth of the hand's unit share a shape.
       const key = `${kind}:${Math.round(r / layout.size * 2000)}`;
       let found = made.get(key);
       if (!found) {
-        found = kind === 'power' ? powerGrip(layout, axes, Math.max(r, 0.004 * layout.size))
+        found = kind === 'power' || kind === 'loop' ? powerGrip(layout, axes, Math.max(r, 0.004 * layout.size), kind === 'loop' && !!layout.separate)
           : kind === 'pinch' ? pinchGrip(layout, axes, r)
+          : kind === 'point' ? pointing(layout, axes)
           : kind === 'hook' ? { shape: HOOK, socket: hookSocket(layout, axes, r) }
           : { shape: kind === 'open' ? OPEN : kind === 'flat' ? FLAT : REST, socket: palmAt(r) };
         made.set(key, found);
@@ -524,12 +600,96 @@ function makeHand(layout: Layout, bones: Bone[][]): Hand {
     },
     set(shape) {
       if (shape !== now) mixShape(shape, shape, 0, now);
+      if (rests) {
+        // A model's own bones: each curls about its own x from its rest; the thumb's root swings across the palm first.
+        bones.forEach((chain, d) => chain.forEach((bone, k) => {
+          const angle = d === 0 ? now.thumb.joints[k]! : now.fingers[d - 1]![k]!;
+          bone.quaternion.copy(rests[d]![k]!).multiply(turnAbout(X, angle, swung));
+          if (d === 0 && k === 0) bone.quaternion.premultiply(turnAbout(axes.across, now.thumb.across, swung));
+        }));
+        return;
+      }
       bones.forEach((chain, d) => {
         digitTurns(axes, d, now, turns);
         chain.forEach((bone, k) => bone.quaternion.copy(turns[k]!));
       });
     },
   };
+}
+
+/** The model's own finger bones, as family/finger_hands.py names them. */
+const OWN = ['thumb', 'index', 'middle', 'ring', 'pinky'] as const;
+
+/**
+ * A hand whose model has its own finger bones, measured as they rest: each digit's knuckles and its tip's end, its joints'
+ * axes (each bone's own x), its thickness from its own corners; the hand's directions from the fingers' roots and their
+ * curl. Null if any of the fifteen is missing.
+ */
+function ownFingers(model: Object3D, tag: 'l' | 'r', hand: Object3D, meshes: SkinnedMesh[]): Hand | null {
+  const bones = OWN.map((digit) => [1, 2, 3].map((j) => model.getObjectByName(`${digit}_0${j}_${tag}`) as Bone | undefined));
+  if (bones.some((chain) => chain.some((bone) => !bone || bone.parent !== (chain.indexOf(bone) === 0 ? hand : chain[chain.indexOf(bone) - 1])))) return null;
+  const chains = bones as Bone[][];
+  const rests = chains.map((chain) => chain.map((bone) => bone.quaternion.clone()));
+  // Each bone's corners in its own frame at rest, from the mesh that has most of them.
+  const cornersOf = (bone: Bone): Vector3[] => {
+    let best: Vector3[] = [];
+    for (const mesh of meshes) {
+      const index = mesh.skeleton.bones.indexOf(bone);
+      if (index < 0) continue;
+      const m = new Matrix4().multiplyMatrices(mesh.skeleton.boneInverses[index]!, mesh.bindMatrix);
+      const position = mesh.geometry.getAttribute('position'), out: Vector3[] = [];
+      for (let i = 0; i < position.count; i++) {
+        let own = 0;
+        for (const [b, w] of weightsOf(mesh, i)) if (b === index) own += w;
+        if (own > 0.5) out.push(new Vector3().fromBufferAttribute(position, i).applyMatrix4(m));
+      }
+      if (out.length > best.length) best = out;
+    }
+    return best;
+  };
+  const turns: Vector3[][] = [];
+  const digits: Digit[] = chains.map((chain, d) => {
+    const joints: Vector3[] = [chain[0]!.position.clone()];
+    const turn = chain[0]!.quaternion.clone();
+    const axes: Vector3[] = [];
+    let radius = 0, count = 0, tip = 0;
+    chain.forEach((bone, k) => {
+      if (k > 0) {
+        joints.push(joints[k - 1]!.clone().add(bone.position.clone().applyQuaternion(turn)));
+        turn.multiply(bone.quaternion);
+      }
+      axes.push(X.clone().applyQuaternion(turn));
+      for (const p of cornersOf(bone)) {
+        radius += Math.hypot(p.x, p.z); count++;
+        if (k === 2) tip = Math.max(tip, p.y);
+      }
+    });
+    joints.push(joints[2]!.clone().add(new Vector3(0, tip || chain[2]!.position.length(), 0).applyQuaternion(turn)));
+    turns.push(axes);
+    return { name: DIGITS[d]!, joints: joints as Digit['joints'], radius: count ? radius / count : 0.01 };
+  });
+  // The hand's directions: along it to the fingers' roots, across from the little finger to the first, and towards the
+  // palm, which the fingers curl to.
+  const roots = digits.slice(1).reduce((sum, digit) => sum.add(digit.joints[0]), new Vector3()).multiplyScalar(0.25);
+  const along = roots.clone().normalize();
+  const thumbward = digits[1]!.joints[0].clone().sub(digits[4]!.joints[0]);
+  thumbward.addScaledVector(along, -thumbward.dot(along)).normalize();
+  const palmward = new Vector3().crossVectors(turns[2]![0]!, along).normalize();
+  let length = 0;
+  for (const digit of digits) length = Math.max(length, digit.joints[3].dot(along));
+  const size = length / LENGTH;
+  const palmCorners = cornersOf(hand as Bone);
+  const bands = new Float32Array(24).fill(-Infinity);
+  for (const p of palmCorners) {
+    if (p.dot(thumbward) > 0.022 * size) continue;
+    const band = Math.floor(p.dot(along) / length * bands.length);
+    if (band >= 0 && band < bands.length) bands[band] = Math.max(bands[band]!, p.dot(palmward));
+  }
+  const palm = (y: number) => {
+    const band = Math.min(bands.length - 1, Math.max(0, Math.floor(y / length * bands.length)));
+    return Number.isFinite(bands[band]!) ? bands[band]! : 0.014 * size;
+  };
+  return makeHand({ digits, along, thumbward, palmward, size, palm, turns, separate: true }, chains, rests);
 }
 
 /** A bone under `parent` at `at` in its frame, not turned, its inverse bind from the parent's. */
@@ -553,6 +713,9 @@ export function fingersOf(model: Object3D): [Hand | null, Hand | null] {
   const hands = (['l', 'r'] as const).map((tag) => {
     const handBone = model.getObjectByName(`hand_${tag}`);
     if (!handBone) return null;
+    // A hand made with fingers of its own is used as it is.
+    const own = ownFingers(model, tag, handBone, meshes);
+    if (own) { own.set(own.rest); return own; }
     // Each mesh's corners that only the hand moves, in the hand bone's frame at rest.
     const found = meshes.map((mesh) => {
       const index = mesh.skeleton.bones.indexOf(handBone as Bone);
