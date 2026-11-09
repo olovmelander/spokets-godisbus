@@ -1,7 +1,7 @@
 import {
   AdditiveBlending, BoxGeometry, BufferAttribute, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, Mesh,
   MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, SphereGeometry, SRGBColorSpace,
-  Vector3,
+  TorusGeometry, Vector3,
 } from 'three';
 import type { ChapterData } from '../sim/types';
 import { sceneWaits, type Act, type ActorKey, type ElofKey, type Point, type SceneDef, type SceneFrame, type ShotKey, type Thing } from '../sim/scene';
@@ -11,6 +11,7 @@ import { chairPose, createFooting, crouchPlaces, crouchPose, KNEE_HAND, kneelPos
 import { CLIPS, STANDS } from './motion-data';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
+import type { Grip } from './fingers';
 
 /**
  * The stage: plays a chapter's scenes in the picture (src/sim/scene.ts). It owns the family's posable figures
@@ -28,6 +29,21 @@ const TURNS_TO: readonly Act[] = ['reach', 'lift', 'offer', 'point'];
 const LAMP_AXIS = new Vector3(0, 0, 1);
 /** How much of the arm's length a hand held out to give something uses: the elbow stays a little bent. */
 const OFFER_REACH = 0.82;
+/**
+ * How each thing is held (./fingers.ts): the hand closes round the knife's haft, a lamp's body, the mug's handle and the
+ * brush's stick; Moa holds her crayon in her fist, its tip out under her little finger, as a child does; the drawing is
+ * pinched at its edges. The size is the radius, in EL, of what the fingers close round.
+ */
+export const GRIPS: Record<Thing, Grip> = {
+  knife: { kind: 'power', size: 0.05 }, brush: { kind: 'power', size: 0.025 }, mug: { kind: 'power', size: 0.024 },
+  crayon: { kind: 'power', size: 0.035 }, drawing: { kind: 'pinch', size: 0.006 },
+  'lamp-mamma': { kind: 'power', size: 0.075 }, 'lamp-pappa': { kind: 'power', size: 0.075 },
+  'lamp-moa': { kind: 'power', size: 0.075 }, 'lamp-bertil': { kind: 'power', size: 0.075 },
+};
+/** A hand laid on something: the wood it steadies, the paper. */
+const FLAT: Grip = { kind: 'flat' };
+/** The mug's handle, from its middle: a loop on its side, held by its upright. */
+const MUG_HANDLE = new Vector3(0.235, -0.01, 0);
 
 /** Where an actor is and what it does, at one moment of the story. */
 interface State {
@@ -37,7 +53,7 @@ interface State {
   act: Act;
   /** When the act began, and the act and stance before it, for the blend between them. */
   actAt: number;
-  before: { act: Act; t: number; stance: Stance; aim: Point | null; mug: 0 | 1 | null; previous: State['before'] } | null;
+  before: { act: Act; t: number; stance: Stance; aim: Point | null; mug: 0 | 1 | null; held: [Thing | null, Thing | null]; previous: State['before'] } | null;
   stance: Stance;
   aim: Point | null;
   glance: { from: Point; weight: number } | null;
@@ -183,7 +199,7 @@ function apply(state: State, key: ActorKey, since: number): void {
     // Keep any unfinished blend when the next key interrupts it. Relative ages also survive scene changes.
     const age = Math.max(0, key.at - state.actAt);
     state.before = first ? null : { act: state.act, t: age, stance: state.stance, aim: state.aim,
-      mug: state.holds === 'mug' ? 1 : state.holdsLeft === 'mug' ? 0 : null, previous: age < .45 ? state.before : null };
+      mug: state.holds === 'mug' ? 1 : state.holdsLeft === 'mug' ? 0 : null, held: [state.holdsLeft, state.holds], previous: age < .45 ? state.before : null };
     state.stance = stanceOf(key.act, state.stance);
     state.act = key.act;
     state.actAt = key.at;
@@ -324,7 +340,10 @@ function thing(kind: Thing, drawing: CanvasTexture): Mesh {
       const heart = new Mesh(new BoxGeometry(0.09, 0.09, 0.02), new MeshStandardMaterial({ color: '#b8463c', roughness: 0.6 }));
       heart.position.set(0, 0.02, 0.165);
       heart.rotation.z = Math.PI / 4;
-      mug.add(heart);
+      // Its handle, on its right as she holds it out: a loop she closes her hand round.
+      const handle = new Mesh(new TorusGeometry(0.075, 0.024, 6, 10, Math.PI).rotateZ(-Math.PI / 2).translate(0.16, -0.01, 0), mug.material);
+      handle.name = 'mug-handle';
+      mug.add(heart, handle);
       return mug;
     }
     case 'crayon': {
@@ -470,7 +489,7 @@ export interface Stage {
   /** One frame: what to do with the ghost, Elof and the camera. `dt` is 0 while the game stands still. */
   update(frame: SceneFrame | null, flags: ReadonlySet<string>, elof: { x: number; y: number }, clock: number, dt: number, calm: boolean): Directions;
   /** Attach the story sweet after Elof's actual body has been posed and placed. */
-  updateElof(rig: Pick<Rig, 'hand' | 'mouth' | 'reach'>, direction: Directions['elof'], height: number, calm: boolean): void;
+  updateElof(rig: Pick<Rig, 'hand' | 'mouth' | 'reach' | 'hold' | 'socket'>, direction: Directions['elof'], height: number, calm: boolean): void;
   /** Everyone the stage has: for the shadows and the tests. */
   readonly actors: ReadonlyMap<Role, { rig: Rig; visible: () => boolean }>;
 }
@@ -594,6 +613,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   gripMark.name = 'carving-knife-grip';
   group.add(supportMark, contactMark, gripMark);
   const knifeDirection = new Vector3(), wristTarget = new Vector3(), up = new Vector3(0, 1, 0);
+  const knifeHeld = new Vector3(), crayonHeld = new Vector3(), heldAxis = new Vector3(), aimed = new Vector3();
   const fingerDirection = new Vector3();
   const across = new Vector3(), forward = new Vector3(), surfaceDirection = new Vector3();
   const mark = (name: string) => { const node = new Object3D(); node.name = name; group.add(node); return node; };
@@ -660,11 +680,14 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       drawnWhile(star, size > 0);
       if (!shown) return;
       const unit = height / 3;
-      rig.hand(1, hand);
+      // Between his thumb and his finger (./fingers.ts), or at the hand of a body without them.
+      const pinched = { kind: 'pinch' as const, size: .08 * unit };
+      const at = () => { rig.hold?.(1, pinched); return rig.socket ? rig.socket(1, pinched, hand) : rig.hand(1, hand); };
+      at();
       if (direction?.act === 'eat') {
         rig.mouth(heldPoint); heldPoint.z += .045 * unit;
         hand.lerp(heldPoint, bite.mouth);
-        rig.reach(1, hand); rig.hand(1, hand);
+        rig.reach(1, hand); at();
       }
       star.position.copy(hand);
       star.scale.setScalar(size * unit);
@@ -1074,8 +1097,11 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           knifeDirection.normalize();
           wristTarget.copy(contactMark.position).addScaledVector(knifeDirection, -.4);
           rig.reach(0, supportMark.position, weight);
+          rig.hold?.(0, FLAT, weight);
           fingerDirection.copy(forward).addScaledVector(up, -.25).normalize();
-          rig.grip(1, wristTarget, fingerDirection, gripMark.position, weight);
+          // The hand closes round the haft, its blade out past the thumb; without fingers, the palm on it.
+          if (rig.grasp) rig.grasp(1, GRIPS.knife, wristTarget, knifeDirection, gripMark.position, weight, knifeHeld);
+          else { rig.grip(1, wristTarget, fingerDirection, gripMark.position, weight); knifeHeld.copy(knifeDirection); }
           contactMark.userData.cut = motion.cut;
           if (state.act === 'carve') carving = { motion, at: state.actAt, face };
         }
@@ -1101,9 +1127,12 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             paperSupport.position.y += .045;
             fingerDirection.copy(forward).addScaledVector(up, -.15).normalize();
             rig.grip(0, paperSupport.position, fingerDirection, otherHand, weight);
+            rig.hold?.(0, FLAT, weight);
             toolAxis.copy(up).addScaledVector(forward, -.45).normalize();
             heldPoint.copy(paperContact.position).addScaledVector(toolAxis, .15);
-            rig.grip(1, heldPoint, fingerDirection, crayonGrip.position, weight);
+            // In her fist, its tip out under her little finger to the paper.
+            if (rig.grasp) rig.grasp(1, GRIPS.crayon, heldPoint, toolAxis, crayonGrip.position, weight, crayonHeld);
+            else { rig.grip(1, heldPoint, fingerDirection, crayonGrip.position, weight); crayonHeld.copy(toolAxis); }
           }
         }
         const showsDrawing = state.holds === 'drawing' || state.holdsLeft === 'drawing';
@@ -1119,10 +1148,15 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           const weight = showsDrawing ? arrival : 1 - smooth(elapsed / .45);
           rig.grip(0, sheetLeft.position, up, otherHand, weight);
           rig.grip(1, sheetRight.position, up, hand, weight);
+          rig.hold?.(0, GRIPS.drawing, weight);
+          rig.hold?.(1, GRIPS.drawing, weight);
         }
         // What they hold: in the right hand, and in the left. Moa's drawing is held up in both.
         const releasingMug = state.before && elapsed < .45 ? state.before.mug : null;
         for (const [side, current] of [[1, state.holds], [0, state.holdsLeft]] as const) {
+          // A hand that has just let something go opens over the blend, one that has just taken it closes.
+          const had = state.before && elapsed < .45 ? state.before.held?.[side] ?? null : null;
+          if (had && had !== current && had !== 'drawing' && !(had === 'mug' && side === releasingMug)) rig.hold?.(side, GRIPS[had], 1 - smooth(elapsed / .45));
           const held = current ?? (side === releasingMug ? 'mug' : null);
           if (!held) continue;
           const mesh = things.get(held);
@@ -1130,6 +1164,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           if (current) holding.add(mesh);
           rig.hand(side, hand);
           if (held === 'drawing') continue;
+          const closing = !current ? 1 - smooth(elapsed / .45) : had === current || !state.before || elapsed >= .45 ? 1 : smooth(elapsed / .45);
           if (held === 'mug') {
             const sip = sippingAt(state.act === 'sip' ? since(state.actAt) : 0, calm, who);
             if (state.before?.act === 'sip' && elapsed < .45) {
@@ -1143,21 +1178,43 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             heldPoint.set(x, mouth.position.y - .9 / unit, z).addScaledVector(across, .4 / unit).addScaledVector(forward, .38 / unit);
             hand.copy(mouth.position).sub(rim); heldPoint.lerp(hand, sip.raise);
             fingerDirection.copy(up);
-            // Her hand wraps the side of the cup, rather than occupying its centre.
-            hand.copy(heldPoint).addScaledVector(across, .18);
-            rig.grip(side, hand, fingerDirection, mugGrip.position, current ? 1 : 1 - smooth(elapsed / .45));
-            mesh.position.copy(mugGrip.position).addScaledVector(across, -.18);
+            const weight = current ? 1 : 1 - smooth(elapsed / .45);
+            if (rig.grasp) {
+              // Her hand closes round the handle's upright; the cup hangs from where her hand is.
+              heldAxis.set(0, 1, 0).applyQuaternion(mesh.quaternion);
+              hand.copy(MUG_HANDLE).applyQuaternion(mesh.quaternion).add(heldPoint);
+              rig.grasp(side, GRIPS.mug, hand, heldAxis, mugGrip.position, weight);
+              mesh.position.copy(MUG_HANDLE).applyQuaternion(mesh.quaternion).negate().add(mugGrip.position);
+            } else {
+              // Her hand wraps the side of the cup, rather than occupying its centre.
+              hand.copy(heldPoint).addScaledVector(across, .18);
+              rig.grip(side, hand, fingerDirection, mugGrip.position, weight);
+              mesh.position.copy(mugGrip.position).addScaledVector(across, -.18);
+            }
           } else {
-            if (held === 'knife' && state.act === 'carve' && workpiece?.act === 'carved') hand.copy(gripMark.position);
-            if (held === 'crayon' && state.act === 'draw' && drawingContact) hand.copy(crayonGrip.position);
+            const carved = held === 'knife' && state.act === 'carve' && workpiece?.act === 'carved';
+            const drawn = held === 'crayon' && state.act === 'draw' && drawingContact;
+            if (carved) hand.copy(gripMark.position);
+            else if (drawn) hand.copy(crayonGrip.position);
+            else if (rig.socket) {
+              // Held where the hand is, in its grip, the fingers closed round it.
+              rig.hold?.(side, GRIPS[held], closing);
+              rig.socket(side, GRIPS[held], hand, heldAxis);
+            }
             mesh.position.copy(hand);
-            if (held === 'knife' && state.act === 'carve' && workpiece?.act === 'carved') mesh.quaternion.setFromUnitVectors(up, knifeDirection);
-            else if (held === 'crayon' && state.act === 'draw' && drawingContact) mesh.quaternion.setFromUnitVectors(up, toolAxis);
+            if (carved) mesh.quaternion.setFromUnitVectors(up, knifeHeld);
+            else if (drawn) mesh.quaternion.setFromUnitVectors(up, crayonHeld);
             else if (held.startsWith('lamp-') && state.aim) {
               // A lamp shines where its holder looks for something: the road ahead of him, the way up to a house.
               lampAim.set(state.aim.x, state.aim.y, state.aim.z ?? 0).sub(hand).normalize();
-              mesh.quaternion.setFromUnitVectors(LAMP_AXIS, lampAim);
+              if (rig.grasp) {
+                // The hand turns with it, closed round its body, the light out past the thumb.
+                rig.grasp(side, GRIPS[held], aimed.copy(hand), lampAim, hand, closing, heldAxis);
+                mesh.position.copy(hand).addScaledVector(heldAxis, -.06);
+                mesh.quaternion.setFromUnitVectors(LAMP_AXIS, heldAxis);
+              } else mesh.quaternion.setFromUnitVectors(LAMP_AXIS, lampAim);
             }
+            else if (rig.socket) mesh.quaternion.setFromUnitVectors(up, heldAxis);
             else mesh.rotation.set(0, yaw(face), held === 'knife' || held === 'brush' || held === 'crayon' ? -0.6 : 0);
           }
         }

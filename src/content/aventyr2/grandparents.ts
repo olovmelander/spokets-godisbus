@@ -48,6 +48,11 @@ const LADDER_AT = { x: 1.2, z: 0.15 };
 const LADDER_DOWN = 1.3;
 /** How far it stands turned from the picture while it stands, so that its rungs show. */
 const LADDER_TURN = 0.8;
+/**
+ * How their hands hold (src/render/fingers.ts): Morfar's closed round a rung of his ladder, Mormor's lantern hanging by its
+ * bail in her hooked fingers. Sizes are the radius of what the fingers close round, in EL.
+ */
+const RUNG = { kind: 'power', size: 0.05 } as const, BAIL = { kind: 'hook', size: 0.012 } as const;
 
 const SIDES = 12;
 const shade = new Color();
@@ -238,8 +243,8 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
   const phase = who === 'mormor' ? 0.7 : 2.1;
   /** Going down on a knee, keyed in Blender (art/blender/motion.py): how far through it they are, 0 standing to 1 down. */
   const clip = CLIPS.kneelElder;
-  const was = new Vector3(), now = new Vector3(), rail = new Vector3(), up = new Quaternion(), tilt = new Quaternion(), Z = new Vector3(0, 0, 1);
-  const kneeAt = new Vector3(), aheadOf = new Vector3();
+  const was = new Vector3(), now = new Vector3(), rail = new Vector3(), rung = new Vector3(), up = new Quaternion(), tilt = new Quaternion(), Z = new Vector3(0, 0, 1);
+  const kneeAt = new Vector3(), aheadOf = new Vector3(), socketAt = new Vector3();
   let since = 0, kneel = 0, facing = 0, gaze = 0, nextBlink = 2 + phase, swing = 0, swingSpeed = 0, first = true;
 
   return {
@@ -308,6 +313,12 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
       rig.group.rotation.y = facing;
       pose.turn = clamp(gaze, -0.7, 0.7);
       rig.pose(pose);
+      if (lantern && rig.hold && rig.socket) {
+        // Her lantern hangs by its bail in the crook of her fingers.
+        rig.hold(1, BAIL);
+        group.updateWorldMatrix(true, true);
+        hinge.position.copy(hand.worldToLocal(rig.socket(1, BAIL, socketAt)));
+      }
       rig.breeze?.(windAt(now.x), dt, still);
       // Down there he leans on his knee with his right hand (hers holds the lantern).
       const leans = who === 'morfar' && kneel > 0 && rig.knee ? sample(clip.hand!, kneel * clip.seconds) * smooth(kneel / 0.2) : 0;
@@ -323,7 +334,11 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
         const holds = 1 - smooth((since - LADDER_DOWN * 0.45) / 0.25);
         if (holds > 0 && kneel < 0.5) {
           group.updateWorldMatrix(true, true);
-          rig.reach(0, carried.localToWorld(rail.set(0, 2.7, 0)), holds * (1 - kneel * 2));
+          // Round the rung at the height of his hand, across the ladder (./fingers.ts).
+          carried.localToWorld(rail.set(0, 2.9, 0));
+          const weight = holds * (1 - kneel * 2);
+          if (rig.grasp) rig.grasp(0, RUNG, rail, rung.set(0, 0, 1).transformDirection(carried.matrixWorld), rail, weight);
+          else rig.reach(0, rail, weight);
         }
       }
 

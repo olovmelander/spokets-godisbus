@@ -1,6 +1,7 @@
 import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
 import type { ChapterData } from '../sim/types';
-import { createArmContact, createHandGrip } from './arm-contact';
+import { createArmContact, createHandGrip, createHandHold } from './arm-contact';
+import { copyShape, fingersOf, mixShape, REST, type Grip } from './fingers';
 import { COAT_ORDER, SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
 import { bendSoftly } from './joints';
 import { sleevesWithArms } from './sleeves';
@@ -205,6 +206,19 @@ export interface Rig {
   reach(side: 0 | 1, target: Vector3, weight?: number, most?: number): void;
   /** Place and aim the palm around a held thing; returns its actual centre after clamping the reach. */
   grip(side: 0 | 1, target: Vector3, fingerDirection: Vector3, out: Vector3, weight?: number): Vector3;
+  /**
+   * Closes a hand's fingers round what it holds (./fingers.ts): `weight` of the way from how they are (resting, after a
+   * pose) to the grip. A body without fingers keeps its hands as they are.
+   */
+  hold?(side: 0 | 1, grip: Grip, weight?: number): void;
+  /**
+   * Holds a thing after posing: the hand goes where its grip's socket comes to `target`, with the thing's axis along
+   * `axis`, and the fingers close round it as the hand arrives (`weight`). Returns the socket where it is (a reach too far
+   * is clamped), and the thing's axis as held in `axisOut`.
+   */
+  grasp?(side: 0 | 1, grip: Grip, target: Vector3, axis: Vector3, out: Vector3, weight?: number, axisOut?: Vector3): Vector3;
+  /** Where a grip's socket is in the world now, and the held thing's axis: for a thing held wherever the hand is. */
+  socket?(side: 0 | 1, grip: Grip, out: Vector3, axisOut?: Vector3): Vector3;
   /**
    * The wind in the soft parts, after posing: `wind` is `windAt` at the body's own x (./wind.ts), and `ruffle` a
    * hand in the hair (−1 to 1). With `still` they are at rest at once.
@@ -668,6 +682,9 @@ export function createModelRig(model: Object3D, height: number): Rig {
   });
   // Elbows and knees bend through half bones, a shoulder's corner gives to its arm, a skirt lies over the thighs (./joints.ts).
   bendSoftly(model);
+  // Fingers that bend and hold, in each hand (./fingers.ts).
+  const fingered = fingersOf(model);
+  const shaped = copyShape(REST), handScale = new Vector3();
   const bone = (name: string, sign: 1 | -1): Bone | null => {
     const node = model.getObjectByName(name);
     return node ? { node, rest: node.quaternion.clone(), sign } : null;
@@ -739,6 +756,16 @@ export function createModelRig(model: Object3D, height: number): Rig {
     const lower = i === 0 ? bones.elbowL : bones.elbowR;
     return upper && lower ? createArmContact(upper.node, lower.node, handBones[i] ?? new Vector3(0, fore[i]!, 0)) : null;
   });
+  const holds = handBones.map((hand, i) => {
+    const lower = i === 0 ? bones.elbowL : bones.elbowR;
+    return hand && lower && contacts[i] ? createHandHold(lower.node, hand, contacts[i]!) : null;
+  });
+  /** A grip's shape and socket in a hand, for the held thing's size in the world. */
+  const gripIn = (side: 0 | 1, grip: Grip) => {
+    const hand = fingered[side], bone = handBones[side];
+    if (!hand || !bone) return null;
+    return hand.grip(grip.kind, (grip.size ?? 0) / Math.max(1e-9, bone.getWorldScale(handScale).x));
+  };
   const grips = handBones.map((hand, i) => {
     const lower = i === 0 ? bones.elbowL : bones.elbowR;
     return hand && lower && contacts[i] ? createHandGrip(lower.node, hand, contacts[i]!) : null;
@@ -749,7 +776,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
   // The rain gear's shells, made the first time it is worn (./rain-gear.ts), and the wardrobe made in Blender.
   let shells: ReturnType<typeof buildShells> | undefined;
   let wardrobe: Wardrobe | null = null, worn: RainGear | null = null, headBare = false;
-  return {
+  const made: Rig = {
     group,
     height,
     legs,
@@ -792,12 +819,39 @@ export function createModelRig(model: Object3D, height: number): Rig {
     breeze(wind, dt, still, ruffle = 0) { if (dt > 0) soft(sway.step(wind, dt, still), still ? 0 : ruffle); },
     mouth(out) { return bones.head ? bones.head.node.localToWorld(out.copy(mouth)) : group.localToWorld(out.set(0, height * .89, height * .075)); },
     reach(side, target, weight = 1, most = 1) { contacts[side]?.(target, weight, most); },
+    hold(side, grip, weight = 1) {
+      const hand = fingered[side], made = gripIn(side, grip);
+      if (!hand || !made) return;
+      hand.set(mixShape(hand.shape, made.shape, Math.max(0, Math.min(1, weight)), shaped));
+    },
+    socket(side, grip, out, axisOut) {
+      const made = gripIn(side, grip), bone = handBones[side];
+      if (!made || !bone) return this.hand(side, out);
+      bone.updateWorldMatrix(true, false);
+      if (axisOut) axisOut.copy(made.socket.axis).transformDirection(bone.matrixWorld);
+      return bone.localToWorld(out.copy(made.socket.at));
+    },
+    grasp(side, grip, target, axis, out, weight = 1, axisOut) {
+      const made = gripIn(side, grip), hold = holds[side];
+      if (!made || !hold) {
+        this.reach(side, target, weight);
+        if (axisOut) axisOut.copy(axis);
+        return this.hand(side, out);
+      }
+      hold(made.socket.at, made.socket.axis, target, axis, out, weight, axisOut, grip.kind === 'hook');
+      // The fingers close as the hand comes, the last of the way.
+      const k = Math.max(0, Math.min(1, (weight - 0.25) / 0.75));
+      this.hold!(side, grip, k * k * (3 - 2 * k));
+      return out;
+    },
     grip(side, target, direction, out, weight = 1) {
       if (grips[side]) return grips[side]!(target, direction, out, weight);
       this.reach(side, target, weight);
       return this.hand(side, out);
     },
     pose(p) {
+      // An empty hand rests a little curled; what it holds closes it again after the pose.
+      for (const hand of fingered) hand?.set(REST);
       handBones.forEach((hand, i) => {
         if (!hand) return;
         hand.quaternion.copy(handRest[i]!);
@@ -864,4 +918,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
       return knee ? knee.node.getWorldPosition(out) : group.localToWorld(out.set(0, height * 0.17, 0));
     },
   };
+  // A body without the family's hands (a figure built in code) holds as it did: at its hand, the hand as it is.
+  if (!fingered[0] && !fingered[1]) { delete made.hold; delete made.grasp; delete made.socket; }
+  return made;
 }

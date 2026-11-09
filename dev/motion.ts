@@ -161,8 +161,16 @@ function frame(): void {
   // `?yaw`: the camera's angle round them in degrees, 0 from the front, 90 from their left, 180 from behind.
   const yaw = query.has('yaw') ? Number(query.get('yaw')) * Math.PI / 180 : view ? Math.atan2(0.55, 0.84) : 0;
   const reach = view && !query.has('yaw') ? Math.hypot(0.55, 0.84) * distance : distance;
-  camera.position.set(middle + Math.sin(yaw) * reach, high + 0.8, Math.cos(yaw) * reach);
-  camera.lookAt(middle, high, 0);
+  // `?bone=hand_r`: close on one of the followed body's bones (a hand, to see it hold).
+  const bone = query.get('bone') ? followed?.getObjectByName(query.get('bone')!) : undefined;
+  if (bone) {
+    const at = bone.getWorldPosition(new Vector3()), near = zoom * 0.5 / Math.tan(camera.fov * Math.PI / 360);
+    camera.position.set(at.x + Math.sin(yaw) * near, at.y + Number(query.get('rise') ?? 0.3) * near, at.z + Math.cos(yaw) * near);
+    camera.lookAt(at);
+  } else {
+    camera.position.set(middle + Math.sin(yaw) * reach, high + 0.8, Math.cos(yaw) * reach);
+    camera.lookAt(middle, high, 0);
+  }
   camera.updateProjectionMatrix();
 }
 addEventListener('resize', frame);
