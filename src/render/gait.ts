@@ -79,8 +79,9 @@ export function wave(series: Series, x: number): number {
  */
 export function stepOf(gait: number, legs: Legs = REHEARSAL_LEGS): number {
   const g = Math.max(gait, 0), leg = legs.hip;
-  // In leg lengths: about three quarters of a leg at an easy walk, more running.
-  const share = 0.36 + 0.27 * Math.min(g / leg, 4.2);
+  // In leg lengths: about three quarters of a leg at an easy walk, more running, and in a sprint longer still, more of
+  // each step in the air (they ran ever faster steps, over seven a second for Bertil, where a child sprints at under five).
+  const share = 0.36 + 0.27 * Math.min(g / leg, 4.2) + 0.12 * clamp(g / leg - 4.2, 0, 7.8);
   return Math.min(share * leg, 2.4 * g);
 }
 
@@ -166,10 +167,26 @@ function rollToReach(one: Foot, hipY: number, legs: Legs, most: number): void {
   rolled(flat, one.pitch, legs, one);
 }
 
+/**
+ * The longest share of a stride a foot can be planted for, with steps of `step` (heights), the hips `crouch` of their
+ * height down and the foot put down `ahead` of the middle of its stance: as far as the leg reaches it ahead (onto its
+ * heel) and behind (onto its toe), from hips as low as the stride lets them go.
+ */
+function stanceReach(legs: Legs, crouch: number, ahead: number, step: number): number {
+  if (step <= 1e-6) return 1;
+  const most = (legs.thigh + legs.shin) * 0.995, down = legs.hip * (1 - crouch - SINK) - legs.ankle;
+  const across = Math.sqrt(Math.max(0, most * most - down * down));
+  return Math.max(0.12, Math.min((0.98 * (across + legs.heel) - ahead) / step, (0.98 * (across + legs.toe) + ahead) / step));
+}
+
 /** The thigh, knee and foot that put an ankle at (ahead, down, out) from the hip joint, tipped `pitch`, for `legs`. */
-function reachWith(ahead: number, down: number, out: number, pitch: number, legs: Legs, pose: Pose, side: 0 | 1): void {
-  const thigh = legs.thigh, shin = legs.shin;
-  const far = clamp(Math.hypot(ahead, down, out), Math.abs(thigh - shin) + 1e-4, thigh + shin);
+function reachWith(ahead: number, down: number, out: number, pitch: number, legs: Legs, pose: Pose, side: 0 | 1, soft = 1): void {
+  const thigh = legs.thigh, shin = legs.shin, whole = thigh + shin;
+  let far = clamp(Math.hypot(ahead, down, out), Math.abs(thigh - shin) + 1e-4, whole);
+  // Near a straight knee a little more reach turns the knee a lot: past `soft` of the leg, the foot falls a little short
+  // and the knee goes on bending smoothly instead of snapping straight (a run sweeps its legs through there every step).
+  const knee0 = soft * whole;
+  if (soft < 1 && far > knee0) far = knee0 + (whole - knee0) * (1 - Math.exp(-(far - knee0) / (whole - knee0)));
   const knee = Math.PI - Math.acos(clamp((thigh * thigh + shin * shin - far * far) / (2 * thigh * shin), -1, 1));
   const open = Math.acos(clamp((thigh * thigh + far * far - shin * shin) / (2 * thigh * far), -1, 1));
   const swing = Math.atan2(ahead, Math.hypot(down, out)) + open;
@@ -188,10 +205,17 @@ export function stride(pose: Pose, phase: number, step: number, pace: number, ru
   kept?: Kept): Pose {
   Object.assign(pose, STANDING);
   const k = clamp(run, 0, 1), p = clamp(pace, 0, 1);
-  const at = blended(strider.walk, strider.run, k), along = curve(strider.walk, strider.run, k);
   // Held by a footing, the steps are as long as the stride counts them (its last step brings the feet together), and the
   // pace grows and dies away the rest of the motion. On their own, the steps die away with it too.
   const still = calm ? 0 : 1, s = Math.max(0, step) * (kept ? 1 : p);
+  // A planted foot goes back under the body only as far as the leg reaches it, from hips as low as they may go and with the
+  // boot rolled onto its heel ahead or its toe behind: faster than that, it is down for less of the stride and the rest is
+  // in the air. (A sprint asked for more, and the knee locked straight while the boot was dragged.)
+  const natural = blended(strider.walk, strider.run, k);
+  const stance = Math.min(natural((g) => g.stance), stanceReach(legs, natural((g) => g.crouch) * p, natural((g) => g.ahead) * p, s));
+  const walk = stance < natural((g) => g.stance) ? { ...strider.walk, stance } : strider.walk;
+  const runs = walk === strider.walk ? strider.run : { ...strider.run, stance };
+  const at = blended(walk, runs, k), along = curve(strider.walk, strider.run, k);
   // The feet: the left heel strikes at 0, the right half a stride later (π: a step).
   const pitch = (c: number) => along((g) => g.pitch, TAU * c) * p;
   foot(frac(phase / TAU), s, at, pitch, legs, p, left, kept?.flat[0], kept?.left[0], kept?.raise[0]);
@@ -201,7 +225,7 @@ export function stride(pose: Pose, phase: number, step: number, pace: number, ru
   const roll = along((g) => g.roll, phase) * p * still;
   const lift = legs.width * Math.sin(roll);
   let hips = legs.hip * (1 - at((g) => g.crouch) * p) + along((g) => g.bob, phase) * p * still;
-  const lowest = hips - legs.hip * SINK, stance = at((g) => g.stance), thigh = legs.thigh, shin = legs.shin;
+  const lowest = hips - legs.hip * SINK, thigh = legs.thigh, shin = legs.shin;
   for (const [one, side] of [[left, 1], [right, -1]] as const) {
     // Never quite straight while striding (a straight knee turns too fast to follow), and straight standing.
     const most = (thigh + shin) * (1 - 0.002 * p);
@@ -221,8 +245,10 @@ export function stride(pose: Pose, phase: number, step: number, pace: number, ru
   }
   // Where the feet go across: the gait's own track, from under the hips as it sets off.
   const out = (at((g) => g.width) - legs.width) * p;
-  reachWith(left.x, hips + lift - left.y, out, left.pitch, legs, pose, 0);
-  reachWith(right.x, hips - lift - right.y, out, right.pitch, legs, pose, 1);
+  // A run's legs swing through full stretch every step: they are softened there (reachWith), a walk's are not.
+  const soft = 1 - 0.08 * k * p;
+  reachWith(left.x, hips + lift - left.y, out, left.pitch, legs, pose, 0, soft);
+  reachWith(right.x, hips - lift - right.y, out, right.pitch, legs, pose, 1, soft);
   // Barely moving, the legs are those of standing: a nearly straight knee's angle is too touchy to settle there by itself.
   // (A footing's last step brings its feet together instead.)
   const settled = kept ? 1 : smooth(p / 0.04);

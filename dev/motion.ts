@@ -133,6 +133,42 @@ const book = BOOKS[(query.get('chapter') ?? 'prolog') as keyof typeof BOOKS] ?? 
 const run = query.has('run') ? book.scenes!.filter((one) => one.stage?.actors) : null;
 const chapter = story || run ? book : { ...garden, furniture, scenes: [{ id: 'lab', seconds: 600, stage: { actors } }] };
 const stage = createStage(chapter, () => 0);
+/**
+ * Each boot's sole at its heel and at its toe, as drawn (window.__motion.joints): two points of the sole picked once, as the
+ * model was bound (the lowest of the boot, its back and its front), so that a script can follow the one it stands on.
+ */
+const soleCorners = new WeakMap<object, { mesh: Mesh & { getVertexPosition(i: number, v: Vector3): Vector3 }; heel: number; toe: number }[]>();
+function solesOf(rig: Rig): Record<string, number[][]> {
+  let found = soleCorners.get(rig);
+  if (!found) {
+    found = [];
+    rig.group.traverse((node) => {
+      const mesh = node as Mesh & { isSkinnedMesh?: boolean; skeleton?: { bones: { name: string }[] }; getVertexPosition(i: number, v: Vector3): Vector3 };
+      if (!mesh.isSkinnedMesh || !mesh.skeleton) return;
+      const index = mesh.geometry.getAttribute('skinIndex'), weight = mesh.geometry.getAttribute('skinWeight'), at = mesh.geometry.getAttribute('position');
+      for (const name of ['foot_l', 'foot_r']) {
+        const bone = mesh.skeleton.bones.findIndex((b) => b.name === name);
+        if (bone < 0) continue;
+        const own: number[] = [];
+        for (let i = 0; i < index.count; i++) if (index.getX(i) === bone && weight.getX(i) > 0.99) own.push(i);
+        if (own.length < 4) continue;
+        const low = Math.min(...own.map((i) => at.getY(i))), high = Math.max(...own.map((i) => at.getY(i)));
+        const sole = own.filter((i) => at.getY(i) < low + 0.02 * (high - low) + 1e-4);
+        const z = (i: number) => at.getZ(i);
+        const heel = sole.reduce((a, b) => (z(b) < z(a) ? b : a)), toe = sole.reduce((a, b) => (z(b) > z(a) ? b : a));
+        found!.push({ mesh, heel, toe });
+      }
+    });
+    soleCorners.set(rig, found);
+  }
+  rig.group.updateMatrixWorld(true);
+  const out: Record<string, number[][]> = {};
+  found.forEach(({ mesh, heel, toe }, i) => {
+    const point = (k: number) => mesh.getVertexPosition(k, new Vector3()).applyMatrix4(mesh.matrixWorld).toArray().map((v) => Math.round(v * 1e5) / 1e5);
+    out[i === 0 ? 'foot_l' : 'foot_r'] = [point(heel), point(toe)];
+  });
+  return out;
+}
 /** The last pose each body was given (window.__motion.poses): for a script to measure each joint frame by frame. */
 const posed = new Map<string, Record<string, unknown>>();
 const watchPose = (who: string, rig: Rig) => {
@@ -390,7 +426,7 @@ window.__motion = {
         }
       });
       const ahead = new Vector3(0, 0, 1).transformDirection(rig.group.matrixWorld), root = rig.group.getWorldPosition(new Vector3());
-      return [who, { bones, low, height: rig.height, legs: rig.legs, ahead: ahead.toArray(), root: root.toArray() }];
+      return [who, { bones, low, height: rig.height, legs: rig.legs, ahead: ahead.toArray(), root: root.toArray(), soles: solesOf(rig) }];
     }));
   },
   /** Where each of the family's hands, mouth and group are: for a script to measure. */
