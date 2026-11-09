@@ -84,24 +84,25 @@ export function elofRainGear(chapter: Pick<ChapterData, 'id' | 'storm'>, flags: 
 }
 
 export const smooth = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
-type Key = readonly [at: number, arms: readonly [number, number], elbows: readonly [number, number], lean: number, nod: number, spread: number, twist: number];
+type Key = readonly [at: number, arms: readonly [number, number], elbows: readonly [number, number], lean: number, nod: number, spread: number, twist: number, out?: readonly [number, number]];
 
 /**
- * How his arms go, key by key: [seconds, arms (left, right: forward and up from hanging), elbows, lean, nod, spread, twist].
- * Putting it on, in step with `ON_SHARE`: he reaches for it at the doll and holds it up; his right hand holds it by the
- * collar at his left shoulder as his left arm pushes down through its sleeve; he reaches back with his right hand and
- * swings it round behind him, and his right arm goes into its sleeve; a shrug, and both hands pull the zip from the hem up
- * to the collar; then he holds his arms out a little: it fits.
+ * How his arms go, key by key: [seconds, arms (left, right: forward and up from hanging), elbows, lean, nod, spread, twist,
+ * and each arm out to its own side]. Putting it on, in step with `ON_SHARE`: he reaches for it at the doll and holds it up;
+ * his right hand holds it by the collar at his left shoulder as his left arm goes out and pushes down through its sleeve; he
+ * reaches back and out with his right hand and swings it round behind him, and his right arm goes into its sleeve; a
+ * shrug, and both hands pull the zip from the hem up to the collar; then he holds his arms out a little: it fits. An arm
+ * going into a sleeve goes out to the side as well as back, so that it reads from in front, at his size.
  */
 const ON: readonly Key[] = [
   [0, [0.1, 0.1], [0.2, 0.2], 0, 0, 0, 0],
   [0.4, [0.95, 0.95], [0.3, 0.3], 0.25, 0.35, 0, 0],
   [0.9, [1.25, 1.25], [0.95, 0.95], 0.02, 0.12, 0, 0],
-  [1.05, [0.75, 1.1], [0.3, 1.4], 0.04, 0.2, 0, 0.15],
-  [1.45, [0.45, 1.0], [0.15, 1.6], 0.04, 0.15, 0.05, 0.2],
-  [1.6, [0.3, 0.9], [0.3, 1.6], 0.02, 0.1, 0.05, 0.1],
-  [2.15, [0.3, -0.5], [0.35, 0.6], 0.02, 0.1, 0.1, -0.25],
-  [2.6, [0.3, 0.35], [0.4, 0.5], 0.02, 0.12, 0.05, 0],
+  [1.05, [0.75, 1.1], [0.3, 1.4], 0.04, 0.2, 0, 0.15, [0.4, 0]],
+  [1.45, [0.45, 1.0], [0.15, 1.6], 0.04, 0.15, 0.05, 0.2, [0.15, 0]],
+  [1.6, [0.3, 0.9], [0.3, 1.6], 0.02, 0.1, 0.05, 0.1, [0.05, 0]],
+  [2.15, [0.3, -0.5], [0.35, 0.6], 0.02, 0.1, 0.1, -0.25, [0.05, 0.7]],
+  [2.6, [0.3, 0.35], [0.4, 0.5], 0.02, 0.12, 0.05, 0, [0.05, 0.12]],
   [2.75, [0.3, 0.3], [0.4, 0.4], 0, 0.1, 0.05, 0],
   [2.95, [0.15, 0.15], [0.3, 0.3], -0.02, 0, 0.12, 0],
   [3.1, [0.5, 0.5], [1.0, 1.0], 0.08, 0.42, 0, 0],
@@ -120,9 +121,9 @@ const OFF: readonly Key[] = [
   [0.25, [0.55, 0.55], [2.0, 2.0], 0.04, 0.35, 0, 0],
   [0.65, [0.5, 0.5], [1.0, 1.0], 0.08, 0.42, 0, 0],
   [0.8, [0.3, 0.2], [0.4, 0.3], 0.02, 0.12, 0.05, 0],
-  [1.2, [0.35, -0.6], [0.5, 0.15], 0.04, 0.1, 0.05, -0.3],
-  [1.6, [0.4, 0.9], [0.4, 1.4], 0.02, 0.12, 0.05, 0.1],
-  [2.1, [0.5, 1.0], [0.15, 1.6], 0.04, 0.15, 0.05, 0.2],
+  [1.2, [0.35, -0.6], [0.5, 0.15], 0.04, 0.1, 0.05, -0.3, [0.05, 0.75]],
+  [1.6, [0.4, 0.9], [0.4, 1.4], 0.02, 0.12, 0.05, 0.1, [0.05, 0.1]],
+  [2.1, [0.5, 1.0], [0.15, 1.6], 0.04, 0.15, 0.05, 0.2, [0.4, 0]],
   [2.3, [1.2, 1.2], [0.85, 0.85], 0.02, 0.15, 0, 0],
   [2.85, [0.95, 0.95], [0.25, 0.25], 0.42, 0.45, 0, 0],
   [3.4, [0.1, 0.1], [0.2, 0.2], 0, 0, 0, 0],
@@ -144,6 +145,7 @@ export function coatPose(scene: string, seconds: number, out: Pose): Pose {
   out.elbowL = mix(a[2][0], b[2][0]); out.elbowR = mix(a[2][1], b[2][1]);
   out.lean = mix(a[3], b[3]); out.nod = mix(a[4], b[4]);
   out.spread = mix(a[5], b[5]); out.twist = mix(a[6], b[6]);
+  out.outL = mix(a[7]?.[0] ?? 0, b[7]?.[0] ?? 0); out.outR = mix(a[7]?.[1] ?? 0, b[7]?.[1] ?? 0);
   const bend = Math.max(0, out.lean - 0.2) / 0.22;
   if (bend > 0) { out.legL = out.legR = 0.55 * bend; out.kneeL = out.kneeR = 1.0 * bend; }
   return out;
