@@ -839,9 +839,12 @@ export function createModelRig(model: Object3D, height: number): Rig {
         return this.hand(side, out);
       }
       hold(made.socket.at, made.socket.axis, target, axis, out, weight, axisOut, grip.kind === 'hook');
-      // The fingers close as the hand comes, the last of the way.
-      const k = Math.max(0, Math.min(1, (weight - 0.25) / 0.75));
-      this.hold!(side, grip, k * k * (3 - 2 * k));
+      // The fingers close as the hand comes, the last of the way, and only on what the hand gets to: an arm that falls
+      // short of it leaves the hand open, not closed on the air.
+      const hand = fingered[side]!, length = hand.layout.size * 0.112 * handScale.x;
+      const k = Math.max(0, Math.min(1, (weight - 0.25) / 0.75)), miss = out.distanceTo(target);
+      const near = 1 - Math.max(0, Math.min(1, (miss - 0.1 * length) / (0.4 * length)));
+      this.hold!(side, grip, k * k * (3 - 2 * k) * near * near * (3 - 2 * near));
       return out;
     },
     grip(side, target, direction, out, weight = 1) {

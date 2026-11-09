@@ -334,8 +334,11 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
         const holds = 1 - smooth((since - LADDER_DOWN * 0.45) / 0.25);
         if (holds > 0 && kneel < 0.5) {
           group.updateWorldMatrix(true, true);
-          // Round the rung at the height of his hand, across the ladder (./fingers.ts).
-          carried.localToWorld(rail.set(0, 2.9, 0));
+          // Round the rung at the height of his hand, at its end nearer him, across the ladder (./fingers.ts).
+          carried.updateWorldMatrix(true, false);
+          const near = rail.set(0, 2.9, 0.3).applyMatrix4(carried.matrixWorld).distanceTo(group.getWorldPosition(now))
+            < rail.set(0, 2.9, -0.3).applyMatrix4(carried.matrixWorld).distanceTo(now) ? 0.3 : -0.3;
+          carried.localToWorld(rail.set(0, 2.9, near));
           const weight = holds * (1 - kneel * 2);
           if (rig.grasp) rig.grasp(0, RUNG, rail, rung.set(0, 0, 1).transformDirection(carried.matrixWorld), rail, weight);
           else rig.reach(0, rail, weight);
