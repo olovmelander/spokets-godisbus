@@ -66,6 +66,13 @@ const SCRIPTS: Record<string, (x: number) => ActorKey[]> = {
     { at: 7, act: 'cheer' }, { at: 9.4, act: 'shrug' }, { at: 11, act: 'startle' }, { at: 13, act: 'gasp' },
     { at: 15, act: 'hug' }, { at: 17.4, act: 'stand' },
   ],
+  // What else the arms do: a lamp shone ahead, a reach down low, a lift, something offered, shown, a sip, the hands.
+  more: (x) => [
+    { at: 0, x, y: 0, z: 0, face: 0.2, move: 0.01, act: 'stand' },
+    { at: 1, act: 'shine', aim: { x: x + 6, y: 2, z: 1 } }, { at: 3.4, act: 'reach', aim: { x: x + 1.6, y: 0.4, z: 0.6 } },
+    { at: 5.8, act: 'lift', aim: { x: x + 1.2, y: 3.2, z: 0.4 } }, { at: 8, act: 'offer', aim: { x: x + 1.6, y: 2.6, z: 0.6 } },
+    { at: 10, act: 'show' }, { at: 12, act: 'sip' }, { at: 14, act: 'hands' }, { at: 16, act: 'stand' },
+  ],
   // Up off a knee, as in Stormkvällen's getting ready, and into the raincoat and the boots, each in their own way.
   dress: (x) => [
     { at: 0, x, y: 0, z: 0, face: 0.25, move: 0.01, act: 'kneel' },
@@ -311,6 +318,8 @@ const probe = new Vector3();
 declare global { interface Window { __motion: unknown } }
 window.__motion = {
   ready,
+  /** The lab's scene, for a script that measures how the bodies' skins bend. */
+  scene,
   /** Plays on from where it is by `seconds`, at 60 frames a second, and draws. */
   play(seconds: number) { const to = clock + seconds; while (clock + 1 / 120 < to) step(1 / 60); draw(); return clock; },
   replay,
