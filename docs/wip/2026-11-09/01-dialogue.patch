@@ -1,0 +1,1930 @@
+diff --git a/scripts/voices-aventyr2.json b/scripts/voices-aventyr2.json
+index 075b8c7..5d6f150 100644
+--- a/scripts/voices-aventyr2.json
++++ b/scripts/voices-aventyr2.json
+@@ -426,13 +426,6 @@
+     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+     "text": "Hu-hu! Vad mjukt det är att flyga!"
+   },
+-  {
+-    "key": "ssPappaHere",
+-    "speaker": "pappa",
+-    "situation": "Äventyr 2, stormskog",
+-    "tag": "[warm, steady father]",
+-    "text": "Elof? Jag hör dig! Var är du?"
+-  },
+   {
+     "key": "ssTooWide",
+     "speaker": "elof",
+@@ -441,18 +434,11 @@
+     "text": "För brett att hoppa. Och så mörkt!"
+   },
+   {
+-    "key": "ssBeam",
++    "key": "ssPappaHere",
+     "speaker": "pappa",
+     "situation": "Äventyr 2, stormskog",
+     "tag": "[warm, steady father]",
+-    "text": "Där är Klonk! Nu ser jag honom."
+-  },
+-  {
+-    "key": "ssStiff",
+-    "speaker": "elof",
+-    "situation": "Äventyr 2, stormskog",
+-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+-    "text": "Pappa ser dig! Då blir du ju stel!"
++    "text": "Elof? Är det du där nere?"
+   },
+   {
+     "key": "ssTiptoe",
+@@ -461,27 +447,6 @@
+     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+     "text": "Förlåt, Klonk! Jag går lätt, lätt."
+   },
+-  {
+-    "key": "ssPappaAway",
+-    "speaker": "pappa",
+-    "situation": "Äventyr 2, stormskog",
+-    "tag": "[warm, steady father]",
+-    "text": "Jag lyser på stigen framför dig."
+-  },
+-  {
+-    "key": "ssAwake",
+-    "speaker": "spoket",
+-    "situation": "Äventyr 2, stormskog",
+-    "tag": "[playful wooden voice, wordless]",
+-    "text": "Klonk!"
+-  },
+-  {
+-    "key": "ssThanks",
+-    "speaker": "elof",
+-    "situation": "Äventyr 2, stormskog",
+-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+-    "text": "Tack, Klonk! Du är världens bästa bro."
+-  },
+   {
+     "key": "ssHollowSeen",
+     "speaker": "elof",
+@@ -552,6 +517,48 @@
+     "tag": "[playful wooden voice, wordless]",
+     "text": "Klonk, klonk!"
+   },
++  {
++    "key": "ssBeam",
++    "speaker": "pappa",
++    "situation": "Äventyr 2, stormskog",
++    "tag": "[warm, steady father]",
++    "text": "Där är du ju! Akta dig för kanten!"
++  },
++  {
++    "key": "ssFell",
++    "speaker": "pappa",
++    "situation": "Äventyr 2, stormskog",
++    "tag": "[warm, steady father]",
++    "text": "Oj! Klonk föll rakt över klyftan."
++  },
++  {
++    "key": "ssStiff",
++    "speaker": "elof",
++    "situation": "Äventyr 2, stormskog",
++    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
++    "text": "Han blir stel när Pappa tittar. En bro!"
++  },
++  {
++    "key": "ssPappaAway",
++    "speaker": "pappa",
++    "situation": "Äventyr 2, stormskog",
++    "tag": "[warm, steady father]",
++    "text": "Bra, Elof! Nu lyser jag på stigen."
++  },
++  {
++    "key": "ssAwake",
++    "speaker": "spoket",
++    "situation": "Äventyr 2, stormskog",
++    "tag": "[playful wooden voice, wordless]",
++    "text": "Klonk!"
++  },
++  {
++    "key": "ssThanks",
++    "speaker": "elof",
++    "situation": "Äventyr 2, stormskog",
++    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
++    "text": "Tack, Klonk! Du är världens bästa bro."
++  },
+   {
+     "key": "scene_stormskog",
+     "speaker": "storyteller",
+diff --git a/src/app/game.ts b/src/app/game.ts
+index 07ff5f0..1fcd706 100644
+--- a/src/app/game.ts
++++ b/src/app/game.ts
+@@ -10,7 +10,7 @@ export interface Held {
+   /** Up and down, for climbing. Left out, it is 0. */
+   y?: number;
+   hopHeld: boolean;
+-  /** Someone is still speaking on the page (src/sim/scene.ts, `quiet`). */
++  /** Someone is still speaking on the page. Left out: nobody listens, as for the robot (src/sim/types.ts, StepInput). */
+   talking?: boolean;
+ }
+ 
+@@ -35,11 +35,14 @@ export class Game {
+   /** One frame: dt seconds have passed. Presses go to the first step that runs. */
+   frame(dt: number, held: Held, edges: Readonly<Edges>): number {
+     this.queue.push(edges);
++    // The page hears what is said only after the frame: a line said in one of its steps is being said in the rest.
++    const told = this.sim.said.length;
+     this.lastSteps = this.loop.advance(dt * this.tempo, (first) => {
+       const e = first ? this.queue.take() : NO_EDGES;
++      const talking = held.talking === undefined ? undefined : held.talking || this.sim.said.length > told;
+       // Hoppa's held state is read each frame. A tap that begins and ends inside one frame therefore
+       // arrives as a press with hopHeld false, which is a hop.
+-      this.sim.step({ x: held.x, y: held.y ?? 0, hopHeld: held.hopHeld, hop: e.hop, act: e.act, help: e.helper, talking: held.talking });
++      this.sim.step({ x: held.x, y: held.y ?? 0, hopHeld: held.hopHeld, hop: e.hop, act: e.act, help: e.helper, talking });
+     });
+     return this.lastSteps;
+   }
+diff --git a/src/audio/voice-player.ts b/src/audio/voice-player.ts
+index 31abdf8..b714d31 100644
+--- a/src/audio/voice-player.ts
++++ b/src/audio/voice-player.ts
+@@ -102,6 +102,34 @@ export function playVoice(key: string): void {
+   }
+ }
+ 
++/**
++ * Pause holds the line being said where it is, as its bubble waits under Pause; `resumeVoice` lets it finish. A line is
++ * cut only when the player goes on from it, or starts again from a big candy.
++ */
++export function pauseVoice(): void {
++  pendingKey = null;
++  try {
++    currentAudio?.pause();
++  } catch {
++    // ignore
++  }
++}
++
++/** Back from Pause: the line that was being said goes on from where it was. */
++export function resumeVoice(): void {
++  const audio = currentAudio;
++  if (!audio || !audio.paused || !soundEnabled || currentVolume <= 0) return;
++  try {
++    audio.play()?.catch(() => {
++      if (currentAudio !== audio) return;
++      currentAudio = null;
++      currentKey = null;
++    });
++  } catch {
++    stopVoice();
++  }
++}
++
+ /** Stops any currently playing voice line. */
+ export function stopVoice(): void {
+   pendingKey = null;
+diff --git a/src/content/aventyr2/chapters/stormskog.ts b/src/content/aventyr2/chapters/stormskog.ts
+index de65c23..816972d 100644
+--- a/src/content/aventyr2/chapters/stormskog.ts
++++ b/src/content/aventyr2/chapters/stormskog.ts
+@@ -18,8 +18,11 @@ import { alongAll, jump, round, row, slopeRow, timeCard } from '../kit';
+  * 5. **Vindfällen:** fallen spruces: a trunk across the path, one leaning on another as a slope, a crack
+  *    between two of them, and the widest gap of all. There the owl waits, and flies Elof over.
+  * 6. **Pappas ficklampa** (puzzle, the Toy Story rule): a gap too wide to jump, and Klonk waits at its edge.
+- *    "Ropa på Pappa": his beam falls on Klonk, who freezes stiff and topples across the gap like a plank.
+- *    Elof walks over his friend. Pappa turns the beam back to the path, and Klonk wakes.
++ *    Pappa searches with his lamp: "Är det du där nere?" "Ropa på Pappa": he sees him at the edge, his
++ *    beam falls on Klonk, who freezes stiff and topples across the gap like a plank (to Pappa, a toy that fell
++ *    over); Elof, thinking, sees why. Elof walks over his friend. On the far side Pappa turns the beam to the path,
++ *    and Klonk wakes beside Elof. Two held scenes, `ss:ljuset` and `ss:vaknar`: each line is read before the
++ *    acting goes on.
+  * 7. **Gamla trägubbens minne:** past a fallen trunk, a dark hollow under the roots. There Klonk shows the
+  *    old one's thought, the crack on the mountain where it lay: "Den var ensam i mörkret i flera år."
+  *    "Därför väntar den inte."
+@@ -36,6 +39,11 @@ import { alongAll, jump, round, row, slopeRow, timeCard } from '../kit';
+ /** The hill down to the village: from the high root's end (184, 4) to the level at (200, 0). */
+ const hill = (x: number) => round(4 - (x - 184) * 0.25, 4);
+ 
++/** Pappa's gap, Klonk across it, and where Elof stands when Klonk wakes on its far side. */
++const GAP = { from: 134, to: 138, woke: 139.4, klonk: 141.5 };
++/** Pappa with his lamp, behind the call sign: where Elof and the camera look up to his face. */
++const PAPPA_FACE = { x: 131, y: 4.8, z: -0.9 };
++
+ /** The owl's flight over the widest gap of the windthrow: from its near edge to well past its far one. */
+ const OWL = { from: { x: 109.6, y: 0 }, to: { x: 123, y: 0 }, rise: 4, time: 3 };
+ 
+@@ -58,11 +66,50 @@ export const stormskog: ChapterData = {
+   id: 'stormskog',
+   place: 'forest',
+   spawn: { x: 1, y: 0.01 },
+-  // Where and when, as the chapter opens (src/content/chapters/cards.ts).
+-  scenes: [timeCard('stormskog', 1)],
++  scenes: [
++    // Where and when, as the chapter opens (src/content/chapters/cards.ts).
++    timeCard('stormskog', 1),
++    // Called, Pappa finds him at the edge with his lamp. Its light falls on Klonk, who is wood at once and lies across
++    // the gap; to Pappa a toy has fallen over, and Elof, thinking, sees why. The picture takes in Pappa's face.
++    {
++      id: 'ss:ljuset', on: 'ss:beam', from: 129, before: GAP.from - 0.5, until: 'ss:frozen', seconds: 3.6, hold: true,
++      cues: [{ at: 1.2, flag: 'ss:frozen' }],
++      lines: [
++        { at: 0.4, who: 'pappa', line: 'ssBeam' },
++        { at: 1.8, who: 'pappa', line: 'ssFell' },
++        { at: 2.8, who: 'elof', line: 'ssStiff' },
++      ],
++      stage: {
++        shots: [{ at: 0, x: 133.6, y: 2.7, height: 7.6, width: 13, move: 0.6 }],
++        elof: [
++          { at: 0, act: 'look', aim: PAPPA_FACE },
++          { at: 1.4, act: 'look', aim: { x: 136, y: 0.2, z: 0 } },
++          { at: 2.8, act: 'look', aim: { x: 133.8, y: 0.3, z: 0 } },
++        ],
++      },
++    },
++    // Over on the far side: Pappa turns his lamp to the path, and in the dark Klonk is himself again, beside Elof.
++    {
++      id: 'ss:vaknar', at: GAP.woke, needs: 'ss:frozen', seconds: 2.9, hold: true,
++      cues: [{ at: 0.9, flag: 'ss:woke' }],
++      lines: [
++        { at: 0.3, who: 'pappa', line: 'ssPappaAway' },
++        { at: 1.3, who: 'spoket', line: 'ssAwake' },
++        { at: 2.2, who: 'elof', line: 'ssThanks' },
++      ],
++      stage: {
++        shots: [{ at: 0, x: 137.2, y: 2.4, height: 7.2, width: 12, move: 0.6 }],
++        elof: [
++          { at: 0, act: 'look', aim: PAPPA_FACE },
++          { at: 1, act: 'look', aim: { x: GAP.klonk, y: 0.6, z: 0 } },
++          { at: 2.2, act: 'wave', aim: { x: GAP.klonk, y: 0.6, z: 0 } },
++        ],
++      },
++    },
++  ],
+   goalX: 205,
+   coda: 'pappa',
+-  storm: { frozen: 'ss:frozen', drips: 'cone', rain: 0.75,
++  storm: { frozen: 'ss:frozen', wakes: 'ss:woke', drips: 'cone', rain: 0.75,
+     lightning: 10,
+     flybys: [
+       // At the forest's edge: the little one, tumbling over the treetops ahead.
+@@ -216,11 +263,10 @@ export const stormskog: ChapterData = {
+     { x: 177.7, bottom: 0, top: 4, exit: 1, needs: 'jay', look: 'lichen' },
+   ],
+   rides: [{ id: 'owl', look: 'owl', ...OWL }],
+-  // Pappa's beam: he stands and watches the light find Klonk, a moment only.
+-  later: [{ flag: 'ss:frozen', after: 'ss:beam', seconds: 1.4, hold: true, within: [126, 139] }],
+   // The memory also reaches a child who passes the hollow or resumes beyond it without its receipt:
+   // keep its picture and unlock the explanation, just as touching the hollow does on the walking route.
+-  sets: [{ flag: 'ss:hollow', when: ['beat:ss:hollow'] }],
++  // Klonk is awake in a game taken up beyond the gap, as in one that saw him wake.
++  sets: [{ flag: 'ss:hollow', when: ['beat:ss:hollow'] }, { flag: 'ss:woke', when: ['scene:ss:vaknar'] }],
+   jumps: [
+     // Up the ravine's far side, step by step.
+     jump({ x: 39.1, y: 0 }, { x: 40, y: 0.8 }),
+@@ -253,9 +299,10 @@ export const stormskog: ChapterData = {
+     // over the widest gap ahead of the owl: a ghost hops where a boy has to fly
+     { at: { x: 124.5, y: 0 } },
+     { at: { x: 128.5, y: 0 } },
+-    // At the edge of Pappa's gap it waits for the beam, which turns it into the bridge.
+-    { at: { x: 133.6, y: 0 }, until: 'ss:frozen' },
+-    { at: { x: 141.5, y: 0 } },
++    // At the edge of Pappa's gap it stands and waits for the beam, which turns it into the bridge.
++    { at: { x: 133.6, y: 0 }, until: 'ss:frozen', still: true },
++    // It wakes on the far side, beside him, once Pappa looks away, and stands there until he has thanked it.
++    { at: { x: GAP.klonk, y: 0 }, until: 'scene:ss:vaknar', still: true },
+     { at: { x: 147.5, y: 0.8 } },
+     // In the dark hollow it waits, showing the old one's thought, until he has come to see.
+     { at: { x: 155.5, y: -1.2 }, until: 'ss:hollow', thought: { picture: 'pine-crack' } },
+@@ -283,15 +330,11 @@ export const stormskog: ChapterData = {
+     { id: 'ss:windthrow', at: 81, who: 'elof', line: 'ssWindthrow' },
+     { id: 'ss:owl-waits', at: 107.5, until: 'owl', needs: 'placed:owl-twig', who: 'elof', line: 'ssOwlWaits', read: true },
+     { id: 'ss:owl-fly', on: 'owl', who: 'elof', line: 'ssOwlFly' },
+-    // 6. Pappa's flashlight
+-    { id: 'ss:pappa', at: 126.5, until: 'ss:beam', who: 'pappa', line: 'ssPappaHere', read: true },
+-    { id: 'ss:wide', at: 129.6, until: 'ss:beam', who: 'elof', line: 'ssTooWide' },
+-    { id: 'ss:beam', on: 'ss:beam', who: 'pappa', line: 'ssBeam', read: true },
+-    { id: 'ss:stiff', on: 'ss:frozen', who: 'elof', line: 'ssStiff', read: true },
++    // 6. Pappa's flashlight: the gap, too wide and too dark; Pappa, searching, sees something tiny in his light and
++    // asks if it is him. The rest is in its two scenes, and on the bridge a whisper to the friend he walks on.
++    { id: 'ss:wide', at: 127.4, until: 'ss:beam', who: 'elof', line: 'ssTooWide' },
++    { id: 'ss:pappa', at: 129.8, until: 'ss:beam', who: 'pappa', line: 'ssPappaHere', read: true },
+     { id: 'ss:tiptoe', at: 135.2, needs: 'ss:frozen', who: 'elof', line: 'ssTiptoe' },
+-    { id: 'ss:away', at: 138.8, needs: 'ss:frozen', who: 'pappa', line: 'ssPappaAway' },
+-    { id: 'ss:awake', at: 140, needs: 'ss:frozen', who: 'spoket', line: 'ssAwake' },
+-    { id: 'ss:thanks', at: 141.6, needs: 'ss:frozen', who: 'elof', line: 'ssThanks' },
+     // 7. the old one's memory: the heart of the chapter, read slowly
+     { id: 'ss:hollow-seen', at: 151, who: 'elof', line: 'ssHollowSeen' },
+     { id: 'ss:hollow', at: 159, on: 'ss:hollow', who: 'spoket', line: 'ssHollowKlonk' },
+@@ -419,7 +462,7 @@ export const context: Chooser = (has, at) => {
+   if (has('jay')) return ['ssLichen', 'ssJay', 'heart'];
+   if (at.x >= 162) return ['ssJay', 'ssJay', 'heart'];
+   if (has('ss:hollow')) return ['ssMemory', 'ssLamps', 'mountain'];
+-  if (has('ss:frozen')) return at.x < 138.5 ? ['ssPlank', 'ssPappa', 'heart', 'pappa'] : ['ssFollow', 'ssLamps'];
++  if (has('ss:frozen')) return has('ss:woke') ? ['ssFollow', 'ssLamps'] : ['ssPlank', 'ssPappa', 'heart', 'pappa'];
+   if (at.x >= 123) return ['ssPappa', 'ssPappa', 'trail', 'pappa'];
+   if (has('owl')) return ['ssOwlRide', 'ssOwl', 'sparkle'];
+   if (has('placed:owl-twig')) return at.x >= 104.6 ? ['ssOwlBoard', 'ssOwl', 'sparkle'] : ['ssWindthrow', 'ssOwl'];
+diff --git a/src/content/aventyr2/lines/stormskog.ts b/src/content/aventyr2/lines/stormskog.ts
+index 047117a..aac6088 100644
+--- a/src/content/aventyr2/lines/stormskog.ts
++++ b/src/content/aventyr2/lines/stormskog.ts
+@@ -20,13 +20,16 @@ export const words: ChapterWords = {
+     ssWindthrow: 'Stormen fällde granar som tändstickor!',
+     ssOwlWaits: 'Du väntar på oss! Får jag åka med?',
+     ssOwlFly: 'Hu-hu! Vad mjukt det är att flyga!',
+-    // 6. Pappa's flashlight
+-    ssPappaHere: 'Elof? Jag hör dig! Var är du?',
++    // 6. Pappa's flashlight. Something tiny moves in Pappa's light: is it him? Called, he knows, and sees him at the
++    // edge. To him Klonk is a toy that fell over: only Elof knows that a grown-up's look makes Klonk stiff, and he
++    // only thinks it.
+     ssTooWide: 'För brett att hoppa. Och så mörkt!',
+-    ssBeam: 'Där är Klonk! Nu ser jag honom.',
+-    ssStiff: 'Pappa ser dig! Då blir du ju stel!',
++    ssPappaHere: 'Elof? Är det du där nere?',
++    ssBeam: 'Där är du ju! Akta dig för kanten!',
++    ssFell: 'Oj! Klonk föll rakt över klyftan.',
++    ssStiff: 'Han blir stel när Pappa tittar. En bro!',
+     ssTiptoe: 'Förlåt, Klonk! Jag går lätt, lätt.',
+-    ssPappaAway: 'Jag lyser på stigen framför dig.',
++    ssPappaAway: 'Bra, Elof! Nu lyser jag på stigen.',
+     ssAwake: 'Klonk!',
+     ssThanks: 'Tack, Klonk! Du är världens bästa bro.',
+     // 7. the old one's memory
+@@ -54,14 +57,15 @@ export const words: ChapterWords = {
+     ssWindthrow: { purpose: 'Följ spåret över vindfällen.', recap: 'Ugglan är fri. Den flög före mig in bland de fallna granarna.' },
+     ssOwlBoard: { purpose: 'Flyg på ugglan över de fallna granarna.', recap: 'Här är det för brett att hoppa. Ugglan väntar på mig.' },
+     ssOwlRide: { purpose: 'Flyg på ugglan.', recap: 'Ugglan bär mig högt över vindfällen.' },
+-    ssPappa: { purpose: 'Ropa på Pappa vid klyftan.', recap: 'Här är för brett att hoppa, och så mörkt. Pappa har ficklampan.' },
+-    ssPlank: { purpose: 'Gå över bron. Det är Klonk!', recap: 'Pappa fick syn på Klonk i lampskenet. När en vuxen ser honom blir han alldeles stel.' },
++    ssPappa: { purpose: 'Ropa på Pappa vid klyftan.', recap: 'Här är för brett att hoppa, och så mörkt. Pappa letar med ficklampan.' },
++    ssPlank: { purpose: 'Gå över bron. Det är Klonk!', recap: 'Pappas lampa lyste på Klonk. När en vuxen ser honom blir han alldeles stel.' },
+     ssFollow: { purpose: 'Följ Klonk vidare in i skogen.', recap: 'Pappa tittade bort, och då vaknade Klonk igen.' },
+     ssMemory: { purpose: 'Följ spåret efter gamla trägubben.', recap: 'Gamla trägubben vet hur det är att vara ensam i mörkret. Därför skyndar han efter lillgubben.' },
+     ssJay: { purpose: 'Plocka ett lingon och ge det till lavskrikan.', recap: 'Lavskrikan från förra äventyret gömmer sig för stormen.' },
+     ssLichen: { purpose: 'Klättra upp längs laven.', recap: 'Lavskrikan fick ett lingon. Den visade mig vägen upp längs laven.' },
+     ssDown: { purpose: 'Följ spåret ner mot byn.', recap: 'Gamla trägubben skyndar mot byn. Där är alla fönster mörka.' },
+   },
++  moments: { 'ss:ljuset': 'Pappas ficklampa', 'ss:vaknar': 'Klonk vaknar' },
+   helpers: {
+     ssLamps: 'Familjen letar med sina lampor. Klonk är med mig.',
+     ssOwl: 'Ugglan är fri. Den hjälper mig över vindfällen.',
+diff --git a/src/content/aventyr2/render.ts b/src/content/aventyr2/render.ts
+index 2b6e261..5cde700 100644
+--- a/src/content/aventyr2/render.ts
++++ b/src/content/aventyr2/render.ts
+@@ -908,8 +908,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
+       }
+       if (coneDrops) for (const splash of splashes) splash.visible = false;
+       if (frozenLedge && storm?.frozen) {
+-        // Once he is over, Pappa looks away and Klonk is himself again, on the far side.
+-        if (flags.has(storm.frozen) && x > frozenLedge.x + frozenLedge.width / 2 + 0.8) crossed = true;
++        // Once he is over, Pappa looks away and Klonk is himself again, on the far side: on its flag, where it has one.
++        if (flags.has(storm.frozen) && (storm.wakes ? flags.has(storm.wakes) : x > frozenLedge.x + frozenLedge.width / 2 + 0.8)) crossed = true;
+         const lying = flags.has(storm.frozen) && !crossed;
+         if (lying && !frozenKlonk) {
+           const ghost = scene.getObjectByName('chase-ghost')?.children[0];
+diff --git a/src/content/chapters/ends.ts b/src/content/chapters/ends.ts
+index b6a89ec..3c0496e 100644
+--- a/src/content/chapters/ends.ts
++++ b/src/content/chapters/ends.ts
+@@ -117,7 +117,7 @@ export const prolog: ChapterData = {
+   ],
+   beats: [
+     { id: 'dropped', on: 'mamma:noticed', who: 'mamma', line: 'dropped' },
+-    { id: 'onlyWood', on: 'pappa:noticed', who: 'pappa', line: 'onlyWood', priority: true },
++    { id: 'onlyWood', on: 'pappa:noticed', who: 'pappa', line: 'onlyWood' },
+     { id: 'snuck', on: 'snuck', who: 'elof', line: 'snuck' },
+     // Their promises, one from each as he passes them on the deck.
+     { id: 'nearYou', at: 45.0, needs: 'pappa:done', who: 'mamma', line: 'nearYou', read: true },
+diff --git a/src/main.ts b/src/main.ts
+index 8bf5489..45cb966 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -8,7 +8,7 @@ import { Game } from './app/game';
+ import { createAudio } from './audio/audio';
+ import { arrangementFor } from './audio/music';
+ import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
+-import { setVoiceSettings, stopVoice } from './audio/voice-player';
++import { pauseVoice, resumeVoice, setVoiceSettings, stopVoice } from './audio/voice-player';
+ import { ADVENTURE2, BONUS, STORY, bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, isAdventure2, loadAdventure2, loadLookCourses, LOOK_IDS, nextAvailable } from './content/chapters';
+ import { album, albumComplete, foundFlag, KINDS } from './content/kinds';
+ import { lostFlag, lostFound } from './content/lost';
+@@ -33,7 +33,7 @@ import { createPhotoStore } from './save/photos';
+ import { ghostNamed, rememberFlags, storyFinished, visitChapter } from './save/journey';
+ import { markOnward, takeOnward } from './save/onward';
+ import { keysLearned, learnKeys } from './save/keys';
+-import type { SimStart, Vec } from './sim/types';
++import type { SimStart, Speaker, Vec } from './sim/types';
+ import type { Debug } from './ui/debug';
+ import { createHud } from './ui/hud';
+ import { createPause, type PausePage } from './ui/pause';
+@@ -47,7 +47,7 @@ import { createOffline } from './platform/offline';
+ import { createStoryPanel } from './ui/story';
+ import { createSceneUi } from './ui/scene';
+ import { openingCues, openingQuiet } from './audio/opening';
+-import { endsInScene, sceneBeats, sceneWaits } from './sim/scene';
++import { QUIET_WAIT, endsInScene, sceneBeats, sceneWaits } from './sim/scene';
+ import { createDevicePlay, createHighLanding, isAndroid, isApple } from './platform/device';
+ import './ui/ui.css';
+ 
+@@ -288,11 +288,14 @@ async function start(): Promise<void> {
+   const fingerMarks = createFingerMarks(document);
+   // In Äventyr 2 he has had his name all along.
+   const isKlonk = () => ghostNamed(save.flags) || !!chapter.named || (chapter.id === 'epilog' && game.sim.flags.has('beat:named'));
++  // Who has said each line, as its bubble shows: their wordless sound goes with it (src/audio/cues.ts).
++  const voiced: Speaker[] = [];
+   // The bag counts all the candy there is: the trail's, and the side candy off it.
+   const hud = createHud(document, chapter.candy.length + (chapter.side?.length ?? 0), isKlonk,
+     () => (settings.slower ? 1.25 : 1) * (settings.bigText ? 1.2 : 1),
+     // Something to use has come in reach: one soft knock of wood (in-play.md row 7).
+-    () => audio.ui('press'));
++    () => audio.ui('press'),
++    (who) => voiced.push(who));
+   const story = createStoryPanel(document, {
+     named: isKlonk,
+     answer(answer) {
+@@ -377,7 +380,7 @@ async function start(): Promise<void> {
+       noteHits: game.sim.noteHits,
+       found: [...game.sim.flags].filter((flag) => flag.startsWith('found:') || flag.startsWith('lost:')).length,
+       footing: footingAt(chapter, p.x),
+-      said: game.sim.said.flatMap((id) => beats.get(id)?.who ?? []),
++      said: [...voiced],
+       ghostPerch: game.sim.ghost?.perch ?? 0,
+       ghostAway: game.sim.ghost ? Math.hypot(game.sim.ghost.x - p.x, game.sim.ghost.y - p.y) : 99,
+       helpStep: game.sim.help.step,
+@@ -485,7 +488,8 @@ async function start(): Promise<void> {
+   function openPause(page?: PausePage): void {
+     if (menuOpen() || platformBlocked()) return;
+     paused = true;
+-    stopVoice();
++    // What is being said waits under Pause, its sound with its bubble.
++    pauseVoice();
+     // The world stops, and the tune goes on under the paper (docs/ux-audit/style-and-sound.md rows 20 and 21).
+     audio.menu(true);
+     audio.ui('open');
+@@ -509,6 +513,7 @@ async function start(): Promise<void> {
+     pause.hide();
+     input.release();
+     game.resume();
++    resumeVoice();
+     audio.menu(false);
+     audio.sleep(document.hidden);
+     audio.unlock();
+@@ -895,6 +900,9 @@ async function start(): Promise<void> {
+     location.replace(`${location.pathname}${courseQuery(params, chapter.id)}`);
+   }
+   let endFor = 0;
++  /** At the end: how long since a line was last shown, and how many had been. Only a line that never ends is let go. */
++  let endQuiet = 0;
++  let endHeard = 0;
+   // The coda before the last page (docs/narrative-audit/threads.md §5.4): the tune closes, and one of the family
+   // answers from afar. Not where a scene is the chapter's end, nor in the epilogue, which has its own.
+   const coda = !endsInScene(chapter) && !chapter.epilogue;
+@@ -1214,11 +1222,10 @@ async function start(): Promise<void> {
+     for (; told < game.sim.said.length; told++) {
+       const id = game.sim.said[told]!;
+       const beat = beats.get(id);
+-      const sceneLine = !!scene && id.startsWith(`${scene.id}:`) && game.sim.scene?.holding === true;
+       // The opening's causes and the final reveal wait for the reader; passing remarks remain timed.
+       const read = readingBeats.has(id);
+       if (read) unreadBeats.push(id);
+-      if (beat) hud.say(beat.who, beat.line, beat.priority || sceneLine, read);
++      if (beat) hud.say(beat.who, beat.line, read);
+       if (beat?.line === 'safeHere') audio.play({ kind: 'motif', who: 'mamma' });
+     }
+     // What is said waits while a memory plays: its line comes after it.
+@@ -1226,9 +1233,13 @@ async function start(): Promise<void> {
+     sceneUi.reading(hud.reading() && !menuOpen() && !platformBlocked(), device,
+       sv.dialogue.moments[scene?.id ?? ''] ?? (readingBeats.has(unreadBeats[0] ?? '') ? sv.storyContext.family : ''));
+     hud.paused(menuOpen());
+-    // The end: a moment to arrive, then the card with the candy in rows of ten. The last words are let finish
+-    // first, for a few seconds at most: a chapter must not end over what someone is saying.
+-    if (atGoal) endFor += menuOpen() ? 0 : dt;
++    // The end: a moment to arrive, then the card with the candy in rows of ten. The last words are let finish first,
++    // and the lines still waiting their turn: a chapter must not end over what someone is saying.
++    if (atGoal) {
++      endFor += menuOpen() ? 0 : dt;
++      endQuiet = voiced.length === endHeard ? endQuiet + (menuOpen() ? 0 : dt) : 0;
++      endHeard = voiced.length;
++    }
+     if (atGoal && coda && !closing) {
+       closing = true;
+       audio.cadence();
+@@ -1242,7 +1253,7 @@ async function start(): Promise<void> {
+       audio.play({ kind: 'motif', who: codaWho });
+     }
+     const wait = coda ? CODA : 1.4;
+-    if (endFor > wait && !hud.reading() && (!hud.speaking() || endFor > wait + 5.6) && !benchOn && !ended) {
++    if (endFor > wait && !hud.reading() && ((!hud.speaking() && !game.sim.unsaid) || endQuiet > QUIET_WAIT) && !benchOn && !ended) {
+       ended = true;
+       paused = true;
+       if (!coda) audio.menu(true);
+diff --git a/src/render/view.ts b/src/render/view.ts
+index 2af11ac..6254513 100644
+--- a/src/render/view.ts
++++ b/src/render/view.ts
+@@ -1906,7 +1906,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
+           one.rig.group.getWorldPosition(lampFrom);
+           lampFrom.y += 3.1 * u;
+           const holdsKlonk = frozenLedge && one.who === 'pappa' && chapter.storm?.frozen && flags.has(chapter.storm.frozen)
+-            && x < frozenLedge.x + frozenLedge.width / 2 + 3;
++            && !(chapter.storm.wakes && flags.has(chapter.storm.wakes)) && x < frozenLedge.x + frozenLedge.width / 2 + 3;
+           if (holdsKlonk) lampTo.set(frozenLedge.x, frozenLedge.y, 0);
+           else lampTo.set(x, y + tall * 0.4, 0);
+           lampAim.subVectors(lampTo, lampFrom);
+diff --git a/src/sim/prologue.ts b/src/sim/prologue.ts
+index f815318..352cce4 100644
+--- a/src/sim/prologue.ts
++++ b/src/sim/prologue.ts
+@@ -21,9 +21,16 @@ export const PAPPA_TIME = 3;
+  */
+ export class PrologueSequence {
+   frame: PrologueFrame | null = null;
++  /** A joke is due and waits for what is being said to finish: he stands and listens meanwhile. */
++  listening = false;
+   constructor(readonly layout: PrologueLayout, private readonly perches: readonly GhostPerch[] = []) {}
+ 
+-  tick(player: PlayerState, ghost: GhostState | null, flags: Set<string>): void {
++  /**
++   * One step. `talking`: a line is still being read, or waits to be said, so a joke that is due waits. The simulation
++   * lets a line that never ends go (./sim.ts, `QUIET_WAIT`).
++   */
++  tick(player: PlayerState, ghost: GhostState | null, flags: Set<string>, talking = false): void {
++    this.listening = false;
+     if (!ghost) return;
+     if (flags.has('pappa:done') && !this.layout.edge) { ghost.gone = true; return; }
+     if (!this.frame && player.mode === 'free' && player.grounded) {
+@@ -31,12 +38,13 @@ export class PrologueSequence {
+       const pappaDue = this.layout.pappaAfter
+         ? (flags.has(this.layout.pappaAfter) || flags.has('pappa:noticed')) && player.x >= (this.layout.pappaFrom ?? -Infinity)
+         : player.x >= 44.4;
+-      if (flags.has('blink') && !flags.has('mamma:passed') && ghost.x >= this.layout.doorway.x - 1.2) {
+-        flags.add('mamma:noticed');
+-        this.frame = { kind: 'mamma', seconds: 0, ghost: { x: ghost.x, y: ghost.y } };
+-      } else if (flags.has('star') && !flags.has('pappa:done') && pappaDue) {
+-        flags.add('pappa:noticed');
+-        this.frame = { kind: 'pappa', seconds: 0, ghost: { x: ghost.x, y: ghost.y } };
++      const kind = flags.has('blink') && !flags.has('mamma:passed') && ghost.x >= this.layout.doorway.x - 1.2 ? 'mamma'
++        : flags.has('star') && !flags.has('pappa:done') && pappaDue ? 'pappa' : null;
++      // Its line is said as it begins: the words before it are let finish first.
++      if (kind && talking) this.listening = true;
++      else if (kind) {
++        flags.add(`${kind}:noticed`);
++        this.frame = { kind, seconds: 0, ghost: { x: ghost.x, y: ghost.y } };
+       }
+     }
+     if (this.frame) {
+@@ -67,7 +75,7 @@ export class PrologueSequence {
+     ghost.gone = false;
+   }
+ 
+-  cancel(): void { this.frame = null; }
++  cancel(): void { this.frame = null; this.listening = false; }
+ }
+ 
+ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+diff --git a/src/sim/scene.ts b/src/sim/scene.ts
+index 1b3c4fe..cb8c502 100644
+--- a/src/sim/scene.ts
++++ b/src/sim/scene.ts
+@@ -42,20 +42,22 @@ export interface SceneDef {
+   seconds: number;
+   /**
+    * He stands and watches it: the stick and the buttons do nothing. A held scene begins only when he stands on
+-   * his own feet, so he is never stopped in the air or on a hose. Keep uninterrupted acting short; essential
++   * his own feet, so he is never stopped in the air or on a hose, and only when nothing is being said: it takes
++   * the floor once the words before it are finished, as `quiet` does. Keep uninterrupted acting short; essential
+    * lines provide reading stops between the actions (the chapter tests check this pacing).
+    */
+   hold?: boolean;
+   /**
+    * It waits until nothing is being said, and he stands and listens meanwhile: the words before it are let
+-   * finish, for `QUIET_WAIT` seconds at most.
++   * finish (`QUIET_WAIT`). A held scene always does.
+    */
+   quiet?: boolean;
+   /** Flags the scene sets at its moments, in seconds from its start: the story's own steps. */
+   cues?: readonly { at: number; flag: string }[];
+   /**
+    * What is said in it, and when: each is a bubble, with the speaker's wordless sound (plan §3.7). A line is a
+-   * beat with the id `<scene id>:<index>`, said once.
++   * beat with the id `<scene id>:<index>`, said once. Each is a reading stop: while a line is still being read, the
++   * scene's clock waits at its next line, and at its end, so it never talks over itself (`QUIET_WAIT` at most).
+    */
+   lines?: readonly { at: number; who: Speaker; line: string }[];
+   /** Wordless sounds follow the same clock as the acting, including reading pauses. */
+@@ -222,7 +224,11 @@ export function endsInScene(chapter: { goalNeeds?: string; scenes?: readonly Sce
+   return chapter.goalNeeds !== undefined && (chapter.scenes ?? []).some((scene) => scene.cues?.some((cue) => cue.flag === chapter.goalNeeds));
+ }
+ 
+-/** The longest a scene waits for quiet, in seconds: a line that never ends cannot keep the story waiting. */
++/**
++ * How long, in seconds, the story waits for quiet after a line was last said: a conversation is let finish however
++ * long it is, but a line that never ends cannot keep the story waiting. Longer than any one line takes to read, even
++ * stretched by *Lugnare tempo* and *Större text*.
++ */
+ export const QUIET_WAIT = 10;
+ 
+ /** The flag a finished scene leaves. */
+@@ -249,6 +255,10 @@ export class SceneDirector {
+   /** A scene is due and waits for quiet: he stands and listens. How long it has waited. */
+   private listening = false;
+   private waited = 0;
++  /** How long the scene playing has waited at a reading stop for the line before it to be read. */
++  private stopped = 0;
++  /** How many lines had been said at the last step: each new one starts the waits' count again. */
++  private heard = 0;
+   /** Where the next scene of this name begins, when it is not at its start. */
+   private opening: { id: string; seconds: number } | null = null;
+ 
+@@ -271,23 +281,46 @@ export class SceneDirector {
+     return this.listening || this.playing?.def.hold === true;
+   }
+ 
+-  /** One step. `said` is where the beats told go, as the simulation's own; `talking`, whether a line is still read. */
+-  tick(player: PlayerState, flags: Set<string>, said: string[], talking = false): void {
++  /**
++   * One step. `said` is where the beats told go, as the simulation's own; `talking`, whether a line is still being
++   * read, or waits to be said; `listening`, whether a page hears them, so that its lines come one at a time.
++   */
++  tick(player: PlayerState, flags: Set<string>, said: string[], talking = false, listening = false): void {
++    // The waits are counted from the last line said: a conversation goes on as long as it goes on, and only a line that
++    // never ends is let go after QUIET_WAIT.
++    if (said.length !== this.heard) {
++      this.heard = said.length;
++      this.waited = 0;
++      this.stopped = 0;
++    }
+     if (!this.playing) this.begin(player, flags, talking);
+     const playing = this.playing;
+     if (!playing) return;
++    const lines = playing.def.lines ?? [];
++    // A reading stop: in a scene that talks, its next line and its end wait while a line is still being read, so that
++    // it never talks over itself, nor goes on before what was said has been read.
++    if (talking && lines.length > 0 && this.stopped < QUIET_WAIT) {
++      const next = playing.line < lines.length ? lines[playing.line]!.at : playing.def.seconds;
++      if (playing.seconds + STEP * 1.5 >= next) {
++        this.stopped += STEP;
++        return;
++      }
++    }
++    this.stopped = 0;
+     playing.seconds += STEP;
+     // Half a step early, so that a moment on a step's edge is never a step late at any frame rate.
+     const now = playing.seconds + STEP / 2;
+     const cues = playing.def.cues ?? [];
+     for (; playing.cue < cues.length && cues[playing.cue]!.at <= now; playing.cue++) flags.add(cues[playing.cue]!.flag);
+-    const lines = playing.def.lines ?? [];
+-    for (; playing.line < lines.length && lines[playing.line]!.at <= now; playing.line++) {
++    let spoke = false;
++    for (; playing.line < lines.length && lines[playing.line]!.at <= now && !(spoke && listening); playing.line++) {
+       const id = `${playing.def.id}:${playing.line}`;
+       flags.add(`beat:${id}`);
+       said.push(id);
++      spoke = true;
+     }
+-    if (now < playing.def.seconds) return;
++    // Heard, a line is read before the next, and before the scene ends.
++    if (now < playing.def.seconds || (spoke && listening)) return;
+     // Whatever was left is told at its end.
+     for (; playing.cue < cues.length; playing.cue++) flags.add(cues[playing.cue]!.flag);
+     flags.add(sceneDone(playing.def.id));
+@@ -308,6 +341,7 @@ export class SceneDirector {
+     this.playing = null;
+     this.listening = false;
+     this.waited = 0;
++    this.stopped = 0;
+   }
+ 
+   private begin(player: PlayerState, flags: Set<string>, talking: boolean): void {
+@@ -326,8 +360,9 @@ export class SceneDirector {
+       }
+       // A held scene waits for him to stand, and the scenes after it wait with it: the story keeps its order.
+       if (scene.hold && !(player.mode === 'free' && player.grounded)) return;
+-      // One that waits for quiet lets what is being said finish first. He stands and listens meanwhile.
+-      if (scene.quiet && talking && this.waited < QUIET_WAIT) {
++      // One that waits for quiet, and every held one, lets what is being said finish first: it takes the floor only
++      // then. He stands and listens meanwhile.
++      if ((scene.quiet || scene.hold) && talking && this.waited < QUIET_WAIT) {
+         this.waited += STEP;
+         this.listening = true;
+         return;
+diff --git a/src/sim/sim.ts b/src/sim/sim.ts
+index 79b345e..2c9a8dc 100644
+--- a/src/sim/sim.ts
++++ b/src/sim/sim.ts
+@@ -16,12 +16,12 @@ import { hintFor } from './help';
+ import { partyReward, sharingReward, type StoryAnswer } from './story';
+ import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
+ import { PrologueSequence } from './prologue';
+-import { SceneDirector, sceneResumeAt } from './scene';
++import { QUIET_WAIT, SceneDirector, sceneResumeAt } from './scene';
+ import {
+   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
+ } from './constants';
+ import type {
+-  ChapterData, Checkpoint, Climb, GhostPerch, HelpState, Hook, Jump, Mode, Mover, PlayerState, Ride, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
++  Beat, ChapterData, Checkpoint, Climb, GhostPerch, HelpState, Hook, Jump, Mode, Mover, PlayerState, Ride, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
+ } from './types';
+ 
+ // 1 EL is the length unit. This scales Box2D's tolerances to a hero who is one unit tall (plan §6.4).
+@@ -197,6 +197,15 @@ export class Sim {
+   private readonly began = new Map<string, number>();
+   /** Whether he stands and watches such a beat now. */
+   private watching = false;
++  /** The beats whose moment has come while someone was still speaking, and the step each came at: they wait their turn. */
++  private readonly waiting = new Map<string, number>();
++  /**
++   * Whether he stands and listens for them: a story line waits for its turn where it belongs, or the words have fallen
++   * behind what he does (more than one line waits).
++   */
++  private behind = false;
++  /** How long the page has gone on speaking since a line was last said: a line that never ends is let go. */
++  private stillFor = 0;
+   private idle = 0;
+   private progress = -1;
+   private furthest = -Infinity;
+@@ -433,9 +442,23 @@ export class Sim {
+ 
+   cancelStory(): void { this.story = null; }
+ 
+-  /** Whether he stands and watches the story now: a beat that takes time, a freeze joke or a held scene. */
++  /**
++   * Whether he stands and watches the story now: a beat that takes time, a freeze joke or a held scene; or listens, while
++   * one of them, or a story line, waits for what is being said to finish.
++   */
+   get held(): boolean {
+-    return this.watching || !!this.prologue?.frame || !!this.scene?.holding;
++    const standing = this.curr.mode === 'free' && this.curr.grounded;
++    return this.watching || (this.behind && standing) || !!this.prologue?.frame || !!this.prologue?.listening || !!this.scene?.holding;
++  }
++
++  /** Whether lines whose moment has come still wait their turn: the page's last card waits for them too. */
++  get unsaid(): boolean {
++    return this.waiting.size > 0;
++  }
++
++  /** The lines that wait their turn, and the step at which the moment of each came. */
++  get waits(): ReadonlyMap<string, number> {
++    return this.waiting;
+   }
+ 
+   /**
+@@ -453,8 +476,14 @@ export class Sim {
+     this.prev = this.curr;
+     this.ringNotes();
+     this.returnGifts();
+-    this.prologue?.tick(this.curr, this.ghost, this.flags);
+-    this.scene?.tick(this.curr, this.flags, this.said, input.talking === true);
++    // What is said waits its turn (./types.ts, StepInput): so do the story's moments, after the lines that came first.
++    // A line that never ends cannot keep the story waiting: QUIET_WAIT after a line was last said, the page is let go.
++    const listening = input.talking !== undefined;
++    const speaking = input.talking === true && this.stillFor < QUIET_WAIT;
++    const told = this.said.length;
++    const talking = speaking || this.waiting.size > 0;
++    this.prologue?.tick(this.curr, this.ghost, this.flags, talking);
++    this.scene?.tick(this.curr, this.flags, this.said, talking, listening);
+     // While he watches a beat of the story, the stick and the buttons do nothing.
+     if (this.held) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
+     // Free, he may take hold of something this step: a hose, a ledge, or the hose below him.
+@@ -479,7 +508,8 @@ export class Sim {
+     this.sink();
+     for (const berry of this.berries) berry.squash = Math.max(0, berry.squash - STEP / BERRY_SQUASH);
+     if (this.chapter.ghostMeet && !this.prologue?.frame) this.haunt();
+-    this.tell();
++    this.tell(speaking || this.said.length > told, listening);
++    this.stillFor = input.talking === true && this.said.length === told ? this.stillFor + STEP : 0;
+     this.assist(input.help === true);
+ 
+     this.world.step(STEP);
+@@ -665,8 +695,16 @@ export class Sim {
+     if (wet) this.startBubble();
+   }
+ 
+-  /** The beats whose moment has come: each is told once, and remembered as a flag. */
+-  private tell(): void {
++  /**
++   * The beats whose moment has come: each is told once, and remembered as a flag. While someone is still speaking on
++   * the page, the next waits its turn: it is said once the line before it has been read, the one that has waited
++   * longest first, and its flag comes with it, so whatever waits for that flag (a flash, a scene, the next line) waits
++   * for the words too (Olov, 9 November 2026: "det den säger få talas klart innan nästa event spelas upp eller pratas
++   * upp"). While a story line (`read`) waits, or more than one line does, he stands and listens (on his own feet, never in
++   * the air or on a hose): the words keep up with what he does, and each is said near where it belongs. With nobody
++   * listening (`listening` false: the robot) each is said as its moment comes.
++   */
++  private tell(talking = false, listening = false): void {
+     for (const set of this.chapter.sets ?? []) if (set.when.every((flag) => this.flags.has(flag))) this.flags.add(set.flag);
+     // Beats that take time: each begins when its first flag is set, and ends by setting its own.
+     this.watching = false;
+@@ -678,18 +716,45 @@ export class Sim {
+       if ((this.steps - from) * STEP >= beat.seconds) this.flags.add(beat.flag);
+       else if (beat.hold) this.watching = true;
+     }
+-    for (const beat of this.chapter.beats ?? []) {
+-      if (beat.needs !== undefined && !this.flags.has(beat.needs)) continue;
+-      if (beat.until !== undefined && this.flags.has(beat.until)) continue;
+-      if (beat.within && (this.curr.x < beat.within[0] || this.curr.x > beat.within[1])) continue;
+-      const flag = `beat:${beat.id}`;
+-      if (this.flags.has(flag)) continue;
++    const due = (beat: Beat) => {
++      if (beat.needs !== undefined && !this.flags.has(beat.needs)) return false;
++      if (beat.until !== undefined && this.flags.has(beat.until)) return false;
++      if (beat.within && (this.curr.x < beat.within[0] || this.curr.x > beat.within[1])) return false;
++      if (this.flags.has(`beat:${beat.id}`)) return false;
+       const passed = beat.at !== undefined && this.curr.x >= beat.at;
+       const happened = beat.on !== undefined && this.flags.has(beat.on);
+-      if (!passed && !happened) continue;
+-      this.flags.add(flag);
++      return passed || happened;
++    };
++    const say = (beat: Beat) => {
++      this.flags.add(`beat:${beat.id}`);
+       this.said.push(beat.id);
++    };
++    if (!listening) {
++      for (const beat of this.chapter.beats ?? []) if (due(beat)) say(beat);
++      return;
++    }
++    // A beat no longer due (he went back, or the story went past it) stops waiting: it was never shown.
++    let next: Beat | null = null;
++    let since = Infinity;
++    const story: Beat[] = [];
++    for (const beat of this.chapter.beats ?? []) {
++      if (!due(beat)) {
++        this.waiting.delete(beat.id);
++        continue;
++      }
++      const from = this.waiting.get(beat.id) ?? this.steps;
++      this.waiting.set(beat.id, from);
++      if (beat.read) story.push(beat);
++      if (from < since) {
++        next = beat;
++        since = from;
++      }
++    }
++    if (next && !talking) {
++      this.waiting.delete(next.id);
++      say(next);
+     }
++    this.behind = this.waiting.size > 1 || story.some((beat) => this.waiting.has(beat.id));
+   }
+ 
+   /**
+@@ -944,6 +1009,9 @@ export class Sim {
+   toCheckpoint(): void {
+     this.prologue?.cancel();
+     this.scene?.cancel();
++    // What waited to be said is said again when its moment comes, where he is now.
++    this.waiting.clear();
++    this.behind = false;
+     this.resetChallenges(true);
+     this.story = null;
+     const to = sceneResumeAt(this.chapter.scenes, this.flags, this.checkpoints[this.checkpoint] ?? this.chapter.spawn);
+diff --git a/src/sim/types.ts b/src/sim/types.ts
+index 9c7d10f..2eb438c 100644
+--- a/src/sim/types.ts
++++ b/src/sim/types.ts
+@@ -182,7 +182,8 @@ export type Speaker = 'mamma' | 'pappa' | 'moa' | 'bertil' | 'elof' | 'spoket'
+ 
+ /**
+  * Something said, in a bubble (plan §3.7): the game has no voices. It comes when Elof first passes `at`, or
+- * when the flag `on` is set, and only once.
++ * when the flag `on` is set, and only once. While someone is still speaking it waits its turn, and its flag
++ * (`beat:<id>`), and whatever waits for that, comes when it is said (src/sim/sim.ts, `tell`).
+  */
+ export interface Beat {
+   id: string;
+@@ -190,8 +191,6 @@ export interface Beat {
+   on?: string;
+   /** Context that must exist even when Elof reaches the position first. */
+   needs?: string;
+-  /** A new causal scene replaces stale queued dialogue. */
+-  priority?: boolean;
+   /** An explanation is no longer useful once this next action is complete. */
+   until?: string;
+   /** A local explanation waits until Elof is back at its help encounter. */
+@@ -703,6 +702,11 @@ export interface Storm {
+    * while it is set and Elof has not crossed, Klonk lies across, and the ghost is not drawn standing anywhere else.
+    */
+   frozen?: string;
++  /**
++   * The flag on which the frozen one wakes: the grown-up looks away. Pappa's lamp leaves him, and he is himself again
++   * where the ghost waits. Left out: once Elof is over.
++   */
++  wakes?: string;
+   /**
+    * The chapter's ledges that are always there are drawn as a goal's white frame bar: the crossbar he walks along,
+    * where Äventyr 1 would have drawn a trestle.
+@@ -786,7 +790,11 @@ export interface StepInput {
+   act: boolean;
+   /** He asks the helper. Left out: no. */
+   help?: boolean;
+-  /** Someone is still speaking on the page: a scene that waits for quiet waits. Left out: no. */
++  /**
++   * Someone is still speaking on the page, or a line was said earlier in this frame: what is to be said next waits
++   * its turn, and so do a held scene and a freeze joke (src/sim/scene.ts). Left out: nobody listens (the robot and
++   * the tests, which have no page), and lines are said as their moments come, all at once, as the page queues them.
++   */
+   talking?: boolean;
+ }
+ 
+diff --git a/src/ui/hud.ts b/src/ui/hud.ts
+index 1e4f912..ce4e1f8 100644
+--- a/src/ui/hud.ts
++++ b/src/ui/hud.ts
+@@ -6,7 +6,7 @@ import type { Speaker, Verb } from '../sim/types';
+ import { faceSvg } from './faces';
+ import { verbIcon } from './verbs';
+ import { candyRows } from './rolls';
+-import { playVoice, stopVoice } from '../audio/voice-player';
++import { playingVoice, playVoice, stopVoice } from '../audio/voice-player';
+ 
+ /**
+  * What the page shows over the game while it is played: the candy bag in the corner (plan §4.3), the word
+@@ -34,8 +34,11 @@ export interface Hud {
+   notice(text: string, seconds?: number): void;
+   /** While paused the bag says its number; in play only for a while after a candy (in-play.md row 2). */
+   paused(on: boolean): void;
+-  /** Story lines wait for Fortsätt; incidental lines stay for a few seconds. */
+-  say(who: Speaker, line: string, priority?: boolean, read?: boolean): void;
++  /**
++   * Story lines wait for Fortsätt; incidental lines stay for a few seconds. Whatever is said waits its turn: a line on
++   * the page is never cut short or replaced by a later one, which comes when it has been read (Olov, 9 November 2026).
++   */
++  say(who: Speaker, line: string, read?: boolean): void;
+   /** A story line is being read, or waits next. Its picture and the game wait with it. */
+   reading(): boolean;
+   /** A fresh press advances one story line, after the short accidental-press guard. */
+@@ -43,13 +46,16 @@ export interface Hud {
+   /** A deliberate checkpoint restart discards the interrupted dialogue, which its scene tells again. */
+   clear(): void;
+   /**
+-   * A scene takes the floor: lines still waiting are dropped, and so is one a find has hidden. A line being read
+-   * is let stay a little longer, so the scene's own lines come when they are acted.
++   * A scene takes the floor: a find's tag comes down. What is being said is let finish: the scene waited for quiet
++   * before it began (src/sim/scene.ts), and its own lines wait their turn as every line does.
+    */
+   hush(): void;
+   /** Moves the bubbles on. `dt` is the time since the last frame, in seconds: 0 while the game is paused. */
+   tick(dt: number): void;
+-  /** Whether someone is saying something, or will: a bubble shows or waits its turn. */
++  /**
++   * Whether someone is saying something, or will: a bubble shows or waits its turn, or a recorded voice still speaks (a
++   * line's, or a card's), so that nothing said after it cuts it.
++   */
+   speaking(): boolean;
+   /**
+    * Shows the card at the end of a chapter: its title, and the candy in rows of ten with the number.
+@@ -69,14 +75,20 @@ const SPARKLE = '<svg class="i" aria-hidden="true"><use href="#i-sparkle"/></svg
+ // Long enough to read at a child's pace: 12 letters 3.6 s, 40 letters 6.1 s (docs/ux-audit/in-play.md row 17).
+ const BUBBLE_TIME = 2.5;
+ const BUBBLE_TIME_PER_LETTER = 0.09;
+-/** How long a line being read stays when a scene begins. */
+-const HUSH_TIME = 1.6;
++/** How long a line takes to read at a child's pace, before *Lugnare tempo* and *Större text* stretch it. */
++export const readingTime = (text: string) => BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER;
++/**
++ * A bubble whose time is up stays this long for a line that goes on from it: the simulation says the next line only
++ * once this one has been read (src/sim/sim.ts), so it comes a frame after, and is added under it.
++ */
++const GOES_ON_TIME = 0.3;
+ 
+ /**
+- * `reading` stretches how long a bubble stays: longer with *Lugnare tempo* and with *Större text*.
++ * `reading` stretches how long a bubble stays: longer with *Lugnare tempo* and with *Större text*. `spoke` hears
++ * each line as it is shown, so its speaker's wordless sound goes with its bubble, not ahead of it.
+  */
+ export function createHud(doc: Document, total: number, ghostNamed: () => boolean = () => false, reading: () => number = () => 1,
+-  arrived: () => void = () => {}): Hud {
++  arrived: () => void = () => {}, spoke: (who: Speaker) => void = () => {}): Hud {
+   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
+   const bag = byId('bag');
+   const number = byId('bagCount');
+@@ -94,6 +106,8 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
+   let wordShown: string | undefined;
+   const queue: { who: Speaker; line: string; read: boolean }[] = [];
+   let left = 0;
++  /** A bubble whose time is up, kept for a line that goes on from it (`GOES_ON_TIME`). */
++  let lingers = 0;
+   let manual = false;
+   let readFor = 0;
+   /** Whose the bubble is and the lines in it now, so that a line which goes on from them is added under them. */
+@@ -218,15 +232,9 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
+       pausedNow = on;
+       bag.classList.toggle('quiet', !on && countFor <= 0);
+     },
+-    say(who, line, priority = false, read = false) {
++    say(who, line, read = false) {
+       if (!lines[line]) return;
+-      // A later event cannot replace a line the player has not finished reading.
+-      if ((priority || read) && !manual) {
+-        const unread = queue.filter((next) => next.read);
+-        queue.splice(0, queue.length, ...unread);
+-        left = 0;
+-        spoken = null;
+-      }
++      // It waits its turn, a story line too: nothing is cut short or dropped to make room for it.
+       queue.push({ who, line, read });
+     },
+     reading() {
+@@ -237,6 +245,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
+       stopVoice();
+       manual = false;
+       left = 0;
++      lingers = 0;
+       bubble.hidden = true;
+       spoken = null;
+       return true;
+@@ -246,23 +255,19 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
+       queue.length = 0;
+       manual = false;
+       left = 0;
++      lingers = 0;
+       spoken = null;
+       bubble.hidden = true;
+     },
+     hush() {
+-      stopVoice();
+-      // Scene transitions may remove passing remarks, never unread story lines.
+-      const unread = queue.filter((next) => next.read);
+-      queue.splice(0, queue.length, ...unread);
+-      // A scene takes the floor: the tag comes down, and a line being read gets a little longer.
++      // A scene takes the floor: the tag comes down. Nothing said is cut or dropped (it waited for quiet).
+       if (noticeFor > 0) {
+         noticeFor = 0;
+         tag.hidden = true;
+       }
+-      if (!manual) left = Math.min(left, HUSH_TIME);
+     },
+     speaking() {
+-      return manual || left > 0 || queue.length > 0;
++      return manual || left > 0 || queue.length > 0 || playingVoice() !== null;
+     },
+     tick(dt) {
+       if (noticeFor > 0) {
+@@ -283,12 +288,25 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
+         bubble.hidden = false;
+         left -= dt;
+         if (left > 0) return;
++        // Its time is up. It stays a moment for a line that goes on from it, which the simulation says now.
++        lingers = GOES_ON_TIME;
++        if (queue.length === 0) return;
++      }
++      if (lingers > 0) {
+         // A line that goes on from this one is added under it, not put in its place (story-presentation.md row 22).
+         const after = queue[0];
+-        if (!after || !GOES_ON.has(after.line) || after.who !== spoken?.who) {
++        if (!after) {
++          lingers -= dt;
++          if (lingers <= 0) {
++            bubble.hidden = true;
++            spoken = null;
++          }
++          return;
++        }
++        lingers = 0;
++        if (!GOES_ON.has(after.line) || after.who !== spoken?.who) {
+           bubble.hidden = true;
+           spoken = null;
+-          return;
+         }
+       }
+       const next = queue.shift();
+@@ -313,7 +331,9 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
+       bubble.hidden = false;
+       manual = next.read;
+       readFor = 0;
+-      left = (BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER) * reading();
++      left = readingTime(text) * reading();
++      // The speaker's wordless sound goes with the bubble.
++      spoke(next.who);
+     },
+     end(title, count, onAgain, onNext, closing, hidden, code, onwardWord, kicker) {
+       if (ended) return;
+diff --git a/src/ui/scene.ts b/src/ui/scene.ts
+index 52ba362..d49953c 100644
+--- a/src/ui/scene.ts
++++ b/src/ui/scene.ts
+@@ -1,7 +1,7 @@
+ import { sv } from '../content/sv';
+ import type { SceneDef, SceneFrame, SceneStage } from '../sim/scene';
+ import type { Device } from '../input/input';
+-import { playVoice } from '../audio/voice-player';
++import { playingVoice, playVoice } from '../audio/voice-player';
+ import './scene.css';
+ export { sceneUiHtml } from './scene-html';
+ 
+@@ -73,7 +73,8 @@ export function createSceneUi(doc: Document, advance: () => void) {
+           captionOn = on;
+           if (word.text && word.text !== voicedWord && age > 0.05 && !covered) {
+             voicedWord = word.text;
+-            playVoice(`scene_${word.text}`);
++            // Read aloud, unless someone is already speaking: a card's voice never cuts a line (Olov, 9 November 2026).
++            if (playingVoice() === null) playVoice(`scene_${word.text}`);
+           }
+         }
+         else { titleText = words[word.text] ?? ''; titleOn = on; }
+diff --git a/tests/browser/dialogue-reading.mjs b/tests/browser/dialogue-reading.mjs
+index ffb4399..5bf68f1 100644
+--- a/tests/browser/dialogue-reading.mjs
++++ b/tests/browser/dialogue-reading.mjs
+@@ -21,34 +21,66 @@ try {
+     const { createHud } = await import('/src/ui/hud.ts');
+     const { createSceneUi } = await import('/src/ui/scene.ts');
+     mountShell(document.body);
+-    const hud = createHud(document, 100);
++    const voiced = [];
++    const hud = createHud(document, 100, () => false, () => 1, () => {}, (who) => voiced.push(who));
+     const line = () => document.getElementById('bubbleLine').textContent;
++    const bubble = document.getElementById('bubble');
++    // A passing remark is on the page when a story line is said. The remark is read to its end (5.47 s) while the game
++    // waits, Fortsätt does not skip it, and then the story line takes the floor (Olov, 9 November 2026).
+     hud.say('mamma', 'notYet'); hud.tick(0);
+-    hud.say('pappa', 'first1', false, true); hud.tick(0);
++    hud.say('pappa', 'first1', true); hud.tick(0);
++    const waits = hud.reading() && !hud.advance();
++    for (let i = 0; i < 53; i++) hud.tick(0.1);
++    const remark = line();
++    hud.tick(0.3);
+     const first = line(), guarded = !hud.advance();
+-    hud.say('pappa', 'first2', false, true);
+-    hud.say('pappa', 'first3', false, true);
+-    hud.say('pappa', 'first4', false, true);
+-    hud.say('elof', 'stomp', true);
++    hud.say('pappa', 'first2', true);
++    hud.say('pappa', 'first3', true);
++    hud.say('pappa', 'first4', true);
++    hud.say('elof', 'stomp');
+     hud.hush(); hud.tick(120);
+     const kept = line() === first && hud.reading();
+     const lines = [line()];
+     for (let i = 0; i < 3; i++) { hud.advance(); hud.tick(0); lines.push(line()); hud.tick(.3); }
+     hud.advance(); hud.tick(0);
+-    const finished = !hud.reading() && document.getElementById('bubble').hidden;
+-    hud.say('elof', 'stolenBag', false, true); hud.tick(0); hud.tick(0);
++    // The shout said after them waits its turn too, and then has its own time.
++    const shout = line(), shoutRead = !hud.reading() && hud.speaking();
++    hud.tick(5); hud.tick(0.4);
++    const finished = !hud.reading() && !hud.speaking() && bubble.hidden;
++    hud.say('elof', 'stolenBag', true); hud.tick(0); hud.tick(0);
+     const pausedGuard = !hud.advance();
+-    hud.tick(.3);
++    hud.tick(.3); hud.advance(); hud.tick(0);
++    // A scene that begins takes nothing from a line being said: it keeps its whole time.
++    hud.say('mamma', 'notYet'); hud.tick(0); hud.tick(2); hud.hush(); hud.tick(3);
++    const hushed = line() === remark && hud.speaking();
++    hud.tick(1);
++    // A line that goes on from the one before, said once that one has had its time (the simulation waits for it), is
++    // still added under it.
++    hud.clear();
++    hud.say('pappa', 'first2'); hud.tick(0); hud.tick(5);
++    const lingers = !bubble.hidden && !hud.speaking();
++    hud.say('pappa', 'first3'); hud.tick(0);
++    const together = [...document.querySelectorAll('#bubbleLine .said')].map((said) => said.textContent);
++    hud.tick(5); hud.tick(0.4);
++    const ended = bubble.hidden;
+     const scene = createSceneUi(document, () => { hud.advance(); scene.reading(hud.reading(), 'touch'); });
+     scene.reading(true, 'touch');
+     window.dialogue = { hud, scene };
+-    return { first, guarded, kept, lines, finished, pausedGuard };
++    return { waits, remark, first, guarded, kept, lines, shout, shoutRead, finished, pausedGuard, hushed, lingers, together, ended, voiced };
+   });
+-  assert.equal(result.first, 'Min allra första trägubbe …', 'essential line takes the floor immediately');
++  assert.equal(result.remark, 'Bertil! Godiset öppnar vi ikväll.', 'a passing remark keeps its whole reading time when a story line is said after it');
++  assert.ok(result.waits, 'the story line waits its turn, with the game, and Fortsätt does not skip the remark');
++  assert.equal(result.first, 'Min allra första trägubbe …', 'then the story line takes the floor');
+   assert.ok(result.guarded && result.pausedGuard, 'fresh/paused lines reject accidental input');
+-  assert.ok(result.kept, 'two minutes, a priority event and scene hush cannot discard unread words');
++  assert.ok(result.kept, 'two minutes and a scene hush cannot discard unread words');
+   assert.deepEqual(result.lines, ['Min allra första trägubbe …', 'Den täljde jag till dig', 'när du var liten, Elof.', 'Vi tappade den här uppe.']);
+-  assert.ok(result.finished, 'exactly four presses finish four lines');
++  assert.ok(result.shout === 'Ge tillbaka mitt godis!' && result.shoutRead, 'a shout said after them waits its turn, and is timed');
++  assert.ok(result.finished, 'exactly four presses finish four lines, and the shout its time');
++  assert.ok(result.hushed, 'a scene beginning does not shorten the line being said');
++  assert.ok(result.lingers, 'a line whose time is up stays a moment for one that goes on from it');
++  assert.deepEqual(result.together, ['Den täljde jag till dig', 'när du var liten, Elof.'], 'the line that goes on is added under it');
++  assert.ok(result.ended, 'and the bubble goes when nothing goes on from it');
++  assert.deepEqual(result.voiced, ['mamma', 'pappa', 'pappa', 'pappa', 'pappa', 'elof', 'elof', 'mamma', 'pappa', 'pappa'], 'each speaker sounds as their bubble shows');
+   await page.tap('#sceneNext');
+   assert.ok(await page.locator('#sceneReading').isHidden(), 'touch continues the actual reading control');
+   for (const [width, height] of [[390, 844], [844, 390], [780, 360], [1180, 820], [1440, 900]]) {
+@@ -87,7 +119,7 @@ try {
+       const chapter = AVENTYR2.find((chapter) => chapter.id === id);
+       const beats = ids.map((id) => chapter.beats.find((beat) => beat.id === id));
+       hud.clear();
+-      for (const beat of beats) hud.say(beat.who, beat.line, false, !!beat.read);
++      for (const beat of beats) hud.say(beat.who, beat.line, !!beat.read);
+       hud.tick(0);
+       const shown = [];
+       for (let i = 0; i < beats.length + 1 && hud.reading(); i++) {
+@@ -102,7 +134,7 @@ try {
+     assert.ok(exchange.finished, `${exchange.id}: the exchange finishes after one press per line`);
+   }
+   assert.deepEqual(errors, []);
+-  console.log('Dialogue reading: queue, input guard, touch, interruption, five large-text layouts and five Adventure 2 exchanges passed.');
++  console.log('Dialogue reading: lines in turn and in full, input guard, touch, interruption, five large-text layouts and five Adventure 2 exchanges passed.');
+ } finally {
+   await browser?.close();
+   await server.close();
+diff --git a/tests/browser/finale-stage.mjs b/tests/browser/finale-stage.mjs
+index 84dc485..d6ac886 100644
+--- a/tests/browser/finale-stage.mjs
++++ b/tests/browser/finale-stage.mjs
+@@ -174,25 +174,27 @@ try {
+   const speech=await page.evaluate(async()=>{const f=await import('/spokets-godisbus/finale-stage-fixture.js');
+     const host=document.createElement('div');document.body.replaceChildren(host);f.mountShell(host);const hud=f.createHud(document,100);
+     const state=()=>({bubble:!document.getElementById('bubble').hidden,notice:!document.getElementById('notice').hidden,line:document.getElementById('bubbleLine').textContent});
+-    hud.say('pappa','tinyElof',true);hud.tick(0);const initial=state();hud.notice('Hittat!');hud.tick(1);const find=state();hud.tick(2.6);const resumed=state();hud.tick(1);const readable=state();
+-    hud.say('elof','stolenBag',true);hud.tick(0);const priority=state();
++    hud.say('pappa','tinyElof');hud.tick(0);const initial=state();hud.notice('Hittat!');hud.tick(1);const find=state();hud.tick(2.6);const resumed=state();hud.tick(1);const readable=state();
++    // A line said while another is on the page waits its turn: the one on the page keeps its whole time (Olov, 9 November 2026).
++    hud.say('elof','stolenBag');hud.tick(0);const waited=state();hud.tick(1.5);const turn=state();
+     // Pappa's sentence in two bubbles is read whole: the second half goes on under the first (story-presentation.md row 22).
+-    hud.say('pappa','first2',true);hud.tick(0);hud.say('pappa','first3');hud.tick(20);const bubble=document.getElementById('bubble');
++    hud.say('pappa','first2');hud.tick(0);hud.say('pappa','first3');hud.tick(20);hud.tick(20);const bubble=document.getElementById('bubble');
+     const more={shown:!bubble.hidden,lines:[...document.querySelectorAll('#bubbleLine .said')].map((said)=>said.textContent),tone:bubble.dataset.tone};
+-    hud.say('elof','stomp',true);hud.tick(0);const shout=bubble.dataset.tone;
+-    hud.say('pappa','first1',false,true);hud.tick(0);const manual=state(),guard=!hud.advance();
+-    hud.say('pappa','first2',false,true);hud.say('pappa','first3',false,true);hud.hush();hud.tick(120);
++    hud.say('elof','stomp');hud.tick(5);const shout=bubble.dataset.tone;
++    hud.say('pappa','first1',true);hud.tick(0);const remark=state(),waits=hud.reading();
++    hud.tick(5);const manual=state(),guard=!hud.advance();
++    hud.say('pappa','first2',true);hud.say('pappa','first3',true);hud.hush();hud.tick(120);
+     const held=state(),stillReading=hud.reading();hud.advance();hud.tick(0);const second=state();
+     hud.tick(.3);hud.advance();hud.tick(0);const third=state();hud.clear();
+     const cleared=!hud.reading()&&!hud.speaking()&&document.getElementById('bubble').hidden;
+-    return{initial,find,resumed,readable,priority,more,shout,manual,guard,held,stillReading,second,third,cleared};});
++    return{initial,find,resumed,readable,waited,turn,more,shout,remark,waits,manual,guard,held,stillReading,second,third,cleared};});
+   // A find hangs from the bag now, so what is being said goes on beside it (docs/ux-audit/in-play.md row 18).
+   check('Portrait: a find leaves speech where it is',speech.initial.bubble && speech.find.notice && speech.find.bubble && speech.find.line===speech.initial.line);
+   check('Portrait: the causal line keeps its reading time after the find',speech.resumed.bubble && !speech.resumed.notice && speech.resumed.line===speech.initial.line && speech.readable.bubble);
+-  check('Portrait: a new causal priority line replaces stale dialogue',speech.priority.bubble && speech.priority.line!==speech.initial.line);
++  check('Portrait: a new line waits for the one being said, then takes its turn',speech.waited.line===speech.initial.line && speech.turn.bubble && speech.turn.line==='Pappa! Spöket tog min godispåse!');
+   check('Portrait: a line that goes on stands under the one before, said gently',speech.more.shown && speech.more.lines.join(' / ')==='Den täljde jag till dig / när du var liten, Elof.' && speech.more.tone==='soft');
+   check('Portrait: a shout is drawn as one',speech.shout==='call');
+-  check('Reading: essential dialogue immediately replaces passing remarks',speech.manual.line==='Min allra första trägubbe …');
++  check('Reading: essential dialogue waits while a passing remark is read to its end, then takes the floor',speech.remark.line==='Ge tillbaka mitt godis!' && speech.waits && speech.manual.line==='Min allra första trägubbe …');
+   check('Reading: a fresh input cannot dismiss a new line immediately',speech.guard);
+   check('Reading: a story line survives two minutes and scene hush',speech.held.line===speech.manual.line && speech.held.bubble && speech.stillReading);
+   check('Reading: each press shows exactly one unread line in order',speech.second.line==='Den täljde jag till dig' && speech.third.line==='när du var liten, Elof.');
+diff --git a/tests/robot/dialogue.test.ts b/tests/robot/dialogue.test.ts
+new file mode 100644
+index 0000000..c9aeeba
+--- /dev/null
++++ b/tests/robot/dialogue.test.ts
+@@ -0,0 +1,28 @@
++import { describe, expect, it } from 'vitest';
++import { AVENTYR2 } from '../../src/content/aventyr2/aventyr2';
++import { BONUS, STORY } from '../../src/content/chapters';
++import { listenThrough } from './listener';
++
++/**
++ * Every chapter of both adventures, played by the robot with the game's own bubbles listening (./listener.ts), as a
++ * reader who reads every line before pressing Fortsätt (Olov, 9 November 2026: "när någon säger något kan bli avbrutet,
++ * så då måste det den säger få talas klart innan nästa event spelas upp eller pratas upp"). No line is taken off the page
++ * before it has been up as long as it takes to read, none is said and never shown, they come in the order their moments
++ * came, and each is shown as the simulation says it: the story waited for the words, not the words for the story.
++ */
++describe('every line is let finish', () => {
++  for (const chapter of [...STORY, ...BONUS, ...AVENTYR2]) {
++    it(`${chapter.id}: read to the end, every line in full and in turn`, () => {
++      const result = listenThrough(chapter, {}, 60, 900);
++      expect(result.goal, `${chapter.id} got to its goal`).toBe(true);
++      const cut = result.cut.map((one) => `${one.id} ${(one.gone! - one.shown!).toFixed(1)} of ${one.needs.toFixed(1)} s`);
++      expect(cut, 'cut short').toEqual([]);
++      expect(result.lost.map((one) => one.id), 'said and never shown').toEqual([]);
++      expect(result.heard.length).toBeGreaterThan(0);
++      // In the order their moments came, each shown the moment it is said.
++      const byMoment = [...result.heard].sort((a, b) => a.due - b.due).map((one) => one.id);
++      expect(result.heard.map((one) => one.id)).toEqual(byMoment);
++      expect(result.lag).toBeLessThan(0.05);
++    });
++  }
++});
+diff --git a/tests/robot/listener.ts b/tests/robot/listener.ts
+new file mode 100644
+index 0000000..e2bd89b
+--- /dev/null
++++ b/tests/robot/listener.ts
+@@ -0,0 +1,187 @@
++import { Game } from '../../src/app/game';
++import { sv } from '../../src/content/sv';
++import { QUIET_WAIT, endsInScene, sceneBeats } from '../../src/sim/scene';
++import type { ChapterData, SimOptions } from '../../src/sim/types';
++import { createHud, readingTime } from '../../src/ui/hud';
++import { decide } from './robot';
++
++/**
++ * The robot with a page to listen to: the game's own bubbles (src/ui/hud.ts) on a page made of plain objects, driven
++ * as src/main.ts drives them. What the simulation says goes to the bubbles; while a story line waits for Fortsätt the
++ * game waits; a held scene that begins takes the floor; and the page tells the simulation whether someone is still
++ * speaking. A reader presses Fortsätt once a line has been up as long as it takes to read. Every bubble is logged with
++ * when it came, when it went and how long it takes to read, so that a line cut short, or one never shown, is counted.
++ */
++
++/** One line as the page showed it. */
++export interface Heard {
++  id: string;
++  line: string;
++  text: string;
++  read: boolean;
++  /** Seconds on the page's clock: when its moment came, when the simulation said it, when it showed, and when it went. */
++  due: number;
++  said: number;
++  shown: number | null;
++  gone: number | null;
++  /** How long it takes to read: 2.5 s and 0.09 s a letter (src/ui/hud.ts). */
++  needs: number;
++}
++
++export interface Listened {
++  goal: boolean;
++  /** The page's clock at the end card. */
++  seconds: number;
++  heard: Heard[];
++  /** Lines taken off the page before they had been up for their reading time. */
++  cut: Heard[];
++  /** Lines said but never shown. */
++  lost: Heard[];
++  /** The longest a line waited between being said and being shown. */
++  lag: number;
++  /** The longest a line waited between its moment and being shown. */
++  late: number;
++  /** Seconds he stood held outside a scene: listening while the story waited for the words, or watching a beat. */
++  listened: number;
++  /** Seconds the game waited for Fortsätt, and from the goal to the end card. */
++  frozen: number;
++  ending: number;
++  /** Each time he stood and listened: where, from when, and for how long. */
++  stops: { x: number; at: number; seconds: number }[];
++}
++
++/** A page of plain objects: just what the bubbles touch. `seen` hears every line that is shown and every hide. */
++export function fakePage(seen: { show(text: string): void; hide(): void }): Document {
++  const elements = new Map<string, Record<string, unknown>>();
++  const element = (id: string): Record<string, unknown> => {
++    const made: Record<string, unknown> = {
++      id, hidden: true, dataset: {}, textContent: '', innerHTML: '', disabled: false, title: '', onclick: null, className: '',
++      style: { setProperty() {} }, classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
++      setAttribute() {}, animate: () => ({}), focus() {}, querySelectorAll: () => [],
++      querySelector: () => element(`${id}>`),
++      replaceChildren(...nodes: { textContent?: string; className?: string }[]) {
++        made.textContent = nodes.map((node) => node.textContent ?? '').join('');
++        if (id === 'bubbleLine') seen.show(nodes.filter((node) => node.className === 'said').at(-1)?.textContent ?? '');
++      },
++    };
++    if (id === 'bubble') {
++      let hidden = true;
++      Object.defineProperty(made, 'hidden', {
++        get: () => hidden,
++        set: (value: boolean) => { if (value && !hidden) seen.hide(); hidden = value; },
++      });
++    }
++    return made;
++  };
++  const byId = (id: string) => {
++    if (!elements.has(id)) elements.set(id, element(id));
++    return elements.get(id)!;
++  };
++  return {
++    getElementById: byId,
++    createElement: () => ({ className: '', textContent: '' }),
++    createTextNode: (text: string) => ({ textContent: text }),
++    documentElement: { dataset: {} },
++    defaultView: null,
++  } as unknown as Document;
++}
++
++/**
++ * Plays `chapter` from its start to its end card, as a player who reads every line: the bubbles and the simulation
++ * as the page has them.
++ */
++export function listenThrough(chapter: ChapterData, options: SimOptions = {}, fps = 60, limit = 600): Listened {
++  const game = new Game(chapter, options);
++  const dt = 1 / fps;
++  let clock = 0;
++  const lines: Record<string, string> = sv.lines;
++  const heard: Heard[] = [];
++  let showing: Heard[] = [];
++  const hud = createHud(fakePage({
++    show(text) {
++      const next = heard.find((one) => one.shown === null && one.text === text);
++      if (!next) return;
++      // A line that goes on from the one before is added under it: the one before has had its time.
++      for (const one of showing) one.gone ??= clock;
++      next.shown = clock;
++      showing = [next];
++    },
++    hide() {
++      for (const one of showing) one.gone ??= clock;
++      showing = [];
++    },
++  }), chapter.candy.length, () => true);
++  // What src/main.ts reads as story lines that wait for Fortsätt.
++  const beats = new Map([...(chapter.beats ?? []), ...sceneBeats(chapter.scenes)].map((beat) => [beat.id, beat]));
++  const reading = new Set([
++    ...(chapter.beats ?? []).filter((beat) => beat.read).map((beat) => beat.id),
++    ...sceneBeats(chapter.scenes?.filter((scene) => scene.hold)).map((beat) => beat.id),
++    ...(chapter.id === 'norrsken' ? ['first1', 'first2', 'first3', 'first4'] : []),
++  ]);
++  let told = game.sim.said.length;
++  let sceneHeard: string | null = null;
++  let wasAhead = false;
++  let wasOffered = false;
++  let endFor = 0;
++  let endQuiet = 0;
++  let endHeard = 0;
++  let listened = 0;
++  const stops: Listened['stops'] = [];
++  let frozen = 0;
++  // The coda before the page (src/main.ts), where a scene is not the chapter's end and it is not the epilogue.
++  const wait = !endsInScene(chapter) && !chapter.epilogue ? 4.6 : 1.4;
++  const due = new Map<string, number>();
++  for (let frame = 0; frame < fps * limit; frame++) {
++    clock += dt;
++    for (const id of game.sim.waits.keys()) if (!due.has(id)) due.set(id, clock);
++    if (hud.reading()) {
++      // The reader presses Fortsätt once the line has been up long enough to read.
++      const up = showing.at(-1);
++      if (up?.read && up.shown !== null && clock - up.shown >= up.needs) hud.advance();
++      game.resume();
++      frozen += dt;
++    } else {
++      const { x, y, ahead, offered } = decide(game, chapter);
++      game.frame(dt, { x, y, hopHeld: true, talking: hud.speaking() }, { hop: ahead && !wasAhead, act: offered && !wasOffered, helper: false });
++      wasAhead = ahead;
++      wasOffered = offered;
++      if (game.sim.held && !game.sim.sceneFrame) {
++        listened += dt;
++        const last = stops.at(-1);
++        if (last && Math.abs(last.at + last.seconds - clock) < dt * 1.5) last.seconds += dt;
++        else stops.push({ x: game.sim.curr.x, at: clock, seconds: dt });
++      }
++    }
++    const scene = game.sim.sceneFrame;
++    if (scene && scene.id !== sceneHeard && chapter.scenes?.find((def) => def.id === scene.id)?.hold) hud.hush();
++    sceneHeard = scene?.id ?? null;
++    for (; told < game.sim.said.length; told++) {
++      const id = game.sim.said[told]!;
++      const beat = beats.get(id);
++      if (!beat || !lines[beat.line]) continue;
++      const read = reading.has(id);
++      heard.push({ id, line: beat.line, text: lines[beat.line]!, read, due: due.get(id) ?? clock, said: clock, shown: null, gone: null, needs: readingTime(lines[beat.line]!) });
++      hud.say(beat.who, beat.line, read);
++    }
++    hud.tick(dt);
++    if (game.sim.flags.has('goal')) {
++      endFor += dt;
++      const shown = heard.filter((one) => one.shown !== null).length;
++      endQuiet = shown === endHeard ? endQuiet + dt : 0;
++      endHeard = shown;
++    }
++    // The end card, as the page brings it.
++    if (endFor > wait && !hud.reading() && ((!hud.speaking() && !game.sim.unsaid) || endQuiet > QUIET_WAIT)) break;
++  }
++  for (const one of showing) one.gone ??= clock;
++  const shown = heard.filter((one) => one.shown !== null);
++  // One frame's grace: a bubble goes on the frame its time runs out.
++  const cut = shown.filter((one) => one.gone! - one.shown! < one.needs - dt - 1e-6);
++  return {
++    goal: game.sim.flags.has('goal'), seconds: clock, heard, cut,
++    lost: heard.filter((one) => one.shown === null),
++    lag: Math.max(0, ...shown.map((one) => one.shown! - one.said)),
++    late: Math.max(0, ...shown.map((one) => one.shown! - one.due)),
++    listened, frozen, ending: endFor, stops,
++  };
++}
+diff --git a/tests/robot/pace.test.ts b/tests/robot/pace.test.ts
+index c87b8c6..53dd6be 100644
+--- a/tests/robot/pace.test.ts
++++ b/tests/robot/pace.test.ts
+@@ -69,7 +69,8 @@ function pace(chapter: ChapterData) {
+     wasAhead = d.ahead;
+     wasOffered = d.offered;
+     const p = game.sim.curr;
+-    const plain = !hop && !act && d.x === 1 && p.mode === 'free' && p.grounded && game.sim.checkpoint === big;
++    // While a held moment holds him, or he stands and listens, he waits: pushing right is not running.
++    const plain = !hop && !act && d.x === 1 && !game.sim.held && p.mode === 'free' && p.grounded && game.sim.checkpoint === big;
+     if (plain) run += dt;
+     else close(p.x);
+   }
+diff --git a/tests/robot/stormskog.test.ts b/tests/robot/stormskog.test.ts
+index 2a6f2a6..59bd6f5 100644
+--- a/tests/robot/stormskog.test.ts
++++ b/tests/robot/stormskog.test.ts
+@@ -7,6 +7,7 @@ import { storyContext } from '../../src/content/story-context';
+ import { sv } from '../../src/content/sv';
+ import { settingsFor, simOptions } from '../../src/save/settings';
+ import { STEP } from '../../src/sim/constants';
++import { sceneBeats } from '../../src/sim/scene';
+ import { Sim } from '../../src/sim/sim';
+ import type { Ledge, SimStart } from '../../src/sim/types';
+ import { idle, jump, leap, run, runPast, use, walkTo } from '../sim/drive';
+@@ -21,8 +22,8 @@ import { decide, heightAt, playThrough } from './robot';
+ /** Everything said on the way, in order, when the robot plays it from the start. */
+ const SAID = [
+   'ss:dark', 'ss:klonk', 'ss:flash', 'ss:cones', 'ss:owl', 'ss:owl-free', 'ss:windthrow',
+-  'ss:owl-waits', 'ss:owl-fly', 'ss:pappa', 'ss:wide', 'ss:beam', 'ss:stiff', 'ss:tiptoe', 'ss:away', 'ss:awake',
+-  'ss:thanks', 'ss:hollow-seen', 'ss:hollow', 'ss:alone', 'ss:why', 'ss:both', 'ss:jay', 'ss:jay-glad', 'ss:see-old',
++  'ss:owl-waits', 'ss:owl-fly', 'ss:wide', 'ss:pappa', 'ss:ljuset:0', 'ss:ljuset:1', 'ss:ljuset:2', 'ss:tiptoe',
++  'ss:vaknar:0', 'ss:vaknar:1', 'ss:vaknar:2', 'ss:hollow-seen', 'ss:hollow', 'ss:alone', 'ss:why', 'ss:both', 'ss:jay', 'ss:jay-glad', 'ss:see-old',
+   'ss:village', 'ss:onward',
+ ];
+ /** The big candies by name: their places in stormskog.checkpoints. */
+@@ -123,7 +124,7 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
+     }
+     expect(game.sim.flags.has('goal')).toBe(true);
+     expect(game.sim.bubbles).toBe(0);
+-    expect(game.sim.said).toEqual(SAID.slice(SAID.indexOf('ss:pappa')));
++    expect(game.sim.said).toEqual(SAID.slice(SAID.indexOf('ss:wide')));
+     // And every trail candy is in the bag at the end, the ones before the big candy from the save.
+     expect(game.sim.collected.every((got) => got)).toBe(true);
+   });
+@@ -196,7 +197,7 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
+       expect(sim.bubbles).toBe(1);
+     });
+ 
+-    it('calling Pappa freezes Klonk at the edge into the bridge, and he walks over his friend', () => {
++    it('calling Pappa: his lamp finds him at the edge, its light freezes Klonk into the bridge, and he walks over his friend', () => {
+       const sim = new Sim(stormskog, {}, saveAt(CP.pappa));
+       run(sim, 0.2);
+       // Klonk waits at the edge of the gap.
+@@ -207,8 +208,9 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
+       expect(sim.curr.word).toBe('callPappa');
+       use(sim);
+       expect(sim.flags.has('ss:beam')).toBe(true);
+-      // A short held beat while the beam finds him: the stick does nothing.
++      // A held moment while the lamp finds him, and Klonk: the stick does nothing.
+       run(sim, 0.6, { x: 1 });
++      expect(sim.sceneFrame?.id).toBe('ss:ljuset');
+       expect(sim.held).toBe(true);
+       expect(Math.abs(sim.curr.x - 131)).toBeLessThan(0.1);
+       run(sim, 1, { x: 1 });
+@@ -218,17 +220,54 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
+       // Across on foot, without a jump.
+       expect(runPast(sim, 139)).toBe(true);
+       expect(sim.bubbles).toBe(0);
+-      expect(sim.said).toEqual(['ss:pappa', 'ss:wide', 'ss:beam', 'ss:stiff', 'ss:tiptoe', 'ss:away']);
+-      run(sim, 0.1);
++      expect(sim.said).toEqual(['ss:wide', 'ss:pappa', 'ss:ljuset:0', 'ss:ljuset:1', 'ss:ljuset:2', 'ss:tiptoe']);
++      // On the far side he stands while Pappa turns his lamp to the path, and Klonk wakes beside him and waits there.
++      expect(sim.flags.has('ss:woke')).toBe(false);
++      for (let i = 0; i < 5 / STEP && !sim.sceneFrame; i++) sim.step({ ...idle, x: 1 });
++      expect(sim.sceneFrame?.id).toBe('ss:vaknar');
++      run(sim, 2, { x: 1 });
++      expect(sim.flags.has('ss:woke')).toBe(true);
++      expect(sim.ghost!.x).toBeCloseTo(141.5, 1);
+       runPast(sim, 143);
+-      expect(sim.said.slice(-2)).toEqual(['ss:awake', 'ss:thanks']);
++      expect(sim.said.slice(-3)).toEqual(['ss:vaknar:0', 'ss:vaknar:1', 'ss:vaknar:2']);
+     });
+ 
+-    it('Pappa speaks in short lines: the beam, and Klonk stiff as a plank', () => {
+-      expect(words.lines.ssBeam).toBe('Där är Klonk! Nu ser jag honom.');
+-      expect(words.lines.ssStiff).toBe('Pappa ser dig! Då blir du ju stel!');
+-      const pappa = (stormskog.beats ?? []).filter((beat) => beat.who === 'pappa');
+-      expect(pappa.map((beat) => beat.line)).toEqual(['ssPappaHere', 'ssBeam', 'ssPappaAway']);
++    it('says what each of them sees: Pappa searching, finding him, a toy fallen over; Elof knowing why; Klonk waking', () => {
++      const scene = (id: string) => stormskog.scenes!.find((one) => one.id === id)!;
++      const said = (id: string) => scene(id).lines!.map((line) => `${line.who}: ${words.lines[line.line]}`);
++      // Something tiny in his light: Pappa is not sure it is him, and Elof answers by calling (the way over).
++      expect((stormskog.beats ?? []).filter((beat) => beat.who === 'pappa').map((beat) => words.lines[beat.line]))
++        .toEqual(['Elof? Är det du där nere?']);
++      expect(said('ss:ljuset')).toEqual([
++        'pappa: Där är du ju! Akta dig för kanten!',
++        'pappa: Oj! Klonk föll rakt över klyftan.',
++        'elof: Han blir stel när Pappa tittar. En bro!',
++      ]);
++      expect(said('ss:vaknar')).toEqual([
++        'pappa: Bra, Elof! Nu lyser jag på stigen.',
++        'spoket: Klonk!',
++        'elof: Tack, Klonk! Du är världens bästa bro.',
++      ]);
++      // Klonk stiffens only after Pappa has found Elof, and wakes only after Pappa has turned his lamp away.
++      for (const id of ['ss:ljuset', 'ss:vaknar']) {
++        const one = scene(id);
++        expect(one.hold, id).toBe(true);
++        expect(one.lines![0]!.at, id).toBeLessThan(one.cues![0]!.at);
++        expect(one.cues![0]!.at, id).toBeLessThan(one.lines![1]!.at);
++        for (const line of one.lines!) expect(words.lines[line.line]!.length, line.line).toBeLessThanOrEqual(40);
++      }
++      expect(scene('ss:ljuset').cues).toEqual([{ at: expect.any(Number), flag: 'ss:frozen' }]);
++      expect(scene('ss:vaknar').cues).toEqual([{ at: expect.any(Number), flag: stormskog.storm!.wakes }]);
++      // That a grown-up's look stiffens Klonk is Elof's secret: he thinks it, and the grown-ups never say it.
++      expect(words.lines.ssStiff).toMatch(/Pappa tittar/);
++      expect(said('ss:ljuset').filter((line) => line.startsWith('pappa')).join(' ')).not.toMatch(/stel|lever|vaken/);
++    });
++
++    it('wakes Klonk in a game taken up beyond the gap, as in one that saw him wake', () => {
++      const sim = new Sim(stormskog, {}, { checkpoint: CP.hollow, flags: ['placed:owl-twig', 'owl', 'ss:beam', 'ss:frozen'] });
++      run(sim, 0.1);
++      expect(sim.flags.has('ss:woke')).toBe(true);
++      expect(sim.flags.has('scene:ss:ljuset')).toBe(true);
+     });
+   });
+ 
+@@ -371,8 +410,8 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
+       expect(text.length, key).toBeLessThanOrEqual(40);
+       expect(key, key).toMatch(/^ss[A-Z]/);
+     }
+-    // Every line of the chapter's words is said somewhere in it.
+-    const said = new Set((stormskog.beats ?? []).map((beat) => beat.line));
++    // Every line of the chapter's words is said somewhere in it: along the way, or in one of its scenes.
++    const said = new Set([...(stormskog.beats ?? []), ...sceneBeats(stormskog.scenes)].map((beat) => beat.line));
+     for (const key of Object.keys(words.lines)) expect(said.has(key), key).toBe(true);
+     const verbs: Record<string, string> = sv.verbs;
+     for (const spot of stormskog.spots ?? []) expect(verbs[spot.word ?? spot.verb], spot.id).toBeTruthy();
+diff --git a/tests/sim/scene.test.ts b/tests/sim/scene.test.ts
+index 3d13b0c..79b3bb7 100644
+--- a/tests/sim/scene.test.ts
++++ b/tests/sim/scene.test.ts
+@@ -9,8 +9,8 @@ import { PROLOG_SCENES } from '../../src/content/chapters/prolog-scenes';
+ /** Just what the director reads of him: where he is, and whether he stands on his own feet. */
+ const standing = (x: number, more: Partial<PlayerState> = {}) => ({ x, y: 0, mode: 'free', grounded: true, ...more }) as PlayerState;
+ 
+-function run(director: SceneDirector, seconds: number, player: PlayerState, flags: Set<string>, said: string[], talking = false) {
+-  for (let i = 0; i < Math.round(seconds / STEP); i++) director.tick(player, flags, said, talking);
++function run(director: SceneDirector, seconds: number, player: PlayerState, flags: Set<string>, said: string[], talking = false, listening = false) {
++  for (let i = 0; i < Math.round(seconds / STEP); i++) director.tick(player, flags, said, talking, listening);
+ }
+ 
+ const morning: SceneDef = {
+@@ -173,6 +173,83 @@ describe('the story\'s scenes', () => {
+     expect(director.frame?.id).toBe('titel');
+   });
+ 
++  // Olov, 9 November 2026: what someone says is let finish before the next event plays or the next line is said.
++  it('lets what is being said finish before any held scene takes the floor, and he listens meanwhile', () => {
++    const flags = new Set<string>(['grab']);
++    const director = new SceneDirector([later], { x: 0, y: 0 }, flags);
++    run(director, 3, standing(0), flags, [], true);
++    expect(director.frame).toBeNull();
++    expect(director.holding).toBe(true);
++    director.tick(standing(0), flags, [], false);
++    expect(director.frame?.id).toBe('later');
++    // One that is not held never waits: a card, or the acting that goes with a line as it is said.
++    const walk: SceneDef = { id: 'walk', on: 'go', seconds: 1 };
++    const going = new Set<string>(['go']);
++    const free = new SceneDirector([walk], { x: 0, y: 0 }, going);
++    free.tick(standing(0), going, [], true);
++    expect(free.frame?.id).toBe('walk');
++  });
++
++  it('counts its wait from the last line said: a conversation before it is let finish, however long', () => {
++    const flags = new Set<string>(['grab']);
++    const said: string[] = [];
++    const director = new SceneDirector([later], { x: 0, y: 0 }, flags);
++    // Four lines of six seconds each, said one after another: longer than QUIET_WAIT, and never one line too long.
++    for (let line = 0; line < 4; line++) {
++      said.push(`talk:${line}`);
++      run(director, 6, standing(0), flags, said, true);
++      expect(director.frame, `after line ${line}`).toBeNull();
++    }
++    director.tick(standing(0), flags, said, false);
++    expect(director.frame?.id).toBe('later');
++  });
++
++  it('makes a reading stop at each line: the next line, and the end, wait while one is still being read', () => {
++    const talk: SceneDef = {
++      id: 'talk', seconds: 3,
++      cues: [{ at: 0.5, flag: 'pointed' }],
++      lines: [{ at: 0.2, who: 'moa', line: 'notYet' }, { at: 1, who: 'pappa', line: 'newGhost' }],
++    };
++    const flags = new Set<string>();
++    const said: string[] = [];
++    const director = new SceneDirector([talk], { x: 0, y: 0 }, flags);
++    run(director, 0.3, standing(0), flags, said);
++    expect(said).toEqual(['talk:0']);
++    // Moa's line is still being read: the acting with it goes on, and the clock stops at Pappa's line.
++    run(director, 4, standing(0), flags, said, true);
++    expect(flags.has('pointed')).toBe(true);
++    expect(said).toEqual(['talk:0']);
++    expect(director.frame!.seconds).toBeLessThan(1);
++    expect(director.frame!.seconds).toBeGreaterThan(0.95);
++    // Read: Pappa answers; while his line is read, the scene does not end.
++    run(director, 0.1, standing(0), flags, said);
++    expect(said).toEqual(['talk:0', 'talk:1']);
++    run(director, 5, standing(0), flags, said, true);
++    expect(director.frame?.id).toBe('talk');
++    expect(flags.has('scene:talk')).toBe(false);
++    run(director, 2.1, standing(0), flags, said);
++    expect(flags.has('scene:talk')).toBe(true);
++  });
++
++  it('tells a page that listens its lines one at a time, and a robot all those due at once', () => {
++    const both: SceneDef = { id: 'both', seconds: 1, lines: [{ at: 0.2, who: 'mamma', line: 'notYet' }, { at: 0.2, who: 'pappa', line: 'newGhost' }] };
++    const flags = new Set<string>();
++    const said: string[] = [];
++    const director = new SceneDirector([both], { x: 0, y: 0 }, flags);
++    for (let i = 0; i < 0.3 / STEP && said.length === 0; i++) director.tick(standing(0), flags, said, false, true);
++    // Due at the same moment, the second waits: the page hears the first only after this step.
++    expect(said).toEqual(['both:0']);
++    run(director, 2, standing(0), flags, said, true, true);
++    expect(said).toEqual(['both:0']);
++    director.tick(standing(0), flags, said, false, true);
++    expect(said).toEqual(['both:0', 'both:1']);
++
++    const robot = new Set<string>();
++    const told: string[] = [];
++    run(new SceneDirector([both], { x: 0, y: 0 }, robot), 0.3, standing(0), robot, told);
++    expect(told).toEqual(['both:0', 'both:1']);
++  });
++
+   it('keeps each unbroken story stretch short, its moments inside it, and its lines among the game\'s words', () => {
+     const lines: Record<string, string> = sv.lines;
+     const words: Record<string, string> = sv.scene;
+diff --git a/tests/sim/talk.test.ts b/tests/sim/talk.test.ts
+new file mode 100644
+index 0000000..9df590e
+--- /dev/null
++++ b/tests/sim/talk.test.ts
+@@ -0,0 +1,161 @@
++import { describe, expect, it } from 'vitest';
++import { Game } from '../../src/app/game';
++import { STEP } from '../../src/sim/constants';
++import { QUIET_WAIT } from '../../src/sim/scene';
++import { Sim } from '../../src/sim/sim';
++import type { ChapterData } from '../../src/sim/types';
++import { idle, run, runPast } from './drive';
++
++/**
++ * What is said waits its turn (Olov, 9 November 2026: "när någon säger något kan bli avbrutet, så då måste det den
++ * säger få talas klart innan nästa event spelas upp eller pratas upp"). The simulation learns only through its input
++ * whether the page is still speaking (`talking`); with nobody listening (the robot), it says each line as before.
++ */
++const lane: ChapterData = {
++  id: 'lane',
++  spawn: { x: 0, y: 0.01 },
++  goalX: 1000,
++  ground: [{ x: -10, y: 8 }, { x: -10, y: 0 }, { x: 80, y: 0 }, { x: 80, y: 8 }],
++  candy: [],
++  beats: [
++    { id: 'dark', at: 2, who: 'elof', line: 'ssDark' },
++    { id: 'klonk', at: 4, who: 'spoket', line: 'ssKlonk' },
++    { id: 'flash', at: 8, who: 'elof', line: 'ssFlash' },
++    { id: 'gone', on: 'beat:flash', who: 'moa', line: 'ssSeeOld' },
++    { id: 'left', at: 14, who: 'elof', line: 'ssVillage' },
++    { id: 'right', at: 14, who: 'spoket', line: 'ssOnward' },
++    { id: 'cones', at: 24, who: 'elof', line: 'ssCones', read: true },
++    { id: 'stale', at: 40, until: 'past', who: 'elof', line: 'ssWide' },
++  ],
++  scenes: [{ id: 'held', at: 60, seconds: 1, hold: true }],
++};
++
++/** Runs right until he has passed `x`, or stands held there, with the page speaking or not. */
++function walk(sim: Sim, x: number, talking: boolean): void {
++  for (let i = 0; i < 20 / STEP && sim.curr.x < x; i++) sim.step({ ...idle, x: 1, talking });
++}
++
++/** Runs right until a line is said, or he has passed `x`. */
++function runUntilSaid(sim: Sim, x: number, talking?: boolean): void {
++  const before = sim.said.length;
++  for (let i = 0; i < 20 / STEP && sim.curr.x < x && sim.said.length === before; i++) sim.step({ ...idle, x: 1, talking });
++}
++
++describe('lines that wait their turn', () => {
++  it('holds a line back while the page still speaks, and its flag with it, and says it once it is quiet', () => {
++    const sim = new Sim(lane);
++    runUntilSaid(sim, 3, false);
++    expect(sim.said).toEqual(['dark']);
++    // "Hu, vad mörkt det är i skogen!" is still being read as he passes the next line's place, and the flash's.
++    walk(sim, 9, true);
++    expect(sim.said).toEqual(['dark']);
++    expect(sim.flags.has('beat:klonk')).toBe(false);
++    expect([...sim.waits.keys()]).toEqual(['klonk', 'flash']);
++    expect(sim.unsaid).toBe(true);
++    // Quiet: the one that has waited longest, and only one, until that one has been read too.
++    sim.step({ ...idle, talking: false });
++    expect(sim.said).toEqual(['dark', 'klonk']);
++    run(sim, 1, { talking: true });
++    expect(sim.said).toEqual(['dark', 'klonk']);
++    sim.step({ ...idle, talking: false });
++    expect(sim.said).toEqual(['dark', 'klonk', 'flash']);
++    // What waits for a line's flag waits for its words: Moa's answer comes after the flash has been read.
++    expect(sim.flags.has('beat:flash')).toBe(true);
++    run(sim, 1, { talking: true });
++    expect(sim.said.at(-1)).toBe('flash');
++    sim.step({ ...idle, talking: false });
++    expect(sim.said.at(-1)).toBe('gone');
++  });
++
++  it('tells a page its lines one at a time, and nobody listening all those due at once', () => {
++    const page = new Sim(lane, {}, { flags: ['beat:dark', 'beat:klonk', 'beat:flash', 'beat:gone'] });
++    runUntilSaid(page, 15, false);
++    expect(page.said).toEqual(['left']);
++    const robot = new Sim(lane, {}, { flags: ['beat:dark', 'beat:klonk', 'beat:flash', 'beat:gone'] });
++    runUntilSaid(robot, 15);
++    expect(robot.said).toEqual(['left', 'right']);
++  });
++
++  it('keeps him where a story line belongs while it waits for the line before it', () => {
++    const sim = new Sim(lane, {}, { flags: ['beat:dark', 'beat:klonk', 'beat:flash', 'beat:gone', 'beat:left', 'beat:right'] });
++    runPast(sim, 22);
++    sim.step({ ...idle, x: 1, talking: false });
++    for (let i = 0; i < 1.5 / STEP; i++) sim.step({ ...idle, x: 1, talking: true });
++    expect(sim.waits.has('cones')).toBe(true);
++    expect(sim.held).toBe(true);
++    const at = sim.curr.x;
++    run(sim, 2, { x: 1, talking: true });
++    expect(sim.curr.x).toBeLessThan(at + 0.3);
++    expect(sim.curr.x).toBeGreaterThanOrEqual(24);
++    sim.step({ ...idle, x: 1, talking: false });
++    expect(sim.said.at(-1)).toBe('cones');
++    expect(sim.held).toBe(false);
++  });
++
++  it('keeps him listening while the words have fallen behind: more than one line waits', () => {
++    const sim = new Sim(lane);
++    runUntilSaid(sim, 3, false);
++    // One line waits: he goes on. Two: he stands, on his own feet, until one of them has been said.
++    for (let i = 0; i < 20 / STEP && sim.waits.size < 1; i++) sim.step({ ...idle, x: 1, talking: true });
++    expect(sim.held).toBe(false);
++    for (let i = 0; i < 20 / STEP && sim.waits.size < 2; i++) sim.step({ ...idle, x: 1, talking: true });
++    run(sim, 0.5, { x: 1, talking: true });
++    expect(sim.curr.grounded).toBe(true);
++    expect(sim.held).toBe(true);
++    sim.step({ ...idle, x: 1, talking: false });
++    expect(sim.held).toBe(false);
++  });
++
++  it('lets a line go that the story has gone past while it waited: it was never shown', () => {
++    const sim = new Sim(lane, {}, { flags: ['beat:dark', 'beat:klonk', 'beat:flash', 'beat:gone', 'beat:left', 'beat:right', 'beat:cones'] });
++    walk(sim, 39, false);
++    walk(sim, 41, true);
++    expect(sim.waits.has('stale')).toBe(true);
++    sim.flags.add('past');
++    run(sim, 0.5, { talking: true });
++    sim.step({ ...idle, talking: false });
++    expect(sim.waits.size).toBe(0);
++    expect(sim.said).not.toContain('stale');
++  });
++
++  it('lets a held scene take the floor only once the lines before it are said and read', () => {
++    const sim = new Sim(lane, {}, { flags: ['beat:dark', 'beat:klonk', 'beat:flash', 'beat:gone', 'beat:left', 'beat:right', 'beat:cones', 'beat:stale'] });
++    walk(sim, 59, false);
++    walk(sim, 60.2, true);
++    run(sim, 3, { x: 1, talking: true });
++    expect(sim.curr.x).toBeLessThan(60.4);
++    expect(sim.sceneFrame).toBeNull();
++    expect(sim.held).toBe(true);
++    sim.step({ ...idle, talking: false });
++    expect(sim.sceneFrame?.id).toBe('held');
++  });
++
++  it('lets go of a page that never stops speaking, QUIET_WAIT after a line was last said', () => {
++    const sim = new Sim(lane);
++    runUntilSaid(sim, 3, false);
++    walk(sim, 4.5, true);
++    for (let i = 0; i < (QUIET_WAIT - 1) / STEP; i++) sim.step({ ...idle, talking: true });
++    expect(sim.said).toEqual(['dark']);
++    run(sim, 1.2, { talking: true });
++    expect(sim.said).toEqual(['dark', 'klonk']);
++  });
++
++  it('hears a line said in a frame as being said for the rest of that frame', () => {
++    // At 30 frames a second, four steps a frame: the two lines due together come in two frames, not one.
++    const game = new Game(lane, {}, { flags: ['beat:dark', 'beat:klonk', 'beat:flash', 'beat:gone'] });
++    const counts: number[] = [];
++    for (let frame = 0; frame < 30 * 6 && game.sim.said.length < 2; frame++) {
++      const before = game.sim.said.length;
++      game.frame(1 / 30, { x: 1, hopHeld: false, talking: false }, { hop: false, act: false, helper: false });
++      counts.push(game.sim.said.length - before);
++    }
++    expect(game.sim.said).toEqual(['left', 'right']);
++    expect(Math.max(...counts)).toBe(1);
++    // Nobody listening: both in the frame they come due, as the robot has always heard them.
++    const robot = new Game(lane, {}, { flags: ['beat:dark', 'beat:klonk', 'beat:flash', 'beat:gone'] });
++    for (let frame = 0; frame < 30 * 6 && robot.sim.said.length === 0; frame++) {
++      robot.frame(1 / 30, { x: 1, hopHeld: false }, { hop: false, act: false, helper: false });
++    }
++    expect(robot.sim.said).toEqual(['left', 'right']);
++  });
++});
+diff --git a/tests/unit/voice-player.test.ts b/tests/unit/voice-player.test.ts
+index cbea50f..a7cac13 100644
+--- a/tests/unit/voice-player.test.ts
++++ b/tests/unit/voice-player.test.ts
+@@ -109,6 +109,24 @@ describe('spoken-line lifecycle', () => {
+     expect(Voice.made).toHaveLength(1);
+   });
+ 
++  it('holds the line being said under Pause, and lets it finish after, not again from its start', () => {
++    player.playVoice('tiny');
++    player.pauseVoice();
++    const voice = Voice.made[0]! as Voice & { paused?: boolean };
++    expect(voice.pause).toHaveBeenCalledOnce();
++    expect(player.playingVoice()).toBe('tiny');
++    voice.paused = true;
++    voice.currentTime = 1.2;
++    player.resumeVoice();
++    expect(voice.play).toHaveBeenCalledTimes(2);
++    expect(voice.currentTime).toBe(1.2);
++    expect(Voice.made).toHaveLength(1);
++    // Nothing to go on with once the line is gone.
++    player.stopVoice();
++    player.resumeVoice();
++    expect(voice.play).toHaveBeenCalledTimes(2);
++  });
++
+   it('does not report a playing line when play() throws synchronously', () => {
+     Voice.throws = true;
+     expect(() => player.playVoice('newGhost')).not.toThrow();
