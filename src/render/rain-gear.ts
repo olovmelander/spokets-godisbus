@@ -4,8 +4,9 @@ import {
 import type { Actor } from '../sim/scene';
 import type { ChapterData } from '../sim/types';
 import { sample, type Clip } from './gait';
+import { bendSoftly } from './joints';
 import { CLIPS } from './motion-data';
-import { sleevesWithArms } from './sleeves';
+import { jointOf, sleevesWithArms } from './sleeves';
 
 /**
  * Rain gear in Stormnatten (Olov, 6 November 2026: "alla karaktärer ska ta på sig regnjacka, stövlar och grejer, så
@@ -311,7 +312,7 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
       const w = skinWeight.getComponent(i, k);
       if (w > best) { best = w; which = skinIndex.getComponent(i, k); }
     }
-    owner[i] = bones[which] ?? '';
+    owner[i] = jointOf(bones[which] ?? '');            // a bone added at a joint stands for the bone it rests on
   }
   // How tall the body is in its own units, and the height range of its thighs' and calves' corners.
   let low = Infinity, high = -Infinity;
@@ -505,7 +506,7 @@ function hideUnder(body: SkinnedMesh, coat: SkinnedMesh | null, boots: [SkinnedM
   for (let i = 0; i < position.count; i++) {
     let best = 0, which = 0;
     for (let k = 0; k < 4; k++) { const w = skinWeight.getComponent(i, k); if (w > best) { best = w; which = skinIndex.getComponent(i, k); } }
-    const bone = names[which] ?? '', x = rest[i * 3], y = rest[i * 3 + 1], z = rest[i * 3 + 2];
+    const bone = jointOf(names[which] ?? ''), x = rest[i * 3], y = rest[i * 3 + 1], z = rest[i * 3 + 2];
     // Under the coat: between its hem and a little under the top of its collar, on the trunk, the arms to the wrist
     // and the thighs; under a boot: the foot and the calf, below the boot's top.
     if (coatBox && COVERED_BY_COAT.has(bone) && y > coatBox.min.y + 0.004 && y < coatBox.max.y - 0.02
@@ -634,8 +635,9 @@ export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
     mesh.name = 'rain-gear';
     mesh.userData.wardrobe = piece.name;
     mesh.bind(new Skeleton(own as Bone[], piece.skeleton.boneInverses), body.bindMatrix);
-    // The coat's sleeves go with the arms, as the body's own do (./sleeves.ts).
+    // The coat's sleeves go with the arms, and its elbows and shoulders bend as the body's own do (./sleeves.ts, ./joints.ts).
     sleevesWithArms(mesh);
+    bendSoftly(mesh);
     mesh.position.copy(body.position);
     mesh.quaternion.copy(body.quaternion);
     mesh.scale.copy(body.scale);

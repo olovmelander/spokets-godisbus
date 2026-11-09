@@ -267,10 +267,12 @@ window.__motion = {
   },
   /** Each skinned mesh in the lab, and how many of its corners ../src/render/sleeves.ts gave to the arms. */
   skins() {
-    const out: { name: string; corners: number; sleeves: unknown }[] = [];
+    const out: { name: string; corners: number; sleeves: unknown; joints: unknown; shoulders: unknown; skirt: unknown }[] = [];
     scene.traverse((node) => {
       const mesh = node as Mesh & { isSkinnedMesh?: boolean };
-      if (mesh.isSkinnedMesh) out.push({ name: mesh.name, corners: mesh.geometry.getAttribute('position').count, sleeves: mesh.geometry.userData.sleevesWithArms });
+      if (!mesh.isSkinnedMesh) return;
+      const data = mesh.geometry.userData;
+      out.push({ name: mesh.name, corners: mesh.geometry.getAttribute('position').count, sleeves: data.sleevesWithArms, joints: data.halfJoints, shoulders: data.softShoulders, skirt: data.skirtsOverThighs });
     });
     return out;
   },

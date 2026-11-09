@@ -2,6 +2,7 @@ import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLam
 import type { ChapterData } from '../sim/types';
 import { createArmContact, createHandGrip } from './arm-contact';
 import { COAT_ORDER, SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
+import { bendSoftly } from './joints';
 import { sleevesWithArms } from './sleeves';
 
 /**
@@ -606,6 +607,8 @@ export function createModelRig(model: Object3D, height: number): Rig {
     skinned.boundingSphere = skinned.geometry.boundingSphere!.clone();
     skinned.boundingSphere.radius *= 1.6;
   });
+  // Elbows and knees bend through half bones, a shoulder's corner gives to its arm, a skirt lies over the thighs (./joints.ts).
+  bendSoftly(model);
   const bone = (name: string, sign: 1 | -1): Bone | null => {
     const node = model.getObjectByName(name);
     return node ? { node, rest: node.quaternion.clone(), sign } : null;

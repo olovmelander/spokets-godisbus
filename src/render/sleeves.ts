@@ -1,4 +1,4 @@
-import type { BufferAttribute, InterleavedBufferAttribute, Object3D, SkinnedMesh } from 'three';
+import { Bone, Object3D, Quaternion, Skeleton, Vector3, type BufferAttribute, type InterleavedBufferAttribute, type SkinnedMesh } from 'three';
 
 /**
  * Sleeves that go with the arm (Olov, 9 November 2026: "make sure they have not wings between the arms and the belly
@@ -23,7 +23,7 @@ import type { BufferAttribute, InterleavedBufferAttribute, Object3D, SkinnedMesh
 type Attribute = BufferAttribute | InterleavedBufferAttribute;
 
 /** Each corner's part: the corners joined by triangles, and those that lie on the same point (a seam in the export). */
-function partsOf(position: Attribute, index: ArrayLike<number> | null, count: number): Int32Array {
+export function partsOf(position: Attribute, index: ArrayLike<number> | null, count: number): Int32Array {
   const parent = new Int32Array(count);
   for (let i = 0; i < count; i++) parent[i] = i;
   const find = (a: number) => {
@@ -45,6 +45,28 @@ function partsOf(position: Attribute, index: ArrayLike<number> | null, count: nu
   }
   for (let i = 0; i < count; i++) parent[i] = find(i);
   return parent;
+}
+
+/** A corner's four weights, rewritten: `put` lists the bones and weights it has now (others are dropped). */
+export function writeWeights(mesh: SkinnedMesh, i: number, put: [number, number][]): void {
+  const skinIndex = mesh.geometry.getAttribute('skinIndex'), skinWeight = mesh.geometry.getAttribute('skinWeight');
+  const top = put.filter(([, w]) => w > 1e-4).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  const total = top.reduce((sum, [, w]) => sum + w, 0) || 1;
+  let stored = 0;
+  for (let k = 0; k < 4; k++) {
+    const [bone, weight] = top[k] ?? [0, 0];
+    skinIndex.setComponent(i, k, bone);
+    if (k > 0) { skinWeight.setComponent(i, k, weight / total); stored += skinWeight.getComponent(i, k); }
+  }
+  skinWeight.setComponent(i, 0, Math.max(0, 1 - stored));     // a packed weight is rounded: the first takes the rest
+}
+
+/** Each corner's bones and weights. */
+export function weightsOf(mesh: SkinnedMesh, i: number): [number, number][] {
+  const skinIndex = mesh.geometry.getAttribute('skinIndex'), skinWeight = mesh.geometry.getAttribute('skinWeight');
+  const out: [number, number][] = [];
+  for (let k = 0; k < 4; k++) { const w = skinWeight.getComponent(i, k); if (w > 0) out.push([skinIndex.getComponent(i, k), w]); }
+  return out;
 }
 
 /**
@@ -111,4 +133,71 @@ export function sleevesWithArms(mesh: SkinnedMesh): number {
   if (changed > 0) { skinWeight.needsUpdate = true; skinIndex.needsUpdate = true; }
   g.userData.sleevesWithArms = changed;
   return changed;
+}
+
+// === Bones added to a model as it is put on its rig, between two of its own (./joints.ts, ./skirts.ts) ===============
+
+/** The joint a bone stands for: an added bone for the bone it rests on (`thigh_l_push` is `thigh_l`). */
+export const jointOf = (name: string) => name.replace(/_(half|push)$/, '');
+
+const rests = new WeakMap<Object3D, Quaternion>();
+
+/** A bone resting where `like` rests, beside it under the same parent, made once per model and found by its name. */
+function besideOf(like: Object3D, name: string): { bone: Bone; rest: Quaternion } {
+  const parent = like.parent!;
+  let bone = parent.children.find((node) => node.name === name) as Bone | undefined;
+  if (!bone) {
+    bone = new Bone();
+    bone.name = name;
+    bone.position.copy(like.position);
+    bone.quaternion.copy(like.quaternion);
+    bone.scale.copy(like.scale);
+    rests.set(bone, like.quaternion.clone());
+    parent.add(bone);
+  }
+  const rest = rests.get(bone) ?? bone.quaternion.clone();
+  rests.set(bone, rest);
+  return { bone, rest };
+}
+
+/** The half bone at `child`'s joint: it turns half as far from its rest as `child` does. One per joint and model. */
+export function halfOf(child: Object3D): Bone {
+  const { bone, rest } = besideOf(child, child.name + '_half');
+  // Set as its matrix is made, every frame, from wherever the pose, a reach or a grip has left the bone below.
+  bone.updateMatrix = function updateMatrix(this: Bone) {
+    this.quaternion.slerpQuaternions(rest, child.quaternion, 0.5);
+    Object3D.prototype.updateMatrix.call(this);
+  };
+  bone.updateMatrix();
+  return bone;
+}
+
+/** How far a thigh swings forward before it lifts a skirt hanging in front of it (radians): little, since a kneel brings
+ * the thigh up level and the skirt must stay over it, where a stride that lifts it a little looks as a skirt does. */
+export const REACHES_SKIRT = 0.15;
+
+/** A bone at a hip that a thigh pushes forward once it reaches the skirt, and never back: a skirt lies on a thigh that
+ * comes up, and hangs from the hips as it goes back. The thigh swings forward about its own x (src/render/rig.ts). */
+export function pushOf(thigh: Object3D): Bone {
+  const { bone, rest } = besideOf(thigh, thigh.name + '_push');
+  const inverse = rest.clone().invert(), turn = new Quaternion(), X = new Vector3(1, 0, 0);
+  bone.updateMatrix = function updateMatrix(this: Bone) {
+    turn.copy(inverse).multiply(thigh.quaternion);
+    const swing = 2 * Math.atan2(turn.x, turn.w);
+    const forward = Math.max(0, Math.atan2(Math.sin(swing), Math.cos(swing)) - REACHES_SKIRT);
+    this.quaternion.copy(rest).multiply(turn.setFromAxisAngle(X, forward));
+    Object3D.prototype.updateMatrix.call(this);
+  };
+  bone.updateMatrix();
+  return bone;
+}
+
+/** The mesh's skeleton with `added` in it, at its end where it is not, bound as the bone `like` (an index) it rests on. */
+export function withBone(mesh: SkinnedMesh, added: Bone, like: number): number {
+  const at = mesh.skeleton.bones.indexOf(added);
+  if (at >= 0) return at;
+  const bones = [...mesh.skeleton.bones, added];
+  const inverses = [...mesh.skeleton.boneInverses.map((m) => m.clone()), mesh.skeleton.boneInverses[like]!.clone()];
+  mesh.bind(new Skeleton(bones, inverses), mesh.bindMatrix);
+  return bones.length - 1;
 }
