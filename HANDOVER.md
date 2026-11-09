@@ -1,5 +1,43 @@
 # Handover
 
+## State (9 November 2026, late afternoon)
+
+- **The whole body bending and moving smoothly** (Olov: "can we fix the joints and movement of the arms, head, legs,
+  bones and other things of the body in blender so it looks amazing and smooth when the characters moves", and "So the
+  full body should move smoothly"), the same cloud session, two building agents.
+  - **A fuller skeleton** (the private repository's **PR #8**, `body-rig`, merged at Olov's word): `family/body_rig.py`
+    (Blender 5.2 `bpy`) gives all seven bodies and the five wardrobes ten more bones with new weights where they bend:
+    `spine_03`, `neck_01` (the head hangs from it), `clavicle_l/r` (the upper arms hang from them),
+    `upperarm_twist_01_l/r`, `lowerarm_twist_01_l/r` and `thigh_correctiveRoot_l/r` (bodies 46 to 56 bones, wardrobes
+    16 to 26). No vertex, colour, triangle or material changed, and the old bones' bind matrices are as they were
+    (`body-rig-verification.json`). Measured: the crotch in a stride or a kneel stretched 35 times and folded 20
+    triangles, now 4 times and 6; the seat in a kneel keeps 0.89 of its round (0.55); the waist in a low reach has no
+    folds (10); the shoulders lift with a raised arm and the neck bends along its length, where both were rigid.
+  - **The game drives them** (`rig.ts`; `tests/unit/fuller-skeleton.test.ts`): the trunk's bend spread over three spine
+    bones (0.4, 0.35, 0.35), the neck taking half the head's turn and nod, a collarbone lifting up to 0.32 rad and
+    coming forward 0.22 as its arm rises or reaches, the forearm's twist bone taking half the hand's turn. A model
+    without the new bones (the stand-ins, an old pack) moves as before.
+  - **No snaps in the upper body** (`stage.ts`): where a pose target jumps (a scene's first frame, a new thing to look
+    at, an act starting from elsewhere), the trunk, arms and head carry on at the speed they had and the difference dies
+    away as a critically damped spring (about a third of a second; the head a little slower). The worst spikes fell from
+    1,200 to 2,400 rad/s² to 150 to 380 in Stormens öga, Morgonen, Stormkvällen, Billsta and the prologue; frames over
+    1,000 from 71 to 6.
+  - **Running legs** (`gait.ts`): the knees and feet flipped every frame in a run (the prologue's `poff`, Billsta's
+    children). At the source: steps keep getting longer past a sprint (`stepOf`), a planted foot stays down only as long
+    as the leg can reach it (`stanceReach`), and in a run the knee bends on smoothly near its full length instead of
+    snapping straight (`reachWith`). Flips at the speed limit fell from 7 to 18 a run to 0 to 2; walks are unchanged.
+  - **The head goes first on a turn:** it looks round to where the body is turning, ahead of it (up to 0.6 rad).
+  - **Checked:** typecheck, `npm test` (221 files, 2,227 tests), `npm run build` with the new skeleton (JS 590.7 KB of
+    1,000, boot 5,430.1 KB of 10,240), the privacy check, family-caps (76) on the new skeleton, and family-help,
+    family-story, prologue, finale-stage, aventyr2 and model-installation by the builders.
+  - **Left:** turning on the spot still slides the feet (it wants a step or two); the trunk stays still under a held act
+    (Moa and Bertil in Stormkvällen); the weight does not yet shift before a step, nor the trunk follow the hips a moment
+    later; Elof's jumps, landings and turns were not measured (his walk and run have no spike over 1,000); boots still
+    slip in Billsta's children's run, which is twice a child's sprint for their size (more time in the scene, or feet
+    planted along a curving path); the hip front in Mormor's deep kneel and the shoulder at the top of a cheer stretch a
+    little more than before; there is no shrug channel for the collarbones; the upper-arm twist bones take no share yet.
+  - **The next step needs:** nothing from Olov's computer.
+
 ## State (9 November 2026, afternoon)
 
 - **Hands with separate fingers** (Olov: "Yes, make new hands with separate fingers in Blender", then "Commit and merge").
@@ -4963,6 +5001,11 @@
 
 ## Next
 
+**The whole body (9 November, late afternoon), left in the cloud:** turning on the spot with steps, the trunk under a
+held act, the weight shifting before a step and the trunk following the hips, Elof's jumps and landings, and Billsta's
+children's run (see "State"). For Olov on the devices: the running in the prologue and Billsta, shoulders and necks in
+the gestures, the hips in a stride and a kneel.
+
 **The family's movements and Elof's raincoat (9 November), for Olov:** on the devices, judge the coats going on in
 Stormkvällen, the doll and Elof's coat through the storm, the kneeling, the cheer and the hug, and the sleeves when they
 wave and point (see "State").
@@ -5438,6 +5481,8 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The whole body moving smoothly (9 Nov, late afternoon) | Olov's request: the joints and movement of the whole body, made in Blender, smooth | Part of the same cloud session, with two building agents | — / 0 so far | A fuller skeleton in Blender (collarbones, neck, three spine bones, twist bones, hip correctives; private PR #8) driven by the game; no snaps in the upper body; running legs at their source; the head leading a turn. |
+| Hands with separate fingers (9 Nov, afternoon) | Olov's request: new hands with separate fingers in Blender | Part of the same cloud session, with one building agent | — / 0 so far | New hands on all seven (private PR #7) and grips that use them: a pointing finger, a pinch, fingers through the mug's handle. |
 | Hands that grip and the rest of the movements (9 Nov, midday) | Olov's request: continue what is recommended, and hands and fingers that look good when they grab things | Part of the same cloud session, with four building agents | — / 0 so far | Fingers that curl round what is held, things held in the hand rather than at the wrist; clean coat fronts and Pappa's lamp from hand to hand; crouching, point, gasp and show keyed in Blender; shade at the foot of Byn's houses and between kit parts. |
 | The family's movements and Elof's raincoat (9 Nov) | Olov's request: smoother, natural kneeling, arms and standing; no wings between arm and body; the raincoats put on properly; and his choice of a doll's raincoat for Elof | Part of the same cloud session, with four building agents in worktrees | — / 0 so far | Sleeves that go with their arms, elbows and knees that keep their round, Moa's skirt over her thigh; kneeling on each body's legs; cheer and hug; the family put their coats and boots on in step with them; Elof's doll's coat through the storm (private PR #6 for its Blender coat). |
 | Blender models and baked shade (8 Nov, late evening) | Olov's proposals 3 and 4: Blender models for what is still built in code near the play plane, and soft shade baked into the scenery models | Part of the same cloud session, with three building agents in worktrees | — / 0 so far | Flärkenbadet's tower, huts, chess, sun board and jetty arm; Själevad's church, moved to where it is seen; Älven's beaver lodge, Olympia's store and masts, Billsta's poles; water under the jetties; Bredbyn's landmarks with baked shade and the shade between the parts of Byn's houses; CI's split suites weighed by share. |

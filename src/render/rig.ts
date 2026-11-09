@@ -3,7 +3,7 @@ import type { ChapterData } from '../sim/types';
 import { createArmContact, createHandGrip, createHandHold } from './arm-contact';
 import { copyShape, fingersOf, mixShape, REST, type Grip } from './fingers';
 import { COAT_ORDER, SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
-import { bendSoftly } from './joints';
+import { bendSoftly, followLimbs } from './joints';
 import { sleevesWithArms } from './sleeves';
 
 /**
@@ -541,6 +541,39 @@ export function createRehearsalRig(who: Role): Rig {
 /** One bone, the turn it rests in, and which way round its x it bends a joint forward. */
 interface Bone { node: Object3D; rest: Quaternion; sign: 1 | -1 }
 
+/**
+ * A fuller skeleton (the private repository's family/body_rig.py): the trunk bends in three places, the head on a neck,
+ * and each arm hangs from a collarbone. Where a model has `spine_03`, the trunk's lean, side-bend and turn are shared
+ * between its three spine bones (`spine`, adding to as much as two bones gave); where it has `neck_01`, the neck takes
+ * `neck` of the head's whole nod, turn and tilt and the head the rest; and where it has a collarbone, the collarbone lifts
+ * as its arm rises past the shoulder's height (`lift`, at most, with the arm straight up), comes forward as the arm
+ * reaches ahead (`reach`) and goes a little back with an arm swung behind (`back`), the arm keeping the way the pose
+ * points it. A model without them bends as it did.
+ */
+export const FULLER = {
+  spine: { lean: [0.4, 0.35, 0.35], side: [0.4, 0.3, 0.3], twist: [0, 0.5, 0.5] },
+  neck: 0.5,
+  lift: 0.32, reach: 0.22, back: 0.1,
+} as const;
+
+const smoothstep = (a: number, b: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+
+/**
+ * How far a collarbone lifts (+) and comes forward (+), in radians, for its arm pointing `way` from the shoulder, given in
+ * the upper chest's terms with the body's `up` and `ahead` there (unit vectors): it lifts as the arm rises past level
+ * (most when it points straight up), comes forward as a raised arm reaches ahead, and goes a little back behind.
+ */
+export function collarbone(way: Vector3, up: Vector3, ahead: Vector3): { lift: number; forward: number } {
+  const rise = Math.acos(Math.max(-1, Math.min(1, -way.dot(up))));
+  const front = way.dot(ahead);
+  const lift = FULLER.lift * smoothstep(1.0, 2.7, rise);
+  const forward = FULLER.reach * smoothstep(0.5, 1.4, rise) * Math.max(0, front) - FULLER.back * smoothstep(0.3, 1.0, rise) * Math.max(0, -front);
+  return { lift, forward };
+}
+
 /** Cache a small support cloud in each boot's bone space; never skin or scan the mesh during a pose. */
 function bootContacts(model: Object3D, foot: Object3D): Vector3[] {
   const points: Vector3[] = [], transform = new Matrix4();
@@ -680,8 +713,10 @@ export function createModelRig(model: Object3D, height: number): Rig {
     skinned.boundingSphere = skinned.geometry.boundingSphere!.clone();
     skinned.boundingSphere.radius *= 1.6;
   });
-  // Elbows and knees bend through half bones, a shoulder's corner gives to its arm, a skirt lies over the thighs (./joints.ts).
+  // Elbows and knees bend through half bones, a shoulder's corner gives to its arm, a skirt lies over the thighs (./joints.ts);
+  // a fuller skeleton's twist bones and hips' corrective bones follow their limbs.
   bendSoftly(model);
+  followLimbs(model);
   // Fingers that bend and hold, in each hand (./fingers.ts).
   const fingered = fingersOf(model);
   const shaped = copyShape(REST), handScale = new Vector3();
@@ -695,6 +730,8 @@ export function createModelRig(model: Object3D, height: number): Rig {
     armL: bone('upperarm_l', 1), armR: bone('upperarm_r', 1), elbowL: bone('lowerarm_l', 1), elbowR: bone('lowerarm_r', 1),
     legL: bone('thigh_l', 1), legR: bone('thigh_r', 1), kneeL: bone('calf_l', -1), kneeR: bone('calf_r', -1),
   };
+  // A fuller skeleton's upper chest, neck and collarbones, where the model has them (`FULLER`).
+  const fuller = { chest: bone('spine_03', 1), neck: bone('neck_01', 1), clavicleL: bone('clavicle_l', 1), clavicleR: bone('clavicle_r', 1) };
   const feet = ['foot_l', 'foot_r'].map((name) => model.getObjectByName(name)).filter((n): n is Object3D => n !== undefined);
   const knees = [bones.kneeL?.node, bones.kneeR?.node].filter((n): n is Object3D => n !== undefined);
   // A hand is the far end of its forearm: the hand's own bone where the model has one.
@@ -707,6 +744,15 @@ export function createModelRig(model: Object3D, height: number): Rig {
     .applyQuaternion(b.node.getWorldQuaternion(new Quaternion()).invert()).normalize() : null;
   const headUp = axis(bones.head, Y), leftOut = axis(bones.armL, Z), rightOut = axis(bones.armR, Z);
   const chestUp = axis(bones.chest, Y), pelvisUp = axis(bones.pelvis, Y);
+  // The upper chest's up and ahead, where an arm's way is measured; each collarbone's, which it turns about.
+  const upperUp = axis(fuller.chest, Y), upperAhead = axis(fuller.chest, Z);
+  const collars = ([[fuller.clavicleL, bones.armL, 1], [fuller.clavicleR, bones.armR, -1]] as const).map(([clavicle, arm, side]) =>
+    clavicle && arm && upperUp && upperAhead && arm.node.parent === clavicle.node && clavicle.node.parent === fuller.chest?.node
+      ? { clavicle, arm, side, up: axis(clavicle, Y)!, ahead: axis(clavicle, Z)! } : null);
+  // The head hangs from the neck: their rests, to share the head's turn between them.
+  const necked = fuller.neck && bones.head && bones.head.node.parent === fuller.neck.node ? fuller.neck : null;
+  const headBack = bones.head ? bones.head.rest.clone().invert() : new Quaternion();
+  const whole = new Quaternion(), part = new Quaternion(), shrug = new Quaternion(), way = new Vector3();
   // The body's forward axis in each bone's own terms: the pelvis tips, the trunk and head lean sideways, a thigh swings out.
   const ahead = {
     pelvis: axis(bones.pelvis, Z), spine: axis(bones.spine, Z), chest: axis(bones.chest, Z), head: axis(bones.head, Z),
@@ -861,13 +907,24 @@ export function createModelRig(model: Object3D, height: number): Rig {
         const wrist = i === 0 ? p.wristL : p.wristR;
         if (wrist !== 0) hand.quaternion.multiply(turn.setFromAxisAngle(X, wrist));
       });
-      // A model with a chest bends through two joints, and its stride turns the shoulders against the hips. The pelvis
-      // tips; the trunk stands up from it, and bends to the side from upright.
-      const side = bones.chest ? 0.5 : 1;
+      // A model with a chest bends through two joints (three with an upper chest, `FULLER`), and its stride turns the
+      // shoulders against the hips. The pelvis tips; the trunk stands up from it, and bends to the side from upright.
+      const three = fuller.chest !== null && bones.chest !== null, spread = FULLER.spine;
+      const side = three ? spread.side[0] : bones.chest ? 0.5 : 1;
       bend(bones.pelvis, 0, pelvisUp, -p.twist * 0.45, ahead.pelvis, p.hipRoll);
-      bend(bones.spine, bones.chest ? p.lean * 0.55 : p.lean, null, 0, ahead.spine, -p.hipRoll - p.bendSide * side);
-      bend(bones.chest, p.lean * 0.55, chestUp, p.twist, ahead.chest, -p.bendSide * 0.5);
+      bend(bones.spine, three ? p.lean * spread.lean[0] : bones.chest ? p.lean * 0.55 : p.lean, null, 0, ahead.spine, -p.hipRoll - p.bendSide * side);
+      bend(bones.chest, p.lean * (three ? spread.lean[1] : 0.55), chestUp, p.twist * (three ? spread.twist[1] : 1), ahead.chest,
+        -p.bendSide * (three ? spread.side[1] : 0.5));
+      if (three) bend(fuller.chest, p.lean * spread.lean[2], upperUp, p.twist * spread.twist[2], upperAhead, -p.bendSide * spread.side[2]);
       bend(bones.head, p.nod, headUp, p.turn - (bones.chest ? p.twist * 0.6 : 0), ahead.head, -p.tilt);
+      if (necked && bones.head) {
+        // The head's whole turn on the trunk, shared: the neck takes its share of it about the neck's foot, the head the
+        // rest about its own joint (the head rests turned in the neck by its rest, so the neck's share is turned by it).
+        whole.copy(headBack).multiply(bones.head.node.quaternion);
+        part.identity().slerp(whole, FULLER.neck);
+        necked.node.quaternion.copy(necked.rest).multiply(bones.head.rest).multiply(part).multiply(headBack);
+        bones.head.node.quaternion.copy(bones.head.rest).multiply(part.invert()).multiply(whole);
+      }
       // The legs lean in under shifted hips (below); each foot stays level across, whatever its leg's lean: the ankle gives.
       const lean = Math.atan2(p.sway * unit, hipFloor);
       bend(bones.footL, p.footL, null, 0, ahead.footL, -(p.splayL - lean));
@@ -877,6 +934,17 @@ export function createModelRig(model: Object3D, height: number): Rig {
       // Out to its own side, in its own plane after the swing: a raised arm goes out beside the head.
       if (p.outL && bones.armL && leftOut) bones.armL.node.quaternion.multiply(turn.setFromAxisAngle(leftOut, p.outL));
       if (p.outR && bones.armR && rightOut) bones.armR.node.quaternion.multiply(turn.setFromAxisAngle(rightOut, -p.outR));
+      for (const collar of collars) {
+        if (!collar) continue;
+        // The arm's way from the shoulder in the upper chest's terms, as the pose points it from a collarbone at rest.
+        way.set(0, 1, 0).applyQuaternion(collar.arm.node.quaternion).applyQuaternion(collar.clavicle.rest);
+        const { lift, forward } = collarbone(way, upperUp!, upperAhead!);
+        // The collarbone turns about the body's ahead (its outer end up) and its up (forward), in its own terms; the arm
+        // turns back by as much, so that it points where the pose has it, from the shoulder where that is now.
+        shrug.setFromAxisAngle(collar.ahead, collar.side * lift).multiply(turn.setFromAxisAngle(collar.up, -collar.side * forward));
+        collar.clavicle.node.quaternion.copy(collar.clavicle.rest).multiply(shrug);
+        collar.arm.node.quaternion.premultiply(shrug.invert());
+      }
       bend(bones.elbowL, p.elbowL);
       bend(bones.elbowR, p.elbowR);
       // The legs hang plumb from a tipped pelvis, and lean in under shifted hips so that the feet stay where they stood.

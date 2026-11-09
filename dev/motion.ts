@@ -3,6 +3,9 @@ import {
   PlaneGeometry, RepeatWrapping, Scene, SRGBColorSpace, Vector3, WebGLRenderer,
 } from 'three';
 import { morgonen } from '../src/content/aventyr2/chapters/morgonen';
+import { billsta } from '../src/content/aventyr2/chapters/billsta';
+import { stormkvall } from '../src/content/aventyr2/chapters/stormkvall';
+import { stormoga } from '../src/content/aventyr2/chapters/stormoga';
 import { prolog } from '../src/content/chapters/ends';
 import { garden } from '../src/content/chapters/garden';
 import { createGrandparent, type Figure, type Grandparent } from '../src/content/aventyr2/grandparents';
@@ -63,6 +66,13 @@ const SCRIPTS: Record<string, (x: number) => ActorKey[]> = {
     { at: 7, act: 'cheer' }, { at: 9.4, act: 'shrug' }, { at: 11, act: 'startle' }, { at: 13, act: 'gasp' },
     { at: 15, act: 'hug' }, { at: 17.4, act: 'stand' },
   ],
+  // What else the arms do: a lamp shone ahead, a reach down low, a lift, something offered, shown, a sip, the hands.
+  more: (x) => [
+    { at: 0, x, y: 0, z: 0, face: 0.2, move: 0.01, act: 'stand' },
+    { at: 1, act: 'shine', aim: { x: x + 6, y: 2, z: 1 } }, { at: 3.4, act: 'reach', aim: { x: x + 1.6, y: 0.4, z: 0.6 } },
+    { at: 5.8, act: 'lift', aim: { x: x + 1.2, y: 3.2, z: 0.4 } }, { at: 8, act: 'offer', aim: { x: x + 1.6, y: 2.6, z: 0.6 } },
+    { at: 10, act: 'show' }, { at: 12, act: 'sip' }, { at: 14, act: 'hands' }, { at: 16, act: 'stand' },
+  ],
   // Up off a knee, as in Stormkvällen's getting ready, and into the raincoat and the boots, each in their own way.
   dress: (x) => [
     { at: 0, x, y: 0, z: 0, face: 0.25, move: 0.01, act: 'kneel' },
@@ -116,9 +126,55 @@ const furniture = sceneName === 'chair' ? cast.map((_, i) => ({ look: 'chair' as
 // before it told.
 const story = query.get('story');
 const told = (book: typeof prolog) => book.scenes!.slice(0, book.scenes!.findIndex((one) => one.id === story)).map((one) => one.by?.done ?? `scene:${one.id}`);
-const book = query.get('chapter') === 'morgonen' ? morgonen : prolog;
-const chapter = story ? book : { ...garden, furniture, scenes: [{ id: 'lab', seconds: 600, stage: { actors } }] };
+const BOOKS = { prolog, morgonen, stormkvall, billsta, stormoga } as const;
+const book = BOOKS[(query.get('chapter') ?? 'prolog') as keyof typeof BOOKS] ?? prolog;
+// ?run&chapter=stormkvall: every staged scene of the chapter in turn, each for its length and a second more, each told
+// when it is over, as the game tells them: for a script to measure the whole chapter's motion (window.__motion.where).
+const run = query.has('run') ? book.scenes!.filter((one) => one.stage?.actors) : null;
+const chapter = story || run ? book : { ...garden, furniture, scenes: [{ id: 'lab', seconds: 600, stage: { actors } }] };
 const stage = createStage(chapter, () => 0);
+/**
+ * Each boot's sole at its heel and at its toe, as drawn (window.__motion.joints): two points of the sole picked once, as the
+ * model was bound (the lowest of the boot, its back and its front), so that a script can follow the one it stands on.
+ */
+const soleCorners = new WeakMap<object, { mesh: Mesh & { getVertexPosition(i: number, v: Vector3): Vector3 }; heel: number; toe: number }[]>();
+function solesOf(rig: Rig): Record<string, number[][]> {
+  let found = soleCorners.get(rig);
+  if (!found) {
+    found = [];
+    rig.group.traverse((node) => {
+      const mesh = node as Mesh & { isSkinnedMesh?: boolean; skeleton?: { bones: { name: string }[] }; getVertexPosition(i: number, v: Vector3): Vector3 };
+      if (!mesh.isSkinnedMesh || !mesh.skeleton) return;
+      const index = mesh.geometry.getAttribute('skinIndex'), weight = mesh.geometry.getAttribute('skinWeight'), at = mesh.geometry.getAttribute('position');
+      for (const name of ['foot_l', 'foot_r']) {
+        const bone = mesh.skeleton.bones.findIndex((b) => b.name === name);
+        if (bone < 0) continue;
+        const own: number[] = [];
+        for (let i = 0; i < index.count; i++) if (index.getX(i) === bone && weight.getX(i) > 0.99) own.push(i);
+        if (own.length < 4) continue;
+        const low = Math.min(...own.map((i) => at.getY(i))), high = Math.max(...own.map((i) => at.getY(i)));
+        const sole = own.filter((i) => at.getY(i) < low + 0.02 * (high - low) + 1e-4);
+        const z = (i: number) => at.getZ(i);
+        const heel = sole.reduce((a, b) => (z(b) < z(a) ? b : a)), toe = sole.reduce((a, b) => (z(b) > z(a) ? b : a));
+        found!.push({ mesh, heel, toe });
+      }
+    });
+    soleCorners.set(rig, found);
+  }
+  rig.group.updateMatrixWorld(true);
+  const out: Record<string, number[][]> = {};
+  found.forEach(({ mesh, heel, toe }, i) => {
+    const point = (k: number) => mesh.getVertexPosition(k, new Vector3()).applyMatrix4(mesh.matrixWorld).toArray().map((v) => Math.round(v * 1e5) / 1e5);
+    out[i === 0 ? 'foot_l' : 'foot_r'] = [point(heel), point(toe)];
+  });
+  return out;
+}
+/** The last pose each body was given (window.__motion.poses): for a script to measure each joint frame by frame. */
+const posed = new Map<string, Record<string, unknown>>();
+const watchPose = (who: string, rig: Rig) => {
+  const original = rig.pose.bind(rig);
+  rig.pose = (pose) => { posed.set(who, { ...pose }); original(pose); };
+};
 scene.add(stage.group);
 // In a told scene only those asked for are seen: the others keep their places, out of the way of the look.
 if (story) for (const [who, one] of stage.actors) if (wanted.length > 0 && !wanted.includes(who)) one.rig.group.scale.setScalar(1e-4);
@@ -179,14 +235,22 @@ const draw = () => { if (track) frame(); renderer.render(scene, camera); };
 
 const flags = new Set<string>(story ? told(book) : []);
 const lamp = litLamp();
-let clock = 0;
+let clock = 0, running = 0, runFrom = 0;
 function step(dt: number): void {
   clock += dt;
   const elof = { x: elofAt(clock), y: 0 };
   // Followers: the scene places them once, and from then on they walk along behind him.
   const following = sceneName === 'follow' && clock > 0.05;
   if (following) flags.add('scene:lab');
-  stage.update(following ? null : { id: story ?? 'lab', seconds: clock }, flags, story ? { x: 10.9, y: 0 } : elof, clock, dt, false);
+  if (run) {
+    // On to the next staged scene when this one is over, telling it as the game does.
+    while (running < run.length && clock - runFrom > (run[running]!.seconds ?? 6) + 1) {
+      flags.add(run[running]!.by?.done ?? `scene:${run[running]!.id}`);
+      runFrom = clock; running++;
+    }
+    const now = run[Math.min(running, run.length - 1)]!;
+    stage.update(running < run.length ? { id: now.id, seconds: clock - runFrom } : null, flags, { x: 10.9, y: 0 }, clock, dt, false);
+  } else stage.update(following ? null : { id: story ?? 'lab', seconds: clock }, flags, story ? { x: 10.9, y: 0 } : elof, clock, dt, false);
   // The raincoat and the boots going on with the motion, as the game's view dresses them.
   if (sceneName === 'dress') {
     for (const who of cast) {
@@ -237,6 +301,7 @@ const load = async () => {
   for (const who of cast) {
     if (!files[`${who}.glb`]) continue;
     stage.replace(who, await assets.model('private', who));
+    watchPose(who, stage.actors.get(who)!.rig);
     // Their raincoat and boots made in Blender, where the pack has them.
     if (sceneName === 'dress' && files[`${who}-wardrobe.glb`]) stage.actors.get(who)!.rig.wear?.(await assets.model('private', `${who}-wardrobe`));
     loaded.push(who);
@@ -249,6 +314,7 @@ const load = async () => {
   for (const { who, figure } of figures) {
     if (!files[`${who}.glb`]) continue;
     figure.dress(await assets.model('private', who));
+    watchPose(who, figure.rig);
     loaded.push(who);
   }
   if (sceneName === 'elofcoat' && files['elof.glb']) {
@@ -266,6 +332,7 @@ const load = async () => {
     const rig = createModelRig(model, 1);
     scene.add(rig.group);
     boy = { rig, motion: createPlayerMotion(), x: 0 };
+    watchPose('elof', rig);
     loaded.push('elof');
   }
   return loaded.length ? `models: ${loaded.join(', ')}` : 'stand-ins (no private pack)';
@@ -287,6 +354,8 @@ const probe = new Vector3();
 declare global { interface Window { __motion: unknown } }
 window.__motion = {
   ready,
+  /** The lab's scene, for a script that measures how the bodies' skins bend. */
+  scene,
   /** Plays on from where it is by `seconds`, at 60 frames a second, and draws. */
   play(seconds: number) { const to = clock + seconds; while (clock + 1 / 120 < to) step(1 / 60); draw(); return clock; },
   replay,
@@ -324,6 +393,10 @@ window.__motion = {
     });
     return out;
   },
+  /** The last pose each body was given, by who. */
+  poses() { return Object.fromEntries(posed); },
+  /** Which staged scene a run is in, and how far into it. */
+  where() { return run ? { scene: run[Math.min(running, run.length - 1)]?.id ?? '', t: clock - runFrom, done: running >= run.length } : { scene: story ?? sceneName, t: clock, done: false }; },
   /** Plays on by `seconds` at 60 frames a second without drawing: for a script that measures every frame. */
   advance(seconds: number) { const to = clock + seconds; while (clock + 1 / 120 < to) step(1 / 60); return clock; },
   /**
@@ -352,8 +425,8 @@ window.__motion = {
           }
         }
       });
-      const ahead = new Vector3(0, 0, 1).transformDirection(rig.group.matrixWorld);
-      return [who, { bones, low, height: rig.height, legs: rig.legs, ahead: ahead.toArray() }];
+      const ahead = new Vector3(0, 0, 1).transformDirection(rig.group.matrixWorld), root = rig.group.getWorldPosition(new Vector3());
+      return [who, { bones, low, height: rig.height, legs: rig.legs, ahead: ahead.toArray(), root: root.toArray(), soles: solesOf(rig) }];
     }));
   },
   /** Where each of the family's hands, mouth and group are: for a script to measure. */
