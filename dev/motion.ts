@@ -1,6 +1,6 @@
 import {
-  AmbientLight, CanvasTexture, Color, DirectionalLight, Group, HemisphereLight, Mesh, MeshLambertMaterial, PerspectiveCamera,
-  PlaneGeometry, RepeatWrapping, Scene, SRGBColorSpace, Vector3, WebGLRenderer,
+  AmbientLight, BoxGeometry, CanvasTexture, Color, DirectionalLight, Group, HemisphereLight, Mesh, MeshLambertMaterial, PerspectiveCamera,
+  PlaneGeometry, Quaternion, RepeatWrapping, Scene, SRGBColorSpace, Vector3, WebGLRenderer,
 } from 'three';
 import { morgonen } from '../src/content/aventyr2/chapters/morgonen';
 import { billsta } from '../src/content/aventyr2/chapters/billsta';
@@ -10,13 +10,15 @@ import { prolog } from '../src/content/chapters/ends';
 import { garden } from '../src/content/chapters/garden';
 import { createGrandparent, type Figure, type Grandparent } from '../src/content/aventyr2/grandparents';
 import { createAssets } from '../src/render/assets';
-import { createPlayerMotion } from '../src/render/player-motion';
+import { createPlayerMotion, createTurning } from '../src/render/player-motion';
 import { createModelRig, STANDING, type Rig, type Role } from '../src/render/rig';
 import { coatPose, elofRainGear, PUT_ON, TAKE_OFF } from '../src/render/elof-coat';
 import type { PlayerState } from '../src/sim/types';
 import { createStage, litLamp } from '../src/render/stage';
 import { FIRST_SLEEVE, gearOnAt, heldInOther, LOOK, type GearRole } from '../src/render/rain-gear';
 import type { ActorKey } from '../src/sim/scene';
+import { JUMP_SPEED } from '../src/sim/constants';
+import { COURSE, createCourse } from './elof-course';
 
 /**
  * Rörelser: the family, mormor and morfar moving as the game moves them (dev/motion.html). Each scene is a short script of
@@ -194,6 +196,17 @@ let boy: { rig: Rig; motion: ReturnType<typeof createPlayerMotion>; x: number } 
  * the coat going on and off as the game's view has it, by the scene's seconds.
  */
 let coated: Rig | null = null;
+/**
+ * ?scene=elofplay: Elof on his own model, moved by the game's own simulation through a course of jumps, hops, landings,
+ * turns about, stops, a clamber, falls and a hose (dev/elof-course.ts), and turned, stretched and squashed as the game's
+ * view does it (src/render/view.ts). `window.__motion.elof()` gives his bones, soles and state each frame.
+ */
+let played: {
+  rig: Rig; outer: Group; motion: ReturnType<typeof createPlayerMotion>; course: ReturnType<typeof createCourse>;
+  turn: number; turning: ReturnType<typeof createTurning>; squash: number; airStretch: number; fallingSpeed: number; stretch: number;
+} | null = null;
+const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
+const clampTo = (n: number, low: number, high: number) => Math.min(high, Math.max(low, n));
 const STORM = { id: 'stormkvall', storm: { rain: 1 } } as Parameters<typeof elofRainGear>[0];
 const elofSpeed = (t: number) => t < 1 ? 0 : t < 5 ? 1.2 : t < 9 ? 3.5 : t < 9.6 ? 3.5 * (9.6 - t) / 0.6 : 0;
 /** Where the camera looks, close on him: he is one EL tall. */
@@ -206,14 +219,14 @@ function frame(): void {
   renderer.setSize(width, height, false);
   camera.aspect = width / height;
   const count = Math.max(1, cast.length + figures.length);
-  const followed = track ? boy ? boy.rig.group : coated ? coated.group : cast[0] ? stage.actors.get(cast[0])?.rig.group : figures[0]?.figure.rig.group : undefined;
+  const followed = track ? played ? played.outer : boy ? boy.rig.group : coated ? coated.group : cast[0] ? stage.actors.get(cast[0])?.rig.group : figures[0]?.figure.rig.group : undefined;
   const span = followed ? zoom : (count - 1) * LANE + (sceneName === 'walk' ? 16 : 4);
   const middle = followed ? followed.getWorldPosition(new Vector3()).x
     : (sceneName === 'walk' ? 8 : sceneName === 'grand' ? 6 : 0) + (count - 1) * LANE / 2;
   const view = query.get('view') === 'three';
   const distance = Math.max(followed ? 4 : 14, span * 0.5 / Math.tan(camera.fov * Math.PI / 360) / Math.max(0.6, camera.aspect) * 1.05);
   // Halfway up whoever is followed (Elof is one EL tall, the grown-ups five), or at `?at` EL.
-  const high = query.has('at') ? Number(query.get('at')) : followed ? (boy || coated ? 0.5 : 2.3) : 2.4;
+  const high = query.has('at') ? Number(query.get('at')) : followed ? (boy || coated || played ? 0.5 : 2.3) : 2.4;
   // `?yaw`: the camera's angle round them in degrees, 0 from the front, 90 from their left, 180 from behind.
   const yaw = query.has('yaw') ? Number(query.get('yaw')) * Math.PI / 180 : view ? Math.atan2(0.55, 0.84) : 0;
   const reach = view && !query.has('yaw') ? Math.hypot(0.55, 0.84) * distance : distance;
@@ -276,6 +289,31 @@ function step(dt: number): void {
     coated.dress?.(elofRainGear(STORM, new Set(), { id, seconds: clock }, query.has('calm')), true);
     coated.pose(coatPose(id, clock, { ...STANDING }));
   }
+  if (played) {
+    const p = played, { course, rig, outer } = p;
+    if (!course.done) course.step(dt);
+    const curr = course.sim.curr;
+    rig.pose(p.motion.update(curr, curr.x, dt, null, 0, false, 0, 1, rig.legs));
+    // As the game's view turns, stretches and squashes him (src/render/view.ts).
+    const onHose = curr.mode === 'climb' || curr.mode === 'slide';
+    const facingAngle = onHose ? Math.PI / 2 : curr.facing > 0 ? -0.35 : Math.PI + 0.35;
+    p.turn = query.has('oldturn') ? p.turn + Math.atan2(Math.sin(facingAngle - p.turn), Math.cos(facingAngle - p.turn)) * ease(14, dt)
+      : p.turning.update(facingAngle, dt);
+    const elastic = curr.mode === 'free';
+    if (dt > 0) {
+      if (!elastic) { p.squash = 1; p.fallingSpeed = 0; }
+      else if (curr.grounded) {
+        if (p.fallingSpeed > 0) p.squash = 1 - .025 - .04 * clampTo(p.fallingSpeed / JUMP_SPEED, 0, 1);
+        p.fallingSpeed = 0;
+      } else p.fallingSpeed = Math.max(p.fallingSpeed, -curr.vy);
+      p.squash += (1 - p.squash) * ease(12, dt);
+    }
+    p.airStretch = !elastic || curr.grounded ? p.squash : p.airStretch + (1 + clampTo(curr.vy * 0.012, -0.05, 0.1) - p.airStretch) * ease(30, dt);
+    p.stretch = !elastic ? 1 : curr.grounded ? p.squash : p.airStretch;
+    outer.position.set(curr.x, curr.y, 0);
+    outer.rotation.set(0, p.turn, 0, 'ZYX');
+    outer.scale.set(1 / Math.sqrt(p.stretch), p.stretch, 1 / Math.sqrt(p.stretch));
+  }
   if (boy) {
     const speed = elofSpeed(clock);
     boy.x += speed * dt;
@@ -326,6 +364,26 @@ const load = async () => {
     scene.add(coated.group);
     loaded.push('elof');
   }
+  if (sceneName === 'elofplay' && files['elof.glb']) {
+    const model = await assets.model('private', 'elof');
+    model.rotation.y = Math.PI / 2;
+    const rig = createModelRig(model, 1), outer = new Group();
+    outer.add(rig.group);
+    scene.add(outer);
+    // The course's walls and ledges, drawn as blocks.
+    const ground = COURSE.ground;
+    for (let i = 1; i < ground.length - 2; i++) {
+      const a = ground[i]!, b = ground[i + 1]!;
+      if (a.y > 0.01 && b.y > 0.01 && a.x !== b.x) {
+        const block = new Mesh(new BoxGeometry(b.x - a.x, a.y, 3), new MeshLambertMaterial({ color: '#a39a86' }));
+        block.position.set((a.x + b.x) / 2, a.y / 2, -0.6);
+        scene.add(block);
+      }
+    }
+    played = { rig, outer, motion: createPlayerMotion(), course: createCourse(), turn: -0.35, turning: createTurning(-0.35), squash: 1, airStretch: 1, fallingSpeed: 0, stretch: 1 };
+    watchPose('elof', rig);
+    loaded.push('elof');
+  }
   if (sceneName === 'elof' && files['elof.glb']) {
     const model = await assets.model('private', 'elof');
     model.rotation.y = Math.PI / 2;
@@ -351,6 +409,11 @@ const ready = load().then((what) => {
 });
 
 const probe = new Vector3();
+/** Elof's bones that a script follows (window.__motion.elof), and those whose turn in the world it is given too. */
+const ELOF_BONES = ['pelvis', 'spine_01', 'spine_02', 'spine_03', 'neck_01', 'Head', 'clavicle_l', 'clavicle_r', 'upperarm_l', 'upperarm_r',
+  'upperarm_twist_01_l', 'upperarm_twist_01_r', 'lowerarm_l', 'lowerarm_r', 'lowerarm_twist_01_l', 'lowerarm_twist_01_r', 'hand_l', 'hand_r',
+  'thigh_l', 'thigh_r', 'thigh_correctiveRoot_l', 'thigh_correctiveRoot_r', 'calf_l', 'calf_r', 'foot_l', 'foot_r', 'ball_l', 'ball_r'];
+const ELOF_WORLD = ['pelvis', 'spine_03', 'Head', 'hand_l', 'hand_r', 'foot_l', 'foot_r'];
 declare global { interface Window { __motion: unknown } }
 window.__motion = {
   ready,
@@ -428,6 +491,29 @@ window.__motion = {
       const ahead = new Vector3(0, 0, 1).transformDirection(rig.group.matrixWorld), root = rig.group.getWorldPosition(new Vector3());
       return [who, { bones, low, height: rig.height, legs: rig.legs, ahead: ahead.toArray(), root: root.toArray(), soles: solesOf(rig) }];
     }));
+  },
+  /**
+   * Elof on the course (?scene=elofplay), as drawn now: where he is in the game and what he does, the part of the course,
+   * his pose, each named bone's own turn (its local quaternion) and place in the world, the world turn of his hips, head,
+   * hands and feet, his soles' heels and toes, the group's turn and stretch.
+   */
+  elof() {
+    if (!played) return null;
+    const { rig, outer, course } = played, curr = course.sim.curr;
+    outer.updateMatrixWorld(true);
+    const local: Record<string, number[]> = {}, world: Record<string, number[]> = {}, at: Record<string, number[]> = {};
+    const q = new Quaternion(), round = (v: number) => Math.round(v * 1e6) / 1e6;
+    rig.group.traverse((node) => {
+      if (!(node as { isBone?: boolean }).isBone || !ELOF_BONES.includes(node.name)) return;
+      local[node.name] = node.quaternion.toArray().map(round);
+      if (ELOF_WORLD.includes(node.name)) world[node.name] = node.getWorldQuaternion(q).toArray().map(round);
+      at[node.name] = node.getWorldPosition(new Vector3()).toArray().map(round);
+    });
+    return {
+      part: course.part, t: course.t, done: course.done,
+      state: { x: curr.x, y: curr.y, vx: curr.vx, vy: curr.vy, mode: curr.mode, grounded: curr.grounded, facing: curr.facing, atEdge: curr.atEdge, t: curr.t },
+      pose: posed.get('elof'), local, world, at, soles: solesOf(rig), turn: played.turn, stretch: played.stretch,
+    };
   },
   /** Where each of the family's hands, mouth and group are: for a script to measure. */
   probe() {
