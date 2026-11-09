@@ -1,5 +1,26 @@
 # Handover
 
+## State (9 November 2026, afternoon)
+
+- **Hands with separate fingers** (Olov: "Yes, make new hands with separate fingers in Blender", then "Commit and merge").
+  - **The private repository's PR #7** (`hands-fingers`, merged): `family/finger_hands.py` (Blender 5.2 `bpy`) gives all
+    seven approved exports new hands, as `separate_sleeves.py` gave them sleeves: a palm squarer at the knuckles with a pad
+    under the thumb, four fingers and a thumb, each of three parts joined at round knuckles (972 corners and 1,880
+    triangles a hand, where the old had 322 and 640), at each one's own size and skin colour. Thirty bones join each
+    skeleton, `thumb_01_l` … `pinky_03_r`, each part its bone's alone. Everything else is checked to be as it was
+    (`baked/private/hands-verification.json`); the wardrobes' cuffs sit over the new wrists. About +27 KB served a
+    model. The builder's sandbox could not run git in the private repository, so it left the files; they were checked
+    and committed in the session at Olov's word.
+  - **The game uses them** (`fingers.ts`: a model's own finger bones as they are; a model without them still gets the
+    fingers added at install): Pappa and Elof point with the index finger; Moa pinches her crayon near its tip, thumb to
+    index, and her drawing at its edge; Mamma's first two fingers go through the mug's handle, the thumb on top; the
+    thumb closes over the fist round the knife, the brush and the lamps; a lighter resting curl.
+  - **Checked:** typecheck, `npm test` (220 files, 2,219 tests), `npm run build` with the new models (JS 589.4 KB of 1,000,
+    boot 5,370.4 KB of 10,240), the privacy check, and the browser suites family-story, family-caps, model-installation,
+    aventyr2, family-help and prologue on the new models; the kitchen and Billsta in the built game.
+  - **Known:** close up the knuckles look like beads; the thumb is short, so a pinch needs the index well curled; Moa's
+    pinch shows only from behind her hair; Elof's raincoat cuff over the new hand was not seen in a picture.
+
 ## State (9 November 2026, midday)
 
 - **Hands that grip, and what was left of the family's movements** (Olov: "merge PR #6 in the family repository as well
@@ -4960,9 +4981,8 @@ and masts, Billsta's poles; the soft shade under Bredbyn church's eaves and betw
 the mountain's kit parts where they stand side by side (see "State").
 
 **On Olov's computer (proposals 1 and 2):** sharper textures where the family and Elof show most, faces and clothes,
-made in Blender against `photos/`. The hands now grip in the game's code (9 November, midday): their fingers curl as a
-mitten round the knife, the crayon and the mug; hands with separate fingers that can point and pinch would be new hands
-made in Blender, if Olov wants them.
+made in Blender against `photos/`. The hands are done: separate fingers made in Blender and gripping in the game (9
+November, afternoon).
 
 **The motion pass (8 November, afternoon), for Olov to judge on the family devices:** the family walking along behind
 Elof and in the prologue's scenes (feet that hold the ground, setting off and stopping), how they stand when nothing
@@ -5646,8 +5666,8 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
-- Hands with separate fingers that can point and pinch (since 9 November the game curls the sculpted, fused fingers as a
-  mitten), finer hair on Moa and Mamma, and the family's bodies closer to the sheets' clothes: pockets, seams, a belt.
+- Finer hair on Moa and Mamma, and the family's bodies closer to the sheets' clothes: pockets, seams, a belt. (Hands
+  with separate fingers were made on 9 November.)
 - The kneel's back foot stepping back about 0.4 of the height, and Granskogen's seesaw kneel and Moa's at the root hole
   played on each body's legs as the other kneels are. (Crouching was keyed in Blender on 9 November.)
 - Äventyr 2's own hidden candy kinds and stickers (its chapters have none, so the album's totals and the golden

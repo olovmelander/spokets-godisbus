@@ -146,7 +146,8 @@ const UNDER_LAG = 0.03;
 const UNCOVERED = 9;
 /** The height of each of the coat's cross-sections, in metres. */
 const BAND = 0.01;
-const ARM_BONE = /^(upperarm|lowerarm|hand)_([lr])$/;
+/** An arm's bones, its hand's and its fingers' (./fingers.ts): a finger's corner is its arm's, as its hand's is. */
+const ARM_BONE = /^(upperarm|lowerarm|hand|(?:thumb|index|middle|ring|pinky)_0[1-3])_([lr])$/;
 const armSide = (bone: string): 0 | 1 | null => {
   const match = ARM_BONE.exec(bone);
   return match ? (match[2] === 'l' ? 0 : 1) : null;
