@@ -415,7 +415,9 @@ export function stand(pose: Pose, t: number, stander: Stander, legs: Legs = REHE
 export type Clip = { readonly seconds: number }
   & { readonly [channel in keyof Pose | 'planted' | 'tuck' | 'heel' | 'over' | 'rise' | 'coat' | 'bootL' | 'bootR' | 'lamp' | KneelChannel]?: readonly number[] };
 /** What going down on a knee keys as shares, the legs reaching from there on each body (kneelLegs, below). */
-type KneelChannel = 'down' | 'front' | 'frontUp' | 'back' | 'backUp' | 'toes' | 'hand';
+type KneelChannel = 'down' | 'front' | 'frontUp' | 'back' | 'backUp' | 'toes' | 'hand'
+  // And how far a gesture's hands have gone to what the scene aims them at (./acting.ts point, gasp, show).
+  | 'aim' | 'mouthR' | 'mouthL' | 'up';
 
 /** One channel's keys at `t` seconds, as Blender plays them: cubic between keys, held at the first and last outside them. */
 export function sample(keys: readonly number[], t: number): number {
@@ -586,4 +588,47 @@ export function kneelPose(clip: Clip, t: number, legs: Legs, out: Pose, width = 
   const at = (keys: readonly number[] | undefined, rest: number) => (keys ? sample(keys, t) : rest);
   return kneelLegs(out, legs, at(clip.down, 1), at(clip.front, 1), at(clip.frontUp, 0), at(clip.back, 1), at(clip.backUp, 0),
     at(clip.toes, 1), width);
+}
+
+/** Crouched, how far the legs fold: the hips as far from the ankles as this share of the whole leg. */
+const CROUCH_FOLD = 0.42;
+/** Crouched, how far ahead of the hips the ankles are, a share of that: the hips sit back over the heels. */
+const CROUCH_AHEAD = 0.5;
+/** Crouched, how much wider the feet are than standing (they stay where they stood). */
+const CROUCH_WIDE = 1;
+const crouchAt = { x: 0, y: 0 };
+/**
+ * Where a body crouches on its own legs (art/blender/motion.py CLIPS.crouch): the hips' height, and how far ahead of them
+ * the ankles are, in shares of the height. The feet stay where they stood; the hips go back and down over them (the stage
+ * moves the body back by `ahead`, src/render/stage.ts).
+ */
+export function crouchPlaces(legs: Legs): { hips: number; ahead: number } {
+  const far = CROUCH_FOLD * (legs.thigh + legs.shin), ahead = CROUCH_AHEAD * far;
+  return { hips: legs.ankle + Math.sqrt(far * far - ahead * ahead), ahead };
+}
+
+/**
+ * The legs of a body going down into a crouch, or crouching: the hips `down` of the way from standing to crouched (a
+ * little past it sinks them lower), the feet flat or the heels `heel` of the way up onto the balls of the feet, as wide
+ * as it stands (`width`) and wider as it goes down, the knees out over them. Writes the legs; the rig stands the body on
+ * its boots.
+ */
+export function crouchLegs(pose: Pose, legs: Legs = REHEARSAL_LEGS, down = 1, heel = 0, width = legs.width): Pose {
+  const places = crouchPlaces(legs), k = clamp(down, 0, 1);
+  const hips = legs.hip + (places.hips - legs.hip) * clamp(down, 0, 1.15), pitch = -HEEL_UP * clamp(heel, 0, 1);
+  rolled(places.ahead * k, pitch, legs, crouchAt);
+  const out = width * (1 + (CROUCH_WIDE - 1) * k) - legs.width;
+  reachWith(crouchAt.x, hips - crouchAt.y, out, pitch, legs, pose, 0);
+  reachWith(crouchAt.x, hips - crouchAt.y, out, pitch, legs, pose, 1);
+  // A model's knee bends on from how it was made (see kneelLegs).
+  const made = (legs.bend ?? 0) * k;
+  pose.kneeL -= made; pose.kneeR -= made;
+  pose.footL -= made; pose.footR -= made;
+  return pose;
+}
+
+/** A crouching clip at `t` seconds over `out` (play, and the legs as it keys them: crouchLegs). */
+export function crouchPose(clip: Clip, t: number, legs: Legs, out: Pose, width = legs.width): Pose {
+  play(clip, t, out);
+  return crouchLegs(out, legs, clip.down ? sample(clip.down, t) : 1, clip.heel ? sample(clip.heel, t) : 0, width);
 }

@@ -7,7 +7,7 @@ import type { ChapterData } from '../sim/types';
 import { sceneWaits, type Act, type ActorKey, type ElofKey, type Point, type SceneDef, type SceneFrame, type ShotKey, type Thing } from '../sim/scene';
 import { actPose, drawingAt, EASY_GAIT, eatingAt, sippingAt, stanceOf, stepLength, type Stance } from './acting';
 import { carvingAt, CARVING_SHAVING_LIFETIME, type CarvingMotion, type CarvingPoint } from './carving-motion';
-import { chairPose, createFooting, KNEE_HAND, kneelPose, sample, SITTING_ON, type Clip, type Footing } from './gait';
+import { chairPose, createFooting, crouchPlaces, crouchPose, KNEE_HAND, kneelPose, sample, SITTING_ON, type Clip, type Footing } from './gait';
 import { CLIPS, STANDS } from './motion-data';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
@@ -122,6 +122,8 @@ const STEP_RATE = 0.9;
  * into one from it: the legs hand over this gradually, not in the few frames a stride takes from standing.
  */
 const RISE = 0.5;
+/** Getting up out of a crouch is quicker than going down into one: its clip (CLIPS.crouch) the other way, in this long. */
+const CROUCH_UP = 0.52;
 const LOW: readonly Stance[] = ['kneel', 'crouch', 'sit'];
 /**
  * What getting up from a chair or sitting down on one (art/blender/motion.py CLIPS.standUp, sitDown) has of the body
@@ -870,7 +872,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         const since = (at: number) => (scene && keys ? Math.max(0, t - at) : elapsed);
         // How each stands runs on its own clock, so that the family never shift their weight together.
         const sitsAt = seatOf(who, rig.height);
-        const context = { t: since(state.actAt), aim, stride, gait, step, pace, calm, role: who, legs: rig.legs, clock: time + LOOP[who], seat: sitsAt };
+        // A kneel or a crouch after the same (walked to, down there, or down already) does not go down again from standing.
+        const already = (state.act === 'kneel' || state.act === 'crouch') && state.before?.stance === state.stance ? CLIPS[state.act].seconds : 0;
+        const context = { t: since(state.actAt) + already, aim, stride, gait, step, pace, calm, role: who, legs: rig.legs, clock: time + LOOP[who], seat: sitsAt };
         actPose(state.act, context, pose, state.stance);
         if (state.glance) {
           // Blend the head angles, avoiding a whip through targets passing close behind the body.
@@ -878,14 +882,28 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           pose.nod = mix(before.nod, pose.nod, state.glance.weight);
           pose.turn = mix(before.turn, pose.turn, state.glance.weight);
         }
-        // Getting up off a knee: the way down (art/blender/motion.py CLIPS.kneel) the other way, handing over to what they
-        // do next as they come up. An act that comes before they are up starts from where they are.
+        // Getting up off a knee or out of a crouch: the way down (art/blender/motion.py CLIPS.kneel, crouch) the other way,
+        // handing over to what they do next as they come up. An act that comes before they are up starts from where they are.
         const getUp = (out: Pose, stance: Stance, from: State['before'], age: number): void => {
-          if (from?.stance !== 'kneel' || stance !== 'stand' || calm || age >= CLIPS.kneel.seconds) return;
-          const u = age / CLIPS.kneel.seconds;
-          kneelPose(CLIPS.kneel, CLIPS.kneel.seconds * (1 - u), rig.legs, Object.assign(gettingUp, out), STANDS[who].width);
+          const clip = from?.stance === 'kneel' ? CLIPS.kneel : from?.stance === 'crouch' ? CLIPS.crouch : null;
+          const up = clip === CLIPS.crouch ? CROUCH_UP : clip?.seconds ?? 0;
+          if (!clip || stance !== 'stand' || calm || age >= up) return;
+          const u = age / up;
+          if (clip === CLIPS.kneel) kneelPose(clip, clip.seconds * (1 - u), rig.legs, Object.assign(gettingUp, out), STANDS[who].width);
+          else crouchPose(clip, clip.seconds * (1 - u), rig.legs, Object.assign(gettingUp, out), STANDS[who].width);
           const k = smooth(u);
           for (const joint of LIMBS) out[joint] = gettingUp[joint] + (out[joint] - gettingUp[joint]) * k;
+        };
+        /**
+         * How far down in a crouch the body is (0 to 1): going down, down there under whatever it does with its arms and
+         * head, and getting up the same way back. The hips sit back over the feet as far (crouchPlaces), which stay put.
+         */
+        const crouched = (act: Act, stance: Stance, from: State['before'], age: number): number => {
+          const clip = CLIPS.crouch, s = clip.seconds;
+          const now = stance === 'crouch' ? act === 'crouch' && !calm ? Math.min(1, Math.max(0, sample(clip.down!, Math.min(age, s)))) : 1
+            : stance === 'stand' && from?.stance === 'crouch' && !calm && age < CROUCH_UP
+              ? Math.min(1, Math.max(0, sample(clip.down!, s * (1 - age / CROUCH_UP)))) : 0;
+          return from && age < .45 ? mix(crouched(from.act, from.stance, from.previous, from.t), now, smooth(age / .45)) : now;
         };
         // Getting up from a chair and sitting down on one (art/blender/motion.py CLIPS.standUp, sitDown): what it has of
         // the body (CHAIRED) comes in from the act before and hands over to what they do next; the head nods on top.
@@ -984,9 +1002,11 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         drawn.set(who, { ...pose });
         // Getting up, the body comes up over its feet; sitting down, it goes down behind them, and in with the chair.
         const hipsBack = backOf(state.stance, state.before, elapsed);
-        if (hipsBack !== 0) {
-          rig.group.position.x -= Math.sin(yaw(face)) * hipsBack;
-          rig.group.position.z -= Math.cos(yaw(face)) * hipsBack;
+        // Crouching, the hips sit back over the feet, which stay where they stood.
+        const shift = hipsBack + crouchPlaces(rig.legs).ahead * rig.height * crouched(state.act, state.stance, state.before, elapsed + already);
+        if (shift !== 0) {
+          rig.group.position.x -= Math.sin(yaw(face)) * shift;
+          rig.group.position.z -= Math.cos(yaw(face)) * shift;
         }
         for (const piece of chairs) if (piece.owner === who) {
           const pushed = chairPose(CLIPS.standUp, SEAT_LEFT, rig.legs, Object.assign(tucked, STANDING), sitsAt, STANDS[who].width) * rig.height;
@@ -1018,22 +1038,27 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // Pointing uses the whole arm; something held out to be taken keeps a bend at the elbow, however far off he is.
         if (rightWeight > 0) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, state.act === 'offer' ? OFFER_REACH : 1);
         if (leftWeight > 0) rig.reach(0, otherHand.divideScalar(leftWeight), leftWeight);
-        // Kneeling, the right hand rests on the right knee, with the real arm: as they go down, while they look about down
-        // there, and as they push up off it getting up.
-        const onKnee = (act: Act, stance: Stance, age: number, old: State['before']): number => {
-          const clip = CLIPS.kneel;
-          const now = act === 'kneel' ? calm ? 1 : sample(clip.hand!, age)
-            : stance === 'kneel' && (act === 'watch' || act === 'look' || act === 'nod') ? 1
-            : old?.stance === 'kneel' && stance === 'stand' && !calm && age < clip.seconds
-              ? sample(clip.hand!, clip.seconds - age) * (1 - smooth(age / clip.seconds)) : 0;
-          return old && age < .45 ? mix(onKnee(old.act, old.stance, old.t, old.previous), now, smooth(age / .45)) : now;
+        // Kneeling, the right hand rests on the right knee, and crouching both hands on the knees, with the real arms: as they
+        // go down, while they look about down there, and as they push up off them getting up.
+        const lowered = (stance: Stance) => stance === 'kneel' ? CLIPS.kneel : stance === 'crouch' ? CLIPS.crouch : null;
+        /** How long getting up takes, from a kneel or a crouch. */
+        const upOf = (clip: Clip) => clip === CLIPS.crouch ? CROUCH_UP : clip.seconds;
+        const onKnee = (side: 0 | 1, act: Act, stance: Stance, age: number, old: State['before']): number => {
+          const resting = (low: Stance) => low === 'crouch' || side === 1;
+          const clip = lowered(stance), from = old ? lowered(old.stance) : null;
+          const now = clip && resting(stance) ? act === stance ? calm ? 1 : sample(clip.hand!, age)
+            : act === 'watch' || act === 'look' || act === 'nod' ? 1 : 0
+            : stance === 'stand' && from && resting(old!.stance) && !calm && age < upOf(from)
+              ? sample(from.hand!, from.seconds * (1 - age / upOf(from))) * (1 - smooth(age / upOf(from))) : 0;
+          return old && age < .45 ? mix(onKnee(side, old.act, old.stance, old.t, old.previous), now, smooth(age / .45)) : now;
         };
-        const handOnKnee = rig.knee ? onKnee(state.act, state.stance, elapsed, state.before) : 0;
-        if (handOnKnee > 1e-3) {
+        forward.set(Math.sin(yaw(face)), 0, Math.cos(yaw(face)));
+        for (const side of [0, 1] as const) {
+          const handOnKnee = rig.knee ? onKnee(side, state.act, state.stance, elapsed + already, state.before) : 0;
+          if (handOnKnee <= 1e-3) continue;
           // On the top of the knee, a little back from its front, the wrist over the thigh.
-          forward.set(Math.sin(yaw(face)), 0, Math.cos(yaw(face)));
-          rig.knee!(1, kneeAt).addScaledVector(up, rig.height * KNEE_HAND.up).addScaledVector(forward, -rig.height * KNEE_HAND.back);
-          rig.reach(1, kneeAt, handOnKnee);
+          rig.knee!(side, kneeAt).addScaledVector(up, rig.height * KNEE_HAND.up).addScaledVector(forward, -rig.height * KNEE_HAND.back);
+          rig.reach(side, kneeAt, handOnKnee);
         }
         // The working hands follow the wood, using each body's real arm lengths and the blade's tip.
         const leavesCarving = state.before?.act === 'carve' && elapsed < .45;

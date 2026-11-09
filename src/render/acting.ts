@@ -1,7 +1,7 @@
 import type { Act } from '../sim/scene';
 import { groundedHips, JOINTS, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
 import { carvingAt } from './carving-motion';
-import { kneelPose, play, sample, seated, stand, stepOf, stride, type Clip, type Footing } from './gait';
+import { crouchPose, kneelPose, play, sample, seated, stand, stepOf, stride, type Clip, type Footing } from './gait';
 import { CLIPS, GAITS, STANDS } from './motion-data';
 import { DRESSING } from './rain-gear';
 
@@ -160,15 +160,12 @@ export function kneeling(p: Pose, legs: Legs = REHEARSAL_LEGS, role?: Role): Pos
   return kneelPose(CLIPS.kneel, CLIPS.kneel.seconds, legs, p, STANDS[role ?? 'pappa'].width);
 }
 
-/** Down on both heels, hands on the knees. */
-function crouching(p: Pose): Pose {
-  p.legL = p.legR = 1.7;
-  p.kneeL = p.kneeR = 2.25;
-  p.lean = 0.45;
-  p.armL = p.armR = 0.9;
-  p.elbowL = p.elbowR = 0.35;
-  p.nod = 0.15;
-  return p;
+/**
+ * Down in a crouch, the hips back over the heels, the trunk forward and the hands on the knees: where going down into a
+ * crouch ends (art/blender/motion.py CLIPS.crouch), on the body's own legs.
+ */
+export function crouching(p: Pose, legs: Legs = REHEARSAL_LEGS, role?: Role): Pose {
+  return crouchPose(CLIPS.crouch, CLIPS.crouch.seconds, legs, p, STANDS[role ?? 'pappa'].width);
 }
 
 const LEGGED = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR'] as const;
@@ -255,7 +252,7 @@ function actOf(act: Act, c: ActContext, out: Pose, stance: Stance): Pose {
   const t = c.calm ? 3 : Math.max(0, c.t);
   const r = t * timing(c.role), energy = weight(c.role);
   const under = () => (stance === 'sit' ? sitting(out, c.legs, c.seat) : stance === 'kneel' ? kneeling(out, c.legs, c.role)
-    : stance === 'crouch' ? crouching(out) : out);
+    : stance === 'crouch' ? crouching(out, c.legs, c.role) : out);
   switch (act) {
     case 'stand':
     case 'watch':
@@ -324,33 +321,52 @@ function actOf(act: Act, c: ActContext, out: Pose, stance: Stance): Pose {
       look(out, c, rise(t - clip.seconds * 0.45, clip.seconds * 0.5));
       return out;
     }
-    case 'crouch':
-      crouching(out);
-      look(out, c);
+    case 'crouch': {
+      // Down into a crouch the way people go down (art/blender/motion.py CLIPS.crouch), on the body's own legs: the hips
+      // back and down over the feet, the trunk forward, the hands to the knees, looking down and then at what they came
+      // down to. Down, they breathe. Reduced motion: crouching.
+      const clip = CLIPS.crouch, stander = STANDS[c.role ?? 'pappa'];
+      crouchPose(clip, Math.min(t, clip.seconds), c.legs ?? REHEARSAL_LEGS, out, stander.width);
+      if (!c.calm) {
+        const breath = Math.sin(Math.PI * 2 * stander.breath * (c.clock ?? c.t)) * rise(t - clip.seconds, 0.6);
+        out.lean += stander.deep * breath;
+        out.nod -= stander.deep * 0.7 * breath;
+      }
+      look(out, c, rise(t - clip.seconds * 0.4, clip.seconds * 0.5));
       return out;
+    }
     case 'gasp': {
+      // Keyed in Blender (art/blender/motion.py CLIPS.gasp): the hands drop a moment, then fly up to the mouth, the right
+      // a moment before the left, a little past, the head and the chest going back with a start; and they come down a
+      // little as the breath goes out. Reduced motion: the hands at the mouth.
       under();
-      // Both hands to the mouth.
-      const k = c.calm ? 1 : rise(r, .22) * (1 - .42 * rise(r - .7, .75));
+      const clip = CLIPS.gasp, at = c.calm ? clip.seconds * .4 : r;
       const hips = hipsOf(out);
-      out.lean -= 0.1 * k;
-      handTo(out, 0.42, hips + SHOULDER + 0.45, 0, k);
-      handTo(out, 0.42, hips + SHOULDER + 0.4, 1, k);
-      out.bounce = loop * .08 * energy * Math.sin(Math.min(1, r / .3) * Math.PI) ** 2;
+      out.lean += sample(clip.lean!, at);
+      handTo(out, 0.42, hips + SHOULDER + 0.45, 0, sample(clip.mouthL!, at));
+      handTo(out, 0.42, hips + SHOULDER + 0.4, 1, sample(clip.mouthR!, at));
+      out.tilt = sample(clip.tilt!, at);
+      out.bounce = loop * sample(clip.bounce!, at) * energy;
       look(out, c);
+      out.nod += loop * sample(clip.nod!, at);
       return out;
     }
     case 'point': {
+      // Keyed in Blender (art/blender/motion.py CLIPS.point): the hand draws back a moment, then goes out along the line to
+      // what the scene points at, a little past and back, the trunk leaning into it, the other arm swinging back a little
+      // (standing); held. Reduced motion: pointing.
       under();
+      const clip = CLIPS.point, at = c.calm ? clip.seconds : t;
       const target = c.aim ?? { ahead: 6, up: CHEST };
       const hips = hipsOf(out);
-      const k = rise(t, 0.3);
-      out.lean += 0.06 * k;
-      // Straight at it: the hand goes as far as the arm reaches along the line to it.
+      out.lean += sample(clip.lean!, at);
+      if (stance === 'stand') { out.armL = sample(clip.armL!, at); out.elbowL = sample(clip.elbowL!, at); }
+      // Straight at it: the hand in line with the forearm, as far as the arm reaches along the line to it.
+      out.wristR = 0;
       const shoulderAhead = Math.sin(out.lean) * SHOULDER, shoulderUp = hips + Math.cos(out.lean) * SHOULDER;
       const dx = target.ahead - shoulderAhead, dy = target.up - shoulderUp;
       const far = Math.hypot(dx, dy) || 1;
-      handTo(out, shoulderAhead + dx / far * 1.7, shoulderUp + dy / far * 1.7, 1, k);
+      handTo(out, shoulderAhead + dx / far * 1.7, shoulderUp + dy / far * 1.7, 1, sample(clip.aim!, at));
       look(out, c, rise(t, .16));
       return out;
     }
@@ -422,14 +438,20 @@ function actOf(act: Act, c: ActContext, out: Pose, stance: Stance): Pose {
       return out;
     }
     case 'show': {
+      // Something held up in both hands, at the height of the face, for others to see. Keyed in Blender
+      // (art/blender/motion.py CLIPS.show): the hands dip a moment, then lift it, rising a moment ahead of coming out, a
+      // little past and back, the chest up and the head back behind it, turned a little to the others. Reduced motion:
+      // held up.
       under();
-      // Something held up in both hands, at the height of the face, for others to see.
-      const k = rise(t, .65);
+      const clip = CLIPS.show, at = c.calm ? clip.seconds : t;
       const hips = hipsOf(out);
       const fromR = handFrom(out, 1), fromL = handFrom(out, 0);
-      handAlong(out, fromL, 1.05, hips + SHOULDER + .22, k, rise(t, .5), .2, 0);
-      handAlong(out, fromR, 1.05, hips + SHOULDER + .22, k, rise(t, .5), .2, 1);
-      out.nod = -0.08 * k;
+      const k = sample(clip.up!, at), lifted = sample(clip.up!, at + .08);
+      out.lean += sample(clip.lean!, at);
+      handAlong(out, fromL, 1.05, hips + SHOULDER + .22, k, lifted, .2, 0);
+      handAlong(out, fromR, 1.05, hips + SHOULDER + .22, k, lifted, .2, 1);
+      out.nod = sample(clip.nod!, at);
+      out.twist += sample(clip.twist!, at);
       return out;
     }
     case 'eat': {

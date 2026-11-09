@@ -307,10 +307,10 @@ CHEER = {
 HUG = {
     'seconds': 1.5,
     'spread': [(0.0, 0.0), (0.2, 1.05), (0.42, 1.0), (1.0, 0.98)],
-    'armR': [(0.0, 0.02), (0.2, -0.15), (0.42, 0.42), (0.56, 0.6), (0.72, 0.55), (1.0, 0.55)],
-    'armL': [(0.0, 0.02), (0.22, -0.15), (0.45, 0.42), (0.59, 0.6), (0.75, 0.55), (1.0, 0.55)],
-    'elbowR': [(0.0, 0.1), (0.2, 0.3), (0.42, 1.15), (0.56, 1.52), (0.72, 1.4), (1.0, 1.4)],
-    'elbowL': [(0.0, 0.1), (0.22, 0.3), (0.45, 1.15), (0.59, 1.52), (0.75, 1.4), (1.0, 1.4)],
+    'armR': [(0.0, 0.02), (0.2, -0.15), (0.42, 0.62), (0.56, 0.88), (0.72, 0.82), (1.0, 0.82)],
+    'armL': [(0.0, 0.02), (0.22, -0.15), (0.45, 0.62), (0.59, 0.88), (0.75, 0.82), (1.0, 0.82)],
+    'elbowR': [(0.0, 0.1), (0.2, 0.3), (0.42, 0.85), (0.56, 1.18), (0.72, 1.08), (1.0, 1.08)],
+    'elbowL': [(0.0, 0.1), (0.22, 0.3), (0.45, 0.85), (0.59, 1.18), (0.75, 1.08), (1.0, 1.08)],
     'wristR': [(0.0, 0.0), (0.42, 0.2), (1.0, 0.25)],
     'wristL': [(0.0, 0.0), (0.45, 0.2), (1.0, 0.25)],
     'lean': [(0.0, 0.0), (0.2, -0.04), (0.45, 0.1), (0.6, 0.14), (1.0, 0.1)],
@@ -370,8 +370,66 @@ STARTLE = {
     'nod': [(0.0, 0.0), (0.08, -0.15), (0.3, -0.05), (0.6, 0.02), (0.8, 0.0)],
     'bounce': [(0.0, 0.0), (0.12, 0.17), (0.27, 0.0)],
 }
+# --- gestures aimed by the scene ----------------------------------------------------------------------------------------
+# These key how far the hands have gone towards what the scene aims them at (src/render/acting.ts puts the hands there
+# for each body, src/render/stage.ts with the real arm): `aim` for the pointing hand, `mouth` for each hand to the mouth,
+# `up` for both hands holding something up to show, as shares of the way, below 0 a little back first and over 1 a
+# little past before they settle. The rest is the pose itself.
+# A point: the hand draws back and up a moment, then goes out along the line to what is pointed at, a little past and
+# back, the trunk leaning into it and the other arm swinging back a little; held while it is pointed at.
+POINT = {
+    'seconds': 1.2,
+    'aim': [(0.0, 0.0), (0.06, -0.06), (0.335, 1.04), (0.44, 0.98), (0.56, 1.0)],
+    'lean': [(0.0, 0.0), (0.08, -0.02), (0.3, 0.08), (0.5, 0.06)],
+    'armL': [(0.0, 0.02), (0.3, -0.18), (0.55, -0.1), (1.0, -0.08)],
+    'elbowL': [(0.0, 0.1), (0.3, 0.3), (1.0, 0.25)],
+}
+# A gasp: the hands drop a moment, then fly up to the mouth, the right a moment before the left, a little past and back,
+# the head and the chest going back with a small start; and the hands come down a little from the mouth as the breath
+# goes out.
+GASP = {
+    'seconds': 1.6,
+    'mouthR': [(0.0, 0.0), (0.04, -0.06), (0.16, 1.05), (0.24, 1.0), (0.5, 1.0), (0.85, 0.6), (1.0, 0.58)],
+    'mouthL': [(0.0, 0.0), (0.06, -0.06), (0.19, 1.05), (0.27, 1.0), (0.52, 1.0), (0.87, 0.6), (1.0, 0.58)],
+    'lean': [(0.0, 0.0), (0.08, -0.14), (0.3, -0.1), (0.6, -0.06), (1.0, -0.05)],
+    'nod': [(0.0, 0.0), (0.08, -0.12), (0.4, -0.04), (1.0, 0.0)],
+    'tilt': [(0.0, 0.0), (0.3, 0.05), (1.0, 0.03)],
+    'bounce': [(0.0, 0.0), (0.07, 0.06), (0.18, 0.0)],
+}
+# Showing something: the hands dip a moment, then lift it up to the face, a little past and back, the chest coming up and
+# the head back a little behind it, and turned a little towards the others.
+SHOW = {
+    'seconds': 1.1,
+    'up': [(0.0, 0.0), (0.1, -0.06), (0.5, 0.9), (0.62, 1.04), (0.78, 1.0)],
+    'lean': [(0.0, 0.0), (0.12, 0.05), (0.6, -0.04), (1.0, -0.02)],
+    'nod': [(0.0, 0.0), (0.4, -0.08), (0.7, -0.1), (1.0, -0.08)],
+    'twist': [(0.0, 0.0), (0.6, 0.05), (1.0, 0.03)],
+}
+
+# --- crouching ----------------------------------------------------------------------------------------------------------
+# Down into a crouch (src/render/acting.ts crouch), keyed at shares of `seconds` as the kneel is: `down`, how far the hips
+# have gone from standing to crouched (past 1 they sink a little lower), and `heel`, how far the heels are up onto the
+# balls of the feet; the legs reach the feet from there on each body (src/render/gait.ts crouchLegs), the feet staying
+# where they stood as the hips go back and down over them, wider, the knees out over the feet. `hand` is how much the
+# hands rest on the knees (src/render/stage.ts puts them there with the real arms). The knees give a little first; the
+# trunk goes forward over the feet as the hips go back, the arms with it; the body sinks a little past and settles.
+# Getting up is the same way back: the weight forward over the feet, a little dip, up, the trunk coming up last.
+CROUCH = {
+    'seconds': 0.9,
+    'down': [(0.0, 0.0), (0.12, 0.06), (0.45, 0.55), (0.72, 0.95), (0.84, 1.04), (1.0, 1.0)],
+    'heel': [(0.0, 0.0), (0.45, 0.35), (0.8, 0.25), (1.0, 0.2)],
+    'hand': [(0.45, 0.0), (0.88, 1.0)],
+    'lean': [(0.0, 0.0), (0.2, 0.08), (0.55, 0.42), (0.8, 0.5), (1.0, 0.44)],
+    'nod': [(0.0, 0.0), (0.4, 0.2), (0.8, 0.14), (1.0, 0.1)],
+    'armL': [(0.0, 0.02), (0.4, 0.35), (0.75, 0.75), (1.0, 0.7)],
+    'armR': [(0.0, 0.02), (0.42, 0.33), (0.77, 0.75), (1.0, 0.7)],
+    'elbowL': [(0.0, 0.1), (0.4, 0.3), (0.8, 0.5), (1.0, 0.45)],
+    'elbowR': [(0.0, 0.1), (0.42, 0.3), (0.82, 0.5), (1.0, 0.45)],
+    'wristL': [(0.0, 0.0), (0.8, 0.3), (1.0, 0.25)],
+    'wristR': [(0.0, 0.0), (0.8, 0.3), (1.0, 0.25)],
+}
 CLIPS = {'kneel': KNEEL, 'kneelElder': KNEEL_ELDER, 'standUp': STAND_UP, 'sitDown': SIT_DOWN, 'cheer': CHEER, 'hug': HUG,
-         'wave': WAVE, 'nod': NOD, 'shrug': SHRUG, 'startle': STARTLE}
+         'wave': WAVE, 'nod': NOD, 'shrug': SHRUG, 'startle': STARTLE, 'crouch': CROUCH, 'point': POINT, 'gasp': GASP, 'show': SHOW}
 
 # --- putting on the raincoat and the boots -------------------------------------------------------------------------------
 # Stormkvallen's `tillsammans` (src/content/aventyr2/chapters/stormkvall.ts): each of the family pulls on a raincoat and
