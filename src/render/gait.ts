@@ -548,18 +548,17 @@ export function kneelLegs(pose: Pose, legs: Legs = REHEARSAL_LEGS, down = 1, fro
   let pitch = -ON_TOES * clamp(toes, 0, 1);
   if (far(pitch) > most) {
     // Just as far up onto the toe as the leg needs to reach it (right over, the ankle swings away again: not past it).
-    let near = pitch, reached: number | null = null;
+    let near = pitch, reached = NaN;
     for (let p = pitch - 0.05; p >= -ON_TOES * 1.15; p -= 0.05) {
       if (far(p) <= most) { reached = p; break; }
       near = p;
     }
-    if (reached !== null) {
-      let hit: number = reached;
+    if (!Number.isNaN(reached)) {
       for (let i = 0; i < 10; i++) {
-        const mid: number = (near + hit) / 2;
-        if (far(mid) > most) near = mid; else hit = mid;
+        const mid: number = (near + reached) / 2;
+        if (far(mid) > most) near = mid; else reached = mid;
       }
-      pitch = hit;
+      pitch = reached;
     }
     far(pitch);
   }

@@ -256,7 +256,54 @@ SIT_DOWN = {
     'elbowL': [(0.0, 0.1), (0.27, 0.45), (0.5, 1.05), (0.7, 1.5), (0.85, 1.63)],
     'elbowR': [(0.0, 0.1), (0.27, 0.45), (0.5, 1.05), (0.7, 1.5), (0.85, 1.63)],
 }
-CLIPS = {'kneel': KNEEL, 'kneelElder': KNEEL_ELDER, 'standUp': STAND_UP, 'sitDown': SIT_DOWN}
+# --- gestures ------------------------------------------------------------------------------------------------------------
+# Keyed in the pose itself, at shares of `seconds` (src/render/acting.ts plays them at each person's own tempo).
+# A cheer: down into the knees with the elbows drawn in and the head down (the wind-up), then both arms flung up and out
+# in a V beside the head (`out`, each arm's own outward turn, keeps them clear of the face), the hands open, the head
+# and the chest up, two hops landing on soft knees, the arms pumping with the second; and down again. The right arm leads
+# the left a moment.
+CHEER = {
+    'seconds': 1.6,
+    'armR': [(0.0, 0.02), (0.06, -0.22), (0.22, 2.6), (0.28, 2.9), (0.38, 2.72), (0.5, 2.86), (0.62, 2.7), (0.78, 1.9),
+             (1.0, 0.08)],
+    'armL': [(0.0, 0.02), (0.08, -0.22), (0.25, 2.55), (0.31, 2.85), (0.41, 2.68), (0.53, 2.82), (0.65, 2.66), (0.8, 1.85),
+             (1.0, 0.08)],
+    # Up and out, and down out to the sides rather than forward.
+    'outR': [(0.0, 0.0), (0.12, 0.15), (0.26, 0.55), (0.62, 0.5), (0.8, 0.85), (0.92, 0.45), (1.0, 0.0)],
+    'outL': [(0.0, 0.0), (0.14, 0.15), (0.29, 0.55), (0.65, 0.5), (0.83, 0.85), (0.95, 0.45), (1.0, 0.0)],
+    'elbowR': [(0.0, 0.1), (0.06, 0.75), (0.22, 0.28), (0.3, 0.14), (0.62, 0.2), (0.82, 0.62), (1.0, 0.15)],
+    'elbowL': [(0.0, 0.1), (0.08, 0.75), (0.25, 0.28), (0.33, 0.14), (0.65, 0.2), (0.85, 0.62), (1.0, 0.15)],
+    'wristR': [(0.0, 0.0), (0.06, 0.3), (0.24, -0.35), (0.6, -0.3), (0.85, 0.12), (1.0, 0.0)],
+    'wristL': [(0.0, 0.0), (0.08, 0.3), (0.27, -0.35), (0.63, -0.3), (0.88, 0.12), (1.0, 0.0)],
+    'lean': [(0.0, 0.0), (0.07, 0.12), (0.24, -0.08), (0.6, -0.05), (0.85, 0.02), (1.0, 0.0)],
+    'nod': [(0.0, 0.0), (0.07, 0.14), (0.24, -0.2), (0.6, -0.14), (0.9, 0.0)],
+    'tilt': [(0.0, 0.0), (0.3, 0.06), (0.6, -0.04), (1.0, 0.0)],
+    # The legs: the dip, and a soft landing from the first hop; the feet stay flat.
+    'legL': [(0.0, 0.0), (0.07, 0.2), (0.16, 0.0), (0.36, 0.0), (0.42, 0.11), (0.48, 0.0)],
+    'legR': [(0.0, 0.0), (0.07, 0.2), (0.16, 0.0), (0.36, 0.0), (0.42, 0.11), (0.48, 0.0)],
+    'kneeL': [(0.0, 0.0), (0.07, 0.4), (0.16, 0.0), (0.36, 0.0), (0.42, 0.22), (0.48, 0.0)],
+    'kneeR': [(0.0, 0.0), (0.07, 0.4), (0.16, 0.0), (0.36, 0.0), (0.42, 0.22), (0.48, 0.0)],
+    'footL': [(0.0, 0.0), (0.07, 0.2), (0.16, 0.0), (0.36, 0.0), (0.42, 0.11), (0.48, 0.0)],
+    'footR': [(0.0, 0.0), (0.07, 0.2), (0.16, 0.0), (0.36, 0.0), (0.42, 0.11), (0.48, 0.0)],
+    'bounce': [(0.0, 0.0), (0.16, 0.0), (0.26, 0.2), (0.36, 0.0), (0.46, 0.15), (0.56, 0.0), (1.0, 0.0)],
+}
+# A hug: the arms open wide (out to the sides, `spread`), then come forward round the one hugged at the height of the
+# chest, the forearms wrapping in behind them (not up to the face), a squeeze with the trunk leaning in and the head to
+# one side, and held.
+HUG = {
+    'seconds': 1.5,
+    'spread': [(0.0, 0.0), (0.2, 1.05), (0.42, 1.0), (1.0, 0.98)],
+    'armR': [(0.0, 0.02), (0.2, -0.15), (0.42, 0.42), (0.56, 0.6), (0.72, 0.55), (1.0, 0.55)],
+    'armL': [(0.0, 0.02), (0.22, -0.15), (0.45, 0.42), (0.59, 0.6), (0.75, 0.55), (1.0, 0.55)],
+    'elbowR': [(0.0, 0.1), (0.2, 0.3), (0.42, 1.15), (0.56, 1.52), (0.72, 1.4), (1.0, 1.4)],
+    'elbowL': [(0.0, 0.1), (0.22, 0.3), (0.45, 1.15), (0.59, 1.52), (0.75, 1.4), (1.0, 1.4)],
+    'wristR': [(0.0, 0.0), (0.42, 0.2), (1.0, 0.25)],
+    'wristL': [(0.0, 0.0), (0.45, 0.2), (1.0, 0.25)],
+    'lean': [(0.0, 0.0), (0.2, -0.04), (0.45, 0.1), (0.6, 0.14), (1.0, 0.1)],
+    'nod': [(0.0, 0.0), (0.45, 0.12), (1.0, 0.1)],
+    'tilt': [(0.0, 0.0), (0.45, 0.1), (0.6, 0.14), (1.0, 0.12)],
+}
+CLIPS = {'kneel': KNEEL, 'kneelElder': KNEEL_ELDER, 'standUp': STAND_UP, 'sitDown': SIT_DOWN, 'cheer': CHEER, 'hug': HUG}
 
 # --- putting on the raincoat and the boots -------------------------------------------------------------------------------
 # Stormkvallen's `tillsammans` (src/content/aventyr2/chapters/stormkvall.ts): each of the family pulls on a raincoat and

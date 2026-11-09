@@ -1,7 +1,7 @@
 import type { Act } from '../sim/scene';
 import { groundedHips, JOINTS, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
 import { carvingAt } from './carving-motion';
-import { kneelPose, play, seated, stand, stepOf, stride, type Clip, type Footing } from './gait';
+import { kneelPose, play, sample, seated, stand, stepOf, stride, type Clip, type Footing } from './gait';
 import { CLIPS, GAITS, STANDS } from './motion-data';
 import { DRESSING } from './rain-gear';
 
@@ -171,6 +171,19 @@ function crouching(p: Pose): Pose {
   return p;
 }
 
+const LEGGED = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR'] as const;
+/**
+ * A gesture keyed in Blender (./motion-data.ts CLIPS) at `t` seconds over the stance under it: what it keys of the body,
+ * and its legs and hop only standing (sitting, kneeling or crouching keeps its legs where they are).
+ */
+function gesture(clip: Clip, t: number, out: Pose, standing: boolean): Pose {
+  const kept = LEGGED.map((joint) => out[joint]);
+  play(clip, t, out);
+  out.bounce = standing && clip.bounce ? sample(clip.bounce, t) : 0;
+  if (!standing) LEGGED.forEach((joint, i) => { out[joint] = kept[i]!; });
+  return out;
+}
+
 /** An easy walk, in the body's own heights a second, where a scene or a follower says nothing faster. */
 export const EASY_GAIT = 0.6;
 
@@ -329,16 +342,11 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       return out;
     }
     case 'cheer': {
+      // Keyed in Blender (art/blender/motion.py CLIPS.cheer): down into the knees, both arms flung up and out in a V with
+      // the hands open, two hops, and down again. Reduced motion: the arms up, held, and no hop.
       under();
-      const k = rise(r, .24), settle = c.calm ? 0 : rise(r - 1.05, .9);
-      out.armR = (2.85 - 1.85 * settle) * k;
-      out.armL = (2.75 - 1.9 * settle) * rise(r - .08, .3);
-      out.elbowL = .25 + .55 * settle; out.elbowR = .25 + .4 * settle;
-      out.bounce = loop * Math.sin(r * 7.5) ** 2 * .2 * energy * rise(r, .16) * smooth((1.6 - r) / .35);
-      // Down into the knees before the first hop, and the hands open up high.
-      const dip = loop * pulse(r, 0, .08, 0, .14);
-      out.kneeL = out.kneeR = .35 * dip; out.legL = out.legR = .17 * dip;
-      out.wristL = out.wristR = -.3 * k * (1 - settle) || 0;
+      gesture(CLIPS.cheer, c.calm ? CLIPS.cheer.seconds * .4 : r, out, stance === 'stand');
+      out.bounce *= loop * energy;
       return out;
     }
     case 'shine': {
@@ -434,15 +442,10 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       return out;
     }
     case 'hug': {
+      // Keyed in Blender (art/blender/motion.py CLIPS.hug): the arms open wide, then round the one hugged at the chest, a
+      // squeeze, and held. Reduced motion: the hug, held.
       under();
-      const k = rise(r, .55), squeeze = loop * pulse(r, .6, .3, .2, .65);
-      out.armR = .4 + .95 * k;
-      out.armL = .4 + 1.02 * rise(r - .07, .6);
-      out.elbowL = .3 + 1.3 * k + .12 * squeeze;
-      out.elbowR = .3 + 1.4 * k + .1 * squeeze;
-      out.lean += .1 * k + .025 * squeeze;
-      out.nod = .12 * k;
-      return out;
+      return gesture(CLIPS.hug, c.calm ? CLIPS.hug.seconds : r, out, stance === 'stand');
     }
     case 'nod': {
       under();
