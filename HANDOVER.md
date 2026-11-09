@@ -29,6 +29,16 @@
   - **Cheer and hug**, keyed in Blender: the cheer dips with the elbows drawn in, then both arms go up in a V beside the
     head with open hands, and two hops; the hug opens wide and wraps round someone at the chest. (They read as a hand on
     the head, or a phone at the ear, and as hands to the face.)
+  - **Standing still** (`STANDS` in `motion.py`, `stand` in `gait.ts`): the weight goes over onto one foot in under a
+    second and rests there with small settles, then goes over to the other (it drifted to and fro like a machine); the
+    hip over the standing foot comes up and the shoulders tip the other way a moment after (they tipped with the hips);
+    the arms hang clear of the body with relaxed hands; the head glances, holds, comes back slowly and looks down now
+    and then. Each keeps their own rhythm; Elof's waiting idle borrows Bertil's legs and hips.
+  - **The wave, nod, shrug and startle**, keyed in Blender and played at each person's own tempo: the wave dips back,
+    swings up beside the head past where it stops, waves from the elbow with the hand a moment late, and comes down; the
+    nod comes up first and nods twice with the trunk; the shrug turns the palms up, the head tipping after; the startle
+    flies the arms up and past, one after the other, with a hop. After a wave, nod, shrug, startle, gasp or cheer they
+    go back to their own standing over 0.7 s, where they froze in the last pose.
   - **Putting on the raincoats** (Stormkvällen's `tillsammans`, now 11.6 s). Each of the four gets up and puts their gear
     on in their own way (clips `dressMamma`, `dressPappa`, `dressMoa`, `dressBertil`): one arm into its sleeve, the
     collar round behind, the other arm, a shrug, the fronts together and the zip to the chin; a knee up over each boot,
@@ -47,7 +57,12 @@
     stone beside him until he grows; on Sunday morning it hangs wet beside the family's coats. In the game it is drawn
     from his own body, with a ragged hem and no hood, until the private repository's **PR #6** (`elof-raincoat`: the
     coat made in Blender for his model, with its collar, zip, cuffs and the hood lying down) is merged.
-  - **Known:** the open front's edge is ragged on Pappa's and Bertil's coarser coats as it closes; on the children the
+  - **Checked:** typecheck, `npm test` (217 files, 2,202 tests), `npm run build` (JS 579.2 KB of 1,000, boot 5,185.2 KB
+    of 10,240), the privacy check, and the browser suites family-help, family-story, prologue, finale-stage, Äventyr 2,
+    story-context, family-caps and model-installation, each by the builder that changed what it covers; filmstrips and
+    measurements on the private models (kept in the session).
+  - **Known:** point, gasp and show still aim with the arm's reach, not keyed curves; the open front's edge is ragged on
+    Pappa's and Bertil's coarser coats as it closes; on the children the
     hand with the collar comes close to the chin; Pappa's lamp follows his hand through the sleeve; Moa and Bertil
     still rise from their crouch in the old blend; an empty hug's hands meet close to the chest; the back foot steps
     back a little into the kneel; Bertil's legs are a hair longer than his hips are high, so his knees stay bent 0.15 rad
