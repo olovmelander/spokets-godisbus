@@ -61,6 +61,10 @@ export function createFootwork() {
   let shift = 0, shiftSpeed = 0;
   /** How far the hips have come down for a foot further than the leg reaches (a share of the height). */
   let lowered = 0;
+  /** Walking off: how far each foot stands from where the stride has it (world units), which way it points, and how much of
+   * that is left (1 until the stride lifts it). */
+  type Carried = { x: number; z: number; yaw: number; k: number; heel: number };
+  const carried: [Carried | null, Carried | null] = [null, null];
 
   /** Where each foot stands under its hip, for hips facing `yaw`: its ankle in the world. */
   const home = (side: 0 | 1, at: Standing, yaw: number) => {
@@ -82,10 +86,43 @@ export function createFootwork() {
     /** Forget where the feet stood: the body has been put somewhere, walks, kneels or sits; standing again, they stand under it. */
     reset(): void {
       feet[0] = feet[1] = null; step = null; last = null; still = 0; lastYaw = null; shift = shiftSpeed = 0; lowered = 0;
+      carried[0] = carried[1] = null;
     },
-    /** Whether a foot stands anywhere but under its hip, or the weight is over one. */
+    /** Whether the feet stand anywhere a stride would not put them, or are being handed over to one. */
     get moved(): boolean {
-      return step !== null || Math.abs(shift) > 1e-4 || feet.some((f) => f !== null && (Math.abs(f.heel) > 1e-4));
+      return feet[0] !== null || carried[0] !== null || carried[1] !== null;
+    },
+    /**
+     * Walking off from where the feet stood: each foot stays where it stands, turned as it was, until the stride (whose legs
+     * the pose has) lifts it, and comes in to where the stride has it while it is in the air. `down`: which feet the stride
+     * has on the ground. Once both have come in, the footwork is done with them.
+     */
+    carry(pose: Pose, legs: Legs, at: Standing, down: readonly [boolean, boolean]): void {
+      const dt = Math.max(0, at.dt);
+      for (const side of [0, 1] as const) {
+        const s = side === 0 ? 1 : -1;
+        const a = ankleOf(pose, side, legs);
+        // Where the stride has the ankle, in the world.
+        const left = (s * (legs.width + a.out)) * at.height, ahead = a.ahead * at.height, c = Math.cos(at.yaw), sn = Math.sin(at.yaw);
+        const x = at.x + left * c + ahead * sn, z = at.z - left * sn + ahead * c;
+        const f = feet[side];
+        if (f && !carried[side]) carried[side] = { x: f.x - x, z: f.z - z, yaw: f.yaw, k: 1, heel: f.heel };
+        const kept = carried[side];
+        if (!kept) continue;
+        if (!down[side]) kept.k = Math.max(0, kept.k - dt / 0.25);
+        // A heel up on its toe comes down about the toe, and the hips come up, as the weight goes onto it.
+        kept.heel *= Math.exp(-8 * dt);
+        const k = smooth(kept.k);
+        if (k <= 0) { carried[side] = null; if (side === 0) pose.yawL = 0; else pose.yawR = 0; continue; }
+        const b = body(at.x + kept.x * k, at.z + kept.z * k, at);
+        const yaw = wrap(kept.yaw - at.yaw) * k, heel = kept.heel * k;
+        const mx = s * a.out + b.left, mz = a.ahead + b.ahead, cy = Math.cos(yaw), sy = Math.sin(yaw);
+        const fore = legs.toe * (1 - Math.cos(heel)) - legs.ankle * Math.sin(heel), rise = -legs.toe * Math.sin(heel) + legs.ankle * (Math.cos(heel) - 1);
+        reachWith(mx * sy + mz * cy + fore, a.down - lowered - rise, s * (mx * cy - mz * sy), a.pitch + heel, legs, pose, side);
+        if (side === 0) pose.yawL = yaw; else pose.yawR = yaw;
+      }
+      lowered *= Math.exp(-8 * dt);
+      feet[0] = feet[1] = null; step = null; last = null; lastYaw = null; shift = shiftSpeed = 0;
     },
     /**
      * The feet of a body standing `at`, over the legs the pose has (its act's): each foot's ankle moved from under its hip

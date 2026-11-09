@@ -331,6 +331,8 @@ export function createFooting() {
     },
     /** Whether the last step is still under way: the stride should go on being drawn until it has closed the feet. */
     get settling(): boolean { return closing !== null && closing.done < 1; },
+    /** Which feet the last stride had down on the ground (left, right). */
+    get down(): readonly [boolean, boolean] { return [world[0] !== null, world[1] !== null]; },
     /**
      * The stride (`stride`), with each planted foot held where it came down. `at`: where the body stands in the world (the
      * middle of its feet), which way it faces (`yaw`: ahead is (sin, cos) of it in x and z), how tall it is, and the

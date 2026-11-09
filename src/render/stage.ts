@@ -909,8 +909,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // A cut is the scene's own; otherwise nobody whips round: a body turns at most at TURN_RATE.
         const cut = !was || Math.hypot(x - was.x, z - was.z) > CUT;
         const facing = face;
-        const onTheSpot = pace < 0.02 && state.stance === 'stand' && !calm;
-        if (flowing && !cut) face = turnBy(was!.face, face, (onTheSpot ? STAND_TURN : TURN_RATE) * dt);
+        // Setting off, it goes on turning no faster than its feet can follow until the stride is under way.
+        const onTheSpot = state.stance === 'stand' && !calm ? 1 - smooth(pace / 0.5) : 0;
+        if (flowing && !cut) face = turnBy(was!.face, face, (TURN_RATE + (STAND_TURN - TURN_RATE) * onTheSpot) * dt);
         // A step up or down takes a moment, as a stride does, never one frame.
         if (flowing && !cut) y = was!.y + Math.max(-STEP_RATE * rig.height * dt, Math.min(STEP_RATE * rig.height * dt, y - was!.y));
         else if (paused && was) face = was.face;
@@ -1066,8 +1067,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         if (!paused) {
           const stands = flowing && !cut && !calm && state.stance === 'stand' && !low && legs <= 0.01 && stridePace <= 0.01
             && !footing.settling && pose.seat === null && !chairClip(state.stance, state.before, elapsed);
-          if (stands) footwork.stand(pose, rig.legs, { x, z, yaw: yaw(face), target: yaw(facing), rate: STAND_TURN * Math.PI * 2, height: rig.height,
-            width: STANDS[who].width, dt });
+          const at = { x, z, yaw: yaw(face), target: yaw(facing), rate: STAND_TURN * Math.PI * 2, height: rig.height, width: STANDS[who].width, dt };
+          if (stands) footwork.stand(pose, rig.legs, at);
+          // Walking off, the feet come in to the stride's own places as it lifts them, not slid there.
+          else if (flowing && !cut && !calm && footwork.moved && state.stance === 'stand' && !low && pose.seat === null) footwork.carry(pose, rig.legs, at, footing.down);
           else { footwork.reset(); pose.yawL = pose.yawR = 0; }
         }
         // What is asked for, from what was drawn. Where it jumps (a new scene, a glance to something else, an act that
