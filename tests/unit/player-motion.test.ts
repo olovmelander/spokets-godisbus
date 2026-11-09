@@ -142,14 +142,23 @@ describe('the player’s shared motion', () => {
     expect(jump(8).legL).toBeGreaterThan(jump(18).legL + 0.5);
   });
 
-  it('steps out of carried modes without adding a false landing impact', () => {
+  it('steps out of carried modes without adding a false landing impact, and without a snap', () => {
     for (const mode of ['climb', 'slide', 'ledge', 'ride', 'bubble', 'down'] as const) {
       const motion = createPlayerMotion(), state = player({ mode, grounded: false, t: 1 });
       for (let frame = 0; frame < 45; frame++) motion.update(state, 0, 1 / 60, null);
       const before = { ...motion.update(state, 0, 0, null) };
-      const released = motion.update(player(), 0, 1 / 60, null);
-      expect(released.kneeL).toBeCloseTo(before.kneeL * Math.exp(-18 / 60), 8);
-      expect(released.kneeR).toBeCloseTo(before.kneeR * Math.exp(-18 / 60), 8);
+      // The knees go on as they were (still), and straighten from there: they never bend further, as a landing would.
+      let last = before, fastest = 0;
+      for (let frame = 0; frame < 40; frame++) {
+        const now = { ...motion.update(player(), 0, 1 / 60, null) };
+        expect(now.kneeL).toBeLessThanOrEqual(last.kneeL + 1e-9); expect(now.kneeR).toBeLessThanOrEqual(last.kneeR + 1e-9);
+        fastest = Math.max(fastest, Math.abs(now.kneeL - last.kneeL) * 60, Math.abs(now.kneeR - last.kneeR) * 60);
+        if (frame === 0) { expect(now.kneeL).toBeCloseTo(before.kneeL, 6); expect(now.kneeR).toBeCloseTo(before.kneeR, 6); }
+        last = now;
+      }
+      expect(last.kneeL).toBeLessThan(0.02); expect(last.kneeR).toBeLessThan(0.02);
+      // A critically damped return: at most w/e of the way a second, never all at once.
+      expect(fastest).toBeLessThan(Math.max(before.kneeL, before.kneeR) * 26 / Math.E + 1e-6);
     }
   });
 
@@ -291,10 +300,11 @@ describe('the player’s shared motion', () => {
   });
 
   it('distinguishes the rise, descent and soft landing, and gives scripted acting full priority', () => {
-    const up = target(player({ grounded: false, vy: JUMP_SPEED }));
+    // Tucked at the top of the arc, opening to reach for the ground as he falls.
+    const top = target(player({ grounded: false, vy: 0 }));
     const down = target(player({ grounded: false, vy: -JUMP_SPEED }));
-    expect(up.kneeL).toBeGreaterThan(down.kneeL + 0.6);
-    expect(up.legL).toBeGreaterThan(down.legL + 0.5);
+    expect(top.kneeL).toBeGreaterThan(down.kneeL + 0.6);
+    expect(top.legL).toBeGreaterThan(down.legL + 0.5);
     const motion = createPlayerMotion(), falling = player({ grounded: false, vy: -JUMP_SPEED });
     for (let i = 0; i < 30; i++) motion.update(falling, 0, 1 / 60, null);
     const before = { ...motion.update(falling, 0, 1 / 60, null) };

@@ -8,6 +8,7 @@ import { sceneWaits, type Act, type ActorKey, type ElofKey, type Point, type Sce
 import { actPose, drawingAt, EASY_GAIT, eatingAt, sippingAt, stanceOf, stepLength, type Stance } from './acting';
 import { carvingAt, CARVING_SHAVING_LIFETIME, type CarvingMotion, type CarvingPoint } from './carving-motion';
 import { chairPose, createFooting, crouchPlaces, crouchPose, KNEE_HAND, kneelPose, sample, SITTING_ON, type Clip, type Footing } from './gait';
+import { createFootwork, type Footwork } from './footwork';
 import { CLIPS, STANDS } from './motion-data';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
@@ -116,6 +117,11 @@ const turnBy = (from: number, to: number, most: number) => {
 /** How fast a body may turn about, in turns a second: a half turn takes a little under half a second. */
 const TURN_RATE = 1.15;
 /**
+ * Standing, it turns on the spot by stepping round (./footwork.ts), and its hips go round no faster than its feet can follow:
+ * a half turn in about a second, in two or three steps.
+ */
+const STAND_TURN = 0.5;
+/**
  * How fast a joint may turn at the most, in radians a second: quicker than any stride, run or gesture the scenes ask for
  * (a run's knees turn at over 20), so those play exactly as keyed; only a jump that nothing else smooths is spread out.
  */
@@ -149,6 +155,8 @@ const LOOP: Record<Role, number> = { pappa: 0, mamma: 2.7, moa: 5.1, bertil: 1.3
 /** What a stride gives the legs and hips, whatever the hands are doing, and what it gives the trunk, head and spread arms. */
 const STRIDING = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'bounce', 'sway', 'hipRoll'] as const;
 const CARRIED = ['lean', 'twist', 'bendSide', 'tilt', 'spread'] as const;
+/** What of the stride's trunk goes on under an act whose arms and head are its own. */
+const UNDER_ACT = ['lean', 'twist', 'bendSide', 'tilt'] as const;
 /** A move this far in one frame is a cut, which the scene makes on purpose: nothing eases across it. */
 const CUT = 1.2;
 /** How fast a body goes up or down a step, in its own heights a second. */
@@ -536,6 +544,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   const asking = new Map<Role, Pose>(), askingStep = new Map<Role, Pose>();
   /** Where each body's planted feet stand (./gait.ts). */
   const footings = new Map<Role, Footing>();
+  const footworks = new Map<Role, Footwork>();
   /** How much of each body's legs the walk has, 0 to 1. */
   const striding = new Map<Role, number>();
   /** A walk that began while the legs were mid-stride (a follower, say): it carries on from their phase. */
@@ -900,7 +909,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // A cut is the scene's own; otherwise nobody whips round: a body turns at most at TURN_RATE.
         const cut = !was || Math.hypot(x - was.x, z - was.z) > CUT;
         const facing = face;
-        if (flowing && !cut) face = turnBy(was!.face, face, TURN_RATE * dt);
+        // Setting off, it goes on turning no faster than its feet can follow until the stride is under way.
+        const onTheSpot = state.stance === 'stand' && !calm ? 1 - smooth(pace / 0.5) : 0;
+        if (flowing && !cut) face = turnBy(was!.face, face, (TURN_RATE + (STAND_TURN - TURN_RATE) * onTheSpot) * dt);
         // A step up or down takes a moment, as a stride does, never one frame.
         if (flowing && !cut) y = was!.y + Math.max(-STEP_RATE * rig.height * dt, Math.min(STEP_RATE * rig.height * dt, y - was!.y));
         else if (paused && was) face = was.face;
@@ -1031,8 +1042,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             feet: { footing, x, z, yaw: yaw(face), height: rig.height, dt } }, walking);
           const weight = Math.min(1, stridePace);
           const acting = !['stand', 'watch', 'look', 'walk'].includes(state.act);
-          // An offer, a drawing or a mug keeps its hands and torso in the act; the hips go with the legs whatever the hands do.
+          // An offer, a drawing or a mug keeps its hands and torso in the act; the hips go with the legs whatever the hands do,
+          // and the trunk goes on over them as it goes walking, turning against the hips and bending with the step.
           for (const joint of STRIDING) pose[joint] += (walking[joint] - pose[joint]) * legs;
+          if (acting) for (const joint of UNDER_ACT) pose[joint] += (walking[joint] - STANDING[joint]) * weight;
           if (!acting) {
             for (const joint of CARRIED) pose[joint] += (walking[joint] - pose[joint]) * weight;
             if (!state.holdsLeft && state.holds !== 'drawing') {
@@ -1049,6 +1062,17 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           if (stridePace > 0.01) pose.seat = null;
         }
         chair(pose, state.stance, state.before, elapsed);
+        // Standing, the feet stay where they stand and step round as the body turns on the spot (./footwork.ts).
+        const footwork = footworks.get(who) ?? footworks.set(who, createFootwork()).get(who)!;
+        if (!paused) {
+          const stands = flowing && !cut && !calm && state.stance === 'stand' && !low && legs <= 0.01 && stridePace <= 0.01
+            && !footing.settling && pose.seat === null && !chairClip(state.stance, state.before, elapsed);
+          const at = { x, z, yaw: yaw(face), target: yaw(facing), rate: STAND_TURN * Math.PI * 2, height: rig.height, width: STANDS[who].width, dt };
+          if (stands) footwork.stand(pose, rig.legs, at);
+          // Walking off, the feet come in to the stride's own places as it lifts them, not slid there.
+          else if (flowing && !cut && !calm && footwork.moved && state.stance === 'stand' && !low && pose.seat === null) footwork.carry(pose, rig.legs, at, footing.down);
+          else { footwork.reset(); pose.yawL = pose.yawR = 0; }
+        }
         // What is asked for, from what was drawn. Where it jumps (a new scene, a glance to something else, an act that
         // starts from elsewhere), the body goes on from where it was at the speed it had and the jump dies away (CATCH):
         // a jump is a change in how far a joint is asked to go in a frame, beyond JUMP; what moves smoothly, however fast,

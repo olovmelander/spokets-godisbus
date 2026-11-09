@@ -54,9 +54,19 @@ const UP_TO_HOUSE = { x: 16, y: 2, z: -40 };
 const WINDOW = { x: 14, y: 7.5, z: -66 };
 /**
  * Their run ahead of him to the house, which stands about x 2 to 34 and z -84 to -61 (`buildings`, below): to its left
- * end, and round it to the door at its back, where the house hides them from the road. In seconds, to the corner.
+ * end, and round it to the door at its back, where the house hides them from the road. In seconds, each child's run to
+ * the corner and on round to the door: at about a child's sprint for their size at the fastest, so that their steps
+ * hold the ground (in 6.2 and 2.6 seconds they went twice that, and their boots slid a third to a half of the way).
+ * Bertil, the smaller, takes a little longer and comes round a moment after Moa.
  */
-const RUN = { corner: { x: -0.6, y: 0, z: -62 }, door: { x: 6, y: 0, z: -89 }, seconds: 6.2 };
+const RUN = {
+  corner: { x: -0.6, y: 0, z: -62 }, door: { x: 6, y: 0, z: -89 },
+  moa: { from: 1.1, corner: 11, door: 5.4 }, bertil: { from: 0.8, corner: 11.6, door: 6 },
+};
+/** Each child sets off round the corner a little before reaching it, so that the run goes round it rather than stopping. */
+const ROUND = 0.93;
+const roundAt = (who: 'moa' | 'bertil') => round(RUN[who].from + RUN[who].corner * ROUND, 1);
+const inAt = (who: 'moa' | 'bertil') => round(roundAt(who) + RUN[who].door, 1);
 
 /** The road's ditch, full of rushing rain: twice a running jump. Morfar's ladder lies over it, rim to rim. */
 const DITCH = { from: 14.6, to: 19.2, bottom: -5 };
@@ -253,20 +263,20 @@ export const billsta: ChapterData = {
     } } },
     // "Följ vårt godis! Vi springer före.": the trail is theirs now (docs/aventyr-2.md). Moa waves to him, and they
     // run off ahead of him up to mormor and morfar's house, round its left end, and in by its door at the back.
-    { id: 'bi:kids-run', on: 'beat:bi:new-trail', until: 'bi:morfar', seconds: RUN.seconds + 3.6, stage: { actors: {
+    { id: 'bi:kids-run', on: 'beat:bi:new-trail', until: 'bi:morfar', seconds: inAt('bertil') + 0.6, stage: { actors: {
       // Mamma watches them go, and lights his road again.
-      mamma: [{ at: 0.6, act: 'look', aim: RUN.corner }, { at: RUN.seconds + 1.6, act: 'shine', aim: ROAD }],
+      mamma: [{ at: 0.6, act: 'look', aim: RUN.corner }, { at: roundAt('moa') + 1, act: 'shine', aim: ROAD }],
       moa: [
         { at: 0, act: 'wave', aim: { x: 7.4, y: 0.6, z: 0 } },
-        { at: 1.1, ...RUN.corner, y: 0, move: RUN.seconds, act: 'look', aim: RUN.corner },
-        { at: RUN.seconds + 0.6, ...RUN.door, y: 0, move: 2.6, act: 'look', aim: RUN.door },
-        { at: RUN.seconds + 3.4, away: true },
+        { at: RUN.moa.from, ...RUN.corner, y: 0, move: RUN.moa.corner, act: 'look', aim: RUN.corner },
+        { at: roundAt('moa'), ...RUN.door, y: 0, move: RUN.moa.door, act: 'look', aim: RUN.door },
+        { at: inAt('moa') + 0.2, away: true },
       ],
       bertil: [
         { at: 0.3, act: 'cheer' },
-        { at: 0.8, x: RUN.corner.x + 1.4, y: 0, z: RUN.corner.z + 2.2, move: RUN.seconds, act: 'look', aim: RUN.corner },
-        { at: RUN.seconds + 0.4, x: RUN.door.x + 1.2, y: 0, z: RUN.door.z + 0.6, move: 2.6, act: 'look', aim: RUN.door },
-        { at: RUN.seconds + 3.2, away: true },
+        { at: RUN.bertil.from, x: RUN.corner.x + 1.4, y: 0, z: RUN.corner.z + 2.2, move: RUN.bertil.corner, act: 'look', aim: RUN.corner },
+        { at: roundAt('bertil'), x: RUN.door.x + 1.2, y: 0, z: RUN.door.z + 0.6, move: RUN.bertil.door, act: 'look', aim: RUN.door },
+        { at: inAt('bertil') + 0.2, away: true },
       ],
     } } },
   ],

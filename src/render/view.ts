@@ -59,7 +59,7 @@ import { createPrologueStage } from './prologue-stage';
 import { createStage, litLamp } from './stage';
 import { actPose, sitting, stanceOf, stepLength, type Stance } from './acting';
 import { createModelRig, createRehearsalRig, galeOf, heightOf, JOINTS, STANDING, type Pose, type Rig, type Role } from './rig';
-import { createPlayerMotion, createPlayerStandIn } from './player-motion';
+import { createPlayerMotion, createPlayerStandIn, createTurning } from './player-motion';
 import { createAurora } from './aurora';
 import { createFamilyMotion } from './family-motion';
 import { createSharedSweets } from './shared-sweets';
@@ -861,6 +861,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let cssHeight = 0;
   const look = cameraIntent({ ...startState(chapter) }, chapter.cameras);
   let turn = 0;
+  // His turn about, as a body turns round: it gathers speed and comes to rest facing the new way (./player-motion.ts).
+  const turning = createTurning(turn);
   let squash = 1;
   let fallingSpeed = 0;
 
@@ -1452,8 +1454,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // In a held scene the scene may turn him: towards his family, or out over the garden.
     const scripted = directions.elof;
     const facingAngle = scripted?.face != null ? -scripted.face * Math.PI * 2 : onHose ? Math.PI / 2 : curr.facing > 0 ? -0.35 : Math.PI + 0.35;
-    const turnDelta = facingAngle - turn;
-    turn += Math.atan2(Math.sin(turnDelta), Math.cos(turnDelta)) * ease(14, dt);
+    turn = turning.update(facingAngle, dt);
     // A held scene owns the pose. Otherwise actual travel drives the same articulated pose on both bodies.
     let scriptedPose: Pose | null = null;
     if (scripted?.act && curr.grounded) {

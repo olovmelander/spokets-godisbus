@@ -66,6 +66,12 @@ export interface Pose {
    */
   outL: number;
   outR: number;
+  /**
+   * Each whole leg turned about the upright through its hip, its toes to the body's own left (+): a foot that stays planted
+   * while the hips turn over it, or opens towards where the body turns (./footwork.ts). Left out: straight ahead.
+   */
+  yawL?: number;
+  yawR?: number;
 }
 
 export const STANDING: Readonly<Pose> = {
@@ -164,7 +170,7 @@ export function blendPose(a: Pose, b: Pose, t: number, out: Pose = { ...STANDING
   const groundA = seatA === null ? 1 : a.floor ?? 0, groundB = seatB === null ? 1 : b.floor ?? 0;
   const mix = (x: number, y: number) => x + (y - x) * t;
   for (const key in STANDING) if (key !== 'seat' && key !== 'floor') {
-    const joint = key as Exclude<keyof Pose, 'seat' | 'floor'>;
+    const joint = key as Exclude<keyof Pose, 'seat' | 'floor' | 'yawL' | 'yawR'>;
     out[joint] = mix(a[joint], b[joint]);
   }
   // Sitting down and standing up: the hips go smoothly between where each pose would have them.
@@ -367,6 +373,24 @@ export function createRehearsalRig(who: Role): Rig {
     if (parent) joints[name].multiplyMatrices(joints[parent], local);
     else joints[name].copy(local);
   }
+  /** A thigh: tipped across with the body (`body`), turned about the upright (`yaw`), out to its side (`splay`), swung. */
+  function leg(name: JointName, x: number, swing: number, body: number, splay: number, yaw: number): void {
+    turn.setFromAxisAngle(X, -swing);
+    if (splay !== 0) turn.premultiply(more.setFromAxisAngle(Z, splay));
+    if (yaw !== 0) turn.premultiply(more.setFromAxisAngle(Y, yaw));
+    if (body !== 0) turn.premultiply(more.setFromAxisAngle(Z, body));
+    local.compose(place.set(x, 0, 0), turn, one);
+    joints[name].multiplyMatrices(joints.root, local);
+  }
+  /** A foot, level again: its leg's own swing out undone about its length, the body's lean about the body's forward. */
+  const across = new Vector3();
+  function foot(name: JointName, parent: JointName, pitch: number, splay: number, lean: number, yaw: number): void {
+    turn.setFromAxisAngle(X, -pitch);
+    if (lean !== 0) turn.premultiply(more.setFromAxisAngle(across.set(0, 0, 1).applyAxisAngle(Y, -yaw), lean));
+    if (splay !== 0) turn.premultiply(more.setFromAxisAngle(Z, splay));
+    local.compose(place.set(0, -SHIN + ANKLE, 0), turn, one);
+    joints[name].multiplyMatrices(joints[parent], local);
+  }
   const hands = [new Vector3(), new Vector3()];
   const contactRoot = new Group();
   contactRoot.scale.setScalar(s);
@@ -446,13 +470,14 @@ export function createRehearsalRig(who: Role): Rig {
     set('handR', 'elbowR', 0, -FORE, 0, p.wristR);
     // The legs hang plumb from a tipped pelvis, and lean in under shifted hips so that the feet stay where they stood.
     const lean = swayLean(p.sway);
-    set('hipL', 'root', HIP_X, 0, 0, p.legL, -p.hipRoll + p.splayL - lean);
+    // A leg turned at the hip (`yawL`) turns about the upright of the body as it leans, and swings out in its own way.
+    leg('hipL', HIP_X, p.legL, -p.hipRoll - lean, p.splayL, p.yawL ?? 0);
     set('kneeL', 'hipL', 0, -THIGH, 0, -p.kneeL);
     // The foot stays level across, whatever the leg's lean: the ankle gives.
-    set('footL', 'kneeL', 0, -SHIN + ANKLE, 0, p.footL, -(p.splayL - lean));
-    set('hipR', 'root', -HIP_X, 0, 0, p.legR, -p.hipRoll - p.splayR - lean);
+    foot('footL', 'kneeL', p.footL, -p.splayL, lean, p.yawL ?? 0);
+    leg('hipR', -HIP_X, p.legR, -p.hipRoll - lean, -p.splayR, p.yawR ?? 0);
     set('kneeR', 'hipR', 0, -THIGH, 0, -p.kneeR);
-    set('footR', 'kneeR', 0, -SHIN + ANKLE, 0, p.footR, p.splayR + lean);
+    foot('footR', 'kneeR', p.footR, p.splayR, lean, p.yawR ?? 0);
   }
   function contactParts(side: 0 | 1): void {
     const arm = contacts[side];
@@ -744,6 +769,30 @@ export function createModelRig(model: Object3D, height: number): Rig {
     .applyQuaternion(b.node.getWorldQuaternion(new Quaternion()).invert()).normalize() : null;
   const headUp = axis(bones.head, Y), leftOut = axis(bones.armL, Z), rightOut = axis(bones.armR, Z);
   const chestUp = axis(bones.chest, Y), pelvisUp = axis(bones.pelvis, Y);
+  // A whole leg turns about the upright through its hip (`yawL`, `yawR`): the body's up in each thigh's own terms.
+  const legUp = [axis(bones.legL, Y), axis(bones.legR, Y)], footUp = [axis(bones.footL, Y), axis(bones.footR, Y)];
+  const bodyAhead = new Vector3();
+  /** A thigh: tipped across with the body (`body`), turned about the upright (`yaw`), out to its side (`splay`), swung. */
+  const thighBend = (b: Bone | null, swing: number, up: Vector3 | null, yaw: number, side: Vector3 | null, body: number, splay: number) => {
+    if (!b) return;
+    b.node.quaternion.copy(b.rest);
+    if (side && body !== 0) b.node.quaternion.multiply(turn.setFromAxisAngle(side, body));
+    if (up && yaw !== 0) b.node.quaternion.multiply(turn.setFromAxisAngle(up, yaw));
+    if (side && splay !== 0) b.node.quaternion.multiply(turn.setFromAxisAngle(side, splay));
+    b.node.quaternion.multiply(turn.setFromAxisAngle(X, swing * b.sign));
+  };
+  /** A foot, level again: its leg's own swing out undone about its length, the body's lean about the body's forward. */
+  const footBend = (b: Bone | null, pitch: number, up: Vector3 | null, side: Vector3 | null, splay: number, lean: number, yaw: number) => {
+    if (!b) return;
+    b.node.quaternion.copy(b.rest);
+    if (side && splay !== 0) b.node.quaternion.multiply(turn.setFromAxisAngle(side, splay));
+    if (side && lean !== 0) {
+      bodyAhead.copy(side);
+      if (up && yaw !== 0) bodyAhead.applyAxisAngle(up, -yaw);
+      b.node.quaternion.multiply(turn.setFromAxisAngle(bodyAhead, lean));
+    }
+    b.node.quaternion.multiply(turn.setFromAxisAngle(X, pitch * b.sign));
+  };
   // The upper chest's up and ahead, where an arm's way is measured; each collarbone's, which it turns about.
   const upperUp = axis(fuller.chest, Y), upperAhead = axis(fuller.chest, Z);
   const collars = ([[fuller.clavicleL, bones.armL, 1], [fuller.clavicleR, bones.armR, -1]] as const).map(([clavicle, arm, side]) =>
@@ -927,8 +976,8 @@ export function createModelRig(model: Object3D, height: number): Rig {
       }
       // The legs lean in under shifted hips (below); each foot stays level across, whatever its leg's lean: the ankle gives.
       const lean = Math.atan2(p.sway * unit, hipFloor);
-      bend(bones.footL, p.footL, null, 0, ahead.footL, -(p.splayL - lean));
-      bend(bones.footR, p.footR, null, 0, ahead.footR, p.splayR + lean);
+      footBend(bones.footL, p.footL, footUp[0]!, ahead.footL, -p.splayL, lean, p.yawL ?? 0);
+      footBend(bones.footR, p.footR, footUp[1]!, ahead.footR, p.splayR, lean, p.yawR ?? 0);
       bend(bones.armL, p.armL, leftOut, p.spread);
       bend(bones.armR, p.armR, rightOut, -p.spread);
       // Out to its own side, in its own plane after the swing: a raised arm goes out beside the head.
@@ -948,8 +997,8 @@ export function createModelRig(model: Object3D, height: number): Rig {
       bend(bones.elbowL, p.elbowL);
       bend(bones.elbowR, p.elbowR);
       // The legs hang plumb from a tipped pelvis, and lean in under shifted hips so that the feet stay where they stood.
-      bend(bones.legL, p.legL, null, 0, ahead.legL, -p.hipRoll + p.splayL - lean);
-      bend(bones.legR, p.legR, null, 0, ahead.legR, -p.hipRoll - p.splayR - lean);
+      thighBend(bones.legL, p.legL, legUp[0]!, p.yawL ?? 0, ahead.legL, -p.hipRoll - lean, p.splayL);
+      thighBend(bones.legR, p.legR, legUp[1]!, p.yawR ?? 0, ahead.legR, -p.hipRoll - lean, -p.splayR);
       bend(bones.kneeL, p.kneeL);
       bend(bones.kneeR, p.kneeR);
       // (A model without a pelvis has no legs to lean in under it either: it stays as it is.)
