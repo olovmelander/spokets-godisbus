@@ -137,8 +137,14 @@ export function sleevesWithArms(mesh: SkinnedMesh): number {
 
 // === Bones added to a model as it is put on its rig, between two of its own (./joints.ts, ./skirts.ts) ===============
 
-/** The joint a bone stands for: an added bone for the bone it rests on (`thigh_l_push` is `thigh_l`). */
-export const jointOf = (name: string) => name.replace(/_(half|push)$/, '');
+/**
+ * The joint a bone stands for: an added bone for the bone it rests on (`thigh_l_push` is `thigh_l`), and a fuller
+ * skeleton's bones (src/render/rig.ts, `FULLER`) for the bone whose part of the body they move: a twist bone or a hip's
+ * corrective bone for its limb, the upper chest and a collarbone for the chest, the neck for the head.
+ */
+export const jointOf = (name: string) => name.replace(/_(half|push)$/, '')
+  .replace(/^(upperarm|lowerarm|thigh|calf)_twist_0\d_([lr])$/, '$1_$2').replace(/^thigh_correctiveRoot_([lr])$/, 'thigh_$1')
+  .replace(/^(spine_03|clavicle_[lr])$/, 'spine_02').replace(/^neck_01$/, 'Head');
 
 const rests = new WeakMap<Object3D, Quaternion>();
 

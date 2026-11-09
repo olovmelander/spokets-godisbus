@@ -47,8 +47,9 @@ export function skirtsOverThighs(mesh: SkinnedMesh): number {
   across.normalize();
   const thigh = hips[0]!.distanceTo(knee);
   const count = position.count;
-  // The trunk: the pelvis and the spine (not a leg, an arm or the head). The parts that are all trunk and hang below the hips.
-  const trunk = bones.map((bone) => /^(pelvis|spine_0[12])$/.test(bone.name));
+  // The trunk: the pelvis and the spine, and a fuller skeleton's collarbones (not a leg, an arm or the head). The parts
+  // that are all trunk and hang below the hips.
+  const trunk = bones.map((bone) => /^(pelvis|spine_0[1-3]|clavicle_[lr])$/.test(bone.name));
   const parts = partsOf(position, g.index ? g.index.array : null, count);
   const mixed = new Set<number>();
   const v = new Vector3(), off = new Vector3();

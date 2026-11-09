@@ -1,4 +1,4 @@
-import { Matrix4, Vector3, type Bone, type Object3D, type SkinnedMesh } from 'three';
+import { Matrix4, Object3D, Quaternion, Vector3, type Bone, type SkinnedMesh } from 'three';
 import { skirtsOverThighs } from './skirts';
 import { halfOf, partsOf, weightsOf, withBone, writeWeights as write } from './sleeves';
 
@@ -115,8 +115,13 @@ export function softShoulders(mesh: SkinnedMesh): number {
     const chest = upper >= 0 && bones[upper]!.parent ? bones.indexOf(bones[upper]!.parent as Bone) : -1;
     if (upper < 0 || chest < 0) continue;
     const own = bones.map((bone) => { for (let node: Object3D | null = bone; node; node = node.parent) if (node === bones[upper]) return true; return false; });
-    // The trunk: the chest and the bones it hangs from (not the head, the hair on it, an arm or a leg).
-    const trunkBones = bones.map((bone) => { for (let node: Object3D | null = bones[chest]!; node; node = node.parent) if (node === bone) return true; return false; });
+    // The trunk: the chest and the bones it hangs from (not the head, the hair on it, an arm or a leg); and, in a fuller
+    // skeleton (src/render/rig.ts, `FULLER`), both collarbones and the upper chest, which the upper arm hangs from now.
+    const trunkBones = bones.map((bone) => {
+      if (TRUNK.test(bone.name)) return true;
+      for (let node: Object3D | null = bones[chest]!; node; node = node.parent) if (node === bone) return true;
+      return false;
+    });
     // In the upper arm's frame at rest: the joint at the origin, the arm down its +y. Its radius there, from its own corners.
     const local = restIn(mesh, upper);
     parts ??= partsOf(position, g.index ? g.index.array : null, count);
@@ -149,6 +154,70 @@ export function softShoulders(mesh: SkinnedMesh): number {
   if (changed > 0) { g.getAttribute('skinIndex').needsUpdate = true; g.getAttribute('skinWeight').needsUpdate = true; }
   g.userData.softShoulders = changed;
   return changed;
+}
+
+/** The trunk's own bones in a fuller skeleton, whichever of them a trunk's corner goes with. */
+const TRUNK = /^(pelvis|spine_0[1-3]|clavicle_[lr])$/;
+
+/**
+ * How much of a limb's twist its twist bone takes (the private repository's family/body_rig.py adds them): the forearm's,
+ * by the wrist, turns with this share of the hand's turn about the forearm, so a hand turned to hold something turns the
+ * forearm along its length instead of wringing it at the wrist. The upper arm's, by the shoulder, could give back a share
+ * of the arm's turn about itself; but every turn the poses give an upper arm is a swing (forward, out, and out in its own
+ * plane), and the twist a run of swings adds up to is no turn of the arm about itself: given back, it would wring the
+ * sleeve between the shoulder and the elbow for nothing, most of all with an arm straight up, where it comes to half a
+ * turn one way or the other. So it follows its arm, until a pose turns one.
+ */
+export const TWIST = { upper: 0, fore: 0.5 };
+
+const Y = new Vector3(0, 1, 0);
+
+/** A twist bone that turns about its own length by `share` of how far `of` has turned about its own, from rest. */
+function twisting(bone: Object3D, of: Object3D, share: number): void {
+  const rest = bone.quaternion.clone(), back = of.quaternion.clone().invert(), turn = new Quaternion();
+  bone.updateMatrix = function updateMatrix(this: Object3D) {
+    // Its turn from rest in its own frame, and the part of it about its length: a twist, whatever its swing.
+    turn.copy(back).multiply(of.quaternion);
+    if (turn.w < 0) turn.set(-turn.x, -turn.y, -turn.z, -turn.w);
+    const twist = 2 * Math.atan2(turn.y, turn.w);
+    this.quaternion.copy(rest).multiply(turn.setFromAxisAngle(Y, share * twist));
+    Object3D.prototype.updateMatrix.call(this);
+  };
+}
+
+/** A corrective bone at a joint that turns half as far as `of`, from the same rest (as `halfOf`, a bone of the model's own). */
+function halfway(bone: Object3D, of: Object3D): void {
+  const rest = bone.quaternion.clone();
+  bone.updateMatrix = function updateMatrix(this: Object3D) {
+    this.quaternion.slerpQuaternions(rest, of.quaternion, 0.5);
+    Object3D.prototype.updateMatrix.call(this);
+  };
+}
+
+/**
+ * The twist and corrective bones of a fuller skeleton, where a model has them (the private repository's
+ * family/body_rig.py): each set as its matrix is made, every frame, from wherever the pose, a reach or a grip has left
+ * the limb it follows. Each upper arm's twist bone gives back half of the arm's twist, each forearm's takes half of the
+ * hand's, and each hip's corrective bone turns half as far as its thigh, so the hip's crease and the seat bend through
+ * it as an elbow does through its half bone. A model without them is as it was. Call it once, at rest; returns how many
+ * it found.
+ */
+export function followLimbs(model: Object3D): number {
+  if (model.userData.followLimbs !== undefined) return 0;
+  let found = 0;
+  for (const tag of ['l', 'r']) {
+    const pairs: [string, string, (bone: Object3D, of: Object3D) => void][] = [
+      [`upperarm_twist_01_${tag}`, `upperarm_${tag}`, (bone, of) => twisting(bone, of, -TWIST.upper)],
+      [`lowerarm_twist_01_${tag}`, `hand_${tag}`, (bone, of) => twisting(bone, of, TWIST.fore)],
+      [`thigh_correctiveRoot_${tag}`, `thigh_${tag}`, halfway],
+    ];
+    for (const [name, ofName, follow] of pairs) {
+      const bone = model.getObjectByName(name), of = model.getObjectByName(ofName);
+      if (bone && of) { follow(bone, of); found++; }
+    }
+  }
+  model.userData.followLimbs = found;
+  return found;
 }
 
 /** Every skinned mesh of a model (or a piece of a wardrobe): its elbows and knees, its shoulders' corners, and a skirt
