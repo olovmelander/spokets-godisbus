@@ -243,7 +243,7 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
   const phase = who === 'mormor' ? 0.7 : 2.1;
   /** Going down on a knee, keyed in Blender (art/blender/motion.py): how far through it they are, 0 standing to 1 down. */
   const clip = CLIPS.kneelElder;
-  const was = new Vector3(), now = new Vector3(), rail = new Vector3(), rung = new Vector3(), up = new Quaternion(), tilt = new Quaternion(), Z = new Vector3(0, 0, 1);
+  const was = new Vector3(), now = new Vector3(), rail = new Vector3(), up = new Quaternion(), tilt = new Quaternion(), Z = new Vector3(0, 0, 1);
   const kneeAt = new Vector3(), aheadOf = new Vector3(), socketAt = new Vector3();
   let since = 0, kneel = 0, facing = 0, gaze = 0, nextBlink = 2 + phase, swing = 0, swingSpeed = 0, first = true;
 
@@ -334,14 +334,14 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
         const holds = 1 - smooth((since - LADDER_DOWN * 0.45) / 0.25);
         if (holds > 0 && kneel < 0.5) {
           group.updateWorldMatrix(true, true);
-          // Round the rung at the height of his hand, at its end nearer him, across the ladder (./fingers.ts).
-          carried.updateWorldMatrix(true, false);
-          const near = rail.set(0, 2.9, 0.3).applyMatrix4(carried.matrixWorld).distanceTo(group.getWorldPosition(now))
-            < rail.set(0, 2.9, -0.3).applyMatrix4(carried.matrixWorld).distanceTo(now) ? 0.3 : -0.3;
-          carried.localToWorld(rail.set(0, 2.9, near));
           const weight = holds * (1 - kneel * 2);
-          if (rig.grasp) rig.grasp(0, RUNG, rail, rung.set(0, 0, 1).transformDirection(carried.matrixWorld), rail, weight);
-          else rig.reach(0, rail, weight);
+          rig.reach(0, carried.localToWorld(rail.set(0, 2.7, 0)), weight);
+          if (rig.hold && rig.socket) {
+            // His hand closes round the rung there as far as it gets to it (./fingers.ts): where he stands, his arm falls
+            // short of the ladder, and the hand stays open rather than closed on the air.
+            const miss = rig.socket(0, RUNG, socketAt).distanceTo(carried.localToWorld(rail.set(0, 2.9, 0)));
+            rig.hold(0, RUNG, weight * (1 - Math.min(1, Math.max(0, (miss - 0.1) / 0.3))));
+          }
         }
       }
 
