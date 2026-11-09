@@ -58,6 +58,12 @@ const DRIFT = 0.5;
 const SINK = 0.06;
 /** How long the last step takes, closing the feet as the body stops, in seconds. */
 const CLOSING = 0.32;
+/**
+ * Setting off from standing, the hips go over the foot that stays this share of the way to it before the other lifts, and
+ * hand over to the stride's own sway through the first step; stopping, the last step takes them over the foot that stays
+ * and brings them back to the middle as it comes down (in the body's heights per the hip joints' width).
+ */
+const SET_OFF = 0.55, LAST_STEP = 0.4;
 
 const TAU = Math.PI * 2;
 const LEGS = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR'] as const;
@@ -180,7 +186,7 @@ function stanceReach(legs: Legs, crouch: number, ahead: number, step: number): n
 }
 
 /** The thigh, knee and foot that put an ankle at (ahead, down, out) from the hip joint, tipped `pitch`, for `legs`. */
-function reachWith(ahead: number, down: number, out: number, pitch: number, legs: Legs, pose: Pose, side: 0 | 1, soft = 1): void {
+export function reachWith(ahead: number, down: number, out: number, pitch: number, legs: Legs, pose: Pose, side: 0 | 1, soft = 1): void {
   const thigh = legs.thigh, shin = legs.shin, whole = thigh + shin;
   let far = clamp(Math.hypot(ahead, down, out), Math.abs(thigh - shin) + 1e-4, whole);
   // Near a straight knee a little more reach turns the knee a lot: past `soft` of the leg, the foot falls a little short
@@ -193,6 +199,20 @@ function reachWith(ahead: number, down: number, out: number, pitch: number, legs
   const splay = Math.atan2(out, down);
   if (side === 0) { pose.legL = swing; pose.kneeL = knee; pose.footL = pitch - (swing - knee); pose.splayL = splay; }
   else { pose.legR = swing; pose.kneeR = knee; pose.footR = pitch - (swing - knee); pose.splayR = splay; }
+}
+
+/**
+ * Where a pose's leg puts its ankle from the hip joint (ahead, down and out, in the body's heights, in the leg's own side
+ * view) and how its foot is tipped: reachWith the other way round.
+ */
+export function ankleOf(pose: Pose, side: 0 | 1, legs: Legs): { ahead: number; down: number; out: number; pitch: number } {
+  const swing = side === 0 ? pose.legL : pose.legR, knee = side === 0 ? pose.kneeL : pose.kneeR;
+  const splay = side === 0 ? pose.splayL : pose.splayR, foot = side === 0 ? pose.footL : pose.footR;
+  const thigh = legs.thigh, shin = legs.shin;
+  const far = Math.sqrt(Math.max(1e-12, thigh * thigh + shin * shin + 2 * thigh * shin * Math.cos(knee)));
+  const open = Math.acos(clamp((thigh * thigh + far * far - shin * shin) / (2 * thigh * far), -1, 1));
+  const toward = swing - open, plumb = far * Math.cos(toward);
+  return { ahead: far * Math.sin(toward), down: plumb * Math.cos(splay), out: plumb * Math.sin(splay), pitch: foot + swing - knee };
 }
 
 /**
@@ -301,11 +321,13 @@ export function createFooting() {
   let closing: { side: 0 | 1; by: number; done: number } | null = null;
   /** Setting off from standing: the feet stand where they stood, under the hips, and the first step is taken from there. */
   let fresh = true;
+  /** Setting off: which foot stays down for the first step, from what phase, and how far on the other lifts. */
+  let setOff: { stays: 0 | 1; from: number; lifts: number } | null = null;
   return {
     /** Forget where the feet stood: the body has been put somewhere else, or has stood still for a while. */
     reset(): void {
       world[0] = world[1] = null; kept.flat = [null, null]; kept.left = [null, null]; last[0] = last[1] = null; going = false; closing = null;
-      fresh = true;
+      fresh = true; setOff = null;
     },
     /** Whether the last step is still under way: the stride should go on being drawn until it has closed the feet. */
     get settling(): boolean { return closing !== null && closing.done < 1; },
@@ -338,6 +360,12 @@ export function createFooting() {
         last[side] = kept.flat[side];
       }
       kept.left = [world[0] ? null : last[0], world[1] ? null : last[1]];
+      // Setting off with both feet down, the one whose step comes first lifts, and the other takes the weight first.
+      if (fresh && planned[0] !== null && planned[1] !== null && !calm) {
+        const stance = Math.min(blended(strider.walk, strider.run, clamp(run, 0, 1))((g) => g.stance), 1);
+        const leftAt = TAU * Math.max(0, stance - frac(phase / TAU)), rightAt = TAU * Math.max(0, stance - frac((phase - Math.PI) / TAU));
+        setOff = leftAt < rightAt ? { stays: 1, from: phase, lifts: Math.max(0.2, leftAt) } : { stays: 0, from: phase, lifts: Math.max(0.2, rightAt) };
+      }
       fresh = false;
       // Stopping with both feet down, one left behind or ahead comes in beside the other: a last small step, lifted, not
       // slid. It ends where the stride puts it, which is under the hips as the pace dies away.
@@ -358,7 +386,22 @@ export function createFooting() {
         }
         if (pace > 0.45) closing = null;
       }
-      return stride(pose, phase, step, pace, run, strider, legs, calm, kept);
+      stride(pose, phase, step, pace, run, strider, legs, calm, kept);
+      // The weight over the foot that stays: before the first step lifts (handing over to the stride's sway through it), and
+      // through the last step, back to the middle as it comes down.
+      let over = 0;
+      if (setOff) {
+        const gone = phase - setOff.from;
+        const k = smooth(gone / (0.75 * setOff.lifts)) * (1 - smooth((gone - setOff.lifts) / Math.max(0.3, Math.PI - setOff.lifts)));
+        over += (setOff.stays === 0 ? 1 : -1) * SET_OFF * k;
+        if (gone > Math.PI || gone < -0.01) setOff = null;
+      }
+      if (closing && closing.done < 1) over += (closing.side === 0 ? -1 : 1) * LAST_STEP * Math.sin(Math.PI * closing.done) ** 0.7;
+      if (over !== 0 && !calm) {
+        pose.sway += over * legs.width * 5.2;
+        pose.hipRoll += over * 0.05;
+      }
+      return pose;
     },
   };
 }
@@ -388,6 +431,11 @@ export interface Stander {
   wrist: Series;
 }
 
+/** Where someone is in a breath at `t` seconds of their own loop, −1 (out) to 1 (in): not quite even, as breathing is not. */
+export function breathing(t: number, stander: Stander): number {
+  return Math.sin(TAU * stander.breath * t + 0.6 * Math.sin(TAU * stander.breath * 0.23 * t));
+}
+
 const planted: Foot = { x: 0, y: 0, pitch: 0, on: 1, flat: 0, c: 0 };
 /**
  * Someone standing, `t` seconds into their own loop (./motion-data.ts STANDS): the feet stay where they are, the weight
@@ -398,7 +446,7 @@ export function stand(pose: Pose, t: number, stander: Stander, legs: Legs = REHE
   Object.assign(pose, STANDING);
   // Reduced motion: their own posture, held.
   const w = calm ? 0 : clamp(weight, 0, 1), x = calm ? 0 : TAU * t / stander.period;
-  const breath = calm ? 0 : Math.sin(TAU * stander.breath * t + 0.6 * Math.sin(TAU * stander.breath * 0.23 * t)) * w;
+  const breath = calm ? 0 : breathing(t, stander) * w;
   const roll = wave(stander.roll, x) * w, lift = legs.width * Math.sin(roll), over = wave(stander.sway, x) * w;
   pose.sway = over * 5.2;
   // The arms hang clear of the body; the hip that goes out pushes its arm out with it.

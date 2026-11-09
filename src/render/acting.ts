@@ -1,7 +1,7 @@
 import type { Act } from '../sim/scene';
 import { groundedHips, JOINTS, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
 import { carvingAt } from './carving-motion';
-import { crouchPose, kneelPose, play, sample, seated, stand, stepOf, stride, type Clip, type Footing } from './gait';
+import { breathing, crouchPose, kneelPose, play, sample, seated, stand, stepOf, stride, type Clip, type Footing } from './gait';
 import { CLIPS, GAITS, STANDS } from './motion-data';
 import { DRESSING } from './rain-gear';
 
@@ -198,6 +198,7 @@ const standingAfter: Pose = { ...STANDING };
  */
 export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'stand'): Pose {
   actOf(act, c, out, stance);
+  if (!c.calm) live(act, c, out, stance);
   const end = ENDS[act];
   if (end === undefined || stance !== 'stand' || c.calm) return out;
   const k = smooth((Math.max(0, c.t) * timing(c.role) - end) / BACK);
@@ -206,10 +207,60 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
   if (k >= 1) return Object.assign(out, standingAfter);
   for (const key in STANDING) {
     if (key === 'seat' || key === 'floor') continue;
-    const joint = key as Exclude<keyof Pose, 'seat' | 'floor'>;
+    const joint = key as Exclude<keyof Pose, 'seat' | 'floor' | 'yawL' | 'yawR'>;
     out[joint] += (standingAfter[joint] - out[joint]) * k;
   }
   return out;
+}
+
+/**
+ * The acts held long enough to stand under (a gesture, something shown, pointed at, shone on, held out or reached for, a
+ * kneel or a crouch): the body goes on living under them. A sip keeps still for the mug at the lips.
+ */
+const LIVES: readonly Act[] = ['point', 'show', 'shine', 'offer', 'reach', 'lift', 'gasp', 'wave', 'cheer', 'shrug', 'hug', 'nod',
+  'startle', 'eat', 'blow', 'hands', 'paint', 'sneak', 'kneel', 'crouch'];
+/** Acts with legs of their own standing: a cheer's bounce, a low reach's bent knees. */
+const OWN_LEGS: readonly Act[] = ['cheer', 'reach'];
+/** The arms an act leaves hanging (left, right). */
+const FREE: Partial<Record<Act, readonly [boolean, boolean]>> = {
+  wave: [true, false], nod: [true, true], shine: [true, false], offer: [true, false], paint: [true, false],
+};
+/** How much of how they stand goes on under a held act: a little less than standing idle. */
+const UNDER = 0.7;
+const life: Pose = { ...STANDING };
+const LEGS_UNDER = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'sway', 'hipRoll'] as const;
+const ARM_L = ['armL', 'elbowL', 'wristL', 'outL'] as const, ARM_R = ['armR', 'elbowR', 'wristR', 'outR'] as const;
+
+/**
+ * Under a held act the body goes on living (Olov, 9 November 2026): it breathes, its weight goes over from one foot to the
+ * other with the hips and the trunk bending against them, the shoulders turning a little against the hips, and an arm the
+ * act leaves free hangs as it hangs standing (./gait.ts stand), all as far as the act lets it: legs it keys stay its own,
+ * and so do the head's turn and nod where the act looks at something. On a knee or in a crouch the trunk does the same,
+ * the hips staying where they are.
+ */
+function live(act: Act, c: ActContext, out: Pose, under: Stance): void {
+  // Kneeling and crouching are their own stance, whatever the one before.
+  const stance = act === 'kneel' || act === 'crouch' ? act : under;
+  if (stance === 'sit' || !LIVES.includes(act)) return;
+  const stander = STANDS[c.role ?? 'pappa'], clock = c.clock ?? c.t;
+  stand(life, clock, stander, c.legs, false, UNDER);
+  const breath = breathing(clock, stander) * UNDER;
+  if (stance === 'stand') {
+    // The legs and the weight over them, unless the act has legs of its own.
+    if (!OWN_LEGS.includes(act)) for (const joint of LEGS_UNDER) out[joint] = life[joint];
+    // A free arm hangs, breathing, out from the body as the hip goes out.
+    const free = FREE[act];
+    if (free?.[0]) for (const joint of ARM_L) out[joint] = life[joint];
+    if (free?.[1]) for (const joint of ARM_R) out[joint] = life[joint];
+    out.lean += life.lean;
+  } else if (act !== 'kneel' && act !== 'crouch') out.lean += stander.deep * breath;
+  // The trunk bends against the hips and the head tilts against it, the shoulders turning a little against the weight.
+  const k = stance === 'stand' ? 1 : 0.5;
+  out.bendSide += life.bendSide * k;
+  out.tilt += life.tilt * k;
+  out.twist += 0.3 * life.sway * k;
+  // A breath lifts the chest and the head stays level: the kneel and the crouch breathe already.
+  if (act !== 'kneel' && act !== 'crouch') out.nod -= stander.deep * 0.7 * breath;
 }
 
 /** An easy walk, in the body's own heights a second, where a scene or a follower says nothing faster. */

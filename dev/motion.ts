@@ -86,6 +86,14 @@ const SCRIPTS: Record<string, (x: number) => ActorKey[]> = {
     { at: 24, x: x + 3, move: 2.4 },
     { at: 27, face: 0.25 },
   ],
+  // Turning on the spot, facing the camera: a little, a quarter to the right, a half turn, back round; turning to point, and
+  // a few steps away, to stop and turn back.
+  turn: (x) => [
+    { at: 0, x, y: 0, z: 0, face: 0.25, move: 0.01, act: 'stand' },
+    { at: 1.5, face: 0.3 }, { at: 3.5, face: 0.55 }, { at: 6, face: 0.05 }, { at: 9, face: 0.25 },
+    { at: 11.5, act: 'point', aim: { x: x - 6, y: 3, z: 3 } }, { at: 14.5, act: 'stand' },
+    { at: 15.5, x: x + 3, move: 2 }, { at: 18.5, face: 0.25 },
+  ],
   // Following Elof, who walks, runs, stops and comes back.
   follow: (x) => [{ at: 0, x, y: 0, z: 0, face: 0, move: 0.01, act: 'stand', follow: 2.5 + x / LANE * 2.2 }],
 };

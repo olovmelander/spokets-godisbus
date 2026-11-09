@@ -48,13 +48,14 @@ ADULT_WALK = {
     # Over the standing foot, and tipped away from the swinging one.
     'sway': ('odd', [(0.0, -0.004), (0.07, 0.0), (0.29, 0.011), (0.46, 0.006)]),
     'roll': ('odd', [(0.0, -0.016), (0.04, 0.0), (0.17, 0.058), (0.36, 0.018)]),
-    # The shoulders turn against the hips: the right shoulder forward as the left heel comes down.
-    'twist': ('odd', [(0.03, 0.17), (0.27, 0.0)]),
-    'lean': ('even', [(0.02, 0.058), (0.25, 0.044)]),
-    'side': ('odd', [(0.07, 0.0), (0.3, 0.022)]),
+    # The shoulders turn against the hips: the right shoulder forward a moment after the left heel comes down. The trunk
+    # follows the hips' turn and sway a moment late, and the head a moment after it (overlap), never in lockstep.
+    'twist': ('odd', [(0.11, 0.17), (0.35, 0.0)]),
+    'lean': ('even', [(0.1, 0.058), (0.33, 0.044)]),
+    'side': ('odd', [(0.15, 0.0), (0.38, 0.022)]),
     # The head stays level: it nods against the trunk and tilts against its bend.
-    'nod': ('even', [(0.02, 0.012), (0.25, 0.028)]),
-    'tilt': ('odd', [(0.07, 0.0), (0.3, -0.016)]),
+    'nod': ('even', [(0.14, 0.012), (0.37, 0.028)]),
+    'tilt': ('odd', [(0.19, 0.0), (0.42, -0.016)]),
     # The left arm comes forward with the right foot, a moment after it, the elbow bending as it comes; the hand trails.
     'arm': ('full', [(0.06, -0.24), (0.31, 0.02), (0.56, 0.36), (0.81, 0.08)]),
     'elbow': ('full', [(0.1, 0.17), (0.38, 0.27), (0.62, 0.48), (0.88, 0.3)]),
@@ -71,11 +72,11 @@ ADULT_RUN = {
     'bob': ('even', [(0.0, 0.0), (0.17, -0.014), (0.42, 0.014)]),
     'sway': ('odd', [(0.0, 0.0), (0.18, 0.005)]),
     'roll': ('odd', [(0.0, 0.0), (0.12, 0.045), (0.36, 0.01)]),
-    'twist': ('odd', [(0.04, 0.27), (0.29, 0.0)]),
-    'lean': ('even', [(0.03, 0.2), (0.28, 0.17)]),
-    'side': ('odd', [(0.06, 0.0), (0.2, 0.012)]),
-    'nod': ('even', [(0.03, -0.03), (0.28, -0.01)]),
-    'tilt': ('odd', [(0.06, 0.0), (0.2, -0.01)]),
+    'twist': ('odd', [(0.1, 0.27), (0.35, 0.0)]),
+    'lean': ('even', [(0.09, 0.2), (0.34, 0.17)]),
+    'side': ('odd', [(0.12, 0.0), (0.26, 0.012)]),
+    'nod': ('even', [(0.12, -0.03), (0.37, -0.01)]),
+    'tilt': ('odd', [(0.15, 0.0), (0.29, -0.01)]),
     # Bent arms that drive, forward and up with the other foot.
     'arm': ('full', [(0.06, -0.48), (0.31, 0.05), (0.56, 0.62), (0.81, 0.1)]),
     'elbow': ('full', [(0.08, 1.18), (0.33, 1.38), (0.58, 1.58), (0.83, 1.35)]),

@@ -24,7 +24,12 @@ describe('story interaction acting', () => {
           const left = rig.hand(0, new Vector3()).multiplyScalar(unit);
           expect(Math.hypot(left.z - (ahead - .15), left.y - (up - .1)), `${who} supporting ${act} ${stance}`).toBeLessThan(.35);
         }
-        expect(actPose(act, context(8, ahead, up), { ...STANDING }, stance)).toEqual(pose);
+        // Held there, the body breathes and its weight goes over under the act (9 November 2026): the hands stay where they
+        // came (the stage's arms hold them on the very point; a pose alone has them within a breath and a weight's shift).
+        for (const later of [8, 9.3]) {
+          rig.pose(actPose(act, context(later, ahead, up), { ...STANDING }, stance));
+          expect(rig.hand(1, new Vector3()).multiplyScalar(unit).distanceTo(right), `${who} ${act} ${stance} at ${later}`).toBeLessThan(.15);
+        }
         expect(pose.bounce).toBe(0);
       }
     }
@@ -93,7 +98,9 @@ describe('story interaction acting', () => {
       expect(at('stomp', 2).legR).toBe(0);
       expect(at('startle', .2).armR).toBeGreaterThan(at('startle', 2).armR + .6);
       expect(at('wave', .6).armR).toBeGreaterThan(at('wave', 3).armR + 1);
-      for (const act of ['stomp', 'hug'] as const) expect(at(act, 3), `${role} ${act}`).toEqual(at(act, 30));
+      expect(at('stomp', 3), `${role} stomp`).toEqual(at('stomp', 30));
+      // A hug is held, its arms round the one hugged, the body breathing under it.
+      for (const joint of ['armL', 'armR', 'elbowL', 'elbowR', 'wristL', 'wristR', 'spread'] as const) expect(at('hug', 3)[joint], `${role} hug ${joint}`).toBe(at('hug', 30)[joint]);
       // A wave, a start or a nod is over, and they stand again as they stand (the motion pass of 9 November 2026).
       for (const act of ['wave', 'startle', 'nod'] as const) expect(at(act, 30), `${role} ${act}`).toEqual(at('stand', 30));
     }
