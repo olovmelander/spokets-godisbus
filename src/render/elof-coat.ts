@@ -25,6 +25,8 @@ export const TAKE = 'coat:take';
 export const DOLL_Z = -1;
 /** He puts his left arm into its sleeve first (./rain-gear.ts `FIRST_SLEEVE`). */
 export const ELOF_FIRST: 0 | 1 = 0;
+/** How big the doll is drawn: a little taller than he is when he is small. Its coat is that big off him. */
+export const DOLL_SIZE = 1.12;
 
 /**
  * Putting it on, in the seconds of Stormkvällen's scene: the coat comes off the doll into his hands (`hands`), and from

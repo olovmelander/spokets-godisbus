@@ -15,7 +15,7 @@ import { kitLife } from '../../render/kit-life';
 import { drawnWhile } from '../../render/idle';
 import { litLamp } from '../../render/stage';
 import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
-import { DOLL_Z, ELOF_COAT, PUT_ON } from '../../render/elof-coat';
+import { DOLL_SIZE, DOLL_Z, ELOF_COAT, PUT_ON } from '../../render/elof-coat';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
 import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
@@ -2016,6 +2016,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // without it once he has taken it. The room's models from Blender (art/blender/a2-room.py) take the plain shapes' place.
       const root = new Group();
       root.position.set(spot.at.x, spot.at.y, DOLL_Z);
+      root.scale.setScalar(DOLL_SIZE);
       const doll = new Group();
       doll.userData.model = 'docka';
       doll.userData.disposeFallback = true;

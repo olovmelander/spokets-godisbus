@@ -51,8 +51,8 @@ const TRAIL = 'scene:tillsammans';
  * The toy shelf in front of the sofa, and the doll sitting at its foot in its small yellow raincoat: on his way across
  * the room, after the table, where nobody stands in any scene. Its back leans on the shelf's front.
  */
-const TOY_SHELF = { x: 21.6, z: DOLL_Z - 0.75 };
-const DOLL = { x: 21 };
+const TOY_SHELF = { x: 21.3, z: DOLL_Z - 0.8 };
+const DOLL = { x: 20.45 };
 
 // Where each of the family is as the evening opens, clear of each other, the table and its chairs. The table is 5 long
 // and 2.2 deep (x 11.5 to 16.5, z -2.6 to -0.4), with a chair behind it and one at its right end (`furniture`).

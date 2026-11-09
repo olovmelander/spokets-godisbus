@@ -1,11 +1,26 @@
 import {
-  BoxGeometry, CapsuleGeometry, ConeGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3, type Object3D,
+  BoxGeometry, CapsuleGeometry, ConeGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3, type Object3D, type SkinnedMesh,
 } from 'three';
 import type { SceneFrame } from '../sim/scene';
 import type { ChapterData } from '../sim/types';
-import { DOLL_Z, ELOF_COAT, PUT_ON, TAKE, TAKE_OFF, smooth } from './elof-coat';
+import { DOLL_SIZE, DOLL_Z, ELOF_COAT, PUT_ON, TAKE, TAKE_OFF, smooth } from './elof-coat';
 
 /** What is drawn of Elof's raincoat beside what ./rain-gear.ts draws on him (./elof-coat.ts): the coat in his hands. */
+
+/**
+ * What of a body is worn over the coat, by its corners: Elof's backpack, its olive canvas, its straps and buckles (and his
+ * shirt's buttons, under the coat in any case), told by their colours. Null for anyone else's body: their coats' shells
+ * are of all that the coat covers.
+ */
+export function wornOver(body: SkinnedMesh): ((corner: number) => boolean) | null {
+  const material = body.material as MeshStandardMaterial;
+  const colour = body.geometry.getAttribute('color');
+  if (!colour || !/^elof\b/.test(material.name ?? '')) return null;
+  return (i) => {
+    const r = colour.getX(i), g = colour.getY(i), b = colour.getZ(i);
+    return r < 0.6 && b < 0.6 * g && b < 0.45 * r;
+  };
+}
 
 /** The doll's coat as it is taken off the doll, built small in code until the room's model has come (art/blender/a2-room.py). */
 function codeCoat(): Group {
@@ -59,18 +74,21 @@ export function createHeldCoat(chapter: Pick<ChapterData, 'id' | 'spots'>) {
       rig.hand(0, hands); rig.hand(1, other);
       hands.add(other).multiplyScalar(0.5);
       if (lying) {
-        // Laid down flat on the stone, a little behind where he stood, its front up.
-        if (!laidSet) { body.updateWorldMatrix(true, false); laid.set(body.position.x - 0.55, ground, -0.3); laidSet = true; }
+        // Laid down flat on the stone where his hands put it, at his feet, its front up and its collar away from us. A game
+        // taken up after it finds it a little behind where he stands.
+        if (!laidSet) { laid.set(taking ? hands.x : body.position.x - 0.55, ground + 0.06, -0.12); laidSet = true; }
         group.position.copy(laid);
         group.rotation.set(-Math.PI / 2, 0, 0.3);
-        group.scale.setScalar(1);
+        // Empty, it lies flat.
+        group.scale.set(DOLL_SIZE, DOLL_SIZE, DOLL_SIZE * 0.4);
         return;
       }
       group.rotation.set(0, 0, 0);
-      group.scale.setScalar(Math.min(1, size));
+      const held = DOLL_SIZE * Math.min(1, size);
+      group.scale.setScalar(held);
       // Off the doll and into his hands; held by its shoulders, it hangs from them.
       const k = putting && from ? smooth(t / PUT_ON.hands) : 1;
-      group.position.copy(hands).add(other.set(0, -0.44 * Math.min(1, size), 0));
+      group.position.copy(hands).add(other.set(0, -0.44 * held, 0));
       if (from && k < 1) group.position.lerp(other.set(from.x, from.y + 0.02, from.z), 1 - k);
     },
   };

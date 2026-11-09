@@ -8,6 +8,7 @@ import { sample, type Clip } from './gait';
 import { bendSoftly } from './joints';
 import { CLIPS } from './motion-data';
 import { jointOf, sleevesWithArms } from './sleeves';
+import { wornOver } from './elof-coat-mesh';
 
 /**
  * Rain gear in Stormnatten (Olov, 6 November 2026: "alla karaktärer ska ta på sig regnjacka, stövlar och grejer, så
@@ -339,7 +340,9 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
   // The coat goes down over the upper part of the thighs; a boot up to a little under the knee.
   const thighCut = (name: string) => { const r = range.get(name)!; return r[0] + (r[1] - r[0]) * 0.55; };
   const calfCut = (name: string) => { const r = range.get(name)!; return r[0] + (r[1] - r[0]) * 0.82; };
-  const inCoat = (i: number) => COAT.has(owner[i]!) || (THIGH.has(owner[i]!) && position.getY(i) > thighCut(owner[i]!));
+  // What is worn over the coat stays out of it: Elof's backpack (./elof-coat-mesh.ts).
+  const over = wornOver(body);
+  const inCoat = (i: number) => (COAT.has(owner[i]!) || (THIGH.has(owner[i]!) && position.getY(i) > thighCut(owner[i]!))) && !over?.(i);
   const inBoot = (side: 0 | 1) => (i: number) => BOOT[side].has(owner[i]!) && (!owner[i]!.startsWith('calf') || position.getY(i) < calfCut(owner[i]!));
 
   function shell(keep: (i: number) => boolean, out: number, colour: string, glossy: number): { mesh: SkinnedMesh; picked: number[] } {
