@@ -1,5 +1,5 @@
 import {
-  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DataTexture, ExtrudeGeometry, InstancedBufferAttribute, DoubleSide, DynamicDrawUsage,
+  AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DataTexture, ExtrudeGeometry, InstancedBufferAttribute, DoubleSide, DynamicDrawUsage,
   Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, RingGeometry,
   CatmullRomCurve3, Points, PointsMaterial, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
   type Material,
@@ -15,6 +15,7 @@ import { kitLife } from '../../render/kit-life';
 import { drawnWhile } from '../../render/idle';
 import { litLamp } from '../../render/stage';
 import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
+import { DOLL_SIZE, DOLL_Z, ELOF_COAT, PUT_ON } from '../../render/elof-coat';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
 import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
@@ -2010,6 +2011,54 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       return { group, update: () => {} };
     },
     aftermath: () => aftermath(),
+    doll: (spot) => {
+      // The doll at the foot of the toy shelf, in the small yellow raincoat Elof takes for the storm (../../render/elof-coat.ts):
+      // without it once he has taken it. The room's models from Blender (art/blender/a2-room.py) take the plain shapes' place.
+      const root = new Group();
+      root.position.set(spot.at.x, spot.at.y, DOLL_Z);
+      root.scale.setScalar(DOLL_SIZE);
+      const doll = new Group();
+      doll.userData.model = 'docka';
+      doll.userData.disposeFallback = true;
+      const dress = solid('#7fa6b8', 0.9), skin = solid('#f2cfb3', 0.7);
+      const body = new Mesh(new CylinderGeometry(0.12, 0.17, 0.4, 12).translate(0, 0.22, 0), dress);
+      const head = new Mesh(new SphereGeometry(0.155, 14, 10).translate(0, 0.62, -0.01), skin);
+      const hair = new Mesh(new SphereGeometry(0.165, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55).translate(0, 0.64, 0.005), solid('#7a5232', 0.9));
+      doll.add(body, head, hair);
+      for (const side of [-1, 1]) {
+        const leg = new Mesh(new CapsuleGeometry(0.05, 0.34, 4, 8).rotateX(Math.PI / 2).translate(side * 0.08, 0.055, 0.26), solid('#efe9e0', 0.9));
+        const shoe = new Mesh(new SphereGeometry(0.06, 8, 6).scale(0.9, 1.2, 0.8).translate(side * 0.086, 0.08, 0.47), solid('#b8403a', 0.7));
+        doll.add(leg, shoe);
+      }
+      const coat = new Group();
+      coat.userData.model = 'docka-rock';
+      coat.userData.disposeFallback = true;
+      const yellow = solid(ELOF_COAT, 0.42);
+      coat.add(new Mesh(new CylinderGeometry(0.1, 0.22, 0.46, 14, 1, true).translate(0, 0.27, 0), yellow));
+      coat.add(new Mesh(new SphereGeometry(0.09, 10, 8).scale(1.1, 0.8, 0.5).translate(0, 0.4, -0.14), yellow));
+      root.add(doll, coat);
+      return {
+        group: root,
+        update(used) {
+          // Taken off the doll the moment he takes it, into his hands (../../render/elof-coat.ts, `createHeldCoat`).
+          drawnWhile(coat, !used && !(elof.flags?.has(`scene:${PUT_ON.scene}`) ?? false));
+        },
+      };
+    },
+    toyShelf: (spot) => {
+      // A low toy shelf in the family's room, its front towards the camera: blocks, a ball, a ring tower, books, a truck.
+      const root = new Group();
+      root.position.set(spot.at.x, spot.at.y, -2);
+      const model = new Group();
+      model.userData.model = 'leksakshylla';
+      model.userData.disposeFallback = true;
+      const birch = solid('#dcbc8c', 0.8);
+      for (const x of [-1.64, 1.64]) model.add(new Mesh(new BoxGeometry(0.12, 1.8, 1).translate(x, 0.9, 0), birch));
+      for (const y of [0.14, 0.9, 1.78]) model.add(new Mesh(new BoxGeometry(3.3, 0.08, 1).translate(0, y, 0), birch));
+      model.add(new Mesh(new BoxGeometry(3.3, 1.7, 0.06).translate(0, 0.9, -0.46), solid('#c4a070', 0.85)));
+      root.add(model);
+      return { group: root, update: () => {} };
+    },
     // The same room on the evening of the storm, before anything has happened to it.
     homeEvening: () => ({ group: roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 14, blanket: false }), update: () => {} }),
     mormor: (spot) => figure(spot, 'mormor'),
@@ -2106,15 +2155,20 @@ function aftermath(): SpotProp {
   const WALL = -8.5;
   const SILL = 3.2;
   const coats: BufferGeometry[] = [];
-  // The very coats and boots they wore through the storm (../../render/rain-gear.ts). Elof, small, went in his own.
+  // The very coats and boots they wore through the storm (../../render/rain-gear.ts).
   const WHO = ['pappa', 'mamma', 'moa', 'bertil'] as const;
   const COATS = WHO.map((who, i) => ({ x: [15.9, 17, 18.1, 19][i]!, tall: [2.7, 2.5, 1.9, 1.5][i]!, colour: RAIN_GEAR[who].coat }));
-  coats.push(paint(new BoxGeometry(4.2, 0.16, 0.16).translate(17.45, 5.6, WALL - 0.24), '#6a4a2c'));
+  coats.push(paint(new BoxGeometry(4.8, 0.16, 0.16).translate(17.75, 5.6, WALL - 0.24), '#6a4a2c'));
   for (const coat of COATS) {
     const mid = 5.45 - coat.tall / 2;
     coats.push(paint(new CylinderGeometry(0.3, 0.56, coat.tall, 10).scale(1, 1, 0.36).translate(coat.x, mid, WALL), coat.colour));
     coats.push(paint(new SphereGeometry(0.27, 10, 8).scale(1, 0.85, 0.6).translate(coat.x, 5.5, WALL), coat.colour));
   }
+  // And beside them, small, the doll's raincoat Elof wore through the storm when he was small (../../render/elof-coat.ts).
+  const LITTLE = { x: 19.85, tall: 0.6 };
+  coats.push(paint(new CylinderGeometry(0.09, 0.2, LITTLE.tall, 10).scale(1, 1, 0.4).translate(LITTLE.x, 5.45 - LITTLE.tall / 2, WALL), ELOF_COAT));
+  coats.push(paint(new SphereGeometry(0.1, 10, 8).scale(1, 0.85, 0.6).translate(LITTLE.x, 5.47, WALL), ELOF_COAT));
+  for (const side of [-1, 1]) coats.push(paint(new CylinderGeometry(0.04, 0.045, 0.34, 6).rotateZ(side * 0.28).translate(LITTLE.x + side * 0.15, 5.2, WALL + 0.02), ELOF_COAT));
   const BOOTS = WHO.map((who, i) => ({ x: [15.8, 16.9, 18, 19][i]!, colour: RAIN_GEAR[who].boots }));
   for (const boot of BOOTS) {
     for (const side of [-0.2, 0.2]) {
@@ -2160,7 +2214,7 @@ function aftermath(): SpotProp {
   // Three slow drops from the coats' hems.
   const fall = new SphereGeometry(0.05, 6, 4);
   const wet = solid('#b8ccdc', 0.1);
-  const drops = COATS.slice(0, 3).map((coat, i) => {
+  const drops = [...COATS.slice(0, 3), LITTLE].map((coat, i) => {
     const drop = new Mesh(fall, wet);
     drop.position.set(coat.x, 0, WALL + 0.1);
     group.add(drop);

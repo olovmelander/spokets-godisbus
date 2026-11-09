@@ -1,7 +1,14 @@
 import {
-  Box3, BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Skeleton, SkinnedMesh, Uint16BufferAttribute, Vector3, type Bone, type Object3D,
+  Box3, BufferAttribute, BufferGeometry, Float32BufferAttribute, Matrix4, MeshStandardMaterial, Skeleton, SkinnedMesh, Uint16BufferAttribute, Vector3, type Bone, type Object3D,
 } from 'three';
+import type { Actor } from '../sim/scene';
 import type { ChapterData } from '../sim/types';
+import { elofRainGear } from './elof-coat';
+import { sample, type Clip } from './gait';
+import { bendSoftly } from './joints';
+import { CLIPS } from './motion-data';
+import { jointOf, sleevesWithArms } from './sleeves';
+import { wornOver } from './elof-coat-mesh';
 
 /**
  * Rain gear in Stormnatten (Olov, 6 November 2026: "alla karaktärer ska ta på sig regnjacka, stövlar och grejer, så
@@ -17,13 +24,28 @@ import type { ChapterData } from '../sim/types';
  */
 export interface RainGear {
   coat: string;
-  boots: string;
+  /** Null: no boots, his own shoes (Elof, in the doll's coat). */
+  boots: string | null;
   /** The side whose boot is off, a sock showing: the body's left is 0. */
   bootOff: 0 | 1 | null;
+  /** While it is being put on (`gearOnAt`, or Elof's: ./elof-coat.ts), or taken off, how far each piece is on. Left out: all of it. */
+  on?: GearOn;
+  /** The arm that goes into its sleeve first (`FIRST_SLEEVE`): the coat goes on in its order. Left out: the left. */
+  first?: 0 | 1;
 }
 
-/** Not Elof: the star has made him small before the family get ready to go out (Stormkvällen's `krymper` comes before
- * `tillsammans`), so no raincoat of theirs fits him; he goes out in his own clothes. */
+/** How far each piece is on, from 0 (not yet) to 1 (on): the coat, and each boot (the body's left is 0). */
+export interface GearOn {
+  coat: number;
+  boots: readonly [number, number];
+}
+const ALL_ON: GearOn = { coat: 1, boots: [1, 1] };
+
+/**
+ * The family's. The star has made Elof small before they get ready to go out (Stormkvällen's `krymper` comes before
+ * `tillsammans`), so no raincoat of theirs fits him: he finds a doll's small yellow one after them, and wears it with
+ * his own shoes (./elof-coat.ts, `ELOF_COAT`). It goes on and comes off in the same order as theirs.
+ */
 export type GearRole = 'mamma' | 'pappa' | 'moa' | 'bertil';
 
 /** Each one's raincoat and boots. Bertil's boots are the green of the boot Elof rides (../content/aventyr2/render.ts). */
@@ -35,22 +57,58 @@ export const LOOK: Record<GearRole, { coat: string; boots: string }> = {
 };
 export const SOCK = '#d9d2c2';
 
-/** What one of the family wears now, in this chapter, with these flags: null is their own clothes. */
 /**
- * When each puts their gear on in Stormkvällen's scene `tillsammans`, in seconds: as each speaks of getting ready,
- * Bertil as he stamps into his boots.
+ * How each puts their raincoat and boots on (Olov, 9 November 2026: "we need to make sure the putting on of the raincoats
+ * works"): a clip of their own, keyed in Blender (art/blender/motion.py CLIPS) and played as the act `dress`
+ * (./acting.ts). Its channels `coat`, `bootL` and `bootR` key how far each piece is on, in step with the motion: the coat
+ * in the order of `COAT_ORDER`, a boot from the sole up as the foot goes into it.
  */
-const GETS_READY: Record<GearRole, number> = { mamma: 1.0, pappa: 3.0, bertil: 4.8, moa: 7.0 };
+export const DRESSING = { mamma: 'dressMamma', pappa: 'dressPappa', moa: 'dressMoa', bertil: 'dressBertil' } as const satisfies Record<GearRole, keyof typeof CLIPS>;
+/** Which arm each puts into its sleeve first (the body's left is 0): the clip and the coat's order agree on it. */
+export const FIRST_SLEEVE: Record<GearRole, 0 | 1> = { mamma: 0, pappa: 1, moa: 0, bertil: 1 };
 
-export function rainGearFor(chapter: Pick<ChapterData, 'id' | 'storm'>, who: string, flags: ReadonlySet<string>, scene?: { id: string; seconds: number } | null): RainGear | null {
+/**
+ * How far the gear is on, `t` seconds after `who` began to put it on: as their clip keys it, from nothing before it to
+ * all of it after. In reduced motion it is all on at once, as they begin. Null before they begin.
+ */
+export function gearOnAt(who: GearRole, t: number, calm = false): GearOn | null {
+  if (!(t >= 0)) return null;
+  if (calm) return ALL_ON;
+  const clip: Clip = CLIPS[DRESSING[who]];
+  const at = (keys?: readonly number[]) => (keys && keys.length >= 3 ? Math.min(1, Math.max(0, sample(keys, t))) : 1);
+  return { coat: at(clip.coat), boots: [at(clip.bootL), at(clip.bootR)] };
+}
+
+/** When `who` begins to put the gear on in a chapter's scene (its first `dress` act), in the scene's seconds: or null. */
+export function dressingFrom(chapter: Pick<ChapterData, 'scenes'>, scene: string, who: string): number | null {
+  const keys = chapter.scenes?.find((one) => one.id === scene)?.stage?.actors?.[who as Actor];
+  return keys?.find((key) => key.act === 'dress')?.at ?? null;
+}
+
+/** They are in their own clothes in Stormkvällen until they have got ready to go out together. */
+const READY = 'scene:tillsammans';
+
+/**
+ * What one of the family wears now, in this chapter, with these flags, in this moment of a scene: null is their own
+ * clothes. `calm`: reduced motion. `tall`: how big he is drawn, for Elof's doll's coat, which he never wears big.
+ */
+export function rainGearFor(chapter: Pick<ChapterData, 'id' | 'storm' | 'scenes'>, who: string, flags: ReadonlySet<string>,
+  scene?: { id: string; seconds: number } | null, calm = false, tall = 1): RainGear | null {
+  // Elof's is the doll's coat, while he is small (./elof-coat.ts).
+  if (who === 'elof') return elofRainGear(chapter, flags, scene, calm, tall);
   if (!(who in LOOK) || !chapter.storm || (chapter.storm.rain ?? 0) <= 0) return null;
-  // Indoors in Stormkvällen they are in their own clothes until they get ready to go out together, one by one.
-  if (chapter.id === 'stormkvall' && !flags.has('scene:tillsammans')
-    && !(scene?.id === 'tillsammans' && scene.seconds >= GETS_READY[who as GearRole])) return null;
   const look = LOOK[who as GearRole];
+  // Indoors in Stormkvällen they are in their own clothes until they get ready to go out together: then each puts it on
+  // in the scene, as far as they have come.
+  if (chapter.id === 'stormkvall' && !flags.has(READY)) {
+    const from = scene ? dressingFrom(chapter, scene.id, who) : null;
+    const on = scene && from !== null ? gearOnAt(who as GearRole, scene.seconds - from, calm) : null;
+    return on && (on.coat > 0 || on.boots[0] > 0 || on.boots[1] > 0)
+      ? { coat: look.coat, boots: look.boots, bootOff: null, on, first: FIRST_SLEEVE[who as GearRole] } : null;
+  }
   // Bertil's right boot is on the water once he has been called to it.
   const bootOff = who === 'bertil' && chapter.id === 'stormgard' && flags.has('sg:bertil') ? 1 : null;
-  return { coat: look.coat, boots: look.boots, bootOff };
+  return { coat: look.coat, boots: look.boots, bootOff, first: FIRST_SLEEVE[who as GearRole] };
 }
 
 /** The bones a coat covers, and those a boot does, by side. */
@@ -58,7 +116,188 @@ const COAT = new Set(['spine_01', 'spine_02', 'pelvis', 'upperarm_l', 'upperarm_
 const BOOT = [new Set(['calf_l', 'foot_l', 'ball_l']), new Set(['calf_r', 'foot_r', 'ball_r'])] as const;
 const THIGH = new Set(['thigh_l', 'thigh_r']);
 
-interface Shells { coat: SkinnedMesh; boots: [SkinnedMesh, SkinnedMesh]; socks: [SkinnedMesh, SkinnedMesh] }
+// --- the order it goes on in ------------------------------------------------------------------------------------------
+
+/**
+ * The order the coat goes on in, as shares of the clip's `coat` channel (art/blender/motion.py keys the motion to the
+ * same shares): the first sleeve from the cuff up to the shoulder as the arm goes into it, and that side's front as it
+ * falls from the shoulder; across the back, from that side, as the coat is swung round behind; the other sleeve and its
+ * front; and, after a shrug, the open front closed from the hem up to the collar as it is zipped.
+ */
+export const COAT_ORDER = {
+  sleeve: [0, 0.22], front: [0.22, 0.32], back: [0.32, 0.52], otherSleeve: [0.52, 0.74], otherFront: [0.74, 0.84], zip: [0.88, 1],
+} as const satisfies Record<string, readonly [number, number]>;
+/** How far in from its side the coat's front is open until it is zipped, as a share of the way to its middle. */
+const ZIP_EDGE = 0.85;
+/** What is under a piece goes a little after the piece has come over it, so that there is never a hole between them. */
+const UNDER_LAG = 0.03;
+/** Under nothing: no share of the gear ever hides it. */
+const UNCOVERED = 9;
+/** The height of each of the coat's cross-sections, in metres. */
+const BAND = 0.01;
+const ARM_BONE = /^(upperarm|lowerarm|hand)_([lr])$/;
+const armSide = (bone: string): 0 | 1 | null => {
+  const match = ARM_BONE.exec(bone);
+  return match ? (match[2] === 'l' ? 0 : 1) : null;
+};
+const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+
+/** A skinned mesh as it lies at rest, in the pelvis's frame and in metres (`restOf`): its corners, and each corner's bone. */
+interface AtRest {
+  at: Float32Array;
+  owner: string[];
+  /** Where a bone's joint is, in the same frame. */
+  joint(name: string): Vector3 | null;
+}
+
+function atRest(mesh: SkinnedMesh): AtRest {
+  const at = restOf(mesh), g = mesh.geometry;
+  const skinIndex = g.getAttribute('skinIndex'), skinWeight = g.getAttribute('skinWeight');
+  const names = mesh.skeleton.bones.map((bone) => bone.name);
+  const owner = new Array<string>(at.length / 3);
+  for (let i = 0; i < owner.length; i++) {
+    let best = 0, which = 0;
+    for (let k = 0; k < 4; k++) { const w = skinWeight.getComponent(i, k); if (w > best) { best = w; which = skinIndex.getComponent(i, k); } }
+    owner[i] = names[which] ?? '';
+  }
+  const pelvis = Math.max(0, names.indexOf('pelvis'));
+  return {
+    at, owner,
+    joint(name) {
+      const k = names.indexOf(name);
+      if (k < 0) return null;
+      // The inverse bind matrices carry the packer's box for the mesh's units; between two of them it cancels.
+      const m = new Matrix4().copy(mesh.skeleton.boneInverses[k]!).invert().premultiply(mesh.skeleton.boneInverses[pelvis]!);
+      return new Vector3().setFromMatrixPosition(m);
+    },
+  };
+}
+
+/** The coat's shape at rest, which its order is worked out on: what it covers of the body follows the same order. */
+interface CoatShape {
+  low: number;
+  high: number;
+  /** Its cross-section at each height (BAND), without its sleeves. */
+  bands: ({ x0: number; x1: number; z0: number; z1: number } | undefined)[];
+  /** Each arm from the shoulder to the wrist, the body's left first. */
+  arms: [{ from: Vector3; to: Vector3 } | null, { from: Vector3; to: Vector3 } | null];
+  /** The arm that goes in first, and which way is ahead along z (the toes are ahead of the ankles). */
+  first: 0 | 1;
+  ahead: 1 | -1;
+}
+
+/** Which way is ahead in a body's frame at rest: the way its toes point from its ankles. */
+function aheadOf(body: AtRest): 1 | -1 {
+  let sum = 0;
+  for (const side of ['l', 'r']) {
+    const ankle = body.joint('foot_' + side);
+    if (!ankle) continue;
+    for (let i = 0; i < body.owner.length; i++) if (body.owner[i] === 'foot_' + side || body.owner[i] === 'ball_' + side) sum += body.at[i * 3 + 2]! - ankle.z;
+  }
+  return sum < 0 ? -1 : 1;
+}
+
+/** The coat's shape, from the corners of a coat (or of a body where a coat lies over it: `keep`). */
+function coatShape(rest: AtRest, first: 0 | 1, ahead: 1 | -1, keep: (i: number) => boolean = () => true): CoatShape | null {
+  let low = Infinity, high = -Infinity;
+  for (let i = 0; i < rest.owner.length; i++) {
+    if (!keep(i) || armSide(rest.owner[i]!) !== null) continue;
+    low = Math.min(low, rest.at[i * 3 + 1]!); high = Math.max(high, rest.at[i * 3 + 1]!);
+  }
+  if (!(high > low)) return null;
+  const bands: CoatShape['bands'] = [];
+  for (let i = 0; i < rest.owner.length; i++) {
+    if (!keep(i) || armSide(rest.owner[i]!) !== null) continue;
+    const x = rest.at[i * 3]!, y = rest.at[i * 3 + 1]!, z = rest.at[i * 3 + 2]!;
+    const band = (bands[Math.floor((y - low) / BAND)] ??= { x0: Infinity, x1: -Infinity, z0: Infinity, z1: -Infinity });
+    band.x0 = Math.min(band.x0, x); band.x1 = Math.max(band.x1, x);
+    band.z0 = Math.min(band.z0, z); band.z1 = Math.max(band.z1, z);
+  }
+  const arm = (side: 'l' | 'r') => {
+    const from = rest.joint('upperarm_' + side), elbow = rest.joint('lowerarm_' + side);
+    const to = rest.joint('hand_' + side) ?? (from && elbow ? elbow.clone().multiplyScalar(2).sub(from) : null);
+    return from && to ? { from, to } : null;
+  };
+  return { low, high, bands, arms: [arm('l'), arm('r')], first, ahead };
+}
+
+const along = new Vector3(), from = new Vector3();
+/** How far into putting the coat on a point of it (or under it) is covered: its share of the `coat` channel. */
+function coatOrderAt(shape: CoatShape, x: number, y: number, z: number, bone: string): number {
+  const span = (range: readonly [number, number], k: number) => range[0] + (range[1] - range[0]) * clamp01(k);
+  const side = armSide(bone);
+  if (side !== null) {
+    // A sleeve, from its cuff up to the shoulder: the arm goes in from the cuff's end.
+    const arm = shape.arms[side];
+    let up = 0;
+    if (arm) {
+      along.subVectors(arm.to, arm.from);
+      up = 1 - from.set(x, y, z).sub(arm.from).dot(along) / Math.max(1e-6, along.lengthSq());
+    }
+    return span(side === shape.first ? COAT_ORDER.sleeve : COAT_ORDER.otherSleeve, up);
+  }
+  const index = Math.min(shape.bands.length - 1, Math.max(0, Math.floor((y - shape.low) / BAND)));
+  let band = shape.bands[index];
+  for (let k = 1; !band && k < shape.bands.length; k++) band = shape.bands[index - k] ?? shape.bands[index + k];
+  if (!band) return COAT_ORDER.back[0];
+  const up = clamp01((y - shape.low) / (shape.high - shape.low));
+  const middle = (band.x0 + band.x1) / 2, half = Math.max(1e-4, (band.x1 - band.x0) / 2);
+  const firstX = shape.arms[shape.first]?.from.x ?? middle + (shape.first === 0 ? half : -half);
+  const otherX = shape.arms[1 - shape.first]?.from.x ?? middle - (firstX - middle);
+  if ((z - (band.z0 + band.z1) / 2) * shape.ahead >= 0) {
+    // The front: each side falls from its shoulder once its arm is in, and the middle closes from the hem up.
+    if (1 - Math.abs(x - middle) / half >= ZIP_EDGE) return span(COAT_ORDER.zip, up);
+    const onFirst = (x - middle) * (firstX - middle) >= 0;
+    return span(onFirst ? COAT_ORDER.front : COAT_ORDER.otherFront, 1 - up);
+  }
+  // The back, swept across from the first arm's side, a little ahead at the collar.
+  const across = (x - firstX) / (Math.abs(otherX - firstX) > 1e-4 ? otherX - firstX : 1);
+  return span(COAT_ORDER.back, 0.85 * clamp01(across) + 0.15 * (1 - up));
+}
+
+/** A boot's height at rest, which it goes on over from the sole up. */
+function bootSpan(rest: AtRest, keep: (i: number) => boolean = () => true): [number, number] | null {
+  let low = Infinity, high = -Infinity;
+  for (let i = 0; i < rest.owner.length; i++) if (keep(i)) { low = Math.min(low, rest.at[i * 3 + 1]!); high = Math.max(high, rest.at[i * 3 + 1]!); }
+  return high > low ? [low, high] : null;
+}
+const bootOrderAt = (span: [number, number], y: number) => clamp01((y - span[0]) / (span[1] - span[0]));
+
+/**
+ * A piece of the gear drawn as far as it is on: its corners with their order (`gearOrder`), and its material's uniform
+ * `gearOn`, how far it is on (above 1, all of it). Every piece of every one of the family shares the one program, made
+ * in the warm-up with the rest of the chapter (they are in the scene, hidden, from when they are made).
+ */
+function revealed(mesh: SkinnedMesh, order: Float32Array): { value: number } {
+  mesh.geometry.setAttribute('gearOrder', new BufferAttribute(order, 1));
+  const on = { value: 2 };
+  const material = mesh.material as MeshStandardMaterial;
+  const before = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, renderer) => {
+    before.call(material, shader, renderer);
+    shader.uniforms.gearOn = on;
+    shader.vertexShader = 'attribute float gearOrder;\nvarying float vGearOrder;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vGearOrder = gearOrder;');
+    shader.fragmentShader = 'uniform float gearOn;\nvarying float vGearOrder;\n' + shader.fragmentShader.replace('void main() {', 'void main() {\n  if (vGearOrder > gearOn) discard;');
+  };
+  const key = material.customProgramCacheKey.bind(material);
+  material.customProgramCacheKey = () => `${key()}:gear-on`;
+  material.needsUpdate = true;
+  return on;
+}
+
+/** A share of a piece as its uniform has it: all of it from 1, so that no rounding leaves a corner out. */
+const shown = (on: number) => (on >= 1 ? 2 : on);
+
+interface Shells {
+  coat: SkinnedMesh;
+  boots: [SkinnedMesh, SkinnedMesh];
+  socks: [SkinnedMesh, SkinnedMesh];
+  /** How far each is on, as its material reads it (`revealed`). */
+  on: { coat: { value: number }; boots: [{ value: number }, { value: number }] };
+  /** The arm the coat's order is worked out for, and working it out again for the other. */
+  first: 0 | 1;
+  reorder(first: 0 | 1): void;
+}
 
 /**
  * The coat's and the boots' shells for one skinned body, built once, hidden. `height` is the body's height in EL,
@@ -81,9 +320,10 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
       const w = skinWeight.getComponent(i, k);
       if (w > best) { best = w; which = skinIndex.getComponent(i, k); }
     }
-    owner[i] = bones[which] ?? '';
+    owner[i] = jointOf(bones[which] ?? '');            // a bone added at a joint stands for the bone it rests on
   }
-  // How tall the body is in its own units, and the height range of its thighs' and calves' corners.
+  // How tall the body is in its own units, and the height range of its thighs' and calves' corners. A body smaller than
+  // a boy (Elof, small, in the doll's coat) has its shells as close to it, for its size, as a boy's would be.
   let low = Infinity, high = -Infinity;
   const range = new Map<string, [number, number]>();
   for (let i = 0; i < count; i++) {
@@ -93,17 +333,19 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
     r[0] = Math.min(r[0], y); r[1] = Math.max(r[1], y);
     range.set(owner[i]!, r);
   }
-  const unit = (high - low) / height;
+  const unit = (high - low) / Math.max(height, 3);
   const index = g.index;
   const triangles = index ? index.count / 3 : count / 3;
   const corner = (t: number, k: number) => (index ? index.getX(t * 3 + k) : t * 3 + k);
   // The coat goes down over the upper part of the thighs; a boot up to a little under the knee.
   const thighCut = (name: string) => { const r = range.get(name)!; return r[0] + (r[1] - r[0]) * 0.55; };
   const calfCut = (name: string) => { const r = range.get(name)!; return r[0] + (r[1] - r[0]) * 0.82; };
-  const inCoat = (i: number) => COAT.has(owner[i]!) || (THIGH.has(owner[i]!) && position.getY(i) > thighCut(owner[i]!));
+  // What is worn over the coat stays out of it: Elof's backpack (./elof-coat-mesh.ts).
+  const over = wornOver(body);
+  const inCoat = (i: number) => (COAT.has(owner[i]!) || (THIGH.has(owner[i]!) && position.getY(i) > thighCut(owner[i]!))) && !over?.(i);
   const inBoot = (side: 0 | 1) => (i: number) => BOOT[side].has(owner[i]!) && (!owner[i]!.startsWith('calf') || position.getY(i) < calfCut(owner[i]!));
 
-  function shell(keep: (i: number) => boolean, out: number, colour: string, glossy: number): SkinnedMesh {
+  function shell(keep: (i: number) => boolean, out: number, colour: string, glossy: number): { mesh: SkinnedMesh; picked: number[] } {
     const picked: number[] = [];
     for (let t = 0; t < triangles; t++) {
       const a = corner(t, 0), b = corner(t, 1), c = corner(t, 2);
@@ -135,25 +377,49 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
     mesh.visible = false;
     mesh.name = 'rain-gear';
     body.parent?.add(mesh);
-    return mesh;
+    return { mesh, picked };
   }
-  return {
-    // A raincoat is shiny and stands a little off the body; a rubber boot is shinier and stands further out.
-    coat: shell(inCoat, 0.05, '#ffffff', 0.38),
-    boots: [shell(inBoot(0), 0.07, '#ffffff', 0.3), shell(inBoot(1), 0.07, '#ffffff', 0.3)],
-    socks: [shell(inBoot(0), 0.015, SOCK, 0.95), shell(inBoot(1), 0.015, SOCK, 0.95)],
+  // A raincoat is shiny and stands a little off the body; a rubber boot is shinier and stands further out.
+  const coat = shell(inCoat, 0.05, '#ffffff', 0.38);
+  coat.mesh.userData.wardrobe = 'shell raincoat';
+  const boots = [shell(inBoot(0), 0.07, '#ffffff', 0.3), shell(inBoot(1), 0.07, '#ffffff', 0.3)] as const;
+  // They go on in the order of the body's own corners at rest: the coat as `COAT_ORDER`, a boot from the sole up.
+  const rest = atRest(body), ahead = aheadOf(rest);
+  const coatOrder = new Float32Array(coat.picked.length);
+  const bootOn = ([0, 1] as const).map((side) => {
+    const span = bootSpan(rest, inBoot(side));
+    return revealed(boots[side].mesh, Float32Array.from(boots[side].picked, (i) => (span ? bootOrderAt(span, rest.at[i * 3 + 1]!) : 0)));
+  });
+  const made: Shells = {
+    coat: coat.mesh,
+    boots: [boots[0].mesh, boots[1].mesh],
+    socks: [shell(inBoot(0), 0.015, SOCK, 0.95).mesh, shell(inBoot(1), 0.015, SOCK, 0.95).mesh],
+    on: { coat: revealed(coat.mesh, coatOrder), boots: [bootOn[0]!, bootOn[1]!] },
+    first: 0,
+    reorder(first) {
+      const shape = coatShape(rest, first, ahead, inCoat);
+      coat.picked.forEach((i, j) => { coatOrder[j] = shape ? coatOrderAt(shape, rest.at[i * 3]!, rest.at[i * 3 + 1]!, rest.at[i * 3 + 2]!, rest.owner[i]!) : 0; });
+      coat.mesh.geometry.getAttribute('gearOrder').needsUpdate = true;
+      made.first = first;
+    },
   };
+  made.reorder(0);
+  return made;
 }
 
 /** Shows the gear on a model's shells (or takes it off, with null). */
 export function wearShells(shells: Shells, gear: RainGear | null): void {
-  shells.coat.visible = gear !== null;
+  const on = gear?.on ?? ALL_ON;
+  if (gear && (gear.first ?? 0) !== shells.first) shells.reorder(gear.first ?? 0);
+  shells.coat.visible = gear !== null && on.coat > 0;
+  shells.on.coat.value = shown(on.coat);
   if (gear) (shells.coat.material as MeshStandardMaterial).color.set(gear.coat);
   for (const side of [0, 1] as const) {
     const off = gear?.bootOff === side;
-    shells.boots[side].visible = gear !== null && !off;
+    shells.boots[side].visible = gear !== null && gear.boots !== null && !off && on.boots[side] > 0;
+    shells.on.boots[side].value = shown(on.boots[side]);
     shells.socks[side].visible = gear !== null && off;
-    if (gear) (shells.boots[side].material as MeshStandardMaterial).color.set(gear.boots);
+    if (gear?.boots) (shells.boots[side].material as MeshStandardMaterial).color.set(gear.boots);
   }
 }
 
@@ -184,6 +450,11 @@ export interface Wardrobe {
   cover: { value: Vector3 } | null;
   /** 1 while the cap is on: then the hair is drawn only below its brim, at the sides, the back and the nape. */
   capped: { value: number } | null;
+  /** How far the coat and each boot are on, as their materials read it (`revealed`). */
+  on: { coat: { value: number } | null; boots: [{ value: number } | null, { value: number } | null] };
+  /** The arm the coat's order is worked out for (`FIRST_SLEEVE`), and working it out again for the other. */
+  first: 0 | 1;
+  reorder(first: 0 | 1): void;
 }
 
 const COVERED_BY_COAT = new Set(['pelvis', 'spine_01', 'spine_02', 'upperarm_l', 'upperarm_r', 'lowerarm_l', 'lowerarm_r', 'thigh_l', 'thigh_r']);
@@ -247,7 +518,7 @@ function hideUnder(body: SkinnedMesh, coat: SkinnedMesh | null, boots: [SkinnedM
   for (let i = 0; i < position.count; i++) {
     let best = 0, which = 0;
     for (let k = 0; k < 4; k++) { const w = skinWeight.getComponent(i, k); if (w > best) { best = w; which = skinIndex.getComponent(i, k); } }
-    const bone = names[which] ?? '', x = rest[i * 3], y = rest[i * 3 + 1], z = rest[i * 3 + 2];
+    const bone = jointOf(names[which] ?? ''), x = rest[i * 3], y = rest[i * 3 + 1], z = rest[i * 3 + 2];
     // Under the coat: between its hem and a little under the top of its collar, on the trunk, the arms to the wrist
     // and the thighs; under a boot: the foot and the calf, below the boot's top.
     if (coatBox && COVERED_BY_COAT.has(bone) && y > coatBox.min.y + 0.004 && y < coatBox.max.y - 0.02
@@ -258,19 +529,45 @@ function hideUnder(body: SkinnedMesh, coat: SkinnedMesh | null, boots: [SkinnedM
     }
   }
   g.setAttribute('wardrobeCover', new Float32BufferAttribute(cover, 3));
-  const uniform = { value: new Vector3() };
+  // Each corner is drawn until what covers it has come over it (`inOrder`): −1, nothing is worn.
+  const uniform = { value: new Vector3(-1, -1, -1) };
   const material = body.material as MeshStandardMaterial;
   const before = material.onBeforeCompile;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.wardrobeWorn = uniform;
     shader.vertexShader = 'attribute vec3 wardrobeCover;\nvarying vec3 vWardrobeCover;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vWardrobeCover = wardrobeCover;');
-    shader.fragmentShader = 'uniform vec3 wardrobeWorn;\nvarying vec3 vWardrobeCover;\n' + shader.fragmentShader.replace('void main() {', 'void main() {\n  if (dot(vWardrobeCover, wardrobeWorn) > 0.5) discard;');
+    shader.fragmentShader = 'uniform vec3 wardrobeWorn;\nvarying vec3 vWardrobeCover;\n' + shader.fragmentShader.replace('void main() {', 'void main() {\n  if (any(lessThanEqual(vWardrobeCover, wardrobeWorn))) discard;');
   };
   const key = material.customProgramCacheKey.bind(material);
   material.customProgramCacheKey = () => `${key()}:wardrobe-cover`;
   material.needsUpdate = true;
   return uniform;
+}
+
+/**
+ * What the coat and the boots cover of the body (`hideUnder`) goes in their order as they are put on: a covered corner
+ * holds the share of the piece over it at which it is covered, a little after the piece's own, and one that is not
+ * covered never goes (`UNCOVERED`). Returns what works the coat's out again, for the arm that goes in first.
+ */
+function inOrder(body: SkinnedMesh, boots: [SkinnedMesh | null, SkinnedMesh | null]): (shape: CoatShape | null) => void {
+  const attribute = body.geometry.getAttribute('wardrobeCover') as Float32BufferAttribute;
+  const cover = attribute.array as Float32Array, rest = atRest(body);
+  const spans = boots.map((boot) => (boot ? bootSpan(atRest(boot)) : null));
+  const underCoat: number[] = [];
+  for (let i = 0; i < cover.length / 3; i++) {
+    if (cover[i * 3]! > 0.5) underCoat.push(i);
+    cover[i * 3] = UNCOVERED;
+    for (const side of [0, 1] as const) {
+      const span = spans[side];
+      cover[i * 3 + 1 + side] = cover[i * 3 + 1 + side]! > 0.5 && span ? bootOrderAt(span, rest.at[i * 3 + 1]!) + UNDER_LAG : UNCOVERED;
+    }
+  }
+  attribute.needsUpdate = true;
+  return (shape) => {
+    for (const i of underCoat) cover[i * 3] = (shape ? coatOrderAt(shape, rest.at[i * 3]!, rest.at[i * 3 + 1]!, rest.at[i * 3 + 2]!, rest.owner[i]!) : 0) + UNDER_LAG;
+    attribute.needsUpdate = true;
+  };
 }
 
 /** The model's cap, where it has one: its own part, painted with its own material ("... cap"). */
@@ -337,7 +634,10 @@ export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
   const bones = new Map(body.skeleton.bones.map((bone) => [bone.name, bone]));
   const pieces: SkinnedMesh[] = [];
   made.traverse((node) => { if ((node as SkinnedMesh).isSkinnedMesh) pieces.push(node as SkinnedMesh); });
-  const out: Wardrobe = { coat: null, boots: [null, null], socks: [null, null], hair: null, cover: null, capped: null };
+  const out: Wardrobe = {
+    coat: null, boots: [null, null], socks: [null, null], hair: null, cover: null, capped: null, on: { coat: null, boots: [null, null] },
+    first: 0, reorder: () => {},
+  };
   for (const piece of pieces) {
     const own = piece.skeleton.bones.map((bone) => bones.get(bone.name));
     if (own.some((bone) => !bone)) continue;
@@ -347,6 +647,9 @@ export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
     mesh.name = 'rain-gear';
     mesh.userData.wardrobe = piece.name;
     mesh.bind(new Skeleton(own as Bone[], piece.skeleton.boneInverses), body.bindMatrix);
+    // The coat's sleeves go with the arms, and its elbows and shoulders bend as the body's own do (./sleeves.ts, ./joints.ts).
+    sleevesWithArms(mesh);
+    bendSoftly(mesh);
     mesh.position.copy(body.position);
     mesh.quaternion.copy(body.quaternion);
     mesh.scale.copy(body.scale);
@@ -360,18 +663,46 @@ export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
     else if (/hair$/.test(piece.name)) out.hair = mesh;
   }
   out.cover = hideUnder(body, out.coat, out.boots);
+  // They go on in order (`COAT_ORDER`, a boot from the sole up), and what they cover goes with them.
+  const ahead = aheadOf(atRest(body));
+  const coatRest = out.coat ? atRest(out.coat) : null, coatOrder = new Float32Array(coatRest?.owner.length ?? 0);
+  if (out.coat) out.on.coat = revealed(out.coat, coatOrder);
+  for (const side of [0, 1] as const) {
+    const boot = out.boots[side];
+    if (!boot) continue;
+    const rest = atRest(boot), span = bootSpan(rest);
+    out.on.boots[side] = revealed(boot, Float32Array.from(rest.owner, (_, i) => (span ? bootOrderAt(span, rest.at[i * 3 + 1]!) : 0)));
+  }
+  const under = out.cover ? inOrder(body, out.boots) : null;
+  out.reorder = (first) => {
+    const shape = coatRest ? coatShape(coatRest, first, ahead) : null;
+    if (out.coat && coatRest && shape) {
+      for (let i = 0; i < coatOrder.length; i++) coatOrder[i] = coatOrderAt(shape, coatRest.at[i * 3]!, coatRest.at[i * 3 + 1]!, coatRest.at[i * 3 + 2]!, coatRest.owner[i]!);
+      out.coat.geometry.getAttribute('gearOrder').needsUpdate = true;
+    }
+    under?.(shape);
+    out.first = first;
+  };
+  out.reorder(0);
   const cap = capOf(model);
   out.capped = out.hair && cap ? hairUnderCap(out.hair, cap) : null;
   return out;
 }
 
-/** Shows the wardrobe's rain gear as `gear` says (or takes it off, with null). */
+/** Shows the wardrobe's rain gear as `gear` says (or takes it off, with null), as far as it is on. */
 export function wearWardrobe(wardrobe: Wardrobe, gear: RainGear | null): void {
-  if (wardrobe.coat) wardrobe.coat.visible = gear !== null;
+  const on = gear?.on ?? ALL_ON;
+  if (gear && (gear.first ?? 0) !== wardrobe.first) wardrobe.reorder(gear.first ?? 0);
+  if (wardrobe.coat) wardrobe.coat.visible = gear !== null && on.coat > 0;
+  if (wardrobe.on.coat) wardrobe.on.coat.value = shown(on.coat);
   for (const side of [0, 1] as const) {
     const off = gear?.bootOff === side;
-    if (wardrobe.boots[side]) wardrobe.boots[side]!.visible = gear !== null && !off;
+    if (wardrobe.boots[side]) wardrobe.boots[side]!.visible = gear !== null && gear.boots !== null && !off && on.boots[side] > 0;
+    if (wardrobe.on.boots[side]) wardrobe.on.boots[side]!.value = shown(on.boots[side]);
     if (wardrobe.socks[side]) wardrobe.socks[side]!.visible = gear !== null && off;
   }
-  wardrobe.cover?.value.set(gear && wardrobe.coat ? 1 : 0, gear && wardrobe.boots[0] && gear.bootOff !== 0 ? 1 : 0, gear && wardrobe.boots[1] && gear.bootOff !== 1 ? 1 : 0);
+  // What is under a piece goes as far as the piece has come over it (−1: none of it).
+  const under = (piece: SkinnedMesh | null, share: number, off = false) => (gear && piece && !off && share > 0 ? shown(share) : -1);
+  wardrobe.cover?.value.set(under(wardrobe.coat, on.coat), under(wardrobe.boots[0], on.boots[0], gear?.bootOff === 0),
+    under(wardrobe.boots[1], on.boots[1], gear?.bootOff === 1));
 }

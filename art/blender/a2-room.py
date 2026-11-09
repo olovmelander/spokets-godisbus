@@ -207,6 +207,147 @@ seat('stol', 1.25, True)
 seat('pall', 1.15, False)
 
 
+# --- the toy shelf, and the doll at its foot -------------------------------------------------------------------------
+# Stormkvallen: once the star has made him small, none of the family's raincoats fits him, and he finds a small yellow one on
+# a doll at the foot of the toy shelf (Olov, 9 November 2026). A plain play doll, nobody's in particular, a little taller than he
+# is when he is small; it sits on the floor with its legs out, leaning on the shelf. Its raincoat is a thing of its own, on the
+# same origin, so that the game can take it off the doll: lemon yellow, the hood down on its back. No letters or marks.
+
+BIRCH = tone('#dcbc8c')
+BIRCH_EDGE = tone('#c4a070')
+LEMON = tone('#f2d43c')
+
+if wanted('leksakshylla'):
+    part = new_part()
+    # A low open shelf of birch plywood, 3.4 wide, 1 deep and 1.8 tall: two shelves and its top, a divider below.
+    for x0 in (-1.7, 1.58):
+        pad(part, (x0, -0.5, 0.0), (x0 + 0.12, 0.5, 1.8), BIRCH, 0.03, x0)
+    pad(part, (-1.6, -0.47, 0.1), (1.6, 0.47, 0.18), BIRCH, 0.02, 1.0)
+    pad(part, (-1.6, -0.5, 0.0), (1.6, -0.42, 0.11), BIRCH_EDGE, 0.02, 2.0)
+    pad(part, (-1.6, -0.47, 0.86), (1.6, 0.47, 0.94), BIRCH, 0.02, 3.0)
+    pad(part, (-1.74, -0.53, 1.74), (1.74, 0.53, 1.82), lit(BIRCH, 1.04), 0.03, 4.0)
+    pad(part, (-1.6, 0.42, 0.1), (1.6, 0.48, 1.76), lit(BIRCH_EDGE, 0.86), 0.01, 5.0)
+    pad(part, (-0.05, -0.46, 0.18), (0.05, 0.44, 0.86), BIRCH, 0.015, 6.0)
+    # On top: three wooden blocks in a stack, a ball, and a tower of rings on a peg.
+    for i, (x, z, colour, turn) in enumerate(((-1.15, 1.82, '#c0443a', 0.1), (-1.12, 2.06, '#3f6ea8', -0.2), (-1.16, 2.3, '#e0b83a', 0.25))):
+        verts = lump(part, Vector((x, -0.05, z + 0.12)), (0.13, 0.13, 0.12), 1, tone(colour))
+        for v in verts:
+            # A cube with its edges rounded: each point pushed out towards the block's corners.
+            d = v.co - Vector((x, -0.05, z + 0.12))
+            d = Vector((max(-0.12, min(0.12, d.x * 1.6)), max(-0.12, min(0.12, d.y * 1.6)), max(-0.11, min(0.11, d.z * 1.6))))
+            v.co = Vector((x, -0.05, z + 0.12)) + Matrix.Rotation(turn, 3, 'Z') @ d
+    ball = lump(part, Vector((1.12, -0.08, 1.82 + 0.2)), (0.2, 0.2, 0.2), 3, tone('#d0503a'))
+    for v in ball:
+        # A white band round its middle.
+        if abs(v.co.z - 2.02) < 0.045:
+            part['paint'][v] = tone('#f2ece0')
+    tube(part, [Vector((0.3, -0.05, 1.82)), Vector((0.3, -0.05, 2.36))], [0.035, 0.035], [BIRCH_EDGE, BIRCH_EDGE], 8)
+    for k, (r, colour) in enumerate(((0.2, '#4a8a4a'), (0.17, '#e0b83a'), (0.14, '#d8803a'), (0.11, '#c0443a'), (0.085, '#3f6ea8'))):
+        z = 1.84 + k * 0.09
+        turned(part, [(0.04, z, tone(colour)), (r, z + 0.012, tone(colour)), (r, z + 0.07, lit(tone(colour), 1.08)), (0.04, z + 0.082, tone(colour))], 18, (0.3, -0.05, 0.0))
+    # On the middle shelf: four plain books standing, and a wooden truck.
+    for i, (wide, tall, colour) in enumerate(((0.09, 0.62, '#6a8aa8'), (0.12, 0.56, '#a8604a'), (0.08, 0.66, '#7a9a5a'), (0.11, 0.5, '#d8c8a0'))):
+        x0 = -1.5 + sum((0.09, 0.12, 0.08, 0.11)[:i]) + 0.012 * i
+        pad(part, (x0, -0.3, 0.94), (x0 + wide, 0.32, 0.94 + tall), tone(colour), 0.012, 10.0 + i)
+    pad(part, (0.35, -0.2, 1.0), (0.95, 0.12, 1.2), lit(BIRCH, 0.95), 0.03, 20.0)
+    pad(part, (0.95, -0.2, 1.0), (1.22, 0.12, 1.36), tone('#c0443a'), 0.04, 21.0)
+    pad(part, (1.0, -0.21, 1.22), (1.2, 0.13, 1.32), tone('#2c3036'), 0.02, 22.0)
+    for x in (0.5, 1.08):
+        for y in (-0.22, 0.14):
+            tube(part, [Vector((x, y - 0.03, 1.0)), Vector((x, y + 0.03, 1.0))], [0.07, 0.07], [tone('#2c2c30'), tone('#2c2c30')], 12)
+    # Below: a soft bin with blocks in it, and a basket.
+    pad(part, (-1.5, -0.4, 0.18), (-0.25, 0.36, 0.72), tone('#5f8a8a'), 0.08, 30.0)
+    for i, colour in enumerate(('#c0443a', '#e0b83a', '#3f6ea8', '#4a8a4a')):
+        lump(part, Vector((-1.25 + i * 0.27, -0.02 + 0.08 * rnd(i, 3.0), 0.74)), (0.1, 0.1, 0.09), 1, tone(colour))
+    turned(part, [(0.0, 0.18, BIRCH_EDGE), (0.5, 0.18, BIRCH_EDGE), (0.56, 0.5, lit(BIRCH_EDGE, 1.05)), (0.58, 0.54, BIRCH), (0.52, 0.54, lit(BIRCH_EDGE, 0.6)), (0.0, 0.3, lit(BIRCH_EDGE, 0.5))], 22, (0.85, 0.0, 0.0))
+    finish(part, 'leksakshylla', sharp=50.0, strength=0.55, reach=0.6, floor=0.0, leaf=True)
+
+# The doll's measures: it sits with its seat on the floor, its back to the shelf, its legs out towards -Y.
+DOLL_SHOULDER = (0.118, 0.02, 0.385)
+DOLL_ELBOW = (0.18, -0.05, 0.27)
+DOLL_WRIST = (0.15, -0.14, 0.18)
+DOLL_SKIN = tone('#f2cfb3')
+DOLL_DRESS = tone('#7fa6b8')
+
+
+def doll_arm(side):
+    """The path of one of the doll's arms, shoulder to wrist: hanging, the hands in its lap."""
+    return [Vector((side * DOLL_SHOULDER[0], DOLL_SHOULDER[1], DOLL_SHOULDER[2])), Vector((side * DOLL_ELBOW[0], DOLL_ELBOW[1], DOLL_ELBOW[2])),
+            Vector((side * DOLL_WRIST[0], DOLL_WRIST[1], DOLL_WRIST[2]))]
+
+
+if wanted('docka'):
+    part = new_part()
+    # Its soft body in a dusty blue dress, the skirt spread over its lap.
+    turned(part, [(0.0, 0.03, lit(DOLL_DRESS, 0.7)), (0.16, 0.04, lit(DOLL_DRESS, 0.8)), (0.18, 0.1, DOLL_DRESS), (0.14, 0.2, DOLL_DRESS),
+                  (0.12, 0.3, DOLL_DRESS), (0.125, 0.38, lit(DOLL_DRESS, 1.05)), (0.1, 0.43, DOLL_DRESS), (0.0, 0.45, DOLL_DRESS)], 20)
+    lump(part, Vector((0.0, -0.12, 0.07)), (0.17, 0.12, 0.05), 3, lit(DOLL_DRESS, 0.95))
+    # Its legs out in front, in pale tights, and red shoes, toes up.
+    for side in (-1.0, 1.0):
+        tube(part, [Vector((side * 0.07, -0.06, 0.06)), Vector((side * 0.078, -0.26, 0.055)), Vector((side * 0.085, -0.44, 0.05))], [0.052, 0.047, 0.042],
+             [tone('#efe9e0')] * 3, 10)
+        lump(part, Vector((side * 0.086, -0.47, 0.08)), (0.05, 0.045, 0.075), 2, tone('#b8403a'))
+        # Its arms in the dress's sleeves, and its hands in its lap.
+        path = doll_arm(side)
+        lump(part, path[0] + Vector((side * -0.004, 0.0, 0.004)), (0.048, 0.046, 0.044), 2, DOLL_DRESS)
+        tube(part, path, [0.04, 0.036, 0.032], [DOLL_DRESS, DOLL_DRESS, lit(DOLL_DRESS, 0.95)], 10)
+        lump(part, path[-1] + Vector((side * -0.012, -0.03, -0.01)), (0.035, 0.042, 0.03), 1, DOLL_SKIN)
+    # The neck and the big round head of a play doll, its hair a brown bob with a fringe.
+    tube(part, [Vector((0.0, 0.0, 0.42)), Vector((0.0, -0.005, 0.5))], [0.045, 0.045], [DOLL_SKIN, DOLL_SKIN], 10)
+    head = Vector((0.0, -0.01, 0.62))
+    lump(part, head, (0.155, 0.145, 0.16), 3, DOLL_SKIN)
+    for side in (-1.0, 1.0):
+        lump(part, head + Vector((side * 0.155, 0.01, -0.01)), (0.022, 0.03, 0.035), 1, lit(DOLL_SKIN, 0.95))
+        # Painted eyes, each with a glint, and a little colour in its cheeks.
+        lump(part, head + Vector((side * 0.052, -0.138, 0.005)), (0.02, 0.012, 0.025), 1, tone('#2a2a34'))
+        lump(part, head + Vector((side * 0.046, -0.148, 0.014)), (0.006, 0.004, 0.006), 1, tone('#f4f4f4'))
+        lump(part, head + Vector((side * 0.085, -0.12, -0.045)), (0.032, 0.01, 0.022), 1, tone('#eea39a'))
+    strip(part, [head + Vector((-0.022, -0.149, -0.062)), head + Vector((0.0, -0.153, -0.068)), head + Vector((0.022, -0.149, -0.062))], 0.006, tone('#c45a5a'), FRONT_)
+    hair = lump(part, head + Vector((0.0, 0.012, 0.018)), (0.168, 0.162, 0.162), 3, tone('#7a5232'))
+    for v in hair:
+        d = v.co - head
+        # The face is bare below the fringe, and the bob ends at the jaw: what lies there goes in under the skin.
+        if (d.y < -0.06 and d.z < 0.06) or d.z < -0.1:
+            v.co = head + d * 0.8
+        elif d.y < -0.06:
+            v.co.z += 0.008
+    finish(part, 'docka', sharp=60.0, strength=0.5, reach=0.3, floor=0.0, leaf=True)
+
+if wanted('docka-rock'):
+    part = new_part()
+    # The doll's small raincoat: rings round the doll from a hem spread on the floor to a collar that stands up, sleeves over
+    # its arms, the hood lying on its back, a zip down the front with its pull, two pocket flaps and a darker turned hem.
+    LEMON_DARK = lit(LEMON, 0.74)
+    rows = [(0.035, 0.225, 0.21), (0.08, 0.215, 0.2), (0.16, 0.19, 0.175), (0.25, 0.165, 0.152), (0.33, 0.155, 0.142), (0.39, 0.155, 0.14),
+            (0.435, 0.135, 0.118), (0.462, 0.09, 0.082), (0.5, 0.078, 0.074)]
+    rings = []
+    tones = []
+    for i, (z, rx, ry) in enumerate(rows):
+        ring = []
+        shades = []
+        for j in range(28):
+            a = TAU * j / 28
+            ahead = -math.sin(a)
+            # Its sides a little in shadow, and a soft fold or two in the skirt.
+            fold = 1.0 + (0.03 * math.sin(a * 7.0 + i) if z < 0.2 else 0.0)
+            ring.append(Vector((rx * fold * math.cos(a), ry * fold * math.sin(a), z)))
+            shades.append(LEMON_DARK if i == 0 else lit(LEMON, 0.86 + 0.16 * max(0.0, ahead)))
+        rings.append(ring)
+        tones.append(shades)
+    skin(part, rings, tones)
+    for side in (-1.0, 1.0):
+        path = doll_arm(side)
+        sleeve = [path[0] + Vector((side * -0.01, 0.0, 0.0)), path[1], path[2] + (path[1] - path[2]).normalized() * 0.02]
+        lump(part, path[0] + Vector((side * -0.004, 0.0, 0.006)), (0.064, 0.062, 0.06), 2, LEMON)
+        tube(part, sleeve, [0.058, 0.052, 0.046], [LEMON, lit(LEMON, 0.95), LEMON_DARK], 12)
+        lump(part, Vector((side * 0.11, -0.148, 0.17)), (0.05, 0.012, 0.02), 1, LEMON_DARK)
+    lump(part, Vector((0.0, 0.14, 0.395)), (0.1, 0.045, 0.075), 2, lit(LEMON, 0.92))
+    lump(part, Vector((0.0, 0.15, 0.435)), (0.075, 0.03, 0.03), 1, LEMON_DARK)
+    strip(part, [Vector((0.0, -ry * 1.01, z)) for z, rx, ry in rows[1:7]], 0.008, tone('#4a4a4e'), FRONT_)
+    lump(part, Vector((0.0, -0.126, 0.41)), (0.012, 0.006, 0.02), 1, tone('#9a9ca2'))
+    finish(part, 'docka-rock', sharp=60.0, strength=0.45, reach=0.25, floor=0.0, leaf=True)
+
+
 # --- the stone in the lake ---------------------------------------------------------------------------------------------
 # The great stone of the meeting: a whale's back of granite, 20 long, its top at 0.6 where he walks. It goes down into the water
 # before it in worn sheets, each with its own edge, and up behind him in others, with lichen on it, moss in its cracks and the wet

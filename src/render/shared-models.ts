@@ -15,7 +15,7 @@ const YARD = ['vedbod', 'roddbat-vinter', 'brevlada', 'gungor', 'utemobler', 'fo
 /** Äventyr 2's buildings: Själevad's church, the beaver's lodge, Olympia's store and floodlight masts, Billsta's poles. */
 const BUILDINGS = ['kyrka', 'baverhydda', 'kiosk', 'belysningsmast', 'elstolpe'];
 const FLARKEN = ['hopptorn', 'hydda', 'hydda-skjutdorr', 'hydda-tjarad', 'schack', 'solskylt', 'bryggarm'];
-const ROOM = ['soffa', 'soffa-filt', 'golvlampa', 'krukvaxt', 'bord', 'stol', 'pall', 'holme'];
+const ROOM = ['soffa', 'soffa-filt', 'golvlampa', 'krukvaxt', 'bord', 'stol', 'pall', 'holme', 'leksakshylla', 'docka', 'docka-rock'];
 const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
 const CARVINGS = ['tragubbe', 'lillgubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];

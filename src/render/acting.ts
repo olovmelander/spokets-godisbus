@@ -1,8 +1,13 @@
 import type { Act } from '../sim/scene';
-import { groundedHips, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
+import { groundedHips, JOINTS, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
 import { carvingAt } from './carving-motion';
-import { play, seated, stand, stepOf, stride, type Footing } from './gait';
+import { kneelPose, play, sample, seated, stand, stepOf, stride, type Clip, type Footing } from './gait';
 import { CLIPS, GAITS, STANDS } from './motion-data';
+import { DRESSING } from './rain-gear';
+
+/** How long, in seconds, the end of putting on the gear takes to hand over to how they stand. */
+const DRESSED = 0.5;
+const dressing: Pose = { ...STANDING };
 
 /**
  * Acting: what each of a scene's acts does to a body, as a pose that moves with time (docs/narrative-audit.md).
@@ -147,18 +152,12 @@ export function sitting(p: Pose, legs?: Legs, seat?: number): Pose {
   return p;
 }
 
-/** One knee on the ground, the other foot planted: the giant comes down to Elof's height. */
-function kneeling(p: Pose): Pose {
-  p.legR = 1.32;
-  p.kneeR = 1.32;
-  p.legL = -0.08;
-  p.kneeL = 1.62;
-  p.lean = 0.2;
-  p.armR = 0.45;
-  p.elbowR = 0.6;
-  p.armL = 0.2;
-  p.elbowL = 0.35;
-  return p;
+/**
+ * One knee on the ground, the other foot planted: the giant comes down to Elof's height. It is where going down on a knee
+ * ends (art/blender/motion.py CLIPS.kneel), on the body's own legs, the feet as far apart as it stands.
+ */
+export function kneeling(p: Pose, legs: Legs = REHEARSAL_LEGS, role?: Role): Pose {
+  return kneelPose(CLIPS.kneel, CLIPS.kneel.seconds, legs, p, STANDS[role ?? 'pappa'].width);
 }
 
 /** Down on both heels, hands on the knees. */
@@ -170,6 +169,50 @@ function crouching(p: Pose): Pose {
   p.elbowL = p.elbowR = 0.35;
   p.nod = 0.15;
   return p;
+}
+
+const LEGGED = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR'] as const;
+/**
+ * A gesture keyed in Blender (./motion-data.ts CLIPS) at `t` seconds over the stance under it: what it keys of the body,
+ * and its legs and hop only standing (sitting, kneeling or crouching keeps its legs where they are).
+ */
+function gesture(clip: Clip, t: number, out: Pose, standing: boolean, energy = 1): Pose {
+  const kept = LEGGED.map((joint) => out[joint]);
+  play(clip, t, out);
+  out.bounce = standing && clip.bounce ? sample(clip.bounce, t) * energy : 0;
+  if (!standing) LEGGED.forEach((joint, i) => { out[joint] = kept[i]!; });
+  // Someone with more go in them flings their arms further.
+  if (energy !== 1) for (const joint of FLUNG) if (clip[joint]) out[joint] = STANDING[joint] + (out[joint] - STANDING[joint]) * energy;
+  return out;
+}
+const FLUNG = ['armL', 'armR', 'outL', 'outR'] as const;
+
+/**
+ * When a gesture that ends is over, in the person's own time (seconds × their tempo), they stand again as they stand
+ * (./gait.ts stand): breathing, the weight going over, looking about. Over BACK seconds.
+ */
+const ENDS: Partial<Record<Act, number>> = { wave: 2.4, nod: 1.1, shrug: 1.0, startle: 1.3, gasp: 1.6, cheer: 1.6 };
+const BACK = 0.7;
+const standingAfter: Pose = { ...STANDING };
+
+/**
+ * The pose an act asks for at its moment. `stance` is what the body does under an act that only uses its arms
+ * or its head: sitting, kneeling, crouching or standing, which the stage keeps from the acts before.
+ */
+export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'stand'): Pose {
+  actOf(act, c, out, stance);
+  const end = ENDS[act];
+  if (end === undefined || stance !== 'stand' || c.calm) return out;
+  const k = smooth((Math.max(0, c.t) * timing(c.role) - end) / BACK);
+  if (k <= 0) return out;
+  actOf('stand', c, standingAfter, 'stand');
+  if (k >= 1) return Object.assign(out, standingAfter);
+  for (const key in STANDING) {
+    if (key === 'seat' || key === 'floor') continue;
+    const joint = key as Exclude<keyof Pose, 'seat' | 'floor'>;
+    out[joint] += (standingAfter[joint] - out[joint]) * k;
+  }
+  return out;
 }
 
 /** An easy walk, in the body's own heights a second, where a scene or a follower says nothing faster. */
@@ -204,17 +247,15 @@ function look(p: Pose, c: ActContext, k = 1): void {
   p.turn += (Math.max(-.7, Math.min(.7, turn)) - p.turn) * k;
 }
 
-/**
- * The pose an act asks for at its moment. `stance` is what the body does under an act that only uses its arms
- * or its head: sitting, kneeling, crouching or standing, which the stage keeps from the acts before.
- */
-export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'stand'): Pose {
+/** The act itself at its moment (actPose, above, hands a finished gesture back to standing). */
+function actOf(act: Act, c: ActContext, out: Pose, stance: Stance): Pose {
   Object.assign(out, STANDING);
   const loop = c.calm ? 0 : 1;
   // A reduced-motion act holds its completed, readable pose; authored keys still decide when acts change.
   const t = c.calm ? 3 : Math.max(0, c.t);
   const r = t * timing(c.role), energy = weight(c.role);
-  const under = () => (stance === 'sit' ? sitting(out, c.legs, c.seat) : stance === 'kneel' ? kneeling(out) : stance === 'crouch' ? crouching(out) : out);
+  const under = () => (stance === 'sit' ? sitting(out, c.legs, c.seat) : stance === 'kneel' ? kneeling(out, c.legs, c.role)
+    : stance === 'crouch' ? crouching(out) : out);
   switch (act) {
     case 'stand':
     case 'watch':
@@ -270,13 +311,17 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       return out;
     }
     case 'kneel': {
-      // Down on a knee the way people go down (art/blender/motion.py CLIPS.kneel): the weight over, a foot forward, and
-      // down onto the other knee. Reduced motion: kneeling.
-      kneeling(out);
-      const clip = CLIPS.kneel;
-      if (!c.calm && t < clip.seconds) play(clip, t, out);
-      out.nod = 0.35 * rise(t, 0.6);
-      look(out, c, rise(t, 0.6));
+      // Down on a knee the way people go down (art/blender/motion.py CLIPS.kneel), on the body's own legs: the weight over,
+      // a foot forward, and down onto the other knee, looking where the feet go and then up at what they came down to.
+      // Down, they breathe. Reduced motion: kneeling.
+      const clip = CLIPS.kneel, stander = STANDS[c.role ?? 'pappa'];
+      kneelPose(clip, Math.min(t, clip.seconds), c.legs ?? REHEARSAL_LEGS, out, stander.width);
+      if (!c.calm) {
+        const breath = Math.sin(Math.PI * 2 * stander.breath * (c.clock ?? c.t)) * rise(t - clip.seconds * 0.8, 0.6);
+        out.lean += stander.deep * breath;
+        out.nod -= stander.deep * 0.7 * breath;
+      }
+      look(out, c, rise(t - clip.seconds * 0.45, clip.seconds * 0.5));
       return out;
     }
     case 'crouch':
@@ -310,31 +355,21 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       return out;
     }
     case 'wave': {
+      // Keyed in Blender (art/blender/motion.py CLIPS.wave): the arm dips back, swings up and out beside the head past
+      // where it stops, and the forearm waves from the elbow with the hand a moment late; then it comes down and hangs.
+      // Reduced motion: the hand up, still.
       under();
-      const k = rise(r, .34), settle = c.calm ? 0 : rise(r - 1.45, .8);
-      out.armR += (2.2 * energy - out.armR) * k;
-      out.armR += (.48 - out.armR) * settle;
-      // The arm up and out beside the head (its own outward turn), the forearm up, waving to and fro from the elbow.
-      out.outR = .8 * k * (1 - settle);
-      const waving = loop * k * (1 - rise(r - 1.2, .7));
-      out.elbowR = .55 + .5 * settle + .32 * Math.sin(r * 9) * waving;
-      // The hand follows the forearm a moment late, and the head tips, friendly; the body leans a little off the raised arm.
-      out.wristR = .3 * Math.sin(r * 9 - 1) * waving || 0;
-      out.tilt = .09 * k * (1 - settle); out.bendSide = .04 * k * (1 - settle);
+      gesture(CLIPS.wave, c.calm ? CLIPS.wave.seconds * .3 : r, out, stance === 'stand', energy);
+      if (c.calm) { out.elbowR = .55; out.wristR = 0; }
       look(out, c);
       return out;
     }
     case 'cheer': {
+      // Keyed in Blender (art/blender/motion.py CLIPS.cheer): down into the knees, both arms flung up and out in a V with
+      // the hands open, two hops, and down again. Reduced motion: the arms up, held, and no hop.
       under();
-      const k = rise(r, .24), settle = c.calm ? 0 : rise(r - 1.05, .9);
-      out.armR = (2.85 - 1.85 * settle) * k;
-      out.armL = (2.75 - 1.9 * settle) * rise(r - .08, .3);
-      out.elbowL = .25 + .55 * settle; out.elbowR = .25 + .4 * settle;
-      out.bounce = loop * Math.sin(r * 7.5) ** 2 * .2 * energy * rise(r, .16) * smooth((1.6 - r) / .35);
-      // Down into the knees before the first hop, and the hands open up high.
-      const dip = loop * pulse(r, 0, .08, 0, .14);
-      out.kneeL = out.kneeR = .35 * dip; out.legL = out.legR = .17 * dip;
-      out.wristL = out.wristR = -.3 * k * (1 - settle) || 0;
+      gesture(CLIPS.cheer, c.calm ? CLIPS.cheer.seconds * .4 : r, out, stance === 'stand');
+      out.bounce *= loop * energy;
       return out;
     }
     case 'shine': {
@@ -417,47 +452,35 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       return out;
     }
     case 'shrug': {
+      // Keyed in Blender (art/blender/motion.py CLIPS.shrug): the forearms up and out with the palms turning up, the head
+      // tipping a moment after them (who knows?), and down again, settling. Reduced motion: the shrug, held.
       under();
-      const k = c.calm ? 1 : rise(t, 0.2) * (1 - rise(t - 0.55, 0.35));
-      out.armL = out.armR = 0.25;
-      out.elbowL = out.elbowR = 0.3 + 1.2 * k;
-      out.spread = 0.35 * k;
-      out.bounce = 0;
-      out.nod = -0.1 * k;
-      // The palms turn up and the head tips: who knows?
-      out.wristL = out.wristR = -.45 * k || 0;
-      out.tilt = .12 * k;
-      return out;
+      return gesture(CLIPS.shrug, c.calm ? CLIPS.shrug.seconds * .4 : r, out, stance === 'stand');
     }
     case 'hug': {
+      // Keyed in Blender (art/blender/motion.py CLIPS.hug): the arms open wide, then round the one hugged at the chest, a
+      // squeeze, and held. Reduced motion: the hug, held.
       under();
-      const k = rise(r, .55), squeeze = loop * pulse(r, .6, .3, .2, .65);
-      out.armR = .4 + .95 * k;
-      out.armL = .4 + 1.02 * rise(r - .07, .6);
-      out.elbowL = .3 + 1.3 * k + .12 * squeeze;
-      out.elbowR = .3 + 1.4 * k + .1 * squeeze;
-      out.lean += .1 * k + .025 * squeeze;
-      out.nod = .12 * k;
-      return out;
+      return gesture(CLIPS.hug, c.calm ? CLIPS.hug.seconds : r, out, stance === 'stand');
     }
     case 'nod': {
+      // Keyed in Blender (art/blender/motion.py CLIPS.nod), on top of where they look: up a little first, down, and a
+      // smaller second nod, the trunk going with it. Reduced motion: the head bowed a little, held.
       under();
       look(out, c);
-      out.nod += c.calm ? .18 : energy * (.22 * pulse(r, .05, .18, .04, .28) + .09 * pulse(r, .57, .15, 0, .24));
-      out.tilt = c.calm ? .05 : .07 * pulse(r, .02, .25, .3, .4);
+      const clip = CLIPS.nod;
+      out.nod += c.calm ? .18 : energy * sample(clip.nod!, r);
+      out.tilt = c.calm ? .05 : sample(clip.tilt!, r);
+      out.lean += c.calm ? 0 : sample(clip.lean!, r);
       return out;
     }
     case 'startle': {
+      // Keyed in Blender (art/blender/motion.py CLIPS.startle): the arms fly up and open past where they stop, the head and
+      // trunk jerk back with a hop, and it all comes down, the trunk forward past upright before it settles. Reduced
+      // motion: the hands up, open, still.
       under();
-      const k = rise(r, .14), settle = c.calm ? .5 : rise(r - .3, .8);
-      out.armR = (1.85 - 1.35 * settle) * k * energy;
-      out.armL = (1.65 - 1.3 * settle) * rise(r - .04, .18) * energy;
-      out.elbowR = (1.2 - .55 * settle) * k;
-      out.elbowL = (1.1 - .55 * settle) * k;
-      out.lean -= .16 * k * (1 - settle);
-      out.bounce = loop * .17 * energy * Math.sin(Math.min(1, r / .35) * Math.PI) ** 2;
-      // The hands fly open.
-      out.wristL = out.wristR = -.5 * k * (1 - settle) || 0;
+      gesture(CLIPS.startle, c.calm ? CLIPS.startle.seconds * .3 : r, out, stance === 'stand', energy);
+      out.bounce *= loop;
       look(out, c);
       return out;
     }
@@ -484,6 +507,19 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       out.nod = 0.65 * k;
       return out;
     }
+    case 'dress': {
+      // Putting on the raincoat and the boots, each in their own way (art/blender/motion.py, DRESSING in ./rain-gear.ts),
+      // the gear going on in step with it; from under it and after it, standing as they stand. Reduced motion: standing,
+      // the gear on at once.
+      stand(out, c.clock ?? c.t, STANDS[c.role ?? 'pappa'], c.legs, c.calm);
+      if (c.calm) return out;
+      const clip: Clip = CLIPS[DRESSING[c.role ?? 'pappa']];
+      const k = 1 - smooth((t - clip.seconds) / DRESSED);
+      if (k <= 0) return out;
+      play(clip, Math.min(t, clip.seconds), Object.assign(dressing, out));
+      for (const joint of JOINTS) out[joint] += (dressing[joint] - out[joint]) * k;
+      return out;
+    }
     case 'paint': {
       under();
       const target = c.aim ?? { ahead: 1.2, up: 1.8 };
@@ -505,6 +541,6 @@ export function stanceOf(act: Act, before: Stance): Stance {
   if (act === 'sit' || act === 'carve' || act === 'draw') return 'sit';
   if (act === 'kneel') return 'kneel';
   if (act === 'crouch') return 'crouch';
-  if (act === 'walk' || act === 'stand' || act === 'stomp' || act === 'sneak' || act === 'cheer') return 'stand';
+  if (act === 'walk' || act === 'stand' || act === 'stomp' || act === 'sneak' || act === 'cheer' || act === 'dress') return 'stand';
   return before;
 }

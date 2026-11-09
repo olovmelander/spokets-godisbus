@@ -42,6 +42,13 @@
     "text": "Räcker godiset hela vägen?"
   },
   {
+    "key": "skDollCoat",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Dockan har en regnrock! Passar den mig?"
+  },
+  {
     "key": "skKlonkHop",
     "speaker": "spoket",
     "situation": "Äventyr 2, stormkvall",
@@ -187,6 +194,13 @@
     "situation": "Äventyr 2, stormkvall",
     "tag": "[warm big sister, lively]",
     "text": "Och jag tar mitt paraply!"
+  },
+  {
+    "key": "skCoatFits",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Den passar! Nu kan regnet komma."
   },
   {
     "key": "skOut",
@@ -1727,6 +1741,13 @@
     "situation": "Äventyr 2, stormoga",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Stjärnorna! Vi är i stormens öga."
+  },
+  {
+    "key": "soCoatOff",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Regnet har slutat. Av med regnrocken!"
   },
   {
     "key": "soFound",

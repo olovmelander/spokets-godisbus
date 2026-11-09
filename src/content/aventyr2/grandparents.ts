@@ -4,7 +4,7 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { lessMotion } from '../../platform/motion';
-import { play, stand } from '../../render/gait';
+import { KNEE_HAND, kneelPose, sample, stand } from '../../render/gait';
 import { CLIPS, STANDS } from '../../render/motion-data';
 import { JOINTS, STANDING, createModelRig, heightOf, type Pose, type Rig } from '../../render/rig';
 import { windAt } from '../../render/wind';
@@ -239,6 +239,7 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
   /** Going down on a knee, keyed in Blender (art/blender/motion.py): how far through it they are, 0 standing to 1 down. */
   const clip = CLIPS.kneelElder;
   const was = new Vector3(), now = new Vector3(), rail = new Vector3(), up = new Quaternion(), tilt = new Quaternion(), Z = new Vector3(0, 0, 1);
+  const kneeAt = new Vector3(), aheadOf = new Vector3();
   let since = 0, kneel = 0, facing = 0, gaze = 0, nextBlink = 2 + phase, swing = 0, swingSpeed = 0, first = true;
 
   return {
@@ -289,10 +290,10 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
         wanted.armR = 1.2 * lets + 0.02 * shows;
         wanted.elbowR = 0.3 * lets + 0.1 * shows;
       }
-      // Kneeling: the clip from where they stand, taking over as they start down.
+      // Kneeling: the clip from where they stand, on their own legs, taking over as they start down.
       Object.assign(pose, wanted);
       if (kneel > 0) {
-        play(clip, kneel * clip.seconds, Object.assign(kneeling, wanted));
+        kneelPose(clip, kneel * clip.seconds, rig.legs, Object.assign(kneeling, wanted), STANDS[who].width);
         const k = smooth(kneel / 0.2);
         for (const joint of JOINTS) pose[joint] = wanted[joint] + (kneeling[joint] - wanted[joint]) * k;
         pose.bounce = 0;
@@ -308,6 +309,15 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
       pose.turn = clamp(gaze, -0.7, 0.7);
       rig.pose(pose);
       rig.breeze?.(windAt(now.x), dt, still);
+      // Down there he leans on his knee with his right hand (hers holds the lantern).
+      const leans = who === 'morfar' && kneel > 0 && rig.knee ? sample(clip.hand!, kneel * clip.seconds) * smooth(kneel / 0.2) : 0;
+      if (leans > 1e-3) {
+        group.updateWorldMatrix(true, true);
+        const knee = rig.knee!(1, kneeAt);
+        aheadOf.set(0, 0, 1).transformDirection(rig.group.matrixWorld).setY(0).normalize();
+        knee.y += rig.height * KNEE_HAND.up;
+        rig.reach(1, knee.addScaledVector(aheadOf, -rig.height * KNEE_HAND.back), leans);
+      }
       if (carried) {
         // His hand stays on the rail until he has let it go.
         const holds = 1 - smooth((since - LADDER_DOWN * 0.45) / 0.25);

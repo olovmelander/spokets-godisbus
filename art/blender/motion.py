@@ -35,6 +35,7 @@ import bpy
 FRAMES = 48         # keyed frames in a stride: Blender's timeline for one cycle
 SAMPLES = 96        # samples of each curve for its series
 HARMONICS = 3       # terms of a body curve's series
+STAND_HARMONICS = 8  # a stand's curves shift the weight in under a second and rest: more terms
 FOOT_HARMONICS = 8  # the foot's pitch has sharp corners: more terms
 
 # --- the walks and runs ------------------------------------------------------------------------------------------------
@@ -133,73 +134,105 @@ GAITS = {
 # breaths a second, `deep` of lean. Lengths are shares of the height, angles radians.
 
 ADULT_STAND = {
-    'period': 10.0, 'breath': 0.24, 'deep': 0.012, 'width': 0.05,
-    # Onto the left foot, resting there, over to the right, resting there.
-    'sway': ('full', [(0.0, 0.0), (0.09, 0.008), (0.16, 0.011), (0.42, 0.01), (0.5, 0.0), (0.59, -0.009), (0.66, -0.011),
-                      (0.92, -0.01)]),
-    'roll': ('full', [(0.0, 0.0), (0.1, 0.03), (0.17, 0.04), (0.42, 0.036), (0.5, 0.0), (0.6, -0.03), (0.67, -0.04),
-                      (0.92, -0.036)]),
-    'side': ('full', [(0.0, 0.0), (0.17, -0.012), (0.42, -0.01), (0.5, 0.0), (0.67, 0.012), (0.92, 0.01)]),
-    'tilt': ('full', [(0.0, 0.0), (0.2, 0.02), (0.45, 0.01), (0.55, -0.005), (0.7, -0.018), (0.95, -0.01)]),
-    'lean': ('full', [(0.0, 0.012), (0.5, 0.008)]),
-    'nod': ('full', [(0.0, 0.02), (0.3, 0.035), (0.6, 0.01), (0.85, 0.03)]),
-    # Looking about: over there, back, the other way.
-    'turn': ('full', [(0.0, 0.0), (0.12, 0.12), (0.3, 0.1), (0.4, 0.0), (0.62, -0.08), (0.78, -0.1), (0.9, 0.0)]),
-    'arm': ('full', [(0.0, 0.05), (0.2, 0.08), (0.5, 0.04), (0.7, 0.07)]),
-    'elbow': ('full', [(0.0, 0.2), (0.25, 0.26), (0.55, 0.18), (0.8, 0.24)]),
-    'wrist': ('full', [(0.0, 0.1), (0.3, 0.14), (0.65, 0.08)]),
+    'period': 10.0, 'breath': 0.24, 'deep': 0.012, 'width': 0.05, 'out': 0.07,
+    # The weight goes over onto the left foot in under a second and rests there, settling a little now and then; then
+    # over onto the right, and rests there. Not a slow drift to and fro, which reads as a machine.
+    'sway': ('full', [(0.0, -0.0135), (0.04, -0.0144), (0.12, 0.0135), (0.16, 0.0158), (0.22, 0.014), (0.4, 0.0149),
+                      (0.46, 0.013), (0.5, 0.0149), (0.56, 0.0144), (0.64, -0.0135), (0.68, -0.0158), (0.74, -0.014),
+                      (0.9, -0.0149), (0.95, -0.013)]),
+    # The hip over the standing foot comes up and the other drops, its knee easy.
+    'roll': ('full', [(0.0, -0.056), (0.04, -0.058), (0.12, 0.053), (0.16, 0.064), (0.22, 0.057), (0.4, 0.06), (0.46, 0.052),
+                      (0.5, 0.06), (0.56, 0.058), (0.64, -0.053), (0.68, -0.064), (0.74, -0.057), (0.9, -0.06),
+                      (0.95, -0.052)]),
+    # The shoulders tip the other way from the hips, a moment after them (the trunk bends over the standing leg).
+    'side': ('full', [(0.0, -0.03), (0.06, -0.032), (0.15, 0.028), (0.2, 0.034), (0.3, 0.03), (0.5, 0.032), (0.58, 0.031),
+                      (0.67, -0.028), (0.72, -0.034), (0.82, -0.03), (0.98, -0.031)]),
+    # The head partly stays level against the trunk, and tilts a little on its own.
+    'tilt': ('full', [(0.0, 0.02), (0.08, 0.02), (0.18, -0.015), (0.3, -0.025), (0.48, -0.01), (0.6, -0.012), (0.7, 0.018),
+                      (0.84, 0.028), (0.95, 0.02)]),
+    'lean': ('full', [(0.0, 0.012), (0.3, 0.016), (0.55, 0.009), (0.8, 0.014)]),
+    # Up a little with the glance, and down at the ground for a moment.
+    'nod': ('full', [(0.0, 0.02), (0.2, 0.025), (0.24, 0.0), (0.34, 0.01), (0.5, 0.03), (0.62, 0.015), (0.8, 0.02),
+                     (0.84, 0.07), (0.9, 0.065), (0.95, 0.025)]),
+    # Glances: the head goes quickly, holds there, and comes back slowly; then the other way.
+    'turn': ('full', [(0.0, 0.0), (0.2, 0.02), (0.235, 0.26), (0.36, 0.27), (0.44, 0.08), (0.56, 0.05), (0.6, 0.02),
+                      (0.635, -0.22), (0.74, -0.23), (0.8, -0.04), (0.9, 0.0)]),
+    # The arms hang easy from bent elbows, a little out from the body (`out`, and more on the side the hip goes out to,
+    # src/render/gait.ts stand), and go a little with each shift of the weight; the hands relaxed.
+    'arm': ('full', [(0.0, 0.05), (0.1, 0.07), (0.2, 0.045), (0.5, 0.05), (0.62, 0.07), (0.72, 0.045)]),
+    'elbow': ('full', [(0.0, 0.2), (0.12, 0.25), (0.3, 0.2), (0.55, 0.22), (0.66, 0.26), (0.85, 0.2)]),
+    'wrist': ('full', [(0.0, 0.12), (0.3, 0.16), (0.65, 0.1), (0.85, 0.14)]),
 }
 
 # Pappa stands easy and solid, looking about. Mamma rests on a hip, her head tilted. Moa fidgets, quicker. Bertil can
 # hardly stand still. Mormor and Morfar stand a little stooped, slow and steady, and breathe slower.
 STANDS = {
-    'pappa': person(ADULT_STAND, period=11.0, width=0.055, turn=('scale', 1.2)),
-    'mamma': person(ADULT_STAND, period=9.0, width=0.045, sway=('scale', 1.35), roll=('scale', 1.4), side=('scale', 1.4),
-                    tilt=('scale', 1.6), elbow=('scale', 1.25)),
-    'moa': person(ADULT_STAND, period=6.5, breath=0.3, sway=('scale', 1.2), tilt=('scale', 1.8), turn=('scale', 1.4),
+    'pappa': person(ADULT_STAND, period=11.0, width=0.055, turn=('scale', 1.15)),
+    'mamma': person(ADULT_STAND, period=9.0, width=0.045, sway=('scale', 1.25), roll=('scale', 1.3), side=('scale', 1.3),
+                    tilt=('scale', 1.6), elbow=('scale', 1.25), out=0.06),
+    'moa': person(ADULT_STAND, period=6.5, breath=0.3, sway=('scale', 1.1), tilt=('scale', 1.6), turn=('scale', 1.3),
                   arm=('scale', 1.4)),
-    'bertil': person(ADULT_STAND, period=4.6, breath=0.34, deep=0.014, width=0.06, sway=('scale', 1.5), roll=('scale', 1.2),
-                     tilt=('scale', 1.5), turn=('scale', 1.6), arm=('scale', 1.8), wrist=('scale', 1.3)),
-    'mormor': person(ADULT_STAND, period=13.0, breath=0.22, deep=0.014, sway=('scale', 0.7), roll=('scale', 0.6),
-                     lean=('full', [(0.0, 0.075), (0.5, 0.07)]), nod=('full', [(0.0, 0.06), (0.4, 0.08), (0.75, 0.05)]),
-                     elbow=('scale', 1.6), turn=('scale', 0.8)),
-    'morfar': person(ADULT_STAND, period=12.0, breath=0.21, deep=0.014, sway=('scale', 0.8), roll=('scale', 0.7),
-                     lean=('full', [(0.0, 0.07), (0.5, 0.065)]), nod=('full', [(0.0, 0.05), (0.35, 0.07), (0.7, 0.04)]),
-                     elbow=('scale', 1.4)),
+    'bertil': person(ADULT_STAND, period=4.6, breath=0.34, deep=0.014, width=0.06, sway=('scale', 1.2), roll=('scale', 1.0),
+                     tilt=('scale', 1.4), turn=('scale', 1.4), arm=('scale', 1.6), wrist=('scale', 1.2), out=0.08),
+    'mormor': person(ADULT_STAND, period=13.0, breath=0.22, deep=0.014, sway=('scale', 0.6), roll=('scale', 0.6),
+                     side=('scale', 0.6), lean=('full', [(0.0, 0.075), (0.5, 0.07)]),
+                     nod=('full', [(0.0, 0.06), (0.4, 0.08), (0.75, 0.05)]), elbow=('scale', 1.6), turn=('scale', 0.8), out=0.06),
+    'morfar': person(ADULT_STAND, period=12.0, breath=0.21, deep=0.014, sway=('scale', 0.7), roll=('scale', 0.7),
+                     side=('scale', 0.7), lean=('full', [(0.0, 0.07), (0.5, 0.065)]),
+                     nod=('full', [(0.0, 0.05), (0.35, 0.07), (0.7, 0.04)]), elbow=('scale', 1.4)),
 }
 # --- going down on a knee ------------------------------------------------------------------------------------------------
-# Keyed in the game's own pose (src/render/rig.ts Pose), at shares of `seconds`, from standing to kneeling on the left knee
-# with the right foot forward (src/render/acting.ts kneeling). The weight goes onto the left leg, the right foot comes up
-# and is put down ahead, and the body goes down over it onto the left knee, a hand going to the right knee, and settles.
-# Getting up is the same way back. Mormor and Morfar take longer, lean further over, and lean on that knee.
+# Down onto the left knee with the right foot forward (src/render/acting.ts kneel), keyed at shares of `seconds`. The legs
+# are keyed as shares and reach the floor from there on each body's own legs (src/render/gait.ts kneelLegs), as the
+# chair's are: `down`, how far the hips have gone from standing to kneeling, the left knee on the floor; `front`, how far
+# the right foot has stepped ahead to its place, and `frontUp` how high it is lifted on the way (a share of the hips'
+# height); `back` and `backUp`, the same for the left foot stepping back to its place; `toes`, how far the left heel has
+# come up, the boot onto its toe. `hand` is how much the right hand rests on the right knee (src/render/stage.ts puts it
+# there with the real arm). The rest is the pose itself.
+# The weight goes onto the left foot and the right steps out ahead, lifted, and is put down; the weight comes forward over
+# it, the left heel lifts and the left foot steps back onto its toe as the hips go down, the trunk leaning over the front
+# foot; the knee comes down softly to the floor, the right hand going to the right knee, and the body settles, the trunk
+# and the head coming up. Getting up is the same way back. Mormor and Morfar take longer, lean further over and lean on
+# the knee with the hand; an old foot is slid more than lifted.
 
 KNEEL = {
-    'seconds': 1.0,
-    'lean': [(0.0, 0.0), (0.2, 0.06), (0.45, 0.16), (0.75, 0.27), (0.9, 0.23), (1.0, 0.2)],
-    'sway': [(0.0, 0.0), (0.18, 0.06), (0.45, 0.03), (0.8, 0.0), (1.0, 0.0)],
-    'hipRoll': [(0.0, 0.0), (0.18, 0.03), (0.45, 0.0), (1.0, 0.0)],
-    'legR': [(0.0, 0.0), (0.18, 0.38), (0.42, 0.95), (0.75, 1.22), (1.0, 1.32)],
-    'kneeR': [(0.0, 0.0), (0.18, 0.6), (0.42, 0.78), (0.75, 1.15), (1.0, 1.32)],
-    'footR': [(0.0, 0.0), (0.18, 0.08), (0.42, -0.17), (0.75, -0.07), (1.0, 0.0)],
-    'legL': [(0.0, 0.0), (0.18, 0.0), (0.42, 0.08), (0.75, 0.0), (1.0, -0.08)],
-    'kneeL': [(0.0, 0.0), (0.18, 0.05), (0.42, 0.45), (0.75, 1.15), (0.92, 1.66), (1.0, 1.62)],
-    'armR': [(0.0, 0.02), (0.45, 0.25), (0.75, 0.5), (1.0, 0.45)],
-    'elbowR': [(0.0, 0.1), (0.45, 0.35), (0.75, 0.62), (1.0, 0.6)],
-    'armL': [(0.0, 0.02), (0.3, 0.25), (0.6, 0.35), (1.0, 0.2)],
-    'elbowL': [(0.0, 0.1), (0.3, 0.4), (0.6, 0.45), (1.0, 0.35)],
-    'nod': [(0.0, 0.0), (0.4, 0.15), (0.8, 0.32), (1.0, 0.35)],
+    'seconds': 1.2,
+    'down': [(0.0, 0.0), (0.12, 0.05), (0.36, 0.3), (0.56, 0.6), (0.74, 0.87), (0.86, 0.97), (0.94, 1.0)],
+    'front': [(0.1, 0.0), (0.38, 1.0)],
+    'frontUp': [(0.1, 0.0), (0.22, 0.12), (0.34, 0.03), (0.4, 0.0)],
+    # The left foot steps back low once the hips are low enough for it to reach, and comes down on its toe.
+    'back': [(0.34, 0.0), (0.64, 1.0)],
+    'backUp': [(0.34, 0.0), (0.46, 0.035), (0.6, 0.008), (0.66, 0.0)],
+    'toes': [(0.28, 0.0), (0.45, 0.5), (0.62, 0.86), (0.9, 1.0)],
+    'hand': [(0.5, 0.0), (0.9, 1.0)],
+    # Onto the left foot, over to the right as it comes down ahead, and square again.
+    'sway': [(0.0, 0.0), (0.14, 0.08), (0.3, 0.06), (0.48, -0.04), (0.72, -0.01), (0.9, 0.0)],
+    'hipRoll': [(0.0, 0.0), (0.14, 0.045), (0.3, 0.035), (0.48, -0.02), (0.75, 0.0)],
+    'bendSide': [(0.0, 0.0), (0.14, -0.03), (0.48, 0.02), (0.8, 0.0)],
+    'lean': [(0.0, 0.0), (0.15, 0.05), (0.4, 0.14), (0.7, 0.3), (0.86, 0.33), (1.0, 0.24)],
+    # Down at where the foot goes, and up again.
+    'nod': [(0.0, 0.0), (0.25, 0.18), (0.6, 0.26), (0.85, 0.2), (1.0, 0.08)],
+    'tilt': [(0.0, 0.0), (0.2, 0.03), (0.5, -0.02), (0.8, 0.02), (1.0, 0.03)],
+    # The left arm comes a little forward for balance and hangs easy; the right goes to the knee, the hand over it.
+    'armL': [(0.0, 0.02), (0.25, 0.12), (0.5, 0.3), (0.75, 0.22), (1.0, 0.14)],
+    'elbowL': [(0.0, 0.1), (0.3, 0.3), (0.6, 0.45), (1.0, 0.32)],
+    'wristL': [(0.0, 0.0), (0.5, 0.1), (1.0, 0.06)],
+    'armR': [(0.0, 0.02), (0.3, 0.15), (0.55, 0.45), (0.8, 0.62), (1.0, 0.6)],
+    'elbowR': [(0.0, 0.1), (0.3, 0.3), (0.6, 0.7), (0.85, 0.85), (1.0, 0.8)],
+    'wristR': [(0.0, 0.0), (0.6, 0.15), (0.9, 0.35), (1.0, 0.3)],
 }
 KNEEL_ELDER = dict(KNEEL)
 KNEEL_ELDER.update({
-    'seconds': 1.5,
-    'lean': [(0.0, 0.07), (0.2, 0.14), (0.45, 0.28), (0.75, 0.4), (0.9, 0.32), (1.0, 0.28)],
-    'armR': [(0.0, 0.02), (0.4, 0.35), (0.7, 0.62), (1.0, 0.55)],
-    'elbowR': [(0.0, 0.2), (0.4, 0.6), (0.7, 0.95), (1.0, 0.85)],
-    'kneeL': [(0.0, 0.0), (0.18, 0.05), (0.42, 0.42), (0.78, 1.12), (0.94, 1.64), (1.0, 1.62)],
-    # An old foot is slid forward, hardly lifted.
-    'legR': [(0.0, 0.0), (0.2, 0.3), (0.45, 0.9), (0.78, 1.22), (1.0, 1.32)],
-    'kneeR': [(0.0, 0.0), (0.2, 0.42), (0.45, 0.72), (0.78, 1.15), (1.0, 1.32)],
-    'footR': [(0.0, 0.0), (0.2, 0.06), (0.45, -0.18), (0.78, -0.07), (1.0, 0.0)],
+    'seconds': 1.7,
+    'down': [(0.0, 0.0), (0.14, 0.04), (0.38, 0.28), (0.58, 0.56), (0.76, 0.85), (0.88, 0.97), (0.96, 1.0)],
+    # An old foot is slid forward and back, hardly lifted.
+    'frontUp': [(0.1, 0.0), (0.22, 0.05), (0.34, 0.01), (0.4, 0.0)],
+    'backUp': [(0.38, 0.0), (0.5, 0.02), (0.66, 0.0)],
+    'hand': [(0.42, 0.0), (0.8, 1.0)],
+    'lean': [(0.0, 0.07), (0.15, 0.12), (0.4, 0.26), (0.7, 0.44), (0.86, 0.46), (1.0, 0.36)],
+    'nod': [(0.0, 0.05), (0.25, 0.2), (0.6, 0.3), (0.85, 0.24), (1.0, 0.12)],
+    'armR': [(0.0, 0.02), (0.3, 0.2), (0.5, 0.5), (0.75, 0.68), (1.0, 0.66)],
+    'elbowR': [(0.0, 0.2), (0.3, 0.4), (0.55, 0.8), (0.8, 0.95), (1.0, 0.9)],
 })
 # Getting up off a kitchen chair: the chair pushed back from the table with the body on it and the feet drawn in under
 # the seat onto their balls; then the body leans well forward over them, comes forward and up off the seat over feet
@@ -237,10 +270,258 @@ SIT_DOWN = {
     'elbowL': [(0.0, 0.1), (0.27, 0.45), (0.5, 1.05), (0.7, 1.5), (0.85, 1.63)],
     'elbowR': [(0.0, 0.1), (0.27, 0.45), (0.5, 1.05), (0.7, 1.5), (0.85, 1.63)],
 }
-CLIPS = {'kneel': KNEEL, 'kneelElder': KNEEL_ELDER, 'standUp': STAND_UP, 'sitDown': SIT_DOWN}
+# --- gestures ------------------------------------------------------------------------------------------------------------
+# Keyed in the pose itself, at shares of `seconds` (src/render/acting.ts plays them at each person's own tempo).
+# A cheer: down into the knees with the elbows drawn in and the head down (the wind-up), then both arms flung up and out
+# in a V beside the head (`out`, each arm's own outward turn, keeps them clear of the face), the hands open, the head
+# and the chest up, two hops landing on soft knees, the arms pumping with the second; and down again. The right arm leads
+# the left a moment.
+CHEER = {
+    'seconds': 1.6,
+    'armR': [(0.0, 0.02), (0.06, -0.22), (0.22, 2.6), (0.28, 2.9), (0.38, 2.72), (0.5, 2.86), (0.62, 2.7), (0.78, 1.9),
+             (1.0, 0.08)],
+    'armL': [(0.0, 0.02), (0.08, -0.22), (0.25, 2.55), (0.31, 2.85), (0.41, 2.68), (0.53, 2.82), (0.65, 2.66), (0.8, 1.85),
+             (1.0, 0.08)],
+    # Up and out, and down out to the sides rather than forward.
+    'outR': [(0.0, 0.0), (0.12, 0.15), (0.26, 0.55), (0.62, 0.5), (0.8, 0.85), (0.92, 0.45), (1.0, 0.0)],
+    'outL': [(0.0, 0.0), (0.14, 0.15), (0.29, 0.55), (0.65, 0.5), (0.83, 0.85), (0.95, 0.45), (1.0, 0.0)],
+    'elbowR': [(0.0, 0.1), (0.06, 0.75), (0.22, 0.28), (0.3, 0.14), (0.62, 0.2), (0.82, 0.62), (1.0, 0.15)],
+    'elbowL': [(0.0, 0.1), (0.08, 0.75), (0.25, 0.28), (0.33, 0.14), (0.65, 0.2), (0.85, 0.62), (1.0, 0.15)],
+    'wristR': [(0.0, 0.0), (0.06, 0.3), (0.24, -0.35), (0.6, -0.3), (0.85, 0.12), (1.0, 0.0)],
+    'wristL': [(0.0, 0.0), (0.08, 0.3), (0.27, -0.35), (0.63, -0.3), (0.88, 0.12), (1.0, 0.0)],
+    'lean': [(0.0, 0.0), (0.07, 0.12), (0.24, -0.08), (0.6, -0.05), (0.85, 0.02), (1.0, 0.0)],
+    'nod': [(0.0, 0.0), (0.07, 0.14), (0.24, -0.2), (0.6, -0.14), (0.9, 0.0)],
+    'tilt': [(0.0, 0.0), (0.3, 0.06), (0.6, -0.04), (1.0, 0.0)],
+    # The legs: the dip, and a soft landing from the first hop; the feet stay flat.
+    'legL': [(0.0, 0.0), (0.07, 0.2), (0.16, 0.0), (0.36, 0.0), (0.42, 0.11), (0.48, 0.0)],
+    'legR': [(0.0, 0.0), (0.07, 0.2), (0.16, 0.0), (0.36, 0.0), (0.42, 0.11), (0.48, 0.0)],
+    'kneeL': [(0.0, 0.0), (0.07, 0.4), (0.16, 0.0), (0.36, 0.0), (0.42, 0.22), (0.48, 0.0)],
+    'kneeR': [(0.0, 0.0), (0.07, 0.4), (0.16, 0.0), (0.36, 0.0), (0.42, 0.22), (0.48, 0.0)],
+    'footL': [(0.0, 0.0), (0.07, 0.2), (0.16, 0.0), (0.36, 0.0), (0.42, 0.11), (0.48, 0.0)],
+    'footR': [(0.0, 0.0), (0.07, 0.2), (0.16, 0.0), (0.36, 0.0), (0.42, 0.11), (0.48, 0.0)],
+    'bounce': [(0.0, 0.0), (0.16, 0.0), (0.26, 0.2), (0.36, 0.0), (0.46, 0.15), (0.56, 0.0), (1.0, 0.0)],
+}
+# A hug: the arms open wide (out to the sides, `spread`), then come forward round the one hugged at the height of the
+# chest, the forearms wrapping in behind them (not up to the face), a squeeze with the trunk leaning in and the head to
+# one side, and held.
+HUG = {
+    'seconds': 1.5,
+    'spread': [(0.0, 0.0), (0.2, 1.05), (0.42, 1.0), (1.0, 0.98)],
+    'armR': [(0.0, 0.02), (0.2, -0.15), (0.42, 0.42), (0.56, 0.6), (0.72, 0.55), (1.0, 0.55)],
+    'armL': [(0.0, 0.02), (0.22, -0.15), (0.45, 0.42), (0.59, 0.6), (0.75, 0.55), (1.0, 0.55)],
+    'elbowR': [(0.0, 0.1), (0.2, 0.3), (0.42, 1.15), (0.56, 1.52), (0.72, 1.4), (1.0, 1.4)],
+    'elbowL': [(0.0, 0.1), (0.22, 0.3), (0.45, 1.15), (0.59, 1.52), (0.75, 1.4), (1.0, 1.4)],
+    'wristR': [(0.0, 0.0), (0.42, 0.2), (1.0, 0.25)],
+    'wristL': [(0.0, 0.0), (0.45, 0.2), (1.0, 0.25)],
+    'lean': [(0.0, 0.0), (0.2, -0.04), (0.45, 0.1), (0.6, 0.14), (1.0, 0.1)],
+    'nod': [(0.0, 0.0), (0.45, 0.12), (1.0, 0.1)],
+    'tilt': [(0.0, 0.0), (0.45, 0.1), (0.6, 0.14), (1.0, 0.12)],
+}
+# A wave: the arm dips back a moment (the wind-up), swings up and out beside the head past where it stops, and the
+# forearm waves to and fro from the elbow, twice and a little, the hand following it a moment late; the head tips and
+# the body leans a little off the raised arm; then the arm comes down out to the side and hangs.
+WAVE = {
+    'seconds': 2.4,
+    'armR': [(0.0, 0.02), (0.05, -0.12), (0.17, 2.0), (0.22, 2.25), (0.3, 2.15), (0.62, 2.2), (0.72, 1.6), (0.86, 0.4),
+             (1.0, 0.06)],
+    'outR': [(0.0, 0.0), (0.08, 0.1), (0.2, 0.8), (0.65, 0.8), (0.82, 0.45), (1.0, 0.0)],
+    'elbowR': [(0.0, 0.1), (0.05, 0.3), (0.2, 0.55), (0.27, 0.87), (0.345, 0.25), (0.42, 0.87), (0.495, 0.25), (0.57, 0.8),
+               (0.645, 0.4), (0.72, 0.55), (0.86, 0.3), (1.0, 0.12)],
+    'wristR': [(0.0, 0.0), (0.2, 0.0), (0.3, 0.3), (0.375, -0.3), (0.45, 0.3), (0.525, -0.3), (0.6, 0.22), (0.68, -0.08),
+               (0.8, 0.0)],
+    'tilt': [(0.0, 0.0), (0.2, 0.09), (0.7, 0.08), (0.9, 0.0)],
+    'bendSide': [(0.0, 0.0), (0.2, 0.04), (0.7, 0.035), (0.9, 0.0)],
+    'nod': [(0.0, 0.0), (0.18, -0.05), (0.7, -0.04), (0.9, 0.0)],
+}
+# A nod, on top of where they look: the head comes up a little first, down, up, and a smaller second nod; the trunk
+# goes a little with it and the head tips.
+NOD = {
+    'seconds': 1.1,
+    'nod': [(0.0, 0.0), (0.06, -0.05), (0.22, 0.24), (0.38, 0.02), (0.52, 0.13), (0.7, 0.0), (1.0, 0.0)],
+    'tilt': [(0.0, 0.0), (0.25, 0.07), (0.7, 0.03), (1.0, 0.0)],
+    'lean': [(0.0, 0.0), (0.25, 0.03), (0.6, 0.01), (1.0, 0.0)],
+}
+# A shrug: the forearms come up and out with the palms turning up, the trunk back a little; the head tips over a moment
+# after them; and all of it drops again, the forearms falling a little past and settling.
+SHRUG = {
+    'seconds': 1.0,
+    'spread': [(0.0, 0.0), (0.18, 0.3), (0.5, 0.36), (0.75, 0.05), (0.85, 0.0)],
+    'armL': [(0.0, 0.02), (0.2, 0.25), (0.5, 0.27), (0.75, 0.04), (0.88, 0.02)],
+    'armR': [(0.0, 0.02), (0.2, 0.25), (0.5, 0.27), (0.75, 0.04), (0.88, 0.02)],
+    'elbowL': [(0.0, 0.1), (0.05, 0.05), (0.2, 1.45), (0.5, 1.5), (0.72, 0.4), (0.8, 0.06), (0.88, 0.12)],
+    'elbowR': [(0.0, 0.1), (0.05, 0.05), (0.2, 1.45), (0.5, 1.5), (0.72, 0.4), (0.8, 0.06), (0.88, 0.12)],
+    'wristL': [(0.0, 0.0), (0.2, -0.45), (0.5, -0.5), (0.75, 0.05), (0.88, 0.0)],
+    'wristR': [(0.0, 0.0), (0.2, -0.45), (0.5, -0.5), (0.75, 0.05), (0.88, 0.0)],
+    'tilt': [(0.0, 0.0), (0.27, 0.12), (0.55, 0.14), (0.85, 0.02), (1.0, 0.0)],
+    'nod': [(0.0, 0.0), (0.22, -0.1), (0.5, -0.08), (0.85, 0.0)],
+    'lean': [(0.0, 0.0), (0.2, -0.04), (0.55, -0.03), (0.85, 0.0)],
+}
+# A start: the arms fly up and open past where they stop, the left a moment after the right, the head and the trunk jerk
+# back and the body hops; then it all comes down, the trunk forward a little past upright before it settles.
+STARTLE = {
+    'seconds': 1.3,
+    'armR': [(0.0, 0.02), (0.1, 1.85), (0.16, 2.0), (0.3, 1.5), (0.6, 0.5), (0.85, 0.1), (1.0, 0.06)],
+    'armL': [(0.0, 0.02), (0.13, 1.65), (0.19, 1.8), (0.33, 1.3), (0.63, 0.45), (0.88, 0.1), (1.0, 0.06)],
+    'elbowR': [(0.0, 0.1), (0.1, 1.2), (0.3, 0.9), (0.6, 0.4), (1.0, 0.15)],
+    'elbowL': [(0.0, 0.1), (0.13, 1.1), (0.33, 0.85), (0.63, 0.38), (1.0, 0.15)],
+    'wristR': [(0.0, 0.0), (0.1, -0.5), (0.35, -0.3), (0.7, 0.0)],
+    'wristL': [(0.0, 0.0), (0.13, -0.5), (0.38, -0.3), (0.73, 0.0)],
+    'lean': [(0.0, 0.0), (0.08, -0.16), (0.2, -0.1), (0.35, -0.02), (0.5, 0.02), (0.7, 0.0)],
+    'nod': [(0.0, 0.0), (0.08, -0.15), (0.3, -0.05), (0.6, 0.02), (0.8, 0.0)],
+    'bounce': [(0.0, 0.0), (0.12, 0.17), (0.27, 0.0)],
+}
+CLIPS = {'kneel': KNEEL, 'kneelElder': KNEEL_ELDER, 'standUp': STAND_UP, 'sitDown': SIT_DOWN, 'cheer': CHEER, 'hug': HUG,
+         'wave': WAVE, 'nod': NOD, 'shrug': SHRUG, 'startle': STARTLE}
+
+# --- putting on the raincoat and the boots -------------------------------------------------------------------------------
+# Stormkvallen's `tillsammans` (src/content/aventyr2/chapters/stormkvall.ts): each of the family pulls on a raincoat and
+# rubber boots before they go out into the storm, in their own way. A part (the coat, or a pair of boots) is keyed here in
+# the game's own pose, in seconds, from standing to standing, with the left arm in first and the left foot first; the parts
+# are put together for each person below, at their own pace, bigger or smaller, and turned about for someone who starts
+# with the right.
+# `coat`, `bootL` and `bootR` key how far each piece is on, 0 to 1: the game draws a piece as far as it is on
+# (src/render/rain-gear.ts), so it goes on with the hands that put it on. The coat goes on in this order (COAT_ORDER there):
+#   0-0.22 the first sleeve, from the cuff up, as the arm goes into it; 0.22-0.32 that side's front, as it falls from the
+#   shoulder; 0.32-0.52 across the back, as the coat is swung round behind; 0.52-0.74 the other sleeve; 0.74-0.84 its
+#   front; 0.88-1 the open front closed from the hem up to the collar, as it is zipped.
+# A boot goes on from the sole up as the foot is pushed down into it, and the foot is stamped down.
+
+# Held by the collar in the right hand, the coat's left sleeve is held open at the left hip; the left arm goes down into it
+# as the right hand pulls the coat up the arm onto the shoulder; the right hand carries the collar up over the head and
+# round behind, lets go, and the right arm reaches back and down into its sleeve, the head turned to find it; a shrug onto
+# the shoulders, the fronts pulled together at the waist, and the zip run up to the chin.
+COAT_ON = {
+    'seconds': 2.95,
+    'armL': [(0.0, 0.02), (0.3, 0.3), (0.62, 0.15), (0.85, 0.08), (1.1, 0.12), (1.62, 0.45), (1.9, 0.38), (2.12, 0.3),
+             (2.4, 0.42), (2.7, 0.38), (2.95, 0.02)],
+    'outL': [(0.0, 0.0), (0.3, 0.15), (0.62, 0.32), (0.85, 0.2), (1.1, 0.1), (1.62, -0.1), (2.12, 0.08), (2.4, -0.32),
+             (2.7, -0.32), (2.95, 0.0)],
+    'elbowL': [(0.0, 0.1), (0.3, 0.9), (0.62, 0.08), (0.85, 0.2), (1.1, 0.3), (1.62, 1.1), (1.9, 0.9), (2.12, 0.35),
+               (2.4, 1.25), (2.7, 1.2), (2.95, 0.1)],
+    'wristL': [(0.0, 0.0), (0.3, 0.1), (0.62, -0.25), (0.85, 0.0), (2.4, 0.15), (2.7, 0.1), (2.95, 0.0)],
+    'armR': [(0.0, 0.02), (0.3, 0.55), (0.62, 0.62), (0.85, 1.2), (1.1, 2.7), (1.38, 0.9), (1.62, -0.7), (1.9, -0.25),
+             (2.12, 0.3), (2.4, 0.42), (2.7, 0.95), (2.95, 0.02)],
+    'outR': [(0.0, 0.0), (0.3, -0.75), (0.62, -1.0), (0.85, -0.85), (1.1, 0.45), (1.38, 0.7), (1.62, 0.35), (1.9, 0.2),
+             (2.12, 0.08), (2.4, -0.32), (2.7, -0.38), (2.95, 0.0)],
+    'elbowR': [(0.0, 0.1), (0.3, 1.05), (0.62, 1.1), (0.85, 1.75), (1.1, 1.25), (1.38, 0.8), (1.62, 0.3), (1.9, 0.12),
+               (2.12, 0.35), (2.4, 1.25), (2.7, 2.25), (2.95, 0.1)],
+    'wristR': [(0.0, 0.0), (0.3, 0.25), (0.85, 0.1), (1.1, 0.3), (1.62, -0.35), (1.9, -0.1), (2.4, 0.15), (2.7, 0.1),
+               (2.95, 0.0)],
+    'lean': [(0.0, 0.0), (0.3, 0.1), (0.62, 0.08), (0.85, 0.04), (1.1, 0.0), (1.38, 0.1), (1.62, 0.18), (1.9, 0.1),
+             (2.12, -0.04), (2.4, 0.06), (2.7, 0.02), (2.95, 0.0)],
+    'nod': [(0.0, 0.0), (0.3, 0.3), (0.62, 0.25), (0.85, 0.05), (1.1, -0.12), (1.38, 0.0), (1.62, 0.1), (2.12, -0.1),
+            (2.4, 0.42), (2.7, 0.15), (2.95, 0.0)],
+    'turn': [(0.0, 0.0), (0.3, 0.2), (0.62, 0.28), (0.85, 0.1), (1.1, -0.1), (1.38, -0.3), (1.62, -0.32), (1.9, -0.12),
+             (2.12, 0.0), (2.95, 0.0)],
+    'twist': [(0.0, 0.0), (0.3, 0.15), (0.62, 0.18), (0.85, 0.1), (1.1, -0.05), (1.38, -0.18), (1.62, -0.25), (1.9, -0.08),
+              (2.12, 0.0), (2.95, 0.0)],
+    'bendSide': [(0.0, 0.0), (0.62, -0.04), (1.1, 0.04), (1.62, 0.02), (2.12, 0.0), (2.95, 0.0)],
+    'coat': [(0.0, 0.0), (0.3, 0.0), (0.62, 0.22), (0.85, 0.32), (1.1, 0.44), (1.38, 0.52), (1.62, 0.6), (1.9, 0.74),
+             (2.12, 0.86), (2.4, 0.88), (2.7, 1.0)],
+}
+
+# Standing on the right foot, the left knee comes up over the boot, the foot is pushed down into it and stamped down; the
+# weight goes over onto the left, and the right foot does the same. The arms go out a little for balance; the eyes on the
+# boot.
+BOOTS_ON = {
+    'seconds': 1.7,
+    'sway': [(0.0, 0.0), (0.2, -0.14), (0.76, -0.14), (1.02, 0.14), (1.48, 0.14), (1.7, 0.0)],
+    'hipRoll': [(0.0, 0.0), (0.2, 0.04), (0.76, 0.03), (1.02, -0.04), (1.48, -0.03), (1.7, 0.0)],
+    'bendSide': [(0.0, 0.0), (0.2, 0.03), (0.76, 0.02), (1.02, -0.03), (1.48, -0.02), (1.7, 0.0)],
+    'legL': [(0.0, 0.0), (0.2, 0.06), (0.4, 0.8), (0.62, 0.35), (0.76, 0.0), (1.7, 0.0)],
+    'kneeL': [(0.0, 0.0), (0.2, 0.1), (0.4, 1.25), (0.62, 0.55), (0.76, 0.1), (0.86, 0.02), (1.48, 0.1), (1.6, 0.0),
+              (1.7, 0.0)],
+    'footL': [(0.0, 0.0), (0.4, -0.1), (0.62, 0.05), (0.76, 0.06), (0.86, 0.0), (1.7, 0.0)],
+    'splayL': [(0.0, 0.0), (0.2, 0.04), (0.4, 0.2), (0.62, 0.1), (0.76, 0.0), (1.7, 0.0)],
+    'legR': [(0.0, 0.0), (0.92, 0.0), (1.02, 0.06), (1.12, 0.8), (1.34, 0.35), (1.48, 0.0), (1.7, 0.0)],
+    'kneeR': [(0.0, 0.0), (0.76, 0.1), (0.86, 0.02), (1.02, 0.1), (1.12, 1.25), (1.34, 0.55), (1.48, 0.1), (1.6, 0.02),
+              (1.7, 0.0)],
+    'footR': [(0.0, 0.0), (1.02, 0.0), (1.12, -0.1), (1.34, 0.05), (1.48, 0.06), (1.6, 0.0), (1.7, 0.0)],
+    'splayR': [(0.0, 0.0), (0.92, 0.0), (1.02, 0.04), (1.12, 0.2), (1.34, 0.1), (1.48, 0.0), (1.7, 0.0)],
+    'armL': [(0.0, 0.02), (0.2, 0.15), (0.76, 0.12), (1.02, 0.15), (1.48, 0.12), (1.7, 0.02)],
+    'armR': [(0.0, 0.02), (0.2, 0.12), (0.76, 0.15), (1.02, 0.12), (1.48, 0.15), (1.7, 0.02)],
+    'outL': [(0.0, 0.0), (0.2, 0.12), (0.76, 0.18), (1.02, 0.1), (1.48, 0.12), (1.7, 0.0)],
+    'outR': [(0.0, 0.0), (0.2, 0.18), (0.76, 0.1), (1.02, 0.18), (1.48, 0.12), (1.7, 0.0)],
+    'elbowL': [(0.0, 0.1), (0.2, 0.35), (0.76, 0.4), (1.48, 0.4), (1.7, 0.1)],
+    'elbowR': [(0.0, 0.1), (0.2, 0.35), (0.76, 0.4), (1.48, 0.4), (1.7, 0.1)],
+    'lean': [(0.0, 0.0), (0.2, 0.08), (0.4, 0.12), (0.76, 0.14), (1.12, 0.12), (1.48, 0.14), (1.7, 0.0)],
+    'nod': [(0.0, 0.0), (0.2, 0.3), (0.76, 0.35), (1.48, 0.35), (1.7, 0.0)],
+    'turn': [(0.0, 0.0), (0.4, 0.1), (0.76, 0.06), (1.12, -0.1), (1.48, -0.06), (1.7, 0.0)],
+    'bootL': [(0.0, 0.0), (0.4, 0.0), (0.62, 0.55), (0.76, 1.0)],
+    'bootR': [(0.0, 0.0), (1.12, 0.0), (1.34, 0.55), (1.48, 1.0)],
+}
+
+STANDING = {'armL': 0.02, 'armR': 0.02, 'elbowL': 0.1, 'elbowR': 0.1}
+GEAR = ('coat', 'bootL', 'bootR')
+# Turned about, left for right: the arms and legs change places, and what turns or tips to one side goes to the other.
+MIRROR = {'armL': 'armR', 'elbowL': 'elbowR', 'outL': 'outR', 'wristL': 'wristR', 'legL': 'legR', 'kneeL': 'kneeR',
+          'footL': 'footR', 'splayL': 'splayR', 'bootL': 'bootR'}
+MIRROR.update({right: left for left, right in list(MIRROR.items())})
+SIDEWAYS = ('turn', 'twist', 'tilt', 'bendSide', 'sway', 'hipRoll')
+
+
+def mirrored(part):
+    """The part the other way about: the right arm in first, or the right foot first."""
+    out = {'seconds': part['seconds']}
+    for name, keys in part.items():
+        if name == 'seconds':
+            continue
+        sign = -1.0 if name in SIDEWAYS else 1.0
+        out[MIRROR.get(name, name)] = [(at, value * sign) for at, value in keys]
+    return out
+
+
+def paced(part, pace=1.0, **gains):
+    """The part taken `pace` times as long, each named channel `gain` times as far from standing (the gear never)."""
+    out = {'seconds': part['seconds'] * pace}
+    for name, keys in part.items():
+        if name == 'seconds':
+            continue
+        rest, gain = STANDING.get(name, 0.0), gains.get(name, 1.0)
+        out[name] = [(at * pace, value if name in GEAR else rest + (value - rest) * gain) for at, value in keys]
+    return out
+
+
+def dressing(*parts, **extra):
+    """One clip of the parts one after another. A channel a part does not key is held between its neighbours (at standing,
+    or for the gear at what is on by then); `extra` keys more on top, in seconds of the whole."""
+    seconds = sum(part['seconds'] for part in parts)
+    names = sorted({name for part in parts for name in part if name != 'seconds'} | set(extra))
+    clip = {'seconds': seconds}
+    for name in names:
+        keys, start, worn = [], 0.0, 0.0
+        for part in parts:
+            if name in part:
+                keys += [(start + at, value) for at, value in part[name]]
+                worn = part[name][-1][1]
+            elif name not in extra:
+                held = worn if name in GEAR else STANDING.get(name, 0.0)
+                keys += [(start, held), (start + part['seconds'], held)]
+            start += part['seconds']
+        keys = sorted(keys + list(extra.get(name, [])))
+        # A key where two parts meet is kept once.
+        clip[name] = [(at / seconds, value) for i, (at, value) in enumerate(keys) if i == 0 or at - keys[i - 1][0] > 1e-6]
+    return clip
+
+
+# Mamma: quick and light, the left arm first, her head tipped as she zips. Pappa: steady and big, the right arm first (the
+# lamp is in his left hand), leaning well into it, heavy on his feet. Moa: the left arm first, quick, her head tipped, a
+# springy stamp. Bertil: the boots first ("Jag tar mina storsta stovlar!"), lifted high and stamped hard, then the coat in a
+# hurry, the right arm first, the arms flung.
+DRESS = {
+    'dressMamma': dressing(paced(COAT_ON, 0.88), paced(BOOTS_ON, 0.85, legL=0.85, kneeL=0.85, legR=0.85, kneeR=0.85),
+                           tilt=[(0.0, 0.0), (2.0, 0.0), (2.3, 0.08), (2.6, 0.02), (4.0, 0.0)]),
+    'dressPappa': dressing(paced(mirrored(COAT_ON), 1.0, lean=1.35, nod=0.85),
+                           paced(mirrored(BOOTS_ON), 1.08, lean=1.3, kneeL=1.15, kneeR=1.15)),
+    'dressMoa': dressing(paced(COAT_ON, 0.92, turn=1.25), paced(BOOTS_ON, 0.82, legL=1.1, legR=1.1),
+                         tilt=[(0.0, 0.0), (0.4, 0.06), (1.2, -0.05), (2.3, 0.08), (2.7, 0.0)]),
+    'dressBertil': dressing(paced(mirrored(BOOTS_ON), 0.8, legL=1.2, kneeL=1.25, legR=1.2, kneeR=1.25, sway=1.3),
+                            paced(mirrored(COAT_ON), 0.78, armL=1.12, armR=1.12, turn=1.2)),
+}
+CLIPS.update(DRESS)
 
 STAND_CHANNELS = ['sway', 'roll', 'side', 'tilt', 'lean', 'nod', 'turn', 'arm', 'elbow', 'wrist']
-STAND_SCALARS = ['period', 'breath', 'deep', 'width']
+STAND_SCALARS = ['period', 'breath', 'deep', 'width', 'out']
 
 CHANNELS = ['bob', 'give', 'sway', 'roll', 'twist', 'lean', 'side', 'nod', 'tilt', 'arm', 'elbow', 'wrist', 'pitch']
 SCALARS = ['stance', 'ahead', 'width', 'lift', 'peak', 'crouch', 'spread']
@@ -382,7 +663,7 @@ for who, table in STANDS.items():
     curves = curves_of(obj)
     fields = ['%s: %s' % (scalar, number(table[scalar])) for scalar in STAND_SCALARS]
     for channel in STAND_CHANNELS:
-        fields.append('%s: [%s]' % (channel, ', '.join(number(v) for v in series(curves[channel], HARMONICS, 0.0))))
+        fields.append('%s: [%s]' % (channel, ', '.join(number(v) for v in series(curves[channel], STAND_HARMONICS, 0.0))))
     stands.append('  %s: { %s },' % (who, ', '.join(fields)))
 
 text = '\n'.join([

@@ -104,6 +104,19 @@ const SCENES: SceneDef[] = [
     },
   },
   {
+    // The rain has stopped: off with the doll's raincoat, the right arm out of its sleeve and the left, off his shoulders,
+    // and down onto the stone (../../../render/elof-coat.ts). It is a doll's coat: it must not be on him when he grows.
+    id: 'rockav',
+    on: 'scene:oga',
+    seconds: 3.8,
+    hold: true,
+    lines: [{ at: 0.3, who: 'elof', line: 'soCoatOff' }],
+    stage: {
+      shots: [{ at: 0, x: EYE - 0.3, y: 1.45, height: 3.2, width: 5, move: 0.8 }],
+      elof: [{ at: 0, face: 0.22, act: 'watch', aim: { x: EYE - 1, y: 1.8, z: 3 } }],
+    },
+  },
+  {
     // 3. The meeting. The old one holds the little one; then they see him.
     id: 'motet',
     on: 'scene:oga',

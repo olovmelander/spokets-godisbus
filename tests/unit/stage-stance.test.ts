@@ -1,7 +1,7 @@
 import { InstancedMesh, Matrix4, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prolog } from '../../src/content/chapters/ends';
-import { sitting } from '../../src/render/acting';
+import { kneeling, sitting } from '../../src/render/acting';
 import { SITTING_ON } from '../../src/render/gait';
 import { heightOf, STANDING, type Pose, type Role } from '../../src/render/rig';
 import { createStage, type Stage } from '../../src/render/stage';
@@ -96,12 +96,15 @@ describe('authored changes of stance', () => {
     const seated = seatedOn('moa', moa.rig);
     expect(moa.pose().seat).toBeCloseTo(seated.seat!, 9);
     expect(moa.pose().legL).toBeCloseTo(seated.legL, 9);
+    // Kneeling as the kneel ends, on their own legs (art/blender/motion.py CLIPS.kneel; since 9 November 2026 the legs
+    // reach the floor from where the clip keys the hips and feet, so the angles are each body's own).
     for (const who of ['mamma', 'pappa'] as const) {
-      const { stage, pose } = watch(who);
+      const { stage, rig, pose } = watch(who);
       show(stage, 'familj', 5.5);
+      const knelt = kneeling({ ...STANDING }, rig.legs, who);
       expect(pose().seat).toBeNull();
-      expect(pose().legL).toBe(-.08);
-      expect(pose().kneeR).toBe(1.32);
+      for (const joint of ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR'] as const) expect(pose()[joint]).toBeCloseTo(knelt[joint], 9);
+      expect(pose().kneeL).toBeGreaterThan(1.3);
     }
   });
 

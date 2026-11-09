@@ -31,8 +31,10 @@ export const words: ChapterWords = {
     skEnough: 'Räcker godiset hela vägen?',
     skKlonkHop: 'Klonk, klonk!',
     skRainLine: 'Brr! Dropparna är stora som bollar.',
+    skDollCoat: 'Dockan har en regnrock! Passar den mig?',
+    skCoatFits: 'Den passar! Nu kan regnet komma.',
   },
-  verbs: { skGoodnight: 'Säg godnatt', skTakeLamp: 'Ta ficklampan' },
+  verbs: { skGoodnight: 'Säg godnatt', skTakeLamp: 'Ta ficklampan', skTakeCoat: 'Ta regnrocken' },
   purposes: {
     skEvening: { purpose: 'Lyssna på stormen.', recap: 'Det är lördagskväll, och stormen viner runt huset.' },
     skFetchLamp: { purpose: 'Hämta ficklampan åt Pappa.', recap: 'Strömmen gick. Pappa letar efter ficklampan i mörkret.' },
@@ -49,6 +51,6 @@ export const words: ChapterWords = {
   },
   moments: {
     kvall: 'Stormkvällen', fonstret: 'Fönstret slår upp', klonkstar: 'Klonks stjärna', krymper: 'Stjärnans magi',
-    tillsammans: 'Vi letar tillsammans', stormtitel: 'Äventyret börjar',
+    tillsammans: 'Vi letar tillsammans', regnrock: 'Dockans regnrock', stormtitel: 'Äventyret börjar',
   },
 };

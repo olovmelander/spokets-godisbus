@@ -401,7 +401,7 @@ export type MoverLook = 'boulder' | 'riverLog' | 'plank' | 'block' | 'matchbox' 
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy' | 'hut-door';
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder' | 'shelf';
-export type SpotLook = 'toothbrushes' | 'kit' | 'casement' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake' | 'rootHole'
+export type SpotLook = 'toothbrushes' | 'kit' | 'casement' | 'doll' | 'toyShelf' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake' | 'rootHole'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'cocoa' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
   | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';

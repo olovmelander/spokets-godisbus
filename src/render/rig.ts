@@ -1,7 +1,9 @@
 import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
 import type { ChapterData } from '../sim/types';
 import { createArmContact, createHandGrip } from './arm-contact';
-import { SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
+import { COAT_ORDER, SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
+import { bendSoftly } from './joints';
+import { sleevesWithArms } from './sleeves';
 
 /**
  * A body's pose, as a scene's acting asks for it (src/render/acting.ts). Angles are in radians. The body faces
@@ -80,7 +82,20 @@ export const JOINTS = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR'
  * shin (knee to ankle), the ankle over the sole, the heel and the toe of the boot behind and ahead of the ankle, and each
  * hip joint out from the middle. The stride (./gait.ts) puts the feet with them, so that a planted foot stays put on any body.
  */
-export interface Legs { hip: number; thigh: number; shin: number; ankle: number; heel: number; toe: number; width: number }
+export interface Legs {
+  hip: number; thigh: number; shin: number; ankle: number; heel: number; toe: number; width: number;
+  /**
+   * How thick the knee is: kneeling on it, how high its joint is over the floor, a share of the height (left out: the
+   * rehearsal figure's, KNEELING). And how far a model's knee is bent as it was made, in radians (left out: none), which
+   * its pose bends it on from.
+   */
+  knee?: number; bend?: number;
+  /** How high the ankle is over the floor with the boot stood up on its toe as one kneels (ON_TOES), from its own shape. */
+  tip?: number;
+}
+
+/** Kneeling, how far the back foot is tipped up onto its toes (radians): the boot stands on its toe, its heel up. */
+export const ON_TOES = 1.95;
 
 // The rehearsal body's measures, in an adult's units (an adult stands about 5.2 tall).
 const ADULT = 5.2;
@@ -94,6 +109,8 @@ const FORE = 0.8;
 const NECK = 1.8;
 /** How thick a knee is: kneeling, the hips are this much higher than the thigh is long. */
 const KNEE = 0.28;
+/** How high a knee's joint is over the floor when the body kneels on it, a share of the height (./gait.ts kneelLegs). */
+export const KNEELING = KNEE / ADULT;
 /** The ankle, over the sole, and the hip joints, out from the middle. */
 const ANKLE = 0.13;
 const HIP_X = 0.38;
@@ -177,6 +194,8 @@ export interface Rig {
   pose(pose: Pose): void;
   /** Where a hand is in the world after the last pose: the body's left is 0. */
   hand(side: 0 | 1, out: Vector3): Vector3;
+  /** Where a knee is in the world after the last pose (the joint): the body's left is 0. A hand rests on it, kneeling. */
+  knee?(side: 0 | 1, out: Vector3): Vector3;
   /** The lips in world space, following the head's nod and turn. */
   mouth(out: Vector3): Vector3;
   /**
@@ -195,8 +214,11 @@ export interface Rig {
   readonly height: number;
   /** Its legs' measures, as shares of its height: the stride is fitted to them (./gait.ts). */
   readonly legs: Legs;
-  /** Rain gear on, or off with null (./rain-gear.ts). */
-  dress?(gear: RainGear | null): void;
+  /**
+   * Rain gear on, as far as it is on, or off with null (./rain-gear.ts). `ready`: it is put on in this chapter, so
+   * whatever it is drawn with is made now, hidden, to be drawn in the warm-up and not first in play.
+   */
+  dress?(gear: RainGear | null, ready?: boolean): void;
   /** The cap off his head, lent away (Bertil's in Granskogen, "Min keps blir din båt"), or back on. */
   bareHead?(bare: boolean): void;
   /** Puts on a wardrobe made in Blender (./rain-gear.ts, fitWardrobe): its pieces are worn from then on. */
@@ -441,13 +463,22 @@ export function createRehearsalRig(who: Role): Rig {
     legs: REHEARSAL_LEGS,
     pose,
     dress(gear) {
-      // The coat over the body and arms; boots over the shins and shoes; a sock where a boot is off.
+      // The coat over the body and arms; boots over the shins and shoes; a sock where a boot is off. Being put on, each
+      // part takes it as the gear comes over it (./rain-gear.ts COAT_ORDER): the first forearm and upper arm, the body,
+      // the other arm; a boot's foot, then its shin.
       const set = (i: number, hex: string) => mesh.setColorAt(i, colour.set(hex));
-      for (const i of [0, 5, 6, 8, 9]) set(i, gear ? gear.coat : role.top);
+      const on = gear?.on, first = gear?.first ?? 0;
+      const sleeve = (side: 0 | 1, k: number) => {
+        const [from, to] = side === first ? COAT_ORDER.sleeve : COAT_ORDER.otherSleeve;
+        return from + (to - from) * k;
+      };
+      const coatAt: [number, number][] = [[0, (COAT_ORDER.back[0] + COAT_ORDER.back[1]) / 2], [5, sleeve(0, 1)], [6, sleeve(0, 0.4)], [8, sleeve(1, 1)], [9, sleeve(1, 0.4)]];
+      for (const [i, share] of coatAt) set(i, gear && (!on || on.coat >= share) ? gear.coat : role.top);
       for (const [side, shin, foot] of [[0, 12, 13], [1, 15, 16]] as const) {
-        const off = gear?.bootOff === side;
-        set(shin, gear && !off ? gear.boots : trousers);
-        set(foot, gear ? (off ? SOCK : gear.boots) : shoe);
+        // No boots (Elof's own shoes), or a boot as far as it is on: its foot first, then its shin.
+        const off = gear?.bootOff === side, boot = gear?.boots ? (on ? on.boots[side] : 1) : 0;
+        set(shin, gear?.boots && !off && boot >= 0.7 ? gear.boots : trousers);
+        set(foot, gear ? (off ? SOCK : gear.boots && boot >= 0.3 ? gear.boots : shoe) : shoe);
       }
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     },
@@ -460,6 +491,10 @@ export function createRehearsalRig(who: Role): Rig {
     hand(side, out) {
       group.updateWorldMatrix(true, false);
       return out.copy(hands[side]).applyMatrix4(group.matrixWorld);
+    },
+    knee(side, out) {
+      group.updateWorldMatrix(true, false);
+      return group.localToWorld(out.setFromMatrixPosition(joints[side === 0 ? 'kneeL' : 'kneeR']).multiplyScalar(s));
     },
     mouth(out) { return group.localToWorld(out.set(0, .25, .38).applyMatrix4(joints.neck).multiplyScalar(s)); },
     breeze(wind, dt, calm) {
@@ -549,24 +584,61 @@ function bootContacts(model: Object3D, foot: Object3D): Vector3[] {
  * Where a bone or a boot is missing, the rehearsal figure's measures stand in.
  */
 function measureLegs(group: Group, orientation: Quaternion, thigh: Object3D | undefined, calf: Object3D | undefined,
-  foot: Object3D | undefined, soles: Vector3[] | undefined, other: Object3D | undefined, height: number): Legs {
+  foot: Object3D | undefined, soles: Vector3[] | undefined, other: Object3D | undefined, height: number, model?: Object3D): Legs {
   if (!thigh || !calf || !foot || !soles?.length || height <= 0) return REHEARSAL_LEGS;
   const body = orientation.clone().invert();
   // Positions in the body's own frame: x its left, y up, z ahead.
   const own = (node: Object3D) => group.worldToLocal(node.getWorldPosition(new Vector3())).applyQuaternion(body);
   const hip = own(thigh), knee = own(calf), ankle = own(foot);
   const toGroup = new Matrix4().copy(group.matrixWorld).invert().multiply(foot.matrixWorld);
-  let low = Infinity, back = Infinity, front = -Infinity;
+  let low = Infinity, back = Infinity, front = -Infinity, tip = Infinity;
   for (const point of soles) {
     const at = point.clone().applyMatrix4(toGroup).applyQuaternion(body);
     low = Math.min(low, at.y); back = Math.min(back, at.z - ankle.z); front = Math.max(front, at.z - ankle.z);
+    // Stood up on its toe, the lowest of the boot is how far under the ankle its toe cap reaches.
+    tip = Math.min(tip, (at.z - ankle.z) * Math.sin(-ON_TOES) + (at.y - ankle.y) * Math.cos(-ON_TOES));
   }
   const width = other ? Math.abs(hip.x - own(other).x) / 2 : REHEARSAL_LEGS.width * height;
   const share = (n: number) => n / height;
+  // The knee as it was made: how far bent, in the body's side view, and how far the front of the shin stands out ahead of
+  // its joint just under it, which is what it kneels on.
+  const thighWay = knee.clone().sub(hip), shinWay = ankle.clone().sub(knee);
+  const bend = -Math.atan2(thighWay.z * shinWay.y - thighWay.y * shinWay.z, thighWay.z * shinWay.z + thighWay.y * shinWay.y);
+  let ahead = 0;
+  const shin = knee.distanceTo(ankle), at = new Vector3(), bound = new Vector3(), skin = new Matrix4();
+  model?.traverse((node) => {
+    const skinned = node as SkinnedMesh;
+    if (!skinned.isSkinnedMesh || !skinned.visible) return;
+    const bone = skinned.skeleton.bones.indexOf(calf as never);
+    const positions = skinned.geometry.getAttribute('position');
+    const indices = skinned.geometry.getAttribute('skinIndex'), weights = skinned.geometry.getAttribute('skinWeight');
+    if (bone < 0 || !positions || !indices || !weights) return;
+    for (let i = 0; i < positions.count; i++) {
+      let w = 0;
+      for (let channel = 0; channel < 4; channel++) if (indices.getComponent(i, channel) === bone) w += weights.getComponent(i, channel);
+      if (w < .5) continue;
+      // Skinned from its bones as they stand now, whatever the model has been scaled or moved by since it was bound.
+      bound.fromBufferAttribute(positions, i).applyMatrix4(skinned.bindMatrix);
+      at.set(0, 0, 0);
+      for (let channel = 0; channel < 4; channel++) {
+        const weight = weights.getComponent(i, channel);
+        if (weight === 0) continue;
+        const which = indices.getComponent(i, channel);
+        skin.multiplyMatrices(skinned.skeleton.bones[which]!.matrixWorld, skinned.skeleton.boneInverses[which]!);
+        at.addScaledVector(bound.clone().applyMatrix4(skin), weight);
+      }
+      group.worldToLocal(at).applyQuaternion(body);
+      if (at.y < knee.y - shin * .5 || at.y > knee.y + shin * .1) continue;
+      // How far under the joint it is with the shin lying back along the floor as it kneels (rising a quarter radian).
+      ahead = Math.max(ahead, (at.z - knee.z) * Math.cos(.25) + (at.y - knee.y) * Math.sin(.25));
+    }
+  });
   return {
-    hip: share(hip.y - low), thigh: share(hip.distanceTo(knee)), shin: share(knee.distanceTo(ankle)), ankle: share(Math.max(0, ankle.y - low)),
+    hip: share(hip.y - low), thigh: share(hip.distanceTo(knee)), shin: share(shin), ankle: share(Math.max(0, ankle.y - low)),
     // A boot is stiff: it comes down on its heel and rolls over its toe.
     heel: share(Math.max(0, -back)), toe: share(Math.max(0, front)), width: share(width),
+    // Bent right over, the knee's skin is drawn in over the joint: by about a quarter, on each of the family's bodies.
+    ...(ahead > 0 ? { knee: share(ahead * .75) } : {}), bend, tip: share(-tip),
   };
 }
 
@@ -588,10 +660,14 @@ export function createModelRig(model: Object3D, height: number): Rig {
   model.traverse((part) => {
     const skinned = part as SkinnedMesh;
     if (!skinned.isSkinnedMesh) return;
+    // Each sleeve goes with its arm, not partly with the chest (./sleeves.ts).
+    sleevesWithArms(skinned);
     skinned.geometry.computeBoundingSphere();
     skinned.boundingSphere = skinned.geometry.boundingSphere!.clone();
     skinned.boundingSphere.radius *= 1.6;
   });
+  // Elbows and knees bend through half bones, a shoulder's corner gives to its arm, a skirt lies over the thighs (./joints.ts).
+  bendSoftly(model);
   const bone = (name: string, sign: 1 | -1): Bone | null => {
     const node = model.getObjectByName(name);
     return node ? { node, rest: node.quaternion.clone(), sign } : null;
@@ -650,7 +726,9 @@ export function createModelRig(model: Object3D, height: number): Rig {
   const restHip = hips.length > 0
     ? hips.reduce((sum, b) => sum + group.worldToLocal(b.node.getWorldPosition(at)).y, 0) / hips.length
     : HIP * unit;
-  const legs = measureLegs(group, orientation, bones.legL?.node, bones.kneeL?.node, feet[0], supports[0]?.points, bones.legR?.node, height);
+  const legs = measureLegs(group, orientation, bones.legL?.node, bones.kneeL?.node, feet[0], supports[0]?.points, bones.legR?.node, height, model);
+  // Kneeling, the body stands on the front of its shin just under the knee: its own knee's thickness below the joint.
+  const kneeThick = (legs.knee ?? KNEELING) * height;
   // Without a hand bone, approximate the forearm by the upper arm, measured in the lower bone's own units.
   // Keeping a world-space length here would shorten the reach if a scene later enlarged the whole figure.
   const fore = [bones.armL, bones.armR].map((upper, i) => {
@@ -675,7 +753,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
     group,
     height,
     legs,
-    dress(gear) {
+    dress(gear, ready = false) {
       worn = gear;
       // The wardrobe made in Blender, once it has come; until then (or without one) shells of the body itself.
       if (wardrobe) {
@@ -683,7 +761,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
         return;
       }
       if (shells === undefined) {
-        if (!gear) return;
+        if (!gear && !ready) return;
         const body = bodyOf(model);
         shells = body ? buildShells(body, height) : null;
       }
@@ -768,7 +846,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
           if (points.length === 0) low = Math.min(low, at.setFromMatrixPosition(toGroup).y - sole);
           else for (const point of points) low = Math.min(low, at.copy(point).applyMatrix4(toGroup).y);
         }
-        for (const knee of knees) low = Math.min(low, at.setFromMatrixPosition(knee.matrixWorld).applyMatrix4(inverseGroup).y - KNEE * unit);
+        for (const knee of knees) low = Math.min(low, at.setFromMatrixPosition(knee.matrixWorld).applyMatrix4(inverseGroup).y - kneeThick);
       }
       const grounded = rest - low + p.bounce * unit;
       model.position.y = p.floor ? Math.max(grounded, seated + p.floor * (restHip - low)) : grounded;
@@ -780,6 +858,10 @@ export function createModelRig(model: Object3D, height: number): Rig {
       if (!lower) return group.localToWorld(out.set(0, height * 0.45, 0));
       // Blender's bones lie along their own +y: the hand is a forearm's length along it from the elbow.
       return lower.node.localToWorld(out.set(0, fore[side]!, 0));
+    },
+    knee(side, out) {
+      const knee = side === 0 ? bones.kneeL : bones.kneeR;
+      return knee ? knee.node.getWorldPosition(out) : group.localToWorld(out.set(0, height * 0.17, 0));
     },
   };
 }

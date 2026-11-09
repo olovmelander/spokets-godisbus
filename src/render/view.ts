@@ -2,6 +2,8 @@ import { lessMotion } from '../platform/motion';
 import { buildBraid } from './braid';
 import { createPaddle, type Paddle } from './paddle';
 import { rainGearFor } from './rain-gear';
+import { coatPose } from './elof-coat';
+import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
 import { createMoverMotion } from './mover-motion';
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
@@ -703,9 +705,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const playerMotion = createPlayerMotion();
   assets
     .manifest()
-    .then((manifest) => (!standIns && manifest.packs.private?.files['elof.glb'] ? assets.model('private', 'elof') : null))
-    .then((model) => {
-      if (!model) return;
+    .then((manifest) => (!standIns && manifest.packs.private?.files['elof.glb'] ? assets.model('private', 'elof').then((model) => ({ model, manifest })) : null))
+    .then((loaded) => {
+      if (!loaded) return;
+      const { model, manifest } = loaded;
       // Exported from Blender he faces +z, and the stand-in faces +x. A quarter turn makes them agree.
       model.rotation.y = Math.PI / 2;
       // Never culled: a skinned body's bounds are taken once, in one pose, and the camera that frames him always has him
@@ -716,6 +719,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const rig = createModelRig(model, 1);
       elof.group.add(rig.group);
       playerBody = rig;
+      // The doll's raincoat made in Blender for his model, where the private pack has it; until then shells of his body.
+      wardrobeFor(rig, 'elof', manifest);
       playerHips = ['thigh_l', 'thigh_r'].map(name => model.getObjectByName(name));
       playerFeet = ['foot_l', 'foot_r'].map(name => model.getObjectByName(name));
       models.push('private/elof');
@@ -983,6 +988,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   carriedCap.visible = false;
   scene.add(carriedCap);
   const capTilt = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI * 0.8);
+  // The doll's raincoat between the doll and his back, and laid on the stone in the storm's eye (./elof-coat.ts).
+  const heldCoat = holdsCoat(chapter) ? createHeldCoat(chapter) : null;
+  if (heldCoat) scene.add(heldCoat.group);
   /** Stormkvällen's flashlight: Elof carries it from the table, and Pappa has it from then on. */
   let carriedLamp: Mesh | null = null, pappasLamp: Mesh | null = null;
   const holdLamp = (lamp: Mesh, rig: Pick<Rig, 'hand'>, side: 0 | 1, facing: number, size: number) => {
@@ -996,13 +1004,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const frozenLedge = chapter.storm?.frozen ? chapter.ledges?.find((ledge) => ledge.needs === chapter.storm!.frozen) : undefined;
   /** The rain gear each body wears now, by its key, so that it is changed only when it changes. */
   const dressed = new WeakMap<object, string>();
-  const dressFor = (rig: Pick<Rig, 'dress'>, who: string, flags: ReadonlySet<string>, scene: SceneFrame | null) => {
+  // Where the family will put their gear on in this chapter, the pieces are made with the body, hidden, so that they are
+  // drawn in the warm-up and nothing is compiled as they go on (./rain-gear.ts). Elof's doll's coat too.
+  const putsOn = chapter.storm !== undefined && (chapter.storm.rain ?? 0) > 0;
+  const dressFor = (rig: Pick<Rig, 'dress'>, who: string, flags: ReadonlySet<string>, scene: SceneFrame | null, calm: boolean, size = 1) => {
     if (!rig.dress) return;
-    const gear = rainGearFor(chapter, who, flags, scene);
-    const key = gear ? `${gear.coat}${gear.boots}${gear.bootOff}` : '';
+    const gear = rainGearFor(chapter, who, flags, scene, calm, size);
+    const on = gear?.on ? `${gear.on.coat.toFixed(3)},${gear.on.boots[0].toFixed(3)},${gear.on.boots[1].toFixed(3)}` : '';
+    const key = gear ? `${gear.coat}${gear.boots}${gear.bootOff}${gear.first}${on}` : '';
     if (dressed.get(rig) === key) return;
     dressed.set(rig, key);
-    rig.dress(gear);
+    rig.dress(gear, putsOn);
   };
   // "Min keps blir din båt, lillebror.": Bertil's cap is off his head once he has lent it, in Granskogen.
   const bared = new WeakMap<object, boolean>();
@@ -1438,6 +1450,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // An act of the hands after a kneel keeps him on his knees, as the family stay on theirs.
       elofStance = stanceOf(scripted.act, elofStance);
       scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null, stride: 0, pace: 0, calm: calmStory }, elofPose, elofStance);
+      // Putting on the doll's raincoat, or taking it off: his arms go into its sleeves and out (./elof-coat.ts).
+      if (sceneFrame) coatPose(sceneFrame.id, sceneFrame.seconds, scriptedPose);
     } else elofStance = 'stand';
     const waving = reaction?.kind === 'player' && curr.grounded;
     // The one wind (./wind.ts) as it reaches each of them where they stand: none indoors, and more in the storm.
@@ -1485,6 +1499,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       playerBody.reach(1, boot.set(scripted.aim.x, scripted.aim.y, scripted.aim.z ?? 0), k * k * (3 - 2 * k));
     }
     stage.updateElof(playerBody, scripted, tall, calmStory);
+    // The doll's raincoat on him, part by part as he puts it on, and in his hands between the doll and his back.
+    dressFor(playerBody, 'elof', flags, sceneFrame ?? null, calmStory, tall);
+    heldCoat?.update(sceneFrame ?? null, flags, playerBody, elof.group, tall, y, calmStory);
     rescuedFigures?.update(flags, elof.group, playerBody, tall);
     if (curr.hook) {
       playerBody.hand(0, laceHand).add(playerBody.hand(1, laceAlong)).multiplyScalar(.5);
@@ -1883,10 +1900,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (actor.visible()) actor.rig.breeze?.(gale * windAt(actor.rig.group.matrixWorld.elements[12]!), dt, calmStory);
     }
     // Rain gear in the storm, as the story has them put it on (./rain-gear.ts): the family at the help points and in
-    // the scenes. Only when it changes: a model that has just taken a figure's place is dressed afresh.
-    for (const [who, actor] of stage.actors) dressFor(actor.rig, who, flags, sceneFrame ?? null);
+    // the scenes, going on as they put it on. Only when it changes: a model that has just taken a figure's place is
+    // dressed afresh.
+    for (const [who, actor] of stage.actors) dressFor(actor.rig, who, flags, sceneFrame ?? null, calmStory);
     for (const one of family) {
-      dressFor(one.rig, one.who, flags, sceneFrame ?? null);
+      dressFor(one.rig, one.who, flags, sceneFrame ?? null, calmStory);
       bareFor(one.rig, one.who, flags);
     }
     if (chapter.id === 'norrsken') {

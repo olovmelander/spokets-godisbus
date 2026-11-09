@@ -1,5 +1,76 @@
 # Handover
 
+## State (9 November 2026, morning)
+
+- **The family's movements and clothes, and Elof's raincoat** (Olov, the night of 8 to 9 November: "Should Elof have or
+  not have a raincoat? And we need to keep improving the look of the family when they sit on their knees, move their
+  arms, and stand still … make sure they have not wings between the arms and the belly when they move their arms … and
+  we need to make sure the puttning on of the raincoats works", and then: "The 'wings' between arms and body is with
+  their ordinarie clothes, so we need to make these models even better when they moves, the look, the smoothness, and
+  that they feel natural"), cloud session, four building agents in worktrees, all on the private models.
+  - **No wings at the shoulder** (`src/render/sleeves.ts`, `sleevesWithArms`, run as a model is installed and as a coat
+    is fitted). Since 7 November each sleeve has been a tube of its own, but it kept the weights of a sleeve sculpted
+    with its trunk: from above the shoulder to a third of the way down the arm part of it stayed on the chest (0.9 to
+    0.04), so a raised arm left the top of its sleeve behind. It flared out at the shoulder (Pappa's, Bertil's and
+    Mormor's T-shirts), pinched a bare shoulder (Mamma's), and hung as a flat flap from the raincoats' sleeves. A
+    separate piece that the arm moves more than the trunk now goes wholly with the upper arm. In a cheer the sleeve lagged
+    4.7 to 8.1 cm behind its arm (the coats 6.9 to 10.5); now 0.1 at most. No private model was changed.
+  - **Elbows and knees keep their round** (`src/render/joints.ts`, `bendSoftly`): a bone at each elbow and knee that
+    turns half as far as the bone below it, added as the model is installed, the weights blended through it over 1.2 limb
+    radii; the coats too. At a sharp bend a corner keeps 0.84 of its distance from the joint (it kept 0.41 to 0.55). The
+    hips are as they were: their half bone tore the trousers' seat, one part shared by both legs.
+  - **Moa's skirt lies over her thigh** (`src/render/skirts.ts`): what hangs below the hips follows the thighs at the
+    front, so her thigh no longer comes through it when she kneels or walks (Mormor's blouse and Morfar's sweater a
+    little too). A fast, high knee lifts its front a little. **A shoulder's corner** gives to a raised arm.
+  - **Kneeling** (`kneel`, `kneelElder` in `art/blender/motion.py`; `kneelLegs` in `gait.ts`): keyed as how far the hips
+    are down and where each foot steps and lifts, the legs worked out on each body from its measured knee and built-in
+    bend. The knee is on the floor (it hovered 0.07 to 0.12 of the height over it), the back boot on its toe, the front
+    boot flat under an upright shin; a hand rests on the knee and pushes off it to get up (Morfar leans on his).
+  - **Cheer and hug**, keyed in Blender: the cheer dips with the elbows drawn in, then both arms go up in a V beside the
+    head with open hands, and two hops; the hug opens wide and wraps round someone at the chest. (They read as a hand on
+    the head, or a phone at the ear, and as hands to the face.)
+  - **Standing still** (`STANDS` in `motion.py`, `stand` in `gait.ts`): the weight goes over onto one foot in under a
+    second and rests there with small settles, then goes over to the other (it drifted to and fro like a machine); the
+    hip over the standing foot comes up and the shoulders tip the other way a moment after (they tipped with the hips);
+    the arms hang clear of the body with relaxed hands; the head glances, holds, comes back slowly and looks down now
+    and then. Each keeps their own rhythm; Elof's waiting idle borrows Bertil's legs and hips.
+  - **The wave, nod, shrug and startle**, keyed in Blender and played at each person's own tempo: the wave dips back,
+    swings up beside the head past where it stops, waves from the elbow with the hand a moment late, and comes down; the
+    nod comes up first and nods twice with the trunk; the shrug turns the palms up, the head tipping after; the startle
+    flies the arms up and past, one after the other, with a hop. After a wave, nod, shrug, startle, gasp or cheer they
+    go back to their own standing over 0.7 s, where they froze in the last pose.
+  - **Putting on the raincoats** (Stormkvällen's `tillsammans`, now 11.6 s). Each of the four gets up and puts their gear
+    on in their own way (clips `dressMamma`, `dressPappa`, `dressMoa`, `dressBertil`): one arm into its sleeve, the
+    collar round behind, the other arm, a shrug, the fronts together and the zip to the chin; a knee up over each boot,
+    the foot pushed in and stamped. The gear appears in step with it: each corner of a coat has its place in an order
+    (`COAT_ORDER`: the first sleeve from the cuff up, that side, the back, the other sleeve and side, then the front
+    closing from the hem to the collar), a boot from the sole up, on the Blender coats and the shells alike, by the
+    scene's own time (seeking and pausing give the same picture). In reduced motion it is on at once. The lines are as
+    they were. It used to appear in one frame.
+  - **Elof's raincoat** (Olov chose "a doll's coat"). After `tillsammans` a toy shelf stands in front of the sofa (the
+    room kit, `art/blender/a2-room.py`) with a doll at its foot in a small lemon-yellow raincoat, belonging to nobody
+    named. Elof says "Dockan har en regnrock! Passar den mig?", and "Ta regnrocken" plays the scene `regnrock`: the coat
+    comes off the doll into his hands and goes on as the family's do, one arm at a time, and the zip ("Den passar! Nu
+    kan regnet komma."). It is not needed to go on; walked past, he has it from Stormgården on. He wears it hood down,
+    in his own shoes, his backpack over it, through every storm chapter and never when big. In Stormens öga the scene
+    `rockav` after `oga` ("Regnet har slutat. Av med regnrocken!") takes it off arm by arm, and it lies folded on the
+    stone beside him until he grows; on Sunday morning it hangs wet beside the family's coats. He wears the coat made in
+    Blender for his model (the private repository's PR #6, `elof-raincoat`: its collar, zip, cuffs and the hood lying
+    down), merged at Olov's word on 9 November; without the private pack it is drawn from his own body.
+  - **Checked:** typecheck, `npm test` (217 files, 2,202 tests), `npm run build` (JS 579.2 KB of 1,000, boot 5,185.2 KB
+    of 10,240), the privacy check, and the browser suites family-help, family-story, prologue, finale-stage, Äventyr 2,
+    story-context, family-caps and model-installation, each by the builder that changed what it covers; filmstrips and
+    measurements on the private models (kept in the session).
+  - **Known:** point, gasp and show still aim with the arm's reach, not keyed curves; the open front's edge is ragged on
+    Pappa's and Bertil's coarser coats as it closes; on the children the
+    hand with the collar comes close to the chin; Pappa's lamp follows his hand through the sleeve; Moa and Bertil
+    still rise from their crouch in the old blend; an empty hug's hands meet close to the chest; the back foot steps
+    back a little into the kneel; Bertil's legs are a hair longer than his hips are high, so his knees stay bent 0.15 rad
+    as he stands (as before).
+  - **For Olov:** on the devices, judge the coats going on in
+    Stormkvällen, the doll and Elof's coat through the storm, the kneeling (the prologue's Pappa, Granskogen's seesaw,
+    Mormor and Morfar in Billsta and Stormens öga), the cheer and the hug, and the sleeves when they wave and point.
+
 ## State (8 November 2026, late evening)
 
 - **Olov's proposals 3 and 4: Blender models for what was still built in code near the play plane, and soft shade
@@ -4823,6 +4894,10 @@
 
 ## Next
 
+**The family's movements and Elof's raincoat (9 November), for Olov:** on the devices, judge the coats going on in
+Stormkvällen, the doll and Elof's coat through the storm, the kneeling, the cheer and the hug, and the sleeves when they
+wave and point (see "State").
+
 **The Unravel pass (8 November, evening), for Olov to judge on the family devices, on High:** the ground's front under
 the path on Berget, Norrsken and Myren; the moss cushions and boulders in Granskogen and Stormskogen; the water in the
 storm (rain rings, the lights' streaks, the shore) and Älven's current; Billsta's firewood, Älven's concrete bridge and
@@ -5293,6 +5368,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The family's movements and Elof's raincoat (9 Nov) | Olov's request: smoother, natural kneeling, arms and standing; no wings between arm and body; the raincoats put on properly; and his choice of a doll's raincoat for Elof | Part of the same cloud session, with four building agents in worktrees | — / 0 so far | Sleeves that go with their arms, elbows and knees that keep their round, Moa's skirt over her thigh; kneeling on each body's legs; cheer and hug; the family put their coats and boots on in step with them; Elof's doll's coat through the storm (private PR #6 for its Blender coat). |
 | Blender models and baked shade (8 Nov, late evening) | Olov's proposals 3 and 4: Blender models for what is still built in code near the play plane, and soft shade baked into the scenery models | Part of the same cloud session, with three building agents in worktrees | — / 0 so far | Flärkenbadet's tower, huts, chess, sun board and jetty arm; Själevad's church, moved to where it is seen; Älven's beaver lodge, Olympia's store and masts, Billsta's poles; water under the jetties; Bredbyn's landmarks with baked shade and the shade between the parts of Byn's houses; CI's split suites weighed by share. |
 | The Unravel pass (8 Nov, evening) | Olov's request: carry out the proposals for a prettier game, with Unravel as the reference | Part of the same cloud session, with five building agents in worktrees | — / 0 so far | Rock and peat fronts with relief and light; rock, turf, gravel and wet ground seen close; water with rain rings, lights, Fresnel, a shore and a current; moss cushions and worn boulders; Billsta's firewood, Älven's concrete bridge and Olympia's hall in Blender; birds that come and go, ravens, crows, bats and the storm's leaves. |
 | Everyone's motion in Blender (8 Nov, afternoon) | Olov's request: smooth, natural, AAA motion for the whole family and the grandparents, made with Blender, on their real bodies; then the chair and the wave | 1 cloud session, Blender 5.2 as a Python module | — / 0 so far | Gaits, stands and kneeling keyed in Blender; a stride with IK on each body's measured legs, planted feet and a closing step; new hip, trunk, head, wrist and thigh joints; Elof's hips and hands; the wave beside the head; getting up from and sitting down on a chair over planted feet, the chair pushed back; everyone seated on the seat with their feet on the floor. |
@@ -5620,9 +5696,9 @@ The first two are in plan §0, "Kvar att svara på". None of them blocks the wor
     - Should the pollen drifting in front of the lens and the beetles on the forest floor stay?
     - Run `?bench` and `?bench&nolens` on the slowest family device: if the lens costs too much there, Mid can
       keep it and High can drop the shade, or the other way round.
-    - The rain gear's colours (Mamma red, Pappa navy, Moa yellow, Bertil orange with green boots; Elof wears none,
-      for he is small before they get ready): are they the family's own, or should they be? It is one table in
-      `src/render/rain-gear.ts`, and the same colours in the private `family/wardrobe.py`.
+    - The rain gear's colours (Mamma red, Pappa navy, Moa yellow, Bertil orange with green boots; Elof, since 9
+      November, a doll's lemon-yellow coat, see "State"): are they the family's own, or should they be? It is one table
+      in `src/render/rain-gear.ts`, and the same colours in the private `family/wardrobe.py`.
     - The night of 7 November, for the devices: does Elof's stride look right now that his feet hold the ground
       (a walk is three to four steps a second)? Is the crane from Blender the crane Elof should ride? Are the
       splashes at his feet in the storm too many, or too few?
