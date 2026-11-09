@@ -94,9 +94,9 @@ export function createHeldCoat(chapter: Pick<ChapterData, 'id' | 'spots'>) {
       holder.visible = !lying;
       folded.visible = lying;
       if (lying) {
-        // Laid down folded on the stone where his hands put it, at his feet. A game taken up after it finds it a little
-        // behind where he stands.
-        if (!laidSet) { laid.set(taking ? hands.x : body.position.x - 0.55, ground, -0.25); laidSet = true; }
+        // Laid down folded on the stone beside him, where his hands put it, behind him as he goes on to the figures. A game
+        // taken up after it finds it there.
+        if (!laidSet) { laid.set((taking ? hands.x : body.position.x) - 0.45, ground, -0.25); laidSet = true; }
         group.position.copy(laid);
         group.rotation.set(0, 0.25, 0);
         group.scale.setScalar(DOLL_SIZE);
