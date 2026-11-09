@@ -899,6 +899,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         }
         // A cut is the scene's own; otherwise nobody whips round: a body turns at most at TURN_RATE.
         const cut = !was || Math.hypot(x - was.x, z - was.z) > CUT;
+        const facing = face;
         if (flowing && !cut) face = turnBy(was!.face, face, TURN_RATE * dt);
         // A step up or down takes a moment, as a stride does, never one frame.
         if (flowing && !cut) y = was!.y + Math.max(-STEP_RATE * rig.height * dt, Math.min(STEP_RATE * rig.height * dt, y - was!.y));
@@ -933,6 +934,12 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           actPose(state.act, { ...context, aim: aimFor(state.glance.from) }, before, state.stance);
           pose.nod = mix(before.nod, pose.nod, state.glance.weight);
           pose.turn = mix(before.turn, pose.turn, state.glance.weight);
+        }
+        // Turning about, the head goes first: it looks round to where the body is turning to, ahead of the body (a larger
+        // facing is to the body's right, and the head turns to its left as `turn` grows).
+        if (flowing && !cut && !calm) {
+          const still = ((((facing - face) % 1) + 1.5) % 1) - 0.5;
+          pose.turn = Math.max(-0.9, Math.min(0.9, pose.turn - Math.max(-0.6, Math.min(0.6, still * Math.PI * 2 * 0.7))));
         }
         // Getting up off a knee or out of a crouch: the way down (art/blender/motion.py CLIPS.kneel, crouch) the other way,
         // handing over to what they do next as they come up. An act that comes before they are up starts from where they are.
