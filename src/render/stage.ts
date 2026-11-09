@@ -116,17 +116,34 @@ const turnBy = (from: number, to: number, most: number) => {
 /** How fast a body may turn about, in turns a second: a half turn takes a little under half a second. */
 const TURN_RATE = 1.15;
 /**
- * How fast a joint may turn, in radians a second: quicker than any gesture or stride the scenes ask for, so those
- * play exactly as authored, but a new act or a glance that would jump a limb in one frame is spread over a few.
+ * How fast a joint may turn at the most, in radians a second: quicker than any stride, run or gesture the scenes ask for
+ * (a run's knees turn at over 20), so those play exactly as keyed; only a jump that nothing else smooths is spread out.
  */
-const JOINT_RATE = 20;
+const JOINT_RATE = 60;
 const LIMBS = JOINTS;
 /**
- * The weight going over a foot, the trunk bending to the side and the head tilting are slow by nature: a new act or a new
- * scene eases them over, at most this fast (a second's worth of the hips' whole shift, in an adult's units or radians).
+ * Where what is asked of a body jumps (a new scene or act, a new stance, the stride taking the legs or letting them go),
+ * what is drawn goes on from where it was at the speed it had, and the difference dies away like a critically damped
+ * spring (inertial blending): nothing snaps, and nothing in between is slowed. How quickly, in radians a second: the
+ * weight going over a foot, the trunk bending to the side and the head tilting are slow by nature; the head turns and
+ * nods at its own pace, a little after the body.
  */
+const CATCH = 14;
+/** A change in how far a joint is asked to go in one frame beyond this (radians) is a jump, not motion. */
+const JUMP = 0.08;
 const SLOW = ['sway', 'hipRoll', 'bendSide', 'tilt'] as const;
+const CATCH_SLOW = 6;
+const CATCH_HEAD = 9;
+const catchOf = (joint: typeof LIMBS[number]) => (SLOW.includes(joint as typeof SLOW[number]) ? CATCH_SLOW
+  : joint === 'turn' || joint === 'nod' ? CATCH_HEAD : CATCH);
+/** And those slow ones never go over faster than this (a second's worth of the hips' whole shift), even in a stride. */
 const SLOW_RATE = 1.5;
+/**
+ * How fast the legs may turn, in radians a second, as they always have: it keeps a walk's planted boot where it is
+ * (tests/unit/family-gait.test.ts). A run's legs would turn faster: there it shows as legs that turn at it, to and fro.
+ */
+const LEG_RATE = 20;
+const rateOf = (joint: typeof LIMBS[number]) => (SLOW.includes(joint as typeof SLOW[number]) ? SLOW_RATE : JOINT_RATE);
 /** Where each of the family's standing loops starts, in seconds: nobody shifts their weight in step with anyone else. */
 const LOOP: Record<Role, number> = { pappa: 0, mamma: 2.7, moa: 5.1, bertil: 1.3 };
 /** What a stride gives the legs and hips, whatever the hands are doing, and what it gives the trunk, head and spread arms. */
@@ -510,6 +527,13 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   const live = new Map<Role, { x: number; y: number; z: number; face: number; walked: number; stride: number; gait: number; pace: number; velocity: number; act: Act; elapsed: number }>();
   /** Each body's pose as last drawn: the next frame's joints turn from it at most at JOINT_RATE. */
   const drawn = new Map<Role, Pose>();
+  /**
+   * How fast each body's joints were drawn turning, and how far what is drawn is from what is asked and how fast that
+   * closes (the inertial blend, CATCH).
+   */
+  const drawnSpeed = new Map<Role, Pose>(), behind = new Map<Role, Pose>(), behindSpeed = new Map<Role, Pose>();
+  /** What was asked of each body last frame, and how far that moved in the frame before: a jump is told from motion by it. */
+  const asking = new Map<Role, Pose>(), askingStep = new Map<Role, Pose>();
   /** Where each body's planted feet stand (./gait.ts). */
   const footings = new Map<Role, Footing>();
   /** How much of each body's legs the walk has, 0 to 1. */
@@ -1018,15 +1042,45 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           if (stridePace > 0.01) pose.seat = null;
         }
         chair(pose, state.stance, state.before, elapsed);
-        // What is asked for, turned towards from what was drawn: a new act, a glance, setting off or stopping
-        // never snaps a limb. Paused, the body holds what was drawn.
-        const shown = drawn.get(who);
-        if (flowing && !cut && shown) {
+        // What is asked for, from what was drawn. Where it jumps (a new scene, a glance to something else, an act that
+        // starts from elsewhere), the body goes on from where it was at the speed it had and the jump dies away (CATCH):
+        // a jump is a change in how far a joint is asked to go in a frame, beyond JUMP; what moves smoothly, however fast,
+        // is drawn as it is. Paused, the body holds what was drawn; a cut or a seek draws what is asked at once.
+        const shown = drawn.get(who), speed = drawnSpeed.get(who) ?? drawnSpeed.set(who, { ...STANDING }).get(who)!;
+        const off = behind.get(who) ?? behind.set(who, { ...STANDING }).get(who)!;
+        const offSpeed = behindSpeed.get(who) ?? behindSpeed.set(who, { ...STANDING }).get(who)!;
+        const target = asking.get(who), targetStep = askingStep.get(who) ?? askingStep.set(who, { ...STANDING }).get(who)!;
+        const wantedNow = { ...pose };
+        if (flowing && !cut && shown && target) {
+          const handing = had !== undefined && had !== legs;
           for (const joint of LIMBS) {
-            const most = (SLOW.includes(joint as typeof SLOW[number]) ? SLOW_RATE : JOINT_RATE) * dt;
-            pose[joint] = shown[joint] + Math.max(-most, Math.min(most, pose[joint] - shown[joint]));
+            const step = pose[joint] - target[joint], excess = step - targetStep[joint], jump = Math.abs(excess) > JUMP;
+            targetStep[joint] = jump ? targetStep[joint] : step;
+            // The legs are the stride's, a clip's or a stance's own, which put the feet where they stand (and the trunk is the
+            // stride's while it walks): they are drawn as asked, at most at LEG_RATE, the weight's shift at SLOW_RATE.
+            if (STRIDING.includes(joint as typeof STRIDING[number]) || ((legs > 0.01 || handing) && CARRIED.includes(joint as typeof CARRIED[number]))) {
+              off[joint] = offSpeed[joint] = 0;
+              const most = (SLOW.includes(joint as typeof SLOW[number]) ? SLOW_RATE : LEG_RATE) * dt;
+              pose[joint] = shown[joint] + Math.max(-most, Math.min(most, pose[joint] - shown[joint]));
+              speed[joint] = (pose[joint] - shown[joint]) / dt;
+              continue;
+            }
+            // The jump goes into how far behind what is asked the body is; the body goes on as it was.
+            if (jump) off[joint] -= excess;
+            // Critically damped, as far as this frame: the difference and its speed die away together.
+            const w = catchOf(joint), e = Math.exp(-w * dt), k = (offSpeed[joint] + w * off[joint]) * dt;
+            off[joint] = (off[joint] + k) * e;
+            offSpeed[joint] = (offSpeed[joint] - w * k) * e;
+            if (Math.abs(off[joint]) < 1e-6 && Math.abs(offSpeed[joint]) < 1e-5) off[joint] = offSpeed[joint] = 0;
+            const most = rateOf(joint) * dt;
+            pose[joint] = shown[joint] + Math.max(-most, Math.min(most, pose[joint] + off[joint] - shown[joint]));
+            speed[joint] = (pose[joint] - shown[joint]) / dt;
           }
-        } else if (paused && shown) Object.assign(pose, shown);
+        } else {
+          if (paused && shown) Object.assign(pose, shown);
+          for (const joint of LIMBS) off[joint] = offSpeed[joint] = speed[joint] = targetStep[joint] = 0;
+        }
+        if (!paused) asking.set(who, wantedNow);
         drawn.set(who, { ...pose });
         // Getting up, the body comes up over its feet; sitting down, it goes down behind them, and in with the chair.
         const hipsBack = backOf(state.stance, state.before, elapsed);
