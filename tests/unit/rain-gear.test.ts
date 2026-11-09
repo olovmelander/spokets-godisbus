@@ -5,7 +5,10 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { describe, expect, it } from 'vitest';
 import { stormkvall } from '../../src/content/aventyr2/chapters/stormkvall';
+import { stormoga } from '../../src/content/aventyr2/chapters/stormoga';
+import { stormskog } from '../../src/content/aventyr2/chapters/stormskog';
 import { ELOF_COAT, PUT_ON, TAKE, TAKE_OFF } from '../../src/render/elof-coat';
+import { holdsCoat } from '../../src/render/elof-coat-mesh';
 import { CLIPS } from '../../src/render/motion-data';
 import {
   bodyOf, buildShells, COAT_ORDER, DRESSING, dressingFrom, gearOnAt, LOOK, rainGearFor, wearShells, type GearRole,
@@ -299,6 +302,13 @@ describe('Elof\'s raincoat', () => {
     expect(rainGearFor(chapter('granskog', false), 'elof', new Set())).toBeNull();
     for (const id of STORM) expect(rainGearFor(chapter(id), 'elof', new Set(), null, false, 3), id).toBeNull();
     expect(rainGearFor(chapter('stormkvall'), 'elof', new Set([TAKE, `scene:${PUT_ON.scene}`]), null, false, 3)).toBeNull();
+  });
+
+  it('is in his hands only where he takes it from the doll and where he takes it off', () => {
+    expect(holdsCoat(stormkvall)).toBe(true);
+    expect(holdsCoat(stormoga)).toBe(true);
+    expect(holdsCoat(stormskog)).toBe(false);
+    expect(stormkvall.spots!.find((spot) => spot.id === TAKE)!.look).toBe('doll');
   });
 
   it('is shells of his own body until a coat made in Blender for his model comes, and then that coat', () => {

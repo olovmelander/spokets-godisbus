@@ -3,7 +3,7 @@ import { buildBraid } from './braid';
 import { createPaddle, type Paddle } from './paddle';
 import { rainGearFor } from './rain-gear';
 import { coatPose } from './elof-coat';
-import { createHeldCoat } from './elof-coat-mesh';
+import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
 import { createMoverMotion } from './mover-motion';
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
@@ -989,7 +989,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(carriedCap);
   const capTilt = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI * 0.8);
   // The doll's raincoat between the doll and his back, and laid on the stone in the storm's eye (./elof-coat.ts).
-  const heldCoat = chapter.storm ? createHeldCoat(chapter) : null;
+  const heldCoat = holdsCoat(chapter) ? createHeldCoat(chapter) : null;
   if (heldCoat) scene.add(heldCoat.group);
   /** Stormkvällen's flashlight: Elof carries it from the table, and Pappa has it from then on. */
   let carriedLamp: Mesh | null = null, pappasLamp: Mesh | null = null;

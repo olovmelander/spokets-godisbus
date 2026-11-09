@@ -38,6 +38,11 @@ function codeCoat(): Group {
   return group;
 }
 
+/** Whether the coat is ever in his hands in this chapter: where he takes it from the doll, or takes it off. */
+export function holdsCoat(chapter: Pick<ChapterData, 'spots' | 'scenes'>): boolean {
+  return (chapter.spots ?? []).some((spot) => spot.id === TAKE) || (chapter.scenes ?? []).some((scene) => scene.id === TAKE_OFF.scene);
+}
+
 /**
  * The coat between the doll and his back, and from his back to the stone: in his two hands as he takes it and holds it
  * up, and lying on the stone after he has laid it down in the storm's eye, until he grows (the POFF hides it).
