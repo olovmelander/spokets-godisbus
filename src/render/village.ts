@@ -290,7 +290,7 @@ interface Placing {
   mirror?: boolean;
   up?: number;
   tone?: number;
-  shade?: (along: number, up: number) => number;
+  shade?: Shade;
 }
 const PLAIN = new Color('#ffffff');
 
@@ -352,18 +352,24 @@ const CUTS: Partial<Record<keyof typeof TILES, { along: number[]; up: number[] }
   // A run of boards ends at a casing or a corner board: its tiles have more corners towards their ends.
   liggande: { along: [0.4, 1.2, 2.8, 3.6], up: [2.3] },
 };
-const FINER = new WeakMap<Shape, Shape>();
-function finer(shape: Shape | undefined, name: keyof typeof TILES): Shape | undefined {
+/** The rows a board gets behind a sign and round it, from the sign's foot to over its top. */
+const SIGN_ROWS = [4.4, 5.6, 6.8, 8];
+const FINER = new WeakMap<Shape, Shape[]>();
+function finer(shape: Shape | undefined, name: keyof typeof TILES, signed: boolean): Shape | undefined {
   const cuts = CUTS[name];
   if (!shape || !cuts) return shape;
   let cut = FINER.get(shape);
-  if (!cut) FINER.set(shape, (cut = sliced(sliced(shape, 0, cuts.along), 1, cuts.up)));
-  return cut;
+  if (!cut) {
+    const along = sliced(shape, 0, cuts.along);
+    FINER.set(shape, (cut = [sliced(along, 1, cuts.up), sliced(along, 1, [...cuts.up, ...SIGN_ROWS])]));
+  }
+  return cut[signed ? 1 : 0];
 }
 
 // Köpmangatan mixes painted timber with smooth rendered shop fronts. A plastered wall is flat: a grid, so that the
 // shade on it has corners to lie on, closer together low down and towards the ends of each piece.
-const PLASTER_PANEL = sliced(sliced(flat([[0, 4, 1.95, TOP, 0, '#ffffff', 0.5]]), 0, [0.4, 1.2, 2.8, 3.6]), 1, [2.3, 2.8, 3.3, 5.5, 8.5]);
+const PLASTER = sliced(flat([[0, 4, 1.95, TOP, 0, '#ffffff', 0.5]]), 0, [0.4, 1.2, 2.8, 3.6]);
+const PLASTER_PANEL = [sliced(PLASTER, 1, [2.3, 2.8, 3.3, 5.5, 8.5]), sliced(PLASTER, 1, [2.3, 2.8, 3.3, ...SIGN_ROWS, 9.5])];
 
 /**
  * The shade on a wall's boards from what stands out of the wall beside them: the sky a point loses to a long edge
@@ -383,8 +389,14 @@ const CAST = {
   strength: 0.8,
 } as const;
 interface Edge { from: number; to: number; proud: number }
+/** A sign on a wall: where it covers the wall, along it and up it, and how far out its face stands. */
+interface Board { from: number; to: number; low: number; high: number; out: number }
+/** The shade's factor at a point of a part on a wall, along the wall, up from its foot and out from its face, and the
+ * signs on the wall. */
+type Shade = ((along: number, up: number, out: number) => number) & { boards: readonly Board[] };
+const shadeOf = (at: (along: number, up: number, out: number) => number): Shade => Object.assign(at, { boards: [] });
 
-function shading(edges: readonly Edge[], pipes: readonly number[] = []): (along: number, up: number) => number {
+function shading(edges: readonly Edge[], pipes: readonly number[] = [], boards: readonly Board[] = []): Shade {
   const edge = (d: number, proud: number) => 0.5 * (1 - Math.max(0, d) / Math.hypot(Math.max(0, d), proud));
   // A long round pipe seen from a point on the wall `d` along from it: the sky between its two sides.
   const round = (d: number) => {
@@ -392,14 +404,31 @@ function shading(edges: readonly Edge[], pipes: readonly number[] = []): (along:
     const middle = Math.atan2(Math.abs(d), out), half = Math.asin(Math.min(1, radius / Math.hypot(d, out)));
     return (Math.sin(Math.min(Math.PI / 2, middle + half)) - Math.sin(Math.max(-Math.PI / 2, middle - half))) / 2;
   };
-  return (along, up) => {
+  return Object.assign((along: number, up: number, out: number) => {
+    // It lies on the wall's face, and on what stands no further out than a cover strip.
+    if (out >= 0.2) return 1;
     let open = 1 - edge(up - CAST.drip.up, CAST.drip.out);
     for (const e of edges) open *= 1 - edge(along < e.from ? e.from - along : along > e.to ? along - e.to : 0, e.proud);
     // The pipe leaves the wall at its foot, where it turns out over the street.
     const onWall = Math.min(1, Math.max(0, (up - CAST.pipe.from) / 0.4));
     for (const x of pipes) open *= 1 - round(along - x) * onWall;
+    // A sign stands a little off the wall: behind it half the sky is gone, and round it the shade fades as at an edge.
+    for (const b of boards) open *= 1 - edge(Math.hypot(Math.max(0, b.from - along, along - b.to), Math.max(0, b.low - up, up - b.high)), b.out);
     return 1 - CAST.strength * (1 - open);
-  };
+  }, { boards });
+}
+
+/** Where a part covers a wall when it is set `at` along it: from side to side and from foot to top, and how far out. */
+function cover(shape: Shape | undefined, at: number): Board | null {
+  if (!shape) return null;
+  const board: Board = { from: Infinity, to: -Infinity, low: Infinity, high: -Infinity, out: 0 };
+  for (let i = 0; i < shape.whose.length; i++) {
+    const x = shape.position[i * 3]! + at, y = shape.position[i * 3 + 1]!;
+    board.from = Math.min(board.from, x); board.to = Math.max(board.to, x);
+    board.low = Math.min(board.low, y); board.high = Math.max(board.high, y);
+    board.out = Math.max(board.out, shape.position[i * 3 + 2]!);
+  }
+  return board;
 }
 
 /** Sets a part of the kit on a wall, `at` along it, in the house's colours. A part the kit lacks is left out. */
@@ -412,8 +441,7 @@ function put(build: Build, shape: Shape | undefined, wall: Wall, at: number, pai
     const x = shape.position[i * 3]! * stretch + at;
     const y = shape.position[i * 3 + 1]!;
     const z = shape.position[i * 3 + 2]!;
-    // The shade of the wall's other parts lies on its face, and on what stands no further out than a cover strip.
-    const shaded = shade && z < 0.2 ? shade(x, up + y * tall) : 1;
+    const shaded = shade ? shade(x, up + y * tall, z) : 1;
     build.position.push(wall.x + wall.along[0] * x + wall.out[0] * z, wall.y + up + y * tall, wall.z + wall.along[1] * x + wall.out[1] * z);
     // A stretched part's faces turn: their normals are divided by the stretch, and made one long again.
     const nx = shape.normal[i * 3]! / stretch;
@@ -439,9 +467,14 @@ function run(build: Build, kit: VillageKit, name: keyof typeof TILES, wall: Wall
   const pitch = TILES[name];
   const count = Math.max(1, Math.round((to - from) / pitch));
   const wide = (to - from) / (pitch * count);
-  // Each board is its own tone, as boards painted in different years are.
-  const shape = name === 'puts' ? PLASTER_PANEL : placing.shade ? finer(kit.get(name), name) : kit.get(name);
-  for (let i = 0; i < count; i++) put(build, shape, wall, from + i * pitch * wide, paint, { ...placing, wide, tone: name === 'puts' ? 1 : 0.965 + 0.07 * hash(from * 3.1 + i) });
+  // Each board is its own tone, as boards painted in different years are. One behind a sign, or beside it, has the
+  // sign's rows of corners too.
+  for (let i = 0; i < count; i++) {
+    const at = from + i * pitch * wide;
+    const signed = !!placing.shade?.boards.some((b) => at < b.to + 1.5 && at + pitch * wide > b.from - 1.5);
+    const shape = name === 'puts' ? PLASTER_PANEL[signed ? 1 : 0] : placing.shade ? finer(kit.get(name), name, signed) : kit.get(name);
+    put(build, shape, wall, at, paint, { ...placing, wide, tone: name === 'puts' ? 1 : 0.965 + 0.07 * hash(from * 3.1 + i) });
+  }
 }
 
 /** How high a part's foot stands: where the chapter says, or on the highest ground under it. */
@@ -632,12 +665,14 @@ function house(build: Build, kit: VillageKit, chapter: ChapterData, parts: reado
     ...(part.windows ?? []).map((w) => ({ from: w.from - CASING, to: w.to + CASING, door: false })),
     ...(part.door ? [{ from: part.door.from - CASING, to: part.door.to + CASING, door: true }] : []),
   ].sort((a, b) => a.from - b.from);
-  // The shade on the boards: from the casings and the door's, the corner boards, the downpipes and the drip board.
+  // The shade on the boards: from the casings and the door's, the corner boards, the downpipes, the sign and the
+  // drip board.
+  const sign = part.sign !== undefined ? cover(kit.get(`skylt-${goods}`), part.sign) : null;
   const shade = shading([
     ...openings.map(({ from: a, to: b, door }) => ({ from: a, to: b, proud: door ? CAST.proud.door : CAST.proud.casing })),
     ...(end.left !== 'none' ? [{ from: from - 1, to: from + CORNER, proud: CAST.proud.corner }] : []),
     ...(end.right !== 'none' ? [{ from: to - CORNER, to: to + 1, proud: CAST.proud.corner }] : []),
-  ], part.pipes);
+  ], part.pipes, sign ? [sign] : []);
   let wood = from + (end.left === 'none' ? 0 : CORNER);
   let stone = from - (end.left === 'side' ? PROUD : 0);
   for (const opening of openings) {
@@ -675,15 +710,31 @@ function house(build: Build, kit: VillageKit, chapter: ChapterData, parts: reado
   }
 }
 
+/**
+ * How the yard's parts stand against each other, as the kit has them (art/blender/village.py): the low wall's top,
+ * how far the fence's boards stand out of the line they stand on, a gatepost's half width and how far it stands out in
+ * front of the boards, and how high the hedge's shade reaches, at its full height.
+ */
+const YARD = { wall: 0.5, boards: 0.3, post: { half: 0.6, proud: 0.5 }, hedge: 1.6 } as const;
+
 /** A yard: a low wall with a fence of boards between two gateposts, a hedge behind it, and a birch. */
 function yard(build: Build, kit: VillageKit, chapter: ChapterData, part: StreetPart): void {
   const paint = { wall: PLAIN, door: PLAIN };
   const front: Wall = { x: 0, y: footOf(chapter, part), z: STREET_DEPTH[part.depth], along: [1, 0], out: [0, 1] };
-  const fence = { tall: part.lowFence ? 0.42 : 1 };
+  const tall = part.lowFence ? 0.42 : 1;
+  const fence = { tall };
+  // Each part's shade from the others (`shading`): the fence's boards stand on the low wall and end at the gateposts,
+  // which stand out in front of them, and the hedge stands on the ground behind the wall and the fence.
+  const { wall, boards, post } = YARD;
+  const edge = (d: number, proud: number) => 0.5 * (1 - Math.max(0, d) / Math.hypot(Math.max(0, d), proud));
+  const posts = [part.from + 0.7, part.to - 0.7];
+  const onWall = shadeOf((along, up) => 1 - CAST.strength * (1 - (1 - edge(up - wall, boards))
+    * (1 - edge(Math.min(...posts.map((x) => Math.abs(along - x))) - post.half, post.proud))));
+  const behind = shadeOf((_along, up) => 1 - CAST.strength * edge(up, YARD.hedge * tall));
   run(build, kit, 'mur', front, part.from, part.to, paint);
-  run(build, kit, 'staket', front, part.from + 1.4, part.to - 1.4, paint, fence);
-  for (const x of [part.from + 0.7, part.to - 0.7]) put(build, kit.get('grindstolpe'), front, x, paint, fence);
-  run(build, kit, 'hack', front, part.from, part.to, paint, fence);
+  run(build, kit, 'staket', front, part.from + 1.4, part.to - 1.4, paint, { ...fence, shade: onWall });
+  for (const x of posts) put(build, kit.get('grindstolpe'), front, x, paint, fence);
+  run(build, kit, 'hack', front, part.from, part.to, paint, { ...fence, shade: behind });
   put(build, kit.get('bjork'), front, part.from + (part.lowFence ? 2 : (part.to - part.from) * 0.4), paint);
 }
 
@@ -734,6 +785,68 @@ function masonry(build: Build, chapter: ChapterData, part: StreetPart): void {
       }
     }
   }
+}
+
+/**
+ * The shade on the street where the near houses stand on it (./dressing/ground.ts): a soft dark band along the
+ * foot of each front, each side wall and each door's granite step, as the shade between the parts of a wall
+ * (`shading`) is. A line of ground a house stands on is given as where it runs along x (`z` set) or along z (`x`
+ * set), between `from` and `to`, with the street on the side `side` points to. Null where no house stands near.
+ */
+export const FOOT_SHADE = {
+  /**
+   * How far out from a foot the shade reaches: half the sky is gone at the foot, and it fades as 1 - d / √(d² + reach²).
+   * The camera looks along the street nearly flat, so a band narrower than this would be a line a few pixels high.
+   */
+  reach: 1.6,
+  strength: 0.85,
+  /** A door's step, as the kit has it (art/blender/village.py): 8 EL wide at a door 6 wide, 3 out from the wall. */
+  step: { wide: 8, out: 3 },
+} as const;
+interface Foot { x?: number; z?: number; from: number; to: number; side: 1 | -1 }
+
+export function footShade(chapter: ChapterData): ((x: number, z: number) => number) | null {
+  const parts = chapter.street ?? [];
+  const feet: Foot[] = [];
+  const front = STREET_DEPTH.near + PROUD;
+  for (const [i, part] of parts.entries()) {
+    if (part.kind !== 'house' || part.depth !== 'near') continue;
+    const end = ends(parts, i);
+    // Two near houses side by side make one foot.
+    const last = feet.at(-1);
+    if (last?.z === front && Math.abs(last.to - part.from) < 1e-6) last.to = part.to;
+    else feet.push({ z: front, from: part.from, to: part.to, side: 1 });
+    const back = STREET_DEPTH.near - SIDE.near;
+    if (end.right === 'side') feet.push({ x: part.to + PROUD, from: back, to: front, side: 1 });
+    if (end.left === 'side') feet.push({ x: part.from - PROUD, from: back, to: front, side: -1 });
+    if (part.door) {
+      const middle = (part.door.from + part.door.to) / 2;
+      const half = (FOOT_SHADE.step.wide / 2) * ((part.door.to - part.door.from) / DOOR_WIDE);
+      const out = STREET_DEPTH.near + FOOT_SHADE.step.out;
+      feet.push({ z: out, from: middle - half, to: middle + half, side: 1 },
+        { x: middle - half, from: front, to: out, side: -1 }, { x: middle + half, from: front, to: out, side: 1 });
+    }
+  }
+  // In the shop, the floor at the foot of the panel along the back wall, and under the low shelf, which stands a
+  // little over it: under it the sky is half gone, and in front of it the shade fades as at a foot, over its height.
+  const shop = chapter.shop;
+  const { shelves, panel } = SHOP_ROOM;
+  if (shop) feet.push({ z: panel.face, from: shop.door, to: shop.to, side: 1 });
+  const low = shop ? { from: shop.door + shelves.from, to: shop.door + shelves.to, height: shelves.at[0] - shelves.thick / 2 } : null;
+  if (feet.length === 0) return null;
+  const { reach, strength } = FOOT_SHADE;
+  const lost = (d: number, over: number) => 0.5 * (1 - d / Math.hypot(d, over));
+  return (x, z) => {
+    let open = 1;
+    for (const foot of feet) {
+      const [along, across] = foot.z !== undefined ? [x, (z - foot.z) * foot.side] : [z, (x - foot.x!) * foot.side];
+      // Behind a foot is under its house.
+      if (across < -0.02) continue;
+      open *= 1 - lost(Math.hypot(Math.max(0, across), Math.max(0, foot.from - along, along - foot.to)), reach);
+    }
+    if (low) open *= 1 - lost(Math.hypot(Math.max(0, z - shelves.front), Math.max(0, low.from - x, x - low.to)), low.height);
+    return 1 - strength * (1 - open);
+  };
 }
 
 /**
@@ -1174,6 +1287,17 @@ function lamps(chapter: ChapterData, floor: number): Group {
 }
 
 /** A cutaway room continuous with the outdoor step: huge jars, plain shelves and a bag to share. */
+/**
+ * The shop's room, measured from its door and floor: the shelves along its back wall (from where along it to where,
+ * how far out from the wall's foot they reach, their two heights and how thick they are), and the panel along the foot
+ * of the wall under the wallpaper (how high, and how far out its face stands).
+ */
+export const SHOP_ROOM = {
+  shelves: { from: 1.5, to: 44.5, back: -8, front: -3.8, at: [1, 8.4], thick: 0.36 },
+  panel: { high: 2.4, face: -7.95 },
+  wall: -8.5,
+} as const;
+
 function shopInterior(chapter: ChapterData): Group {
   const group = new Group();
   group.name = 'candy-shop-interior';
@@ -1198,8 +1322,26 @@ function shopInterior(chapter: ChapterData): Group {
   });
   wallpaper.wrapS = wallpaper.wrapT = RepeatWrapping;
   wallpaper.repeat.set((to - door) / 5, 4);
-  const wall = new Mesh(new PlaneGeometry(to - door + 2, 28), new MeshBasicMaterial({ map: wallpaper, fog: false }));
-  wall.position.set((door + to) / 2, floor + 14, -8.5);
+  // The wallpaper is darker under each shelf and over it, and over the panel at its foot, as the wall of the street's
+  // houses is beside what stands out of it (`shading`), worked out once on its rows of corners.
+  const { shelves, panel } = SHOP_ROOM;
+  const edge = (d: number, reach: number) => 0.5 * (1 - Math.max(0, d) / Math.hypot(Math.max(0, d), reach));
+  const paper = new PlaneGeometry(to - door + 2, 28, 1, 56);
+  const rows = paper.getAttribute('position');
+  const shade: number[] = [];
+  for (let i = 0; i < rows.count; i++) {
+    const up = rows.getY(i) + 14;
+    let open = 1 - edge(up - panel.high, panel.face - SHOP_ROOM.wall);
+    for (const at of shelves.at) {
+      open *= 1 - edge(at - shelves.thick / 2 - up, 1.5);
+      open *= 1 - edge(up - at - shelves.thick / 2, 1);
+    }
+    const k = 1 - 0.55 * (1 - open);
+    shade.push(k, k, k);
+  }
+  paper.setAttribute('color', new Float32BufferAttribute(shade, 3));
+  const wall = new Mesh(paper, new MeshBasicMaterial({ map: wallpaper, fog: false, vertexColors: true }));
+  wall.position.set((door + to) / 2, floor + 14, SHOP_ROOM.wall);
   group.add(wall);
   // The door is open behind his path. Its jamb, warm sill and doormat mark the threshold without a wall
   // across the play plane. The interior wall hides cars beyond it; they never enter the room.
@@ -1211,8 +1353,8 @@ function shopInterior(chapter: ChapterData): Group {
   // Both top surfaces remain at the authored floor height; no white slice of the backdrop shows through.
   block(door + 0.13, floor - 8, 1.84, 0.55, 16, 2.15, new MeshStandardMaterial({ color: '#68513b', roughness: 1 }));
   block(door + 1.8, floor + 0.035, -0.9, 4.5, 0.05, 3, new MeshStandardMaterial({ color: '#8b6260', roughness: 1 }));
-  block((door + to) / 2, floor + 1.2, -8.1, to - door + 1, 2.4, 0.3);
-  for (const y of [floor + 1, floor + 8.4]) block(door + 23, y, -5.9, 43, 0.36, 4.2);
+  block((door + to) / 2, floor + panel.high / 2, panel.face - 0.15, to - door + 1, panel.high, 0.3);
+  for (const y of shelves.at) block(door + (shelves.from + shelves.to) / 2, floor + y, (shelves.back + shelves.front) / 2, shelves.to - shelves.from, shelves.thick, shelves.front - shelves.back);
 
   const glass = new MeshStandardMaterial({ vertexColors: true, roughness: 0.18, transparent: true, depthWrite: false, side: DoubleSide });
   const jars = new InstancedMesh(jarShape(), glass, 10);

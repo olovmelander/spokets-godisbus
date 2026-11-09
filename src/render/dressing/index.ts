@@ -2,7 +2,7 @@ import { Group, type Object3D, type Texture } from 'three';
 import type { ChapterData, PlaceId } from '../../sim/types';
 import { scenery } from '../backdrop';
 import { createLife, type Life, type LifeAsk, type Quiet } from '../life';
-import { fronts, street, villageLife } from '../village';
+import { footShade, fronts, street, villageLife } from '../village';
 import { drainFrame } from './drain';
 import { bog } from './bog';
 import { built } from './built';
@@ -199,7 +199,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   standing.add(outdoor);
   const landmarks = forestLandmarks(chapter);
   fitOutdoorLandmarks(chapter, landmarks);
-  const ground = bank(landChapter, own);
+  const ground = bank(landChapter, own, look.id === 'village' ? footShade(chapter) ?? undefined : undefined);
   if (look.id === 'forest') bakeForestShadows(ground, standing, look.sun.from);
   const air = effects(landChapter, from, to, look.id, standing);
   const front = foreground(landChapter, from, to, OWN[look.id].growth, standing);

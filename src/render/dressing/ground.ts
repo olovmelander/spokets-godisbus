@@ -506,7 +506,7 @@ export function drainsOf(chapter: ChapterData): { from: number; to: number; y: n
 }
 
 /** A street is built: level and without a bank behind the path, and tilted in front of it. */
-const PROFILE_STREET: Row[] = [
+const STREET_ROWS: Row[] = [
   { z: -16, drop: 0, shade: 0.74, bump: 0 },
   { z: -10, drop: 0, shade: 0.82, bump: 0 },
   // A drain's grate ends here behind the path: the road goes on over its well, which has a wall here.
@@ -518,6 +518,23 @@ const PROFILE_STREET: Row[] = [
   { z: EDGE, drop: 0, shade: 1, bump: 0 },
   ...TILTED,
 ];
+/**
+ * More rows where the near houses' stone feet (6.65 behind the path) and a door's step (4 behind it) stand on the
+ * street, for the shade along their foot (`feet` in `bank`, ../village.ts `footShade`).
+ */
+const FEET_ROWS = [-6.65, -6.4, -6, -4, -3.7, -3.2];
+/** A profile with more rows behind the path, each on the line between the two it falls between. */
+function withRows(rows: Row[], more: readonly number[]): Row[] {
+  return rows.flatMap((row, i): Row[] => {
+    const before = rows[i - 1];
+    if (!before || row.z > EDGE) return [row];
+    return [...more.filter((z) => z > before.z && z < row.z).map((z) => {
+      const k = (z - before.z) / (row.z - before.z);
+      return { z, drop: before.drop + (row.drop - before.drop) * k, shade: before.shade + (row.shade - before.shade) * k, bump: 0 };
+    }), row];
+  });
+}
+const PROFILE_STREET: Row[] = withRows(STREET_ROWS, FEET_ROWS);
 
 /** The road's section: a thin wearing course, crushed stone, then earth. Samples lie on the old cut. */
 const ROAD_SAMPLES = [0.3, 0.4, 2.05, 2.25, 6];
@@ -698,8 +715,12 @@ function forwardAtCorner(chapter: ChapterData, x: number, y: number, over = SOFT
   return forward;
 }
 
-/** A wooden floor behind its front edge, in every place: boards, level, a little darker further in. */
-const BOARDS_BEHIND: Row[] = [
+/**
+ * A wooden floor behind its front edge, in every place: boards, level, a little darker further in. Its rows are
+ * closer together at a room's back wall and in front of a low shelf on its floor (the shop's, ../village.ts
+ * `footShade`), for the shade there.
+ */
+const BOARDS_BEHIND: Row[] = withRows([
   { z: -16, drop: 0, shade: 0.7, bump: 0 },
   { z: -10, drop: 0, shade: 0.8, bump: 0 },
   { z: -5.5, drop: 0, shade: 0.9, bump: 0 },
@@ -708,7 +729,7 @@ const BOARDS_BEHIND: Row[] = [
   { z: -0.3, drop: 0, shade: 1, bump: 0 },
   { z: EDGE, drop: 0, shade: 1, bump: 0 },
   { z: 1.1, drop: 0, shade: 1, bump: 0 },
-];
+], [-7.95, -7.6, -3.8, -3.5, -3.0]);
 /**
  * A wooden floor: boards, level where he walks, and in front of the path the tilted plane (`TILTED`). It was
  * a face at first: the boards' picture ran down it 16 lengths deep, a plank fence with black gaps. Where
@@ -987,9 +1008,12 @@ interface Wall {
   lower: Ground;
 }
 
-/** The ground of a chapter, as one mesh for each stretch of one kind of ground. */
-export function bank(chapter: ChapterData, own: Ground): Group {
-  const shapes = bankShapes(chapter, own);
+/**
+ * The ground of a chapter, as one mesh for each stretch of one kind of ground. `feet`: how much of its light the
+ * ground keeps at (x, z), where houses stand on it (../village.ts `footShade`).
+ */
+export function bank(chapter: ChapterData, own: Ground, feet?: (x: number, z: number) => number): Group {
+  const shapes = bankShapes(chapter, own, feet);
   // A picture is drawn only for a chapter that has ground of its kind.
   const has = (which: (look: GroundLook) => boolean) => shapes.some(({ kind }) => which(GROUNDS[kind]));
   const maps = {
@@ -1030,7 +1054,7 @@ export function jettiesOf(chapter: ChapterData, own: Ground): { from: number; to
 }
 
 /** The shapes of a chapter's ground, a stretch of one kind at a time. No picture is drawn for them here. */
-export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; shape: BufferGeometry }[] {
+export function bankShapes(chapter: ChapterData, own: Ground, feet?: (x: number, z: number) => number): { kind: Ground; shape: BufferGeometry }[] {
   chapter = landscape(chapter);
   const line = chapter.ground;
   const first = line[0]!;
@@ -1137,7 +1161,7 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
     const stretch = points.slice(start, Math.min(points.length, i + 1));
     const kind = points[start]!.kind;
     const front = frontFor(kind, own);
-    if (stretch.length > 1) shapes.push({ kind, shape: stretchOfGround(stretch, kind, front, front.jointed ? blocks : [], front.shore === 'ground' ? dampAt : undefined) });
+    if (stretch.length > 1) shapes.push({ kind, shape: stretchOfGround(stretch, kind, front, front.jointed ? blocks : [], front.shore === 'ground' ? dampAt : undefined, feet) });
     start = i;
   }
   return shapes;
@@ -1147,7 +1171,7 @@ export function bankShapes(chapter: ChapterData, own: Ground): { kind: Ground; s
  * One stretch, as columns of points across the profile. The top and a wall's face have a column each where
  * they meet, so that each keeps its own colour and its own lie of the picture, and the corner is a corner.
  */
-function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks: Block[] = [], dampAt?: (x: number) => number): BufferGeometry {
+function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks: Block[] = [], dampAt?: (x: number) => number, feet?: (x: number, z: number) => number): BufferGeometry {
   const look = GROUNDS[kind];
   const street = front === FRONTS.street && (road(kind) || kind === 'iron');
   const profile = street ? PROFILE_ROAD : kind === 'moss' ? PROFILE_FOREST_SHADE : front.rows;
@@ -1276,6 +1300,8 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       if (row.pale && !face) c.lerp(WHITE, row.pale);
       if (row.under) c.copy(UNDER);
       if (row.far) c.lerp(front.far, row.far);
+      // Where a house stands on the street, the shade along its foot.
+      if (feet && !face) c.multiplyScalar(feet(p.x, z));
       colour.push(c.r, c.g, c.b);
       // The rim board lies along the path: across it the picture spans one board, between two gaps, and its
       // grain runs along.
