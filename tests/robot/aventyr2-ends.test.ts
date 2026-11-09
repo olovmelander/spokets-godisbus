@@ -11,7 +11,9 @@ describe('Äventyr 2: Stormkvällen', () => {
   it('finds the flashlight for Pappa, says goodnight, loses both figures to the gust, tastes Klonk\'s star and goes out into the storm', () => {
     const result = playThrough(60, stormkvall, {}, 300);
     expect(result.goal).toBe(true);
-    expect(result.flags).toEqual(expect.arrayContaining(['lamp:take', 'lamp:give', 'goodnight', 'gust', 'star', 'scene:krymper', 'scene:tillsammans', 'a2titel']));
+    expect(result.flags).toEqual(expect.arrayContaining(['lamp:take', 'lamp:give', 'goodnight', 'gust', 'star', 'scene:krymper', 'scene:tillsammans', 'coat:take', 'scene:regnrock', 'a2titel']));
+    // The doll's raincoat, after the family have put on theirs.
+    expect(result.flags.indexOf('scene:tillsammans')).toBeLessThan(result.flags.indexOf('coat:take'));
     const order = ['kvall:0', 'skLampThanks', 'fonstret:0', 'fonstret:2', 'klonkstar:1', 'krymper:0', 'tillsammans:0', 'skTrail', 'stormtitel:0'];
     expect(result.said.filter((id) => order.includes(id))).toEqual(order);
     expect(result.bubbles).toBe(0);

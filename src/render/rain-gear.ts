@@ -3,6 +3,7 @@ import {
 } from 'three';
 import type { Actor } from '../sim/scene';
 import type { ChapterData } from '../sim/types';
+import { elofRainGear } from './elof-coat';
 import { sample, type Clip } from './gait';
 import { bendSoftly } from './joints';
 import { CLIPS } from './motion-data';
@@ -22,10 +23,11 @@ import { jointOf, sleevesWithArms } from './sleeves';
  */
 export interface RainGear {
   coat: string;
-  boots: string;
+  /** Null: no boots, his own shoes (Elof, in the doll's coat). */
+  boots: string | null;
   /** The side whose boot is off, a sock showing: the body's left is 0. */
   bootOff: 0 | 1 | null;
-  /** While it is being put on (`gearOnAt`), how far each piece is on. Left out: all of it. */
+  /** While it is being put on (`gearOnAt`, or Elof's: ./elof-coat.ts), or taken off, how far each piece is on. Left out: all of it. */
   on?: GearOn;
   /** The arm that goes into its sleeve first (`FIRST_SLEEVE`): the coat goes on in its order. Left out: the left. */
   first?: 0 | 1;
@@ -38,8 +40,11 @@ export interface GearOn {
 }
 const ALL_ON: GearOn = { coat: 1, boots: [1, 1] };
 
-/** Not Elof: the star has made him small before the family get ready to go out (Stormkvällen's `krymper` comes before
- * `tillsammans`), so no raincoat of theirs fits him; he goes out in his own clothes. */
+/**
+ * The family's. The star has made Elof small before they get ready to go out (Stormkvällen's `krymper` comes before
+ * `tillsammans`), so no raincoat of theirs fits him: he finds a doll's small yellow one after them, and wears it with
+ * his own shoes (./elof-coat.ts, `ELOF_COAT`). It goes on and comes off in the same order as theirs.
+ */
 export type GearRole = 'mamma' | 'pappa' | 'moa' | 'bertil';
 
 /** Each one's raincoat and boots. Bertil's boots are the green of the boot Elof rides (../content/aventyr2/render.ts). */
@@ -84,10 +89,12 @@ const READY = 'scene:tillsammans';
 
 /**
  * What one of the family wears now, in this chapter, with these flags, in this moment of a scene: null is their own
- * clothes. `calm`: reduced motion.
+ * clothes. `calm`: reduced motion. `tall`: how big he is drawn, for Elof's doll's coat, which he never wears big.
  */
 export function rainGearFor(chapter: Pick<ChapterData, 'id' | 'storm' | 'scenes'>, who: string, flags: ReadonlySet<string>,
-  scene?: { id: string; seconds: number } | null, calm = false): RainGear | null {
+  scene?: { id: string; seconds: number } | null, calm = false, tall = 1): RainGear | null {
+  // Elof's is the doll's coat, while he is small (./elof-coat.ts).
+  if (who === 'elof') return elofRainGear(chapter, flags, scene, calm, tall);
   if (!(who in LOOK) || !chapter.storm || (chapter.storm.rain ?? 0) <= 0) return null;
   const look = LOOK[who as GearRole];
   // Indoors in Stormkvällen they are in their own clothes until they get ready to go out together: then each puts it on
@@ -314,7 +321,8 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
     }
     owner[i] = jointOf(bones[which] ?? '');            // a bone added at a joint stands for the bone it rests on
   }
-  // How tall the body is in its own units, and the height range of its thighs' and calves' corners.
+  // How tall the body is in its own units, and the height range of its thighs' and calves' corners. A body smaller than
+  // a boy (Elof, small, in the doll's coat) has its shells as close to it, for its size, as a boy's would be.
   let low = Infinity, high = -Infinity;
   const range = new Map<string, [number, number]>();
   for (let i = 0; i < count; i++) {
@@ -324,7 +332,7 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
     r[0] = Math.min(r[0], y); r[1] = Math.max(r[1], y);
     range.set(owner[i]!, r);
   }
-  const unit = (high - low) / height;
+  const unit = (high - low) / Math.max(height, 3);
   const index = g.index;
   const triangles = index ? index.count / 3 : count / 3;
   const corner = (t: number, k: number) => (index ? index.getX(t * 3 + k) : t * 3 + k);
@@ -370,6 +378,7 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
   }
   // A raincoat is shiny and stands a little off the body; a rubber boot is shinier and stands further out.
   const coat = shell(inCoat, 0.05, '#ffffff', 0.38);
+  coat.mesh.userData.wardrobe = 'shell raincoat';
   const boots = [shell(inBoot(0), 0.07, '#ffffff', 0.3), shell(inBoot(1), 0.07, '#ffffff', 0.3)] as const;
   // They go on in the order of the body's own corners at rest: the coat as `COAT_ORDER`, a boot from the sole up.
   const rest = atRest(body), ahead = aheadOf(rest);
@@ -404,10 +413,10 @@ export function wearShells(shells: Shells, gear: RainGear | null): void {
   if (gear) (shells.coat.material as MeshStandardMaterial).color.set(gear.coat);
   for (const side of [0, 1] as const) {
     const off = gear?.bootOff === side;
-    shells.boots[side].visible = gear !== null && !off && on.boots[side] > 0;
+    shells.boots[side].visible = gear !== null && gear.boots !== null && !off && on.boots[side] > 0;
     shells.on.boots[side].value = shown(on.boots[side]);
     shells.socks[side].visible = gear !== null && off;
-    if (gear) (shells.boots[side].material as MeshStandardMaterial).color.set(gear.boots);
+    if (gear?.boots) (shells.boots[side].material as MeshStandardMaterial).color.set(gear.boots);
   }
 }
 
@@ -685,7 +694,7 @@ export function wearWardrobe(wardrobe: Wardrobe, gear: RainGear | null): void {
   if (wardrobe.on.coat) wardrobe.on.coat.value = shown(on.coat);
   for (const side of [0, 1] as const) {
     const off = gear?.bootOff === side;
-    if (wardrobe.boots[side]) wardrobe.boots[side]!.visible = gear !== null && !off && on.boots[side] > 0;
+    if (wardrobe.boots[side]) wardrobe.boots[side]!.visible = gear !== null && gear.boots !== null && !off && on.boots[side] > 0;
     if (wardrobe.on.boots[side]) wardrobe.on.boots[side]!.value = shown(on.boots[side]);
     if (wardrobe.socks[side]) wardrobe.socks[side]!.visible = gear !== null && off;
   }

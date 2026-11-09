@@ -15,6 +15,7 @@ export const words: ChapterWords = {
     soOwlCome: 'Ugglan! Nu ser du var vi är!',
     soQuiet: 'Det blev alldeles tyst …',
     soStars: 'Stjärnorna! Vi är i stormens öga.',
+    soCoatOff: 'Regnet har slutat. Av med regnrocken!',
     soFound: 'Där är ni! Jag har letat överallt.',
     soKlonk: 'Klonk …',
     soHeld: 'Du följde honom hela natten.',
@@ -55,5 +56,5 @@ export const words: ChapterWords = {
     soFriends: 'Klonk och ugglan är här. Familjens lampor lyser från bryggan.',
     soFamilyShore: 'Familjen, mormor och morfar väntar på stranden.',
   },
-  moments: { oga: 'Stormens öga', motet: 'Där är ni!', stor: 'Guldgodiset' },
+  moments: { oga: 'Stormens öga', rockav: 'Av med regnrocken', motet: 'Där är ni!', stor: 'Guldgodiset' },
 };

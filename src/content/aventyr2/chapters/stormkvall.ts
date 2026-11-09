@@ -2,6 +2,7 @@ import type { ChapterData } from '../../../sim/types';
 import type { SceneDef } from '../../../sim/scene';
 import type { Chooser } from '../context';
 import { jump, round, row } from '../kit';
+import { DOLL_Z, TAKE } from '../../../render/elof-coat';
 
 /**
  * Äventyr 2, Prolog: Stormkvällen (docs/aventyr-2.md). Units: EL. A Saturday evening at the end of October, at
@@ -21,6 +22,9 @@ import { jump, round, row } from '../kit';
  * 6. **Vi letar tillsammans:** the family pull on raincoats and take their lamps. A candy lies on the floor, then
  *    another: the old trägubbe's trail. Tiny, he crosses the giant room, the door sill and the veranda. The trail
  *    is laid only now, its big candies too (`Checkpoint.after`): nothing lies on the floor before the gust.
+ *    None of their raincoats fits him now; at the foot of the toy shelf a doll sits in a small yellow one. *Ta
+ *    regnrocken*: he puts it on, one arm and the other, and it fits (Olov, 9 November 2026; ../../../render/elof-coat.ts).
+ *    He wears it through the storm. It is not needed to go on: walked past, he goes out onto the deck in his own clothes.
  * 7. **Stormnatten:** at the deck's edge the stormy garden opens below him, and the adventure's title.
  *
  * The family are the same rehearsal figures as the first adventure's prologue (src/render/stage.ts).
@@ -43,6 +47,12 @@ const STAR_Y = 0.35;
 const KLONK = { x: STAR + 0.9, y: 0, z: 0 };
 /** What the trail's big candies wait for: the old trägubbe lays it, and it is found once he is small. */
 const TRAIL = 'scene:tillsammans';
+/**
+ * The toy shelf in front of the sofa, and the doll sitting at its foot in its small yellow raincoat: on his way across
+ * the room, after the table, where nobody stands in any scene. Its back leans on the shelf's front.
+ */
+const TOY_SHELF = { x: 21.6, z: DOLL_Z - 0.75 };
+const DOLL = { x: 21 };
 
 // Where each of the family is as the evening opens, clear of each other, the table and its chairs. The table is 5 long
 // and 2.2 deep (x 11.5 to 16.5, z -2.6 to -0.4), with a chair behind it and one at its right end (`furniture`).
@@ -272,7 +282,25 @@ const SCENES: SceneDef[] = [
     },
   },
   {
-    // 6. At the deck's edge the storm-dark garden opens below, and the adventure's name stands over it.
+    // 6. A raincoat that fits him: the doll's. He takes it off the doll, swings it up onto his back and puts his arms into
+    // its sleeves, the left and then the right, pulls its front together, and holds out his arms: it fits (the coat and his
+    // arms as it goes on, ../../../render/elof-coat.ts). He turns from the doll to us as it goes on.
+    id: 'regnrock',
+    on: TAKE,
+    resumeAt: { x: DOLL.x - 0.6, y: 0 },
+    seconds: 5,
+    hold: true,
+    lines: [{ at: 3.75, who: 'elof', line: 'skCoatFits' }],
+    stage: {
+      shots: [{ at: 0, x: DOLL.x - 0.3, y: 0.85, height: 3, width: 5, move: 0.8 }],
+      elof: [
+        { at: 0, face: 0.68, act: 'watch', aim: { x: DOLL.x, y: 0.35, z: DOLL_Z } },
+        { at: 1.15, face: 0.22, act: 'watch', aim: { x: DOLL.x - 1, y: 1.2, z: 3 } },
+      ],
+    },
+  },
+  {
+    // 7. At the deck's edge the storm-dark garden opens below, and the adventure's name stands over it.
     id: 'stormtitel',
     at: 51.4,
     needs: 'scene:tillsammans',
@@ -329,6 +357,8 @@ export const stormkvall: ChapterData = {
     { look: 'candle', at: { x: CANDLE.x, y: CANDLE.y }, z: CANDLE.z, after: 'candles' },
     // The flashlight on the table, until Elof has taken it to Pappa.
     { look: 'flashlight', at: { x: 15, y: 1.65 }, z: -1.3, until: 'lamp:take' },
+    // The toy shelf, with the doll at its foot (the spot `coat:take`).
+    { look: 'toyShelf', at: { x: TOY_SHELF.x, y: 0 }, z: TOY_SHELF.z },
   ],
   furniture: [
     { look: 'table', at: { x: 14, y: 0 }, z: -1.5 },
@@ -370,6 +400,8 @@ export const stormkvall: ChapterData = {
     { id: 'goodnight', at: { x: GOODNIGHT, y: 0 }, verb: 'give', word: 'skGoodnight', needs: 'beat:skLampThanks' },
     // Klonk's last star: out of its bag in the scene, held up between them, and not there before.
     { id: 'star', look: 'star', at: { x: STAR, y: STAR_Y }, verb: 'take', word: 'tasteStar', needs: 'scene:klonkstar', after: 'star:out' },
+    // The doll's raincoat, once the family have put on theirs and he is small.
+    { id: TAKE, look: 'doll', at: { x: DOLL.x, y: 0 }, verb: 'take', word: 'skTakeCoat', needs: 'scene:tillsammans' },
   ],
   jumps: [jump({ x: 29.8, y: 0 }, { x: 30.6, y: 0.5 })],
   ghost: [
@@ -396,6 +428,8 @@ export const stormkvall: ChapterData = {
     // A handful is not for ever: this is what runs out at the end of Älven.
     { id: 'skHandful', on: 'beat:skTrail', who: 'moa', line: 'skHandful', read: true },
     { id: 'skEnough', on: 'beat:skHandful', who: 'bertil', line: 'skEnough', read: true },
+    // The doll at the toy shelf, as he comes to it: its raincoat might fit him.
+    { id: 'skDoll', at: DOLL.x - 2.2, needs: 'scene:tillsammans', until: TAKE, who: 'elof', line: 'skDollCoat', read: true },
     { id: 'skSill', at: 27.6, needs: 'scene:tillsammans', who: 'spoket', line: 'skKlonkHop' },
     { id: 'skRain', at: 39.4, needs: 'scene:tillsammans', who: 'elof', line: 'skRainLine' },
     // On the deck, the family's promises, as he passes them.

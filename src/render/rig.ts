@@ -475,9 +475,10 @@ export function createRehearsalRig(who: Role): Rig {
       const coatAt: [number, number][] = [[0, (COAT_ORDER.back[0] + COAT_ORDER.back[1]) / 2], [5, sleeve(0, 1)], [6, sleeve(0, 0.4)], [8, sleeve(1, 1)], [9, sleeve(1, 0.4)]];
       for (const [i, share] of coatAt) set(i, gear && (!on || on.coat >= share) ? gear.coat : role.top);
       for (const [side, shin, foot] of [[0, 12, 13], [1, 15, 16]] as const) {
-        const off = gear?.bootOff === side, boot = on ? on.boots[side] : 1;
-        set(shin, gear && !off && boot >= 0.7 ? gear.boots : trousers);
-        set(foot, gear ? (off ? SOCK : boot >= 0.3 ? gear.boots : shoe) : shoe);
+        // No boots (Elof's own shoes), or a boot as far as it is on: its foot first, then its shin.
+        const off = gear?.bootOff === side, boot = gear?.boots ? (on ? on.boots[side] : 1) : 0;
+        set(shin, gear?.boots && !off && boot >= 0.7 ? gear.boots : trousers);
+        set(foot, gear ? (off ? SOCK : gear.boots && boot >= 0.3 ? gear.boots : shoe) : shoe);
       }
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     },

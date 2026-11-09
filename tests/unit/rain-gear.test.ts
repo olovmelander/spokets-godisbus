@@ -1,12 +1,16 @@
 import {
-  Bone, BoxGeometry, BufferGeometry, Float32BufferAttribute, Group, MeshStandardMaterial, Skeleton, SkinnedMesh, Uint16BufferAttribute, Vector3,
+  Bone, Box3, BoxGeometry, BufferGeometry, Float32BufferAttribute, Group, MeshStandardMaterial, Skeleton, SkinnedMesh, Uint16BufferAttribute, Vector3,
+  type Object3D,
 } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { describe, expect, it } from 'vitest';
 import { stormkvall } from '../../src/content/aventyr2/chapters/stormkvall';
+import { ELOF_COAT, PUT_ON, TAKE, TAKE_OFF } from '../../src/render/elof-coat';
 import { CLIPS } from '../../src/render/motion-data';
 import {
-  buildShells, COAT_ORDER, DRESSING, dressingFrom, gearOnAt, rainGearFor, wearShells, type GearRole,
+  bodyOf, buildShells, COAT_ORDER, DRESSING, dressingFrom, gearOnAt, LOOK, rainGearFor, wearShells, type GearRole,
 } from '../../src/render/rain-gear';
+import { createModelRig } from '../../src/render/rig';
 
 /** Rain gear in Stormnatten, as the story has them put it on (src/render/rain-gear.ts, 6 November 2026). */
 const storm = { rain: 0.8 } as never;
@@ -234,3 +238,149 @@ describe('the gear going on, on a body', () => {
     expect(shells.on.boots.map((one) => one.value > 1)).toEqual([true, true]);
   });
 });
+
+/** Elof in the doll's raincoat (src/render/elof-coat.ts; Olov, 9 November 2026). */
+describe('Elof\'s raincoat', () => {
+  const STORM = ['stormgard', 'stormskog', 'stormbyn', 'olympia', 'flarken', 'alven', 'billsta', 'stormoga'];
+  const scene = (id: string, seconds: number) => ({ id, seconds });
+
+  it('is the doll\'s small lemon-yellow coat, with his own shoes and no boots', () => {
+    const gear = rainGearFor(chapter('stormskog'), 'elof', new Set())!;
+    expect(gear.coat).toBe(ELOF_COAT);
+    expect(gear.coat).not.toBe(LOOK.moa.coat);
+    expect(gear.boots).toBeNull();
+    expect(gear.on).toBeUndefined();
+    // His left arm goes into its sleeve first: the coat's order is worked out for it, as the family's is for theirs.
+    expect(gear.first).toBe(0);
+  });
+
+  it('is not his in Stormkvällen until he has taken it from the doll, after the family have put on theirs', () => {
+    const ready = ['scene:krymper', 'scene:tillsammans'];
+    expect(rainGearFor(chapter('stormkvall'), 'elof', new Set())).toBeNull();
+    expect(rainGearFor(chapter('stormkvall'), 'elof', new Set(ready))).toBeNull();
+    expect(rainGearFor(chapter('stormkvall'), 'elof', new Set(ready), scene('tillsammans', 8))).toBeNull();
+    expect(rainGearFor(chapter('stormkvall'), 'elof', new Set([...ready, TAKE, `scene:${PUT_ON.scene}`]))!.on).toBeUndefined();
+  });
+
+  it('goes on in the family\'s order as he puts it on: in his hands first, his left sleeve, round his back, the right, the zip', () => {
+    const at = (seconds: number, calm = false) => rainGearFor(chapter('stormkvall'), 'elof', new Set([TAKE]), scene(PUT_ON.scene, seconds), calm)!;
+    expect(at(0.2).on).toEqual({ coat: 0, boots: [0, 0] });
+    expect(at(PUT_ON.on).on!.coat).toBe(0);
+    expect(at(1.45).on!.coat).toBeCloseTo(COAT_ORDER.sleeve[1]);
+    expect(at(2.15).on!.coat).toBeCloseTo(COAT_ORDER.back[1]);
+    expect(at(2.6).on!.coat).toBeCloseTo(COAT_ORDER.otherSleeve[1]);
+    let last = 0;
+    for (let t = 0; t < 3.5; t += 0.05) {
+      const now = at(t).on?.coat ?? 1;
+      expect(now).toBeGreaterThanOrEqual(last);
+      last = now;
+    }
+    expect(at(3.6).on).toBeUndefined();
+    // In reduced motion it is on at once.
+    expect(at(0.1, true).on).toBeUndefined();
+  });
+
+  it('is worn through every chapter of the storm, and comes off in the storm\'s eye before he grows', () => {
+    for (const id of STORM) expect(rainGearFor(chapter(id), 'elof', new Set()), id).not.toBeNull();
+    expect(rainGearFor(chapter('stormoga'), 'elof', new Set(['eye']), scene('oga', 3))).not.toBeNull();
+    const off = (seconds: number) => rainGearFor(chapter('stormoga'), 'elof', new Set(['eye', 'scene:oga']), scene(TAKE_OFF.scene, seconds));
+    // The other way round: the zip, the right sleeve, off his back, the left sleeve, and then it is in his hands.
+    expect(off(0.2)!.on).toBeUndefined();
+    expect(off(0.65)!.on!.coat).toBeCloseTo(COAT_ORDER.zip[0]);
+    expect(off(1.2)!.on!.coat).toBeCloseTo(COAT_ORDER.otherSleeve[0]);
+    expect(off(1.6)!.on!.coat).toBeCloseTo(COAT_ORDER.back[0]);
+    expect(off(TAKE_OFF.off + 0.1)!.on!.coat).toBe(0);
+    expect(rainGearFor(chapter('stormoga'), 'elof', new Set(['eye', 'scene:oga']), scene(TAKE_OFF.scene, 0.1), true)!.on!.coat).toBe(0);
+    for (const flag of [`scene:${TAKE_OFF.scene}`, 'scene:motet', 'taste']) expect(rainGearFor(chapter('stormoga'), 'elof', new Set(['eye', flag]))).toBeNull();
+  });
+
+  it('is never on him out of the storm, nor when he is big', () => {
+    expect(rainGearFor(chapter('morgonen', false), 'elof', new Set())).toBeNull();
+    expect(rainGearFor(chapter('granskog', false), 'elof', new Set())).toBeNull();
+    for (const id of STORM) expect(rainGearFor(chapter(id), 'elof', new Set(), null, false, 3), id).toBeNull();
+    expect(rainGearFor(chapter('stormkvall'), 'elof', new Set([TAKE, `scene:${PUT_ON.scene}`]), null, false, 3)).toBeNull();
+  });
+
+  it('is shells of his own body until a coat made in Blender for his model comes, and then that coat', () => {
+    const model = elofFigure();
+    const rig = createModelRig(model, 1);
+    const coats = () => {
+      const found: SkinnedMesh[] = [];
+      model.traverse((node) => { if (node.name === 'rain-gear' && /raincoat$/.test(String(node.userData.wardrobe))) found.push(node as SkinnedMesh); });
+      return found;
+    };
+    const gear = rainGearFor(chapter('stormskog'), 'elof', new Set())!;
+    rig.dress!(gear);
+    expect(coats().map((coat) => coat.userData.wardrobe)).toEqual(['shell raincoat']);
+    expect(coats()[0]!.visible).toBe(true);
+    // No boots: of the shells, only the coat is drawn.
+    const drawn: SkinnedMesh[] = [];
+    model.traverse((node) => { if (node.name === 'rain-gear' && node.visible) drawn.push(node as SkinnedMesh); });
+    expect(drawn).toEqual(coats());
+    // It lies close to him: as close, for his size, as a boy's would.
+    const body = bodyOf(model)!.geometry;
+    body.computeBoundingBox();
+    const out = new Box3().setFromBufferAttribute(coats()[0]!.geometry.getAttribute('position') as Float32BufferAttribute).max.x - body.boundingBox!.max.x;
+    expect(out).toBeGreaterThan(0);
+    expect(out).toBeLessThan(0.025);
+    // Going on, in the family's order: none of it before, part of it after.
+    rig.dress!({ ...gear, on: { coat: 0, boots: [0, 0] } });
+    expect(coats()[0]!.visible).toBe(false);
+    rig.dress!({ ...gear, on: { coat: 0.3, boots: [0, 0] } });
+    expect(coats()[0]!.visible).toBe(true);
+    expect(coats()[0]!.geometry.getAttribute('gearOrder')).toBeDefined();
+    rig.wear!(elofWardrobe(model));
+    expect(coats().map((coat) => coat.userData.wardrobe)).toEqual(['elof_raincoat']);
+    expect(coats()[0]!.visible).toBe(true);
+    rig.dress!(null);
+    expect(coats()[0]!.visible).toBe(false);
+  });
+});
+
+/** A small skinned figure, 1 tall, its parts boxes each moved by one bone, named as the family's models' bones are. */
+function elofFigure(): Group {
+  const model = new Group();
+  const bones: Bone[] = [];
+  const bone = (name: string, parent: Object3D, x: number, y: number) => {
+    const made = new Bone();
+    made.name = name;
+    made.position.set(x, y, 0);
+    parent.add(made);
+    bones.push(made);
+    return made;
+  };
+  const pelvis = bone('pelvis', model, 0, 0.42);
+  const chest = bone('spine_02', bone('spine_01', pelvis, 0, 0.1), 0, 0.12);
+  bone('Head', chest, 0, 0.18);
+  for (const [side, x] of [['l', 1], ['r', -1]] as const) {
+    bone(`lowerarm_${side}`, bone(`upperarm_${side}`, chest, x * 0.12, 0.08), x * 0.02, -0.12);
+    bone(`foot_${side}`, bone(`calf_${side}`, bone(`thigh_${side}`, pelvis, x * 0.06, -0.02), 0, -0.18), 0, -0.17);
+  }
+  model.updateMatrixWorld(true);
+  const parts = bones.map((one, i) => {
+    const at = one.getWorldPosition(new Vector3());
+    const box = new BoxGeometry(0.1, 0.12, 0.1).translate(at.x, at.y - 0.04, at.z).toNonIndexed();
+    const count = box.getAttribute('position').count;
+    box.deleteAttribute('uv');
+    box.setAttribute('skinIndex', new Uint16BufferAttribute(Array.from({ length: count * 4 }, (_, k) => (k % 4 === 0 ? i : 0)), 4));
+    box.setAttribute('skinWeight', new Float32BufferAttribute(Array.from({ length: count * 4 }, (_, k) => (k % 4 === 0 ? 1 : 0)), 4));
+    return box;
+  });
+  const body = new SkinnedMesh(mergeGeometries(parts), new MeshStandardMaterial());
+  body.name = 'elof_painted';
+  model.add(body);
+  body.bind(new Skeleton(bones));
+  return model;
+}
+
+/** What the private pack's elof-wardrobe.glb has: a raincoat skinned to bones of the same names. */
+function elofWardrobe(model: Group): Group {
+  const made = new Group();
+  const source = bodyOf(model)!;
+  const coat = new SkinnedMesh(source.geometry.clone(), new MeshStandardMaterial());
+  coat.name = 'elof_raincoat';
+  const bones = source.skeleton.bones.map((one) => { const copy = new Bone(); copy.name = one.name; return copy; });
+  made.add(coat, ...bones);
+  coat.bind(new Skeleton(bones, source.skeleton.boneInverses));
+  return made;
+}

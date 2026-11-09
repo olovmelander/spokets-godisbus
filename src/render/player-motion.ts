@@ -10,6 +10,7 @@ const BOY = GAITS.bertil;
 /** What standing gives him while he waits: the legs on the ground, the hips over them, the trunk and head. */
 const STOOD = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'sway', 'hipRoll', 'bendSide', 'tilt'] as const;
 import { createArmContact } from './arm-contact';
+import { COAT_ORDER, type RainGear } from './rain-gear';
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
 const smooth = (n: number) => { const t = clamp(n); return t * t * (3 - 2 * t); };
@@ -427,9 +428,50 @@ export function createPlayerStandIn() {
     legs[i]!.knee.children[1]!.name = `player-boot-${side}`;
     arms[i]!.shoulder.name = `player-shoulder-${side}`; arms[i]!.elbow.name = `player-elbow-${side}`;
   }
+  // The doll's raincoat in Stormnatten (./elof-coat.ts): over his body with its hood on his back, and over each arm's
+  // upper arm and forearm, each shown as the coat comes over it. Made the first time it is worn.
+  let coat: { back: Group; sleeves: Group[]; material: MeshStandardMaterial } | null = null;
+  const makeCoat = () => {
+    const material = new MeshStandardMaterial({ color: '#ffffff', roughness: 0.42 });
+    const back = new Group();
+    const trunk = new Mesh(new CapsuleGeometry(0.168, 0.2, 6, 14), material); trunk.position.y = 0.12;
+    const hem = new Mesh(new ConeGeometry(0.205, 0.2, 14, 1, true).translate(0, -0.1, 0), material); hem.position.y = 0.02;
+    const hood = new Mesh(new SphereGeometry(0.11, 12, 8).scale(0.55, 0.7, 1), material); hood.position.set(-0.15, 0.33, 0);
+    back.add(trunk, hem, hood);
+    body.add(back);
+    const sleeves = arms.map((arm) => {
+      const sleeve = new Group();
+      const upper = new Mesh(new CapsuleGeometry(0.056, 0.06, 4, 8), material); upper.position.y = -0.0725;
+      const lower = new Mesh(new CapsuleGeometry(0.054, 0.05, 4, 8), material); lower.position.y = -0.066;
+      arm.shoulder.add(upper); arm.elbow.add(lower);
+      sleeve.userData.parts = [upper, lower];
+      return sleeve;
+    });
+    return { back, sleeves, material };
+  };
   let disposed = false;
   return {
     group,
+    /**
+     * The doll's coat on, as far as it is on, or off with null (./rain-gear.ts). Each part takes it as the coat comes over
+     * it, in the family's order (COAT_ORDER): the first forearm and upper arm, the body, the other arm.
+     */
+    dress(gear: RainGear | null) {
+      if (!gear && !coat) return;
+      coat ??= makeCoat();
+      const share = gear?.on?.coat ?? 1, first = gear?.first ?? 0;
+      const sleeve = (side: number, k: number) => {
+        const [from, to] = side === first ? COAT_ORDER.sleeve : COAT_ORDER.otherSleeve;
+        return from + (to - from) * k;
+      };
+      coat.back.visible = gear !== null && share >= (COAT_ORDER.back[0] + COAT_ORDER.back[1]) / 2;
+      coat.sleeves.forEach((sleeveOf, i) => {
+        const [upper, lower] = sleeveOf.userData.parts as Mesh[];
+        upper!.visible = gear !== null && share >= sleeve(i, 1);
+        lower!.visible = gear !== null && share >= sleeve(i, 0.4);
+      });
+      if (gear) coat.material.color.set(gear.coat);
+    },
     dispose() {
       if (disposed) return;
       disposed = true;
