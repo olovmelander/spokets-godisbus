@@ -1,7 +1,8 @@
 import {
-  BufferGeometry, Color, Euler, Float32BufferAttribute, Group, Matrix3, Matrix4, Mesh, MeshStandardMaterial, Quaternion, SphereGeometry, Vector3,
+  Box3, BufferGeometry, Color, Euler, Float32BufferAttribute, Group, Matrix3, Matrix4, Mesh, MeshStandardMaterial, Quaternion, SphereGeometry, Vector3,
   type InstancedMesh, type Object3D,
 } from 'three';
+import { shadeAmong, type Among } from './forest-kit';
 import { STONE, barkDetail, barky } from './bark-detail';
 import type { ChapterData } from '../sim/types';
 import { grows, heightAt, noise, sequence } from './dressing/kit';
@@ -196,6 +197,9 @@ export function rockAt(kit: MountainKit, rock: Outcrop, fit: { name: string; mir
     const patch = smooth(0.45, 0.76, noise(where.x * 1.15 + 8, where.y * 1.8 + where.z * 0.5));
     colour.multiplyScalar(0.8 + 0.25 * noise(where.x * 6.8, where.y * 7.1 + where.z * 3));
     colour.lerp(CRUST, patch * (0.26 + Math.max(0, towards.y) * 0.22));
+    // The support, pushed back under the lip after the part's shade was baked, stands in the lip's shade: darkest
+    // just under it, and lighter further down.
+    colour.multiplyScalar(1 - 0.45 * away * (1 - smooth(0.3, 1.6, distance)));
   });
   const geometry = shaped(made);
   if (rock.kind === 'hylla') geometry.computeVertexNormals();
@@ -394,21 +398,35 @@ export function createMountain(chapter: ChapterData, ledges: { install(carved: (
     const fits = fitted(kit, rocks);
     const carved = new Map<number, BufferGeometry | null>();
     const cairn = build();
+    const stacks: { first: number; count: number; box: Box3; matrix: Matrix4 }[] = [];
     const stepped = new Set<string>();
     for (const [i, crop] of rocks.entries()) {
       const fit = fits[i];
       if (!fit) continue;
       if (crop.kind === 'rose') {
-        put(cairn, kit.get(fit.name)!, at(crop.x, crop.y, 0));
+        const first = cairn.position.length / 3;
+        const shape = kit.get(fit.name)!;
+        const matrix = at(crop.x, crop.y, 0);
+        put(cairn, shape, matrix);
+        stacks.push({ first, count: cairn.position.length / 3 - first, box: new Box3().setFromArray(shape.position), matrix });
         for (const mover of crop.movers) stepped.add(chapter.movers![mover]!.id);
         continue;
       }
       // The rock is drawn at its highest ledge; its step is part of it.
       for (const [k, ledge] of crop.ledges.entries()) carved.set(ledge, k === 0 ? withUv(rockAt(kit, crop, fit)) : null);
     }
+    const cairnShape = cairn.index.length > 0 ? barky(shaped(cairn), STONE) : null;
+    // The shade between the rocks and the cairn's stacks where they stand together: each part was baked alone.
+    const among: Among[] = [...carved.values()].flatMap((geometry) => {
+      if (!geometry) return [];
+      geometry.computeBoundingBox();
+      return [{ geometry, first: 0, count: geometry.getAttribute('position').count, box: geometry.boundingBox!, matrix: new Matrix4() }];
+    });
+    if (cairnShape) among.push(...stacks.map((stack) => ({ geometry: cairnShape, ...stack })));
+    shadeAmong(among);
     ledges.install((ledge) => carved.get(ledge));
-    if (cairn.index.length > 0) {
-      const mesh = new Mesh(barky(shaped(cairn), STONE), rock);
+    if (cairnShape) {
+      const mesh = new Mesh(cairnShape, rock);
       mesh.name = 'cairn';
       group.add(mesh);
     }

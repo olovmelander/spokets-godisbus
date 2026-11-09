@@ -448,7 +448,8 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
     // The stand-ins for cones and stones were never drawn: only their places were used.
     cones.dispose();
     stones.dispose();
-    if (still.length > 0) kinds.push(new Mesh(together(still), kit.material));
+    // Put together with the shade each part gives those beside it: they were baked one at a time.
+    if (still.length > 0) kinds.push(new Mesh(together(still, true), kit.material));
   } else kinds.push(cones, stones);
   for (const mesh of kinds) {
     const many = mesh as InstancedMesh;
