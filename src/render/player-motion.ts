@@ -158,6 +158,8 @@ const READY = 0.25;
  * the push, its feet left behind no longer than the push takes (`Air.rise`), and goes up after them.
  */
 const DIP_HOLD = 0.035, DIP = 0.115, PUSH = 0.2;
+/** How far up the body goes over feet still on the ground as the legs push (EL at size 1): then the feet go too. */
+const PUSH_REACH = 0.3;
 
 /**
  * Where a jump is: how long since he left the ground, whether he jumped (rather than stepped off), how fast he went along
@@ -498,8 +500,9 @@ export function createPlayerMotion() {
       const absorb = landing > 0 ? READY * Math.exp(-landed / 0.2) + landing * give(landed, GIVE) : 0;
       playerPose(player.mode === 'fly' ? { ...player, vy } : player, phase, skid ? 0 : pace, absorb, target, leg, air);
       if (airborne && !player.grounded && air.pushed && air.t < PUSH && !calm) {
-        // Through the dip and the push the body is drawn with its feet on the ground, and goes up after them.
-        target.bounce = -(air.rise ?? 0) / Math.max(0.2, tall) * 5.2 * (1 - smooth(air.t / PUSH));
+        // Through the dip and the push the body is drawn with its feet on the ground, as far as its legs push it up, and goes
+        // up after them.
+        target.bounce = -Math.min((air.rise ?? 0) / Math.max(0.2, tall), PUSH_REACH) * 5.2 * (1 - smooth(air.t / PUSH));
       }
       if (walking && landed < 1.5 && !calm) {
         // The trunk a moment after the legs: it goes on down over them and comes up again, the head after it; the arms
