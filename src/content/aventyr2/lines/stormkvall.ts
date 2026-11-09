@@ -31,7 +31,7 @@ export const words: ChapterWords = {
     skEnough: 'Räcker godiset hela vägen?',
     skKlonkHop: 'Klonk, klonk!',
     skRainLine: 'Brr! Dropparna är stora som bollar.',
-    skDollCoat: 'Dockan har en regnrock. Den kanske passar mig!',
+    skDollCoat: 'Dockan har en regnrock! Passar den mig?',
     skCoatFits: 'Den passar! Nu kan regnet komma.',
   },
   verbs: { skGoodnight: 'Säg godnatt', skTakeLamp: 'Ta ficklampan', skTakeCoat: 'Ta regnrocken' },
