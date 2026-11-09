@@ -54,9 +54,9 @@
     kan regnet komma."). It is not needed to go on; walked past, he has it from Stormgården on. He wears it hood down,
     in his own shoes, his backpack over it, through every storm chapter and never when big. In Stormens öga the scene
     `rockav` after `oga` ("Regnet har slutat. Av med regnrocken!") takes it off arm by arm, and it lies folded on the
-    stone beside him until he grows; on Sunday morning it hangs wet beside the family's coats. In the game it is drawn
-    from his own body, with a ragged hem and no hood, until the private repository's **PR #6** (`elof-raincoat`: the
-    coat made in Blender for his model, with its collar, zip, cuffs and the hood lying down) is merged.
+    stone beside him until he grows; on Sunday morning it hangs wet beside the family's coats. He wears the coat made in
+    Blender for his model (the private repository's PR #6, `elof-raincoat`: its collar, zip, cuffs and the hood lying
+    down), merged at Olov's word on 9 November; without the private pack it is drawn from his own body.
   - **Checked:** typecheck, `npm test` (217 files, 2,202 tests), `npm run build` (JS 579.2 KB of 1,000, boot 5,185.2 KB
     of 10,240), the privacy check, and the browser suites family-help, family-story, prologue, finale-stage, Äventyr 2,
     story-context, family-caps and model-installation, each by the builder that changed what it covers; filmstrips and
@@ -67,7 +67,7 @@
     still rise from their crouch in the old blend; an empty hug's hands meet close to the chest; the back foot steps
     back a little into the kneel; Bertil's legs are a hair longer than his hips are high, so his knees stay bent 0.15 rad
     as he stands (as before).
-  - **For Olov:** merge the private repository's PR #6 with this; on the devices, judge the coats going on in
+  - **For Olov:** on the devices, judge the coats going on in
     Stormkvällen, the doll and Elof's coat through the storm, the kneeling (the prologue's Pappa, Granskogen's seesaw,
     Mormor and Morfar in Billsta and Stormens öga), the cheer and the hug, and the sleeves when they wave and point.
 
@@ -4894,9 +4894,9 @@
 
 ## Next
 
-**The family's movements and Elof's raincoat (9 November), for Olov:** merge the private repository's PR #6 (Elof's coat
-made in Blender) with the public PR; on the devices, judge the coats going on in Stormkvällen, the doll and Elof's coat
-through the storm, the kneeling, the cheer and the hug, and the sleeves when they wave and point (see "State").
+**The family's movements and Elof's raincoat (9 November), for Olov:** on the devices, judge the coats going on in
+Stormkvällen, the doll and Elof's coat through the storm, the kneeling, the cheer and the hug, and the sleeves when they
+wave and point (see "State").
 
 **The Unravel pass (8 November, evening), for Olov to judge on the family devices, on High:** the ground's front under
 the path on Berget, Norrsken and Myren; the moss cushions and boulders in Granskogen and Stormskogen; the water in the
