@@ -43,9 +43,21 @@ export function holdsCoat(chapter: Pick<ChapterData, 'spots' | 'scenes'>): boole
   return (chapter.spots ?? []).some((spot) => spot.id === TAKE) || (chapter.scenes ?? []).some((scene) => scene.id === TAKE_OFF.scene);
 }
 
+/** The coat folded once and laid down: flat, its hood on top at the collar, the zip down its middle. */
+function foldedCoat(): Group {
+  const group = new Group();
+  const material = new MeshStandardMaterial({ color: ELOF_COAT, roughness: 0.42 });
+  const body = new Mesh(new BoxGeometry(0.44, 0.07, 0.32).translate(0, 0.035, 0), material);
+  const fold = new Mesh(new CapsuleGeometry(0.036, 0.37, 4, 8).rotateZ(Math.PI / 2).translate(0, 0.038, 0.16), material);
+  const hood = new Mesh(new SphereGeometry(0.09, 10, 6).scale(1.1, 0.45, 0.7).translate(0, 0.07, -0.1), material);
+  const zip = new Mesh(new BoxGeometry(0.012, 0.012, 0.3).translate(0, 0.072, 0.01), new MeshStandardMaterial({ color: '#4a4a4e', roughness: 0.5 }));
+  group.add(body, fold, hood, zip);
+  return group;
+}
+
 /**
  * The coat between the doll and his back, and from his back to the stone: in his two hands as he takes it and holds it
- * up, and lying on the stone after he has laid it down in the storm's eye, until he grows (the POFF hides it).
+ * up, and folded on the stone after he has laid it down in the storm's eye, until he grows (the POFF hides it).
  */
 export function createHeldCoat(chapter: Pick<ChapterData, 'id' | 'spots'>) {
   const group = new Group();
@@ -54,7 +66,8 @@ export function createHeldCoat(chapter: Pick<ChapterData, 'id' | 'spots'>) {
   holder.userData.model = 'docka-rock';
   holder.userData.disposeFallback = true;
   holder.add(codeCoat());
-  group.add(holder);
+  const folded = foldedCoat();
+  group.add(holder, folded);
   group.visible = false;
   const doll = chapter.spots?.find((spot) => spot.id === TAKE);
   const from = doll ? new Vector3(doll.at.x, doll.at.y, DOLL_Z) : null;
@@ -78,14 +91,15 @@ export function createHeldCoat(chapter: Pick<ChapterData, 'id' | 'spots'>) {
       if (!group.visible) { if (!flags.has(`scene:${TAKE_OFF.scene}`)) laidSet = false; return; }
       rig.hand(0, hands); rig.hand(1, other);
       hands.add(other).multiplyScalar(0.5);
+      holder.visible = !lying;
+      folded.visible = lying;
       if (lying) {
-        // Laid down flat on the stone where his hands put it, at his feet, its front up and its collar away from us. A game
-        // taken up after it finds it a little behind where he stands.
-        if (!laidSet) { laid.set(taking ? hands.x : body.position.x - 0.55, ground + 0.06, -0.12); laidSet = true; }
+        // Laid down folded on the stone where his hands put it, at his feet. A game taken up after it finds it a little
+        // behind where he stands.
+        if (!laidSet) { laid.set(taking ? hands.x : body.position.x - 0.55, ground, -0.25); laidSet = true; }
         group.position.copy(laid);
-        group.rotation.set(-Math.PI / 2, 0, 0.3);
-        // Empty, it lies flat.
-        group.scale.set(DOLL_SIZE, DOLL_SIZE, DOLL_SIZE * 0.4);
+        group.rotation.set(0, 0.25, 0);
+        group.scale.setScalar(DOLL_SIZE);
         return;
       }
       group.rotation.set(0, 0, 0);
