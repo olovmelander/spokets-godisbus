@@ -604,7 +604,7 @@ function measureLegs(group: Group, orientation: Quaternion, thigh: Object3D | un
   const thighWay = knee.clone().sub(hip), shinWay = ankle.clone().sub(knee);
   const bend = -Math.atan2(thighWay.z * shinWay.y - thighWay.y * shinWay.z, thighWay.z * shinWay.z + thighWay.y * shinWay.y);
   let ahead = 0;
-  const shin = knee.distanceTo(ankle), at = new Vector3();
+  const shin = knee.distanceTo(ankle), at = new Vector3(), bound = new Vector3(), skin = new Matrix4();
   model?.traverse((node) => {
     const skinned = node as SkinnedMesh;
     if (!skinned.isSkinnedMesh || !skinned.visible) return;
@@ -616,7 +616,16 @@ function measureLegs(group: Group, orientation: Quaternion, thigh: Object3D | un
       let w = 0;
       for (let channel = 0; channel < 4; channel++) if (indices.getComponent(i, channel) === bone) w += weights.getComponent(i, channel);
       if (w < .5) continue;
-      skinned.getVertexPosition(i, at).applyMatrix4(skinned.matrixWorld);
+      // Skinned from its bones as they stand now, whatever the model has been scaled or moved by since it was bound.
+      bound.fromBufferAttribute(positions, i).applyMatrix4(skinned.bindMatrix);
+      at.set(0, 0, 0);
+      for (let channel = 0; channel < 4; channel++) {
+        const weight = weights.getComponent(i, channel);
+        if (weight === 0) continue;
+        const which = indices.getComponent(i, channel);
+        skin.multiplyMatrices(skinned.skeleton.bones[which]!.matrixWorld, skinned.skeleton.boneInverses[which]!);
+        at.addScaledVector(bound.clone().applyMatrix4(skin), weight);
+      }
       group.worldToLocal(at).applyQuaternion(body);
       if (at.y < knee.y - shin * .5 || at.y > knee.y + shin * .1) continue;
       // How far under the joint it is with the shin lying back along the floor as it kneels (rising a quarter radian).
