@@ -1,4 +1,4 @@
-import { JOINTS, REHEARSAL_LEGS, STANDING, type Legs, type Pose } from './rig';
+import { JOINTS, KNEELING, ON_TOES, REHEARSAL_LEGS, STANDING, type Legs, type Pose } from './rig';
 
 /**
  * The stride (plan §5.6 point 3): how a body walks and runs, in the pose language of ./rig.ts. Pure: no three, no clock.
@@ -407,7 +407,9 @@ export function stand(pose: Pose, t: number, stander: Stander, legs: Legs = REHE
  * each boot are on (`coat`, `bootL`, `bootR`, 0 to 1: ./rain-gear.ts), in step with the motion.
  */
 export type Clip = { readonly seconds: number }
-  & { readonly [channel in keyof Pose | 'planted' | 'tuck' | 'heel' | 'over' | 'rise' | 'coat' | 'bootL' | 'bootR']?: readonly number[] };
+  & { readonly [channel in keyof Pose | 'planted' | 'tuck' | 'heel' | 'over' | 'rise' | 'coat' | 'bootL' | 'bootR' | KneelChannel]?: readonly number[] };
+/** What going down on a knee keys as shares, the legs reaching from there on each body (kneelLegs, below). */
+type KneelChannel = 'down' | 'front' | 'frontUp' | 'back' | 'backUp' | 'toes' | 'hand';
 
 /** One channel's keys at `t` seconds, as Blender plays them: cubic between keys, held at the first and last outside them. */
 export function sample(keys: readonly number[], t: number): number {
@@ -481,4 +483,102 @@ export function chairPose(clip: Clip, t: number, legs: Legs, out: Pose, seat = S
   play(clip, t, out);
   const at = (keys?: readonly number[]) => (keys ? sample(keys, t) : 0);
   return seated(out, legs, seat, at(clip.tuck), at(clip.over), at(clip.rise), at(clip.heel), width);
+}
+
+/** Kneeling, how far the left knee is behind the hips, a share of the thigh: the weight a little forward, over the front foot. */
+const KNEE_BACK = 0.3;
+/** Kneeling, how far the right shin leans forward over its foot (radians). */
+const FRONT_SHIN = 0.12;
+/** How much a model's boots and knees give, kneeling, beyond what its bones say: a share of the height. */
+const SKIN = 0.005;
+/**
+ * Where a kneeling hand's wrist goes, from the knee's joint, in the body's heights: up over the knee and back over the
+ * thigh, so that the hand lies over the knee (src/render/stage.ts, src/content/aventyr2/grandparents.ts).
+ */
+export const KNEE_HAND = { up: 0.035, back: 0.07 } as const;
+const kneelFoot = { x: 0, y: 0 };
+/**
+ * Where a body kneels on its own legs (art/blender/motion.py CLIPS.kneel): the hips' height, the right ankle's place ahead
+ * of them and the left foot's flat place behind them, in shares of the height. The left knee is on the floor a little
+ * behind the hips (its joint as high as the knee is thick: Legs.knee), the left shin goes back from it to a foot that
+ * stands on its toe, and the right foot is flat ahead with its shin upright, leaning a little forward.
+ */
+export function kneelPlaces(legs: Legs): { hips: number; front: number; back: number; knee: { ahead: number; up: number } } {
+  const thigh = legs.thigh, shin = legs.shin, knee = -KNEE_BACK * thigh, thick = legs.knee ?? KNEELING;
+  const hips = thick + Math.sqrt(thigh * thigh - knee * knee);
+  // On its toe: the ankle as high as the boot's toe cap on the floor puts it, and the shin rising back to it from the knee.
+  rolled(0, -ON_TOES, legs, kneelFoot);
+  kneelFoot.y = legs.tip ?? kneelFoot.y;
+  const rise = clamp((kneelFoot.y - thick) / shin, -0.9, 0.9);
+  const back = knee - shin * Math.sqrt(1 - rise * rise) - kneelFoot.x;
+  // The right knee over its foot: as far ahead as the thigh reaches from the hips to it.
+  const kneeUp = legs.ankle + shin * Math.cos(FRONT_SHIN);
+  const ahead = Math.sqrt(Math.max(0, thigh * thigh - (kneeUp - hips) ** 2));
+  return { hips, front: ahead - shin * Math.sin(FRONT_SHIN), back, knee: { ahead, up: kneeUp } };
+}
+
+const kneelAt = { x: 0, y: 0 };
+/**
+ * The legs of a body going down on its left knee, or kneeling: the hips `down` of the way from standing to kneeling, the
+ * right foot `front` of the way to its place ahead and lifted `frontUp` (a share of the hips' height) on the way, the left
+ * foot `back` of the way to its place behind, lifted `backUp`, and up on its toes `toes` of the way. The feet stand
+ * `width` apart (Stander.width). Writes the legs; the rig stands the body on its lowest boot or knee.
+ */
+export function kneelLegs(pose: Pose, legs: Legs = REHEARSAL_LEGS, down = 1, front = 1, frontUp = 0, back = 1, backUp = 0,
+  toes = 1, width = legs.width): Pose {
+  const places = kneelPlaces(legs), most = (legs.thigh + legs.shin) * 1.0005;
+  const hips = legs.hip + (places.hips - legs.hip) * clamp(down, 0, 1);
+  const out = width - legs.width;
+  // A model's skin and boots give a little where its bones do not: measured on the family's bodies kneeling.
+  const skin = legs.tip === undefined ? 0 : SKIN;
+  // The right foot flat, stepping ahead.
+  rolled(places.front * front, 0, legs, kneelAt);
+  kneelAt.y += frontUp * legs.hip - skin * clamp(down, 0, 1) * clamp(front, 0, 1);
+  reachWith(kneelAt.x, hips - kneelAt.y, out, 0, legs, pose, 1);
+  // The left foot, going back and up onto its toe; a foot too far for the leg to reach comes up further onto it. Right up
+  // on its toe, the ankle is as high as the boot's own toe cap puts it (Legs.tip).
+  const flat = places.back * back, up = backUp * legs.hip;
+  rolled(0, -ON_TOES, legs, kneelFoot);
+  const cap = (legs.tip ?? kneelFoot.y) - kneelFoot.y;
+  const far = (pitch: number) => {
+    rolled(flat, pitch, legs, kneelAt);
+    kneelAt.y += (cap + skin) * Math.min(1, (pitch / -ON_TOES) ** 2);
+    return Math.hypot(kneelAt.x, hips - kneelAt.y - up, out);
+  };
+  let pitch = -ON_TOES * clamp(toes, 0, 1);
+  if (far(pitch) > most) {
+    // Just as far up onto the toe as the leg needs to reach it (right over, the ankle swings away again: not past it).
+    let near = pitch, reached: number | null = null;
+    for (let p = pitch - 0.05; p >= -ON_TOES * 1.15; p -= 0.05) {
+      if (far(p) <= most) { reached = p; break; }
+      near = p;
+    }
+    if (reached !== null) {
+      let hit: number = reached;
+      for (let i = 0; i < 10; i++) {
+        const mid: number = (near + hit) / 2;
+        if (far(mid) > most) near = mid; else hit = mid;
+      }
+      pitch = hit;
+    }
+    far(pitch);
+  }
+  reachWith(kneelAt.x, hips - kneelAt.y - up, out, pitch, legs, pose, 0);
+  // A model's knee bends on from how it was made, and its boot stands flat under the shin as it was made: going down, the
+  // bend it already has is taken off both, so that a deep bend puts the knee and the boot where they belong.
+  const made = (legs.bend ?? 0) * clamp(down, 0, 1);
+  pose.kneeL -= made; pose.kneeR -= made;
+  pose.footL -= made; pose.footR -= made;
+  return pose;
+}
+
+/**
+ * A kneeling clip at `t` seconds over `out` (play, and the legs as it keys them: kneelLegs), for a body with legs `legs`
+ * who stands `width` apart.
+ */
+export function kneelPose(clip: Clip, t: number, legs: Legs, out: Pose, width = legs.width): Pose {
+  play(clip, t, out);
+  const at = (keys: readonly number[] | undefined, rest: number) => (keys ? sample(keys, t) : rest);
+  return kneelLegs(out, legs, at(clip.down, 1), at(clip.front, 1), at(clip.frontUp, 0), at(clip.back, 1), at(clip.backUp, 0),
+    at(clip.toes, 1), width);
 }

@@ -82,7 +82,20 @@ export const JOINTS = ['lean', 'nod', 'turn', 'armL', 'armR', 'elbowL', 'elbowR'
  * shin (knee to ankle), the ankle over the sole, the heel and the toe of the boot behind and ahead of the ankle, and each
  * hip joint out from the middle. The stride (./gait.ts) puts the feet with them, so that a planted foot stays put on any body.
  */
-export interface Legs { hip: number; thigh: number; shin: number; ankle: number; heel: number; toe: number; width: number }
+export interface Legs {
+  hip: number; thigh: number; shin: number; ankle: number; heel: number; toe: number; width: number;
+  /**
+   * How thick the knee is: kneeling on it, how high its joint is over the floor, a share of the height (left out: the
+   * rehearsal figure's, KNEELING). And how far a model's knee is bent as it was made, in radians (left out: none), which
+   * its pose bends it on from.
+   */
+  knee?: number; bend?: number;
+  /** How high the ankle is over the floor with the boot stood up on its toe as one kneels (ON_TOES), from its own shape. */
+  tip?: number;
+}
+
+/** Kneeling, how far the back foot is tipped up onto its toes (radians): the boot stands on its toe, its heel up. */
+export const ON_TOES = 1.95;
 
 // The rehearsal body's measures, in an adult's units (an adult stands about 5.2 tall).
 const ADULT = 5.2;
@@ -96,6 +109,8 @@ const FORE = 0.8;
 const NECK = 1.8;
 /** How thick a knee is: kneeling, the hips are this much higher than the thigh is long. */
 const KNEE = 0.28;
+/** How high a knee's joint is over the floor when the body kneels on it, a share of the height (./gait.ts kneelLegs). */
+export const KNEELING = KNEE / ADULT;
 /** The ankle, over the sole, and the hip joints, out from the middle. */
 const ANKLE = 0.13;
 const HIP_X = 0.38;
@@ -179,6 +194,8 @@ export interface Rig {
   pose(pose: Pose): void;
   /** Where a hand is in the world after the last pose: the body's left is 0. */
   hand(side: 0 | 1, out: Vector3): Vector3;
+  /** Where a knee is in the world after the last pose (the joint): the body's left is 0. A hand rests on it, kneeling. */
+  knee?(side: 0 | 1, out: Vector3): Vector3;
   /** The lips in world space, following the head's nod and turn. */
   mouth(out: Vector3): Vector3;
   /**
@@ -474,6 +491,10 @@ export function createRehearsalRig(who: Role): Rig {
       group.updateWorldMatrix(true, false);
       return out.copy(hands[side]).applyMatrix4(group.matrixWorld);
     },
+    knee(side, out) {
+      group.updateWorldMatrix(true, false);
+      return group.localToWorld(out.setFromMatrixPosition(joints[side === 0 ? 'kneeL' : 'kneeR']).multiplyScalar(s));
+    },
     mouth(out) { return group.localToWorld(out.set(0, .25, .38).applyMatrix4(joints.neck).multiplyScalar(s)); },
     breeze(wind, dt, calm) {
       // Paused (no time passing), the hair and the brim hold exactly as they are.
@@ -562,24 +583,52 @@ function bootContacts(model: Object3D, foot: Object3D): Vector3[] {
  * Where a bone or a boot is missing, the rehearsal figure's measures stand in.
  */
 function measureLegs(group: Group, orientation: Quaternion, thigh: Object3D | undefined, calf: Object3D | undefined,
-  foot: Object3D | undefined, soles: Vector3[] | undefined, other: Object3D | undefined, height: number): Legs {
+  foot: Object3D | undefined, soles: Vector3[] | undefined, other: Object3D | undefined, height: number, model?: Object3D): Legs {
   if (!thigh || !calf || !foot || !soles?.length || height <= 0) return REHEARSAL_LEGS;
   const body = orientation.clone().invert();
   // Positions in the body's own frame: x its left, y up, z ahead.
   const own = (node: Object3D) => group.worldToLocal(node.getWorldPosition(new Vector3())).applyQuaternion(body);
   const hip = own(thigh), knee = own(calf), ankle = own(foot);
   const toGroup = new Matrix4().copy(group.matrixWorld).invert().multiply(foot.matrixWorld);
-  let low = Infinity, back = Infinity, front = -Infinity;
+  let low = Infinity, back = Infinity, front = -Infinity, tip = Infinity;
   for (const point of soles) {
     const at = point.clone().applyMatrix4(toGroup).applyQuaternion(body);
     low = Math.min(low, at.y); back = Math.min(back, at.z - ankle.z); front = Math.max(front, at.z - ankle.z);
+    // Stood up on its toe, the lowest of the boot is how far under the ankle its toe cap reaches.
+    tip = Math.min(tip, (at.z - ankle.z) * Math.sin(-ON_TOES) + (at.y - ankle.y) * Math.cos(-ON_TOES));
   }
   const width = other ? Math.abs(hip.x - own(other).x) / 2 : REHEARSAL_LEGS.width * height;
   const share = (n: number) => n / height;
+  // The knee as it was made: how far bent, in the body's side view, and how far the front of the shin stands out ahead of
+  // its joint just under it, which is what it kneels on.
+  const thighWay = knee.clone().sub(hip), shinWay = ankle.clone().sub(knee);
+  const bend = -Math.atan2(thighWay.z * shinWay.y - thighWay.y * shinWay.z, thighWay.z * shinWay.z + thighWay.y * shinWay.y);
+  let ahead = 0;
+  const shin = knee.distanceTo(ankle), at = new Vector3();
+  model?.traverse((node) => {
+    const skinned = node as SkinnedMesh;
+    if (!skinned.isSkinnedMesh || !skinned.visible) return;
+    const bone = skinned.skeleton.bones.indexOf(calf as never);
+    const positions = skinned.geometry.getAttribute('position');
+    const indices = skinned.geometry.getAttribute('skinIndex'), weights = skinned.geometry.getAttribute('skinWeight');
+    if (bone < 0 || !positions || !indices || !weights) return;
+    for (let i = 0; i < positions.count; i++) {
+      let w = 0;
+      for (let channel = 0; channel < 4; channel++) if (indices.getComponent(i, channel) === bone) w += weights.getComponent(i, channel);
+      if (w < .5) continue;
+      skinned.getVertexPosition(i, at).applyMatrix4(skinned.matrixWorld);
+      group.worldToLocal(at).applyQuaternion(body);
+      if (at.y < knee.y - shin * .5 || at.y > knee.y + shin * .1) continue;
+      // How far under the joint it is with the shin lying back along the floor as it kneels (rising a quarter radian).
+      ahead = Math.max(ahead, (at.z - knee.z) * Math.cos(.25) + (at.y - knee.y) * Math.sin(.25));
+    }
+  });
   return {
-    hip: share(hip.y - low), thigh: share(hip.distanceTo(knee)), shin: share(knee.distanceTo(ankle)), ankle: share(Math.max(0, ankle.y - low)),
+    hip: share(hip.y - low), thigh: share(hip.distanceTo(knee)), shin: share(shin), ankle: share(Math.max(0, ankle.y - low)),
     // A boot is stiff: it comes down on its heel and rolls over its toe.
     heel: share(Math.max(0, -back)), toe: share(Math.max(0, front)), width: share(width),
+    // Bent right over, the knee's skin is drawn in over the joint: by about a quarter, on each of the family's bodies.
+    ...(ahead > 0 ? { knee: share(ahead * .75) } : {}), bend, tip: share(-tip),
   };
 }
 
@@ -667,7 +716,9 @@ export function createModelRig(model: Object3D, height: number): Rig {
   const restHip = hips.length > 0
     ? hips.reduce((sum, b) => sum + group.worldToLocal(b.node.getWorldPosition(at)).y, 0) / hips.length
     : HIP * unit;
-  const legs = measureLegs(group, orientation, bones.legL?.node, bones.kneeL?.node, feet[0], supports[0]?.points, bones.legR?.node, height);
+  const legs = measureLegs(group, orientation, bones.legL?.node, bones.kneeL?.node, feet[0], supports[0]?.points, bones.legR?.node, height, model);
+  // Kneeling, the body stands on the front of its shin just under the knee: its own knee's thickness below the joint.
+  const kneeThick = (legs.knee ?? KNEELING) * height;
   // Without a hand bone, approximate the forearm by the upper arm, measured in the lower bone's own units.
   // Keeping a world-space length here would shorten the reach if a scene later enlarged the whole figure.
   const fore = [bones.armL, bones.armR].map((upper, i) => {
@@ -785,7 +836,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
           if (points.length === 0) low = Math.min(low, at.setFromMatrixPosition(toGroup).y - sole);
           else for (const point of points) low = Math.min(low, at.copy(point).applyMatrix4(toGroup).y);
         }
-        for (const knee of knees) low = Math.min(low, at.setFromMatrixPosition(knee.matrixWorld).applyMatrix4(inverseGroup).y - KNEE * unit);
+        for (const knee of knees) low = Math.min(low, at.setFromMatrixPosition(knee.matrixWorld).applyMatrix4(inverseGroup).y - kneeThick);
       }
       const grounded = rest - low + p.bounce * unit;
       model.position.y = p.floor ? Math.max(grounded, seated + p.floor * (restHip - low)) : grounded;
@@ -797,6 +848,10 @@ export function createModelRig(model: Object3D, height: number): Rig {
       if (!lower) return group.localToWorld(out.set(0, height * 0.45, 0));
       // Blender's bones lie along their own +y: the hand is a forearm's length along it from the elbow.
       return lower.node.localToWorld(out.set(0, fore[side]!, 0));
+    },
+    knee(side, out) {
+      const knee = side === 0 ? bones.kneeL : bones.kneeR;
+      return knee ? knee.node.getWorldPosition(out) : group.localToWorld(out.set(0, height * 0.17, 0));
     },
   };
 }

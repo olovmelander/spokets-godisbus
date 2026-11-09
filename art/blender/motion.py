@@ -168,38 +168,57 @@ STANDS = {
                      elbow=('scale', 1.4)),
 }
 # --- going down on a knee ------------------------------------------------------------------------------------------------
-# Keyed in the game's own pose (src/render/rig.ts Pose), at shares of `seconds`, from standing to kneeling on the left knee
-# with the right foot forward (src/render/acting.ts kneeling). The weight goes onto the left leg, the right foot comes up
-# and is put down ahead, and the body goes down over it onto the left knee, a hand going to the right knee, and settles.
-# Getting up is the same way back. Mormor and Morfar take longer, lean further over, and lean on that knee.
+# Down onto the left knee with the right foot forward (src/render/acting.ts kneel), keyed at shares of `seconds`. The legs
+# are keyed as shares and reach the floor from there on each body's own legs (src/render/gait.ts kneelLegs), as the
+# chair's are: `down`, how far the hips have gone from standing to kneeling, the left knee on the floor; `front`, how far
+# the right foot has stepped ahead to its place, and `frontUp` how high it is lifted on the way (a share of the hips'
+# height); `back` and `backUp`, the same for the left foot stepping back to its place; `toes`, how far the left heel has
+# come up, the boot onto its toe. `hand` is how much the right hand rests on the right knee (src/render/stage.ts puts it
+# there with the real arm). The rest is the pose itself.
+# The weight goes onto the left foot and the right steps out ahead, lifted, and is put down; the weight comes forward over
+# it, the left heel lifts and the left foot steps back onto its toe as the hips go down, the trunk leaning over the front
+# foot; the knee comes down softly to the floor, the right hand going to the right knee, and the body settles, the trunk
+# and the head coming up. Getting up is the same way back. Mormor and Morfar take longer, lean further over and lean on
+# the knee with the hand; an old foot is slid more than lifted.
 
 KNEEL = {
-    'seconds': 1.0,
-    'lean': [(0.0, 0.0), (0.2, 0.06), (0.45, 0.16), (0.75, 0.27), (0.9, 0.23), (1.0, 0.2)],
-    'sway': [(0.0, 0.0), (0.18, 0.06), (0.45, 0.03), (0.8, 0.0), (1.0, 0.0)],
-    'hipRoll': [(0.0, 0.0), (0.18, 0.03), (0.45, 0.0), (1.0, 0.0)],
-    'legR': [(0.0, 0.0), (0.18, 0.38), (0.42, 0.95), (0.75, 1.22), (1.0, 1.32)],
-    'kneeR': [(0.0, 0.0), (0.18, 0.6), (0.42, 0.78), (0.75, 1.15), (1.0, 1.32)],
-    'footR': [(0.0, 0.0), (0.18, 0.08), (0.42, -0.17), (0.75, -0.07), (1.0, 0.0)],
-    'legL': [(0.0, 0.0), (0.18, 0.0), (0.42, 0.08), (0.75, 0.0), (1.0, -0.08)],
-    'kneeL': [(0.0, 0.0), (0.18, 0.05), (0.42, 0.45), (0.75, 1.15), (0.92, 1.66), (1.0, 1.62)],
-    'armR': [(0.0, 0.02), (0.45, 0.25), (0.75, 0.5), (1.0, 0.45)],
-    'elbowR': [(0.0, 0.1), (0.45, 0.35), (0.75, 0.62), (1.0, 0.6)],
-    'armL': [(0.0, 0.02), (0.3, 0.25), (0.6, 0.35), (1.0, 0.2)],
-    'elbowL': [(0.0, 0.1), (0.3, 0.4), (0.6, 0.45), (1.0, 0.35)],
-    'nod': [(0.0, 0.0), (0.4, 0.15), (0.8, 0.32), (1.0, 0.35)],
+    'seconds': 1.2,
+    'down': [(0.0, 0.0), (0.12, 0.05), (0.36, 0.3), (0.56, 0.6), (0.74, 0.87), (0.86, 0.97), (0.94, 1.0)],
+    'front': [(0.1, 0.0), (0.38, 1.0)],
+    'frontUp': [(0.1, 0.0), (0.22, 0.12), (0.34, 0.03), (0.4, 0.0)],
+    # The left foot steps back low once the hips are low enough for it to reach, and comes down on its toe.
+    'back': [(0.34, 0.0), (0.64, 1.0)],
+    'backUp': [(0.34, 0.0), (0.46, 0.035), (0.6, 0.008), (0.66, 0.0)],
+    'toes': [(0.28, 0.0), (0.45, 0.5), (0.62, 0.86), (0.9, 1.0)],
+    'hand': [(0.5, 0.0), (0.9, 1.0)],
+    # Onto the left foot, over to the right as it comes down ahead, and square again.
+    'sway': [(0.0, 0.0), (0.14, 0.08), (0.3, 0.06), (0.48, -0.04), (0.72, -0.01), (0.9, 0.0)],
+    'hipRoll': [(0.0, 0.0), (0.14, 0.045), (0.3, 0.035), (0.48, -0.02), (0.75, 0.0)],
+    'bendSide': [(0.0, 0.0), (0.14, -0.03), (0.48, 0.02), (0.8, 0.0)],
+    'lean': [(0.0, 0.0), (0.15, 0.05), (0.4, 0.14), (0.7, 0.3), (0.86, 0.33), (1.0, 0.24)],
+    # Down at where the foot goes, and up again.
+    'nod': [(0.0, 0.0), (0.25, 0.18), (0.6, 0.26), (0.85, 0.2), (1.0, 0.08)],
+    'tilt': [(0.0, 0.0), (0.2, 0.03), (0.5, -0.02), (0.8, 0.02), (1.0, 0.03)],
+    # The left arm comes a little forward for balance and hangs easy; the right goes to the knee, the hand over it.
+    'armL': [(0.0, 0.02), (0.25, 0.12), (0.5, 0.3), (0.75, 0.22), (1.0, 0.14)],
+    'elbowL': [(0.0, 0.1), (0.3, 0.3), (0.6, 0.45), (1.0, 0.32)],
+    'wristL': [(0.0, 0.0), (0.5, 0.1), (1.0, 0.06)],
+    'armR': [(0.0, 0.02), (0.3, 0.15), (0.55, 0.45), (0.8, 0.62), (1.0, 0.6)],
+    'elbowR': [(0.0, 0.1), (0.3, 0.3), (0.6, 0.7), (0.85, 0.85), (1.0, 0.8)],
+    'wristR': [(0.0, 0.0), (0.6, 0.15), (0.9, 0.35), (1.0, 0.3)],
 }
 KNEEL_ELDER = dict(KNEEL)
 KNEEL_ELDER.update({
-    'seconds': 1.5,
-    'lean': [(0.0, 0.07), (0.2, 0.14), (0.45, 0.28), (0.75, 0.4), (0.9, 0.32), (1.0, 0.28)],
-    'armR': [(0.0, 0.02), (0.4, 0.35), (0.7, 0.62), (1.0, 0.55)],
-    'elbowR': [(0.0, 0.2), (0.4, 0.6), (0.7, 0.95), (1.0, 0.85)],
-    'kneeL': [(0.0, 0.0), (0.18, 0.05), (0.42, 0.42), (0.78, 1.12), (0.94, 1.64), (1.0, 1.62)],
-    # An old foot is slid forward, hardly lifted.
-    'legR': [(0.0, 0.0), (0.2, 0.3), (0.45, 0.9), (0.78, 1.22), (1.0, 1.32)],
-    'kneeR': [(0.0, 0.0), (0.2, 0.42), (0.45, 0.72), (0.78, 1.15), (1.0, 1.32)],
-    'footR': [(0.0, 0.0), (0.2, 0.06), (0.45, -0.18), (0.78, -0.07), (1.0, 0.0)],
+    'seconds': 1.7,
+    'down': [(0.0, 0.0), (0.14, 0.04), (0.38, 0.28), (0.58, 0.56), (0.76, 0.85), (0.88, 0.97), (0.96, 1.0)],
+    # An old foot is slid forward and back, hardly lifted.
+    'frontUp': [(0.1, 0.0), (0.22, 0.05), (0.34, 0.01), (0.4, 0.0)],
+    'backUp': [(0.38, 0.0), (0.5, 0.02), (0.66, 0.0)],
+    'hand': [(0.42, 0.0), (0.8, 1.0)],
+    'lean': [(0.0, 0.07), (0.15, 0.12), (0.4, 0.26), (0.7, 0.44), (0.86, 0.46), (1.0, 0.36)],
+    'nod': [(0.0, 0.05), (0.25, 0.2), (0.6, 0.3), (0.85, 0.24), (1.0, 0.12)],
+    'armR': [(0.0, 0.02), (0.3, 0.2), (0.5, 0.5), (0.75, 0.68), (1.0, 0.66)],
+    'elbowR': [(0.0, 0.2), (0.3, 0.4), (0.55, 0.8), (0.8, 0.95), (1.0, 0.9)],
 })
 # Getting up off a kitchen chair: the chair pushed back from the table with the body on it and the feet drawn in under
 # the seat onto their balls; then the body leans well forward over them, comes forward and up off the seat over feet

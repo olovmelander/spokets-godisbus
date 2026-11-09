@@ -101,6 +101,8 @@ scene.add(floor);
 
 const actors: Partial<Record<Role, ActorKey[]>> = {};
 cast.forEach((who, i) => { actors[who] = (SCRIPTS[sceneName] ?? SCRIPTS.walk!)(i * LANE); });
+// ?face=0: which way they face at first (0 along the course, side on to the camera; 0.25 towards it).
+if (query.has('face')) for (const keys of Object.values(actors)) keys[0]!.face = Number(query.get('face'));
 // The chair stands behind where they sit, as the kitchen's do in the prologue (src/content/chapters/ends.ts).
 const furniture = sceneName === 'chair' ? cast.map((_, i) => ({ look: 'chair' as const, at: { x: i * LANE - 0.3, y: 0 }, z: 0, face: 0 })) : [];
 // ?story=vaknar: one of the prologue's own scenes (or Morgonen's, &chapter=morgonen), in its kitchen, with the scenes
@@ -275,6 +277,38 @@ window.__motion = {
       out.push({ name: mesh.name, corners: mesh.geometry.getAttribute('position').count, sleeves: data.sleevesWithArms, joints: data.halfJoints, shoulders: data.softShoulders, skirt: data.skirtsOverThighs });
     });
     return out;
+  },
+  /** Plays on by `seconds` at 60 frames a second without drawing: for a script that measures every frame. */
+  advance(seconds: number) { const to = clock + seconds; while (clock + 1 / 120 < to) step(1 / 60); return clock; },
+  /**
+   * Each body's bones in the world, and the lowest skinned point of each knee (its calf's vertices) and each foot, as drawn:
+   * for a script to measure a knee in the floor, a planted foot that slides or a joint that jumps.
+   */
+  joints() {
+    const rigs = [...[...stage.actors].map(([who, { rig }]) => [who, rig] as const), ...figures.map(({ who, figure }) => [who, figure.rig] as const)];
+    return Object.fromEntries(rigs.map(([who, rig]) => {
+      rig.group.updateMatrixWorld(true);
+      const bones: Record<string, number[]> = {};
+      const low: Record<string, number[]> = {};
+      rig.group.traverse((node) => {
+        if ((node as { isBone?: boolean }).isBone) bones[node.name] = node.getWorldPosition(new Vector3()).toArray();
+        const mesh = node as Mesh & { isSkinnedMesh?: boolean; skeleton?: { bones: { name: string }[] }; getVertexPosition(i: number, v: Vector3): Vector3 };
+        if (!mesh.isSkinnedMesh || !mesh.skeleton || !mesh.visible) return;
+        const index = mesh.geometry.getAttribute('skinIndex'), weight = mesh.geometry.getAttribute('skinWeight');
+        const v = new Vector3();
+        for (const name of ['calf_l', 'calf_r', 'foot_l', 'foot_r', 'thigh_l', 'thigh_r']) {
+          const bone = mesh.skeleton.bones.findIndex((b) => b.name === name);
+          if (bone < 0) continue;
+          for (let i = 0; i < index.count; i++) {
+            if (index.getX(i) !== bone || weight.getX(i) < 0.5) continue;
+            mesh.getVertexPosition(i, v).applyMatrix4(mesh.matrixWorld);
+            if (!low[name] || v.y < low[name]![1]!) low[name] = v.toArray();
+          }
+        }
+      });
+      const ahead = new Vector3(0, 0, 1).transformDirection(rig.group.matrixWorld);
+      return [who, { bones, low, height: rig.height, legs: rig.legs, ahead: ahead.toArray() }];
+    }));
   },
   /** Where each of the family's hands, mouth and group are: for a script to measure. */
   probe() {

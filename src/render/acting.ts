@@ -1,7 +1,7 @@
 import type { Act } from '../sim/scene';
 import { groundedHips, JOINTS, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
 import { carvingAt } from './carving-motion';
-import { play, seated, stand, stepOf, stride, type Clip, type Footing } from './gait';
+import { kneelPose, play, seated, stand, stepOf, stride, type Clip, type Footing } from './gait';
 import { CLIPS, GAITS, STANDS } from './motion-data';
 import { DRESSING } from './rain-gear';
 
@@ -152,18 +152,12 @@ export function sitting(p: Pose, legs?: Legs, seat?: number): Pose {
   return p;
 }
 
-/** One knee on the ground, the other foot planted: the giant comes down to Elof's height. */
-function kneeling(p: Pose): Pose {
-  p.legR = 1.32;
-  p.kneeR = 1.32;
-  p.legL = -0.08;
-  p.kneeL = 1.62;
-  p.lean = 0.2;
-  p.armR = 0.45;
-  p.elbowR = 0.6;
-  p.armL = 0.2;
-  p.elbowL = 0.35;
-  return p;
+/**
+ * One knee on the ground, the other foot planted: the giant comes down to Elof's height. It is where going down on a knee
+ * ends (art/blender/motion.py CLIPS.kneel), on the body's own legs, the feet as far apart as it stands.
+ */
+export function kneeling(p: Pose, legs: Legs = REHEARSAL_LEGS, role?: Role): Pose {
+  return kneelPose(CLIPS.kneel, CLIPS.kneel.seconds, legs, p, STANDS[role ?? 'pappa'].width);
 }
 
 /** Down on both heels, hands on the knees. */
@@ -219,7 +213,8 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
   // A reduced-motion act holds its completed, readable pose; authored keys still decide when acts change.
   const t = c.calm ? 3 : Math.max(0, c.t);
   const r = t * timing(c.role), energy = weight(c.role);
-  const under = () => (stance === 'sit' ? sitting(out, c.legs, c.seat) : stance === 'kneel' ? kneeling(out) : stance === 'crouch' ? crouching(out) : out);
+  const under = () => (stance === 'sit' ? sitting(out, c.legs, c.seat) : stance === 'kneel' ? kneeling(out, c.legs, c.role)
+    : stance === 'crouch' ? crouching(out) : out);
   switch (act) {
     case 'stand':
     case 'watch':
@@ -275,13 +270,17 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       return out;
     }
     case 'kneel': {
-      // Down on a knee the way people go down (art/blender/motion.py CLIPS.kneel): the weight over, a foot forward, and
-      // down onto the other knee. Reduced motion: kneeling.
-      kneeling(out);
-      const clip = CLIPS.kneel;
-      if (!c.calm && t < clip.seconds) play(clip, t, out);
-      out.nod = 0.35 * rise(t, 0.6);
-      look(out, c, rise(t, 0.6));
+      // Down on a knee the way people go down (art/blender/motion.py CLIPS.kneel), on the body's own legs: the weight over,
+      // a foot forward, and down onto the other knee, looking where the feet go and then up at what they came down to.
+      // Down, they breathe. Reduced motion: kneeling.
+      const clip = CLIPS.kneel, stander = STANDS[c.role ?? 'pappa'];
+      kneelPose(clip, Math.min(t, clip.seconds), c.legs ?? REHEARSAL_LEGS, out, stander.width);
+      if (!c.calm) {
+        const breath = Math.sin(Math.PI * 2 * stander.breath * (c.clock ?? c.t)) * rise(t - clip.seconds * 0.8, 0.6);
+        out.lean += stander.deep * breath;
+        out.nod -= stander.deep * 0.7 * breath;
+      }
+      look(out, c, rise(t - clip.seconds * 0.45, clip.seconds * 0.5));
       return out;
     }
     case 'crouch':

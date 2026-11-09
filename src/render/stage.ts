@@ -7,7 +7,7 @@ import type { ChapterData } from '../sim/types';
 import { sceneWaits, type Act, type ActorKey, type ElofKey, type Point, type SceneDef, type SceneFrame, type ShotKey, type Thing } from '../sim/scene';
 import { actPose, drawingAt, EASY_GAIT, eatingAt, sippingAt, stanceOf, stepLength, type Stance } from './acting';
 import { carvingAt, CARVING_SHAVING_LIFETIME, type CarvingMotion, type CarvingPoint } from './carving-motion';
-import { chairPose, createFooting, play as playClip, sample, SITTING_ON, type Clip, type Footing } from './gait';
+import { chairPose, createFooting, KNEE_HAND, kneelPose, sample, SITTING_ON, type Clip, type Footing } from './gait';
 import { CLIPS, STANDS } from './motion-data';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
@@ -622,7 +622,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   }
 
   const place = new Object3D();
-  const hand = new Vector3(), lampAim = new Vector3();
+  const hand = new Vector3(), lampAim = new Vector3(), kneeAt = new Vector3();
   const pose: Pose = { ...STANDING };
   const before: Pose = { ...STANDING };
   const walking: Pose = { ...STANDING };
@@ -883,7 +883,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         const getUp = (out: Pose, stance: Stance, from: State['before'], age: number): void => {
           if (from?.stance !== 'kneel' || stance !== 'stand' || calm || age >= CLIPS.kneel.seconds) return;
           const u = age / CLIPS.kneel.seconds;
-          playClip(CLIPS.kneel, CLIPS.kneel.seconds * (1 - u), Object.assign(gettingUp, out));
+          kneelPose(CLIPS.kneel, CLIPS.kneel.seconds * (1 - u), rig.legs, Object.assign(gettingUp, out), STANDS[who].width);
           const k = smooth(u);
           for (const joint of LIMBS) out[joint] = gettingUp[joint] + (out[joint] - gettingUp[joint]) * k;
         };
@@ -1018,6 +1018,23 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // Pointing uses the whole arm; something held out to be taken keeps a bend at the elbow, however far off he is.
         if (rightWeight > 0) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, state.act === 'offer' ? OFFER_REACH : 1);
         if (leftWeight > 0) rig.reach(0, otherHand.divideScalar(leftWeight), leftWeight);
+        // Kneeling, the right hand rests on the right knee, with the real arm: as they go down, while they look about down
+        // there, and as they push up off it getting up.
+        const onKnee = (act: Act, stance: Stance, age: number, old: State['before']): number => {
+          const clip = CLIPS.kneel;
+          const now = act === 'kneel' ? calm ? 1 : sample(clip.hand!, age)
+            : stance === 'kneel' && (act === 'watch' || act === 'look' || act === 'nod') ? 1
+            : old?.stance === 'kneel' && stance === 'stand' && !calm && age < clip.seconds
+              ? sample(clip.hand!, clip.seconds - age) * (1 - smooth(age / clip.seconds)) : 0;
+          return old && age < .45 ? mix(onKnee(old.act, old.stance, old.t, old.previous), now, smooth(age / .45)) : now;
+        };
+        const handOnKnee = rig.knee ? onKnee(state.act, state.stance, elapsed, state.before) : 0;
+        if (handOnKnee > 1e-3) {
+          // On the top of the knee, a little back from its front, the wrist over the thigh.
+          forward.set(Math.sin(yaw(face)), 0, Math.cos(yaw(face)));
+          rig.knee!(1, kneeAt).addScaledVector(up, rig.height * KNEE_HAND.up).addScaledVector(forward, -rig.height * KNEE_HAND.back);
+          rig.reach(1, kneeAt, handOnKnee);
+        }
         // The working hands follow the wood, using each body's real arm lengths and the blade's tip.
         const leavesCarving = state.before?.act === 'carve' && elapsed < .45;
         if (who === 'pappa' && workpiece?.act === 'carved' && (state.act === 'carve' || leavesCarving)) {
