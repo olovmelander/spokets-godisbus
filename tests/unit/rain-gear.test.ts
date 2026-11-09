@@ -11,7 +11,7 @@ import { ELOF_COAT, PUT_ON, TAKE, TAKE_OFF } from '../../src/render/elof-coat';
 import { holdsCoat } from '../../src/render/elof-coat-mesh';
 import { CLIPS } from '../../src/render/motion-data';
 import {
-  bodyOf, buildShells, COAT_ORDER, DRESSING, dressingFrom, gearOnAt, LOOK, rainGearFor, wearShells, type GearRole,
+  bodyOf, buildShells, COAT_ORDER, DRESSING, dressingFrom, gearOnAt, heldInOther, LOOK, rainGearFor, wearShells, type GearRole,
 } from '../../src/render/rain-gear';
 import { createModelRig } from '../../src/render/rig';
 
@@ -99,6 +99,27 @@ describe('getting ready in Stormkvällen', () => {
     expect(half('bertil', 1)).toBeLessThan(half('bertil', 0));
     // A boot on each foot, one after the other.
     for (const who of FAMILY) expect(Math.abs(half(who, 1) - half(who, 2)), who).toBeGreaterThan(0.3);
+  });
+
+  it('has Pappa pass the flashlight to his other hand while his lamp hand goes over his head and into its sleeve', () => {
+    const from = dressingFrom(stormkvall, 'tillsammans', 'pappa')!, clip = CLIPS[DRESSING.pappa];
+    const other = (t: number, calm = false) => heldInOther(stormkvall, 'pappa', at(from + t), calm);
+    expect(other(-0.5)).toBe(false);
+    expect(other(0.2)).toBe(false);
+    expect(other(1.4)).toBe(true);
+    expect(other(clip.seconds)).toBe(false);
+    expect(heldInOther(stormkvall, 'pappa', at(scene.seconds))).toBe(false);
+    // Over a stretch, and once each way: it is handed over, and back.
+    let changes = 0, held = 0;
+    for (let t = 0; t <= clip.seconds; t += 1 / 60) {
+      if (other(t) !== other(t - 1 / 60)) changes++;
+      if (other(t)) held += 1 / 60;
+    }
+    expect(changes).toBe(2);
+    expect(held).toBeGreaterThan(1.5);
+    // Never in reduced motion, nor by anyone but him.
+    expect(other(1.4, true)).toBe(false);
+    for (const who of ['mamma', 'moa', 'bertil']) expect(heldInOther(stormkvall, who, at(5))).toBe(false);
   });
 
   it('in reduced motion is all on at once as they begin', () => {
@@ -217,6 +238,26 @@ describe('the gear going on, on a body', () => {
       expect(sole.order).toBeCloseTo(0, 5);
       expect(top.order).toBeCloseTo(1, 5);
       expect(range(all.filter((c) => c.bone.startsWith('foot')))[1]).toBeLessThan(range(all.filter((c) => c.bone.startsWith('calf')))[1]);
+    }
+  });
+
+  it('closes the front along straight lines: each point of it knows how far across from the zip it is, and how high', () => {
+    const shells = buildShells(figure(), 5.2)!;
+    const coat = corners(shells.coat), front = shells.coat.geometry.getAttribute('gearFront'), normal = shells.coat.geometry.getAttribute('normal');
+    const at = coat.map((c, i) => ({ ...c, across: front.getX(i), up: front.getY(i), on: front.getZ(i), facing: normal.getZ(i) }));
+    // On the front of the trunk only: not the back, not the sleeves.
+    expect(at.filter((c) => c.on === 1).every((c) => c.z >= 0 && !/arm_/.test(c.bone))).toBe(true);
+    expect(at.filter((c) => c.z < -0.09 || /arm_/.test(c.bone)).every((c) => c.on === 0)).toBe(true);
+    // Across, it goes with the corner's distance from the zip and nothing else, whatever the coat's width at its height,
+    // so that the edge of the open middle is one straight line; the first arm's side is +.
+    // (The figure's shoulder joints are 0.22 to each side of its middle; on the faces ahead a corner's x is as at rest.)
+    const ahead = at.filter((c) => c.on === 1 && c.facing > 0.99);
+    expect(ahead.length).toBeGreaterThan(20);
+    for (const one of ahead) expect(one.across).toBeCloseTo(Math.max(-1, Math.min(1, one.x / 0.22)), 5);
+    // Up, from the hem (0) to the collar (1), with the height alone.
+    for (const one of ahead) {
+      expect(one.up).toBeGreaterThanOrEqual(0); expect(one.up).toBeLessThanOrEqual(1);
+      for (const other of ahead) if (other.y > one.y + 1e-6) expect(other.up).toBeGreaterThanOrEqual(one.up);
     }
   });
 

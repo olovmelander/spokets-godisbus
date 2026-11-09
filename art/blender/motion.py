@@ -387,9 +387,10 @@ CLIPS = {'kneel': KNEEL, 'kneelElder': KNEEL_ELDER, 'standUp': STAND_UP, 'sitDow
 # A boot goes on from the sole up as the foot is pushed down into it, and the foot is stamped down.
 
 # Held by the collar in the right hand, the coat's left sleeve is held open at the left hip; the left arm goes down into it
-# as the right hand pulls the coat up the arm onto the shoulder; the right hand carries the collar up over the head and
-# round behind, lets go, and the right arm reaches back and down into its sleeve, the head turned to find it; a shrug onto
-# the shoulders, the fronts pulled together at the waist, and the zip run up to the chin.
+# as the right hand pulls the coat up the arm onto the shoulder, below the chin; the right hand carries the collar across
+# the chest to its own side and up over the head beside it, never across the face, and round behind, lets go, and the
+# right arm reaches back and down into its sleeve, the head turned to find it; a shrug onto the shoulders, the fronts
+# pulled together at the waist, and the zip run up to the chin.
 COAT_ON = {
     'seconds': 2.95,
     'armL': [(0.0, 0.02), (0.3, 0.3), (0.62, 0.15), (0.85, 0.08), (1.1, 0.12), (1.62, 0.45), (1.9, 0.38), (2.12, 0.3),
@@ -399,11 +400,11 @@ COAT_ON = {
     'elbowL': [(0.0, 0.1), (0.3, 0.9), (0.62, 0.08), (0.85, 0.2), (1.1, 0.3), (1.62, 1.1), (1.9, 0.9), (2.12, 0.35),
                (2.4, 1.25), (2.7, 1.2), (2.95, 0.1)],
     'wristL': [(0.0, 0.0), (0.3, 0.1), (0.62, -0.25), (0.85, 0.0), (2.4, 0.15), (2.7, 0.1), (2.95, 0.0)],
-    'armR': [(0.0, 0.02), (0.3, 0.55), (0.62, 0.62), (0.85, 1.2), (1.1, 2.7), (1.38, 0.9), (1.62, -0.7), (1.9, -0.25),
+    'armR': [(0.0, 0.02), (0.3, 0.5), (0.62, 0.52), (0.85, 0.85), (0.97, 0.8), (1.1, 2.7), (1.38, 0.9), (1.62, -0.7), (1.9, -0.25),
              (2.12, 0.3), (2.4, 0.42), (2.7, 0.95), (2.95, 0.02)],
-    'outR': [(0.0, 0.0), (0.3, -0.75), (0.62, -1.0), (0.85, -0.85), (1.1, 0.45), (1.38, 0.7), (1.62, 0.35), (1.9, 0.2),
+    'outR': [(0.0, 0.0), (0.3, -0.7), (0.62, -0.92), (0.85, -1.0), (0.97, 0.35), (1.1, 0.45), (1.38, 0.7), (1.62, 0.35), (1.9, 0.2),
              (2.12, 0.08), (2.4, -0.32), (2.7, -0.38), (2.95, 0.0)],
-    'elbowR': [(0.0, 0.1), (0.3, 1.05), (0.62, 1.1), (0.85, 1.75), (1.1, 1.25), (1.38, 0.8), (1.62, 0.3), (1.9, 0.12),
+    'elbowR': [(0.0, 0.1), (0.3, 0.95), (0.62, 0.85), (0.85, 1.35), (0.97, 0.9), (1.1, 1.25), (1.38, 0.8), (1.62, 0.3), (1.9, 0.12),
                (2.12, 0.35), (2.4, 1.25), (2.7, 2.25), (2.95, 0.1)],
     'wristR': [(0.0, 0.0), (0.3, 0.25), (0.85, 0.1), (1.1, 0.3), (1.62, -0.35), (1.9, -0.1), (2.4, 0.15), (2.7, 0.1),
                (2.95, 0.0)],
@@ -504,19 +505,59 @@ def dressing(*parts, **extra):
     return clip
 
 
-# Mamma: quick and light, the left arm first, her head tipped as she zips. Pappa: steady and big, the right arm first (the
-# lamp is in his left hand), leaning well into it, heavy on his feet. Moa: the left arm first, quick, her head tipped, a
-# springy stamp. Bertil: the boots first ("Jag tar mina storsta stovlar!"), lifted high and stamped hard, then the coat in a
-# hurry, the right arm first, the arms flung.
+def rekeyed(part, seconds=None, **channels):
+    """The part with some channels keyed afresh (and, given, a new length)."""
+    made = dict(part)
+    made.update(channels)
+    if seconds is not None:
+        made['seconds'] = seconds
+    return made
+
+
+# A child's head is big for its shoulders and its arms are short: the hand that holds the collar keeps lower and further
+# out to the side as the first arm goes in, the elbow less bent, so that it stays clear of the chin.
+CHILD_COAT = rekeyed(
+    COAT_ON,
+    armR=[(0.0, 0.02), (0.3, 0.42), (0.62, 0.45), (0.85, 0.72), (0.97, 0.75), (1.1, 2.7), (1.38, 0.9), (1.62, -0.7), (1.9, -0.25),
+          (2.12, 0.3), (2.4, 0.42), (2.7, 0.95), (2.95, 0.02)],
+    outR=[(0.0, 0.0), (0.3, -0.62), (0.62, -0.9), (0.85, -1.05), (0.97, 0.35), (1.1, 0.45), (1.38, 0.7), (1.62, 0.35), (1.9, 0.2),
+          (2.12, 0.08), (2.4, -0.32), (2.7, -0.38), (2.95, 0.0)],
+    elbowR=[(0.0, 0.1), (0.3, 0.8), (0.62, 0.7), (0.85, 1.15), (0.97, 0.85), (1.1, 1.25), (1.38, 0.8), (1.62, 0.3), (1.9, 0.12),
+            (2.12, 0.35), (2.4, 1.25), (2.7, 2.0), (2.95, 0.1)],
+)
+
+# Pappa has the flashlight in the hand that holds the collar. Once his first arm is in its sleeve, that hand comes up to the
+# collar and takes the lamp, so that the other goes over his head and into its sleeve empty; after the zip the zipping hand
+# comes down to it and takes the lamp back. `lamp` keys which hand holds it: 0 the collar hand (his left), 1 the other.
+PAPPA_COAT = rekeyed(
+    COAT_ON, seconds=3.1,
+    armL=[(0.0, 0.02), (0.3, 0.3), (0.62, 0.15), (0.85, 0.45), (1.1, 0.12), (1.62, 0.45), (1.9, 0.38), (2.12, 0.3),
+          (2.4, 0.42), (2.7, 0.38), (2.85, 0.4), (3.1, 0.02)],
+    outL=[(0.0, 0.0), (0.3, 0.15), (0.62, 0.32), (0.85, -0.25), (1.1, 0.1), (1.62, -0.1), (2.12, 0.08), (2.4, -0.32),
+          (2.7, -0.32), (2.85, -0.3), (3.1, 0.0)],
+    elbowL=[(0.0, 0.1), (0.3, 0.9), (0.62, 0.08), (0.85, 1.6), (1.1, 0.3), (1.62, 1.1), (1.9, 0.9), (2.12, 0.35),
+            (2.4, 1.25), (2.7, 1.2), (2.85, 1.25), (3.1, 0.1)],
+    armR=COAT_ON['armR'][:-1] + [(2.85, 0.42), (3.1, 0.02)],
+    outR=COAT_ON['outR'][:-1] + [(2.85, -0.32), (3.1, 0.0)],
+    elbowR=COAT_ON['elbowR'][:-1] + [(2.85, 1.25), (3.1, 0.1)],
+    wristR=COAT_ON['wristR'][:-1] + [(3.1, 0.0)],
+    nod=COAT_ON['nod'][:-1] + [(2.85, 0.3), (3.1, 0.0)],
+    lamp=[(0.0, 0.0), (0.8, 0.0), (0.86, 1.0), (2.8, 1.0), (2.86, 0.0)],
+)
+
+# Mamma: quick and light, the left arm first, her head tipped as she zips. Pappa: steady and big, the right arm first,
+# passing the flashlight from hand to hand, leaning well into it, heavy on his feet. Moa: the left arm first, quick, her
+# head tipped, a springy stamp. Bertil: the boots first ("Jag tar mina storsta stovlar!"), lifted high and stamped hard,
+# then the coat in a hurry, the right arm first, the arms flung.
 DRESS = {
     'dressMamma': dressing(paced(COAT_ON, 0.88), paced(BOOTS_ON, 0.85, legL=0.85, kneeL=0.85, legR=0.85, kneeR=0.85),
                            tilt=[(0.0, 0.0), (2.0, 0.0), (2.3, 0.08), (2.6, 0.02), (4.0, 0.0)]),
-    'dressPappa': dressing(paced(mirrored(COAT_ON), 1.0, lean=1.35, nod=0.85),
+    'dressPappa': dressing(paced(mirrored(PAPPA_COAT), 1.0, lean=1.35, nod=0.85),
                            paced(mirrored(BOOTS_ON), 1.08, lean=1.3, kneeL=1.15, kneeR=1.15)),
-    'dressMoa': dressing(paced(COAT_ON, 0.92, turn=1.25), paced(BOOTS_ON, 0.82, legL=1.1, legR=1.1),
+    'dressMoa': dressing(paced(CHILD_COAT, 0.92, turn=1.25), paced(BOOTS_ON, 0.82, legL=1.1, legR=1.1),
                          tilt=[(0.0, 0.0), (0.4, 0.06), (1.2, -0.05), (2.3, 0.08), (2.7, 0.0)]),
     'dressBertil': dressing(paced(mirrored(BOOTS_ON), 0.8, legL=1.2, kneeL=1.25, legR=1.2, kneeR=1.25, sway=1.3),
-                            paced(mirrored(COAT_ON), 0.78, armL=1.12, armR=1.12, turn=1.2)),
+                            paced(mirrored(CHILD_COAT), 0.78, armL=1.12, armR=1.12, turn=1.2)),
 }
 CLIPS.update(DRESS)
 

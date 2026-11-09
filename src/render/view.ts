@@ -1,7 +1,7 @@
 import { lessMotion } from '../platform/motion';
 import { buildBraid } from './braid';
 import { createPaddle, type Paddle } from './paddle';
-import { rainGearFor } from './rain-gear';
+import { heldInOther, rainGearFor } from './rain-gear';
 import { coatPose } from './elof-coat';
 import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
 import { createMoverMotion } from './mover-motion';
@@ -1584,7 +1584,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (pappaHas && pappa) {
         pappa.rig.group.updateWorldMatrix(true, false);
         pappa.rig.group.getWorldQuaternion(lampTurn);
-        holdLamp(pappasLamp, pappa.rig, 0, 2 * Math.atan2(lampTurn.y, lampTurn.w), Math.max(0.7, pappa.rig.height / 5.2));
+        // In his left hand; while he puts his coat on, in his right for a while (./rain-gear.ts heldInOther).
+        const side = heldInOther(chapter, 'pappa', sceneFrame, calmStory) ? 1 : 0;
+        holdLamp(pappasLamp, pappa.rig, side, 2 * Math.atan2(lampTurn.y, lampTurn.w), Math.max(0.7, pappa.rig.height / 5.2));
       }
     }
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);

@@ -8,10 +8,11 @@ import { garden } from '../src/content/chapters/garden';
 import { createGrandparent, type Figure, type Grandparent } from '../src/content/aventyr2/grandparents';
 import { createAssets } from '../src/render/assets';
 import { createPlayerMotion } from '../src/render/player-motion';
-import { createModelRig, type Rig, type Role } from '../src/render/rig';
+import { createModelRig, STANDING, type Rig, type Role } from '../src/render/rig';
+import { coatPose, elofRainGear, PUT_ON, TAKE_OFF } from '../src/render/elof-coat';
 import type { PlayerState } from '../src/sim/types';
-import { createStage } from '../src/render/stage';
-import { FIRST_SLEEVE, gearOnAt, LOOK, type GearRole } from '../src/render/rain-gear';
+import { createStage, litLamp } from '../src/render/stage';
+import { FIRST_SLEEVE, gearOnAt, heldInOther, LOOK, type GearRole } from '../src/render/rain-gear';
 import type { ActorKey } from '../src/sim/scene';
 
 /**
@@ -131,6 +132,13 @@ const figures: { who: Grandparent; figure: Figure; group: Group }[] = elders.map
 
 // ?scene=elof: Elof on his own model, as the game moves him (src/render/player-motion.ts): a walk, a run, and a stop.
 let boy: { rig: Rig; motion: ReturnType<typeof createPlayerMotion>; x: number } | null = null;
+/**
+ * ?scene=elofcoat: Elof on his own model in the doll's raincoat (made in Blender where the pack has it), putting it on as in
+ * Stormkvällen's `regnrock`, or with &off taking it off as in Stormens öga's `rockav`: his arms as ./elof-coat.ts keys them,
+ * the coat going on and off as the game's view has it, by the scene's seconds.
+ */
+let coated: Rig | null = null;
+const STORM = { id: 'stormkvall', storm: { rain: 1 } } as Parameters<typeof elofRainGear>[0];
 const elofSpeed = (t: number) => t < 1 ? 0 : t < 5 ? 1.2 : t < 9 ? 3.5 : t < 9.6 ? 3.5 * (9.6 - t) / 0.6 : 0;
 /** Where the camera looks, close on him: he is one EL tall. */
 
@@ -142,14 +150,14 @@ function frame(): void {
   renderer.setSize(width, height, false);
   camera.aspect = width / height;
   const count = Math.max(1, cast.length + figures.length);
-  const followed = track ? boy ? boy.rig.group : cast[0] ? stage.actors.get(cast[0])?.rig.group : figures[0]?.figure.rig.group : undefined;
+  const followed = track ? boy ? boy.rig.group : coated ? coated.group : cast[0] ? stage.actors.get(cast[0])?.rig.group : figures[0]?.figure.rig.group : undefined;
   const span = followed ? zoom : (count - 1) * LANE + (sceneName === 'walk' ? 16 : 4);
   const middle = followed ? followed.getWorldPosition(new Vector3()).x
     : (sceneName === 'walk' ? 8 : sceneName === 'grand' ? 6 : 0) + (count - 1) * LANE / 2;
   const view = query.get('view') === 'three';
   const distance = Math.max(followed ? 4 : 14, span * 0.5 / Math.tan(camera.fov * Math.PI / 360) / Math.max(0.6, camera.aspect) * 1.05);
   // Halfway up whoever is followed (Elof is one EL tall, the grown-ups five), or at `?at` EL.
-  const high = query.has('at') ? Number(query.get('at')) : followed ? (boy ? 0.5 : 2.3) : 2.4;
+  const high = query.has('at') ? Number(query.get('at')) : followed ? (boy || coated ? 0.5 : 2.3) : 2.4;
   // `?yaw`: the camera's angle round them in degrees, 0 from the front, 90 from their left, 180 from behind.
   const yaw = query.has('yaw') ? Number(query.get('yaw')) * Math.PI / 180 : view ? Math.atan2(0.55, 0.84) : 0;
   const reach = view && !query.has('yaw') ? Math.hypot(0.55, 0.84) * distance : distance;
@@ -162,6 +170,7 @@ frame();
 const draw = () => { if (track) frame(); renderer.render(scene, camera); };
 
 const flags = new Set<string>(story ? told(book) : []);
+const lamp = litLamp();
 let clock = 0;
 function step(dt: number): void {
   clock += dt;
@@ -177,10 +186,24 @@ function step(dt: number): void {
       stage.actors.get(who)?.rig.dress?.(on && (on.coat > 0 || on.boots[0] > 0 || on.boots[1] > 0)
         ? { ...LOOK[who], bootOff: null, on, first: FIRST_SLEEVE[who] } : null, true);
     }
+    // Pappa's flashlight, in the hand that holds it as the game's view has it (src/render/view.ts).
+    const pappa = stage.actors.get('pappa');
+    if (pappa && cast.includes('pappa')) {
+      if (!lamp.parent) scene.add(lamp);
+      const side = heldInOther(chapter, 'pappa', { id: 'lab', seconds: clock }, query.has('calm')) ? 1 : 0;
+      pappa.rig.group.updateMatrixWorld(true);
+      pappa.rig.hand(side, lamp.position);
+      lamp.rotation.set(0, pappa.rig.group.rotation.y, 0);
+    }
   }
   // Elof comes up to each of them (they go down on a knee), calls them (the lantern, the ladder), and goes on.
   const near = Math.min(1, Math.max(0, (clock - 1) / 3)) - Math.min(1, Math.max(0, (clock - 10) / 3));
   for (const { figure, group } of figures) figure.update(clock > 6.5, clock, dt, group.position.x + 9 - 7 * near);
+  if (coated) {
+    const id = query.has('off') ? TAKE_OFF.scene : PUT_ON.scene;
+    coated.dress?.(elofRainGear(STORM, new Set(), { id, seconds: clock }, query.has('calm')), true);
+    coated.pose(coatPose(id, clock, { ...STANDING }));
+  }
   if (boy) {
     const speed = elofSpeed(clock);
     boy.x += speed * dt;
@@ -219,6 +242,15 @@ const load = async () => {
     if (!files[`${who}.glb`]) continue;
     figure.dress(await assets.model('private', who));
     loaded.push(who);
+  }
+  if (sceneName === 'elofcoat' && files['elof.glb']) {
+    const model = await assets.model('private', 'elof');
+    model.rotation.y = Math.PI / 2;
+    coated = createModelRig(model, 1);
+    coated.group.rotation.y = -Math.PI / 2 + Number(query.get('turn') ?? 0);
+    if (files['elof-wardrobe.glb']) { coated.wear?.(await assets.model('private', 'elof-wardrobe')); loaded.push('elof-wardrobe'); }
+    scene.add(coated.group);
+    loaded.push('elof');
   }
   if (sceneName === 'elof' && files['elof.glb']) {
     const model = await assets.model('private', 'elof');

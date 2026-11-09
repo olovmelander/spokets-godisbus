@@ -409,10 +409,11 @@ export function stand(pose: Pose, t: number, stander: Stander, legs: Legs = REHE
  * A clip keyed in the pose itself (art/blender/motion.py CLIPS): each channel's keys as [seconds, value, slope, …].
  * Getting up from a chair and sitting down on one keys the legs as shares (seated, below), and where the body stands:
  * `planted`, 0 with its hips at its place, 1 with its feet there. Putting on the rain gear keys how far the coat and
- * each boot are on (`coat`, `bootL`, `bootR`, 0 to 1: ./rain-gear.ts), in step with the motion.
+ * each boot are on (`coat`, `bootL`, `bootR`, 0 to 1: ./rain-gear.ts), in step with the motion, and which hand holds
+ * a flashlight meanwhile (`lamp`: 1, the other hand).
  */
 export type Clip = { readonly seconds: number }
-  & { readonly [channel in keyof Pose | 'planted' | 'tuck' | 'heel' | 'over' | 'rise' | 'coat' | 'bootL' | 'bootR' | KneelChannel]?: readonly number[] };
+  & { readonly [channel in keyof Pose | 'planted' | 'tuck' | 'heel' | 'over' | 'rise' | 'coat' | 'bootL' | 'bootR' | 'lamp' | KneelChannel]?: readonly number[] };
 /** What going down on a knee keys as shares, the legs reaching from there on each body (kneelLegs, below). */
 type KneelChannel = 'down' | 'front' | 'frontUp' | 'back' | 'backUp' | 'toes' | 'hand';
 
